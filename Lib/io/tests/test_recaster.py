@@ -97,6 +97,6 @@ class test_recaster(ScipyTestCase):
         R = self.recaster
         for T in (N.complex128, N.complex64,
                   N.float64, N.uint64):
-            B = R.downcast_or_none(N.array(value, T))
+            B = R.downcast(N.array(value, T))
             assert B is not None, 'Got None for %s' % T
             assert B.dtype.type == N.int32

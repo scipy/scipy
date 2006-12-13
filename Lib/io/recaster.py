@@ -214,12 +214,6 @@ class Recaster(object):
                         rtol=tols['rtol'],
                         atol=tols['atol'])
 
-    def arr_if_valid(self, arr):
-        ''' Returns array if of valid sctype, None otherwise '''
-        if arr.dtype.type not in self.sctype_list:
-            return None
-        return arr
-
     def smallest_of_kind(self, arr, kind=None, max_size=None):
         ''' Return arr maybe downcast to same kind, smaller storage
 
@@ -249,7 +243,9 @@ class Recaster(object):
                 ret_arr = test_arr
             else:
                 break
-        return self.arr_if_valid(ret_arr)
+        if ret_arr.dtype.type not in self.sctype_list:
+            return None
+        return ret_arr
         
     def smallest_int_sctype(self, mx, mn):
         ''' Return integer type with smallest storage containing mx and mn
@@ -282,7 +278,7 @@ class Recaster(object):
             return arr.astype(idt)
         return None
 
-    def downcast_or_none(self, arr):
+    def downcast(self, arr, allow_larger_integer=False):
         ''' Downcast array to smaller or same type
         
         If cannot find smaller type within tolerance,
@@ -291,12 +287,16 @@ class Recaster(object):
         dtp = arr.dtype
         dtk = dtp.kind
         dti = dtp.itemsize
+        int_arr = None
         if dtk in ('c', 'f'):
             if self.downcast_fp_to_int:
                 test_arr = self.cast_to_integer(arr)
                 if test_arr is not None:
                     if self.all_close(arr, test_arr):
-                        return test_arr
+                        if test_arr.dtype.itemsize < dti:
+                            return test_arr
+                        else:
+                            int_arr = test_arr
             if self.downcast_fp_to_fp:
                 if dtk == 'c':
                     # Try downcasting to float
@@ -311,14 +311,19 @@ class Recaster(object):
             if self.downcast_int_to_int:
                 test_arr = self.cast_to_integer(arr)
                 if test_arr is not None:
-                    if test_arr.dtype.itemsize <= dti:
+                    if test_arr.dtype.itemsize < dti:
                         return test_arr
+                    else:
+                        int_arr = test_arr
         else:
             raise TypeError, 'Do not recognize array kind %s' % dtk
-        return self.arr_if_valid(arr)
-        
+        if arr.dtype.type in self.sctype_list:
+            return arr
+        if allow_larger_integer and int_arr is not None:
+            return int_arr
+        raise TypeError, 'Cannot downcast array within tolerance'
 
-    def recast_or_none(self, arr):
+    def recast(self, arr):
         ''' Recast array to type in type list
         
         If cannot find smaller type within tolerance, by downcasting,
@@ -326,9 +331,10 @@ class Recaster(object):
         types.  If none of these return an array within tolerance,
         return None
         '''
-        test_arr = self.downcast_or_none(arr)
-        if test_arr is not None:
-            return test_arr
+        try:
+            return self.downcast(arr, allow_larger_integer=True)
+        except ValueError:
+            pass
         # Could not downcast, arr dtype not in known list
         dtp = arr.dtype
         dtk = dtp.kind
@@ -361,19 +367,7 @@ class Recaster(object):
                             if test_arr is not None:
                                 return test_arr
                         return flt_arr
-        return None
-
-    def downcast(self, arr):
-        ret = self.downcast_or_none(arr)
-        if ret is None:
-            raise TypeError, 'Cannot downcast array within tolerance'
-        return ret
-        
-    def recast(self, arr):
-        ret = self.recast_or_none(arr)
-        if ret is None:
-            raise TypeError, 'Cannot recast array within tolerance'
-        return ret
+        raise TypeError, 'Cannot recast array within tolerance'
 
     def recast_best_sctype(self, arr):
         ''' Recast array, return closest sctype to original
