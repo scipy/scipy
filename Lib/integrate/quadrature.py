@@ -268,9 +268,20 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     return result
 
 def romb(y, dx=1.0, axis=-1, show=False):
-    """Uses Romberg integration to integrate y(x) using N samples
-    along the given axis which are assumed equally spaced with distance dx.
-    The number of samples must be 1 + a non-negative power of two: N=2**k + 1
+    """Romberg integration using samples of a function
+
+    Inputs:
+
+       y    -  a vector of 2**k + 1 equally-spaced samples of a fucntion
+       dx   -  the sample spacing.
+       axis -  the axis along which to integrate
+       show -  When y is a single 1-d array, then if this argument is True
+               print the table showing Richardson extrapolation from the
+               samples.
+
+    Output: ret
+
+       ret  - The integrated result for each axis. 
 
     See also:
 
