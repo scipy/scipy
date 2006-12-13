@@ -69,7 +69,7 @@ class TimeSeries(sa.ShiftingArray):
         retVal = ""
         if self.firstValue() is not None:
             for i in range(self.firstValue(),self.lastValue()+1):
-                index = str(tsdate.Date(freq=self.freq,val=i))
+                index = str(tsdate.Date(freq=self.freq,value=i))
                 index = index + (" " * (6-len(index)))
                 retVal += index + "---> " + str(super(TimeSeries, self).__getitem__(i)) + "\n"
             return retVal
@@ -78,18 +78,18 @@ class TimeSeries(sa.ShiftingArray):
             
             
     def firstValue(self, asDate=False):
-        val = super(TimeSeries, self).firstValue()
+        value = super(TimeSeries, self).firstValue()
         if asDate:
-            return tsdate.Date(freq=self.freq, val=val)
+            return tsdate.Date(freq=self.freq, value=value)
         else:
-            return val
+            return value
         
     def lastValue(self, asDate=False):
-        val = super(TimeSeries, self).lastValue()
+        value = super(TimeSeries, self).lastValue()
         if asDate:
-            return tsdate.Date(freq=self.freq, val=val)
+            return tsdate.Date(freq=self.freq, value=value)
         else:
-            return val
+            return value
 
     ### DATA 
     
