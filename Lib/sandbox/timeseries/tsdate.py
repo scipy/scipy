@@ -12,19 +12,19 @@ class Date:
         
         if val is not None:
             if self.freq == 'D':
-                self.__date = val+originDate
+                self.mxDate = val+originDate
             elif self.freq == 'B':
-                self.__date = originDate + val + (val//5)*7 - (val//5)*5
+                self.mxDate = originDate + val + (val//5)*7 - (val//5)*5
             elif self.freq == 'S':
-                self.__date = secondlyOriginDate + mx.DateTime.DateTimeDeltaFromSeconds(val)
+                self.mxDate = secondlyOriginDate + mx.DateTime.DateTimeDeltaFromSeconds(val)
             elif self.freq == 'M':
-                self.__date = originDate + mx.DateTime.RelativeDateTime(months=val, day=-1)
+                self.mxDate = originDate + mx.DateTime.RelativeDateTime(months=val, day=-1)
             elif self.freq == 'A':
-                self.__date = originDate + mx.DateTime.RelativeDateTime(years=val, month=-1, day=-1)
+                self.mxDate = originDate + mx.DateTime.RelativeDateTime(years=val, month=-1, day=-1)
             elif self.freq == 'Q':
-                self.__date = originDate + 1 + mx.DateTime.RelativeDateTime(years=int(val/4), month=int(12 * (float(val)/4 - val/4)), day=-1)
+                self.mxDate = originDate + 1 + mx.DateTime.RelativeDateTime(years=int(val/4), month=int(12 * (float(val)/4 - val/4)), day=-1)
         elif mxDate is not None:
-            self.__date = mxDate
+            self.mxDate = mxDate
         else:
             error = ValueError("Insufficient parameters given to create a date at the given frequency")
 
@@ -47,30 +47,32 @@ class Date:
                 if month is None or day is None or seconds is None: raise error
                 
             if self.freq != 'S':
-                self.__date = mx.DateTime.Date(year, month, day)
+                self.mxDate = mx.DateTime.Date(year, month, day)
                 if self.freq == 'B':
-                    if self.__date.day_of_week == 5 or self.__date.day_of_week == 6:
+                    if self.mxDate.day_of_week == 5 or self.mxDate.day_of_week == 6:
                         raise ValueError("Weekend passed as business day")
             else:
                 _hours = int(seconds/3600)
                 _minutes = int((seconds - _hours*3600)/60)
                 _seconds = seconds % 60
                 
-                self.__date = mx.DateTime.Date(year, month, day, _hours, _minutes, _seconds)
+                self.mxDate = mx.DateTime.Date(year, month, day, _hours, _minutes, _seconds)
+                
+        self.value = self.__value()
                         
                 
-    def day(self):          return self.mxDate().day
-    def day_of_week(self):  return self.mxDate().day_of_week
-    def month(self):        return self.mxDate().month
-    def quarter(self):      return monthToQuarter(self.mxDate().month)
-    def year(self):         return self.mxDate().year
-    def seconds(self):      return int(self.mxDate().second)
-    def minute(self):       return int(self.mxDate().minute)
-    def hour(self):         return int(self.mxDate().hour)
+    def day(self):          return self.mxDate.day
+    def day_of_week(self):  return self.mxDate.day_of_week
+    def month(self):        return self.mxDate.month
+    def quarter(self):      return monthToQuarter(self.mxDate.month)
+    def year(self):         return self.mxDate.year
+    def seconds(self):      return int(self.mxDate.second)
+    def minute(self):       return int(self.mxDate.minute)
+    def hour(self):         return int(self.mxDate.hour)
     
     def strfmt(self, fmt):
         qFmt = fmt.replace("%q", "XXXX")
-        tmpStr = self.__date.strftime(qFmt)
+        tmpStr = self.mxDate.strftime(qFmt)
         return tmpStr.replace("XXXX", str(self.quarter()))
             
     def __str__(self):
@@ -120,26 +122,24 @@ class Date:
     def __hash__(self): return hash(int(self)) ^ hash(self.freq)
     
     def __int__(self):
-        return self.value()
+        return self.value
             
-    def value(self):
+    def __value(self):
         if self.freq == 'D':
-            return int((self.__date-originDate).days)
+            return int((self.mxDate-originDate).days)
         elif self.freq == 'B':
-            days = (self.__date-originDate).days
+            days = (self.mxDate-originDate).days
             weeks = days // 7
             return int((weeks*5) + (days - weeks*7))
         elif self.freq == 'M':
-            return (self.__date.year - originDate.year)*12 + (self.__date.month - originDate.month)
+            return (self.mxDate.year - originDate.year)*12 + (self.mxDate.month - originDate.month)
         elif self.freq == 'S':
-            return int((self.__date - secondlyOriginDate).seconds)
+            return int((self.mxDate - secondlyOriginDate).seconds)
         elif self.freq == 'A':
-            return int(self.__date.year - originDate.year + 1)
+            return int(self.mxDate.year - originDate.year + 1)
         elif self.freq == 'Q':
-            return int ((self.__date.year - originDate.year)*4 + (self.__date.month - originDate.month)/3)
+            return int ((self.mxDate.year - originDate.year)*4 + (self.mxDate.month - originDate.month)/3)
             
-    def mxDate(self):
-        return self.__date
     
 originDate = mx.DateTime.Date(1850)-1
 secondlyOriginDate = mx.DateTime.Date(1980) - mx.DateTime.DateTimeDeltaFromSeconds(1)
@@ -194,7 +194,7 @@ def dateOf(date, toFreq, relation="BEFORE"):
         if toFreq == 'B':
             # BEFORE result: preceeding Friday if date is a weekend, same day otherwise
             # AFTER result: following Monday if date is a weekend, same day otherwise
-            tempDate = date.mxDate()
+            tempDate = date.mxDate
             if _rel == 'B':
                 if tempDate.day_of_week >= 5: tempDate -= (tempDate.day_of_week - 4)
             elif _rel == 'A':
@@ -228,7 +228,7 @@ def dateOf(date, toFreq, relation="BEFORE"):
     elif date.freq == 'M':
 
         if toFreq == 'D':
-            tempDate = date.mxDate()
+            tempDate = date.mxDate
             if _rel == 'B':
                 return Date(freq='D', year=date.year(), month=date.month(), day=1)
             elif _rel == 'A':
