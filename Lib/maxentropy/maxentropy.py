@@ -520,7 +520,7 @@ class basemodel(object):
         """Clears the interim results of computations depending on the
         parameters and the sample.
         """
-        for var in ['mu', 'logZ', 'logZapprox', 'logw']:
+        for var in ['mu', 'logZ', 'logZapprox', 'logv']:
             if hasattr(self, var):
                 exec('del self.' + var)
 
@@ -1228,14 +1228,14 @@ class bigmodel(basemodel):
         if hasattr(self, 'logZapprox'):
             return self.logZapprox
  
-        # Compute log w = log [p_dot(s_j)/aux_dist(s_j)]   for
+        # Compute log v = log [p_dot(s_j)/aux_dist(s_j)]   for
         # j=1,...,n=|sample| using a precomputed matrix of sample
         # features.
-        logw = self._logw()
+        logv = self._logv()
         
-        # Good, we have our logw.  Now:
-        n = len(logw)
-        self.logZapprox = logsumexp(logw) - math.log(n)
+        # Good, we have our logv.  Now:
+        n = len(logv)
+        self.logZapprox = logsumexp(logv) - math.log(n)
         return self.logZapprox
     
     
@@ -1253,43 +1253,43 @@ class bigmodel(basemodel):
         self.estimate()
         return self.mu
        
-    def _logw(self):
+    def _logv(self):
         """This function helps with caching of interim computational
         results.  It is designed to be called internally, not by a user.
 
         This is defined as the array of unnormalized importance sampling
         weights corresponding to the sample x_j whose features are
         represented as the columns of self.sampleF.
-            logw_j = p_dot(x_j) / q(x_j),
+            logv_j = p_dot(x_j) / q(x_j),
         where p_dot(x_j) = p_0(x_j) exp(theta . f(x_j)) is the
         unnormalized pdf value of the point x_j under the current model.
         """
-        # First see whether logw has been precomputed
-        if hasattr(self, 'logw'):
-            return self.logw
+        # First see whether logv has been precomputed
+        if hasattr(self, 'logv'):
+            return self.logv
  
-        # Compute log w = log [p_dot(s_j)/aux_dist(s_j)]   for
+        # Compute log v = log [p_dot(s_j)/aux_dist(s_j)]   for
         # j=1,...,n=|sample| using a precomputed matrix of sample
         # features.
         if self.external is None:
             paramsdotF = innerprodtranspose(self.sampleF, self.params)
-            logw = paramsdotF - self.samplelogprobs
+            logv = paramsdotF - self.samplelogprobs
             # Are we minimizing KL divergence between the model and a prior
             # density p_0?
             if self.priorlogprobs is not None:
-                logw += self.priorlogprobs
+                logv += self.priorlogprobs
         else:
             e = self.external
             paramsdotF = innerprodtranspose(self.externalFs[e], self.params)
-            logw = paramsdotF - self.externallogprobs[e]
+            logv = paramsdotF - self.externallogprobs[e]
             # Are we minimizing KL divergence between the model and a prior
             # density p_0?
             if self.externalpriorlogprobs is not None:
-                logw += self.externalpriorlogprobs[e]
+                logv += self.externalpriorlogprobs[e]
         
-        # Good, we have our logw.  Now:
-        self.logw = logw
-        return logw
+        # Good, we have our logv.  Now:
+        self.logv = logv
+        return logv
     
     
     def estimate(self):
@@ -1358,31 +1358,21 @@ class bigmodel(basemodel):
             if (not self.staticsample) or self.matrixtrials > 1:
                 self.resample()
             
-            logw = self._logw()
-            n = len(logw)
+            logv = self._logv()
+            n = len(logv)
             logZ = self.lognormconst()
             logZs.append(logZ)
             
-            # # 1. Compute log w = log [p_dot(s_j)/aux_dist(s_j)]   for
-            # #    j=1,...,n=|sample| using a precomputed matrix of sample
-            # #    features.
-            # logw = self._logw()
-            # 
-            # # 2. Good, we have our logw.  Now:
-            # n = len(logw)
-            # lse = logsumexp(logw)
-            # logZs.append(lse - math.log(n))
-           
             # We don't need to handle negative values separately,
             # because we don't need to take the log of the feature
             # matrix sampleF. See my thesis, Section 4.4
             
-            logwminuslogZ = logw - logZ
+            logu = logv - logZ
             if self.external is None:
-                averages = innerprod(self.sampleF, arrayexp(logwminuslogZ)) 
+                averages = innerprod(self.sampleF, arrayexp(logu)) 
             else:
                 averages = innerprod(self.externalFs[self.external], \
-                                     arrayexp(logwminuslogZ)) 
+                                     arrayexp(logu)) 
             averages /= n
             mus.append(averages)
                         
