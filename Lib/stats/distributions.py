@@ -2055,7 +2055,7 @@ class johnsonsb_gen(rv_continuous):
     def _cdf(self, x, a, b):
         return norm.cdf(a+b*log(x/(1.0-x)))
     def _ppf(self, q, a, b):
-        return 1.0/(1+exp(-1.0/b*norm.ppf(q)-a))
+        return 1.0/(1+exp(-1.0/b*(norm.ppf(q)-a)))
 johnsonsb = johnsonsb_gen(a=0.0,b=1.0,name='johnsonb',
                           longname="A Johnson SB",
                           shapes="a,b",extradoc="""
