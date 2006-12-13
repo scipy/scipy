@@ -2,7 +2,7 @@ import corelib
 import mx.DateTime
 
 class Date:
-    def __init__(self, freq, year=None, month=None, day=None, seconds=None,quarter=None, mxDate=None, val=None):
+    def __init__(self, freq, year=None, month=None, day=None, seconds=None,quarter=None, mxDate=None, value=None):
         
         if hasattr(freq, 'freq'):
             self.freq = corelib.fmtFreq(freq.freq)
@@ -10,19 +10,19 @@ class Date:
             self.freq = corelib.fmtFreq(freq)
         self.type = corelib.freqToType(self.freq)
         
-        if val is not None:
+        if value is not None:
             if self.freq == 'D':
-                self.mxDate = val+originDate
+                self.mxDate = value+originDate
             elif self.freq == 'B':
-                self.mxDate = originDate + val + (val//5)*7 - (val//5)*5
+                self.mxDate = originDate + value + (value//5)*7 - (value//5)*5
             elif self.freq == 'S':
-                self.mxDate = secondlyOriginDate + mx.DateTime.DateTimeDeltaFromSeconds(val)
+                self.mxDate = secondlyOriginDate + mx.DateTime.DateTimeDeltaFromSeconds(value)
             elif self.freq == 'M':
-                self.mxDate = originDate + mx.DateTime.RelativeDateTime(months=val, day=-1)
+                self.mxDate = originDate + mx.DateTime.RelativeDateTime(months=value, day=-1)
             elif self.freq == 'A':
-                self.mxDate = originDate + mx.DateTime.RelativeDateTime(years=val, month=-1, day=-1)
+                self.mxDate = originDate + mx.DateTime.RelativeDateTime(years=value, month=-1, day=-1)
             elif self.freq == 'Q':
-                self.mxDate = originDate + 1 + mx.DateTime.RelativeDateTime(years=int(val/4), month=int(12 * (float(val)/4 - val/4)), day=-1)
+                self.mxDate = originDate + 1 + mx.DateTime.RelativeDateTime(years=int(value/4), month=int(12 * (float(value)/4 - value/4)), day=-1)
         elif mxDate is not None:
             self.mxDate = mxDate
         else:
@@ -93,7 +93,7 @@ class Date:
     def __add__(self, other):
         if isinstance(other, Date):
             raise TypeError("Cannot add dates")
-        return Date(freq=self.freq, val=int(self) + other)
+        return Date(freq=self.freq, value=int(self) + other)
     
     def __radd__(self, other): return self+other
     
