@@ -286,7 +286,11 @@ class formula(object):
     of the columns of the two formulas.
     """
     
-    def _get_namespace(self):  return self.__namespace or default_namespace
+    def _get_namespace(self): 
+	if isinstance(self.__namespace, N.ndarray): 
+	    return self.__namespace 
+	else: return self.__namespace or default_namespace
+
     def _set_namespace(self, value):  self.__namespace = value
     def _del_namespace(self): del self.__namespace
     namespace = property(_get_namespace, _set_namespace, _del_namespace)
