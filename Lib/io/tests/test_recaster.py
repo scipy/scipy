@@ -13,7 +13,8 @@ except:
 class test_recaster(ScipyTestCase):
     def setUp(self):
         self.valid_types = [N.int32, N.complex128, N.float64]
-        self.recaster = Recaster(self.valid_types)
+        self.recaster = Recaster(self.valid_types,
+                                 recast_options='smallest')
     
     def test_init(self):
         # Setting sctype_list
@@ -31,37 +32,29 @@ class test_recaster(ScipyTestCase):
         assert tols != R.sctype_tols, 'Tols dictionary not set correctly'
         assert R.sctype_tols[T]['rtol'] == F.eps*2, 'Rtol not correctly set'
         assert R.sctype_tols[T]['atol'] == F.tiny*2, 'Atol not correctly set'
+        # Options
         # Sctype size lists
         # Integer sizes
         # Cabable types
         
-    def test_smallest_of_kind(self):
+    def test_cast_to_fp(self):
         R = self.recaster
         value = 1
-        # smallest same kind
-        # Define expected type output from same kind downcast of value
-        required_types = {'complex': N.complex128,
-                          'float': N.float64,
-                          'int': N.int32,
-                          'uint': None}
-        for kind, req_type in required_types.items():
-            if req_type is not None:
-                rdtsz = N.dtype(req_type).itemsize
-            for T in N.sctypes[kind]:
-                tdtsz = N.dtype(T).itemsize
-                ok_T = T in R.sctype_list
-                expect_none = ((req_type is None) or 
-                               ((tdtsz <= rdtsz) and not ok_T))
-                A = N.array(value, T)
-                C = R.smallest_of_kind(A)
-                if expect_none:
-                    assert C is None, 'Expecting None for %s' % T
-                else:
-                    assert C is not None, 'Got unexpected None from %s' % T
-                    assert C.dtype.type == req_type, \
-                           'Expected %s type, got %s type' % \
-                           (C.dtype.type, req_type)
-
+        # Define expected type output from fp recast of value
+        inp_outp = (
+            (N.complex128, N.complex128),
+            (N.complex64, N.complex128),
+            )
+        for inp, outp in inp_outp:
+            arr = N.array(value, dtype=inp)
+            rtol = R.sctype_tols[inp]['rtol']
+            atol = R.sctype_tols[inp]['atol']
+            kind = N.dtype(inp).kind
+            arr = R.cast_to_fp(arr, rtol, atol, kind)
+            if outp is None:
+                assert arr is None, 'Expected None from type %s' % inp
+            assert arr.dtype.type is outp, 'Expected output type %s from input %s' % (inp, outp)
+            
     def test_smallest_int_sctype(self):
         # Smallest int sctype with testing recaster
         params = sctype_attributes()
@@ -92,11 +85,13 @@ class test_recaster(ScipyTestCase):
             assert N.dtype(rt) == N.dtype(T), \
                    'Expected %s, got %s type' % (T, rt)
         
-    def test_downcasts(self):
+    def test_recasts(self):
         value = 100
         R = self.recaster
         for T in (N.complex128, N.complex64,
                   N.float64, N.uint64):
-            B = R.downcast(N.array(value, T))
+            B = R.recast(N.array(value, T))
             assert B is not None, 'Got None for %s' % T
-            assert B.dtype.type == N.int32
+            Bt = B.dtype.type
+            assert Bt == N.int32, 'Input %s, output %s' % (T, Bt)
+        

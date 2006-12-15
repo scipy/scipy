@@ -48,61 +48,121 @@ class Recaster(object):
 
     Initialization specifies acceptable types (ATs)
 
-    Implements downcast and recast method - returns array that may be
-    of different storage type to the input array, where the new type
-    is one of the ATs. Downcast forces return array to be same size or
-    smaller than the input.  recast method will return a larger type
-    if no smaller type will contain the data without loss of
-    precision.
-
-    At its simplest, the downcast method can reject arrays that
-    are not in the list of ATs.
+    Implements recast method - returns array that may be of different
+    storage type to the input array, where the new type is one of the
+    ATs. Recast method will return a larger type if no smaller type
+    will contain the data without loss of precision greater than
+    specified in options at object creation.
     '''
 
     _sctype_attributes = sctype_attributes()
-
+    _k = 2**10
+    _option_defaults = {
+        'only_if_none': {
+        'fp_to_int': 'if_none',
+        'fp_to_fp': 'if_none',
+        'int_to_int': 'if_none',
+        'int_to_fp': 'if_none',
+        'downcast_only': False,
+        'downcast_within_fp': False,
+        'guarantee_fp_to_fp_precision': False,
+        'prefer_input_at_threshold': 0,
+        },
+        'smallest': {
+        'fp_to_int': 'always',
+        'fp_to_fp': 'always',
+        'int_to_int': 'always',
+        'int_to_fp': 'always',
+        'downcast_only': False,
+        'downcast_within_fp': True,
+        'guarantee_fp_to_fp_precision': False,
+        'prefer_input_at_threshold': 0
+        },
+        'fairly_small': {
+        'fp_to_int': 'always',
+        'fp_to_fp': 'if_none',
+        'int_to_int': 'always',
+        'int_to_fp': 'if_none',
+        'downcast_only': False,
+        'downcast_within_fp': False,
+        'guarantee_fp_to_fp_precision': False,
+        'prefer_input_at_threshold': 2 * _k,
+        },
+        'preserve_precision': {
+        'fp_to_int': 'never',
+        'fp_to_fp': 'if_none',
+        'int_to_int': 'if_none',
+        'int_to_fp': 'never',
+        'downcast_only': False,
+        'downcast_within_fp': False,
+        'guarantee_fp_to_fp_precision': True,
+        'prefer_input_at_threshold': 0
+        }
+        }
+    
     def __init__(self, sctype_list=None,
-                 downcast_fp_to_fp = True,
-                 downcast_fp_to_int = True,
-                 downcast_int_to_int = True,
-                 upcast_int_to_fp = True,
-                 upcast_fp_to_int = True,
-                 sctype_tols=None):
+                 sctype_tols=None,
+                 recast_options='only_if_none'):
         ''' Set types for which we are attempting to downcast
 
         Input
         sctype_list  - list of acceptable scalar types
                      If None defaults to all system types
-        downcast_fp_to_fp - if True, tries to downcast floats and complex
-                       to smaller size of same type
-        downcast_fp_to_int - if True, tries to downcast floats and complex
-                       to integers
-        downcast_int_to_int - if True, tries to downcast integers to
-                       smaller of same type
-        upcast_int_to_fp - if True, tries to upcast integers that could not
-                       be downcast to floating point type
-        upcast_fp_to_int - if True, tries to upcast floating point arrays
-                       that cannot be downcast, to integers
         sctype_tols  - dictionary key datatype, values rtol, tol
                      to specify tolerances for checking near equality in
-                     downcasting
+                     downcasting. Note that tolerance values for integers
+                     are used for upcasting integers to floats
+        recast_options - dictionary of options for recasting or string
+                     specifying one of default options dictionaries.
 
-        Note that tolerance values for integers are used for upcasting
-        integers to floats
+        recast_option strings can be:
+        only_if_none - only attempts recast if the type is not in
+                       acceptable types 
+        smallest     - return array of smallest possible type within tolerance
+        fairly_small - compromise set of options between speed of downcast and
+                       size of output
+        preserve_precision - recasts arrays only to types that preserve precision
+
+        Elements in recast_options dictionary:
+        fp_to_int     - "always" or "if_none" or "never"
+                         When to attempt cast of floating point to int
+        fp_to_fp      - "always" or "if_none" or "never"
+                         When to attempt cast of floating point to floating point
+        int_to_int    - "always" or "if_none" or "never"
+                         When to attempt cast of int to int
+        int_to_fp     - "always" or "if_none" or "never"
+                         When to attempt cast of int to floating point
+        downcast_only - if True, only return datatype of same size or less
+        downcast_within_fp - if True, tries downcasting within fp types, even
+                             if there is an fp type that already matches
+        guarantee_fp_to_fp_precision - if True, will only do fp to fp array
+                        casting to type of same or higher precision. Note that
+                        if fp_to_int recasting is allowed this will allow
+                        precision loss of fp values
+        prefer_input_at_threshold - number of bytes. If input array size
+                        is less than or equal to this number, and in valid
+                        types list, return the array without attempting
+                        recasting
         '''
         if sctype_list is None:
             sctype_list = self._sctype_attributes.keys()
         self.sctype_list = sctype_list
-        # Casting options
-        self.sctype_tols = self.default_sctype_tols()
-        self.downcast_fp_to_fp = downcast_fp_to_fp
-        self.downcast_fp_to_int = downcast_fp_to_int
-        self.downcast_int_to_int = downcast_int_to_int
-        self.upcast_int_to_fp = upcast_int_to_fp
-        self.upcast_fp_to_int = upcast_fp_to_int
         # Tolerances
+        self.sctype_tols = self.default_sctype_tols()
         if sctype_tols is not None:
             self.sctype_tols.update(sctype_tols)
+        # Casting options
+        if recast_options is None:
+            recast_options = 'only_if_none'
+        if isinstance(recast_options, basestring):
+            try:
+                self.recast_options = self._option_defaults[recast_options]
+            except KeyError:
+                raise ValueError, \
+                      'Did not recognize option string %s' % recast_options
+        else:
+            self.recast_options = self._option_defaults['only_if_none']
+            self.recast_options.update(recast_options)
         # Cache sctype sizes, 
         self.sized_sctypes = {}
         for k in ('c', 'f', 'i', 'u'):
@@ -115,11 +175,30 @@ class Recaster(object):
                     self.ints_sized_sctypes.append(e)
         if self.ints_sized_sctypes:
             self.ints_sized_sctypes.sort(lambda x, y: cmp(y[1], x[1]))
-        # Cache capable types list
+        # Cache capable types list and sizes
         self._capable_sctypes = {}
+        self._capable_sctype_sizes = {}
+        self._c2f_capable_sctype_sizes = {}
+        flts = self.sized_sctypes['f']
         for k in self._sctype_attributes:
-            self._capable_sctypes[k] = self.get_capable_sctype(k)
-    
+            sct = self.get_capable_sctype(k)
+            self._capable_sctypes[k] = sct
+            if sct is None:
+                self._capable_sctype_sizes[k] = inf
+                if dtype(k).type == 'c':
+                    self._c2f_capable_sctype_sizes[k] = inf
+                continue
+            dtp = dtype(sct)
+            self._capable_sctype_sizes[k] = dtp.itemsize
+            fsz = inf
+            min_sz = ceil(dtp.itemsize / 2.0)
+            if dtp.kind == 'c':
+                for T, sz in flts:
+                    if sz < min_sz:
+                        break
+                    fsz = sz
+                self._c2f_capable_sctype_sizes[k] = fsz
+            
     def default_sctype_tols(self):
         ''' Default allclose tolerance values for all dtypes '''
         t_dict = {}
@@ -156,17 +235,6 @@ class Recaster(object):
         D.sort(lambda x, y: cmp(y[1], x[1]))
         return D
 
-    def capable_sctype(self, sct):
-        ''' Return smallest type containing sct type without precision loss
-
-        Value pulled fron dictionary cached from init - see
-        get_capable_sctype method for algorithm
-        '''
-        try:
-            return self._capable_sctypes[sct]
-        except KeyError:
-            return None
-        
     def get_capable_sctype(self, sct):
         ''' Return smallest scalar type containing sct type without precision loss
 
@@ -207,44 +275,37 @@ class Recaster(object):
                     break
         return out_t
 
-    def all_close(self, arr1, arr2):
-        ''' True if arr1 arr2 close with tols for arr1 '''
-        tols = self.sctype_tols[arr1.dtype.type]
-        return allclose(arr1, arr2,
-                        rtol=tols['rtol'],
-                        atol=tols['atol'])
-
-    def smallest_of_kind(self, arr, kind=None, max_size=None):
-        ''' Return arr maybe downcast to same kind, smaller storage
+    def cast_to_fp(self, arr, rtol, atol, kind,
+                   max_size=inf,
+                   continue_down=False):
+        ''' Return fp arr maybe recast to specified kind, different sctype
 
         Inputs
-        arr         - array to possibly downcast
-        kind        - kind of array to downcast within
-                      (if None (default) use arr.dtype.kind)
+        arr         - array to possibly recast
+        rtol        - relative tolerace for allclose
+        atol        - absolute tolerance for allclose
+        kind        - kind of array to recast within
+                      (one of "c", "f", "u", "i")
         max_size    - maximum size of sctype to return (in bytes)
-                      (if None, set to arr.dtype.itemsize-1)
-        If arr cannot be downcast within given tolerances, then:
-        return arr if arr is in list of acceptable types, otherwise
+        continue_down - if False, return array of largest sctype
+                        within tolerance and >= max_size
+                        if True, continue downcasting within kind
+                        to find smallest possible within tolerance
+                        
+        If arr cannot be recast within given tolerances, and size,
         return None
         '''
-        dtp = arr.dtype
-        if kind is None:
-            kind = dtp.kind
-        if max_size is None:
-            max_size = dtp.itemsize-1
-        sctypes = self.sized_sctypes[kind]
-        sctypes = [t[0] for i, t in enumerate(sctypes) if t[1] <= max_size]
-        tols = self.sctype_tols[dtp.type]
-        rtol, atol = tols['rtol'], tols['atol']
-        ret_arr = arr
-        for T in sctypes:
+        ret_arr = None
+        for T, sz in self.sized_sctypes[kind]:
+            if sz > max_size:
+                continue
             test_arr = arr.astype(T)
             if allclose(test_arr, arr, rtol, atol):
                 ret_arr = test_arr
+                if not continue_down:
+                    break
             else:
                 break
-        if ret_arr.dtype.type not in self.sctype_list:
-            return None
         return ret_arr
         
     def smallest_int_sctype(self, mx, mn):
@@ -278,95 +339,101 @@ class Recaster(object):
             return arr.astype(idt)
         return None
 
-    def downcast(self, arr, allow_larger_integer=False):
-        ''' Downcast array to smaller or same type
+    def recast(self, arr):
+        ''' Recast array to type in type list
         
-        If cannot find smaller type within tolerance,
-        return array if is already valid type, otherwise None
+        If cannot recast to  an array within tolerance,
+        raise error
         '''
         dtp = arr.dtype
         dtk = dtp.kind
         dti = dtp.itemsize
-        int_arr = None
+        dtt = dtp.type
+        opts = self.recast_options
+        curr_size = inf
+        ret_arr = None
+        valid_input_arr = dtt in self.sctype_list
+        if valid_input_arr:
+            if opts['prefer_input_at_threshold'] > arr.nbytes:
+                return arr
+            ret_arr = arr
+        if opts['downcast_only'] or valid_input_arr:
+            curr_size = dti
+        tols = self.sctype_tols[dtt]
+        rtol, atol = tols['rtol'], tols['atol']
         if dtk in ('c', 'f'):
-            if self.downcast_fp_to_int:
+            if opts['fp_to_int'] == 'always' or \
+                   (opts['fp_to_int'] == 'if_none' and
+                    ret_arr is None):
                 test_arr = self.cast_to_integer(arr)
-                if test_arr is not None:
-                    if self.all_close(arr, test_arr):
-                        if test_arr.dtype.itemsize < dti:
-                            return test_arr
-                        else:
-                            int_arr = test_arr
-            if self.downcast_fp_to_fp:
-                if dtk == 'c':
-                    # Try downcasting to float
-                    max_size = ceil(dti / 2.0)
-                    test_arr = self.smallest_of_kind(arr, 'f', max_size)
+                if test_arr is not None and \
+                   test_arr.dtype.itemsize < curr_size:
+                    if allclose(arr, test_arr, rtol, atol):
+                        ret_arr = test_arr
+                        curr_size = ret_arr.dtype.itemsize
+            if opts['fp_to_fp'] == 'always' or \
+                   (opts['fp_to_fp'] == 'if_none' and
+                    ret_arr is None):
+                if dtk == 'c' and not opts['guarantee_fp_to_fp_precision']:
+                    # Try casting to float
+                    max_size = min([self._c2f_capable_sctype_sizes[dtt],
+                                    curr_size - 1])
+                    test_arr = self.cast_to_fp(arr,
+                                               rtol,
+                                               atol,
+                                               'f',
+                                               max_size,
+                                               opts['downcast_within_fp'])
                     if test_arr is not None:
-                        return test_arr
-                test_arr = self.smallest_of_kind(arr)
-                if test_arr is not None:
-                    return test_arr
-        elif dtk in ('u', 'i'):
-            if self.downcast_int_to_int:
-                test_arr = self.cast_to_integer(arr)
-                if test_arr is not None:
-                    if test_arr.dtype.itemsize < dti:
-                        return test_arr
+                        ret_arr = test_arr
+                        curr_size = ret_arr.dtype.itemsize
+                if opts['fp_to_fp'] == 'always' or \
+                       (opts['fp_to_fp'] == 'if_none' and
+                        ret_arr is None):
+                    # Cast float or complex to another of same type
+                    if opts['guarantee_fp_to_fp_precision']:
+                        sct = self._capable_sctypes[dtt]
+                        sz = self._capable_sctype_sizes[dtt]
+                        if sz < curr_size and sct is not None:
+                            ret_arr = arr.astype(sct)
+                            curr_size = sz
                     else:
-                        int_arr = test_arr
+                        max_size = min([self._capable_sctype_sizes[dtt],
+                                        curr_size - 1])
+                        test_arr = self.cast_to_fp(arr,
+                                                   rtol,
+                                                   atol,
+                                                   dtk,
+                                                   max_size,
+                                                   opts['downcast_within_fp'])
+                        if test_arr is not None:
+                            ret_arr = test_arr
+                            curr_size = ret_arr.dtype.itemsize
+        elif dtk in ('u', 'i'):
+            if opts['int_to_int'] == 'always' or \
+                   (opts['int_to_int'] == 'if_none' and
+                    ret_arr is None):
+                test_arr = self.cast_to_integer(arr)
+                if test_arr is not None and \
+                       test_arr.dtype.itemsize < curr_size:
+                    ret_arr = test_arr
+                    curr_size = ret_arr.dtype.itemsize
+            if opts['int_to_fp'] == 'always' or \
+                   (opts['int_to_fp'] == 'if_none' and
+                    ret_arr is None):
+                test_arr = self.cast_to_fp(arr,
+                                           rtol,
+                                           atol,
+                                           'f',
+                                           curr_size-1,
+                                           opts['downcast_within_fp'])
+                if test_arr is not None:
+                    ret_arr = test_arr
         else:
             raise TypeError, 'Do not recognize array kind %s' % dtk
-        if arr.dtype.type in self.sctype_list:
-            return arr
-        if allow_larger_integer and int_arr is not None:
-            return int_arr
-        raise TypeError, 'Cannot downcast array within tolerance'
 
-    def recast(self, arr):
-        ''' Recast array to type in type list
-        
-        If cannot find smaller type within tolerance, by downcasting,
-        and array not of valid type already, then try larger
-        types.  If none of these return an array within tolerance,
-        return None
-        '''
-        try:
-            return self.downcast(arr, allow_larger_integer=True)
-        except ValueError:
-            pass
-        # Could not downcast, arr dtype not in known list
-        dtp = arr.dtype
-        dtk = dtp.kind
-        sct = dtp.type
-        if dtk in ('c', 'f'):
-            # Try upcast to larger dtype of same kind
-            udt = self.capable_sctype[sct]
-            if udt is not None:
-                return arr.astype(udt)
-            # Try casting to an integer
-            if self.upcast_fp_to_int:
-                test_arr = self.cast_to_integer(arr)
-                if test_arr is not None:
-                    if self.all_close(arr, test_arr):
-                        return test_arr
-        else: # integer types
-            # try casting to any possible integer type
-            test_arr = self.cast_to_integer(arr)
-            if test_arr is not None:
-                return test_arr
-            # Can try casting integers to floats
-            if self.upcast_int_to_fp:
-                flts = self._sized_sctypes['f']
-                if flts:
-                    flt_arr = arr.astype(flts[0])
-                    if self.all_close(arr, flt_arr):
-                        if self.downcast_fp_to_fp:
-                            max_size = flt_arr.dtype.itemsize - 1
-                            test_arr = self.smallest_of_kind(arr, 'f', max_size)
-                            if test_arr is not None:
-                                return test_arr
-                        return flt_arr
+        if ret_arr is not None:
+            return ret_arr
         raise TypeError, 'Cannot recast array within tolerance'
 
     def recast_best_sctype(self, arr):
@@ -378,7 +445,7 @@ class Recaster(object):
         sct = arr.dtype.type
         arr = self.recast(arr)
         if sct not in self.sctype_list:
-            sct = self.capable_sctype[sct]
+            sct = self._capable_sctypes[sct]
             if sct is None:
                 sct = arr.dtype.type
         return arr, sct
