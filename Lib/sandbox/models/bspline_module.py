@@ -128,7 +128,7 @@ def setup_bspline_module():
 
     eval_ext_code = '''
 
-    int dim[2] = {upper-lower, Nx[0]};
+    npy_intp dim[2] = {upper-lower, Nx[0]};
     PyArrayObject *basis;
     double *data;
 
@@ -252,7 +252,7 @@ def setup_bspline_module():
 
     gram_ext_code = '''
 
-    int dim[2] = {Nknots[0]-m, m};
+    npy_intp dim[2] = {Nknots[0]-m, m};
     double *data;
     PyArrayObject *gram;
 
@@ -315,7 +315,7 @@ def setup_bspline_module():
 
     invband_ext_code = '''
 
-    int dim[2] = {NL[0], NL[1]};
+    npy_intp dim[2] = {NL[0], NL[1]};
     int i, j;
     double *data;
     PyArrayObject *invband;
