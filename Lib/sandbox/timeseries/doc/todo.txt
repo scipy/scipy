@@ -20,10 +20,6 @@ To-do:
 	  
 	  This should also be an attribute of each TimeSeries object that would
 	  provide the default behaviour if the basis option was not specified.
-	  
-	- add an "ignore" option to the convert method to specify whether to
-	  ignore masked values in the calculation or not (current behaviour is
-	  to ignore masked values).
 
 	- support for wider variety of standard numpy/ma functions
 
@@ -39,14 +35,6 @@ To-do:
 	  don't have a nice relationship where the lower frequency strictly contains
 	  whole periods of the higher frequency. For example, if converting weekly to
 	  monthly, some weeks overlap more than one month.
-
-	- Perhaps change frequency conversion code to simply group data in the C code,
-	  (eg. if going from daily to monthly, create a 2 dimensional array
-	  where each column represents one month's worth of data), and then
-	  perform mathematical operation on the python side (eg. sum/average/etc
-	  the columns to reduce back to a 1-d array). This would not work well
-	  for the scenario described in the previous bullet, but would work nicely
-	  for a lot of scenarios.
 
 
 Wishlist:
