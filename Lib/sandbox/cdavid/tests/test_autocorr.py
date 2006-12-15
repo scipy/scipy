@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Last Change: Tue Dec 12 07:00 PM 2006 J
+# Last Change: Fri Dec 15 10:00 PM 2006 J
 
 from numpy.testing import *
 from numpy.random import randn, seed
@@ -12,7 +12,7 @@ from ctypes import c_uint
 set_package_path()
 from cdavid.autocorr import _raw_autocorr_1d, _raw_autocorr_1d_noncontiguous
 from cdavid.autocorr import autocorr_oneside_nofft as autocorr
-from cdavid.autocorr import autocorr_fft 
+from cdavid.autocorr import autocorr_fft , nextpow2
 from cdavid.autocorr import _autocorr_oneside_nofft_py as autocorr_py
 restore_path()
 

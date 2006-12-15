@@ -1,12 +1,12 @@
 #! /usr/bin/env python
-# Last Change: Fri Nov 24 04:00 PM 2006 J
+# Last Change: Fri Dec 15 10:00 PM 2006 J
 
 from numpy.testing import *
 
 import numpy as N
 
 set_package_path()
-from segmentaxis import segment_axis
+from cdavid.segmentaxis import segment_axis
 restore_path()
 
 # #Optional:
