@@ -2,7 +2,7 @@ import corelib
 import mx.DateTime
 
 class Date:
-    def __init__(self, freq, year=None, month=None, day=None, seconds=None,quarter=None, mxDate=None, value=None):
+    def __init__(self, freq, year=None, month=None, day=None, seconds=None, quarter=None, mxDate=None, value=None):
         
         if hasattr(freq, 'freq'):
             self.freq = corelib.fmtFreq(freq.freq)
@@ -12,17 +12,19 @@ class Date:
         
         if value is not None:
             if self.freq == 'D':
-                self.mxDate = value+originDate
+                self.mxDate = mx.DateTime.DateTimeFromAbsDays(value-1)
             elif self.freq == 'B':
-                self.mxDate = originDate + value + (value//5)*7 - (value//5)*5
+                #originDate + val + (val//5)*7 - (val//5)*5
+                value -= 1
+                self.mxDate = mx.DateTime.DateTimeFromAbsDays(value + (value//5)*7 - (value//5)*5)
             elif self.freq == 'S':
                 self.mxDate = secondlyOriginDate + mx.DateTime.DateTimeDeltaFromSeconds(value)
             elif self.freq == 'M':
-                self.mxDate = originDate + mx.DateTime.RelativeDateTime(months=value, day=-1)
+                self.mxDate = (mx.DateTime.Date(0)) + mx.DateTime.RelativeDateTime(months=value-1, day=-1)
             elif self.freq == 'A':
-                self.mxDate = originDate + mx.DateTime.RelativeDateTime(years=value, month=-1, day=-1)
+                self.mxDate = mx.DateTime.Date(value, -1, -1)
             elif self.freq == 'Q':
-                self.mxDate = originDate + 1 + mx.DateTime.RelativeDateTime(years=int(value/4), month=int(12 * (float(value)/4 - value/4)), day=-1)
+                self.mxDate = (mx.DateTime.Date(0)) + mx.DateTime.RelativeDateTime(years=(value // 4), month=((value * 3) % 12), day=-1)
         elif mxDate is not None:
             self.mxDate = mxDate
         else:
@@ -125,23 +127,23 @@ class Date:
         return self.value
             
     def __value(self):
+        
         if self.freq == 'D':
-            return int((self.mxDate-originDate).days)
+            return self.mxDate.absdate
         elif self.freq == 'B':
-            days = (self.mxDate-originDate).days
+            days = self.mxDate.absdate
             weeks = days // 7
             return int((weeks*5) + (days - weeks*7))
         elif self.freq == 'M':
-            return (self.mxDate.year - originDate.year)*12 + (self.mxDate.month - originDate.month)
+            return self.mxDate.year*12 + self.mxDate.month
         elif self.freq == 'S':
             return int((self.mxDate - secondlyOriginDate).seconds)
         elif self.freq == 'A':
-            return int(self.mxDate.year - originDate.year + 1)
+            return int(self.mxDate.year)
         elif self.freq == 'Q':
-            return int ((self.mxDate.year - originDate.year)*4 + (self.mxDate.month - originDate.month)/3)
-            
+            return int(self.mxDate.year*4 + self.mxDate.month/3)
+
     
-originDate = mx.DateTime.Date(1850)-1
 secondlyOriginDate = mx.DateTime.Date(1980) - mx.DateTime.DateTimeDeltaFromSeconds(1)
 
     
