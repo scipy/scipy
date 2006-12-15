@@ -1,5 +1,6 @@
 import numpy as np
 import timeseries as ts
+from numpy import ma
 
  
 # create a time series at business frequency and fill it with random data
@@ -18,12 +19,37 @@ bSer[weekdays == 4] = 100
 """
 Convert bSer to a monthly frequency series.
 
-The optional observed argument to the convert method specifies what
-method will be used to perform the frequency conversion. If it is
-not specified, the observed attribute of the series will be used to
-determine the method.
+The optional func argument to the convert method specifies is a 
+function that acts on a 1-dimension masked array and returns a single
+value.
 """
-mSer1 = bSer.convert('M',observed='AVERAGED')
+mSer1 = bSer.convert('M',func=ma.average)
+
+
+"""
+If func is None, a "2 dimensional" time series will be returned. In this
+example, the value for each month will be a length 23 masked array (23
+being the max number of business days in a month)
+"""
+mSer1_2d = bSer.convert('M',func=None)
+
+
+"""
+If func is not specified, the observed attribute of the series
+will be used to determine the method. (SUMMED for this example)
+"""
+mSer1_default = bSer.convert('M')
+
+
+"""
+Convert mSer to a business frequency series.
+
+when converting from a lower frequency to a higher frequency, position is one
+of 'START' or 'END', and determines where the data point will be placed in the
+period. In the future, interpolation methods will be supported to fill in the
+resulting masked values.
+"""
+mToB = bSer.convert('M',position='START')
 
 
 # create another monthly frequency series
@@ -63,7 +89,7 @@ if a fill_value is specified, both TimeSeries objects are filled from
 min(mSer1.firstValue(),mSer2.firstValue()) to max(mSer1.lastValue(),mSer2.lastValue())
 wherever the series are masked before performing the operation
 """
-mAdd2 = ts.add(mSer1,mSer2,fill_value=0)
+mAdd2 = ts.add(mSer1, mSer2, fill_value=0)
 
 
 # calculate the average value in the series. Behaves the same as in ma
@@ -79,17 +105,22 @@ bSqrt = ts.sqrt(bSer)
 # get the last day of this year, at daily frequency
 dLastDayOfYear = ts.dateOf(ts.thisday('A'),'D','AFTER')
 
+
 # get the first day of this year, at business frequency
 bFirstDayOfYear = ts.dateOf(ts.thisday('A'),'B','BEFORE')
 
+
 # get the last day of the previous quarter, business frequency
-bFirstDayOfLastQuarter = ts.dateOf(ts.thisday('Q')-1,'B','AFTER')
+bLastDayOfLastQuarter = ts.dateOf(ts.thisday('Q')-1,'B','AFTER')
+
 
 # dateOf can also go from high frequency to low frequency. In this case, the third parameter has no impact
 aTrueValue = (ts.thisday('Q') == ts.dateOf(ts.thisday('b'),'Q'))
 
+
 # dates of the same frequency can be subtracted (but not added obviously)
 numberOfBusinessDaysPassedThisYear = ts.thisday('b') - bFirstDayOfYear
+
 
 # integers can be added/substracted to/from dates
 fiveDaysFromNow = ts.thisday('d') + 5
