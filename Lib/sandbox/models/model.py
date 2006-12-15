@@ -41,7 +41,7 @@ class Model:
         """
         raise NotImplementedError
 
-class LikelihoodModel(Model):
+class likelihood_model(Model):
 
     def logL(self, theta):
         """

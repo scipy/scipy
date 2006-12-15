@@ -1,10 +1,10 @@
 import numpy as N
 import numpy.linalg as L
 import scipy.linalg
-from scipy.sandbox.models.model import LikelihoodModel, LikelihoodModelResults
+from scipy.sandbox.models.model import likelihood_model, LikelihoodModelResults
 from scipy.sandbox.models import utils
 
-class ols_model(LikelihoodModel):
+class ols_model(likelihood_model):
     
     """
     A simple ordinary least squares model.
@@ -14,7 +14,7 @@ class ols_model(LikelihoodModel):
         return -scipy.linalg.norm(self.whiten(Y) - N.dot(self.wdesign, b))**2 / 2.
 
     def __init__(self, design):
-        LikelihoodModel.__init__(self)
+        likelihood_model.__init__(self)
         self.initialize(design)
 
     def initialize(self, design):
