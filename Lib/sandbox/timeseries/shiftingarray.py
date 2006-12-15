@@ -20,10 +20,14 @@ class ShiftingArray(object):
         else:
             tempData = ma.array(values, self.dtype)
         
-        newSize = tempData.size*2       
+        #newSize = tempData.size*2
+        newShape = list(tempData.shape)
+        newShape[0] *= 2
+        newShape = tuple(newShape)
+        
 
-        firstIndex = newSize//4
-        lastIndex = firstIndex + tempData.size - 1
+        firstIndex = newShape[0]//4
+        lastIndex = firstIndex + tempData.shape[0] - 1
         if startIndex is None:
             self.indexZeroRepresents = None
         else:    
@@ -33,7 +37,7 @@ class ShiftingArray(object):
             tempMask = ma.make_mask(mask)
             tempData[tempMask] = ma.masked
 
-        self.data = ma.array(numpy.empty(newSize,self.dtype))
+        self.data = ma.array(numpy.empty(newShape,self.dtype))
 
         if firstIndex > 0:
             self.data[0:firstIndex] = ma.masked
@@ -187,7 +191,7 @@ class ShiftingArray(object):
             return 0
 
     def firstValue(self):
-        firstIndex = first_unmasked(self.data)
+        firstIndex = corelib.first_unmasked(self.data)
         if self.indexZeroRepresents is None or firstIndex is None:
             return None
         else:
@@ -195,7 +199,7 @@ class ShiftingArray(object):
 
 
     def lastValue(self):
-        lastIndex = last_unmasked(self.data)
+        lastIndex = corelib.last_unmasked(self.data)
         if self.indexZeroRepresents is None or lastIndex is None:
             return None
         else:
@@ -207,7 +211,7 @@ class ShiftingArray(object):
     def __str__(self):
         retVal = ""
         if self.firstValue() is not None:
-            for i in range(first_unmasked(self.data), last_unmasked(self.data)+1):
+            for i in range(corelib.first_unmasked(self.data), corelib.last_unmasked(self.data)+1):
                 index = str(i+self.indexZeroRepresents)
                 index = index + (" " * (6-len(index)))
                 retVal += index + "---> " + str(self.data[i]) + "\n"
@@ -223,7 +227,9 @@ def doFunc(ser1, ser2, func,fill_value=ma.masked):
         if ser1.indexZeroRepresents is None:
             return ShiftingArray([],ser1.data.dtype)        
         else:
-            ser2 = ShiftingArray([ser2]*len(ser1),ser1.data.dtype, ser1.firstValue())
+            tempSer = numpy.empty(ser1.data.shape,dtype=ser1.data.dtype)
+            tempSer.fill(ser2)
+            ser2 = ShiftingArray(tempSer, startIndex=ser1.firstValue())
     
     sFV, sLV = ser1.firstValue(), ser1.lastValue()
     oFV, oLV = ser2.firstValue(), ser2.lastValue()
@@ -282,16 +288,3 @@ def expandAmt(size):
     return round(size*EXPAND_MULT) + EXPAND_ADD
 
 
-def first_unmasked(m):
-    idx = numpy.where(m.mask == False)
-    if len(idx) != 0 and len(idx[0]) != 0:
-        return idx[0][0]
-    else:
-        return None
-    
-def last_unmasked(m):
-    idx = numpy.where(m.mask == False)
-    if len(idx) != 0 and len(idx[0]) != 0:
-        return idx[0][-1]
-    else:
-        return None
