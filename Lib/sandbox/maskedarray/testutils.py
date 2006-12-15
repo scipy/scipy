@@ -2,12 +2,12 @@
 
 :author: Pierre Gerard-Marchant
 :contact: pierregm_at_uga_dot_edu
-:version: $Id: testutils.py 14 2006-12-04 19:31:13Z pierregm $
+:version: $Id$
 """
-__author__ = "Pierre GF Gerard-Marchant ($Author: pierregm $)"
+__author__ = "Pierre GF Gerard-Marchant ($Author$)"
 __version__ = "1.0"
-__revision__ = "$Revision: 14 $"
-__date__ = "$Date: 2006-12-04 14:31:13 -0500 (Mon, 04 Dec 2006) $"
+__revision__ = "$Revision$"
+__date__ = "$Date$"
 
 
 import numpy as N

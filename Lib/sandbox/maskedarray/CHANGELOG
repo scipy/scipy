@@ -1,18 +1,28 @@
-#2006-12-09: - Code reorganization: define 2 modules, core and extras
-#2006-11-25: - Disable copy by default
-#            - Added keep_mask flag (to save mask when creating a ma from a ma)
-#            - Fixed functions: empty_like
-#            - Fixed methods: .any and .all 
-#            - New functions: masked_all, masked_all_like
-#            - New methods: .squeeze
-#2006-11-20: - fixed make_mask 
-#            - fixed nonzero method
-#2006-11-16: - fixed .T
-#2006-11-12: - add max, min as function (not only method...)
-#            - repr returns a name like masked_xxx, where xxx is the subclass
-#2006-10-31: - make sure that make_mask returns a pure ndarray.
-#2006-10-30: - When converted to a float, a masked singleton is transformed to nan 
-#              instead of raising an exception.
+#2006-12-13 : - moved 'average' to 'extras'
+#			: Core
+#		    : - Fixed make_mask (forced filling to True)
+#	        : - Fixed ndim
+#		    : - Fixed error message in __new__ when wrong sizes
+#			: - Fixed the reshape function.
+#           : Extras
+#		    : - masked_all: set default dtype to float_
+#		    : - _fromnxfunctions: make sure that list are recognized
+#		    : - added notmasked_edges, notmasked_contiguous
+#2006-12-09 : - Code reorganization: define 2 modules, core and extras
+#2006-11-25 : - Disable copy by default
+#             - Added keep_mask flag (to save mask when creating a ma from a ma)
+#             - Fixed functions: empty_like
+#             - Fixed methods: .any and .all 
+#             - New functions: masked_all, masked_all_like
+#             - New methods: .squeeze
+#2006-11-20 : - fixed make_mask 
+#             - fixed nonzero method
+#2006-11-16 : - fixed .T
+#2006-11-12 : - add max, min as function (not only method...)
+#             - repr returns a name like masked_xxx, where xxx is the subclass
+#2006-10-31 : - make sure that make_mask returns a pure ndarray.
+#2006-10-30 : - When converted to a float, a masked singleton is transformed to nan 
+#               instead of raising an exception.
 #21: Use __get__ method in _arraymethods, _arithmethods, _compamethods
 #18: Updated put to match the definition of numpy 1.0, deleted putmask, changed resize
 #2: prevent an extra kword being sent to make_mask_none

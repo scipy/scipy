@@ -12,12 +12,12 @@ pgmdevlist_at_gmail_dot_com
 
 :author: Pierre Gerard-Marchant
 :contact: pierregm_at_uga_dot_edu
-:version: $Id: core.py 40 2006-12-10 19:50:35Z backtopop $
+:version: $Id$
 """
-__author__ = "Pierre GF Gerard-Marchant ($Author: backtopop $)"
+__author__ = "Pierre GF Gerard-Marchant ($Author$)"
 __version__ = '1.0'
-__revision__ = "$Revision: 40 $"
-__date__     = '$Date: 2006-12-10 14:50:35 -0500 (Sun, 10 Dec 2006) $'
+__revision__ = "$Revision$"
+__date__     = '$Date$'
 
 __all__ = ['MAError', 'MaskType', 'MaskedArray',
            'bool_', 'complex_', 'float_', 'int_', 'object_',
@@ -25,7 +25,7 @@ __all__ = ['MAError', 'MaskType', 'MaskedArray',
                'amax', 'amin', 'anom', 'anomalies', 'any', 'arange', 
                'arccos', 'arccosh', 'arcsin', 'arcsinh', 'arctan', 'arctan2', 
                'arctanh', 'argmax', 'argmin', 'argsort', 'around', 
-               'array', 'asarray', 'average', 
+               'array', 'asarray',  
            'bitwise_and', 'bitwise_or', 'bitwise_xor',
            'ceil', 'choose', 'compressed', 'concatenate', 'conjugate', 
                'cos', 'cosh', 'count',
@@ -582,6 +582,7 @@ If `flag=True`, returns `nomask` if `m` contains no true elements.
     if m is nomask:
         return nomask
     elif isinstance(m, ndarray):
+        m = filled(m, True)
         if m.dtype.type is MaskType:
             if copy:
                 result = numeric.array(m, dtype=MaskType, copy=copy)
@@ -591,7 +592,7 @@ If `flag=True`, returns `nomask` if `m` contains no true elements.
             result = numeric.array(m, dtype=MaskType)
     else:
         result = numeric.array(filled(m, True), dtype=MaskType)
-
+    # Bas les masques !
     if flag and not result.any():
         return nomask
     else:
@@ -856,7 +857,7 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
                 else:
                     msg = "Mask and data not compatible: data size is %i, "+\
                           "mask size is %i."
-                    raise MAError, msg % (nm, nd)
+                    raise MAError, msg % (nd, nm)
             elif (_mask.shape != _data.shape):
                 _mask = _mask.reshape(_data.shape).copy()
         #....
@@ -1411,6 +1412,12 @@ scalar or the masked singleton."""
         return self._data.size
     size = property(fget=_get_size,
                     doc="Size (number of elements) of the array.")
+    #
+    def _get_ndim(self):
+        "Returns the number of dimensions."
+        return self._data.ndim
+    ndim = property(fget=_get_ndim,
+                    doc="Number of dimensions of the array.")
     #
     def reshape (self, *s):
         """Reshapes the array to shape s.
@@ -2302,12 +2309,32 @@ product = _frommethod('prod')
 ptp = _frommethod('ptp')
 ravel = _frommethod('ravel')
 repeat = _frommethod('repeat')
-reshape = _frommethod('reshape')
 std = _frommethod('std')
 sum = _frommethod('sum')
 swapaxes = _frommethod('swapaxes')
 take = _frommethod('take')
 var = _frommethod('var')
+
+#..............................................................................
+def power(a, b, third=None):
+    """Computes a**b elementwise.
+    Masked values are set to 1."""
+    if third is not None:
+        raise MAError, "3-argument power not supported."
+    ma = getmask(a)
+    mb = getmask(b)
+    m = mask_or(ma, mb)
+    fa = filled(a, 1)
+    fb = filled(b, 1)
+    if fb.dtype.char in typecodes["Integer"]:
+        return masked_array(umath.power(fa, fb), m)
+    md = make_mask((fa < 0), flag=1)
+    m = mask_or(m, md)
+    if m is nomask:
+        return masked_array(umath.power(fa, fb))
+    else:
+        fa[m] = 1
+        return masked_array(umath.power(fa, fb), m)
 
 #..............................................................................
 def argsort(a, axis=None, kind='quicksort', fill_value=None):
@@ -2462,34 +2489,42 @@ def right_shift (a, n):
         d = umath.right_shift(filled(a, 0), n)
         return masked_array(d, mask=m)
 #......................................
-def put(x, indices, values, mode='raise'):
-    """sets storage-indexed locations to corresponding values.
+def put(a, indices, values, mode='raise'):
+    """Sets storage-indexed locations to corresponding values.
     Values and indices are filled if necessary."""
     # We can't use 'frommethod', the order of arguments is different
     try:
-        return x.put(indices, values, mode=mode)
+        return a.put(indices, values, mode=mode)
     except AttributeError:
-        return fromnumeric.asarray(x).put(indices, values, mode=mode)
+        return fromnumeric.asarray(a).put(indices, values, mode=mode)
 
-def putmask(x, mask, values): #, mode='raise'):
-    """`putmask(x, mask, v)` results in `x = v` for all places where `mask` is true.
+def putmask(a, mask, values): #, mode='raise'):
+    """`putmask(a, mask, v)` results in `a = v` for all places where `mask` is true.
 If `v` is shorter than `mask`, it will be repeated as necessary.
 In particular `v` can be a scalar or length 1 array."""
     # We can't use 'frommethod', the order of arguments is different
     try:
-        return x.putmask(values, mask)
+        return a.putmask(values, mask)
     except AttributeError:
-        return fromnumeric.asarray(x).putmask(values, mask)
+        return fromnumeric.asarray(a).putmask(values, mask)
 
-def transpose(x,axes=None):
+def transpose(a,axes=None):
     """Returns a view of the array with dimensions permuted according to axes.  
 If `axes` is None (default), returns array with dimensions reversed.
     """
     #We can't use 'frommethod', as 'transpose' doesn't take keywords
     try:
-        return x.transpose(axes)
+        return a.transpose(axes)
     except AttributeError:
-        return fromnumeric.asarray(x).transpose(axes)
+        return fromnumeric.asarray(a).transpose(axes)
+    
+def reshape(a, new_shape):
+    """Changes the shape of the array `a` to `new_shape`."""
+    #We can't use 'frommethod', it whine about some parameters. Dmmit.
+    try:
+        return a.reshape(new_shape)
+    except AttributeError:
+        return fromnumeric.asarray(a).reshape(new_shape)
 
 def resize(x, new_shape):
     """resize(a,new_shape) returns a new array with the specified shape.
@@ -2685,123 +2720,6 @@ The absolute error `atol` comes into play for those elements of `b`
     y = filled(array(d2, copy=0, mask=m), 1).astype(float)
     d = umath.less_equal(umath.absolute(x-y), atol + rtol * umath.absolute(y))
     return fromnumeric.alltrue(fromnumeric.ravel(d))
-
-def average (a, axis=None, weights=None, returned = 0):
-    """average(a, axis=None weights=None, returned=False)
-
-    Averages the array over the given axis.  If the axis is None, averages
-    over all dimensions of the array.  Equivalent to a.mean(axis)
-
-    If an integer axis is given, this equals:
-        a.sum(axis) * 1.0 / size(a, axis)
-
-    If axis is None, this equals:
-        a.sum(axis) * 1.0 / a.size
-
-    If weights are given, result is:
-        sum(a * weights,axis) / sum(weights,axis),
-    where the weights must have a's shape or be 1D with length the
-    size of a in the given axis. Integer weights are converted to
-    Float.  Not specifying weights is equivalent to specifying
-    weights that are all 1.
-
-    If 'returned' is True, return a tuple: the result and the sum of
-    the weights or count of values. The shape of these two results
-    will be the same.
-
-    Returns masked values instead of ZeroDivisionError if appropriate.
-    
-    """
-    a = asarray(a)
-    mask = a.mask
-    ash = a.shape
-    if ash == ():
-        ash = (1,)
-    if axis is None:
-        if mask is nomask:
-            if weights is None:
-                n = a.sum(axis=None)
-                d = float(a.size)
-            else:
-                w = filled(weights, 0.0).ravel()
-                n = umath.add.reduce(a._data.ravel() * w)
-                d = umath.add.reduce(w)
-                del w
-        else:
-            if weights is None:
-                n = a.filled(0).sum(axis=None)
-                d = umath.add.reduce((-mask).ravel().astype(int_))
-            else:
-                w = array(filled(weights, 0.0), float, mask=mask).ravel()
-                n = add.reduce(a.ravel() * w)
-                d = add.reduce(w)
-                del w
-    else:
-        if mask is nomask:
-            if weights is None:
-                d = ash[axis] * 1.0
-                n = add.reduce(a._data, axis)
-            else:
-                w = filled(weights, 0.0)
-                wsh = w.shape
-                if wsh == ():
-                    wsh = (1,)
-                if wsh == ash:
-                    w = numeric.array(w, float_, copy=0)
-                    n = add.reduce(a*w, axis)
-                    d = add.reduce(w, axis)
-                    del w
-                elif wsh == (ash[axis],):
-                    ni = ash[axis]
-                    r = [None]*len(ash)
-                    r[axis] = slice(None, None, 1)
-                    w = eval ("w["+ repr(tuple(r)) + "] * ones(ash, float)")
-                    n = add.reduce(a*w, axis)
-                    d = add.reduce(w, axis)
-                    del w, r
-                else:
-                    raise ValueError, 'average: weights wrong shape.'
-        else:
-            if weights is None:
-                n = add.reduce(a, axis)
-                d = umath.add.reduce((-mask), axis=axis, dtype=float_)
-            else:
-                w = filled(weights, 0.0)
-                wsh = w.shape
-                if wsh == ():
-                    wsh = (1,)
-                if wsh == ash:
-                    w = array(w, float, mask=mask, copy=0)
-                    n = add.reduce(a*w, axis)
-                    d = add.reduce(w, axis)
-                elif wsh == (ash[axis],):
-                    ni = ash[axis]
-                    r = [None]*len(ash)
-                    r[axis] = slice(None, None, 1)
-                    w = eval ("w["+ repr(tuple(r)) + "] * masked_array(ones(ash, float), mask)")
-                    n = add.reduce(a*w, axis)
-                    d = add.reduce(w, axis)
-                else:
-                    raise ValueError, 'average: weights wrong shape.'
-                del w
-    if n is masked or d is masked: 
-        return masked
-    result = n/d
-    del n
-    
-    if isinstance(result, MaskedArray):
-        if ((axis is None) or (axis==0 and a.ndim == 1)) and \
-           (result._mask is nomask):
-            result = result._data
-        if returned:
-            if not isinstance(d, MaskedArray):
-                d = masked_array(d)
-            if isinstance(d, ndarray) and (not d.shape == result.shape):
-                d = ones(result.shape, float) * d
-    if returned:
-        return result, d
-    else:
-        return result
 
 #..............................................................................
 def asarray(a, dtype=None):

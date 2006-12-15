@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-__author__ = "Pierre GF Gerard-Marchant ($Author: backtopop $)"
+__author__ = "Pierre GF Gerard-Marchant ($Author$)"
 __version__ = '1.0'
-__revision__ = "$Revision: 37 $"
-__date__     = '$Date: 2006-12-08 14:30:29 -0500 (Fri, 08 Dec 2006) $'
+__revision__ = "$Revision$"
+__date__     = '$Date$'
 
 import os
 
