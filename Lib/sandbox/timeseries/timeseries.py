@@ -53,6 +53,8 @@ class TimeSeries(sa.ShiftingArray):
         to fill in the gaps. Valid values are "CUBIC", "LINEAR", "CONSTANT", "DIVIDED",
         and None.
         
+        Note: interp currently not implemented
+        
         """
         
         if position.upper() not in ('END','START'): raise ValueError("invalid value for position argument: (%s)",str(position))
