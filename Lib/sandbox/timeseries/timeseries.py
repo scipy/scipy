@@ -34,37 +34,68 @@ class TimeSeries(sa.ShiftingArray):
         super(TimeSeries, self).__setitem__(key, value)
 
     
-    def convert(self, freq, observed=None):
-        # return self converted to freq, method according to self.observed
+    def convert(self, freq, func='auto', position='END', interp=None):
+        """
+        return self converted to freq.
+        
+        When converting to a lower frequency, func is a function that acts
+        on a 1-d array and returns a scalar or 1-d array. func should handle
+        masked values appropriately. If func is "auto", then an
+        appropriate function is determined based on the observed attribute
+        of the series. If func is None, then a 2D array is returned, where each
+        column represents the values appropriately grouped into the new frequency.
+        interp and position will be ignored in this case.
+        
+        When converting to a higher frequency, position is 'START' or 'END'
+        and determines where the data point is in each period (eg. if going
+        from monthly to daily, and position is 'END', then each data point is
+        placed at the end of the month). Interp is the method that will be used
+        to fill in the gaps. Valid values are "CUBIC", "LINEAR", "CONSTANT", "DIVIDED",
+        and None.
+        
+        """
+        
+        if position.upper() not in ('END','START'): raise ValueError("invalid value for position argument: (%s)",str(position))
+        
         toFreq = corelib.fmtFreq(freq)
         fromFreq = self.freq
         
         if fromFreq != toFreq:
-            if observed is None: observed=self.observed
-            else: observed = corelib.fmtObserv(observed)
+        
+            if func == 'auto':
+                func = corelib.obsDict[self.observed]
 
-            firstIndex = sa.first_unmasked(self.data)
+            firstIndex = corelib.first_unmasked(self.data)
             if firstIndex is None:
-                return TimeSeries([], dtype=self.dtype, freq=toFreq, observed=observed)
+                return TimeSeries([], dtype=self.dtype, freq=toFreq, observed=self.observed)
 
             startIndexAdj = self.firstValue()
 
-            lastIndex = sa.last_unmasked(self.data)
+            lastIndex = corelib.last_unmasked(self.data)
 
             tempData = copy.deepcopy(self.data[firstIndex:lastIndex+1])
             tempMask = tempData.mask
             tempData = tempData.filled()
 
-            cRetVal = cseries.reindex(tempData, fromFreq, toFreq, observed, startIndexAdj, tempMask)
+            cRetVal = cseries.reindex(tempData, fromFreq, toFreq, position, startIndexAdj, tempMask)
+
             _values = cRetVal['values']
             _mask = cRetVal['mask']
+            
+            tempData = ma.array(_values)
+            tempMask = ma.make_mask(_mask)
+            tempData[tempMask] = ma.masked
 
+            if func is not None and tempData.ndim == 2:
+                tempData = corelib.apply_along_axis(func, 1, tempData)
+                
             startIndex = cseries.convert(startIndexAdj, fromFreq, toFreq)
 
-            return TimeSeries(_values, dtype=self.data.dtype, freq=toFreq, observed=observed, startIndex=startIndex, mask=_mask)
+            return TimeSeries(tempData, dtype=self.data.dtype, freq=toFreq, observed=self.observed, startIndex=startIndex)
             
         else:
             return copy.deepcopy(self)
+
 
         
     def __str__(self):
