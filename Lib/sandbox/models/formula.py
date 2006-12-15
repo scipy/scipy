@@ -309,6 +309,7 @@ class formula(object):
 
         """
 
+
         self.__namespace = namespace
         if isinstance(termlist, formula):
             self.terms = copy.copy(list(termlist.terms))
@@ -339,12 +340,18 @@ class formula(object):
         argument 'n' indicates the number of rows (observations).
         """
 
+        if 'namespace' in kw:
+            namespace = kw['namespace']
+        else:
+            namespace = self.namespace
+            
+
         allvals = []
         intercept = False
         iindex = 0
         for t in self.terms:
 
-            t.namespace = self.namespace
+            t.namespace = namespace
             val = t(*args, **kw)
 
             isintercept = False
