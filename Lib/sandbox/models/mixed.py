@@ -42,15 +42,14 @@ class Unit:
         self.n = v.shape[0]
         return v
 
-    def compute_S(self, D, sigma):
+    def _compute_S(self, D, sigma):
         """
         Display (3.3) from Laird, Lange, Stram (see help(Unit))
         """ 
-
         self.S = (N.identity(self.n) * sigma**2 +
-                  N.dot(self.Z, N.dot(D, N.transpose(self.Z))))
+                  N.dot(self.Z, N.dot(D, self.Z.T)))
 
-    def compute_W(self):
+    def _compute_W(self):
         """
         Display (3.2) from Laird, Lange, Stram (see help(Unit))
         """ 
@@ -61,19 +60,19 @@ class Unit:
         Display (3.10) from Laird, Lange, Stram (see help(Unit))
         """ 
         t = N.dot(self.W, self.X)
-        self.P = self.W - N.dot(N.dot(t, Sinv), N.transpose(t))
+        self.P = self.W - N.dot(N.dot(t, Sinv), t.T)
 
-    def compute_r(self, alpha):
+    def _compute_r(self, alpha):
         """
         Display (3.5) from Laird, Lange, Stram (see help(Unit))
         """ 
         self.r = self.Y - N.dot(self.X, alpha)
 
-    def compute_b(self, D):
+    def _compute_b(self, D):
         """
         Display (3.4) from Laird, Lange, Stram (see help(Unit))
         """ 
-        self.b = N.dot(D, N.dot(N.dot(N.transpose(self.Z), self.W), self.r))
+        self.b = N.dot(D, N.dot(N.dot(self.Z.T, self.W), self.r))
 
     def fit(self, a, D, sigma):
         """
@@ -83,10 +82,10 @@ class Unit:
         Displays (3.2)-(3.5).
         """
 
-        self.compute_S(D, sigma)
-        self.compute_W()
-        self.compute_r(a)
-        self.compute_b(D)
+        self._compute_S(D, sigma)
+        self._compute_W()
+        self._compute_r(a)
+        self._compute_b(D)
 
     def compute_xtwy(self):
         """
@@ -98,7 +97,7 @@ class Unit:
         """
         Utility function to compute X^tWX for Unit instance.
         """
-        return N.dot(N.dot(N.transpose(self.X), self.W), self.X)
+        return N.dot(N.dot(self.X.T, self.W), self.X)
 
     def cov_random(self, D, Sinv=None):
         """
@@ -108,7 +107,7 @@ class Unit:
         if Sinv is not None:
             self.compute_P(Sinv)
         t = N.dot(self.Z, D)
-        return D - N.dot(N.dot(N.transpose(t), self.P), t)
+        return D - N.dot(N.dot(t.T, self.P), t)
 
     def logL(self, a, ML=False):
         """
@@ -166,8 +165,7 @@ class Mixed:
         self.a = N.zeros(self.p, N.float64)
 
         # Determine size of D, and sensible initial estimates
-        # of sigma and D
-        
+        # of sigma and D        
         d = self.units[0].design(self.random)
         self.q = d.shape[1]  # d.shape = q 
 
@@ -176,7 +174,7 @@ class Mixed:
 
         self.dev = N.inf
 
-    def compute_a(self):
+    def _compute_a(self):
         """
         Display (3.1) of
         Laird, Lange, Stram (see help(Mixed)).
@@ -192,7 +190,7 @@ class Mixed:
         self.Sinv = L.pinv(S)
         self.a = N.dot(self.Sinv, Y)
             
-    def compute_sigma(self, ML=False):
+    def _compute_sigma(self, ML=False):
         """
         Estimate sigma. If ML is True, return the ML estimate of sigma,
         else return the REML estimate.
@@ -214,7 +212,7 @@ class Mixed:
                                                self.sigma**2 * W)
         self.sigma = N.sqrt(sigmasq / self.N)
 
-    def compute_D(self, ML=False):
+    def _compute_D(self, ML=False):
         """
         Estimate random effects covariance D.
         If ML is True, return the ML estimate of sigma,
@@ -233,7 +231,7 @@ class Mixed:
                 W = unit.P
             D += N.multiply.outer(unit.b, unit.b)
             t = N.dot(unit.Z, self.D)
-            D += self.D - N.dot(N.dot(N.transpose(t), W), t)
+            D += self.D - N.dot(N.dot(t.T, W), t)
 
         self.D = D / self.m
 
@@ -245,7 +243,7 @@ class Mixed:
         return self.Sinv
 
     def deviance(self, ML=False):
-        return - 2 * self.logL(ML=ML)
+        return -2 * self.logL(ML=ML)
 
     def logL(self, ML=False):
         """
@@ -263,8 +261,8 @@ class Mixed:
         S = 0
         Y = 0
         for unit in self.units:
-            S += N.dot(N.transpose(unit.X), unit.X)
-            Y += N.dot(N.transpose(unit.X), unit.Y)
+            S += N.dot(unit.X.T, unit.X)
+            Y += N.dot(unit.X.T, unit.Y)
 
         self.a = L.lstsq(S, Y)[0]
 
@@ -280,10 +278,10 @@ class Mixed:
                 unit.b = L.lstsq(Z, unit.r)[0]
 
             sigmasq += (N.power(unit.Y, 2).sum() -
-                        (self.a * N.dot(N.transpose(unit.X), unit.Y)).sum() -
-                        (unit.b * N.dot(N.transpose(unit.Z), unit.r)).sum())
+                        (self.a * N.dot(unit.X.T, unit.Y)).sum() -
+                        (unit.b * N.dot(unit.Z.T, unit.r)).sum())
             D += N.multiply.outer(unit.b, unit.b)
-            t += L.pinv(N.dot(N.transpose(unit.Z), unit.Z))
+            t += L.pinv(N.dot(unit.Z.T, unit.Z))
 
         sigmasq /= (self.N - (self.m - 1) * self.q - self.p)
         self.sigma = N.sqrt(sigmasq)
@@ -299,9 +297,9 @@ class Mixed:
     def fit(self, niter=100, ML=False):
 
         for i in range(niter):
-            self.compute_a()
-            self.compute_sigma(ML=ML)
-            self.compute_D(ML=ML)
+            self._compute_a()
+            self._compute_sigma(ML=ML)
+            self._compute_D(ML=ML)
             if not self.cont(ML=ML):
                 break
             
@@ -314,10 +312,10 @@ if __name__ == '__main__':
     
     n = 3
 
-    import formula
-    fixed = formula.term('f')
-    random = formula.term('r')
-    response = formula.term('y')
+    from scipy.sandbox.models.formula import term
+    fixed = term('f')
+    random = term('r')
+    response = term('y')
 
     for i in range(nsubj):
         d = R.standard_normal()
@@ -326,9 +324,11 @@ if __name__ == '__main__':
         Y = R.standard_normal((n,)) + d * 4
         units.append(Unit({'f':X, 'r':Z, 'y':Y}))
 
-    m = Mixed(units, response)#, fixed, random)
+    #m = Mixed(units, response)#, fixed, random)
+    m = Mixed(units, response, fixed, random)
     m.initialize()
     m.fit()
+    print m.a
 
 ## a = Unit()
 ## a['x'] = N.array([2,3])
