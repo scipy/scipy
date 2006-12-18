@@ -337,7 +337,7 @@ class formula(object):
         Create (transpose) of the design matrix of the formula within
         namespace. Extra arguments are passed to each term instance. If
         the formula just contains an intercept, then the keyword
-        argument 'n' indicates the number of rows (observations).
+        argument 'nrow' indicates the number of rows (observations).
         """
 
         if 'namespace' in kw:
@@ -375,6 +375,7 @@ class formula(object):
             except:
                 pass
         else:
+            nrow = kw.get('nrow', -1)
             if allvals != []:
                 if interceptindex > 0:
                     n = allvals[0].shape[1]
@@ -382,10 +383,10 @@ class formula(object):
                     n = allvals[1].shape[1]
                 allvals[interceptindex] = N.ones((1,n), N.float64) 
                 allvals = N.concatenate(allvals)
-            elif nrow <= 1: # FIXME: nrow is undefined here
+            elif nrow <= 1: 
                 raise ValueError, 'with only intercept in formula, keyword \'nrow\' argument needed'
             else:
-                allvals = I(nrow=nrow) # ... and here
+                allvals = I(nrow=nrow)
                 allvals.shape = (1,) + allvals.shape
         return allvals
     
