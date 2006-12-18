@@ -181,12 +181,12 @@ class Mixed:
 
         """
 
-        S = 0
-        Y = 0
         for unit in self.units:
             unit.fit(self.a, self.D, self.sigma)
-            S += unit.compute_xtwx()
-            Y += unit.compute_xtwy()
+
+        S = sum([unit.compute_xtwx() for unit in self.units])
+        Y = sum([unit.compute_xtwy() for unit in self.units])
+        
         self.Sinv = L.pinv(S)
         self.a = N.dot(self.Sinv, Y)
             
@@ -258,12 +258,8 @@ class Mixed:
         return logL
 
     def initialize(self):
-        S = 0
-        Y = 0
-        for unit in self.units:
-            S += N.dot(unit.X.T, unit.X)
-            Y += N.dot(unit.X.T, unit.Y)
-
+        S = sum([N.dot(unit.X.T, unit.X) for unit in self.units])
+        Y = sum([N.dot(unit.X.T, unit.Y) for unit in self.units])
         self.a = L.lstsq(S, Y)[0]
 
         D = 0
@@ -328,7 +324,8 @@ if __name__ == '__main__':
     m = Mixed(units, response, fixed, random)
     m.initialize()
     m.fit()
-    print m.a
+
+
 
 ## a = Unit()
 ## a['x'] = N.array([2,3])
