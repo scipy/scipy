@@ -1139,32 +1139,6 @@ class bigmodel(basemodel):
         # in stochastic approx
         self.testconvergematrices = 10  
         
-        # For comparing sampling methods and opt algorithms -- specifies that
-        # we can compute the exact expectations at any iteration with
-        # self.expectations() as a convergence criterion
-        self.testconvergecheat = False   
-        
-        # Number of stdevs either side of the mean for Z and E confidence
-        # intervals
-        self.z = 3.0         
-        
-        # Desired precision with expectation estimates
-        self.Etol = 5e-5     
-        
-        # Desired precision with logZ estimates
-        self.Ztol = 5e-5        
-        
-        # Using relative precision for the sampling stopping criterion is
-        # disabled by default:
-        self.Ertol = 0.0
-        
-        # Number of samples to compute before tracking the variance
-        self.init_samples = 10000     
-        
-        # Min number of samples to compute the variance of after starting
-        # tracking
-        self.min_samples = 10000      
-        
         # Test for convergence every 'testevery' iterations, using one or
         # more external samples. If None, don't test.
         self.testevery = None
