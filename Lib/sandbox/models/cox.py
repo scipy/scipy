@@ -154,12 +154,7 @@ class coxph(model.likelihood_model):
                 raise NotImplementedError, 'Cox tie breaking method not implemented'
             else:
                 raise NotImplementedError, 'tie breaking method not recognized'
-        # FIXME: score is an int. it has no shape
-        # is it that we shouldn't be using an int above
-        # or that we shouldn't be looking at shape here
-        if score.shape == ():
-            score = N.array([score])
-        return score
+        return = N.array([score])
 
     def information(self, b, ties='breslow'):
 
