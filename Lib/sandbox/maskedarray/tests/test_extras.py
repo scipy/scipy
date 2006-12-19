@@ -26,6 +26,80 @@ import maskedarray.extras
 reload(maskedarray.extras)
 from maskedarray.extras import *
 
+class test_average(NumpyTestCase):        
+    "Several tests of average. Why so many ? Good point..."
+    def check_testAverage1(self):
+        "Test of average."
+        ott = array([0.,1.,2.,3.], mask=[1,0,0,0])
+        assert_equal(2.0, average(ott,axis=0))
+        assert_equal(2.0, average(ott, weights=[1., 1., 2., 1.]))
+        result, wts = average(ott, weights=[1.,1.,2.,1.], returned=1)
+        assert_equal(2.0, result)
+        assert(wts == 4.0)
+        ott[:] = masked
+        assert_equal(average(ott,axis=0).mask, [True])
+        ott = array([0.,1.,2.,3.], mask=[1,0,0,0])
+        ott = ott.reshape(2,2)
+        ott[:,1] = masked
+        assert_equal(average(ott,axis=0), [2.0, 0.0])
+        assert_equal(average(ott,axis=1).mask[0], [True])
+        assert_equal([2.,0.], average(ott, axis=0))
+        result, wts = average(ott, axis=0, returned=1)
+        assert_equal(wts, [1., 0.])
+
+    def check_testAverage2(self):
+        "More tests of average."
+        w1 = [0,1,1,1,1,0]
+        w2 = [[0,1,1,1,1,0],[1,0,0,0,0,1]]
+        x = arange(6, dtype=float_)
+        assert_equal(average(x, axis=0), 2.5)
+        assert_equal(average(x, axis=0, weights=w1), 2.5)
+        y = array([arange(6, dtype=float_), 2.0*arange(6)])
+        assert_equal(average(y, None), N.add.reduce(N.arange(6))*3./12.)
+        assert_equal(average(y, axis=0), N.arange(6) * 3./2.)
+        assert_equal(average(y, axis=1), [average(x,axis=0), average(x,axis=0) * 2.0])
+        assert_equal(average(y, None, weights=w2), 20./6.)
+        assert_equal(average(y, axis=0, weights=w2), [0.,1.,2.,3.,4.,10.])
+        assert_equal(average(y, axis=1), [average(x,axis=0), average(x,axis=0) * 2.0])
+        m1 = zeros(6)
+        m2 = [0,0,1,1,0,0]
+        m3 = [[0,0,1,1,0,0],[0,1,1,1,1,0]]
+        m4 = ones(6)
+        m5 = [0, 1, 1, 1, 1, 1]
+        assert_equal(average(masked_array(x, m1),axis=0), 2.5)
+        assert_equal(average(masked_array(x, m2),axis=0), 2.5)
+        assert_equal(average(masked_array(x, m4),axis=0).mask, [True])
+        assert_equal(average(masked_array(x, m5),axis=0), 0.0)
+        assert_equal(count(average(masked_array(x, m4),axis=0)), 0)
+        z = masked_array(y, m3)
+        assert_equal(average(z, None), 20./6.)
+        assert_equal(average(z, axis=0), [0.,1.,99.,99.,4.0, 7.5])
+        assert_equal(average(z, axis=1), [2.5, 5.0])
+        assert_equal(average(z,axis=0, weights=w2), [0.,1., 99., 99., 4.0, 10.0])
+
+    def check_testAverage3(self):
+        "Yet more tests of average!"
+        a = arange(6)
+        b = arange(6) * 3
+        r1, w1 = average([[a,b],[b,a]], axis=1, returned=1)
+        assert_equal(shape(r1) , shape(w1))
+        assert_equal(r1.shape , w1.shape)
+        r2, w2 = average(ones((2,2,3)), axis=0, weights=[3,1], returned=1)
+        assert_equal(shape(w2) , shape(r2))
+        r2, w2 = average(ones((2,2,3)), returned=1)
+        assert_equal(shape(w2) , shape(r2))
+        r2, w2 = average(ones((2,2,3)), weights=ones((2,2,3)), returned=1)
+        assert_equal(shape(w2), shape(r2))
+        a2d = array([[1,2],[0,4]], float)
+        a2dm = masked_array(a2d, [[0,0],[1,0]])
+        a2da = average(a2d, axis=0)
+        assert_equal(a2da, [0.5, 3.0])
+        a2dma = average(a2dm, axis=0)
+        assert_equal(a2dma, [1.0, 3.0])
+        a2dma = average(a2dm, axis=None)
+        assert_equal(a2dma, 7./3.)
+        a2dma = average(a2dm, axis=1)
+        assert_equal(a2dma, [1.5, 4.0])
        
 class test_concatenator(NumpyTestCase):
     "Tests for mr_, the equivalent of r_ for masked arrays."
@@ -98,8 +172,50 @@ class test_notmasked(NumpyTestCase):
         assert_equal(tmp[0][-1], (4, (0,3)))
         assert(tmp[1] is None)
         assert_equal(tmp[2][-1], (6, (0,5)))
+        
+class test_compress2d(NumpyTestCase):
+    "Tests compress2d and mask_row_columns."
+    def check_compress2d(self):
+        "Tests compress2d"
+        x = array(N.arange(9).reshape(3,3), mask=[[1,0,0],[0,0,0],[0,0,0]])
+        assert_equal(compress2d(x), [[4,5],[7,8]] )
+        assert_equal(compress2d(x,0), [[3,4,5],[6,7,8]] )
+        assert_equal(compress2d(x,1), [[1,2],[4,5],[7,8]] )
+        x = array(x._data, mask=[[0,0,0],[0,1,0],[0,0,0]])
+        assert_equal(compress2d(x), [[0,2],[6,8]] )
+        assert_equal(compress2d(x,0), [[0,1,2],[6,7,8]] )
+        assert_equal(compress2d(x,1), [[0,2],[3,5],[6,8]] )
+        x = array(x._data, mask=[[1,0,0],[0,1,0],[0,0,0]])
+        assert_equal(compress2d(x), [[8]] )
+        assert_equal(compress2d(x,0), [[6,7,8]] )
+        assert_equal(compress2d(x,1,), [[2],[5],[8]] )
+        x = array(x._data, mask=[[1,0,0],[0,1,0],[0,0,1]])
+        assert_equal(compress2d(x).size, 0 )
+        assert_equal(compress2d(x,0).size, 0 )
+        assert_equal(compress2d(x,1).size, 0 )
+    #
+    def check_mask_rowcols(self):
+        "Tests mask_rowcols."
+        x = array(N.arange(9).reshape(3,3), mask=[[1,0,0],[0,0,0],[0,0,0]])
+        assert_equal(mask_rowcols(x).mask, [[1,1,1],[1,0,0],[1,0,0]] )
+        assert_equal(mask_rowcols(x,0).mask, [[1,1,1],[0,0,0],[0,0,0]] )
+        assert_equal(mask_rowcols(x,1).mask, [[1,0,0],[1,0,0],[1,0,0]] )
+        x = array(x._data, mask=[[0,0,0],[0,1,0],[0,0,0]])
+        assert_equal(mask_rowcols(x).mask, [[0,1,0],[1,1,1],[0,1,0]] )
+        assert_equal(mask_rowcols(x,0).mask, [[0,0,0],[1,1,1],[0,0,0]] )
+        assert_equal(mask_rowcols(x,1).mask, [[0,1,0],[0,1,0],[0,1,0]] )
+        x = array(x._data, mask=[[1,0,0],[0,1,0],[0,0,0]])
+        assert_equal(mask_rowcols(x).mask, [[1,1,1],[1,1,1],[1,1,0]] )
+        assert_equal(mask_rowcols(x,0).mask, [[1,1,1],[1,1,1],[0,0,0]] )
+        assert_equal(mask_rowcols(x,1,).mask, [[1,1,0],[1,1,0],[1,1,0]] )
+        x = array(x._data, mask=[[1,0,0],[0,1,0],[0,0,1]])
+        assert(mask_rowcols(x).all())
+        assert(mask_rowcols(x,0).all())
+        assert(mask_rowcols(x,1).all())
 
 ###############################################################################
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
     NumpyTest().run()
+
+    

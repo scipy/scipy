@@ -14,8 +14,8 @@ __date__     = '$Date$'
 __all__ = ['apply_along_axis', 'atleast_1d', 'atleast_2d', 'atleast_3d',
                'average',
            'vstack', 'hstack', 'dstack', 'row_stack', 'column_stack',
-           'count_masked', 
-           'masked_all', 'masked_all_like', 'mr_',
+           'compress2d', 'count_masked', 
+           'mask_rowcols','masked_all', 'masked_all_like', 'mr_',
            'notmasked_edges', 'notmasked_contiguous',
            'stdu', 'varu',
            ]
@@ -23,9 +23,8 @@ __all__ = ['apply_along_axis', 'atleast_1d', 'atleast_2d', 'atleast_3d',
 from itertools import groupby
 
 import core
-reload(core)
+#reload(core)
 from core import *
-from core import _arraymethod
 
 import numpy
 from numpy import float_
@@ -38,8 +37,9 @@ from numpy.core.fromnumeric import asarray as nxasarray
 from numpy.lib.index_tricks import concatenator
 import numpy.lib.function_base as function_base
 
+#...............................................................................
 def issequence(seq):
-    """Returns True if the argumnet is a sequence (ndarray, list or tuple."""
+    """Returns True if the argumnet is a sequence (ndarray, list or tuple)."""
     if isinstance(seq, ndarray):
         return True
     elif isinstance(seq, tuple):
@@ -290,7 +290,7 @@ def average (a, axis=None, weights=None, returned = 0):
         if mask is nomask:
             if weights is None:
                 d = ash[axis] * 1.0
-                n = add.reduce(a._data, axis)
+                n = add.reduce(a._data, axis, dtype=float_)
             else:
                 w = filled(weights, 0.0)
                 wsh = w.shape
@@ -306,14 +306,14 @@ def average (a, axis=None, weights=None, returned = 0):
                     r = [None]*len(ash)
                     r[axis] = slice(None, None, 1)
                     w = eval ("w["+ repr(tuple(r)) + "] * ones(ash, float)")
-                    n = add.reduce(a*w, axis)
-                    d = add.reduce(w, axis)
+                    n = add.reduce(a*w, axis, dtype=float_)
+                    d = add.reduce(w, axis, dtype=float_)
                     del w, r
                 else:
                     raise ValueError, 'average: weights wrong shape.'
         else:
             if weights is None:
-                n = add.reduce(a, axis)
+                n = add.reduce(a, axis, dtype=float_)
                 d = umath.add.reduce((-mask), axis=axis, dtype=float_)
             else:
                 w = filled(weights, 0.0)
@@ -321,16 +321,16 @@ def average (a, axis=None, weights=None, returned = 0):
                 if wsh == ():
                     wsh = (1,)
                 if wsh == ash:
-                    w = array(w, float, mask=mask, copy=0)
-                    n = add.reduce(a*w, axis)
-                    d = add.reduce(w, axis)
+                    w = array(w, dtype=float_, mask=mask, copy=0)
+                    n = add.reduce(a*w, axis, dtype=float_)
+                    d = add.reduce(w, axis, dtype=float_)
                 elif wsh == (ash[axis],):
                     ni = ash[axis]
                     r = [None]*len(ash)
                     r[axis] = slice(None, None, 1)
                     w = eval ("w["+ repr(tuple(r)) + "] * masked_array(ones(ash, float), mask)")
-                    n = add.reduce(a*w, axis)
-                    d = add.reduce(w, axis)
+                    n = add.reduce(a*w, axis, dtype=float_)
+                    d = add.reduce(w, axis, dtype=float_)
                 else:
                     raise ValueError, 'average: weights wrong shape.'
                 del w
@@ -339,19 +339,72 @@ def average (a, axis=None, weights=None, returned = 0):
     result = n/d
     del n
     
-    if isinstance(result, MaskedArray):
+    if isMaskedArray(result):
         if ((axis is None) or (axis==0 and a.ndim == 1)) and \
-           (result._mask is nomask):
+           (result.mask is nomask):
             result = result._data
         if returned:
-            if not isinstance(d, MaskedArray):
+            if not isMaskedArray(d):
                 d = masked_array(d)
             if isinstance(d, ndarray) and (not d.shape == result.shape):
-                d = ones(result.shape, float) * d
+                d = ones(result.shape, dtype=float_) * d
     if returned:
+        print type(result)
         return result, d
     else:
         return result
+    
+#..............................................................................
+def compress2d(x, axis=None):
+    """Suppresses the rows and/or columns of a 2D array that contains masked values.
+    The suppression behavior is selected with the `axis`parameter.
+        - If axis is None, rows and columns are suppressed. 
+        - If axis is 0, only rows are suppressed. 
+        - If axis is 1 or -1, only columns are suppressed.
+    Returns a *pure* ndarray.    
+    """
+    x = asarray(x)
+    if x.ndim <> 2:
+        raise NotImplementedError, "compress2d works for 2D arrays only."
+    m = getmask(x)
+    # Nothing is masked: return x
+    if m is nomask or not m.any():
+        return nxasarray(x)
+    # All is masked: return empty
+    if m.all():
+        return nxarray([])
+    # Builds a list of rows/columns indices
+    (idxr, idxc) = (range(len(x)), range(x.shape[1]))
+    masked = m.nonzero()
+    if not axis:
+        for i in function_base.unique(masked[0]):
+            idxr.remove(i)
+    if axis in [None, 1, -1]:
+        for j in function_base.unique(masked[1]):
+            idxc.remove(j)
+    return nxasarray(x[idxr][:,idxc])    
+
+def mask_rowcols(a, axis=None):
+    """Suppresses the rows and/or columns of a 2D array that contains masked values.
+    The suppression behavior is selected with the `axis`parameter.
+        - If axis is None, rows and columns are suppressed. 
+        - If axis is 0, only rows are suppressed. 
+        - If axis is 1 or -1, only columns are suppressed.
+    Returns a *pure* ndarray.    
+    """
+    a = asarray(a)
+    if a.ndim != 2:
+        raise NotImplementedError, "compress2d works for 2D arrays only."
+    m = getmask(a)
+    # Nothing is masked: return a
+    if m is nomask or not m.any():
+        return a
+    maskedval = m.nonzero()
+    if not axis:
+        a[function_base.unique(maskedval[0])] = masked
+    if axis in [None, 1, -1]:
+        a[:,function_base.unique(maskedval[1])] = masked
+    return a
 
 
 #####--------------------------------------------------------------------------

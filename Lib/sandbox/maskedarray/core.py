@@ -947,7 +947,8 @@ Returns the item described by i. Not a copy as in previous versions.
                 return dout
             else:
                 return self.__class__(dout, mask=nomask, 
-                                      fill_value=self._fill_value)
+                                      fill_value=self._fill_value,
+                                      dtype = self.dtype,)
         #....
 #        m = self._mask.copy()   
         m = self._mask
@@ -958,7 +959,8 @@ Returns the item described by i. Not a copy as in previous versions.
             else:
                 return dout
         else:
-            return self.__class__(dout, mask=mi, fill_value=self._fill_value)
+            return self.__class__(dout, mask=mi, dtype = self.dtype,
+                                  fill_value=self._fill_value)
     #........................
     def __setitem__(self, index, value):
         """x.__setitem__(i, y) <==> x[i]=y
@@ -1001,9 +1003,11 @@ The use of negative indices is not supported."""
         m = self._mask
         dout = self._data[i:j]
         if m is nomask:
-            return self.__class__(dout, fill_value=self._fill_value)
+            return self.__class__(dout, dtype = self.dtype,
+                                  fill_value=self._fill_value)
         else:
-            return self.__class__(dout, mask=m[i:j], fill_value=self._fill_value)
+            return self.__class__(dout, mask=m[i:j], dtype = self.dtype, 
+                                  fill_value=self._fill_value)
     #........................
     def __setslice__(self, i, j, value):
         """x.__setslice__(i, j, value) <==> x[i:j]=value
@@ -1119,14 +1123,16 @@ masked_%(name)s(data = %(data)s,
 Returns a masked array of the current subclass, with the new `_data` 
 the absolute of the inital `_data`.
         """
-        return self.__class__(self._data.__abs__(), mask=self._mask)
+        return self.__class__(self._data.__abs__(), mask=self._mask,
+                             dtype = self.dtype,)
     #
     def __neg__(self):
         """x.__abs__() <==> neg(x)
 Returns a masked array of the current subclass, with the new `_data` 
 the negative of the inital `_data`."""
         try:
-            return self.__class__(self._data.__neg__(), mask=self._mask)
+            return self.__class__(self._data.__neg__(), mask=self._mask,
+                                  dtype = self.dtype,)
         except MAError:
             return negative(self)
     #
@@ -1233,8 +1239,9 @@ Subclassing is preserved."""
         d = self._data.astype(tc)
 #        print "DEBUG: _astype: d", d
 #        print "DEBUG: _astype: m", self._mask        
-        return self.__class__(d, mask=self._mask)
+        return self.__class__(d, mask=self._mask, dtype=tc)
     #............................................        
+    #TODO: FIX THAT: THAT"S NOT A REAL FLATITER
     def _get_flat(self):
         """Calculates the flat value.
         """
@@ -1425,9 +1432,13 @@ Returns a new masked array.
 If you want to modify the shape in place, please use `a.shape = s`"""
         if self._mask is not nomask:
             return self.__class__(self._data.reshape(*s), 
-                                  mask=self._mask.reshape(*s))
+                                  mask=self._mask.reshape(*s),
+                                  dtype = self.dtype,
+                                  fill_value=self.fill_value)
         else:
-            return self.__class__(self._data.reshape(*s))
+            return self.__class__(self._data.reshape(*s),
+                                  dtype = self.dtype,
+                                  fill_value=self.fill_value)
     #
     def repeat(self, repeats, axis=None):
         """Repeat elements of `a` `repeats` times along `axis`.
@@ -1447,7 +1458,8 @@ The mask is repeated accordingly.
         if m is not nomask:
             m = fromnumeric.repeat(m, repeats, axis)
         d = fromnumeric.repeat(f, repeats, axis)
-        return self.__class__(d, mask=m, fill_value=self.fill_value)
+        return self.__class__(d, mask=m, dtype = self.dtype,
+                              fill_value=self.fill_value)
     #
     def resize(self, newshape, refcheck=True, order=False):
         """Attempts to modify size and shape of self inplace.  
@@ -1470,37 +1482,16 @@ The mask is repeated accordingly.
                   "Use the resize function."
             raise ValueError, msg
         return None
-
-        
-#    #
-#    def transpose(self,axes=None):
-#        """Returns a view of 'a' with axes transposed."""
-#        (d,m) = (self._data, self._mask)
-#        if m is nomask:
-#            return self.__class__(d.transpose(axes), copy=False)
-#        else:
-#            return self.__class__(d.transpose(axes), 
-#                                  mask=m.transpose(axes), copy=False)
-#    #
-#    def swapaxes(self, axis1, axis2):
-#        (d,m) = (self._data, self._mask)
-#        if m is nomask:
-#            return self.__class__(d.swapaxes(axis1, axis2),
-#                                  copy=False)
-#        else:
-#            return self.__class__(data=d.swapaxes(axis1, axis2),
-#                                  mask=m.swapaxes(axis1, axis2),
-#                                  copy=False)    
     #
-#    def take(self, indices, axis=None, out=None, mode='raise'):
-#        "returns selection of items from a."
-#        (d,m) = (self._data, self._mask)
-#        if m is nomask:
-#            return self.__class__(d.take(indices, axis=axis, out=out, mode=mode))
-#        else:
-#            return self.__class__(d.take(indices, axis=axis, out=out, mode=mode),
-#                             mask=m.take(indices, axis=axis, out=out, mode=mode),
-#                             copy=False,)
+    def flatten(self):
+        """Flattens the array in place.
+        """
+        flatsize = self.size
+        self._data.resize((flatsize,))
+        if self.mask is not nomask:
+             self._mask.resize((flatsize,))
+        return self
+
     #
     def put(self, indices, values, mode='raise'):
         """Sets storage-indexed locations to corresponding values.
@@ -1534,7 +1525,8 @@ else the corresponding values are unmasked.
         """
         d = filled(self, True).all(axis)
         m = self._mask.all(axis)
-        return self.__class__(d, mask=m, fill_value=self._fill_value)
+        return self.__class__(d, mask=m, dtype=bool_,
+                              fill_value=self._fill_value,)
     def any(self, axis=None):
         """a.any(axis) returns True if some or all entries along the axis are True.
     Returns False otherwise. If axis is None, uses the flatten array.
@@ -1543,7 +1535,8 @@ else the corresponding values are unmasked.
         """
         d = filled(self, False).any(axis)
         m = self._mask.all(axis)
-        return self.__class__(d, mask=m, fill_value=self._fill_value) 
+        return self.__class__(d, mask=m, dtype=bool_,
+                              fill_value=self._fill_value) 
     def nonzero(self):
         """a.nonzero() returns a tuple of arrays
 
@@ -1583,13 +1576,15 @@ If `axis` is None, applies to a flattened version of the array.
 #            if axis is None:
 #                return self._data.sum(None, dtype=dtype)
             return self.__class__(self._data.sum(axis, dtype=dtype),
-                                  mask=nomask, fill_value=self._fill_value)
+                                  mask=nomask, dtype = self.dtype,
+                                  fill_value=self.fill_value)
         else:
 #            if axis is None:
 #                return self.filled(0).sum(None, dtype=dtype)
             return self.__class__(self.filled(0).sum(axis, dtype=dtype),
-                                  mask=self._mask.all(axis), 
-                                  fill_value=self._fill_value)
+                                  mask=self._mask.all(axis),
+                                  dtype = self.dtype,
+                                  fill_value=self.fill_value)
             
     def cumsum(self, axis=None, dtype=None):
         """a.cumprod(axis=None, dtype=None)
@@ -1600,12 +1595,16 @@ If `axis` is None, applies to a flattened version of the array.
         if self._mask is nomask:
 #            if axis is None:
 #                return self._data.cumsum(None, dtype=dtype)
-            return self.__class__(self._data.cumsum(axis=axis, dtype=dtype))
+            return self.__class__(self._data.cumsum(axis=axis, dtype=dtype),
+                                  dtype = self.dtype,
+                                  fill_value=self.fill_value)
         else:
 #            if axis is None:
 #                return self.filled(0).cumsum(None, dtype=dtype)
             return self.__class__(self.filled(0).cumsum(axis=axis, dtype=dtype),
-                             mask=self._mask, fill_value=self._fill_value)
+                                  mask=self._mask,
+                                  dtype = self.dtype,
+                                  fill_value=self.fill_value)
         
     def prod(self, axis=None, dtype=None):
         """a.prod(axis=None, dtype=None)
@@ -1617,14 +1616,17 @@ If `axis` is None, applies to a flattened version of the array.
 #            if axis is None:
 #                return self._data.prod(None, dtype=dtype)
             return self.__class__(self._data.prod(axis, dtype=dtype),
-                                  mask=nomask, fill_value=self._fill_value)
+                                  mask=nomask,
+                                  dtype = self.dtype,
+                                  fill_value=self.fill_value)
 #            return self.__class__(self._data.prod(axis=axis, dtype=dtype))
         else:
 #            if axis is None:
 #                return self.filled(1).prod(None, dtype=dtype)
             return self.__class__(self.filled(1).prod(axis=axis, dtype=dtype),
-                                  mask=self._mask.all(axis), 
-                                  fill_value=self._fill_value)
+                                  mask=self._mask.all(axis),
+                                  dtype = self.dtype,
+                                  fill_value=self.fill_value)
     product = prod
             
     def cumprod(self, axis=None, dtype=None):
@@ -1637,12 +1639,16 @@ If `axis` is None, applies to a flattened version of the array.
 #            if axis is None:
 #                return self._data.cumprod(None, dtype=dtype)
             return self.__class__(self._data.cumprod(axis=axis, dtype=dtype),
-                                  mask=nomask, fill_value=self._fill_value)
+                                  mask=nomask,
+                                  dtype = self.dtype,
+                                  fill_value=self.fill_value,)
         else:
 #            if axis is None:
 #                return self.filled(1).cumprod(None, dtype=dtype)
             return self.__class__(self.filled(1).cumprod(axis=axis, dtype=dtype),
-                                  mask=self._mask, fill_value=self._fill_value)        
+                                  mask=self._mask,
+                                  dtype = self.dtype,
+                                  fill_value=self.fill_value)        
             
     def mean(self, axis=None, dtype=None):
         """a.mean(axis=None, dtype=None)
@@ -1661,15 +1667,17 @@ If `axis` is None, applies to a flattened version of the array.
 #            if axis is None:
 #                return self._data.mean(axis=None, dtype=dtype)
             return self.__class__(self._data.mean(axis=axis, dtype=dtype),
-                                  mask=nomask, fill_value=self._fill_value)
+                                  mask=nomask, dtype = self.dtype,
+                                  fill_value=self.fill_value)
         else:
             dsum = fromnumeric.sum(self.filled(0), axis=axis, dtype=dtype)
             cnt = self.count(axis=axis)
             mask = self._mask.all(axis)
             if axis is None and mask:
                 return masked
-            return self.__class__(dsum*1./cnt, mask=mask, 
-                                  fill_value=self._fill_value)
+            return self.__class__(dsum*1./cnt, mask=mask,
+                                  dtype = self.dtype,
+                                  fill_value=self.fill_value,)
     
     def anom(self, axis=None, dtype=None):
         """a.anom(axis=None, dtype=None)
@@ -1692,7 +1700,9 @@ i.e. var = mean((x - x.mean())**2).
 #            if axis is None:
 #                return self._data.var(axis=None, dtype=dtype)
             return self.__class__(self._data.var(axis=axis, dtype=dtype),
-                                  mask=nomask, fill_value=self._fill_value)
+                                  mask=nomask,
+                                  dtype = self.dtype,
+                                  fill_value=self.fill_value)
         else:
             cnt = self.count(axis=axis)
             danom = self.anom(axis=axis, dtype=dtype)
@@ -1703,7 +1713,8 @@ i.e. var = mean((x - x.mean())**2).
                 return dvar
             return self.__class__(dvar, 
                                   mask=mask_or(self._mask.all(axis), (cnt==1)),
-                                  fill_value=self._fill_value)
+                                  dtype = self.dtype,
+                                  fill_value=self.fill_value)
             
     def std(self, axis=None, dtype=None):
         """a.std(axis=None, dtype=None)
@@ -1719,8 +1730,9 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
             else:
                 # Should we use umath.sqrt instead ?
                 return sqrt(dvar)
-        return self.__class__(sqrt(dvar._data), mask=dvar._mask, 
-                              fill_value=self._fill_value)
+        return self.__class__(sqrt(dvar._data), mask=dvar._mask,
+                              dtype = self.dtype,
+                              fill_value=self.fill_value,)
     #............................................
     def argsort(self, axis=None, fill_value=None, kind='quicksort'):
         """Returns an array of indices that sort 'a' along the specified axis.
@@ -1932,7 +1944,8 @@ object is called instead.
                 m_other = mask_or(m_other, domain)
         m = mask_or(m_self, m_other)      
         method = getattr(base, self.methodname)       
-        return instance.__class__(method(target, *args), mask=m)
+        return instance.__class__(method(target, *args), mask=m,
+                                  fill_value=instance.fill_value)
 #......................................
 class _compamethods(object):
     """Defines comparison methods (eq, ge, gt...).
@@ -1961,7 +1974,9 @@ Instead of calling a ufunc, the method of the masked object is called.
         base = instance.filled(self.fill_self)
         target = filled(other, self.fill_other)
         method = getattr(base, self.methodname)      
-        return instance.__class__(method(target, *args), mask=m)  
+        return instance.__class__(method(target, *args), mask=m,
+                                  dtype = instance.dtype,
+                                  fill_value=instance.fill_value)  
 #..........................................................
 MaskedArray.__add__ = _arithmethods('__add__')
 MaskedArray.__radd__ = _arithmethods('__add__')
@@ -2099,18 +2114,19 @@ If `onmask` is False, the new mask is just a reference to the initial mask.
         return self
     def __call__(self, *args, **params):
         methodname = self._name
-        (d,m, f) = (self.obj._data, self.obj._mask, self.obj._fill_value)
+        (d, m) = (self.obj._data, self.obj._mask)
+        (t, f) = (self.obj.dtype, self.obj._fill_value)
         C = self.obj.__class__
         if m is nomask:
             return C(getattr(d,methodname).__call__(*args, **params),
-                     fill_value=f)
+                     dtype=t, fill_value=f)
         elif self._onmask:
             return C(getattr(d,methodname).__call__(*args, **params),
                      mask=getattr(m,methodname)(*args, **params),
-                     fill_value=f)
+                     dtype=t, fill_value=f)
         else:
             return C(getattr(d,methodname).__call__(*args, **params), mask=m,
-                     fill_value=f) 
+                     dtype=t, fill_value=f) 
 #......................................
 MaskedArray.conj = MaskedArray.conjugate = _arraymethod('conjugate') 
 MaskedArray.diagonal = _arraymethod('diagonal')
@@ -2162,10 +2178,10 @@ In one argument case, returns the scalar minimum.
             m = umath.logical_and.reduce(m, axis)
 #            return masked_array(t, mask=m, fill_value=get_fill_value(target))
             try:
-                return target.__class__(t, mask=m, 
+                return target.__class__(t, mask=m, dtype=t.dtype,
                                         fill_value=get_fill_value(target))
             except AttributeError:
-                return masked_array(t, mask=m, 
+                return masked_array(t, mask=m, dtype=t.dtype,
                                     fill_value=get_fill_value(target))
     #.........
     def outer(self, a, b):
@@ -2225,10 +2241,10 @@ class _maximum_operation:
                                      axis)
             m = umath.logical_and.reduce(m, axis)
             try:
-                return target.__class__(t, mask=m, 
+                return target.__class__(t, mask=m, dtype=t.dtype,
                                         fill_value=get_fill_value(target))
             except AttributeError:
-                return masked_array(t, mask=m, 
+                return masked_array(t, mask=m, dtype=t.dtype,
                                     fill_value=get_fill_value(target))
     #.........
     def outer (self, a, b):
@@ -2461,10 +2477,12 @@ def expand_dims(x,axis):
     if isinstance(x, MaskedArray):
         (d,m) = (x._data, x._mask)
         if m is nomask:
-            return masked_array(n_expand_dims(d,axis))
+            return masked_array(n_expand_dims(d,axis),                                
+                                dtype=d.dtype, fill_value=x._fill_value)
         else:
             return masked_array(n_expand_dims(d,axis), 
-                           mask=n_expand_dims(m,axis))
+                                mask=n_expand_dims(m,axis),
+                                dtype=d.dtype, fill_value=x._fill_value)
     else:
         return n_expand_dims(x,axis)
 

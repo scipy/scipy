@@ -1,3 +1,5 @@
+#2006-12-18 : Extras
+#           : - Added compress2d and mask_rowcols
 #2006-12-13 : - moved 'average' to 'extras'
 #			: Core
 #		    : - Fixed make_mask (forced filling to True)
