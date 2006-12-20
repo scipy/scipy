@@ -1,3 +1,9 @@
+#
+# models - Statistical Models
+#
+
+from info import __doc__
+
 import model
 import formula
 import regression
