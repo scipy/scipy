@@ -49,7 +49,20 @@ class ts_binary_operation:
         else:
             return self.f(a, b, *args, **kwargs)
             
-            
+    def reduce (self, target, axis=0, dtype=None):
+        """Reduce target along the given axis with this function."""
+        
+        return self.f.reduce(target, axis, dtype)
+
+    def outer (self, a, b):
+        return self.f.outer(a, b)
+
+    def accumulate (self, target, axis=0):
+        return datawrap(self.f.accumulate(target, axis), target)
+
+    def __str__ (self):
+        return "Masked version of " + str(self.f)            
+
 
 class TimeSeries(ma.MaskedArray):
 
