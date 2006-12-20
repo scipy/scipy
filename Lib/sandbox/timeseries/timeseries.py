@@ -6,6 +6,8 @@ import cseries
 import tsdate
 import copy as copytools
 
+masked = ma.masked
+nomask = ma.nomask
 
 def ts_compatible(a, b):
     if a.freq != b.freq:
