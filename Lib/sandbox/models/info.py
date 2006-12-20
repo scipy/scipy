@@ -2,7 +2,6 @@
 Statistical models
 ==================
 
-testing
 """
 
 depends = ['weave',
