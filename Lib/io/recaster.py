@@ -43,6 +43,9 @@ def sctype_attributes():
         }
     return d_dict
 
+class RecastError(ValueError):
+    pass
+
 class Recaster(object):
     ''' Class to recast arrays to one of acceptable scalar types
 
@@ -67,6 +70,7 @@ class Recaster(object):
         'downcast_within_fp': False,
         'guarantee_fp_to_fp_precision': False,
         'prefer_input_at_threshold': 0,
+        'prefer_int_type': 'i',
         },
         'smallest': {
         'fp_to_int': 'always',
@@ -76,7 +80,8 @@ class Recaster(object):
         'downcast_only': False,
         'downcast_within_fp': True,
         'guarantee_fp_to_fp_precision': False,
-        'prefer_input_at_threshold': 0
+        'prefer_input_at_threshold': 0,
+        'prefer_int_type': 'i',
         },
         'fairly_small': {
         'fp_to_int': 'always',
@@ -87,6 +92,7 @@ class Recaster(object):
         'downcast_within_fp': False,
         'guarantee_fp_to_fp_precision': False,
         'prefer_input_at_threshold': 2 * _k,
+        'prefer_int_type': 'i',
         },
         'preserve_precision': {
         'fp_to_int': 'never',
@@ -96,7 +102,8 @@ class Recaster(object):
         'downcast_only': False,
         'downcast_within_fp': False,
         'guarantee_fp_to_fp_precision': True,
-        'prefer_input_at_threshold': 0
+        'prefer_input_at_threshold': 0,
+        'prefer_int_type': 'i',
         }
         }
     
@@ -143,6 +150,9 @@ class Recaster(object):
                         is less than or equal to this number, and in valid
                         types list, return the array without attempting
                         recasting
+        prefer_int_type - if 'i', when recasting to integer type, prefer int
+                        when equal sized uint is also available. Prefer
+                        uint otherwise.
         '''
         if sctype_list is None:
             sctype_list = self._sctype_attributes.keys()
@@ -275,15 +285,13 @@ class Recaster(object):
                     break
         return out_t
 
-    def cast_to_fp(self, arr, rtol, atol, kind,
+    def cast_to_fp(self, arr, kind,
                    max_size=inf,
                    continue_down=False):
         ''' Return fp arr maybe recast to specified kind, different sctype
 
         Inputs
         arr         - array to possibly recast
-        rtol        - relative tolerace for allclose
-        atol        - absolute tolerance for allclose
         kind        - kind of array to recast within
                       (one of "c", "f", "u", "i")
         max_size    - maximum size of sctype to return (in bytes)
@@ -295,6 +303,8 @@ class Recaster(object):
         If arr cannot be recast within given tolerances, and size,
         return None
         '''
+        tols = self.sctype_tols[arr.dtype.type]
+        rtol, atol = tols['rtol'], tols['atol']
         ret_arr = None
         for T, sz in self.sized_sctypes[kind]:
             if sz > max_size:
@@ -308,33 +318,43 @@ class Recaster(object):
                 break
         return ret_arr
         
-    def smallest_int_sctype(self, mx, mn):
+    def smallest_int_sctype(self, mx, mn, prefer='i'):
         ''' Return integer type with smallest storage containing mx and mn
 
         Inputs
         mx      - maximum value
         mn      - minumum value
-
+        prefer  - if == 'i' prefer int for range also compatible
+                  uint, else prefer uint in same situation
+                  
         Returns None if no integer can contain this range
         '''
         sct = None
+        sz = inf
         for T, tsz in self.ints_sized_sctypes:
             t_dict = self._sctype_attributes[T]
             if t_dict['max'] >= mx and t_dict['min'] <= mn:
-                if sct is None or tsz < sz:
+                if tsz < sz:
                     sct = T
                     sz = tsz
+                elif tsz == sz:
+                    if t_dict['kind'] == prefer:
+                        sct = T
         return sct
 
-    def cast_to_integer(self, arr):
+    def cast_to_integer(self, arr, prefer='i'):
         ''' Casts arr to smallest integer containing range
 
         Returns None if range of arr cannot be contained in acceptable
         integer types
+
+        prefer  - if == 'i' prefer int for range also compatible
+                  uint, else prefer uint in same situation
+                  
         '''
         mx = amax(arr)
         mn = amin(arr)
-        idt = self.smallest_int_sctype(mx, mn)
+        idt = self.smallest_int_sctype(mx, mn, prefer)
         if idt is not None:
             return arr.astype(idt)
         return None
@@ -365,7 +385,8 @@ class Recaster(object):
             if opts['fp_to_int'] == 'always' or \
                    (opts['fp_to_int'] == 'if_none' and
                     ret_arr is None):
-                test_arr = self.cast_to_integer(arr)
+                test_arr = self.cast_to_integer(arr,
+                                                opts['prefer_int_type'])
                 if test_arr is not None and \
                    test_arr.dtype.itemsize < curr_size:
                     if allclose(arr, test_arr, rtol, atol):
@@ -379,8 +400,6 @@ class Recaster(object):
                     max_size = min([self._c2f_capable_sctype_sizes[dtt],
                                     curr_size - 1])
                     test_arr = self.cast_to_fp(arr,
-                                               rtol,
-                                               atol,
                                                'f',
                                                max_size,
                                                opts['downcast_within_fp'])
@@ -401,8 +420,6 @@ class Recaster(object):
                         max_size = min([self._capable_sctype_sizes[dtt],
                                         curr_size - 1])
                         test_arr = self.cast_to_fp(arr,
-                                                   rtol,
-                                                   atol,
                                                    dtk,
                                                    max_size,
                                                    opts['downcast_within_fp'])
@@ -413,7 +430,8 @@ class Recaster(object):
             if opts['int_to_int'] == 'always' or \
                    (opts['int_to_int'] == 'if_none' and
                     ret_arr is None):
-                test_arr = self.cast_to_integer(arr)
+                test_arr = self.cast_to_integer(arr,
+                                                opts['prefer_int_type'])
                 if test_arr is not None and \
                        test_arr.dtype.itemsize < curr_size:
                     ret_arr = test_arr
@@ -422,8 +440,6 @@ class Recaster(object):
                    (opts['int_to_fp'] == 'if_none' and
                     ret_arr is None):
                 test_arr = self.cast_to_fp(arr,
-                                           rtol,
-                                           atol,
                                            'f',
                                            curr_size-1,
                                            opts['downcast_within_fp'])
@@ -434,7 +450,7 @@ class Recaster(object):
 
         if ret_arr is not None:
             return ret_arr
-        raise TypeError, 'Cannot recast array within tolerance'
+        raise RecastError, 'Cannot recast array within tolerance'
 
     def recast_best_sctype(self, arr):
         ''' Recast array, return closest sctype to original
