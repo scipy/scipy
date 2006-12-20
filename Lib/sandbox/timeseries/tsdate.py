@@ -14,7 +14,6 @@ class Date:
             if self.freq == 'D':
                 self.mxDate = mx.DateTime.DateTimeFromAbsDays(value-1)
             elif self.freq == 'B':
-                #originDate + val + (val//5)*7 - (val//5)*5
                 value -= 1
                 self.mxDate = mx.DateTime.DateTimeFromAbsDays(value + (value//5)*7 - (value//5)*5)
             elif self.freq == 'S':
@@ -100,14 +99,14 @@ class Date:
     def __radd__(self, other): return self+other
     
     def __sub__(self, other):
-        try: return self + (-1) * other
-        except: pass
-        try:
+        if isinstance(other, Date):
             if self.freq != other.freq:
                 raise ValueError("Cannont subtract dates of different frequency (" + str(self.freq) + " != " + str(other.freq) + ")")
-            return int(self) - int(other)
-        except TypeError: 
-            raise TypeError("Could not subtract types " + str(type(self)) + " and " + str(type(other)))
+            else:
+                return int(self) - int(other) 
+        else:
+            return self + (-1) * int(other)
+
 
     def __repr__(self): return "<" + str(self.freq) + ":" + str(self) + ">"
     
