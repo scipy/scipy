@@ -83,17 +83,21 @@ def last_unmasked_val(m):
 
 
 def __unmasked(m, get_val, relpos):
-    idx = numpy.where(m.mask == False)
-    if len(idx) != 0 and len(idx[0]) != 0:
-        idx = idx[0][relpos]
+    
+    if m.mask is ma.nomask:
+        return 0    
     else:
-        idx = None
-        
-    if get_val:
-        if idx is None: return ma.masked
-        else: return m[idx]
-    else:
-        return idx
+        idx = numpy.where(m.mask == False)
+        if len(idx) != 0 and len(idx[0]) != 0:
+            idx = idx[0][relpos]
+        else:
+            idx = None
+
+        if get_val:
+            if idx is None: return ma.masked
+            else: return m[idx]
+        else:
+            return idx
 #############################################################
 
 #converts possible strings for frequency into acceptable values             
