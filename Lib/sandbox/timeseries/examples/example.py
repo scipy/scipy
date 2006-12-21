@@ -71,6 +71,17 @@ mSer2[sixtyMonthsAgoIdx:sixtyMonthsAgoIdx+10] = 12
 mSer2[-1] = ts.masked #ts.masked is the same thing as numpy.ma.masked
 
 
+# dates can be used as indices as well
+mSer2[ts.thisday('m')-55] = 400
+
+
+"""
+the tser function makes it easy to index a series over a range of dates
+without worrying about converting the dates to appropriate integers first
+"""
+mSer2[ts.tser(ts.thisday('m')-59, ts.thisday('m')-45)] = 25
+
+
 """
 Only series of the same frequency and size and same start date
 can be used in the basic operations.
