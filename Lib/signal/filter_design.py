@@ -7,7 +7,7 @@ import numpy
 from numpy.core.umath import *
 from numpy import atleast_1d, poly, polyval, roots, imag, real, asarray,\
      allclose, resize, pi, concatenate, absolute, logspace
-from numpy import mintypecode, select
+from numpy import mintypecode, select, sum
 from scipy import special, optimize, linalg
 from scipy.misc import comb
 import string, types
