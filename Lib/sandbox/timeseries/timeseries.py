@@ -6,6 +6,8 @@ import cseries
 import tsdate
 import copy as copytools
 
+from types import MethodType
+
 masked = ma.masked
 nomask = ma.nomask
 
@@ -50,8 +52,6 @@ class ts_binary_operation:
             return self.f(a, b, *args, **kwargs)
             
     def reduce (self, target, axis=0, dtype=None):
-        """Reduce target along the given axis with this function."""
-        
         return self.f.reduce(target, axis, dtype)
 
     def outer (self, a, b):
@@ -328,7 +328,9 @@ tan = ts_unary_operation(ma.tan)
 arcsin = ts_unary_operation(ma.arcsin)
 arccos = ts_unary_operation(ma.arccos)
 arctan = ts_unary_operation(ma.arctan)
-power = ts_binary_operation(ma.power)
+
+def cumprod(self, axis=0, dtype=None, out=None): return datawrap(ma._cumprod(self, axis, dtype, out), self)
+def cumsum(self, axis=0, dtype=None, out=None): return datawrap(ma._cumsum(self, axis, dtype, out), self)
 
 arcsinh = ts_unary_operation(ma.arcsinh)
 arccosh = ts_unary_operation(ma.arccosh)
@@ -339,30 +341,49 @@ tanh = ts_unary_operation(ma.tanh)
 absolute = ts_unary_operation(ma.absolute)
 fabs = ts_unary_operation(ma.fabs)
 negative = ts_unary_operation(ma.negative)
-
-def nonzero(a): return datawrap(ma.nonzero(a), a)
-def zeros(shape, dtype=float, freq=None, start_date=None, observed=None):
-    return TimeSeries(ma.zeros(shape, dtype), freq=freq, start_date=start_date, observed=observed)
-def ones(shape, dtype=float, freq=None, start_date=None, observed=None):
-    return TimeSeries(ma.ones(shape, dtype), freq=freq, start_date=start_date, observed=observed)
-
-count = ma.count
-sum = ma.sum
-product = ma.product
-average = ma.average
-
-
+nonzero = ts_unary_operation(ma.nonzero)
 
 around = ts_unary_operation(ma.around)
 floor = ts_unary_operation(ma.floor)
 ceil = ts_unary_operation(ma.ceil)
 logical_not = ts_unary_operation(ma.logical_not)
 
+def zeros(shape, dtype=float, freq=None, start_date=None, observed=None):
+    return TimeSeries(ma.zeros(shape, dtype), freq=freq, start_date=start_date, observed=observed)
+def ones(shape, dtype=float, freq=None, start_date=None, observed=None):
+    return TimeSeries(ma.ones(shape, dtype), freq=freq, start_date=start_date, observed=observed)
+
+
+# functions from ma that we want to return scalars or masked arrays
+count = ma.count
+sum = ma.sum
+product = ma.product
+average = ma.average
+compress = ma.compress
+minimum = ma.minimum
+maximum = ma.maximum
+alltrue = ma.alltrue
+allclose = ma.allclose
+allequal = ma.allequal
+sometrue = ma.sometrue
+std = ma._std
+var = ma._var
+
+def argmin (x, axis = -1, out=None, fill_value=None):
+    # same as argmin for ma, but returns a date instead of integer
+    return x.start_date() + ma.argmin(x, axis, out, fill_value)    
+
+def argmax (x, axis = -1, out=None, fill_value=None):
+    # same as argmax for ma, but returns a date instead of integer
+    return x.start_date() + ma.argmax(x, axis, out, fill_value)
+    
+
+# binary operators
 add = ts_binary_operation(ma.add)
 subtract = ts_binary_operation(ma.subtract)
-
 multiply = ts_binary_operation(ma.multiply)
 divide = ts_binary_operation(ma.divide)
+power = ts_binary_operation(ma.power)
 true_divide = ts_binary_operation(ma.true_divide)
 floor_divide = ts_binary_operation(ma.floor_divide)
 remainder = ts_binary_operation(ma.remainder)
@@ -384,6 +405,31 @@ bitwise_xor = ts_binary_operation(ma.bitwise_xor)
 
 def left_shift (a, n): return datawrap(ma.left_shift(a, n), a)
 def right_shift (a, n): return datawrap(ma.right_shift(a, n), a)
+
+def masked_where(condition, x, copy=1): return datawrap(ma.masked_where(condition, x, copy), x)
+def masked_greater(x, value, copy=1): return datawrap(ma.masked_greater(x, value, copy), x)
+def masked_greater_equal(x, value, copy=1): return datawrap(ma.masked_greater_equal(x, value, copy), x)
+def masked_less(x, value, copy=1): return datawrap(ma.masked_less(x, value, copy), x)
+def masked_less_equal(x, value, copy=1): return datawrap(ma.masked_less_equal(x, value, copy), x)
+def masked_not_equal(x, value, copy=1): return datawrap(ma.masked_not_equal(x, value, copy), x)
+def masked_equal(x, value, copy=1): return datawrap(ma.masked_equal(x, value, copy), x)
+def masked_inside(x, v1, v2, copy=1): return datawrap(ma.masked_inside(x, v1, v2, copy), x)
+def masked_outside(x, v1, v2, copy=1): return datawrap(ma.masked_outside(x, v1, v2, copy), x)
+
+def clip(self,a_min,a_max,out=None): return datawrap(ma._clip(self, a_min, a_max, out=None), self)
+
+
+array = TimeSeries
+
+def _m(f):
+    return MethodType(f, None, array)
+    
+array.clip = _m(clip)
+array.argmax = _m(argmax)
+array.argmin = _m(argmin)
+array.cumprod = _m(cumprod)
+array.cumsum = _m(cumsum)
+
 
 # time series specific functions
 
