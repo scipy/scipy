@@ -69,7 +69,7 @@ class likelihood_model(Model):
 #             return -self.logL(theta)
 #         self.results = optimize.fmin(f, theta)
         
-class LikelihoodModelResults:
+class likelihood_model_results:
 
     def __init__(self, beta, normalized_cov_beta=None, scale=1.):
         self.beta = beta
