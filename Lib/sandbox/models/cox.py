@@ -154,7 +154,7 @@ class coxph(model.likelihood_model):
                 raise NotImplementedError, 'Cox tie breaking method not implemented'
             else:
                 raise NotImplementedError, 'tie breaking method not recognized'
-        return = N.array([score])
+        return N.array([score])
 
     def information(self, b, ties='breslow'):
 
