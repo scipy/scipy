@@ -1,5 +1,6 @@
 import csv
 import os
+import string
 import unittest
 
 import numpy as N
@@ -53,7 +54,7 @@ class test_formula(ScipyTestCase):
         self.namespace = {}
         self.terms = []
         for i in range(10):
-            name = '%s' % i.upper()
+            name = '%s' % string.uppercase[i]
             self.namespace[name] = self.X[:,i]
             self.terms.append(formula.term(name))
 
