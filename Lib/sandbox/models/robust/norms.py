@@ -1,5 +1,4 @@
 import numpy as N
-import scipy.interpolate
 
 class RobustNorm:
     def __call__(self, z):
