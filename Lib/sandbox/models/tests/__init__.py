@@ -1,7 +1,8 @@
-import test_formula
-import test_regression
-import test_utils
 import unittest
+
+from scipy.sandbox.models.tests import test_formula
+from scipy.sandbox.models.tests import test_regression
+from scipy.sandbox.models.tests import test_utils
 
 def suite():
     return unittest.TestSuite([test_formula.suite(),
