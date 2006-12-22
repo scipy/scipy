@@ -1,7 +1,8 @@
 import unittest
+
 from numpy.random import standard_normal
+
 from scipy.sandbox.models.regression import ols_model, ar_model
-from numpy.testing import *
 
 W = standard_normal
 

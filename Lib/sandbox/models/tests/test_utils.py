@@ -1,8 +1,10 @@
 import unittest
+
 import numpy as N
 import numpy.random as R
+from numpy.testing import assert_almost_equal
 import scipy
-from numpy.testing import *
+
 from scipy.sandbox.models import utils
 
 class test_Utils(unittest.TestCase):

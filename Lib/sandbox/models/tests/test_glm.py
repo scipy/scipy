@@ -1,8 +1,10 @@
-import scipy.sandbox.models as S
 import unittest
-import numpy.random as R
+
 import numpy as N
-from numpy.testing import *
+import numpy.random as R
+from numpy.testing import NumpyTest, NumpyTestCase
+
+import scipy.sandbox.models as S
 from scipy.sandbox.models.glm import model
 
 W = R.standard_normal
