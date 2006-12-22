@@ -29,7 +29,8 @@ class model(wls_model):
             results = self.results
         return self.M((results.Y - results.predict) / N.sqrt(results.scale)).sum()
 
-    def next(self, results):
+    def next(self):
+        results = self.results
         self.weights = self.M.weights((results.Y - results.predict) / N.sqrt(results.scale))
         self.initialize(self.design)
         results = wls_model.fit(self, results.Y)
@@ -71,6 +72,6 @@ class model(wls_model):
         self.scale = self.results.scale = self.estimate_scale(self.results)
         
         while self.cont(self.results):
-            self.results = self.next(self.results)
+            self.results = self.next()
 
         return self.results
