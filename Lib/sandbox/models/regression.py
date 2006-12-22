@@ -60,10 +60,10 @@ class ols_model(likelihood_model):
         self.initialize(design)
 
     def initialize(self, design):
-	"""
-	Set design for model, prewhitening design matrix and precomputing
-	covariance of coefficients (up to scale factor in front).
-	"""
+        """
+        Set design for model, prewhitening design matrix and precomputing
+        covariance of coefficients (up to scale factor in front).
+        """
 
         self.design = design
         self.wdesign = self.whiten(design)
@@ -73,9 +73,9 @@ class ols_model(likelihood_model):
         self.df_resid = self.wdesign.shape[0] - utils.rank(self.design)
 
     def whiten(self, Y):
-	"""
-	OLS model whitener does nothing: returns Y.
-	"""
+        """
+        OLS model whitener does nothing: returns Y.
+        """
 
         return Y
     
@@ -95,7 +95,7 @@ class ols_model(likelihood_model):
     def fit(self, Y):
         """
         Full fit of the model including estimate of covariance matrix, 
-	(whitened) residuals and scale. 
+        (whitened) residuals and scale. 
 
         """
     
@@ -160,80 +160,80 @@ class ar_model(ols_model):
     """
 
     def __init__(self, design, rho):
-	if type(rho) is type(1):
-	    self.order = rho
-	    self.rho = N.zeros(self.order, N.float64)
-	else:
-	    self.rho = N.squeeze(N.asarray(rho))
-	    if len(self.rho.shape) not in [0,1]:
-		raise ValueError, "AR parameters must be a scalar or a vector"
-	    if self.rho.shape == ():
-		self.rho.shape = (1,)
-	    self.order = self.rho.shape[0]
+        if type(rho) is type(1):
+            self.order = rho
+            self.rho = N.zeros(self.order, N.float64)
+        else:
+            self.rho = N.squeeze(N.asarray(rho))
+            if len(self.rho.shape) not in [0,1]:
+                raise ValueError, "AR parameters must be a scalar or a vector"
+            if self.rho.shape == ():
+                self.rho.shape = (1,)
+            self.order = self.rho.shape[0]
         ols_model.__init__(self, design)
 
     def iterative_fit(self, Y, niter=3):
-	"""
-	Perform an iterative two-stage procedure to estimate AR(p)
-	paramters and regression coefficients simultaneously.
-	"""
-	for i in range(niter):
-	    self.initialize(self.design)
-	    results = self.fit(Y)
-	    self.rho, _ = self.yule_walker(Y - results.predict)
+        """
+        Perform an iterative two-stage procedure to estimate AR(p)
+        paramters and regression coefficients simultaneously.
+        """
+        for i in range(niter):
+            self.initialize(self.design)
+            results = self.fit(Y)
+            self.rho, _ = self.yule_walker(Y - results.predict)
 
 
     def whiten(self, X):
-	"""
-	Whiten a series of columns according to an AR(p)
-	covariance structure.
+        """
+        Whiten a series of columns according to an AR(p)
+        covariance structure.
 
-	"""
-	X = N.asarray(X, N.float64)
-	_X = X.copy()
-	for i in range(self.order):
-	    _X[(i+1):] = _X[(i+1):] - self.rho[i] * X[0:-(i+1)]
-	return _X
+        """
+        X = N.asarray(X, N.float64)
+        _X = X.copy()
+        for i in range(self.order):
+            _X[(i+1):] = _X[(i+1):] - self.rho[i] * X[0:-(i+1)]
+        return _X
 
     def yule_walker(self, X, method="unbiased", df=None):
-	"""
-	Estimate AR(p) parameters from a sequence X using Yule-Walker equation.
-	Method can be "unbiased" or "MLE" and this determines
-	denominator in estimate of ACF at lag k. If "MLE", the denominator is 
-	n=r.shape[0], if "unbiased" the denominator is n-k.
+        """
+        Estimate AR(p) parameters from a sequence X using Yule-Walker equation.
+        Method can be "unbiased" or "MLE" and this determines
+        denominator in estimate of ACF at lag k. If "MLE", the denominator is 
+        n=r.shape[0], if "unbiased" the denominator is n-k.
 
-	If df is supplied, then it is assumed the X has df degrees of
-	freedom rather than n.
+        If df is supplied, then it is assumed the X has df degrees of
+        freedom rather than n.
 
-	See, for example:
+        See, for example:
 
         http://en.wikipedia.org/wiki/Autoregressive_moving_average_model
-	"""
-	
-	method = str(method).lower()
-	if method not in ["unbiased", "mle"]:
-	    raise ValueError, "ACF estimation method must be 'unbiased' \
-	    or 'MLE'"
-	X = N.asarray(X, N.float64)
-	X -= X.mean()
-	n = df or X.shape[0]
+        """
+        
+        method = str(method).lower()
+        if method not in ["unbiased", "mle"]:
+            raise ValueError, "ACF estimation method must be 'unbiased' \
+            or 'MLE'"
+        X = N.asarray(X, N.float64)
+        X -= X.mean()
+        n = df or X.shape[0]
 
-	if method == "unbiased":
-	    denom = lambda k: n - k
-	else:
-	    denom = lambda k: n
+        if method == "unbiased":
+            denom = lambda k: n - k
+        else:
+            denom = lambda k: n
 
-	if len(X.shape) != 1:
-	    raise ValueError, "expecting a vector to estimate AR parameters"
-	r = N.zeros(self.order+1, N.float64)
-	r[0] = (X**2).sum() / denom(0)
-	for k in range(1,self.order+1):
-	    r[k] = (X[0:-k]*X[k:]).sum() / denom(k)
-	R = toeplitz(r[:-1])
+        if len(X.shape) != 1:
+            raise ValueError, "expecting a vector to estimate AR parameters"
+        r = N.zeros(self.order+1, N.float64)
+        r[0] = (X**2).sum() / denom(0)
+        for k in range(1,self.order+1):
+            r[k] = (X[0:-k]*X[k:]).sum() / denom(k)
+        R = toeplitz(r[:-1])
 
-	rho = L.solve(R, r[1:])
-	sigmasq = r[0] - (r[1:]*rho).sum()
-	return rho, N.sqrt(sigmasq)
+        rho = L.solve(R, r[1:])
+        sigmasq = r[0] - (r[1:]*rho).sum()
+        return rho, N.sqrt(sigmasq)
 
 class wls_model(ols_model):
     """
@@ -272,11 +272,11 @@ class wls_model(ols_model):
         ols_model.__init__(self, design)
 
     def whiten(self, X):
-	"""
-	Whitener for WLS model, multiplies by sqrt(self.weights)
-	"""
+        """
+        Whitener for WLS model, multiplies by sqrt(self.weights)
+        """
 
-	X = N.asarray(X, N.float64)
+        X = N.asarray(X, N.float64)
 
         if X.ndim == 1:
             return X * N.sqrt(self.weights)

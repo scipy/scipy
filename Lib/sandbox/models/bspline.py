@@ -50,11 +50,11 @@ def _trace_symbanded(a,b, lower=0):
     """
 
     if lower:
-	t = _zero_triband(a * b, lower=1)
-	return t[0].sum() + 2 * t[1:].sum()
+        t = _zero_triband(a * b, lower=1)
+        return t[0].sum() + 2 * t[1:].sum()
     else:
-	t = _zero_triband(a * b, lower=0)
-	return t[-1].sum() + 2 * t[:-1].sum()
+        t = _zero_triband(a * b, lower=0)
+        return t[-1].sum() + 2 * t[:-1].sum()
 
 
 def _zero_triband(a, lower=0):
@@ -64,9 +64,9 @@ def _zero_triband(a, lower=0):
 
     nrow, ncol = a.shape
     if lower: 
-	for i in range(nrow): a[i,(ncol-i):] = 0.
+        for i in range(nrow): a[i,(ncol-i):] = 0.
     else:
-	for i in range(nrow): a[i,0:i] = 0.
+        for i in range(nrow): a[i,0:i] = 0.
     return a
 
 def _zerofunc(x):
@@ -137,17 +137,18 @@ class BSpline:
         upper = min(upper, self.tau.shape[0] - self.m)
         lower = max(0, lower)
         
-	d = N.asarray(d)
-	if d.shape == ():
-	    v = _bspline.evaluate(x, self.tau, self.m, int(d), lower, upper)
-	else:
-	    if d.shape[0] != 2:
-		raise ValueError, "if d is not an integer, expecting a jx2 array with first row indicating order \
-		of derivative, second row coefficient in front."
+        d = N.asarray(d)
+        if d.shape == ():
+            v = _bspline.evaluate(x, self.tau, self.m, int(d), lower, upper)
+        else:
+            if d.shape[0] != 2:
+                raise ValueError, "if d is not an integer, expecting a jx2 \
+                   array with first row indicating order \
+		   of derivative, second row coefficient in front."
 
-	    v = 0
-	    for i in range(d.shape[1]):
-		v += d[1,i] * _bspline.evaluate(x, self.tau, self.m, d[0,i], lower, upper)
+            v = 0
+            for i in range(d.shape[1]):
+                v += d[1,i] * _bspline.evaluate(x, self.tau, self.m, d[0,i], lower, upper)
 
         v.shape = (upper-lower,) + _shape
         if upper == self.tau.shape[0] - self.m:
@@ -159,23 +160,24 @@ class BSpline:
         Compute Gram inner product matrix.
         """
         
-	d = N.squeeze(d)
-	if N.asarray(d).shape == ():
-	    self.g = _bspline.gram(self.tau, self.m, int(d), int(d))
-	else:
-	    d = N.asarray(d)
-	    if d.shape[0] != 2:
-		raise ValueError, "if d is not an integer, expecting a jx2 array with first row indicating order \
-		of derivative, second row coefficient in front."
-	    if d.shape == (2,):
-		d.shape = (2,1)
-	    self.g = 0
-	    for i in range(d.shape[1]):
+        d = N.squeeze(d)
+        if N.asarray(d).shape == ():
+            self.g = _bspline.gram(self.tau, self.m, int(d), int(d))
+        else:
+            d = N.asarray(d)
+            if d.shape[0] != 2:
+                raise ValueError, "if d is not an integer, expecting a jx2 \
+                   array with first row indicating order \
+		   of derivative, second row coefficient in front."
+            if d.shape == (2,):
+                d.shape = (2,1)
+            self.g = 0
+            for i in range(d.shape[1]):
                 for j in range(d.shape[1]):
-		    self.g += d[1,i]* d[1,j] * _bspline.gram(self.tau, self.m, int(d[0,i]), int(d[0,j]))
-	self.g = self.g.T
-	self.d = d
-	return N.nan_to_num(self.g)
+                    self.g += d[1,i]* d[1,j] * _bspline.gram(self.tau, self.m, int(d[0,i]), int(d[0,j]))
+        self.g = self.g.T
+        self.d = d
+        return N.nan_to_num(self.g)
 
 class SmoothingSpline(BSpline):
 
@@ -185,10 +187,10 @@ class SmoothingSpline(BSpline):
     default_pen = 1.0e-03
 
     def smooth(self, y, x=None, weights=None):
-	if self.method == "target_df":
-	    self.fit_target_df(y, x=x, weights=weights, df=self.target_df)
-	elif self.method == "optimize_gcv":
-	    self.fit_optimize_gcv(y, x=x, weights=weights)
+        if self.method == "target_df":
+            self.fit_target_df(y, x=x, weights=weights, df=self.target_df)
+        elif self.method == "optimize_gcv":
+            self.fit_optimize_gcv(y, x=x, weights=weights)
 
     def fit(self, y, x=None, weights=None, pen=0.):
         banded = True
@@ -200,20 +202,21 @@ class SmoothingSpline(BSpline):
             banded = False
             
         if x.shape != y.shape:
-            raise ValueError, 'x and y shape do not agree, by default x are the Bspline\'s internal knots'
+            raise ValueError, 'x and y shape do not agree, by default x are \
+               the Bspline\'s internal knots'
         
-	bt = self.basis(x)
-	if pen >= self.penmax:
-	    pen = self.penmax
+        bt = self.basis(x)
+        if pen >= self.penmax:
+            pen = self.penmax
 
 
         if weights is not None:
-	    self.weights = weights 
-	else:
-	    self.weights = 1. 
+            self.weights = weights 
+        else:
+            self.weights = 1. 
 
-	_w = N.sqrt(self.weights)
-	bt *= _w
+        _w = N.sqrt(self.weights)
+        bt *= _w
 
         # throw out rows with zeros (this happens at boundary points!)
 
@@ -222,109 +225,110 @@ class SmoothingSpline(BSpline):
         bt = bt[:,mask]
         y = y[mask]
 
-	self.df_total = y.shape[0]
+        self.df_total = y.shape[0]
         bty = N.dot(bt, _w * y)
-	self.N = y.shape[0]
+        self.N = y.shape[0]
         if not banded:
             self.btb = N.dot(bt, bt.T)
-	    _g = band2array(self.g, lower=1, symmetric=True)
+            _g = band2array(self.g, lower=1, symmetric=True)
             self.coef, _, self.rank = L.lstsq(self.btb + pen*_g, bty)[0:3]
-	    self.rank = min(self.rank, self.btb.shape[0])
+            self.rank = min(self.rank, self.btb.shape[0])
         else:
             self.btb = N.zeros(self.g.shape, N.float64)
             nband, nbasis = self.g.shape
             for i in range(nbasis):
                 for k in range(min(nband, nbasis-i)):
-		    self.btb[k,i] = (bt[i] * bt[i+k]).sum()
+                    self.btb[k,i] = (bt[i] * bt[i+k]).sum()
 
-	    bty.shape = (1,bty.shape[0])
+                bty.shape = (1,bty.shape[0])
             self.chol, self.coef = solveh_banded(self.btb + 
 						 pen*self.g,
 						 bty, lower=1)
 
-	self.coef = N.squeeze(self.coef)
-	self.resid = y * self.weights - N.dot(self.coef, bt)	    
-	self.pen = pen
+        self.coef = N.squeeze(self.coef)
+        self.resid = y * self.weights - N.dot(self.coef, bt)	    
+        self.pen = pen
 
     def gcv(self):
-	"""
-	Generalized cross-validation score of current fit.
-	"""
+        """
+        Generalized cross-validation score of current fit.
+        """
 
-	norm_resid = (self.resid**2).sum()
-	return norm_resid / (self.df_total - self.trace())
+        norm_resid = (self.resid**2).sum()
+        return norm_resid / (self.df_total - self.trace())
 
     def df_resid(self):
-	"""
-	self.N - self.trace()
+        """
+        self.N - self.trace()
 
-	where self.N is the number of observations of last fit.
-	"""
+        where self.N is the number of observations of last fit.
+        """
 	
-	return self.N - self.trace()
+        return self.N - self.trace()
 
     def df_fit(self):
-	"""
-	= self.trace()
+        """
+        = self.trace()
 
-	How many degrees of freedom used in the fit? 
-	"""
-	return self.trace()
+        How many degrees of freedom used in the fit? 
+        """
+        return self.trace()
 
     def trace(self):
-	"""
-	Trace of the smoothing matrix S(pen)
-	"""
+        """
+        Trace of the smoothing matrix S(pen)
+        """
 
-	if self.pen > 0:
-	    _invband = _bspline.invband(self.chol.copy())
-	    tr = _trace_symbanded(_invband, self.btb, lower=1)
-	    return tr
-	else:
-	    return self.rank
+        if self.pen > 0:
+            _invband = _bspline.invband(self.chol.copy())
+            tr = _trace_symbanded(_invband, self.btb, lower=1)
+            return tr
+        else:
+            return self.rank
 
     def fit_target_df(self, y, x=None, df=None, weights=None, tol=1.0e-03):
-	"""
-	Fit smoothing spline with approximately df degrees of freedom
+        """
+        Fit smoothing spline with approximately df degrees of freedom
         used in the fit, i.e. so that self.trace() is approximately df.
 
-	In general, df must be greater than the dimension of the null space
-	of the Gram inner product. For cubic smoothing splines, this means
-	that df > 2.
+        In general, df must be greater than the dimension of the null space
+        of the Gram inner product. For cubic smoothing splines, this means
+        that df > 2.
 
         """
 
-	df = df or self.target_df
+        df = df or self.target_df
 
-	apen, bpen = 0, 1.0e-03
-	olddf = y.shape[0] - self.m
+        apen, bpen = 0, 1.0e-03
+        olddf = y.shape[0] - self.m
 
-	if hasattr(self, "pen"):
-	    self.fit(y, x=x, weights=weights, pen=self.pen)
-	    curdf = self.trace()
-	    if N.fabs(curdf - df) / df < tol: 
-		return
-	    if curdf > df:
-		apen, bpen = self.pen, 2 * self.pen
-	    else:
-		apen, bpen = 0., self.pen
+        if hasattr(self, "pen"):
+            self.fit(y, x=x, weights=weights, pen=self.pen)
+            curdf = self.trace()
+            if N.fabs(curdf - df) / df < tol:
+                return
+            if curdf > df:
+                apen, bpen = self.pen, 2 * self.pen
+            else:
+                apen, bpen = 0., self.pen
 
-	while True:
-	    curpen = 0.5 * (apen + bpen)
-	    self.fit(y, x=x, weights=weights, pen=curpen)
-	    curdf = self.trace()
-	    if curdf > df:
-		apen, bpen = curpen, 2 * curpen
-	    else:
-		apen, bpen = apen, curpen
-	    if apen >= self.penmax:
-		raise ValueError, "penalty too large, try setting penmax higher or decreasing df"
-	    if N.fabs(curdf - df) / df < tol: 
-		break
+        while True:
+            curpen = 0.5 * (apen + bpen)
+            self.fit(y, x=x, weights=weights, pen=curpen)
+            curdf = self.trace()
+            if curdf > df:
+                apen, bpen = curpen, 2 * curpen
+            else:
+                apen, bpen = apen, curpen
+            if apen >= self.penmax:
+                raise ValueError, "penalty too large, try setting penmax \
+                   higher or decreasing df"
+            if N.fabs(curdf - df) / df < tol: 
+                break
 
     def fit_optimize_gcv(self, y, x=None, weights=None, tol=1.0e-03,
 		     bracket=(0,1.0e-03)):
-	"""
+        """
 	Fit smoothing spline trying to optimize GCV.
 
 	Try to find a bracketing interval for scipy.optimize.golden
@@ -334,13 +338,13 @@ class SmoothingSpline(BSpline):
 	sometimes difficult to find a bracketing interval.
 
         """
-    
-	def _gcv(pen, y, x):
-	    self.fit(y, x=x, pen=N.exp(pen))
-	    a = self.gcv()
-	    return a
 
-	a = golden(_gcv, args=(y,x), brack=(-100,20), tol=tol)
+        def _gcv(pen, y, x):
+            self.fit(y, x=x, pen=N.exp(pen))
+            a = self.gcv()
+            return a
+
+        a = golden(_gcv, args=(y,x), brack=(-100,20), tol=tol)
 
 
 def band2array(a, lower=0, symmetric=False, hermitian=False):
@@ -365,7 +369,7 @@ def band2array(a, lower=0, symmetric=False, hermitian=False):
             _a += _b 
             if symmetric and j > 0: _a += _b.T
             elif hermitian and j > 0: _a += _b.conjugate().T
-	_a = _a.T
+        _a = _a.T
 
     return _a
 

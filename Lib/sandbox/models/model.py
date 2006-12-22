@@ -1,6 +1,6 @@
 import numpy as N
 from numpy.linalg import inv
-import scipy.optimize
+#from scipy import optimize
 
 from scipy.sandbox.models.contrast import ContrastResults
 from scipy.sandbox.models.utils import recipr
@@ -64,10 +64,10 @@ class likelihood_model(Model):
         raise NotImplementedError
 
     def newton(self, theta):
-	raise NotImplementedError
+        raise NotImplementedError
 #         def f(theta):
 #             return -self.logL(theta)
-#         self.results = scipy.optimize.fmin(f, theta)
+#         self.results = optimize.fmin(f, theta)
         
 class LikelihoodModelResults:
 

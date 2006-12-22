@@ -14,7 +14,7 @@ class Family:
 
     def weights(self, mu):
         
-	"""
+        """
         Weights for IRLS step.
         """
 

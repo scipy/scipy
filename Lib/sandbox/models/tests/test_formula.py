@@ -57,43 +57,43 @@ class test_formula(ScipyTestCase):
         self.formula = self.terms[0]
         for i in range(1, 10):
             self.formula += self.terms[i]
-	self.formula.namespace = self.namespace
+        self.formula.namespace = self.namespace
 
     def test_namespace(self):
-	space1 = {'X':N.arange(50), 'Y':N.arange(50)*2}
-	space2 = {'X':N.arange(20), 'Y':N.arange(20)*2}
-	X = formula.term('X')
-	Y = formula.term('Y')
+        space1 = {'X':N.arange(50), 'Y':N.arange(50)*2}
+        space2 = {'X':N.arange(20), 'Y':N.arange(20)*2}
+        X = formula.term('X')
+        Y = formula.term('Y')
 
-	X.namespace = space1 
-	assert_almost_equal(X(), N.arange(50))
+        X.namespace = space1 
+        assert_almost_equal(X(), N.arange(50))
 
-	Y.namespace = space2
-	assert_almost_equal(Y(), N.arange(20)*2)
+        Y.namespace = space2
+        assert_almost_equal(Y(), N.arange(20)*2)
 
-	f = X + Y
+        f = X + Y
 
-	f.namespace = space1
-	self.assertEqual(f().shape, (2,50))
-	assert_almost_equal(Y(), N.arange(50)*2)
-	assert_almost_equal(X(), N.arange(50))
+        f.namespace = space1
+        self.assertEqual(f().shape, (2,50))
+        assert_almost_equal(Y(), N.arange(50)*2)
+        assert_almost_equal(X(), N.arange(50))
 
-	f.namespace = space2
-	self.assertEqual(f().shape, (2,20))
-	assert_almost_equal(Y(), N.arange(20)*2)
-	assert_almost_equal(X(), N.arange(20))
+        f.namespace = space2
+        self.assertEqual(f().shape, (2,20))
+        assert_almost_equal(Y(), N.arange(20)*2)
+        assert_almost_equal(X(), N.arange(20))
 
 
     def test_termcolumns(self):
         t1 = formula.term("A")
         t2 = formula.term("B")
         f = t1 + t2 + t1 * t2
-	def other(val):
-	    return N.array([3.2*val,4.342*val**2, 5.234*val**3])
-	q = formula.quantitative(['other%d' % i for i in range(1,4)], termname='other', func=t1, transform=other)
-	f += q
-	q.namespace = f.namespace = self.formula.namespace
-	assert_almost_equal(q(), f()[f.termcolumns(q)])
+        def other(val):
+            return N.array([3.2*val,4.342*val**2, 5.234*val**3])
+        q = formula.quantitative(['other%d' % i for i in range(1,4)], termname='other', func=t1, transform=other)
+        f += q
+        q.namespace = f.namespace = self.formula.namespace
+        assert_almost_equal(q(), f()[f.termcolumns(q)])
 
 
     def test_str(self):
@@ -111,27 +111,27 @@ class test_formula(ScipyTestCase):
         prod = self.terms[0] * self.terms[2]
         self.formula += prod
         x = self.formula.design()
-	p = self.formula['A*C']
+        p = self.formula['A*C']
         col = self.formula.termcolumns(prod, dict=False)
         assert_almost_equal(N.squeeze(x[:,col]), self.X[:,0] * self.X[:,2])
         assert_almost_equal(N.squeeze(p()), self.X[:,0] * self.X[:,2])
-	
+        
     def test_intercept1(self):
         prod = self.terms[0] * self.terms[2]
         self.formula += formula.I
-	icol = self.formula.names().index('intercept')
-	assert_almost_equal(self.formula()[icol], N.ones((40,)))
+        icol = self.formula.names().index('intercept')
+        assert_almost_equal(self.formula()[icol], N.ones((40,)))
 
     def test_intercept2(self):
         prod = self.terms[0] * self.terms[2]
         self.formula += formula.I
-	icol = self.formula.names().index('intercept')
-	assert_almost_equal(self.formula()[icol], N.ones((40,)))
+        icol = self.formula.names().index('intercept')
+        assert_almost_equal(self.formula()[icol], N.ones((40,)))
 
     def test_intercept3(self):
         prod = self.terms[0] * formula.I
-	prod.namespace = self.formula.namespace
-	assert_almost_equal(N.squeeze(prod()), self.terms[0]())
+        prod.namespace = self.formula.namespace
+        assert_almost_equal(N.squeeze(prod()), self.terms[0]())
 
 
 
@@ -163,53 +163,53 @@ class test_formula(ScipyTestCase):
         resid = N.identity(40) - P
         self.namespace['noise'] = N.transpose(N.dot(resid, R.standard_normal((40,5))))
         terms = dummy + self.terms[2]
-	terms.namespace = self.formula.namespace
+        terms.namespace = self.formula.namespace
         c = contrast.Contrast(terms, self.formula)
         c.getmatrix()
         self.assertEquals(c.matrix.shape, (10,))
 
     def test_power(self):
     
-	t = self.terms[2]
-	t2 = t**2
-	t.namespace = t2.namespace = self.formula.namespace
-	assert_almost_equal(t()**2, t2())
+        t = self.terms[2]
+        t2 = t**2
+        t.namespace = t2.namespace = self.formula.namespace
+        assert_almost_equal(t()**2, t2())
 
     def test_quantitative(self):
-	t = self.terms[2]
-	sint = formula.quantitative('t', func=t, transform=N.sin)
-	t.namespace = sint.namespace = self.formula.namespace
-	assert_almost_equal(N.sin(t()), sint())
+        t = self.terms[2]
+        sint = formula.quantitative('t', func=t, transform=N.sin)
+        t.namespace = sint.namespace = self.formula.namespace
+        assert_almost_equal(N.sin(t()), sint())
 
     def test_factor1(self):
-	f = ['a','b','c']*10
-	fac = formula.factor('ff', set(f))
-	fac.namespace = {'ff':f}
-	self.assertEquals(list(fac.values()), f)
+        f = ['a','b','c']*10
+        fac = formula.factor('ff', set(f))
+        fac.namespace = {'ff':f}
+        self.assertEquals(list(fac.values()), f)
 
     def test_factor2(self):
-	f = ['a','b','c']*10
-	fac = formula.factor('ff', set(f))
-	fac.namespace = {'ff':f}
-	self.assertEquals(fac().shape, (3,30))
+        f = ['a','b','c']*10
+        fac = formula.factor('ff', set(f))
+        fac.namespace = {'ff':f}
+        self.assertEquals(fac().shape, (3,30))
 
     def test_factor3(self):
-	f = ['a','b','c']*10
-	fac = formula.factor('ff', set(f))
-	fac.namespace = {'ff':f}
-	m = fac.main_effect(reference=1)
-	self.assertEquals(m().shape, (2,30))
+        f = ['a','b','c']*10
+        fac = formula.factor('ff', set(f))
+        fac.namespace = {'ff':f}
+        m = fac.main_effect(reference=1)
+        self.assertEquals(m().shape, (2,30))
 
     def test_factor4(self):
-	f = ['a','b','c']*10
-	fac = formula.factor('ff', set(f))
-	fac.namespace = {'ff':f}
-	m = fac.main_effect(reference=2)
-	r = N.array([N.identity(3)]*10)
-	r.shape = (30,3)
-	r = r.T
-	_m = N.array([r[0]-r[2],r[1]-r[2]])
-	assert_almost_equal(_m, m())
+        f = ['a','b','c']*10
+        fac = formula.factor('ff', set(f))
+        fac.namespace = {'ff':f}
+        m = fac.main_effect(reference=2)
+        r = N.array([N.identity(3)]*10)
+        r.shape = (30,3)
+        r = r.T
+        _m = N.array([r[0]-r[2],r[1]-r[2]])
+        assert_almost_equal(_m, m())
 
     def test_contrast4(self):
     

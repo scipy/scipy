@@ -29,12 +29,12 @@ class model(wls_model):
         return self.family.deviance(Y, results.mu) / scale
 
     def next(self):
-	results = self.results; Y = self.Y
+        results = self.results; Y = self.Y
         self.weights = self.family.weights(results.mu)
         self.initialize(self.design)
         Z = results.predict + self.family.link.deriv(results.mu) * (Y - results.mu)
         newresults = wls_model.fit(self, Z)
-	newresults.Y = Y
+        newresults.Y = Y
         newresults.mu = self.family.link.inverse(newresults.predict)
         self.iter += 1
         return newresults

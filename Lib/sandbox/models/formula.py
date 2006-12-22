@@ -54,9 +54,9 @@ class term(object):
     # Namespace in which self.name will be looked up in, if needed
 
     def _get_namespace(self): 
-	if isinstance(self.__namespace, N.ndarray): 
-	    return self.__namespace 
-	else: return self.__namespace or default_namespace
+        if isinstance(self.__namespace, N.ndarray): 
+            return self.__namespace 
+        else: return self.__namespace or default_namespace
 
     def _set_namespace(self, value):  self.__namespace = value
     def _del_namespace(self): del self.__namespace
@@ -105,13 +105,13 @@ class term(object):
     def __call__(self, *args, **kw):
         """
         Return the columns associated to self in a design matrix.
-	If the term has no 'func' attribute, it returns
+        If the term has no 'func' attribute, it returns
         
-	self.namespace[self.termname]
+        self.namespace[self.termname]
 
-	else, it returns
-	
-	self.func(*args, **kw)
+        else, it returns
+        
+        self.func(*args, **kw)
 
         """
         
@@ -156,8 +156,8 @@ class factor(term):
 
     def get_columns(self, *args, **kw):
         """
-	Calling function for factor instance.
-	"""
+        Calling function for factor instance.
+        """
 
         v = self.namespace[self._name]
         while True:
@@ -181,9 +181,9 @@ class factor(term):
 
     def values(self, *args, **kw):
         """
-	Return the keys of the factor, rather than the columns of the design 
-	matrix.
-	"""
+        Return the keys of the factor, rather than the columns of the design 
+        matrix.
+        """
 
         del(self.func)
         val = self(*args, **kw)
@@ -204,7 +204,7 @@ class factor(term):
 
         When adding \'intercept\' to a factor, this just returns 
 
-	formula(self, namespace=self.namespace)
+        formula(self, namespace=self.namespace)
 
         """
         
@@ -237,8 +237,8 @@ class factor(term):
         __names = self.names()
         _names = ['%s-%s' % (__names[keep[i]], __names[reference]) for i in range(len(keep))]
         value = quantitative(_names, func=self, 
-		     termname='%s:maineffect' % self.termname,
-		     transform=maineffect_func)
+                     termname='%s:maineffect' % self.termname,
+                     transform=maineffect_func)
         value.namespace = self.namespace
         return value
 
@@ -269,9 +269,9 @@ class quantitative(term):
 
     def __call__(self, *args, **kw):
         """
-	A quantitative is just like term, except there is an additional
-	transformation: self.transform.
-	"""
+        A quantitative is just like term, except there is an additional
+        transformation: self.transform.
+        """
         return self.transform(term.__call__(self, *args, **kw))
 
 class formula(object):
@@ -287,9 +287,9 @@ class formula(object):
     """
     
     def _get_namespace(self): 
-	if isinstance(self.__namespace, N.ndarray): 
-	    return self.__namespace 
-	else: return self.__namespace or default_namespace
+        if isinstance(self.__namespace, N.ndarray): 
+            return self.__namespace 
+        else: return self.__namespace or default_namespace
 
     def _set_namespace(self, value):  self.__namespace = value
     def _del_namespace(self): del self.__namespace
@@ -396,11 +396,11 @@ class formula(object):
         """
 
         if not isinstance(query_term, formula):
-	    if type(query_term) == type("name"):
-		try: query = self[query_term]
-		except: return False
-	    elif isinstance(query_term, term):
-		return query_term.termname in self.termnames()
+            if type(query_term) == type("name"):
+                try: query = self[query_term]
+                except: return False
+            elif isinstance(query_term, term):
+                return query_term.termname in self.termnames()
         elif len(query_term.terms) == 1:
             query_term = query_term.terms[0]
             return query_term.termname in self.termnames()
@@ -525,7 +525,7 @@ class formula(object):
                     sumterms.namespace = self.namespace
 
                     _term = quantitative(names, func=sumterms, termname=termname,
-					 transform=product_func)
+                                         transform=product_func)
                     _term.namespace = self.namespace
 
 
