@@ -77,19 +77,21 @@ class Date:
         return tmpStr.replace("XXXX", str(self.quarter()))
             
     def __str__(self):
+        return self.strfmt(self.default_fmtstr())
+    
+    def default_fmtstr(self):
         if self.freq in ("B", "D"):
-            return self.strfmt("%d-%b-%y")
+            return "%d-%b-%y"
         elif self.freq == "S":
-            return self.strfmt("%d-%b-%Y %H:%M:%S")
+            return "%d-%b-%Y %H:%M:%S"
         elif self.freq == "M":
-            return self.strfmt("%b-%Y")
+            return "%b-%Y"
         elif self.freq == "Q":
-            return self.strfmt("%Yq%q")
+            return "%Yq%q"
         elif self.freq == "A":
-            return self.strfmt("%Y")
+            return "%Y"
         else:
-            return self.strfmt("%d-%b-%y")
-
+            return "%d-%b-%y"
         
     def __add__(self, other):
         if isinstance(other, Date):
