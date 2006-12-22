@@ -1,9 +1,12 @@
-import unittest, csv, os
+import csv
+import os
+import unittest
+
 import numpy as N
 import numpy.random as R
 import numpy.linalg as L
-import scipy, string
 from numpy.testing import *
+import scipy
 
 from scipy.sandbox.models import utils, formula, contrast
 
@@ -50,7 +53,7 @@ class test_formula(ScipyTestCase):
         self.namespace = {}
         self.terms = []
         for i in range(10):
-            name = '%s' % string.uppercase[i]
+            name = '%s' % i.upper()
             self.namespace[name] = self.X[:,i]
             self.terms.append(formula.term(name))
 
