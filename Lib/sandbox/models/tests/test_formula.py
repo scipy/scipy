@@ -6,7 +6,7 @@ import unittest
 import numpy as N
 import numpy.random as R
 import numpy.linalg as L
-from numpy.testing import *
+from numpy.testing import assert_almost_equal, ScipyTestCase
 import scipy
 
 from scipy.sandbox.models import utils, formula, contrast
