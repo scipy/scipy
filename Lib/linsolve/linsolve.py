@@ -86,6 +86,10 @@ def spsolve(A, b, permc_spec=2):
 
 def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
          drop_tol=0.0, relax=1, panel_size=10):
+    """
+    A linear solver, for a square matrix A, using LU decomposition where
+    L is a lower triangular matrix and U is an upper triagular matrix.
+    """
     M, N = A.shape
     if (M != N):
         raise ValueError, "can only factor square matrices"
