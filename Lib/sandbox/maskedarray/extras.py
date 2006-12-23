@@ -14,8 +14,10 @@ __date__     = '$Date$'
 __all__ = ['apply_along_axis', 'atleast_1d', 'atleast_2d', 'atleast_3d',
                'average',
            'vstack', 'hstack', 'dstack', 'row_stack', 'column_stack',
-           'compress2d', 'count_masked', 
-           'mask_rowcols','masked_all', 'masked_all_like', 'mr_',
+           'compress_rowcols', 'compress_rows', 'compress_cols', 'count_masked', 
+           'dot',
+           'mask_rowcols', 'mask_rows', 'mask_cols', 'masked_all', 
+               'masked_all_like', 'mr_',
            'notmasked_edges', 'notmasked_contiguous',
            'stdu', 'varu',
            ]
@@ -229,7 +231,6 @@ def apply_along_axis(func1d,axis,arr,*args):
             outarr[tuple(i.tolist())] = res
             dtypes.append(asarray(res).dtype)
             k += 1
-    print dtypes
     if not hasattr(arr, '_mask'):
         return numeric.asarray(outarr, dtype=max(dtypes))
     else:
@@ -349,13 +350,12 @@ def average (a, axis=None, weights=None, returned = 0):
             if isinstance(d, ndarray) and (not d.shape == result.shape):
                 d = ones(result.shape, dtype=float_) * d
     if returned:
-        print type(result)
         return result, d
     else:
         return result
     
 #..............................................................................
-def compress2d(x, axis=None):
+def compress_rowcols(x, axis=None):
     """Suppresses the rows and/or columns of a 2D array that contains masked values.
     The suppression behavior is selected with the `axis`parameter.
         - If axis is None, rows and columns are suppressed. 
@@ -369,7 +369,7 @@ def compress2d(x, axis=None):
     m = getmask(x)
     # Nothing is masked: return x
     if m is nomask or not m.any():
-        return nxasarray(x)
+        return x._data
     # All is masked: return empty
     if m.all():
         return nxarray([])
@@ -382,11 +382,19 @@ def compress2d(x, axis=None):
     if axis in [None, 1, -1]:
         for j in function_base.unique(masked[1]):
             idxc.remove(j)
-    return nxasarray(x[idxr][:,idxc])    
+    return x._data[idxr][:,idxc]
+
+def compress_rows(a):
+    """Suppresses whole rows of a 2D array that contain masked values."""
+    return compress_rowcols(a,0)
+
+def compress_cols(a):
+    """Suppresses whole columnss of a 2D array that contain masked values."""
+    return compress_rowcols(a,1)
 
 def mask_rowcols(a, axis=None):
-    """Suppresses the rows and/or columns of a 2D array that contains masked values.
-    The suppression behavior is selected with the `axis`parameter.
+    """Masks whole rows and/or columns of a 2D array that contain masked values.
+    The masking behavior is selected with the `axis`parameter.
         - If axis is None, rows and columns are suppressed. 
         - If axis is 0, only rows are suppressed. 
         - If axis is 1 or -1, only columns are suppressed.
@@ -405,6 +413,36 @@ def mask_rowcols(a, axis=None):
     if axis in [None, 1, -1]:
         a[:,function_base.unique(maskedval[1])] = masked
     return a
+
+def mask_rows(a, axis=None):
+    """Masks whole rows of a 2D array that contain masked values."""
+    return mask_rowcols(a, 0)
+
+def mask_cols(a, axis=None):
+    """Masks whole columns of a 2D array that contain masked values."""
+    return mask_rowcols(a, 1)
+
+        
+def dot(a,b):
+    """Returns the dot product of two 2D masked arrays a and b.
+    Like the generic numpy equivalent the product sum is over
+    the last dimension of a and the second-to-last dimension of b.
+    
+    Masked values are propagated: if a masked value appears in a row or column,
+    the whole row or column is considered masked.
+    
+    NB: The first argument is not conjugated.
+    """
+    #TODO: Works only with 2D arrays. There should be a way to get it to run with higher dimension
+    a = mask_rows(a)
+    b = mask_cols(b)
+    #
+    d = numpy.dot(a.filled(0), b.filled(0))
+    #
+    am = (~getmaskarray(a))
+    bm = (~getmaskarray(b))
+    m = ~numpy.dot(am,bm)
+    return masked_array(d, mask=m)
 
 
 #####--------------------------------------------------------------------------

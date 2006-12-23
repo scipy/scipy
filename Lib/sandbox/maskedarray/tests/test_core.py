@@ -950,6 +950,63 @@ class test_array_methods(NumpyTestCase):
         #We default to true
         mx = masked_array(x, mask=[0,1,0])
         assert_equal(mx.mask, [1,1,0])
+    
+    def check_hardmask(self):        
+        "Test hard_mask"
+        d = arange(5)
+        n = [0,0,0,1,1]
+        m = make_mask(n)
+        xh = array(d, mask = m, hard_mask=True)
+        # We need to copy, to avoid updating d in xh!
+        xs = array(d, mask = m, hard_mask=False, copy=True)
+        xh[[1,4]] = [10,40]
+        xs[[1,4]] = [10,40]
+        assert_equal(xh._data, [0,10,2,3,4])
+        assert_equal(xs._data, [0,10,2,3,40])
+        assert(xh.mask is m)
+        assert_equal(xs.mask, [0,0,0,1,0])
+        assert(xh._hardmask)
+        assert(not xs._hardmask)
+        xh[1:4] = [10,20,30]
+        xs[1:4] = [10,20,30]
+        assert_equal(xh._data, [0,10,20,3,4])
+        assert_equal(xs._data, [0,10,20,30,40])
+        assert(xh.mask is m)
+        assert_equal(xs.mask, nomask)
+        xh[0] = maskedarray.core.masked
+        xs[0] = maskedarray.core.masked
+        assert_equal(xh.mask, [1,0,0,1,1])
+        assert_equal(xs.mask, [1,0,0,0,0])
+        xh[:] = 1
+        xs[:] = 1
+        assert_equal(xh._data, [0,1,1,3,4])
+        assert_equal(xs._data, [1,1,1,1,1])
+        assert_equal(xh.mask, [1,0,0,1,1])
+        assert_equal(xs.mask, nomask)
+        # Switch to soft mask
+        xh.soften_mask()
+        xh[:] = arange(5)
+        assert_equal(xh._data, [0,1,2,3,4])
+        assert_equal(xh.mask, nomask)
+        # Switch back to hard mask
+        xh.harden_mask()
+        xh[xh<3] = maskedarray.core.masked
+        assert_equal(xh._data, [0,1,2,3,4])
+        assert_equal(xh._mask, [1,1,1,0,0])
+        xh[filled(xh>1,False)] = 5
+        assert_equal(xh._data, [0,1,2,5,5])
+        assert_equal(xh._mask, [1,1,1,0,0])
+        #
+        xh = array([[1,2],[3,4]], mask = [[1,0],[0,0]], hard_mask=True)
+        xh[0] = 0
+        assert_equal(xh._data, [[1,0],[3,4]])
+        assert_equal(xh._mask, [[1,0],[0,0]])
+        xh[-1,-1] = 5
+        assert_equal(xh._data, [[1,0],[3,5]])
+        assert_equal(xh._mask, [[1,0],[0,0]])
+        xh[filled(xh<5,False)] = 2
+        assert_equal(xh._data, [[1,2],[2,5]])
+        assert_equal(xh._mask, [[1,0],[0,0]])
 #..............................................................................
 
 #..............................................................................

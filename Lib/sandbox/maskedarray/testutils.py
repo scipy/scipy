@@ -17,7 +17,7 @@ from numpy.testing import NumpyTest, NumpyTestCase
 from numpy.testing.utils import build_err_msg, rand
 
 import core
-reload(core)
+#reload(core)
 from core import mask_or, getmask, getmaskarray, masked_array, nomask
 from core import filled, equal, less
 

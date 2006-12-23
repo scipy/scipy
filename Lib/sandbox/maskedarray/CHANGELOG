@@ -1,3 +1,13 @@
+#2006-12-22 : Core
+#           : - Optimized(?) default_/maximum_/minimum_fill_value
+#           : - Force __new__ to not return a MaskedArray, in order to ...
+#           :   ... optimize __array_finalize__
+#           : - Add the hard_mask flag to __new__ (*[False]*)
+#2006-12-19 : Core
+#			: - Fixed a problem on _set_mask which prevented to set a mask to nomask
+#           : Extras
+#           : - Renamed compress2d to compress_rowcols
+#           : - Added dot
 #2006-12-18 : Extras
 #           : - Added compress2d and mask_rowcols
 #2006-12-13 : - moved 'average' to 'extras'

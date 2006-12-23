@@ -173,26 +173,26 @@ class test_notmasked(NumpyTestCase):
         assert(tmp[1] is None)
         assert_equal(tmp[2][-1], (6, (0,5)))
         
-class test_compress2d(NumpyTestCase):
-    "Tests compress2d and mask_row_columns."
+class test_2dfunctions(NumpyTestCase):
+    "Tests 2D functions"
     def check_compress2d(self):
         "Tests compress2d"
         x = array(N.arange(9).reshape(3,3), mask=[[1,0,0],[0,0,0],[0,0,0]])
-        assert_equal(compress2d(x), [[4,5],[7,8]] )
-        assert_equal(compress2d(x,0), [[3,4,5],[6,7,8]] )
-        assert_equal(compress2d(x,1), [[1,2],[4,5],[7,8]] )
+        assert_equal(compress_rowcols(x), [[4,5],[7,8]] )
+        assert_equal(compress_rowcols(x,0), [[3,4,5],[6,7,8]] )
+        assert_equal(compress_rowcols(x,1), [[1,2],[4,5],[7,8]] )
         x = array(x._data, mask=[[0,0,0],[0,1,0],[0,0,0]])
-        assert_equal(compress2d(x), [[0,2],[6,8]] )
-        assert_equal(compress2d(x,0), [[0,1,2],[6,7,8]] )
-        assert_equal(compress2d(x,1), [[0,2],[3,5],[6,8]] )
+        assert_equal(compress_rowcols(x), [[0,2],[6,8]] )
+        assert_equal(compress_rowcols(x,0), [[0,1,2],[6,7,8]] )
+        assert_equal(compress_rowcols(x,1), [[0,2],[3,5],[6,8]] )
         x = array(x._data, mask=[[1,0,0],[0,1,0],[0,0,0]])
-        assert_equal(compress2d(x), [[8]] )
-        assert_equal(compress2d(x,0), [[6,7,8]] )
-        assert_equal(compress2d(x,1,), [[2],[5],[8]] )
+        assert_equal(compress_rowcols(x), [[8]] )
+        assert_equal(compress_rowcols(x,0), [[6,7,8]] )
+        assert_equal(compress_rowcols(x,1,), [[2],[5],[8]] )
         x = array(x._data, mask=[[1,0,0],[0,1,0],[0,0,1]])
-        assert_equal(compress2d(x).size, 0 )
-        assert_equal(compress2d(x,0).size, 0 )
-        assert_equal(compress2d(x,1).size, 0 )
+        assert_equal(compress_rowcols(x).size, 0 )
+        assert_equal(compress_rowcols(x,0).size, 0 )
+        assert_equal(compress_rowcols(x,1).size, 0 )
     #
     def check_mask_rowcols(self):
         "Tests mask_rowcols."
@@ -212,6 +212,55 @@ class test_compress2d(NumpyTestCase):
         assert(mask_rowcols(x).all())
         assert(mask_rowcols(x,0).all())
         assert(mask_rowcols(x,1).all())
+    #
+    def test_dot(self):        
+        "Tests dot product"
+        n = N.arange(1,7)
+        #
+        m = [1,0,0,0,0,0]
+        a = masked_array(n, mask=m).reshape(2,3)
+        b = masked_array(n, mask=m).reshape(3,2)
+        c = dot(a,b)
+        assert_equal(c.mask, [[1,1],[1,0]])
+        c = dot(b,a)
+        assert_equal(c.mask, [[1,1,1],[1,0,0],[1,0,0]])
+        #        
+        m = [0,0,0,0,0,1]
+        a = masked_array(n, mask=m).reshape(2,3)
+        b = masked_array(n, mask=m).reshape(3,2)
+        c = dot(a,b)
+        assert_equal(c.mask,[[0,1],[1,1]])        
+        c = dot(b,a)
+        assert_equal(c.mask, [[0,0,1],[0,0,1],[1,1,1]])
+        #        
+        m = [0,0,0,0,0,0]
+        a = masked_array(n, mask=m).reshape(2,3)
+        b = masked_array(n, mask=m).reshape(3,2)
+        c = dot(a,b)
+        assert_equal(c.mask,nomask)
+        c = dot(b,a)
+        assert_equal(c.mask,nomask)
+        #        
+        a = masked_array(n, mask=[1,0,0,0,0,0]).reshape(2,3)
+        b = masked_array(n, mask=[0,0,0,0,0,0]).reshape(3,2)
+        c = dot(a,b)
+        assert_equal(c.mask,[[1,1],[0,0]])
+        c = dot(b,a)
+        assert_equal(c.mask,[[1,0,0],[1,0,0],[1,0,0]])
+        #        
+        a = masked_array(n, mask=[0,0,0,0,0,1]).reshape(2,3)
+        b = masked_array(n, mask=[0,0,0,0,0,0]).reshape(3,2)
+        c = dot(a,b)
+        assert_equal(c.mask,[[0,0],[1,1]])
+        c = dot(b,a)
+        assert_equal(c.mask,[[0,0,1],[0,0,1],[0,0,1]])
+        #        
+        a = masked_array(n, mask=[0,0,0,0,0,1]).reshape(2,3)
+        b = masked_array(n, mask=[0,0,1,0,0,0]).reshape(3,2)
+        c = dot(a,b)
+        assert_equal(c.mask,[[1,0],[1,1]])
+        c = dot(b,a)
+        assert_equal(c.mask,[[0,0,1],[1,1,1],[0,0,1]])
 
 ###############################################################################
 #------------------------------------------------------------------------------
