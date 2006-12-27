@@ -1535,7 +1535,8 @@ def _linesearch_powell(func, p, xi, tol=1e-3):
 
 
 def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
-                maxfun=None, full_output=0, disp=1, retall=0, callback=None):
+                maxfun=None, full_output=0, disp=1, retall=0, callback=None,
+                direc=None):
     """Minimize a function using modified Powell's method.
 
     Description:
@@ -1551,6 +1552,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
       callback -- an optional user-supplied function to call after each
                   iteration.  It is called as callback(xk), where xk is the
                   current parameter vector.
+      direc -- initial direction set
 
     Outputs: (xopt, {fopt, xi, direc, iter, funcalls, warnflag}, {allvecs})
 
@@ -1610,7 +1612,12 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     if maxfun is None:
         maxfun = N * 1000
 
-    direc = eye(N,dtype=float)
+
+    if direc is None:
+        direc = eye(N, dtype=float)
+    else:
+        direc = asarray(direc, dtype=float)
+
     fval = squeeze(func(x))
     x1 = x.copy()
     iter = 0;
