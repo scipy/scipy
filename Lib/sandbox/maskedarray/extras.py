@@ -58,15 +58,15 @@ def count_masked(arr, axis=None):
 def masked_all(shape, dtype=float_):
     """Returns an empty masked array of the given shape and dtype,
     where all the data are masked."""
-    a = empty(shape, dtype)
-    a[:] = masked
+    a = masked_array(numeric.empty(shape, dtype),
+                     mask=numeric.ones(shape, bool_))
     return a
 
 def masked_all_like(arr):
     """Returns an empty masked array of the same shape and dtype as the array `a`,
     where all the data are masked."""
-    a = empty_like(arr)
-    a[:] = masked
+    a = masked_array(numeric.empty_like(arr),
+                     mask=numeric.ones(shape, bool_))
     return a
 
 #####--------------------------------------------------------------------------

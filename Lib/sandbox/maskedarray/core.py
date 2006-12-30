@@ -73,8 +73,8 @@ from numpy.lib.shape_base import expand_dims as n_expand_dims
 import warnings
 
 import logging
-logging.basicConfig(level=logging.WARNING,
-                    format='%(levelname)s %(message)s',)
+logging.basicConfig(level=logging.CRITICAL,
+                    format='%(name)-15s %(levelname)s %(message)s',)
 
 
 MaskType = bool_
@@ -814,18 +814,18 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
            (hasattr(data,"_mask") and hasattr(data,"_data")) :
             if keep_mask:
                 if mask is nomask:
-                    cls.__defaultmask = data._mask
+                    cls._defaultmask = data._mask
                 else:
-                    cls.__defaultmask = mask_or(data._mask, mask, 
+                    cls._defaultmask = mask_or(data._mask, mask, 
                                                 copy=copy, small_mask=small_mask)
             else:
-                cls.__defaultmask = make_mask(mask, copy=copy, small_mask=small_mask)
+                cls._defaultmask = make_mask(mask, copy=copy, small_mask=small_mask)
             # Update fille_value
             if fill_value is None:
                 cls._fill_value = data._fill_value
             else:
                 cls._fill_value = fill_value
-            cls.__defaulthardmask = hard_mask
+            cls._defaulthardmask = hard_mask
             _data = data._data
             if dtype is not None and _data.dtype != numeric.dtype(dtype):
                 return _data.astype(dtype).view(cls)
@@ -853,8 +853,7 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
 #                    cls.__defaultmask = getmask(_data)
 #                    return _data.view(cls)
         # Define mask .................
-        if not is_mask(mask):
-            mask = make_mask(mask, small_mask=small_mask)
+        mask = make_mask(mask, small_mask=small_mask)
         #....Check shapes compatibility
         if mask is not nomask:
             (nd, nm) = (_data.size, mask.size)
@@ -873,8 +872,8 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
 #                mask = _data.shape
         #....
         cls._fill_value = fill_value
-        cls.__defaulthardmask = hard_mask
-        cls.__defaultmask = mask
+        cls._defaulthardmask = hard_mask
+        cls._defaultmask = mask
 #        logging.debug("__new__ returned %s as %s" % (type(_data), cls))
         return numeric.asanyarray(_data).view(cls)
     #..................................
@@ -923,8 +922,8 @@ Wraps the numpy array and sets the mask according to context.
             self._fill_value = obj._fill_value
         else:
             self._data = obj
-            self._mask = self.__defaultmask
-            self._hardmask = self.__defaulthardmask
+            self._mask = self._defaultmask
+            self._hardmask = self._defaulthardmask
             self.fill_value = self._fill_value
 #        #
 #        logging.debug("__finalize__ returned %s" % type(self))       
@@ -1002,21 +1001,12 @@ Sets item described by index. If value is masked, masks those locations.
             valmask = getmask(value)
             if valmask is nomask:
                 d[index] = valdata
-            else:
+            elif valmask.size > 1:
                 dindx = d[index]
                 numeric.putmask(dindx, ~valmask, valdata)
                 d[index] = dindx
                 numeric.putmask(mindx, valmask, True)
                 m[index] = mindx
-#        else:
-#            mindx = m[index]
-#            value = masked_array(value, mask=mindx, keep_mask=True)
-#            valmask = getmask(value)
-#            if valmask is nomask:
-#                d[vindx] = filled(value)
-#            else:
-#                d[vindx[~valmask]] = filled(value[~valmask])
-#                m[vindx[valmask]] = True
         #.....    
         if not m.any():
             self._mask = nomask
@@ -1048,33 +1038,8 @@ If `value` is masked, masks those locations."""
             if m is nomask:
                 m = make_mask_none(d.shape)
             m[i:j] = True
+            self._mask = m
             return
-        #....
-#        valmask = getmask(value)
-#        valdata = filled(value).astype(d.dtype)
-#        if valmask is nomask:
-#            if m is nomask:
-#                d[i:j] = valdata
-#            elif self._hardmask:
-#                d[(~m)[i:j]] = valdata
-#            elif not self._hardmask:
-#                d[i:j] = valdata
-#                m[i:j] = False
-#                if not m.any():
-#                    self._mask = nomask
-#            return
-#        else:
-#            if m is nomask:
-#                m = make_mask_none(d.shape)
-#                m[i:j] = valmask
-#            elif self._hardmask:
-#                m[i:j] = mask_or(m[i:j], valmask)
-#            else:
-#                m[i:j] = valmask
-#            d[(~m)[i:j]] = valdata
-#            if not m.any():
-#                self._mask = nomask
-#            return
         #....   
         if m is nomask:
             valmask = getmask(value)
@@ -1094,10 +1059,10 @@ If `value` is masked, masks those locations."""
         else:
             mindx = m[i:j]
             value = masked_array(value, mask=mindx, keep_mask=True)
-            valmask = getmask(value)
-            if valmask is None:
+            valmask = value._mask
+            if valmask is nomask:
                 d[i:j][~mindx] = filled(value)
-            else:
+            elif valmask.size > 1:
                 d[i:j][~mindx] = value[~valmask]
                 m[i:j][valmask] = True
         #.....    
@@ -1286,8 +1251,13 @@ the negative of the inital `_data`."""
 Subclassing is preserved."""
         if tc == self._data.dtype:
             return self
-        d = self._data.astype(tc) 
-        return self.__class__(d, mask=self._mask, dtype=tc)
+        try:
+            return self.__class__(self, mask=self._mask, dtype=tc, copy=True)
+        except:
+            d = self._data.astype(tc) 
+            return self.__class__(d, mask=self._mask, dtype=tc)
+#        
+#        
     #............................................
     def harden_mask(self):
         "Forces the mask to hard"
@@ -1395,14 +1365,12 @@ If `fill_value` is None, uses self.fill_value.
             value = fill_value
         #
         if self is masked_singleton:
-            result = numeric.array(value)
+            result = numeric.asanyarray(value)
         else:
+            result = d.copy()
             try:
-#                result = numeric.array(d, dtype=d.dtype, copy=True)
-                result = d.copy()
                 result[m] = value
             except (TypeError, AttributeError):
-                #ok, can't put that value in here
                 value = numeric.array(value, dtype=object)
                 d = d.astype(object)
                 result = fromnumeric.choose(m, (d, value))
@@ -2157,6 +2125,7 @@ If `onmask` is False, the new mask is just a reference to the initial mask.
                      dtype=t, fill_value=f) 
 #......................................
 MaskedArray.conj = MaskedArray.conjugate = _arraymethod('conjugate') 
+MaskedArray.copy = MaskedArray.conjugate = _arraymethod('copy') 
 MaskedArray.diagonal = _arraymethod('diagonal')
 MaskedArray.take = _arraymethod('take')
 MaskedArray.ravel = _arraymethod('ravel')
