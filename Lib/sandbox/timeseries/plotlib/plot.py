@@ -71,7 +71,7 @@ class DateAxis:
                     if year_starts[x]:
                         major_labels[x] += '\n\n'+(start_date + x).strfmt('%Y')
     
-            elif numPers <= 11 * 12:
+            elif numPers <= 11 * 4:
 
                 minor_ticks = list(range(numPers))
 
