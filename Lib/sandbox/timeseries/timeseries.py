@@ -45,9 +45,15 @@ class ts_binary_operation:
             ts_compatible(a, b)
             return TimeSeries(self.f(a, b, *args, **kwargs), freq=a.freq, observed=a.observed, start_date=a.start_date())
         elif isinstance(a, TimeSeries):
-            return TimeSeries(self.f(a, b, *args, **kwargs), freq=a.freq, observed=a.observed, start_date=a.start_date())
+            if corelib.isDateType(a.tstype):
+                return TimeSeries(self.f(a, b, *args, **kwargs), dtype=a.tstype, freq=a.freq, observed=a.observed, start_date=a.start_date())
+            else:
+                return TimeSeries(self.f(a, b, *args, **kwargs), freq=a.freq, observed=a.observed, start_date=a.start_date())
         elif isinstance(b, TimeSeries):
-            return TimeSeries(self.f(a, b, *args, **kwargs), freq=b.freq, observed=b.observed, start_date=b.start_date())
+            if corelib.isDateType(b.tstype):
+                return TimeSeries(self.f(a, b, *args, **kwargs), dtype=b.tstype, freq=b.freq, observed=b.observed, start_date=b.start_date())
+            else:
+                return TimeSeries(self.f(a, b, *args, **kwargs), freq=b.freq, observed=b.observed, start_date=b.start_date())
         else:
             return self.f(a, b, *args, **kwargs)
             
