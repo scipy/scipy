@@ -73,7 +73,7 @@ from numpy.lib.shape_base import expand_dims as n_expand_dims
 import warnings
 
 import logging
-logging.basicConfig(level=logging.CRITICAL,
+logging.basicConfig(level=logging.DEBUG,
                     format='%(name)-15s %(levelname)s %(message)s',)
 
 
@@ -123,6 +123,7 @@ class MAError(Exception):
     "Class for MA related errors."
     def __init__ (self, args=None):
         "Creates an exception."
+        Exception.__init__(self,args)
         self.args = args
     def __str__(self):
         "Calculates the string representation."
@@ -191,7 +192,7 @@ def maximum_fill_value (obj):
     elif isinstance(obj, float):
         return max_filler['f']
     elif isinstance(obj, int) or isinstance(obj, long):
-        #TODO: Check what happens to 'UnisgnedInteger'!
+        #TODO: Check what happens to 'UnsignedInteger'!
         return max_filler['i']
     else:
         raise TypeError, 'Unsuitable type for calculating maximum.'
@@ -326,10 +327,11 @@ where invalid values are pre-masked.
         m = getmask(a)
         d1 = filled(a, self.fill)
         if self.domain is not None:
-            m = mask_or(m, self.domain(d1))
+            m = mask_or(m, numeric.asarray(self.domain(d1)))
         result = self.f(d1, *args, **kwargs)
-        if isinstance(a, MaskedArray):
-            return a.__class__(result, mask=m)
+        #
+        if isinstance(result, MaskedArray):
+            return result.__class__(result, mask=m)
         return masked_array(result, mask=m)
     #
     def __str__ (self):
@@ -457,13 +459,15 @@ They have no reduce, outer or accumulate.
         mb = getmask(b)
         d1 = filled(a, self.fillx)
         d2 = filled(b, self.filly)
-        t = self.domain(d1, d2)
+        t = numeric.asarray(self.domain(d1, d2))
 
         if fromnumeric.sometrue(t, None):
             d2 = numeric.where(t, self.filly, d2)
             mb = mask_or(mb, t)
         m = mask_or(ma, mb)
         result =  self.f(d1, d2)
+        if isinstance(result, MaskedArray):
+            return result.__class__(result, mask=m) 
         return masked_array(result, mask=m)
 
     def __str__ (self):
@@ -773,7 +777,7 @@ masked_print_option = _MaskedPrintOption('--')
 #####--------------------------------------------------------------------------
 #---- --- MaskedArray class ---
 #####--------------------------------------------------------------------------
-class MaskedArray(numeric.ndarray, object):
+class MaskedArray(numeric.ndarray):
     """Arrays with possibly masked values.
 Masked values of True exclude the corresponding element from any computation.
 
@@ -802,7 +806,7 @@ The fill_value is not used for computation within this module.
     """
     __array_priority__ = 10.1
     #TODO: There some reorganization to do round here
-    def __new__(cls, data, mask=nomask, dtype=None, copy=False, fill_value=None,
+    def __new__(cls, data=None, mask=nomask, dtype=None, copy=False, fill_value=None,
                 keep_mask=True, small_mask=True, hard_mask=False):
         """array(data, dtype=None, copy=True, mask=nomask, fill_value=None)
         
@@ -875,6 +879,10 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         cls._defaulthardmask = hard_mask
         cls._defaultmask = mask
 #        logging.debug("__new__ returned %s as %s" % (type(_data), cls))
+#        data = numeric.ndarray.__new__(cls, shape=_data.shape,dtype=_data.dtype, 
+#                                       buffer=_data.data, offset=0)
+#        print type(data), data.shape
+#        return data
         return numeric.asanyarray(_data).view(cls)
     #..................................
     def __array_wrap__(self, obj, context=None):
@@ -915,7 +923,8 @@ Wraps the numpy array and sets the mask according to context.
         """
         #
 #        logging.debug("__finalize__ received %s" % type(obj))
-        if isMaskedArray(obj):
+        if isinstance(obj, MaskedArray):
+#        if isMaskedArray(obj):
             self._data = obj._data
             self._mask = obj._mask
             self._hardmask = obj._hardmask
@@ -1499,7 +1508,7 @@ The mask is repeated accordingly.
         flatsize = self.size
         self._data.resize((flatsize,))
         if self.mask is not nomask:
-             self._mask.resize((flatsize,))
+            self._mask.resize((flatsize,))
         return self
 
     #
@@ -1902,7 +1911,15 @@ object is called instead.
         self.fill_self = fill_self
         self.fill_other = fill_other
         self.domain = domain
-        self.__doc__ = getattr(methodname, '__doc__')
+        self.obj = None
+        self.__doc__ = self.getdoc()
+    #
+    def getdoc(self):
+        "Returns the doc of the function (from the doc of the method)."
+        try:
+            return getattr(MaskedArray, self.methodname).__doc__
+        except:
+            return getattr(numpy, self.methodname).__doc__
     #
     def __get__(self, obj, objtype=None):
         self.obj = obj
@@ -1957,6 +1974,15 @@ Instead of calling a ufunc, the method of the masked object is called.
         self.methodname = methodname
         self.fill_self = fill_self
         self.fill_other = fill_other
+        self.obj = None
+        self.__doc__ = self.getdoc()
+    #
+    def getdoc(self):
+        "Returns the doc of the function (from the doc of the method)."
+        try:
+            return getattr(MaskedArray, self.methodname).__doc__
+        except:
+            return getattr(numpy, self.methodname).__doc__
     #
     def __get__(self, obj, objtype=None):
         self.obj = obj
@@ -2098,16 +2124,20 @@ If `onmask` is False, the new mask is just a reference to the initial mask.
     def __init__(self, funcname, onmask=True):
         self._name = funcname
         self._onmask = onmask
+        self.obj = None
         self.__doc__ = self.getdoc()
+    #
     def getdoc(self):
         "Returns the doc of the function (from the doc of the method)."
         try:
             return getattr(MaskedArray, self._name).__doc__
         except:
             return getattr(numpy, self._name).__doc__
+    #
     def __get__(self, obj, objtype=None):
         self.obj = obj
         return self
+    #
     def __call__(self, *args, **params):
         methodname = self._name
         (d, m) = (self.obj._data, self.obj._mask)
@@ -2125,7 +2155,7 @@ If `onmask` is False, the new mask is just a reference to the initial mask.
                      dtype=t, fill_value=f) 
 #......................................
 MaskedArray.conj = MaskedArray.conjugate = _arraymethod('conjugate') 
-MaskedArray.copy = MaskedArray.conjugate = _arraymethod('copy') 
+MaskedArray.copy = _arraymethod('copy') 
 MaskedArray.diagonal = _arraymethod('diagonal')
 MaskedArray.take = _arraymethod('take')
 MaskedArray.ravel = _arraymethod('ravel')
@@ -2837,4 +2867,5 @@ MaskedArray.__setstate__ = _setstate
 MaskedArray.__reduce__ = _reduce
 MaskedArray.__dump__ = dump
 MaskedArray.__dumps__ = dumps
+
 

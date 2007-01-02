@@ -12,11 +12,11 @@ __revision__ = "$Revision$"
 __date__     = '$Date$'
 
 import core
-reload(core)
+#reload(core)
 from core import *
 
 import extras
-reload(extras)
+#reload(extras)
 from extras import *
 
 

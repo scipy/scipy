@@ -1,5 +1,6 @@
 #2006-12-30 : Core
 #			: - Cleaned up setitem/setslice w/ hard_mask=True
+#			: - Fixed masked_unary/binary_operations to work with subclasses of MaskedArray
 #2006-12-22 : Core
 #           : - Optimized(?) default_/maximum_/minimum_fill_value
 #           : - Force __new__ to not return a MaskedArray, in order to ...
