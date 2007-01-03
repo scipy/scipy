@@ -119,9 +119,14 @@ def _timeseriescompat(a, b):
     if a.freq != b.freq:
         raise TimeSeriesCompatibilityError('freq', a.freq, b.freq)
     elif a.start_date() != b.start_date():
-        raise TimeSeriesCompatibilityError('start_date', a.start_date(), b.start_date())
+        raise TimeSeriesCompatibilityError('start_date', 
+                                           a.start_date(), b.start_date())
+    elif (a._dates.get_steps() != b._dates.get_steps()).any():
+        raise TimeSeriesCompatibilityError('time_steps', 
+                                           a._dates.get_steps(), b._dates.get_steps())
     elif a.shape != b.shape:
-        raise TimeSeriesCompatibilityError('size', str(a.shape), str(b.shape))
+        raise TimeSeriesCompatibilityError('size', "1: %s" % str(a.shape), 
+                                                   "2: %s" % str(b.shape))
     return True
 
 def _datadatescompat(data,dates):
@@ -134,11 +139,18 @@ def _datadatescompat(data,dates):
     if dsize == tsize:
         return True
     elif data.ndim > 1:
-        dsize = numeric.asarray(data.shape[1:]).prod()
+        dsize = numeric.asarray(data.shape)[:-1].prod()
         if dsize == tsize:
             return True    
-    raise TimeSeriesCompatibilityError('size', dsize, tsize)
-        
+    raise TimeSeriesCompatibilityError('size', "data: %s" % dsize, 
+                                               "dates: %s" % tsize)
+
+def _getdatalength(data):
+    "Estimates the length of a series (size/nb of variables)."
+    if numeric.ndim(data) >= 2:
+        return numeric.asarray(numeric.shape(data))[:-1].prod()
+    else:
+        return numeric.size(data)
 
 ##### --------------------------------------------------------------------------
 ##--- ... Time Series ...
@@ -196,10 +208,7 @@ The combination of `series` and `dates` is the `data` part.
         else:
             # Check dates ........
             if dates is None:
-                if numeric.ndim(data) >= 2:
-                    length = numeric.asarray(numeric.shape(data))[1:].prod()
-                else:
-                    length = numeric.size(data)
+                length = _getdatalength(data)
                 newdates = date_array(start_date=start_date, length=length,
                                       freq=freq)                 
             elif not hasattr(dates, 'freq'):
@@ -606,10 +615,9 @@ If `ondates` is False, the `_dates` part remains unchanged.
                                       dates=instance._dates)  
 #TimeSeries.astype = _tsarraymethod('astype')
 TimeSeries.reshape = _tsarraymethod('reshape', ondates=True)
-TimeSeries.transpose = _tsarraymethod('transpose', ondates=True)
-TimeSeries.swapaxes = _tsarraymethod('swapaxes', ondates=True)
 TimeSeries.copy = _tsarraymethod('copy', ondates=True)
 TimeSeries.compress = _tsarraymethod('compress', ondates=True)
+TimeSeries.ravel = _tsarraymethod('ravel', ondates=True)
 TimeSeries.filled = _tsarraymethod('filled', ondates=False)
 TimeSeries.cumsum = _tsarraymethod('cumsum',ondates=False)
 TimeSeries.cumprod = _tsarraymethod('cumprod',ondates=False)
@@ -640,7 +648,7 @@ When called, returns a ndarray, as the result of the method applied on the serie
         else:
             try:
                 axis = params.get('axis', args[0])
-                if axis == 0:
+                if axis in [-1, _series.ndim-1]:
                     result = TimeSeries(result, dates=_dates)
             except IndexError:
                 pass
@@ -653,6 +661,25 @@ TimeSeries.var = _tsaxismethod('var')
 TimeSeries.varu = _tsaxismethod('varu')
 TimeSeries.std = _tsaxismethod('std')
 TimeSeries.stdu = _tsaxismethod('stdu')
+
+class _tsblockedmethods(object):
+    """Defines a wrapper for array methods that should be temporarily disabled.
+    """
+    def __init__ (self, methodname):
+        """abfunc(fillx, filly) must be defined.
+           abinop(x, filly) = x for all x to enable reduce.
+        """
+        self._name = methodname
+    #
+    def __get__(self, obj, objtype=None):
+        self.obj = obj
+        return self
+    #
+    def __call__ (self, *args, **params):
+        raise NotImplementedError
+TimeSeries.transpose = _tsarraymethod('transpose', ondates=True)
+TimeSeries.swapaxes = _tsarraymethod('swapaxes', ondates=True)
+
 
 #####---------------------------------------------------------------------------
 #---- --- Definition of functions from the corresponding methods ---
@@ -697,7 +724,7 @@ second = _frommethod('second')
 ##### ---------------------------------------------------------------------------
 #---- ... Additional methods ...
 ##### ---------------------------------------------------------------------------
-def tofile(self, output, sep='\t', format='%s', format_dates=None):
+def tofile(self, output, sep='\t', format_dates=None):
     """Writes the TimeSeries to a file.
 
 :Parameters:
@@ -718,326 +745,103 @@ def tofile(self, output, sep='\t', format='%s', format_dates=None):
     ofile.close()
 TimeSeries.tofile = tofile
 
-##### ---------------------------------------------------------------------------
-##--- ... Pickling ...
-##### ---------------------------------------------------------------------------
-##FIXME: We're kinda stuck with forcing the mask to have the same shape as the data
-#def _tsreconstruct(baseclass, datesclass, baseshape, basetype):
-#    """Internal function that builds a new MaskedArray from the information stored
-#in a pickle."""
-#    _series = ndarray.__new__(ndarray, baseshape, basetype)
-#    _dates = ndarray.__new__(datesclass, baseshape, basetype)
-#    return TimeSeries.__new__(baseclass, _series, dates=_dates, dtype=basetype)
-#
-#def _tsgetstate(a):
-#    "Returns the internal state of the TimeSeries, for pickling purposes."
-#    #TODO: We should prolly go through a recarray here as well.
-#    state = (1,
-#             a.shape, 
-#             a.dtype,
-#             a.flags.fnc,
-#             (a._series).__reduce__()[-1][-1],
-#             (a._dates).__reduce__()[-1][-1])
-#    return state
+#............................................
+def asrecords(series):
+    """Returns the masked time series as a recarray.
+Fields are `_dates`, `_data` and _`mask`.
+        """
+    desctype = [('_dates',int_), ('_series',series.dtype), ('_mask', bool_)]
+    flat = series.ravel()
+    _dates = numeric.asarray(flat._dates)
+    if flat.size > 0:
+        return recfromarrays([_dates, flat._data, getmaskarray(flat)],
+                             dtype=desctype,
+                             shape = (flat.size,),  
+                             )
+    else:
+        return recfromarrays([[], [], []], dtype=desctype, 
+                             shape = (flat.size,),  
+                             )
+TimeSeries.asrecords = asrecords
+
+def flatten(series):
+    """Flattens a (multi-) time series to 1D series."""
+    shp_ini = series.shape
+    # Already flat time series....
+    if len(shp_ini) == 1:
+        return series
+    # Folded single time series ..
+    newdates = series._dates.ravel()
+    if series._dates.size == series._series.size:
+        newshape = (series._series.size,)
+    else:
+        newshape = (numeric.asarray(shp_ini[:-1]).prod(), shp_ini[-1])
+    newseries = series._series.reshape(newshape)
+    return time_series(newseries, newdates)
+TimeSeries.flatten = flatten
+
+
+
+#####---------------------------------------------------------------------------
+#---- --- Archiving ---
+#####---------------------------------------------------------------------------
+def _tsreconstruct(baseclass, datesclass, baseshape, basetype, fill_value):
+    """Internal function that builds a new TimeSeries from the information stored
+in a pickle."""
+#    raise NotImplementedError,"Please use timeseries.archive/unarchive instead."""
+    _series = ndarray.__new__(ndarray, baseshape, basetype)
+    _dates = ndarray.__new__(datesclass, baseshape, int_)
+    _mask = ndarray.__new__(ndarray, baseshape, bool_)
+    return baseclass.__new__(baseclass, _series, dates=_dates, mask=_mask, 
+                             dtype=basetype, fill_value=fill_value)
 #    
-#def _tssetstate(a, state):
-#    """Restores the internal state of the TimeSeries, for pickling purposes.
-#`state` is typically the output of the ``__getstate__`` output, and is a 5-tuple:
-#
-#    - class name
-#    - a tuple giving the shape of the data
-#    - a typecode for the data
-#    - a binary string for the data
-#    - a binary string for the mask.
-#        """
-#    (ver, shp, typ, isf, raw, dti) = state
-#    (a._series).__setstate__((shp, typ, isf, raw))
-#    (a._dates).__setstate__((shp, N.dtype('|O8'), isf, dti))
-#    (a._dates)._asstrings = None
+def _tsgetstate(a):
+    "Returns the internal state of the TimeSeries, for pickling purposes."
+#    raise NotImplementedError,"Please use timeseries.archive/unarchive instead."""
+    records = a.asrecords()
+    state = (1,
+             a.shape, 
+             a.dtype,
+             a.freq,
+             records.flags.fnc,
+             a.fill_value,
+             records
+             )
+    return state
+#    
+def _tssetstate(a, state):
+    """Restores the internal state of the TimeSeries, for pickling purposes.
+`state` is typically the output of the ``__getstate__`` output, and is a 5-tuple:
+
+    - class name
+    - a tuple giving the shape of the data
+    - a typecode for the data
+    - a binary string for the data
+    - a binary string for the mask.
+    """
+    (ver, shp, typ, frq, isf, flv, rec) = state
+    a.fill_value = flv
+    a._dates = a._dates.__class__(rec['_dates'], freq=frq)
+    (a._dates).__tostr = None
+    _data = rec['_series'].view(typ)
+    _mask = rec['_mask'].view(MA.MaskType)
+    a._series = masked_array(_data, mask=_mask)
+#    a._data.shape = shp
+#    a._dates.shape = shp
+#    a._mask = rec['_mask'].view(MA.MaskType)
+#    a._mask.shape = shp
 #        
-#def _tsreduce(a):
-#    """Returns a 3-tuple for pickling a MaskedArray."""
-#    return (_tsreconstruct,
-#            (a.__class__, a._dates.__class__, (0,), 'b', ),
-#            a.__getstate__())
-#
-#TimeSeries.__getstate__ = _tsgetstate
-#TimeSeries.__setstate__ = _tssetstate
-#TimeSeries.__reduce__ = _tsreduce
+def _tsreduce(a):
+    """Returns a 3-tuple for pickling a MaskedArray."""
+    return (_tsreconstruct,
+            (a.__class__, a.dates.__class__, (0,), 'b', -9999),
+            a.__getstate__())
+#    
+TimeSeries.__getstate__ = _tsgetstate
+TimeSeries.__setstate__ = _tssetstate
+TimeSeries.__reduce__ = _tsreduce
 #TimeSeries.__dump__ = dump
 #TimeSeries.__dumps__ = dumps
-#
-##................................................
-
-#
-##### --------------------------------------------------------------------------
-##--- ... Shortcuts ...
-##### --------------------------------------------------------------------------  
-#def isTimeSeries(x):
-#    """Checks whether `x` is a time series (an instance of `TimeSeries` )."""
-#    return isinstance(x, TimeSeries)        
-#
-##### --------------------------------------------------------------------------
-##--- ... MaskedTimeSeries class ...
-##### --------------------------------------------------------------------------
-#class MaskedTimeSeries(MaskedArray, TimeSeries): 
-#    """Base class for the definition of time series.
-#A time series is here defined as the combination of two arrays:
-#    
-#    - an array storing the time information (as a `TimeArray` instance);
-#    - an array storing the data (as a `MaskedArray` instance.
-#    """
-#    def __new__(cls, data, dates=None, mask=nomask, 
-#                dtype=None, copy=True, fill_value=-9999):
-#        mtslog.log(5, "__new__: data types %s, %s" % (type(data), dtype))
-##        if isinstance(data, TimeSeries):
-#        #....................
-#        if isinstance(data, TimeSeries):  
-#            if isinstance(data, MaskedTimeSeries):
-#                _data = data._data
-#            else:
-#                _data = data
-#            _dates = data._dates
-#            _series = data._series
-#            mtslog.log(5, "__new__ from TS: data %i - %s - %s" % \
-#                          (id(_data._series), type(_data._series), _data.ravel()))
-#            mtslog.log(5,"__new__ from TS: dates %i - %s - %s" % \
-#                          (id(_dates), type(_dates), _dates.ravel()))
-#        elif isinstance(data, recarray):
-#            assert(data.dtype.names == ('_dates', '_series', '_mask'),
-#                   "Invalid fields names (got %s)" % (data.dtype.names,))
-#            _dates = data['_dates']
-#            _series = data['_series']
-#            _mask = data['_mask']
-#        else:
-#            if hasattr(data, "_data"):
-#                _data = TimeSeries(data._data, dates=dates, 
-#                                       dtype=dtype, copy=copy)
-#            else:
-#                _data = TimeSeries(data, dates=dates, 
-#                                       dtype=dtype, copy=copy)
-#            _dates = _data._dates    
-#            _series = _data._series
-#            mtslog.log(5,"__new__ from scratch: data %i - %s - %s" % \
-#                         (id(_data._series), type(_data._series), _data.ravel()))
-#            mtslog.log(5,"__new__ from TS: dates %i - %s - %s" % \
-#                         (id(_dates), type(_dates), _dates.ravel()))
-#        #.....................
-#        if mask is nomask:
-#            if hasattr(data, "_mask"):
-#                _mask = data._mask
-#            else:
-#                _mask = nomask
-#        else:
-#            _mask = make_mask(mask, copy=copy, flag=True)
-#        #....Check shapes compatibility
-#        if _mask is not nomask:
-#            (nd, nm) = (_data.size, _mask.size)
-#            if (nm != nd):
-#                if nm == 1:
-#                    _mask = N.resize(_mask, _data.shape)
-#                elif nd == 1:
-#                    _data = N.resize(_data, _mask.shape)
-#                else:
-#                    msg = "Mask and data not compatible (size issues: %i & %i)."
-#                    raise MAError, msg % (nm, nd)
-#            elif (_mask.shape != _data.shape):
-#                mtslog.log(5,"__new__ from scratch: force _mask shape %s > %s" % \
-#                             (_mask.shape, _data.shape))
-#                _mask.shape = _data.shape
-#        #....
-#        cls._fill_value = fill_value
-#        cls._basemask = _mask
-#        cls._basedates = _dates
-#        cls._baseseries = _series
-#        return _data.view(cls)
-##        return _series.view(cls)
-#    #..............
-#    def __array_wrap__(self, obj, context=None):
-#        """Special hook for ufuncs.
-#Wraps the numpy array and sets the mask according to context.
-#        """
-##        return MaskedArray.__array_wrap__(obj, context=None)
-#        return MaskedTimeSeries(obj, dates=self._dates, mask=self._mask,
-#                                fill_value=self._fill_value)
-#        
-#    #..............
-#    def __array_finalize__(self,obj):
-#        mtslog.log(5, "__array_finalize__: obj is %s" % (type(obj), ))
-#        if not hasattr(self, "_data"):
-#            self._data = obj
-#        if not hasattr(self, "_dates"):
-#            self._dates = self._basedates
-#            mtslog.log(5, "__array_finalize__: set dates to: %s - %s" % \
-#                          (id(self._dates), self._dates.ravel() ))
-#        if not hasattr(self, "_mask"):
-#            self._mask = self._basemask
-#            mtslog.log(5, "__array_finalize__: set mask to: %s - %s" % \
-#                          (id(self._mask), self._mask.ravel() ))
-#        if not hasattr(self, "_series"):
-#            if hasattr(obj, "_series"):
-#                self._series = obj._series
-#            else:
-#                self._series = obj
-#        self.fill_value = self._fill_value
-#        return
-#    #------------------------------------------------------
-#    def __str__(self):
-#        """Calculate the str representation, using masked for fill if
-#           it is enabled. Otherwise fill with fill value.
-#        """
-#        if masked_print_option.enabled():
-#            f = masked_print_option
-#            # XXX: Without the following special case masked
-#            # XXX: would print as "[--]", not "--". Can we avoid
-#            # XXX: checks for masked by choosing a different value
-#            # XXX: for the masked singleton? 2005-01-05 -- sasha
-#            if self is masked:
-#                return str(f)
-#            m = self._mask
-#            if m is nomask:
-#                res = self._data
-#            else:
-#                if m.shape == () and m:
-#                    return str(f)
-#                # convert to object array to make filled work
-#                res = (self._series).astype("|O8")
-#                res[self._mask] = f
-#        else:
-#            res = self.filled(self.fill_value)
-#        return str(res)
-#    #............................................
-#    def ids (self):
-#        """Return the ids of the data, dates and mask areas"""
-#        return (id(self._series), id(self.dates), id(self._mask))
-#    #............................................
-#    @property
-#    def maskedseries(self):
-#        """Returns a masked array of the series (dates are omitteed)."""
-#        return masked_array(self._series, mask=self._mask)
-#    _mseries = maskedseries
-#    #............................................
-#    def filled(self, fill_value=None):
-#        """A numeric array with masked values filled. If fill_value is None,
-#           use self.fill_value().
-#
-#           If mask is nomask, copy data only if not contiguous.
-#           Result is always a contiguous, numeric array.
-## Is contiguous really necessary now?
-#        """
-#        (d, m) = (self._data, self._mask)
-#        if m is nomask:
-#            return d
-#        #
-#        if fill_value is None:
-#            value = self._fill_value
-#        else:
-#            value = fill_value
-#        #
-#        if self is masked_singleton:
-#            return numeric.array(value)
-#        #
-#        result = d.copy()
-#        try:
-#            result.__setitem__(m, value)
-#        except (TypeError, AttributeError):
-#            #ok, can't put that value in here
-#            value = numeric.array(value, dtype=object)
-#            d = d.astype(object)
-#            result = fromnumeric.choose(m, (d, value))
-#        except IndexError:
-#            #ok, if scalar
-#            if d.shape:
-#                raise
-#            elif m:
-#                result = numeric.array(value, dtype=d.dtype)
-#            else:
-#                result = d
-#        return result
-#    #............................................
-
-#    #............................................
-#    def asrecords(self):
-#        """Returns the masked time series as a recarray.
-#Fields are `_dates`, `_data` and _`mask`.
-#        """
-#        desctype = [('_dates','|O8'), ('_series',self.dtype), ('_mask',N.bool_)]
-#        flat = self.ravel()
-#        if flat.size > 0:
-#            return recfromarrays([flat._dates, flat._series, getmaskarray(flat)],
-#                                 dtype=desctype,
-#                                 shape = (flat.size,),  
-#                                 )
-#        else:
-#            return recfromarrays([[], [], []], dtype=desctype, 
-#                                 shape = (flat.size,),  
-#                                 )
-#            
-#            
-##    def reshape (self, *s):
-##        """This array reshaped to shape s"""
-##        self._data = self._data.reshape(*s)
-##        self._dates = self._dates.reshape(*s)
-##        if self._mask is not nomask:
-##            self._mask = self._mask.reshape(*s)
-##        return self.view()
-##### --------------------------------------------------------------------------
-##--- ... Pickling ...
-##### --------------------------------------------------------------------------
-#def _mtsreconstruct(baseclass, datesclass, baseshape, basetype, fill_value):
-#    """Internal function that builds a new MaskedArray from the information stored
-#in a pickle."""
-##    raise NotImplementedError,"Please use timeseries.archive/unarchive instead."""
-#    _series = ndarray.__new__(ndarray, baseshape, basetype)
-#    _dates = ndarray.__new__(datesclass, baseshape, '|O8')
-#    _mask = ndarray.__new__(ndarray, baseshape, '|O8')
-#    return baseclass.__new__(baseclass, _series, dates=_dates, mask=_mask, 
-#                             dtype=basetype, fill_value=fill_value)
-##    
-#def _mtsgetstate(a):
-#    "Returns the internal state of the TimeSeries, for pickling purposes."
-##    raise NotImplementedError,"Please use timeseries.archive/unarchive instead."""
-#    records = a.asrecords()
-#    state = (1,
-#             a.shape, 
-#             a.dtype,
-#             records.flags.fnc,
-#             a.fill_value,
-#             records
-#             )
-#    return state
-##    
-#def _mtssetstate(a, state):
-#    """Restores the internal state of the TimeSeries, for pickling purposes.
-#`state` is typically the output of the ``__getstate__`` output, and is a 5-tuple:
-#
-#    - class name
-#    - a tuple giving the shape of the data
-#    - a typecode for the data
-#    - a binary string for the data
-#    - a binary string for the mask.
-#        """
-#    (ver, shp, typ, isf, flv, rec) = state
-#    a.fill_value = flv
-#    a._data._series = a._series = N.asarray(rec['_series'])
-#    a._data._series.shape = a._series.shape = shp
-#    a._data._dates = a._dates = a._dates.__class__(rec['_dates'])
-#    a._data._dates.shape = a._dates.shape = shp
-#    (a._dates)._asstrings = None
-#    a._mask = N.array(rec['_mask'], dtype=MA.MaskType)
-#    a._mask.shape = shp
-##        
-#def _mtsreduce(a):
-#    """Returns a 3-tuple for pickling a MaskedArray."""
-#    return (_mtsreconstruct,
-#            (a.__class__, a.dates.__class__, (0,), 'b', -9999),
-#            a.__getstate__())
-##    
-#MaskedTimeSeries.__getstate__ = _mtsgetstate
-#MaskedTimeSeries.__setstate__ = _mtssetstate
-#MaskedTimeSeries.__reduce__ = _mtsreduce
-#MaskedTimeSeries.__dump__ = dump
-#MaskedTimeSeries.__dumps__ = dumps
 
 
 ##### -------------------------------------------------------------------------
@@ -1057,10 +861,7 @@ def time_series(data, dates=None, freq=None, observed=None,
         Array of data.
     """
     if dates is None:
-        if numeric.ndim(data) >= 2:
-            length = numeric.asarray(numeric.shape(data))[1:].prod()
-        else:
-            length = numeric.size(data)
+        length = _getdatalength(data)
         dates = date_array(start_date=start_date, end_date=end_date,
                            length=length, include_last=include_last, freq=freq)   
     elif not isinstance(dates, DateArray):
@@ -1078,82 +879,6 @@ def isTimeSeries(series):
 ##### --------------------------------------------------------------------------
 ##--- ... Additional functions ...
 ##### --------------------------------------------------------------------------
-#def check_dates(a,b):
-#    """Returns the array of dates from the two objects `a` or `b` (or None)."""
-#    if isTimeSeries(a):
-#        if isTimeSeries(b) and (a._dates == b._dates).all() is False:
-#            raise ValueError, "Incompatible dates !"
-#        return a._dates
-#    elif isTimeSeries(b):
-#        return b._dates
-#    else:
-#        return
-#         
-#def parse_period(period):
-#    """Returns a TimeArray couple (starting date; ending date) from the arguments."""
-#####    print "........DEBUG PARSE DATES: period %s is %s" % (period, type(period))
-##    if isinstance(period,TimeArray) or isinstance(period,Dates):
-#####        print "........DEBUG PARSE_PERIOD: OK"
-#    if isinstance(period,TimeArray):
-#        return (period[0],period[-1])
-#    elif hasattr(period,"__len__"):
-#        if not isinstance(period[0], TimeArray):
-#            tstart = TimeArray(period[0])
-#        else:
-#            tstart = period[0] 
-#        if not isinstance(period[-1], TimeArray):
-#            tend = TimeArray(period[-1])
-#        else:
-#            tend = period[-1] 
-#        return (tstart, tend)
-#    else:
-#        p = N.asarray(period)
-#        if N.all(p < 9999):
-#            p = N.array(period,dtype="|S4")
-#        p = time_array(p)
-#        return (p[0], p[-1])
-#
-#def where_period(period, dates, *choices):
-#    """Returns choices fro True/False, whether dates fall during a given period.
-#If no choices are given, outputs the array indices  for the dates falling in the
-#period.
-#
-#:Parameters:
-#    `period` : Sequence
-#        Selection period, as a sequence (starting date, ending date).
-#    `dates` : TimeArray
-#        Array of dates.
-#    `choices` : *(optional)*
-#        Arrays to select from when the condition is True/False.
-#    """
-#    (tstart, tend) = parse_period(period)
-#    condition = ascondition((dates>=tstart)&(dates<=tend))
-#    condition = (dates>=tstart)&(dates<=tend)
-#    return N.where(condition, *choices)
-#
-#def masked_inside_period(data, period, dates=None):
-#    """Returns x as an array masked where dates fall inside the selection period,
-#as well as where data are initially missing (masked)."""
-#    (tstart, tend) = parse_period(period)
-#    # Get dates ..................
-#    if hasattr(data, "_dates"):
-#        dates = data._dates
-#    elif dates is None:
-#        raise ValueError,"Undefined dates !"
-#    else:
-#        assert(N.size(dates)==N.size(data), 
-#               "Inconsistent data and dates sizes!")
-#    # where_period yields True inside the period, when mask should yield False
-#    condition = ascondition(N.logical_and((dates>=tstart), (dates<=tend)))
-#    cm = filled(condition,True).reshape(data.shape)
-#    mask = mask_or(MA.getmaskarray(data), cm, copy=True)
-#    if isinstance(data, MaskedTimeSeries):
-#        return data.__class__(data._data, dates=dates, mask=mask, copy=True)
-#    if isinstance(data, TimeSeries):
-#        return MaskedTimeSeries(data, dates=dates, mask=mask, copy=True)
-#    else:
-#        return masked_array(data, mask=mask, copy=True) 
-#
 def mask_period(data, start_date=None, end_date=None, 
                 inside=True, include_edges=True, inplace=True):
     """Returns x as an array masked where dates fall outside the selection period,
@@ -1223,7 +948,7 @@ def mask_outside_period(data, start_date=None, end_date=None,
     """Masks values falling outside a given range of dates."""
     return mask_period(data, start_date=start_date, end_date=end_date, 
                        inside=False, include_edges=include_edges, inplace=inplace)
-
+#..........................................................
 def adjust_endpoints(a, start_date=None, end_date=None):
     """Returns a TimeSeries going from `start_date` to `end_date`.
     If `start_date` and `end_date` both fall into the initial range of dates, 
@@ -1238,6 +963,9 @@ def adjust_endpoints(a, start_date=None, end_date=None):
     if not a.dates.isvalid():
         raise TimeSeriesError, \
             "Cannot adjust a series with missing or duplicated dates."
+    # Flatten the series if needed ..............
+    a = a.flatten()
+    shp_flat = a.shape
     # Dates validity checks .,...................
     msg = "%s should be a valid Date instance! (got %s instead)"
     (dstart, dend) = a.dates[[0,-1]]
@@ -1248,7 +976,7 @@ def adjust_endpoints(a, start_date=None, end_date=None):
         if not isDateType(start_date):
             raise TypeError, msg % ('start_date', type(start_date))
         start_lag = start_date - dstart
-              
+    #....          
     if end_date is None: 
         end_date = dend
         end_lag = 0
@@ -1256,14 +984,15 @@ def adjust_endpoints(a, start_date=None, end_date=None):
         if not isDateType(end_date):
             raise TypeError, msg % ('end_date', type(end_date))
         end_lag = end_date - dend    
+    # Check if the new range is included in the old one
     if start_lag >= 0:
         if end_lag == 0:
             return a[start_lag:]
         elif end_lag < 0:
             return a[start_lag:end_lag]
-
+    # Create a new series .......................
     newdates = date_array(start_date=start_date, end_date=end_date)
-    newshape = list(a.shape)
+    newshape = list(shp_flat)
     newshape[0] = len(newdates)
     newshape = tuple(newshape)
     
@@ -1273,8 +1002,7 @@ def adjust_endpoints(a, start_date=None, end_date=None):
     end_date = min(end_date, dend) + 1
     newseries[start_date:end_date] = a[start_date:end_date]
     return newseries
-
-
+#..........................................................
 def align_series(*series, **kwargs):
     """Aligns several TimeSeries, so that their starting and ending dates match.
     Series are resized and filled with mased values accordingly.
@@ -1286,8 +1014,7 @@ def align_series(*series, **kwargs):
     dates respectively.    
     """
     if len(series) < 2:
-        return series
-        
+        return series  
     unique_freqs = numpy.unique([x.freq for x in series])
     try:
         common_freq = unique_freqs.item()
@@ -1365,23 +1092,16 @@ def convert(series, freq, func='auto', position='END', interp=None):
         
     tempData = masked_array(_values, mask=_mask)
 
-    if tempData.ndim == 2:
-#        tempData = tempData.T
-        if func is not None:
-            tempData = MA.apply_along_axis(func, 1, tempData)
-        else:
-            tempData = tempData.T
-            
-    #startIndex = cseries.convert(start_date, fromFreq, toFreq)
+    if tempData.ndim == 2 and func is not None:
+         tempData = MA.apply_along_axis(func, -1, tempData)
+           
     newStart = series._dates[0].asfreq(toFreq, "BEFORE")
     newEnd = series._dates[-1].asfreq(toFreq, "AFTER")
     
     newseries = TimeSeries(tempData, freq=toFreq, 
                            observed=series.observed, 
                            start_date=newStart)
-    return newseries
-#    return adjust_endpoints(newseries, end_date=newEnd)
-#    return (tempData, newStart, toFreq, newseries, _values, _mask)
+    return adjust_endpoints(newseries, end_date=newEnd)
 
 
 def fill_missing_dates(data, dates=None, freq=None,fill_value=None):
@@ -1457,13 +1177,6 @@ The data corresponding to the initially missing dates are masked, or filled to
     return time_series(newdata.reshape(nshp), newdates)
 
 
-#######--------------------------------------------------------------------------
-###---- --- Archiving ---
-#######--------------------------------------------------------------------------
-
-
-
-
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
@@ -1498,9 +1211,25 @@ if __name__ == '__main__':
         data = masked_array(numeric.arange(15)-6, mask=[1,0,0,0,0]*3)
         print "."*50+"\nseries"
         tseries = time_series(data, dlist)
-    
+        
     if 1:
-        mser3 = time_series(MA.mr_[malg1._series, malg2._series].reshape(2,-1), 
+        dlist_1 = ['2007-01-%02i' % i for i in range(1,8)]
+        dlist_2 = ['2007-01-%02i' % i for i in numpy.arange(1,28)[::4]]
+        data = masked_array(numeric.arange(7), mask=[1,0,0,0,0,0,0])
+        tseries_1 = time_series(data, dlist_1)
+        tseries_2 = time_series(data, dlist_2)
+        tseries_3 = time_series(data[::-1], dlist_2)
+        
+        try:
+            tseries = tseries_1 + tseries_2
+        except TimeSeriesCompatibilityError:
+            print "I knew it!"
+        tseries = tseries_2 + tseries_3
+        assert_equal(tseries._dates, tseries_3._dates)
+        assert_equal(tseries._mask, [1,0,0,0,0,0,1])
+                
+    if 1:
+        mser3 = time_series(MA.mr_[malg1._series, malg2._series].reshape(-1,2), 
                             dates=malg1.dates)
  
 

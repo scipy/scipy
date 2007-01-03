@@ -1,0 +1,6 @@
+#2007-01-03 : tseries 
+#           : - Allowed endpoints adjustment after convert
+#           : - Put the estimation of the data length in its own function.
+#           : - Added a timestep compatibility check.
+#           : - The variables in a multi-series correspond now to the last axis.
+#           : - Blocked transpose/swapaxes, temporarily.

@@ -266,6 +266,14 @@ class test_functions(NumpyTestCase):
         mask = mask_period(tseries, start, end, inside=False, include_edges=False,
                            inplace=False)
         assert_equal(mask._mask, [1,1,1,1,1,0,0,0,0,0,0,0,1,1,1])
+    #
+    def pickling(self):
+        "Tests pickling/unpickling"
+        (tseries, data, dates) = self.d
+        tmp = maskedarray.loads(tseries.dumps())
+        assert_equal(tmp._data, tseries._data)
+        assert_equal(tmp._dates, tseries._dates)
+        assert_equal(tmp._mask, tseries._mask)
         
 ###############################################################################
 #------------------------------------------------------------------------------

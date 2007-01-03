@@ -703,6 +703,22 @@ accesses the array element by element. Therefore, `d` is a Date object.
             self.__tostr = tostr
         return self.__tostr
     #
+#    def asfreq_ini(self, freq=None):
+#        "Converts the dates to another frequency."
+#        # Note: As we define a new object, we don't need caching
+#        if freq is None:
+#            return self
+#        freq = corelib.fmtFreq(freq)
+#        if freq == self.freq:
+#            return self        
+#        if self.isvalid():
+#            new = numeric.arange(self.size, dtype=int_)
+#            new += self[0].asfreq(freq).value
+#        else:
+#            new = numpy.fromiter((d.asfreq(freq).value for d in self),
+#                                 dtype=float_)
+#        return DateArray(new, freq=freq)
+    
     def asfreq(self, freq=None):
         "Converts the dates to another frequency."
         # Note: As we define a new object, we don't need caching
@@ -711,12 +727,8 @@ accesses the array element by element. Therefore, `d` is a Date object.
         freq = corelib.fmtFreq(freq)
         if freq == self.freq:
             return self        
-        if self.isvalid():
-            new = numeric.arange(self.size, dtype=int_)
-            new += self[0].asfreq(freq).value
-        else:
-            new = numpy.fromiter((d.asfreq(freq).value for d in self),
-                                 dtype=float_)
+        new = numpy.fromiter((d.asfreq(freq).value for d in self),
+                              dtype=float_)
         return DateArray(new, freq=freq)
     #......................................................
     def find_dates(self, *dates):
@@ -1052,3 +1064,7 @@ if __name__ == '__main__':
         myDateD = Date(freq='D',year=1985,month=10,day=4)
         
         #------------------------------------------------
+    if 1:
+        dlist = ['2007-01-%02i' % i for i in range(1,15)]
+        dates = date_array_fromlist(dlist)
+        dates_2 = dates.asfreq('M')

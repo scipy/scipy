@@ -136,15 +136,13 @@ def isDateType(dtype):
 #####---------------------------------------------------------------------------
 #---- --- Misc functions ---
 #####---------------------------------------------------------------------------
-#def flatten(listOfLists):
-#    return list(chain(*listOfLists))
 #http://aspn.activestate.com/ASPN/Mail/Message/python-tutor/2302348
-def flatten(iterable):
+def flatten_sequence(iterable):
     """Flattens a compound of nested iterables."""
     itm = iter(iterable)
     for elm in itm:
         if hasattr(elm,'__iter__') and not isinstance(elm, basestring):
-            for f in flatten(elm):
+            for f in flatten_sequence(elm):
                 yield f
         else:
             yield elm
@@ -154,6 +152,6 @@ def flatargs(*args):
     if not hasattr(args, '__iter__'):
         return args
     else:
-        return flatten(args)
+        return flatten_sequence(args)
         
 
