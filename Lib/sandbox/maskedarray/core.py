@@ -163,6 +163,8 @@ def default_fill_value (obj):
         return default_filler['S']
     elif isinstance(obj, complex):
         return default_filler['c']
+    elif isinstance(obj, numeric.dtype):
+        return default_filler[obj.kind]
     else:
         return default_filler['O']
 

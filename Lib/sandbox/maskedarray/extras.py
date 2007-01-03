@@ -231,11 +231,13 @@ def apply_along_axis(func1d,axis,arr,*args):
             outarr[tuple(i.tolist())] = res
             dtypes.append(asarray(res).dtype)
             k += 1
+    max_dtypes = numeric.dtype(numeric.asarray(dtypes).max())
     if not hasattr(arr, '_mask'):
-        return numeric.asarray(outarr, dtype=max(dtypes))
+        result = numeric.asarray(outarr, dtype=max_dtypes)
     else:
-        return outarr.astype(max(dtypes))
-
+        result = core.asarray(outarr, dtype=max_dtypes)
+        result.fill_value = core.default_fill_value(result)
+    return result
 
 def average (a, axis=None, weights=None, returned = 0):
     """average(a, axis=None weights=None, returned=False)

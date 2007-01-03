@@ -1,3 +1,7 @@
+#2007-01-02 : Extras
+#           : - Made sure that apply_along_axis output the proper fill_value 
+#           : Core
+#           : - Can use dtypes for the definition of default_fill_value
 #2006-12-30 : Core
 #			: - Cleaned up setitem/setslice w/ hard_mask=True
 #			: - Fixed masked_unary/binary_operations to work with subclasses of MaskedArray
