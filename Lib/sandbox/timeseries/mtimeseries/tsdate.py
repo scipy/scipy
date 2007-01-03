@@ -24,7 +24,7 @@ import maskedarray as MA
 
 import tscore as corelib
 #reload(corelib)
-from tscore import isDateType
+#from tscore import isDateType
 
 #from corelib import fmtFreq, freqToType
 import mx.DateTime as mxD
@@ -412,7 +412,8 @@ def dateOf(date, toFreq, relation="BEFORE"):
     else:
         before = False
 
-    if not isDateType(date):
+#    if not isDateType(date):
+    if not isinstance(date, Date):
         raise DateError, "Date should be a valid Date instance!"
 
     if date.freq == toFreq:
@@ -628,7 +629,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
     
     def __getitem__(self, index):
         #dalog.info("__getitem__ got  index %s (%s)"%(index, type(index)))
-        if isDateType(index):
+        if isinstance(index, Date):
             index = self.find_dates(index)
         elif numeric.asarray(index).dtype.kind == 'O':
             try:
@@ -762,8 +763,9 @@ accesses the array element by element. Therefore, `d` is a Date object.
         if self.freq == 'U':
             warnings.warn("Undefined frequency: assuming daily!")
         if self.__steps is None:
-            steps = numeric.asarray(numpy.diff(self))
-            if steps.size > 0:
+            val = numeric.asarray(self).ravel()
+            if val.size > 0:
+                steps = val[1:] - val[:-1]
                 if self.__full is None:
                     self.__full = (steps.max() == 1)
                 if self.__hasdups is None:
@@ -831,7 +833,7 @@ is returned.
                 raise FrequencyDateError("Cannot operate on dates", \
                                          freq, other.freq)
 #            other = 
-        elif isDateType(other):
+        elif isinstance(other, Date):
             if other.freq != freq:
                 raise FrequencyDateError("Cannot operate on dates", \
                                          freq, other.freq)
@@ -923,7 +925,7 @@ def _listparser(dlist, freq=None):
     elif dlist.dtype.kind == 'O':
         template = dlist[0]
         #...as Date objects
-        if isDateType(template):
+        if isinstance(template, Date):
             dates = numpy.fromiter((d.value for d in dlist), float_)
         #...as mx.DateTime objects
         elif hasattr(template,'absdays'):
@@ -963,15 +965,18 @@ def date_array(dlist=None, start_date=None, end_date=None, length=None,
     # Case #2: we have a starting date ..........
     if start_date is None:
         raise InsufficientDateError
-    if not isDateType(start_date):
+#    if not isDateType(start_date):
+    if not isinstance(start_date, Date):
         raise DateError, "Starting date should be a valid Date instance!"
     # Check if we have an end_date
     if end_date is None:
         if length is None:
             raise ValueError,"No length precised!"
     else:
-        assert(isDateType(end_date),
-               "Starting date should be a valid Date instance!")
+        if not isinstance(end_date, Date):
+            raise DateError, "Ending date should be a valid Date instance!"
+#        assert(isDateType(end_date),
+#               "Starting date should be a valid Date instance!")
         length = end_date - start_date
         if include_last:
             length += 1

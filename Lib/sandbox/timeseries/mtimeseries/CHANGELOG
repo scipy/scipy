@@ -4,3 +4,4 @@
 #           : - Added a timestep compatibility check.
 #           : - The variables in a multi-series correspond now to the last axis.
 #           : - Blocked transpose/swapaxes, temporarily.
+#           : - Speed-up fill_missing_dates

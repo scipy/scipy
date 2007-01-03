@@ -877,7 +877,7 @@ def isTimeSeries(series):
     return isinstance(series, TimeSeries)
 
 ##### --------------------------------------------------------------------------
-##--- ... Additional functions ...
+#---- ... Additional functions ...
 ##### --------------------------------------------------------------------------
 def mask_period(data, start_date=None, end_date=None, 
                 inside=True, include_edges=True, inplace=True):
@@ -1102,7 +1102,7 @@ def convert(series, freq, func='auto', position='END', interp=None):
                            observed=series.observed, 
                            start_date=newStart)
     return adjust_endpoints(newseries, end_date=newEnd)
-
+TimeSeries.convert = convert
 
 def fill_missing_dates(data, dates=None, freq=None,fill_value=None):
     """Finds and fills the missing dates in a time series.
@@ -1127,11 +1127,20 @@ The data corresponding to the initially missing dates are masked, or filled to
         if not isTimeSeries(data):
             raise InsufficientDateError
         dates = data._dates
-        data = data._series
         freq = dates.freq
+        datad = data._series._data
+        datam = data._series._mask
+#        if fill_value is None:
+#            fill_value = data._fill_value
     elif not isinstance(dates, DateArray):
         dates = DateArray(dates, freq)
-    dflat = dates.ravel().asfreq(freq)
+        if isinstance(data, MaskedArray):
+            datad = data._data
+            datam = data._mask
+        else:
+            datad = data
+            datam = nomask
+    dflat = dates.asfreq(freq).ravel()
     n = len(dflat)
     if not dflat.has_missing_dates():
         return time_series(data, dflat)
@@ -1153,22 +1162,31 @@ The data corresponding to the initially missing dates are masked, or filled to
                      ]
     #.............................
     # Just a quick check
+    vdflat = numeric.asarray(dflat)
+    vnewdates = numeric.asarray(newdates)
     for (osl,nsl) in zip(oldslc,newslc):
-        assert numpy.equal(dflat[osl],newdates[nsl]).all(),\
+        assert numpy.equal(vdflat[osl],vnewdates[nsl]).all(),\
             "Slicing mishap ! Please check %s (old) and %s (new)" % (osl,nsl)
     #.............................
     data = MA.asarray(data)
-    newdata = MA.masked_array(numeric.empty(nsize, data.dtype),
-                              mask=numeric.ones(nsize, bool_))
-    if fill_value is None:
-        if hasattr(data,'fill_value'):
-            fill_value = data.fill_value
-        else:
-            fill_value = MA.default_fill_value(data)
+    newdatad = numeric.empty(nsize, data.dtype)
+    newdatam = numeric.ones(nsize, bool_)
+#    if fill_value is None:
+#        if hasattr(data,'fill_value'):
+#            fill_value = data.fill_value
+#        else:
+#            fill_value = MA.default_fill_value(data)
     #data = data.filled(fill_value)
     #....
-    for (new,old) in zip(newslc,oldslc):
-        newdata[new] = data[old]
+    if datam is nomask:
+        for (new,old) in zip(newslc,oldslc):
+            newdatad[new] = datad[old]
+            newdatam[new] = False
+    else:
+        for (new,old) in zip(newslc,oldslc):
+            newdatad[new] = datad[old]
+            newdatam[new] = datam[old]
+    newdata = MA.masked_array(newdatad, mask=newdatam, fill_value=fill_value)    
     # Get new shape ..............
     if data.ndim == 1:
         nshp = (newdates.size,)
@@ -1229,7 +1247,7 @@ if __name__ == '__main__':
         assert_equal(tseries._mask, [1,0,0,0,0,0,1])
                 
     if 1:
-        mser3 = time_series(MA.mr_[malg1._series, malg2._series].reshape(-1,2), 
+        mser3 = time_series(MA.mr_[malg1._series, 100+malg2._series].reshape(2,-1).T, 
                             dates=malg1.dates)
- 
+        data = mser3._series._data
 
