@@ -1643,7 +1643,6 @@ class dok_matrix(spmatrix, dict):
                     assert M == int(M) and M > 0
                     assert N == int(N) and N > 0
                     self.shape = (int(M), int(N))
-                    return
                 except (TypeError, ValueError, AssertionError):
                     raise TypeError, "dimensions must be a 2-tuple of positive"\
                             " integers"
