@@ -140,6 +140,7 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
   PyObject *x_py = NULL,*y_py = NULL,*z_py = NULL,*w_py = NULL,\
     *tx_py = NULL,*ty_py = NULL;
   PyObject *wrk_py=NULL;
+  PyObject *ret=NULL;
   nx=ny=ier=nxo=nyo=0;
   if (!PyArg_ParseTuple(args, "OOOOddddiiiddOOiiOii",\
 			&x_py,&y_py,&z_py,&w_py,&xb,&xe,\
@@ -224,10 +225,17 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
   Py_DECREF(ap_y);
   Py_DECREF(ap_z);
   Py_DECREF(ap_w);
-  return Py_BuildValue("NNN{s:N,s:i,s:d}",PyArray_Return(ap_tx),\
-		       PyArray_Return(ap_ty),PyArray_Return(ap_c),\
-		       "wrk",PyArray_Return(ap_wrk),\
-		       "ier",ier,"fp",fp);
+  ret = Py_BuildValue("NNN{s:N,s:i,s:d}",PyArray_Return(ap_tx),\
+	              PyArray_Return(ap_ty),PyArray_Return(ap_c),\
+                      "wrk",PyArray_Return(ap_wrk),\
+		      "ier",ier,"fp",fp);
+  Py_DECREF(ap_tx);
+  Py_DECREF(ap_ty);
+  Py_DECREF(ap_c);
+  Py_DECREF(ap_wrk);
+
+  return ret;
+
   fail:
   if (wa) free(wa);
   Py_XDECREF(ap_x);
