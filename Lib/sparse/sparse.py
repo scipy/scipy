@@ -647,7 +647,8 @@ class csc_matrix(spmatrix):
             if (nnz2 == 0): nnz2 = 1
             data1, data2 = _convert_data(self.data[:nnz1], ocs.data[:nnz2], dtypechar)
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscadd')
-            c, rowc, ptrc, ierr = func(data1, self.rowind[:nnz1], self.indptr, data2, ocs.rowind[:nnz2], ocs.indptr)
+            c, rowc, ptrc, ierr = func(data1, self.rowind[:nnz1], self.indptr,
+                                       data2, ocs.rowind[:nnz2], ocs.indptr)
             if ierr:
                 raise RuntimeError, "ran out of space"
             M, N = self.shape
@@ -672,7 +673,8 @@ class csc_matrix(spmatrix):
             if (nnz2 == 0): nnz2=1
             data1, data2 = _convert_data(self.data[:nnz1], ocs.data[:nnz2], dtypechar)
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscadd')
-            c, rowc, ptrc, ierr = func(data1, self.rowind[:nnz1], self.indptr, data2, ocs.rowind[:nnz2], ocs.indptr)
+            c, rowc, ptrc, ierr = func(data1, self.rowind[:nnz1], self.indptr,
+                                       data2, ocs.rowind[:nnz2], ocs.indptr)
             if ierr:
                 raise RuntimeError, "ran out of space"
             M, N = self.shape
@@ -870,14 +872,15 @@ class csc_matrix(spmatrix):
                 rowb = other.rowind
                 ptrb = other.indptr
             a, b = _convert_data(a, b, dtypechar)
-            newshape = (M, N)
             ptrc = zeros((N+1,), intc)
             nnzc = 2*max(ptra[-1], ptrb[-1])
             c = zeros((nnzc,), dtypechar)
             rowc = zeros((nnzc,), intc)
             ierr = irow = kcol = 0
             while True: # loop in case first call runs out of memory.
-                c, rowc, ptrc, irow, kcol, ierr = func(M, a, rowa, ptra, b, rowb, ptrb, c, rowc, ptrc, irow, kcol, ierr)
+                c, rowc, ptrc, irow, kcol, ierr = func(M, a, rowa, ptra, b,
+                                                       rowb, ptrb, c, rowc,
+                                                       ptrc, irow, kcol, ierr)
                 if (ierr==0): break
                 # otherwise we were too small and must resize arrays
                 #  calculations continue where they left off...
@@ -1230,7 +1233,8 @@ class csr_matrix(spmatrix):
             dtypechar = _coerce_rules[(self.dtype.char, ocs.dtype.char)]
             data1, data2 = _convert_data(self.data, ocs.data, dtypechar)
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscadd')
-            c, colc, ptrc, ierr = func(data1, self.colind, self.indptr, data2, ocs.colind, ocs.indptr)
+            c, colc, ptrc, ierr = func(data1, self.colind, self.indptr, data2,
+                                       ocs.colind, ocs.indptr)
             if ierr:
                 raise RuntimeError, "ran out of space"
             M, N = self.shape
@@ -1290,7 +1294,8 @@ class csr_matrix(spmatrix):
             dtypechar = _coerce_rules[(self.dtype.char, ocs.dtype.char)]
             data1, data2 = _convert_data(self.data, ocs.data, dtypechar)
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscmul')
-            c, colc, ptrc, ierr = func(data1, self.colind, self.indptr, data2, ocs.colind, ocs.indptr)
+            c, colc, ptrc, ierr = func(data1, self.colind, self.indptr, data2,
+                                       ocs.colind, ocs.indptr)
             if ierr:
                 raise RuntimeError, "ran out of space"
             M, N = self.shape
@@ -2052,7 +2057,6 @@ class dok_matrix(spmatrix, dict):
         base = dok_matrix()
         ext = dok_matrix()
         indx = int((columns == 1))
-        N = len(cols_or_rows)
         if indx:
             for key in self:
                 num = searchsorted(cols_or_rows, key[1])
@@ -2128,7 +2132,6 @@ class dok_matrix(spmatrix, dict):
             ikey0 = int(key[0])
             ikey1 = int(key[1])
             if ikey0 != current_row:
-                N = ikey0-current_row
                 row_ptr[current_row+1:ikey0+1] = k
                 current_row = ikey0
             data[k] = dict.__getitem__(self, key)
@@ -2161,7 +2164,6 @@ class dok_matrix(spmatrix, dict):
             ikey0 = int(key[0])
             ikey1 = int(key[1])
             if ikey1 != current_col:
-                N = ikey1-current_col
                 col_ptr[current_col+1:ikey1+1] = k
                 current_col = ikey1
             data[k] = self[key]
