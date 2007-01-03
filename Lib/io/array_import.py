@@ -90,8 +90,12 @@ def build_numberlist(lines):
     return linelist
 
 def get_open_file(fileobject, mode='rb'):
-    if isinstance(fileobject, types.StringType):
+    try:
+        # this is the duck typing check: if fileobject
+        # can be used is os.path.expanduser, it is a string
+        # otherwise it is a fileobject
         fileobject = os.path.expanduser(fileobject)
+
         if mode[0]=='r' and not os.path.exists(fileobject):
             raise IOError, (2, 'No such file or directory: '
                             + fileobject)
@@ -103,7 +107,9 @@ def get_open_file(fileobject, mode='rb'):
                 if type(details) == type(()):
                     details = details + (fileobject,)
                 raise IOError, details
-    else:
+    except AttributeError:
+        # it is assumed that the fileobject is a python
+        # file object if it can not be used in os.path.expanduser
         file = fileobject
 
     return file
