@@ -1002,7 +1002,7 @@ def adjust_endpoints(a, start_date=None, end_date=None):
     end_date = min(end_date, dend) + 1
     newseries[start_date:end_date] = a[start_date:end_date]
     return newseries
-#..........................................................
+#....................................................................
 def align_series(*series, **kwargs):
     """Aligns several TimeSeries, so that their starting and ending dates match.
     Series are resized and filled with mased values accordingly.
@@ -1038,8 +1038,7 @@ def align_series(*series, **kwargs):
     
     return [adjust_endpoints(x, start_date, end_date) for x in series]
 aligned = align_series
-
-
+#....................................................................
 def convert(series, freq, func='auto', position='END', interp=None):
     """Converts a series to a frequency
        
@@ -1103,7 +1102,7 @@ def convert(series, freq, func='auto', position='END', interp=None):
                            start_date=newStart)
     return adjust_endpoints(newseries, end_date=newEnd)
 TimeSeries.convert = convert
-
+#....................................................................
 def fill_missing_dates(data, dates=None, freq=None,fill_value=None):
     """Finds and fills the missing dates in a time series.
 The data corresponding to the initially missing dates are masked, or filled to 
@@ -1120,9 +1119,9 @@ The data corresponding to the initially missing dates are masked, or filled to
         Default value for missing data. If None, the data are just masked.
     """
     freq = corelib.fmtFreq(freq)
-#    if freq == 'U':
-#        raise ValueError,\
-#              "Unable to define a proper date resolution (found %s)." % freq
+    if freq == 'U':
+        raise ValueError,\
+              "Unable to define a proper date resolution (found %s)." % freq
     if dates is None:
         if not isTimeSeries(data):
             raise InsufficientDateError
@@ -1150,7 +1149,7 @@ The data corresponding to the initially missing dates are masked, or filled to
     newdates = date_array(start_date=tstart, end_date=tend, include_last=True)
     nsize = newdates.size
     #.............................
-    # Get the steps between consecutive data. We need relativedelta to deal w/ months
+    # Get the steps between consecutive data. 
     delta = dflat.get_steps()-1
     gap = delta.nonzero()
     slcid = numpy.r_[[0,], numpy.arange(1,n)[gap], [n,]]

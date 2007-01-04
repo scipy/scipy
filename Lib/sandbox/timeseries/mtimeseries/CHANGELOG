@@ -1,3 +1,5 @@
+#2007-01-04 : tsdate
+#           : - Corrected a bug w/ Date.__init__ and 'B' freq
 #2007-01-03 : tseries 
 #           : - Allowed endpoints adjustment after convert
 #           : - Put the estimation of the data length in its own function.

@@ -123,7 +123,7 @@ class Date:
             if self.freq == 'A':
                 self.mxDate = mxD.Date(value, -1, -1)
             elif self.freq == 'B':
-                value -= 1
+                value = value - 1
                 self.mxDate = mxD.DateTimeFromAbsDays(value + (value//5)*7 - (value//5)*5)
             elif self.freq in ['D','U']:
                 self.mxDate = mxD.DateTimeFromAbsDays(value-1)
@@ -744,6 +744,17 @@ accesses the array element by element. Therefore, `d` is a Date object.
         if fromnumeric.size(c) == 0:
             raise ValueError, "Date out of bounds!"
         return c  
+#    def find_dates_alt(self, *dates):
+#        "Returns the indices corresponding to given dates, as an array."
+#        ifreq = self.freq
+#        c = numpy.zeros(self.shape, bool_)
+#        dates = date_array([d for d in corelib.flatargs(*dates)]).asfreq(ifreq)
+#        for d in numeric.asarray(dates):
+#            c += (self == d)
+#        c = c.nonzero()
+#        if fromnumeric.size(c) == 0:
+#            raise ValueError, "Date out of bounds!"
+#        return c  
     def date_to_index(self, date):
         "Returns the index corresponding to one given date, as an integer."
         if self.isvalid():
