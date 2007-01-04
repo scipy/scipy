@@ -14,7 +14,7 @@ class Date:
             if self.freq == 'D':
                 self.mxDate = mx.DateTime.DateTimeFromAbsDays(value-1)
             elif self.freq == 'B':
-                value -= 1
+                value = value - 1
                 self.mxDate = mx.DateTime.DateTimeFromAbsDays(value + (value//5)*7 - (value//5)*5)
             elif self.freq == 'S':
                 self.mxDate = secondlyOriginDate + mx.DateTime.DateTimeDeltaFromSeconds(value)
@@ -60,7 +60,6 @@ class Date:
                 self.mxDate = mx.DateTime.Date(year, month, day, _hours, _minutes, _seconds)
                 
         self.value = self.__value()
-                        
                 
     def day(self):          return self.mxDate.day
     def day_of_week(self):  return self.mxDate.day_of_week
