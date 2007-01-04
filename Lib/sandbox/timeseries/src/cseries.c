@@ -193,18 +193,100 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
 }
 
 
+/*
+convert fromDate to a date at toFreq according to relation
+*/
 static long
-convert(long fromDate, char fromFreq, char toFreq, int notStartInd)
+asfreq(long fromDate, char fromFreq, char toFreq, char relation)
 {
     long absdate, secsInDay;
     long converted;
-    int y,m;
+    int y,m, doAfter;
 
     mxDateTimeObject *convDate;
 
     secsInDay = 86400;
+    doAfter = 0;
 
-    absdate = toDaily(fromDate, fromFreq);
+    if (relation == 'A') {
+        switch(fromFreq)
+        {
+
+            case 'D': //daily
+
+                switch(toFreq)
+                {
+                    case 'A':
+                        break;
+                    case 'Q':
+                        break;
+                    case 'M':
+                        break;
+                    case 'B':
+                        break;
+                    default:
+                        doAfter = 1;
+                        break;
+                }
+                break;
+
+            case 'B': //business
+
+                switch(toFreq)
+                {
+                    case 'A':
+                        break;
+                    case 'Q':
+                        break;
+                    case 'M':
+                        break;
+                    case 'D':
+                        break;
+                    default:
+                        doAfter = 1;
+                        break;
+                }
+                break;
+
+            case 'M': //monthly
+
+                switch(toFreq)
+                {
+                    case 'A':
+                        break;
+                    case 'Q':
+                        break;
+                    default:
+                        doAfter = 1;
+                        break;
+                }
+                break;
+
+            case 'Q': //quarterly
+
+                switch(toFreq)
+                {
+                    case 'A':
+                        break;
+                    default:
+                        doAfter = 1;
+                        break;
+                }
+                break;
+
+            case 'A': //annual
+                doAfter = 1;
+                break;
+
+        }
+
+    }
+
+    if (doAfter) {
+        absdate = toDaily(fromDate + 1, fromFreq);
+    } else {
+        absdate = toDaily(fromDate, fromFreq);
+    }
 
     convDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(absdate,0);
 
@@ -220,27 +302,16 @@ convert(long fromDate, char fromFreq, char toFreq, int notStartInd)
         case 'B':
             if (convDate->day_of_week > 4) //is weekend day
             {
-                if (notStartInd == 1 && freqVal(fromFreq) > 4)
-                {
-                    return -1;
-                }
-                else
-                {
-                    if (convDate->day - (convDate->day_of_week - 4) < 1) {
-                        //change to Monday after weekend
-                        absdate += (7 - convDate->day_of_week);
-                    } else {
-                        //change to friday before weekend
-                        absdate -= (convDate->day_of_week - 4);
-                    }
-
-                    converted = (long)((absdate / 7 * 5.0) + absdate%7);
+                if (fromFreq == 'D' && relation == 'B') {
+                    //change to friday before weekend
+                    absdate -= (convDate->day_of_week - 4);
+                } else {
+                    //change to Monday after weekend
+                    absdate += (7 - convDate->day_of_week);
                 }
             }
-            else
-            {
-                converted = (long)((absdate / 7 * 5.0) + absdate%7);
-            }
+            //converted = (long)((absdate / 7 * 5.0) + absdate%7);
+            converted = (long)((absdate / 7 * 5.0) + absdate%7);
             break;
         case 'M':
             converted = (long)(y*12 + m);
@@ -255,7 +326,33 @@ convert(long fromDate, char fromFreq, char toFreq, int notStartInd)
             return -1;
     }
 
-    return converted;
+    if (doAfter) {
+        return converted-1;
+    } else {
+        return converted;
+    }
+}
+
+
+/*
+for use internally by the convert function. Same as the asfreq function,
+except going from daily to business returns -1 always if fromDate is on
+a weekend
+*/
+static long
+asfreq_forseries(long fromDate, char fromFreq, char toFreq, char relation)
+{
+    mxDateTimeObject *convDate;
+
+    if (fromFreq == 'D' && toFreq == 'B') {
+        convDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(fromDate,0);
+        if (convDate->day_of_week > 4) //is weekend day
+        {
+                return -1;
+        }
+    }
+
+    return asfreq(fromDate, fromFreq, toFreq, relation);
 }
 
 static int validFreq(char freq) {
@@ -426,9 +523,9 @@ expand(long oldSize, char fromFreq, char toFreq, long *newLen, long *newHeight)
 }
 
 
-static char cseries_reindex_doc[] = "";
+static char cseries_convert_doc[] = "";
 static PyObject *
-cseries_reindex(PyObject *self, PyObject *args)
+cseries_convert(PyObject *self, PyObject *args)
 {
     PyArrayObject *array;
     PyArrayObject *tempArray;
@@ -440,7 +537,6 @@ cseries_reindex(PyObject *self, PyObject *args)
 
     PyObject *returnVal = NULL;
 
-    int notStartInd;
     long startIndex, newStart, newStartYaxis;
     long newLen, newHeight;
     long i, currIndex, prevIndex;
@@ -448,6 +544,7 @@ cseries_reindex(PyObject *self, PyObject *args)
     long *dim;
     long currPerLen;
     char *fromFreq, *toFreq, *position;
+    char relation;
 
     PyObject *val, *valMask;
 
@@ -455,7 +552,7 @@ cseries_reindex(PyObject *self, PyObject *args)
 
     returnVal = PyDict_New();
 
-    if (!PyArg_ParseTuple(args, "OssslO:reindex(array, fromfreq, tofreq, position, startIndex, mask)", &tempArray, &fromFreq, &toFreq, &position, &startIndex, &tempMask)) return NULL;
+    if (!PyArg_ParseTuple(args, "OssslO:convert(array, fromfreq, tofreq, position, startIndex, mask)", &tempArray, &fromFreq, &toFreq, &position, &startIndex, &tempMask)) return NULL;
 
     if (toFreq[0] == fromFreq[0])
     {
@@ -464,6 +561,21 @@ cseries_reindex(PyObject *self, PyObject *args)
         PyDict_SetItemString(returnVal, "mask", (PyObject*)tempMask);
 
         return returnVal;
+    }
+
+    switch(position[0])
+    {
+        case 'S':
+            // start -> before
+            relation = 'B';
+            break;
+        case 'E':
+            // end -> after
+            relation = 'A';
+            break;
+        default:
+            return NULL;
+            break;
     }
 
     //get frequency numeric mapping
@@ -477,12 +589,11 @@ cseries_reindex(PyObject *self, PyObject *args)
     if (!expand(array->dimensions[0], fromFreq[0], toFreq[0], &newLen, &newHeight)) return NULL;
 
     //convert start index to new frequency
-    notStartInd = 0;
-    newStart = convert(startIndex, fromFreq[0], toFreq[0], notStartInd);
+    newStart = asfreq(startIndex, fromFreq[0], toFreq[0], 'B');
 
     if (newHeight > 1) {
 
-        newStartYaxis = startIndex - convert(newStart, toFreq[0], fromFreq[0], notStartInd);
+        newStartYaxis = startIndex - asfreq(newStart, toFreq[0], fromFreq[0], 'B');
         currPerLen = newStartYaxis;
 
         nd = 2;
@@ -507,8 +618,6 @@ cseries_reindex(PyObject *self, PyObject *args)
     //initialize prevIndex
     prevIndex = newStart;
 
-    notStartInd = 1;
-
     //set values in the new array
     for (i = 0; i < array->dimensions[0]; i++)
     {
@@ -520,11 +629,8 @@ cseries_reindex(PyObject *self, PyObject *args)
         valMask = PyArray_GETITEM(mask, PyArray_GetPtr(mask, &i));
 
         //find index for start of current period in new frequency
-        if (newHeight == 1 && (position[0] == 'E' && !((fromFrVal == 4 && toFrVal == 5) || (fromFrVal == 5 && toFrVal == 4))) ) {
-            currIndex = convert(startIndex + i + 1, fromFreq[0], toFreq[0], notStartInd)-1;
-        } else {
-            currIndex = convert(startIndex + i, fromFreq[0], toFreq[0], notStartInd);
-        }
+        currIndex = asfreq_forseries(startIndex + i, fromFreq[0], toFreq[0], relation);
+
 
         if (newHeight > 1) {
 
@@ -558,29 +664,49 @@ cseries_reindex(PyObject *self, PyObject *args)
 }
 
 
-static char cseries_convert_doc[] = "";
+static char cseries_asfreq_doc[] = "";
 static PyObject *
-cseries_convert(PyObject *self, PyObject *args)
+cseries_asfreq(PyObject *self, PyObject *args)
 {
-    long fromDate;
-    char* fromFreq;
-    char* toFreq;
-    int notStartInd;
+    PyArrayObject *fromDates, *toDates;
+    PyArrayIterObject *iterFrom, *iterTo;
+    PyObject *fromDateObj, *toDateObj;
+    char *fromFreq, *toFreq, *relation;
+    long fromDate, toDate;
 
-    if (!PyArg_ParseTuple(args, "lss:convert(fromDate, fromfreq, tofreq)", &fromDate, &fromFreq, &toFreq)) return NULL;
+    if (!PyArg_ParseTuple(args, "Osss:asfreq(fromDates, fromfreq, tofreq, relation)", &fromDates, &fromFreq, &toFreq, &relation)) return NULL;
 
-    //always want start of period (only matters when converting from lower freq to higher freq ie. m -> d)
-    notStartInd = 0;
+    toDates = (PyArrayObject *)PyArray_Copy(fromDates);
 
-    return PyInt_FromLong(convert(fromDate, fromFreq[0], toFreq[0], notStartInd));
+    iterFrom = (PyArrayIterObject *)PyArray_IterNew((PyObject *)fromDates);
+    if (iterFrom == NULL) return NULL;
+
+    iterTo = (PyArrayIterObject *)PyArray_IterNew((PyObject *)toDates);
+    if (iterTo == NULL) return NULL;
+
+    while (iterFrom->index < iterFrom->size) {
+
+        fromDateObj = PyArray_GETITEM(fromDates, iterFrom->dataptr);
+        fromDate = PyInt_AsLong(fromDateObj);
+        toDate = asfreq(fromDate, fromFreq[0], toFreq[0], relation[0]);
+        toDateObj = PyInt_FromLong(toDate);
+
+        PyArray_SETITEM(toDates, iterTo->dataptr, toDateObj);
+
+        PyArray_ITER_NEXT(iterFrom);
+        PyArray_ITER_NEXT(iterTo);
+    }
+
+    return (PyObject *)toDates;
+
 }
 
 
 ///////////////////////////////////////////////////////////////////////
 
 static PyMethodDef cseries_methods[] = {
-    {"reindex", cseries_reindex, METH_VARARGS, cseries_reindex_doc},
     {"convert", cseries_convert, METH_VARARGS, cseries_convert_doc},
+    {"asfreq", cseries_asfreq, METH_VARARGS, cseries_asfreq_doc},
     {"getDateInfo", cseries_getDateInfo, METH_VARARGS, cseries_getDateInfo_doc},
     {NULL, NULL}
 };
