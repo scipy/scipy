@@ -190,7 +190,6 @@ class TimeSeries(ma.MaskedArray):
             if self.size == 0:
                 return TimeSeries(self, freq=toFreq, start_date=tsdate.dateOf(self.start_date(), toFreq))
 
-
             tempData = self.filled()
 
             if self.mask is ma.nomask:
@@ -198,7 +197,7 @@ class TimeSeries(ma.MaskedArray):
                 tempMask[:] = False
             else: tempMask = self.mask
 
-            cRetVal = cseries.reindex(tempData, fromFreq, toFreq, position, int(self.start_date()), tempMask)
+            cRetVal = cseries.convert(tempData, fromFreq, toFreq, position, int(self.start_date()), tempMask)
 
             _values = cRetVal['values']
             _mask = cRetVal['mask']
@@ -210,10 +209,11 @@ class TimeSeries(ma.MaskedArray):
             if func is not None and tempData.ndim == 2:
                 tempData = corelib.apply_along_axis(func, 1, tempData)
                 
-            startIndex = cseries.convert(int(self.start_date()), fromFreq, toFreq)
-    
-            newStart = tsdate.dateOf(self.start_date(),toFreq, "BEFORE")
-            newEnd = tsdate.dateOf(self.end_date(),toFreq, "AFTER")
+            startIndex = cseries.asfreq(numpy.asarray(int(self.start_date())), fromFreq, toFreq, 'BEFORE')
+            newStart = tsdate.Date(freq=toFreq, value=startIndex)
+
+            endIndex = cseries.asfreq(numpy.asarray(int(self.end_date())), fromFreq, toFreq, 'AFTER')
+            newEnd = tsdate.Date(freq=toFreq, value=endIndex)
 
             return adjust_endpoints(TimeSeries(tempData, freq=toFreq, observed=self.observed, start_date=startIndex), start_date=newStart, end_date=newEnd)
             
