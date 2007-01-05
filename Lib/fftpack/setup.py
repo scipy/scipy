@@ -30,7 +30,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_fftpack',
                          sources=sources,
                          libraries=['dfftpack'],
-                         extra_info = fft_opt_info
+                         extra_info = [fft_opt_info, djbfft_info],
                          )
 
     config.add_extension('convolve',
