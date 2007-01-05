@@ -22,6 +22,9 @@ include Lib/sandbox/arpack/tests/*
 include Lib/sandbox/arraysetops/*
 include Lib/sandbox/arraysetops/tests/*
 include Lib/sandbox/buildgrid/*
+include Lib/sandbox/cdavid/*
+include Lib/sandbox/cdavid/src/*
+include Lib/sandbox/cdavid/tests/*
 include Lib/sandbox/constants/*
 include Lib/sandbox/cow/*
 include Lib/sandbox/delaunay/*
@@ -37,6 +40,8 @@ include Lib/sandbox/fdfpack/utils/*
 include Lib/sandbox/ga/*
 include Lib/sandbox/gplt/*
 include Lib/sandbox/image/*
+include Lib/sandbox/maskedarray/*
+include Lib/sandbox/maskedarray/tests/*
 include Lib/sandbox/models/*
 include Lib/sandbox/models/family/*
 include Lib/sandbox/models/robust/*
@@ -75,8 +80,17 @@ include Lib/sandbox/stats/*
 include Lib/sandbox/svm/*
 include Lib/sandbox/svm/libsvm-2.82/*
 include Lib/sandbox/svm/tests/*
+include Lib/sandbox/timeseries/*
+include Lib/sandbox/timeseries/doc/*
+include Lib/sandbox/timeseries/examples/*
+include Lib/sandbox/timeseries/mtimeseries/*
+include Lib/sandbox/timeseries/mtimeseries/tests/*
+include Lib/sandbox/timeseries/old/*
+include Lib/sandbox/timeseries/plotlib/*
+include Lib/sandbox/timeseries/src/*
 include Lib/sandbox/umfpack/*
 include Lib/sandbox/umfpack/umfpack/*
+include Lib/sandbox/wavelet/*
 include Lib/sandbox/xplt/*
 include Lib/sandbox/xplt/gistdata/*
 include Lib/sandbox/xplt/pygist/*
