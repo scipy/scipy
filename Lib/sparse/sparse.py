@@ -532,11 +532,11 @@ class csc_matrix(spmatrix):
                         if copy:
                             self.data = array(s)
                             self.rowind = array(rowind)
-                            self.indptr = array(indptr)
+                            self.indptr = array(indptr, dtype=intc)
                         else:
                             self.data = asarray(s)
                             self.rowind = asarray(rowind)
-                            self.indptr = asarray(indptr)
+                            self.indptr = asarray(indptr, dtype=intc)
                     except:
                         raise ValueError, "unrecognized form for csc_matrix constructor"
                 else:
@@ -1078,11 +1078,11 @@ class csr_matrix(spmatrix):
                         if copy:
                             self.data = array(s, dtype=self.dtype)
                             self.colind = array(colind)
-                            self.indptr = array(indptr)
+                            self.indptr = array(indptr, dtype=intc)
                         else:
                             self.data = asarray(s, dtype=self.dtype)
                             self.colind = asarray(colind)
-                            self.indptr = asarray(indptr)
+                            self.indptr = asarray(indptr, dtype=intc)
                 else:
                     # (data, ij) format
                     self.dtype = getdtype(dtype, s)
@@ -2704,7 +2704,7 @@ def spdiags(diags, offsets, M, N):
         diags = diags.astype('d')
     if not hasattr(offsets, '__len__' ):
         offsets = (offsets,)
-    offsets = array(offsets, copy=False)
+    offsets = array(offsets, copy=False, dtype=numpy.intc)
     assert(len(offsets) == diags.shape[0])
     indptr,rowind,data = sparsetools.spdiags(M,N,len(offsets),offsets,diags)
     return csc_matrix((data,rowind,indptr),(M,N))
