@@ -50,7 +50,6 @@ _formats = {'csc':[0, "Compressed Sparse Column"],
 
 
 
-#these four  don't appear to be used anymore (Jan 6th, 2007)
 _coerce_rules = {('f', 'f'):'f', ('f', 'd'):'d', ('f', 'F'):'F',
                  ('f', 'D'):'D', ('d', 'f'):'d', ('d', 'd'):'d',
                  ('d', 'F'):'D', ('d', 'D'):'D', ('F', 'f'):'F',
@@ -577,6 +576,9 @@ class csc_matrix(spmatrix):
         self._check()
 
     def _check(self):
+        # some functions pass floats
+        self.shape = tuple([int(x) for x in self.shape])
+
         M, N = self.shape
         nnz = self.indptr[-1]
         nzmax = len(self.rowind)
@@ -598,9 +600,8 @@ class csc_matrix(spmatrix):
                   "Last value of index list should be less than "\
                   "the size of data list"
         if (self.rowind.dtype != numpy.intc):
-            raise TypeError, "rowind indices must be of type numpy.intc"
-        if (self.indptr.dtype != numpy.intc):
-            raise TypeError, "inptr indices must be of type numpy.intc"
+            self.rowind = self.rowind.astype(numpy.intc)
+            self.indptr = self.indptr.astype(numpy.intc)
         self.nnz = nnz
         self.nzmax = nzmax
         self.dtype = self.data.dtype
@@ -798,7 +799,7 @@ class csc_matrix(spmatrix):
                 cd = conj(self.data)
             else:
                 cd = self.data
-            y = sparsetools.csrmux(self.shape[1],self.shape[0],self.indptr,self.rowind,cd,oth)
+            y = sparsetool.csrmux(self.shape[1],self.shape[0],self.indptr,self.rowind,cd,oth)
             if isinstance(other, matrix):
                 y = asmatrix(y)
                 # In the (unlikely) event that this matrix is 1x1 and 'other' was an
@@ -1107,6 +1108,8 @@ class csr_matrix(spmatrix):
         self._check()
 
     def _check(self):
+        # some functions pass floats
+        self.shape = tuple([int(x) for x in self.shape])
 
         M, N = self.shape
         nnz = self.indptr[-1]
@@ -1126,9 +1129,8 @@ class csr_matrix(spmatrix):
                   "last value of index list should be less than "\
                   "the size of data list"
         if (self.colind.dtype != numpy.intc):
-            raise TypeError, "colind indices must be of type numpy.intc"
-        if (self.indptr.dtype != numpy.intc):
-            raise TypeError, "inptr indices must be of type numpy.intc"
+            self.colind = self.colind.astype(numpy.intc)
+            self.indptr = self.indptr.astype(numpy.intc)
         self.nnz = nnz
         self.nzmax = nzmax
         self.dtype = self.data.dtype
@@ -2128,8 +2130,8 @@ class coo_matrix(spmatrix):
             # Use 2 steps to ensure dims has length 2.
             M, N = dims
             self.shape = (M, N)
-        self.row = asarray(ij[0])
-        self.col = asarray(ij[1])
+        self.row = asarray(ij[0],dtype=numpy.intc)
+        self.col = asarray(ij[1],dtype=numpy.intc)
         self.data = asarray(obj, dtype=self.dtype)
         self._check()
 
@@ -2142,9 +2144,12 @@ class coo_matrix(spmatrix):
             raise ValueError, "row, column, and data array must all be "\
                   "the same length"
         if (self.row.dtype != numpy.intc):
-            raise TypeError, "row indices must be of type numpy.intc"
+            self.row = self.row.astype(numpy.intc)
         if (self.col.dtype != numpy.intc):
-            raise TypeError, "col indices must be of type numpy.intc"
+            self.col = self.col.astype(numpy.intc)
+
+        # some functions pass floats
+        self.shape = tuple([int(x) for x in self.shape])
         self.nnz = nnz
         self.ftype = _transtabl.get(self.dtype.char,'')
 
@@ -2177,7 +2182,7 @@ class coo_matrix(spmatrix):
         if self.nnz == 0:
             return csc_matrix(self.shape, dtype=self.dtype)
         else:
-            indptr,rowind,data = sparsetools.cootocsc(self.shape[0],self.shape[1],self.size,self.row,self.col,self.data)        
+            indptr,rowind,data = sparsetools.cootocsc(self.shape[0],self.shape[1],self.size,self.row,self.col,self.data)
             return csc_matrix((data,rowind,indptr),self.shape)
 
     
