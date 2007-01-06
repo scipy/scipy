@@ -266,7 +266,7 @@ def mmwrite(target,a,comment='',field=None,precision=None):
             raise ValueError,'unknown matrix type ' + `type(a)`
         rows,cols = a.shape
         entries = a.getnnz()
-        typecode = a.gettypecode()
+        typecode = a.dtype.char
 
     if precision is None:
         if typecode in 'fF':
