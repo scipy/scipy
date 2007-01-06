@@ -15,10 +15,16 @@ def configuration(parent_package='',top_path=None):
     #                   sources = [join('sparsekit','*.f')]
     #                   )
 
-    sources = ['spblas.f.src','spconv.f.src','sparsetools.pyf.src']
+##    sources = ['spblas.f.src','spconv.f.src','sparsetools.pyf.src']
+##    sources = [join('sparsetools',x) for x in sources]
+
+##    config.add_extension('sparsetools',
+##                         sources =  sources,
+##                         )
+    sources = ['sparsetools_wrap.cxx','sparsetools.py']
     sources = [join('sparsetools',x) for x in sources]
 
-    config.add_extension('sparsetools',
+    config.add_extension('_sparsetools',
                          sources =  sources,
                          )
 
