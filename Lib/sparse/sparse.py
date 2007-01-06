@@ -971,6 +971,17 @@ class csc_matrix(spmatrix):
         self.nzmax = nnz
         self._check()
 
+    def ensure_sorted_indices(self,inplace=False):
+        """Return a copy of this matrix where the row indices are sorted
+        """
+        if inplace:
+            temp = self.tocsr().tocsc()
+            self.rowind = temp.rowind
+            self.indptr = temp.indptr
+            self.data   = temp.data
+        else:
+            return self.tocsr().tocsc()
+
     def copy(self):
         new = csc_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtype)
         new.data = self.data.copy()
@@ -1462,6 +1473,18 @@ class csr_matrix(spmatrix):
         self.colind = self.colind[:nnz]
         self.nzmax = nnz
         self._check()
+
+    def ensure_sorted_indices(self,inplace=False):
+        """Return a copy of this matrix where the column indices are sorted
+        """
+        if inplace:
+            temp = self.tocsc().tocsr()
+            self.colind = temp.colind
+            self.indptr = temp.indptr
+            self.data   = temp.data
+        else:
+            return self.tocsc().tocsr()
+
 
     def copy(self):
         new = csr_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtype)
