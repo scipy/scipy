@@ -6,6 +6,7 @@
 
 %{
 #define SWIG_FILE_WITH_INIT
+#include "Python.h"
 #include "numpy/arrayobject.h"
 #include "complex_ops.h"
 #include "sparsetools.h"

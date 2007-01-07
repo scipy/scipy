@@ -11,21 +11,13 @@ def configuration(parent_package='',top_path=None):
 
     config.add_data_dir('tests')
 
-    #config.add_library('sparsekit_src',
-    #                   sources = [join('sparsekit','*.f')]
-    #                   )
-
-##    sources = ['spblas.f.src','spconv.f.src','sparsetools.pyf.src']
-##    sources = [join('sparsetools',x) for x in sources]
-
-##    config.add_extension('sparsetools',
-##                         sources =  sources,
-##                         )
-    sources = ['sparsetools_wrap.cxx','sparsetools.py']
-    sources = [join('sparsetools',x) for x in sources]
-
+    # Adding a Python file as a "source" file for an extension is something of
+    # a hack, but it works to put it in the right place.
+    sources = [join('sparsetools', x) for x in 
+        ['sparsetools.py', 'sparsetools_wrap.cxx']]
     config.add_extension('_sparsetools',
-                         sources =  sources,
+                         sources=sources,
+                         include_dirs=['sparsetools'],
                          )
 
     return config
