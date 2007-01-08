@@ -25,12 +25,13 @@ is less so.
 Example:
     Construct a 10x1000 lil_matrix and add some values to it:
     >>> from scipy import sparse, linsolve
-    >>> from numpy import rand, linalg
+    >>> from numpy import linalg
+    >>> from numpy.random import rand
     >>> A = sparse.lil_matrix((1000, 1000))
     >>> A[0, :100] = rand(100)
     >>> A[1, 100:200] = A[0, :100]
     >>> A.setdiag(rand(1000))
-    
+
     Now convert it to CSR format and solve (A A^T) x = b for x:
     >>> A = A.tocsr()
     >>> b = rand(1000)
