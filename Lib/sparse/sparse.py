@@ -799,7 +799,7 @@ class csc_matrix(spmatrix):
                 cd = conj(self.data)
             else:
                 cd = self.data
-            y = sparsetool.csrmux(self.shape[1],self.shape[0],self.indptr,self.rowind,cd,oth)
+            y = sparsetools.csrmux(self.shape[1],self.shape[0],self.indptr,self.rowind,cd,oth)
             if isinstance(other, matrix):
                 y = asmatrix(y)
                 # In the (unlikely) event that this matrix is 1x1 and 'other' was an
