@@ -424,13 +424,23 @@ class spmatrix(object):
         """Fills the diagonal elements {a_ii} with the values from the
         given sequence.  If k != 0, fills the off-diagonal elements
         {a_{i,i+k}} instead.
+
+        values may have any length.  If the diagonal is longer than values,
+        then the remaining diagonal entries will not be set.  If values if
+        longer than the diagonal, then the remaining values are ignored.
         """
         M, N = self.shape
-        if len(values) > min(M, N+k):
-            raise ValueError, "sequence of target values is too long"
-        for i, v in enumerate(values):
-            self[i, i+k] = v
-        return
+        if (k > 0 and k >= N) or (k < 0 and -k >= M):
+            raise ValueError, "k exceedes matrix dimensions"
+        if k < 0:
+            max_index = min(M+k,N,len(values))
+            for i,v in enumerate(values[:max_index]):
+                self[i - k, i] = v
+        else:
+            max_index = min(M,N-k,len(values))
+            for i,v in enumerate(values[:max_index]):
+                self[i, i + k] = v
+
     
     def save(self, file_name, format = '%d %d %f\n'):
         try:
