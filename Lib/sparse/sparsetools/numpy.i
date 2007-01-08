@@ -20,6 +20,7 @@
 #define array_size(a,i)        (((PyArrayObject *)a)->dimensions[i])
 #define array_is_contiguous(a) (PyArray_ISCONTIGUOUS(a))
 
+
 /* Given a PyObject, return a string describing its type.
  */
 char* pytype_string(PyObject* py_obj) {
@@ -216,7 +217,7 @@ int require_dimensions_n(PyArrayObject* ary, int* exact_dimensions, int n) {
  * array has the specified shape, return 1.  Otherwise, set the python
  * error string and return 0.
  */
-int require_size(PyArrayObject* ary, int* size, int n) {
+int require_size(PyArrayObject* ary, npy_intp * size, int n) {
   int i;
   int success = 1;
   int len;
@@ -235,14 +236,14 @@ int require_size(PyArrayObject* ary, int* size, int n) {
       }
       else
       {
-	sprintf(s, "%d,", size[i]);                
+	sprintf(s,"%" NPY_INTP_FMT ",", size[i]);                
       }    
       strcat(desired_dims,s);
     }
     len = strlen(desired_dims);
     desired_dims[len-1] = ']';
     for (i = 0; i < n; i++) {
-      sprintf(s, "%d,", array_size(ary,i));                            
+      sprintf(s,"%" NPY_INTP_FMT ",", array_size(ary,i));                            
       strcat(actual_dims,s);
     }
     len = strlen(actual_dims);
@@ -284,7 +285,7 @@ int require_size(PyArrayObject* ary, int* size, int n) {
 /* One dimensional input arrays */
 %define TYPEMAP_IN1(type,typecode)
   %typemap(in) type* IN_ARRAY1 (PyArrayObject* array=NULL, int is_new_object) {
-  int size[1] = {-1};
+  npy_intp size[1] = {-1};
   array = obj_to_array_contiguous_allow_conversion($input, typecode, &is_new_object);
   if (!array || !require_dimensions(array,1) || !require_size(array,size,1)) SWIG_fail;
   $1 = (type*) array->data;
@@ -330,7 +331,7 @@ TYPEMAP_IN1(PyObject,      PyArray_OBJECT)
 %define TYPEMAP_IN2(type,typecode)
   %typemap(in) (type* IN_ARRAY2)
                (PyArrayObject* array=NULL, int is_new_object) {
-  int size[2] = {-1,-1};
+  npy_intp size[2] = {-1,-1};
   array = obj_to_array_contiguous_allow_conversion($input, typecode, &is_new_object);
   if (!array || !require_dimensions(array,2) || !require_size(array,size,1)) SWIG_fail;
   $1 = (type*) array->data;
