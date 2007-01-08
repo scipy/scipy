@@ -2718,7 +2718,7 @@ def spidentity(n, dtype='d'):
     return spdiags( diags, 0, n, n )
 
 
-def speye(n, m = None, k = 0, dtype = 'd'):
+def speye(n, m, k = 0, dtype = 'd'):
     """
     speye(n, m) returns a (n x m) matrix stored
     in CSC sparse matrix format, where the  k-th diagonal is all ones,
