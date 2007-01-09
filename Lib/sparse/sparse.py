@@ -2391,6 +2391,10 @@ class lil_matrix(spmatrix):
     
     
     def __setitem__(self, index, x):
+        if isscalar(x):
+            x = self.dtype.type(x)
+        elif not isinstance(x, spmatrix):
+            x = numpy.asarray(x, dtype=self.dtype)
         try:
             assert len(index) == 2
         except (AssertionError, TypeError):
