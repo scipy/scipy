@@ -857,6 +857,102 @@ void cootocsc(const I n_row,
 	      std::vector<T>* Bx)
 { cootocsr<I,T>(n_col,n_row,NNZ,Aj,Ai,Ax,Bp,Bi,Bx); }
 
+/* Taken from numpy. */
+#define PYA_QS_STACK 100
+#define SMALL_QUICKSORT 15
+#define STDC_LT(a,b) ((a) < (b))
+#define STDC_LE(a,b) ((a) <= (b))
+#define STDC_EQ(a,b) ((a) == (b))
+#define SWAP(a,b) {SWAP_temp = (b); (b)=(a); (a) = SWAP_temp;}
+template<class I, class Ip>
+void int_aquicksort(I *v, Ip* tosort, Ip num, void *unused)
+{
+  I vp;
+  Ip *pl, *pr, SWAP_temp;
+  Ip *stack[PYA_QS_STACK], **sptr=stack, *pm, *pi, *pj, *pt, vi;
 
+  pl = tosort;
+  pr = tosort + num - 1;
+
+  for(;;) {
+    while ((pr - pl) > SMALL_QUICKSORT) {
+      /* quicksort partition */
+      pm = pl + ((pr - pl) >> 1);
+      if (STDC_LT(v[*pm],v[*pl])) SWAP(*pm,*pl);
+      if (STDC_LT(v[*pr],v[*pm])) SWAP(*pr,*pm);
+      if (STDC_LT(v[*pm],v[*pl])) SWAP(*pm,*pl);
+      vp = v[*pm];
+      pi = pl;
+      pj = pr - 1;
+      SWAP(*pm,*pj);
+      for(;;) {
+	do ++pi; while (STDC_LT(v[*pi],vp));
+	do --pj; while (STDC_LT(vp,v[*pj]));
+	if (pi >= pj)  break;
+	SWAP(*pi,*pj);
+      }
+      SWAP(*pi,*(pr-1));
+      /* push largest partition on stack */
+      if (pi - pl < pr - pi) {
+	*sptr++ = pi + 1;
+	*sptr++ = pr;
+	pr = pi - 1;
+      }else{
+	*sptr++ = pl;
+	*sptr++ = pi - 1;
+	pl = pi + 1;
+      }
+    }
+    /* insertion sort */
+    for(pi = pl + 1; pi <= pr; ++pi) {
+      vi = *pi;
+      vp = v[vi];
+      for(pj = pi, pt = pi - 1; \
+	    pj > pl && STDC_LT(vp, v[*pt]);)
+	{
+	  *pj-- = *pt--;
+	}
+      *pj = vi;
+    }
+    if (sptr == stack) break;
+    pr = *(--sptr);
+    pl = *(--sptr);
+  }
+}
+
+template<class I, class T>
+void ensure_sorted_indices(const I n_row,
+			   const I n_col,
+			   const I Ap[], 
+			   I Aj[], 
+			   T Ax[])
+{
+  const T zero = ZERO<T>();
+  I isort[ n_col ];
+  std::vector<I> itemp(n_col,0);
+  std::vector<T> atemp(n_col,zero);
+
+  for(I i = 0; i < n_row; i++){
+    I row_start = Ap[i];
+    I row_end   = Ap[i+1];
+    I ncol = row_end - row_start;
+    I ii;
+
+    for(I jj = 0; jj < ncol; jj++){
+      isort[jj] = jj;
+      atemp[jj] = Ax[row_start + jj];
+      itemp[jj] = Aj[row_start + jj];
+    }    
+    int_aquicksort( Aj + row_start, isort, ncol, 0 );
+    
+    /* Permute in-place both Aj and Ax of row i. */
+    for(I jj = row_start; jj < row_end; jj++){
+      ii = isort[jj-row_start];
+      Aj[jj] = itemp[ii];
+      Ax[jj] = atemp[ii];
+    }
+  }
+}
+			   
 
 #endif

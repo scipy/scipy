@@ -19,6 +19,15 @@ def configuration(parent_package='',top_path=None):
                          sources=sources,
                          include_dirs=['sparsetools'],
                          )
+##     sparsetools_i_file = config.paths(join('sparsetools','sparsetools.i'))[0]
+##     def sparsetools_i(ext, build_dir):
+##             return sparsetools_i_file
+##     config.add_extension('_sparsetools',
+##                          sources= [sparsetools_i_file],
+##                          include_dirs=['sparsetools'],
+##                          depends = [join('sparsetools', x) for x in
+##                                     ['sparsetools.i', 'sparsetools.h']]
+##                          )
 
     return config
 

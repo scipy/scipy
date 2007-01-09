@@ -999,10 +999,13 @@ class csc_matrix(spmatrix):
         """Return a copy of this matrix where the row indices are sorted
         """
         if inplace:
-            temp = self.tocsr().tocsc()
-            self.rowind = temp.rowind
-            self.indptr = temp.indptr
-            self.data   = temp.data
+##             temp = self.tocsr().tocsc()
+##             self.rowind = temp.rowind
+##             self.indptr = temp.indptr
+##             self.data   = temp.data
+            sparsetools.ensure_sorted_indices( self.shape[1],self.shape[0],
+                                               self.indptr,self.rowind,
+                                               self.data )
         else:
             return self.tocsr().tocsc()
 
@@ -1507,10 +1510,13 @@ class csr_matrix(spmatrix):
         """Return a copy of this matrix where the column indices are sorted
         """
         if inplace:
-            temp = self.tocsc().tocsr()
-            self.colind = temp.colind
-            self.indptr = temp.indptr
-            self.data   = temp.data
+##             temp = self.tocsc().tocsr()
+##             self.colind = temp.colind
+##             self.indptr = temp.indptr
+##             self.data   = temp.data
+            sparsetools.ensure_sorted_indices( self.shape[0],self.shape[1],
+                                               self.indptr,self.colind,
+                                               self.data )
         else:
             return self.tocsc().tocsr()
 
