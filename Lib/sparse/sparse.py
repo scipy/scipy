@@ -20,8 +20,8 @@ def resize1d(arr, newlen):
     new[:old] = arr
     return new
 
-MAXPRINT=50
-ALLOCSIZE=1000
+MAXPRINT = 50
+ALLOCSIZE = 1000
 NZMAX = 100
 
 
@@ -83,9 +83,9 @@ class spmatrix(object):
         self.maxprint = maxprint
         self.allocsize = allocsize
 
-    def astype( self, t ):
+    def astype(self, t):
         csc = self.tocsc()
-        return csc.astype( t )
+        return csc.astype(t)
 
     def getmaxprint(self):
         try:
@@ -158,7 +158,7 @@ class spmatrix(object):
         return val[:-1]
 
     def __cmp__(self, other):
-        raise TypeError, "comparison of sparse matrices not implemented"
+        raise NotImplementedError, "comparison of sparse matrices not implemented"
 
     def __nonzero__(self):  # Simple -- other ideas?
         return self.getnnz() > 0
@@ -383,18 +383,18 @@ class spmatrix(object):
         # For some sparse matrix formats more efficient methods are
         # possible -- these should override this function.
         m, n = self.shape
-        if axis==0:
+        if axis == 0:
             # sum over columns
             # Does the following multiplication work in NumPy now?
             o = asmatrix(ones((1, m), dtype=self.dtype))
             return o * self
             # o = ones(m, dtype=self.dtype)
             # return asmatrix(self.rmatvec(o))
-        elif axis==1:
+        elif axis == 1:
             # sum over rows
             o = asmatrix(ones((n, 1), dtype=self.dtype))
             return self * o
-        elif axis==None:
+        elif axis == None:
             # sum over rows and columns
             m, n = self.shape
             o0 = asmatrix(ones((1, m), dtype=self.dtype))
@@ -407,11 +407,11 @@ class spmatrix(object):
         """Average the matrix over the given axis.  If the axis is None,
         average over both rows and columns, returning a scalar.
         """
-        if axis==0:
+        if axis == 0:
             mean = self.sum(0)
             mean *= 1.0 / self.shape[0]
             return mean
-        elif axis==1:
+        elif axis == 1:
             mean = self.sum(1)
             mean *= 1.0 / self.shape[1]
             return mean
@@ -433,11 +433,11 @@ class spmatrix(object):
         if (k > 0 and k >= N) or (k < 0 and -k >= M):
             raise ValueError, "k exceedes matrix dimensions"
         if k < 0:
-            max_index = min(M+k,N,len(values))
+            max_index = min(M+k, N, len(values))
             for i,v in enumerate(values[:max_index]):
                 self[i - k, i] = v
         else:
-            max_index = min(M,N-k,len(values))
+            max_index = min(M, N-k, len(values))
             for i,v in enumerate(values[:max_index]):
                 self[i, i + k] = v
 
@@ -618,6 +618,7 @@ class csc_matrix(spmatrix):
         if self.dtype.char not in 'fdFD':
             self.data = 1.0 * self.data
             self.dtype = self.data.dtype
+
         self.ftype = _transtabl[self.dtype.char]
 
     def astype(self, t):
@@ -647,7 +648,7 @@ class csc_matrix(spmatrix):
             indptr,rowind,data = sparsetools.cscplcsc(self.shape[0],self.shape[1], \
                                                     self.indptr,self.rowind,self.data,\
                                                       ocs.indptr,ocs.rowind,ocs.data)
-            return csc_matrix((data,rowind,indptr),self.shape)
+            return csc_matrix((data,rowind,indptr), self.shape)
         elif isdense(other):
             # Convert this matrix to a dense matrix and add them.
             return self.todense() + other
@@ -762,7 +763,7 @@ class csc_matrix(spmatrix):
             # indptr[j+1]
             for j in xrange(n):
                 out[j] = data[indptr[j] : indptr[j+1]].sum()
-            if axis==0:
+            if axis == 0:
                 # Output is a (1 x n) dense matrix
                 return asmatrix(out)
             else:
@@ -784,8 +785,8 @@ class csc_matrix(spmatrix):
             #if len(other) != self.shape[1]:
             #    raise ValueError, "dimension mismatch"
             oth = numpy.ravel(other)
-            y = sparsetools.cscmux(self.shape[0],self.shape[1],\
-                                   self.indptr,self.rowind,self.data,oth)
+            y = sparsetools.cscmux(self.shape[0], self.shape[1],\
+                                   self.indptr, self.rowind, self.data, oth)
             if isinstance(other, matrix):
                 y = asmatrix(y)
                 # If 'other' was an (nx1) column vector, transpose the result
@@ -831,7 +832,7 @@ class csc_matrix(spmatrix):
             other = other.tocsc()
             indptr,rowind,data = sparsetools.cscmucsc(M,N,self.indptr,self.rowind,self.data,\
                                                              other.indptr,other.rowind,other.data)
-            return csc_matrix((data,rowind,indptr),(M,N))      
+            return csc_matrix((data, rowind, indptr), (M, N))      
         elif isdense(other):
             # This is SLOW!  We need a more efficient implementation
             # of sparse * dense matrix multiplication!
@@ -926,7 +927,6 @@ class csc_matrix(spmatrix):
             raise ValueError, "slicing with step != 1 not supported"
         if stop <= start:
             raise ValueError, "slice width must be >= 1"
-        startind = -1
 
         indices = []
         
@@ -958,11 +958,11 @@ class csc_matrix(spmatrix):
     def tocoo(self):
         rows,cols,data = sparsetools.csctocoo(self.shape[0],self.shape[1],\
                                               self.indptr,self.rowind,self.data)
-        return coo_matrix((data,(rows,cols)),self.shape)
+        return coo_matrix((data,(rows,cols)), self.shape)
 
     def tocsr(self):
         indptr,colind,data = sparsetools.csctocsr(self.shape[0],self.shape[1],self.indptr,self.rowind,self.data)
-        return csr_matrix((data,colind,indptr),self.shape)
+        return csr_matrix((data,colind,indptr), self.shape)
     
     def toarray(self):
         return self.tocsr().toarray()
@@ -981,7 +981,7 @@ class csc_matrix(spmatrix):
         self.nzmax = nnz
         self._check()
 
-    def ensure_sorted_indices(self,inplace=False):
+    def ensure_sorted_indices(self, inplace=False):
         """Return a copy of this matrix where the row indices are sorted
         """
         if inplace:
@@ -991,6 +991,7 @@ class csc_matrix(spmatrix):
             self.data   = temp.data
         else:
             return self.tocsr().tocsc()
+
 
     def copy(self):
         new = csc_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtype)
@@ -1380,7 +1381,6 @@ class csr_matrix(spmatrix):
             raise ValueError, "slicing with step != 1 not supported"
         if stop <= start:
             raise ValueError, "slice width must be >= 1"
-        startind = -1
 
         indices = []
         
