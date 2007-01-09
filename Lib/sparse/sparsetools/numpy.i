@@ -41,11 +41,14 @@ char* pytype_string(PyObject* py_obj) {
 
 /* Given a Numeric typecode, return a string describing the type.
  */
-char* typecode_string(int typecode) {
-  char* type_names[20] = {"char","unsigned byte","byte","short",
-			  "unsigned short","int","unsigned int","long",
-			  "float","double","complex float","complex double",
-			  "object","ntype","unkown"};
+char* type_names[20] = {"char","unsigned byte","byte","short",
+			"unsigned short","int","unsigned int","long",
+			"float","double","complex float","complex double",
+			"object","ntype","unkown"};
+ char* typecode_string(int typecode) {
+  if(typecode < 0 || typecode > 19)
+    typecode = 19;
+
   return type_names[typecode];
 }
 
@@ -298,7 +301,7 @@ int require_size(PyArrayObject* ary, npy_intp * size, int n) {
 /* Define concrete examples of the TYPEMAP_IN1 macros */
 TYPEMAP_IN1(char,          PyArray_CHAR  )
 TYPEMAP_IN1(unsigned char, PyArray_UBYTE )
-TYPEMAP_IN1(signed char,   PyArray_SBYTE )
+TYPEMAP_IN1(signed char,   PyArray_BYTE  )
 TYPEMAP_IN1(short,         PyArray_SHORT )
 TYPEMAP_IN1(int,           PyArray_INT   )
 TYPEMAP_IN1(long,          PyArray_LONG  )
@@ -310,7 +313,7 @@ TYPEMAP_IN1(npy_cdouble,        PyArray_CDOUBLE)
 TYPEMAP_IN1(npy_clongdouble,    PyArray_CLONGDOUBLE)
 TYPEMAP_IN1(const char,          PyArray_CHAR  )
 TYPEMAP_IN1(const unsigned char, PyArray_UBYTE )
-TYPEMAP_IN1(const signed char,   PyArray_SBYTE )
+TYPEMAP_IN1(const signed char,   PyArray_BYTE  )
 TYPEMAP_IN1(const short,         PyArray_SHORT )
 TYPEMAP_IN1(const int,           PyArray_INT   )
 TYPEMAP_IN1(const long,          PyArray_LONG  )
@@ -344,7 +347,7 @@ TYPEMAP_IN1(PyObject,      PyArray_OBJECT)
 /* Define concrete examples of the TYPEMAP_IN2 macros */
 TYPEMAP_IN2(char,          PyArray_CHAR  )
 TYPEMAP_IN2(unsigned char, PyArray_UBYTE )
-TYPEMAP_IN2(signed char,   PyArray_SBYTE )
+TYPEMAP_IN2(signed char,   PyArray_BYTE  )
 TYPEMAP_IN2(short,         PyArray_SHORT )
 TYPEMAP_IN2(int,           PyArray_INT   )
 TYPEMAP_IN2(long,          PyArray_LONG  )
@@ -356,7 +359,7 @@ TYPEMAP_IN2(npy_cdouble,        PyArray_CDOUBLE)
 TYPEMAP_IN2(npy_clongdouble,    PyArray_CLONGDOUBLE)
 TYPEMAP_IN2(const char,          PyArray_CHAR  )
 TYPEMAP_IN2(const unsigned char, PyArray_UBYTE )
-TYPEMAP_IN2(const signed char,   PyArray_SBYTE )
+TYPEMAP_IN2(const signed char,   PyArray_BYTE  )
 TYPEMAP_IN2(const short,         PyArray_SHORT )
 TYPEMAP_IN2(const int,           PyArray_INT   )
 TYPEMAP_IN2(const long,          PyArray_LONG  )
@@ -408,7 +411,7 @@ TYPEMAP_IN2(PyObject,      PyArray_OBJECT)
 /* Define concrete examples of the TYPEMAP_INPLACE1 macro */
 TYPEMAP_INPLACE1(char,          PyArray_CHAR  )
 TYPEMAP_INPLACE1(unsigned char, PyArray_UBYTE )
-TYPEMAP_INPLACE1(signed char,   PyArray_SBYTE )
+TYPEMAP_INPLACE1(signed char,   PyArray_BYTE  )
 TYPEMAP_INPLACE1(short,         PyArray_SHORT )
 TYPEMAP_INPLACE1(int,           PyArray_INT   )
 TYPEMAP_INPLACE1(long,          PyArray_LONG  )
@@ -420,7 +423,7 @@ TYPEMAP_INPLACE1(npy_cdouble,        PyArray_CDOUBLE)
 TYPEMAP_INPLACE1(npy_clongdouble,    PyArray_CLONGDOUBLE)
 TYPEMAP_INPLACE1(const char,          PyArray_CHAR  )
 TYPEMAP_INPLACE1(const unsigned char, PyArray_UBYTE )
-TYPEMAP_INPLACE1(const signed char,   PyArray_SBYTE )
+TYPEMAP_INPLACE1(const signed char,   PyArray_BYTE  )
 TYPEMAP_INPLACE1(const short,         PyArray_SHORT )
 TYPEMAP_INPLACE1(const int,           PyArray_INT   )
 TYPEMAP_INPLACE1(const long,          PyArray_LONG  )
@@ -450,7 +453,7 @@ TYPEMAP_INPLACE1(PyObject,      PyArray_OBJECT)
 /* Define concrete examples of the TYPEMAP_INPLACE2 macro */
 TYPEMAP_INPLACE2(char,          PyArray_CHAR  )
 TYPEMAP_INPLACE2(unsigned char, PyArray_UBYTE )
-TYPEMAP_INPLACE2(signed char,   PyArray_SBYTE )
+TYPEMAP_INPLACE2(signed char,   PyArray_BYTE  )
 TYPEMAP_INPLACE2(short,         PyArray_SHORT )
 TYPEMAP_INPLACE2(int,           PyArray_INT   )
 TYPEMAP_INPLACE2(long,          PyArray_LONG  )
@@ -462,7 +465,7 @@ TYPEMAP_INPLACE2(npy_cdouble,        PyArray_CDOUBLE)
 TYPEMAP_INPLACE2(npy_clongdouble,    PyArray_CLONGDOUBLE)
 TYPEMAP_INPLACE2(const char,          PyArray_CHAR  )
 TYPEMAP_INPLACE2(const unsigned char, PyArray_UBYTE )
-TYPEMAP_INPLACE2(const signed char,   PyArray_SBYTE )
+TYPEMAP_INPLACE2(const signed char,   PyArray_BYTE  )
 TYPEMAP_INPLACE2(const short,         PyArray_SHORT )
 TYPEMAP_INPLACE2(const int,           PyArray_INT   )
 TYPEMAP_INPLACE2(const long,          PyArray_LONG  )
@@ -521,7 +524,7 @@ TYPEMAP_INPLACE2(PyObject,      PyArray_OBJECT)
 /* Define concrete examples of the TYPEMAP_ARGOUT1 macro */
 TYPEMAP_ARGOUT1(char,          PyArray_CHAR  )
 TYPEMAP_ARGOUT1(unsigned char, PyArray_UBYTE )
-TYPEMAP_ARGOUT1(signed char,   PyArray_SBYTE )
+TYPEMAP_ARGOUT1(signed char,   PyArray_BYTE  )
 TYPEMAP_ARGOUT1(short,         PyArray_SHORT )
 TYPEMAP_ARGOUT1(int,           PyArray_INT   )
 TYPEMAP_ARGOUT1(long,          PyArray_LONG  )
@@ -549,7 +552,7 @@ TYPEMAP_ARGOUT1(PyObject,      PyArray_OBJECT)
 /* Define concrete examples of the TYPEMAP_ARGOUT2 macro */
 TYPEMAP_ARGOUT2(char,          PyArray_CHAR  )
 TYPEMAP_ARGOUT2(unsigned char, PyArray_UBYTE )
-TYPEMAP_ARGOUT2(signed char,   PyArray_SBYTE )
+TYPEMAP_ARGOUT2(signed char,   PyArray_BYTE  )
 TYPEMAP_ARGOUT2(short,         PyArray_SHORT )
 TYPEMAP_ARGOUT2(int,           PyArray_INT   )
 TYPEMAP_ARGOUT2(long,          PyArray_LONG  )

@@ -49,11 +49,7 @@ PyObject *helper_appendToTuple( PyObject *where, PyObject *what ) {
   }
   return where;
 }
-
-
-
-
-%}
+%} //end inline code
 
 
 
@@ -76,206 +72,136 @@ PyObject *helper_appendToTuple( PyObject *where, PyObject *what ) {
 
 
 
-
+ /*
+  * make typechecks - used for overloading
+  */
 %include "typemaps.i"
 
-%typemap(typecheck) int *, const int *, int [], const int []
+%define NPY_TYPECHECK( ctype, atype )
+%typemap(typecheck) ctype *, const ctype *, ctype [], const ctype []
 {
-  $1 = (is_array($input) && PyArray_CanCastSafely(PyArray_TYPE($input),PyArray_INT)) ? 1 : 0;
+  $1 = (is_array($input) && PyArray_CanCastSafely(PyArray_TYPE($input),PyArray_##atype)) ? 1 : 0;
 };
+%enddef
 
-%typemap(typecheck) float *, const float *, float [], const float []
-{
-  $1 = (is_array($input) && PyArray_CanCastSafely(PyArray_TYPE($input),PyArray_FLOAT)) ? 1 : 0;
+NPY_TYPECHECK(         int,      INT )
+NPY_TYPECHECK(        long,     LONG )
+NPY_TYPECHECK(       float,    FLOAT )
+NPY_TYPECHECK(      double,   DOUBLE )
+NPY_TYPECHECK(  npy_cfloat,   CFLOAT )
+NPY_TYPECHECK(  npy_cdouble, CDOUBLE )
+
+
+
+ /*
+  * IN types
+  */
+%define I_IN_ARRAY1( ctype )
+%apply ctype * IN_ARRAY1 {
+    const ctype Ap [ ],
+    const ctype Ai [ ],
+    const ctype Aj [ ],
+    const ctype Bp [ ],
+    const ctype Bi [ ],	
+    const ctype Bj [ ],
+    const ctype offsets [ ]
 };
+%enddef
 
-%typemap(typecheck) double *, const double *, double [], const double []
-{
-  $1 = (is_array($input) && PyArray_CanCastSafely(PyArray_TYPE($input),PyArray_DOUBLE)) ? 1 : 0;
+%define T_IN_ARRAY1( ctype )
+%apply ctype * IN_ARRAY1 {
+    const ctype Ax [ ],
+    const ctype Bx [ ],
+    const ctype Xx [ ],
+    const ctype Yx [ ]
 };
+%enddef
 
-%typemap(typecheck) long double *, const long double *, long double [], const long double []
-{
-  $1 = (is_array($input) && PyArray_CanCastSafely(PyArray_TYPE($input),PyArray_LONGDOUBLE)) ? 1 : 0;
+%define T_IN_ARRAY2( ctype )
+%apply ctype * IN_ARRAY2 {
+  const ctype Mx    [ ],
+  const ctype diags [ ]
 };
+%enddef
 
-%typemap(typecheck) npy_cfloat *, const npy_cfloat *, npy_cfloat [], const npy_cfloat []
-{
-  $1 = (is_array($input) && PyArray_CanCastSafely(PyArray_TYPE($input),PyArray_CFLOAT)) ? 1 : 0;
+
+I_IN_ARRAY1( int  )
+I_IN_ARRAY1( long )
+
+T_IN_ARRAY1( int         )
+T_IN_ARRAY1( long        )
+T_IN_ARRAY1( float       )
+T_IN_ARRAY1( double      )
+T_IN_ARRAY1( npy_cfloat  )
+T_IN_ARRAY1( npy_cdouble )
+
+T_IN_ARRAY2( int         )
+T_IN_ARRAY2( long        )
+T_IN_ARRAY2( float       )
+T_IN_ARRAY2( double      )
+T_IN_ARRAY2( npy_cfloat  )
+T_IN_ARRAY2( npy_cdouble )
+
+
+
+ /*
+  * OUT types
+  */
+%define I_ARRAY_ARGOUT( ctype, atype )
+VEC_ARRAY_ARGOUT( ctype, atype )
+%apply std::vector<ctype>* array_argout {
+    std::vector<ctype>* Ap,
+    std::vector<ctype>* Ai,
+    std::vector<ctype>* Aj,
+    std::vector<ctype>* Bp,
+    std::vector<ctype>* Bi,
+    std::vector<ctype>* Bj,
+    std::vector<ctype>* Cp,
+    std::vector<ctype>* Ci,
+    std::vector<ctype>* Cj
 };
+%enddef
 
-%typemap(typecheck) npy_cdouble *, const npy_cdouble *, npy_cdouble [], const npy_cdouble []
-{
-  $1 = (is_array($input) && PyArray_CanCastSafely(PyArray_TYPE($input),PyArray_CDOUBLE)) ? 1 : 0;
+%define T_ARRAY_ARGOUT( ctype, atype )
+VEC_ARRAY_ARGOUT( ctype, atype )
+%apply std::vector<ctype>* array_argout {
+    std::vector<ctype>* Ax, 
+    std::vector<ctype>* Bx,
+    std::vector<ctype>* Cx, 
+    std::vector<ctype>* Xx,
+    std::vector<ctype>* Yx 
 };
+%enddef
 
-%typemap(typecheck) npy_clongdouble *, const npy_clongdouble *, npy_clongdouble [], const npy_clongdouble []
-{
-  $1 = (is_array($input) && PyArray_CanCastSafely(PyArray_TYPE($input),PyArray_CLONGDOUBLE)) ? 1 : 0;
+
+
+I_ARRAY_ARGOUT( int,   INT)
+I_ARRAY_ARGOUT( long, LONG)
+
+T_ARRAY_ARGOUT( int,         INT     )
+T_ARRAY_ARGOUT( long,        LONG    )
+T_ARRAY_ARGOUT( float,       FLOAT   )
+T_ARRAY_ARGOUT( double,      DOUBLE  )
+T_ARRAY_ARGOUT( npy_cfloat,  CFLOAT  )
+T_ARRAY_ARGOUT( npy_cdouble, CDOUBLE )
+
+
+
+ /*
+  * INOUT types
+  */
+%define T_INPLACE_ARRAY2( ctype )
+%apply ctype * INPLACE_ARRAY2 {
+  ctype Mx [ ]
 };
+%enddef
 
-
-
-
-
-
-/*
- * IN types
- */
-%apply int * IN_ARRAY1 {
-    const int Ap [ ],
-    const int Ai [ ],
-    const int Aj [ ],
-    const int Bp [ ],
-    const int Bi [ ],	
-    const int Bj [ ],
-    const int offsets [ ]
-};
-
-%apply float * IN_ARRAY1 {
-    const float Ax [ ],
-    const float Bx [ ],
-    const float Xx [ ],
-    const float Yx [ ]
-};
-
-%apply double * IN_ARRAY1 {
-    const double Ax [ ],
-    const double Bx [ ],
-    const double Xx [ ],
-    const double Yx [ ]
-};
-
-%apply long double * IN_ARRAY1 {
-    const long double Ax [ ],
-    const long double Bx [ ],
-    const long double Xx [ ],
-    const long double Yx [ ]
-};
-
-%apply npy_cfloat * IN_ARRAY1 {
-    const npy_cfloat Ax [ ],
-    const npy_cfloat Bx [ ],
-    const npy_cfloat Xx [ ],
-    const npy_cfloat Yx [ ]
-};
-
-%apply npy_cdouble * IN_ARRAY1 {
-    const npy_cdouble Ax [ ],
-    const npy_cdouble Bx [ ],
-    const npy_cdouble Xx [ ],
-    const npy_cdouble Yx [ ]
-};
-
-%apply npy_clongdouble * IN_ARRAY1 {
-    const npy_clongdouble Ax [ ],
-    const npy_clongdouble Bx [ ],
-    const npy_clongdouble Xx [ ],
-    const npy_clongdouble Yx [ ]
-};
-
-
-%apply float * IN_ARRAY2 { const float Mx[] }
-%apply double * IN_ARRAY2 { const double Mx[] }
-%apply long double * IN_ARRAY2 { const long double Mx[] }
-%apply npy_cfloat * IN_ARRAY2 { const npy_cfloat Mx[] }
-%apply npy_cdouble * IN_ARRAY2 { const npy_cdouble Mx[] }
-%apply npy_clongdouble * IN_ARRAY2 { const npy_longdouble Mx[] }
-
-
-%apply float * IN_ARRAY2 { const float diags[] }
-%apply double * IN_ARRAY2 { const double diags[] }
-%apply long double * IN_ARRAY2 { const long double diags[] }
-%apply npy_cfloat * IN_ARRAY2 { const npy_cfloat diags[] }
-%apply npy_cdouble * IN_ARRAY2 { const npy_cdouble diags[] }
-%apply npy_clongdouble * IN_ARRAY2 { const npy_longdouble diags[] }
-
-
-
-/*
- * OUT types
- */
-VEC_ARRAY_ARGOUT( int, INT )
-%apply std::vector<int>* array_argout {
-    std::vector<int>* Ap,
-    std::vector<int>* Ai,
-    std::vector<int>* Aj,
-    std::vector<int>* Bp,
-    std::vector<int>* Bi,
-    std::vector<int>* Bj,
-    std::vector<int>* Cp,
-    std::vector<int>* Ci,
-    std::vector<int>* Cj
-};
-
-VEC_ARRAY_ARGOUT( float, FLOAT )
-%apply std::vector<float>* array_argout {
-    std::vector<float>* Ax,
-    std::vector<float>* Bx,
-    std::vector<float>* Cx,
-    std::vector<float>* Xx,
-    std::vector<float>* Yx
-};
-
-VEC_ARRAY_ARGOUT( double, DOUBLE )
-%apply std::vector<double>* array_argout {
-    std::vector<double>* Ax,
-    std::vector<double>* Bx,
-    std::vector<double>* Cx,
-    std::vector<double>* Xx,
-    std::vector<double>* Yx
-};
-
-
-VEC_ARRAY_ARGOUT( long double, LONGDOUBLE )
-%apply std::vector<long double>* array_argout {
-    std::vector<long double>* Ax,
-    std::vector<long double>* Bx,
-    std::vector<long double>* Cx,
-    std::vector<long double>* Xx,
-    std::vector<long double>* Yx
-};
-
-VEC_ARRAY_ARGOUT( npy_cfloat, CFLOAT )
-%apply std::vector<npy_cfloat>* array_argout {
-    std::vector<npy_cfloat>* Ax,
-    std::vector<npy_cfloat>* Bx,
-    std::vector<npy_cfloat>* Cx,
-    std::vector<npy_cfloat>* Xx,
-    std::vector<npy_cfloat>* Yx
-};
-
-
-VEC_ARRAY_ARGOUT( npy_cdouble, CDOUBLE )
-%apply std::vector<npy_cdouble>* array_argout {
-    std::vector<npy_cdouble>* Ax,
-    std::vector<npy_cdouble>* Bx,
-    std::vector<npy_cdouble>* Cx,
-    std::vector<npy_cdouble>* Xx,
-    std::vector<npy_cdouble>* Yx
-};
-
-
-VEC_ARRAY_ARGOUT( npy_clongdouble, CLONGDOUBLE )
-%apply std::vector<npy_clongdouble>* array_argout {
-    std::vector<npy_clongdouble>* Ax,
-    std::vector<npy_clongdouble>* Bx,
-    std::vector<npy_clongdouble>* Cx,
-    std::vector<npy_clongdouble>* Xx,
-    std::vector<npy_clongdouble>* Yx
-};
-
-
-
-/*
- * INOUT types
- */
-%apply float * INPLACE_ARRAY2 { float Mx [] }
-%apply double * INPLACE_ARRAY2 { double Mx [] }
-%apply long double * INPLACE_ARRAY2 { long double Mx[] }
-%apply npy_cfloat * INPLACE_ARRAY2 { npy_cfloat Mx[] }
-%apply npy_cdouble * INPLACE_ARRAY2 { npy_cdouble Mx[] }
-%apply npy_clongdouble * INPLACE_ARRAY2 { npy_longdouble Mx[] }
+T_INPLACE_ARRAY2( int         )
+T_INPLACE_ARRAY2( long        )
+T_INPLACE_ARRAY2( float       )
+T_INPLACE_ARRAY2( double      )
+T_INPLACE_ARRAY2( npy_cfloat  )
+T_INPLACE_ARRAY2( npy_cdouble )
 
 
 
@@ -283,159 +209,68 @@ VEC_ARRAY_ARGOUT( npy_clongdouble, CLONGDOUBLE )
 
 
 %include "sparsetools.h"
-
-
-
  /*
-  * Order may be important here, list float before double
+  * Order may be important here, list float before npy_float64, scalar before complex
   */
+
+%define INSTANTIATE_ALL( f_name )		     
+%template(f_name)   f_name<int,int>;
+%template(f_name)   f_name<int,long>;
+%template(f_name)   f_name<int,float>;
+%template(f_name)   f_name<int,double>;
+%template(f_name)   f_name<int,npy_cfloat>;
+%template(f_name)   f_name<int,npy_cdouble>;
+/* 64-bit indices would go here */
+%enddef
+
+
 
 /*
  *  CSR->CSC or CSC->CSR or CSR = CSR^T or CSC = CSC^T
  */
-%template(csrtocsc)   csrtocsc<float>; 
-%template(csrtocsc)   csrtocsc<double>; 
-%template(csrtocsc)   csrtocsc<long double>; 
-%template(csrtocsc)   csrtocsc<npy_cfloat>; 
-%template(csrtocsc)   csrtocsc<npy_cdouble>; 
-%template(csrtocsc)   csrtocsc<npy_clongdouble>; 
-
-%template(csctocsr)   csctocsr<float>; 
-%template(csctocsr)   csctocsr<double>; 
-%template(csctocsr)   csctocsr<long double>; 
-%template(csctocsr)   csctocsr<npy_cfloat>; 
-%template(csctocsr)   csctocsr<npy_cdouble>; 
-%template(csctocsr)   csctocsr<npy_clongdouble>; 
-
+INSTANTIATE_ALL(csrtocsc)
+INSTANTIATE_ALL(csctocsr)
 
 /*
  * CSR<->COO and CSC<->COO
  */
-%template(csrtocoo)   csrtocoo<float>; 
-%template(csrtocoo)   csrtocoo<double>; 
-%template(csrtocoo)   csrtocoo<long double>; 
-%template(csrtocoo)   csrtocoo<npy_cfloat>; 
-%template(csrtocoo)   csrtocoo<npy_cdouble>; 
-%template(csrtocoo)   csrtocoo<npy_clongdouble>; 
-
-%template(cootocsr)   cootocsr<float>; 
-%template(cootocsr)   cootocsr<double>; 
-%template(cootocsr)   cootocsr<long double>; 
-%template(cootocsr)   cootocsr<npy_cfloat>; 
-%template(cootocsr)   cootocsr<npy_cdouble>; 
-%template(cootocsr)   cootocsr<npy_clongdouble>; 
-
-%template(csctocoo)   csctocoo<float>; 
-%template(csctocoo)   csctocoo<double>; 
-%template(csctocoo)   csctocoo<long double>; 
-%template(csctocoo)   csctocoo<npy_cfloat>; 
-%template(csctocoo)   csctocoo<npy_cdouble>; 
-%template(csctocoo)   csctocoo<npy_clongdouble>; 
-
-%template(cootocsc)   cootocsc<float>; 
-%template(cootocsc)   cootocsc<double>; 
-%template(cootocsc)   cootocsc<long double>; 
-%template(cootocsc)   cootocsc<npy_cfloat>; 
-%template(cootocsc)   cootocsc<npy_cdouble>; 
-%template(cootocsc)   cootocsc<npy_clongdouble>; 
-
+INSTANTIATE_ALL(csrtocoo)
+INSTANTIATE_ALL(csctocoo)
+INSTANTIATE_ALL(cootocsr)
+INSTANTIATE_ALL(cootocsc)
 
 /*
  * CSR+CSR and CSC+CSC
  */
-%template(csrplcsr)   csrplcsr<float>; 
-%template(csrplcsr)   csrplcsr<double>; 
-%template(csrplcsr)   csrplcsr<long double>; 
-%template(csrplcsr)   csrplcsr<npy_cfloat>; 
-%template(csrplcsr)   csrplcsr<npy_cdouble>; 
-%template(csrplcsr)   csrplcsr<npy_clongdouble>; 
-
-%template(cscplcsc)   cscplcsc<float>; 
-%template(cscplcsc)   cscplcsc<double>; 
-%template(cscplcsc)   cscplcsc<long double>; 
-%template(cscplcsc)   cscplcsc<npy_cfloat>; 
-%template(cscplcsc)   cscplcsc<npy_cdouble>; 
-%template(cscplcsc)   cscplcsc<npy_clongdouble>; 
-
-
+INSTANTIATE_ALL(csrplcsr)
+INSTANTIATE_ALL(cscplcsc)
 
 /*
  * CSR*CSR and CSC*CSC
  */
-%template(csrmucsr)   csrmucsr<float>; 
-%template(csrmucsr)   csrmucsr<double>; 
-%template(csrmucsr)   csrmucsr<long double>; 
-%template(csrmucsr)   csrmucsr<npy_cfloat>; 
-%template(csrmucsr)   csrmucsr<npy_cdouble>; 
-%template(csrmucsr)   csrmucsr<npy_clongdouble>; 
-
-%template(cscmucsc)   cscmucsc<float>; 
-%template(cscmucsc)   cscmucsc<double>; 
-%template(cscmucsc)   cscmucsc<long double>; 
-%template(cscmucsc)   cscmucsc<npy_cfloat>; 
-%template(cscmucsc)   cscmucsc<npy_cdouble>; 
-%template(cscmucsc)   cscmucsc<npy_clongdouble>; 
+INSTANTIATE_ALL(csrmucsr)
+INSTANTIATE_ALL(cscmucsc)
 
 /*
  * CSR*x and CSC*x
  */
-%template(csrmux)   csrmux<float>; 
-%template(csrmux)   csrmux<double>; 
-%template(csrmux)   csrmux<long double>; 
-%template(csrmux)   csrmux<npy_cfloat>; 
-%template(csrmux)   csrmux<npy_cdouble>; 
-%template(csrmux)   csrmux<npy_clongdouble>; 
-
-%template(cscmux)   cscmux<float>; 
-%template(cscmux)   cscmux<double>; 
-%template(cscmux)   cscmux<long double>; 
-%template(cscmux)   cscmux<npy_cfloat>; 
-%template(cscmux)   cscmux<npy_cdouble>; 
-%template(cscmux)   cscmux<npy_clongdouble>; 
-
+INSTANTIATE_ALL(csrmux)
+INSTANTIATE_ALL(cscmux)
 
 /*
  * CSR(elmul)CSR and CSC(elmul)CSC
  */
-%template(csrelmulcsr)   csrelmulcsr<float>; 
-%template(csrelmulcsr)   csrelmulcsr<double>; 
-%template(csrelmulcsr)   csrelmulcsr<long double>; 
-%template(csrelmulcsr)   csrelmulcsr<npy_cfloat>; 
-%template(csrelmulcsr)   csrelmulcsr<npy_cdouble>; 
-%template(csrelmulcsr)   csrelmulcsr<npy_clongdouble>; 
-
-%template(cscelmulcsc)   cscelmulcsc<float>; 
-%template(cscelmulcsc)   cscelmulcsc<double>; 
-%template(cscelmulcsc)   cscelmulcsc<long double>; 
-%template(cscelmulcsc)   cscelmulcsc<npy_cfloat>; 
-%template(cscelmulcsc)   cscelmulcsc<npy_cdouble>; 
-%template(cscelmulcsc)   cscelmulcsc<npy_clongdouble>; 
+INSTANTIATE_ALL(csrelmulcsr)
+INSTANTIATE_ALL(cscelmulcsc)
 
 
 /*
  * spdiags->CSC
  */
-%template(spdiags)   spdiags<float>; 
-%template(spdiags)   spdiags<double>; 
-%template(spdiags)   spdiags<long double>; 
-%template(spdiags)   spdiags<npy_cfloat>; 
-%template(spdiags)   spdiags<npy_cdouble>; 
-%template(spdiags)   spdiags<npy_clongdouble>; 
-
+INSTANTIATE_ALL(spdiags)
 
 /*
  * CSR<->Dense
  */
-%template(csrtodense)   csrtodense<float>; 
-%template(csrtodense)   csrtodense<double>; 
-%template(csrtodense)   csrtodense<long double>; 
-%template(csrtodense)   csrtodense<npy_cfloat>; 
-%template(csrtodense)   csrtodense<npy_cdouble>; 
-%template(csrtodense)   csrtodense<npy_clongdouble>; 
-
-%template(densetocsr)   densetocsr<float>; 
-%template(densetocsr)   densetocsr<double>; 
-%template(densetocsr)   densetocsr<long double>; 
-%template(densetocsr)   densetocsr<npy_cfloat>; 
-%template(densetocsr)   densetocsr<npy_cdouble>; 
-%template(densetocsr)   densetocsr<npy_clongdouble>; 
+INSTANTIATE_ALL(csrtodense)
+INSTANTIATE_ALL(densetocsr)
