@@ -10,14 +10,25 @@ else:
     isUmfpack = False
 useUmfpack = True
 
-def use_solver( use ):
+def use_solver( **kwargs ):
     """
+    Valid keyword arguments with defaults (other ignored):
+      useUmfpack = True
+      assumeSortedIndices = False
+      
     The default sparse solver is umfpack when available. This can be changed by
-    passing "use = {'useUmfpack' : False}"
-    which then causes the always present SuperLU based solver to be used.
+    passing useUmfpack = False, which then causes the always present SuperLU
+    based solver to be used.
+    
+    Umfpack requires a CSR/CSC matrix to have sorted column/row indices. If
+    sure that the matrix fulfills this, pass assumeSortedIndices =
+    True to gain some speed.
     """
-    for key, val in use.iteritems():
-        globals()[key] = val
+    if kwargs.has_key( 'useUmfpack' ):
+        globals()['useUmfpack'] = kwargs['useUmfpack']
+
+    if isUmfpack:
+        umfpack.configure( **kwargs )
 
 def _toCS_superLU( A ):
     if hasattr(A, 'tocsc') and not isspmatrix_csr( A ):
@@ -71,7 +82,8 @@ def spsolve(A, b, permc_spec=2):
 
         family = {'d' : 'di', 'D' : 'zi'}
         umf = umfpack.UmfpackContext( family[mat.dtype.char] )
-        return umf.linsolve( umfpack.UMFPACK_A, mat, b, autoTranspose = True )
+        return umf.linsolve( umfpack.UMFPACK_A, mat, b,
+                             autoTranspose = True )
 
     else:
         mat, csc = _toCS_superLU( A )
@@ -116,14 +128,14 @@ def _testme():
     a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
     b = array([1, 2, 3, 4, 5])
     print "Solve: single precision complex:"
-    use_solver( use = {'useUmfpack' : False} )
+    use_solver( useUmfpack = False )
     a = a.astype('F')
     x = spsolve(a, b)
     print x
     print "Error: ", a*x-b
 
     print "Solve: double precision complex:"
-    use_solver( use = {'useUmfpack' : True} )
+    use_solver( useUmfpack = True )
     a = a.astype('D')
     x = spsolve(a, b)
     print x
@@ -136,7 +148,7 @@ def _testme():
     print "Error: ", a*x-b
 
     print "Solve: single precision:"
-    use_solver( use = {'useUmfpack' : False} )
+    use_solver( useUmfpack = False )
     a = a.astype('f')
     x = spsolve(a, b.astype('f'))
     print x

@@ -6,8 +6,8 @@ The default solver is SuperLU (included in the scipy distribution), which can
 solve real or complex linear systems in both single and double precisions.  It
 is automatically replaced by UMFPACK, if available. Note that UMFPACK works in
 double precision only, so switch it off by
->>> use_solver( use = {'useUmfpack': False} )
-to solve in the single precision.
+>>> use_solver( useUmfpack = False )
+to solve in the single precision. See also use_solver documentation.
 
 Example session:
 
@@ -20,14 +20,14 @@ Example session:
 >>> a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
 >>> b = array([1, 2, 3, 4, 5])
 >>> print "Solve: single precision complex:"
->>> use_solver( use = {'useUmfpack' : False} )
+>>> use_solver( useUmfpack = False )
 >>> a = a.astype('F')
 >>> x = spsolve(a, b)
 >>> print x
 >>> print "Error: ", a*x-b
 >>>
 >>> print "Solve: double precision complex:"
->>> use_solver( use = {'useUmfpack' : True} )
+>>> use_solver( useUmfpack = True )
 >>> a = a.astype('D')
 >>> x = spsolve(a, b)
 >>> print x
@@ -40,7 +40,7 @@ Example session:
 >>> print "Error: ", a*x-b
 >>>
 >>> print "Solve: single precision:"
->>> use_solver( use = {'useUmfpack' : False} )
+>>> use_solver( useUmfpack = False )
 >>> a = a.astype('f')
 >>> x = spsolve(a, b.astype('f'))
 >>> print x

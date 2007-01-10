@@ -15,6 +15,23 @@ try: # Silence import error.
 except:
     _um = None
 
+assumeSortedIndices = False
+
+##
+# 10.01.2006, c
+def configure( **kwargs ):
+    """
+    Valid keyword arguments with defaults (other ignored):
+      assumeSortedIndices = False
+
+    Umfpack requires a CSR/CSC matrix to have sorted column/row indices. If
+    sure that the matrix fulfills this, pass assumeSortedIndices =
+    True to gain some speed.
+    """
+    if kwargs.has_key( 'assumeSortedIndices' ):
+        globals()['assumeSortedIndices'] = kwargs['assumeSortedIndices']
+    
+
 ##
 # 30.11.2005, c
 def updateDictWithVars( adict, module, pattern, group = None ):
@@ -330,15 +347,15 @@ class UmfpackContext( Struct ):
 
     ##
     # 30.11.2005, c
-    # 01.12.2005
-    # 01.03.2006
+    # last revision: 10.01.2007
     def symbolic( self, mtx ):
         """Symbolic object (symbolic LU decomposition) computation for a given
         sparsity pattern."""
         self.free_symbolic()
 
-        #row/column indices cannot be assumed to be sorted
-        mtx.ensure_sorted_indices(inplace=True)
+        if not assumeSortedIndices:
+            # row/column indices cannot be assumed to be sorted
+            mtx.ensure_sorted_indices( inplace = True )
 
         indx = self._getIndx( mtx )
         if self.isReal:
@@ -372,9 +389,6 @@ class UmfpackContext( Struct ):
         if necessary."""
 
         self.free_numeric()
-
-        #row/column indices cannot be assumed to be sorted
-        mtx.ensure_sorted_indices(inplace=True)
 
         if self._symbolic is None:
             self.symbolic( mtx )
