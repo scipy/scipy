@@ -812,7 +812,9 @@ class csc_matrix(_cs_matrix):
                   "the size of data list"
         if (self.rowind.dtype != numpy.intc):
             self.rowind = self.rowind.astype(numpy.intc)
+        if (self.indptr.dtype != numpy.intc):            
             self.indptr = self.indptr.astype(numpy.intc)
+            
         self.nnz = nnz
         self.nzmax = nzmax
         self.dtype = self.data.dtype
@@ -852,17 +854,17 @@ class csc_matrix(_cs_matrix):
 
     def transpose(self, copy=False):
         M, N = self.shape
-        new = csr_matrix((N, M), nzmax=self.nzmax, dtype=self.dtype)
+
         if copy:
-            new.data = self.data.copy()
-            new.colind = self.rowind.copy()
-            new.indptr = self.indptr.copy()
+            data   = self.data.copy()
+            colind = self.rowind.copy()
+            indptr = self.indptr.copy()
         else:
-            new.data = self.data
-            new.colind = self.rowind
-            new.indptr = self.indptr
-        new._check()
-        return new
+            data   = self.data
+            colind = self.rowind
+            indptr = self.indptr
+
+        return csr_matrix((data,colind,indptr),(N,M))
 
     def conj(self, copy=False):
         new = csc_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtype)
@@ -1215,7 +1217,9 @@ class csr_matrix(_cs_matrix):
                   "the size of data list"
         if (self.colind.dtype != numpy.intc):
             self.colind = self.colind.astype(numpy.intc)
+        if (self.indptr.dtype != numpy.intc):            
             self.indptr = self.indptr.astype(numpy.intc)
+
         self.nnz = nnz
         self.nzmax = nzmax
         self.dtype = self.data.dtype
@@ -1235,17 +1239,17 @@ class csr_matrix(_cs_matrix):
 
     def transpose(self, copy=False):
         M, N = self.shape
-        new = csc_matrix((N, M), nzmax=self.nzmax, dtype=self.dtype)
+
         if copy:
-            new.data = self.data.copy()
-            new.rowind = self.colind.copy()
-            new.indptr = self.indptr.copy()
+            data   = self.data.copy()
+            rowind = self.colind.copy()
+            indptr = self.indptr.copy()
         else:
-            new.data = self.data
-            new.rowind = self.colind
-            new.indptr = self.indptr
-        new._check()
-        return new
+            data   = self.data
+            rowind = self.colind
+            indptr = self.indptr
+
+        return csc_matrix((data,rowind,indptr),(N,M))
 
     def sum(self, axis=None):
         # Override the base class sum method for efficiency in the cases
