@@ -47,13 +47,13 @@ def configuration(parent_package='',top_path=None):
     #config.add_subpackage('odr')
 
     # Delaunay triangulation and Natural Neighbor interpolation
-    config.add_subpackage('delaunay')
+    #config.add_subpackage('delaunay')
 
     # Gist-based plotting library for X11
     #config.add_subpackage('xplt')
 
     # elementwise numerical expressions
-    config.add_subpackage('numexpr')
+    #config.add_subpackage('numexpr')
 
     # Statistical models
     #config.add_subpackage('models')

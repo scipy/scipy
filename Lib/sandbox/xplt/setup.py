@@ -245,9 +245,8 @@ def configuration(parent_package='',top_path=None):
                       ]
 
     gistpath = os.path.join(get_python_lib(1),config.path_in_package,"gistdata")
-    gistpath = os.path.join('/home/share/software',gistpath[1:])
     gistpath = gistpath.replace("\\",r"\\\\")
-    print gistpath
+
     def get_playsource(extension,build_dir):
         if windows:
             playsource = winsource + allsource
