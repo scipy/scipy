@@ -563,16 +563,16 @@ class _cs_matrix(spmatrix):
             raise TypeError, "unsupported type for sparse matrix power"
 
 
-    def matmat(self, other, self_ind, other_ind, cls):
+    def _matmat(self, other, self_ind, other_ind, fn, cls):
         if isspmatrix(other):
             M, K1 = self.shape
             K2, N = other.shape
             if (K1 != K2):
                 raise ValueError, "shape mismatch error"
             other = other.tocsc()
-            indptr, ind, data = cscmucsc(M, N, self.indptr, self_ind, \
-                                            self.data, other.indptr, \
-                                            other_ind, other.data)
+            indptr, ind, data = fn(M, N, self.indptr, self_ind, \
+                                   self.data, other.indptr, \
+                                   other_ind, other.data)
             return cls((data, ind, indptr), (M, N))      
         elif isdense(other):
             # This is SLOW!  We need a more efficient implementation
@@ -581,7 +581,7 @@ class _cs_matrix(spmatrix):
         else:
             raise TypeError, "need a dense or sparse matrix"
 
-    def matvec(self, other, self_ind, fn):
+    def _matvec(self, other, self_ind, fn):
         if isdense(other):
             # This check is too harsh -- it prevents a column vector from
             # being created on-the-fly like dense matrix objects can.
@@ -602,7 +602,7 @@ class _cs_matrix(spmatrix):
         else:
             raise TypeError, "need a dense vector"
 
-    def rmatvec(self, other, shape0, shape1, fn, conjugate=True):
+    def _rmatvec(self, other, shape0, shape1, fn, conjugate=True):
         if isdense(other):
             # This check is too harsh -- it prevents a column vector from
             # being created on-the-fly like dense matrix objects can.
@@ -616,8 +616,8 @@ class _cs_matrix(spmatrix):
             y = fn(shape0, shape1, self.indptr, self.rowind, cd, oth)
             if isinstance(other, matrix):
                 y = asmatrix(y)
-                # In the (unlikely) event that this matrix is 1x1 and 'other' was an
-                # (mx1) column vector, transpose the result.
+                # In the (unlikely) event that this matrix is 1x1 and 'other'
+                # was an (mx1) column vector, transpose the result.
                 if other.ndim == 2 and other.shape[1] == 1:
                     y = y.T
             return y
@@ -629,7 +629,7 @@ class _cs_matrix(spmatrix):
     def getdata(self, ind):
         return self.data[ind]
 
-    def tocoo(self, fn, self_ind):
+    def _tocoo(self, fn, self_ind):
         rows, cols, data = fn(self.shape[0], self.shape[1], \
                               self.indptr, self_ind, self.data)
         return coo_matrix((data, (rows, cols)), self.shape)
@@ -887,13 +887,13 @@ class csc_matrix(_cs_matrix):
             return asmatrix(out).T
                     
     def matvec(self, other):
-        _cs_matrix.matvec(self, other, self.rowind, cscmux)
+        _cs_matrix._matvec(self, other, self.rowind, cscmux)
 
     def rmatvec(self, other, conjugate=True):
-        _cs_matrix.rmatvec(self, other, shape[1], shape[0], cscmux, conjugate=conjugate)
+        _cs_matrix._rmatvec(self, other, shape[1], shape[0], cscmux, conjugate=conjugate)
 
     def matmat(self, other):
-        _cs_matrix.matmat(self, other, self.rowind, other.rowind, csc_matrix)
+        _cs_matrix._matmat(self, other, self.rowind, other.rowind, cscmucsc, csc_matrix)
 
 
     def __getitem__(self, key):
@@ -1004,7 +1004,7 @@ class csc_matrix(_cs_matrix):
         return self.toself(copy)
 
     def tocoo(self):
-        _cs_matrix.tocoo(self, csctocoo, self.rowind)
+        _cs_matrix._tocoo(self, csctocoo, self.rowind)
 
     def tocsr(self):
         indptr, colind, data = csctocsr(self.shape[0], self.shape[1], \
@@ -1032,13 +1032,9 @@ class csc_matrix(_cs_matrix):
         """Return a copy of this matrix where the row indices are sorted
         """
         if inplace:
-##             temp = self.tocsr().tocsc()
-##             self.rowind = temp.rowind
-##             self.indptr = temp.indptr
-##             self.data   = temp.data
-            sparsetools.ensure_sorted_indices( self.shape[1],self.shape[0],
-                                               self.indptr,self.rowind,
-                                               self.data )
+            sparsetools.ensure_sorted_indices(self.shape[1], self.shape[0],
+                                              self.indptr, self.rowind,
+                                              self.data )
         else:
             return self.tocsr().tocsc()
 
@@ -1261,13 +1257,13 @@ class csr_matrix(_cs_matrix):
             return asmatrix(out)
 
     def matvec(self, other):
-        _cs_matrix.matvec(self, other, self.colind, csrmux)
+        _cs_matrix._matvec(self, other, self.colind, csrmux)
         
     def rmatvec(self, other, conjugate=True):
-        _cs_matrix.rmatvec(self, other, shape[0], shape[1], csrmux, conjugate=conjugate)
+        _cs_matrix._rmatvec(self, other, shape[0], shape[1], csrmux, conjugate=conjugate)
 
     def matmat(self, other):
-        _cs_matrix.matmat(self, other, self.colind, other.colind, csr_matrix)
+        _cs_matrix._matmat(self, other, self.colind, other.colind, csrmucsr, csr_matrix)
 
 
     def __getitem__(self, key):
@@ -1375,7 +1371,7 @@ class csr_matrix(_cs_matrix):
         return self.toself(copy)
 
     def tocoo(self):
-        _cs_matrix.tocoo(self, csrtocoo, self.colind)
+        _cs_matrix._tocoo(self, csrtocoo, self.colind)
 
     def tocsc(self):
         indptr, rowind, data = csrtocsc(self.shape[0], self.shape[1], \
@@ -1407,13 +1403,9 @@ class csr_matrix(_cs_matrix):
         """Return a copy of this matrix where the column indices are sorted
         """
         if inplace:
-##             temp = self.tocsc().tocsr()
-##             self.colind = temp.colind
-##             self.indptr = temp.indptr
-##             self.data   = temp.data
-            sparsetools.ensure_sorted_indices( self.shape[0],self.shape[1],
-                                               self.indptr,self.colind,
-                                               self.data )
+            sparsetools.ensure_sorted_indices(self.shape[0], self.shape[1],
+                                              self.indptr, self.colind,
+                                              self.data )
         else:
             return self.tocsc().tocsr()
 
