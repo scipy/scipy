@@ -447,7 +447,7 @@ def fromrecords(reclist, dtype=None, shape=None, formats=None, names=None,
         if isinstance(reclist, recarray):
             arrlist = [reclist.field(i) for i in range(len(reclist.dtype))]
             if names is None:
-                names = nrec.dtype.names
+                names = reclist.dtype.names
         else:
             obj = numeric.array(reclist,dtype=object)
             arrlist = [numeric.array(obj[...,i].tolist()) 
@@ -568,7 +568,7 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
         line = f.readline()
         firstline = line[:line.find(commentchar)].strip()
         _varnames = firstline.split(delimitor)
-        print "_VARNAMES:%s-"%_varnames, len(_varnames)
+        logging.debug("_VARNAMES:%s-%s"% (_varnames,len(_varnames)))
         if len(_varnames) > 1:
             break
     if varnames is None:
@@ -593,7 +593,7 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
     mdescr = [(n,f) for (n,f) in zip(varnames, vartypes)]
     # Get the data and the mask .................
     # We just need a list of masked_arrays. It's easier to create it like that:
-    _mask = (_variables.T == '')
+    _mask = (_variables.T == missingchar)
     _datalist = [masked_array(a,mask=m,dtype=t)
                      for (a,m,t) in zip(_variables.T, _mask, vartypes)]
     return fromarrays(_datalist, dtype=mdescr)
