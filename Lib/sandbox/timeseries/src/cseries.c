@@ -9,150 +9,496 @@ static char cseries_doc[] = "Speed sensitive time series operations";
 
 ///////////////////////////////////////////////////////////////////////
 
+// helpers for frequency conversion routines //
 
-static //PyArrayObject *
-setArrayItem_1D(PyArrayObject **theArray, long index, PyObject *newVal)
-{
-    if (index >= 0)
-    {
-        //set value in array
-        PyArray_SETITEM(*theArray, PyArray_GetPtr(*theArray, &index), newVal);
+static long DtoB_weekday(long fromDate) { return (((fromDate / 7) * 5) + fromDate%7); }
+
+static long DtoB_WeekendToMonday(mxDateTimeObject *dailyDate) {
+
+    long absdate = dailyDate->absdate;
+    if (dailyDate->day_of_week > 4) {
+        //change to Monday after weekend
+        absdate += (7 - dailyDate->day_of_week);
     }
-
+    return DtoB_weekday(absdate);
 }
 
-static //PyArrayObject *
-setArrayItem_2D(PyArrayObject **theArray, long index_x, long index_y, PyObject *newVal)
-{
-    long idx[] = {index_x, index_y};
+static long DtoB_WeekendToFriday(mxDateTimeObject *dailyDate) {
 
-    if (index_x >= 0 && index_y >= 0) {
-        //set value in array
-        PyArray_SETITEM(*theArray, PyArray_GetPtr(*theArray, idx), newVal);
+    long absdate = dailyDate->absdate;
+    if (dailyDate->day_of_week > 4) {
+        //change to friday before weekend
+        absdate -= (dailyDate->day_of_week - 4);
     }
+    return DtoB_weekday(absdate);
+}
 
+static long absdate_from_ymd(int y, int m, int d) {
+    mxDateTimeObject *tempDate;
+    long result;
+
+    tempDate = (mxDateTimeObject *)mxDateTime.DateTime_FromDateAndTime(y,m,d,0,0,0);
+    result = (long)(tempDate->absdate);
+    Py_DECREF(tempDate);
+    return result;
 }
 
 
-static int
-freqVal(char freq)
-{
-    switch(freq)
-    {
-        case 'A':
-            //annual
-            return 1;
-        case 'Q':
-            //quarterly
-            return 2;
-        case 'M':
-            //monthly
-            return 3;
-        case 'B':
-            //business
-            return 4;
-        case 'D':
-            //daily
-            return 5;
-        default:
-            return 0;
+static mxDateTimeObject *day_before_mxobj(int y, int m, int d) {
+    return  (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(absdate_from_ymd(y, m, d) - 1, 0);
+}
+
+/*
+returns Date(y, m, d) converted to business frequency.
+If the initial result is a weekend, the following Monday is returned
+*/
+static long busday_before(int y, int m, int d) {
+    mxDateTimeObject *dailyDate;
+    long result;
+
+    dailyDate = (mxDateTimeObject *)mxDateTime.DateTime_FromDateAndTime(y,m,d,0,0,0);
+    result = DtoB_WeekendToMonday(dailyDate);
+
+    Py_DECREF(dailyDate);
+    return result;
+}
+
+/*
+returns Date(y, m, d) - 1 converted to business frequency.
+If the initial result is a weekend, the preceding Friday is returned
+*/
+static long busday_after(int y, int m, int d) {
+    mxDateTimeObject *dailyDate;
+    long result;
+
+    dailyDate = day_before_mxobj(y,m,d);
+    result = DtoB_WeekendToFriday(dailyDate);
+
+    Py_DECREF(dailyDate);
+    return result;
+}
+
+///////////////////////////////////////////////
+
+// frequency specifc conversion routines
+// each function must take an integer fromDate and a char relation ('B' or 'A' for 'BEFORE' or 'AFTER')
+
+//************ FROM ANNUAL ***************
+
+static long asfreq_AtoQ(long fromDate, char relation) {
+    if (relation == 'B') { return fromDate * 4 + 1; }
+    else {                 return (fromDate + 1) * 4; }
+}
+
+static long asfreq_AtoM(long fromDate, char relation) {
+    if (relation == 'B') { return fromDate * 12 + 1; }
+    else {                 return (fromDate + 1) * 12; }
+}
+
+static long asfreq_AtoW(long fromDate, char relation) { return 0; }
+
+static long asfreq_AtoB(long fromDate, char relation) {
+    if (relation == 'B') { return busday_before(fromDate,1,1); }
+    else {                 return busday_after(fromDate+1,1,1); }
+}
+
+static long asfreq_AtoD(long fromDate, char relation) {
+    if (relation == 'B') { return absdate_from_ymd(fromDate,1,1); }
+    else {                 return absdate_from_ymd(fromDate+1,1,1) - 1; }
+}
+
+static long asfreq_AtoH(long fromDate, char relation) { return 0; }
+static long asfreq_AtoT(long fromDate, char relation) { return 0; }
+static long asfreq_AtoS(long fromDate, char relation) { return 0; }
+
+
+//************ FROM QUARTERLY ***************
+
+static long asfreq_QtoA(long fromDate, char relation) { return (fromDate - 1) / 4; }
+
+static long asfreq_QtoM(long fromDate, char relation) {
+    if (relation == 'B') { return fromDate * 3 - 2; }
+    else {                 return fromDate  * 3; }
+}
+
+static long asfreq_QtoW(long fromDate, char relation) { return 0; }
+
+static void QtoD_ym(long fromDate, long *y, long *m) {
+    *y = (fromDate - 1) / 4;
+    *m = fromDate * 3 - 12 * (*y) - 2;
+}
+
+static long asfreq_QtoB(long fromDate, char relation) {
+
+    long y, m;
+
+    if (relation == 'B') {
+        QtoD_ym(fromDate, &y, &m);
+        return busday_before(y,m,1);
+    } else {
+        QtoD_ym(fromDate+1, &y, &m);
+        return busday_after(y, m, 1);
     }
 }
 
-static long
-toDaily(long fromDate, char fromFreq)
-{
-    long absdate;
-    int y,m,d;
+static long asfreq_QtoD(long fromDate, char relation) {
 
-    mxDateTimeObject *theDate;
+    long y, m;
 
-    //convert fromDate to days since (0 AD - 1 day)
+    if (relation == 'B') {
+        QtoD_ym(fromDate, &y, &m);
+        return absdate_from_ymd(y, m, 1);
+    } else {
+        QtoD_ym(fromDate+1, &y, &m);
+        return absdate_from_ymd(y, m, 1) - 1;
+    }
+}
+
+static long asfreq_QtoH(long fromDate, char relation) { return 0; }
+static long asfreq_QtoT(long fromDate, char relation) { return 0; }
+static long asfreq_QtoS(long fromDate, char relation) { return 0; }
+
+
+//************ FROM MONTHLY ***************
+
+static long asfreq_MtoA(long fromDate, char relation) { return (fromDate - 1) / 12; }
+static long asfreq_MtoQ(long fromDate, char relation) { return (fromDate - 1) / 3 + 1; }
+
+static long asfreq_MtoW(long fromDate, char relation) { return 0; }
+
+static void MtoD_ym(long fromDate, long *y, long *m) {
+    *y = (fromDate - 1) / 12;
+    *m = fromDate  - 12 * (*y);
+}
+
+static long asfreq_MtoB(long fromDate, char relation) {
+
+    long y, m;
+
+    if (relation == 'B') {
+        MtoD_ym(fromDate, &y, &m);
+        return busday_before(y,m,1);
+    } else {
+        MtoD_ym(fromDate+1, &y, &m);
+        return busday_after(y, m, 1);
+    }
+}
+
+static long asfreq_MtoD(long fromDate, char relation) {
+
+    long y, m;
+
+    if (relation == 'B') {
+        MtoD_ym(fromDate, &y, &m);
+        return absdate_from_ymd(y, m, 1);
+    } else {
+        MtoD_ym(fromDate+1, &y, &m);
+        return absdate_from_ymd(y, m, 1) - 1;
+    }
+}
+
+static long asfreq_MtoH(long fromDate, char relation) { return 0; }
+static long asfreq_MtoT(long fromDate, char relation) { return 0; }
+static long asfreq_MtoS(long fromDate, char relation) { return 0; }
+
+
+//************ FROM WEEKLY ***************
+
+static long asfreq_WtoA(long fromDate, char relation) { return 0; }
+static long asfreq_WtoQ(long fromDate, char relation) { return 0; }
+static long asfreq_WtoM(long fromDate, char relation) { return 0; }
+static long asfreq_WtoB(long fromDate, char relation) { return 0; }
+static long asfreq_WtoD(long fromDate, char relation) { return 0; }
+static long asfreq_WtoH(long fromDate, char relation) { return 0; }
+static long asfreq_WtoT(long fromDate, char relation) { return 0; }
+static long asfreq_WtoS(long fromDate, char relation) { return 0; }
+
+
+//************ FROM DAILY ***************
+
+static long asfreq_DtoA(long fromDate, char relation) {
+    mxDateTimeObject *mxDate;
+    long result;
+
+    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(fromDate, 0);
+    result = (long)(mxDate->year);
+    Py_DECREF(mxDate);
+    return result;
+}
+
+static long asfreq_DtoQ(long fromDate, char relation) {
+
+    mxDateTimeObject *mxDate;
+    long result;
+
+    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(fromDate, 0);
+    result = (long)((mxDate->year) * 4 + (mxDate->month-1)/3 + 1);
+    Py_DECREF(mxDate);
+    return result;
+}
+
+static long asfreq_DtoM(long fromDate, char relation) {
+    mxDateTimeObject *mxDate;
+    long result;
+
+    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(fromDate, 0);
+    result = (long)((mxDate->year) * 12 + mxDate->month);
+    Py_DECREF(mxDate);
+    return result;
+}
+
+
+static long asfreq_DtoW(long fromDate, char relation) { return 0; }
+
+static long asfreq_DtoB(long fromDate, char relation) {
+    mxDateTimeObject *mxDate;
+    long result;
+
+    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(fromDate, 0);
+    if (relation == 'B') {
+        result = DtoB_WeekendToFriday(mxDate);
+    } else {
+        result = DtoB_WeekendToMonday(mxDate);
+    }
+
+    Py_DECREF(mxDate);
+    return result;
+}
+
+static long asfreq_DtoB_forConvert(long fromDate, char relation) {
+    mxDateTimeObject *mxDate;
+    long result;
+
+    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(fromDate, 0);
+
+    if (mxDate->day_of_week > 4) {
+        result = -1;
+    } else {
+        result = DtoB_weekday(mxDate->absdate);
+    }
+
+    Py_DECREF(mxDate);
+    return result;
+}
+
+
+static long asfreq_DtoH(long fromDate, char relation) { return 0; }
+static long asfreq_DtoT(long fromDate, char relation) { return 0; }
+static long asfreq_DtoS(long fromDate, char relation) { return 0; }
+
+//************ FROM BUSINESS ***************
+
+static long asfreq_BtoD(long fromDate, char relation) {
+    return ((fromDate-1)/5)*7 + (fromDate-1)%5 + 1; }
+
+static long asfreq_BtoA(long fromDate, char relation) {
+    return asfreq_DtoA(asfreq_BtoD(fromDate, relation), relation); }
+
+static long asfreq_BtoQ(long fromDate, char relation) {
+    return asfreq_DtoQ(asfreq_BtoD(fromDate, relation), relation); }
+
+static long asfreq_BtoM(long fromDate, char relation) {
+    return asfreq_DtoM(asfreq_BtoD(fromDate, relation), relation); }
+
+static long asfreq_BtoW(long fromDate, char relation) {
+    return asfreq_DtoW(asfreq_BtoD(fromDate, relation), relation); }
+
+static long asfreq_BtoH(long fromDate, char relation) {
+    return asfreq_DtoH(asfreq_BtoD(fromDate, relation), relation); }
+
+static long asfreq_BtoT(long fromDate, char relation) {
+    return asfreq_DtoT(asfreq_BtoD(fromDate, relation), relation); }
+
+static long asfreq_BtoS(long fromDate, char relation) {
+    return asfreq_DtoS(asfreq_BtoD(fromDate, relation), relation); }
+
+//************ FROM HOURLY ***************
+
+static long asfreq_HtoA(long fromDate, char relation) { return 0; }
+static long asfreq_HtoQ(long fromDate, char relation) { return 0; }
+static long asfreq_HtoM(long fromDate, char relation) { return 0; }
+static long asfreq_HtoW(long fromDate, char relation) { return 0; }
+static long asfreq_HtoB(long fromDate, char relation) { return 0; }
+static long asfreq_HtoB_forConvert(long fromDate, char relation) { return 0; }
+static long asfreq_HtoD(long fromDate, char relation) { return 0; }
+static long asfreq_HtoT(long fromDate, char relation) { return 0; }
+static long asfreq_HtoS(long fromDate, char relation) { return 0; }
+
+//************ FROM MINUTELY ***************
+
+static long asfreq_TtoA(long fromDate, char relation) { return 0; }
+static long asfreq_TtoQ(long fromDate, char relation) { return 0; }
+static long asfreq_TtoM(long fromDate, char relation) { return 0; }
+static long asfreq_TtoW(long fromDate, char relation) { return 0; }
+static long asfreq_TtoB(long fromDate, char relation) { return 0; }
+static long asfreq_TtoB_forConvert(long fromDate, char relation) { return 0; }
+static long asfreq_TtoD(long fromDate, char relation) { return 0; }
+static long asfreq_TtoH(long fromDate, char relation) { return 0; }
+static long asfreq_TtoS(long fromDate, char relation) { return 0; }
+
+//************ FROM SECONDLY ***************
+
+static long asfreq_StoA(long fromDate, char relation) { return 0; }
+static long asfreq_StoQ(long fromDate, char relation) { return 0; }
+static long asfreq_StoM(long fromDate, char relation) { return 0; }
+static long asfreq_StoW(long fromDate, char relation) { return 0; }
+static long asfreq_StoB(long fromDate, char relation) { return 0; }
+static long asfreq_StoB_forConvert(long fromDate, char relation) { return 0; }
+static long asfreq_StoD(long fromDate, char relation) { return 0; }
+static long asfreq_StoH(long fromDate, char relation) { return 0; }
+static long asfreq_StoT(long fromDate, char relation) { return 0; }
+
+static long nofunc(long fromDate, char relation) { return -1; }
+
+// end of frequency specific conversion routines
+
+// return a pointer to appropriate conversion function
+static long (*get_asfreq_func(char fromFreq, char toFreq, int forConvert))(long, char) {
+
     switch(fromFreq)
     {
-        case 'D':
-            absdate = fromDate;
-            break;
-        case 'B':
-            absdate = ((fromDate-1)/5)*7 + (fromDate-1)%5 + 1;
-            break;
-        case 'M':
-            y = fromDate/12;
-            m = fromDate%12;
-
-            if (m == 0)
-            {
-                m = 12;
-                y--;
-            }
-            d=1;
-            break;
-        case 'Q':
-            y = fromDate/4;
-            m = (fromDate%4) * 3 - 2;
-
-            if (m < 1)
-            {
-                m += 12;
-                y--;
-            }
-            else if (m == 12)
-            {
-                m = 1;
-                y++;
-            }
-            d=1;
-            break;
         case 'A':
-            y = fromDate;
-            m = 1;
-            d = 1;
-            break;
-        default:
-            return -1;
+            switch(toFreq)
+            {
+                case 'Q': return &asfreq_AtoQ;
+                case 'M': return &asfreq_AtoM;
+                case 'W': return &asfreq_AtoW;
+                case 'B': return &asfreq_AtoB;
+                case 'D': return &asfreq_AtoD;
+                case 'H': return &asfreq_AtoH;
+                case 'T': return &asfreq_AtoT;
+                case 'S': return &asfreq_AtoS;
+                default: return &nofunc;
+            }
+
+        case 'Q':
+            switch(toFreq)
+            {
+                case 'A': return &asfreq_QtoA;
+                case 'M': return &asfreq_QtoM;
+                case 'W': return &asfreq_QtoW;
+                case 'B': return &asfreq_QtoB;
+                case 'D': return &asfreq_QtoD;
+                case 'H': return &asfreq_QtoH;
+                case 'T': return &asfreq_QtoT;
+                case 'S': return &asfreq_QtoS;
+                default: return &nofunc;
+            }
+
+        case 'M':
+            switch(toFreq)
+            {
+                case 'A': return &asfreq_MtoA;
+                case 'Q': return &asfreq_MtoQ;
+                case 'W': return &asfreq_MtoW;
+                case 'B': return &asfreq_MtoB;
+                case 'D': return &asfreq_MtoD;
+                case 'H': return &asfreq_MtoH;
+                case 'T': return &asfreq_MtoT;
+                case 'S': return &asfreq_MtoS;
+                default: return &nofunc;
+            }
+
+        case 'W':
+            switch(toFreq)
+            {
+                case 'A': return &asfreq_WtoA;
+                case 'Q': return &asfreq_WtoQ;
+                case 'M': return &asfreq_WtoM;
+                case 'B': return &asfreq_WtoB;
+                case 'D': return &asfreq_WtoD;
+                case 'H': return &asfreq_WtoH;
+                case 'T': return &asfreq_WtoT;
+                case 'S': return &asfreq_WtoS;
+                default: return &nofunc;
+            }
+
+        case 'B':
+            switch(toFreq)
+            {
+                case 'A': return &asfreq_BtoA;
+                case 'Q': return &asfreq_BtoQ;
+                case 'M': return &asfreq_BtoM;
+                case 'W': return &asfreq_BtoW;
+                case 'D': return &asfreq_BtoD;
+                case 'H': return &asfreq_BtoH;
+                case 'T': return &asfreq_BtoT;
+                case 'S': return &asfreq_BtoS;
+                default: return &nofunc;
+            }
+
+        case 'D':
+            switch(toFreq)
+            {
+                case 'A': return &asfreq_DtoA;
+                case 'Q': return &asfreq_DtoQ;
+                case 'M': return &asfreq_DtoM;
+                case 'W': return &asfreq_DtoW;
+                case 'B':
+                    if (forConvert) { return &asfreq_DtoB_forConvert; }
+                    else            { return &asfreq_DtoB; }
+                case 'H': return &asfreq_DtoH;
+                case 'T': return &asfreq_DtoT;
+                case 'S': return &asfreq_DtoS;
+                default: return &nofunc;
+            }
+
+        case 'H':
+            switch(toFreq)
+            {
+                case 'A': return &asfreq_HtoA;
+                case 'Q': return &asfreq_HtoQ;
+                case 'M': return &asfreq_HtoM;
+                case 'W': return &asfreq_HtoW;
+                case 'B':
+                    if (forConvert) { return &asfreq_HtoB_forConvert; }
+                    else            { return &asfreq_HtoB; }
+                case 'D': return &asfreq_HtoD;
+                case 'T': return &asfreq_HtoT;
+                case 'S': return &asfreq_HtoS;
+                default: return &nofunc;
+            }
+
+        case 'T':
+            switch(toFreq)
+            {
+                case 'A': return &asfreq_TtoA;
+                case 'Q': return &asfreq_TtoQ;
+                case 'M': return &asfreq_TtoM;
+                case 'W': return &asfreq_TtoW;
+                case 'B':
+                    if (forConvert) { return &asfreq_TtoB_forConvert; }
+                    else            { return &asfreq_TtoB; }
+                case 'D': return &asfreq_TtoD;
+                case 'H': return &asfreq_TtoH;
+                case 'S': return &asfreq_TtoS;
+                default: return &nofunc;
+            }
+
+        case 'S':
+            switch(toFreq)
+            {
+                case 'A': return &asfreq_StoA;
+                case 'Q': return &asfreq_StoQ;
+                case 'M': return &asfreq_StoM;
+                case 'W': return &asfreq_StoW;
+                case 'B':
+                    if (forConvert) { return &asfreq_StoB_forConvert; }
+                    else            { return &asfreq_StoB; }
+                case 'D': return &asfreq_StoD;
+                case 'H': return &asfreq_StoH;
+                case 'T': return &asfreq_StoT;
+                default: return &nofunc;
+            }
+        default: return &nofunc;
     }
-
-    if (freqVal(fromFreq) < 4)
-    {
-        theDate = (mxDateTimeObject *)mxDateTime.DateTime_FromDateAndTime(y,m,d,0,0,0);
-        absdate = (long)(theDate->absdate);
-    }
-
-    return absdate;
-
 }
 
-
-static long
-getDateInfo_sub(long dateNum, char freq, char info) {
-
-    long monthNum;
-    mxDateTimeObject *convDate;
-    convDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(toDaily(dateNum,freq),0);
-
-    switch(info)
-    {
-        case 'Y': //year
-
-            return (long)(convDate->year);
-
-        case 'Q': //quarter
-            monthNum = (long)(convDate->month);
-            return ((monthNum-1)/3)+1;
-
-        case 'M': //month
-            return (long)(convDate->month);
-
-        case 'D': //day
-            return (long)(convDate->day);
-
-        case 'W': //day of week
-            return (long)(convDate->day_of_week);
-        default:
-            return -1;
-    }
-}
-
+static long dInfo_year(mxDateTimeObject *dateObj)    { return dateObj->year; }
+static long dInfo_quarter(mxDateTimeObject *dateObj) { return ((dateObj->month-1)/3)+1; }
+static long dInfo_month(mxDateTimeObject *dateObj)   { return dateObj->month; }
+static long dInfo_day(mxDateTimeObject *dateObj)     { return dateObj->day; }
+static long dInfo_dow(mxDateTimeObject *dateObj)     { return dateObj->day_of_week; }
 
 static char cseries_getDateInfo_doc[] = "";
 static PyObject *
@@ -162,364 +508,117 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
     char *info;
 
     PyArrayObject *array;
-    PyArrayObject *tempArray;
     PyArrayObject *newArray;
+    PyArrayIterObject *iterSource, *iterResult;
+    mxDateTimeObject *convDate;
 
-    char *getptr;
     PyObject *val;
-    long i, lngVal, dInfo, dim;
+    long dateNum, dInfo;
 
-    if (!PyArg_ParseTuple(args, "Oss:getDateInfo(array, freq, info)", &tempArray, &freq, &info)) return NULL;
+    long (*toDaily)(long, char) = NULL;
+    long (*getDateInfo)(mxDateTimeObject*) = NULL;
 
-    array = PyArray_GETCONTIGUOUS(tempArray);
+    if (!PyArg_ParseTuple(args, "Oss:getDateInfo(array, freq, info)", &array, &freq, &info)) return NULL;
+    newArray = (PyArrayObject *)PyArray_Copy(array);
 
-    dim = array->dimensions[0];
+    iterSource = (PyArrayIterObject *)PyArray_IterNew((PyObject *)array);
+    iterResult = (PyArrayIterObject *)PyArray_IterNew((PyObject *)newArray);
 
-    //initialize new array
-    newArray = (PyArrayObject*)PyArray_SimpleNew(array->nd, &dim, array->descr->type_num);
+    toDaily = get_asfreq_func(*freq, 'D', 0);
 
-    for (i = 0; i < array->dimensions[0]; i++)
+    switch(*info)
     {
-        getptr = array->data + i*array->strides[0];
-        val = PyArray_GETITEM(array, getptr);
-        lngVal = PyInt_AsLong(val);
-        dInfo = getDateInfo_sub(lngVal, *freq, *info);
-
-        setArrayItem_1D(&newArray, i, PyInt_FromLong(dInfo));
+        case 'Y': //year
+            getDateInfo = &dInfo_year;
+            break;
+        case 'Q': //quarter
+            getDateInfo = &dInfo_quarter;
+            break;
+        case 'M': //month
+            getDateInfo = &dInfo_month;
+            break;
+        case 'D': //day
+            getDateInfo = &dInfo_day;
+            break;
+        case 'W': //day of week
+            getDateInfo = &dInfo_dow;
+            break;
+        default:
+            return NULL;
     }
+
+    while (iterSource->index < iterSource->size) {
+
+        val = PyArray_GETITEM(array, iterSource->dataptr);
+        dateNum = PyInt_AsLong(val);
+
+        convDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(toDaily(dateNum, 'A'), 0);
+        dInfo = getDateInfo(convDate);
+        Py_DECREF(convDate);
+
+        PyArray_SETITEM(newArray, iterResult->dataptr, PyInt_FromLong(dInfo));
+
+        PyArray_ITER_NEXT(iterSource);
+        PyArray_ITER_NEXT(iterResult);
+    }
+
+    Py_DECREF(iterSource);
+    Py_DECREF(iterResult);
 
     return (PyObject *) newArray;
 
 }
 
 
-/*
-convert fromDate to a date at toFreq according to relation
-*/
-static long
-asfreq(long fromDate, char fromFreq, char toFreq, char relation)
-{
-    long absdate, secsInDay;
-    long converted;
-    int y,m, doAfter;
-
-    mxDateTimeObject *convDate;
-
-    secsInDay = 86400;
-    doAfter = 0;
-
-    if (relation == 'A') {
-        switch(fromFreq)
-        {
-
-            case 'D': //daily
-
-                switch(toFreq)
-                {
-                    case 'A':
-                        break;
-                    case 'Q':
-                        break;
-                    case 'M':
-                        break;
-                    case 'B':
-                        break;
-                    default:
-                        doAfter = 1;
-                        break;
-                }
-                break;
-
-            case 'B': //business
-
-                switch(toFreq)
-                {
-                    case 'A':
-                        break;
-                    case 'Q':
-                        break;
-                    case 'M':
-                        break;
-                    case 'D':
-                        break;
-                    default:
-                        doAfter = 1;
-                        break;
-                }
-                break;
-
-            case 'M': //monthly
-
-                switch(toFreq)
-                {
-                    case 'A':
-                        break;
-                    case 'Q':
-                        break;
-                    default:
-                        doAfter = 1;
-                        break;
-                }
-                break;
-
-            case 'Q': //quarterly
-
-                switch(toFreq)
-                {
-                    case 'A':
-                        break;
-                    default:
-                        doAfter = 1;
-                        break;
-                }
-                break;
-
-            case 'A': //annual
-                doAfter = 1;
-                break;
-
-        }
-
-    }
-
-    if (doAfter) {
-        absdate = toDaily(fromDate + 1, fromFreq);
-    } else {
-        absdate = toDaily(fromDate, fromFreq);
-    }
-
-    convDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(absdate,0);
-
-    y = convDate->year;
-    m = convDate->month;
-
-    //convert convDate to appropriate # of periods according to toFreq
-    switch(toFreq)
-    {
-        case 'D':
-            converted = absdate;
-            break;
-        case 'B':
-            if (convDate->day_of_week > 4) //is weekend day
-            {
-                if (fromFreq == 'D' && relation == 'B') {
-                    //change to friday before weekend
-                    absdate -= (convDate->day_of_week - 4);
-                } else {
-                    //change to Monday after weekend
-                    absdate += (7 - convDate->day_of_week);
-                }
-            }
-            //converted = (long)((absdate / 7 * 5.0) + absdate%7);
-            converted = (long)((absdate / 7 * 5.0) + absdate%7);
-            break;
-        case 'M':
-            converted = (long)(y*12 + m);
-            break;
-        case 'Q':
-            converted = (long)(y*4 + ((m-1)/3) + 1);
-            break;
-        case 'A':
-            converted = (long)(y);
-            break;
-        default:
-            return -1;
-    }
-
-    if (doAfter) {
-        return converted-1;
-    } else {
-        return converted;
-    }
-}
-
-
-/*
-for use internally by the convert function. Same as the asfreq function,
-except going from daily to business returns -1 always if fromDate is on
-a weekend
-*/
-static long
-asfreq_forseries(long fromDate, char fromFreq, char toFreq, char relation)
-{
-    mxDateTimeObject *convDate;
-
-    if (fromFreq == 'D' && toFreq == 'B') {
-        convDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(fromDate,0);
-        if (convDate->day_of_week > 4) //is weekend day
-        {
-                return -1;
-        }
-    }
-
-    return asfreq(fromDate, fromFreq, toFreq, relation);
-}
-
-static int validFreq(char freq) {
-    switch(freq)
-    {
-        case 'A':
-            return 1;
-        case 'Q':
-            return 1;
-        case 'M':
-            return 1;
-        case 'B':
-            return 1;
-        case 'D':
-            return 1;
-        default:
-            return 0;
-    }
-}
-
-
-static int
-expand(long oldSize, char fromFreq, char toFreq, long *newLen, long *newHeight)
-{
+static long get_height(char fromFreq, char toFreq) {
 
     int maxBusDaysPerYear, maxBusDaysPerQuarter, maxBusDaysPerMonth;
-    int minBusDaysPerYear, minBusDaysPerQuarter, minBusDaysPerMonth;
-
     int maxDaysPerYear, maxDaysPerQuarter, maxDaysPerMonth;
-    int minDaysPerYear, minDaysPerQuarter, minDaysPerMonth;
 
-    minBusDaysPerYear = 260;    maxBusDaysPerYear = 262;
-    minBusDaysPerQuarter = 64;  maxBusDaysPerQuarter = 66;
-    minBusDaysPerMonth = 20;    maxBusDaysPerMonth = 23;
+    maxBusDaysPerYear = 262;
+    maxBusDaysPerQuarter = 66;
+    maxBusDaysPerMonth = 23;
 
-    minDaysPerYear = 365;       maxDaysPerYear = 366;
-    minDaysPerQuarter = 90;     maxDaysPerQuarter = 92;
-    minDaysPerMonth = 28;       maxDaysPerMonth = 31;
+    maxDaysPerYear = 366;
+    maxDaysPerQuarter = 92;
+    maxDaysPerMonth = 31;
 
-    if (!validFreq(fromFreq)) return 0;
-    if (!validFreq(toFreq)) return 0;
-
-    if (fromFreq == toFreq) {
-        *newLen = oldSize;
-        *newHeight = 1;
-    } else {
-
-        switch(fromFreq)
-        {
-            case 'A': //annual
-
-                switch(toFreq)
-                {
-                    case 'Q':
-                        *newLen = oldSize * 4;
-                        *newHeight = 1;
-                        break;
-                    case 'M':
-                        *newLen = oldSize * 12;
-                        *newHeight = 1;
-                        break;
-                    case 'B':
-                        *newLen = oldSize * maxBusDaysPerYear;
-                        *newHeight = 1;
-                        break;
-                    case 'D':
-                        *newLen = oldSize * maxDaysPerYear;
-                        *newHeight = 1;
-                        break;
-                }
-                break;
-
-            case 'Q': //quarterly
-
-                switch(toFreq)
-                {
-                    case 'A':
-                        *newLen = (oldSize / 4) + 2;
-                        *newHeight = 4;
-                        break;
-                    case 'M':
-                        *newLen = oldSize * 3;
-                        *newHeight = 1;
-                        break;
-                    case 'B':
-                        *newLen = oldSize * maxBusDaysPerQuarter;
-                        *newHeight = 1;
-                        break;
-                    case 'D':
-                        *newLen = oldSize * maxDaysPerQuarter;
-                        *newHeight = 1;
-                        break;
-                }
-                break;
-
-            case 'M': //monthly
-
-                switch(toFreq)
-                {
-                    case 'A':
-                        *newLen = (oldSize / 12) + 2;
-                        *newHeight = 12;
-                        break;
-                    case 'Q':
-                        *newLen = (oldSize / 3) + 2;
-                        *newHeight = 3;
-                        break;
-                    case 'B':
-                        *newLen = oldSize * maxBusDaysPerMonth;
-                        *newHeight = 1;
-                        break;
-                    case 'D':
-                        *newLen = oldSize * maxDaysPerMonth;
-                        *newHeight = 1;
-                        break;
-                }
-                break;
-
-            case 'B': //business
-
-                switch(toFreq)
-                {
-                    case 'A':
-                        *newLen = (oldSize / minBusDaysPerYear) + 2;
-                        *newHeight = maxBusDaysPerYear;
-                        break;
-                    case 'Q':
-                        *newLen = (oldSize / minBusDaysPerQuarter) + 2;
-                        *newHeight = maxBusDaysPerQuarter;
-                        break;
-                    case 'M':
-                        *newLen = (oldSize / minBusDaysPerMonth) + 2;
-                        *newHeight = maxBusDaysPerMonth;
-                        break;
-                    case 'D':
-                        *newLen = ((7 * oldSize)/5) + 2;
-                        *newHeight = 1;
-                        break;
-                }
-                break;
-
-            case 'D': //daily
-
-                switch(toFreq)
-                {
-                    case 'A':
-                        *newLen = (oldSize / minDaysPerYear) + 2;
-                        *newHeight = maxDaysPerYear;
-                        break;
-                    case 'Q':
-                        *newLen = (oldSize / minDaysPerQuarter) + 2;
-                        *newHeight = maxDaysPerQuarter;
-                        break;
-                    case 'M':
-                        *newLen = (oldSize / minDaysPerMonth) + 2;
-                        *newHeight = maxDaysPerMonth;
-                        break;
-                    case 'B':
-                        *newLen = ((5 * oldSize)/7) + 2;
-                        *newHeight = 1;
-                        break;                }
-                break;
-        }
+    switch(fromFreq)
+    {
+        case 'A': return 1;
+        case 'Q':
+            switch(toFreq)
+            {
+                case 'A': return 4;
+                default: return 1;
+            }
+        case 'M': //monthly
+            switch(toFreq)
+            {
+                case 'A': return 12;
+                case 'Q': return 3;
+                default: return 1;
+            }
+        case 'B': //business
+            switch(toFreq)
+            {
+                case 'A': return maxBusDaysPerYear;;
+                case 'Q': return maxBusDaysPerQuarter;
+                case 'M': return maxBusDaysPerMonth;
+                case 'W': return 5;
+                default: return 1;
+            }
+        case 'D': //daily
+            switch(toFreq)
+            {
+                case 'A': return maxDaysPerYear;;
+                case 'Q': return maxDaysPerQuarter;
+                case 'M': return maxDaysPerMonth;
+                case 'W': return 7;
+                default: return 1;
+            }
+        default: return 1;
     }
-
-    return 1;
-
 }
 
 
@@ -527,38 +626,36 @@ static char cseries_convert_doc[] = "";
 static PyObject *
 cseries_convert(PyObject *self, PyObject *args)
 {
-    PyArrayObject *array;
-    PyArrayObject *tempArray;
-    PyArrayObject *newArray;
-
-    PyArrayObject *mask;
-    PyArrayObject *tempMask;
-    PyArrayObject *newMask;
+    PyArrayObject *array, *newArray;
+    PyArrayObject *mask, *newMask;
 
     PyObject *returnVal = NULL;
 
-    long startIndex, newStart, newStartYaxis;
+    long startIndex;
+    long newStart, newStartTemp;
+    long newEnd, newEndTemp;
     long newLen, newHeight;
     long i, currIndex, prevIndex;
     long nd;
-    long *dim;
+    npy_intp *dim, *newIdx;
     long currPerLen;
     char *fromFreq, *toFreq, *position;
     char relation;
 
     PyObject *val, *valMask;
 
-    int toFrVal, fromFrVal;
+    long (*asfreq_main)(long, char) = NULL;
+    long (*asfreq_endpoints)(long, char) = NULL;
+    long (*asfreq_reverse)(long, char) = NULL;
 
     returnVal = PyDict_New();
 
-    if (!PyArg_ParseTuple(args, "OssslO:convert(array, fromfreq, tofreq, position, startIndex, mask)", &tempArray, &fromFreq, &toFreq, &position, &startIndex, &tempMask)) return NULL;
+    if (!PyArg_ParseTuple(args, "OssslO:convert(array, fromfreq, tofreq, position, startIndex, mask)", &array, &fromFreq, &toFreq, &position, &startIndex, &mask)) return NULL;
 
     if (toFreq[0] == fromFreq[0])
     {
-
-        PyDict_SetItemString(returnVal, "values", (PyObject*)tempArray);
-        PyDict_SetItemString(returnVal, "mask", (PyObject*)tempMask);
+        PyDict_SetItemString(returnVal, "values", (PyObject*)array);
+        PyDict_SetItemString(returnVal, "mask", (PyObject*)mask);
 
         return returnVal;
     }
@@ -578,59 +675,56 @@ cseries_convert(PyObject *self, PyObject *args)
             break;
     }
 
-    //get frequency numeric mapping
-    fromFrVal = freqVal(fromFreq[0]);
-    toFrVal = freqVal(toFreq[0]);
-
-    array = PyArray_GETCONTIGUOUS(tempArray);
-    mask = PyArray_GETCONTIGUOUS(tempMask);
-
-    //expand size to fit new values if needed
-    if (!expand(array->dimensions[0], fromFreq[0], toFreq[0], &newLen, &newHeight)) return NULL;
+    asfreq_main = get_asfreq_func(fromFreq[0], toFreq[0], 1);
+    asfreq_endpoints = get_asfreq_func(fromFreq[0], toFreq[0], 0);
 
     //convert start index to new frequency
-    newStart = asfreq(startIndex, fromFreq[0], toFreq[0], 'B');
+    newStartTemp = asfreq_main(startIndex, 'B');
+    if (newStartTemp == -1) {  newStart = asfreq_endpoints(startIndex, 'A'); }
+    else { newStart = newStartTemp; }
+
+    //convert end index to new frequency
+    newEndTemp = asfreq_main(startIndex+array->dimensions[0]-1, 'A');
+    if (newEndTemp == -1) { newEnd = asfreq_endpoints(startIndex, 'B'); }
+    else { newEnd = newEndTemp; }
+
+    newLen = newEnd - newStart + 1;
+    newHeight = get_height(fromFreq[0], toFreq[0]);
 
     if (newHeight > 1) {
 
-        newStartYaxis = startIndex - asfreq(newStart, toFreq[0], fromFreq[0], 'B');
-        currPerLen = newStartYaxis;
+        asfreq_reverse = get_asfreq_func(toFreq[0], fromFreq[0], 0);
+        currPerLen = startIndex - asfreq_reverse(newStart, 'B');
 
         nd = 2;
-        dim = malloc(nd * sizeof(int));
+        dim = PyDimMem_NEW(nd);
         dim[0] = newLen;
         dim[1] = newHeight;
     } else {
-        currPerLen = 0;
         nd = 1;
-        dim = malloc(nd * sizeof(int));
+        dim = PyDimMem_NEW(nd);
         dim[0] = newLen;
     }
 
+    newIdx = PyDimMem_NEW(nd);
     newArray = (PyArrayObject*)PyArray_SimpleNew(nd, dim, array->descr->type_num);
     newMask  = (PyArrayObject*)PyArray_SimpleNew(nd, dim, mask->descr->type_num);
 
-    free(dim);
+    PyDimMem_FREE(dim);
 
     PyArray_FILLWBYTE(newArray,0);
     PyArray_FILLWBYTE(newMask,1);
 
-    //initialize prevIndex
     prevIndex = newStart;
 
     //set values in the new array
-    for (i = 0; i < array->dimensions[0]; i++)
-    {
+    for (i = 0; i < array->dimensions[0]; i++) {
 
-        //get value from old array
         val = PyArray_GETITEM(array, PyArray_GetPtr(array, &i));
-
-        //get the mask corresponding to the old value
         valMask = PyArray_GETITEM(mask, PyArray_GetPtr(mask, &i));
 
-        //find index for start of current period in new frequency
-        currIndex = asfreq_forseries(startIndex + i, fromFreq[0], toFreq[0], relation);
-
+        currIndex = asfreq_main(startIndex + i, relation);
+        newIdx[0] = currIndex-newStart;
 
         if (newHeight > 1) {
 
@@ -641,23 +735,24 @@ cseries_convert(PyObject *self, PyObject *args)
                     prevIndex = currIndex;
                 }
 
-                //set value in the new array
-                setArrayItem_2D(&newArray, currIndex-newStart, currPerLen, val);
-                setArrayItem_2D(&newMask, currIndex-newStart, currPerLen, valMask);
-
+                newIdx[1] = currPerLen;
                 currPerLen++;
-
-        } else {
-
-            setArrayItem_1D(&newArray, currIndex-newStart, val);
-            setArrayItem_1D(&newMask, currIndex-newStart, valMask);
-
         }
 
+        if (newIdx[0] > -1) {
+            PyArray_SETITEM(newArray, PyArray_GetPtr(newArray, newIdx), val);
+            PyArray_SETITEM(newMask, PyArray_GetPtr(newMask, newIdx), valMask);
+        }
+
+        Py_DECREF(val);
+        Py_DECREF(valMask);
     }
+
+    PyDimMem_FREE(newIdx);
 
     PyDict_SetItemString(returnVal, "values", (PyObject*)newArray);
     PyDict_SetItemString(returnVal, "mask", (PyObject*)newMask);
+    PyDict_SetItemString(returnVal, "startindex", (PyObject*)PyInt_FromLong(newStart));
 
     return returnVal;
 
@@ -673,8 +768,11 @@ cseries_asfreq(PyObject *self, PyObject *args)
     PyObject *fromDateObj, *toDateObj;
     char *fromFreq, *toFreq, *relation;
     long fromDate, toDate;
+    long (*asfreq_main)(long, char) = NULL;
 
     if (!PyArg_ParseTuple(args, "Osss:asfreq(fromDates, fromfreq, tofreq, relation)", &fromDates, &fromFreq, &toFreq, &relation)) return NULL;
+
+    asfreq_main = get_asfreq_func(fromFreq[0], toFreq[0], 0);
 
     toDates = (PyArrayObject *)PyArray_Copy(fromDates);
 
@@ -688,14 +786,20 @@ cseries_asfreq(PyObject *self, PyObject *args)
 
         fromDateObj = PyArray_GETITEM(fromDates, iterFrom->dataptr);
         fromDate = PyInt_AsLong(fromDateObj);
-        toDate = asfreq(fromDate, fromFreq[0], toFreq[0], relation[0]);
+        toDate = asfreq_main(fromDate, relation[0]);
         toDateObj = PyInt_FromLong(toDate);
 
         PyArray_SETITEM(toDates, iterTo->dataptr, toDateObj);
 
+        Py_DECREF(fromDateObj);
+        Py_DECREF(toDateObj);
+
         PyArray_ITER_NEXT(iterFrom);
         PyArray_ITER_NEXT(iterTo);
     }
+
+    Py_DECREF(iterFrom);
+    Py_DECREF(iterTo);
 
     return (PyObject *)toDates;
 
