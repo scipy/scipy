@@ -1,3 +1,11 @@
+#2007-01-10 : Mrecords
+#           : - Defines a class of records that support masked arrays
+#2007-01-08 : Core:
+#           : - Forced to reset the class defaults after initialization
+#           : - Forced the MaskedArray class defaults to be reset
+#           : - Modified __array_finallize__ to allow objects w/ _data and _mask fields to be recognized as MA
+#2007-01-04 : Core:
+#           : - Fixed a but in masked_all_like
 #2007-01-02 : Extras
 #           : - Made sure that apply_along_axis output the proper fill_value 
 #           : Core
