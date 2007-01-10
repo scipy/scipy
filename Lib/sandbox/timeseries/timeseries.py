@@ -201,6 +201,7 @@ class TimeSeries(ma.MaskedArray):
 
             _values = cRetVal['values']
             _mask = cRetVal['mask']
+            startIndex = cRetVal['startindex']
             
             tempData = ma.array(_values)
             tempMask = ma.make_mask(_mask)
@@ -208,14 +209,8 @@ class TimeSeries(ma.MaskedArray):
 
             if func is not None and tempData.ndim == 2:
                 tempData = corelib.apply_along_axis(func, 1, tempData)
-                
-            startIndex = cseries.asfreq(numpy.asarray(int(self.start_date())), fromFreq, toFreq, 'BEFORE')
-            newStart = tsdate.Date(freq=toFreq, value=startIndex)
 
-            endIndex = cseries.asfreq(numpy.asarray(int(self.end_date())), fromFreq, toFreq, 'AFTER')
-            newEnd = tsdate.Date(freq=toFreq, value=endIndex)
-
-            return adjust_endpoints(TimeSeries(tempData, freq=toFreq, observed=self.observed, start_date=startIndex), start_date=newStart, end_date=newEnd)
+            return TimeSeries(tempData, freq=toFreq, observed=self.observed, start_date=startIndex)
             
         else:
             return copytools.deepcopy(self)
