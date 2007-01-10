@@ -466,7 +466,7 @@ class spmatrix(object):
             fd.write(format % (ir, ic, data))
         fd.close()
 
-class _sc_matrix(spmatrix):
+class _cs_matrix(spmatrix):
 
     def astype(self, t):
         out = self.copy()
