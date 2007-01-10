@@ -1,4 +1,6 @@
 import corelib
+import cseries
+import numpy as np
 import mx.DateTime
 
 class Date:
@@ -191,102 +193,5 @@ def dateOf(date, toFreq, relation="BEFORE"):
 
     if date.freq == toFreq:
         return date
-    elif date.freq == 'D':
-
-        if toFreq == 'B':
-            # BEFORE result: preceeding Friday if date is a weekend, same day otherwise
-            # AFTER result: following Monday if date is a weekend, same day otherwise
-            tempDate = date.mxDate
-            if _rel == 'B':
-                if tempDate.day_of_week >= 5: tempDate -= (tempDate.day_of_week - 4)
-            elif _rel == 'A':
-                if tempDate.day_of_week >= 5: tempDate += 7 - tempDate.day_of_week
-            return Date(freq='B', mxDate=tempDate)
-            
-        elif toFreq == 'M': return Date(freq='M', year=date.year(), month=date.month())
-
-        elif toFreq == 'S':
-            if _rel == 'B': return Date(freq='S', year=date.year(), month=date.month(), day=date.day(), seconds=0)
-            elif _rel == "A": return Date(freq='S', year=date.year(), month=date.month(), day=date.day(), seconds=24*60*60-1)
-            
-        elif toFreq == 'Q': return Date(freq='Q', year=date.year(), quarter=date.quarter())
-        
-        elif toFreq == 'A': return Date(freq='A', year=date.year())
-        
-    elif date.freq == 'B':
-
-        if toFreq == 'D': return Date(freq='D', year=date.year(), month=date.month(), day=date.day())
-
-        elif toFreq == 'M': return Date(freq='M', year=date.year(), month=date.month())
-
-        elif toFreq == 'S':
-            if _rel == 'B': return Date(freq='S', year=date.year(), month=date.month(), day=date.day(), seconds=0)
-            elif _rel == 'A': return Date(freq='S', year=date.year(), month=date.month(), dday=ate.day(), seconds=24*60*60-1)
-            
-        elif toFreq == 'Q': return Date(freq='Q', year=date.year(), quarter=date.quarter())
-                
-        elif toFreq == 'A': return Date(freq='A', year=date.year())
-
-    elif date.freq == 'M':
-
-        if toFreq == 'D':
-            tempDate = date.mxDate
-            if _rel == 'B':
-                return Date(freq='D', year=date.year(), month=date.month(), day=1)
-            elif _rel == 'A':
-                if date.month() == 12:
-                    tempMonth = 1
-                    tempYear = date.year() + 1
-                else:
-                    tempMonth = date.month() + 1
-                    tempYear = date.year()
-                return Date('D', year=tempYear, month=tempMonth, day=1)-1
-
-        elif toFreq == 'B':
-            if _rel == 'B': return dateOf(dateOf(date, 'D', "BEFORE"), 'B', "AFTER")
-            elif _rel == 'A': return dateOf(dateOf(date, 'D', "AFTER"), 'B', "BEFORE")
-
-        elif toFreq == 'S':
-            if _rel == 'B': return dateOf(dateOf(date, 'D', "BEFORE"), 'S', "BEFORE")
-            elif _rel == 'A': return dateOf(dateOf(date, 'D', "AFTER"), 'S', "AFTER")
-            
-        elif toFreq == 'Q': return Date(freq='Q', year=date.year(), quarter=date.quarter())
-                        
-        elif toFreq == 'A': return Date(freq='A', year=date.year())
-    
-    elif date.freq == 'S':
-
-        if toFreq == 'D':
-            return Date('D', year=date.year(), month=date.month(), day=date.day())
-        elif toFreq == 'B':
-            if _rel == 'B': return dateOf(dateOf(date, 'D'), 'B', "BEFORE")
-            elif _rel == 'A': return dateOf(dateOf(date, 'D'), 'B', "AFTER")
-        elif toFreq == 'M':
-            return Date(freq='M', year=date.year(), month=date.month())
-            
-    elif date.freq == 'Q':
-    
-        if toFreq == 'D':
-            if _rel == 'B': return dateOf(date-1, 'D', "AFTER")+1
-            elif _rel == 'A': return Date(freq='D', year=date.year(), month=date.month(), day=date.day())
-        elif toFreq == 'B':
-            if _rel == 'B': return dateOf(dateOf(date, 'D'), 'B', "AFTER")
-            if _rel == 'A': return dateOf(dateOf(date, 'D', "AFTER"), 'B', "BEFORE")
-        elif toFreq == 'M':
-            if _rel == 'B': return dateOf(date-1, 'M', "AFTER")+1
-            elif _rel == 'A': return Date(freq='M', year=date.year(), month=date.month())
-        elif toFreq == 'A': return Date(freq='A', year=date.year())
-    elif date.freq == 'A':
-        
-        if toFreq == 'D':
-            if _rel == 'B': return Date(freq='D', year=date.year(), month=1, day=1)
-            elif _rel == 'A': return Date(freq='D', year=date.year(), month=12, day=31)            
-        elif toFreq == 'B':
-            if _rel == 'B': return dateOf(dateOf(date, 'D'), 'B', "AFTER")
-            if _rel == 'A': return dateOf(dateOf(date, 'D', "AFTER"), 'B', "BEFORE")
-        elif toFreq == 'M':
-            if _rel == 'B': return Date(freq='M', year=date.year(), month=1)
-            elif _rel == 'A': return Date(freq='M', year=date.year(), month=12)
-        elif toFreq == 'Q':
-            if _rel == 'B': return Date(freq='Q', year=date.year(), quarter=1)
-            elif _rel == 'A': return Date(freq='Q', year=date.year(), quarter=4)
+    else:
+        return Date(freq=toFreq, value=cseries.asfreq(np.asarray(date.value), date.freq, toFreq, _rel))
