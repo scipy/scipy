@@ -6,7 +6,7 @@ Revision of sparsetools by Nathan Bell
 """
 
 from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
-                  ndarray, amax, rank, conj, searchsorted, ndarray,   \
+                  ndarray, amax, amin, rank, conj, searchsorted, ndarray,   \
                   less, where, greater, array, transpose, empty, ones, \
                   arange, shape, intc
 import numpy
@@ -2088,6 +2088,8 @@ class coo_matrix(spmatrix):
             raise TypeError, "invalid input format"
         
         if dims is None:
+            if len(ij[0]) == 0 or len(ij[1]) == 0:
+                raise ValueError, "cannot infer dimensions from zero sized index arrays"
             M = int(amax(ij[0])) + 1
             N = int(amax(ij[1])) + 1
             self.shape = (M, N)
@@ -2095,6 +2097,7 @@ class coo_matrix(spmatrix):
             # Use 2 steps to ensure dims has length 2.
             M, N = dims
             self.shape = (M, N)
+            
         self.row = asarray(ij[0], dtype=numpy.intc)
         self.col = asarray(ij[1], dtype=numpy.intc)
         self.data = asarray(obj, dtype=self.dtype)
@@ -2112,6 +2115,16 @@ class coo_matrix(spmatrix):
             self.row = self.row.astype(numpy.intc)
         if (self.col.dtype != numpy.intc):
             self.col = self.col.astype(numpy.intc)
+
+        if nnz > 0:
+            if(amax(self.row) >= self.shape[0]):
+                raise ValueError, "row index exceedes matrix dimensions"
+            if(amax(self.col) >= self.shape[1]):
+                raise ValueError, "column index exceedes matrix dimensions"
+            if(amin(self.row) < 0):
+                raise ValueError, "negative row index found"
+            if(amin(self.col) < 0):
+                raise ValueError, "negative column index found"
 
         # some functions pass floats
         self.shape = tuple([int(x) for x in self.shape])
