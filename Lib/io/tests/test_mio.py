@@ -4,7 +4,7 @@ import os
 from glob import glob
 from cStringIO import StringIO
 from tempfile import mkstemp
-from numpy.testing import set_package_path, restore_path, ScipyTestCase, ScipyTest
+from numpy.testing import set_package_path, restore_path, NumpyTestCase, NumpyTest
 from numpy.testing import assert_equal, assert_array_almost_equal
 from numpy import arange, array, eye, pi, cos, exp, sin, sqrt, ndarray,  \
      zeros, reshape, transpose, empty
@@ -23,7 +23,7 @@ except:
 
 test_data_path = os.path.join(os.path.dirname(__file__), './data')
 
-class test_mio_array(ScipyTestCase):    
+class test_mio_array(NumpyTestCase):    
     def __init__(self, *args, **kwargs):
         super(test_mio_array, self).__init__(*args, **kwargs)
 
@@ -233,5 +233,5 @@ class test_mio_array(ScipyTestCase):
 
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()
 

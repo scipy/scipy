@@ -77,7 +77,7 @@ def direct_shift(x,a,period=None):
     return ifft(fft(x)*exp(k*a)).real
 
 
-class test_diff(ScipyTestCase):
+class test_diff(NumpyTestCase):
 
     def check_definition(self):
         for n in [16,17,64,127,32]:
@@ -216,7 +216,7 @@ class test_diff(ScipyTestCase):
             print ' (secs for %s calls)' % (repeat)
 
 
-class test_tilbert(ScipyTestCase):
+class test_tilbert(NumpyTestCase):
 
     def check_definition(self):
         for h in [0.1,0.5,1,5.5,10]:
@@ -277,7 +277,7 @@ class test_tilbert(ScipyTestCase):
             sys.stdout.flush()
             print ' (secs for %s calls)' % (repeat)
 
-class test_itilbert(ScipyTestCase):
+class test_itilbert(NumpyTestCase):
 
     def check_definition(self):
         for h in [0.1,0.5,1,5.5,10]:
@@ -291,7 +291,7 @@ class test_itilbert(ScipyTestCase):
                 assert_array_almost_equal(itilbert(sin(2*x),h),
                                           direct_itilbert(sin(2*x),h))
 
-class test_hilbert(ScipyTestCase):
+class test_hilbert(NumpyTestCase):
 
     def check_definition(self):
         for n in [16,17,64,127]:
@@ -360,7 +360,7 @@ class test_hilbert(ScipyTestCase):
             sys.stdout.flush()
             print ' (secs for %s calls)' % (repeat)
 
-class test_ihilbert(ScipyTestCase):
+class test_ihilbert(NumpyTestCase):
 
     def check_definition(self):
         for n in [16,17,64,127]:
@@ -381,7 +381,7 @@ class test_ihilbert(ScipyTestCase):
             y2 = itilbert(f,h=10)
             assert_array_almost_equal (y,y2)
 
-class test_shift(ScipyTestCase):
+class test_shift(NumpyTestCase):
 
     def check_definition(self):
         for n in [18,17,64,127,32,2048,256]:
@@ -430,4 +430,4 @@ class test_shift(ScipyTestCase):
             print ' (secs for %s calls)' % (repeat)
 
 if __name__ == "__main__":
-    ScipyTest('fftpack.pseudo_diffs').run()
+    NumpyTest('fftpack.pseudo_diffs').run()

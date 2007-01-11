@@ -16,7 +16,7 @@ restore_path()
 import wxPython
 import wxPython.wx
 
-class test_wx_converter(ScipyTestCase):
+class test_wx_converter(NumpyTestCase):
     def check_type_match_string(self,level=5):
         s = wx_spec.wx_converter()
         assert(not s.type_match('string') )
@@ -91,4 +91,4 @@ class test_wx_converter(ScipyTestCase):
         assert( c == 'hello')
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

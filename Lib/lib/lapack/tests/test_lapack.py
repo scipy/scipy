@@ -27,7 +27,7 @@ restore_path()
 
 #class _test_ev: pass
 
-class _test_lapack(ScipyTestCase,
+class _test_lapack(NumpyTestCase,
                    _test_ev,
                    _test_gev):
 
@@ -123,4 +123,4 @@ else:
         decimal = 12
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

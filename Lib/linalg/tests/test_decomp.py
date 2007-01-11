@@ -32,7 +32,7 @@ from numpy.random import rand
 def random(size):
     return rand(*size)
 
-class test_eigvals(ScipyTestCase):
+class test_eigvals(NumpyTestCase):
 
     def check_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
@@ -78,7 +78,7 @@ class test_eigvals(ScipyTestCase):
 
             print '   (secs for %s calls)' % (repeat)
 
-class test_eig(ScipyTestCase):
+class test_eig(NumpyTestCase):
 
     def check_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
@@ -111,10 +111,10 @@ class test_eig(ScipyTestCase):
 
 
 
-class test_eig_banded(ScipyTestCase):
+class test_eig_banded(NumpyTestCase):
 
     def __init__(self, *args):
-        ScipyTestCase.__init__(self, *args)
+        NumpyTestCase.__init__(self, *args)
 
         self.create_bandmat()
 
@@ -396,7 +396,7 @@ class test_eig_banded(ScipyTestCase):
 
 
 
-class test_lu(ScipyTestCase):
+class test_lu(NumpyTestCase):
 
     def check_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
@@ -414,7 +414,7 @@ class test_lu(ScipyTestCase):
 
     #XXX: need more tests
 
-class test_lu_solve(ScipyTestCase):
+class test_lu_solve(NumpyTestCase):
     def check_lu(self):
         a = random((10,10))
         b = random((10,))
@@ -426,7 +426,7 @@ class test_lu_solve(ScipyTestCase):
 
         assert_array_equal(x1,x2)
 
-class test_svd(ScipyTestCase):
+class test_svd(NumpyTestCase):
 
     def check_simple(self):
         a = [[1,2,3],[1,20,3],[2,5,6]]
@@ -499,7 +499,7 @@ class test_svd(ScipyTestCase):
                 for i in range(len(s)): sigma[i,i] = s[i]
                 assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
-class test_svdvals(ScipyTestCase):
+class test_svdvals(NumpyTestCase):
 
     def check_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
@@ -537,12 +537,12 @@ class test_svdvals(ScipyTestCase):
         assert len(s)==2
         assert s[0]>=s[1]
 
-class test_diagsvd(ScipyTestCase):
+class test_diagsvd(NumpyTestCase):
 
     def check_simple(self):
         assert_array_almost_equal(diagsvd([1,0,0],3,3),[[1,0,0],[0,0,0],[0,0,0]])
 
-class test_cholesky(ScipyTestCase):
+class test_cholesky(NumpyTestCase):
 
     def check_simple(self):
         a = [[8,2,3],[2,9,3],[3,3,6]]
@@ -591,7 +591,7 @@ class test_cholesky(ScipyTestCase):
             assert_array_almost_equal(cholesky(a,lower=1),c)
 
 
-class test_qr(ScipyTestCase):
+class test_qr(NumpyTestCase):
 
     def check_simple(self):
         a = [[8,2,3],[2,9,3],[5,3,6]]
@@ -677,7 +677,7 @@ class test_qr(ScipyTestCase):
 transp = transpose
 any = sometrue
 
-class test_schur(ScipyTestCase):
+class test_schur(NumpyTestCase):
 
     def check_simple(self):
         a = [[8,12,3],[2,9,3],[10,3,6]]
@@ -689,7 +689,7 @@ class test_schur(ScipyTestCase):
         tc2,zc2 = rsf2csf(tc,zc)
         assert_array_almost_equal(dot(dot(zc2,tc2),transp(conj(zc2))),a)
 
-class test_hessenberg(ScipyTestCase):
+class test_hessenberg(NumpyTestCase):
 
     def check_simple(self):
         a = [[-149, -50,-154],
@@ -737,4 +737,4 @@ class test_hessenberg(ScipyTestCase):
             assert_array_almost_equal(h1,h)
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

@@ -10,7 +10,7 @@ def assert_quad((value, err), tabledValue, errTol=1.5e-8):
     if errTol is not None:
         assert err < errTol, (err, errTol)
 
-class test_quad(ScipyTestCase):
+class test_quad(NumpyTestCase):
     def check_typical(self):
         # 1) Typical function with two extra arguments:
         def myfunc(x,n,z):       # Bessel function integrand
@@ -106,4 +106,4 @@ class test_quad(ScipyTestCase):
                     8/3.0 * (b**4.0 - a**4.0))
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

@@ -9,7 +9,7 @@ from weave import inline_tools
 restore_path()
 
 
-class test_dict_construct(ScipyTestCase):
+class test_dict_construct(NumpyTestCase):
     #------------------------------------------------------------------------
     # Check that construction from basic types is allowed and have correct
     # reference counts
@@ -25,7 +25,7 @@ class test_dict_construct(ScipyTestCase):
         assert res == {}
 
 
-class test_dict_has_key(ScipyTestCase):
+class test_dict_has_key(NumpyTestCase):
     def check_obj(self,level=5):
         class foo:
             pass
@@ -89,7 +89,7 @@ class test_dict_has_key(ScipyTestCase):
         res = inline_tools.inline(code,['a'])
         assert not res
 
-class test_dict_get_item_op(ScipyTestCase):
+class test_dict_get_item_op(NumpyTestCase):
 
     def generic_get(self,code,args=['a']):
         a = {}
@@ -132,7 +132,7 @@ class test_dict_get_item_op(ScipyTestCase):
         except KeyError:
             pass
 
-class test_dict_set_operator(ScipyTestCase):
+class test_dict_set_operator(NumpyTestCase):
     def generic_new(self,key,val):
         # test that value is set correctly and that reference counts
         # on dict, key, and val are being handled correctly.
@@ -199,7 +199,7 @@ class test_dict_set_operator(ScipyTestCase):
         key,val = foo(),12345
         self.generic_overwrite(key,val)
 
-class test_dict_del(ScipyTestCase):
+class test_dict_del(NumpyTestCase):
     def generic(self,key):
         # test that value is set correctly and that reference counts
         # on dict, key, are being handled correctly. after deletion,
@@ -233,7 +233,7 @@ class test_dict_del(ScipyTestCase):
         key = foo()
         self.generic(key)
 
-class test_dict_others(ScipyTestCase):
+class test_dict_others(NumpyTestCase):
     def check_clear(self,level=5):
         a = {}
         a["hello"] = 1
@@ -262,4 +262,4 @@ class test_dict_others(ScipyTestCase):
         assert a == b
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

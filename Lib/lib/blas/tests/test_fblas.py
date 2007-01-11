@@ -40,7 +40,7 @@ def matrixmultiply(a, b):
 ##################################################
 ### Test blas ?axpy
 
-class base_axpy(ScipyTestCase):
+class base_axpy(NumpyTestCase):
     def check_default_a(self):
         x = arange(3.,dtype=self.dtype)
         y = arange(3.,dtype=x.dtype)
@@ -114,7 +114,7 @@ class test_zaxpy(base_axpy):
 ##################################################
 ### Test blas ?scal
 
-class base_scal(ScipyTestCase):
+class base_scal(NumpyTestCase):
     def check_simple(self):
         x = arange(3.,dtype=self.dtype)
         real_x = x*3.
@@ -159,7 +159,7 @@ class test_zscal(base_scal):
 ##################################################
 ### Test blas ?copy
 
-class base_copy(ScipyTestCase):
+class base_copy(NumpyTestCase):
     def check_simple(self):
         x = arange(3.,dtype=self.dtype)
         y = zeros(shape(x),x.dtype)
@@ -228,7 +228,7 @@ class test_zcopy(base_copy):
 ##################################################
 ### Test blas ?swap
 
-class base_swap(ScipyTestCase):
+class base_swap(NumpyTestCase):
     def check_simple(self):
         x = arange(3.,dtype=self.dtype)
         y = zeros(shape(x),x.dtype)
@@ -304,7 +304,7 @@ class test_zswap(base_swap):
 ### Test blas ?gemv
 ### This will be a mess to test all cases.
 
-class base_gemv(ScipyTestCase):
+class base_gemv(NumpyTestCase):
     def get_data(self,x_stride=1,y_stride=1):
         mult = array(1, dtype = self.dtype)
         if self.dtype in [complex64, complex128]:
@@ -409,7 +409,7 @@ class test_zgemv(base_gemv):
 ### Test blas ?ger
 ### This will be a mess to test all cases.
 
-class base_ger(ScipyTestCase):
+class base_ger(NumpyTestCase):
     def get_data(self,x_stride=1,y_stride=1):
         from numpy.random import normal
         alpha = array(1., dtype = self.dtype)
@@ -518,4 +518,4 @@ class test_zgerc(base_ger_complex):
 """
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

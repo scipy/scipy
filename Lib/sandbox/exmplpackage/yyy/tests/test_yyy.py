@@ -7,10 +7,10 @@ set_package_path()
 from yyy import fun
 del sys.path[0]
 
-class test_fun(ScipyTestCase):
+class test_fun(NumpyTestCase):
     def check_simple(self, level=1):
         assert fun()=='Hello from yyy.fun'
     #...
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

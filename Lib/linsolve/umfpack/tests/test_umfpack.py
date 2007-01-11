@@ -18,7 +18,7 @@ import scipy.linsolve.umfpack as um
 
 restore_path()
 
-class test_solvers(ScipyTestCase):
+class test_solvers(NumpyTestCase):
     """Tests inverting a sparse linear system"""
     
     def check_solve_complex_without_umfpack(self):
@@ -72,7 +72,7 @@ class test_solvers(ScipyTestCase):
 
 
         
-class test_factorization(ScipyTestCase):
+class test_factorization(NumpyTestCase):
     """Tests factorizing a sparse linear system"""
     
     def check_complex_lu(self):
@@ -132,4 +132,4 @@ class test_factorization(ScipyTestCase):
         
         
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

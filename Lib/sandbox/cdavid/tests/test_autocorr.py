@@ -345,7 +345,7 @@ class test_autocorr_fft(NumpyTestCase):
         assert_array_almost_equal(atest, aref, decimal = md)
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()
 
 #class test_autocorr_2d(NumpyTestCase):
 #    def check_double(self):

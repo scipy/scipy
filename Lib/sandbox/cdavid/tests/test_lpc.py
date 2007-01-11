@@ -184,4 +184,4 @@ class test_lpc(NumpyTestCase):
         assert_array_almost_equal(k, kt)
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

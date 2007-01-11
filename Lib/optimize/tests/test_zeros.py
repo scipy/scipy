@@ -51,7 +51,7 @@ mstrings = ['cc.bisect','cc.ridder','cc.brenth','cc.brentq']
 functions = [f2,f3,f4,f5,f6]
 fstrings = ['f2','f3','f4','f5','f6']
 
-class test_basic(ScipyTestCase) :
+class test_basic(NumpyTestCase) :
     def run_test(self, method, name):
         a = .5
         b = sqrt(3)
@@ -93,4 +93,4 @@ class test_basic(ScipyTestCase) :
             print '\n\n'
 
 if __name__ == '__main__' :
-    ScipyTest().run()
+    NumpyTest().run()

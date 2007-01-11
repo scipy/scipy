@@ -7,7 +7,7 @@ set_package_path()
 from scipy.integrate import quadrature, romberg, romb
 restore_path()
 
-class test_quadrature(ScipyTestCase):
+class test_quadrature(NumpyTestCase):
     def quad(self, x, a, b, args):
         raise NotImplementedError
 
@@ -31,4 +31,4 @@ class test_quadrature(ScipyTestCase):
         assert_equal(romb(numpy.arange(17)),128)
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

@@ -20,7 +20,7 @@ restore_path()
 
 from UserList import UserList
 
-class _test_sequence_base(ScipyTestCase):
+class _test_sequence_base(NumpyTestCase):
     seq_type = None
 
     def check_conversion(self,level=5):
@@ -435,4 +435,4 @@ class test_list(_test_sequence_base):
         assert b == desired
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

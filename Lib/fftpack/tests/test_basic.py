@@ -90,7 +90,7 @@ def direct_irdft(x):
             x1[0] = x[0]
     return direct_idft(x1).real
 
-class test_fft(ScipyTestCase):
+class test_fft(NumpyTestCase):
 
     def check_definition(self):
         x = [1,2,3,4+1j,1,2,3,4+2j]
@@ -162,7 +162,7 @@ class test_fft(ScipyTestCase):
             print ' (secs for %s calls)' % (repeat)
         sys.stdout.flush()
 
-class test_ifft(ScipyTestCase):
+class test_ifft(NumpyTestCase):
 
     def check_definition(self):
         x = [1,2,3,4+1j,1,2,3,4+2j]
@@ -237,7 +237,7 @@ class test_ifft(ScipyTestCase):
             print ' (secs for %s calls)' % (repeat)
         sys.stdout.flush()
 
-class test_rfft(ScipyTestCase):
+class test_rfft(NumpyTestCase):
 
     def check_definition(self):
         x = [1,2,3,4,1,2,3,4]
@@ -292,7 +292,7 @@ class test_rfft(ScipyTestCase):
             print ' (secs for %s calls)' % (repeat)
         sys.stdout.flush()
 
-class test_irfft(ScipyTestCase):
+class test_irfft(NumpyTestCase):
 
     def check_definition(self):
         x = [1,2,3,4,1,2,3,4]
@@ -368,7 +368,7 @@ class test_irfft(ScipyTestCase):
 
         sys.stdout.flush()
 
-class test_fftn(ScipyTestCase):
+class test_fftn(NumpyTestCase):
 
     def check_definition(self):
         x = [[1,2,3],[4,5,6],[7,8,9]]
@@ -529,7 +529,7 @@ class test_fftn(ScipyTestCase):
 
         sys.stdout.flush()
 
-class test_ifftn(ScipyTestCase):
+class test_ifftn(NumpyTestCase):
 
     def check_definition(self):
         x = [[1,2,3],[4,5,6],[7,8,9]]
@@ -547,4 +547,4 @@ class test_ifftn(ScipyTestCase):
             assert_array_almost_equal (fftn(ifftn(x)),x)
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

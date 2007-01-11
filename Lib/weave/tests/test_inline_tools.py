@@ -9,7 +9,7 @@ set_local_path()
 from test_scxx import *
 restore_path()
 
-class test_inline(ScipyTestCase):
+class test_inline(NumpyTestCase):
     """ These are long running tests...
 
          I'd like to benchmark these things somehow.
@@ -43,4 +43,4 @@ class test_inline(ScipyTestCase):
             pass
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

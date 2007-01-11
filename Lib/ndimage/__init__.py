@@ -36,6 +36,6 @@ from measurements import *
 from morphology import *
 
 from info import __doc__
-from numpy.testing import ScipyTest
-test = ScipyTest().test
+from numpy.testing import NumpyTest
+test = NumpyTest().test
 

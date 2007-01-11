@@ -16,7 +16,7 @@ restore_path()
 import numpy.oldnumeric as N
 import tempfile
 
-class test_numpyio(ScipyTestCase):
+class test_numpyio(NumpyTestCase):
     def check_basic(self):
         # Generate some data
         a = 255*rand(20)
@@ -34,7 +34,7 @@ class test_numpyio(ScipyTestCase):
         assert(N.product(a.astype(N.Int16) == b,axis=0))
         os.remove(fname)
 
-class test_read_array(ScipyTestCase):
+class test_read_array(NumpyTestCase):
     def check_complex(self):
         a = rand(13,4) + 1j*rand(13,4)
         fname = tempfile.mktemp('.dat')
@@ -61,4 +61,4 @@ class test_read_array(ScipyTestCase):
         os.remove(fname)
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

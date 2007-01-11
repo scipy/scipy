@@ -48,7 +48,7 @@ X7 = X6 * X
 X8 = X7 * X
 X9 = X8 * X
 
-class test_round(ScipyTestCase):
+class test_round(NumpyTestCase):
     """ W.II. ROUND
 
         You should get the numbers 1 to 9.  Many language compilers,
@@ -98,7 +98,7 @@ class test_round(ScipyTestCase):
         y=(int(round((3-numpy.exp(numpy.log(numpy.sqrt(2.0)*numpy.sqrt(2.0)))))))
         assert_equal(y,1)
 
-class test_basicstats(ScipyTestCase):
+class test_basicstats(NumpyTestCase):
     """ W.II.C. Compute basic statistic on all the variables.
 
         The means should be the fifth value of all the variables (case FIVE).
@@ -184,7 +184,7 @@ class test_basicstats(ScipyTestCase):
         y = scipy.stats.std(ROUND)
         assert_approx_equal(y, 2.738612788)
 
-class test_corr(ScipyTestCase):
+class test_corr(NumpyTestCase):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
         All the correlations, except for ZERO and MISS, shoud be exactly 1.
@@ -371,7 +371,7 @@ class test_corr(ScipyTestCase):
 ### I need to figure out how to do this one.
 
 
-class test_regression(ScipyTestCase):
+class test_regression(NumpyTestCase):
     def check_linregressBIGX(self):
         """ W.II.F.  Regress BIG on X.
 
@@ -436,7 +436,7 @@ def compare_results(res,desired):
 ##################################################
 ### Test for sum
 
-class test_gmean(ScipyTestCase):
+class test_gmean(NumpyTestCase):
 
     def check_1D_list(self):
         a = (1,2,3,4)
@@ -475,7 +475,7 @@ class test_gmean(ScipyTestCase):
         desired = array((v,v,v))
         assert_array_almost_equal(desired,actual,decimal=14)
 
-class test_hmean(ScipyTestCase):
+class test_hmean(NumpyTestCase):
     def check_1D_list(self):
         a = (1,2,3,4)
         actual= stats.hmean(a)
@@ -515,7 +515,7 @@ class test_hmean(ScipyTestCase):
         assert_array_almost_equal(desired1,actual1,decimal=14)
 
 
-class test_mean(ScipyTestCase):
+class test_mean(NumpyTestCase):
     def check_basic(self):
         a = [3,4,5,10,-3,-5,6]
         af = [3.,4,5,10,-3,-5,-6]
@@ -552,7 +552,7 @@ class test_mean(ScipyTestCase):
             A += val
         assert_almost_equal(stats.mean(a,axis=None),A/(5*3.0*5))
 
-class test_median(ScipyTestCase):
+class test_median(NumpyTestCase):
     def check_basic(self):
         a1 = [3,4,5,10,-3,-5,6]
         a2 = [3,-6,-2,8,7,4,2,1]
@@ -561,7 +561,7 @@ class test_median(ScipyTestCase):
         assert_equal(stats.median(a2),2.5)
         assert_equal(stats.median(a3),3.5)
 
-class test_percentile(ScipyTestCase):
+class test_percentile(NumpyTestCase):
     def setUp(self):
         self.a1 = [3,4,5,10,-3,-5,6]
         self.a2 = [3,-6,-2,8,7,4,2,1]
@@ -578,7 +578,7 @@ class test_percentile(ScipyTestCase):
         assert_equal(stats.scoreatpercentile(x, 100), 3.5)
         assert_equal(stats.scoreatpercentile(x, 50), 1.75)
         
-class test_std(ScipyTestCase):
+class test_std(NumpyTestCase):
     def check_basic(self):
         a = [3,4,5,10,-3,-5,6]
         b = [3,4,5,10,-3,-5,-6]
@@ -597,21 +597,21 @@ class test_std(ScipyTestCase):
         assert_array_almost_equal(stats.std(a,axis=1),b2,11)
 
 
-class test_cmedian(ScipyTestCase):
+class test_cmedian(NumpyTestCase):
     def check_basic(self):
         data = [1,2,3,1,5,3,6,4,3,2,4,3,5,2.0]
         assert_almost_equal(stats.cmedian(data,5),3.2916666666666665)
         assert_almost_equal(stats.cmedian(data,3),3.083333333333333)
         assert_almost_equal(stats.cmedian(data),3.0020020020020022)
 
-class test_median(ScipyTestCase):
+class test_median(NumpyTestCase):
     def check_basic(self):
         data1 = [1,3,5,2,3,1,19,-10,2,4.0]
         data2 = [3,5,1,10,23,-10,3,-2,6,8,15]
         assert_almost_equal(stats.median(data1),2.5)
         assert_almost_equal(stats.median(data2),5)
 
-class test_mode(ScipyTestCase):
+class test_mode(NumpyTestCase):
     def check_basic(self):
         data1 = [3,5,1,10,23,3,2,6,8,6,10,6]
         vals = stats.mode(data1)
@@ -619,7 +619,7 @@ class test_mode(ScipyTestCase):
         assert_almost_equal(vals[1][0],3)
 
 
-class test_variability(ScipyTestCase):
+class test_variability(NumpyTestCase):
     """  Comparison numbers are found using R v.1.5.1
          note that length(testcase) = 4
     """
@@ -699,7 +699,7 @@ class test_variability(ScipyTestCase):
 
 
 
-class test_moments(ScipyTestCase):
+class test_moments(NumpyTestCase):
     """
         Comparison numbers are found using R v.1.5.1
         note that length(testcase) = 4
@@ -759,7 +759,7 @@ class test_moments(ScipyTestCase):
         y = scipy.stats.kurtosis(self.testcase,0,0)
         assert_approx_equal(y,1.64)
 
-class test_threshold(ScipyTestCase):
+class test_threshold(NumpyTestCase):
     def check_basic(self):
         a = [-1,2,3,4,5,-1,-2]
         assert_array_equal(stats.threshold(a),a)
@@ -771,4 +771,4 @@ class test_threshold(ScipyTestCase):
                            [0,2,3,4,0,0,0])
         
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

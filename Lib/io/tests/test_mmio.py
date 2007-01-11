@@ -8,7 +8,7 @@ set_package_path()
 from io.mmio import mminfo,mmread,mmwrite
 restore_path()
 
-class test_mmio_array(ScipyTestCase):
+class test_mmio_array(NumpyTestCase):
 
     def check_simple(self):
         a = [[1,2],[3,4]]
@@ -135,7 +135,7 @@ _exmpl_mtx = '''\
     5     5   1.200e+01
 '''
 
-class test_mmio_coordinate(ScipyTestCase):
+class test_mmio_coordinate(NumpyTestCase):
 
     def check_simple_todense(self):
         fn = mktemp()
@@ -152,4 +152,4 @@ class test_mmio_coordinate(ScipyTestCase):
         assert_array_almost_equal(a,b)
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

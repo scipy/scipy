@@ -12,4 +12,4 @@ from test_scxx_dict import *
 restore_path()
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

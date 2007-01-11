@@ -23,7 +23,7 @@ from linalg import fblas
 from linalg import cblas
 restore_path()
 
-class test_cblas1_simple(ScipyTestCase):
+class test_cblas1_simple(NumpyTestCase):
 
     def check_axpy(self):
         for p in 'sd':
@@ -35,7 +35,7 @@ class test_cblas1_simple(ScipyTestCase):
             if f is None: continue
             assert_array_almost_equal(f(5,[1,2j,3],[2,-1,3]),[7,10j-1,18])
 
-class test_fblas1_simple(ScipyTestCase):
+class test_fblas1_simple(NumpyTestCase):
 
     def check_axpy(self):
         for p in 'sd':
@@ -121,7 +121,7 @@ class test_fblas1_simple(ScipyTestCase):
             assert_equal(f([-5,4+3j,6]),1)
     #XXX: need tests for rot,rotm,rotg,rotmg
 
-class test_fblas2_simple(ScipyTestCase):
+class test_fblas2_simple(NumpyTestCase):
 
     def check_gemv(self):
         for p in 'sd':
@@ -169,7 +169,7 @@ class test_fblas2_simple(ScipyTestCase):
                                            2j,
                                            3j],[3j,4j]),[[6,8],[12,16],[18,24]])
 
-class test_fblas3_simple(ScipyTestCase):
+class test_fblas3_simple(NumpyTestCase):
 
     def check_gemm(self):
         for p in 'sd':
@@ -183,7 +183,7 @@ class test_fblas3_simple(ScipyTestCase):
             assert_array_almost_equal(f(3j,[3-4j],[-4]),[[-48-36j]])
             assert_array_almost_equal(f(3j,[3-4j],[-4],3,[5j]),[-48-21j])
 
-class test_blas(ScipyTestCase):
+class test_blas(NumpyTestCase):
 
     def check_fblas(self):
         if hasattr(fblas,'empty_module'):
@@ -208,4 +208,4 @@ Notes:
 """
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

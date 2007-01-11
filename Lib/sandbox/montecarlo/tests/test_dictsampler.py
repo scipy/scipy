@@ -21,7 +21,7 @@ restore_path()
 import unittest
 
 
-class test_dictsampler(ScipyTestCase):
+class test_dictsampler(NumpyTestCase):
     def check_simple(self):
         """
         # Sample from this discrete distribution:
@@ -76,4 +76,4 @@ class test_dictsampler(ScipyTestCase):
 
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

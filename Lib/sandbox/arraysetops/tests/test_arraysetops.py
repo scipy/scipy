@@ -24,7 +24,7 @@ set_package_path()
 from scipy.arraysetops import *
 restore_path()
 
-class test_aso( ScipyTestCase ):
+class test_aso( NumpyTestCase ):
 
     def chech_all():
         test_unique1d()
@@ -37,4 +37,4 @@ class test_aso( ScipyTestCase ):
         test_manyways()
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

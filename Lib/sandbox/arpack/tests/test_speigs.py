@@ -8,7 +8,7 @@ restore_path()
 
 import numpy as N
 
-class test_eigs(ScipyTestCase):
+class test_eigs(NumpyTestCase):
     def test(self):
         maxn=15                # Dimension of square matrix to be solved
         # Use a PDP^-1 factorisation to construct matrix with known
@@ -36,7 +36,7 @@ class test_eigs(ScipyTestCase):
         assert_array_almost_equal(calc_vecs,  N.array(vecs)[:,0:nev], decimal=7)
 
 
-# class test_geneigs(ScipyTestCase):
+# class test_geneigs(NumpyTestCase):
 #     def test(self):
 #         import pickle
 #         import scipy.linsolve
@@ -50,5 +50,5 @@ class test_eigs(ScipyTestCase):
 #          94.646308846854879, 95.30841709116271], decimal=11)
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()
     

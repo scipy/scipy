@@ -6,7 +6,7 @@ import unittest
 import numpy as N
 import numpy.random as R
 import numpy.linalg as L
-from numpy.testing import assert_almost_equal, ScipyTestCase
+from numpy.testing import assert_almost_equal, NumpyTestCase
 import scipy
 
 from scipy.sandbox.models import utils, formula, contrast
@@ -47,7 +47,7 @@ class test_term(unittest.TestCase):
         f = intercept * t1
         self.assertEqual(str(f), str(formula.formula(t1)))
 
-class test_formula(ScipyTestCase):
+class test_formula(NumpyTestCase):
 
     def setUp(self):
         self.X = R.standard_normal((40,10))

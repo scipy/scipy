@@ -71,10 +71,10 @@ __doc__ += pkgload.get_pkgdocs()
 
 def test(level=1, verbosity=1):
     """ Run Scipy tests suite with level and verbosity."""
-    from numpy.testing import ScipyTest
+    from numpy.testing import NumpyTest
     import scipy
     scipy.pkgload()
-    return ScipyTest(scipy).test(level, verbosity)
+    return NumpyTest(scipy).test(level, verbosity)
 
 __doc__ += """
 

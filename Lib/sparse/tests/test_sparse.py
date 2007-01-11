@@ -461,7 +461,7 @@ class _test_arith:
 
 
 
-class test_csr(_test_cs, _test_horiz_slicing, _test_arith, ScipyTestCase):
+class test_csr(_test_cs, _test_horiz_slicing, _test_arith, NumpyTestCase):
     spmatrix = csr_matrix
 
     def check_constructor1(self):
@@ -528,7 +528,7 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_arith, ScipyTestCase):
             for ic in range( asp.shape[1] ):
                 assert_equal( asp[ir, ic], bsp[ir, ic] )
                 
-class test_csc(_test_cs, _test_vert_slicing, _test_arith, ScipyTestCase):
+class test_csc(_test_cs, _test_vert_slicing, _test_arith, NumpyTestCase):
     spmatrix = csc_matrix
 
     def check_constructor1(self):
@@ -587,7 +587,7 @@ class test_csc(_test_cs, _test_vert_slicing, _test_arith, ScipyTestCase):
             for ic in range( asp.shape[1] ):
                 assert_equal( asp[ir, ic], bsp[ir, ic] )
 
-class test_dok(_test_cs, ScipyTestCase):
+class test_dok(_test_cs, NumpyTestCase):
     spmatrix = dok_matrix
 
     def check_mult(self):
@@ -698,7 +698,7 @@ class test_dok(_test_cs, ScipyTestCase):
         assert caught == 6
 
 
-class test_lil(_test_cs, _test_horiz_slicing, ScipyTestCase):
+class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase):
     spmatrix = lil_matrix
     def check_mult(self):
         A = matrix(zeros((10,10)))
@@ -741,7 +741,7 @@ class test_lil(_test_cs, _test_horiz_slicing, ScipyTestCase):
         assert_array_equal(C.A, D.A)
 
 
-class test_construct_utils(ScipyTestCase):
+class test_construct_utils(NumpyTestCase):
     def check_identity(self):
         a = spidentity(3)
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
@@ -763,7 +763,7 @@ class test_construct_utils(ScipyTestCase):
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
         assert_array_equal(a.toarray(), b)
 
-class test_coo(ScipyTestCase):
+class test_coo(NumpyTestCase):
     def check_constructor1(self):
         row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
         col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
@@ -817,4 +817,4 @@ class test_coo(ScipyTestCase):
 
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

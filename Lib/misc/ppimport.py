@@ -242,8 +242,8 @@ class _ModuleLoader(object):
         self.__dict__['_ppimport_p_frame'] = p_frame
 
         if location != 'sys.path':
-            from numpy.test.testing import ScipyTest
-            self.__dict__['test'] = ScipyTest(self).test
+            from numpy.test.testing import NumpyTest
+            self.__dict__['test'] = NumpyTest(self).test
 
         # install loader
         sys.modules[name] = self
@@ -283,8 +283,8 @@ class _ModuleLoader(object):
         self.__dict__['_ppimport_module'] = module
 
         # XXX: Should we check the existence of module.test? Warn?
-        from numpy.test.testing import ScipyTest
-        module.test = ScipyTest(module).test
+        from numpy.test.testing import NumpyTest
+        module.test = NumpyTest(module).test
 
         return module
 

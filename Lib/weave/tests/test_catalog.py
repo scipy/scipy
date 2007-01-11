@@ -11,7 +11,7 @@ from weave_test_utils import *
 restore_path()
 
 
-class test_default_dir(ScipyTestCase):
+class test_default_dir(NumpyTestCase):
     def check_is_writable(self):
         path = catalog.default_dir()
         name = os.path.join(path,'dummy_catalog')
@@ -22,10 +22,10 @@ class test_default_dir(ScipyTestCase):
             test_file.close()
             os.remove(name)
 
-class test_os_dependent_catalog_name(ScipyTestCase):
+class test_os_dependent_catalog_name(NumpyTestCase):
     pass
 
-class test_catalog_path(ScipyTestCase):
+class test_catalog_path(NumpyTestCase):
     def check_default(self):
         in_path = catalog.default_dir()
         path = catalog.catalog_path(in_path)
@@ -64,7 +64,7 @@ class test_catalog_path(ScipyTestCase):
         path = catalog.catalog_path(in_path)
         assert (path is None)
 
-class test_get_catalog(ScipyTestCase):
+class test_get_catalog(NumpyTestCase):
     """ This only tests whether new catalogs are created correctly.
         And whether non-existent return None correctly with read mode.
         Putting catalogs in the right place is all tested with
@@ -98,7 +98,7 @@ class test_get_catalog(ScipyTestCase):
         self.remove_dir(pardir)
         assert(cat is not None)
 
-class test_catalog(ScipyTestCase):
+class test_catalog(NumpyTestCase):
 
     def clear_environ(self):
         if os.environ.has_key('PYTHONCOMPILED'):
@@ -331,4 +331,4 @@ class test_catalog(ScipyTestCase):
 
 
 if __name__ == '__main__':
-    ScipyTest('weave.catalog').run()
+    NumpyTest('weave.catalog').run()
