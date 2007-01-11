@@ -26,10 +26,10 @@
 static char const rcsid[] =
   "@(#) $Jeannot: moduleTNC.c,v 1.12 2005/01/28 18:27:31 js Exp $";
 
+#include "Python.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "Python.h"
 
 #include "tnc.h"
 
