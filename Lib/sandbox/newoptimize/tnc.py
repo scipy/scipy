@@ -33,6 +33,7 @@ value of the function, and whose second argument is the gradient of the function
 """
 
 import moduleTNC
+from numpy import asarray
 
 MSG_NONE = 0 # No messages
 MSG_ITER = 1 # One line per iteration
@@ -51,6 +52,7 @@ MSGS = {
 }
 
 HUGE_VAL=1e200*1e200 # No standard representation of Infinity in Python 2.3.3
+               # FIXME: can we use inf now that we have numpy and IEEE floats?
 
 INFEASIBLE   = -1 # Infeasible (low > up)
 LOCALMINIMUM =  0 # Local minima reach (|pg| ~= 0)
@@ -74,26 +76,34 @@ RCSTRINGS = {
         USERABORT    : "User requested end of minimization"
 }
 
-def minimize(function, x, low = None, up = None, scale = None, offset = None,
-        messages = MSG_ALL, maxCGit = -1, maxnfeval = None, eta = -1, stepmx = 0,
-        accuracy = 0, fmin = 0, ftol = -1, xtol = -1, pgtol = -1, rescale = -1):
+# Changes to interface made by Travis Oliphant, Apr. 2004 for inclusion in
+#  SciPy
+
+import optimize
+approx_fprime = optimize.approx_fprime
+
+def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon=1e-8,
+        scale=None, offset=None, messages=MSG_ALL, maxCGit=-1, maxfun=None, eta=-1,
+        stepmx=0, accuracy=0, fmin=0, ftol=-1, xtol=-1, pgtol=-1, rescale=-1):
     """Minimize a function with variables subject to bounds, using gradient
     information.
 
     returns (rc, nfeval, x).
 
     Inputs:
-    x         : initial estimate (a list of floats)
-    function  : the function to minimize. Must take one argument, x and return
+    func      : the function to minimize. Must take one argument, x and return
                 f and g, where f is the value of the function and g its
                 gradient (a list of floats).
                 if the function returns None, the minimization is aborted.
-    low, up   : the bounds (lists of floats)
-                set low[i] to -HUGE_VAL to remove the lower bound
-                set up[i] to HUGE_VAL to remove the upper bound
-                if low == None, the lower bounds are removed.
-                if up == None, the upper bounds are removed.
-                low and up defaults to None
+    x0        : initial estimate (a list of floats)
+    fprime    : gradient of func. If None, then func returns the function
+                value and the gradient ( f, g = func(x, *args) ).
+                Called as fprime(x, *args)
+    args      : arguments to pass to function
+    approx_grad : if true, approximate the gradient numerically
+    bounds    : a list of (min, max) pairs for each element in x, defining
+                the bounds on that parameter. Use None for one of min or max
+                when there is no bound in that direction
     scale     : scaling factors to apply to each variable (a list of floats)
                 if None, the factors are up-low for interval bounded variables
                 and 1+|x] fo the others.
@@ -108,8 +118,8 @@ def minimize(function, x, low = None, up = None, scale = None, offset = None,
                 if maxCGit == 0, the direction chosen is -gradient
                 if maxCGit < 0, maxCGit is set to max(1,min(50,n/2))
                 defaults to -1
-    maxnfeval : max. number of function evaluation
-                if None, maxnfeval is set to max(100, 10*len(x0))
+    maxfun    : max. number of function evaluation
+                if None, maxfun is set to max(100, 10*len(x0))
                 defaults to None
     eta       : severity of the line search. if < 0 or > 1, set to 0.25
                 defaults to -1
@@ -141,13 +151,73 @@ def minimize(function, x, low = None, up = None, scale = None, offset = None,
     Outputs:
     x         : the solution (a list of floats)
     nfeval    : the number of function evaluations
-    rc        : return code as defined in the RCSTRINGS dict"""
+    rc        : return code as defined in the RCSTRINGS dict
 
-    if low == None:
-        low = [-HUGE_VAL]*len(x)
+See also:
 
-    if up == None:
-        up = [HUGE_VAL]*len(x)
+  fmin, fmin_powell, fmin_cg,
+         fmin_bfgs, fmin_ncg -- multivariate local optimizers
+  leastsq -- nonlinear least squares minimizer
+
+  fmin_l_bfgs_b, fmin_tnc,
+         fmin_cobyla -- constrained multivariate optimizers
+
+  anneal, brute -- global optimizers
+
+  fminbound, brent, golden, bracket -- local scalar minimizers
+
+  fsolve -- n-dimenstional root-finding
+
+  brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+  fixed_point -- scalar fixed-point finder
+"""
+
+    n = len(x0)
+
+    if bounds is None:
+        bounds = [(None,None)] * n
+    if len(bounds) != n:
+        raise ValueError('length of x0 != length of bounds')
+
+    if approx_grad:
+        def func_and_grad(x):
+            x = asarray(x)
+            f = func(x, *args)
+            g = approx_fprime(x, func, epsilon, *args)
+            return f, list(g)
+    elif fprime is None:
+        def func_and_grad(x):
+            x = asarray(x)
+            f, g = func(x, *args)
+            return f, list(g)
+    else:
+        def func_and_grad(x):
+            x = asarray(x)
+            f = func(x, *args)
+            g = fprime(x, *args)
+            return f, list(g)
+
+    """
+    low, up   : the bounds (lists of floats)
+                set low[i] to -HUGE_VAL to remove the lower bound
+                set up[i] to HUGE_VAL to remove the upper bound
+                if low == None, the lower bounds are removed.
+                if up == None, the upper bounds are removed.
+                low and up defaults to None
+    """
+    low = [0]*n
+    up = [0]*n
+    for i in range(n):
+        l,u = bounds[i]
+        if l is None:
+            low[i] = -HUGE_VAL
+        else:
+            low[i] = l
+        if u is None:
+            up[i] = HUGE_VAL
+        else:
+            up[i] = u
 
     if scale == None:
         scale = []
@@ -155,11 +225,11 @@ def minimize(function, x, low = None, up = None, scale = None, offset = None,
     if offset == None:
         offset = []
 
-    if maxnfeval == None:
-        maxnfeval = max(100, 10*len(x))
+    if maxfun == None:
+        maxfun = max(100, 10*len(x0))
 
-    return moduleTNC.minimize(function, x, low, up, scale, offset,
-            messages, maxCGit, maxnfeval, eta, stepmx, accuracy,
+    return moduleTNC.minimize(func_and_grad, x0, low, up, scale, offset,
+            messages, maxCGit, maxfun, eta, stepmx, accuracy,
             fmin, ftol, xtol, pgtol, rescale)
 
 if __name__ == '__main__':
@@ -178,7 +248,7 @@ if __name__ == '__main__':
             return f, g
 
         # Optimizer call
-        rc, nf, x = minimize(function, [-7, 3], [-10, 1], [10, 10])
+        rc, nf, x = fmin_tnc(function, [-7, 3], bounds=([-10, 1], [10, 10]))
 
         print "After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc]
         print "x =", x
@@ -260,9 +330,9 @@ if __name__ == '__main__':
         return f, dif
     tests.append ((test45fg, [2]*5, [0]*5, [1,2,3,4,5], [1,2,3,4,5]))
 
-    def test(fg, x, low, up, xopt):
+    def test(fg, x, bounds, xopt):
         print "** Test", fg.__name__
-        rc, nf, x = minimize(fg, x, low, up, messages = MSG_NONE, maxnfeval = 200)
+        rc, nf, x = fmin_tnc(fg, x, bounds=bounds, messages = MSG_NONE, maxnfeval = 200)
         print "After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc]
         print "x =", x
         print "exact value =", xopt
@@ -278,8 +348,8 @@ if __name__ == '__main__':
         if ef > 1e-8:
             raise "Test "+fg.__name__+" failed"
 
-    for fg, x, low, up, xopt in tests:
-        test(fg, x, low, up, xopt)
+    for fg, x, bounds, xopt in tests:
+        test(fg, x, bounds, xopt)
 
     print
     print "** All TNC tests passed."
