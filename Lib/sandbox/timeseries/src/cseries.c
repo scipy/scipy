@@ -635,13 +635,18 @@ cseries_convert(PyObject *self, PyObject *args)
 
     //convert start index to new frequency
     newStartTemp = asfreq_main(startIndex, 'B');
-    if (newStartTemp == -1) {  newStart = asfreq_endpoints(startIndex, 'A'); }
+    if (newStartTemp < 1) { newStart = asfreq_endpoints(startIndex, 'A'); }
     else { newStart = newStartTemp; }
 
     //convert end index to new frequency
     newEndTemp = asfreq_main(startIndex+array->dimensions[0]-1, 'A');
-    if (newEndTemp == -1) { newEnd = asfreq_endpoints(startIndex+array->dimensions[0]-1, 'B'); }
+    if (newEndTemp < 1) { newEnd = asfreq_endpoints(startIndex+array->dimensions[0]-1, 'B'); }
     else { newEnd = newEndTemp; }
+
+    if (newStart < 1) {
+        PyErr_SetString(PyExc_ValueError, "start_date outside allowable range for destination frequency");
+        return NULL;
+    }
 
     newLen = newEnd - newStart + 1;
     newHeight = get_height(fromFreq[0], toFreq[0]);
