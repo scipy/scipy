@@ -28,18 +28,13 @@ _byteorderconv = N.core.records._byteorderconv
 _typestr = ntypes._typestr
 
 import maskedarray as MA
-reload(MA)
-filled = MA.filled
-getmaskarray = MA.getmaskarray
-masked = MA.masked
-nomask = MA.nomask
-mask_or = MA.mask_or
-masked_array = MA.masked_array
+#reload(MA)
+from maskedarray import masked, nomask, mask_or, filled, getmaskarray, masked_array
 
 import warnings
-import logging
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(name)-15s %(levelname)s %(message)s',)
+#import logging
+#logging.basicConfig(level=logging.DEBUG,
+#                    format='%(name)-15s %(levelname)s %(message)s',)
 
 
 class mrecarray(ndarray):
@@ -85,7 +80,7 @@ class mrecarray(ndarray):
     def __getallfields(self,fieldname):
         """Returns all the fields sharing the same fieldname base.
     The fieldname base is either `_data` or `_mask`."""
-        logging.debug('__getallfields(%s)' % fieldname)
+#        logging.debug('__getallfields(%s)' % fieldname)
         (names, formats, offsets, objs) = ([], [], [], [])
         fkeyname = '%%s%s' % fieldname
         for s in self._mrecarray__globalfdict.keys():
@@ -154,7 +149,7 @@ class mrecarray(ndarray):
             func = ndarray.__getattribute__(self,'_mrecarray__getallfields')
             return func.__call__('_mask')            
         elif attr == '_mask':
-            logging.debug('__getattribute__: all fields %s' % attr)
+#            logging.debug('__getattribute__: all fields %s' % attr)
             func = ndarray.__getattribute__(self,'_getmask')
             return func.__call__()            
         # Case #6: attr is not a field at all !
@@ -215,21 +210,21 @@ class mrecarray(ndarray):
 #            func = ndarray.__getattribute__(self,'_mrecarray__getallfields')
 #            return func.__call__('_mask')            
         elif attr == '_mask':
-            logging.debug(" setattr _mask to %s [%s]" % (val,(val is nomask)))
+#            logging.debug(" setattr _mask to %s [%s]" % (val,(val is nomask)))
             if self._hardmask:
-                logging.debug("setattr: object has hardmask")
+#                logging.debug("setattr: object has hardmask")
                 if val is not nomask:
                     mval = getmaskarray(val)
                     for k in gdict.keys():
                         fkey = fdict["%s_mask" % k ][:2]
                         m = mask_or(mval, self.getfield(*fkey))
-                        logging.debug("setattr: set %s to %s" % (k,m))
+#                        logging.debug("setattr: set %s to %s" % (k,m))
                         self.setfield(m, *fkey)
             else:
                 mval = getmaskarray(val)
                 for k in gdict.keys():
                     self.setfield(mval, *fdict["%s_mask" % k ][:2])            
-            logging.debug('__getattribute__: all fields %s' % attr)
+#            logging.debug('__getattribute__: all fields %s' % attr)
             return
 #            func = ndarray.__getattribute__(self,'_getmask')
 #            return func.__call__()            
@@ -237,7 +232,7 @@ class mrecarray(ndarray):
 
     #......................................................        
     def __getitem__(self, indx):
-        logging.debug('__getitem__ got %s' % indx)
+#        logging.debug('__getitem__ got %s' % indx)
         try:
             obj = ndarray.__getitem__(self, indx)
         except ValueError:
@@ -284,7 +279,7 @@ class mrecarray(ndarray):
         """Returns a view of the mrecarray."""
         try:
             if issubclass(obj, ndarray):
-                logging.debug('direct view as %s' % obj)
+#                logging.debug('direct view as %s' % obj)
                 return ndarray.view(self, obj)
         except TypeError:
             pass
@@ -363,8 +358,7 @@ def fromarrays(arraylist, dtype=None, shape=None, formats=None,
                 formats += `obj.itemsize`
             formats += ','
         formats = formats[:-1]
-        
-    logging.debug("fromarrays: formats",formats)
+#    logging.debug("fromarrays: formats",formats)
     # Define the dtype ..........................
     if dtype is not None:
         descr = numeric.dtype(dtype)
@@ -394,10 +388,10 @@ def fromarrays(arraylist, dtype=None, shape=None, formats=None,
     _names = mdescr.names
     # Populate the record array (makes a copy)
     for i in range(len(arraylist)):
-        logging.debug("fromarrays: i:%i-%s/%s" % \
-                      (i, arraylist[i]._data, MA.getmaskarray(arraylist[i])))
-        logging.debug("fromarrays: i:%i-%s/%s" % \
-                      (i,_names[2*i], _names[2*i+1]))
+#        logging.debug("fromarrays: i:%i-%s/%s" % \
+#                      (i, arraylist[i]._data, MA.getmaskarray(arraylist[i])))
+#        logging.debug("fromarrays: i:%i-%s/%s" % \
+#                      (i,_names[2*i], _names[2*i+1]))
         _array[_names[2*i]] = arraylist[i]._data
         _array[_names[2*i+1]] = getmaskarray(arraylist[i])
     return _array
@@ -512,7 +506,6 @@ def _guessvartypes(arr):
                 try: 
                     val = complex(f)
                 except ValueError:
-                    print "str_!"
                     vartypes.append(arr.dtype)
                 else:
                     vartypes.append(complex_)
