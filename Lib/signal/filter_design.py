@@ -1,5 +1,3 @@
-## Automatically adapted for scipy Oct 21, 2005 by convertcode.py
-
 """Filter design.
 """
 
@@ -7,7 +5,7 @@ import numpy
 from numpy.core.umath import *
 from numpy import atleast_1d, poly, polyval, roots, imag, real, asarray,\
      allclose, resize, pi, concatenate, absolute, logspace
-from numpy import mintypecode, select, sum
+from numpy import mintypecode, select
 from scipy import special, optimize, linalg
 from scipy.misc import comb
 import string, types
@@ -1539,4 +1537,4 @@ def firwin(N, cutoff, width=None, window='hamming'):
     alpha = N//2
     m = numpy.arange(0,N)
     h = win*special.sinc(cutoff*(m-alpha))
-    return h / sum(h,axis=0)
+    return h / numpy.sum(h,axis=0)
