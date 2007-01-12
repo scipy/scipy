@@ -470,7 +470,7 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_arith, NumpyTestCase):
                    [0,2,0]],'d')
         bsp = csr_matrix(b)
         assert_array_almost_equal(bsp.data,[4,3,1,2])
-        assert_array_equal(bsp.index,[1,0,2,1])
+        assert_array_equal(bsp.indices,[1,0,2,1])
         assert_array_equal(bsp.indptr,[0,1,3,4])
         assert_equal(bsp.getnnz(),4)
         assert_equal(bsp.getformat(),'csr')
@@ -481,7 +481,7 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_arith, NumpyTestCase):
         b[3,4] = 5
         bsp = csr_matrix(b)
         assert_array_almost_equal(bsp.data,[5])
-        assert_array_equal(bsp.index,[4])
+        assert_array_equal(bsp.indices,[4])
         assert_array_equal(bsp.indptr,[0,0,0,0,1,1,1])
         assert_array_almost_equal(bsp.todense(),b)
     
@@ -491,7 +491,7 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_arith, NumpyTestCase):
                    [3,0]],'d')
         bsp = csr_matrix(b)
         assert_array_almost_equal(bsp.data,[1,2,3])
-        assert_array_equal(bsp.index,[0,1,0])
+        assert_array_equal(bsp.indices,[0,1,0])
         assert_array_equal(bsp.indptr,[0,1,2,3])
         assert_array_almost_equal(bsp.todense(),b)
     
@@ -523,7 +523,7 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_arith, NumpyTestCase):
         print 'in\n', asp
         asp.ensure_sorted_indices( inplace = True )
         print 'out\n', asp
-        assert_array_equal(asp.index,[1, 2, 7, 4, 5])
+        assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
         for ir in range( asp.shape[0] ):
             for ic in range( asp.shape[1] ):
                 assert_equal( asp[ir, ic], bsp[ir, ic] )
@@ -535,7 +535,7 @@ class test_csc(_test_cs, _test_vert_slicing, _test_arith, NumpyTestCase):
         b = matrix([[1,0,0],[3,0,1],[0,2,0]],'d')
         bsp = csc_matrix(b)
         assert_array_almost_equal(bsp.data,[1,3,2,1])
-        assert_array_equal(bsp.index,[0,1,2,1])
+        assert_array_equal(bsp.indices,[0,1,2,1])
         assert_array_equal(bsp.indptr,[0,2,3,4])
         assert_equal(bsp.getnnz(),4)
         assert_equal(bsp.getformat(),'csc')
@@ -545,14 +545,14 @@ class test_csc(_test_cs, _test_vert_slicing, _test_arith, NumpyTestCase):
         b[2,4] = 5
         bsp = csc_matrix(b)
         assert_array_almost_equal(bsp.data,[5])
-        assert_array_equal(bsp.index,[2])
+        assert_array_equal(bsp.indices,[2])
         assert_array_equal(bsp.indptr,[0,0,0,0,0,1,1])
 
     def check_constructor3(self):
         b = matrix([[1,0],[0,2],[3,0]],'d')
         bsp = csc_matrix(b)
         assert_array_almost_equal(bsp.data,[1,3,2])
-        assert_array_equal(bsp.index,[0,2,1])
+        assert_array_equal(bsp.indices,[0,2,1])
         assert_array_equal(bsp.indptr,[0,2,3])
 
     def check_empty(self):
@@ -582,7 +582,7 @@ class test_csc(_test_cs, _test_vert_slicing, _test_arith, NumpyTestCase):
         print 'in\n', asp
         asp.ensure_sorted_indices( inplace = True )
         print 'out\n', asp
-        assert_array_equal(asp.index,[1, 2, 7, 4, 5])
+        assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
         for ir in range( asp.shape[0] ):
             for ic in range( asp.shape[1] ):
                 assert_equal( asp[ir, ic], bsp[ir, ic] )
