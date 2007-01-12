@@ -12,9 +12,9 @@ from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
                   less, where, greater, array, transpose, empty, ones, \
                   arange, shape, intc
 import numpy
-from scipy.sparse.sparsetools import densetocsr, csrtocsc, csrtodense, cscplcsc, \
-     cscelmulcsc, cscmux, csrmux, csrmucsr, csrtocoo, cootocsc, cootocsr, \
-     cscmucsc, csctocoo, csctocsr, csrplcsr, csrelmulcsr
+from scipy.sparse.sparsetools import densetocsr, csrtocsc, csrtodense, \
+     cscplcsc, cscelmulcsc, cscmux, csrmux, csrmucsr, csrtocoo, cootocsc, \
+     cootocsr, cscmucsc, csctocoo, csctocsr, csrplcsr, csrelmulcsr
 import sparsetools
 import itertools, operator, copy
 from bisect import bisect_left
@@ -561,7 +561,7 @@ class _cs_matrix(spmatrix):
                                                self.indptr, self.indices, \
                                                self.data, other.indptr, \
                                                other.indices, other.data)
-            return self.__class__((data, ind, indptr), (self.shape[0], other.shape[1]))
+            return self.__class__((data, ind, indptr), self.shape)
         else:
             raise TypeError, "unsupported type for sparse matrix power"
 
@@ -775,7 +775,7 @@ class csc_matrix(_cs_matrix):
                 self.indices = temp.indices
                 self.indptr = temp.indptr
                 self.shape = temp.shape
-        elif type(arg1) == tuple:
+        elif isinstance(arg1, tuple):
             if isshape(arg1):
                 self.dtype = getdtype(dtype, default=float)
                 # It's a tuple of matrix dimensions (M, N)
@@ -973,7 +973,7 @@ class csc_matrix(_cs_matrix):
                 col = N + col
             if not (0<=row<M) or not (0<=col<N):
                 raise IndexError, "index out of bounds"
-            #this was implemented in fortran before - is there a noticable performance advangate?
+            #this was implemented in fortran before - is there a noticable performance advantage?
             indxs = numpy.where(row == self.indices[self.indptr[col]:self.indptr[col+1]])
             if len(indxs[0]) == 0:
                 return 0
@@ -1150,7 +1150,7 @@ class csr_matrix(_cs_matrix):
                 self.indices = temp.indices
                 self.indptr = temp.indptr
                 self.shape = temp.shape
-        elif type(arg1) == tuple:
+        elif isinstance(arg1, tuple):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
                 M, N = arg1
@@ -1323,7 +1323,7 @@ class csr_matrix(_cs_matrix):
                 col = N + col
             if not (0<=row<M) or not (0<=col<N):
                 raise IndexError, "index out of bounds"
-            #this was implemented in fortran before - is there a noticable performance advangate?
+            #this was implemented in fortran before - is there a noticable performance advantage?
             indxs = numpy.where(col == self.indices[self.indptr[row]:self.indptr[row+1]])
             if len(indxs[0]) == 0:
                 return 0
@@ -1474,18 +1474,12 @@ class dok_matrix(spmatrix, dict):
                 self.shape = shape
         self.dtype = getdtype(dtype, A, default=float)
         if A is not None:
-            if type(A) == tuple:
+            if isinstance(A, tuple):
                 # Interpret as dimensions
-                try:
-                    dims = A
-                    (M, N) = dims
-                    assert M == int(M) and M > 0
-                    assert N == int(N) and N > 0
-                    self.shape = (int(M), int(N))
-                    return
-                except (TypeError, ValueError, AssertionError):
+                if not isshape(A):
                     raise TypeError, "dimensions must be a 2-tuple of positive"\
                             " integers"
+                self.shape = A
             elif isspmatrix(A):
                 # For sparse matrices, this is too inefficient; we need
                 # something else.
@@ -1555,10 +1549,9 @@ class dok_matrix(spmatrix, dict):
         matrix with just these elements.
         """
         try:
-            assert len(key) == 2
-        except (AssertionError, TypeError):
+            i, j = key
+        except (ValueError, TypeError):
             raise TypeError, "index must be a pair of integers or slices"
-        i, j = key
 
         # Bounds checking
         if isintlike(i):
@@ -2020,20 +2013,17 @@ class dok_matrix(spmatrix, dict):
         """ Resize the matrix to dimensions given by 'shape', removing any
         non-zero elements that lie outside.
         """
-        M, N = self.shape
-        try:
-            newM, newN = shape
-            assert newM == int(newM) and newM > 0
-            assert newN == int(newN) and newN > 0
-        except (TypeError, ValueError, AssertionError):
+        if not isshape(shape):
             raise TypeError, "dimensions must be a 2-tuple of positive"\
                              " integers"
+        newM, newN = shape
+        M, N = self.shape
         if newM < M or newN < N:
             # Remove all elements outside new dimensions
             for (i, j) in self.keys():
                 if i >= newM or j >= newN:
                     del self[i, j]
-        self.shape = (newM, newN)
+        self.shape = shape
 
 
 
@@ -2236,11 +2226,11 @@ class lil_matrix(spmatrix):
         self.shape = (M, N)
 
         # Pluck out all non-zeros from the dense array/matrix A
-        self.rows = []
-        for i in xrange(M):
-            self.rows.append([])
-        # The non-zero values of the matrix:
-        self.data = [[] for i in xrange(M)]
+        self.rows = numpy.empty((M,), dtype=object)
+        self.data = numpy.empty((M,), dtype=object)
+        for i in range(M):
+            self.rows[i] = []
+            self.data[i] = []
 
         if A is not None:
             for i in xrange(A.shape[0]):
@@ -2281,6 +2271,37 @@ class lil_matrix(spmatrix):
         new.rows[0] = self.rows[i][:]
         new.data[0] = self.data[i][:]
         return new
+
+
+
+    def _get1(self, i, j):
+        row = self.rows[i]
+        data = self.data[i]
+        if j > self.shape[1]:
+            raise IndexError
+
+        pos = bisect_left(row, j)
+        if pos != len(data) and row[pos] == j:
+            return data[pos]
+        else:
+            return 0
+
+    def _slicetoseq(self, j, shape):
+        if j.start is not None and j.start < 0:
+            start =  shape + j.start
+        elif j.start is None:
+            start = 0
+        else:
+            start = j.start                    
+        if j.stop is not None and j.stop < 0:
+            stop = shape + j.stop
+        elif j.stop is None:
+            stop = shape
+        else:
+            stop = j.stop
+        j = range(start, stop, j.step or 1)
+        return j
+
         
     def __getitem__(self, index):
         """Return the element(s) index=(i, j), where j may be a slice.
@@ -2288,187 +2309,112 @@ class lil_matrix(spmatrix):
         Python lists return copies.
         """
         try:
-            assert len(index) == 2
+            i, j = index
         except (AssertionError, TypeError):
             raise IndexError, "invalid index"
-        i, j = index
-        if type(i) is slice:
-            raise IndexError, "lil_matrix supports slices only of a single row"
-            # TODO: add support for this, like in __setitem__
-        elif isintlike(i):
-            i = int(i)   # Python list indices must be machine-sized ints
-            if not (i>=0 and i<self.shape[0]):
-                raise IndexError, "lil_matrix index out of range"
-        elif operator.isSequenceType(i):
-            raise NotImplementedError, "sequence indexing not yet fully supported"
+
+        if isscalar(i):
+            if isscalar(j):                
+                return self._get1(i, j)
+            if isinstance(j, slice):
+                j = self._slicetoseq(j, self.shape[1])
+            if issequence(j):
+                return self.__class__([[self._get1(i, jj) for jj in j]])
+        elif issequence(i) and issequence(j):
+            return self.__class__([[self._get1(ii, jj) for (ii, jj) in zip(i, j)]])
+        elif issequence(i) or isinstance(i, slice):
+            if isinstance(i, slice):
+                i = self._slicetoseq(i, self.shape[0])
+            if isscalar(j):
+                return self.__class__([[self._get1(ii, j)] for ii in i])
+            if isinstance(j, slice):
+                j = self._slicetoseq(j, self.shape[1])
+            if issequence(j):
+                return self.__class__([[self._get1(ii, jj) for jj in j] for ii in i])
         else:
-            raise IndexError, "invalid index"
+            raise IndexError
+
+    
+    def _insertat(self, i, j, x):
+        """ helper for __setitem__: insert a value at (i,j) where i, j and x
+        are all scalars """
         row = self.rows[i]
-        if type(j) is slice:
-            start, stop, stride = j.indices(self.shape[1])
-            if stride != 1:
-                raise ValueError, "slicing with step != 1 not supported"
-            if min(start, stop) < 0 or max(start, stop-1) >= self.shape[1]:
-                raise IndexError, "invalid index"
-            if stop <= start:
-                raise ValueError, "slice width must be >= 1"
-            # Look up 'start' and 'stop' in column index
-            startind = bisect_left(row, start)
-            stopind = bisect_left(row, stop)
-            new = lil_matrix((1, stop - start), dtype=self.dtype)
-            new.data = [self.data[i][startind:stopind]]
-            new.rows = [[colind - start for colind in row[startind:stopind]]]
-            return new
-        elif operator.isSequenceType(j):
-            raise NotImplementedError, "sequence indexing not yet fully supported"
-        elif isintlike(j):
-            j = int(j)   # Python list indices must be machine-sized ints
-            if not (j>=0 and j<self.shape[1]):
-                raise IndexError, "lil_matrix index out of range"
-        else:
-            raise IndexError, "invalid index"
+        data = self.data[i]
+        self._insertat2(row, data, j, x)
+
+    def _insertat2(self, row, data, j, x):
+        """ helper for __setitem__: insert a value in the given row/data at
+        column j. """
         pos = bisect_left(row, j)
-        if pos == len(row) or row[pos] != j:
-            # Element doesn't exist (is zero)
-            return self.dtype.type(0)
+        if x != 0:
+            if pos == len(row):
+                row.append(j)
+                data.append(x)
+            elif row[pos] != j:
+                row.insert(pos, j)
+                data.insert(pos, x)
+            else:
+                data[pos] = x
         else:
-            return self.data[i][pos]
-    
-    
+            if pos < len(row) and row[pos] == j:
+                del row[pos]
+                del data[pos]
+
+
+    def _insertat3(self, row, data, j, x):
+        """ helper for __setitem__ """
+        if isinstance(j, slice):
+            j = self._slicetoseq(j, self.shape[1])
+        if issequence(j):
+            if isinstance(x, spmatrix):
+                x = x.todense()
+            x = numpy.asarray(x).squeeze()
+            if isscalar(x) or x.size == 1:
+                for jj in j:
+                    self._insertat2(row, data, jj, x)
+            else:
+                # x must be one D. maybe check these things out
+                for jj, xx in zip(j, x):
+                    self._insertat2(row, data, jj, xx)
+        elif isscalar(j):
+            self._insertat2(row, data, j, x)
+        else:
+            raise ValueError, "invalid column value: %s" % str(j)
+
+
     def __setitem__(self, index, x):
         if isscalar(x):
             x = self.dtype.type(x)
         elif not isinstance(x, spmatrix):
             x = numpy.asarray(x, dtype=self.dtype)
+
         try:
-            assert len(index) == 2
-        except (AssertionError, TypeError):
+            i, j = index
+        except (ValueError, TypeError):
             raise IndexError, "invalid index"
-        i, j = index
-        if isintlike(i):
-            i = int(i)   # Python list indices must be machine-sized ints
-            if not (i>=0 and i<self.shape[0]):
-                raise IndexError, "lil_matrix index out of range"
+
+        if isscalar(i):
+            row = self.rows[i]
+            data = self.data[i]
+            self._insertat3(row, data, j, x)
+        elif issequence(i) and issequence(j):                
+            if isscalar(x):
+                for ii, jj in zip(i, j):
+                    self._insertat(ii, jj, x)
+            else:
+                for ii, jj, xx in zip(i, j, x):
+                    self._insertat(ii, jj, xx)
+        elif isinstance(i, slice) or issequence(i):
+            rows = self.rows[i]
+            datas = self.data[i]
+            if isscalar(x):
+                for row, data in zip(rows, datas):
+                    self._insertat3(row, data, j, x)
+            else:
+                for row, data, xx in zip(rows, datas, x):
+                    self._insertat3(row, data, j, xx)
         else:
-            if isinstance(i, slice):
-                seq = xrange(i.start or 0, i.stop or self.shape[1], i.step or 1)
-            elif operator.isSequenceType(i):
-                seq = i
-            else:
-                raise IndexError, "invalid index"
-            try:
-                if not len(x) == len(seq):
-                    raise ValueError, "number of elements in source must be" \
-                            " same as number of elements in destimation"
-            except TypeError:
-                # Either x or seq is not a sequence.  Note that a sparse matrix
-                # is also not a sequence under this definition.
-                # Currently we don't support setting to/from non-sequence types.
-                # This could be enhanced, though, to allow a scalar source,
-                # and/or a sparse vector.
-                raise TypeError, "unsupported type for lil_matrix.__setitem__"
-            else:
-                # Sequence: call __setitem__ recursively, once for each row
-                for i in xrange(len(seq)):
-                    self[seq[i], index[1]] = x[i]
-                return
-
-        # Below here, i is an integer
-        row = self.rows[i]
-        if isintlike(j):
-            j = int(j)   # Python list indices must be machine-sized ints
-            if not (j>=0 and j<self.shape[1]):
-                raise IndexError, "lil_matrix index out of range"
-            # Find element to be set or removed
-            pos = bisect_left(row, j)
-            if x != 0:
-                if pos == len(row):
-                    # New element at end
-                    row.append(j)
-                    self.data[i].append(x)
-                elif row[pos] != j:
-                    # New element
-                    row.insert(pos, j)
-                    self.data[i].insert(pos, x)
-                else:
-                    # Element already exists
-                    self.data[i][pos] = x
-            else:
-                # Remove element
-                if pos < len(row) and row[pos] == j:
-                    # Element already exists
-                    del row[pos]
-                    del self.data[i][pos]
-                # otherwise no element exists -- do nothing
-        else:
-            if isinstance(j, slice):
-                # Is there an easier way to do this?
-                seq = xrange(j.start or 0, j.stop or self.shape[1], j.step or 1)
-            elif operator.isSequenceType(j):
-                seq = j
-            else:
-                raise IndexError, "invalid index"
-
-            if isscalar(x):             # does this work with 0-dim arrays too?
-                if len(row) == 0:
-                    row[:] = seq
-                    self.data[i] = [x for item in seq]  # make copies 
-                else:
-                    # add elements the slow way
-                    for k, col in enumerate(seq):
-                        self[i, col] = x
-                return
-            else:
-                if isinstance(x, lil_matrix):
-                    if x.shape == (1, self.shape[1]):
-                        self.rows[i] = x.rows[0]
-                        self.data[i] = x.data[0]  
-                        # This doesn't make a copy.  Whether to copy or
-                        # not with sparse matrix slicing needs a thorough
-                        # review for consistency!
-                    elif x.shape == (1, len(seq)):
-                        # Add elements the slow way.  This could be made
-                        # more efficient!
-                        for k, col in enumerate(seq):
-                            self[i, col] = x[0, k]
-                    else:
-                        # This should never happen:
-                        raise ValueError, "source and destination must have" \
-                                          " the same shape"
-                    return
-                elif isinstance(x, csr_matrix):
-
-                    if x.shape != (1, self.shape[1]):
-                        raise ValueError, "sparse matrix source must be (1 x n)"
-                    self.rows[i] = x.indices.tolist()
-                    self.data[i] = x.data.tolist()
-                    # This should be generalized to other shapes than an entire
-                    # row.
-
-                else:
-                    # Try converting to a dense array.
-                    try:
-                        x = asarray(x)
-                    except Error, e:
-                        raise TypeError, "unsupported type for" \
-                                         " lil_matrix.__setitem__"
-                    else:
-                        if x.ndim == 2:
-                            # If it's 2d, ensure it's 1 x n, then
-                            # squeeze it down to 1d
-                            if x.shape != (1, len(seq)):
-                                raise ValueError, \
-                                    "source and destination have incompatible "\
-                                    "dimensions"
-                            else:
-                                x = x.squeeze()
-                     
-                    # Add elements one by one
-                    for k, col in enumerate(seq):
-                        self[i, col] = x[k]
-                    return
-                    
-                return
+            raise ValueError, "invalid index value: %s" % str((i, j))
                 
 
     def __mul__(self, other):           # self * other
@@ -2478,7 +2424,7 @@ class lil_matrix(spmatrix):
                 # Multiply by zero: return the zero matrix
                 return new
             # Multiply this scalar by every element.
-            new.data = [[val*other for val in rowvals] for rowvals in new.data]
+            new.data = numpy.array([[val*other for val in rowvals] for rowvals in new.data], dtype=object)
             return new
         else:
             return self.dot(other)
@@ -2552,26 +2498,26 @@ class lil_matrix(spmatrix):
 # unsymmetric sparse skyline
 # variable block row
 
-def _isinstance( x, _class ):
+def _isinstance(x, _class):
     ##
     # This makes scipy.sparse.sparse.csc_matrix == __main__.csc_matrix.
     c1 = ('%s' % x.__class__).split( '.' )
     c2 = ('%s' % _class).split( '.' )
     aux = c1[-1] == c2[-1]
-    return isinstance( x, _class ) or aux
+    return isinstance(x, _class) or aux
 
 def isspmatrix(x):
     return _isinstance(x, spmatrix)
 
 issparse = isspmatrix
 
-def isspmatrix_csr( x ):
+def isspmatrix_csr(x):
     return _isinstance(x, csr_matrix)
 
-def isspmatrix_csc( x ):
+def isspmatrix_csc(x):
     return _isinstance(x, csc_matrix)
 
-def isspmatrix_dok( x ):
+def isspmatrix_dok(x):
     return _isinstance(x, dok_matrix)
 
 def isspmatrix_lil( x ):
@@ -2605,7 +2551,8 @@ def isshape(x):
     try:
         # Assume it's a tuple of matrix dimensions (M, N)
         (M, N) = x
-        assert M == int(M) and N == int(N)   # raises TypeError unless integers
+        assert isintlike(M) and isintlike(N)   # raises TypeError unless integers
+        assert M > 0 and N > 0
     except (ValueError, TypeError, AssertionError):
         return False
     else:
@@ -2685,6 +2632,11 @@ def speye(n, m, k = 0, dtype = 'd'):
     """
     diags = ones((1, n), dtype = dtype)
     return spdiags(diags, k, n, m)
+
+
+def issequence(t):
+    return isinstance(t, (list, tuple))
+
 
 def _testme():
     a = csc_matrix((arange(1, 9), \

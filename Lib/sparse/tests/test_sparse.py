@@ -32,7 +32,7 @@ class _test_cs:
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
 
-    def check_getelement(self):
+    def check_getelement(self):        
         assert_equal(self.datsp[0,0],1)
         assert_equal(self.datsp[0,1],0)
         assert_equal(self.datsp[1,0],3)
@@ -724,7 +724,7 @@ class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase):
         A = B / 10
         B[0, :] = A[0, :]
         assert_array_equal(A[0, :].A, B[0, :].A)
-        assert_array_equal(A[0, :].A, array([[0, 0, 0, 1, 0, 0, 0, 0, 0, 0]]))
+        assert_array_equal(A[0, :].A, array([[0, 0, 0, 1, 0, 0, 0, 0, 0, 0.]]))
 
     def check_lil_from_csr(self):
         """ Tests whether a lil_matrix can be constructed from a
