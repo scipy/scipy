@@ -317,10 +317,10 @@ class UmfpackContext( Struct ):
     def _getIndx( self, mtx ):
 
         if sp.isspmatrix_csc( mtx ):
-            indx = mtx.rowind
+            indx = mtx.index
             self.isCSR = 0
         elif sp.isspmatrix_csr( mtx ):
-            indx = mtx.colind
+            indx = mtx.index
             self.isCSR = 1
         else:
             raise TypeError, 'must be a CSC/CSR matrix (is %s)' % mtx.__class__

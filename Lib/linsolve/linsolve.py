@@ -87,10 +87,7 @@ def spsolve(A, b, permc_spec=2):
 
     else:
         mat, csc = _toCS_superLU( A )
-        if csc:
-            index0 = mat.rowind
-        else:
-            index0 = mat.colind
+        index0 = mat.index
         ftype, lastel, data, index1 = mat.ftype, mat.nnz, mat.data, mat.indptr
         gssv = eval('_superlu.' + ftype + 'gssv')
         b = asarray(b, dtype=data.dtype)
@@ -115,7 +112,7 @@ def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
 
     csc = A.tocsc()
     gstrf = eval('_superlu.' + csc.ftype + 'gstrf')
-    return gstrf(N, csc.nnz, csc.data, csc.rowind, csc.indptr, permc_spec,
+    return gstrf(N, csc.nnz, csc.data, csc.index, csc.indptr, permc_spec,
                  diag_pivot_thresh, drop_tol, relax, panel_size)
 
 def _testme():
