@@ -19,25 +19,80 @@ import numpy.core.numeric as numeric
 import numpy.core.numerictypes as ntypes
 from numpy.core.defchararray import chararray
 from numpy.core.records import find_duplicate
-from numpy import bool_
 
 from numpy.core.records import format_parser, record, recarray
+from numpy.core.records import fromarrays as recfromarrays
 
 ndarray = numeric.ndarray
 _byteorderconv = N.core.records._byteorderconv
 _typestr = ntypes._typestr
 
 import maskedarray as MA
-#reload(MA)
-from maskedarray import masked, nomask, mask_or, filled, getmaskarray, masked_array
+reload(MA)
+from maskedarray import masked, nomask, mask_or, filled, getmask, getmaskarray, \
+    masked_array, make_mask
+from maskedarray import MaskedArray
+from maskedarray.core import default_fill_value, masked_print_option
 
 import warnings
-#import logging
-#logging.basicConfig(level=logging.DEBUG,
-#                    format='%(name)-15s %(levelname)s %(message)s',)
+import logging
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(name)-15s %(levelname)s %(message)s',)
 
 
-class mrecarray(ndarray):
+
+def _getformats(data):
+    """Returns the formats of each array of arraylist as a comma-separated 
+    string."""
+    if isinstance(data, record):
+        return ",".join([desc[1] for desc in data.dtype.descr])
+    
+    formats = ''
+    for obj in data:
+        obj = numeric.asarray(obj)
+#        if not isinstance(obj, ndarray):
+##        if not isinstance(obj, ndarray):
+#            raise ValueError, "item in the array list must be an ndarray."
+        formats += _typestr[obj.dtype.type]
+        if issubclass(obj.dtype.type, ntypes.flexible):
+            formats += `obj.itemsize`
+        formats += ','
+    return formats[:-1]    
+
+def _checknames(descr, names=None):
+    """Checks that the field names of the descriptor `descr` are not some 
+    reserved keywords. If this is the case, a default 'f%i' is substituted.
+    If the argument `names` is not None, updates the field names to valid names.    
+    """    
+    ndescr = len(descr)
+    default_names = ['f%i' % i for i in range(ndescr)]
+    reserved = ['_data','_mask','_fieldmask', 'dtype']
+    if names is None:
+        new_names = default_names
+    else:
+        if isinstance(names, (tuple, list)):
+            new_names = names
+        elif isinstance(names, str):
+            new_names = names.split(',')
+        else:
+            raise NameError, "illegal input names %s" % `names`
+        nnames = len(new_names)
+        if nnames < ndescr:
+            new_names += default_names[nnames:]
+    ndescr = []
+    for (n, d, t) in zip(new_names, default_names, descr.descr):
+        if n in reserved:
+            if t[0] in reserved: 
+                ndescr.append((d,t[1]))
+            else:
+                ndescr.append(t)
+        else:
+            ndescr.append((n,t[1]))
+    return numeric.dtype(ndescr)
+    
+
+
+class MaskedRecords(MaskedArray, object):
     """
     
 :IVariables:
@@ -47,76 +102,92 @@ class mrecarray(ndarray):
         Dictionary of global fields, as the combination of a `_data` and a `_mask`.
         (`f0`)
     """
-    __localfdict = {}
-    __globalfdict = {}
-    def __new__(subtype, shape, dtype=None, buf=None, offset=0, strides=None,
+    _defaultfieldmask = nomask
+    _defaulthardmask = False
+    def __new__(cls, data, mask=nomask, dtype=None, 
+                hard_mask=False, fill_value=None,
+#                offset=0, strides=None,
                 formats=None, names=None, titles=None,
-                byteorder=None, aligned=False, hard_mask=False):
-        
+                byteorder=None, aligned=False):
+        #
+        if isinstance(data, MaskedRecords):
+            cls._defaultfieldmask = data._fieldmask
+            cls._defaulthardmask = data._hardmask | hard_mask
+            cls._fill_value = data._fill_value
+            return data._data.view(cls)
+        # Get the new descriptor ................
         if dtype is not None:
             descr = numeric.dtype(dtype)
         else:
-            descr = format_parser(formats, names, titles, aligned, byteorder)._descr
-
-        if buf is None:
-            mrec = ndarray.__new__(subtype, shape, (record, descr))
+            if formats is None:
+                formats = _getformats(data)
+            parsed = format_parser(formats, names, titles, aligned, byteorder)
+            descr = parsed._descr
+        if names is not None:
+            descr = _checknames(descr,names)
+        _names = descr.names    
+        mdescr = [(t[0],'|b1') for t in descr.descr]
+        #
+        shape = numeric.asarray(data[0]).shape
+        if isinstance(shape, int):
+            shape = (shape,)
+#        logging.debug('__new__: shape: %s' % str(shape))
+        # Construct the _data recarray ..........
+        if isinstance(data, record):
+            _data = numeric.asarray(data).view(recarray)
+            _fieldmask = mask
+        elif isinstance(data, recarray):
+            _data = data
+            _fieldmask = mask
         else:
-            mrec = ndarray.__new__(subtype, shape, (record, descr),
-                                   buffer=buf, offset=offset,
-                                   strides=strides)           
-        # Stores the field names in directories..
-        mrec.__localfdict = dict(descr.fields)
-        mrec.__globalfdict = {}
-        keys = sorted(mrec.__localfdict.keys())
-        for i in range(len(keys)//2):
-            ikey = keys[2*i]
-            nkey = "_".join(ikey.split('_')[:-1])
-            (dfield, mfield) = ("%s_data" % nkey, "%s_mask" % nkey)
-            mrec.__globalfdict[nkey] = dict(_data=mrec.__localfdict[dfield],
-                                            _mask=mrec.__localfdict[mfield])
-        mrec._hardmask = hard_mask
-        return mrec
-    
-    def __getallfields(self,fieldname):
-        """Returns all the fields sharing the same fieldname base.
-    The fieldname base is either `_data` or `_mask`."""
-#        logging.debug('__getallfields(%s)' % fieldname)
-        (names, formats, offsets, objs) = ([], [], [], [])
-        fkeyname = '%%s%s' % fieldname
-        for s in self._mrecarray__globalfdict.keys():
-            fkey = fkeyname % s
-            fattr =  self._mrecarray__localfdict[fkey]
-            names.append(s)
-            obj = self.__getobj(ndarray.__getitem__(self,fkey))
-            objs.append(obj)
-            formats.append(fattr[0])
-            offsets.append(fattr[1])
-        descr = [(n,f) for (n,f) in zip(names, formats)]
-        return N.core.records.fromarrays(objs, dtype=descr)
-    
-    def _getdata(self):
-        """Returns all the `_data` fields."""
-        return self.__getallfields('_data')
-    
-    def _getfieldmask(self):
-        """Returns a recarray of the mask of each field."""
-        return self.__getallfields('_mask')
-    
-    def _getmask(self):
-        """Returns the mask of the mrecarray.
-    An element of the mrecarray is considered masked when all the corresponding
-    fields are masked."""
-        nbfields = len(self.dtype )//2
-        recmask = self._getfieldmask().view(bool_).reshape(-1,nbfields)
-        return recmask.all(1)        
-    
-    def __getobj(self, obj, viewtype=ndarray):
-        "Returns an object as a view of a ndarray, or as itself."
-        if (isinstance(obj, ndarray) and obj.dtype.isbuiltin):
-            return obj.view(viewtype)
-        return obj
+            _data = recarray(shape, dtype=descr)
+            _fieldmask = recarray(shape, dtype=mdescr)
+            for (n,v) in zip(_names, data):
+                _data[n] = numeric.asarray(v).view(ndarray)
+                _fieldmask[n] = getmaskarray(v)
+        
+#        logging.debug('__new__: _fieldmask: %s' % _fieldmask)
+        # Set filling value .....................
+        if fill_value is None:
+            cls._fill_value = [default_fill_value(numeric.dtype(d[1]))
+                               for d in descr.descr]
+        else:
+            cls._fill_value = fill_value
+        # Set class defaults ....................
+        cls._defaultfieldmask = _fieldmask
+        cls._defaulthardmask = hard_mask
+        #
+        return _data.view(cls)
+        
+    def __array_finalize__(self,obj):
+#        logging.debug("__array_finalize__ received %s" % type(obj))      
+        if isinstance(obj, MaskedRecords):
+            self.__dict__.update(_data=obj._data,
+                                 _fieldmask=obj._fieldmask,
+                                 _hardmask=obj._hardmask,
+                                 _fill_value=obj._fill_value                                 
+                                 )
+#            self._data = obj._data
+#            self._fieldmask = obj._fieldmask
+#            self._hardmask = obj._series._hardmask
+#            self._fill_value = obj._fill_value
+        else:     
+#            self._data = obj.view(recarray)
+#            self._fieldmask = self._defaultfieldmask
+#            self._hardmask = self._defaulthardmask
+#            self.fill_value = self._fill_value
+            self.__dict__.update(_data = obj.view(recarray),
+                                 _fieldmask = self._defaultfieldmask,
+                                 _hardmask = self._defaulthardmask,
+                                 fill_value = self._fill_value
+                                )
+            MaskedRecords._defaultfieldmask = nomask
+            MaskedRecords._defaulthardmask = False
+#        logging.debug("__array_finalize__ exit ")  
+        return
     #......................................................
     def __getattribute__(self, attr):
+#        logging.debug('__getattribute__ %s' % attr)
         try:
             # Returns a generic attribute
             return object.__getattribute__(self,attr)
@@ -124,61 +195,37 @@ class mrecarray(ndarray):
             # OK, so attr must be a field name
             pass
         # Get the list of fields ......
-        fdict = ndarray.__getattribute__(self,'_mrecarray__localfdict') or {}
-        # Case #1: attr is a basic field
-        if attr in fdict.keys():
-            fattr = fdict[attr]
-            obj = self.getfield(*fattr)
-            if obj.dtype.fields:
-                return obj
-            if obj.dtype.char in 'SU':
-                return obj.view(chararray)
-            return obj.view(ndarray)
-        # Case #2: attr is acompund field
-        elif ("%s_data" % attr) in fdict.keys():
-            data = self.getfield(*fdict["%s_data" % attr ][:2])
-            mask = self.getfield(*fdict["%s_mask" % attr ][:2])    
-            return MA.masked_array(data.view(ndarray), 
-                              mask=mask.view(ndarray), 
-                              copy=False)
-        # Case #3/4/5: attr is a generic field
-        elif attr == '_data':    
-            func = ndarray.__getattribute__(self,'_mrecarray__getallfields')
-            return func.__call__('_data')        
-        elif attr == '_fieldmask':    
-            func = ndarray.__getattribute__(self,'_mrecarray__getallfields')
-            return func.__call__('_mask')            
+#        logging.debug('__getattribute__ %s listfield' % attr)
+        _names = self.dtype.names
+        _local = self.__dict__
+        _mask = _local['_fieldmask']
+        if attr in _names:
+            _data = _local['_data']
+            obj = numeric.asarray(_data.__getattribute__(attr)).view(MaskedArray)
+            obj._mask = make_mask(_mask.__getattribute__(attr))
+            return obj
         elif attr == '_mask':
-#            logging.debug('__getattribute__: all fields %s' % attr)
-            func = ndarray.__getattribute__(self,'_getmask')
-            return func.__call__()            
-        # Case #6: attr is not a field at all !
-        else:
-            raise AttributeError, "record array has no attribute %s" % attr
-
-# Save the dictionary
-#  If the attr is a field name and not in the saved dictionary
-#  Undo any "setting" of the attribute and do a setfield
-# Thus, you can't create attributes on-the-fly that are field names. 
-
+#            logging.debug('__getattribute__ return mask')
+            if self.size > 1:
+                return _mask.view((bool_, len(self.dtype))).all(1)
+            return _mask.view((bool_, len(self.dtype)))
+        raise AttributeError,"No attribute '%s' !" % attr
+            
     def __setattr__(self, attr, val):
-        # gets some status on attr: an existing field ? a new attribute ?
-        fdict = ndarray.__getattribute__(self,'_mrecarray__localfdict') or {}
-        gdict = ndarray.__getattribute__(self,'_mrecarray__globalfdict') or {}
-        attrlist = fdict.keys() + ['_data', '_fieldmask', '_mask']
-        isvalidattr = (attr in attrlist ) or ('%s_data' % attr in attrlist)
+#        logging.debug('__setattribute__ %s' % attr)
         newattr = attr not in self.__dict__
-        
         try:
             # Is attr a generic attribute ?
             ret = object.__setattr__(self, attr, val)
         except:
             # Not a generic attribute: exit if it's not a valid field
-            if not isvalidattr:
+#            logging.debug('__setattribute__ %s' % attr)
+            fielddict = self.dtype.names or {}
+            if attr not in fielddict:
                 exctype, value = sys.exc_info()[:2]
                 raise exctype, value
         else:
-            if not isvalidattr:
+            if attr not in list(self.dtype.names) + ['_mask']:
                 return ret
             if newattr:         # We just added this one
                 try:            #  or this setattr worked on an internal
@@ -186,94 +233,72 @@ class mrecarray(ndarray):
                     object.__delattr__(self, attr)
                 except:
                     return ret
-        
         # Case #1.: Basic field ............
-        if attr in fdict.keys():
-            return self.setfield(val, *fdict[attr][:2])
-        # Case #2 Compund field ............
-        elif ("%s_data" % attr) in fdict.keys():
-            data = self.setfield(filled(val), *fdict["%s_data" % attr ][:2])
-            mask = self.setfield(getmaskarray(val), *fdict["%s_mask" % attr ][:2])             
-            return 
-        elif attr == '_data':    
+        base_fmask = self._fieldmask
+        _names = self.dtype.names
+        if attr in _names:
             fval = filled(val)
-            for k in gdict.keys():
-                self.setfield(fval, *gdict["%s_data" % k ][:2])
-            return
-#            func = ndarray.__getattribute__(self,'_mrecarray__getallfields')
-#            return func.__call__('_data')        
-        elif attr == '_fieldmask':    
             mval = getmaskarray(val)
-            for k in gdict.keys():
-                self.setfield(mval, *gdict["%s_mask" % k ][:2])
+            if self._hardmask:
+                mval = mask_or(mval, base_fmask.__getattr__(attr))
+            self._data.__setattr__(attr, fval)
+            base_fmask.__setattr__(attr, mval)
             return
-#            func = ndarray.__getattribute__(self,'_mrecarray__getallfields')
-#            return func.__call__('_mask')            
         elif attr == '_mask':
-#            logging.debug(" setattr _mask to %s [%s]" % (val,(val is nomask)))
             if self._hardmask:
 #                logging.debug("setattr: object has hardmask")
                 if val is not nomask:
                     mval = getmaskarray(val)
-                    for k in gdict.keys():
-                        fkey = fdict["%s_mask" % k ][:2]
-                        m = mask_or(mval, self.getfield(*fkey))
-#                        logging.debug("setattr: set %s to %s" % (k,m))
-                        self.setfield(m, *fkey)
+                    for k in _names:
+                        m = mask_or(mval, base_fmask.__getattr__(k))
+                        base_fmask.__setattr__(k, m)
             else:
                 mval = getmaskarray(val)
-                for k in gdict.keys():
-                    self.setfield(mval, *fdict["%s_mask" % k ][:2])            
-#            logging.debug('__getattribute__: all fields %s' % attr)
+                for k in _names:
+                    base_fmask.__setattr__(k, mval)  
             return
-#            func = ndarray.__getattribute__(self,'_getmask')
-#            return func.__call__()            
-            
-
-    #......................................................        
+    #............................................
     def __getitem__(self, indx):
-#        logging.debug('__getitem__ got %s' % indx)
-        try:
-            obj = ndarray.__getitem__(self, indx)
-        except ValueError:
-            if indx in self.__globalfdict.keys():
-                objd = ndarray.__getitem__(self, "%s_data" % indx)
-                objm = ndarray.__getitem__(self, "%s_mask" % indx)
-                return MA.masked_array(objd.view(ndarray), 
-                                  mask=objm.view(ndarray))
-            elif indx in ['_data', '_fieldmask']:
-                return self.__getallfields(indx)
-            elif indx == '_mask':
-                return self._getmask()
-            else:
-                msg = "Cannot do anything w/ indx '%s'!" % indx
-                raise ValueError, msg
-            
-#        logging.debug('__getitem__ send %s' % type(self.__getobj(obj)))
-        return self.__getobj(obj)
-    #.......................................................
-    def field(self,attr, val=None):
-        """Sets the field `attr` to the new value `val`.
-    If `val` is None, returns the corresponding field.
-    """
-        if isinstance(attr,int):
-            names = ndarray.__getattribute__(self,'dtype').names
-            attr = names[attr]
-        
-        fdict = ndarray.__getattribute__(self,'_mrecarray__localfdict') or {}
-        f = fdict[attr]
-        # Case #1: just retrieve the data .......
-        if val is None:
-            try:
-                return self.__getattribute__(attr)
-            except:
-                raise ValueError, "Unable to retrieve field '%s'" % attr 
-        # Case #2: set the field to a new value ..
+        """Returns all the fields sharing the same fieldname base.
+    The fieldname base is either `_data` or `_mask`."""
+#        logging.debug('__getitem__(%s)' % indx)
+        _localdict = self.__dict__
+        # We want a field ........
+        if isinstance(indx, str):           
+            obj = _localdict['_data'][indx].view(MaskedArray)
+            obj._mask = make_mask(_localdict['_fieldmask'][indx])
+            return obj
+        # We want some elements ..
+        return MaskedRecords(_localdict['_data'][indx], 
+                             mask=_localdict['_fieldmask'][indx],
+                             dtype=self.dtype)
+    #......................................................
+    def __str__(self):
+        """x.__str__() <==> str(x)
+Calculates the string representation, using masked for fill if it is enabled. 
+Otherwise, fills with fill value.
+        """
+        if self.size > 1:
+            mstr = ["(%s)" % ",".join([str(i) for i in s])  
+                    for s in zip(*[getattr(self,f) for f in self.dtype.names])]
+            return "[%s]" % ", ".join(mstr)
         else:
-            try:
-                return self.__setattribute__(attr)
-            except:
-                raise ValueError, "Unable to set field '%s'" % attr 
+            mstr = numeric.asarray(self._data.item(), dtype=object_)
+            mstr[list(self._fieldmask)] = masked_print_option
+            return str(mstr)
+    
+    def __repr__(self):
+        """x.__repr__() <==> repr(x)
+Calculates the repr representation, using masked for fill if it is enabled. 
+Otherwise fill with fill value.
+        """
+        _names = self.dtype.names
+        fmt = "%%%is : %%s" % (max([len(n) for n in _names])+4,)
+        reprstr = [fmt % (f,getattr(self,f)) for f in self.dtype.names]
+        reprstr.insert(0,'masked_records(')
+        reprstr.extend([fmt % ('    fill_value', self._fill_value), 
+                         '              )'])
+        return str("\n".join(reprstr))
     #......................................................
     def view(self, obj):
         """Returns a view of the mrecarray."""
@@ -294,23 +319,17 @@ class mrecarray(ndarray):
     def soften_mask(self):
         "Forces the mask to soft"
         self._hardmask = False
+    #.............................................
+    def copy(self):
+        _localdict = self.__dict__
+        return MaskedRecords(_localdict['_data'].copy(),
+                        mask=_localdict['_fieldmask'].copy(),
+                       dtype=self.dtype)
+
 
 #####---------------------------------------------------------------------------
 #---- --- Constructors ---
 #####---------------------------------------------------------------------------
-def _splitfields(descr):
-    """Creates a new descriptor from the descriptor `descr`.
-    The initial fields are renamed by adding a `_data` suffix to the name.
-    Their dtype is kept.
-    New fields are also created from the initial ones by adding a `_mask` suffix
-    to the name.
-    The dtype of these latter is set to `bool_`
-    """
-    mdescr = []
-    for (n,d) in descr.descr:
-        mdescr.append( ("%s_data" % n, d) )
-        mdescr.append( ("%s_mask" % n, bool_) )
-    return numeric.dtype(mdescr)
 
 def fromarrays(arraylist, dtype=None, shape=None, formats=None,
                names=None, titles=None, aligned=False, byteorder=None):
@@ -347,17 +366,7 @@ def fromarrays(arraylist, dtype=None, shape=None, formats=None,
         shape = (shape,)
     # Define formats from scratch ...............
     if formats is None and dtype is None:
-        # go through each object in the list to see if it is an ndarray
-        # and determine the formats.
-        formats = ''
-        for obj in arraylist:
-            if not isinstance(obj, ndarray):
-                raise ValueError, "item in the array list must be an ndarray."
-            formats += _typestr[obj.dtype.type]
-            if issubclass(obj.dtype.type, ntypes.flexible):
-                formats += `obj.itemsize`
-            formats += ','
-        formats = formats[:-1]
+        formats = _getformats(arraylist)
 #    logging.debug("fromarrays: formats",formats)
     # Define the dtype ..........................
     if dtype is not None:
@@ -383,58 +392,25 @@ def fromarrays(arraylist, dtype=None, shape=None, formats=None,
         if testshape != shape:
             raise ValueError, "Array-shape mismatch in array %d" % k
     # Reconstruct the descriptor, by creating a _data and _mask version
-    mdescr = _splitfields(descr)
-    _array = mrecarray(shape, mdescr)
-    _names = mdescr.names
-    # Populate the record array (makes a copy)
-    for i in range(len(arraylist)):
-#        logging.debug("fromarrays: i:%i-%s/%s" % \
-#                      (i, arraylist[i]._data, MA.getmaskarray(arraylist[i])))
-#        logging.debug("fromarrays: i:%i-%s/%s" % \
-#                      (i,_names[2*i], _names[2*i+1]))
-        _array[_names[2*i]] = arraylist[i]._data
-        _array[_names[2*i+1]] = getmaskarray(arraylist[i])
-    return _array
+    return MaskedRecords(arraylist, dtype=descr)
 #..............................................................................
 def fromrecords(reclist, dtype=None, shape=None, formats=None, names=None,
                 titles=None, aligned=False, byteorder=None):
-    """Creates a mrecarray from a list of records.
+    """Creates a MaskedRecords from a list of records.
 
     The data in the same field can be heterogeneous, they will be promoted
     to the highest data type.  This method is intended for creating
     smaller record arrays.  If used to create large array without formats
-    defined
+    defined, it can be slow.
 
-        r=fromrecords([(2,3.,'abc')]*100000)
-
-        it can be slow.
-
-        If formats is None, then this will auto-detect formats. Use list of
-        tuples rather than list of lists for faster processing.
-
-    >>> r=fromrecords([(456,'dbe',1.2),(2,'de',1.3)],names='col1,col2,col3')
-    >>> print r[0]
-    (456, 'dbe', 1.2)
-    >>> r.col1
-    array([456,   2])
-    >>> r.col2
-    chararray(['dbe', 'de'])
-    >>> import cPickle
-    >>> print cPickle.loads(cPickle.dumps(r))
-    recarray[
-    (456, 'dbe', 1.2),
-    (2, 'de', 1.3)
-    ]
+    If formats is None, then this will auto-detect formats. Use a list of
+    tuples rather than a list of lists for faster processing.
     """    
-    # Case #1: reclist is in fact a mrecarray ........
-    if isinstance(reclist, mrecarray):
+    # reclist is in fact a mrecarray .................
+    if isinstance(reclist, MaskedRecords):
         mdescr = reclist.dtype
         shape = reclist.shape
-        _array = mrecarray(shape, mdescr)
-        for (i,r) in enumerate(reclist):
-            _array[i] = r
-        return _array
-    
+        return MaskedRecords(reclist, dtype=mdescr)
     # No format, no dtype: create from to arrays .....
     nfields = len(reclist[0])
     if formats is None and dtype is None:  # slower
@@ -446,8 +422,8 @@ def fromrecords(reclist, dtype=None, shape=None, formats=None, names=None,
             obj = numeric.array(reclist,dtype=object)
             arrlist = [numeric.array(obj[...,i].tolist()) 
                                for i in xrange(nfields)]
-        return fromarrays(arrlist, formats=formats, shape=shape, names=names,
-                          titles=titles, aligned=aligned, byteorder=byteorder)
+        return MaskedRecords(arrlist, formats=formats, names=names, 
+                             titles=titles, aligned=aligned, byteorder=byteorder)
     # Construct the descriptor .......................
     if dtype is not None:
         descr = numeric.dtype(dtype)
@@ -456,7 +432,6 @@ def fromrecords(reclist, dtype=None, shape=None, formats=None, names=None,
         parsed = format_parser(formats, names, titles, aligned, byteorder)
         _names = parsed._names
         descr = parsed._descr
-    mdescr = _splitfields(descr)
 
     try:
         retval = numeric.array(reclist, dtype = descr)
@@ -467,21 +442,15 @@ def fromrecords(reclist, dtype=None, shape=None, formats=None, names=None,
             shape = (shape*2,)
         if len(shape) > 1:
             raise ValueError, "Can only deal with 1-d array."
-        _array = recarray(shape, mdescr)
-        raise NotImplementedError,"I should really test that..."
-        for k in xrange(_array.size):
-            _array[k] = tuple(reclist[k])
-        return _array
+        retval = recarray(shape, mdescr)
+        for k in xrange(retval.size):
+            retval[k] = tuple(reclist[k])
+        return MaskedRecords(retval, dtype=descr)
     else:
         if shape is not None and retval.shape != shape:
             retval.shape = shape
     #
-    tmp = retval.view(recarray)
-    _array = mrecarray(shape, mdescr)
-    for n in tmp.dtype.names:
-        _array['%s_data' % n] = tmp[n]
-        _array['%s_mask' % n] = nomask
-    return _array
+    return MaskedRecords(retval, dtype=descr)
 
 def _guessvartypes(arr):        
     """Tries to guess the dtypes of the str_ ndarray `arr`, by testing element-wise
@@ -561,16 +530,14 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
         line = f.readline()
         firstline = line[:line.find(commentchar)].strip()
         _varnames = firstline.split(delimitor)
-        logging.debug("_VARNAMES:%s-%s"% (_varnames,len(_varnames)))
+#        logging.debug("_VARNAMES:%s-%s"% (_varnames,len(_varnames)))
         if len(_varnames) > 1:
             break
     if varnames is None:
         varnames = _varnames
     # Get the data ..............................
-    _variables = [line.strip().split(delimitor) for line in f
-                   if line[0] != commentchar and len(line) > 1]
-    _variables = N.array(_variables)
-    #_variables = MA.masked_equal(_variables,'')
+    _variables = MA.asarray([line.strip().split(delimitor) for line in f
+                                  if line[0] != commentchar and len(line) > 1])
     (nvars, nfields) = _variables.shape
     # Try to guess the dtype ....................
     if vartypes is None:
@@ -584,43 +551,14 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
             vartypes = _guessvartypes(_variables[0])
     # Construct the descriptor ..................
     mdescr = [(n,f) for (n,f) in zip(varnames, vartypes)]
+#    logging.debug("fromtextfile: descr: %s" % mdescr)
     # Get the data and the mask .................
     # We just need a list of masked_arrays. It's easier to create it like that:
     _mask = (_variables.T == missingchar)
     _datalist = [masked_array(a,mask=m,dtype=t)
                      for (a,m,t) in zip(_variables.T, _mask, vartypes)]
-    return fromarrays(_datalist, dtype=mdescr)
+    return MaskedRecords(_datalist, dtype=mdescr)
     
 
 
 ################################################################################
-from maskedarray.testutils import assert_equal, assert_array_equal
-if 1:
-    if 0:
-        fcontent = """#
-'One (S)','Two (I)','Three (F)','Four (M)','Five (-)','Six (C)'
-'strings',1,1.0,'mixed column',,1
-'with embedded "double quotes"',2,2.0,1.0,,1
-'strings',3,3.0E5,3,,1
-'strings',4,-1e-10,,,1
-"""    
-        import os
-        from datetime import datetime
-        fname = 'tmp%s' % datetime.now().strftime("%y%m%d%H%M%S%s")
-        f = open(fname, 'w')
-        f.write(fcontent)
-        f.close()
-        mrectxt = fromtextfile(fname,delimitor=',',varnames='ABCDEFG')        
-        os.unlink(fname)
-        #
-        assert(isinstance(mrectxt, mrecarray))
-        assert_equal(mrectxt.F, [1,1,1,1])
-        assert_equal(mrectxt.E._mask, [1,1,1,1])
-        assert_equal(mrectxt.C, [1,2,3.e+5,-1e-10])
-#...............................................................................
-
-
-        
-    
-        
-
