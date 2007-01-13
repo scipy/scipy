@@ -363,7 +363,8 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=1e-3,t=None,
         t = empty((nest,),float)
         _curfit_cache['t'] = t
     if task <= 0:
-        _curfit_cache['wrk'] = empty((m*(k+1)+nest*(7+3*k),),float)
+        if per: _curfit_cache['wrk'] = empty((m*(k+1)+nest*(8+5*k),),float)
+        else: _curfit_cache['wrk'] = empty((m*(k+1)+nest*(7+3*k),),float)
         _curfit_cache['iwrk'] = empty((nest,),int32)
     try:
         t=_curfit_cache['t']
@@ -376,7 +377,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=1e-3,t=None,
         n,c,fp,ier = dfitpack.curfit(task, x, y, w, t, wrk, iwrk, xb, xe, k, s)
     else:
         n,c,fp,ier = dfitpack.percur(task, x, y, w, t, wrk, iwrk, k, s)
-    tck = (t[:n],c[:n-k-1],k)
+    tck = (t[:n],c[:n],k)
     if ier<=0 and not quiet:
         print _iermess[ier][0]
         print "\tk=%d n=%d m=%d fp=%f s=%f"%(k,len(t),m,fp,s)
@@ -781,7 +782,7 @@ if __name__ == "__main__":
         v,v1=f(x),f(x1)
         nk=[]
         for k in range(1,6):
-            tck=splrep(x,v,s=s,per=per,k=k,nest=-1,xe=xe)
+            tck=splrep(x,v,s=s,per=per,k=k,xe=xe)
             if at:t=tck[0][k:-k]
             else: t=x1
             nd=[]
@@ -810,7 +811,7 @@ if __name__ == "__main__":
         v=f(x)
         nk=[]
         for k in range(1,6):
-            tck=splrep(x,v,s=s,per=per,k=k,nest=-1,xe=xe)
+            tck=splrep(x,v,s=s,per=per,k=k,xe=xe)
             nk.append([splint(ia,ib,tck),spalde(dx,tck)])
         print "\nf = %s  s=S_k(x;t,c)  x in [%s, %s] > [%s, %s]"%(f(None),
                                                    `round(xb,3)`,`round(xe,3)`,
@@ -839,7 +840,7 @@ if __name__ == "__main__":
         print "  k  :     Roots of s(x) approx %s  x in [%s,%s]:"%\
               (f(None),`round(a,3)`,`round(b,3)`)
         for k in range(1,6):
-            tck=splrep(x,v,s=s,per=per,k=k,nest=-1,xe=xe)
+            tck=splrep(x,v,s=s,per=per,k=k,xe=xe)
             print '  %d  : %s'%(k,`sproot(tck).tolist()`)
     def test4(f=f1,per=0,s=0,a=0,b=2*pi,N=20,xb=None,xe=None,
               ia=0,ib=2*pi,dx=0.2*pi):
@@ -853,7 +854,7 @@ if __name__ == "__main__":
         print "  k  :  [x(u), %s(x(u))]  Error of splprep  Error of splrep "%(f(0,None))
         for k in range(1,6):
             tckp,u=splprep([x,v],s=s,per=per,k=k,nest=-1)
-            tck=splrep(x,v,s=s,per=per,k=k,nest=-1)
+            tck=splrep(x,v,s=s,per=per,k=k)
             uv=splev(dx,tckp)
             print "  %d  :  %s    %.1e           %.1e"%\
                   (k,`map(lambda x:round(x,3),uv)`,
