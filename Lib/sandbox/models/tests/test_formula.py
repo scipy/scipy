@@ -1,7 +1,8 @@
-import csv
-import os
+"""
+Test functions for models.formula
+"""
+
 import string
-#import unittest
 
 import numpy as N
 import numpy.random as R
@@ -226,11 +227,5 @@ class test_formula(NumpyTestCase):
         
         self.assertEquals(estimable, False)
 
-#def suite():
-#    suite = unittest.makeSuite(formulaTest)
-#    return suite
-
 if __name__ == "__main__":
     NumpyTest().run()
-#if __name__ == '__main__':
-#    unittest.main()

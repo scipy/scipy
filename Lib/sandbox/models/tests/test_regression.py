@@ -1,4 +1,6 @@
-#import unittest
+"""
+Test functions for models.regression
+"""
 
 from numpy.random import standard_normal
 from numpy.testing import NumpyTest, NumpyTestCase
@@ -41,5 +43,3 @@ class test_Regression(NumpyTestCase):
 
 if __name__ == "__main__":
     NumpyTest().run()
-#if __name__ == '__main__':
-#    unittest.main()

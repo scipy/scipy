@@ -1,10 +1,12 @@
-#import unittest
+"""
+Test functions for models.utils
+"""
 
 import numpy as N
 import numpy.random as R
 from numpy.testing import assert_almost_equal, NumpyTest, NumpyTestCase
-import scipy
 
+import scipy
 from scipy.sandbox.models import utils
 
 class test_Utils(NumpyTestCase):
@@ -55,5 +57,3 @@ class test_Utils(NumpyTestCase):
 
 if __name__ == "__main__":
     NumpyTest().run()
-#if __name__ == '__main__':
-#    unittest.main()
