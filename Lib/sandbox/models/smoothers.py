@@ -7,13 +7,11 @@ who generate a smooth fit of a set of (x,y) pairs.
 import numpy as N
 import numpy.linalg as L
 
-from scipy.optimize import golden
 from scipy.linalg import solveh_banded
-
-from bspline import bspline
-from utils import band2array
+from scipy.optimize import golden
 
 from scipy.sandbox.models import _bspline
+from scipy.sandbox.models.bspline import bspline, band2array
 
 
 class poly_smoother:
@@ -96,7 +94,7 @@ class smoothing_spline(bspline):
 
         mask = N.flatnonzero(1 - N.alltrue(N.equal(bt, 0), axis=0))
 
-        bt = bt[:,mask]
+        bt = bt[:, mask]
         y = y[mask]
 
         self.df_total = y.shape[0]
@@ -115,9 +113,9 @@ class smoothing_spline(bspline):
             nband, nbasis = self.g.shape
             for i in range(nbasis):
                 for k in range(min(nband, nbasis-i)):
-                    self.btb[k,i] = (bt[i] * bt[i+k]).sum()
+                    self.btb[k, i] = (bt[i] * bt[i+k]).sum()
 
-            bty.shape = (1,bty.shape[0])
+            bty.shape = (1, bty.shape[0])
             self.chol, self.coef = solveh_banded(self.btb + 
                                                  pen*self.g,
                                                  bty, lower=1)
@@ -164,7 +162,6 @@ class smoothing_spline(bspline):
             return self.rank
 
 class smoothing_spline_fixeddf(smoothing_spline):
-
     """
     Fit smoothing spline with approximately df degrees of freedom
     used in the fit, i.e. so that self.trace() is approximately df.
@@ -172,7 +169,6 @@ class smoothing_spline_fixeddf(smoothing_spline):
     In general, df must be greater than the dimension of the null space
     of the Gram inner product. For cubic smoothing splines, this means
     that df > 2.
-
     """
 
     target_df = 5

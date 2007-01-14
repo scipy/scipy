@@ -1,8 +1,8 @@
 import numpy as N
-from scipy.sandbox.models import family
 
-from glm import model as glm
-from bspline import SmoothingSpline
+from scipy.sandbox.models import family
+from scipy.sandbox.models.bspline import SmoothingSpline
+from scipy.sandbox.models.glm import model as glm
 
 def default_smoother(x):
     _x = x.copy()

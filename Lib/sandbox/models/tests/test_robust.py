@@ -1,7 +1,8 @@
-import scipy.sandbox.models as S
 import unittest
+
 import numpy.random as R
-import numpy as N
+
+import scipy.sandbox.models as S
 
 W = R.standard_normal
 

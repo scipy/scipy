@@ -1,6 +1,8 @@
 import shutil
 import tempfile
+
 import numpy as N
+
 from scipy.sandbox.models import survival, model
 
 class discrete:
@@ -197,7 +199,7 @@ if __name__ == '__main__':
     for i in range(2*n):
         subjects[i].X = X[i]
 
-    import formula as F
+    import scipy.sandbox.models.formula as F
     x = F.quantitative('X')
     f = F.formula(x)
 

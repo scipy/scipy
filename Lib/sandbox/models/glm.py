@@ -25,11 +25,13 @@ class model(wls_model):
         """
         if results is None:
             results = self.results
-        if Y is None: Y = self.Y
+        if Y is None:
+            Y = self.Y
         return self.family.deviance(Y, results.mu) / scale
 
     def next(self):
-        results = self.results; Y = self.Y
+        results = self.results
+        Y = self.Y
         self.weights = self.family.weights(results.mu)
         self.initialize(self.design)
         Z = results.predict + self.family.link.deriv(results.mu) * (Y - results.mu)
