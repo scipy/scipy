@@ -14,7 +14,7 @@ __date__     = '$Date: 2006-12-22 18:58:11 -0500 (Fri, 22 Dec 2006) $'
 import types
 import datetime
 
-import numpy as N
+import numpy
 import numpy.core.fromnumeric  as fromnumeric
 import numpy.core.numeric as numeric
 from numpy.testing import NumpyTest, NumpyTestCase
@@ -24,12 +24,11 @@ import maskedarray
 from maskedarray import masked_array
 
 import maskedarray.testutils
-reload(maskedarray.testutils)
 from maskedarray.testutils import assert_equal, assert_array_equal
 
-import tsdate
-reload(tsdate)
-from tsdate import *
+import tdates
+reload(tdates)
+from tdates import date_array_fromlist, Date, DateArray, mxDFromString
 
 class test_creation(NumpyTestCase):
     "Base test class for MaskedArrays."
@@ -41,67 +40,67 @@ class test_creation(NumpyTestCase):
         "Tests creation from list of strings"
         dlist = ['2007-01-%02i' % i for i in range(1,15)]
         # A simple case: daily data
-        dates = datearray_fromlist(dlist, 'D')
+        dates = date_array_fromlist(dlist, 'D')
         assert_equal(dates.freq,'D')
         assert(dates.isfull())
-        assert(not dates.ispacked())
+        assert(not dates.has_duplicated_dates())
         assert_equal(dates, 732677+numpy.arange(len(dlist)))
         # as simple, but we need to guess the frequency this time
-        dates = datearray_fromlist(dlist, 'D')
+        dates = date_array_fromlist(dlist, 'D')
         assert_equal(dates.freq,'D')
         assert(dates.isfull())
-        assert(not dates.ispacked())
+        assert(not dates.has_duplicated_dates())
         assert_equal(dates, 732677+numpy.arange(len(dlist)))
         # Still daily data, that we force to month
-        dates = datearray_fromlist(dlist, 'M')
+        dates = date_array_fromlist(dlist, 'M')
         assert_equal(dates.freq,'M')
         assert(not dates.isfull())
-        assert(dates.ispacked())
-        assert_equal(dates, [24085]*len(dlist))
+        assert(dates.has_duplicated_dates())
+        assert_equal(dates, [24073]*len(dlist))
         # Now, for monthly data
         dlist = ['2007-%02i' % i for i in range(1,13)]
-        dates = datearray_fromlist(dlist, 'M')
+        dates = date_array_fromlist(dlist, 'M')
         assert_equal(dates.freq,'M')
         assert(dates.isfull())
-        assert(not dates.ispacked())
-        assert_equal(dates, 24085 + numpy.arange(12))
+        assert(not dates.has_duplicated_dates())
+        assert_equal(dates, 24073 + numpy.arange(12))
         # Monthly data  w/ guessing
         dlist = ['2007-%02i' % i for i in range(1,13)]
-        dates = datearray_fromlist(dlist, )
+        dates = date_array_fromlist(dlist, )
         assert_equal(dates.freq,'M')
         assert(dates.isfull())
-        assert(not dates.ispacked())
-        assert_equal(dates, 24085 + numpy.arange(12))
+        assert(not dates.has_duplicated_dates())
+        assert_equal(dates, 24073 + numpy.arange(12))
         
     def test_fromstrings_wmissing(self):
         "Tests creation from list of strings w/ missing dates"
         dlist = ['2007-01-%02i' % i for i in (1,2,4,5,7,8,10,11,13)]
-        dates = datearray_fromlist(dlist)
+        dates = date_array_fromlist(dlist)
         assert_equal(dates.freq,'U')
         assert(not dates.isfull())
-        assert(not dates.ispacked())
+        assert(not dates.has_duplicated_dates())
         assert_equal(dates.tovalue(),732676+numpy.array([1,2,4,5,7,8,10,11,13]))
         #
-        ddates = datearray_fromlist(dlist, 'D')
+        ddates = date_array_fromlist(dlist, 'D')
         assert_equal(ddates.freq,'D')
         assert(not ddates.isfull())
-        assert(not ddates.ispacked())
+        assert(not ddates.has_duplicated_dates())
         #
-        mdates = datearray_fromlist(dlist, 'M')
+        mdates = date_array_fromlist(dlist, 'M')
         assert_equal(mdates.freq,'M')
         assert(not dates.isfull())
-        assert(mdates.ispacked())
+        assert(mdates.has_duplicated_dates())
         #
     
     def test_fromsobjects(self):
         "Tests creation from list of objects."
         dlist = ['2007-01-%02i' % i for i in (1,2,4,5,7,8,10,11,13)]
-        dates = datearray_fromlist(dlist)
+        dates = date_array_fromlist(dlist)
         dobj = [datetime.datetime.fromordinal(d) for d in dates.toordinal()]
-        odates = datearray_fromlist(dobj)
+        odates = date_array_fromlist(dobj)
         assert_equal(dates,odates)
         dobj = [mxDFromString(d) for d in dlist]
-        odates = datearray_fromlist(dobj)
+        odates = date_array_fromlist(dobj)
         assert_equal(dates,odates)
 
 
@@ -114,29 +113,29 @@ class test_methods(NumpyTestCase):
     def test_getitem(self):
         "Tests getitem"
         dlist = ['2007-%02i' % i for i in range(1,5)+range(7,13)]
-        mdates = datearray_fromlist(dlist).asfreq('M')
+        mdates = date_array_fromlist(dlist, 'M')
         # Using an integer
-        assert_equal(mdates[0].value, 24085)
-        assert_equal(mdates[-1].value, 24096)
+        assert_equal(mdates[0].value, 24073)
+        assert_equal(mdates[-1].value, 24084)
         # Using a date
         lag = mdates.find_dates(mdates[0])
         assert_equal(mdates[lag], mdates[0])
-        lag = mdates.find_dates(Date('M',value=24092))
+        lag = mdates.find_dates(Date('M',value=24080))
         assert_equal(mdates[lag], mdates[5])
         # Using several dates
-        lag = mdates.find_dates(Date('M',value=24085), Date('M',value=24096))
+        lag = mdates.find_dates(Date('M',value=24073), Date('M',value=24084))
         assert_equal(mdates[lag], 
                      DateArray([mdates[0], mdates[-1]], freq='M'))
         assert_equal(mdates[[mdates[0],mdates[-1]]], mdates[lag])
         #
         assert_equal(mdates>=mdates[-4], [0,0,0,0,0,0,1,1,1,1])
         dlist = ['2006-%02i' % i for i in range(1,5)+range(7,13)]
-        mdates = datearray_fromlist(dlist).asfreq('M')
+        mdates = date_array_fromlist(dlist).asfreq('M')
 
         
     def test_getsteps(self):
         dlist = ['2007-01-%02i' %i for i in (1,2,3,4,8,9,10,11,12,15)]
-        ddates = datearray_fromlist(dlist)
+        ddates = date_array_fromlist(dlist)
         assert_equal(ddates.get_steps(), [1,1,1,4,1,1,1,1,3])
 
 ###############################################################################

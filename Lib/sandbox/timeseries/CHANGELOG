@@ -1,3 +1,9 @@
+#2007-01-14 : Code reorganization:
+#           : - Moved Matt's initial version to archived_version
+#           : - Moved Pierre's version to base
+#           : tdates
+#           : - Fixed a bug w/ definition of months and weeks
+#           : - Renamed dateOf to asfreq + use cseries
 #2007-01-04 : tsdate
 #           : - Corrected a bug w/ Date.__init__ and 'B' freq
 #2007-01-03 : tseries 

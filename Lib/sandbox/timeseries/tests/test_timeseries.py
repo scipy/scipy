@@ -4,40 +4,42 @@ Adapted from the original test_ma by Pierre Gerard-Marchant
 
 :author: Pierre Gerard-Marchant
 :contact: pierregm_at_uga_dot_edu
-:version: $Id: test_core.py 59 2006-12-22 23:58:11Z backtopop $
+:version: $Id$
 """
-__author__ = "Pierre GF Gerard-Marchant ($Author: backtopop $)"
+__author__ = "Pierre GF Gerard-Marchant ($Author$)"
 __version__ = '1.0'
-__revision__ = "$Revision: 59 $"
-__date__     = '$Date: 2006-12-22 18:58:11 -0500 (Fri, 22 Dec 2006) $'
+__revision__ = "$Revision$"
+__date__     = '$Date$'
 
 import types
 
 import numpy as N
+from numpy import bool_, complex_, float_, int_, object_
 import numpy.core.fromnumeric  as fromnumeric
 import numpy.core.numeric as numeric
 from numpy.testing import NumpyTest, NumpyTestCase
 from numpy.testing.utils import build_err_msg
 
 import maskedarray
-from maskedarray import masked_array
+from maskedarray import masked_array, masked, nomask
 
 import maskedarray.testutils
-reload(maskedarray.testutils)
+#reload(maskedarray.testutils)
 from maskedarray.testutils import assert_equal, assert_array_equal
 
-import tsdate
-reload(tsdate)
-from tsdate import date_array_fromlist
+#import tdates
+##reload(tdates)
+#from tdates import date_array_fromlist
 import tseries
-reload(tseries)
-from tseries import *
+#reload(tseries)
+from tseries import Date, date_array_fromlist
+from tseries import time_series, TimeSeries, adjust_endpoints, mask_period
 
 class test_creation(NumpyTestCase):
     "Base test class for MaskedArrays."
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)
-        dlist = ['2007-01-%02i' %i for i in range(1,16)]
+        dlist = ['2007-01-%02i' % i for i in range(1,16)]
         dates = date_array_fromlist(dlist)
         data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3)
         self.d = (dlist, dates, data)
@@ -74,6 +76,7 @@ class test_creation(NumpyTestCase):
         assert_equal(series._series, data)
         assert_equal(series._dates, dates)
         assert_equal(series.freq, 'D')
+#...............................................................................
 
 class test_arithmetics(NumpyTestCase):
     "Some basic arithmetic tests"
@@ -83,7 +86,6 @@ class test_arithmetics(NumpyTestCase):
         dates = date_array_fromlist(dlist)
         data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3)
         self.d = (time_series(data, dlist), data)
-
         
     def test_intfloat(self):
         "Test arithmetic timeseries/integers"
@@ -161,7 +163,7 @@ class test_arithmetics(NumpyTestCase):
         series[2] = masked
         assert_equal(series._mask, [1,0,1]+[1,0,0]*4)
         assert_equal(series._series._mask, [1,0,1]+[1,0,0]*4)
-
+#...............................................................................
 
 class test_getitem(NumpyTestCase):
     "Some getitem tests"
@@ -174,52 +176,52 @@ class test_getitem(NumpyTestCase):
     
     def test_wdate(self):
         "Tests  getitem with date as index"
-        (tseries, data, dates) = self.d
-        last_date = tseries[-1]._dates
-        assert_equal(tseries[-1], tseries[last_date])
-        assert_equal(tseries._dates[-1], dates[-1])
-        assert_equal(tseries[-1]._dates, dates[-1])
-        assert_equal(tseries[last_date]._dates, dates[-1])
-        assert_equal(tseries._series[-1], data._data[-1])
-        assert_equal(tseries[-1]._series, data._data[-1])
-        assert_equal(tseries._mask[-1], data._mask[-1])
+        (series, data, dates) = self.d
+        last_date = series[-1]._dates
+        assert_equal(series[-1], series[last_date])
+        assert_equal(series._dates[-1], dates[-1])
+        assert_equal(series[-1]._dates, dates[-1])
+        assert_equal(series[last_date]._dates, dates[-1])
+        assert_equal(series._series[-1], data._data[-1])
+        assert_equal(series[-1]._series, data._data[-1])
+        assert_equal(series._mask[-1], data._mask[-1])
         #
-        tseries['2007-01-06'] = 999
-        assert_equal(tseries[5], 999)
+        series['2007-01-06'] = 999
+        assert_equal(series[5], 999)
         #
     def test_wtimeseries(self):
         "Tests getitem w/ TimeSeries as index"
-        (tseries, data, dates) = self.d
+        (series, data, dates) = self.d
         # Testing a basic condition on data
-        cond = (tseries<8).filled(False)
-        dseries = tseries[cond]
+        cond = (series<8).filled(False)
+        dseries = series[cond]
         assert_equal(dseries._data, [1,2,3,4,6,7])
-        assert_equal(dseries._dates, tseries._dates[[1,2,3,4,6,7]])
+        assert_equal(dseries._dates, series._dates[[1,2,3,4,6,7]])
         assert_equal(dseries._mask, nomask)
         # Testing a basic condition on dates
-        tseries[tseries._dates < Date('D',string='2007-01-06')] = MA.masked
-        assert_equal(tseries[:5]._series._mask, [1,1,1,1,1])
+        series[series._dates < Date('D',string='2007-01-06')] = masked
+        assert_equal(series[:5]._series._mask, [1,1,1,1,1])
     
     def test_wslices(self):
         "Test get/set items."
-        (tseries, data, dates) = self.d
+        (series, data, dates) = self.d
         # Basic slices
-        assert_equal(tseries[3:7]._series._data, data[3:7]._data)
-        assert_equal(tseries[3:7]._series._mask, data[3:7]._mask)
-        assert_equal(tseries[3:7]._dates, dates[3:7])
+        assert_equal(series[3:7]._series._data, data[3:7]._data)
+        assert_equal(series[3:7]._series._mask, data[3:7]._mask)
+        assert_equal(series[3:7]._dates, dates[3:7])
         # Ditto
-        assert_equal(tseries[:5]._series._data, data[:5]._data)
-        assert_equal(tseries[:5]._series._mask, data[:5]._mask)
-        assert_equal(tseries[:5]._dates, dates[:5])
+        assert_equal(series[:5]._series._data, data[:5]._data)
+        assert_equal(series[:5]._series._mask, data[:5]._mask)
+        assert_equal(series[:5]._dates, dates[:5])
         # With set
-        tseries[:5] = 0
-        assert_equal(tseries[:5]._series, [0,0,0,0,0])
-        dseries = numpy.log(tseries)
-        tseries[-5:] = dseries[-5:]
-        assert_equal(tseries[-5:], dseries[-5:])
+        series[:5] = 0
+        assert_equal(series[:5]._series, [0,0,0,0,0])
+        dseries = N.log(series)
+        series[-5:] = dseries[-5:]
+        assert_equal(series[-5:], dseries[-5:])
         # Now, using dates !
-        dseries = tseries[tseries.dates[3]:tseries.dates[7]]
-        assert_equal(dseries, tseries[3:7])
+        dseries = series[series.dates[3]:series.dates[7]]
+        assert_equal(dseries, series[3:7])
         
 class test_functions(NumpyTestCase):
     "Some getitem tests"
@@ -232,48 +234,48 @@ class test_functions(NumpyTestCase):
     #
     def test_adjustendpoints(self):
         "Tests adjust_endpoints"
-        (tseries, data, dates) = self.d
-        dseries = adjust_endpoints(tseries, tseries.dates[0], tseries.dates[-1])
-        assert_equal(dseries, tseries)
-        dseries = adjust_endpoints(tseries, tseries.dates[3], tseries.dates[-3])
-        assert_equal(dseries, tseries[3:-2])
-        dseries = adjust_endpoints(tseries, end_date=Date('D', string='2007-01-31'))
+        (series, data, dates) = self.d
+        dseries = adjust_endpoints(series, series.dates[0], series.dates[-1])
+        assert_equal(dseries, series)
+        dseries = adjust_endpoints(series, series.dates[3], series.dates[-3])
+        assert_equal(dseries, series[3:-2])
+        dseries = adjust_endpoints(series, end_date=Date('D', string='2007-01-31'))
         assert_equal(dseries.size, 31)
-        assert_equal(dseries._mask, numpy.r_[tseries._mask, [1]*16])
-        dseries = adjust_endpoints(tseries, end_date=Date('D', string='2007-01-06'))
+        assert_equal(dseries._mask, N.r_[series._mask, [1]*16])
+        dseries = adjust_endpoints(series, end_date=Date('D', string='2007-01-06'))
         assert_equal(dseries.size, 6)
-        assert_equal(dseries, tseries[:6])
-        dseries = adjust_endpoints(tseries, 
+        assert_equal(dseries, series[:6])
+        dseries = adjust_endpoints(series, 
                                    start_date=Date('D', string='2007-01-06'),
                                    end_date=Date('D', string='2007-01-31'))
         assert_equal(dseries.size, 26)
-        assert_equal(dseries._mask, numpy.r_[tseries._mask[5:], [1]*16])
+        assert_equal(dseries._mask, N.r_[series._mask[5:], [1]*16])
     #
     def test_maskperiod(self):        
         "Test mask_period"
-        (tseries, data, dates) = self.d
-        tseries.mask = nomask
+        (series, data, dates) = self.d
+        series.mask = nomask
         (start, end) = ('2007-01-06', '2007-01-12')
-        mask = mask_period(tseries, start, end, inside=True, include_edges=True,
+        mask = mask_period(series, start, end, inside=True, include_edges=True,
                            inplace=False)
-        assert_equal(mask._mask, numpy.array([0,0,0,0,0,1,1,1,1,1,1,1,0,0,0]))
-        mask = mask_period(tseries, start, end, inside=True, include_edges=False,
+        assert_equal(mask._mask, N.array([0,0,0,0,0,1,1,1,1,1,1,1,0,0,0]))
+        mask = mask_period(series, start, end, inside=True, include_edges=False,
                            inplace=False)
         assert_equal(mask._mask, [0,0,0,0,0,0,1,1,1,1,1,0,0,0,0])
-        mask = mask_period(tseries, start, end, inside=False, include_edges=True,
+        mask = mask_period(series, start, end, inside=False, include_edges=True,
                            inplace=False)
         assert_equal(mask._mask, [1,1,1,1,1,1,0,0,0,0,0,1,1,1,1])
-        mask = mask_period(tseries, start, end, inside=False, include_edges=False,
+        mask = mask_period(series, start, end, inside=False, include_edges=False,
                            inplace=False)
         assert_equal(mask._mask, [1,1,1,1,1,0,0,0,0,0,0,0,1,1,1])
     #
     def pickling(self):
         "Tests pickling/unpickling"
-        (tseries, data, dates) = self.d
-        tmp = maskedarray.loads(tseries.dumps())
-        assert_equal(tmp._data, tseries._data)
-        assert_equal(tmp._dates, tseries._dates)
-        assert_equal(tmp._mask, tseries._mask)
+        (series, data, dates) = self.d
+        tmp = maskedarray.loads(series.dumps())
+        assert_equal(tmp._data, series._data)
+        assert_equal(tmp._dates, series._dates)
+        assert_equal(tmp._mask, series._mask)
         
 ###############################################################################
 #------------------------------------------------------------------------------

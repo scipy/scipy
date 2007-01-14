@@ -22,13 +22,11 @@ import numpy.core.fromnumeric as fromnumeric
 import maskedarray as MA
 #reload(MA)
 
-import tscore as corelib
-#reload(corelib)
-#from tscore import isDateType
-
-#from corelib import fmtFreq, freqToType
 import mx.DateTime as mxD
 from mx.DateTime.Parser import DateFromString as mxDFromString
+
+import tscore as corelib
+import cseries
 
 
 import logging
@@ -37,16 +35,13 @@ logging.basicConfig(level=logging.DEBUG,
 daflog = logging.getLogger('darray_from')
 dalog = logging.getLogger('DateArray')
 
-#TODO: - it's possible to change the freq on the fly, e.g. mydateD.freq = 'A'
-#TODO:   ...We can prevent that by making freq a readonly property, or call dateOf
-#TODO:   ...or decide it's OK
-#TODO: - Do we still need dateOf, or should we call cseries.convert instead ?
-#TODO: - It'd be really nice if  cseries.convert could accpt an array, 
-#TODO:   ...that way, we could call it instead of looping in asfreq
-    
-secondlyOriginDate = mxD.Date(1980) - mxD.DateTimeDeltaFrom(seconds=1)
-minutelyOriginDate = mxD.Date(1980) - mxD.DateTimeDeltaFrom(minute=1)
-hourlyOriginDate = mxD.Date(1980) - mxD.DateTimeDeltaFrom(hour=1)
+#####---------------------------------------------------------------------------
+#---- --- Date Info ---
+#####---------------------------------------------------------------------------
+OriginDate = mxD.Date(1970)
+secondlyOriginDate = OriginDate - mxD.DateTimeDeltaFrom(seconds=1)
+minutelyOriginDate = OriginDate - mxD.DateTimeDeltaFrom(minutes=1)
+hourlyOriginDate = OriginDate - mxD.DateTimeDeltaFrom(hours=1)
 
 #####---------------------------------------------------------------------------
 #---- --- Date Exceptions ---
@@ -123,17 +118,17 @@ class Date:
             if self.freq == 'A':
                 self.mxDate = mxD.Date(value, -1, -1)
             elif self.freq == 'B':
-                value = value - 1
-                self.mxDate = mxD.DateTimeFromAbsDays(value + (value//5)*7 - (value//5)*5)
+                valtmp = (value - 1)//5
+                self.mxDate = mxD.DateTimeFromAbsDateTime(value + valtmp*7 - valtmp*5)
             elif self.freq in ['D','U']:
-                self.mxDate = mxD.DateTimeFromAbsDays(value-1)
+                self.mxDate = mxD.DateTimeFromAbsDateTime(value)
             elif self.freq == 'H':
                 self.mxDate = hourlyOriginDate + mxD.DateTimeDeltaFrom(hours=value)
             elif self.freq == 'M':
-                self.mxDate = mxD.Date(0) + \
+                self.mxDate = mxD.DateTimeFromAbsDateTime(1) + \
                               mxD.RelativeDateTime(months=value-1, day=-1)
             elif self.freq == 'Q':
-                self.mxDate = mxD.Date(0) + \
+                self.mxDate = mxD.DateTimeFromAbsDateTime(1) + \
                               mxD.RelativeDateTime(years=(value // 4), 
                                                    month=((value * 3) % 12), day=-1)
             elif self.freq == 'S':
@@ -141,8 +136,9 @@ class Date:
             elif self.freq == 'T':
                 self.mxDate = minutelyOriginDate + mxD.DateTimeDeltaFrom(minutes=value)
             elif self.freq == 'W':
-                self.mxDate = mxD.Date(0) + \
-                              mxD.RelativeDateTime(weeks=value-5./7-1)
+                self.mxDate = mxD.Date(1,1,7) + \
+                              mxD.RelativeDateTime(weeks=value-1)
+#                              mxD.RelativeDateTime(weeks=value-5./7-1)
         
         elif string is not None:
             self.mxDate = mxDFromString(string)  
@@ -150,7 +146,7 @@ class Date:
         elif mxDate is not None:
             if isinstance(mxDate, datetime.datetime):
                 mxDate = mxD.strptime(mxDate.isoformat()[:19], "%Y-%m-%dT%H:%M:%S")
-            self.mxDate = mxDate
+            self.mxDate = truncateDate(self.freq, mxDate)
             
         else:
             # First, some basic checks.....
@@ -176,7 +172,7 @@ class Date:
                     raise InsufficientDateError
                 
             if self.freq in ['A','B','D','M','Q','W']:
-                self.mxDate = mxD.Date(year, month, day)
+                self.mxDate = truncateDate(self.freq, mxD.Date(year, month, day))
                 if self.freq == 'B':
                     if self.mxDate.day_of_week in [5,6]:
                         raise ValueError("Weekend passed as business day")
@@ -198,7 +194,9 @@ class Date:
                     seconds = 0
                 else:
                     seconds = seconds % 60
-                self.mxDate = mxD.Date(year, month, day, hours, minutes, seconds)     
+                self.mxDate = truncateDate(self.freq,
+                                           mxD.Date(year, month, day, 
+                                                    hours, minutes, seconds))
         self.value = self.__value()
     # FIXME: Shall we set them as properties ?
     def day(self):          
@@ -284,29 +282,31 @@ class Date:
         elif self.freq == 'B':
             days = self.mxDate.absdate
             weeks = days // 7
-            val = int((weeks*5) + (days - weeks*7))
+#            val = (weeks*5) + (days - weeks*7)
+            val = days - weeks*2
         # Daily/undefined
         elif self.freq in ['D', 'U']:
             val = self.mxDate.absdate
         # Hourly........
         elif self.freq == 'H':
-            val = int((self.mxDate - hourlyOriginDate).hours)
+            val = (self.mxDate - hourlyOriginDate).hours
         # Monthly.......
         elif self.freq == 'M':
-            val = self.mxDate.year*12 + self.mxDate.month
+            val = (self.mxDate.year-1)*12 + self.mxDate.month
         # Quarterly.....
         elif self.freq == 'Q':
-            val = int(self.mxDate.year*4 + self.mxDate.month/3)
+            val = (self.mxDate.year-1)*4 + self.mxDate.month//3
         # Secondly......
         elif self.freq == 'S':
-            val = int((self.mxDate - secondlyOriginDate).seconds)
+            val = (self.mxDate - secondlyOriginDate).seconds
         # Minutely......
         elif self.freq == 'T':
-            val = int((self.mxDate - minutelyOriginDate).minutes)
+            val = (self.mxDate - minutelyOriginDate).minutes
         # Weekly........
         elif self.freq == 'W':
-            val = int(self.mxDate.year*365.25/7.-1) + self.mxDate.iso_week[1]
-        return val
+            #val = int(self.mxDate.year*365.25/7.-1) + self.mxDate.iso_week[1]
+            val = self.mxDate.absdate//7
+        return int(val)
     #......................................................
     def default_fmtstr(self):
         "Defines the default formats for printing Dates."
@@ -318,7 +318,11 @@ class Date:
             fmt =  "%b-%Y"
         elif self.freq == "Q":
             fmt =  "%YQ%q"
-        elif self.freq in ("H","S","T"):
+        elif self.freq == 'H':
+            fmt = "%d-%b-%Y %H:00"
+        elif self.freq == 'T':
+            fmt = "%d-%b-%Y %H:%M"
+        elif self.freq == "S":
             fmt =  "%d-%b-%Y %H:%M:%S"
         elif self.freq == "W":
             fmt =  "%YW%W"
@@ -356,7 +360,7 @@ class Date:
     
     def asfreq(self, toFreq, relation='before'):
         """Converts the date to a new frequency."""
-        return dateOf(self, toFreq, relation)
+        return asfreq(self, toFreq, relation)
     
     def isvalid(self):
         "Returns whether the DateArray is valid: no missing/duplicated dates."
@@ -367,6 +371,31 @@ class Date:
 #####---------------------------------------------------------------------------
 #---- --- Functions ---
 #####---------------------------------------------------------------------------
+def truncateDate(freq, mxDate):
+    """Chops off the irrelevant information from the mxDate passed in."""
+    freq = corelib.fmtFreq(freq)
+    if freq == 'A':
+        return mxD.Date(mxDate.year)
+    elif freq == 'Q':
+        return mxD.Date(mxDate.year, monthToQuarter(mxDate.month)*3)
+    elif freq == 'M':
+        return mxD.Date(mxDate.year, mxDate.month)
+    elif freq == 'W':
+        d = mxDate.absdate
+        return mxD.DateTimeFromAbsDateTime(d + (7 - d % 7) % 7 - 1)
+    elif freq in ('B', 'D'):
+        if freq == 'B' and mxDate.day_of_week in [5,6]:
+            raise ValueError("Weekend passed as business day")
+        return mxD.Date(mxDate.year, mxDate.month, mxDate.day)
+    elif freq == 'H':
+        return mxD.Date(mxDate.year, mxDate.month, mxDate.day, \
+                        mxDate.hour)
+    elif freq == 'T':
+        return mxD.Date(mxDate.year, mxDate.month, mxDate.day, \
+                        mxDate.hour, mxDate.minute)
+    else:
+        return mxDate
+    
 def monthToQuarter(monthNum):
     """Returns the quarter corresponding to the month `monthnum`.
     For example, December is the 4th quarter, Januray the first."""
@@ -399,18 +428,18 @@ def prevbusday(day_end_hour=18, day_end_min=0):
     else: 
         return thisday('B')
                 
-def dateOf(date, toFreq, relation="BEFORE"):
+def asfreq(date, toFreq, relation="BEFORE"):
     """Returns a date converted to another frequency `toFreq`, according to the
     relation `relation` ."""
     toFreq = corelib.fmtFreq(toFreq)
     _rel = relation.upper()[0]
-    if _rel not in ['B', 'A']:
-        msg = "Invalid relation '%s': Should be in ['before', 'after']"
-        raise ValueError, msg % relation
-    elif _rel == 'B':
-        before = True
-    else:
-        before = False
+#    if _rel not in ['B', 'A']:
+#        msg = "Invalid relation '%s': Should be in ['before', 'after']"
+#        raise ValueError, msg % relation
+#    elif _rel == 'B':
+#        before = True
+#    else:
+#        before = False
 
 #    if not isDateType(date):
     if not isinstance(date, Date):
@@ -418,156 +447,162 @@ def dateOf(date, toFreq, relation="BEFORE"):
 
     if date.freq == toFreq:
         return date
-    # Convert to annual ....................
-    elif toFreq == 'A':
-        return Date(freq='A', year=date.year())
-    # Convert to quarterly .................
-    elif toFreq == 'Q':
-        if date.freq == 'A':
-            if before: 
-                return Date(freq='A', year=date.year(), quarter=1)
-            else: 
-                return Date(freq='A', year=date.year(), quarter=4)
+    else:
+        value = cseries.asfreq(numeric.asarray(date.value), date.freq, toFreq, _rel)
+        if value > 0:
+            return Date(freq=toFreq, value=value)
         else:
-            return Date(freq='Q', year=date.year(), quarter=date.quarter())
-    # Convert to monthly....................
-    elif toFreq == 'M':
-        if date.freq == 'A':
-            if before: 
-                return Date(freq='M', year=date.year(), month=1)
-            else: 
-                return Date(freq='M', year=date.year(), month=12)
-        elif date.freq == 'Q':
-            if before: 
-                return dateOf(date-1, 'M', "AFTER")+1
-            else: 
-                return Date(freq='M', year=date.year(), month=date.month())
-        else:
-            return Date(freq='M', year=date.year(), month=date.month())
-    # Convert to weekly ....................
-    elif toFreq == 'W':
-        if date.freq == 'A':
-            if before: 
-                return Date(freq='W', year=date.year(), month=1, day=1)
-            else: 
-                return Date(freq='W', year=date.year(), month=12, day=-1)
-        elif date.freq in ['Q','M']:
-            if before: 
-                return dateOf(date-1, 'W', "AFTER")+1
-            else: 
-                return Date(freq='W', year=date.year(), month=date.month())
-        else:
-            val = date.weeks() + int(date.year()*365.25/7.-1)
-            return Date(freq='W', value=val)
-    # Convert to business days..............
-    elif toFreq == 'B':
-        if date.freq in ['A','Q','M','W']:
-            if before: 
-                return dateOf(dateOf(date, 'D'), 'B', "AFTER")
-            else: 
-                return dateOf(dateOf(date, 'D', "AFTER"), 'B', "BEFORE")
-        elif date.freq == 'D':
-            # BEFORE result: preceeding Friday if date is a weekend, same day otherwise
-            # AFTER result: following Monday if date is a weekend, same day otherwise
-            tempDate = date.mxDate
-            if before:
-                if tempDate.day_of_week >= 5: 
-                    tempDate -= (tempDate.day_of_week - 4)
-            else:
-                if tempDate.day_of_week >= 5: 
-                    tempDate += 7 - tempDate.day_of_week
-            return Date(freq='B', mxDate=tempDate)
-        else: 
-            if before: 
-                return dateOf(dateOf(date, 'D'), 'B', "BEFORE")
-            else: 
-                return dateOf(dateOf(date, 'D'), 'B', "AFTER")
-    # Convert to day .......................
-    elif toFreq == 'D':
-        # ...from annual
-        if date.freq == 'A':
-            if before: 
-                return Date(freq='D', year=date.year(), month=1, day=1)
-            else: 
-                return Date(freq='D', year=date.year(), month=12, day=31) 
-        # ...from quarter
-        elif date.freq == 'Q':
-            if before: 
-                return dateOf(date-1, 'D', "AFTER")+1
-            else: 
-                return Date(freq='D', year=date.year(), month=date.month(), 
-                            day=date.day())
-        # ...from month
-        elif date.freq == 'M':
-            if before:
-                return Date(freq='D', year=date.year(), month=date.month(), day=1)
-            else:
-                (mm,yy) = (date.month(), date.year())
-                if date.month() == 12:
-                    (mm, yy) = (1, yy + 1)
-                else:
-                    mm = mm + 1
-                return Date('D', year=yy, month=mm, day=1)-1
-        # ...from week
-        elif date.freq == 'W':
-            if before:
-                return Date(freq='D', year=date.year(), month=date.month(), 
-                            day=date.day())
-            else:
-                ndate = date + 1 
-                return Date(freq='D', year=ndate.year(), month=ndate.month(), 
-                            day=ndate.day()) 
-        # ...from a lower freq
-        else:
-            return Date('D', year=date.year(), month=date.month(), day=date.day())  
-    #Convert to hour........................
-    elif toFreq == 'H':
-        if date.freq in ['A','Q','M','W']:
-            if before: 
-                return dateOf(dateOf(date, 'D', "BEFORE"), 'H', "BEFORE")
-            else: 
-                return dateOf(dateOf(date, 'D', "AFTER"), 'H', "AFTER")
-        if date.freq in ['B','D']:
-            if before: 
-                return Date(freq='H', year=date.year(), month=date.month(), 
-                            day=date.day(), hours=0)
-            else: 
-                return Date(freq='H', year=date.year(), month=date.month(), 
-                            day=date.day(), hours=23)
-        else: 
-            return Date(freq='H', year=date.year(), month=date.month(), 
-                        day=date.day(), hours=date.hour())
-    #Convert to second......................
-    elif toFreq == 'T':
-        if date.freq in ['A','Q','M','W']:
-            if before: 
-                return dateOf(dateOf(date, 'D', "BEFORE"), 'T', "BEFORE")
-            else: 
-                return dateOf(dateOf(date, 'D', "AFTER"), 'T', "AFTER")
-        elif date.freq in ['B','D','H']:
-            if before: 
-                return Date(freq='T', year=date.year(), month=date.month(), 
-                            day=date.day(), minutes=0)
-            else: 
-                return Date(freq='T', year=date.year(), month=date.month(), 
-                            day=date.day(), minutes=24*60-1)
-        else:
-            return Date(freq='H', year=date.year(), month=date.month(), 
-                        day=date.day(), hours=date.hour(), minutes=date.minute())
-    #Convert to minute......................
-    elif toFreq == 'S':
-        if date.freq in ['A','Q','M','W']:
-            if before: 
-                return dateOf(dateOf(date, 'D', "BEFORE"), 'S', "BEFORE")
-            else: 
-                return dateOf(dateOf(date, 'D', "AFTER"), 'S', "AFTER")
-        elif date.freq in ['B','D']:
-            if before: 
-                return Date(freq='S', year=date.year(), month=date.month(), 
-                            day=date.day(), seconds=0)
-            else: 
-                return Date(freq='S', year=date.year(), month=date.month(), 
-                            day=date.day(), seconds=24*60*60-1)
+            return None
+#    # Convert to annual ....................
+#    elif toFreq == 'A':
+#        return Date(freq='A', year=date.year())
+#    # Convert to quarterly .................
+#    elif toFreq == 'Q':
+#        if date.freq == 'A':
+#            if before: 
+#                return Date(freq='A', year=date.year(), quarter=1)
+#            else: 
+#                return Date(freq='A', year=date.year(), quarter=4)
+#        else:
+#            return Date(freq='Q', year=date.year(), quarter=date.quarter())
+#    # Convert to monthly....................
+#    elif toFreq == 'M':
+#        if date.freq == 'A':
+#            if before: 
+#                return Date(freq='M', year=date.year(), month=1)
+#            else: 
+#                return Date(freq='M', year=date.year(), month=12)
+#        elif date.freq == 'Q':
+#            if before: 
+#                return dateOf(date-1, 'M', "AFTER")+1
+#            else: 
+#                return Date(freq='M', year=date.year(), month=date.month())
+#        else:
+#            return Date(freq='M', year=date.year(), month=date.month())
+#    # Convert to weekly ....................
+#    elif toFreq == 'W':
+#        if date.freq == 'A':
+#            if before: 
+#                return Date(freq='W', year=date.year(), month=1, day=1)
+#            else: 
+#                return Date(freq='W', year=date.year(), month=12, day=-1)
+#        elif date.freq in ['Q','M']:
+#            if before: 
+#                return dateOf(date-1, 'W', "AFTER")+1
+#            else: 
+#                return Date(freq='W', year=date.year(), month=date.month())
+#        else:
+#            val = date.weeks() + int(date.year()*365.25/7.-1)
+#            return Date(freq='W', value=val)
+#    # Convert to business days..............
+#    elif toFreq == 'B':
+#        if date.freq in ['A','Q','M','W']:
+#            if before: 
+#                return dateOf(dateOf(date, 'D'), 'B', "AFTER")
+#            else: 
+#                return dateOf(dateOf(date, 'D', "AFTER"), 'B', "BEFORE")
+#        elif date.freq == 'D':
+#            # BEFORE result: preceeding Friday if date is a weekend, same day otherwise
+#            # AFTER result: following Monday if date is a weekend, same day otherwise
+#            tempDate = date.mxDate
+#            if before:
+#                if tempDate.day_of_week >= 5: 
+#                    tempDate -= (tempDate.day_of_week - 4)
+#            else:
+#                if tempDate.day_of_week >= 5: 
+#                    tempDate += 7 - tempDate.day_of_week
+#            return Date(freq='B', mxDate=tempDate)
+#        else: 
+#            if before: 
+#                return dateOf(dateOf(date, 'D'), 'B', "BEFORE")
+#            else: 
+#                return dateOf(dateOf(date, 'D'), 'B', "AFTER")
+#    # Convert to day .......................
+#    elif toFreq == 'D':
+#        # ...from annual
+#        if date.freq == 'A':
+#            if before: 
+#                return Date(freq='D', year=date.year(), month=1, day=1)
+#            else: 
+#                return Date(freq='D', year=date.year(), month=12, day=31) 
+#        # ...from quarter
+#        elif date.freq == 'Q':
+#            if before: 
+#                return dateOf(date-1, 'D', "AFTER")+1
+#            else: 
+#                return Date(freq='D', year=date.year(), month=date.month(), 
+#                            day=date.day())
+#        # ...from month
+#        elif date.freq == 'M':
+#            if before:
+#                return Date(freq='D', year=date.year(), month=date.month(), day=1)
+#            else:
+#                (mm,yy) = (date.month(), date.year())
+#                if date.month() == 12:
+#                    (mm, yy) = (1, yy + 1)
+#                else:
+#                    mm = mm + 1
+#                return Date('D', year=yy, month=mm, day=1)-1
+#        # ...from week
+#        elif date.freq == 'W':
+#            if before:
+#                return Date(freq='D', year=date.year(), month=date.month(), 
+#                            day=date.day())
+#            else:
+#                ndate = date + 1 
+#                return Date(freq='D', year=ndate.year(), month=ndate.month(), 
+#                            day=ndate.day()) 
+#        # ...from a lower freq
+#        else:
+#            return Date('D', year=date.year(), month=date.month(), day=date.day())  
+#    #Convert to hour........................
+#    elif toFreq == 'H':
+#        if date.freq in ['A','Q','M','W']:
+#            if before: 
+#                return dateOf(dateOf(date, 'D', "BEFORE"), 'H', "BEFORE")
+#            else: 
+#                return dateOf(dateOf(date, 'D', "AFTER"), 'H', "AFTER")
+#        if date.freq in ['B','D']:
+#            if before: 
+#                return Date(freq='H', year=date.year(), month=date.month(), 
+#                            day=date.day(), hours=0)
+#            else: 
+#                return Date(freq='H', year=date.year(), month=date.month(), 
+#                            day=date.day(), hours=23)
+#        else: 
+#            return Date(freq='H', year=date.year(), month=date.month(), 
+#                        day=date.day(), hours=date.hour())
+#    #Convert to second......................
+#    elif toFreq == 'T':
+#        if date.freq in ['A','Q','M','W']:
+#            if before: 
+#                return dateOf(dateOf(date, 'D', "BEFORE"), 'T', "BEFORE")
+#            else: 
+#                return dateOf(dateOf(date, 'D', "AFTER"), 'T', "AFTER")
+#        elif date.freq in ['B','D','H']:
+#            if before: 
+#                return Date(freq='T', year=date.year(), month=date.month(), 
+#                            day=date.day(), minutes=0)
+#            else: 
+#                return Date(freq='T', year=date.year(), month=date.month(), 
+#                            day=date.day(), minutes=24*60-1)
+#        else:
+#            return Date(freq='H', year=date.year(), month=date.month(), 
+#                        day=date.day(), hours=date.hour(), minutes=date.minute())
+#    #Convert to minute......................
+#    elif toFreq == 'S':
+#        if date.freq in ['A','Q','M','W']:
+#            if before: 
+#                return dateOf(dateOf(date, 'D', "BEFORE"), 'S', "BEFORE")
+#            else: 
+#                return dateOf(dateOf(date, 'D', "AFTER"), 'S', "AFTER")
+#        elif date.freq in ['B','D']:
+#            if before: 
+#                return Date(freq='S', year=date.year(), month=date.month(), 
+#                            day=date.day(), seconds=0)
+#            else: 
+#                return Date(freq='S', year=date.year(), month=date.month(), 
+#                            day=date.day(), seconds=24*60*60-1)
             
 def isDate(data):
     "Returns whether `data` is an instance of Date."
@@ -720,7 +755,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
 #                                 dtype=float_)
 #        return DateArray(new, freq=freq)
     
-    def asfreq(self, freq=None):
+    def asfreq(self, freq=None, relation="BEFORE"):
         "Converts the dates to another frequency."
         # Note: As we define a new object, we don't need caching
         if freq is None:
@@ -728,8 +763,8 @@ accesses the array element by element. Therefore, `d` is a Date object.
         freq = corelib.fmtFreq(freq)
         if freq == self.freq:
             return self        
-        new = numpy.fromiter((d.asfreq(freq).value for d in self),
-                              dtype=float_)
+        _rel = relation.upper()[0]
+        new = cseries.asfreq(numeric.asarray(self), self.freq, freq, _rel)
         return DateArray(new, freq=freq)
     #......................................................
     def find_dates(self, *dates):
@@ -1052,35 +1087,3 @@ second = _frommethod('second')
 
 
 ################################################################################
-if __name__ == '__main__':
-#    from maskedarray.testutils import assert_equal
-    import datetime
-    if 1:
-        # get the last day of this year, at daily frequency
-        dLastDayOfYear = dateOf(thisday('A'),'D','AFTER')
-    if 0:
-        # get the first day of this year, at business frequency
-        bFirstDayOfYear = dateOf(thisday('A'),'B','BEFORE')
-        # get the last day of the previous quarter, business frequency
-        bLastDayOfLastQuarter = dateOf(thisday('Q')-1,'B','AFTER')
-        # dateOf can also go from high frequency to low frequency. In this case, the third parameter has no impact
-        aTrueValue = (thisday('Q') == dateOf(thisday('b'),'Q'))
-        # dates of the same frequency can be subtracted (but not added obviously)
-        numberOfBusinessDaysPassedThisYear = thisday('b') - bFirstDayOfYear
-    
-        # integers can be added/substracted to/from dates
-        fiveDaysFromNow = thisday('d') + 5
-    
-        # get the previous business day, where business day is considered to
-        # end at day_end_hour and day_end_min
-        pbd = prevbusday(day_end_hour=18,day_end_min=0)
-    
-        # construct a date object explicitly
-        myDateQ = Date(freq='Q',year=2004,quarter=3)
-        myDateD = Date(freq='D',year=1985,month=10,day=4)
-        
-        #------------------------------------------------
-    if 1:
-        dlist = ['2007-01-%02i' % i for i in range(1,15)]
-        dates = date_array_fromlist(dlist)
-        dates_2 = dates.asfreq('M')

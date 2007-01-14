@@ -64,10 +64,10 @@ import tscore as corelib
 #reload(corelib)
 from tscore import *
 
-import tsdate
-reload(tsdate)
-from tsdate import DateError, InsufficientDateError
-from tsdate import Date, isDate, DateArray, isDateArray, \
+import tdates
+reload(tdates)
+from tdates import DateError, InsufficientDateError
+from tdates import Date, isDate, DateArray, isDateArray, \
     date_array, date_array_fromlist, date_array_fromrange, thisday
 
 import cseries
@@ -155,12 +155,12 @@ def _getdatalength(data):
 ##### --------------------------------------------------------------------------
 ##--- ... Time Series ...
 ##### --------------------------------------------------------------------------
-if oldma:
-    parentclass = ndarray
-else:
-    parentclass = MaskedArray
+#if oldma:
+#    parentclass = ndarray
+#else:
+#    parentclass = MaskedArray
 #
-class TimeSeries(parentclass, object):     
+class TimeSeries(MaskedArray, object):     
     """Base class for the definition of time series.
 A time series is here defined as the combination of three arrays:
     
@@ -1088,19 +1088,21 @@ def convert(series, freq, func='auto', position='END', interp=None):
                               int(start_date), tempMask)
     _values = cRetVal['values']
     _mask = cRetVal['mask']
+    _startindex = cRetVal['startindex']
+    start_date = Date(freq=toFreq, value=_startindex)
         
     tempData = masked_array(_values, mask=_mask)
 
     if tempData.ndim == 2 and func is not None:
          tempData = MA.apply_along_axis(func, -1, tempData)
            
-    newStart = series._dates[0].asfreq(toFreq, "BEFORE")
-    newEnd = series._dates[-1].asfreq(toFreq, "AFTER")
+#    newEnd = series._dates[-1].asfreq(toFreq, "AFTER")
     
     newseries = TimeSeries(tempData, freq=toFreq, 
                            observed=series.observed, 
-                           start_date=newStart)
-    return adjust_endpoints(newseries, end_date=newEnd)
+                           start_date=start_date)
+    return newseries
+#    return adjust_endpoints(newseries, end_date=newEnd)
 TimeSeries.convert = convert
 #....................................................................
 def fill_missing_dates(data, dates=None, freq=None,fill_value=None):
