@@ -1,13 +1,13 @@
-import unittest
+#import unittest
 
 import numpy as N
 import numpy.random as R
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_almost_equal, NumpyTest, NumpyTestCase
 import scipy
 
 from scipy.sandbox.models import utils
 
-class test_Utils(unittest.TestCase):
+class test_Utils(NumpyTestCase):
 
     def test_recipr(self):
         X = N.array([[2,1],[-1,0]])
@@ -53,5 +53,7 @@ class test_Utils(unittest.TestCase):
         y = N.zeros((2, 2))
         self.assertRaises(ValueError, utils.StepFunction, x, y)
 
-if __name__ == '__main__':
-    unittest.main()
+if __name__ == "__main__":
+    NumpyTest().run()
+#if __name__ == '__main__':
+#    unittest.main()

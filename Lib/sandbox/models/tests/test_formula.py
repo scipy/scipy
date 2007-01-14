@@ -1,17 +1,17 @@
 import csv
 import os
 import string
-import unittest
+#import unittest
 
 import numpy as N
 import numpy.random as R
 import numpy.linalg as L
-from numpy.testing import assert_almost_equal, NumpyTestCase
+from numpy.testing import assert_almost_equal, NumpyTest, NumpyTestCase
 import scipy
 
 from scipy.sandbox.models import utils, formula, contrast
 
-class test_term(unittest.TestCase):
+class test_term(NumpyTestCase):
 
     def test_init(self):
         t1 = formula.term("trivial")
@@ -226,10 +226,11 @@ class test_formula(NumpyTestCase):
         
         self.assertEquals(estimable, False)
 
-def suite():
-    suite = unittest.makeSuite(formulaTest)
-    return suite
+#def suite():
+#    suite = unittest.makeSuite(formulaTest)
+#    return suite
 
-
-if __name__ == '__main__':
-    unittest.main()
+if __name__ == "__main__":
+    NumpyTest().run()
+#if __name__ == '__main__':
+#    unittest.main()

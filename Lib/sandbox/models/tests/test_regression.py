@@ -1,12 +1,13 @@
-import unittest
+#import unittest
 
 from numpy.random import standard_normal
+from numpy.testing import NumpyTest, NumpyTestCase
 
 from scipy.sandbox.models.regression import ols_model, ar_model
 
 W = standard_normal
 
-class test_Regression(unittest.TestCase):
+class test_Regression(NumpyTestCase):
 
     def testOLS(self):
         X = W((40,10))
@@ -38,6 +39,7 @@ class test_Regression(unittest.TestCase):
         results = model.fit(Y)
         self.assertEquals(results.df_resid, 31)
 
-
-if __name__ == '__main__':
-    unittest.main()
+if __name__ == "__main__":
+    NumpyTest().run()
+#if __name__ == '__main__':
+#    unittest.main()

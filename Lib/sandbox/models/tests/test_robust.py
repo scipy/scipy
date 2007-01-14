@@ -1,12 +1,13 @@
-import unittest
+#import unittest
 
 import numpy.random as R
+from numpy.testing import NumpyTest, NumpyTestCase
 
 import scipy.sandbox.models as S
 
 W = R.standard_normal
 
-class RegressionTest(unittest.TestCase):
+class RegressionTest(NumpyTestCase):
 
     def testRobust(self):
         X = W((40,10))
@@ -23,6 +24,7 @@ class RegressionTest(unittest.TestCase):
         results = model.fit(Y)
         self.assertEquals(results.df_resid, 31)
 
-
-if __name__ == '__main__':
-    unittest.main()
+if __name__ == "__main__":
+    NumpyTest().run()
+#if __name__ == '__main__':
+#    unittest.main()
