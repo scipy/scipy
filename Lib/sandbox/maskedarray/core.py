@@ -140,6 +140,7 @@ default_filler = {'b': True,
                   'i' : 999999,
                   'O' : '?',
                   'S' : 'N/A',
+                  'V' : '???',        
                   }
 max_filler = {'b': False,
               'f' : -numeric.inf,
@@ -574,7 +575,7 @@ Does not check contents, only type.
     except AttributeError:
         return False
 #
-def make_mask(m, copy=False, small_mask=False):
+def make_mask(m, copy=False, small_mask=True, flag=None):
     """make_mask(m, copy=0, small_mask=0)
 Returns `m` as a mask, creating a copy if necessary or requested.
 The function can accept any sequence of integers or `nomask`. 
@@ -586,6 +587,10 @@ If `small_mask=True`, returns `nomask` if `m` contains no true elements.
     - `copy` (boolean, *[False]*) : Returns a copy of `m` if true.
     - `small_mask` (boolean, *[False]*): Flattens mask to `nomask` if `m` is all false.
     """
+    if flag is not None:
+        warnings.warn("The flag 'flag' is now called 'small_mask'!",
+                      DeprecationWarning)
+        small_mask = flag
     if m is nomask:
         return nomask
     elif isinstance(m, ndarray):
@@ -807,14 +812,20 @@ printing and in method/function filled().
 The fill_value is not used for computation within this module.
     """
     __array_priority__ = 10.1
+    _defaultmask = nomask
+    _defaulthardmask = False
     #TODO: There some reorganization to do round here
     def __new__(cls, data=None, mask=nomask, dtype=None, copy=False, fill_value=None,
-                keep_mask=True, small_mask=True, hard_mask=False):
+                keep_mask=True, small_mask=True, hard_mask=False, flag=None):
         """array(data, dtype=None, copy=True, mask=nomask, fill_value=None)
         
 If `data` is already a ndarray, its dtype becomes the default value of dtype.
         """  
 #        logging.debug("__new__ received %s" % type(data))
+        if flag is not None:
+            warnings.warn("The flag 'flag' is now called 'small_mask'!",
+                          DeprecationWarning)
+            small_mask = flag
         # 1. Argument is MA ...........
         if isinstance(data, MaskedArray) or\
            (hasattr(data,"_mask") and hasattr(data,"_data")) :
@@ -881,11 +892,8 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         cls._defaulthardmask = hard_mask
         cls._defaultmask = mask
 #        logging.debug("__new__ returned %s as %s" % (type(_data), cls))
-#        data = numeric.ndarray.__new__(cls, shape=_data.shape,dtype=_data.dtype, 
-#                                       buffer=_data.data, offset=0)
-#        print type(data), data.shape
-#        return data
         return numeric.asanyarray(_data).view(cls)
+    
     #..................................
     def __array_wrap__(self, obj, context=None):
         """Special hook for ufuncs.
@@ -926,16 +934,29 @@ Wraps the numpy array and sets the mask according to context.
         #
 #        logging.debug("__finalize__ received %s" % type(obj))
         if isinstance(obj, MaskedArray):
-#        if isMaskedArray(obj):
+            # We came here from a MaskedArray
             self._data = obj._data
             self._mask = obj._mask
             self._hardmask = obj._hardmask
             self._fill_value = obj._fill_value
         else:
-            self._data = obj
-            self._mask = self._defaultmask
+            # We came here from a .view()
+            if hasattr(obj,'_data') and hasattr(obj, '_mask'):
+                # obj is an old masked array or a smart record
+                self._data = obj._data
+                self._mask = obj._mask
+            else:
+                # obj is anything but...
+                self._data = obj
+                self._mask = self._defaultmask
+            # Set the instance default
             self._hardmask = self._defaulthardmask
             self.fill_value = self._fill_value
+            # Reset the class default
+            MaskedArray._defaultmask = nomask
+            MaskedArray._defaulthardmask = False
+            MaskedArray._fill_value = None
+#            logging.debug("__finalize__: obj has _mask %s" % hasattr(obj,'_data'))
 #        #
 #        logging.debug("__finalize__ returned %s" % type(self))       
         return    
@@ -1146,13 +1167,13 @@ masked_%(name)s(data = %(data)s,
             return with_mask1 % {
                 'name': name,
                 'data': str(self),
-                'mask': str(self.mask),
+                'mask': str(self._mask),
                 'fill': str(self.fill_value),
                 }
         return with_mask % {
             'name': name,
             'data': str(self),
-            'mask': str(self.mask),
+            'mask': str(self._mask),
             'fill': str(self.fill_value),
             }
     #............................................
@@ -1265,8 +1286,9 @@ Subclassing is preserved."""
         try:
             return self.__class__(self, mask=self._mask, dtype=tc, copy=True)
         except:
-            d = self._data.astype(tc) 
-            return self.__class__(d, mask=self._mask, dtype=tc)
+#            d = self._data.astype(tc) 
+            return self.__class__(self._data.astype(tc), mask=self._mask, 
+                                  dtype=tc)
 #        
 #        
     #............................................

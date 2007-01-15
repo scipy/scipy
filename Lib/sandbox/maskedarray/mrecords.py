@@ -13,7 +13,7 @@ __date__     = '$Date$'
 import sys
 import types
 
-import numpy as N
+import numpy
 from numpy import bool_, complex_, float_, int_, str_, object_
 import numpy.core.numeric as numeric
 import numpy.core.numerictypes as ntypes
@@ -24,7 +24,7 @@ from numpy.core.records import format_parser, record, recarray
 from numpy.core.records import fromarrays as recfromarrays
 
 ndarray = numeric.ndarray
-_byteorderconv = N.core.records._byteorderconv
+_byteorderconv = numpy.core.records._byteorderconv
 _typestr = ntypes._typestr
 
 import maskedarray as MA
@@ -39,7 +39,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG,
                     format='%(name)-15s %(levelname)s %(message)s',)
 
-
+reserved_fields = ['_data','_mask','_fieldmask', 'dtype']
 
 def _getformats(data):
     """Returns the formats of each array of arraylist as a comma-separated 
@@ -66,7 +66,6 @@ def _checknames(descr, names=None):
     """    
     ndescr = len(descr)
     default_names = ['f%i' % i for i in range(ndescr)]
-    reserved = ['_data','_mask','_fieldmask', 'dtype']
     if names is None:
         new_names = default_names
     else:
@@ -81,8 +80,8 @@ def _checknames(descr, names=None):
             new_names += default_names[nnames:]
     ndescr = []
     for (n, d, t) in zip(new_names, default_names, descr.descr):
-        if n in reserved:
-            if t[0] in reserved: 
+        if n in reserved_fields:
+            if t[0] in reserved_fields: 
                 ndescr.append((d,t[1]))
             else:
                 ndescr.append(t)
@@ -246,7 +245,6 @@ class MaskedRecords(MaskedArray, object):
             return
         elif attr == '_mask':
             if self._hardmask:
-#                logging.debug("setattr: object has hardmask")
                 if val is not nomask:
                     mval = getmaskarray(val)
                     for k in _names:
@@ -272,6 +270,45 @@ class MaskedRecords(MaskedArray, object):
         return MaskedRecords(_localdict['_data'][indx], 
                              mask=_localdict['_fieldmask'][indx],
                              dtype=self.dtype)
+        
+    def __getslice__(self, i, j):
+        """Returns the slice described by [i,j]."""
+        _localdict = self.__dict__
+        return MaskedRecords(_localdict['_data'][i:j], 
+                        mask=_localdict['_fieldmask'][i:j],
+                       dtype=self.dtype)      
+        
+    def __setslice__(self, i, j, value):
+        """Sets the slice described by [i,j] to `value`."""
+        _localdict = self.__dict__
+        d = _localdict['_data']
+        m = _localdict['_fieldmask']
+        names = self.dtype.names
+        if value is masked:
+            for n in names:
+                m[i:j][n] = masked
+        elif not self._hardmask:
+            fval = filled(value)
+            mval = getmaskarray(value)
+            for n in names:
+                d[n][i:j] = fval
+                m[n][i:j] = mval
+        else:
+            mindx = getmaskarray(self)[i:j]
+            val = masked_array(value, mask=mindx, keep_mask=True)
+            valmask = getmask(value)
+            if valmask is nomask:
+                for n in names:
+                    mval = mask_or(m[n][i:j], valmask)
+                    d[n][i:j][~mval] = filled(value)
+            elif valmask.size > 1:
+                for n in names:
+                    mval = mask_or(m[n][i:j], valmask)
+                    d[n][i:j][~mval] = fval[~mval]
+                    m[n][i:j] = mask_or(m[n][i:j], mval) 
+            
+        return MaskedRecords(d, mask=m, dtype=self.dtype)      
+        
     #......................................................
     def __str__(self):
         """x.__str__() <==> str(x)
@@ -312,6 +349,35 @@ Otherwise fill with fill value.
         if dtype.fields is None:
             return self.__array__().view(dtype)
         return ndarray.view(self, obj)            
+    #......................................................
+    def filled(self, fill_value=None):
+        """Returns an array of the same class as `_data`,
+ with masked values filled with `fill_value`.
+Subclassing is preserved.
+        
+If `fill_value` is None, uses self.fill_value.
+        """
+        _localdict = self.__dict__
+        d = _localdict['_data']
+        fm = _localdict['_fieldmask']
+        if not numeric.asarray(fm, dtype=bool_).any():
+            return d
+        #
+        if fill_value is None:
+            value = _localdict['fill_value']
+        else:
+            value = fill_value
+            if numeric.size(value) == 1:
+                value = [value,] * len(self.dtype)
+        #
+        if self is masked:
+            result = numeric.asanyarray(value)
+        else:
+            result = d.copy()
+            for (n, v) in zip(d.dtype.names, value):
+                numpy.putmask(numeric.asarray(result[n]), 
+                              numeric.asarray(fm[n]), v)
+        return result
     #............................................
     def harden_mask(self):
         "Forces the mask to hard"
@@ -559,6 +625,43 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
                      for (a,m,t) in zip(_variables.T, _mask, vartypes)]
     return MaskedRecords(_datalist, dtype=mdescr)
     
-
-
 ################################################################################
+if 1:
+    from maskedarray.testutils import assert_equal
+    import numpy as N
+    if 1:
+#        def setup(self):       
+#        "Generic setup" 
+        d = N.arange(5)
+        m = MA.make_mask([1,0,0,1,1])
+        base_d = N.r_[d,d[::-1]].reshape(2,-1).T
+        base_m = N.r_[[m, m[::-1]]].T
+        base = MA.array(base_d, mask=base_m)    
+        mrecord = fromarrays(base.T,)
+        self_data = [d, m, mrecord]
+        
+#    def test_get(self):
+#        "Tests fields retrieval"
+        [d, m, mrec] = self_data
+        mrec = mrec.copy()
+        assert_equal(mrec.f0, MA.array(d,mask=m))
+        assert_equal(mrec.f1, MA.array(d[::-1],mask=m[::-1]))
+        assert((mrec._fieldmask == N.core.records.fromarrays([m, m[::-1]])).all())
+        assert_equal(mrec._mask, N.r_[[m,m[::-1]]].all(0))
+        assert_equal(mrec.f0[1], mrec[1].f0)
+        #
+        assert(isinstance(mrec[:2], MaskedRecords))
+        assert_equal(mrec[:2]['f0'], d[:2])
+        #
+        mrec[:2] = 5
+        assert_equal(mrec.f0._data, [5,5,2,3,4])
+        assert_equal(mrec.f1._data, [5,5,2,1,0])
+        assert_equal(mrec.f0._mask, [0,0,0,1,1])
+        assert_equal(mrec.f1._mask, [0,0,0,0,1])
+        mrec.harden_mask()
+        mrec[-2:] = 5
+        assert_equal(mrec.f0._data, [5,5,2,3,4])
+        assert_equal(mrec.f1._data, [5,5,2,5,0])
+        assert_equal(mrec.f0._mask, [0,0,0,1,1])
+        assert_equal(mrec.f1._mask, [0,0,0,0,1])
+        

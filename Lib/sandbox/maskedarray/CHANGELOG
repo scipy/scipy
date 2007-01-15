@@ -1,3 +1,6 @@
+#2007-01-14 : Mrecords
+#           : - Slices are now properly supported
+#           : - `filled` is now properly supported
 #2007-01-12 : Mrecords
 #			: - Complete reorganization...
 #2007-01-10 : Mrecords
