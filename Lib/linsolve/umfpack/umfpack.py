@@ -674,7 +674,7 @@ class UmfpackContext( Struct ):
             U = sp.csc_matrix((Ux,Ui,Up),(min(n_row,n_col),n_col))
             R = Rs
             
-            return (L,U,P,Q,R,do_recip)  
+            return (L,U,P,Q,R,bool(do_recip))  
             
         else:            
             #allocate additional storage for imaginary parts
@@ -702,6 +702,6 @@ class UmfpackContext( Struct ):
             L = sp.csr_matrix((Lxz,Lj,Lp),(n_row,min(n_row,n_col)))
             U = sp.csc_matrix((Uxz,Ui,Up),(min(n_row,n_col),n_col))
             R = Rs
-            
-            return (L,U,P,Q,R,do_recip)  
+
+            return (L,U,P,Q,R,bool(do_recip))
 
