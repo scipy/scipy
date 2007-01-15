@@ -1,5 +1,6 @@
 import numpy
 import maskedarray as MA
+from scipy.interpolate import fitpack
 
 
 #####---------------------------------------------------------------------------
@@ -155,3 +156,92 @@ def flatargs(*args):
         return flatten_sequence(args)
         
 
+#####---------------------------------------------------------------------------
+#---- --- Functions for filling in masked values in a masked array ---
+#####---------------------------------------------------------------------------
+
+def forward_fill(marr, maxgap=None):
+    """forward_fill(marr, maxgap=None)
+
+forward fill masked values in a 1-d array when there are <= maxgap
+consecutive masked values. If maxgap is None, then forward fill all
+masked values."""
+
+    assert(marr.ndim == 1)
+
+    result = marr.copy()
+
+    if marr.mask is MA.nomask or marr.size == 0: return result
+
+    currGap = 0
+
+    if maxgap is not None:
+
+        for i in range(1, result.size):
+            if result.mask[i]:
+                currGap += 1
+                if currGap <= maxgap and not result.mask[i-1]:
+                    result.data[i] = result.data[i-1]
+                    result.mask[i] = False
+                elif currGap == maxgap + 1:
+                    result.mask[i-maxgap:i] = True
+            else:
+                currGap = 0
+                
+    else:
+        
+        for i in range(1, result.size):
+            if result.mask[i] and not  result.mask[i-1]:
+                result.data[i] = result.data[i-1]
+                result.mask[i] = False
+    
+    return result
+
+
+def backward_fill(marr, maxgap=None):
+    """backward_fill(marr, maxgap=None)
+
+backward fill masked values in a 1-d array when there are <= maxgap
+consecutive masked values. If maxgap is None, then backward fill all
+masked values."""
+
+    return forward_fill(marr[::-1], maxgap=maxgap)[::-1]
+    
+
+def interp_masked1d(marr, kind='linear'):
+    """interp_masked1d(marr, king='linear')
+
+Interpolate masked values in marr according to method kind.
+kind must be one of 'constant', 'linear', 'cubic', quintic'
+"""
+
+    kind = kind.lower()
+    
+    if kind == 'constant': return forward_fill(marr)
+    
+    if marr.ndim != 1: raise ValueError("array must be 1 dimensional!")
+    
+    if not hasattr(marr, 'mask') or marr.mask is MA.nomask: return marr.copy()
+    
+    unmaskedIndices = numpy.where((marr.mask == False))[0]
+    if unmaskedIndices.size < 2: return marr.copy()
+
+    try:
+        k = {'linear' : 1,
+             'cubic' : 3,
+             'quintic' : 5}[kind.lower()]
+    except KeyError:
+        raise ValueError("Unsupported interpolation type.")
+    
+    first_unmasked, last_unmasked = MA.extras.flatnotmasked_edges(marr)
+    
+    vals = marr.data[unmaskedIndices]
+    
+    tck = fitpack.splrep(unmaskedIndices, vals, k=k)
+    
+    maskedIndices = numpy.where(marr.mask)[0]
+    interpIndices = maskedIndices[(maskedIndices > first_unmasked) & (maskedIndices < last_unmasked)]
+    
+    result = marr.copy()
+    result[interpIndices] = fitpack.splev(interpIndices, tck).astype(marr.dtype)
+    return result
