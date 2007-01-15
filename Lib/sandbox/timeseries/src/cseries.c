@@ -123,8 +123,7 @@ static long asfreq_DtoM(long fromDate, char relation) {
     return result;
 }
 
-
-static long asfreq_DtoW(long fromDate, char relation) { return -1; }
+static long asfreq_DtoW(long fromDate, char relation) { return (fromDate - 1)/7 + 1; }
 
 static long asfreq_DtoB(long fromDate, char relation) {
     mxDateTimeObject *mxDate;
@@ -246,38 +245,40 @@ static long asfreq_BtoS(long fromDate, char relation) {
 
 //************ FROM WEEKLY ***************
 
-static long asfreq_WtoA(long fromDate, char relation) { return -1; }
-static long asfreq_WtoQ(long fromDate, char relation) { return -1; }
-static long asfreq_WtoM(long fromDate, char relation) { return -1; }
-static long asfreq_WtoB(long fromDate, char relation) { return -1; }
-static long asfreq_WtoD(long fromDate, char relation) { return -1; }
-static long asfreq_WtoH(long fromDate, char relation) { return -1; }
-static long asfreq_WtoT(long fromDate, char relation) { return -1; }
-static long asfreq_WtoS(long fromDate, char relation) { return -1; }
+static long asfreq_WtoD(long fromDate, char relation) {
+    if (relation == 'B') { return fromDate * 7 - 6;}
+    else                 { return fromDate * 7; }}
+
+static long asfreq_WtoA(long fromDate, char relation) {
+    return asfreq_DtoA(asfreq_WtoD(fromDate, 'A'), relation); }
+static long asfreq_WtoQ(long fromDate, char relation) {
+    return asfreq_DtoQ(asfreq_WtoD(fromDate, 'A'), relation); }
+static long asfreq_WtoM(long fromDate, char relation) {
+    return asfreq_DtoM(asfreq_WtoD(fromDate, 'A'), relation); }
+
+static long asfreq_WtoB(long fromDate, char relation) {
+    mxDateTimeObject *mxDate;
+    long result;
+
+    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(asfreq_WtoD(fromDate, relation), 0);
+    if (relation == 'B') { result = DtoB_WeekendToMonday(mxDate); }
+    else                 { result = DtoB_WeekendToFriday(mxDate); }
+    Py_DECREF(mxDate);
+    return result;
+}
+
+static long asfreq_WtoH(long fromDate, char relation) {
+    return asfreq_DtoH(asfreq_WtoD(fromDate, relation), relation); }
+static long asfreq_WtoT(long fromDate, char relation) {
+    return asfreq_DtoT(asfreq_WtoD(fromDate, relation), relation); }
+static long asfreq_WtoS(long fromDate, char relation) {
+    return asfreq_DtoS(asfreq_WtoD(fromDate, relation), relation); }
 
 //************ FROM MONTHLY ***************
-
-static long asfreq_MtoA(long fromDate, char relation) { return (fromDate - 1) / 12 + 1; }
-static long asfreq_MtoQ(long fromDate, char relation) { return (fromDate - 1) / 3 + 1; }
-
-static long asfreq_MtoW(long fromDate, char relation) { return -1; }
 
 static void MtoD_ym(long fromDate, long *y, long *m) {
     *y = (fromDate - 1) / 12 + 1;
     *m = fromDate - 12 * (*y) - 1;
-}
-
-static long asfreq_MtoB(long fromDate, char relation) {
-
-    long y, m;
-
-    if (relation == 'B') {
-        MtoD_ym(fromDate, &y, &m);
-        return busday_before(y,m,1);
-    } else {
-        MtoD_ym(fromDate+1, &y, &m);
-        return busday_after(y, m, 1);
-    }
 }
 
 static long asfreq_MtoD(long fromDate, char relation) {
@@ -293,37 +294,32 @@ static long asfreq_MtoD(long fromDate, char relation) {
     }
 }
 
+static long asfreq_MtoA(long fromDate, char relation) { return (fromDate - 1) / 12 + 1; }
+static long asfreq_MtoQ(long fromDate, char relation) { return (fromDate - 1) / 3 + 1; }
+
+static long asfreq_MtoW(long fromDate, char relation) { return asfreq_DtoW(asfreq_MtoD(fromDate, relation), relation); }
+
+static long asfreq_MtoB(long fromDate, char relation) {
+
+    mxDateTimeObject *mxDate;
+    long result;
+
+    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(asfreq_MtoD(fromDate, relation), 0);
+    if (relation == 'B') { result = DtoB_WeekendToMonday(mxDate); }
+    else                 { result = DtoB_WeekendToFriday(mxDate); }
+    Py_DECREF(mxDate);
+    return result;
+}
+
 static long asfreq_MtoH(long fromDate, char relation) { return asfreq_DtoH(asfreq_MtoD(fromDate, relation), relation); }
 static long asfreq_MtoT(long fromDate, char relation) { return asfreq_DtoT(asfreq_MtoD(fromDate, relation), relation); }
 static long asfreq_MtoS(long fromDate, char relation) { return asfreq_DtoS(asfreq_MtoD(fromDate, relation), relation); }
 
 //************ FROM QUARTERLY ***************
 
-static long asfreq_QtoA(long fromDate, char relation) { return (fromDate - 1)/ 4 + 1; }
-
-static long asfreq_QtoM(long fromDate, char relation) {
-    if (relation == 'B') { return fromDate * 3 - 2; }
-    else {                 return fromDate  * 3; }
-}
-
-static long asfreq_QtoW(long fromDate, char relation) { return -1; }
-
 static void QtoD_ym(long fromDate, long *y, long *m) {
     *y = (fromDate - 1) / 4 + 1;
     *m = (fromDate + 4) * 3 - 12 * (*y) - 2;
-}
-
-static long asfreq_QtoB(long fromDate, char relation) {
-
-    long y, m;
-
-    if (relation == 'B') {
-        QtoD_ym(fromDate, &y, &m);
-        return busday_before(y,m,1);
-    } else {
-        QtoD_ym(fromDate+1, &y, &m);
-        return busday_after(y, m, 1);
-    }
 }
 
 static long asfreq_QtoD(long fromDate, char relation) {
@@ -339,12 +335,39 @@ static long asfreq_QtoD(long fromDate, char relation) {
     }
 }
 
+static long asfreq_QtoA(long fromDate, char relation) { return (fromDate - 1)/ 4 + 1; }
+
+static long asfreq_QtoM(long fromDate, char relation) {
+    if (relation == 'B') { return fromDate * 3 - 2; }
+    else {                 return fromDate  * 3; }
+}
+
+static long asfreq_QtoW(long fromDate, char relation) { return asfreq_DtoW(asfreq_QtoD(fromDate, relation), relation); }
+
+static long asfreq_QtoB(long fromDate, char relation) {
+
+    mxDateTimeObject *mxDate;
+    long result;
+
+    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(asfreq_QtoD(fromDate, relation), 0);
+    if (relation == 'B') { result = DtoB_WeekendToMonday(mxDate); }
+    else                 { result = DtoB_WeekendToFriday(mxDate); }
+    Py_DECREF(mxDate);
+    return result;
+}
+
+
 static long asfreq_QtoH(long fromDate, char relation) { return asfreq_DtoH(asfreq_QtoD(fromDate, relation), relation); }
 static long asfreq_QtoT(long fromDate, char relation) { return asfreq_DtoT(asfreq_QtoD(fromDate, relation), relation); }
 static long asfreq_QtoS(long fromDate, char relation) { return asfreq_DtoS(asfreq_QtoD(fromDate, relation), relation); }
 
 
 //************ FROM ANNUAL ***************
+
+static long asfreq_AtoD(long fromDate, char relation) {
+    if (relation == 'B') { return absdate_from_ymd(fromDate,1,1); }
+    else {                 return absdate_from_ymd(fromDate+1,1,1) - 1; }
+}
 
 static long asfreq_AtoQ(long fromDate, char relation) {
     if (relation == 'B') { return fromDate * 4 - 3; }
@@ -356,16 +379,11 @@ static long asfreq_AtoM(long fromDate, char relation) {
     else {                 return fromDate * 12; }
 }
 
-static long asfreq_AtoW(long fromDate, char relation) { return -1; }
+static long asfreq_AtoW(long fromDate, char relation) { return asfreq_DtoW(asfreq_AtoD(fromDate, relation), relation); }
 
 static long asfreq_AtoB(long fromDate, char relation) {
     if (relation == 'B') { return busday_before(fromDate,1,1); }
     else {                 return busday_after(fromDate+1,1,1); }
-}
-
-static long asfreq_AtoD(long fromDate, char relation) {
-    if (relation == 'B') { return absdate_from_ymd(fromDate,1,1); }
-    else {                 return absdate_from_ymd(fromDate+1,1,1) - 1; }
 }
 
 static long asfreq_AtoH(long fromDate, char relation) { return asfreq_DtoH(asfreq_AtoD(fromDate, relation), relation); }
@@ -553,6 +571,14 @@ static long get_height(char fromFreq, char toFreq) {
                 case 'Q': return 3;
                 default: return 1;
             }
+        case 'W': //monthly
+            switch(toFreq)
+            {
+                case 'A': return 53;
+                case 'Q': return 13;
+                case 'M': return 4;
+                default: return 1;
+            }
         case 'B': //business
             switch(toFreq)
             {
@@ -569,6 +595,42 @@ static long get_height(char fromFreq, char toFreq) {
                 case 'Q': return maxDaysPerQuarter;
                 case 'M': return maxDaysPerMonth;
                 case 'W': return 7;
+                default: return 1;
+            }
+        case 'H': //hourly
+            switch(toFreq)
+            {
+                case 'A': return 24 * maxDaysPerYear;;
+                case 'Q': return 24 * maxDaysPerQuarter;
+                case 'M': return 24 * maxDaysPerMonth;
+                case 'W': return 24 * 7;
+                case 'D': return 24;
+                case 'B': return 24;
+                default: return 1;
+            }
+        case 'T': //minutely
+            switch(toFreq)
+            {
+                case 'A': return 24 * 60 * maxDaysPerYear;;
+                case 'Q': return 24 * 60 * maxDaysPerQuarter;
+                case 'M': return 24 * 60 * maxDaysPerMonth;
+                case 'W': return 24 * 60 * 7;
+                case 'D': return 24 * 60;
+                case 'B': return 24 * 60;
+                case 'H': return 60;
+                default: return 1;
+            }
+        case 'S': //minutely
+            switch(toFreq)
+            {
+                case 'A': return 24 * 60 * 60 * maxDaysPerYear;;
+                case 'Q': return 24 * 60 * 60 * maxDaysPerQuarter;
+                case 'M': return 24 * 60 * 60 * maxDaysPerMonth;
+                case 'W': return 24 * 60 * 60 * 7;
+                case 'D': return 24 * 60 * 60;
+                case 'B': return 24 * 60 * 60;
+                case 'H': return 60 * 60;
+                case 'T': return 60;
                 default: return 1;
             }
         default: return 1;
