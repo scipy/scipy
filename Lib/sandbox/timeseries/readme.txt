@@ -5,6 +5,7 @@ Requirements and warnings:
 2. Only tested with numpy 1.0.1
 3. Only tested with Python 2.4.x
 4. Only tested on Windows Platform
+5. Requires maskedarray from the sandbox (not the standard masked array module with numpy)
    
 
 Instructions:
