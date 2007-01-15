@@ -26,9 +26,9 @@ import maskedarray.core as MA
 #import maskedarray.mrecords
 ##reload(maskedarray.mrecords)
 #from maskedarray.mrecords import mrecarray, fromarrays, fromtextfile, fromrecords
-import mrecords
-reload(mrecords)
-from mrecords import MaskedRecords, fromarrays, fromtextfile, fromrecords
+import maskedarray.mrecords
+reload(maskedarray.mrecords)
+from maskedarray.mrecords import MaskedRecords, fromarrays, fromtextfile, fromrecords
 
 #..............................................................................
 class test_mrecords(NumpyTestCase):
@@ -56,6 +56,9 @@ class test_mrecords(NumpyTestCase):
         assert((mrec._fieldmask == N.core.records.fromarrays([m, m[::-1]])).all())
         assert_equal(mrec._mask, N.r_[[m,m[::-1]]].all(0))
         assert_equal(mrec.f0[1], mrec[1].f0)
+        #
+        assert(isinstance(mrec[:2], MaskedRecords))
+        assert_equal(mrec[:2]['f0'], d[:2])
         
     def test_set(self):
         "Tests setting fields/attributes."
@@ -73,7 +76,22 @@ class test_mrecords(NumpyTestCase):
         assert_equal(mrecord['f0']._mask, mrecord['f1']._mask)
         mrecord._mask = MA.nomask
         assert_equal(getmaskarray(mrecord['f1']), [0]*5)
-        assert_equal(mrecord['f0']._mask, mrecord['f1']._mask)    
+        assert_equal(mrecord['f0']._mask, mrecord['f1']._mask)   
+        #
+    def test_setslices(self):
+        "Tests setting slices."
+        [d, m, mrec] = self.data        
+        mrec[:2] = 5
+        assert_equal(mrec.f0._data, [5,5,2,3,4])
+        assert_equal(mrec.f1._data, [5,5,2,1,0])
+        assert_equal(mrec.f0._mask, [0,0,0,1,1])
+        assert_equal(mrec.f1._mask, [0,0,0,0,1])
+        mrec.harden_mask()
+        mrec[-2:] = 5
+        assert_equal(mrec.f0._data, [5,5,2,3,4])
+        assert_equal(mrec.f1._data, [5,5,2,5,0])
+        assert_equal(mrec.f0._mask, [0,0,0,1,1])
+        assert_equal(mrec.f1._mask, [0,0,0,0,1]) 
         
     def test_hardmask(self):
         "Test hardmask"
@@ -127,6 +145,13 @@ class test_mrecords(NumpyTestCase):
         assert_equal(mrectxt.F, [1,1,1,1])
         assert_equal(mrectxt.E._mask, [1,1,1,1])
         assert_equal(mrectxt.C, [1,2,3.e+5,-1e-10])  
+        
+    def test_addfield(self):
+        "Tests addfield"
+        [d, m, mrec] = self.data
+        mrec.addfield(masked_array(d+10, mask=m[::-1]))
+        assert_equal(mrec.f2, d+10)
+        assert_equal(mrec.f2._mask, m[::-1])    
                 
 ###############################################################################
 #------------------------------------------------------------------------------

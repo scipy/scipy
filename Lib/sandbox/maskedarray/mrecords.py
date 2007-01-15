@@ -387,10 +387,41 @@ If `fill_value` is None, uses self.fill_value.
         self._hardmask = False
     #.............................................
     def copy(self):
+        """Returns a copy of the masked record."""
         _localdict = self.__dict__
         return MaskedRecords(_localdict['_data'].copy(),
                         mask=_localdict['_fieldmask'].copy(),
                        dtype=self.dtype)
+    #.............................................
+    def addfield(self, newfield, newfieldname=None):
+        """Adds a new field to the masked record array, using `newfield` as data
+    and `newfieldname` as name. If `newfieldname` is None, the new field name is
+    set to 'fi', where `i` is the number of existing fields.
+        """
+        _localdict = self.__dict__
+        _data = _localdict['_data']
+        _mask = _localdict['_fieldmask']
+        if newfieldname is None or newfieldname in reserved_fields:
+            newfieldname = 'f%i' % len(_data.dtype)
+        newfield = MA.asarray(newfield)
+        # Get the enw data ............
+        newdtype = numeric.dtype(_data.dtype.descr + \
+                                 [(newfieldname, newfield.dtype)])
+        newdata = recarray(_data.shape, newdtype)
+        [newdata.setfield(_data.getfield(*f),*f) 
+             for f in _data.dtype.fields.values()]
+        newdata.setfield(newfield.filled(), *newdata.dtype.fields[newfieldname])
+        # Get the new mask .............
+        newmdtype = numeric.dtype([(n,N.bool_) for n in newdtype.names])
+        newmask = recarray(_data.shape, newmdtype)
+        [newmask.setfield(_mask.getfield(*f),*f)
+             for f in _mask.dtype.fields.values()]
+        newmask.setfield(getmaskarray(newfield), 
+                         *newmask.dtype.fields[newfieldname])
+        self.__dict__.update(_data=newdata,
+                             _fieldmask=newmask)
+#        return MaskedRecords(newdata, mask=newmask, dtype=newdtype)
+        
 
 
 #####---------------------------------------------------------------------------
@@ -640,28 +671,5 @@ if 1:
         mrecord = fromarrays(base.T,)
         self_data = [d, m, mrecord]
         
-#    def test_get(self):
-#        "Tests fields retrieval"
-        [d, m, mrec] = self_data
-        mrec = mrec.copy()
-        assert_equal(mrec.f0, MA.array(d,mask=m))
-        assert_equal(mrec.f1, MA.array(d[::-1],mask=m[::-1]))
-        assert((mrec._fieldmask == N.core.records.fromarrays([m, m[::-1]])).all())
-        assert_equal(mrec._mask, N.r_[[m,m[::-1]]].all(0))
-        assert_equal(mrec.f0[1], mrec[1].f0)
-        #
-        assert(isinstance(mrec[:2], MaskedRecords))
-        assert_equal(mrec[:2]['f0'], d[:2])
-        #
-        mrec[:2] = 5
-        assert_equal(mrec.f0._data, [5,5,2,3,4])
-        assert_equal(mrec.f1._data, [5,5,2,1,0])
-        assert_equal(mrec.f0._mask, [0,0,0,1,1])
-        assert_equal(mrec.f1._mask, [0,0,0,0,1])
-        mrec.harden_mask()
-        mrec[-2:] = 5
-        assert_equal(mrec.f0._data, [5,5,2,3,4])
-        assert_equal(mrec.f1._data, [5,5,2,5,0])
-        assert_equal(mrec.f0._mask, [0,0,0,1,1])
-        assert_equal(mrec.f1._mask, [0,0,0,0,1])
+
         
