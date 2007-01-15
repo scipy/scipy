@@ -6,7 +6,7 @@ by P. Dierckx (see http://www.netlib.org/dierckx/) transformed
 to double routines by Pearu Peterson.
 """
 # Created by Pearu Peterson, June,August 2003
-# Modified by John Travers, October 2006
+# Modified by John Travers, October-January 2006
 
 __all__ = [
     'UnivariateSpline',
@@ -84,7 +84,7 @@ class UnivariateSpline(object):
                        deviation of y[i].
         """
         #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
-        data = dfitpack.fpcurf0(x,y,k,w=w,
+        data = dfitpack.fpcurf_smth0(x,y,k,w=w,
                                 xb=bbox[0],xe=bbox[1],s=s)
         if data[-1]==1:
             # nest too small, setting to maximum bound
@@ -130,7 +130,7 @@ class UnivariateSpline(object):
         fpint.resize(nest)
         nrdata.resize(nest)
         args = data[:8] + (t,c,n,fpint,nrdata,data[13])
-        data = dfitpack.fpcurf1(*args)
+        data = dfitpack.fpcurf_smth1(*args)
         return data
 
     def set_smoothing_factor(self, s):
@@ -144,7 +144,7 @@ class UnivariateSpline(object):
                           'LSQ spline with fixed knots')
             return
         args = data[:6] + (s,) + data[7:]
-        data = dfitpack.fpcurf1(*args)
+        data = dfitpack.fpcurf_smth1(*args)
         if data[-1]==1:
             # nest too small, setting to maximum bound
             data = self._reset_nest(data)
@@ -158,8 +158,10 @@ class UnivariateSpline(object):
         
         """
         if nu is None:
-            return dfitpack.splev(*(self._eval_args+(x,)))
-        return dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
+            sp,ier = dfitpack.splev(*(self._eval_args+(x,)))
+            return sp
+        sp,ier = dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
+        return sp
 
     def get_knots(self):
         """ Return the positions of (boundary and interior)
@@ -186,7 +188,8 @@ class UnivariateSpline(object):
         """ Return definite integral of the spline between two
         given points.
         """
-        return dfitpack.splint(*(self._eval_args+(a,b)))
+        iy, wrk = dfitpack.splint(*(self._eval_args+(a,b)))
+        return iy
 
     def derivatives(self, x):
         """ Return all derivatives of the spline at the point x."""
@@ -205,11 +208,10 @@ class UnivariateSpline(object):
             assert ier==0,`ier`
             return z[:m]
         raise NotImplementedError,\
-              'finding roots unsupported for non-cubic splines'
+              'finding roots not supported for non-cubic splines'
 
 class InterpolatedUnivariateSpline(UnivariateSpline):
-    """ Interpolated univariate spline approximation. Identical to
-    UnivariateSpline with less error checking.
+    """ Interpolated univariate spline approximation.
 
     """
 
@@ -227,14 +229,12 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
           k=3        - degree of the univariate spline.
         """
         #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
-        self._data = dfitpack.fpcurf0(x,y,k,w=w,
+        self._data = dfitpack.fpcurf_smth0(x,y,k,w=w,
                                       xb=bbox[0],xe=bbox[1],s=0)
         self._reset_class()
 
 class LSQUnivariateSpline(UnivariateSpline):
-    """ Weighted least-squares univariate spline
-    approximation. Appears to be identical to UnivariateSpline with
-    more error checking.
+    """ Weighted least-squares univariate spline approximation.
 
     """
 
@@ -264,7 +264,7 @@ class LSQUnivariateSpline(UnivariateSpline):
         if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0,axis=0):
             raise ValueError,\
                   'Interior knots t must satisfy Schoenberg-Whitney conditions'
-        data = dfitpack.fpcurfm1(x,y,k,t,w=w,xb=xb,xe=xe)
+        data = dfitpack.fpcurf_lsq(x,y,k,t,w=w,xb=xb,xe=xe)
         self._data = data[:-3] + (None,None,data[-1])
         self._reset_class()
 
@@ -363,7 +363,6 @@ class SmoothBivariateSpline(BivariateSpline):
     LSQUnivariateSpline - to create a BivariateSpline using weighted
                           least-squares fitting
     """
-
     def __init__(self, x, y, z, w=None,
                  bbox = [None]*4, kx=3, ky=3, s=None, eps=None):
         """
@@ -388,7 +387,7 @@ class SmoothBivariateSpline(BivariateSpline):
                        equations. 0 < eps < 1, default is 1e-16.
         """
         xb,xe,yb,ye = bbox
-        nx,tx,ny,ty,c,fp,wrk1,ier = dfitpack.surfit_smth(x,y,z,w,
+        nx,tx,ny,ty,c,fp,wrk1,ier = dfitpack.surfit_smth0(x,y,z,w,
                                                          xb,xe,yb,ye,
                                                          kx,ky,s=s,
                                                          eps=eps,lwrk2=1)
@@ -411,7 +410,6 @@ class LSQBivariateSpline(BivariateSpline):
     SmoothUnivariateSpline - to create a BivariateSpline through the 
                              given points
     """
-
     def __init__(self, x, y, z, tx, ty, w=None,
                  bbox = [None]*4,
                  kx=3, ky=3, eps=None):
@@ -471,7 +469,6 @@ class RectBivariateSpline(BivariateSpline):
     bisplrep, bisplev - an older wrapping of FITPACK
     UnivariateSpline - a similar class for univariate spline interpolation
     """
-
     def __init__(self, x, y, z,
                  bbox = [None]*4, kx=3, ky=3, s=0):
         """
@@ -506,7 +503,7 @@ class RectBivariateSpline(BivariateSpline):
                   'y dimension of z must have same number of elements as y'
         z = ravel(z)
         xb,xe,yb,ye = bbox
-        nx,tx,ny,ty,c,fp,ier = dfitpack.regrid_smth(x,y,z,
+        nx,tx,ny,ty,c,fp,ier = dfitpack.regrid_smth0(x,y,z,
                                                     xb,xe,yb,ye,
                                                     kx,ky,s)
         if ier in [0,-1,-2]: # normal return
@@ -518,4 +515,3 @@ class RectBivariateSpline(BivariateSpline):
         self.fp = fp
         self.tck = tx[:nx],ty[:ny],c[:(nx-kx-1)*(ny-ky-1)]
         self.degrees = kx,ky
-
