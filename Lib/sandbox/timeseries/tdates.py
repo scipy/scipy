@@ -177,20 +177,20 @@ class Date:
                     if self.mxDate.day_of_week in [5,6]:
                         raise ValueError("Weekend passed as business day")
             elif self.freq in ['H','S','T']:
-                if not hours:
-                    if not minutes:
-                        if not seconds:
+                if hours is None:
+                    if minutes is None:
+                        if seconds is None:
                             hours = 0
                         else:
                             hours = seconds//3600
                     else:
                         hours = minutes // 60
-                if not minutes:
-                    if not seconds:
+                if minutes is None:
+                    if seconds is None:
                         minutes = 0
                     else:
                         minutes = (seconds-hours*3600)//60
-                if not seconds:
+                if seconds is None:
                     seconds = 0
                 else:
                     seconds = seconds % 60
@@ -277,13 +277,12 @@ class Date:
         "Converts the date to an integer, depending on the current frequency."
         # Annual .......
         if self.freq == 'A':
-            val = int(self.mxDate.year)
+            val = self.mxDate.year
         # Business days.
         elif self.freq == 'B':
             days = self.mxDate.absdate
             weeks = days // 7
-#            val = (weeks*5) + (days - weeks*7)
-            val = days - weeks*2
+            val = days - weeks*2  # (weeks*5) + (days - weeks*7)
         # Daily/undefined
         elif self.freq in ['D', 'U']:
             val = self.mxDate.absdate
@@ -304,7 +303,6 @@ class Date:
             val = (self.mxDate - minutelyOriginDate).minutes
         # Weekly........
         elif self.freq == 'W':
-            #val = int(self.mxDate.year*365.25/7.-1) + self.mxDate.iso_week[1]
             val = self.mxDate.absdate//7
         return int(val)
     #......................................................
@@ -382,7 +380,7 @@ def truncateDate(freq, mxDate):
         return mxD.Date(mxDate.year, mxDate.month)
     elif freq == 'W':
         d = mxDate.absdate
-        return mxD.DateTimeFromAbsDateTime(d + (7 - d % 7) % 7 - 1)
+        return mxD.DateTimeFromAbsDateTime(d + (7 - d % 7) % 7)
     elif freq in ('B', 'D'):
         if freq == 'B' and mxDate.day_of_week in [5,6]:
             raise ValueError("Weekend passed as business day")
