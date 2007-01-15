@@ -220,7 +220,7 @@ The combination of `series` and `dates` is the `data` part.
 #        newdata = MaskedArray.__new__(cls, data=_data, mask=mask, **options)
         newdata = super(TimeSeries,cls).__new__(cls, _data, mask=mask,
                                                 **options)
-        assert(_datadatescompat(data,newdates))
+        assert(_datadatescompat(newdata.data,newdates))
         return newdata
             
     #..................................
