@@ -1,3 +1,4 @@
+#2007-01-15 : - Added tmulti and its tests, to support multi-variable series
 #2007-01-14 : Code reorganization:
 #           : - Moved Matt's initial version to archived_version
 #           : - Moved Pierre's version to base
