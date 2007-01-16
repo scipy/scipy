@@ -1,61 +1,51 @@
-#2007-01-15 : MRecords
-#           : - Add the addfield method
-#2007-01-14 : Mrecords
-#           : - Slices are now properly supported
-#           : - `filled` is now properly supported
-#2007-01-12 : Mrecords
-#			: - Complete reorganization...
-#2007-01-10 : Mrecords
-#           : - Defines a class of records that support masked arrays
+#2007-01-15 : mrecords: Add the addfield method
+#           : core    : Force the mask of a masked array `x` to be copied w/...
+#                     ...masked_array(x,copy=True,mask=nomask,keep_mask=true)
+#2007-01-14 : mrecords: Slices are now properly supported
+#           : mrecords: `filled` is now properly supported
+#2007-01-12 : mrecords: Complete reorganization...
+#2007-01-10 : mrecords: Defines a class of records that support masked arrays
 #2007-01-08 : Core:
-#           : - Force a reset of the class defaults after initialization
-#           : - Modified __array_finallize__ to allow objects w/ _data and _mask fields to be recognized as MA
-#2007-01-04 : Core:
-#           : - Fixed a but in masked_all_like
-#2007-01-02 : Extras
-#           : - Force apply_along_axis to output the proper fill_value 
-#           : Core
-#           : - Can use dtypes for the definition of default_fill_value
-#2006-12-30 : Core
-#			: - Cleaned up setitem/setslice w/ hard_mask=True
-#			: - Fixed masked_unary/binary_operations to work with subclasses of MaskedArray
-#2006-12-22 : Core
-#           : - Optimized(?) default_/maximum_/minimum_fill_value
-#           : - Force __new__ to not return a MaskedArray, in order to ...
-#           :   ... optimize __array_finalize__
-#           : - Add the hard_mask flag to __new__ (*[False]*)
-#2006-12-19 : Core
-#			: - Fixed a problem on _set_mask which prevented to set a mask to nomask
-#           : Extras
-#           : - Renamed compress2d to compress_rowcols
-#           : - Added dot
-#2006-12-18 : Extras
-#           : - Added compress2d and mask_rowcols
-#2006-12-13 : - moved 'average' to 'extras'
-#			: Core
-#		    : - Fixed make_mask (forced filling to True)
-#	        : - Fixed ndim
-#		    : - Fixed error message in __new__ when wrong sizes
-#			: - Fixed the reshape function.
-#           : Extras
-#		    : - masked_all: set default dtype to float_
-#		    : - _fromnxfunctions: make sure that list are recognized
-#		    : - added notmasked_edges, notmasked_contiguous
+#           : core    : Force a reset of the class defaults after initialization
+#           : core    : Modified __array_finallize__ to allow objects w/ _data...
+#                     ... _mask fields to be recognized as MA
+#2007-01-04 : core    : Fixed a but in masked_all_like
+#2007-01-02 : extras  : Force apply_along_axis to output the proper fill_value 
+#           : core    : Can use dtypes for the definition of default_fill_value
+#2006-12-30 : core    : Cleaned up setitem/setslice w/ hard_mask=True
+#			: core    : Fixed masked_unary/binary_operations...
+#					  ...to work with subclasses of MaskedArray
+#2006-12-22 : core    : Optimized(?) default_/maximum_/minimum_fill_value
+#           : core    : Force __new__ to not return a MaskedArray, in order to ...
+#           :         ... optimize __array_finalize__
+#           : core    : Add the hard_mask flag to __new__ (*[False]*)
+#2006-12-19 : core    : Fixed a problem on _set_mask which prevented to set a mask to nomask
+#           : extras  : Renamed compress2d to compress_rowcols
+#           : extras  : Added dot
+#2006-12-18 : extras  : Added compress2d and mask_rowcols
+#           : extras  : moved 'average' to 'extras'
+#2006-12-13 : core    : Fixed make_mask (forced filling to True)
+#	        : core    : Fixed ndim
+#		    : core    : Fixed error message in __new__ when wrong sizes
+#			: core    : Fixed the reshape function.
+#		    : extras  : masked_all: set default dtype to float_
+#		    : extras  : _fromnxfunctions: make sure that list are recognized
+#		    : extras  : added notmasked_edges, notmasked_contiguous
 #2006-12-09 : - Code reorganization: define 2 modules, core and extras
-#2006-11-25 : - Disable copy by default
-#             - Added keep_mask flag (to save mask when creating a ma from a ma)
-#             - Fixed functions: empty_like
-#             - Fixed methods: .any and .all 
-#             - New functions: masked_all, masked_all_like
-#             - New methods: .squeeze
-#2006-11-20 : - fixed make_mask 
-#             - fixed nonzero method
-#2006-11-16 : - fixed .T
-#2006-11-12 : - add max, min as function (not only method...)
-#             - repr returns a name like masked_xxx, where xxx is the subclass
-#2006-10-31 : - make sure that make_mask returns a pure ndarray.
-#2006-10-30 : - When converted to a float, a masked singleton is transformed to nan 
-#               instead of raising an exception.
+#2006-11-25 : core    : Disable copy by default
+#             core    : Added keep_mask flag (to save mask when creating a ma from a ma)
+#             core    : Fixed functions: empty_like
+#             core    : Fixed methods: .any and .all 
+#             core    : New functions: masked_all, masked_all_like
+#             core    : New methods: .squeeze
+#2006-11-20 : core    : fixed make_mask 
+#             core    : fixed nonzero method
+#2006-11-16 : core    : fixed .T
+#2006-11-12 : core    : add max, min as function (not only method...)
+#             core    : repr returns a name like masked_xxx, where xxx is the subclass
+#2006-10-31 : core    : make sure that make_mask returns a pure ndarray.
+#2006-10-30 : core    : When converted to a float, a masked singleton is ...
+#                     ...transformed to nan instead of raising an exception.
 #21: Use __get__ method in _arraymethods, _arithmethods, _compamethods
 #18: Updated put to match the definition of numpy 1.0, deleted putmask, changed resize
 #2: prevent an extra kword being sent to make_mask_none

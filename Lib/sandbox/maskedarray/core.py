@@ -831,7 +831,10 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
            (hasattr(data,"_mask") and hasattr(data,"_data")) :
             if keep_mask:
                 if mask is nomask:
-                    cls._defaultmask = data._mask
+                    if copy:
+                        cls._defaultmask = data._mask.copy()
+                    else:
+                        cls._defaultmask = data._mask
                 else:
                     cls._defaultmask = mask_or(data._mask, mask, 
                                                 copy=copy, small_mask=small_mask)
@@ -870,7 +873,7 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
 #                    cls.__defaultmask = getmask(_data)
 #                    return _data.view(cls)
         # Define mask .................
-        mask = make_mask(mask, small_mask=small_mask)
+        mask = make_mask(mask, copy=copy, small_mask=small_mask)
         #....Check shapes compatibility
         if mask is not nomask:
             (nd, nm) = (_data.size, mask.size)

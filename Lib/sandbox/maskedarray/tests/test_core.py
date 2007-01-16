@@ -323,6 +323,15 @@ class test_ma(NumpyTestCase):
         y9 = x4.copy()
         assert_equal(y9._data, x4._data)
         assert_equal(y9._mask, x4._mask)
+        #
+        x = masked_array([1,2,3], mask=[0,1,0])
+        # Copy is False by default
+        y = masked_array(x)
+        assert_equal(id(y._data), id(x._data))
+        assert_equal(id(y._mask), id(x._mask))
+        y = masked_array(x, copy=True)
+        assert_not_equal(id(y._data), id(x._data))
+        assert_not_equal(id(y._mask), id(x._mask))
         
     #........................
     def check_testOddFeatures_1(self):
@@ -1007,6 +1016,17 @@ class test_array_methods(NumpyTestCase):
         xh[filled(xh<5,False)] = 2
         assert_equal(xh._data, [[1,2],[2,5]])
         assert_equal(xh._mask, [[1,0],[0,0]])
+        #        
+        "Another test of hardmask"
+        d = arange(5)
+        n = [0,0,0,1,1]
+        m = make_mask(n)
+        xh = array(d, mask = m, hard_mask=True)
+        xh[4:5] = 999
+        assert(xh.mask is m)
+        xh[0:1] = 999
+        
+        assert_equal(xh._data,[999,1,2,3,4])
 #..............................................................................
 
 #..............................................................................
