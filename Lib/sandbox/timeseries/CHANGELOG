@@ -1,16 +1,16 @@
-#2007-01-15 : - Added tmulti and its tests, to support multi-variable series
+#2007-01-15 : tmulti : Add the module and its tests, to support multi-variable series
+#           : tdates : Some minor bug fixes
+#           : tseries: Fixed a bug in __new__ when data are lists
+#           : tcore  : Introduced the forward/backward_fill and interpol functions.
 #2007-01-14 : Code reorganization:
-#           : - Moved Matt's initial version to archived_version
-#           : - Moved Pierre's version to base
-#           : tdates
-#           : - Fixed a bug w/ definition of months and weeks
-#           : - Renamed dateOf to asfreq + use cseries
-#2007-01-04 : tsdate
-#           : - Corrected a bug w/ Date.__init__ and 'B' freq
-#2007-01-03 : tseries 
-#           : - Allowed endpoints adjustment after convert
-#           : - Put the estimation of the data length in its own function.
-#           : - Added a timestep compatibility check.
-#           : - The variables in a multi-series correspond now to the last axis.
-#           : - Blocked transpose/swapaxes, temporarily.
-#           : - Speed-up fill_missing_dates
+#           : 	- Moved Matt's initial version to archived_version
+#           : 	- Moved Pierre's version to base
+#           : tdates : Fixed a bug w/ definition of months and weeks
+#           : tdates : Renamed dateOf to asfreq + use cseries
+#2007-01-04 : tdates : Corrected a bug w/ Date.__init__ and 'B' freq
+#2007-01-03 : tseries: Allowed endpoints adjustment after convert
+#           : tseries: Put the estimation of the data length in its own function.
+#           : tseries: Added a timestep compatibility check.
+#           : tseries: The variables in a multi-series correspond now to the last axis.
+#           : tseries: Blocked transpose/swapaxes, temporarily.
+#           : tseries: Speed-up fill_missing_dates

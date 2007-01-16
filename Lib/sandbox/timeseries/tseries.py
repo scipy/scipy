@@ -224,7 +224,7 @@ The combination of `series` and `dates` is the `data` part.
 #        newdata = MaskedArray.__new__(cls, data=_data, mask=mask, **options)
         newdata = super(TimeSeries,cls).__new__(cls, _data, mask=mask,
                                                 **options)
-        assert(_datadatescompat(newdata.data,newdates))
+        assert(_datadatescompat(newdata._data,newdates))
         return newdata
             
     #..................................
@@ -1193,55 +1193,70 @@ The data corresponding to the initially missing dates are masked, or filled to
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     from maskedarray.testutils import assert_equal
-    if 0:
-        dlist = ['2007-01-%02i' % i for i in range(1,16)]
-        dates = date_array(dlist)
-        data = masked_array(numeric.arange(15, dtype=float_), mask=[1,0,0,0,0]*3)
-#        btseries = BaseTimeSeries(data._data, dates)
-        tseries = time_series(data, dlist)
-        dseries = numpy.log(tseries)
-    if 1:
-        mlist = ['2005-%02i' % i for i in range(1,13)]
-        mlist += ['2006-%02i' % i for i in range(1,13)]
-        mdata = numpy.arange(24)
-        mser1 = time_series(mdata, mlist, observed='SUMMED')
-        #
-        mlist2 = ['2004-%02i' % i for i in range(1,13)]
-        mlist2 += ['2005-%02i' % i for i in range(1,13)]
-        mser2 = time_series(mdata, mlist2, observed='SUMMED')
-        #
-        today = thisday('m')
-        (malg1,malg2) = aligned(mser1, mser2)
-        
-        C = convert(mser2,'A')
-        D = convert(mser2,'A',func=None)
-        
-    if 0:
-        dlist = ['2007-01-%02i' % i for i in range(1,16)]
-        dates = date_array(dlist)
-        print "."*50+"\ndata"
-        data = masked_array(numeric.arange(15)-6, mask=[1,0,0,0,0]*3)
-        print "."*50+"\nseries"
-        tseries = time_series(data, dlist)
-        
-    if 1:
-        dlist_1 = ['2007-01-%02i' % i for i in range(1,8)]
-        dlist_2 = ['2007-01-%02i' % i for i in numpy.arange(1,28)[::4]]
-        data = masked_array(numeric.arange(7), mask=[1,0,0,0,0,0,0])
-        tseries_1 = time_series(data, dlist_1)
-        tseries_2 = time_series(data, dlist_2)
-        tseries_3 = time_series(data[::-1], dlist_2)
-        
-        try:
-            tseries = tseries_1 + tseries_2
-        except TimeSeriesCompatibilityError:
-            print "I knew it!"
-        tseries = tseries_2 + tseries_3
-        assert_equal(tseries._dates, tseries_3._dates)
-        assert_equal(tseries._mask, [1,0,0,0,0,0,1])
-                
-    if 1:
-        mser3 = time_series(MA.mr_[malg1._series, 100+malg2._series].reshape(2,-1).T, 
-                            dates=malg1.dates)
-        data = mser3._series._data
+#    if 0:
+#        dlist = ['2007-01-%02i' % i for i in range(1,16)]
+#        dates = date_array(dlist)
+#        data = masked_array(numeric.arange(15, dtype=float_), mask=[1,0,0,0,0]*3)
+##        btseries = BaseTimeSeries(data._data, dates)
+#        tseries = time_series(data, dlist)
+#        dseries = numpy.log(tseries)
+#    if 0:
+#        mlist = ['2005-%02i' % i for i in range(1,13)]
+#        mlist += ['2006-%02i' % i for i in range(1,13)]
+#        mdata = numpy.arange(24)
+#        mser1 = time_series(mdata, mlist, observed='SUMMED')
+#        #
+#        mlist2 = ['2004-%02i' % i for i in range(1,13)]
+#        mlist2 += ['2005-%02i' % i for i in range(1,13)]
+#        mser2 = time_series(mdata, mlist2, observed='SUMMED')
+#        #
+#        today = thisday('m')
+#        (malg1,malg2) = aligned(mser1, mser2)
+#        
+#        C = convert(mser2,'A')
+#        D = convert(mser2,'A',func=None)
+#        
+#    if 0:
+#        dlist = ['2007-01-%02i' % i for i in range(1,16)]
+#        dates = date_array(dlist)
+#        print "."*50+"\ndata"
+#        data = masked_array(numeric.arange(15)-6, mask=[1,0,0,0,0]*3)
+#        print "."*50+"\nseries"
+#        tseries = time_series(data, dlist)
+#        
+#    if 0:
+#        dlist_1 = ['2007-01-%02i' % i for i in range(1,8)]
+#        dlist_2 = ['2007-01-%02i' % i for i in numpy.arange(1,28)[::4]]
+#        data = masked_array(numeric.arange(7), mask=[1,0,0,0,0,0,0])
+#        tseries_1 = time_series(data, dlist_1)
+#        tseries_2 = time_series(data, dlist_2)
+#        tseries_3 = time_series(data[::-1], dlist_2)
+#        
+#        try:
+#            tseries = tseries_1 + tseries_2
+#        except TimeSeriesCompatibilityError:
+#            print "I knew it!"
+#        tseries = tseries_2 + tseries_3
+#        assert_equal(tseries._dates, tseries_3._dates)
+#        assert_equal(tseries._mask, [1,0,0,0,0,0,1])
+#                
+#    if 0:
+#        mser3 = time_series(MA.mr_[malg1._series, 100+malg2._series].reshape(2,-1).T, 
+#                            dates=malg1.dates)
+#        data = mser3._series._data
 
+    if 1:
+        dlist = ['2007-01-%02i' % i for i in range(1,16)]
+        dates = date_array_fromlist(dlist)
+        data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3, dtype=float_)
+        self_d = (time_series(range(15), dlist), data, dates)
+        (series, data, dates) = self_d
+#        # Testing a basic condition on data
+#        cond = (series<8).filled(False)
+#        dseries = series[cond]
+#        assert_equal(dseries._data, [1,2,3,4,6,7])
+#        assert_equal(dseries._dates, series._dates[[1,2,3,4,6,7]])
+#        assert_equal(dseries._mask, nomask)
+#        # Testing a basic condition on dates
+#        series[series._dates < Date('D',string='2007-01-06')] = masked
+#        assert_equal(series[:5]._series._mask, [1,1,1,1,1])

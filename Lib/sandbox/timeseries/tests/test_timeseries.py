@@ -11,8 +11,6 @@ __version__ = '1.0'
 __revision__ = "$Revision$"
 __date__     = '$Date$'
 
-import types
-
 import numpy as N
 from numpy import bool_, complex_, float_, int_, object_
 import numpy.core.fromnumeric  as fromnumeric
@@ -24,12 +22,8 @@ import maskedarray
 from maskedarray import masked_array, masked, nomask
 
 import maskedarray.testutils
-#reload(maskedarray.testutils)
 from maskedarray.testutils import assert_equal, assert_array_equal
 
-#import tdates
-##reload(tdates)
-#from tdates import date_array_fromlist
 import tseries
 #reload(tseries)
 from tseries import Date, date_array_fromlist
@@ -57,8 +51,7 @@ class test_creation(NumpyTestCase):
     def test_fromrange (self):
         "Base data definition."
         (dlist, dates, data) = self.d
-        series = time_series(data, start_date=Date('D',value=dates[0]),
-                             length=15)
+        series = time_series(data, start_date=dates[0], length=15)
         assert(isinstance(series, TimeSeries))
         assert_equal(series._mask, [1,0,0,0,0]*3)
         assert_equal(series._series, data)
