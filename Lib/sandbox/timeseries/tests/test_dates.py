@@ -25,10 +25,10 @@ from maskedarray import masked_array
 import maskedarray.testutils
 from maskedarray.testutils import assert_equal, assert_array_equal
 
-import tdates
-import tcore
+from timeseries import tdates
+from timeseries import tcore
 reload(tdates)
-from tdates import date_array_fromlist, Date, DateArray, mxDFromString
+from timeseries.tdates import date_array_fromlist, Date, DateArray, mxDFromString
 
 class test_creation(NumpyTestCase):
     "Base test class for MaskedArrays."
@@ -111,6 +111,93 @@ class test_creation(NumpyTestCase):
             assert(tdates.Date(freq=f, value=today.value) == today)
 
 
+class test_date_properties(NumpyTestCase):
+    "Test properties such as year, month, day_of_week, etc...."
+    
+    def __init__(self, *args, **kwds):
+        NumpyTestCase.__init__(self, *args, **kwds)
+
+    def test_properties(self):
+    
+        a_date = tdates.Date(freq='A', year=2007)
+        q_date = tdates.Date(freq='Q', year=2007, quarter=1)
+        m_date = tdates.Date(freq='M', year=2007, month=1)
+        w_date = tdates.Date(freq='W', year=2007, month=1, day=7)
+        b_date = tdates.Date(freq='B', year=2007, month=1, day=1)
+        d_date = tdates.Date(freq='D', year=2007, month=1, day=1)
+        h_date = tdates.Date(freq='H', year=2007, month=1, day=1,
+                                       hour=0)
+        t_date = tdates.Date(freq='T', year=2007, month=1, day=1,
+                                       hour=0, minute=0)
+        s_date = tdates.Date(freq='T', year=2007, month=1, day=1,
+                                       hour=0, minute=0, second=0)
+
+        assert_equal(a_date.year, 2007)
+
+        for x in range(3):
+            assert_equal((q_date+x).year, 2007)
+            assert_equal((q_date+x).quarter, x+1)
+
+        for x in range(11):
+
+            m_date_x = m_date+x
+            assert_equal(m_date_x.year, 2007)
+
+            if   1  <= x + 1 <= 3:  assert_equal(m_date_x.quarter, 1)
+            elif 4  <= x + 1 <= 6:  assert_equal(m_date_x.quarter, 2)
+            elif 7  <= x + 1 <= 9:  assert_equal(m_date_x.quarter, 3)
+            elif 10 <= x + 1 <= 12: assert_equal(m_date_x.quarter, 4)
+
+            assert_equal(m_date_x.month, x+1)
+
+        assert_equal(w_date.year, 2007)
+        assert_equal(w_date.quarter, 1)
+        assert_equal(w_date.month, 1)
+        assert_equal(w_date.week, 1)
+        assert_equal((w_date-1).week, 52)
+
+        assert_equal(b_date.year, 2007)
+        assert_equal(b_date.quarter, 1)
+        assert_equal(b_date.month, 1)
+        assert_equal(b_date.day, 1)
+        assert_equal(b_date.day_of_week, 0)
+        assert_equal(b_date.day_of_year, 1)
+
+        assert_equal(d_date.year, 2007)
+        assert_equal(d_date.quarter, 1)
+        assert_equal(d_date.month, 1)
+        assert_equal(d_date.day, 1)
+        assert_equal(d_date.day_of_week, 0)
+        assert_equal(d_date.day_of_year, 1)
+
+        assert_equal(h_date.year, 2007)
+        assert_equal(h_date.quarter, 1)
+        assert_equal(h_date.month, 1)
+        assert_equal(h_date.day, 1)
+        assert_equal(h_date.day_of_week, 0)
+        assert_equal(h_date.day_of_year, 1)
+        assert_equal(h_date.hour, 0)
+
+        assert_equal(t_date.year, 2007)
+        assert_equal(t_date.quarter, 1)
+        assert_equal(t_date.month, 1)
+        assert_equal(t_date.day, 1)
+        assert_equal(t_date.day_of_week, 0)
+        assert_equal(t_date.day_of_year, 1)
+        assert_equal(t_date.hour, 0)
+        assert_equal(t_date.minute, 0)
+
+        assert_equal(s_date.year, 2007)
+        assert_equal(s_date.quarter, 1)
+        assert_equal(s_date.month, 1)
+        assert_equal(s_date.day, 1)
+        assert_equal(s_date.day_of_week, 0)
+        assert_equal(s_date.day_of_year, 1)
+        assert_equal(s_date.hour, 0)
+        assert_equal(s_date.minute, 0)
+        assert_equal(s_date.second, 0)
+
+
 class test_freq_conversion(NumpyTestCase):
     "Test frequency conversion of date objects"
     
@@ -132,17 +219,17 @@ class test_freq_conversion(NumpyTestCase):
         date_A_to_D_before = Date(freq='D', year=2007, month=1, day=1)
         date_A_to_D_after = Date(freq='D', year=2007, month=12, day=31)
         date_A_to_H_before = Date(freq='H', year=2007, month=1, day=1, 
-                                  hours=0)
+                                  hour=0)
         date_A_to_H_after = Date(freq='H', year=2007, month=12, day=31, 
-                                 hours=23)
+                                 hour=23)
         date_A_to_T_before = Date(freq='T', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0)
+                                  hour=0, minute=0)
         date_A_to_T_after = Date(freq='T', year=2007, month=12, day=31, 
-                                 hours=23, minutes=59)
+                                 hour=23, minute=59)
         date_A_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0, seconds=0)
+                                  hour=0, minute=0, second=0)
         date_A_to_S_after = Date(freq='S', year=2007, month=12, day=31, 
-                                 hours=23, minutes=59, seconds=59)
+                                 hour=23, minute=59, second=59)
         
         assert_equal(date_A.asfreq('Q', "BEFORE"), date_A_to_Q_before)
         assert_equal(date_A.asfreq('Q', "AFTER"), date_A_to_Q_after)
@@ -177,17 +264,17 @@ class test_freq_conversion(NumpyTestCase):
         date_Q_to_D_before = Date(freq='D', year=2007, month=1, day=1)
         date_Q_to_D_after = Date(freq='D', year=2007, month=3, day=31)
         date_Q_to_H_before = Date(freq='H', year=2007, month=1, day=1, 
-                                  hours=0)
+                                  hour=0)
         date_Q_to_H_after = Date(freq='H', year=2007, month=3, day=31, 
-                                 hours=23)
+                                 hour=23)
         date_Q_to_T_before = Date(freq='T', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0)
+                                  hour=0, minute=0)
         date_Q_to_T_after = Date(freq='T', year=2007, month=3, day=31, 
-                                 hours=23, minutes=59)
+                                 hour=23, minute=59)
         date_Q_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0, seconds=0)
+                                  hour=0, minute=0, second=0)
         date_Q_to_S_after = Date(freq='S', year=2007, month=3, day=31, 
-                                 hours=23, minutes=59, seconds=59)
+                                 hour=23, minute=59, second=59)
         
         assert_equal(date_Q.asfreq('A'), date_Q_to_A)
         assert_equal(date_Q_end_of_year.asfreq('A'), date_Q_to_A)
@@ -223,17 +310,17 @@ class test_freq_conversion(NumpyTestCase):
         date_M_to_D_before = Date(freq='D', year=2007, month=1, day=1)
         date_M_to_D_after = Date(freq='D', year=2007, month=1, day=31)
         date_M_to_H_before = Date(freq='H', year=2007, month=1, day=1, 
-                                  hours=0)
+                                  hour=0)
         date_M_to_H_after = Date(freq='H', year=2007, month=1, day=31, 
-                                 hours=23)
+                                 hour=23)
         date_M_to_T_before = Date(freq='T', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0)
+                                  hour=0, minute=0)
         date_M_to_T_after = Date(freq='T', year=2007, month=1, day=31, 
-                                 hours=23, minutes=59)
+                                 hour=23, minute=59)
         date_M_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0, seconds=0)
+                                  hour=0, minute=0, second=0)
         date_M_to_S_after = Date(freq='S', year=2007, month=1, day=31, 
-                                 hours=23, minutes=59, seconds=59)
+                                 hour=23, minute=59, second=59)
         
         assert_equal(date_M.asfreq('A'), date_M_to_A)
         assert_equal(date_M_end_of_year.asfreq('A'), date_M_to_A)
@@ -265,17 +352,17 @@ class test_freq_conversion(NumpyTestCase):
         date_W_to_Q = Date(freq='Q', year=2007, quarter=1)
         date_W_to_M = Date(freq='M', year=2007, month=1)
 
-        if Date(freq='D', year=2007, month=12, day=31).day_of_week() == 6:
+        if Date(freq='D', year=2007, month=12, day=31).day_of_week == 6:
             date_W_to_A_end_of_year = Date(freq='A', year=2007)
         else:
             date_W_to_A_end_of_year = Date(freq='A', year=2008)
 
-        if Date(freq='D', year=2007, month=3, day=31).day_of_week() == 6:
+        if Date(freq='D', year=2007, month=3, day=31).day_of_week == 6:
             date_W_to_Q_end_of_quarter = Date(freq='Q', year=2007, quarter=1)
         else:
             date_W_to_Q_end_of_quarter = Date(freq='Q', year=2007, quarter=2)
 
-        if Date(freq='D', year=2007, month=1, day=31).day_of_week() == 6:
+        if Date(freq='D', year=2007, month=1, day=31).day_of_week == 6:
             date_W_to_M_end_of_month = Date(freq='M', year=2007, month=1)
         else:
             date_W_to_M_end_of_month = Date(freq='M', year=2007, month=2)
@@ -285,17 +372,17 @@ class test_freq_conversion(NumpyTestCase):
         date_W_to_D_before = Date(freq='D', year=2007, month=1, day=1)
         date_W_to_D_after = Date(freq='D', year=2007, month=1, day=7)
         date_W_to_H_before = Date(freq='H', year=2007, month=1, day=1, 
-                                  hours=0)
+                                  hour=0)
         date_W_to_H_after = Date(freq='H', year=2007, month=1, day=7, 
-                                 hours=23)
+                                 hour=23)
         date_W_to_T_before = Date(freq='T', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0)
+                                  hour=0, minute=0)
         date_W_to_T_after = Date(freq='T', year=2007, month=1, day=7, 
-                                 hours=23, minutes=59)
+                                 hour=23, minute=59)
         date_W_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0, seconds=0)
+                                  hour=0, minute=0, second=0)
         date_W_to_S_after = Date(freq='S', year=2007, month=1, day=7, 
-                                 hours=23, minutes=59, seconds=59)
+                                 hour=23, minute=59, second=59)
         
         assert_equal(date_W.asfreq('A'), date_W_to_A)
         assert_equal(date_W_end_of_year.asfreq('A'), date_W_to_A_end_of_year)
@@ -330,17 +417,17 @@ class test_freq_conversion(NumpyTestCase):
         date_B_to_W = Date(freq='W', year=2007, month=1, day=7)
         date_B_to_D = Date(freq='D', year=2007, month=1, day=1)
         date_B_to_H_before = Date(freq='H', year=2007, month=1, day=1, 
-                                  hours=0)
+                                  hour=0)
         date_B_to_H_after = Date(freq='H', year=2007, month=1, day=1, 
-                                 hours=23)
+                                 hour=23)
         date_B_to_T_before = Date(freq='T', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0)
+                                  hour=0, minute=0)
         date_B_to_T_after = Date(freq='T', year=2007, month=1, day=1, 
-                                 hours=23, minutes=59)
+                                 hour=23, minute=59)
         date_B_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0, seconds=0)
+                                  hour=0, minute=0, second=0)
         date_B_to_S_after = Date(freq='S', year=2007, month=1, day=1, 
-                                 hours=23, minutes=59, seconds=59)
+                                 hour=23, minute=59, second=59)
         
         assert_equal(date_B.asfreq('A'), date_B_to_A)
         assert_equal(date_B_end_of_year.asfreq('A'), date_B_to_A)
@@ -383,17 +470,17 @@ class test_freq_conversion(NumpyTestCase):
         date_D_to_W = Date(freq='W', year=2007, month=1, day=7)
 
         date_D_to_H_before = Date(freq='H', year=2007, month=1, day=1, 
-                                  hours=0)
+                                  hour=0)
         date_D_to_H_after = Date(freq='H', year=2007, month=1, day=1, 
-                                 hours=23)
+                                 hour=23)
         date_D_to_T_before = Date(freq='T', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0)
+                                  hour=0, minute=0)
         date_D_to_T_after = Date(freq='T', year=2007, month=1, day=1, 
-                                 hours=23, minutes=59)
+                                 hour=23, minute=59)
         date_D_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0, seconds=0)
+                                  hour=0, minute=0, second=0)
         date_D_to_S_after = Date(freq='S', year=2007, month=1, day=1, 
-                                 hours=23, minutes=59, seconds=59)
+                                 hour=23, minute=59, second=59)
         
         assert_equal(date_D.asfreq('A'), date_D_to_A)
         assert_equal(date_D_end_of_year.asfreq('A'), date_D_to_A)
@@ -420,19 +507,19 @@ class test_freq_conversion(NumpyTestCase):
     def test_conv_hourly(self):
         "frequency conversion tests: from Hourly Frequency"
         
-        date_H = Date(freq='H', year=2007, month=1, day=1, hours=0)
+        date_H = Date(freq='H', year=2007, month=1, day=1, hour=0)
         date_H_end_of_year = Date(freq='H', year=2007, month=12, day=31, 
-                                  hours=23)
+                                  hour=23)
         date_H_end_of_quarter = Date(freq='H', year=2007, month=3, day=31, 
-                                     hours=23)
+                                     hour=23)
         date_H_end_of_month = Date(freq='H', year=2007, month=1, day=31, 
-                                   hours=23)
+                                   hour=23)
         date_H_end_of_week = Date(freq='H', year=2007, month=1, day=7, 
-                                  hours=23)
+                                  hour=23)
         date_H_end_of_day = Date(freq='H', year=2007, month=1, day=1, 
-                                 hours=23)
+                                 hour=23)
         date_H_end_of_bus = Date(freq='H', year=2007, month=1, day=1, 
-                                 hours=23)
+                                 hour=23)
         
         date_H_to_A = Date(freq='A', year=2007)
         date_H_to_Q = Date(freq='Q', year=2007, quarter=1)
@@ -442,13 +529,13 @@ class test_freq_conversion(NumpyTestCase):
         date_H_to_B = Date(freq='B', year=2007, month=1, day=1)
         
         date_H_to_T_before = Date(freq='T', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0)
+                                  hour=0, minute=0)
         date_H_to_T_after = Date(freq='T', year=2007, month=1, day=1, 
-                                 hours=0, minutes=59)
+                                 hour=0, minute=59)
         date_H_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0, seconds=0)
+                                  hour=0, minute=0, second=0)
         date_H_to_S_after = Date(freq='S', year=2007, month=1, day=1, 
-                                 hours=0, minutes=59, seconds=59)
+                                 hour=0, minute=59, second=59)
         
         assert_equal(date_H.asfreq('A'), date_H_to_A)
         assert_equal(date_H_end_of_year.asfreq('A'), date_H_to_A)
@@ -472,21 +559,21 @@ class test_freq_conversion(NumpyTestCase):
         "frequency conversion tests: from Minutely Frequency"
         
         date_T = Date(freq='T', year=2007, month=1, day=1, 
-                      hours=0, minutes=0)
+                      hour=0, minute=0)
         date_T_end_of_year = Date(freq='T', year=2007, month=12, day=31, 
-                                  hours=23, minutes=59)
+                                  hour=23, minute=59)
         date_T_end_of_quarter = Date(freq='T', year=2007, month=3, day=31, 
-                                     hours=23, minutes=59)
+                                     hour=23, minute=59)
         date_T_end_of_month = Date(freq='T', year=2007, month=1, day=31, 
-                                   hours=23, minutes=59)
+                                   hour=23, minute=59)
         date_T_end_of_week = Date(freq='T', year=2007, month=1, day=7, 
-                                  hours=23, minutes=59)
+                                  hour=23, minute=59)
         date_T_end_of_day = Date(freq='T', year=2007, month=1, day=1, 
-                                 hours=23, minutes=59)
+                                 hour=23, minute=59)
         date_T_end_of_bus = Date(freq='T', year=2007, month=1, day=1, 
-                                 hours=23, minutes=59)
+                                 hour=23, minute=59)
         date_T_end_of_hour = Date(freq='T', year=2007, month=1, day=1, 
-                                  hours=0, minutes=59)
+                                  hour=0, minute=59)
         
         date_T_to_A = Date(freq='A', year=2007)
         date_T_to_Q = Date(freq='Q', year=2007, quarter=1)
@@ -494,12 +581,12 @@ class test_freq_conversion(NumpyTestCase):
         date_T_to_W = Date(freq='W', year=2007, month=1, day=7)
         date_T_to_D = Date(freq='D', year=2007, month=1, day=1)
         date_T_to_B = Date(freq='B', year=2007, month=1, day=1)
-        date_T_to_H = Date(freq='H', year=2007, month=1, day=1, hours=0)
+        date_T_to_H = Date(freq='H', year=2007, month=1, day=1, hour=0)
         
         date_T_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hours=0, minutes=0, seconds=0)
+                                  hour=0, minute=0, second=0)
         date_T_to_S_after = Date(freq='S', year=2007, month=1, day=1, 
-                                 hours=0, minutes=0, seconds=59)
+                                 hour=0, minute=0, second=59)
         
         assert_equal(date_T.asfreq('A'), date_T_to_A)
         assert_equal(date_T_end_of_year.asfreq('A'), date_T_to_A)
@@ -524,23 +611,23 @@ class test_freq_conversion(NumpyTestCase):
         "frequency conversion tests: from Secondly Frequency"
         
         date_S = Date(freq='S', year=2007, month=1, day=1, 
-                      hours=0, minutes=0, seconds=0)
+                      hour=0, minute=0, second=0)
         date_S_end_of_year = Date(freq='S', year=2007, month=12, day=31, 
-                                  hours=23, minutes=59, seconds=59)
+                                  hour=23, minute=59, second=59)
         date_S_end_of_quarter = Date(freq='S', year=2007, month=3, day=31, 
-                                     hours=23, minutes=59, seconds=59)
+                                     hour=23, minute=59, second=59)
         date_S_end_of_month = Date(freq='S', year=2007, month=1, day=31, 
-                                   hours=23, minutes=59, seconds=59)
+                                   hour=23, minute=59, second=59)
         date_S_end_of_week = Date(freq='S', year=2007, month=1, day=7, 
-                                  hours=23, minutes=59, seconds=59)
+                                  hour=23, minute=59, second=59)
         date_S_end_of_day = Date(freq='S', year=2007, month=1, day=1, 
-                                 hours=23, minutes=59, seconds=59)
+                                 hour=23, minute=59, second=59)
         date_S_end_of_bus = Date(freq='S', year=2007, month=1, day=1, 
-                                 hours=23, minutes=59, seconds=59)
+                                 hour=23, minute=59, second=59)
         date_S_end_of_hour = Date(freq='S', year=2007, month=1, day=1, 
-                                  hours=0, minutes=59, seconds=59)
+                                  hour=0, minute=59, second=59)
         date_S_end_of_minute = Date(freq='S', year=2007, month=1, day=1, 
-                                    hours=0, minutes=0, seconds=59)
+                                    hour=0, minute=0, second=59)
         
         date_S_to_A = Date(freq='A', year=2007)
         date_S_to_Q = Date(freq='Q', year=2007, quarter=1)
@@ -549,9 +636,9 @@ class test_freq_conversion(NumpyTestCase):
         date_S_to_D = Date(freq='D', year=2007, month=1, day=1)
         date_S_to_B = Date(freq='B', year=2007, month=1, day=1)
         date_S_to_H = Date(freq='H', year=2007, month=1, day=1, 
-                           hours=0)
+                           hour=0)
         date_S_to_T = Date(freq='T', year=2007, month=1, day=1, 
-                           hours=0, minutes=0)
+                           hour=0, minute=0)
         
         assert_equal(date_S.asfreq('A'), date_S_to_A)
         assert_equal(date_S_end_of_year.asfreq('A'), date_S_to_A)
