@@ -1,9 +1,11 @@
 """
-:author: Pierre Gerard-Marchant
-:contact: pierregm_at_uga_dot_edu
+Classes definition for the support of individual dates and array of dates.
+
+:author: Pierre GF Gerard-Marchant & Matt Knox
+:contact: pierregm_at_uga_dot_edu - mattknow_ca_at_hotmail_dot_com
 :version: $Id$
 """
-__author__ = "Pierre GF Gerard-Marchant ($Author$)"
+__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author$)"
 __version__ = '1.0'
 __revision__ = "$Revision$"
 __date__     = '$Date$'
@@ -34,6 +36,16 @@ logging.basicConfig(level=logging.DEBUG,
                     format='%(name)-15s %(levelname)s %(message)s',)
 daflog = logging.getLogger('darray_from')
 dalog = logging.getLogger('DateArray')
+
+
+__all__ = [
+'Date', 'DateArray','isDate','isDateArray',
+'DateError', 'ArithmeticDateError', 'FrequencyDateError','InsufficientDateError',
+'datearray','date_array', 'date_array_fromlist_', 'date_array_fromrange',
+'day_of_week','dat_of_year','day','month','quarter','year','hour','minute','second',
+'truncateDate','monthToQuarter','thisday','today','prevbusday','asfreq'
+           ]
+
 
 #####---------------------------------------------------------------------------
 #---- --- Date Info ---
@@ -282,7 +294,8 @@ class Date:
         elif self.freq == 'B':
             days = self.mxDate.absdate
             weeks = days // 7
-            val = days - weeks*2  # (weeks*5) + (days - weeks*7)
+            val = days - weeks*2  
+            # (weeks*5) + (days - weeks*7)
         # Daily/undefined
         elif self.freq in ['D', 'U']:
             val = self.mxDate.absdate
@@ -736,23 +749,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
                 tostr = firststr
             self.__tostr = tostr
         return self.__tostr
-    #
-#    def asfreq_ini(self, freq=None):
-#        "Converts the dates to another frequency."
-#        # Note: As we define a new object, we don't need caching
-#        if freq is None:
-#            return self
-#        freq = corelib.fmtFreq(freq)
-#        if freq == self.freq:
-#            return self        
-#        if self.isvalid():
-#            new = numeric.arange(self.size, dtype=int_)
-#            new += self[0].asfreq(freq).value
-#        else:
-#            new = numpy.fromiter((d.asfreq(freq).value for d in self),
-#                                 dtype=float_)
-#        return DateArray(new, freq=freq)
-    
+    #   
     def asfreq(self, freq=None, relation="BEFORE"):
         "Converts the dates to another frequency."
         # Note: As we define a new object, we don't need caching

@@ -18,6 +18,7 @@ import numpy
 from numpy import bool_, complex_, float_, int_, str_, object_
 import numpy.core.fromnumeric as fromnumeric
 import numpy.core.numeric as numeric
+from numpy.core.numeric import ndarray
 import numpy.core.numerictypes as ntypes
 import numpy.core.umath as umath
 from numpy.core.defchararray import chararray
@@ -35,7 +36,7 @@ from maskedarray.core import masked, nomask, getmask, getmaskarray, make_mask,\
     make_mask_none, mask_or, masked_array, filled
 
 import maskedarray.mrecords as MR
-reload(MR)
+#reload(MR)
 from maskedarray.mrecords import _checknames, _guessvartypes, openfile,\
     MaskedRecords
 from maskedarray.mrecords import fromrecords as mrecfromrecords
@@ -43,7 +44,7 @@ from maskedarray.mrecords import fromrecords as mrecfromrecords
 from tseries import TimeSeries, time_series, _getdatalength
 from tdates import Date, DateArray, date_array
 
-ndarray = numeric.ndarray
+#ndarray = numeric.ndarray
 _byteorderconv = numpy.core.records._byteorderconv
 _typestr = ntypes._typestr
 
@@ -54,6 +55,9 @@ import logging
 logging.basicConfig(level=logging.DEBUG,
                     format='%(name)-15s %(levelname)s %(message)s',)
 
+__all__ = [
+'MultiTimeSeries','fromarrays','fromrecords','fromtextfile',           
+]
 
 def _getformats(data):
     """Returns the formats of each array of arraylist as a comma-separated 
@@ -130,6 +134,27 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
 #        assert(_datadatescompat(data,newdates))
         #
         return _data.view(cls)
+    
+        #..................................
+    def __array_wrap__(self, obj, context=None):
+        """Special hook for ufuncs.
+Wraps the numpy array and sets the mask according to context.
+        """
+#        mclass = self.__class__
+        #..........
+        logging.debug("__wrap__ received %s" % type(obj))
+        if context is None:
+#            return mclass(obj, mask=self._mask, copy=False)
+            return MaskedArray(obj, mask=self._mask, copy=False,
+                               dtype=obj.dtype,
+                               fill_value=self.fill_value, )
+        #..........
+        (func, args) = context[:2]
+ 
+#        return mclass(obj, copy=False, mask=m)
+        return MultiTimeSeries(obj, copy=False, mask=m,)
+#                           dtype=obj.dtype, fill_value=self._fill_value)
+    
         
     def __array_finalize__(self,obj):
         logging.debug("__array_finalize__ received %s" % type(obj))      
@@ -600,6 +625,7 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
 #        descr = [('A',N.float_),('B',N.float_)]
 #
 #if 1:
+#    import numpy as N
 #    if 1:        
 ##    def setup(self):       
 ##        "Generic setup" 
@@ -613,6 +639,8 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
 #        dates = date_array(dlist)
 #        ts = time_series(mrec,dates)
 #        mts = MultiTimeSeries(mrec,dates)
+#        
+#        logmts = N.log(mts)
 #        self_data = [d, m, mrec, dlist, dates, ts, mts]
 #        #
 #        mts.addfield(masked_array(d+10, mask=m[::-1]))

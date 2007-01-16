@@ -1,7 +1,22 @@
+"""
+A collection of tools for timeseries
+
+:author: Pierre GF Gerard-Marchant & Matt Knox
+:contact: pierregm_at_uga_dot_edu - mattknow_ca_at_hotmail_dot_com
+:version: $Id$
+"""
+__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author$)"
+__version__ = '1.0'
+__revision__ = "$Revision$"
+__date__     = '$Date$'
+
 import numpy
-import maskedarray as MA
+import numpy.core.numeric as numeric
+
 from scipy.interpolate import fitpack
 
+import maskedarray as MA
+from maskedarray import masked, nomask, getmask
 
 #####---------------------------------------------------------------------------
 #---- --- Generic functions ---
@@ -125,9 +140,11 @@ freq_type_mapping = {'A': numpy.dateA,
                      }
         
 def freqToType(freq):
+    "Returns the Date dtype corresponding to the given frequency."
     return freq_type_mapping[fmtFreq(freq)]
 
 def isDateType(dtype):
+    "Returns True whether the argument is the dtype of a Date."
     #TODO: That looks messy. We should simplify that
     if len([x for x in freq_type_mapping.values() if x == dtype]) > 0: 
         return True
@@ -163,39 +180,36 @@ def flatargs(*args):
 def forward_fill(marr, maxgap=None):
     """forward_fill(marr, maxgap=None)
 
-forward fill masked values in a 1-d array when there are <= maxgap
+Forward fill masked values in a 1-d array when there are <= maxgap
 consecutive masked values. If maxgap is None, then forward fill all
 masked values."""
 
-    assert(marr.ndim == 1)
+    if numeric.ndim(marr) > 1:
+        raise ValueError,"The input array should be 1D only!"
 
-    result = marr.copy()
-
-    if marr.mask is MA.nomask or marr.size == 0: return result
+    marr = MA.array(marr, copy=True)
+    if getmask(marr) is nomask or marr.size == 0:
+        return marr
 
     currGap = 0
 
     if maxgap is not None:
-
-        for i in range(1, result.size):
-            if result.mask[i]:
+        for i in range(1, marr.size):
+            if marr._mask[i]:
                 currGap += 1
-                if currGap <= maxgap and not result.mask[i-1]:
-                    result.data[i] = result.data[i-1]
-                    result.mask[i] = False
+                if currGap <= maxgap and not marr._mask[i-1]:
+                    marr._data[i] = marr._data[i-1]
+                    marr._mask[i] = False
                 elif currGap == maxgap + 1:
-                    result.mask[i-maxgap:i] = True
+                    marr._mask[i-maxgap:i] = True
             else:
-                currGap = 0
-                
+                currGap = 0               
     else:
-        
-        for i in range(1, result.size):
-            if result.mask[i] and not  result.mask[i-1]:
-                result.data[i] = result.data[i-1]
-                result.mask[i] = False
-    
-    return result
+        for i in range(1, marr.size):
+            if marr._mask[i] and not marr._mask[i-1]:
+                marr._data[i] = marr._data[i-1]
+                marr._mask[i] = False
+    return marr
 
 
 def backward_fill(marr, maxgap=None):
@@ -204,7 +218,6 @@ def backward_fill(marr, maxgap=None):
 backward fill masked values in a 1-d array when there are <= maxgap
 consecutive masked values. If maxgap is None, then backward fill all
 masked values."""
-
     return forward_fill(marr[::-1], maxgap=maxgap)[::-1]
     
 
@@ -214,18 +227,20 @@ def interp_masked1d(marr, kind='linear'):
 Interpolate masked values in marr according to method kind.
 kind must be one of 'constant', 'linear', 'cubic', quintic'
 """
-
+    if numeric.ndim(marr) > 1: 
+        raise ValueError("array must be 1 dimensional!")
+    #
+    marr = MA.array(marr, copy=True)
+    if getmask(marr) is nomask: 
+        return marr
+    #
+    unmaskedIndices = (~marr._mask).nonzero()[0]
+    if unmaskedIndices.size < 2: 
+        return marr
+    #    
     kind = kind.lower()
-    
-    if kind == 'constant': return forward_fill(marr)
-    
-    if marr.ndim != 1: raise ValueError("array must be 1 dimensional!")
-    
-    if not hasattr(marr, 'mask') or marr.mask is MA.nomask: return marr.copy()
-    
-    unmaskedIndices = numpy.where((marr.mask == False))[0]
-    if unmaskedIndices.size < 2: return marr.copy()
-
+    if kind == 'constant': 
+        return forward_fill(marr)
     try:
         k = {'linear' : 1,
              'cubic' : 3,
@@ -239,9 +254,8 @@ kind must be one of 'constant', 'linear', 'cubic', quintic'
     
     tck = fitpack.splrep(unmaskedIndices, vals, k=k)
     
-    maskedIndices = numpy.where(marr.mask)[0]
-    interpIndices = maskedIndices[(maskedIndices > first_unmasked) & (maskedIndices < last_unmasked)]
-    
-    result = marr.copy()
-    result[interpIndices] = fitpack.splev(interpIndices, tck).astype(marr.dtype)
-    return result
+    maskedIndices = marr._mask.nonzero()[0]
+    interpIndices = maskedIndices[(maskedIndices > first_unmasked) & \
+                                  (maskedIndices < last_unmasked)]
+    marr[interpIndices] = fitpack.splev(interpIndices, tck).astype(marr.dtype)
+    return marr

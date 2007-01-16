@@ -17,19 +17,14 @@ These two classes were liberally adapted from `MaskedArray` class.
 
 
 
-:author: Pierre Gerard-Marchant
-:contact: pierregm_at_uga_dot_edu
+:author: Pierre GF Gerard-Marchant & Matt Knox
+:contact: pierregm_at_uga_dot_edu - mattknox_ca_at_hotmail_dot_com
 :version: $Id$
 """
-__author__ = "Pierre GF Gerard-Marchant ($Author$)"
+__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author$)"
 __version__ = '1.0'
 __revision__ = "$Revision$"
 __date__     = '$Date$'
-
-
-import logging
-import weakref
-
 
 import numpy
 from numpy import ndarray
@@ -42,7 +37,6 @@ from numpy.core.records import fromarrays as recfromarrays
 
 import maskedarray as MA
 #reload(MA)
-#MaskedArray = MA.MaskedArray
 from maskedarray.core import MaskedArray, MAError, masked, nomask, \
     filled, getmask, getmaskarray, make_mask_none, mask_or, make_mask, \
     masked_array
@@ -60,7 +54,17 @@ from tdates import Date, isDate, DateArray, isDateArray, \
 import cseries
 #reload(cseries)
 
+__all__ = [
+'TimeSeriesError','TimeSeriesCompatibilityError','TimeSeries','isTimeSeries',
+'time_series',
+'day_of_week','dat_of_year','day','month','quarter','year','hour','minute','second',  
+'tofile','asrecords','flatten','adjust_endpoints','align_series','aligned',
+'mask_period','mask_inside_period','mask_outside_period',
+'convert','fill_missing_dates'
+           ]
+
 #...............................................................................
+import logging
 logging.basicConfig(level=logging.DEBUG,
                     format='%(name)-15s %(levelname)s %(message)s',)
 talog = logging.getLogger('log.TimeArray')
@@ -1143,7 +1147,8 @@ The data corresponding to the initially missing dates are masked, or filled to
     delta = dflat.get_steps()-1
     gap = delta.nonzero()
     slcid = numpy.r_[[0,], numpy.arange(1,n)[gap], [n,]]
-    oldslc = numpy.array([slice(i,e) for (i,e) in numpy.broadcast(slcid[:-1],slcid[1:])])
+    oldslc = numpy.array([slice(i,e) 
+                          for (i,e) in numpy.broadcast(slcid[:-1],slcid[1:])])
     addidx = delta[gap].astype(int_).cumsum()
     newslc = numpy.r_[[oldslc[0]], 
                       [slice(i+d,e+d) for (i,e,d) in \
@@ -1184,7 +1189,7 @@ The data corresponding to the initially missing dates are masked, or filled to
     return time_series(newdata.reshape(nshp), newdates)
 
 
-
+################################################################################
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     from maskedarray.testutils import assert_equal
