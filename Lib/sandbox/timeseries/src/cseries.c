@@ -156,6 +156,9 @@ static long asfreq_DtoB_forConvert(long fromDate, char relation) {
     return result;
 }
 
+// needed for getDateInfo function
+static long asfreq_DtoD(long fromDate, char relation) { return fromDate; }
+
 static long asfreq_DtoHIGHFREQ(long fromDate, char relation, long periodsPerDay) {
     if (fromDate >= minval_D_toHighFreq) {
         if (relation == 'B') { return (fromDate - minval_D_toHighFreq)*(periodsPerDay) + 1; }
@@ -480,6 +483,7 @@ static long (*get_asfreq_func(char fromFreq, char toFreq, int forConvert))(long,
                 case 'B':
                     if (forConvert) { return &asfreq_DtoB_forConvert; }
                     else            { return &asfreq_DtoB; }
+                case 'D': return &asfreq_DtoD;
                 case 'H': return &asfreq_DtoH;
                 case 'T': return &asfreq_DtoT;
                 case 'S': return &asfreq_DtoS;
@@ -833,7 +837,50 @@ static long dInfo_year(mxDateTimeObject *dateObj)    { return dateObj->year; }
 static long dInfo_quarter(mxDateTimeObject *dateObj) { return ((dateObj->month-1)/3)+1; }
 static long dInfo_month(mxDateTimeObject *dateObj)   { return dateObj->month; }
 static long dInfo_day(mxDateTimeObject *dateObj)     { return dateObj->day; }
-static long dInfo_dow(mxDateTimeObject *dateObj)     { return dateObj->day_of_week; }
+static long dInfo_day_of_year(mxDateTimeObject *dateObj)     { return dateObj->day_of_year; }
+static long dInfo_day_of_week(mxDateTimeObject *dateObj)     { return dateObj->day_of_week; }
+static long dInfo_week(mxDateTimeObject *dateObj)     {
+
+    long year, week, day;
+    PyObject *ISOWeekTuple = NULL;
+    ISOWeekTuple = PyObject_GetAttrString(dateObj, "iso_week");
+
+    if (!PyArg_ParseTuple(ISOWeekTuple,"iii;need a ISO Week 3-tuple (year,week,day)",
+              &year,&week,&day)) return NULL;
+
+    Py_DECREF(ISOWeekTuple);
+
+    return week;
+}
+static long dInfo_hour(mxDateTimeObject *dateObj)     { return dateObj->hour; }
+static long dInfo_minute(mxDateTimeObject *dateObj)     { return dateObj->minute; }
+static long dInfo_second(mxDateTimeObject *dateObj)     { return dateObj->second; }
+
+static double getAbsTime(char freq, long dailyDate, long originalDate) {
+
+    double periodsPerDay, result;
+    long startOfDay;
+
+    switch(freq)
+    {
+        case 'H':
+            periodsPerDay = 24;
+            break;
+        case 'T':
+            periodsPerDay = 24*60;
+            break;
+        case 'S':
+            periodsPerDay = 24*60*60;
+            break;
+        default:
+            return 0;
+    }
+
+    startOfDay = asfreq_DtoHIGHFREQ(dailyDate, 'B', periodsPerDay);
+    return (24*60*60)*((double)(originalDate - startOfDay))/periodsPerDay;
+}
+
+
 
 static char cseries_getDateInfo_doc[] = "";
 static PyObject *
@@ -849,6 +896,7 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
 
     PyObject *val;
     long dateNum, dInfo;
+    double absdate, abstime;
 
     long (*toDaily)(long, char) = NULL;
     long (*getDateInfo)(mxDateTimeObject*) = NULL;
@@ -875,8 +923,23 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
         case 'D': //day
             getDateInfo = &dInfo_day;
             break;
+        case 'R': //day of year
+            getDateInfo = &dInfo_day_of_year;
+            break;
         case 'W': //day of week
-            getDateInfo = &dInfo_dow;
+            getDateInfo = &dInfo_day_of_week;
+            break;
+        case 'I': //week of year
+            getDateInfo = &dInfo_week;
+            break;
+        case 'H': //hour
+            getDateInfo = &dInfo_hour;
+            break;
+        case 'T': //minute
+            getDateInfo = &dInfo_minute;
+            break;
+        case 'S': //second
+            getDateInfo = &dInfo_second;
             break;
         default:
             return NULL;
@@ -886,8 +949,10 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
 
         val = PyArray_GETITEM(array, iterSource->dataptr);
         dateNum = PyInt_AsLong(val);
+        absdate = (double)toDaily(dateNum, 'B');
+        abstime = getAbsTime(*freq, absdate, dateNum);
 
-        convDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(toDaily(dateNum, 'A'), 0);
+        convDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(absdate, abstime);
         dInfo = getDateInfo(convDate);
         Py_DECREF(convDate);
 
