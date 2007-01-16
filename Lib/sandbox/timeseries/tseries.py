@@ -57,7 +57,7 @@ import cseries
 __all__ = [
 'TimeSeriesError','TimeSeriesCompatibilityError','TimeSeries','isTimeSeries',
 'time_series',
-'day_of_week','dat_of_year','day','month','quarter','year','hour','minute','second',  
+'day_of_week','day_of_year','day','month','quarter','year','hour','minute','second',  
 'tofile','asrecords','flatten','adjust_endpoints','align_series','aligned',
 'mask_period','mask_inside_period','mask_outside_period',
 'convert','fill_missing_dates'
