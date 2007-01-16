@@ -261,6 +261,40 @@ class test_2dfunctions(NumpyTestCase):
         assert_equal(c.mask,[[1,0],[1,1]])
         c = dot(b,a)
         assert_equal(c.mask,[[0,0,1],[1,1,1],[0,0,1]])
+        
+    def test_mediff1d(self):    
+        "Tests mediff1d"    
+        x = masked_array(N.arange(5), mask=[1,0,0,0,1])
+        difx_d = (x._data[1:]-x._data[:-1])
+        difx_m = (x._mask[1:]-x._mask[:-1])
+        dx = mediff1d(x)
+        assert_equal(dx._data, difx_d)
+        assert_equal(dx._mask, difx_m)
+        #
+        dx = mediff1d(x, to_begin=masked)
+        assert_equal(dx._data, N.r_[0,difx_d])
+        assert_equal(dx._mask, N.r_[1,difx_m])
+        dx = mediff1d(x, to_begin=[1,2,3])
+        assert_equal(dx._data, N.r_[[1,2,3],difx_d])
+        assert_equal(dx._mask, N.r_[[0,0,0],difx_m])
+        #
+        dx = mediff1d(x, to_end=masked)
+        assert_equal(dx._data, N.r_[difx_d,0])
+        assert_equal(dx._mask, N.r_[difx_m,1])
+        dx = mediff1d(x, to_end=[1,2,3])
+        assert_equal(dx._data, N.r_[difx_d,[1,2,3]])
+        assert_equal(dx._mask, N.r_[difx_m,[0,0,0]])
+        #
+        dx = mediff1d(x, to_end=masked, to_begin=masked)
+        assert_equal(dx._data, N.r_[0,difx_d,0])
+        assert_equal(dx._mask, N.r_[1,difx_m,1])
+        dx = mediff1d(x, to_end=[1,2,3], to_begin=masked)
+        assert_equal(dx._data, N.r_[0,difx_d,[1,2,3]])
+        assert_equal(dx._mask, N.r_[1,difx_m,[0,0,0]])
+        #
+        dx = mediff1d(x._data, to_end=masked, to_begin=masked)
+        assert_equal(dx._data, N.r_[0,difx_d,0])
+        assert_equal(dx._mask, N.r_[1,0,0,0,0,1])
 
 ###############################################################################
 #------------------------------------------------------------------------------

@@ -11,15 +11,15 @@ __version__ = '1.0'
 __revision__ = "$Revision$"
 __date__     = '$Date$'
 
-__all__ = ['apply_along_axis', 'atleast_1d', 'atleast_2d', 'atleast_3d',
-               'average',
-           'vstack', 'hstack', 'dstack', 'row_stack', 'column_stack',
-           'compress_rowcols', 'compress_rows', 'compress_cols', 'count_masked', 
-           'dot',
-           'mask_rowcols', 'mask_rows', 'mask_cols', 'masked_all', 
-               'masked_all_like', 'mr_',
-           'notmasked_edges', 'notmasked_contiguous',
-           'stdu', 'varu',
+__all__ = [
+'apply_along_axis', 'atleast_1d', 'atleast_2d', 'atleast_3d', 'average',
+'vstack', 'hstack', 'dstack', 'row_stack', 'column_stack',
+'compress_rowcols', 'compress_rows', 'compress_cols', 'count_masked', 
+'dot', 
+'mask_rowcols','mask_rows','mask_cols','masked_all','masked_all_like', 
+'mediff1d', 'mr_',
+'notmasked_edges','notmasked_contiguous',
+'stdu', 'varu',
            ]
 
 from itertools import groupby
@@ -66,7 +66,7 @@ def masked_all_like(arr):
     """Returns an empty masked array of the same shape and dtype as the array `a`,
     where all the data are masked."""
     a = masked_array(numeric.empty_like(arr),
-                     mask=numeric.ones(shape, bool_))
+                     mask=numeric.ones(arr.shape, bool_))
     return a
 
 #####--------------------------------------------------------------------------
@@ -446,6 +446,53 @@ def dot(a,b):
     m = ~numpy.dot(am,bm)
     return masked_array(d, mask=m)
 
+#...............................................................................
+def mediff1d(array, to_end=None, to_begin=None):
+    """Array difference with prefixed and/or appended value."""
+    a = MA.masked_array(array, copy=True)
+    if a.ndim > 1:
+        a.reshape((a.size,))
+    (d, m, n) = (a._data, a._mask, a.size-1)
+    dd = d[1:]-d[:-1]
+    if m is nomask:
+        dm = nomask
+    else:
+        dm = m[1:]-m[:-1]
+    #
+    if to_end is not None:
+        to_end = MA.asarray(to_end)
+        nend = to_end.size
+        if to_begin is not None:
+            to_begin = MA.asarray(to_begin)
+            nbegin = to_begin.size
+            r_data = N.empty((n+nend+nbegin,), dtype=a.dtype)
+            r_mask = N.zeros((n+nend+nbegin,), dtype=bool_)
+            r_data[:nbegin] = to_begin._data
+            r_mask[:nbegin] = to_begin._mask
+            r_data[nbegin:-nend] = dd
+            r_mask[nbegin:-nend] = dm
+        else:
+            r_data = N.empty((n+nend,), dtype=a.dtype)
+            r_mask = N.zeros((n+nend,), dtype=bool_)
+            r_data[:-nend] = dd
+            r_mask[:-nend] = dm
+        r_data[-nend:] = to_end._data
+        r_mask[-nend:] = to_end._mask
+    #
+    elif to_begin is not None:
+        to_begin = MA.asarray(to_begin)
+        nbegin = to_begin.size
+        r_data = N.empty((n+nbegin,), dtype=a.dtype)
+        r_mask = N.zeros((n+nbegin,), dtype=bool_)
+        r_data[:nbegin] = to_begin._data
+        r_mask[:nbegin] = to_begin._mask
+        r_data[nbegin:] = dd
+        r_mask[nbegin:] = dm
+    #
+    else:
+        r_data = dd
+        r_mask = dm
+    return masked_array(r_data, mask=r_mask)
 
 #####--------------------------------------------------------------------------
 #---- --- Concatenation helpers ---

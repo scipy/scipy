@@ -1,4 +1,5 @@
-#2007-01-15 : mrecords: Add the addfield method
+#2007-01-16 : extras  : new function : `mediff1d`
+#2007-01-15 : mrecords: new method: `addfield`
 #           : core    : Force the mask of a masked array `x` to be copied w/...
 #                     ...masked_array(x,copy=True,mask=nomask,keep_mask=true)
 #2007-01-14 : mrecords: Slices are now properly supported
