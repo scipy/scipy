@@ -24,10 +24,10 @@ from maskedarray import masked_array, masked, nomask
 import maskedarray.testutils
 from maskedarray.testutils import assert_equal, assert_array_equal
 
-import tseries
+from timeseries import tseries
 #reload(tseries)
-from tseries import Date, date_array_fromlist
-from tseries import time_series, TimeSeries, adjust_endpoints, mask_period
+from timeseries.tseries import Date, date_array_fromlist
+from timeseries.tseries import time_series, TimeSeries, adjust_endpoints, mask_period
 
 class test_creation(NumpyTestCase):
     "Base test class for MaskedArrays."
@@ -69,6 +69,12 @@ class test_creation(NumpyTestCase):
         assert_equal(series._series, data)
         assert_equal(series._dates, dates)
         assert_equal(series.freq, 'D')
+        
+    def test_datafromlist(self):
+        (_, dates, _) = self.d
+        data = list(range(15))
+        series = time_series(data, dates)
+        assert_equal(series._data.size, 15)
 #...............................................................................
 
 class test_arithmetics(NumpyTestCase):
