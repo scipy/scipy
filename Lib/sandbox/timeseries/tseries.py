@@ -487,9 +487,9 @@ timeseries(data  = %(data)s,
             return self
         return TimeSeries(self._series, dates=self._dates.asfreq(freq))
     
-    def convert(self, freq, func='auto', position='END', interp=None):
+    def convert(self, freq, func='auto', position='END'):
         "Converts the dates to another frequency, and adapt the data."
-        return convert(self, freq, func=func, position=position, interp=interp)
+        return convert(self, freq, func=func, position=position)
         
 ##### --------------------------------------------------------------------------
 ##--- ... Additional methods ...
@@ -1031,7 +1031,7 @@ def align_series(*series, **kwargs):
     return [adjust_endpoints(x, start_date, end_date) for x in series]
 aligned = align_series
 #....................................................................
-def convert(series, freq, func='auto', position='END', interp=None):
+def convert(series, freq, func='auto', position='END'):
     """Converts a series to a frequency
        
     When converting to a lower frequency, func is a function that acts
@@ -1045,11 +1045,7 @@ def convert(series, freq, func='auto', position='END', interp=None):
     When converting to a higher frequency, position is 'START' or 'END'
     and determines where the data point is in each period (eg. if going
     from monthly to daily, and position is 'END', then each data point is
-    placed at the end of the month). Interp is the method that will be used
-    to fill in the gaps. Valid values are "CUBIC", "LINEAR", "CONSTANT", "DIVIDED",
-    and None.
-        
-    Note: interp currently not implemented
+    placed at the end of the month).
     """
     if not isinstance(series,TimeSeries):
         raise TypeError, "The argument should be a valid TimeSeries!"
