@@ -33,6 +33,7 @@
 
 import os,sys,string
 import pickle
+import socket
 import tempfile
 
 try:
@@ -127,13 +128,30 @@ def create_dir(p):
             os.mkdir(p)
 
 def is_writable(dir):
-    dummy = os.path.join(dir, "dummy")
+    """Determine whether a given directory is writable in a portable manner.
+
+    :Parameters:
+     - dir: string
+       A string represeting a path to a directory on the filesystem.
+
+    :Returns:
+      True or False.
+    """
+
+    # Do NOT use a hardcoded name here due to the danger from race conditions
+    # on NFS when multiple processes are accessing the same base directory in
+    # parallel.  We use both hostname and pocess id for the prefix in an
+    # attempt to ensure that there can really be no name collisions (tempfile
+    # appends 6 random chars to this prefix).
+    prefix = 'dummy_%s_%s_' % (socket.gethostname(),os.getpid())
     try:
-        open(dummy, 'w')
-    except IOError:
-        return 0
-    os.unlink(dummy)
-    return 1
+        tmp = tempfile.TemporaryFile(prefix=prefix,dir=dir)
+    except OSError:
+        return False
+    # The underlying file is destroyed upon closing the file object (under
+    # *nix, it was unlinked at creation time)
+    tmp.close()
+    return True
 
 def whoami():
     """return a string identifying the user."""
