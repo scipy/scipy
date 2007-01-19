@@ -2,11 +2,11 @@
 """
 
 import numpy
-from numpy.core.umath import *
-from numpy import atleast_1d, poly, polyval, roots, imag, real, asarray,\
-     allclose, resize, pi, concatenate, absolute, logspace
-from numpy import mintypecode, select
-from scipy import special, optimize, linalg
+from numpy import atleast_1d, poly, polyval, roots, real, asarray, allclose, \
+    resize, pi, absolute, logspace, r_, sqrt, tan, log10, arctan, arcsinh, \
+    cos, exp, cosh, arccosh, ceil, conjugate, zeros, sinh
+from numpy import mintypecode
+from scipy import special, optimize
 from scipy.misc import comb
 import string, types
 
