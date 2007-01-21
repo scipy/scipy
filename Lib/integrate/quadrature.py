@@ -3,11 +3,13 @@
 # Author: Travis Oliphant
 
 __all__ = ['fixed_quad','quadrature','romberg','trapz','simps','romb',
-           'cumtrapz']
+           'cumtrapz','newton_cotes','composite']
 
 from scipy.special.orthogonal import p_roots
 from numpy import sum, ones, add, diff, isinf, isscalar, \
      asarray, real, trapz, arange, empty
+import scipy as sp
+import numpy as np
 
 def fixed_quad(func,a,b,args=(),n=5):
     """Compute a definite integral using fixed-order Gaussian quadrature.
@@ -457,3 +459,143 @@ def romberg(function, a, b, args=(), tol=1.48E-8, show=False,
     if show:
         _printresmat(vfunc, interval, resmat)
     return result
+
+
+# Coefficients for Netwon-Cotes quadrature
+#
+# These are the points being used
+#  to construct the local interpolating polynomial
+#  a are the weights for Newton-Cotes integration
+#  B is the error coefficient.
+#  error in these coefficients grows as N gets larger.
+#  or as samples are closer and closer together
+
+# You can use maxima to find these rational coefficients
+#  for equally spaced data using the commands
+#  a(i,N) := integrate(product(r-j,j,0,i-1) * product(r-j,j,i+1,N),r,0,N) / ((N-i)! * i!) * (-1)^(N-i);
+#  Be(N) := N^(N+2)/(N+2)! * (N/(N+3) - sum((i/N)^(N+2)*a(i,N),i,0,N));
+#  Bo(N) := N^(N+1)/(N+1)! * (N/(N+2) - sum((i/N)^(N+1)*a(i,N),i,0,N));
+#  B(N) := (if (mod(N,2)=0) then Be(N) else Bo(N));
+#
+# pre-computed for equally-spaced weights
+#
+# num_a, den_a, int_a, num_B, den_B = _builtincoeffs[N]
+#
+#  a = num_a*array(int_a)/den_a
+#  B = num_B*1.0 / den_B
+#
+#  integrate(f(x),x,x_0,x_N) = dx*sum(a*f(x_i)) + B*(dx)^(2k+3) f^(2k+2)(x*)
+#    where k = N // 2
+#
+_builtincoeffs = {
+    1:(1,2,[1,1],-1,12),
+    2:(1,3,[1,4,1],-1,90),
+    3:(3,8,[1,3,3,1],-3,80),
+    4:(2,45,[7,32,12,32,7],-8,945),
+    5:(5,288,[19,75,50,50,75,19],-275,12096),
+    6:(1,140,[41,216,27,272,27,216,41],-9,1400),
+    7:(7,17280,[751,3577,1323,2989,2989,1323,3577,751],-8183,518400),
+    8:(4,14175,[989,5888,-928,10496,-4540,10496,-928,5888,989],
+       -2368,467775),
+    9:(9,89600,[2857,15741,1080,19344,5778,5778,19344,1080,
+                15741,2857], -4671, 394240),
+    10:(5,299376,[16067,106300,-48525,272400,-260550,427368,
+                  -260550,272400,-48525,106300,16067],
+        -673175, 163459296),
+    11:(11,87091200,[2171465,13486539,-3237113, 25226685,-9595542,
+                     15493566,15493566,-9595542,25226685,-3237113,
+                     13486539,2171465], -2224234463, 237758976000),
+    12:(1, 5255250, [1364651,9903168,-7587864,35725120,-51491295,
+                     87516288,-87797136,87516288,-51491295,35725120,
+                     -7587864,9903168,1364651], -3012, 875875),
+    13:(13, 402361344000,[8181904909, 56280729661, -31268252574,
+                          156074417954,-151659573325,206683437987,
+                          -43111992612,-43111992612,206683437987,
+                          -151659573325,156074417954,-31268252574,
+                          56280729661,8181904909], -2639651053,
+        344881152000),
+    14:(7, 2501928000, [90241897,710986864,-770720657,3501442784,
+                        -6625093363,12630121616,-16802270373,19534438464,
+                        -16802270373,12630121616,-6625093363,3501442784,
+                        -770720657,710986864,90241897], -3740727473,
+        1275983280000)
+    }           
+
+def newton_cotes(rn,equal=0):
+    r"""Return weights and error coefficient for Netwon-Cotes integration.
+
+     Suppose we have (N+1) samples of f at the positions
+       x_0, x_1, ..., x_N.  Then an N-point Newton-Cotes formula for the
+       integral between x_0 and x_N is:
+
+     $\int_{x_0}^{x_N} f(x)dx = \Delta x \sum_{i=0}^{N} a_i f(x_i)
+                                + B_N (\Delta x)^{N+2} f^{N+1} (\xi)$
+
+       where $\xi \in [x_0,x_N]$ and $\Delta x = \frac{x_N-x_0}{N}$ is the
+       averages samples spacing. 
+
+     If the samples are equally-spaced and N is even, then the error
+     term is $B_N (\Delta x)^{N+3} f^{N+2}(\xi)$.
+
+     Normally, the Newton-Cotes rules are used on smaller integration
+     regions and a composite rule is used to return the total integral.
+
+    Inputs:
+        rn    -- the integer order for equally-spaced data
+                 or the relative positions of the samples with
+                 the first sample at 0 and the last at N, where
+                 N+1 is the length of rn.  N is the order of the Newt
+        equal -- Set to 1 to enforce equally spaced data
+
+    Outputs:
+        an    -- 1-d array of weights to apply to the function at
+                 the provided sample positions.
+        B     -- error coefficient
+    """
+    try:
+        N = len(rn)-1
+        if equal:
+            rn = np.arange(N+1)
+        elif np.all(np.diff(rn)==1):
+            equal = 1
+    except:
+        N = rn
+        rn = np.arange(N+1)
+        equal = 1
+
+    if equal and _builtincoeffs.has_key(N):
+        na, da, vi, nb, db = _builtincoeffs[N]
+        return na*np.array(vi,float)/da, float(nb)/db
+
+    if (rn[0] != 0) or (rn[-1] != N):
+        raise ValueError, "The sample positions must start at 0"\
+              " and end at N"
+    yi = rn / float(N)
+    ti = 2.0*yi - 1
+    nvec = np.arange(0,N+1)
+    C = np.mat(ti**nvec[:,np.newaxis])
+    Cinv = C.I
+    # improve precision of result  
+    Cinv = 2*Cinv - Cinv*C*Cinv
+    Cinv = 2*Cinv - Cinv*C*Cinv
+    Cinv = Cinv.A
+    vec = 2.0/ (nvec[::2]+1)
+    ai = np.dot(Cinv[:,::2],vec) * N/2
+
+    if (N%2 == 0) and equal:
+        BN = N/(N+3.)
+        power = N+2
+    else:
+        BN = N/(N+2.)
+        power = N+1
+
+    BN = BN - np.dot(yi**power, ai)
+    p1 = power+1
+    fac = power*math.log(N) - sp.special.gammaln(p1)
+    fac = math.exp(fac)
+    return ai, BN*fac
+
+
+# Should only use if samples are forced on you
+def composite(f,x=None,dx=1,axis=-1,n=5):
+    pass 

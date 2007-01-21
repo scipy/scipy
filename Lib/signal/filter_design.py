@@ -182,12 +182,10 @@ def lp2lp(b,a,wo=1.0):
     from a low-pass filter prototype with unity cutoff frequency.
     """
     a,b = map(atleast_1d,(a,b))
-    # fixme: this test is not terribly reliable in the face of 0-d arrays which
-    # tend to get passed in. However, using .flat should work around that
-    # problem.
-    if type(wo) is type(a):
-        wo = wo.flat[0]
-    wo = float(wo)
+    try:
+        wo = float(wo)
+    except TypeError:
+        wo = float(wo[0])
     d = len(a)
     n = len(b)
     M = max((d,n))
@@ -203,11 +201,10 @@ def lp2hp(b,a,wo=1.0):
     from a low-pass filter prototype with unity cutoff frequency.
     """
     a,b = map(atleast_1d,(a,b))
-    # fixme: this test is not terribly reliable in the face of 0-d arrays which
-    # tend to get passed in. However, using .flat should work around that
-    # problem.
-    if type(wo) is type(a):
-        wo = wo.flat[0]
+    try:
+        wo = float(wo)
+    except TypeError:
+        wo = float(wo[0])
     d = len(a)
     n = len(b)
     if wo != 1:
@@ -877,8 +874,8 @@ def ellipord(wp, ws, gpass, gstop, analog=0):
     Description:
 
       Return the order of the lowest order digital elliptic filter
-      that loses no more than gpass dB in the passband and has at least gstop dB
-      attenuation in the stopband.
+      that loses no more than gpass dB in the passband and has at least
+      gstop dB attenuation in the stopband.
 
     Inputs:
 
@@ -895,9 +892,9 @@ def ellipord(wp, ws, gpass, gstop, analog=0):
 
     Outputs: (ord, Wn)
 
-      ord -- The lowest order for a Chebyshev type II filter that meets specs.
-      Wn -- The Chebyshev natural frequency for
-            use with scipy.signal.cheby2 to give the filter.
+      ord -- The lowest order for an Elliptic (Cauer) filter that meets specs.
+      Wn  -- The natural frequency for use with scipy.signal.ellip
+               to give the filter.
 
     """
     wp = atleast_1d(wp)
