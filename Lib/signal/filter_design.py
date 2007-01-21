@@ -182,8 +182,11 @@ def lp2lp(b,a,wo=1.0):
     from a low-pass filter prototype with unity cutoff frequency.
     """
     a,b = map(atleast_1d,(a,b))
+    # fixme: this test is not terribly reliable in the face of 0-d arrays which
+    # tend to get passed in. However, using .flat should work around that
+    # problem.
     if type(wo) is type(a):
-        wo = wo[0]
+        wo = wo.flat[0]
     wo = float(wo)
     d = len(a)
     n = len(b)
@@ -200,8 +203,11 @@ def lp2hp(b,a,wo=1.0):
     from a low-pass filter prototype with unity cutoff frequency.
     """
     a,b = map(atleast_1d,(a,b))
+    # fixme: this test is not terribly reliable in the face of 0-d arrays which
+    # tend to get passed in. However, using .flat should work around that
+    # problem.
     if type(wo) is type(a):
-        wo = wo[0]
+        wo = wo.flat[0]
     d = len(a)
     n = len(b)
     if wo != 1:
