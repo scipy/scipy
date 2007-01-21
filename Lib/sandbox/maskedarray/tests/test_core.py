@@ -233,7 +233,7 @@ class test_ma(NumpyTestCase):
         x4 = array(x1)
     # test conversion to strings
         junk, garbage = str(x2), repr(x2)
-        assert_equal(N.sort(x1),sort(x2, fill_value=0))
+        assert_equal(N.sort(x1),sort(x2,endwith=False))
     # tests of indexing
         assert type(x2[1]) is type(x1[1])
         assert x1[1] == x2[1]
@@ -1027,6 +1027,39 @@ class test_array_methods(NumpyTestCase):
         xh[0:1] = 999
         
         assert_equal(xh._data,[999,1,2,3,4])
+        
+    def check_sort(self):
+        "Test sort"
+        x = array([1,4,2,3],mask=[0,1,0,0],dtype=N.uint8)
+        #
+        sortedx = sort(x)
+        assert_equal(sortedx._data,[1,2,3,4])
+        assert_equal(sortedx._mask,[0,0,0,1])
+        #
+        sortedx = sort(x, endwith=False)
+        assert_equal(sortedx._data, [4,1,2,3])
+        assert_equal(sortedx._mask, [1,0,0,0])
+        #
+        x.sort()
+        assert_equal(x._data,[1,2,3,4])
+        assert_equal(x._mask,[0,0,0,1])
+        #
+        x = array([1,4,2,3],mask=[0,1,0,0],dtype=N.uint8)
+        x.sort(endwith=False)
+        assert_equal(x._data, [4,1,2,3])
+        assert_equal(x._mask, [1,0,0,0])
+        #
+        x = [1,4,2,3]
+        sortedx = sort(x)
+        assert(not isinstance(sorted, MaskedArray))
+        #
+        x = array([0,1,-1,-2,2], mask=nomask, dtype=N.int8)
+        sortedx = sort(x, endwith=False)
+        assert_equal(sortedx._data, [-2,-1,0,1,2])
+        x = array([0,1,-1,-2,2], mask=[0,1,0,0,1], dtype=N.int8)
+        sortedx = sort(x, endwith=False)
+        assert_equal(sortedx._data, [1,2,-2,-1,0])
+        assert_equal(sortedx._mask, [1,1,0,0,0])
 #..............................................................................
 
 #..............................................................................

@@ -66,6 +66,7 @@ import numpy.core.umath as umath
 import numpy.core.fromnumeric  as fromnumeric
 from numpy.core.numeric import ndarray
 from numpy.core.fromnumeric import amax, amin
+import numpy.core.numerictypes as ntypes
 from numpy.core.numerictypes import bool_, typecodes
 from numpy.core.multiarray import dtype
 import numpy.core.numeric as numeric
@@ -140,16 +141,36 @@ default_filler = {'b': True,
                   'i' : 999999,
                   'O' : '?',
                   'S' : 'N/A',
+                  'u' : 999999,
                   'V' : '???',        
                   }
-max_filler = {'b': False,
-              'f' : -numeric.inf,
-              'i' : -sys.maxint,
-              }
-min_filler = {'b' : True,
-              'f' : numeric.inf,
-              'i' : sys.maxint,
-              }
+#{0: <type 'numpy.bool_'>,
+# 1: <type 'numpy.int8'>,
+# 2: <type 'numpy.uint8'>,
+# 3: <type 'numpy.int16'>,
+# 4: <type 'numpy.uint16'>,
+# 5: <type 'numpy.int32'>,
+# 6: <type 'numpy.uint32'>,
+# 7: <type 'numpy.int64'>,
+# 8: <type 'numpy.uint64'>,
+# 9: <type 'numpy.int64'>,
+# 10: <type 'numpy.uint64'>,
+# 11: <type 'numpy.float32'>,
+# 12: <type 'numpy.float64'>,
+# 13: <type 'numpy.float128'>,
+# 14: <type 'numpy.complex64'>,
+# 15: <type 'numpy.complex128'>,
+# 16: <type 'numpy.complex256'>,
+# 17: <type 'numpy.object_'>,
+# 18: <type 'numpy.string_'>,
+# 19: <type 'numpy.unicode_'>,
+# 20: <type 'numpy.void'>,
+max_filler = ntypes._minvals
+max_filler.update([(k,-numeric.inf) for k in 
+                   [numpy.float32, numpy.float64, numpy.float128]])            
+min_filler = ntypes._maxvals
+min_filler.update([(k,numeric.inf) for k in 
+                   [numpy.float32, numpy.float64, numpy.float128]])           
 
 
 def default_fill_value (obj):
@@ -172,33 +193,40 @@ def default_fill_value (obj):
 def minimum_fill_value (obj):
     "Calculates the default fill value suitable for taking the minimum of `obj`."
     if hasattr(obj, 'dtype'):
-        objtype = obj.dtype.kind
-        try:
-            return min_filler[objtype]
-        except KeyError:
+        objtype = obj.dtype
+        filler = min_filler[objtype]
+        if filler is None:
             raise TypeError, 'Unsuitable type for calculating minimum.'
+        return filler
     elif isinstance(obj, float):
-        return min_filler['f']
-    elif isinstance(obj, int) or isinstance(obj, long):
-        return min_filler['i']
+        return min_filler[ntypes.typeDict['float_']]
+    elif isinstance(obj, int):
+        return min_filler[ntypes.typeDict['int_']]
+    elif isinstance(obj, long):
+        return min_filler[ntypes.typeDict['uint']]
+    elif isinstance(obj, numeric.dtype):
+        return min_filler[obj]
     else:
         raise TypeError, 'Unsuitable type for calculating minimum.'
 
 def maximum_fill_value (obj):
     "Calculates the default fill value suitable for taking the maximum of `obj`."
     if hasattr(obj, 'dtype'):
-        objtype = obj.dtype.kind
-        try:
-            return max_filler[objtype]
-        except KeyError:
-            raise TypeError, 'Unsuitable type for calculating maximum.'
+        objtype = obj.dtype
+        filler = max_filler[objtype]
+        if filler is None:
+            raise TypeError, 'Unsuitable type for calculating minimum.'
+        return filler
     elif isinstance(obj, float):
-        return max_filler['f']
-    elif isinstance(obj, int) or isinstance(obj, long):
-        #TODO: Check what happens to 'UnsignedInteger'!
-        return max_filler['i']
+        return max_filler[ntypes.typeDict['float_']]
+    elif isinstance(obj, int):
+        return max_filler[ntypes.typeDict['int_']]
+    elif isinstance(obj, long):
+        return max_filler[ntypes.typeDict['uint']]
+    elif isinstance(obj, numeric.dtype):
+        return max_filler[obj]
     else:
-        raise TypeError, 'Unsuitable type for calculating maximum.'
+        raise TypeError, 'Unsuitable type for calculating minimum.'
 
 def set_fill_value (a, fill_value):
     "Sets the fill value of `a` if it is a masked array."
@@ -896,7 +924,6 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         cls._defaultmask = mask
 #        logging.debug("__new__ returned %s as %s" % (type(_data), cls))
         return numeric.asanyarray(_data).view(cls)
-    
     #..................................
     def __array_wrap__(self, obj, context=None):
         """Special hook for ufuncs.
@@ -904,9 +931,10 @@ Wraps the numpy array and sets the mask according to context.
         """
 #        mclass = self.__class__
         #..........
-#        logging.debug("__wrap__ received %s" % type(obj))
+#        logging.debug("__wrap__ received %s w/ context:%ss" % (type(obj),context))
         if context is None:
 #            return mclass(obj, mask=self._mask, copy=False)
+#            logging.debug("__wrap__ received nocontext")
             return MaskedArray(obj, mask=self._mask, copy=False,
                                dtype=obj.dtype,
                                fill_value=self.fill_value, )
@@ -927,6 +955,7 @@ Wraps the numpy array and sets the mask according to context.
                 if m.shape != dshape:
                     m = reduce(mask_or, [getmaskarray(arg) for arg in args])
 #        return mclass(obj, copy=False, mask=m)
+#        logging.debug("__wrap__ context %s" % context)
         return MaskedArray(obj, copy=False, mask=m,)
 #                           dtype=obj.dtype, fill_value=self._fill_value)
     #........................
@@ -938,6 +967,9 @@ Wraps the numpy array and sets the mask according to context.
 #        logging.debug("__finalize__ received %s" % type(obj))
         if isinstance(obj, MaskedArray):
             # We came here from a MaskedArray
+#            logging.debug("__finalize__ recieved data %s" % obj)
+#            logging.debug("__finalize__ recieved data._data %s" % obj._data)
+#            logging.debug("__finalize__ recieved data.base %s" % obj.base)
             self._data = obj._data
             self._mask = obj._mask
             self._hardmask = obj._hardmask
@@ -1851,6 +1883,59 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
         if axis is None:
             return d.argmax()
         return d.argmax(axis)
+    
+    def sort(self, axis=-1, kind='quicksort', order=None, endwith=True):
+        """
+        Sort a along the given axis.
+
+    Keyword arguments:
+
+    axis  -- axis to be sorted (default -1)
+    kind  -- sorting algorithm (default 'quicksort')
+             Possible values: 'quicksort', 'mergesort', or 'heapsort'.
+    order -- If a has fields defined, then the order keyword can be the
+             field name to sort on or a list (or tuple) of field names
+             to indicate the order that fields should be used to define
+             the sort.
+    endwith--Boolean flag indicating whether missing values (if any) should
+             be forced in the upper indices (at the end of the array) or
+             lower indices (at the beginning).
+
+    Returns: None.
+
+    This method sorts 'a' in place along the given axis using the algorithm
+    specified by the kind keyword.
+
+    The various sorts may characterized by average speed, worst case
+    performance, need for work space, and whether they are stable. A stable
+    sort keeps items with the same key in the same relative order and is most
+    useful when used with argsort where the key might differ from the items
+    being sorted. The three available algorithms have the following properties:
+
+    |------------------------------------------------------|
+    |    kind   | speed |  worst case | work space | stable|
+    |------------------------------------------------------|
+    |'quicksort'|   1   | O(n^2)      |     0      |   no  |
+    |'mergesort'|   2   | O(n*log(n)) |    ~n/2    |   yes |
+    |'heapsort' |   3   | O(n*log(n)) |     0      |   no  |
+    |------------------------------------------------------|
+
+    All the sort algorithms make temporary copies of the data when the sort is
+    not along the last axis. Consequently, sorts along the last axis are faster
+    and use less space than sorts along other axis.
+
+    """
+        
+        if endwith:
+            filler = minimum_fill_value(self.dtype)
+        else:
+            filler = maximum_fill_value(self.dtype)
+        indx = self.filled(filler).argsort(axis=axis,kind=kind,order=order)
+        self._data = self._data[indx]
+        m = self._mask
+        if m is not nomask:
+            self._mask = m[indx]
+        return 
     #............................................
     # Backwards Compatibility. Heck...
     @property
@@ -2494,6 +2579,55 @@ def argmax(a, axis=None, fill_value=None):
         return d.argmax(axis=None)
     return d.argmax(axis=axis)
 
+def sort(a, axis=-1, kind='quicksort', order=None, endwith=True):
+    """
+    Sort a along the given axis.
+
+Keyword arguments:
+
+axis  -- axis to be sorted (default -1)
+kind  -- sorting algorithm (default 'quicksort')
+         Possible values: 'quicksort', 'mergesort', or 'heapsort'.
+order -- If a has fields defined, then the order keyword can be the
+         field name to sort on or a list (or tuple) of field names
+         to indicate the order that fields should be used to define
+         the sort.
+endwith--Boolean flag indicating whether missing values (if any) should
+         be forced in the upper indices (at the end of the array) or
+         lower indices (at the beginning).
+
+Returns: None.
+
+This method sorts 'a' in place along the given axis using the algorithm
+specified by the kind keyword.
+
+The various sorts may characterized by average speed, worst case
+performance, need for work space, and whether they are stable. A stable
+sort keeps items with the same key in the same relative order and is most
+useful when used with argsort where the key might differ from the items
+being sorted. The three available algorithms have the following properties:
+
+|------------------------------------------------------|
+|    kind   | speed |  worst case | work space | stable|
+|------------------------------------------------------|
+|'quicksort'|   1   | O(n^2)      |     0      |   no  |
+|'mergesort'|   2   | O(n*log(n)) |    ~n/2    |   yes |
+|'heapsort' |   3   | O(n*log(n)) |     0      |   no  |
+|------------------------------------------------------|
+
+All the sort algorithms make temporary copies of the data when the sort is
+not along the last axis. Consequently, sorts along the last axis are faster
+and use less space than sorts along other axis.
+
+"""
+    a = numeric.asanyarray(a)
+    if endwith:
+        filler = minimum_fill_value(a)
+    else:
+        filler = maximum_fill_value(a)
+    indx = filled(a,filler).argsort(axis=axis,kind=kind,order=order)
+    return a[indx]   
+
 def compressed(x):
     """Returns a compressed version of a masked array (or just the array if it
     wasn't masked first)."""
@@ -2678,23 +2812,6 @@ def choose (indices, t, out=None, mode='raise'):
     m = numeric.choose(c, masks)
     m = make_mask(mask_or(m, getmask(indices)), copy=0, small_mask=1)
     return masked_array(d, mask=m)
-
-def sort (x, axis=-1, fill_value=None, kind='quicksort'):
-    """If x does not have a mask, returns a masked array formed from the
-    result of numeric.sort(x, axis).
-   Otherwise, fills x with fill_value. Sort it. Sets a mask where the result 
-   is equal to fill_value. Note that this may have unintended consequences 
-   if the data contains the fill value at a non-masked site.
-   If fill_value is not given the default fill value for x's type will be
-   used.
-    """
-    if fill_value is None:
-        fill_value = default_fill_value (x)
-    d = filled(x, fill_value)
-    s = fromnumeric.sort(d, axis=axis, kind=kind)
-    if getmask(x) is nomask:
-        return masked_array(s)
-    return masked_values(s, fill_value, copy=0)    
 
 def round_(a, decimals=0, out=None):
     """Returns reference to result. Copies a and rounds to 'decimals' places.
@@ -2895,4 +3012,4 @@ MaskedArray.__reduce__ = _reduce
 MaskedArray.__dump__ = dump
 MaskedArray.__dumps__ = dumps
 
-
+################################################################################
