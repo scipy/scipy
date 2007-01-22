@@ -42,6 +42,14 @@ def reverse_dict(d):
 #####---------------------------------------------------------------------------
 #---- --- Option conversion ---
 #####---------------------------------------------------------------------------
+fmtobs_dict = {'UNDEF': ['UNDEF','UNDEFINED'],
+               'BEGINNING': ['BEGIN','BEGINNING'],
+               'ENDING': ['END','ENDING'],
+               'AVERAGED': ['AVERAGE','AVERAGE','MEAN'],
+               'SUMMED': ['SUM','SUMMED'],
+               'MAXIMUM': ['MAX','MAXIMUM','HIGH'],
+               'MINIMUM': ['MIN','MINIMUM','LOW']}
+
 obs_dict = {"UNDEFINED":None,
             "UNDEF":None,
             "BEGIN": first_unmasked_val,
@@ -59,13 +67,15 @@ obs_dict = {"UNDEFINED":None,
             "MIN": MA.minimum,
             }
 obsDict = obs_dict
+fmtobs_revdict = reverse_dict(fmtobs_dict)
+
 #
 def fmtObserv(obStr):
     "Converts a possible 'Observed' string into acceptable values."
     if obStr is None:
         return None
-    elif obStr.upper() in obs_dict.keys():
-        return obStr.upper()    
+    elif obStr.upper() in fmtobs_revdict:
+        return fmtobs_revdict[obStr.upper()]
     else:
         raise ValueError("Invalid value for observed attribute: %s " % str(obStr))
 
