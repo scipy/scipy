@@ -42,7 +42,7 @@ def reverse_dict(d):
 #####---------------------------------------------------------------------------
 #---- --- Option conversion ---
 #####---------------------------------------------------------------------------
-fmtobs_dict = {'UNDEF': ['UNDEF','UNDEFINED'],
+fmtobs_dict = {'UNDEFINED': ['UNDEF','UNDEFINED'],
                'BEGINNING': ['BEGIN','BEGINNING'],
                'ENDING': ['END','ENDING'],
                'AVERAGED': ['AVERAGE','AVERAGE','MEAN'],
