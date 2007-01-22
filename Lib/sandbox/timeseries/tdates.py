@@ -13,6 +13,7 @@ __date__     = '$Date$'
 import datetime
 import itertools
 import warnings
+import types
 
 
 import numpy
@@ -541,7 +542,11 @@ accesses the array element by element. Therefore, `d` is a Date object.
             except AttributeError:
                 pass     
         r = ndarray.__getitem__(self, index)
-        if r.size == 1:
+
+        if not hasattr(r, "size"):
+            if type(r) == types.IntType: return Date(self.freq, value=r)
+            else: return r
+        elif r.size == 1:
             # Only one element, and it's not a scalar: we have a DateArray of size 1
             if len(r.shape) > 0:
                 r = r.item()
