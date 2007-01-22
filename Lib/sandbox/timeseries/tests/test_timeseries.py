@@ -19,6 +19,7 @@ from numpy.testing import NumpyTest, NumpyTestCase
 from numpy.testing.utils import build_err_msg
 
 import maskedarray
+import maskedarray as MA
 from maskedarray import masked_array, masked, nomask
 
 import maskedarray.testutils
@@ -69,6 +70,26 @@ class test_creation(NumpyTestCase):
         assert_equal(series._series, data)
         assert_equal(series._dates, dates)
         assert_equal(series.freq, 'D')
+        
+        
+    def test_fromdatearray(self):
+        _, dates, _ = self.d
+        data = dates.copy()
+        data = dates
+    
+        series = time_series(data, dates)
+        assert(isinstance(series, TimeSeries))
+        assert_equal(series._dates, dates)
+        assert_equal(series._data, data)
+        assert_equal(series.freq, 'D')
+        
+        series[5] = MA.masked
+        
+        # ensure that series can be represented by a string after masking a value
+        # (there was a bug before that prevented this from working when using a 
+        # DateArray for the data)
+        strrep = str(series)
+        
         
     def test_datafromlist(self):
         (_, dates, _) = self.d
