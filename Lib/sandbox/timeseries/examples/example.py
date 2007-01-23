@@ -1,5 +1,7 @@
 import numpy as N
 import maskedarray as MA
+import mx.DateTime
+import datetime
 import tseries as TS
 import tdates as TD
 D = TD.Date(freq='D', year=2007, month=1, day=1)
@@ -7,12 +9,14 @@ M = TD.Date(freq='M', year=2007, month=1, day=1)
 Y = TD.Date(freq='A', year=2007, month=1, day=1)
 TD.Date(freq='Q',year=2004,quarter=3)
 TD.Date(freq='D',year=2001,month=1,day=1)
-TD.Date('D', '2007-01-01')
+TD.Date('D', string='2007-01-01')
 TD.Date('D', mxDate=mx.DateTime.now())
 TD.Date('D', mxDate=datetime.datetime.now())
+mybirthday = D-1
+infivemonths = M + 5
 data = N.random.uniform(-100,100,600)
 today = TD.thisday('B')
-series = TS.time_series(data, dtype=np.float_, freq='B', observed='SUMMED',
+series = TS.time_series(data, dtype=N.float_, freq='B', observed='SUMMED',
                         start_date=today-600)
 series[0]
 series[-30:]
@@ -21,7 +25,7 @@ series[thirtydaysago:]
 series[thirtydaysago.tostring():]
 series[series<0] = 0
 series[series.day_of_week == 4] = 100
-weekdays = td.day_of_week(series)
+weekdays = TD.day_of_week(series)
 series[weekdays == 4] = 100
 series_log = N.log(series)
 mlist_1 = ['2005-%02i' % i for i in range(1,10)]

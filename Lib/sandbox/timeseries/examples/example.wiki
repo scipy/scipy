@@ -1,10 +1,23 @@
 
+== Requirements ==
+
+In order to use the `TimeSeries` package, you need to have the foloowing packages installed:
+    * `numpy` 
+    * `maskedarray` : the new implementation where masked arrays are subclasses of regular ndarrays. You can find this version in the sandbox on the scipy SVN server
+    * `mx.DateTime` : This external module is needed to process some of the dates in C. At term, we hope to be able to get rid of it. In the meanwhile, sorry for the inconvenience.
+
+
+The `TimeSeries` package is organized as a group of modules. Two modules are especially useful: `tdates` for managing `Date` and `DateArray` objects, and `tseries`, for managing time series. 
 {{{#!python numbers=disable
 >>> import numpy as N
 >>> import maskedarray as MA
+>>> import mx.DateTime
+>>> import datetime
 >>> import tseries as TS
 >>> import tdates as TD
 }}}
+Note that you could also just import the generic `timeseries` package to achieve the same results.
+
 
 == Dates ==
 
@@ -14,16 +27,13 @@ A `Date` object combines some date and/or time related information with a given 
 >>> M = TD.Date(freq='M', year=2007, month=1, day=1)
 >>> Y = TD.Date(freq='A', year=2007, month=1, day=1)
 }}}
-use the same date information, but different frequencies. They correspond to to the day Jan. 01, 2007, the month Jan. 2007 and the year 2007, respectively. The importance of the frequency will become clearer later on.
+use the same date information, but different frequencies. They correspond to to the day 'Jan. 01, 2007', the month 'Jan. 2007' and the year '2007', respectively. The importance of the frequency will become clearer later on.
 ~- A more technical note: `Date` objects are internally stored as integers. The conversion to integers and back is controlled by the frequency. In the example above, the internal representation of the three objects `D`, `M` and `Y` are 732677, 24073 and 2007, respectively. -~
-
-Date objects are managed through their own class, appropriately named `Date`.
 
 ==== Construction of a `Date` object ====
 Several options are available to construct a Date object explicitly. In each case, the `frequency` argument must be given.
 
     * Give appropriate values to any of the `year`, `month`, `day`, `quarter`, `hours`, `minutes`, `seconds` arguments.
-
 {{{#!python numbers=disable
 >>> TD.Date(freq='Q',year=2004,quarter=3)
 <Q : 2004Q3>
@@ -32,7 +42,6 @@ Several options are available to construct a Date object explicitly. In each cas
 }}}
       
     * Use the `string` keyword. This method calls the `mx.DateTime.Parser` submodule, more information is available in the documentation of this latter.
-
 {{{#!python numbers=disable      
 >>> TD.Date('D', string='2007-01-01')
 <D : 01-Jan-2007>
@@ -45,11 +54,44 @@ Several options are available to construct a Date object explicitly. In each cas
 }}}
 
 
+==== Manipulating dates ====
+
+You can add and subtract integers from a `Date` object to get a new `Date` object. The frequency of the new object is the same as the roginal one. For example:
+{{{#!python numbers=disable
+>>> mybirthday = D-1
+<D : 31-Dec-2006>
+>>> infivemonths = M + 5
+<M : Jun-2007>
+}}}
+
+You can convert a `Date` object from one frequency to another with the `asfreq` method. When converting to a higher frequency (for example, from monthly to daily), the new object will fall on the earliest date possible by default. Thus, if you convert a daily `Date` to a monthly one and back to a daily one, you will lose your day information in the process:
+{{{#!python numbers=disable
+>>> mybirthday.asfreq('M')
+<M: Dec-2006>
+>>> mybirthday.asfreq('M').asfreq('D')
+<D: 01-Dec-2006>
+}}}
+
+Some other methods worth mentioning are:
+    * `toordinal` : converts an object to the equivalent proleptic gregorian date
+    * `tostring`  : converts an object to the corresponding string.
+
 ----
 
 == DateArray objects ==
 
-DateArrays are simply ndarrays of `Date` objects.
+DateArrays are simply ndarrays of `Date` objects. They accept the same methods as a `Date` object, with the addition of:
+    * `tovalue` : converts the array to an array of integers. Each integer is the internal representation of the corresponding date
+    * `has_missing_dates` : outputs a boolean on whether some dates are missing or not. 
+    * `has_duplicated_dates` : outputs a boolean on whether some dates are duplicated or not.
+
+==== Construction ====
+
+To construct a `DateArray` object, you can call the class directly
+{{{#!python numbers=disable
+}}}
+
+
 
 ----
 
