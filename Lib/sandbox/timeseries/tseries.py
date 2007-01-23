@@ -146,11 +146,6 @@ def _getdatalength(data):
 ##### --------------------------------------------------------------------------
 ##--- ... Time Series ...
 ##### --------------------------------------------------------------------------
-#if oldma:
-#    parentclass = ndarray
-#else:
-#    parentclass = MaskedArray
-#
 class TimeSeries(MaskedArray, object):     
     """Base class for the definition of time series.
 A time series is here defined as the combination of three arrays:
@@ -192,8 +187,10 @@ The combination of `series` and `dates` is the `data` part.
             else:
                 freq = newdates.freq
             # Check observed.......
-            if observed is not None:
-                observed = data._observed
+            if observed is None:
+                observed = data.observed
+            else:
+                observed = corelib.fmtObserv(observed)
             cls._defaultobserved = observed  
             _data = data._series
         else:
@@ -210,18 +207,8 @@ The combination of `series` and `dates` is the `data` part.
             if hasattr(data, '_mask') :
                 mask = mask_or(data._mask, mask)
             cls._defaultdates = newdates    
-            cls._defaultobserved = observed  
-#            if oldma:
-#                newdata = MaskedArray(data, mask=mask, dtype=dtype,
-#                                      copy=copy,fill_value=fill_value)
-#                cls._defaultmask = newdata._mask
-#                cls._defaulthardmask = True
-#                cls._fill_value = newdata._fill_value
-#                assert(_datadatescompat(newdata,dates))
-#                return ndarray.__new__(cls,shape=newdata.shape,dtype=newdata.dtype,
-#                                       buffer=newdata._data)
-#            _data = data
-#        newdata = MaskedArray.__new__(cls, data=_data, mask=mask, **options)
+            cls._defaultobserved = corelib.fmtObserv(observed)
+
         newdata = super(TimeSeries,cls).__new__(cls, _data, mask=mask,
                                                 **options)
         assert(_datadatescompat(newdata._data,newdates))
@@ -229,11 +216,6 @@ The combination of `series` and `dates` is the `data` part.
             
     #..................................
     def __array_wrap__(self, obj, context=None):
-#        if oldma:
-#            tmpself = MaskedArray(self._data, mask=self._mask)
-#            return TimeSeries(MaskedArray.__array_wrap__(tmpself, obj, context),
-#                              dates=self._dates)
-#        print "__array_wrap__"
         return TimeSeries(super(TimeSeries,self).__array_wrap__(obj, context),
                           dates=self._dates)
     #............................................
@@ -605,7 +587,7 @@ If `ondates` is False, the `_dates` part remains unchanged.
         else:
             return instance.__class__(func_series(*args), 
                                       dates=instance._dates)  
-#TimeSeries.astype = _tsarraymethod('astype')
+TimeSeries.astype = _tsarraymethod('astype')
 TimeSeries.reshape = _tsarraymethod('reshape', ondates=True)
 TimeSeries.copy = _tsarraymethod('copy', ondates=True)
 TimeSeries.compress = _tsarraymethod('compress', ondates=True)
@@ -1072,7 +1054,7 @@ def convert(series, freq, func='auto', position='END'):
     tempData = series._series.filled()
     tempMask = getmaskarray(series)
 
-    cRetVal = cseries.reindex(tempData, fromFreq, toFreq, position, 
+    cRetVal = cseries.convert(tempData, fromFreq, toFreq, position, 
                               int(start_date), tempMask)
     _values = cRetVal['values']
     _mask = cRetVal['mask']
@@ -1084,13 +1066,12 @@ def convert(series, freq, func='auto', position='END'):
     if tempData.ndim == 2 and func is not None:
         tempData = MA.apply_along_axis(func, -1, tempData)
            
-#    newEnd = series._dates[-1].asfreq(toFreq, "AFTER")
-    
     newseries = TimeSeries(tempData, freq=toFreq, 
                            observed=series.observed, 
                            start_date=start_date)
     return newseries
-#    return adjust_endpoints(newseries, end_date=newEnd)
+
+
 TimeSeries.convert = convert
 #....................................................................
 def fill_missing_dates(data, dates=None, freq=None,fill_value=None):
