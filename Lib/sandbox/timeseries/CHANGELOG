@@ -1,3 +1,4 @@
+#2007-01-23 : tdates : forced a 'U' to 'D' when using asfreq
 #2007-01-15 : tmulti : Add the module and its tests, to support multi-variable series
 #           : tdates : Some minor bug fixes
 #           : tseries: Fixed a bug in __new__ when data are lists

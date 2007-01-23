@@ -456,7 +456,7 @@ def prevbusday(day_end_hour=18, day_end_min=0):
 def asfreq(date, toFreq, relation="BEFORE"):
     """Returns a date converted to another frequency `toFreq`, according to the
     relation `relation` ."""
-    toFreq = corelib.fmtFreq(toFreq)
+    tofreq = corelib.fmtFreq(toFreq)
     _rel = relation.upper()[0]
     if _rel not in ['B', 'A']:
         msg = "Invalid relation '%s': Should be in ['before', 'after']"
@@ -465,12 +465,18 @@ def asfreq(date, toFreq, relation="BEFORE"):
     if not isinstance(date, Date):
         raise DateError, "Date should be a valid Date instance!"
 
-    if date.freq == toFreq:
+    if date.freq == 'U':
+        warnings.warn("Undefined frequency: assuming daily!")
+        fromfreq = 'D'
+    else:
+        fromfreq = date.freq
+    
+    if fromfreq == tofreq:
         return date
     else:
-        value = cseries.asfreq(numeric.asarray(date.value), date.freq, toFreq, _rel)
+        value = cseries.asfreq(numeric.asarray(date.value), fromfreq, tofreq, _rel)
         if value > 0:
-            return Date(freq=toFreq, value=value)
+            return Date(freq=tofreq, value=value)
         else:
             return None
             
@@ -657,11 +663,16 @@ accesses the array element by element. Therefore, `d` is a Date object.
         # Note: As we define a new object, we don't need caching
         if freq is None:
             return self
-        freq = corelib.fmtFreq(freq)
-        if freq == self.freq:
+        tofreq = corelib.fmtFreq(freq)
+        if tofreq == self.freq:
             return self        
+        if self.freq == 'U':
+            warnings.warn("Undefined frequency: assuming daily!")
+            fromfreq = 'D'
+        else:
+            fromfreq = self.freq
         _rel = relation.upper()[0]
-        new = cseries.asfreq(numeric.asarray(self), self.freq, freq, _rel)
+        new = cseries.asfreq(numeric.asarray(self), fromfreq, tofreq, _rel)
         return DateArray(new, freq=freq)
     #......................................................
     def find_dates(self, *dates):
@@ -676,17 +687,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
         if fromnumeric.size(c) == 0:
             raise ValueError, "Date out of bounds!"
         return c  
-#    def find_dates_alt(self, *dates):
-#        "Returns the indices corresponding to given dates, as an array."
-#        ifreq = self.freq
-#        c = numpy.zeros(self.shape, bool_)
-#        dates = date_array([d for d in corelib.flatargs(*dates)]).asfreq(ifreq)
-#        for d in numeric.asarray(dates):
-#            c += (self == d)
-#        c = c.nonzero()
-#        if fromnumeric.size(c) == 0:
-#            raise ValueError, "Date out of bounds!"
-#        return c  
+
     def date_to_index(self, date):
         "Returns the index corresponding to one given date, as an integer."
         if self.isvalid():
