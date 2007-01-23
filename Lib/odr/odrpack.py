@@ -100,7 +100,7 @@ robert.kern@gmail.com
 """
 
 import numpy
-from scipy.sandbox.odr import __odrpack
+from scipy.odr import __odrpack
 
 odr = __odrpack.odr
 odr_error = __odrpack.odr_error
