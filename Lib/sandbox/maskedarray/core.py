@@ -165,12 +165,13 @@ default_filler = {'b': True,
 # 18: <type 'numpy.string_'>,
 # 19: <type 'numpy.unicode_'>,
 # 20: <type 'numpy.void'>,
-max_filler = ntypes._minvals
-max_filler.update([(k,-numeric.inf) for k in 
-                   [numpy.float32, numpy.float64, numpy.float128]])            
+max_filler = ntypes._minvals   
+max_filler.update([(k,-numeric.inf) for k in [numpy.float32, numpy.float64]])         
 min_filler = ntypes._maxvals
-min_filler.update([(k,numeric.inf) for k in 
-                   [numpy.float32, numpy.float64, numpy.float128]])           
+min_filler.update([(k,numeric.inf) for k in [numpy.float32, numpy.float64]])    
+if 'float128' in ntypes.typeDict:
+    max_filler.update([(numpy.float128,-numeric.inf)])
+    min_filler.update([(numpy.float128, numeric.inf)])       
 
 
 def default_fill_value (obj):
@@ -1173,6 +1174,9 @@ Otherwise, fills with fill value.
                 if m.shape == () and m:
                     return str(f)
                 # convert to object array to make filled work
+#CHECK: the two lines below seem more robust than the self._data.astype
+#                res = numeric.empty(self._data.shape, object_)
+#                numeric.putmask(res,~m,self._data)
                 res = self._data.astype("|O8")
                 res[self._mask] = f
         else:
