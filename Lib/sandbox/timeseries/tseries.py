@@ -109,9 +109,9 @@ def _timeseriescompat(a, b):
         return True
     if a.freq != b.freq:
         raise TimeSeriesCompatibilityError('freq', a.freq, b.freq)
-    elif a.start_date() != b.start_date():
+    elif a.start_date != b.start_date:
         raise TimeSeriesCompatibilityError('start_date', 
-                                           a.start_date(), b.start_date())
+                                           a.start_date, b.start_date)
     elif (a._dates.get_steps() != b._dates.get_steps()).any():
         raise TimeSeriesCompatibilityError('time_steps', 
                                            a._dates.get_steps(), b._dates.get_steps())
@@ -416,32 +416,70 @@ timeseries(data  = %(data)s,
     def freq(self):
         """Returns the corresponding frequency."""
         return self._dates.freq
-#    @property
-    def years(self):
-        """Returns the corresponding years."""
-        return self._dates.years
-#    @property
-    def months(self):
-        """Returns the corresponding months."""
-        return self._dates.months
-#    @property
-    def yeardays(self):
-        """Returns the corresponding days of year."""
-        return self._dates.yeardays
-    day_of_year = yeardays
-#    @property
-    def weekdays(self):
-        """Returns the corresponding days of weeks."""
+        
+    @property
+    def day(self):          
+        "Returns the day of month for each date in self._dates."
+        return self._dates.day
+    @property
+    def day_of_week(self):  
+        "Returns the day of week for each date in self._dates."
         return self._dates.day_of_week
-    day_of_week = weekdays
+    @property
+    def day_of_year(self):  
+        "Returns the day of year for each date in self._dates."
+        return self._dates.day_of_year
+    @property
+    def month(self):        
+        "Returns the month for each date in self._dates."
+        return self._dates.month
+    @property
+    def quarter(self):   
+        "Returns the quarter for each date in self._dates."   
+        return self._dates.quarter
+    @property
+    def year(self):         
+        "Returns the year for each date in self._dates."
+        return self._dates.year
+    @property
+    def second(self):    
+        "Returns the seconds for each date in self._dates."  
+        return self._dates.second
+    @property
+    def minute(self):     
+        "Returns the minutes for each date in self._dates."  
+        return self._dates.minute
+    @property
+    def hour(self):         
+        "Returns the hour for each date in self._dates."
+        return self._dates.hour
+    @property
+    def week(self):
+        "Returns the week for each date in self._dates."
+        return self._dates.week
+
+    days = day
+    weekdays = day_of_week
+    yeardays = day_of_year
+    months = month
+    quarters = quarter
+    years = year
+    seconds = second
+    minutes = minute
+    hours = hour
+    weeks = week
+
     
+    @property
     def start_date(self):
         """Returns the first date of the series."""
         return self._dates[0]
-#
+
+    @property
     def end_date(self):
         """Returns the last date of the series."""
         return self._dates[-1]
+
     
     def isvalid(self):
         """Returns whether the series has no duplicate/missing dates."""
@@ -1003,10 +1041,10 @@ def align_series(*series, **kwargs):
         raise TimeSeriesError, \
             "Cannot adjust a series with missing or duplicated dates."
     
-    start_date = kwargs.pop('start_date', min([x.start_date() for x in series]))
+    start_date = kwargs.pop('start_date', min([x.start_date for x in series]))
     if isinstance(start_date,str):
         start_date = Date(common_freq, string=start_date)
-    end_date = kwargs.pop('end_date', max([x.end_date() for x in series]))
+    end_date = kwargs.pop('end_date', max([x.end_date for x in series]))
     if isinstance(end_date,str):
         end_date = Date(common_freq, string=end_date)
     
