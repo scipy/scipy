@@ -401,7 +401,6 @@ TYPEMAP_IN2(PyObject,      PyArray_OBJECT)
  /* One dimensional input/output arrays */
 %define TYPEMAP_INPLACE1(type,typecode)
 %typemap(in) (type* INPLACE_ARRAY) (PyArrayObject* temp=NULL) {
-  int i;
   temp = obj_to_array_no_conversion($input,typecode);
   if (!temp  || !require_contiguous(temp)) SWIG_fail;
   $1 = (type*) temp->data;

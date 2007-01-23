@@ -21314,7 +21314,6 @@ SWIGINTERN PyObject *_wrap_ensure_sorted_indices__SWIG_1(PyObject *SWIGUNUSEDPAR
     arg3 = (int*) array3->data;
   }
   {
-    int i;
     temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
     if (!temp4  || !require_contiguous(temp4)) SWIG_fail;
     arg4 = (int*) temp4->data;
@@ -21379,13 +21378,11 @@ SWIGINTERN PyObject *_wrap_ensure_sorted_indices__SWIG_2(PyObject *SWIGUNUSEDPAR
     arg3 = (int*) array3->data;
   }
   {
-    int i;
     temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
     if (!temp4  || !require_contiguous(temp4)) SWIG_fail;
     arg4 = (int*) temp4->data;
   }
   {
-    int i;
     temp5 = obj_to_array_no_conversion(obj4,PyArray_LONG);
     if (!temp5  || !require_contiguous(temp5)) SWIG_fail;
     arg5 = (long*) temp5->data;
@@ -21445,13 +21442,11 @@ SWIGINTERN PyObject *_wrap_ensure_sorted_indices__SWIG_3(PyObject *SWIGUNUSEDPAR
     arg3 = (int*) array3->data;
   }
   {
-    int i;
     temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
     if (!temp4  || !require_contiguous(temp4)) SWIG_fail;
     arg4 = (int*) temp4->data;
   }
   {
-    int i;
     temp5 = obj_to_array_no_conversion(obj4,PyArray_FLOAT);
     if (!temp5  || !require_contiguous(temp5)) SWIG_fail;
     arg5 = (float*) temp5->data;
@@ -21511,13 +21506,11 @@ SWIGINTERN PyObject *_wrap_ensure_sorted_indices__SWIG_4(PyObject *SWIGUNUSEDPAR
     arg3 = (int*) array3->data;
   }
   {
-    int i;
     temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
     if (!temp4  || !require_contiguous(temp4)) SWIG_fail;
     arg4 = (int*) temp4->data;
   }
   {
-    int i;
     temp5 = obj_to_array_no_conversion(obj4,PyArray_DOUBLE);
     if (!temp5  || !require_contiguous(temp5)) SWIG_fail;
     arg5 = (double*) temp5->data;
@@ -21577,13 +21570,11 @@ SWIGINTERN PyObject *_wrap_ensure_sorted_indices__SWIG_5(PyObject *SWIGUNUSEDPAR
     arg3 = (int*) array3->data;
   }
   {
-    int i;
     temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
     if (!temp4  || !require_contiguous(temp4)) SWIG_fail;
     arg4 = (int*) temp4->data;
   }
   {
-    int i;
     temp5 = obj_to_array_no_conversion(obj4,PyArray_CFLOAT);
     if (!temp5  || !require_contiguous(temp5)) SWIG_fail;
     arg5 = (npy_cfloat*) temp5->data;
@@ -21643,13 +21634,11 @@ SWIGINTERN PyObject *_wrap_ensure_sorted_indices__SWIG_6(PyObject *SWIGUNUSEDPAR
     arg3 = (int*) array3->data;
   }
   {
-    int i;
     temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
     if (!temp4  || !require_contiguous(temp4)) SWIG_fail;
     arg4 = (int*) temp4->data;
   }
   {
-    int i;
     temp5 = obj_to_array_no_conversion(obj4,PyArray_CDOUBLE);
     if (!temp5  || !require_contiguous(temp5)) SWIG_fail;
     arg5 = (npy_cdouble*) temp5->data;

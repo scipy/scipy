@@ -227,7 +227,7 @@ void csrmucsr(const I n_row,
   std::vector<T> sums(n_col,zero);
 
   for(I i = 0; i < n_row; i++){
-    I istart = -1;
+    I istart = -2;
     I length =  0;
     
     for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
@@ -314,7 +314,7 @@ void csrplcsr(const I n_row,
   std::vector<T>  sums(n_col,zero);
 
   for(I i = 0; i < n_row; i++){
-    I istart = -1;
+    I istart = -2;
     I length =  0;
     
     //add a row of A to sums
@@ -409,7 +409,7 @@ void csrelmulcsr(const I n_row,
   std::vector<T> B_row(n_col,zero);
 
   for(I i = 0; i < n_row; i++){
-    I istart = -1;
+    I istart = -2;
     I length =  0;
     
     //add a row of A to A_row
