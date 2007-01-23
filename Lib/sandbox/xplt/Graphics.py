@@ -1,22 +1,29 @@
+import os
+import types
+
 #import Tkinter
 #from Tkinter import *
 #from Scientific.TkWidgets.TkPlotCanvas import *
+
 from scipy import *
 from numpy.core.umath import *
+
 #from _Graphics import *
 #import PIL.ImageTk,PIL.Image
 #ImageTk = PIL.ImageTk
 #Image = PIL.Image
-import gist, types, string, os
-import Mplot
-import scipy.io as io
 
+# Local imports
+import gist
+import Mplot
 
 def read_act(filename):
-    fid = io.fopen('%s.act'%filename)
-    p = fid.fread(256*3,'byte')
+    fid = open('%s.act'%filename, 'rb')
+    p = ndarray(shape=(256,3),
+                dtype='u1',
+                buffer=fid.read(256*3),
+                ).copy()
     fid.close()
-    p.shape = (256,3)
     return p
 
 Palette = {}
