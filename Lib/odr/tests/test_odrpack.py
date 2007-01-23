@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 from numpy import pi
 from numpy.testing import assert_array_almost_equal
-from scipy.sandbox.odr import Data, Model, ODR, RealData, odr_stop
+from scipy.odr import Data, Model, ODR, RealData, odr_stop
 
 
 class ODRTestCase(unittest.TestCase):
