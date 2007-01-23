@@ -1,0 +1,221 @@
+
+{{{#!python numbers=disable
+>>> import numpy as N
+>>> import maskedarray as MA
+>>> import tseries as TS
+>>> import tdates as TD
+}}}
+
+== Dates ==
+
+A `Date` object combines some date and/or time related information with a given frequency. You can picture the frequency as the unit into which the date is expressed. For example, the three objects:
+{{{#!python  numbers=disable
+>>> D = TD.Date(freq='D', year=2007, month=1, day=1)
+>>> M = TD.Date(freq='M', year=2007, month=1, day=1)
+>>> Y = TD.Date(freq='A', year=2007, month=1, day=1)
+}}}
+use the same date information, but different frequencies. They correspond to to the day Jan. 01, 2007, the month Jan. 2007 and the year 2007, respectively. The importance of the frequency will become clearer later on.
+~- A more technical note: `Date` objects are internally stored as integers. The conversion to integers and back is controlled by the frequency. In the example above, the internal representation of the three objects `D`, `M` and `Y` are 732677, 24073 and 2007, respectively. -~
+
+Date objects are managed through their own class, appropriately named `Date`.
+
+==== Construction of a `Date` object ====
+Several options are available to construct a Date object explicitly. In each case, the `frequency` argument must be given.
+
+    * Give appropriate values to any of the `year`, `month`, `day`, `quarter`, `hours`, `minutes`, `seconds` arguments.
+
+{{{#!python numbers=disable
+>>> TD.Date(freq='Q',year=2004,quarter=3)
+<Q : 2004Q3>
+>>> TD.Date(freq='D',year=2001,month=1,day=1)
+<D : 01-Jan-2001>
+}}}
+      
+    * Use the `string` keyword. This method calls the `mx.DateTime.Parser` submodule, more information is available in the documentation of this latter.
+
+{{{#!python numbers=disable      
+>>> TD.Date('D', string='2007-01-01')
+<D : 01-Jan-2007>
+}}}      
+
+    * Use the `mxDate` keyword with an existing `mx.DateTime.DateTime` object, or even a `datetime.datetime` object.
+{{{#!python numbers=disable
+>>> TD.Date('D', mxDate=mx.DateTime.now())
+>>> TD.Date('D', mxDate=datetime.datetime.now())
+}}}
+
+
+----
+
+== DateArray objects ==
+
+DateArrays are simply ndarrays of `Date` objects.
+
+----
+
+== TimeSeries ==
+
+A `TimeSeries` object is the combination of three ndarrays:
+
+    * `dates`: DateArray object.
+    * `data` : ndarray.
+    * `mask` : Boolean ndarray, indicating missing or invalid data.
+    
+
+==== Construction ====
+
+To construct a TimeSeries, you can use the class constructor:
+
+{{{#!python numbers=disable
+TimeSeries(data, dates=None, mask=nomask, 
+           freq=None, observed=None, start_date=None, 
+           dtype=None, copy=False, fill_value=None,
+           keep_mask=True, small_mask=True, hard_mask=False)
+}}}               
+where `data` is a sequence, a ndarray or a MaskedArray. If `dates` is None, a DateArray of the same length as the data is constructed at a `freq` frequency, starting at `start_date`.
+
+Alternatively, you can use the `time_series` function:
+{{{#!python numbers=disable
+time_series(data, dates=None, freq=None, 
+            start_date=None, end_date=None, length=None, include_last=True,
+            mask=nomask, dtype=None, copy=False, fill_value=None,
+            keep_mask=True, small_mask=True, hard_mask=False)    
+}}}
+
+Let us construct a series of 600 random elements, starting 600 business days ago, at  a business daily frequency
+{{{#!python numbers=disable
+>>> data = N.random.uniform(-100,100,600)
+>>> today = TD.thisday('B')
+>>> series = TS.time_series(data, dtype=N.float_, freq='B', observed='SUMMED',
+>>>                         start_date=today-600)
+}}}
+
+==== Indexing ====
+
+Elements of a TimeSeries can be accessed just like with regular ndarrrays. Thus,
+{{{#!python numbers=disable
+>>> series[0]
+}}}
+outputs the first element, while
+{{{#!python numbers=disable
+>>> series[-30:]
+}}}
+outputs the last 30 elements.
+
+But you can also use a date:
+{{{#!python numbers=disable
+>>> thirtydaysago = today - 30
+>>> series[thirtydaysago:]
+}}}
+or even a string...
+{{{#!python numbers=disable
+>>> series[thirtydaysago.tostring():]
+}}}
+
+In a similar way, setting elements of a TimeSeries works seamlessly.
+Let us set negative values to zero...
+{{{#!python numbers=disable
+>>> series[series<0] = 0
+}}}
+... and the values falling on Fridays to 100
+{{{#!python numbers=disable
+>>> series[series.day_of_week == 4] = 100
+}}}
+Note that we could also create a temporary array of 'day_of weeks' for the 
+corresponding period, and use it as condition.
+{{{#!python numbers=disable
+>>> weekdays = TD.day_of_week(series)
+>>> series[weekdays == 4] = 100
+}}}
+You should keep in mind that TimeSeries are basically MaskedArrays. If some data are masked, you will not be able to use a condition as index, you will have to fill the data first.
+
+==== Operations on TimeSeries ====
+
+If you work with only one TimeSeries, you can use regular commands to process the data. For example:
+{{{#!python numbers=disable
+>>> series_log = N.log(series)
+}}}
+Note that invalid values (negative, in that case), are automatically masked. Note also that you could use the corresponding function of the `maskedarray` module. This latter approach is actually recommended when you want to use the `reduce` and `accumulate` methods of some ufuncs (such as add or multiply). ~-The reason is that the methods of the numpy.ufuncs do not communicate well with subclasses: as they do not call the `__array_wrap__` method, there is no postprocessing.-~
+
+When working with multiple series, only series of the same frequency, size and starting date can be used in basic operations. The function `align_series` ~-(or its alias `aligned`)-~ forces series to have matching starting and ending dates. By default, the starting date will be set to the smallest starting date of the series, and the ending date to the largest.
+
+Let's construct a list of months, starting on Jan 2005 and ending on Dec 2006, with a gap from Oct 2005 to Dec 2006.
+{{{#!python numbers=disable
+>>> mlist_1 = ['2005-%02i' % i for i in range(1,10)]
+>>> mlist_1 += ['2006-%02i' % i for i in range(2,13)]
+>>> mdata_1 = N.arange(len(mlist_1))
+>>> mser_1 = TS.time_series(mdata_1, mlist_1, observed='SUMMED')
+}}}
+Note that the frequency is 'U', for undefined. In fact, you have to specify what kind of data is actually missing by forcing a given frequency.
+{{{#!python numbers=disable
+>>> mser = mser1.asfreq('M')
+}}}
+Let us check whether there are some duplicated dates (no):
+{{{#!python numbers=disable
+>>> mser1.has_duplicated_dates()
+}}}
+...or missing dates (yes):
+{{{#!python numbers=disable
+>>> mser1.has_missing_dates()
+}}}
+Let us construct a second monthly series, this time without missing dates
+{{{#!python numbers=disable
+>>> mlist_2 = ['2004-%02i' % i for i in range(1,13)]
+>>> mlist_2 += ['2005-%02i' % i for i in range(1,13)]
+>>> mser_2 = TS.time_series(N.arange(len(mlist_2)), mlist_2, observed='SUMMED')
+}}}
+Let's try to add the two series:
+{{{#!python numbers=disable
+>>> mser_3 = mser_1 + mser_2
+}}}
+That doesn't work, as the series have different starting dates. We need to align them first.
+{{{#!python numbers=disable
+>>> (malg_1,malg_2) = aligned(mser_1, mser_2) 
+}}}
+That still doesnt' work, as `malg_1` has missing dates. Let us fill it, then: data falling on a date that was missing will be masked.
+{{{#!python numbers=disable
+>>> mser_1_filled = fill_missing_dates(mser_1)
+>>> (malg_1,malg_2) = align_series(mser_1_filled, mser_2) 
+}}}
+Now we can add the two series. Only the data that fall on dates common to the original, non-aligned series will be actually added, the others will be masked. After all, we are adding masked arrays.
+{{{#!python numbers=disable
+>>> mser_3 = malg_1 + malg_2
+}}}
+We could have filled the initial series first:
+{{{#!python numbers=disable
+>>> mser_3 = filled(malg_1,0) + filled(malg_2,0)
+}}}
+Alternatively, we can force the series to start/end at some given dates
+{{{#!python numbers=disable
+>>> (malg_1,malg_2) = aligned(mser_1_filled, mser2, 
+>>>                           start_date='2004-06', end_date='2006-06')
+}}}
+
+
+==== TimeSeries Conversion ====
+
+To convert a TimeSeries to another frequency, use the `convert` method or function. The optional argument `func` must be a function that acts on a 1D masked array and returns a scalar. 
+{{{#!python numbers=disable
+>>> mseries = series.convert('M',func=ma.average)
+}}}
+If `func` is not specified, the default value `'auto'` is used instead. In that case,
+the conversion function is estimated from the `observed` attribute of the series.
+For example, if `observed='SUMMED'`, then `func='auto'` is in fact `func=sum`.
+{{{#!python  numbers=disable
+>>> mseries_default = series.convert('M')
+}}}
+If `func` is None, the convert method/function returns a 2D array, where each row corresponds to the new frequency, and the columns to the original data. In our example, `convert` will return a 2D array with 23 columns, as there are at most 23 business days per month.
+{{{#!python numbers=disable
+>>> mseries_2d = series.convert('M',func=None)
+}}}
+When converting from a lower frequency to a higher frequency, an extra argument `position` is required. The value of the argument is either 'START' or 'END', and determines where the data point will be placed in the period. In the future, interpolation methods will be supported to fill in the resulting masked values.
+
+Let us create a second series, this time with a monthly frequency, starting 110 months ago.
+{{{#!python numbers=disable
+>>> data = N.random.uniform(-100,100,100).astype(np.float_)
+>>> today = TS.today.asfreq('M') - 110
+>>> nseries = TS.TimeSeries(data, freq='m', observed='END',start_date=today)
+>>> sixtymonthsago = today-60
+>>> nseries[sixtymonthsago:sixtymonthsago+10] = 12
+}}}
+

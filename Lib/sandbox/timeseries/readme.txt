@@ -4,7 +4,7 @@ Requirements and warnings:
    code requires access to a couple of the header files included with this module when compiling
 2. Only tested with numpy 1.0.1
 3. Only tested with Python 2.4.x
-4. Only tested on Windows Platform
+4. Only tested on Windows and x86_64 Platform
 5. Requires maskedarray from the sandbox (not the standard masked array module with numpy)
    
 

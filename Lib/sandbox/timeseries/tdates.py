@@ -337,7 +337,7 @@ class Date:
         if self.freq == "A":
             fmt =  "%Y"
         elif self.freq in ("B","D"):
-            fmt =  "%d-%b-%y"
+            fmt =  "%d-%b-%Y"
         elif self.freq == "M":
             fmt =  "%b-%Y"
         elif self.freq == "Q":
@@ -542,13 +542,14 @@ accesses the array element by element. Therefore, `d` is a Date object.
             except AttributeError:
                 pass     
         r = ndarray.__getitem__(self, index)
-
         if not hasattr(r, "size"):
-            if type(r) == types.IntType: return Date(self.freq, value=r)
-            else: return r
+            if isinstance(r, int): 
+                return Date(self.freq, value=r)
+            else: 
+                return r
         elif r.size == 1:
             # Only one element, and it's not a scalar: we have a DateArray of size 1
-            if len(r.shape) > 0:
+            if len(numeric.shape(r)) > 0:
                 r = r.item()
             return Date(self.freq, value=r)
         else:
