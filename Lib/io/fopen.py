@@ -10,8 +10,6 @@ import numpyio
 
 LittleEndian = (sys.byteorder == 'little')
 
-_unit_imag = {'f': array(1j,'F'), 'd': 1j}
-
 __all__ = ['fopen']
 
 def getsize_type(mtype):
