@@ -108,7 +108,7 @@ class get_psolveq(get_psolve):
 class get_rpsolveq(get_psolveq):
     methname = 'rpsolve'
 
-def bicg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
+def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
     """Use BIConjugate Gradient iteration to solve A x = b
 
     Inputs:
@@ -133,11 +133,15 @@ def bicg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
-    xtype  --  The type of the result.  If None, then it will be determined
-                 from A.dtype.char and b.  If A does not have a typecode method then it will
-                 compute A.matvec(x0) to get a typecode.   To save the extra computation when
-                 A does not have a typecode attribute use xtype=0 for the same type as b or
-                 use xtype='f','d','F',or 'D'
+    xtype  --  The type of the result.  If None, then it will be
+               determined from A.dtype.char and b.  If A does not have a
+               typecode method then it will compute A.matvec(x0) to get a
+               typecode.   To save the extra computation when A does not
+               have a typecode attribute use xtype=0 for the same type as
+               b or use xtype='f','d','F',or 'D'
+    callback -- an optional user-supplied function to call after each
+                iteration.  It is called as callback(xk), where xk is the
+                current parameter vector.
     """
     b = sb.asarray(b)+0.0
     n = len(b)
@@ -180,9 +184,12 @@ def bicg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     ftflag = True
     bnrm2 = -1.0
     iter_ = maxiter
-    while 1:
+    while True:
+        olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
            revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
+        if callback is not None and iter_ > olditer:
+            callback(x)
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):
@@ -219,7 +226,8 @@ def bicg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
 
     return x, info
 
-def bicgstab(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
+
+def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
     """Use BIConjugate Gradient STABilized iteration to solve A x = b
 
     Inputs:
@@ -243,11 +251,15 @@ def bicgstab(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
-    xtype  --  The type of the result.  If None, then it will be determined
-                 from A.dtype.char and b.  If A does not have a typecode method then it will
-                 compute A.matvec(x0) to get a typecode.   To save the extra computation when
-                 A does not have a typecode attribute use xtype=0 for the same type as b or
-                 use xtype='f','d','F',or 'D'
+    xtype  --  The type of the result.  If None, then it will be
+               determined from A.dtype.char and b.  If A does not have a
+               typecode method then it will compute A.matvec(x0) to get a
+               typecode.   To save the extra computation when A does not
+               have a typecode attribute use xtype=0 for the same type as
+               b or use xtype='f','d','F',or 'D'
+    callback -- an optional user-supplied function to call after each
+                iteration.  It is called as callback(xk), where xk is the
+                current parameter vector.
     """
     b = sb.asarray(b)+0.0
     n = len(b)
@@ -290,9 +302,12 @@ def bicgstab(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     ftflag = True
     bnrm2 = -1.0
     iter_ = maxiter
-    while 1:
+    while True:
+        olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
            revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
+        if callback is not None and iter_ > olditer:
+            callback(x)
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):
@@ -320,7 +335,8 @@ def bicgstab(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
 
     return x, info
 
-def cg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
+
+def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
     """Use Conjugate Gradient iteration to solve A x = b (A^H = A)
 
     Inputs:
@@ -345,11 +361,15 @@ def cg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
-    xtype  --  The type of the result.  If None, then it will be determined
-                 from A.dtype.char and b.  If A does not have a typecode method then it will
-                 compute A.matvec(x0) to get a typecode.   To save the extra computation when
-                 A does not have a typecode attribute use xtype=0 for the same type as b or
-                 use xtype='f','d','F',or 'D'
+    xtype  --  The type of the result.  If None, then it will be
+               determined from A.dtype.char and b.  If A does not have a
+               typecode method then it will compute A.matvec(x0) to get a
+               typecode.   To save the extra computation when A does not
+               have a typecode attribute use xtype=0 for the same type as
+               b or use xtype='f','d','F',or 'D'
+    callback -- an optional user-supplied function to call after each
+                iteration.  It is called as callback(xk), where xk is the
+                current parameter vector.
     """
     b = sb.asarray(b)+0.0
     n = len(b)
@@ -392,9 +412,12 @@ def cg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     ftflag = True
     bnrm2 = -1.0
     iter_ = maxiter
-    while 1:
+    while True:
+        olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
            revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
+        if callback is not None and iter_ > olditer:
+            callback(x)
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):
@@ -423,7 +446,7 @@ def cg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     return x, info
 
 
-def cgs(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
+def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
     """Use Conjugate Gradient Squared iteration to solve A x = b
 
     Inputs:
@@ -448,11 +471,15 @@ def cgs(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
-    xtype  --  The type of the result.  If None, then it will be determined
-                 from A.dtype.char and b.  If A does not have a typecode method then it will
-                 compute A.matvec(x0) to get a typecode.   To save the extra computation when
-                 A does not have a typecode attribute use xtype=0 for the same type as b or
-                 use xtype='f','d','F',or 'D'
+    xtype  --  The type of the result.  If None, then it will be
+               determined from A.dtype.char and b.  If A does not have a
+               typecode method then it will compute A.matvec(x0) to get a
+               typecode.   To save the extra computation when A does not
+               have a typecode attribute use xtype=0 for the same type as
+               b or use xtype='f','d','F',or 'D'
+    callback -- an optional user-supplied function to call after each
+                iteration.  It is called as callback(xk), where xk is the
+                current parameter vector.
     """
     b = sb.asarray(b) + 0.0
     n = len(b)
@@ -495,9 +522,12 @@ def cgs(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     ftflag = True
     bnrm2 = -1.0
     iter_ = maxiter
-    while 1:
+    while True:
+        olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
            revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
+        if callback is not None and iter_ > olditer:
+            callback(x)
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):
@@ -525,7 +555,8 @@ def cgs(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
 
     return x, info
 
-def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
+
+def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, callback=None):
     """Use Generalized Minimal RESidual iteration to solve A x = b
 
     Inputs:
@@ -552,11 +583,15 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
-    xtype  --  The type of the result.  If None, then it will be determined
-                 from A.dtype.char and b.  If A does not have a dtype attribute then it will
-                 compute A.matvec(x0) to get a data type.   To save the extra computation when
-                 A does not have a typecode attribute use xtype=0 for the same type as b or
-                 use xtype='f','d','F',or 'D'
+    xtype  --  The type of the result.  If None, then it will be
+               determined from A.dtype.char and b.  If A does not have a
+               typecode method then it will compute A.matvec(x0) to get a
+               typecode.   To save the extra computation when A does not
+               have a typecode attribute use xtype=0 for the same type as
+               b or use xtype='f','d','F',or 'D'
+    callback -- an optional user-supplied function to call after each
+                iteration.  It is called as callback(xk), where xk is the
+                current parameter vector.
     """
     b = sb.asarray(b)+0.0
     n = len(b)
@@ -600,9 +635,12 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
     ftflag = True
     bnrm2 = -1.0
     iter_ = maxiter
-    while 1:
+    while True:
+        olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
            revcom(b, x, restrt, work, work2, iter_, resid, info, ndx1, ndx2, ijob)
+        if callback is not None and iter_ > olditer:
+            callback(x)
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):
@@ -631,8 +669,8 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
     return x, info
 
 
-def qmr(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
-    """Use Quasi-Minimal Residucal iteration to solve A x = b
+def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
+    """Use Quasi-Minimal Residual iteration to solve A x = b
 
     Inputs:
 
@@ -657,11 +695,15 @@ def qmr(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
-    xtype  --  The type of the result.  If None, then it will be determined
-                 from A.dtype.char and b.  If A does not have a typecode method then it will
-                 compute A.matvec(x0) to get a typecode.   To save the extra computation when
-                 A does not have a typecode attribute use xtype=0 for the same type as b or
-                 use xtype='f','d','F',or 'D'
+    xtype  --  The type of the result.  If None, then it will be
+               determined from A.dtype.char and b.  If A does not have a
+               typecode method then it will compute A.matvec(x0) to get a
+               typecode.   To save the extra computation when A does not
+               have a typecode attribute use xtype=0 for the same type as
+               b or use xtype='f','d','F',or 'D'
+    callback -- an optional user-supplied function to call after each
+                iteration.  It is called as callback(xk), where xk is the
+                current parameter vector.
     """
     b = sb.asarray(b)+0.0
     n = len(b)
@@ -705,9 +747,12 @@ def qmr(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     ftflag = True
     bnrm2 = -1.0
     iter_ = maxiter
-    while 1:
+    while True:
+        olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
            revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
+        if callback is not None and iter_ > olditer:
+            callback(x)
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):
