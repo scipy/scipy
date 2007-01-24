@@ -174,15 +174,14 @@ class npfile(object):
             shape = (shape,)
         dt = N.dtype(dt)
         dt_endian = self._endian_from_dtype(dt)
-        if not endian == 'dtype':
-            if dt_endian != endian:
-                dt = dt.newbyteorder(endian)
         sz = dt.itemsize * N.product(shape)
         buf = self.file.read(sz)
-        return N.ndarray(shape=shape,
+        arr = N.ndarray(shape=shape,
                          dtype=dt,
                          buffer=buf,
-                         order=order).copy()
-    
+                         order=order)
+        if (not endian == 'dtype') and (dt_endian != endian):
+            return arr.byteswap()
+        return arr.copy()
 
     fread = read
