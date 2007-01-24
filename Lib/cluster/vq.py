@@ -94,13 +94,13 @@ def vq(obs,code_book):
                     The code book is usually generated using the kmeans
                     algorithm.  Each row of the array holds a different
                     code, and the columns are the features of the code.
-                                    #   c0    c1    c2   c3
-                        code_book = [[  1.,   2.,   3.,   4.],  #f0
-                                     [  1.,   2.,   3.,   4.],  #f1
-                                     [  1.,   2.,   3.,   4.]]) #f2
+                                    #   f0    f1    f2   f3
+                        code_book = [[  1.,   2.,   3.,   4.],  #c0
+                                     [  1.,   2.,   3.,   4.],  #c1
+                                     [  1.,   2.,   3.,   4.]]) #c2
         Outputs:
             code -- 1D array.
-                    If obs is a NxM array, then a length M array
+                    If obs is a NxM array, then a length N array
                     is returned that holds the selected code book index for
                     each observation.
             dist -- 1D array.
