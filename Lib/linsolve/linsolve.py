@@ -54,6 +54,9 @@ def _toCS_umfpack( A ):
     return mat
 
 def spsolve(A, b, permc_spec=2):
+    if isspmatrix( b ):
+        b = b.toarray()
+
     if b.ndim > 1:
         if max( b.shape ) == b.size:
             b = b.squeeze()

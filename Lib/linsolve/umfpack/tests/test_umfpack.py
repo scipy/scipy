@@ -63,6 +63,15 @@ class test_solvers(NumpyTestCase):
         #print "Error: ", a*x-b
         assert_array_almost_equal(a*x, b)
 
+    def check_solve_sparse_rhs(self):
+        """Solve with UMFPACK: double precision, sparse rhs"""
+        linsolve.use_solver( useUmfpack = True )
+        a = self.a.astype('d')
+        b = csc_matrix( self.b )
+        x = linsolve.spsolve(a, b)
+        #print x
+        #print "Error: ", a*x-b
+        assert_array_almost_equal(a*x, self.b)
 
     def setUp(self):
         self.a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
