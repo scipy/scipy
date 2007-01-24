@@ -18,9 +18,9 @@
 __all__ = ['whiten', 'vq', 'kmeans']
 
 from numpy.random import randint
-from scipy.stats import std, mean
 from numpy import shape, zeros, subtract, sqrt, argmin, minimum, array, \
      newaxis, arange, compress, equal, common_type, single, double, take
+from scipy.stats import std, mean
 
 def whiten(obs):
     """ Normalize a group of observations on a per feature basis
@@ -54,6 +54,8 @@ def whiten(obs):
 
         Test
 
+            >>> from numpy import array
+            >>> from scipy.cluster.vq import whiten
             >>> features  = array([[  1.9,2.3,1.7],
             ...                    [  1.5,2.5,2.2],
             ...                    [  0.8,0.6,1.7,]])
@@ -110,6 +112,8 @@ def vq(obs,code_book):
 
         Test
 
+            >>> from numpy import array
+            >>> from scipy.cluster.vq import vq
             >>> code_book = array([[1.,1.,1.],
             ...                    [2.,2.,2.]])
             >>> features  = array([[  1.9,2.3,1.7],
@@ -192,6 +196,8 @@ def kmeans_(obs,guess,thresh=1e-5):
 
         Note: not whitened in this example.
 
+        >>> from numpy import array
+        >>> from scipy.cluster.vq import kmeans_
         >>> features  = array([[ 1.9,2.3],
         ...                    [ 1.5,2.5],
         ...                    [ 0.8,0.6],
@@ -264,6 +270,8 @@ def kmeans(obs,k_or_guess,iter=20,thresh=1e-5):
 
         ("Not checked carefully for accuracy..." he said sheepishly)
 
+        >>> from numpy import array
+        >>> from scipy.cluster.vq import vq, kmeans
         >>> features  = array([[ 1.9,2.3],
         ...                    [ 1.5,2.5],
         ...                    [ 0.8,0.6],
