@@ -51,7 +51,11 @@ class test_npfile(NumpyTestCase):
     def test_read_write(self):
         npf = npfile(StringIO())
         arr = N.reshape(N.arange(10), (5,2))
+        # Arr as read in fortran order
         f_arr = arr.reshape((2,5)).T
+        # Arr written in fortran order read in C order
+        cf_arr = arr.T.reshape((5,2))
+        # Byteswapped array
         bo = arr.dtype.byteorder
         swapped_code = sys_endian_code == '<' and '>' or '<'
         if bo in ['=', sys_endian_code]:
@@ -70,6 +74,11 @@ class test_npfile(NumpyTestCase):
         npf.rewind()
         assert_array_equal(npf.read(shp, adt, order='F'),
                            f_arr)
+        npf.rewind()
+        npf.write(arr, order='F')
+        npf.rewind()
+        assert_array_equal(npf.read(shp, adt),
+                           cf_arr)
         
         npf = npfile(StringIO(), endian='swapped', order='F')
         npf.write(arr)
@@ -78,5 +87,5 @@ class test_npfile(NumpyTestCase):
         npf.rewind()
         assert_array_equal(npf.read(shp, adt, endian='dtype'), bs_arr)
         npf.rewind()
-        # assert_array_equal(npf.read(shp, adt, order='C'), f_arr)
+        assert_array_equal(npf.read(shp, adt, order='C'), cf_arr)
         
