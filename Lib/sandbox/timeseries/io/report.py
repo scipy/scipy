@@ -1,6 +1,27 @@
 import cStringIO,operator, types
 import timeseries as ts
 
+class fmtfunc_wrapper:
+    """wraps a formatting function such that it handles masked values
+
+:IVariables:
+    - `fmtfunc` : formatting function.
+    - `mask_rep` : string to use for masked values
+    """
+    def __init__ (self, fmtfunc, mask_rep):
+        self.f = fmtfunc
+        self.mr = mask_rep
+
+    def __call__ (self, item):
+        "Execute the call behavior."
+
+        if hasattr(item, "_mask") and item._mask:
+            return self.mr
+        else:
+            return self.f(item)
+
+
+
 def report(*tseries, **kwargs):
     """generate a table report of *tseries with dates in the left column.
 
@@ -14,22 +35,23 @@ def report(*tseries, **kwargs):
           must be equal to len(tseries) (no date column header specified) or
           len(tseries)+1 (first header is assumed to be date column header)
         - `header_char` : Character to be used for the row separator line
-        - `justify` (List or String, *[None]*) : Determines how are data justified in
-          their column. If not specified, the date column and string columns are left
-          justified, and everything else is right justified. If a string is specified,
-          it must be one of 'left', 'right', or 'center' and all columns will be
-          justified the same way. If a list is specified, each column will be justified
-          according to the specification for that column in the list (specifying the
-          justification for the date column is optional).
+        - `justify` (List of strings or single string, *[None]*) : Determines how are
+          data justified in their column. If not specified, the date column and string
+          columns are left justified, and everything else is right justified. If a
+          string is specified, it must be one of 'left', 'right', or 'center' and all
+          columns will be justified the same way. If a list is specified, each column
+          will be justified according to the specification for that column in the list
+          (specifying the justification for the date column is optional).
         - `prefix` (string, *['']*) : A string prepended to each printed row.
         - `postfix` (string, *['']*) : A string appended to each printed row.
         - `mask_rep` (string, *['--']*): String used to represent masked values in
           output
         - `datefmt` (string, *[None]*) : Formatting string used for displaying the
           dates in the date column. If None, str() is simply called on the dates
-        - `fmtfunc` (function, *[str]*): A function f(item) for formatting each data
-          type in the report into a string. If not specified, str() is simply called
-          on each item.
+        - `fmtfunc` (List of functions or single function, *[None]*) : A function or
+          list of functions for formatting each data column in the report. If not
+          specified, str() is simply called on each item. If a list of functions is
+          provided, there must be exactly one function for each column
         - `wrapfunc` (function, *[lambda x:x]*): A function f(text) for wrapping text;
           each element in the table is first wrapped by this function. Useful functions
           for this are wrap_onspace, wrap_onspace_strict, and wrap_always (which are
@@ -51,6 +73,9 @@ def report(*tseries, **kwargs):
     # show masked values as "N/A"
     print r.report(series1, series2, fmtfunc=lambda x:'%.2f' % x, mask_rep='N/A')
 
+    # same thing, but format one column one with 2 decimal places, and column two with 4
+    print r.report(series1, series2, fmtfunc=[(lambda x:'%.2f' % x), (lambda x:'%.4f' % x)], mask_rep='N/A')
+
     # print an html table of the data over a specified range
     print "<table>" + \
           r.report(series1, series2, series3, dates=darray,
@@ -69,13 +94,12 @@ def report(*tseries, **kwargs):
     postfix = kwargs.pop('postfix', '')
     mask_rep = kwargs.pop('mask_rep', '--')
     datefmt = kwargs.pop('datefmt', None)
-    fmtfunc_temp = kwargs.pop('fmtfunc', str)
+    fmtfunc = kwargs.pop('fmtfunc', str)
     
-    def fmtfunc(item):
-        if hasattr(item, "_mask") and item._mask:
-            return mask_rep
-        else:
-            return fmtfunc_temp(item)
+    if type(fmtfunc) != types.ListType:
+        fmtfunc = [fmtfunc_wrapper(fmtfunc, mask_rep)]*len(tseries)
+    else:
+        fmtfunc = [fmtfunc_wrapper(f, mask_rep) for f in fmtfunc]
     
     wrapfunc = kwargs.pop('wrapfunc', lambda x:x)
 
@@ -123,7 +147,7 @@ def report(*tseries, **kwargs):
                               end_date=tseries[0].end_date)
     
     for d in dates:
-        rows.append([datefmt_func(d)]+[fmtfunc(ser[d]) for ser in tseries])
+        rows.append([datefmt_func(d)]+[fmtfunc[i](ser[d]) for i, ser in enumerate(tseries)])
 
     return indent(rows, hasHeader=hasHeader, headerChar=header_char,
                   delim=delim, justify=justify, separateRows=False,
