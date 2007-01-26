@@ -329,8 +329,24 @@ def riccati_yn(n,x):
     return jn[:(n+1)],jnp[:(n+1)]
 
 def _sph_harmonic(m,n,theta,phi):
-    """Spherical harmonic of order m,n (|m|<=n) and argument theta and phi:
-    Y^m_n(theta,phi)
+    """Compute spherical harmonics.
+
+    This is a ufunc and may take scalar or array arguments like any other ufunc.
+    The inputs will be broadcasted against each other.
+
+    :Parameters:
+      - `m` : int |m| <= n
+        The order of the harmonic.
+      - `n` : int >= 0
+        The degree of the harmonic.
+      - `theta` : float [0, pi]
+        The polar (colatitudinal) coordinate.
+      - `phi` : float [0, 2*pi]
+        The azimuthal (longitudinal) coordinate.
+
+    :Returns:
+      - `y_mn` : complex float
+        The harmonic $Y^m_n$ sampled at `theta` and `phi`.
     """
     x = cos(phi)
     m,n = int(m), int(n)
