@@ -473,12 +473,18 @@ timeseries(data  = %(data)s,
     @property
     def start_date(self):
         """Returns the first date of the series."""
-        return self._dates[0]
+        if self._dates.size != 0:
+            return self._dates[0]
+        else:
+            return None
 
     @property
     def end_date(self):
         """Returns the last date of the series."""
-        return self._dates[-1]
+        if self._dates.size != 0:
+            return self._dates[-1]
+        else:
+            return None
 
     
     def isvalid(self):
