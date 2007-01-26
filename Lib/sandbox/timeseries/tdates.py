@@ -708,15 +708,20 @@ accesses the array element by element. Therefore, `d` is a Date object.
             warnings.warn("Undefined frequency: assuming daily!")
         if self.__steps is None:
             val = numeric.asarray(self).ravel()
-            if val.size > 0:
+            if val.size > 1:
                 steps = val[1:] - val[:-1]
                 if self.__full is None:
                     self.__full = (steps.max() == 1)
                 if self.__hasdups is None:
                     self.__hasdups = (steps.min() == 0)
-            else:
+            elif val.size == 1:
                 self.__full = True
                 self.__hasdups = False
+                steps = numeric.array([], dtype=int_)
+            else:
+                self.__full = False
+                self.__hasdups = False
+                steps = None
             self.__steps = steps
         return self.__steps
     
