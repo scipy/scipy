@@ -199,8 +199,11 @@ The combination of `series` and `dates` is the `data` part.
             # Check dates ........
             if dates is None:
                 length = _getdatalength(data)
-                newdates = date_array(start_date=start_date, length=length,
-                                      freq=freq)                 
+                if length > 0:
+                    newdates = date_array(start_date=start_date, length=length,
+                                          freq=freq)
+                else:
+                    newdates = date_array([], freq=freq)
             elif not hasattr(dates, 'freq'):
                 newdates = date_array(dlist=dates, freq=freq)
             else:
@@ -882,8 +885,12 @@ def time_series(data, dates=None, freq=None, observed=None,
     """
     if dates is None:
         length = _getdatalength(data)
-        dates = date_array(start_date=start_date, end_date=end_date,
-                           length=length, include_last=include_last, freq=freq)   
+        if length > 0:
+            dates = date_array(start_date=start_date, end_date=end_date,
+                               length=length, include_last=include_last, freq=freq) 
+        else:
+            dates = date_array([], freq=freq)
+  
     elif not isinstance(dates, DateArray):
         dates = date_array(dlist=dates, freq=freq)
     return TimeSeries(data=data, dates=dates, mask=mask, observed=observed,
