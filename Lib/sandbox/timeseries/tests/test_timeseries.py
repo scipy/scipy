@@ -297,6 +297,14 @@ class test_functions(NumpyTestCase):
         assert_equal(tmp._dates, series._dates)
         assert_equal(tmp._mask, series._mask)
         
+    def test_empty_timeseries(self):
+        "Tests that empty TimeSeries are  handled properly"
+        empty_ts = time_series([], freq='b')
+        assert_array_equal(empty_ts, empty_ts + 1)
+        assert_array_equal(empty_ts, empty_ts + empty_ts)
+        assert_equal(empty_ts.start_date, None)
+        assert_equal(empty_ts.end_date, None)
+        
 ###############################################################################
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
