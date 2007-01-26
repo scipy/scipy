@@ -339,10 +339,10 @@ def _sph_harmonic(m,n,theta,phi):
         The order of the harmonic.
       - `n` : int >= 0
         The degree of the harmonic.
-      - `theta` : float [0, pi]
-        The polar (colatitudinal) coordinate.
-      - `phi` : float [0, 2*pi]
+      - `theta` : float [0, 2*pi]
         The azimuthal (longitudinal) coordinate.
+      - `phi` : float [0, pi]
+        The polar (colatitudinal) coordinate.
 
     :Returns:
       - `y_mn` : complex float
