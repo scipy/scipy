@@ -112,11 +112,13 @@ def _timeseriescompat(a, b):
     elif a.start_date != b.start_date:
         raise TimeSeriesCompatibilityError('start_date', 
                                            a.start_date, b.start_date)
-    elif (a._dates.get_steps() != b._dates.get_steps()).any():
-        raise TimeSeriesCompatibilityError('time_steps', 
-                                           a._dates.get_steps(), b._dates.get_steps())
-    elif a.shape != b.shape:
-        raise TimeSeriesCompatibilityError('size', "1: %s" % str(a.shape), 
+    else:
+        step_diff = a._dates.get_steps() != b._dates.get_steps()
+        if (step_diff is True) or (hasattr(step_diff, "any") and step_diff.any()):
+            raise TimeSeriesCompatibilityError('time_steps', 
+                                               a._dates.get_steps(), b._dates.get_steps())
+        elif a.shape != b.shape:
+            raise TimeSeriesCompatibilityError('size', "1: %s" % str(a.shape), 
                                                    "2: %s" % str(b.shape))
     return True
 
