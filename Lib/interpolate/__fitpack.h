@@ -210,9 +210,15 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
   ap_c = (PyArrayObject *)PyArray_FromDims(1,&lc,PyArray_DOUBLE);
   if (ap_tx == NULL || ap_ty == NULL || ap_c == NULL) goto fail;
   if ((iopt==0)||(nx>nxo)||(ny>nyo)) {
+    Py_XDECREF(ap_wrk);
     ap_wrk = (PyArrayObject *)PyArray_FromDims(1,&lc,PyArray_DOUBLE);
     if (ap_wrk == NULL) goto fail;
     /*ap_iwrk = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_INT);*/
+  }
+  if(ap_wrk->dimensions[0]<lc) {
+    Py_XDECREF(ap_wrk);
+    ap_wrk = (PyArrayObject *)PyArray_FromDims(1,&lc,PyArray_DOUBLE);
+    if (ap_wrk == NULL) goto fail;
   }
   memcpy(ap_tx->data,tx,nx*sizeof(double));
   memcpy(ap_ty->data,ty,ny*sizeof(double));
