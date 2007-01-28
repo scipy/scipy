@@ -33,8 +33,7 @@ import cseries
 
 
 import logging
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(name)-15s %(levelname)s %(message)s',)
+logging.basicConfig(level=logging.DEBUG,format='%(name)-15s %(levelname)s %(message)s',)
 daflog = logging.getLogger('darray_from')
 dalog = logging.getLogger('DateArray')
 
@@ -125,7 +124,7 @@ class Date:
             self.freq = corelib.fmtFreq(freq.freq)
         else:
             self.freq = corelib.fmtFreq(freq)
-        self.type = corelib.freqToType(self.freq)
+        self.freqstr = self.freq
         
         if value is not None:
             if self.freq == 'A':
@@ -356,9 +355,12 @@ class Date:
         
     def strfmt(self, fmt):
         "Formats the date"
+        if fmt is None:
+            fmt = self.default_fmtstr()
         qFmt = fmt.replace("%q", "XXXX")
         tmpStr = self.mxDate.strftime(qFmt)
-        if "XXXX" in tmpStr: tmpStr = tmpStr.replace("XXXX", str(self.quarter))
+        if "XXXX" in tmpStr: 
+            tmpStr = tmpStr.replace("XXXX", str(self.quarter))
         return tmpStr
             
     def __str__(self):
@@ -505,9 +507,9 @@ However, a loop such as :
 accesses the array element by element. Therefore, `d` is a Date object.    
     """
     def __new__(cls, dates=None, freq='U', copy=False):
-        #dalog.info("__new__ received %s [%i]" % (type(dates), numpy.size(dates)))
+        #logging.debug('DA:__new__ received %s [%i]" % (type(dates), numpy.size(dates)))
         if isinstance(dates, DateArray):
-            #dalog.info("__new__ sends %s as %s" % (type(dates), cls))
+            #logging.debug('DA:__new__ sends %s as %s" % (type(dates), cls))
             cls.__defaultfreq = dates.freq
             if not copy:
                 return dates.view(cls)
@@ -516,7 +518,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
             _dates = numeric.asarray(dates, dtype=int_)
             if copy:
                 _dates = _dates.copy()
-            #dalog.info("__new__ sends %s as %s" % (type(_dates), cls))
+            #logging.debug('DA:__new__ sends %s as %s" % (type(_dates), cls))
             if freq is None:
                 freq = 'U'
             cls.__defaultfreq = corelib.fmtFreq(freq)
@@ -531,15 +533,17 @@ accesses the array element by element. Therefore, `d` is a Date object.
             raise ArithmeticDateError, "(function %s)" % context[0].__name__
     
     def __array_finalize__(self, obj):
-        #dalog.info("__array_finalize__ received %s" % type(obj))
+        #logging.debug('DA:__array_finalize__ received %s" % type(obj))
         if hasattr(obj, 'freq'):
             self.freq = obj.freq
+            self.freqstr = obj.freqstr
         else:
             self.freq = self.__defaultfreq
-        #dalog.info("__array_finalize__ sends %s" % type(self))
+            self.freqstr = self.__defaultfreq
+        #logging.debug('DA:__array_finalize__ sends %s" % type(self))
     
     def __getitem__(self, index):
-        #dalog.info("__getitem__ got  index %s (%s)"%(index, type(index)))
+        #logging.debug('DA:__getitem__ got  index %s (%s)"%(index, type(index)))
         if isinstance(index, Date):
             index = self.find_dates(index)
         elif numeric.asarray(index).dtype.kind == 'O':
@@ -620,15 +624,6 @@ accesses the array element by element. Therefore, `d` is a Date object.
         return numeric.asarray(cseries.getDateInfo(numeric.asarray(self), self.freq, info), dtype=int_)
         
     #.... Conversion methods ....................
-#    def toobject(self):
-#        "Converts the dates from ordinals to Date objects."
-#        # Note: we better try to cache the result
-#        if self.__toobj is None:
-##            toobj = numeric.empty(self.size, dtype=object_)
-##            toobj[:] = [Date(self.freq, value=d) for d in self]
-##            self.__toobj = toobj
-#            self.__toobj = self
-#        return self.__toobj
     #
     def tovalue(self):
         "Converts the dates to integer values."
@@ -763,7 +758,7 @@ is returned.
         self._asdates = asdates
         self.__doc__ = getattr(methodname, '__doc__')
         self.obj = None
-        #dalog.info('__datearithmetics got method %s' % methodname)
+        #logging.debug('DA:__datearithmetics got method %s' % methodname)
     #
     def __get__(self, obj, objtype=None):
         self.obj = obj
@@ -775,7 +770,7 @@ is returned.
         freq = instance.freq
         if 'context' not in kwargs:
             kwargs['context'] = 'DateOK'
-        #dalog.info('__datearithmetics got other %s' % type(other))
+        #logging.debug('DA:__datearithmetics got other %s' % type(other))
         method = getattr(super(DateArray,instance), self.methodname)
         if isinstance(other, DateArray):
             if other.freq != freq:
@@ -787,7 +782,7 @@ is returned.
                 raise FrequencyDateError("Cannot operate on dates", \
                                          freq, other.freq)
             other = other.value
-            #dalog.info('__datearithmetics got other %s' % type(other))
+            #logging.debug('DA:__datearithmetics got other %s' % type(other))
         elif isinstance(other, ndarray):
             if other.dtype.kind not in ['i','f']:
                 raise ArithmeticDateError
@@ -901,6 +896,7 @@ def date_array(dlist=None, start_date=None, end_date=None, length=None,
     - a starting date and either an ending date or a given length.
     - a list of dates.
     """
+    #TODO: make sure we can use a string for a date!
     freq = corelib.fmtFreq(freq)
     # Case #1: we have a list ...................
     if dlist is not None:
