@@ -177,7 +177,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             u = 1
         nbd[i] = bounds_map[l, u]
 
-    x = array(x0)
+    x = array(x0, float64)
     f = array(0.0, float64)
     g = zeros((n,), float64)
     wa = zeros((2*m*n+4*n + 12*m**2 + 12*m,), float64)
