@@ -1064,15 +1064,17 @@ def align_series(*series, **kwargs):
     if common_freq == 'U':
         raise TimeSeriesError, \
             "Cannot adjust a series with 'Undefined' frequency."
-    valid_states = [x.isvalid() for x in series]
+    valid_states = [x.isvalid() or (x.size == 0 and x.ndim > 0) for x in series]
     if not numpy.all(valid_states):
         raise TimeSeriesError, \
             "Cannot adjust a series with missing or duplicated dates."
     
-    start_date = kwargs.pop('start_date', min([x.start_date for x in series]))
+    start_date = kwargs.pop('start_date', min([x.start_date for x in series if x.start_date is not None]))
+    print start_date
     if isinstance(start_date,str):
         start_date = Date(common_freq, string=start_date)
-    end_date = kwargs.pop('end_date', max([x.end_date for x in series]))
+    end_date = kwargs.pop('end_date', max([x.end_date for x in series if x.end_date is not None]))
+    print end_date
     if isinstance(end_date,str):
         end_date = Date(common_freq, string=end_date)
     
