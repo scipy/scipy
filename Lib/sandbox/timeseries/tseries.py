@@ -987,7 +987,7 @@ def adjust_endpoints(a, start_date=None, end_date=None):
     if a.freq == 'U':
         raise TimeSeriesError, \
             "Cannot adjust a series with 'Undefined' frequency."
-    if not a.dates.isvalid():
+    if not a.dates.isvalid() and a.ndim > 0 and a.size > 1:
         raise TimeSeriesError, \
             "Cannot adjust a series with missing or duplicated dates."
     # Flatten the series if needed ..............
@@ -995,39 +995,52 @@ def adjust_endpoints(a, start_date=None, end_date=None):
     shp_flat = a.shape
     # Dates validity checks .,...................
     msg = "%s should be a valid Date instance! (got %s instead)"
-    (dstart, dend) = a.dates[[0,-1]]
-    if start_date is None: 
-        start_date = dstart
-        start_lag = 0
-    else:
-        if not isDateType(start_date):
-            raise TypeError, msg % ('start_date', type(start_date))
-        start_lag = start_date - dstart
-    #....          
-    if end_date is None: 
-        end_date = dend
-        end_lag = 0
-    else:
-        if not isDateType(end_date):
-            raise TypeError, msg % ('end_date', type(end_date))
-        end_lag = end_date - dend    
-    # Check if the new range is included in the old one
-    if start_lag >= 0:
-        if end_lag == 0:
-            return a[start_lag:]
-        elif end_lag < 0:
-            return a[start_lag:end_lag]
+    
+    (dstart, dend) = a.start_date, a.end_date
+    if dstart is not None:
+
+        if start_date is None: 
+            start_date = dstart
+            start_lag = 0
+        else:
+            if not isDateType(start_date):
+                raise TypeError, msg % ('start_date', type(start_date))
+            start_lag = start_date - dstart
+        #....          
+        if end_date is None: 
+            end_date = dend
+            end_lag = 0
+        else:
+            if not isDateType(end_date):
+                raise TypeError, msg % ('end_date', type(end_date))
+            end_lag = end_date - dend    
+        # Check if the new range is included in the old one
+        if start_lag >= 0:
+            if end_lag == 0:
+                return a[start_lag:]
+            elif end_lag < 0:
+                return a[start_lag:end_lag]
+
+    else:                
+        if start_date is None or end_date is None:
+            raise TimeSeriesError, \
+                """start_date and end_date must be specified to adjust
+endpoints of a zero length series"""
+                
     # Create a new series .......................
     newdates = date_array(start_date=start_date, end_date=end_date)
     newshape = list(shp_flat)
     newshape[0] = len(newdates)
     newshape = tuple(newshape)
-    
+
     newdata = masked_array(numeric.empty(newshape, dtype=a.dtype), mask=True)
     newseries = TimeSeries(newdata, newdates)
-    start_date = max(start_date, dstart)
-    end_date = min(end_date, dend) + 1
-    newseries[start_date:end_date] = a[start_date:end_date]
+    
+    if dstart is not None:
+        start_date = max(start_date, dstart)
+        end_date = min(end_date, dend) + 1
+        newseries[start_date:end_date] = a[start_date:end_date]
+        
     return newseries
 #....................................................................
 def align_series(*series, **kwargs):
