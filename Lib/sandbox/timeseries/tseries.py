@@ -517,10 +517,7 @@ timeseries(data  = %(data)s,
         if freq is None:
             return self
         return TimeSeries(self._series, dates=self._dates.asfreq(freq))
-    
-    def convert(self, freq, func='auto', position='END'):
-        "Converts the dates to another frequency, and adapt the data."
-        return convert(self, freq, func=func, position=position)
+        
         
 ##### --------------------------------------------------------------------------
 ##--- ... Additional methods ...
@@ -1034,7 +1031,11 @@ endpoints of a zero length series"""
     newshape = tuple(newshape)
 
     newdata = masked_array(numeric.empty(newshape, dtype=a.dtype), mask=True)
-    newseries = TimeSeries(newdata, newdates)
+    
+    # need to ensure that we preserve attributes of the series in the result
+    options = dict(fill_value=a.fill_value, observed=a.observed)
+    
+    newseries = TimeSeries(newdata, newdates, **options)
     
     if dstart is not None:
         start_date = max(start_date, dstart)
@@ -1136,9 +1137,46 @@ def convert(series, freq, func='auto', position='END'):
                            observed=series.observed, 
                            start_date=start_date)
     return newseries
+#....................................................................
+def tshift(series, nper):
+    """Returns a series of the same size as `series`, with the same
+start_date and end_date, but values shifted by `nper`. This is useful
+for doing things like calculating a percentage change.
+Eg. pct_change = 100 * (series/tshift(series, -1) - 1)
 
+:Example:
+>>> series = tseries.time_series([0,1,2,3], start_date=tdates.Date(freq='A', year=2005))
+>>> series
+timeseries(data  = [0 1 2 3],
+           dates = [2005 ... 2008],
+           freq  = A)
+>>> tshift(series, -1)
+timeseries(data  = [-- 0 1 2],
+           dates = [2005 ... 2008],
+           freq  = A)
+"""
+    newdata = masked_array(numeric.empty(series.shape, dtype=series.dtype), mask=True)
 
+    # need to ensure that we preserve attributes of the series in the result
+    options = dict(fill_value=series.fill_value, observed=series.observed)
+    newseries = TimeSeries(newdata, series._dates, **options)
+
+    if nper < 0:
+        nper = max(-series.shape[0],nper)
+        newseries[-nper:] = series._series[:nper].copy()
+        newseries[:-nper] = masked
+    elif nper > 0:
+        nper = min(series.shape[0],nper)
+        newseries[-nper:] = masked
+        newseries[:-nper] = series._series[nper:].copy()
+    else:
+        newseries[:] = self._series[:].copy()
+
+    return newseries
+#....................................................................
 TimeSeries.convert = convert
+TimeSeries.tshift = tshift
+
 #....................................................................
 def fill_missing_dates(data, dates=None, freq=None,fill_value=None):
     """Finds and fills the missing dates in a time series.
