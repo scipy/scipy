@@ -28,7 +28,7 @@ from maskedarray.testutils import assert_equal, assert_array_equal
 from timeseries import tseries
 #reload(tseries)
 from timeseries.tseries import Date, date_array_fromlist
-from timeseries.tseries import time_series, TimeSeries, adjust_endpoints, mask_period
+from timeseries.tseries import time_series, TimeSeries, adjust_endpoints, mask_period, align_series
 
 class test_creation(NumpyTestCase):
     "Base test class for MaskedArrays."
@@ -270,6 +270,12 @@ class test_functions(NumpyTestCase):
                                    end_date=Date('D', string='2007-01-31'))
         assert_equal(dseries.size, 26)
         assert_equal(dseries._mask, N.r_[series._mask[5:], [1]*16])
+        
+        empty_series = time_series([], freq='d')
+        a, b = align_series(series, empty_series)
+        assert_equal(a.start_date, b.start_date)
+        assert_equal(a.end_date, b.end_date)
+        
     #
     def test_maskperiod(self):        
         "Test mask_period"
