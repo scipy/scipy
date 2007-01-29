@@ -276,6 +276,22 @@ class test_functions(NumpyTestCase):
         assert_equal(a.start_date, b.start_date)
         assert_equal(a.end_date, b.end_date)
         
+    def test_tshift(self):
+        "Test tshift function"
+        series = self.d[0]
+        shift_negative = series.tshift(-1)
+        result_data = [999] + [0,1,2,3,4,5,6,7,8,9,10,11,12,13]
+        result_mask = [1  ] + [1,0,0,0,0,1,0,0,0,0,1, 0, 0, 0 ]
+        shift_negative_result = time_series(result_data, series._dates, mask=result_mask)
+
+        shift_positive = series.tshift(1)
+        result_data = [1,2,3,4,5,6,7,8,9,10,11,12,13,14] + [999]
+        result_mask = [0,0,0,0,1,0,0,0,0,1, 0, 0, 0, 0 ] + [1  ]
+        shift_positive_result = time_series(result_data, series._dates, mask=result_mask)
+        
+        assert_array_equal(shift_negative, shift_negative_result)
+        assert_array_equal(shift_positive, shift_positive_result)
+        
     #
     def test_maskperiod(self):        
         "Test mask_period"
