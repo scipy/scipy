@@ -624,8 +624,8 @@ def buttord(wp, ws, gpass, gstop, analog=0):
         passb = tan(wp*pi/2.0)
         stopb = tan(ws*pi/2.0)
     else:
-        passb = wp
-        stopb = ws
+        passb = wp*1.0
+        stopb = ws*1.0
 
     if filter_type == 1:            # low
         nat = stopb / passb
@@ -729,11 +729,11 @@ def cheb1ord(wp, ws, gpass, gstop, analog=0):
 
     # Pre-wagpass frequencies
     if not analog:
-        passb = tan(pi*wp/2)
-        stopb = tan(pi*ws/2)
+        passb = tan(pi*wp/2.)
+        stopb = tan(pi*ws/2.)
     else:
-        passb = wp
-        stopb = ws
+        passb = wp*1.0
+        stopb = ws*1.0
 
     if filter_type == 1:           # low
         nat = stopb / passb
@@ -806,11 +806,11 @@ def cheb2ord(wp, ws, gpass, gstop, analog=0):
 
     # Pre-wagpass frequencies
     if not analog:
-        passb = tan(pi*wp/2)
-        stopb = tan(pi*ws/2)
+        passb = tan(pi*wp/2.0)
+        stopb = tan(pi*ws/2.0)
     else:
-        passb = wp
-        stopb = ws
+        passb = wp*1.0
+        stopb = ws*1.0
 
     if filter_type == 1:           # low
         nat = stopb / passb
@@ -906,8 +906,8 @@ def ellipord(wp, ws, gpass, gstop, analog=0):
 
     # Pre-wagpass frequencies
     if analog:
-        passb = wp
-        stopb = ws
+        passb = wp*1.0
+        stopb = ws*1.0
     else:
         passb = tan(wp*pi/2.0)
         stopb = tan(ws*pi/2.0)
