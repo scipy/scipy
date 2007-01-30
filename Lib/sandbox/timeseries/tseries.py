@@ -523,6 +523,14 @@ timeseries(data  = %(data)s,
     containing the indices of the non-zero elements in that dimension."""
         return self._series.nonzero()
         
+def _attrib_dict(series, exclude=[]):
+    """this function is used for passing through attributes of one
+time series to a new one being created"""
+    result = {'fill_value':series.fill_value,
+              'observed':series.observed}
+    return dict(filter(lambda x: x[0] not in exclude, result.iteritems()))
+    
+        
 ##### --------------------------------------------------------------------------
 ##--- ... Additional methods ...
 ##### --------------------------------------------------------------------------
@@ -1117,7 +1125,7 @@ def convert(series, freq, func='auto', position='END'):
     if position.upper() not in ('END','START'): 
         raise ValueError("invalid value for position argument: (%s)",str(position))
     
-    toFreq = corelib.fmtFreq(freq)
+    toFreq = corelib.check_freq(freq)
     fromFreq = series.freq
     start_date = series._dates[0]
     
@@ -1180,7 +1188,7 @@ timeseries(data  = [-- 0 1 2],
            freq  = A)
 """
     #Backup series attributes
-    options = dict(fill_value=series.fill_value, observed=series.observed)
+    options = _attrib_dict(series)
     newdata = masked_array(numeric.empty(series.shape, dtype=series.dtype), 
                            mask=True)
     if copy:
