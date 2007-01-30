@@ -12,6 +12,29 @@ these are the earliest values at each frequency that can be converted
 to frequencies higher than daily (ie. Hourly, Minutely, Secondly)
 */
 
+#define FANN  1000  /* Annual */
+#define FQTR  2000  /* Quarterly */
+#define FMTH  3000  /* Monthly */
+#define FWK   4000  /* Weekly */
+#define FBUS  5000  /* Business days */
+#define FDL   6000  /* Daily */
+#define FHR   7000  /* Hourly */
+#define FMIN  8000  /* Minutely */
+#define FSEC  9000  /* Secondly */
+#define FUND  -9999 /* Undefined */
+/*
+static long FANN = 1000;
+static long FQTR = 2000;
+static long FMTH = 3000;
+static long FWK  = 4000;
+static long FBUS = 5000;
+static long FDL  = 6000;
+static long FHR  = 7000;
+static long FMIN = 8000;
+static long FSEC = 9000;
+static long FUND = -9999;
+*/
+
 static long minval_D_toHighFreq = 719163;
 
 ///////////////////////////////////////////////////////////////////////
@@ -399,142 +422,142 @@ static long nofunc(long fromDate, char relation) { return -1; }
 // end of frequency specific conversion routines
 
 // return a pointer to appropriate conversion function
-static long (*get_asfreq_func(char fromFreq, char toFreq, int forConvert))(long, char) {
+static long (*get_asfreq_func(int fromFreq, int toFreq, int forConvert))(long, char) {
 
     switch(fromFreq)
     {
-        case 'A':
+        case FANN:
             switch(toFreq)
             {
-                case 'Q': return &asfreq_AtoQ;
-                case 'M': return &asfreq_AtoM;
-                case 'W': return &asfreq_AtoW;
-                case 'B': return &asfreq_AtoB;
-                case 'D': return &asfreq_AtoD;
-                case 'H': return &asfreq_AtoH;
-                case 'T': return &asfreq_AtoT;
-                case 'S': return &asfreq_AtoS;
+                case FQTR: return &asfreq_AtoQ;
+                case FMTH: return &asfreq_AtoM;
+                case FWK: return &asfreq_AtoW;
+                case FBUS: return &asfreq_AtoB;
+                case FDL: return &asfreq_AtoD;
+                case FHR: return &asfreq_AtoH;
+                case FMIN: return &asfreq_AtoT;
+                case FSEC: return &asfreq_AtoS;
                 default: return &nofunc;
             }
 
-        case 'Q':
+        case FQTR:
             switch(toFreq)
             {
-                case 'A': return &asfreq_QtoA;
-                case 'M': return &asfreq_QtoM;
-                case 'W': return &asfreq_QtoW;
-                case 'B': return &asfreq_QtoB;
-                case 'D': return &asfreq_QtoD;
-                case 'H': return &asfreq_QtoH;
-                case 'T': return &asfreq_QtoT;
-                case 'S': return &asfreq_QtoS;
+                case FANN: return &asfreq_QtoA;
+                case FMTH: return &asfreq_QtoM;
+                case FWK: return &asfreq_QtoW;
+                case FBUS: return &asfreq_QtoB;
+                case FDL: return &asfreq_QtoD;
+                case FHR: return &asfreq_QtoH;
+                case FMIN: return &asfreq_QtoT;
+                case FSEC: return &asfreq_QtoS;
                 default: return &nofunc;
             }
 
-        case 'M':
+        case FMTH:
             switch(toFreq)
             {
-                case 'A': return &asfreq_MtoA;
-                case 'Q': return &asfreq_MtoQ;
-                case 'W': return &asfreq_MtoW;
-                case 'B': return &asfreq_MtoB;
-                case 'D': return &asfreq_MtoD;
-                case 'H': return &asfreq_MtoH;
-                case 'T': return &asfreq_MtoT;
-                case 'S': return &asfreq_MtoS;
+                case FANN: return &asfreq_MtoA;
+                case FQTR: return &asfreq_MtoQ;
+                case FWK: return &asfreq_MtoW;
+                case FBUS: return &asfreq_MtoB;
+                case FDL: return &asfreq_MtoD;
+                case FHR: return &asfreq_MtoH;
+                case FMIN: return &asfreq_MtoT;
+                case FSEC: return &asfreq_MtoS;
                 default: return &nofunc;
             }
 
-        case 'W':
+        case FWK:
             switch(toFreq)
             {
-                case 'A': return &asfreq_WtoA;
-                case 'Q': return &asfreq_WtoQ;
-                case 'M': return &asfreq_WtoM;
-                case 'B': return &asfreq_WtoB;
-                case 'D': return &asfreq_WtoD;
-                case 'H': return &asfreq_WtoH;
-                case 'T': return &asfreq_WtoT;
-                case 'S': return &asfreq_WtoS;
+                case FANN: return &asfreq_WtoA;
+                case FQTR: return &asfreq_WtoQ;
+                case FMTH: return &asfreq_WtoM;
+                case FBUS: return &asfreq_WtoB;
+                case FDL: return &asfreq_WtoD;
+                case FHR: return &asfreq_WtoH;
+                case FMIN: return &asfreq_WtoT;
+                case FSEC: return &asfreq_WtoS;
                 default: return &nofunc;
             }
 
-        case 'B':
+        case FBUS:
             switch(toFreq)
             {
-                case 'A': return &asfreq_BtoA;
-                case 'Q': return &asfreq_BtoQ;
-                case 'M': return &asfreq_BtoM;
-                case 'W': return &asfreq_BtoW;
-                case 'D': return &asfreq_BtoD;
-                case 'H': return &asfreq_BtoH;
-                case 'T': return &asfreq_BtoT;
-                case 'S': return &asfreq_BtoS;
+                case FANN: return &asfreq_BtoA;
+                case FQTR: return &asfreq_BtoQ;
+                case FMTH: return &asfreq_BtoM;
+                case FWK: return &asfreq_BtoW;
+                case FDL: return &asfreq_BtoD;
+                case FHR: return &asfreq_BtoH;
+                case FMIN: return &asfreq_BtoT;
+                case FSEC: return &asfreq_BtoS;
                 default: return &nofunc;
             }
 
-        case 'D':
+        case FDL:
             switch(toFreq)
             {
-                case 'A': return &asfreq_DtoA;
-                case 'Q': return &asfreq_DtoQ;
-                case 'M': return &asfreq_DtoM;
-                case 'W': return &asfreq_DtoW;
-                case 'B':
+                case FANN: return &asfreq_DtoA;
+                case FQTR: return &asfreq_DtoQ;
+                case FMTH: return &asfreq_DtoM;
+                case FWK: return &asfreq_DtoW;
+                case FBUS:
                     if (forConvert) { return &asfreq_DtoB_forConvert; }
                     else            { return &asfreq_DtoB; }
-                case 'D': return &asfreq_DtoD;
-                case 'H': return &asfreq_DtoH;
-                case 'T': return &asfreq_DtoT;
-                case 'S': return &asfreq_DtoS;
+                case FDL: return &asfreq_DtoD;
+                case FHR: return &asfreq_DtoH;
+                case FMIN: return &asfreq_DtoT;
+                case FSEC: return &asfreq_DtoS;
                 default: return &nofunc;
             }
 
-        case 'H':
+        case FHR:
             switch(toFreq)
             {
-                case 'A': return &asfreq_HtoA;
-                case 'Q': return &asfreq_HtoQ;
-                case 'M': return &asfreq_HtoM;
-                case 'W': return &asfreq_HtoW;
-                case 'B':
+                case FANN: return &asfreq_HtoA;
+                case FQTR: return &asfreq_HtoQ;
+                case FMTH: return &asfreq_HtoM;
+                case FWK: return &asfreq_HtoW;
+                case FBUS:
                     if (forConvert) { return &asfreq_HtoB_forConvert; }
                     else            { return &asfreq_HtoB; }
-                case 'D': return &asfreq_HtoD;
-                case 'T': return &asfreq_HtoT;
-                case 'S': return &asfreq_HtoS;
+                case FDL: return &asfreq_HtoD;
+                case FMIN: return &asfreq_HtoT;
+                case FSEC: return &asfreq_HtoS;
                 default: return &nofunc;
             }
 
-        case 'T':
+        case FMIN:
             switch(toFreq)
             {
-                case 'A': return &asfreq_TtoA;
-                case 'Q': return &asfreq_TtoQ;
-                case 'M': return &asfreq_TtoM;
-                case 'W': return &asfreq_TtoW;
-                case 'B':
+                case FANN: return &asfreq_TtoA;
+                case FQTR: return &asfreq_TtoQ;
+                case FMTH: return &asfreq_TtoM;
+                case FWK: return &asfreq_TtoW;
+                case FBUS:
                     if (forConvert) { return &asfreq_TtoB_forConvert; }
                     else            { return &asfreq_TtoB; }
-                case 'D': return &asfreq_TtoD;
-                case 'H': return &asfreq_TtoH;
-                case 'S': return &asfreq_TtoS;
+                case FDL: return &asfreq_TtoD;
+                case FHR: return &asfreq_TtoH;
+                case FSEC: return &asfreq_TtoS;
                 default: return &nofunc;
             }
 
-        case 'S':
+        case FSEC:
             switch(toFreq)
             {
-                case 'A': return &asfreq_StoA;
-                case 'Q': return &asfreq_StoQ;
-                case 'M': return &asfreq_StoM;
-                case 'W': return &asfreq_StoW;
-                case 'B':
+                case FANN: return &asfreq_StoA;
+                case FQTR: return &asfreq_StoQ;
+                case FMTH: return &asfreq_StoM;
+                case FWK: return &asfreq_StoW;
+                case FBUS:
                     if (forConvert) { return &asfreq_StoB_forConvert; }
                     else            { return &asfreq_StoB; }
-                case 'D': return &asfreq_StoD;
-                case 'H': return &asfreq_StoH;
-                case 'T': return &asfreq_StoT;
+                case FDL: return &asfreq_StoD;
+                case FHR: return &asfreq_StoH;
+                case FMIN: return &asfreq_StoT;
                 default: return &nofunc;
             }
         default: return &nofunc;
@@ -546,7 +569,7 @@ Helper function for cseries_convert:
     determine the size of the second dimension for the resulting
     converted array
 */
-static long get_height(char fromFreq, char toFreq) {
+static long get_height(int fromFreq, int toFreq) {
 
     int maxBusDaysPerYear, maxBusDaysPerQuarter, maxBusDaysPerMonth;
     int maxDaysPerYear, maxDaysPerQuarter, maxDaysPerMonth;
@@ -561,80 +584,80 @@ static long get_height(char fromFreq, char toFreq) {
 
     switch(fromFreq)
     {
-        case 'A': return 1;
-        case 'Q':
+        case FANN: return 1;
+        case FQTR:
             switch(toFreq)
             {
-                case 'A': return 4;
+                case FANN: return 4;
                 default: return 1;
             }
-        case 'M': //monthly
+        case FMTH: //monthly
             switch(toFreq)
             {
-                case 'A': return 12;
-                case 'Q': return 3;
+                case FANN: return 12;
+                case FQTR: return 3;
                 default: return 1;
             }
-        case 'W': //monthly
+        case FWK: //monthly
             switch(toFreq)
             {
-                case 'A': return 53;
-                case 'Q': return 13;
-                case 'M': return 4;
+                case FANN: return 53;
+                case FQTR: return 13;
+                case FMTH: return 4;
                 default: return 1;
             }
-        case 'B': //business
+        case FBUS: //business
             switch(toFreq)
             {
-                case 'A': return maxBusDaysPerYear;;
-                case 'Q': return maxBusDaysPerQuarter;
-                case 'M': return maxBusDaysPerMonth;
-                case 'W': return 5;
+                case FANN: return maxBusDaysPerYear;;
+                case FQTR: return maxBusDaysPerQuarter;
+                case FMTH: return maxBusDaysPerMonth;
+                case FWK: return 5;
                 default: return 1;
             }
-        case 'D': //daily
+        case FDL: //daily
             switch(toFreq)
             {
-                case 'A': return maxDaysPerYear;;
-                case 'Q': return maxDaysPerQuarter;
-                case 'M': return maxDaysPerMonth;
-                case 'W': return 7;
+                case FANN: return maxDaysPerYear;;
+                case FQTR: return maxDaysPerQuarter;
+                case FMTH: return maxDaysPerMonth;
+                case FWK: return 7;
                 default: return 1;
             }
-        case 'H': //hourly
+        case FHR: //hourly
             switch(toFreq)
             {
-                case 'A': return 24 * maxDaysPerYear;;
-                case 'Q': return 24 * maxDaysPerQuarter;
-                case 'M': return 24 * maxDaysPerMonth;
-                case 'W': return 24 * 7;
-                case 'D': return 24;
-                case 'B': return 24;
+                case FANN: return 24 * maxDaysPerYear;;
+                case FQTR: return 24 * maxDaysPerQuarter;
+                case FMTH: return 24 * maxDaysPerMonth;
+                case FWK: return 24 * 7;
+                case FDL: return 24;
+                case FBUS: return 24;
                 default: return 1;
             }
-        case 'T': //minutely
+        case FMIN: //minutely
             switch(toFreq)
             {
-                case 'A': return 24 * 60 * maxDaysPerYear;;
-                case 'Q': return 24 * 60 * maxDaysPerQuarter;
-                case 'M': return 24 * 60 * maxDaysPerMonth;
-                case 'W': return 24 * 60 * 7;
-                case 'D': return 24 * 60;
-                case 'B': return 24 * 60;
-                case 'H': return 60;
+                case FANN: return 24 * 60 * maxDaysPerYear;;
+                case FQTR: return 24 * 60 * maxDaysPerQuarter;
+                case FMTH: return 24 * 60 * maxDaysPerMonth;
+                case FWK: return 24 * 60 * 7;
+                case FDL: return 24 * 60;
+                case FBUS: return 24 * 60;
+                case FHR: return 60;
                 default: return 1;
             }
-        case 'S': //minutely
+        case FSEC: //minutely
             switch(toFreq)
             {
-                case 'A': return 24 * 60 * 60 * maxDaysPerYear;;
-                case 'Q': return 24 * 60 * 60 * maxDaysPerQuarter;
-                case 'M': return 24 * 60 * 60 * maxDaysPerMonth;
-                case 'W': return 24 * 60 * 60 * 7;
-                case 'D': return 24 * 60 * 60;
-                case 'B': return 24 * 60 * 60;
-                case 'H': return 60 * 60;
-                case 'T': return 60;
+                case FANN: return 24 * 60 * 60 * maxDaysPerYear;;
+                case FQTR: return 24 * 60 * 60 * maxDaysPerQuarter;
+                case FMTH: return 24 * 60 * 60 * maxDaysPerMonth;
+                case FWK: return 24 * 60 * 60 * 7;
+                case FDL: return 24 * 60 * 60;
+                case FBUS: return 24 * 60 * 60;
+                case FHR: return 60 * 60;
+                case FMIN: return 60;
                 default: return 1;
             }
         default: return 1;
@@ -651,6 +674,7 @@ cseries_convert(PyObject *self, PyObject *args)
     PyArrayObject *mask, *newMask;
 
     PyObject *returnVal = NULL;
+    PyObject *start_index_retval;
 
     long startIndex;
     long newStart, newStartTemp;
@@ -660,7 +684,8 @@ cseries_convert(PyObject *self, PyObject *args)
     long nd;
     npy_intp *dim, *newIdx;
     long currPerLen;
-    char *fromFreq, *toFreq, *position;
+    char *position;
+    int fromFreq, toFreq;
     char relation;
 
     PyObject *val, *valMask;
@@ -671,12 +696,15 @@ cseries_convert(PyObject *self, PyObject *args)
 
     returnVal = PyDict_New();
 
-    if (!PyArg_ParseTuple(args, "OssslO:convert(array, fromfreq, tofreq, position, startIndex, mask)", &array, &fromFreq, &toFreq, &position, &startIndex, &mask)) return NULL;
+    if (!PyArg_ParseTuple(args, "OiislO:convert(array, fromfreq, tofreq, position, startIndex, mask)", &array, &fromFreq, &toFreq, &position, &startIndex, &mask)) return NULL;
 
-    if (toFreq[0] == fromFreq[0])
+    if (toFreq == fromFreq)
     {
         PyDict_SetItemString(returnVal, "values", (PyObject*)array);
         PyDict_SetItemString(returnVal, "mask", (PyObject*)mask);
+
+        Py_DECREF(array);
+        Py_DECREF(mask);
 
         return returnVal;
     }
@@ -696,8 +724,8 @@ cseries_convert(PyObject *self, PyObject *args)
             break;
     }
 
-    asfreq_main = get_asfreq_func(fromFreq[0], toFreq[0], 1);
-    asfreq_endpoints = get_asfreq_func(fromFreq[0], toFreq[0], 0);
+    asfreq_main = get_asfreq_func(fromFreq, toFreq, 1);
+    asfreq_endpoints = get_asfreq_func(fromFreq, toFreq, 0);
 
     //convert start index to new frequency
     newStartTemp = asfreq_main(startIndex, 'B');
@@ -715,11 +743,11 @@ cseries_convert(PyObject *self, PyObject *args)
     }
 
     newLen = newEnd - newStart + 1;
-    newHeight = get_height(fromFreq[0], toFreq[0]);
+    newHeight = get_height(fromFreq, toFreq);
 
     if (newHeight > 1) {
 
-        asfreq_reverse = get_asfreq_func(toFreq[0], fromFreq[0], 0);
+        asfreq_reverse = get_asfreq_func(toFreq, fromFreq, 0);
         currPerLen = startIndex - asfreq_reverse(newStart, 'B');
 
         nd = 2;
@@ -778,9 +806,15 @@ cseries_convert(PyObject *self, PyObject *args)
 
     PyDimMem_FREE(newIdx);
 
+    start_index_retval = (PyObject*)PyInt_FromLong(newStart);
+
     PyDict_SetItemString(returnVal, "values", (PyObject*)newArray);
     PyDict_SetItemString(returnVal, "mask", (PyObject*)newMask);
-    PyDict_SetItemString(returnVal, "startindex", (PyObject*)PyInt_FromLong(newStart));
+    PyDict_SetItemString(returnVal, "startindex", start_index_retval);
+
+    Py_DECREF(newArray);
+    Py_DECREF(newMask);
+    Py_DECREF(start_index_retval);
 
     return returnVal;
 
@@ -794,13 +828,14 @@ cseries_asfreq(PyObject *self, PyObject *args)
     PyArrayObject *fromDates, *toDates;
     PyArrayIterObject *iterFrom, *iterTo;
     PyObject *fromDateObj, *toDateObj;
-    char *fromFreq, *toFreq, *relation;
+    char *relation;
+    int fromFreq, toFreq;
     long fromDate, toDate;
     long (*asfreq_main)(long, char) = NULL;
 
-    if (!PyArg_ParseTuple(args, "Osss:asfreq(fromDates, fromfreq, tofreq, relation)", &fromDates, &fromFreq, &toFreq, &relation)) return NULL;
+    if (!PyArg_ParseTuple(args, "Oiis:asfreq(fromDates, fromfreq, tofreq, relation)", &fromDates, &fromFreq, &toFreq, &relation)) return NULL;
 
-    asfreq_main = get_asfreq_func(fromFreq[0], toFreq[0], 0);
+    asfreq_main = get_asfreq_func(fromFreq, toFreq, 0);
 
     toDates = (PyArrayObject *)PyArray_Copy(fromDates);
 
@@ -841,35 +876,34 @@ static long dInfo_day_of_year(mxDateTimeObject *dateObj)     { return dateObj->d
 static long dInfo_day_of_week(mxDateTimeObject *dateObj)     { return dateObj->day_of_week; }
 static long dInfo_week(mxDateTimeObject *dateObj)     {
 
-    long year, week, day;
+    int year, week, day;
     PyObject *ISOWeekTuple = NULL;
-    ISOWeekTuple = PyObject_GetAttrString(dateObj, "iso_week");
+    ISOWeekTuple = PyObject_GetAttrString((PyObject*)dateObj, "iso_week");
 
     if (!PyArg_ParseTuple(ISOWeekTuple,"iii;need a ISO Week 3-tuple (year,week,day)",
-              &year,&week,&day)) return NULL;
+              &year, &week, &day)) return NULL;
 
     Py_DECREF(ISOWeekTuple);
 
-    return week;
+    return (long)week;
 }
 static long dInfo_hour(mxDateTimeObject *dateObj)     { return dateObj->hour; }
 static long dInfo_minute(mxDateTimeObject *dateObj)     { return dateObj->minute; }
-static long dInfo_second(mxDateTimeObject *dateObj)     { return dateObj->second; }
+static long dInfo_second(mxDateTimeObject *dateObj)     { return (long)dateObj->second; }
 
-static double getAbsTime(char freq, long dailyDate, long originalDate) {
+static double getAbsTime(int freq, long dailyDate, long originalDate) {
 
-    double periodsPerDay, result;
-    long startOfDay;
+    long startOfDay, periodsPerDay;
 
     switch(freq)
     {
-        case 'H':
+        case FHR:
             periodsPerDay = 24;
             break;
-        case 'T':
+        case FMIN:
             periodsPerDay = 24*60;
             break;
-        case 'S':
+        case FSEC:
             periodsPerDay = 24*60*60;
             break;
         default:
@@ -877,7 +911,7 @@ static double getAbsTime(char freq, long dailyDate, long originalDate) {
     }
 
     startOfDay = asfreq_DtoHIGHFREQ(dailyDate, 'B', periodsPerDay);
-    return (24*60*60)*((double)(originalDate - startOfDay))/periodsPerDay;
+    return (24*60*60)*((double)(originalDate - startOfDay))/((double)periodsPerDay);
 }
 
 
@@ -886,7 +920,7 @@ static char cseries_getDateInfo_doc[] = "";
 static PyObject *
 cseries_getDateInfo(PyObject *self, PyObject *args)
 {
-    char *freq;
+    int freq;
     char *info;
 
     PyArrayObject *array;
@@ -896,18 +930,20 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
 
     PyObject *val;
     long dateNum, dInfo;
-    double absdate, abstime;
+    long absdate;
+    //double absdate, abstime;
+    double abstime;
 
     long (*toDaily)(long, char) = NULL;
     long (*getDateInfo)(mxDateTimeObject*) = NULL;
 
-    if (!PyArg_ParseTuple(args, "Oss:getDateInfo(array, freq, info)", &array, &freq, &info)) return NULL;
+    if (!PyArg_ParseTuple(args, "Ois:getDateInfo(array, freq, info)", &array, &freq, &info)) return NULL;
     newArray = (PyArrayObject *)PyArray_Copy(array);
 
     iterSource = (PyArrayIterObject *)PyArray_IterNew((PyObject *)array);
     iterResult = (PyArrayIterObject *)PyArray_IterNew((PyObject *)newArray);
 
-    toDaily = get_asfreq_func(*freq, 'D', 0);
+    toDaily = get_asfreq_func(freq, FDL, 0);
 
     switch(*info)
     {
@@ -949,8 +985,9 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
 
         val = PyArray_GETITEM(array, iterSource->dataptr);
         dateNum = PyInt_AsLong(val);
-        absdate = (double)toDaily(dateNum, 'B');
-        abstime = getAbsTime(*freq, absdate, dateNum);
+        //absdate = (double)toDaily(dateNum, 'B');
+        absdate = toDaily(dateNum, 'B');
+        abstime = getAbsTime(freq, absdate, dateNum);
 
         convDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(absdate, abstime);
         dInfo = getDateInfo(convDate);
