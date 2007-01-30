@@ -14,6 +14,7 @@ static struct PyMethodDef fitpack_module_methods[] = {
 {"_parcur", fitpack_parcur, METH_VARARGS, doc_parcur},
 {"_surfit", fitpack_surfit, METH_VARARGS, doc_surfit},
 {"_bispev", fitpack_bispev, METH_VARARGS, doc_bispev},
+{"_insert", fitpack_insert, METH_VARARGS, doc_insert},
 {NULL,		NULL, 0, NULL}
 };
 PyMODINIT_FUNC init_fitpack(void) {

@@ -16,6 +16,7 @@
   {"_parcur", fitpack_parcur, METH_VARARGS, doc_parcur},
   {"_surfit", fitpack_surfit, METH_VARARGS, doc_surfit},
   {"_bispev", fitpack_bispev, METH_VARARGS, doc_bispev},
+  {"_insert", fitpack_insert, METH_VARARGS, doc_insert},
  */
 /* link libraries: (one item per line)
    ddierckx
@@ -36,6 +37,7 @@
 #define SURFIT surfit
 #define BISPEV bispev
 #define PARDER parder
+#define INSERT insert
 #else
 #define CURFIT curfit_
 #define PERCUR percur_
@@ -49,6 +51,7 @@
 #define SURFIT surfit_
 #define BISPEV bispev_
 #define PARDER parder_
+#define INSERT insert_
 #endif
 void CURFIT(int*,int*,double*,double*,double*,double*,double*,int*,double*,int*,int*,double*,double*,double*,double*,int*,int*,int*);
 void PERCUR(int*,int*,double*,double*,double*,int*,double*,int*,int*,double*,double*,double*,double*,int*,int*,int*);
@@ -62,6 +65,7 @@ void CLOCUR(int*,int*,int*,int*,double*,int*,double*,double*,int*,double*,int*,i
 void SURFIT(int*,int*,double*,double*,double*,double*,double*,double*,double*,double*,int*,int*,double*,int*,int*,int*,double*,int*,double*,int*,double*,double*,double*,double*,int*,double*,int*,int*,int*,int*);
 void BISPEV(double*,int*,double*,int*,double*,int*,int*,double*,int*,double*,int*,double*,double*,int*,int*,int*,int*);
 void PARDER(double*,int*,double*,int*,double*,int*,int*,int*,int*,double*,int*,double*,int*,double*,double*,int*,int*,int*,int*);
+void INSERT(int*,double*,int*,double*,int*,double*,double*,int*,double*,int*,int*);
 
 /* Note that curev, cualde need no interface. */
 
@@ -544,6 +548,43 @@ static PyObject *fitpack_spalde(PyObject *dummy, PyObject *args) {
   Py_XDECREF(ap_t);
   return NULL;
 }
+
+static char doc_insert[] = " [tt,cc,ier] = _insert(iopt,t,c,k,x,m)";
+static PyObject *fitpack_insert(PyObject *dummy, PyObject*args) {
+  int iopt, n, nn, k, nest, ier, m;
+  double x;
+  double *t, *c, *tt, *cc;
+  PyArrayObject *ap_t = NULL, *ap_c = NULL, *ap_tt = NULL, *ap_cc = NULL;
+  PyObject *t_py = NULL, *c_py = NULL;
+  if (!PyArg_ParseTuple(args, "iOOidi",&iopt,&t_py,&c_py,&k, &x, &m)) return NULL;
+  ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
+  ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
+  if (ap_t == NULL || ap_c == NULL) goto fail;
+  t = (double *) ap_t->data;
+  c = (double *) ap_c->data;
+  n = ap_t->dimensions[0];
+  nest = n + m;
+  ap_tt = (PyArrayObject *)PyArray_FromDims(1,&nest,PyArray_DOUBLE);
+  ap_cc = (PyArrayObject *)PyArray_FromDims(1,&nest,PyArray_DOUBLE);
+  if (ap_tt == NULL || ap_cc == NULL) goto fail;
+  tt = (double *) ap_tt->data;
+  cc = (double *) ap_cc->data;
+  for ( ; n < nest; n++) {
+    INSERT(&iopt, t, &n, c, &k, &x, tt, &nn, cc, &nest, &ier);
+    if (ier) break;
+    t = tt;
+    c = cc;
+  }
+  Py_DECREF(ap_c);
+  Py_DECREF(ap_t);
+  PyObject* ret = Py_BuildValue("NNi",PyArray_Return(ap_tt),PyArray_Return(ap_cc),ier);
+  return ret;
+  
+  fail:
+  Py_XDECREF(ap_c);
+  Py_XDECREF(ap_t);
+  return NULL;
+  }
 
 
 

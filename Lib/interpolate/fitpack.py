@@ -29,7 +29,7 @@ TODO: Make interfaces to the following fitpack functions:
 """
 
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
-    'bisplrep', 'bisplev']
+    'bisplrep', 'bisplev', 'insert']
 __version__ = "$Revision$"[10:-1]
 import _fitpack
 from numpy import atleast_1d, array, ones, zeros, sqrt, ravel, transpose, \
@@ -750,6 +750,49 @@ def bisplev(x,y,tck,dx=0,dy=0):
     if len(z)>1: return z
     if len(z[0])>1: return z[0]
     return z[0][0]
+
+def insert(x,tck,m=1,per=0):
+    """Insert knots into a B-spline.
+
+    Description:
+
+      Given the knots and coefficients of a B-spline representation, create a 
+      new B-spline with a knot inserted m times at point x.
+      This is a wrapper around the FORTRAN routine insert of FITPACK.
+
+    Inputs:
+
+      x (u) -- A 1-D point at which to insert a new knot(s).  If tck was returned
+               from splprep, then the parameter values, u should be given.
+      tck -- A sequence of length 3 returned by splrep or splprep containg the
+             knots, coefficients, and degree of the spline.
+      m -- The number of times to insert the given knot (its multiplicity).
+      per -- If non-zero, input spline is considered periodic.
+
+    Outputs: tck
+
+      tck -- (t,c,k) a tuple containing the vector of knots, the B-spline
+             coefficients, and the degree of the new spline.
+    
+    Requirements:
+        t(k+1) <= x <= t(n-k), where k is the degree of the spline.
+        In case of a periodic spline (per != 0) there must be
+           either at least k interior knots t(j) satisfying t(k+1)<t(j)<=x
+           or at least k interior knots t(j) satisfying x<=t(j)<t(n-k).    
+    """
+    t,c,k=tck
+    try:
+        c[0][0]
+        cc = []
+        for c_vals in c:
+          tt, cc_val, kk = insert(x, [t, c_vals, k], m)
+          cc.append(cc_val)
+        return (tt, cc, kk) 
+    except: pass
+    tt, cc, ier = _fitpack._insert(per, t, c, k, x, m)
+    if ier==10: raise ValueError,"Invalid input data"
+    if ier: raise TypeError,"An error occurred"
+    return (tt, cc, k)
 
 
 if __name__ == "__main__":
