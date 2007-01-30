@@ -38,7 +38,6 @@ class fmtfunc_wrapper:
             return self.f(item)
 
 
-
 def report(*tseries, **kwargs):
     """generate a table report of *tseries with dates in the left column.
 
@@ -51,7 +50,20 @@ def report(*tseries, **kwargs):
         - `header_row` (list, *[None]*) : optional list of column headers. Length
           must be equal to len(tseries) (no date column header specified) or
           len(tseries)+1 (first header is assumed to be date column header)
-        - `header_char` : Character to be used for the row separator line
+        - `header_char` (string, *['-']*): Character to be used for the row separator
+          line between the header and first row of data. None for no separator. This
+          is ignored if `header_row` is None.
+        - `row_char` (string, *[None]*): Character to be used for the row separator
+          line between each row of data. None for no separator
+        - `footer_func` (List of functions or single function, *[None]*) : A function or
+          list of functions for summarizing each data column in the report. For example,
+          ma.sum to get the sum of the column. If a list of functions is provided
+          there must be exactly one function for each column.
+        - `footer_char` (string, *['-']*): Character to be used for the row separator
+          line between the last row of data and the footer. None for no separator. This
+          is ignored if `footer_func` is None.
+        - `footer_label` (string, *[None]*) : label for the footer row. This is
+          ignored if footer_func is None.
         - `justify` (List of strings or single string, *[None]*) : Determines how are
           data justified in their column. If not specified, the date column and string
           columns are left justified, and everything else is right justified. If a
@@ -105,6 +117,10 @@ def report(*tseries, **kwargs):
     dates = kwargs.pop('dates', None)
     header_row = kwargs.pop('header_row', None)
     header_char = kwargs.pop('header_char', '-')
+    row_char = kwargs.pop('row_char', None)
+    footer_label = kwargs.pop('footer_label', None)
+    footer_char = kwargs.pop('footer_char', '-')
+    footer_func = kwargs.pop('footer_func', None)
     delim = kwargs.pop('delim', ' | ')
     justify = kwargs.pop('justify', None)
     prefix = kwargs.pop('prefix', '')
@@ -112,6 +128,7 @@ def report(*tseries, **kwargs):
     mask_rep = kwargs.pop('mask_rep', '--')
     datefmt = kwargs.pop('datefmt', None)
     fmtfunc = kwargs.pop('fmtfunc', str)
+    
     
     if type(fmtfunc) != types.ListType:
         fmtfunc = [fmtfunc_wrapper(fmtfunc, mask_rep)]*len(tseries)
@@ -124,7 +141,7 @@ def report(*tseries, **kwargs):
         raise KeyError("Unrecognized keyword(s): %s" % (", ".join(kwargs.keys())))
 
     if header_row is not None:
-        hasHeader=True
+        has_header=True
         if len(header_row) == len(tseries)+1:
             # label for date column included
             rows = [header_row]
@@ -132,7 +149,7 @@ def report(*tseries, **kwargs):
             # label for date column not included
             rows = [['']+header_row]
     else:
-        hasHeader=False
+        has_header=False
         rows=[]
         
     if justify is not None:
@@ -157,17 +174,32 @@ def report(*tseries, **kwargs):
     else:
         def datefmt_func(date): return date.strfmt(datefmt)
 
-    tseries = ts.align_series(*tseries)
-    
     if dates is None:
+        tseries = ts.align_series(*tseries)
         dates = td.date_array(start_date=tseries[0].start_date,
                               end_date=tseries[0].end_date)
+    else:
+        tseries = ts.align_series(start_date=dates[0], end_date=dates[-1], *tseries)
     
     for d in dates:
         rows.append([datefmt_func(d)]+[fmtfunc[i](ser[d]) for i, ser in enumerate(tseries)])
+        
+    if footer_func is not None:
+        has_footer=True
+        if type(footer_func) != types.ListType:
+            footer_func = [footer_func]*len(tseries)
 
-    return indent(rows, hasHeader=hasHeader, headerChar=header_char,
-                  delim=delim, justify=justify, separateRows=False,
+        if footer_label is None: footer_label = ['']
+        else: footer_label = [footer_label]
+        rows.append(footer_label + [fmtfunc[i](footer_func[i](ser)) for i, ser in enumerate(tseries)])
+    else:
+        has_footer=False
+
+    return indent(rows,
+                  has_header=has_header, header_char=header_char,
+                  has_footer=has_footer, footer_char=footer_char,
+                  separate_rows=separate_rows, row_char=row_char,
+                  delim=delim, justify=justify,
                   prefix=prefix, postfix=postfix, wrapfunc=wrapfunc)
    
 
@@ -175,18 +207,22 @@ def report(*tseries, **kwargs):
 
 # written by George Sakkis
 # http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/267662
-def indent(rows, hasHeader=False, headerChar='-', delim=' | ', justify=None,
-           separateRows=False, prefix='', postfix='', wrapfunc=lambda x:x):
+def indent(rows,
+           has_header=False, header_char='-',
+           has_footer=False, footer_char='-',
+           separate_rows=False, row_char='_',
+           delim=' | ', justify=None, 
+           prefix='', postfix='', wrapfunc=lambda x:x):
     """Indents a table by column.
        - rows: A sequence of sequences of items, one sequence per row.
-       - hasHeader: True if the first row consists of the columns' names.
-       - headerChar: Character to be used for the row separator line
-         (if hasHeader==True or separateRows==True).
+       - has_header: True if the first row consists of the columns' names.
+       - header_char: Character to be used for the row separator line
+         (if has_header==True or separate_rows==True).
        - delim: The column delimiter.
        - justify: Determines how are data justified in their column. 
          Valid values are 'left','right' and 'center'.
-       - separateRows: True if rows are to be separated by a line
-         of 'headerChar's.
+       - separate_rows: True if rows are to be separated by a line
+         of 'header_char's.
        - prefix: A string prepended to each printed row.
        - postfix: A string appended to each printed row.
        - wrapfunc: A function f(text) for wrapping text; each element in
@@ -198,6 +234,7 @@ def indent(rows, hasHeader=False, headerChar='-', delim=' | ', justify=None,
         return [[substr or '' for substr in item] for item in map(None,*newRows)]
     # break each logical row into one or more physical ones
     logicalRows = [rowWrapper(row) for row in rows]
+    numLogicalRows = len(logicalRows)
     # columns of physical rows
     columns = map(None,*reduce(operator.add,logicalRows))
     numCols = len(columns)
@@ -208,21 +245,37 @@ def indent(rows, hasHeader=False, headerChar='-', delim=' | ', justify=None,
     
     # get the maximum of each column by the string length of its items
     maxWidths = [max([len(str(item)) for item in column]) for column in columns]
-    rowSeparator = headerChar * (len(prefix) + len(postfix) + sum(maxWidths) + \
-                                 len(delim)*(len(maxWidths)-1))
+    
+    def getSeparator(char, separate):
+        if char is not None and separate:
+            return char * (len(prefix) + len(postfix) + sum(maxWidths) + \
+                                         len(delim)*(len(maxWidths)-1))
+        else:
+            return None
+    
+    header_separator = getSeparator(header_char, has_header)
+    footer_separator = getSeparator(footer_char, has_footer)
+    row_separator = getSeparator(row_char, separate_rows)
+    
     # select the appropriate justify method
     justify_funcs = {'center':str.center, 'right':str.rjust, 'left':str.ljust}
    
-    
     output=cStringIO.StringIO()
-    if separateRows: print >> output, rowSeparator
-    for physicalRows in logicalRows:
+
+    for rowNum, physicalRows in enumerate(logicalRows):
         for row in physicalRows:
             print >> output, \
                 prefix \
                 + delim.join([justify_funcs[justify[colNum].lower()](str(item),width) for (colNum,item,width) in zip(colNums,row,maxWidths)]) \
                 + postfix
-        if separateRows or hasHeader: print >> output, rowSeparator; hasHeader=False
+
+        if row_separator and (0 < rowNum < numLogicalRows-2):
+            print >> output, row_separator
+        elif header_separator and rowNum == 0:
+            print >> output, header_separator            
+        elif footer_separator and rowNum == numLogicalRows-2:
+            print >> output, footer_separator
+            
     return output.getvalue()
 
 # written by Mike Brown
