@@ -650,7 +650,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
             return self        
         if self.freqstr == 'U':
             warnings.warn("Undefined frequency: assuming daily!")
-            fromfreq = corelib.check_freq('D')
+            fromfreq = corelib.freq_revdict['D']
         else:
             fromfreq = self.freq
         _rel = relation.upper()[0]
