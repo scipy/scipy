@@ -24,15 +24,15 @@ from maskedarray.testutils import assert_equal, assert_array_equal
 import maskedarray.core as MA
 import maskedarray.mrecords as MR
 
-from maskedarray.core import getmaskarray, nomask
+from maskedarray.core import getmaskarray, nomask, masked_array
 
 ##reload(MA)
 #import maskedarray.mrecords
 ##reload(maskedarray.mrecords)
 #from maskedarray.mrecords import mrecarray, fromarrays, fromtextfile, fromrecords
-import multitimeseries
-reload(multitimeseries)
-from multitimeseries import MultiTimeSeries, TimeSeries,\
+from timeseries import tmulti
+reload(tmulti)
+from timeseries.tmulti import MultiTimeSeries, TimeSeries,\
     fromarrays, fromtextfile, fromrecords, \
     date_array, time_series
 
