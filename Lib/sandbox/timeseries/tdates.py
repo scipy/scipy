@@ -458,7 +458,7 @@ def asfreq(date, toFreq, relation="BEFORE"):
 
     if date.freqstr == 'U':
         warnings.warn("Undefined frequency: assuming daily!")
-        fromfreq = corelib.check_freq('D')
+        fromfreq = corelib.freq_revdict['D']
     else:
         fromfreq = date.freq
     
