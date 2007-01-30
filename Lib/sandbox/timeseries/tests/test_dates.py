@@ -26,8 +26,9 @@ import maskedarray.testutils
 from maskedarray.testutils import assert_equal, assert_array_equal
 
 from timeseries import tdates
-from timeseries import tcore
 reload(tdates)
+from timeseries import tcore
+reload(tcore)
 from timeseries.tdates import date_array_fromlist, Date, DateArray, mxDFromString
 
 class test_creation(NumpyTestCase):
@@ -41,33 +42,33 @@ class test_creation(NumpyTestCase):
         dlist = ['2007-01-%02i' % i for i in range(1,15)]
         # A simple case: daily data
         dates = date_array_fromlist(dlist, 'D')
-        assert_equal(dates.freq,'D')
+        assert_equal(dates.freqstr,'D')
         assert(dates.isfull())
         assert(not dates.has_duplicated_dates())
         assert_equal(dates, 732677+numpy.arange(len(dlist)))
         # as simple, but we need to guess the frequency this time
         dates = date_array_fromlist(dlist, 'D')
-        assert_equal(dates.freq,'D')
+        assert_equal(dates.freqstr,'D')
         assert(dates.isfull())
         assert(not dates.has_duplicated_dates())
         assert_equal(dates, 732677+numpy.arange(len(dlist)))
         # Still daily data, that we force to month
         dates = date_array_fromlist(dlist, 'M')
-        assert_equal(dates.freq,'M')
+        assert_equal(dates.freqstr,'M')
         assert(not dates.isfull())
         assert(dates.has_duplicated_dates())
         assert_equal(dates, [24073]*len(dlist))
         # Now, for monthly data
         dlist = ['2007-%02i' % i for i in range(1,13)]
         dates = date_array_fromlist(dlist, 'M')
-        assert_equal(dates.freq,'M')
+        assert_equal(dates.freqstr,'M')
         assert(dates.isfull())
         assert(not dates.has_duplicated_dates())
         assert_equal(dates, 24073 + numpy.arange(12))
         # Monthly data  w/ guessing
         dlist = ['2007-%02i' % i for i in range(1,13)]
         dates = date_array_fromlist(dlist, )
-        assert_equal(dates.freq,'M')
+        assert_equal(dates.freqstr,'M')
         assert(dates.isfull())
         assert(not dates.has_duplicated_dates())
         assert_equal(dates, 24073 + numpy.arange(12))
@@ -76,18 +77,18 @@ class test_creation(NumpyTestCase):
         "Tests creation from list of strings w/ missing dates"
         dlist = ['2007-01-%02i' % i for i in (1,2,4,5,7,8,10,11,13)]
         dates = date_array_fromlist(dlist)
-        assert_equal(dates.freq,'U')
+        assert_equal(dates.freqstr,'U')
         assert(not dates.isfull())
         assert(not dates.has_duplicated_dates())
         assert_equal(dates.tovalue(),732676+numpy.array([1,2,4,5,7,8,10,11,13]))
         #
         ddates = date_array_fromlist(dlist, 'D')
-        assert_equal(ddates.freq,'D')
+        assert_equal(ddates.freqstr,'D')
         assert(not ddates.isfull())
         assert(not ddates.has_duplicated_dates())
         #
         mdates = date_array_fromlist(dlist, 'M')
-        assert_equal(mdates.freq,'M')
+        assert_equal(mdates.freqstr,'M')
         assert(not dates.isfull())
         assert(mdates.has_duplicated_dates())
         #
@@ -105,7 +106,8 @@ class test_creation(NumpyTestCase):
 
     def test_consistent_value(self):
         "Tests that values don't get mutated when constructing dates from a value"
-        freqs = [x for x in list(tcore.fmtfreq_dict) if x != 'U']
+        freqs = [x[0] for x in tcore.freq_dict.values() if x[0] != 'U']
+        print freqs
         for f in freqs:
             today = tdates.thisday(f)
             assert(tdates.Date(freq=f, value=today.value) == today)

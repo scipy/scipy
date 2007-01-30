@@ -42,11 +42,11 @@ from maskedarray.core import MaskedArray, MAError, masked, nomask, \
     masked_array
 
 import tcore as corelib
-#reload(corelib)
+reload(corelib)
 from tcore import *
 
 import tdates
-#reload(tdates)
+reload(tdates)
 from tdates import DateError, InsufficientDateError
 from tdates import Date, isDate, DateArray, isDateArray, \
     date_array, date_array_fromlist, date_array_fromrange, thisday
@@ -64,12 +64,7 @@ __all__ = [
            ]
 
 #...............................................................................
-import logging
-logging.basicConfig(level=logging.DEBUG,
                     format='%(name)-15s %(levelname)s %(message)s',)
-talog = logging.getLogger('log.TimeArray')
-tslog = logging.getLogger('TimeSeries')
-btslog = logging.getLogger('BaseTimeSeries')
 
 ufunc_domain = {}
 ufunc_fills = {}
@@ -183,7 +178,7 @@ The combination of `series` and `dates` is the `data` part.
             cls._defaultdates = newdates    
             # Check frequency......
             if freq is not None:
-                freq = corelib.fmtFreq(freq)
+                freq = corelib.check_freq(freq)[0]
                 if freq != newdates.freq:
                     _dates = newdates.tofreq(freq)
             else:
@@ -265,32 +260,32 @@ The combination of `series` and `dates` is the `data` part.
             super(self._series.__class__, self._series).__setattribute__(attr, value)
             setattr(self._series, attr, value)
     #............................................
-    def __checkindex(self, index):
+    def __checkindex(self, indx):
         "Checks the validity of an index."
-        if isinstance(index, int):
-            return index
-        if isinstance(index, str):
-            return self._dates.date_to_index(Date(self._dates.freq, string=index))
-        elif isDate(index) or isDateArray(index):
-            return self._dates.date_to_index(index)
-        elif isinstance(index,slice):
-            slice_start = self.__checkindex(index.start)
-            slice_stop = self.__checkindex(index.stop)
-            return slice(slice_start, slice_stop, index.step)
-        elif isTimeSeries(index):
-            index = index._series
-        if getmask(index) is not nomask:
+        if isinstance(indx, int):
+            return indx
+        if isinstance(indx, str):
+            return self._dates.date_to_index(Date(self._dates.freq, string=indx))
+        elif isDate(indx) or isDateArray(indx):
+            return self._dates.date_to_index(indx)
+        elif isinstance(indx,slice):
+            slice_start = self.__checkindex(indx.start)
+            slice_stop = self.__checkindex(indx.stop)
+            return slice(slice_start, slice_stop, indx.step)
+        elif isTimeSeries(indx):
+            indx = indx._series
+        if getmask(indx) is not nomask:
             msg = "Masked arrays must be filled before they can be used as indices!"
             raise IndexError, msg
-        return index
+        return indx
 
-    def __getitem__(self, index):
+    def __getitem__(self, indx):
         """x.__getitem__(y) <==> x[y]
 Returns the item described by i. Not a copy as in previous versions.
         """
-        index = self.__checkindex(index)
-        data = self._series[index]
-        date = self._dates[index]
+        indx = self.__checkindex(indx)
+        data = self._series[indx]
+        date = self._dates[indx]
         m = self._mask
         scalardata = (len(numeric.shape(data))==0)
         # 
@@ -301,7 +296,7 @@ Returns the item described by i. Not a copy as in previous versions.
                 return TimeSeries(data, dates=date, mask=nomask, keep_mask=True,
                                   copy=False)
         #....
-        mi = m[index]
+        mi = m[indx]
         if mi.size == 1:
             if mi:
                 return TimeSeries(data, dates=date, mask=True)
@@ -309,19 +304,19 @@ Returns the item described by i. Not a copy as in previous versions.
         else:
             return TimeSeries(data, dates=date, mask=mi)
     #........................
-    def __setitem__(self, index, value):
+    def __setitem__(self, indx, value):
         """x.__setitem__(i, y) <==> x[i]=y
 Sets item described by index. If value is masked, masks those locations.
         """
         if self is masked:
             raise MAError, 'Cannot alter the masked element.'
-        index = self.__checkindex(index)
+        indx = self.__checkindex(indx)
         #....
         if isinstance(value, TimeSeries):
-            assert(_timeseriescompat(self[index], value))
-            self._series[index] = value._series
+            assert(_timeseriescompat(self[indx], value))
+            self._series[indx] = value._series
         else:
-            self._series[index] = value
+            self._series[indx] = value
         # Don't forget to update the mask !
         self._mask = self._series._mask
         
@@ -338,7 +333,7 @@ Sets item described by index. If value is masked, masks those locations.
         i = self.__checkindex(i)
         j = self.__checkindex(j)
         #....
-        data = self._series[i:j]
+#        data = self._series[i:j]
         if isinstance(value, TimeSeries):
             assert(_timeseriescompat(self[i:j], value))
             self._series[i:j] = value._series
@@ -379,10 +374,10 @@ timeseries(data  = %(data)s,
         if self.ndim <= 1:
             return desc_short % {'data': str(self._series),
                                  'time': timestr,
-                                 'freq': self.freq, }
+                                 'freq': self.freqstr, }
         return desc % {'data': str(self._series),
                        'time': timestr,
-                       'freq': self.freq, }
+                       'freq': self.freqstr, }
     #............................................
     def _get_mask(self):
         """Returns the current mask."""
@@ -419,8 +414,12 @@ timeseries(data  = %(data)s,
         return self._dates
     @property
     def freq(self):
-        """Returns the corresponding frequency."""
+        """Returns the corresponding frequency (as an integer)."""
         return self._dates.freq
+    @property
+    def freqstr(self):
+        """Returns the corresponding frequency (as a string)."""
+        return self._dates.freqstr
         
     @property
     def day(self):          
@@ -474,7 +473,6 @@ timeseries(data  = %(data)s,
     hours = hour
     weeks = week
 
-    
     @property
     def start_date(self):
         """Returns the first date of the series."""
@@ -482,7 +480,6 @@ timeseries(data  = %(data)s,
             return self._dates[0]
         else:
             return None
-
     @property
     def end_date(self):
         """Returns the last date of the series."""
@@ -490,7 +487,6 @@ timeseries(data  = %(data)s,
             return self._dates[-1]
         else:
             return None
-
     
     def isvalid(self):
         """Returns whether the series has no duplicate/missing dates."""
@@ -517,7 +513,15 @@ timeseries(data  = %(data)s,
         if freq is None:
             return self
         return TimeSeries(self._series, dates=self._dates.asfreq(freq))
-        
+    
+    def convert(self, freq, func='auto', position='END'):
+        "Converts the dates to another frequency, and adapt the data."
+        return convert(self, freq, func=func, position=position)
+    #.....................................................
+    def nonzero(self):
+        """Returns a tuple of ndarrays, one for each dimension of the array,
+    containing the indices of the non-zero elements in that dimension."""
+        return self._series.nonzero()
         
 ##### --------------------------------------------------------------------------
 ##--- ... Additional methods ...
@@ -681,6 +685,9 @@ TimeSeries.var = _tsaxismethod('var')
 TimeSeries.varu = _tsaxismethod('varu')
 TimeSeries.std = _tsaxismethod('std')
 TimeSeries.stdu = _tsaxismethod('stdu')
+TimeSeries.all = _tsaxismethod('all')
+TimeSeries.any = _tsaxismethod('any')
+
 
 class _tsblockedmethods(object):
     """Defines a wrapper for array methods that should be temporarily disabled.
@@ -930,16 +937,16 @@ as well as where data are initially missing (masked).
         start_date = data._dates[0]
     elif isinstance(start_date, str):
         start_date = Date(data.freq, string=start_date)
-    elif not isDateType(start_date):
-        raise DateError,"Starting date should be a valid date!"
+    elif not isinstance(start_date, Date):
+        raise DateError,"Starting date should be a valid Date object!"
     start_date = max(start_date, data.dates[0])
     # Check the ending date ................
     if end_date is None:
         end_date = data._dates[-1]
     elif isinstance(end_date, str):
         end_date = Date(data.freq, string=end_date)
-    elif not isDateType(end_date):
-        raise DateError,"Starting date should be a valid date!"
+    elif not isinstance(end_date, Date):
+        raise DateError,"Starting date should be a valid Date object!"
     end_date = min(end_date, data.dates[-1])
     # Constructs the selection mask .........
     if inside:
@@ -984,64 +991,65 @@ def adjust_endpoints(a, start_date=None, end_date=None):
     if a.freq == 'U':
         raise TimeSeriesError, \
             "Cannot adjust a series with 'Undefined' frequency."
-    if not a.dates.isvalid() and a.ndim > 0 and a.size > 1:
+    if not a.dates.isvalid():
         raise TimeSeriesError, \
             "Cannot adjust a series with missing or duplicated dates."
     # Flatten the series if needed ..............
     a = a.flatten()
     shp_flat = a.shape
     # Dates validity checks .,...................
-    msg = "%s should be a valid Date instance! (got %s instead)"
-    
-    (dstart, dend) = a.start_date, a.end_date
-    if dstart is not None:
-
-        if start_date is None: 
-            start_date = dstart
-            start_lag = 0
-        else:
-            if not isDateType(start_date):
-                raise TypeError, msg % ('start_date', type(start_date))
+    msg = "%s should be a valid Date object! (got %s instead)"
+    if a.dates.size >= 1:
+        (dstart, dend) = a.dates[[0,-1]]
+    else:
+        (dstart, dend) = (None, None)
+    # Skip the empty series case
+    if dstart is None and (start_date is None or end_date is None):
+        raise TimeSeriesError, "Both start_date and end_date must be specified"+\
+                               " to adjust endpoints of a zero length series!" 
+    #....
+    if start_date is None: 
+        start_date = dstart
+        start_lag = 0
+    else:
+        if not isinstance(start_date, Date):
+            raise TypeError, msg % ('start_date', type(start_date))
+        if dstart is not None:
             start_lag = start_date - dstart
-        #....          
-        if end_date is None: 
-            end_date = dend
-            end_lag = 0
         else:
-            if not isDateType(end_date):
-                raise TypeError, msg % ('end_date', type(end_date))
+            start_lag = start_date
+    #....          
+    if end_date is None: 
+        end_date = dend
+        end_lag = 0
+    else:
+        if not isinstance(end_date, Date):
+            raise TypeError, msg % ('end_date', type(end_date))
+        if dend is not None:
             end_lag = end_date - dend    
-        # Check if the new range is included in the old one
-        if start_lag >= 0:
-            if end_lag == 0:
-                return a[start_lag:]
-            elif end_lag < 0:
-                return a[start_lag:end_lag]
-
-    else:                
-        if start_date is None or end_date is None:
-            raise TimeSeriesError, \
-                """start_date and end_date must be specified to adjust
-endpoints of a zero length series"""
-                
+        else:
+            end_lag = end_date
+    # Check if the new range is included in the old one
+    if start_lag >= 0:
+        if end_lag == 0:
+            return a[start_lag:]
+        elif end_lag < 0:
+            return a[start_lag:end_lag]
     # Create a new series .......................
     newdates = date_array(start_date=start_date, end_date=end_date)
+    
     newshape = list(shp_flat)
     newshape[0] = len(newdates)
     newshape = tuple(newshape)
-
+    
     newdata = masked_array(numeric.empty(newshape, dtype=a.dtype), mask=True)
-    
-    # need to ensure that we preserve attributes of the series in the result
+    #backup the series attributes
     options = dict(fill_value=a.fill_value, observed=a.observed)
-    
     newseries = TimeSeries(newdata, newdates, **options)
-    
     if dstart is not None:
         start_date = max(start_date, dstart)
         end_date = min(end_date, dend) + 1
         newseries[start_date:end_date] = a[start_date:end_date]
-        
     return newseries
 #....................................................................
 def align_series(*series, **kwargs):
@@ -1056,7 +1064,7 @@ def align_series(*series, **kwargs):
     """
     if len(series) < 2:
         return series  
-    unique_freqs = numpy.unique([x.freq for x in series])
+    unique_freqs = numpy.unique([x.freqstr for x in series])
     try:
         common_freq = unique_freqs.item()
     except ValueError:
@@ -1065,15 +1073,19 @@ def align_series(*series, **kwargs):
     if common_freq == 'U':
         raise TimeSeriesError, \
             "Cannot adjust a series with 'Undefined' frequency."
-    valid_states = [x.isvalid() or (x.size == 0 and x.ndim > 0) for x in series]
+    valid_states = [x.isvalid() for x in series]
     if not numpy.all(valid_states):
         raise TimeSeriesError, \
             "Cannot adjust a series with missing or duplicated dates."
     
-    start_date = kwargs.pop('start_date', min([x.start_date for x in series if x.start_date is not None]))
+    start_date = kwargs.pop('start_date', 
+                            min([x.start_date for x in series 
+                                     if x.start_date is not None]))
     if isinstance(start_date,str):
         start_date = Date(common_freq, string=start_date)
-    end_date = kwargs.pop('end_date', max([x.end_date for x in series if x.end_date is not None]))
+    end_date = kwargs.pop('end_date', 
+                          max([x.end_date for x in series
+                                   if x.end_date is not None]))
     if isinstance(end_date,str):
         end_date = Date(common_freq, string=end_date)
     
@@ -1137,7 +1149,9 @@ def convert(series, freq, func='auto', position='END'):
                            observed=series.observed, 
                            start_date=start_date)
     return newseries
-#....................................................................
+TimeSeries.convert = convert
+
+#...............................................................................
 def tshift(series, nper):
     """Returns a series of the same size as `series`, with the same
 start_date and end_date, but values shifted by `nper`. This is useful
@@ -1155,27 +1169,25 @@ timeseries(data  = [-- 0 1 2],
            dates = [2005 ... 2008],
            freq  = A)
 """
-    newdata = masked_array(numeric.empty(series.shape, dtype=series.dtype), mask=True)
-
-    # need to ensure that we preserve attributes of the series in the result
+    #Backup series attributes
     options = dict(fill_value=series.fill_value, observed=series.observed)
-    newseries = TimeSeries(newdata, series._dates, **options)
-
+    newdata = masked_array(numeric.empty(series.shape, dtype=series.dtype), 
+                           mask=True)
+    inidata = series._series.copy()
     if nper < 0:
-        nper = max(-series.shape[0],nper)
-        newseries[-nper:] = series._series[:nper].copy()
-        newseries[:-nper] = masked
+        nper = max(-len(series), nper)
+        newdata[-nper:] = inidata[:nper]
     elif nper > 0:
-        nper = min(series.shape[0],nper)
-        newseries[-nper:] = masked
-        newseries[:-nper] = series._series[nper:].copy()
+        nper = min(len(series), nper)
+        newdata[:-nper] = inidata[nper:]
     else:
-        newseries[:] = self._series[:].copy()
-
+        newdata = inidata
+    newseries = TimeSeries(newdata, series._dates, **options)
     return newseries
-#....................................................................
-TimeSeries.convert = convert
 TimeSeries.tshift = tshift
+#....................................................................
+
+
 
 #....................................................................
 def fill_missing_dates(data, dates=None, freq=None,fill_value=None):
@@ -1193,10 +1205,10 @@ The data corresponding to the initially missing dates are masked, or filled to
     `fill_value` : float *[None]*
         Default value for missing data. If None, the data are just masked.
     """
-    freq = corelib.fmtFreq(freq)
-    if freq == 'U':
+    (freq, freqstr) = corelib.check_freq(freq)
+    if freqstr == 'U':
         raise ValueError,\
-              "Unable to define a proper date resolution (found %s)." % freq
+              "Unable to define a proper date resolution (found %s)." % freqstr
     if dates is None:
         if not isTimeSeries(data):
             raise InsufficientDateError
@@ -1272,7 +1284,6 @@ The data corresponding to the initially missing dates are masked, or filled to
 
 ################################################################################
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
     from maskedarray.testutils import assert_equal
 #    if 0:
 #        dlist = ['2007-01-%02i' % i for i in range(1,16)]
@@ -1331,7 +1342,14 @@ if __name__ == '__main__':
         dates = date_array_fromlist(dlist)
         data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3, dtype=float_)
         self_d = (time_series(range(15), dlist), data, dates)
-        (series, data, dates) = self_d
+        (ser, data, dates) = self_d
+        
+    if 1:
+        hodie = tdates.today('M')
+        ser_0 = time_series([], [], freq='M')
+        ser_2 = time_series([1,2], start_date=hodie)
+        ser_1 = time_series([1], hodie, freq='M')
+        
 #        # Testing a basic condition on data
 #        cond = (series<8).filled(False)
 #        dseries = series[cond]

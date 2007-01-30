@@ -89,8 +89,15 @@ DateArrays are simply ndarrays of `Date` objects. They accept the same methods a
 
 To construct a `DateArray` object, you can call the class directly
 {{{#!python numbers=disable
+DateArray(dates=None, freq='U', copy=False)
 }}}
-
+where `dates` can be ''(i)'' an existing `DateArray`; ''(ii)'' a sequence of `Date` objects; ''(iii)''' a sequence of objects that `Date` can recognize (such as strings, integers, `mx.DateTime` objects...).
+Alternatively, you can use the `date_array` constructor:
+{{{#!python numbers=disable
+date_array(dlist=None, start_date=None, end_date=None, 
+           include_last=True, length=None,  freq=None)
+}}}
+If `dlist` is None, a new list of dates will be created from `start_date` and `end_date`. You should set `include_last` to True if you want `end_date` to be included. If `end_date` is None, then a series of length `length` will be created.
 
 
 ----
@@ -98,11 +105,10 @@ To construct a `DateArray` object, you can call the class directly
 == TimeSeries ==
 
 A `TimeSeries` object is the combination of three ndarrays:
-
     * `dates`: DateArray object.
     * `data` : ndarray.
     * `mask` : Boolean ndarray, indicating missing or invalid data.
-    
+These three arrays can be accessed as attributes of a TimeSeries object. Another very useful attribute is `series`, that gives you the possibility to directly access `data` and `mask` as a masked array.
 
 ==== Construction ====
 
@@ -131,6 +137,15 @@ Let us construct a series of 600 random elements, starting 600 business days ago
 >>> series = TS.time_series(data, dtype=N.float_, freq='B', observed='SUMMED',
 >>>                         start_date=today-600)
 }}}
+We can check that `series.dates` is a `DateArray` object and that `series.series` is a `MaskedArray` object.
+{{{#!python numbers=disable
+>>> isinstance(series.dates, TD.DateArray)
+True
+>>> isinstance(series.series, MA.MaskedArray)
+True
+}}}
+So, if you are already familiar with `MaskedArray`, using `TimeSeries` should be straightforward. Just keep in mind that another attribute is always present, `dates`.
+
 
 ==== Indexing ====
 
@@ -153,6 +168,11 @@ or even a string...
 {{{#!python numbers=disable
 >>> series[thirtydaysago.tostring():]
 }}}
+or a sequence/ndarray of integers... 
+{{{#!python numbers=disable
+>>> series[[0,-1]]
+}}}
+~-This latter is quite useful: it gives you the first and last data of your series.-~
 
 In a similar way, setting elements of a TimeSeries works seamlessly.
 Let us set negative values to zero...
@@ -190,16 +210,20 @@ Let's construct a list of months, starting on Jan 2005 and ending on Dec 2006, w
 }}}
 Note that the frequency is 'U', for undefined. In fact, you have to specify what kind of data is actually missing by forcing a given frequency.
 {{{#!python numbers=disable
->>> mser = mser1.asfreq('M')
+>>> mser = mser_1.asfreq('M')
 }}}
 Let us check whether there are some duplicated dates (no):
 {{{#!python numbers=disable
->>> mser1.has_duplicated_dates()
+>>> mser_1.has_duplicated_dates()
+False
 }}}
 ...or missing dates (yes):
 {{{#!python numbers=disable
->>> mser1.has_missing_dates()
+>>> mser_1.has_missing_dates()
+True
 }}}
+
+
 Let us construct a second monthly series, this time without missing dates
 {{{#!python numbers=disable
 >>> mlist_2 = ['2004-%02i' % i for i in range(1,13)]
@@ -227,7 +251,7 @@ We could have filled the initial series first:
 {{{#!python numbers=disable
 >>> mser_3 = filled(malg_1,0) + filled(malg_2,0)
 }}}
-Alternatively, we can force the series to start/end at some given dates
+When aligning the series, we could have forced the series to start/end at some given dates:
 {{{#!python numbers=disable
 >>> (malg_1,malg_2) = aligned(mser_1_filled, mser2, 
 >>>                           start_date='2004-06', end_date='2006-06')

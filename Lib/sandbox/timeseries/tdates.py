@@ -32,10 +32,6 @@ import tcore as corelib
 import cseries
 
 
-import logging
-logging.basicConfig(level=logging.DEBUG,format='%(name)-15s %(levelname)s %(message)s',)
-daflog = logging.getLogger('darray_from')
-dalog = logging.getLogger('DateArray')
 
 
 __all__ = [
@@ -116,38 +112,54 @@ class Date:
       >>> td.Date('D', mxDate=mx.DateTime.now())
       >>> td.Date('D', mxDate=datetime.datetime.now())
       """
-    def __init__(self, freq, year=None, month=None, day=None, quarter=None, 
+    default_fmtstr = {'A': "%Y",
+                      'Q': "%YQ%q",
+                      'M': "%b-%Y",
+                      'W': "%d-%b-%y",
+                      'B': "%d-%b-%Y",
+                      'D': "%d-%b-%Y",
+                      'U': "%d-%b-%Y",
+                      'H': "%d-%b-%Y %H:00",
+                      'T': "%d-%b-%Y %H:%M",
+                      'S': "%d-%b-%Y %H:%M:%S"
+                      }
+      
+    def __init__(self, freq, value=None, string=None,
+                 year=None, month=None, day=None, quarter=None, 
                  hour=None, minute=None, second=None, 
-                 mxDate=None, value=None, string=None):
+                 mxDate=None):
         
         if hasattr(freq, 'freq'):
-            self.freq = corelib.fmtFreq(freq.freq)
+            self.freq = corelib.check_freq(freq.freq)
         else:
-            self.freq = corelib.fmtFreq(freq)
-        self.freqstr = self.freq
+            self.freq = corelib.check_freq(freq)
+        self.freqstr = corelib.freq_tostr(self.freq)
         
         if value is not None:
-            if self.freq == 'A':
+            if isinstance(value, str):
+                self.mxDate = mxDFromString(string)
+            elif self.freqstr == 'A':
                 self.mxDate = mxD.Date(value, -1, -1)
-            elif self.freq == 'B':
+            elif self.freqstr == 'B':
                 valtmp = (value - 1)//5
-                self.mxDate = mxD.DateTimeFromAbsDateTime(value + valtmp*7 - valtmp*5)
-            elif self.freq in ['D','U']:
+                #... (value + valtmp*7 - valtmp*5)
+                self.mxDate = mxD.DateTimeFromAbsDateTime(value + valtmp*2)
+            elif self.freqstr in ['D','U']:
                 self.mxDate = mxD.DateTimeFromAbsDateTime(value)
-            elif self.freq == 'H':
+            elif self.freqstr == 'H':
                 self.mxDate = hourlyOriginDate + mxD.DateTimeDeltaFrom(hours=value)
-            elif self.freq == 'M':
+            elif self.freqstr == 'M':
                 self.mxDate = mxD.DateTimeFromAbsDateTime(1) + \
                               mxD.RelativeDateTime(months=value-1, day=-1)
-            elif self.freq == 'Q':
+            elif self.freqstr == 'Q':
                 self.mxDate = mxD.DateTimeFromAbsDateTime(1) + \
                               mxD.RelativeDateTime(years=(value // 4), 
                                                    month=((value * 3) % 12), day=-1)
-            elif self.freq == 'S':
+            elif self.freqstr == 'S':
                 self.mxDate = secondlyOriginDate + mxD.DateTimeDeltaFromSeconds(value)
-            elif self.freq == 'T':
+            elif self.freqstr == 'T':
                 self.mxDate = minutelyOriginDate + mxD.DateTimeDeltaFrom(minutes=value)
-            elif self.freq == 'W':
+            elif self.freqstr == 'W':
                 self.mxDate = mxD.Date(1,1,7) + \
                               mxD.RelativeDateTime(weeks=value-1)
         
@@ -163,31 +175,31 @@ class Date:
             # First, some basic checks.....
             if year is None:
                 raise InsufficientDateError            
-            if self.freq in ('B', 'D', 'W'):
+            if self.freqstr in 'BDWU':
                 if month is None or day is None: 
                     raise InsufficientDateError
-            elif self.freq == 'M':
+            elif self.freqstr == 'M':
                 if month is None: 
                     raise InsufficientDateError
                 day = -1
-            elif self.freq == 'Q':
+            elif self.freqstr == 'Q':
                 if quarter is None: 
                     raise InsufficientDateError
                 month = quarter * 3
                 day = -1
-            elif self.freq == 'A':
+            elif self.freqstr == 'A':
                 month = -1
                 day = -1
-            elif self.freq == 'S':
+            elif self.freqstr == 'S':
                 if month is None or day is None or second is None: 
                     raise InsufficientDateError
                 
-            if self.freq in ['A','B','D','M','Q','W']:
+            if self.freqstr in ['A','B','D','M','Q','W']:
                 self.mxDate = truncateDate(self.freq, mxD.Date(year, month, day))
-                if self.freq == 'B':
+                if self.freqstr == 'B':
                     if self.mxDate.day_of_week in [5,6]:
                         raise ValueError("Weekend passed as business day")
-            elif self.freq in ['H','S','T']:
+            elif self.freqstr in 'HTS':
                 if hour is None:
                     if minute is None:
                         if second is None:
@@ -205,7 +217,7 @@ class Date:
                     second = 0
                 else:
                     second = second % 60
-                self.mxDate = truncateDate(self.freq,
+                self.mxDate = truncateDate(self.freqstr,
                                            mxD.Date(year, month, day, 
                                                     hour, minute, second))
         self.value = self.__value()
@@ -252,11 +264,13 @@ class Date:
         return self.__getDateInfo('I')
         
     def __getDateInfo(self, info):
-        return int(cseries.getDateInfo(numpy.asarray(self.value), self.freq, info))
+        return int(cseries.getDateInfo(numpy.asarray(self.value), 
+                                       self.freqstr, info))
  
     def __add__(self, other):
         if isinstance(other, Date):
-            raise FrequencyDateError("Cannot add dates", self.freq, other.freq)
+            raise FrequencyDateError("Cannot add dates", 
+                                     self.freqstr, other.freqstr)
         return Date(freq=self.freq, value=int(self) + other)
     
     def __radd__(self, other): 
@@ -266,7 +280,7 @@ class Date:
         if isinstance(other, Date):
             if self.freq != other.freq:
                 raise FrequencyDateError("Cannot subtract dates", \
-                                         self.freq, other.freq)
+                                         self.freqstr, other.freqstr)
             else:
                 return int(self) - int(other) 
         else:
@@ -276,16 +290,16 @@ class Date:
         if not hasattr(other, 'freq'):
             return False
         elif self.freq != other.freq:
-            raise FrequencyDateError("Cannot subtract dates", \
-                                     self.freq, other.freq)
+            raise FrequencyDateError("Cannot compare dates", \
+                                     self.freqstr, other.freqstr)
         return int(self) == int(other) 
     
     def __cmp__(self, other): 
         if not hasattr(other, 'freq'):
             return False
         elif self.freq != other.freq:
-            raise FrequencyDateError("Cannot subtract dates", \
-                                     self.freq, other.freq)
+            raise FrequencyDateError("Cannot compare dates", \
+                                     self.freqstr, other.freqstr)
         return int(self)-int(other)    
         
     def __hash__(self): 
@@ -300,63 +314,41 @@ class Date:
     def __value(self):   
         "Converts the date to an integer, depending on the current frequency."
         # Annual .......
-        if self.freq == 'A':
+        if self.freqstr == 'A':
             val = self.mxDate.year
         # Business days.
-        elif self.freq == 'B':
+        elif self.freqstr == 'B':
             days = self.mxDate.absdate
             weeks = days // 7
             val = days - weeks*2  
             # (weeks*5) + (days - weeks*7)
         # Daily/undefined
-        elif self.freq in ['D', 'U']:
+        elif self.freqstr in 'DU':
             val = self.mxDate.absdate
         # Hourly........
-        elif self.freq == 'H':
+        elif self.freqstr == 'H':
             val = (self.mxDate - hourlyOriginDate).hours
         # Monthly.......
-        elif self.freq == 'M':
+        elif self.freqstr == 'M':
             val = (self.mxDate.year-1)*12 + self.mxDate.month
         # Quarterly.....
-        elif self.freq == 'Q':
+        elif self.freqstr == 'Q':
             val = (self.mxDate.year-1)*4 + self.mxDate.month//3
         # Secondly......
-        elif self.freq == 'S':
+        elif self.freqstr == 'S':
             val = (self.mxDate - secondlyOriginDate).seconds
         # Minutely......
-        elif self.freq == 'T':
+        elif self.freqstr == 'T':
             val = (self.mxDate - minutelyOriginDate).minutes
         # Weekly........
-        elif self.freq == 'W':
+        elif self.freqstr == 'W':
             val = self.mxDate.absdate//7
         return int(val)
-    #......................................................
-    def default_fmtstr(self):
-        "Defines the default formats for printing Dates."
-        if self.freq == "A":
-            fmt =  "%Y"
-        elif self.freq in ("B","D"):
-            fmt =  "%d-%b-%Y"
-        elif self.freq == "M":
-            fmt =  "%b-%Y"
-        elif self.freq == "Q":
-            fmt =  "%YQ%q"
-        elif self.freq == 'H':
-            fmt = "%d-%b-%Y %H:00"
-        elif self.freq == 'T':
-            fmt = "%d-%b-%Y %H:%M"
-        elif self.freq == "S":
-            fmt =  "%d-%b-%Y %H:%M:%S"
-        elif self.freq == "W":
-            fmt =  "%YW%W"
-        else:
-            fmt = "%d-%b-%y"
-        return fmt
-        
+    #......................................................        
     def strfmt(self, fmt):
         "Formats the date"
         if fmt is None:
-            fmt = self.default_fmtstr()
+            fmt = self.default_fmtstr[self.freqstr]
         qFmt = fmt.replace("%q", "XXXX")
         tmpStr = self.mxDate.strftime(qFmt)
         if "XXXX" in tmpStr: 
@@ -364,10 +356,10 @@ class Date:
         return tmpStr
             
     def __str__(self):
-        return self.strfmt(self.default_fmtstr())
+        return self.strfmt(self.default_fmtstr[self.freqstr])
 
     def __repr__(self): 
-        return "<%s : %s>" % (str(self.freq), str(self))
+        return "<%s : %s>" % (str(self.freqstr), str(self))
     #......................................................
     def toordinal(self):
         "Returns the date as an ordinal."
@@ -400,24 +392,24 @@ class Date:
 #####---------------------------------------------------------------------------
 def truncateDate(freq, mxDate):
     """Chops off the irrelevant information from the mxDate passed in."""
-    freq = corelib.fmtFreq(freq)
-    if freq == 'A':
+    freqstr = corelib.check_freqstr(freq)
+    if freqstr == 'A':
         return mxD.Date(mxDate.year)
-    elif freq == 'Q':
+    elif freqstr == 'Q':
         return mxD.Date(mxDate.year, monthToQuarter(mxDate.month)*3)
-    elif freq == 'M':
+    elif freqstr == 'M':
         return mxD.Date(mxDate.year, mxDate.month)
-    elif freq == 'W':
+    elif freqstr == 'W':
         d = mxDate.absdate
         return mxD.DateTimeFromAbsDateTime(d + (7 - d % 7) % 7)
-    elif freq in ('B', 'D'):
+    elif freqstr in 'BD':
         if freq == 'B' and mxDate.day_of_week in [5,6]:
             raise ValueError("Weekend passed as business day")
         return mxD.Date(mxDate.year, mxDate.month, mxDate.day)
-    elif freq == 'H':
+    elif freqstr == 'H':
         return mxD.Date(mxDate.year, mxDate.month, mxDate.day, \
                         mxDate.hour)
-    elif freq == 'T':
+    elif freqstr == 'T':
         return mxD.Date(mxDate.year, mxDate.month, mxDate.day, \
                         mxDate.hour, mxDate.minute)
     else:
@@ -430,18 +422,18 @@ def monthToQuarter(monthNum):
 
 def thisday(freq):
     "Returns today's date, at the given frequency `freq`."
-    freq = corelib.fmtFreq(freq)
+    freqstr = corelib.check_freqstr(freq)
     tempDate = mxD.now()
     # if it is Saturday or Sunday currently, freq==B, then we want to use Friday
-    if freq == 'B' and tempDate.day_of_week >= 5:
+    if freqstr == 'B' and tempDate.day_of_week >= 5:
         tempDate -= (tempDate.day_of_week - 4)
-    if freq in ('B','D','H','S','T','W'):
+    if freqstr in ('B','D','H','S','T','W','U'):
         return Date(freq, mxDate=tempDate)
-    elif freq == 'M':
+    elif freqstr == 'M':
         return Date(freq, year=tempDate.year, month=tempDate.month)
-    elif freq == 'Q':
+    elif freqstr == 'Q':
         return Date(freq, year=tempDate.year, quarter=monthToQuarter(tempDate.month))
-    elif freq == 'A':
+    elif freqstr == 'A':
         return Date(freq, year=tempDate.year)
 today = thisday
 
@@ -458,7 +450,7 @@ def prevbusday(day_end_hour=18, day_end_min=0):
 def asfreq(date, toFreq, relation="BEFORE"):
     """Returns a date converted to another frequency `toFreq`, according to the
     relation `relation` ."""
-    tofreq = corelib.fmtFreq(toFreq)
+    tofreq = corelib.check_freqstr(toFreq)
     _rel = relation.upper()[0]
     if _rel not in ['B', 'A']:
         msg = "Invalid relation '%s': Should be in ['before', 'after']"
@@ -467,11 +459,11 @@ def asfreq(date, toFreq, relation="BEFORE"):
     if not isinstance(date, Date):
         raise DateError, "Date should be a valid Date instance!"
 
-    if date.freq == 'U':
+    if date.freqstr == 'U':
         warnings.warn("Undefined frequency: assuming daily!")
         fromfreq = 'D'
     else:
-        fromfreq = date.freq
+        fromfreq = date.freqstr
     
     if fromfreq == tofreq:
         return date
@@ -507,21 +499,20 @@ However, a loop such as :
 accesses the array element by element. Therefore, `d` is a Date object.    
     """
     def __new__(cls, dates=None, freq='U', copy=False):
-        #logging.debug('DA:__new__ received %s [%i]" % (type(dates), numpy.size(dates)))
         if isinstance(dates, DateArray):
-            #logging.debug('DA:__new__ sends %s as %s" % (type(dates), cls))
             cls.__defaultfreq = dates.freq
             if not copy:
                 return dates.view(cls)
             return dates.copy().view(cls)
         else:
             _dates = numeric.asarray(dates, dtype=int_)
+            if _dates.ndim == 0:
+                _dates.shape = (1,)
             if copy:
                 _dates = _dates.copy()
-            #logging.debug('DA:__new__ sends %s as %s" % (type(_dates), cls))
             if freq is None:
                 freq = 'U'
-            cls.__defaultfreq = corelib.fmtFreq(freq)
+            cls.__defaultfreq = corelib.check_freq(freq)
             (cls.__toobj, cls.__toord, cls.__tostr) = (None, None, None)
             (cls.__steps, cls.__full, cls.__hasdups) = (None, None, None)
             return _dates.view(cls)
@@ -533,25 +524,22 @@ accesses the array element by element. Therefore, `d` is a Date object.
             raise ArithmeticDateError, "(function %s)" % context[0].__name__
     
     def __array_finalize__(self, obj):
-        #logging.debug('DA:__array_finalize__ received %s" % type(obj))
         if hasattr(obj, 'freq'):
             self.freq = obj.freq
             self.freqstr = obj.freqstr
         else:
             self.freq = self.__defaultfreq
-            self.freqstr = self.__defaultfreq
-        #logging.debug('DA:__array_finalize__ sends %s" % type(self))
+            self.freqstr = corelib.freq_tostr(self.__defaultfreq)
     
-    def __getitem__(self, index):
-        #logging.debug('DA:__getitem__ got  index %s (%s)"%(index, type(index)))
-        if isinstance(index, Date):
-            index = self.find_dates(index)
-        elif numeric.asarray(index).dtype.kind == 'O':
+    def __getitem__(self, indx):
+        if isinstance(indx, Date):
+            index = self.find_dates(indx)
+        elif numeric.asarray(indx).dtype.kind == 'O':
             try:
-                index = self.find_dates(index)       
+                indx = self.find_dates(indx)       
             except AttributeError:
                 pass     
-        r = ndarray.__getitem__(self, index)
+        r = ndarray.__getitem__(self, indx)
         if not hasattr(r, "size"):
             if isinstance(r, int): 
                 return Date(self.freq, value=r)
@@ -661,7 +649,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
         tofreq = corelib.fmtFreq(freq)
         if tofreq == self.freq:
             return self        
-        if self.freq == 'U':
+        if self.freqstr == 'U':
             warnings.warn("Undefined frequency: assuming daily!")
             fromfreq = 'D'
         else:
@@ -709,14 +697,15 @@ accesses the array element by element. Therefore, `d` is a Date object.
                     self.__full = (steps.max() == 1)
                 if self.__hasdups is None:
                     self.__hasdups = (steps.min() == 0)
-            elif val.size == 1:
+            else:
+#            elif val.size == 1:
                 self.__full = True
                 self.__hasdups = False
                 steps = numeric.array([], dtype=int_)
-            else:
-                self.__full = False
-                self.__hasdups = False
-                steps = None
+#            else:
+#                self.__full = False
+#                self.__hasdups = False
+#                steps = None
             self.__steps = steps
         return self.__steps
     
@@ -758,7 +747,6 @@ is returned.
         self._asdates = asdates
         self.__doc__ = getattr(methodname, '__doc__')
         self.obj = None
-        #logging.debug('DA:__datearithmetics got method %s' % methodname)
     #
     def __get__(self, obj, objtype=None):
         self.obj = obj
@@ -770,7 +758,6 @@ is returned.
         freq = instance.freq
         if 'context' not in kwargs:
             kwargs['context'] = 'DateOK'
-        #logging.debug('DA:__datearithmetics got other %s' % type(other))
         method = getattr(super(DateArray,instance), self.methodname)
         if isinstance(other, DateArray):
             if other.freq != freq:
@@ -782,7 +769,6 @@ is returned.
                 raise FrequencyDateError("Cannot operate on dates", \
                                          freq, other.freq)
             other = other.value
-            #logging.debug('DA:__datearithmetics got other %s' % type(other))
         elif isinstance(other, ndarray):
             if other.dtype.kind not in ['i','f']:
                 raise ArithmeticDateError
@@ -848,6 +834,8 @@ def _listparser(dlist, freq=None):
     "Constructs a DateArray from a list."
     dlist = numeric.asarray(dlist)
     dlist.sort()
+    if dlist.ndim == 0:
+        dlist.shape = (1,)
     # Case #1: dates as strings .................
     if dlist.dtype.kind == 'S':
         #...construct a list of ordinals
@@ -860,7 +848,7 @@ def _listparser(dlist, freq=None):
         #...construct a list of dates
         dates = [Date(freq, string=s) for s in dlist]
     # Case #2: dates as numbers .................
-    elif dlist.dtype.kind in ['i','f']:
+    elif dlist.dtype.kind in 'if':
         #...hopefully, they are values
         if freq is None:
             freq = guess_freq(dlist)
@@ -868,9 +856,17 @@ def _listparser(dlist, freq=None):
     # Case #3: dates as objects .................
     elif dlist.dtype.kind == 'O':
         template = dlist[0]
+#        if dlist.size > 1:
+#            template = dlist[0]
+#        else:
+#            template = dlist.item()
         #...as Date objects
         if isinstance(template, Date):
-            dates = numpy.fromiter((d.value for d in dlist), float_)
+            dates = numpy.fromiter((d.value for d in dlist), int_)
+#            if dlist.size > 1:
+#                dates = numpy.fromiter((d.value for d in dlist), int_)
+#            else:
+#                dates = [template]
         #...as mx.DateTime objects
         elif hasattr(template,'absdays'):
             # no freq given: try to guess it from absdays
@@ -880,7 +876,7 @@ def _listparser(dlist, freq=None):
                 freq = guess_freq(ords)
             dates = [Date(freq, mxDate=m) for m in dlist]
         #...as datetime objects
-        elif hasattr(dlist[0], 'toordinal'):
+        elif hasattr(template, 'toordinal'):
             ords = numpy.fromiter((d.toordinal() for d in dlist), float_)
             if freq is None:
                 freq = guess_freq(ords)
@@ -896,8 +892,7 @@ def date_array(dlist=None, start_date=None, end_date=None, length=None,
     - a starting date and either an ending date or a given length.
     - a list of dates.
     """
-    #TODO: make sure we can use a string for a date!
-    freq = corelib.fmtFreq(freq)
+    freq = corelib.check_freq(freq)
     # Case #1: we have a list ...................
     if dlist is not None:
         # Already a DateArray....................

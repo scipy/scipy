@@ -81,86 +81,113 @@ def fmtObserv(obStr):
         raise ValueError("Invalid value for observed attribute: %s " % str(obStr))
 
 
-fmtfreq_dict = {'A': ['ANNUAL','ANNUALLY','YEAR','YEARLY'],
-                'B': ['BUSINESS','BUSINESSLYT'],
-                'D': ['DAY','DAILY',],
-                'H': ['HOUR','HOURLY',],
-                'M': ['MONTH','MONTHLY',],
-                'Q': ['QUARTER','QUARTERLY',],
-                'S': ['SECOND','SECONDLY',],
-                'T': ['MINUTE','MINUTELY',],
-                'W': ['WEEK','WEEKLY',],
-                'U': ['UNDEF','UNDEFINED'],
+
+freq_dict = { 1000: ['A','Y','ANNUAL','ANNUALLY','YEAR','YEARLY'],
+              2000: ['Q','QUARTER','QUARTERLY',],
+              3000: ['M','MONTH','MONTHLY',],
+              4000: ['W','WEEK','WEEKLY',],
+              5000: ['B','BUSINESS','BUSINESSLYT'],
+              6000: ['D','DAY','DAILY',],
+              7000: ['H','HOUR','HOURLY',],
+              8000: ['T','MINUTE','MINUTELY',],
+              9000: ['S','SECOND','SECONDLY',],
+             -9999: ['U','UNDEF','UNDEFINED'],
                 }
-fmtfreq_revdict = reverse_dict(fmtfreq_dict)
+freq_revdict = reverse_dict(freq_dict)
 
-def fmtFreq (freqStr):
+def freq_fromstr(freq_asstr):
+    "Converts a frequency given as string to the corresponding integer."
+    freq_asstr = freq_asstr.upper()
+    if freq_asstr not in freq_revdict.keys():
+        raise ValueError, "Invalid frequency string %s" % freq_asstr
+    return freq_revdict[freq_asstr]
+    
+def freq_tostr(freq_asint):
+    "Converts a frequency given as integer to the corresponding symbol."
+    if freq_asint not in freq_dict.keys():
+        raise ValueError, "Invalid frequency representation %s" % freq_asint
+    return freq_dict[freq_asint][0]
+
+def check_freq(freq):
     "Converts a possible 'frequency' string to acceptable values."
-    if freqStr is None:
-        return None    
-    elif freqStr.upper() in fmtfreq_dict.keys():
-        return freqStr[0].upper()
-    elif freqStr.upper() in fmtfreq_revdict.keys():
-        return fmtfreq_revdict[freqStr.upper()]
+    if freq is None:
+        return None
+    elif isinstance(freq, int):
+        if freq not in freq_dict.keys():
+            raise ValueError("Invalid frequency: %s " % str(freq))
+        return freq
+    elif freq.upper() in freq_revdict.keys():
+        return freq_revdict[freq.upper()]
     else:
-        raise ValueError("Invalid frequency: %s " % str(freqStr))
-        
-class DateSpec:
-    "Fake data type for date variables."
-    def __init__(self, freq):
-        self.freq = fmtFreq(freq)
-        
-    def __hash__(self): 
-        return hash(self.freq)
+        raise ValueError("Invalid frequency: %s " % str(freq))
     
-    def __eq__(self, other):
-        if hasattr(other, "freq"): 
-            return self.freq == other.freq
-        else: 
-            return False
-    def __str__(self): 
-        return "Date(%s)" % str(self.freq)
-    
-    
-
-# define custom numpy types.
-# Note: A more robust approach would register these as actual valid numpy types
-# this is just a hack for now
-numpy.dateA = DateSpec("Annual")
-numpy.dateB = DateSpec("Business")
-numpy.dateD = DateSpec("Daily")
-numpy.dateH = DateSpec("Hourly")
-numpy.dateM = DateSpec("Monthly")
-numpy.dateQ = DateSpec("Quarterly")
-numpy.dateS = DateSpec("Secondly")
-numpy.dateT = DateSpec("Minutely")
-numpy.dateW = DateSpec("Weekly")
-numpy.dateU = DateSpec("Undefined")
-
-
-freq_type_mapping = {'A': numpy.dateA,
-                     'B': numpy.dateB,
-                     'D': numpy.dateD,
-                     'H': numpy.dateH,
-                     'M': numpy.dateM,
-                     'Q': numpy.dateQ,
-                     'S': numpy.dateS,
-                     'T': numpy.dateT,
-                     'W': numpy.dateW,
-                     'U': numpy.dateU,
-                     }
+def check_freqstr(freq):
+    if freq is None:
+        return None
+    elif isinstance(freq, int):
+        if freq not in freq_dict.keys():
+            raise ValueError("Invalid frequency: %s " % str(freq))
+        return freq_dict[freq][0]
+    elif freq.upper() in freq_revdict.keys():
+        return freq_dict[freq_revdict[freq.upper()]][0]
+    else:
+        raise ValueError("Invalid frequency: %s " % str(freq))    
+fmtFreq = check_freqstr
         
-def freqToType(freq):
-    "Returns the Date dtype corresponding to the given frequency."
-    return freq_type_mapping[fmtFreq(freq)]
-
-def isDateType(dtype):
-    "Returns True whether the argument is the dtype of a Date."
-    #TODO: That looks messy. We should simplify that
-    if len([x for x in freq_type_mapping.values() if x == dtype]) > 0: 
-        return True
-    else: 
-        return False
+#class DateSpec:
+#    "Fake data type for date variables."
+#    def __init__(self, freq):
+#        self.freq = fmtFreq(freq)
+#        
+#    def __hash__(self): 
+#        return hash(self.freq)
+#    
+#    def __eq__(self, other):
+#        if hasattr(other, "freq"): 
+#            return self.freq == other.freq
+#        else: 
+#            return False
+#    def __str__(self): 
+#        return "Date(%s)" % str(self.freq) 
+#
+## define custom numpy types.
+## Note: A more robust approach would register these as actual valid numpy types
+## this is just a hack for now
+#numpy.dateA = DateSpec("Annual")
+#numpy.dateB = DateSpec("Business")
+#numpy.dateD = DateSpec("Daily")
+#numpy.dateH = DateSpec("Hourly")
+#numpy.dateM = DateSpec("Monthly")
+#numpy.dateQ = DateSpec("Quarterly")
+#numpy.dateS = DateSpec("Secondly")
+#numpy.dateT = DateSpec("Minutely")
+#numpy.dateW = DateSpec("Weekly")
+#numpy.dateU = DateSpec("Undefined")
+#
+#
+#freq_type_mapping = {'A': numpy.dateA,
+#                     'B': numpy.dateB,
+#                     'D': numpy.dateD,
+#                     'H': numpy.dateH,
+#                     'M': numpy.dateM,
+#                     'Q': numpy.dateQ,
+#                     'S': numpy.dateS,
+#                     'T': numpy.dateT,
+#                     'W': numpy.dateW,
+#                     'U': numpy.dateU,
+#                     }
+#        
+#def freqToType(freq):
+#    "Returns the Date dtype corresponding to the given frequency."
+#    return freq_type_mapping[fmtFreq(freq)]
+#
+#def isDateType(dtype):
+#    "Returns True whether the argument is the dtype of a Date."
+#    #TODO: That looks messy. We should simplify that
+#    if len([x for x in freq_type_mapping.values() if x == dtype]) > 0: 
+#        return True
+#    else: 
+#        return False
 
 #####---------------------------------------------------------------------------
 #---- --- Misc functions ---

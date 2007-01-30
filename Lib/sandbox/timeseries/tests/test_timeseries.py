@@ -2,11 +2,11 @@
 """Tests suite for MaskedArray.
 Adapted from the original test_ma by Pierre Gerard-Marchant
 
-:author: Pierre Gerard-Marchant
-:contact: pierregm_at_uga_dot_edu
+:author: Pierre Gerard-Marchant & Matt Knox 
+:contact: pierregm_at_uga_dot_edu & mattknox_ca_at_hotmail_dot_com
 :version: $Id$
 """
-__author__ = "Pierre GF Gerard-Marchant ($Author$)"
+__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author$)"
 __version__ = '1.0'
 __revision__ = "$Revision$"
 __date__     = '$Date$'
@@ -28,7 +28,8 @@ from maskedarray.testutils import assert_equal, assert_array_equal
 from timeseries import tseries
 #reload(tseries)
 from timeseries.tseries import Date, date_array_fromlist
-from timeseries.tseries import time_series, TimeSeries, adjust_endpoints, mask_period, align_series
+from timeseries.tseries import time_series, TimeSeries, adjust_endpoints, \
+    mask_period, align_series
 
 class test_creation(NumpyTestCase):
     "Base test class for MaskedArrays."
@@ -47,7 +48,7 @@ class test_creation(NumpyTestCase):
         assert_equal(series._mask, [1,0,0,0,0]*3)
         assert_equal(series._series, data)
         assert_equal(series._dates, date_array_fromlist(dlist))
-        assert_equal(series.freq, 'D')
+        assert_equal(series.freqstr, 'D')
 
     def test_fromrange (self):
         "Base data definition."
@@ -57,7 +58,7 @@ class test_creation(NumpyTestCase):
         assert_equal(series._mask, [1,0,0,0,0]*3)
         assert_equal(series._series, data)
         assert_equal(series._dates, dates)
-        assert_equal(series.freq, 'D')
+        assert_equal(series.freqstr, 'D')
 
     def test_fromseries (self):
         "Base data definition."
@@ -69,7 +70,7 @@ class test_creation(NumpyTestCase):
         assert_equal(series._mask, [1,0,0,0,0]*3)
         assert_equal(series._series, data)
         assert_equal(series._dates, dates)
-        assert_equal(series.freq, 'D')
+        assert_equal(series.freqstr, 'D')
         
         
     def test_fromdatearray(self):
@@ -81,7 +82,7 @@ class test_creation(NumpyTestCase):
         assert(isinstance(series, TimeSeries))
         assert_equal(series._dates, dates)
         assert_equal(series._data, data)
-        assert_equal(series.freq, 'D')
+        assert_equal(series.freqstr, 'D')
         
         series[5] = MA.masked
         
@@ -270,12 +271,12 @@ class test_functions(NumpyTestCase):
                                    end_date=Date('D', string='2007-01-31'))
         assert_equal(dseries.size, 26)
         assert_equal(dseries._mask, N.r_[series._mask[5:], [1]*16])
-        
+        #
         empty_series = time_series([], freq='d')
         a, b = align_series(series, empty_series)
         assert_equal(a.start_date, b.start_date)
         assert_equal(a.end_date, b.end_date)
-        
+    #    
     def test_tshift(self):
         "Test tshift function"
         series = self.d[0]
@@ -291,7 +292,6 @@ class test_functions(NumpyTestCase):
         
         assert_array_equal(shift_negative, shift_negative_result)
         assert_array_equal(shift_positive, shift_positive_result)
-        
     #
     def test_maskperiod(self):        
         "Test mask_period"

@@ -51,8 +51,6 @@ _typestr = ntypes._typestr
 reserved_fields = MR.reserved_fields + ['_dates']
 
 import warnings
-import logging
-logging.basicConfig(level=logging.DEBUG,
                     format='%(name)-15s %(levelname)s %(message)s',)
 
 __all__ = [
@@ -103,7 +101,6 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
         mroptions = dict(fill_value=fill_value, hard_mask=hard_mask, 
                          formats=formats, names=names, titles=titles, 
                          byteorder=byteorder, aligned=aligned)
-        logging.debug("__new__ received %s" % type(data))
         #
         if isinstance(data, MultiTimeSeries):
             cls._defaultfieldmask = data._series._fieldmask
@@ -142,7 +139,6 @@ Wraps the numpy array and sets the mask according to context.
         """
 #        mclass = self.__class__
         #..........
-        logging.debug("__wrap__ received %s" % type(obj))
         if context is None:
 #            return mclass(obj, mask=self._mask, copy=False)
             return MaskedArray(obj, mask=self._mask, copy=False,
@@ -157,7 +153,6 @@ Wraps the numpy array and sets the mask according to context.
     
         
     def __array_finalize__(self,obj):
-        logging.debug("__array_finalize__ received %s" % type(obj))      
         if isinstance(obj, MultiTimeSeries):
             self.__dict__.update(_dates=obj._dates,
                                  _series=obj._series,
@@ -167,8 +162,6 @@ Wraps the numpy array and sets the mask according to context.
                                  _fill_value=obj._fill_value                                 
                                  )
         else:     
-            logging.debug("__array_finalize__ dtype %s" % obj.dtype)  
-            logging.debug("__array_finalize__ mask %s" % self._defaultfieldmask)  
             self.__dict__.update(_data = obj.view(recarray),
                                  _dates = self._defaultdates,
                                  _series = MaskedRecords(obj, dtype=obj.dtype),
@@ -178,11 +171,9 @@ Wraps the numpy array and sets the mask according to context.
                                 )
             MultiTimeSeries._defaultfieldmask = nomask
             MultiTimeSeries._defaulthardmask = False
-#        logging.debug("__array_finalize__ exit ")  
         return
     #......................................................
     def __getattribute__(self, attr):
-#        logging.debug('__getattribute__ %s' % attr)
         try:
             # Returns a generic attribute
             return object.__getattribute__(self,attr)
@@ -190,7 +181,6 @@ Wraps the numpy array and sets the mask according to context.
             # OK, so attr must be a field name
             pass
         # Get the list of fields ......
-#        logging.debug('__getattribute__ %s listfield' % attr)
         _names = self.dtype.names
         _local = self.__dict__
         _mask = _local['_fieldmask']
@@ -200,21 +190,18 @@ Wraps the numpy array and sets the mask according to context.
             obj._mask = make_mask(_mask.__getattribute__(attr))
             return obj
         elif attr == '_mask':
-#            logging.debug('__getattribute__ return mask')
             if self.size > 1:
                 return _mask.view((bool_, len(self.dtype))).all(1)
             return _mask.view((bool_, len(self.dtype)))
         raise AttributeError,"No attribute '%s' !" % attr
             
     def __setattr__(self, attr, val):
-#        logging.debug('__setattribute__ %s' % attr)
         newattr = attr not in self.__dict__
         try:
             # Is attr a generic attribute ?
             ret = object.__setattr__(self, attr, val)
         except:
             # Not a generic attribute: exit if it's not a valid field
-#            logging.debug('__setattribute__ %s' % attr)
             fielddict = self.dtype.names or {}
             if attr not in fielddict:
                 exctype, value = sys.exc_info()[:2]
@@ -242,16 +229,12 @@ Wraps the numpy array and sets the mask according to context.
         elif attr == '_mask':
             if self._hardmask:
                 val = make_mask(val)
-                logging.debug("setattr: object has hardmask %s" % val)
-                logging.debug("setattr: val is nomask: %s" % (val is nomask))
                 if val is not nomask:
 #                    mval = getmaskarray(val)
                     for k in _names:
                         m = mask_or(val, base_fmask.__getattr__(k))
-                        logging.debug("setattr: %k to: %s" % (k,m))
                         base_fmask.__setattr__(k, m)
                 else:
-                    logging.debug("setattr: VAL IS NOMASK: %s" % (val is nomask))
                 return
             else:
                 mval = getmaskarray(val)
@@ -262,14 +245,11 @@ Wraps the numpy array and sets the mask according to context.
     def __getitem__(self, indx):
         """Returns all the fields sharing the same fieldname base.
     The fieldname base is either `_data` or `_mask`."""
-        logging.debug('__getitem__(%s)' % indx)
         _localdict = self.__dict__
         # We want a field ........
         if indx in self.dtype.names:
-            logging.debug('__getitem__ getfield %s' % indx)
             obj = _localdict['_series'][indx].view(TimeSeries)
             obj._mask = make_mask(_localdict['_fieldmask'][indx])
-            logging.debug('__getitem__ field %s mask %s:' % (indx, obj._mask))
             return obj
         # We want some elements ..
         indx = super(MultiTimeSeries, self)._TimeSeries__checkindex(indx)
@@ -280,7 +260,6 @@ Wraps the numpy array and sets the mask according to context.
         
     def __getslice__(self, i, j):
         """Returns the slice described by [i,j]."""
-        logging.debug("__Getslice__ [%i,%i]" % (i,j))
         _localdict = self.__dict__
         return MultiTimeSeries(_localdict['_data'][i:j], 
                                mask=_localdict['_fieldmask'][i:j],
@@ -358,7 +337,6 @@ Otherwise fill with fill value.
         """Returns a view of the mrecarray."""
         try:
             if issubclass(obj, ndarray):
-#                logging.debug('direct view as %s' % obj)
                 return ndarray.view(self, obj)
         except TypeError:
             pass
@@ -426,7 +404,6 @@ def fromarrays(arraylist, dates=None,
     # Define formats from scratch ...............
     if formats is None and dtype is None:
         formats = _getformats(arraylist)
-#    logging.debug("fromarrays: formats",formats)
     # Define the dtype ..........................
     if dtype is not None:
         descr = numeric.dtype(dtype)
@@ -545,7 +522,6 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
         line = f.readline()
         firstline = line[:line.find(commentchar)].strip()
         _varnames = firstline.split(delimitor)
-#        logging.debug("_VARNAMES:%s-%s"% (_varnames,len(_varnames)))
         if len(_varnames) > 1:
             break
     if varnames is None:
@@ -586,7 +562,6 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
             vartypes = _guessvartypes(_variables[0])
     # Construct the descriptor ..................
     mdescr = [(n,f) for (n,f) in zip(varnames, vartypes)]
-#    logging.debug("fromtextfile: descr: %s" % mdescr)
     # Get the data and the mask .................
     # We just need a list of masked_arrays. It's easier to create it like that:
     _mask = (_variables.T == missingchar)
