@@ -51,7 +51,7 @@ _typestr = ntypes._typestr
 reserved_fields = MR.reserved_fields + ['_dates']
 
 import warnings
-                    format='%(name)-15s %(levelname)s %(message)s',)
+#                    format='%(name)-15s %(levelname)s %(message)s',)
 
 __all__ = [
 'MultiTimeSeries','fromarrays','fromrecords','fromtextfile',           
@@ -235,7 +235,7 @@ Wraps the numpy array and sets the mask according to context.
                         m = mask_or(val, base_fmask.__getattr__(k))
                         base_fmask.__setattr__(k, m)
                 else:
-                return
+                    return
             else:
                 mval = getmaskarray(val)
                 for k in _names:
