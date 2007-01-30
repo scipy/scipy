@@ -697,8 +697,8 @@ class test_methods(NumpyTestCase):
         
     def test_empty_datearray(self):
         empty_darray = DateArray([], freq='b')
-        assert_equal(empty_darray.isfull(), False)
-        assert_equal(empty_darray.isvalid(), False)
+        assert_equal(empty_darray.isfull(), True)
+        assert_equal(empty_darray.isvalid(), True)
         assert_equal(empty_darray.get_steps(), None)
         
 
