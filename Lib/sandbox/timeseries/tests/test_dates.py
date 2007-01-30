@@ -29,7 +29,7 @@ from timeseries import tdates
 reload(tdates)
 from timeseries import tcore
 reload(tcore)
-from timeseries.tdates import date_array_fromlist, Date, DateArray, mxDFromString
+from timeseries.tdates import date_array_fromlist, Date, DateArray, date_array, mxDFromString
 
 class test_creation(NumpyTestCase):
     "Base test class for MaskedArrays."
@@ -200,464 +200,481 @@ class test_date_properties(NumpyTestCase):
         assert_equal(s_date.second, 0)
 
 
+def dArrayWrap(date):
+    "wrap a date into a DateArray of length 1"
+    return date_array(start_date=date,length=1)
+
+def noWrap(item): return item
+
 class test_freq_conversion(NumpyTestCase):
     "Test frequency conversion of date objects"
     
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)       
+        NumpyTestCase.__init__(self, *args, **kwds)
+        self.dateWrap = [(dArrayWrap, assert_array_equal),
+                         (noWrap, assert_equal)]
         
     def test_conv_annual(self):
         "frequency conversion tests: from Annual Frequency"
 
-        date_A = Date(freq='A', year=2007)
-        date_A_to_Q_before = Date(freq='Q', year=2007, quarter=1)
-        date_A_to_Q_after = Date(freq='Q', year=2007, quarter=4)
-        date_A_to_M_before = Date(freq='M', year=2007, month=1)
-        date_A_to_M_after = Date(freq='M', year=2007, month=12)
-        date_A_to_W_before = Date(freq='W', year=2007, month=1, day=1)
-        date_A_to_W_after = Date(freq='W', year=2007, month=12, day=31)
-        date_A_to_B_before = Date(freq='B', year=2007, month=1, day=1)
-        date_A_to_B_after = Date(freq='B', year=2007, month=12, day=31)
-        date_A_to_D_before = Date(freq='D', year=2007, month=1, day=1)
-        date_A_to_D_after = Date(freq='D', year=2007, month=12, day=31)
-        date_A_to_H_before = Date(freq='H', year=2007, month=1, day=1, 
-                                  hour=0)
-        date_A_to_H_after = Date(freq='H', year=2007, month=12, day=31, 
-                                 hour=23)
-        date_A_to_T_before = Date(freq='T', year=2007, month=1, day=1, 
-                                  hour=0, minute=0)
-        date_A_to_T_after = Date(freq='T', year=2007, month=12, day=31, 
-                                 hour=23, minute=59)
-        date_A_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hour=0, minute=0, second=0)
-        date_A_to_S_after = Date(freq='S', year=2007, month=12, day=31, 
-                                 hour=23, minute=59, second=59)
-        
-        assert_equal(date_A.asfreq('Q', "BEFORE"), date_A_to_Q_before)
-        assert_equal(date_A.asfreq('Q', "AFTER"), date_A_to_Q_after)
-        assert_equal(date_A.asfreq('M', "BEFORE"), date_A_to_M_before)
-        assert_equal(date_A.asfreq('M', "AFTER"), date_A_to_M_after)
-        assert_equal(date_A.asfreq('W', "BEFORE"), date_A_to_W_before)
-        assert_equal(date_A.asfreq('W', "AFTER"), date_A_to_W_after)
-        assert_equal(date_A.asfreq('B', "BEFORE"), date_A_to_B_before)
-        assert_equal(date_A.asfreq('B', "AFTER"), date_A_to_B_after)
-        assert_equal(date_A.asfreq('D', "BEFORE"), date_A_to_D_before)
-        assert_equal(date_A.asfreq('D', "AFTER"), date_A_to_D_after)
-        assert_equal(date_A.asfreq('H', "BEFORE"), date_A_to_H_before)
-        assert_equal(date_A.asfreq('H', "AFTER"), date_A_to_H_after)
-        assert_equal(date_A.asfreq('T', "BEFORE"), date_A_to_T_before)
-        assert_equal(date_A.asfreq('T', "AFTER"), date_A_to_T_after)
-        assert_equal(date_A.asfreq('S', "BEFORE"), date_A_to_S_before)
-        assert_equal(date_A.asfreq('S', "AFTER"), date_A_to_S_after)
+        for dWrap, assert_func in self.dateWrap:
+            date_A = dWrap(Date(freq='A', year=2007))
+            date_A_to_Q_before = dWrap(Date(freq='Q', year=2007, quarter=1))
+            date_A_to_Q_after = dWrap(Date(freq='Q', year=2007, quarter=4))
+            date_A_to_M_before = dWrap(Date(freq='M', year=2007, month=1))
+            date_A_to_M_after = dWrap(Date(freq='M', year=2007, month=12))
+            date_A_to_W_before = dWrap(Date(freq='W', year=2007, month=1, day=1))
+            date_A_to_W_after = dWrap(Date(freq='W', year=2007, month=12, day=31))
+            date_A_to_B_before = dWrap(Date(freq='B', year=2007, month=1, day=1))
+            date_A_to_B_after = dWrap(Date(freq='B', year=2007, month=12, day=31))
+            date_A_to_D_before = dWrap(Date(freq='D', year=2007, month=1, day=1))
+            date_A_to_D_after = dWrap(Date(freq='D', year=2007, month=12, day=31))
+            date_A_to_H_before = dWrap(Date(freq='H', year=2007, month=1, day=1, 
+                                      hour=0))
+            date_A_to_H_after = dWrap(Date(freq='H', year=2007, month=12, day=31, 
+                                     hour=23))
+            date_A_to_T_before = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                                      hour=0, minute=0))
+            date_A_to_T_after = dWrap(Date(freq='T', year=2007, month=12, day=31, 
+                                     hour=23, minute=59))
+            date_A_to_S_before = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                      hour=0, minute=0, second=0))
+            date_A_to_S_after = dWrap(Date(freq='S', year=2007, month=12, day=31, 
+                                     hour=23, minute=59, second=59))
+
+            assert_func(date_A.asfreq('Q', "BEFORE"), date_A_to_Q_before)
+            assert_func(date_A.asfreq('Q', "AFTER"), date_A_to_Q_after)
+            assert_func(date_A.asfreq('M', "BEFORE"), date_A_to_M_before)
+            assert_func(date_A.asfreq('M', "AFTER"), date_A_to_M_after)
+            assert_func(date_A.asfreq('W', "BEFORE"), date_A_to_W_before)
+            assert_func(date_A.asfreq('W', "AFTER"), date_A_to_W_after)
+            assert_func(date_A.asfreq('B', "BEFORE"), date_A_to_B_before)
+            assert_func(date_A.asfreq('B', "AFTER"), date_A_to_B_after)
+            assert_func(date_A.asfreq('D', "BEFORE"), date_A_to_D_before)
+            assert_func(date_A.asfreq('D', "AFTER"), date_A_to_D_after)
+            assert_func(date_A.asfreq('H', "BEFORE"), date_A_to_H_before)
+            assert_func(date_A.asfreq('H', "AFTER"), date_A_to_H_after)
+            assert_func(date_A.asfreq('T', "BEFORE"), date_A_to_T_before)
+            assert_func(date_A.asfreq('T', "AFTER"), date_A_to_T_after)
+            assert_func(date_A.asfreq('S', "BEFORE"), date_A_to_S_before)
+            assert_func(date_A.asfreq('S', "AFTER"), date_A_to_S_after)
 
         
     def test_conv_quarterly(self):
         "frequency conversion tests: from Quarterly Frequency"
 
-        date_Q = Date(freq='Q', year=2007, quarter=1)
-        date_Q_end_of_year = Date(freq='Q', year=2007, quarter=4)
-        date_Q_to_A = Date(freq='A', year=2007)
-        date_Q_to_M_before = Date(freq='M', year=2007, month=1)
-        date_Q_to_M_after = Date(freq='M', year=2007, month=3)
-        date_Q_to_W_before = Date(freq='W', year=2007, month=1, day=1)
-        date_Q_to_W_after = Date(freq='W', year=2007, month=3, day=31)
-        date_Q_to_B_before = Date(freq='B', year=2007, month=1, day=1)
-        date_Q_to_B_after = Date(freq='B', year=2007, month=3, day=30)
-        date_Q_to_D_before = Date(freq='D', year=2007, month=1, day=1)
-        date_Q_to_D_after = Date(freq='D', year=2007, month=3, day=31)
-        date_Q_to_H_before = Date(freq='H', year=2007, month=1, day=1, 
-                                  hour=0)
-        date_Q_to_H_after = Date(freq='H', year=2007, month=3, day=31, 
-                                 hour=23)
-        date_Q_to_T_before = Date(freq='T', year=2007, month=1, day=1, 
-                                  hour=0, minute=0)
-        date_Q_to_T_after = Date(freq='T', year=2007, month=3, day=31, 
-                                 hour=23, minute=59)
-        date_Q_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hour=0, minute=0, second=0)
-        date_Q_to_S_after = Date(freq='S', year=2007, month=3, day=31, 
-                                 hour=23, minute=59, second=59)
-        
-        assert_equal(date_Q.asfreq('A'), date_Q_to_A)
-        assert_equal(date_Q_end_of_year.asfreq('A'), date_Q_to_A)
-        
-        assert_equal(date_Q.asfreq('M', "BEFORE"), date_Q_to_M_before)
-        assert_equal(date_Q.asfreq('M', "AFTER"), date_Q_to_M_after)
-        assert_equal(date_Q.asfreq('W', "BEFORE"), date_Q_to_W_before)
-        assert_equal(date_Q.asfreq('W', "AFTER"), date_Q_to_W_after)
-        assert_equal(date_Q.asfreq('B', "BEFORE"), date_Q_to_B_before)
-        assert_equal(date_Q.asfreq('B', "AFTER"), date_Q_to_B_after)
-        assert_equal(date_Q.asfreq('D', "BEFORE"), date_Q_to_D_before)
-        assert_equal(date_Q.asfreq('D', "AFTER"), date_Q_to_D_after)
-        assert_equal(date_Q.asfreq('H', "BEFORE"), date_Q_to_H_before)
-        assert_equal(date_Q.asfreq('H', "AFTER"), date_Q_to_H_after)
-        assert_equal(date_Q.asfreq('T', "BEFORE"), date_Q_to_T_before)
-        assert_equal(date_Q.asfreq('T', "AFTER"), date_Q_to_T_after)
-        assert_equal(date_Q.asfreq('S', "BEFORE"), date_Q_to_S_before)
-        assert_equal(date_Q.asfreq('S', "AFTER"), date_Q_to_S_after)
+        for dWrap, assert_func in self.dateWrap:
+            date_Q = dWrap(Date(freq='Q', year=2007, quarter=1))
+            date_Q_end_of_year = dWrap(Date(freq='Q', year=2007, quarter=4))
+            date_Q_to_A = dWrap(Date(freq='A', year=2007))
+            date_Q_to_M_before = dWrap(Date(freq='M', year=2007, month=1))
+            date_Q_to_M_after = dWrap(Date(freq='M', year=2007, month=3))
+            date_Q_to_W_before = dWrap(Date(freq='W', year=2007, month=1, day=1))
+            date_Q_to_W_after = dWrap(Date(freq='W', year=2007, month=3, day=31))
+            date_Q_to_B_before = dWrap(Date(freq='B', year=2007, month=1, day=1))
+            date_Q_to_B_after = dWrap(Date(freq='B', year=2007, month=3, day=30))
+            date_Q_to_D_before = dWrap(Date(freq='D', year=2007, month=1, day=1))
+            date_Q_to_D_after = dWrap(Date(freq='D', year=2007, month=3, day=31))
+            date_Q_to_H_before = dWrap(Date(freq='H', year=2007, month=1, day=1, 
+                                      hour=0))
+            date_Q_to_H_after = dWrap(Date(freq='H', year=2007, month=3, day=31, 
+                                     hour=23))
+            date_Q_to_T_before = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                                      hour=0, minute=0))
+            date_Q_to_T_after = dWrap(Date(freq='T', year=2007, month=3, day=31, 
+                                     hour=23, minute=59))
+            date_Q_to_S_before = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                      hour=0, minute=0, second=0))
+            date_Q_to_S_after = dWrap(Date(freq='S', year=2007, month=3, day=31, 
+                                     hour=23, minute=59, second=59))
+
+            assert_func(date_Q.asfreq('A'), date_Q_to_A)
+            assert_func(date_Q_end_of_year.asfreq('A'), date_Q_to_A)
+
+            assert_func(date_Q.asfreq('M', "BEFORE"), date_Q_to_M_before)
+            assert_func(date_Q.asfreq('M', "AFTER"), date_Q_to_M_after)
+            assert_func(date_Q.asfreq('W', "BEFORE"), date_Q_to_W_before)
+            assert_func(date_Q.asfreq('W', "AFTER"), date_Q_to_W_after)
+            assert_func(date_Q.asfreq('B', "BEFORE"), date_Q_to_B_before)
+            assert_func(date_Q.asfreq('B', "AFTER"), date_Q_to_B_after)
+            assert_func(date_Q.asfreq('D', "BEFORE"), date_Q_to_D_before)
+            assert_func(date_Q.asfreq('D', "AFTER"), date_Q_to_D_after)
+            assert_func(date_Q.asfreq('H', "BEFORE"), date_Q_to_H_before)
+            assert_func(date_Q.asfreq('H', "AFTER"), date_Q_to_H_after)
+            assert_func(date_Q.asfreq('T', "BEFORE"), date_Q_to_T_before)
+            assert_func(date_Q.asfreq('T', "AFTER"), date_Q_to_T_after)
+            assert_func(date_Q.asfreq('S', "BEFORE"), date_Q_to_S_before)
+            assert_func(date_Q.asfreq('S', "AFTER"), date_Q_to_S_after)
         
 
     def test_conv_monthly(self):
         "frequency conversion tests: from Monthly Frequency"
         
-        date_M = Date(freq='M', year=2007, month=1)
-        date_M_end_of_year = Date(freq='M', year=2007, month=12)
-        date_M_end_of_quarter = Date(freq='M', year=2007, month=3)
-        date_M_to_A = Date(freq='A', year=2007)
-        date_M_to_Q = Date(freq='Q', year=2007, quarter=1)
-        date_M_to_W_before = Date(freq='W', year=2007, month=1, day=1)
-        date_M_to_W_after = Date(freq='W', year=2007, month=1, day=31)
-        date_M_to_B_before = Date(freq='B', year=2007, month=1, day=1)
-        date_M_to_B_after = Date(freq='B', year=2007, month=1, day=31)
-        date_M_to_D_before = Date(freq='D', year=2007, month=1, day=1)
-        date_M_to_D_after = Date(freq='D', year=2007, month=1, day=31)
-        date_M_to_H_before = Date(freq='H', year=2007, month=1, day=1, 
-                                  hour=0)
-        date_M_to_H_after = Date(freq='H', year=2007, month=1, day=31, 
-                                 hour=23)
-        date_M_to_T_before = Date(freq='T', year=2007, month=1, day=1, 
-                                  hour=0, minute=0)
-        date_M_to_T_after = Date(freq='T', year=2007, month=1, day=31, 
-                                 hour=23, minute=59)
-        date_M_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hour=0, minute=0, second=0)
-        date_M_to_S_after = Date(freq='S', year=2007, month=1, day=31, 
-                                 hour=23, minute=59, second=59)
-        
-        assert_equal(date_M.asfreq('A'), date_M_to_A)
-        assert_equal(date_M_end_of_year.asfreq('A'), date_M_to_A)
-        assert_equal(date_M.asfreq('Q'), date_M_to_Q)
-        assert_equal(date_M_end_of_quarter.asfreq('Q'), date_M_to_Q)
+        for dWrap, assert_func in self.dateWrap:
+            date_M = dWrap(Date(freq='M', year=2007, month=1))
+            date_M_end_of_year = dWrap(Date(freq='M', year=2007, month=12))
+            date_M_end_of_quarter = dWrap(Date(freq='M', year=2007, month=3))
+            date_M_to_A = dWrap(Date(freq='A', year=2007))
+            date_M_to_Q = dWrap(Date(freq='Q', year=2007, quarter=1))
+            date_M_to_W_before = dWrap(Date(freq='W', year=2007, month=1, day=1))
+            date_M_to_W_after = dWrap(Date(freq='W', year=2007, month=1, day=31))
+            date_M_to_B_before = dWrap(Date(freq='B', year=2007, month=1, day=1))
+            date_M_to_B_after = dWrap(Date(freq='B', year=2007, month=1, day=31))
+            date_M_to_D_before = dWrap(Date(freq='D', year=2007, month=1, day=1))
+            date_M_to_D_after = dWrap(Date(freq='D', year=2007, month=1, day=31))
+            date_M_to_H_before = dWrap(Date(freq='H', year=2007, month=1, day=1, 
+                                      hour=0))
+            date_M_to_H_after = dWrap(Date(freq='H', year=2007, month=1, day=31, 
+                                     hour=23))
+            date_M_to_T_before = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                                      hour=0, minute=0))
+            date_M_to_T_after = dWrap(Date(freq='T', year=2007, month=1, day=31, 
+                                     hour=23, minute=59))
+            date_M_to_S_before = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                      hour=0, minute=0, second=0))
+            date_M_to_S_after = dWrap(Date(freq='S', year=2007, month=1, day=31, 
+                                     hour=23, minute=59, second=59))
 
-        assert_equal(date_M.asfreq('W', "BEFORE"), date_M_to_W_before)
-        assert_equal(date_M.asfreq('W', "AFTER"), date_M_to_W_after)
-        assert_equal(date_M.asfreq('B', "BEFORE"), date_M_to_B_before)
-        assert_equal(date_M.asfreq('B', "AFTER"), date_M_to_B_after)
-        assert_equal(date_M.asfreq('D', "BEFORE"), date_M_to_D_before)
-        assert_equal(date_M.asfreq('D', "AFTER"), date_M_to_D_after)
-        assert_equal(date_M.asfreq('H', "BEFORE"), date_M_to_H_before)
-        assert_equal(date_M.asfreq('H', "AFTER"), date_M_to_H_after)
-        assert_equal(date_M.asfreq('T', "BEFORE"), date_M_to_T_before)
-        assert_equal(date_M.asfreq('T', "AFTER"), date_M_to_T_after)
-        assert_equal(date_M.asfreq('S', "BEFORE"), date_M_to_S_before)
-        assert_equal(date_M.asfreq('S', "AFTER"), date_M_to_S_after)
+            assert_func(date_M.asfreq('A'), date_M_to_A)
+            assert_func(date_M_end_of_year.asfreq('A'), date_M_to_A)
+            assert_func(date_M.asfreq('Q'), date_M_to_Q)
+            assert_func(date_M_end_of_quarter.asfreq('Q'), date_M_to_Q)
+
+            assert_func(date_M.asfreq('W', "BEFORE"), date_M_to_W_before)
+            assert_func(date_M.asfreq('W', "AFTER"), date_M_to_W_after)
+            assert_func(date_M.asfreq('B', "BEFORE"), date_M_to_B_before)
+            assert_func(date_M.asfreq('B', "AFTER"), date_M_to_B_after)
+            assert_func(date_M.asfreq('D', "BEFORE"), date_M_to_D_before)
+            assert_func(date_M.asfreq('D', "AFTER"), date_M_to_D_after)
+            assert_func(date_M.asfreq('H', "BEFORE"), date_M_to_H_before)
+            assert_func(date_M.asfreq('H', "AFTER"), date_M_to_H_after)
+            assert_func(date_M.asfreq('T', "BEFORE"), date_M_to_T_before)
+            assert_func(date_M.asfreq('T', "AFTER"), date_M_to_T_after)
+            assert_func(date_M.asfreq('S', "BEFORE"), date_M_to_S_before)
+            assert_func(date_M.asfreq('S', "AFTER"), date_M_to_S_after)
 
         
     def test_conv_weekly(self):
         "frequency conversion tests: from Weekly Frequency"
         
-        date_W = Date(freq='W', year=2007, month=1, day=1)
-        date_W_end_of_year = Date(freq='W', year=2007, month=12, day=31)
-        date_W_end_of_quarter = Date(freq='W', year=2007, month=3, day=31)
-        date_W_end_of_month = Date(freq='W', year=2007, month=1, day=31)
-        date_W_to_A = Date(freq='A', year=2007)
-        date_W_to_Q = Date(freq='Q', year=2007, quarter=1)
-        date_W_to_M = Date(freq='M', year=2007, month=1)
+        for dWrap, assert_func in self.dateWrap:
+            date_W = dWrap(Date(freq='W', year=2007, month=1, day=1))
+            date_W_end_of_year = dWrap(Date(freq='W', year=2007, month=12, day=31))
+            date_W_end_of_quarter = dWrap(Date(freq='W', year=2007, month=3, day=31))
+            date_W_end_of_month = dWrap(Date(freq='W', year=2007, month=1, day=31))
+            date_W_to_A = dWrap(Date(freq='A', year=2007))
+            date_W_to_Q = dWrap(Date(freq='Q', year=2007, quarter=1))
+            date_W_to_M = dWrap(Date(freq='M', year=2007, month=1))
 
-        if Date(freq='D', year=2007, month=12, day=31).day_of_week == 6:
-            date_W_to_A_end_of_year = Date(freq='A', year=2007)
-        else:
-            date_W_to_A_end_of_year = Date(freq='A', year=2008)
+            if Date(freq='D', year=2007, month=12, day=31).day_of_week == 6:
+                date_W_to_A_end_of_year = dWrap(Date(freq='A', year=2007))
+            else:
+                date_W_to_A_end_of_year = dWrap(Date(freq='A', year=2008))
 
-        if Date(freq='D', year=2007, month=3, day=31).day_of_week == 6:
-            date_W_to_Q_end_of_quarter = Date(freq='Q', year=2007, quarter=1)
-        else:
-            date_W_to_Q_end_of_quarter = Date(freq='Q', year=2007, quarter=2)
+            if Date(freq='D', year=2007, month=3, day=31).day_of_week == 6:
+                date_W_to_Q_end_of_quarter = dWrap(Date(freq='Q', year=2007, quarter=1))
+            else:
+                date_W_to_Q_end_of_quarter = dWrap(Date(freq='Q', year=2007, quarter=2))
 
-        if Date(freq='D', year=2007, month=1, day=31).day_of_week == 6:
-            date_W_to_M_end_of_month = Date(freq='M', year=2007, month=1)
-        else:
-            date_W_to_M_end_of_month = Date(freq='M', year=2007, month=2)
+            if Date(freq='D', year=2007, month=1, day=31).day_of_week == 6:
+                date_W_to_M_end_of_month = dWrap(Date(freq='M', year=2007, month=1))
+            else:
+                date_W_to_M_end_of_month = dWrap(Date(freq='M', year=2007, month=2))
 
-        date_W_to_B_before = Date(freq='B', year=2007, month=1, day=1)
-        date_W_to_B_after = Date(freq='B', year=2007, month=1, day=5)
-        date_W_to_D_before = Date(freq='D', year=2007, month=1, day=1)
-        date_W_to_D_after = Date(freq='D', year=2007, month=1, day=7)
-        date_W_to_H_before = Date(freq='H', year=2007, month=1, day=1, 
-                                  hour=0)
-        date_W_to_H_after = Date(freq='H', year=2007, month=1, day=7, 
-                                 hour=23)
-        date_W_to_T_before = Date(freq='T', year=2007, month=1, day=1, 
-                                  hour=0, minute=0)
-        date_W_to_T_after = Date(freq='T', year=2007, month=1, day=7, 
-                                 hour=23, minute=59)
-        date_W_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hour=0, minute=0, second=0)
-        date_W_to_S_after = Date(freq='S', year=2007, month=1, day=7, 
-                                 hour=23, minute=59, second=59)
-        
-        assert_equal(date_W.asfreq('A'), date_W_to_A)
-        assert_equal(date_W_end_of_year.asfreq('A'), date_W_to_A_end_of_year)
-        assert_equal(date_W.asfreq('Q'), date_W_to_Q)
-        assert_equal(date_W_end_of_quarter.asfreq('Q'), date_W_to_Q_end_of_quarter)
-        assert_equal(date_W.asfreq('M'), date_W_to_M)
-        assert_equal(date_W_end_of_month.asfreq('M'), date_W_to_M_end_of_month)
+            date_W_to_B_before = dWrap(Date(freq='B', year=2007, month=1, day=1))
+            date_W_to_B_after = dWrap(Date(freq='B', year=2007, month=1, day=5))
+            date_W_to_D_before = dWrap(Date(freq='D', year=2007, month=1, day=1))
+            date_W_to_D_after = dWrap(Date(freq='D', year=2007, month=1, day=7))
+            date_W_to_H_before = dWrap(Date(freq='H', year=2007, month=1, day=1, 
+                                      hour=0))
+            date_W_to_H_after = dWrap(Date(freq='H', year=2007, month=1, day=7, 
+                                     hour=23))
+            date_W_to_T_before = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                                      hour=0, minute=0))
+            date_W_to_T_after = dWrap(Date(freq='T', year=2007, month=1, day=7, 
+                                     hour=23, minute=59))
+            date_W_to_S_before = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                      hour=0, minute=0, second=0))
+            date_W_to_S_after = dWrap(Date(freq='S', year=2007, month=1, day=7, 
+                                     hour=23, minute=59, second=59))
 
-        assert_equal(date_W.asfreq('B', "BEFORE"), date_W_to_B_before)
-        assert_equal(date_W.asfreq('B', "AFTER"), date_W_to_B_after)
-        assert_equal(date_W.asfreq('D', "BEFORE"), date_W_to_D_before)
-        assert_equal(date_W.asfreq('D', "AFTER"), date_W_to_D_after)
-        assert_equal(date_W.asfreq('H', "BEFORE"), date_W_to_H_before)
-        assert_equal(date_W.asfreq('H', "AFTER"), date_W_to_H_after)
-        assert_equal(date_W.asfreq('T', "BEFORE"), date_W_to_T_before)
-        assert_equal(date_W.asfreq('T', "AFTER"), date_W_to_T_after)
-        assert_equal(date_W.asfreq('S', "BEFORE"), date_W_to_S_before)
-        assert_equal(date_W.asfreq('S', "AFTER"), date_W_to_S_after)
+            assert_func(date_W.asfreq('A'), date_W_to_A)
+            assert_func(date_W_end_of_year.asfreq('A'), date_W_to_A_end_of_year)
+            assert_func(date_W.asfreq('Q'), date_W_to_Q)
+            assert_func(date_W_end_of_quarter.asfreq('Q'), date_W_to_Q_end_of_quarter)
+            assert_func(date_W.asfreq('M'), date_W_to_M)
+            assert_func(date_W_end_of_month.asfreq('M'), date_W_to_M_end_of_month)
+
+            assert_func(date_W.asfreq('B', "BEFORE"), date_W_to_B_before)
+            assert_func(date_W.asfreq('B', "AFTER"), date_W_to_B_after)
+            assert_func(date_W.asfreq('D', "BEFORE"), date_W_to_D_before)
+            assert_func(date_W.asfreq('D', "AFTER"), date_W_to_D_after)
+            assert_func(date_W.asfreq('H', "BEFORE"), date_W_to_H_before)
+            assert_func(date_W.asfreq('H', "AFTER"), date_W_to_H_after)
+            assert_func(date_W.asfreq('T', "BEFORE"), date_W_to_T_before)
+            assert_func(date_W.asfreq('T', "AFTER"), date_W_to_T_after)
+            assert_func(date_W.asfreq('S', "BEFORE"), date_W_to_S_before)
+            assert_func(date_W.asfreq('S', "AFTER"), date_W_to_S_after)
         
     def test_conv_business(self):
         "frequency conversion tests: from Business Frequency"
         
-        date_B = Date(freq='B', year=2007, month=1, day=1)
-        date_B_end_of_year = Date(freq='B', year=2007, month=12, day=31)
-        date_B_end_of_quarter = Date(freq='B', year=2007, month=3, day=30)
-        date_B_end_of_month = Date(freq='B', year=2007, month=1, day=31)
-        date_B_end_of_week = Date(freq='B', year=2007, month=1, day=5)
-        
-        date_B_to_A = Date(freq='A', year=2007)
-        date_B_to_Q = Date(freq='Q', year=2007, quarter=1)
-        date_B_to_M = Date(freq='M', year=2007, month=1)
-        date_B_to_W = Date(freq='W', year=2007, month=1, day=7)
-        date_B_to_D = Date(freq='D', year=2007, month=1, day=1)
-        date_B_to_H_before = Date(freq='H', year=2007, month=1, day=1, 
-                                  hour=0)
-        date_B_to_H_after = Date(freq='H', year=2007, month=1, day=1, 
-                                 hour=23)
-        date_B_to_T_before = Date(freq='T', year=2007, month=1, day=1, 
-                                  hour=0, minute=0)
-        date_B_to_T_after = Date(freq='T', year=2007, month=1, day=1, 
-                                 hour=23, minute=59)
-        date_B_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hour=0, minute=0, second=0)
-        date_B_to_S_after = Date(freq='S', year=2007, month=1, day=1, 
-                                 hour=23, minute=59, second=59)
-        
-        assert_equal(date_B.asfreq('A'), date_B_to_A)
-        assert_equal(date_B_end_of_year.asfreq('A'), date_B_to_A)
-        assert_equal(date_B.asfreq('Q'), date_B_to_Q)
-        assert_equal(date_B_end_of_quarter.asfreq('Q'), date_B_to_Q)
-        assert_equal(date_B.asfreq('M'), date_B_to_M)
-        assert_equal(date_B_end_of_month.asfreq('M'), date_B_to_M)
-        assert_equal(date_B.asfreq('W'), date_B_to_W)
-        assert_equal(date_B_end_of_week.asfreq('W'), date_B_to_W)
+        for dWrap, assert_func in self.dateWrap:
+            date_B = dWrap(Date(freq='B', year=2007, month=1, day=1))
+            date_B_end_of_year = dWrap(Date(freq='B', year=2007, month=12, day=31))
+            date_B_end_of_quarter = dWrap(Date(freq='B', year=2007, month=3, day=30))
+            date_B_end_of_month = dWrap(Date(freq='B', year=2007, month=1, day=31))
+            date_B_end_of_week = dWrap(Date(freq='B', year=2007, month=1, day=5))
 
-        assert_equal(date_B.asfreq('D'), date_B_to_D)
+            date_B_to_A = dWrap(Date(freq='A', year=2007))
+            date_B_to_Q = dWrap(Date(freq='Q', year=2007, quarter=1))
+            date_B_to_M = dWrap(Date(freq='M', year=2007, month=1))
+            date_B_to_W = dWrap(Date(freq='W', year=2007, month=1, day=7))
+            date_B_to_D = dWrap(Date(freq='D', year=2007, month=1, day=1))
+            date_B_to_H_before = dWrap(Date(freq='H', year=2007, month=1, day=1, 
+                                      hour=0))
+            date_B_to_H_after = dWrap(Date(freq='H', year=2007, month=1, day=1, 
+                                     hour=23))
+            date_B_to_T_before = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                                      hour=0, minute=0))
+            date_B_to_T_after = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                                     hour=23, minute=59))
+            date_B_to_S_before = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                      hour=0, minute=0, second=0))
+            date_B_to_S_after = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                     hour=23, minute=59, second=59))
 
-        assert_equal(date_B.asfreq('H', "BEFORE"), date_B_to_H_before)
-        assert_equal(date_B.asfreq('H', "AFTER"), date_B_to_H_after)
-        assert_equal(date_B.asfreq('T', "BEFORE"), date_B_to_T_before)
-        assert_equal(date_B.asfreq('T', "AFTER"), date_B_to_T_after)
-        assert_equal(date_B.asfreq('S', "BEFORE"), date_B_to_S_before)
-        assert_equal(date_B.asfreq('S', "AFTER"), date_B_to_S_after)
+            assert_func(date_B.asfreq('A'), date_B_to_A)
+            assert_func(date_B_end_of_year.asfreq('A'), date_B_to_A)
+            assert_func(date_B.asfreq('Q'), date_B_to_Q)
+            assert_func(date_B_end_of_quarter.asfreq('Q'), date_B_to_Q)
+            assert_func(date_B.asfreq('M'), date_B_to_M)
+            assert_func(date_B_end_of_month.asfreq('M'), date_B_to_M)
+            assert_func(date_B.asfreq('W'), date_B_to_W)
+            assert_func(date_B_end_of_week.asfreq('W'), date_B_to_W)
+
+            assert_func(date_B.asfreq('D'), date_B_to_D)
+
+            assert_func(date_B.asfreq('H', "BEFORE"), date_B_to_H_before)
+            assert_func(date_B.asfreq('H', "AFTER"), date_B_to_H_after)
+            assert_func(date_B.asfreq('T', "BEFORE"), date_B_to_T_before)
+            assert_func(date_B.asfreq('T', "AFTER"), date_B_to_T_after)
+            assert_func(date_B.asfreq('S', "BEFORE"), date_B_to_S_before)
+            assert_func(date_B.asfreq('S', "AFTER"), date_B_to_S_after)
 
     def test_conv_daily(self):
         "frequency conversion tests: from Business Frequency"
         
-        date_D = Date(freq='D', year=2007, month=1, day=1)
-        date_D_end_of_year = Date(freq='D', year=2007, month=12, day=31)
-        date_D_end_of_quarter = Date(freq='D', year=2007, month=3, day=31)
-        date_D_end_of_month = Date(freq='D', year=2007, month=1, day=31)
-        date_D_end_of_week = Date(freq='D', year=2007, month=1, day=7)
-        
-        date_D_friday = Date(freq='D', year=2007, month=1, day=5)
-        date_D_saturday = Date(freq='D', year=2007, month=1, day=6)
-        date_D_sunday = Date(freq='D', year=2007, month=1, day=7)
-        date_D_monday = Date(freq='D', year=2007, month=1, day=8)
-        
-        date_B_friday = Date(freq='B', year=2007, month=1, day=5)
-        date_B_monday = Date(freq='B', year=2007, month=1, day=8)
-        
-        date_D_to_A = Date(freq='A', year=2007)
-        date_D_to_Q = Date(freq='Q', year=2007, quarter=1)
-        date_D_to_M = Date(freq='M', year=2007, month=1)
-        date_D_to_W = Date(freq='W', year=2007, month=1, day=7)
+        for dWrap, assert_func in self.dateWrap:
+            date_D = dWrap(Date(freq='D', year=2007, month=1, day=1))
+            date_D_end_of_year = dWrap(Date(freq='D', year=2007, month=12, day=31))
+            date_D_end_of_quarter = dWrap(Date(freq='D', year=2007, month=3, day=31))
+            date_D_end_of_month = dWrap(Date(freq='D', year=2007, month=1, day=31))
+            date_D_end_of_week = dWrap(Date(freq='D', year=2007, month=1, day=7))
 
-        date_D_to_H_before = Date(freq='H', year=2007, month=1, day=1, 
-                                  hour=0)
-        date_D_to_H_after = Date(freq='H', year=2007, month=1, day=1, 
-                                 hour=23)
-        date_D_to_T_before = Date(freq='T', year=2007, month=1, day=1, 
-                                  hour=0, minute=0)
-        date_D_to_T_after = Date(freq='T', year=2007, month=1, day=1, 
-                                 hour=23, minute=59)
-        date_D_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hour=0, minute=0, second=0)
-        date_D_to_S_after = Date(freq='S', year=2007, month=1, day=1, 
-                                 hour=23, minute=59, second=59)
-        
-        assert_equal(date_D.asfreq('A'), date_D_to_A)
-        assert_equal(date_D_end_of_year.asfreq('A'), date_D_to_A)
-        assert_equal(date_D.asfreq('Q'), date_D_to_Q)
-        assert_equal(date_D_end_of_quarter.asfreq('Q'), date_D_to_Q)
-        assert_equal(date_D.asfreq('M'), date_D_to_M)
-        assert_equal(date_D_end_of_month.asfreq('M'), date_D_to_M)
-        assert_equal(date_D.asfreq('W'), date_D_to_W)
-        assert_equal(date_D_end_of_week.asfreq('W'), date_D_to_W)
+            date_D_friday = dWrap(Date(freq='D', year=2007, month=1, day=5))
+            date_D_saturday = dWrap(Date(freq='D', year=2007, month=1, day=6))
+            date_D_sunday = dWrap(Date(freq='D', year=2007, month=1, day=7))
+            date_D_monday = dWrap(Date(freq='D', year=2007, month=1, day=8))
 
-        assert_equal(date_D_friday.asfreq('B'), date_B_friday)
-        assert_equal(date_D_saturday.asfreq('B', "BEFORE"), date_B_friday)
-        assert_equal(date_D_saturday.asfreq('B', "AFTER"), date_B_monday)
-        assert_equal(date_D_sunday.asfreq('B', "BEFORE"), date_B_friday)
-        assert_equal(date_D_sunday.asfreq('B', "AFTER"), date_B_monday)
+            date_B_friday = dWrap(Date(freq='B', year=2007, month=1, day=5))
+            date_B_monday = dWrap(Date(freq='B', year=2007, month=1, day=8))
 
-        assert_equal(date_D.asfreq('H', "BEFORE"), date_D_to_H_before)
-        assert_equal(date_D.asfreq('H', "AFTER"), date_D_to_H_after)
-        assert_equal(date_D.asfreq('T', "BEFORE"), date_D_to_T_before)
-        assert_equal(date_D.asfreq('T', "AFTER"), date_D_to_T_after)
-        assert_equal(date_D.asfreq('S', "BEFORE"), date_D_to_S_before)
-        assert_equal(date_D.asfreq('S', "AFTER"), date_D_to_S_after)
+            date_D_to_A = dWrap(Date(freq='A', year=2007))
+            date_D_to_Q = dWrap(Date(freq='Q', year=2007, quarter=1))
+            date_D_to_M = dWrap(Date(freq='M', year=2007, month=1))
+            date_D_to_W = dWrap(Date(freq='W', year=2007, month=1, day=7))
+
+            date_D_to_H_before = dWrap(Date(freq='H', year=2007, month=1, day=1, 
+                                      hour=0))
+            date_D_to_H_after = dWrap(Date(freq='H', year=2007, month=1, day=1, 
+                                     hour=23))
+            date_D_to_T_before = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                                      hour=0, minute=0))
+            date_D_to_T_after = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                                     hour=23, minute=59))
+            date_D_to_S_before = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                      hour=0, minute=0, second=0))
+            date_D_to_S_after = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                     hour=23, minute=59, second=59))
+
+            assert_func(date_D.asfreq('A'), date_D_to_A)
+            assert_func(date_D_end_of_year.asfreq('A'), date_D_to_A)
+            assert_func(date_D.asfreq('Q'), date_D_to_Q)
+            assert_func(date_D_end_of_quarter.asfreq('Q'), date_D_to_Q)
+            assert_func(date_D.asfreq('M'), date_D_to_M)
+            assert_func(date_D_end_of_month.asfreq('M'), date_D_to_M)
+            assert_func(date_D.asfreq('W'), date_D_to_W)
+            assert_func(date_D_end_of_week.asfreq('W'), date_D_to_W)
+
+            assert_func(date_D_friday.asfreq('B'), date_B_friday)
+            assert_func(date_D_saturday.asfreq('B', "BEFORE"), date_B_friday)
+            assert_func(date_D_saturday.asfreq('B', "AFTER"), date_B_monday)
+            assert_func(date_D_sunday.asfreq('B', "BEFORE"), date_B_friday)
+            assert_func(date_D_sunday.asfreq('B', "AFTER"), date_B_monday)
+
+            assert_func(date_D.asfreq('H', "BEFORE"), date_D_to_H_before)
+            assert_func(date_D.asfreq('H', "AFTER"), date_D_to_H_after)
+            assert_func(date_D.asfreq('T', "BEFORE"), date_D_to_T_before)
+            assert_func(date_D.asfreq('T', "AFTER"), date_D_to_T_after)
+            assert_func(date_D.asfreq('S', "BEFORE"), date_D_to_S_before)
+            assert_func(date_D.asfreq('S', "AFTER"), date_D_to_S_after)
 
     def test_conv_hourly(self):
         "frequency conversion tests: from Hourly Frequency"
         
-        date_H = Date(freq='H', year=2007, month=1, day=1, hour=0)
-        date_H_end_of_year = Date(freq='H', year=2007, month=12, day=31, 
-                                  hour=23)
-        date_H_end_of_quarter = Date(freq='H', year=2007, month=3, day=31, 
-                                     hour=23)
-        date_H_end_of_month = Date(freq='H', year=2007, month=1, day=31, 
-                                   hour=23)
-        date_H_end_of_week = Date(freq='H', year=2007, month=1, day=7, 
-                                  hour=23)
-        date_H_end_of_day = Date(freq='H', year=2007, month=1, day=1, 
-                                 hour=23)
-        date_H_end_of_bus = Date(freq='H', year=2007, month=1, day=1, 
-                                 hour=23)
-        
-        date_H_to_A = Date(freq='A', year=2007)
-        date_H_to_Q = Date(freq='Q', year=2007, quarter=1)
-        date_H_to_M = Date(freq='M', year=2007, month=1)
-        date_H_to_W = Date(freq='W', year=2007, month=1, day=7)
-        date_H_to_D = Date(freq='D', year=2007, month=1, day=1)
-        date_H_to_B = Date(freq='B', year=2007, month=1, day=1)
-        
-        date_H_to_T_before = Date(freq='T', year=2007, month=1, day=1, 
-                                  hour=0, minute=0)
-        date_H_to_T_after = Date(freq='T', year=2007, month=1, day=1, 
-                                 hour=0, minute=59)
-        date_H_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hour=0, minute=0, second=0)
-        date_H_to_S_after = Date(freq='S', year=2007, month=1, day=1, 
-                                 hour=0, minute=59, second=59)
-        
-        assert_equal(date_H.asfreq('A'), date_H_to_A)
-        assert_equal(date_H_end_of_year.asfreq('A'), date_H_to_A)
-        assert_equal(date_H.asfreq('Q'), date_H_to_Q)
-        assert_equal(date_H_end_of_quarter.asfreq('Q'), date_H_to_Q)
-        assert_equal(date_H.asfreq('M'), date_H_to_M)
-        assert_equal(date_H_end_of_month.asfreq('M'), date_H_to_M)
-        assert_equal(date_H.asfreq('W'), date_H_to_W)
-        assert_equal(date_H_end_of_week.asfreq('W'), date_H_to_W)
-        assert_equal(date_H.asfreq('D'), date_H_to_D)
-        assert_equal(date_H_end_of_day.asfreq('D'), date_H_to_D)
-        assert_equal(date_H.asfreq('B'), date_H_to_B)
-        assert_equal(date_H_end_of_bus.asfreq('B'), date_H_to_B)
+        for dWrap, assert_func in self.dateWrap:
+            date_H = dWrap(Date(freq='H', year=2007, month=1, day=1, hour=0))
+            date_H_end_of_year = dWrap(Date(freq='H', year=2007, month=12, day=31, 
+                                      hour=23))
+            date_H_end_of_quarter = dWrap(Date(freq='H', year=2007, month=3, day=31, 
+                                         hour=23))
+            date_H_end_of_month = dWrap(Date(freq='H', year=2007, month=1, day=31, 
+                                       hour=23))
+            date_H_end_of_week = dWrap(Date(freq='H', year=2007, month=1, day=7, 
+                                      hour=23))
+            date_H_end_of_day = dWrap(Date(freq='H', year=2007, month=1, day=1, 
+                                     hour=23))
+            date_H_end_of_bus = dWrap(Date(freq='H', year=2007, month=1, day=1, 
+                                     hour=23))
 
-        assert_equal(date_H.asfreq('T', "BEFORE"), date_H_to_T_before)
-        assert_equal(date_H.asfreq('T', "AFTER"), date_H_to_T_after)
-        assert_equal(date_H.asfreq('S', "BEFORE"), date_H_to_S_before)
-        assert_equal(date_H.asfreq('S', "AFTER"), date_H_to_S_after)
+            date_H_to_A = dWrap(Date(freq='A', year=2007))
+            date_H_to_Q = dWrap(Date(freq='Q', year=2007, quarter=1))
+            date_H_to_M = dWrap(Date(freq='M', year=2007, month=1))
+            date_H_to_W = dWrap(Date(freq='W', year=2007, month=1, day=7))
+            date_H_to_D = dWrap(Date(freq='D', year=2007, month=1, day=1))
+            date_H_to_B = dWrap(Date(freq='B', year=2007, month=1, day=1))
+
+            date_H_to_T_before = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                                      hour=0, minute=0))
+            date_H_to_T_after = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                                     hour=0, minute=59))
+            date_H_to_S_before = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                      hour=0, minute=0, second=0))
+            date_H_to_S_after = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                     hour=0, minute=59, second=59))
+
+            assert_func(date_H.asfreq('A'), date_H_to_A)
+            assert_func(date_H_end_of_year.asfreq('A'), date_H_to_A)
+            assert_func(date_H.asfreq('Q'), date_H_to_Q)
+            assert_func(date_H_end_of_quarter.asfreq('Q'), date_H_to_Q)
+            assert_func(date_H.asfreq('M'), date_H_to_M)
+            assert_func(date_H_end_of_month.asfreq('M'), date_H_to_M)
+            assert_func(date_H.asfreq('W'), date_H_to_W)
+            assert_func(date_H_end_of_week.asfreq('W'), date_H_to_W)
+            assert_func(date_H.asfreq('D'), date_H_to_D)
+            assert_func(date_H_end_of_day.asfreq('D'), date_H_to_D)
+            assert_func(date_H.asfreq('B'), date_H_to_B)
+            assert_func(date_H_end_of_bus.asfreq('B'), date_H_to_B)
+
+            assert_func(date_H.asfreq('T', "BEFORE"), date_H_to_T_before)
+            assert_func(date_H.asfreq('T', "AFTER"), date_H_to_T_after)
+            assert_func(date_H.asfreq('S', "BEFORE"), date_H_to_S_before)
+            assert_func(date_H.asfreq('S', "AFTER"), date_H_to_S_after)
 
     def test_conv_minutely(self):
         "frequency conversion tests: from Minutely Frequency"
         
-        date_T = Date(freq='T', year=2007, month=1, day=1, 
-                      hour=0, minute=0)
-        date_T_end_of_year = Date(freq='T', year=2007, month=12, day=31, 
-                                  hour=23, minute=59)
-        date_T_end_of_quarter = Date(freq='T', year=2007, month=3, day=31, 
-                                     hour=23, minute=59)
-        date_T_end_of_month = Date(freq='T', year=2007, month=1, day=31, 
-                                   hour=23, minute=59)
-        date_T_end_of_week = Date(freq='T', year=2007, month=1, day=7, 
-                                  hour=23, minute=59)
-        date_T_end_of_day = Date(freq='T', year=2007, month=1, day=1, 
-                                 hour=23, minute=59)
-        date_T_end_of_bus = Date(freq='T', year=2007, month=1, day=1, 
-                                 hour=23, minute=59)
-        date_T_end_of_hour = Date(freq='T', year=2007, month=1, day=1, 
-                                  hour=0, minute=59)
-        
-        date_T_to_A = Date(freq='A', year=2007)
-        date_T_to_Q = Date(freq='Q', year=2007, quarter=1)
-        date_T_to_M = Date(freq='M', year=2007, month=1)
-        date_T_to_W = Date(freq='W', year=2007, month=1, day=7)
-        date_T_to_D = Date(freq='D', year=2007, month=1, day=1)
-        date_T_to_B = Date(freq='B', year=2007, month=1, day=1)
-        date_T_to_H = Date(freq='H', year=2007, month=1, day=1, hour=0)
-        
-        date_T_to_S_before = Date(freq='S', year=2007, month=1, day=1, 
-                                  hour=0, minute=0, second=0)
-        date_T_to_S_after = Date(freq='S', year=2007, month=1, day=1, 
-                                 hour=0, minute=0, second=59)
-        
-        assert_equal(date_T.asfreq('A'), date_T_to_A)
-        assert_equal(date_T_end_of_year.asfreq('A'), date_T_to_A)
-        assert_equal(date_T.asfreq('Q'), date_T_to_Q)
-        assert_equal(date_T_end_of_quarter.asfreq('Q'), date_T_to_Q)
-        assert_equal(date_T.asfreq('M'), date_T_to_M)
-        assert_equal(date_T_end_of_month.asfreq('M'), date_T_to_M)
-        assert_equal(date_T.asfreq('W'), date_T_to_W)
-        assert_equal(date_T_end_of_week.asfreq('W'), date_T_to_W)
-        assert_equal(date_T.asfreq('D'), date_T_to_D)
-        assert_equal(date_T_end_of_day.asfreq('D'), date_T_to_D)
-        assert_equal(date_T.asfreq('B'), date_T_to_B)
-        assert_equal(date_T_end_of_bus.asfreq('B'), date_T_to_B)
-        assert_equal(date_T.asfreq('H'), date_T_to_H)
-        assert_equal(date_T_end_of_hour.asfreq('H'), date_T_to_H)
+        for dWrap, assert_func in self.dateWrap:
+            date_T = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                          hour=0, minute=0))
+            date_T_end_of_year = dWrap(Date(freq='T', year=2007, month=12, day=31, 
+                                      hour=23, minute=59))
+            date_T_end_of_quarter = dWrap(Date(freq='T', year=2007, month=3, day=31, 
+                                         hour=23, minute=59))
+            date_T_end_of_month = dWrap(Date(freq='T', year=2007, month=1, day=31, 
+                                       hour=23, minute=59))
+            date_T_end_of_week = dWrap(Date(freq='T', year=2007, month=1, day=7, 
+                                      hour=23, minute=59))
+            date_T_end_of_day = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                                     hour=23, minute=59))
+            date_T_end_of_bus = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                                     hour=23, minute=59))
+            date_T_end_of_hour = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                                      hour=0, minute=59))
 
-        assert_equal(date_T.asfreq('S', "BEFORE"), date_T_to_S_before)
-        assert_equal(date_T.asfreq('S', "AFTER"), date_T_to_S_after)
+            date_T_to_A = dWrap(Date(freq='A', year=2007))
+            date_T_to_Q = dWrap(Date(freq='Q', year=2007, quarter=1))
+            date_T_to_M = dWrap(Date(freq='M', year=2007, month=1))
+            date_T_to_W = dWrap(Date(freq='W', year=2007, month=1, day=7))
+            date_T_to_D = dWrap(Date(freq='D', year=2007, month=1, day=1))
+            date_T_to_B = dWrap(Date(freq='B', year=2007, month=1, day=1))
+            date_T_to_H = dWrap(Date(freq='H', year=2007, month=1, day=1, hour=0))
+
+            date_T_to_S_before = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                      hour=0, minute=0, second=0))
+            date_T_to_S_after = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                     hour=0, minute=0, second=59))
+
+            assert_func(date_T.asfreq('A'), date_T_to_A)
+            assert_func(date_T_end_of_year.asfreq('A'), date_T_to_A)
+            assert_func(date_T.asfreq('Q'), date_T_to_Q)
+            assert_func(date_T_end_of_quarter.asfreq('Q'), date_T_to_Q)
+            assert_func(date_T.asfreq('M'), date_T_to_M)
+            assert_func(date_T_end_of_month.asfreq('M'), date_T_to_M)
+            assert_func(date_T.asfreq('W'), date_T_to_W)
+            assert_func(date_T_end_of_week.asfreq('W'), date_T_to_W)
+            assert_func(date_T.asfreq('D'), date_T_to_D)
+            assert_func(date_T_end_of_day.asfreq('D'), date_T_to_D)
+            assert_func(date_T.asfreq('B'), date_T_to_B)
+            assert_func(date_T_end_of_bus.asfreq('B'), date_T_to_B)
+            assert_func(date_T.asfreq('H'), date_T_to_H)
+            assert_func(date_T_end_of_hour.asfreq('H'), date_T_to_H)
+
+            assert_func(date_T.asfreq('S', "BEFORE"), date_T_to_S_before)
+            assert_func(date_T.asfreq('S', "AFTER"), date_T_to_S_after)
 
 
     def test_conv_secondly(self):
         "frequency conversion tests: from Secondly Frequency"
         
-        date_S = Date(freq='S', year=2007, month=1, day=1, 
-                      hour=0, minute=0, second=0)
-        date_S_end_of_year = Date(freq='S', year=2007, month=12, day=31, 
-                                  hour=23, minute=59, second=59)
-        date_S_end_of_quarter = Date(freq='S', year=2007, month=3, day=31, 
-                                     hour=23, minute=59, second=59)
-        date_S_end_of_month = Date(freq='S', year=2007, month=1, day=31, 
-                                   hour=23, minute=59, second=59)
-        date_S_end_of_week = Date(freq='S', year=2007, month=1, day=7, 
-                                  hour=23, minute=59, second=59)
-        date_S_end_of_day = Date(freq='S', year=2007, month=1, day=1, 
-                                 hour=23, minute=59, second=59)
-        date_S_end_of_bus = Date(freq='S', year=2007, month=1, day=1, 
-                                 hour=23, minute=59, second=59)
-        date_S_end_of_hour = Date(freq='S', year=2007, month=1, day=1, 
-                                  hour=0, minute=59, second=59)
-        date_S_end_of_minute = Date(freq='S', year=2007, month=1, day=1, 
-                                    hour=0, minute=0, second=59)
-        
-        date_S_to_A = Date(freq='A', year=2007)
-        date_S_to_Q = Date(freq='Q', year=2007, quarter=1)
-        date_S_to_M = Date(freq='M', year=2007, month=1)
-        date_S_to_W = Date(freq='W', year=2007, month=1, day=7)
-        date_S_to_D = Date(freq='D', year=2007, month=1, day=1)
-        date_S_to_B = Date(freq='B', year=2007, month=1, day=1)
-        date_S_to_H = Date(freq='H', year=2007, month=1, day=1, 
-                           hour=0)
-        date_S_to_T = Date(freq='T', year=2007, month=1, day=1, 
-                           hour=0, minute=0)
-        
-        assert_equal(date_S.asfreq('A'), date_S_to_A)
-        assert_equal(date_S_end_of_year.asfreq('A'), date_S_to_A)
-        assert_equal(date_S.asfreq('Q'), date_S_to_Q)
-        assert_equal(date_S_end_of_quarter.asfreq('Q'), date_S_to_Q)
-        assert_equal(date_S.asfreq('M'), date_S_to_M)
-        assert_equal(date_S_end_of_month.asfreq('M'), date_S_to_M)
-        assert_equal(date_S.asfreq('W'), date_S_to_W)
-        assert_equal(date_S_end_of_week.asfreq('W'), date_S_to_W)
-        assert_equal(date_S.asfreq('D'), date_S_to_D)
-        assert_equal(date_S_end_of_day.asfreq('D'), date_S_to_D)
-        assert_equal(date_S.asfreq('B'), date_S_to_B)
-        assert_equal(date_S_end_of_bus.asfreq('B'), date_S_to_B)
-        assert_equal(date_S.asfreq('H'), date_S_to_H)
-        assert_equal(date_S_end_of_hour.asfreq('H'), date_S_to_H)
-        assert_equal(date_S.asfreq('T'), date_S_to_T)
-        assert_equal(date_S_end_of_minute.asfreq('T'), date_S_to_T)
+        for dWrap, assert_func in self.dateWrap:
+            date_S = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                          hour=0, minute=0, second=0))
+            date_S_end_of_year = dWrap(Date(freq='S', year=2007, month=12, day=31, 
+                                      hour=23, minute=59, second=59))
+            date_S_end_of_quarter = dWrap(Date(freq='S', year=2007, month=3, day=31, 
+                                         hour=23, minute=59, second=59))
+            date_S_end_of_month = dWrap(Date(freq='S', year=2007, month=1, day=31, 
+                                       hour=23, minute=59, second=59))
+            date_S_end_of_week = dWrap(Date(freq='S', year=2007, month=1, day=7, 
+                                      hour=23, minute=59, second=59))
+            date_S_end_of_day = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                     hour=23, minute=59, second=59))
+            date_S_end_of_bus = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                     hour=23, minute=59, second=59))
+            date_S_end_of_hour = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                      hour=0, minute=59, second=59))
+            date_S_end_of_minute = dWrap(Date(freq='S', year=2007, month=1, day=1, 
+                                        hour=0, minute=0, second=59))
+
+            date_S_to_A = dWrap(Date(freq='A', year=2007))
+            date_S_to_Q = dWrap(Date(freq='Q', year=2007, quarter=1))
+            date_S_to_M = dWrap(Date(freq='M', year=2007, month=1))
+            date_S_to_W = dWrap(Date(freq='W', year=2007, month=1, day=7))
+            date_S_to_D = dWrap(Date(freq='D', year=2007, month=1, day=1))
+            date_S_to_B = dWrap(Date(freq='B', year=2007, month=1, day=1))
+            date_S_to_H = dWrap(Date(freq='H', year=2007, month=1, day=1, 
+                               hour=0))
+            date_S_to_T = dWrap(Date(freq='T', year=2007, month=1, day=1, 
+                               hour=0, minute=0))
+
+            assert_func(date_S.asfreq('A'), date_S_to_A)
+            assert_func(date_S_end_of_year.asfreq('A'), date_S_to_A)
+            assert_func(date_S.asfreq('Q'), date_S_to_Q)
+            assert_func(date_S_end_of_quarter.asfreq('Q'), date_S_to_Q)
+            assert_func(date_S.asfreq('M'), date_S_to_M)
+            assert_func(date_S_end_of_month.asfreq('M'), date_S_to_M)
+            assert_func(date_S.asfreq('W'), date_S_to_W)
+            assert_func(date_S_end_of_week.asfreq('W'), date_S_to_W)
+            assert_func(date_S.asfreq('D'), date_S_to_D)
+            assert_func(date_S_end_of_day.asfreq('D'), date_S_to_D)
+            assert_func(date_S.asfreq('B'), date_S_to_B)
+            assert_func(date_S_end_of_bus.asfreq('B'), date_S_to_B)
+            assert_func(date_S.asfreq('H'), date_S_to_H)
+            assert_func(date_S_end_of_hour.asfreq('H'), date_S_to_H)
+            assert_func(date_S.asfreq('T'), date_S_to_T)
+            assert_func(date_S_end_of_minute.asfreq('T'), date_S_to_T)
         
 
 class test_methods(NumpyTestCase):
