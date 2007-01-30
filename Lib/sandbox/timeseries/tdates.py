@@ -265,7 +265,7 @@ class Date:
         
     def __getDateInfo(self, info):
         return int(cseries.getDateInfo(numpy.asarray(self.value), 
-                                       self.freqstr, info))
+                                       self.freq, info))
  
     def __add__(self, other):
         if isinstance(other, Date):
@@ -377,15 +377,12 @@ class Date:
         "Returns the date as itself."
         return self
     
-    def asfreq(self, toFreq, relation='before'):
-        """Converts the date to a new frequency."""
-        return asfreq(self, toFreq, relation)
-    
     def isvalid(self):
         "Returns whether the DateArray is valid: no missing/duplicated dates."
         # A date is always valid by itself, but we need the object to support the function
         # when we're working with singletons.
         return True
+        
     
 #####---------------------------------------------------------------------------
 #---- --- Functions ---
@@ -450,7 +447,7 @@ def prevbusday(day_end_hour=18, day_end_min=0):
 def asfreq(date, toFreq, relation="BEFORE"):
     """Returns a date converted to another frequency `toFreq`, according to the
     relation `relation` ."""
-    tofreq = corelib.check_freqstr(toFreq)
+    tofreq = corelib.check_freq(toFreq)
     _rel = relation.upper()[0]
     if _rel not in ['B', 'A']:
         msg = "Invalid relation '%s': Should be in ['before', 'after']"
@@ -461,9 +458,9 @@ def asfreq(date, toFreq, relation="BEFORE"):
 
     if date.freqstr == 'U':
         warnings.warn("Undefined frequency: assuming daily!")
-        fromfreq = 'D'
+        fromfreq = corelib.check_freq('D')
     else:
-        fromfreq = date.freqstr
+        fromfreq = date.freq
     
     if fromfreq == tofreq:
         return date
@@ -473,6 +470,8 @@ def asfreq(date, toFreq, relation="BEFORE"):
             return Date(freq=tofreq, value=value)
         else:
             return None
+            
+Date.asfreq = asfreq
             
 def isDate(data):
     "Returns whether `data` is an instance of Date."
@@ -646,12 +645,12 @@ accesses the array element by element. Therefore, `d` is a Date object.
         # Note: As we define a new object, we don't need caching
         if freq is None:
             return self
-        tofreq = corelib.fmtFreq(freq)
+        tofreq = corelib.check_freq(freq)
         if tofreq == self.freq:
             return self        
         if self.freqstr == 'U':
             warnings.warn("Undefined frequency: assuming daily!")
-            fromfreq = 'D'
+            fromfreq = corelib.check_freq('D')
         else:
             fromfreq = self.freq
         _rel = relation.upper()[0]
