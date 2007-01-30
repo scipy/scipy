@@ -64,7 +64,7 @@ __all__ = [
            ]
 
 #...............................................................................
-                    format='%(name)-15s %(levelname)s %(message)s',)
+#                    format='%(name)-15s %(levelname)s %(message)s',)
 
 ufunc_domain = {}
 ufunc_fills = {}
