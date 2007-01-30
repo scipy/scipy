@@ -1152,11 +1152,21 @@ def convert(series, freq, func='auto', position='END'):
 TimeSeries.convert = convert
 
 #...............................................................................
-def tshift(series, nper):
+def tshift(series, nper, copy=True):
     """Returns a series of the same size as `series`, with the same
 start_date and end_date, but values shifted by `nper`. This is useful
 for doing things like calculating a percentage change.
-Eg. pct_change = 100 * (series/tshift(series, -1) - 1)
+Eg. pct_change = 100 * (series/tshift(series, -1, copy=False) - 1)
+Note: By default the data is copied, but if you are using the result in
+a way that is going to make a copy anyway (like the above example) then
+you may want to bypass copying the data.
+
+:Parameters:
+    - `series` (TimeSeries) : TimeSeries object to shift
+    - `nper` (int) : number of periods to shift. Negative numbers
+      shift values to the right, positive to the left
+    - `copy` (boolean, *[True]*) : copies the data if True, returns
+      a view if False.
 
 :Example:
 >>> series = tseries.time_series([0,1,2,3], start_date=tdates.Date(freq='A', year=2005))
@@ -1173,7 +1183,11 @@ timeseries(data  = [-- 0 1 2],
     options = dict(fill_value=series.fill_value, observed=series.observed)
     newdata = masked_array(numeric.empty(series.shape, dtype=series.dtype), 
                            mask=True)
-    inidata = series._series.copy()
+    if copy:
+        inidata = series._series.copy()
+    else:
+        inidata = series._series
+    
     if nper < 0:
         nper = max(-len(series), nper)
         newdata[-nper:] = inidata[:nper]
