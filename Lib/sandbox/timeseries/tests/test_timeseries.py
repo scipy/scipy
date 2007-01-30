@@ -27,9 +27,9 @@ from maskedarray.testutils import assert_equal, assert_array_equal
 
 from timeseries import tseries
 #reload(tseries)
-from timeseries.tseries import Date, date_array_fromlist
+from timeseries.tseries import Date, date_array_fromlist, date_array
 from timeseries.tseries import time_series, TimeSeries, adjust_endpoints, \
-    mask_period, align_series
+    mask_period, align_series, fill_missing_dates
 
 class test_creation(NumpyTestCase):
     "Base test class for MaskedArrays."
@@ -334,6 +334,22 @@ test_dates test suite.
                      Date(freq='b', year=2005, month=6, day=1).asfreq('M'))
         assert_equal(highToLow.end_date,
                      (Date(freq='b', year=2005, month=6, day=1) + 99).asfreq('M'))
+                     
+    def test_fill_missing_dates(self):
+        """Test fill_missing_dates function"""
+        
+        _start = Date(freq='m', year=2005, month=1)
+        _end = Date(freq='m', year=2005, month=4)
+        
+        dates = date_array([_start, _end], freq='M')
+        series = time_series([1, 2], dates)
+        filled_ser = fill_missing_dates(series)
+        
+        assert_equal(filled_ser.start_date, _start)
+        assert_equal(filled_ser.end_date, _end)
+        assert(filled_ser.isfull())
+        assert(not filled_ser.has_duplicated_dates())
+        assert_equal(filled_ser.size, _end - _start + 1)
     
     #
     def test_maskperiod(self):        
