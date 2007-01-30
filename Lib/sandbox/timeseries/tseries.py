@@ -178,7 +178,7 @@ The combination of `series` and `dates` is the `data` part.
             cls._defaultdates = newdates    
             # Check frequency......
             if freq is not None:
-                freq = corelib.check_freq(freq)[0]
+                freq = corelib.check_freq(freq)
                 if freq != newdates.freq:
                     _dates = newdates.tofreq(freq)
             else:
@@ -1227,7 +1227,7 @@ The data corresponding to the initially missing dates are masked, or filled to
     `fill_value` : float *[None]*
         Default value for missing data. If None, the data are just masked.
     """
-    (freq, freqstr) = corelib.check_freq(freq)
+    (freq, freqstr) = corelib.check_freq(freq), corelib.check_freqstr(freq)
     if freqstr == 'U':
         raise ValueError,\
               "Unable to define a proper date resolution (found %s)." % freqstr
