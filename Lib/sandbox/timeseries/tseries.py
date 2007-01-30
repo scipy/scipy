@@ -64,7 +64,6 @@ __all__ = [
            ]
 
 #...............................................................................
-#                    format='%(name)-15s %(levelname)s %(message)s',)
 
 ufunc_domain = {}
 ufunc_fills = {}
@@ -1195,7 +1194,6 @@ timeseries(data  = [-- 0 1 2],
         inidata = series._series.copy()
     else:
         inidata = series._series
-    
     if nper < 0:
         nper = max(-len(series), nper)
         newdata[-nper:] = inidata[:nper]

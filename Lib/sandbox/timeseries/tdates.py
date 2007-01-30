@@ -470,7 +470,6 @@ def asfreq(date, toFreq, relation="BEFORE"):
             return Date(freq=tofreq, value=value)
         else:
             return None
-            
 Date.asfreq = asfreq
             
 def isDate(data):
@@ -697,14 +696,9 @@ accesses the array element by element. Therefore, `d` is a Date object.
                 if self.__hasdups is None:
                     self.__hasdups = (steps.min() == 0)
             else:
-#            elif val.size == 1:
                 self.__full = True
                 self.__hasdups = False
                 steps = numeric.array([], dtype=int_)
-#            else:
-#                self.__full = False
-#                self.__hasdups = False
-#                steps = None
             self.__steps = steps
         return self.__steps
     
@@ -855,17 +849,9 @@ def _listparser(dlist, freq=None):
     # Case #3: dates as objects .................
     elif dlist.dtype.kind == 'O':
         template = dlist[0]
-#        if dlist.size > 1:
-#            template = dlist[0]
-#        else:
-#            template = dlist.item()
         #...as Date objects
         if isinstance(template, Date):
             dates = numpy.fromiter((d.value for d in dlist), int_)
-#            if dlist.size > 1:
-#                dates = numpy.fromiter((d.value for d in dlist), int_)
-#            else:
-#                dates = [template]
         #...as mx.DateTime objects
         elif hasattr(template,'absdays'):
             # no freq given: try to guess it from absdays
@@ -904,7 +890,6 @@ def date_array(dlist=None, start_date=None, end_date=None, length=None,
     # Case #2: we have a starting date ..........
     if start_date is None:
         raise InsufficientDateError
-#    if not isDateType(start_date):
     if not isinstance(start_date, Date):
         raise DateError, "Starting date should be a valid Date instance!"
     # Check if we have an end_date
@@ -914,8 +899,6 @@ def date_array(dlist=None, start_date=None, end_date=None, length=None,
     else:
         if not isinstance(end_date, Date):
             raise DateError, "Ending date should be a valid Date instance!"
-#        assert(isDateType(end_date),
-#               "Starting date should be a valid Date instance!")
         length = end_date - start_date
         if include_last:
             length += 1

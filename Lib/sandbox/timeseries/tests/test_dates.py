@@ -26,9 +26,9 @@ import maskedarray.testutils
 from maskedarray.testutils import assert_equal, assert_array_equal
 
 from timeseries import tdates
-reload(tdates)
+#reload(tdates)
 from timeseries import tcore
-reload(tcore)
+#reload(tcore)
 from timeseries.tdates import date_array_fromlist, Date, DateArray, date_array, mxDFromString
 
 class test_creation(NumpyTestCase):

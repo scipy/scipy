@@ -2,11 +2,11 @@
 """
 Support for multi-variable time series, through masked recarrays.
 
-:author: Pierre Gerard-Marchant
-:contact: pierregm_at_uga_dot_edu
+:author: Pierre GF Gerard-Marchant & Matt Knox
+:contact: pierregm_at_uga_dot_edu - mattknow_ca_at_hotmail_dot_com
 :version: $Id$
 """
-__author__ = "Pierre GF Gerard-Marchant ($Author$)"
+__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author$)"
 __version__ = '1.0'
 __revision__ = "$Revision$"
 __date__     = '$Date$'
@@ -51,7 +51,6 @@ _typestr = ntypes._typestr
 reserved_fields = MR.reserved_fields + ['_dates']
 
 import warnings
-#                    format='%(name)-15s %(levelname)s %(message)s',)
 
 __all__ = [
 'MultiTimeSeries','fromarrays','fromrecords','fromtextfile',           
@@ -107,11 +106,6 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
             cls._defaulthardmask = data._series._hardmask | hard_mask
             cls._fill_value = data._series._fill_value
             return data._data.view(cls)
-#        elif isinstance(data, TimeSeries):
-#            cls._defaultfieldmask = data._series._fieldmask
-#            cls._defaulthardmask = data._series._hardmask | hard_mask
-#            cls._fill_value = data._series._fill_value
-            
         # .......................................
         _data = MaskedRecords(data, mask=mask, dtype=dtype, **mroptions)
         if dates is None:
@@ -122,36 +116,30 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
             newdates = date_array(dlist=dates, freq=freq)
         else:
             newdates = dates
-#            _data = data
-#            if hasattr(data, '_mask') :
-#                mask = mask_or(data._mask, mask)
         cls._defaultdates = newdates    
         cls._defaultobserved = observed  
         cls._defaultfieldmask = _data._fieldmask
-#        assert(_datadatescompat(data,newdates))
         #
         return _data.view(cls)
-    
-        #..................................
-    def __array_wrap__(self, obj, context=None):
-        """Special hook for ufuncs.
-Wraps the numpy array and sets the mask according to context.
-        """
-#        mclass = self.__class__
-        #..........
-        if context is None:
-#            return mclass(obj, mask=self._mask, copy=False)
-            return MaskedArray(obj, mask=self._mask, copy=False,
-                               dtype=obj.dtype,
-                               fill_value=self.fill_value, )
-        #..........
-        (func, args) = context[:2]
- 
-#        return mclass(obj, copy=False, mask=m)
-        return MultiTimeSeries(obj, copy=False, mask=m,)
-#                           dtype=obj.dtype, fill_value=self._fill_value)
-    
-        
+#    
+#        #..................................
+#    def __array_wrap__(self, obj, context=None):
+#        """Special hook for ufuncs.
+#Wraps the numpy array and sets the mask according to context.
+#        """
+##        mclass = self.__class__
+#        #..........
+#        if context is None:
+##            return mclass(obj, mask=self._mask, copy=False)
+#            return MaskedArray(obj, mask=self._mask, copy=False,
+#                               dtype=obj.dtype,
+#                               fill_value=self.fill_value, )
+#        #..........
+#        (func, args) = context[:2]
+# 
+##        return mclass(obj, copy=False, mask=m)
+#        return MultiTimeSeries(obj, copy=False, mask=m,)
+##                           dtype=obj.dtype, fill_value=self._fill_value)        
     def __array_finalize__(self,obj):
         if isinstance(obj, MultiTimeSeries):
             self.__dict__.update(_dates=obj._dates,
@@ -234,13 +222,11 @@ Wraps the numpy array and sets the mask according to context.
                     for k in _names:
                         m = mask_or(val, base_fmask.__getattr__(k))
                         base_fmask.__setattr__(k, m)
-                else:
-                    return
             else:
                 mval = getmaskarray(val)
                 for k in _names:
                     base_fmask.__setattr__(k, mval)  
-                return
+            return
     #............................................
     def __getitem__(self, indx):
         """Returns all the fields sharing the same fieldname base.

@@ -26,17 +26,12 @@ import maskedarray.mrecords as MR
 
 from maskedarray.core import getmaskarray, nomask, masked_array
 
-##reload(MA)
-#import maskedarray.mrecords
-##reload(maskedarray.mrecords)
-#from maskedarray.mrecords import mrecarray, fromarrays, fromtextfile, fromrecords
 from timeseries import tmulti
 reload(tmulti)
 from timeseries.tmulti import MultiTimeSeries, TimeSeries,\
     fromarrays, fromtextfile, fromrecords, \
     date_array, time_series
 
-#from timeseries.tseries import time_series, TimeSeries
 
 #..............................................................................
 class test_mrecords(NumpyTestCase):
