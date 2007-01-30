@@ -292,6 +292,49 @@ class test_functions(NumpyTestCase):
         
         assert_array_equal(shift_negative, shift_negative_result)
         assert_array_equal(shift_positive, shift_positive_result)
+        
+    def test_convert(self):
+        """Test convert function
+        
+Just check basic functionality. The details of the actual
+date conversion algorithms already tested by asfreq in the
+test_dates test suite.
+        """
+        lowFreqSeries = time_series(N.arange(10),
+                                    start_date=Date(freq='m', year=2005, month=6))
+        highFreqSeries = time_series(N.arange(100),
+                                    start_date=Date(freq='b', year=2005, month=6, day=1))
+                                    
+        lowToHigh_start = lowFreqSeries.convert('B', position='START')
+        
+        assert_equal(lowToHigh_start.start_date,
+                     Date(freq='m', year=2005, month=6).asfreq("B", relation="BEFORE"))
+        assert_equal(lowToHigh_start.end_date,
+                     (Date(freq='m', year=2005, month=6) + 9).asfreq("B", relation="AFTER"))
+
+        assert_equal(lowToHigh_start._mask[0], False)
+        assert_equal(lowToHigh_start._mask[-1], True)
+
+        lowToHigh_end = lowFreqSeries.convert('B', position='END')
+        
+        assert_equal(lowToHigh_end.start_date,
+                     Date(freq='m', year=2005, month=6).asfreq("B", relation="BEFORE"))
+        assert_equal(lowToHigh_end.end_date,
+                     (Date(freq='m', year=2005, month=6) + 9).asfreq("B", relation="AFTER"))
+                     
+        assert_equal(lowToHigh_end._mask[0], True)
+        assert_equal(lowToHigh_end._mask[-1], False)
+
+    
+        highToLow = highFreqSeries.convert('M', func=None)
+        
+        assert_equal(highToLow.ndim, 2)
+        assert_equal(highToLow.shape[1], 23)
+        assert_equal(highToLow.start_date,
+                     Date(freq='b', year=2005, month=6, day=1).asfreq('M'))
+        assert_equal(highToLow.end_date,
+                     (Date(freq='b', year=2005, month=6, day=1) + 99).asfreq('M'))
+    
     #
     def test_maskperiod(self):        
         "Test mask_period"
