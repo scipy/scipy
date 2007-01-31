@@ -35,7 +35,6 @@ from maskedarray import MaskedArray
 from maskedarray.core import default_fill_value, masked_print_option
 
 import warnings
-                    format='%(name)-15s %(levelname)s %(message)s',)
 
 reserved_fields = ['_data','_mask','_fieldmask', 'dtype']
 
