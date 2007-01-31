@@ -60,7 +60,7 @@ __all__ = [
 'day_of_week','day_of_year','day','month','quarter','year','hour','minute','second',  
 'tofile','asrecords','flatten','adjust_endpoints','align_series','aligned',
 'mask_period','mask_inside_period','mask_outside_period',
-'convert','fill_missing_dates'
+'convert','fill_missing_dates', 'stack'
            ]
 
 #...............................................................................
@@ -115,6 +115,39 @@ def _timeseriescompat(a, b):
             raise TimeSeriesCompatibilityError('size', "1: %s" % str(a.shape), 
                                                    "2: %s" % str(b.shape))
     return True
+    
+
+def _timeseriescompat_multiple(*series):
+    """Checks the date compatibility of multiple TimeSeries objects.
+    Returns True if everything's fine, or raises an exception. Unlike
+    the binary version, all items must be TimeSeries objects."""
+    
+    freqs, start_dates, steps, shapes = \
+        zip(*[(ser.freq, ser.start_date,
+               (ser._dates.get_steps() != series[0]._dates.get_steps()).any(),
+               ser.shape)  for ser in series])
+                
+    if len(set(freqs)) > 1:
+        errItems = tuple(set(freqs))
+        raise TimeSeriesCompatibilityError('freq', errItems[0], errItems[1])
+    
+    if len(set(start_dates)) > 1:
+        errItems = tuple(set(start_dates))
+        raise TimeSeriesCompatibilityError('start_dates', errItems[0], errItems[1])
+
+            
+    if max(steps) == True:
+        bad_index = [x for x, val in enumerate(steps) if val][0]
+        raise TimeSeriesCompatibilityError('time_steps', 
+                series[0]._dates.get_steps(), series[bad_index]._dates.get_steps())        
+
+    if len(set(shapes)) > 1:
+        errItems = tuple(set(shapes))
+        raise TimeSeriesCompatibilityError('size', "1: %s" % str(errItems[0].shape), 
+                                               "2: %s" % str(errItems[1].shape))
+
+    return True
+
 
 def _datadatescompat(data,dates):
     """Checks the compatibility of dates and data at the creation of a TimeSeries.
@@ -286,15 +319,17 @@ Returns the item described by i. Not a copy as in previous versions.
         data = self._series[indx]
         date = self._dates[indx]
         m = self._mask
-        scalardata = (len(numeric.shape(data))==0)
-        # 
+        
+        singlepoint = (len(numeric.shape(date))==0)
+
+        if singlepoint:
+            data = data.reshape((list((1,)) + list(data.shape)))
+            date = date_array(start_date=date, length=1, freq=date.freq)
+            
         if m is nomask:
-            if scalardata:
-                return TimeSeries(data, dates=date)
-            else:
-                return TimeSeries(data, dates=date, mask=nomask, keep_mask=True,
-                                  copy=False)
-        #....
+            return TimeSeries(data, dates=date, mask=nomask, keep_mask=True,
+                      copy=False)
+
         mi = m[indx]
         if mi.size == 1:
             if mi:
@@ -302,6 +337,7 @@ Returns the item described by i. Not a copy as in previous versions.
             return TimeSeries(data, dates=date, mask=nomask)
         else:
             return TimeSeries(data, dates=date, mask=mi)
+
     #........................
     def __setitem__(self, indx, value):
         """x.__setitem__(i, y) <==> x[i]=y
@@ -1301,7 +1337,20 @@ The data corresponding to the initially missing dates are masked, or filled to
         nshp = tuple([-1,] + list(data.shape[1:]))
     return time_series(newdata.reshape(nshp), newdates)
 
-
+#....................................................................
+def stack(*series):
+    """performs a column_stack on the data from each series, and the
+resulting series has the same dates as each individual series. All series
+must be date compatible.
+    
+:Parameters:
+    `*series` : the series to be stacked
+"""
+    _timeseriescompat_multiple(*series)
+    return time_series(MA.column_stack(series), series[0]._dates,
+                       **_attrib_dict(series[0]))
+                       
+    
 ################################################################################
 if __name__ == '__main__':
     from maskedarray.testutils import assert_equal
