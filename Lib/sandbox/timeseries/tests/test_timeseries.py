@@ -198,11 +198,11 @@ class test_getitem(NumpyTestCase):
     def test_wdate(self):
         "Tests  getitem with date as index"
         (series, data, dates) = self.d
-        last_date = series[-1]._dates
+        last_date = series._dates[-1]
         assert_equal(series[-1], series[last_date])
         assert_equal(series._dates[-1], dates[-1])
-        assert_equal(series[-1]._dates, dates[-1])
-        assert_equal(series[last_date]._dates, dates[-1])
+        assert_equal(series[-1]._dates[0], dates[-1])
+        assert_equal(series[last_date]._dates[0], dates[-1])
         assert_equal(series._series[-1], data._data[-1])
         assert_equal(series[-1]._series, data._data[-1])
         assert_equal(series._mask[-1], data._mask[-1])
@@ -385,6 +385,56 @@ test_dates test suite.
         assert_array_equal(empty_ts, empty_ts + empty_ts)
         assert_equal(empty_ts.start_date, None)
         assert_equal(empty_ts.end_date, None)
+        
+    def test__timeseriescompat_multiple(self):
+        
+        seriesM_10 = time_series(N.arange(10),
+                                    date_array(
+                                      start_date=Date(freq='m', year=2005, month=1),
+                                      length=10)
+                                )
+        
+        seriesD_10 = time_series(N.arange(10),
+                                    date_array(
+                                      start_date=Date(freq='d', year=2005, month=1, day=1),
+                                      length=10)
+                                )
+        
+        seriesD_5 = time_series(N.arange(5),
+                                    date_array(
+                                      start_date=Date(freq='d', year=2005, month=1, day=1),
+                                      length=5)
+                                )
+                                
+        seriesD_5_apr = time_series(N.arange(5),
+                                    date_array(
+                                      start_date=Date(freq='d', year=2005, month=4, day=1),
+                                      length=5)
+                                )
+                                
+        assert(tseries._timeseriescompat_multiple(seriesM_10, seriesM_10, seriesM_10))
+
+        try:
+            tseries._timeseriescompat_multiple(seriesM_10, seriesD_10)
+            exception = False
+        except:
+            exception = True
+        assert(exception)
+
+        try:
+            tseries._timeseriescompat_multiple(seriesD_5, seriesD_10)
+            exception = False
+        except:
+            exception = True
+        assert(exception)
+        
+        try:
+            tseries._timeseriescompat_multiple(seriesD_5, seriesD_5_apr)
+            exception = False
+        except:
+            exception = True
+        assert(exception)
+
         
 ###############################################################################
 #------------------------------------------------------------------------------
