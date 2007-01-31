@@ -8,7 +8,6 @@ from info import __doc__
 from numpyio import packbits, unpackbits, bswap, fread, fwrite, \
      convert_objectarray
 from mio import *
-from fopen import *
 from npfile import npfile
 from recaster import sctype_attributes, Recaster
 from array_import import *

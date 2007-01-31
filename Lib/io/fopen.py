@@ -8,6 +8,10 @@ import types
 from numpy import *
 import numpyio
 
+import warnings
+warnings.warn('fopen module is deprecated, please use npfile instead',
+              DeprecationWarning, stacklevel=2)
+
 LittleEndian = (sys.byteorder == 'little')
 
 __all__ = ['fopen']
