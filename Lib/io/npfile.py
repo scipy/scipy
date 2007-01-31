@@ -16,7 +16,7 @@ class npfile(object):
     Inputs:
       file_name -- The complete path name to the file to open
                    or an open file-like object
-      permission -- Open the file with given permissions: ('r', 'H', 'a')
+      permission -- Open the file with given permissions: ('r', 'w', 'a')
                     for reading, writing, or appending.  This is the same
                     as the mode argument in the builtin open command.
       format -- The byte-ordering of the file:
