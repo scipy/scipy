@@ -156,15 +156,16 @@ class npfile(object):
     fwrite = write
     
     def read(self, shape, dt, endian=None, order=None):
-        ''' Read data from file and return it in a numpy array
+        '''Read data from file and return it in a numpy array.
         
         Inputs
+        ------
         shape     - shape of output array, or number of elements
-        dt        - dtype of array to write
+        dt        - dtype of array to be read
         endian    - endianness of written data
                     (can be None, 'dtype', '<', '>')
                     (default from self.endian)
-        order     - order of array to write (C, F)
+        order     - order of array to be read ('C' or 'F')
                     (default from self.order)
         '''
         endian, order = self._endian_order(endian, order)
