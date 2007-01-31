@@ -449,7 +449,7 @@ def dot(a,b):
 #...............................................................................
 def mediff1d(array, to_end=None, to_begin=None):
     """Array difference with prefixed and/or appended value."""
-    a = MA.masked_array(array, copy=True)
+    a = masked_array(array, copy=True)
     if a.ndim > 1:
         a.reshape((a.size,))
     (d, m, n) = (a._data, a._mask, a.size-1)
@@ -460,30 +460,30 @@ def mediff1d(array, to_end=None, to_begin=None):
         dm = m[1:]-m[:-1]
     #
     if to_end is not None:
-        to_end = MA.asarray(to_end)
+        to_end = asarray(to_end)
         nend = to_end.size
         if to_begin is not None:
-            to_begin = MA.asarray(to_begin)
+            to_begin = asarray(to_begin)
             nbegin = to_begin.size
-            r_data = N.empty((n+nend+nbegin,), dtype=a.dtype)
-            r_mask = N.zeros((n+nend+nbegin,), dtype=bool_)
+            r_data = numeric.empty((n+nend+nbegin,), dtype=a.dtype)
+            r_mask = numeric.zeros((n+nend+nbegin,), dtype=bool_)
             r_data[:nbegin] = to_begin._data
             r_mask[:nbegin] = to_begin._mask
             r_data[nbegin:-nend] = dd
             r_mask[nbegin:-nend] = dm
         else:
-            r_data = N.empty((n+nend,), dtype=a.dtype)
-            r_mask = N.zeros((n+nend,), dtype=bool_)
+            r_data = numeric.empty((n+nend,), dtype=a.dtype)
+            r_mask = numeric.zeros((n+nend,), dtype=bool_)
             r_data[:-nend] = dd
             r_mask[:-nend] = dm
         r_data[-nend:] = to_end._data
         r_mask[-nend:] = to_end._mask
     #
     elif to_begin is not None:
-        to_begin = MA.asarray(to_begin)
+        to_begin = asarray(to_begin)
         nbegin = to_begin.size
-        r_data = N.empty((n+nbegin,), dtype=a.dtype)
-        r_mask = N.zeros((n+nbegin,), dtype=bool_)
+        r_data = numeric.empty((n+nbegin,), dtype=a.dtype)
+        r_mask = numeric.zeros((n+nbegin,), dtype=bool_)
         r_data[:nbegin] = to_begin._data
         r_mask[:nbegin] = to_begin._mask
         r_data[nbegin:] = dd
