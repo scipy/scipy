@@ -36,7 +36,7 @@ import numpy.core.umath as umath
 from numpy.core.records import fromarrays as recfromarrays
 
 import maskedarray as MA
-#reload(MA)
+reload(MA)
 from maskedarray.core import MaskedArray, MAError, masked, nomask, \
     filled, getmask, getmaskarray, make_mask_none, mask_or, make_mask, \
     masked_array
@@ -53,6 +53,10 @@ from tdates import Date, isDate, DateArray, isDateArray, \
 
 import cseries
 #reload(cseries)
+
+
+
+
 
 __all__ = [
 'TimeSeriesError','TimeSeriesCompatibilityError','TimeSeries','isTimeSeries',
@@ -295,29 +299,38 @@ The combination of `series` and `dates` is the `data` part.
     def __checkindex(self, indx):
         "Checks the validity of an index."
         if isinstance(indx, int):
-            return indx
+            return (indx, indx)
         if isinstance(indx, str):
-            return self._dates.date_to_index(Date(self._dates.freq, string=indx))
+            indx = self._dates.date_to_index(Date(self._dates.freq, string=indx))
+            return (indx, indx)
         elif isDate(indx) or isDateArray(indx):
-            return self._dates.date_to_index(indx)
+            indx = self._dates.date_to_index(indx)
+            return (indx, indx)
         elif isinstance(indx,slice):
-            slice_start = self.__checkindex(indx.start)
-            slice_stop = self.__checkindex(indx.stop)
-            return slice(slice_start, slice_stop, indx.step)
+            slice_start = self.__checkindex(indx.start)[0]
+            slice_stop = self.__checkindex(indx.stop)[0]
+            indx = slice(slice_start, slice_stop, indx.step)
+            return (indx,indx)
+        elif isinstance(indx, tuple):
+            if len(indx) > self.shape:
+                raise IndexError, "Too many indices"
+            elif len(indx)==2:
+                return (indx,indx[0])
+            return (indx,indx[:-1])
         elif isTimeSeries(indx):
             indx = indx._series
         if getmask(indx) is not nomask:
             msg = "Masked arrays must be filled before they can be used as indices!"
             raise IndexError, msg
-        return indx
+        return (indx,indx)
 
     def __getitem__(self, indx):
         """x.__getitem__(y) <==> x[y]
 Returns the item described by i. Not a copy as in previous versions.
         """
-        indx = self.__checkindex(indx)
-        data = self._series[indx]
-        date = self._dates[indx]
+        (sindx, dindx) = self.__checkindex(indx)
+        data = self._series[sindx]
+        date = self._dates[dindx]
         m = self._mask
         
         singlepoint = (len(numeric.shape(date))==0)
@@ -330,7 +343,7 @@ Returns the item described by i. Not a copy as in previous versions.
             return TimeSeries(data, dates=date, mask=nomask, keep_mask=True,
                       copy=False)
 
-        mi = m[indx]
+        mi = m[sindx]
         if mi.size == 1:
             if mi:
                 return TimeSeries(data, dates=date, mask=True)
@@ -345,35 +358,35 @@ Sets item described by index. If value is masked, masks those locations.
         """
         if self is masked:
             raise MAError, 'Cannot alter the masked element.'
-        indx = self.__checkindex(indx)
+        (sindx, dindx) = self.__checkindex(indx)
         #....
         if isinstance(value, TimeSeries):
-            assert(_timeseriescompat(self[indx], value))
-            self._series[indx] = value._series
+            assert(_timeseriescompat(self[sindx], value))
+            self._series[sindx] = value._series
         else:
-            self._series[indx] = value
+            self._series[sindx] = value
         # Don't forget to update the mask !
         self._mask = self._series._mask
         
     #........................
     def __getslice__(self, i, j):
         "Gets slice described by i, j"
-        i = self.__checkindex(i)
-        j = self.__checkindex(j)
-        (data, date) = (self._series[i:j], self._dates[i:j])
+        (si,di) = self.__checkindex(i)
+        (sj,dj) = self.__checkindex(j)
+        (data, date) = (self._series[si:sj], self._dates[di:dj])
         return TimeSeries(data, dates=date, copy=False)
     #....
     def __setslice__(self, i, j, value):
         "Gets item described by i. Not a copy as in previous versions."
-        i = self.__checkindex(i)
-        j = self.__checkindex(j)
+        (si,di) = self.__checkindex(i)
+        (sj,dj) = self.__checkindex(j)
         #....
 #        data = self._series[i:j]
         if isinstance(value, TimeSeries):
-            assert(_timeseriescompat(self[i:j], value))
-            self._series[i:j] = value._series
+            assert(_timeseriescompat(self[si:sj], value))
+            self._series[si:sj] = value._series
         else:
-            self._series[i:j] = value
+            self._series[si:sj] = value
         # Don't forget to update the mask !
         self._mask = self._series._mask
     #......................................................
@@ -937,7 +950,6 @@ def time_series(data, dates=None, freq=None, observed=None,
                                length=length, include_last=include_last, freq=freq) 
         else:
             dates = date_array([], freq=freq)
-  
     elif not isinstance(dates, DateArray):
         dates = date_array(dlist=dates, freq=freq)
     return TimeSeries(data=data, dates=dates, mask=mask, observed=observed,
@@ -1354,6 +1366,8 @@ must be date compatible.
 ################################################################################
 if __name__ == '__main__':
     from maskedarray.testutils import assert_equal
+    import numpy as N
+    
 #    if 0:
 #        dlist = ['2007-01-%02i' % i for i in range(1,16)]
 #        dates = date_array(dlist)
@@ -1410,15 +1424,39 @@ if __name__ == '__main__':
         dlist = ['2007-01-%02i' % i for i in range(1,16)]
         dates = date_array_fromlist(dlist)
         data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3, dtype=float_)
-        self_d = (time_series(range(15), dlist), data, dates)
-        (ser, data, dates) = self_d
-        
+        self_d = (time_series(data, dlist), data, dates)
+        (series, data, dates) = self_d
+    
+        assert_equal(series[3:7]._series._data, data[3:7]._data)
+        assert_equal(series[3:7]._series._mask, data[3:7]._mask)
+        assert_equal(series[3:7]._dates, dates[3:7])
+        # Ditto
+        assert_equal(series[:5]._series._data, data[:5]._data)
+        assert_equal(series[:5]._series._mask, data[:5]._mask)
+        assert_equal(series[:5]._dates, dates[:5])
+        # With set
+        series[:5] = 0
+        assert_equal(series[:5]._series, [0,0,0,0,0])
+        dseries = N.log(series)
+        series[-5:] = dseries[-5:]
+        assert_equal(series[-5:], dseries[-5:])
+        # Now, using dates !
+        dseries = series[series.dates[3]:series.dates[7]]
+        assert_equal(dseries, series[3:7])
+    
+    
     if 1:
         hodie = tdates.today('M')
         ser_0 = time_series([], [], freq='M')
         ser_2 = time_series([1,2], start_date=hodie)
         ser_1 = time_series([1], hodie, freq='M')
-        
+        (a,b,d) = ([1,2,3],[3,2,1], date_array(tdates.today('M'),length=3))
+        ser_x = time_series(numpy.column_stack((a,b)), dates=d)
+        assert_equal(ser_x[0,0], time_series(a[0],d[0]))
+        assert_equal(ser_x[0,:], time_series([(a[0],b[0])], d[0]))
+        assert_equal(ser_x[:,0], time_series(a, d)) 
+        assert_equal(ser_x[:,:], ser_x) 
+        print "OK"
 #        # Testing a basic condition on data
 #        cond = (series<8).filled(False)
 #        dseries = series[cond]

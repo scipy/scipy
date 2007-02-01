@@ -908,7 +908,8 @@ def date_array(dlist=None, start_date=None, end_date=None, length=None,
     # Check if we have an end_date
     if end_date is None:
         if length is None:
-            raise ValueError,"No length precised!"
+#            raise ValueError,"No length precised!"
+            length = 1
     else:
         if not isDate(end_date):
             raise DateError, "Ending date should be a valid Date instance!"

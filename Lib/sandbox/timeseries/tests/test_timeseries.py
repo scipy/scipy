@@ -27,7 +27,7 @@ from maskedarray.testutils import assert_equal, assert_array_equal
 
 from timeseries import tseries
 #reload(tseries)
-from timeseries.tseries import Date, date_array_fromlist, date_array
+from timeseries.tseries import Date, date_array_fromlist, date_array, thisday
 from timeseries.tseries import time_series, TimeSeries, adjust_endpoints, \
     mask_period, align_series, fill_missing_dates
 
@@ -243,6 +243,15 @@ class test_getitem(NumpyTestCase):
         # Now, using dates !
         dseries = series[series.dates[3]:series.dates[7]]
         assert_equal(dseries, series[3:7])
+        
+    def test_on2d(self):
+        "Tests getitem on a 2D series"
+        (a,b,d) = ([1,2,3],[3,2,1], date_array(thisday('M'),length=3))
+        ser_x = time_series(N.column_stack((a,b)), dates=d)
+        assert_equal(ser_x[0,0], time_series(a[0],d[0]))
+        assert_equal(ser_x[0,:], time_series([(a[0],b[0])], d[0]))
+        assert_equal(ser_x[:,0], time_series(a, d)) 
+        assert_equal(ser_x[:,:], ser_x) 
         
 class test_functions(NumpyTestCase):
     "Some getitem tests"
