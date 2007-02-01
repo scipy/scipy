@@ -238,18 +238,20 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
             obj._mask = make_mask(_localdict['_fieldmask'][indx])
             return obj
         # We want some elements ..
-        indx = super(MultiTimeSeries, self)._TimeSeries__checkindex(indx)
-        return MultiTimeSeries(_localdict['_series'][indx], 
-                               dates=_localdict['_dates'][indx],
+        (sindx, dindx) = super(MultiTimeSeries, self)._TimeSeries__checkindex(indx)
+        return MultiTimeSeries(_localdict['_series'][sindx], 
+                               dates=_localdict['_dates'][dindx],
 #                              mask=_localdict['_fieldmask'][indx],
                                dtype=self.dtype)
         
     def __getslice__(self, i, j):
         """Returns the slice described by [i,j]."""
         _localdict = self.__dict__
-        return MultiTimeSeries(_localdict['_data'][i:j], 
-                               mask=_localdict['_fieldmask'][i:j],
-                               dates=_localdict['_dates'][i:j],
+        (si, di) = super(MultiTimeSeries, self)._TimeSeries__checkindex(i)
+        (sj, dj) = super(MultiTimeSeries, self)._TimeSeries__checkindex(j)
+        return MultiTimeSeries(_localdict['_data'][si:sj], 
+                               mask=_localdict['_fieldmask'][si:sj],
+                               dates=_localdict['_dates'][di:dj],
                                dtype=self.dtype)      
         
     def __setslice__(self, i, j, value):
@@ -564,48 +566,17 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
 
     
 ################################################################################
-#if 1:
-#    from tseries import aligned
-#    import maskedarray.testutils
-#    from maskedarray.testutils import *
-#    
-#    if 1:
-#        mlist = ['2005-%02i' % i for i in range(1,13)]
-#        mlist += ['2006-%02i' % i for i in range(1,13)]
-#        mdata = numpy.arange(24)
-#        mser1 = time_series(mdata, mlist, observed='SUMMED')
-#        #
-#    if 1:
-#        mlist2 = ['2004-%02i' % i for i in range(1,13)]
-#        mlist2 += ['2005-%02i' % i for i in range(1,13)]
-#        mser2 = time_series(mdata, mlist2, observed='SUMMED')
-#        #
-#        (malg1,malg2) = aligned(mser1, mser2)
-#    if 1:
-#        mrec = MR.fromarrays([mser1])
-#        descr = [('A',N.float_),('B',N.float_)]
-#
-#if 1:
-#    import numpy as N
-#    if 1:        
-##    def setup(self):       
-##        "Generic setup" 
-#        d = N.arange(5)
-#        m = MA.make_mask([1,0,0,1,1])
-#        base_d = N.r_[d,d[::-1]].reshape(2,-1).T
-#        base_m = N.r_[[m, m[::-1]]].T
-#        base = MA.array(base_d, mask=base_m)    
-#        mrec = MR.fromarrays(base.T,)
-#        dlist = ['2007-%02i' % (i+1) for i in d]
-#        dates = date_array(dlist)
-#        ts = time_series(mrec,dates)
-#        mts = MultiTimeSeries(mrec,dates)
-#        
-#        logmts = N.log(mts)
-#        self_data = [d, m, mrec, dlist, dates, ts, mts]
-#        #
-#        mts.addfield(masked_array(d+10, mask=m[::-1]))
-#        assert('f2' in mts.dtype.names)
-#        assert_equal(mts.f2, d+10)
-#        assert_equal(mts.f2._mask, m[::-1])
-
+if __name__ == '__main__':
+    import numpy as N
+    if 1:
+        d = N.arange(5)
+        m = MA.make_mask([1,0,0,1,1])
+        base_d = N.r_[d,d[::-1]].reshape(2,-1).T
+        base_m = N.r_[[m, m[::-1]]].T
+        base = MA.array(base_d, mask=base_m)    
+        mrec = MR.fromarrays(base.T,)
+        dlist = ['2007-%02i' % (i+1) for i in d]
+        dates = date_array(dlist)
+        ts = time_series(mrec,dates)
+        mts = MultiTimeSeries(mrec,dates)
+        self_data = [d, m, mrec, dlist, dates, ts, mts]

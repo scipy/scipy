@@ -539,6 +539,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
             except AttributeError:
                 pass     
         r = ndarray.__getitem__(self, indx)
+#        return r
         if not hasattr(r, "size"):
             if isinstance(r, int): 
                 return Date(self.freq, value=r)
@@ -546,7 +547,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
                 return r
         elif r.size == 1:
             # Only one element, and it's not a scalar: we have a DateArray of size 1
-            if len(numeric.shape(r)) > 0:
+            if len(r.shape) > 0:
                 r = r.item()
             return Date(self.freq, value=r)
         else:
@@ -982,3 +983,6 @@ if __name__ == '__main__':
     assert (Date('D','2007-01')==Date('D',string='2007-01'))
     assert (Date('D','2007-01')==Date('D', value=732677))
     assert (Date('D',732677)==Date('D', value=732677))
+    n = Date('D','2007-01')
+    tmp = date_array(n,n+3)
+    print tmp[0]
