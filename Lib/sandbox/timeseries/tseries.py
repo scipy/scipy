@@ -192,12 +192,13 @@ A time series is here defined as the combination of three arrays:
     
 The combination of `series` and `dates` is the `data` part.
     """
+    options = None
     def __new__(cls, data, dates=None, mask=nomask, 
                 freq=None, observed=None, start_date=None, 
                 dtype=None, copy=False, fill_value=None,
                 keep_mask=True, small_mask=True, hard_mask=False):
         #tslog.info("__new__: received data types %s, %s" % (type(data), data))
-        options = dict(copy=copy, dtype=dtype, fill_value=fill_value,
+        maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value,
                        keep_mask=keep_mask, small_mask=small_mask, 
                        hard_mask=hard_mask, )
         if isinstance(data, TimeSeries):
@@ -251,7 +252,7 @@ The combination of `series` and `dates` is the `data` part.
             assert(numeric.size(newdates)==1)
             return _data.view(cls)
         newdata = super(TimeSeries,cls).__new__(cls, _data, mask=mask,
-                                                **options)
+                                                **maparms)
         assert(_datadatescompat(newdata._data,newdates))
         return newdata
             
