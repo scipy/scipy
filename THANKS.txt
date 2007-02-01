@@ -14,6 +14,7 @@ used in SciPy.  All three continually work on both algorithm development and
 improvements to the feature set, build process, and robustness of SciPy.
 
 
+Nathan Bell         -- sparsetools reimplementation (CSR/CSC matrix operations)
 Robert Cimrman      -- UMFpack wrapper for sparse matrix module
 David M. Cooke      -- improvements to system_info, and LBFGSB wrapper
 Chuck Harris        -- Zeros package in optimize (1d root-finding algorithms)
