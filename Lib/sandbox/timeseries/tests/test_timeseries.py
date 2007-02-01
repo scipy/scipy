@@ -29,7 +29,7 @@ from timeseries import tseries
 #reload(tseries)
 from timeseries.tseries import Date, date_array_fromlist, date_array, thisday
 from timeseries.tseries import time_series, TimeSeries, adjust_endpoints, \
-    mask_period, align_series, fill_missing_dates
+    mask_period, align_series, fill_missing_dates, tsmasked
 
 class test_creation(NumpyTestCase):
     "Base test class for MaskedArrays."
@@ -184,6 +184,16 @@ class test_arithmetics(NumpyTestCase):
         series[2] = masked
         assert_equal(series._mask, [1,0,1]+[1,0,0]*4)
         assert_equal(series._series._mask, [1,0,1]+[1,0,0]*4)
+    #
+    def test_ismasked(self):
+        "Checks checks on masked"
+        (series, data) =self.d
+        assert(series[0] is tsmasked)
+        assert(tsmasked._series is masked)
+        assert(series._series[0] is masked)
+        assert(series[0]._series is masked)
+    
+    
 #...............................................................................
 
 class test_getitem(NumpyTestCase):

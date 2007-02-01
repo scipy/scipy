@@ -36,17 +36,17 @@ import numpy.core.umath as umath
 from numpy.core.records import fromarrays as recfromarrays
 
 import maskedarray as MA
-reload(MA)
+#reload(MA)
 from maskedarray.core import MaskedArray, MAError, masked, nomask, \
     filled, getmask, getmaskarray, make_mask_none, mask_or, make_mask, \
     masked_array
 
 import tcore as corelib
-reload(corelib)
+#reload(corelib)
 from tcore import *
 
 import tdates
-reload(tdates)
+#reload(tdates)
 from tdates import DateError, InsufficientDateError
 from tdates import Date, isDate, DateArray, isDateArray, \
     date_array, date_array_fromlist, date_array_fromrange, thisday
@@ -239,12 +239,17 @@ The combination of `series` and `dates` is the `data` part.
                 newdates = date_array(dlist=dates, freq=freq)
             else:
                 newdates = dates
+            # Check data .........
             _data = data
             if hasattr(data, '_mask') :
                 mask = mask_or(data._mask, mask)
+            # Set default ........
             cls._defaultdates = newdates    
             cls._defaultobserved = corelib.fmtObserv(observed)
 
+        if _data is masked:
+            assert(numeric.size(newdates)==1)
+            return _data.view(cls)
         newdata = super(TimeSeries,cls).__new__(cls, _data, mask=mask,
                                                 **options)
         assert(_datadatescompat(newdata._data,newdates))
@@ -268,15 +273,21 @@ The combination of `series` and `dates` is the `data` part.
         else:     
             self._dates = self._defaultdates
             self.observed = self._defaultobserved
-            self._series = MA.array(obj, mask=self._defaultmask, 
-                                    copy=False, hard_mask=self._defaulthardmask)
-            self._mask = self._defaultmask
             self._data = obj
+            self._mask = self._defaultmask
+            if obj is masked:
+                self._series = masked
+            else:
+                self._series = MA.array(obj, mask=self._defaultmask, 
+                                        copy=False, hard_mask=self._defaulthardmask)
             self._hardmask = self._defaulthardmask
             self.fill_value = self._fill_value
         self._mask =  self._series._mask
         self._data = self._series._data
         self._hardmask = self._series._hardmask
+        #
+        TimeSeries._defaulthardmask = False
+        TimeSeries._defaultmask = nomask
         #tslog.info("__array_finalize__ sends %s" % type(self))
         return
     #............................................
@@ -336,7 +347,8 @@ Returns the item described by i. Not a copy as in previous versions.
         singlepoint = (len(numeric.shape(date))==0)
 
         if singlepoint:
-            data = data.reshape((list((1,)) + list(data.shape)))
+            if data is not masked:
+                data = data.reshape((list((1,)) + list(data.shape)))
             date = date_array(start_date=date, length=1, freq=date.freq)
             
         if m is nomask:
@@ -346,7 +358,9 @@ Returns the item described by i. Not a copy as in previous versions.
         mi = m[sindx]
         if mi.size == 1:
             if mi:
-                return TimeSeries(data, dates=date, mask=True)
+                output = tsmasked
+                output._dates = date
+                return output
             return TimeSeries(data, dates=date, mask=nomask)
         else:
             return TimeSeries(data, dates=date, mask=mi)
@@ -962,6 +976,8 @@ def isTimeSeries(series):
     "Returns whether the series is a valid TimeSeries object."
     return isinstance(series, TimeSeries)
 
+tsmasked = TimeSeries(masked,dates=Date('D',0))
+
 ##### --------------------------------------------------------------------------
 #---- ... Additional functions ...
 ##### --------------------------------------------------------------------------
@@ -1427,42 +1443,7 @@ if __name__ == '__main__':
         self_d = (time_series(data, dlist), data, dates)
         (series, data, dates) = self_d
     
-        assert_equal(series[3:7]._series._data, data[3:7]._data)
-        assert_equal(series[3:7]._series._mask, data[3:7]._mask)
-        assert_equal(series[3:7]._dates, dates[3:7])
-        # Ditto
-        assert_equal(series[:5]._series._data, data[:5]._data)
-        assert_equal(series[:5]._series._mask, data[:5]._mask)
-        assert_equal(series[:5]._dates, dates[:5])
-        # With set
-        series[:5] = 0
-        assert_equal(series[:5]._series, [0,0,0,0,0])
-        dseries = N.log(series)
-        series[-5:] = dseries[-5:]
-        assert_equal(series[-5:], dseries[-5:])
-        # Now, using dates !
-        dseries = series[series.dates[3]:series.dates[7]]
-        assert_equal(dseries, series[3:7])
-    
-    
-    if 1:
-        hodie = tdates.today('M')
-        ser_0 = time_series([], [], freq='M')
-        ser_2 = time_series([1,2], start_date=hodie)
-        ser_1 = time_series([1], hodie, freq='M')
-        (a,b,d) = ([1,2,3],[3,2,1], date_array(tdates.today('M'),length=3))
-        ser_x = time_series(numpy.column_stack((a,b)), dates=d)
-        assert_equal(ser_x[0,0], time_series(a[0],d[0]))
-        assert_equal(ser_x[0,:], time_series([(a[0],b[0])], d[0]))
-        assert_equal(ser_x[:,0], time_series(a, d)) 
-        assert_equal(ser_x[:,:], ser_x) 
-        print "OK"
-#        # Testing a basic condition on data
-#        cond = (series<8).filled(False)
-#        dseries = series[cond]
-#        assert_equal(dseries._data, [1,2,3,4,6,7])
-#        assert_equal(dseries._dates, series._dates[[1,2,3,4,6,7]])
-#        assert_equal(dseries._mask, nomask)
-#        # Testing a basic condition on dates
-#        series[series._dates < Date('D',string='2007-01-06')] = masked
-#        assert_equal(series[:5]._series._mask, [1,1,1,1,1])
+        assert(series[0] is tsmasked)
+        assert(tsmasked._series is masked)
+        assert(series._series[0] is masked)
+        assert(series[0]._series is masked)
