@@ -855,6 +855,8 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         # 1. Argument is MA ...........
         if isinstance(data, MaskedArray) or\
            (hasattr(data,"_mask") and hasattr(data,"_data")) :
+            if data is masked:
+                return masked
             if keep_mask:
                 if mask is nomask:
                     if copy:
@@ -3023,4 +3025,5 @@ if __name__ == '__main__':
         a = arange(4)
         a[1:-1] = masked
         b = a[:-5]
-
+    if 1:
+        assert(masked_array(masked) is masked)
