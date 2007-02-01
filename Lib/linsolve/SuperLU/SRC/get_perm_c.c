@@ -402,7 +402,7 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 	t = SuperLU_timer_();
 
 	/* Initialize and allocate storage for GENMMD. */
-	delta = 1; /* DELTA is a parameter to allow the choice of nodes
+	delta = 0; /* DELTA is a parameter to allow the choice of nodes
 		      whose degree <= min-degree + DELTA. */
 	maxint = 2147483647; /* 2**31 - 1 */
 	invp = (int *) SUPERLU_MALLOC((n+delta)*sizeof(int));
@@ -420,7 +420,7 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 	for (i = 0; i <= n; ++i) ++b_colptr[i];
 	for (i = 0; i < bnz; ++i) ++b_rowind[i];
 	
-	genmmd_(&n, b_colptr, b_rowind, perm_c, invp, &delta, dhead, 
+	genmmd_(&n, b_colptr, b_rowind, invp, perm_c, &delta, dhead, 
 		qsize, llist, marker, &maxint, &nofsub);
 
 	/* Transform perm_c into 0-based indexing. */
