@@ -33,7 +33,6 @@ import cseries
 
 
 
-
 __all__ = [
 'Date', 'DateArray','isDate','isDateArray',
 'DateError', 'ArithmeticDateError', 'FrequencyDateError','InsufficientDateError',
@@ -135,9 +134,10 @@ class Date:
             self.freq = corelib.check_freq(freq)
         self.freqstr = corelib.freq_tostr(self.freq)
         
+        
         if value is not None:
             if isinstance(value, str):
-                self.mxDate = mxDFromString(string)
+                self.mxDate = mxDFromString(value)
             elif self.freqstr == 'A':
                 self.mxDate = mxD.Date(value, -1, -1)
             elif self.freqstr == 'B':
@@ -474,7 +474,8 @@ Date.asfreq = asfreq
             
 def isDate(data):
     "Returns whether `data` is an instance of Date."
-    return isinstance(data, Date)
+    return isinstance(data, Date) or \
+           (hasattr(data,'freq') and hasattr(data,'value'))
 
             
 #####---------------------------------------------------------------------------
@@ -882,22 +883,34 @@ def date_array(dlist=None, start_date=None, end_date=None, length=None,
     if dlist is not None:
         # Already a DateArray....................
         if isinstance(dlist, DateArray):
-            if freq != dlist.freq:
+            if (freq is not None) and (dlist.freq != corelib.check_freq(freq)):
                 return dlist.asfreq(freq)
             else:
                 return dlist
-        return _listparser(dlist, freq)
+        # Make sure it's a sequence, else that's a start_date
+        if hasattr(dlist,'__len__'):
+            return _listparser(dlist, freq)
+        elif start_date is not None:
+            if end_date is not None:
+                dmsg = "What starting date should be used ? '%s' or '%s' ?"
+                raise DateError, dmsg % (dlist, start_date)
+            else:
+                (start_date, end_date) = (dlist, start_date)
+        else:
+            start_date = dlist
     # Case #2: we have a starting date ..........
     if start_date is None:
         raise InsufficientDateError
-    if not isinstance(start_date, Date):
-        raise DateError, "Starting date should be a valid Date instance!"
+    if not isDate(start_date):
+        dmsg = "Starting date should be a valid Date instance! "
+        dmsg += "(got '%s' instead)" % type(start_date)
+        raise DateError, dmsg
     # Check if we have an end_date
     if end_date is None:
         if length is None:
             raise ValueError,"No length precised!"
     else:
-        if not isinstance(end_date, Date):
+        if not isDate(end_date):
             raise DateError, "Ending date should be a valid Date instance!"
         length = end_date - start_date
         if include_last:
@@ -963,3 +976,8 @@ second = _frommethod('second')
 
 
 ################################################################################
+
+if __name__ == '__main__':
+    assert (Date('D','2007-01')==Date('D',string='2007-01'))
+    assert (Date('D','2007-01')==Date('D', value=732677))
+    assert (Date('D',732677)==Date('D', value=732677))

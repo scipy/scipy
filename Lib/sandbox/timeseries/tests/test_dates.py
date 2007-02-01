@@ -29,7 +29,8 @@ from timeseries import tdates
 #reload(tdates)
 from timeseries import tcore
 #reload(tcore)
-from timeseries.tdates import date_array_fromlist, Date, DateArray, date_array, mxDFromString
+from timeseries.tdates import date_array_fromlist, Date, DateArray, date_array,\
+    mxDFromString, today
 
 class test_creation(NumpyTestCase):
     "Base test class for MaskedArrays."
@@ -111,7 +112,18 @@ class test_creation(NumpyTestCase):
         for f in freqs:
             today = tdates.thisday(f)
             assert(tdates.Date(freq=f, value=today.value) == today)
-
+            
+    def test_shortcuts(self):
+        "Tests some creation shortcuts. Because I'm lazy like that."
+        # Dates shortcuts
+        assert_equal(Date('D','2007-01'), Date('D',string='2007-01'))
+        assert_equal(Date('D','2007-01'), Date('D', value=732677))
+        assert_equal(Date('D',732677), Date('D', value=732677))
+        # DateArray shortcuts
+        n = today('M')
+        d = date_array(start_date=n, length=3)
+        assert_equal(date_array(n,length=3), d)
+        assert_equal(date_array(n, n+2), d)
 
 class test_date_properties(NumpyTestCase):
     "Test properties such as year, month, day_of_week, etc...."
