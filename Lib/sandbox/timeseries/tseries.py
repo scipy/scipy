@@ -375,7 +375,9 @@ Sets item described by index. If value is masked, masks those locations.
             raise MAError, 'Cannot alter the masked element.'
         (sindx, dindx) = self.__checkindex(indx)
         #....
-        if isinstance(value, TimeSeries):
+        if value is tsmasked:
+            self._series[sindx] = masked
+        elif isinstance(value, TimeSeries):
             assert(_timeseriescompat(self[sindx], value))
             self._series[sindx] = value._series
         else:
