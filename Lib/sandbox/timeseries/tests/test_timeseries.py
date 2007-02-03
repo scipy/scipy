@@ -29,7 +29,7 @@ from timeseries import tseries
 #reload(tseries)
 from timeseries.tseries import Date, date_array_fromlist, date_array, thisday
 from timeseries.tseries import time_series, TimeSeries, adjust_endpoints, \
-    mask_period, align_series, fill_missing_dates, tsmasked
+    mask_period, align_series, fill_missing_dates, tsmasked, concatenate_series
 
 class test_creation(NumpyTestCase):
     "Base test class for MaskedArrays."
@@ -453,6 +453,54 @@ test_dates test suite.
         except:
             exception = True
         assert(exception)
+        
+    def test_compressed(self):
+        "Tests compress"
+        dlist = ['2007-01-%02i' % i for i in range(1,16)]
+        dates = date_array_fromlist(dlist)
+        data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3, dtype=float_)
+        series = time_series(data, dlist)
+        #
+        keeper = N.array([0,1,1,1,1]*3, dtype=bool_)
+        c_series = series.compressed()
+        assert_equal(c_series._data, [1,2,3,4,6,7,8,9,11,12,13,14])
+        assert_equal(c_series._mask, nomask)
+        assert_equal(c_series._dates, dates[keeper])
+        #
+        series_st = time_series(MA.column_stack((data,data[::-1])), 
+                                dates=dates)
+        c_series = series_st.compressed()
+        d = [1,2,3,6,7,8,11,12,13]
+        assert_equal(c_series._data, N.c_[(d,list(reversed(d)))])
+        assert_equal(c_series._mask, nomask)
+        assert_equal(c_series._dates, dates[d])
+        
+    def test_concatenate(self):
+        "Tests concatenate"
+        dlist = ['2007-%02i' % i for i in range(1,6)]
+        dates = date_array_fromlist(dlist)
+        data = masked_array(numeric.arange(5), mask=[1,0,0,0,0], dtype=float_)
+        #
+        ser_1 = time_series(data, dates)
+        ser_2 = time_series(data, dates=dates+10)
+        newseries = concatenate_series([ser_1, ser_2])
+        assert_equal(newseries._data,[0,1,2,3,4,0,0,0,0,0,0,1,2,3,4])
+        assert_equal(newseries._mask,[1,0,0,0,0]+[1]*5+[1,0,0,0,0])
+         #
+        ser_1 = time_series(data, dates)
+        ser_2 = time_series(data, dates=dates+10)
+        newseries = concatenate_series([ser_1, ser_2], keep_gap=False)
+        assert_equal(newseries._data,[0,1,2,3,4,0,1,2,3,4])
+        assert_equal(newseries._mask,[1,0,0,0,0]+[1,0,0,0,0])
+        assert newseries.has_missing_dates()
+        #
+        ser_2 = time_series(data, dates=dates+3)
+        newseries = concatenate_series([ser_1, ser_2])
+        assert_equal(newseries._data,[0,1,2,0,1,2,3,4])
+        assert_equal(newseries._mask,[1,0,0,1,0,0,0,0])
+        #
+        
+        
 
         
 ###############################################################################

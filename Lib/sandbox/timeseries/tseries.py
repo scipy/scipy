@@ -64,7 +64,7 @@ __all__ = [
 'day_of_week','day_of_year','day','month','quarter','year','hour','minute','second',  
 'tofile','asrecords','flatten','adjust_endpoints','align_series','aligned',
 'mask_period','mask_inside_period','mask_outside_period',
-'convert','fill_missing_dates', 'stack', 'tsmasked'
+'convert','fill_missing_dates', 'stack'
            ]
 
 #...............................................................................
@@ -148,7 +148,7 @@ def _timeseriescompat_multiple(*series):
     if len(set(shapes)) > 1:
         errItems = tuple(set(shapes))
         raise TimeSeriesCompatibilityError('size', "1: %s" % str(errItems[0].shape), 
-                                               "2: %s" % str(errItems[1].shape))
+                                                   "2: %s" % str(errItems[1].shape))
 
     return True
 
@@ -175,6 +175,18 @@ def _getdatalength(data):
         return numeric.asarray(numeric.shape(data))[:-1].prod()
     else:
         return numeric.size(data)
+    
+def _compare_frequencies(*series):
+    """Compares the frequencies of a sequence of series. 
+    Returns the common frequency, or raises an exception if series have different 
+    frequencies."""
+    unique_freqs = numpy.unique([x.freqstr for x in series])
+    try:
+        common_freq = unique_freqs.item()
+    except ValueError:
+        raise TimeSeriesError, \
+            "All series must have same frequency!"
+    return common_freq    
 
 ##### --------------------------------------------------------------------------
 ##--- ... Time Series ...
@@ -374,7 +386,7 @@ Sets item described by index. If value is masked, masks those locations.
         if self is masked:
             raise MAError, 'Cannot alter the masked element.'
         (sindx, dindx) = self.__checkindex(indx)
-        #....
+        #....        
         if value is tsmasked:
             self._series[sindx] = masked
         elif isinstance(value, TimeSeries):
@@ -1053,7 +1065,27 @@ def mask_outside_period(data, start_date=None, end_date=None,
     """Masks values falling outside a given range of dates."""
     return mask_period(data, start_date=start_date, end_date=end_date, 
                        inside=False, include_edges=include_edges, inplace=inplace)
-#..........................................................
+    
+#...............................................................................
+def compressed(series):
+    """Suppresses missing values from a time series."""
+    if series._mask is nomask:
+        return series
+    if series.ndim == 1:
+        keeper = ~(series._mask)
+    elif series.ndim == 2:
+        # Both dates and data are 2D: ravel first
+        if series._dates.ndim == 2:
+            series = series.ravel()
+            keeper = ~(series._mask)
+        # a 2D series: suppress the rows (dates are in columns)
+        else:
+            keeper = ~(series._mask.any(-1))
+    else:
+        raise NotImplementedError
+    return series[keeper]
+TimeSeries.compressed = compressed
+#...............................................................................
 def adjust_endpoints(a, start_date=None, end_date=None):
     """Returns a TimeSeries going from `start_date` to `end_date`.
     If `start_date` and `end_date` both fall into the initial range of dates, 
@@ -1139,14 +1171,7 @@ def align_series(*series, **kwargs):
     if len(series) < 2:
         return series  
     unique_freqs = numpy.unique([x.freqstr for x in series])
-    try:
-        common_freq = unique_freqs.item()
-    except ValueError:
-        raise TimeSeriesError, \
-            "All series must have same frequency!"
-    if common_freq == 'U':
-        raise TimeSeriesError, \
-            "Cannot adjust a series with 'Undefined' frequency."
+    common_freq = _compare_frequencies(*series)
     valid_states = [x.isvalid() for x in series]
     if not numpy.all(valid_states):
         raise TimeSeriesError, \
@@ -1272,11 +1297,7 @@ timeseries(data  = [-- 0 1 2],
     newseries = TimeSeries(newdata, series._dates, **options)
     return newseries
 TimeSeries.tshift = tshift
-#....................................................................
-
-
-
-#....................................................................
+#...............................................................................
 def fill_missing_dates(data, dates=None, freq=None,fill_value=None):
     """Finds and fills the missing dates in a time series.
 The data corresponding to the initially missing dates are masked, or filled to 
@@ -1317,7 +1338,6 @@ The data corresponding to the initially missing dates are masked, or filled to
     n = len(dflat)
     if not dflat.has_missing_dates():
         return time_series(data, dflat)
-
     # ...and now, fill it ! ......
     (tstart, tend) = dflat[[0,-1]]
     newdates = date_array(start_date=tstart, end_date=tend, include_last=True)
@@ -1367,8 +1387,7 @@ The data corresponding to the initially missing dates are masked, or filled to
     else:
         nshp = tuple([-1,] + list(data.shape[1:]))
     return time_series(newdata.reshape(nshp), newdates)
-
-#....................................................................
+#...............................................................................
 def stack(*series):
     """performs a column_stack on the data from each series, and the
 resulting series has the same dates as each individual series. All series
@@ -1380,64 +1399,47 @@ must be date compatible.
     _timeseriescompat_multiple(*series)
     return time_series(MA.column_stack(series), series[0]._dates,
                        **_attrib_dict(series[0]))
-                       
+#...............................................................................
+def concatenate_series(series, keep_gap=True):
+    """Concatenates a sequence of series, by chronological order.
+    Overlapping data are processed in a FIFO basis: the data from the first series
+    of the sequence will be overwritten by the data of the second series, and so forth.
+    If keep_gap is true, any gap between consecutive, non overlapping series are
+    kept: the corresponding data are masked.
+    """
+    common_f = _compare_frequencies(*series)
+    start_date = min([s.start_date for s in series if s.start_date is not None])
+    end_date =   max([s.end_date for s in series if s.end_date is not None])
+    newdtype = max([s.dtype for s in series])
+    whichone = numeric.zeros((end_date-start_date+1), dtype=int_)
+    newseries = time_series(numeric.empty((end_date-start_date+1), dtype=newdtype), 
+                            dates=date_array(start_date, end_date, freq=common_f),
+                            mask=True)
+    newdata = newseries._data
+    newmask = newseries._mask
+    for (k,s) in enumerate(series):
+        start = s.start_date - start_date
+        end = start + len(s)
+        whichone[start:end] = k+1
+        newdata[start:end] = s._data
+        if s._mask is nomask:
+            newmask[start:end] = False
+        else:
+            newmask[start:end] = s._mask
+    keeper = whichone.astype(bool_)
+    if not keep_gap:
+        newseries = newseries[keeper]
+    else:
+        newdata[~keeper] = 0
+    return newseries
+                           
     
 ################################################################################
 if __name__ == '__main__':
     from maskedarray.testutils import assert_equal
     import numpy as N
     
-#    if 0:
-#        dlist = ['2007-01-%02i' % i for i in range(1,16)]
-#        dates = date_array(dlist)
-#        data = masked_array(numeric.arange(15, dtype=float_), mask=[1,0,0,0,0]*3)
-##        btseries = BaseTimeSeries(data._data, dates)
-#        tseries = time_series(data, dlist)
-#        dseries = numpy.log(tseries)
-#    if 0:
-#        mlist = ['2005-%02i' % i for i in range(1,13)]
-#        mlist += ['2006-%02i' % i for i in range(1,13)]
-#        mdata = numpy.arange(24)
-#        mser1 = time_series(mdata, mlist, observed='SUMMED')
-#        #
-#        mlist2 = ['2004-%02i' % i for i in range(1,13)]
-#        mlist2 += ['2005-%02i' % i for i in range(1,13)]
-#        mser2 = time_series(mdata, mlist2, observed='SUMMED')
-#        #
-#        today = thisday('m')
-#        (malg1,malg2) = aligned(mser1, mser2)
-#        
-#        C = convert(mser2,'A')
-#        D = convert(mser2,'A',func=None)
-#        
-#    if 0:
-#        dlist = ['2007-01-%02i' % i for i in range(1,16)]
-#        dates = date_array(dlist)
-#        print "."*50+"\ndata"
-#        data = masked_array(numeric.arange(15)-6, mask=[1,0,0,0,0]*3)
-#        print "."*50+"\nseries"
-#        tseries = time_series(data, dlist)
-#        
-#    if 0:
-#        dlist_1 = ['2007-01-%02i' % i for i in range(1,8)]
-#        dlist_2 = ['2007-01-%02i' % i for i in numpy.arange(1,28)[::4]]
-#        data = masked_array(numeric.arange(7), mask=[1,0,0,0,0,0,0])
-#        tseries_1 = time_series(data, dlist_1)
-#        tseries_2 = time_series(data, dlist_2)
-#        tseries_3 = time_series(data[::-1], dlist_2)
-#        
-#        try:
-#            tseries = tseries_1 + tseries_2
-#        except TimeSeriesCompatibilityError:
-#            print "I knew it!"
-#        tseries = tseries_2 + tseries_3
-#        assert_equal(tseries._dates, tseries_3._dates)
-#        assert_equal(tseries._mask, [1,0,0,0,0,0,1])
-#                
-#    if 0:
-#        mser3 = time_series(MA.mr_[malg1._series, 100+malg2._series].reshape(2,-1).T, 
-#                            dates=malg1.dates)
-#        data = mser3._series._data
+
 
     if 1:
         dlist = ['2007-01-%02i' % i for i in range(1,16)]
