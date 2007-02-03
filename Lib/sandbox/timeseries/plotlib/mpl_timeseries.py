@@ -27,7 +27,7 @@ from matplotlib.mlab import meshgrid
 from matplotlib.ticker import Formatter, ScalarFormatter, FuncFormatter, \
                               Locator, FixedLocator
 
-from matplotlib.transforms import nonsingular
+#from matplotlib.transforms import nonsingular
 
 import numpy as N
 import maskedarray as MA
@@ -98,6 +98,33 @@ The specific Subplot object class to add is given through the keywords
     figure_instance.sca(a)
     figure_instance._seen[key] = a
     return a
+
+
+def nonsingular(vmin, vmax, expander=0.001, tiny=1e-15, increasing=True):
+    '''
+    Ensure the endpoints of a range are not too close together.
+
+    "too close" means the interval is smaller than 'tiny' times
+            the maximum absolute value.
+
+    If they are too close, each will be moved by the 'expander'.
+    If 'increasing' is True and vmin > vmax, they will be swapped.
+    '''
+    #TODO: Remove that when matplotlib incorporate it by default
+    swapped = False
+    if vmax < vmin:
+        vmin, vmax = vmax, vmin
+        swapped = True
+    if vmax - vmin <= max(abs(vmin), abs(vmax)) * tiny:
+        if vmin==0.0:
+            vmin = -expander
+            vmax = expander
+        else:
+            vmin -= expander*abs(vmin)
+            vmax += expander*abs(vmax)
+    if swapped and not increasing:
+        vmin, vmax = vmax, vmin
+    return vmin, vmax
 
 ##### -------------------------------------------------------------------------
 #---- --- Locators ---
