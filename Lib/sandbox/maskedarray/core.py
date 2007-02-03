@@ -856,7 +856,7 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         if isinstance(data, MaskedArray) or\
            (hasattr(data,"_mask") and hasattr(data,"_data")) :
             if data is masked:
-                return masked
+                return masked.view(cls)
             if keep_mask:
                 if mask is nomask:
                     if copy:
