@@ -673,16 +673,24 @@ accesses the array element by element. Therefore, `d` is a Date object.
 
     def date_to_index(self, date):
         "Returns the index corresponding to one given date, as an integer."
-        if self.isvalid():
-            index = date.value - self[0].value
-            if index < 0 or index > self.size:
-                raise ValueError, "Date out of bounds!"
-            return index
+        if isDate(date):
+            if self.isvalid():
+                index = date.value - self[0].value
+                if index < 0 or index > self.size:
+                    raise ValueError, "Date out of bounds!"
+                return index
+            else:
+                index_asarray = (self == date.value).nonzero()
+                if fromnumeric.size(index_asarray) == 0:
+                    raise ValueError, "Date out of bounds!" 
+                return index_asarray[0][0]
         else:
-            index_asarray = (self == date.value).nonzero()
-            if fromnumeric.size(index_asarray) == 0:
-                raise ValueError, "Date out of bounds!" 
-            return index_asarray[0][0]
+            #date is a DateArray
+            def idx_check(val): return (date == val).any()
+            idx_check_v = numpy.vectorize(idx_check)
+            return numpy.where(idx_check_v(self.tovalue()))[0]
+            
+            
     #......................................................        
     def get_steps(self):
         """Returns the time steps between consecutive dates.
