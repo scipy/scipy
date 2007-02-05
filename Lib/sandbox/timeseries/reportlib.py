@@ -68,7 +68,8 @@ _default_options = {
     'wrapfunc':lambda x:x,
     'col_width':None,
     'nls':'\n',
-    'output':sys.stdout
+    'output':sys.stdout,
+    'fixed_width':True
 }
 
 class Report(object):
@@ -146,6 +147,13 @@ to the instance.
           of integers). The column will be at least as wide as col_width, but may be
           larger if cell contents exceed col_width. If specifying a list, you may
           optionally specify the width for the Date column as the first entry
+          
+        - `output` (buffer, *[sys.stdout]*): `output` must have a write method.
+          
+        - `fixed_width` (boolean, *[True]*): If True, columns are fixed width (ie.
+          cells will be padded with spaces to ensure all cells in a given column are
+          the same width). If False, `col_width` will be ignored and cells will not
+          be padded.
           
 :Examples:
 
@@ -258,6 +266,7 @@ to the instance.
         col_width = option('col_width')
         nls=option('nls')
         output=option('output')
+        fixed_width=option('fixed_width')
         
         if header_row is not None:
             has_header=True
@@ -273,24 +282,27 @@ to the instance.
             has_header=False
             rows=[]
 
-        if justify is not None:
-            _justify = kwargs.pop('justify')
-            if isinstance(justify, str):
-                # justify all columns the the same way
-                justify = [justify for x in range(len(tseries)+1)]
-            elif isinstance(justify, list): #assume it is a list or tuple, etc
-                if len(justify) == len(tseries):
-                    # justification for date column not included, so set that
-                    # to left by default
-                    justify = ['left'] + justify
+        if fixed_width:
+            if justify is not None:
+                _justify = kwargs.pop('justify')
+                if isinstance(justify, str):
+                    # justify all columns the the same way
+                    justify = [justify for x in range(len(tseries)+1)]
+                elif isinstance(justify, list): #assume it is a list or tuple, etc
+                    if len(justify) == len(tseries):
+                        # justification for date column not included, so set that
+                        # to left by default
+                        justify = ['left'] + justify
+                else:
+                    raise ValueError("invalid `justify` specification")
             else:
-                raise ValueError("invalid `justify` specification")
+                # default column justification
+                justify = ['left']
+                for ser in tseries:
+                    if str(ser.dtype)[:2] == '|S': justify.append('left')
+                    else: justify.append('right')
         else:
-            # default column justification
-            justify = ['left']
-            for ser in tseries:
-                if str(ser.dtype)[:2] == '|S': justify.append('left')
-                else: justify.append('right')
+            justify = [None for x in range(len(tseries)+1)]
 
         if datefmt is None:
             def datefmt_func(date): return str(date)
@@ -308,16 +320,22 @@ to the instance.
             fmtfunc = [fmtfunc_wrapper(f, mask_rep) for f in fmtfunc]
         else:
             fmtfunc = [fmtfunc_wrapper(fmtfunc, mask_rep)]*len(tseries)
+
+        def wrapfunc_default(func):
+            if func is None: return lambda x:x
+            else: return func
             
         if isinstance(wrapfunc, list):
             if len(wrapfunc) == len(tseries):
                 wrapfunc = [lambda x: x] + wrapfunc
+            wrapfunc = [wrapfunc_default(func) for func in wrapfunc]
         else:
-            wrapfunc = [wrapfunc for x in range(len(tseries)+1)]
+            wrapfunc = [wrapfunc_default(wrapfunc) for x in range(len(tseries)+1)]
+    
             
         if isinstance(col_width, list):
             if len(col_width) == len(tseries):
-                col_width = [-1] + col_width
+                col_width = [None] + col_width
         else:
             col_width = [col_width for x in range(len(tseries)+1)]
 
@@ -352,7 +370,7 @@ to the instance.
                 if footer_func[i] is None:
                     footer_data.append('')
                 else:
-                    footer_data.append(fmtfunc[i](footer_func[i](ser)))
+                    footer_data.append(fmtfunc[i](footer_func[i](ser[dates])))
 
             rows.append(footer_label + footer_data)
         else:
@@ -386,7 +404,8 @@ to the instance.
         row_separator = getSeparator(row_char, True)
 
         # select the appropriate justify method
-        justify_funcs = {'center':str.center, 'right':str.rjust, 'left':str.ljust}
+        justify_funcs = {'center':str.center, 'right':str.rjust, 'left':str.ljust,
+                          'none':(lambda text, width: text)}
 
         if has_header and has_footer:
             data_start = 1
@@ -404,7 +423,7 @@ to the instance.
         for rowNum, physicalRows in enumerate(logicalRows):
             for row in physicalRows:
                 output.write(prefix \
-                           + delim.join([justify_funcs[justify[colNum].lower()](str(item),width) for (colNum,item,width) in zip(colNums,row,maxWidths)]) \
+                           + delim.join([justify_funcs[str(justify[colNum]).lower()](str(item),width) for (colNum,item,width) in zip(colNums,row,maxWidths)]) \
                            + postfix + nls)
 
             if row_separator and (data_start <= rowNum <= data_end):
