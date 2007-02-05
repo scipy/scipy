@@ -454,14 +454,11 @@ and most spaces in the text.
     
         width = self.width
         nls = self.nls
-    
-        if nls[-1] == '\n': line_end = nls
-        else:               line_end = nls + '\n'
 
         def break_or_space(line, word, width):
             temp_idx = (len(line[line.rfind(nls)+1:]) + len(word.split(nls,1)[0]) >= width)
             if temp_idx:
-                return line_end
+                return nls
             else:
                 return ' '
 
