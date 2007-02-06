@@ -32,10 +32,8 @@ from matplotlib.ticker import Formatter, ScalarFormatter, FuncFormatter, \
 import numpy as N
 import maskedarray as MA
 
-import tdates
-from tdates import date_array, Date
-import tseries
-from tseries import TimeSeries
+import timeseries as TS
+from timeseries import date_array, Date, TimeSeries
 
 import warnings
 
@@ -192,8 +190,8 @@ class TimeSeries_DateLocator(Locator):
     def _initialize_dates(self, start_val, end_val):
         "Returns a DateArray for the current frequency."
         freq = self.freqstr
-        dates = date_array(start_date=Date(freq, value=start_val),
-                           end_date=Date(freq, value=end_val), 
+        dates = date_array(start_date=Date(freq, value=int(start_val)),
+                           end_date=Date(freq, value=int(end_val)), 
                            freq=freq)
         return dates
 
@@ -719,9 +717,9 @@ if __name__ == '__main__':
 
     da = date_array(start_date=Date(freq='D', year=2003, quarter=3, month=1, day=17), 
                     length=51)
-    ser = tseries.time_series(MA.arange(len(da)), dates=da)
+    ser = TS.time_series(MA.arange(len(da)), dates=da)
     ser[4] = MA.masked
-    ser_2 = tseries.time_series(MA.arange(len(da)), dates=da.asfreq('M'))
+    ser_2 = TS.time_series(MA.arange(len(da)), dates=da.asfreq('M'))
     
     pylab.figure()
     pylab.gcf().add_tsplot(111)
