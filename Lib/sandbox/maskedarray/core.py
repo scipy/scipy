@@ -1796,7 +1796,8 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
                               dtype = self.dtype,
                               fill_value=self.fill_value, **self.options)
     #............................................
-    def argsort(self, axis=None, fill_value=None, kind='quicksort'):
+    def argsort(self, axis=None, fill_value=None, kind='quicksort',
+                order=None):
         """Returns an array of indices that sort 'a' along the specified axis.
     Masked values are filled beforehand to `fill_value`.        
     If `fill_value` is None, uses the default for the data type.
@@ -1836,8 +1837,8 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
             fill_value = default_fill_value(self._data)
         d = self.filled(fill_value)
         if axis is None:
-            return d.argsort(kind=kind)
-        return d.argsort(axis, kind)
+            return d.argsort(kind=kind, order=order)
+        return d.argsort(axis, kind=kind, order=order)
 
     def argmin(self, axis=None, fill_value=None):
         """Returns the array of indices for the minimum values of `a` along the 
@@ -2626,7 +2627,9 @@ and use less space than sorts along other axis.
         filler = minimum_fill_value(a)
     else:
         filler = maximum_fill_value(a)
-    indx = filled(a,filler).argsort(axis=axis,kind=kind,order=order)
+#    return
+    indx = numpy.indices(a.shape).tolist()
+    indx[axis] = filled(a,filler).argsort(axis=axis,kind=kind,order=order)
     return a[indx]   
 
 def compressed(x):
