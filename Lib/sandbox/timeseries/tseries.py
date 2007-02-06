@@ -60,7 +60,7 @@ import cseries
 
 __all__ = [
 'TimeSeriesError','TimeSeriesCompatibilityError','TimeSeries','isTimeSeries',
-'time_series',
+'time_series', 'tsmasked',
 'day_of_week','day_of_year','day','month','quarter','year','hour','minute','second',  
 'tofile','asrecords','flatten','adjust_endpoints','align_series','aligned',
 'mask_period','mask_inside_period','mask_outside_period',
@@ -165,7 +165,9 @@ def _datadatescompat(data,dates):
     elif data.ndim > 1:
         dsize = numeric.asarray(data.shape)[:-1].prod()
         if dsize == tsize:
-            return True    
+            return True 
+    elif data.ndim == 0 and tsize <= 1:
+        return True   
     raise TimeSeriesCompatibilityError('size', "data: %s" % dsize, 
                                                "dates: %s" % tsize)
 
@@ -327,9 +329,17 @@ The combination of `series` and `dates` is the `data` part.
         if isinstance(indx, str):
             indx = self._dates.date_to_index(Date(self._dates.freq, string=indx))
             return (indx, indx)
-        elif isDate(indx) or isDateArray(indx):
+        elif isDate(indx):
             indx = self._dates.date_to_index(indx)
             return (indx, indx)
+        elif isDateArray(indx):
+            if indx.size == 1:
+                indx = self._dates.date_to_index(indx[0])
+                return (indx,indx)
+            else:
+                d2i = self._dates.date_to_index
+                tmp = numpy.fromiter((d2i(i) for i in indx),int_)
+                return (tmp,tmp)
         elif isinstance(indx,slice):
             slice_start = self.__checkindex(indx.start)[0]
             slice_stop = self.__checkindex(indx.stop)[0]
@@ -360,7 +370,7 @@ Returns the item described by i. Not a copy as in previous versions.
         singlepoint = (len(numeric.shape(date))==0)
 
         if singlepoint:
-            if data is not masked:
+            if data is not masked and self.ndim > 1:
                 data = data.reshape((list((1,)) + list(data.shape)))
             date = date_array(start_date=date, length=1, freq=date.freq)
             
@@ -1439,16 +1449,18 @@ if __name__ == '__main__':
     from maskedarray.testutils import assert_equal
     import numpy as N
     
-
-
     if 1:
-        dlist = ['2007-01-%02i' % i for i in range(1,16)]
-        dates = date_array_fromlist(dlist)
-        data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3, dtype=float_)
-        self_d = (time_series(data, dlist), data, dates)
-        (series, data, dates) = self_d
-    
-        assert(series[0] is tsmasked)
-        assert(tsmasked._series is masked)
-        assert(series._series[0] is masked)
-        assert(series[0]._series is masked)
+        #TODO: CHECK THAT, AND PUT IT IN tests/test_timeseries IF IT WORKS
+        # Test 2 points of 3 variables
+        xx = time_series([[1,2,3],[4,5,6]], start_date=thisday('b'))
+        assert_equal(xx[0]._data, [[1,2,3]])
+        assert_equal(xx[:,0]._data, [1,4])
+        # Test a single point of 3 variables
+        xx = time_series([[1,2,3]], start_date=thisday('b'))
+        assert_equal(xx[0]._data, [[1,2,3]])
+        assert_equal(xx[:,0]._data, [[1]])
+        # Test 3 data points
+        x = time_series([1,2,3], start_date=thisday('b'))
+        assert_equal(x[0], 1)
+        # Test using a DateArray as items
+        assert_equal(x[x._dates[:]],x)
