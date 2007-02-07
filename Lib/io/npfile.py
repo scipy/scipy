@@ -1,7 +1,7 @@
-# Author: Matthew Brett, Travis Oliphant
+# Authors: Matthew Brett, Travis Oliphant
 
 """
-Class for reading and writing numpy arrays from / to files
+Class for reading and writing numpy arrays from / to binary files
 """
 
 import sys
@@ -23,10 +23,38 @@ class npfile(object):
                 (['native', 'n'], ['ieee-le', 'l'], ['ieee-be', 'B']) for
                 native, little-endian, or big-endian respectively.
 
-    Attributes
+    Attributes:
       endian   -- default endian code for reading / writing
       order    -- default order for reading writing ('C' or 'F')
-      file -- file object containing read / written data
+      file     -- file object containing read / written data
+
+    Methods:
+      seek, tell, close  -- as for file objects
+      rewind             -- set read position to beginning of file
+      read_raw           -- read string data from file (read method of file)
+      write_raw          -- write string data to file (write method of file)
+      read_array         -- read numpy array from binary file data
+      write_array        -- write numpy array contents to binary file
+      
+    Example use:
+    >>> from StringIO import StringIO
+    >>> import numpy as N
+    >>> from scipy.io import npfile
+    >>> arr = N.arange(10).reshape(5,2)
+    >>> # Make file-like object (could also be file name)
+    >>> my_file = StringIO()
+    >>> npf = npfile(my_file)
+    >>> npf.write_array(arr)
+    >>> npf.rewind()
+    >>> npf.read_array((5,2), arr.dtype)
+    >>> npf.close()
+    >>> # Or read write in Fortran order, Big endian
+    >>> # and read back in C, system endian
+    >>> my_file = StringIO()
+    >>> npf = npfile(my_file, order='F', endian='>')
+    >>> npf.write_array(arr)
+    >>> npf.rewind()
+    >>> npf.read_array((5,2), arr.dtype)
     '''
 
     def __init__(self, file_name,
@@ -44,7 +72,6 @@ class npfile(object):
             if closed:
                 raise TypeError, 'File object should be open'
             self.file = file_name
-            
         self.endian = endian
         self.order = order
 
@@ -95,26 +122,11 @@ class npfile(object):
         else:
             self.seek(-howmany,1)
 
-    def size(self):
-        """Return the size of the file.
-
-        Cached once found
-        """
-        try:
-            sz = self.thesize
-        except AttributeError:
-            curpos = self.tell()
-            self.seek(0,2)
-            sz = self.tell()
-            self.seek(curpos)
-            self.thesize = sz
-        return sz
-
-    def raw_read(self, size=-1):
+    def read_raw(self, size=-1):
         """Read raw bytes from file as string."""
         return self.file.read(size)
 
-    def raw_write(self, str):
+    def write_raw(self, str):
         """Write string to file as raw bytes."""
         return self.file.write(str)
 
@@ -134,16 +146,16 @@ class npfile(object):
             dt_endian = sys_endian_code
         return dt_endian
     
-    def write(self, data, endian=None, order=None):
+    def write_array(self, data, endian=None, order=None):
         ''' Write to open file object the flattened numpy array data
 
         Inputs
         data      - numpy array or object convertable to array
         endian    - endianness of written data
                     (can be None, 'dtype', '<', '>')
-                    (default from self.endian)
+                    (if None, get from self.endian)
         order     - order of array to write (C, F)
-                    (default from self.order)
+                    (if None from self.order)
         '''
         endian, order = self._endian_order(endian, order)
         data = N.asarray(data)
@@ -153,20 +165,21 @@ class npfile(object):
                 data = data.byteswap()
         self.file.write(data.tostring(order=order))
         
-    fwrite = write
-    
-    def read(self, shape, dt, endian=None, order=None):
+    def read_array(self, shape, dt, endian=None, order=None):
         '''Read data from file and return it in a numpy array.
         
         Inputs
         ------
         shape     - shape of output array, or number of elements
         dt        - dtype of array to be read
-        endian    - endianness of written data
+        endian    - endianness of data in file
                     (can be None, 'dtype', '<', '>')
-                    (default from self.endian)
-        order     - order of array to be read ('C' or 'F')
-                    (default from self.order)
+                    (if None, get from self.endian)
+        order     - order of array in file (C, F)
+                    (if None get from self.order)
+
+        Outputs
+        arr       - array from file with given dtype (dt)
         '''
         endian, order = self._endian_order(endian, order)
         try:
@@ -185,4 +198,3 @@ class npfile(object):
             return arr.byteswap()
         return arr.copy()
 
-    fread = read
