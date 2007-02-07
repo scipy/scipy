@@ -32,8 +32,11 @@ from matplotlib.ticker import Formatter, ScalarFormatter, FuncFormatter, \
 import numpy as N
 import maskedarray as MA
 
-import timeseries as TS
-from timeseries import date_array, Date, TimeSeries
+import timeseries
+from timeseries import date_array, Date, DateArray, TimeSeries
+#from tdates import date_array, Date
+#import tseries
+#from tseries import TimeSeries
 
 import warnings
 
@@ -114,7 +117,7 @@ def nonsingular(vmin, vmax, expander=0.001, tiny=1e-15, increasing=True):
         vmin, vmax = vmax, vmin
         swapped = True
     if vmax - vmin <= max(abs(vmin), abs(vmax)) * tiny:
-        if vmin==0.0:
+        if vmin == 0.0:
             vmin = -expander
             vmax = expander
         else:
@@ -538,46 +541,88 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
     #............................................    
     def _check_plot_params(self,*args):
         """Defines the plot coordinates (and basic plotting arguments)."""
-        # At least three arguments ....
-        if len(args) >= 3:
-            params = args[:3]
-        # Two arguments only ..........
-        elif len(args) == 2:
-            if isinstance(args[1], str):
-                # The last argument is a format string
-                arg = args[0]
-                if isinstance(arg, TimeSeries):
-                    params = (arg._dates, arg._series, args[1])
+        remaining = list(args)
+        # No args ? Use defaults, if any
+        if len(args) == 0:
+            if self.xdata is None:
+                raise ValueError, "No date information available!"
+            return (self.xdata, self.ydata)
+        output = []
+        while len(remaining) > 0:
+            a = remaining.pop(0)
+            # The argument is a format: use default dates/
+            if isinstance(a,str):
+                if self.xdata is None:
+                    raise ValueError, "No date information available!"
+                else:
+                    output.extend([self.xdata, self.ydata, a])
+            # The argument is a TimeSeries: use its dates for x
+            elif isinstance(a, TimeSeries):
+                (x,y) = (a._dates, a._series)
+                if len(remaining) > 0 and isinstance(remaining[0], str):
+                    b = remaining.pop(0)
+                    output.extend([x,y,b])
+                else:
+                    output.extend([x,y])
+            # The argument is a DateArray............
+            elif isinstance(a, (Date, DateArray)):
+                # Force to current freq
+                if self.freqstr is not None:
+                    if a.freqstr != self.freqstr:
+                        a = a.asfreq(self.freqstr)
+                # There's an argument after
+                if len(remaining) > 0:
+                    #...and it's a format string
+                    if isinstance(remaining[0], str):
+                        b = remaining.pop(0)
+                        if self.ydata is None:
+                            raise ValueError, "No data information available!"
+                        else:
+                            output.extend([a, self.ydata, b])
+                    #... and it's another date: use the default
+                    elif isinstance(remaining[0], DateArray):
+                        if self.ydata is None:
+                            raise ValueError, "No data information available!"
+                        else:
+                            output.extend([a, self.ydata])
+                    #... and it must be some data
+                    else:   
+                        b = remaining.pop(0)
+                        if len(remaining) > 0:
+                            if isinstance(remaining[0], str):
+                                c = remaining.pop(0)
+                                output.extend([a,b,c])
+                            else:
+                                output.extend([a,b])
+                     #   continue
+                else:
+                    if self.ydata is None:
+                        raise ValueError, "No data information available!"
+                    #else:
+                    #    break
+            # Otherwise..............................
+            elif len(remaining) > 0:
+                if isinstance(remaining[0], str):
+                    b = remaining.pop(0)
+                    if self.xdata is None:
+                        raise ValueError, "No date information available!"
+                    else:
+                        output.extend([self.xdata, a, b])
+                    #continue
                 elif self.xdata is None:
                     raise ValueError, "No date information available!"
                 else:
-                    params = (self.xdata, args[0], args[1])
-            else:
-                params = args
-        # One argument only ...........
-        elif len(args) == 1:
-            if isinstance(args[0], str):
-                if self.xdata is None:
-                    raise ValueError, "No date information available!"
-                else:
-                    params =  (self.xdata, self.ydata, args[0])
-            elif isinstance(args[0], TimeSeries):
-                if self.xdata is None:
-                    arg = args[0]
-                    params = (arg._dates, arg._series)
-                else:
-                    params = (self.xdata, args[0])
-        else:
-            params = (self.xdata, self.ydata)
-        # Reinitialize the plot if needed 
+                    output.extend([self.xdata, a])
+                    #continue
+        # Reinitialize the plot if needed ...........
         if self.xdata is None:
-            self.xdata = params[0]
+            self.xdata = output[0]
             self.freqstr = self.xdata.freqstr
         # Force the xdata to the current frequency
-        elif params[0].freqstr != self.freqstr:
-            params = list(params)
-            params[0] = params[0].asfreq(self.freqstr)
-        return params
+        elif output[0].freqstr != self.freqstr:
+            output = list(output)
+            output[0] = output[0].asfreq(self.freqstr)
+        return output
     #............................................
     def tsplot(self,*parms,**kwargs):
         """Plots the data parsed in argument.
@@ -626,12 +671,12 @@ This command accepts the same keywords as `matplotlib.plot`."""
                                                  dynamic_mode=True))
         #........................................
         self.xaxis.set_major_formatter(TimeSeries_DateFormatter(self.freqstr))
-#        if rcParams['backend'] == 'PS':
-#            rotate = False
-#            warnings.warn("dateplot: PS backend detected, rotate disabled")
-#        if self.is_last_row():
-#            if rotate:
-#                setp(self.get_xticklabels(),rotation=45)
+        if rcParams['backend'] == 'PS':
+            rotate = False
+            warnings.warn("dateplot: PS backend detected, rotate disabled")
+        if self.is_last_row():
+            if rotate:
+                setp(self.get_xticklabels(),rotation=45)
 #        self.xaxis.set_major_formatter(FuncFormatter(self.dateticks_formatter))
 #        self.xaxis.set_minor_formatter(FuncFormatter(self.dateticks_formatter))
 #        else:
@@ -717,9 +762,9 @@ if __name__ == '__main__':
 
     da = date_array(start_date=Date(freq='D', year=2003, quarter=3, month=1, day=17), 
                     length=51)
-    ser = TS.time_series(MA.arange(len(da)), dates=da)
+    ser = timeseries.time_series(MA.arange(len(da)), dates=da)
     ser[4] = MA.masked
-    ser_2 = TS.time_series(MA.arange(len(da)), dates=da.asfreq('M'))
+    ser_2 = timeseries.time_series(MA.arange(len(da)), dates=da.asfreq('M'))
     
     pylab.figure()
     pylab.gcf().add_tsplot(111)
