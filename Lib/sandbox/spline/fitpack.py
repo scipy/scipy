@@ -236,8 +236,9 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
         _parcur_cache['t']=t
         _parcur_cache['wrk']=wrk
         _parcur_cache['iwrk']=iwrk
-    c.shape=idim,nest 
-    c = c[:][:n-k-1]
+    c = c[:n*idim]
+    c.shape=idim,n
+    c = c[:,:n-k-1]
     tcku = [t[:n],list(c),k],u
     if ier<=0 and not quiet:
         print _iermess[ier][0]
