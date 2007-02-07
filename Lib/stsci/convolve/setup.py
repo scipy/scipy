@@ -18,6 +18,6 @@ if __name__ == "__main__":
     setup(author='Todd Miller',
           author_email = 'help@stsci.edu',
           description = 'image array convolution functions',
-          version = '0.1',
+          version = '2.0',
           **config)
 

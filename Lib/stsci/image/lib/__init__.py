@@ -2,7 +2,7 @@ import sys
 from _image import *
 from combine import *
 
-
+__version__ = '2.0'
 if sys.version_info < (2,4):
     def test():
         import doctest, _image, combine
