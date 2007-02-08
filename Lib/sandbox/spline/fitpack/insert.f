@@ -61,7 +61,7 @@ c    dept. computer science, k.u.leuven
 c    celestijnenlaan 200a, b-3001 heverlee, belgium.
 c    e-mail : Paul.Dierckx@cs.kuleuven.ac.be
 c
-c  latest update : march 1987
+c  latest update : february 2007 (second interval search added)
 c
 c  ..scalar arguments..
       integer iopt,n,k,nn,nest,ier
@@ -69,7 +69,7 @@ c  ..scalar arguments..
 c  ..array arguments..
       real*8 t(nest),c(nest),tt(nest),cc(nest)
 c  ..local scalars..
-      integer kk,k1,l,nk,nk1
+      integer kk,k1,l,nk
 c  ..
 c  before starting computations a data check is made. if the input data
 c  are invalid control is immediately repassed to the calling program.
@@ -79,11 +79,18 @@ c  are invalid control is immediately repassed to the calling program.
       nk = n-k
       if(x.lt.t(k1) .or. x.gt.t(nk)) go to 40
 c  search for knot interval t(l) <= x < t(l+1).
-      nk1 = nk-1
       l = k1
-  10  if(x.lt.t(l+1) .or. l.eq.nk1) go to 20
+  10  if(x.lt.t(l+1)) go to 20
       l = l+1
+      if(l.eq.nk) go to 14
       go to 10
+c  if no interval found above, then reverse the search and 
+c  look for knot interval t(l) < x <= t(l+1).
+  14  l = nk-1
+  16  if(x.gt.t(l)) go to 20
+      l = l-1
+      if(l.eq.k) go to 40
+      go to 16
   20  if(t(l).ge.t(l+1)) go to 40
       if(iopt.eq.0) go to 30
       kk = 2*k

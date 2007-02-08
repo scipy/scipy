@@ -30,11 +30,11 @@ TODO: Make interfaces to the following fitpack functions:
 """
 
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
-    'bisplrep', 'bisplev']
+    'bisplrep', 'bisplev', 'insert']
 __version__ = "$Revision$"[10:-1]
 
 from numpy import atleast_1d, array, ones, zeros, sqrt, ravel, transpose, \
-     dot, sin, cos, pi, arange, empty, int32, where
+     dot, sin, cos, pi, arange, empty, int32, where, resize
 myasarray = atleast_1d
 
 # f2py-generated interface to fitpack
@@ -210,7 +210,11 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
         else: nest=m+k+1
     nest=max(nest,2*k+3)
     if task==0:
-        u,ub,ue,n,t,c,fp,wrk,iwrk,ier=dfitpack.parcur_smth0(ipar,idim,u,x,
+        if per:
+            u,n,t,c,fp,wrk,iwrk,ier=dfitpack.clocur_smth0(ipar,idim,u,x,w,nest,
+                                                                    k=k,s=s)
+        else:
+            u,ub,ue,n,t,c,fp,wrk,iwrk,ier=dfitpack.parcur_smth0(ipar,idim,u,x,
                                                     w,ub,ue,nest,k=k,s=s)
     if task==1:
         try: 
@@ -589,6 +593,62 @@ def spalde(x,tck):
             raise TypeError,"Invalid input data. t(k)<=x<=t(n-k+1) must hold."
         raise TypeError,"Unknown error"
 
+def insert(x,tck,m=1,per=0):
+    """Insert knots into a B-spline.
+
+    Description:
+
+    Given the knots and coefficients of a B-spline representation, create a 
+    new B-spline with a knot inserted m times at point x.
+    This is a wrapper around the FORTRAN routine insert of FITPACK.
+
+    Inputs:
+
+    x (u) -- A 1-D point at which to insert a new knot(s).  If tck was returned
+            from splprep, then the parameter values, u should be given.
+    tck -- A sequence of length 3 returned by splrep or splprep containg the
+            knots, coefficients, and degree of the spline.
+    m -- The number of times to insert the given knot (its multiplicity).
+    per -- If non-zero, input spline is considered periodic.
+
+    Outputs: tck
+
+    tck -- (t,c,k) a tuple containing the vector of knots, the B-spline
+            coefficients, and the degree of the new spline.
+    
+    Requirements:
+        t(k+1) <= x <= t(n-k), where k is the degree of the spline.
+        In case of a periodic spline (per != 0) there must be
+        either at least k interior knots t(j) satisfying t(k+1)<t(j)<=x
+        or at least k interior knots t(j) satisfying x<=t(j)<t(n-k).    
+    """
+    t,c,k=tck
+    try:
+        c[0][0]
+        parametric = True
+    except:
+        parametric = False
+    if parametric:
+        cc = []
+        for c_vals in c:
+            tt, cc_val, kk = insert(x, [t, c_vals, k], m)
+            cc.append(cc_val)
+        return (tt, cc, kk)
+    else:
+        n = len(t)
+        nest = n+m
+        c = c.copy()
+        c.resize(nest)
+        t = t.copy()
+        t.resize(nest)
+        while(n<nest):
+            tt, nn, cc, ier = dfitpack.insert(per, t, n, c, k, x)
+            if ier==10: raise ValueError,"Invalid input data"
+            if ier: raise TypeError,"An error occurred"
+            t = tt
+            c = cc
+            n+=1
+        return (tt, cc, k)
 
 _surfit_cache = {}
 

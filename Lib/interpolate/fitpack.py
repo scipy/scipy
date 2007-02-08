@@ -818,7 +818,6 @@ def insert(x,tck,m=1,per=0):
         if ier: raise TypeError,"An error occurred"
         return (tt, cc, k)
 
-
 if __name__ == "__main__":
     import sys,string
     runtest=range(10)
