@@ -6,7 +6,7 @@ Base classes for matlab (TM) file stream reading
 
 import sys
 
-from numpy import *
+import numpy as N
 
 try:
     import scipy.sparse
@@ -71,10 +71,10 @@ class MatStreamAgent(object):
         a_dtype is assumed to be correct endianness
         '''
         num_bytes = a_dtype.itemsize
-        arr = ndarray(shape=(),
-                      dtype=a_dtype,
-                      buffer=self.mat_stream.read(num_bytes),
-                      order='F')
+        arr = N.ndarray(shape=(),
+                        dtype=a_dtype,
+                        buffer=self.mat_stream.read(num_bytes),
+                        order='F')
         return arr
 
     def read_ztstring(self, num_bytes):
@@ -184,7 +184,7 @@ class MatFileReader(MatStreamAgent):
     def convert_dtypes(self, dtype_template):
         dtypes = dtype_template.copy()
         for k in dtypes:
-            dtypes[k] = dtype(dtypes[k]).newbyteorder(
+            dtypes[k] = N.dtype(dtypes[k]).newbyteorder(
                 self.order_code)
         return dtypes
     
@@ -227,10 +227,10 @@ class MatFileReader(MatStreamAgent):
                 if len(dims) >= 2: # return array of strings
                     dtt = self.order_code + 'U'
                     n_dims = dims[:-1]
-                    str_arr = reshape(arr,
-                                    (small_product(n_dims),
-                                     dims[-1]))
-                    arr = empty(n_dims, dtype=object)
+                    str_arr = arr.reshape(
+                        (small_product(n_dims),
+                         dims[-1]))
+                    arr = N.empty(n_dims, dtype=object)
                     for i in range(0, n_dims[-1]):
                         arr[...,i] = self.chars_to_str(str_arr[i])
                 else: # return string
@@ -241,9 +241,9 @@ class MatFileReader(MatStreamAgent):
                 if getter.mat_dtype is not None:
                     arr = arr.astype(getter.mat_dtype)
             if self.squeeze_me:
-                arr = squeeze(arr)
+                arr = N.squeeze(arr)
                 if not arr.size:
-                    arr = array([])
+                    arr = N.array([])
                 elif not arr.shape: # 0d coverted to scalar
                     arr = arr.item()
             return arr
@@ -251,8 +251,8 @@ class MatFileReader(MatStreamAgent):
 
     def chars_to_str(self, str_arr):
         ''' Convert string array to string '''
-        dt = dtype('U' + str(small_product(str_arr.shape)))
-        return ndarray(shape=(),
+        dt = N.dtype('U' + str(small_product(str_arr.shape)))
+        return N.ndarray(shape=(),
                        dtype = dt,
                        buffer = str_arr.copy()).item()
 
@@ -354,7 +354,7 @@ class MatStreamWriter(object):
         
     def arr_dtype_number(self, num):
         ''' Return dtype for given number of items per element'''
-        return dtype(self.arr.dtype.str[:2] + str(num))
+        return N.dtype(self.arr.dtype.str[:2] + str(num))
 
     def arr_to_chars(self):
         ''' Convert string array to char array '''
@@ -362,7 +362,7 @@ class MatStreamWriter(object):
         if not dims:
             dims = [1]
         dims.append(int(self.arr.dtype.str[2:]))
-        self.arr = ndarray(shape=dims,
+        self.arr = N.ndarray(shape=dims,
                            dtype=self.arr_dtype_number(1),
                            buffer=self.arr)
 

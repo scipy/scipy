@@ -7,10 +7,10 @@ Module for reading and writing matlab (TM) .mat files
 import os
 import sys
 
-from numpy import *
+from scipy.io.mio4 import MatFile4Reader, MatFile4Writer
+from scipy.io.mio5 import MatFile5Reader, MatFile5Writer
 
-from mio4 import MatFile4Reader, MatFile4Writer
-from mio5 import MatFile5Reader, MatFile5Writer
+__all__ = ['find_mat_file','mat_reader_factory','loadmat', 'savemat']
 
 def find_mat_file(file_name, appendmat=True):
     ''' Try to find .mat file on system path

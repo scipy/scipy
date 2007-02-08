@@ -8,6 +8,8 @@ import sys
 
 import numpy as N
 
+__all__ = ['sys_endian_code', 'npfile']
+
 sys_endian_code = (sys.byteorder == 'little') and '<' or '>'
 
 class npfile(object):
