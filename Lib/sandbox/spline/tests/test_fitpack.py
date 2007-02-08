@@ -142,3 +142,6 @@ class test_parcur(NumpyTestCase):
                                                                      decimal=1)
                 assert_almost_equal(0.0, 
                             around(abs(splev(uv[0],tck)-f(uv[0])),2),decimal=1)
+
+if __name__ == "__main__":
+    NumpyTest().run()

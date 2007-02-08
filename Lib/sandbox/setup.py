@@ -81,6 +81,9 @@ def configuration(parent_package='',top_path=None):
 
     # New spline package (based on scipy.interpolate)
     #config.add_subpackage('spline')
+    
+    # Radial basis functions package
+    #config.add_subpackage('rbf')
 
     return config
 
