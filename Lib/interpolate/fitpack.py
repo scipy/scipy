@@ -436,16 +436,20 @@ def splev(x,tck,der=0):
     t,c,k=tck
     try:
         c[0][0]
+        parametric = True
+    except:
+        parametric = False
+    if parametric:
         return map(lambda c,x=x,t=t,k=k,der=der:splev(x,[t,c,k],der),c)
-    except: pass
-    if not (0<=der<=k):
-        raise ValueError,"0<=der=%d<=k=%d must hold"%(der,k)
-    x=myasarray(x)
-    y,ier=_fitpack._spl_(x,der,t,c,k)
-    if ier==10: raise ValueError,"Invalid input data"
-    if ier: raise TypeError,"An error occurred"
-    if len(y)>1: return y
-    return y[0]
+    else:
+      if not (0<=der<=k):
+          raise ValueError,"0<=der=%d<=k=%d must hold"%(der,k)
+      x=myasarray(x)
+      y,ier=_fitpack._spl_(x,der,t,c,k)
+      if ier==10: raise ValueError,"Invalid input data"
+      if ier: raise TypeError,"An error occurred"
+      if len(y)>1: return y
+      return y[0]
 
 def splint(a,b,tck,full_output=0):
     """Evaluate the definite integral of a B-spline.
@@ -475,11 +479,17 @@ def splint(a,b,tck,full_output=0):
               of the FITPACK functions
     """
     t,c,k=tck
-    try: c[0][0];return _ntlist(map(lambda c,a=a,b=b,t=t,k=k:splint(a,b,[t,c,k]),c))
-    except: pass
-    aint,wrk=_fitpack._splint(t,c,k,a,b)
-    if full_output: return aint,wrk
-    else: return aint
+    try:
+        c[0][0]
+        parametric = True
+    except:
+        parametric = False
+    if parametric:
+        return _ntlist(map(lambda c,a=a,b=b,t=t,k=k:splint(a,b,[t,c,k]),c))
+    else:
+        aint,wrk=_fitpack._splint(t,c,k,a,b)
+        if full_output: return aint,wrk
+        else: return aint
 
 def sproot(tck,mest=10):
     """Find the roots of a cubic B-spline.
@@ -509,18 +519,24 @@ def sproot(tck,mest=10):
     t,c,k=tck
     if k==4: t=t[1:-1]
     if k==5: t=t[2:-2]
-    try: c[0][0];return _ntlist(map(lambda c,t=t,k=k,mest=mest:sproot([t,c,k],mest),c))
-    except: pass
-    if len(t)<8:
-        raise TypeError,"The number of knots %d>=8"%(len(t))
-    z,ier=_fitpack._sproot(t,c,k,mest)
-    if ier==10:
-        raise TypeError,"Invalid input data. t1<=..<=t4<t5<..<tn-3<=..<=tn must hold."
-    if ier==0: return z
-    if ier==1:
-        print "Warning: the number of zeros exceeds mest"
-        return z
-    raise TypeError,"Unknown error"
+    try:
+        c[0][0]
+        parametric = True
+    except:
+        parametric = False
+    if parametric:
+        return _ntlist(map(lambda c,t=t,k=k,mest=mest:sproot([t,c,k],mest),c))
+    else:
+        if len(t)<8:
+            raise TypeError,"The number of knots %d>=8"%(len(t))
+        z,ier=_fitpack._sproot(t,c,k,mest)
+        if ier==10:
+            raise TypeError,"Invalid input data. t1<=..<=t4<t5<..<tn-3<=..<=tn must hold."
+        if ier==0: return z
+        if ier==1:
+            print "Warning: the number of zeros exceeds mest"
+            return z
+        raise TypeError,"Unknown error"
 
 def spalde(x,tck):
     """Evaluate all derivatives of a B-spline.
@@ -550,19 +566,23 @@ def spalde(x,tck):
     t,c,k=tck
     try:
         c[0][0]
-        return _ntlist(map(lambda c,x=x,t=t,k=k:spalde(x,[t,c,k]),c))
-    except: pass
-    try: x=x.tolist()
+        parametric = True
     except:
-        try: x=list(x)
-        except: x=[x]
-    if len(x)>1:
-        return map(lambda x,tck=tck:spalde(x,tck),x)
-    d,ier=_fitpack._spalde(t,c,k,x[0])
-    if ier==0: return d
-    if ier==10:
-        raise TypeError,"Invalid input data. t(k)<=x<=t(n-k+1) must hold."
-    raise TypeError,"Unknown error"
+        parametric = False
+    if parametric:
+        return _ntlist(map(lambda c,x=x,t=t,k=k:spalde(x,[t,c,k]),c))
+    else:
+      try: x=x.tolist()
+      except:
+          try: x=list(x)
+          except: x=[x]
+      if len(x)>1:
+          return map(lambda x,tck=tck:spalde(x,tck),x)
+      d,ier=_fitpack._spalde(t,c,k,x[0])
+      if ier==0: return d
+      if ier==10:
+          raise TypeError,"Invalid input data. t(k)<=x<=t(n-k+1) must hold."
+      raise TypeError,"Unknown error"
 
 #def _curfit(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
 #           full_output=0,nest=None,per=0,quiet=1):
@@ -783,16 +803,20 @@ def insert(x,tck,m=1,per=0):
     t,c,k=tck
     try:
         c[0][0]
+        parametric = True
+    except:
+        parametric = False
+    if parametric:
         cc = []
         for c_vals in c:
           tt, cc_val, kk = insert(x, [t, c_vals, k], m)
           cc.append(cc_val)
-        return (tt, cc, kk) 
-    except: pass
-    tt, cc, ier = _fitpack._insert(per, t, c, k, x, m)
-    if ier==10: raise ValueError,"Invalid input data"
-    if ier: raise TypeError,"An error occurred"
-    return (tt, cc, k)
+        return (tt, cc, kk)
+    else:
+        tt, cc, ier = _fitpack._insert(per, t, c, k, x, m)
+        if ier==10: raise ValueError,"Invalid input data"
+        if ier: raise TypeError,"An error occurred"
+        return (tt, cc, k)
 
 
 if __name__ == "__main__":

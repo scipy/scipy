@@ -443,21 +443,24 @@ def splev(x,tck,der=0):
     t,c,k=tck
     try:
         c[0][0] # check if c is >1-d
+        parametric = True # it is
+    except TypeError: parametric = False # c is 1-d
+    if parametric:
         return map(lambda c,x=x,t=t,k=k,der=der:splev(x,[t,c,k],der),c)
-    except TypeError: pass # c is 1-d
-    if not (0<=der<=k):
-        raise ValueError,"0<=der=%d<=k=%d must hold"%(der,k)
-    x=myasarray(x)
-    c = c.copy()
-    c.resize(len(t))
-    if (der>0):
-        y,ier=dfitpack.splder(t,c,k,x,der)
     else:
-        y,ier=dfitpack.splev(t,c,k,x)
-    if ier==10: raise ValueError,"Invalid input data"
-    if ier: raise TypeError,"An unkown error occurred"
-    if len(y)>1: return y
-    return y[0]
+        if not (0<=der<=k):
+            raise ValueError,"0<=der=%d<=k=%d must hold"%(der,k)
+        x=myasarray(x)
+        c = c.copy()
+        c.resize(len(t))
+        if (der>0):
+            y,ier=dfitpack.splder(t,c,k,x,der)
+        else:
+            y,ier=dfitpack.splev(t,c,k,x)
+        if ier==10: raise ValueError,"Invalid input data"
+        if ier: raise TypeError,"An unkown error occurred"
+        if len(y)>1: return y
+        return y[0]
 
 def splint(a,b,tck,full_output=False):
     """Evaluate the definite integral of a B-spline.
@@ -485,13 +488,16 @@ def splint(a,b,tck,full_output=False):
     t,c,k=tck
     try:
         c[0][0] # check if c is >1-d
+        parametric = True # it is
+    except TypeError: parametric = False # c is 1-d
+    if parametric:
         return map(lambda c,a=a,b=b,t=t,k=k:splint(a,b,[t,c,k]),c)
-    except TypeError: pass # c is 1-d
-    c = c.copy()
-    c.resize(len(t))
-    aint,wrk = dfitpack.splint(t,c,k,a,b)
-    if full_output: return aint,wrk
-    else: return aint
+    else:
+        c = c.copy()
+        c.resize(len(t))
+        aint,wrk = dfitpack.splint(t,c,k,a,b)
+        if full_output: return aint,wrk
+        else: return aint
 
 def sproot(tck,mest=10):
     """Find the roots of a cubic B-spline.
@@ -520,21 +526,24 @@ def sproot(tck,mest=10):
         raise ValueError, "Sproot only valid for cubic bsplines"
     try:
         c[0][0] # check if c is >1-d
+        parametric = True # it is
+    except TypeError: parametric = False # c is 1-d
+    if parametric:
         return map(lambda c,t=t,k=k,mest=mest:sproot([t,c,k],mest),c)
-    except TypeError: pass # c is 1-d
-    if len(t)<8:
-        raise TypeError,"The number of knots be >=8"
-    c = c.copy()
-    c.resize(len(t))
-    z,m,ier=dfitpack.sproot(t,c,mest)
-    if ier==10:
-        raise TypeError,"Invalid input data. t1<=..<=t4<t5<..<tn-3<=..<=tn" \
-                        "must hold."
-    if ier==0: return z[0:m]
-    if ier==1:
-        print "Warning: the number of zeros exceeds mest"
-        return z
-    raise TypeError,"Unknown error"
+    else:
+        if len(t)<8:
+            raise TypeError,"The number of knots be >=8"
+        c = c.copy()
+        c.resize(len(t))
+        z,m,ier=dfitpack.sproot(t,c,mest)
+        if ier==10:
+            raise TypeError,"Invalid input data. t1<=..<=t4<t5<..<tn-3<=..<=tn" \
+                            "must hold."
+        if ier==0: return z[0:m]
+        if ier==1:
+            print "Warning: the number of zeros exceeds mest"
+            return z
+        raise TypeError,"Unknown error"
 
 def spalde(x,tck):
     """Evaluate all derivatives of a B-spline.
@@ -561,21 +570,24 @@ def spalde(x,tck):
     t,c,k=tck
     try:
         c[0][0] # check if c is >1-d
+        parametric = True # it is
+    except TypeError: parametric = False # c is 1-d
+    if parametric:
         return map(lambda c,x=x,t=t,k=k:spalde(x,[t,c,k]),c)
-    except TypeError: pass # c is 1-d
-    try: x=x.tolist()
-    except:
-        try: x=list(x)
-        except: x=[x]
-    if len(x)>1:
-        return map(lambda x,tck=tck:spalde(x,tck),x)
-    c = c.copy()
-    c.resize(len(t))
-    d,ier=dfitpack.spalde(t,c,k,x[0])
-    if ier==0: return d
-    if ier==10:
-        raise TypeError,"Invalid input data. t(k)<=x<=t(n-k+1) must hold."
-    raise TypeError,"Unknown error"
+    else:
+        try: x=x.tolist()
+        except:
+            try: x=list(x)
+            except: x=[x]
+        if len(x)>1:
+            return map(lambda x,tck=tck:spalde(x,tck),x)
+        c = c.copy()
+        c.resize(len(t))
+        d,ier=dfitpack.spalde(t,c,k,x[0])
+        if ier==0: return d
+        if ier==10:
+            raise TypeError,"Invalid input data. t(k)<=x<=t(n-k+1) must hold."
+        raise TypeError,"Unknown error"
 
 
 _surfit_cache = {}
