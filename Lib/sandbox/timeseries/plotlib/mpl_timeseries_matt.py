@@ -351,13 +351,6 @@ class TimeSeries_MonthlyLocator(TimeSeries_DateLocator):
                                         base, quarter, month, day)
         self.offset = 1
     
-    def _get_default_spacing(self, span):
-        "Returns the default tick spacing for monthly data."
-        (minor, major) = _get_default_monthly_spacing(span)
-        if self.isminor:
-            return minor
-        return major
-    
     def _get_default_locs(self, vmin, vmax):
         "Returns the default tick locations for monthly data."
 
