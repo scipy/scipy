@@ -7,11 +7,6 @@
 
 static char cseries_doc[] = "Speed sensitive time series operations";
 
-/*
-these are the earliest values at each frequency that can be converted
-to frequencies higher than daily (ie. Hourly, Minutely, Secondly)
-*/
-
 #define FANN  1000  /* Annual */
 #define FQTR  2000  /* Quarterly */
 #define FMTH  3000  /* Monthly */
@@ -22,18 +17,6 @@ to frequencies higher than daily (ie. Hourly, Minutely, Secondly)
 #define FMIN  8000  /* Minutely */
 #define FSEC  9000  /* Secondly */
 #define FUND  -9999 /* Undefined */
-/*
-static long FANN = 1000;
-static long FQTR = 2000;
-static long FMTH = 3000;
-static long FWK  = 4000;
-static long FBUS = 5000;
-static long FDL  = 6000;
-static long FHR  = 7000;
-static long FMIN = 8000;
-static long FSEC = 9000;
-static long FUND = -9999;
-*/
 
 static long minval_D_toHighFreq = 719163;
 
