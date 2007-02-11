@@ -193,7 +193,7 @@ def apply_along_axis(func1d,axis,arr,*args):
     if asscalar:
         dtypes.append(numeric.asarray(res).dtype)
         outarr = zeros(outshape, object_)
-        outarr[ind] = res
+        outarr[tuple(ind)] = res
         Ntot = numeric.product(outshape)
         k = 1
         while k < Ntot:
@@ -206,7 +206,7 @@ def apply_along_axis(func1d,axis,arr,*args):
                 n -= 1
             i.put(indlist,ind)
             res = func1d(arr[tuple(i.tolist())],*args)
-            outarr[ind] = res
+            outarr[tuple(ind)] = res
             dtypes.append(asarray(res).dtype)
             k += 1
     else:

@@ -11,6 +11,7 @@ __date__ = "$Date$"
 
 
 import numpy as N
+from numpy.core import ndarray
 from numpy.core.numerictypes import float_
 import numpy.core.umath as umath
 from numpy.testing import NumpyTest, NumpyTestCase
@@ -54,7 +55,6 @@ def assert_equal(actual,desired,err_msg=''):
         for k in range(len(desired)):
             assert_equal(actual[k], desired[k], 'item=%r\n%s' % (k,err_msg))
         return
-    from numpy.core import ndarray
     if isinstance(actual, ndarray) or isinstance(desired, ndarray):
         return assert_array_equal(actual, desired, err_msg)
     msg = build_err_msg([actual, desired], err_msg,)
@@ -98,8 +98,8 @@ def assert_array_compare(comparison, x, y, err_msg='', header='',
     yf = filled(y)
     m = mask_or(getmask(x), getmask(y))
     
-    x = filled(masked_array(xf, copy=False, mask=m), fill_value)
-    y = filled(masked_array(yf, copy=False, mask=m), fill_value)
+    x = masked_array(xf, copy=False, mask=m).filled(fill_value)
+    y = masked_array(yf, copy=False, mask=m).filled(fill_value)
     if (x.dtype.char != "O"):
         x = x.astype(float_)
         if isinstance(x, N.ndarray) and x.size > 1:

@@ -296,6 +296,15 @@ class test_2dfunctions(NumpyTestCase):
         assert_equal(dx._data, N.r_[0,difx_d,0])
         assert_equal(dx._mask, N.r_[1,0,0,0,0,1])
 
+class test_apply_along_axis(NumpyTestCase):
+    "Tests 2D functions"
+    def check_3d(self):
+        a = arange(12.).reshape(2,2,3)
+        def myfunc(b):
+            return b[1]
+        xa = apply_along_axis(myfunc,2,a)
+        assert_equal(xa,[[1,4],[7,10]])
+
 ###############################################################################
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
