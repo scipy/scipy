@@ -9,7 +9,8 @@ Adapted for numpy_core 2005 by Travis Oliphant and
 (mainly) Paul Dubois.
 
 Subclassing of the base ndarray 2006 by Pierre Gerard-Marchant.
-pgmdevlist_at_gmail_dot_com
+pgmdevlist_AT_gmail_DOT_com
+Improvements suggested by Reggie Dugard (reggie_AT_merfinllc_DOT_com)
 
 :author: Pierre Gerard-Marchant
 :contact: pierregm_at_uga_dot_edu
@@ -74,6 +75,8 @@ import numpy.core.numeric as numeric
 from numpy.lib.shape_base import expand_dims as n_expand_dims
 import warnings
 
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(name)-15s %(levelname)s %(message)s',)
 
 
 MaskType = bool_
@@ -857,6 +860,7 @@ object is called instead.
     #
     def __call__ (self, other, *args):
         "Execute the call behavior."
+#        logging.debug("_mathmethod : %s" % self.methodname)
         instance = self.obj
         m_self = instance._mask
         m_other = getmask(other)
@@ -1009,6 +1013,7 @@ The fill_value is not used for computation within this module.
 
 If `data` is already a ndarray, its dtype becomes the default value of dtype.
         """
+#        logging.debug("__new__ received %s" % type(data))
         if flag is not None:
             warnings.warn("The flag 'flag' is now called 'small_mask'!",
                           DeprecationWarning)
@@ -1068,7 +1073,9 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         """Special hook for ufuncs.
 Wraps the numpy array and sets the mask according to context.
         """
+#        logging.debug("wrap from  : %s" % obj)
         result = obj.view(type(self))
+#        logging.debug("wrap result: %s" % result)
         #..........
         if context is None:
             m = self._mask
@@ -1147,6 +1154,7 @@ Returns the item described by i. Not a copy as in previous versions.
         """x.__setitem__(i, y) <==> x[i]=y
 Sets item described by index. If value is masked, masks those locations.
         """
+        #logging.debug("__setitem__ %s to %s" % (index,value))
         if self is masked:
             raise MAError, 'Cannot alter the masked element.'
 #        if getmask(indx) is not nomask:
@@ -1201,6 +1209,7 @@ Sets item described by index. If value is masked, masks those locations.
         """x.__getslice__(i, j) <==> x[i:j]
 Returns the slice described by i, j.
 The use of negative indices is not supported."""
+        #logging.debug("__getslice__ (%s,%s)" % (i,j))
         return self.__getitem__(slice(i,j))
     #........................
     def __setslice__(self, i, j, value):
@@ -1316,6 +1325,7 @@ masked_%(name)s(data = %(data)s,
         "Divides self by other in place."
         dom_mask = domain_safe_divide().__call__(self, filled(other,1))
         other_mask = getmask(other)
+#        logging.debug("dom_mask: %s" % dom_mask)
         new_mask = mask_or(other_mask, dom_mask)
         ndarray.__idiv__(self._data, other)
         self._mask = mask_or(self._mask, new_mask)
@@ -1425,6 +1435,7 @@ If `fill_value` is None, uses self.fill_value.
         #
         if fill_value is None:
             fill_value = self.fill_value
+#        logging.debug("filled use %s instead of %s" % (self.fill_value, fill_value))
         #
         if self is masked_singleton:
             result = numeric.asanyarray(fill_value)
