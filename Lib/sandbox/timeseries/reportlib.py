@@ -312,7 +312,7 @@ to the instance.
                 # default column justification
                 justify = ['left']
                 for ser in tseries:
-                    if ser.dtype.char in 'SUb': justify.append('left')
+                    if ser.dtype.char in 'SUO': justify.append('left')
                     else: justify.append('right')
                     
                     
