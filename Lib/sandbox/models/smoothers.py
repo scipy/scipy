@@ -1,7 +1,6 @@
 """
 This module contains scatterplot smoothers, that is classes
 who generate a smooth fit of a set of (x,y) pairs.
-
 """
 
 import numpy as N
@@ -15,7 +14,6 @@ from scipy.sandbox.models.bspline import bspline, band2array
 
 
 class poly_smoother:
-
     """
     Polynomial smoother up to a given order.
     Fit based on weighted least squares.

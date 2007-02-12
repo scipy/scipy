@@ -1,9 +1,12 @@
+"""
+Mixed effects models
+"""
+
 import numpy as N
 import numpy.linalg as L
 from scipy.sandbox.models.formula import formula, I
 
 class Unit:
-
     """
     Individual experimental unit for 
     EM implementation of (repeated measures)

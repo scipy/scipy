@@ -1,6 +1,6 @@
 import numpy as N
-import scipy
-import scipy.stats
+from scipy import median
+from scipy.stats import norm
 
 def MAD(a, c=0.6745):
     """
@@ -11,8 +11,8 @@ def MAD(a, c=0.6745):
     """
 
     a = N.asarray(a, N.float64)
-    d = N.multiply.outer(scipy.median(a), N.ones(a.shape[1:]))
-    return scipy.median(N.fabs(a - d) / c)
+    d = N.multiply.outer(median(a), N.ones(a.shape[1:]))
+    return median(N.fabs(a - d) / c)
 
 class Huber:
     """
@@ -25,8 +25,8 @@ class Huber:
     c = 1.5
     tol = 1.0e-06
 
-    tmp = 2 * scipy.stats.norm.cdf(c) - 1
-    gamma = tmp + c**2 * (1 - tmp) - 2 * c * scipy.stats.norm.pdf(c)
+    tmp = 2 * norm.cdf(c) - 1
+    gamma = tmp + c**2 * (1 - tmp) - 2 * c * norm.pdf(c)
     del(tmp)
     
     niter = 10
@@ -41,7 +41,7 @@ class Huber:
         self.a = N.asarray(a, N.float64)
         if mu is None:
             self.n = self.a.shape[0] - 1
-            self.mu = N.multiply.outer(scipy.median(self.a), N.ones(self.a.shape[1:]))
+            self.mu = N.multiply.outer(median(self.a), N.ones(self.a.shape[1:]))
             self.est_mu = True
         else:
             self.n = self.a.shape[0]

@@ -3,6 +3,8 @@ import numpy.linalg as L
 import scipy.interpolate
 import scipy.linalg
 
+__docformat__ = 'restructuredtext'
+
 def recipr(X):
     """
     Return the reciprocal of an array, setting all entries less than or
@@ -72,24 +74,26 @@ def fullrank(X, r=None):
     return N.asarray(N.transpose(value)).astype(N.float64)
 
 class StepFunction:
-    '''A basic step function: values at the ends are handled in the simplest way possible: everything to the left of x[0] is set to ival; everything to the right of x[-1] is set to y[-1].
-    
-    >>>
-    >>> from numpy import *
+    """
+    A basic step function: values at the ends are handled in the simplest
+    way possible: everything to the left of x[0] is set to ival; everything
+    to the right of x[-1] is set to y[-1].
+
+    Examples
+    --------
+    >>> from numpy import arange
+    >>> from scipy.sandbox.models.utils import StepFunction
     >>>
     >>> x = arange(20)
     >>> y = arange(20)
-    >>>
     >>> f = StepFunction(x, y)
     >>>
     >>> print f(3.2)
-    3
+    3.0
     >>> print f([[3.2,4.5],[24,-3.1]])
-    [[ 3  4]
-     [19  0]]
-    >>>
-
-    '''
+    [[  3.   4.]
+     [ 19.   0.]]
+    """
 
     def __init__(self, x, y, ival=0., sorted=False):
             

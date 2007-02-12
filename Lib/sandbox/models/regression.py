@@ -16,6 +16,8 @@ General reference for regression models:
 
 """
 
+__docformat__ = 'restructuredtext en'
+
 import numpy as N
 import numpy.linalg as L
 from scipy.linalg import norm, toeplitz
@@ -24,10 +26,11 @@ from scipy.sandbox.models.model import likelihood_model, likelihood_model_result
 from scipy.sandbox.models import utils
 
 class ols_model(likelihood_model):
-    
     """
     A simple ordinary least squares model.
 
+    Examples
+    --------
     >>> import numpy as N
     >>> 
     >>> from scipy.sandbox.models.formula import term, I
@@ -46,16 +49,22 @@ class ols_model(likelihood_model):
     >>> results.t()
     array([ 0.98019606,  1.87867287])
     >>> print results.Tcontrast([0,1])
-    <T contrast: effect=2.142857, sd=1.140623, t=1.878673, df_denom=5, pval=0.042804>
+    <T contrast: effect=2.14285714286, sd=1.14062281591, t=1.87867287326, df_denom=5>
     >>> print results.Fcontrast(N.identity(2))
-    <F contrast: F=19.460784, df_denom=5, df_num=2, pval=0.123740>
->>> 
+    <F contrast: F=19.4607843137, df_denom=5, df_num=2>
     """
 
     def logL(self, b, Y):
         return -norm(self.whiten(Y) - N.dot(self.wdesign, b))**2 / 2.
 
     def __init__(self, design):
+        """
+        Create a `ols_model` from a design.
+
+        :Parameters:
+            design : TODO
+                TODO
+        """
         likelihood_model.__init__(self)
         self.initialize(design)
 
@@ -63,6 +72,10 @@ class ols_model(likelihood_model):
         """
         Set design for model, prewhitening design matrix and precomputing
         covariance of coefficients (up to scale factor in front).
+
+        :Parameters:
+            design : TODO
+                TODO
         """
 
         self.design = design
@@ -117,6 +130,11 @@ class ar_model(ols_model):
     """
     A regression model with an AR(p) covariance structure.
 
+    The linear autoregressive process of order p--AR(p)--is defined as:
+        TODO
+
+    Examples
+    --------
     >>> import numpy as N
     >>> import numpy.random as R
     >>> 
@@ -146,17 +164,14 @@ class ar_model(ols_model):
     >>> results.t()
     array([ 30.796394  ,  -2.66543144])
     >>> print results.Tcontrast([0,1])
-    <T contrast: effect=-0.561455, sd=0.210643, t=-2.665431, df_denom=5, pval=0.044592>
+    <T contrast: effect=-0.561454972239, sd=0.210643186553, t=-2.66543144085, df_denom=5>
     >>> print results.Fcontrast(N.identity(2))
-    <F contrast: F=2762.428127, df_denom=5, df_num=2, pval=0.000000>
-    >>> 
-
+    <F contrast: F=2762.42812716, df_denom=5, df_num=2>
+    >>>
     >>> model.rho = N.array([0,0])
     >>> model.iterative_fit(data['Y'], niter=3)
     >>> print model.rho
     [-0.61887622 -0.88137957]
-    >>> 
-
     """
 
     def __init__(self, design, rho):
@@ -175,7 +190,13 @@ class ar_model(ols_model):
     def iterative_fit(self, Y, niter=3):
         """
         Perform an iterative two-stage procedure to estimate AR(p)
-        paramters and regression coefficients simultaneously.
+        parameters and regression coefficients simultaneously.
+
+        :Parameters:
+            Y : TODO
+                TODO
+            niter : ``integer``
+                the number of iterations
         """
         for i in range(niter):
             self.initialize(self.design)
@@ -188,6 +209,9 @@ class ar_model(ols_model):
         Whiten a series of columns according to an AR(p)
         covariance structure.
 
+        :Parameters:
+            X : TODO
+                TODO
         """
         X = N.asarray(X, N.float64)
         _X = X.copy()
@@ -198,16 +222,25 @@ class ar_model(ols_model):
     def yule_walker(self, X, method="unbiased", df=None):
         """
         Estimate AR(p) parameters from a sequence X using Yule-Walker equation.
-        Method can be "unbiased" or "MLE" and this determines
-        denominator in estimate of ACF at lag k. If "MLE", the denominator is 
-        n=r.shape[0], if "unbiased" the denominator is n-k.
 
-        If df is supplied, then it is assumed the X has df degrees of
-        freedom rather than n.
+        unbiased or maximum-likelihood estimator (mle)
 
         See, for example:
 
         http://en.wikipedia.org/wiki/Autoregressive_moving_average_model
+
+        :Parameters:
+            X : TODO
+                TODO
+            method : ``string``
+                Method can be "unbiased" or "mle" and this determines
+                denominator in estimate of autocorrelation function (ACF)
+                at lag k. If "mle", the denominator is n=r.shape[0], if
+                "unbiased" the denominator is n-k.
+            df : ``integer``
+                Specifies the degrees of freedom. If df is supplied,
+                then it is assumed the X has df degrees of
+                freedom rather than n.
         """
         
         method = str(method).lower()
@@ -237,7 +270,6 @@ class ar_model(ols_model):
 
 class wls_model(ols_model):
     """
-
     A regression model with diagonal but non-identity covariance
     structure. The weights are presumed to be
     (proportional to the) inverse of the
@@ -261,10 +293,9 @@ class wls_model(ols_model):
     >>> results.t()
     array([ 0.35684428,  2.0652652 ])
     >>> print results.Tcontrast([0,1])
-    <T contrast: effect=2.916667, sd=1.412248, t=2.065265, df_denom=5, pval=0.035345>
+    <T contrast: effect=2.91666666667, sd=1.41224801095, t=2.06526519708, df_denom=5>
     >>> print results.Fcontrast(N.identity(2))
-    <F contrast: F=26.998607, df_denom=5, df_num=2, pval=0.110763>
-
+    <F contrast: F=26.9986072423, df_denom=5, df_num=2>
     """
 
     def __init__(self, design, weights=1):

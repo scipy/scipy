@@ -1,3 +1,6 @@
+"""
+Robust linear models
+"""
 import numpy as N
 
 from scipy.sandbox.models.regression import wls_model

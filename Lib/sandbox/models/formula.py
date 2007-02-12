@@ -1,11 +1,15 @@
+"""
+Provides the basic classes needed to specify statistical models.
+"""
 import copy
 import types
 import numpy as N
 
+__docformat__ = 'restructuredtext'
+
 default_namespace = {}
 
 class term(object):
-
     """
     This class is very simple: it is just a named term in a model formula.
 
@@ -13,7 +17,6 @@ class term(object):
     defaults to formula.default_namespace. 
     When called in an instance of formula, 
     the namespace used is that formula's namespace.
-    
     """
 
     def __pow__(self, power):
@@ -106,13 +109,9 @@ class term(object):
         """
         Return the columns associated to self in a design matrix.
         If the term has no 'func' attribute, it returns
-        
-        self.namespace[self.termname]
-
+        ``self.namespace[self.termname]``
         else, it returns
-        
-        self.func(*args, **kw)
-
+        ``self.func(*args, **kw)``
         """
         
         if not hasattr(self, 'func'):
@@ -243,7 +242,6 @@ class factor(term):
         return value
 
 class quantitative(term):
-
     """
     A subclass of term that can be used to apply point transformations
     of another term, i.e. to take powers:
@@ -260,7 +258,6 @@ class quantitative(term):
     >>> x3.namespace = x.namespace
     >>> print N.allclose(x()**2, x3())
     True
-
     """
 
     def __init__(self, name, func=None, termname=None, transform=lambda x: x):
@@ -275,9 +272,7 @@ class quantitative(term):
         return self.transform(term.__call__(self, *args, **kw))
 
 class formula(object):
-
     """
-
     A formula object for manipulating design matrices in regression models,
     essentially consisting of a list of term instances.
 
@@ -302,11 +297,9 @@ class formula(object):
     def __init__(self, termlist, namespace=default_namespace):
         """
         Create a formula from either:
-
-        i) a formula object
-        ii) a sequence of term instances
-        iii) one term
-
+         i. a `formula` object
+         ii. a sequence of `term` instances
+         iii. one `term`
         """
 
 
@@ -457,7 +450,7 @@ class formula(object):
 
     def design(self, *args, **kw):
         """
-        transpose(self(*args, **kw))
+        ``transpose(self(*args, **kw))``
         """
         return self(*args, **kw).T
 
@@ -607,12 +600,11 @@ Intercept term in a formula. If intercept is the
 only term in the formula, then a keywords argument
 \'nrow\' is needed.
 
->>> from formula import *
+>>> from scipy.sandbox.models.formula import formula, I
 >>> I()
-1
+array(1.0)
 >>> I(nrow=5)
-array([1, 1, 1, 1, 1])
-
+array([ 1.,  1.,  1.,  1.,  1.])
 >>> f=formula(I)
 >>> f(nrow=5)
 array([1, 1, 1, 1, 1])

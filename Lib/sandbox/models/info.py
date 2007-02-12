@@ -1,18 +1,24 @@
 """
 Statistical models
-==================
 
-This module contains a several linear statistical models
-- model formulae as in R (to some extent)
-- OLS (ordinary least square regression)
-- WLS (weighted least square regression)
-- ARp regression
-- GLMS (generalized linear models)
-- robust linear models using M estimators (with a number of standard default robust norms as in R's rlm)
-- robust scale estimates (MAD, Huber's proposal 2).
-- mixed effects models
-- generalized additive models (gam)
+ - model `formula`
+ - standard `regression` models
+
+  - `ols_model` (ordinary least square regression)
+  - `wls_model` (weighted least square regression)
+  - `ar_model` (autoregression)
+
+ - `glm.model` (generalized linear models)
+ - robust statistical models
+
+  - `rlm.model` (robust linear models using M estimators)
+  - `robust.norms` estimates
+  - `robust.scale` estimates (MAD, Huber's proposal 2).
+
+ - `mixed` effects models
+ - `gam` (generalized additive models)
 """
+__docformat__ = 'restructuredtext en'
 
 depends = ['weave',
            'special.orthogonal',

@@ -1,3 +1,6 @@
+"""
+Generalized additive models
+"""
 import numpy as N
 
 from scipy.sandbox.models import family

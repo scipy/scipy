@@ -2,6 +2,8 @@
 # models - Statistical Models
 #
 
+__docformat__ = 'restructuredtext'
+
 from scipy.sandbox.models.info import __doc__
 
 import scipy.sandbox.models.model

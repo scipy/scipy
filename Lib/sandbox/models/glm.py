@@ -1,3 +1,6 @@
+"""
+General linear model
+"""
 import numpy as N
 from scipy.sandbox.models import family
 from scipy.sandbox.models.regression import wls_model

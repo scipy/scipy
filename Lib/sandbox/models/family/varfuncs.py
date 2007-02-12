@@ -1,10 +1,11 @@
+__docformat__ = 'restructuredtext'
+
 import numpy as N
 
 class VarianceFunction:
     """
     Variance function that relates the variance of a random variable
     to its mean. Defaults to 1.
-
     """
 
     def __call__(self, mu):
@@ -13,7 +14,6 @@ class VarianceFunction:
 constant = VarianceFunction()
 
 class Power:
-
     """
     Variance function:
 
@@ -27,7 +27,6 @@ class Power:
         return N.power(N.fabs(mu), self.power)
 
 class Binomial:
-
     """
     Binomial variance function
 
@@ -50,4 +49,3 @@ mu = Power()
 mu_squared = Power(power=2)
 mu_cubed = Power(power=3)
 binary = Binomial()
-    
