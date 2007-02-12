@@ -134,12 +134,12 @@ to the instance.
           is ignored if `header_row` is None.
           
         - `header_justify` (List of strings or single string, *[None]*) : Determines
-          how are data justified in their column. If not specified, all headers are
-          left justified. If a string is specified, it must be one of 'left', 'right',
-          or 'center' and all headers will be justified the same way. If a list is
-          specified, each header will be justified according to the specification for
-          that header in the list. Specifying the justification for the date column is
-          header is optional.
+          how headers are justified. If not specified, all headers are left justified.
+          If a string is specified, it must be one of 'left', 'right', or 'center'
+          and all headers will be justified the same way. If a list is specified, each
+          header will be justified according to the specification for that header in
+          the list. Specifying the justification for the date column is header is
+          optional.
           
         - `row_char` (string, *[None]*): Character to be used for the row separator
           line between each row of data. None for no separator
