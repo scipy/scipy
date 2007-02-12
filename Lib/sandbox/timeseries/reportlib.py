@@ -12,6 +12,45 @@ Ideas borrowed from:
 
 - Mike Brown
     http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/148061
+    
+:Examples:
+
+    import numpy as np
+    import timeseries as ts
+    import maskedarray as ma
+    from timeseries import Report, wrap_onspace
+
+    series1 = ts.time_series(np.random.uniform(-100,100,15), start_date=ts.thisday('b')-15)
+    series2 = ts.time_series(np.random.uniform(-100,100,13), start_date=ts.thisday('b')-10)
+    series3 = ts.time_series(['string1', 'another string', 'yet another string']*3, start_date=ts.thisday('b')-10)
+    
+    darray = ts.date_array(start_date=ts.thisday('b')-8, end_date=ts.thisday('b')-3)
+    
+    txt_o = open('myfile.txt', 'w')
+    html_o = open('myfile.html', 'w')
+    
+    # report containing only numerical series, showing 2 decimal places
+    num_report = Report(series1, series2, fmtfunc=lambda x:'%.2f' % x)
+    
+    # report containing some string and numerical data
+    mixed_report = Report(series1, series2, series3)
+
+    # output a csv report suitable for excel to sys.stdout, show masked values as "N/A"
+    num_report(delim=', ', mask_rep='N/A')
+
+    # format one column one with 2 decimal places, and column two with 4.
+    # Add a sum footer. Write the output to txt_o
+    num_report(fmtfunc=[(lambda x:'%.2f' % x), (lambda x:'%.4f' % x)],
+                 footer_func=ma.sum, footer_label='sum', output=txt_o)
+
+    # create an html table of the data over a specified range.
+    # Wrap text in cells to width 10. Output to html_o
+    html_o.write("<table>")
+    mixed_report(series1, series2, series3, dates=darray,
+               delim="</td><td>", prefix="<tr><td>", postfix="</td></tr>",
+               wrapfunc=wrap_onspace(10, nls='<BR>'), output=html_o)
+    html_o.write("</table>")
+    
 """
 __author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author: mattknox_ca $)"
 __version__ = '1.0'
@@ -19,9 +58,8 @@ __revision__ = "$Revision: 2641 $"
 __date__     = '$Date: 2007-01-30 13:40:17 -0500 (Tue, 30 Jan 2007) $'
 
 import sys
-import cStringIO, operator, types, copy
-import tseries as ts
-import tdates as td
+import operator, types, copy
+import timeseries as ts
 
 __all__ = [
     'Report', 'wrap_onspace', 'wrap_onspace_strict',
@@ -54,6 +92,7 @@ _default_options = {
     'dates':None,
     'header_row':None,
     'header_char':'-',
+    'header_justify':None,
     'row_char':None,
     'footer_label':None,
     'footer_char':'-',
@@ -94,6 +133,14 @@ to the instance.
           line between the header and first row of data. None for no separator. This
           is ignored if `header_row` is None.
           
+        - `header_justify` (List of strings or single string, *[None]*) : Determines
+          how are data justified in their column. If not specified, all headers are
+          left justified. If a string is specified, it must be one of 'left', 'right',
+          or 'center' and all headers will be justified the same way. If a list is
+          specified, each header will be justified according to the specification for
+          that header in the list. Specifying the justification for the date column is
+          header is optional.
+          
         - `row_char` (string, *[None]*): Character to be used for the row separator
           line between each row of data. None for no separator
           
@@ -110,8 +157,8 @@ to the instance.
         - `footer_label` (string, *[None]*) : label for the footer row. This goes at the
           end of the date column. This is ignored if footer_func is None.
           
-        - `justify` (List of strings or single string, *[None]*) : Determines how are
-          data justified in their column. If not specified, the date column and string
+        - `justify` (List of strings or single string, *[None]*) : Determines how data
+          are justified in their column. If not specified, the date column and string
           columns are left justified, and everything else is right justified. If a
           string is specified, it must be one of 'left', 'right', or 'center' and all
           columns will be justified the same way. If a list is specified, each column
@@ -153,45 +200,7 @@ to the instance.
         - `fixed_width` (boolean, *[True]*): If True, columns are fixed width (ie.
           cells will be padded with spaces to ensure all cells in a given column are
           the same width). If False, `col_width` will be ignored and cells will not
-          be padded.
-          
-:Examples:
-
-    import numpy as np
-    import timeseries as ts
-    import maskedarray as ma
-    from timeseries import Report, wrap_onspace
-
-    series1 = ts.time_series(np.random.uniform(-100,100,15), start_date=ts.thisday('b')-15)
-    series2 = ts.time_series(np.random.uniform(-100,100,13), start_date=ts.thisday('b')-10)
-    series3 = ts.time_series(['string1', 'another string', 'yet another string']*3, start_date=ts.thisday('b')-10)
-    
-    darray = ts.date_array(start_date=ts.thisday('b')-8, end_date=ts.thisday('b')-3)
-    
-    txt_o = open('myfile.txt', 'w')
-    html_o = open('myfile.html', 'w')
-    
-    # report containing only numerical series, showing 2 decimal places
-    num_report = Report(series1, series2, fmtfunc=lambda x:'%.2f' % x)
-    
-    # report containing some string and numerical data
-    mixed_report = Report(series1, series2, series3)
-
-    # output a csv report suitable for excel to sys.stdout, show masked values as "N/A"
-    num_report(delim=', ', mask_rep='N/A')
-
-    # format one column one with 2 decimal places, and column two with 4.
-    # Add a sum footer. Write the output to txt_o
-    num_report(fmtfunc=[(lambda x:'%.2f' % x), (lambda x:'%.4f' % x)],
-                 footer_func=ma.sum, footer_label='sum', output=txt_o)
-
-    # create an html table of the data over a specified range.
-    # Wrap text in cells to width 10. Output to html_o
-    html_o.write("<table>")
-    mixed_report(series1, series2, series3, dates=darray,
-               delim="</td><td>", prefix="<tr><td>", postfix="</td></tr>",
-               wrapfunc=wrap_onspace(10, nls='<BR>'), output=html_o)
-    html_o.write("</table>")"""
+          be padded."""
 
     def __init__(self, *tseries, **kwargs):
         
@@ -207,7 +216,7 @@ to the instance.
         
         option_list = list(_default_options)
 
-        for x in [kw for kw in option_list if kw in kwargs]:
+        for x in [kw for kw in kwargs if kw in option_list]:
             option_dict[x] = kwargs.pop(x)
             
         if len(kwargs) > 0:
@@ -251,6 +260,7 @@ to the instance.
         dates = option('dates')
         header_row = option('header_row')
         header_char = option('header_char')
+        header_justify = option('header_justify')
         row_char = option('row_char')
         footer_label = option('footer_label')
         footer_char = option('footer_char')
@@ -283,24 +293,34 @@ to the instance.
             rows=[]
 
         if fixed_width:
-            if justify is not None:
-                _justify = kwargs.pop('justify')
-                if isinstance(justify, str):
+        
+            def _standardize_justify(userspec):
+                if isinstance(userspec, str):
                     # justify all columns the the same way
-                    justify = [justify for x in range(len(tseries)+1)]
-                elif isinstance(justify, list): #assume it is a list or tuple, etc
-                    if len(justify) == len(tseries):
+                    return [userspec for x in range(len(tseries)+1)]
+                elif isinstance(userspec, list):
+                    if len(userspec) == len(tseries):
                         # justification for date column not included, so set that
                         # to left by default
-                        justify = ['left'] + justify
+                        return ['left'] + userspec
                 else:
                     raise ValueError("invalid `justify` specification")
+                    
+            if justify is not None:
+                justify = _standardize_justify(justify)
             else:
                 # default column justification
                 justify = ['left']
                 for ser in tseries:
-                    if str(ser.dtype)[:2] == '|S': justify.append('left')
+                    if ser.dtype.char in 'SUb': justify.append('left')
                     else: justify.append('right')
+                    
+                    
+            if header_justify is not None:
+                header_justify = _standardize_justify(header_justify)
+            else:
+                # default column justification
+                header_justify = ['left' for x in range(len(tseries)+1)]
         else:
             justify = [None for x in range(len(tseries)+1)]
 
@@ -311,7 +331,7 @@ to the instance.
 
         if dates is None:
             tseries = ts.align_series(*tseries)
-            dates = td.date_array(start_date=tseries[0].start_date,
+            dates = ts.date_array(start_date=tseries[0].start_date,
                                   end_date=tseries[0].end_date)
         else:
             tseries = ts.align_series(start_date=dates[0], end_date=dates[-1], *tseries)
@@ -422,8 +442,13 @@ to the instance.
 
         for rowNum, physicalRows in enumerate(logicalRows):
             for row in physicalRows:
+                if rowNum == 0 and header_separator:
+                    _justify = header_justify
+                else:
+                    _justify = justify
+                    
                 output.write(prefix \
-                           + delim.join([justify_funcs[str(justify[colNum]).lower()](str(item),width) for (colNum,item,width) in zip(colNums,row,maxWidths)]) \
+                           + delim.join([justify_funcs[str(_justify[colNum]).lower()](str(item),width) for (colNum,item,width) in zip(colNums,row,maxWidths)]) \
                            + postfix + nls)
 
             if row_separator and (data_start <= rowNum <= data_end):
