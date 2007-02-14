@@ -20,8 +20,7 @@ class test_npfile(NumpyTestCase):
         npf.write_array(arr)
         npf.rewind()
         self.assertRaises(IOError, npf.read_array,
-                          arr.shape,
-                          arr.dtype)
+                          arr.dtype, arr.shape)
         npf.close()
         os.remove(fname)
 
@@ -48,6 +47,16 @@ class test_npfile(NumpyTestCase):
         npf.rewind()
         assert str == npf.read_raw(len(str))
         
+    def test_remaining_bytes(self):
+        npf = npfile(StringIO())
+        assert npf.remaining_bytes() == 0
+        npf.write_raw('+' * 10)
+        assert npf.remaining_bytes() == 0
+        npf.rewind()
+        assert npf.remaining_bytes() == 10
+        npf.seek(5)
+        assert npf.remaining_bytes() == 5
+
     def test_read_write_array(self):
         npf = npfile(StringIO())
         arr = N.reshape(N.arange(10), (5,2))
@@ -67,25 +76,29 @@ class test_npfile(NumpyTestCase):
         shp = arr.shape
         npf.write_array(arr)
         npf.rewind()
-        assert_array_equal(npf.read_array(shp, adt), arr)
+        assert_array_equal(npf.read_array(adt), arr.flatten())
         npf.rewind()
-        assert_array_equal(npf.read_array(shp, adt, endian=swapped_code),
+        assert_array_equal(npf.read_array(adt, shp), arr)
+        npf.rewind()
+        assert_array_equal(npf.read_array(adt, shp, endian=swapped_code),
                            bs_arr)
         npf.rewind()
-        assert_array_equal(npf.read_array(shp, adt, order='F'),
+        assert_array_equal(npf.read_array(adt, shp, order='F'),
                            f_arr)
         npf.rewind()
         npf.write_array(arr, order='F')
         npf.rewind()
-        assert_array_equal(npf.read_array(shp, adt),
+        assert_array_equal(npf.read_array(adt), arr.flatten('F'))
+        npf.rewind()
+        assert_array_equal(npf.read_array(adt, shp),
                            cf_arr)
         
         npf = npfile(StringIO(), endian='swapped', order='F')
         npf.write_array(arr)
         npf.rewind()
-        assert_array_equal(npf.read_array(shp, adt), arr)
+        assert_array_equal(npf.read_array(adt, shp), arr)
         npf.rewind()
-        assert_array_equal(npf.read_array(shp, adt, endian='dtype'), bs_arr)
+        assert_array_equal(npf.read_array(adt, shp, endian='dtype'), bs_arr)
         npf.rewind()
-        assert_array_equal(npf.read_array(shp, adt, order='C'), cf_arr)
+        assert_array_equal(npf.read_array(adt, shp, order='C'), cf_arr)
         

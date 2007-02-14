@@ -132,6 +132,13 @@ class npfile(object):
         """Write string to file as raw bytes."""
         return self.file.write(str)
 
+    def remaining_bytes(self):
+        cur_pos = self.tell()
+        self.seek(0, 2)
+        end_pos = self.tell()
+        self.seek(cur_pos)
+        return end_pos - cur_pos
+
     def _endian_order(self, endian, order):
         ''' Housekeeping function to return endian, order from input args '''
         if endian is None:
@@ -167,13 +174,16 @@ class npfile(object):
                 data = data.byteswap()
         self.file.write(data.tostring(order=order))
         
-    def read_array(self, shape, dt, endian=None, order=None):
+    def read_array(self, dt, shape=-1, endian=None, order=None):
         '''Read data from file and return it in a numpy array.
         
         Inputs
         ------
-        shape     - shape of output array, or number of elements
         dt        - dtype of array to be read
+        shape     - shape of output array, or number of elements
+                    (-1 as number of elements or element in shape
+                    means unknown dimension as in reshape; size
+                    of array calculated from remaining bytes in file)
         endian    - endianness of data in file
                     (can be None, 'dtype', '<', '>')
                     (if None, get from self.endian)
@@ -184,13 +194,26 @@ class npfile(object):
         arr       - array from file with given dtype (dt)
         '''
         endian, order = self._endian_order(endian, order)
-        try:
-            shape = tuple(shape)
-        except TypeError:
-            shape = (shape,)
         dt = N.dtype(dt)
-        dt_endian = self._endian_from_dtype(dt)
+        try:
+            shape = list(shape)
+        except TypeError:
+            shape = [shape]
+        minus_ones = shape.count(-1)
+        if minus_ones == 0:
+            pass
+        elif minus_ones == 1:
+            known_dimensions_size = -N.product(shape,axis=0) * dt.itemsize
+            unknown_dimension_size, illegal = divmod(self.remaining_bytes(),
+                                                     known_dimensions_size)
+            if illegal:
+                raise ValueError("unknown dimension doesn't match filesize")
+            shape[shape.index(-1)] = unknown_dimension_size
+        else:
+            raise ValueError(
+                "illegal -1 count; can only specify one unknown dimension")
         sz = dt.itemsize * N.product(shape)
+        dt_endian = self._endian_from_dtype(dt)
         buf = self.file.read(sz)
         arr = N.ndarray(shape=shape,
                          dtype=dt,
