@@ -65,22 +65,33 @@ static int makeTranslationTables(void)
     cfmsdm(&status, D_NC, D_ND, D_NA, dmistt);  //Date
     return 0;
 }
-///////////////////////////////////////////////////////////////////////
+
+static char cfame_set_option_doc[] = "wrapper to cfmsopt";
+static PyObject *
+cfame_set_option(PyObject *self, PyObject *args)
+{
+    int status;
+    char *name, *val;
+    if (!PyArg_ParseTuple(args, "ss:set_option", &name, &val)) return NULL;
+
+    printf("%s\n", name);
+    printf("%s\n", val);
+
+    CALLFAME(cfmsopt(&status, name, val));
+
+    Py_RETURN_NONE;
+}
+
+
 
 static char cfame_open_doc[] = "open(database, access)\n\nOpens a FAME database and returns a FAME db idenifier.";
 static PyObject *
 cfame_open(PyObject *self, PyObject *args)
 {
     int status;
-    int dbkey, access, large;
+    int dbkey, access;
     const char *dbname;
-    if (!PyArg_ParseTuple(args, "sii:open", &dbname, &access, &large)) return NULL;
-
-    if (access == HOMODE || access == HCMODE) {
-
-        if (large) { CALLFAME(cfmsopt(&status, "DBSIZE", "LARGE")); }
-        else       { CALLFAME(cfmsopt(&status, "DBSIZE", "STANDARD")); }
-    }
+    if (!PyArg_ParseTuple(args, "si:open", &dbname, &access)) return NULL;
 
     CALLFAME(cfmopdb (&status, &dbkey, dbname, access));
 
@@ -975,6 +986,7 @@ static PyMethodDef cfame_methods[] = {
     {"read", cfame_read, METH_VARARGS, cfame_read_doc},
     {"whats", cfame_whats, METH_VARARGS, cfame_whats_doc},
     {"size", cfame_size, METH_VARARGS, cfame_size_doc},
+    {"set_option", cfame_set_option, METH_VARARGS, cfame_set_option_doc},
     {"write_scalar", cfame_write_scalar, METH_VARARGS, cfame_write_scalar_doc},
     {"write_series", cfame_write_series, METH_VARARGS, cfame_write_series_doc},
     {"create", cfame_create, METH_VARARGS, cfame_create_doc},
