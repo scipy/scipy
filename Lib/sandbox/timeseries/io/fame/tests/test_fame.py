@@ -392,7 +392,6 @@ class test_write(NumpyTestCase):
         
     def _test_whats(self):
         "test whats method"
-        
         # just make sure it doesn't crash for now
         what_dict = self.db.whats('$tser_float32')
         
@@ -408,18 +407,14 @@ class test_write(NumpyTestCase):
         self.db.remove(['$cser_1', '$cser_2'])
         assert(not self.db.exists('$cser_1'))
         assert(not self.db.exists('$cser_2'))
-        
         self.db.remove('$cser_1', must_exist=False)
 
-        
     def _test_wildlist(self):
         "test wildlist method"
         wl1 = self.db.wildlist("$cser_?")
         wl2 = self.db.wildlist("$cser_?", wildonly=True)
-        
         res1 = sorted(["$CSER_"+x.upper() for x in list(data['cser'])])
         res2 = sorted([x.upper() for x in list(data['cser'])])
-        
         assert_equal(wl1, res1)
         assert_equal(wl2, res2)
         
@@ -433,7 +428,6 @@ class test_write(NumpyTestCase):
         self.db.restore()
         assert(self.db.exists('$tser_float32'))
 
-    
     def tearDown(self):
         self.db.close()
 
