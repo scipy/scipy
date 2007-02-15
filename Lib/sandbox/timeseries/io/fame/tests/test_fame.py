@@ -147,7 +147,8 @@ class test_write(NumpyTestCase):
         self._test_remove()
         
         self._test_wildlist()
-        
+
+        self._test_restore()
         
 
     def _test_write_scalars(self):
@@ -396,10 +397,12 @@ class test_write(NumpyTestCase):
         what_dict = self.db.whats('$tser_float32')
         
     def _test_exists(self):
+        "test exists method"
         assert(self.db.exists('$cser_float32'))
         assert(not self.db.exists('$fake_series'))
         
     def _test_remove(self):
+        "test remove method"
         assert(self.db.exists('$cser_1'))
         assert(self.db.exists('$cser_2'))
         self.db.remove(['$cser_1', '$cser_2'])
@@ -410,6 +413,7 @@ class test_write(NumpyTestCase):
 
         
     def _test_wildlist(self):
+        "test wildlist method"
         wl1 = self.db.wildlist("$cser_?")
         wl2 = self.db.wildlist("$cser_?", wildonly=True)
         
@@ -418,6 +422,16 @@ class test_write(NumpyTestCase):
         
         assert_equal(wl1, res1)
         assert_equal(wl2, res2)
+        
+    def _test_restore(self):
+        "test restore method"
+        self.db.close()
+        self.db = fame.FameDb("testdb.db",'s')
+        
+        self.db.remove('$tser_float32')
+        assert(not self.db.exists('$tser_float32'))
+        self.db.restore()
+        assert(self.db.exists('$tser_float32'))
 
     
     def tearDown(self):
