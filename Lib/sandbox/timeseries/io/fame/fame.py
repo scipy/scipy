@@ -25,12 +25,11 @@ class CaseInsensitiveDict(dict):
 
 class DBError(Exception): pass
 
-
 class FameDb(object):
     """Fame database object
 
 :Construction:
-    x = FameDb(conn_str, mode='r', large=True)
+    x = FameDb(conn_str, mode='r')
 
 :Paramaters:
     - `conn_str` (str) : valid connection string. Can be a physical path,
@@ -43,12 +42,8 @@ class FameDb(object):
         'c' => create
         'u' => update
         'w' => write
-        'd' => direct
-    - `large` (boolean, *[True]*) : Applies only when `mode` is 'o' or 'c'.
-    If True, a large size database will be created. If False, a standard size
-    database will be created.
-"""
-    def __init__(self, conn_str, mode='r', large=True):
+        'd' => direct"""
+    def __init__(self, conn_str, mode='r'):
         mode = mode.lower()
         if mode == 'r':
             intmode = mp.HRMODE
@@ -69,7 +64,7 @@ class FameDb(object):
         self.mode = mode
         
         try:
-            self.dbkey = cf_open(conn_str, intmode, int(large))
+            self.dbkey = cf_open(conn_str, intmode)
             self.dbIsOpen = True
         except:
             self.dbIsOpen = False
@@ -643,6 +638,7 @@ This is needed because the Fame C api is not thread safe."""
         return result
 
 cf_open = cFameCall(cfame.open)
+cf_set_option = cFameCall(cfame.set_option)
 cf_close = cFameCall(cfame.close)
 cf_restore = cFameCall(cfame.restore)
 cf_size = cFameCall(cfame.size)
@@ -655,3 +651,16 @@ cf_write_series = cFameCall(cfame.write_series)
 cf_write_namelist = cFameCall(cfame.write_namelist)
 cf_wildlist = cFameCall(cfame.wildlist)
 cf_exists = cFameCall(cfame.exists)
+
+set_option = cf_set_option
+set_option.__doc__ = \
+"""Set an option in the C HLI. See the FAME documentation for cfmsopt for a
+listing of allowable option settings.
+
+:Parameters:
+    - option (str) : name of the option to set
+    - setting (str) : value of the option to set
+    
+:Example:
+    set_option("DBSIZE", "LARGE")
+"""
