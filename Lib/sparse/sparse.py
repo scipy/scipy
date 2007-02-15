@@ -315,7 +315,7 @@ class spmatrix(object):
 
         if len(other.shape) == 1:
             result = self.matvec(other)
-        elif isdense(other) and asarray(other).squeeze().ndim == 1:
+        elif isdense(other) and asarray(other).squeeze().ndim <= 1:
             # If it's a row or column vector, return a DENSE result
             result = self.matvec(other)
         elif len(other.shape) == 2:
