@@ -139,6 +139,16 @@ class test_write(NumpyTestCase):
         self._test_assume_exists_cser()
         
         self._test_dict_cser()
+        
+        self._test_whats()
+        
+        self._test_exists()
+        
+        self._test_remove()
+        
+        self._test_wildlist()
+        
+        
 
     def _test_write_scalars(self):
         "test writing all types of scalar values"
@@ -378,6 +388,37 @@ class test_write(NumpyTestCase):
         result = self.db.read(['$cser_1', '$cser_2'])
         assert_array_equal(result['$cser_1'], data['cser']['float32'])
         assert_array_equal(result['$cser_2'], data['cser']['float32'])
+        
+    def _test_whats(self):
+        "test whats method"
+        
+        # just make sure it doesn't crash for now
+        what_dict = self.db.whats('$tser_float32')
+        
+    def _test_exists(self):
+        assert(self.db.exists('$cser_float32'))
+        assert(not self.db.exists('$fake_series'))
+        
+    def _test_remove(self):
+        assert(self.db.exists('$cser_1'))
+        assert(self.db.exists('$cser_2'))
+        self.db.remove(['$cser_1', '$cser_2'])
+        assert(not self.db.exists('$cser_1'))
+        assert(not self.db.exists('$cser_2'))
+        
+        self.db.remove('$cser_1', must_exist=False)
+
+        
+    def _test_wildlist(self):
+        wl1 = self.db.wildlist("$cser_?")
+        wl2 = self.db.wildlist("$cser_?", wildonly=True)
+        
+        res1 = sorted(["$CSER_"+x.upper() for x in list(data['cser'])])
+        res2 = sorted([x.upper() for x in list(data['cser'])])
+        
+        assert_equal(wl1, res1)
+        assert_equal(wl2, res2)
+
     
     def tearDown(self):
         self.db.close()
