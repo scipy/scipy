@@ -23,9 +23,10 @@ static int    bmistt[3];        //Boolean
 static int    dmistt[3];        //Date
 
 //Numeric
-static float N_ND = 1.701419e+038;
-static float N_NC = 1.701418e+038;
-static float N_NA = 1.701417e+038;
+static float N_ND = (float)1.701419e+038;
+static float N_NC = (float)1.701418e+038;
+static float N_NA = (float)1.701417e+038;
+
 // Precision
 static double P_ND = 1.70141507979e+038;
 static double P_NC = 1.70141507978e+038;
@@ -74,9 +75,6 @@ cfame_set_option(PyObject *self, PyObject *args)
     char *name, *val;
     if (!PyArg_ParseTuple(args, "ss:set_option", &name, &val)) return NULL;
 
-    printf("%s\n", name);
-    printf("%s\n", val);
-
     CALLFAME(cfmsopt(&status, name, val));
 
     Py_RETURN_NONE;
@@ -84,13 +82,13 @@ cfame_set_option(PyObject *self, PyObject *args)
 
 
 
-static char cfame_open_doc[] = "open(database, access)\n\nOpens a FAME database and returns a FAME db idenifier.";
+static char cfame_open_doc[] = "C level open method. This is called from the __init__ method of FameDb in fame.py";
 static PyObject *
 cfame_open(PyObject *self, PyObject *args)
 {
     int status;
     int dbkey, access;
-    const char *dbname;
+    char *dbname;
     if (!PyArg_ParseTuple(args, "si:open", &dbname, &access)) return NULL;
 
     CALLFAME(cfmopdb (&status, &dbkey, dbname, access));
@@ -98,7 +96,7 @@ cfame_open(PyObject *self, PyObject *args)
     return PyInt_FromLong(dbkey);
 }
 
-static char cfame_close_doc[] = "close(database_id)\n\nCloses an open FAME database.";
+static char cfame_close_doc[] = "C level portion of the close method.";
 static PyObject *
 cfame_close(PyObject *self, PyObject *args)
 {
@@ -112,13 +110,13 @@ cfame_close(PyObject *self, PyObject *args)
     return PyInt_FromLong(0);
 }
 
-static char cfame_wildlist_doc[] = "wildlist(dbkey, wildlist expression, wildonly)\n\nPerforms a wildlist.";
+static char cfame_wildlist_doc[] = "C level portion of the wildlist method.";
 static PyObject *
 cfame_wildlist(PyObject *self, PyObject *args)
 {
     int status;
     int dbkey;
-    const char *expression;
+    char *expression;
     int class, type, freq;
     char objnam[MAXOBJNAME+1];
     PyObject *result = PyList_New(0);
@@ -230,20 +228,16 @@ static PyObject *make_mask(void *data, int arraylen, int type) {
 }
 
 
-static char cfame_read_doc[] = "read(dbkey, data object name, startDate, endDate, dateSeriesFlag, longStr)\n\nReturns specified object.";
-//startDate(endDate) must be the int value of the startDate(endDate) using the frequency of the underlying data
-//dateSeriesFlag is 1 for date series 0 for case series
-//longStr is 1 for string series with very long items 0 otherwise. Use 1 with care as it takes up alot of memory.
+static char cfame_read_doc[] = "C level portion of read method.";
 static PyObject *
 cfame_read(PyObject *self, PyObject *args)
 {
     int status, dbkey, i;
     int dataFlag;
 
-    const char *object_name;
+    char *object_name;
 
     int first_point, last_point; //this defines the custom range to read (-1 for both means read all)
-    int longStr; //1 for case series with really long items
 
     int max_string_len;
 
@@ -259,7 +253,6 @@ cfame_read(PyObject *self, PyObject *args)
     desc[0] = 0x0;
     doc[0]  = 0x0;
 
-    // "isiii:get" means parse args for an int, a string and 4 more ints and use "get" as the function name in error messages
     if (!PyArg_ParseTuple(args, "isiii:read",
                                 &dbkey,
                                 &object_name,
@@ -371,7 +364,7 @@ cfame_read(PyObject *self, PyObject *args)
                 if (class == HSERIE)
                 {
                     PyObject** temp;
-                    PyArrayObject *mask;
+
                     //string series
                     int* missing;
                     int* outlen;
@@ -577,30 +570,40 @@ static PyArrayObject *replace_mask(PyObject *orig_data, PyObject *orig_mask, int
     return data;
 }
 
-static char cfame_write_series_doc[] = "write_series(dbkey, name, data, mask, start_index, end_index, source_type, source_freq)\n\nWrites a series to the DB";
+static char cfame_write_series_doc[] =
+    "C level portion of code for write_tser and write_cser method.";
 static PyObject *
 cfame_write_series(PyObject *self, PyObject *args)
 {
     int status, dbkey;
     PyObject *dataArrayTemp, *maskArrayTemp;
     PyArrayObject *dataArray, *maskArray;
-    const char* name;
+    char* name;
     char errMsg[500];
-    int class, start_index, end_index, numobjs, source_type, type, ppd,
+    int class, start_index, end_index, numobjs, source_type, type,
         source_freq, freq, start_year, start_period, end_year, end_period;
     PyObject * returnVal = NULL;
     int range[3];
 
-    if (!PyArg_ParseTuple(args, "isOOiiii:write_series", &dbkey, &name, &dataArrayTemp, &maskArrayTemp, &start_index, &end_index, &source_type, &source_freq)) return NULL;   //get params
-    CALLFAME(cfmosiz(&status, dbkey, name, &class, &type, &freq, &start_year, &start_period, &end_year, &end_period));   //get object info
+    if (!PyArg_ParseTuple(args, "isOOiiii:write_series",
+                                    &dbkey, &name,
+                                    &dataArrayTemp, &maskArrayTemp,
+                                    &start_index, &end_index,
+                                    &source_type, &source_freq)) return NULL;
+
+    CALLFAME(cfmosiz(&status, dbkey, name,
+                     &class, &type, &freq, &start_year,
+                     &start_period, &end_year, &end_period));
 
     if (source_type != type) {
-        PyErr_SetString(PyExc_RuntimeError, "received a non-matching type, cannot write");
+        PyErr_SetString(PyExc_RuntimeError,
+                        "received a non-matching type, cannot write");
         return NULL;
     }
 
     if (source_freq != freq) {
-        PyErr_SetString(PyExc_RuntimeError, "received a non-matching frequency, cannot write");
+        PyErr_SetString(PyExc_RuntimeError,
+                        "received a non-matching frequency, cannot write");
         return NULL;
     }
 
@@ -620,7 +623,8 @@ cfame_write_series(PyObject *self, PyObject *args)
     //set the range that we will be writing to
     CALLFAME(cfmsrng(&status, freq, &start_year, &start_period, &end_year, &end_period, range, &numobjs));
     if (!PyArray_Check(dataArrayTemp)) {
-        PyErr_SetString(PyExc_RuntimeError, "write_series was passed something other than an ndarray");
+        PyErr_SetString(PyExc_RuntimeError,
+                        "write_series was passed something other than an ndarray");
         return NULL;
     }
 
@@ -700,22 +704,20 @@ cfame_write_series(PyObject *self, PyObject *args)
                 }
 
         }
-
         Py_DECREF(dataArray);
-
     }
 
     Py_RETURN_NONE;
 }
 
 
-static char cfame_write_scalar_doc[] = "write_scalar(dbkey, name, object, source_type)\n\nWrites a scalar to the DB";
+static char cfame_write_scalar_doc[] = "C level portion of write_scalar method.";
 static PyObject *
 cfame_write_scalar(PyObject *self, PyObject *args)
 {
     int status, dbkey;
     PyObject* object;
-    const char* name;
+    char* name;
     int class, freq, start_year, start_period, end_year, end_period;  // data fields returned by cfmosiz
     PyObject * returnVal = NULL;
     int source_type, type;
@@ -771,13 +773,12 @@ cfame_write_scalar(PyObject *self, PyObject *args)
 }
 
 
-static char cfame_write_namelist_doc[] = "write_namelist(dbkey, name, namelist_string)\n\nWrites a namelist to the DB";
+static char cfame_write_namelist_doc[] = "C level portion of code for writing namelists.";
 static PyObject *
 cfame_write_namelist(PyObject *self, PyObject *args)
 {
     int status, dbkey;
-    const char* name;
-    const char* namelist;
+    char *name, *namelist;
 
     if (!PyArg_ParseTuple(args, "iss:writeNamelist", &dbkey, &name, &namelist)) return NULL;
 
@@ -786,42 +787,46 @@ cfame_write_namelist(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static char cfame_create_doc[] = "create(dbkey, object_name, class_arg, freq_arg, type_arg, basis_arg, observed_arg)\n\nCreates a fame object in the DB";
+static char cfame_create_doc[] = "C level portion of code for creating objects.";
 static PyObject *
 cfame_create(PyObject *self, PyObject *args)
 {
     int status, dbkey;
-    const char* object_name;
+    char* object_name;
     int class_arg, freq_arg, type_arg, basis_arg, observed_arg;
 
-    if (!PyArg_ParseTuple(args, "isiiiii:create", &dbkey, &object_name, &class_arg, &freq_arg, &type_arg, &basis_arg, &observed_arg)) return NULL;   //get params
+    if (!PyArg_ParseTuple(args, "isiiiii:create",
+                                &dbkey, &object_name, &class_arg,
+                                &freq_arg, &type_arg, &basis_arg,
+                                &observed_arg)) return NULL;
+
     CALLFAME(cfmnwob(&status, dbkey, object_name, class_arg, freq_arg, type_arg, basis_arg, observed_arg));
 
     Py_RETURN_NONE;
 }
 
-static char cfame_remove_doc[] = "remove(dbkey, object_name)";
+static char cfame_remove_doc[] = "C level portion of code for deleting objects.";
 static PyObject*
 cfame_remove(PyObject* self, PyObject* args)
 {
     int status, dbkey;
-    const char* object_name;
+    char* object_name;
 
-    if (!PyArg_ParseTuple(args, "is:remove", &dbkey, &object_name)) return NULL;   //get params
+    if (!PyArg_ParseTuple(args, "is:remove", &dbkey, &object_name)) return NULL;
     CALLFAME(cfmdlob(&status, dbkey, object_name));
 
     Py_RETURN_NONE;
 }
 
-static char cfame_exists_doc[] = "exists(dbkey, object_name)";
+static char cfame_exists_doc[] = "C level portion of code for checking existence of object.";
 static PyObject*
 cfame_exists(PyObject* self, PyObject* args)
 {
     int status, dbkey;
-    const char* object_name;
+    char* object_name;
     int deslen, doclen;
 
-    if (!PyArg_ParseTuple(args, "is:exists", &dbkey, &object_name)) return NULL;   //get params
+    if (!PyArg_ParseTuple(args, "is:exists", &dbkey, &object_name)) return NULL;
 
     cfmdlen (&status, dbkey, object_name, &deslen, &doclen);
     if (status == HNOOBJ)
@@ -830,13 +835,13 @@ cfame_exists(PyObject* self, PyObject* args)
         Py_RETURN_TRUE;
 }
 
-static char cfame_updated_doc[] = "updated(dbkey, object_name)";
+static char cfame_updated_doc[] = "C level portion of updated function.";
 static PyObject*
 cfame_updated(PyObject* self, PyObject* args)
 {
     int status, dbkey;
-    const char *object_name;
-    int class, type, freq, start_year, start_period, end_year, end_period;  // data fields returned by cfmosiz
+    char *object_name;
+    int class, type, freq, start_year, start_period, end_year, end_period;
     int basis, observ, created_year, created_month, created_day, mod_year, mod_month, mod_day;
     char desc[1], doc[1];
     PyObject * returnVal = NULL;
@@ -844,7 +849,7 @@ cfame_updated(PyObject* self, PyObject* args)
     desc[0] = 0x0;
     doc[0]  = 0x0;
 
-    if (!PyArg_ParseTuple(args, "is:updated", &dbkey, &object_name)) return NULL;   //get params
+    if (!PyArg_ParseTuple(args, "is:updated", &dbkey, &object_name)) return NULL;
 
     CALLFAME(cfmwhat(&status, dbkey, object_name, &class, &type, &freq, &basis, &observ,
                      &start_year, &start_period, &end_year, &end_period,
@@ -861,7 +866,7 @@ cfame_updated(PyObject* self, PyObject* args)
     return returnVal;
 }
 
-static char cfame_whats_doc[] = "whats(dbkey, data object name)\n\nReturns information about the specified object.";
+static char cfame_whats_doc[] = "C level portion of whats function.";
 static PyObject *
 cfame_whats(PyObject *self, PyObject *args)
 {
@@ -880,9 +885,11 @@ cfame_whats(PyObject *self, PyObject *args)
     int class, type, freq, start_year, start_period, end_year, end_period;  // data fields returned by cfmosiz
     int basis, observ, created_year, created_month, created_day, mod_year, mod_month, mod_day;  //additional fields for cfmwhat
 
-    //get arguments.
-    //"is" means first one is integer second is string
-    //"whats" is what will appear in python error messages if this method crashes
+    PyObject *py_class, *py_type, *py_freq, *py_basis, *py_observ,
+             *py_start_year, *py_start_period, *py_end_year, *py_end_period,
+             *py_mod_year, *py_mod_month, *py_mod_day,
+             *py_desc, *py_doc;
+
     if (!PyArg_ParseTuple(args, "is:whats",
                                 &dbkey,
                                 &object_name)) return NULL;
@@ -912,28 +919,63 @@ cfame_whats(PyObject *self, PyObject *args)
                      &mod_year, &mod_month, &mod_day,
                      desc, doc));
 
+    py_class = PyInt_FromLong(class);
+    py_type = PyInt_FromLong(type);
+    py_freq = PyInt_FromLong(freq);
+    py_basis = PyInt_FromLong(basis);
+    py_observ = PyInt_FromLong(observ);
+    py_start_year = PyInt_FromLong(start_year);
+    py_start_period = PyInt_FromLong(start_period);
+    py_end_year = PyInt_FromLong(end_year);
+    py_end_period = PyInt_FromLong(end_period);
+    py_mod_year = PyInt_FromLong(mod_year);
+    py_mod_month = PyInt_FromLong(mod_month);
+    py_mod_day = PyInt_FromLong(mod_day);
+
+    py_desc = PyString_FromString(desc);
+    py_doc = PyString_FromString(doc);
+
     returnVal = PyDict_New();
 
-    PyDict_SetItemString(returnVal, "type", PyInt_FromLong(type));
-    PyDict_SetItemString(returnVal, "freq", PyInt_FromLong(freq));
-    PyDict_SetItemString(returnVal, "class", PyInt_FromLong(class));
-    PyDict_SetItemString(returnVal, "start_year", PyInt_FromLong(start_year));
-    PyDict_SetItemString(returnVal, "start_period", PyInt_FromLong(start_period));
-    PyDict_SetItemString(returnVal, "end_year", PyInt_FromLong(end_year));
-    PyDict_SetItemString(returnVal, "end_period", PyInt_FromLong(end_period));
-    PyDict_SetItemString(returnVal, "mod_year", PyInt_FromLong(mod_year));
-    PyDict_SetItemString(returnVal, "mod_month", PyInt_FromLong(mod_month));
-    PyDict_SetItemString(returnVal, "mod_day", PyInt_FromLong(mod_day));
-    PyDict_SetItemString(returnVal, "desc", PyString_FromString(desc));
-    PyDict_SetItemString(returnVal, "doc", PyString_FromString(doc));
+    PyDict_SetItemString(returnVal, "class", py_class);
+    PyDict_SetItemString(returnVal, "type", py_type);
+    PyDict_SetItemString(returnVal, "freq", py_freq);
+    PyDict_SetItemString(returnVal, "basis", py_basis);
+    PyDict_SetItemString(returnVal, "observ", py_observ);
+    PyDict_SetItemString(returnVal, "start_year", py_start_year);
+    PyDict_SetItemString(returnVal, "start_period", py_start_period);
+    PyDict_SetItemString(returnVal, "end_year", py_end_year);
+    PyDict_SetItemString(returnVal, "end_period", py_end_period);
+    PyDict_SetItemString(returnVal, "mod_year", py_mod_year);
+    PyDict_SetItemString(returnVal, "mod_month", py_mod_month);
+    PyDict_SetItemString(returnVal, "mod_day", py_mod_day);
+
+    PyDict_SetItemString(returnVal, "desc", py_desc);
+    PyDict_SetItemString(returnVal, "doc", py_doc);
 
     free((void*)desc);
     free((void*)doc);
 
+    Py_DECREF(py_class);
+    Py_DECREF(py_type);
+    Py_DECREF(py_freq);
+    Py_DECREF(py_basis);
+    Py_DECREF(py_observ);
+    Py_DECREF(py_start_year);
+    Py_DECREF(py_start_period);
+    Py_DECREF(py_end_year);
+    Py_DECREF(py_end_period);
+    Py_DECREF(py_mod_year);
+    Py_DECREF(py_mod_month);
+    Py_DECREF(py_mod_day);
+
+    Py_DECREF(py_desc);
+    Py_DECREF(py_doc);
+
     return returnVal;
 }
 
-static char cfame_size_doc[] = "size(dbkey, data object name)\n\nReturns limited about the specified object.";
+static char cfame_size_doc[] = "C level portion of size method.";
 static PyObject *
 cfame_size(PyObject *self, PyObject *args)
 {
@@ -944,28 +986,48 @@ cfame_size(PyObject *self, PyObject *args)
     //return val
     PyObject *returnVal = NULL;
 
+    PyObject *py_class, *py_type, *py_freq, *py_start_year, *py_start_period,
+             *py_end_year, *py_end_period;
+
     int status;
     int class, type, freq, start_year, start_period, end_year, end_period;  // data fields returned by cfmosiz
 
-    //get arguments.
-    //"is" means first one is integer second is string
-    //"size" is what will appear in python error messages if this method crashes
     if (!PyArg_ParseTuple(args, "is:size",
                                 &dbkey,
                                 &object_name)) return NULL;
 
     CALLFAME(cfmosiz(&status, dbkey, object_name, &class, &type, &freq, &start_year, &start_period, &end_year, &end_period));
 
+    py_class = PyInt_FromLong(class);
+    py_type = PyInt_FromLong(type);
+    py_freq = PyInt_FromLong(freq);
+    py_start_year = PyInt_FromLong(start_year);
+    py_start_period = PyInt_FromLong(start_period);
+    py_end_year = PyInt_FromLong(end_year);
+    py_end_period = PyInt_FromLong(end_period);
+
     returnVal = PyDict_New();
 
-    PyDict_SetItemString(returnVal, "freq", PyInt_FromLong(freq));
-    //To return other fields add them here
-    //look up cfmosiz in fame help for other fields
+    PyDict_SetItemString(returnVal, "class", py_class);
+    PyDict_SetItemString(returnVal, "type", py_type);
+    PyDict_SetItemString(returnVal, "freq", py_freq);
+    PyDict_SetItemString(returnVal, "start_year", py_start_year);
+    PyDict_SetItemString(returnVal, "start_period", py_start_period);
+    PyDict_SetItemString(returnVal, "end_year", py_end_year);
+    PyDict_SetItemString(returnVal, "end_period", py_end_period);
+
+    Py_DECREF(py_class);
+    Py_DECREF(py_type);
+    Py_DECREF(py_freq);
+    Py_DECREF(py_start_year);
+    Py_DECREF(py_start_period);
+    Py_DECREF(py_end_year);
+    Py_DECREF(py_end_period);
 
     return returnVal;
 }
 
-static char cfame_restore_doc[] = "restore(dbkey)\n\nDiscard any changes made to the database since it was last opened or posted.\nXXX: not sure what posted means, see FAME API";
+static char cfame_restore_doc[] = "C level portion of restore method.";
 static PyObject *
 cfame_restore(PyObject *self, PyObject *args)
 {
