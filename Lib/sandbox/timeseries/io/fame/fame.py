@@ -545,12 +545,12 @@ over-written, otherwise it is created.
             exp = exp.replace("^", "(.)")
             exp = exp.replace("$","\$")
             regex = re.compile(exp)
-            for i in range(len(res)):
-                res[i] = "".join(regex.match(res[i]).groups())
+            res = ["".join(regex.match(res[i]).groups()) \
+                   for i in range(len(res))]
         return res
 
-    def exists(self, objName):
-        return cf_exists(self.dbkey, objName)
+    def exists(self, name):
+        return cf_exists(self.dbkey, name)
 
     def close(self):
         if self.dbIsOpen:
@@ -575,15 +575,11 @@ over-written, otherwise it is created.
             raise DBError("Database is not open")
 
 
-    def remove(self, name, ignoreError=True):
+    def remove(self, name, must_exist=True):
         """Deletes the given series from the database"""
-        if type(name) == type(""): name = [name]
+        if isinstance(name, str): name = [name]
+        [cf_remove(self.dbkey, n) for n in name if must_exist or self.exists(n)]
 
-        for x in name:
-            try:
-                cf_remove(self.dbkey, x)
-            except:
-                if not ignoreError: raise            
 
     def get_freq(self, name):
         """Finds the frequency of the object stored in the db as `name`"""
@@ -595,18 +591,23 @@ over-written, otherwise it is created.
 
 
     def whats(self, name):
-        """Preforms a fame "whats" command on the provided series"""
-        if type(name) == type(""): name = [name]
+        """Preforms a fame "whats" command on the provided name(s)"""
+        if isinstance(name, str):
+            single_obj = True
+            name = [name]
+        else:
+            single_obj = False
 
         result = {}
-        for dbname in name:
+        for n in name:
             if not self.dbIsOpen:
                 raise DBError("Database is not open")
 
-            result[dbname] = cf_whats(self.dbkey, dbname.upper())
+            result[n] = cf_whats(self.dbkey, n.upper())
 
-        if len(result) == 1:
+        if single_obj:
             return result.values()[0]
+
         return result
 
 
@@ -624,7 +625,7 @@ This is needed because the Fame C api is not thread safe."""
         self.f = func
         self.__doc__ = getattr(func, "__doc__", str(func))
         self.__name__ = getattr(func, "__name__", str(func))
-    #
+
     def __call__ (self, *args, **kwargs):
         "Execute the call behavior."
         tmp = fameLock.acquire()
