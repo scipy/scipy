@@ -13,6 +13,9 @@
 
 #define CALLFAME(cmd) Py_BEGIN_ALLOW_THREADS; cmd; Py_END_ALLOW_THREADS; if (checkError(status)) return NULL
 
+//call fame without checking for errors
+#define CALLFAME_NOCHECK(cmd) Py_BEGIN_ALLOW_THREADS; cmd; Py_END_ALLOW_THREADS;
+
 #define ROUND(x) ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
 
 /**********************************************************************/
@@ -49,7 +52,6 @@ static checkError(int status)
     {
         char message[1000];
         PyErr_SetString(PyExc_RuntimeError, getsta(status, message));
-        cfmfin(&status);
         return 1;
     }
     return 0;
@@ -76,7 +78,6 @@ cfame_set_option(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "ss:set_option", &name, &val)) return NULL;
 
     CALLFAME(cfmsopt(&status, name, val));
-
     Py_RETURN_NONE;
 }
 
@@ -86,13 +87,11 @@ static char cfame_open_doc[] = "C level open method. This is called from the __i
 static PyObject *
 cfame_open(PyObject *self, PyObject *args)
 {
-    int status;
-    int dbkey, access;
+    int status, dbkey, access;
     char *dbname;
     if (!PyArg_ParseTuple(args, "si:open", &dbname, &access)) return NULL;
 
     CALLFAME(cfmopdb (&status, &dbkey, dbname, access));
-
     return PyInt_FromLong(dbkey);
 }
 
@@ -100,15 +99,87 @@ static char cfame_close_doc[] = "C level portion of the close method.";
 static PyObject *
 cfame_close(PyObject *self, PyObject *args)
 {
-    int status;
-    int dbkey;
+    int status, dbkey;
     if (!PyArg_ParseTuple(args, "i:close", &dbkey)) return NULL;
 
-    cfmcldb (&status, dbkey);
-    if (checkError(status)) return NULL;
-
-    return PyInt_FromLong(0);
+    CALLFAME(cfmcldb (&status, dbkey));
+    Py_RETURN_NONE;
 }
+
+static char cfame_get_db_attr_doc[] = "C level portion of the get_db_attr method.";
+static PyObject *
+cfame_get_db_attr(PyObject *self, PyObject *args)
+{
+    int status, dbkey;
+    int is_desc, is_doc, is_created, is_modified, is_isopen;
+    char *attr;
+    if (!PyArg_ParseTuple(args, "is:get_db_attr", &dbkey, &attr)) return NULL;
+
+    is_desc = (strcmp(attr, "DESC") == 0);
+    is_doc = (strcmp(attr, "DOC") == 0);
+    is_created = (strcmp(attr, "CREATED") == 0);
+    is_modified = (strcmp(attr, "MODIFIED") == 0);
+    is_isopen = (strcmp(attr, "ISOPEN") == 0);
+
+    if (is_desc || is_doc) {
+        int cyear, cmonth, cday, myear, mmonth, mday;
+        int deslen, doclen;
+        void *tempdesc, *tempdoc;
+        char *desc, *doc;
+        PyObject *result;
+
+        CALLFAME(cfmglen(&status, dbkey, &deslen, &doclen));
+
+        if (is_desc) { doclen = 0; }
+        else { deslen = 0; }
+
+        /* allocate the memory needed for the desc/doc strings */
+        if ((tempdesc = malloc((deslen + 1) * sizeof(char))) == NULL) return PyErr_NoMemory();
+        if ((tempdoc = malloc((doclen + 1) * sizeof(char))) == NULL) return PyErr_NoMemory();
+
+        /* set the memory to non-null chars to tell fame the length of string we will accept */
+        memset(tempdesc, 'A', deslen);
+        memset(tempdoc, 'A', doclen);
+
+        /* cast to char array */
+        desc = (char*)tempdesc;
+        doc = (char*)tempdoc;
+
+        /* terminate the string with a null */
+        desc[deslen] = 0x0;
+        doc[doclen] = 0x0;
+
+        CALLFAME(cfmgdba(&status, dbkey, &cyear, &cmonth, &cday,
+                         &myear, &mmonth, &mday,
+                         desc, doc));
+
+        if (is_desc) { result = PyString_FromString(desc); }
+        else         { result = PyString_FromString(doc); }
+
+        free((void*)desc);
+        free((void*)doc);
+
+        return result;
+    } else if (is_isopen) {
+        int deslen, doclen;
+
+        CALLFAME_NOCHECK(cfmglen(&status, dbkey, &deslen, &doclen));
+
+        if (status == HBKEY)         { Py_RETURN_FALSE; }
+        else if (checkError(status)) { return NULL; }
+        else                         { Py_RETURN_TRUE; }
+    } else if (is_created || is_modified) {
+
+        int cdate, mdate;
+        CALLFAME(cfmgdbd(&status, dbkey, HSEC, &cdate, &mdate));
+        if (is_modified) { return PyInt_FromLong(mdate); }
+        else { return PyInt_FromLong(cdate); }
+
+    } else {
+        Py_RETURN_NONE;
+    }
+}
+
 
 static char cfame_wildlist_doc[] = "C level portion of the wildlist method.";
 static PyObject *
@@ -137,8 +208,10 @@ cfame_wildlist(PyObject *self, PyObject *args)
 
     while (status != HNOOBJ)
     {
+        PyObject *py_str = PyString_FromString(objnam);
         // append objnam to list
-        if (PyList_Append(result, PyString_FromString(objnam))) return NULL;
+        if (PyList_Append(result, py_str)) return NULL;
+        Py_DECREF(py_str);
 
         // get next item
         cfmnxwc (&status, dbkey, objnam, &class, &type, &freq);
@@ -237,15 +310,17 @@ cfame_read(PyObject *self, PyObject *args)
 
     char *object_name;
 
-    int first_point, last_point; //this defines the custom range to read (-1 for both means read all)
+    int first_point, last_point;
 
     int max_string_len;
 
-    int class, type, freq, start_year, start_period, end_year, end_period;  // data fields returned by cfmosiz
-    int basis, observed, created_year, created_month, created_day, mod_year, mod_month, mod_day;  //additional fields for cfmwhat
+    int class, type, freq, start_year, start_period, end_year, end_period;
+    int basis, observed, created_year, created_month, created_day,
+        mod_year, mod_month, mod_day;
     char desc[1], doc[1];
     PyObject * returnVal = NULL;
     PyObject * values = NULL;
+    PyObject *py_type, *py_freq, *py_class, *py_observed;
     int numobjs, typeNum;
     int range[3];
     void* dbValues;
@@ -260,26 +335,40 @@ cfame_read(PyObject *self, PyObject *args)
                                 &last_point,
                                 &max_string_len)) return NULL;   //get params
 
-    CALLFAME(cfmwhat(&status, dbkey, object_name, &class, &type, &freq, &basis, &observed, &start_year, &start_period, &end_year, &end_period, &created_year, &created_month, &created_day, &mod_year, &mod_month, &mod_day, desc, doc));
+    CALLFAME(cfmwhat(&status, dbkey, object_name, &class, &type, &freq,
+                     &basis, &observed,
+                     &start_year, &start_period,
+                     &end_year, &end_period,
+                     &created_year, &created_month, &created_day,
+                     &mod_year, &mod_month, &mod_day, desc, doc));
 
     returnVal = PyDict_New();
 
-    PyDict_SetItemString(returnVal, "type", PyInt_FromLong(type));
-    PyDict_SetItemString(returnVal, "freq", PyInt_FromLong(freq));
-    PyDict_SetItemString(returnVal, "class", PyInt_FromLong(class));
-    PyDict_SetItemString(returnVal, "mod_year", PyInt_FromLong(mod_year));
-    PyDict_SetItemString(returnVal, "mod_month", PyInt_FromLong(mod_month));
-    PyDict_SetItemString(returnVal, "mod_day", PyInt_FromLong(mod_day));
-    PyDict_SetItemString(returnVal, "observed", PyInt_FromLong(observed));
-    PyDict_SetItemString(returnVal, "basis", PyInt_FromLong(basis));
+    py_type = PyInt_FromLong(type);
+    py_freq = PyInt_FromLong(freq);
+    py_class = PyInt_FromLong(class);
+    py_observed = PyInt_FromLong(observed);
+
+    PyDict_SetItemString(returnVal, "type", py_type);
+    PyDict_SetItemString(returnVal, "freq", py_freq);
+    PyDict_SetItemString(returnVal, "class", py_class);
+    PyDict_SetItemString(returnVal, "observed", py_observed);
+
+    Py_DECREF(py_type);
+    Py_DECREF(py_freq);
+    Py_DECREF(py_class);
+    Py_DECREF(py_observed);
 
     if (type == HNAMEL)     //namelists
     {
+        PyObject *py_nl;
         int length;
         char names[MAXOBJNAME*MAXNLLENGTH+1];
 
         CALLFAME(cfmgtnl(&status, dbkey, object_name, HNLALL, names, MAXOBJNAME*MAXNLLENGTH, &length));
-        PyDict_SetItemString(returnVal, "data", PyString_FromStringAndSize(names, length)); //just return the namelist as a comma delimited string
+        py_nl = PyString_FromStringAndSize(names, length);
+        PyDict_SetItemString(returnVal, "data", py_nl);
+        Py_DECREF(py_nl);
     }
     else
     {
@@ -396,18 +485,19 @@ cfame_read(PyObject *self, PyObject *args)
                         } else {
 
                             if (missing[i] != HNMVAL) {
-                                if ((temp[i] = PyString_FromString("")) == NULL) {
+                                PyObject *zerolenstr = PyString_FromString("");
+                                if ((temp[i] = zerolenstr) == NULL) {
                                     PyErr_SetString(PyExc_RuntimeError, "Failed to initialize missing string element.");
                                     return NULL;
                                 }
                                 mask_raw[i] = 1;
                             } else {
-                                if ((temp[i] = PyString_FromStringAndSize(((char**)dbValues)[i], outlen[i])) == NULL) {
+                                PyObject *currStr = PyString_FromStringAndSize(((char**)dbValues)[i], outlen[i]);
+                                if ((temp[i] = currStr) == NULL) {
                                     return PyErr_NoMemory();
                                 }
                                 mask_raw[i] = 0;
                             }
-
                             free(((char**)dbValues)[i]);
                         }
                     }
@@ -567,6 +657,7 @@ static PyArrayObject *replace_mask(PyObject *orig_data, PyObject *orig_mask, int
         }
         Py_DECREF(valMask);
     }
+    Py_DECREF(fillVal);
     return data;
 }
 
@@ -805,14 +896,16 @@ cfame_create(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static char cfame_remove_doc[] = "C level portion of code for deleting objects.";
+
+
+static char cfame_delete_doc[] = "C level portion of code for deleting objects.";
 static PyObject*
-cfame_remove(PyObject* self, PyObject* args)
+cfame_delete(PyObject* self, PyObject* args)
 {
     int status, dbkey;
     char* object_name;
 
-    if (!PyArg_ParseTuple(args, "is:remove", &dbkey, &object_name)) return NULL;
+    if (!PyArg_ParseTuple(args, "is:delete", &dbkey, &object_name)) return NULL;
     CALLFAME(cfmdlob(&status, dbkey, object_name));
 
     Py_RETURN_NONE;
@@ -835,36 +928,7 @@ cfame_exists(PyObject* self, PyObject* args)
         Py_RETURN_TRUE;
 }
 
-static char cfame_updated_doc[] = "C level portion of updated function.";
-static PyObject*
-cfame_updated(PyObject* self, PyObject* args)
-{
-    int status, dbkey;
-    char *object_name;
-    int class, type, freq, start_year, start_period, end_year, end_period;
-    int basis, observ, created_year, created_month, created_day, mod_year, mod_month, mod_day;
-    char desc[1], doc[1];
-    PyObject * returnVal = NULL;
 
-    desc[0] = 0x0;
-    doc[0]  = 0x0;
-
-    if (!PyArg_ParseTuple(args, "is:updated", &dbkey, &object_name)) return NULL;
-
-    CALLFAME(cfmwhat(&status, dbkey, object_name, &class, &type, &freq, &basis, &observ,
-                     &start_year, &start_period, &end_year, &end_period,
-                     &created_year, &created_month, &created_day,
-                     &mod_year, &mod_month, &mod_day,
-                     desc, doc));
-
-    returnVal = PyDict_New();
-
-    PyDict_SetItemString(returnVal, "mod_year", PyInt_FromLong(mod_year));
-    PyDict_SetItemString(returnVal, "mod_month", PyInt_FromLong(mod_month));
-    PyDict_SetItemString(returnVal, "mod_day", PyInt_FromLong(mod_day));
-
-    return returnVal;
-}
 
 static char cfame_whats_doc[] = "C level portion of whats function.";
 static PyObject *
@@ -882,8 +946,9 @@ cfame_whats(PyObject *self, PyObject *args)
     int status;
     void *tempdesc, *tempdoc;
     char *desc, *doc;
-    int class, type, freq, start_year, start_period, end_year, end_period;  // data fields returned by cfmosiz
-    int basis, observ, created_year, created_month, created_day, mod_year, mod_month, mod_day;  //additional fields for cfmwhat
+    int class, type, freq, start_year, start_period, end_year, end_period,
+        basis, observ, created_year, created_month, created_day,
+        mod_year, mod_month, mod_day;
 
     PyObject *py_class, *py_type, *py_freq, *py_basis, *py_observ,
              *py_start_year, *py_start_period, *py_end_year, *py_end_period,
@@ -975,9 +1040,9 @@ cfame_whats(PyObject *self, PyObject *args)
     return returnVal;
 }
 
-static char cfame_size_doc[] = "C level portion of size method.";
+static char cfame_obj_size_doc[] = "C level portion of obj_size method.";
 static PyObject *
-cfame_size(PyObject *self, PyObject *args)
+cfame_obj_size(PyObject *self, PyObject *args)
 {
     //arguments
     char *object_name;
@@ -1047,16 +1112,16 @@ static PyMethodDef cfame_methods[] = {
     {"wildlist", cfame_wildlist, METH_VARARGS, cfame_wildlist_doc},
     {"read", cfame_read, METH_VARARGS, cfame_read_doc},
     {"whats", cfame_whats, METH_VARARGS, cfame_whats_doc},
-    {"size", cfame_size, METH_VARARGS, cfame_size_doc},
+    {"obj_size", cfame_obj_size, METH_VARARGS, cfame_obj_size_doc},
     {"set_option", cfame_set_option, METH_VARARGS, cfame_set_option_doc},
     {"write_scalar", cfame_write_scalar, METH_VARARGS, cfame_write_scalar_doc},
     {"write_series", cfame_write_series, METH_VARARGS, cfame_write_series_doc},
     {"create", cfame_create, METH_VARARGS, cfame_create_doc},
-    {"remove", cfame_remove, METH_VARARGS, cfame_remove_doc},
+    {"delete", cfame_delete, METH_VARARGS, cfame_delete_doc},
     {"exists", cfame_exists, METH_VARARGS, cfame_exists_doc},
-    {"updated", cfame_updated, METH_VARARGS, cfame_updated_doc},
     {"write_namelist", cfame_write_namelist, METH_VARARGS, cfame_write_namelist_doc},
     {"restore", cfame_restore, METH_VARARGS, cfame_restore_doc},
+    {"get_db_attr", cfame_get_db_attr, METH_VARARGS, cfame_get_db_attr_doc},
     {NULL, NULL}
 };
 
