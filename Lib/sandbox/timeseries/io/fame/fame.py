@@ -23,10 +23,32 @@ class CaseInsensitiveDict(dict):
         if hasattr(key, 'upper'): key = key.upper()
         super(CaseInsensitiveDict, self).__setitem__(key, item)
 
+
+def _single_or_multi_func(dbkey, name, func, *args, **kwargs):
+    if isinstance(name, str):
+        single_obj = True
+        name = [name]
+    else:
+        single_obj = False
+
+    result = {}
+    for n in name:
+        result[n] = func(dbkey, n, *args, **kwargs)
+
+    if single_obj:
+        return result.values()[0]
+
+    return result
+    
+def _famedate_to_tsdate(fame_date, freqstr):
+    "convert integer fame date to a timeseries Date"
+    value = fame_date + mp.value_adjust[ts.freq_fromstr(freqstr)]
+    return ts.Date(freq=freqstr, value=value)
+
 class DBError(Exception): pass
 
 class FameDb(object):
-    """Fame database object
+    """Fame database object.
 
 :Construction:
     x = FameDb(conn_str, mode='r')
@@ -42,7 +64,12 @@ class FameDb(object):
         'c' => create
         'u' => update
         'w' => write
-        'd' => direct"""
+        'd' => direct
+
+Notes
+    - For changes to be commited, you must explictly use the "commit" or
+      "close" methods (changes are commited on close). Changes are NOT
+      committed when the database object is deleted."""
     def __init__(self, conn_str, mode='r'):
         mode = mode.lower()
         if mode == 'r':
@@ -63,12 +90,7 @@ class FameDb(object):
             raise ValueError, "Database access mode not supported."
         self.mode = mode
         
-        try:
-            self.dbkey = cf_open(conn_str, intmode)
-            self.dbIsOpen = True
-        except:
-            self.dbIsOpen = False
-            raise
+        self.dbkey = cf_open(conn_str, intmode)
 
         
     def read(self, name,
@@ -103,10 +125,6 @@ class FameDb(object):
             case insensitive dictionary of the objects
         if `name` is a single string:
             object from database that is stored as `name`"""
-
-
-        if not self.dbIsOpen:
-            raise DBError("Database is not open")
 
         isSingle = False
         if isinstance(name, types.StringType):
@@ -145,7 +163,7 @@ class FameDb(object):
             objName = objName.upper()
 
             if checkFreq:
-                objFreq = self.get_freq(objName)
+                objFreq = self.obj_size(objName)['freq']
 
                 if objFreq == range_freq:
                     start_index, end_index = _start_date, _end_date
@@ -209,7 +227,6 @@ class FameDb(object):
                     pyObj = ma.array(data, mask=mask)
                 else:
                     observed = mp.observedMapping[result['observed']]
-                    basis = mp.basisMapping[result['basis']]
                     freq = mp.freqMapping[result['freq']]
 
                     if 'data' in result:
@@ -324,8 +341,6 @@ value pair)
         - `end_date` (Date, *[None]*) : If None, data will be written until the end of
            `tser`. If specified, only data points on or before end_date will be written.
 """
-        
-        self.__check_writeable()
             
         if not isinstance(tser, ts.TimeSeries):
             raise ValueError("tser is not a valid time series")
@@ -345,10 +360,7 @@ value pair)
 
         if create:
             
-            if hasattr(tser, "basis"):
-                fame_basis = mp.basisReverseMapping[tser.basis]
-            else:
-                fame_basis = mp.HBSDAY
+            fame_basis = mp.HBSDAY
 
             if hasattr(tser, "observed"):
                 fame_observed = mp.observedReverseMapping[tser.observed]
@@ -356,7 +368,7 @@ value pair)
             else:
                 fame_observed = mp.HOBEND
 
-            if self.exists(name): self.remove(name)
+            if self.exists(name): self.delete(name)
             cf_create(self.dbkey, name, mp.HSERIE, fame_freq, fame_type, fame_basis, fame_observed)
 
         def get_boundary_date(bdate, attr):
@@ -420,8 +432,6 @@ value pair)
         - `end_case` (int, *[None]*) : If None, data will be written until the end of
            `cser`. If specified, only data points on or before end_case will be written.
 """
-        
-        self.__check_writeable()
             
         if not isinstance(cser, numpy.ndarray):
             raise ValueError("cser is not a valid ndarray")
@@ -447,7 +457,7 @@ value pair)
         fame_type = mp.fametype_fromdata(fame_data)
 
         if create:
-            if self.exists(name): self.remove(name)
+            if self.exists(name): self.delete(name)
             cf_create(self.dbkey, name, mp.HSERIE, mp.HCASEX, fame_type, mp.HBSUND, mp.HOBUND)
 
         def get_boundary_case(bcase, attr):
@@ -497,8 +507,6 @@ over-written, otherwise it is created.
         - `scalar` : one of the following: string, numpy scalar, int, float,
            list of strings (for name lists), Date, boolean"""
         
-        self.__check_writeable()
-        
         fame_type = mp.fametype_fromdata(scalar)
 
         if isinstance(scalar, ts.Date):
@@ -519,7 +527,7 @@ over-written, otherwise it is created.
         else:
             raise ValueError("Unrecognized data type")
             
-        if self.exists(name): self.remove(name)
+        if self.exists(name): self.delete(name)
         cf_create(self.dbkey, name, mp.HSCALA, mp.HUNDFX, fame_type, mp.HBSUND, mp.HOBUND)
 
         # convert integer types to floats since FAME does not have an integer type
@@ -533,11 +541,30 @@ over-written, otherwise it is created.
             cf_write_scalar(self.dbkey, name, fame_data, fame_type)
 
 
+    def desc(self):
+        "get 'description' attribute of database"
+        return cf_get_db_attr(self.dbkey, "DESC")
+        
+    def doc(self):
+        "get 'doc' attribute of database"
+        return cf_get_db_attr(self.dbkey, "DOC")
+        
+    def created(self):
+        "get 'created' attribute of database"
+        fame_date = cf_get_db_attr(self.dbkey, "CREATED")
+        return _famedate_to_tsdate(fame_date, 's')
+        
+    def modified(self):
+        "get 'modified' attribute of database"
+        fame_date = cf_get_db_attr(self.dbkey, "MODIFIED")
+        return _famedate_to_tsdate(fame_date, 's')
+        
+    def is_open(self):
+        return cf_get_db_attr(self.dbkey, "ISOPEN")
 
     def wildlist(self, exp, wildonly=False):
         """performs a wildlist lookup on the database, using Fame syntax
 ("?" and "^"), returns a normal python list of strings"""
-        self.__check_readable()
         res = cf_wildlist(self.dbkey, exp)
             
         if wildonly:
@@ -553,64 +580,25 @@ over-written, otherwise it is created.
         return cf_exists(self.dbkey, name)
 
     def close(self):
-        if self.dbIsOpen:
+        """Closes the database. Changes will be posted."""
+        if self.is_open():
             cf_close(self.dbkey)
-        self.dbIsOpen = False
+            
+    def commit(self):
+        pass
 
-    def __del__(self):
-        if self.dbIsOpen:
-            self.close()
-
-
-    def __check_writeable(self):
-        """Raises error if data base is not writeable"""
-        if not self.dbIsOpen:
-            raise DBError("Database is not open")
-        if self.mode == 'r':
-            raise DBError("Cannot write to a read-only database")
-
-    def __check_readable(self):
-        """Raises error if data base is not readable"""
-        if not self.dbIsOpen:
-            raise DBError("Database is not open")
-
-
-    def remove(self, name, must_exist=True):
-        """Deletes the given series from the database"""
+    def delete(self, name, must_exist=True):
+        """Deletes the specified object(s) from the database"""
         if isinstance(name, str): name = [name]
-        [cf_remove(self.dbkey, n) for n in name if must_exist or self.exists(n)]
+        [cf_delete(self.dbkey, n) for n in name if must_exist or self.exists(n)]
 
-
-    def get_freq(self, name):
-        """Finds the frequency of the object stored in the db as `name`"""
-        if not self.dbIsOpen:
-            raise DBError("Database is not open")
-
-        result = cf_size(self.dbkey, name.upper())
-        return result['freq']
-
+    def obj_size(self, name):
+        """basic information about the size of an object(s) in a database"""
+        return _single_or_multi_func(self.dbkey, name, cf_obj_size)
 
     def whats(self, name):
         """Preforms a fame "whats" command on the provided name(s)"""
-        if isinstance(name, str):
-            single_obj = True
-            name = [name]
-        else:
-            single_obj = False
-
-        result = {}
-        for n in name:
-            if not self.dbIsOpen:
-                raise DBError("Database is not open")
-
-            result[n] = cf_whats(self.dbkey, n.upper())
-
-        if single_obj:
-            return result.values()[0]
-
-        return result
-
-
+        return _single_or_multi_func(self.dbkey, name, cf_whats)
 
     def restore(self):
         """Discard any changes made to the database since it was last opened or posted."""
@@ -618,7 +606,7 @@ over-written, otherwise it is created.
 
 
 class cFameCall:
-    """wrapper for cfame functions that acquires and releases a resource log.
+    """wrapper for cfame functions that acquires and releases a resource lock.
 This is needed because the Fame C api is not thread safe."""
 
     def __init__ (self, func):
@@ -642,9 +630,9 @@ cf_open = cFameCall(cfame.open)
 cf_set_option = cFameCall(cfame.set_option)
 cf_close = cFameCall(cfame.close)
 cf_restore = cFameCall(cfame.restore)
-cf_size = cFameCall(cfame.size)
+cf_obj_size = cFameCall(cfame.obj_size)
 cf_whats = cFameCall(cfame.whats)
-cf_remove = cFameCall(cfame.remove)
+cf_delete = cFameCall(cfame.delete)
 cf_create = cFameCall(cfame.create)
 cf_read = cFameCall(cfame.read)
 cf_write_scalar = cFameCall(cfame.write_scalar)
@@ -652,6 +640,7 @@ cf_write_series = cFameCall(cfame.write_series)
 cf_write_namelist = cFameCall(cfame.write_namelist)
 cf_wildlist = cFameCall(cfame.wildlist)
 cf_exists = cFameCall(cfame.exists)
+cf_get_db_attr = cFameCall(cfame.get_db_attr)
 
 set_option = cf_set_option
 set_option.__doc__ = \
