@@ -92,64 +92,28 @@ class test_write(NumpyTestCase):
     def test_main(self):
         "execute all the tests. Order is important here"
 
-        self._test_write_scalars()
-        self._test_read_scalars()
-        
-        self._test_dict_scalars()
+        tests = ["_test_write_scalars", "_test_read_scalars",
+                 "_test_dict_scalars", "_test_write_freqs_tser",
+                 "_test_read_freqs_tser", "_test_write_dtypes_tser",
+                 "_test_read_dtypes_tser",  "_test_read_range_tser",
+                 "_test_write_append_tser", "_test_read_append_tser",
+                 "_test_write_range_tser", "_test_verify_write_range_tser",
+                 "_test_write_empty_tser", "_test_read_empty_tser",
+                 "_test_overwrite_tser", "_test_assume_exists_tser",
+                 "_test_dict_tser", "_test_write_dtypes_cser",
+                 "_test_read_dtypes_cser", "_test_read_range_cser",
+                 "_test_write_append_cser", "_test_read_append_cser",
+                 "_test_write_range_cser", "_test_verify_write_range_cser",
+                 "_test_write_empty_cser", "_test_read_empty_cser",
+                 "_test_overwrite_cser", "_test_assume_exists_cser",
+                 "_test_dict_cser", "_test_whats",
+                 "_test_exists",  "_test_delete",
+                 "_test_wildlist", "_test_restore"]
 
-        self._test_write_freqs_tser()
-        self._test_read_freqs_tser()
+        for t in tests:
+            print t
+            getattr(self, t)()
 
-        self._test_write_dtypes_tser()
-        self._test_read_dtypes_tser()
-        
-        self._test_read_range_tser()
-
-        self._test_write_append_tser()
-        self._test_read_append_tser()
-        
-        self._test_write_range_tser()
-        self._test_verify_write_range_tser()
-        
-        self._test_write_empty_tser()
-        self._test_read_empty_tser()
-        
-        self._test_overwrite_tser()
-        
-        self._test_assume_exists_tser()
-        
-        self._test_dict_tser()
-        
-        self._test_write_dtypes_cser()
-        self._test_read_dtypes_cser()
-        
-        self._test_read_range_cser()
-
-        self._test_write_append_cser()
-        self._test_read_append_cser()
-        
-        self._test_write_range_cser()
-        self._test_verify_write_range_cser()
-
-        self._test_write_empty_cser()
-        self._test_read_empty_cser()
-        
-        self._test_overwrite_cser()
-        
-        self._test_assume_exists_cser()
-        
-        self._test_dict_cser()
-        
-        self._test_whats()
-        
-        self._test_exists()
-        
-        self._test_remove()
-        
-        self._test_wildlist()
-
-        self._test_restore()
-        
 
     def _test_write_scalars(self):
         "test writing all types of scalar values"
@@ -400,14 +364,14 @@ class test_write(NumpyTestCase):
         assert(self.db.exists('$cser_float32'))
         assert(not self.db.exists('$fake_series'))
         
-    def _test_remove(self):
-        "test remove method"
+    def _test_delete(self):
+        "test delete method"
         assert(self.db.exists('$cser_1'))
         assert(self.db.exists('$cser_2'))
-        self.db.remove(['$cser_1', '$cser_2'])
+        self.db.delete(['$cser_1', '$cser_2'])
         assert(not self.db.exists('$cser_1'))
         assert(not self.db.exists('$cser_2'))
-        self.db.remove('$cser_1', must_exist=False)
+        self.db.delete('$cser_1', must_exist=False)
 
     def _test_wildlist(self):
         "test wildlist method"
@@ -423,7 +387,7 @@ class test_write(NumpyTestCase):
         self.db.close()
         self.db = fame.FameDb("testdb.db",'s')
         
-        self.db.remove('$tser_float32')
+        self.db.delete('$tser_float32')
         assert(not self.db.exists('$tser_float32'))
         self.db.restore()
         assert(self.db.exists('$tser_float32'))
