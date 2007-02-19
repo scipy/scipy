@@ -1,3 +1,32 @@
+"""
+pyfame TODO:
+
+- implement "commit"
+- implement "create_from_pyobj"
+
+Add unit tests:
+
+    - db_created
+    - db_modified
+    - is_open
+    - db_desc
+    - db_doc
+    - create
+    - commit
+    - create_from_pyobj
+
+Add new functions:
+
+    - set_obj_attr
+    - get_obj_attr
+    - modified
+    - created
+    - desc
+    - freq
+    - copy
+    - rename
+"""
+
 import sys, types, re, os
 
 import timeseries as ts
@@ -211,6 +240,7 @@ Notes
                 if 'data' in result:
                     vals = result['data']
                     mask = result['mask']
+                    if not mask.any(): mask = ma.nomask
                 else:
                     vals = []
                     mask = ma.nomask
@@ -540,26 +570,55 @@ over-written, otherwise it is created.
         else:
             cf_write_scalar(self.dbkey, name, fame_data, fame_type)
 
+    
+    def create(name, cls, type, freq=None, basis=None, observed=None):
+        """create object in database with specified attributes as `name`"""
+        
+        if cls not in (mp.HSERIE, mp.HSCALA):
+            raise ValueError("unrecognized object class: "+str(cls))
+        
+        if freq is None:
+            if cls == mp.HSCALA:
+                freq = mp.HUNDFX
+            else:
+                raise ValueError("freq must be specified for series")
 
-    def desc(self):
+        if freq in (mp.HUNDFX, mp.HCASEX):
+            basis = mp.HBSUND
+            observed = mp.HOBUND
+        else:
+            if basis is None: basis = mp.HBSDAY
+            if observed is None: observed = mp.HOBEND
+
+        cf_create(self.dbkey, name, cls, freq, type, basis, observed)
+        
+    def create_from_pyobj(name, pyobj):
+        """create object of appropriate type in database based on the
+python object `pyobj` as `name`. Does not write any data to the
+database, simply initializes the object in the database."""
+        raise NotImplementedError("function not implemented yet")
+
+
+    def db_desc(self):
         "get 'description' attribute of database"
         return cf_get_db_attr(self.dbkey, "DESC")
         
-    def doc(self):
+    def db_doc(self):
         "get 'doc' attribute of database"
         return cf_get_db_attr(self.dbkey, "DOC")
         
-    def created(self):
+    def db_created(self):
         "get 'created' attribute of database"
         fame_date = cf_get_db_attr(self.dbkey, "CREATED")
         return _famedate_to_tsdate(fame_date, 's')
         
-    def modified(self):
+    def db_modified(self):
         "get 'modified' attribute of database"
         fame_date = cf_get_db_attr(self.dbkey, "MODIFIED")
         return _famedate_to_tsdate(fame_date, 's')
         
     def is_open(self):
+        "returns True if database is open. False otherwise"
         return cf_get_db_attr(self.dbkey, "ISOPEN")
 
     def wildlist(self, exp, wildonly=False):
@@ -585,7 +644,7 @@ over-written, otherwise it is created.
             cf_close(self.dbkey)
             
     def commit(self):
-        pass
+        raise NotImplementedError("function not implemented yet")
 
     def delete(self, name, must_exist=True):
         """Deletes the specified object(s) from the database"""
