@@ -299,6 +299,7 @@ The combination of `series` and `dates` is the `data` part.
         assert(_datadatescompat(_data,newdates))
         _data._dates = newdates
         _data._defaultdates = _data._dates
+        _data.observed = observed
         return _data
     #............................................
     def __array_finalize__(self,obj):
