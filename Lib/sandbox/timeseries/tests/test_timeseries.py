@@ -178,7 +178,8 @@ class test_arithmetics(NumpyTestCase):
         series.mask = nomask
         assert(series._mask is nomask)
         assert(series._series._mask is nomask)
-        series._series.mask = [1,0,0]*5
+        #series._series.mask = [1,0,0]*5
+        series.mask = [1,0,0]*5
         assert_equal(series._mask, [1,0,0]*5)
         assert_equal(series._series._mask, [1,0,0]*5)
         series[2] = masked

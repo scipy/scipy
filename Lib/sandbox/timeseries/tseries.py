@@ -35,7 +35,7 @@ import numpy.core.umath as umath
 #from numpy.core.records import recarray
 from numpy.core.records import fromarrays as recfromarrays
 
-import maskedarray as MA
+import maskedarray.core as MA
 #reload(MA)
 from maskedarray.core import MaskedArray, MAError, masked, nomask, \
     filled, getmask, getmaskarray, make_mask_none, mask_or, make_mask, \
@@ -56,8 +56,6 @@ import cseries
 
 
 
-
-
 __all__ = [
 'TimeSeriesError','TimeSeriesCompatibilityError','TimeSeries','isTimeSeries',
 'time_series', 'tsmasked',
@@ -68,9 +66,9 @@ __all__ = [
            ]
 
 #...............................................................................
-
-ufunc_domain = {}
-ufunc_fills = {}
+#
+#ufunc_domain = {}
+#ufunc_fills = {}
 
 #### --------------------------------------------------------------------------
 #--- ... TimeSeriesError class ...
@@ -95,9 +93,10 @@ class TimeSeriesCompatibilityError(TimeSeriesError):
             msg = "Incompatible starting dates! (%s <> %s)"
         elif mode == 'size':
             msg = "Incompatible sizes! (%s <> %s)"
+        else:
+            msg = "Incompatibility !  (%s <> %s)"
         msg = msg % (first, second)
         TimeSeriesError.__init__(self, msg)
-
 
 #def _compatibilitycheck(a, b):
 def _timeseriescompat(a, b):
@@ -193,6 +192,61 @@ def _compare_frequencies(*series):
 ##### --------------------------------------------------------------------------
 ##--- ... Time Series ...
 ##### --------------------------------------------------------------------------
+class _tsmathmethod(object):
+    """Defines a wrapper for arithmetic array methods (add, mul...).
+When called, returns a new TimeSeries object, with the new series the result of
+the method applied on the original series.
+The `_dates` part remains unchanged.
+    """
+    def __init__ (self, methodname):
+        self._name = methodname
+    #
+    def __get__(self, obj, objtype=None):
+        "Gets the calling object."
+        self.obj = obj
+        return self
+    #
+    def __call__ (self, other, *args):
+        "Execute the call behavior."
+        instance = self.obj
+        if isinstance(other, TimeSeries):
+            assert(_timeseriescompat(instance, other))
+        func = getattr(super(TimeSeries, instance), self._name)
+        result = func(other, *args) #.view(type(instance))
+        result._dates = instance._dates
+        return result
+
+class _tsarraymethod(object):
+    """Defines a wrapper for basic array methods.
+When called, returns a new TimeSeries object, with the new series the result of
+the method applied on the original series.
+If `ondates` is True, the same operation is performed on the `_dates`.
+If `ondates` is False, the `_dates` part remains unchanged.
+    """
+    def __init__ (self, methodname, ondates=False):
+        """abfunc(fillx, filly) must be defined.
+           abinop(x, filly) = x for all x to enable reduce.
+        """
+        self._name = methodname
+        self._ondates = ondates
+    #
+    def __get__(self, obj, objtype=None):
+        self.obj = obj
+        return self
+    #
+    def __call__ (self, *args):
+        "Execute the call behavior."
+        _name = self._name
+        instance = self.obj
+        func_series = getattr(super(TimeSeries, instance), _name)
+        result = func_series(*args)
+        if self._ondates:
+            result._dates = getattr(instance._dates, _name)
+        else:
+            result._dates = instance._dates
+        return result
+
+
 class TimeSeries(MaskedArray, object):     
     """Base class for the definition of time series.
 A time series is here defined as the combination of three arrays:
@@ -207,120 +261,62 @@ A time series is here defined as the combination of three arrays:
 The combination of `series` and `dates` is the `data` part.
     """
     options = None
+    _defaultobserved = None
     def __new__(cls, data, dates=None, mask=nomask, 
                 freq=None, observed=None, start_date=None, 
                 dtype=None, copy=False, fill_value=None,
                 keep_mask=True, small_mask=True, hard_mask=False):
-        #tslog.info("__new__: received data types %s, %s" % (type(data), data))
         maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value,
                        keep_mask=keep_mask, small_mask=small_mask, 
-                       hard_mask=hard_mask, )
-        if isinstance(data, TimeSeries):
-            # Check dates ........
-            if dates is None:
-                newdates = data._dates
-            else:
-                if not hasattr(dates,'freq'):
-                    raise DateError, "Invalid Dates!"       
-                newdates = dates
-                data._dates = newdates
-                if hasattr(data, '_data') and hasattr(data._data, '_dates'):
-                    data._data._dates = newdates
-            cls._defaultdates = newdates    
-            # Check frequency......
-            if freq is not None:
-                freq = corelib.check_freq(freq)
-                if freq != newdates.freq:
-                    _dates = newdates.tofreq(freq)
-            else:
-                freq = newdates.freq
-            # Check observed.......
-            if observed is None:
-                observed = data.observed
-            else:
-                observed = corelib.fmtObserv(observed)
-            cls._defaultobserved = observed  
-            _data = data._series
+                       hard_mask=hard_mask,)
+        # Get the data ...............................
+        _data = MaskedArray(data, mask=mask, **maparms).view(cls)
+        # Get the frequency ..........................
+        freq = corelib.check_freq(freq)
+        # Get the dates ..............................
+        if dates is None:
+            newdates = getattr(data, '_dates', None)
         else:
-            # Check dates ........
-            if dates is None:
-                length = _getdatalength(data)
-                if length > 0:
-                    newdates = date_array(start_date=start_date, length=length,
-                                          freq=freq)
-                else:
-                    newdates = date_array([], freq=freq)
-            elif not hasattr(dates, 'freq'):
+            newdates = dates
+        if newdates is not None:
+            if not hasattr(newdates, 'freq'):
                 newdates = date_array(dlist=dates, freq=freq)
+            if freq is not None and newdates.freq != freq:
+                newdates = newdates.tofreq(freq)
+        else:
+            length = _getdatalength(data)
+            if length > 0:
+                newdates = date_array(start_date=start_date, length=length,
+                                      freq=freq)
             else:
-                newdates = dates
-            # Check data .........
-            _data = data
-            if hasattr(data, '_mask') :
-                mask = mask_or(data._mask, mask)
-            # Set default ........
-            cls._defaultdates = newdates    
-            cls._defaultobserved = corelib.fmtObserv(observed)
-
+                newdates = date_array([], freq=freq)          
+        # Get observed ...............................
+        observed = getattr(data, 'observed', corelib.fmtObserv(observed))
+        
         if _data is masked:
             assert(numeric.size(newdates)==1)
             return _data.view(cls)
-        newdata = super(TimeSeries,cls).__new__(cls, _data, mask=mask,
-                                                **maparms)
-        assert(_datadatescompat(newdata._data,newdates))
-        return newdata
-            
-    #..................................
-    def __array_wrap__(self, obj, context=None):
-        return TimeSeries(super(TimeSeries,self).__array_wrap__(obj, context),
-                          dates=self._dates)
+        assert(_datadatescompat(_data,newdates))
+        _data._dates = newdates
+        _data._defaultdates = _data._dates
+        return _data
     #............................................
     def __array_finalize__(self,obj):
-        #tslog.info("__array_finalize__ received %s" % type(obj))      
-        if isinstance(obj, TimeSeries):
-            self._dates = obj._dates
-            self._data = obj._series._data
-            self._mask = obj._series._mask
-            self._series = obj._series
-            self._hardmask = obj._series._hardmask
-            self.observed = obj.observed
-            self._fill_value = obj._fill_value
-        else:     
-            self._dates = self._defaultdates
-            self.observed = self._defaultobserved
-            self._data = obj
-            self._mask = self._defaultmask
-            if obj is masked:
-                self._series = masked
-            else:
-                self._series = MA.array(obj, mask=self._defaultmask, 
-                                        copy=False, hard_mask=self._defaulthardmask)
-            self._hardmask = self._defaulthardmask
-            self.fill_value = self._fill_value
-        self._mask =  self._series._mask
-        self._data = self._series._data
-        self._hardmask = self._series._hardmask
-        #
-        TimeSeries._defaulthardmask = False
-        TimeSeries._defaultmask = nomask
-        #tslog.info("__array_finalize__ sends %s" % type(self))
+        MaskedArray.__array_finalize__(self, obj)        
+        self._dates = getattr(obj, '_dates', None)
+        self.observed = getattr(obj, 'observed', self._defaultobserved)
         return
+    #..................................
+    def __array_wrap__(self, obj, context=None):
+        result = super(TimeSeries, self).__array_wrap__(obj, context)
+        result._dates = self._dates
+        return result
     #............................................
-    def __getattribute__(self,attr):
-        "Returns a given attribute."
-        # Here, we need to be smart: _mask should call _series._mask...
-        if attr in ['_data','_mask','_hardmask']:
-            return getattr(self._series,attr)
-        return super(TimeSeries, self).__getattribute__(attr)
-    
-    def __setattribute__(self,attr, value):
-        """Sets an attribute to a given value."""
-        # Same thing here: if we modify ._mask, we need to modify _series._mask
-        # ...as well
-        super(TimeSeries, self).__setattribute__(attr, value)
-        if attr in ['_data','_mask','_hardmask']:
-            super(self._series.__class__, self._series).__setattribute__(attr, value)
-            setattr(self._series, attr, value)
+    def _get_series(self):
+        if self._mask.ndim == 0 and self._mask:
+            return masked
+        return self.view(MaskedArray)
+    _series = property(fget=_get_series)
     #............................................
     def __checkindex(self, indx):
         "Checks the validity of an index."
@@ -397,42 +393,24 @@ Sets item described by index. If value is masked, masks those locations.
             raise MAError, 'Cannot alter the masked element.'
         (sindx, dindx) = self.__checkindex(indx)
         #....        
-        if value is tsmasked:
-            self._series[sindx] = masked
-        elif isinstance(value, TimeSeries):
-            assert(_timeseriescompat(self[sindx], value))
-            self._series[sindx] = value._series
-        else:
-            self._series[sindx] = value
-        # Don't forget to update the mask !
-        self._mask = self._series._mask
-        
+        super(TimeSeries, self).__setitem__(sindx, value)    
     #........................
     def __getslice__(self, i, j):
         "Gets slice described by i, j"
         (si,di) = self.__checkindex(i)
         (sj,dj) = self.__checkindex(j)
-        (data, date) = (self._series[si:sj], self._dates[di:dj])
-        return TimeSeries(data, dates=date, copy=False)
+        result = super(TimeSeries, self).__getitem__(slice(si,sj))
+        result._dates = self._dates[di:dj]
+        return result
     #....
     def __setslice__(self, i, j, value):
         "Gets item described by i. Not a copy as in previous versions."
-        (si,di) = self.__checkindex(i)
-        (sj,dj) = self.__checkindex(j)
+        (si,_) = self.__checkindex(i)
+        (sj,_) = self.__checkindex(j)
         #....
-#        data = self._series[i:j]
         if isinstance(value, TimeSeries):
             assert(_timeseriescompat(self[si:sj], value))
-            self._series[si:sj] = value._series
-        else:
-            self._series[si:sj] = value
-        # Don't forget to update the mask !
-        self._mask = self._series._mask
-    #......................................................
-    def __len__(self):
-        if self.ndim == 0:
-            return 0
-        return ndarray.__len__(self)
+        super(TimeSeries, self).__setitem__(slice(si,sj), value)
     #......................................................
     def __str__(self):
         """Returns a string representation of self (w/o the dates...)"""
@@ -466,30 +444,46 @@ timeseries(data  = %(data)s,
                        'time': timestr,
                        'freq': self.freqstr, }
     #............................................
-    def _get_mask(self):
-        """Returns the current mask."""
-        return self._series._mask
-    def _set_mask(self, mask):
-        """Sets the mask to `mask`."""
-        mask = make_mask(mask, copy=False, small_mask=True)
-        if mask is not nomask:
-            if mask.size != self._data.size:
-                raise ValueError, "Inconsistent shape between data and mask!"
-            if mask.shape != self._data.shape:
-                mask.shape = self._data.shape
-            self._series._mask = mask  
-        else:
-            self._series._mask = nomask
-    mask = property(fget=_get_mask, fset=_set_mask, doc="Mask")
- 
+    __add__ = _tsmathmethod('__add__')
+    __radd__ = _tsmathmethod('__add__')
+    __sub__ = _tsmathmethod('__sub__')
+    __rsub__ = _tsmathmethod('__rsub__')
+    __pow__ = _tsmathmethod('__pow__')
+    __mul__ = _tsmathmethod('__mul__')
+    __rmul__ = _tsmathmethod('__mul__')
+    __div__ = _tsmathmethod('__div__')
+    __rdiv__ = _tsmathmethod('__rdiv__')
+    __truediv__ = _tsmathmethod('__truediv__')
+    __rtruediv__ = _tsmathmethod('__rtruediv__')
+    __floordiv__ = _tsmathmethod('__floordiv__')
+    __rfloordiv__ = _tsmathmethod('__rfloordiv__')
+    __eq__ = _tsmathmethod('__eq__')
+    __ne__ = _tsmathmethod('__ne__')
+    __lt__ = _tsmathmethod('__lt__')
+    __le__ = _tsmathmethod('__le__')
+    __gt__ = _tsmathmethod('__gt__')
+    __ge__ = _tsmathmethod('__ge__')
+    
+    astype = _tsarraymethod('astype')
+    reshape = _tsarraymethod('reshape', ondates=True)
+    copy = _tsarraymethod('copy', ondates=True)
+    compress = _tsarraymethod('compress', ondates=True)
+    ravel = _tsarraymethod('ravel', ondates=True)
+    cumsum = _tsarraymethod('cumsum',ondates=False)
+    cumprod = _tsarraymethod('cumprod',ondates=False)
+    anom = _tsarraymethod('anom',ondates=False)
+    
+#    def nonzero(self):
+#        """Returns a tuple of ndarrays, one for each dimension of the array,
+#    containing the indices of the non-zero elements in that dimension."""
+#        return self._series.nonzero()
+    
+#    filled = _tsarraymethod('filled', ondates=False)
+    
+    #............................................ 
     def ids (self):
         """Return the ids of the data, dates and mask areas"""
-        return (id(self._series), id(self.dates),)
-        
-    def copy(self):
-        "Returns a copy of the TimeSeries."
-        return TimeSeries(self, copy=True)
-    
+        return (id(self._series), id(self.dates),)   
     #------------------------------------------------------
     @property
     def series(self):
@@ -507,7 +501,6 @@ timeseries(data  = %(data)s,
     def freqstr(self):
         """Returns the corresponding frequency (as a string)."""
         return self._dates.freqstr
-        
     @property
     def day(self):          
         "Returns the day of month for each date in self._dates."
@@ -605,10 +598,6 @@ timeseries(data  = %(data)s,
         "Converts the dates to another frequency, and adapt the data."
         return convert(self, freq, func=func, position=position)
     #.....................................................
-    def nonzero(self):
-        """Returns a tuple of ndarrays, one for each dimension of the array,
-    containing the indices of the non-zero elements in that dimension."""
-        return self._series.nonzero()
         
 def _attrib_dict(series, exclude=[]):
     """this function is used for passing through attributes of one
@@ -621,128 +610,7 @@ time series to a new one being created"""
 ##### --------------------------------------------------------------------------
 ##--- ... Additional methods ...
 ##### --------------------------------------------------------------------------
-class _inplacemethod(object):
-    """Defines a wrapper for inplace arithmetic array methods (iadd, imul...).
-When called, returns a new TimeSeries object, with the new series the result of
-the method applied on the original series.
-The `_dates` part remains unchanged.
-    """
-    def __init__ (self, binop):
-        """abfunc(fillx, filly) must be defined.
-           abinop(x, filly) = x for all x to enable reduce.
-        """
-        self.f = binop
-        self.obj = None
-    #
-    def __get__(self, obj, objtype=None):
-        "Gets the calling object."
-        self.obj = obj
-        return self
-    #
-    def __call__ (self, other, *args):
-        "Execute the call behavior."
-        instance = self.obj
-        assert(_timeseriescompat(instance,other))
-        func = getattr(instance._series, self.f)    
-        func(other, *args)
-        return instance
-#......................................
-TimeSeries.__iadd__ = _inplacemethod('__iadd__')
-TimeSeries.__iand__ = _inplacemethod('__iand__')
-TimeSeries.__idiv__ = _inplacemethod('__idiv__')
-TimeSeries.__isub__ = _inplacemethod('__isub__')
-TimeSeries.__imul__ = _inplacemethod('__imul__')
 
-
-class _tsmathmethod(object):
-    """Defines a wrapper for arithmetic array methods (add, mul...).
-When called, returns a new TimeSeries object, with the new series the result of
-the method applied on the original series.
-The `_dates` part remains unchanged.
-    """
-    def __init__ (self, binop):
-        """abfunc(fillx, filly) must be defined.
-           abinop(x, filly) = x for all x to enable reduce.
-        """
-        self.f = binop
-    #
-    def __get__(self, obj, objtype=None):
-        "Gets the calling object."
-        self.obj = obj
-        return self
-    #
-    def __call__ (self, other, *args):
-        "Execute the call behavior."
-        instance = self.obj
-        _dates = instance._dates
-        #tslog.info("_tsmathmethod: series: %s" % instance,)
-        #tslog.info("_tsmathmethod: other  : %s" % other,)
-        func = getattr(instance._series, self.f)    
-        if isinstance(other, TimeSeries):
-            assert(_timeseriescompat(instance, other))
-        return instance.__class__(func(other, *args), dates=_dates,)
-#......................................
-TimeSeries.__add__ = _tsmathmethod('__add__')
-TimeSeries.__radd__ = _tsmathmethod('__add__')
-TimeSeries.__sub__ = _tsmathmethod('__sub__')
-TimeSeries.__rsub__ = _tsmathmethod('__rsub__')
-TimeSeries.__pow__ = _tsmathmethod('__pow__')
-TimeSeries.__mul__ = _tsmathmethod('__mul__')
-TimeSeries.__rmul__ = _tsmathmethod('__mul__')
-TimeSeries.__div__ = _tsmathmethod('__div__')
-TimeSeries.__rdiv__ = _tsmathmethod('__rdiv__')
-TimeSeries.__truediv__ = _tsmathmethod('__truediv__')
-TimeSeries.__rtruediv__ = _tsmathmethod('__rtruediv__')
-TimeSeries.__floordiv__ = _tsmathmethod('__floordiv__')
-TimeSeries.__rfloordiv__ = _tsmathmethod('__rfloordiv__')
-TimeSeries.__eq__ = _tsmathmethod('__eq__')
-TimeSeries.__ne__ = _tsmathmethod('__ne__')
-TimeSeries.__lt__ = _tsmathmethod('__lt__')
-TimeSeries.__le__ = _tsmathmethod('__le__')
-TimeSeries.__gt__ = _tsmathmethod('__gt__')
-TimeSeries.__ge__ = _tsmathmethod('__ge__')
-#................................................
-class _tsarraymethod(object):
-    """Defines a wrapper for basic array methods.
-When called, returns a new TimeSeries object, with the new series the result of
-the method applied on the original series.
-If `ondates` is True, the same operation is performed on the `_dates`.
-If `ondates` is False, the `_dates` part remains unchanged.
-    """
-    def __init__ (self, methodname, ondates=False):
-        """abfunc(fillx, filly) must be defined.
-           abinop(x, filly) = x for all x to enable reduce.
-        """
-        self._name = methodname
-        self._ondates = ondates
-    #
-    def __get__(self, obj, objtype=None):
-        self.obj = obj
-        return self
-    #
-    def __call__ (self, *args):
-        "Execute the call behavior."
-        _name = self._name
-        instance = self.obj
-        func_series = getattr(instance._series, _name)
-        if self._ondates:
-            func_dates = getattr(instance._dates, _name)
-            return instance.__class__(func_series(*args), 
-                                      dates=func_dates(*args))
-        else:
-            return instance.__class__(func_series(*args), 
-                                      dates=instance._dates)  
-TimeSeries.astype = _tsarraymethod('astype')
-TimeSeries.reshape = _tsarraymethod('reshape', ondates=True)
-TimeSeries.copy = _tsarraymethod('copy', ondates=True)
-TimeSeries.compress = _tsarraymethod('compress', ondates=True)
-TimeSeries.ravel = _tsarraymethod('ravel', ondates=True)
-TimeSeries.filled = _tsarraymethod('filled', ondates=False)
-TimeSeries.cumsum = _tsarraymethod('cumsum',ondates=False)
-TimeSeries.cumprod = _tsarraymethod('cumprod',ondates=False)
-TimeSeries.anom = _tsarraymethod('anom',ondates=False)
-
-#......................................
 class _tsaxismethod(object):
     """Defines a wrapper for array methods working on an axis (mean...).
 When called, returns a ndarray, as the result of the method applied on the series.
@@ -982,6 +850,7 @@ def time_series(data, dates=None, freq=None, observed=None,
     `data` : 
         Array of data.
     """
+    data = numeric.asanyarray(data)
     if dates is None:
         length = _getdatalength(data)
         if length > 0:
@@ -1375,12 +1244,6 @@ The data corresponding to the initially missing dates are masked, or filled to
     data = MA.asarray(data)
     newdatad = numeric.empty(nsize, data.dtype)
     newdatam = numeric.ones(nsize, bool_)
-#    if fill_value is None:
-#        if hasattr(data,'fill_value'):
-#            fill_value = data.fill_value
-#        else:
-#            fill_value = MA.default_fill_value(data)
-    #data = data.filled(fill_value)
     #....
     if datam is nomask:
         for (new,old) in zip(newslc,oldslc):
@@ -1448,19 +1311,6 @@ def concatenate_series(series, keep_gap=True):
 if __name__ == '__main__':
     from maskedarray.testutils import assert_equal
     import numpy as N
+       
+
     
-    if 1:
-        #TODO: CHECK THAT, AND PUT IT IN tests/test_timeseries IF IT WORKS
-        # Test 2 points of 3 variables
-        xx = time_series([[1,2,3],[4,5,6]], start_date=thisday('b'))
-        assert_equal(xx[0]._data, [[1,2,3]])
-        assert_equal(xx[:,0]._data, [1,4])
-        # Test a single point of 3 variables
-        xx = time_series([[1,2,3]], start_date=thisday('b'))
-        assert_equal(xx[0]._data, [[1,2,3]])
-        assert_equal(xx[:,0]._data, [[1]])
-        # Test 3 data points
-        x = time_series([1,2,3], start_date=thisday('b'))
-        assert_equal(x[0], 1)
-        # Test using a DateArray as items
-        assert_equal(x[x._dates[:]],x)

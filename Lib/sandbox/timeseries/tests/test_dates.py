@@ -25,12 +25,17 @@ from maskedarray import masked_array
 import maskedarray.testutils
 from maskedarray.testutils import assert_equal, assert_array_equal
 
-from timeseries import tdates
-#reload(tdates)
+import timeseries.tdates as tdates
+reload(tdates)
+#from timeseries import tdates
+##reload(tdates)
+#from timeseries.tdates import date_array_fromlist, Date, DateArray, date_array,\
+#    mxDFromString, today
+from timeseries.tdates import *
+from timeseries.tdates import mxDFromString
 from timeseries import tcore
 #reload(tcore)
-from timeseries.tdates import date_array_fromlist, Date, DateArray, date_array,\
-    mxDFromString, today
+
 
 class test_creation(NumpyTestCase):
     "Base test class for MaskedArrays."
