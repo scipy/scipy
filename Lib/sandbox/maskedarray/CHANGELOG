@@ -31,7 +31,10 @@ The _mask attibute is left unchanged. Because it is a basic attribute, it can
 be overwritten far too easily. If you want to specify a new value for the mask,
 you should use the _setmask or __setmask__ methods: these methods ensure that
 the new mask has the same shape as the data, and that the _hardmask condition
-is respected.
+is respected. Note that in some particular cases involving subclasses of 
+MaskedArray, the mask is not always propagated properly. It is recommended to
+set the mask of the base object, instead of trying to set the mask through a 
+view of MaskedArray.
 
 Following the suggestions of Reggie Dugard, the class defaults have been
 suppressed. Unfortunately, that required to add some extra definitions in the
@@ -43,7 +46,15 @@ instead of creating a new masked array from scratch.
 The previous implementation of MaskedArray is called core_ini.py and it can be
 found in the alternative_versions directory. This folder contains also yet
 another implementation core_alt. This latter is left for documentation purposes,
-and should serve as a template when we'll port the package to C.
+and should serve as a template when we'll port the package to C. It introduces
+yet another attribute, _masklayer. This attribute is always a ndarray of booleans
+with the same shape as the data, that stores the values of the masked. The _mask
+attribute is then a property, that returns _masklayer or nomask depending on 
+the value of the _smallmask flag and the values of _masklayer. This approach 
+seems to solve the anomaly in mask propagation mentioned earlier. However, some
+performance tests show that this approach is significantly slower (from 10% to 
+50%) than the current implementation. It was therfore decided to leave it out of
+the main package.
 
 #...............................................................................
 2007-01-22 : core    : fixed a call to numpy.float128 on 32b machines

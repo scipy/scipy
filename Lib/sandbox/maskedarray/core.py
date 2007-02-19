@@ -1163,7 +1163,13 @@ If `value` is masked, masks those locations."""
             if newmask is not nomask:
                 self._mask.__ior__(newmask)
         else:
-            self._mask.flat = newmask
+            # This one is tricky: if we set the mask that way, we may break the
+            # propagation. But if we don't, we end up with a mask full of False
+            # and a test on nomask fails...
+            if newmask is nomask:
+                self._mask = nomask
+            else:
+                self._mask.flat = newmask
         if self._mask.shape:
             self._mask.shape = self.shape
     _setmask = __setmask__
