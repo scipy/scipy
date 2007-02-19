@@ -539,7 +539,11 @@ accesses the array element by element. Therefore, `d` is a Date object.
         r = ndarray.__getitem__(self, indx)
         if isinstance(r, (generic, int)):
             return Date(self.freq, value=r)
-        elif r.size == 1:
+        elif hasattr(r, 'size') and r.size == 1:
+            # need to check if it has a size attribute for situations
+            # like when the datearray is the data for a maskedarray
+            # or some other subclass of ndarray with wierd getitem
+            # behaviour
             return Date(self.freq, value=r.item())
         else:
             return r
