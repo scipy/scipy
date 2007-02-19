@@ -987,7 +987,7 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         _data = numeric.array(data, dtype=dtype, copy=copy, subok=True)
         _baseclass = getattr(_data, '_baseclass', type(_data))
         _data = _data.view(cls)
-        # Pricess mask ...........
+        # Process mask ...........
         # Backwards compat
         if hasattr(data,'_mask') and not isinstance(data, ndarray):
             _data._mask = data._mask
@@ -999,8 +999,6 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
                     _data._sharedmask = False
                 if not keep_mask:
                     _data._mask = nomask
-#                else;
-#                    _data._mask = data._mask
         else:
             mask = numeric.array(mask, dtype=MaskType, copy=copy)
             if mask.shape != _data.shape:
@@ -1035,14 +1033,8 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         """
         # Finalize mask ...............
         self._mask = getattr(obj, '_mask', nomask)
-#        if not self.shape:
-#            self._mask.shape = obj.shape
-#        else:
-#            self._mask.shape = self.shape
         if self._mask is not nomask:
             self._mask.shape = self.shape
-#            except ValueError:
-#                self._mask = nomask
         # Get the remaining options ...
         self._hardmask = getattr(obj, '_hardmask', self._defaulthardmask)
         self._smallmask = getattr(obj, '_smallmask', True)
@@ -1059,7 +1051,7 @@ Wraps the numpy array and sets the mask according to context.
         #..........
         if context is not None:
             result._mask = result._mask.copy()
-            (func, args, out_index) = context
+            (func, args, _) = context
             m = reduce(mask_or, [getmask(arg) for arg in args])
             # Get domain mask
             domain = ufunc_domain.get(func, None)
@@ -1162,7 +1154,6 @@ Sets a slice i:j to `value`.
 If `value` is masked, masks those locations."""
         self.__setitem__(slice(i,j), value)
     #............................................
-    #............................................
     def __setmask__(self, mask):
         newmask = make_mask(mask, copy=False, small_mask=self._smallmask)
 #        self.unshare_mask()
@@ -1180,18 +1171,7 @@ If `value` is masked, masks those locations."""
     def _get_mask(self):
         """Returns the current mask."""
         return self._mask
-    
-#    def _set_mask(self, mask):
-#        """Sets the mask to `mask`."""
-#        mask = make_mask(mask, copy=False, small_mask=self._smallmask)
-#        if mask is not nomask:
-#            if mask.size != self.size:
-#                raise ValueError, "Inconsistent shape between data and mask!"
-#            if mask.shape != self.shape:
-#                mask.shape = self.shape
-#            self._mask = mask
-#        else:
-#            self._mask = nomask
+
     mask = property(fget=_get_mask, fset=__setmask__, doc="Mask")
     #............................................
     def harden_mask(self):
@@ -1421,20 +1401,6 @@ scalar or the masked singleton."""
         else:
             return masked_array(n1 - n2)
     #............................................
-#    def _get_shape(self):
-#        "Returns the current shape."
-#        return self._data.shape
-#    #
-#    def _set_shape (self, newshape):
-#        "Sets the array's shape."
-#        self._data.shape = newshape
-#        if self._mask is not nomask:
-#            #self._mask = self._mask.copy()
-#            self._mask.shape = newshape
-#    #
-#    shape = property(fget=_get_shape, fset=_set_shape,
-#                     doc="Shape of the array, as a tuple.")
-    #
     def reshape (self, *s):
         """Reshapes the array to shape s.
 Returns a new masked array.
@@ -1652,7 +1618,6 @@ i.e. var = mean((x - x.mean())**2).
             danom = self.anom(axis=axis, dtype=dtype)
             danom *= danom
             dvar = danom.sum(axis) / cnt
-#            dvar /= cnt
             if axis is not None:
                 dvar._mask = mask_or(self._mask.all(axis), (cnt==1))
             return dvar
@@ -1836,7 +1801,7 @@ maximum_fill_value corresponding to the data type."""
             return super(MaskedArray, self).max(axis=axis)
         elif (not mask.ndim) and mask:
             return masked
-        # Check teh mask ..............
+        # Check the mask ..............
         if axis is None:
             mask = umath.logical_and.reduce(mask.flat)
         else:
@@ -1901,72 +1866,12 @@ the maximum default, the minimum uses the minimum default."""
     # Backwards Compatibility. Heck...
     @property
     def data(self):
-        """Returns the `_data` part of the MaskedArray.
-You should really use `_data` instead..."""
+        """Returns the `_data` part of the MaskedArray."""
         return self._data
     def raw_data(self):
         """Returns the `_data` part of the MaskedArray.
-You should really use `_data` instead..."""
+You should really use `data` instead..."""
         return self._data
-
-##..............................................................................
-
-
-
-#class _arithmethods:
-#    """Defines a wrapper for arithmetic methods.
-#Instead of directly calling a ufunc, the corresponding method of  the `array._data`
-#object is called instead.
-#    """
-#    def __init__ (self, methodname, fill_self=0, fill_other=0, domain=None):
-#        """
-#:Parameters:
-#    - `methodname` (String) : Method name.
-#    - `fill_self` (Float *[0]*) : Fill value for the instance.
-#    - `fill_other` (Float *[0]*) : Fill value for the target.
-#    - `domain` (Domain object *[None]*) : Domain of non-validity.
-#        """
-#        self.methodname = methodname
-#        self.fill_self = fill_self
-#        self.fill_other = fill_other
-#        self.domain = domain
-#    #
-#    def __call__ (self, instance, other, *args):
-#        "Execute the call behavior."
-#        m_self = instance._mask
-#        m_other = getmask(other)
-#        base = filled(instance,self.fill_self)
-#        target = filled(other, self.fill_other)
-#        if self.domain is not None:
-#            # We need to force the domain to a ndarray only.
-#            if self.fill_other > self.fill_self:
-#                domain = self.domain(base, target)
-#            else:
-#                domain = self.domain(target, base)
-#            if domain.any():
-#                #If `other` is a subclass of ndarray, `filled` must have the
-#                # same subclass, else we'll lose some info.
-#                #The easiest then is to fill `target` instead of creating
-#                # a pure ndarray.
-#                #Oh, and we better make a copy!
-#                if isinstance(other, ndarray):
-#                    if target is other:
-#                        # We don't want to modify other: let's copy target, then
-#                        target = target.copy()
-#                    target[:] = numeric.where(fromnumeric.asarray(domain),
-#                                              self.fill_other, target)
-#                else:
-#                    target = numeric.where(fromnumeric.asarray(domain),
-#                                           self.fill_other, target)
-#                m_other = mask_or(m_other, domain)
-#        m = mask_or(m_self, m_other)
-#        method = getattr(base, self.methodname)
-#        return instance.__class__(method(target, *args), mask=m)
-#    #
-#    def patch(self):
-#        """Applies the method `func` from class `method` to MaskedArray"""
-#        return types.MethodType(self,None,MaskedArray)
-#..............................................................................
 
 #####--------------------------------------------------------------------------
 #---- --- Shortcuts ---
@@ -2003,61 +1908,11 @@ def is_masked(x):
     return False
 
 
-#####--------------------------------------------------------------------------
-#---- --- Patch methods ---
-#####--------------------------------------------------------------------------
-#class _arraymethod:
-#    """Defines a wrapper for basic array methods.
-#Upon call, returns a masked array, where the new `_data` array is the output
-#of the corresponding method called on the original `_data`.
-#
-#If `onmask` is True, the new mask is the output of the method calld on the initial mask.
-#If `onmask` is False, the new mask is just a reference to the initial mask.
-#
-#:Parameters:
-#    `funcname` : String
-#        Name of the function to apply on data.
-#    `onmask` : Boolean *[True]*
-#        Whether the mask must be processed also (True) or left alone (False).
-#    """
-#    def __init__(self, funcname, onmask=True):
-#        self._name = funcname
-#        self._onmask = onmask
-#        self.__doc__ = getattr(ndarray, self._name).__doc__
-#    def __call__(self, instance, *args, **params):
-#        methodname = self._name
-#        (d,m) = (instance._data, instance._mask)
-#        C = instance.__class__
-#        if m is nomask:
-#            return C(getattr(d,methodname).__call__(*args, **params))
-#        elif self._onmask:
-#            return C(getattr(d,methodname).__call__(*args, **params),
-#                     mask=getattr(m,methodname)(*args, **params) )
-#        else:
-#            return C(getattr(d,methodname).__call__(*args, **params), mask=m)
-#
-#    def patch(self):
-#        "Adds the new method to MaskedArray."
-#        return types.MethodType(self, None, MaskedArray)
-##......................................
-#MaskedArray.conj = MaskedArray.conjugate = _arraymethod('conjugate').patch()
-#MaskedArray.diagonal = _arraymethod('diagonal').patch()
-#MaskedArray.take = _arraymethod('take').patch()
-#MaskedArray.ravel = _arraymethod('ravel').patch()
-#MaskedArray.transpose = _arraymethod('transpose').patch()
-#MaskedArray.T = _arraymethod('transpose').patch()
-#MaskedArray.swapaxes = _arraymethod('swapaxes').patch()
-#MaskedArray.clip = _arraymethod('clip', onmask=False).patch()
-#MaskedArray.compress = _arraymethod('compress').patch()
-#MaskedArray.resize = _arraymethod('resize').patch()
-#MaskedArray.copy = _arraymethod('copy').patch()
-
-
-
 #####---------------------------------------------------------------------------
 #---- --- Extrema functions ---
 #####---------------------------------------------------------------------------
 class _extrema_operation(object):
+    "Generic class for maximum/minimum functions."
     def __call__(self, a, b=None):
         "Executes the call behavior."
         if b is None:
@@ -2733,163 +2588,7 @@ MaskedArray.__dumps__ = dumps
 
 ################################################################################
 
-if __name__ == '__main__':
-    import numpy as N
-    from maskedarray.testutils import assert_equal, assert_array_equal
-    pi = N.pi
-    
-    a = array([1,2,3,4,5],mask=[0,1,0,0,0])
-    x = add.reduce(a)
-    assert_equal(add.reduce(a), 13)
-    
-    if 0:        
-        x = masked_array([1,2,3], mask=[1,0,0])
-        mx = masked_array(x)
-        assert_equal(mx.mask, x.mask)
-        mx = masked_array(x, mask=[0,1,0], keep_mask=False)
-        assert_equal(mx.mask, [0,1,0])
-        mx = masked_array(x, mask=[0,1,0], keep_mask=True)
-        assert_equal(mx.mask, [1,1,0])   
-        #We default to true
-        mx = masked_array(x, mask=[0,1,0])
-        assert_equal(mx.mask, [1,1,0])
-    if 0:        
-        import numpy.core.ma as nma
-        x = nma.arange(5)
-        x[2] = nma.masked
-        X = masked_array(x, mask=x._mask)
-        assert_equal(X._mask, x.mask)
-        assert_equal(X._data, x._data)
-        X = masked_array(x)
-        assert_equal(X._data, x._data)
-        assert_equal(X._mask, x.mask)
-        assert_equal(getmask(x), [0,0,1,0,0])
-    if 0:        
-        d = arange(5)
-        n = [0,0,0,1,1]
-        m = make_mask(n)
-        x = array(d, mask = m)
-        assert( x[3] is masked)
-        assert( x[4] is masked)
-        x[[1,4]] = [10,40]
-        assert( x.mask is not m)
-        assert( x[3] is masked)
-        assert( x[4] is not masked)
-        assert_equal(x, [0,10,2,-1,40])   
-    if 0:
-        d = arange(5)
-        n = [0,0,0,1,1]
-        m = make_mask(n)
-        xh = array(d, mask = m, hard_mask=True)
-        # We need to copy, to avoid updating d in xh!
-        xs = array(d, mask = m, hard_mask=False, copy=True)
-        xh[[1,4]] = [10,40]
-        xs[[1,4]] = [10,40]
-        assert_equal(xh._data, [0,10,2,3,4])
-        assert_equal(xs._data, [0,10,2,3,40])
-        #assert_equal(xh.mask.ctypes.data, m.ctypes.data)
-        assert_equal(xs.mask, [0,0,0,1,0])
-        assert(xh._hardmask)
-        assert(not xs._hardmask)
-        xh[1:4] = [10,20,30]
-        xs[1:4] = [10,20,30]
-        assert_equal(xh._data, [0,10,20,3,4])
-        assert_equal(xs._data, [0,10,20,30,40])
-        #assert_equal(xh.mask.ctypes.data, m.ctypes.data)
-        assert_equal(xs.mask, nomask)
-        xh[0] = masked
-        xs[0] = masked
-        assert_equal(xh.mask, [1,0,0,1,1])
-        assert_equal(xs.mask, [1,0,0,0,0])
-        xh[:] = 1
-        xs[:] = 1
-        assert_equal(xh._data, [0,1,1,3,4])
-        assert_equal(xs._data, [1,1,1,1,1])
-        assert_equal(xh.mask, [1,0,0,1,1])
-        assert_equal(xs.mask, nomask)
-        # Switch to soft mask
-        xh.soften_mask()
-        xh[:] = arange(5)
-        assert_equal(xh._data, [0,1,2,3,4])
-        assert_equal(xh.mask, nomask)
-        # Switch back to hard mask
-        xh.harden_mask()
-        xh[xh<3] = masked
-        assert_equal(xh._data, [0,1,2,3,4])
-        assert_equal(xh._mask, [1,1,1,0,0])
-        xh[filled(xh>1,False)] = 5
-        assert_equal(xh._data, [0,1,2,5,5])
-        assert_equal(xh._mask, [1,1,1,0,0])
-        #
-        xh = array([[1,2],[3,4]], mask = [[1,0],[0,0]], hard_mask=True)
-        xh[0] = 0
-        assert_equal(xh._data, [[1,0],[3,4]])
-        assert_equal(xh._mask, [[1,0],[0,0]])
-        xh[-1,-1] = 5
-        assert_equal(xh._data, [[1,0],[3,5]])
-        assert_equal(xh._mask, [[1,0],[0,0]])
-        xh[filled(xh<5,False)] = 2
-        assert_equal(xh._data, [[1,2],[2,5]])
-        assert_equal(xh._mask, [[1,0],[0,0]])
-        #        
-        "Another test of hardmask"
-        d = arange(5)
-        n = [0,0,0,1,1]
-        m = make_mask(n)
-        xh = array(d, mask = m, hard_mask=True)
-        xh[4:5] = 999
-        #assert_equal(xh.mask.ctypes.data, m.ctypes.data)
-        xh[0:1] = 999    
-        assert_equal(xh._data,[999,1,2,3,4])
-    if 0:        
-        x = N.array([[ 0.13,  0.26,  0.90],
-                     [ 0.28,  0.33,  0.63],
-                     [ 0.31,  0.87,  0.70]])
-        m = N.array([[ True, False, False],
-                     [False, False, False],
-                     [True,  True, False]], dtype=N.bool_)
-        mx = masked_array(x, mask=m)
-        xbig = N.array([[False, False,  True],
-                        [False, False,  True],
-                        [False,  True,  True]], dtype=N.bool_)
-        mxbig = (mx > 0.5)
-        mxsmall = (mx < 0.5)
-        #
-        assert (mxbig.all()==False)
-        assert (mxbig.any()==True)
-        y = mxbig.all(0)
-        assert_equal(mxbig.all(0),[False, False, True])
-        assert_equal(mxbig.all(1), [False, False, True])
-        assert_equal(mxbig.any(0),[False, False, True])
-        assert_equal(mxbig.any(1), [True, True, True])
-        
-    if 1:
-        "Tests put."
-        d = arange(5)
-        n = [0,0,0,1,1]
-        m = make_mask(n)
-        x = array(d, mask = m)
-        assert( x[3] is masked)
-        assert( x[4] is masked)
-        x[[1,4]] = [10,40]
-        assert( x.mask is not m)
-        assert( x[3] is masked)
-        assert( x[4] is not masked)
-        assert_equal(x, [0,10,2,-1,40])        
-        #
-        x = masked_array(arange(10), mask=[1,0,0,0,0]*2)
-        i = [0,2,4,6]
-        x.put(i, [6,4,2,0])
-        assert_equal(x, asarray([6,1,4,3,2,5,0,7,8,9,]))
-        assert_equal(x.mask, [0,0,0,0,0,1,0,0,0,0])
-        x.put(i, masked_array([0,2,4,6],[1,0,1,0]))
-        assert_array_equal(x, [0,1,2,3,4,5,6,7,8,9,])
-        assert_equal(x.mask, [1,0,0,0,1,1,0,0,0,0])
-        #
-        x = masked_array(arange(10), mask=[1,0,0,0,0]*2)
-        put(x, i, [6,4,2,0])
-        assert_equal(x, asarray([6,1,4,3,2,5,0,7,8,9,]))
-        assert_equal(x.mask, [0,0,0,0,0,1,0,0,0,0])
-        put(x, i, masked_array([0,2,4,6],[1,0,1,0]))
-        assert_array_equal(x, [0,1,2,3,4,5,6,7,8,9,])
-        assert_equal(x.mask, [1,0,0,0,1,1,0,0,0,0])  
+#if __name__ == '__main__':
+#    import numpy as N
+#    from maskedarray.testutils import assert_equal, assert_array_equal
+#    pi = N.pi
