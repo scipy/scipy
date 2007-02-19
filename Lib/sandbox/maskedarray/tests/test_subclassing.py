@@ -1,16 +1,27 @@
+# pylint: disable-msg=W0611, W0612, W0511,R0201
+"""Tests suite for MaskedArray & subclassing.
+
+:author: Pierre Gerard-Marchant
+:contact: pierregm_at_uga_dot_edu
+:version: $Id$
+"""
+__author__ = "Pierre GF Gerard-Marchant ($Author$)"
+__version__ = '1.0'
+__revision__ = "$Revision$"
+__date__     = '$Date$'
+
 import numpy as N
 import numpy.core.numeric as numeric
 
 from numpy.testing import NumpyTest, NumpyTestCase
 
 import maskedarray.testutils
-reload(maskedarray.testutils)
+#reload(maskedarray.testutils)
 from maskedarray.testutils import *
 
 import maskedarray.core as coremodule
-reload(coremodule)
+#reload(coremodule)
 from maskedarray.core import *
-
 
 
 class SubArray(N.ndarray):
@@ -37,8 +48,11 @@ class MSubArray(SubArray,MaskedArray):
         return _data
     def __array_finalize__(self,obj):
         SubArray.__array_finalize__(self, obj)
-        MaskedArray.__array_finalize__(self,obj)
+        MaskedArray.__array_finalize__(self,obj)    
         return
+    def _get_series(self):
+        return self.view(MaskedArray)
+    _series = property(fget=_get_series)
 msubarray = MSubArray
 
 class MMatrix(MaskedArray, N.matrix,):
@@ -50,6 +64,9 @@ class MMatrix(MaskedArray, N.matrix,):
         N.matrix.__array_finalize__(self, obj)
         MaskedArray.__array_finalize__(self,obj)
         return     
+    def _get_series(self):
+        return self.view(MaskedArray)
+    _series = property(fget=_get_series)
 mmatrix = MMatrix 
         
 
@@ -98,18 +115,15 @@ class test_subclassing(NumpyTestCase):
         assert isinstance(z, MSubArray)
         assert isinstance(z._data, SubArray)
         assert z._data.info['added'] > 0
+        #
+        ym._setmask([1,0,0,0,1])
+        assert_equal(ym._mask, [1,0,0,0,1])
+        ym._series._setmask([0,0,0,0,1])
+        assert_equal(ym._mask, [0,0,0,0,1])
+        
         
 ################################################################################
 if __name__ == '__main__':
     NumpyTest().run()
-    if 1:
-        x = N.arange(5)
-        mx = mmatrix(x,mask=[0,1,0,0,0])
-        
-        c = mx.ravel()
-        
-        a = add(mx,x)
-        b = mx+x
-        assert_equal(a,b)
 
 

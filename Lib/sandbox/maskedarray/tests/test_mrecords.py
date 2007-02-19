@@ -28,7 +28,8 @@ import maskedarray.core as MA
 #from maskedarray.mrecords import mrecarray, fromarrays, fromtextfile, fromrecords
 import maskedarray.mrecords
 reload(maskedarray.mrecords)
-from maskedarray.mrecords import MaskedRecords, fromarrays, fromtextfile, fromrecords
+from maskedarray.mrecords import MaskedRecords, \
+    fromarrays, fromtextfile, fromrecords, addfield
 
 #..............................................................................
 class test_mrecords(NumpyTestCase):
@@ -149,7 +150,7 @@ class test_mrecords(NumpyTestCase):
     def test_addfield(self):
         "Tests addfield"
         [d, m, mrec] = self.data
-        mrec.addfield(masked_array(d+10, mask=m[::-1]))
+        mrec = addfield(mrec, masked_array(d+10, mask=m[::-1]))
         assert_equal(mrec.f2, d+10)
         assert_equal(mrec.f2._mask, m[::-1])    
                 

@@ -1012,7 +1012,7 @@ class test_array_methods(NumpyTestCase):
         xs[[1,4]] = [10,40]
         assert_equal(xh._data, [0,10,2,3,4])
         assert_equal(xs._data, [0,10,2,3,40])
-        assert(xh.mask is m)
+        #assert_equal(xh.mask.ctypes.data, m.ctypes.data)
         assert_equal(xs.mask, [0,0,0,1,0])
         assert(xh._hardmask)
         assert(not xs._hardmask)
@@ -1020,7 +1020,7 @@ class test_array_methods(NumpyTestCase):
         xs[1:4] = [10,20,30]
         assert_equal(xh._data, [0,10,20,3,4])
         assert_equal(xs._data, [0,10,20,30,40])
-        assert(xh.mask is m)
+        #assert_equal(xh.mask.ctypes.data, m.ctypes.data)
         assert_equal(xs.mask, nomask)
         xh[0] = masked
         xs[0] = masked
@@ -1063,9 +1063,8 @@ class test_array_methods(NumpyTestCase):
         m = make_mask(n)
         xh = array(d, mask = m, hard_mask=True)
         xh[4:5] = 999
-        assert(xh.mask is m)
-        xh[0:1] = 999
-        
+        #assert_equal(xh.mask.ctypes.data, m.ctypes.data)
+        xh[0:1] = 999    
         assert_equal(xh._data,[999,1,2,3,4])
         
     def check_sort(self):

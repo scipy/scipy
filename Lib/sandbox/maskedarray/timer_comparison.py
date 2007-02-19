@@ -25,6 +25,7 @@ class moduletester:
         self.equal = module.equal
         self.filled = module.filled
         self.getmask = module.getmask 
+        self.getmaskarray = module.getmaskarray
         self.id = id
         self.inner = module.inner
         self.make_mask = module.make_mask
@@ -233,7 +234,7 @@ class moduletester:
         assert t[2] == 3
     #----------------------------------        
     def test_5(self):        
-        "Tests inplace"
+        "Tests inplace w/ scalar"
     
         x = self.arange(10)
         y = self.arange(10)
@@ -284,7 +285,12 @@ class moduletester:
         #assert id1 == self.id(x.raw_data())
         assert self.allequal(x, y+1.)
         
+
+    def test_6(self):        
+        "Tests inplace w/ array"
+    
         x = self.arange(10, dtype=float_)
+        y = self.arange(10)
         xm = self.arange(10, dtype=float_)
         xm[2] = self.masked
         m = xm.mask
@@ -328,8 +334,9 @@ class moduletester:
         a[-1] = self.masked
         x /= a
         xm /= a
+        
     #----------------------------------    
-    def test_6(self):
+    def test_7(self):
         "Tests ufunc"
         d = (self.array([1.0, 0, -1, pi/2]*2, mask=[0,1]+[0]*6),
              self.array([1.0, 0, -1, pi/2]*2, mask=[1,0]+[0]*6),)
@@ -363,6 +370,7 @@ class moduletester:
             mr = mf(*args)
             self.assert_array_equal(ur.filled(0), mr.filled(0), f)
             self.assert_array_equal(ur._mask, mr._mask)
+            
     #----------------------------------    
     def test_99(self):
         # test average
@@ -419,29 +427,37 @@ class moduletester:
 
 ################################################################################    
 if __name__ == '__main__':
-    setup_base = "from __main__ import moduletester\ntester = moduletester(module)"
+            
+    setup_base = "from __main__ import moduletester \n"\
+                 "import numpy\n" \
+                 "tester = moduletester(module)\n"
     setup_old = "import numpy.core.ma as module\n"+setup_base
     setup_new = "import maskedarray.core_ini as module\n"+setup_base
-    setup_alt = "import maskedarray.core as module\n"+setup_base
+    setup_cur = "import maskedarray.core as module\n"+setup_base
+#    setup_alt = "import maskedarray.core_alt as module\n"+setup_base
+#    setup_tmp = "import maskedarray.core_tmp as module\n"+setup_base
     
-    nrepeat = 2
-    nloop = 3
-
-    
-    for i in range(1,7):
-        func = 'tester.test_%i()' % i
-        old = timeit.Timer(func, setup_old).repeat(nrepeat, nloop*10)
-        new = timeit.Timer(func, setup_new).repeat(nrepeat, nloop*10)
-        alt = timeit.Timer(func, setup_alt).repeat(nrepeat, nloop*10)
-        old = numpy.sort(old)
-        new = numpy.sort(new)
-        alt = numpy.sort(alt)
-        print "#%i" % i +50*'.'
-        print eval("moduletester.test_%i.__doc__" % i)
-        print "numpy.core.ma: %.3f - %.3f" % (old[0], old[1])
-        print "core_ini     : %.3f - %.3f" % (new[0], new[1])
-        print "core_alt     : %.3f - %.3f" % (alt[0], alt[1])
-#    import maskedarray.core_alt as module
-#    tester = moduletester(module)
-#    tester.test_3()
-#    print "OK"
+    (nrepeat, nloop) = (10, 10)
+        
+    if 1:    
+        for i in range(1,8):
+            func = 'tester.test_%i()' % i
+            old = timeit.Timer(func, setup_old).repeat(nrepeat, nloop*10)
+            new = timeit.Timer(func, setup_new).repeat(nrepeat, nloop*10)
+            cur = timeit.Timer(func, setup_cur).repeat(nrepeat, nloop*10)
+#            alt = timeit.Timer(func, setup_alt).repeat(nrepeat, nloop*10)
+#            tmp = timeit.Timer(func, setup_tmp).repeat(nrepeat, nloop*10)
+            old = numpy.sort(old)
+            new = numpy.sort(new)
+            cur = numpy.sort(cur)
+#            alt = numpy.sort(alt)
+#            tmp = numpy.sort(tmp)
+            print "#%i" % i +50*'.'
+            print eval("moduletester.test_%i.__doc__" % i)
+            print "numpy.core.ma: %.3f - %.3f" % (old[0], old[1])
+            print "core_ini     : %.3f - %.3f" % (new[0], new[1])
+            print "core_current : %.3f - %.3f" % (cur[0], cur[1])
+#            print "core_alt     : %.3f - %.3f" % (alt[0], alt[1])
+#            print "core_tmp     : %.3f - %.3f" % (tmp[0], tmp[1])
+            
+            

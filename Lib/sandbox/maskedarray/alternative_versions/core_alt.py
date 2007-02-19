@@ -370,11 +370,10 @@ where invalid values are pre-masked.
         m = mask_or(getmask(a), getmask(b))
         if (not m.ndim) and m:
             return masked
-        d1 = filled(a, self.fillx)
-        d2 = filled(b, self.filly)
-        result = self.f(d1, d2, *args, **kwargs).view(get_masked_subclass(a,b))
+        result = self.f(a, b, *args, **kwargs).view(get_masked_subclass(a,b))
         if result.ndim > 0:
-            result._mask = m
+            result.unshare_mask()
+            result._masklayer |= m
         return result
     #
     def reduce (self, target, axis=0, dtype=None):
@@ -791,76 +790,76 @@ masked_print_option = _MaskedPrintOption('--')
 #####--------------------------------------------------------------------------
 #---- --- MaskedArray class ---
 #####--------------------------------------------------------------------------
-##def _getoptions(a_out, a_in):
-##    "Copies standards options of a_in to a_out."
-##    for att in [']
-#class _mathmethod(object):
-#    """Defines a wrapper for arithmetic methods.
-#Instead of directly calling a ufunc, the corresponding method of  the `array._data`
-#object is called instead.
-#    """
-#    def __init__ (self, methodname, fill_self=0, fill_other=0, domain=None):
-#        """
-#:Parameters:
-#    - `methodname` (String) : Method name.
-#    - `fill_self` (Float *[0]*) : Fill value for the instance.
-#    - `fill_other` (Float *[0]*) : Fill value for the target.
-#    - `domain` (Domain object *[None]*) : Domain of non-validity.
-#        """
-#        self.methodname = methodname
-#        self.fill_self = fill_self
-#        self.fill_other = fill_other
-#        self.domain = domain
-#        self.obj = None
-#        self.__doc__ = self.getdoc()
-#    #
-#    def getdoc(self):
-#        "Returns the doc of the function (from the doc of the method)."
-#        try:
-#            return getattr(MaskedArray, self.methodname).__doc__
-#        except:
-#            return getattr(ndarray, self.methodname).__doc__
-#    #
-#    def __get__(self, obj, objtype=None):
-#        self.obj = obj
-#        return self
-#    #
-#    def __call__ (self, other, *args):
-#        "Execute the call behavior."
-#        instance = self.obj
-#        m_self = instance._mask
-#        m_other = getmask(other)
-#        base = instance.filled(self.fill_self)
-#        target = filled(other, self.fill_other)
-#        if self.domain is not None:
-#            # We need to force the domain to a ndarray only.
-#            if self.fill_other > self.fill_self:
-#                domain = self.domain(base, target)
-#            else:
-#                domain = self.domain(target, base)
-#            if domain.any():
-#                #If `other` is a subclass of ndarray, `filled` must have the
-#                # same subclass, else we'll lose some info.
-#                #The easiest then is to fill `target` instead of creating
-#                # a pure ndarray.
-#                #Oh, and we better make a copy!
-#                if isinstance(other, ndarray):
-#                    # We don't want to modify other: let's copy target, then
-#                    target = target.copy()
-#                    target[fromnumeric.asarray(domain)] = self.fill_other
-#                else:
-#                    target = numeric.where(fromnumeric.asarray(domain),
-#                                           self.fill_other, target)
-#                m_other = mask_or(m_other, domain)
-#        m = mask_or(m_self, m_other)
-#        method = getattr(base, self.methodname)
-#        result = method(target, *args).view(type(instance))
-#        try:
-#            result._mask = m
-#        except AttributeError:
-#            if m:
-#                result = masked
-#        return result
+#def _getoptions(a_out, a_in):
+#    "Copies standards options of a_in to a_out."
+#    for att in [']
+class _mathmethod(object):
+    """Defines a wrapper for arithmetic methods.
+Instead of directly calling a ufunc, the corresponding method of  the `array._data`
+object is called instead.
+    """
+    def __init__ (self, methodname, fill_self=0, fill_other=0, domain=None):
+        """
+:Parameters:
+    - `methodname` (String) : Method name.
+    - `fill_self` (Float *[0]*) : Fill value for the instance.
+    - `fill_other` (Float *[0]*) : Fill value for the target.
+    - `domain` (Domain object *[None]*) : Domain of non-validity.
+        """
+        self.methodname = methodname
+        self.fill_self = fill_self
+        self.fill_other = fill_other
+        self.domain = domain
+        self.obj = None
+        self.__doc__ = self.getdoc()
+    #
+    def getdoc(self):
+        "Returns the doc of the function (from the doc of the method)."
+        try:
+            return getattr(MaskedArray, self.methodname).__doc__
+        except:
+            return getattr(ndarray, self.methodname).__doc__
+    #
+    def __get__(self, obj, objtype=None):
+        self.obj = obj
+        return self
+    #
+    def __call__ (self, other, *args):
+        "Execute the call behavior."
+        instance = self.obj
+        m_self = instance._mask
+        m_other = getmask(other)
+        base = instance.filled(self.fill_self)
+        target = filled(other, self.fill_other)
+        if self.domain is not None:
+            # We need to force the domain to a ndarray only.
+            if self.fill_other > self.fill_self:
+                domain = self.domain(base, target)
+            else:
+                domain = self.domain(target, base)
+            if domain.any():
+                #If `other` is a subclass of ndarray, `filled` must have the
+                # same subclass, else we'll lose some info.
+                #The easiest then is to fill `target` instead of creating
+                # a pure ndarray.
+                #Oh, and we better make a copy!
+                if isinstance(other, ndarray):
+                    # We don't want to modify other: let's copy target, then
+                    target = target.copy()
+                    target[fromnumeric.asarray(domain)] = self.fill_other
+                else:
+                    target = numeric.where(fromnumeric.asarray(domain),
+                                           self.fill_other, target)
+                m_other = mask_or(m_other, domain)
+        m = mask_or(m_self, m_other)
+        method = getattr(base, self.methodname)
+        result = method(target, *args).view(type(instance))
+        try:
+            result._mask = m
+        except AttributeError:
+            if m:
+                result = masked
+        return result
 #...............................................................................
 class _arraymethod(object):
     """Defines a wrapper for basic array methods.
@@ -993,12 +992,13 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
             _data._mask = data._mask
             _data._sharedmask = True
         if mask is nomask:
-            if _data._mask is not nomask:
+            if _data._hasmasked:
                 if copy:
-                    _data._mask = data._mask.copy()
+                    _data._masklayer = data._masklayer.copy()
                     _data._sharedmask = False
                 if not keep_mask:
-                    _data._mask = nomask
+                    _data._masklayer.flat = False
+                    _data._hasmasked = False
 #                else;
 #                    _data._mask = data._mask
         else:
@@ -1013,13 +1013,15 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
                     msg = "Mask and data not compatible: data size is %i, "+\
                           "mask size is %i."
                     raise MAError, msg % (nd, nm)
-            if _data._mask is nomask or not keep_mask:
-                _data._mask = mask
+            if not (_data._hasmasked and keep_mask):
+                _data._masklayer = mask
+                _data._hasmasked = True
                 _data._sharedmask = True
             else:
-                _data._mask = _data._mask.copy()
+                _data._masklayer = _data._masklayer.copy()
                 _data._mask.__ior__(mask) 
                 _data._sharedmask = False
+                _data._hasmasked = True
         # Process extra options ..
         # Update fille_value
         _data._fill_value = getattr(data, '_fill_value', fill_value)
@@ -1034,13 +1036,17 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         """Finalizes the masked array.
         """
         # Finalize mask ...............
-        self._mask = getattr(obj, '_mask', nomask)
+        self._masklayer = getattr(obj, '_masklayer', nomask)
+        self._hasmasked = getattr(obj, '_hasmasked', False)
+        if self._masklayer is nomask:
+            self._masklayer = numeric.zeros(obj.shape, dtype=MaskType)
+            self._hasmasked = False
 #        if not self.shape:
 #            self._mask.shape = obj.shape
 #        else:
 #            self._mask.shape = self.shape
-        if self._mask is not nomask:
-            self._mask.shape = self.shape
+        if self._hasmasked:
+            self._masklayer.shape = self.shape
 #            except ValueError:
 #                self._mask = nomask
         # Get the remaining options ...
@@ -1056,9 +1062,11 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
 Wraps the numpy array and sets the mask according to context.
         """
         result = obj.view(type(self))
+        result._masklayer = self._masklayer.copy()
+        result._hasmasked = self._hasmasked
+#        result._hasmasked = result._masklayer.any()
         #..........
         if context is not None:
-            result._mask = result._mask.copy()
             (func, args, out_index) = context
             m = reduce(mask_or, [getmask(arg) for arg in args])
             # Get domain mask
@@ -1070,14 +1078,17 @@ Wraps the numpy array and sets the mask according to context.
                     d = domain(*args)
                 if m is nomask:
                     if d is not nomask:
-                        m = d
+                        result._masklayer.flat = d
+                        result._hasmasked = True
                 else:
-                    m |= d
-            result._mask = m
-        if (not m.ndim) and m:
+                    result._masklayer |= d
+                    result._hasmasked |= d.any()
+            else:
+                result._masklayer.__ior__(m)
+                result._hasmasked = m.any()
+        if result._masklayer.size == 1 and result._masklayer.item():
             return masked
         #....
-        result._mask = m
         result._fill_value = self._fill_value
         result._hardmask = self._hardmask
         result._smallmask = self._smallmask
@@ -1093,17 +1104,15 @@ Returns the item described by i. Not a copy as in previous versions.
 #            msg = "Masked arrays must be filled before they can be used as indices!"
 #            raise IndexError, msg
         # super() can't work here if the underlying data is a matrix...
-        dout = (self._data).__getitem__(indx)
-        m = self._mask
-        if hasattr(dout, 'shape') and len(dout.shape) > 0:
+        result = (self._data).__getitem__(indx)
+        m = self._masklayer[indx]
+        if hasattr(result, 'shape') and len(result.shape) > 0:
             # Not a scalar: make sure that dout is a MA
-            dout = dout.view(type(self))
-            if m is not nomask:
-                # use _set_mask to take care of the shape
-                dout.__setmask__(m[indx])
-        elif m is not nomask and m[indx]:
+            result = result.view(type(self))
+            result.__setmask__(m)
+        elif not m.shape and m:
             return masked
-        return dout
+        return result
     #........................
     def __setitem__(self, indx, value):
         """x.__setitem__(i, y) <==> x[i]=y
@@ -1116,39 +1125,47 @@ Sets item described by index. If value is masked, masks those locations.
 #            raise IndexError, msg
         #....
         if value is masked:
-            if self._mask is nomask:
-                self._mask = make_mask_none(self.shape)
-            else:
-                self._mask = self._mask.copy()
-            self._mask[indx] = True
+#            if self._sharedmask:
+#                slef.unshare_mask()
+            self._masklayer[indx] = True
+            self._hasmasked = True
             return
         #....
         dval = numeric.asarray(value).astype(self.dtype)
         valmask = getmask(value)
-        if self._mask is nomask:
+        
+        if not self._hasmasked:
             if valmask is not nomask:
-                self._mask = make_mask_none(self.shape)
-                self._mask[indx] = valmask
+                self._masklayer[indx] = valmask
+                self._hasmasked = True
         elif not self._hardmask:
-            self._mask = self._mask.copy()
+            self.unshare_mask()
             if valmask is nomask:
-                self._mask[indx] = False
+                self._masklayer[indx] = False
+                self._hasmasked = self._masklayer.any()
             else:
-                self._mask[indx] = valmask
+                self._masklayer[indx] = valmask
+                self._hasmasked = True
         elif hasattr(indx, 'dtype') and (indx.dtype==bool_):
-            indx = indx * umath.logical_not(self._mask)
+            indx = indx * umath.logical_not(self._masklayer)
+#        elif isinstance(index, int):
         else:
-            mindx = mask_or(self._mask[indx], valmask, copy=True)
+            mindx = mask_or(self._masklayer[indx], valmask, copy=True)
             dindx = self._data[indx]
             if dindx.size > 1:
                 dindx[~mindx] = dval
             elif mindx is nomask:
                 dindx = dval
             dval = dindx
-            self._mask[indx] = mindx
+            self._masklayer[indx] = mindx
         # Set data ..........
         #dval = filled(value).astype(self.dtype)
         ndarray.__setitem__(self._data,indx,dval)
+#        #.....
+#        if m is nomask or not m.any():
+#            self._mask = nomask
+#        else:
+#            self._mask = m
     #............................................
     def __getslice__(self, i, j):
         """x.__getslice__(i, j) <==> x[i:j]
@@ -1162,24 +1179,28 @@ Sets a slice i:j to `value`.
 If `value` is masked, masks those locations."""
         self.__setitem__(slice(i,j), value)
     #............................................
-    #............................................
     def __setmask__(self, mask):
         newmask = make_mask(mask, copy=False, small_mask=self._smallmask)
 #        self.unshare_mask()
-        if self._mask is nomask:
-            self._mask = newmask
-        elif self._hardmask:
+        if self._hardmask:
             if newmask is not nomask:
-                self._mask.__ior__(newmask)
+                self.unshare_mask()
+                self._masklayer.__ior__(newmask)
+                self._hasmasked = True
         else:
-            self._mask.flat = newmask
-        if self._mask.shape:
-            self._mask.shape = self.shape
-    _setmask = __setmask__
+#            if self._hasmasked and (mask is nomask):
+#                self.unshare_mask()
+            self._masklayer.flat = newmask
+            self._hasmasked = newmask.any()
+        if self._masklayer.shape:
+            self._masklayer.shape = self.shape
+    _set_mask = __setmask__
     
     def _get_mask(self):
         """Returns the current mask."""
-        return self._mask
+        if not self._hasmasked and self._smallmask:
+            return nomask
+        return self._masklayer
     
 #    def _set_mask(self, mask):
 #        """Sets the mask to `mask`."""
@@ -1192,7 +1213,7 @@ If `value` is masked, masks those locations."""
 #            self._mask = mask
 #        else:
 #            self._mask = nomask
-    mask = property(fget=_get_mask, fset=__setmask__, doc="Mask")
+    mask = _mask = property(fget=_get_mask, fset=__setmask__, doc="Mask")
     #............................................
     def harden_mask(self):
         "Forces the mask to hard."
@@ -1204,7 +1225,7 @@ If `value` is masked, masks those locations."""
         
     def unshare_mask(self):
         if self._sharedmask:
-            self._mask = self._mask.copy()
+            self._masklayer = self._masklayer.copy()
             self._sharedmask = False
         
     #............................................
@@ -1345,30 +1366,38 @@ masked_%(name)s(data = %(data)s,
         "Adds other to self in place."
         ndarray.__iadd__(self._data,other)
         m = getmask(other)
-        if self._mask is nomask:
-            self._mask = m
-        elif m is not nomask:
-            self._mask += m
+        if m is not nomask:
+            self._masklayer += m
+            self._hasmasked = True
+#        if m is not nomask:
+#            self._masklayer |= m
+#            self._hasmasked = True
         return self
     #....
     def __isub__(self, other):
         "Subtracts other from self in place."
         ndarray.__isub__(self._data,other)
         m = getmask(other)
-        if self._mask is nomask:
-            self._mask = m
-        elif m is not nomask:
-            self._mask += m
+#        if not self._hasmasked:
+#            self._masklayer.flat = m
+#        elif m is not nomask:
+#            self._masklayer += m
+        if m is not nomask:
+            self._masklayer += m
+            self._hasmasked = True
         return self
     #....
     def __imul__(self, other):
         "Multiplies self by other in place."
         ndarray.__imul__(self._data,other)
         m = getmask(other)
-        if self._mask is nomask:
-            self._mask = m
-        elif m is not nomask:
-            self._mask += m
+#        if not self._hasmasked:
+#            self._masklayer.flat = m
+#        elif m is not nomask:
+#            self._masklayer += m
+        if m is not nomask:
+            self._masklayer += m
+            self._hasmasked = True
         return self
     #....
     def __idiv__(self, other):
@@ -1379,6 +1408,27 @@ masked_%(name)s(data = %(data)s,
         ndarray.__idiv__(self._data, other)
         self._mask = mask_or(self._mask, new_mask)
         return self
+    #....
+    __add__ = _mathmethod('__add__')
+    __radd__ = _mathmethod('__add__')
+    __sub__ = _mathmethod('__sub__')
+    __rsub__ = _mathmethod('__rsub__')
+    __pow__ = _mathmethod('__pow__')
+    __mul__ = _mathmethod('__mul__', 1, 1)
+    __rmul__ = _mathmethod('__mul__', 1, 1)
+    __div__ = _mathmethod('__div__', 0, 1, domain_safe_divide())
+    __rdiv__ = _mathmethod('__rdiv__', 1, 0, domain_safe_divide())
+    __truediv__ = _mathmethod('__truediv__', 0, 1, domain_safe_divide())
+    __rtruediv__ = _mathmethod('__rtruediv__', 1, 0, domain_safe_divide())
+    __floordiv__ = _mathmethod('__floordiv__', 0, 1, domain_safe_divide())
+    __rfloordiv__ = _mathmethod('__rfloordiv__', 1, 0, domain_safe_divide())
+    __eq__ = _mathmethod('__eq__')
+    __ne__ = _mathmethod('__ne__')
+    __le__ = _mathmethod('__le__')
+    __lt__ = _mathmethod('__lt__')
+    __ge__ = _mathmethod('__ge__')
+    __gt__ = _mathmethod('__gt__')
+
     #............................................
     def __float__(self):
         "Converts self to float."
@@ -1441,8 +1491,7 @@ Returns a new masked array.
 If you want to modify the shape in place, please use `a.shape = s`"""
         # TODO: Do we keep super, or reshape _data and take a view ?
         result = super(MaskedArray, self).reshape(*s)
-        if self._mask is not nomask:
-            result._mask = self._mask.reshape(*s)
+        result._masklayer = self._masklayer.reshape(*s)
         return result
     #
     repeat = _arraymethod('repeat')
@@ -2735,8 +2784,9 @@ MaskedArray.__dumps__ = dumps
 
 if __name__ == '__main__':
     import numpy as N
-    from maskedarray.testutils import assert_equal, assert_array_equal
+    from maskedarray.testutils import assert_equal, assert_array_equal, assert_mask_equal
     pi = N.pi
+#    coremodule = __main__
     
     a = array([1,2,3,4,5],mask=[0,1,0,0,0])
     x = add.reduce(a)
@@ -2893,3 +2943,51 @@ if __name__ == '__main__':
         put(x, i, masked_array([0,2,4,6],[1,0,1,0]))
         assert_array_equal(x, [0,1,2,3,4,5,6,7,8,9,])
         assert_equal(x.mask, [1,0,0,0,1,1,0,0,0,0])  
+        
+    if 1:
+        x = arange(20)
+        x = x.reshape(4,5)
+        x.flat[5] = 12
+        assert x[1,0] == 12
+        z = x + 10j * x
+        assert_equal(z.real, x)
+        assert_equal(z.imag, 10*x)
+        assert_equal((z*conjugate(z)).real, 101*x*x)
+        z.imag[...] = 0.0
+    if 1:
+        x = array([1.0, 0, -1, pi/2]*2, mask=[0,1]+[0]*6)
+        y = array([1.0, 0, -1, pi/2]*2, mask=[1,0]+[0]*6)
+        d = (x,y)
+        
+        z = N.add(x, y)
+        
+        for f in ['sqrt', 'log', 'log10', 'exp', 'conjugate',
+                  'sin', 'cos', 'tan',
+                  'arcsin', 'arccos', 'arctan',
+                  'sinh', 'cosh', 'tanh',
+                  'arcsinh',
+                  'arccosh',
+                  'arctanh',
+                  'absolute', 'fabs', 'negative',
+                  # 'nonzero', 'around',
+                  'floor', 'ceil',
+                  # 'sometrue', 'alltrue',
+                  'logical_not',
+                  'add', 'subtract', 'multiply',
+                  'divide', 'true_divide', 'floor_divide',
+                  'remainder', 'fmod', 'hypot', 'arctan2',
+                  'equal', 'not_equal', 'less_equal', 'greater_equal',
+                  'less', 'greater',
+                  'logical_and', 'logical_or', 'logical_xor',
+                  ]:
+            print f
+            try:
+                uf = getattr(umath, f)
+            except AttributeError:
+                uf = getattr(fromnumeric, f)
+            mf = eval(f) #getattr(coremodule, f)
+            args = d[:uf.nin]
+            ur = uf(*args)
+            mr = mf(*args)
+            assert_equal(ur.filled(0), mr.filled(0), f)
+            assert_mask_equal(ur.mask, mr.mask)
