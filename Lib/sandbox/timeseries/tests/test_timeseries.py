@@ -75,7 +75,6 @@ class test_creation(NumpyTestCase):
         
     def test_fromdatearray(self):
         _, dates, _ = self.d
-        data = dates.copy()
         data = dates
     
         series = time_series(data, dates)
