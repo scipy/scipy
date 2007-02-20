@@ -554,43 +554,43 @@ accesses the array element by element. Therefore, `d` is a Date object.
     @property
     def day(self):          
         "Returns the day of month."
-        return self.__getDateInfo__('D')
+        return self.__getdateinfo__('D')
     @property
     def day_of_week(self):  
         "Returns the day of week."
-        return self.__getDateInfo__('W')
+        return self.__getdateinfo__('W')
     @property
     def day_of_year(self):  
         "Returns the day of year."
-        return self.__getDateInfo__('R')
+        return self.__getdateinfo__('R')
     @property
     def month(self):        
         "Returns the month."
-        return self.__getDateInfo__('M')
+        return self.__getdateinfo__('M')
     @property
     def quarter(self):   
         "Returns the quarter."   
-        return self.__getDateInfo__('Q')
+        return self.__getdateinfo__('Q')
     @property
     def year(self):         
         "Returns the year."
-        return self.__getDateInfo__('Y')
+        return self.__getdateinfo__('Y')
     @property
     def second(self):    
         "Returns the seconds."  
-        return self.__getDateInfo__('S')
+        return self.__getdateinfo__('S')
     @property
     def minute(self):     
         "Returns the minutes."  
-        return self.__getDateInfo__('T')
+        return self.__getdateinfo__('T')
     @property
     def hour(self):         
         "Returns the hour."
-        return self.__getDateInfo__('H')
+        return self.__getdateinfo__('H')
     @property
     def week(self):
         "Returns the week."
-        return self.__getDateInfo__('I')
+        return self.__getdateinfo__('I')
 
     days = day
     weekdays = day_of_week
@@ -603,9 +603,9 @@ accesses the array element by element. Therefore, `d` is a Date object.
     hours = hour
     weeks = week
     
-    def __getDateInfo(self, info):
+    def __getdateinfo__(self, info):
         return numeric.asarray(cseries.getDateInfo(numeric.asarray(self), self.freq, info), dtype=int_)
-        
+    __getDateInfo = __getdateinfo__    
     #.... Conversion methods ....................
     #
     def tovalue(self):

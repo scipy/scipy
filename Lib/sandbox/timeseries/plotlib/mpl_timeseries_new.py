@@ -1,12 +1,12 @@
 """
 Classes to plot TimeSeries w/ matplotlib.
 
-:author: Pierre GF Gerard-Marchant
-:contact: pierregm_at_uga_edu
+:author: Pierre GF Gerard-Marchant & Matt Knox
+:contact: pierregm_at_uga_dot_edu - mattknow_ca_at_hotmail_dot_com
 :date: $Date: 2007-02-02 23:19:06 -0500 (Fri, 02 Feb 2007) $
-:version: $Id: mpl_timeseries.py 2676 2007-02-03 04:19:06Z pierregm $
+:version: $Id: tdates.py 2726 2007-02-19 07:37:26Z pierregm $
 """
-__author__ = "Pierre GF Gerard-Marchant ($Author: pierregm $)"
+__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author: pierregm $)"
 __version__ = '1.0'
 __revision__ = "$Revision: 2676 $"
 __date__     = '$Date: 2007-02-02 23:19:06 -0500 (Fri, 02 Feb 2007) $'
@@ -133,7 +133,10 @@ def nonsingular(vmin, vmax, expander=0.001, tiny=1e-15, increasing=True):
 
 def _get_default_annual_spacing(nyears):
     """Returns a default spacing between consecutive ticks for annual data."""
-    if nyears < 20: 
+
+    if nyears < 11: 
+        (min_spacing, maj_spacing) = (1, 1)
+    elif nyears < 15: 
         (min_spacing, maj_spacing) = (1, 2)
     elif nyears < 50: 
         (min_spacing, maj_spacing) = (1, 5)
@@ -147,34 +150,6 @@ def _get_default_annual_spacing(nyears):
         (min_spacing, maj_spacing) = (10, 50)
     else:
         (min_spacing, maj_spacing) = (20, 100)
-    return (min_spacing, maj_spacing)
-
-def _get_default_quarterly_spacing(nquarters):
-    """Returns a default spacing between consecutive ticks for quarterly data."""
-    if nquarters <= 3*4:
-        (min_spacing, maj_spacing) = (1,4)
-    elif nquarters <= 11*4:
-        (min_spacing, maj_spacing) = (1,4)
-    else:
-        (min_anndef, maj_anndef) = _get_default_annual_spacing(nquarters//4)
-        min_spacing = min_anndef * 4
-        maj_spacing = maj_anndef * 4
-    return (min_spacing, maj_spacing)
-
-def _get_default_monthly_spacing(nmonths):
-    """Returns a default spacing between consecutive ticks for monthly data."""
-    if nmonths <= 10:
-        (min_spacing, maj_spacing) = (1,3)
-    elif nmonths <= 2*12:
-        (min_spacing, maj_spacing) = (1,6)
-    elif nmonths <= 3*12:
-        (min_spacing, maj_spacing) = (1,12)
-    elif nmonths <= 11*12:
-        (min_spacing, maj_spacing) = (3,12)  
-    else:
-        (min_anndef, maj_anndef) = _get_default_annual_spacing(nmonths//12)
-        min_spacing = min_anndef * 12
-        maj_spacing = maj_anndef * 12
     return (min_spacing, maj_spacing)
 
 #...............................................................................
@@ -202,6 +177,10 @@ class TimeSeries_DateLocator(Locator):
         "Returns the default ticks spacing."
         raise NotImplementedError('Derived must override')
     
+    def _get_default_locs(self, vmin, vmax):
+        "Returns the default ticks spacing."
+        raise NotImplementedError('Derived must override')
+    
     def __call__(self):
         'Return the locations of the ticks.'
         self.verify_intervals()
@@ -209,12 +188,12 @@ class TimeSeries_DateLocator(Locator):
         if vmax < vmin:
             vmin, vmax = vmax, vmin
         if self.isdynamic:
-            base = self._get_default_spacing(vmax-vmin+1)
+            locs = self._get_default_locs(vmin, vmax)
         else:
             base = self.base
-        d = vmin // base
-        vmin = (d+1) * base + self.offset
-        locs = range(vmin, vmax+1, base)
+            (d, m) = divmod(vmin, base)
+            vmin = (d+1) * base
+            locs = range(vmin, vmax+1, base)
         return locs
     
     def autoscale(self):
@@ -223,21 +202,12 @@ class TimeSeries_DateLocator(Locator):
         """
         self.verify_intervals()
         dmin, dmax = self.dataInterval.get_bounds()
-        if self.isdynamic:
-            base = self._get_default_spacing(dmax-dmin+1)
-        else:
-            base = self.base
-        (d,m) = divmod(dmin, base)
-        if m < base/2:
-            vmin = d * base
-        else:
-            vmin = (d+1) * base
-        (d,m) = divmod(dmax, base)
-        vmax = (d+1) * base
+        locs = self._get_default_locs(dmin, dmax)
+        (vmin, vmax) = locs[[0, -1]]
         if vmin == vmax:
             vmin -= 1
             vmax += 1
-        return nonsingular(vmin, vmax)        
+        return nonsingular(vmin, vmax)      
     
 #...............................................................................
 class TimeSeries_AnnualLocator(TimeSeries_DateLocator):
@@ -248,12 +218,17 @@ class TimeSeries_AnnualLocator(TimeSeries_DateLocator):
         TimeSeries_DateLocator.__init__(self,'A', minor_locator, dynamic_mode,
                                         base, quarter, month, day)
     
-    def _get_default_spacing(self, span):
+    def _get_default_locs(self, vmin, vmax):
         "Returns the default tick spacing for annual data."
+        span = vmax - vmin + 1
         (minor, major) = _get_default_annual_spacing(span)
         if self.isminor:
-            return minor
-        return major
+            base = minor
+        else:
+            base = major
+        offset = base - (vmin % base)
+        return N.arange(vmin+offset, vmax+1, base)
+    
 #...............................................................................
 class TimeSeries_QuarterlyLocator(TimeSeries_DateLocator):
     "Locates the ticks along an axis controlled by a quarterly DateArray."
@@ -264,12 +239,24 @@ class TimeSeries_QuarterlyLocator(TimeSeries_DateLocator):
                                         base, quarter, month, day)
         self.offset=1
     
-    def _get_default_spacing(self, span):
-        "Returns the default tick spacing for quarterly data."
-        (minor, major) = _get_default_quarterly_spacing(span)
+    def _get_default_locs(self, vmin, vmax):
+        "Returns the default ticks spacing."
+        nquarters = vmax - vmin + 1
+        if nquarters <= 3*4:
+            (min_spacing, maj_spacing) = (1, 4)
+        elif nquarters <= 11*4:
+            (min_spacing, maj_spacing) = (1, 4)
+        else:
+            (min_anndef, maj_anndef) = _get_default_annual_spacing(nquarters//4)
+            min_spacing = min_anndef * 4
+            maj_spacing = maj_anndef * 4
         if self.isminor:
-            return minor
-        return major       
+            base = min_spacing
+        else:
+            base = maj_spacing
+        offset = base - (vmin+4-1) % base
+        return N.arange(vmin+offset, vmax+1, base)
+    
 #...............................................................................
 class TimeSeries_MonthlyLocator(TimeSeries_DateLocator):
     "Locates the ticks along an axis controlled by a monthly DateArray."
@@ -280,12 +267,28 @@ class TimeSeries_MonthlyLocator(TimeSeries_DateLocator):
                                         base, quarter, month, day)
         self.offset = 1
     
-    def _get_default_spacing(self, span):
-        "Returns the default tick spacing for monthly data."
-        (minor, major) = _get_default_monthly_spacing(span)
+    def _get_default_locs(self, vmin, vmax):
+        "Returns the default ticks spacing."
+        nmonths = vmax - vmin + 1
+        if nmonths <= 10:
+            (min_spacing, maj_spacing) = (1, 3)
+        elif nmonths <= 2*12:
+            (min_spacing, maj_spacing) = (1, 6)
+        elif nmonths <= 3*12:
+            (min_spacing, maj_spacing) = (1, 12)
+        elif nmonths <= 11*12:
+            (min_spacing, maj_spacing) = (3, 12)  
+        else:
+            (min_anndef, maj_anndef) = _get_default_annual_spacing(nmonths//12)
+            min_spacing = min_anndef * 12
+            maj_spacing = maj_anndef * 12
         if self.isminor:
-            return minor
-        return major
+            base = min_spacing
+            offset = ((4 - (vmin-1) % 4) % base)
+        else:
+            base = maj_spacing
+            offset = ((4 - (vmin-1) % 4) % 4)
+        return N.arange(vmin+offset, vmax+1, base)
     
 #...............................................................................
 class TimeSeries_DailyLocator(TimeSeries_DateLocator):
@@ -310,18 +313,21 @@ class TimeSeries_DailyLocator(TimeSeries_DateLocator):
         #
         if span <= daysperyear//12:
             minor = default
-            major = default[(dates.day_of_week == 1)]
+            major = default[(dates.day == 1)]
         elif span <= daysperyear//3:
-            minor = default[(dates.day_of_week == 1)]
+            minor = default
             major = default[(dates.day == 1)]
         elif span <= 1.5 * daysperyear:
+            monthstart = (dates.day == 1)
             minor = default[(dates.day_of_week == 1)]
-            major = default[(dates.day == 1)]
+            major = default[monthstart]
         elif span <= 3 * daysperyear:
+            quarterstart = (dates.day == 1) & (dates.month % 3 == 1)
             minor = default[(dates.day == 1)]
-            major = default[(dates.day_of_year == 1)]
+            major = default[quarterstart]
         elif span <= 11 * daysperyear:
-            minor = default[(dates.quarter != (dates-1).quarter)]
+            quarterstart = (dates.day == 1) & (dates.month % 3 == 1)
+            minor = default[quarterstart]
             major = default[(dates.day_of_year == 1)]
         else:
             (min_anndef, maj_anndef) = _get_default_annual_spacing(span/daysperyear)
@@ -475,14 +481,168 @@ class TimeSeries_MonthLocator(TimeSeries_DateLocator):
 class TimeSeries_DateFormatter(Formatter):
     """Formats the ticks along a DateArray axis."""
     
-    def __init__(self, freq, fmt=None):
-        if fmt is None:
-            fmt = Date.default_fmtstr[freq]
-        self.fmt = fmt
+    def __init__(self, freq, minor_locator=False, dynamic_mode=True,):
+        self.format = None
         self.freqstr = freq
+        self.locs = []
+        self.formatdict = {}
+        self.isminor = minor_locator
+        self.isdynamic = dynamic_mode
+        self.offset = 0
+
+            
+    def _initialize_dates(self, locs):
+        "Returns a DateArray for the current frequency."
+        freq = self.freqstr
+        dates = date_array(dlist=self.locs, freq=freq)
+        return dates
     
+    def set_locs(self, locs):
+        'Sets the locations of the ticks'
+        self.locs = locs
+        if len(self.locs) > 0:
+            self.verify_intervals()
+            d = abs(self.viewInterval.span())
+            self._set_format(d)
+    #
     def __call__(self, x, pos=0):
-        return Date(self.freqstr, value=int(x)).strfmt(self.fmt)
+        if self.isminor:
+            fmt = self.formatdict.pop(x, '')
+            if fmt is not '':
+                retval = Date(self.freqstr, value=int(x)).strfmt(fmt)
+            else:
+                retval = ''
+        else:
+            retval = ''
+        return retval
+    
+ 
+#...............................................................................    
+class TimeSeries_AnnualFormatter(TimeSeries_DateFormatter):
+    #
+    def __init__(self, minor_locator=False, dynamic_mode=True,):
+        TimeSeries_DateFormatter.__init__(self, 'A',
+                                          minor_locator=minor_locator, 
+                                          dynamic_mode=dynamic_mode,)
+
+    def _set_format(self, span):
+        dates = self._initialize_dates(self.locs)
+        format = N.empty(len(self.locs), dtype="|S2")
+        format.flat = ''
+        if span <= 11:
+            format[:] = "%Y"
+        elif span < 15:
+            format[(self.locs % 2 == 0)] = "%Y"
+        elif span < 50:
+            format[(self.locs % 5 == 0)] = "%Y"
+        elif span < 100:
+            format[(self.locs % 10 == 0)] = "%Y"
+        elif span < 200:
+            format[(self.locs % 20 == 0)] = "%Y"
+        elif span < 400:
+            format[(self.locs % 25 == 0)] = "%Y"
+        elif span < 1000:
+            format[(self.locs % 50 == 0)] = "%Y"
+        else:
+            format[(self.locs % 100 == 0)] = "%Y"
+        self.formatdict = dict([(x,f) for (x,f) in zip(self.locs, format)])
+        
+#...............................................................................        
+class TimeSeries_QuarterlyFormatter(TimeSeries_DateFormatter):
+    #
+    def __init__(self, minor_locator=False, dynamic_mode=True,):
+        TimeSeries_DateFormatter.__init__(self, 'Q',
+                                          minor_locator=minor_locator, 
+                                          dynamic_mode=dynamic_mode,)
+
+    def _set_format(self, span):
+        dates = self._initialize_dates(self.locs)
+        format = N.empty(len(self.locs), dtype="|S7")
+        format.flat = ''
+        (years,quarters) = divmod(self.locs-1, 4)
+        if span <= 3*4:
+            yearchange = (self.locs % 4 == 1)
+            format[:] = "Q%q"
+            format[(quarters == 0)] = "Q%q\n%Y"
+            format[0] = "Q%q\n%Y"
+        elif span <= 11*4:
+            format[(years % 2 == 1) & (quarters == 0)] = "%Y"
+        else:
+            format[(years % 5 == 4)] = "%Y"
+        self.formatdict = dict([(x,f) for (x,f) in zip(self.locs, format)])
+                       
+        
+#...............................................................................        
+class TimeSeries_MonthlyFormatter(TimeSeries_DateFormatter):
+    #
+    def __init__(self, minor_locator=False, dynamic_mode=True,):
+        TimeSeries_DateFormatter.__init__(self, 'M',
+                                          minor_locator=minor_locator, 
+                                          dynamic_mode=dynamic_mode,)
+    #
+    def _set_format(self, span):
+        dates = self._initialize_dates(self.locs)
+        yearchange = (self.locs % 12 == 1)
+        format = N.empty(len(self.locs), dtype="|S6")
+        format.flat = ''
+        if span <= 1.5 * 12:
+            format[:] = "%b"
+            format[yearchange] = "%b\n%Y"
+            format[0] = "%b\n%Y"
+        elif span <= 3*12:
+            format[(dates.month % 2 == 1)] = "%b"
+            format[yearchange] = "%b\n%Y"
+        else:
+            format[yearchange] = "%Y"   
+        self.formatdict = dict([(x,f) for (x,f) in zip(self.locs, format)])
+            
+
+#...............................................................................
+class TimeSeries_DailyFormatter(TimeSeries_DateFormatter):
+    #
+    def __init__(self, freq, minor_locator=False, dynamic_mode=True,):
+        TimeSeries_DateFormatter.__init__(self, freq, 
+                                          minor_locator=minor_locator, 
+                                          dynamic_mode=dynamic_mode,)
+        if self.freqstr == 'B':
+            self.daysinyear = 261
+        else:
+            self.daysinyear = 365
+    #
+    def _set_format(self, span):
+        dayperyear = self.daysinyear
+        dates = self._initialize_dates(self.locs)
+        yearchange = (dates.day_of_year == 1)
+        format = N.empty(len(self.locs), dtype="|S8")
+        format.flat = ''
+        if span <= dayperyear // 12:
+            format[:] = '%d'
+            format[(dates.day == 1)] = '\n%b'
+            format[yearchange] = '\n%b\n%Y'
+            format[0] = '\n%b\n%Y'
+        elif span <= dayperyear // 4:
+            format[(dates.day_of_week == 1)] = '%d'
+            format[(dates.day == 1)] = '\n%b'
+            format[yearchange] = '\n%b\n%Y'
+        elif span <= 1.5 * dayperyear:
+            monthweekchange = (dates.day_of_week == 0) | (dates.day == 1)
+            format[monthweekchange] = '\n%b'
+            format[yearchange] = '\n%b\n%Y'
+        elif span <= 3 * dayperyear:
+            quarterchange = (dates.months % 3 == 1) & (dates.day == 1)
+            format[quarterchange] = '%b'
+            format[yearchange] = '\n%Y'
+        else:
+            format[:] = '%Y'
+        self.formatdict = dict([(x,f) for (x,f) in zip(self.locs, format)])
+            
+
+# Monthly:
+#  if span <= 1.5 * 12: '%b' on minor ticks, '%Y' on major ticks
+#elif span <= 3 * 12  : '%b' every even month on minor ticks, '%Y' on major
+#elif span <= 11 * 12 : '%Y' on major
+# Daily:
+
 
 
 #####--------------------------------------------------------------------------
@@ -652,46 +812,50 @@ This command accepts the same keywords as `matplotlib.plot`."""
         # Get the locator class .................
         if self.freqstr in 'BDU':
             locator = TimeSeries_DailyLocator
+            formatter = TimeSeries_DailyFormatter
             self.xaxis.set_major_locator(locator(self.freqstr,
                                                  minor_locator=False,
                                                  dynamic_mode=True))
             self.xaxis.set_minor_locator(locator(self.freqstr,
                                                  minor_locator=True,
                                                  dynamic_mode=True))
+            self.xaxis.set_major_formatter(formatter(self.freqstr,
+                                                     minor_locator=False,
+                                                     dynamic_mode=True))
+            self.xaxis.set_minor_formatter(formatter(self.freqstr,
+                                                     minor_locator=True,
+                                                     dynamic_mode=True))
         else:
             if self.freqstr == 'A':
                 locator = TimeSeries_AnnualLocator
+                formatter = TimeSeries_AnnualFormatter
             elif self.freqstr == 'Q':
                 locator = TimeSeries_QuarterlyLocator
+                formatter = TimeSeries_QuarterlyFormatter
             elif self.freqstr == 'M':
                 locator = TimeSeries_MonthlyLocator
+                formatter = TimeSeries_MonthlyFormatter
             self.xaxis.set_major_locator(locator(minor_locator=False,
                                                  dynamic_mode=True))
             self.xaxis.set_minor_locator(locator(minor_locator=True,
                                                  dynamic_mode=True))
+            self.xaxis.set_major_formatter(formatter(minor_locator=False,
+                                                     dynamic_mode=True))
+            self.xaxis.set_minor_formatter(formatter(minor_locator=True,
+                                                     dynamic_mode=True))
         #........................................
-        self.xaxis.set_major_formatter(TimeSeries_DateFormatter(self.freqstr))
-        if rcParams['backend'] == 'PS':
-            rotate = False
-            warnings.warn("dateplot: PS backend detected, rotate disabled")
-        if self.is_last_row():
-            if rotate:
-                setp(self.get_xticklabels(),rotation=45)
+#        if rcParams['backend'] == 'PS':
+#            rotate = False
+#            warnings.warn("dateplot: PS backend detected, rotate disabled")
+#        if self.is_last_row():
+#            if rotate:
+#                setp(self.get_xticklabels(),rotation=45)
 #        self.xaxis.set_major_formatter(FuncFormatter(self.dateticks_formatter))
 #        self.xaxis.set_minor_formatter(FuncFormatter(self.dateticks_formatter))
 #        else:
 #            self.set_xticklabels([])
 #            self.set_xlabel('')          
-#    #............................................
-#    def plot_shifts(self,shifts,**kwargs):
-#        """Plots regime shifts.
-#:param shifts: Shifts/trends to plot.
-#:type shifts: `RegimeShift`
-#        """
-#        self.tsplot(self.xdata,shifts.regimes,**kwargs)
-#        for x in shifts.xshifts[0]:
-#            self.axvline(self.xdata[x],ls=':',c='#999999',lw=0.5)    
-    #............................................
+
 TSPlot = TimeSeriesPlot
 
 
@@ -760,16 +924,16 @@ def tsplot(*args, **kwargs):
 ################################################################################
 if __name__ == '__main__':
 
-    da = date_array(start_date=Date(freq='D', year=2003, quarter=3, month=1, day=17), 
+    da = date_array(start_date=Date(freq='A', year=2003, quarter=3, month=1, day=17), 
                     length=51)
     ser = timeseries.time_series(MA.arange(len(da)), dates=da)
     ser[4] = MA.masked
-    ser_2 = timeseries.time_series(MA.arange(len(da)), dates=da.asfreq('M'))
+#    ser_2 = timeseries.time_series(MA.arange(len(da)), dates=da.asfreq('Q'))
     
     pylab.figure()
     pylab.gcf().add_tsplot(111)
     pylab.gca().tsplot(ser, 'ko-')
     pylab.gca().format_dateaxis()
-    pylab.gca().tsplot(ser_2, 'rs')
+#    pylab.gca().tsplot(ser_2, 'rs')
     pylab.show()
     
