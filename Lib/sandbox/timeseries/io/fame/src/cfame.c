@@ -12,6 +12,10 @@
 #define MAXNLLENGTH 1000
 
 #define CALLFAME(cmd) Py_BEGIN_ALLOW_THREADS; cmd; Py_END_ALLOW_THREADS; if (checkError(status)) return NULL
+#define ADD_INT_TO_DICT(dict, key, val) \
+    {PyObject *pyval = PyInt_FromLong(val); \
+     PyDict_SetItemString(dict, key, pyval); \
+     Py_DECREF(pyval); }
 
 //call fame without checking for errors
 #define CALLFAME_NOCHECK(cmd) Py_BEGIN_ALLOW_THREADS; cmd; Py_END_ALLOW_THREADS;
@@ -95,7 +99,8 @@ cfame_open(PyObject *self, PyObject *args)
     return PyInt_FromLong(dbkey);
 }
 
-static char cfame_close_doc[] = "C level portion of the close method.";
+static char cfame_close_doc[] =
+"C level portion of the close method.";
 static PyObject *
 cfame_close(PyObject *self, PyObject *args)
 {
@@ -103,6 +108,52 @@ cfame_close(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:close", &dbkey)) return NULL;
 
     CALLFAME(cfmcldb (&status, dbkey));
+    Py_RETURN_NONE;
+}
+
+static char cfame_post_doc[] =
+"C level portion of the post method.";
+static PyObject *
+cfame_post(PyObject *self, PyObject *args)
+{
+    int status, dbkey;
+    if (!PyArg_ParseTuple(args, "i:post", &dbkey)) return NULL;
+
+    CALLFAME(cfmpodb (&status, dbkey));
+    Py_RETURN_NONE;
+}
+
+static char cfame_license_expires_doc[] =
+"C level portion of the license_expires method.";
+static PyObject *
+cfame_license_expires(PyObject *self, PyObject *args)
+{
+    int status, date;
+    CALLFAME(cfmexpiration (&status, &date));
+    return PyInt_FromLong(date);
+}
+
+static char cfame_copy_doc[] = "C level portion of the copy_object function.";
+static PyObject *
+cfame_copy(PyObject *self, PyObject *args)
+{
+    int status, srckey, tarkey;
+    char *srcname, *tarname;
+    if (!PyArg_ParseTuple(args, "iiss:copy", &srckey, &tarkey, &srcname, &tarname)) return NULL;
+
+    CALLFAME(cfmcpob (&status, srckey, tarkey, srcname, tarname));
+    Py_RETURN_NONE;
+}
+
+static char cfame_rename_obj_doc[] = "C level portion of the rename function.";
+static PyObject *
+cfame_rename_obj(PyObject *self, PyObject *args)
+{
+    int status, dbkey;
+    char *srcname, *tarname;
+    if (!PyArg_ParseTuple(args, "iss:copy", &dbkey, &srcname, &tarname)) return NULL;
+
+    CALLFAME(cfmrnob (&status, dbkey, srcname, tarname));
     Py_RETURN_NONE;
 }
 
@@ -178,6 +229,92 @@ cfame_get_db_attr(PyObject *self, PyObject *args)
     } else {
         Py_RETURN_NONE;
     }
+}
+
+static char cfame_set_db_desc_doc[] = "C level portion of the set_db_desc method.";
+static PyObject *
+cfame_set_db_desc(PyObject *self, PyObject *args)
+{
+    int status, dbkey;
+    char *desc;
+    if (!PyArg_ParseTuple(args, "is:set_db_desc", &dbkey, &desc)) return NULL;
+    CALLFAME(cfmddes(&status, dbkey, desc));
+    Py_RETURN_NONE;
+}
+
+static char cfame_set_db_doc_doc[] = "C level portion of the set_db_doc method.";
+static PyObject *
+cfame_set_db_doc(PyObject *self, PyObject *args)
+{
+    int status, dbkey;
+    char *doc;
+    if (!PyArg_ParseTuple(args, "is:set_db_doc", &dbkey, &doc)) return NULL;
+    CALLFAME(cfmddoc(&status, dbkey, doc));
+    Py_RETURN_NONE;
+}
+
+static char cfame_set_obj_desc_doc[] = "C level portion of the set_obj_desc method.";
+static PyObject *
+cfame_set_obj_desc(PyObject *self, PyObject *args)
+{
+    int status, dbkey;
+    char *name, *desc;
+    if (!PyArg_ParseTuple(args, "iss:set_obj_desc", &dbkey, &name, &desc)) return NULL;
+    CALLFAME(cfmsdes(&status, dbkey, name, desc));
+    Py_RETURN_NONE;
+}
+
+static char cfame_set_obj_doc_doc[] = "C level portion of the set_obj_doc method.";
+static PyObject *
+cfame_set_obj_doc(PyObject *self, PyObject *args)
+{
+    int status, dbkey;
+    char *name, *doc;
+    if (!PyArg_ParseTuple(args, "iss:set_obj_doc", &dbkey, &name, &doc)) return NULL;
+    CALLFAME(cfmsdoc(&status, dbkey, name, doc));
+    Py_RETURN_NONE;
+}
+
+static char cfame_set_obj_basis_doc[] = "C level portion of the set_obj_basis method.";
+static PyObject *
+cfame_set_obj_basis(PyObject *self, PyObject *args)
+{
+    int status, dbkey, basis;
+    char *name;
+    if (!PyArg_ParseTuple(args, "isi:set_obj_basis", &dbkey, &name, &basis)) return NULL;
+    CALLFAME(cfmsbas(&status, dbkey, name, basis));
+    Py_RETURN_NONE;
+}
+
+static char cfame_set_obj_observed_doc[] = "C level portion of the set_obj_observed method.";
+static PyObject *
+cfame_set_obj_observed(PyObject *self, PyObject *args)
+{
+    int status, dbkey, observed;
+    char *name;
+    if (!PyArg_ParseTuple(args, "isi:set_obj_observed", &dbkey, &name, &observed)) return NULL;
+    CALLFAME(cfmsobs(&status, dbkey, name, observed));
+    Py_RETURN_NONE;
+}
+
+static char cfame_get_obj_attr_doc[] = "C level portion of the get_obj_attr method.";
+static PyObject *
+cfame_get_obj_attr(PyObject *self, PyObject *args)
+{
+    int status, dbkey;
+    int is_created, is_modified;
+    int cdate, mdate;
+    char *name, *attr;
+    if (!PyArg_ParseTuple(args, "iss:get_obj_attr", &dbkey, &name, &attr)) return NULL;
+
+    is_created = (strcmp(attr, "CREATED") == 0);
+    is_modified = (strcmp(attr, "MODIFIED") == 0);
+
+
+    CALLFAME(cfmgdat(&status, dbkey, name, HSEC, &cdate, &mdate));
+    if (is_modified) { return PyInt_FromLong(mdate); }
+    else { return PyInt_FromLong(cdate); }
+
 }
 
 
@@ -898,9 +1035,9 @@ cfame_create(PyObject *self, PyObject *args)
 
 
 
-static char cfame_delete_doc[] = "C level portion of code for deleting objects.";
+static char cfame_delete_obj_doc[] = "C level portion of code for deleting objects.";
 static PyObject*
-cfame_delete(PyObject* self, PyObject* args)
+cfame_delete_obj(PyObject* self, PyObject* args)
 {
     int status, dbkey;
     char* object_name;
@@ -1109,6 +1246,10 @@ cfame_restore(PyObject *self, PyObject *args)
 static PyMethodDef cfame_methods[] = {
     {"open", cfame_open, METH_VARARGS, cfame_open_doc},
     {"close", cfame_close, METH_VARARGS, cfame_close_doc},
+    {"copy", cfame_copy, METH_VARARGS, cfame_copy_doc},
+    {"rename_obj", cfame_rename_obj, METH_VARARGS, cfame_rename_obj_doc},
+    {"post", cfame_post, METH_VARARGS, cfame_post_doc},
+    {"license_expires", cfame_license_expires, METH_VARARGS, cfame_license_expires_doc},
     {"wildlist", cfame_wildlist, METH_VARARGS, cfame_wildlist_doc},
     {"read", cfame_read, METH_VARARGS, cfame_read_doc},
     {"whats", cfame_whats, METH_VARARGS, cfame_whats_doc},
@@ -1117,21 +1258,318 @@ static PyMethodDef cfame_methods[] = {
     {"write_scalar", cfame_write_scalar, METH_VARARGS, cfame_write_scalar_doc},
     {"write_series", cfame_write_series, METH_VARARGS, cfame_write_series_doc},
     {"create", cfame_create, METH_VARARGS, cfame_create_doc},
-    {"delete", cfame_delete, METH_VARARGS, cfame_delete_doc},
+    {"delete_obj", cfame_delete_obj, METH_VARARGS, cfame_delete_obj_doc},
     {"exists", cfame_exists, METH_VARARGS, cfame_exists_doc},
     {"write_namelist", cfame_write_namelist, METH_VARARGS, cfame_write_namelist_doc},
     {"restore", cfame_restore, METH_VARARGS, cfame_restore_doc},
+    {"get_obj_attr", cfame_get_obj_attr, METH_VARARGS, cfame_get_obj_attr_doc},
     {"get_db_attr", cfame_get_db_attr, METH_VARARGS, cfame_get_db_attr_doc},
+    {"set_db_desc", cfame_set_db_desc, METH_VARARGS, cfame_set_db_desc},
+    {"set_db_doc", cfame_set_db_doc, METH_VARARGS, cfame_set_db_doc},
+    {"set_obj_desc", cfame_set_obj_desc, METH_VARARGS, cfame_set_obj_desc},
+    {"set_obj_doc", cfame_set_obj_doc, METH_VARARGS, cfame_set_obj_doc},
+    {"set_obj_basis", cfame_set_obj_basis, METH_VARARGS, cfame_set_obj_basis},
+    {"set_obj_observed", cfame_set_obj_observed, METH_VARARGS, cfame_set_obj_observed},
     {NULL, NULL}
 };
 
 PyMODINIT_FUNC
 initcfame(void)
 {
+    PyObject *m, *FAME_CONSTANTS;
     int status;
-    cfmini(&status);
-    Py_InitModule3("cfame", cfame_methods, cfame_doc);
+    CALLFAME(cfmini(&status));
+    if ((m = Py_InitModule3("cfame", cfame_methods, cfame_doc)) == NULL) return NULL;
     import_array();
-
     makeTranslationTables();
+
+    FAME_CONSTANTS = PyDict_New();
+
+    // Add all the fame constants to a python dictionary
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSUCC",HSUCC);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HINITD",HINITD);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNINIT",HNINIT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFIN",HFIN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBFILE",HBFILE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBMODE",HBMODE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBKEY",HBKEY);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBSRNG",HBSRNG);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBERNG",HBERNG);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBNRNG",HBNRNG);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNOOBJ",HNOOBJ);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBRNG",HBRNG);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HDUTAR",HDUTAR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBOBJT",HBOBJT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBFREQ",HBFREQ);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HTRUNC",HTRUNC);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNPOST",HNPOST);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFUSE",HFUSE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNFMDB",HNFMDB);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HRNEXI",HRNEXI);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HCEXI",HCEXI);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNRESW",HNRESW);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBCLAS",HBCLAS);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBOBSV",HBOBSV);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBBASI",HBBASI);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOEXI",HOEXI);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBMONT",HBMONT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBFLAB",HBFLAB);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBMISS",HBMISS);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBINDX",HBINDX);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNWILD",HNWILD);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBNCHR",HBNCHR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBGROW",HBGROW);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HQUOTA",HQUOTA);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOLDDB",HOLDDB);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HMPOST",HMPOST);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSPCDB",HSPCDB);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBFLAG",HBFLAG);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HPACK",HPACK);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNEMPT",HNEMPT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBATTR",HBATTR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HDUP",HDUP);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBYEAR",HBYEAR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBPER",HBPER);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBDAY",HBDAY);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBDATE",HBDATE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBSEL",HBSEL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBREL",HBREL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBTIME",HBTIME);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBCPU",HBCPU);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HEXPIR",HEXPIR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBPROD",HBPROD);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBUNIT",HBUNIT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBCNTX",HBCNTX);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HLOCKD",HLOCKD);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNETCN",HNETCN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNFAME",HNFAME);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNBACK",HNBACK);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSUSPN",HSUSPN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBSRVR",HBSRVR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HCLNLM",HCLNLM);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBUSER",HBUSER);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSRVST",HSRVST);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBOPT",HBOPT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBOPTV",HBOPTV);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNSUPP",HNSUPP);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBLEN",HBLEN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNULLP",HNULLP);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HREADO",HREADO);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNWFEA",HNWFEA);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBGLNM",HBGLNM);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HCLCHN",HCLCHN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HDPRMC",HDPRMC);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWKOPN",HWKOPN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNUFRD",HNUFRD);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNOMEM",HNOMEM);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBFUNC",HBFUNC);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBPHAS",HBPHAS);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HAPOST",HAPOST);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HUPDRD",HUPDRD);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HP1REQ",HP1REQ);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HP2REQ",HP2REQ);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HUNEXP",HUNEXP);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBVER",HBVER);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNFILE",HNFILE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HMFILE",HMFILE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSCLLM",HSCLLM);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HDBCLM",HDBCLM);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSNFIL",HSNFIL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSMFIL",HSMFIL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HRESFD",HRESFD);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HTMOUT",HTMOUT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HCHGAC",HCHGAC);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFMENV",HFMENV);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HLICFL",HLICFL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HLICNS",HLICNS);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HRMTDB",HRMTDB);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBCONN",HBCONN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HABORT",HABORT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNCONN",HNCONN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNMCA",HNMCA);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBATYP",HBATYP);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBASRT",HBASRT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBPRSP",HBPRSP);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBGRP",HBGRP);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNLOCL",HNLOCL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HDHOST",HDHOST);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOPENW",HOPENW);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOPEND",HOPEND);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNTWIC",HNTWIC);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HPWWOU",HPWWOU);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HLSERV",HLSERV);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HLRESV",HLRESV);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HMAXDB",HMAXDB);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HLARGE",HLARGE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HREMSUP",HREMSUP);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBADVAL",HBADVAL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNOMAP",HNOMAP);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HIFAIL",HIFAIL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFAMER",HFAMER);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBFMON",HBFMON);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNAMLEN",HNAMLEN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNAMSIZ",HNAMSIZ);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HRMODE",HRMODE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HCMODE",HCMODE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOMODE",HOMODE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HUMODE",HUMODE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSMODE",HSMODE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWMODE",HWMODE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HDMODE",HDMODE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSERIE",HSERIE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSCALA",HSCALA);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFRMLA",HFRMLA);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HITEM",HITEM);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HGLNAM",HGLNAM);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HGLFOR",HGLFOR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HUNDFT",HUNDFT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNUMRC",HNUMRC);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNAMEL",HNAMEL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBOOLN",HBOOLN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSTRNG",HSTRNG);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HPRECN",HPRECN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HDATE",HDATE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HRECRD",HRECRD);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBSUND",HBSUND);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBSDAY",HBSDAY);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBSBUS",HBSBUS);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOBUND",HOBUND);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOBBEG",HOBBEG);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOBEND",HOBEND);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOBAVG",HOBAVG);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOBSUM",HOBSUM);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOBANN",HOBANN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOBFRM",HOBFRM);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOBHI",HOBHI);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOBLO",HOBLO);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HUNDFX",HUNDFX);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HDAILY",HDAILY);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBUSNS",HBUSNS);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWKSUN",HWKSUN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWKMON",HWKMON);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWKTUE",HWKTUE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWKWED",HWKWED);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWKTHU",HWKTHU);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWKFRI",HWKFRI);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWKSAT",HWKSAT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HTENDA",HTENDA);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWASUN",HWASUN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWAMON",HWAMON);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWATUE",HWATUE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWAWED",HWAWED);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWATHU",HWATHU);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWAFRI",HWAFRI);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWASAT",HWASAT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWBSUN",HWBSUN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWBMON",HWBMON);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWBTUE",HWBTUE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWBWED",HWBWED);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWBTHU",HWBTHU);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWBFRI",HWBFRI);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWBSAT",HWBSAT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HTWICM",HTWICM);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HMONTH",HMONTH);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBMNOV",HBMNOV);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBIMON",HBIMON);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HQTOCT",HQTOCT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HQTNOV",HQTNOV);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HQTDEC",HQTDEC);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HANJAN",HANJAN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HANFEB",HANFEB);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HANMAR",HANMAR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HANAPR",HANAPR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HANMAY",HANMAY);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HANJUN",HANJUN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HANJUL",HANJUL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HANAUG",HANAUG);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HANSEP",HANSEP);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HANOCT",HANOCT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HANNOV",HANNOV);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HANDEC",HANDEC);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSMJUL",HSMJUL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSMAUG",HSMAUG);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSMSEP",HSMSEP);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSMOCT",HSMOCT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSMNOV",HSMNOV);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSMDEC",HSMDEC);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HAYPP",HAYPP);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HAPPY",HAPPY);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSEC",HSEC);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HMIN",HMIN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HHOUR",HHOUR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HCASEX",HCASEX);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HJAN",HJAN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFEB",HFEB);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HMAR",HMAR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HAPR",HAPR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HMAY",HMAY);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HJUN",HJUN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HJUL",HJUL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HAUG",HAUG);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSEP",HSEP);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HOCT",HOCT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNOV",HNOV);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HDEC",HDEC);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYJAN",HFYJAN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYFEB",HFYFEB);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYMAR",HFYMAR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYAPR",HFYAPR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYMAY",HFYMAY);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYJUN",HFYJUN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYJUL",HFYJUL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYAUG",HFYAUG);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYSEP",HFYSEP);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYOCT",HFYOCT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYNOV",HFYNOV);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYDEC",HFYDEC);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSUN",HSUN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HMON",HMON);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HTUE",HTUE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWED",HWED);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HTHU",HTHU);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFRI",HFRI);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSAT",HSAT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HASUN",HASUN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HAMON",HAMON);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HATUE",HATUE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HAWED",HAWED);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HATHU",HATHU);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HAFRI",HAFRI);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HASAT",HASAT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBSUN",HBSUN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBMON",HBMON);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBTUE",HBTUE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBWED",HBWED);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBTHU",HBTHU);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBFRI",HBFRI);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBSAT",HBSAT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYFST",HFYFST);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYLST",HFYLST);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HFYAUT",HFYAUT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBEGIN",HBEGIN);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HEND",HEND);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HINTVL",HINTVL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HBEFOR",HBEFOR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HAFTER",HAFTER);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HCONT",HCONT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNMVAL",HNMVAL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNCVAL",HNCVAL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNAVAL",HNAVAL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNDVAL",HNDVAL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HMGVAL",HMGVAL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HUNCHG",HUNCHG);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HSERVR",HSERVR);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HCLNT",HCLNT);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HCHANL",HCHANL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HREAD",HREAD);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HWRITE",HWRITE);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HALL",HALL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNTMIS",HNTMIS);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HTMIS",HTMIS);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNO",HNO);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HYES",HYES);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HNLALL",HNLALL);
+    ADD_INT_TO_DICT(FAME_CONSTANTS, "HLI_MAX_STR_LEN",HLI_MAX_STR_LEN);
+
+    PyModule_AddObject(m, "FAME_CONSTANTS", FAME_CONSTANTS);
 }
