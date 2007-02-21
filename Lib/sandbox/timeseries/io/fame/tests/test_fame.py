@@ -9,6 +9,7 @@ __version__ = '1.0'
 __revision__ = "$Revision: 2578 $"
 __date__     = '$Date: 2007-01-17 14:25:10 -0500 (Wed, 17 Jan 2007) $'
 
+import os
 import numpy as N
 from numpy import bool_, complex_, float_, int_, object_
 import numpy.core.fromnumeric  as fromnumeric
@@ -83,6 +84,9 @@ data['scalars']['namelist'] = ["mystring", "$asdf","gggggggg"]
 data['scalars']['boolean'] = True
 for f in data['dates']:
     data['scalars']['date_'+f] = data['dates'][f]
+    
+_desc = "my desc\nline 2"
+_doc = "my doc\nline 2"
 
 class test_write(NumpyTestCase):
     
@@ -108,7 +112,10 @@ class test_write(NumpyTestCase):
                  "_test_overwrite_cser", "_test_assume_exists_cser",
                  "_test_dict_cser", "_test_whats",
                  "_test_exists",  "_test_delete",
-                 "_test_wildlist", "_test_restore"]
+                 "_test_wildlist", "_test_restore",
+                 "_test_db_attribs", "_test_initialize_obj_and_post",
+                 "_test_copy_rename", "_test_obj_attribs",
+                 "_test_misc_funcs"]
 
         for t in tests:
             print t
@@ -357,21 +364,21 @@ class test_write(NumpyTestCase):
     def _test_whats(self):
         "test whats method"
         # just make sure it doesn't crash for now
-        what_dict = self.db.whats('$tser_float32')
+        what_dict = self.db._whats('$tser_float32')
         
     def _test_exists(self):
         "test exists method"
-        assert(self.db.exists('$cser_float32'))
-        assert(not self.db.exists('$fake_series'))
+        assert(self.db.obj_exists('$cser_float32'))
+        assert(not self.db.obj_exists('$fake_series'))
         
     def _test_delete(self):
         "test delete method"
-        assert(self.db.exists('$cser_1'))
-        assert(self.db.exists('$cser_2'))
-        self.db.delete(['$cser_1', '$cser_2'])
-        assert(not self.db.exists('$cser_1'))
-        assert(not self.db.exists('$cser_2'))
-        self.db.delete('$cser_1', must_exist=False)
+        assert(self.db.obj_exists('$cser_1'))
+        assert(self.db.obj_exists('$cser_2'))
+        self.db.delete_obj(['$cser_1', '$cser_2'])
+        assert(not self.db.obj_exists('$cser_1'))
+        assert(not self.db.obj_exists('$cser_2'))
+        self.db.delete_obj('$cser_1', must_exist=False)
 
     def _test_wildlist(self):
         "test wildlist method"
@@ -387,10 +394,110 @@ class test_write(NumpyTestCase):
         self.db.close()
         self.db = fame.FameDb("testdb.db",'s')
         
-        self.db.delete('$tser_float32')
-        assert(not self.db.exists('$tser_float32'))
+        self.db.delete_obj('$tser_float32')
+        assert(not self.db.obj_exists('$tser_float32'))
         self.db.restore()
-        assert(self.db.exists('$tser_float32'))
+        assert(self.db.obj_exists('$tser_float32'))
+
+    def _test_db_attribs(self):
+        "test setting and retrieving database attributes"
+        self.db.set_db_desc(_desc)
+        self.db.set_db_doc(_doc)
+
+        created = self.db.db_created()
+        modified = self.db.db_modified()
+        desc = self.db.db_desc()
+        doc = self.db.db_doc()
+        
+        assert(abs(ts.thisday('s') - created) < 100)
+        assert(abs(ts.thisday('s') - modified) < 100)
+        assert_equal(desc, _desc)
+        assert_equal(doc, _doc)
+        
+        assert(self.db.db_is_open())
+        self.db.close()
+        assert(not self.db.db_is_open())
+        self.db = fame.FameDb("testdb.db",'s')
+
+    def _test_initialize_obj_and_post(self):
+        """test initializing an object and posting of database"""
+        self.db.initialize_obj("$postobj", ts.thisday('B'))
+        exist_script = "from timeseries.io import fame;"
+        exist_script += "db = fame.FameDb('testdb.db', 'r');"
+        exist_script += "print db.obj_exists('$postobj');"
+
+        proc = os.popen('python -c "'+exist_script+'"')
+        exists = proc.readlines()[0].strip('\n')
+        proc.close()
+
+        assert_equal(exists, "False")
+        
+        self.db.post()
+        
+        proc = os.popen('python -c "'+exist_script+'"')
+        exists = proc.readlines()[0].strip('\n')
+        proc.close()
+        
+        assert_equal(exists, "True")
+
+    def _test_copy_rename(self):
+        "test copying and renaming an object"
+        db2 = fame.FameDb("testdb2.db", 'o')
+        self.db.copy_obj(db2, "$tser_float32", "$copied_obj")
+        orig_obj = self.db.read("$tser_float32")
+        copied_obj = db2.read("$copied_obj")
+        assert_array_equal(orig_obj, copied_obj)
+        
+        db2.rename_obj("$copied_obj", "$renamed_obj")
+        assert(db2.obj_exists("$renamed_obj"))
+        assert(not db2.obj_exists("$copied_obj"))
+        
+        db2.close()
+        
+    def _test_obj_attribs(self):
+        "test getting and setting object attributes"
+        assert_equal(self.db.obj_freq("$freq_b"), data['freqs']['b'].freq)
+        
+        assert_equal(self.db.obj_start_date("$freq_b"),
+                     data['freqs']['b'].start_date)
+        assert_equal(self.db.obj_end_date("$freq_b"),
+                     data['freqs']['b'].end_date)
+
+        created = self.db.obj_created("$freq_b")
+        modified = self.db.obj_modified("$freq_b")
+
+        assert(abs(ts.thisday('s') - created) < 100)
+        assert(abs(ts.thisday('s') - modified) < 100)
+        
+        self.db.set_obj_desc("$freq_b", _desc)
+        self.db.set_obj_doc("$freq_b", _doc)
+        
+        desc = self.db.obj_desc("$freq_b")
+        doc = self.db.obj_doc("$freq_b")
+        
+        assert_equal(desc, _desc)
+        assert_equal(doc, _doc)
+        
+        self.db.set_obj_basis("$freq_b", fame.HBSDAY)
+        assert_equal(self.db.obj_basis("$freq_b"), fame.HBSDAY)
+        self.db.set_obj_basis("$freq_b", fame.HBSBUS)
+        assert_equal(self.db.obj_basis("$freq_b"), fame.HBSBUS)
+        
+        self.db.set_obj_observed("$freq_b", "END")
+        assert_equal(self.db.obj_observed("$freq_b"), "ENDING")
+        
+        self.db.set_obj_observed("$freq_b", "MAX")
+        assert_equal(self.db.obj_observed("$freq_b"), "MAXIMUM")
+
+        self.db.set_obj_observed("$freq_b", "AVERAGE")
+        assert_equal(self.db.obj_observed("$freq_b"), "AVERAGED")
+
+    def _test_misc_funcs(self):
+        "test FAME functions that aren't database methods"
+        assert_equal(fame.license_expires().freq, ts.freq_fromstr('D'))
+        
+        # just test that this doesn't crash for now
+        fame.set_option("DBSIZE", "LARGE")
 
     def tearDown(self):
         self.db.close()
