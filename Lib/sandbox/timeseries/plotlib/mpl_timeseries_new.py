@@ -131,26 +131,374 @@ def nonsingular(vmin, vmax, expander=0.001, tiny=1e-15, increasing=True):
 #---- --- Locators ---
 ##### -------------------------------------------------------------------------
 
+def _year_start(_dates):
+    return (_dates.year != (_dates-1).year)
+
+def _quarter_start(_dates):
+    return (_dates.quarter != (_dates-1).quarter)
+    
+def _month_start(_dates):
+    return (_dates.month != (_dates-1).month)
+
+def _week_start(_dates):
+    return (_dates.day_of_week == 1)
+
 def _get_default_annual_spacing(nyears):
     """Returns a default spacing between consecutive ticks for annual data."""
-
     if nyears < 11: 
         (min_spacing, maj_spacing) = (1, 1)
-    elif nyears < 15: 
+    elif nyears < 20: 
         (min_spacing, maj_spacing) = (1, 2)
     elif nyears < 50: 
         (min_spacing, maj_spacing) = (1, 5)
     elif nyears < 100: 
         (min_spacing, maj_spacing) = (5, 10)
     elif nyears < 200: 
-        (min_spacing, maj_spacing) = (5, 20)
-    elif nyears < 400: 
         (min_spacing, maj_spacing) = (5, 25)
-    elif nyears < 1000: 
+    elif nyears < 600: 
         (min_spacing, maj_spacing) = (10, 50)
     else:
-        (min_spacing, maj_spacing) = (20, 100)
+        factor = nyears // 1000 + 1
+        (min_spacing, maj_spacing) = (factor*20, factor*100)
     return (min_spacing, maj_spacing)
+
+
+def _BreakDown_ParamCheck(locator, formatter):
+    if not locator and not formatter:
+        raise ValueError("Must specify either locator or formatter")
+    
+    if locator and formatter:
+        raise ValueError("Must specify only one of locator or formatter")
+
+def _Daily_BreakDown(dates, locator=False, formatter=False):
+    
+    _BreakDown_ParamCheck(locator, formatter)
+    
+    if dates.freqstr == 'B': periodsperyear = 261
+    elif dates.freqstr == 'D': periodsperyear = 365
+    else: raise ValueError("unexpected frequency")
+
+    vmin = dates[0].value
+    vmax = dates[-1].value
+    span = vmax - vmin + 1
+
+    if locator:
+        default = N.arange(vmin, vmax+1) 
+    else: #formatter
+        format = N.empty(dates.size, dtype="|S8")
+        format.flat = ''
+
+    if span <= (periodsperyear//12 - 2):
+    
+        month_start = _month_start(dates)
+    
+        if locator:
+            major = default[month_start]
+            minor = default
+        else:
+            year_start = _year_start(dates)
+            year_start[0] = False
+            month_start[0] = False
+            
+            format[:] = '%d'
+            format[month_start] = '%d\n%b'
+            format[year_start] = '%d\n%b\n%Y'
+
+            if not year_start.any():
+                if not month_start.any():
+                    if dates.size > 1: idx = 1
+                    else: idx = 0
+                    format[idx] = '%d\n%b\n%Y'
+                else:
+                    format[N.where(month_start)[0][0]] = '%d\n%b\n%Y'
+            
+    elif span <= periodsperyear//4:
+    
+        month_start = _month_start(dates)
+
+        if locator:
+            major = default[month_start]
+            minor = default
+        else:
+            week_start = _week_start(dates)
+            year_start = _year_start(dates)
+            
+            week_start[0] = False
+            month_start[0] = False
+            year_start[0] = False
+
+            format[week_start] = '%d'
+            format[month_start] = '\n\n%b'
+            format[year_start] = '\n\n%b\n%Y'
+
+            if not year_start.any():
+                if not month_start.any():
+                    format[N.where(week_start)[0][0]] = '\n\n%b\n%Y'
+                else:
+                    format[N.where(month_start)[0][0]] = '\n\n%b\n%Y'
+        
+    elif span <= 1.15 * periodsperyear:
+        month_start = _month_start(dates)
+
+        if locator:
+            week_start = _week_start(dates)
+            minor_idx = week_start | month_start
+            minor_idx[0] = True
+            major = default[month_start]
+            minor = default[minor_idx]
+        else:
+            year_start = _year_start(dates)
+            month_start[0] = False
+            year_start[0] = False
+            format[month_start] = '%b'
+            format[year_start] = '%b\n%Y'
+
+            if not year_start.any():
+                format[N.where(month_start)[0][0]] = '%b\n%Y'
+        
+    elif span <= 2.5 * periodsperyear:
+
+        year_start = _year_start(dates)
+        month_start = _month_start(dates)
+
+        if locator:
+            major = default[year_start]
+            minor = default[month_start]
+        else:
+            quarter_start = _quarter_start(dates)
+            format[quarter_start] = '%b'
+            format[year_start] = '%b\n%Y'
+
+    elif span <= 4 * periodsperyear:
+
+        year_start = _year_start(dates)
+        month_start = _month_start(dates)
+
+        if locator:
+            major = default[year_start]
+            minor = default[month_start]
+        else:
+            jan = (dates.month == 1)
+            jul = (dates.month == 7)
+            jan_or_jul = month_start & (jan | jul)
+            format[jan_or_jul] = '%b'
+            format[year_start] = '%b\n%Y'
+
+    elif span <= 11 * periodsperyear:
+    
+        year_start = _year_start(dates)
+
+        if locator:
+            quarter_start = _quarter_start(dates)
+            major = default[year_start]
+            minor = default[quarter_start]
+        else:
+            format[year_start] = '%Y'
+        
+    else:
+    
+        (min_anndef, maj_anndef) = _get_default_annual_spacing(span/periodsperyear)
+        year_start = _year_start(dates)
+
+        major_idx = year_start & (dates.years % maj_anndef == 0)
+
+        if locator:
+            major = default[major_idx]
+            minor = default[year_start & (dates.years % min_anndef == 0)]
+        else:
+            format[major_idx] = '%Y'
+
+    if locator:
+        return minor, major
+    else:
+        return format
+
+
+def _Monthly_BreakDown(dates, locator=False, formatter=False):
+
+    _BreakDown_ParamCheck(locator, formatter)
+    
+    if dates.freqstr != 'M': raise ValueError("unexpected frequency")
+
+    periodsperyear = 12
+
+    vmin = dates[0].value
+    vmax = dates[-1].value
+    span = vmax - vmin + 1
+
+    if locator:
+        default = N.arange(vmin, vmax+1) 
+    else: #formatter
+        format = N.empty(dates.size, dtype="|S8")
+        format.flat = ''
+
+    if span <= 1.15 * periodsperyear:
+        year_start = _year_start(dates)
+
+        if locator:
+            major = default[year_start]
+            minor = default
+        else:
+            year_start[0] = False
+
+            format[:] = '%b'
+            format[year_start] = '%b\n%Y'
+
+            if not year_start.any():
+                if dates.size > 1: idx = 1
+                else: idx = 0
+                format[idx] = '%b\n%Y'
+        
+    elif span <= 2.5 * periodsperyear:
+
+        year_start = _year_start(dates)
+
+        if locator:
+            major = default[year_start]
+            minor = default
+        else:
+            quarter_start = _quarter_start(dates)
+            format[quarter_start] = '%b'
+            format[year_start] = '%b\n%Y'
+
+    elif span <= 4 * periodsperyear:
+
+        year_start = _year_start(dates)
+
+        if locator:
+            major = default[year_start]
+            minor = default
+        else:
+            months = dates.month
+            format[(months == 1) | (months == 7)] = '%b'
+            format[year_start] = '%b\n%Y'
+
+    elif span <= 11 * periodsperyear:
+    
+        year_start = _year_start(dates)
+
+        if locator:
+            quarter_start = _quarter_start(dates)
+            major = default[year_start]
+            minor = default[quarter_start]
+        else:
+            format[year_start] = '%Y'
+        
+    else:
+    
+        (min_anndef, maj_anndef) = _get_default_annual_spacing(span/periodsperyear)
+        year_start = _year_start(dates)
+
+        major_idx = year_start & (dates.years % maj_anndef == 0)
+
+        if locator:
+            major = default[major_idx]
+            minor = default[year_start & (dates.years % min_anndef == 0)]
+        else:
+            format[major_idx] = '%Y'
+
+    if locator:
+        return minor, major
+    else:
+        return format
+
+
+def _Quarterly_BreakDown(dates, locator=False, formatter=False):
+
+    _BreakDown_ParamCheck(locator, formatter)
+    
+    if dates.freqstr != 'Q': raise ValueError("unexpected frequency")
+
+    periodsperyear = 4
+
+    vmin = dates[0].value
+    vmax = dates[-1].value
+    span = vmax - vmin + 1
+
+    if locator:
+        default = N.arange(vmin, vmax+1) 
+    else: #formatter
+        format = N.empty(dates.size, dtype="|S8")
+        format.flat = ''
+
+    if span <= 3.5 * periodsperyear:
+
+        year_start = _year_start(dates)
+
+        if locator:
+            major = default[year_start]
+            minor = default
+        else:
+            year_start[0] = False
+            
+            format[:] = 'Q%q'
+            format[year_start] = 'Q%q\n%Y'
+
+            if not year_start.any():
+                if dates.size > 1: idx = 1
+                else: idx = 0
+                format[idx] = 'Q%q\n%Y'
+
+    elif span <= 11 * periodsperyear:
+    
+        year_start = _year_start(dates)
+
+        if locator:
+            major = default[year_start]
+            minor = default
+        else:
+            format[year_start] = '%Y'
+        
+    else:
+    
+        (min_anndef, maj_anndef) = _get_default_annual_spacing(span/periodsperyear)
+        year_start = _year_start(dates)
+
+        major_idx = year_start & (dates.years % maj_anndef == 0)
+
+        if locator:
+            major = default[major_idx]
+            minor = default[year_start & (dates.years % min_anndef == 0)]
+        else:
+            format[major_idx] = '%Y'
+
+    if locator:
+        return minor, major
+    else:
+        return format
+
+
+def _Annual_BreakDown(dates, locator=False, formatter=False):
+
+    _BreakDown_ParamCheck(locator, formatter)
+    
+    if dates.freqstr != 'A': raise ValueError("unexpected frequency")
+
+    vmin = dates[0].value
+    vmax = dates[-1].value
+    span = vmax - vmin + 1
+
+    if locator:
+        default = N.arange(vmin, vmax+1) 
+    else: #formatter
+        format = N.empty(dates.size, dtype="|S8")
+        format.flat = ''
+
+    (min_anndef, maj_anndef) = _get_default_annual_spacing(span)
+    year_start = _year_start(dates)
+
+    major_idx = year_start & (dates.years % maj_anndef == 0)
+
+    if locator:
+        major = default[major_idx]
+        minor = default[year_start & (dates.years % min_anndef == 0)]
+    else:
+        format[major_idx] = '%Y'
+
+    if locator:
+        return minor, major
+    else:
+        return format
 
 #...............................................................................
 class TimeSeries_DateLocator(Locator):
@@ -208,7 +556,13 @@ class TimeSeries_DateLocator(Locator):
             vmin -= 1
             vmax += 1
         return nonsingular(vmin, vmax)      
-    
+
+def _generic_get_default_locs(self, vmin, vmax, BreakDownFunc):
+        dates = self._initialize_dates(vmin, vmax)
+        minor, major = BreakDownFunc(dates, locator=True)
+        if self.isminor: return minor
+        return major
+
 #...............................................................................
 class TimeSeries_AnnualLocator(TimeSeries_DateLocator):
     "Locates the ticks along an axis controlled by an annual DateArray."
@@ -220,14 +574,7 @@ class TimeSeries_AnnualLocator(TimeSeries_DateLocator):
     
     def _get_default_locs(self, vmin, vmax):
         "Returns the default tick spacing for annual data."
-        span = vmax - vmin + 1
-        (minor, major) = _get_default_annual_spacing(span)
-        if self.isminor:
-            base = minor
-        else:
-            base = major
-        offset = base - (vmin % base)
-        return N.arange(vmin+offset, vmax+1, base)
+        return _generic_get_default_locs(self, vmin, vmax, _Annual_BreakDown)
     
 #...............................................................................
 class TimeSeries_QuarterlyLocator(TimeSeries_DateLocator):
@@ -241,21 +588,7 @@ class TimeSeries_QuarterlyLocator(TimeSeries_DateLocator):
     
     def _get_default_locs(self, vmin, vmax):
         "Returns the default ticks spacing."
-        nquarters = vmax - vmin + 1
-        if nquarters <= 3*4:
-            (min_spacing, maj_spacing) = (1, 4)
-        elif nquarters <= 11*4:
-            (min_spacing, maj_spacing) = (1, 4)
-        else:
-            (min_anndef, maj_anndef) = _get_default_annual_spacing(nquarters//4)
-            min_spacing = min_anndef * 4
-            maj_spacing = maj_anndef * 4
-        if self.isminor:
-            base = min_spacing
-        else:
-            base = maj_spacing
-        offset = base - (vmin+4-1) % base
-        return N.arange(vmin+offset, vmax+1, base)
+        return _generic_get_default_locs(self, vmin, vmax, _Quarterly_BreakDown)
     
 #...............................................................................
 class TimeSeries_MonthlyLocator(TimeSeries_DateLocator):
@@ -269,27 +602,8 @@ class TimeSeries_MonthlyLocator(TimeSeries_DateLocator):
     
     def _get_default_locs(self, vmin, vmax):
         "Returns the default ticks spacing."
-        nmonths = vmax - vmin + 1
-        if nmonths <= 10:
-            (min_spacing, maj_spacing) = (1, 3)
-        elif nmonths <= 2*12:
-            (min_spacing, maj_spacing) = (1, 6)
-        elif nmonths <= 3*12:
-            (min_spacing, maj_spacing) = (1, 12)
-        elif nmonths <= 11*12:
-            (min_spacing, maj_spacing) = (3, 12)  
-        else:
-            (min_anndef, maj_anndef) = _get_default_annual_spacing(nmonths//12)
-            min_spacing = min_anndef * 12
-            maj_spacing = maj_anndef * 12
-        if self.isminor:
-            base = min_spacing
-            offset = ((4 - (vmin-1) % 4) % base)
-        else:
-            base = maj_spacing
-            offset = ((4 - (vmin-1) % 4) % 4)
-        return N.arange(vmin+offset, vmax+1, base)
-    
+        return _generic_get_default_locs(self, vmin, vmax, _Monthly_BreakDown)
+
 #...............................................................................
 class TimeSeries_DailyLocator(TimeSeries_DateLocator):
     "Locates the ticks along an axis controlled by a daily DateArray."
@@ -298,73 +612,11 @@ class TimeSeries_DailyLocator(TimeSeries_DateLocator):
                  base=1, quarter=1, month=1, day=1):
         TimeSeries_DateLocator.__init__(self, freq, minor_locator, dynamic_mode,
                                         base, quarter, month, day)
-        if self.freqstr == 'B':
-            self.daysinyear = 261
-        else:
-            self.daysinyear = 365
         self._cacheddates = None
         
     def _get_default_locs(self, vmin, vmax):
         "Returns the default tick locations for daily data."
-        daysperyear = self.daysinyear
-        span = vmax - vmin + 1
-        dates = self._initialize_dates(vmin, vmax)
-        default = N.arange(vmin, vmax+1) 
-        #
-        if span <= daysperyear//12:
-            minor = default
-            major = default[(dates.day == 1)]
-        elif span <= daysperyear//3:
-            minor = default
-            major = default[(dates.day == 1)]
-        elif span <= 1.5 * daysperyear:
-            monthstart = (dates.day == 1)
-            minor = default[(dates.day_of_week == 1)]
-            major = default[monthstart]
-        elif span <= 3 * daysperyear:
-            quarterstart = (dates.day == 1) & (dates.month % 3 == 1)
-            minor = default[(dates.day == 1)]
-            major = default[quarterstart]
-        elif span <= 11 * daysperyear:
-            quarterstart = (dates.day == 1) & (dates.month % 3 == 1)
-            minor = default[quarterstart]
-            major = default[(dates.day_of_year == 1)]
-        else:
-            (min_anndef, maj_anndef) = _get_default_annual_spacing(span/daysperyear)
-            annual = (dates.day_of_year == 1)
-            minor = default[annual & (dates.years % min_anndef == 0)]
-            major = default[annual & (dates.years % maj_anndef == 0)]
-        if self.isminor:
-            return minor
-        return major
-
-    def __call__(self):
-        'Return the locations of the ticks'
-        self.verify_intervals()
-        vmin, vmax = self.viewInterval.get_bounds()
-        if vmax < vmin:
-            vmin, vmax = vmax, vmin
-        if self.isdynamic:
-            locs = self._get_default_locs(vmin, vmax)
-        else:
-            base = self.base
-            (d,m) = divmod(vmin, base)
-            vmin = (d+1) * base
-            locs = range(vmin, vmax+1, base)
-        return locs
-
-    def autoscale(self):
-        """Sets the view limits to the nearest multiples of base that contain 
-    the data.
-        """
-        self.verify_intervals()
-        dmin, dmax = self.dataInterval.get_bounds()
-        locs = self._get_default_locs(dmin, dmax)
-        (vmin, vmax) = locs[[0,-1]]
-        if vmin == vmax:
-            vmin -= 1
-            vmax += 1
-        return nonsingular(vmin, vmax)        
+        return _generic_get_default_locs(self, vmin, vmax, _Daily_BreakDown)
 
 #...............................................................................
 class TimeSeries_YearLocator(TimeSeries_DateLocator):
@@ -516,7 +768,11 @@ class TimeSeries_DateFormatter(Formatter):
             retval = ''
         return retval
     
- 
+def _generic_set_format(self, BreakDownFunc):
+    dates = self._initialize_dates(self.locs)
+    format = BreakDownFunc(dates, formatter=True)
+    return dict([(x,f) for (x,f) in zip(self.locs, format)])
+
 #...............................................................................    
 class TimeSeries_AnnualFormatter(TimeSeries_DateFormatter):
     #
@@ -526,26 +782,7 @@ class TimeSeries_AnnualFormatter(TimeSeries_DateFormatter):
                                           dynamic_mode=dynamic_mode,)
 
     def _set_format(self, span):
-        dates = self._initialize_dates(self.locs)
-        format = N.empty(len(self.locs), dtype="|S2")
-        format.flat = ''
-        if span <= 11:
-            format[:] = "%Y"
-        elif span < 15:
-            format[(self.locs % 2 == 0)] = "%Y"
-        elif span < 50:
-            format[(self.locs % 5 == 0)] = "%Y"
-        elif span < 100:
-            format[(self.locs % 10 == 0)] = "%Y"
-        elif span < 200:
-            format[(self.locs % 20 == 0)] = "%Y"
-        elif span < 400:
-            format[(self.locs % 25 == 0)] = "%Y"
-        elif span < 1000:
-            format[(self.locs % 50 == 0)] = "%Y"
-        else:
-            format[(self.locs % 100 == 0)] = "%Y"
-        self.formatdict = dict([(x,f) for (x,f) in zip(self.locs, format)])
+        self.formatdict = _generic_set_format(self, _Annual_BreakDown)
         
 #...............................................................................        
 class TimeSeries_QuarterlyFormatter(TimeSeries_DateFormatter):
@@ -556,21 +793,7 @@ class TimeSeries_QuarterlyFormatter(TimeSeries_DateFormatter):
                                           dynamic_mode=dynamic_mode,)
 
     def _set_format(self, span):
-        dates = self._initialize_dates(self.locs)
-        format = N.empty(len(self.locs), dtype="|S7")
-        format.flat = ''
-        (years,quarters) = divmod(self.locs-1, 4)
-        if span <= 3*4:
-            yearchange = (self.locs % 4 == 1)
-            format[:] = "Q%q"
-            format[(quarters == 0)] = "Q%q\n%Y"
-            format[0] = "Q%q\n%Y"
-        elif span <= 11*4:
-            format[(years % 2 == 1) & (quarters == 0)] = "%Y"
-        else:
-            format[(years % 5 == 4)] = "%Y"
-        self.formatdict = dict([(x,f) for (x,f) in zip(self.locs, format)])
-                       
+        self.formatdict = _generic_set_format(self, _Quarterly_BreakDown)
         
 #...............................................................................        
 class TimeSeries_MonthlyFormatter(TimeSeries_DateFormatter):
@@ -581,21 +804,7 @@ class TimeSeries_MonthlyFormatter(TimeSeries_DateFormatter):
                                           dynamic_mode=dynamic_mode,)
     #
     def _set_format(self, span):
-        dates = self._initialize_dates(self.locs)
-        yearchange = (self.locs % 12 == 1)
-        format = N.empty(len(self.locs), dtype="|S6")
-        format.flat = ''
-        if span <= 1.5 * 12:
-            format[:] = "%b"
-            format[yearchange] = "%b\n%Y"
-            format[0] = "%b\n%Y"
-        elif span <= 3*12:
-            format[(dates.month % 2 == 1)] = "%b"
-            format[yearchange] = "%b\n%Y"
-        else:
-            format[yearchange] = "%Y"   
-        self.formatdict = dict([(x,f) for (x,f) in zip(self.locs, format)])
-            
+        self.formatdict = _generic_set_format(self, _Monthly_BreakDown)
 
 #...............................................................................
 class TimeSeries_DailyFormatter(TimeSeries_DateFormatter):
@@ -604,46 +813,9 @@ class TimeSeries_DailyFormatter(TimeSeries_DateFormatter):
         TimeSeries_DateFormatter.__init__(self, freq, 
                                           minor_locator=minor_locator, 
                                           dynamic_mode=dynamic_mode,)
-        if self.freqstr == 'B':
-            self.daysinyear = 261
-        else:
-            self.daysinyear = 365
     #
     def _set_format(self, span):
-        dayperyear = self.daysinyear
-        dates = self._initialize_dates(self.locs)
-        yearchange = (dates.day_of_year == 1)
-        format = N.empty(len(self.locs), dtype="|S8")
-        format.flat = ''
-        if span <= dayperyear // 12:
-            format[:] = '%d'
-            format[(dates.day == 1)] = '\n%b'
-            format[yearchange] = '\n%b\n%Y'
-            format[0] = '\n%b\n%Y'
-        elif span <= dayperyear // 4:
-            format[(dates.day_of_week == 1)] = '%d'
-            format[(dates.day == 1)] = '\n%b'
-            format[yearchange] = '\n%b\n%Y'
-        elif span <= 1.5 * dayperyear:
-            monthweekchange = (dates.day_of_week == 0) | (dates.day == 1)
-            format[monthweekchange] = '\n%b'
-            format[yearchange] = '\n%b\n%Y'
-        elif span <= 3 * dayperyear:
-            quarterchange = (dates.months % 3 == 1) & (dates.day == 1)
-            format[quarterchange] = '%b'
-            format[yearchange] = '\n%Y'
-        else:
-            format[:] = '%Y'
-        self.formatdict = dict([(x,f) for (x,f) in zip(self.locs, format)])
-            
-
-# Monthly:
-#  if span <= 1.5 * 12: '%b' on minor ticks, '%Y' on major ticks
-#elif span <= 3 * 12  : '%b' every even month on minor ticks, '%Y' on major
-#elif span <= 11 * 12 : '%Y' on major
-# Daily:
-
-
+        self.formatdict = _generic_set_format(self, _Daily_BreakDown)
 
 #####--------------------------------------------------------------------------
 #---- --- TimeSeries plots ---
