@@ -176,23 +176,6 @@ class CaseInsensitiveDict(dict):
         if hasattr(key, 'upper'): key = key.upper()
         super(CaseInsensitiveDict, self).__setitem__(key, item)
 
-
-def _single_or_multi_func(dbkey, name, func, *args, **kwargs):
-    if isinstance(name, str):
-        single_obj = True
-        name = [name]
-    else:
-        single_obj = False
-
-    result = {}
-    for n in name:
-        result[n] = func(dbkey, n, *args, **kwargs)
-
-    if single_obj:
-        return result.values()[0]
-
-    return result
-    
 def _famedate_to_tsdate(fame_date, freqstr):
     "convert integer fame date to a timeseries Date"
     value = fame_date + date_value_adjust[ts.freq_fromstr(freqstr)]
@@ -292,31 +275,31 @@ Notes
         """read specified object(s) from database
 
 :Parameters:
-        - `name` (string or list of strings) : names of objects that will be
-          read from the database
+    - `name` (string or list of strings) : names of objects that will be
+      read from the database
 
-        - `start_date` (int, *[None]*) : Applies only when reading time series.
-          If specified, only data points on or after `start_date` will be read.
-          If None, data will be read from the first value of the series.
-        - `end_date` (int, *[None]*) : Applies only when reading time series.
-          If specified, only data points on or before `end_date` will be read.
-          If None, data will be read to the last value of the series.
-        - `start_case` (int, *[None]*) : Applies only when reading case series.
-          If specified, only data points on or after `start_case` will be read.
-          If None, data will be read starting from case index 1
-        - `end_case` (int, *[None]*) : Applies only when reading case series.
-          If specified, only data points on or before `end_case` will be read.
-          If None, data will be read to the last value of the series.
-        - `max_string_len` (int, *[65]*) : Applies only when readings strings
-           or series of strings. This is the maximum length of string that can
-           be read. Lower values result in less memory usage, so you should
-           specify this as low as is reasonable for your data.
+    - `start_date` (int, *[None]*) : Applies only when reading time series.
+      If specified, only data points on or after `start_date` will be read.
+      If None, data will be read from the first value of the series.
+    - `end_date` (int, *[None]*) : Applies only when reading time series.
+      If specified, only data points on or before `end_date` will be read.
+      If None, data will be read to the last value of the series.
+    - `start_case` (int, *[None]*) : Applies only when reading case series.
+      If specified, only data points on or after `start_case` will be read.
+      If None, data will be read starting from case index 1
+    - `end_case` (int, *[None]*) : Applies only when reading case series.
+      If specified, only data points on or before `end_case` will be read.
+      If None, data will be read to the last value of the series.
+    - `max_string_len` (int, *[65]*) : Applies only when readings strings
+       or series of strings. This is the maximum length of string that can
+       be read. Lower values result in less memory usage, so you should
+       specify this as low as is reasonable for your data.
            
 :Return:
-        if `name` is a list of strings:
-            case insensitive dictionary of the objects
-        if `name` is a single string:
-            object from database that is stored as `name`"""
+    if `name` is a list of strings:
+        case insensitive dictionary of the objects
+    if `name` is a single string:
+        object from database that is stored as `name`"""
 
         isSingle = False
         if isinstance(name, str):
@@ -439,8 +422,35 @@ Notes
             return items.values()[0]
             
         return items
+#..............................................................................
+    def write_dict(self, objdict,
+              overwrite=False, assume_exists=False,
+              start_date=None, end_date=None,
+              zero_represents=1, start_case=None, end_case=None):
+        """for each key, value pair in the dictionary `objdict` write value to
+the database as key, as appropriate type (calls FameDb.write on
+each key, value pair)
 
-
+:Parameters:
+    - `objdict` (dict) : dictionary of objects to be written. Object names
+      for keys and objects to be written for values
+    - `overwrite` (boolean, *[False]*) : See documentation for write_tser and
+      write_cser
+    - `assume_exists` (boolean, *[False]*) : See documentation for write_tser
+      and write_cser
+    - `start_date` (Date, *[None]*) : See documentation for write_tser
+    - `end_date` (Date, *[None]*) : See documentation for write_tser
+    - `zero_represents` (int, *[1]*) : See documentation for write_cser
+    - `start_case` (int, *[None]*) : See documentation for write_cser
+    - `end_case` (int, *[None]*) : See documentation for write_cser
+"""
+        for key, obj in objdict.iteritems():
+            self.write(key, obj,
+                       overwrite=overwrite, assume_exists=assume_exists,
+                       start_date=start_date, end_date=end_date,
+                       zero_represents=zero_represents,
+                       start_case=start_case, end_case=end_case)
+#..............................................................................
     def write_tser_dict(self, objdict,
                         overwrite=False, assume_exists=False,
                         start_date=None, end_date=None):
@@ -449,26 +459,18 @@ the database as key, as a time series (calls FameDb.write_tser on each key,
 value pair)
 
 :Parameters:
-        - `objdict` (dict) : dictionary of TimeSeries objects to be written. Object
-          names for keys and TimeSeries objects for values
-        - `overwrite (boolean, *[False]*) : If True, if the key exists in the database it
-           will be overwritten. If False, data will be added to series that already exist
-           (data in objects in `objdict` will be given priority over pre-existing data in
-           the db where there is overlap)
-        - `assume_exists` (boolean, *[False]*) : If True, an error will be
-           raised if the series does not exist. If False, the series will be
-           created if it does not exist already.
-        - `start_date` (Date, *[None]*) : If None, data will be written from the start of
-           the series. If specified, only data points on or after start_date will be written.
-        - `end_date` (Date, *[None]*) : If None, data will be written until the end of
-           the series. If specified, only data points on or before end_date will be written.
+    - `objdict` (dict) : dictionary of TimeSeries objects to be written. Object
+      names for keys and TimeSeries objects for values
+    - `overwrite` (boolean, *[False]*) : See documentation for write_tser
+    - `assume_exists` (boolean, *[False]*) : See documentation for write_tser
+    - `start_date` (Date, *[None]*) : See documentation for write_tser
+    - `end_date` (Date, *[None]*) : See documentation for write_tser
 """
         for key, obj in objdict.iteritems():
             self.write_tser(key, obj, overwrite=overwrite,
                             assume_exists=assume_exists,
                             start_date=start_date, end_date=end_date)
-
-
+#..............................................................................
     def write_cser_dict(self, objdict,
                         overwrite=False, assume_exists=False,
                         zero_represents=1, start_case=None, end_case=None):
@@ -477,62 +479,86 @@ the database as key, as a case series (calls FameDb.write_tser on each key,
 value pair)
 
 :Parameters:
-        - `objdict` (dict) : dictionary of arrays to be written as Case Series.
-           Object names for keys and arrays for values
-        - `overwrite (boolean, *[False]*) : If True, if the key exists in the database it
-           will be overwritten. If False, data will be added to series that already exist
-           (data in objects in `objdict` will be given priority over pre-existing data in
-           the db where there is overlap)
-        - `assume_exists` (boolean, *[False]*) : If True, an error will be
-           raised if the series does not exist. If False, the series will be
-           created if it does not exist already.
-        - `zero_represents` (int, *[1]*) : the case index for FAME that index zero in
-           the array represents
-        - `start_case` (int, *[None]*) : If None, data will be written from the start of
-           the array. If specified, only data points on or after start_case will be written.
-        - `end_case` (int, *[None]*) : If None, data will be written until the end of
-           the array. If specified, only data points on or before end_case will be written.
+    - `objdict` (dict) : dictionary of arrays to be written as Case Series.
+       Object names for keys and arrays for values
+    - `overwrite` (boolean, *[False]*) : See documentation for write_cser
+    - `assume_exists` (boolean, *[False]*) : See documentation for write_cser
+    - `zero_represents` (int, *[1]*) : See documentation for write_cser
+    - `start_case` (int, *[None]*) : See documentation for write_cser
+    - `end_case` (int, *[None]*) : See documentation for write_cser
 """
         for key, obj in objdict.iteritems():
             self.write_cser(key, obj, overwrite=overwrite,
                             assume_exists=assume_exists,
                             zero_represents=zero_represents,
                             start_case=start_case, end_case=end_case)
-
+#..............................................................................
     def write_scalar_dict(self, objdict):
         """for each key, value pair in the dictionary `objdict` write value to
 the database as key, as a scalar (calls FameDb.write_scalar on each key,
 value pair)
 
 :Parameters:
-        - `objdict` (dict) : dictionary of items to be written as scalars.
-           Object names for keys and scalar items for values
+    - `objdict` (dict) : dictionary of items to be written as scalars.
+       Object names for keys and scalar items for values
 """
         for key, obj in objdict.iteritems():
             self.write_scalar(key, obj)
+#..............................................................................
+    def write(self, name, pyobj,
+              overwrite=False, assume_exists=False,
+              start_date=None, end_date=None,
+              zero_represents=1, start_case=None, end_case=None):
+        """wrapper for write_tser, write_cser, and write_scalar which chooses
+appropriate method by inspecting `pyobj`
 
-
+:Parameters:
+    - `name` (string) : database key that the object will be written to
+    - `pyobj` (object) : any valid object that can be written by write_scalar,
+      write_tser, or write_cser
+    - `overwrite` (boolean, *[False]*) : See documentation for write_tser and
+      write_cser
+    - `assume_exists` (boolean, *[False]*) : See documentation for write_tser
+      and write_cser
+    - `start_date` (Date, *[None]*) : See documentation for write_tser
+    - `end_date` (Date, *[None]*) : See documentation for write_tser
+    - `zero_represents` (int, *[1]*) : See documentation for write_cser
+    - `start_case` (int, *[None]*) : See documentation for write_cser
+    - `end_case` (int, *[None]*) : See documentation for write_cser
+"""
+        if isinstance(pyobj, ts.TimeSeries):
+            self.write_tser(name, pyobj, overwrite=overwrite,
+                            assume_exists=assume_exists,
+                            start_date=start_date, end_date=end_date)
+        elif isinstance(pyobj, numpy.ndarray) and pyobj.ndim == 1:
+            self.write_cser(name, pyobj, overwrite=overwrite,
+                            assume_exists=assume_exists,
+                            zero_represents=zero_represents,
+                            start_case=start_case, end_case=end_case)
+        else:
+            self.write_scalar(name, pyobj)
+#..............................................................................
     def write_tser(self, name, tser,
                    overwrite=False, assume_exists=False,
                    start_date=None, end_date=None):
         """write `tser` to the database as `name` as a time series.
 
 :Parameters:
-        - `name` (string) : database key that the object will be written to
-        - `tser` (TimeSeries) : TimeSeries object to be written. Cannot have missing dates.
-           Use fill_missing_dates first on your series if you suspect this is the situation.
-           TimeSeries must be 1-dimensional
-        - `overwrite (boolean, *[False]*) : If True, if `name` exists in the database it
-           will be overwritten. If False, data will be added to series that already exist
-           (data in `tser` will be given priority over pre-existing data in the db where
-           there is overlap)
-        - `assume_exists` (boolean, *[False]*) : If True, an error will be
-           raised if the series does not exist. If False, the series will be
-           created if it does not exist already.
-        - `start_date` (Date, *[None]*) : If None, data will be written from the start of
-           `tser`. If specified, only data points on or after start_date will be written.
-        - `end_date` (Date, *[None]*) : If None, data will be written until the end of
-           `tser`. If specified, only data points on or before end_date will be written.
+    - `name` (string) : database key that the object will be written to
+    - `tser` (TimeSeries) : TimeSeries object to be written. Cannot have missing dates.
+       Use fill_missing_dates first on your series if you suspect this is the situation.
+       TimeSeries must be 1-dimensional
+    - `overwrite (boolean, *[False]*) : If True, if `name` exists in the database it
+       will be overwritten. If False, data will be added to series that already exist
+       (data in `tser` will be given priority over pre-existing data in the db where
+       there is overlap)
+    - `assume_exists` (boolean, *[False]*) : If True, an error will be
+       raised if the series does not exist. If False, the series will be
+       created if it does not exist already.
+    - `start_date` (Date, *[None]*) : If None, data will be written from the start of
+       `tser`. If specified, only data points on or after start_date will be written.
+    - `end_date` (Date, *[None]*) : If None, data will be written until the end of
+       `tser`. If specified, only data points on or before end_date will be written.
 """
             
         if not isinstance(tser, ts.TimeSeries):
@@ -601,27 +627,29 @@ value pair)
             end_index   -= date_value_adjust[towrite.freq]
 
             cfame.write_series(self.dbkey, name, fame_data, fame_mask, start_index, end_index, fame_type, fame_freq)
-
-    def write_cser(self, name, cser, overwrite=False, assume_exists=False, zero_represents=1, start_case=None, end_case=None):
+#..............................................................................
+    def write_cser(self, name, cser,
+                   overwrite=False, assume_exists=False,
+                   zero_represents=1, start_case=None, end_case=None):
         """write `cser` to the database as `name` as a case series.
 
 :Parameters:
-        - `name` (string) : database key that the object will be written to
-        - `cser` (ndarray) : 1-dimensional ndarray (or subclass of ndarray) object to be
-           written. If `cser` is a MaskedArray, then masked values will be written as ND.
-        - `overwrite (boolean, *[False]*) : If True, if `name` exists in the database it
-           will be overwritten. If False, data will be added to series that already exist
-           (data in `cser` will be given priority over pre-existing data in the db where
-           there is overlap)
-        - `assume_exists` (boolean, *[False]*) : If True, an error will be
-           raised if the series does not exist. If False, the series will be
-           created if it does not exist already.
-        - `zero_represents` (int, *[1]*) : the case index for FAME that index zero in
-           the array represents
-        - `start_case` (int, *[None]*) : If None, data will be written from the start of
-           `cser`. If specified, only data points on or after start_case will be written.
-        - `end_case` (int, *[None]*) : If None, data will be written until the end of
-           `cser`. If specified, only data points on or before end_case will be written.
+    - `name` (string) : database key that the object will be written to
+    - `cser` (ndarray) : 1-dimensional ndarray (or subclass of ndarray) object to be
+       written. If `cser` is a MaskedArray, then masked values will be written as ND.
+    - `overwrite (boolean, *[False]*) : If True, if `name` exists in the database it
+       will be overwritten. If False, data will be added to series that already exist
+       (data in `cser` will be given priority over pre-existing data in the db where
+       there is overlap)
+    - `assume_exists` (boolean, *[False]*) : If True, an error will be
+       raised if the series does not exist. If False, the series will be
+       created if it does not exist already.
+    - `zero_represents` (int, *[1]*) : the case index for FAME that index zero in
+       the array represents
+    - `start_case` (int, *[None]*) : If None, data will be written from the start of
+       `cser`. If specified, only data points on or after start_case will be written.
+    - `end_case` (int, *[None]*) : If None, data will be written until the end of
+       `cser`. If specified, only data points on or before end_case will be written.
 """
             
         if not isinstance(cser, numpy.ndarray):
@@ -693,8 +721,7 @@ value pair)
                 fame_data = fame_data.astype(newType)
 
             cfame.write_series(self.dbkey, name, fame_data, fame_mask, start_case, end_case, fame_type, fame_freq)
-
-
+#..............................................................................
     def write_scalar(self, name, scalar):
         """write `scalar` to the database as `name` as a scalar object. If an
 object already exists in the database named as `name` then it is
@@ -743,7 +770,21 @@ over-written, otherwise it is created.
             cf_write_namelist(self.dbkey, name, fame_data)
         else:
             cf_write_scalar(self.dbkey, name, fame_data, fame_type)
-            
+#..............................................................................
+    def delete_obj(self, name, must_exist=True):
+        """Deletes the specified object(s) from the database
+
+:Parameters:
+    - `name` (string of list of strings) : name of object(s) to delete from
+      database
+    - `must_exist` (boolean, *[True]*) : If True, an error will be raised if
+      you try to delete an object that does not exists. If False, deletion
+      will only be attempted for objects that actually exist, and other
+      entries will be ignored.
+"""
+        if isinstance(name, str): name = [name]
+        [cf_delete_obj(self.dbkey, n) for n in name if must_exist or self.obj_exists(n)]
+
     def _create_obj(self, name, cls, type, freq=None, basis=None, observed=None):
         """create object in database with specified attributes as `name`.
 
@@ -769,7 +810,7 @@ with a prototype object.
             if observed is None: observed = HOBEND
 
         cf_create(self.dbkey, name, cls, freq, type, basis, observed)
-        
+
     def initialize_obj(self, name, pyobj):
         """initialize object of appropriate type in database based on the
 python object `pyobj` as `name`. Does not write any data to the
@@ -789,81 +830,42 @@ database, simply initializes the object in the database."""
                     fame_params['basis'],
                     fame_params['observed'])
 
-
-    def db_desc(self):
-        "get 'description' attribute of database"
-        return cf_get_db_attr(self.dbkey, "DESC")
+    def rename_obj(self, name, new_name):
+        """rename fame object in database"""
+        cf_rename_obj(self.dbkey, name, new_name)
         
-    def db_doc(self):
-        "get 'doc' attribute of database"
-        return cf_get_db_attr(self.dbkey, "DOC")
-        
-    def db_created(self):
-        "get 'created' attribute of database"
-        fame_date = cf_get_db_attr(self.dbkey, "CREATED")
-        return _famedate_to_tsdate(fame_date, 's')
-        
-    def db_modified(self):
-        "get 'modified' attribute of database"
-        fame_date = cf_get_db_attr(self.dbkey, "MODIFIED")
-        return _famedate_to_tsdate(fame_date, 's')
+    def copy_obj(self, target_db, source_name, target_name=None):
+        """copy fame object to another destination"""
+        if target_name is None: target_name = source_name
+        cf_copy(self.dbkey, target_db.dbkey, source_name, target_name)
+#..............................................................................
+    def set_obj_desc(self, name, desc):
+        "set 'description' attribute of object in database"
+        cf_set_obj_desc(self.dbkey, name, desc)
 
-    def set_db_desc(self, desc):
-        "set description attribute of database"
-        cf_set_db_desc(self.dbkey, desc)
+    def set_obj_doc(self, name, doc):
+        "set 'documentation' attribute of object in database"
+        cf_set_obj_doc(self.dbkey, name, doc)
 
-    def set_db_doc(self, doc):
-        "set doc attribute of database"
-        cf_set_db_doc(self.dbkey, doc)
+    def set_obj_basis(self, name, basis):
+        "set 'basis' attribute of object in database"
+        basis = translate_basis(basis)
+        cf_set_obj_basis(self.dbkey, name, basis)
 
-    def db_is_open(self):
-        "returns True if database is open. False otherwise"
-        return cf_get_db_attr(self.dbkey, "ISOPEN")
+    def set_obj_observed(self, name, observed):
+        "set 'observed' attribute of object in database"
+        observed = translate_observed(observed)
+        cf_set_obj_observed(self.dbkey, name, observed)
+#..............................................................................
+    def _whats(self, name):
+        """Preforms a fame "whats" command on the provided name
 
-    def wildlist(self, exp, wildonly=False):
-        """performs a wildlist lookup on the database, using Fame syntax
-("?" and "^"), returns a normal python list of strings"""
-        res = cf_wildlist(self.dbkey, exp)
-            
-        if wildonly:
-            exp = exp.replace("?", "(.*)")
-            exp = exp.replace("^", "(.)")
-            exp = exp.replace("$","\$")
-            regex = re.compile(exp)
-            res = ["".join(regex.match(res[i]).groups()) \
-                   for i in range(len(res))]
-        return res
-
-    def close(self):
-        """Closes the database. Changes will be posted."""
-        if self.db_is_open():
-            cf_close(self.dbkey)
-            
-    def post(self):
-        cf_post(self.dbkey)
-
-    def restore(self):
-        """Discard any changes made to the database since it was last opened or posted."""
-        cf_restore(self.dbkey)
-
-    def obj_exists(self, name):
-        return cf_exists(self.dbkey, name)
-        
-    def delete_obj(self, name, must_exist=True):
-        """Deletes the specified object(s) from the database"""
-        if isinstance(name, str): name = [name]
-        [cf_delete_obj(self.dbkey, n) for n in name if must_exist or self.obj_exists(n)]
-
-    def obj_size(self, name):
-        """basic information about the size of an object(s) in a database"""
-        return _single_or_multi_func(self.dbkey, name, cf_obj_size)
-        
-    def obj_freq(self, name):
-        """get frequency of a FAME time series object in the database"""
-        obj_sz = self.obj_size(name)
-        fame_freq = obj_sz['freq']
-        if fame_freq == 0: return None
-        return freq_map[obj_sz['freq']]
+Note: Returns FAME constants which are not directly interpretable
+in the context of the timeseries module. For this reason, it is
+recommended that you use the obj_* methods to retrieve the desired
+information about an object.
+"""
+        return cf_whats(self.dbkey, name)
 
     def __ser_date(self, name, date_type):
         """helper method for start_date and end_date"""
@@ -880,6 +882,36 @@ database, simply initializes the object in the database."""
             
         annDate = ts.Date(freq='A', year=obj_sz[date_type+'_year'])
         return annDate.asfreq(ts_freq, relation='BEFORE') + (obj_sz[date_type+'_period'] - 1)
+
+    def obj_size(self, name):
+        """basic information about the size of an object in a database"""
+        return cf_obj_size(self.dbkey, name)
+
+    def obj_desc(self, name):
+        """get desc attribute for an object"""
+        return self._whats(name)['desc']
+
+    def obj_doc(self, name):
+        """get doc attribute for an object"""
+        return self._whats(name)['doc']
+
+    def obj_exists(self, name):
+        return cf_exists(self.dbkey, name)
+
+    def obj_freq(self, name):
+        """get frequency of a FAME time series object in the database"""
+        obj_sz = self.obj_size(name)
+        fame_freq = obj_sz['freq']
+        if fame_freq == 0: return None
+        return freq_map[obj_sz['freq']]
+
+    def obj_basis(self, name):
+        """get basis attribute of a FAME time series object in the database"""
+        return self._whats(name)['basis']
+
+    def obj_observed(self, name):
+        """get observed attribute of a FAME time series object in the database"""
+        return observed_map[self._whats(name)['observ']]
 
     def obj_start_date(self, name):
         """get start_date of a FAME time series object"""
@@ -898,67 +930,62 @@ database, simply initializes the object in the database."""
         "get 'modified' attribute of object in database"
         fame_date = cf_get_obj_attr(self.dbkey, name, "MODIFIED")
         return _famedate_to_tsdate(fame_date, 's')
+#..............................................................................
+    def db_desc(self):
+        "get 'description' attribute of database"
+        return cf_get_db_attr(self.dbkey, "DESC")
 
-    def set_obj_desc(self, name, desc):
-        "set 'description' attribute of object in database"
-        cf_set_obj_desc(self.dbkey, name, desc)
+    def db_doc(self):
+        "get 'doc' attribute of database"
+        return cf_get_db_attr(self.dbkey, "DOC")
 
-    def set_obj_doc(self, name, doc):
-        "set 'documentation' attribute of object in database"
-        cf_set_obj_doc(self.dbkey, name, doc)
+    def db_created(self):
+        "get 'created' attribute of database"
+        fame_date = cf_get_db_attr(self.dbkey, "CREATED")
+        return _famedate_to_tsdate(fame_date, 's')
 
-    def set_obj_basis(self, name, basis):
-        "set 'basis' attribute of object in database"
-        basis = translate_basis(basis)
-        cf_set_obj_basis(self.dbkey, name, basis)
+    def db_modified(self):
+        "get 'modified' attribute of database"
+        fame_date = cf_get_db_attr(self.dbkey, "MODIFIED")
+        return _famedate_to_tsdate(fame_date, 's')
 
-    def set_obj_observed(self, name, observed):
-        "set 'observed' attribute of object in database"
-        observed = translate_observed(observed)
-        cf_set_obj_observed(self.dbkey, name, observed)
+    def db_is_open(self):
+        "returns True if database is open. False otherwise"
+        return cf_get_db_attr(self.dbkey, "ISOPEN")
 
-    def _whats(self, name):
-        """Preforms a fame "whats" command on the provided name(s)
+    def set_db_desc(self, desc):
+        "set description attribute of database"
+        cf_set_db_desc(self.dbkey, desc)
 
-Note: Returns FAME constants which are not directly interpretable
-in the context of the timeseries module. For this reason, it is
-recommended that you use the obj_* methods to retrieve the desired
-information about an object.
-"""
-        return _single_or_multi_func(self.dbkey, name, cf_whats)
-        
-    def obj_desc(self, name):
-        """get desc attribute for an object"""
-        return self._whats(name)['desc']
+    def set_db_doc(self, doc):
+        "set doc attribute of database"
+        cf_set_db_doc(self.dbkey, doc)
+#..............................................................................
+    def wildlist(self, exp, wildonly=False):
+        """performs a wildlist lookup on the database, using Fame syntax
+("?" and "^"), returns a normal python list of strings"""
+        res = cf_wildlist(self.dbkey, exp)
+            
+        if wildonly:
+            exp = exp.replace("?", "(.*)")
+            exp = exp.replace("^", "(.)")
+            exp = exp.replace("$","\$")
+            regex = re.compile(exp)
+            res = ["".join(regex.match(res[i]).groups()) \
+                   for i in range(len(res))]
+        return res
+#..............................................................................
+    def close(self):
+        """Closes the database. Changes will be posted."""
+        if self.db_is_open():
+            cf_close(self.dbkey)
+            
+    def post(self):
+        cf_post(self.dbkey)
 
-    def obj_doc(self, name):
-        """get doc attribute for an object"""
-        return self._whats(name)['doc']
-
-    def rename_obj(self, name, new_name):
-        """rename fame object(s) in database"""
-        if isinstance(name, str): name = [name]
-        if isinstance(new_name, str): new_name = [new_name]
-
-        if len(name) != len(new_name):
-            raise ValueError("number of original names does not match " + \
-                             "number of new names")
-                             
-        for n, o in zip(name, new_name):
-            cf_rename_obj(self.dbkey, n, o)
-        
-    def copy_obj(self, target_db, source_name, target_name=None):
-        """copy fame object(s) to another destination"""
-        if target_name is None: target_name = source_name
-        if isinstance(source_name, str): source_name = [source_name]
-        if isinstance(target_name, str): target_name = [target_name]
-
-        if len(source_name) != len(target_name):
-            raise ValueError("number of source names does not match " + \
-                             "number of target names")
-
-        for s, t in zip(source_name, target_name):
-            cf_copy(self.dbkey, target_db.dbkey, s, t)
+    def restore(self):
+        """Discard any changes made to the database since it was last opened or posted."""
+        cf_restore(self.dbkey)
 
 
 class cFameCall:
