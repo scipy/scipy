@@ -2,6 +2,7 @@
 
 import types
 import numpy
+import tempfile
 
 from numpy import amin, amax, ravel, asarray, cast, arange, \
      ones, newaxis, transpose, mgrid, iscomplexobj, sum, zeros, uint8
@@ -226,18 +227,21 @@ def imshow(arr):
     """Simple showing of an image through an external viewer.
     """
     im = toimage(arr)
-    if (len(arr.shape) == 3) and (arr.shape[2] == 4):
-        try:
-            import os
-            im.save('/tmp/scipy_imshow.png')
-            if os.system("(xv /tmp/scipy_imshow.png; rm -f /tmp/scipy_imshow.png)&"):
-                raise RuntimeError
-            return
-        except:
-            print "Warning: Alpha channel may not be handled correctly."
+    fnum,fname = tempfile.mkstemp('.png')
+    try:
+        im.save(fname)
+    except:
+        raise RuntimeError("Error saving temporary image data.")
 
-    im.show()
-    return
+    import os
+    os.close(fnum)
+
+    cmd = os.environ.get('SCIPY_PIL_IMAGE_VIEWER','see')
+    status = os.system("%s %s" % (cmd,fname))
+
+    os.unlink(fname)
+    if status != 0:
+        raise RuntimeError('Could not execute image viewer.')
 
 def imresize(arr,size):
     """Resize an image.
