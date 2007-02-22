@@ -37,7 +37,7 @@ class test_dictsampler(NumpyTestCase):
         #import pdb
         #pdb.set_trace()
         s = sampler.sample(n)
-        assert sum(s[i]=='b' for i in range(n),axis=0)*1./n > 0.75
+        assert sum((s[i]=='b' for i in range(n)),axis=0)*1./n > 0.75
 
         #lam = 10.0
         #n = 35
