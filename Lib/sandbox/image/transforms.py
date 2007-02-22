@@ -1,5 +1,12 @@
-import numpy as sb
-pi = sb.pi
+import numpy as np
+from numpy import conj, dot, ogrid, pi, r_, sin, transpose, zeros
+from scipy import linalg
+
+
+__all__ = """dct idct dct2 idct2 dctn idctn dct2raw idct2raw
+dst idst dst2 idst2 dstn idstn 
+digitrevorder bitrevorder wht
+""".split()
 
 # fast discrete cosine transforms of real sequences (using the fft)
 #  These implement the DCT-II and inverse DCT-II (DCT-III)
@@ -28,7 +35,7 @@ def dct(x,axis=-1):
     else:
         newshape = list(x.shape)
         newshape[axis] = 2*N
-        xtilde = sb.empty(newshape,sb.float64)
+        xtilde = np.empty(newshape,np.float64)
         slices[0][axis] = slice(None,N)
         slices[2][axis] = slice(N,None)
         slices[3][axis] = slice(None,None,-1)
@@ -37,9 +44,9 @@ def dct(x,axis=-1):
         slices[k] = tuple(slices[k])
     xtilde[slices[0]] = x[slices[1]]
     xtilde[slices[2]] = x[slices[3]]
-    Xt = sb.fft(xtilde,axis=axis)
-    pk = sb.exp(-1j*pi*sb.arange(N)/(2*N))
-    newshape = sb.ones(n)
+    Xt = np.fft(xtilde,axis=axis)
+    pk = np.exp(-1j*pi*np.arange(N)/(2*N))
+    newshape = np.ones(n)
     newshape[axis] = N
     pk.shape = newshape
 
@@ -47,7 +54,7 @@ def dct(x,axis=-1):
         pk /= 2;
         Xt = Xt[slices[0]]
 
-    return sb.real(Xt*pk)
+    return np.real(Xt*pk)
 
 
 def idct(v,axis=-1):
@@ -59,13 +66,13 @@ def idct(v,axis=-1):
         slices[k] = []
         for j in range(n):
             slices[k].append(slice(None))
-    k = sb.arange(N)
+    k = np.arange(N)
     if even:
-        ak = sb.r_[1.0,[2]*(N-1)]*sb.exp(1j*pi*k/(2*N))
-        newshape = sb.ones(n)
+        ak = np.r_[1.0,[2]*(N-1)]*np.exp(1j*pi*k/(2*N))
+        newshape = np.ones(n)
         newshape[axis] = N
         ak.shape = newshape
-        xhat = sb.real(sb.ifft(v*ak,axis=axis))
+        xhat = np.real(np.ifft(v*ak,axis=axis))
         x = 0.0*v
         slices[0][axis] = slice(None,None,2)
         slices[1][axis] = slice(None,N/2)
@@ -77,13 +84,13 @@ def idct(v,axis=-1):
         x[slices[2]] = xhat[slices[3]]
         return x
     else:
-        ak = 2*sb.exp(1j*pi*k/(2*N))
-        newshape = sb.ones(n)
+        ak = 2*np.exp(1j*pi*k/(2*N))
+        newshape = np.ones(n)
         newshape[axis] = N
         ak.shape = newshape
         newshape = list(v.shape)
         newshape[axis] = 2*N
-        Y = zeros(newshape,sb.Complex)
+        Y = zeros(newshape,np.complex128)
         #Y[:N] = ak*v
         #Y[(N+1):] = conj(Y[N:0:-1])
         slices[0][axis] = slice(None,N)
@@ -92,7 +99,7 @@ def idct(v,axis=-1):
         slices[3][axis] = slice((N-1),0,-1)
         Y[slices[0]] = ak*v
         Y[slices[2]] = conj(Y[slices[3]])
-        x = sb.real(sb.ifft(Y,axis=axis))[slices[0]]
+        x = np.real(np.ifft(Y,axis=axis))[slices[0]]
         return x
 
 def dct2(x,axes=(-1,-2)):
@@ -103,7 +110,7 @@ def idct2(v,axes=(-1,-2)):
 
 def dctn(x,axes=None):
     if axes is None:
-        axes = sb.arange(len(x.shape))
+        axes = np.arange(len(x.shape))
     res = x
     for k in axes:
         res = dct(res,axis=k)
@@ -111,7 +118,7 @@ def dctn(x,axes=None):
 
 def idctn(v,axes=None):
     if axes is None:
-        axes = sb.arange(len(v.shape))
+        axes = np.arange(len(v.shape))
     res = v
     for k in axes:
         res = idct(res,axis=k)
@@ -120,7 +127,7 @@ def idctn(v,axes=None):
 
 def makeC(N):
     n,l = ogrid[:N,:N]
-    C = sb.cos(pi*(2*n+1)*l/(2*N))
+    C = np.cos(pi*(2*n+1)*l/(2*N))
     return C
 
 def dct2raw(x):
@@ -159,7 +166,7 @@ def dst(x,axis=-1):
             slices[k].append(slice(None))
     newshape = list(x.shape)
     newshape[axis] = 2*(N+1)
-    xtilde = sb.zeros(newshape,sb.float64)
+    xtilde = np.zeros(newshape,np.float64)
     slices[0][axis] = slice(1,N+1)
     slices[1][axis] = slice(N+2,None)
     slices[2][axis] = slice(None,None,-1)
@@ -167,8 +174,8 @@ def dst(x,axis=-1):
         slices[k] = tuple(slices[k])
     xtilde[slices[0]] = x
     xtilde[slices[1]] = -x[slices[2]]
-    Xt = sb.fft(xtilde,axis=axis)
-    return (-sb.imag(Xt)/2)[slices[0]]
+    Xt = np.fft(xtilde,axis=axis)
+    return (-np.imag(Xt)/2)[slices[0]]
 
 def idst(v,axis=-1):
     n = len(v.shape)
@@ -180,7 +187,7 @@ def idst(v,axis=-1):
             slices[k].append(slice(None))
     newshape = list(v.shape)
     newshape[axis] = 2*(N+1)
-    Xt = sb.zeros(newshape,sb.Complex)
+    Xt = np.zeros(newshape,np.complex128)
     slices[0][axis] = slice(1,N+1)
     slices[1][axis] = slice(N+2,None)
     slices[2][axis] = slice(None,None,-1)
@@ -189,7 +196,7 @@ def idst(v,axis=-1):
         slices[k] = tuple(slices[k])
     Xt[slices[0]] = -val
     Xt[slices[1]] = val[slices[2]]
-    xhat = sb.real(sb.ifft(Xt,axis=axis))
+    xhat = np.real(np.ifft(Xt,axis=axis))
     return xhat[slices[0]]
 
 def dst2(x,axes=(-1,-2)):
@@ -200,7 +207,7 @@ def idst2(v,axes=(-1,-2)):
 
 def dstn(x,axes=None):
     if axes is None:
-        axes = sb.arange(len(x.shape))
+        axes = np.arange(len(x.shape))
     res = x
     for k in axes:
         res = dst(res,axis=k)
@@ -208,14 +215,14 @@ def dstn(x,axes=None):
 
 def idstn(v,axes=None):
     if axes is None:
-        axes = sb.arange(len(v.shape))
+        axes = np.arange(len(v.shape))
     res = v
     for k in axes:
         res = idst(res,axis=k)
     return res
 
 def digitrevorder(x,base):
-    x = sb.asarray(x)
+    x = np.asarray(x)
     rem = N = len(x)
     L = 0
     while 1:
@@ -227,7 +234,7 @@ def digitrevorder(x,base):
         rem = intd
         L += 1
     vec = r_[[base**n for n in range(L)]]
-    newx = x[sb.newaxis,:]*vec[:,sb.newaxis]
+    newx = x[np.newaxis,:]*vec[:,np.newaxis]
     # compute digits
     for k in range(L-1,-1,-1):
         newx[k] = x // vec[k]
@@ -260,8 +267,8 @@ def wht(data):
     Digital Signal Processing" Spring Verlag, New York 1975. page-111.
     """
     N = len(data)
-    L = sb.log2(N);
-    if ((L-sb.floor(L)) > 0.0):
+    L = np.log2(N);
+    if ((L-np.floor(L)) > 0.0):
         raise ValueError, "Length must be power of 2"
     x=bitrevorder(data);
 

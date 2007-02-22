@@ -1,6 +1,6 @@
 
-import numpy as sb
-import scipy
+import numpy as np
+from scipy import linalg
 import os
 
 # Various utilities and data for color processing
@@ -25,7 +25,7 @@ xyz_from_rgbcie = [[0.490, 0.310, 0.200],
                    [0.177, 0.813, 0.011],
                    [0.000, 0.010, 0.990]]
 
-rgbcie_from_xyz = scipy.linalg.inv(xyz_from_rgbcie)
+rgbcie_from_xyz = linalg.inv(xyz_from_rgbcie)
 
 rgbntsc_from_xyz = [[1.910, -0.533, -0.288],
                     [-0.985, 2.000, -0.028],
@@ -45,7 +45,7 @@ xyz_from_rgb =  [[0.412453, 0.357580, 0.180423],
                  [0.212671, 0.715160, 0.072169],
                  [0.019334, 0.119193, 0.950227]]
 
-rgb_from_xyz = scipy.linalg.inv(xyz_from_rgb)
+rgb_from_xyz = linalg.inv(xyz_from_rgb)
 
 # From http://www.mir.com/DMG/ycbcr.html
 
@@ -53,7 +53,7 @@ ycbcr_from_rgbp = [[0.299, 0.587, 0.114],
                    [-0.168736, -0.331264, 0.5],
                    [0.5, -0.418688, -0.081312]]
 
-rgbp_from_ycbcr = scipy.linalg.inv(ycbcr_from_rgbp)
+rgbp_from_ycbcr = linalg.inv(ycbcr_from_rgbp)
 
 
 # LMS color space spectral matching curves provide the
@@ -94,7 +94,7 @@ thisdict = globals()
 for name in ['ciexyz31_1.txt','ciexyz64_1.txt','ciexyzjv.txt',
              'sbrgb2.txt','linss2_10e_1.txt']:
     k = k + 1
-    name = os.path.join(os.path.split(__file__)[0],'colordata',name)
+    name = os.path.join(os.path.dirname(__file__),name)
     afile = open(name)
     lines = afile.readlines()
     afile.close()
@@ -152,15 +152,15 @@ del key
 
 def tri2chr(tri,axis=None):
     """Convert tristimulus values to chromoticity values"""
-    tri = sb.asarray(tri)
+    tri = np.asarray(tri)
     n = len(tri.shape)
     if axis is None:
         axis = coloraxis(tri.shape)
     slices = []
     for k in range(n):
         slices.append(slice(None))
-    slices[axis] = sb.newaxis
-    norm = sb.sum(tri,axis=axis)[slices]
+    slices[axis] = np.newaxis
+    norm = np.sum(tri,axis=axis)[slices]
     slices[axis] = slice(None,2)
     out = tri[slices]/norm
     return out
@@ -174,17 +174,17 @@ def coloraxis(shape):
     raise ValueError, "No Color axis found."
 
 def convert(matrix,TTT,axis=None):
-    TTT = sb.asarray(TTT)
+    TTT = np.asarray(TTT)
     if axis is None:
         axis = coloraxis(TTT.shape)
     if (axis != 0):
-        TTT = sb.swapaxes(TTT,0,axis)
+        TTT = np.swapaxes(TTT,0,axis)
     oldshape = TTT.shape
-    TTT = sb.reshape(TTT,(3,-1))
-    OUT = sb.dot(matrix, TTT)
+    TTT = np.reshape(TTT,(3,-1))
+    OUT = np.dot(matrix, TTT)
     OUT.shape = oldshape
     if (axis != 0):
-        OUT = sb.swapaxes(OUT,axis,0)
+        OUT = np.swapaxes(OUT,axis,0)
     return OUT
 
 def xyz2rgbcie(xyz,axis=None):
@@ -216,12 +216,12 @@ def separate_colors(xyz,axis=None):
     return x, y, z, axis
 
 def join_colors(c1,c2,c3,axis):
-    c1,c2,c3 = sb.asarray(c1),sb.asarray(c2),sb.asarray(c3)
+    c1,c2,c3 = np.asarray(c1),np.asarray(c2),np.asarray(c3)
     newshape = c1.shape[:axis] + (1,) + c1.shape[axis:]
     c1.shape = newshape
     c2.shape = newshape
     c3.shape = newshape
-    return sb.concatenate((c1,c2,c3),axis=axis)
+    return np.concatenate((c1,c2,c3),axis=axis)
 
 def xyz2lab(xyz, axis=None, wp=whitepoints['D65'][-1], doclip=1):
     x,y,z,axis = separate_colors(xyz,axis)
@@ -229,21 +229,21 @@ def xyz2lab(xyz, axis=None, wp=whitepoints['D65'][-1], doclip=1):
     def f(t):
         eps = 216/24389.
         kap = 24389/27.
-        return sb.where(t > eps,
-                        sb.power(t, 1.0/3),
+        return np.where(t > eps,
+                        np.power(t, 1.0/3),
                         (kap*t + 16.0)/116)
     fx,fy,fz = f(xn), f(yn), f(zn)
     L = 116*fy - 16
     a = 500*(fx - fy)
     b = 200*(fy - fz)
     if doclip:
-        L = sb.clip(L, 0.0, 100.0)
-        a = sb.clip(a, -500.0, 500.0)
-        b = sb.clip(b, -200.0, 200.0)
+        L = np.clip(L, 0.0, 100.0)
+        a = np.clip(a, -500.0, 500.0)
+        b = np.clip(b, -200.0, 200.0)
     return join_colors(L,a,b,axis)
 
 def lab2xyz(lab, axis=None, wp=whitepoints['D65'][-1]):
-    lab = sb.asarray(lab)
+    lab = np.asarray(lab)
     L,a,b,axis = separate_colors(lab,axis)
     fy = (L+16)/116.0
     fz = fy - b / 200.
@@ -251,8 +251,8 @@ def lab2xyz(lab, axis=None, wp=whitepoints['D65'][-1]):
     def finv(y):
         eps3 = (216/24389.)**3
         kap = 24389/27.
-        return sb.where(y > eps3,
-                        sb.power(y,3),
+        return np.where(y > eps3,
+                        np.power(y,3),
                         (116*y-16)/kap)
     xr, yr, zr = finv(fx), finv(fy), finv(fz)
     return join_colors(xr*wp[0],yr*wp[1],zr*wp[2],axis)
@@ -262,6 +262,51 @@ def rgb2lab(rgb):
 
 def lab2rgb(lab):
     return xyz2rgb(lab2xyz(lab))
+
+def _uv(x, y, z):
+    """ The u, v formulae for CIE 1976 L*u*v* computations.
+    """
+    denominator = (x + 15*y + 3*z)
+    zeros = (denominator == 0.0)
+    denominator[zeros] = 1.0
+    u_numerator = 4 * x
+    u_numerator[zeros] = 4.0
+    v_numerator = 9 * y
+    v_numerator[zeros] = 9.0 / 15.0
+
+    return u_numerator/denominator, v_numerator/denominator
+
+def xyz2luv(xyz, axis=None, wp=whitepoints['D65'][-1]):
+    x, y, z, axis = separate_colors(xyz, axis)
+    xn, yn, zn = x/wp[0], y/wp[1], z/wp[2]
+    Ls = 116.0 * np.power(yn, 1./3) - 16.0
+    small_mask = (y <= 0.008856*wp[1])
+    Ls[small_mask] = 903.0 * y[small_mask] / wp[1]
+    unp, vnp = _uv(*wp)
+    up, vp = _uv(x, y, z)
+    us = 13 * Ls * (up - unp)
+    vs = 13 * Ls * (vp - vnp)
+
+    return join_colors(Ls, us, vs, axis)
+
+def luv2xyz(luv, axis=None, wp=whitepoints['D65'][-1]):
+    Ls, us, vs, axis = separate_colors(luv, axis)
+    unp, vnp = _uv(*wp)
+    small_mask = (Ls <= 903.3 * 0.008856)
+    y = wp[1] * ((Ls + 16.0) / 116.0) ** 3
+    y[small_mask] = Ls * wp[1] / 903.0
+    up = us / (13*Ls) + us
+    vp = vs / (13*Ls) + vs
+    x = 9.0 * y * up / (4.0 * vp)
+    z = -x / 3.0 - 5.0 * y + 3.0 * y/vp
+
+    return join_colors(x, y, z, axis)
+
+def rgb2luv(rgb):
+    return xyz2luv(rgb2xyz(rgb))
+
+def luv2rgb(luv):
+    return xyz2rgb(luv2xyz(luv))
 
 #  RGB values that will be displayed on a screen are always
 #  R'G'B' values.  To get the XYZ value of the color that will be
@@ -291,10 +336,10 @@ def lab2rgb(lab):
 #    rgbp = rgb**(1.0/gamma)
 
 def rgb2rgbp(rgb,gamma=None):
-    rgb = sb.asarray(rgb)
+    rgb = np.asarray(rgb)
     if gamma is None:
         eps = 0.0031308
-        return sb.where(rgb < eps, 12.92*rgb,
+        return np.where(rgb < eps, 12.92*rgb,
                      1.055*rgb**(1.0/2.4) - 0.055)
     else:
         return rgb**(1.0/gamma)
@@ -306,11 +351,11 @@ def rgb2rgbp(rgb,gamma=None):
 #     rgb = rgbp**gamma
 #
 def rgbp2rgb(rgbp,gamma=None):
-    rgbp = sb.asarray(rgbp)
+    rgbp = np.asarray(rgbp)
     if gamma is None:
         eps = 0.04045
-        return sb.where(rgbp <= eps, rgbp / 12.92,
-                     sb.power((rgbp + 0.055)/1.055,2.4))
+        return np.where(rgbp <= eps, rgbp / 12.92,
+                     np.power((rgbp + 0.055)/1.055,2.4))
     else:
         return rgbp**gamma
 
@@ -340,9 +385,9 @@ def ycbcr2rgb(ycbcr,gamma=None,axis=None):
 
 def ycbcr_8bit(ycbcr,axis=None):
     y,cb,cr,axis = separate_colors(ycbcr,axis)
-    Y = sb.asarray((y*219 + 16),sb.UInt8)
-    Cb = sb.asarray((cb*224 + 128),sb.UInt8)
-    Cr = sb.asarray((cr*224 + 128),sb.UInt8)
+    Y = np.asarray((y*219 + 16),np.uint8)
+    Cb = np.asarray((cb*224 + 128),np.uint8)
+    Cr = np.asarray((cr*224 + 128),np.uint8)
     return join_colors(Y,Cb,Cr,axis)
 
 def ycbcr_norm(YCbCr,axis=None):
