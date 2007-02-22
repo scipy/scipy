@@ -161,7 +161,7 @@ def period_break(dates, period):
     return (current - previous).nonzero()[0]
 
 
-def _daily_finder(locs, freqstr, aslocator):
+def _daily_finder(vmin, vmax, freqstr, aslocator):
 
     if freqstr == 'B': 
         periodsperyear = 261
@@ -170,16 +170,14 @@ def _daily_finder(locs, freqstr, aslocator):
     else: 
         raise ValueError("unexpected frequency")
 
-    locs = N.asarray(locs)
-    (vmin, vmax) = locs[[0,-1]]
+    (vmin, vmax) = (int(vmin), int(vmax))
     span = vmax - vmin + 1
     dates = date_array(start_date=Date(freqstr,vmin), 
                        end_date=Date(freqstr, vmax))
+    default = N.arange(vmin, vmax+1) 
     # Initialize the output
-    if aslocator:
-        default = N.arange(vmin, vmax+1) 
-    else: #asformatter
-        format = N.empty(locs.size, dtype="|S8")
+    if not aslocator:
+        format = N.empty(default.shape, dtype="|S10")
         format.flat = ''
     # Case 1. Less than a month
     if span <= (periodsperyear//12 - 2):
@@ -200,7 +198,7 @@ def _daily_finder(locs, freqstr, aslocator):
                         idx = 0
                     format[idx] = '%d\n%b\n%Y'
                 else:
-                    format[month_break[0]] = '%d\n%b\n%Y'
+                    format[month_start[0]] = '%d\n%b\n%Y'
     # Case 2. Less than three months        
     elif span <= periodsperyear//4:
         month_start = period_break(dates,'month')
@@ -210,22 +208,17 @@ def _daily_finder(locs, freqstr, aslocator):
         else:
             week_start = (dates.day_of_week == 1)
             year_start = period_break(dates,'year')
-            
-            week_start[0] = False
-            month_start[0] = False
-            year_start[0] = False
-
+#            week_start[0] = False
+#            month_start[0] = False
+#            year_start[0] = False
             format[week_start] = '%d'
             format[month_start] = '\n\n%b'
             format[year_start] = '\n\n%b\n%Y'
-
             if year_start.size == 0:
-                month_break = month_start.nonzero()[0]
-                if month_break.size == 0:
-                    week_break = week_start.nonzero()[0]
-                    format[week_break[0]] = '\n\n%b\n%Y'
+                if month_start.size == 0:
+                    format[week_start[0]] = '\n\n%b\n%Y'
                 else:
-                    format[month_break[0]] = '\n\n%b\n%Y'
+                    format[month_start[0]] = '\n\n%b\n%Y'
     # Case 3. Less than 14 months ...............
     elif span <= 1.15 * periodsperyear:
         month_start = period_break(dates,'month')
@@ -242,7 +235,7 @@ def _daily_finder(locs, freqstr, aslocator):
             format[month_start] = '%b'
             format[year_start] = '%b\n%Y'
             if not year_start.size:
-                format[month_break[0]] = '%b\n%Y'
+                format[month_start[0]] = '%b\n%Y'
     # Case 4. Less than 2.5 years ...............
     elif span <= 2.5 * periodsperyear:
         year_start = period_break(dates,'year')
@@ -293,14 +286,12 @@ def _daily_finder(locs, freqstr, aslocator):
         return minor, major
     else:
         formatted = (format != '')
-        return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
+        return dict([(d,f) for (d,f) in zip(default[formatted],format[formatted])])
 #...............................................................................
-def _monthly_finder(locs, freqstr, aslocator):
+def _monthly_finder(vmin, vmax, freqstr, aslocator):
     if freqstr != 'M': 
         raise ValueError("unexpected frequency")
     periodsperyear = 12
-    locs = N.asarray(locs)
-    (vmin, vmax) = locs[[0,-1]]    
     (vmin, vmax) = (int(vmin), int(vmax+1))
     span = vmax - vmin + 1
     #............................................
@@ -367,12 +358,10 @@ def _monthly_finder(locs, freqstr, aslocator):
         formatted = (format != '')
         return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
 #...............................................................................
-def _quarterly_finder(locs, freqstr, aslocator):
+def _quarterly_finder(vmin, vmax, freqstr, aslocator):
     if freqstr != 'Q': 
         raise ValueError("unexpected frequency")
-    periodsperyear = 4
-    locs = N.asarray(locs)
-    (vmin, vmax) = locs[[0,-1]]    
+    periodsperyear = 4  
     (vmin, vmax) = (int(vmin), int(vmax+1))
     span = vmax - vmin + 1
     #............................................
@@ -420,11 +409,9 @@ def _quarterly_finder(locs, freqstr, aslocator):
         formatted = (format != '')
         return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
 #...............................................................................
-def _annual_finder(locs, freqstr, aslocator):
+def _annual_finder(vmin, vmax, freqstr, aslocator):
     if freqstr != 'Q': 
-        raise ValueError("unexpected frequency")
-    locs = N.asarray(locs)
-    (vmin, vmax) = locs[[0,-1]]    
+        raise ValueError("unexpected frequency")   
     (vmin, vmax) = (int(vmin), int(vmax+1))
     span = vmax - vmin + 1
     #............................................
@@ -465,7 +452,7 @@ class TimeSeries_DateLocator(Locator):
             self.finder = _quarterly_finder
         elif freq == 'M':
             self.finder = _monthly_finder
-        elif freq == 'D':
+        elif freq in 'BD':
             self.finder = _daily_finder
             
     def asminor(self):
@@ -480,7 +467,7 @@ class TimeSeries_DateLocator(Locator):
     
     def _get_default_locs(self, vmin, vmax):
         "Returns the default locations of ticks."
-        (minor, major) = self.finder(N.arange(vmin, vmax+1), self.freqstr, True)
+        (minor, major) = self.finder(vmin, vmax, self.freqstr, True)
         if self.isminor:
             return minor
         return major
@@ -534,7 +521,7 @@ class TimeSeries_DateFormatter(Formatter):
             self.finder = _quarterly_finder
         elif freq == 'M':
             self.finder = _monthly_finder
-        elif freq == 'D':
+        elif freq in 'BD':
             self.finder = _daily_finder
             
     def asminor(self):
@@ -549,7 +536,7 @@ class TimeSeries_DateFormatter(Formatter):
     
     def _set_default_format(self, vmin, vmax):
         "Returns the default ticks spacing."
-        self.formatdict = self.finder(self.locs, self.freqstr, False)
+        self.formatdict = self.finder(vmin, vmax, self.freqstr, False)
         return self.formatdict
     
     def set_locs(self, locs):
@@ -814,10 +801,10 @@ def tsplot(*args, **kwargs):
 ################################################################################
 if __name__ == '__main__':
 
-    da = date_array(start_date=Date(freq='M', year=2003, quarter=3, month=1, day=17), 
-                    length=51)
+    da = date_array(start_date=Date(freq='B', year=2003, quarter=3, month=1, day=17), 
+                    length=10)
     ser = timeseries.time_series(MA.arange(len(da)), dates=da)
-    ser[4] = MA.masked
+#    ser[4] = MA.masked
 #    ser_2 = timeseries.time_series(MA.arange(len(da)), dates=da.asfreq('Q'))
     
     pylab.figure()
