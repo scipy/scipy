@@ -268,11 +268,10 @@ def _uv(x, y, z):
     """
     denominator = (x + 15*y + 3*z)
     zeros = (denominator == 0.0)
-    denominator[zeros] = 1.0
-    u_numerator = 4 * x
-    u_numerator[zeros] = 4.0
-    v_numerator = 9 * y
-    v_numerator[zeros] = 9.0 / 15.0
+    denominator = np.where(zeros, 1.0, denominator)
+    # I'm not entirely sure about these defaults when X=Y=Z=0.
+    u_numerator = np.where(zeros, 4.0, 4*x)
+    v_numerator = np.where(zeros, 9.0, 9 * y)
 
     return u_numerator/denominator, v_numerator/denominator
 
