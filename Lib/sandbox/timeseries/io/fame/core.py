@@ -5,17 +5,11 @@ import maskedarray as ma
 import timeseries as ts
 
 import cfame
-from cfame import FAME_CONSTANTS
+from const import *
 
 __all__ = [
     'FameDb', 'set_option', 'license_expires', 'DBError'
            ]
-
-_g = globals()
-for var, val in FAME_CONSTANTS.iteritems():
-    _g[var] = val
-    
-__all__.extend(list(FAME_CONSTANTS))
 
 def reverse_dict(d):
     return dict([(y, x) for x, y in d.iteritems()])
