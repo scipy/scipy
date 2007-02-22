@@ -18,6 +18,15 @@ from scipy.interpolate import fitpack
 import maskedarray as MA
 from maskedarray import masked, nomask, getmask
 
+from cseries import TSER_CONSTANTS
+
+"""add constants in cfame.FAME_CONSTANTS dictionary to global namespace
+for this module"""
+
+_g = globals()
+_g.update(TSER_CONSTANTS)
+
+
 #####---------------------------------------------------------------------------
 #---- --- Generic functions ---
 #####---------------------------------------------------------------------------
@@ -82,16 +91,16 @@ def fmtObserv(obStr):
 
 
 
-freq_dict = { 1000: ['A','Y','ANNUAL','ANNUALLY','YEAR','YEARLY'],
-              2000: ['Q','QUARTER','QUARTERLY',],
-              3000: ['M','MONTH','MONTHLY',],
-              4000: ['W','WEEK','WEEKLY',],
-              5000: ['B','BUSINESS','BUSINESSLY'],
-              6000: ['D','DAY','DAILY',],
-              7000: ['H','HOUR','HOURLY',],
-              8000: ['T','MINUTE','MINUTELY',],
-              9000: ['S','SECOND','SECONDLY',],
-             -9999: ['U','UNDEF','UNDEFINED'],
+freq_dict = { FR_ANN: ['A','Y','ANNUAL','ANNUALLY','YEAR','YEARLY'],
+              FR_QTR: ['Q','QUARTER','QUARTERLY',],
+              FR_MTH: ['M','MONTH','MONTHLY',],
+              FR_WK: ['W','WEEK','WEEKLY',],
+              FR_BUS: ['B','BUSINESS','BUSINESSLY'],
+              FR_DAY: ['D','DAY','DAILY',],
+              FR_HR: ['H','HOUR','HOURLY',],
+              FR_MIN: ['T','MINUTE','MINUTELY',],
+              FR_SEC: ['S','SECOND','SECONDLY',],
+              FR_UND: ['U','UNDEF','UNDEFINED'],
                 }
 freq_revdict = reverse_dict(freq_dict)
 
