@@ -7,16 +7,21 @@
 
 static char cseries_doc[] = "Speed sensitive time series operations";
 
-#define FANN  1000  /* Annual */
-#define FQTR  2000  /* Quarterly */
-#define FMTH  3000  /* Monthly */
-#define FWK   4000  /* Weekly */
-#define FBUS  5000  /* Business days */
-#define FDL   6000  /* Daily */
-#define FHR   7000  /* Hourly */
-#define FMIN  8000  /* Minutely */
-#define FSEC  9000  /* Secondly */
-#define FUND  -9999 /* Undefined */
+#define FR_ANN  1000  /* Annual */
+#define FR_QTR  2000  /* Quarterly */
+#define FR_MTH  3000  /* Monthly */
+#define FR_WK   4000  /* Weekly */
+#define FR_BUS  5000  /* Business days */
+#define FR_DAY   6000  /* Daily */
+#define FR_HR   7000  /* Hourly */
+#define FR_MIN  8000  /* Minutely */
+#define FR_SEC  9000  /* Secondly */
+#define FR_UND  -9999 /* Undefined */
+
+#define ADD_INT_TO_DICT(dict, key, val) \
+    {PyObject *pyval = PyInt_FromLong(val); \
+     PyDict_SetItemString(dict, key, pyval); \
+     Py_DECREF(pyval); }
 
 static long minval_D_toHighFreq = 719163;
 
@@ -409,138 +414,138 @@ static long (*get_asfreq_func(int fromFreq, int toFreq, int forConvert))(long, c
 
     switch(fromFreq)
     {
-        case FANN:
+        case FR_ANN:
             switch(toFreq)
             {
-                case FQTR: return &asfreq_AtoQ;
-                case FMTH: return &asfreq_AtoM;
-                case FWK: return &asfreq_AtoW;
-                case FBUS: return &asfreq_AtoB;
-                case FDL: return &asfreq_AtoD;
-                case FHR: return &asfreq_AtoH;
-                case FMIN: return &asfreq_AtoT;
-                case FSEC: return &asfreq_AtoS;
+                case FR_QTR: return &asfreq_AtoQ;
+                case FR_MTH: return &asfreq_AtoM;
+                case FR_WK: return &asfreq_AtoW;
+                case FR_BUS: return &asfreq_AtoB;
+                case FR_DAY: return &asfreq_AtoD;
+                case FR_HR: return &asfreq_AtoH;
+                case FR_MIN: return &asfreq_AtoT;
+                case FR_SEC: return &asfreq_AtoS;
                 default: return &nofunc;
             }
 
-        case FQTR:
+        case FR_QTR:
             switch(toFreq)
             {
-                case FANN: return &asfreq_QtoA;
-                case FMTH: return &asfreq_QtoM;
-                case FWK: return &asfreq_QtoW;
-                case FBUS: return &asfreq_QtoB;
-                case FDL: return &asfreq_QtoD;
-                case FHR: return &asfreq_QtoH;
-                case FMIN: return &asfreq_QtoT;
-                case FSEC: return &asfreq_QtoS;
+                case FR_ANN: return &asfreq_QtoA;
+                case FR_MTH: return &asfreq_QtoM;
+                case FR_WK: return &asfreq_QtoW;
+                case FR_BUS: return &asfreq_QtoB;
+                case FR_DAY: return &asfreq_QtoD;
+                case FR_HR: return &asfreq_QtoH;
+                case FR_MIN: return &asfreq_QtoT;
+                case FR_SEC: return &asfreq_QtoS;
                 default: return &nofunc;
             }
 
-        case FMTH:
+        case FR_MTH:
             switch(toFreq)
             {
-                case FANN: return &asfreq_MtoA;
-                case FQTR: return &asfreq_MtoQ;
-                case FWK: return &asfreq_MtoW;
-                case FBUS: return &asfreq_MtoB;
-                case FDL: return &asfreq_MtoD;
-                case FHR: return &asfreq_MtoH;
-                case FMIN: return &asfreq_MtoT;
-                case FSEC: return &asfreq_MtoS;
+                case FR_ANN: return &asfreq_MtoA;
+                case FR_QTR: return &asfreq_MtoQ;
+                case FR_WK: return &asfreq_MtoW;
+                case FR_BUS: return &asfreq_MtoB;
+                case FR_DAY: return &asfreq_MtoD;
+                case FR_HR: return &asfreq_MtoH;
+                case FR_MIN: return &asfreq_MtoT;
+                case FR_SEC: return &asfreq_MtoS;
                 default: return &nofunc;
             }
 
-        case FWK:
+        case FR_WK:
             switch(toFreq)
             {
-                case FANN: return &asfreq_WtoA;
-                case FQTR: return &asfreq_WtoQ;
-                case FMTH: return &asfreq_WtoM;
-                case FBUS: return &asfreq_WtoB;
-                case FDL: return &asfreq_WtoD;
-                case FHR: return &asfreq_WtoH;
-                case FMIN: return &asfreq_WtoT;
-                case FSEC: return &asfreq_WtoS;
+                case FR_ANN: return &asfreq_WtoA;
+                case FR_QTR: return &asfreq_WtoQ;
+                case FR_MTH: return &asfreq_WtoM;
+                case FR_BUS: return &asfreq_WtoB;
+                case FR_DAY: return &asfreq_WtoD;
+                case FR_HR: return &asfreq_WtoH;
+                case FR_MIN: return &asfreq_WtoT;
+                case FR_SEC: return &asfreq_WtoS;
                 default: return &nofunc;
             }
 
-        case FBUS:
+        case FR_BUS:
             switch(toFreq)
             {
-                case FANN: return &asfreq_BtoA;
-                case FQTR: return &asfreq_BtoQ;
-                case FMTH: return &asfreq_BtoM;
-                case FWK: return &asfreq_BtoW;
-                case FDL: return &asfreq_BtoD;
-                case FHR: return &asfreq_BtoH;
-                case FMIN: return &asfreq_BtoT;
-                case FSEC: return &asfreq_BtoS;
+                case FR_ANN: return &asfreq_BtoA;
+                case FR_QTR: return &asfreq_BtoQ;
+                case FR_MTH: return &asfreq_BtoM;
+                case FR_WK: return &asfreq_BtoW;
+                case FR_DAY: return &asfreq_BtoD;
+                case FR_HR: return &asfreq_BtoH;
+                case FR_MIN: return &asfreq_BtoT;
+                case FR_SEC: return &asfreq_BtoS;
                 default: return &nofunc;
             }
 
-        case FDL:
+        case FR_DAY:
             switch(toFreq)
             {
-                case FANN: return &asfreq_DtoA;
-                case FQTR: return &asfreq_DtoQ;
-                case FMTH: return &asfreq_DtoM;
-                case FWK: return &asfreq_DtoW;
-                case FBUS:
+                case FR_ANN: return &asfreq_DtoA;
+                case FR_QTR: return &asfreq_DtoQ;
+                case FR_MTH: return &asfreq_DtoM;
+                case FR_WK: return &asfreq_DtoW;
+                case FR_BUS:
                     if (forConvert) { return &asfreq_DtoB_forConvert; }
                     else            { return &asfreq_DtoB; }
-                case FDL: return &asfreq_DtoD;
-                case FHR: return &asfreq_DtoH;
-                case FMIN: return &asfreq_DtoT;
-                case FSEC: return &asfreq_DtoS;
+                case FR_DAY: return &asfreq_DtoD;
+                case FR_HR: return &asfreq_DtoH;
+                case FR_MIN: return &asfreq_DtoT;
+                case FR_SEC: return &asfreq_DtoS;
                 default: return &nofunc;
             }
 
-        case FHR:
+        case FR_HR:
             switch(toFreq)
             {
-                case FANN: return &asfreq_HtoA;
-                case FQTR: return &asfreq_HtoQ;
-                case FMTH: return &asfreq_HtoM;
-                case FWK: return &asfreq_HtoW;
-                case FBUS:
+                case FR_ANN: return &asfreq_HtoA;
+                case FR_QTR: return &asfreq_HtoQ;
+                case FR_MTH: return &asfreq_HtoM;
+                case FR_WK: return &asfreq_HtoW;
+                case FR_BUS:
                     if (forConvert) { return &asfreq_HtoB_forConvert; }
                     else            { return &asfreq_HtoB; }
-                case FDL: return &asfreq_HtoD;
-                case FMIN: return &asfreq_HtoT;
-                case FSEC: return &asfreq_HtoS;
+                case FR_DAY: return &asfreq_HtoD;
+                case FR_MIN: return &asfreq_HtoT;
+                case FR_SEC: return &asfreq_HtoS;
                 default: return &nofunc;
             }
 
-        case FMIN:
+        case FR_MIN:
             switch(toFreq)
             {
-                case FANN: return &asfreq_TtoA;
-                case FQTR: return &asfreq_TtoQ;
-                case FMTH: return &asfreq_TtoM;
-                case FWK: return &asfreq_TtoW;
-                case FBUS:
+                case FR_ANN: return &asfreq_TtoA;
+                case FR_QTR: return &asfreq_TtoQ;
+                case FR_MTH: return &asfreq_TtoM;
+                case FR_WK: return &asfreq_TtoW;
+                case FR_BUS:
                     if (forConvert) { return &asfreq_TtoB_forConvert; }
                     else            { return &asfreq_TtoB; }
-                case FDL: return &asfreq_TtoD;
-                case FHR: return &asfreq_TtoH;
-                case FSEC: return &asfreq_TtoS;
+                case FR_DAY: return &asfreq_TtoD;
+                case FR_HR: return &asfreq_TtoH;
+                case FR_SEC: return &asfreq_TtoS;
                 default: return &nofunc;
             }
 
-        case FSEC:
+        case FR_SEC:
             switch(toFreq)
             {
-                case FANN: return &asfreq_StoA;
-                case FQTR: return &asfreq_StoQ;
-                case FMTH: return &asfreq_StoM;
-                case FWK: return &asfreq_StoW;
-                case FBUS:
+                case FR_ANN: return &asfreq_StoA;
+                case FR_QTR: return &asfreq_StoQ;
+                case FR_MTH: return &asfreq_StoM;
+                case FR_WK: return &asfreq_StoW;
+                case FR_BUS:
                     if (forConvert) { return &asfreq_StoB_forConvert; }
                     else            { return &asfreq_StoB; }
-                case FDL: return &asfreq_StoD;
-                case FHR: return &asfreq_StoH;
-                case FMIN: return &asfreq_StoT;
+                case FR_DAY: return &asfreq_StoD;
+                case FR_HR: return &asfreq_StoH;
+                case FR_MIN: return &asfreq_StoT;
                 default: return &nofunc;
             }
         default: return &nofunc;
@@ -567,80 +572,80 @@ static long get_height(int fromFreq, int toFreq) {
 
     switch(fromFreq)
     {
-        case FANN: return 1;
-        case FQTR:
+        case FR_ANN: return 1;
+        case FR_QTR:
             switch(toFreq)
             {
-                case FANN: return 4;
+                case FR_ANN: return 4;
                 default: return 1;
             }
-        case FMTH: //monthly
+        case FR_MTH: //monthly
             switch(toFreq)
             {
-                case FANN: return 12;
-                case FQTR: return 3;
+                case FR_ANN: return 12;
+                case FR_QTR: return 3;
                 default: return 1;
             }
-        case FWK: //monthly
+        case FR_WK: //monthly
             switch(toFreq)
             {
-                case FANN: return 53;
-                case FQTR: return 13;
-                case FMTH: return 4;
+                case FR_ANN: return 53;
+                case FR_QTR: return 13;
+                case FR_MTH: return 4;
                 default: return 1;
             }
-        case FBUS: //business
+        case FR_BUS: //business
             switch(toFreq)
             {
-                case FANN: return maxBusDaysPerYear;;
-                case FQTR: return maxBusDaysPerQuarter;
-                case FMTH: return maxBusDaysPerMonth;
-                case FWK: return 5;
+                case FR_ANN: return maxBusDaysPerYear;;
+                case FR_QTR: return maxBusDaysPerQuarter;
+                case FR_MTH: return maxBusDaysPerMonth;
+                case FR_WK: return 5;
                 default: return 1;
             }
-        case FDL: //daily
+        case FR_DAY: //daily
             switch(toFreq)
             {
-                case FANN: return maxDaysPerYear;;
-                case FQTR: return maxDaysPerQuarter;
-                case FMTH: return maxDaysPerMonth;
-                case FWK: return 7;
+                case FR_ANN: return maxDaysPerYear;;
+                case FR_QTR: return maxDaysPerQuarter;
+                case FR_MTH: return maxDaysPerMonth;
+                case FR_WK: return 7;
                 default: return 1;
             }
-        case FHR: //hourly
+        case FR_HR: //hourly
             switch(toFreq)
             {
-                case FANN: return 24 * maxDaysPerYear;;
-                case FQTR: return 24 * maxDaysPerQuarter;
-                case FMTH: return 24 * maxDaysPerMonth;
-                case FWK: return 24 * 7;
-                case FDL: return 24;
-                case FBUS: return 24;
+                case FR_ANN: return 24 * maxDaysPerYear;;
+                case FR_QTR: return 24 * maxDaysPerQuarter;
+                case FR_MTH: return 24 * maxDaysPerMonth;
+                case FR_WK: return 24 * 7;
+                case FR_DAY: return 24;
+                case FR_BUS: return 24;
                 default: return 1;
             }
-        case FMIN: //minutely
+        case FR_MIN: //minutely
             switch(toFreq)
             {
-                case FANN: return 24 * 60 * maxDaysPerYear;;
-                case FQTR: return 24 * 60 * maxDaysPerQuarter;
-                case FMTH: return 24 * 60 * maxDaysPerMonth;
-                case FWK: return 24 * 60 * 7;
-                case FDL: return 24 * 60;
-                case FBUS: return 24 * 60;
-                case FHR: return 60;
+                case FR_ANN: return 24 * 60 * maxDaysPerYear;;
+                case FR_QTR: return 24 * 60 * maxDaysPerQuarter;
+                case FR_MTH: return 24 * 60 * maxDaysPerMonth;
+                case FR_WK: return 24 * 60 * 7;
+                case FR_DAY: return 24 * 60;
+                case FR_BUS: return 24 * 60;
+                case FR_HR: return 60;
                 default: return 1;
             }
-        case FSEC: //minutely
+        case FR_SEC: //minutely
             switch(toFreq)
             {
-                case FANN: return 24 * 60 * 60 * maxDaysPerYear;;
-                case FQTR: return 24 * 60 * 60 * maxDaysPerQuarter;
-                case FMTH: return 24 * 60 * 60 * maxDaysPerMonth;
-                case FWK: return 24 * 60 * 60 * 7;
-                case FDL: return 24 * 60 * 60;
-                case FBUS: return 24 * 60 * 60;
-                case FHR: return 60 * 60;
-                case FMIN: return 60;
+                case FR_ANN: return 24 * 60 * 60 * maxDaysPerYear;;
+                case FR_QTR: return 24 * 60 * 60 * maxDaysPerQuarter;
+                case FR_MTH: return 24 * 60 * 60 * maxDaysPerMonth;
+                case FR_WK: return 24 * 60 * 60 * 7;
+                case FR_DAY: return 24 * 60 * 60;
+                case FR_BUS: return 24 * 60 * 60;
+                case FR_HR: return 60 * 60;
+                case FR_MIN: return 60;
                 default: return 1;
             }
         default: return 1;
@@ -864,7 +869,7 @@ static long dInfo_week(mxDateTimeObject *dateObj)     {
     ISOWeekTuple = PyObject_GetAttrString((PyObject*)dateObj, "iso_week");
 
     if (!PyArg_ParseTuple(ISOWeekTuple,"iii;need a ISO Week 3-tuple (year,week,day)",
-              &year, &week, &day)) return NULL;
+              &year, &week, &day)) return -9999;
 
     Py_DECREF(ISOWeekTuple);
 
@@ -880,13 +885,13 @@ static double getAbsTime(int freq, long dailyDate, long originalDate) {
 
     switch(freq)
     {
-        case FHR:
+        case FR_HR:
             periodsPerDay = 24;
             break;
-        case FMIN:
+        case FR_MIN:
             periodsPerDay = 24*60;
             break;
-        case FSEC:
+        case FR_SEC:
             periodsPerDay = 24*60*60;
             break;
         default:
@@ -914,7 +919,6 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
     PyObject *val;
     long dateNum, dInfo;
     long absdate;
-    //double absdate, abstime;
     double abstime;
 
     long (*toDaily)(long, char) = NULL;
@@ -926,7 +930,7 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
     iterSource = (PyArrayIterObject *)PyArray_IterNew((PyObject *)array);
     iterResult = (PyArrayIterObject *)PyArray_IterNew((PyObject *)newArray);
 
-    toDaily = get_asfreq_func(freq, FDL, 0);
+    toDaily = get_asfreq_func(freq, FR_DAY, 0);
 
     switch(*info)
     {
@@ -968,7 +972,6 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
 
         val = PyArray_GETITEM(array, iterSource->dataptr);
         dateNum = PyInt_AsLong(val);
-        //absdate = (double)toDaily(dateNum, 'B');
         absdate = toDaily(dateNum, 'B');
         abstime = getAbsTime(freq, absdate, dateNum);
 
@@ -1001,7 +1004,24 @@ static PyMethodDef cseries_methods[] = {
 PyMODINIT_FUNC
 initcseries(void)
 {
-    Py_InitModule3("cseries", cseries_methods, cseries_doc);
+    PyObject *m, *TSER_CONSTANTS;
+    m = Py_InitModule3("cseries", cseries_methods, cseries_doc);
     mxDateTime_ImportModuleAndAPI();
     import_array();
+
+    TSER_CONSTANTS = PyDict_New();
+
+    // Add all the frequency constants to a python dictionary
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_ANN", FR_ANN);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_QTR", FR_QTR);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_MTH", FR_MTH);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_WK", FR_WK);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_BUS", FR_BUS);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_DAY", FR_DAY);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_HR", FR_HR);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_MIN", FR_MIN);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_SEC", FR_SEC);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_UND", FR_UND);
+
+    PyModule_AddObject(m, "TSER_CONSTANTS", TSER_CONSTANTS);
 }
