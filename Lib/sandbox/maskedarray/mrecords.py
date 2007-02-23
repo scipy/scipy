@@ -41,7 +41,7 @@ reserved_fields = ['_data','_mask','_fieldmask', 'dtype']
 def _getformats(data):
     """Returns the formats of each array of arraylist as a comma-separated 
     string."""
-    if isinstance(data, record):
+    if hasattr(data,'dtype'):
         return ",".join([desc[1] for desc in data.dtype.descr])
     
     formats = ''
@@ -644,4 +644,15 @@ set to 'fi', where `i` is the number of existing fields.
     return newdata
         
 ################################################################################
-  
+if __name__ == '__main__':
+    import numpy as N
+    if 1:
+        d = N.arange(5)
+        m = MA.make_mask([1,0,0,1,1])
+        base_d = N.r_[d,d[::-1]].reshape(2,-1).T
+        base_m = N.r_[[m, m[::-1]]].T
+        base = MA.array(base_d, mask=base_m)    
+        mrecord = fromarrays(base.T,)
+        
+        mrec = MaskedRecords(mrecord)
+        

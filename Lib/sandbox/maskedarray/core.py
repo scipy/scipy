@@ -1171,7 +1171,7 @@ If `value` is masked, masks those locations."""
             else:
                 self._mask.flat = newmask
         if self._mask.shape:
-            self._mask.shape = self.shape
+            self._mask = numeric.reshape(self._mask, self.shape)
     _setmask = __setmask__
     
     def _get_mask(self):
