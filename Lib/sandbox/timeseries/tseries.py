@@ -32,27 +32,23 @@ from numpy.core import bool_, complex_, float_, int_, object_
 import numpy.core.fromnumeric as fromnumeric
 import numpy.core.numeric as numeric
 import numpy.core.umath as umath
-#from numpy.core.records import recarray
+from numpy.core.records import recarray
 from numpy.core.records import fromarrays as recfromarrays
 
 import maskedarray.core as MA
-#reload(MA)
 from maskedarray.core import MaskedArray, MAError, masked, nomask, \
     filled, getmask, getmaskarray, make_mask_none, mask_or, make_mask, \
     masked_array
 
 import tcore as corelib
-#reload(corelib)
 from tcore import *
 
 import tdates
-#reload(tdates)
 from tdates import DateError, InsufficientDateError
 from tdates import Date, isDate, DateArray, isDateArray, \
-    date_array, date_array_fromlist, date_array_fromrange, thisday
+    date_array, date_array_fromlist, date_array_fromrange, thisday, today
 
 import cseries
-#reload(cseries)
 
 
 
@@ -162,7 +158,8 @@ def _datadatescompat(data,dates):
     if dsize == tsize:
         return True
     elif data.ndim > 1:
-        dsize = numeric.asarray(data.shape)[:-1].prod()
+        #dsize = numeric.asarray(data.shape)[:-1].prod()
+        dsize = data.shape[0]
         if dsize == tsize:
             return True 
     elif data.ndim == 0 and tsize <= 1:
@@ -241,11 +238,40 @@ If `ondates` is False, the `_dates` part remains unchanged.
         func_series = getattr(super(TimeSeries, instance), _name)
         result = func_series(*args)
         if self._ondates:
-            result._dates = getattr(instance._dates, _name)
+            result._dates = getattr(instance._dates, _name)(*args)
         else:
             result._dates = instance._dates
         return result
 
+class _tsaxismethod(object):
+    """Defines a wrapper for array methods working on an axis (mean...).
+When called, returns a ndarray, as the result of the method applied on the series.
+    """
+    def __init__ (self, methodname):
+        """abfunc(fillx, filly) must be defined.
+           abinop(x, filly) = x for all x to enable reduce.
+        """
+        self._name = methodname
+    #
+    def __get__(self, obj, objtype=None):
+        self.obj = obj
+        return self
+    #
+    def __call__ (self, *args, **params):
+        "Execute the call behavior."
+        (_dates, _series) = (self.obj._dates, self.obj._series)
+        func = getattr(_series, self._name)
+        result = func(*args, **params)
+        if _dates.size == _series.size:
+            return result
+        else:
+            try:
+                axis = params.get('axis', args[0])
+                if axis in [-1, _series.ndim-1]:
+                    result = TimeSeries(result, dates=_dates)
+            except IndexError:
+                pass
+            return result
 
 class TimeSeries(MaskedArray, object):     
     """Base class for the definition of time series.
@@ -284,9 +310,9 @@ The combination of `series` and `dates` is the `data` part.
             if freq is not None and newdates.freq != freq:
                 newdates = newdates.tofreq(freq)
         else:
-            length = _getdatalength(data)
-            if length > 0:
-                newdates = date_array(start_date=start_date, length=length,
+            dshape = _data.shape
+            if len(dshape) > 0:
+                newdates = date_array(start_date=start_date, length=dshape[0],
                                       freq=freq)
             else:
                 newdates = date_array([], freq=freq)          
@@ -304,8 +330,8 @@ The combination of `series` and `dates` is the `data` part.
     #............................................
     def __array_finalize__(self,obj):
         MaskedArray.__array_finalize__(self, obj)        
-        self._dates = getattr(obj, '_dates', None)
-        self.observed = getattr(obj, 'observed', self._defaultobserved)
+        self._dates = getattr(obj, '_dates', [])
+        self.observed = getattr(obj, 'observed', None)
         return
     #..................................
     def __array_wrap__(self, obj, context=None):
@@ -323,7 +349,7 @@ The combination of `series` and `dates` is the `data` part.
         "Checks the validity of an index."
         if isinstance(indx, int):
             return (indx, indx)
-        if isinstance(indx, str):
+        elif isinstance(indx, str):
             indx = self._dates.date_to_index(Date(self._dates.freq, string=indx))
             return (indx, indx)
         elif isDate(indx):
@@ -345,9 +371,12 @@ The combination of `series` and `dates` is the `data` part.
         elif isinstance(indx, tuple):
             if len(indx) > self.shape:
                 raise IndexError, "Too many indices"
-            elif len(indx)==2:
-                return (indx,indx[0])
-            return (indx,indx[:-1])
+            if self._dates.size == self.size:
+                return (indx, indx)
+            return (indx,indx[0])
+#            elif len(indx)==2:
+#                return (indx,indx[0])
+#            return (indx,indx[:-1])
         elif isTimeSeries(indx):
             indx = indx._series
         if getmask(indx) is not nomask:
@@ -360,30 +389,46 @@ The combination of `series` and `dates` is the `data` part.
 Returns the item described by i. Not a copy as in previous versions.
         """
         (sindx, dindx) = self.__checkindex(indx)
-        data = self._series[sindx]
-        date = self._dates[dindx]
+        newdata = numeric.array(self._series[sindx], copy=False, subok=True)
+        newdate = self._dates[dindx]
         m = self._mask
-        
-        singlepoint = (len(numeric.shape(date))==0)
-
+        singlepoint = (len(numeric.shape(newdate))==0)
         if singlepoint:
-            if data is not masked and self.ndim > 1:
-                data = data.reshape((list((1,)) + list(data.shape)))
-            date = date_array(start_date=date, length=1, freq=date.freq)
-            
-        if m is nomask:
-            return TimeSeries(data, dates=date, mask=nomask, keep_mask=True,
-                      copy=False)
+            if newdata is masked:
+                newdata = tsmasked
+                newdata._dates = newdate
+                return newdata
+            elif self.ndim > 1:
+                # CHECK: use reshape, or set shape ?
+                newshape = (list((1,)) + list(newdata.shape))
+                newdata.shape = newshape
+        newdata = newdata.view(type(self))    
+        newdata._dates = newdate
+        return newdata
+# CHECK : The implementation below should work, but does not. Why ?
+#        newdata = numeric.array(self._data[sindx], copy=False)
+#        newdates = self._dates[dindx]
+#        if self._mask is not nomask:
+#            newmask = self._mask.copy()[sindx]
+#        else:
+#            newmask = nomask
+#        singlepoint = (len(numeric.shape(newdates))==0)
+#        if singlepoint:
+#            if newmask.ndim == 0 and newmask:
+#                output = tsmasked
+#                output._dates = newdates
+#                return output
+#            if self.ndim > 1:
+#                # CHECK: use reshape, or set shape ?
+#                newdata = newdata.reshape((list((1,)) + list(newdata.shape)))
+#                if newmask is not nomask:
+#                    newmask.shape = newdata.shape
+#        newdata = newdata.view(type(self))    
+#        newdata._dates = newdates
+#        newdata._mask = newmask
+#        return newdata
 
-        mi = m[sindx]
-        if mi.size == 1:
-            if mi:
-                output = tsmasked
-                output._dates = date
-                return output
-            return TimeSeries(data, dates=date, mask=nomask)
-        else:
-            return TimeSeries(data, dates=date, mask=mi)
+
 
     #........................
     def __setitem__(self, indx, value):
@@ -465,7 +510,6 @@ timeseries(data  = %(data)s,
     __gt__ = _tsmathmethod('__gt__')
     __ge__ = _tsmathmethod('__ge__')
     
-    astype = _tsarraymethod('astype')
     reshape = _tsarraymethod('reshape', ondates=True)
     copy = _tsarraymethod('copy', ondates=True)
     compress = _tsarraymethod('compress', ondates=True)
@@ -473,6 +517,17 @@ timeseries(data  = %(data)s,
     cumsum = _tsarraymethod('cumsum',ondates=False)
     cumprod = _tsarraymethod('cumprod',ondates=False)
     anom = _tsarraymethod('anom',ondates=False)
+    
+    sum = _tsaxismethod('sum')
+    prod = _tsaxismethod('prod')
+    mean = _tsaxismethod('mean')
+    var = _tsaxismethod('var')
+    varu = _tsaxismethod('varu')
+    std = _tsaxismethod('std')
+    stdu = _tsaxismethod('stdu')
+    all = _tsaxismethod('all')
+    any = _tsaxismethod('any')
+
     
 #    def nonzero(self):
 #        """Returns a tuple of ndarrays, one for each dimension of the array,
@@ -599,6 +654,21 @@ timeseries(data  = %(data)s,
         "Converts the dates to another frequency, and adapt the data."
         return convert(self, freq, func=func, position=position)
     #.....................................................
+    def transpose(self, *axes):
+        if self._dates.size == self.size:
+            result = super(TimeSeries, self).transpose(*axes)
+            result._dates = self._dates.transpose(*axes)
+        else:
+            errmsg = "Operation not permitted on multi-variable series"
+            print "AXES:",axes
+            if (len(axes)==0) or axes[0] != 0:
+                raise ValueError, errmsg
+            else:
+                result = super(TimeSeries, self).transpose(*axes)
+                result._dates = self._dates
+        return result
+    
+    
         
 def _attrib_dict(series, exclude=[]):
     """this function is used for passing through attributes of one
@@ -612,45 +682,7 @@ time series to a new one being created"""
 ##--- ... Additional methods ...
 ##### --------------------------------------------------------------------------
 
-class _tsaxismethod(object):
-    """Defines a wrapper for array methods working on an axis (mean...).
-When called, returns a ndarray, as the result of the method applied on the series.
-    """
-    def __init__ (self, methodname):
-        """abfunc(fillx, filly) must be defined.
-           abinop(x, filly) = x for all x to enable reduce.
-        """
-        self._name = methodname
-    #
-    def __get__(self, obj, objtype=None):
-        self.obj = obj
-        return self
-    #
-    def __call__ (self, *args, **params):
-        "Execute the call behavior."
-        (_dates, _series) = (self.obj._dates, self.obj._series)
-        func = getattr(_series, self._name)
-        result = func(*args, **params)
-        if _series.ndim < 2 or _dates.size == _series.size:
-            return result
-        else:
-            try:
-                axis = params.get('axis', args[0])
-                if axis in [-1, _series.ndim-1]:
-                    result = TimeSeries(result, dates=_dates)
-            except IndexError:
-                pass
-            return result
 #.......................................
-TimeSeries.sum = _tsaxismethod('sum')
-TimeSeries.prod = _tsaxismethod('prod')
-TimeSeries.mean = _tsaxismethod('mean')
-TimeSeries.var = _tsaxismethod('var')
-TimeSeries.varu = _tsaxismethod('varu')
-TimeSeries.std = _tsaxismethod('std')
-TimeSeries.stdu = _tsaxismethod('stdu')
-TimeSeries.all = _tsaxismethod('all')
-TimeSeries.any = _tsaxismethod('any')
 
 
 class _tsblockedmethods(object):
@@ -668,7 +700,7 @@ class _tsblockedmethods(object):
     #
     def __call__ (self, *args, **params):
         raise NotImplementedError
-TimeSeries.transpose = _tsarraymethod('transpose', ondates=True)
+#TimeSeries.transpose = _tsarraymethod('transpose', ondates=True)
 TimeSeries.swapaxes = _tsarraymethod('swapaxes', ondates=True)
 
 
@@ -851,14 +883,15 @@ def time_series(data, dates=None, freq=None, observed=None,
     `data` : 
         Array of data.
     """
-    data = numeric.asanyarray(data)
+    data = numeric.array(data, copy=False, subok=True)
     if dates is None:
-        length = _getdatalength(data)
-        if length > 0:
+        dshape = data.shape
+        if len(dshape) > 0:
             dates = date_array(start_date=start_date, end_date=end_date,
-                               length=length, include_last=include_last, freq=freq) 
+                               length=dshape[0], include_last=include_last, 
+                               freq=freq) 
         else:
-            dates = date_array([], freq=freq)
+            dates = date_array([], freq=freq)   
     elif not isinstance(dates, DateArray):
         dates = date_array(dlist=dates, freq=freq)
     return TimeSeries(data=data, dates=dates, mask=mask, observed=observed,
@@ -1310,8 +1343,31 @@ def concatenate_series(series, keep_gap=True):
     
 ################################################################################
 if __name__ == '__main__':
-    from maskedarray.testutils import assert_equal
+    from maskedarray.testutils import assert_equal, assert_array_equal
     import numpy as N
-       
-
+    
+    if 1:
+        dlist = ['2007-01-%02i' % i for i in range(1,11)]
+        dates = date_array_fromlist(dlist)
+        data = masked_array(numeric.arange(10), mask=[1,0,0,0,0]*2, dtype=float_)
+        ser1d = time_series(data, dlist)
+        
+        serfolded = ser1d.reshape((5,2))
+        assert_equal(serfolded._dates.shape, (5,2))
+        assert_equal(serfolded[0], time_series([0,1],mask=[1,0],
+                                               start_date=dates[0]))
+        assert_equal(serfolded[:,0], 
+                     time_series(ser1d[::2], dates=dates[::2]))
+        sertrans = serfolded.transpose()
+        assert_equal(sertrans.shape, (2,5))
+        
+        assert ser1d[0] is tsmasked
+        print "OK"
+    if 1:
+        hodie = today('D')
+        ser2d = time_series(N.arange(10).reshape(5,2), start_date=hodie,
+                            mask=[[1,1],[0,0],[0,0],[0,0],[0,0]])
+    if 1:
+        hodie = today('D')
+        ser3d = time_series(N.arange(30).reshape(5,3,2), start_date=hodie,)
     

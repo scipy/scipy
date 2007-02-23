@@ -25,7 +25,6 @@ import numpy.core.numerictypes as ntypes
 from numpy.core.numerictypes import generic
 
 import maskedarray as MA
-#reload(MA)
 
 import mx.DateTime as mxD
 from mx.DateTime.Parser import DateFromString as mxDFromString
@@ -40,7 +39,8 @@ __all__ = [
 'DateError', 'ArithmeticDateError', 'FrequencyDateError','InsufficientDateError',
 'datearray','date_array', 'date_array_fromlist', 'date_array_fromrange',
 'day_of_week','day_of_year','day','month','quarter','year','hour','minute','second',
-'truncateDate','monthToQuarter','thisday','today','prevbusday','asfreq'
+'truncateDate','monthToQuarter','thisday','today','prevbusday','asfreq',
+'period_break'
            ]
 
 
@@ -224,6 +224,9 @@ class Date:
                                                     hour, minute, second))
         self.value = self.__value()
 
+    def __getitem__(self, indx):
+        return self
+
     @property
     def day(self):          
         "Returns the day of month."
@@ -385,6 +388,7 @@ class Date:
         # A date is always valid by itself, but we need the object to support the function
         # when we're working with singletons.
         return True
+    #......................................................
         
     
 #####---------------------------------------------------------------------------
@@ -488,6 +492,52 @@ ufunc_dateOK = ['add','subtract',
                 'equal','not_equal','less','less_equal', 'greater','greater_equal',
                 'isnan']
 
+class _datearithmetics(object):
+    """Defines a wrapper for arithmetic methods.
+Instead of directly calling a ufunc, the corresponding method of  the `array._data` 
+object is called instead.
+If `asdates` is True, a DateArray object is returned , else a regular ndarray
+is returned.
+    """
+    def __init__ (self, methodname, asdates=True):
+        """
+:Parameters:
+    - `methodname` (String) : Method name.
+        """
+        self.methodname = methodname
+        self._asdates = asdates
+        self.__doc__ = getattr(methodname, '__doc__')
+        self.obj = None
+    #
+    def __get__(self, obj, objtype=None):
+        self.obj = obj
+        return self
+    #
+    def __call__ (self, other, *args, **kwargs):
+        "Execute the call behavior."
+        instance = self.obj
+        freq = instance.freq
+        if 'context' not in kwargs:
+            kwargs['context'] = 'DateOK'
+        method = getattr(super(DateArray,instance), self.methodname)
+        if isinstance(other, DateArray):
+            if other.freq != freq:
+                raise FrequencyDateError("Cannot operate on dates", \
+                                         freq, other.freq)
+        elif isinstance(other, Date):
+            if other.freq != freq:
+                raise FrequencyDateError("Cannot operate on dates", \
+                                         freq, other.freq)
+            other = other.value
+        elif isinstance(other, ndarray):
+            if other.dtype.kind not in ['i','f']:
+                raise ArithmeticDateError
+        if self._asdates:
+            return instance.__class__(method(other, *args), 
+                                      freq=freq)
+        else:
+            return method(other, *args)
+
 class DateArray(ndarray):  
     """Defines a ndarray of dates, as ordinals.
     
@@ -506,12 +556,14 @@ accesses the array element by element. Therefore, `d` is a Date object.
         if freq is None:
             _freq = getattr(dates, 'freq', -9999)
         else:
-            _freq = freq
-        cls._defaultfreq = corelib.check_freq(freq)
+            _freq = corelib.check_freq(freq)
+        cls._defaultfreq = corelib.check_freq(_freq)
         # Get the dates ..........
-        _dates = numeric.array(dates, copy=copy, dtype=int_, subok=1).view(cls)
+        _dates = numeric.array(dates, copy=copy, dtype=int_, subok=1)
         if _dates.ndim == 0:
             _dates.shape = (1,)
+        _dates = _dates.view(cls)
+        _dates.freq = _freq
         return _dates
     
     def __array_wrap__(self, obj, context=None):
@@ -550,6 +602,17 @@ accesses the array element by element. Therefore, `d` is a Date object.
         
     def __repr__(self):
         return ndarray.__repr__(self)
+    #......................................................
+    __add__ = _datearithmetics('__add__', asdates=True)
+    __radd__ = _datearithmetics('__add__', asdates=True)
+    __sub__ = _datearithmetics('__sub__', asdates=True)
+    __rsub__ = _datearithmetics('__rsub__', asdates=True)
+    __le__ = _datearithmetics('__le__', asdates=False)
+    __lt__ = _datearithmetics('__lt__', asdates=False)
+    __ge__ = _datearithmetics('__ge__', asdates=False)
+    __gt__ = _datearithmetics('__gt__', asdates=False)
+    __eq__ = _datearithmetics('__eq__', asdates=False)
+    __ne__ = _datearithmetics('__ne__', asdates=False)
     #......................................................
     @property
     def day(self):          
@@ -717,63 +780,9 @@ accesses the array element by element. Therefore, `d` is a Date object.
         "Returns whether the DateArray is valid: no missing/duplicated dates."
         return  (self.isfull() and not self.has_duplicated_dates())
     #......................................................
-class _datearithmetics(object):
-    """Defines a wrapper for arithmetic methods.
-Instead of directly calling a ufunc, the corresponding method of  the `array._data` 
-object is called instead.
-If `asdates` is True, a DateArray object is returned , else a regular ndarray
-is returned.
-    """
-    def __init__ (self, methodname, asdates=True):
-        """
-:Parameters:
-    - `methodname` (String) : Method name.
-        """
-        self.methodname = methodname
-        self._asdates = asdates
-        self.__doc__ = getattr(methodname, '__doc__')
-        self.obj = None
-    #
-    def __get__(self, obj, objtype=None):
-        self.obj = obj
-        return self
-    #
-    def __call__ (self, other, *args, **kwargs):
-        "Execute the call behavior."
-        instance = self.obj
-        freq = instance.freq
-        if 'context' not in kwargs:
-            kwargs['context'] = 'DateOK'
-        method = getattr(super(DateArray,instance), self.methodname)
-        if isinstance(other, DateArray):
-            if other.freq != freq:
-                raise FrequencyDateError("Cannot operate on dates", \
-                                         freq, other.freq)
-#            other = 
-        elif isinstance(other, Date):
-            if other.freq != freq:
-                raise FrequencyDateError("Cannot operate on dates", \
-                                         freq, other.freq)
-            other = other.value
-        elif isinstance(other, ndarray):
-            if other.dtype.kind not in ['i','f']:
-                raise ArithmeticDateError
-        if self._asdates:
-            return instance.__class__(method(other, *args), 
-                                      freq=freq)
-        else:
-            return method(other, *args)
+
 #............................
-DateArray.__add__ = _datearithmetics('__add__', asdates=True)
-DateArray.__radd__ = _datearithmetics('__add__', asdates=True)
-DateArray.__sub__ = _datearithmetics('__sub__', asdates=True)
-DateArray.__rsub__ = _datearithmetics('__rsub__', asdates=True)
-DateArray.__le__ = _datearithmetics('__le__', asdates=False)
-DateArray.__lt__ = _datearithmetics('__lt__', asdates=False)
-DateArray.__ge__ = _datearithmetics('__ge__', asdates=False)
-DateArray.__gt__ = _datearithmetics('__gt__', asdates=False)
-DateArray.__eq__ = _datearithmetics('__eq__', asdates=False)
-DateArray.__ne__ = _datearithmetics('__ne__', asdates=False)
+
 
 #####---------------------------------------------------------------------------
 #---- --- DateArray functions ---
@@ -892,6 +901,8 @@ def date_array(dlist=None, start_date=None, end_date=None, length=None,
             start_date = dlist
     # Case #2: we have a starting date ..........
     if start_date is None:
+        if length == 0:
+            return DateArray([], freq=freq)
         raise InsufficientDateError
     if not isDate(start_date):
         dmsg = "Starting date should be a valid Date instance! "
@@ -905,7 +916,7 @@ def date_array(dlist=None, start_date=None, end_date=None, length=None,
     else:
         if not isDate(end_date):
             raise DateError, "Ending date should be a valid Date instance!"
-        length = end_date - start_date
+        length = int(end_date - start_date)
         if include_last:
             length += 1
 #    dlist = [(start_date+i).value for i in range(length)]
@@ -968,6 +979,20 @@ minute = _frommethod('minute')
 second = _frommethod('second')
 
 
+def period_break(dates, period):
+    """Returns the indices where the given period changes.
+
+:Parameters:
+    dates : DateArray
+        Array of dates to monitor.
+    period : string
+        Name of the period to monitor.
+    """
+    current = getattr(dates, period)
+    previous = getattr(dates-1, period)
+    return (current - previous).nonzero()[0]
+
+
 ################################################################################
 
 if __name__ == '__main__':
@@ -982,3 +1007,16 @@ if __name__ == '__main__':
         lag = mdates.find_dates(mdates[0])
         print mdates[lag]
         assert_equal(mdates[lag], mdates[0])
+    if 1:
+        hodie = today('D')
+        D = DateArray(today('D'))
+        assert_equal(D.freq, 6000)
+    
+    if 1:
+        freqs = [x[0] for x in corelib.freq_dict.values() if x[0] != 'U']
+        print freqs
+        for f in freqs:
+            print f
+            today = thisday(f)
+            assert(Date(freq=f, value=today.value) == today)
+    

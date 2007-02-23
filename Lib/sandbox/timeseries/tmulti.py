@@ -27,8 +27,6 @@ from numpy.core.records import format_parser, recarray, record
 from numpy.core.records import fromarrays as recfromarrays
 
 import maskedarray as MA
-#import numpy.core.ma as MA
-#reload(MA)
 #MaskedArray = MA.MaskedArray
 from maskedarray.core import MaskedArray, MAError, default_fill_value, \
     masked_print_option
@@ -36,7 +34,6 @@ from maskedarray.core import masked, nomask, getmask, getmaskarray, make_mask,\
     make_mask_none, mask_or, masked_array, filled
 
 import maskedarray.mrecords as MR
-#reload(MR)
 from maskedarray.mrecords import _checknames, _guessvartypes, openfile,\
     MaskedRecords
 from maskedarray.mrecords import fromrecords as mrecfromrecords
@@ -74,7 +71,6 @@ def _getformats(data):
         formats += ','
     return formats[:-1]    
 
-
     
 
 
@@ -102,12 +98,12 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
                          byteorder=byteorder, aligned=aligned)
         #
         if isinstance(data, MultiTimeSeries):
-            cls._defaultfieldmask = data._series._fieldmask
-            cls._defaulthardmask = data._series._hardmask | hard_mask
-            cls._fill_value = data._series._fill_value
-            return data._data.view(cls)
+#            if copy:
+#                data = data.copy()
+            data._hardmask = data._hardmask | hard_mask
+            return data
         # .......................................
-        _data = MaskedRecords(data, mask=mask, dtype=dtype, **mroptions)
+        _data = MaskedRecords(data, mask=mask, dtype=dtype, **mroptions).view(cls)
         if dates is None:
             length = _getdatalength(data)
             newdates = date_array(start_date=start_date, length=length,
@@ -116,72 +112,67 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
             newdates = date_array(dlist=dates, freq=freq)
         else:
             newdates = dates
-        cls._defaultdates = newdates    
-        cls._defaultobserved = observed  
+        _data._dates = newdates    
+        _data._observed = observed  
         cls._defaultfieldmask = _data._fieldmask
         #
-        return _data.view(cls)
-#    
-#        #..................................
-#    def __array_wrap__(self, obj, context=None):
-#        """Special hook for ufuncs.
-#Wraps the numpy array and sets the mask according to context.
-#        """
-##        mclass = self.__class__
-#        #..........
-#        if context is None:
-##            return mclass(obj, mask=self._mask, copy=False)
-#            return MaskedArray(obj, mask=self._mask, copy=False,
-#                               dtype=obj.dtype,
-#                               fill_value=self.fill_value, )
-#        #..........
-#        (func, args) = context[:2]
-# 
-##        return mclass(obj, copy=False, mask=m)
-#        return MultiTimeSeries(obj, copy=False, mask=m,)
-##                           dtype=obj.dtype, fill_value=self._fill_value)        
-    def __array_finalize__(self,obj):
-        if isinstance(obj, MultiTimeSeries):
-            self.__dict__.update(_dates=obj._dates,
-                                 _series=obj._series,
-                                 _data=obj._series._data,
-                                 _fieldmask=obj._series._fieldmask,
-                                 _hardmask=obj._series._hardmask,
-                                 _fill_value=obj._fill_value                                 
+        return _data
+
+    def __array_finalize__(self,obj):        
+        if isinstance(obj, (MaskedRecords)):
+            self.__dict__.update(_fieldmask=obj._fieldmask,
+                                 _hardmask=obj._hardmask,
+                                 _fill_value=obj._fill_value,                                 
                                  )
+            if isinstance(obj, MultiTimeSeries):
+                self.__dict__.update(observed=obj.observed,
+                                     _dates=obj._dates)
+            else:
+                self.__dict__.update(observed=None,
+                                     _dates=[])
         else:     
-            self.__dict__.update(_data = obj.view(recarray),
-                                 _dates = self._defaultdates,
-                                 _series = MaskedRecords(obj, dtype=obj.dtype),
-                                 _fieldmask = self._defaultfieldmask,
-                                 _hardmask = self._defaulthardmask,
-                                 fill_value = self._fill_value
+            self.__dict__.update(_dates = [],
+                                 observed=None,
+                                 _fieldmask = nomask,
+                                 _hardmask = False,
+                                 fill_value = None
                                 )
-            MultiTimeSeries._defaultfieldmask = nomask
-            MultiTimeSeries._defaulthardmask = False
         return
+    
+        
+    def _getdata(self):
+        "Returns the data as a recarray."
+        return self.view(recarray)
+    _data = property(fget=_getdata)
+    
+    def _getseries(self):
+        "Returns the data as a MaskedRecord array."
+        return self.view(MaskedRecords)
+    _series = property(fget=_getseries)
+    
     #......................................................
     def __getattribute__(self, attr):
-        try:
-            # Returns a generic attribute
-            return object.__getattribute__(self,attr)
-        except AttributeError: 
-            # OK, so attr must be a field name
-            pass
-        # Get the list of fields ......
-        _names = self.dtype.names
-        _local = self.__dict__
-        _mask = _local['_fieldmask']
-        if attr in _names:
-            _data = _local['_data']
-            obj = numeric.asarray(_data.__getattribute__(attr)).view(MaskedArray)
-            obj._mask = make_mask(_mask.__getattribute__(attr))
-            return obj
-        elif attr == '_mask':
-            if self.size > 1:
-                return _mask.view((bool_, len(self.dtype))).all(1)
-            return _mask.view((bool_, len(self.dtype)))
-        raise AttributeError,"No attribute '%s' !" % attr
+        return MaskedRecords.__getattribute__(self,attr)
+#        try:
+#            # Returns a generic attribute
+#            return object.__getattribute__(self,attr)
+#        except AttributeError: 
+#            # OK, so attr must be a field name
+#            pass
+#        # Get the list of fields ......
+#        _names = self.dtype.names
+#        _local = self.__dict__
+#        _mask = _local['_fieldmask']
+#        if attr in _names:
+#            _data = self._data
+#            obj = numeric.asarray(_data.__getattribute__(attr)).view(MaskedArray)
+#            obj._mask = make_mask(_mask.__getattribute__(attr))
+#            return obj
+#        elif attr == '_mask':
+#            if self.size > 1:
+#                return _mask.view((bool_, len(self.dtype))).all(1)
+#            return _mask.view((bool_, len(self.dtype)))
+#        raise AttributeError,"No attribute '%s' !" % attr
             
     def __setattr__(self, attr, val):
         newattr = attr not in self.__dict__
@@ -195,7 +186,7 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
                 exctype, value = sys.exc_info()[:2]
                 raise exctype, value
         else:
-            if attr not in list(self.dtype.names) + ['_mask']:
+            if attr not in list(self.dtype.names) + ['_dates','_mask']:
                 return ret
             if newattr:         # We just added this one
                 try:            #  or this setattr worked on an internal
@@ -234,59 +225,36 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
         _localdict = self.__dict__
         # We want a field ........
         if indx in self.dtype.names:
-            obj = _localdict['_series'][indx].view(TimeSeries)
+            obj = self._data[indx].view(TimeSeries)
+            obj._dates = _localdict['_dates']
             obj._mask = make_mask(_localdict['_fieldmask'][indx])
             return obj
         # We want some elements ..
-        (sindx, dindx) = super(MultiTimeSeries, self)._TimeSeries__checkindex(indx)
-        return MultiTimeSeries(_localdict['_series'][sindx], 
-                               dates=_localdict['_dates'][dindx],
-#                              mask=_localdict['_fieldmask'][indx],
-                               dtype=self.dtype)
+        (sindx, dindx) = self._TimeSeries__checkindex(indx)
+#        obj = numeric.array(self._data[sindx],
+#                            copy=False, subok=True).view(type(self))
+        obj = numeric.array(self._data[sindx], copy=False, subok=True)
+        obj = obj.view(type(self))
+        obj.__dict__.update(_dates=_localdict['_dates'][dindx],
+                            _fieldmask=_localdict['_fieldmask'][sindx],
+                            _fill_value=_localdict['_fill_value'])
+        return obj
         
     def __getslice__(self, i, j):
         """Returns the slice described by [i,j]."""
         _localdict = self.__dict__
         (si, di) = super(MultiTimeSeries, self)._TimeSeries__checkindex(i)
         (sj, dj) = super(MultiTimeSeries, self)._TimeSeries__checkindex(j)
-        return MultiTimeSeries(_localdict['_data'][si:sj], 
-                               mask=_localdict['_fieldmask'][si:sj],
-                               dates=_localdict['_dates'][di:dj],
-                               dtype=self.dtype)      
+        newdata = self._data[si:sj].view(type(self))
+        newdata.__dict__.update(_dates=_localdict['_dates'][di:dj],
+                                _mask=_localdict['_fieldmask'][si:sj])
+        return newdata    
         
     def __setslice__(self, i, j, value):
         """Sets the slice described by [i,j] to `value`."""
-        _localdict = self.__dict__
-        d = _localdict['_data']
-        t = _localdict['_dates']
-        m = _localdict['_fieldmask']
-        names = self.dtype.names
-        if value is masked:
-            for n in names:
-                m[i:j][n] = masked
-        elif not self._hardmask:
-            fval = filled(value)
-            mval = getmaskarray(value)
-            for n in names:
-                d[n][i:j] = fval
-                m[n][i:j] = mval
-        else:
-            mindx = getmaskarray(self)[i:j]
-            val = masked_array(value, mask=mindx, keep_mask=True)
-            valmask = getmask(value)
-            if valmask is nomask:
-                for n in names:
-                    mval = mask_or(m[n][i:j], valmask)
-                    d[n][i:j][~mval] = filled(value)
-            elif valmask.size > 1:
-                for n in names:
-                    mval = mask_or(m[n][i:j], valmask)
-                    d[n][i:j][~mval] = fval[~mval]
-                    m[n][i:j] = mask_or(m[n][i:j], mval) 
+        self.view(MaskedRecords).__setslice__(i,j,value)
+        return   
             
-        return MultiTimeSeries(d, mask=m, dates=t[i:j], dtype=self.dtype)      
-            
-        
     #......................................................
     def __str__(self):
         """x.__str__() <==> str(x)
@@ -320,25 +288,6 @@ Otherwise fill with fill value.
                         fmt % ('    fill_value', self._fill_value), 
                          '               )'])
         return str("\n".join(reprstr))
-    #......................................................
-    def view(self, obj):
-        """Returns a view of the mrecarray."""
-        try:
-            if issubclass(obj, ndarray):
-                return ndarray.view(self, obj)
-        except TypeError:
-            pass
-        dtype = numeric.dtype(obj)
-        if dtype.fields is None:
-            return self.__array__().view(dtype)
-        return ndarray.view(self, obj)            
-    #............................................
-#    def harden_mask(self):
-#        "Forces the mask to hard"
-#        self._hardmask = True
-#    def soften_mask(self):
-#        "Forces the mask to soft"
-#        self._hardmask = False
     #.............................................
     def copy(self):
         "Returns a copy of the argument."
@@ -347,9 +296,7 @@ Otherwise fill with fill value.
                        dates=_localdict['_dates'].copy(),
                         mask=_localdict['_fieldmask'].copy(),
                        dtype=self.dtype)
-    #.............................................
-    def addfield(self, newfield, newfieldname=None):
-        MaskedRecords.addfield(self, newfield, newfieldname)
+
 
 #####---------------------------------------------------------------------------
 #---- --- Constructors ---
@@ -561,13 +508,11 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
     return MultiTimeSeries(_datalist, dates=newdates, dtype=mdescr)
     
 
-
-################################################################################
-
     
 ################################################################################
 if __name__ == '__main__':
     import numpy as N
+    from maskedarray.testutils import assert_equal
     if 1:
         d = N.arange(5)
         m = MA.make_mask([1,0,0,1,1])
@@ -580,3 +525,16 @@ if __name__ == '__main__':
         ts = time_series(mrec,dates)
         mts = MultiTimeSeries(mrec,dates)
         self_data = [d, m, mrec, dlist, dates, ts, mts]
+        
+    if 1:        
+        mts[:2] = 5
+        assert_equal(mts.f0._data, [5,5,2,3,4])
+        assert_equal(mts.f1._data, [5,5,2,1,0])
+        assert_equal(mts.f0._mask, [0,0,0,1,1])
+        assert_equal(mts.f1._mask, [0,0,0,0,1])
+        mts.harden_mask()
+        mts[-2:] = 5
+        assert_equal(mts.f0._data, [5,5,2,3,4])
+        assert_equal(mts.f1._data, [5,5,2,5,0])
+        assert_equal(mts.f0._mask, [0,0,0,1,1])
+        assert_equal(mts.f1._mask, [0,0,0,0,1]) 

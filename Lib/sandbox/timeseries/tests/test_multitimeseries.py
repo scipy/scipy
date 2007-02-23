@@ -18,16 +18,15 @@ from numpy.testing import NumpyTest, NumpyTestCase
 from numpy.testing.utils import build_err_msg
 
 import maskedarray.testutils
-#reload(maskedarray.testutils)
 from maskedarray.testutils import assert_equal, assert_array_equal
 
 import maskedarray.core as MA
 import maskedarray.mrecords as MR
+from maskedarray.mrecords import addfield
 
 from maskedarray.core import getmaskarray, nomask, masked_array
 
 from timeseries import tmulti
-reload(tmulti)
 from timeseries.tmulti import MultiTimeSeries, TimeSeries,\
     fromarrays, fromtextfile, fromrecords, \
     date_array, time_series
@@ -63,11 +62,14 @@ class test_mrecords(NumpyTestCase):
         assert_equal(mts['f0']._mask, m)
         #
         assert(isinstance(mts[0], MultiTimeSeries))
-        assert_equal(mts[0]._data, mrec[0])
-        assert_equal(mts[0]._dates, dates[0])       
+        assert_equal(mts._data[0], mrec[0])
+        # We can't use assert_equal here, as it tries to convert the tuple into a singleton
+        assert(mts[0]._data.view(N.ndarray) == mrec[0])
+        assert_equal(mts._dates[0], dates[0])  
+        assert_equal(mts[0]._dates, dates[0])
         #
         assert(isinstance(mts['2007-01'], MultiTimeSeries))
-        assert_equal(mts['2007-01']._data, mrec[0])
+        assert(mts['2007-01']._data == mrec[0])
         assert_equal(mts['2007-01']._dates, dates[0])       
         #
         assert_equal(mts.f0, time_series(d, dates=dates, mask=m))
@@ -131,7 +133,7 @@ class test_mrecords(NumpyTestCase):
     def test_addfield(self):
         "Tests addfield"
         [d, m, mrec, dlist, dates, ts, mts] = self.data
-        mts.addfield(masked_array(d+10, mask=m[::-1]))
+        mts = addfield(mts, masked_array(d+10, mask=m[::-1]))
         assert_equal(mts.f2, d+10)
         assert_equal(mts.f2._mask, m[::-1])            
 
