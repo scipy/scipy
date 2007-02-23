@@ -22,6 +22,9 @@ static char cseries_doc[] = "Speed sensitive time series operations";
      PyDict_SetItemString(dict, key, pyval); \
      Py_DECREF(pyval); }
 
+#define DINFO_ERR -99
+
+#define CHECK_ASFREQ(result) if ((result) == DINFO_ERR) return NULL
 
 //DERIVED FROM mx.DateTime
 /*
@@ -38,7 +41,7 @@ static char cseries_doc[] = "Speed sensitive time series operations";
 static PyObject *DateCalc_Error; /* Error Exception object */
 static PyObject *DateCalc_RangeError; /* Error Exception object */
 
-#define DINFO_ERR -99
+
 
 #define GREGORIAN_CALENDAR 0
 #define JULIAN_CALENDAR 1
@@ -1067,13 +1070,17 @@ cseries_convert(PyObject *self, PyObject *args)
     asfreq_endpoints = get_asfreq_func(fromFreq, toFreq, 0);
 
     //convert start index to new frequency
-    newStartTemp = asfreq_main(startIndex, 'B');
-    if (newStartTemp < 1) { newStart = asfreq_endpoints(startIndex, 'A'); }
+    CHECK_ASFREQ(newStartTemp = asfreq_main(startIndex, 'B'));
+    if (newStartTemp < 1) {
+        CHECK_ASFREQ(newStart = asfreq_endpoints(startIndex, 'A'));
+    }
     else { newStart = newStartTemp; }
 
     //convert end index to new frequency
-    newEndTemp = asfreq_main(startIndex+array->dimensions[0]-1, 'A');
-    if (newEndTemp < 1) { newEnd = asfreq_endpoints(startIndex+array->dimensions[0]-1, 'B'); }
+    CHECK_ASFREQ(newEndTemp = asfreq_main(startIndex+array->dimensions[0]-1, 'A'));
+    if (newEndTemp < 1) {
+        CHECK_ASFREQ(newEnd = asfreq_endpoints(startIndex+array->dimensions[0]-1, 'B'));
+    }
     else { newEnd = newEndTemp; }
 
     if (newStart < 1) {
@@ -1085,9 +1092,10 @@ cseries_convert(PyObject *self, PyObject *args)
     newHeight = get_height(fromFreq, toFreq);
 
     if (newHeight > 1) {
-
+        long tempval;
         asfreq_reverse = get_asfreq_func(toFreq, fromFreq, 0);
-        currPerLen = startIndex - asfreq_reverse(newStart, 'B');
+        CHECK_ASFREQ(tempval = asfreq_reverse(newStart, 'B'));
+        currPerLen = startIndex - tempval;
 
         nd = 2;
         dim = PyDimMem_NEW(nd);
@@ -1118,7 +1126,7 @@ cseries_convert(PyObject *self, PyObject *args)
         val = PyArray_GETITEM(array, PyArray_GetPtr(array, &i));
         valMask = PyArray_GETITEM(mask, PyArray_GetPtr(mask, &i));
 
-        currIndex = asfreq_main(startIndex + i, relation);
+        CHECK_ASFREQ(currIndex = asfreq_main(startIndex + i, relation));
         newIdx[0] = currIndex-newStart;
 
         if (newHeight > 1) {
@@ -1188,7 +1196,7 @@ cseries_asfreq(PyObject *self, PyObject *args)
 
         fromDateObj = PyArray_GETITEM(fromDates, iterFrom->dataptr);
         fromDate = PyInt_AsLong(fromDateObj);
-        toDate = asfreq_main(fromDate, relation[0]);
+        CHECK_ASFREQ(toDate = asfreq_main(fromDate, relation[0]));
         toDateObj = PyInt_FromLong(toDate);
 
         PyArray_SETITEM(toDates, iterTo->dataptr, toDateObj);
@@ -1214,22 +1222,6 @@ static int dInfo_day(struct date_info dateObj)     { return dateObj.day; }
 static int dInfo_day_of_year(struct date_info dateObj) { return dateObj.day_of_year; }
 static int dInfo_day_of_week(struct date_info dateObj) { return dateObj.day_of_week; }
 static int dInfo_week(struct date_info dateObj)     { return dInfoCalc_ISOWeek(dateObj); }
-
-/*
-    int year, week, day;
-    PyObject *ISOWeekTuple = NULL;
-    ISOWeekTuple = PyObject_GetAttrString((PyObject*)dateObj, "iso_week");
-
-    if (!PyArg_ParseTuple(ISOWeekTuple,"iii;need a ISO Week 3-tuple (year,week,day)",
-              &year, &week, &day)) return -9999;
-
-    Py_DECREF(ISOWeekTuple);
-
-    return (long)week;
-    dInfoCalc_ISOWeek(dinfo)
-}
-*/
-
 static int dInfo_hour(struct date_info dateObj)     { return dateObj.hour; }
 static int dInfo_minute(struct date_info dateObj)     { return dateObj.minute; }
 static int dInfo_second(struct date_info dateObj)     { return (int)dateObj.second; }
@@ -1328,7 +1320,7 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
         val = PyArray_GETITEM(array, iterSource->dataptr);
         dateNum = PyInt_AsLong(val);
         Py_DECREF(val);
-        absdate = toDaily(dateNum, 'B');
+        CHECK_ASFREQ(absdate = toDaily(dateNum, 'B'));
         abstime = getAbsTime(freq, absdate, dateNum);
 
         if(dInfoCalc_SetFromAbsDateTime(&convDate, absdate, abstime, GREGORIAN_CALENDAR)) return NULL;
