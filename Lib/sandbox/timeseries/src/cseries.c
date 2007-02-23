@@ -2,7 +2,6 @@
 #include <structmember.h>
 #include <stdio.h>
 #include <string.h>
-#include "mxDateTime.h"
 #include "arrayobject.h"
 
 static char cseries_doc[] = "Speed sensitive time series operations";
@@ -12,7 +11,7 @@ static char cseries_doc[] = "Speed sensitive time series operations";
 #define FR_MTH  3000  /* Monthly */
 #define FR_WK   4000  /* Weekly */
 #define FR_BUS  5000  /* Business days */
-#define FR_DAY   6000  /* Daily */
+#define FR_DAY  6000  /* Daily */
 #define FR_HR   7000  /* Hourly */
 #define FR_MIN  8000  /* Minutely */
 #define FR_SEC  9000  /* Secondly */
@@ -23,7 +22,383 @@ static char cseries_doc[] = "Speed sensitive time series operations";
      PyDict_SetItemString(dict, key, pyval); \
      Py_DECREF(pyval); }
 
+
+//DERIVED FROM mx.DateTime
+/*
+=====================================================
+== Functions in the following section are borrowed ==
+== from mx.DateTime, and in many cases slightly    ==
+== modified                                        ==
+=====================================================
+*/
+
+#define Py_AssertWithArg(x,errortype,errorstr,a1) {if (!(x)) {PyErr_Format(errortype,errorstr,a1);goto onError;}}
+#define Py_Error(errortype,errorstr) {PyErr_SetString(errortype,errorstr);goto onError;}
+
+static PyObject *DateCalc_Error; /* Error Exception object */
+static PyObject *DateCalc_RangeError; /* Error Exception object */
+
+#define DINFO_ERR -99
+
+#define GREGORIAN_CALENDAR 0
+#define JULIAN_CALENDAR 1
+
+#define SECONDS_PER_DAY ((double) 86400.0)
+
+/* Table with day offsets for each month (0-based, without and with leap) */
+static int month_offset[2][13] = {
+    { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 },
+    { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 }
+};
+
+/* Table of number of days in a month (0-based, without and with leap) */
+static int days_in_month[2][12] = {
+    { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
+    { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
+};
+
+struct date_info {
+    long absdate;
+    double abstime;
+
+    double second;
+    int minute;
+    int hour;
+    int day;
+    int month;
+    int quarter;
+    int year;
+    int day_of_week;
+    int day_of_year;
+    int calendar;
+};
+
+
+/* Return 1/0 iff year points to a leap year in calendar. */
+static
+int dInfoCalc_Leapyear(register long year,
+            int calendar)
+{
+    if (calendar == GREGORIAN_CALENDAR) {
+        return (year % 4 == 0) && ((year % 100 != 0) || (year % 400 == 0));
+    } else {
+        return (year % 4 == 0);
+    }
+}
+
+static
+int dInfoCalc_ISOWeek(struct date_info dinfo)
+{
+    int week;
+
+    /* Estimate */
+    week = (dinfo.day_of_year-1) - dinfo.day_of_week + 3;
+    if (week >= 0) week = week / 7 + 1;
+
+    /* Verify */
+    if (week < 0) {
+        /* The day lies in last week of the previous year */
+        if ((week > -2) ||
+            (week == -2 && dInfoCalc_Leapyear(dinfo.year-1, dinfo.calendar)))
+            week = 53;
+        else
+            week = 52;
+    } else if (week == 53) {
+    /* Check if the week belongs to year or year+1 */
+        if (31-dinfo.day + dinfo.day_of_week < 3) {
+            week = 1;
+        }
+    }
+
+    return week;
+}
+
+
+/* Return the day of the week for the given absolute date. */
+static
+int dInfoCalc_DayOfWeek(register long absdate)
+{
+    int day_of_week;
+
+    if (absdate >= 1) {
+        day_of_week = (absdate - 1) % 7;
+    } else {
+        day_of_week = 6 - ((-absdate) % 7);
+    }
+    return day_of_week;
+}
+
+/* Return the year offset, that is the absolute date of the day
+   31.12.(year-1) in the given calendar.
+
+   Note:
+   For the Julian calendar we shift the absdate (which is measured
+   using the Gregorian Epoch) value by two days because the Epoch
+   (0001-01-01) in the Julian calendar lies 2 days before the Epoch in
+   the Gregorian calendar. */
+static
+int dInfoCalc_YearOffset(register long year,
+              int calendar)
+{
+    year--;
+    if (calendar == GREGORIAN_CALENDAR) {
+    if (year >= 0 || -1/4 == -1)
+        return year*365 + year/4 - year/100 + year/400;
+    else
+        return year*365 + (year-3)/4 - (year-99)/100 + (year-399)/400;
+    }
+    else if (calendar == JULIAN_CALENDAR) {
+    if (year >= 0 || -1/4 == -1)
+        return year*365 + year/4 - 2;
+    else
+        return year*365 + (year-3)/4 - 2;
+    }
+    Py_Error(DateCalc_Error, "unknown calendar");
+ onError:
+    return -1;
+}
+
+
+/* Set the instance's value using the given date and time. calendar
+   may be set to the flags: GREGORIAN_CALENDAR,
+   JULIAN_CALENDAR to indicate the calendar to be used. */
+
+static
+int dInfoCalc_SetFromDateAndTime(struct date_info *dinfo,
+                  int year,
+                  int month,
+                  int day,
+                  int hour,
+                  int minute,
+                  double second,
+                  int calendar)
+{
+
+    /* Calculate the absolute date */
+    {
+        int leap;
+        long yearoffset,absdate;
+
+        /* Range check */
+        Py_AssertWithArg(year > -(INT_MAX / 366) && year < (INT_MAX / 366),
+                 DateCalc_RangeError,
+                 "year out of range: %i",
+                 year);
+
+        /* Is it a leap year ? */
+        leap = dInfoCalc_Leapyear(year,calendar);
+
+        /* Negative month values indicate months relative to the years end */
+        if (month < 0) month += 13;
+        Py_AssertWithArg(month >= 1 && month <= 12,
+                 DateCalc_RangeError,
+                 "month out of range (1-12): %i",
+                 month);
+
+        /* Negative values indicate days relative to the months end */
+        if (day < 0) day += days_in_month[leap][month - 1] + 1;
+        Py_AssertWithArg(day >= 1 && day <= days_in_month[leap][month - 1],
+                 DateCalc_RangeError,
+                 "day out of range: %i",
+                 day);
+
+        yearoffset = dInfoCalc_YearOffset(year,calendar);
+        if (yearoffset == -1 && PyErr_Occurred()) goto onError;
+
+        absdate = day + month_offset[leap][month - 1] + yearoffset;
+
+        dinfo->absdate = absdate;
+
+        dinfo->year = year;
+        dinfo->month = month;
+        dinfo->day = day;
+
+        dinfo->day_of_week = dInfoCalc_DayOfWeek(absdate);
+        dinfo->day_of_year = (short)(absdate - yearoffset);
+
+        dinfo->calendar = calendar;
+    }
+
+    /* Calculate the absolute time */
+    {
+    Py_AssertWithArg(hour >= 0 && hour <= 23,
+             DateCalc_RangeError,
+             "hour out of range (0-23): %i",
+             hour);
+    Py_AssertWithArg(minute >= 0 && minute <= 59,
+             DateCalc_RangeError,
+             "minute out of range (0-59): %i",
+             minute);
+    Py_AssertWithArg(second >= (double)0.0 &&
+             (second < (double)60.0 ||
+              (hour == 23 && minute == 59 &&
+               second < (double)61.0)),
+             DateCalc_RangeError,
+             "second out of range (0.0 - <60.0; <61.0 for 23:59): %f",
+             second);
+
+    dinfo->abstime = (double)(hour*3600 + minute*60) + second;
+
+    dinfo->hour = hour;
+    dinfo->minute = minute;
+    dinfo->second = second;
+    }
+    return 0;
+ onError:
+    return -1;
+}
+
+
+/* Sets the date part of the date_info struct using the indicated
+   calendar.
+
+   XXX This could also be done using some integer arithmetics rather
+       than with this iterative approach... */
+static
+int dInfoCalc_SetFromAbsDate(register struct date_info *dinfo,
+                  long absdate,
+                  int calendar)
+{
+    register long year;
+    long yearoffset;
+    int leap,dayoffset;
+    int *monthoffset;
+
+    /* Approximate year */
+    if (calendar == GREGORIAN_CALENDAR) {
+        year = (long)(((double)absdate) / 365.2425);
+    } else if (calendar == JULIAN_CALENDAR) {
+        year = (long)(((double)absdate) / 365.25);
+    } else {
+        Py_Error(DateCalc_Error, "unknown calendar");
+    }
+    if (absdate > 0) year++;
+
+    /* Apply corrections to reach the correct year */
+    while (1) {
+        /* Calculate the year offset */
+        yearoffset = dInfoCalc_YearOffset(year,calendar);
+        if (yearoffset == -1 && PyErr_Occurred())
+            goto onError;
+
+        /* Backward correction: absdate must be greater than the
+           yearoffset */
+        if (yearoffset >= absdate) {
+            year--;
+            continue;
+        }
+
+        dayoffset = absdate - yearoffset;
+        leap = dInfoCalc_Leapyear(year,calendar);
+
+        /* Forward correction: non leap years only have 365 days */
+        if (dayoffset > 365 && !leap) {
+            year++;
+            continue;
+        }
+        break;
+    }
+
+    dinfo->year = year;
+    dinfo->calendar = calendar;
+
+    /* Now iterate to find the month */
+    monthoffset = month_offset[leap];
+    {
+        register int month;
+
+        for (month = 1; month < 13; month++) {
+            if (monthoffset[month] >= dayoffset)
+            break;
+        }
+
+        dinfo->month = month;
+        dinfo->quarter = ((month-1)/3)+1;
+        dinfo->day = dayoffset - month_offset[leap][month-1];
+    }
+
+
+    dinfo->day_of_week = dInfoCalc_DayOfWeek(absdate);
+    dinfo->day_of_year = dayoffset;
+    dinfo->absdate = absdate;
+
+    return 0;
+
+ onError:
+    return -1;
+}
+
+/* Sets the time part of the DateTime object. */
+static
+int dInfoCalc_SetFromAbsTime(struct date_info *dinfo,
+                  double abstime)
+{
+    int inttime;
+    int hour,minute;
+    double second;
+
+    inttime = (int)abstime;
+    hour = inttime / 3600;
+    minute = (inttime % 3600) / 60;
+    second = abstime - (double)(hour*3600 + minute*60);
+
+    dinfo->hour = hour;
+    dinfo->minute = minute;
+    dinfo->second = second;
+
+    dinfo->abstime = abstime;
+
+    return 0;
+}
+
+/* Set the instance's value using the given date and time. calendar
+   may be set to the flags: GREGORIAN_CALENDAR, JULIAN_CALENDAR to
+   indicate the calendar to be used. */
+static
+int dInfoCalc_SetFromAbsDateTime(struct date_info *dinfo,
+                  long absdate,
+                  double abstime,
+                  int calendar)
+{
+
+    /* Bounds check */
+    Py_AssertWithArg(abstime >= 0.0 && abstime <= SECONDS_PER_DAY,
+             DateCalc_Error,
+             "abstime out of range (0.0 - 86400.0): %f",
+             abstime);
+
+    /* Calculate the date */
+    if (dInfoCalc_SetFromAbsDate(dinfo,
+                  absdate,
+                  calendar))
+    goto onError;
+
+    /* Calculate the time */
+    if (dInfoCalc_SetFromAbsTime(dinfo,
+                  abstime))
+    goto onError;
+
+    return 0;
+ onError:
+    return -1;
+}
+
+/*
+====================================================
+== End of section borrowed from mx.DateTime       ==
+====================================================
+*/
+
+
+//////////////////////////////////////////////////////////
+
 static long minval_D_toHighFreq = 719163;
+
+///////////////////////////////////////////////////////////////////////
+
+static long absdatetime_hour(long absdate, long time) {
+
+}
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -31,70 +406,32 @@ static long minval_D_toHighFreq = 719163;
 
 static long DtoB_weekday(long fromDate) { return (((fromDate) / 7) * 5) + (fromDate)%7; }
 
-static long DtoB_WeekendToMonday(mxDateTimeObject *dailyDate) {
+static long DtoB_WeekendToMonday(struct date_info dinfo) {
 
-    long absdate = dailyDate->absdate;
-    if (dailyDate->day_of_week > 4) {
+    long absdate = dinfo.absdate;
+    if (dinfo.day_of_week > 4) {
         //change to Monday after weekend
-        absdate += (7 - dailyDate->day_of_week);
+        absdate += (7 - dinfo.day_of_week);
     }
     return DtoB_weekday(absdate);
 }
 
-static long DtoB_WeekendToFriday(mxDateTimeObject *dailyDate) {
+static long DtoB_WeekendToFriday(struct date_info dinfo) {
 
-    long absdate = dailyDate->absdate;
-    if (dailyDate->day_of_week > 4) {
+    long absdate = dinfo.absdate;
+    if (dinfo.day_of_week > 4) {
         //change to friday before weekend
-        absdate -= (dailyDate->day_of_week - 4);
+        absdate -= (dinfo.day_of_week - 4);
     }
     return DtoB_weekday(absdate);
 }
 
 static long absdate_from_ymd(int y, int m, int d) {
-    mxDateTimeObject *tempDate;
-    long result;
-
-    tempDate = (mxDateTimeObject *)mxDateTime.DateTime_FromDateAndTime(y,m,d,0,0,0);
-    result = (long)(tempDate->absdate);
-    Py_DECREF(tempDate);
-    return result;
+    struct date_info tempDate;
+    if (dInfoCalc_SetFromDateAndTime(&tempDate, y, m, d, 0, 0, 0, GREGORIAN_CALENDAR)) return DINFO_ERR;
+    return tempDate.absdate;
 }
 
-
-static mxDateTimeObject *day_before_mxobj(int y, int m, int d) {
-    return  (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(absdate_from_ymd(y, m, d) - 1, 0);
-}
-
-/*
-returns Date(y, m, d) converted to business frequency.
-If the initial result is a weekend, the following Monday is returned
-*/
-static long busday_before(int y, int m, int d) {
-    mxDateTimeObject *dailyDate;
-    long result;
-
-    dailyDate = (mxDateTimeObject *)mxDateTime.DateTime_FromDateAndTime(y,m,d,0,0,0);
-    result = DtoB_WeekendToMonday(dailyDate);
-
-    Py_DECREF(dailyDate);
-    return result;
-}
-
-/*
-returns Date(y, m, d) - 1 converted to business frequency.
-If the initial result is a weekend, the preceding Friday is returned
-*/
-static long busday_after(int y, int m, int d) {
-    mxDateTimeObject *dailyDate;
-    long result;
-
-    dailyDate = day_before_mxobj(y,m,d);
-    result = DtoB_WeekendToFriday(dailyDate);
-
-    Py_DECREF(dailyDate);
-    return result;
-}
 
 ///////////////////////////////////////////////
 
@@ -104,67 +441,55 @@ static long busday_after(int y, int m, int d) {
 //************ FROM DAILY ***************
 
 static long asfreq_DtoA(long fromDate, char relation) {
-    mxDateTimeObject *mxDate;
-    long result;
 
-    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(fromDate, 0);
-    result = (long)(mxDate->year);
-    Py_DECREF(mxDate);
-    return result;
+    struct date_info dinfo;
+    if (dInfoCalc_SetFromAbsDate(&dinfo, fromDate,
+                    GREGORIAN_CALENDAR)) return DINFO_ERR;
+    return (long)(dinfo.year);
 }
 
 static long asfreq_DtoQ(long fromDate, char relation) {
 
-    mxDateTimeObject *mxDate;
-    long result;
-
-    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(fromDate, 0);
-    result = (long)((mxDate->year - 1) * 4 + (mxDate->month-1)/3 + 1);
-    Py_DECREF(mxDate);
-    return result;
+    struct date_info dinfo;
+    if (dInfoCalc_SetFromAbsDate(&dinfo, fromDate,
+                    GREGORIAN_CALENDAR)) return DINFO_ERR;
+    return (long)((dinfo.year - 1) * 4 + dinfo.quarter);
 }
 
 static long asfreq_DtoM(long fromDate, char relation) {
-    mxDateTimeObject *mxDate;
-    long result;
 
-    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(fromDate, 0);
-    result = (long)((mxDate->year - 1) * 12 + mxDate->month);
-    Py_DECREF(mxDate);
-    return result;
+    struct date_info dinfo;
+    if (dInfoCalc_SetFromAbsDate(&dinfo, fromDate,
+                    GREGORIAN_CALENDAR)) return DINFO_ERR;
+    return (long)((dinfo.year - 1) * 12 + dinfo.month);
 }
 
 static long asfreq_DtoW(long fromDate, char relation) { return (fromDate - 1)/7 + 1; }
 
 static long asfreq_DtoB(long fromDate, char relation) {
-    mxDateTimeObject *mxDate;
-    long result;
 
-    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(fromDate, 0);
+    struct date_info dinfo;
+    if (dInfoCalc_SetFromAbsDate(&dinfo, fromDate,
+                    GREGORIAN_CALENDAR)) return DINFO_ERR;
+
     if (relation == 'B') {
-        result = DtoB_WeekendToFriday(mxDate);
+        return DtoB_WeekendToFriday(dinfo);
     } else {
-        result = DtoB_WeekendToMonday(mxDate);
+        return DtoB_WeekendToMonday(dinfo);
     }
-
-    Py_DECREF(mxDate);
-    return result;
 }
 
 static long asfreq_DtoB_forConvert(long fromDate, char relation) {
-    mxDateTimeObject *mxDate;
-    long result;
 
-    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(fromDate, 0);
+    struct date_info dinfo;
+    if (dInfoCalc_SetFromAbsDate(&dinfo, fromDate,
+                    GREGORIAN_CALENDAR)) return DINFO_ERR;
 
-    if (mxDate->day_of_week > 4) {
-        result = -1;
+    if (dinfo.day_of_week > 4) {
+        return -1;
     } else {
-        result = DtoB_weekday(mxDate->absdate);
+        return DtoB_weekday(fromDate);
     }
-
-    Py_DECREF(mxDate);
-    return result;
 }
 
 // needed for getDateInfo function
@@ -271,14 +596,13 @@ static long asfreq_WtoM(long fromDate, char relation) {
     return asfreq_DtoM(asfreq_WtoD(fromDate, 'A'), relation); }
 
 static long asfreq_WtoB(long fromDate, char relation) {
-    mxDateTimeObject *mxDate;
-    long result;
 
-    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(asfreq_WtoD(fromDate, relation), 0);
-    if (relation == 'B') { result = DtoB_WeekendToMonday(mxDate); }
-    else                 { result = DtoB_WeekendToFriday(mxDate); }
-    Py_DECREF(mxDate);
-    return result;
+    struct date_info dinfo;
+    if (dInfoCalc_SetFromAbsDate(&dinfo, asfreq_WtoD(fromDate, relation),
+                    GREGORIAN_CALENDAR)) return DINFO_ERR;
+
+    if (relation == 'B') { return DtoB_WeekendToMonday(dinfo); }
+    else                 { return DtoB_WeekendToFriday(dinfo); }
 }
 
 static long asfreq_WtoH(long fromDate, char relation) {
@@ -297,14 +621,16 @@ static void MtoD_ym(long fromDate, long *y, long *m) {
 
 static long asfreq_MtoD(long fromDate, char relation) {
 
-    long y, m;
+    long y, m, absdate;
 
     if (relation == 'B') {
         MtoD_ym(fromDate, &y, &m);
-        return absdate_from_ymd(y, m, 1);
+        if ((absdate = absdate_from_ymd(y, m, 1)) == DINFO_ERR) return DINFO_ERR;
+        return absdate;
     } else {
         MtoD_ym(fromDate+1, &y, &m);
-        return absdate_from_ymd(y, m, 1) - 1;
+        if ((absdate = absdate_from_ymd(y, m, 1)) == DINFO_ERR) return DINFO_ERR;
+        return absdate-1;
     }
 }
 
@@ -315,14 +641,12 @@ static long asfreq_MtoW(long fromDate, char relation) { return asfreq_DtoW(asfre
 
 static long asfreq_MtoB(long fromDate, char relation) {
 
-    mxDateTimeObject *mxDate;
-    long result;
+    struct date_info dinfo;
+    if (dInfoCalc_SetFromAbsDate(&dinfo, asfreq_MtoD(fromDate, relation),
+                    GREGORIAN_CALENDAR)) return DINFO_ERR;
 
-    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(asfreq_MtoD(fromDate, relation), 0);
-    if (relation == 'B') { result = DtoB_WeekendToMonday(mxDate); }
-    else                 { result = DtoB_WeekendToFriday(mxDate); }
-    Py_DECREF(mxDate);
-    return result;
+    if (relation == 'B') { return DtoB_WeekendToMonday(dinfo); }
+    else                 { return DtoB_WeekendToFriday(dinfo); }
 }
 
 static long asfreq_MtoH(long fromDate, char relation) { return asfreq_DtoH(asfreq_MtoD(fromDate, relation), relation); }
@@ -338,14 +662,16 @@ static void QtoD_ym(long fromDate, long *y, long *m) {
 
 static long asfreq_QtoD(long fromDate, char relation) {
 
-    long y, m;
+    long y, m, absdate;
 
     if (relation == 'B') {
         QtoD_ym(fromDate, &y, &m);
-        return absdate_from_ymd(y, m, 1);
+        if ((absdate = absdate_from_ymd(y, m, 1)) == DINFO_ERR) return DINFO_ERR;
+        return absdate;
     } else {
         QtoD_ym(fromDate+1, &y, &m);
-        return absdate_from_ymd(y, m, 1) - 1;
+        if ((absdate = absdate_from_ymd(y, m, 1)) == DINFO_ERR) return DINFO_ERR;
+        return absdate - 1;
     }
 }
 
@@ -360,14 +686,12 @@ static long asfreq_QtoW(long fromDate, char relation) { return asfreq_DtoW(asfre
 
 static long asfreq_QtoB(long fromDate, char relation) {
 
-    mxDateTimeObject *mxDate;
-    long result;
+    struct date_info dinfo;
+    if (dInfoCalc_SetFromAbsDate(&dinfo, asfreq_QtoD(fromDate, relation),
+                    GREGORIAN_CALENDAR)) return DINFO_ERR;
 
-    mxDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(asfreq_QtoD(fromDate, relation), 0);
-    if (relation == 'B') { result = DtoB_WeekendToMonday(mxDate); }
-    else                 { result = DtoB_WeekendToFriday(mxDate); }
-    Py_DECREF(mxDate);
-    return result;
+    if (relation == 'B') { return DtoB_WeekendToMonday(dinfo); }
+    else                 { return DtoB_WeekendToFriday(dinfo); }
 }
 
 
@@ -379,8 +703,14 @@ static long asfreq_QtoS(long fromDate, char relation) { return asfreq_DtoS(asfre
 //************ FROM ANNUAL ***************
 
 static long asfreq_AtoD(long fromDate, char relation) {
-    if (relation == 'B') { return absdate_from_ymd(fromDate,1,1); }
-    else {                 return absdate_from_ymd(fromDate+1,1,1) - 1; }
+    long absdate;
+    if (relation == 'B') {
+        if ((absdate = absdate_from_ymd(fromDate,1,1)) == DINFO_ERR) return DINFO_ERR;
+        return absdate;
+    } else {
+        if ((absdate = absdate_from_ymd(fromDate+1,1,1)) == DINFO_ERR) return DINFO_ERR;
+        return absdate - 1;
+    }
 }
 
 static long asfreq_AtoQ(long fromDate, char relation) {
@@ -396,8 +726,29 @@ static long asfreq_AtoM(long fromDate, char relation) {
 static long asfreq_AtoW(long fromDate, char relation) { return asfreq_DtoW(asfreq_AtoD(fromDate, relation), relation); }
 
 static long asfreq_AtoB(long fromDate, char relation) {
-    if (relation == 'B') { return busday_before(fromDate,1,1); }
-    else {                 return busday_after(fromDate+1,1,1); }
+
+    struct date_info dailyDate;
+
+    if (relation == 'B') {
+        if (dInfoCalc_SetFromDateAndTime(&dailyDate,
+                        fromDate,1,1, 0, 0, 0,
+                        GREGORIAN_CALENDAR)) return DINFO_ERR;
+        return DtoB_WeekendToMonday(dailyDate);
+    } else {
+        long absdate;
+
+        if (dInfoCalc_SetFromDateAndTime(&dailyDate,
+                       fromDate+1,1,1, 0, 0, 0,
+                       GREGORIAN_CALENDAR)) return DINFO_ERR;
+
+        absdate = dailyDate.absdate - 1;
+
+        if(dInfoCalc_SetFromAbsDate(&dailyDate,
+                      absdate,
+                      GREGORIAN_CALENDAR)) return DINFO_ERR;
+
+        return DtoB_WeekendToFriday(dailyDate);
+    }
 }
 
 static long asfreq_AtoH(long fromDate, char relation) { return asfreq_DtoH(asfreq_AtoD(fromDate, relation), relation); }
@@ -856,14 +1207,15 @@ cseries_asfreq(PyObject *self, PyObject *args)
 
 }
 
-static long dInfo_year(mxDateTimeObject *dateObj)    { return dateObj->year; }
-static long dInfo_quarter(mxDateTimeObject *dateObj) { return ((dateObj->month-1)/3)+1; }
-static long dInfo_month(mxDateTimeObject *dateObj)   { return dateObj->month; }
-static long dInfo_day(mxDateTimeObject *dateObj)     { return dateObj->day; }
-static long dInfo_day_of_year(mxDateTimeObject *dateObj)     { return dateObj->day_of_year; }
-static long dInfo_day_of_week(mxDateTimeObject *dateObj)     { return dateObj->day_of_week; }
-static long dInfo_week(mxDateTimeObject *dateObj)     {
+static int dInfo_year(struct date_info dateObj)    { return dateObj.year; }
+static int dInfo_quarter(struct date_info dateObj) { return dateObj.quarter; }
+static int dInfo_month(struct date_info dateObj)   { return dateObj.month; }
+static int dInfo_day(struct date_info dateObj)     { return dateObj.day; }
+static int dInfo_day_of_year(struct date_info dateObj) { return dateObj.day_of_year; }
+static int dInfo_day_of_week(struct date_info dateObj) { return dateObj.day_of_week; }
+static int dInfo_week(struct date_info dateObj)     { return dInfoCalc_ISOWeek(dateObj); }
 
+/*
     int year, week, day;
     PyObject *ISOWeekTuple = NULL;
     ISOWeekTuple = PyObject_GetAttrString((PyObject*)dateObj, "iso_week");
@@ -874,10 +1226,13 @@ static long dInfo_week(mxDateTimeObject *dateObj)     {
     Py_DECREF(ISOWeekTuple);
 
     return (long)week;
+    dInfoCalc_ISOWeek(dinfo)
 }
-static long dInfo_hour(mxDateTimeObject *dateObj)     { return dateObj->hour; }
-static long dInfo_minute(mxDateTimeObject *dateObj)     { return dateObj->minute; }
-static long dInfo_second(mxDateTimeObject *dateObj)     { return (long)dateObj->second; }
+*/
+
+static int dInfo_hour(struct date_info dateObj)     { return dateObj.hour; }
+static int dInfo_minute(struct date_info dateObj)     { return dateObj.minute; }
+static int dInfo_second(struct date_info dateObj)     { return (int)dateObj.second; }
 
 static double getAbsTime(int freq, long dailyDate, long originalDate) {
 
@@ -914,7 +1269,7 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
     PyArrayObject *array;
     PyArrayObject *newArray;
     PyArrayIterObject *iterSource, *iterResult;
-    mxDateTimeObject *convDate;
+    struct date_info convDate;
 
     PyObject *val;
     long dateNum, dInfo;
@@ -922,7 +1277,7 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
     double abstime;
 
     long (*toDaily)(long, char) = NULL;
-    long (*getDateInfo)(mxDateTimeObject*) = NULL;
+    int (*getDateInfo)(struct date_info) = NULL;
 
     if (!PyArg_ParseTuple(args, "Ois:getDateInfo(array, freq, info)", &array, &freq, &info)) return NULL;
     newArray = (PyArrayObject *)PyArray_Copy(array);
@@ -972,12 +1327,12 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
 
         val = PyArray_GETITEM(array, iterSource->dataptr);
         dateNum = PyInt_AsLong(val);
+        Py_DECREF(val);
         absdate = toDaily(dateNum, 'B');
         abstime = getAbsTime(freq, absdate, dateNum);
 
-        convDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(absdate, abstime);
+        if(dInfoCalc_SetFromAbsDateTime(&convDate, absdate, abstime, GREGORIAN_CALENDAR)) return NULL;
         dInfo = getDateInfo(convDate);
-        Py_DECREF(convDate);
 
         PyArray_SETITEM(newArray, iterResult->dataptr, PyInt_FromLong(dInfo));
 
@@ -989,8 +1344,8 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
     Py_DECREF(iterResult);
 
     return (PyObject *) newArray;
-
 }
+
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -1006,7 +1361,6 @@ initcseries(void)
 {
     PyObject *m, *TSER_CONSTANTS;
     m = Py_InitModule3("cseries", cseries_methods, cseries_doc);
-    mxDateTime_ImportModuleAndAPI();
     import_array();
 
     TSER_CONSTANTS = PyDict_New();
