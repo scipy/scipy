@@ -41,7 +41,7 @@ import numpy.lib.function_base as function_base
 
 #...............................................................................
 def issequence(seq):
-    """Returns True if the argumnet is a sequence (ndarray, list or tuple)."""
+    """Returns True if the argument is a sequence (ndarray, list or tuple)."""
     if isinstance(seq, ndarray):
         return True
     elif isinstance(seq, tuple):
