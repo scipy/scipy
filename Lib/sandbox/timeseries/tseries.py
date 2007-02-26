@@ -291,7 +291,7 @@ The combination of `series` and `dates` is the `data` part.
     def __new__(cls, data, dates=None, mask=nomask, 
                 freq=None, observed=None, start_date=None, 
                 dtype=None, copy=False, fill_value=None,
-                keep_mask=True, small_mask=True, hard_mask=False):
+                keep_mask=True, small_mask=True, hard_mask=False, **options):
         maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value,
                        keep_mask=keep_mask, small_mask=small_mask, 
                        hard_mask=hard_mask,)
@@ -394,6 +394,7 @@ Returns the item described by i. Not a copy as in previous versions.
         m = self._mask
         singlepoint = (len(numeric.shape(newdate))==0)
         if singlepoint:
+            newdate = DateArray(newdate)
             if newdata is masked:
                 newdata = tsmasked
                 newdata._dates = newdate
@@ -655,19 +656,35 @@ timeseries(data  = %(data)s,
         return convert(self, freq, func=func, position=position)
     #.....................................................
     def transpose(self, *axes):
+        """ a.transpose(*axes)
+
+    Returns a view of 'a' with axes transposed. If no axes are given,
+    or None is passed, switches the order of the axes. For a 2-d
+    array, this is the usual matrix transpose. If axes are given,
+    they describe how the axes are permuted.
+
+        """
         if self._dates.size == self.size:
             result = super(TimeSeries, self).transpose(*axes)
             result._dates = self._dates.transpose(*axes)
         else:
             errmsg = "Operation not permitted on multi-variable series"
-            print "AXES:",axes
             if (len(axes)==0) or axes[0] != 0:
-                raise ValueError, errmsg
+                raise TimeSeriesError, errmsg
             else:
                 result = super(TimeSeries, self).transpose(*axes)
                 result._dates = self._dates
         return result
-    
+    #......................................................
+    def copy_attributes(self, oldseries, exclude=[]):
+        "Copies the attributes from oldseries if they are not in the exclude list."
+        attrlist = ['fill_value', 'observed']
+        if not isinstance(oldseries, TimeSeries):
+            msg = "Series should be a valid TimeSeries object! (got <%s> instead)"
+            raise TimeSeriesError, msg % type(oldseries)
+        for attr in attrlist:
+            if not attr in exclude:
+                setattr(self, attr, getattr(oldseries, attr))
     
         
 def _attrib_dict(series, exclude=[]):
@@ -676,7 +693,7 @@ time series to a new one being created"""
     result = {'fill_value':series.fill_value,
               'observed':series.observed}
     return dict(filter(lambda x: x[0] not in exclude, result.iteritems()))
-    
+  
         
 ##### --------------------------------------------------------------------------
 ##--- ... Additional methods ...
@@ -1061,14 +1078,14 @@ def adjust_endpoints(a, start_date=None, end_date=None):
     newshape[0] = len(newdates)
     newshape = tuple(newshape)
     
-    newdata = masked_array(numeric.empty(newshape, dtype=a.dtype), mask=True)
-    #backup the series attributes
-    options = dict(fill_value=a.fill_value, observed=a.observed)
-    newseries = TimeSeries(newdata, newdates, **options)
+    newseries = numeric.empty(newshape, dtype=a.dtype).view(type(a))
+    newseries.__setmask__(numeric.ones(newseries.shape, dtype=bool_))
+    newseries._dates = newdates
     if dstart is not None:
         start_date = max(start_date, dstart)
         end_date = min(end_date, dend) + 1
         newseries[start_date:end_date] = a[start_date:end_date]
+    newseries.copy_attributes(a)
     return newseries
 #....................................................................
 def align_series(*series, **kwargs):
@@ -1105,7 +1122,7 @@ def align_series(*series, **kwargs):
 aligned = align_series
 #....................................................................
 def convert(series, freq, func='auto', position='END'):
-    """Converts a series to a frequency
+    """Converts a series to a frequency.
        
     When converting to a lower frequency, func is a function that acts
     on a 1-d array and returns a scalar or 1-d array. func should handle
@@ -1156,12 +1173,20 @@ def convert(series, freq, func='auto', position='END'):
 
     if tempData.ndim == 2 and func is not None:
         tempData = MA.apply_along_axis(func, -1, tempData)
-           
-    newseries = TimeSeries(tempData, freq=toFreq, 
-                           observed=series.observed, 
-                           start_date=start_date)
+
+    newseries = tempData.view(type(series))
+    newseries._dates = date_array(start_date=start_date, length=len(newseries),
+                                  freq=toFreq)
+    newseries.copy_attributes(series)
     return newseries
+
+def group_byperiod(series, freq, func='auto', position='END'):
+    """Converts a series to a frequency, without any processing.
+    """
+    return convert(series, freq, func=None, position='END')
+
 TimeSeries.convert = convert
+TimeSeries.group_byperiod = group_byperiod
 
 #...............................................................................
 def tshift(series, nper, copy=True):
@@ -1207,7 +1232,9 @@ timeseries(data  = [-- 0 1 2],
         newdata[:-nper] = inidata[nper:]
     else:
         newdata = inidata
-    newseries = TimeSeries(newdata, series._dates, **options)
+    newseries = newdata.view(type(series))
+    newseries._dates = series._dates
+    newseries.copy_attributes(series)
     return newseries
 TimeSeries.tshift = tshift
 #...............................................................................
@@ -1339,7 +1366,12 @@ def concatenate_series(series, keep_gap=True):
     else:
         newdata[~keeper] = 0
     return newseries
-                           
+#...............................................................................
+def empty_like(series):
+    result = N.empty_like(series).view(type(series))
+    result._dates = series._dates
+    result._mask = series._mask
+    return result                           
     
 ################################################################################
 if __name__ == '__main__':
@@ -1361,13 +1393,21 @@ if __name__ == '__main__':
         sertrans = serfolded.transpose()
         assert_equal(sertrans.shape, (2,5))
         
-        assert ser1d[0] is tsmasked
-        print "OK"
     if 1:
         hodie = today('D')
         ser2d = time_series(N.arange(10).reshape(5,2), start_date=hodie,
                             mask=[[1,1],[0,0],[0,0],[0,0],[0,0]])
+        try:
+            ser2d_transpose = ser2d.transpose()
+        except TimeSeriesError:
+            pass
     if 1:
         hodie = today('D')
         ser3d = time_series(N.arange(30).reshape(5,3,2), start_date=hodie,)
+        try:
+            ser3d_transpose = ser3d.transpose()
+        except TimeSeriesError:
+            pass
+        assert_equal(ser3d.transpose(0,2,1).shape, (5,2,3))
+        
     

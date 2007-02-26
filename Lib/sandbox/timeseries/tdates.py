@@ -550,7 +550,8 @@ However, a loop such as :
 >>> for d in DateArray(...):
 accesses the array element by element. Therefore, `d` is a Date object.    
     """
-    (_tostr, _toord, _steps) = (None, None, None)
+    _defcachedinfo = dict(toobj=None, tostr=None, toord=None, 
+                          steps=None, full=None, hasdups=None)
     def __new__(cls, dates=None, freq=None, copy=False):
         # Get the frequency ......
         if freq is None:
@@ -573,11 +574,11 @@ accesses the array element by element. Therefore, `d` is a Date object.
             raise ArithmeticDateError, "(function %s)" % context[0].__name__
     
     def __array_finalize__(self, obj):
-        self.freq = getattr(obj, 'freq', self._defaultfreq)
-        self.freqstr = getattr(obj, 'freqstr', corelib.freq_tostr(self.freq))
-        for attr in ('_toobj','_toord','_tostr',
-                     '_steps','_full','_hasdups'):
-            setattr(self, attr, getattr(obj, attr, None))
+        self.freq = getattr(obj, 'freq', -9999)
+        self._cachedinfo = dict(toobj=None, tostr=None, toord=None, 
+                                steps=None, full=None, hasdups=None)
+        if hasattr(obj,'_cachedinfo'):
+            self._cachedinfo.update(obj._cachedinfo)
         return
     
     def __getitem__(self, indx):
@@ -598,6 +599,10 @@ accesses the array element by element. Therefore, `d` is a Date object.
             # behaviour
             return Date(self.freq, value=r.item())
         else:
+            r._cachedinfo.update(dict(steps=None, full=None, hasdups=None))
+            for attr in ('tostr','toobj','toord'):
+                if r._cachedinfo[attr] is not None:
+                    r._cachedinfo[attr] = r._cachedinfo[attr][indx]
             return r
         
     def __repr__(self):
@@ -614,6 +619,10 @@ accesses the array element by element. Therefore, `d` is a Date object.
     __eq__ = _datearithmetics('__eq__', asdates=False)
     __ne__ = _datearithmetics('__ne__', asdates=False)
     #......................................................
+    @property
+    def freqstr(self):
+        "Returns the frequency string code."
+        return corelib.freq_tostr(self.freq)
     @property
     def day(self):          
         "Returns the day of month."
@@ -667,7 +676,9 @@ accesses the array element by element. Therefore, `d` is a Date object.
     weeks = week
     
     def __getdateinfo__(self, info):
-        return numeric.asarray(cseries.getDateInfo(numeric.asarray(self), self.freq, info), dtype=int_)
+        return numeric.asarray(cseries.getDateInfo(numeric.asarray(self), 
+                                                   self.freq, info), 
+                               dtype=int_)
     __getDateInfo = __getdateinfo__    
     #.... Conversion methods ....................
     #
@@ -678,17 +689,17 @@ accesses the array element by element. Therefore, `d` is a Date object.
     def toordinal(self):
         "Converts the dates from values to ordinals."
         # Note: we better try to cache the result
-        if self._toord is None:
+        if self._cachedinfo['toord'] is None:
 #            diter = (Date(self.freq, value=d).toordinal() for d in self)
             diter = (d.toordinal() for d in self)
             toord = numeric.fromiter(diter, dtype=float_)
-            self._toord = toord
-        return self._toord
+            self._cachedinfo['toord'] = toord
+        return self._cachedinfo['toord']
     #
     def tostring(self):
         "Converts the dates to strings."
         # Note: we better cache the result
-        if self._tostr is None:
+        if self._cachedinfo['tostr'] is None:
             firststr = str(self[0])
             if self.size > 0:
                 ncharsize = len(firststr)
@@ -696,8 +707,8 @@ accesses the array element by element. Therefore, `d` is a Date object.
                                         dtype='|S%i' % ncharsize)
             else:
                 tostr = firststr
-            self._tostr = tostr
-        return self._tostr
+            self._cachedinfo['tostr'] = tostr
+        return self._cachedinfo['tostr']
     #   
     def asfreq(self, freq=None, relation="BEFORE"):
         "Converts the dates to another frequency."
@@ -743,38 +754,39 @@ accesses the array element by element. Therefore, `d` is a Date object.
     The timesteps have the same unit as the frequency of the series."""
         if self.freq == 'U':
             warnings.warn("Undefined frequency: assuming integers!")
-        if self._steps is None:
+        if self._cachedinfo['steps'] is None:
+            _cached = self._cachedinfo
             val = numeric.asarray(self).ravel()
             if val.size > 1:
                 steps = val[1:] - val[:-1]
-                if self._full is None:
-                    self._full = (steps.max() == 1)
-                if self._hasdups is None:
-                    self._hasdups = (steps.min() == 0)
+                if _cached['full'] is None:
+                    _cached['full'] = (steps.max() == 1)
+                if _cached['hasdups'] is None:
+                    _cached['hasdups'] = (steps.min() == 0)
             else:
-                self._full = True
-                self._hasdups = False
+                _cached['full'] = True
+                _cached['hasdups'] = False
                 steps = numeric.array([], dtype=int_)
-            self._steps = steps
-        return self._steps
+            self._cachedinfo['steps'] = steps
+        return self._cachedinfo['steps']
     
     def has_missing_dates(self):
         "Returns whether the DateArray have missing dates."
-        if self._full is None:
+        if self._cachedinfo['full'] is None:
             steps = self.get_steps()
-        return not(self._full)
+        return not(self._cachedinfo['full'])
     
     def isfull(self):
         "Returns whether the DateArray has no missing dates."
-        if self._full is None:
+        if self._cachedinfo['full'] is None:
             steps = self.get_steps()
-        return self._full
+        return self._cachedinfo['full']
     
     def has_duplicated_dates(self):
         "Returns whether the DateArray has duplicated dates."
-        if self._hasdups is None:
+        if self._cachedinfo['hasdups'] is None:
             steps = self.get_steps()
-        return self._hasdups
+        return self._cachedinfo['hasdups']
     
     def isvalid(self):
         "Returns whether the DateArray is valid: no missing/duplicated dates."
@@ -996,6 +1008,7 @@ def period_break(dates, period):
 ################################################################################
 
 if __name__ == '__main__':
+    import maskedarray.testutils
     from maskedarray.testutils import assert_equal
     if 1:
         dlist = ['2007-%02i' % i for i in range(1,5)+range(7,13)]
@@ -1019,4 +1032,11 @@ if __name__ == '__main__':
             print f
             today = thisday(f)
             assert(Date(freq=f, value=today.value) == today)
+    
+    if 1:
+        D = date_array(start_date=thisday('D'), length=5)
+        Dstr = D.tostring()
+        assert_equal(D.tostring(), Dstr)
+        DL = D[[0,-1]]
+        assert_equal(DL.tostring(), Dstr[[0,-1]])
     
