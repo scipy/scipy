@@ -32,6 +32,7 @@ import numpy as N
 import maskedarray as MA
 
 import timeseries
+import timeseries as TS
 from timeseries import date_array, Date, DateArray, TimeSeries
 
 import warnings
@@ -160,25 +161,38 @@ def period_break(dates, period):
     previous = getattr(dates-1, period)
     return (current - previous).nonzero()[0]
 
+def has_level_label(label_flags):
+    """returns true if the label_flags indicate there is at least
+one label for this level"""
+    if label_flags.size == 0 or \
+       (label_flags.size == 1 and label_flags[0] == 0):
+        return False
+    else:
+        return True
 
-def _daily_finder(vmin, vmax, freqstr, aslocator):
+def _daily_finder(vmin, vmax, freq, aslocator):
 
-    if freqstr == 'B': 
+    if freq == TS.FR_BUS: 
         periodsperyear = 261
-    elif freqstr == 'D': 
+    elif freq == TS.FR_DAY: 
         periodsperyear = 365
     else: 
         raise ValueError("unexpected frequency")
 
     (vmin, vmax) = (int(vmin), int(vmax))
     span = vmax - vmin + 1
-    dates = date_array(start_date=Date(freqstr,vmin), 
-                       end_date=Date(freqstr, vmax))
+    dates = date_array(start_date=Date(freq,vmin), 
+                       end_date=Date(freq, vmax))
     default = N.arange(vmin, vmax+1) 
     # Initialize the output
     if not aslocator:
         format = N.empty(default.shape, dtype="|S10")
         format.flat = ''
+
+    def first_label(label_flags):
+        if label_flags[0] == 0: return label_flags[1]
+        else: return label_flags[0]
+
     # Case 1. Less than a month
     if span <= (periodsperyear//12 - 2):
         month_start = period_break(dates,'month')
@@ -190,15 +204,15 @@ def _daily_finder(vmin, vmax, freqstr, aslocator):
             format[:] = '%d'
             format[month_start] = '%d\n%b'
             format[year_start] = '%d\n%b\n%Y'
-            if year_start.size == 0:
-                if month_start.size == 0:
+            if not has_level_label(year_start):
+                if not has_level_label(month_start):
                     if dates.size > 1: 
                         idx = 1
                     else: 
                         idx = 0
                     format[idx] = '%d\n%b\n%Y'
                 else:
-                    format[month_start[0]] = '%d\n%b\n%Y'
+                    format[first_label(month_start)] = '%d\n%b\n%Y'
     # Case 2. Less than three months        
     elif span <= periodsperyear//4:
         month_start = period_break(dates,'month')
@@ -206,36 +220,37 @@ def _daily_finder(vmin, vmax, freqstr, aslocator):
             major = default[month_start]
             minor = default
         else:
-            week_start = (dates.day_of_week == 1)
+            week_start = period_break(dates,'week')
             year_start = period_break(dates,'year')
-#            week_start[0] = False
-#            month_start[0] = False
-#            year_start[0] = False
+
             format[week_start] = '%d'
             format[month_start] = '\n\n%b'
             format[year_start] = '\n\n%b\n%Y'
-            if year_start.size == 0:
-                if month_start.size == 0:
-                    format[week_start[0]] = '\n\n%b\n%Y'
+            if not has_level_label(year_start):
+                if not has_level_label(month_start):
+                    format[first_label(week_start)] = '\n\n%b\n%Y'
                 else:
-                    format[month_start[0]] = '\n\n%b\n%Y'
+                    format[first_label(month_start)] = '\n\n%b\n%Y'
     # Case 3. Less than 14 months ...............
     elif span <= 1.15 * periodsperyear:
-        month_start = period_break(dates,'month')
+        
         if aslocator:
-            week_start = period_break(dates, 'week')
-            minor_idx = (week_start | month_start)
-            minor_idx[0] = True
-            major = default[month_start]
+            d_minus_1 = dates-1
+
+            month_diff = N.abs(dates.month - d_minus_1.month)
+            week_diff = N.abs(dates.week - d_minus_1.week)
+            minor_idx = (month_diff + week_diff).nonzero()[0]
+
+            major = default[month_diff != 0]
             minor = default[minor_idx]
         else:
             year_start = period_break(dates,'year')
-            month_start[0] = False
-            year_start[0] = False
+            month_start = period_break(dates,'month')
+
             format[month_start] = '%b'
             format[year_start] = '%b\n%Y'
-            if not year_start.size:
-                format[month_start[0]] = '%b\n%Y'
+            if not has_level_label(year_start):
+                format[first_label(month_start)] = '%b\n%Y'
     # Case 4. Less than 2.5 years ...............
     elif span <= 2.5 * periodsperyear:
         year_start = period_break(dates,'year')
@@ -256,7 +271,7 @@ def _daily_finder(vmin, vmax, freqstr, aslocator):
             minor = default[month_start]
         else:
             month_break = dates[month_start].month
-            jan_or_jul = month_start[(month_break == 1 | month_break == 7)]
+            jan_or_jul = month_start[(month_break == 1) | (month_break == 7)]
             format[jan_or_jul] = '%b'
             format[year_start] = '%b\n%Y'
     # Case 5. Less than 11 years ................
@@ -288,11 +303,12 @@ def _daily_finder(vmin, vmax, freqstr, aslocator):
         formatted = (format != '')
         return dict([(d,f) for (d,f) in zip(default[formatted],format[formatted])])
 #...............................................................................
-def _monthly_finder(vmin, vmax, freqstr, aslocator):
-    if freqstr != 'M': 
+def _monthly_finder(vmin, vmax, freq, aslocator):
+    if freq != TS.FR_MTH: 
         raise ValueError("unexpected frequency")
     periodsperyear = 12
-    (vmin, vmax) = (int(vmin), int(vmax+1))
+
+    (vmin, vmax) = (int(vmin), int(vmax))
     span = vmax - vmin + 1
     #............................................
     dates = N.arange(vmin, vmax+1) 
@@ -305,10 +321,11 @@ def _monthly_finder(vmin, vmax, freqstr, aslocator):
             major = dates[year_start]
             minor = dates
         else:
+            
             format[:] = '%b'
             format[year_start] = '%b\n%Y'
 
-            if not year_start.size:
+            if not has_level_label(year_start):
                 if dates.size > 1: 
                     idx = 1
                 else: 
@@ -358,11 +375,11 @@ def _monthly_finder(vmin, vmax, freqstr, aslocator):
         formatted = (format != '')
         return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
 #...............................................................................
-def _quarterly_finder(vmin, vmax, freqstr, aslocator):
-    if freqstr != 'Q': 
+def _quarterly_finder(vmin, vmax, freq, aslocator):
+    if freq != TS.FR_QTR: 
         raise ValueError("unexpected frequency")
     periodsperyear = 4  
-    (vmin, vmax) = (int(vmin), int(vmax+1))
+    (vmin, vmax) = (int(vmin), int(vmax))
     span = vmax - vmin + 1
     #............................................
     dates = N.arange(vmin, vmax+1) 
@@ -377,7 +394,7 @@ def _quarterly_finder(vmin, vmax, freqstr, aslocator):
         else:
             format[:] = 'Q%q'
             format[year_start] = 'Q%q\n%Y'
-            if not year_start.size:
+            if not has_level_label(year_start):
                 if dates.size > 1: 
                     idx = 1
                 else: 
@@ -400,7 +417,6 @@ def _quarterly_finder(vmin, vmax, freqstr, aslocator):
             major = dates[major_idx]
             minor = dates[year_start[(years % min_anndef == 0)]]
         else:
-            print "major_idx",major_idx
             format[major_idx] = '%Y'
     #............................................
     if aslocator:
@@ -409,8 +425,8 @@ def _quarterly_finder(vmin, vmax, freqstr, aslocator):
         formatted = (format != '')
         return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
 #...............................................................................
-def _annual_finder(vmin, vmax, freqstr, aslocator):
-    if freqstr != 'Q': 
+def _annual_finder(vmin, vmax, freq, aslocator):
+    if freq != TS.FR_ANN: 
         raise ValueError("unexpected frequency")   
     (vmin, vmax) = (int(vmin), int(vmax+1))
     span = vmax - vmin + 1
@@ -439,20 +455,20 @@ class TimeSeries_DateLocator(Locator):
 
     def __init__(self, freq, minor_locator=False, dynamic_mode=True,
                  base=1, quarter=1, month=1, day=1):
-        self.freqstr = freq
+        self.freq = freq
         self.base = base
         (self.quarter, self.month, self.day) = (quarter, month, day)
         self.isminor = minor_locator
         self.isdynamic = dynamic_mode
         self.offset = 0
         #.....
-        if freq == 'A':
+        if freq == TS.FR_ANN:
             self.finder = _annual_finder
-        elif freq == 'Q':
+        elif freq == TS.FR_QTR:
             self.finder = _quarterly_finder
-        elif freq == 'M':
+        elif freq == TS.FR_MTH:
             self.finder = _monthly_finder
-        elif freq in 'BD':
+        elif freq in (TS.FR_BUS, TS.FR_DAY):
             self.finder = _daily_finder
             
     def asminor(self):
@@ -467,7 +483,7 @@ class TimeSeries_DateLocator(Locator):
     
     def _get_default_locs(self, vmin, vmax):
         "Returns the default locations of ticks."
-        (minor, major) = self.finder(vmin, vmax, self.freqstr, True)
+        (minor, major) = self.finder(vmin, vmax, self.freq, True)
         if self.isminor:
             return minor
         return major
@@ -508,20 +524,20 @@ class TimeSeries_DateFormatter(Formatter):
     
     def __init__(self, freq, minor_locator=False, dynamic_mode=True,):
         self.format = None
-        self.freqstr = freq
+        self.freq = freq
         self.locs = []
         self.formatdict = {}
         self.isminor = minor_locator
         self.isdynamic = dynamic_mode
         self.offset = 0
         #.....
-        if freq == 'A':
+        if freq == TS.FR_ANN:
             self.finder = _annual_finder
-        elif freq == 'Q':
+        elif freq == TS.FR_QTR:
             self.finder = _quarterly_finder
-        elif freq == 'M':
+        elif freq == TS.FR_MTH:
             self.finder = _monthly_finder
-        elif freq in 'BD':
+        elif freq in (TS.FR_BUS, TS.FR_DAY):
             self.finder = _daily_finder
             
     def asminor(self):
@@ -536,7 +552,7 @@ class TimeSeries_DateFormatter(Formatter):
     
     def _set_default_format(self, vmin, vmax):
         "Returns the default ticks spacing."
-        self.formatdict = self.finder(vmin, vmax, self.freqstr, False)
+        self.formatdict = self.finder(vmin, vmax, self.freq, False)
         return self.formatdict
     
     def set_locs(self, locs):
@@ -550,7 +566,7 @@ class TimeSeries_DateFormatter(Formatter):
         if self.isminor:
             fmt = self.formatdict.pop(x, '')
             if fmt is not '':
-                retval = Date(self.freqstr, value=int(x)).strfmt(fmt)
+                retval = Date(self.freq, value=int(x)).strfmt(fmt)
             else:
                 retval = ''
         else:
@@ -589,13 +605,13 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
             assert hasattr(_series, "dates")
             self._series = _series.ravel()
             self.xdata = _series.dates
-            self.freqstr = _series.dates.freqstr
+            self.freq = _series.dates.freq
             self.xaxis.set_major_locator
             
         else:
             self._series = None
             self.xdata = None
-            self.freqstr = None
+            self.freq = None
         self._austoscale = False
         # Get the data to plot 
         self.legendsymbols = []
@@ -642,9 +658,9 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
             # The argument is a DateArray............
             elif isinstance(a, (Date, DateArray)):
                 # Force to current freq
-                if self.freqstr is not None:
-                    if a.freqstr != self.freqstr:
-                        a = a.asfreq(self.freqstr)
+                if self.freq is not None:
+                    if a.freq != self.freq:
+                        a = a.asfreq(self.freq)
                 # There's an argument after
                 if len(remaining) > 0:
                     #...and it's a format string
@@ -687,11 +703,11 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
         # Reinitialize the plot if needed ...........
         if self.xdata is None:
             self.xdata = output[0]
-            self.freqstr = self.xdata.freqstr
+            self.freq = self.xdata.freq
         # Force the xdata to the current frequency
-        elif output[0].freqstr != self.freqstr:
+        elif output[0].freq != self.freq:
             output = list(output)
-            output[0] = output[0].asfreq(self.freqstr)
+            output[0] = output[0].asfreq(self.freq)
         return output
     #............................................
     def tsplot(self,*parms,**kwargs):
@@ -715,16 +731,16 @@ This command accepts the same keywords as `matplotlib.plot`."""
         String format for major ticks ("%Y").
         """
         # Get the locator class ................. 
-        majlocator = TimeSeries_DateLocator(self.freqstr, dynamic_mode=True,
+        majlocator = TimeSeries_DateLocator(self.freq, dynamic_mode=True,
                                             minor_locator=False)
-        minlocator = TimeSeries_DateLocator(self.freqstr, dynamic_mode=True,
+        minlocator = TimeSeries_DateLocator(self.freq, dynamic_mode=True,
                                             minor_locator=True)
         self.xaxis.set_major_locator(majlocator)
         self.xaxis.set_minor_locator(minlocator)
         # Get the formatter .....................
-        majformatter = TimeSeries_DateFormatter(self.freqstr, dynamic_mode=True,
+        majformatter = TimeSeries_DateFormatter(self.freq, dynamic_mode=True,
                                                 minor_locator=False)
-        minformatter = TimeSeries_DateFormatter(self.freqstr, dynamic_mode=True,
+        minformatter = TimeSeries_DateFormatter(self.freq, dynamic_mode=True,
                                                 minor_locator=True)
         self.xaxis.set_major_formatter(majformatter)
         self.xaxis.set_minor_formatter(minformatter)
