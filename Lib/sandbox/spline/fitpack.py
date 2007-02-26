@@ -266,7 +266,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
 _splrep_cache = {}
 _percur_cache = {}
 
-def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=1e-3,t=None,
+def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
            full_output=0,per=0,quiet=1):
     """Find the B-spline representation of 1-D curve.
 
@@ -304,7 +304,8 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=1e-3,t=None,
            weights represent the inverse of the standard-deviation of y, then a
            good s value should be found in the range (m-sqrt(2*m),m+sqrt(2*m))
            where m is the number of datapoints in x, y, and w.
-           default : s=m-sqrt(2*m)
+           default : s = m-sqrt(2*m) if weights are supplied.
+                     s = 0.0 (interpolating) if no weights are supplied.
       t -- The knots needed for task=-1.  If given then task is automatically
            set to -1.
       full_output -- If non-zero, then return optional outputs.
@@ -342,8 +343,12 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=1e-3,t=None,
     """
     x,y=map(myasarray,[x,y])
     m=len(x)
-    if w is None: w=ones(m,float)
-    else: w=myasarray(w)
+    if w is None:
+        w=ones(m,float)
+        if s is None: s = 0.0
+    else:
+        w=myasarray(w)
+        if s is None: s = m-sqrt(2*m)
     if not len(w) == m:
         raise TypeError,' len(w)=%d is not equal to m=%d'%(len(w),m)
     if (m != len(y)) or (m != len(w)):
@@ -356,7 +361,6 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=1e-3,t=None,
     if xb is None: xb=x[0]
     if xe is None: xe=x[-1]
     if not (-1<=task<=1): raise TypeError, 'task must be either -1,0, or 1'
-    if s is None: s = m-sqrt(2*m)
     if t is not None:
         task = -1
     if task == -1:
@@ -381,21 +385,22 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=1e-3,t=None,
             _percur_cache['wrk']=wrk
             _percur_cache['iwrk']=iwrk
             _percur_cache['n']=n
-    if task == 0:
-        spl = spline.UnivariateSpline(x,y,w,[xb,xe],k=k,s=s)
-    elif task == 1:
-        try:
-            spl = _splrep_cache['spl']
-        except KeyError:
-            raise ValueError, 'task=1 can only be called after task=0'
-        spl.set_smoothing_factor(s)
-    elif task == -1:
-        t = t[where(t>xb)]
-        t = t[where(t<xe)]
-        spl = spline.LSQUnivariateSpline(x,y,t,w,[xb,xe],k=k)
-    if task>=0:
-        _splrep_cache['spl'] = spl
-    x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier = spl._data
+    else:
+        if task == 0:
+            spl = spline.UnivariateSpline(x,y,w,[xb,xe],k=k,s=s)
+        elif task == 1:
+            try:
+                spl = _splrep_cache['spl']
+            except KeyError:
+                raise ValueError, 'task=1 can only be called after task=0'
+            spl.set_smoothing_factor(s)
+        elif task == -1:
+            t = t[where(t>xb)]
+            t = t[where(t<xe)]
+            spl = spline.LSQUnivariateSpline(x,y,t,w,[xb,xe],k=k)
+        if task>=0:
+            _splrep_cache['spl'] = spl
+        x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier = spl._data
     tck = (t[:n],c[:n-k-1],k)
     if ier<=0 and not quiet:
         print _iermess[ier][0]
