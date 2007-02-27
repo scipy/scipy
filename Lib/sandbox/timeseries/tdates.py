@@ -599,10 +599,11 @@ accesses the array element by element. Therefore, `d` is a Date object.
             # behaviour
             return Date(self.freq, value=r.item())
         else:
-            r._cachedinfo.update(dict(steps=None, full=None, hasdups=None))
-            for attr in ('tostr','toobj','toord'):
-                if r._cachedinfo[attr] is not None:
-                    r._cachedinfo[attr] = r._cachedinfo[attr][indx]
+            if hasattr(r, '_cachedinfo'):
+                r._cachedinfo.update(dict(steps=None, full=None, hasdups=None))
+                for attr in ('tostr','toobj','toord'):
+                    if r._cachedinfo[attr] is not None:
+                        r._cachedinfo[attr] = r._cachedinfo[attr][indx]
             return r
         
     def __repr__(self):
