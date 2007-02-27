@@ -275,7 +275,7 @@ class test_getitem(NumpyTestCase):
         series = time_series(N.arange(10).reshape(5,2), start_date=hodie)
         assert_equal(len(series), 5)
         assert_equal(series[0], [[0,1]])
-        assert_equal(series[0]._dates, (hodie))
+        assert_equal(series[0]._dates[0], (hodie))
         assert_equal(series[:,0], [0,2,4,6,8])
         assert_equal(series[:,0]._dates, series._dates)
         # Case 2D + mask
@@ -284,7 +284,7 @@ class test_getitem(NumpyTestCase):
         assert_equal(len(series), 5)
         assert_equal(series[0], [[0,1]])
         assert_equal(series[0]._mask, [[1,1]])
-        assert_equal(series[0]._dates, (hodie))
+        assert_equal(series[0]._dates[0], (hodie))
         assert_equal(series[:,0]._data, [0,2,4,6,8])
         assert_equal(series[:,0]._mask, [1,0,0,0,0])
         assert_equal(series[:,0]._dates, series._dates)       
@@ -293,7 +293,7 @@ class test_getitem(NumpyTestCase):
         x = series[0]
         assert_equal(len(series), 5)
         assert_equal(series[0], [[[0,1],[2,3],[4,5]]])
-        assert_equal(series[0]._dates, (hodie))
+        assert_equal(series[0]._dates[0], (hodie))
         assert_equal(series[:,0], series._data[:,0])
         assert_equal(series[:,0]._dates, series._dates)
         x = series[:,:,0]

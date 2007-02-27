@@ -55,10 +55,12 @@ import cseries
 __all__ = [
 'TimeSeriesError','TimeSeriesCompatibilityError','TimeSeries','isTimeSeries',
 'time_series', 'tsmasked',
-'day_of_week','day_of_year','day','month','quarter','year','hour','minute','second',  
-'tofile','asrecords','flatten','adjust_endpoints','align_series','aligned',
-'mask_period','mask_inside_period','mask_outside_period',
-'convert','fill_missing_dates', 'stack'
+'mask_period','mask_inside_period','mask_outside_period','compressed',
+'adjust_endpoints','align_series','aligned','convert','group_byperiod',
+'tshift','fill_missing_dates', 'stack', 'concatenate_series','empty_like',
+'day_of_week','day_of_year','day','month','quarter','year',
+'hour','minute','second',  
+'tofile','asrecords','flatten',
            ]
 
 #...............................................................................
@@ -209,7 +211,7 @@ The `_dates` part remains unchanged.
         if isinstance(other, TimeSeries):
             assert(_timeseriescompat(instance, other))
         func = getattr(super(TimeSeries, instance), self._name)
-        result = func(other, *args) #.view(type(instance))
+        result = func(other, *args).view(type(instance))
         result._dates = instance._dates
         return result
 
@@ -288,6 +290,7 @@ The combination of `series` and `dates` is the `data` part.
     """
     options = None
     _defaultobserved = None
+    _genattributes = ['fill_value', 'observed']
     def __new__(cls, data, dates=None, mask=nomask, 
                 freq=None, observed=None, start_date=None, 
                 dtype=None, copy=False, fill_value=None,
@@ -678,7 +681,7 @@ timeseries(data  = %(data)s,
     #......................................................
     def copy_attributes(self, oldseries, exclude=[]):
         "Copies the attributes from oldseries if they are not in the exclude list."
-        attrlist = ['fill_value', 'observed']
+        attrlist = type(self)._genattributes
         if not isinstance(oldseries, TimeSeries):
             msg = "Series should be a valid TimeSeries object! (got <%s> instead)"
             raise TimeSeriesError, msg % type(oldseries)
@@ -1410,4 +1413,18 @@ if __name__ == '__main__':
             pass
         assert_equal(ser3d.transpose(0,2,1).shape, (5,2,3))
         
+    if 1:        
+        data = dates
     
+        series = time_series(data, dates)
+        assert(isinstance(series, TimeSeries))
+        assert_equal(series._dates, dates)
+        assert_equal(series._data, data)
+        assert_equal(series.freqstr, 'D')
+        
+        series[5] = MA.masked
+        
+        # ensure that series can be represented by a string after masking a value
+        # (there was a bug before that prevented this from working when using a 
+        # DateArray for the data)
+        strrep = str(series)
