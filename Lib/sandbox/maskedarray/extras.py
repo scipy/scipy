@@ -25,7 +25,6 @@ __all__ = [
 from itertools import groupby
 
 import core
-#reload(core)
 from core import *
 
 import numpy

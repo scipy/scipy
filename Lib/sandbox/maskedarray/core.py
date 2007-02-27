@@ -372,6 +372,8 @@ where invalid values are pre-masked.
             return masked
         d1 = filled(a, self.fillx)
         d2 = filled(b, self.filly)
+# CHECK : Do we really need to fill the arguments ? Pro'ly not        
+#        result = self.f(a, b, *args, **kwargs).view(get_masked_subclass(a,b))
         result = self.f(d1, d2, *args, **kwargs).view(get_masked_subclass(a,b))
         if result.ndim > 0:
             result._mask = m
@@ -643,7 +645,7 @@ The result may equal m1 or m2 if the other is nomask.
 #####--------------------------------------------------------------------------
 #--- --- Masking functions ---
 #####--------------------------------------------------------------------------
-def masked_where(condition, x, copy=True):
+def masked_where(condition, a, copy=True):
     """Returns `x` as an array masked where `condition` is true.
 Masked values of `x` or `condition` are kept.
 
@@ -652,12 +654,16 @@ Masked values of `x` or `condition` are kept.
     - `x` (ndarray) : Array to mask.
     - `copy` (boolean, *[False]*) : Returns a copy of `m` if true.
     """
-    cm = filled(condition,1)
-    if isinstance(x,MaskedArray):
-        m = mask_or(x._mask, cm)
-        return x.__class__(x._data, mask=m, copy=copy)
+    cond = filled(condition,1)
+    a = numeric.array(a, copy=copy, subok=True)
+    if hasattr(a, '_mask'):
+        cond = mask_or(cond, a._mask)
+        cls = type(a)
     else:
-        return MaskedArray(fromnumeric.asarray(x), copy=copy, mask=cm)
+        cls = MaskedArray
+    result = a.view(cls)
+    result._mask = cond
+    return result
 
 def masked_greater(x, value, copy=1):
     "Shortcut to `masked_where`, with ``condition = (x > value)``."

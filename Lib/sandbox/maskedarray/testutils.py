@@ -73,7 +73,7 @@ def assert_equal(actual,desired,err_msg=''):
         return _assert_equal_on_sequences(actual.tolist(), 
                                           desired.tolist(), 
                                           err_msg='')
-        return assert_array_equal(actual, desired, err_msg)
+    return assert_array_equal(actual, desired, err_msg)
 #.............................
 def fail_if_equal(actual,desired,err_msg='',):
     """Raises an assertion error if two items are equal.

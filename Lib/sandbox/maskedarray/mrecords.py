@@ -28,7 +28,6 @@ _byteorderconv = numpy.core.records._byteorderconv
 _typestr = ntypes._typestr
 
 import maskedarray as MA
-#reload(MA)
 from maskedarray import masked, nomask, mask_or, filled, getmask, getmaskarray, \
     masked_array, make_mask
 from maskedarray import MaskedArray
