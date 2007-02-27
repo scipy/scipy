@@ -733,7 +733,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
             c += (self == d.value)
         c = c.nonzero()
         if fromnumeric.size(c) == 0:
-            raise ValueError, "Date out of bounds!"
+            raise IndexError, "Date out of bounds!"
         return c  
 
     def date_to_index(self, date):
@@ -741,12 +741,12 @@ accesses the array element by element. Therefore, `d` is a Date object.
         if self.isvalid():
             index = date.value - self[0].value
             if index < 0 or index > self.size:
-                raise ValueError, "Date out of bounds!"
+                raise IndexError, "Date out of bounds!"
             return index
         else:
             index_asarray = (self == date.value).nonzero()
             if fromnumeric.size(index_asarray) == 0:
-                raise ValueError, "Date out of bounds!" 
+                raise IndexError, "Date out of bounds!" 
             return index_asarray[0][0]
     #......................................................        
     def get_steps(self):
