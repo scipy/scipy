@@ -23,10 +23,12 @@ import tmulti
 from tmulti import *
 import reportlib
 from reportlib import *
-import plotlib
+import extras
+from extras import *
 
 __all__ = ['tdates', 'tseries','tmulti','reportlib']
 __all__ += tdates.__all__
 __all__ += tseries.__all__
 __all__ += tmulti.__all__
 __all__ += reportlib.__all__
+__all__ += extras.__all__
