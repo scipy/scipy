@@ -924,7 +924,7 @@ def isTimeSeries(series):
     "Returns whether the series is a valid TimeSeries object."
     return isinstance(series, TimeSeries)
 
-tsmasked = TimeSeries(masked,dates=Date('D',0))
+tsmasked = TimeSeries(masked,dates=Date('D',1))
 
 ##### --------------------------------------------------------------------------
 #---- ... Additional functions ...
