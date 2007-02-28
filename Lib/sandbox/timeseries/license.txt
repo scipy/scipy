@@ -7,6 +7,8 @@ Functions in cseries.c marked in the section labelled
 are slightly modified versions of functions found in mxDateTime.c in the
 mx.DateTime source code.
 
+parser.py is a slightly modified version of Parser.py found in mx.DateTime
+
 =================================================================
 
 EGENIX.COM PUBLIC LICENSE AGREEMENT VERSION 1.0.0
