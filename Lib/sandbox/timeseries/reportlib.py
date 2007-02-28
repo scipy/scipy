@@ -60,6 +60,7 @@ __date__     = '$Date: 2007-01-30 13:40:17 -0500 (Tue, 30 Jan 2007) $'
 import sys
 import operator, types, copy
 import timeseries as ts
+import maskedarray as ma
 
 __all__ = [
     'Report', 'wrap_onspace', 'wrap_onspace_strict',
@@ -359,20 +360,12 @@ to the instance.
         else:
             col_width = [col_width for x in range(len(tseries)+1)]
 
-        ############################################################
-        # temporary hack to handle singletons for different types of
-        # behaviour until we finalize how they will be handled
-        ############################################################
-        if ts.time_series([1,2], start_date=ts.thisday('b'))[0].ndim == 0:
-            def getval(series, date): return series[date]
-        else:
-            def getval(series, date):
-                temp = series[date]
-                if temp is ts.tsmasked:
-                    return temp
-                else:
-                    return temp.series[0]
-        ############################################################
+        def getval(series, date):
+            try:
+                val = series[date]
+            except IndexError:
+                val = ma.masked
+            return val
 
         for d in dates:
             rows.append([datefmt_func(d)]+[fmtfunc[i](getval(ser, d)) for i, ser in enumerate(tseries)])
