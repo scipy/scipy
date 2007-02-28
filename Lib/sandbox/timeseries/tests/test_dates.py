@@ -26,11 +26,8 @@ import maskedarray.testutils
 from maskedarray.testutils import assert_equal, assert_array_equal
 
 import timeseries.tdates as tdates
-#from timeseries import tdates
-#from timeseries.tdates import date_array_fromlist, Date, DateArray, date_array,\
-#    mxDFromString, today
 from timeseries.tdates import *
-from timeseries.tdates import mxDFromString
+from timeseries.parser import DateFromString
 from timeseries import tcore
 
 
@@ -103,7 +100,7 @@ class test_creation(NumpyTestCase):
         dobj = [datetime.datetime.fromordinal(d) for d in dates.toordinal()]
         odates = date_array_fromlist(dobj)
         assert_equal(dates,odates)
-        dobj = [mxDFromString(d) for d in dlist]
+        dobj = [DateFromString(d) for d in dlist]
         odates = date_array_fromlist(dobj)
         assert_equal(dates,odates)
 
