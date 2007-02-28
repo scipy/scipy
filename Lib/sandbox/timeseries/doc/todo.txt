@@ -4,9 +4,6 @@ To-do:
 	but would be nice to have none-the-less :)
 	===================================================================
 
-	- create an actual Date data type so dates can be stored in arrays without
-	  resorting to object_ dtype
-
 	- add a "basis" option to the convert method. Possible values are
 	  'business' or 'daily'. This would be used in determining the weights
 	  of the months, quarters, etc when converting things with
@@ -16,7 +13,7 @@ To-do:
 	  provide the default behaviour if the basis option was not specified.
 
 	- add time series specific concepts/functions like moving averages, MACD, moving
-	  standard deviation, etc...
+	  standard deviation, seasonal analysis, etc...
 
 	- add support for more frequencies: semi-annual, decade, and maybe even
 	  sub-frequencies like quarterly with quarters ending on months other than
@@ -28,16 +25,5 @@ To-do:
 
 Wishlist:
 
-	- currently, the code relies on the mx.DateTime module (both the python,
-	  and c extension code). For obvious reasons, it would be nice if
-	  external dependencies could be eliminated as much as possible. Not sure
-	  if the built in datetime module is up to the task though, particularly
-	  where the c-api is concerned.
-
 	- pytables submodule for reading and writing timeseries objects directly
 	  to/from HDF5 databases
-
-	- plotting sub-module so timeseries objects can be easily plotted using
-	  matplotlib
-
-	- reporting sub-module
