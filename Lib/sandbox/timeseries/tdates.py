@@ -10,7 +10,8 @@ __version__ = '1.0'
 __revision__ = "$Revision$"
 __date__     = '$Date$'
 
-import datetime
+import datetime as dt
+
 import itertools
 import warnings
 import types
@@ -26,7 +27,12 @@ from numpy.core.numerictypes import generic
 
 import maskedarray as MA
 
-import mx.DateTime as mxD
+try:
+    from mx.DateTime import DateTimeType
+except ImportError:
+    class DateTimeType: pass
+    
+    
 from mx.DateTime.Parser import DateFromString as mxDFromString
 
 import tcore as corelib
@@ -47,10 +53,12 @@ __all__ = [
 #####---------------------------------------------------------------------------
 #---- --- Date Info ---
 #####---------------------------------------------------------------------------
-OriginDate = mxD.Date(1970)
-secondlyOriginDate = OriginDate - mxD.DateTimeDeltaFrom(seconds=1)
-minutelyOriginDate = OriginDate - mxD.DateTimeDeltaFrom(minutes=1)
-hourlyOriginDate = OriginDate - mxD.DateTimeDeltaFrom(hours=1)
+
+OriginDate = dt.datetime(1970, 1, 1)
+secondlyOriginDate = OriginDate - dt.timedelta(seconds=1)
+minutelyOriginDate = OriginDate - dt.timedelta(minutes=1)
+hourlyOriginDate = OriginDate - dt.timedelta(hours=1)
+
 
 #####---------------------------------------------------------------------------
 #---- --- Date Exceptions ---
@@ -107,16 +115,14 @@ class Date:
       
       >>> ts.Date('D', '2007-01-01')
       
-    - Use the `mxDate` keyword with an existing mx.DateTime.DateTime object, or 
-      even a datetime.datetime object.
-      
-      >>> td.Date('D', mxDate=mx.DateTime.now())
-      >>> td.Date('D', mxDate=datetime.datetime.now())
+    - Use the `datetime` keyword with an existing datetime.datetime object.
+
+      >>> td.Date('D', datetime=datetime.datetime.now())
       """
     default_fmtstr = {'A': "%Y",
                       'Q': "%YQ%q",
                       'M': "%b-%Y",
-                      'W': "%d-%b-%y",
+                      'W': "%d-%b-%Y",
                       'B': "%d-%b-%Y",
                       'D': "%d-%b-%Y",
                       'U': "%d-%b-%Y",
@@ -128,7 +134,7 @@ class Date:
     def __init__(self, freq, value=None, string=None,
                  year=None, month=None, day=None, quarter=None, 
                  hour=None, minute=None, second=None, 
-                 mxDate=None):
+                 datetime=None):
         
         if hasattr(freq, 'freq'):
             self.freq = corelib.check_freq(freq.freq)
@@ -138,40 +144,43 @@ class Date:
         
         
         if value is not None:
+            if isinstance(value, ndarray):
+                value = int(value)
+        
             if isinstance(value, str):
-                self.mxDate = mxDFromString(value)
+                self.datetime = mx_to_datetime(mxDFromString(value))
             elif self.freqstr == 'A':
-                self.mxDate = mxD.Date(value, -1, -1)
+                self.datetime = dt.datetime(value, 1, 1)
             elif self.freqstr == 'B':
                 valtmp = (value - 1)//5
-                #... (value + valtmp*7 - valtmp*5)
-                self.mxDate = mxD.DateTimeFromAbsDateTime(value + valtmp*2)
+                self.datetime = dt.datetime.fromordinal(value + valtmp*2)
             elif self.freqstr in ['D','U']:
-                self.mxDate = mxD.DateTimeFromAbsDateTime(value)
+                self.datetime = dt.datetime.fromordinal(value)
             elif self.freqstr == 'H':
-                self.mxDate = hourlyOriginDate + mxD.DateTimeDeltaFrom(hours=value)
+                self.datetime = hourlyOriginDate + dt.timedelta(hours=value)
             elif self.freqstr == 'M':
-                self.mxDate = mxD.DateTimeFromAbsDateTime(1) + \
-                              mxD.RelativeDateTime(months=value-1, day=-1)
+                year = (value - 1)//12 + 1
+                month = value - (year - 1)*12
+                self.datetime = dt.datetime(year, month, 1)
             elif self.freqstr == 'Q':
-                self.mxDate = mxD.DateTimeFromAbsDateTime(1) + \
-                              mxD.RelativeDateTime(years=(value // 4), 
-                                                   month=((value * 3) % 12), day=-1)
+                year = (value - 1)//4 + 1
+                month = (value - (year - 1)*4)*3
+                self.datetime = dt.datetime(year, month, 1)
             elif self.freqstr == 'S':
-                self.mxDate = secondlyOriginDate + mxD.DateTimeDeltaFromSeconds(value)
+                self.datetime = secondlyOriginDate + dt.timedelta(seconds=value)
             elif self.freqstr == 'T':
-                self.mxDate = minutelyOriginDate + mxD.DateTimeDeltaFrom(minutes=value)
+                self.datetime = minutelyOriginDate + dt.timedelta(minutes=value)
             elif self.freqstr == 'W':
-                self.mxDate = mxD.Date(1,1,7) + \
-                              mxD.RelativeDateTime(weeks=value-1)
+                self.datetime = dt.datetime(1,1,7) + \
+                                dt.timedelta(days=(value-1)*7)
         
         elif string is not None:
-            self.mxDate = mxDFromString(string)  
+            self.datetime = mx_to_datetime(mxDFromString(string))
             
-        elif mxDate is not None:
-            if isinstance(mxDate, datetime.datetime):
-                mxDate = mxD.strptime(mxDate.isoformat()[:19], "%Y-%m-%dT%H:%M:%S")
-            self.mxDate = truncateDate(self.freq, mxDate)
+        elif datetime is not None:
+            if isinstance(datetime, DateTimeType):
+                datetime = mx_to_datetime(datetime)
+            self.datetime = truncateDate(self.freq, datetime)
             
         else:
             # First, some basic checks.....
@@ -183,23 +192,23 @@ class Date:
             elif self.freqstr == 'M':
                 if month is None: 
                     raise InsufficientDateError
-                day = -1
+                day = 1
             elif self.freqstr == 'Q':
                 if quarter is None: 
                     raise InsufficientDateError
                 month = quarter * 3
-                day = -1
+                day = 1
             elif self.freqstr == 'A':
-                month = -1
-                day = -1
+                month = 1
+                day = 1
             elif self.freqstr == 'S':
                 if month is None or day is None or second is None: 
                     raise InsufficientDateError
                 
             if self.freqstr in ['A','B','D','M','Q','W']:
-                self.mxDate = truncateDate(self.freq, mxD.Date(year, month, day))
+                self.datetime = truncateDate(self.freq, dt.datetime(year, month, day))
                 if self.freqstr == 'B':
-                    if self.mxDate.day_of_week in [5,6]:
+                    if self.datetime.isoweekday() in [6,7]:
                         raise ValueError("Weekend passed as business day")
             elif self.freqstr in 'HTS':
                 if hour is None:
@@ -219,9 +228,9 @@ class Date:
                     second = 0
                 else:
                     second = second % 60
-                self.mxDate = truncateDate(self.freqstr,
-                                           mxD.Date(year, month, day, 
-                                                    hour, minute, second))
+                self.datetime = truncateDate(self.freqstr,
+                                             dt.datetime(year, month, day, 
+                                                         hour, minute, second))
         self.value = self.__value()
 
     def __getitem__(self, indx):
@@ -321,34 +330,36 @@ class Date:
         "Converts the date to an integer, depending on the current frequency."
         # Annual .......
         if self.freqstr == 'A':
-            val = self.mxDate.year
-        # Business days.
-        elif self.freqstr == 'B':
-            days = self.mxDate.absdate
-            weeks = days // 7
-            val = days - weeks*2  
-            # (weeks*5) + (days - weeks*7)
-        # Daily/undefined
-        elif self.freqstr in 'DU':
-            val = self.mxDate.absdate
-        # Hourly........
-        elif self.freqstr == 'H':
-            val = (self.mxDate - hourlyOriginDate).hours
-        # Monthly.......
-        elif self.freqstr == 'M':
-            val = (self.mxDate.year-1)*12 + self.mxDate.month
+            val = self.datetime.year
         # Quarterly.....
         elif self.freqstr == 'Q':
-            val = (self.mxDate.year-1)*4 + self.mxDate.month//3
-        # Secondly......
-        elif self.freqstr == 'S':
-            val = (self.mxDate - secondlyOriginDate).seconds
-        # Minutely......
-        elif self.freqstr == 'T':
-            val = (self.mxDate - minutelyOriginDate).minutes
+            val = (self.datetime.year-1)*4 + self.datetime.month//3
+        # Monthly.......
+        elif self.freqstr == 'M':
+            val = (self.datetime.year-1)*12 + self.datetime.month
         # Weekly........
         elif self.freqstr == 'W':
-            val = self.mxDate.absdate//7
+            val = self.datetime.toordinal()//7
+        # Business days.
+        elif self.freqstr == 'B':
+            days = self.datetime.toordinal()
+            weeks = days // 7
+            val = days - weeks*2  
+        # Daily/undefined
+        elif self.freqstr in 'DU':
+            val = self.datetime.toordinal()
+        # Hourly........
+        elif self.freqstr == 'H':
+            delta = (self.datetime - hourlyOriginDate)
+            val = delta.days*24 + delta.seconds/(3600)
+        # Minutely......
+        elif self.freqstr == 'T':
+            delta = (self.datetime - minutelyOriginDate)
+            val = delta.days*1440 + delta.seconds/(60)
+        # Secondly......
+        elif self.freqstr == 'S':
+            delta = (self.datetime - secondlyOriginDate)
+            val = delta.days*86400 + delta.seconds
         return int(val)
     #......................................................        
     def strfmt(self, fmt):
@@ -356,7 +367,7 @@ class Date:
         if fmt is None:
             fmt = self.default_fmtstr[self.freqstr]
         qFmt = fmt.replace("%q", "XXXX")
-        tmpStr = self.mxDate.strftime(qFmt)
+        tmpStr = self.datetime.strftime(qFmt)
         if "XXXX" in tmpStr: 
             tmpStr = tmpStr.replace("XXXX", str(self.quarter))
         return tmpStr
@@ -369,11 +380,11 @@ class Date:
     #......................................................
     def toordinal(self):
         "Returns the date as an ordinal."
-        return self.mxDate.absdays
+        return self.datetime.toordinal()
 
     def fromordinal(self, ordinal):
         "Returns the date as an ordinal."
-        return Date(self.freq, mxDate=mxD.DateTimeFromAbsDays(ordinal))
+        return Date(self.freq, datetime=dt.datetime.fromordinal(ordinal))
     
     def tostring(self):
         "Returns the date as a string."
@@ -394,30 +405,39 @@ class Date:
 #####---------------------------------------------------------------------------
 #---- --- Functions ---
 #####---------------------------------------------------------------------------
-def truncateDate(freq, mxDate):
-    """Chops off the irrelevant information from the mxDate passed in."""
+
+def mx_to_datetime(mxDate):
+    microsecond = 1000000*(mxDate.second % 1)
+    return dt.datetime(mxDate.year, mxDate.month,
+                       mxDate.day, mxDate.hour,
+                       mxDate.minute,
+                       int(mxDate.second), microsecond)
+
+
+def truncateDate(freq, datetime):
+    "Chops off the irrelevant information from the datetime object passed in."
     freqstr = corelib.check_freqstr(freq)
     if freqstr == 'A':
-        return mxD.Date(mxDate.year)
+        return dt.datetime(datetime.year, 1, 1)
     elif freqstr == 'Q':
-        return mxD.Date(mxDate.year, monthToQuarter(mxDate.month)*3)
+        return dt.datetime(datetime.year, monthToQuarter(datetime.month)*3, 1)
     elif freqstr == 'M':
-        return mxD.Date(mxDate.year, mxDate.month)
+        return dt.datetime(datetime.year, datetime.month, 1)
     elif freqstr == 'W':
-        d = mxDate.absdate
-        return mxD.DateTimeFromAbsDateTime(d + (7 - d % 7) % 7)
+        d = datetime.toordinal()
+        return dt.datetime.fromordinal(d + (7 - d % 7) % 7)
     elif freqstr in 'BD':
-        if freq == 'B' and mxDate.day_of_week in [5,6]:
+        if freq == 'B' and datetime.isoweekday() in (6,7):
             raise ValueError("Weekend passed as business day")
-        return mxD.Date(mxDate.year, mxDate.month, mxDate.day)
+        return dt.datetime(datetime.year, datetime.month, datetime.day)
     elif freqstr == 'H':
-        return mxD.Date(mxDate.year, mxDate.month, mxDate.day, \
-                        mxDate.hour)
+        return dt.datetime(datetime.year, datetime.month, datetime.day, \
+                           datetime.hour)
     elif freqstr == 'T':
-        return mxD.Date(mxDate.year, mxDate.month, mxDate.day, \
-                        mxDate.hour, mxDate.minute)
+        return dt.datetime(datetime.year, datetime.month, datetime.day, \
+                           datetime.hour, datetime.minute)
     else:
-        return mxDate
+        return datetime
     
 def monthToQuarter(monthNum):
     """Returns the quarter corresponding to the month `monthnum`.
@@ -427,12 +447,12 @@ def monthToQuarter(monthNum):
 def thisday(freq):
     "Returns today's date, at the given frequency `freq`."
     freqstr = corelib.check_freqstr(freq)
-    tempDate = mxD.now()
+    tempDate = dt.datetime.now()
     # if it is Saturday or Sunday currently, freq==B, then we want to use Friday
-    if freqstr == 'B' and tempDate.day_of_week >= 5:
-        tempDate -= (tempDate.day_of_week - 4)
+    if freqstr == 'B' and tempDate.isoweekday() >= 6:
+        tempDate = tempDate - dt.timedelta(days=(tempDate.isoweekday() - 5))
     if freqstr in ('B','D','H','S','T','W','U'):
-        return Date(freq, mxDate=tempDate)
+        return Date(freq, datetime=tempDate)
     elif freqstr == 'M':
         return Date(freq, year=tempDate.year, month=tempDate.month)
     elif freqstr == 'Q':
@@ -443,7 +463,7 @@ today = thisday
 
 def prevbusday(day_end_hour=18, day_end_min=0):
     "Returns the previous business day."
-    tempDate = mxD.localtime()
+    tempDate = dt.datetime.now()
     dateNum = tempDate.hour + float(tempDate.minute)/60
     checkNum = day_end_hour + float(day_end_min)/60
     if dateNum < checkNum: 
@@ -874,13 +894,13 @@ def _listparser(dlist, freq=None):
                 ords = numpy.fromiter((s.absdays for s in dlist), float_)
                 ords += 1
                 freq = guess_freq(ords)
-            dates = [Date(freq, mxDate=m) for m in dlist]
+            dates = [Date(freq, datetime=m) for m in dlist]
         #...as datetime objects
         elif hasattr(template, 'toordinal'):
             ords = numpy.fromiter((d.toordinal() for d in dlist), float_)
             if freq is None:
                 freq = guess_freq(ords)
-            dates = [Date(freq, mxDate=mxD.DateTimeFromAbsDays(a)) for a in ords]
+            dates = [Date(freq, datetime=dt.datetime.fromordinal(a)) for a in ords]
     #
     result = DateArray(dates, freq)
     return result
