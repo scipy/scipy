@@ -31,9 +31,8 @@ try:
     from mx.DateTime import DateTimeType
 except ImportError:
     class DateTimeType: pass
-    
-    
-from mx.DateTime.Parser import DateFromString as mxDFromString
+
+from parser import DateFromString, DateTimeFromString    
 
 import tcore as corelib
 import cseries
@@ -148,7 +147,10 @@ class Date:
                 value = int(value)
         
             if isinstance(value, str):
-                self.datetime = mx_to_datetime(mxDFromString(value))
+                if self.freqstr in ('H', 'T', 'S'):
+                    self.datetime = DateTimeFromString(value)
+                else:
+                    self.datetime = DateFromString(value)
             elif self.freqstr == 'A':
                 self.datetime = dt.datetime(value, 1, 1)
             elif self.freqstr == 'B':
@@ -175,7 +177,10 @@ class Date:
                                 dt.timedelta(days=(value-1)*7)
         
         elif string is not None:
-            self.datetime = mx_to_datetime(mxDFromString(string))
+            if self.freqstr in ('H', 'T', 'S'):
+                self.datetime = DateTimeFromString(string)
+            else:
+                self.datetime = DateFromString(string)
             
         elif datetime is not None:
             if isinstance(datetime, DateTimeType):
@@ -867,7 +872,7 @@ def _listparser(dlist, freq=None):
     # Case #1: dates as strings .................
     if dlist.dtype.kind == 'S':
         #...construct a list of ordinals
-        ords = numpy.fromiter((mxDFromString(s).absdays for s in dlist),
+        ords = numpy.fromiter((DateTimeFromString(s).toordinal() for s in dlist),
                                float_)
         ords += 1
         #...try to guess the frequency
