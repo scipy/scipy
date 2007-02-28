@@ -1,3 +1,4 @@
+#-*- coding: latin-1 -*-
 """ Date/Time string parsing module.
 
 This code is a slightly modified version of Parser.py found in mx.DateTime
@@ -8,6 +9,10 @@ license.txt for more details.
 import re,string
 import datetime as dt
 from string import atoi, atof, lower, upper
+
+__all__ = [
+'DateFromString', 'DateTimeFromString'
+           ]
 
 # Enable to produce debugging output
 _debug = 0
