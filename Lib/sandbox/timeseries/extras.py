@@ -12,12 +12,14 @@ __revision__ = "$Revision: 2752 $"
 __date__     = '$Date: 2007-02-22 15:50:12 -0500 (Thu, 22 Feb 2007) $'
 
 __all__ = [
-    'forward_fill', 'backward_fill', 'interp_masked1d'
+    'forward_fill', 'backward_fill', 'interp_masked1d',
+    'expmave'
           ]
 
+import numpy as N
 from scipy.interpolate import fitpack
 import maskedarray as MA
-from maskedarray import masked, nomask, getmask
+from maskedarray import masked, nomask, getmask, MaskedArray
 import numpy.core.numeric as numeric
 
 #####---------------------------------------------------------------------------
@@ -106,3 +108,41 @@ kind must be one of 'constant', 'linear', 'cubic', quintic'
                                   (maskedIndices < last_unmasked)]
     marr[interpIndices] = fitpack.splev(interpIndices, tck).astype(marr.dtype)
     return marr
+
+
+#####---------------------------------------------------------------------------
+#---- --- Moving average functions                                           ---
+#####---------------------------------------------------------------------------
+
+def expmave(data, n, tol=1e-6):
+    """calculate exponential moving average of a series.
+
+:Parameters:
+    - `data` (ndarray, MaskedArray) : data is a valid ndarray or MaskedArray
+      or an instance of a subclass of these types. In particular, TimeSeries
+      objects are valid here.
+    - `n` (int) : time periods. Where the smoothing factor is 2/(n + 1)
+    - `tol` (float, *[1e-6]*) : when `data` contains masked values, this
+      parameter will determine what points in the result should be masked.
+      Values in the result that would not be "significantly" impacted (as
+      determined by this parameter) by the masked values are left unmasked.
+"""
+    if isinstance(data, MaskedArray):
+        ismasked = (data._mask is not nomask)
+    else:
+        ismasked = False
+        
+    k = 2./float(n + 1)
+    def expmave_sub(a, b):
+        return b + k * (a - b)
+        
+    if ismasked:
+        data = data.filled(0)
+
+    result = N.frompyfunc(expmave_sub, 2, 1).accumulate(data).astype(data.dtype)
+    if ismasked:
+        _unmasked = N.logical_not(MA.getmask(data)).astype(N.float_)
+        marker = 1 - N.frompyfunc(expmave_sub, 2, 1).accumulate(_unmasked)
+        result[marker > tol] = masked
+
+    return result
