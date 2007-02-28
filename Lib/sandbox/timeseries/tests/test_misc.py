@@ -24,7 +24,7 @@ from maskedarray import masked_array, masked, nomask
 import maskedarray.testutils
 from maskedarray.testutils import assert_equal, assert_array_equal, approx
 
-from timeseries import tcore
+from timeseries import extras
 
 class test_funcs(NumpyTestCase):
     
@@ -39,29 +39,29 @@ class test_funcs(NumpyTestCase):
         result[0] = 1
         result[2] = 3
        
-        assert_equal(tcore.backward_fill(self.test_array, maxgap=1), result)
+        assert_equal(extras.backward_fill(self.test_array, maxgap=1), result)
         
         result[5] = 7
         result[6] = 7
         
-        assert_equal(tcore.backward_fill(self.test_array), result)
+        assert_equal(extras.backward_fill(self.test_array), result)
 
     def test_forward_fill (self):
         result = masked_array(self.data, mask=self.mask)
         result[2] = 1
        
-        assert_equal(tcore.forward_fill(self.test_array, maxgap=1), result)
+        assert_equal(extras.forward_fill(self.test_array, maxgap=1), result)
         
         result[5] = 4
         result[6] = 4
         
-        assert_equal(tcore.forward_fill(self.test_array), result)
+        assert_equal(extras.forward_fill(self.test_array), result)
 
     def test_interp_fill(self):
         result_lin = masked_array(self.data).astype(float_)
         result_lin[0] = masked
         
-        approx(tcore.interp_masked1d(self.test_array.astype(float_), kind='linear'), result_lin)
+        approx(extras.interp_masked1d(self.test_array.astype(float_), kind='linear'), result_lin)
         
         
 ###############################################################################
