@@ -18,6 +18,7 @@ from numpy.testing import NumpyTest, NumpyTestCase
 from numpy.testing.utils import build_err_msg
 
 from timeseries.io import fame
+from timeseries.io.fame import const
 from timeseries import Report
 import timeseries as ts
 import maskedarray as ma
@@ -478,10 +479,10 @@ class test_write(NumpyTestCase):
         assert_equal(desc, _desc)
         assert_equal(doc, _doc)
         
-        self.db.set_obj_basis("$freq_b", fame.HBSDAY)
-        assert_equal(self.db.obj_basis("$freq_b"), fame.HBSDAY)
-        self.db.set_obj_basis("$freq_b", fame.HBSBUS)
-        assert_equal(self.db.obj_basis("$freq_b"), fame.HBSBUS)
+        self.db.set_obj_basis("$freq_b", const.HBSDAY)
+        assert_equal(self.db.obj_basis("$freq_b"), const.HBSDAY)
+        self.db.set_obj_basis("$freq_b", const.HBSBUS)
+        assert_equal(self.db.obj_basis("$freq_b"), const.HBSBUS)
         
         self.db.set_obj_observed("$freq_b", "END")
         assert_equal(self.db.obj_observed("$freq_b"), "ENDING")
