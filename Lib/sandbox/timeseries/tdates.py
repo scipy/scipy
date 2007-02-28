@@ -2,7 +2,7 @@
 Classes definition for the support of individual dates and array of dates.
 
 :author: Pierre GF Gerard-Marchant & Matt Knox
-:contact: pierregm_at_uga_dot_edu - mattknow_ca_at_hotmail_dot_com
+:contact: pierregm_at_uga_dot_edu - mattknox_ca_at_hotmail_dot_com
 :version: $Id$
 """
 __author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author$)"
