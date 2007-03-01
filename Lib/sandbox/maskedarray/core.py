@@ -1945,7 +1945,7 @@ masked_singleton = MaskedArray(0, dtype=int_, mask=True)
 masked = masked_singleton
 
 masked_array = MaskedArray
-def array(data, dtype=None, copy=False, order=False, mask=nomask,
+def array(data, dtype=None, copy=False, order=False, mask=nomask, subok=True,
           keep_mask=True, small_mask=True, hard_mask=None, fill_value=None):
     """array(data, dtype=None, copy=True, order=False, mask=nomask,
              keep_mask=True, small_mask=True, fill_value=None)
@@ -1953,7 +1953,7 @@ Acts as shortcut to MaskedArray, with options in a different order for convenien
 And backwards compatibility...
     """
     #TODO: we should try to put 'order' somwehere
-    return MaskedArray(data, mask=mask, dtype=dtype, copy=copy,
+    return MaskedArray(data, mask=mask, dtype=dtype, copy=copy, subok=subok,
                        keep_mask=keep_mask, small_mask=small_mask,
                        hard_mask=hard_mask, fill_value=fill_value)
 
