@@ -1397,7 +1397,7 @@ cseries_strfmt(PyObject *self, PyObject *args)
 
     /* We need to modify the fmt_str passed in to handle our special syntax for quarters.
        We can't modify the string passed in directly, so we must make a copy. */
-    fmt_str = malloc(strlen(orig_fmt_str)*sizeof(char));
+    fmt_str = malloc((strlen(orig_fmt_str) + 1)*sizeof(char));
     strcpy(fmt_str, orig_fmt_str);
 
     if ((q_loc = strstr(fmt_str,"%q")) != NULL) {
