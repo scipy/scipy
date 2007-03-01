@@ -1,7 +1,9 @@
 #include <Python.h>
+#include <datetime.h>
 #include <structmember.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "arrayobject.h"
 
 static char cseries_doc[] = "Speed sensitive time series operations";
@@ -214,6 +216,7 @@ int dInfoCalc_SetFromDateAndTime(struct date_info *dinfo,
 
         dinfo->year = year;
         dinfo->month = month;
+        dinfo->quarter = ((month-1)/3)+1;
         dinfo->day = day;
 
         dinfo->day_of_week = dInfoCalc_DayOfWeek(absdate);
@@ -1164,9 +1167,7 @@ cseries_convert(PyObject *self, PyObject *args)
     Py_DECREF(start_index_retval);
 
     return returnVal;
-
 }
-
 
 static char cseries_asfreq_doc[] = "";
 static PyObject *
@@ -1338,10 +1339,111 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
     return (PyObject *) newArray;
 }
 
+static char *str_replace(const char *s, const char *old, const char *new)
+{
+    char *ret;
+    int i, count = 0;
+    size_t newlen = strlen(new);
+    size_t oldlen = strlen(old);
+
+    for (i = 0; s[i] != '\0'; i++) {
+        if (strstr(&s[i], old) == &s[i]) {
+           count++;
+           i += oldlen - 1;
+        }
+    }
+
+    ret = malloc(i + 1 + count * (newlen - oldlen));
+    if (ret == NULL) return NULL;
+
+    i = 0;
+    while (*s) {
+        if (strstr(s, old) == s) {
+            strcpy(&ret[i], new);
+            i += newlen;
+            s += oldlen;
+        } else {
+            ret[i++] = *s++;
+        }
+    }
+    ret[i] = '\0';
+
+    return ret;
+}
+
+static char cseries_strfmt_doc[] = "";
+static PyObject *
+cseries_strfmt(PyObject *self, PyObject *args)
+{
+
+    char *orig_fmt_str, *fmt_str, *q_loc;
+    char *result;
+    char place_holder[] = "^`";
+    struct tm c_date;
+    struct date_info tempDate;
+    int result_len;
+    PyObject *date, *py_result;
+
+    if (!PyArg_ParseTuple(args, "Os:strfmt(datetime, fmt_str)", &date, &orig_fmt_str)) return NULL;
+
+    if (dInfoCalc_SetFromDateAndTime(&tempDate,
+                                    PyDateTime_GET_YEAR(date),
+                                    PyDateTime_GET_MONTH(date),
+                                    PyDateTime_GET_DAY(date),
+                                    PyDateTime_DATE_GET_HOUR(date),
+                                    PyDateTime_DATE_GET_MINUTE(date),
+                                    PyDateTime_DATE_GET_SECOND(date),
+                                    GREGORIAN_CALENDAR)) return NULL;
+
+    /* We need to modify the fmt_str passed in to handle our special syntax for quarters.
+       We can't modify the string passed in directly, so we must make a copy. */
+    fmt_str = malloc(strlen(orig_fmt_str)*sizeof(char));
+    strcpy(fmt_str, orig_fmt_str);
+
+    if ((q_loc = strstr(fmt_str,"%q")) != NULL) {
+        q_loc = strstr(fmt_str,"%q");
+        strncpy (q_loc,place_holder,2);
+    }
+
+    c_date.tm_sec = (int)tempDate.second;
+    c_date.tm_min = tempDate.minute;
+    c_date.tm_hour = tempDate.hour;
+    c_date.tm_mday = tempDate.day;
+    c_date.tm_mon = tempDate.month - 1;
+    c_date.tm_year = tempDate.year - 1900;
+    c_date.tm_wday = tempDate.day_of_week;
+    c_date.tm_yday = tempDate.day_of_year;
+    c_date.tm_isdst = -1;
+
+    result_len = strlen(orig_fmt_str) + 50;
+
+    result = malloc(result_len * sizeof(char));
+
+    strftime(result, result_len, fmt_str, &c_date);
+
+    if (q_loc != NULL) {
+        char *alt_result;
+        char q_str[2];
+
+        sprintf(q_str, "%i", tempDate.quarter);
+        alt_result = str_replace(result, place_holder, q_str);
+        py_result = PyString_FromString(alt_result);
+        free(result);
+        free(alt_result);
+    } else {
+        py_result = PyString_FromString(result);
+        free(result);
+    }
+
+    return py_result;
+
+}
+
 
 ///////////////////////////////////////////////////////////////////////
 
 static PyMethodDef cseries_methods[] = {
+    {"strfmt", cseries_strfmt, METH_VARARGS, cseries_strfmt_doc},
     {"convert", cseries_convert, METH_VARARGS, cseries_convert_doc},
     {"asfreq", cseries_asfreq, METH_VARARGS, cseries_asfreq_doc},
     {"getDateInfo", cseries_getDateInfo, METH_VARARGS, cseries_getDateInfo_doc},
@@ -1354,6 +1456,7 @@ initcseries(void)
     PyObject *m, *TSER_CONSTANTS;
     m = Py_InitModule3("cseries", cseries_methods, cseries_doc);
     import_array();
+    PyDateTime_IMPORT;
 
     TSER_CONSTANTS = PyDict_New();
 
