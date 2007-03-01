@@ -1,21 +1,11 @@
-# pylint: disable-msg=W0201, W0212
 """
-Core classes for time/date related arrays.
-
-The `DateArray` class provides a base for the creation of date-based objects,
-using days as the base units. This class could be adapted easily to objects
-with a smaller temporal resolution (for example, using one hour, one second as the
-base unit).
-
 The `TimeSeries` class provides  a base for the definition of time series.
 A time series is defined here as the combination of two arrays:
     
     - an array storing the time information (as a `DateArray` instance);
-    - an array storing the data (as a `MaskedArray` instance.
+    - an array storing the data (as a `MaskedArray` instance.)
 
 These two classes were liberally adapted from `MaskedArray` class.
-
-
 
 :author: Pierre GF Gerard-Marchant & Matt Knox
 :contact: pierregm_at_uga_dot_edu - mattknox_ca_at_hotmail_dot_com
