@@ -980,7 +980,7 @@ The fill_value is not used for computation within this module.
     _baseclass =  numeric.ndarray
     def __new__(cls, data=None, mask=nomask, dtype=None, copy=False, fill_value=None,
                 keep_mask=True, small_mask=True, hard_mask=False, flag=None,
-                **options):
+                subok=True, **options):
         """array(data, dtype=None, copy=True, mask=nomask, fill_value=None)
 
 If `data` is already a ndarray, its dtype becomes the default value of dtype.
@@ -992,7 +992,8 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         # Process data............
         _data = numeric.array(data, dtype=dtype, copy=copy, subok=True)
         _baseclass = getattr(_data, '_baseclass', type(_data))
-        _data = _data.view(cls)
+        if not isinstance(data, MaskedArray) or not subok:
+            _data = _data.view(cls)
         # Process mask ...........
         # Backwards compat
         if hasattr(data,'_mask') and not isinstance(data, ndarray):

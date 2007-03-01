@@ -1106,6 +1106,7 @@ class test_array_methods(NumpyTestCase):
         assert_equal(sortedx._mask, [1,1,0,0,0])
     
     def check_ravel(self):
+        "Tests ravel"
         a = array([[1,2,3,4,5]], mask=[[0,1,0,0,0]])
         aravel = a.ravel()
         assert_equal(a._mask.shape, a.shape)

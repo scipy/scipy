@@ -118,20 +118,27 @@ class test_subclassing(NumpyTestCase):
         assert_equal(ym._mask, [1,0,0,0,1])
         ym._series._setmask([0,0,0,0,1])
         assert_equal(ym._mask, [0,0,0,0,1])
-        
-        
-################################################################################
-if __name__ == '__main__':
-    NumpyTest().run()
-    if 1:
+    
+    def check_subclasspreservation(self):
+        "Checks that masked_array(...,subok=True) preserves the class."
         x = N.arange(5)
         m = [0,0,1,0,0]
         xinfo = [(i,j) for (i,j) in zip(x,m)]
         xsub = MSubArray(x, mask=m, info={'xsub':xinfo})
         #
-        xsub_low = less(xsub,3)
-        assert isinstance(xsub, MSubArray)
-        assert_equal(xsub_low.info, xinfo)
+        mxsub = masked_array(xsub, subok=True)
+        assert isinstance(mxsub, MSubArray)
+        assert_equal(mxsub.info, xsub.info)
+        #
+        mxsub = masked_array(xsub, subok=False)
+        assert not isinstance(mxsub, MSubArray)
+        assert isinstance(mxsub, MaskedArray)
+        
+        
+################################################################################
+if __name__ == '__main__':
+    NumpyTest().run()
+
                      
 
 
