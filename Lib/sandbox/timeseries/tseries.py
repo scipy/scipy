@@ -330,7 +330,8 @@ The combination of `series` and `dates` is the `data` part.
             return _data.view(cls)
         assert(_datadatescompat(_data,newdates))
         _data._dates = newdates
-        _data._defaultdates = _data._dates
+        if _data._dates.size == _data.size and _data.ndim > 1:
+            _data._dates.shape = _data.shape
         _data.observed = observed
         return _data
     #............................................
@@ -904,8 +905,11 @@ def time_series(data, dates=None, freq=None, observed=None,
     if dates is None:
         dshape = data.shape
         if len(dshape) > 0:
+            if length is None:
+                length = dshape[0]
+        if len(dshape) > 0:
             dates = date_array(start_date=start_date, end_date=end_date,
-                               length=dshape[0], include_last=include_last, 
+                               length=length, include_last=include_last, 
                                freq=freq) 
         else:
             dates = date_array([], freq=freq)   
@@ -921,7 +925,7 @@ def isTimeSeries(series):
     "Returns whether the series is a valid TimeSeries object."
     return isinstance(series, TimeSeries)
 
-tsmasked = TimeSeries(masked,dates=Date('D',1))
+tsmasked = TimeSeries(masked,dates=DateArray(Date('D',1)))
 
 ##### --------------------------------------------------------------------------
 #---- ... Additional functions ...
@@ -1415,6 +1419,7 @@ if __name__ == '__main__':
         dates = date_array_fromlist(dlist)
         data = masked_array(numeric.arange(10), mask=[1,0,0,0,0]*2, dtype=float_)
         series = time_series(data, dlist)
+#        tostr = series._dates.tostring()
         #
         import cPickle
         series_pickled = cPickle.loads(series.dumps())
@@ -1422,13 +1427,5 @@ if __name__ == '__main__':
         assert_equal(series_pickled._data, series._data)
         assert_equal(series_pickled._mask, series._mask)        
         #
-        data = masked_array(N.matrix(range(10)).T, mask=[1,0,0,0,0]*2)
-        dates = date_array(start_date=thisday('D'), length=10)
-        series = time_series(data,dates=dates)
-        series_pickled = cPickle.loads(series.dumps())
-        assert_equal(series_pickled._dates, series._dates)
-        assert_equal(series_pickled._data, series._data)
-        assert_equal(series_pickled._mask, series._mask)
-        assert(isinstance(series_pickled._data, N.matrix))
-        
+
         
