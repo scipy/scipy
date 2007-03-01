@@ -376,13 +376,13 @@ def generate_module(module_string, module_file):
     """
     file_changed = 1
     if os.path.exists(module_file):
-        f =open(module_file,'r')
+        f = open(module_file,'r')
         old_string = f.read()
         f.close()
         if old_string == module_string:
             file_changed = 0
     if file_changed:
-        f =open(module_file,'w')
+        f = open(module_file,'w')
         f.write(module_string)
         f.close()
     return module_file
