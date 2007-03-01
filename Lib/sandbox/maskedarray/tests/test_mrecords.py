@@ -18,16 +18,12 @@ from numpy.testing import NumpyTest, NumpyTestCase
 from numpy.testing.utils import build_err_msg
 
 import maskedarray.testutils
-reload(maskedarray.testutils)
 from maskedarray.testutils import *
 
 import maskedarray.core as MA
-##reload(MA)
 #import maskedarray.mrecords
-##reload(maskedarray.mrecords)
 #from maskedarray.mrecords import mrecarray, fromarrays, fromtextfile, fromrecords
 import maskedarray.mrecords
-reload(maskedarray.mrecords)
 from maskedarray.mrecords import MaskedRecords, \
     fromarrays, fromtextfile, fromrecords, addfield
 

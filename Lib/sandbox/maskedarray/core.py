@@ -1884,6 +1884,52 @@ the maximum default, the minimum uses the minimum default."""
         """Returns the `_data` part of the MaskedArray.
 You should really use `data` instead..."""
         return self._data
+    #--------------------------------------------
+    # Pickling
+    def __getstate__(self):
+        "Returns the internal state of the masked array, for pickling purposes."
+        state = (1,
+                 self.shape,
+                 self.dtype,
+                 self.flags.fnc,
+                 self._data.tostring(),
+                 getmaskarray(self).tostring(),
+                 self._fill_value,
+                 )
+        return state    
+    #
+    def __setstate__(self, state):
+        """Restores the internal state of the masked array, for pickling purposes.
+    `state` is typically the output of the ``__getstate__`` output, and is a 5-tuple:
+    
+        - class name
+        - a tuple giving the shape of the data
+        - a typecode for the data
+        - a binary string for the data
+        - a binary string for the mask.
+            """
+        (ver, shp, typ, isf, raw, msk, flv) = state
+        ndarray.__setstate__(self, (shp, typ, isf, raw))
+        self._mask.__setstate__((shp, dtype(bool), isf, msk))
+        self.fill_value = flv
+    #
+    def __reduce__(self):
+        """Returns a 3-tuple for pickling a MaskedArray."""
+        return (_mareconstruct,
+                (self.__class__, self._baseclass, (0,), 'b', ),
+                self.__getstate__())
+    
+    
+def _mareconstruct(subtype, baseclass, baseshape, basetype,):
+    """Internal function that builds a new MaskedArray from the information stored
+in a pickle."""
+    _data = ndarray.__new__(baseclass, baseshape, basetype)
+    _mask = ndarray.__new__(ndarray, baseshape, 'b1')
+    return subtype.__new__(subtype, _data, mask=_mask, dtype=basetype, small_mask=False)
+#MaskedArray.__dump__ = dump
+#MaskedArray.__dumps__ = dumps
+    
+    
 
 #####--------------------------------------------------------------------------
 #---- --- Shortcuts ---
@@ -2531,44 +2577,6 @@ Returns an array of the given dimensions, initialized to all zeros."""
 #####--------------------------------------------------------------------------
 #---- --- Pickling ---
 #####--------------------------------------------------------------------------
-#FIXME: We're kinda stuck with forcing the mask to have the same shape as the data
-def _mareconstruct(subtype, baseshape, basetype,):
-    """Internal function that builds a new MaskedArray from the information stored
-in a pickle."""
-    _data = ndarray.__new__(ndarray, baseshape, basetype)
-    _mask = ndarray.__new__(ndarray, baseshape, basetype)
-    return MaskedArray.__new__(subtype, _data, mask=_mask, dtype=basetype, small_mask=False)
-
-def _getstate(a):
-    "Returns the internal state of the masked array, for pickling purposes."
-    state = (1,
-             a.shape,
-             a.dtype,
-             a.flags.fnc,
-             a.tostring(),
-             getmaskarray(a).tostring())
-    return state
-
-def _setstate(a, state):
-    """Restores the internal state of the masked array, for pickling purposes.
-`state` is typically the output of the ``__getstate__`` output, and is a 5-tuple:
-
-    - class name
-    - a tuple giving the shape of the data
-    - a typecode for the data
-    - a binary string for the data
-    - a binary string for the mask.
-        """
-    (ver, shp, typ, isf, raw, msk) = state
-    super(MaskedArray, a).__setstate__((shp, typ, isf, raw))
-    (a._mask).__setstate__((shp, dtype('|b1'), isf, msk))
-
-def _reduce(a):
-    """Returns a 3-tuple for pickling a MaskedArray."""
-    return (_mareconstruct,
-            (a.__class__, (0,), 'b', ),
-            a.__getstate__())
-
 def dump(a,F):
     """Pickles the MaskedArray `a` to the file `F`.
 `F` can either be the handle of an exiting file, or a string representing a file name.
@@ -2592,15 +2600,24 @@ def loads(strg):
     "Loads a pickle from the current string."""
     return cPickle.loads(strg)
 
-MaskedArray.__getstate__ = _getstate
-MaskedArray.__setstate__ = _setstate
-MaskedArray.__reduce__ = _reduce
-MaskedArray.__dump__ = dump
-MaskedArray.__dumps__ = dumps
 
 ################################################################################
 
-#if __name__ == '__main__':
-#    import numpy as N
-#    from maskedarray.testutils import assert_equal, assert_array_equal
-#    pi = N.pi
+if __name__ == '__main__':
+    import numpy as N
+    from maskedarray.testutils import assert_equal, assert_array_equal
+    #
+    a = arange(10)
+    a[::3] = masked
+    a.fill_value = 999
+    a_pickled = cPickle.loads(a.dumps())
+    assert_equal(a_pickled._mask, a._mask)
+    assert_equal(a_pickled._data, a._data)
+    assert_equal(a_pickled.fill_value, 999)
+    #
+    a = array(numpy.matrix(range(10)), mask=[1,0,1,0,0]*2)
+    a_pickled = cPickle.loads(a.dumps())
+    assert_equal(a_pickled._mask, a._mask)
+    assert_equal(a_pickled, a)
+    assert(isinstance(a_pickled._data,numpy.matrix))
+    

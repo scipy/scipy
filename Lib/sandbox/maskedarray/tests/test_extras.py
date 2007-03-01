@@ -16,14 +16,11 @@ from numpy.testing import NumpyTest, NumpyTestCase
 from numpy.testing.utils import build_err_msg
 
 import maskedarray.testutils
-reload(maskedarray.testutils)
 from maskedarray.testutils import *
 
 import maskedarray.core
-reload(maskedarray.core)
 from maskedarray.core import *
 import maskedarray.extras
-reload(maskedarray.extras)
 from maskedarray.extras import *
 
 class test_average(NumpyTestCase):        

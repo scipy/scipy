@@ -18,11 +18,9 @@ from numpy.testing import NumpyTest, NumpyTestCase
 from numpy.testing.utils import build_err_msg
 
 import maskedarray.testutils
-reload(maskedarray.testutils)
 from maskedarray.testutils import *
 
 import maskedarray.core as coremodule
-reload(coremodule)
 from maskedarray.core import *
 
 pi = N.pi
@@ -600,16 +598,6 @@ class test_ma(NumpyTestCase):
         assert t[0] == 'abc'
         assert t[1] == 2
         assert t[2] == 3
-    #........................
-    def check_pickling(self):
-        "Test of pickling"
-        import pickle
-        x = arange(12)
-        x[4:10:2] = masked
-        x = x.reshape(4,3)
-        s = pickle.dumps(x)
-        y = pickle.loads(s)
-        assert_equal(x,y)
     #.......................
     def check_maskedelement(self):
         "Test of masked element"
@@ -699,6 +687,23 @@ class test_ma(NumpyTestCase):
         assert_equal(X._data, x._data)
         assert_equal(X._mask, x.mask)
         assert_equal(getmask(x), [0,0,1,0,0])
+        
+    def check_pickling(self):
+        "Tests pickling"
+        import cPickle
+        a = arange(10)
+        a[::3] = masked
+        a.fill_value = 999
+        a_pickled = cPickle.loads(a.dumps())
+        assert_equal(a_pickled._mask, a._mask)
+        assert_equal(a_pickled._data, a._data)
+        assert_equal(a_pickled.fill_value, 999)
+        #
+        a = array(N.matrix(range(10)), mask=[1,0,1,0,0]*2)
+        a_pickled = cPickle.loads(a.dumps())
+        assert_equal(a_pickled._mask, a._mask)
+        assert_equal(a_pickled, a)
+        assert(isinstance(a_pickled._data,N.matrix))
         
 #...............................................................................
         

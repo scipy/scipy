@@ -16,11 +16,9 @@ import numpy.core.numeric as numeric
 from numpy.testing import NumpyTest, NumpyTestCase
 
 import maskedarray.testutils
-#reload(maskedarray.testutils)
 from maskedarray.testutils import *
 
 import maskedarray.core as coremodule
-#reload(coremodule)
 from maskedarray.core import *
 
 
@@ -125,5 +123,15 @@ class test_subclassing(NumpyTestCase):
 ################################################################################
 if __name__ == '__main__':
     NumpyTest().run()
+    if 1:
+        x = N.arange(5)
+        m = [0,0,1,0,0]
+        xinfo = [(i,j) for (i,j) in zip(x,m)]
+        xsub = MSubArray(x, mask=m, info={'xsub':xinfo})
+        #
+        xsub_low = less(xsub,3)
+        assert isinstance(xsub, MSubArray)
+        assert_equal(xsub_low.info, xinfo)
+                     
 
 
