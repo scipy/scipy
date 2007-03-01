@@ -371,11 +371,7 @@ class Date:
         "Formats the date"
         if fmt is None:
             fmt = self.default_fmtstr[self.freqstr]
-        qFmt = fmt.replace("%q", "XXXX")
-        tmpStr = self.datetime.strftime(qFmt)
-        if "XXXX" in tmpStr: 
-            tmpStr = tmpStr.replace("XXXX", str(self.quarter))
-        return tmpStr
+        return cseries.strfmt(self.datetime, fmt)
             
     def __str__(self):
         return self.strfmt(self.default_fmtstr[self.freqstr])
