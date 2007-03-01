@@ -348,7 +348,7 @@ class test_functions(NumpyTestCase):
         
         assert_array_equal(shift_negative, shift_negative_result)
         assert_array_equal(shift_positive, shift_positive_result)
-        
+    #
     def test_convert(self):
         """Test convert function
         
@@ -390,10 +390,9 @@ test_dates test suite.
                      Date(freq='b', year=2005, month=6, day=1).asfreq('M'))
         assert_equal(highToLow.end_date,
                      (Date(freq='b', year=2005, month=6, day=1) + 99).asfreq('M'))
-                     
+    #                
     def test_fill_missing_dates(self):
         """Test fill_missing_dates function"""
-        
         _start = Date(freq='m', year=2005, month=1)
         _end = Date(freq='m', year=2005, month=4)
         
@@ -406,7 +405,6 @@ test_dates test suite.
         assert(filled_ser.isfull())
         assert(not filled_ser.has_duplicated_dates())
         assert_equal(filled_ser.size, _end - _start + 1)
-    
     #
     def test_maskperiod(self):        
         "Test mask_period"
@@ -426,13 +424,24 @@ test_dates test suite.
                            inplace=False)
         assert_equal(mask._mask, [1,1,1,1,1,0,0,0,0,0,0,0,1,1,1])
     #
-    def pickling(self):
+    def test_pickling(self):
         "Tests pickling/unpickling"
         (series, data, dates) = self.d
-        tmp = maskedarray.loads(series.dumps())
-        assert_equal(tmp._data, series._data)
-        assert_equal(tmp._dates, series._dates)
-        assert_equal(tmp._mask, series._mask)
+        import cPickle
+        series_pickled = cPickle.loads(series.dumps())
+        assert_equal(series_pickled._dates, series._dates)
+        assert_equal(series_pickled._data, series._data)
+        assert_equal(series_pickled._mask, series._mask)
+        #
+        data = masked_array(N.matrix(range(10)).T, mask=[1,0,0,0,0]*2)
+        dates = date_array(start_date=thisday('D'), length=10)
+        series = time_series(data,dates=dates)
+        series_pickled = cPickle.loads(series.dumps())
+        assert_equal(series_pickled._dates, series._dates)
+        assert_equal(series_pickled._data, series._data)
+        assert_equal(series_pickled._mask, series._mask)
+        assert(isinstance(series_pickled._data, N.matrix))
+         
         
     def test_empty_timeseries(self):
         "Tests that empty TimeSeries are  handled properly"

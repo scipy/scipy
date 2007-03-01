@@ -3,7 +3,7 @@ Reporting functions
 
 :author: Pierre GF Gerard-Marchant & Matt Knox
 :contact: pierregm_at_uga_dot_edu - mattknox_ca_at_hotmail_dot_com
-:version: $Id: tdates.py 2641 2007-01-30 18:40:17Z mattknox_ca $
+:version: $Id$
 
 Ideas borrowed from:
 
@@ -52,10 +52,10 @@ Ideas borrowed from:
     html_o.write("</table>")
     
 """
-__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author: mattknox_ca $)"
+__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author$)"
 __version__ = '1.0'
-__revision__ = "$Revision: 2641 $"
-__date__     = '$Date: 2007-01-30 13:40:17 -0500 (Tue, 30 Jan 2007) $'
+__revision__ = "$Revision$"
+__date__     = '$Date$'
 
 import sys
 import operator, types, copy

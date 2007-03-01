@@ -29,6 +29,7 @@ __date__     = '$Date$'
 import numpy
 from numpy import ndarray
 from numpy.core import bool_, complex_, float_, int_, object_
+from numpy.core.multiarray import dtype
 import numpy.core.fromnumeric as fromnumeric
 import numpy.core.numeric as numeric
 import numpy.core.umath as umath
@@ -292,7 +293,7 @@ The combination of `series` and `dates` is the `data` part.
     _defaultobserved = None
     _genattributes = ['fill_value', 'observed']
     def __new__(cls, data, dates=None, mask=nomask, 
-                freq=None, observed=None, start_date=None, 
+                freq=None, observed=None, start_date=None, length=None,
                 dtype=None, copy=False, fill_value=None,
                 keep_mask=True, small_mask=True, hard_mask=False, **options):
         maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value,
@@ -315,6 +316,8 @@ The combination of `series` and `dates` is the `data` part.
         else:
             dshape = _data.shape
             if len(dshape) > 0:
+                if length is None:
+                    length = dshape[0]
                 newdates = date_array(start_date=start_date, length=dshape[0],
                                       freq=freq)
             else:
@@ -688,7 +691,55 @@ timeseries(data  = %(data)s,
         for attr in attrlist:
             if not attr in exclude:
                 setattr(self, attr, getattr(oldseries, attr))
+    #......................................................
+    # Pickling
+    def __getstate__(self):
+        "Returns the internal state of the TimeSeries, for pickling purposes."
+    #    raise NotImplementedError,"Please use timeseries.archive/unarchive instead."""
+        state = (1,
+                 self.shape,
+                 self.dtype,
+                 self.flags.fnc,
+                 self._data.tostring(),
+                 getmaskarray(self).tostring(),
+                 self._fill_value,
+                 self._dates.shape,
+                 numeric.asarray(self._dates).tostring(),
+                 self.freq,
+                 )
+        return state
+    #    
+    def __setstate__(self, state):
+        """Restores the internal state of the TimeSeries, for pickling purposes.
+    `state` is typically the output of the ``__getstate__`` output, and is a 5-tuple:
     
+        - class name
+        - a tuple giving the shape of the data
+        - a typecode for the data
+        - a binary string for the data
+        - a binary string for the mask.
+        """
+        (ver, shp, typ, isf, raw, msk, flv, dsh, dtm, frq) = state
+        super(TimeSeries, self).__setstate__((ver, shp, typ, isf, raw, msk, flv))
+        self._dates.__setstate__((dsh, dtype(int_), isf, dtm))
+        self._dates.freq = frq
+#        
+    def __reduce__(self):
+        """Returns a 3-tuple for pickling a MaskedArray."""
+        return (_tsreconstruct,
+                (self.__class__, self._baseclass, 
+                 self.shape, self._dates.shape, self.dtype, self._fill_value),
+                self.__getstate__())
+
+def _tsreconstruct(genclass, baseclass, baseshape, dateshape, basetype, fill_value):
+    """Internal function that builds a new TimeSeries from the information stored
+    in a pickle."""
+    #    raise NotImplementedError,"Please use timeseries.archive/unarchive instead."""
+    _series = ndarray.__new__(baseclass, baseshape, basetype)
+    _dates = ndarray.__new__(DateArray, dateshape, int_)
+    _mask = ndarray.__new__(ndarray, baseshape, bool_)
+    return genclass.__new__(genclass, _series, dates=_dates, mask=_mask, 
+                            dtype=basetype, fill_value=fill_value)
         
 def _attrib_dict(series, exclude=[]):
     """this function is used for passing through attributes of one
@@ -828,61 +879,7 @@ TimeSeries.flatten = flatten
 #####---------------------------------------------------------------------------
 #---- --- Archiving ---
 #####---------------------------------------------------------------------------
-def _tsreconstruct(baseclass, datesclass, baseshape, basetype, fill_value):
-    """Internal function that builds a new TimeSeries from the information stored
-in a pickle."""
-#    raise NotImplementedError,"Please use timeseries.archive/unarchive instead."""
-    _series = ndarray.__new__(ndarray, baseshape, basetype)
-    _dates = ndarray.__new__(datesclass, baseshape, int_)
-    _mask = ndarray.__new__(ndarray, baseshape, bool_)
-    return baseclass.__new__(baseclass, _series, dates=_dates, mask=_mask, 
-                             dtype=basetype, fill_value=fill_value)
-#    
-def _tsgetstate(a):
-    "Returns the internal state of the TimeSeries, for pickling purposes."
-#    raise NotImplementedError,"Please use timeseries.archive/unarchive instead."""
-    records = a.asrecords()
-    state = (1,
-             a.shape, 
-             a.dtype,
-             a.freq,
-             records.flags.fnc,
-             a.fill_value,
-             records
-             )
-    return state
-#    
-def _tssetstate(a, state):
-    """Restores the internal state of the TimeSeries, for pickling purposes.
-`state` is typically the output of the ``__getstate__`` output, and is a 5-tuple:
 
-    - class name
-    - a tuple giving the shape of the data
-    - a typecode for the data
-    - a binary string for the data
-    - a binary string for the mask.
-    """
-    (ver, shp, typ, frq, isf, flv, rec) = state
-    a.fill_value = flv
-    a._dates = a._dates.__class__(rec['_dates'], freq=frq)
-    (a._dates).__tostr = None
-    _data = rec['_series'].view(typ)
-    _mask = rec['_mask'].view(MA.MaskType)
-    a._series = masked_array(_data, mask=_mask)
-#    a._data.shape = shp
-#    a._dates.shape = shp
-#    a._mask = rec['_mask'].view(MA.MaskType)
-#    a._mask.shape = shp
-#        
-def _tsreduce(a):
-    """Returns a 3-tuple for pickling a MaskedArray."""
-    return (_tsreconstruct,
-            (a.__class__, a.dates.__class__, (0,), 'b', -9999),
-            a.__getstate__())
-#    
-TimeSeries.__getstate__ = _tsgetstate
-TimeSeries.__setstate__ = _tssetstate
-TimeSeries.__reduce__ = _tsreduce
 #TimeSeries.__dump__ = dump
 #TimeSeries.__dumps__ = dumps
 
@@ -1413,18 +1410,25 @@ if __name__ == '__main__':
             pass
         assert_equal(ser3d.transpose(0,2,1).shape, (5,2,3))
         
-    if 1:        
-        data = dates
-    
-        series = time_series(data, dates)
-        assert(isinstance(series, TimeSeries))
-        assert_equal(series._dates, dates)
-        assert_equal(series._data, data)
-        assert_equal(series.freqstr, 'D')
+    if 1:
+        dlist = ['2007-01-%02i' % i for i in range(1,11)]
+        dates = date_array_fromlist(dlist)
+        data = masked_array(numeric.arange(10), mask=[1,0,0,0,0]*2, dtype=float_)
+        series = time_series(data, dlist)
+        #
+        import cPickle
+        series_pickled = cPickle.loads(series.dumps())
+        assert_equal(series_pickled._dates, series._dates)
+        assert_equal(series_pickled._data, series._data)
+        assert_equal(series_pickled._mask, series._mask)        
+        #
+        data = masked_array(N.matrix(range(10)).T, mask=[1,0,0,0,0]*2)
+        dates = date_array(start_date=thisday('D'), length=10)
+        series = time_series(data,dates=dates)
+        series_pickled = cPickle.loads(series.dumps())
+        assert_equal(series_pickled._dates, series._dates)
+        assert_equal(series_pickled._data, series._data)
+        assert_equal(series_pickled._mask, series._mask)
+        assert(isinstance(series_pickled._data, N.matrix))
         
-        series[5] = MA.masked
         
-        # ensure that series can be represented by a string after masking a value
-        # (there was a bug before that prevented this from working when using a 
-        # DateArray for the data)
-        strrep = str(series)

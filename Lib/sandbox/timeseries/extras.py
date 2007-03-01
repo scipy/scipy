@@ -4,12 +4,12 @@ A collection of utilities for timeseries
 
 :author: Pierre GF Gerard-Marchant & Matt Knox
 :contact: pierregm_at_uga_dot_edu - mattknox_ca_at_hotmail_dot_com
-:version: $Id: tcore.py 2752 2007-02-22 20:50:12Z mattknox_ca $
+:version: $Id$
 """
-__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author: mattknox_ca $)"
+__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author$)"
 __version__ = '1.0'
-__revision__ = "$Revision: 2752 $"
-__date__     = '$Date: 2007-02-22 15:50:12 -0500 (Thu, 22 Feb 2007) $'
+__revision__ = "$Revision$"
+__date__     = '$Date$'
 
 __all__ = [
     'forward_fill', 'backward_fill', 'interp_masked1d',

@@ -4,12 +4,12 @@ Adapted from the original test_ma by Pierre Gerard-Marchant
 
 :author: Pierre Gerard-Marchant & Matt Knox
 :contact: pierregm_at_uga_dot_edu & mattknox_ca_at_hotmail_dot_com
-:version: $Id: test_timeseries.py 2578 2007-01-17 19:25:10Z mattknox_ca $
+:version: $Id$
 """
-__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author: mattknox_ca $)"
+__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author$)"
 __version__ = '1.0'
-__revision__ = "$Revision: 2578 $"
-__date__     = '$Date: 2007-01-17 14:25:10 -0500 (Wed, 17 Jan 2007) $'
+__revision__ = "$Revision$"
+__date__     = '$Date$'
 
 import numpy as N
 from numpy import bool_, complex_, float_, int_, object_
