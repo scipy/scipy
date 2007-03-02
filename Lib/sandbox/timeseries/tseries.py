@@ -926,20 +926,21 @@ def mask_period(data, start_date=None, end_date=None,
 as well as where data are initially missing (masked).
 
 :Parameters:
-    `data` : Timeseries
+    data : Timeseries
         Data to process
-    `start_date` : Date *[None]*
-        Starting date. If None, uses the first date.
-    `end_date` : Date *[None]*
-        Ending date. If None, uses the last date.
-    `inside` : Boolean *[True]*
+    start_date : string/Date *[None]*
+        Starting date. If None, uses the first date of the series.
+    end_date : string/Date *[None]*
+        Ending date. If None, uses the last date of the series.
+    inside : Boolean *[True]*
         Whether the dates inside the range should be masked. If not, masks outside.
-    `include_edges` : Boolean *[True]*
+    include_edges : Boolean *[True]*
         Whether the starting and ending dates should be masked.
-    `inplace` : Boolean *[True]*
+    inplace : Boolean *[True]*
         Whether the data mask should be modified in place. If not, returns a new
         TimeSeries.
-"""
+    """
+    data = masked_array(data, subok=True, copy=not inplace)
     if not isTimeSeries(data):
         raise ValueError,"Data should be a valid TimeSeries!"
     # Check the starting date ..............
@@ -970,13 +971,10 @@ as well as where data are initially missing (masked).
         else:
             selection = (data.dates < start_date) | (data.dates > end_date)
     # Process the data:
-    if inplace:
-        if data._mask is nomask:
-            data._mask = selection
-        else:
-            data._mask += selection
+    if data._mask is nomask:
+        data._mask = selection
     else:
-        return TimeSeries(data, mask=selection, keep_mask=True)
+        data._mask += selection
     return data
 
 def mask_inside_period(data, start_date=None, end_date=None, 
@@ -1388,34 +1386,20 @@ if __name__ == '__main__':
         assert_equal(sertrans.shape, (2,5))
         
     if 1:
-        hodie = today('D')
-        ser2d = time_series(N.arange(10).reshape(5,2), start_date=hodie,
-                            mask=[[1,1],[0,0],[0,0],[0,0],[0,0]])
-        try:
-            ser2d_transpose = ser2d.transpose()
-        except TimeSeriesError:
-            pass
-    if 1:
-        hodie = today('D')
-        ser3d = time_series(N.arange(30).reshape(5,3,2), start_date=hodie,)
-        try:
-            ser3d_transpose = ser3d.transpose()
-        except TimeSeriesError:
-            pass
-        assert_equal(ser3d.transpose(0,2,1).shape, (5,2,3))
-        
-    if 1:
-        dlist = ['2007-01-%02i' % i for i in range(1,11)]
-        dates = date_array_fromlist(dlist)
-        data = masked_array(numeric.arange(10), mask=[1,0,0,0,0]*2, dtype=float_)
+        dlist = ['2007-01-%02i' % i for i in range(1,16)]
+        data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3, dtype=float_)
         series = time_series(data, dlist)
-#        tostr = series._dates.tostring()
-        #
-        import cPickle
-        series_pickled = cPickle.loads(series.dumps())
-        assert_equal(series_pickled._dates, series._dates)
-        assert_equal(series_pickled._data, series._data)
-        assert_equal(series_pickled._mask, series._mask)        
-        #
-
-        
+        series.mask = nomask
+        (start, end) = ('2007-01-06', '2007-01-12')
+        mask = mask_period(series, start, end, inside=True, include_edges=True,
+                           inplace=False)
+        assert_equal(mask._mask, N.array([0,0,0,0,0,1,1,1,1,1,1,1,0,0,0]))
+        mask = mask_period(series, start, end, inside=True, include_edges=False,
+                           inplace=False)
+        assert_equal(mask._mask, [0,0,0,0,0,0,1,1,1,1,1,0,0,0,0])
+        mask = mask_period(series, start, end, inside=False, include_edges=True,
+                           inplace=False)
+        assert_equal(mask._mask, [1,1,1,1,1,1,0,0,0,0,0,1,1,1,1])
+        mask = mask_period(series, start, end, inside=False, include_edges=False,
+                           inplace=False)
+        assert_equal(mask._mask, [1,1,1,1,1,0,0,0,0,0,0,0,1,1,1])
