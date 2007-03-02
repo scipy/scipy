@@ -29,21 +29,8 @@ __all__ = ['expmave'
 #####---------------------------------------------------------------------------
 #---- --- Moving average functions ---
 #####---------------------------------------------------------------------------
-def expmave(data, n, tol=1e-6):
-    """Calculates the exponential moving average of a series.
-
-:Parameters:
-    data : ndarray
-        Data as a valid (subclass of) ndarray or MaskedArray. In particular, 
-        TimeSeries objects are valid here.
-    n : int 
-        Time periods. The smoothing factor is 2/(n + 1)
-    tol : float, *[1e-6]*
-        Tolerance for the definition of the mask. When data contains masked 
-        values, this parameter determinea what points in the result should be masked.
-        Values in the result that would not be "significantly" impacted (as 
-        determined by this parameter) by the masked values are left unmasked.
-"""
+def __expmave(data, n, tol):
+    """helper function for expmave"""
     data = marray(data, copy=True, subok=True)
     ismasked = (data._mask is not nomask)
     data._mask = N.zeros(data.shape, bool_)
@@ -61,6 +48,43 @@ def expmave(data, n, tol=1e-6):
     data._mask[0] = True
     #
     return data
+    
+def expmave(data, n, tol=1e-6,
+            centered=False, trailing=False):
+    """Calculates the exponential moving average of a series.
+
+:Parameters:
+    data : ndarray
+        Data as a valid (subclass of) ndarray or MaskedArray. In particular, 
+        TimeSeries objects are valid here.
+    n : int 
+        Time periods. The smoothing factor is 2/(n + 1).
+    tol : float, *[1e-6]*
+        Tolerance for the definition of the mask. When data contains masked 
+        values, this parameter determinea what points in the result should be masked.
+        Values in the result that would not be "significantly" impacted (as 
+        determined by this parameter) by the masked values are left unmasked.
+    centered : boolean, *[False]*
+        If both centered and trailing are False, then centered is forced to
+        True. If centered, the result at position i is the average of the
+        trailing result with n=n//2, and an equivalent calculation operating in
+        the reverse direction on the series.
+    trailing : boolean, *[False]*
+        If trailing is True, the result at position i uses only data points at,
+        or before, position i.
+"""
+    if not centered and not trailing:
+        centered = True
+    elif centered and trailing:
+        raise ValueError("Cannot specify both centered and trailing")
+
+    if trailing:
+        return __expmave(data, n, tol=tol)
+    else:
+        rev_result = __expmave(data[::-1], n//2, tol=tol)[::-1]
+        fwd_result = __expmave(data, n//2, tol=tol)
+        return (rev_result + fwd_result)/N.array(2, dtype=data.dtype)
+
 
 def weightmave(data, n):
     data = marray(data, subok=True, copy=True)
