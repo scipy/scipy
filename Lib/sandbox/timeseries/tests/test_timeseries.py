@@ -25,9 +25,8 @@ from maskedarray import masked_array, masked, nomask
 import maskedarray.testutils
 from maskedarray.testutils import assert_equal, assert_array_equal
 
-from timeseries import tseries
-from timeseries.tseries import Date, date_array_fromlist, date_array, thisday
-from timeseries.tseries import time_series, TimeSeries, adjust_endpoints, \
+from timeseries import Date, date_array_fromlist, date_array, thisday
+from timeseries import time_series, TimeSeries, adjust_endpoints, \
     mask_period, align_series, fill_missing_dates, tsmasked, concatenate_series
 
 class test_creation(NumpyTestCase):
