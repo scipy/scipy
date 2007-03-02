@@ -15,8 +15,11 @@ def configuration(parent_package='',top_path=None):
                          sources=[sources,],
                          include_dirs=[nxheader],
                          )
-    confgr.add_data_dir('doc')
-    confgr.add_data_dir('examples')
+    confgr.add_data_dir('docs')
+    confgr.add_subpackage('addons')
+    confgr.add_subpackage('io')
+    confgr.add_subpackage('plotlib')
+    confgr.add_subpackage('tests')
     return confgr
 
 if __name__ == "__main__":

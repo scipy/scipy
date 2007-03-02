@@ -30,37 +30,59 @@ __all__ = ['expmave'
 #---- --- Moving average functions ---
 #####---------------------------------------------------------------------------
 def expmave(data, n, tol=1e-6):
-    """Calculate the exponential moving average of a series.
+    """Calculates the exponential moving average of a series.
 
 :Parameters:
-    - `data` (ndarray, MaskedArray) : data is a valid ndarray or MaskedArray
-      or an instance of a subclass of these types. In particular, TimeSeries
-      objects are valid here.
-    - `n` (int) : time periods. Where the smoothing factor is 2/(n + 1)
-    - `tol` (float, *[1e-6]*) : when `data` contains masked values, this
-      parameter will determine what points in the result should be masked.
-      Values in the result that would not be "significantly" impacted (as
-      determined by this parameter) by the masked values are left unmasked.
+    data : ndarray
+        Data as a valid (subclass of) ndarray or MaskedArray. In particular, 
+        TimeSeries objects are valid here.
+    n : int 
+        Time periods. The smoothing factor is 2/(n + 1)
+    tol : float, *[1e-6]*
+        Tolerance for the definition of the mask. When data contains masked 
+        values, this parameter determinea what points in the result should be masked.
+        Values in the result that would not be "significantly" impacted (as 
+        determined by this parameter) by the masked values are left unmasked.
 """
-    if isinstance(data, MaskedArray):
-        ismasked = (data._mask is not nomask)
-    else:
-        ismasked = False
+    data = marray(data, copy=True, subok=True)
+    ismasked = (data._mask is not nomask)
+    data._mask = N.zeros(data.shape, bool_)
+    _data = data._data
     #
     k = 2./float(n + 1)
     def expmave_sub(a, b):
         return b + k * (a - b)
-    #    
-    if ismasked:
-        data = data.filled(0)
     #
-    result = N.frompyfunc(expmave_sub, 2, 1).accumulate(data).astype(data.dtype)
+    data._data.flat = N.frompyfunc(expmave_sub, 2, 1).accumulate(_data)
     if ismasked:
-        _unmasked = N.logical_not(getmask(data)).astype(float_)
-        marker = 1 - N.frompyfunc(expmave_sub, 2, 1).accumulate(_unmasked)
-        result[marker > tol] = masked
+        _unmasked = N.logical_not(data._mask).astype(float_)
+        marker = 1. - N.frompyfunc(expmave_sub, 2, 1).accumulate(_unmasked)
+        data._mask[marker > tol] = True
+    data._mask[0] = True
     #
-    return result
+    return data
+
+def weightmave(data, n):
+    data = marray(data, subok=True, copy=True)
+    data._mask = N.zeros(data.shape, bool_)
+    # Set the data
+    _data = data._data
+    tmp = N.empty_like(_data)
+    tmp[:n] = _data[:n]
+    s = 0
+    for i in range(n, len(data)):
+        s += _data[i] - _data[i-n]
+        tmp[i] = n*_data[i] + tmp[i-1] - s
+    tmp *= 2./(n*(n+1))
+    data._data.flat = tmp
+    # Set the mask
+    if data._mask is not nomask:
+        msk = data._mask.nonzero()[0].repeat(n).reshape(-1,n)
+        msk += range(n)
+        data._mask[msk.ravel()] = True
+    data._mask[:n] = True
+    return data
+
 
 #...............................................................................
 def running_window(data, window_type, window_size):
@@ -134,4 +156,5 @@ def running_mean(data, width):
 if __name__ == '__main__':
     from maskedarray.testutils import assert_equal, assert_almost_equal
     from timeseries import time_series, thisday
-    
+    #
+    data = MA.arange(100)
