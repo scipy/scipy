@@ -14,11 +14,9 @@ import numpy.core.numeric as numeric
 from numpy.testing import NumpyTest, NumpyTestCase
 
 import maskedarray.testutils
-#reload(maskedarray.testutils)
 from maskedarray.testutils import *
 
 import maskedarray.core as coremodule
-#reload(coremodule)
 from maskedarray.core import MaskedArray, masked
 
 from addons.interpolate import backward_fill, forward_fill, interp_masked1d

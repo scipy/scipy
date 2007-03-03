@@ -29,8 +29,21 @@ __all__ = ['expmave'
 #####---------------------------------------------------------------------------
 #---- --- Moving average functions ---
 #####---------------------------------------------------------------------------
-def __expmave(data, n, tol):
-    """helper function for expmave"""
+def expmave(data, n, tol=1e-6):
+    """Calculates the exponential moving average of a series.
+
+:Parameters:
+    data : ndarray
+        Data as a valid (subclass of) ndarray or MaskedArray. In particular, 
+        TimeSeries objects are valid here.
+    n : int 
+        Time periods. The smoothing factor is 2/(n + 1)
+    tol : float, *[1e-6]*
+        Tolerance for the definition of the mask. When data contains masked 
+        values, this parameter determinea what points in the result should be masked.
+        Values in the result that would not be "significantly" impacted (as 
+        determined by this parameter) by the masked values are left unmasked.
+"""
     data = marray(data, copy=True, subok=True)
     ismasked = (data._mask is not nomask)
     data._mask = N.zeros(data.shape, bool_)
@@ -48,43 +61,6 @@ def __expmave(data, n, tol):
     data._mask[0] = True
     #
     return data
-    
-def expmave(data, n, tol=1e-6,
-            centered=False, trailing=False):
-    """Calculates the exponential moving average of a series.
-
-:Parameters:
-    data : ndarray
-        Data as a valid (subclass of) ndarray or MaskedArray. In particular, 
-        TimeSeries objects are valid here.
-    n : int 
-        Time periods. The smoothing factor is 2/(n + 1).
-    tol : float, *[1e-6]*
-        Tolerance for the definition of the mask. When data contains masked 
-        values, this parameter determinea what points in the result should be masked.
-        Values in the result that would not be "significantly" impacted (as 
-        determined by this parameter) by the masked values are left unmasked.
-    centered : boolean, *[False]*
-        If both centered and trailing are False, then centered is forced to
-        True. If centered, the result at position i is the average of the
-        trailing result with n=n//2, and an equivalent calculation operating in
-        the reverse direction on the series.
-    trailing : boolean, *[False]*
-        If trailing is True, the result at position i uses only data points at,
-        or before, position i.
-"""
-    if not centered and not trailing:
-        centered = True
-    elif centered and trailing:
-        raise ValueError("Cannot specify both centered and trailing")
-
-    if trailing:
-        return __expmave(data, n, tol=tol)
-    else:
-        rev_result = __expmave(data[::-1], n//2, tol=tol)[::-1]
-        fwd_result = __expmave(data, n//2, tol=tol)
-        return (rev_result + fwd_result)/N.array(2, dtype=data.dtype)
-
 
 def weightmave(data, n):
     data = marray(data, subok=True, copy=True)
@@ -109,31 +85,23 @@ def weightmave(data, n):
 
 
 #...............................................................................
-def running_window(data, window_type, window_size,
-                   centered=False, trailing=False):
-    """Applies a running window of type window_type and size window_size on the
-data. Returns a (subclass of) MaskedArray.
-
+def running_window(data, window_type, window_size):
+    """Applies a running window of type window_type and size window_size on the 
+    data.
+    
+    Returns a (subclass of) MaskedArray. The k first and k last data are always 
+    masked (with k=window_size//2). When data has a missing value at position i, 
+    the result has missing values in the interval [i-k:i+k+1].
+    
+    
 :Parameters:
     data : ndarray
-        Data to process. The array should be at most 2D. On 2D arrays, the
-        window
+        Data to process. The array should be at most 2D. On 2D arrays, the window
         is applied recursively on each column.
     window_type : string/tuple/float
         Window type (see Notes)
     window_size : integer
         The width of the window.
-    centered : boolean, *[False]*
-        If both centered and trailing are False, then centered is forced to
-        True. If centered, the result at position i uses data points from
-        [i-k:i+k+1] in the calculation. The k first and k last data are always
-        masked (with k=window_size//2). When data has a missing value at
-        position i, the result has missing values in the interval [i-k:i+k+1].
-    trailing : boolean, *[False]*
-        If trailing is True, the result at position i uses data points from
-        [i-window_size:i+1] in the calculation.the first "window_size" data
-        points are always masked. When data has a missing value at position i,
-        the result has missing values in the interval [i-window_size:i+1].
         
 Notes
 -----
@@ -148,24 +116,14 @@ as the beta parameter of the kaiser window.
 
 Note also that only boxcar has been thoroughly tested.
     """
-
-    if not centered and not trailing:
-        centered = True
-    elif centered and trailing:
-        raise ValueError("Cannot specify both centered and trailing")
-    
-    
+    #
     data = marray(data, copy=True, subok=True)
     if data._mask is nomask:
         data._mask = N.zeros(data.shape, bool_)
     window = get_window(window_type, window_size, fftbins=False)
-    n = len(data)
-    
-    if centered: k = window_size//2
-    else:        k = 0
-
+    (n, k) = (len(data), window_size//2)
+    #
     if data.ndim == 1:
-        
         data._data.flat = convolve(data._data, window)[k:n+k] / float(window_size)
         data._mask[:] = ((convolve(getmaskarray(data), window) > 0)[k:n+k])
     elif data.ndim == 2:
@@ -175,38 +133,24 @@ Note also that only boxcar has been thoroughly tested.
             data._mask[:,i] = (convolve(data._mask[:,i], window) > 0)[k:n+k]
     else:
         raise ValueError, "Data should be at most 2D"
-        
-    if centered:
-        data._mask[:k] = data._mask[-k:] = True
-    else:
-        data._mask[:window_size] = True
+    data._mask[:k] = data._mask[-k:] = True
     return data
 
-def running_mean(data, width,
-                 centered=False, trailing=False):
-    """Computes the running mean of size width on the data. Returns a
-(subclass of) MaskedArray.
-
+def running_mean(data, width):
+    """Computes the running mean of size width on the data.
+    
+    Returns a (subclass of) MaskedArray. The k first and k last data are always 
+    masked (with k=window_size//2). When data has a missing value at position i, 
+    the result has missing values in the interval [i-k:i+k+1].
+    
 :Parameters:
     data : ndarray
         Data to process. The array should be at most 2D. On 2D arrays, the window
         is applied recursively on each column.
     window_size : integer
-        The width of the window.
-    centered : boolean, *[False]*
-        If both centered and trailing are False, then centered is forced to
-        True. If centered, the result at position i uses data points from
-        [i-k:i+k+1] in the calculation. The k first and k last data are always
-        masked (with k=window_size//2). When data has a missing value at
-        position i, the result has missing values in the interval [i-k:i+k+1].
-    trailing : boolean, *[False]*
-        If trailing is True, the result at position i uses data points from
-        [i-window_size:i+1] in the calculation.the first "window_size" data
-        points are always masked. When data has a missing value at position i,
-        the result has missing values in the interval [i-window_size:i+1]."""
-
-    return running_window(data, 'boxcar', width,
-                          centered=centered, trailing=trailing)
+        The width of the window.    
+    """
+    return running_window(data, 'boxcar', width)
 
 ################################################################################
 if __name__ == '__main__':

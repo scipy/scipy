@@ -25,8 +25,9 @@ from maskedarray import masked_array, masked, nomask
 import maskedarray.testutils
 from maskedarray.testutils import assert_equal, assert_array_equal
 
-from timeseries import Date, date_array_fromlist, date_array, thisday
-from timeseries import time_series, TimeSeries, adjust_endpoints, \
+from timeseries import tseries
+from timeseries.tseries import Date, date_array_fromlist, date_array, thisday
+from timeseries.tseries import time_series, TimeSeries, adjust_endpoints, \
     mask_period, align_series, fill_missing_dates, tsmasked, concatenate_series
 
 class test_creation(NumpyTestCase):
@@ -422,6 +423,15 @@ test_dates test suite.
         mask = mask_period(series, start, end, inside=False, include_edges=False,
                            inplace=False)
         assert_equal(mask._mask, [1,1,1,1,1,0,0,0,0,0,0,0,1,1,1])
+        # Now w/ multivariables
+        data = masked_array(numeric.arange(30).reshape(-1,2), dtype=float_)
+        series = time_series(data, dates=dates)
+        mask = mask_period(series, start, end, inside=True, include_edges=True,
+                           inplace=False)
+        result = N.array([0,0,0,0,0,1,1,1,1,1,1,1,0,0,0])
+        assert_equal(mask._mask, result.repeat(2).reshape(-1,2))
+        
+        
     #
     def test_pickling(self):
         "Tests pickling/unpickling"

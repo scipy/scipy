@@ -715,9 +715,11 @@ class test_methods(NumpyTestCase):
         assert_equal(mdates>=mdates[-4], [0,0,0,0,0,0,1,1,1,1])
         dlist = ['2006-%02i' % i for i in range(1,5)+range(7,13)]
         mdates = date_array_fromlist(dlist).asfreq('M')
+        #CHECK : Oops, what were we supposed to do here ?
 
         
     def test_getsteps(self):
+        "Tests the getsteps method"
         dlist = ['2007-01-%02i' %i for i in (1,2,3,4,8,9,10,11,12,15)]
         ddates = date_array_fromlist(dlist)
         assert_equal(ddates.get_steps(), [1,1,1,4,1,1,1,1,3])
@@ -729,7 +731,12 @@ class test_methods(NumpyTestCase):
         assert_equal(empty_darray.isvalid(), True)
         assert_equal(empty_darray.get_steps(), None)
         
-
+    def test_cachedinfo(self):
+        D = date_array(start_date=thisday('D'), length=5)
+        Dstr = D.tostring()
+        assert_equal(D.tostring(), Dstr)
+        DL = D[[0,-1]]
+        assert_equal(DL.tostring(), Dstr[[0,-1]])
 
 ###############################################################################
 #------------------------------------------------------------------------------

@@ -23,6 +23,8 @@ import tmulti
 from tmulti import *
 import reportlib
 from reportlib import *
+import plotlib
+import addons
 
 
 __all__ = ['tdates', 'tseries','tmulti','reportlib']

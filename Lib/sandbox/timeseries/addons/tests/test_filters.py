@@ -16,18 +16,15 @@ import numpy.core.numeric as numeric
 from numpy.testing import NumpyTest, NumpyTestCase
 
 import maskedarray.testutils
-#reload(maskedarray.testutils)
 from maskedarray.testutils import *
 
 import maskedarray.core as coremodule
-#reload(coremodule)
 from maskedarray.core import MaskedArray, masked
 
 import tseries
 from tseries import time_series, thisday
 
 import addons.filters
-reload(addons.filters)
 from addons.filters import running_mean
 
 

@@ -308,7 +308,7 @@ The combination of `series` and `dates` is the `data` part.
             if len(dshape) > 0:
                 if length is None:
                     length = dshape[0]
-                newdates = date_array(start_date=start_date, length=dshape[0],
+                newdates = date_array(start_date=start_date, length=length,
                                       freq=freq)
             else:
                 newdates = date_array([], freq=freq)          
@@ -610,17 +610,25 @@ timeseries(data  = %(data)s,
     @property
     def start_date(self):
         """Returns the first date of the series."""
-        if self._dates.size != 0:
-            return self._dates[0]
-        else:
+        _dates = self._dates
+        dsize = _dates.size
+        if dsize == 0:
             return None
+        elif dsize == 1:
+            return _dates[0]
+        else:
+            return Date(self.freq, _dates.flat[0])
     @property
     def end_date(self):
         """Returns the last date of the series."""
-        if self._dates.size != 0:
-            return self._dates[-1]
-        else:
+        _dates = self._dates
+        dsize = _dates.size
+        if dsize == 0:
             return None
+        elif dsize == 1:
+            return _dates[-1]
+        else:
+            return Date(self.freq, _dates.flat[-1])
     
     def isvalid(self):
         """Returns whether the series has no duplicate/missing dates."""
@@ -920,14 +928,16 @@ tsmasked = TimeSeries(masked,dates=DateArray(Date('D',1)))
 ##### --------------------------------------------------------------------------
 #---- ... Additional functions ...
 ##### --------------------------------------------------------------------------
-def mask_period(data, start_date=None, end_date=None, 
-                inside=True, include_edges=True, inplace=True):
+def mask_period(data, period=None, start_date=None, end_date=None, 
+                inside=True, include_edges=True, inplace=False):
     """Returns x as an array masked where dates fall outside the selection period,
 as well as where data are initially missing (masked).
 
 :Parameters:
     data : Timeseries
         Data to process
+    period : Sequence
+        A sequence of (starting date, ending date).
     start_date : string/Date *[None]*
         Starting date. If None, uses the first date of the series.
     end_date : string/Date *[None]*
@@ -943,47 +953,50 @@ as well as where data are initially missing (masked).
     data = masked_array(data, subok=True, copy=not inplace)
     if not isTimeSeries(data):
         raise ValueError,"Data should be a valid TimeSeries!"
+    dates = data._dates
+    if dates.ndim == 1:
+        dates_lims = dates[[0,-1]]
+    else:
+        dates_lim = dates.ravel()[[0,-1]]
+    # Check the period .....................
+    if period is not None and isinstance(period, (tuple, list, ndarray)):
+        (start_date, end_date) = (period[0], period[-1])    
     # Check the starting date ..............
     if start_date is None:
-        start_date = data._dates[0]
+        start_date = dates_lim[0]
     elif isinstance(start_date, str):
         start_date = Date(data.freq, string=start_date)
     elif not isinstance(start_date, Date):
         raise DateError,"Starting date should be a valid Date object!"
-    start_date = max(start_date, data.dates[0])
     # Check the ending date ................
     if end_date is None:
-        end_date = data._dates[-1]
+        end_date = dates_lim[-1]
     elif isinstance(end_date, str):
         end_date = Date(data.freq, string=end_date)
     elif not isinstance(end_date, Date):
         raise DateError,"Starting date should be a valid Date object!"
-    end_date = min(end_date, data.dates[-1])
     # Constructs the selection mask .........
+    dates = data.dates
     if inside:
         if include_edges:
-            selection = (data.dates >= start_date) & (data.dates <= end_date)
+            selection = (dates >= start_date) & (dates <= end_date)
         else:
-            selection = (data.dates > start_date) & (data.dates < end_date)
+            selection = (dates > start_date) & (dates < end_date)
     else:
         if include_edges:
-            selection = (data.dates <= start_date) | (data.dates >= end_date)
+            selection = (dates <= start_date) | (dates >= end_date)
         else:
-            selection = (data.dates < start_date) | (data.dates > end_date)
-    # Process the data:
-    if data._mask is nomask:
-        data._mask = selection
-    else:
-        data._mask += selection
+            selection = (dates < start_date) | (dates > end_date)
+    data[selection] = masked
     return data
 
 def mask_inside_period(data, start_date=None, end_date=None, 
-                       include_edges=True, inplace=True):
+                       include_edges=True, inplace=False):
     """Masks values falling inside a given range of dates."""
     return mask_period(data, start_date=start_date, end_date=end_date, 
                        inside=True, include_edges=include_edges, inplace=inplace)
 def mask_outside_period(data, start_date=None, end_date=None, 
-                       include_edges=True, inplace=True):
+                       include_edges=True, inplace=False):
     """Masks values falling outside a given range of dates."""
     return mask_period(data, start_date=start_date, end_date=end_date, 
                        inside=False, include_edges=include_edges, inplace=inplace)
@@ -1374,6 +1387,8 @@ if __name__ == '__main__':
         dlist = ['2007-01-%02i' % i for i in range(1,11)]
         dates = date_array_fromlist(dlist)
         data = masked_array(numeric.arange(10), mask=[1,0,0,0,0]*2, dtype=float_)
+    
+    if 0:
         ser1d = time_series(data, dlist)
         
         serfolded = ser1d.reshape((5,2))
@@ -1385,21 +1400,17 @@ if __name__ == '__main__':
         sertrans = serfolded.transpose()
         assert_equal(sertrans.shape, (2,5))
         
-    if 1:
-        dlist = ['2007-01-%02i' % i for i in range(1,16)]
-        data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3, dtype=float_)
-        series = time_series(data, dlist)
-        series.mask = nomask
-        (start, end) = ('2007-01-06', '2007-01-12')
-        mask = mask_period(series, start, end, inside=True, include_edges=True,
-                           inplace=False)
-        assert_equal(mask._mask, N.array([0,0,0,0,0,1,1,1,1,1,1,1,0,0,0]))
-        mask = mask_period(series, start, end, inside=True, include_edges=False,
-                           inplace=False)
-        assert_equal(mask._mask, [0,0,0,0,0,0,1,1,1,1,1,0,0,0,0])
-        mask = mask_period(series, start, end, inside=False, include_edges=True,
-                           inplace=False)
-        assert_equal(mask._mask, [1,1,1,1,1,1,0,0,0,0,0,1,1,1,1])
-        mask = mask_period(series, start, end, inside=False, include_edges=False,
-                           inplace=False)
-        assert_equal(mask._mask, [1,1,1,1,1,0,0,0,0,0,0,0,1,1,1])
+    if 1:        
+        data = dates
+        series = time_series(data, dates)
+        assert(isinstance(series, TimeSeries))
+        assert_equal(series._dates, dates)
+        assert_equal(series._data, data)
+        assert_equal(series.freqstr, 'D')
+        
+        series[5] = MA.masked
+        
+        # ensure that series can be represented by a string after masking a value
+        # (there was a bug before that prevented this from working when using a 
+        # DateArray for the data)
+        strrep = str(series)
