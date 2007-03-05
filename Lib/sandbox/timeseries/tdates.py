@@ -118,17 +118,19 @@ class Date:
 
       >>> td.Date('D', datetime=datetime.datetime.now())
       """
-    default_fmtstr = {'A': "%Y",
-                      'Q': "%YQ%q",
-                      'M': "%b-%Y",
-                      'W': "%d-%b-%Y",
-                      'B': "%d-%b-%Y",
-                      'D': "%d-%b-%Y",
-                      'U': "%d-%b-%Y",
-                      'H': "%d-%b-%Y %H:00",
-                      'T': "%d-%b-%Y %H:%M",
-                      'S': "%d-%b-%Y %H:%M:%S"
+    default_fmtstr = {_c.FR_ANN: "%Y",
+                      _c.FR_QTR: "%YQ%q",
+                      _c.FR_MTH: "%b-%Y",
+                      _c.FR_WK: "%d-%b-%Y",
+                      _c.FR_BUS: "%d-%b-%Y",
+                      _c.FR_DAY: "%d-%b-%Y",
+                      _c.FR_UND: "%d-%b-%Y",
+                      _c.FR_HR: "%d-%b-%Y %H:00",
+                      _c.FR_MIN: "%d-%b-%Y %H:%M",
+                      _c.FR_SEC: "%d-%b-%Y %H:%M:%S"
                       }
+    
+    for x in range(7): default_fmtstr[_c.FR_WK+x] = default_fmtstr[_c.FR_WK]
       
     def __init__(self, freq, value=None, string=None,
                  year=None, month=None, day=None, quarter=None, 
@@ -141,6 +143,7 @@ class Date:
             self.freq = corelib.check_freq(freq)
         self.freqstr = corelib.freq_tostr(self.freq)
         
+        _freqGroup = get_freq_group(self.freq)
         
         if value is not None:
             if isinstance(value, ndarray):
@@ -165,9 +168,11 @@ class Date:
             elif self.freq == _c.FR_BUS:
                 valtmp = (value - 1)//5
                 self.datetime = dt.datetime.fromordinal(value + valtmp*2)
-            elif self.freq == _c.FR_WK:
+            elif _freqGroup == _c.FR_WK:
+                """value=1 must correspond to first FULL week in the year 0001
+                ending on the given day of the week"""
                 self.datetime = dt.datetime(1,1,7) + \
-                                dt.timedelta(days=(value-1)*7)
+                                dt.timedelta(days=(value-1)*7 + (self.freq - _c.FR_WK))
             elif self.freq == _c.FR_MTH:
                 year = (value - 1)//12 + 1
                 month = value - (year - 1)*12
@@ -196,7 +201,7 @@ class Date:
             # First, some basic checks.....
             if year is None:
                 raise InsufficientDateError            
-            if self.freq in (_c.FR_BUS, _c.FR_DAY, _c.FR_WK, _c.FR_UND):
+            if _freqGroup in (_c.FR_BUS, _c.FR_DAY, _c.FR_WK, _c.FR_UND):
                 if month is None or day is None: 
                     raise InsufficientDateError
             elif self.freq == _c.FR_MTH:
@@ -215,7 +220,7 @@ class Date:
                 if month is None or day is None or second is None: 
                     raise InsufficientDateError
                 
-            if self.freq in (_c.FR_BUS, _c.FR_DAY, _c.FR_WK,
+            if _freqGroup in (_c.FR_BUS, _c.FR_DAY, _c.FR_WK,
                              _c.FR_MTH, _c.FR_QTR, _c.FR_ANN):
                 self.datetime = truncateDate(self.freq, dt.datetime(year, month, day))
                 if self.freq == _c.FR_BUS:
@@ -239,7 +244,7 @@ class Date:
                     second = 0
                 else:
                     second = second % 60
-                self.datetime = truncateDate(self.freqstr,
+                self.datetime = truncateDate(self.freq,
                                              dt.datetime(year, month, day, 
                                                          hour, minute, second))
             else:
@@ -342,6 +347,7 @@ class Date:
     
     def __value(self):   
         "Converts the date to an integer, depending on the current frequency."
+        _freqGroup = get_freq_group(self.freq)
         # Secondly......
         if self.freq == _c.FR_SEC:
             delta = (self.datetime - secondlyOriginDate)
@@ -369,7 +375,7 @@ class Date:
             weeks = days // 7
             val = days - weeks*2  
         # Weekly........
-        elif self.freq == _c.FR_WK:
+        elif _freqGroup == _c.FR_WK:
             val = self.datetime.toordinal()//7
         # Monthly.......
         elif self.freq == _c.FR_MTH:
@@ -386,13 +392,13 @@ class Date:
     def strfmt(self, fmt):
         "Formats the date"
         if fmt is None:
-            fmt = self.default_fmtstr[self.freqstr]
+            fmt = self.default_fmtstr[self.freq]
         if self.freq == _c.FR_UND:
             return str(self.value)
         return cseries.strfmt(self.datetime, fmt)
             
     def __str__(self):
-        return self.strfmt(self.default_fmtstr[self.freqstr])
+        return self.strfmt(self.default_fmtstr[self.freq])
 
     def __repr__(self): 
         return "<%s : %s>" % (str(self.freqstr), str(self))
@@ -428,6 +434,10 @@ class Date:
 #---- --- Functions ---
 #####---------------------------------------------------------------------------
 
+def get_freq_group(freq):
+    # truncate frequency to nearest thousand
+    return (freq//1000)*1000
+
 def mx_to_datetime(mxDate):
     microsecond = 1000000*(mxDate.second % 1)
     return dt.datetime(mxDate.year, mxDate.month,
@@ -439,6 +449,7 @@ def mx_to_datetime(mxDate):
 def truncateDate(freq, datetime):
     "Chops off the irrelevant information from the datetime object passed in."
     freq = corelib.check_freq(freq)
+    _freqGroup = get_freq_group(freq)
     if freq == _c.FR_MIN:
         return dt.datetime(datetime.year, datetime.month, datetime.day, \
                            datetime.hour, datetime.minute)
@@ -449,9 +460,10 @@ def truncateDate(freq, datetime):
         if freq == _c.FR_BUS and datetime.isoweekday() in (6,7):
             raise ValueError("Weekend passed as business day")
         return dt.datetime(datetime.year, datetime.month, datetime.day)
-    elif freq == _c.FR_WK:
+    elif _freqGroup == _c.FR_WK:
         d = datetime.toordinal()
-        return dt.datetime.fromordinal(d + (7 - d % 7) % 7)
+        day_adj = (7 - (freq - _c.FR_WK)) % 7
+        return dt.datetime.fromordinal(d + ((7 - day_adj) - d % 7) % 7)
     elif freq == _c.FR_MTH:
         return dt.datetime(datetime.year, datetime.month, 1)
     elif freq == _c.FR_QTR:
@@ -469,20 +481,12 @@ def monthToQuarter(monthNum):
 def thisday(freq):
     "Returns today's date, at the given frequency `freq`."
     freq = corelib.check_freq(freq)
+    _freqGroup = get_freq_group(freq)
     tempDate = dt.datetime.now()
     # if it is Saturday or Sunday currently, freq==B, then we want to use Friday
     if freq == _c.FR_BUS and tempDate.isoweekday() >= 6:
         tempDate = tempDate - dt.timedelta(days=(tempDate.isoweekday() - 5))
-    if freq in (_c.FR_BUS,_c.FR_DAY,
-                _c.FR_HR,_c.FR_SEC,_c.FR_MIN,
-                _c.FR_WK,_c.FR_UND):
-        return Date(freq, datetime=tempDate)
-    elif freq == _c.FR_MTH:
-        return Date(freq, year=tempDate.year, month=tempDate.month)
-    elif freq == _c.FR_QTR:
-        return Date(freq, year=tempDate.year, quarter=monthToQuarter(tempDate.month))
-    elif freq == _c.FR_ANN:
-        return Date(freq, year=tempDate.year)
+    return Date(freq=freq, datetime=tempDate)
 today = thisday
 
 def prevbusday(day_end_hour=18, day_end_min=0):
@@ -599,7 +603,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
     def __new__(cls, dates=None, freq=None, copy=False):
         # Get the frequency ......
         if freq is None:
-            _freq = getattr(dates, 'freq', -9999)
+            _freq = getattr(dates, 'freq', _c.FR_UND)
         else:
             _freq = corelib.check_freq(freq)
         cls._defaultfreq = corelib.check_freq(_freq)
@@ -618,7 +622,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
             raise ArithmeticDateError, "(function %s)" % context[0].__name__
     
     def __array_finalize__(self, obj):
-        self.freq = getattr(obj, 'freq', -9999)
+        self.freq = getattr(obj, 'freq', _c.FR_UND)
         self._cachedinfo = dict(toobj=None, tostr=None, toord=None, 
                                 steps=None, full=None, hasdups=None)
         if hasattr(obj,'_cachedinfo'):
