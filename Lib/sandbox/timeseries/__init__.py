@@ -24,10 +24,10 @@ from tmulti import *
 import reportlib
 from reportlib import *
 import plotlib
-import addons
+from addons import filters, interpolate
 
 
-__all__ = ['tdates', 'tseries','tmulti','reportlib']
+__all__ = ['tdates', 'tseries','tmulti','reportlib','filters','interpolate']
 __all__ += tdates.__all__
 __all__ += tseries.__all__
 __all__ += tmulti.__all__
