@@ -955,7 +955,7 @@ as well as where data are initially missing (masked).
         raise ValueError,"Data should be a valid TimeSeries!"
     dates = data._dates
     if dates.ndim == 1:
-        dates_lims = dates[[0,-1]]
+        dates_lim = dates[[0,-1]]
     else:
         dates_lim = dates.ravel()[[0,-1]]
     # Check the period .....................
