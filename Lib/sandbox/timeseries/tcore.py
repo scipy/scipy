@@ -88,12 +88,25 @@ def fmtObserv(obStr):
     else:
         raise ValueError("Invalid value for observed attribute: %s " % str(obStr))
 
+_weekly_prefixes = ['W','WEEK','WEEKLY']
+_week_end_map = {
+    FR_WKSUN:'SUNDAY',
+    FR_WKSAT:'SATURDAY',
+    FR_WKFRI:'FRIDAY',
+    FR_WKTHU:'THURSDAY',
+    FR_WKWED:'WEDNESDAY',
+    FR_WKTUE:'TUESDAY',
+    FR_WKMON:'MONDAY'}
 
+def _gen_weekly_strs(day):
+    result = []
+    for pr in _weekly_prefixes:
+        result += [pr+'-'+day_str for day_str in (day[:3], day)]
+    return result
 
 freq_dict = { FR_ANN: ['A','Y','ANNUAL','ANNUALLY','YEAR','YEARLY'],
               FR_QTR: ['Q','QUARTER','QUARTERLY',],
               FR_MTH: ['M','MONTH','MONTHLY',],
-              FR_WK: ['W','WEEK','WEEKLY',],
               FR_BUS: ['B','BUSINESS','BUSINESSLY'],
               FR_DAY: ['D','DAY','DAILY',],
               FR_HR: ['H','HOUR','HOURLY',],
@@ -101,6 +114,11 @@ freq_dict = { FR_ANN: ['A','Y','ANNUAL','ANNUALLY','YEAR','YEARLY'],
               FR_SEC: ['S','SECOND','SECONDLY',],
               FR_UND: ['U','UNDEF','UNDEFINED'],
                 }
+                
+for _freq, day_str in _week_end_map.iteritems():
+    freq_dict[_freq] = _gen_weekly_strs(day_str)
+freq_dict[FR_WK] += _weekly_prefixes
+    
 freq_revdict = reverse_dict(freq_dict)
 
 def freq_fromstr(freq_asstr):
