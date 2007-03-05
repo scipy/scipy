@@ -3,12 +3,12 @@ Classes definition for the support of individual dates and array of dates.
 
 :author: Pierre GF Gerard-Marchant & Matt Knox
 :contact: pierregm_at_uga_dot_edu - mattknox_ca_at_hotmail_dot_com
-:version: $Id$
+:version: $Id: tdates.py 2815 2007-03-02 16:39:07Z mattknox_ca $
 """
-__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author$)"
+__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author: mattknox_ca $)"
 __version__ = '1.0'
-__revision__ = "$Revision$"
-__date__     = '$Date$'
+__revision__ = "$Revision: 2815 $"
+__date__     = '$Date: 2007-03-02 11:39:07 -0500 (Fri, 02 Mar 2007) $'
 
 import datetime as dt
 
@@ -35,6 +35,7 @@ except ImportError:
 from parser import DateFromString, DateTimeFromString    
 
 import tcore as corelib
+import tcore as _c
 import cseries
 
 
@@ -47,7 +48,6 @@ __all__ = [
 'truncateDate','monthToQuarter','thisday','today','prevbusday','asfreq',
 'period_break'
            ]
-
 
 #####---------------------------------------------------------------------------
 #---- --- Date Info ---
@@ -147,40 +147,42 @@ class Date:
                 value = int(value)
         
             if isinstance(value, str):
-                if self.freqstr in ('H', 'T', 'S'):
+                if self.freq in (_c.FR_HR, _c.FR_MIN, _c.FR_SEC):
                     self.datetime = DateTimeFromString(value)
                 else:
                     self.datetime = DateFromString(value)
-            elif self.freqstr == 'A':
-                self.datetime = dt.datetime(value, 1, 1)
-            elif self.freqstr == 'B':
+
+            elif self.freq == _c.FR_SEC:
+                self.datetime = secondlyOriginDate + dt.timedelta(seconds=value)
+            elif self.freq == _c.FR_MIN:
+                self.datetime = minutelyOriginDate + dt.timedelta(minutes=value)
+            elif self.freq == _c.FR_HR:
+                self.datetime = hourlyOriginDate + dt.timedelta(hours=value)
+            elif self.freq == _c.FR_DAY:
+                self.datetime = dt.datetime.fromordinal(value)
+            elif self.freq == _c.FR_UND:
+                self.datetime = int(value)
+            elif self.freq == _c.FR_BUS:
                 valtmp = (value - 1)//5
                 self.datetime = dt.datetime.fromordinal(value + valtmp*2)
-#            elif self.freqstr in 'DU':
-            elif self.freqstr == 'D':
-                self.datetime = dt.datetime.fromordinal(value)
-            elif self.freqstr == 'U':
-                self.datetime = int(value)
-            elif self.freqstr == 'H':
-                self.datetime = hourlyOriginDate + dt.timedelta(hours=value)
-            elif self.freqstr == 'M':
+            elif self.freq == _c.FR_WK:
+                self.datetime = dt.datetime(1,1,7) + \
+                                dt.timedelta(days=(value-1)*7)
+            elif self.freq == _c.FR_MTH:
                 year = (value - 1)//12 + 1
                 month = value - (year - 1)*12
                 self.datetime = dt.datetime(year, month, 1)
-            elif self.freqstr == 'Q':
+            elif self.freq == _c.FR_QTR:
                 year = (value - 1)//4 + 1
                 month = (value - (year - 1)*4)*3
                 self.datetime = dt.datetime(year, month, 1)
-            elif self.freqstr == 'S':
-                self.datetime = secondlyOriginDate + dt.timedelta(seconds=value)
-            elif self.freqstr == 'T':
-                self.datetime = minutelyOriginDate + dt.timedelta(minutes=value)
-            elif self.freqstr == 'W':
-                self.datetime = dt.datetime(1,1,7) + \
-                                dt.timedelta(days=(value-1)*7)
+            elif self.freq == _c.FR_ANN:
+                self.datetime = dt.datetime(value, 1, 1)
+            else:
+                raise ValueError("unrecognized frequency: "+str(self.freq))
         
         elif string is not None:
-            if self.freqstr in ('H', 'T', 'S'):
+            if self.freq in (_c.FR_HR, _c.FR_MIN, _c.FR_SEC):
                 self.datetime = DateTimeFromString(string)
             else:
                 self.datetime = DateFromString(string)
@@ -194,31 +196,32 @@ class Date:
             # First, some basic checks.....
             if year is None:
                 raise InsufficientDateError            
-            if self.freqstr in 'BDWU':
+            if self.freq in (_c.FR_BUS, _c.FR_DAY, _c.FR_WK, _c.FR_UND):
                 if month is None or day is None: 
                     raise InsufficientDateError
-            elif self.freqstr == 'M':
+            elif self.freq == _c.FR_MTH:
                 if month is None: 
                     raise InsufficientDateError
                 day = 1
-            elif self.freqstr == 'Q':
+            elif self.freq == _c.FR_QTR:
                 if quarter is None: 
                     raise InsufficientDateError
                 month = quarter * 3
                 day = 1
-            elif self.freqstr == 'A':
+            elif self.freq == _c.FR_ANN:
                 month = 1
                 day = 1
-            elif self.freqstr == 'S':
+            elif self.freq == _c.FR_SEC:
                 if month is None or day is None or second is None: 
                     raise InsufficientDateError
                 
-            if self.freqstr in ['A','B','D','M','Q','W']:
+            if self.freq in (_c.FR_BUS, _c.FR_DAY, _c.FR_WK,
+                             _c.FR_MTH, _c.FR_QTR, _c.FR_ANN):
                 self.datetime = truncateDate(self.freq, dt.datetime(year, month, day))
-                if self.freqstr == 'B':
+                if self.freq == _c.FR_BUS:
                     if self.datetime.isoweekday() in [6,7]:
                         raise ValueError("Weekend passed as business day")
-            elif self.freqstr in 'HTS':
+            elif self.freq in (_c.FR_HR, _c.FR_MIN, _c.FR_SEC):
                 if hour is None:
                     if minute is None:
                         if second is None:
@@ -239,6 +242,9 @@ class Date:
                 self.datetime = truncateDate(self.freqstr,
                                              dt.datetime(year, month, day, 
                                                          hour, minute, second))
+            else:
+                raise ValueError("unrecognized frequency: "+str(self.freq))
+
         self.value = self.__value()
 
     def __getitem__(self, indx):
@@ -336,52 +342,52 @@ class Date:
     
     def __value(self):   
         "Converts the date to an integer, depending on the current frequency."
-        # Annual .......
-        if self.freqstr == 'A':
-            val = self.datetime.year
-        # Quarterly.....
-        elif self.freqstr == 'Q':
-            val = (self.datetime.year-1)*4 + self.datetime.month//3
-        # Monthly.......
-        elif self.freqstr == 'M':
-            val = (self.datetime.year-1)*12 + self.datetime.month
-        # Weekly........
-        elif self.freqstr == 'W':
-            val = self.datetime.toordinal()//7
-        # Business days.
-        elif self.freqstr == 'B':
-            days = self.datetime.toordinal()
-            weeks = days // 7
-            val = days - weeks*2  
-        # Daily.........
-#        elif self.freqstr in 'DU':
-        elif self.freqstr == 'D':
+        # Secondly......
+        if self.freq == _c.FR_SEC:
+            delta = (self.datetime - secondlyOriginDate)
+            val = delta.days*86400 + delta.seconds
+        # Minutely......
+        elif self.freq == _c.FR_MIN:
+            delta = (self.datetime - minutelyOriginDate)
+            val = delta.days*1440 + delta.seconds/(60)
+        # Hourly........
+        elif self.freq == _c.FR_HR:
+            delta = (self.datetime - hourlyOriginDate)
+            val = delta.days*24 + delta.seconds/(3600)
+        # Daily
+        elif self.freq == _c.FR_DAY:
             val = self.datetime.toordinal()
-        # Undefined.....
-        elif self.freqstr == 'U':
+        # undefined
+        elif self.freq == _c.FR_UND:
             if not hasattr(self.datetime, 'toordinal'):
                 val = self.datetime
             else:
                 val = self.datetime.toordinal()
-        # Hourly........
-        elif self.freqstr == 'H':
-            delta = (self.datetime - hourlyOriginDate)
-            val = delta.days*24 + delta.seconds/(3600)
-        # Minutely......
-        elif self.freqstr == 'T':
-            delta = (self.datetime - minutelyOriginDate)
-            val = delta.days*1440 + delta.seconds/(60)
-        # Secondly......
-        elif self.freqstr == 'S':
-            delta = (self.datetime - secondlyOriginDate)
-            val = delta.days*86400 + delta.seconds
+        # Business days.
+        elif self.freq == _c.FR_BUS:
+            days = self.datetime.toordinal()
+            weeks = days // 7
+            val = days - weeks*2  
+        # Weekly........
+        elif self.freq == _c.FR_WK:
+            val = self.datetime.toordinal()//7
+        # Monthly.......
+        elif self.freq == _c.FR_MTH:
+            val = (self.datetime.year-1)*12 + self.datetime.month
+        # Quarterly.....
+        elif self.freq == _c.FR_QTR:
+            val = (self.datetime.year-1)*4 + self.datetime.month//3
+        # Annual .......
+        elif self.freq == _c.FR_ANN:
+            val = self.datetime.year
+
         return int(val)
     #......................................................        
     def strfmt(self, fmt):
         "Formats the date"
         if fmt is None:
             fmt = self.default_fmtstr[self.freqstr]
-        if self.freqstr == 'U':
+        if self.freq == _c.FR_UND:
             return str(self.value)
         return cseries.strfmt(self.datetime, fmt)
             
@@ -394,7 +400,7 @@ class Date:
     def toordinal(self):
         "Returns the date as an ordinal."
         # FIXME: We shouldn't need the test if we were in C
-        if self.freqstr == 'U':
+        if self.freq == _c.FR_UND:
             return self.value
         return self.datetime.toordinal()
 
@@ -432,26 +438,26 @@ def mx_to_datetime(mxDate):
 
 def truncateDate(freq, datetime):
     "Chops off the irrelevant information from the datetime object passed in."
-    freqstr = corelib.check_freqstr(freq)
-    if freqstr == 'A':
-        return dt.datetime(datetime.year, 1, 1)
-    elif freqstr == 'Q':
-        return dt.datetime(datetime.year, monthToQuarter(datetime.month)*3, 1)
-    elif freqstr == 'M':
-        return dt.datetime(datetime.year, datetime.month, 1)
-    elif freqstr == 'W':
-        d = datetime.toordinal()
-        return dt.datetime.fromordinal(d + (7 - d % 7) % 7)
-    elif freqstr in 'BD':
-        if freq == 'B' and datetime.isoweekday() in (6,7):
-            raise ValueError("Weekend passed as business day")
-        return dt.datetime(datetime.year, datetime.month, datetime.day)
-    elif freqstr == 'H':
-        return dt.datetime(datetime.year, datetime.month, datetime.day, \
-                           datetime.hour)
-    elif freqstr == 'T':
+    freq = corelib.check_freq(freq)
+    if freq == _c.FR_MIN:
         return dt.datetime(datetime.year, datetime.month, datetime.day, \
                            datetime.hour, datetime.minute)
+    elif freq == _c.FR_HR:
+        return dt.datetime(datetime.year, datetime.month, datetime.day, \
+                           datetime.hour)
+    elif freq in (_c.FR_BUS, _c.FR_DAY):
+        if freq == _c.FR_BUS and datetime.isoweekday() in (6,7):
+            raise ValueError("Weekend passed as business day")
+        return dt.datetime(datetime.year, datetime.month, datetime.day)
+    elif freq == _c.FR_WK:
+        d = datetime.toordinal()
+        return dt.datetime.fromordinal(d + (7 - d % 7) % 7)
+    elif freq == _c.FR_MTH:
+        return dt.datetime(datetime.year, datetime.month, 1)
+    elif freq == _c.FR_QTR:
+        return dt.datetime(datetime.year, monthToQuarter(datetime.month)*3, 1)
+    elif freq == _c.FR_ANN:
+        return dt.datetime(datetime.year, 1, 1)
     else:
         return datetime
     
@@ -462,18 +468,20 @@ def monthToQuarter(monthNum):
 
 def thisday(freq):
     "Returns today's date, at the given frequency `freq`."
-    freqstr = corelib.check_freqstr(freq)
+    freq = corelib.check_freq(freq)
     tempDate = dt.datetime.now()
     # if it is Saturday or Sunday currently, freq==B, then we want to use Friday
-    if freqstr == 'B' and tempDate.isoweekday() >= 6:
+    if freq == _c.FR_BUS and tempDate.isoweekday() >= 6:
         tempDate = tempDate - dt.timedelta(days=(tempDate.isoweekday() - 5))
-    if freqstr in ('B','D','H','S','T','W','U'):
+    if freq in (_c.FR_BUS,_c.FR_DAY,
+                _c.FR_HR,_c.FR_SEC,_c.FR_MIN,
+                _c.FR_WK,_c.FR_UND):
         return Date(freq, datetime=tempDate)
-    elif freqstr == 'M':
+    elif freq == _c.FR_MTH:
         return Date(freq, year=tempDate.year, month=tempDate.month)
-    elif freqstr == 'Q':
+    elif freq == _c.FR_QTR:
         return Date(freq, year=tempDate.year, quarter=monthToQuarter(tempDate.month))
-    elif freqstr == 'A':
+    elif freq == _c.FR_ANN:
         return Date(freq, year=tempDate.year)
 today = thisday
 
@@ -483,9 +491,9 @@ def prevbusday(day_end_hour=18, day_end_min=0):
     dateNum = tempDate.hour + float(tempDate.minute)/60
     checkNum = day_end_hour + float(day_end_min)/60
     if dateNum < checkNum: 
-        return thisday('B') - 1
+        return thisday(_c.FR_BUS) - 1
     else: 
-        return thisday('B')
+        return thisday(_c.FR_BUS)
                 
 def asfreq(date, toFreq, relation="BEFORE"):
     """Returns a date converted to another frequency `toFreq`, according to the
@@ -499,9 +507,9 @@ def asfreq(date, toFreq, relation="BEFORE"):
     if not isinstance(date, Date):
         raise DateError, "Date should be a valid Date instance!"
 
-    if date.freqstr == 'U':
+    if date.freq == _c.FR_UND:
         warnings.warn("Undefined frequency: assuming daily!")
-        fromfreq = corelib.freq_revdict['D']
+        fromfreq = _c.FR_DAY
     else:
         fromfreq = date.freq
     
@@ -729,7 +737,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
         # Note: we better try to cache the result
         if self._cachedinfo['toord'] is None:
 #            diter = (Date(self.freq, value=d).toordinal() for d in self)
-            if self.freq == -9999:
+            if self.freq == _c.FR_UND:
                 diter = (d.value for d in self)
             else:
                 diter = (d.toordinal() for d in self)
@@ -754,17 +762,18 @@ accesses the array element by element. Therefore, `d` is a Date object.
     def asfreq(self, freq=None, relation="BEFORE"):
         "Converts the dates to another frequency."
         # Note: As we define a new object, we don't need caching
-        if freq is None or freq == -9999:
+        if freq is None or freq == _c.FR_UND:
             return self
         tofreq = corelib.check_freq(freq)
         if tofreq == self.freq:
             return self    
         _rel = relation.upper()[0]    
         fromfreq = self.freq
-        if fromfreq == -9999:
-             fromfreq = 6000
+        if fromfreq == _c.FR_UND:
+             fromfreq = _c.FR_DAY
         new = cseries.asfreq(numeric.asarray(self), fromfreq, tofreq, _rel)
         return DateArray(new, freq=freq)
+
     #......................................................
     def find_dates(self, *dates):
         "Returns the indices corresponding to given dates, as an array."
@@ -853,30 +862,30 @@ def guess_freq(dates):
     ddif = numeric.asarray(numpy.diff(dates))
     ddif.sort()
     if ddif[0] == ddif[-1] == 1.:
-        fcode = 'D'
+        fcode = _c.FR_DAY
     elif (ddif[0] == 1.) and (ddif[-1] == 3.):
-        fcode = 'B'
+        fcode = _c.FR_BUS
     elif (ddif[0] > 3.) and  (ddif[-1] == 7.):
-        fcode = 'W'
+        fcode = _c.FR_WK
     elif (ddif[0] >= 28.) and (ddif[-1] <= 31.):
-        fcode = 'M'
+        fcode = _c.FR_MTH
     elif (ddif[0] >= 90.) and (ddif[-1] <= 92.):
-        fcode = 'Q'
+        fcode = _c.FR_QTR
     elif (ddif[0] >= 365.) and (ddif[-1] <= 366.):
-        fcode = 'A'
+        fcode = _c.FR_ANN
     elif numpy.abs(24.*ddif[0] - 1) <= 1e-5 and \
          numpy.abs(24.*ddif[-1] - 1) <= 1e-5:
-        fcode = 'H'
+        fcode = _c.FR_HR
     elif numpy.abs(1440.*ddif[0] - 1) <= 1e-5 and \
          numpy.abs(1440.*ddif[-1] - 1) <= 1e-5:
-        fcode = 'T'
+        fcode = _c.FR_MIN
     elif numpy.abs(86400.*ddif[0] - 1) <= 1e-5 and \
          numpy.abs(86400.*ddif[-1] - 1) <= 1e-5:
-        fcode = 'S'
+        fcode = _c.FR_SEC
     else:
         warnings.warn("Unable to estimate the frequency! %.3f<>%.3f" %\
                       (ddif[0], ddif[-1]))
-        fcode = 'U'
+        fcode = _c.FR_UND
     return fcode
 
 
