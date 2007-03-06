@@ -83,7 +83,7 @@ class fmtfunc_wrapper:
     def __call__ (self, item):
         "Execute the call behavior."
 
-        if hasattr(item, "_mask") and item._mask:
+        if hasattr(item, "_mask") and isinstance(item._mask, bool) and item._mask:
             return self.mr
         else:
             return self.f(item)
