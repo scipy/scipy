@@ -104,8 +104,31 @@ def _gen_weekly_strs(day):
         result += [pr+'-'+day_str for day_str in (day[:3], day)]
     return result
 
-freq_dict = { FR_ANN: ['A','Y','ANNUAL','ANNUALLY','YEAR','YEARLY'],
-              FR_QTR: ['Q','QUARTER','QUARTERLY',],
+_annual_prefixes = ['A','Y','ANNUAL','ANNUALLY','YEAR','YEARLY']
+_year_end_map = {
+    FR_ANNJAN:'JANUARY',
+    FR_ANNFEB:'FEBRUARY',
+    FR_ANNMAR:'MARCH',
+    FR_ANNAPR:'APRIL',
+    FR_ANNMAY:'MAY',
+    FR_ANNJUN:'JUNE',
+    FR_ANNJUL:'JULY',
+    FR_ANNAUG:'AUGUST',
+    FR_ANNSEP:'SEPTEMBER',
+    FR_ANNOCT:'OCTOBER',
+    FR_ANNNOV:'NOVEMBER',
+    FR_ANNDEC:'DECEMBER'
+    }
+
+def _gen_annual_strs(month):
+    result = []
+    for pr in _annual_prefixes:
+        result += [pr+'-'+mth_str for mth_str in (month[:3], month)]
+    return result
+
+
+
+freq_dict = { FR_QTR: ['Q','QUARTER','QUARTERLY',],
               FR_MTH: ['M','MONTH','MONTHLY',],
               FR_BUS: ['B','BUSINESS','BUSINESSLY'],
               FR_DAY: ['D','DAY','DAILY',],
@@ -118,7 +141,11 @@ freq_dict = { FR_ANN: ['A','Y','ANNUAL','ANNUALLY','YEAR','YEARLY'],
 for _freq, day_str in _week_end_map.iteritems():
     freq_dict[_freq] = _gen_weekly_strs(day_str)
 freq_dict[FR_WK] += _weekly_prefixes
-    
+
+for _freq, mth_str in _year_end_map.iteritems():
+    freq_dict[_freq] = _gen_annual_strs(mth_str)
+freq_dict[FR_ANN] += _annual_prefixes
+
 freq_revdict = reverse_dict(freq_dict)
 
 def freq_fromstr(freq_asstr):
