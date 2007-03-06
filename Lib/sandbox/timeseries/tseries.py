@@ -955,22 +955,25 @@ as well as where data are initially missing (masked).
         raise ValueError,"Data should be a valid TimeSeries!"
     dates = data._dates
     if dates.ndim == 1:
-        dates_lim = dates[[0,-1]]
+        dates_lims = dates[[0,-1]]
     else:
-        dates_lim = dates.ravel()[[0,-1]]
+        dates_lims = dates.ravel()[[0,-1]]
     # Check the period .....................
-    if period is not None and isinstance(period, (tuple, list, ndarray)):
-        (start_date, end_date) = (period[0], period[-1])    
+    if period is not None:
+        if isinstance(period, (tuple, list, ndarray)):
+            (start_date, end_date) = (period[0], period[-1])   
+        else:
+            (start_date, end_date) = (period, start_date)   
     # Check the starting date ..............
     if start_date is None:
-        start_date = dates_lim[0]
+        start_date = dates_lims[0]
     elif isinstance(start_date, str):
         start_date = Date(data.freq, string=start_date)
     elif not isinstance(start_date, Date):
         raise DateError,"Starting date should be a valid Date object!"
     # Check the ending date ................
     if end_date is None:
-        end_date = dates_lim[-1]
+        end_date = dates_lims[-1]
     elif isinstance(end_date, str):
         end_date = Date(data.freq, string=end_date)
     elif not isinstance(end_date, Date):
