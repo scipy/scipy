@@ -9,6 +9,19 @@
 static char cseries_doc[] = "Speed sensitive time series operations";
 
 #define FR_ANN  1000  /* Annual */
+#define FR_ANNDEC  FR_ANN  /* Annual - December year end*/
+#define FR_ANNJAN  1001  /* Annual - January year end*/
+#define FR_ANNFEB  1002  /* Annual - February year end*/
+#define FR_ANNMAR  1003  /* Annual - March year end*/
+#define FR_ANNAPR  1004  /* Annual - April year end*/
+#define FR_ANNMAY  1005  /* Annual - May year end*/
+#define FR_ANNJUN  1006  /* Annual - June year end*/
+#define FR_ANNJUL  1007  /* Annual - July year end*/
+#define FR_ANNAUG  1008  /* Annual - August year end*/
+#define FR_ANNSEP  1009  /* Annual - September year end*/
+#define FR_ANNOCT  1010  /* Annual - October year end*/
+#define FR_ANNNOV  1011  /* Annual - November year end*/
+
 #define FR_QTR  2000  /* Quarterly */
 #define FR_MTH  3000  /* Monthly */
 
@@ -38,8 +51,12 @@ static char cseries_doc[] = "Speed sensitive time series operations";
 #define CHECK_ASFREQ(result) if ((result) == DINFO_ERR) return NULL
 
 struct asfreq_info{
-    int to_week_end; //day the week ends on in the "to" frequency
     int from_week_end; //day the week ends on in the "from" frequency
+    int to_week_end; //day the week ends on in the "to" frequency
+
+    int from_a_year_end; //month the year ends on in the "from" frequency
+    int to_a_year_end; //month the year ends on in the "to" frequency
+
 };
 
 static struct asfreq_info NULL_AF_INFO;
@@ -108,25 +125,25 @@ int dInfoCalc_Leapyear(register long year,
 }
 
 static
-int dInfoCalc_ISOWeek(struct date_info dinfo)
+int dInfoCalc_ISOWeek(struct date_info *dinfo)
 {
     int week;
 
     /* Estimate */
-    week = (dinfo.day_of_year-1) - dinfo.day_of_week + 3;
+    week = (dinfo->day_of_year-1) - dinfo->day_of_week + 3;
     if (week >= 0) week = week / 7 + 1;
 
     /* Verify */
     if (week < 0) {
         /* The day lies in last week of the previous year */
         if ((week > -2) ||
-            (week == -2 && dInfoCalc_Leapyear(dinfo.year-1, dinfo.calendar)))
+            (week == -2 && dInfoCalc_Leapyear(dinfo->year-1, dinfo->calendar)))
             week = 53;
         else
             week = 52;
     } else if (week == 53) {
     /* Check if the week belongs to year or year+1 */
-        if (31-dinfo.day + dinfo.day_of_week < 3) {
+        if (31-dinfo->day + dinfo->day_of_week < 3) {
             week = 1;
         }
     }
@@ -462,15 +479,17 @@ static long absdate_from_ymd(int y, int m, int d) {
 
 //************ FROM DAILY ***************
 
-static long asfreq_DtoA(long fromDate, char relation, struct asfreq_info af_info) {
+static long asfreq_DtoA(long fromDate, char relation, struct asfreq_info *af_info) {
 
     struct date_info dinfo;
     if (dInfoCalc_SetFromAbsDate(&dinfo, fromDate,
                     GREGORIAN_CALENDAR)) return DINFO_ERR;
-    return (long)(dinfo.year);
+    if (dinfo.month > af_info->to_a_year_end) { return (long)(dinfo.year + 1); }
+    else { return (long)(dinfo.year); }
 }
 
-static long asfreq_DtoQ(long fromDate, char relation, struct asfreq_info af_info) {
+
+static long asfreq_DtoQ(long fromDate, char relation, struct asfreq_info *af_info) {
 
     struct date_info dinfo;
     if (dInfoCalc_SetFromAbsDate(&dinfo, fromDate,
@@ -478,7 +497,7 @@ static long asfreq_DtoQ(long fromDate, char relation, struct asfreq_info af_info
     return (long)((dinfo.year - 1) * 4 + dinfo.quarter);
 }
 
-static long asfreq_DtoM(long fromDate, char relation, struct asfreq_info af_info) {
+static long asfreq_DtoM(long fromDate, char relation, struct asfreq_info *af_info) {
 
     struct date_info dinfo;
     if (dInfoCalc_SetFromAbsDate(&dinfo, fromDate,
@@ -486,11 +505,11 @@ static long asfreq_DtoM(long fromDate, char relation, struct asfreq_info af_info
     return (long)((dinfo.year - 1) * 12 + dinfo.month);
 }
 
-static long asfreq_DtoW(long fromDate, char relation, struct asfreq_info af_info) {
-    return (fromDate - (1 + af_info.to_week_end))/7 + 1;
+static long asfreq_DtoW(long fromDate, char relation, struct asfreq_info *af_info) {
+    return (fromDate - (1 + af_info->to_week_end))/7 + 1;
 }
 
-static long asfreq_DtoB(long fromDate, char relation, struct asfreq_info af_info) {
+static long asfreq_DtoB(long fromDate, char relation, struct asfreq_info *af_info) {
 
     struct date_info dinfo;
     if (dInfoCalc_SetFromAbsDate(&dinfo, fromDate,
@@ -503,7 +522,7 @@ static long asfreq_DtoB(long fromDate, char relation, struct asfreq_info af_info
     }
 }
 
-static long asfreq_DtoB_forConvert(long fromDate, char relation, struct asfreq_info af_info) {
+static long asfreq_DtoB_forConvert(long fromDate, char relation, struct asfreq_info *af_info) {
 
     struct date_info dinfo;
     if (dInfoCalc_SetFromAbsDate(&dinfo, fromDate,
@@ -517,7 +536,7 @@ static long asfreq_DtoB_forConvert(long fromDate, char relation, struct asfreq_i
 }
 
 // needed for getDateInfo function
-static long asfreq_DtoD(long fromDate, char relation, struct asfreq_info af_info) { return fromDate; }
+static long asfreq_DtoD(long fromDate, char relation, struct asfreq_info *af_info) { return fromDate; }
 
 static long asfreq_DtoHIGHFREQ(long fromDate, char relation, long periodsPerDay) {
     if (fromDate >= minval_D_toHighFreq) {
@@ -526,128 +545,129 @@ static long asfreq_DtoHIGHFREQ(long fromDate, char relation, long periodsPerDay)
     } else { return -1; }
 }
 
-static long asfreq_DtoH(long fromDate, char relation, struct asfreq_info af_info)
+static long asfreq_DtoH(long fromDate, char relation, struct asfreq_info *af_info)
     { return asfreq_DtoHIGHFREQ(fromDate, relation, 24); }
-static long asfreq_DtoT(long fromDate, char relation, struct asfreq_info af_info)
+static long asfreq_DtoT(long fromDate, char relation, struct asfreq_info *af_info)
     { return asfreq_DtoHIGHFREQ(fromDate, relation, 24*60); }
-static long asfreq_DtoS(long fromDate, char relation, struct asfreq_info af_info)
+static long asfreq_DtoS(long fromDate, char relation, struct asfreq_info *af_info)
     { return asfreq_DtoHIGHFREQ(fromDate, relation, 24*60*60); }
 
 //************ FROM SECONDLY ***************
 
-static long asfreq_StoD(long fromDate, char relation, struct asfreq_info af_info)
+static long asfreq_StoD(long fromDate, char relation, struct asfreq_info *af_info)
     { return (fromDate - 1)/(60*60*24) + minval_D_toHighFreq; }
 
-static long asfreq_StoA(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoA(asfreq_StoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_StoQ(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoQ(asfreq_StoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_StoM(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoM(asfreq_StoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_StoW(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoW(asfreq_StoD(fromDate, relation, NULL_AF_INFO), relation, af_info); }
-static long asfreq_StoB(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoB(asfreq_StoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_StoB_forConvert(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoB_forConvert(asfreq_StoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_StoT(long fromDate, char relation, struct asfreq_info af_info)
+static long asfreq_StoA(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoA(asfreq_StoD(fromDate, relation, &NULL_AF_INFO), relation, af_info); }
+static long asfreq_StoQ(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoQ(asfreq_StoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
+static long asfreq_StoM(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoM(asfreq_StoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
+static long asfreq_StoW(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoW(asfreq_StoD(fromDate, relation, &NULL_AF_INFO), relation, af_info); }
+static long asfreq_StoB(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoB(asfreq_StoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
+static long asfreq_StoB_forConvert(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoB_forConvert(asfreq_StoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
+static long asfreq_StoT(long fromDate, char relation, struct asfreq_info *af_info)
     { return (fromDate - 1)/60 + 1; }
-static long asfreq_StoH(long fromDate, char relation, struct asfreq_info af_info)
+static long asfreq_StoH(long fromDate, char relation, struct asfreq_info *af_info)
     { return (fromDate - 1)/(60*60) + 1; }
 
 //************ FROM MINUTELY ***************
 
-static long asfreq_TtoD(long fromDate, char relation, struct asfreq_info af_info)
+static long asfreq_TtoD(long fromDate, char relation, struct asfreq_info *af_info)
     { return (fromDate - 1)/(60*24) + minval_D_toHighFreq; }
 
-static long asfreq_TtoA(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoA(asfreq_TtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_TtoQ(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoQ(asfreq_TtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_TtoM(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoM(asfreq_TtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_TtoW(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoW(asfreq_TtoD(fromDate, relation, NULL_AF_INFO), relation, af_info); }
-static long asfreq_TtoB(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoB(asfreq_TtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
+static long asfreq_TtoA(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoA(asfreq_TtoD(fromDate, relation, &NULL_AF_INFO), relation, af_info); }
+static long asfreq_TtoQ(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoQ(asfreq_TtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
+static long asfreq_TtoM(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoM(asfreq_TtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
+static long asfreq_TtoW(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoW(asfreq_TtoD(fromDate, relation, &NULL_AF_INFO), relation, af_info); }
+static long asfreq_TtoB(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoB(asfreq_TtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
 
-static long asfreq_TtoB_forConvert(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoB_forConvert(asfreq_TtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
+static long asfreq_TtoB_forConvert(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoB_forConvert(asfreq_TtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
 
-static long asfreq_TtoH(long fromDate, char relation, struct asfreq_info af_info)
+static long asfreq_TtoH(long fromDate, char relation, struct asfreq_info *af_info)
     { return (fromDate - 1)/60 + 1; }
-static long asfreq_TtoS(long fromDate, char relation, struct asfreq_info af_info) {
+static long asfreq_TtoS(long fromDate, char relation, struct asfreq_info *af_info) {
     if (relation == 'B') {  return fromDate*60 - 59; }
     else                 {  return fromDate*60;      }}
 
 //************ FROM HOURLY ***************
 
-static long asfreq_HtoD(long fromDate, char relation, struct asfreq_info af_info)
+static long asfreq_HtoD(long fromDate, char relation, struct asfreq_info *af_info)
     { return (fromDate - 1)/24 + minval_D_toHighFreq; }
-static long asfreq_HtoA(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoA(asfreq_HtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_HtoQ(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoQ(asfreq_HtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_HtoM(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoM(asfreq_HtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_HtoW(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoW(asfreq_HtoD(fromDate, relation, NULL_AF_INFO), relation, af_info); }
-static long asfreq_HtoB(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoB(asfreq_HtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
+static long asfreq_HtoA(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoA(asfreq_HtoD(fromDate, relation, &NULL_AF_INFO), relation, af_info); }
+static long asfreq_HtoQ(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoQ(asfreq_HtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
+static long asfreq_HtoM(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoM(asfreq_HtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
+static long asfreq_HtoW(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoW(asfreq_HtoD(fromDate, relation, &NULL_AF_INFO), relation, af_info); }
+static long asfreq_HtoB(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoB(asfreq_HtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
 
-static long asfreq_HtoB_forConvert(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoB_forConvert(asfreq_HtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
+static long asfreq_HtoB_forConvert(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoB_forConvert(asfreq_HtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
 
 // calculation works out the same as TtoS, so we just call that function for HtoT
-static long asfreq_HtoT(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_TtoS(fromDate, relation, NULL_AF_INFO); }
-static long asfreq_HtoS(long fromDate, char relation, struct asfreq_info af_info) {
+static long asfreq_HtoT(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_TtoS(fromDate, relation, &NULL_AF_INFO); }
+static long asfreq_HtoS(long fromDate, char relation, struct asfreq_info *af_info) {
     if (relation == 'B') {  return fromDate*60*60 - 60*60 + 1; }
     else                 {  return fromDate*60*60;             }}
 
 //************ FROM BUSINESS ***************
 
-static long asfreq_BtoD(long fromDate, char relation, struct asfreq_info af_info)
+static long asfreq_BtoD(long fromDate, char relation, struct asfreq_info *af_info)
     { return ((fromDate-1)/5)*7 + (fromDate-1)%5 + 1; }
 
-static long asfreq_BtoA(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoA(asfreq_BtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
+static long asfreq_BtoA(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoA(asfreq_BtoD(fromDate, relation, &NULL_AF_INFO), relation, af_info); }
 
-static long asfreq_BtoQ(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoQ(asfreq_BtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
+static long asfreq_BtoQ(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoQ(asfreq_BtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
 
-static long asfreq_BtoM(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoM(asfreq_BtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
+static long asfreq_BtoM(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoM(asfreq_BtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
 
-static long asfreq_BtoW(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoW(asfreq_BtoD(fromDate, relation, NULL_AF_INFO), relation, af_info); }
+static long asfreq_BtoW(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoW(asfreq_BtoD(fromDate, relation, &NULL_AF_INFO), relation, af_info); }
 
-static long asfreq_BtoH(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoH(asfreq_BtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
+static long asfreq_BtoH(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoH(asfreq_BtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
 
-static long asfreq_BtoT(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoT(asfreq_BtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
+static long asfreq_BtoT(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoT(asfreq_BtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
 
-static long asfreq_BtoS(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoS(asfreq_BtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
+static long asfreq_BtoS(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoS(asfreq_BtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
 
 //************ FROM WEEKLY ***************
 
-static long asfreq_WtoD(long fromDate, char relation, struct asfreq_info af_info) {
-    if (relation == 'B') { return fromDate * 7 - 6 + af_info.from_week_end;}
-    else                 { return fromDate * 7 + af_info.from_week_end; }}
+static long asfreq_WtoD(long fromDate, char relation, struct asfreq_info *af_info) {
+    if (relation == 'B') { return fromDate * 7 - 6 + af_info->from_week_end;}
+    else                 { return fromDate * 7 + af_info->from_week_end; }
+}
 
-static long asfreq_WtoA(long fromDate, char relation, struct asfreq_info af_info) {
-    return asfreq_DtoA(asfreq_WtoD(fromDate, 'A', af_info), relation, NULL_AF_INFO); }
-static long asfreq_WtoQ(long fromDate, char relation, struct asfreq_info af_info) {
-    return asfreq_DtoQ(asfreq_WtoD(fromDate, 'A', af_info), relation, NULL_AF_INFO); }
-static long asfreq_WtoM(long fromDate, char relation, struct asfreq_info af_info) {
-    return asfreq_DtoM(asfreq_WtoD(fromDate, 'A', af_info), relation, NULL_AF_INFO); }
+static long asfreq_WtoA(long fromDate, char relation, struct asfreq_info *af_info) {
+    return asfreq_DtoA(asfreq_WtoD(fromDate, 'A', af_info), relation, af_info); }
+static long asfreq_WtoQ(long fromDate, char relation, struct asfreq_info *af_info) {
+    return asfreq_DtoQ(asfreq_WtoD(fromDate, 'A', af_info), relation, &NULL_AF_INFO); }
+static long asfreq_WtoM(long fromDate, char relation, struct asfreq_info *af_info) {
+    return asfreq_DtoM(asfreq_WtoD(fromDate, 'A', af_info), relation, &NULL_AF_INFO); }
 
-static long asfreq_WtoW(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoW(asfreq_WtoD(fromDate, relation, af_info), relation, NULL_AF_INFO); }
+static long asfreq_WtoW(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoW(asfreq_WtoD(fromDate, relation, af_info), relation, &NULL_AF_INFO); }
 
-static long asfreq_WtoB(long fromDate, char relation, struct asfreq_info af_info) {
+static long asfreq_WtoB(long fromDate, char relation, struct asfreq_info *af_info) {
 
     struct date_info dinfo;
     if (dInfoCalc_SetFromAbsDate(&dinfo, asfreq_WtoD(fromDate, relation, af_info),
@@ -657,12 +677,12 @@ static long asfreq_WtoB(long fromDate, char relation, struct asfreq_info af_info
     else                 { return DtoB_WeekendToFriday(dinfo); }
 }
 
-static long asfreq_WtoH(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoH(asfreq_WtoD(fromDate, relation, af_info), relation, NULL_AF_INFO); }
-static long asfreq_WtoT(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoT(asfreq_WtoD(fromDate, relation, af_info), relation, NULL_AF_INFO); }
-static long asfreq_WtoS(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoS(asfreq_WtoD(fromDate, relation, af_info), relation, NULL_AF_INFO); }
+static long asfreq_WtoH(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoH(asfreq_WtoD(fromDate, relation, af_info), relation, &NULL_AF_INFO); }
+static long asfreq_WtoT(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoT(asfreq_WtoD(fromDate, relation, af_info), relation, &NULL_AF_INFO); }
+static long asfreq_WtoS(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoS(asfreq_WtoD(fromDate, relation, af_info), relation, &NULL_AF_INFO); }
 
 //************ FROM MONTHLY ***************
 
@@ -671,7 +691,7 @@ static void MtoD_ym(long fromDate, long *y, long *m) {
     *m = fromDate - 12 * (*y) - 1;
 }
 
-static long asfreq_MtoD(long fromDate, char relation, struct asfreq_info af_info) {
+static long asfreq_MtoD(long fromDate, char relation, struct asfreq_info *af_info) {
 
     long y, m, absdate;
 
@@ -686,30 +706,35 @@ static long asfreq_MtoD(long fromDate, char relation, struct asfreq_info af_info
     }
 }
 
-static long asfreq_MtoA(long fromDate, char relation, struct asfreq_info af_info)
-    { return (fromDate - 1) / 12 + 1; }
-static long asfreq_MtoQ(long fromDate, char relation, struct asfreq_info af_info)
+static long asfreq_MtoA(long fromDate, char relation, struct asfreq_info *af_info) {
+    long year = (fromDate - 1) / 12 + 1;
+    long month = fromDate - (year - 1)*12;
+    if (month > af_info->to_a_year_end) { return year + 1; }
+    else { return year; }
+}
+
+static long asfreq_MtoQ(long fromDate, char relation, struct asfreq_info *af_info)
     { return (fromDate - 1) / 3 + 1; }
 
-static long asfreq_MtoW(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoW(asfreq_MtoD(fromDate, relation, NULL_AF_INFO), relation, af_info); }
+static long asfreq_MtoW(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoW(asfreq_MtoD(fromDate, relation, &NULL_AF_INFO), relation, af_info); }
 
-static long asfreq_MtoB(long fromDate, char relation, struct asfreq_info af_info) {
+static long asfreq_MtoB(long fromDate, char relation, struct asfreq_info *af_info) {
 
     struct date_info dinfo;
-    if (dInfoCalc_SetFromAbsDate(&dinfo, asfreq_MtoD(fromDate, relation, NULL_AF_INFO),
+    if (dInfoCalc_SetFromAbsDate(&dinfo, asfreq_MtoD(fromDate, relation, &NULL_AF_INFO),
                     GREGORIAN_CALENDAR)) return DINFO_ERR;
 
     if (relation == 'B') { return DtoB_WeekendToMonday(dinfo); }
     else                 { return DtoB_WeekendToFriday(dinfo); }
 }
 
-static long asfreq_MtoH(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoH(asfreq_MtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_MtoT(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoT(asfreq_MtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_MtoS(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoS(asfreq_MtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
+static long asfreq_MtoH(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoH(asfreq_MtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
+static long asfreq_MtoT(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoT(asfreq_MtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
+static long asfreq_MtoS(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoS(asfreq_MtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
 
 //************ FROM QUARTERLY ***************
 
@@ -718,7 +743,7 @@ static void QtoD_ym(long fromDate, long *y, long *m) {
     *m = (fromDate + 4) * 3 - 12 * (*y) - 2;
 }
 
-static long asfreq_QtoD(long fromDate, char relation, struct asfreq_info af_info) {
+static long asfreq_QtoD(long fromDate, char relation, struct asfreq_info *af_info) {
 
     long y, m, absdate;
 
@@ -733,21 +758,25 @@ static long asfreq_QtoD(long fromDate, char relation, struct asfreq_info af_info
     }
 }
 
-static long asfreq_QtoA(long fromDate, char relation, struct asfreq_info af_info)
-    { return (fromDate - 1)/ 4 + 1; }
+static long asfreq_QtoA(long fromDate, char relation, struct asfreq_info *af_info) {
+    long year = (fromDate - 1) / 4 + 1;
+    long quarter = fromDate - (year - 1)*4;
+    if (quarter > af_info->to_a_year_end) { return year + 1; }
+    else { return year; }
+}
 
-static long asfreq_QtoM(long fromDate, char relation, struct asfreq_info af_info) {
+static long asfreq_QtoM(long fromDate, char relation, struct asfreq_info *af_info) {
     if (relation == 'B') { return fromDate * 3 - 2; }
     else {                 return fromDate  * 3; }
 }
 
-static long asfreq_QtoW(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoW(asfreq_QtoD(fromDate, relation, NULL_AF_INFO), relation, af_info); }
+static long asfreq_QtoW(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoW(asfreq_QtoD(fromDate, relation, &NULL_AF_INFO), relation, af_info); }
 
-static long asfreq_QtoB(long fromDate, char relation, struct asfreq_info af_info) {
+static long asfreq_QtoB(long fromDate, char relation, struct asfreq_info *af_info) {
 
     struct date_info dinfo;
-    if (dInfoCalc_SetFromAbsDate(&dinfo, asfreq_QtoD(fromDate, relation, NULL_AF_INFO),
+    if (dInfoCalc_SetFromAbsDate(&dinfo, asfreq_QtoD(fromDate, relation, &NULL_AF_INFO),
                     GREGORIAN_CALENDAR)) return DINFO_ERR;
 
     if (relation == 'B') { return DtoB_WeekendToMonday(dinfo); }
@@ -755,54 +784,80 @@ static long asfreq_QtoB(long fromDate, char relation, struct asfreq_info af_info
 }
 
 
-static long asfreq_QtoH(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoH(asfreq_QtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_QtoT(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoT(asfreq_QtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_QtoS(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoS(asfreq_QtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
+static long asfreq_QtoH(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoH(asfreq_QtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
+static long asfreq_QtoT(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoT(asfreq_QtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
+static long asfreq_QtoS(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoS(asfreq_QtoD(fromDate, relation, &NULL_AF_INFO), relation, &NULL_AF_INFO); }
 
 
 //************ FROM ANNUAL ***************
 
-static long asfreq_AtoD(long fromDate, char relation, struct asfreq_info af_info) {
-    long absdate;
+static long asfreq_AtoD(long fromDate, char relation, struct asfreq_info *af_info) {
+    long absdate, year, final_adj;
+    int month = (af_info->from_a_year_end + 1) % 12;
+
     if (relation == 'B') {
-        if ((absdate = absdate_from_ymd(fromDate,1,1)) == DINFO_ERR) return DINFO_ERR;
-        return absdate;
+        if (af_info->from_a_year_end == 12) {year = fromDate;}
+        else {year = fromDate - 1;}
+        final_adj = 0;
     } else {
-        if ((absdate = absdate_from_ymd(fromDate+1,1,1)) == DINFO_ERR) return DINFO_ERR;
-        return absdate - 1;
+        if (af_info->from_a_year_end == 12) {year = fromDate+1;}
+        else {year = fromDate;}
+        final_adj = -1;
+    }
+    absdate = absdate_from_ymd(year, month, 1);
+    if (absdate  == DINFO_ERR) return DINFO_ERR;
+    return absdate + final_adj;
+}
+
+static long asfreq_AtoQ(long fromDate, char relation, struct asfreq_info *af_info) {
+
+    long quarter = asfreq_MtoQ(af_info->from_a_year_end, 'B', &NULL_AF_INFO);
+
+    if (relation == 'B') {
+        return fromDate * 4 - 3 - (4 - quarter);
+    } else {
+        return fromDate * 4 - (4 - quarter);
     }
 }
 
-static long asfreq_AtoQ(long fromDate, char relation, struct asfreq_info af_info) {
-    if (relation == 'B') { return fromDate * 4 - 3; }
-    else {                 return fromDate * 4; }
+static long asfreq_AtoM(long fromDate, char relation, struct asfreq_info *af_info) {
+    if (relation == 'B') {
+        return fromDate * 12 - 11 - (12 - af_info->from_a_year_end);
+    } else {
+        return fromDate * 12 - (12 - af_info->from_a_year_end);
+    }
 }
 
-static long asfreq_AtoM(long fromDate, char relation, struct asfreq_info af_info) {
-    if (relation == 'B') { return fromDate * 12 - 11; }
-    else {                 return fromDate * 12; }
-}
+static long asfreq_AtoW(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoW(asfreq_AtoD(fromDate, relation, af_info), relation, af_info); }
 
-static long asfreq_AtoW(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoW(asfreq_AtoD(fromDate, relation, NULL_AF_INFO), relation, af_info); }
+static long asfreq_AtoB(long fromDate, char relation, struct asfreq_info *af_info) {
 
-static long asfreq_AtoB(long fromDate, char relation, struct asfreq_info af_info) {
+    long absdate, year;
+    int month = (af_info->from_a_year_end + 1) % 12;
 
     struct date_info dailyDate;
 
     if (relation == 'B') {
+
+        if (af_info->from_a_year_end == 12) {year = fromDate;}
+        else {year = fromDate - 1;}
+
         if (dInfoCalc_SetFromDateAndTime(&dailyDate,
-                        fromDate,1,1, 0, 0, 0,
+                        year,month,1, 0, 0, 0,
                         GREGORIAN_CALENDAR)) return DINFO_ERR;
         return DtoB_WeekendToMonday(dailyDate);
     } else {
         long absdate;
 
+        if (af_info->from_a_year_end == 12) {year = fromDate+1;}
+        else {year = fromDate;}
+
         if (dInfoCalc_SetFromDateAndTime(&dailyDate,
-                       fromDate+1,1,1, 0, 0, 0,
+                       year,month,1, 0, 0, 0,
                        GREGORIAN_CALENDAR)) return DINFO_ERR;
 
         absdate = dailyDate.absdate - 1;
@@ -815,20 +870,19 @@ static long asfreq_AtoB(long fromDate, char relation, struct asfreq_info af_info
     }
 }
 
-static long asfreq_AtoH(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoH(asfreq_AtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_AtoT(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoT(asfreq_AtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
-static long asfreq_AtoS(long fromDate, char relation, struct asfreq_info af_info)
-    { return asfreq_DtoS(asfreq_AtoD(fromDate, relation, NULL_AF_INFO), relation, NULL_AF_INFO); }
+static long asfreq_AtoH(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoH(asfreq_AtoD(fromDate, relation, af_info), relation, &NULL_AF_INFO); }
+static long asfreq_AtoT(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoT(asfreq_AtoD(fromDate, relation, af_info), relation, &NULL_AF_INFO); }
+static long asfreq_AtoS(long fromDate, char relation, struct asfreq_info *af_info)
+    { return asfreq_DtoS(asfreq_AtoD(fromDate, relation, af_info), relation, &NULL_AF_INFO); }
 
-
-static long nofunc(long fromDate, char relation, struct asfreq_info af_info) { return -1; }
+static long nofunc(long fromDate, char relation, struct asfreq_info *af_info) { return -1; }
 
 // end of frequency specific conversion routines
 
 // return a pointer to appropriate conversion function
-static long (*get_asfreq_func(int fromFreq, int toFreq, int forConvert))(long, char, struct asfreq_info) {
+static long (*get_asfreq_func(int fromFreq, int toFreq, int forConvert))(long, char, struct asfreq_info*) {
 
     int fromGroup = (fromFreq/1000)*1000;
     int toGroup = (toFreq/1000)*1000;
@@ -1079,10 +1133,17 @@ static long get_height(int fromFreq, int toFreq) {
     }
 }
 
-static void *get_asfreq_info(int fromFreq, int toFreq, struct asfreq_info *af_info) {
+static int calc_a_year_end(int freq, int group) {
+    int result = freq - group;
+    if (result == 0) {return 12;}
+    else {return result;}
+}
 
-    int maxBusDaysPerYear, maxBusDaysPerQuarter, maxBusDaysPerMonth;
-    int maxDaysPerYear, maxDaysPerQuarter, maxDaysPerMonth;
+static int calc_week_end(int freq, int group) {
+    return freq - group;
+}
+
+static void get_asfreq_info(int fromFreq, int toFreq, struct asfreq_info *af_info) {
 
     int fromGroup = (fromFreq/1000)*1000;
     int toGroup = (toFreq/1000)*1000;
@@ -1090,14 +1151,20 @@ static void *get_asfreq_info(int fromFreq, int toFreq, struct asfreq_info *af_in
     switch(fromGroup)
     {
         case FR_WK: {
-            af_info->from_week_end = fromFreq - fromGroup;
+            af_info->from_week_end = calc_week_end(fromFreq, fromGroup);
+        } break;
+        case FR_ANN: {
+            af_info->from_a_year_end = calc_a_year_end(fromFreq, fromGroup);
         } break;
     }
 
     switch(toGroup)
     {
         case FR_WK: {
-            af_info->to_week_end = toFreq - toGroup;
+            af_info->to_week_end = calc_week_end(toFreq, toGroup);
+        } break;
+        case FR_ANN: {
+            af_info->to_a_year_end = calc_a_year_end(toFreq, toGroup);
         } break;
     }
 
@@ -1129,9 +1196,9 @@ cseries_convert(PyObject *self, PyObject *args)
 
     PyObject *val, *valMask;
 
-    long (*asfreq_main)(long, char, struct asfreq_info) = NULL;
-    long (*asfreq_endpoints)(long, char, struct asfreq_info) = NULL;
-    long (*asfreq_reverse)(long, char, struct asfreq_info) = NULL;
+    long (*asfreq_main)(long, char, struct asfreq_info*) = NULL;
+    long (*asfreq_endpoints)(long, char, struct asfreq_info*) = NULL;
+    long (*asfreq_reverse)(long, char, struct asfreq_info*) = NULL;
 
     returnVal = PyDict_New();
 
@@ -1169,16 +1236,16 @@ cseries_convert(PyObject *self, PyObject *args)
     asfreq_endpoints = get_asfreq_func(fromFreq, toFreq, 0);
 
     //convert start index to new frequency
-    CHECK_ASFREQ(newStartTemp = asfreq_main(startIndex, 'B', af_info));
+    CHECK_ASFREQ(newStartTemp = asfreq_main(startIndex, 'B', &af_info));
     if (newStartTemp < 1) {
-        CHECK_ASFREQ(newStart = asfreq_endpoints(startIndex, 'A', af_info));
+        CHECK_ASFREQ(newStart = asfreq_endpoints(startIndex, 'A', &af_info));
     }
     else { newStart = newStartTemp; }
 
     //convert end index to new frequency
-    CHECK_ASFREQ(newEndTemp = asfreq_main(startIndex+array->dimensions[0]-1, 'A', af_info));
+    CHECK_ASFREQ(newEndTemp = asfreq_main(startIndex+array->dimensions[0]-1, 'A', &af_info));
     if (newEndTemp < 1) {
-        CHECK_ASFREQ(newEnd = asfreq_endpoints(startIndex+array->dimensions[0]-1, 'B', af_info));
+        CHECK_ASFREQ(newEnd = asfreq_endpoints(startIndex+array->dimensions[0]-1, 'B', &af_info));
     }
     else { newEnd = newEndTemp; }
 
@@ -1192,8 +1259,12 @@ cseries_convert(PyObject *self, PyObject *args)
 
     if (newHeight > 1) {
         long tempval;
+        struct asfreq_info af_info_rev;
+
+        get_asfreq_info(toFreq, fromFreq, &af_info_rev);
         asfreq_reverse = get_asfreq_func(toFreq, fromFreq, 0);
-        CHECK_ASFREQ(tempval = asfreq_reverse(newStart, 'B', af_info));
+
+        CHECK_ASFREQ(tempval = asfreq_reverse(newStart, 'B', &af_info_rev));
         currPerLen = startIndex - tempval;
 
         nd = 2;
@@ -1225,7 +1296,8 @@ cseries_convert(PyObject *self, PyObject *args)
         val = PyArray_GETITEM(array, PyArray_GetPtr(array, &i));
         valMask = PyArray_GETITEM(mask, PyArray_GetPtr(mask, &i));
 
-        CHECK_ASFREQ(currIndex = asfreq_main(startIndex + i, relation, af_info));
+        CHECK_ASFREQ(currIndex = asfreq_main(startIndex + i, relation, &af_info));
+
         newIdx[0] = currIndex-newStart;
 
         if (newHeight > 1) {
@@ -1248,6 +1320,7 @@ cseries_convert(PyObject *self, PyObject *args)
 
         Py_DECREF(val);
         Py_DECREF(valMask);
+
     }
 
     PyDimMem_FREE(newIdx);
@@ -1265,6 +1338,51 @@ cseries_convert(PyObject *self, PyObject *args)
     return returnVal;
 }
 
+/*
+static long my_func(long arg1, char arg2, struct asfreq_info *foobar) {
+    printf("address inside: %i\n", foobar);
+    printf("to_a_year_end: %i\n", foobar->to_a_year_end);
+    return 55;
+}
+
+static void set_struct(struct asfreq_info *foobar) {
+    foobar->to_a_year_end = 20;
+}
+
+static long (*get_my_func(int fromFreq, int toFreq, int forConvert))(long, char, struct asfreq_info*) {
+    return &asfreq_DtoA;
+}
+
+static char cseries_fpointer_doc[] = "";
+static PyObject *
+cseries_fpointer(PyObject *self, PyObject *args)
+{
+
+    int myint;
+    struct asfreq_info af_info;
+    long fromFreq, toFreq;
+    char *relation;
+    long (*fpointer)(long, char, struct asfreq_info*) = NULL;
+    long result;
+
+    if (!PyArg_ParseTuple(args, "iis:fpointer(fromfreq, tofreq, relation)", &fromFreq, &toFreq, &relation)) return NULL;
+    //if (!PyArg_ParseTuple(args, "i:fpointer(myint)", &myint)) return NULL;
+
+    get_asfreq_info(fromFreq, toFreq, &af_info);
+
+    //fpointer = get_my_func(15, 15, 15);
+    fpointer = get_asfreq_func(fromFreq, toFreq, 0);
+
+    printf("address outside: %i\n", &af_info);
+    result = fpointer(732741, 'B', &af_info);
+    printf("result: %i\n", result);
+
+    printf("function address: fpointer, my_func (%i, %i)\n", fpointer, &asfreq_DtoA);
+
+    Py_RETURN_NONE;
+}
+*/
+
 static char cseries_asfreq_doc[] = "";
 static PyObject *
 cseries_asfreq(PyObject *self, PyObject *args)
@@ -1275,7 +1393,7 @@ cseries_asfreq(PyObject *self, PyObject *args)
     char *relation;
     int fromFreq, toFreq;
     long fromDate, toDate;
-    long (*asfreq_main)(long, char, struct asfreq_info) = NULL;
+    long (*asfreq_main)(long, char, struct asfreq_info*) = NULL;
     struct asfreq_info af_info;
 
     if (!PyArg_ParseTuple(args, "Oiis:asfreq(fromDates, fromfreq, tofreq, relation)", &fromDates, &fromFreq, &toFreq, &relation)) return NULL;
@@ -1296,7 +1414,7 @@ cseries_asfreq(PyObject *self, PyObject *args)
 
         fromDateObj = PyArray_GETITEM(fromDates, iterFrom->dataptr);
         fromDate = PyInt_AsLong(fromDateObj);
-        CHECK_ASFREQ(toDate = asfreq_main(fromDate, relation[0], af_info));
+        CHECK_ASFREQ(toDate = asfreq_main(fromDate, relation[0], &af_info));
         toDateObj = PyInt_FromLong(toDate);
 
         PyArray_SETITEM(toDates, iterTo->dataptr, toDateObj);
@@ -1315,16 +1433,16 @@ cseries_asfreq(PyObject *self, PyObject *args)
 
 }
 
-static int dInfo_year(struct date_info dateObj)    { return dateObj.year; }
-static int dInfo_quarter(struct date_info dateObj) { return dateObj.quarter; }
-static int dInfo_month(struct date_info dateObj)   { return dateObj.month; }
-static int dInfo_day(struct date_info dateObj)     { return dateObj.day; }
-static int dInfo_day_of_year(struct date_info dateObj) { return dateObj.day_of_year; }
-static int dInfo_day_of_week(struct date_info dateObj) { return dateObj.day_of_week; }
-static int dInfo_week(struct date_info dateObj)     { return dInfoCalc_ISOWeek(dateObj); }
-static int dInfo_hour(struct date_info dateObj)     { return dateObj.hour; }
-static int dInfo_minute(struct date_info dateObj)     { return dateObj.minute; }
-static int dInfo_second(struct date_info dateObj)     { return (int)dateObj.second; }
+static int dInfo_year(struct date_info *dateObj)    { return dateObj->year; }
+static int dInfo_quarter(struct date_info *dateObj) { return dateObj->quarter; }
+static int dInfo_month(struct date_info *dateObj)   { return dateObj->month; }
+static int dInfo_day(struct date_info *dateObj)     { return dateObj->day; }
+static int dInfo_day_of_year(struct date_info *dateObj) { return dateObj->day_of_year; }
+static int dInfo_day_of_week(struct date_info *dateObj) { return dateObj->day_of_week; }
+static int dInfo_week(struct date_info *dateObj)     { return dInfoCalc_ISOWeek(dateObj); }
+static int dInfo_hour(struct date_info *dateObj)     { return dateObj->hour; }
+static int dInfo_minute(struct date_info *dateObj)     { return dateObj->minute; }
+static int dInfo_second(struct date_info *dateObj)     { return (int)dateObj->second; }
 
 static double getAbsTime(int freq, long dailyDate, long originalDate) {
 
@@ -1368,8 +1486,8 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
     long absdate;
     double abstime;
 
-    long (*toDaily)(long, char, struct asfreq_info) = NULL;
-    int (*getDateInfo)(struct date_info) = NULL;
+    long (*toDaily)(long, char, struct asfreq_info*) = NULL;
+    int (*getDateInfo)(struct date_info*) = NULL;
     struct asfreq_info af_info;
 
     if (!PyArg_ParseTuple(args, "Ois:getDateInfo(array, freq, info)", &array, &freq, &info)) return NULL;
@@ -1422,11 +1540,11 @@ cseries_getDateInfo(PyObject *self, PyObject *args)
         val = PyArray_GETITEM(array, iterSource->dataptr);
         dateNum = PyInt_AsLong(val);
         Py_DECREF(val);
-        CHECK_ASFREQ(absdate = toDaily(dateNum, 'B', af_info));
+        CHECK_ASFREQ(absdate = toDaily(dateNum, 'B', &af_info));
         abstime = getAbsTime(freq, absdate, dateNum);
 
         if(dInfoCalc_SetFromAbsDateTime(&convDate, absdate, abstime, GREGORIAN_CALENDAR)) return NULL;
-        dInfo = getDateInfo(convDate);
+        dInfo = getDateInfo(&convDate);
 
         PyArray_SETITEM(newArray, iterResult->dataptr, PyInt_FromLong(dInfo));
 
@@ -1543,6 +1661,8 @@ cseries_strfmt(PyObject *self, PyObject *args)
 
 ///////////////////////////////////////////////////////////////////////
 
+//{"fpointer", cseries_fpointer, METH_VARARGS, cseries_fpointer_doc},
+
 static PyMethodDef cseries_methods[] = {
     {"strfmt", cseries_strfmt, METH_VARARGS, cseries_strfmt_doc},
     {"convert", cseries_convert, METH_VARARGS, cseries_convert_doc},
@@ -1563,6 +1683,19 @@ initcseries(void)
 
     // Add all the frequency constants to a python dictionary
     ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_ANN", FR_ANN);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_ANNJAN", FR_ANNJAN);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_ANNFEB", FR_ANNFEB);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_ANNMAR", FR_ANNMAR);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_ANNAPR", FR_ANNAPR);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_ANNMAY", FR_ANNMAY);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_ANNJUN", FR_ANNJUN);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_ANNJUL", FR_ANNJUL);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_ANNAUG", FR_ANNAUG);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_ANNSEP", FR_ANNSEP);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_ANNOCT", FR_ANNOCT);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_ANNNOV", FR_ANNNOV);
+    ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_ANNDEC", FR_ANNDEC);
+
     ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_QTR", FR_QTR);
     ADD_INT_TO_DICT(TSER_CONSTANTS, "FR_MTH", FR_MTH);
 
