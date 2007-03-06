@@ -131,6 +131,7 @@ class Date:
                       }
     
     for x in range(7): default_fmtstr[_c.FR_WK+x] = default_fmtstr[_c.FR_WK]
+    for x in range(12): default_fmtstr[_c.FR_ANN+x] = default_fmtstr[_c.FR_ANN]
       
     def __init__(self, freq, value=None, string=None,
                  year=None, month=None, day=None, quarter=None, 
@@ -145,17 +146,17 @@ class Date:
         
         _freqGroup = get_freq_group(self.freq)
         
-        if value is not None:
-            if isinstance(value, ndarray):
-                value = int(value)
+        if isinstance(value, str):
+            if self.freq in (_c.FR_HR, _c.FR_MIN, _c.FR_SEC):
+                self.datetime = DateTimeFromString(value)
+            else:
+                self.datetime = DateFromString(value) 
+        elif value is not None:
         
-            if isinstance(value, str):
-                if self.freq in (_c.FR_HR, _c.FR_MIN, _c.FR_SEC):
-                    self.datetime = DateTimeFromString(value)
-                else:
-                    self.datetime = DateFromString(value)
+            #value could be a numpy scalar, which is not acceptable
+            value = int(value)
 
-            elif self.freq == _c.FR_SEC:
+            if self.freq == _c.FR_SEC:
                 self.datetime = secondlyOriginDate + dt.timedelta(seconds=value)
             elif self.freq == _c.FR_MIN:
                 self.datetime = minutelyOriginDate + dt.timedelta(minutes=value)
@@ -181,8 +182,11 @@ class Date:
                 year = (value - 1)//4 + 1
                 month = (value - (year - 1)*4)*3
                 self.datetime = dt.datetime(year, month, 1)
-            elif self.freq == _c.FR_ANN:
-                self.datetime = dt.datetime(value, 1, 1)
+            elif _freqGroup == _c.FR_ANN:
+                if self.freq == _c.FR_ANNDEC:
+                    self.datetime = dt.datetime(value, 12, 1)
+                else:
+                    self.datetime = dt.datetime(value, self.freq - _c.FR_ANN, 1)
             else:
                 raise ValueError("unrecognized frequency: "+str(self.freq))
         
@@ -213,8 +217,9 @@ class Date:
                     raise InsufficientDateError
                 month = quarter * 3
                 day = 1
-            elif self.freq == _c.FR_ANN:
-                month = 1
+            elif _freqGroup == _c.FR_ANN:
+                month = self.freq - _freqGroup
+                if month == 0: month = 12
                 day = 1
             elif self.freq == _c.FR_SEC:
                 if month is None or day is None or second is None: 
@@ -384,7 +389,7 @@ class Date:
         elif self.freq == _c.FR_QTR:
             val = (self.datetime.year-1)*4 + self.datetime.month//3
         # Annual .......
-        elif self.freq == _c.FR_ANN:
+        elif _freqGroup == _c.FR_ANN:
             val = self.datetime.year
 
         return int(val)
@@ -468,8 +473,16 @@ def truncateDate(freq, datetime):
         return dt.datetime(datetime.year, datetime.month, 1)
     elif freq == _c.FR_QTR:
         return dt.datetime(datetime.year, monthToQuarter(datetime.month)*3, 1)
-    elif freq == _c.FR_ANN:
-        return dt.datetime(datetime.year, 1, 1)
+    elif _freqGroup == _c.FR_ANN:
+        
+        if freq == _c.FR_ANNDEC: fr_month = 12
+        else: fr_month = freq - _c.FR_ANN
+        
+        if datetime.month <= fr_month:
+            return dt.datetime(datetime.year, fr_month, 1)
+        else:
+            return dt.datetime(datetime.year+1, fr_month, 1)
+
     else:
         return datetime
     
