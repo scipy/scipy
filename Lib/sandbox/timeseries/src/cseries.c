@@ -1338,51 +1338,6 @@ cseries_convert(PyObject *self, PyObject *args)
     return returnVal;
 }
 
-/*
-static long my_func(long arg1, char arg2, struct asfreq_info *foobar) {
-    printf("address inside: %i\n", foobar);
-    printf("to_a_year_end: %i\n", foobar->to_a_year_end);
-    return 55;
-}
-
-static void set_struct(struct asfreq_info *foobar) {
-    foobar->to_a_year_end = 20;
-}
-
-static long (*get_my_func(int fromFreq, int toFreq, int forConvert))(long, char, struct asfreq_info*) {
-    return &asfreq_DtoA;
-}
-
-static char cseries_fpointer_doc[] = "";
-static PyObject *
-cseries_fpointer(PyObject *self, PyObject *args)
-{
-
-    int myint;
-    struct asfreq_info af_info;
-    long fromFreq, toFreq;
-    char *relation;
-    long (*fpointer)(long, char, struct asfreq_info*) = NULL;
-    long result;
-
-    if (!PyArg_ParseTuple(args, "iis:fpointer(fromfreq, tofreq, relation)", &fromFreq, &toFreq, &relation)) return NULL;
-    //if (!PyArg_ParseTuple(args, "i:fpointer(myint)", &myint)) return NULL;
-
-    get_asfreq_info(fromFreq, toFreq, &af_info);
-
-    //fpointer = get_my_func(15, 15, 15);
-    fpointer = get_asfreq_func(fromFreq, toFreq, 0);
-
-    printf("address outside: %i\n", &af_info);
-    result = fpointer(732741, 'B', &af_info);
-    printf("result: %i\n", result);
-
-    printf("function address: fpointer, my_func (%i, %i)\n", fpointer, &asfreq_DtoA);
-
-    Py_RETURN_NONE;
-}
-*/
-
 static char cseries_asfreq_doc[] = "";
 static PyObject *
 cseries_asfreq(PyObject *self, PyObject *args)
