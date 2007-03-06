@@ -110,7 +110,7 @@ class test_creation(NumpyTestCase):
         print freqs
         for f in freqs:
             today = tdates.thisday(f)
-            assert(tdates.Date(freq=f, value=today.value) == today)
+            assert_equal(tdates.Date(freq=f, value=today.value), today)
             
     def test_shortcuts(self):
         "Tests some creation shortcuts. Because I'm lazy like that."
