@@ -23,7 +23,6 @@ import tmulti
 from tmulti import *
 import reportlib
 from reportlib import *
-import plotlib
 from addons import filters, interpolate
 
 
