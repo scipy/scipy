@@ -426,7 +426,7 @@ def _quarterly_finder(vmin, vmax, freq, aslocator):
         return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
 #...............................................................................
 def _annual_finder(vmin, vmax, freq, aslocator):
-    if freq != TS.FR_ANN: 
+    if TS.get_freq_group(freq) != TS.FR_ANN: 
         raise ValueError("unexpected frequency")   
     (vmin, vmax) = (int(vmin), int(vmax+1))
     span = vmax - vmin + 1
@@ -457,12 +457,13 @@ class TimeSeries_DateLocator(Locator):
                  base=1, quarter=1, month=1, day=1):
         self.freq = freq
         self.base = base
+        fgroup = TS.get_freq_group(freq)
         (self.quarter, self.month, self.day) = (quarter, month, day)
         self.isminor = minor_locator
         self.isdynamic = dynamic_mode
         self.offset = 0
         #.....
-        if freq == TS.FR_ANN:
+        if fgroup == TS.FR_ANN:
             self.finder = _annual_finder
         elif freq == TS.FR_QTR:
             self.finder = _quarterly_finder
@@ -530,8 +531,9 @@ class TimeSeries_DateFormatter(Formatter):
         self.isminor = minor_locator
         self.isdynamic = dynamic_mode
         self.offset = 0
+        fgroup = TS.get_freq_group(freq)
         #.....
-        if freq == TS.FR_ANN:
+        if fgroup == TS.FR_ANN:
             self.finder = _annual_finder
         elif freq == TS.FR_QTR:
             self.finder = _quarterly_finder
