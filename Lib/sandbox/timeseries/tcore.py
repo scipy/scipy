@@ -126,16 +126,14 @@ def _gen_annual_strs(month):
         result += [pr+'-'+mth_str for mth_str in (month[:3], month)]
     return result
 
-
-
-freq_dict = { FR_QTR: ['Q','QUARTER','QUARTERLY',],
-              FR_MTH: ['M','MONTH','MONTHLY',],
+freq_dict = { FR_QTR: ['Q','QUARTER','QUARTERLY'],
+              FR_MTH: ['M','MONTH','MONTHLY'],
               FR_BUS: ['B','BUSINESS','BUSINESSLY'],
-              FR_DAY: ['D','DAY','DAILY',],
-              FR_HR: ['H','HOUR','HOURLY',],
-              FR_MIN: ['T','MINUTE','MINUTELY',],
-              FR_SEC: ['S','SECOND','SECONDLY',],
-              FR_UND: ['U','UNDEF','UNDEFINED'],
+              FR_DAY: ['D','DAY','DAILY'],
+              FR_HR: ['H','HOUR','HOURLY'],
+              FR_MIN: ['T','MINUTE','MINUTELY'],
+              FR_SEC: ['S','SECOND','SECONDLY'],
+              FR_UND: ['U','UNDEF','UNDEFINED']
                 }
                 
 for _freq, day_str in _week_end_map.iteritems():
@@ -186,6 +184,10 @@ def check_freqstr(freq):
     else:
         raise ValueError("Invalid frequency: %s " % str(freq))    
 fmtFreq = check_freqstr
+
+def get_freq_group(freq):
+    # truncate frequency to nearest thousand
+    return (freq//1000)*1000
         
 
 #####---------------------------------------------------------------------------
