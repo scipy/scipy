@@ -144,7 +144,7 @@ class Date:
             self.freq = corelib.check_freq(freq)
         self.freqstr = corelib.freq_tostr(self.freq)
         
-        _freqGroup = get_freq_group(self.freq)
+        _freqGroup = corelib.get_freq_group(self.freq)
         
         if isinstance(value, str):
             if self.freq in (_c.FR_HR, _c.FR_MIN, _c.FR_SEC):
@@ -352,7 +352,7 @@ class Date:
     
     def __value(self):   
         "Converts the date to an integer, depending on the current frequency."
-        _freqGroup = get_freq_group(self.freq)
+        _freqGroup = corelib.get_freq_group(self.freq)
         # Secondly......
         if self.freq == _c.FR_SEC:
             delta = (self.datetime - secondlyOriginDate)
@@ -439,10 +439,6 @@ class Date:
 #---- --- Functions ---
 #####---------------------------------------------------------------------------
 
-def get_freq_group(freq):
-    # truncate frequency to nearest thousand
-    return (freq//1000)*1000
-
 def mx_to_datetime(mxDate):
     microsecond = 1000000*(mxDate.second % 1)
     return dt.datetime(mxDate.year, mxDate.month,
@@ -454,7 +450,7 @@ def mx_to_datetime(mxDate):
 def truncateDate(freq, datetime):
     "Chops off the irrelevant information from the datetime object passed in."
     freq = corelib.check_freq(freq)
-    _freqGroup = get_freq_group(freq)
+    _freqGroup = corelib.get_freq_group(freq)
     if freq == _c.FR_MIN:
         return dt.datetime(datetime.year, datetime.month, datetime.day, \
                            datetime.hour, datetime.minute)
@@ -494,7 +490,7 @@ def monthToQuarter(monthNum):
 def thisday(freq):
     "Returns today's date, at the given frequency `freq`."
     freq = corelib.check_freq(freq)
-    _freqGroup = get_freq_group(freq)
+    _freqGroup = corelib.get_freq_group(freq)
     tempDate = dt.datetime.now()
     # if it is Saturday or Sunday currently, freq==B, then we want to use Friday
     if freq == _c.FR_BUS and tempDate.isoweekday() >= 6:
