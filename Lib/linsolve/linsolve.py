@@ -118,6 +118,35 @@ def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
     return gstrf(N, csc.nnz, csc.data, csc.indices, csc.indptr, permc_spec,
                  diag_pivot_thresh, drop_tol, relax, panel_size)
 
+def factorized( A ):
+    """
+    Return a fuction for solving a linear system, with A pre-factorized.
+
+    Example:
+      solve = factorized( A ) # Makes LU decomposition.
+      x1 = solve( rhs1 ) # Uses the LU factors.
+      x2 = solve( rhs2 ) # Uses again the LU factors.
+    """
+    if isUmfpack and useUmfpack:
+        mat = _toCS_umfpack( A )
+
+        if mat.dtype.char not in 'dD':
+            raise ValueError, "convert matrix data to double, please, using"\
+                  " .astype(), or set linsolve.useUmfpack = False"
+
+        family = {'d' : 'di', 'D' : 'zi'}
+        umf = umfpack.UmfpackContext( family[mat.dtype.char] )
+
+        # Make LU decomposition.
+        umf.numeric( mat )
+
+        def solve( b ):
+            return umf.solve( umfpack.UMFPACK_A, mat, b, autoTranspose = True )
+            
+        return solve
+    else:
+        return splu( A ).solve
+
 def _testme():
     from scipy.sparse import csc_matrix
     from numpy import array

@@ -73,11 +73,34 @@ class test_solvers(NumpyTestCase):
         #print "Error: ", a*x-b
         assert_array_almost_equal(a*x, self.b)
 
+    def check_factorized_umfpack(self):
+        """Prefactorize (with UMFPACK) matrix for solving with multiple rhs"""
+        linsolve.use_solver( useUmfpack = True )
+        a = self.a.astype('d')
+        solve = linsolve.factorized( a )
+
+        x1 = solve( self.b )
+        assert_array_almost_equal(a*x1, self.b)
+        x2 = solve( self.b2 )
+        assert_array_almost_equal(a*x2, self.b2)
+
+    def check_factorized_without_umfpack(self):
+        """Prefactorize matrix for solving with multiple rhs"""
+        linsolve.use_solver( useUmfpack = False )
+        a = self.a.astype('d')
+        solve = linsolve.factorized( a )
+
+        x1 = solve( self.b )
+        assert_array_almost_equal(a*x1, self.b)
+        x2 = solve( self.b2 )
+        assert_array_almost_equal(a*x2, self.b2)
+
     def setUp(self):
         self.a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
         #print "The sparse matrix (constructed from diagonals):"
         #print self.a
         self.b = array([1, 2, 3, 4, 5])
+        self.b2 = array([5, 4, 3, 2, 1])
 
 
         
