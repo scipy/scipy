@@ -97,50 +97,19 @@ typedef struct
 
 /* Type of computer arithmetic */
 
-/* PDP-11, Pro350, VAX:
+/* This is kind of improper, as the byte-order of floats may not
+ * be the same as the byte-order of ints. However, it works.
  */
-/* #define DEC 1 */
 
-/* Not sure about these pdp defines */
-#if defined(vax) || defined(__vax__) || defined(decvax) || \
-    defined(__decvax__) || defined(pro350) || defined(pdp11)
-#define DEC 1  
-
-#elif defined(ns32000) || defined(__ns32000__) || \
-    defined(sun386) || defined(__sun386__) || \
-    defined(__i386__) || defined(i386) || \
-    defined(_M_IX86) || defined(_X86_) || defined(__THW_INTEL__) || \
-    defined(__I86__) || defined(__INTEL__) || \
-    defined(__amd64__) || defined(__ia64__) || defined(_M_IA64) || \
-    defined(MIPSEL) || defined(_MIPSEL) || \
-    defined(BIT_ZERO_ON_RIGHT) || \
-    defined(__alpha__) || defined(__alpha) || \
-    defined(sequent)
-#define IBMPC 1   /* Intel IEEE, low order words come first */
-#define BIGENDIAN 0
-
-#elif defined(sel) || defined(pyr) || defined(mc68000) || defined (m68k) || \
-          defined(is68k) || defined(tahoe) || defined(ibm032) || \
-          defined(ibm370) || defined(MIPSEB) || defined(_MIPSEB) || \
-          defined(__convex__) || defined(DGUX) || defined(hppa) || \
-          defined(apollo) || defined(_CRAY) || defined(__hppa) || \
-          defined(__hp9000) || defined(__hp9000s300) || \
-          defined(__hp9000s700) || defined(__AIX) || defined(_AIX) ||\
-          defined(__pyr__) || defined(__mc68000__) || defined(__sparc) ||\
-          defined(_IBMR2) || defined (BIT_ZERO_ON_LEFT) 
-#define MIEEE 1     /* Motorola IEEE, high order words come first */
-#define BIGENDIAN 1
-
-#else 
-#define UNK 1        /* Machine not IEEE or DEC, 
-                        constants given in decimal format */
-#if WORDS_BIGENDIAN  /* Defined in pyconfig.h */
-#define BIGENDIAN 1
+#include <pyconfig.h>
+#ifdef WORDS_BIGENDIAN
+# define MIEEE 1
+# define BIGENDIAN 1
 #else
-#define BIGENDIAN 0
+# define IBMPC 1
+# define BIGENDIAN 0
 #endif
 
-#endif
 /* UNKnown arithmetic, invokes coefficients given in
  * normal decimal format.  Beware of range boundary
  * problems (MACHEP, MAXLOG, etc. in const.c) and
