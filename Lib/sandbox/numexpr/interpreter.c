@@ -1055,12 +1055,13 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
 
     for (i = 0; i < n_inputs; i++) {
         PyObject *a = PyTuple_GET_ITEM(a_inputs, i+n_inputs);
+        PyObject *b;
         char c = PyString_AS_STRING(self->signature)[i];
         int typecode = typecode_from_char(c);
         if (PyArray_NDIM(a) == 0) {
             /* Broadcast scalars */
             intp dims[1] = {BLOCK_SIZE1};
-            PyObject *b = PyArray_SimpleNew(1, dims, typecode);
+            b = PyArray_SimpleNew(1, dims, typecode);
             if (!b) goto cleanup_and_exit;
             self->memsteps[i+1] = 0;
             PyTuple_SET_ITEM(a_inputs, i+2*n_inputs, b);  /* steals reference */
