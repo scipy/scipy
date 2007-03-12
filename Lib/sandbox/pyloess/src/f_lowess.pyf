@@ -1,0 +1,38 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module _lowess ! in 
+    interface  ! in :_lowess
+        subroutine lowess(x,y,n,f,nsteps,delta,ys,rw,res) ! in :_lowess:lowess.f
+            double precision dimension(n), intent(in) :: x
+            double precision dimension(n),depend(n), intent(in) :: y
+            integer optional,check(len(x)>=n),depend(x) :: n=len(x)
+            double precision  intent(in) :: f
+            integer intent(in) :: nsteps
+            double precision intent(in) :: delta
+            double precision dimension(n),depend(n), intent(out) :: ys
+            double precision dimension(n),depend(n), intent(out) :: rw
+            double precision dimension(n),depend(n), intent(out) :: res
+        end subroutine lowess
+        subroutine lowest(x,y,n,xs,ys,nleft,nright,w,userw,rw,ok) ! in :_lowess:lowess.f
+            double precision dimension(n) :: x
+            double precision dimension(n),depend(n) :: y
+            integer optional,check(len(x)>=n),depend(x) :: n=len(x)
+            double precision :: xs
+            double precision :: ys
+            integer :: nleft
+            integer :: nright
+            double precision dimension(n),depend(n) :: w
+            logical :: userw
+            double precision dimension(n),depend(n) :: rw
+            logical :: ok
+        end subroutine lowest
+        subroutine ssort(a,n) ! in :_lowess:lowess.f
+            real dimension(n) :: a
+            integer optional,check(len(a)>=n),depend(a) :: n=len(a)
+        end subroutine ssort
+    end interface 
+end python module _lowess
+
+! This file was auto-generated with f2py (version:2_3522).
+! See http://cens.ioc.ee/projects/f2py2e/

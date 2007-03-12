@@ -1,0 +1,16 @@
+pyloess: a numpy wrapper to lowess and stl.
+
+LOWESS
+------
+
+The initial file is available at: 
+http://netlib.bell-labs.com/netlib/go/lowess.f.gz
+Simple to double precision conversion by Pierre GERARD-MARCHANT, 2007/03.
+
+
+STL 
+-----
+
+The initial file is available at:
+http://netlib.bell-labs.com/netlib/a/stl.gz
+Simple to double precision conversion by Pierre GERARD-MARCHANT, 2007/03.

@@ -1,0 +1,15 @@
+rm -rf build
+pushd src
+rm -f cloess.c *.so *.o
+pyrexc cloess.pyx || exit
+gcc -c -fPIC loess.c loessc.c misc.c predict.c loessf.f linpack_lite.f
+gcc -c -fPIC cloess.c -I/usr/include/python2.4 \
+	-I/usr/lib64/python2.4/site-packages/numpy/core/include || exit
+gcc -shared loessf.o linpack_lite.o loess.o loessc.o misc.o predict.o cloess.o \
+	-llapack -lblas -o cloess.so || exit
+rm -f *.o
+popd
+mv src/cloess.so cloess.so
+python -c "import cloess; print dir(cloess)"
+python pyloess.py
+echo "OK"
