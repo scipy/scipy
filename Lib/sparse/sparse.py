@@ -722,7 +722,7 @@ class csc_matrix(_cs_matrix):
 
           - csc_matrix((data, ij), [(M, N), nzmax])
             where data, ij satisfy:
-                a[ij[k, 0], ij[k, 1]] = data[k]
+                a[ij[0, k], ij[1, k]] = data[k]
 
           - csc_matrix((data, row, ptr), [(M, N)])
             standard CSC representation
