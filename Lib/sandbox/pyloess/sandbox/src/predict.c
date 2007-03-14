@@ -4,8 +4,7 @@
 #include <stdlib.h>
 
 void
-predict(double *eval, int m, loess *lo, predicted *pre,
-        int se)
+predict(double *eval, int m, loess *lo, prediction *pre, int se)
 {
     int    size_info[3];
     void    pred_();
@@ -159,7 +158,7 @@ pred_(double *y, double *x_, double *new_x, int *size_info, double *s,
 }
 
 void
-pred_free_mem(predicted *pre)
+pred_free_mem(prediction *pre)
 {
 	free(pre->fit);
 	free(pre->se_fit);
