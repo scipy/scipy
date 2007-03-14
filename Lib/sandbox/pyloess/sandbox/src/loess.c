@@ -3,10 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <time.h>
+
 static char *surf_stat;
 
 void
-loess_setup(double *x, double *y, int n, int p, loess *lo)
+loess_setup(double *x, double *y, long n, long p, loess *lo)
 {
     int i, max_kd;
 
@@ -43,8 +45,8 @@ loess_setup(double *x, double *y, int n, int p, loess *lo)
     lo->outputs.robust = (double *) malloc(n * sizeof(double));
     lo->outputs.divisor = (double *) malloc(p * sizeof(double));
 
-    lo->kd_tree.parameter = (int *) malloc(7 * sizeof(int));
-    lo->kd_tree.a = (int *) malloc(max_kd * sizeof(int));
+    lo->kd_tree.parameter = (long *) malloc(7 * sizeof(long));
+    lo->kd_tree.a = (long *) malloc(max_kd * sizeof(long));
     lo->kd_tree.xi = (double *) malloc(max_kd * sizeof(double));
     lo->kd_tree.vert = (double *) malloc(p * 2 * sizeof(double));
     lo->kd_tree.vval = (double *) malloc((p + 1) * max_kd * sizeof(double));
@@ -116,6 +118,12 @@ loess_(double *y, double *x_, int *size_info, double *weights, double *span,
     int     cut, comp();
     char    *new_stat;
     void    condition();
+    char timestr[30];
+    size_t timestri;
+    struct tm tim;
+    time_t now;
+    now = time(NULL);
+    tim = *(localtime(&now));
 
     D = size_info[0];
     N = size_info[1];
@@ -212,8 +220,10 @@ loess_(double *y, double *x_, int *size_info, double *weights, double *span,
             *one_delta = delta1;
             *two_delta = delta2;
         }
+        strftime(timestr,30,"%b %d, %Y; %H:%M:%S\n",&tim);
+        printf("%s", timestr);
         for(i = 0; i < N; i++)
-            printf("i:%i y:%.3f f:%.3f\n", i, y[i], fitted_values[i]);
+            printf("%.6f\n", fitted_values[i]);
             fitted_residuals[i] = y[i] - fitted_values[i];
         if(j < (*iterations))
             F77_SUB(lowesw)(fitted_residuals, &N, robust, temp);

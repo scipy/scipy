@@ -3,85 +3,137 @@ cimport c_python
 cimport c_numpy
 from c_numpy cimport ndarray, npy_intp, \
     PyArray_SIZE, PyArray_EMPTY, PyArray_FROMANY, \
-    NPY_INT, NPY_DOUBLE, NPY_OWNDATA, NPY_ALIGNED
-import numpy as _N
+    NPY_INT, NPY_DOUBLE, NPY_OWNDATA, NPY_ALIGNED, NPY_FORTRAN
+import numpy
+
+#narray = _N.array
+#ndouble = _N.float
+#nbool = _N.bool
+
 # NumPy must be initialized
 c_numpy.import_array()
 
 cimport c_loess
+
+
+cdef floatarray_from_data(rows, cols, double *data):
+    cdef ndarray a_ndr
+    cdef double *a_dat
+    a_ndr = numpy.empty((rows*cols,), dtype=numpy.float)
+    a_dat = <double *>a_ndr.data
+    for i from 0 <= i < a_ndr.size:
+        a_dat[i] = data[i]
+    if cols > 1:
+        a_ndr.shape = (rows, cols)
+    return a_ndr
+
+cdef boolarray_from_data(rows, cols, int *data):
+    cdef ndarray a_ndr
+    cdef int *a_dat
+    a_ndr = numpy.empty((rows*cols,), dtype=numpy.int)
+    a_dat = <int *>a_ndr.data
+    for i from 0 <= i < a_ndr.size:
+        a_dat[i] = data[i]
+    if cols > 1:
+        a_ndr.shape = (rows, cols)
+    return a_ndr.astype(numpy.bool)
+
     
 #####---------------------------------------------------------------------------
 #---- ---- loess model ---
 #####---------------------------------------------------------------------------
-
 cdef class loess_inputs:
-    cdef c_loess.c_loess_inputs _inputs
-    cdef public long nobs, nvar
-    cdef readonly ndarray x, y, weights
-    
-    def __init__(self, object x, object y, object weights=None):
-        cdef ndarray x_ndr, y_ndr
-        cdef double *x_dat, *y_in_dat, *w_dat
-        cdef npy_intp n, p
-        cdef npy_intp *dims
-        print "DEBUG: Initializing loess_inputs...",
-        self.x = <ndarray>PyArray_FROMANY(x, NPY_DOUBLE, 1, 1, NPY_OWNDATA)
-        self.y = <ndarray>PyArray_FROMANY(y, NPY_DOUBLE, 1, 1, NPY_OWNDATA)
-        #
-        if self.x.ndim > 2:
-            raise ValueError,"Argument 'x' should be 2D at most!"
-        n = len(self.x)
-        p = self.x.size / n
-        # Initialize the python side ............
-        self.nobs = <long>n
-        self.nvar = <long>p
-        dims[0] = n
-        # ... input weights ...
-        if weights is None:
-            self.weights = <ndarray>PyArray_EMPTY(1, dims, NPY_DOUBLE, NPY_ALIGNED)
-            w_dat = <double *>self.weights.data
-            for i from 0 <= i < dims[0]:
-                w_dat[i] = 1
-        else:
-            self.weights = <ndarray>PyArray_FROMANY(weights, NPY_DOUBLE, 1, 1, NPY_OWNDATA)
-            if self.weights.ndim > 1 or self.weights.size != n:
+    cdef c_loess.c_loess_inputs *_base
+    #.........
+    property x:
+        def __get__(self):
+            return floatarray_from_data(self._base.n, self._base.p, self._base.x)
+    #.........    
+    property y:
+        def __get__(self):
+            return floatarray_from_data(self._base.n, 1, self._base.y)
+    #.........    
+    property weights:
+        "Weights"
+        def __get__(self):
+            return floatarray_from_data(self._base.n, 1, self._base.weights)
+        
+        def __set__(self, w):
+            cdef npy_intp *dims
+            cdef ndarray w_ndr
+            w_ndr = <ndarray>PyArray_FROMANY(w, NPY_DOUBLE, 1, 1, NPY_OWNDATA)
+            if w_ndr.ndim > 1 or w_ndr.size != self._base.n:
                 raise ValueError, "Invalid size of the 'weights' vector!"
-            w_dat = <double *>self.weights.data
-        # Initialize the underlying C object ....
-        self._inputs.n = self.nobs
-        self._inputs.p = self.nvar
-        self._inputs.x = <double *>self.x.data
-        self._inputs.y = <double *>self.y.data
-        self._inputs.weights = <double *>self.weights.data
-        
-#        for i from 0 <= i < (self.nobs*self.nvar):
-#            self._inputs.x[i] = self.x.data[i]
-#        for i from 0 <= i < self.nobs:
-#            self._inputs.y[i] = self.y.data[i]
-#            self._inputs.weights[i] = w_dat[i]
-        print " OK."
-        return
-
-       
-#####---------------------------------------------------------------------------
-#---- ---- loess control ---
-#####---------------------------------------------------------------------------
+            self._base.weights = <double *>w_ndr.data
+    #.........    
+    property nobs:
+        "Number of observations."
+        def __get__(self):
+            return self._base.n
+    #.........
+    property nvar:
+        "Number of independent variables."
+        def __get__(self):
+            return self._base.p
+#       
+######---------------------------------------------------------------------------
+##---- ---- loess control ---
+######---------------------------------------------------------------------------
 cdef class loess_control:
-    cdef c_loess.c_loess_control _control
-    cdef public char *surface, *statistics, *trace_hat
-    cdef public double cell
-    cdef public int iterations
-    
-    def __init__(self):
-        print "DEBUG: Initializing loess_control...",
-        self.surface = self._control.surface = "interpolate"
-        self.statistics = self._control.statistics = "approximate"
-        self.cell = self._control.cell = 0.2
-        self.trace_hat = self._control.trace_hat = "wait.to.decide"
-        self.iterations = self._control.iterations = 4
-        print "OK."
-        return 
-        
+    cdef c_loess.c_loess_control *_base
+    #.........    
+    property surface:
+        def __get__(self):
+            return self._base.surface
+        def __set__(self, surface):
+            self._base.surface = surface
+    #.........
+    property statistics:
+        def __get__(self):
+            return self._base.statistics
+        def __set__(self, statistics):
+            self._base.statistics = statistics
+    #.........
+    property trace_hat:
+        def __get__(self):
+            return self._base.trace_hat
+        def __set__(self, trace_hat):
+            self._base.trace_hat = trace_hat
+    #.........
+    property iterations:
+        def __get__(self):
+            return self._base.iterations
+        def __set__(self, iterations):
+            self._base.iterations = iterations
+    #.........
+    property cell:
+        def __get__(self):
+            return self._base.cell
+        def __set__(self, cell):
+            self._base.cell = cell
+    #.........
+    def update(self, **cellargs):
+        surface = cellargs.get('surface', None)
+        if surface is not None:
+            self.surface = surface
+        #
+        statistics = cellargs.get('statistics', None)
+        if statistics is not None:
+            self.statistics = statistics
+        #    
+        trace_hat = cellargs.get('trace_hat', None)
+        if trace_hat is not None:
+            self.trace_hat = trace_hat
+        #
+        iterations = cellargs.get('iterations', None)
+        if iterations is not None:
+            self.iterations = iterations
+        #
+        cell = cellargs.get('cell', None)
+        if cell is not None:
+            self.parametric_flags = cell
+        #
+    #.........
     def __str__(self):
         strg = ["Control          :",
                 "Surface type     : %s" % self.surface,
@@ -91,43 +143,181 @@ cdef class loess_control:
                 "Nb iterations    : %s" % self.iterations,]
         return '\n'.join(strg)
         
-    
+#    
+######---------------------------------------------------------------------------
+##---- ---- loess kd_tree ---
+######---------------------------------------------------------------------------
+cdef class loess_kd_tree:
+    cdef c_loess.c_loess_kd_tree *_base
+#    #.........
+#    property parameter:
+#        def __get__(self):
+#            return self._base.parameter
+#    #.........
+#    property a:
+#        def __get__(self):
+#            return self._base.a
+#    #.........
+#    property vval:
+#        def __get__(self):
+#            return self._base.vert
+#    #.........
+#    property xi:
+#        def __get__(self):
+#            return self._base.xi
+#    #.........
+#    property vert:
+#        def __get__(self):
+#            return self._base.vert
+#        return
+#    
+######---------------------------------------------------------------------------
+##---- ---- loess model ---
+######---------------------------------------------------------------------------
+cdef class loess_model:
+    cdef c_loess.c_loess_model *_base
+    cdef long npar
+    #.........
+    property span:
+        def __get__(self):
+            return self._base.span
+        def __set__(self, span):
+            self._base.span = span
+    #.........
+    property degree:
+        def __get__(self):
+            return self._base.degree
+    #.........
+    property normalize:
+        "Normalize the variables. Only useful if more than one variable..."
+        def __get__(self):
+            return bool(self._base.normalize)
+        def __set__(self, normalize):
+            self._base.normalize = normalize
+    #.........
+    property family:
+        def __get__(self):
+            return self._base.family
+    #.........
+    property parametric_flags:
+        def __get__(self):
+            return boolarray_from_data(8, 1, self._base.parametric)
+        def __set__(self, paramf):
+            cdef ndarray p_ndr
+            cdef long *p_dat
+            cdef int i
+            p_ndr = <ndarray>PyArray_FROMANY(paramf, NPY_LONG, 1, 1, NPY_OWNDATA)
+            p_dat = <long *>p_ndr.data
+            for i in 0 <= i < max(8, p_ndr.size):
+                self._base.parametric[i] = p_dat[i]
+    #.........
+    property drop_square_flags:
+        def __get__(self):
+            return boolarray_from_data(8, 1, self._base.drop_square)
+        def __set__(self, drop_sq):
+            cdef ndarray d_ndr
+            cdef long *d_dat
+            cdef int i
+            d_ndr = <ndarray>PyArray_FROMANY(drop_sq, NPY_LONG, 1, 1, NPY_OWNDATA)
+            d_dat = <long *>d_ndr.data
+            for i in 0 <= i < max(8, d_ndr.size):
+                self._base.drop_square[i] = d_dat[i]
+    #........
+    def update(self, **modelargs):
+        family = modelargs.get('family', None)
+        if family is not None:
+            self.family = family
+        #
+        span = modelargs.get('span', None)
+        if span is not None:
+            self.span = span
+        #    
+        degree = modelargs.get('degree', None)
+        if degree is not None:
+            self.degree = degree
+        #
+        normalize = modelargs.get('normalize', None)
+        if normalize is not None:
+            self.normalize = normalize
+        #
+        parametric = modelargs.get('parametric', None)
+        if parametric is not None:
+            self.parametric_flags = parametric
+        #
+        drop_square = modelargs.get('drop_square', None)
+        if drop_square is not None:
+            self.drop_square_flags = drop_square
+    #.........
+    def __repr__(self):
+        return "loess model parameters @%s" % id(self)
+    #.........
+    def __str__(self):
+        strg = ["Model parameters.....",
+                "family      : %s" % self.family,
+                "span        : %s" % self.span,
+                "degree      : %s" % self.degree,
+                "normalized  : %s" % self.normalize,
+                "parametric  : %s" % self.parametric_flags[:self.npar],
+                "drop_square : %s" % self.drop_square_flags[:self.npar]
+                ]
+        return '\n'.join(strg)
+        
 #####---------------------------------------------------------------------------
 #---- ---- loess outputs ---
 #####---------------------------------------------------------------------------
 cdef class loess_outputs:
-    cdef c_loess.c_loess_outputs _outputs
-    cdef ndarray fitted_values, fitted_residuals, pseudovalues, diagonal, robust, divisor
-    cdef double enp, s, one_delta, two_delta, trace_hat
-    
-    def __init__(self, n, p):
-        cdef npy_intp *rows, *cols
-        #cdef double *fv_dat, *fr_dat, *pv_dat, *diag_dat, *rw_dat, *div_dat
-        rows[0] = <npy_intp>n
-        cols[0] = <npy_intp>p
-        print "DEBUG: Initializing loess_outputs...",
-        # Initialize the python side ............
-        self.fitted_values = <ndarray>PyArray_EMPTY(1, rows, NPY_DOUBLE, NPY_ALIGNED)
-        self.fitted_residuals = <ndarray>PyArray_EMPTY(1, rows, NPY_DOUBLE, NPY_ALIGNED)
-        self.pesudovalues = <ndarray>PyArray_EMPTY(1, rows, NPY_DOUBLE, NPY_ALIGNED)
-        self.diagonal = <ndarray>PyArray_EMPTY(1, rows, NPY_DOUBLE, NPY_ALIGNED)
-        self.robust = <ndarray>PyArray_EMPTY(1, rows, NPY_DOUBLE, NPY_ALIGNED)
-        self.divisor = <ndarray>PyArray_EMPTY(1, cols, NPY_DOUBLE, NPY_ALIGNED)
-        # Initialize the C side .................
-        self._outputs.fitted_values = <double *>self.fitted_values.data
-        self._outputs.fitted_residuals = <double *>self.fitted_residuals.data
-        self._outputs.pseudovalues = <double *>self.pseudovalues.data
-        self._outputs.diagonal = <double *>self.diagonal.data
-        self._outputs.robust = <double *>self.robust.data
-        self._outputs.divisor = <double *>self.divisor.data
-        # Common initialization .................
-        self.enp = self._outputs.enp = 0
-        self.s = self._outputs.s = 0
-        self.one_delta = self._outputs.one_delta = 0
-        self.two_delta = self._outputs.two_delta = 0
-        self.trace_hat = self._outputs.trace_hat = 0 
-        print "OK."   
-        
+    cdef c_loess.c_loess_outputs *_base
+    cdef long nobs
+    #........
+    property fitted_values:
+        def __get__(self):
+            return floatarray_from_data(self.nobs, 1, self._base.fitted_values)
+    #.........
+    property fitted_residuals:
+        def __get__(self):
+            return floatarray_from_data(self.nobs, 1, self._base.fitted_residuals)
+    #.........
+    property pseudovalues:
+        def __get__(self):
+            return floatarray_from_data(self.nobs, 1, self._base.pseudovalues)
+    #.........
+    property diagonal:
+        def __get__(self):
+            return floatarray_from_data(self.nobs, 1, self._base.diagonal)
+    #.........
+    property robust:
+        def __get__(self):
+            return floatarray_from_data(self.nobs, 1, self._base.robust)
+    #.........
+    property divisor:
+        def __get__(self):
+            return floatarray_from_data(self.nobs, 1, self._base.divisor)
+    #.........    
+    property enp:
+        "Equivalent number of parameters."
+        def __get__(self):
+            return self._base.enp
+    #.........
+    property s:
+#        ""
+        def __get__(self):
+            return self._base.s
+    #.........
+    property one_delta:
+#        ""
+        def __get__(self):
+            return self._base.one_delta
+    #.........
+    property two_delta:
+#        ""
+        def __get__(self):
+            return self._base.two_delta
+    #.........
+    property trace_hat:
+#        ""
+        def __get__(self):
+            return self._base.trace_hat
+#    #.........
 #    def __str__(self):
 #        strg = ["Outputs          :",
 #                "enp       : %s" % self.enp,
@@ -135,181 +325,170 @@ cdef class loess_outputs:
 #                "Deltas        : %s/%s" % (self.one_delta, self.two_delta),
 #                "Divisor    : %s" % self.divisor,]
 #        return '\n'.join(strg)
-    
-#####---------------------------------------------------------------------------
-#---- ---- loess kd_tree ---
-#####---------------------------------------------------------------------------
-cdef class loess_kd_tree:
-    cdef c_loess.c_loess_kd_tree _kdtree
-    cdef ndarray parameter, a, xi, vert, vval
-    
-    def __init__(self, long n, long p):
-        cdef long maxkd, nval, nvert
-        cdef npy_intp *nmaxkd, *nnval, *nnvert, *npars
-        #
-        print "DEBUG: Initializing loess_kdtree...",
-        maxkd = max(n, 200)
-        nvert = p * 2
-        nval = (p+1) * maxkd
-        # Initialize the python side ............
-        print "(python side)",
-        nmaxkd[0] = <npy_intp>maxkd
-        nnvert[0] = <npy_intp>nvert
-        nnval[0] = <npy_intp>nval
-        npars[0] = <npy_intp>8
-        self.parameter = <ndarray>PyArray_EMPTY(1, npars, NPY_LONG, NPY_ALIGNED)
-        self.a = <ndarray>PyArray_EMPTY(1, nmaxkd, NPY_LONG, NPY_ALIGNED)
-        self.xi = <ndarray>PyArray_EMPTY(1, nmaxkd, NPY_DOUBLE, NPY_ALIGNED)
-        self.vert = <ndarray>PyArray_EMPTY(1, nnvert, NPY_DOUBLE, NPY_ALIGNED)
-        self.vval = <ndarray>PyArray_EMPTY(1, nnval, NPY_DOUBLE, NPY_ALIGNED)
-#        self.parameter = <ndarray>_N.empty((8,), _N.long, order='F')
-#        self.a = <ndarray>_N.empty((maxkd,), _N.long, order='F')
-#        self.xi = <ndarray>_N.empty((maxkd,), _N.float, order='F')
-#        self.vert = <ndarray>_N.empty((p*2,), _N.float, order='F')
-#        self.vval = <ndarray>_N.empty((nnval,), _N.float, order='F')
-        # Initialize the C side .................
-        print "(C side)",
-        self._kdtree.parameter = <long *>self.parameter.data
-        self._kdtree.a = <long *>self.a.data
-        self._kdtree.xi = <double *>self.xi.data
-        self._kdtree.vert = <double *>self.vert.data
-        self._kdtree.vval = <double *>self.vval.data
-#        # FIXME : Do we need to fill the arrays ?
-#        for i from 0 <= i < 8:
-#            self._kdtree.parameter[i] = 0
-#        for i from 0 <= i < len(self.a):
-#            self._kdtree.a[i] = 0
-#            self._kdtree.xi[i] = 0
-#        for i from 0 <= i < (p*2):
-#            self._kdtree.vert[i] = 0
-#        for i from 0 <= i < nnval:
-#            self._kdtree.vval[i] = 0
-        print "OK."
-        return
-    
-#####---------------------------------------------------------------------------
-#---- ---- loess model ---
-#####---------------------------------------------------------------------------
 
-cdef class loess_model:
-    cdef c_loess.c_loess_model _model
-    cdef double span
-    cdef int degree, normalize
-    cdef char *family
-#    cdef ndarray parametric_flags, drop_square_flags
-    cdef object parametric_flags, drop_square_flags
-    #
-    def __init__(self, double span=0.75, int degree=2, int normalize=1, 
-                 object parametric_in=False, object drop_square_in=False, 
-                 object family="gaussian"):
-        cdef int i
-        cdef int *parmf_dat, *dropsq_dat
-        cdef npy_intp *npars
-        print "DEBUG: Initializing loess_model...",
-        self.span = self._model.span = span
-        self.degree = self._model.degree = degree
-        self.normalize = self._model.normalize = normalize
-        self.family = self._model.family = family
-        # FIXME : trying to use a ndarray crashes around here....
-        self.parametric_flags = [None]*8
-        if hasattr(parametric_in, '__len__'):
-            for i from 0 <= i < len(parametric_in):
-                self.parametric_flags[i] = parametric_in[i]
-                self._model.parametric[i] = parametric_in[i]
-        else:
-            for i from 0 <= i <=7:
-                self.parametric_flags[i] = parametric_in
-                self._model.parametric[i] = parametric_in
-        #....
-        self.drop_square_flags = [None]*8
-        if hasattr(drop_square_in, '__len__'):
-            for i from 0 <= i < len(drop_square_in):
-                self.drop_square_flags[i] = drop_square_in[i]
-                self._model.drop_square[i] = drop_square_in[i]
-        else:
-            for i from 0 <= i < 8:
-                self.drop_square_flags[i] = drop_square_in
-                self._model.drop_square[i] = drop_square_in
-        print "OK."
-#        npars[0] = 8
-#        self.parametric = <ndarray>PyArray_EMPTY(1, npars, NPY_INT, NPY_ALIGNED)
-#        self.drop_square = <ndarray>PyArray_EMPTY(1, npars, NPY_INT, NPY_ALIGNED)
-#        parmf_dat = <int *>self.parametric_flags.data
-#        dropsq_dat = <int *>self.drop_square_flags.data
-#        for i from 0 <= i < 8:
-#            print "i:%i" % i
-#            parmf_dat[i] = 0
-#            self._model.parametric[i] = parmf_dat[i]
-#            dropsq_dat[i] = 0
-#            self._model.drop_square[i] = dropsq_dat[i]
-#        print "DEBUG: loess_model: initialized"
-        return
-    #
-    def __repr__(self):
-        return "loess model parameters @%s" % id(self)
-    def __str__(self):
-        strg = ["Object      : %s" % self.__name__,
-                "family      : %s" % self._model.family,
-                "span        : %s" % self._model.span,
-                "degree      : %s" % self._model.degree,
-                "normalized  : %s" % self._model.normalize,
-                "parametric  : %s" % self.parametric,
-                "drop_square : %s" % self.drop_square]
-        return '\n'.join(strg)
+
+#####---------------------------------------------------------------------------
+#---- ---- loess anova ---
+#####---------------------------------------------------------------------------
+cdef class loess_anova:
+    cdef c_loess.c_anova *_base
+    cdef long nest
+    #.........
+    property dfn:
+        def __get__(self):
+            return self._base.dfn
+    #.........
+    property dfd:
+        def __get__(self):
+            return self._base.dfd
+    #.........
+    property F_value:
+        def __get__(self):
+            return self._base.F_value
+    #.........
+    property Pr_F:
+        def __get__(self):
+            return self._base.Pr_F
+        
+#####---------------------------------------------------------------------------
+#---- ---- loess confidence ---
+#####---------------------------------------------------------------------------
+cdef class confidence_interval:
+    cdef c_loess.c_conf_inv *_base
+    cdef nest
+    #.........
+    def __dealloc__(self):
+        c_loess.pw_free_mem(self)
+    #.........
+    property fit:
+        def __get__(self):
+            return floatarray_from_data(nest, 1, self._base.fit)
+    #.........
+    property upper:
+        def __get__(self):
+            return floatarray_from_data(nest, 1, self._base.upper)
+    #.........
+    property lower:
+        def __get__(self):
+            return floatarray_from_data(nest, 1, self._base.lower)
+
+#####---------------------------------------------------------------------------
+#---- ---- loess predictions ---
+#####---------------------------------------------------------------------------
+cdef class loess_predicted:
+    cdef c_loess.c_prediction *_base
+    cdef long nest
+    cdef confidence_interval conf_interval
+    #.........
+    def __dealloc__(self):
+        c_loess.pred_free_mem(self._base)
+    #.........
+    property predicted:
+        def __get__(self):
+            return floatarray_from_data(nest, 1, self._base.fit)
+    #.........
+    property predicted_stderr:
+        def __get__(self):
+            return floatarray_from_data(nest, 1, self._base.se_fit)
+    #.........
+    property residual_scale:
+        def __get__(self):
+            return self.residual_scale
+    #.........
+    property df:
+        def __get__(self):
+            return self.df
+    #.........
+    def confidence(self, coverage=0.95):
+        """
+    coverage : float
+        Confidence level of the confidence intervals limits as a fraction.
+        """
+        c_loess.pointwise(self._base, self.nest, coverage,
+                          self.conf_interval._base)
     
+
 #####---------------------------------------------------------------------------
 #---- ---- loess base class ---
 #####---------------------------------------------------------------------------
-
 cdef class loess:
-#    cdef c_loess.c_loess *_base # If we try the pure C way
     cdef c_loess.c_loess _base
-    cdef loess_inputs inputs
-    cdef loess_model model
-    cdef loess_control control
-    cdef loess_kd_tree kd_tree
-    cdef loess_outputs outputs
+    cdef readonly loess_inputs inputs
+    cdef readonly loess_model model
+    cdef readonly loess_control control
+    cdef readonly loess_kd_tree kd_tree
+    cdef readonly loess_outputs outputs
+    cdef readonly loess_predicted predicted
     
     def __init__(self, object x, object y, object weights=None):
         #
         cdef ndarray x_ndr, y_ndr
         cdef double *x_dat, *y_dat
-        cdef long n, p
         cdef int i
         #
-#        print "Try setup"
-#        # CHECK : The following function segfaults :(
-#        c_loess.loess_setup(x_dat, y_dat, n, d, self._base)
-#        # CHECK : So we gonna try the hard way
-        # Initialize the python side ............
-        self.inputs = loess_inputs(x, y, weights)
-        n = self.inputs.nobs
-        p = self.inputs.nvar
+        x_ndr = <ndarray>PyArray_FROMANY(x, NPY_DOUBLE, 1, 1, NPY_FORTRAN)
+        y_ndr = <ndarray>PyArray_FROMANY(y, NPY_DOUBLE, 1, 1, NPY_FORTRAN)
+        x_dat = <double *>x_ndr.data
+        y_dat = <double *>y_ndr.data
+        n = len(x_ndr)
+        p = x_ndr.size / n
+        c_loess.loess_setup(x_dat, y_dat, n, p, &self._base)
+        #
+        self.inputs = loess_inputs()
+        self.inputs._base = &self._base.inputs
+        #
         self.model = loess_model()
+        self.model._base = &self._base.model
+        self.model.npar = p
+        #
         self.control = loess_control()
-        self.outputs = loess_outputs(n,p)
-        self.kd_tree = loess_kd_tree(n,p)
-        # Initialize the C side .................
-        print "DEBUG:Initializing loess_cside"
-        self._base.inputs = self.inputs._inputs
-        self._base.model = self.model._model
-        self._base.control = self.control._control
-        self._base.kd_tree = self.kd_tree._kdtree
-        self._base.outputs = self.outputs._outputs
-
-
-
-#        self.inputs = base.in
-#        self.model = base.model
-#        self.kd_tree = base.kd_tree
-#        self.outputs = base.out
-        
-    
+        self.control._base = &self._base.control
+        #
+        self.kd_tree = loess_kd_tree()
+        self.kd_tree._base = &self._base.kd_tree
+        #
+        self.outputs = loess_outputs()
+        self.outputs._base = &self._base.outputs
+        self.outputs.nobs = n
+    #......................................................
+    def fit(self):
+        c_loess.loess_fit(&self._base)
+        return
     #......................................................
     def summary(self):
-        print "Number of Observations         : %d" % self.inputs.n
+        print "Number of Observations         : %d" % self.inputs.nobs
         print "Equivalent Number of Parameters: %.1f" % self.outputs.enp
         if self.model.family == "gaussian":
             print "Residual Standard Error        : %.4f" % self.outputs.s
         else:
             print "Residual Scale Estimate        : %.4f" % self.outputs.s
+    #......................................................
+    def predict(self, newdata, stderr=False):
+        """
+    newdata: ndarray
+        A (m,p) ndarray specifying the values of the predictors at which the 
+        evaluation is to be carried out.
+    stderr: Boolean
+        Logical flag for computing standard errors at newdata.
+        """
+        cdef ndarray p_ndr
+        cdef double *p_dat
+        cdef int i, m
+        #
+        p_ndr = <ndarray>PyArray_FROMANY(newdata, NPY_DOUBLE, 1, self.nvar, NPY_FORTRAN)
+        p_dat = <double *>p_ndr.data
+        m = len(p_ndr)
+        c_loess.predict(p_dat, m, &self._base, self.predicted._base, stderr)
+        self.predicted.nest = m
+    #......................................................
+#    def pointwisevoid(predicted *pre, int m, double coverage,
+#                      struct ci_struct *ci)
+#        c_loess.pointwise(predicted *pre, int m, double coverage,
+#                      struct ci_struct *ci)
+#
+#def anova(loess_one, loess_two):
+#    cdef c_loess.c_anova result
+#    
+#    c_loess.anova(loess_one._base, loess_two._base, &result)
+#        
+        

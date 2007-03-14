@@ -30,8 +30,8 @@ typedef struct {
     } loess_control;
 
 typedef struct {
-    int    *parameter;
-    int    *a;
+    long   *parameter;
+    long   *a;
     double *xi;
     double *vert;
     double *vval;
@@ -64,18 +64,18 @@ typedef struct {
     double *se_fit;
     double residual_scale;
     double df;
-} predicted;
+    } prediction;
 
-struct anova_struct {
+typedef struct {
     double dfn;
     double dfd;
     double F_value;
     double Pr_F;
-};
+    } anova_struct;
 
-struct ci_struct {
+typedef struct {
     double *fit;
     double *upper;
     double *lower;
-};
+    } conf_inv;
 

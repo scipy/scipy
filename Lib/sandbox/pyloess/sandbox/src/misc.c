@@ -3,24 +3,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static double
-fmin(double a, double b)
+static double fmin(double a, double b)
 {
     return(a < b ? a : b);
 }
 
-static double
-fmax(double a, double b)
+static double fmax(double a, double b)
 {
     return(a > b ? a : b);
 }
 
 
-
-
-void
-anova(loess *one, loess *two,
-      struct anova_struct *out)
+void anova(loess *one, loess *two, anova_struct *out)
 {
     double  one_d1, one_d2, one_s, two_d1, two_d2, two_s,
             rssdiff, d1diff, tmp, pf();
@@ -44,9 +38,7 @@ anova(loess *one, loess *two,
     out->Pr_F = 1 - pf(out->F_value, out->dfn, out->dfd);
 }
 
-void
-pointwise(predicted *pre, int m, double coverage,
-          struct ci_struct *ci)
+void pointwise(prediction *pre, int m, double coverage, conf_inv *ci)
 {
     double    t_dist, limit, fit, qt();
     int    i;
@@ -64,23 +56,20 @@ pointwise(predicted *pre, int m, double coverage,
     }
 }
 
-void
-pw_free_mem(struct ci_struct *ci)
+void pw_free_mem(conf_inv *ci)
 {
     free(ci->fit);
     free(ci->upper);
     free(ci->lower);
 }
 
-double
-pf(double q, double df1, double df2)
+double pf(double q, double df1, double df2)
 {
     double    ibeta();
     return(ibeta(q*df1/(df2+q*df1), df1/2, df2/2));
 }
 
-double
-qt(double p, double df)
+double qt(double p, double df)
 {
     double    t, invibeta();
     t = invibeta(fabs(2*p-1), 0.5, df/2);
@@ -97,8 +86,7 @@ qt(double p, double df)
 #define IBETA_LARGE     1.0e30
 #define IBETA_SMALL     1.0e-30
 
-double
-ibeta(double x, double a, double b)
+double ibeta(double x, double a, double b)
 {
     int flipped = 0, i, k, count;
     double I, temp, pn[6], ak, bk, next, prev, factor, val;
@@ -169,8 +157,7 @@ static double den[] = {
         0.001308
 };
 
-double
-invigauss_quick(double p)
+double invigauss_quick(double p)
 {
     int lower;
     double t, n, d, q;
@@ -191,8 +178,7 @@ invigauss_quick(double p)
  * Assumption: 0 <= p <= 1, a,b > 0.
  */
 
-double
-invibeta(double p, double a, double b)
+double invibeta(double p, double a, double b)
 {
     int i;
     double ql, qr, qm, qdiff;
@@ -280,8 +266,7 @@ invibeta(double p, double a, double b)
  * Assumption: 0 < p < 1, a,b > 0.
  */
 
-double
-invibeta_quick(double p, double a, double b)
+double invibeta_quick(double p, double a, double b)
 {
     double x, m, s, fmax(), fmin(), invigauss_quick();
 
@@ -291,8 +276,7 @@ invibeta_quick(double p, double a, double b)
     return(fmax(0.0, fmin(1.0, invigauss_quick(p)*s + m)));
 }
 
-int
-max(int a, int b)
+int max(int a, int b)
 {
     return(a > b ? a : b);
 }
@@ -300,15 +284,13 @@ max(int a, int b)
 typedef double doublereal;
 typedef int integer;
 
-void
-Recover(char *a, int *b)
+void Recover(char *a, int *b)
 {
     printf(a);
     exit(1);
 }
 
-void
-Warning(char *a, int *b)
+void Warning(char *a, int *b)
 {
     printf(a);
 }
