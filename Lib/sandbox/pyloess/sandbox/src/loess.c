@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <time.h>
 
 static char *surf_stat;
 
@@ -118,12 +117,6 @@ loess_(double *y, double *x_, int *size_info, double *weights, double *span,
     int     cut, comp();
     char    *new_stat;
     void    condition();
-    char timestr[30];
-    size_t timestri;
-    struct tm tim;
-    time_t now;
-    now = time(NULL);
-    tim = *(localtime(&now));
 
     D = size_info[0];
     N = size_info[1];
@@ -220,11 +213,9 @@ loess_(double *y, double *x_, int *size_info, double *weights, double *span,
             *one_delta = delta1;
             *two_delta = delta2;
         }
-        strftime(timestr,30,"%b %d, %Y; %H:%M:%S\n",&tim);
-        printf("%s", timestr);
-        for(i = 0; i < N; i++)
-            printf("%.6f\n", fitted_values[i]);
+        for(i = 0; i < N; i++){
             fitted_residuals[i] = y[i] - fitted_values[i];
+        };
         if(j < (*iterations))
             F77_SUB(lowesw)(fitted_residuals, &N, robust, temp);
     }

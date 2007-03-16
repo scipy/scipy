@@ -1,6 +1,7 @@
 #include "S.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define    min(x,y)  ((x) < (y) ? (x) : (y))
 #define    max(x,y)  ((x) > (y) ? (x) : (y))
@@ -255,7 +256,7 @@ loess_free()
 
 /* begin ehg's FORTRAN-callable C-codes */
 
-void
+void*
 F77_SUB(ehg182)(int *i)
 {
 char *mess, mess2[50];
@@ -298,7 +299,9 @@ case 196: mess="degree must be at least 1 for vertex influence matrix"; break;
 case 999: mess="not yet implemented"; break;
 default: sprintf(mess=mess2,"Assert failed; error code %d\n",*i); break;
     }
-    Recover(mess,NULL_ENTRY);  /* in /usr/s/current/src/qpe/debug.c */
+    printf(mess);
+    return(i);
+//    Recover(mess,NULL_ENTRY);  /* in /usr/s/current/src/qpe/debug.c */
 }
 
 void

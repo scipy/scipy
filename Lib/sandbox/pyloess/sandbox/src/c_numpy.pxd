@@ -123,4 +123,7 @@ cdef extern from "numpy/arrayobject.h":
     object PyArray_IterNew(object arr)
     void PyArray_ITER_NEXT(flatiter it)
 
+
+    object PyArray_SimpleNewFromData(int ndims, npy_intp* dims, NPY_TYPES type_num, void* data)
+
     void import_array()
