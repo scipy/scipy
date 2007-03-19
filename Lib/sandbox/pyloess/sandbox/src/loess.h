@@ -5,6 +5,11 @@
 #define FALSE 0
 
 typedef struct {
+    int err_status;
+    char *err_msg;
+    } loess_errstatus;
+
+typedef struct {
     long    n;
     long    p;
     double  *y;
@@ -57,6 +62,7 @@ typedef struct {
     loess_control control;
     loess_kd_tree kd_tree;
     loess_outputs outputs;
+    loess_errstatus status;
 } loess;
 
 typedef struct {

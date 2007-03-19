@@ -39,6 +39,8 @@ c     remaining vertices
     5 continue
       return
       end
+C----------------------------------------------------------------------C
+C     cpvert
       subroutine ehg125(p,nv,v,vhit,nvmax,d,k,t,r,s,f,l,u)
       logical i1,i2,match
       integer d,execnt,h,i,i3,j,k,m,mm,nv,nvmax,p,r,s
@@ -104,6 +106,8 @@ c           bottom of while loop
       end if
       return
       end
+C-----------------------------------------------------------------------
+C     descend
       integer function ehg138(i,z,a,xi,lo,hi,ncmax)
       logical i1
       integer d,execnt,i,j,nc,ncmax
@@ -131,6 +135,9 @@ c     bottom of while loop
     4 ehg138=j
       return
       end
+
+C----------------------------------------------------------------------C
+C     select q-th smallest by partial sorting
       subroutine ehg106(il,ir,k,nk,p,pi,n)
       integer execnt,i,ii,il,ir,j,k,l,n,nk,r
       integer pi(n)
@@ -198,6 +205,9 @@ c        bottom of while loop
 c     bottom of while loop
     4 return
       end
+
+C----------------------------------------------------------------------C
+C     l2fit,l2tr computational kernel
       subroutine ehg127(q,n,d,nf,f,x,psi,y,rw,kernel,k,dist,eta,b,od,w,r
      +cond,sing,sigma,u,e,dgamma,qraux,work,tol,dd,tdeg,cdeg,s)
       integer column,d,dd,execnt,i,i3,i9,info,inorm2,j,jj,jpvt,k,kernel,
@@ -384,6 +394,9 @@ c        bug fix 2006-07-04 for k=1, od>1.   (thanks btyner@gmail.com)
    27 continue
       return
       end
+
+C----------------------------------------------------------------------C
+C     lowesb after workspace expansion
       subroutine ehg131(x,y,rw,trl,diagl,kernel,k,n,d,nc,ncmax,vc,nv,nvm
      +ax,nf,f,a,c,hi,lo,pi,psi,v,vhit,vval,xi,dist,eta,b,ntol,fd,w,vval2
      +,rcond,sing,dd,tdeg,cdeg,lq,lf,setlf)
@@ -437,6 +450,9 @@ c     smooth
      +g,cdeg,lq,lf,setlf,vval)
       return
       end
+
+C----------------------------------------------------------------------C
+C     lowese after workspace expansion
       subroutine ehg133(n,d,vc,nvmax,nc,ncmax,a,c,hi,lo,v,vval,xi,m,z,s)
       integer d,execnt,i,i1,m,nc,ncmax,nv,nvmax,vc
       integer a(ncmax),c(vc,ncmax),hi(ncmax),lo(ncmax)
@@ -464,6 +480,9 @@ c     smooth
       iw(i)=j
       return
       end
+
+C----------------------------------------------------------------------C
+C     delta1,2 from trL
       subroutine ehg141(trl,n,deg,k,d,nsing,dk,delta1,delta2)
       integer d,deg,dk,k,n,nsing
       external ehg176
@@ -514,6 +533,9 @@ c     coef, d, deg, del
       delta2=n-trl*dexp(c1*z**c2*(1-z)**c3*c4)
       return
       end
+
+C----------------------------------------------------------------------C
+C     exact delta
       subroutine lowesc(n,l,ll,trl,delta1,delta2)
       integer execnt,i,j,n
       double precision delta1,delta2,trl
@@ -554,6 +576,9 @@ c     $delta sub 2 = "tr" LL sup 2$
    10 continue
       return
       end
+
+C----------------------------------------------------------------------C
+C     compute derived k-d tree information
       subroutine ehg169(d,vc,nc,ncmax,nv,nvmax,v,a,xi,c,hi,lo)
       integer d,execnt,i,j,k,mc,mv,nc,ncmax,nv,nvmax,p,vc
       integer a(ncmax),c(vc,ncmax),hi(ncmax),lo(ncmax),novhit(1)
@@ -606,6 +631,9 @@ c     bottom of while loop
       end if
       return
       end
+
+C----------------------------------------------------------------------C
+C     loeval for delta
        DOUBLE PRECISION function ehg176(z)
        DOUBLE PRECISION z(*)
        integer d,vc,nv,nc
@@ -707,6 +735,9 @@ c     bottom of while loop
        data vval(1,10) /-4.1032D-2/
        ehg176=ehg128(z,d,nc,vc,a,xi,lo,hi,c,v,nv,vval)
        end
+
+C----------------------------------------------------------------------C
+C     approximate delta
       subroutine lowesa(trl,n,d,tau,nsing,delta1,delta2)
       integer d,dka,dkb,execnt,n,nsing,tau
       double precision alpha,d1a,d1b,d2a,d2b,delta1,delta2,trl
@@ -721,6 +752,9 @@ c     bottom of while loop
       delta2=(1-alpha)*d2a+alpha*d2b
       return
       end
+
+C----------------------------------------------------------------------C
+C     lowesl after workspace expansion
       subroutine ehg191(m,z,l,d,n,nf,nv,ncmax,vc,a,xi,lo,hi,c,v,nvmax,vv
      +al2,lf,lq)
       integer lq1,d,execnt,i,i1,i2,j,m,n,nc,ncmax,nf,nv,nvmax,p,vc
@@ -764,6 +798,9 @@ c           bottom of while loop
     3 continue
       return
       end
+
+C----------------------------------------------------------------------C
+C     trL approximation
       subroutine ehg196(tau,d,f,trl)
       integer d,dka,dkb,execnt,tau
       double precision alpha,f,trl,trla,trlb
@@ -777,6 +814,9 @@ c           bottom of while loop
       trl=(1-alpha)*trla+alpha*trlb
       return
       end
+
+C----------------------------------------------------------------------C
+C     for deg 1,2
       subroutine ehg197(deg,tau,d,f,dk,trl)
       integer d,deg,dk,tau
       double precision trl, f
@@ -787,6 +827,9 @@ c           bottom of while loop
       trl = dk*(1+max(0.d0,(g1-f)/f))
       return
       end
+
+C----------------------------------------------------------------------C
+C     lowesr after workspace expansion
       subroutine ehg192(y,d,n,nf,nv,nvmax,vval,lf,lq)
       integer d,execnt,i,i1,i2,j,n,nf,nv,nvmax
       integer lq(nvmax,nf)
@@ -810,6 +853,10 @@ c           bottom of while loop
     5 continue
       return
       end
+
+
+C----------------------------------------------------------------------C
+C     eval
       DOUBLE PRECISION function ehg128(z,d,ncmax,vc,a,xi,lo,hi,c,v,nvmax
      +,vval)
       logical i10,i2,i3,i4,i5,i6,i7,i8,i9
@@ -1147,6 +1194,10 @@ c        Hermite basis
       ehg128=s
       return
       end
+
+
+C----------------------------------------------------------------------C
+C
       integer function ifloor(x)
       DOUBLE PRECISION x
       ifloor=x
@@ -1271,6 +1322,9 @@ c              ( U sup T Q sup T ) W $
     4 continue
       return
       end
+
+C----------------------------------------------------------------------C
+C     l2tr
       subroutine ehg139(v,nvmax,nv,n,d,nf,f,x,pi,psi,y,rw,trl,kernel,k,d
      +ist,phi,eta,b,od,w,diagl,vval2,ncmax,vc,a,xi,lo,hi,c,vhit,rcond,si
      +ng,dd,tdeg,cdeg,lq,lf,setlf,s)
@@ -1434,6 +1488,9 @@ c           $Lf sub {:,l,:} = V SIGMA sup {+} U sup T Q sup T W$
       end if
       return
       end
+
+
+C----------------------------------------------------------------------C
       subroutine dqrdc(x,ldx,n,p,qraux,jpvt,work,job)
       integer ldx,n,p,job
       integer jpvt(1)
@@ -1641,6 +1698,8 @@ c
   200 continue
       return
       end
+
+C---------------------------------------------------------------------C
       integer function idamax(n,dx,incx)
 c
 c     finds the index of element having max. absolute value.
@@ -1678,6 +1737,9 @@ c
    30 continue
       return
       end
+
+C----------------------------------------------------------------------C
+C     build kd tree
       subroutine lowesb(xx,yy,ww,diagl,infl,iv,liv,lv,wv)
       logical infl,setlf
       integer execnt
@@ -1722,6 +1784,9 @@ c
       end if
       return
       end
+
+C----------------------------------------------------------------------C
+C     setup workspace
       subroutine lowesd(versio,iv,liv,lv,v,d,n,f,ideg,nvmax,setlf)
       logical setlf
       integer bound,d,execnt,i,i1,i2,ideg,j,liv,lv,n,ncmax,nf,nvmax,vc,v
@@ -1822,6 +1887,9 @@ c     initialize permutation
       v(4)=1.d0
       return
       end
+
+C----------------------------------------------------------------------C
+C     evaluate smooth at z
       subroutine lowese(iv,liv,lv,wv,m,z,s)
       integer execnt,m
       integer iv(*)
@@ -1840,6 +1908,9 @@ c     initialize permutation
      +8)),iv(iv(9)),iv(iv(10)),wv(iv(11)),wv(iv(13)),wv(iv(12)),m,z,s)
       return
       end
+
+C----------------------------------------------------------------------C
+C     slow smooth at z
       subroutine lowesf(xx,yy,ww,iv,liv,lv,wv,m,z,l,ihat,s)
       logical i1
       integer execnt,ihat,m,n
@@ -1866,6 +1937,9 @@ c     initialize permutation
      +(4),iv(30),iv(33),iv(32),iv(41),s)
       return
       end
+
+C----------------------------------------------------------------------C
+C     explicit hat matrix mapping y to z
       subroutine lowesl(iv,liv,lv,wv,m,z,l)
       integer execnt,m,n
       integer iv(*)
@@ -1888,6 +1962,9 @@ c     initialize permutation
      +24)),wv(iv(34)),iv(iv(25)))
       return
       end
+
+C----------------------------------------------------------------------C
+C     rebuild with new data values (does not change y)
       subroutine lowesr(yy,iv,liv,lv,wv)
       integer execnt
       integer iv(*)
@@ -1906,6 +1983,9 @@ c     initialize permutation
      +)),iv(iv(25)))
       return
       end
+
+C----------------------------------------------------------------------C
+C     robustness weights
       subroutine lowesw(res,n,rw,pi)
       integer identi,execnt,i,i1,n,nh
       integer pi(n)
@@ -1957,6 +2037,9 @@ c     partial sort to find 6*mad
       end if
       return
       end
+
+C----------------------------------------------------------------------C
+C     pseudovalues
       subroutine lowesp(n,y,yhat,pwgts,rwgts,pi,ytilde)
       integer identi,execnt,i2,i3,i5,m,n
       integer pi(n)
@@ -2009,6 +2092,9 @@ c     pseudovalues
     8 continue
       return
       end
+
+C----------------------------------------------------------------------C
+C     rbuild
       subroutine ehg124(ll,uu,d,n,nv,nc,ncmax,vc,x,pi,a,xi,lo,hi,c,v,vhi
      +t,nvmax,fc,fd,dd)
       logical i1,i2,i3,leaf
@@ -2117,6 +2203,9 @@ c           right son
 c     bottom of while loop
     4 return
       end
+
+C----------------------------------------------------------------------C
+C     spread
       subroutine ehg129(l,u,d,x,pi,n,sigma)
       integer d,execnt,i,k,l,n,u
       integer pi(n)
@@ -2143,6 +2232,9 @@ c     MachInf -> machin
     3 continue
       return
       end
+
+C----------------------------------------------------------------------C
+C     vleaf
       subroutine ehg137(z,kappa,leaf,nleaf,d,nv,nvmax,ncmax,vc,a,xi,lo,h
      +i,c,v)
       integer d,execnt,nc,ncmax,nleaf,p,stackt

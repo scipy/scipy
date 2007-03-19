@@ -110,10 +110,10 @@ class test_loess2d(NumpyTestCase):
         (x, y, results, newdata1, newdata2, madeup) = self.d
         madeup.model.span = 0.5
         madeup.model.normalize = True
-        madeup.predict(newdata1, stderr=False)
+        madeup.predict(newdata1, stderror=False)
         assert_almost_equal(madeup.predicted.values, results[4], 5)
         #
-        madeup_pred = madeup.predict(newdata1, stderr=False)
+        madeup_pred = madeup.predict(newdata1, stderror=False)
         assert_almost_equal(madeup_pred.values, results[4], 5)
     #
     def test_2d_pred_nodata(self):
@@ -131,13 +131,13 @@ class test_loess2d(NumpyTestCase):
         (x, y, results, newdata1, newdata2, madeup) = self.d   
         madeup.model.span = 0.5
         madeup.model.normalize = True
-        madeup_pred = madeup.predict(newdata2, stderr=True)
+        madeup_pred = madeup.predict(newdata2, stderror=True)
         assert_almost_equal(madeup_pred.values, results[5], 5)
         assert_almost_equal(madeup_pred.stderr, [0.276746, 0.278009], 5)
         assert_almost_equal(madeup_pred.residual_scale, 0.969302, 6)
         assert_almost_equal(madeup_pred.df, 81.2319, 4)
         # Direct access
-        madeup.predict(newdata2, stderr=True)
+        madeup.predict(newdata2, stderror=True)
         assert_almost_equal(madeup.predicted.values, results[5], 5)
         assert_almost_equal(madeup.predicted.stderr, [0.276746, 0.278009], 5)
         assert_almost_equal(madeup.predicted.residual_scale, 0.969302, 6)
@@ -148,7 +148,7 @@ class test_loess2d(NumpyTestCase):
         (x, y, results, newdata1, newdata2, madeup) = self.d   
         madeup.model.span = 0.5
         madeup.model.normalize = True
-        madeup_pred = madeup.predict(newdata2, stderr=True)        
+        madeup_pred = madeup.predict(newdata2, stderror=True)        
         madeup.predicted.confidence(coverage=0.99)
         assert_almost_equal(madeup.predicted.confidence_intervals.lower, 
                             results[6][::3], 5)
@@ -215,14 +215,14 @@ class test_loess_gas(NumpyTestCase):
         (E, NOx, gas_fit_E, newdata, coverage, results) = self.d
         gas = cloess.loess(E,NOx, span=2./3.)
         gas.fit()
-        gas.predict(gas_fit_E, stderr=False)
+        gas.predict(gas_fit_E, stderror=False)
         assert_almost_equal(gas.predicted.values, results[2], 6)
     #
     def test_1dpredict_2(self):
         "Basic test 1d - new predictions"
         (E, NOx, gas_fit_E, newdata, coverage, results) = self.d        
         gas = cloess.loess(E,NOx, span=2./3.)
-        gas.predict(newdata, stderr=True)
+        gas.predict(newdata, stderror=True)
         gas.predicted.confidence(0.99)
         assert_almost_equal(gas.predicted.confidence_intervals.lower,
                             results[3][0::3], 6)
@@ -230,10 +230,58 @@ class test_loess_gas(NumpyTestCase):
                             results[3][1::3], 6)
         assert_almost_equal(gas.predicted.confidence_intervals.upper,
                             results[3][2::3], 6)
+    #
+    def test_anova(self):
+        "Tests anova"
+        (E, NOx, gas_fit_E, newdata, coverage, results) = self.d        
+        gas = cloess.loess(E,NOx, span=2./3.)
+        gas.fit()
+        gas_null = cloess.loess(E, NOx, span=1.0)
+        gas_null.fit()
+        gas_anova = cloess.anova(gas, gas_null)
+        gas_anova_theo = results[4]
+        assert_almost_equal(gas_anova.dfn, gas_anova_theo[0], 5)
+        assert_almost_equal(gas_anova.dfd, gas_anova_theo[1], 5)
+        assert_almost_equal(gas_anova.F_value, gas_anova_theo[2], 5)
+        assert_almost_equal(gas_anova.Pr_F, gas_anova_theo[3], 5)
+    #
+    def test_failures(self):
+        "Tests failures"
+        (E, NOx, gas_fit_E, newdata, coverage, results) = self.d       
+        gas = cloess.loess(E,NOx, span=2./3.)
+        # This one should fail (all parametric)
+        gas.model.parametric_flags = True
+        self.assertRaises(ValueError, gas.fit)
+        # This one also (all drop_square)
+        gas.model.drop_square_flags = True
+        self.assertRaises(ValueError, gas.fit)
+        gas.model.degree = 1
+        self.assertRaises(ValueError, gas.fit)
+        # This one should not (revert to std)
+        gas.model.parametric_flags = False
+        gas.model.drop_square_flags = False
+        gas.model.degree = 2
+        gas.fit()
+        # Now, for predict .................
+        gas.predict(gas_fit_E, stderror=False)
+        # This one should fail (extrapolation & blending)
+        self.assertRaises(ValueError, 
+                          gas.predict, gas.predicted.values, stderror=False)
+        # But this one should not ..........
+        gas.predict(gas_fit_E, stderror=False)
+        print "OK"
+        
+        
+        
+        
+        
         
 ########################################################################
 if __name__ == '__main__':
     NumpyTest().run()       
+
+    print "cloess:", dir(cloess)
+#    print "cloess.modelflags", dir(cloess.modelflags)
 
     if 0:
         NOx = N.array([4.818, 2.849, 3.275, 4.691, 4.255, 5.064, 2.118, 4.602,
@@ -243,8 +291,48 @@ if __name__ == '__main__':
                      1.074, 1.148, 1.000, 0.928, 0.767, 0.701, 0.807, 0.902,
                      0.997, 1.224, 1.089, 0.973, 0.980, 0.665])
         gas_fit_E = N.array([0.665, 0.949, 1.224])
-        gas_test = loess(E, NOx, span=2./3.)
-#        gas_test.fit()
-        gas_test.predict(gas_fit_E, stderr=False)
-        gas_test.predict(gas_test.predicted.values, stderr=False)
+        gas = loess(E, NOx, span=2./3.)
+        #
+        gas.model.parametric_flags = True
+        try:
+            gas.fit()
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("ValueError not raised !")
+        
+        
+    #
+    if 0:
+        dfile = open(os.path.join('examples','madeup_data'), 'r')
+        dfile.readline()
+        x = N.fromiter((float(v) for v in dfile.readline().rstrip().split()),
+                        N.float_).reshape(-1,2)
+        dfile.readline()
+        y = N.fromiter((float(v) for v in dfile.readline().rstrip().split()),
+                        N.float_)
+        dfile = open(os.path.join('examples','madeup_data'), 'r')
+        dfile.readline()
+        #
+        rfile = open(os.path.join('examples','madeup_result'), 'r')
+        results = []
+        for i in range(8):
+            rfile.readline()
+            z = N.fromiter((float(v) for v in rfile.readline().rstrip().split()),
+                           N.float_)
+            results.append(z)
+        #
+        newdata1 = N.array([[-2.5, 0.0, 2.5], [0., 0., 0.]])
+        newdata2 = N.array([[-0.5, 0.5], [0., 0.]])
+        #
+        madeup = cloess.loess(x,y)
+        
+        print madeup.model
+        madeup.model.parametric_flags = [True, False]        
+        print madeup.model
+        madeup.model.parametric_flags[0] = False
+        print madeup.model
+        madeup.model.update(family="symmetric",normalize=False)
+        print madeup.model
+        
     

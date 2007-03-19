@@ -1,6 +1,9 @@
 # -*- Mode: Python -*-  
 
 cdef extern from "loess.h":
+    ctypedef struct c_loess_errstatus "loess_errstatus":
+        int err_status
+        char *err_msg
     ctypedef struct c_loess_inputs "loess_inputs":
         long   n
         long   p
@@ -40,16 +43,17 @@ cdef extern from "loess.h":
         c_loess_control control
         c_loess_kd_tree kd_tree
         c_loess_outputs outputs
+        c_loess_errstatus status
     ctypedef struct c_prediction "prediction": 
         double  *fit
         double  *se_fit
         double  residual_scale
         double  df
-    ctypedef struct c_anova "anova_struct":
-        double  dfn
-        double  dfd
-        double  F_value
-        double  Pr_F
+#    ctypedef struct c_anova "anova_struct":
+#        double  dfn
+#        double  dfd
+#        double  F_value
+#        double  Pr_F
     ctypedef struct c_conf_inv "conf_inv":
         double  *fit
         double  *upper
@@ -61,8 +65,11 @@ cdef extern from "cloess.h":
     void loess_free_mem(c_loess *lo)
     void loess_summary(c_loess *lo)
     #
-    void predict(double *eval, int m, c_loess *lo, c_prediction *pre, int se)
+    void c_predict "predict" (double *eval, int m, c_loess *lo, c_prediction *pre, int se) 
     void pred_free_mem(c_prediction *pre)
     #
-    void anova(c_loess *one, c_loess *two, c_anova *out)
-    void pointwise(c_prediction *pre, int m, double coverage, c_conf_inv *ci)
+    void c_pointwise "pointwise" (c_prediction *pre, int m, double coverage, c_conf_inv *ci)
+    double pf (double q, double df1, double df2)
+    double ibeta (double x, double a, double b)
+    void pw_free_mem (c_conf_inv *ci)
+    

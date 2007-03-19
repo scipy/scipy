@@ -18,3 +18,5 @@ cdef extern from "Python.h":
     void   Py_XINCREF(object o)
     void   Py_XDECREF(object o)
     void   Py_CLEAR(object o) # use instead of decref
+    
+    object PyList_New(int size)

@@ -65,7 +65,7 @@ void pw_free_mem(conf_inv *ci)
 
 double pf(double q, double df1, double df2)
 {
-    double    ibeta();
+    double ibeta();
     return(ibeta(q*df1/(df2+q*df1), df1/2, df2/2));
 }
 

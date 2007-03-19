@@ -6,26 +6,18 @@ from c_numpy cimport ndarray, npy_intp, \
     NPY_INT, NPY_DOUBLE, NPY_OWNDATA, NPY_ALIGNED, NPY_FORTRAN, \
     PyArray_SimpleNewFromData
 import numpy
-
-#narray = _N.array
-#ndouble = _N.float
-#nbool = _N.bool
+narray = numpy.array
 
 # NumPy must be initialized
 c_numpy.import_array()
 
 cimport c_loess
 
-
 cdef floatarray_from_data(int rows, int cols, double *data):
     cdef ndarray a_ndr
     cdef npy_intp size
     size = rows*cols
     a_ndr = <object>PyArray_SimpleNewFromData(1, &size, NPY_DOUBLE, data)
-#    a_ndr = numpy.empty((rows*cols,), dtype=numpy.float)
-#    a_dat = <double *>a_ndr.data
-#    for i from 0 <= i < a_ndr.size:
-#        a_dat[i] = data[i]
     if cols > 1:
         a_ndr.shape = (rows, cols)
     return a_ndr
@@ -34,15 +26,48 @@ cdef boolarray_from_data(int rows, int cols, int *data):
     cdef ndarray a_ndr
     cdef npy_intp size
     size = rows*cols
-#    cdef int *a_dat
-#    a_ndr = numpy.empty((rows*cols,), dtype=numpy.int)
     a_ndr = <object>PyArray_SimpleNewFromData(1, &size, NPY_DOUBLE, data)
-#    a_dat = <int *>a_ndr.data
-#    for i from 0 <= i < a_ndr.size:
-#        a_dat[i] = data[i]
     if cols > 1:
         a_ndr.shape = (rows, cols)
     return a_ndr.astype(numpy.bool)
+
+##cimport modelflags
+##import modelflags
+#
+#cdef list_to_clist(object p_list):
+#    cdef int i, imax
+#    p_list = list(p_list)
+#    imax = min(8, len(p_list))
+#    for i from 0 <= i < imax:
+#        c_list[i] = p_list[i]
+#    return c_list[0]
+#cdef object clist_to_list(int c_list[8]):
+#    cdef int i, imax
+#    p_list = [False] * 8
+#    imax = min(8, len(p_list))
+#    for i from 0 <= i < imax:
+#        p_list[i] = c_list[i]
+#    return p_list
+#        
+#
+#class modelflags:
+#    def __init__(self):
+#        self.str_list = [False] * 8
+#        self.c_list = list_to_clist(self.str_list)
+#    def __getitem__(self, idx):
+#        return self.str_list[idx]
+#    def __setitem__(self, idx, val):
+#        cdef int tmpval
+#        tmpval = val
+#        self.c_list[idx] = tmpval
+#        self.str_list[idx] = bool(val)
+#    def __str__(self):
+#        return str(self.str_list)
+#
+##class modelflags(c_modelflags):
+##    def __init__(self):
+##        c_modelflags.__init__(self)
+##        
 
 
 """
@@ -334,34 +359,46 @@ cdef class loess_control:
 ######---------------------------------------------------------------------------
 cdef class loess_kd_tree:
     cdef c_loess.c_loess_kd_tree *_base
-#    #.........
-#    property parameter:
-#        def __get__(self):
-#            return self._base.parameter
-#    #.........
-#    property a:
-#        def __get__(self):
-#            return self._base.a
-#    #.........
-#    property vval:
-#        def __get__(self):
-#            return self._base.vert
-#    #.........
-#    property xi:
-#        def __get__(self):
-#            return self._base.xi
-#    #.........
-#    property vert:
-#        def __get__(self):
-#            return self._base.vert
-#        return
-#    
+
 ######---------------------------------------------------------------------------
 ##---- ---- loess model ---
 ######---------------------------------------------------------------------------
 cdef class loess_model:
     cdef c_loess.c_loess_model *_base
     cdef long npar
+#    cdef public double span
+#    cdef public int degree
+#    cdef public char *family
+#    cdef public parametric_mflags, drop_square_mflags
+    #.........
+    cdef setup(self, c_loess.c_loess_model *base, long npar):
+        self._base = base
+        self.npar = npar
+#        self.parametric_flags = modelflags()
+#        self.parametric_flags.c_list[0] = base.parametric[0]
+#        self.drop_square_flags = modelflags()
+#        self.drop_square_flags.c_list[0] = base.drop_square[0]
+#        self.span = self._base.span
+#        self.degree = self._base.degree
+#        self.family = self._base.family
+#        self.parametric_flags = boolarray_from_data(self.npar, 1, self._base.parametric)
+#        self.drop_square_flags = boolarray_from_data(self.npar, 1, self._base.drop_square)
+        return self    
+    #.........
+    property normalize:
+        """
+    normalize : boolean [True]
+        Determines whether the independent variables should be normalized.  
+        If True, the normalization is performed by setting the 10% trimmed 
+        standard deviation to one. If False, no normalization is carried out. 
+        This option is only useful for more than one variable. For spatial
+        coordinates predictors or variables with a common scale, it should be 
+        set to False.
+        """
+        def __get__(self):
+            return bool(self._base.normalize)
+        def __set__(self, normalize):
+            self._base.normalize = normalize
     #.........
     property span:
         """Smoothing factor, as a fraction of the number of points to take into
@@ -384,21 +421,6 @@ cdef class loess_model:
         def __set__(self, degree):
             if degree < 0 or degree > 2:
                 raise ValueError("Degree should be between 0 and 2!")
-    #.........
-    property normalize:
-        """
-    normalize : boolean [True]
-        Determines whether the independent variables should be normalized.  
-        If True, the normalization is performed by setting the 10% trimmed 
-        standard deviation to one. If False, no normalization is carried out. 
-        This option is only useful for more than one variable. For spatial
-        coordinates predictors or variables with a common scale, it should be 
-        set to False.
-        """
-        def __get__(self):
-            return bool(self._base.normalize)
-        def __set__(self, normalize):
-            self._base.normalize = normalize
     #.........
     property family:
         """
@@ -428,12 +450,11 @@ cdef class loess_model:
             return boolarray_from_data(self.npar, 1, self._base.parametric)
         def __set__(self, paramf):
             cdef ndarray p_ndr
-            cdef long *p_dat
             cdef int i
-            p_ndr = numpy.array(paramf, copy=False, subok=True, dtype=numpy.int)
-            p_dat = <long *>p_ndr.data
-            for i from 0 <= i < min(self.npar, p_ndr.size - 1):
-                self._base.parametric[i] = p_dat[i]
+            p_ndr = numpy.atleast_1d(narray(paramf, copy=False, subok=True, 
+                                            dtype=numpy.bool))
+            for i from 0 <= i < min(self.npar, p_ndr.size):
+                self._base.parametric[i] = p_ndr[i]
     #.........
     property drop_square_flags:
         """
@@ -447,12 +468,11 @@ cdef class loess_model:
             return boolarray_from_data(self.npar, 1, self._base.drop_square)
         def __set__(self, drop_sq):
             cdef ndarray d_ndr
-            cdef long *d_dat
             cdef int i
-            d_ndr = numpy.array(drop_sq, copy=False, subok=True, dtype=numpy.int)
-            d_dat = <long *>d_ndr.data
-            for i from 0 <= i < min(self.npar, d_ndr.size - 1):
-                self._base.drop_square[i] = d_dat[i]
+            d_ndr = numpy.atleast_1d(narray(drop_sq, copy=False, subok=True, 
+                                            dtype=numpy.bool))
+            for i from 0 <= i < min(self.npar, d_ndr.size):
+                self._base.drop_square[i] = d_ndr[i]
     #........
     def update(self, **modelargs):
         family = modelargs.get('family', None)
@@ -545,7 +565,7 @@ cdef class loess_outputs:
     property divisor:
         "Equivalent number of parameters."
         def __get__(self):
-            return floatarray_from_data(self.nvar, 1, self._base.divisor)
+            return floatarray_from_data(self.npar, 1, self._base.divisor)
     #.........    
     property enp:
         """
@@ -585,7 +605,7 @@ cdef class loess_outputs:
         Trace of the operator hat matrix.
         """
         def __get__(self):
-            return self._base.trace_hat    #        ""
+            return self._base.trace_hat
     #.........
     def __str__(self):
         strg = ["Outputs................",
@@ -598,62 +618,22 @@ cdef class loess_outputs:
         return '\n'.join(strg)
 
 
-#####---------------------------------------------------------------------------
-#---- ---- loess anova ---
-#####---------------------------------------------------------------------------
-cdef class loess_anova:
-    cdef c_loess.c_anova *_base
-    cdef long nest
-    #.........
-    property dfn:
-        def __get__(self):
-            return self._base.dfn
-    #.........
-    property dfd:
-        def __get__(self):
-            return self._base.dfd
-    #.........
-    property F_value:
-        def __get__(self):
-            return self._base.F_value
-    #.........
-    property Pr_F:
-        def __get__(self):
-            return self._base.Pr_F
         
 #####---------------------------------------------------------------------------
 #---- ---- loess confidence ---
 #####---------------------------------------------------------------------------
 cdef class conf_intervals:
     cdef c_loess.c_conf_inv _base
-    cdef nest
+    cdef readonly ndarray lower, fit, upper
     #.........
-    def __dealloc__(self):
-        c_loess.pw_free_mem(self)
+#    def __dealloc__(self):
+#        c_loess.pw_free_mem(self._base)
     #.........
-    property fit:
-        """
-    fit : ndarray
-        The (m,) ndarray of estimated values
-        """
-        def __get__(self):
-            return floatarray_from_data(self.nest, 1, self._base.fit)
-    #.........
-    property upper:
-        """
-    upper : ndarray
-        The (m,) ndarray of the upper limits of the pointwise confidence intervals.
-        """  
-        def __get__(self):
-            return floatarray_from_data(self.nest, 1, self._base.upper)
-    #.........
-    property lower:  
-        """
-    lower : ndarray
-        The (m,) ndarray of the lower limits of the pointwise confidence intervals.
-        """
-        def __get__(self):
-            return floatarray_from_data(self.nest, 1, self._base.lower)
+    cdef setup(self, c_loess.c_conf_inv base, long nest):
+        self._base = base
+        self.fit = floatarray_from_data(nest, 1, base.fit)
+        self.upper = floatarray_from_data(nest, 1, base.upper)
+        self.lower = floatarray_from_data(nest, 1, base.lower)
     #.........
     def __str__(self):
         cdef ndarray tmp_ndr
@@ -668,10 +648,41 @@ cdef class loess_predicted:
     cdef c_loess.c_prediction _base
     cdef readonly long nest
     cdef readonly conf_intervals confidence_intervals
-
+#    cdef readonly ndarray values, stderr
+#    cdef readonly double residual_scale, df
     #.........
     def __dealloc__(self):
         c_loess.pred_free_mem(&self._base)      
+    #.........
+    cdef setup(self, c_loess.c_prediction base, long nest):
+        self._base = base
+        self.nest = nest
+#    cdef setup(self, c_loess.c_loess loess_base, object newdata, stderror):
+#        cdef ndarray p_ndr
+#        cdef double *p_dat
+#        cdef c_loess.c_prediction _prediction
+#        cdef int i, m
+#        #
+#        # Note : we need a copy as we may have to normalize
+#        p_ndr = narray(newdata, copy=True, subok=True, order='C').ravel()
+#        p_dat = <double *>p_ndr.data
+#        # Test the compatibility of sizes .......
+#        if p_ndr.size == 0:
+#            raise ValueError("Can't predict without input data !")
+#        (m, notOK) = divmod(len(p_ndr), loess_base.inputs.p)
+#        if notOK:
+#            raise ValueError(
+#                  "Incompatible data size: there should be as many rows as parameters")
+#        #.....
+#        c_loess.c_predict(p_dat, m, &loess_base, &_prediction, stderror)
+#        if loess_base.status.err_status:
+#            raise ValueError(loess_base.status.err_msg)
+#        self._base = _prediction
+#        self.nest = m
+##        self.values = floatarray_from_data(m, 1, _prediction.fit)
+##        self.stderr = floatarray_from_data(m, 1, _prediction.se_fit)
+##        self.residual_scale = _prediction.residual_scale
+##        self.df = _prediction.df
     #.........
     property values:
         """
@@ -705,7 +716,7 @@ cdef class loess_predicted:
         confidence intervals for the evaluated surface.
         """
         def __get__(self):
-            return self._base.df
+            return self._base.df        
     #.........
     def confidence(self, coverage=0.95):
         """Returns the pointwise confidence intervals for each predicted values,
@@ -715,15 +726,14 @@ at the given confidence interval coverage.
     coverage : float
         Confidence level of the confidence intervals limits, as a fraction.
         """
-        cdef c_loess.c_conf_inv _conf_intv
+        cdef c_loess.c_conf_inv _confintv
         if coverage < 0.5:
             coverage = 1. - coverage 
         if coverage > 1. :
             raise ValueError("The coverage precentage should be between 0 and 1!")
-        c_loess.pointwise(&self._base, self.nest, coverage, &_conf_intv)
+        c_loess.c_pointwise(&self._base, self.nest, coverage, &_confintv)
         self.confidence_intervals = conf_intervals()
-        self.confidence_intervals._base = _conf_intv
-        self.confidence_intervals.nest = self.nest
+        self.confidence_intervals.setup(_confintv, self.nest)
         return self.confidence_intervals
     #.........
     def __str__(self):
@@ -756,7 +766,7 @@ cdef class loess:
         cdef double *x_dat, *y_dat
         cdef int i
         # Get the predictor array
-        x_ndr = numpy.array(x, copy=True, subok=True, order='C')
+        x_ndr = narray(x, copy=True, subok=True, order='C')
         x_dat = <double *>x_ndr.data
         n = len(x_ndr)
         p = x_ndr.size / n
@@ -766,7 +776,7 @@ cdef class loess:
         if p > 1:
             x_ndr.shape = (n*p,)
         # Get the response array ......
-        y_ndr = numpy.array(y, copy=False, subok=True, order='C')
+        y_ndr = narray(y, copy=False, subok=True, order='C')
         y_dat = <double *>y_ndr.data
         if y_ndr.size != n:
             raise ValueError("Incompatible size between the response array (%i)"\
@@ -778,8 +788,9 @@ cdef class loess:
         self.inputs._base = &self._base.inputs
         #
         self.model = loess_model()
-        self.model._base = &self._base.model
-        self.model.npar = p
+        self.model.setup(&self._base.model, p)
+#        self.model._base = &self._base.model
+#        self.model.npar = p
         #
         self.control = loess_control()
         self.control._base = &self._base.control
@@ -808,6 +819,8 @@ cdef class loess:
     def fit(self):
         c_loess.loess_fit(&self._base)
         self.outputs.activated = True
+        if self._base.status.err_status:
+            raise ValueError(self._base.status.err_msg)
         return
     #......................................................
     def summary(self):
@@ -818,7 +831,7 @@ cdef class loess:
         else:
             print "Residual Scale Estimate        : %.4f" % self.outputs.s
     #......................................................
-    def predict(self, newdata, stderr=False):
+    def predict(self, newdata, stderror=False):
         """
     newdata: ndarray
         A (m,p) ndarray specifying the values of the predictors at which the 
@@ -834,8 +847,10 @@ cdef class loess:
         if self.outputs.activated == 0:
             c_loess.loess_fit(&self._base)
             self.outputs.activated = True
+            if self._base.status.err_status:
+                raise ValueError(self._base.status.err_msg)
         # Note : we need a copy as we may have to normalize
-        p_ndr = numpy.array(newdata, copy=True, subok=True, order='C').ravel()
+        p_ndr = narray(newdata, copy=True, subok=True, order='C').ravel()
         p_dat = <double *>p_ndr.data
         # Test the compatibility of sizes .......
         if p_ndr.size == 0:
@@ -845,10 +860,13 @@ cdef class loess:
             raise ValueError(
                   "Incompatible data size: there should be as many rows as parameters")
         #.....
-        c_loess.predict(p_dat, m, &self._base, &_prediction, stderr)
+        c_loess.c_predict(p_dat, m, &self._base, &_prediction, stderror)
+        if self._base.status.err_status:
+            raise ValueError(self._base.status.err_msg)
         self.predicted = loess_predicted()
         self.predicted._base = _prediction
         self.predicted.nest = m
+#        self.predicted.setup(_prediction, m)
         return self.predicted
     #.........
     def __dealloc__(self):
@@ -856,27 +874,46 @@ cdef class loess:
     #......................................................
     
 
-#cdef prediction(loess loess_obj, object newdata, object stderr):
-#    cdef c_loess.c_prediction _base
-#    cdef ndarray p_ndr
-#    cdef double *p_dat
-#    cdef int i, m
-#    cdef loess_prediction result
-#    #
-#    p_ndr = numpy.array(newdata, copy=False, subok=True, order='F') #.ravel()
-##   p_ndr = <ndarray>PyArray_FROMANY(newdata, NPY_DOUBLE, 1, self.model.npar, NPY_FORTRAN)
-#    p_dat = <double *>p_ndr.data
-#    m = len(p_ndr)    
-#    c_loess.predict(p_dat, m, &loess_obj._base, &_base, stderr)
-#    result = loess_predicted()
-#    result._base = _base
-#    result.nest = m
-#    return result
+#####---------------------------------------------------------------------------
+#---- ---- loess anova ---
+#####---------------------------------------------------------------------------
+cdef class anova:
+    cdef readonly double dfn, dfd, F_value, Pr_F
+    #
+    def __init__(self, loess_one, loess_two):
+        cdef double one_d1, one_d2, one_s, two_d1, two_d2, two_s, rssdiff,\
+                    d1diff, tmp, df1, df2
+        #
+        if not isinstance(loess_one, loess) or not isinstance(loess_two, loess):
+            raise ValueError("Arguments should be valid loess objects!"\
+                             "got '%s' instead" % type(loess_one))
+        #
+        out_one = loess_one.outputs
+        out_two = loess_two.outputs
+        #
+        one_d1 = out_one.one_delta
+        one_d2 = out_one.two_delta
+        one_s = out_one.s
+        #
+        two_d1 = out_two.one_delta
+        two_d2 = out_two.two_delta
+        two_s = out_two.s
+        #
+        rssdiff = abs(one_s * one_s * one_d1 - two_s * two_s * two_d1)
+        d1diff = abs(one_d1 - two_d1)
+        self.dfn = d1diff * d1diff / abs(one_d2 - two_d2)
+        df1 = self.dfn
+        #
+        if out_one.enp > out_two.enp:
+            self.dfd = one_d1 * one_d1 / one_d2
+            tmp = one_s
+        else:
+            self.dfd = two_d1 * two_d1 / two_d2
+            tmp = two_s
+        df2 = self.dfd
+        F_value = (rssdiff / d1diff) / (tmp * tmp)
+        
+        self.Pr_F = 1. - c_loess.ibeta(F_value*df1/(df2+F_value*df1), df1/2, df2/2)
+        self.F_value = F_value
 
-
-#def anova(loess_one, loess_two):
-#    cdef c_loess.c_anova result
-#   
-#    c_loess.anova(loess_one._base, loess_two._base, &result)
-#        
         

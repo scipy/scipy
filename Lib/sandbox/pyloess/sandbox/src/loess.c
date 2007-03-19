@@ -2,9 +2,13 @@
 #include "loess.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 static char *surf_stat;
+
+int error_status = 0;
+char *error_message = NULL;
 
 void
 loess_setup(double *x, double *y, long n, long p, loess *lo)
@@ -59,13 +63,17 @@ loess_fit(loess *lo)
 
     size_info[0] = lo->inputs.p;
     size_info[1] = lo->inputs.n;
+    
+    //Reset the default error status...
+    error_status = 0;
+    lo->status.err_status = 0;
+    lo->status.err_msg = NULL;
 
     iterations = (!strcmp(lo->model.family, "gaussian")) ? 0 :
     lo->control.iterations;
     if(!strcmp(lo->control.trace_hat, "wait.to.decide")) {
         if(!strcmp(lo->control.surface, "interpolate"))
-            lo->control.trace_hat = (lo->inputs.n < 500) ? "exact" :
-"approximate";
+            lo->control.trace_hat = (lo->inputs.n < 500) ? "exact" : "approximate";
         else
             lo->control.trace_hat = "exact";
         }
@@ -96,6 +104,11 @@ loess_fit(loess *lo)
            lo->kd_tree.xi,
            lo->kd_tree.vert,
            lo->kd_tree.vval);
+
+    if(error_status){
+        lo->status.err_status = error_status;
+        lo->status.err_msg = error_message;
+    }
 }
 
 void
@@ -115,7 +128,7 @@ loess_(double *y, double *x_, int *size_info, double *weights, double *span,
             setLf, nonparametric = 0, *order_parametric,
             *order_drop_sqr, zero = 0, max_kd, *a_tmp, *param_tmp;
     int     cut, comp();
-    char    *new_stat;
+    char    *new_stat, *mess;
     void    condition();
 
     D = size_info[0];
@@ -167,6 +180,7 @@ loess_(double *y, double *x_, int *size_info, double *weights, double *span,
     }
     else
         for(i = 0; i < D; i++) divisor[i] = 1;
+    
     j = D - 1;
     for(i = 0; i < D; i++) {
         sum_drop_sqr = sum_drop_sqr + drop_square[i];
@@ -176,6 +190,7 @@ loess_(double *y, double *x_, int *size_info, double *weights, double *span,
         else
             order_parametric[nonparametric++] = i;
     }
+    //Reorder the predictors w/ the non-parametric first
     for(i = 0; i < D; i++) {
         order_drop_sqr[i] = 2 - drop_square[order_parametric[i]];
         k = i * N;
@@ -183,20 +198,29 @@ loess_(double *y, double *x_, int *size_info, double *weights, double *span,
         for(j = 0; j < N; j++)
             x[k + j] = x_tmp[p + j];
     }
+    
+    // Misc. checks .............................
     if((*degree) == 1 && sum_drop_sqr) {
-        fprintf(stderr, "Specified the square of a factor predictor to be"\
-                        "dropped when degree = 1");
-        exit(1);
+    	error_status = 1;
+    	error_message = "Specified the square of a factor predictor to be "\
+               			"dropped when degree = 1";
+        return;
     }
+    
     if(D == 1 && sum_drop_sqr) {
-        fprintf(stderr, "Specified the square of a predictor to be dropped"\
-                        "with only one numeric predictor");
-        exit(1);
+    	error_status = 1;
+        error_message = "Specified the square of a predictor to be dropped "\
+                        "with only one numeric predictor";
+        return;
     }
+    
     if(sum_parametric == D) {
-        fprintf(stderr, "Specified parametric for all predictors");
-        exit(1);
+    	error_status = 1;
+        error_message = "Specified parametric for all predictors";
+        return;
         }
+        
+    // Start the iterations .....................
     for(j = 0; j <= (*iterations); j++) {
         new_stat = j ? "none" : *statistics;
         for(i = 0; i < N; i++)
@@ -221,8 +245,7 @@ loess_(double *y, double *x_, int *size_info, double *weights, double *span,
     }
     if((*iterations) > 0) {
         F77_SUB(lowesp)(&N, y, fitted_values, weights, robust, temp,
-pseudovalues);
-
+						pseudovalues);
         loess_raw(pseudovalues, x, weights, weights, &D, &N, span,
                   degree, &nonparametric, order_drop_sqr, &sum_drop_sqr,
                   &new_cell, &surf_stat, temp, param_tmp, a_tmp, xi_tmp,
@@ -241,7 +264,8 @@ pseudovalues);
                     pseudo_resid[i] * pseudo_resid[i];
     *enp = (*one_delta) + 2 * (*trace_hat_out) - N;
     *s = sqrt(sum_squares / (*one_delta));
-
+    
+    //Clean the mess and leave ..................
     free(x);
     free(x_tmp);
     free(temp);
