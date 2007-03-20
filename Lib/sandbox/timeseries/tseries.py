@@ -51,7 +51,7 @@ __all__ = [
 'tshift','fill_missing_dates', 'stack', 'concatenate_series','empty_like',
 'day_of_week','day_of_year','day','month','quarter','year',
 'hour','minute','second',
-'tofile','asrecords','flatten',
+'tofile','asrecords','flatten', 'check_observed',
            ]
 
 
@@ -90,7 +90,7 @@ def fmtObserv(obStr):
         return fmtobs_revdict[obStr.upper()]
     else:
         raise ValueError("Invalid value for observed attribute: %s " % str(obStr))
-
+check_observed = fmtObserv
 
 #### --------------------------------------------------------------------------
 #--- ... TimeSeriesError class ...
