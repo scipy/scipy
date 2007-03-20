@@ -169,15 +169,12 @@ However, a loop such as :
 >>> for d in DateArray(...):
 accesses the array element by element. Therefore, `d` is a Date object.
     """
-    _defcachedinfo = dict(toobj=None, tostr=None, toord=None,
-                          steps=None, full=None, hasdups=None)
     def __new__(cls, dates=None, freq=None, copy=False):
         # Get the frequency ......
         if freq is None:
             _freq = getattr(dates, 'freq', _c.FR_UND)
         else:
             _freq = check_freq(freq)
-        cls._defaultfreq = check_freq(_freq)
         # Get the dates ..........
         _dates = numeric.array(dates, copy=copy, dtype=int_, subok=1)
         if _dates.ndim == 0:
