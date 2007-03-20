@@ -26,6 +26,7 @@ import maskedarray.testutils
 from maskedarray.testutils import assert_equal, assert_array_equal
 
 import timeseries as ts
+from timeseries.parser import DateFromString, DateTimeFromString
 from timeseries import *
 from timeseries.cseries import freq_dict
 
