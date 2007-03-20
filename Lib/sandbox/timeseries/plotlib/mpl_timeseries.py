@@ -34,6 +34,7 @@ import maskedarray as MA
 import timeseries
 import timeseries as TS
 from timeseries import date_array, Date, DateArray, TimeSeries
+from timeseries import const as _c
 
 import warnings
 
@@ -65,13 +66,13 @@ The specific Subplot object class to add is given through the keywords
         key.__hash__()
     except TypeError:
         key = str(key)
-    #        
+    #
     if figure_instance._seen.has_key(key):
         ax = figure_instance._seen[key]
         figure_instance.sca(ax)
         return ax
     #
-    if not len(args): 
+    if not len(args):
         return
 #    if hasattr(args[0], '__array__'):
 #        fixedargs = args[1:]
@@ -90,7 +91,7 @@ The specific Subplot object class to add is given through the keywords
             a = PolarSubplot(figure_instance, *args, **kwargs)
         else:
             a = SubplotClass(figure_instance, *args, **kwargs)
-            
+
     figure_instance.axes.append(a)
     figure_instance._axstack.push(a)
     figure_instance.sca(a)
@@ -130,17 +131,17 @@ def nonsingular(vmin, vmax, expander=0.001, tiny=1e-15, increasing=True):
 
 def _get_default_annual_spacing(nyears):
     """Returns a default spacing between consecutive ticks for annual data."""
-    if nyears < 11: 
+    if nyears < 11:
         (min_spacing, maj_spacing) = (1, 1)
-    elif nyears < 20: 
+    elif nyears < 20:
         (min_spacing, maj_spacing) = (1, 2)
-    elif nyears < 50: 
+    elif nyears < 50:
         (min_spacing, maj_spacing) = (1, 5)
-    elif nyears < 100: 
+    elif nyears < 100:
         (min_spacing, maj_spacing) = (5, 10)
-    elif nyears < 200: 
+    elif nyears < 200:
         (min_spacing, maj_spacing) = (5, 25)
-    elif nyears < 600: 
+    elif nyears < 600:
         (min_spacing, maj_spacing) = (10, 50)
     else:
         factor = nyears // 1000 + 1
@@ -172,18 +173,18 @@ one label for this level"""
 
 def _daily_finder(vmin, vmax, freq, aslocator):
 
-    if freq == TS.FR_BUS: 
+    if freq == _c.FR_BUS:
         periodsperyear = 261
-    elif freq == TS.FR_DAY: 
+    elif freq == _c.FR_DAY:
         periodsperyear = 365
-    else: 
+    else:
         raise ValueError("unexpected frequency")
 
     (vmin, vmax) = (int(vmin), int(vmax))
     span = vmax - vmin + 1
-    dates = date_array(start_date=Date(freq,vmin), 
+    dates = date_array(start_date=Date(freq,vmin),
                        end_date=Date(freq, vmax))
-    default = N.arange(vmin, vmax+1) 
+    default = N.arange(vmin, vmax+1)
     # Initialize the output
     if not aslocator:
         format = N.empty(default.shape, dtype="|S10")
@@ -206,14 +207,14 @@ def _daily_finder(vmin, vmax, freq, aslocator):
             format[year_start] = '%d\n%b\n%Y'
             if not has_level_label(year_start):
                 if not has_level_label(month_start):
-                    if dates.size > 1: 
+                    if dates.size > 1:
                         idx = 1
-                    else: 
+                    else:
                         idx = 0
                     format[idx] = '%d\n%b\n%Y'
                 else:
                     format[first_label(month_start)] = '%d\n%b\n%Y'
-    # Case 2. Less than three months        
+    # Case 2. Less than three months
     elif span <= periodsperyear//4:
         month_start = period_break(dates,'month')
         if aslocator:
@@ -233,7 +234,7 @@ def _daily_finder(vmin, vmax, freq, aslocator):
                     format[first_label(month_start)] = '\n\n%b\n%Y'
     # Case 3. Less than 14 months ...............
     elif span <= 1.15 * periodsperyear:
-        
+
         if aslocator:
             d_minus_1 = dates-1
 
@@ -304,14 +305,14 @@ def _daily_finder(vmin, vmax, freq, aslocator):
         return dict([(d,f) for (d,f) in zip(default[formatted],format[formatted])])
 #...............................................................................
 def _monthly_finder(vmin, vmax, freq, aslocator):
-    if freq != TS.FR_MTH: 
+    if freq != _c.FR_MTH:
         raise ValueError("unexpected frequency")
     periodsperyear = 12
 
     (vmin, vmax) = (int(vmin), int(vmax))
     span = vmax - vmin + 1
     #............................................
-    dates = N.arange(vmin, vmax+1) 
+    dates = N.arange(vmin, vmax+1)
     format = N.empty(span, dtype="|S8")
     format.flat = ''
     year_start = (dates % 12 == 1).nonzero()[0]
@@ -321,14 +322,14 @@ def _monthly_finder(vmin, vmax, freq, aslocator):
             major = dates[year_start]
             minor = dates
         else:
-            
+
             format[:] = '%b'
             format[year_start] = '%b\n%Y'
 
             if not has_level_label(year_start):
-                if dates.size > 1: 
+                if dates.size > 1:
                     idx = 1
-                else: 
+                else:
                     idx = 0
                 format[idx] = '%b\n%Y'
     #........................
@@ -357,7 +358,7 @@ def _monthly_finder(vmin, vmax, freq, aslocator):
             minor = dates[quarter_start]
         else:
             format[year_start] = '%Y'
-   #......................... 
+   #.........................
     else:
         nyears = span/periodsperyear
         (min_anndef, maj_anndef) = _get_default_annual_spacing(nyears)
@@ -376,13 +377,13 @@ def _monthly_finder(vmin, vmax, freq, aslocator):
         return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
 #...............................................................................
 def _quarterly_finder(vmin, vmax, freq, aslocator):
-    if freq != TS.FR_QTR: 
+    if freq != _c.FR_QTR:
         raise ValueError("unexpected frequency")
-    periodsperyear = 4  
+    periodsperyear = 4
     (vmin, vmax) = (int(vmin), int(vmax))
     span = vmax - vmin + 1
     #............................................
-    dates = N.arange(vmin, vmax+1) 
+    dates = N.arange(vmin, vmax+1)
     format = N.empty(span, dtype="|S8")
     format.flat = ''
     year_start = (dates % 4 == 1).nonzero()[0]
@@ -395,9 +396,9 @@ def _quarterly_finder(vmin, vmax, freq, aslocator):
             format[:] = 'Q%q'
             format[year_start] = 'Q%q\n%Y'
             if not has_level_label(year_start):
-                if dates.size > 1: 
+                if dates.size > 1:
                     idx = 1
-                else: 
+                else:
                     idx = 0
                 format[idx] = 'Q%q\n%Y'
     #............................................
@@ -426,12 +427,12 @@ def _quarterly_finder(vmin, vmax, freq, aslocator):
         return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
 #...............................................................................
 def _annual_finder(vmin, vmax, freq, aslocator):
-    if TS.get_freq_group(freq) != TS.FR_ANN: 
-        raise ValueError("unexpected frequency")   
+    if TS.get_freq_group(freq) != _c.FR_ANN:
+        raise ValueError("unexpected frequency")
     (vmin, vmax) = (int(vmin), int(vmax+1))
     span = vmax - vmin + 1
     #............................................
-    dates = N.arange(vmin, vmax+1) 
+    dates = N.arange(vmin, vmax+1)
     format = N.empty(span, dtype="|S8")
     format.flat = ''
     #............................................
@@ -448,7 +449,7 @@ def _annual_finder(vmin, vmax, freq, aslocator):
     else:
         formatted = (format != '')
         return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
-    
+
 #...............................................................................
 class TimeSeries_DateLocator(Locator):
     "Locates the ticks along an axis controlled by a DateArray."
@@ -463,32 +464,32 @@ class TimeSeries_DateLocator(Locator):
         self.isdynamic = dynamic_mode
         self.offset = 0
         #.....
-        if fgroup == TS.FR_ANN:
+        if fgroup == _c.FR_ANN:
             self.finder = _annual_finder
-        elif freq == TS.FR_QTR:
+        elif freq == _c.FR_QTR:
             self.finder = _quarterly_finder
-        elif freq == TS.FR_MTH:
+        elif freq == _c.FR_MTH:
             self.finder = _monthly_finder
-        elif freq in (TS.FR_BUS, TS.FR_DAY):
+        elif freq in (_c.FR_BUS, _c.FR_DAY):
             self.finder = _daily_finder
-            
+
     def asminor(self):
         "Returns the locator set to minor mode."
         self.isminor = True
         return self
-    
+
     def asmajor(self):
         "Returns the locator set to major mode."
         self.isminor = False
         return self
-    
+
     def _get_default_locs(self, vmin, vmax):
         "Returns the default locations of ticks."
         (minor, major) = self.finder(vmin, vmax, self.freq, True)
         if self.isminor:
             return minor
         return major
-    
+
     def __call__(self):
         'Return the locations of the ticks.'
         self.verify_intervals()
@@ -503,9 +504,9 @@ class TimeSeries_DateLocator(Locator):
             vmin = (d+1) * base
             locs = range(vmin, vmax+1, base)
         return locs
-    
+
     def autoscale(self):
-        """Sets the view limits to the nearest multiples of base that contain 
+        """Sets the view limits to the nearest multiples of base that contain
     the data.
         """
         self.verify_intervals()
@@ -515,14 +516,14 @@ class TimeSeries_DateLocator(Locator):
         if vmin == vmax:
             vmin -= 1
             vmax += 1
-        return nonsingular(vmin, vmax)      
+        return nonsingular(vmin, vmax)
 
 #####---------------------------------------------------------------------------
 #---- --- Formatter ---
-#####---------------------------------------------------------------------------            
+#####---------------------------------------------------------------------------
 class TimeSeries_DateFormatter(Formatter):
     """Formats the ticks along a DateArray axis."""
-    
+
     def __init__(self, freq, minor_locator=False, dynamic_mode=True,):
         self.format = None
         self.freq = freq
@@ -533,30 +534,30 @@ class TimeSeries_DateFormatter(Formatter):
         self.offset = 0
         fgroup = TS.get_freq_group(freq)
         #.....
-        if fgroup == TS.FR_ANN:
+        if fgroup == _c.FR_ANN:
             self.finder = _annual_finder
-        elif freq == TS.FR_QTR:
+        elif freq == _c.FR_QTR:
             self.finder = _quarterly_finder
-        elif freq == TS.FR_MTH:
+        elif freq == _c.FR_MTH:
             self.finder = _monthly_finder
-        elif freq in (TS.FR_BUS, TS.FR_DAY):
+        elif freq in (_c.FR_BUS, _c.FR_DAY):
             self.finder = _daily_finder
-            
+
     def asminor(self):
         "Returns the formatter set to minor mode."
         self.isminor = True
         return self
-    
+
     def asmajor(self):
         "Returns the fromatter set to major mode."
         self.isminor = False
         return self
-    
+
     def _set_default_format(self, vmin, vmax):
         "Returns the default ticks spacing."
         self.formatdict = self.finder(vmin, vmax, self.freq, False)
         return self.formatdict
-    
+
     def set_locs(self, locs):
         'Sets the locations of the ticks'
         self.locs = locs
@@ -574,7 +575,7 @@ class TimeSeries_DateFormatter(Formatter):
         else:
             retval = ''
         return retval
-    
+
 
 
 
@@ -590,11 +591,11 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
 :Parameters:
     `fig` : Figure
         Base figure.
-        
+
 :Keywords:
     `series` : TimeSeries
         Data to plot
-        
+
         """
         # Retrieve the series ...................
         _series = kwargs.pop('series',None)
@@ -609,13 +610,13 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
             self.xdata = _series.dates
             self.freq = _series.dates.freq
             self.xaxis.set_major_locator
-            
+
         else:
             self._series = None
             self.xdata = None
             self.freq = None
         self._austoscale = False
-        # Get the data to plot 
+        # Get the data to plot
         self.legendsymbols = []
         self.legendlabels = []
     #............................................
@@ -631,7 +632,7 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
         """Gets the base time series."""
         return self._series
     ydata = property(fget=get_ydata, fset=set_ydata, doc='Time series')
-    #............................................    
+    #............................................
     def _check_plot_params(self,*args):
         """Defines the plot coordinates (and basic plotting arguments)."""
         remaining = list(args)
@@ -679,7 +680,7 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
                         else:
                             output.extend([a, self.ydata])
                     #... and it must be some data
-                    else:   
+                    else:
                         b = remaining.pop(0)
                         if len(remaining) > 0:
                             if isinstance(remaining[0], str):
@@ -719,20 +720,20 @@ This command accepts the same keywords as `matplotlib.plot`."""
         parms = self._check_plot_params(*parms)
         self.legendlabels.append(kwargs.get('label',None))
         Subplot.plot(self, *parms,**kwargs)
-    #............................................       
-    def format_dateaxis(self,maj_spacing=None, min_spacing=None, 
+    #............................................
+    def format_dateaxis(self,maj_spacing=None, min_spacing=None,
                         strformat="%Y", rotate=True):
         """Pretty-formats the date axis (x-axis).
-        
+
 :Parameters:
-    `major` : Integer *[5]* 
+    `major` : Integer *[5]*
         Major tick locator, in years (major tick every `major` years).
-    `minor` : Integer *[12]* 
+    `minor` : Integer *[12]*
         Minor tick locator, in months (minor ticks every `minor` months).
     `strformat` : String *['%Y']*
         String format for major ticks ("%Y").
         """
-        # Get the locator class ................. 
+        # Get the locator class .................
         majlocator = TimeSeries_DateLocator(self.freq, dynamic_mode=True,
                                             minor_locator=False)
         minlocator = TimeSeries_DateLocator(self.freq, dynamic_mode=True,
@@ -759,7 +760,7 @@ TSPlot = TimeSeriesPlot
 
 #####--------------------------------------------------------------------------
 #---- --- TimeSeries Figures ---
-#####--------------------------------------------------------------------------        
+#####--------------------------------------------------------------------------
 class TimeSeriesFigure(Figure):
     """Time Series Figure: all subplots share the same time series.
     """
@@ -773,14 +774,14 @@ class TimeSeriesFigure(Figure):
     def add_tsplot(self, *args, **kwargs):
         """Adds a `TimeSeriesPlot` subplot to the figure."""
         kwargs.update(SubplotClass=TimeSeriesPlot,
-                      series=self._series)        
+                      series=self._series)
         return add_generic_subplot(self, *args, **kwargs)
     add_plot = add_tsplot
 TSFigure = TimeSeriesFigure
 #................................................
-def tsfigure(series, **figargs):    
+def tsfigure(series, **figargs):
     """Creates a new `TimeSeriesFigure` object.
-    
+
 :Parameters:
     `series` : TimeSeries object
         Input data.
@@ -798,7 +799,7 @@ def add_tsplot(axes, *args, **kwargs):
         kwargs['series'] = None
     return add_generic_subplot(axes, *args, **kwargs)
 Figure.add_tsplot = add_tsplot
-    
+
 
 def tsplot(*args, **kwargs):
     # allow callers to override the hold state by passing hold=True|False
@@ -819,16 +820,15 @@ def tsplot(*args, **kwargs):
 ################################################################################
 if __name__ == '__main__':
 
-    da = date_array(start_date=Date(freq='B', year=2003, quarter=3, month=1, day=17), 
+    da = date_array(start_date=Date(freq='B', year=2003, quarter=3, month=1, day=17),
                     length=10)
     ser = timeseries.time_series(MA.arange(len(da)), dates=da)
 #    ser[4] = MA.masked
 #    ser_2 = timeseries.time_series(MA.arange(len(da)), dates=da.asfreq('Q'))
-    
+
     pylab.figure()
     pylab.gcf().add_tsplot(111)
     pylab.gca().tsplot(ser, 'ko-')
     pylab.gca().format_dateaxis()
 #    pylab.gca().tsplot(ser_2, 'rs')
     pylab.show()
-    
