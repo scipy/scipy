@@ -800,7 +800,9 @@ class test_coo(NumpyTestCase):
         coo = coo_matrix((data,(row,col)),(4,3))
 
         ndata,nrow,ncol = coo._normalize(rowfirst=True)
-        assert(zip(nrow,ncol,ndata) == sorted(zip(row,col,data))) #should sort by rows, then cols
+        sorted_rcd = zip(row, col, data)
+        sorted_rcd.sort()
+        assert(zip(nrow,ncol,ndata) == sorted_rcd) #should sort by rows, then cols
         assert_array_equal(coo.data, data)                        #coo.data has not changed
         assert_array_equal(coo.row, row)                          #coo.row has not changed
         assert_array_equal(coo.col, col)                          #coo.col has not changed
