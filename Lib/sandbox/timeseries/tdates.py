@@ -33,6 +33,9 @@ import tcore as corelib
 import const as _c
 import cseries
 
+cseries.set_callback_DateFromString(DateFromString)
+cseries.set_callback_DateTimeFromString(DateTimeFromString)
+
 from cseries import Date, thisday, check_freq, check_freq_str, get_freq_group
 today = thisday
 
