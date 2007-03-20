@@ -1,7 +1,7 @@
 """
 The `TimeSeries` class provides  a base for the definition of time series.
 A time series is defined here as the combination of two arrays:
-    
+
     - an array storing the time information (as a `DateArray` instance);
     - an array storing the data (as a `MaskedArray` instance.)
 
@@ -26,21 +26,21 @@ import numpy.core.umath as umath
 from numpy.core.records import recarray
 from numpy.core.records import fromarrays as recfromarrays
 
-import maskedarray.core as MA
-from maskedarray.core import MaskedArray, MAError, masked, nomask, \
+import maskedarray as MA
+from maskedarray import MaskedArray, MAError, masked, nomask, \
     filled, getmask, getmaskarray, make_mask_none, mask_or, make_mask, \
     masked_array
 
 import tcore as corelib
-from tcore import *
+import const as _c
 
 import tdates
 from tdates import DateError, InsufficientDateError
 from tdates import Date, isDate, DateArray, isDateArray, \
-    date_array, date_array_fromlist, date_array_fromrange, thisday, today
+    date_array, date_array_fromlist, date_array_fromrange, thisday, today, \
+    check_freq, check_freq_str
 
 import cseries
-
 
 
 __all__ = [
@@ -50,14 +50,47 @@ __all__ = [
 'adjust_endpoints','align_series','aligned','convert','group_byperiod',
 'tshift','fill_missing_dates', 'stack', 'concatenate_series','empty_like',
 'day_of_week','day_of_year','day','month','quarter','year',
-'hour','minute','second',  
+'hour','minute','second',
 'tofile','asrecords','flatten',
            ]
 
-#...............................................................................
-#
-#ufunc_domain = {}
-#ufunc_fills = {}
+
+#####---------------------------------------------------------------------------
+#---- --- Observed options ---
+#####---------------------------------------------------------------------------
+fmtobs_dict = {'UNDEFINED': ['UNDEF','UNDEFINED',None],
+               'BEGINNING': ['BEGIN','BEGINNING'],
+               'ENDING': ['END','ENDING'],
+               'AVERAGED': ['AVERAGE','AVERAGED','MEAN'],
+               'SUMMED': ['SUM','SUMMED'],
+               'MAXIMUM': ['MAX','MAXIMUM','HIGH'],
+               'MINIMUM': ['MIN','MINIMUM','LOW']}
+
+obs_dict = {"UNDEFINED":None,
+            "BEGINNING": corelib.first_unmasked_val,
+            "ENDING": corelib.last_unmasked_val,
+            "AVERAGED": MA.average,
+            "SUMMED": MA.sum,
+            "MAXIMUM": MA.maximum,
+            "MINIMUM": MA.minimum,
+            }
+
+alias_obs_dict = {}
+for ob, aliases in fmtobs_dict.iteritems():
+    for al in aliases:
+        alias_obs_dict[al] = obs_dict[ob]
+obs_dict.update(alias_obs_dict)
+fmtobs_revdict = corelib.reverse_dict(fmtobs_dict)
+
+def fmtObserv(obStr):
+    "Converts a possible 'Observed' string into acceptable values."
+    if obStr is None:
+        return fmtobs_revdict[None]
+    elif obStr.upper() in fmtobs_revdict:
+        return fmtobs_revdict[obStr.upper()]
+    else:
+        raise ValueError("Invalid value for observed attribute: %s " % str(obStr))
+
 
 #### --------------------------------------------------------------------------
 #--- ... TimeSeriesError class ...
@@ -96,46 +129,46 @@ def _timeseriescompat(a, b):
     if a.freq != b.freq:
         raise TimeSeriesCompatibilityError('freq', a.freq, b.freq)
     elif a.start_date != b.start_date:
-        raise TimeSeriesCompatibilityError('start_date', 
+        raise TimeSeriesCompatibilityError('start_date',
                                            a.start_date, b.start_date)
     else:
         step_diff = a._dates.get_steps() != b._dates.get_steps()
         if (step_diff is True) or (hasattr(step_diff, "any") and step_diff.any()):
-            raise TimeSeriesCompatibilityError('time_steps', 
+            raise TimeSeriesCompatibilityError('time_steps',
                                                a._dates.get_steps(), b._dates.get_steps())
         elif a.shape != b.shape:
-            raise TimeSeriesCompatibilityError('size', "1: %s" % str(a.shape), 
+            raise TimeSeriesCompatibilityError('size', "1: %s" % str(a.shape),
                                                    "2: %s" % str(b.shape))
     return True
-    
+
 
 def _timeseriescompat_multiple(*series):
     """Checks the date compatibility of multiple TimeSeries objects.
     Returns True if everything's fine, or raises an exception. Unlike
     the binary version, all items must be TimeSeries objects."""
-    
+
     freqs, start_dates, steps, shapes = \
         zip(*[(ser.freq, ser.start_date,
                (ser._dates.get_steps() != series[0]._dates.get_steps()).any(),
                ser.shape)  for ser in series])
-                
+
     if len(set(freqs)) > 1:
         errItems = tuple(set(freqs))
         raise TimeSeriesCompatibilityError('freq', errItems[0], errItems[1])
-    
+
     if len(set(start_dates)) > 1:
         errItems = tuple(set(start_dates))
         raise TimeSeriesCompatibilityError('start_dates', errItems[0], errItems[1])
 
-            
+
     if max(steps) == True:
         bad_index = [x for x, val in enumerate(steps) if val][0]
-        raise TimeSeriesCompatibilityError('time_steps', 
-                series[0]._dates.get_steps(), series[bad_index]._dates.get_steps())        
+        raise TimeSeriesCompatibilityError('time_steps',
+                series[0]._dates.get_steps(), series[bad_index]._dates.get_steps())
 
     if len(set(shapes)) > 1:
         errItems = tuple(set(shapes))
-        raise TimeSeriesCompatibilityError('size', "1: %s" % str(errItems[0].shape), 
+        raise TimeSeriesCompatibilityError('size', "1: %s" % str(errItems[0].shape),
                                                    "2: %s" % str(errItems[1].shape))
 
     return True
@@ -143,7 +176,7 @@ def _timeseriescompat_multiple(*series):
 
 def _datadatescompat(data,dates):
     """Checks the compatibility of dates and data at the creation of a TimeSeries.
-    Returns True if everything's fine, raises an exception otherwise."""    
+    Returns True if everything's fine, raises an exception otherwise."""
     # If there's only 1 element, the date is a Date object, which has no size...
     tsize = numeric.size(dates)
     dsize = data.size
@@ -154,10 +187,10 @@ def _datadatescompat(data,dates):
         #dsize = numeric.asarray(data.shape)[:-1].prod()
         dsize = data.shape[0]
         if dsize == tsize:
-            return True 
+            return True
     elif data.ndim == 0 and tsize <= 1:
-        return True   
-    raise TimeSeriesCompatibilityError('size', "data: %s" % dsize, 
+        return True
+    raise TimeSeriesCompatibilityError('size', "data: %s" % dsize,
                                                "dates: %s" % tsize)
 
 def _getdatalength(data):
@@ -166,10 +199,10 @@ def _getdatalength(data):
         return numeric.asarray(numeric.shape(data))[:-1].prod()
     else:
         return numeric.size(data)
-    
+
 def _compare_frequencies(*series):
-    """Compares the frequencies of a sequence of series. 
-    Returns the common frequency, or raises an exception if series have different 
+    """Compares the frequencies of a sequence of series.
+    Returns the common frequency, or raises an exception if series have different
     frequencies."""
     unique_freqs = numpy.unique([x.freqstr for x in series])
     try:
@@ -177,7 +210,7 @@ def _compare_frequencies(*series):
     except ValueError:
         raise TimeSeriesError, \
             "All series must have same frequency!"
-    return common_freq    
+    return common_freq
 
 ##### --------------------------------------------------------------------------
 ##--- ... Time Series ...
@@ -266,33 +299,34 @@ When called, returns a ndarray, as the result of the method applied on the serie
                 pass
             return result
 
-class TimeSeries(MaskedArray, object):     
+class TimeSeries(MaskedArray, object):
     """Base class for the definition of time series.
 A time series is here defined as the combination of three arrays:
-    
+
     - `series` : *[ndarray]*
         Data part
     - `mask` : *[ndarray]*
         Mask part
     - `dates` : *[DateArray]*
         Date part
-    
+
 The combination of `series` and `dates` is the `data` part.
     """
     options = None
     _defaultobserved = None
     _genattributes = ['fill_value', 'observed']
-    def __new__(cls, data, dates=None, mask=nomask, 
+    def __new__(cls, data, dates=None, mask=nomask,
                 freq=None, observed=None, start_date=None, length=None,
                 dtype=None, copy=False, fill_value=None,
                 keep_mask=True, small_mask=True, hard_mask=False, **options):
         maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value,
-                       keep_mask=keep_mask, small_mask=small_mask, 
+                       keep_mask=keep_mask, small_mask=small_mask,
                        hard_mask=hard_mask,)
         # Get the data ...............................
         _data = MaskedArray(data, mask=mask, **maparms).view(cls)
         # Get the frequency ..........................
-        freq = corelib.check_freq(freq)
+        freq = check_freq(freq)
+
         # Get the dates ..............................
         if dates is None:
             newdates = getattr(data, '_dates', None)
@@ -301,8 +335,8 @@ The combination of `series` and `dates` is the `data` part.
         if newdates is not None:
             if not hasattr(newdates, 'freq'):
                 newdates = date_array(dlist=dates, freq=freq)
-            if freq is not None and newdates.freq != freq:
-                newdates = newdates.tofreq(freq)
+            if freq != _c.FR_UND and newdates.freq != freq:
+                newdates = newdates.asfreq(freq)
         else:
             dshape = _data.shape
             if len(dshape) > 0:
@@ -311,10 +345,10 @@ The combination of `series` and `dates` is the `data` part.
                 newdates = date_array(start_date=start_date, length=length,
                                       freq=freq)
             else:
-                newdates = date_array([], freq=freq)          
+                newdates = date_array([], freq=freq)
         # Get observed ...............................
-        observed = getattr(data, 'observed', corelib.fmtObserv(observed))
-        
+        observed = getattr(data, 'observed', fmtObserv(observed))
+
         if _data is masked:
             assert(numeric.size(newdates)==1)
             return _data.view(cls)
@@ -326,7 +360,7 @@ The combination of `series` and `dates` is the `data` part.
         return _data
     #............................................
     def __array_finalize__(self,obj):
-        MaskedArray.__array_finalize__(self, obj)        
+        MaskedArray.__array_finalize__(self, obj)
         self._dates = getattr(obj, '_dates', [])
         self.observed = getattr(obj, 'observed', None)
         return
@@ -400,7 +434,7 @@ Returns the item described by i. Not a copy as in previous versions.
                 # CHECK: use reshape, or set shape ?
                 newshape = (list((1,)) + list(newdata.shape))
                 newdata.shape = newshape
-        newdata = newdata.view(type(self))    
+        newdata = newdata.view(type(self))
         newdata._dates = newdate
         return newdata
 # CHECK : The implementation below should work, but does not. Why ?
@@ -421,7 +455,7 @@ Returns the item described by i. Not a copy as in previous versions.
 #                newdata = newdata.reshape((list((1,)) + list(newdata.shape)))
 #                if newmask is not nomask:
 #                    newmask.shape = newdata.shape
-#        newdata = newdata.view(type(self))    
+#        newdata = newdata.view(type(self))
 #        newdata._dates = newdates
 #        newdata._mask = newmask
 #        return newdata
@@ -436,8 +470,8 @@ Sets item described by index. If value is masked, masks those locations.
         if self is masked:
             raise MAError, 'Cannot alter the masked element.'
         (sindx, dindx) = self.__checkindex(indx)
-        #....        
-        super(TimeSeries, self).__setitem__(sindx, value)    
+        #....
+        super(TimeSeries, self).__setitem__(sindx, value)
     #........................
     def __getslice__(self, i, j):
         "Gets slice described by i, j"
@@ -466,8 +500,8 @@ Sets item described by index. If value is masked, masks those locations.
         desc = """\
 timeseries(data  =
  %(data)s,
-           dates = 
- %(time)s, 
+           dates =
+ %(time)s,
            freq  = %(freq)s)
 """
         desc_short = """\
@@ -507,7 +541,7 @@ timeseries(data  = %(data)s,
     __le__ = _tsmathmethod('__le__')
     __gt__ = _tsmathmethod('__gt__')
     __ge__ = _tsmathmethod('__ge__')
-    
+
     reshape = _tsarraymethod('reshape', ondates=True)
     copy = _tsarraymethod('copy', ondates=True)
     compress = _tsarraymethod('compress', ondates=True)
@@ -515,7 +549,7 @@ timeseries(data  = %(data)s,
     cumsum = _tsarraymethod('cumsum',ondates=False)
     cumprod = _tsarraymethod('cumprod',ondates=False)
     anom = _tsarraymethod('anom',ondates=False)
-    
+
     sum = _tsaxismethod('sum')
     prod = _tsaxismethod('prod')
     mean = _tsaxismethod('mean')
@@ -526,18 +560,18 @@ timeseries(data  = %(data)s,
     all = _tsaxismethod('all')
     any = _tsaxismethod('any')
 
-    
+
 #    def nonzero(self):
 #        """Returns a tuple of ndarrays, one for each dimension of the array,
 #    containing the indices of the non-zero elements in that dimension."""
 #        return self._series.nonzero()
-    
+
 #    filled = _tsarraymethod('filled', ondates=False)
-    
-    #............................................ 
+
+    #............................................
     def ids (self):
         """Return the ids of the data, dates and mask areas"""
-        return (id(self._series), id(self.dates),)   
+        return (id(self._series), id(self.dates),)
     #------------------------------------------------------
     @property
     def series(self):
@@ -556,39 +590,39 @@ timeseries(data  = %(data)s,
         """Returns the corresponding frequency (as a string)."""
         return self._dates.freqstr
     @property
-    def day(self):          
+    def day(self):
         "Returns the day of month for each date in self._dates."
         return self._dates.day
     @property
-    def day_of_week(self):  
+    def day_of_week(self):
         "Returns the day of week for each date in self._dates."
         return self._dates.day_of_week
     @property
-    def day_of_year(self):  
+    def day_of_year(self):
         "Returns the day of year for each date in self._dates."
         return self._dates.day_of_year
     @property
-    def month(self):        
+    def month(self):
         "Returns the month for each date in self._dates."
         return self._dates.month
     @property
-    def quarter(self):   
-        "Returns the quarter for each date in self._dates."   
+    def quarter(self):
+        "Returns the quarter for each date in self._dates."
         return self._dates.quarter
     @property
-    def year(self):         
+    def year(self):
         "Returns the year for each date in self._dates."
         return self._dates.year
     @property
-    def second(self):    
-        "Returns the seconds for each date in self._dates."  
+    def second(self):
+        "Returns the seconds for each date in self._dates."
         return self._dates.second
     @property
-    def minute(self):     
-        "Returns the minutes for each date in self._dates."  
+    def minute(self):
+        "Returns the minutes for each date in self._dates."
         return self._dates.minute
     @property
-    def hour(self):         
+    def hour(self):
         "Returns the hour for each date in self._dates."
         return self._dates.hour
     @property
@@ -629,33 +663,33 @@ timeseries(data  = %(data)s,
             return _dates[-1]
         else:
             return Date(self.freq, _dates.flat[-1])
-    
+
     def isvalid(self):
         """Returns whether the series has no duplicate/missing dates."""
         return self._dates.isvalid()
-    
+
     def has_missing_dates(self):
         """Returns whether there's a date gap in the series."""
         return self._dates.has_missing_dates()
-    
+
     def isfull(self):
         """Returns whether there's no date gap in the series."""
         return self._dates.isfull()
-    
+
     def has_duplicated_dates(self):
         """Returns whether there are duplicated dates in the series."""
         return self._dates.has_duplicated_dates()
-    
+
     def date_to_index(self, date):
         "Returns the index corresponding to a given date, as an integer."
-        return self._dates.date_to_index(date) 
+        return self._dates.date_to_index(date)
     #.....................................................
     def asfreq(self, freq=None):
         "Converts the dates to another frequency."
         if freq is None:
             return self
         return TimeSeries(self._series, dates=self._dates.asfreq(freq))
-    
+
     def convert(self, freq, func='auto', position='END'):
         "Converts the dates to another frequency, and adapt the data."
         return convert(self, freq, func=func, position=position)
@@ -707,11 +741,11 @@ timeseries(data  = %(data)s,
                  self.freq,
                  )
         return state
-    #    
+    #
     def __setstate__(self, state):
         """Restores the internal state of the TimeSeries, for pickling purposes.
     `state` is typically the output of the ``__getstate__`` output, and is a 5-tuple:
-    
+
         - class name
         - a tuple giving the shape of the data
         - a typecode for the data
@@ -722,11 +756,11 @@ timeseries(data  = %(data)s,
         super(TimeSeries, self).__setstate__((ver, shp, typ, isf, raw, msk, flv))
         self._dates.__setstate__((dsh, dtype(int_), isf, dtm))
         self._dates.freq = frq
-#        
+#
     def __reduce__(self):
         """Returns a 3-tuple for pickling a MaskedArray."""
         return (_tsreconstruct,
-                (self.__class__, self._baseclass, 
+                (self.__class__, self._baseclass,
                  self.shape, self._dates.shape, self.dtype, self._fill_value),
                 self.__getstate__())
 
@@ -737,17 +771,17 @@ def _tsreconstruct(genclass, baseclass, baseshape, dateshape, basetype, fill_val
     _series = ndarray.__new__(baseclass, baseshape, basetype)
     _dates = ndarray.__new__(DateArray, dateshape, int_)
     _mask = ndarray.__new__(ndarray, baseshape, bool_)
-    return genclass.__new__(genclass, _series, dates=_dates, mask=_mask, 
+    return genclass.__new__(genclass, _series, dates=_dates, mask=_mask,
                             dtype=basetype, fill_value=fill_value)
-        
+
 def _attrib_dict(series, exclude=[]):
     """this function is used for passing through attributes of one
 time series to a new one being created"""
     result = {'fill_value':series.fill_value,
               'observed':series.observed}
     return dict(filter(lambda x: x[0] not in exclude, result.iteritems()))
-  
-        
+
+
 ##### --------------------------------------------------------------------------
 ##--- ... Additional methods ...
 ##### --------------------------------------------------------------------------
@@ -789,7 +823,7 @@ class _frommethod(object):
         try:
             return getattr(TimeSeries, self._methodname).__doc__
         except:
-            return "???"    
+            return "???"
     #
     def __call__ (self, caller, *args, **params):
         if hasattr(caller, self._methodname):
@@ -832,7 +866,7 @@ def tofile(self, output, sep='\t', format_dates=None):
     if format_dates is None:
         format_dates = self.dates[0].default_fmtstr()
     oformat = "%%s%s%s" % (sep,format_dates)
-    for (_dates,_data) in numpy.broadcast(self._dates.ravel().asstrings(), 
+    for (_dates,_data) in numpy.broadcast(self._dates.ravel().asstrings(),
                                           filled(self)):
         ofile.write('%s\n' % sep.join([oformat % (_dates, _data) ]))
     ofile.close()
@@ -849,11 +883,11 @@ Fields are `_dates`, `_data` and _`mask`.
     if flat.size > 0:
         return recfromarrays([_dates, flat._data, getmaskarray(flat)],
                              dtype=desctype,
-                             shape = (flat.size,),  
+                             shape = (flat.size,),
                              )
     else:
-        return recfromarrays([[], [], []], dtype=desctype, 
-                             shape = (flat.size,),  
+        return recfromarrays([[], [], []], dtype=desctype,
+                             shape = (flat.size,),
                              )
 TimeSeries.asrecords = asrecords
 
@@ -892,11 +926,11 @@ def time_series(data, dates=None, freq=None, observed=None,
                 dtype=None, copy=False, fill_value=None,
                 keep_mask=True, small_mask=True, hard_mask=False):
     """Creates a TimeSeries object
-    
+
 :Parameters:
     `dates` : ndarray
         Array of dates.
-    `data` : 
+    `data` :
         Array of data.
     """
     data = numeric.array(data, copy=False, subok=True)
@@ -907,15 +941,15 @@ def time_series(data, dates=None, freq=None, observed=None,
                 length = dshape[0]
         if len(dshape) > 0:
             dates = date_array(start_date=start_date, end_date=end_date,
-                               length=length, include_last=include_last, 
-                               freq=freq) 
+                               length=length, include_last=include_last,
+                               freq=freq)
         else:
-            dates = date_array([], freq=freq)   
+            dates = date_array([], freq=freq)
     elif not isinstance(dates, DateArray):
         dates = date_array(dlist=dates, freq=freq)
     return TimeSeries(data=data, dates=dates, mask=mask, observed=observed,
                       copy=copy, dtype=dtype, fill_value=fill_value,
-                      keep_mask=keep_mask, small_mask=small_mask, 
+                      keep_mask=keep_mask, small_mask=small_mask,
                       hard_mask=hard_mask,)
 
 
@@ -928,7 +962,7 @@ tsmasked = TimeSeries(masked,dates=DateArray(Date('D',1)))
 ##### --------------------------------------------------------------------------
 #---- ... Additional functions ...
 ##### --------------------------------------------------------------------------
-def mask_period(data, period=None, start_date=None, end_date=None, 
+def mask_period(data, period=None, start_date=None, end_date=None,
                 inside=True, include_edges=True, inplace=False):
     """Returns x as an array masked where dates fall outside the selection period,
 as well as where data are initially missing (masked).
@@ -961,9 +995,9 @@ as well as where data are initially missing (masked).
     # Check the period .....................
     if period is not None:
         if isinstance(period, (tuple, list, ndarray)):
-            (start_date, end_date) = (period[0], period[-1])   
+            (start_date, end_date) = (period[0], period[-1])
         else:
-            (start_date, end_date) = (period, start_date)   
+            (start_date, end_date) = (period, start_date)
     # Check the starting date ..............
     if start_date is None:
         start_date = dates_lims[0]
@@ -993,17 +1027,17 @@ as well as where data are initially missing (masked).
     data[selection] = masked
     return data
 
-def mask_inside_period(data, start_date=None, end_date=None, 
+def mask_inside_period(data, start_date=None, end_date=None,
                        include_edges=True, inplace=False):
     """Masks values falling inside a given range of dates."""
-    return mask_period(data, start_date=start_date, end_date=end_date, 
+    return mask_period(data, start_date=start_date, end_date=end_date,
                        inside=True, include_edges=include_edges, inplace=inplace)
-def mask_outside_period(data, start_date=None, end_date=None, 
+def mask_outside_period(data, start_date=None, end_date=None,
                        include_edges=True, inplace=False):
     """Masks values falling outside a given range of dates."""
-    return mask_period(data, start_date=start_date, end_date=end_date, 
+    return mask_period(data, start_date=start_date, end_date=end_date,
                        inside=False, include_edges=include_edges, inplace=inplace)
-    
+
 #...............................................................................
 def compressed(series):
     """Suppresses missing values from a time series."""
@@ -1026,7 +1060,7 @@ TimeSeries.compressed = compressed
 #...............................................................................
 def adjust_endpoints(a, start_date=None, end_date=None):
     """Returns a TimeSeries going from `start_date` to `end_date`.
-    If `start_date` and `end_date` both fall into the initial range of dates, 
+    If `start_date` and `end_date` both fall into the initial range of dates,
     the new series is NOT a copy.
     """
     # Series validity tests .....................
@@ -1050,9 +1084,9 @@ def adjust_endpoints(a, start_date=None, end_date=None):
     # Skip the empty series case
     if dstart is None and (start_date is None or end_date is None):
         raise TimeSeriesError, "Both start_date and end_date must be specified"+\
-                               " to adjust endpoints of a zero length series!" 
+                               " to adjust endpoints of a zero length series!"
     #....
-    if start_date is None: 
+    if start_date is None:
         start_date = dstart
         start_lag = 0
     else:
@@ -1062,15 +1096,15 @@ def adjust_endpoints(a, start_date=None, end_date=None):
             start_lag = start_date - dstart
         else:
             start_lag = start_date
-    #....          
-    if end_date is None: 
+    #....
+    if end_date is None:
         end_date = dend
         end_lag = 0
     else:
         if not isinstance(end_date, Date):
             raise TypeError, msg % ('end_date', type(end_date))
         if dend is not None:
-            end_lag = end_date - dend    
+            end_lag = end_date - dend
         else:
             end_lag = end_date
     # Check if the new range is included in the old one
@@ -1081,11 +1115,11 @@ def adjust_endpoints(a, start_date=None, end_date=None):
             return a[start_lag:end_lag]
     # Create a new series .......................
     newdates = date_array(start_date=start_date, end_date=end_date)
-    
+
     newshape = list(shp_flat)
     newshape[0] = len(newdates)
     newshape = tuple(newshape)
-    
+
     newseries = numeric.empty(newshape, dtype=a.dtype).view(type(a))
     newseries.__setmask__(numeric.ones(newseries.shape, dtype=bool_))
     newseries._dates = newdates
@@ -1099,39 +1133,39 @@ def adjust_endpoints(a, start_date=None, end_date=None):
 def align_series(*series, **kwargs):
     """Aligns several TimeSeries, so that their starting and ending dates match.
     Series are resized and filled with mased values accordingly.
-    
+
     The function accepts two extras parameters:
     - `start_date` forces the series to start at that given date,
     - `end_date` forces the series to end at that given date.
     By default, `start_date` and `end_date` are set to the smallest and largest
-    dates respectively.    
+    dates respectively.
     """
     if len(series) < 2:
-        return series  
+        return series
     unique_freqs = numpy.unique([x.freqstr for x in series])
     common_freq = _compare_frequencies(*series)
     valid_states = [x.isvalid() for x in series]
     if not numpy.all(valid_states):
         raise TimeSeriesError, \
             "Cannot adjust a series with missing or duplicated dates."
-    
-    start_date = kwargs.pop('start_date', 
-                            min([x.start_date for x in series 
+
+    start_date = kwargs.pop('start_date',
+                            min([x.start_date for x in series
                                      if x.start_date is not None]))
     if isinstance(start_date,str):
         start_date = Date(common_freq, string=start_date)
-    end_date = kwargs.pop('end_date', 
+    end_date = kwargs.pop('end_date',
                           max([x.end_date for x in series
                                    if x.end_date is not None]))
     if isinstance(end_date,str):
         end_date = Date(common_freq, string=end_date)
-    
+
     return [adjust_endpoints(x, start_date, end_date) for x in series]
 aligned = align_series
 #....................................................................
 def convert(series, freq, func='auto', position='END'):
     """Converts a series to a frequency.
-       
+
     When converting to a lower frequency, func is a function that acts
     on a 1-d array and returns a scalar or 1-d array. func should handle
     masked values appropriately. If func is "auto", then an
@@ -1139,7 +1173,7 @@ def convert(series, freq, func='auto', position='END'):
     of the series. If func is None, then a 2D array is returned, where each
     column represents the values appropriately grouped into the new frequency.
     interp and position will be ignored in this case.
-        
+
     When converting to a higher frequency, position is 'START' or 'END'
     and determines where the data point is in each period (eg. if going
     from monthly to daily, and position is 'END', then each data point is
@@ -1150,33 +1184,31 @@ def convert(series, freq, func='auto', position='END'):
     if not series.isvalid():
         raise TimeSeriesError, \
             "Cannot adjust a series with missing or duplicated dates."
-    
-    if position.upper() not in ('END','START'): 
+
+    if position.upper() not in ('END','START'):
         raise ValueError("invalid value for position argument: (%s)",str(position))
-    
-    toFreq = corelib.check_freq(freq)
+
+    toFreq = freq
     fromFreq = series.freq
+
     start_date = series._dates[0]
-    
-    if fromFreq == toFreq:
-        return series.copy()
-    
+
     if series.size == 0:
-        return TimeSeries(series, freq=toFreq, 
+        return TimeSeries(series, freq=toFreq,
                           start_date=start_date.asfreq(toFreq))
     if func == 'auto':
-        func = corelib.obs_dict[series.observed]
+        func = obs_dict[series.observed]
 
     tempData = series._series.filled()
     tempMask = getmaskarray(series)
 
-    cRetVal = cseries.convert(tempData, fromFreq, toFreq, position, 
-                              int(start_date), tempMask)
+    cRetVal = cseries.TS_convert(tempData, fromFreq, toFreq, position,
+                                 int(start_date), tempMask)
     _values = cRetVal['values']
     _mask = cRetVal['mask']
     _startindex = cRetVal['startindex']
     start_date = Date(freq=toFreq, value=_startindex)
-        
+
     tempData = masked_array(_values, mask=_mask)
 
     if tempData.ndim == 2 and func is not None:
@@ -1226,7 +1258,7 @@ timeseries(data  = [-- 0 1 2],
 """
     #Backup series attributes
     options = _attrib_dict(series)
-    newdata = masked_array(numeric.empty(series.shape, dtype=series.dtype), 
+    newdata = masked_array(numeric.empty(series.shape, dtype=series.dtype),
                            mask=True)
     if copy:
         inidata = series._series.copy()
@@ -1248,21 +1280,25 @@ TimeSeries.tshift = tshift
 #...............................................................................
 def fill_missing_dates(data, dates=None, freq=None,fill_value=None):
     """Finds and fills the missing dates in a time series.
-The data corresponding to the initially missing dates are masked, or filled to 
+The data corresponding to the initially missing dates are masked, or filled to
 `fill_value`.
-    
+
 :Parameters:
     `data`
         Initial array of data.
-    `dates` 
-        Initial array of dates. 
+    `dates`
+        Initial array of dates.
     `freq` : float *[None]*
         New date resolutions. If *None*, the initial resolution is used instead.
     `fill_value` : float *[None]*
         Default value for missing data. If None, the data are just masked.
     """
-    (freq, freqstr) = corelib.check_freq(freq), corelib.check_freqstr(freq)
-    if freqstr == 'U':
+
+    orig_freq = freq
+    freq = check_freq(freq)
+
+    if orig_freq is not None and freq == _c.FR_UND:
+        freqstr = check_freq_str(freq)
         raise ValueError,\
               "Unable to define a proper date resolution (found %s)." % freqstr
     if dates is None:
@@ -1291,16 +1327,16 @@ The data corresponding to the initially missing dates are masked, or filled to
     newdates = date_array(start_date=tstart, end_date=tend, include_last=True)
     nsize = newdates.size
     #.............................
-    # Get the steps between consecutive data. 
+    # Get the steps between consecutive data.
     delta = dflat.get_steps()-1
     gap = delta.nonzero()
     slcid = numpy.r_[[0,], numpy.arange(1,n)[gap], [n,]]
-    oldslc = numpy.array([slice(i,e) 
+    oldslc = numpy.array([slice(i,e)
                           for (i,e) in numpy.broadcast(slcid[:-1],slcid[1:])])
     addidx = delta[gap].astype(int_).cumsum()
-    newslc = numpy.r_[[oldslc[0]], 
+    newslc = numpy.r_[[oldslc[0]],
                       [slice(i+d,e+d) for (i,e,d) in \
-                           numpy.broadcast(slcid[1:-1],slcid[2:],addidx)] 
+                           numpy.broadcast(slcid[1:-1],slcid[2:],addidx)]
                      ]
     #.............................
     # Just a quick check
@@ -1322,7 +1358,7 @@ The data corresponding to the initially missing dates are masked, or filled to
         for (new,old) in zip(newslc,oldslc):
             newdatad[new] = datad[old]
             newdatam[new] = datam[old]
-    newdata = MA.masked_array(newdatad, mask=newdatam, fill_value=fill_value)    
+    newdata = MA.masked_array(newdatad, mask=newdatam, fill_value=fill_value)
     # Get new shape ..............
     if data.ndim == 1:
         nshp = (newdates.size,)
@@ -1334,7 +1370,7 @@ def stack(*series):
     """performs a column_stack on the data from each series, and the
 resulting series has the same dates as each individual series. All series
 must be date compatible.
-    
+
 :Parameters:
     `*series` : the series to be stacked
 """
@@ -1354,7 +1390,7 @@ def concatenate_series(series, keep_gap=True):
     end_date =   max([s.end_date for s in series if s.end_date is not None])
     newdtype = max([s.dtype for s in series])
     whichone = numeric.zeros((end_date-start_date+1), dtype=int_)
-    newseries = time_series(numeric.empty((end_date-start_date+1), dtype=newdtype), 
+    newseries = time_series(numeric.empty((end_date-start_date+1), dtype=newdtype),
                             dates=date_array(start_date, end_date, freq=common_f),
                             mask=True)
     newdata = newseries._data
@@ -1379,41 +1415,41 @@ def empty_like(series):
     result = N.empty_like(series).view(type(series))
     result._dates = series._dates
     result._mask = series._mask
-    return result                           
-    
+    return result
+
 ################################################################################
 if __name__ == '__main__':
     from maskedarray.testutils import assert_equal, assert_array_equal
     import numpy as N
-    
+
     if 1:
         dlist = ['2007-01-%02i' % i for i in range(1,11)]
         dates = date_array_fromlist(dlist)
         data = masked_array(numeric.arange(10), mask=[1,0,0,0,0]*2, dtype=float_)
-    
+
     if 0:
         ser1d = time_series(data, dlist)
-        
+
         serfolded = ser1d.reshape((5,2))
         assert_equal(serfolded._dates.shape, (5,2))
         assert_equal(serfolded[0], time_series([0,1],mask=[1,0],
                                                start_date=dates[0]))
-        assert_equal(serfolded[:,0], 
+        assert_equal(serfolded[:,0],
                      time_series(ser1d[::2], dates=dates[::2]))
         sertrans = serfolded.transpose()
         assert_equal(sertrans.shape, (2,5))
-        
-    if 1:        
+
+    if 1:
         data = dates
         series = time_series(data, dates)
         assert(isinstance(series, TimeSeries))
         assert_equal(series._dates, dates)
         assert_equal(series._data, data)
         assert_equal(series.freqstr, 'D')
-        
+
         series[5] = MA.masked
-        
+
         # ensure that series can be represented by a string after masking a value
-        # (there was a bug before that prevented this from working when using a 
+        # (there was a bug before that prevented this from working when using a
         # DateArray for the data)
         strrep = str(series)
