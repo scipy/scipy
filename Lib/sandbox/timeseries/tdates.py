@@ -33,7 +33,7 @@ import tcore as corelib
 import const as _c
 import cseries
 
-from cseries import Date, thisday, check_freq, check_freq_str
+from cseries import Date, thisday, check_freq, check_freq_str, get_freq_group
 today = thisday
 
 __all__ = [
@@ -42,7 +42,7 @@ __all__ = [
 'datearray','date_array', 'date_array_fromlist', 'date_array_fromrange',
 'day_of_week','day_of_year','day','month','quarter','year','hour','minute',
 'second','thisday','today','prevbusday','period_break', 'check_freq',
-'check_freq_str'
+'check_freq_str','get_freq_group'
            ]
 
 
