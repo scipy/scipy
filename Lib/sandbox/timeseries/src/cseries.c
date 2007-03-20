@@ -2463,6 +2463,20 @@ cseries_check_freq_str(PyObject *self, PyObject *args) {
     return result;
 }
 
+static char cseries_get_freq_group_doc[] =
+"translate user specified frequency into frequency group constant";
+static PyObject *
+cseries_get_freq_group(PyObject *self, PyObject *args) {
+
+    PyObject *freq;
+    int freq_val;
+
+    if (!PyArg_ParseTuple(args, "O:get_freq_group(freq)", &freq)) return NULL;
+    if ((freq_val = check_freq(freq)) == INT_ERR_CODE) return NULL;
+
+    return PyInt_FromLong(get_freq_group(freq_val));
+}
+
 static char cseries_thisday_doc[] =
 "Returns today's date, at the given frequency\n\n"
 ":Parameters:\n"
@@ -2860,6 +2874,7 @@ static PyMethodDef cseries_methods[] = {
     {"thisday", cseries_thisday, METH_VARARGS, cseries_thisday_doc},
     {"check_freq", cseries_check_freq, METH_VARARGS, cseries_check_freq_doc},
     {"check_freq_str", cseries_check_freq_str, METH_VARARGS, cseries_check_freq_str_doc},
+    {"get_freq_group", cseries_get_freq_group, METH_VARARGS, cseries_get_freq_group_doc},
 
     {"set_callback_DateFromString", set_callback_DateFromString, METH_VARARGS,
      set_callback_DateFromString_doc},
