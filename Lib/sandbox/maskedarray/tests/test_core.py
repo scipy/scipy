@@ -1001,7 +1001,7 @@ class test_array_methods(NumpyTestCase):
         assert_equal(mx.mask, [0,1,0])
         mx = masked_array(x, mask=[0,1,0], keep_mask=True)
         assert_equal(mx.mask, [1,1,0])   
-        #We default to true
+        # We default to true
         mx = masked_array(x, mask=[0,1,0])
         assert_equal(mx.mask, [1,1,0])
     
