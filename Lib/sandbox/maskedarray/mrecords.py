@@ -226,7 +226,7 @@ class MaskedRecords(MaskedArray, object):
         # We want a field ........
         if isinstance(indx, str):           
             obj = _data[indx].view(MaskedArray)
-            obj._setmask(_localdict['_fieldmask'][indx])
+            obj._set_mask(_localdict['_fieldmask'][indx])
             return obj
         # We want some elements ..
         obj = ndarray.__getitem__(self, indx).view(type(self))

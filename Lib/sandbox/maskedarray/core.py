@@ -990,22 +990,25 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
                           DeprecationWarning)
             small_mask = flag
         # Process data............
-        _data = numeric.array(data, dtype=dtype, copy=copy, subok=True)
-        _baseclass = getattr(_data, '_baseclass', type(_data))
-        if not isinstance(data, MaskedArray) or not subok:
+        _data = numeric.array(data, dtype=dtype, copy=copy, subok=subok)
+        _baseclass = getattr(data, '_baseclass', type(_data))
+        _basedict = getattr(data, '_basedict', getattr(data, '__dict__', None))
+        if not isinstance(data, MaskedArray): 
             _data = _data.view(cls)
-        # Process mask ...........
-        # Backwards compat
+        elif not subok:
+            _data = _data.view(cls)
+        else:
+            _data = _data.view(type(data))
+        # Backwards compat .......
         if hasattr(data,'_mask') and not isinstance(data, ndarray):
             _data._mask = data._mask
-            _data._sharedmask = True
+            _sharedmask = True
+        # Process mask ...........
         if mask is nomask:
-            if _data._mask is not nomask:
-                if copy:
-                    _data._mask = data._mask.copy()
-                    _data._sharedmask = False
-                if not keep_mask:
-                    _data._mask = nomask
+            if not keep_mask:
+                _data._mask = nomask
+            if copy:
+                _data._mask = _data._mask.copy()
         else:
             mask = numeric.array(mask, dtype=MaskType, copy=copy)
             if mask.shape != _data.shape:
@@ -1018,21 +1021,27 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
                     msg = "Mask and data not compatible: data size is %i, "+\
                           "mask size is %i."
                     raise MAError, msg % (nd, nm)
-            if _data._mask is nomask or not keep_mask:
+            if _data._mask is nomask:
                 _data._mask = mask
                 _data._sharedmask = True
             else:
-                _data._mask = _data._mask.copy()
-                _data._mask.__ior__(mask) 
+                # Make a copy of the mask to avoid propagation
                 _data._sharedmask = False
-        # Process extra options ..
-        # Update fille_value
+                if not keep_mask:
+                    _data._mask = mask
+                else:
+                    _data._mask = umath.logical_or(mask, _data._mask) 
+                    
+                    
+        # Update fill_value.......
         _data._fill_value = getattr(data, '_fill_value', fill_value)
         if _data._fill_value is None:
             _data._fill_value = default_fill_value(_data)
+        # Process extra options ..
         _data._hardmask = hard_mask
         _data._smallmask = small_mask
         _data._baseclass = _baseclass
+        _data._basedict = _basedict
         return _data
     #........................
     def __array_finalize__(self,obj):
@@ -1048,6 +1057,10 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         self._sharedmask = True
         self._baseclass = getattr(obj, '_baseclass', type(obj))
         self._fill_value = getattr(obj, '_fill_value', None)
+        # Update special attributes ...
+        self._basedict = getattr(obj, '_basedict', getattr(obj, '__dict__', None))
+        if self._basedict is not None:
+            self.__dict__.update(self._basedict)
         return
     #..................................
     def __array_wrap__(self, obj, context=None):
@@ -1179,7 +1192,7 @@ If `value` is masked, masks those locations."""
                 self._mask.flat = newmask
         if self._mask.shape:
             self._mask = numeric.reshape(self._mask, self.shape)
-    _setmask = __setmask__
+    _set_mask = __setmask__
     
     def _get_mask(self):
         """Returns the current mask."""

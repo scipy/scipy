@@ -114,10 +114,15 @@ class test_subclassing(NumpyTestCase):
         assert isinstance(z._data, SubArray)
         assert z._data.info['added'] > 0
         #
-        ym._setmask([1,0,0,0,1])
+        ym._set_mask([1,0,0,0,1])
         assert_equal(ym._mask, [1,0,0,0,1])
-        ym._series._setmask([0,0,0,0,1])
+        ym._series._set_mask([0,0,0,0,1])
         assert_equal(ym._mask, [0,0,0,0,1])
+        #
+        xsub = subarray(x, info={'name':'x'})
+        mxsub = masked_array(xsub)
+        assert hasattr(mxsub, 'info')
+        assert_equal(mxsub.info, xsub.info)
     
     def check_subclasspreservation(self):
         "Checks that masked_array(...,subok=True) preserves the class."
@@ -126,13 +131,13 @@ class test_subclassing(NumpyTestCase):
         xinfo = [(i,j) for (i,j) in zip(x,m)]
         xsub = MSubArray(x, mask=m, info={'xsub':xinfo})
         #
-        mxsub = masked_array(xsub, subok=True)
-        assert isinstance(mxsub, MSubArray)
-        assert_equal(mxsub.info, xsub.info)
-        #
         mxsub = masked_array(xsub, subok=False)
         assert not isinstance(mxsub, MSubArray)
         assert isinstance(mxsub, MaskedArray)
+        #
+        mxsub = masked_array(xsub, subok=True)
+        assert isinstance(mxsub, MSubArray)
+        assert_equal(mxsub.info, xsub.info)
         
         
 ################################################################################
