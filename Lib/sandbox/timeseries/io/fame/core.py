@@ -3,6 +3,7 @@ import re, thread
 import numpy
 import maskedarray as ma
 import timeseries as ts
+from timeseries import const as _c
 
 import cfame
 from const import *
@@ -14,23 +15,20 @@ __all__ = [
 def reverse_dict(d):
     return dict([(y, x) for x, y in d.iteritems()])
 
-def convert_dict(d, key_func=lambda x:x, val_func=lambda x:x):
-    return dict([(key_func(key), val_func(val)) for key, val in d.iteritems()])
-
-basis_map = { HBSUND:"U",
-              HBSDAY:"D",
-              HBSBUS:"B"}
+basis_map = { HBSUND:_c.FR_UND,
+              HBSDAY:_c.FR_DAY,
+              HBSBUS:_c.FR_BUS}
 basis_revmap = reverse_dict(basis_map)
 
-observed_map = { HOBUND:"UNDEFINED",
-                 HOBBEG:"BEGINNING",
-                 HOBEND:"ENDING",
-                 HOBAVG:"AVERAGED",
-                 HOBSUM:"SUMMED",
-                 HOBANN:"ANNUALIZED",
-                 HOBFRM:"FORMULA",
-                 HOBHI:"MAXIMUM",
-                 HOBLO:"MINIMUM"}
+observed_map = { HOBUND:ts.check_observed("UNDEFINED"),
+                 HOBBEG:ts.check_observed("BEGINNING"),
+                 HOBEND:ts.check_observed("ENDING"),
+                 HOBAVG:ts.check_observed("AVERAGED"),
+                 HOBSUM:ts.check_observed("SUMMED"),
+                 HOBANN:"ANNUALIZED", #ts.check_observed("ANNUALIZED"),
+                 HOBFRM:"FORMULA", #ts.check_observed("FORMULA"),
+                 HOBHI:ts.check_observed("MAXIMUM"),
+                 HOBLO:ts.check_observed("MINIMUM")}
 observed_revmap = reverse_dict(observed_map)
 observed_revmap['HIGH'] = HOBHI
 observed_revmap['LOW'] = HOBLO
@@ -39,7 +37,7 @@ def translate_basis(basis):
     "translate user specified basis to FAME constant"
 
     if isinstance(basis, str):
-        freq = ts.freq_tostr(ts.freq_fromstr(basis))
+        freq = ts.check_freq(basis)
         try:
             return basis_revmap[freq]
         except KeyError:
@@ -47,75 +45,88 @@ def translate_basis(basis):
                              "'DAILY', 'BUSINESS', or 'UNDEFINED'")
     else:
         if basis in basis_map: return basis
-        elif basis == ts.freq_fromstr('D'): return HBSDAY
-        elif basis == ts.freq_fromstr('B'): return HBSBUS
-        elif basis == ts.freq_fromstr('U'): return HBSUND
+        elif basis == _c.FR_DAY: return HBSDAY
+        elif basis == _c.FR_BUS: return HBSBUS
+        elif basis == _c.FR_UND: return HBSUND
         else:
             raise ValueError("Invalid Basis value")
 
 def translate_observed(observed):
     "translate user specified observed to FAME constant"
     if isinstance(observed, str):
-        return observed_revmap[ts.fmtObserv(observed)]
+        return observed_revmap[ts.check_observed(observed)]
     elif observed in (observed_map):
         return observed
     else:
         raise ValueError("Invalid Observed value")
 
-freq_map = { HDAILY:"D",
-                HBUSNS:"B",
-                HMONTH:"M",
-                HWKSUN:"W",
-                HSEC  :"S",
-                HMIN  :"T",
-                HHOUR :"H",
-                HQTOCT:"Q",
-                HQTNOV:"Q",
-                HQTDEC:"Q",
-                HANJAN:"A",
-                HANFEB:"A",
-                HANMAR:"A",
-                HANAPR:"A",
-                HANMAY:"A",
-                HANJUN:"A",
-                HANJUL:"A",
-                HANAUG:"A",
-                HANSEP:"A",
-                HANOCT:"A",
-                HANNOV:"A",
-                HANDEC:"A" }
-freq_map = convert_dict(freq_map, val_func=ts.freq_fromstr)
+freq_map = {    HDAILY:_c.FR_DAY,
+                HBUSNS:_c.FR_BUS,
+                HMONTH:_c.FR_MTH,
+                HWKSUN:_c.FR_WKSUN,
+                HWKMON:_c.FR_WKMON,
+                HWKTUE:_c.FR_WKTUE,
+                HWKWED:_c.FR_WKWED,
+                HWKTHU:_c.FR_WKTHU,
+                HWKFRI:_c.FR_WKFRI,
+                HWKSAT:_c.FR_WKSAT,
+                HSEC  :_c.FR_SEC,
+                HMIN  :_c.FR_MIN,
+                HHOUR :_c.FR_HR,
+                HQTOCT:_c.FR_QTR,
+                HQTNOV:_c.FR_QTR,
+                HQTDEC:_c.FR_QTR,
+                HANJAN:_c.FR_ANNJAN,
+                HANFEB:_c.FR_ANNFEB,
+                HANMAR:_c.FR_ANNMAR,
+                HANAPR:_c.FR_ANNAPR,
+                HANMAY:_c.FR_ANNMAY,
+                HANJUN:_c.FR_ANNJUN,
+                HANJUL:_c.FR_ANNJUL,
+                HANAUG:_c.FR_ANNAUG,
+                HANSEP:_c.FR_ANNSEP,
+                HANOCT:_c.FR_ANNOCT,
+                HANNOV:_c.FR_ANNNOV,
+                HANDEC:_c.FR_ANNDEC }
 
-freq_revmap = { "D" : HDAILY,
-                "B" : HBUSNS,
-                "M" : HMONTH,
-                "W" : HWKSUN,
-                "S" : HSEC,
-                "T" : HMIN,
-                "H" : HHOUR,
-                "Q" : HQTDEC,
-                "A" : HANDEC}
-freq_revmap = convert_dict(freq_revmap, key_func=ts.freq_fromstr)
+freq_revmap = reverse_dict(freq_map)
+freq_revmap[_c.FR_QTR] = HQTDEC
 
-date_value_adjust = { 'A':1849,
-                      'Q':7396,
-                      'M':22188,
-                      'W':96477,
-                      'B':482381,
-                      'D':675333,
-                      'H':87648,
-                      'T':5258880,
-                      'S':315532800}
-date_value_adjust = convert_dict(date_value_adjust, key_func=ts.freq_fromstr)
+date_value_adjust = {   _c.FR_ANNJAN:1849,
+                        _c.FR_ANNFEB:1849,
+                        _c.FR_ANNMAR:1849,
+                        _c.FR_ANNAPR:1849,
+                        _c.FR_ANNMAY:1849,
+                        _c.FR_ANNJUN:1849,
+                        _c.FR_ANNJUL:1849,
+                        _c.FR_ANNAUG:1849,
+                        _c.FR_ANNSEP:1849,
+                        _c.FR_ANNOCT:1849,
+                        _c.FR_ANNNOV:1849,
+                        _c.FR_ANNDEC:1849,
+                        _c.FR_QTR:7396,
+                        _c.FR_MTH:22188,
+                        _c.FR_WKSUN:96477,
+                        _c.FR_WKMON:96477,
+                        _c.FR_WKTUE:96477,
+                        _c.FR_WKWED:96477,
+                        _c.FR_WKTHU:96477,
+                        _c.FR_WKFRI:96477,
+                        _c.FR_WKSAT:96477,
+                        _c.FR_BUS:482381,
+                        _c.FR_DAY:675333,
+                        _c.FR_HR:87648,
+                        _c.FR_MIN:5258880,
+                        _c.FR_SEC:315532800}
 
 def fametype_fromdata(data):
     """determine fame type code from a data object"""
-    
+
     if isinstance(data, ts.DateArray) or isinstance(data, ts.Date):
         return freq_revmap[data.freq]
     elif hasattr(data, 'dtype'):
         dtypeStr = str(data.dtype)
-        
+
         if dtypeStr[:5] == "float":
             if int(dtypeStr[5:]) > 32: return HPRECN
             else: return HNUMRC
@@ -131,7 +142,7 @@ def fametype_fromdata(data):
             return HBOOLN
         else:
             raise ValueError("Unsupported dtype for fame database: %s", dtypeStr)
-    
+
     elif isinstance(data, str):
         return HSTRNG
     elif isinstance(data, (int, float)):
@@ -161,19 +172,19 @@ class CaseInsensitiveDict(dict):
     def __init__(self, data={}):
         for i, v in data.iteritems():
             self[i.upper()] = v
-            
+
     def __getitem__(self, key):
         if hasattr(key, 'upper'): key = key.upper()
         return super(CaseInsensitiveDict, self).__getitem__(key)
-        
+
     def __setitem__(self, key, item):
         if hasattr(key, 'upper'): key = key.upper()
         super(CaseInsensitiveDict, self).__setitem__(key, item)
 
-def _famedate_to_tsdate(fame_date, freqstr):
+def _famedate_to_tsdate(fame_date, freq):
     "convert integer fame date to a timeseries Date"
-    value = fame_date + date_value_adjust[ts.freq_fromstr(freqstr)]
-    return ts.Date(freq=freqstr, value=value)
+    value = fame_date + date_value_adjust[freq]
+    return ts.Date(freq=freq, value=value)
 
 
 def _fame_params_from_pyobj_scalar(pyobj):
@@ -221,7 +232,7 @@ class FameDb(object):
 :Construction:
     x = FameDb(conn_str, mode='r')
 
-:Paramaters:
+:Parameters:
     - `conn_str` (str) : valid connection string. Can be a physical path,
     or channel specification, etc. See FAME documentation on cfmopdb for
     valid connection strings.
@@ -258,14 +269,14 @@ Notes
         else:
             raise ValueError, "Database access mode not supported."
         self.mode = mode
-        
+
         self.dbkey = cf_open(conn_str, intmode)
 
-        
+
     def read(self, name,
              start_date=None, end_date=None,
              start_case=None, end_case=None, max_string_len=65):
-    
+
         """read specified object(s) from database
 
 :Parameters:
@@ -288,7 +299,7 @@ Notes
        or series of strings. This is the maximum length of string that can
        be read. Lower values result in less memory usage, so you should
        specify this as low as is reasonable for your data.
-           
+
 :Return:
     if `name` is a list of strings:
         case insensitive dictionary of the objects
@@ -303,7 +314,7 @@ Notes
             names = name
 
         items = CaseInsensitiveDict()
-        
+
         #default to -1. This will get the entire range
         _start_case = _end_case = -1
         _start_date = _end_date = -1
@@ -322,7 +333,7 @@ Notes
 
         if start_case is not None: _start_case = start_case
         if end_case is not None: _end_case = end_case
-       
+
         if len(set([_start_case, _end_case, _start_date, _end_date, -1])) != 1:
             checkFreq = True
         else:
@@ -376,7 +387,7 @@ Notes
                             pyObj = numpyType(pyObj)
 
             elif result['class'] == HSERIE:
-                
+
                 if 'data' in result:
                     vals = result['data']
                     mask = result['mask']
@@ -384,7 +395,7 @@ Notes
                 else:
                     vals = []
                     mask = ma.nomask
-                    
+
                 if result['type'] >= 8: # date type
                     valadj = date_value_adjust[freq_map[result['type']]]
                     if len(vals) > 0: vals += valadj
@@ -392,7 +403,7 @@ Notes
                                         freq=freq_map[result['type']])
                 else:
                     data = numpy.array(vals, dtype=numpyType)
-                    
+
                 if result['freq'] == HCASEX:
                     pyObj = ma.array(data, mask=mask)
                 else:
@@ -405,7 +416,7 @@ Notes
                               value=result['startindex']+date_value_adjust[freq])
                     else:
                         start_date = None
-                    
+
                     pyObj = ts.time_series(data, freq=freq,
                                            start_date=start_date,
                                            observed=observed, mask=mask)
@@ -414,7 +425,7 @@ Notes
 
         if isSingle:
             return items.values()[0]
-            
+
         return items
 #..............................................................................
     def write_dict(self, objdict,
@@ -554,7 +565,7 @@ appropriate method by inspecting `pyobj`
     - `end_date` (Date, *[None]*) : If None, data will be written until the end of
        `tser`. If specified, only data points on or before end_date will be written.
 """
-            
+
         if not isinstance(tser, ts.TimeSeries):
             raise ValueError("tser is not a valid time series")
         elif tser.has_missing_dates():
@@ -569,15 +580,15 @@ appropriate method by inspecting `pyobj`
 
         if overwrite or not exists: create = True
         else: create = False
-        
+
         fame_params = _fame_params_from_pyobj_tser(tser)
-        
+
         fame_cls = fame_params['cls']
         fame_type = fame_params['type']
         fame_freq = fame_params['freq']
         fame_basis = fame_params['basis']
         fame_observed = fame_params['observed']
-        
+
         if create:
             if exists: self.delete_obj(name)
             cf_create(self.dbkey, name, fame_cls, fame_freq, fame_type, fame_basis, fame_observed)
@@ -591,10 +602,10 @@ appropriate method by inspecting `pyobj`
                 return bdate
             else:
                 return getattr(tser, attr)
-            
+
         start_date = get_boundary_date(start_date, "start_date")
         end_date = get_boundary_date(end_date, "end_date")
-        
+
         if start_date is not None:
 
             towrite = tser[start_date:end_date+1]
@@ -645,7 +656,7 @@ appropriate method by inspecting `pyobj`
     - `end_case` (int, *[None]*) : If None, data will be written until the end of
        `cser`. If specified, only data points on or before end_case will be written.
 """
-            
+
         if not isinstance(cser, numpy.ndarray):
             raise ValueError("cser is not a valid ndarray")
         elif cser.ndim != 1:
@@ -657,9 +668,9 @@ appropriate method by inspecting `pyobj`
 
         if overwrite or not exists: create = True
         else: create = False
-        
+
         fame_params = _fame_params_from_pyobj_cser(cser)
-        
+
         fame_cls = fame_params['cls']
         fame_type = fame_params['type']
         fame_freq = fame_params['freq']
@@ -696,15 +707,15 @@ appropriate method by inspecting `pyobj`
                         return zero_represents + cser.size - 1
                     else:
                         raise ValueError("unexpected argument: %s " % attr)
-            
+
         start_case = get_boundary_case(start_case, "start_case")
         end_case = get_boundary_case(end_case, "end_case")
 
-        if start_case is not None:        
+        if start_case is not None:
             # convert integer types to floats since FAME does not have an integer type
             s = start_case - zero_represents
             e = end_case - zero_represents
-            
+
             fame_data = fame_data[s:e+1]
             fame_mask = fame_mask[s:e+1]
             newType = fametype_tonumpy(fame_type)
@@ -725,7 +736,7 @@ over-written, otherwise it is created.
         - `name` (string) : database key that the object will be written to
         - `scalar` : one of the following: string, numpy scalar, int, float,
            list of strings (for name lists), Date, boolean"""
-        
+
         fame_params = _fame_params_from_pyobj_scalar(scalar)
         fame_type = fame_params['type']
 
@@ -746,7 +757,7 @@ over-written, otherwise it is created.
             fame_data = "{" + ", ".join(scalar) + "}"
         else:
             raise ValueError("Unrecognized data type")
-            
+
         if self.obj_exists(name): self.delete_obj(name)
         cf_create(self.dbkey, name,
                     fame_params['cls'],
@@ -759,7 +770,7 @@ over-written, otherwise it is created.
         newType = fametype_tonumpy(fame_type)
         if hasattr(fame_data, 'dtype') and newType != fame_data.dtype:
             fame_data = fame_data.astype(newType)
-        
+
         if fame_type == HNAMEL:
             cf_write_namelist(self.dbkey, name, fame_data)
         else:
@@ -786,10 +797,10 @@ You must use the fame constants defined in mapping.py for each of the
 parameters. Generally speaking, it is easier to use initialize_obj
 with a prototype object.
 """
-        
+
         if cls not in (HSERIE, HSCALA):
             raise ValueError("unrecognized object class: "+str(cls))
-        
+
         if freq is None:
             if cls == HSCALA:
                 freq = HUNDFX
@@ -815,7 +826,7 @@ database, simply initializes the object in the database."""
             param_func = _fame_params_from_pyobj_cser
         else:
             param_func = _fame_params_from_pyobj_scalar
-            
+
         fame_params = param_func(pyobj)
         cf_create(self.dbkey, name,
                     fame_params['cls'],
@@ -827,7 +838,7 @@ database, simply initializes the object in the database."""
     def rename_obj(self, name, new_name):
         """rename fame object in database"""
         cf_rename_obj(self.dbkey, name, new_name)
-        
+
     def copy_obj(self, target_db, source_name, target_name=None):
         """copy fame object to another destination"""
         if target_name is None: target_name = source_name
@@ -871,9 +882,9 @@ information about an object.
             ts_freq = freq_map[obj_sz['freq']]
         except KeyError:
             raise DBError("unsupported FAME frequency: %i", fame_freq)
-        
+
         if obj_sz[date_type+'_year'] == -1: return None
-            
+
         annDate = ts.Date(freq='A', year=obj_sz[date_type+'_year'])
         return annDate.asfreq(ts_freq, relation='BEFORE') + (obj_sz[date_type+'_period'] - 1)
 
@@ -914,16 +925,16 @@ information about an object.
     def obj_end_date(self, name):
         """get end_date of a FAME time series object"""
         return self.__ser_date(name, 'end')
-        
+
     def obj_created(self, name):
         "get 'created' attribute of object in database"
         fame_date = cf_get_obj_attr(self.dbkey, name, "CREATED")
-        return _famedate_to_tsdate(fame_date, 's')
+        return _famedate_to_tsdate(fame_date, _c.FR_SEC)
 
     def obj_modified(self, name):
         "get 'modified' attribute of object in database"
         fame_date = cf_get_obj_attr(self.dbkey, name, "MODIFIED")
-        return _famedate_to_tsdate(fame_date, 's')
+        return _famedate_to_tsdate(fame_date, _c.FR_SEC)
 #..............................................................................
     def db_desc(self):
         "get 'description' attribute of database"
@@ -936,12 +947,12 @@ information about an object.
     def db_created(self):
         "get 'created' attribute of database"
         fame_date = cf_get_db_attr(self.dbkey, "CREATED")
-        return _famedate_to_tsdate(fame_date, 's')
+        return _famedate_to_tsdate(fame_date, _c.FR_SEC)
 
     def db_modified(self):
         "get 'modified' attribute of database"
         fame_date = cf_get_db_attr(self.dbkey, "MODIFIED")
-        return _famedate_to_tsdate(fame_date, 's')
+        return _famedate_to_tsdate(fame_date, _c.FR_SEC)
 
     def db_is_open(self):
         "returns True if database is open. False otherwise"
@@ -959,7 +970,7 @@ information about an object.
         """performs a wildlist lookup on the database, using Fame syntax
 ("?" and "^"), returns a normal python list of strings"""
         res = cf_wildlist(self.dbkey, exp)
-            
+
         if wildonly:
             exp = exp.replace("?", "(.*)")
             exp = exp.replace("^", "(.)")
@@ -973,7 +984,7 @@ information about an object.
         """Closes the database. Changes will be posted."""
         if self.db_is_open():
             cf_close(self.dbkey)
-            
+
     def post(self):
         cf_post(self.dbkey)
 
@@ -1002,7 +1013,7 @@ This is needed because the Fame C api is not thread safe."""
         except:
             self.fameLock.release()
             raise
-            
+
         return result
 
 cf_open = cFameCall(cfame.open)
@@ -1041,7 +1052,7 @@ listing of allowable option settings.
 :Parameters:
     - option (str) : name of the option to set
     - setting (str) : value of the option to set
-    
+
 :Example:
     set_option("DBSIZE", "LARGE")
 """
@@ -1049,5 +1060,5 @@ listing of allowable option settings.
 def license_expires():
     """get date that license expires on"""
     fame_date = cf_license_expires()
-    adj_val = date_value_adjust[ts.freq_fromstr('D')]
-    return ts.Date(freq='D', value=fame_date+adj_val)
+    adj_val = date_value_adjust[_c.FR_DAY]
+    return ts.Date(freq=_c.FR_DAY, value=fame_date+adj_val)

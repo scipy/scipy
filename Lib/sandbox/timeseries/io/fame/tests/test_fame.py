@@ -19,6 +19,7 @@ from numpy.testing.utils import build_err_msg
 
 from timeseries.io import fame
 from timeseries.io.fame import const
+from timeseries import const as _c
 from timeseries import Report
 import timeseries as ts
 import maskedarray as ma
@@ -85,15 +86,15 @@ data['scalars']['namelist'] = ["mystring", "$asdf","gggggggg"]
 data['scalars']['boolean'] = True
 for f in data['dates']:
     data['scalars']['date_'+f] = data['dates'][f]
-    
+
 _desc = "my desc\nline 2"
 _doc = "my doc\nline 2"
 
 class test_write(NumpyTestCase):
-    
+
     def setUp(self):
         self.db = fame.FameDb("testdb.db",'o')
-        
+
     def test_main(self):
         "execute all the tests. Order is important here"
 
@@ -127,7 +128,7 @@ class test_write(NumpyTestCase):
         "test writing all types of scalar values"
         for s in data['scalars']:
             self.db.write_scalar('$scalar_'+s, data['scalars'][s])
-            
+
     def _test_dict_scalars(self):
         "test writing multiple scalars at once using write_scalar_dict"
         self.db.write_scalar_dict({'$scalar_1':data['scalars']['float32'],
@@ -175,10 +176,10 @@ class test_write(NumpyTestCase):
             ser = self.db.read('$tser_'+x)
             if str(ser.dtype)[:5] == 'float' and str(data['tser'][x].dtype)[:3] == 'int':
                 ser = ser.astype(data['tser'][x].dtype)
-                
+
             assert_mask_equal(ser.mask, data['tser'][x].mask)
             assert((ser == data['tser'][x]).all())
-            
+
     def _test_read_range_tser(self):
         "test reading a time series over specified ranges"
         src = data['tser']['float32']
@@ -186,32 +187,32 @@ class test_write(NumpyTestCase):
         s2 = src.start_date-2
         e1 = src.end_date+2
         e2 = src.end_date-2
-        
+
         dateList = [(s1, e1),
                     (s1, e2),
                     (s2, e1),
                     (s2, e2)]
-                    
+
         for s, e in dateList:
             res = ts.adjust_endpoints(src, start_date=s, end_date=e)
             ser = self.db.read('$tser_float32', start_date=s, end_date=e)
             assert_array_equal(res, ser)
-            
+
 
     def _test_write_append_tser(self):
         "test appending data to an existing time series"
         self.db.write_tser('$appendTSer', data['tser']['float32'])
         self.db.write_tser('$appendTSer', appendTSer)
-        
+
     def _test_read_append_tser(self):
         "test reading of appended time series"
         result = ts.adjust_endpoints(data['tser']['float32'],
                                      start_date=data['tser']['float32'].start_date,
                                      end_date=appendTSer.end_date)
         result[appendTSer.start_date:appendTSer.end_date+1] = appendTSer
-        
+
         ser = self.db.read('$appendTSer')
-        
+
         assert_array_equal(result, ser)
 
 
@@ -223,12 +224,12 @@ class test_write(NumpyTestCase):
 
     def _test_verify_write_range_tser(self):
         "verify that _test_write_range_write_tser worked as expected"
-        
+
         ser = self.db.read('$rangeTSer')
-        
+
         sDate = ts.Date(freq='A', year=2008)
         eDate = ts.Date(freq='A', year=2012)
-        
+
         assert_array_equal(ser, rangeTSer[sDate:eDate+1])
 
     def _test_write_empty_tser(self):
@@ -240,7 +241,7 @@ class test_write(NumpyTestCase):
         "test reading a time series with no data"
         ser = self.db.read('$emptyTSer')
         assert(ser.start_date is None)
-        
+
     def _test_overwrite_tser(self):
         "test overwriting a time series"
         self.db.write_tser('$tser_float32', data['tser']['bool'], overwrite=True)
@@ -255,7 +256,7 @@ class test_write(NumpyTestCase):
         except fame.DBError:
             exception = True
         assert(exception)
-        
+
     def _test_dict_tser(self):
         "test writing multiple time series at once using write_tser_dict"
         self.db.write_tser_dict({'$tser_1':data['tser']['float32'],
@@ -275,7 +276,7 @@ class test_write(NumpyTestCase):
             ser = self.db.read('$cser_'+x)
             if str(ser.dtype)[:5] == 'float' and str(data['cser'][x].dtype)[:3] == 'int':
                 ser = ser.astype(data['cser'][x].dtype)
-                
+
             assert_mask_equal(ser.mask, data['cser'][x].mask)
             assert((ser == data['cser'][x]).all())
 
@@ -286,12 +287,12 @@ class test_write(NumpyTestCase):
         s2 = 1
         e1 = 8
         e2 = 4
-        
+
         caseList = [(s1, e1),
                     (s1, e2),
                     (s2, e1),
                     (s2, e2)]
-                    
+
         for s, e in caseList:
             size = (e - s + 1)
             res = ma.array([0]*size , np.float32, mask=[1]*size )
@@ -308,14 +309,14 @@ class test_write(NumpyTestCase):
         "test appending to an existing case series"
         self.db.write_cser('$appendCSer', data['cser']['float32'])
         self.db.write_cser('$appendCSer', appendCSer, zero_represents=4)
-        
+
     def _test_read_append_cser(self):
         "test reading of appended case series"
-        
+
         result = ma.concatenate([data['cser']['float32'][:3], appendCSer])
         ser = self.db.read('$appendCSer')
         assert_array_equal(result, ser)
-        
+
     def _test_write_range_cser(self):
         "test writing over a specified range"
         self.db.write_cser('$rangeCSer', rangeCSer,
@@ -323,11 +324,11 @@ class test_write(NumpyTestCase):
 
     def _test_verify_write_range_cser(self):
         "verify that _test_write_range_write_cser worked as expected"
-        
+
         ser = self.db.read('$rangeCSer')
         result = ma.arange(9).astype(np.float32)
         result[:4] = ma.masked
-        
+
         assert_array_equal(ser, result)
 
     def _test_write_empty_cser(self):
@@ -338,13 +339,13 @@ class test_write(NumpyTestCase):
         "test reading a case series with no data"
         ser = self.db.read('$emptyCSer')
         assert_equal(ser.size, 0)
-    
+
     def _test_overwrite_cser(self):
         "test overwriting a case series"
         self.db.write_cser('$cser_float32', data['cser']['bool'], overwrite=True)
         ser = self.db.read('$cser_float32')
         assert_array_equal(ser, data['cser']['bool'])
-        
+
     def _test_assume_exists_cser(self):
         "check to see if the assume_exists flag works for write_cser"
         exception = False
@@ -361,17 +362,17 @@ class test_write(NumpyTestCase):
         result = self.db.read(['$cser_1', '$cser_2'])
         assert_array_equal(result['$cser_1'], data['cser']['float32'])
         assert_array_equal(result['$cser_2'], data['cser']['float32'])
-        
+
     def _test_whats(self):
         "test whats method"
         # just make sure it doesn't crash for now
         what_dict = self.db._whats('$tser_float32')
-        
+
     def _test_exists(self):
         "test exists method"
         assert(self.db.obj_exists('$cser_float32'))
         assert(not self.db.obj_exists('$fake_series'))
-        
+
     def _test_delete(self):
         "test delete method"
         assert(self.db.obj_exists('$cser_1'))
@@ -389,12 +390,12 @@ class test_write(NumpyTestCase):
         res2 = sorted([x.upper() for x in list(data['cser'])])
         assert_equal(wl1, res1)
         assert_equal(wl2, res2)
-        
+
     def _test_restore(self):
         "test restore method"
         self.db.close()
         self.db = fame.FameDb("testdb.db",'s')
-        
+
         self.db.delete_obj('$tser_float32')
         assert(not self.db.obj_exists('$tser_float32'))
         self.db.restore()
@@ -409,12 +410,12 @@ class test_write(NumpyTestCase):
         modified = self.db.db_modified()
         desc = self.db.db_desc()
         doc = self.db.db_doc()
-        
+
         assert(abs(ts.thisday('s') - created) < 100)
         assert(abs(ts.thisday('s') - modified) < 100)
         assert_equal(desc, _desc)
         assert_equal(doc, _doc)
-        
+
         assert(self.db.db_is_open())
         self.db.close()
         assert(not self.db.db_is_open())
@@ -432,13 +433,13 @@ class test_write(NumpyTestCase):
         proc.close()
 
         assert_equal(exists, "False")
-        
+
         self.db.post()
-        
+
         proc = os.popen('python -c "'+exist_script+'"')
         exists = proc.readlines()[0].strip('\n')
         proc.close()
-        
+
         assert_equal(exists, "True")
 
     def _test_copy_rename(self):
@@ -448,17 +449,17 @@ class test_write(NumpyTestCase):
         orig_obj = self.db.read("$tser_float32")
         copied_obj = db2.read("$copied_obj")
         assert_array_equal(orig_obj, copied_obj)
-        
+
         db2.rename_obj("$copied_obj", "$renamed_obj")
         assert(db2.obj_exists("$renamed_obj"))
         assert(not db2.obj_exists("$copied_obj"))
-        
+
         db2.close()
-        
+
     def _test_obj_attribs(self):
         "test getting and setting object attributes"
         assert_equal(self.db.obj_freq("$freq_b"), data['freqs']['b'].freq)
-        
+
         assert_equal(self.db.obj_start_date("$freq_b"),
                      data['freqs']['b'].start_date)
         assert_equal(self.db.obj_end_date("$freq_b"),
@@ -469,24 +470,24 @@ class test_write(NumpyTestCase):
 
         assert(abs(ts.thisday('s') - created) < 100)
         assert(abs(ts.thisday('s') - modified) < 100)
-        
+
         self.db.set_obj_desc("$freq_b", _desc)
         self.db.set_obj_doc("$freq_b", _doc)
-        
+
         desc = self.db.obj_desc("$freq_b")
         doc = self.db.obj_doc("$freq_b")
-        
+
         assert_equal(desc, _desc)
         assert_equal(doc, _doc)
-        
+
         self.db.set_obj_basis("$freq_b", const.HBSDAY)
         assert_equal(self.db.obj_basis("$freq_b"), const.HBSDAY)
         self.db.set_obj_basis("$freq_b", const.HBSBUS)
         assert_equal(self.db.obj_basis("$freq_b"), const.HBSBUS)
-        
+
         self.db.set_obj_observed("$freq_b", "END")
         assert_equal(self.db.obj_observed("$freq_b"), "ENDING")
-        
+
         self.db.set_obj_observed("$freq_b", "MAX")
         assert_equal(self.db.obj_observed("$freq_b"), "MAXIMUM")
 
@@ -495,16 +496,16 @@ class test_write(NumpyTestCase):
 
     def _test_misc_funcs(self):
         "test FAME functions that aren't database methods"
-        assert_equal(fame.license_expires().freq, ts.freq_fromstr('D'))
-        
+        assert_equal(fame.license_expires().freq, _c.FR_DAY)
+
         # just test that this doesn't crash for now
         fame.set_option("DBSIZE", "LARGE")
 
     def tearDown(self):
         self.db.close()
 
-        
-        
+
+
 ###############################################################################
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
