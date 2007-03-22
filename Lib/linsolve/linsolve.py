@@ -120,7 +120,7 @@ def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
 
 def factorized( A ):
     """
-    Return a fuction for solving a linear system, with A pre-factorized.
+    Return a fuction for solving a sparse linear system, with A pre-factorized.
 
     Example:
       solve = factorized( A ) # Makes LU decomposition.
