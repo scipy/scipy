@@ -269,6 +269,15 @@ accesses the array element by element. Therefore, `d` is a Date object.
         "Returns the year."
         return self.__getdateinfo__('Y')
     @property
+    def qyear(self):
+        """For quarterly frequency dates, returns the year corresponding to the
+year end (start) month. When using QTR or QTR-E based quarterly
+frequencies, this is the fiscal year in a financial context.
+
+For non-quarterly dates, this simply returns the year of the date."""
+
+        return self.__getdateinfo__('F')
+    @property
     def second(self):
         "Returns the seconds."
         return self.__getdateinfo__('S')
