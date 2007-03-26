@@ -48,7 +48,8 @@ __all__ = [
 'time_series', 'tsmasked',
 'mask_period','mask_inside_period','mask_outside_period','compressed',
 'adjust_endpoints','align_series','aligned','convert','group_byperiod',
-'tshift','fill_missing_dates', 'stack', 'concatenate_series','empty_like',
+'pct','tshift','fill_missing_dates', 'stack', 'concatenate_series',
+'empty_like',
 'day_of_week','day_of_year','day','month','quarter','year',
 'hour','minute','second',
 'tofile','asrecords','flatten', 'check_observed',
@@ -1231,33 +1232,28 @@ TimeSeries.group_byperiod = group_byperiod
 #...............................................................................
 def tshift(series, nper, copy=True):
     """Returns a series of the same size as `series`, with the same
-start_date and end_date, but values shifted by `nper`. This is useful
-for doing things like calculating a percentage change.
-Eg. pct_change = 100 * (series/tshift(series, -1, copy=False) - 1)
-Note: By default the data is copied, but if you are using the result in
-a way that is going to make a copy anyway (like the above example) then
-you may want to bypass copying the data.
+start_date and end_date, but values shifted by `nper`.
 
 :Parameters:
-    - `series` (TimeSeries) : TimeSeries object to shift
-    - `nper` (int) : number of periods to shift. Negative numbers
-      shift values to the right, positive to the left
-    - `copy` (boolean, *[True]*) : copies the data if True, returns
-      a view if False.
+    - series : (TimeSeries)
+        TimeSeries object to shift
+    - nper : (int)
+        number of periods to shift. Negative numbers shift values to the
+        right, positive to the left
+    - copy : (boolean, *[True]*)
+        copies the data if True, returns a view if False.
 
 :Example:
->>> series = tseries.time_series([0,1,2,3], start_date=tdates.Date(freq='A', year=2005))
+>>> series = time_series([0,1,2,3], start_date=Date(freq='A', year=2005))
 >>> series
 timeseries(data  = [0 1 2 3],
            dates = [2005 ... 2008],
-           freq  = A)
+           freq  = A-DEC)
 >>> tshift(series, -1)
 timeseries(data  = [-- 0 1 2],
            dates = [2005 ... 2008],
-           freq  = A)
-"""
-    #Backup series attributes
-    options = _attrib_dict(series)
+           freq  = A-DEC)
+>>> pct_change = 100 * (series/tshift(series, -1, copy=False) - 1)"""
     newdata = masked_array(numeric.empty(series.shape, dtype=series.dtype),
                            mask=True)
     if copy:
@@ -1277,6 +1273,36 @@ timeseries(data  = [-- 0 1 2],
     newseries.copy_attributes(series)
     return newseries
 TimeSeries.tshift = tshift
+#...............................................................................
+def pct(series, nper=1):
+    """Returns the rolling percentage change of the series.
+
+:Parameters:
+    - series : (TimeSeries)
+        TimeSeries object to to calculate percentage chage for
+    - nper : (int)
+        number of periods for percentage change
+
+:Example:
+>>> series = time_series([2.,1.,2.,3.], start_date=Date(freq='A', year=2005))
+>>> pct(series)
+timeseries(data  = [-- -50.0 100.0 50.0],
+           dates = [2005 ... 2008],
+           freq  = A-DEC)
+>>> pct(series, 2)
+timeseries(data  = [-- -- 0.0 200.0],
+           dates = [2005 ... 2008],
+           freq  = A-DEC)"""
+
+    newdata = masked_array(numeric.empty(series.shape, dtype=series.dtype),
+                           mask=True)
+    if nper < newdata.size:
+        newdata[nper:] = 100*(series._series[nper:]/series._series[:-nper] - 1)
+    newseries = newdata.view(type(series))
+    newseries._dates = series._dates
+    newseries.copy_attributes(series)
+    return newseries
+TimeSeries.pct = pct
 #...............................................................................
 def fill_missing_dates(data, dates=None, freq=None,fill_value=None):
     """Finds and fills the missing dates in a time series.
@@ -1378,13 +1404,18 @@ must be date compatible.
     return time_series(MA.column_stack(series), series[0]._dates,
                        **_attrib_dict(series[0]))
 #...............................................................................
-def concatenate_series(series, keep_gap=True):
+def concatenate_series(*series, **kwargs):
     """Concatenates a sequence of series, by chronological order.
     Overlapping data are processed in a FIFO basis: the data from the first series
     of the sequence will be overwritten by the data of the second series, and so forth.
     If keep_gap is true, any gap between consecutive, non overlapping series are
     kept: the corresponding data are masked.
     """
+    
+    keep_gap = kwargs.pop('keep_gap', True)
+    if len(kwargs) > 0:
+        raise KeyError("unrecognized keyword: %s" % list(kwargs)[0])
+    
     common_f = _compare_frequencies(*series)
     start_date = min([s.start_date for s in series if s.start_date is not None])
     end_date =   max([s.end_date for s in series if s.end_date is not None])
