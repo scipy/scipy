@@ -540,19 +540,19 @@ test_dates test suite.
         #
         ser_1 = time_series(data, dates)
         ser_2 = time_series(data, dates=dates+10)
-        newseries = concatenate_series([ser_1, ser_2])
+        newseries = concatenate_series(ser_1, ser_2)
         assert_equal(newseries._data,[0,1,2,3,4,0,0,0,0,0,0,1,2,3,4])
         assert_equal(newseries._mask,[1,0,0,0,0]+[1]*5+[1,0,0,0,0])
          #
         ser_1 = time_series(data, dates)
         ser_2 = time_series(data, dates=dates+10)
-        newseries = concatenate_series([ser_1, ser_2], keep_gap=False)
+        newseries = concatenate_series(ser_1, ser_2, keep_gap=False)
         assert_equal(newseries._data,[0,1,2,3,4,0,1,2,3,4])
         assert_equal(newseries._mask,[1,0,0,0,0]+[1,0,0,0,0])
         assert newseries.has_missing_dates()
         #
         ser_2 = time_series(data, dates=dates+3)
-        newseries = concatenate_series([ser_1, ser_2])
+        newseries = concatenate_series(ser_1, ser_2)
         assert_equal(newseries._data,[0,1,2,0,1,2,3,4])
         assert_equal(newseries._mask,[1,0,0,1,0,0,0,0])
         #
