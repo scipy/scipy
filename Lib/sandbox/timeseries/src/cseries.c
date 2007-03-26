@@ -1958,8 +1958,17 @@ static char DateObject_strfmt_doc[] =
 ":Parameters:\n"
 "   - fmt : string\n"
 "       Formatting string. Uses the same directives as in the time.strftime\n"
-"       function in the standard Python time module. In addition, a %q directive\n"
-"       directive is recognized which represents the 'quarter' of the date";
+"       function in the standard Python time module. In addition, a few other\n"
+"       directives are supported:\n"
+"           %q -  the 'quarter' of the date\n"
+"           %f -  Year without century as a decimal number [00,99]. The\n"
+"                 'year' in this case is the year of the date determined by\n"
+"                 the year for the current quarter. This is the same as %y\n"
+"                 unless the Date is one of the 'qtr-s' frequencies\n"
+"           %F -  Year with century as a decimal number. The 'year' in this\n"
+"                 case is the year of the date determined by the year for\n"
+"                 the current quarter. This is the same as %Y unless the\n"
+"                 Date is one of the 'qtr-s' frequencies\n";
 static PyObject *
 DateObject_strfmt(DateObject *self, PyObject *args)
 {
@@ -2501,18 +2510,18 @@ static PyNumberMethods DateObject_as_number = {
     0,                                   /* nb_positive */
     0,                                   /* nb_absolute */
     0,                                   /* nb_nonzero */
-    0,				                     /* nb_invert */
-    0,	                                 /* nb_lshift */
-    0,	                                 /* nb_rshift */
-    0,	                                 /* nb_and */
-    0,	                                 /* nb_xor */
-    0,	                                 /* nb_or */
-    0,		                             /* nb_coerce */
-    (unaryfunc)DateObject___int__,		 /* nb_int */
-    (unaryfunc)0,				         /* nb_long */
-    (unaryfunc)DateObject___float__,	 /* nb_float */
-    (unaryfunc)0,				         /* nb_oct */
-    (unaryfunc)0,				         /* nb_hex */
+    0,                                   /* nb_invert */
+    0,                                   /* nb_lshift */
+    0,                                   /* nb_rshift */
+    0,                                   /* nb_and */
+    0,                                   /* nb_xor */
+    0,                                   /* nb_or */
+    0,                                   /* nb_coerce */
+    (unaryfunc)DateObject___int__,       /* nb_int */
+    (unaryfunc)0,                        /* nb_long */
+    (unaryfunc)DateObject___float__,     /* nb_float */
+    (unaryfunc)0,                        /* nb_oct */
+    (unaryfunc)0,                        /* nb_hex */
 };
 
 static PyMethodDef DateObject_methods[] = {
@@ -3051,9 +3060,9 @@ initcseries(void)
     PyModule_AddObject(m, "Date", (PyObject *)&DateType);
 
     if(build_freq_dict(m) == INT_ERR_CODE) {
-    	PyErr_SetString(					\
-    		PyExc_ImportError,				\
-    		"initialization of module timeseries.cseries failed");
+        PyErr_SetString(                    \
+            PyExc_ImportError,              \
+            "initialization of module timeseries.cseries failed");
         return;
     };
 
