@@ -91,7 +91,17 @@ class ArithmeticDateError(DateError):
 #####---------------------------------------------------------------------------
 
 def prevbusday(day_end_hour=18, day_end_min=0):
-    "Returns the previous business day."
+    """Returns the previous business day (Monday-Friday) at business frequency.
+
+:Parameters:
+    - day_end_hour : (int, *[18]* )
+    - day_end_min : (int, *[0]*)
+
+:Return values:
+    If it is currently Saturday or Sunday, then the preceding Friday will be
+    returned. If it is later than the specified day_end_hour and day_end_min,
+    thisday('b') will be returned. Otherwise, thisday('b')-1 will be returned.
+"""
     tempDate = dt.datetime.now()
     dateNum = tempDate.hour + float(tempDate.minute)/60
     checkNum = day_end_hour + float(day_end_min)/60
