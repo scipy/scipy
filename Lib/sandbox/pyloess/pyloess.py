@@ -39,13 +39,16 @@ from numpy import bool_, complex_, float_, int_, str_, object_
 import numpy.core.numeric as numeric
 from numpy.core.records import recarray
 
+from numpy.core import array as narray
+from numpy.core import empty as nempty
+
 import _lowess, _stl, _loess
 
 
 #####---------------------------------------------------------------------------
 #--- --- STL ---
 #####---------------------------------------------------------------------------
-def lowess(x,y,f=0.5,nsteps=2,delta=0):
+def flowess(x,y,span=0.5,nsteps=2,delta=0):
     """Performs a robust locally weighted regression (lowess).
 
     Outputs a *3xN* array of fitted values, residuals and fit weights.
@@ -57,7 +60,7 @@ def lowess(x,y,f=0.5,nsteps=2,delta=0):
         ordered from smallest to largest.
     y : ndarray
         Ordinates of the points on the scatterplot.
-    f : Float *[0.5]*
+    span : Float *[0.5]*
         Fraction of the total number of points used to compute each fitted value.
         As f increases the smoothed values become smoother. Choosing f in the range
         .2 to .8 usually results in a good fit.
@@ -145,9 +148,223 @@ References
     35:54.
 
     """
-    dtyp = [('smooth',float_), ('weigths', float_), ('residuals', float_)]
-    return numeric.fromiter(zip(*_lowess.lowess(x,y,f,nsteps,delta,)),
-                            dtype=dtyp).view(recarray)
+    x = narray(x, copy=False, subok=True, dtype=float_)
+    y = narray(y, copy=False, subok=True, dtype=float_)
+    if x.size != y.size:
+        raise ValueError("Incompatible size between observations and response!")
+    
+    
+    out_dtype = [('smooth',float_), ('weigths', float_), ('residuals', float_)]
+    return numeric.fromiter(zip(*_lowess.lowess(x,y,span,nsteps,delta,)),
+                            dtype=out_dtype).view(recarray)
+
+
+class lowess:
+    """An object for robust locally weighted regression.
+    
+:IVariables:
+    inputs : An object storing the inputs.
+        x : A (n,) ndarray of observations (sorted by increasing values).
+        y : A (n,) ndarray of responses (sorted by increasing x).
+    parameters : An object storing the control parameters.
+        span : Fraction of the total number of points used in the smooth.
+        nsteps : Number of iterations of the robust fit.
+        delta : Parameter used to save computation time
+    outputs : An object storing the outputs.
+        smooth : A (n,) ndarray of fitted values.
+        residuals : A (n,) ndarray of fitted residuals.
+        weights : A (n,) ndarray of robust weights.
+        
+
+Method
+------
+    The fitted values are computed by using the nearest neighbor
+    routine  and  robust locally weighted regression of degree 1
+    with the tricube weight function.  A few additional features
+    have  been  added.  Suppose r is FN truncated to an integer.
+    Let  h  be  the  distance  to  the  r-th  nearest   neighbor
+    from X[i].   All  points within h of X[i] are used.  Thus if
+    the r-th nearest neighbor is exactly the  same  distance  as
+    other  points,  more  than r points can possibly be used for
+    the smooth at  X[i].   There  are  two  cases  where  robust
+    locally  weighted regression of degree 0 is actually used at
+    X[i].  One case occurs when  h  is  0.0.   The  second  case
+    occurs  when  the  weighted  standard error of the X[i] with
+    respect to the weights w[j] is  less  than  .001  times  the
+    range  of the X[i], where w[j] is the weight assigned to the
+    j-th point of X (the tricube  weight  times  the  robustness
+    weight)  divided by the sum of all of the weights.  Finally,
+    if the w[j] are all zero for the smooth at X[i], the  fitted
+    value is taken to be Y[i].    
+
+References
+----------
+    W. S. Cleveland. 1978. Visual and Computational Considerations in
+    Smoothing Scatterplots by Locally Weighted Regression. In
+    Computer Science and Statistics: Eleventh Annual Symposium on the
+    Interface, pages 96-100. Institute of Statistics, North Carolina
+    State University, Raleigh, North Carolina, 1978.
+
+    W. S. Cleveland, 1979. Robust Locally Weighted Regression and
+    Smoothing Scatterplots. Journal of the American Statistical
+    Association, 74:829-836, 1979.
+
+    W. S. Cleveland, 1981. LOWESS: A Program for Smoothing Scatterplots
+    by Robust Locally Weighted Regression. The American Statistician,
+    35:54.  
+    """
+    #............................................
+    class _inputs(object):
+        """Inputs of the lowess fit.
+        
+:IVariables:
+    x : ndarray
+        A (n,) float ndarray of observations (sorted by increasing values).
+    y : ndarray
+        A (n,) float ndarray of responses (sorted by increasing x).
+        """
+        def __init__(self, x, y):
+            x = narray(x, copy=False, subok=True, dtype=float_).ravel()
+            y = narray(y, copy=False, subok=True, dtype=float_).ravel()
+            if x.size != y.size:
+                msg = "Incompatible size between observations (%s) and response (%s)!" 
+                raise ValueError(msg % (x.size, y.size))
+            idx = x.argsort()
+            self._x = x[idx]
+            self._y = y[idx]
+        #.....
+        x = property(fget=lambda self:self._x)
+        y = property(fget=lambda self:self._y)
+    #............................................     
+    class _parameters(object):
+        """Parameters of the lowess fit.
+        
+:IVariables:
+    span : float *[0.5]*
+        Fraction of the total number of points used to compute each fitted value.
+        As f increases the smoothed values become smoother. Choosing f in the range
+        .2 to .8 usually results in a good fit.
+    nsteps : integer *[2]*
+        Number of iterations in the robust fit. If nsteps=0, the nonrobust fit
+        is returned; setting nsteps=2 should serve most purposes.
+    delta : integer *[0]*
+        Nonnegative parameter which may be used to save computations.
+        If N (the number of observations) is less than 100, set delta=0.0;
+        if N is greater than 100 you should find out how delta works by reading
+        the additional instructions section.
+        """
+        def __init__(self, span, nsteps, delta, caller):
+            self.activated = False
+            self._span = span
+            self._nsteps = nsteps
+            self._delta = delta
+            self._caller = caller
+        #.....
+        def _get_span(self):
+            "Gets the current span."
+            return self._span
+        def _set_span(self, span):
+            "Sets the current span, and refit if needed."
+            if span <= 0 or span > 1:
+                raise ValueError("span should be between zero and one!")
+            self._span = span
+            if self.activated:
+                self._caller.fit()
+        span = property(fget=_get_span, fset=_set_span)
+        #.....
+        def _get_nsteps(self):
+            "Gets the current number of iterations."
+            return self._nsteps
+        def _set_nsteps(self, nsteps):
+            "Sets the current number of iterations, and refit if needed."
+            if nsteps < 0:
+                raise ValueError("nsteps should be positive!")
+            self._nsteps = nsteps
+            if self.activated:
+                self._caller.fit()
+        nsteps = property(fget=_get_nsteps, fset=_set_nsteps)
+        #.....
+        def _get_delta(self):
+            "Gets the current delta."
+            return self._delta
+        def _set_delta(self, delta):
+            "Sets the current delta, and refit if needed."
+            if delta < 0:
+                raise ValueError("delta should be positive!")
+            self._delta = delta
+            if self.activated:
+                self._caller.fit()
+        delta = property(fget=_get_delta, fset=_set_delta)     
+    #............................................
+    class _outputs(object):
+        """Outputs of the lowess fit.
+
+:IVariables:
+    fitted_values : ndarray
+        A (n,) ndarray of fitted values (readonly).
+    fitted_residuals : ndarray
+        A (n,) ndarray of residuals (readonly).
+    weights : ndarray
+        A (n,) ndarray of robust weights (readonly).
+        """
+        def __init__(self, n):
+            self._fval = nempty((n,), float_)
+            self._rw = nempty((n,), float_)
+            self._fres = nempty((n,), float_)
+        #.....
+        fitted_values = property(fget=lambda self:self._fval)
+        robust_weights = property(fget=lambda self:self._rw)
+        fitted_residuals = property(fget=lambda self:self._fres)
+        
+    #............................................
+    def __init__(self, x, y, span=0.5, nsteps=2, delta=0):
+        """
+:Parameters:
+    x : ndarray
+        Abscissas of the points on the scatterplot; the values in X must be
+        ordered from smallest to largest.
+    y : ndarray
+        Ordinates of the points on the scatterplot.
+    span : Float *[0.5]*
+        Fraction of the total number of points used to compute each fitted value.
+        As span increases the smoothed values become smoother. Choosing span in 
+        the range .2 to .8 usually results in a good fit.
+    nsteps : Integer *[2]*
+        Number of iterations in the robust fit. If nsteps=0, the nonrobust fit
+        is returned; setting nsteps=2 should serve most purposes.
+    delta : Integer *[0]*
+        Nonnegative parameter which may be used to save computations.
+        If N (the number of elements in x) is less than 100, set delta=0.0;
+        if N is greater than 100 you should find out how delta works by reading
+        the additional instructions section.
+        """
+        # Chek the input data .........
+        # Initialize the attributes ...
+        self.inputs = lowess._inputs(x,y)
+        self.parameters = lowess._parameters(span, nsteps, delta, self)
+        self.outputs = lowess._outputs(self.inputs._x.size)
+        # Force a fit .................
+        self.fit()
+        
+    #............................................
+    def fit(self):
+        """Computes the lowess fit. Returns a lowess.outputs object."""
+        (x, y) = (self.inputs._x, self.inputs._y)
+        # Get the parameters .....
+        self.parameters.activated = True
+        f = self.parameters._span
+        nsteps = self.parameters._nsteps
+        delta = self.parameters._delta
+        (tmp_s, tmp_w, tmp_r) = _lowess.lowess(x, y, f, nsteps, delta)
+        # Process the outputs .....
+        #... set the values
+        self.outputs.fitted_values[:] = tmp_s.flat
+        self.outputs.robust_weights[:] = tmp_w.flat
+        self.outputs.fitted_residuals[:] = tmp_r.flat
+        # Clean up the mess .......
+        del(tmp_s, tmp_w, tmp_r)
+        return self.outputs
+
 
 #####---------------------------------------------------------------------------
 #--- --- STL ---
@@ -393,3 +610,9 @@ loess : locally weighted estimates. Multi-variate version
 """
 
 loess_anova = _loess.anova
+
+################################################################################
+if __name__ == '__main__':
+    from maskedarray.testutils import assert_almost_equal
+    from maskedarray import masked_values
+    

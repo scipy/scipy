@@ -20,3 +20,5 @@ cdef extern from "Python.h":
     void   Py_CLEAR(object o) # use instead of decref
     
     object PyList_New(int size)
+    object PyCObject_FromVoidPtr(void *, void (*)(void *))
+    void *PyCObject_AsVoidPtr(object)

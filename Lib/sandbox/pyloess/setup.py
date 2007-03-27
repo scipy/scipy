@@ -29,9 +29,19 @@ def configuration(parent_package='',top_path=None):
     build_info = {}
     dict_append(build_info, **blas_info)
     dict_append(build_info, libraries=['floess'])    
-    c_sources = ['_loess.c', 'loess.c', 'loessc.c', 'misc.c', 'predict.c',]
+    c_sources = ['loess.c', 'loessc.c', 'misc.c', 'predict.c',]
     confgr.add_extension('_loess',
-                         sources=[join('src', x) for x in c_sources],
+                         sources=[join('src','_loess.c')] + \
+                                 [join('src', x) for x in c_sources],
+                         depends = [join('src','*.h'),
+                                    join('src','*.pyx'),
+                                    join('src','*.pxd')
+                                    ],
+                         **build_info
+                        )
+    confgr.add_extension('_mloess',
+                         sources=[join('src','_mloess.c')] + \
+                                 [join('src', x) for x in c_sources],
                          depends = [join('src','*.h'),
                                     join('src','*.pyx'),
                                     join('src','*.pxd')

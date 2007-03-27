@@ -8,6 +8,9 @@ from c_numpy cimport ndarray, npy_intp, \
 import numpy
 narray = numpy.array
 float_ = numpy.float_
+import maskedarray
+marray = maskedarray.masked_array
+getmaskarray = maskedarray.getmaskarray
 
 # NumPy must be initialized
 c_numpy.import_array()
@@ -66,9 +69,13 @@ cdef class loess_inputs:
         A (n,p) ndarray of independent variables, with n the number of observations
         and p the number of variables.
     y : ndarray
-        A (n,) ndarray of observations
+        A (n,) ndarray of observations.
+    masked : ndarray
+        A (n,) ndarry of booleans indicating the missing observations and responses.
     nobs : integer
         Number of observations: nobs=n.
+    nobs_eff : integer
+        Number of effective observations.
     npar : integer
         Number of independent variables: npar=p.
     weights : ndarray
@@ -82,25 +89,32 @@ cdef class loess_inputs:
     cdef c_loess.c_loess_inputs *_base
     cdef ndarray w_ndr
     cdef readonly ndarray x, y, masked, x_eff, y_eff
-    cdef readonly int nobs, npar
+    cdef readonly int nobs, nobs_eff, npar
     #.........
     def __init__(self, x_data, y_data):
         cdef ndarray unmasked
-        self.x = narray(x_data, copy=False, subok=True, dtype=float_, order='C')
-        self.y = narray(y_data, copy=False, subok=True, dtype=float_, order='C')
+        self.x = marray(x_data, copy=False, subok=True, dtype=float_, order='C')
+        self.y = marray(y_data, copy=False, subok=True, dtype=float_, order='C')
         # Check the dimensions ........
         if self.x.ndim == 1:
             self.npar = 1
+            self.masked = maskedarray.mask_or(getmaskarray(self.x),
+                                              getmaskarray(self.y), 
+                                              small_mask=False) 
         elif self.x.ndim == 2:
             self.npar = self.x.shape[-1]
+            self.masked = maskedarray.mask_or(getmaskarray(self.x).any(axis=1),
+                                              getmaskarray(self.y),
+                                              small_mask=False) 
         else:
             raise ValueError("The array of indepedent varibales should be 2D at most!")
         self.nobs = len(self.x)         
+        self.nobs_eff = self.nobs - self.masked.sum()
         # Get the effective data ......
-        self.x_eff = self.x.ravel()
-        self.y_eff = self.y
+        unmasked = numpy.logical_not(self.masked)
+        self.x_eff = self.x[unmasked].ravel()
+        self.y_eff = self.y[unmasked]
         self.w_ndr = numpy.ones((self.nobs,), dtype=float_)
-
     #.........    
     property weights:
         """A (n,) ndarray of weights to be given to individual observations in the 
@@ -115,13 +129,14 @@ cdef class loess_inputs:
         
         def __set__(self, w):
             cdef npy_intp *dims
-            cdef ndarray w_ndr
-            w_ndr = narray(w, copy=False, subok=False)
+            cdef ndarray w_ndr, unmasked
+            unmasked = numpy.logical_not(self.masked)
+            w_ndr = narray(w, copy=False, subok=False, dtype=float_)
             if w_ndr.ndim > 1 or w_ndr.size != self.nobs:
                 raise ValueError, "Invalid size of the 'weights' vector!"
             self.w_ndr = w_ndr
-            self._base.weights = <double *>w_ndr.data
-#       
+            self._base.weights = <double *>w_ndr[unmasked].data
+
 ######---------------------------------------------------------------------------
 ##---- ---- loess control ---
 ######---------------------------------------------------------------------------
@@ -462,33 +477,49 @@ loess.fit() method is called.
         The (p,) array of normalization divisors for numeric predictors.
     """
     cdef c_loess.c_loess_outputs *_base
-    cdef long nobs, npar
-    cdef readonly int activated
-    cdef setup(self,c_loess.c_loess_outputs *base, long nobs, long npar):
+    cdef long nobs, nobs_eff, npar
+    cdef ndarray masked, unmasked
+    cdef readonly int activated, ismasked
+    #
+    cdef setup(self,c_loess.c_loess_outputs *base, 
+               long nobs, long nobs_eff, long npar, ndarray mask):
         self._base = base
         self.nobs = nobs
+        self.nobs_eff = nobs_eff
         self.npar = npar
+        self.masked = mask
+        self.unmasked = numpy.logical_not(mask)
         self.activated = False
+        self.ismasked = mask.any()
+    #........
+    cdef ndarray getoutput(self, double *data):
+        cdef ndarray out_ndr, tmp_ndr
+        tmp_ndr = floatarray_from_data(self.nobs_eff, 1, data)
+        if not self.ismasked:
+            return tmp_ndr
+        out_ndr = marray(numpy.empty((self.nobs,), float_), mask=self.masked)
+        out_ndr[self.unmasked] = tmp_ndr.flat
+        return out_ndr
     #........
     property fitted_values:    
         def __get__(self):
-            return floatarray_from_data(self.nobs, 1, self._base.fitted_values)
+            return self.getoutput(self._base.fitted_values)
     #.........
     property fitted_residuals:
         def __get__(self):
-            return floatarray_from_data(self.nobs, 1, self._base.fitted_residuals)
+            return self.getoutput(self._base.fitted_residuals)
     #.........
     property pseudovalues:
         def __get__(self):
-            return floatarray_from_data(self.nobs, 1, self._base.pseudovalues)
+            return self.getoutput(self._base.pseudovalues)
     #.........
     property diagonal:
         def __get__(self):
-            return floatarray_from_data(self.nobs, 1, self._base.diagonal)
+            return self.getoutput(self._base.diagonal)
     #.........
     property robust:
         def __get__(self):
-            return floatarray_from_data(self.nobs, 1, self._base.robust)
+            return self.getoutput(self._base.robust)
     #.........
     property divisor:
         def __get__(self):
@@ -754,17 +785,18 @@ cdef class loess:
     cdef readonly loess_kd_tree kd_tree
     cdef readonly loess_outputs outputs
     cdef readonly loess_predicted predicted
+    cdef public long nobs, npar
     
     def __init__(self, object x, object y, object weights=None, **options):
         #
-        cdef ndarray x_ndr, y_ndr
+        cdef ndarray x_ndr, y_ndr, m_ndr
         cdef double *x_dat, *y_dat
         cdef int i
         # Initialize the inputs .......
         self.inputs = loess_inputs(x, y)
         x_dat = <double *>self.inputs.x_eff.data
         y_dat = <double *>self.inputs.y_eff.data
-        n = self.inputs.nobs
+        n = self.inputs.nobs_eff
         p = self.inputs.npar
         c_loess.loess_setup(x_dat, y_dat, n, p, &self._base)
         # Sets the _base input .........
@@ -780,7 +812,8 @@ cdef class loess:
         self.kd_tree._base = &self._base.kd_tree
         # Initialize the outputs ......
         self.outputs = loess_outputs()
-        self.outputs.setup(&self._base.outputs, n, p,)
+        self.outputs.setup(&self._base.outputs,
+                           self.inputs.nobs, n, p, self.inputs.masked)
         # Process options .............
         modelopt = {}
         controlopt = {}
@@ -802,13 +835,13 @@ cdef class loess:
             raise ValueError(self._base.status.err_msg)
         return
     #......................................................
-    def input_summary(self):
+    def inputs_summary(self):
         """Returns some generic information about the loess parameters.
         """
         toprint = [str(self.inputs), str(self.model), str(self.control)]
         return "\n".join(toprint)
         
-    def output_summary(self):
+    def outputs_summary(self):
         """Returns some generic information about the loess fit."""
         print "Number of Observations         : %d" % self.inputs.nobs
         print "Fit flag                       : %d" % bool(self.outputs.activated)
