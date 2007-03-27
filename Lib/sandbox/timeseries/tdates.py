@@ -36,7 +36,8 @@ import cseries
 cseries.set_callback_DateFromString(DateFromString)
 cseries.set_callback_DateTimeFromString(DateTimeFromString)
 
-from cseries import Date, thisday, check_freq, check_freq_str, get_freq_group
+from cseries import Date, thisday, check_freq, check_freq_str, get_freq_group,\
+                    DateCalc_Error, DateCalc_RangeError
 today = thisday
 
 __all__ = [
@@ -45,7 +46,7 @@ __all__ = [
 'datearray','date_array', 'date_array_fromlist', 'date_array_fromrange',
 'day_of_week','day_of_year','day','month','quarter','year','hour','minute',
 'second','thisday','today','prevbusday','period_break', 'check_freq',
-'check_freq_str','get_freq_group'
+'check_freq_str','get_freq_group', 'DateCalc_Error', 'DateCalc_RangeError'
            ]
 
 
