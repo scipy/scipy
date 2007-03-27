@@ -1105,6 +1105,47 @@ class test_array_methods(NumpyTestCase):
         assert_equal(sortedx._data, [1,2,-2,-1,0])
         assert_equal(sortedx._mask, [1,1,0,0,0])
     
+    def check_sort_2d(self):
+        "Check sort of 2D array."
+        # 2D array w/o mask
+        a = masked_array([[8,4,1],[2,0,9]])
+        a.sort(0)
+        assert_equal(a, [[2,0,1],[8,4,9]])
+        a = masked_array([[8,4,1],[2,0,9]])
+        a.sort(1)
+        assert_equal(a, [[1,4,8],[0,2,9]])
+        # 2D array w/mask
+        a = masked_array([[8,4,1],[2,0,9]], mask=[[1,0,0],[0,0,1]])
+        a.sort(0)
+        assert_equal(a, [[2,0,1],[8,4,9]])
+        assert_equal(a._mask, [[0,0,0],[1,0,1]])
+        a = masked_array([[8,4,1],[2,0,9]], mask=[[1,0,0],[0,0,1]])
+        a.sort(1)
+        assert_equal(a, [[1,4,8],[0,2,9]])
+        assert_equal(a._mask, [[0,0,1],[0,0,1]])
+        # 3D
+        a = masked_array([[[7, 8, 9],[4, 5, 6],[1, 2, 3]],
+                          [[1, 2, 3],[7, 8, 9],[4, 5, 6]],
+                          [[7, 8, 9],[1, 2, 3],[4, 5, 6]],
+                          [[4, 5, 6],[1, 2, 3],[7, 8, 9]]])
+        a[a%4==0] = masked
+        am = a.copy()
+        an = a.filled(99)
+        am.sort(0)
+        an.sort(0)
+        assert_equal(am, an)
+        am = a.copy()
+        an = a.filled(99)
+        am.sort(1)
+        an.sort(1)
+        assert_equal(am, an)
+        am = a.copy()
+        an = a.filled(99)
+        am.sort(2)
+        an.sort(2)
+        assert_equal(am, an)
+        
+    
     def check_ravel(self):
         "Tests ravel"
         a = array([[1,2,3,4,5]], mask=[[0,1,0,0,0]])

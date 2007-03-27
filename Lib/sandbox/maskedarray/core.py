@@ -1775,20 +1775,24 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
     |'heapsort' |   3   | O(n*log(n)) |     0      |   no  |
     |------------------------------------------------------|
 
-    All the sort algorithms make temporary copies of the data when the sort is
-    not along the last axis. Consequently, sorts along the last axis are faster
-    and use less space than sorts along other axis.
-
     """
-        if fill_value is None:
-            if endwith:
-                filler = minimum_fill_value(self)
-            else:
-                filler = maximum_fill_value(self)
+        if self._mask is nomask:
+            ndarray.sort(self,axis=axis, kind=kind, order=order)
         else:
-            filler = fill_value
-        indx = self.filled(filler).argsort(axis=axis,kind=kind,order=order)
-        self[:] = self[indx]
+            if fill_value is None:
+                if endwith:
+                    filler = minimum_fill_value(self)
+                else:
+                    filler = maximum_fill_value(self)
+            else:
+                filler = fill_value
+            idx = numpy.indices(self.shape)
+            idx[axis] = self.filled(filler).argsort(axis=axis,kind=kind,order=order)
+            idx_l = idx.tolist()
+            tmp_mask = self._mask[idx_l].flat
+            tmp_data = self._data[idx_l].flat
+            self.flat = tmp_data
+            self._mask.flat = tmp_mask
         return
     #............................................
     def min(self, axis=None, fill_value=None):
@@ -2620,18 +2624,35 @@ def loads(strg):
 if __name__ == '__main__':
     import numpy as N
     from maskedarray.testutils import assert_equal, assert_array_equal
+    marray = masked_array
     #
-    a = arange(10)
-    a[::3] = masked
-    a.fill_value = 999
-    a_pickled = cPickle.loads(a.dumps())
-    assert_equal(a_pickled._mask, a._mask)
-    assert_equal(a_pickled._data, a._data)
-    assert_equal(a_pickled.fill_value, 999)
+    if 0:
+        a = arange(10)
+        a[::3] = masked
+        a.fill_value = 999
+        a_pickled = cPickle.loads(a.dumps())
+        assert_equal(a_pickled._mask, a._mask)
+        assert_equal(a_pickled._data, a._data)
+        assert_equal(a_pickled.fill_value, 999)
+        #
+        a = array(numpy.matrix(range(10)), mask=[1,0,1,0,0]*2)
+        a_pickled = cPickle.loads(a.dumps())
+        assert_equal(a_pickled._mask, a._mask)
+        assert_equal(a_pickled, a)
+        assert(isinstance(a_pickled._data,numpy.matrix))
     #
-    a = array(numpy.matrix(range(10)), mask=[1,0,1,0,0]*2)
-    a_pickled = cPickle.loads(a.dumps())
-    assert_equal(a_pickled._mask, a._mask)
-    assert_equal(a_pickled, a)
-    assert(isinstance(a_pickled._data,numpy.matrix))
+    
+    #
+    if 1:
+        x = marray(numpy.linspace(-1.,1.,31),)
+        x[:10] = x[-10:] = masked
+        z = marray(numpy.empty((len(x),3), dtype=numpy.float_))
+        z[:,0] = x[:]
+        for i in range(1,3):
+            idx = numpy.arange(len(x))
+            numpy.random.shuffle(idx)
+            z[:,i] = x[idx]
+        #
+        z.sort(0)
+        
     
