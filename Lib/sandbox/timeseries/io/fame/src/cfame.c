@@ -1278,7 +1278,11 @@ initcfame(void)
 {
     PyObject *m, *FAME_CONSTANTS;
     int status;
-    CALLFAME(cfmini(&status));
+    CALLFAME_NOCHECK(cfmini(&status));
+    if (status != HSUCC && status != HINITD) {
+        if (checkError(status)) { return NULL; }
+    }
+
     if ((m = Py_InitModule3("cfame", cfame_methods, cfame_doc)) == NULL) return NULL;
     import_array();
     makeTranslationTables();
