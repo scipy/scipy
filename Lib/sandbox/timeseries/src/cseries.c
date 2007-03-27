@@ -242,10 +242,9 @@ str_replace(const char *s, const char *old, const char *new) {
 #define Py_AssertWithArg(x,errortype,errorstr,a1) {if (!(x)) {PyErr_Format(errortype,errorstr,a1);goto onError;}}
 #define Py_Error(errortype,errorstr) {PyErr_SetString(errortype,errorstr);goto onError;}
 
-static PyObject *DateCalc_Error; /* Error Exception object */
-static PyObject *DateCalc_RangeError; /* Error Exception object */
-
-
+ /* Error Exception objects */
+static PyObject *DateCalc_Error;
+static PyObject *DateCalc_RangeError;
 
 #define GREGORIAN_CALENDAR 0
 #define JULIAN_CALENDAR 1
@@ -410,7 +409,7 @@ int dInfoCalc_SetFromDateAndTime(struct date_info *dinfo,
                  day);
 
         yearoffset = dInfoCalc_YearOffset(year,calendar);
-        if (yearoffset == -1 && PyErr_Occurred()) goto onError;
+        if (PyErr_Occurred()) goto onError;
 
         absdate = day + month_offset[leap][month - 1] + yearoffset;
 
@@ -487,7 +486,7 @@ int dInfoCalc_SetFromAbsDate(register struct date_info *dinfo,
     while (1) {
         /* Calculate the year offset */
         yearoffset = dInfoCalc_YearOffset(year,calendar);
-        if (yearoffset == -1 && PyErr_Occurred())
+        if (PyErr_Occurred())
             goto onError;
 
         /* Backward correction: absdate must be greater than the
@@ -1817,23 +1816,22 @@ DateObject_init(DateObject *self, PyObject *args, PyObject *kwds) {
             self->value = (int)(delta*1440 + hour*60 + minute + 1);
         } else if (self->freq == FR_HR) {
             long absdays, delta;
-            absdays = absdate_from_ymd(year, month, day);
+            if((absdays = absdate_from_ymd(year, month, day)) == INT_ERR_CODE) return -1;
             delta = (absdays - HIGHFREQ_ORIG);
             self->value = (int)(delta*24 + hour + 1);
         } else if (self->freq == FR_DAY) {
-            self->value = (int)absdate_from_ymd(year, month, day);
+            if((self->value = (int)absdate_from_ymd(year, month, day)) == INT_ERR_CODE) return -1;
         } else if (self->freq == FR_UND) {
-            self->value = (int)absdate_from_ymd(year, month, day);
+            if((self->value = (int)absdate_from_ymd(year, month, day)) == INT_ERR_CODE) return -1;
         } else if (self->freq == FR_BUS) {
             long weeks, days;
-            days = absdate_from_ymd(year, month, day);
+            if((days = absdate_from_ymd(year, month, day)) == INT_ERR_CODE) return -1;
             weeks = days/7;
             self->value = (int)(days - weeks*2);
         } else if (freq_group == FR_WK) {
-            int adj_ordinal;
-            int ordinal = (int)absdate_from_ymd(year, month, day);
-            int day_adj = (7 - (self->freq - FR_WK)) % 7;
-
+            int adj_ordinal, ordinal, day_adj;
+            if((ordinal = (int)absdate_from_ymd(year, month, day)) == INT_ERR_CODE) return -1;
+            day_adj = (7 - (self->freq - FR_WK)) % 7;
             adj_ordinal = ordinal + ((7 - day_adj) - ordinal % 7) % 7;
             self->value = adj_ordinal/7;
         } else if (self->freq == FR_MTH) {
@@ -3049,6 +3047,11 @@ initcseries(void)
 
     if (PyType_Ready(&DateType) < 0) return;
 
+    DateCalc_Error =
+        PyErr_NewException("cseries.DateCalc_Error", NULL, NULL);
+    DateCalc_RangeError =
+        PyErr_NewException("cseries.DateCalc_RangeError", NULL, NULL);
+
     m = Py_InitModule3("cseries", cseries_methods, cseries_doc);
     if (m == NULL)
       return;
@@ -3069,4 +3072,8 @@ initcseries(void)
     PyModule_AddObject(m, "freq_dict", freq_dict);
     PyModule_AddObject(m, "freq_dict_rev", freq_dict_rev);
     PyModule_AddObject(m, "freq_constants", freq_constants);
+
+    PyModule_AddObject(m, "DateCalc_Error", DateCalc_Error);
+    PyModule_AddObject(m, "DateCalc_RangeError", DateCalc_RangeError);
+
 }
