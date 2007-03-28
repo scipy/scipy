@@ -130,7 +130,7 @@ map_coordinate(double in, maybelong len, int mode)
       if (len <= 1) {
         in = 0;
       } else {
-        maybelong sz2 = 2 * len;
+        maybelong sz2 = 2 * len - 1;
         if (in < -sz2)
           in = sz2 * (maybelong)(-in / sz2) + in;
         in = in < -len ? in + sz2 : -in - 1;
