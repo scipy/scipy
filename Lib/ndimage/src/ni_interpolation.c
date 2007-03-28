@@ -153,7 +153,7 @@ map_coordinate(double in, maybelong len, int mode)
       in = -1;
       break;
     }
-  } else if (in >= len) {
+  } else if (in > len-1) {
     switch (mode) {
     case NI_EXTEND_MIRROR:
       if (len <= 1) {
