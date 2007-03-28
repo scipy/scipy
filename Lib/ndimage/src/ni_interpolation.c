@@ -141,9 +141,9 @@ map_coordinate(double in, maybelong len, int mode)
         in = 0;
       } else {
         maybelong sz = len;
-        in += sz * (maybelong)(-in / sz); 
-        if (in < 0)
-          in += sz;
+        // Integer division of -in/sz gives (-in mod sz)
+        // Note that 'in' is negative
+        in += sz * ((maybelong)(-in / sz) + 1);
       }
       break;
     case NI_EXTEND_NEAREST:
@@ -180,7 +180,7 @@ map_coordinate(double in, maybelong len, int mode)
         in = 0;
       } else {
         maybelong sz = len;
-        in -= sz * (maybelong)(in / sz); 
+        in -= sz * (maybelong)(in / sz);
       }
       break;
     case NI_EXTEND_NEAREST:

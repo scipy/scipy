@@ -1856,7 +1856,7 @@ class test_ndimage(NumpyTestCase):
         for order in range(0, 6):
             out = ndimage.affine_transform(data, [[0.5]],
                                           output_shape = (4,), order=order)
-            self.failUnless(diff(out, [1, 1, 1, 1]) < eps)
+            self.failUnless(diff(out, [1, 1, 1, 0]) < eps)
 
     def test_affine_transform11(self):
         "affine transform 11"
@@ -2072,7 +2072,7 @@ class test_ndimage(NumpyTestCase):
         data = numpy.ones([2], numpy.float64)
         for order in range(0, 6):
             out = ndimage.zoom(data, 2.0, order=order)
-            self.failUnless(diff(out, [1, 1, 1, 1]) < eps)
+            self.failUnless(diff(out, [1, 1, 1, 0]) < eps)
 
     def test_zoom02(self):
         "zoom 2"
@@ -2212,39 +2212,46 @@ class test_ndimage(NumpyTestCase):
 
     def test_rotate05(self):
         "rotate 5"
-        data = numpy.array([[[0, 0, 0, 0, 0],
-                                [0, 1, 1, 0, 0],
-                                [0, 0, 0, 0, 0]]] * 3,
-                              dtype = numpy.float64)
-        true = numpy.array([[[0, 0, 0],
-                                [0, 0, 0],
-                                [0, 1, 0],
-                                [0, 1, 0],
-                                [0, 0, 0]]] * 3, dtype = numpy.float64)
+        data = numpy.empty((4,3,3))
+        for i in range(3):
+            data[:,:,i] = numpy.array([[0,0,0],
+                                       [0,1,0],
+                                       [0,1,0],
+                                       [0,0,0]], dtype = numpy.float64)
+
+        true = numpy.array([[0,0,0,0],
+                            [0,1,1,0],
+                            [0,0,0,0]], dtype = numpy.float64)
+
         for order in range(0, 6):
             out = ndimage.rotate(data, 90)
-            self.failUnless(diff(out, true) < eps)
-
+            for i in range(3):
+                self.failUnless(diff(out[:,:,i], true) < eps)
+                
     def test_rotate06(self):
         "rotate 6"
-        data = numpy.array([[[0, 0, 0, 0, 0],
-                                [0, 1, 1, 0, 0],
-                                [0, 0, 0, 0, 0]]] * 3,
-                              dtype = numpy.float64)
-        true = numpy.array([[[0, 0, 0, 0, 0],
-                                [0, 0, 1, 0, 0],
-                                [0, 0, 1, 0, 0]]] * 3,
-                              dtype = numpy.float64)
-        for order in range(0, 6):
-            out = ndimage.rotate(data, 90, reshape = False)
-            self.failUnless(diff(out, true) < eps)
+        data = numpy.empty((3,4,3))
+        for i in range(3):
+            data[:,:,i] = numpy.array([[0,0,0,0],
+                                       [0,1,1,0],
+                                       [0,0,0,0]], dtype = numpy.float64)
 
+        true = numpy.array([[0,0,0],
+                            [0,1,0],
+                            [0,1,0],
+                            [0,0,0]], dtype = numpy.float64)
+
+        for order in range(0, 6):
+            out = ndimage.rotate(data, 90)
+            for i in range(3):
+                self.failUnless(diff(out[:,:,i], true) < eps)
+                
     def test_rotate07(self):
         "rotate 7"
         data = numpy.array([[[0, 0, 0, 0, 0],
-                                [0, 1, 1, 0, 0],
-                                [0, 0, 0, 0, 0]]] * 2,
-                              dtype = numpy.float64)
+                             [0, 1, 1, 0, 0],
+                             [0, 0, 0, 0, 0]]] * 2,
+                           dtype = numpy.float64)
         data = data.transpose()
         true = numpy.array([[[0, 0, 0],
                                 [0, 1, 0],
