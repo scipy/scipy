@@ -757,6 +757,66 @@ This command accepts the same keywords as `matplotlib.plot`."""
 
 TSPlot = TimeSeriesPlot
 
+def add_yaxis(fsp=None, position='right', yscale=None, basey=10, subsy=None,
+              **kwargs):
+    """Adds a second y-axis to a plot.
+ 
+:Parameters:
+    `fsp` : Subplot *[None]*
+        Subplot to which the secondary y-axis is added. If *None*, the current
+        subplot is selected
+    `position` : String in `('left','right')` *['right']*
+        Position of the new axis.
+    `yscale` : String, in `('log', 'linear')` *[None]*
+        Scale of the new axis. If None, uses the same scale as the first y 
+axis
+    `basey` : Integer *[10]*
+        Base of the logarithm for the new axis (if needed).
+    `subsy` : sequence *[None]*
+        Sequence of the location of the minor ticks;
+        None defaults to autosubs, which depend on the number of decades in 
+the plot.  
+        Eg for base 10, subsy=(1,2,5) will  put minor ticks on 1,2,5,11,12,15, 
+21, ....
+        To turn off minor ticking, set subsy=[]
+ 
+    """
+    if fsp is None:
+        fsp = pylab.gca()
+    if not isinstance(fsp, TimeSeriesPlot):
+        raise TypeError("The current plot is not a TimeSeriesPlot")
+    fig = fsp.figure
+    axisini = fsp.axis()
+    fsp_alt_args = (fsp._rows, fsp._cols, fsp._num+1)
+    fsp_alt = fig.add_tsplot(frameon=False, position=fsp.get_position(),
+                             sharex=fsp, *fsp_alt_args)
+    # Set position ....................
+    if position == 'right':
+        (inipos, newpos) = ('left', 'right')
+    else:
+        (inipos, newpos) = ('right','left')
+    # Force scales tics to one side ...
+    fsp.yaxis.set_ticks_position(inipos)
+    fsp.yaxis.set_label_position(inipos)
+    # Force 2nd ticks to the other side..
+    fsp_alt.yaxis.set_ticks_position(newpos)
+    fsp_alt.yaxis.set_label_position(newpos) 
+    # Force period axis scale..........
+    if yscale is None:
+        yscale = fsp.get_yscale()
+        try:
+            basey = fsp.yaxis.get_major_locator()._base
+        except AttributeError:
+            basey = 10.
+    fsp_alt.set_yscale(yscale, basey=basey, subsy=subsy)
+    # Guess we're good ................
+    fsp_alt.set_xticks('')
+    fsp_alt.set_xticklabels('')
+    
+    pylab.draw_if_interactive()
+    return fsp_alt
+
+TimeSeriesPlot.add_yaxis = add_yaxis
 
 #####--------------------------------------------------------------------------
 #---- --- TimeSeries Figures ---
