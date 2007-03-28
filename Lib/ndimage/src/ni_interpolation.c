@@ -308,7 +308,7 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
 }
  
 #define CASE_MAP_COORDINATES(_p, _coor, _rank, _stride, _type) \
-case t ## _type:                                               \
+case t ## _type:                                                    \
 {                                                              \
   int _hh;                                                     \
   for(_hh = 0; _hh < _rank; _hh++) {                           \
@@ -354,8 +354,8 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(maybelong*, double*,
   double **splvals = NULL, icoor[MAXDIM];
   double idimensions[MAXDIM], istrides[MAXDIM];
   NI_Iterator io, ic;
-  Float64 *matrix = matrix_ar ? (Float64*)NA_OFFSETDATA(matrix_ar) : NULL;
-  Float64 *shift = shift_ar ? (Float64*)NA_OFFSETDATA(shift_ar) : NULL;
+  Float64 *matrix = matrix_ar ? (Float64*)PyArray_DATA(matrix_ar) : NULL;
+  Float64 *shift = shift_ar ? (Float64*)PyArray_DATA(shift_ar) : NULL;
   int irank = 0, orank, qq;
 
   for(kk = 0; kk < input->nd; kk++) {
@@ -373,7 +373,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(maybelong*, double*,
     cstride = ic.strides[0];
     if (!NI_LineIterator(&ic, 0))
       goto exit;
-    pc = NA_OFFSETDATA(coordinates);   
+    pc = (void *)(PyArray_DATA(coordinates));
   }
 
   /* offsets used at the borders: */
@@ -422,8 +422,8 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(maybelong*, double*,
     goto exit;
 
   /* get data pointers: */
-  pi = NA_OFFSETDATA(input);
-  po = NA_OFFSETDATA(output);
+  pi = (void *)PyArray_DATA(input);
+  po = (void *)PyArray_DATA(output);
 
   /* make a table of all possible coordinates within the spline filter: */
   fcoordinates = (maybelong*)malloc(irank * filter_size * sizeof(maybelong));
@@ -659,8 +659,8 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
   maybelong size;
   double ***splvals = NULL;
   NI_Iterator io;
-  Float64 *zooms = zoom_ar ? (Float64*)NA_OFFSETDATA(zoom_ar) : NULL;
-  Float64 *shifts = shift_ar ? (Float64*)NA_OFFSETDATA(shift_ar) : NULL;
+  Float64 *zooms = zoom_ar ? (Float64*)PyArray_DATA(zoom_ar) : NULL;
+  Float64 *shifts = shift_ar ? (Float64*)PyArray_DATA(shift_ar) : NULL;
   int rank = 0, qq;
   
   for(kk = 0; kk < input->nd; kk++) {
@@ -792,8 +792,8 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
   if (!NI_InitPointIterator(output, &io))
     goto exit;
 
-  pi = NA_OFFSETDATA(input);
-  po = NA_OFFSETDATA(output);
+  pi = (void *)PyArray_DATA(input);
+  po = (void *)PyArray_DATA(output);
     
   /* store all coordinates and offsets with filter: */
   fcoordinates = (maybelong*)malloc(rank * filter_size * sizeof(maybelong));
