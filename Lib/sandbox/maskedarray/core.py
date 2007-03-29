@@ -1067,6 +1067,7 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         """Special hook for ufuncs.
 Wraps the numpy array and sets the mask according to context.
         """
+        #TODO : Should we check for type result 
         result = obj.view(type(self))
         #..........
         if context is not None:
@@ -1085,11 +1086,15 @@ Wraps the numpy array and sets the mask according to context.
                         m = d
                 else:
                     m |= d
-            result._mask = m
-        if (not m.ndim) and m:
-            return masked
+            if not m.ndim and m:
+                if m:
+                    if result.shape == ():
+                        return masked
+                    result._mask = numeric.ones(result.shape, bool_)
+            else:
+                result._mask = m
         #....
-        result._mask = m
+#        result._mask = m
         result._fill_value = self._fill_value
         result._hardmask = self._hardmask
         result._smallmask = self._smallmask
@@ -2626,33 +2631,42 @@ if __name__ == '__main__':
     from maskedarray.testutils import assert_equal, assert_array_equal
     marray = masked_array
     #
-    if 0:
-        a = arange(10)
-        a[::3] = masked
-        a.fill_value = 999
-        a_pickled = cPickle.loads(a.dumps())
-        assert_equal(a_pickled._mask, a._mask)
-        assert_equal(a_pickled._data, a._data)
-        assert_equal(a_pickled.fill_value, 999)
-        #
-        a = array(numpy.matrix(range(10)), mask=[1,0,1,0,0]*2)
-        a_pickled = cPickle.loads(a.dumps())
-        assert_equal(a_pickled._mask, a._mask)
-        assert_equal(a_pickled, a)
-        assert(isinstance(a_pickled._data,numpy.matrix))
-    #
-    
-    #
     if 1:
-        x = marray(numpy.linspace(-1.,1.,31),)
-        x[:10] = x[-10:] = masked
-        z = marray(numpy.empty((len(x),3), dtype=numpy.float_))
-        z[:,0] = x[:]
-        for i in range(1,3):
-            idx = numpy.arange(len(x))
-            numpy.random.shuffle(idx)
-            z[:,i] = x[idx]
-        #
-        z.sort(0)
-        
+        x = masked_array([1,2])
+        y = x * masked
+        print y
+        assert_equal(y.shape, x.shape)
+        assert_equal(y._mask, [True, True])
+        y = x + masked
+        assert_equal(y.shape, x.shape)
+        assert_equal(y._mask, [True, True])
+#    if 0:
+#        a = arange(10)
+#        a[::3] = masked
+#        a.fill_value = 999
+#        a_pickled = cPickle.loads(a.dumps())
+#        assert_equal(a_pickled._mask, a._mask)
+#        assert_equal(a_pickled._data, a._data)
+#        assert_equal(a_pickled.fill_value, 999)
+#        #
+#        a = array(numpy.matrix(range(10)), mask=[1,0,1,0,0]*2)
+#        a_pickled = cPickle.loads(a.dumps())
+#        assert_equal(a_pickled._mask, a._mask)
+#        assert_equal(a_pickled, a)
+#        assert(isinstance(a_pickled._data,numpy.matrix))
+#    #
+#    
+#    #
+#    if 1:
+#        x = marray(numpy.linspace(-1.,1.,31),)
+#        x[:10] = x[-10:] = masked
+#        z = marray(numpy.empty((len(x),3), dtype=numpy.float_))
+#        z[:,0] = x[:]
+#        for i in range(1,3):
+#            idx = numpy.arange(len(x))
+#            numpy.random.shuffle(idx)
+#            z[:,i] = x[idx]
+#        #
+#        z.sort(0)
+#        
     

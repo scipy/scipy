@@ -612,6 +612,17 @@ class test_ma(NumpyTestCase):
         #self.failUnlessRaises(Exception, lambda x,y: x+y, masked, xx)
         #self.failUnlessRaises(Exception, lambda x,y: x+y, xx, masked)
     #........................
+    def check_usingmasked(self):
+        "Checks that there's no collapsing to masked"        
+        x = masked_array([1,2])
+        y = x * masked
+        assert_equal(y.shape, x.shape)
+        assert_equal(y._mask, [True, True])
+        y = x + masked
+        assert_equal(y.shape, x.shape)
+        assert_equal(y._mask, [True, True])
+        
+    #........................
     def check_topython(self):
         "Tests some communication issues with Python."
         assert_equal(1, int(array(1)))
