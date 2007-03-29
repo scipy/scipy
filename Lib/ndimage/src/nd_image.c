@@ -270,8 +270,8 @@ static int Py_Filter1DFunc(double *iline, maybelong ilen,
   double *po = NULL;
   NI_PythonCallbackData *cbdata = (NI_PythonCallbackData*)data;
 
-  py_ibuffer = NA_NewArray(iline, PyArray_DOUBLE, 1, (int)ilen);
-  py_obuffer = NA_NewArray(NULL, PyArray_DOUBLE, 1, (int)olen);
+  py_ibuffer = NA_NewArray(iline, PyArray_DOUBLE, 1, &ilen);
+  py_obuffer = NA_NewArray(NULL, PyArray_DOUBLE, 1, &olen);
   if (!py_ibuffer || !py_obuffer)
     goto exit;
   tmp = Py_BuildValue("(OO)", py_ibuffer, py_obuffer);
@@ -348,7 +348,7 @@ static int Py_FilterFunc(double *buffer, maybelong filter_size,
   PyObject *rv = NULL, *args = NULL, *tmp = NULL;
   NI_PythonCallbackData *cbdata = (NI_PythonCallbackData*)data;
 
-  py_buffer = NA_NewArray(buffer, PyArray_DOUBLE, 1, filter_size);
+  py_buffer = NA_NewArray(buffer, PyArray_DOUBLE, 1, &filter_size);
   if (!py_buffer)
     goto exit;
   tmp = Py_BuildValue("(O)", py_buffer);
@@ -1095,7 +1095,7 @@ static PyObject *Py_Histogram(PyObject *obj, PyObject *args)
     goto exit;
   }
   for(jj = 0; jj < n_results; jj++) {
-    histograms[jj] = NA_NewArray(NULL, tInt32, 1, nbins);
+    histograms[jj] = NA_NewArray(NULL, tInt32, 1, &nbins);
     if (!histograms[jj]) {
       PyErr_NoMemory();
       goto exit;
