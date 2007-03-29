@@ -2,7 +2,7 @@
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
- * are met: 
+ * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
@@ -15,7 +15,7 @@
  * 3. The name of the author may not be used to endorse or promote
  *    products derived from this software without specific prior
  *    written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
  * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -26,7 +26,7 @@
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "ni_support.h"
@@ -63,14 +63,14 @@ int NI_Label(PyArrayObject* input, PyArrayObject* strct,
   ssize = 1;
   for(kk = 0; kk < strct->nd; kk++)
     ssize *= strct->dimensions[kk];
-  /* we only use the first half of the structure data, so we make a 
+  /* we only use the first half of the structure data, so we make a
      temporary structure for use with the filter functions: */
   footprint = (Bool*)malloc(ssize * sizeof(Bool));
   if (!footprint) {
     PyErr_NoMemory();
     goto exit;
   }
-  ps = (Bool*)NA_OFFSETDATA(strct);
+  ps = (Bool*)PyArray_DATA(strct);
   filter_size = 0;
   for(jj = 0; jj < ssize / 2; jj++) {
     footprint[jj] = ps[jj];
@@ -80,8 +80,8 @@ int NI_Label(PyArrayObject* input, PyArrayObject* strct,
   for(jj = ssize / 2; jj < ssize; jj++)
     footprint[jj] = 0;
   /* get data and size */
-  pi = NA_OFFSETDATA(input);
-  po = NA_OFFSETDATA(output);
+  pi = (void *)PyArray_DATA(input);
+  po = (void *)PyArray_DATA(output);
   size = 1;
   for(kk = 0; kk < output->nd; kk++)
     size *= output->dimensions[kk];
@@ -119,12 +119,12 @@ int NI_Label(PyArrayObject* input, PyArrayObject* strct,
                           NI_EXTEND_CONSTANT, &offsets, &mask_value, NULL))
     goto exit;
   /* initialize filter iterator: */
-  if (!NI_InitFilterIterator(input->nd, strct->dimensions, filter_size, 
+  if (!NI_InitFilterIterator(input->nd, strct->dimensions, filter_size,
                                            input->dimensions, NULL, &fi))
     goto exit;
   /* reset output iterator: */
   NI_ITERATOR_RESET(io);
-  po = NA_OFFSETDATA(output);
+  po = (void *)PyArray_DATA(output);
   /* iterator over the elements: */
   oo = offsets;
   for(jj = 0; jj < size; jj++) {
@@ -185,7 +185,7 @@ int NI_Label(PyArrayObject* input, PyArrayObject* strct,
       Int32 idx1 = pairs->index1 - 1;
       Int32 idx2 = pairs->index2 - 1;
       if (index_map[idx2] == idx1 || index_map[idx2] == idx2) {
-        /* if this pair was already processed, or if idx2 was not 
+        /* if this pair was already processed, or if idx2 was not
            mapped yet, we delete this pair and map idx2 to idx1: */
         _index_pair *tp = pairs;
         pairs = tp->next;
@@ -228,7 +228,7 @@ int NI_Label(PyArrayObject* input, PyArrayObject* strct,
   if (index_map) {
     *max_label = 0;
     NI_ITERATOR_RESET(io);
-    po = NA_OFFSETDATA(output);
+    po = (void *)PyArray_DATA(output);
     for(jj = 0; jj < size; jj++) {
       Int32 p = *(Int32*)po;
       if (p > 0 )
@@ -291,7 +291,7 @@ int NI_FindObjects(PyArrayObject* input, maybelong max_label,
   char *pi;
 
   /* get input data, size and iterator: */
-  pi = NA_OFFSETDATA(input);
+  pi = (void *)PyArray_DATA(input);
   size = 1;
   for(kk = 0; kk < input->nd; kk++)
     size *= input->dimensions[kk];
@@ -307,25 +307,25 @@ int NI_FindObjects(PyArrayObject* input, maybelong max_label,
   /* iterate over all points: */
   for(jj = 0 ; jj < size; jj++) {
     switch (input->descr->type_num) {
-    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions, 
+    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
                            max_label, ii,  Bool);
-    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions, 
+    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
                            max_label, ii, UInt8);
-    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions, 
+    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
                            max_label, ii, UInt16);
-    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions, 
+    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
                            max_label, ii, UInt32);
 #if HAS_UINT64
-    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions, 
+    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
                            max_label, ii, UInt64);
 #endif
-    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions, 
+    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
                            max_label, ii, Int8);
-    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions, 
+    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
                            max_label, ii, Int16);
-    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions, 
+    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
                            max_label, ii, Int32);
-    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions, 
+    CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
                            max_label, ii, Int64);
       break;
     default:
@@ -511,8 +511,8 @@ int NI_FindObjects(PyArrayObject* input, maybelong max_label,
 }
 #endif
 
-int NI_Statistics(PyArrayObject *input, PyArrayObject *labels, 
-  maybelong min_label, maybelong max_label, maybelong *indices, 
+int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
+  maybelong min_label, maybelong max_label, maybelong *indices,
   maybelong n_results, double *sum, maybelong *total, double *variance,
   double *minimum, double *maximum, maybelong* min_pos, maybelong* max_pos)
 {
@@ -520,16 +520,16 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
   NI_Iterator ii, mi;
   maybelong jj, size, idx = 0, label = 1, doit = 1;
   int qq;
-  
+
   /* input iterator: */
   if (!NI_InitPointIterator(input, &ii))
     return 0;
   /* input data: */
-  pi = NA_OFFSETDATA(input);
+  pi = (void *)PyArray_DATA(input);
   if (labels) {
     if (!NI_InitPointIterator(labels, &mi))
       return 0;
-    pm = NA_OFFSETDATA(labels);
+    pm = (void *)PyArray_DATA(labels);
   }
   /* input size: */
   size = 1;
@@ -560,7 +560,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
         doit = idx >= 0;
       } else {
         doit = 0;
-      } 
+      }
     } else {
       doit = label != 0;
     }
@@ -610,11 +610,11 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
     if (do_var) {
       /* reset input iterator: */
       NI_ITERATOR_RESET(ii);
-      pi = NA_OFFSETDATA(input);
+      pi = (void *)PyArray_DATA(input);
       if (labels) {
         /* reset label iterator: */
         NI_ITERATOR_RESET(mi);
-        pm = NA_OFFSETDATA(labels);
+        pm = (void *)PyArray_DATA(labels);
       }
       for(jj = 0; jj < size; jj++) {
         NI_GET_LABEL(pm, label, labels->descr->type_num);
@@ -624,7 +624,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
             doit = idx >= 0;
           } else {
             doit = 0;
-          } 
+          }
         } else {
           doit = label != 0;
         }
@@ -641,7 +641,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
         }
       }
       for(jj = 0; jj < n_results; jj++)
-        variance[jj] = (total[jj] > 1 ? 
+        variance[jj] = (total[jj] > 1 ?
                         variance[jj] / (total[jj] - 1) : 0.0);
     }
   }
@@ -649,8 +649,8 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
 }
 
 
-int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels, 
-              maybelong min_label, maybelong max_label, maybelong *indices, 
+int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
+              maybelong min_label, maybelong max_label, maybelong *indices,
               maybelong n_results, double *center_of_mass)
 {
   char *pi = NULL, *pm = NULL;
@@ -663,11 +663,11 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
   if (!NI_InitPointIterator(input, &ii))
     goto exit;
   /* input data: */
-  pi = NA_OFFSETDATA(input);
+  pi = (void *)PyArray_DATA(input);
   if (labels) {
     if (!NI_InitPointIterator(labels, &mi))
       goto exit;
-    pm = NA_OFFSETDATA(labels);
+    pm = (void *)PyArray_DATA(labels);
   }
   /* input size: */
   size = 1;
@@ -692,7 +692,7 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
         doit = idx >= 0;
       } else {
         doit = 0;
-      } 
+      }
     } else {
       doit = label != 0;
     }
@@ -719,8 +719,8 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
 }
 
 
-int NI_Histogram(PyArrayObject *input, PyArrayObject *labels, 
-              maybelong min_label, maybelong max_label, maybelong *indices, 
+int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
+              maybelong min_label, maybelong max_label, maybelong *indices,
               maybelong n_results, PyArrayObject **histograms,
               double min, double max, maybelong nbins)
 {
@@ -730,16 +730,16 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
   Int32 **ph = NULL;
   double bsize;
   int qq;
-  
+
   /* input iterator: */
   if (!NI_InitPointIterator(input, &ii))
     goto exit;
   /* input data: */
-  pi = NA_OFFSETDATA(input);
+  pi = (void *)PyArray_DATA(input);
   if (labels) {
     if (!NI_InitPointIterator(labels, &mi))
       goto exit;
-    pm = NA_OFFSETDATA(labels);
+    pm = (void *)PyArray_DATA(labels);
   }
   ph = (Int32**)malloc(n_results * sizeof(Int32*));
   if (!ph) {
@@ -747,9 +747,9 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
     goto exit;
   }
   for(jj = 0; jj < n_results; jj++) {
-    ph[jj] = (Int32*)NA_OFFSETDATA(histograms[jj]);
-    for(kk = 0; kk < nbins; kk++)
-      ph[jj][kk] = 0;
+      ph[jj] = (Int32*)PyArray_DATA(histograms[jj]);
+      for(kk = 0; kk < nbins; kk++)
+          ph[jj][kk] = 0;
   }
   bsize = (max - min) / (double)nbins;
   /* input size: */
@@ -765,7 +765,7 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
         doit = idx >= 0;
       } else {
         doit = 0;
-      } 
+      }
     } else {
       doit = label != 0;
     }
@@ -821,7 +821,7 @@ case t ## _type:                           \
 case t ## _type:                           \
   *((_type*)_pl) = _label;                 \
   break
-  
+
 #define CASE_WINDEX1(_v_index, _p_index, _strides, _istrides, _irank,  \
                      _icont, _p_idx, _v_idx, _pi, _vval, _pval, _type) \
 case t ## _type:                                                       \
@@ -860,7 +860,7 @@ typedef struct {
   DONE_TYPE done;
 } NI_WatershedElement;
 
-int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers, 
+int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
                     PyArrayObject* strct, PyArrayObject* output)
 {
   char *pl, *pm, *pi;
@@ -872,7 +872,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
   NI_WatershedElement *temp = NULL, **first = NULL, **last = NULL;
   Bool *ps = NULL;
   NI_Iterator mi, ii, li;
-  
+
   i_contiguous = PyArray_ISCONTIGUOUS(input);
   o_contiguous = PyArray_ISCONTIGUOUS(output);
   ssize = 1;
@@ -891,7 +891,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     PyErr_NoMemory();
     goto exit;
   }
-  pi = NA_OFFSETDATA(input);
+  pi = (void *)PyArray_DATA(input);
   if (!NI_InitPointIterator(input, &ii))
     goto exit;
   /* Initialization and find the maximum of the input. */
@@ -911,11 +911,11 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
       maxval = ival;
     NI_ITERATOR_NEXT(ii, pi);
   }
-  pi = NA_OFFSETDATA(input);
+  pi = (void *)PyArray_DATA(input);
   /* Allocate and initialize the storage for the queue. */
-  first = (NI_WatershedElement**)malloc((maxval + 1) * 
+  first = (NI_WatershedElement**)malloc((maxval + 1) *
                                         sizeof(NI_WatershedElement*));
-  last = (NI_WatershedElement**)malloc((maxval + 1) * 
+  last = (NI_WatershedElement**)malloc((maxval + 1) *
                                        sizeof(NI_WatershedElement*));
   if (!first || !last) {
     PyErr_NoMemory();
@@ -929,15 +929,15 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     goto exit;
   if (!NI_InitPointIterator(output, &li))
     goto exit;
-  pm = NA_OFFSETDATA(markers);
-  pl = NA_OFFSETDATA(output);
+  pm = (void *)PyArray_DATA(markers);
+  pl = (void *)PyArray_DATA(output);
   /* initialize all nodes */
   for(ll = 0; ll < input->nd; ll++)
     coordinates[ll] = 0;
   for(jj = 0; jj < size; jj++) {
     /* get marker */
     int label = 0;
-    switch(markers->descr->type_num) { 
+    switch(markers->descr->type_num) {
     CASE_GET_LABEL(label, pm, UInt8);
     CASE_GET_LABEL(label, pm, UInt16);
     CASE_GET_LABEL(label, pm, UInt32);
@@ -1001,15 +1001,15 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     }
     for(ll = input->nd - 1; ll >= 0; ll--)
       if (coordinates[ll] < input->dimensions[ll] - 1) {
-        coordinates[ll]++;                        
-        break;                                                
-      } else {                                                
-        coordinates[ll] = 0;                        
-      }        
+        coordinates[ll]++;
+        break;
+      } else {
+        coordinates[ll] = 0;
+      }
   }
-  
-  pl = NA_OFFSETDATA(output);
-  ps = (Bool*)NA_OFFSETDATA(strct);
+
+  pl = (void *)PyArray_DATA(output);
+  ps = (Bool*)PyArray_DATA(strct);
   nneigh = 0;
   for (kk = 0; kk < ssize; kk++)
     if (ps[kk] && kk != (ssize / 2))
@@ -1037,11 +1037,11 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     }
     for(ll = input->nd - 1; ll >= 0; ll--)
       if (coordinates[ll] < 1) {
-        coordinates[ll]++;                        
-        break;                                                
-      } else {                                                
-        coordinates[ll] = -1;                        
-      }        
+        coordinates[ll]++;
+        break;
+      } else {
+        coordinates[ll] = -1;
+      }
   }
   /* Propagation phase: */
   for(jj = 0; jj <= maxval; jj++) {
@@ -1076,11 +1076,11 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
             /* If the neighbor was not processed yet: */
             int max, pval, vval, wvp, pcost, label, p_idx, v_idx;
             switch(input->descr->type_num) {
-            CASE_WINDEX1(v_index, p_index, strides, input->strides, 
-                         input->nd, i_contiguous, p_idx, v_idx, pi, 
+            CASE_WINDEX1(v_index, p_index, strides, input->strides,
+                         input->nd, i_contiguous, p_idx, v_idx, pi,
                          vval, pval, UInt8);
-            CASE_WINDEX1(v_index, p_index, strides, input->strides, 
-                         input->nd, i_contiguous, p_idx, v_idx, pi, 
+            CASE_WINDEX1(v_index, p_index, strides, input->strides,
+                         input->nd, i_contiguous, p_idx, v_idx, pi,
                          vval, pval, UInt16);
             default:
               PyErr_SetString(PyExc_RuntimeError,
@@ -1091,7 +1091,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
             wvp = pval - vval;
             if (wvp < 0)
               wvp = -wvp;
-            /* Find the maximum of this cost and the current 
+            /* Find the maximum of this cost and the current
                element cost: */
             pcost = p->cost;
             max = v->cost > wvp ? v->cost : wvp;
@@ -1157,7 +1157,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
                   last[pcost] = prev;
                 if (prev)
                   prev->next = next;
-                if (next) 
+                if (next)
                   next->prev = prev;
               }
               /* Insert the neighbor in the appropiate queue: */

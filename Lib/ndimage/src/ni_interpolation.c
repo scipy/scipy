@@ -2,7 +2,7 @@
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
- * are met: 
+ * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
@@ -15,7 +15,7 @@
  * 3. The name of the author may not be used to endorse or promote
  *    products derived from this software without specific prior
  *    written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
  * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -26,7 +26,7 @@
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "ni_support.h"
@@ -36,7 +36,7 @@
 
 /* calculate the B-spline interpolation coefficients for given x: */
 static void
-spline_coefficients(double x, int order, double *result) 
+spline_coefficients(double x, int order, double *result)
 {
   int hh;
   double y, start;
@@ -66,21 +66,21 @@ spline_coefficients(double x, int order, double *result)
       break;
     case 3:
       if (y < 1.0) {
-        result[hh] = 
+        result[hh] =
           (y * y * (y - 2.0) * 3.0 + 4.0) / 6.0;
       } else if (y < 2.0) {
         y = 2.0 - y;
         result[hh] = y * y * y / 6.0;
       } else {
         result[hh] = 0.0;
-      }        
+      }
       break;
     case 4:
       if (y < 0.5) {
         y *= y;
         result[hh] = y * (y * 0.25 - 0.625) + 115.0 / 192.0;
       } else if (y < 1.5) {
-        result[hh] = y * (y * (y * (5.0 / 6.0 - y / 6.0) - 1.25) + 
+        result[hh] = y * (y * (y * (5.0 / 6.0 - y / 6.0) - 1.25) +
                           5.0 / 24.0) + 55.0 / 96.0;
       } else if (y < 2.5) {
         y -= 2.5;
@@ -93,10 +93,10 @@ spline_coefficients(double x, int order, double *result)
     case 5:
       if (y < 1.0) {
         double f = y * y;
-        result[hh] = 
+        result[hh] =
           f * (f * (0.25 - y / 12.0) - 0.5) + 0.55;
       } else if (y < 2.0) {
-        result[hh] = y * (y * (y * (y * (y / 24.0 - 0.375) 
+        result[hh] = y * (y * (y * (y * (y / 24.0 - 0.375)
                                     + 1.25) -  1.75) + 0.625) + 0.425;
       } else if (y < 3.0) {
         double f = 3.0 - y;
@@ -112,7 +112,7 @@ spline_coefficients(double x, int order, double *result)
 
 /* map a coordinate outside the borders, according to the requested
    boundary condition: */
-static double 
+static double
 map_coordinate(double in, maybelong len, int mode)
 {
   if (in < 0) {
@@ -136,7 +136,7 @@ map_coordinate(double in, maybelong len, int mode)
         in = in < -len ? in + sz2 : -in - 1;
       }
       break;
-    case NI_EXTEND_WRAP: 
+    case NI_EXTEND_WRAP:
       if (len <= 1) {
         in = 0;
       } else {
@@ -175,7 +175,7 @@ map_coordinate(double in, maybelong len, int mode)
           in = sz2 - in - 1;
       }
       break;
-    case NI_EXTEND_WRAP: 
+    case NI_EXTEND_WRAP:
       if (len <= 1) {
         in = 0;
       } else {
@@ -199,7 +199,7 @@ map_coordinate(double in, maybelong len, int mode)
 #define TOLERANCE 1e-15
 
 /* one-dimensional spline filter: */
-int NI_SplineFilter1D(PyArrayObject *input, int order, int axis, 
+int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
                       PyArrayObject *output)
 {
   int hh, npoles = 0, more;
@@ -251,7 +251,7 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
   if (!NI_InitLineBuffer(output, axis, 0, 0, lines, buffer,
                          NI_EXTEND_DEFAULT, 0.0, &oline_buffer))
     goto exit;
-  
+
   /* iterate over all the array lines: */
   do {
     /* copy lines from array to buffer: */
@@ -265,36 +265,36 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
       if (len > 1) {
         for(ll = 0; ll < len; ll++)
           ln[ll] *= weight;
-        for(hh = 0; hh < npoles; hh++) {                                
-          double p = pole[hh];                                        
+        for(hh = 0; hh < npoles; hh++) {
+          double p = pole[hh];
           int max = (int)ceil(log(TOLERANCE) / log(fabs(p)));
-          if (max < len) {                                                
-            double zn = p;                                                
-            double sum = ln[0];                                        
-            for(ll = 1; ll < max; ll++) {                                
-              sum += zn * ln[ll];                                        
-              zn *= p;                                                
-            }                                                        
-            ln[0] = sum;                                                
-          } else {                                                        
-            double zn = p;                                                
-            double iz = 1.0 / p;                                        
-            double z2n = pow(p, (double)(len - 1));                        
-            double sum = ln[0] + z2n * ln[len - 1];                        
-            z2n *= z2n * iz;                                        
-            for(ll = 1; ll <= len - 2; ll++) {                        
-              sum += (zn + z2n) * ln[ll];                                
-              zn *= p;                                                
-              z2n *= iz;                                                
-            }                                                        
+          if (max < len) {
+            double zn = p;
+            double sum = ln[0];
+            for(ll = 1; ll < max; ll++) {
+              sum += zn * ln[ll];
+              zn *= p;
+            }
+            ln[0] = sum;
+          } else {
+            double zn = p;
+            double iz = 1.0 / p;
+            double z2n = pow(p, (double)(len - 1));
+            double sum = ln[0] + z2n * ln[len - 1];
+            z2n *= z2n * iz;
+            for(ll = 1; ll <= len - 2; ll++) {
+              sum += (zn + z2n) * ln[ll];
+              zn *= p;
+              z2n *= iz;
+            }
             ln[0] = sum / (1.0 - zn * zn);
-          }                                                                
-          for(ll = 1; ll < len; ll++)                                
-            ln[ll] += p * ln[ll - 1];                                
+          }
+          for(ll = 1; ll < len; ll++)
+            ln[ll] += p * ln[ll - 1];
           ln[len-1] = (p / (p * p - 1.0)) * (ln[len-1] + p * ln[len-2]);
-          for(ll = len - 2; ll >= 0; ll--)                                
-            ln[ll] = p * (ln[ll + 1] - ln[ll]);                        
-        }                                                                
+          for(ll = len - 2; ll >= 0; ll--)
+            ln[ll] = p * (ln[ll + 1] - ln[ll]);
+        }
       }
     }
     /* copy lines from buffer to array: */
@@ -306,7 +306,7 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
   if (buffer) free(buffer);
   return PyErr_Occurred() ? 0 : 1;
 }
- 
+
 #define CASE_MAP_COORDINATES(_p, _coor, _rank, _stride, _type) \
 case t ## _type:                                                    \
 {                                                              \
@@ -321,7 +321,7 @@ break;
 #define CASE_INTERP_COEFF(_coeff, _pi, _idx, _type) \
 case t ## _type:                                    \
   _coeff = *(_type*)(_pi + _idx);                   \
-  break;                                          
+  break;
 
 #define CASE_INTERP_OUT(_po, _t, _type) \
 case t ## _type:                        \
@@ -344,8 +344,8 @@ case t ## _type:                            \
   *(_type*)_po = (_type)_t;                 \
   break;
 
-int 
-NI_GeometricTransform(PyArrayObject *input, int (*map)(maybelong*, double*, 
+int
+NI_GeometricTransform(PyArrayObject *input, int (*map)(maybelong*, double*,
         int, int, void*), void* map_data, PyArrayObject* matrix_ar,
         PyArrayObject* shift_ar, PyArrayObject *coordinates,
         PyArrayObject *output, int order, int mode, double cval)
@@ -440,7 +440,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(maybelong*, double*,
   for(jj = 0; jj < irank; jj++)
     ftmp[jj] = 0;
   kk = 0;
-  for(hh = 0; hh < filter_size; hh++) {    
+  for(hh = 0; hh < filter_size; hh++) {
     for(jj = 0; jj < irank; jj++)
       fcoordinates[jj + hh * irank] = ftmp[jj];
     foffsets[hh] = kk;
@@ -497,7 +497,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(maybelong*, double*,
         CASE_MAP_COORDINATES(p, icoor, irank, cstride, Float32);
         CASE_MAP_COORDINATES(p, icoor, irank, cstride, Float64);
       default:
-        PyErr_SetString(PyExc_RuntimeError, 
+        PyErr_SetString(PyExc_RuntimeError,
                         "coordinate array data type not supported");
         goto exit;
       }
@@ -551,17 +551,17 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(maybelong*, double*,
       }
     }
 
-    if (!constant) {                                                         
-      maybelong *ff = fcoordinates;               
-      for(hh = 0; hh < filter_size; hh++) {                           
+    if (!constant) {
+      maybelong *ff = fcoordinates;
+      for(hh = 0; hh < filter_size; hh++) {
         int idx = 0;
-        if (edge) {                                                         
-          for(ll = 0; ll < irank; ll++) { 
-            if (edge_offsets[ll])                 
-              idx += edge_offsets[ll][ff[ll]];         
-            else                                                         
+        if (edge) {
+          for(ll = 0; ll < irank; ll++) {
+            if (edge_offsets[ll])
+              idx += edge_offsets[ll][ff[ll]];
+            else
               idx += ff[ll] * istrides[ll];
-          }        
+          }
         } else {
           idx = foffsets[hh];
         }
@@ -570,36 +570,36 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(maybelong*, double*,
         ff += irank;
       }
     }
-    if (!constant) {                                                         
-      maybelong *ff = fcoordinates;               
+    if (!constant) {
+      maybelong *ff = fcoordinates;
       t = 0.0;
-      for(hh = 0; hh < filter_size; hh++) {                           
+      for(hh = 0; hh < filter_size; hh++) {
         double coeff = 0.0;
         switch(input->descr->type_num) {
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Bool);       
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt8);        
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt16);        
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt32);       
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Bool);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt8);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt16);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt32);
 #if HAS_UINT64
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt64); 
-#endif       
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int8);        
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int16);        
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int32);        
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int64);        
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float32);        
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float64);        
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt64);
+#endif
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int8);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int16);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int32);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int64);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float32);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float64);
         default:
           PyErr_SetString(PyExc_RuntimeError, "data type not supported");
           goto exit;
         }
         /* calculate the interpolated value: */
         for(ll = 0; ll < irank; ll++)
-          if (order > 0)                                                 
+          if (order > 0)
             coeff *= splvals[ll][ff[ll]];
-        t += coeff;                                                         
+        t += coeff;
         ff += irank;
-      }                                                                 
+      }
     } else {
       t = cval;
     }
@@ -630,7 +630,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(maybelong*, double*,
   }
 
  exit:
-  if (edge_offsets) 
+  if (edge_offsets)
     free(edge_offsets);
   if (data_offsets) {
     for(jj = 0; jj < irank; jj++)
@@ -651,13 +651,13 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(maybelong*, double*,
   return PyErr_Occurred() ? 0 : 1;
 }
 
-int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar, 
+int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                  PyArrayObject* shift_ar, PyArrayObject *output,
                  int order, int mode, double cval)
 {
   char *po, *pi;
   maybelong **zeros = NULL, **offsets = NULL, ***edge_offsets = NULL;
-  maybelong ftmp[MAXDIM], *fcoordinates = NULL, *foffsets = NULL; 
+  maybelong ftmp[MAXDIM], *fcoordinates = NULL, *foffsets = NULL;
   maybelong jj, hh, kk, filter_size, odimensions[MAXDIM];
   maybelong idimensions[MAXDIM], istrides[MAXDIM], *idxs = NULL;
   maybelong size;
@@ -666,7 +666,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
   Float64 *zooms = zoom_ar ? (Float64*)PyArray_DATA(zoom_ar) : NULL;
   Float64 *shifts = shift_ar ? (Float64*)PyArray_DATA(shift_ar) : NULL;
   int rank = 0, qq;
-  
+
   for(kk = 0; kk < input->nd; kk++) {
     idimensions[kk] = input->dimensions[kk];
     istrides[kk] = input->strides[kk];
@@ -688,10 +688,10 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
       if(!zeros[jj]) {
         PyErr_NoMemory();
         goto exit;
-      }    
+      }
     }
   }
-  
+
   /* store offsets, along each axis: */
   offsets = (maybelong**)malloc(rank * sizeof(maybelong*));
   /* store spline coefficients, along each axis: */
@@ -714,7 +714,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     if (!offsets[jj] || !splvals[jj] || !edge_offsets[jj]) {
       PyErr_NoMemory();
       goto exit;
-    }  
+    }
     for(hh = 0; hh < odimensions[jj]; hh++) {
       splvals[jj][hh] = NULL;
       edge_offsets[jj][hh] = NULL;
@@ -775,9 +775,9 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
           if (!splvals[jj][kk]) {
             PyErr_NoMemory();
             goto exit;
-          }        
+          }
           spline_coefficients(cc, order, splvals[jj][kk]);
-        }        
+        }
       } else {
         zeros[jj][kk] = 1;
       }
@@ -798,7 +798,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
 
   pi = (void *)PyArray_DATA(input);
   po = (void *)PyArray_DATA(output);
-    
+
   /* store all coordinates and offsets with filter: */
   fcoordinates = (maybelong*)malloc(rank * filter_size * sizeof(maybelong));
   foffsets = (maybelong*)malloc(filter_size * sizeof(maybelong));
@@ -810,7 +810,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
   for(jj = 0; jj < rank; jj++)
     ftmp[jj] = 0;
   kk = 0;
-  for(hh = 0; hh < filter_size; hh++) {    
+  for(hh = 0; hh < filter_size; hh++) {
     for(jj = 0; jj < rank; jj++)
       fcoordinates[jj + hh * rank] = ftmp[jj];
     foffsets[hh] = kk;
@@ -828,31 +828,31 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
   size = 1;
   for(qq = 0; qq < output->nd; qq++)
     size *= output->dimensions[qq];
-  for(kk = 0; kk < size; kk++) {                                         
-    double t = 0.0;                                                         
+  for(kk = 0; kk < size; kk++) {
+    double t = 0.0;
     int edge = 0, oo = 0, zero = 0;
-                                                                         
-    for(hh = 0; hh < rank; hh++) {                                         
-      if (zeros && zeros[hh][io.coordinates[hh]]) { 
+
+    for(hh = 0; hh < rank; hh++) {
+      if (zeros && zeros[hh][io.coordinates[hh]]) {
         /* we use constant border condition */
-        zero = 1;                                                         
-        break;                                                         
-      }                                                                 
-      oo += offsets[hh][io.coordinates[hh]];                                 
-      if (edge_offsets[hh][io.coordinates[hh]])                         
-        edge = 1;                                                         
-    }                                                                         
-      
-    if (!zero) {                                                         
+        zero = 1;
+        break;
+      }
+      oo += offsets[hh][io.coordinates[hh]];
+      if (edge_offsets[hh][io.coordinates[hh]])
+        edge = 1;
+    }
+
+    if (!zero) {
       maybelong *ff = fcoordinates;
       for(hh = 0; hh < filter_size; hh++) {
-        int idx = 0;        
+        int idx = 0;
         if (edge) {
             /* use precalculated edge offsets: */
-          for(jj = 0; jj < rank; jj++) {                                 
-            if (edge_offsets[jj][io.coordinates[jj]])                 
-              idx += edge_offsets[jj][io.coordinates[jj]][ff[jj]];         
-            else                                                         
+          for(jj = 0; jj < rank; jj++) {
+            if (edge_offsets[jj][io.coordinates[jj]])
+              idx += edge_offsets[jj][io.coordinates[jj]][ff[jj]];
+            else
               idx += ff[jj] * istrides[jj];
           }
           idx += oo;
@@ -864,39 +864,39 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
         ff += rank;
       }
     }
-    if (!zero) {                                                         
+    if (!zero) {
       maybelong *ff = fcoordinates;
       t = 0.0;
       for(hh = 0; hh < filter_size; hh++) {
         double coeff = 0.0;
         switch(input->descr->type_num) {
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Bool);       
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt8);        
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt16);        
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt32);       
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Bool);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt8);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt16);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt32);
 #if HAS_UINT64
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt64); 
-#endif                                
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int8);        
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int16);        
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int32);        
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int64);        
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float32);        
-          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float64);        
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt64);
+#endif
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int8);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int16);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int32);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int64);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float32);
+          CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float64);
         default:
           PyErr_SetString(PyExc_RuntimeError, "data type not supported");
           goto exit;
         }
         /* calculate interpolated value: */
-        for(jj = 0; jj < rank; jj++)                 
-          if (order > 0)                                                 
-            coeff *= splvals[jj][io.coordinates[jj]][ff[jj]];         
-        t += coeff;                                                         
+        for(jj = 0; jj < rank; jj++)
+          if (order > 0)
+            coeff *= splvals[jj][io.coordinates[jj]][ff[jj]];
+        t += coeff;
         ff += rank;
-      }                                                 
+      }
     } else {
       t = cval;
-    }                
+    }
     /* store output: */
     switch (output->descr->type_num) {
       CASE_INTERP_OUT(po, t, Bool);
@@ -917,7 +917,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
       goto exit;
     }
     NI_ITERATOR_NEXT(io, po);
-  }                                                                         
+  }
 
  exit:
   if (zeros) {

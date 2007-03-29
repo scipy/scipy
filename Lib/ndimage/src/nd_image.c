@@ -2,7 +2,7 @@
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
- * are met: 
+ * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
@@ -15,7 +15,7 @@
  * 3. The name of the author may not be used to endorse or promote
  *    products derived from this software without specific prior
  *    written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
  * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -26,7 +26,7 @@
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #define ND_IMPORT_ARRAY
@@ -46,52 +46,52 @@ typedef struct {
 } NI_PythonCallbackData;
 
 /* Convert an input array of any type, not necessarily contiguous */
-static int 
+static int
 NI_ObjectToInputArray(PyObject *object, PyArrayObject **array)
 {
-  *array = NA_InputArray(object, tAny, NUM_ALIGNED|NUM_NOTSWAPPED);
+  *array = NA_InputArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
   return *array ? 1 : 0;
 }
 
 /* Convert an input array of any type, not necessarily contiguous */
-static int 
+static int
 NI_ObjectToOptionalInputArray(PyObject *object, PyArrayObject **array)
 {
   if (object == Py_None) {
     *array = NULL;
     return 1;
   } else {
-    *array = NA_InputArray(object, tAny, NUM_ALIGNED|NUM_NOTSWAPPED);
+    *array = NA_InputArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
     return *array ? 1 : 0;
   }
 }
 
 /* Convert an output array of any type, not necessarily contiguous */
-static int 
+static int
 NI_ObjectToOutputArray(PyObject *object, PyArrayObject **array)
 {
-  *array = NA_OutputArray(object, tAny, NUM_ALIGNED|NUM_NOTSWAPPED);
+  *array = NA_OutputArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
   return *array ? 1 : 0;
 }
 
 /* Convert an output array of any type, not necessarily contiguous */
-static int 
+static int
 NI_ObjectToOptionalOutputArray(PyObject *object, PyArrayObject **array)
 {
   if (object == Py_None) {
     *array = NULL;
     return 1;
   } else {
-    *array = NA_OutputArray(object, tAny, NUM_ALIGNED|NUM_NOTSWAPPED);
+    *array = NA_OutputArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
     return *array ? 1 : 0;
   }
 }
 
 /* Convert an input/output array of any type, not necessarily contiguous */
-static int 
+static int
 NI_ObjectToIoArray(PyObject *object, PyArrayObject **array)
 {
-  *array = NA_IoArray(object, tAny, NUM_ALIGNED|NUM_NOTSWAPPED);
+  *array = NA_IoArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
   return *array ? 1 : 0;
 }
 
@@ -100,23 +100,23 @@ static maybelong
 NI_ObjectToLongSequenceAndLength(PyObject *object, maybelong **sequence)
 {
   long *pa, ii;
-  PyArrayObject *array = NA_InputArray(object, PyArray_LONG, C_ARRAY);
+  PyArrayObject *array = NA_InputArray(object, PyArray_LONG, NPY_CARRAY);
   maybelong length = NA_elements(array);
-  
+
   *sequence = (maybelong*)malloc(length * sizeof(maybelong));
   if (!*sequence) {
     PyErr_NoMemory();
     Py_XDECREF(array);
     return -1;
   }
-  pa = (long*)NA_OFFSETDATA(array);
+  pa = (long*)PyArray_DATA(array);
   for(ii = 0; ii < length; ii++)
     (*sequence)[ii] = pa[ii];
   Py_XDECREF(array);
   return length;
 }
 
-static int 
+static int
 NI_ObjectToLongSequence(PyObject *object, maybelong **sequence)
 {
   return NI_ObjectToLongSequenceAndLength(object, sequence) >= 0;
@@ -132,9 +132,9 @@ static PyObject *Py_Correlate1D(PyObject *obj, PyObject *args)
   int axis, mode;
   long origin;
   double cval;
-  
-  if (!PyArg_ParseTuple(args, "O&O&iO&idl", NI_ObjectToInputArray, &input, 
-                  NI_ObjectToInputArray, &weights, &axis, 
+
+  if (!PyArg_ParseTuple(args, "O&O&iO&idl", NI_ObjectToInputArray, &input,
+                  NI_ObjectToInputArray, &weights, &axis,
                   NI_ObjectToOutputArray, &output, &mode, &cval, &origin))
     goto exit;
   if (!NI_Correlate1D(input, weights, axis, output,
@@ -153,12 +153,12 @@ static PyObject *Py_Correlate(PyObject *obj, PyObject *args)
   maybelong *origin = NULL;
   int mode;
   double cval;
-  
-  if (!PyArg_ParseTuple(args, "O&O&O&idO&", NI_ObjectToInputArray, &input, 
-          NI_ObjectToInputArray, &weights, NI_ObjectToOutputArray, &output, 
+
+  if (!PyArg_ParseTuple(args, "O&O&O&idO&", NI_ObjectToInputArray, &input,
+          NI_ObjectToInputArray, &weights, NI_ObjectToOutputArray, &output,
           &mode, &cval, NI_ObjectToLongSequence, &origin))
     goto exit;
-  if (!NI_Correlate(input, weights, output, (NI_ExtendMode)mode, cval, 
+  if (!NI_Correlate(input, weights, output, (NI_ExtendMode)mode, cval,
                     origin))
     goto exit;
 exit:
@@ -176,8 +176,8 @@ static PyObject *Py_UniformFilter1D(PyObject *obj, PyObject *args)
   int axis, mode;
   long filter_size, origin;
   double cval;
-  
-  if (!PyArg_ParseTuple(args, "O&liO&idl", NI_ObjectToInputArray, &input, 
+
+  if (!PyArg_ParseTuple(args, "O&liO&idl", NI_ObjectToInputArray, &input,
                     &filter_size, &axis, NI_ObjectToOutputArray, &output,
                     &mode, &cval, &origin))
     goto exit;
@@ -196,8 +196,8 @@ static PyObject *Py_MinOrMaxFilter1D(PyObject *obj, PyObject *args)
   int axis, mode, minimum;
   long filter_size, origin;
   double cval;
-  
-  if (!PyArg_ParseTuple(args, "O&liO&idli", NI_ObjectToInputArray, &input, 
+
+  if (!PyArg_ParseTuple(args, "O&liO&idli", NI_ObjectToInputArray, &input,
                     &filter_size, &axis, NI_ObjectToOutputArray, &output,
                     &mode, &cval, &origin, &minimum))
     goto exit;
@@ -217,7 +217,7 @@ static PyObject *Py_MinOrMaxFilter(PyObject *obj, PyObject *args)
   maybelong *origin = NULL;
   int mode, minimum;
   double cval;
-  
+
   if (!PyArg_ParseTuple(args, "O&O&O&O&idO&i", NI_ObjectToInputArray,
                     &input, NI_ObjectToInputArray, &footprint,
                     NI_ObjectToOptionalInputArray, &structure,
@@ -243,7 +243,7 @@ static PyObject *Py_RankFilter(PyObject *obj, PyObject *args)
   maybelong *origin = NULL;
   int mode, rank;
   double cval;
-  
+
   if (!PyArg_ParseTuple(args, "O&iO&O&idO&", NI_ObjectToInputArray,
                     &input, &rank, NI_ObjectToInputArray, &footprint,
                     NI_ObjectToOutputArray, &output, &mode, &cval,
@@ -264,12 +264,12 @@ exit:
 static int Py_Filter1DFunc(double *iline, maybelong ilen,
                            double *oline, maybelong olen, void *data)
 {
-  PyArrayObject *py_ibuffer = NULL, *py_obuffer = NULL; 
+  PyArrayObject *py_ibuffer = NULL, *py_obuffer = NULL;
   PyObject *rv = NULL, *args = NULL, *tmp = NULL;
   maybelong ii;
   double *po = NULL;
   NI_PythonCallbackData *cbdata = (NI_PythonCallbackData*)data;
-  
+
   py_ibuffer = NA_NewArray(iline, PyArray_DOUBLE, 1, (int)ilen);
   py_obuffer = NA_NewArray(NULL, PyArray_DOUBLE, 1, (int)olen);
   if (!py_ibuffer || !py_obuffer)
@@ -283,7 +283,7 @@ static int Py_Filter1DFunc(double *iline, maybelong ilen,
   rv = PyObject_Call(cbdata->function, args, cbdata->extra_keywords);
   if (!rv)
     goto exit;
-  po = (double*)NA_OFFSETDATA(py_obuffer);
+  po = (double*)PyArray_DATA(py_obuffer);
   for(ii = 0; ii < olen; ii++)
     oline[ii] = po[ii];
 exit:
@@ -304,9 +304,9 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
   int axis, mode;
   long origin, filter_size;
   double cval;
-  
-  if (!PyArg_ParseTuple(args, "O&OliO&idlOO", NI_ObjectToInputArray, 
-        &input, &fnc, &filter_size, &axis, NI_ObjectToOutputArray, 
+
+  if (!PyArg_ParseTuple(args, "O&OliO&idlOO", NI_ObjectToInputArray,
+        &input, &fnc, &filter_size, &axis, NI_ObjectToOutputArray,
         &output, &mode, &cval, &origin, &extra_arguments, &extra_keywords))
     goto exit;
   if (!PyTuple_Check(extra_arguments)) {
@@ -378,8 +378,8 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
   int mode;
   maybelong *origin = NULL;
   double cval;
-  
-  if (!PyArg_ParseTuple(args, "O&OO&O&idO&OO", NI_ObjectToInputArray, 
+
+  if (!PyArg_ParseTuple(args, "O&OO&O&idO&OO", NI_ObjectToInputArray,
                         &input, &fnc, NI_ObjectToInputArray, &footprint,
                         NI_ObjectToOutputArray, &output, &mode, &cval,
                         NI_ObjectToLongSequence, &origin,
@@ -425,15 +425,15 @@ static PyObject *Py_FourierFilter(PyObject *obj, PyObject *args)
   PyArrayObject *input = NULL, *output = NULL, *parameters = NULL;
   int axis, filter_type;
   long n;
-  
-  if (!PyArg_ParseTuple(args, "O&O&liO&i", NI_ObjectToInputArray, &input, 
+
+  if (!PyArg_ParseTuple(args, "O&O&liO&i", NI_ObjectToInputArray, &input,
                     NI_ObjectToInputArray, &parameters, &n, &axis,
                     NI_ObjectToOutputArray, &output, &filter_type))
-    goto exit;   
-                
+    goto exit;
+
   if (!NI_FourierFilter(input, parameters, n, axis, output, filter_type))
     goto exit;
-    
+
 exit:
   Py_XDECREF(input);
   Py_XDECREF(parameters);
@@ -446,15 +446,15 @@ static PyObject *Py_FourierShift(PyObject *obj, PyObject *args)
   PyArrayObject *input = NULL, *output = NULL, *shifts = NULL;
   int axis;
   long n;
-  
-  if (!PyArg_ParseTuple(args, "O&O&liO&", NI_ObjectToInputArray, &input, 
+
+  if (!PyArg_ParseTuple(args, "O&O&liO&", NI_ObjectToInputArray, &input,
                     NI_ObjectToInputArray, &shifts, &n, &axis,
                     NI_ObjectToOutputArray, &output))
-    goto exit;   
-                
+    goto exit;
+
   if (!NI_FourierShift(input, shifts, n, axis, output))
     goto exit;
-    
+
 exit:
   Py_XDECREF(input);
   Py_XDECREF(shifts);
@@ -466,11 +466,11 @@ static PyObject *Py_SplineFilter1D(PyObject *obj, PyObject *args)
 {
   PyArrayObject *input = NULL, *output = NULL;
   int axis, order;
-  
+
   if (!PyArg_ParseTuple(args, "O&iiO&", NI_ObjectToInputArray, &input,
           &order, &axis, NI_ObjectToOutputArray, &output))
     goto exit;
-    
+
   if (!NI_SplineFilter1D(input, order, axis, output))
     goto exit;
 
@@ -480,7 +480,7 @@ exit:
   return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
-static int Py_Map(maybelong *ocoor, double* icoor, int orank, int irank, 
+static int Py_Map(maybelong *ocoor, double* icoor, int orank, int irank,
                   void *data)
 {
   PyObject *coors = NULL, *rets = NULL, *args = NULL, *tmp = NULL;
@@ -527,10 +527,10 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
   double cval;
   void *func = NULL, *data = NULL;
   NI_PythonCallbackData cbdata;
-  
+
   if (!PyArg_ParseTuple(args, "O&OO&O&O&O&iidOO", NI_ObjectToInputArray,
                         &input, &fnc, NI_ObjectToOptionalInputArray,
-                        &coordinates, NI_ObjectToOptionalInputArray, 
+                        &coordinates, NI_ObjectToOptionalInputArray,
                         &matrix, NI_ObjectToOptionalInputArray, &shift,
                         NI_ObjectToOutputArray, &output, &order, &mode,
                         &cval, &extra_arguments, &extra_keywords))
@@ -562,8 +562,8 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
       goto exit;
     }
   }
-  
-  if (!NI_GeometricTransform(input, func, data, matrix, shift, coordinates, 
+
+  if (!NI_GeometricTransform(input, func, data, matrix, shift, coordinates,
                           output, order, (NI_ExtendMode)mode, cval))
     goto exit;
 
@@ -582,8 +582,8 @@ static PyObject *Py_ZoomShift(PyObject *obj, PyObject *args)
   PyArrayObject *zoom = NULL;
   int mode, order;
   double cval;
-  
-  if (!PyArg_ParseTuple(args, "O&O&O&O&iid", NI_ObjectToInputArray, 
+
+  if (!PyArg_ParseTuple(args, "O&O&O&O&iid", NI_ObjectToInputArray,
           &input, NI_ObjectToOptionalInputArray, &zoom,
           NI_ObjectToOptionalInputArray, &shift, NI_ObjectToOutputArray,
           &output, &order, &mode, &cval))
@@ -606,10 +606,10 @@ static PyObject *Py_Label(PyObject *obj, PyObject *args)
   PyArrayObject *input = NULL, *output = NULL, *strct = NULL;
   maybelong max_label;
 
-  if (!PyArg_ParseTuple(args, "O&O&O&", NI_ObjectToInputArray, &input, 
+  if (!PyArg_ParseTuple(args, "O&O&O&", NI_ObjectToInputArray, &input,
           NI_ObjectToInputArray, &strct, NI_ObjectToOutputArray, &output))
     goto exit;
-    
+
   if (!NI_Label(input, strct, &max_label, output))
     goto exit;
 
@@ -632,12 +632,12 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
   if (!PyArg_ParseTuple(args, "O&l", NI_ObjectToInputArray, &input,
                         &max_label))
     goto exit;
-    
+
   if (max_label < 0)
     max_label = 0;
   if (max_label > 0) {
     if (input->nd > 0) {
-      regions = (maybelong*)malloc(2 * max_label * input->nd * 
+      regions = (maybelong*)malloc(2 * max_label * input->nd *
                                                     sizeof(maybelong));
     } else {
       regions = (maybelong*)malloc(max_label * sizeof(maybelong));
@@ -647,7 +647,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
       goto exit;
     }
   }
-   
+
   if (!NI_FindObjects(input, max_label, regions))
     goto exit;
 
@@ -715,11 +715,11 @@ static PyObject *Py_WatershedIFT(PyObject *obj, PyObject *args)
   PyArrayObject *input = NULL, *output = NULL, *markers = NULL;
   PyArrayObject *strct = NULL;
 
-  if (!PyArg_ParseTuple(args, "O&O&O&O&", NI_ObjectToInputArray, &input, 
+  if (!PyArg_ParseTuple(args, "O&O&O&O&", NI_ObjectToInputArray, &input,
           NI_ObjectToInputArray, &markers, NI_ObjectToInputArray,
           &strct, NI_ObjectToOutputArray, &output))
     goto exit;
-    
+
   if (!NI_WatershedIFT(input, markers, strct, output))
     goto exit;
 
@@ -731,7 +731,7 @@ exit:
   return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
-static int _NI_GetIndices(PyObject* indices_object, 
+static int _NI_GetIndices(PyObject* indices_object,
                           maybelong** result_indices, maybelong* min_label,
                           maybelong* max_label, maybelong* n_results)
 {
@@ -765,7 +765,7 @@ static int _NI_GetIndices(PyObject* indices_object,
         if (indices[ii] > *max_label)
           *max_label = indices[ii];
       }
-      *result_indices = (maybelong*)malloc((*max_label - *min_label + 1) * 
+      *result_indices = (maybelong*)malloc((*max_label - *min_label + 1) *
                                            sizeof(maybelong));
       if (!*result_indices) {
         PyErr_NoMemory();
@@ -912,8 +912,8 @@ static PyObject *Py_Statistics(PyObject *obj, PyObject *args)
   maybelong *lresult1 = NULL, *lresult2 = NULL;
   maybelong min_label, max_label, *result_indices = NULL, n_results, ii;
   int type;
-  
-  if (!PyArg_ParseTuple(args, "O&O&Oi", NI_ObjectToInputArray, &input, 
+
+  if (!PyArg_ParseTuple(args, "O&O&Oi", NI_ObjectToInputArray, &input,
           NI_ObjectToOptionalInputArray, &labels, &indices_object, &type))
     goto exit;
 
@@ -951,53 +951,53 @@ static PyObject *Py_Statistics(PyObject *obj, PyObject *args)
   }
   switch(type) {
   case 0:
-    if (!NI_Statistics(input, labels, min_label, max_label, result_indices, 
+    if (!NI_Statistics(input, labels, min_label, max_label, result_indices,
                   n_results, dresult1, NULL, NULL, NULL, NULL, NULL, NULL))
       goto exit;
     result = _NI_BuildMeasurementResultDouble(n_results, dresult1);
     break;
   case 1:
-    if (!NI_Statistics(input, labels, min_label, max_label, result_indices, 
+    if (!NI_Statistics(input, labels, min_label, max_label, result_indices,
               n_results, dresult1, lresult1, NULL, NULL, NULL, NULL, NULL))
       goto exit;
     for(ii = 0; ii < n_results; ii++)
       dresult1[ii] = lresult1[ii] > 0 ? dresult1[ii] / lresult1[ii] : 0.0;
-  
+
     result = _NI_BuildMeasurementResultDouble(n_results, dresult1);
-    break;    
+    break;
   case 2:
-    if (!NI_Statistics(input, labels, min_label, max_label, result_indices, 
+    if (!NI_Statistics(input, labels, min_label, max_label, result_indices,
           n_results, dresult1, lresult1, dresult2, NULL, NULL, NULL, NULL))
       goto exit;
     result = _NI_BuildMeasurementResultDouble(n_results, dresult2);
     break;
   case 3:
-    if (!NI_Statistics(input, labels, min_label, max_label, result_indices, 
+    if (!NI_Statistics(input, labels, min_label, max_label, result_indices,
                   n_results, NULL, NULL, NULL, dresult1, NULL, NULL, NULL))
       goto exit;
     result = _NI_BuildMeasurementResultDouble(n_results, dresult1);
     break;
   case 4:
-    if (!NI_Statistics(input, labels, min_label, max_label, result_indices, 
+    if (!NI_Statistics(input, labels, min_label, max_label, result_indices,
                   n_results, NULL, NULL, NULL, NULL, dresult1, NULL, NULL))
       goto exit;
     result = _NI_BuildMeasurementResultDouble(n_results, dresult1);
     break;
   case 5:
-    if (!NI_Statistics(input, labels, min_label, max_label, result_indices, 
+    if (!NI_Statistics(input, labels, min_label, max_label, result_indices,
               n_results, NULL, NULL, NULL, dresult1, NULL, lresult1, NULL))
       goto exit;
     result = _NI_BuildMeasurementResultInt(n_results, lresult1);
     break;
   case 6:
-    if (!NI_Statistics(input, labels, min_label, max_label, result_indices, 
+    if (!NI_Statistics(input, labels, min_label, max_label, result_indices,
               n_results, NULL, NULL, NULL, NULL, dresult1, NULL, lresult1))
       goto exit;
     result = _NI_BuildMeasurementResultInt(n_results, lresult1);
     break;
   case 7:
-    if (!NI_Statistics(input, labels, min_label, max_label, result_indices, 
-                       n_results, NULL, NULL, NULL, dresult1, dresult2, 
+    if (!NI_Statistics(input, labels, min_label, max_label, result_indices,
+                       n_results, NULL, NULL, NULL, dresult1, dresult2,
                        lresult1, lresult2))
       goto exit;
     res1 = _NI_BuildMeasurementResultDouble(n_results, dresult1);
@@ -1036,8 +1036,8 @@ static PyObject *Py_CenterOfMass(PyObject *obj, PyObject *args)
   PyObject *indices_object, *result = NULL;
   double *center_of_mass = NULL;
   maybelong min_label, max_label, *result_indices = NULL, n_results;
-  
-  if (!PyArg_ParseTuple(args, "O&O&O", NI_ObjectToInputArray, &input, 
+
+  if (!PyArg_ParseTuple(args, "O&O&O", NI_ObjectToInputArray, &input,
                   NI_ObjectToOptionalInputArray, &labels, &indices_object))
     goto exit;
 
@@ -1045,13 +1045,13 @@ static PyObject *Py_CenterOfMass(PyObject *obj, PyObject *args)
                       &max_label, &n_results))
     goto exit;
 
-  center_of_mass = (double*)malloc(input->nd * n_results * 
+  center_of_mass = (double*)malloc(input->nd * n_results *
                                    sizeof(double));
   if (!center_of_mass) {
     PyErr_NoMemory();
     goto exit;
   }
-  
+
   if (!NI_CenterOfMass(input, labels, min_label, max_label,
                        result_indices, n_results, center_of_mass))
     goto exit;
@@ -1101,8 +1101,8 @@ static PyObject *Py_Histogram(PyObject *obj, PyObject *args)
       goto exit;
     }
   }
-  
-  if (!NI_Histogram(input, labels, min_label, max_label, result_indices, 
+
+  if (!NI_Histogram(input, labels, min_label, max_label, result_indices,
                     n_results, histograms, min, max, nbins))
     goto exit;
 
@@ -1130,11 +1130,11 @@ static PyObject *Py_DistanceTransformBruteForce(PyObject *obj,
   int metric;
 
   if (!PyArg_ParseTuple(args, "O&iO&O&O&", NI_ObjectToInputArray, &input,
-                        &metric, NI_ObjectToOptionalInputArray, &sampling, 
-                        NI_ObjectToOptionalOutputArray, &output, 
+                        &metric, NI_ObjectToOptionalInputArray, &sampling,
+                        NI_ObjectToOptionalOutputArray, &output,
                         NI_ObjectToOptionalOutputArray, &features))
     goto exit;
-  if (!NI_DistanceTransformBruteForce(input, metric, sampling,  
+  if (!NI_DistanceTransformBruteForce(input, metric, sampling,
                                       output, features))
     goto exit;
 exit:
@@ -1156,9 +1156,9 @@ static PyObject *Py_DistanceTransformOnePass(PyObject *obj, PyObject *args)
   if (!NI_DistanceTransformOnePass(strct, distances, features))
     goto exit;
 exit:
-  Py_XDECREF(strct); 
-  Py_XDECREF(distances); 
-  Py_XDECREF(features); 
+  Py_XDECREF(strct);
+  Py_XDECREF(distances);
+  Py_XDECREF(features);
   return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -1167,7 +1167,7 @@ static PyObject *Py_EuclideanFeatureTransform(PyObject *obj,
 {
   PyArrayObject *input = NULL, *features = NULL, *sampling = NULL;
 
-  if (!PyArg_ParseTuple(args, "O&O&O&", NI_ObjectToInputArray, &input, 
+  if (!PyArg_ParseTuple(args, "O&O&O&", NI_ObjectToInputArray, &input,
                         NI_ObjectToOptionalInputArray, &sampling,
                         NI_ObjectToOutputArray, &features))
     goto exit;
@@ -1180,7 +1180,7 @@ exit:
   return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
-static void _FreeCoordinateList(void* ptr) 
+static void _FreeCoordinateList(void* ptr)
 {
   NI_FreeCoordinateList((NI_CoordinateList*)ptr);
 }
@@ -1198,12 +1198,12 @@ static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
   if (!PyArg_ParseTuple(args, "O&O&O&O&iO&iii", NI_ObjectToInputArray,
                         &input, NI_ObjectToInputArray, &strct,
                         NI_ObjectToOptionalInputArray, &mask,
-                        NI_ObjectToOutputArray, &output, &border_value, 
+                        NI_ObjectToOutputArray, &output, &border_value,
                         NI_ObjectToLongSequence, &origins,  &invert,
                         &center_is_true, &return_coordinates))
     goto exit;
   if (!NI_BinaryErosion(input, strct, mask, output, border_value,
-                        origins, invert, center_is_true, &changed, 
+                        origins, invert, center_is_true, &changed,
                         return_coordinates ? &coordinate_list : NULL))
     goto exit;
   if (return_coordinates) {
@@ -1235,15 +1235,15 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
   int invert, niter;
   maybelong *origins = NULL;
 
-  if (!PyArg_ParseTuple(args, "O&O&O&iO&iO", NI_ObjectToIoArray, &array, 
-          NI_ObjectToInputArray, &strct, NI_ObjectToOptionalInputArray, 
+  if (!PyArg_ParseTuple(args, "O&O&O&iO&iO", NI_ObjectToIoArray, &array,
+          NI_ObjectToInputArray, &strct, NI_ObjectToOptionalInputArray,
           &mask, &niter, NI_ObjectToLongSequence, &origins, &invert,
           &cobj))
     goto exit;
-    
+
   if (PyCObject_Check(cobj)) {
     NI_CoordinateList *cobj_data = PyCObject_AsVoidPtr(cobj);
-    if (!NI_BinaryErosion2(array, strct, mask, niter, origins, invert, 
+    if (!NI_BinaryErosion2(array, strct, mask, niter, origins, invert,
                            &cobj_data))
       goto exit;
   } else {
@@ -1297,9 +1297,9 @@ static PyMethodDef methods[] = {
    METH_VARARGS, ""},
   {"histogram",             (PyCFunction)Py_Histogram,
    METH_VARARGS, ""},
-  {"distance_transform_bf", (PyCFunction)Py_DistanceTransformBruteForce, 
+  {"distance_transform_bf", (PyCFunction)Py_DistanceTransformBruteForce,
    METH_VARARGS, ""},
-  {"distance_transform_op", (PyCFunction)Py_DistanceTransformOnePass, 
+  {"distance_transform_op", (PyCFunction)Py_DistanceTransformOnePass,
    METH_VARARGS, ""},
   {"euclidean_feature_transform",
    (PyCFunction)Py_EuclideanFeatureTransform, METH_VARARGS, ""},
@@ -1313,5 +1313,5 @@ static PyMethodDef methods[] = {
 PyMODINIT_FUNC init_nd_image(void)
 {
   Py_InitModule("_nd_image", methods);
-  import_libnumarray();
+  import_array();
 }

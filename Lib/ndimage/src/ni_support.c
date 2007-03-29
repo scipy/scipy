@@ -2,7 +2,7 @@
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
- * are met: 
+ * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
@@ -15,7 +15,7 @@
  * 3. The name of the author may not be used to endorse or promote
  *    products derived from this software without specific prior
  *    written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
  * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -26,7 +26,7 @@
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "ni_support.h"
@@ -45,7 +45,7 @@ int NI_InitPointIterator(PyArrayObject *array, NI_Iterator *iterator)
     /* initialize strides: */
     iterator->strides[ii] = array->strides[ii];
     /* calculate the strides to move back at the end of an axis: */
-    iterator->backstrides[ii] = 
+    iterator->backstrides[ii] =
         array->strides[ii] * iterator->dimensions[ii];
   }
   return 1;
@@ -56,7 +56,7 @@ int NI_InitPointIterator(PyArrayObject *array, NI_Iterator *iterator)
 int NI_SubspaceIterator(NI_Iterator *iterator, UInt32 axes)
 {
   int ii, last = 0;
-  
+
   for(ii = 0; ii <= iterator->rank_m1; ii++) {
     if (axes & (((UInt32)1) << ii)) {
       if (last != ii) {
@@ -84,7 +84,7 @@ int NI_LineIterator(NI_Iterator *iterator, int axis)
 /******************************************************************/
 
 /* Allocate line buffer data */
-int NI_AllocateLineBuffer(PyArrayObject* array, int axis, maybelong size1, 
+int NI_AllocateLineBuffer(PyArrayObject* array, int axis, maybelong size1,
     maybelong size2, maybelong *lines, maybelong max_size, double **buffer)
 {
   maybelong line_size, max_lines;
@@ -104,7 +104,7 @@ int NI_AllocateLineBuffer(PyArrayObject* array, int axis, maybelong size1,
      from the maximum size allowed: */
   if (*lines < 1) {
     *lines = line_size > 0 ? max_size / line_size : 0;
-    if (*lines < 1) 
+    if (*lines < 1)
       *lines = 1;
   }
   /* no need to allocate too many lines: */
@@ -120,13 +120,13 @@ int NI_AllocateLineBuffer(PyArrayObject* array, int axis, maybelong size1,
 }
 
 /* Initialize a line buffer */
-int NI_InitLineBuffer(PyArrayObject *array, int axis, maybelong size1, 
+int NI_InitLineBuffer(PyArrayObject *array, int axis, maybelong size1,
     maybelong size2, maybelong buffer_lines, double *buffer_data,
     NI_ExtendMode extend_mode, double extend_value, NI_LineBuffer *buffer)
 {
   maybelong line_length = 0, array_lines = 0, size;
   int ii;
-  
+
   size = 1;
   for(ii = 0; ii < array->nd; ii++)
     size *= array->dimensions[ii];
@@ -144,7 +144,7 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, maybelong size1,
   if (line_length > 0)
     array_lines = line_length > 0 ? size / line_length : 1;
   /* initialize the buffer structure: */
-  buffer->array_data = NA_OFFSETDATA(array);
+  buffer->array_data = (void *)PyArray_DATA(array);
   buffer->buffer_data = buffer_data;
   buffer->buffer_lines = buffer_lines;
   buffer->array_type = array->descr->type_num;
@@ -160,7 +160,7 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, maybelong size1,
 }
 
 /* Extend a line in memory to implement boundary conditions: */
-int NI_ExtendLine(double *line, maybelong length, maybelong size1, 
+int NI_ExtendLine(double *line, maybelong length, maybelong size1,
                 maybelong size2, NI_ExtendMode mode, double constant_value)
 {
   maybelong ii, jj, length1, nextend, rextend;
@@ -174,25 +174,25 @@ int NI_ExtendLine(double *line, maybelong length, maybelong size1,
     l2 = line;
     for(ii = 0; ii < rextend; ii++)
       *l2++ = *l1++;
-    for(ii = 0; ii < nextend; ii++) {                                        
+    for(ii = 0; ii < nextend; ii++) {
       l1 = line + size1;
       for(jj = 0; jj < length; jj++)
         *l2++ = *l1++;
-    }                                                                        
-    nextend = size2 / length;                        
-    rextend = size2 - nextend * length;                
-    l1 = line + size1;                
-    l2 = line + size1 + length;        
-    for(ii = 0; ii < nextend; ii++) {                        
-      l3 = l1;                                        
+    }
+    nextend = size2 / length;
+    rextend = size2 - nextend * length;
+    l1 = line + size1;
+    l2 = line + size1 + length;
+    for(ii = 0; ii < nextend; ii++) {
+      l3 = l1;
       for(jj = 0; jj < length; jj++)
         *l2++ = *l3++;
-    }                                                        
+    }
     for(ii = 0; ii < rextend; ii++)
       *l2++ = *l1++;
     break;
   case NI_EXTEND_MIRROR:
-    if (length == 1) {                
+    if (length == 1) {
       l1 = line;
       val = line[size1];
       for(ii = 0; ii < size1; ii++)
@@ -201,58 +201,58 @@ int NI_ExtendLine(double *line, maybelong length, maybelong size1,
       val = line[size1 + length - 1];
       for(ii = 0; ii < size2; ii++)
         *l1++ = val;
-    } else {                                                                   
-      length1 = length - 1;                                
-      nextend = size1 / length1;                        
-      rextend = size1 - nextend * length1;                
-      l1 = line + size1 + 1;        
-      l2 = l1 - 2;                        
-      for(ii = 0; ii < nextend; ii++) {                        
-        l3 = l1;                                        
+    } else {
+      length1 = length - 1;
+      nextend = size1 / length1;
+      rextend = size1 - nextend * length1;
+      l1 = line + size1 + 1;
+      l2 = l1 - 2;
+      for(ii = 0; ii < nextend; ii++) {
+        l3 = l1;
         for(jj = 0; jj < length1; jj++)
           *l2-- = *l3++;
-        l1 -= length1;                                
-      }                                                        
+        l1 -= length1;
+      }
       for(ii = 0; ii < rextend; ii++)
         *l2-- = *l1++;
-      nextend = size2 / length1;                                
-      rextend = size2 - nextend * length1;                        
-      l1 = line + size1 + length1 - 1;        
-      l2 = l1 + 2;                                
-      for(ii = 0; ii < nextend; ii++) {                                
-        l3 = l1;                                                
-        for(jj = 0; jj < length1; jj++)                                
+      nextend = size2 / length1;
+      rextend = size2 - nextend * length1;
+      l1 = line + size1 + length1 - 1;
+      l2 = l1 + 2;
+      for(ii = 0; ii < nextend; ii++) {
+        l3 = l1;
+        for(jj = 0; jj < length1; jj++)
           *l2++ = *l3--;
-        l1 += length1;                                        
-      }                                                                
+        l1 += length1;
+      }
       for(ii = 0; ii < rextend; ii++)
         *l2++ = *l1--;
     }
     break;
   case NI_EXTEND_REFLECT:
-    nextend = size1 / length;                
-    rextend = size1 - nextend * length;        
-    l1 = line + size1;        
-    l2 = l1 - 1;                        
-    for(ii = 0; ii < nextend; ii++) {                
-      l3 = l1;                                        
+    nextend = size1 / length;
+    rextend = size1 - nextend * length;
+    l1 = line + size1;
+    l2 = l1 - 1;
+    for(ii = 0; ii < nextend; ii++) {
+      l3 = l1;
       for(jj = 0; jj < length; jj++)
         *l2-- = *l3++;
-      l1 -= length;                        
-    }                                                
-    l3 = l1;                                        
+      l1 -= length;
+    }
+    l3 = l1;
     for(ii = 0; ii < rextend; ii++)
       *l2-- = *l3++;
-    nextend = size2 / length;                                
-    rextend = size2 - nextend * length;                        
-    l1 = line + size1 + length - 1;        
-    l2 = l1 + 1;                                        
-    for(ii = 0; ii < nextend; ii++) {                                
-      l3 = l1;                                                
+    nextend = size2 / length;
+    rextend = size2 - nextend * length;
+    l1 = line + size1 + length - 1;
+    l2 = l1 + 1;
+    for(ii = 0; ii < nextend; ii++) {
+      l3 = l1;
       for(jj = 0; jj < length; jj++)
         *l2++ = *l3--;
-      l1 += length;                                        
-    }                                                                
+      l1 += length;
+    }
     for(ii = 0; ii < rextend; ii++)
       *l2++ = *l1--;
     break;
@@ -260,18 +260,18 @@ int NI_ExtendLine(double *line, maybelong length, maybelong size1,
     l1 = line;
     val = line[size1];
     for(ii = 0; ii < size1; ii++)
-      *l1++ = val;                                        
-    l1 = line + size1 + length;                
+      *l1++ = val;
+    l1 = line + size1 + length;
     val = line[size1 + length - 1];
-    for(ii = 0; ii < size2; ii++)                                
+    for(ii = 0; ii < size2; ii++)
       *l1++ = val;
     break;
   case NI_EXTEND_CONSTANT:
     l1 = line;
     for(ii = 0; ii < size1; ii++)
-      *l1++ = constant_value;                                        
-    l1 = line + size1 + length;                
-    for(ii = 0; ii < size2; ii++)                                
+      *l1++ = constant_value;
+    l1 = line + size1 + length;
+    for(ii = 0; ii < size2; ii++)
       *l1++ = constant_value;
     break;
   default:
@@ -291,7 +291,7 @@ case t ## _type:                                                  \
     _pi += _stride;                                               \
   }                                                               \
 }                                                                 \
-break                                                   
+break
 
 
 /* Copy a line from an array to a buffer: */
@@ -332,14 +332,14 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
     NI_ITERATOR_NEXT(buffer->iterator, buffer->array_data);
     /* implement boundary conditions to the line: */
     if (buffer->size1 + buffer->size2 > 0)
-      if (!NI_ExtendLine(pb - buffer->size1, length, buffer->size1, 
-                         buffer->size2, buffer->extend_mode, 
+      if (!NI_ExtendLine(pb - buffer->size1, length, buffer->size1,
+                         buffer->size2, buffer->extend_mode,
                          buffer->extend_value))
         return 0;
     /* The number of the array lines copied: */
     ++(buffer->next_line);
     /* keep track of (and return) the number of lines in the buffer: */
-    ++(*number_of_lines);  
+    ++(*number_of_lines);
     pb += buffer->line_length + buffer->size1 + buffer->size2;
   }
   /* if not all array lines were processed, *more is set true: */
@@ -405,7 +405,7 @@ int NI_LineBufferToArray(NI_LineBuffer *buffer)
 /******************************************************************/
 
 /* Initialize a filter iterator: */
-int 
+int
 NI_InitFilterIterator(int rank, maybelong *filter_shape,
           maybelong filter_size, maybelong *array_shape,
           maybelong *origins, NI_FilterIterator *iterator)
@@ -428,7 +428,7 @@ NI_InitFilterIterator(int rank, maybelong *filter_shape,
     }
   }
   for(ii = 0; ii < rank; ii++) {
-    maybelong step = array_shape[ii] < fshape[ii] ? 
+    maybelong step = array_shape[ii] < fshape[ii] ?
                                              array_shape[ii] : fshape[ii];
     maybelong orgn = fshape[ii] / 2 + forigins[ii];
     /* stride for stepping back to previous offsets: */
@@ -452,7 +452,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
   maybelong max_stride = 0, *ashape = NULL, *astrides = NULL;
   maybelong footprint_size = 0, coordinates[MAXDIM], position[MAXDIM];
   maybelong fshape[MAXDIM], forigins[MAXDIM], *po, *pc = NULL;
-  
+
   rank = array->nd;
   ashape = array->dimensions;
   astrides = array->strides;
@@ -466,7 +466,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
   /* calculate the number of non-zero elements in the footprint: */
   if (footprint) {
     for(kk = 0; kk < filter_size; kk++)
-      if (footprint[kk]) 
+      if (footprint[kk])
         ++footprint_size;
   } else {
     footprint_size = filter_size;
@@ -482,7 +482,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
     goto exit;
   }
   if (coordinate_offsets) {
-    *coordinate_offsets = (maybelong*)malloc(offsets_size * rank * 
+    *coordinate_offsets = (maybelong*)malloc(offsets_size * rank *
                                        footprint_size * sizeof(maybelong));
     if (!*coordinate_offsets) {
       PyErr_NoMemory();
@@ -503,10 +503,10 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
     /* keep track of the kernel position: */
     position[ii] = 0;
   }
-  /* the flag to indicate that we are outside the border must have a 
+  /* the flag to indicate that we are outside the border must have a
      value that is larger than any possible offset: */
   *border_flag_value = max_size * max_stride + 1;
-  /* calculate all possible offsets to elements in the filter kernel, 
+  /* calculate all possible offsets to elements in the filter kernel,
      for all regions in the array (interior and border regions): */
   po = *offsets;
   if (coordinate_offsets) {
@@ -518,7 +518,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
     for(kk = 0; kk < filter_size; kk++) {
       maybelong offset = 0;
       /* only calculate an offset if the footprint is 1: */
-      if (!footprint || footprint[kk]) { 
+      if (!footprint || footprint[kk]) {
         /* find offsets along all axes: */
         for(ii = 0; ii < rank; ii++) {
           maybelong orgn = fshape[ii] / 2 + forigins[ii];
@@ -572,7 +572,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
                 cc = 0;
               } else {
                 int sz = len;
-                cc += sz * (int)(-cc / sz); 
+                cc += sz * (int)(-cc / sz);
                 if (cc < 0)
                   cc += sz;
               }
@@ -581,7 +581,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
                 cc = 0;
               } else {
                 int sz = len;
-                cc -= sz * (int)(cc / sz); 
+                cc -= sz * (int)(cc / sz);
               }
             }
             break;
@@ -633,7 +633,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
         }
       }
     }
-    
+
     /* move to the next array region: */
     for(ii = rank - 1; ii >= 0; ii--) {
       int orgn = fshape[ii] / 2 + forigins[ii];
@@ -651,7 +651,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
       }
     }
   }
-  
+
  exit:
   if (PyErr_Occurred()) {
     if (*offsets)
@@ -678,7 +678,7 @@ NI_CoordinateList* NI_InitCoordinateList(int size, int rank)
   return list;
 }
 
-int NI_CoordinateListStealBlocks(NI_CoordinateList *list1, 
+int NI_CoordinateListStealBlocks(NI_CoordinateList *list1,
                                  NI_CoordinateList *list2)
 {
   if (list1->block_size != list2->block_size ||
@@ -703,7 +703,7 @@ NI_CoordinateBlock* NI_CoordinateListAddBlock(NI_CoordinateList *list)
     PyErr_NoMemory();
     goto exit;
   }
-  block->coordinates = (maybelong*)malloc(list->block_size * list->rank * 
+  block->coordinates = (maybelong*)malloc(list->block_size * list->rank *
 					  sizeof(maybelong));
   if (!block->coordinates) {
     PyErr_NoMemory();
@@ -712,7 +712,7 @@ NI_CoordinateBlock* NI_CoordinateListAddBlock(NI_CoordinateList *list)
   block->next = list->blocks;
   list->blocks = block;
   block->size = 0;
-  
+
 exit:
   if (PyErr_Occurred()) {
     if (block)
@@ -727,7 +727,7 @@ NI_CoordinateBlock* NI_CoordinateListDeleteBlock(NI_CoordinateList *list)
   NI_CoordinateBlock* block = list->blocks;
   if (block) {
     list->blocks = block->next;
-    if (block->coordinates) 
+    if (block->coordinates)
       free(block->coordinates);
     free(block);
   }

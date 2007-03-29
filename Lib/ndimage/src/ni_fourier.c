@@ -2,7 +2,7 @@
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
- * are met: 
+ * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
@@ -15,7 +15,7 @@
  * 3. The name of the author may not be used to endorse or promote
  *    products derived from this software without specific prior
  *    written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
  * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -26,7 +26,7 @@
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "ni_support.h"
@@ -135,14 +135,14 @@ static double _bessel_j1(double x)
   w = x;
   if (x < 0)
     w = -x;
-  
+
   if (w <= 5.0) {
-    z = x * x;        
+    z = x * x;
     w = polevl(z, RP, 3) / p1evl(z, RQ, 8);
     w = w * x * (z - Z1) * (z - Z2);
     return w ;
   }
-  
+
   w = 5.0 / x;
   z = w * w;
   p = polevl(z, PP, 6) / polevl(z, PQ, 6);
@@ -159,20 +159,20 @@ case t ## _type:                              \
 
 #define CASE_FOURIER_OUT_RC(_po, _tmp, _type) \
 case t ## _type:                              \
-  (*(_type*)_po).r = tmp;                     \
-  (*(_type*)_po).i = 0.0;                     \
+  (*(_type*)_po).real = tmp;                  \
+  (*(_type*)_po).imag = 0.0;                  \
   break
 
 #define CASE_FOURIER_OUT_CC(_po, _tmp_r, _tmp_i, _type) \
 case t ## _type:                                        \
-  (*(_type*)_po).r = _tmp_r;                            \
-  (*(_type*)_po).i = _tmp_i;                            \
+  (*(_type*)_po).real = _tmp_r;                         \
+  (*(_type*)_po).imag = _tmp_i;                         \
   break
 
 #define CASE_FOURIER_FILTER_RC(_pi, _tmp, _tmp_r, _tmp_i, _type) \
 case t ## _type:                                                 \
-  _tmp_r = (*(_type*)_pi).r * _tmp;                              \
-  _tmp_i = (*(_type*)_pi).i * _tmp;                              \
+  _tmp_r = (*(_type*)_pi).real * _tmp;                           \
+  _tmp_i = (*(_type*)_pi).imag * _tmp;                           \
   break;
 
 #define CASE_FOURIER_FILTER_RR(_pi, _tmp, _type) \
@@ -180,16 +180,16 @@ case t ## _type:                                 \
   _tmp *= *(_type*)_pi;                          \
   break;
 
-int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array, 
+int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
             maybelong n, int axis, PyArrayObject* output, int filter_type)
 {
   NI_Iterator ii, io;
   char *pi, *po;
   double *parameters = NULL, **params = NULL;
   maybelong kk, hh, size;
-  Float64 *iparameters = NA_OFFSETDATA(parameter_array);
+  Float64 *iparameters = (void *)PyArray_DATA(parameter_array);
   int ll;
-  
+
   /* precalculate the parameters: */
   parameters = (double*)malloc(input->nd * sizeof(double));
   if (!parameters) {
@@ -200,7 +200,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
     /* along the direction of the real transform we must use the given
        length of that dimensons, unless a complex transform is assumed
        (n < 0): */
-    int shape = kk == axis ? 
+    int shape = kk == axis ?
             (n < 0 ? input->dimensions[kk] : n) : input->dimensions[kk];
     switch (filter_type) {
       case _NI_GAUSSIAN:
@@ -219,7 +219,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
     PyErr_NoMemory();
     goto exit;
   }
-  for(kk = 0; kk < input->nd; kk++) 
+  for(kk = 0; kk < input->nd; kk++)
     params[kk] = NULL;
   for(kk = 0; kk < input->nd; kk++) {
     if (input->dimensions[kk] > 1) {
@@ -262,7 +262,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
           if (hh == axis && n >= 0) {
             double tmp = M_PI * parameters[hh] / n;
             for(kk = 1; kk < input->dimensions[hh]; kk++)
-              params[hh][kk] = tmp > 0.0 ? 
+              params[hh][kk] = tmp > 0.0 ?
                                       sin(tmp * kk) / (tmp * kk) : 0.0;
           } else {
             double tmp = M_PI * parameters[hh] / input->dimensions[hh];
@@ -275,7 +275,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
                                       sin(tmp * kk) / (tmp * kk) : 0.0;
           }
         }
-      }    
+      }
       break;
     case _NI_ELLIPSOID:
       /* calculate the tables of parameters: */
@@ -312,8 +312,8 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
   /* initialize output element iterator: */
   if (!NI_InitPointIterator(output, &io))
     goto exit;
-  pi = NA_OFFSETDATA(input);
-  po = NA_OFFSETDATA(output);
+  pi = (void *)PyArray_DATA(input);
+  po = (void *)PyArray_DATA(output);
   size = 1;
   for(ll = 0; ll < input->nd; ll++)
     size *= input->dimensions[ll];
@@ -363,14 +363,14 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
         input->descr->type_num == tComplex64) {
       double tmp_r = 0.0, tmp_i = 0.0;
       switch (input->descr->type_num) {
-        CASE_FOURIER_FILTER_RC(pi, tmp, tmp_r, tmp_i, Complex32);
+          /*CASE_FOURIER_FILTER_RC(pi, tmp, tmp_r, tmp_i, Complex32);*/
         CASE_FOURIER_FILTER_RC(pi, tmp, tmp_r, tmp_i, Complex64);
       default:
         PyErr_SetString(PyExc_RuntimeError, "data type not supported");
         goto exit;
       }
       switch (output->descr->type_num) {
-        CASE_FOURIER_OUT_CC(po, tmp_r, tmp_i, Complex32);
+          /*CASE_FOURIER_OUT_CC(po, tmp_r, tmp_i, Complex32);*/
         CASE_FOURIER_OUT_CC(po, tmp_r, tmp_i, Complex64);
       default:
         PyErr_SetString(PyExc_RuntimeError, "data type not supported");
@@ -398,7 +398,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
       switch (output->descr->type_num) {
         CASE_FOURIER_OUT_RR(po, tmp, Float32);
         CASE_FOURIER_OUT_RR(po, tmp, Float64);
-        CASE_FOURIER_OUT_RC(po, tmp, Complex32);
+        /*CASE_FOURIER_OUT_RC(po, tmp, Complex32);*/
         CASE_FOURIER_OUT_RC(po, tmp, Complex64);
       default:
         PyErr_SetString(PyExc_RuntimeError, "data type not supported");
@@ -407,7 +407,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
     }
     NI_ITERATOR_NEXT2(ii, io, pi, po);
   }
-  
+
  exit:
   if (parameters) free(parameters);
   if (params) {
@@ -425,22 +425,22 @@ case t ## _type:                                                     \
   _i = _tmp * _sint;                                                 \
   break;
 
-#define CASE_FOURIER_SHIFT_C(_pi, _r, _i, _cost, _sint, _type) \
-case t ## _type:                                               \
-  _r = (*(_type*)_pi).r * _cost - (*(_type*)_pi).i * _sint;    \
-  _i = (*(_type*)_pi).r * _sint + (*(_type*)_pi).i * _cost;    \
+#define CASE_FOURIER_SHIFT_C(_pi, _r, _i, _cost, _sint, _type)     \
+case t ## _type:                                                   \
+  _r = (*(_type*)_pi).real * _cost - (*(_type*)_pi).imag * _sint;  \
+  _i = (*(_type*)_pi).real * _sint + (*(_type*)_pi).imag * _cost;  \
   break;
 
-int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array, 
+int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
       maybelong n, int axis, PyArrayObject* output)
 {
   NI_Iterator ii, io;
   char *pi, *po;
   double *shifts = NULL, **params = NULL;
   maybelong kk, hh, size;
-  Float64 *ishifts = NA_OFFSETDATA(shift_array);
+  Float64 *ishifts = (void *)PyArray_DATA(shift_array);
   int ll;
-  
+
   /* precalculate the shifts: */
   shifts = (double*)malloc(input->nd * sizeof(double));
   if (!shifts) {
@@ -451,9 +451,9 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
     /* along the direction of the real transform we must use the given
        length of that dimensons, unless a complex transform is assumed
        (n < 0): */
-    int shape = kk == axis ? 
+    int shape = kk == axis ?
             (n < 0 ? input->dimensions[kk] : n) : input->dimensions[kk];
-    shifts[kk] = -2.0 * M_PI * *ishifts++ / (double)shape;        
+    shifts[kk] = -2.0 * M_PI * *ishifts++ / (double)shape;
   }
   /* allocate memory for tables: */
   params = (double**) malloc(input->nd * sizeof(double*));
@@ -461,7 +461,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
     PyErr_NoMemory();
     goto exit;
   }
-  for(kk = 0; kk < input->nd; kk++) 
+  for(kk = 0; kk < input->nd; kk++)
     params[kk] = NULL;
   for(kk = 0; kk < input->nd; kk++) {
     if (input->dimensions[kk] > 1) {
@@ -494,8 +494,8 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
   /* initialize output element iterator: */
   if (!NI_InitPointIterator(output, &io))
     goto exit;
-  pi = NA_OFFSETDATA(input);
-  po = NA_OFFSETDATA(output);
+  pi = (void *)PyArray_DATA(input);
+  po = (void *)PyArray_DATA(output);
   size = 1;
   for(ll = 0; ll < input->nd; ll++)
     size *= input->dimensions[ll];
@@ -521,14 +521,14 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
       CASE_FOURIER_SHIFT_R(pi, tmp, r, i, cost, sint, Int64)
       CASE_FOURIER_SHIFT_R(pi, tmp, r, i, cost, sint, Float32)
       CASE_FOURIER_SHIFT_R(pi, tmp, r, i, cost, sint, Float64)
-      CASE_FOURIER_SHIFT_C(pi, r, i, cost, sint, Complex32)
+          /*CASE_FOURIER_SHIFT_C(pi, r, i, cost, sint, Complex32)*/
       CASE_FOURIER_SHIFT_C(pi, r, i, cost, sint, Complex64)
     default:
       PyErr_SetString(PyExc_RuntimeError, "data type not supported");
       goto exit;
     }
     switch (output->descr->type_num) {
-      CASE_FOURIER_OUT_CC(po, r, i, Complex32);
+        /*CASE_FOURIER_OUT_CC(po, r, i, Complex32);*/
       CASE_FOURIER_OUT_CC(po, r, i, Complex64);
     default:
       PyErr_SetString(PyExc_RuntimeError, "data type not supported");
@@ -536,7 +536,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
     }
     NI_ITERATOR_NEXT2(ii, io, pi, po);
   }
-  
+
  exit:
   if (shifts) free(shifts);
   if (params) {
@@ -546,4 +546,3 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
   }
   return PyErr_Occurred() ? 0 : 1;
 }
-
