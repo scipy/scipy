@@ -610,7 +610,8 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(maybelong*, double*,
       CASE_INTERP_OUT_UINT(po, t, UInt16, 0, MAX_UINT16);
       CASE_INTERP_OUT_UINT(po, t, UInt32, 0, MAX_UINT32);
 #if HAS_UINT64
-      CASE_INTERP_OUT_UINT(po, t, UInt64);
+      /* FIXME */
+      CASE_INTERP_OUT_UINT(po, t, UInt64, 0, MAX_UINT32);
 #endif
       CASE_INTERP_OUT_INT(po, t, Int8, MIN_INT8, MAX_INT8);
       CASE_INTERP_OUT_INT(po, t, Int16, MIN_INT16, MAX_INT16);
@@ -904,7 +905,8 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
       CASE_INTERP_OUT_UINT(po, t, UInt16, 0, MAX_UINT16);
       CASE_INTERP_OUT_UINT(po, t, UInt32, 0, MAX_UINT32);
 #if HAS_UINT64
-      CASE_INTERP_OUT_UINT(po, t, UInt64, 0, MAX_UINT64);
+      /* FIXME */
+      CASE_INTERP_OUT_UINT(po, t, UInt64, 0, MAX_UINT32);
 #endif
       CASE_INTERP_OUT_INT(po, t, Int8, MIN_INT8, MAX_INT8);
       CASE_INTERP_OUT_INT(po, t, Int16, MIN_INT16, MAX_INT16);

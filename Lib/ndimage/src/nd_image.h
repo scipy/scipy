@@ -40,6 +40,8 @@
 typedef npy_intp maybelong;
 #define MAXDIM NPY_MAXDIMS
 
+#define HAS_UINT64 1
+
 typedef enum
 {
      tAny=-1,
