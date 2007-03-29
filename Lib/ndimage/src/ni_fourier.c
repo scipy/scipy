@@ -359,19 +359,19 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
     default:
       break;
     }
-    if (input->descr->type_num == tComplex32 ||
-        input->descr->type_num == tComplex64) {
+    if (input->descr->type_num == tComplex64 ||
+        input->descr->type_num == tComplex128) {
       double tmp_r = 0.0, tmp_i = 0.0;
       switch (input->descr->type_num) {
-          /*CASE_FOURIER_FILTER_RC(pi, tmp, tmp_r, tmp_i, Complex32);*/
         CASE_FOURIER_FILTER_RC(pi, tmp, tmp_r, tmp_i, Complex64);
+        CASE_FOURIER_FILTER_RC(pi, tmp, tmp_r, tmp_i, Complex128);
       default:
         PyErr_SetString(PyExc_RuntimeError, "data type not supported");
         goto exit;
       }
       switch (output->descr->type_num) {
-          /*CASE_FOURIER_OUT_CC(po, tmp_r, tmp_i, Complex32);*/
         CASE_FOURIER_OUT_CC(po, tmp_r, tmp_i, Complex64);
+        CASE_FOURIER_OUT_CC(po, tmp_r, tmp_i, Complex128);
       default:
         PyErr_SetString(PyExc_RuntimeError, "data type not supported");
         goto exit;
@@ -398,8 +398,8 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
       switch (output->descr->type_num) {
         CASE_FOURIER_OUT_RR(po, tmp, Float32);
         CASE_FOURIER_OUT_RR(po, tmp, Float64);
-        /*CASE_FOURIER_OUT_RC(po, tmp, Complex32);*/
         CASE_FOURIER_OUT_RC(po, tmp, Complex64);
+        CASE_FOURIER_OUT_RC(po, tmp, Complex128);
       default:
         PyErr_SetString(PyExc_RuntimeError, "data type not supported");
         goto exit;
@@ -521,15 +521,15 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
       CASE_FOURIER_SHIFT_R(pi, tmp, r, i, cost, sint, Int64)
       CASE_FOURIER_SHIFT_R(pi, tmp, r, i, cost, sint, Float32)
       CASE_FOURIER_SHIFT_R(pi, tmp, r, i, cost, sint, Float64)
-          /*CASE_FOURIER_SHIFT_C(pi, r, i, cost, sint, Complex32)*/
       CASE_FOURIER_SHIFT_C(pi, r, i, cost, sint, Complex64)
+      CASE_FOURIER_SHIFT_C(pi, r, i, cost, sint, Complex128)
     default:
       PyErr_SetString(PyExc_RuntimeError, "data type not supported");
       goto exit;
     }
     switch (output->descr->type_num) {
-        /*CASE_FOURIER_OUT_CC(po, r, i, Complex32);*/
       CASE_FOURIER_OUT_CC(po, r, i, Complex64);
+      CASE_FOURIER_OUT_CC(po, r, i, Complex128);
     default:
       PyErr_SetString(PyExc_RuntimeError, "data type not supported");
       goto exit;

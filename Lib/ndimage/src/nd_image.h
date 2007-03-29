@@ -56,8 +56,8 @@ typedef enum
      tUInt64=PyArray_UINT64,
      tFloat32=PyArray_FLOAT32,
      tFloat64=PyArray_FLOAT64,
-     tComplex32=PyArray_COMPLEX64,
-     tComplex64=PyArray_COMPLEX128,
+     tComplex64=PyArray_COMPLEX64,
+     tComplex128=PyArray_COMPLEX128,
      tObject=PyArray_OBJECT,        /* placeholder... does nothing */
      tMaxType=PyArray_NTYPES,
      tDefault = tFloat64,
