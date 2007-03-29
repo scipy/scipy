@@ -33,14 +33,15 @@
 #define ND_IMAGE_H
 
 #include "Python.h"
+
+#ifndef ND_IMPORT_ARRAY
+#define NO_IMPORT_ARRAY
+#endif
+
 #include <numpy/noprefix.h>
+#undef NO_IMPORT_ARRAY
 
-#define NI_MAXDIM NPY_MAXDIMS
-
-typedef npy_intp maybelong;
-#define MAXDIM NPY_MAXDIMS
-
-#define HAS_UINT64 1
+/* Eventually get rid of everything below this line */
 
 typedef enum
 {
@@ -68,6 +69,39 @@ typedef enum
 #endif
 } NumarrayType;
 
+#define NI_MAXDIM NPY_MAXDIMS
+
+typedef npy_intp maybelong;
+#define MAXDIM NPY_MAXDIMS
+
+#define HAS_UINT64 1
+
+
+
+#ifdef ND_IMPORT_ARRAY
+
+/* Numarray Helper Functions */
+
+static PyArrayObject*
+NA_InputArray(PyObject *a, NumarrayType t, int requires)
+{
+    PyArray_Descr *descr;
+    if (t == tAny) descr = NULL;
+    else descr = PyArray_DescrFromType(t);
+    return (PyArrayObject *)                                            \
+        PyArray_CheckFromAny(a, descr, 0, 0, requires, NULL);
+}
+
+static unsigned long
+NA_elements(PyArrayObject  *a)
+{
+    int i;
+    unsigned long n = 1;
+    for(i = 0; i<a->nd; i++)
+        n *= a->dimensions[i];
+    return n;
+}
+
 /* satisfies ensures that 'a' meets a set of requirements and matches
 the specified type.
 */
@@ -89,16 +123,6 @@ satisfies(PyArrayObject *a, int requirements, NumarrayType t)
     if (requirements & NPY_ENSURECOPY)
         return 0;
     return type_ok;
-}
-
-static PyArrayObject*
-NA_InputArray(PyObject *a, NumarrayType t, int requires)
-{
-    PyArray_Descr *descr;
-    if (t == tAny) descr = NULL;
-    else descr = PyArray_DescrFromType(t);
-    return (PyArrayObject *)                                            \
-        PyArray_CheckFromAny(a, descr, 0, 0, requires, NULL);
 }
 
 static PyArrayObject *
@@ -159,16 +183,6 @@ NA_IoArray(PyObject *a, NumarrayType t, int requires)
     }
 
     return shadow;
-}
-
-static unsigned long
-NA_elements(PyArrayObject  *a)
-{
-    int i;
-    unsigned long n = 1;
-    for(i = 0; i<a->nd; i++)
-        n *= a->dimensions[i];
-    return n;
 }
 
 #define NUM_LITTLE_ENDIAN 0
@@ -275,11 +289,12 @@ NA_NewArray(void *buffer, NumarrayType type, int ndim, maybelong *shape)
                                        NA_ByteOrder(), 1, 1);
 }
 
-
-#define  NA_InputArray (*(PyArrayObject* (*) (PyObject*,NumarrayType,int) ) (void *) NA_InputArray)
 #define  NA_OutputArray (*(PyArrayObject* (*) (PyObject*,NumarrayType,int) ) (void *) NA_OutputArray)
 #define  NA_IoArray (*(PyArrayObject* (*) (PyObject*,NumarrayType,int) ) (void *) NA_IoArray)
-#define  NA_elements (*(unsigned long (*) (PyArrayObject*) ) (void *) NA_elements)
 #define  NA_NewArray (*(PyArrayObject* (*) (void* buffer, NumarrayType type, int ndim, ...) ) (void *) NA_NewArray )
+#define  NA_elements (*(unsigned long (*) (PyArrayObject*) ) (void *) NA_elements)
+#define  NA_InputArray (*(PyArrayObject* (*) (PyObject*,NumarrayType,int) ) (void *) NA_InputArray)
 
-#endif
+#endif /* ND_IMPORT_ARRAY */
+
+#endif /* ND_IMAGE_H */
