@@ -70,8 +70,6 @@ class test_ndimage(NumpyTestCase):
                       numpy.uint16, numpy.int32, numpy.uint32,
                       numpy.int64, numpy.uint64,
                       numpy.float32, numpy.float64]
-##      if numinclude.hasUInt64:
-##          self.types.append(numpy.UInt64)
 
         # list of boundary modes:
         self.modes = ['nearest', 'wrap', 'reflect', 'constant']
@@ -1295,6 +1293,24 @@ class test_ndimage(NumpyTestCase):
             output = ndimage.correlate(array, weights,
                                                  mode = mode, cval = 0)
             self.failUnless(diff(output, true_value) < eps)
+
+    def test_boundaries(self):
+        "boundary modes"
+        def shift(x):
+            return (x[0] + 0.1,)
+
+        data = numpy.array([1,2,3,4])
+        expected = {'constant': [1,2,3,-1,-1,-1],
+                    'wrap': [1,2,3,4,1,2],
+                    'reflect' : [1,2,3,4,4,3],
+                    'mirror' : [1,2,3,4,3,2],                    
+                    'nearest' : [1,2,3,4,4,4]}
+
+        for mode in expected.keys():
+            assert_array_equal(expected[mode],
+                               ndimage.geometric_transform(data,shift,
+                                                           cval=-1,mode=mode,
+                                                           output_shape=(6,)))
 
     def test_fourier_gaussian_real01(self):
         "gaussian fourier filter for real transforms 1"
