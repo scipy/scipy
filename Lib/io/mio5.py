@@ -157,7 +157,7 @@ class Mat5ArrayReader(MatArrayReader):
         tag = N.ndarray(shape=(),
                       dtype=self.dtypes['tag_full'],
                       buffer = raw_tag)
-        mdtype = tag['mdtype']
+        mdtype = tag['mdtype'].item()
         byte_count = mdtype >> 16
         if byte_count: # small data element format
             if byte_count > 4:
@@ -168,7 +168,7 @@ class Mat5ArrayReader(MatArrayReader):
             return N.ndarray(shape=(el_count,),
                            dtype=dt,
                            buffer=raw_tag[4:])
-        byte_count = tag['byte_count']
+        byte_count = tag['byte_count'].item()
         if mdtype == miMATRIX:
             return self.current_getter(byte_count).get_array()
         if mdtype in self.codecs: # encoded char data
@@ -193,8 +193,8 @@ class Mat5ArrayReader(MatArrayReader):
     def matrix_getter_factory(self):
         ''' Returns reader for next matrix at top level '''
         tag = self.read_dtype(self.dtypes['tag_full'])
-        mdtype = tag['mdtype']
-        byte_count = tag['byte_count']
+        mdtype = tag['mdtype'].item()
+        byte_count = tag['byte_count'].item()
         next_pos = self.mat_stream.tell() + byte_count
         if mdtype == miCOMPRESSED:
             getter = Mat5ZArrayReader(self, byte_count).matrix_getter_factory()
@@ -506,7 +506,7 @@ class MatFile5Reader(MatFileReader):
         ''' Read in mat 5 file header '''
         hdict = {}
         hdr = self.read_dtype(self.dtypes['file_header'])
-        hdict['__header__'] = hdr['description'].strip(' \t\n\000')
+        hdict['__header__'] = hdr['description'].item().strip(' \t\n\000')
         v_major = hdr['version'] >> 8
         v_minor = hdr['version'] & 0xFF
         hdict['__version__'] = '%d.%d' % (v_major, v_minor)
