@@ -11,9 +11,10 @@ from numpy import polyadd, polymul, polydiv, polysub, \
      where, sqrt, rank, newaxis, argmax, product, cos, pi, exp, \
      ravel, size, less_equal, sum, r_, iscomplexobj, take, \
      argsort, allclose, expand_dims, unique, prod, sort, reshape, c_, \
-     transpose, dot, any, minimum, maximum, mean
+     transpose, dot, any, minimum, maximum, mean, cosh, arccosh, \
+     arccos
 import numpy
-from scipy.fftpack import fftn, ifftn
+from scipy.fftpack import fftn, ifftn, fft
 from scipy.misc import factorial
 
 _modedict = {'valid':0, 'same':1, 'full':2}
@@ -825,6 +826,59 @@ def general_gaussian(M,p,sig,sym=1):
         M = M+1
     n = arange(0,M)-(M-1.0)/2.0
     w = exp(-0.5*(n/sig)**(2*p))
+    if not sym and not odd:
+        w = w[:-1]
+    return w
+
+
+# contributed by Kumanna
+def chebwin(M, at, sym=1):
+    """Dolph-Chebyshev window.
+
+    INPUTS:
+
+      M : int
+        Window size
+      at : float
+        Attenuation (in dB)
+      sym : bool
+        Generates symmetric window if True.
+
+    """
+    if M < 1:
+        return array([])
+    if M == 1:
+        return ones(1,'d')
+
+    odd = M % 2
+    if not sym and not odd:
+        M = M+1
+
+    # compute the parameter beta
+    beta = cosh(1.0/(M-1.0)*arccosh(10**(at/20.)))
+    k = r_[0:M]*1.0
+    x = beta*cos(pi*k/M)
+    #find the window's DFT coefficients
+    p = zeros(x.shape) * 1.0
+    for i in range(len(x)):
+        if x[i] < 1:
+            p[i] = cos((M - 1) * arccos(x[i]))
+        else:
+            p[i] = cosh((M - 1) * arccosh(x[i]))
+
+    # Appropriate IDFT and filling up
+    # depending on even/odd M
+    if M % 2:
+        w = real(fft(p));
+        n = (M + 1) / 2;
+        w = w[:n] / w[0];
+        w = concatenate((w[n - 1:0:-1], w))
+    else:
+        p = p * exp(1.j*pi / M * r_[0:M])
+        w = real(fft(p));
+        n = M / 2 + 1;
+        w = w / w[1];
+        w = concatenate((w[n - 1:0:-1], w[1:n]));
     if not sym and not odd:
         w = w[:-1]
     return w
