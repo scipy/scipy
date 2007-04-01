@@ -654,7 +654,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
       fixed_point -- scalar fixed-point finder
 
       """
-    x0 = asarray(x0)
+    x0 = asarray(x0).squeeze()
+    if x0.ndim == 0:
+        x0.shape = (1,)
     if maxiter is None:
         maxiter = len(x0)*200
     func_calls, f = wrap_function(f, args)
