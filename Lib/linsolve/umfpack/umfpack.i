@@ -117,6 +117,7 @@ PyArrayObject *helper_getCArrayObject( PyObject *input, int type,
     return NULL; \
   } \
   $1 = (double *) obj->data; \
+  Py_DECREF( obj ); \
 };
 
 /*!
@@ -130,7 +131,7 @@ PyArrayObject *helper_getCArrayObject( PyObject *input, int type,
 }; \
 %typemap( argout ) ttype* opaque_argout { \
   PyObject *obj; \
-  obj = SWIG_NewPointerObj( (ttype) (*$1), $*1_descriptor, 1 ); \
+  obj = SWIG_NewPointerObj( (ttype) (*$1), $*1_descriptor, 0 ); \
   $result = helper_appendToTuple( $result, obj ); \
 };
 
@@ -146,7 +147,7 @@ PyArrayObject *helper_getCArrayObject( PyObject *input, int type,
 }; \
 %typemap( argout ) ttype* opaque_arginout { \
   PyObject *obj; \
-  obj = SWIG_NewPointerObj( (ttype) (*$1), $*1_descriptor, 1 ); \
+  obj = SWIG_NewPointerObj( (ttype) (*$1), $*1_descriptor, 0 ); \
   $result = helper_appendToTuple( $result, obj ); \
 };
 
