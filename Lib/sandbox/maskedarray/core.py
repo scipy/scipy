@@ -1307,8 +1307,11 @@ Otherwise, fills with fill value.
             if m is nomask:
                 res = self._data
             else:
-                if m.shape == () and m:
-                    return str(f)
+                if m.shape == ():
+                    if m:
+                        return str(f)
+                    else:
+                        return str(self._data)
                 # convert to object array to make filled work
 #CHECK: the two lines below seem more robust than the self._data.astype
 #                res = numeric.empty(self._data.shape, object_)
@@ -2640,33 +2643,3 @@ if __name__ == '__main__':
         y = x + masked
         assert_equal(y.shape, x.shape)
         assert_equal(y._mask, [True, True])
-#    if 0:
-#        a = arange(10)
-#        a[::3] = masked
-#        a.fill_value = 999
-#        a_pickled = cPickle.loads(a.dumps())
-#        assert_equal(a_pickled._mask, a._mask)
-#        assert_equal(a_pickled._data, a._data)
-#        assert_equal(a_pickled.fill_value, 999)
-#        #
-#        a = array(numpy.matrix(range(10)), mask=[1,0,1,0,0]*2)
-#        a_pickled = cPickle.loads(a.dumps())
-#        assert_equal(a_pickled._mask, a._mask)
-#        assert_equal(a_pickled, a)
-#        assert(isinstance(a_pickled._data,numpy.matrix))
-#    #
-#    
-#    #
-#    if 1:
-#        x = marray(numpy.linspace(-1.,1.,31),)
-#        x[:10] = x[-10:] = masked
-#        z = marray(numpy.empty((len(x),3), dtype=numpy.float_))
-#        z[:,0] = x[:]
-#        for i in range(1,3):
-#            idx = numpy.arange(len(x))
-#            numpy.random.shuffle(idx)
-#            z[:,i] = x[idx]
-#        #
-#        z.sort(0)
-#        
-    

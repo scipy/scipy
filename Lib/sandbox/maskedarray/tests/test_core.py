@@ -612,6 +612,15 @@ class test_ma(NumpyTestCase):
         #self.failUnlessRaises(Exception, lambda x,y: x+y, masked, xx)
         #self.failUnlessRaises(Exception, lambda x,y: x+y, xx, masked)
     #........................
+    def check_scalar(self):
+        "Checks masking a scalar"
+        x = masked_array(0)
+        assert_equal(str(x), '0')
+        x = masked_array(0,mask=True)
+        assert_equal(str(x), str(masked_print_option))
+        x = masked_array(0, mask=False)
+        assert_equal(str(x), '0')
+    #........................
     def check_usingmasked(self):
         "Checks that there's no collapsing to masked"        
         x = masked_array([1,2])
