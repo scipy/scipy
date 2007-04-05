@@ -2620,8 +2620,7 @@ def spidentity(n, dtype='d'):
     spidentity( n ) returns the identity matrix of shape (n, n) stored
     in CSC sparse matrix format.
     """
-    diags = ones( (1, n), dtype = dtype )
-    return spdiags( diags, 0, n, n )
+    return csc_matrix((ones(n,dtype=dtype),arange(n),arange(n+1)),(n,n))
 
 
 def speye(n, m, k = 0, dtype = 'd'):
