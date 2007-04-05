@@ -839,7 +839,7 @@ class TimeSeriesFigure(Figure):
     add_plot = add_tsplot
 TSFigure = TimeSeriesFigure
 #................................................
-def tsfigure(series, **figargs):
+def tsfigure(series=None, **figargs):
     """Creates a new `TimeSeriesFigure` object.
 
 :Parameters:
