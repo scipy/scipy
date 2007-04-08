@@ -585,7 +585,6 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
   else {
     Py_DECREF(ap_fvec);
     Py_DECREF(ap_fjac);
-    Py_DECREF(ap_diag);
     Py_DECREF(ap_ipvt);
     Py_DECREF(ap_qtf);
     return Py_BuildValue("Ni",PyArray_Return(ap_x),info);
