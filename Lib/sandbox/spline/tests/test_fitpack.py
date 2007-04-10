@@ -13,10 +13,10 @@ Run tests if spline is not installed:
 
 import sys
 from numpy.testing import *
-from numpy import array, arange, around, pi, sin, ravel
+from numpy import array, arange, around, pi, sin, ravel, zeros, asarray
 
 set_package_path()
-from spline.fitpack import splrep, splev, sproot, splint, spalde
+from spline.fitpack import splprep, splrep, splev, sproot, splint, spalde
 from spline.fitpack import bisplev, bisplrep, splprep
 restore_path()
 
@@ -24,7 +24,7 @@ set_local_path()
 from dierckx_test_data import *
 restore_path()
 
-class test_splrep_slev(NumpyTestCase):
+class test_splrep_splev(NumpyTestCase):
     def check_curfit_against_dierckx_smth(self):
         x,y = curfit_test['x'],curfit_test['y']
         k,s = curfit_test_smth['k'],curfit_test_smth['s']
@@ -59,6 +59,101 @@ class test_splrep_slev(NumpyTestCase):
                                       curfit_test_lsq['c'][i], decimal=3)
             assert_array_almost_equal(around(sp,1),
                                       curfit_test_lsq['sp'][i])
+
+    def check_percur_against_dierckx(self):
+            x,y = percur_test['x'], percur_test['y']
+            k,s = percur_test['k'], percur_test['s']
+            iopt, res = percur_test['iopt'], percur_test['res']
+            err = percur_test['err']
+            coef, knots = percur_test['coef'], percur_test['knots']
+            sp = percur_test['sp']
+            for i in range(len(k)):
+                if iopt[i] != -1:
+                    tck,fp,ier,msg = splrep(x,y,k=k[i],task=iopt[i],s=s[i],
+                                                    per=True,full_output=True)
+                else:
+                    tck,fp,ier,msg = splrep(x,y,t=knots[i],k=k[i],task=iopt[i],
+                                                     per=True,full_output=True)
+                tt,cc,kk = tck
+                tt,cc = asarray(tt), asarray(cc)
+                assert_almost_equal(ier,err[i])
+                assert_almost_equal(fp,res[i],decimal=1)
+                assert_array_almost_equal(tt,knots[i], decimal=3)
+                assert_array_almost_equal(cc,coef[i], decimal=3)
+                yy = asarray(splev(x,tck))
+                assert_array_almost_equal(yy,sp[i], decimal=3)
+            
+class test_splprep_splev(NumpyTestCase):
+    def check_parcur_against_dierckx(self):
+        xa,xo = parcur_test['xa'], parcur_test['xo']
+        k,s = parcur_test['k'], parcur_test['s']
+        u = parcur_test['u']
+        ub,ue = parcur_test['ub'], parcur_test['ue']
+        iopt, res = parcur_test['iopt'], parcur_test['res']
+        err, ipar = parcur_test['err'], parcur_test['ipar']
+        knots = parcur_test['knots']
+        sx, sy = parcur_test['sx'], parcur_test['sy']
+        sp = parcur_test['sp']
+        x = array([xa, xo])
+        for i in range(len(k)):
+            if iopt[i] != -1:
+                if ipar[i] == 1:
+                    tcku,fp,ier,msg = splprep(x,u=u,ub=ub,ue=ue,k=k[i],
+                                   task=iopt[i],s=s[i],full_output=True)
+                else:
+                    tcku,fp,ier,msg = splprep(x,ub=ub,ue=ue,k=k[i],
+                                   task=iopt[i],s=s[i],full_output=True)
+            else:
+                tcku,fp,ier,msg = splprep(x,ub=ub,ue=ue,t=knots[i],
+                                   k=k[i],task=iopt[i],full_output=True)
+            tck,u = tcku
+            tt,cc,kk = tck
+            tt,cc = asarray(tt), asarray(cc)
+            assert_almost_equal(ier,err[i])
+            assert_almost_equal(fp,res[i],decimal=3)
+            assert_array_almost_equal(tt,knots[i], decimal=3)
+            assert_array_almost_equal(cc[0],sx[i], decimal=3)
+            assert_array_almost_equal(cc[1],sy[i], decimal=3)
+            y = asarray(splev(u,tck))
+            yy = zeros(64, 'float')
+            yy[0:-1:2] = y[0]
+            yy[1::2] = y[1]
+            assert_array_almost_equal(yy,sp[i], decimal=3)
+    
+    def check_clocur_against_dierckx(self):
+        xa,xo = clocur_test['xa'], clocur_test['xo']
+        k,s = clocur_test['k'], clocur_test['s']
+        u = clocur_test['u']
+        iopt, res = clocur_test['iopt'], clocur_test['res']
+        err, ipar = clocur_test['err'], clocur_test['ipar']
+        knots = clocur_test['knots']
+        sx, sy = clocur_test['sx'], clocur_test['sy']
+        sp = clocur_test['sp']
+        x = array([xa, xo]) 
+        for i in range(len(k)):
+            if iopt[i] != -1:
+                if ipar[i] == 1:
+                    tcku,fp,ier,msg = splprep(x,u=u,k=k[i],task=iopt[i],
+                                        s=s[i],per=True,full_output=True)
+                else:
+                    tcku,fp,ier,msg = splprep(x,k=k[i],task=iopt[i],
+                                        s=s[i],per=True,full_output=True)
+            else:
+                tcku,fp,ier,msg = splprep(x,t=knots[i],k=k[i],task=iopt[i],
+                                                 per=True,full_output=True)
+            tck,u = tcku
+            tt,cc,kk = tck
+            tt,cc = asarray(tt), asarray(cc)
+            assert_almost_equal(ier,err[i])
+            assert_almost_equal(fp,res[i],decimal=3)
+            assert_array_almost_equal(tt,knots[i], decimal=3)
+            assert_array_almost_equal(cc[0],sx[i], decimal=3)
+            assert_array_almost_equal(cc[1],sy[i], decimal=3)
+            y = asarray(splev(u,tck))
+            yy = zeros(36, 'float')
+            yy[0:-1:2] = y[0,:-1]
+            yy[1::2] = y[1,:-1]
+            assert_array_almost_equal(yy,sp[i], decimal=3)
 
 class test_splint_spalde(NumpyTestCase):
     def check_splint_spalde(self):
@@ -139,9 +234,9 @@ class test_parcur(NumpyTestCase):
                 tck=splrep(x,v,s=s,per=per,k=k)
                 uv=splev(dx,tckp)
                 assert_almost_equal(0.0, around(abs(uv[1]-f(uv[0])),2), 
-                                                                     decimal=1)
+                                                                    decimal=1)
                 assert_almost_equal(0.0, 
-                            around(abs(splev(uv[0],tck)-f(uv[0])),2),decimal=1)
+                        around(abs(splev(uv[0],tck)-f(uv[0])),2),decimal=1)
 
 if __name__ == "__main__":
     NumpyTest().run()

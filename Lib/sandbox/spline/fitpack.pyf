@@ -147,7 +147,7 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        integer optional,check(1<=k && k <=5),intent(in) :: k=3
        real*8 intent(hide),check(s>=0.0) :: s = 0.0
        integer intent(hide),depend(m,k) :: nest=m+2*k
-       integer intent(in,out) :: n
+       integer intent(out),depend(t) :: n=len(t)
        real*8 dimension(n),intent(in,out) :: t
        real*8 dimension(n),intent(out) :: c
        real*8 intent(out) :: fp
@@ -167,10 +167,10 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        real*8 dimension(m),depend(m),check(len(w)==m) :: w
        integer optional,check(1<=k && k <=5),intent(in) :: k=3
        real*8 optional,check(s>=0.0) :: s = 0.0
-       integer intent(hide),depend(m,k) :: nest=m+2*k
-       integer intent(in,out),depend(nest) :: n=nest
+       integer intent(hide),depend(t) :: nest=len(t)
+       integer intent(in,out) :: n
        real*8 dimension(nest),intent(in,out) :: t
-       real*8 dimension(n),intent(out) :: c
+       real*8 dimension(nest),intent(out) :: c
        real*8 intent(out) :: fp
        real*8 dimension(lwrk),intent(in,out) :: wrk
        integer intent(hide),depend(m,k,nest) :: lwrk=m*(k+1)+nest*(8+5*k)
@@ -189,9 +189,9 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        integer optional,check(1<=k && k <=5),intent(in) :: k=3
        real*8 optional,check(s>=0.0) :: s = 0.0
        integer intent(hide),depend(m,k) :: nest=m+2*k
-       integer intent(out),depend(nest) :: n=nest
+       integer intent(out) :: n
        real*8 dimension(nest),intent(out) :: t
-       real*8 dimension(n),intent(out) :: c
+       real*8 dimension(nest),intent(out) :: c
        real*8 intent(out) :: fp
        real*8 dimension(lwrk),intent(out) :: wrk
        integer intent(hide),depend(m,k,nest) :: lwrk=m*(k+1)+nest*(8+5*k)
@@ -215,15 +215,15 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        real*8 intent(in,out) :: ue
        integer check(1<=k && k<=5) :: k=3.0
        real*8 intent(hide),check(s>=0.0) :: s = 0.0
-       integer intent(in) :: nest
+       integer intent(hide) :: nest=n
        integer intent(in,out) :: n
        real*8 dimension(nest), intent(in,out) :: t
        integer intent(hide), depend(nest,idim) :: nc=idim*nest
        real*8 dimension(nc), intent(out) :: c
        real*8 intent(out) :: fp
-       real*8 dimension(lwrk), intent(cache) :: wrk
+       real*8 dimension(lwrk), intent(hide,cache) :: wrk
        integer intent(hide),depend(m,k,nest,idim) :: lwrk=m*(k+1)+nest*(6+idim+3*k)
-       integer dimension(nest), intent(cache) :: iwrk
+       integer dimension(nest), intent(hide,cache) :: iwrk
        integer intent(out) :: ier
      end subroutine parcur_lsq
 
@@ -256,32 +256,6 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        integer intent(out) :: ier
      end subroutine parcur_smth1
 
-     subroutine clocur_smth0(iopt,ipar,idim,m,u,mx,x,w,k,s,nest,n,t,nc,c,fp,&
-                                                             wrk,lwrk,iwrk,ier)
-       !u,n,t,c,fp,wrk,iwrk,ier=clocur_smth0(ipar,idim,u,x,w,nest,[k,s])
-       fortranname clocur
-       integer intent(hide) :: iopt = 0
-       integer check(ipar == 1 || ipar == 0) :: ipar
-       integer check(idim > 0 && idim < 11) :: idim
-       integer intent(hide),depend(u,k),check(m>k) :: m=len(u)
-       real*8 dimension(m), intent(in,out) :: u
-       integer intent(hide),depend(x,idim,m),check(mx>=idim*m) :: mx=len(x)
-       real*8 dimension(mx) :: x
-       real*8 dimension(m) :: w
-       integer check(1<=k && k<=5) :: k=3.0
-       real*8 check(s>=0.0) :: s = 0.0
-       integer intent(in) :: nest
-       integer intent(out) :: n
-       real*8 dimension(nest), intent(out) :: t
-       integer intent(hide), depend(nest,idim) :: nc=idim*nest
-       real*8 dimension(nc), intent(out) :: c
-       real*8 intent(out) :: fp
-       real*8 dimension(lwrk), intent(out) :: wrk
-       integer intent(hide),depend(m,k,nest,idim) :: lwrk=m*(k+1)+nest*(7+idim+5*k)
-       integer dimension(nest), intent(out) :: iwrk
-       integer intent(out) :: ier
-     end subroutine clocur_smth0
-
      subroutine parcur_smth0(iopt,ipar,idim,m,u,mx,x,w,ub,ue,k,s,nest,n,t,nc,&
                                                         c,fp,wrk,lwrk,iwrk,ier)
        fortranname parcur
@@ -308,6 +282,85 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        integer dimension(nest), intent(out) :: iwrk
        integer intent(out) :: ier
      end subroutine parcur_smth0
+
+     subroutine clocur_lsq(iopt,ipar,idim,m,u,mx,x,w,k,s,nest,n,t,nc,c,fp,&
+                                                             wrk,lwrk,iwrk,ier)
+       !u,n,t,c,fp,wrk,iwrk,ier=clocur_lsq(ipar,idim,u,x,w,nest,n,t,[k,s])
+       fortranname clocur
+       integer intent(hide) :: iopt = -1
+       integer check(ipar == 1 || ipar == 0) :: ipar
+       integer check(idim > 0 && idim < 11) :: idim
+       integer intent(hide),depend(u,k),check(m>k) :: m=len(u)
+       real*8 dimension(m), intent(in,out) :: u
+       integer intent(hide),depend(x,idim,m),check(mx>=idim*m) :: mx=len(x)
+       real*8 dimension(mx) :: x
+       real*8 dimension(m) :: w
+       integer check(1<=k && k<=5) :: k=3.0
+       real*8 intent(hide) :: s = 0.0
+       integer intent(hide) :: nest=n
+       integer intent(in,out) :: n
+       real*8 dimension(nest), intent(in,out) :: t
+       integer intent(hide), depend(nest,idim) :: nc=idim*nest
+       real*8 dimension(nc), intent(out) :: c
+       real*8 intent(out) :: fp
+       real*8 dimension(lwrk), intent(cache,hide) :: wrk
+       integer intent(hide),depend(m,k,nest,idim) :: lwrk=m*(k+1)+nest*(7+idim+5*k)
+       integer dimension(nest), intent(cache,hide) :: iwrk
+       integer intent(out) :: ier
+     end subroutine clocur_lsq
+
+     subroutine clocur_smth0(iopt,ipar,idim,m,u,mx,x,w,k,s,nest,n,t,nc,c,fp,&
+                                                             wrk,lwrk,iwrk,ier)
+       !u,n,t,c,fp,wrk,iwrk,ier=clocur_smth0(ipar,idim,u,x,w,nest,[k,s])
+       fortranname clocur
+       integer intent(hide) :: iopt = 0
+       integer check(ipar == 1 || ipar == 0) :: ipar
+       integer check(idim > 0 && idim < 11) :: idim
+       integer intent(hide),depend(u,k),check(m>k) :: m=len(u)
+       real*8 dimension(m), intent(in,out) :: u
+       integer intent(hide),depend(x,idim,m),check(mx>=idim*m) :: mx=len(x)
+       real*8 dimension(mx) :: x
+       real*8 dimension(m) :: w
+       integer check(1<=k && k<=5) :: k=3.0
+       real*8 check(s>=0.0) :: s = 0.0
+       integer intent(in) :: nest
+       integer intent(out) :: n
+       real*8 dimension(nest), intent(out) :: t
+       integer intent(hide), depend(nest,idim) :: nc=idim*nest
+       real*8 dimension(nc), intent(out) :: c
+       real*8 intent(out) :: fp
+       real*8 dimension(lwrk), intent(out) :: wrk
+       integer intent(hide),depend(m,k,nest,idim) :: lwrk=m*(k+1)+nest*(7+idim+5*k)
+       integer dimension(nest), intent(out) :: iwrk
+       integer intent(out) :: ier
+     end subroutine clocur_smth0
+
+     subroutine clocur_smth1(iopt,ipar,idim,m,u,mx,x,w,k,s,nest,n,t,nc,c,fp,&
+                                                             wrk,lwrk,iwrk,ier)
+       !u,n,t,c,fp,wrk,iwrk,ier=clocur_smth1(ipar,idim,u,x,w,nest,
+       !                                                    n,t,wrk,iwrk,[k,s])
+       fortranname clocur
+       integer intent(hide) :: iopt = 1
+       integer check(ipar == 1 || ipar == 0) :: ipar
+       integer check(idim > 0 && idim < 11) :: idim
+       integer intent(hide),depend(u,k),check(m>k) :: m=len(u)
+       real*8 dimension(m), intent(in,out) :: u
+       integer intent(hide),depend(x,idim,m),check(mx>=idim*m) :: mx=len(x)
+       real*8 dimension(mx) :: x
+       real*8 dimension(m) :: w
+       integer check(1<=k && k<=5) :: k=3.0
+       real*8 check(s>=0.0) :: s = 0.0
+       integer intent(in) :: nest
+       integer intent(in,out) :: n
+       real*8 dimension(nest), intent(in,out) :: t
+       integer intent(hide), depend(nest,idim) :: nc=idim*nest
+       real*8 dimension(nc), intent(out) :: c
+       real*8 intent(out) :: fp
+       real*8 dimension(lwrk), intent(in,out) :: wrk
+       integer intent(hide),depend(m,k,nest,idim) :: lwrk=m*(k+1)+nest*(7+idim+5*k)
+       integer dimension(nest), intent(in,out) :: iwrk
+       integer intent(out) :: ier
+     end subroutine clocur_smth1
 
      subroutine insert(iopt,t,n,c,k,x,tt,nn,cc,nest,ier)
        ! tt, nn, cc, ier = insert(per, t, c, k, x, nest)

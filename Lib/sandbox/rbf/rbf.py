@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-"""
-rbf - Radial basis functions for interpolation/smoothing scattered Nd data.
+"""rbf - Radial basis functions for interpolation/smoothing scattered Nd data.
 
 Written by John Travers <jtravs@gmail.com>, February 2007
 Based closely on Matlab code by Alex Chirokov
+Additional, large, improvements by Robert Hetland
 
 Permission to use, modify, and distribute this software is given under the
 terms of the SciPy (BSD style) license.  See LICENSE.txt that came with
@@ -11,116 +11,141 @@ this distribution for specifics.
 
 NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
 
+Copyright (c) 2006-2007, Robert Hetland <hetland@tamu.edu>
+Copyright (c) 2007, John Travers <jtravs@gmail.com>
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+       notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+       copyright notice, this list of conditions and the following
+       disclaimer in the documentation and/or other materials provided
+       with the distribution.
+
+    * Neither the name of Robert Hetland nor the names of any
+       contributors may be used to endorse or promote products derived
+       from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import scipy as s
+from numpy import sqrt, log, asarray, newaxis, all, dot, float64, eye
 import scipy.linalg
 
 class Rbf(object):
     """ A class for radial basis function approximation/interpolation of
         n-dimensional scattered data.
     """
-    def __init__(self,x,y, function='multiquadrics', constant=None, smooth=0):
+    
+    def _euclidean_norm(self, x1, x2):
+        return sqrt( ((x1 - x2)**2).sum(axis=0) )
+    
+    def _function(self, r):
+        if self.function.lower() == 'multiquadric':
+            return sqrt((self.epsilon*r)**2 + 1)
+        elif self.function.lower() == 'inverse multiquadric':
+            return 1.0/sqrt((self.epsilon*r)**2 + 1)
+        elif self.function.lower() == 'gausian':
+            return exp(-(self.epsilon*r)**2)
+        elif self.function.lower() == 'cubic':
+            return r**3
+        elif self.function.lower() == 'quintic':
+            return r**5
+        elif self.function.lower() == 'thin-plate':
+            return r**2 * log(r)
+        else:
+            raise ValueError, 'Invalid basis function name'
+    
+    def __init__(self, *args, **kwargs):
         """ Constructor for Rbf class.
-
+            
             Inputs:
-                x   (dim, n) array of coordinates for the nodes
-                y   (n,) array of values at the nodes
-                function    the radial basis function
-                            'linear', 'cubic' 'thinplate', 'multiquadrics'
-                            or 'gaussian', default is 'multiquadrics'
-                constant    adjustable constant for gaussian or multiquadrics
+                x, y, z, ..., d    
+                            Where x, y, z, ... are the coordinates of the nodes
+                            and d is the array of values at the nodes
+                
+                function    the radial basis function, based on the radius, r, given 
+                            by the norm (defult is Euclidean distance); the default
+                            is 'multiquadratic'.
+                            
+                            'multiquadric': sqrt((self.epsilon*r)**2 + 1)
+                            'inverse multiquadric': 1.0/sqrt((self.epsilon*r)**2 + 1)
+                            'gausian': exp(-(self.epsilon*r)**2)
+                            'cubic': r**3
+                            'quintic': r**5
+                            'thin-plate': r**2 * log(r)
+                            
+                epsilon     adjustable constant for gaussian or multiquadrics
                             functions - defaults to approximate average distance
                             between nodes (which is a good start)
+                            
                 smooth      values greater than zero increase the smoothness
                             of the approximation. 
                             0 is for interpolation (default), the function will
                             always go through the nodal points in this case.
+                            
+                norm        A function that returns the 'distance' between two points,
+                            with inputs as arrays of positions (x, y, z, ...), and an
+                            output as an array of distance.  E.g, the default is
+                            
+                                def euclidean_norm(self, x1, x2):
+                                    return sqrt( ((x1 - x2)**2).sum(axis=0) )
+                            
+                            which is called with x1 = x1[ndims, newaxis, :] and 
+                            x2 = x2[ndims, :, newaxis] such that the result is a 
+                            symetric, square matrix of the distances between each point
+                            to each other point.
+            
+            Outputs: 
+                Interpolator object rbfi that returns interpolated values at new positions:
+                >>> rbfi = Rbf(x, y, z, d)      # radial basis function interpolator instance
+                >>> di = rbfi(xi, yi, zi)       # interpolated values
+        """        
+        self.xi = asarray([asarray(a, dtype=float64).flatten() for a in args[:-1]])
+        self.N = self.xi.shape[-1]
+        self.di = asarray(args[-1], dtype=float64).flatten()
+        
+        assert [x.size==self.di.size for x in self.xi], \
+               'All arrays must be equal length'
+        
+        self.norm = kwargs.pop('norm', self._euclidean_norm)
+        r = self._call_norm(self.xi, self.xi)
+        self.epsilon = kwargs.pop('epsilon', r.mean())
+        self.function = kwargs.pop('function', 'multiquadric')
+        self.smooth = kwargs.pop('smooth', 0.0)
+        
+        self.A = self._function(r) - eye(self.N)*self.smooth
+        self.nodes = scipy.linalg.solve(self.A, self.di)
+    
+    def _call_norm(self, x1, x2):
+        if len(x1.shape) == 1:
+            x1 = x1[newaxis, :]
+        if len(x2.shape) == 1:
+            x2 = x2[newaxis, :]
+        x1 = x1[..., :, newaxis]
+        x2 = x2[..., newaxis, :]
+        return self.norm(x1, x2)
+    
+    def __call__(self, *args):
+        assert all([x.shape == y.shape \
+                    for x in args \
+                    for y in args]), 'Array lengths must be equal'
+        shp = args[0].shape
+        self.xa = asarray([a.flatten() for a in args], dtype=float64)
+        r = self._call_norm(self.xa, self.xi)
+        return dot(self._function(r), self.nodes).reshape(shp)
 
-            Outputs: None
-        """
-        if len(x.shape) == 1:
-            nxdim = 1
-            nx = x.shape[0]
-        else:
-            (nxdim, nx)=x.shape
-        if len(y.shape) == 1:
-            nydim = 1
-            ny = y.shape[0]
-        else:
-            (nydim, ny)=y.shape
-        x.shape = (nxdim, nx)
-        y.shape = (nydim, ny)
-        if nx != ny:
-            raise ValueError, 'x and y should have the same number of points'
-        if nydim != 1:
-            raise ValueError, 'y should be a length n vector'
-        self.x = x
-        self.y = y
-        self.function = function
-        if (constant==None 
-            and ((function == 'multiquadrics') or (function == 'gaussian'))):
-            # approx. average distance between the nodes
-            constant = (s.product(x.T.max(0)-x.T.min(0),axis=0)/nx)**(1/nxdim)
-        self.constant = constant
-        self.smooth = smooth
-        if self.function == 'linear':
-            self.phi = lambda r: r
-        elif self.function == 'cubic':
-            self.phi = lambda r: r*r*r
-        elif self.function == 'multiquadrics':
-            self.phi = lambda r: s.sqrt(1.0+r*r/(self.constant*self.constant))
-        elif self.function == 'thinplate':
-            self.phi = lambda r: r*r*s.log(r+1)
-        elif self.function == 'gaussian':
-            self.phi = lambda r: s.exp(-0.5*r*r/(self.rbfconst*self.constant))
-        else:
-            raise ValueError, 'unkown function'
-        A = self._rbf_assemble()
-        b=s.r_[y.T, s.zeros((nxdim+1, 1), float)]
-        self.coeff = s.linalg.solve(A,b)
-
-    def __call__(self, xi):
-        """ Evaluate the radial basis function approximation at points xi.
-
-            Inputs:
-                xi  (dim, n) array of coordinates for the points to evaluate at
-
-            Outputs:
-                y   (n,) array of values at the points xi
-        """
-        if len(xi.shape) == 1:
-            nxidim = 1
-            nxi = xi.shape[0]
-        else:
-            (nxidim, nxi)=xi.shape
-        xi.shape = (nxidim, nxi)
-        (nxdim, nx) = self.x.shape
-        if nxdim != nxidim:
-            raise ValueError, 'xi should have the same number of rows as an' \
-                              ' array used to create RBF interpolation'
-        f = s.zeros(nxi, float)
-        r = s.zeros(nx, float)
-        for i in range(nxi):
-            st=0.0
-            r = s.dot(xi[:,i,s.newaxis],s.ones((1,nx))) - self.x
-            r = s.sqrt(sum(r*r))
-            st = self.coeff[nx,:] + s.sum(self.coeff[0:nx,:].flatten()*self.phi(r))
-            for k in range(nxdim):
-                st=st+self.coeff[k+nx+1,:]*xi[k,i]
-            f[i] = st
-        return f
-
-    def _rbf_assemble(self):
-        (nxdim, nx)=self.x.shape
-        A=s.zeros((nx,nx), float)
-        for i in range(nx):
-            for j in range(i+1):
-                r=s.linalg.norm(self.x[:,i]-self.x[:,j])
-                temp=self.phi(r)
-                A[i,j]=temp
-                A[j,i]=temp
-            A[i,i] = A[i,i] - self.smooth
-        P = s.c_[s.ones((nx,1), float), self.x.T]
-        A = s.r_[s.c_[A, P], s.c_[P.T, s.zeros((nxdim+1,nxdim+1), float)]]
-        return A

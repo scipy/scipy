@@ -25,8 +25,8 @@ Running test programs:
     $ python fitpack.py        # run all available test programs
 
 TODO: Make interfaces to the following fitpack functions:
-    For univariate splines: cocosp, concon, fourco, insert
-    For bivariate splines: profil, regrid, parsur, surev
+    For univariate splines: cocosp, concon, fourco
+    For bivariate splines: profil, parsur, surev
 """
 
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
@@ -219,27 +219,36 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     if task==1:
         try: 
             u=_parcur_cache['u']
-            ub=_parcur_cache['ub']
-            ue=_parcur_cache['ue']
             t=_parcur_cache['t']
             wrk=_parcur_cache['wrk']
             iwrk=_parcur_cache['iwrk']
             n=_parcur_cache['n']
+            if not per:
+                ub=_parcur_cache['ub']
+                ue=_parcur_cache['ue']
         except KeyError:
             raise ValueError, 'task=1 can only be called after task=0'
-        u,ub,ue,n,t,c,fp,wrk,iwrk,ier=dfitpack.parcur_smth1(ipar,idim,u,x,w,
-                                             ub,ue,nest,n,t,wrk,iwrk,k=k,s=s)
+        if per:
+            u,n,t,c,fp,wrk,iwrk,ier=dfitpack.clocur_smth1(ipar,idim,u,x,
+                                             w,n,t,wrk,iwrk,k=k,s=s)
+        else:
+            u,ub,ue,n,t,c,fp,wrk,iwrk,ier=dfitpack.parcur_smth1(ipar,idim,u,x,
+                                             w,ub,ue,n,t,wrk,iwrk,k=k,s=s)
     if task==-1:
-        u,ub,ue,n,t,c,fp,ier=dfitpack.parcur_lsq(ipar,idim,u,x,w,ub,ue,
-                                                                nest,n,t,k=k)
+        if per:
+            u,n,t,c,fp,ier=dfitpack.clocur_lsq(ipar,idim,u,x,w,n,t,k=k)
+        else:
+            u,ub,ue,n,t,c,fp,ier=dfitpack.parcur_lsq(ipar,idim,u,x,w,ub,ue,
+                                                                n,t,k=k)
     if task>=0:
         _parcur_cache['n']=n
         _parcur_cache['u']=u
-        _parcur_cache['ub']=ub
-        _parcur_cache['ue']=ue
         _parcur_cache['t']=t
         _parcur_cache['wrk']=wrk
         _parcur_cache['iwrk']=iwrk
+        if not per:
+            _parcur_cache['ub']=ub
+            _parcur_cache['ue']=ue
     c = c[:n*idim]
     c.shape=idim,n
     c = c[:,:n-k-1]
@@ -379,7 +388,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
             n,t,c,fp,wrk,iwrk,ier = dfitpack.percur_smth1(x,y,w,n,t,wrk,iwrk,
                                                                     k=k,s=s)
         elif task==-1:
-            n,t,c,fp,ier = dfitpack.percur_lsq(x,y,w,n,t,k=k)
+            n,t,c,fp,ier = dfitpack.percur_lsq(x,y,w,t,k=k)
         if task>=0:
             _percur_cache['t']=t
             _percur_cache['wrk']=wrk

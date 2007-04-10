@@ -23,11 +23,9 @@ p.title('Interpolation using current scipy fitpack2')
 rbf = Rbf(x, y)
 fi = rbf(xi)
 p.subplot(2,1,2)
-p.plot(x,y,'bo',xi.flatten(),fi.flatten(),'g',xi.flatten(),
-                                                    s.sin(xi.flatten()),'r')
+p.plot(x,y,'bo',xi,fi,'g',xi, s.sin(xi),'r')
 p.title('RBF interpolation - multiquadrics')
-p.savefig('rbf1dtest.png')
-p.close()
+p.show()
 
 # 2-d tests - setup scattered data
 x = s.rand(50,1)*4-2
@@ -37,8 +35,8 @@ ti = s.linspace(-2.0,2.0,81)
 (XI,YI) = s.meshgrid(ti,ti)
 
 # use RBF
-rbf = Rbf(s.c_[x.flatten(),y.flatten()].T,z.T,constant=2)
-ZI = rbf(s.c_[XI.flatten(), YI.flatten()].T)
+rbf = Rbf(x.flatten(),y.flatten(),z.flatten(),eps=2)
+ZI = rbf(XI.flatten(), YI.flatten())
 ZI.shape = XI.shape
 
 # plot the result
