@@ -30,10 +30,17 @@
 
 import types
 import math
+import warnings
 import numpy
 import _ni_support
 import _nd_image
 
+def _extend_mode_to_code(mode):
+    mode = _ni_support._extend_mode_to_code(mode)
+    if mode == 2:
+        warnings.warn('Mode "reflect" may yield incorrect results on '
+                      'boundaries. Please use "mirror" instead.')
+    return mode
 
 def spline_filter1d(input, order = 3, axis = -1, output = numpy.float64,
                     output_type = None):
@@ -126,7 +133,7 @@ def geometric_transform(input, mapping, output_shape = None,
         output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError, 'input and output rank must be > 0'
-    mode = _ni_support._extend_mode_to_code(mode)
+    mode = _extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output = numpy.float64)
     else:
@@ -188,7 +195,7 @@ def map_coordinates(input, coordinates, output_type = None, output = None,
         raise RuntimeError, 'input and output rank must be > 0'
     if coordinates.shape[0] != input.ndim:
         raise RuntimeError, 'invalid shape for coordinate array'
-    mode = _ni_support._extend_mode_to_code(mode)
+    mode = _extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output = numpy.float64)
     else:
@@ -229,7 +236,7 @@ def affine_transform(input, matrix, offset = 0.0, output_shape = None,
         output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError, 'input and output rank must be > 0'
-    mode = _ni_support._extend_mode_to_code(mode)
+    mode = _extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output = numpy.float64)
     else:
@@ -277,7 +284,7 @@ def shift(input, shift, output_type = None, output = None, order = 3,
         raise TypeError, 'Complex type not supported'
     if input.ndim < 1:
         raise RuntimeError, 'input and output rank must be > 0'
-    mode = _ni_support._extend_mode_to_code(mode)
+    mode = _extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output = numpy.float64)
     else:
@@ -310,7 +317,7 @@ def zoom(input, zoom, output_type = None, output = None, order = 3,
         raise TypeError, 'Complex type not supported'
     if input.ndim < 1:
         raise RuntimeError, 'input and output rank must be > 0'
-    mode = _ni_support._extend_mode_to_code(mode)
+    mode = _extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output = numpy.float64)
     else:
