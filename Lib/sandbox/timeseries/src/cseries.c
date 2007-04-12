@@ -90,6 +90,9 @@ static char cseries_doc[] = "Speed sensitive time series operations";
 
 #define CHECK_ASFREQ(result) if ((result) == INT_ERR_CODE) return NULL
 
+#define MEM_CHECK(item) if (item == NULL) { return PyErr_NoMemory(); }
+#define ERR_CHECK(item) if (item == NULL) { return NULL; }
+
 static int get_freq_group(int freq) {
     return (freq/1000)*1000;
 }
@@ -2611,7 +2614,6 @@ static PyObject *
 cseries_check_freq_str(PyObject *self, PyObject *args) {
 
     PyObject *alias_tuple, *result, *freq_key;
-    int freq_val;
 
     if ((freq_key = cseries_check_freq(self, args)) == NULL) return NULL;
 
@@ -2885,6 +2887,320 @@ TimeSeries_convert(PyObject *self, PyObject *args)
     return returnVal;
 }
 
+
+/* This function is directly copied from direct copy of function in  */
+/* Return typenumber from dtype2 unless it is NULL, then return
+   NPY_DOUBLE if dtype1->type_num is integer or bool
+   and dtype1->type_num otherwise.
+*/
+static int
+_get_type_num_double(PyArray_Descr *dtype1, PyArray_Descr *dtype2)
+{
+        if (dtype2 != NULL)
+                return dtype2->type_num;
+
+        /* For integer or bool data-types */
+        if (dtype1->type_num < NPY_FLOAT) {
+                return NPY_DOUBLE;
+        }
+        else {
+                return dtype1->type_num;
+        }
+}
+
+#define _CHKTYPENUM(typ) ((typ) ? (typ)->type_num : PyArray_NOTYPE)
+
+/* validates the standard arguments to moving functions and set the original
+   mask, original ndarray, and mask for the result */
+static PyObject *
+check_mov_args(PyObject *orig_arrayobj, int window_size, int min_win_size,
+               PyArrayObject **orig_ndarray, PyArrayObject **orig_mask,
+               PyArrayObject **result_mask) {
+
+    int *raw_result_mask;
+
+    if (!PyArray_Check(orig_arrayobj)) {
+        PyErr_SetString(PyExc_ValueError, "array must be a valid subtype of ndarray");
+        return NULL;
+    }
+
+    // check if array has a mask, and if that mask is an array
+    if (PyObject_HasAttrString(orig_arrayobj, "_mask")) {
+        PyObject *tempMask = PyObject_GetAttrString(orig_arrayobj, "_mask");
+        if (PyArray_Check(tempMask)) {
+            *orig_mask = (PyArrayObject*)PyArray_EnsureArray(tempMask);
+        } else {
+            Py_DECREF(tempMask);
+        }
+    }
+
+    *orig_ndarray = (PyArrayObject*)PyArray_EnsureArray(orig_arrayobj);
+
+    if ((*orig_ndarray)->nd != 1) {
+        PyErr_SetString(PyExc_ValueError, "array must be 1 dimensional");
+        return NULL;
+    }
+
+    if (window_size < min_win_size) {
+        char *error_str;
+        error_str = malloc(60 * sizeof(char));
+        MEM_CHECK(error_str)
+        sprintf(error_str,
+                "window_size must be greater than or equal to %i",
+                min_win_size);
+        PyErr_SetString(PyExc_ValueError, error_str);
+        free(error_str);
+        return NULL;
+    }
+
+    raw_result_mask = malloc((*orig_ndarray)->dimensions[0] * sizeof(int));
+    MEM_CHECK(raw_result_mask)
+
+    {
+        int i, valid_points=0, is_masked;
+
+        for (i=0; i<((*orig_ndarray)->dimensions[0]); i++) {
+
+            is_masked=0;
+
+            if (*orig_mask != NULL) {
+                PyObject *valMask;
+                valMask = PyArray_GETITEM(*orig_mask, PyArray_GetPtr(*orig_mask, &i));
+                is_masked = (int)PyInt_AsLong(valMask);
+                Py_DECREF(valMask);
+            }
+
+            if (is_masked) {
+                valid_points=0;
+            } else {
+                if (valid_points < window_size) { valid_points += 1; }
+                if (valid_points < window_size) { is_masked = 1; }
+            }
+
+            raw_result_mask[i] = is_masked;
+        }
+    }
+
+    *result_mask = (PyArrayObject*)PyArray_SimpleNewFromData(
+                                        1, (*orig_ndarray)->dimensions,
+                                        PyArray_INT32, raw_result_mask);
+    MEM_CHECK(*result_mask)
+    (*result_mask)->flags = ((*result_mask)->flags) | NPY_OWNDATA;
+}
+
+
+static PyObject *NP_ADD, *NP_MULTIPLY, *NP_SUBTRACT, *NP_SQRT;
+
+/* computation portion of moving sum. Appropriate mask is overlayed on top
+   afterwards */
+static PyArrayObject*
+calc_mov_sum(PyArrayObject *orig_ndarray, int window_size, int rtype)
+{
+    PyArrayObject *result_ndarray=NULL;
+    int i, valid_points=0;
+
+    result_ndarray = (PyArrayObject*)PyArray_ZEROS(
+                                       orig_ndarray->nd,
+                                       orig_ndarray->dimensions,
+                                       rtype, 0);
+    ERR_CHECK(result_ndarray)
+
+    for (i=0; i<orig_ndarray->dimensions[0]; i++) {
+
+        PyObject *val=NULL, *mov_sum_val=NULL;
+
+        val = PyArray_GETITEM(orig_ndarray, PyArray_GetPtr(orig_ndarray, &i));
+
+        if (valid_points == 0) {
+            mov_sum_val = val;
+            valid_points += 1;
+        } else {
+            int prev_idx = i-1;
+            PyObject *mov_sum_prevval;
+            mov_sum_prevval= PyArray_GETITEM(result_ndarray,
+                                   PyArray_GetPtr(result_ndarray, &prev_idx));
+            mov_sum_val = PyObject_CallFunction(NP_ADD, "OO", (PyArrayObject*)val,
+                                                     mov_sum_prevval);
+            Py_DECREF(mov_sum_prevval);
+            ERR_CHECK(mov_sum_val)
+
+            if (valid_points == window_size) {
+                PyObject *temp_val, *rem_val;
+                int rem_idx = i-window_size;
+                temp_val = mov_sum_val;
+                rem_val = PyArray_GETITEM(orig_ndarray,
+                                   PyArray_GetPtr(orig_ndarray, &rem_idx));
+
+                mov_sum_val = PyObject_CallFunction(
+                                        NP_SUBTRACT,
+                                        "OO", (PyArrayObject*)temp_val,
+                                        rem_val);
+                ERR_CHECK(mov_sum_val)
+
+                Py_DECREF(temp_val);
+                Py_DECREF(rem_val);
+
+            } else {
+                valid_points += 1;
+            }
+        }
+
+        PyArray_SETITEM(result_ndarray, PyArray_GetPtr(result_ndarray, &i), mov_sum_val);
+
+        if (mov_sum_val != val) { Py_DECREF(val); }
+
+        Py_DECREF(mov_sum_val);
+    }
+
+    return result_ndarray;
+
+}
+
+static char MaskedArray_mov_sum_doc[] = "";
+static PyObject *
+MaskedArray_mov_sum(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *orig_arrayobj=NULL, *result_dict=NULL;
+    PyArrayObject *orig_ndarray=NULL, *orig_mask=NULL,
+                  *result_ndarray=NULL, *result_mask=NULL;
+
+    PyArray_Descr *dtype=NULL;
+
+    int rtype, window_size;
+
+    static char *kwlist[] = {"array", "window_size", "dtype", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                "Oi|O&:mov_sum(array, window_size, dtype)", kwlist,
+                &orig_arrayobj, &window_size,
+                PyArray_DescrConverter2, &dtype)) return NULL;
+
+
+    check_mov_args(orig_arrayobj, window_size, 1,
+                   &orig_ndarray, &orig_mask, &result_mask);
+
+    rtype = _CHKTYPENUM(dtype);
+
+    result_ndarray = calc_mov_sum(orig_ndarray, window_size, rtype);
+    ERR_CHECK(result_ndarray)
+
+    result_dict = PyDict_New();
+    MEM_CHECK(result_dict)
+    PyDict_SetItemString(result_dict, "array", (PyObject*)result_ndarray);
+    PyDict_SetItemString(result_dict, "mask", (PyObject*)result_mask);
+
+    Py_DECREF(result_ndarray);
+    Py_DECREF(result_mask);
+    return result_dict;
+}
+
+
+static char MaskedArray_mov_stddev_doc[] = "";
+static PyObject *
+MaskedArray_mov_stddev(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *orig_arrayobj=NULL, *result_dict=NULL;
+    PyArrayObject *orig_ndarray=NULL, *orig_mask=NULL,
+                  *result_ndarray=NULL, *result_mask=NULL,
+                  *result_temp1=NULL, *result_temp2=NULL, *result_temp3=NULL;
+    PyArrayObject *mov_sum=NULL, *mov_sum_sq=NULL;
+    PyObject *denom1=NULL, *denom2=NULL;
+
+    PyArray_Descr *dtype=NULL;
+
+    int *raw_result_mask;
+
+    int rtype, window_size, is_variance, is_sample;
+
+    static char *kwlist[] = {"array", "window_size", "is_variance", "is_sample", "dtype", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                "Oiii|O&:mov_stddev(array, window_size, is_variance, is_sample, dtype)", kwlist,
+                &orig_arrayobj, &window_size, &is_variance, &is_sample,
+                PyArray_DescrConverter2, &dtype)) return NULL;
+
+
+    check_mov_args(orig_arrayobj, window_size, 2,
+                   &orig_ndarray, &orig_mask, &result_mask);
+
+    rtype = _get_type_num_double(orig_ndarray->descr, dtype);
+
+    mov_sum = calc_mov_sum(orig_ndarray, window_size, rtype);
+    ERR_CHECK(mov_sum)
+
+    result_temp1 = (PyArrayObject*)PyObject_CallFunction(
+                                NP_MULTIPLY, "OO",
+                                orig_ndarray, (PyObject*)orig_ndarray);
+    ERR_CHECK(result_temp1)
+
+    mov_sum_sq = calc_mov_sum(result_temp1, window_size, rtype);
+
+    Py_DECREF(result_temp1);
+    ERR_CHECK(mov_sum_sq)
+
+
+    /*
+      formulas from:
+      http://en.wikipedia.org/wiki/Standard_deviation#Rapid_calculation_methods
+     */
+    if (is_sample) {
+        denom1 = PyFloat_FromDouble(1.0/(double)(window_size-1));
+        denom2 = PyFloat_FromDouble(1.0/(double)(window_size*(window_size-1)));
+    } else {
+        denom1 = PyFloat_FromDouble(1.0/(double)window_size);
+        denom2 = PyFloat_FromDouble(1.0/(double)(window_size*window_size));
+    }
+
+    result_temp1 = (PyArrayObject*)PyObject_CallFunction(
+                                        NP_MULTIPLY,
+                                        "OO", mov_sum_sq,
+                                        denom1);
+    ERR_CHECK(result_temp1)
+    Py_DECREF(mov_sum_sq);
+    Py_DECREF(denom1);
+
+    result_temp3 = (PyArrayObject*)PyObject_CallFunction(
+                                        NP_MULTIPLY,
+                                        "OO", mov_sum,
+                                        (PyObject*)mov_sum);
+    ERR_CHECK(result_temp3)
+    Py_DECREF(mov_sum);
+    result_temp2 = (PyArrayObject*)PyObject_CallFunction(
+                                        NP_MULTIPLY,
+                                        "OO", result_temp3,
+                                        denom2);
+    ERR_CHECK(result_temp2)
+    Py_DECREF(result_temp3);
+    Py_DECREF(denom2);
+
+    result_temp3 = (PyArrayObject*)PyObject_CallFunction(
+                                        NP_SUBTRACT,
+                                        "OO", result_temp1,
+                                        (PyObject*)result_temp2);
+    ERR_CHECK(result_temp3)
+    Py_DECREF(result_temp1);
+    Py_DECREF(result_temp2);
+
+    if (is_variance) {
+        result_ndarray = result_temp3;
+    } else {
+        result_temp1 = (PyArrayObject*)PyObject_CallFunction(
+                                       NP_SQRT, "(O)", result_temp3);
+        ERR_CHECK(result_temp1)
+        Py_DECREF(result_temp3);
+        result_ndarray = result_temp1;
+    }
+
+    result_dict = PyDict_New();
+    MEM_CHECK(result_dict)
+    PyDict_SetItemString(result_dict, "array", (PyObject*)result_ndarray);
+    PyDict_SetItemString(result_dict, "mask", (PyObject*)result_mask);
+
+    Py_DECREF(result_ndarray);
+    Py_DECREF(result_mask);
+    return result_dict;
+}
+
 static char DateArray_asfreq_doc[] = "";
 static PyObject *
 DateArray_asfreq(PyObject *self, PyObject *args)
@@ -3022,20 +3338,32 @@ DateArray_getDateInfo(PyObject *self, PyObject *args)
 
 static PyMethodDef cseries_methods[] = {
 
-    {"TS_convert", TimeSeries_convert, METH_VARARGS, TimeSeries_convert_doc},
+    {"MA_mov_sum", (PyCFunction)MaskedArray_mov_sum,
+     METH_VARARGS | METH_KEYWORDS, MaskedArray_mov_sum_doc},
+    {"MA_mov_stddev", (PyCFunction)MaskedArray_mov_stddev,
+     METH_VARARGS | METH_KEYWORDS, MaskedArray_mov_stddev_doc},
 
-    {"DA_asfreq", DateArray_asfreq, METH_VARARGS, DateArray_asfreq_doc},
-    {"DA_getDateInfo", DateArray_getDateInfo, METH_VARARGS, DateArray_getDateInfo_doc},
+    {"TS_convert", (PyCFunction)TimeSeries_convert,
+     METH_VARARGS, TimeSeries_convert_doc},
 
-    {"thisday", cseries_thisday, METH_VARARGS, cseries_thisday_doc},
-    {"check_freq", cseries_check_freq, METH_VARARGS, cseries_check_freq_doc},
-    {"check_freq_str", cseries_check_freq_str, METH_VARARGS, cseries_check_freq_str_doc},
-    {"get_freq_group", cseries_get_freq_group, METH_VARARGS, cseries_get_freq_group_doc},
+    {"DA_asfreq", (PyCFunction)DateArray_asfreq,
+     METH_VARARGS, DateArray_asfreq_doc},
+    {"DA_getDateInfo", (PyCFunction)DateArray_getDateInfo,
+     METH_VARARGS, DateArray_getDateInfo_doc},
 
-    {"set_callback_DateFromString", set_callback_DateFromString, METH_VARARGS,
-     set_callback_DateFromString_doc},
-    {"set_callback_DateTimeFromString", set_callback_DateTimeFromString, METH_VARARGS,
-     set_callback_DateTimeFromString_doc},
+    {"thisday", (PyCFunction)cseries_thisday,
+     METH_VARARGS, cseries_thisday_doc},
+    {"check_freq", (PyCFunction)cseries_check_freq,
+     METH_VARARGS, cseries_check_freq_doc},
+    {"check_freq_str", (PyCFunction)cseries_check_freq_str,
+     METH_VARARGS, cseries_check_freq_str_doc},
+    {"get_freq_group", (PyCFunction)cseries_get_freq_group,
+     METH_VARARGS, cseries_get_freq_group_doc},
+
+    {"set_callback_DateFromString", (PyCFunction)set_callback_DateFromString,
+     METH_VARARGS, set_callback_DateFromString_doc},
+    {"set_callback_DateTimeFromString", (PyCFunction)set_callback_DateTimeFromString,
+     METH_VARARGS, set_callback_DateTimeFromString_doc},
 
     {NULL, NULL}
 };
@@ -3043,7 +3371,7 @@ static PyMethodDef cseries_methods[] = {
 PyMODINIT_FUNC
 initcseries(void)
 {
-    PyObject *m;
+    PyObject *m, *ops_dict;
 
     if (PyType_Ready(&DateType) < 0) return;
 
@@ -3058,6 +3386,17 @@ initcseries(void)
 
     import_array();
     PyDateTime_IMPORT;
+    ops_dict = PyArray_GetNumericOps();
+    NP_ADD = PyDict_GetItemString(ops_dict, "add");
+    NP_MULTIPLY = PyDict_GetItemString(ops_dict, "multiply");
+    NP_SUBTRACT = PyDict_GetItemString(ops_dict, "subtract");
+    NP_SQRT = PyDict_GetItemString(ops_dict, "sqrt");
+
+    Py_INCREF(NP_ADD);
+    Py_INCREF(NP_MULTIPLY);
+    Py_INCREF(NP_SUBTRACT);
+    Py_INCREF(NP_SQRT);
+    Py_DECREF(ops_dict);
 
     Py_INCREF(&DateType);
     PyModule_AddObject(m, "Date", (PyObject *)&DateType);
