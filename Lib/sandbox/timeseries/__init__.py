@@ -25,8 +25,8 @@ import tmulti
 from tmulti import *
 import reportlib
 from reportlib import *
-import addons
-from addons import filters, interpolate, moving_funcs
+import lib
+from lib import filters, interpolate, moving_funcs
 
 
 __all__ = ['const', 'tdates','tseries','tmulti','reportlib','filters',
