@@ -19,7 +19,7 @@ from maskedarray.testutils import *
 import maskedarray.core as coremodule
 from maskedarray.core import MaskedArray, masked
 
-from addons.interpolate import backward_fill, forward_fill, interp_masked1d
+from timeseries.lib.interpolate import backward_fill, forward_fill, interp_masked1d
 
 class test_funcs(NumpyTestCase):
     

@@ -23,7 +23,7 @@ from maskedarray.core import MaskedArray, masked
 
 from timeseries import time_series, thisday
 
-from timeseries.addons.moving_funcs import cmov_average
+from timeseries.lib.moving_funcs import cmov_average
 
 class test_cmov_average(NumpyTestCase):
     
