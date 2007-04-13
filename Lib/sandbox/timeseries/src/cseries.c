@@ -2914,9 +2914,9 @@ _get_type_num_double(PyArray_Descr *dtype1, PyArray_Descr *dtype2)
    mask, original ndarray, and mask for the result */
 static PyObject *
 check_mov_args(PyObject *orig_arrayobj, int window_size, int min_win_size,
-               PyArrayObject **orig_ndarray, PyArrayObject **orig_mask,
-               PyArrayObject **result_mask) {
+               PyArrayObject **orig_ndarray, PyArrayObject **result_mask) {
 
+    PyArrayObject *orig_mask=NULL;
     int *raw_result_mask;
 
     if (!PyArray_Check(orig_arrayobj)) {
@@ -2928,7 +2928,7 @@ check_mov_args(PyObject *orig_arrayobj, int window_size, int min_win_size,
     if (PyObject_HasAttrString(orig_arrayobj, "_mask")) {
         PyObject *tempMask = PyObject_GetAttrString(orig_arrayobj, "_mask");
         if (PyArray_Check(tempMask)) {
-            *orig_mask = (PyArrayObject*)PyArray_EnsureArray(tempMask);
+            orig_mask = (PyArrayObject*)PyArray_EnsureArray(tempMask);
         } else {
             Py_DECREF(tempMask);
         }
@@ -2963,9 +2963,9 @@ check_mov_args(PyObject *orig_arrayobj, int window_size, int min_win_size,
 
             is_masked=0;
 
-            if (*orig_mask != NULL) {
+            if (orig_mask != NULL) {
                 PyObject *valMask;
-                valMask = PyArray_GETITEM(*orig_mask, PyArray_GetPtr(*orig_mask, &i));
+                valMask = PyArray_GETITEM(orig_mask, PyArray_GetPtr(orig_mask, &i));
                 is_masked = (int)PyInt_AsLong(valMask);
                 Py_DECREF(valMask);
             }
@@ -3061,9 +3061,7 @@ static PyObject *
 MaskedArray_mov_sum(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *orig_arrayobj=NULL, *result_dict=NULL;
-    PyArrayObject *orig_ndarray=NULL, *orig_mask=NULL,
-                  *result_ndarray=NULL, *result_mask=NULL;
-
+    PyArrayObject *orig_ndarray=NULL, *result_ndarray=NULL, *result_mask=NULL;
     PyArray_Descr *dtype=NULL;
 
     int rtype, window_size;
@@ -3075,9 +3073,8 @@ MaskedArray_mov_sum(PyObject *self, PyObject *args, PyObject *kwds)
                 &orig_arrayobj, &window_size,
                 PyArray_DescrConverter2, &dtype)) return NULL;
 
-
     check_mov_args(orig_arrayobj, window_size, 1,
-                   &orig_ndarray, &orig_mask, &result_mask);
+                   &orig_ndarray, &result_mask);
 
     rtype = _CHKTYPENUM(dtype);
 
@@ -3094,14 +3091,63 @@ MaskedArray_mov_sum(PyObject *self, PyObject *args, PyObject *kwds)
     return result_dict;
 }
 
+static char MaskedArray_mov_average_doc[] = "";
+static PyObject *
+MaskedArray_mov_average(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *orig_arrayobj=NULL, *result_dict=NULL;
+    PyArrayObject *orig_ndarray=NULL, *result_ndarray=NULL, *result_mask=NULL,
+                  *mov_sum=NULL;
+    PyObject *denom=NULL;
+
+    PyArray_Descr *dtype=NULL;
+
+    int *raw_result_mask;
+
+    int rtype, window_size;
+
+    static char *kwlist[] = {"array", "window_size", "dtype", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                "Oi|O&:mov_average(array, window_size, dtype)", kwlist,
+                &orig_arrayobj, &window_size,
+                PyArray_DescrConverter2, &dtype)) return NULL;
+
+
+    check_mov_args(orig_arrayobj, window_size, 2,
+                   &orig_ndarray, &result_mask);
+
+    rtype = _get_type_num_double(orig_ndarray->descr, dtype);
+
+    mov_sum = calc_mov_sum(orig_ndarray, window_size, rtype);
+    ERR_CHECK(mov_sum)
+
+    denom = PyFloat_FromDouble(1.0/(double)(window_size));
+
+    result_ndarray = (PyArrayObject*)PyObject_CallFunction(
+                                        NP_MULTIPLY,
+                                        "OO", mov_sum,
+                                        denom);
+    ERR_CHECK(result_ndarray)
+    Py_DECREF(mov_sum);
+    Py_DECREF(denom);
+
+    result_dict = PyDict_New();
+    MEM_CHECK(result_dict)
+    PyDict_SetItemString(result_dict, "array", (PyObject*)result_ndarray);
+    PyDict_SetItemString(result_dict, "mask", (PyObject*)result_mask);
+
+    Py_DECREF(result_ndarray);
+    Py_DECREF(result_mask);
+    return result_dict;
+}
 
 static char MaskedArray_mov_stddev_doc[] = "";
 static PyObject *
 MaskedArray_mov_stddev(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *orig_arrayobj=NULL, *result_dict=NULL;
-    PyArrayObject *orig_ndarray=NULL, *orig_mask=NULL,
-                  *result_ndarray=NULL, *result_mask=NULL,
+    PyArrayObject *orig_ndarray=NULL, *result_ndarray=NULL, *result_mask=NULL,
                   *result_temp1=NULL, *result_temp2=NULL, *result_temp3=NULL;
     PyArrayObject *mov_sum=NULL, *mov_sum_sq=NULL;
     PyObject *denom1=NULL, *denom2=NULL;
@@ -3121,7 +3167,7 @@ MaskedArray_mov_stddev(PyObject *self, PyObject *args, PyObject *kwds)
 
 
     check_mov_args(orig_arrayobj, window_size, 2,
-                   &orig_ndarray, &orig_mask, &result_mask);
+                   &orig_ndarray, &result_mask);
 
     rtype = _get_type_num_double(orig_ndarray->descr, dtype);
 
@@ -3340,6 +3386,8 @@ static PyMethodDef cseries_methods[] = {
 
     {"MA_mov_sum", (PyCFunction)MaskedArray_mov_sum,
      METH_VARARGS | METH_KEYWORDS, MaskedArray_mov_sum_doc},
+    {"MA_mov_average", (PyCFunction)MaskedArray_mov_average,
+     METH_VARARGS | METH_KEYWORDS, MaskedArray_mov_average_doc},
     {"MA_mov_stddev", (PyCFunction)MaskedArray_mov_stddev,
      METH_VARARGS | METH_KEYWORDS, MaskedArray_mov_stddev_doc},
 

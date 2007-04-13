@@ -21,10 +21,10 @@ import maskedarray as MA
 from maskedarray import MaskedArray, nomask, getmask, getmaskarray, masked
 marray = MA.array
 
-from timeseries.cseries import MA_mov_stddev, MA_mov_sum
+from timeseries.cseries import MA_mov_stddev, MA_mov_sum, MA_mov_average
 
 __all__ = ['mov_sum',
-           'mov_average_expw',
+           'mov_average', 'mov_mean', 'mov_average_expw',
            'mov_stddev', 'mov_var', 'mov_sample_stddev', 'mov_sample_var',
            'cmov_average', 'cmov_mean', 'cmov_window'
            ]
@@ -52,6 +52,16 @@ def mov_sum(data, window_size, dtype=None):
     result_dict = MA_mov_sum(**kwargs)
     return _process_result_dict(data, result_dict)
 
+def mov_average(data, window_size, dtype=None):
+    kwargs = {'array':data,
+              'window_size':window_size}
+
+    if dtype is not None:
+        kwargs['dtype'] = dtype
+              
+    result_dict = MA_mov_average(**kwargs)
+    return _process_result_dict(data, result_dict)
+mov_mean = mov_average
 
 def _mov_var_stddev(data, window_size, is_variance, is_sample, dtype):
     "helper function for mov_var and mov_stddev functions"
