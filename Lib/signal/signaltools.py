@@ -464,8 +464,8 @@ def lfilter(b, a, x, axis=-1, zi=None):
     The filter function is implemented as a direct II transposed structure.
     This means that the filter implements
 
-    y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[nb]*x[n-nb]
-                     - a[1]*y[n-1] + ... + a[na]*y[n-na]
+    a[0]*y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[nb]*x[n-nb]
+                          - a[1]*y[n-1] - ... - a[na]*y[n-na]
 
     using the following difference equations:
 
