@@ -6,6 +6,7 @@ __all__ = ['fixed_quad','quadrature','romberg','trapz','simps','romb',
            'cumtrapz','newton_cotes','composite']
 
 from scipy.special.orthogonal import p_roots
+from scipy.special import gammaln
 from numpy import sum, ones, add, diff, isinf, isscalar, \
      asarray, real, trapz, arange, empty
 import scipy as sp
@@ -591,7 +592,7 @@ def newton_cotes(rn,equal=0):
 
     BN = BN - np.dot(yi**power, ai)
     p1 = power+1
-    fac = power*math.log(N) - sp.special.gammaln(p1)
+    fac = power*math.log(N) - gammaln(p1)
     fac = math.exp(fac)
     return ai, BN*fac
 

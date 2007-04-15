@@ -20,10 +20,9 @@ from numpy import asarray,zeros,sum,newaxis,greater_equal,subtract,arange,\
 import numpy
 from numpy import asarray_chkfinite, outer, concatenate, reshape, single
 from numpy import matrix as Matrix
+from numpy.linalg import LinAlgError
 from scipy.linalg import calc_lwork
 
-class LinAlgError(Exception):
-    pass
 
 def lu_solve((lu, piv), b, trans=0, overwrite_b=0):
     """ lu_solve((lu, piv), b, trans=0, overwrite_b=0) -> x

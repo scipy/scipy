@@ -6,8 +6,9 @@
 
 from __future__ import nested_scopes
 import scipy
-import scipy.special as special
-import scipy.optimize as optimize
+from scipy.misc import comb, derivative
+from scipy import special
+from scipy import optimize
 import inspect
 from numpy import alltrue, where, arange, put, putmask, \
      ravel, take, ones, sum, shape, product, repeat, reshape, \
@@ -91,7 +92,7 @@ class general_cont_ppf(object):
     def _tosolve(self, x, q, *args):
         return apply(self.cdf, (x, )+args) - q
     def _single_call(self, q, *args):
-        return scipy.optimize.brentq(self._tosolve, self.xa, self.xb, args=(q,)+args, xtol=self.xtol)
+        return optimize.brentq(self._tosolve, self.xa, self.xb, args=(q,)+args, xtol=self.xtol)
     def __call__(self, q, *args):
         return self.vecfunc(q, *args)
 
@@ -327,7 +328,7 @@ class rv_continuous(object):
         return apply(self.cdf, (x, )+args)-q
 
     def _ppf_single_call(self, q, *args):
-        return scipy.optimize.brentq(self._ppf_to_solve, self.xa, self.xb, args=(q,)+args, xtol=self.xtol)
+        return optimize.brentq(self._ppf_to_solve, self.xa, self.xb, args=(q,)+args, xtol=self.xtol)
 
     # moment from definition
     def _mom_integ0(self, x,m,*args):
@@ -352,7 +353,7 @@ class rv_continuous(object):
         return cond
 
     def _pdf(self,x,*args):
-        return scipy.derivative(self._cdf,x,dx=1e-5,args=args,order=5)
+        return derivative(self._cdf,x,dx=1e-5,args=args,order=5)
 
     ## Could also define any of these (return 1-d using self._size to get number)
     def _rvs(self, *args):
@@ -1600,7 +1601,7 @@ class genpareto_gen(rv_continuous):
         return vals
     def _munp(self, n, c):
         k = arange(0,n+1)
-        val = (-1.0/c)**n * sum(scipy.comb(n,k)*(-1)**k / (1.0-c*k),axis=0)
+        val = (-1.0/c)**n * sum(comb(n,k)*(-1)**k / (1.0-c*k),axis=0)
         return where(c*n < 1, val, inf)
     def _entropy(self, c):
         if (c > 0):
@@ -1658,7 +1659,7 @@ class genextreme_gen(rv_continuous):
         return 1.0/c*(1-(-log(q))**c)
     def _munp(self, n, c):
         k = arange(0,n+1)
-        vals = 1.0/c**n * sum(scipy.comb(n,k) * (-1)**k * special.gamma(c*k + 1),axis=0)
+        vals = 1.0/c**n * sum(comb(n,k) * (-1)**k * special.gamma(c*k + 1),axis=0)
         return where(c*n > -1, vals, inf)
 genextreme = genextreme_gen(name='genextreme',
                             longname="A generalized extreme value",
@@ -3947,7 +3948,6 @@ class hypergeom_gen(rv_discrete):
         return cond
     def _pmf(self, k, M, n, N):
         tot, good = M, n
-        comb = scipy.comb
         bad = tot - good
         return comb(good,k) * comb(bad,N-k) / comb(tot,N)
     def _stats(self, M, n, N):
@@ -4038,6 +4038,7 @@ class poisson_gen(rv_discrete):
     def _ppf(self, q, mu):
         vals = ceil(special.pdtrik(q,mu))
         temp = special.pdtr(vals-1,mu)
+        # fixme: vals1 = vals-1?
         return where((temp >= q), vals1, vals)
     def _stats(self, mu):
         var = mu

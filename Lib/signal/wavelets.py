@@ -1,8 +1,8 @@
-## Automatically adapted for scipy Oct 21, 2005 by convertcode.py
-
 
 import numpy as sb
-import scipy as s
+from numpy.dual import eig
+from scipy.misc import comb
+
 
 def daub(p):
     """The coefficients for the FIR low-pass filter producing Daubechies wavelets.
@@ -30,10 +30,10 @@ def daub(p):
     elif p<35:
         # construct polynomial and factor it
         if p<35:
-            P = [s.comb(p-1+k,k,exact=1) for k in range(p)][::-1]
+            P = [comb(p-1+k,k,exact=1) for k in range(p)][::-1]
             yj = sb.roots(P)
         else:  # try different polynomial --- needs work
-            P = [s.comb(p-1+k,k,exact=1)/4.0**k for k in range(p)][::-1]
+            P = [comb(p-1+k,k,exact=1)/4.0**k for k in range(p)][::-1]
             yj = sb.roots(P) / 4
         # for each root, compute two z roots, select the one with |z|>1
         # Build up final polynomial
@@ -124,7 +124,7 @@ def cascade(hk,J=7):
     psi = 0*x
 
     # find phi0, and phi1
-    lam, v = s.linalg.eig(m[0,0])
+    lam, v = eig(m[0,0])
     ind = sb.argmin(sb.absolute(lam-1))
     # a dictionary with a binary representation of the
     #   evaluation points x < 1 -- i.e. position is 0.xxxx

@@ -300,13 +300,14 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
 
     mesg = errors[info][0]
     if full_output:
-        import scipy.linalg as sl
+        from numpy.dual import inv
+        from numpy.linalg import LinAlgError
         perm = take(eye(n),retval[1]['ipvt']-1,0)
         r = triu(transpose(retval[1]['fjac'])[:n,:])
         R = dot(r, perm)
         try:
-            cov_x = sl.inv(dot(transpose(R),R))
-        except sl.basic.LinAlgError:
+            cov_x = inv(dot(transpose(R),R))
+        except LinAlgError:
             cov_x = None
         return (retval[0], cov_x) + retval[1:-1] + (mesg,info)
     else:
