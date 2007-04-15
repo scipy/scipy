@@ -12,6 +12,7 @@ __all__ = [
     'InterpolatedUnivariateSpline',
     'LSQUnivariateSpline',
 
+    'BivariateSpline',
     'LSQBivariateSpline',
     'SmoothBivariateSpline',
     'RectBivariateSpline']
