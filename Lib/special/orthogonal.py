@@ -62,7 +62,7 @@ from __future__ import nested_scopes
 # Scipy imports.
 import numpy as np
 from numpy import all, any, exp, inf, pi, sqrt
-from scipy.linalg import eig
+from numpy.dual import eig
 
 # Local imports.
 import _cephes as cephes
