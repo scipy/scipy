@@ -240,8 +240,7 @@ class Mat4MatrixWriter(MatStreamWriter):
         self.arr = N.atleast_2d(self.arr)
         dims = self.arr.shape
         if len(dims) > 2:
-            dims = [N.product(dims[:-1]), dims[-1]]
-            self.arr = reshape(self.arr, dims)
+            self.arr = self.arr.reshape(-1,dims[-1])
             
     def write(self):
         assert False, 'Not implemented'
