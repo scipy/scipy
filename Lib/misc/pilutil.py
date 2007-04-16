@@ -5,7 +5,8 @@ import numpy
 import tempfile
 
 from numpy import amin, amax, ravel, asarray, cast, arange, \
-     ones, newaxis, transpose, mgrid, iscomplexobj, sum, zeros, uint8
+     ones, newaxis, transpose, mgrid, iscomplexobj, sum, zeros, uint8, \
+     issubdtype, array
 
 import Image
 import ImageFilter
@@ -252,10 +253,10 @@ def imresize(arr,size):
     """
     im = toimage(arr)
     ts = type(size)
-    if ts is types.IntType:
+    if issubdtype(ts,int):
         size = size / 100.0
-    if type(size) is types.FloatType:
-        size = (im.size[0]*size,im.size[1]*size)
+    elif issubdtype(type(size),float):
+        size = (array(im.size)*size).astype(int)
     else:
         size = (size[1],size[0])
     imnew = im.resize(size)
