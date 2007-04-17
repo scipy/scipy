@@ -2989,15 +2989,16 @@ check_mov_args(PyObject *orig_arrayobj, int window_size, int min_win_size,
 }
 
 
-static PyObject *NP_ADD, *NP_MULTIPLY, *NP_SUBTRACT, *NP_SQRT;
+static PyObject *NP_ADD, *NP_MULTIPLY, *NP_SUBTRACT, *NP_SQRT,
+                *NP_GREATER, *NP_GREATER_EQUAL;
 
 /* computation portion of moving sum. Appropriate mask is overlayed on top
    afterwards */
-static PyArrayObject*
+static PyObject*
 calc_mov_sum(PyArrayObject *orig_ndarray, int window_size, int rtype)
 {
     PyArrayObject *result_ndarray=NULL;
-    int i, valid_points=0;
+    int i;
 
     result_ndarray = (PyArrayObject*)PyArray_ZEROS(
                                        orig_ndarray->nd,
@@ -3011,9 +3012,8 @@ calc_mov_sum(PyArrayObject *orig_ndarray, int window_size, int rtype)
 
         val = PyArray_GETITEM(orig_ndarray, PyArray_GetPtr(orig_ndarray, &i));
 
-        if (valid_points == 0) {
+        if (i == 0) {
             mov_sum_val = val;
-            valid_points += 1;
         } else {
             int prev_idx = i-1;
             PyObject *mov_sum_prevval;
@@ -3024,7 +3024,7 @@ calc_mov_sum(PyArrayObject *orig_ndarray, int window_size, int rtype)
             Py_DECREF(mov_sum_prevval);
             ERR_CHECK(mov_sum_val)
 
-            if (valid_points == window_size) {
+            if (i >= (window_size - 1)) {
                 PyObject *temp_val, *rem_val;
                 int rem_idx = i-window_size;
                 temp_val = mov_sum_val;
@@ -3039,9 +3039,6 @@ calc_mov_sum(PyArrayObject *orig_ndarray, int window_size, int rtype)
 
                 Py_DECREF(temp_val);
                 Py_DECREF(rem_val);
-
-            } else {
-                valid_points += 1;
             }
         }
 
@@ -3052,7 +3049,7 @@ calc_mov_sum(PyArrayObject *orig_ndarray, int window_size, int rtype)
         Py_DECREF(mov_sum_val);
     }
 
-    return result_ndarray;
+    return (PyObject*)result_ndarray;
 
 }
 
@@ -3078,7 +3075,7 @@ MaskedArray_mov_sum(PyObject *self, PyObject *args, PyObject *kwds)
 
     rtype = _CHKTYPENUM(dtype);
 
-    result_ndarray = calc_mov_sum(orig_ndarray, window_size, rtype);
+    result_ndarray = (PyArrayObject*)calc_mov_sum(orig_ndarray, window_size, rtype);
     ERR_CHECK(result_ndarray)
 
     result_dict = PyDict_New();
@@ -3102,8 +3099,6 @@ MaskedArray_mov_average(PyObject *self, PyObject *args, PyObject *kwds)
 
     PyArray_Descr *dtype=NULL;
 
-    int *raw_result_mask;
-
     int rtype, window_size;
 
     static char *kwlist[] = {"array", "window_size", "dtype", NULL};
@@ -3119,7 +3114,7 @@ MaskedArray_mov_average(PyObject *self, PyObject *args, PyObject *kwds)
 
     rtype = _get_type_num_double(orig_ndarray->descr, dtype);
 
-    mov_sum = calc_mov_sum(orig_ndarray, window_size, rtype);
+    mov_sum = (PyArrayObject*)calc_mov_sum(orig_ndarray, window_size, rtype);
     ERR_CHECK(mov_sum)
 
     denom = PyFloat_FromDouble(1.0/(double)(window_size));
@@ -3142,6 +3137,281 @@ MaskedArray_mov_average(PyObject *self, PyObject *args, PyObject *kwds)
     return result_dict;
 }
 
+static PyObject*
+np_add(PyObject *left_val, PyObject *right_val) {
+
+    PyObject *result;
+
+    result = PyObject_CallFunction(
+                         NP_ADD, "OO",
+                         (PyArrayObject*)left_val,
+                         right_val);
+    return result;
+}
+
+static PyObject*
+np_subtract(PyObject *left_val, PyObject *right_val) {
+
+    PyObject *result;
+
+    result = PyObject_CallFunction(
+                         NP_SUBTRACT, "OO",
+                         (PyArrayObject*)left_val,
+                         right_val);
+    return result;
+}
+
+static PyObject*
+np_multiply(PyObject *left_val, PyObject *right_val) {
+
+    PyObject *result;
+
+    result = PyObject_CallFunction(
+                         NP_MULTIPLY, "OO",
+                         (PyArrayObject*)left_val,
+                         right_val);
+    return result;
+}
+
+static int np_greater(PyObject *left_val, PyObject *right_val) {
+
+    PyObject *temp;
+    int result;
+
+    temp = PyObject_CallFunction(
+                         NP_GREATER, "OO",
+                         (PyArrayObject*)left_val,
+                         right_val);
+
+    result = (int)PyInt_AsLong(temp);
+    Py_DECREF(temp);
+    return result;
+}
+
+static int np_greater_equal(PyObject *left_val, PyObject *right_val) {
+
+    PyObject *temp;
+    int result;
+
+    temp = PyObject_CallFunction(
+                         NP_GREATER_EQUAL, "OO",
+                         (PyArrayObject*)left_val,
+                         right_val);
+
+    result = (int)PyInt_AsLong(temp);
+    Py_DECREF(temp);
+    return result;
+}
+
+/* computation portion of moving median. Appropriate mask is overlayed on top
+   afterwards.
+
+   The algorithm used here is based on the code found at:
+    http://cran.r-project.org/src/contrib/Devel/runStat_1.1.tar.gz
+
+   This code was originally released under the GPL, but the author
+   (David Brahm) has granted me (and scipy) permission to use it under the BSD
+   license. */
+static PyObject*
+calc_mov_median(PyArrayObject *orig_ndarray, int window_size, int rtype)
+{
+    PyArrayObject *result_ndarray=NULL;
+    PyObject **result_array, **ref_array, **even_array=NULL;
+    PyObject *new_val, *old_val, *temp;
+    PyObject *temp_add, *one_half;
+    int a, i, k, R, arr_size, z, is_odd;
+    int *r;
+
+    arr_size = orig_ndarray->dimensions[0];
+
+    result_ndarray = (PyArrayObject*)PyArray_ZEROS(
+                                       orig_ndarray->nd,
+                                       orig_ndarray->dimensions,
+                                       rtype, 0);
+    ERR_CHECK(result_ndarray)
+
+    if (arr_size >= window_size) {
+        result_array = calloc(arr_size, sizeof(PyObject*));
+        MEM_CHECK(result_array)
+
+        /* this array will be used for quick access to the data in the original
+           array (so PyArray_GETITEM doesn't have to be used over and over in the
+           main loop) */
+        ref_array = malloc(arr_size * sizeof(PyObject*));
+        MEM_CHECK(ref_array)
+
+        for (i=0; i<arr_size; i++) {
+            ref_array[i] = PyArray_GETITEM(orig_ndarray, PyArray_GetPtr(orig_ndarray, &i));
+        }
+
+        /* this array wll be used for keeping track of the "ranks" of the values
+           in the current window */
+        r = malloc(window_size * sizeof(int));
+        MEM_CHECK(r)
+
+        for (i=0; i < window_size; i++) {
+            r[i] = 1;
+        }
+
+        if ((window_size % 2) == 0) {
+            // array to store two median values when window_size is an even #
+            even_array = calloc(2, sizeof(PyObject*));
+            MEM_CHECK(even_array)
+        }
+
+        R = (window_size + 1)/2;
+        one_half = PyFloat_FromDouble(0.5);
+
+        z = arr_size - window_size;
+
+        //printf("yep 1: %f, %f\n", PyFloat_AsDouble(data_array[z+i]), PyFloat_AsDouble(data_array[z+k]));
+
+        /* Calculate initial ranks "r" */
+        for (i=0; i < window_size; i++) {
+
+            for (k=0;   k < i;  k++) {
+                if (np_greater_equal(ref_array[z+i], ref_array[z+k])) {
+                    r[i]++;
+                }
+            }
+            for (k=i+1; k < window_size; k++) {
+                if (np_greater(ref_array[z+i], ref_array[z+k])) {
+                    r[i]++;
+                }
+            }
+
+            /* If rank=R, this is the median */
+            if (even_array != NULL) {
+                if (r[i]==R) {
+                    even_array[0] = ref_array[z+i];
+                } else if (r[i] == (R+1)) {
+                    even_array[1] = ref_array[z+i];
+                }
+            } else {
+                if (r[i]==R) {
+                    result_array[arr_size-1] = ref_array[z+i];
+                }
+            }
+        }
+
+        if (even_array != NULL) {
+            temp_add = np_add(even_array[0], even_array[1]);
+            result_array[arr_size-1] = np_multiply(temp_add, one_half);
+            Py_DECREF(temp_add);
+        }
+
+        for (i=arr_size-2; i >= window_size-1; i--) {
+            a = window_size;
+            z = i - window_size + 1;
+            old_val = ref_array[i+1];
+            new_val = ref_array[i-window_size+1];
+
+            for (k=window_size-1; k > 0; k--) {
+                r[k] = r[k-1]; /* Shift previous iteration's ranks */
+                if (np_greater_equal(ref_array[z+k], new_val)) {r[k]++; a--;}
+                if (np_greater(ref_array[z+k], old_val)) {r[k]--;}
+
+                if (r[k]==R) {
+                    result_array[i] = ref_array[z+k];
+                }
+
+                if (even_array != NULL) {
+                    if (r[k]==R) {
+                        even_array[0] = ref_array[z+k];
+                    } else if (r[k] == (R+1)) {
+                        even_array[1] = ref_array[z+k];
+                    }
+                } else {
+                    if (r[k]==R) {
+                        result_array[i] = ref_array[z+k];
+                    }
+                }
+
+            }
+
+            r[0] = a;
+
+            if (even_array != NULL) {
+                if (a==R) {
+                    even_array[0] = new_val;
+                } else if (a == (R+1)) {
+                    even_array[1] = new_val;
+                }
+
+                temp_add = np_add(even_array[0], even_array[1]);
+                result_array[i] = np_multiply(temp_add, one_half);;
+                Py_DECREF(temp_add);
+
+            } else {
+                if (a==R) {
+                    result_array[i] = new_val;
+                }
+            }
+
+        }
+
+        Py_DECREF(one_half);
+
+        for (i=window_size-1; i<arr_size; i++) {
+            PyArray_SETITEM(result_ndarray,
+                            PyArray_GetPtr(result_ndarray, &i),
+                            result_array[i]);
+        }
+
+        for (i=0; i<arr_size; i++) {
+            Py_DECREF(ref_array[i]);
+        }
+
+        if (even_array != NULL) {
+            for (i=window_size-1; i<arr_size; i++) {
+                Py_DECREF(result_array[i]);
+            }
+        }
+
+        free(ref_array);
+        free(result_array);
+    }
+
+    return (PyObject*)result_ndarray;
+
+}
+
+static char MaskedArray_mov_median_doc[] = "";
+static PyObject *
+MaskedArray_mov_median(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *orig_arrayobj=NULL, *result_dict=NULL;
+    PyArrayObject *orig_ndarray=NULL, *result_ndarray=NULL, *result_mask=NULL;
+    PyArray_Descr *dtype=NULL;
+
+    int rtype, window_size;
+
+    static char *kwlist[] = {"array", "window_size", "dtype", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                "Oi|O&:mov_median(array, window_size, dtype)", kwlist,
+                &orig_arrayobj, &window_size,
+                PyArray_DescrConverter2, &dtype)) return NULL;
+
+    check_mov_args(orig_arrayobj, window_size, 1,
+                   &orig_ndarray, &result_mask);
+
+    rtype = _CHKTYPENUM(dtype);
+
+    result_ndarray = (PyArrayObject*)calc_mov_median(orig_ndarray, window_size, rtype);
+    ERR_CHECK(result_ndarray)
+
+    result_dict = PyDict_New();
+    MEM_CHECK(result_dict)
+    PyDict_SetItemString(result_dict, "array", (PyObject*)result_ndarray);
+    PyDict_SetItemString(result_dict, "mask", (PyObject*)result_mask);
+
+    Py_DECREF(result_ndarray);
+    Py_DECREF(result_mask);
+    return result_dict;
+}
+
+
 static char MaskedArray_mov_stddev_doc[] = "";
 static PyObject *
 MaskedArray_mov_stddev(PyObject *self, PyObject *args, PyObject *kwds)
@@ -3153,8 +3423,6 @@ MaskedArray_mov_stddev(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *denom1=NULL, *denom2=NULL;
 
     PyArray_Descr *dtype=NULL;
-
-    int *raw_result_mask;
 
     int rtype, window_size, is_variance, is_sample;
 
@@ -3171,7 +3439,7 @@ MaskedArray_mov_stddev(PyObject *self, PyObject *args, PyObject *kwds)
 
     rtype = _get_type_num_double(orig_ndarray->descr, dtype);
 
-    mov_sum = calc_mov_sum(orig_ndarray, window_size, rtype);
+    mov_sum = (PyArrayObject*)calc_mov_sum(orig_ndarray, window_size, rtype);
     ERR_CHECK(mov_sum)
 
     result_temp1 = (PyArrayObject*)PyObject_CallFunction(
@@ -3179,7 +3447,7 @@ MaskedArray_mov_stddev(PyObject *self, PyObject *args, PyObject *kwds)
                                 orig_ndarray, (PyObject*)orig_ndarray);
     ERR_CHECK(result_temp1)
 
-    mov_sum_sq = calc_mov_sum(result_temp1, window_size, rtype);
+    mov_sum_sq = (PyArrayObject*)calc_mov_sum(result_temp1, window_size, rtype);
 
     Py_DECREF(result_temp1);
     ERR_CHECK(mov_sum_sq)
@@ -3386,6 +3654,8 @@ static PyMethodDef cseries_methods[] = {
 
     {"MA_mov_sum", (PyCFunction)MaskedArray_mov_sum,
      METH_VARARGS | METH_KEYWORDS, MaskedArray_mov_sum_doc},
+    {"MA_mov_median", (PyCFunction)MaskedArray_mov_median,
+     METH_VARARGS | METH_KEYWORDS, MaskedArray_mov_median_doc},
     {"MA_mov_average", (PyCFunction)MaskedArray_mov_average,
      METH_VARARGS | METH_KEYWORDS, MaskedArray_mov_average_doc},
     {"MA_mov_stddev", (PyCFunction)MaskedArray_mov_stddev,
@@ -3439,11 +3709,15 @@ initcseries(void)
     NP_MULTIPLY = PyDict_GetItemString(ops_dict, "multiply");
     NP_SUBTRACT = PyDict_GetItemString(ops_dict, "subtract");
     NP_SQRT = PyDict_GetItemString(ops_dict, "sqrt");
+    NP_GREATER = PyDict_GetItemString(ops_dict, "greater");
+    NP_GREATER_EQUAL = PyDict_GetItemString(ops_dict, "greater_equal");
 
     Py_INCREF(NP_ADD);
     Py_INCREF(NP_MULTIPLY);
     Py_INCREF(NP_SUBTRACT);
     Py_INCREF(NP_SQRT);
+    Py_INCREF(NP_GREATER);
+    Py_INCREF(NP_GREATER_EQUAL);
     Py_DECREF(ops_dict);
 
     Py_INCREF(&DateType);

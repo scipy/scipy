@@ -21,9 +21,10 @@ import maskedarray as MA
 from maskedarray import MaskedArray, nomask, getmask, getmaskarray, masked
 marray = MA.array
 
-from timeseries.cseries import MA_mov_stddev, MA_mov_sum, MA_mov_average
+from timeseries.cseries import MA_mov_stddev, MA_mov_sum, MA_mov_average, \
+                               MA_mov_median
 
-__all__ = ['mov_sum',
+__all__ = ['mov_sum', 'mov_median',
            'mov_average', 'mov_mean', 'mov_average_expw',
            'mov_stddev', 'mov_var', 'mov_sample_stddev', 'mov_sample_var',
            'cmov_average', 'cmov_mean', 'cmov_window'
@@ -50,6 +51,16 @@ def mov_sum(data, window_size, dtype=None):
         kwargs['dtype'] = dtype
               
     result_dict = MA_mov_sum(**kwargs)
+    return _process_result_dict(data, result_dict)
+
+def mov_median(data, window_size, dtype=None):
+    kwargs = {'array':data,
+              'window_size':window_size}
+
+    if dtype is not None:
+        kwargs['dtype'] = dtype
+              
+    result_dict = MA_mov_median(**kwargs)
     return _process_result_dict(data, result_dict)
 
 def mov_average(data, window_size, dtype=None):
