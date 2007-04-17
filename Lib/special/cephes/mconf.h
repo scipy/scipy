@@ -163,7 +163,7 @@ typedef struct
 #define ANSIC 1
 
 /* Get ANSI function prototypes, if you want them. */
-#ifdef __STDC__
+#if defined(__STDC__) || defined(_MSC_EXTENSIONS)
 #define ANSIPROT
 #include "protos.h"
 #else
