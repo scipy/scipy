@@ -928,7 +928,7 @@ void ensure_sorted_indices(const I n_row,
 			   T Ax[])
 {
   const T zero = ZERO<T>();
-  I isort[ n_col ];
+  I* isort = new I[ n_col ];
   std::vector<I> itemp(n_col,0);
   std::vector<T> atemp(n_col,zero);
 
@@ -952,6 +952,7 @@ void ensure_sorted_indices(const I n_row,
       Ax[jj] = atemp[ii];
     }
   }
+  delete[] isort;
 }
 			   
 

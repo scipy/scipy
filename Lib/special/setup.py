@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 from os.path import join
 from distutils.sysconfig import get_python_inc
 
@@ -9,9 +10,10 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('special', parent_package, top_path)
 
     define_macros = []
-#    if sys.platform=='win32':
+    if sys.platform=='win32':
 #        define_macros.append(('NOINFINITIES',None))
 #        define_macros.append(('NONANS',None))
+        define_macros.append(('_USE_MATH_DEFINES',None))
 
     # C libraries
     config.add_library('c_misc',sources=[join('c_misc','*.c')])
