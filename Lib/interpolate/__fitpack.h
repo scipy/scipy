@@ -556,6 +556,7 @@ static PyObject *fitpack_insert(PyObject *dummy, PyObject*args) {
   double *t, *c, *tt, *cc;
   PyArrayObject *ap_t = NULL, *ap_c = NULL, *ap_tt = NULL, *ap_cc = NULL;
   PyObject *t_py = NULL, *c_py = NULL;
+  PyObject *ret = NULL;
   if (!PyArg_ParseTuple(args, "iOOidi",&iopt,&t_py,&c_py,&k, &x, &m)) return NULL;
   ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);
   ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, PyArray_DOUBLE, 0, 1);
@@ -577,7 +578,7 @@ static PyObject *fitpack_insert(PyObject *dummy, PyObject*args) {
   }
   Py_DECREF(ap_c);
   Py_DECREF(ap_t);
-  PyObject* ret = Py_BuildValue("NNi",PyArray_Return(ap_tt),PyArray_Return(ap_cc),ier);
+  ret = Py_BuildValue("NNi",PyArray_Return(ap_tt),PyArray_Return(ap_cc),ier);
   return ret;
   
   fail:

@@ -18,7 +18,8 @@ def configuration(parent_package='',top_path=None):
 #    arpack_sources.extend([os.path.join('ARPACK','BLAS', '*.f')])
     arpack_sources.extend([os.path.join('ARPACK','LAPACK', '*.f')])
 
-    config.add_library('arpack', sources=arpack_sources)
+    config.add_library('arpack', sources=arpack_sources,
+                       include_dirs=[os.path.join(['ARPACK', 'SRC'])])
 
 
     config.add_extension('_arpack',
