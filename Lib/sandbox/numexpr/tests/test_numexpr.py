@@ -186,6 +186,7 @@ tests = [
           'sinh(a)',
           '2*a + (cos(3)+5)*sinh(cos(b))',
           '2*a + arctan2(a, b)',
+          'arcsin(0.5)',
           'where(a, 2, b)',
           'where((a-10).real, a, 2)',
           'cos(1+1)',
@@ -210,6 +211,7 @@ for op in ['<', '<=', '==', '>=', '>', '!=']:
     cmptests.append("a/2+5 %s b" % op)
     cmptests.append("a/2+5 %s 7" % op)
     cmptests.append("7 %s b" % op)
+    cmptests.append("7.0 %s 5" % op)
 tests.append(('COMPARISONS', cmptests))
 
 func1tests = []

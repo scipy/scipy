@@ -75,12 +75,15 @@ def getKind(x):
     return type_to_kind[converter]
 
 def binop(opname, reversed=False, kind=None):
+    # Getting the named method from self (after reversal) does not
+    # always work (e.g. int constants do not have a __lt__ method).
+    opfunc = getattr(operator, "__%s__" % opname)
     @ophelper
     def operation(self, other):
         if reversed:
             self, other = other, self
         if allConstantNodes([self, other]):
-            return ConstantNode(getattr(self.value, "__%s__" % opname)(other.value))
+            return ConstantNode(opfunc(self.value, other.value))
         else:
             return OpNode(opname, (self, other), kind=kind)
     return operation
