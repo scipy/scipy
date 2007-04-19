@@ -277,6 +277,9 @@ static char op_signature(int op, int n) {
 
    To add a function opcode, just copy OP_SIN or OP_ARCTAN2.
 
+   Some functions are repeated in this table that are opcodes, but there's
+   no problem with that as the compiler selects opcodes over functions,
+   and this makes it easier to compare opcode vs. function speeds.
 */
 
 enum FuncFFCodes {
@@ -296,6 +299,7 @@ enum FuncFFCodes {
 
 typedef double (*FuncFFPtr)(double);
 
+/* The order of this array must match the FuncFFCodes enum above */
 FuncFFPtr functions_f[] = {
     sqrt,
     sin,
@@ -339,6 +343,7 @@ enum FuncCCCodes {
 
 typedef void (*FuncCCPtr)(cdouble*, cdouble*);
 
+/* The order of this array must match the FuncCCCodes enum above */
 FuncCCPtr functions_cc[] = {
     nc_sqrt,
     nc_sin,
