@@ -32,12 +32,9 @@ def factorial(n,exact=0):
     if exact:
         if n < 0:
             return 0L
-        n = long(n)
         val = 1L
-        k = 1L
-        while (k < n+1L):
-            val = val*k
-            k += 1
+        for k in xrange(1,n+1):
+          val *= k
         return val
     else:
         from scipy import special
@@ -64,12 +61,9 @@ def factorial2(n,exact=0):
             return 0L
         if n <= 0:
             return 1L
-        n = long(n)
         val = 1L
-        k = n
-        while (k > 0):
-            val = val*k
-            k -= 2
+        for k in xrange(n,0,-2):
+          val *= k
         return val
     else:
         from scipy import special
@@ -94,12 +88,9 @@ def factorialk(n,k,exact=1):
             return 0L
         if n<=0:
             return 1L
-        n = long(n)
         val = 1L
-        j = n
-        while (j > 0):
+        for j in xrange(n,0,-k):
             val = val*j
-            j -= k
         return val
     else:
         raise NotImplementedError
@@ -118,16 +109,9 @@ def comb(N,k,exact=0):
     if exact:
         if (k > N) or (N < 0) or (k < 0):
             return 0L
-        N,k = map(long,(N,k))
-        top = N
         val = 1L
-        while (top > (N-k)):
-            val *= top
-            top -= 1
-        n = 1L
-        while (n < k+1L):
-            val /= n
-            n += 1
+        for j in xrange(min(k, N-k)):
+          val = (val*(N-j))//(j+1)
         return val
     else:
         from scipy import special
