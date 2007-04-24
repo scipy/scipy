@@ -828,7 +828,7 @@ def kurtosistest(a, axis=0):
         warnings.warn(
             "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" % 
             int(n))
-    b2 = kurtosis(a, axis)
+    b2 = kurtosis(a, axis, fisher=False)
     E = 3.0*(n-1) /(n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1)*(n+3)*(n+5))
     x = (b2-E)/np.sqrt(varb2)
@@ -847,8 +847,6 @@ def kurtosistest(a, axis=0):
 def normaltest(a, axis=0):
     # fixme: find reference
     """Tests whether skew and/or kurtosis of dataset differs from normal curve.
-
-    This is the omnibus test of D'Agostino and Pearson, 1973
 
     Parameters
     ----------
