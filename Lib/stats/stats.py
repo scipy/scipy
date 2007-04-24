@@ -184,6 +184,7 @@ Statistics Tables and Formulae_. Chapman & Hall: New York. 2000.
 
 # Standard library imports.
 import warnings
+import math
 
 # Scipy imports.
 from numpy import array, asarray, dot, ma, zeros, sum
@@ -795,11 +796,11 @@ def skewtest(a, axis=0):
         warnings.warn(
             "skewtest only valid for n>=8 ... continuing anyway, n=%i" % 
             int(n))
-    y = b2 * np.sqrt(((n+1)*(n+3)) / (6.0*(n-2)) )
+    y = b2 * math.sqrt(((n+1)*(n+3)) / (6.0*(n-2)) )
     beta2 = ( 3.0*(n*n+27*n-70)*(n+1)*(n+3) ) / ( (n-2.0)*(n+5)*(n+7)*(n+9) )
-    W2 = -1 + np.sqrt(2*(beta2-1))
-    delta = 1/np.sqrt(np.log(np.sqrt(W2)))
-    alpha = np.sqrt(2.0/(W2-1))
+    W2 = -1 + math.sqrt(2*(beta2-1))
+    delta = 1/math.sqrt(0.5*math.log(W2))
+    alpha = math.sqrt(2.0/(W2-1))
     y = np.where(y==0, 1, y)
     Z = delta*np.log(y/alpha + np.sqrt((y/alpha)**2+1))
     return Z, (1.0 - zprob(Z))*2
@@ -845,7 +846,6 @@ def kurtosistest(a, axis=0):
 
 
 def normaltest(a, axis=0):
-    # fixme: find reference
     """Tests whether skew and/or kurtosis of dataset differs from normal curve.
 
     Parameters
@@ -857,6 +857,16 @@ def normaltest(a, axis=0):
     -------
     (Chi^2 score,
      2-tail probability)
+
+    Based on the D'Agostino and Pearson's test that combines skew and
+    kurtosis to produce an omnibus test of normality.
+
+    D'Agostino, R. B. and Pearson, E. S. (1971), "An Omnibus Test of Normality for
+    Moderate and Large Sample Size," Biometrika, 58, 341-348
+
+    D'Agostino, R. B. and Pearson, E. S. (1973), "Testing for departures from
+    Normality," Biometrika, 60, 613-622
+    
     """
     a, axis = _chk_asarray(a, axis)
     s,p = skewtest(a,axis)
