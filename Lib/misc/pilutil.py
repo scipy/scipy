@@ -16,13 +16,11 @@ __all__ = ['fromimage','toimage','imsave','imread','bytescale',
 
 # Returns a byte-scaled image
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):
-    if data.dtype is uint8:
+    if data.dtype == uint8:
         return data
     high = high - low
-    if cmin is None:
-        cmin = amin(ravel(data))
-    if cmax is None:
-        cmax = amax(ravel(data))
+    if cmin is None: cmin = data.min()
+    if cmax is None: cmax = data.max()
     scale = high *1.0 / (cmax-cmin or 1)
     bytedata = ((data*1.0-cmin)*scale + 0.4999).astype(uint8)
     return bytedata + cast[uint8](low)
