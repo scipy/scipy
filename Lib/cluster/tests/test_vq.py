@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 # David Cournapeau
-# Last Change: Thu Apr 26 04:00 PM 2007 J
+# Last Change: Thu Apr 26 05:00 PM 2007 J
 
 # For now, just copy the tests from sandbox.pyem, so we can check that
 # kmeans works OK for trivial examples.
@@ -15,10 +15,12 @@ set_package_path()
 from cluster.vq import kmeans, kmeans_, py_vq, py_vq2
 restore_path()
 
-# #Optional:
-# set_local_path()
-# # import modules that are located in the same directory as this file.
-# restore_path()
+#Optional:
+set_local_path()
+# import modules that are located in the same directory as this file.
+import os.path
+DATAFILE1   = os.path.join(sys.path[0], "data.txt")
+restore_path()
 
 # Global data
 X   = N.array([[3.0, 3], [4, 3], [4, 2],
@@ -68,7 +70,7 @@ class test_kmean(NumpyTestCase):
 
     def check_kmeans_lost_cluster(self, level=1):
         """This will cause kmean to have a cluster with no points."""
-        data    = N.fromfile(open("data.txt"), sep = ", ")
+        data    = N.fromfile(open(DATAFILE1), sep = ", ")
         data    = data.reshape((200, 2))
         initk   = N.array([[-1.8127404, -0.67128041], [ 2.04621601, 0.07401111], 
                     [-2.31149087,-0.05160469]])
