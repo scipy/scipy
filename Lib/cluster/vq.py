@@ -15,7 +15,10 @@
         Train a codebook for mimimum distortion using the kmeans algorithm
 
 """
+__docformat__ = 'restructuredtext'
+
 __all__ = ['whiten', 'vq', 'kmeans']
+
 
 from numpy.random import randint
 from numpy import shape, zeros, sqrt, argmin, minimum, array, \
@@ -24,47 +27,44 @@ from numpy import shape, zeros, sqrt, argmin, minimum, array, \
 import numpy as N
 
 def whiten(obs):
-    """ Normalize a group of observations on a per feature basis
+    """ Normalize a group of observations on a per feature basis.
 
-        Description
+    Before running kmeans algorithms, it is beneficial to "whiten", or
+    scale, the observation data on a per feature basis.  This is done
+    by dividing each feature by its standard deviation across all
+    observations.
 
-            Before running kmeans algorithms, it is beneficial to "whiten", or
-            scale, the observation data on a per feature basis.  This is done
-            by dividing each feature by its standard deviation across all
-            observations.
+    :Parameters:
+        obs : ndarray
+            Each row of the array is an observation.  The
+            columns are the "features" seen during each observation
+            ::
 
-        Arguments
-
-            obs -- 2D array.
-                    Each row of the array is an observation.  The
-                    columns are the "features" seen during each observation
-
-                              #   f0    f1    f2
-                        obs = [[  1.,   1.,   1.],  #o0
-                               [  2.,   2.,   2.],  #o1
-                               [  3.,   3.,   3.],  #o2
-                               [  4.,   4.,   4.]]) #o3
+                      #   f0    f1    f2
+                obs = [[  1.,   1.,   1.],  #o0
+                       [  2.,   2.,   2.],  #o1
+                       [  3.,   3.,   3.],  #o2
+                       [  4.,   4.,   4.]]) #o3
 
             XXX perhaps should have an axis variable here.
 
-        Outputs
+    :Returns:
+        result : ndarray
+            Contains the values in obs scaled by the standard devation
+            of each column.
 
-            result -- 2D array.
-                    Contains the values in obs scaled by the standard devation
-                    of each column.
+    Examples
+    --------
 
-        Test
-
-            >>> from numpy import array
-            >>> from scipy.cluster.vq import whiten
-            >>> features  = array([[  1.9,2.3,1.7],
-            ...                    [  1.5,2.5,2.2],
-            ...                    [  0.8,0.6,1.7,]])
-            >>> whiten(features)
-            array([[ 3.41250074,  2.20300046,  5.88897275],
-                   [ 2.69407953,  2.39456571,  7.62102355],
-                   [ 1.43684242,  0.57469577,  5.88897275]])
-
+    >>> from numpy import array
+    >>> from scipy.cluster.vq import whiten
+    >>> features  = array([[  1.9,2.3,1.7],
+    ...                    [  1.5,2.5,2.2],
+    ...                    [  0.8,0.6,1.7,]])
+    >>> whiten(features)
+    array([[ 3.41250074,  2.20300046,  5.88897275],
+           [ 2.69407953,  2.39456571,  7.62102355],
+           [ 1.43684242,  0.57469577,  5.88897275]])
     """
     std_dev = std(obs, axis=0)
     return obs / std_dev
@@ -72,56 +72,55 @@ def whiten(obs):
 def vq(obs, code_book):
     """ Vector Quantization: assign features sets to codes in a code book.
 
-        Description:
-            Vector quantization determines which code in the code book best
-            represents an observation of a target.  The features of each
-            observation are compared to each code in the book, and assigned
-            the one closest to it.  The observations are contained in the obs
-            array. These features should be "whitened," or nomalized by the
-            standard deviation of all the features before being quantized.
-            The code book can be created using the kmeans algorithm or
-            something similar.
+    Vector quantization determines which code in the code book best represents
+    an observation of a target.  The features of each observation are compared
+    to each code in the book, and assigned the one closest to it.  The
+    observations are contained in the obs array. These features should be
+    "whitened," or nomalized by the standard deviation of all the features
+    before being quantized.  The code book can be created using the kmeans
+    algorithm or something similar.
 
-        Note:
-           This currently forces 32 bit math precision for speed.  Anyone know
-           of a situation where this undermines the accuracy of the algorithm?
+    :Parameters:
+        obs : ndarray 
+            Each row of the array is an observation.  The columns are the
+            "features" seen during each observation The features must be
+            whitened first using the whiten function or something equivalent.
+        code_book : ndarray.
+            The code book is usually generated using the kmeans algorithm.
+            Each row of the array holds a different code, and the columns are
+            the features of the code.
 
+            ::
 
-        Arguments:
-            obs -- 2D array.
-                    Each row of the array is an observation.  The
-                    columns are the "features" seen during each observation
-                    The features must be whitened first using the
-                    whiten function or something equivalent.
-            code_book -- 2D array.
-                    The code book is usually generated using the kmeans
-                    algorithm.  Each row of the array holds a different
-                    code, and the columns are the features of the code.
-                                    #   f0    f1    f2   f3
-                        code_book = [[  1.,   2.,   3.,   4.],  #c0
-                                     [  1.,   2.,   3.,   4.],  #c1
-                                     [  1.,   2.,   3.,   4.]]) #c2
-        Outputs:
-            code -- 1D array.
-                    If obs is a NxM array, then a length N array
-                    is returned that holds the selected code book index for
-                    each observation.
-            dist -- 1D array.
-                        The distortion (distance) between the observation and
-                        its nearest code
-        Reference
+                            #   f0    f1    f2   f3
+                code_book = [[  1.,   2.,   3.,   4.],  #c0
+                             [  1.,   2.,   3.,   4.],  #c1
+                             [  1.,   2.,   3.,   4.]]) #c2
 
-        Test
+    :Returns:
+        code : ndarray
+            If obs is a NxM array, then a length N array is returned that holds
+            the selected code book index for each observation.
+        dist : ndarray
+            The distortion (distance) between the observation and its nearest
+            code
 
-            >>> from numpy import array
-            >>> from scipy.cluster.vq import vq
-            >>> code_book = array([[1.,1.,1.],
-            ...                    [2.,2.,2.]])
-            >>> features  = array([[  1.9,2.3,1.7],
-            ...                    [  1.5,2.5,2.2],
-            ...                    [  0.8,0.6,1.7]])
-            >>> vq(features,code_book)
-            (array([1, 1, 0],'i'), array([ 0.43588989,  0.73484692,  0.83066239]))
+    Notes
+    -----
+    This currently forces 32 bit math precision for speed.  Anyone know
+    of a situation where this undermines the accuracy of the algorithm?
+
+    Examples
+    --------
+    >>> from numpy import array
+    >>> from scipy.cluster.vq import vq
+    >>> code_book = array([[1.,1.,1.],
+    ...                    [2.,2.,2.]])
+    >>> features  = array([[  1.9,2.3,1.7],
+    ...                    [  1.5,2.5,2.2],
+    ...                    [  0.8,0.6,1.7]])
+    >>> vq(features,code_book)
+    (array([1, 1, 0],'i'), array([ 0.43588989,  0.73484692,  0.83066239]))
 
     """
     try:
@@ -225,32 +224,36 @@ def py_vq2(obs, code_book):
     return code, min_dist
 
 def kmeans_(obs, guess, thresh=1e-5):
-    """ See kmeans
+    """ "raw" version of kmeans.
 
-    Outputs
+    :Returns:
+        code_book :
+            the lowest distortion codebook found.
+        avg_dist :
+            the average distance a observation is from a code in the book.
+            Lower means the code_book matches the data better.
 
-        code_book -- the lowest distortion codebook found.
-        avg_dist -- the average distance a observation is
-                    from a code in the book.  Lower means
-                    the code_book matches the data better.
+    :SeeAlso:
+        - kmeans : wrapper around kmeans
 
     XXX should have an axis variable here.
 
-    Test
+    Examples
+    --------
 
-        Note: not whitened in this example.
+    Note: not whitened in this example.
 
-        >>> from numpy import array
-        >>> from scipy.cluster.vq import kmeans_
-        >>> features  = array([[ 1.9,2.3],
-        ...                    [ 1.5,2.5],
-        ...                    [ 0.8,0.6],
-        ...                    [ 0.4,1.8],
-        ...                    [ 1.0,1.0]])
-        >>> book = array((features[0],features[2]))
-        >>> kmeans_(features,book)
-        (array([[ 1.7       ,  2.4       ],
-               [ 0.73333333,  1.13333333]]), 0.40563916697728591)
+    >>> from numpy import array
+    >>> from scipy.cluster.vq import kmeans_
+    >>> features  = array([[ 1.9,2.3],
+    ...                    [ 1.5,2.5],
+    ...                    [ 0.8,0.6],
+    ...                    [ 0.4,1.8],
+    ...                    [ 1.0,1.0]])
+    >>> book = array((features[0],features[2]))
+    >>> kmeans_(features,book)
+    (array([[ 1.7       ,  2.4       ],
+           [ 0.73333333,  1.13333333]]), 0.40563916697728591)
 
     """
 
@@ -278,66 +281,60 @@ def kmeans_(obs, guess, thresh=1e-5):
     return code_book, avg_dist[-1]
 
 def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
-    """ Generate a code book with minimum distortion
+    """ Generate a code book with minimum distortion.
 
-    Description
-
-    Arguments
-
-        obs -- 2D array
-                Each row of the array is an observation.  The
-                columns are the "features" seen during each observation
-                The features must be whitened first using the
-                whiten function or something equivalent.
-        k_or_guess -- integer or 2D array.
-            If integer, it is the number of code book elements.
-            If a 2D array, the array is used as the intial guess for
-            the code book.  The array should have k rows, and the
-            same number of columns (features) as the obs array.
-        iter -- integer.
-            The number of times to restart the kmeans algorithm with
-            a new initial guess.  If k_or_guess is a 2D array (codebook),
-            this argument is ignored and only 1 iteration is run.
-        thresh -- float
-            Terminate each kmeans run when the distortion change from
-            one iteration to the next is less than this value.
-    Outputs
-
-        codesbook -- 2D array.
+    :Parameters:
+        obs : ndarray
+            Each row of the array is an observation.  The columns are the
+            "features" seen during each observation The features must be
+            whitened first using the whiten function or something equivalent.
+        k_or_guess : int or ndarray
+            If integer, it is the number of code book elements.  If a 2D array,
+            the array is used as the intial guess for the code book.  The array
+            should have k rows, and the same number of columns (features) as
+            the obs array.
+        iter : int
+            The number of times to restart the kmeans algorithm with a new
+            initial guess.  If k_or_guess is a 2D array (codebook), this
+            argument is ignored and only 1 iteration is run.
+        thresh : float
+            Terminate each kmeans run when the distortion change from one
+            iteration to the next is less than this value.
+    :Returns:
+        codesbook : ndarray
             The codes that best fit the observation
-        distortion -- float
+        distortion : float
             The distortion between the observations and the codes.
 
-    Reference
+    Examples
+    --------
 
-    Test
+    ("Not checked carefully for accuracy..." he said sheepishly)
 
-        ("Not checked carefully for accuracy..." he said sheepishly)
+    >>> from numpy import array
+    >>> from scipy.cluster.vq import vq, kmeans
+    >>> features  = array([[ 1.9,2.3],
+    ...                    [ 1.5,2.5],
+    ...                    [ 0.8,0.6],
+    ...                    [ 0.4,1.8],
+    ...                    [ 0.1,0.1],
+    ...                    [ 0.2,1.8],
+    ...                    [ 2.0,0.5],
+    ...                    [ 0.3,1.5],
+    ...                    [ 1.0,1.0]])
+    >>> whitened = whiten(features)
+    >>> book = array((whitened[0],whitened[2]))
+    >>> kmeans(whitened,book)
+    (array([[ 2.3110306 ,  2.86287398],
+           [ 0.93218041,  1.24398691]]), 0.85684700941625547)
 
-        >>> from numpy import array
-        >>> from scipy.cluster.vq import vq, kmeans
-        >>> features  = array([[ 1.9,2.3],
-        ...                    [ 1.5,2.5],
-        ...                    [ 0.8,0.6],
-        ...                    [ 0.4,1.8],
-        ...                    [ 0.1,0.1],
-        ...                    [ 0.2,1.8],
-        ...                    [ 2.0,0.5],
-        ...                    [ 0.3,1.5],
-        ...                    [ 1.0,1.0]])
-        >>> whitened = whiten(features)
-        >>> book = array((whitened[0],whitened[2]))
-        >>> kmeans(whitened,book)
-        (array([[ 2.3110306 ,  2.86287398],
-               [ 0.93218041,  1.24398691]]), 0.85684700941625547)
-
-        >>> import RandomArray
-        >>> RandomArray.seed(1000,2000)
-        >>> codes = 3
-        >>> kmeans(whitened,codes)
-        (array([[ 2.3110306 ,  2.86287398],
-               [ 1.32544402,  0.65607529],
-               [ 0.40782893,  2.02786907]]), 0.5196582527686241)
+    >>> import RandomArray
+    >>> RandomArray.seed(1000,2000)
+    >>> codes = 3
+    >>> kmeans(whitened,codes)
+    (array([[ 2.3110306 ,  2.86287398],
+           [ 1.32544402,  0.65607529],
+           [ 0.40782893,  2.02786907]]), 0.5196582527686241)
 
     """
     if int(iter) < 1:
