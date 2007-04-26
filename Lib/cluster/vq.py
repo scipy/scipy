@@ -19,6 +19,7 @@ __docformat__ = 'restructuredtext'
 
 __all__ = ['whiten', 'vq', 'kmeans']
 
+import warnings
 
 from numpy.random import randint
 from numpy import shape, zeros, sqrt, argmin, minimum, array, \
@@ -146,7 +147,7 @@ def py_vq(obs, code_book):
 
     :Parameters:
         obs : ndarray
-            Expect a rank 2 array. Each row is one observation.
+            Expects a rank 2 array. Each row is one observation.
         code_book : ndarray
             Code book to use. Same format than obs. Should have same number of
             features (eg columns) than obs.
@@ -168,10 +169,18 @@ def py_vq(obs, code_book):
     """
     # n = number of observations
     # d = number of features
-    (n, d)  = shape(obs)
+    if N.ndim(obs) == 1:
+        if not N.ndim(obs) == N.ndim(code_book):
+            raise ValueError("Observation and code_book should have the same rank")
+        else:
+            return _py_vq_1d(obs, code_book)
+    else:
+        (n, d)  = shape(obs)
 
-    # code books and observations should have same number of features
-    if not d == code_book.shape[1]:
+    # code books and observations should have same number of features and same shape
+    if not N.ndim(obs) == N.ndim(code_book):
+        raise ValueError("Observation and code_book should have the same rank")
+    elif not d == code_book.shape[1]:
         raise ValueError("""
             code book(%d) and obs(%d) should have the same 
             number of features (eg columns)""" % (code_book.shape[1], d))
@@ -182,6 +191,35 @@ def py_vq(obs, code_book):
         dist        = N.sum((obs[i] - code_book) ** 2, 1)
         code[i]     = argmin(dist)
         min_dist[i] = dist[code[i]]
+
+    return code, sqrt(min_dist)
+
+def _py_vq_1d(obs, code_book):
+    """ Python version of vq algorithm for rank 1 only.
+
+    :Parameters:
+        obs : ndarray
+            Expects a rank 1 array. Each item is one observation.
+        code_book : ndarray
+            Code book to use. Same format than obs. Should rank 1 too.
+
+    :Returns:
+        code : ndarray
+            code[i] gives the label of the ith obversation, that its code is
+            code_book[code[i]].
+        mind_dist : ndarray
+            min_dist[i] gives the distance between the ith observation and its
+            corresponding code.
+    """
+    raise RuntimeError("_py_vq_1d buggy, do not use rank 1 arrays for now")
+    n       = obs.size
+    nc      = code_book.size
+    dist    = N.zeros((n, nc))
+    for i in range(nc):
+        dist[:, i]  = N.sum(obs - code_book[i])
+    print dist
+    code    = argmin(dist)
+    min_dist= dist[code]
 
     return code, sqrt(min_dist)
 
@@ -366,3 +404,147 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
                 best_dist = dist
         result = best_book, best_dist
     return result
+
+def _kpoints(data, k):
+    """Pick k points at random in data (one row = one observation).  
+    
+    This is done by taking the k first values of a random permutation of 1..N
+    where N is the number of observation.
+    
+    :Parameters:
+        data : ndarray
+            Expect a rank 1 or 2 array. Rank 1 are assumed to describe one
+            dimensional data, rank 2 multidimensional data, in which case one
+            row is one observation.
+        k : int 
+            Number of samples to generate.
+    """
+    if data.ndim > 1:
+        n   = data.shape[0]
+    else:
+        n   = data.size
+
+    p   = N.random.permutation(n)
+    x   = data[p[:k], :].copy()
+
+    return x
+
+def _krandinit(data, k):
+    """Returns k samples of a random variable which parameters depend on data.
+    
+    More precisely, it returns k observations sampled from a Gaussian random
+    variable which mean and covariances are the one estimated from data.
+
+    :Parameters:
+        data : ndarray
+            Expect a rank 1 or 2 array. Rank 1 are assumed to describe one
+            dimensional data, rank 2 multidimensional data, in which case one
+            row is one observation.
+        k : int 
+            Number of samples to generate.
+    """
+    mu  = N.mean(data, 0)
+    cov = N.cov(data, rowvar = 0)
+
+    # k rows, d cols (one row = one obs)
+    # Generate k sample of a random variable ~ Gaussian(mu, cov)
+    x   = N.random.randn(k, mu.size)
+    x   = N.dot(x, N.linalg.cholesky(cov).T) + mu
+
+    return x
+
+_valid_init_meth    = {'random': _krandinit, 'points': _kpoints}
+
+def kmeans2(data, k, minit = 'random', niter = 10):
+    """Classify a set of points into k clusters using kmean algorithm.
+    
+    The algorithm works by minimizing the euclidian distance between data points
+    of cluster means. This version is more complete than kmean (has several
+    initialisation methods).
+
+    :Parameters:
+        data : ndarray
+            Expect a rank 1 or 2 array. Rank 1 are assumed to describe one
+            dimensional data, rank 2 multidimensional data, in which case one
+            row is one observation.
+        k : int or ndarray
+            Number of clusters. If a ndarray is given instead, it is
+            interpreted as initial cluster to use instead.
+        minit : string
+            Method for initialization. Available methods are random, points and
+            uniform:
+            
+            random uses k points drawn from a Gaussian random generator which
+            mean and variances are estimated from the data.
+
+            points choses k points at random from the points in data.
+
+            uniform choses k points from the data such are they form a uniform
+            grid od the dataset.
+
+        niter : int
+            Number of iterations to run.
+
+    :Returns:
+        clusters : ndarray
+            the found clusters (one cluster per row).
+        label : ndarray
+            label[i] gives the label of the ith obversation, that its centroid is
+            cluster[label[i]].
+
+    """
+    # If data is rank 1, then we have 1 dimension problem.
+    nd  = N.ndim(data)
+    if nd == 1:
+        d   = 1
+    elif nd == 2:
+        d   = data.shape[1]
+    else:
+        raise ValueError("Input of rank > 2 not supported")
+
+    # If k is not a single value, then it should be compatible with data's
+    # shape
+    if N.size(k) > 1:
+        if not nd == N.ndim(k):
+            raise ValueError("k is not an int and has not same rank than data")
+        if d == 1:
+            nc  = len(k)
+        else:
+            (nc, dc)    = k.shape
+            if not dc == d:
+                raise ValueError("k is not an int and has not same rank than\
+                        data")
+        clusters    = k.copy()
+    else:
+        nc  = k
+        try:
+            init    = _valid_init_meth[minit]
+        except KeyError:
+            raise ValueError("unknown init method %s" % str(minit))
+        clusters    = init(data, k)
+
+    assert not niter == 0
+    return _kmeans2(data, clusters, niter, nc)
+
+def _kmeans2(data, code, niter, nc):
+    """ "raw" version of kmeans2. Do not use directly.
+    
+    Run kmeans with a given initial codebook.
+    
+    :undocumented
+    """
+    for i in range(niter):
+        # Compute the nearest neighbour for each obs
+        # using the current code book
+        label   = vq(data, code)[0]
+        # Update the code by computing centroids using the new code book
+        for j in range(nc):
+            mbs = N.where(label==j)
+            if mbs[0].size > 0:
+                code[j, :] = N.mean(data[mbs], axis=0) 
+            else:
+                warnings.warn("one cluster has no member anymore ! You should"\
+                        " rerun kmean with different initialization !")
+
+    return code, label
+

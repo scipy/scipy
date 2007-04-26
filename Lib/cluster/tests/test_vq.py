@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 # David Cournapeau
-# Last Change: Thu Apr 26 05:00 PM 2007 J
+# Last Change: Thu Apr 26 09:00 PM 2007 J
 
 # For now, just copy the tests from sandbox.pyem, so we can check that
 # kmeans works OK for trivial examples.
@@ -12,7 +12,7 @@ from numpy.testing import *
 import numpy as N
 
 set_package_path()
-from cluster.vq import kmeans, kmeans_, py_vq, py_vq2
+from cluster.vq import kmeans, kmeans2, py_vq, py_vq2, _py_vq_1d
 restore_path()
 
 #Optional:
@@ -60,22 +60,60 @@ class test_vq(NumpyTestCase):
         except ImportError:
             print "== Error while importing _vq, not testing C imp of vq =="
 
+    #def check_vq_1d(self, level=1):
+    #    data    = X[:, 0]
+    #    initc   = data[:3]
+    #    code    = initc.copy()
+    #    print _py_vq_1d(data, initc)
+
 class test_kmean(NumpyTestCase):
-    def check_kmeans(self, level=1):
+    def check_kmeans_simple(self, level=1):
         initc   = N.concatenate(([[X[0]], [X[1]], [X[2]]])) 
         code    = initc.copy()
-        #code1   = kmeans(X, code, iter = 1)[0]
+        code1   = kmeans(X, code, iter = 1)[0]
 
-        #assert_array_almost_equal(code1, CODET2)
+        assert_array_almost_equal(code1, CODET2)
 
     def check_kmeans_lost_cluster(self, level=1):
         """This will cause kmean to have a cluster with no points."""
         data    = N.fromfile(open(DATAFILE1), sep = ", ")
         data    = data.reshape((200, 2))
-        initk   = N.array([[-1.8127404, -0.67128041], [ 2.04621601, 0.07401111], 
+        initk   = N.array([[-1.8127404, -0.67128041], 
+                    [ 2.04621601, 0.07401111], 
                     [-2.31149087,-0.05160469]])
 
         res     = kmeans(data, initk)
+
+    def check_kmeans2_simple(self, level=1):
+        """Testing simple call to kmeans2 and its results."""
+        initc   = N.concatenate(([[X[0]], [X[1]], [X[2]]])) 
+        code    = initc.copy()
+        code1   = kmeans2(X, code, niter = 1)[0]
+        code2   = kmeans2(X, code, niter = 2)[0]
+
+        assert_array_almost_equal(code1, CODET1)
+        assert_array_almost_equal(code2, CODET2)
+
+    #def check_kmeans2_rank1(self, level=1):
+    #    """Testing simple call to kmeans2 with rank 1 data."""
+    #    data    = N.fromfile(open(DATAFILE1), sep = ", ")
+    #    data    = data.reshape((200, 2))
+    #    data1   = data[:, 0]
+    #    data2   = data[:, 1]
+
+    #    initc   = data1[:3]
+    #    code    = initc.copy()
+    #    print _py_vq_1d(data1, code)
+    #    code1   = kmeans2(data1, code, niter = 1)[0]
+    #    code2   = kmeans2(data1, code, niter = 2)[0]
+
+    def check_kmeans2_init(self, level = 1):
+        """Testing that kmeans2 init methods work."""
+        data    = N.fromfile(open(DATAFILE1), sep = ", ")
+        data    = data.reshape((200, 2))
+
+        kmeans2(data, 3, minit = 'random')
+        kmeans2(data, 3, minit = 'points')
 
 if __name__ == "__main__":
     NumpyTest().run()
