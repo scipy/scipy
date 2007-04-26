@@ -18,9 +18,10 @@
 __all__ = ['whiten', 'vq', 'kmeans']
 
 from numpy.random import randint
-from numpy import shape, zeros, subtract, sqrt, argmin, minimum, array, \
+from numpy import shape, zeros, sqrt, argmin, minimum, array, \
      newaxis, arange, compress, equal, common_type, single, double, take, \
      std, mean
+import numpy as N
 
 def whiten(obs):
     """ Normalize a group of observations on a per feature basis
@@ -65,10 +66,10 @@ def whiten(obs):
                    [ 1.43684242,  0.57469577,  5.88897275]])
 
     """
-    std_dev = std(obs,axis=0)
+    std_dev = std(obs, axis=0)
     return obs / std_dev
 
-def vq(obs,code_book):
+def vq(obs, code_book):
     """ Vector Quantization: assign features sets to codes in a code book.
 
         Description:
@@ -129,61 +130,101 @@ def vq(obs,code_book):
         c_obs = obs.astype(ct)
         c_code_book = code_book.astype(ct)
         if ct is single:
-            results = _vq.float_vq(c_obs,c_code_book)
+            results = _vq.float_vq(c_obs, c_code_book)
         elif ct is double:
-            results = _vq.double_vq(c_obs,c_code_book)
+            results = _vq.double_vq(c_obs, c_code_book)
         else:
-            results = py_vq(obs,code_book)
+            results = py_vq(obs, code_book)
     except ImportError:
-        results = py_vq(obs,code_book)
+        results = py_vq(obs, code_book)
     return results
 
-def py_vq(obs,code_book):
+def py_vq(obs, code_book):
     """ Python version of vq algorithm.
 
+    The algorithm simply computes the euclidian distance between each
+    observation and every frame in the code_book/
+
+    :Parameters:
+        obs : ndarray
+            Expect a rank 2 array. Each row is one observation.
+        code_book : ndarray
+            Code book to use. Same format than obs. Should have same number of
+            features (eg columns) than obs.
+
+    :Note:
         This function is slower than the C versions, but it works for
         all input types.  If the inputs have the wrong types for the
         C versions of the function, this one is called as a last resort.
 
         Its about 20 times slower than the C versions.
-    """
-    No,Nf = shape(obs) #No = observation count, Nf = feature count
-    # code books and observations should have same number of features
-    assert(Nf == code_book.shape[1])
-    code = [];min_dist = []
-    #create a memory block to use for the difference calculations
-    diff = zeros(shape(code_book), common_type(obs,code_book))
-    for o in obs:
-        subtract(code_book,o,diff) # faster version of --> diff = code_book - o
-        dist = sqrt(sum(diff*diff,-1))
-        code.append(argmin(dist,axis=-1))
-        #something weird here dst does not work reliably because it sometime
-        #returns an array of goofy length. Try except fixes it, but is ugly.
-        dst = minimum.reduce(dist,0)
-        try:    dst = dst[0]
-        except: pass
-        min_dist.append(dst)
-    return array(code,dtype=int), array(min_dist)
 
-def py_vq2(obs,code_book):
-    """ This could be faster when number of codebooks is small, but it becomes
-         a real memory hog when codebook is large.  It requires NxMxO storage
-         where N=number of obs, M = number of features, and O = number of
-         codes.
+    :Returns:
+        code : ndarray
+            code[i] gives the label of the ith obversation, that its code is
+            code_book[code[i]].
+        mind_dist : ndarray
+            min_dist[i] gives the distance between the ith observation and its
+            corresponding code.
     """
-    No,Nf = shape(obs) #No = observation count, Nf = feature count
+    # n = number of observations
+    # d = number of features
+    (n, d)  = shape(obs)
+
+    # code books and observations should have same number of features
+    if not d == code_book.shape[1]:
+        raise ValueError("""
+            code book(%d) and obs(%d) should have the same 
+            number of features (eg columns)""" % (code_book.shape[1], d))
+    
+    code        = zeros(n, dtype = int)
+    min_dist    = zeros(n)
+    for i in range(n):
+        dist        = N.sum((obs[i] - code_book) ** 2, 1)
+        code[i]     = argmin(dist)
+        min_dist[i] = dist[code[i]]
+
+    return code, sqrt(min_dist)
+
+def py_vq2(obs, code_book):
+    """2nd Python version of vq algorithm.
+
+    The algorithm simply computes the euclidian distance between each
+    observation and every frame in the code_book/
+
+    :Parameters:
+        obs : ndarray
+            Expect a rank 2 array. Each row is one observation.
+        code_book : ndarray
+            Code book to use. Same format than obs. Should have same number of
+            features (eg columns) than obs.
+
+    :Note:
+        This could be faster when number of codebooks is small, but it becomes
+        a real memory hog when codebook is large.  It requires NxMxO storage
+        where N=number of obs, M = number of features, and O = number of codes.
+
+    :Returns:
+        code : ndarray
+            code[i] gives the label of the ith obversation, that its code is
+            code_book[code[i]].
+        mind_dist : ndarray
+            min_dist[i] gives the distance between the ith observation and its
+            corresponding code.
+    """
+    No, Nf = shape(obs) #No = observation count, Nf = feature count
     # code books and observations should have same number of features
     assert(Nf == code_book.shape[1])
     diff = obs[newaxis,:,:]-code_book[:,newaxis,:]
-    dist = sqrt(sum(diff*diff,-1))
-    code = argmin(dist,0)
-    min_dist = minimum.reduce(dist,0) #the next line I think is equivalent
+    dist = sqrt(N.sum(diff*diff, -1))
+    code = argmin(dist, 0)
+    min_dist = minimum.reduce(dist, 0) #the next line I think is equivalent
                                       #  - and should be faster
     #min_dist = choose(code,dist) # but in practice, didn't seem to make
                                   # much difference.
     return code, min_dist
 
-def kmeans_(obs,guess,thresh=1e-5):
+def kmeans_(obs, guess, thresh=1e-5):
     """ See kmeans
 
     Outputs
@@ -192,6 +233,9 @@ def kmeans_(obs,guess,thresh=1e-5):
         avg_dist -- the average distance a observation is
                     from a code in the book.  Lower means
                     the code_book matches the data better.
+
+    XXX should have an axis variable here.
+
     Test
 
         Note: not whitened in this example.
@@ -233,7 +277,7 @@ def kmeans_(obs,guess,thresh=1e-5):
     #print avg_dist
     return code_book, avg_dist[-1]
 
-def kmeans(obs,k_or_guess,iter=20,thresh=1e-5):
+def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
     """ Generate a code book with minimum distortion
 
     Description
