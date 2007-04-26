@@ -17,7 +17,7 @@
 """
 __docformat__ = 'restructuredtext'
 
-__all__ = ['whiten', 'vq', 'kmeans']
+__all__ = ['whiten', 'vq', 'kmeans', 'kmeans2']
 
 import warnings
 
