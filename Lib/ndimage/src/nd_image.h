@@ -61,12 +61,8 @@ typedef enum
      tComplex128=PyArray_COMPLEX128,
      tObject=PyArray_OBJECT,        /* placeholder... does nothing */
      tMaxType=PyArray_NTYPES,
-     tDefault = tFloat64,
-#if NPY_BITSOF_LONG == 64
-     tLong = tInt64,
-#else
-     tLong = tInt32,
-#endif
+     tDefault=PyArray_FLOAT64,
+     tLong=PyArray_LONG,
 } NumarrayType;
 
 #define NI_MAXDIM NPY_MAXDIMS
