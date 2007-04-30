@@ -1,5 +1,6 @@
-from numpy import *
-import vq_c as vq
+import numpy as N
+from scipy.cluster import vq
+#import vq_c as vq
 
 def python_vq(all_data,code_book):
     import time
@@ -11,8 +12,8 @@ def python_vq(all_data,code_book):
     print '  first dist:', dist1[:5]
     print '  last codes:', codes1[-5:]
     print '  last dist:', dist1[-5:]
-    float_obs = all_data.astype(Float32)
-    float_code = code_book.astype(Float32)
+    float_obs = all_data.astype(N.float32)
+    float_code = code_book.astype(N.float32)
     t1 = time.time()
     codes1,dist1 = vq.vq(float_obs,float_code)
     t2 = time.time()
@@ -33,13 +34,12 @@ def read_data(name):
     return array(data)
 
 def main():
-    import scipy.stats
-    scipy.stats.seed(1000,1000)
+    N.random.seed((1000,1000))
     Ncodes = 40
     Nfeatures = 16
     Nobs = 4000
-    code_book = RandomArray.normal(0,1,(Ncodes,Nfeatures))
-    features = RandomArray.normal(0,1,(Nobs,Nfeatures))
+    code_book = N.random.normal(0,1,(Ncodes,Nfeatures))
+    features = N.random.normal(0,1,(Nobs,Nfeatures))
     codes,dist = python_vq(features,code_book)
 
 if __name__ == '__main__':
