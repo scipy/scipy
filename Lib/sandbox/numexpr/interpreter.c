@@ -103,7 +103,7 @@ enum OpCodes {
 };
 
 /* returns the sig of the nth op, '\0' if no more ops -1 on failure */
-static char op_signature(int op, int n) {
+static int op_signature(int op, int n) {
     switch (op) {
         case OP_NOOP:
             break;
@@ -512,8 +512,8 @@ check_program(NumExprObject *self)
 {
     unsigned char *program;
     Py_ssize_t prog_len, n_buffers, n_inputs;
-    int rno, pc, arg, argloc, argno;
-    char sig, *fullsig, *signature;
+    int rno, pc, arg, argloc, argno, sig;
+    char *fullsig, *signature;
 
     if (PyString_AsStringAndSize(self->program, (char **)&program,
                                  &prog_len) < 0) {
