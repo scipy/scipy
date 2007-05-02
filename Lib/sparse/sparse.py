@@ -2415,20 +2415,20 @@ class lil_matrix(spmatrix):
                     self._insertat3(row, data, j, xx)
         else:
             raise ValueError, "invalid index value: %s" % str((i, j))
-                
 
     def __mul__(self, other):           # self * other
         if isscalarlike(other):
-            new = self.copy()
             if other == 0:
                 # Multiply by zero: return the zero matrix
-                return new
-            # Multiply this scalar by every element.
-            new.data = numpy.array([[val*other for val in rowvals] for rowvals in new.data], dtype=object)
+                new = lil_matrix(shape=self.shape, dtype=self.dtype)
+            else:
+                new = self.copy()
+                # Multiply this scalar by every element.
+                new.data = numpy.array([[val*other for val in rowvals] for
+                                        rowvals in new.data], dtype=object)
             return new
         else:
             return self.dot(other)
-
 
     def copy(self):
         new = lil_matrix(self.shape, dtype=self.dtype)

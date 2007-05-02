@@ -710,7 +710,17 @@ class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase):
         B[5,6] = 20
         assert_array_equal(A * A.T, (B * B.T).todense())
         assert_array_equal(A * A.H, (B * B.H).todense())
-    
+
+    def check_scalar_mul(self):
+        x = lil_matrix((3,3))
+        x[0,0] = 2
+
+        x = x*2
+        assert_equal(x[0,0],4)
+
+        x = x*0
+        assert_equal(x[0,0],0)
+
     def check_lil_lil_assignment(self):
         """ Tests whether a row of one lil_matrix can be assigned to
         another.
