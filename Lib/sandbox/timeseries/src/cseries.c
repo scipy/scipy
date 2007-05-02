@@ -1453,7 +1453,7 @@ static int reverse_dict(PyObject *source, PyObject *dest) {
 
     PyObject *key, *value;
 
-    int pos = 0;
+    Py_ssize_t pos = 0;
 
     while (PyDict_Next(source, &pos, &key, &value)) {
         PyObject *tuple_iter;
@@ -1461,7 +1461,7 @@ static int reverse_dict(PyObject *source, PyObject *dest) {
 
         if((tuple_iter = PyObject_GetIter(value)) == NULL) return INT_ERR_CODE;
 
-        while (item = PyIter_Next(tuple_iter)) {
+        while ((item = PyIter_Next(tuple_iter)) != NULL) {
             PyDict_SetItem(dest, item, key);
             Py_DECREF(item);
         }
@@ -2113,6 +2113,7 @@ DateObject___str__(DateObject* self)
     int freq_group = get_freq_group(self->freq);
     PyObject *string_arg, *retval;
 
+    string_arg = NULL;
     if (freq_group == FR_ANN) { string_arg = Py_BuildValue("(s)", "%Y"); }
     else if (freq_group == FR_QTR) { string_arg = Py_BuildValue("(s)", "%FQ%q"); }
     else if (freq_group == FR_MTH) { string_arg = Py_BuildValue("(s)", "%b-%Y"); }
@@ -2275,7 +2276,7 @@ DateObject___compare__(DateObject * obj1, DateObject * obj2)
     if (obj1->value < obj2->value) return -1;
     if (obj1->value > obj2->value) return 1;
     if (obj1->value == obj2->value) return 0;
-
+    return -1;
 }
 
 static long
@@ -3067,6 +3068,7 @@ check_mov_args(PyObject *orig_arrayobj, int span, int min_win_size,
     MEM_CHECK(*result_mask)
     result_mask_tmp = (PyArrayObject**)result_mask;
     (*result_mask_tmp)->flags = ((*result_mask_tmp)->flags) | NPY_OWNDATA;
+    return 0;
 }
 
 /* computation portion of moving sum. Appropriate mask is overlayed on top
