@@ -354,7 +354,7 @@ For non-quarterly dates, this simply returns the year of the date."""
             self._cachedinfo['tostr'] = tostr
         return self._cachedinfo['tostr']
     #
-    def asfreq(self, freq=None, relation="BEFORE"):
+    def asfreq(self, freq=None, relation="AFTER"):
         "Converts the dates to another frequency."
         # Note: As we define a new object, we don't need caching
         if freq is None or freq == _c.FR_UND:
