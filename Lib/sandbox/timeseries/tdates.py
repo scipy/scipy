@@ -491,7 +491,7 @@ def _listparser(dlist, freq=None):
     if dlist.ndim == 0:
         dlist.shape = (1,)
     # Case #1: dates as strings .................
-    if dlist.dtype.kind == 'S':
+    if dlist.dtype.kind in 'SU':
         #...construct a list of ordinals
         ords = numpy.fromiter((DateTimeFromString(s).toordinal() for s in dlist),
                                float_)
