@@ -1470,7 +1470,7 @@ static int reverse_dict(PyObject *source, PyObject *dest) {
     return 0;
 }
 
-static int build_freq_dict() {
+static int build_freq_dict(void) {
 
     char ANN_prefixes[8][15] = { "A", "Y", "ANN", "ANNUAL", "ANNUALLY",
                                  "YR", "YEAR", "YEARLY" };
@@ -1671,7 +1671,7 @@ DateObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 
 /* for use in C code */
 static DateObject *
-DateObject_New() {
+DateObject_New(void) {
     PyObject *dummy;
     return (DateObject*)DateObject_new(&DateType, dummy, dummy);
 }
@@ -1989,7 +1989,7 @@ DateObject_strfmt(DateObject *self, PyObject *args)
     struct date_info tempDate;
     long absdate;
     double abstime;
-    int i, result_len, special_found=0;
+    int i, result_len;
     PyObject *py_result;
 
     long (*toDaily)(long, char, struct asfreq_info*) = NULL;
@@ -2721,7 +2721,8 @@ TimeSeries_convert(PyObject *self, PyObject *args)
     long newStart, newStartTemp;
     long newEnd, newEndTemp;
     long newLen, newHeight;
-    long i, currIndex, prevIndex;
+    int i;
+    long currIndex, prevIndex;
     long nd;
     npy_intp *dim, *newIdx;
     long currPerLen;
@@ -3719,9 +3720,9 @@ initcseries(void)
     Py_DECREF(ops_dict);
 
     Py_INCREF(&DateType);
-    PyModule_AddObject(m, "Date", (PyObject *)&DateType);
+    PyModule_AddObject(m, "Date", (PyObject *)(&DateType));
 
-    if(build_freq_dict(m) == INT_ERR_CODE) {
+    if(build_freq_dict() == INT_ERR_CODE) {
         PyErr_SetString(                    \
             PyExc_ImportError,              \
             "initialization of module timeseries.cseries failed");
