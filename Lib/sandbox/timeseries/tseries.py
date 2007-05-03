@@ -690,10 +690,6 @@ timeseries(data  = %(data)s,
         if freq is None:
             return self
         return TimeSeries(self._series, dates=self._dates.asfreq(freq))
-
-    def convert(self, freq, func='auto', position='END'):
-        "Converts the dates to another frequency, and adapt the data."
-        return convert(self, freq, func=func, position=position)
     #.....................................................
     def transpose(self, *axes):
         """ a.transpose(*axes)
@@ -1182,15 +1178,24 @@ def convert(series, freq, func='auto', position='END'):
     """
     if not isinstance(series,TimeSeries):
         raise TypeError, "The argument should be a valid TimeSeries!"
+
+    toFreq = check_freq(freq)
+    fromFreq = series.freq
+
+    if toFreq == _c.FR_UND:
+        raise TimeSeriesError, \
+            "Cannot convert a series to UNDEFINED frequency."
+
+    if fromFreq == _c.FR_UND:
+        raise TimeSeriesError, \
+            "Cannot convert a series with UNDEFINED frequency."
+
     if not series.isvalid():
         raise TimeSeriesError, \
             "Cannot adjust a series with missing or duplicated dates."
 
     if position.upper() not in ('END','START'):
         raise ValueError("invalid value for position argument: (%s)",str(position))
-
-    toFreq = freq
-    fromFreq = series.freq
 
     start_date = series._dates[0]
 
