@@ -399,7 +399,7 @@ For non-quarterly dates, this simply returns the year of the date."""
     def get_steps(self):
         """Returns the time steps between consecutive dates.
     The timesteps have the same unit as the frequency of the series."""
-        if self.freq == 'U':
+        if self.freq == _c.FR_UND:
             warnings.warn("Undefined frequency: assuming integers!")
         if self._cachedinfo['steps'] is None:
             _cached = self._cachedinfo
