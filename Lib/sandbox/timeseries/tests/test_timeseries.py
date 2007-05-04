@@ -73,6 +73,7 @@ class test_creation(NumpyTestCase):
 
 
     def test_fromdatearray(self):
+        "Tests the creation of a series from a datearray"
         _, dates, _ = self.d
         data = dates
 
@@ -91,10 +92,28 @@ class test_creation(NumpyTestCase):
 
 
     def test_datafromlist(self):
+        "Check the creation of a time series from a list of data."
         (_, dates, _) = self.d
         data = list(range(15))
         series = time_series(data, dates)
         assert_equal(series._data.size, 15)
+        
+    def test_unsorted(self):
+        "Tests that the data are porperly sorted along the dates."
+        dlist = ['2007-01-%02i' % i for i in (3,2,1)]
+        data = [10,20,30]
+        series = time_series(data,dlist)
+        assert_equal(series._data,[30,20,10])
+        #
+        series = TimeSeries(data, dlist)
+        assert_equal(series._data,[30,20,10])
+        #
+        series = TimeSeries(data, dlist, mask=[1,0,0])
+        assert_equal(series._mask,[0,0,1])
+        #
+        data = masked_array([10,20,30],mask=[1,0,0])
+        series = TimeSeries(data, dlist)
+        assert_equal(series._mask,[0,0,1])
 #...............................................................................
 
 class test_arithmetics(NumpyTestCase):
@@ -463,7 +482,7 @@ test_dates test suite.
         assert_equal(empty_ts.end_date, None)
 
     def test__timeseriescompat_multiple(self):
-
+        "Tests the compatibility of multiple time series."
         seriesM_10 = time_series(N.arange(10),
                                     date_array(
                                       start_date=Date(freq='m', year=2005, month=1),

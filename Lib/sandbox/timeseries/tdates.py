@@ -195,6 +195,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
             _dates.shape = (1,)
         _dates = _dates.view(cls)
         _dates.freq = _freq
+        _dates._unsorted = None
         return _dates
 
     def __array_wrap__(self, obj, context=None):
@@ -205,6 +206,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
 
     def __array_finalize__(self, obj):
         self.freq = getattr(obj, 'freq', _c.FR_UND)
+        self._unsorted = getattr(obj,'_unsorted',None)
         self._cachedinfo = dict(toobj=None, tostr=None, toord=None,
                                 steps=None, full=None, hasdups=None)
         if hasattr(obj,'_cachedinfo'):
@@ -487,7 +489,8 @@ def guess_freq(dates):
 def _listparser(dlist, freq=None):
     "Constructs a DateArray from a list."
     dlist = numeric.asarray(dlist)
-    dlist.sort()
+    idx = dlist.argsort()
+    dlist = dlist[idx]
     if dlist.ndim == 0:
         dlist.shape = (1,)
     # Case #1: dates as strings .................
@@ -531,6 +534,7 @@ def _listparser(dlist, freq=None):
             dates = [Date(freq, datetime=dt.datetime.fromordinal(a)) for a in ords]
     #
     result = DateArray(dates, freq)
+    result._unsorted = idx
     return result
 
 
@@ -695,4 +699,4 @@ if __name__ == '__main__':
     if 1:
         "Tests the automatic sorting of dates."
         D = date_array_fromlist(dlist=['2006-01','2005-01','2004-01'],freq='M')
-        assert_equal(D.view(N.ndarray), [24037, 24049, 24061])
+        assert_equal(D.view(ndarray), [24037, 24049, 24061])

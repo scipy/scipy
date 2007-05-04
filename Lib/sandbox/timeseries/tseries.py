@@ -324,11 +324,9 @@ The combination of `series` and `dates` is the `data` part.
         maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value,
                        keep_mask=keep_mask, small_mask=small_mask,
                        hard_mask=hard_mask,)
-        # Get the data ...............................
-        _data = MaskedArray(data, mask=mask, **maparms).view(cls)
+        _data = MaskedArray(data, mask=mask, **maparms)
         # Get the frequency ..........................
         freq = check_freq(freq)
-
         # Get the dates ..............................
         if dates is None:
             newdates = getattr(data, '_dates', None)
@@ -350,7 +348,10 @@ The combination of `series` and `dates` is the `data` part.
                 newdates = date_array([], freq=freq)
         # Get observed ...............................
         observed = getattr(data, 'observed', fmtObserv(observed))
-
+        # Get the data ...............................
+        if newdates._unsorted is not None:
+            _data = _data[newdates._unsorted]
+        _data = _data.view(cls)
         if _data is masked:
             assert(numeric.size(newdates)==1)
             return _data.view(cls)
@@ -373,6 +374,7 @@ The combination of `series` and `dates` is the `data` part.
         return result
     #............................................
     def _get_series(self):
+        "Returns the series as a regular masked array."
         if self._mask.ndim == 0 and self._mask:
             return masked
         return self.view(MaskedArray)
@@ -945,10 +947,16 @@ def time_series(data, dates=None, freq=None, observed=None,
             dates = date_array([], freq=freq)
     elif not isinstance(dates, DateArray):
         dates = date_array(dlist=dates, freq=freq)
-    return TimeSeries(data=data, dates=dates, mask=mask, observed=observed,
-                      copy=copy, dtype=dtype, fill_value=fill_value,
-                      keep_mask=keep_mask, small_mask=small_mask,
-                      hard_mask=hard_mask,)
+    if dates._unsorted is not None:
+        idx = dates._unsorted
+        data = data[idx]
+        if mask is not nomask:
+            mask = mask[idx]
+        dates._unsorted = None
+    return TimeSeries(data=data, dates=dates, mask=mask, 
+                      observed=observed, copy=copy, dtype=dtype, 
+                      fill_value=fill_value, keep_mask=keep_mask, 
+                      small_mask=small_mask, hard_mask=hard_mask,)
 
 
 def isTimeSeries(series):
@@ -1452,6 +1460,7 @@ def concatenate_series(*series, **kwargs):
     return newseries
 #...............................................................................
 def empty_like(series):
+    """Returns an empty series with the same dtype, mask and dates as series."""
     result = N.empty_like(series).view(type(series))
     result._dates = series._dates
     result._mask = series._mask
