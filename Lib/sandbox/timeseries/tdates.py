@@ -3,12 +3,12 @@ Classes definition for the support of individual dates and array of dates.
 
 :author: Pierre GF Gerard-Marchant & Matt Knox
 :contact: pierregm_at_uga_dot_edu - mattknox_ca_at_hotmail_dot_com
-:version: $Id: tdates.py 2815 2007-03-02 16:39:07Z mattknox_ca $
+:version: $Id$
 """
-__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author: mattknox_ca $)"
+__author__ = "Pierre GF Gerard-Marchant & Matt Knox ($Author$)"
 __version__ = '1.0'
-__revision__ = "$Revision: 2815 $"
-__date__     = '$Date: 2007-03-02 11:39:07 -0500 (Fri, 02 Mar 2007) $'
+__revision__ = "$Revision$"
+__date__     = '$Date$'
 
 import datetime as dt
 

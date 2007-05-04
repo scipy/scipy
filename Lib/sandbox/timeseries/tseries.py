@@ -43,6 +43,7 @@ from tdates import Date, isDate, DateArray, isDateArray, \
 import cseries
 
 
+
 __all__ = [
 'TimeSeriesError','TimeSeriesCompatibilityError','TimeSeries','isTimeSeries',
 'time_series', 'tsmasked',
@@ -1207,6 +1208,9 @@ def convert(series, freq, func='auto', position='END'):
 
     tempData = series._series.filled()
     tempMask = getmaskarray(series)
+
+    if (tempData.size // series._dates.size) > 1:
+        raise TimeSeriesError("convert works with 1D data only !")
 
     cRetVal = cseries.TS_convert(tempData, fromFreq, toFreq, position,
                                  int(start_date), tempMask)

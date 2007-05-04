@@ -833,8 +833,9 @@ class TimeSeriesFigure(Figure):
     #.........
     def add_tsplot(self, *args, **kwargs):
         """Adds a `TimeSeriesPlot` subplot to the figure."""
-        kwargs.update(SubplotClass=TimeSeriesPlot,
-                      series=self._series)
+        kwargs.update(SubplotClass=TimeSeriesPlot)
+        if self._series is not None:
+            kwargs.update(series=self._series)
         return add_generic_subplot(self, *args, **kwargs)
     add_plot = add_tsplot
 TSFigure = TimeSeriesFigure
