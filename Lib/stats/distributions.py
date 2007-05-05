@@ -119,6 +119,12 @@ class rv_frozen(object):
         return self.dist.sf(x,*self.args,**self.kwds)
     def stats(self):
         return self.dist.stats(*self.args,**self.kwds)
+    def moment(self,n):
+        return self.dist.moment(n,*self.args,**self.kwds)
+    def entropy(self):
+        return self.dist.entropy(*self.args,**self.kwds)
+    def pmf(self,k):
+        return self.dist.pmf(k,*self.args,**self.kwds)
 
 
 
