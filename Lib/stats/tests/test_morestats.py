@@ -10,6 +10,7 @@ import stats
 restore_path()
 
 import numpy as N
+from numpy.random import RandomState
 
 g1 = [1.006, 0.996, 0.998, 1.000, 0.992, 0.993, 1.002, 0.999, 0.994, 1.000]
 g2 = [0.998, 1.006, 1.000, 1.002, 0.997, 0.998, 0.996, 1.000, 1.006, 0.988]
@@ -39,20 +40,18 @@ class test_shapiro(NumpyTestCase):
 
 class test_anderson(NumpyTestCase):
     def check_normal(self):
-        x1 = scipy.stats.expon.rvs(size=50)
-        x2 = scipy.stats.norm.rvs(size=50)
+        rs = RandomState(1234567890)
+        x1 = rs.standard_exponential(size=50)
+        x2 = rs.standard_normal(size=50)
         A,crit,sig = scipy.stats.anderson(x1)
         assert_array_less(crit[:-1], A)
         A,crit,sig = scipy.stats.anderson(x2)
-        try:
-            assert_array_less(A, crit[-2:])
-        except:
-            A, crit, sig = scipy.stats.anderson(x2)
-            assert_array_less(A, crit[-2:])
+        assert_array_less(A, crit[-2:])
 
     def check_expon(self):
-        x1 = scipy.stats.expon.rvs(size=50)
-        x2 = scipy.stats.norm.rvs(size=50)
+        rs = RandomState(1234567890)
+        x1 = rs.standard_exponential(size=50)
+        x2 = rs.standard_normal(size=50)
         A,crit,sig = scipy.stats.anderson(x1,'expon')
         assert_array_less(A, crit[-2:])
         A,crit,sig = scipy.stats.anderson(x2,'expon')
