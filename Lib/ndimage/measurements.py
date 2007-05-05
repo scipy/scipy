@@ -87,22 +87,39 @@ def find_objects(input, max_label = 0):
         max_label = input.max()
     return _nd_image.find_objects(input, max_label)
 
-def sum(input, labels = None, index = None):
+def sum(input, labels=None, index=None):
     """Calculate the sum of the values of the array.
 
-    The index parameter is a single label number or a sequence of
-    label numbers of the objects to be measured. If index is None, all
-    values are used where labels is larger than zero.
+    :Parameters:
+        index : scalar or array
+            A single label number or a sequence of label numbers of
+            the objects to be measured. If index is None, all
+            values are used where 'labels' is larger than zero.
+
+        labels : array of same shape as input
+            Assign labels to the values of the array.  For example,
+            if
+
+            input = [0,1,2,3] and
+            labels = [1,1,2,2]
+
+            then sum(input, labels, index=[1,2]) would yield [1,5].
+
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if labels != None:
+    if labels is not None:
         labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
         if labels.shape != input.shape:
             raise RuntimeError, 'input and labels shape are not equal'
+    if index is not None:
+        index = numpy.asarray(index)
+        if numpy.issubsctype(index.dtype,numpy.int64) or \
+               numpy.issubsctype(index.dtype,numpy.uint64):
+            raise ValueError("Index values cannot be of type int64/uint64.")
     return _nd_image.statistics(input, labels, index, 0)
 
 

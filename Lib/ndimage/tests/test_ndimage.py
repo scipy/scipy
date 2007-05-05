@@ -2823,6 +2823,13 @@ class test_ndimage(NumpyTestCase):
                                             index = [4, 8, 2])
             self.failUnless(output == [4.0, 0.0, 5.0])
 
+    def test_sum13(self):
+        "sum 13"
+        input = numpy.array([1,2,3,4])
+        labels = numpy.array([0,0,0,0])
+        index = numpy.array([0],numpy.uint64)
+        self.failUnlessRaises(ValueError,ndimage.sum,input,labels,index)
+
     def test_mean01(self):
         "mean 1"
         labels = numpy.array([1, 0], bool)
