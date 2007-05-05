@@ -91,19 +91,21 @@ def sum(input, labels=None, index=None):
     """Calculate the sum of the values of the array.
 
     :Parameters:
+        labels : array of integers, same shape as input
+            Assign labels to the values of the array.
+
         index : scalar or array
             A single label number or a sequence of label numbers of
             the objects to be measured. If index is None, all
             values are used where 'labels' is larger than zero.
 
-        labels : array of same shape as input
-            Assign labels to the values of the array.  For example,
-            if
+    Examples
+    --------
 
-            input = [0,1,2,3] and
-            labels = [1,1,2,2]
-
-            then sum(input, labels, index=[1,2]) would yield [1,5].
+    >>> input =  [0,1,2,3]
+    >>> labels = [1,1,2,2]
+    >>> sum(input, labels, index=[1,2])
+    [1.0, 5.0]
 
     """
     input = numpy.asarray(input)
@@ -117,9 +119,9 @@ def sum(input, labels=None, index=None):
             raise RuntimeError, 'input and labels shape are not equal'
     if index is not None:
         T = getattr(index,'dtype',numpy.int32)
-        if numpy.issubsctype(T,numpy.int64) or \
-               numpy.issubsctype(T,numpy.uint64):
-            raise ValueError("Index values cannot be of type int64/uint64.")
+        if T not in [numpy.int8, numpy.int16, numpy.int32,
+                     numpy.uint8, numpy.uint16, numpy.bool]:
+            raise ValueError("Invalid index type")
         index = numpy.asarray(index,dtype=T)
     return _nd_image.statistics(input, labels, index, 0)
 
