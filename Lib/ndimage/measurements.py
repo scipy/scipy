@@ -116,14 +116,11 @@ def sum(input, labels=None, index=None):
         if labels.shape != input.shape:
             raise RuntimeError, 'input and labels shape are not equal'
     if index is not None:
-        if numpy.isscalar(index):
-            index = numpy.asarray(index,dtype=numpy.uint32)
-        else:
-            index = numpy.asarray(index)
-
-        if numpy.issubsctype(index.dtype,numpy.int64) or \
-               numpy.issubsctype(index.dtype,numpy.uint64):
+        T = getattr(index,'dtype',numpy.int32)
+        if numpy.issubsctype(T,numpy.int64) or \
+               numpy.issubsctype(T,numpy.uint64):
             raise ValueError("Index values cannot be of type int64/uint64.")
+        index = numpy.asarray(index,dtype=T)
     return _nd_image.statistics(input, labels, index, 0)
 
 
