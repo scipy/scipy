@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 # David Cournapeau
-# Last Change: Thu Apr 26 09:00 PM 2007 J
+# Last Change: Sat May 05 06:00 PM 2007 J
 
 # For now, just copy the tests from sandbox.pyem, so we can check that
 # kmeans works OK for trivial examples.
@@ -13,6 +13,12 @@ import numpy as N
 
 set_package_path()
 from cluster.vq import kmeans, kmeans2, py_vq, py_vq2, _py_vq_1d
+try:
+    from cluster import _vq
+    TESTC=True
+except ImportError:
+    print "== Error while importing _vq, not testing C imp of vq =="
+    TESTC=False
 restore_path()
 
 #Optional:
@@ -53,12 +59,11 @@ class test_vq(NumpyTestCase):
     def check_vq(self, level=1):
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
-        try:
-            import _vq
+        if TESTC:
             label1 = _vq.double_vq(X, initc)[0]
             assert_array_equal(label1, LABEL1)
-        except ImportError:
-            print "== Error while importing _vq, not testing C imp of vq =="
+        else:
+            print "== not testing C imp of vq =="
 
     #def check_vq_1d(self, level=1):
     #    data = X[:, 0]
@@ -114,6 +119,12 @@ class test_kmean(NumpyTestCase):
 
         kmeans2(data, 3, minit = 'random')
         kmeans2(data, 3, minit = 'points')
+
+        # Check special case 1d
+        data = data[:, :1]
+        kmeans2(data, 3, minit = 'random')
+        kmeans2(data, 3, minit = 'points')
+
 
 if __name__ == "__main__":
     NumpyTest().run()

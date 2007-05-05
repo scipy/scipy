@@ -446,8 +446,8 @@ def _krandinit(data, k):
             Number of samples to generate.
 
     """
-    mu = N.mean(data, 0)
-    cov = N.cov(data, rowvar = 0)
+    mu  = N.mean(data, 0)
+    cov = N.atleast_2d(N.cov(data, rowvar = 0))
 
     # k rows, d cols (one row = one obs)
     # Generate k sample of a random variable ~ Gaussian(mu, cov)
@@ -500,6 +500,7 @@ def kmeans2(data, k, minit='random', niter=10):
     nd  = N.ndim(data)
     if nd == 1:
         d = 1
+        raise ValueError("Input of rank 1 not supported yet")
     elif nd == 2:
         d = data.shape[1]
     else:
