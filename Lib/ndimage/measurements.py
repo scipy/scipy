@@ -116,7 +116,11 @@ def sum(input, labels=None, index=None):
         if labels.shape != input.shape:
             raise RuntimeError, 'input and labels shape are not equal'
     if index is not None:
-        index = numpy.asarray(index)
+        if numpy.isscalar(index):
+            index = numpy.asarray(index,dtype=numpy.uint32)
+        else:
+            index = numpy.asarray(index)
+
         if numpy.issubsctype(index.dtype,numpy.int64) or \
                numpy.issubsctype(index.dtype,numpy.uint64):
             raise ValueError("Index values cannot be of type int64/uint64.")
