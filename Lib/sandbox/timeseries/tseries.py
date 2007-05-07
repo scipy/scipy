@@ -296,7 +296,9 @@ When called, returns a ndarray, as the result of the method applied on the serie
             try:
                 axis = params.get('axis', args[0])
                 if axis in [-1, _series.ndim-1]:
-                    result = TimeSeries(result, dates=_dates)
+                    result = result.view(type(self.obj))
+                    result._dates = _dates
+#                    result = TimeSeries(result, dates=_dates)
             except IndexError:
                 pass
             return result
@@ -319,9 +321,9 @@ The combination of `series` and `dates` is the `data` part.
     _genattributes = ['fill_value', 'observed']
     def __new__(cls, data, dates=None, mask=nomask,
                 freq=None, observed=None, start_date=None, length=None,
-                dtype=None, copy=False, fill_value=None,
+                dtype=None, copy=False, fill_value=None, subok=True,
                 keep_mask=True, small_mask=True, hard_mask=False, **options):
-        maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value,
+        maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value,subok=subok,
                        keep_mask=keep_mask, small_mask=small_mask,
                        hard_mask=hard_mask,)
         _data = MaskedArray(data, mask=mask, **maparms)
@@ -351,7 +353,8 @@ The combination of `series` and `dates` is the `data` part.
         # Get the data ...............................
         if newdates._unsorted is not None:
             _data = _data[newdates._unsorted]
-        _data = _data.view(cls)
+        if not subok or not isinstance(_data,TimeSeries):
+            _data = _data.view(cls)
         if _data is masked:
             assert(numeric.size(newdates)==1)
             return _data.view(cls)
@@ -1238,10 +1241,16 @@ def convert(series, freq, func='auto', position='END'):
     newseries.copy_attributes(series)
     return newseries
 
-def group_byperiod(series, freq, func='auto', position='END'):
-    """Converts a series to a frequency, without any processing.
+def group_byperiod(series, freq, position='END'):
+    """Converts a series to a frequency, without any processing. If the series
+    has missing data, it is first filled with masked data. Duplicate values in the
+    series will raise an exception.
     """
-    return convert(series, freq, func=None, position='END')
+    if series.has_duplicated_dates():
+        raise TimeSeriesError("The input series must not have duplicated dates!")
+    elif series.has_missing_dates():
+        series = fill_missing_dates(series)
+    return convert(series, freq, func=None, position=position)
 
 TimeSeries.convert = convert
 TimeSeries.group_byperiod = group_byperiod
@@ -1407,7 +1416,10 @@ The data corresponding to the initially missing dates are masked, or filled to
         nshp = (newdates.size,)
     else:
         nshp = tuple([-1,] + list(data.shape[1:]))
-    return time_series(newdata.reshape(nshp), newdates)
+    _data = newdata.reshape(nshp).view(type(data))
+    _data._dates = newdates
+    return _data
+#    return time_series(newdata.reshape(nshp), newdates)
 #...............................................................................
 def stack(*series):
     """performs a column_stack on the data from each series, and the

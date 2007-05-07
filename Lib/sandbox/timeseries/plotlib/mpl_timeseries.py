@@ -692,17 +692,16 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
                     if self.ydata is None:
                         raise ValueError, "No data information available!"
             # Otherwise..............................
-            elif len(remaining) > 0:
-                if isinstance(remaining[0], str):
-                    b = remaining.pop(0)
-                    if self.xdata is None:
-                        raise ValueError, "No date information available!"
-                    else:
-                        output.extend([self.xdata, a, b])
-                elif self.xdata is None:
+            elif len(remaining) > 0 and isinstance(remaining[0], str):
+                b = remaining.pop(0)
+                if self.xdata is None:
                     raise ValueError, "No date information available!"
                 else:
-                    output.extend([self.xdata, a])
+                    output.extend([self.xdata, a, b])
+            elif self.xdata is None:
+                raise ValueError, "No date information available!"
+            else:
+                output.extend([self.xdata, a])
         # Reinitialize the plot if needed ...........
         if self.xdata is None:
             self.xdata = output[0]
