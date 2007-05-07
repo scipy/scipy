@@ -1651,7 +1651,7 @@ i.e. var = mean((x - x.mean())**2).
             cnt = self.count(axis=axis)
             danom = self.anom(axis=axis, dtype=dtype)
             danom *= danom
-            dvar = danom.sum(axis) / cnt
+            dvar = numeric.array(danom.sum(axis) / cnt).view(type(self))
             if axis is not None:
                 dvar._mask = mask_or(self._mask.all(axis), (cnt==1))
             return dvar
@@ -2634,7 +2634,7 @@ if __name__ == '__main__':
     from maskedarray.testutils import assert_equal, assert_array_equal
     marray = masked_array
     #
-    if 1:
+    if 0:
         x = masked_array([1,2])
         y = x * masked
         print y
@@ -2643,3 +2643,8 @@ if __name__ == '__main__':
         y = x + masked
         assert_equal(y.shape, x.shape)
         assert_equal(y._mask, [True, True])
+    #
+    if 1:
+        x = arange(10)
+        x[0] = masked
+        print dot(x,x)

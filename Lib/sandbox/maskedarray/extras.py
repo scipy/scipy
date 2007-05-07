@@ -435,8 +435,9 @@ def dot(a,b):
     NB: The first argument is not conjugated.
     """
     #TODO: Works only with 2D arrays. There should be a way to get it to run with higher dimension
-    a = mask_rows(a)
-    b = mask_cols(b)
+    if (a.ndim == 2) and (b.ndim == 2):
+        a = mask_rows(a)
+        b = mask_cols(b)
     #
     d = numpy.dot(a.filled(0), b.filled(0))
     #
@@ -600,7 +601,7 @@ def notmasked_edges(a, axis=None):
 
 def flatnotmasked_contiguous(a):
     """Finds contiguous unmasked data in a flattened masked array.
-    Returns a sorted sequence of tuples (size,(start index, end index)).
+    Returns a sorted sequence of slices (start index, end index).
     """
     m = getmask(a)
     if m is nomask:
@@ -611,13 +612,14 @@ def flatnotmasked_contiguous(a):
     result = []
     for k, group in groupby(enumerate(unmasked), lambda (i,x):i-x):
         tmp = numpy.fromiter((g[1] for g in group), int_)
-        result.append((tmp.size, tuple(tmp[[0,-1]])))
+#        result.append((tmp.size, tuple(tmp[[0,-1]])))
+        result.append( slice(tmp[0],tmp[-1]) )
     result.sort()
     return result
 
 def notmasked_contiguous(a, axis=None):
     """Finds contiguous unmasked data in a masked array along the given axis.
-    Returns a sorted sequence of tuples (size,(start index, end index)).
+    Returns a sorted sequence of slices (start index, end index).
     Note: Only accepts 2D arrays at most.
     """
     a = asarray(a)
@@ -638,3 +640,10 @@ def notmasked_contiguous(a, axis=None):
         result.append( flatnotmasked_contiguous(a[idx]) )
     return result
   
+################################################################################
+if __name__ == '__main__':
+    #
+    if 1:
+        x = arange(10)
+        x[0] = masked
+        print dot(x,x)
