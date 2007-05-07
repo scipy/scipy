@@ -69,7 +69,6 @@ static void * ellpj_data[] = { (void *)ellpj, (void *)ellpj,};
 static void * exp1_data[] = { (void *)exp1_wrap, (void *)exp1_wrap, (void *)cexp1_wrap, (void *)cexp1_wrap,};
 static void * expi_data[] = { (void *)expi_wrap, (void *)expi_wrap,};
 static void * expn_data[] = { (void *)expn, (void *)expn, };
-static void * jn_data[] = { (void *)jn, (void *)jn, };
 static void * kn_data[] = { (void *)kn, (void *)kn, };
 
 static void * pdtrc_data[] = { (void *)pdtrc, (void *)pdtrc, };
@@ -568,10 +567,6 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	Py_DECREF(f);
 
 
-
-	f = PyUFunc_FromFuncAndData(cephes2a_functions, jn_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "jn", jn_doc, 0);
-	PyDict_SetItemString(dictionary, "jn", f);
-	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes2a_functions, kn_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "kn", kn_doc, 0);
 	PyDict_SetItemString(dictionary, "kn", f);
 	Py_DECREF(f);
@@ -656,6 +651,9 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 
 	f = PyUFunc_FromFuncAndData(cephes2c_functions, jv_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "jv", jv_doc, 0);
 	PyDict_SetItemString(dictionary, "jv", f);
+        /* cephes jn doesn't have any advantages over jv, and is less
+           accurate. So we alias jv to jn */
+        PyDict_SetItemString(dictionary, "jn", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes2cp_functions, jve_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "jve", jve_doc, 0);
 	PyDict_SetItemString(dictionary, "jve", f);

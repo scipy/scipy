@@ -24,48 +24,48 @@ C       Output:  CDN --- Dn(z)
 C       Routine called: GAIH for computing ג(x), x=n/2 (n=1,2,...)
 C       ===========================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Y)
-	IMPLICIT COMPLEX*16 (C,Z)
-	EPS=1.0D-15
-	PI=3.141592653589793D0
-	SQ2=DSQRT(2.0D0)
-	CA0=CDEXP(-.25D0*Z*Z)
-	VA0=0.5D0*(1.0D0-N)
-	IF (N.EQ.0.0) THEN
-	   CDN=CA0
-	ELSE
-	   IF (CDABS(Z).EQ.0.0) THEN
-	      IF (VA0.LE.0.0.AND.VA0.EQ.INT(VA0)) THEN
-		 CDN=0.0D0
-	      ELSE
-		 CALL GAIH(VA0,GA0)
-		 PD=DSQRT(PI)/(2.0D0**(-.5D0*N)*GA0)
-		 CDN=CMPLX(PD,0.0D0)
-	      ENDIF
-	   ELSE
-	      XN=-N
-	      CALL GAIH(XN,G1)
-	      CB0=2.0D0**(-0.5D0*N-1.0D0)*CA0/G1
-	      VT=-.5D0*N
-	      CALL GAIH(VT,G0)
-	      CDN=CMPLX(G0,0.0D0)
-	      CR=(1.0D0,0.0D0)
-	      DO 10 M=1,250
-		 VM=.5D0*(M-N)
-		 CALL GAIH(VM,GM)
-		 CR=-CR*SQ2*Z/M
-		 CDW=GM*CR
-		 CDN=CDN+CDW
-		 IF (CDABS(CDW).LT.CDABS(CDN)*EPS) GO TO 20
+        IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Y)
+        IMPLICIT COMPLEX*16 (C,Z)
+        EPS=1.0D-15
+        PI=3.141592653589793D0
+        SQ2=DSQRT(2.0D0)
+        CA0=CDEXP(-.25D0*Z*Z)
+        VA0=0.5D0*(1.0D0-N)
+        IF (N.EQ.0.0) THEN
+           CDN=CA0
+        ELSE
+           IF (CDABS(Z).EQ.0.0) THEN
+              IF (VA0.LE.0.0.AND.VA0.EQ.INT(VA0)) THEN
+                 CDN=0.0D0
+              ELSE
+                 CALL GAIH(VA0,GA0)
+                 PD=DSQRT(PI)/(2.0D0**(-.5D0*N)*GA0)
+                 CDN=CMPLX(PD,0.0D0)
+              ENDIF
+           ELSE
+              XN=-N
+              CALL GAIH(XN,G1)
+              CB0=2.0D0**(-0.5D0*N-1.0D0)*CA0/G1
+              VT=-.5D0*N
+              CALL GAIH(VT,G0)
+              CDN=CMPLX(G0,0.0D0)
+              CR=(1.0D0,0.0D0)
+              DO 10 M=1,250
+                 VM=.5D0*(M-N)
+                 CALL GAIH(VM,GM)
+                 CR=-CR*SQ2*Z/M
+                 CDW=GM*CR
+                 CDN=CDN+CDW
+                 IF (CDABS(CDW).LT.CDABS(CDN)*EPS) GO TO 20
 10            CONTINUE
 20            CDN=CB0*CDN
-	   ENDIF
-	ENDIF
-	RETURN
-	END
+           ENDIF
+        ENDIF
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE CFS(Z,ZF,ZD)
@@ -459,67 +459,67 @@ C       Purpose: Compute coefficient Bk's for oblate radial
 C                functions with a small argument
 C       =====================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION BK(200),CK(200),U(200),V(200),W(200)
-	EPS=1.0D-14
-	IP=1
-	IF (N-M.EQ.2*INT((N-M)/2)) IP=0
-	NM=25+INT(0.5*(N-M)+C)
-	U(1)=0.0D0
-	N2=NM-2
-	DO 10 J=2,N2
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION BK(200),CK(200),U(200),V(200),W(200)
+        EPS=1.0D-14
+        IP=1
+        IF (N-M.EQ.2*INT((N-M)/2)) IP=0
+        NM=25+INT(0.5*(N-M)+C)
+        U(1)=0.0D0
+        N2=NM-2
+        DO 10 J=2,N2
 10         U(J)=C*C
-	DO 15 J=1,N2
+        DO 15 J=1,N2
 15         V(J)=(2.0*J-1.0-IP)*(2.0*(J-M)-IP)+M*(M-1.0)-CV
-	DO 20 J=1,NM-1
+        DO 20 J=1,NM-1
 20         W(J)=(2.0*J-IP)*(2.0*J+1.0-IP)
-	IF (IP.EQ.0) THEN
+        IF (IP.EQ.0) THEN
            SW=0.0D0
-	   DO 40 K=0,N2-1
-	      S1=0.0D0
-	      I1=K-M+1
-	      DO 30 I=I1,NM
-		 IF (I.LT.0) GO TO 30
-		 R1=1.0D0
-		 DO 25 J=1,K
+           DO 40 K=0,N2-1
+              S1=0.0D0
+              I1=K-M+1
+              DO 30 I=I1,NM
+                 IF (I.LT.0) GO TO 30
+                 R1=1.0D0
+                 DO 25 J=1,K
 25                  R1=R1*(I+M-J)/J
-		 S1=S1+CK(I+1)*(2.0*I+M)*R1
-		 IF (DABS(S1-SW).LT.DABS(S1)*EPS) GO TO 35
-		 SW=S1
+                 S1=S1+CK(I+1)*(2.0*I+M)*R1
+                 IF (DABS(S1-SW).LT.DABS(S1)*EPS) GO TO 35
+                 SW=S1
 30            CONTINUE
 35            BK(K+1)=QT*S1
 40         CONTINUE
-	ELSE IF (IP.EQ.1) THEN
+        ELSE IF (IP.EQ.1) THEN
            SW=0.0D0
-	   DO 60 K=0,N2-1
-	      S1=0.0D0
-	      I1=K-M+1
-	      DO 50 I=I1,NM
-		 IF (I.LT.0) GO TO 50
-		 R1=1.0D0
-		 DO 45 J=1,K
+           DO 60 K=0,N2-1
+              S1=0.0D0
+              I1=K-M+1
+              DO 50 I=I1,NM
+                 IF (I.LT.0) GO TO 50
+                 R1=1.0D0
+                 DO 45 J=1,K
 45                  R1=R1*(I+M-J)/J
-		 IF (I.GT.0) S1=S1+CK(I)*(2.0*I+M-1)*R1
-		 S1=S1-CK(I+1)*(2.0*I+M)*R1
-		 IF (DABS(S1-SW).LT.DABS(S1)*EPS) GO TO 55
-		 SW=S1
+                 IF (I.GT.0) S1=S1+CK(I)*(2.0*I+M-1)*R1
+                 S1=S1-CK(I+1)*(2.0*I+M)*R1
+                 IF (DABS(S1-SW).LT.DABS(S1)*EPS) GO TO 55
+                 SW=S1
 50            CONTINUE
 55            BK(K+1)=QT*S1
 60         CONTINUE
-	ENDIF
-	W(1)=W(1)/V(1)
-	BK(1)=BK(1)/V(1)
-	DO 65 K=2,N2
-	   T=V(K)-W(K-1)*U(K)
-	   W(K)=W(K)/T
+        ENDIF
+        W(1)=W(1)/V(1)
+        BK(1)=BK(1)/V(1)
+        DO 65 K=2,N2
+           T=V(K)-W(K-1)*U(K)
+           W(K)=W(K)/T
 65         BK(K)=(BK(K)-BK(K-1)*U(K))/T
-	DO 70 K=N2-1,1,-1
+        DO 70 K=N2-1,1,-1
 70         BK(K)=BK(K)-W(K)*BK(K+1)
-	RETURN
-	END
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE CJY01(Z,CBJ0,CDJ0,CBJ1,CDJ1,CBY0,CDY0,CBY1,CDY1)
@@ -677,97 +677,97 @@ C            (3) KMN for computing expansion coefficients
 C                and joining factors
 C       ======================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION PM(0:251),PD(0:251),QM(0:251),QD(0:251),
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION PM(0:251),PD(0:251),QM(0:251),QD(0:251),
      &            DN(200),DF(200)
-	IF (DABS(DF(1)).LT.1.0D-280) THEN
-	   R2F=1.0D+300
-	   R2D=1.0D+300
-	   RETURN
-	ENDIF
-	EPS=1.0D-14
-	IP=1
-	NM1=INT((N-M)/2)
-	IF (N-M.EQ.2*NM1) IP=0
-	NM=25+NM1+INT(C)
-	NM2=2*NM+M
-	CALL KMN(M,N,C,CV,KD,DF,DN,CK1,CK2)
-	CALL LPMNS(M,NM2,X,PM,PD)
-	CALL LQMNS(M,NM2,X,QM,QD)
-	SU0=0.0D0
+        IF (DABS(DF(1)).LT.1.0D-280) THEN
+           R2F=1.0D+300
+           R2D=1.0D+300
+           RETURN
+        ENDIF
+        EPS=1.0D-14
+        IP=1
+        NM1=INT((N-M)/2)
+        IF (N-M.EQ.2*NM1) IP=0
+        NM=25+NM1+INT(C)
+        NM2=2*NM+M
+        CALL KMN(M,N,C,CV,KD,DF,DN,CK1,CK2)
+        CALL LPMNS(M,NM2,X,PM,PD)
+        CALL LQMNS(M,NM2,X,QM,QD)
+        SU0=0.0D0
         SW=0.0D0
-	DO 10 K=1,NM
-	  J=2*K-2+M+IP
-	  SU0=SU0+DF(K)*QM(J)
-	  IF (K.GT.NM1.AND.DABS(SU0-SW).LT.DABS(SU0)*EPS) GO TO 15                                                                   
+        DO 10 K=1,NM
+          J=2*K-2+M+IP
+          SU0=SU0+DF(K)*QM(J)
+          IF (K.GT.NM1.AND.DABS(SU0-SW).LT.DABS(SU0)*EPS) GO TO 15                                                                   
 10        SW=SU0
 15      SD0=0.0D0
-	DO 20 K=1,NM
-	  J=2*K-2+M+IP
-	  SD0=SD0+DF(K)*QD(J)
-	  IF (K.GT.NM1.AND.DABS(SD0-SW).LT.DABS(SD0)*EPS) GO TO 25
+        DO 20 K=1,NM
+          J=2*K-2+M+IP
+          SD0=SD0+DF(K)*QD(J)
+          IF (K.GT.NM1.AND.DABS(SD0-SW).LT.DABS(SD0)*EPS) GO TO 25
 20        SW=SD0
 25        SU1=0.0D0
-	  SD1=0.0D0
-	  DO 30 K=1,M
-	     J=M-2*K+IP
-	     IF (J.LT.0) J=-J-1
-	     SU1=SU1+DN(K)*QM(J)
+          SD1=0.0D0
+          DO 30 K=1,M
+             J=M-2*K+IP
+             IF (J.LT.0) J=-J-1
+             SU1=SU1+DN(K)*QM(J)
 30           SD1=SD1+DN(K)*QD(J)
-	  GA=((X-1.0D0)/(X+1.0D0))**(0.5D0*M)
-	  DO 55 K=1,M
-	     J=M-2*K+IP
-	     IF (J.GE.0) GO TO 55
-	     IF (J.LT.0) J=-J-1
-	     R1=1.0D0
-	     DO 35 J1=1,J
+          GA=((X-1.0D0)/(X+1.0D0))**(0.5D0*M)
+          DO 55 K=1,M
+             J=M-2*K+IP
+             IF (J.GE.0) GO TO 55
+             IF (J.LT.0) J=-J-1
+             R1=1.0D0
+             DO 35 J1=1,J
 35              R1=(M+J1)*R1
-	     R2=1.0D0
-	     DO 40 J2=1,M-J-2
+             R2=1.0D0
+             DO 40 J2=1,M-J-2
 40              R2=J2*R2
-	     R3=1.0D0
-	     SF=1.0D0
-	     DO 45 L1=1,J
-		R3=0.5D0*R3*(-J+L1-1.0)*(J+L1)/((M+L1)*L1)*(1.0-X)
+             R3=1.0D0
+             SF=1.0D0
+             DO 45 L1=1,J
+                R3=0.5D0*R3*(-J+L1-1.0)*(J+L1)/((M+L1)*L1)*(1.0-X)
 45              SF=SF+R3
-	     IF (M-J.GE.2) GB=(M-J-1.0D0)*R2
-	     IF (M-J.LE.1) GB=1.0D0
-	     SPL=R1*GA*GB*SF
-	     SU1=SU1+(-1)**(J+M)*DN(K)*SPL
-	     SPD1=M/(X*X-1.0D0)*SPL
-	     GC=0.5D0*J*(J+1.0)/(M+1.0)
-	     SD=1.0D0
-	     R4=1.0D0
-	     DO 50 L1=1,J-1
-		R4=0.5D0*R4*(-J+L1)*(J+L1+1.0)/((M+L1+1.0)*L1)
+             IF (M-J.GE.2) GB=(M-J-1.0D0)*R2
+             IF (M-J.LE.1) GB=1.0D0
+             SPL=R1*GA*GB*SF
+             SU1=SU1+(-1)**(J+M)*DN(K)*SPL
+             SPD1=M/(X*X-1.0D0)*SPL
+             GC=0.5D0*J*(J+1.0)/(M+1.0)
+             SD=1.0D0
+             R4=1.0D0
+             DO 50 L1=1,J-1
+                R4=0.5D0*R4*(-J+L1)*(J+L1+1.0)/((M+L1+1.0)*L1)
      &             *(1.0-X)
 50              SD=SD+R4
-	     SPD2=R1*GA*GB*GC*SD
-	     SD1=SD1+(-1)**(J+M)*DN(K)*(SPD1+SPD2)
+             SPD2=R1*GA*GB*GC*SD
+             SD1=SD1+(-1)**(J+M)*DN(K)*(SPD1+SPD2)
 55        CONTINUE
-	  SU2=0.0D0
-	  KI=(2*M+1+IP)/2
-	  NM3=NM+KI
-	  DO 60 K=KI,NM3
-	     J=2*K-1-M-IP
-	     SU2=SU2+DN(K)*PM(J)
-	     IF (J.GT.M.AND.DABS(SU2-SW).LT.DABS(SU2)*EPS) GO TO 65
+          SU2=0.0D0
+          KI=(2*M+1+IP)/2
+          NM3=NM+KI
+          DO 60 K=KI,NM3
+             J=2*K-1-M-IP
+             SU2=SU2+DN(K)*PM(J)
+             IF (J.GT.M.AND.DABS(SU2-SW).LT.DABS(SU2)*EPS) GO TO 65
 60           SW=SU2
 65        SD2=0.0D0
-	  DO 70 K=KI,NM3
-	     J=2*K-1-M-IP
-	     SD2=SD2+DN(K)*PD(J)
-	     IF (J.GT.M.AND.DABS(SD2-SW).LT.DABS(SD2)*EPS) GO TO 75
+          DO 70 K=KI,NM3
+             J=2*K-1-M-IP
+             SD2=SD2+DN(K)*PD(J)
+             IF (J.GT.M.AND.DABS(SD2-SW).LT.DABS(SD2)*EPS) GO TO 75
 70           SW=SD2
 75      SUM=SU0+SU1+SU2
-	SDM=SD0+SD1+SD2
-	R2F=SUM/CK2
-	R2D=SDM/CK2
-	RETURN
-	END
+        SDM=SD0+SD1+SD2
+        R2F=SUM/CK2
+        R2D=SDM/CK2
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE BERNOB(N,BN)
@@ -833,33 +833,33 @@ C       Purpose: Compute Q*mn(-ic) for oblate radial functions
 C                with a small argument
 C       =========================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION AP(200),CK(200)
-	IP=1
-	IF (N-M.EQ.2*INT((N-M)/2)) IP=0
-	R=1.0D0/CK(1)**2
-	AP(1)=R
-	DO 20 I=1,M
-	   S=0.0D0
-	   DO 15 L=1,I
-	      SK=0.0D0
-	      DO 10 K=0,L
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION AP(200),CK(200)
+        IP=1
+        IF (N-M.EQ.2*INT((N-M)/2)) IP=0
+        R=1.0D0/CK(1)**2
+        AP(1)=R
+        DO 20 I=1,M
+           S=0.0D0
+           DO 15 L=1,I
+              SK=0.0D0
+              DO 10 K=0,L
 10               SK=SK+CK(K+1)*CK(L-K+1)
 15            S=S+SK*AP(I-L+1)
 20      AP(I+1)=-R*S
-	QS0=AP(M+1)     
-	DO 30 L=1,M
-	   R=1.0D0
-	   DO 25 K=1,L
+        QS0=AP(M+1)     
+        DO 30 L=1,M
+           R=1.0D0
+           DO 25 K=1,L
 25            R=R*(2.0D0*K+IP)*(2.0D0*K-1.0D0+IP)/(2.0D0*K)**2
 30         QS0=QS0+AP(M-L+1)*R
-	QS=(-1)**IP*CK1*(CK1*QS0)/C
-	QT=-2.0D0/CK1*QS
-	RETURN
-	END
+        QS=(-1)**IP*CK1*(CK1*QS0)/C
+        QT=-2.0D0/CK1*QS
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE CV0(KD,M,Q,A0)
@@ -1456,78 +1456,78 @@ C                SPHY for computing the spherical Bessel
 C                functions of the second kind      
 C       ========================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION DF(200),SY(0:251),DY(0:251)
-	EPS=1.0D-14
-	IP=1
-	NM1=INT((N-M)/2)
-	IF (N-M.EQ.2*NM1) IP=0
-	NM=25+NM1+INT(C)
-	REG=1.0D0
-	IF (M+NM.GT.80) REG=1.0D-200
-	NM2=2*NM+M
-	CX=C*X
-	CALL SPHY(NM2,CX,NM2,SY,DY)
-	R0=REG
-	DO 10 J=1,2*M+IP
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION DF(200),SY(0:251),DY(0:251)
+        EPS=1.0D-14
+        IP=1
+        NM1=INT((N-M)/2)
+        IF (N-M.EQ.2*NM1) IP=0
+        NM=25+NM1+INT(C)
+        REG=1.0D0
+        IF (M+NM.GT.80) REG=1.0D-200
+        NM2=2*NM+M
+        CX=C*X
+        CALL SPHY(NM2,CX,NM2,SY,DY)
+        R0=REG
+        DO 10 J=1,2*M+IP
 10         R0=R0*J
-	R=R0    
-	SUC=R*DF(1)
+        R=R0    
+        SUC=R*DF(1)
         SW=0.0D0
-	DO 15 K=2,NM
-	   R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
-	   SUC=SUC+R*DF(K)
-	   IF (K.GT.NM1.AND.DABS(SUC-SW).LT.DABS(SUC)*EPS) GO TO 20
+        DO 15 K=2,NM
+           R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
+           SUC=SUC+R*DF(K)
+           IF (K.GT.NM1.AND.DABS(SUC-SW).LT.DABS(SUC)*EPS) GO TO 20
 15         SW=SUC
 20      A0=(1.0D0-KD/(X*X))**(0.5D0*M)/SUC
-	R2F=0.0D0
+        R2F=0.0D0
         EPS1=0.0D0
         NP=0
-	DO 50 K=1,NM
-	   L=2*K+M-N-2+IP
+        DO 50 K=1,NM
+           L=2*K+M-N-2+IP
            LG=1
-	   IF (L.NE.4*INT(L/4)) LG=-1
-	   IF (K.EQ.1) THEN
-	      R=R0
-	   ELSE
-	      R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
-	   ENDIF
-	   NP=M+2*K-2+IP
-	   R2F=R2F+LG*R*(DF(K)*SY(NP))
-	   EPS1=DABS(R2F-SW)
-	   IF (K.GT.NM1.AND.EPS1.LT.DABS(R2F)*EPS) GO TO 55
+           IF (L.NE.4*INT(L/4)) LG=-1
+           IF (K.EQ.1) THEN
+              R=R0
+           ELSE
+              R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
+           ENDIF
+           NP=M+2*K-2+IP
+           R2F=R2F+LG*R*(DF(K)*SY(NP))
+           EPS1=DABS(R2F-SW)
+           IF (K.GT.NM1.AND.EPS1.LT.DABS(R2F)*EPS) GO TO 55
 50         SW=R2F
 55      ID1=INT(LOG10(EPS1/DABS(R2F)+EPS))
-	R2F=R2F*A0
-	IF (NP.GE.NM2) THEN
-	   ID=10
-	   RETURN
-	ENDIF
-	B0=KD*M/X**3.0D0/(1.0-KD/(X*X))*R2F                
-	SUD=0.0D0
+        R2F=R2F*A0
+        IF (NP.GE.NM2) THEN
+           ID=10
+           RETURN
+        ENDIF
+        B0=KD*M/X**3.0D0/(1.0-KD/(X*X))*R2F                
+        SUD=0.0D0
         EPS2=0.0D0
-	DO 60 K=1,NM
-	   L=2*K+M-N-2+IP
-	   LG=1
-	   IF (L.NE.4*INT(L/4)) LG=-1
-	   IF (K.EQ.1) THEN
-	      R=R0
-	   ELSE
-	      R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
-	   ENDIF
-	   NP=M+2*K-2+IP
-	   SUD=SUD+LG*R*(DF(K)*DY(NP))
-	   EPS2=DABS(SUD-SW)
-	   IF (K.GT.NM1.AND.EPS2.LT.DABS(SUD)*EPS) GO TO 65
+        DO 60 K=1,NM
+           L=2*K+M-N-2+IP
+           LG=1
+           IF (L.NE.4*INT(L/4)) LG=-1
+           IF (K.EQ.1) THEN
+              R=R0
+           ELSE
+              R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
+           ENDIF
+           NP=M+2*K-2+IP
+           SUD=SUD+LG*R*(DF(K)*DY(NP))
+           EPS2=DABS(SUD-SW)
+           IF (K.GT.NM1.AND.EPS2.LT.DABS(SUD)*EPS) GO TO 65
 60         SW=SUD
 65      R2D=B0+A0*C*SUD       
-	ID2=INT(LOG10(EPS2/DABS(SUD)+EPS))
-	ID=MAX(ID1,ID2)
-	RETURN
-	END
+        ID2=INT(LOG10(EPS2/DABS(SUD)+EPS))
+        ID=MAX(ID1,ID2)
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE PSI_SPEC(X,PS)
@@ -1682,51 +1682,51 @@ C       Output:  PM(n) --- Pmn(x)
 C                PD(n) --- Pmn'(x)
 C       ========================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION PM(0:N),PD(0:N)
-	DO 10 K=0,N
-	   PM(K)=0.0D0
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION PM(0:N),PD(0:N)
+        DO 10 K=0,N
+           PM(K)=0.0D0
 10         PD(K)=0.0D0
-	IF (DABS(X).EQ.1.0D0) THEN
-	   DO 15 K=0,N
-	      IF (M.EQ.0) THEN
-		 PM(K)=1.0D0
-		 PD(K)=0.5D0*K*(K+1.0)
-		 IF (X.LT.0.0) THEN
-		    PM(K)=(-1)**K*PM(K)
-		    PD(K)=(-1)**(K+1)*PD(K)
-		 ENDIF
-	      ELSE IF (M.EQ.1) THEN
-		 PD(K)=1.0D+300
-	      ELSE IF (M.EQ.2) THEN
-		 PD(K)=-0.25D0*(K+2.0)*(K+1.0)*K*(K-1.0)
-		 IF (X.LT.0.0) PD(K)=(-1)**(K+1)*PD(K)
-	      ENDIF
+        IF (DABS(X).EQ.1.0D0) THEN
+           DO 15 K=0,N
+              IF (M.EQ.0) THEN
+                 PM(K)=1.0D0
+                 PD(K)=0.5D0*K*(K+1.0)
+                 IF (X.LT.0.0) THEN
+                    PM(K)=(-1)**K*PM(K)
+                    PD(K)=(-1)**(K+1)*PD(K)
+                 ENDIF
+              ELSE IF (M.EQ.1) THEN
+                 PD(K)=1.0D+300
+              ELSE IF (M.EQ.2) THEN
+                 PD(K)=-0.25D0*(K+2.0)*(K+1.0)*K*(K-1.0)
+                 IF (X.LT.0.0) PD(K)=(-1)**(K+1)*PD(K)
+              ENDIF
 15         CONTINUE
-	   RETURN
-	ENDIF
-	X0=DABS(1.0D0-X*X)
-	PM0=1.0D0
-	PMK=PM0
-	DO 20 K=1,M
-	   PMK=(2.0D0*K-1.0D0)*DSQRT(X0)*PM0
+           RETURN
+        ENDIF
+        X0=DABS(1.0D0-X*X)
+        PM0=1.0D0
+        PMK=PM0
+        DO 20 K=1,M
+           PMK=(2.0D0*K-1.0D0)*DSQRT(X0)*PM0
 20         PM0=PMK
-	PM1=(2.0D0*M+1.0D0)*X*PM0
-	PM(M)=PMK
-	PM(M+1)=PM1
-	DO 25 K=M+2,N
-	   PM2=((2.0D0*K-1.0D0)*X*PM1-(K+M-1.0D0)*PMK)/(K-M)
-	   PM(K)=PM2
-	   PMK=PM1
+        PM1=(2.0D0*M+1.0D0)*X*PM0
+        PM(M)=PMK
+        PM(M+1)=PM1
+        DO 25 K=M+2,N
+           PM2=((2.0D0*K-1.0D0)*X*PM1-(K+M-1.0D0)*PMK)/(K-M)
+           PM(K)=PM2
+           PMK=PM1
 25         PM1=PM2
-	PD(0)=((1.0D0-M)*PM(1)-X*PM(0))/(X*X-1.0)  
-	DO 30 K=1,N
+        PD(0)=((1.0D0-M)*PM(1)-X*PM(0))/(X*X-1.0)  
+        DO 30 K=1,N
 30         PD(K)=(K*X*PM(K)-(K+M)*PM(K-1))/(X*X-1.0D0)
         DO 35 K=1,N
            PM(K)=(-1)**M*PM(K)
 35         PD(K)=(-1)**M*PD(K)
-	RETURN
-	END
+        RETURN
+        END
 
 C       **********************************
 
@@ -1830,24 +1830,24 @@ C            (4) RMN2SP for computing the prolate radial function
 C                of the second kind for a small argument
 C       ==============================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION DF(200)
-	KD=1
-	CALL SDMN(M,N,C,CV,KD,DF)
-	IF (KF.NE.2) THEN
-	   CALL RMN1(M,N,C,X,DF,KD,R1F,R1D)
-	ENDIF
-	IF (KF.GT.1) THEN
-	   CALL RMN2L(M,N,C,X,DF,KD,R2F,R2D,ID)
-	   IF (ID.GT.-8) THEN
-	      CALL RMN2SP(M,N,C,X,CV,DF,KD,R2F,R2D)
-	   ENDIF
-	ENDIF
-	RETURN
-	END
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION DF(200)
+        KD=1
+        CALL SDMN(M,N,C,CV,KD,DF)
+        IF (KF.NE.2) THEN
+           CALL RMN1(M,N,C,X,DF,KD,R1F,R1D)
+        ENDIF
+        IF (KF.GT.1) THEN
+           CALL RMN2L(M,N,C,X,DF,KD,R2F,R2D,ID)
+           IF (ID.GT.-8) THEN
+              CALL RMN2SP(M,N,C,X,CV,DF,KD,R2F,R2D)
+           ENDIF
+        ENDIF
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
@@ -1922,9 +1922,9 @@ C       Input :  x  --- Argument of ג(x)  ( |x| ף 1 )
 C       Output:  GA --- ג(x)
 C       ================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION G(25)
-	DATA G/1.0D0,0.5772156649015329D0,
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION G(25)
+        DATA G/1.0D0,0.5772156649015329D0,
      &       -0.6558780715202538D0, -0.420026350340952D-1,
      &        0.1665386113822915D0, -.421977345555443D-1,
      &        -.96219715278770D-2, .72189432466630D-2,
@@ -1936,12 +1936,12 @@ C
      &         .1043427D-9, .77823D-11,
      &        -.36968D-11, .51D-12,
      &        -.206D-13, -.54D-14, .14D-14/
-	GR=(25)
-	DO 20 K=24,1,-1
+        GR=(25)
+        DO 20 K=24,1,-1
 20         GR=GR*X+G(K)
-	GA=1.0D0/(GR*X)
-	RETURN
-	END
+        GA=1.0D0/(GR*X)
+        RETURN
+        END
 
 
 C       **********************************
@@ -2475,39 +2475,39 @@ C       Input :  z   --- Complex argument
 C       Output:  CER --- erf(z)
 C       ====================================================
 C
-	IMPLICIT COMPLEX *16 (C,Z)
-	DOUBLE PRECISION A0,PI
-	A0=CDABS(Z)
-	C0=CDEXP(-Z*Z)
-	PI=3.141592653589793D0
-	Z1=Z
-	IF (DBLE(Z).LT.0.0) THEN
-	   Z1=-Z
-	ENDIF
-	IF (A0.LE.5.8D0) THEN    
-	   CS=Z1
-	   CR=Z1
-	   DO 10 K=1,120
-	      CR=CR*Z1*Z1/(K+0.5D0)
-	      CS=CS+CR
-	      IF (CDABS(CR/CS).LT.1.0D-15) GO TO 15
+        IMPLICIT COMPLEX *16 (C,Z)
+        DOUBLE PRECISION A0,PI
+        A0=CDABS(Z)
+        C0=CDEXP(-Z*Z)
+        PI=3.141592653589793D0
+        Z1=Z
+        IF (DBLE(Z).LT.0.0) THEN
+           Z1=-Z
+        ENDIF
+        IF (A0.LE.5.8D0) THEN    
+           CS=Z1
+           CR=Z1
+           DO 10 K=1,120
+              CR=CR*Z1*Z1/(K+0.5D0)
+              CS=CS+CR
+              IF (CDABS(CR/CS).LT.1.0D-15) GO TO 15
 10         CONTINUE
 15         CER=2.0D0*C0*CS/DSQRT(PI)
-	ELSE                              
-	   CL=1.0D0/Z1              
-	   CR=CL
-	   DO 20 K=1,13
-	      CR=-CR*(K-0.5D0)/(Z1*Z1)
-	      CL=CL+CR
-	      IF (CDABS(CR/CL).LT.1.0D-15) GO TO 25
+        ELSE                              
+           CL=1.0D0/Z1              
+           CR=CL
+           DO 20 K=1,13
+              CR=-CR*(K-0.5D0)/(Z1*Z1)
+              CL=CL+CR
+              IF (CDABS(CR/CL).LT.1.0D-15) GO TO 25
 20         CONTINUE
 25         CER=1.0D0-C0*CL/DSQRT(PI)
-	ENDIF
-	IF (DBLE(Z).LT.0.0) THEN
-	   CER=-CER
-	ENDIF
-	RETURN
-	END
+        ENDIF
+        IF (DBLE(Z).LT.0.0) THEN
+           CER=-CER
+        ENDIF
+        RETURN
+        END
 
 
 
@@ -2909,124 +2909,124 @@ C                point for backward recurrence
 C            (2) GAM0 for computing gamma function (|x| ף 1)
 C       =========================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION VL(0:*),DL(0:*)
-	PI=3.141592653589793D0
-	RP2=0.63661977236758D0
-	X=DABS(X)
-	X2=X*X
-	N=INT(V)
-	V0=V-N
-	VM=V
-	IF (X.LE.12.0D0) THEN
-	   DO 25 K=0,N
-	      VK=V0+K
-	      BK=1.0D0
-	      R=1.0D0
-	      DO 10 I=1,50
-		 R=-0.25D0*R*X2/(I*(I+VK))
-		 BK=BK+R
-		 IF (DABS(R).LT.DABS(BK)*1.0D-15) GO TO 15
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION VL(0:*),DL(0:*)
+        PI=3.141592653589793D0
+        RP2=0.63661977236758D0
+        X=DABS(X)
+        X2=X*X
+        N=INT(V)
+        V0=V-N
+        VM=V
+        IF (X.LE.12.0D0) THEN
+           DO 25 K=0,N
+              VK=V0+K
+              BK=1.0D0
+              R=1.0D0
+              DO 10 I=1,50
+                 R=-0.25D0*R*X2/(I*(I+VK))
+                 BK=BK+R
+                 IF (DABS(R).LT.DABS(BK)*1.0D-15) GO TO 15
 10            CONTINUE
 15            VL(K)=BK
-	      UK=1.0D0
-	      R=1.0D0
-	      DO 20 I=1,50
-		 R=-0.25D0*R*X2/(I*(I+VK+1.0D0))
-		 UK=UK+R
-		 IF (DABS(R).LT.DABS(UK)*1.0D-15) GO TO 25
+              UK=1.0D0
+              R=1.0D0
+              DO 20 I=1,50
+                 R=-0.25D0*R*X2/(I*(I+VK+1.0D0))
+                 UK=UK+R
+                 IF (DABS(R).LT.DABS(UK)*1.0D-15) GO TO 25
 20            CONTINUE
 25            DL(K)=-0.5D0*X/(VK+1.0D0)*UK
-	   RETURN
-	ENDIF
-	K0=11
-	IF (X.GE.35.0D0) K0=10
-	IF (X.GE.50.0D0) K0=8
+           RETURN
+        ENDIF
+        K0=11
+        IF (X.GE.35.0D0) K0=10
+        IF (X.GE.50.0D0) K0=8
         BJV0=0.0D0
         BJV1=0.0D0
-	DO 40 J=0,1
-	   VV=4.0D0*(J+V0)*(J+V0)
-	   PX=1.0D0
-	   RP=1.0D0
-	   DO 30 K=1,K0
-	      RP=-0.78125D-2*RP*(VV-(4.0*K-3.0)**2.0)*(VV-
+        DO 40 J=0,1
+           VV=4.0D0*(J+V0)*(J+V0)
+           PX=1.0D0
+           RP=1.0D0
+           DO 30 K=1,K0
+              RP=-0.78125D-2*RP*(VV-(4.0*K-3.0)**2.0)*(VV-
      &            (4.0*K-1.0)**2.0)/(K*(2.0*K-1.0)*X2)
 30            PX=PX+RP
-	   QX=1.0D0
-	   RQ=1.0D0
-	   DO 35 K=1,K0
-	      RQ=-0.78125D-2*RQ*(VV-(4.0*K-1.0)**2.0)*(VV-
+           QX=1.0D0
+           RQ=1.0D0
+           DO 35 K=1,K0
+              RQ=-0.78125D-2*RQ*(VV-(4.0*K-1.0)**2.0)*(VV-
      &            (4.0*K+1.0)**2.0)/(K*(2.0*K+1.0)*X2)
 35            QX=QX+RQ
-	   QX=0.125D0*(VV-1.0D0)*QX/X
-	   XK=X-(0.5D0*(J+V0)+0.25D0)*PI
-	   A0=DSQRT(RP2/X)
-	   CK=DCOS(XK)
-	   SK=DSIN(XK)
-	   IF (J.EQ.0) BJV0=A0*(PX*CK-QX*SK)
-	   IF (J.EQ.1) BJV1=A0*(PX*CK-QX*SK)
+           QX=0.125D0*(VV-1.0D0)*QX/X
+           XK=X-(0.5D0*(J+V0)+0.25D0)*PI
+           A0=DSQRT(RP2/X)
+           CK=DCOS(XK)
+           SK=DSIN(XK)
+           IF (J.EQ.0) BJV0=A0*(PX*CK-QX*SK)
+           IF (J.EQ.1) BJV1=A0*(PX*CK-QX*SK)
 40      CONTINUE
-	IF (V0.EQ.0.0D0) THEN
-	   GA=1.0D0
-	ELSE
-	   CALL GAM0(V0,GA)
-	   GA=V0*GA
-	ENDIF
-	FAC=(2.0D0/X)**V0*GA
-	VL(0)=BJV0
-	DL(0)=-BJV1+V0/X*BJV0
-	VL(1)=BJV1
-	DL(1)=BJV0-(1.0D0+V0)/X*BJV1
-	R0=2.0D0*(1.0D0+V0)/X
-	IF (N.LE.1) THEN
-	   VL(0)=FAC*VL(0)
-	   DL(0)=FAC*DL(0)-V0/X*VL(0)
-	   VL(1)=FAC*R0*VL(1)
-	   DL(1)=FAC*R0*DL(1)-(1.0D0+V0)/X*VL(1)
-	   RETURN
-	ENDIF
-	IF (N.GE.2.AND.N.LE.INT(0.9*X)) THEN
-	   F0=BJV0
-	   F1=BJV1
-	   DO 45 K=2,N
-	      F=2.0D0*(K+V0-1.0D0)/X*F1-F0
-	      F0=F1
-	      F1=F
+        IF (V0.EQ.0.0D0) THEN
+           GA=1.0D0
+        ELSE
+           CALL GAM0(V0,GA)
+           GA=V0*GA
+        ENDIF
+        FAC=(2.0D0/X)**V0*GA
+        VL(0)=BJV0
+        DL(0)=-BJV1+V0/X*BJV0
+        VL(1)=BJV1
+        DL(1)=BJV0-(1.0D0+V0)/X*BJV1
+        R0=2.0D0*(1.0D0+V0)/X
+        IF (N.LE.1) THEN
+           VL(0)=FAC*VL(0)
+           DL(0)=FAC*DL(0)-V0/X*VL(0)
+           VL(1)=FAC*R0*VL(1)
+           DL(1)=FAC*R0*DL(1)-(1.0D0+V0)/X*VL(1)
+           RETURN
+        ENDIF
+        IF (N.GE.2.AND.N.LE.INT(0.9*X)) THEN
+           F0=BJV0
+           F1=BJV1
+           DO 45 K=2,N
+              F=2.0D0*(K+V0-1.0D0)/X*F1-F0
+              F0=F1
+              F1=F
 45            VL(K)=F
-	ELSE IF (N.GE.2) THEN
-	   M=MSTA1(X,200)
-	   IF (M.LT.N) THEN
-	      N=M
-	   ELSE
-	      M=MSTA2(X,N,15)
-	   ENDIF
+        ELSE IF (N.GE.2) THEN
+           M=MSTA1(X,200)
+           IF (M.LT.N) THEN
+              N=M
+           ELSE
+              M=MSTA2(X,N,15)
+           ENDIF
            F=0.0D0
-	   F2=0.0D0
-	   F1=1.0D-100
-	   DO 50 K=M,0,-1
-	      F=2.0D0*(V0+K+1.0D0)/X*F1-F2
-	      IF (K.LE.N) VL(K)=F
-	      F2=F1
+           F2=0.0D0
+           F1=1.0D-100
+           DO 50 K=M,0,-1
+              F=2.0D0*(V0+K+1.0D0)/X*F1-F2
+              IF (K.LE.N) VL(K)=F
+              F2=F1
 50            F1=F
            CS=0.0D0
-	   IF (DABS(BJV0).GT.DABS(BJV1)) CS=BJV0/F
-	   ELSE CS=BJV1/F2
-	   DO 55 K=0,N
+           IF (DABS(BJV0).GT.DABS(BJV1)) CS=BJV0/F
+           ELSE CS=BJV1/F2
+           DO 55 K=0,N
 55            VL(K)=CS*VL(K)
-	ENDIF
-	VL(0)=FAC*VL(0)
-	DO 65 J=1,N
-	   RC=FAC*R0
-	   VL(J)=RC*VL(J)
-	   DL(J-1)=-0.5D0*X/(J+V0)*VL(J)
+        ENDIF
+        VL(0)=FAC*VL(0)
+        DO 65 J=1,N
+           RC=FAC*R0
+           VL(J)=RC*VL(J)
+           DL(J-1)=-0.5D0*X/(J+V0)*VL(J)
 65         R0=2.0D0*(J+V0+1)/X*R0
-	DL(N)=2.0D0*(V0+N)*(VL(N-1)-VL(N))/X
-	VM=N+V0
-	RETURN
-	END
+        DL(N)=2.0D0*(V0+N)*(VL(N-1)-VL(N))/X
+        VM=N+V0
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE CHGUIT(A,B,X,HU,ID)
@@ -3139,84 +3139,84 @@ C                prolate and oblate spheroidal functions
 C                and joining factors
 C       ===================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION U(200),V(200),W(200),DF(200),DN(200),
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION U(200),V(200),W(200),DF(200),DN(200),
      &            TP(200),RK(200)
-	NM=25+INT(0.5*(N-M)+C)
-	NN=NM+M
-	CS=C*C*KD
-	IP=1
-	IF (N-M.EQ.2*INT((N-M)/2)) IP=0
+        NM=25+INT(0.5*(N-M)+C)
+        NN=NM+M
+        CS=C*C*KD
+        IP=1
+        IF (N-M.EQ.2*INT((N-M)/2)) IP=0
         K=0
-	DO 10 I=1,NN+3     
-	   IF (IP.EQ.0) K=-2*(I-1)
-	   IF (IP.EQ.1) K=-(2*I-3)
-	   GK0=2.0D0*M+K
-	   GK1=(M+K)*(M+K+1.0D0)
-	   GK2=2.0D0*(M+K)-1.0D0
-	   GK3=2.0D0*(M+K)+3.0D0
-	   U(I)=GK0*(GK0-1.0D0)*CS/(GK2*(GK2+2.0D0))
-	   V(I)=GK1-CV+(2.0D0*(GK1-M*M)-1.0D0)*CS/(GK2*GK3)
+        DO 10 I=1,NN+3     
+           IF (IP.EQ.0) K=-2*(I-1)
+           IF (IP.EQ.1) K=-(2*I-3)
+           GK0=2.0D0*M+K
+           GK1=(M+K)*(M+K+1.0D0)
+           GK2=2.0D0*(M+K)-1.0D0
+           GK3=2.0D0*(M+K)+3.0D0
+           U(I)=GK0*(GK0-1.0D0)*CS/(GK2*(GK2+2.0D0))
+           V(I)=GK1-CV+(2.0D0*(GK1-M*M)-1.0D0)*CS/(GK2*GK3)
 10         W(I)=(K+1.0D0)*(K+2.0D0)*CS/((GK2+2.0D0)*GK3)
-	DO 20 K=1,M
-	   T=V(M+1)
-	   DO 15 L=0,M-K-1
+        DO 20 K=1,M
+           T=V(M+1)
+           DO 15 L=0,M-K-1
 15            T=V(M-L)-W(M-L+1)*U(M-L)/T
 20         RK(K)=-U(K)/T
-	R=1.0D0
-	DO 25 K=1,M
-	   R=R*RK(K)
+        R=1.0D0
+        DO 25 K=1,M
+           R=R*RK(K)
 25         DN(K)=DF(1)*R
-	TP(NN)=V(NN+1)
-	DO 30 K=NN-1,M+1,-1
-	   TP(K)=V(K+1)-W(K+2)*U(K+1)/TP(K+1)
-	   IF (K.GT.M+1) RK(K)=-U(K)/TP(K)
+        TP(NN)=V(NN+1)
+        DO 30 K=NN-1,M+1,-1
+           TP(K)=V(K+1)-W(K+2)*U(K+1)/TP(K+1)
+           IF (K.GT.M+1) RK(K)=-U(K)/TP(K)
 30      CONTINUE
-	IF (M.EQ.0) DNP=DF(1)
-	IF (M.NE.0) DNP=DN(M)
-	DN(M+1)=(-1)**IP*DNP*CS/((2.0*M-1.0)*(2.0*M+1.0-4.0*IP)
+        IF (M.EQ.0) DNP=DF(1)
+        IF (M.NE.0) DNP=DN(M)
+        DN(M+1)=(-1)**IP*DNP*CS/((2.0*M-1.0)*(2.0*M+1.0-4.0*IP)
      &          *TP(M+1))
-	DO 35 K=M+2,NN
+        DO 35 K=M+2,NN
 35         DN(K)=RK(K)*DN(K-1)
-	R1=1.0D0
-	DO 40 J=1,(N+M+IP)/2
+        R1=1.0D0
+        DO 40 J=1,(N+M+IP)/2
 40         R1=R1*(J+0.5D0*(N+M+IP))
-	NM1=(N-M)/2
-	R=1.0D0
-	DO 45 J=1,2*M+IP
+        NM1=(N-M)/2
+        R=1.0D0
+        DO 45 J=1,2*M+IP
 45         R=R*J
-	SU0=R*DF(1)
+        SU0=R*DF(1)
         SW=0.0D0
-	DO 50 K=2,NM
-	   R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
-	   SU0=SU0+R*DF(K)
-	   IF (K.GT.NM1.AND.DABS((SU0-SW)/SU0).LT.1.0D-14) GO TO 55
+        DO 50 K=2,NM
+           R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
+           SU0=SU0+R*DF(K)
+           IF (K.GT.NM1.AND.DABS((SU0-SW)/SU0).LT.1.0D-14) GO TO 55
 50         SW=SU0
 55      IF (KD.EQ.1) GOTO 70
-	R2=1.0D0
-	DO 60 J=1,M
+        R2=1.0D0
+        DO 60 J=1,M
 60         R2=2.0D0*C*R2*J
-	R3=1.0D0
-	DO 65 J=1,(N-M-IP)/2
+        R3=1.0D0
+        DO 65 J=1,(N-M-IP)/2
 65         R3=R3*J
-	SA0=(2.0*(M+IP)+1.0)*R1/(2.0**N*C**IP*R2*R3*DF(1))
-	CK1=SA0*SU0
-	IF (KD.EQ.-1) RETURN
+        SA0=(2.0*(M+IP)+1.0)*R1/(2.0**N*C**IP*R2*R3*DF(1))
+        CK1=SA0*SU0
+        IF (KD.EQ.-1) RETURN
 70      R4=1.0D0
-	DO 75 J=1,(N-M-IP)/2
+        DO 75 J=1,(N-M-IP)/2
 75         R4=4.0D0*R4*J
-	R5=1.0D0
-	DO 80 J=1,M
+        R5=1.0D0
+        DO 80 J=1,M
 80         R5=R5*(J+M)/C
-	G0=DN(M)
-	IF (M.EQ.0) G0=DF(1)
-	SB0=(IP+1.0)*C**(IP+1)/(2.0*IP*(M-2.0)+1.0)/(2.0*M-1.0)
-	CK2=(-1)**IP*SB0*R4*R5*G0/R1*SU0
-	RETURN
-	END
+        G0=DN(M)
+        IF (M.EQ.0) G0=DF(1)
+        SB0=(IP+1.0)*C**(IP+1)/(2.0*IP*(M-2.0)+1.0)/(2.0*M-1.0)
+        CK2=(-1)**IP*SB0*R4*R5*G0/R1*SU0
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE LAGZO(N,X,W)
@@ -4257,104 +4257,104 @@ C                MSTA1 and MSTA2 to calculate the starting
 C                point for backward recurrence
 C       =====================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION BJ(0:N),DJ(0:N),BY(0:N),DY(0:N),
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION BJ(0:N),DJ(0:N),BY(0:N),DY(0:N),
      &            A(4),B(4),A1(4),B1(4)
-	PI=3.141592653589793D0
-	R2P=.63661977236758D0
-	NM=N
-	IF (X.LT.1.0D-100) THEN
-	   DO 10 K=0,N
-	      BJ(K)=0.0D0
-	      DJ(K)=0.0D0
-	      BY(K)=-1.0D+300
+        PI=3.141592653589793D0
+        R2P=.63661977236758D0
+        NM=N
+        IF (X.LT.1.0D-100) THEN
+           DO 10 K=0,N
+              BJ(K)=0.0D0
+              DJ(K)=0.0D0
+              BY(K)=-1.0D+300
 10            DY(K)=1.0D+300
-	   BJ(0)=1.0D0
-	   DJ(1)=0.5D0
-	   RETURN
-	ENDIF
-	IF (X.LE.300.0.OR.N.GT.INT(0.9*X)) THEN
-	   IF (N.EQ.0) NM=1
-	   M=MSTA1(X,200)
-	   IF (M.LT.NM) THEN
-	      NM=M
-	   ELSE
-	      M=MSTA2(X,NM,15)
-	   ENDIF
-	   BS=0.0D0
-	   SU=0.0D0
-	   SV=0.0D0
-	   F2=0.0D0
-	   F1=1.0D-100
+           BJ(0)=1.0D0
+           DJ(1)=0.5D0
+           RETURN
+        ENDIF
+        IF (X.LE.300.0.OR.N.GT.INT(0.9*X)) THEN
+           IF (N.EQ.0) NM=1
+           M=MSTA1(X,200)
+           IF (M.LT.NM) THEN
+              NM=M
+           ELSE
+              M=MSTA2(X,NM,15)
+           ENDIF
+           BS=0.0D0
+           SU=0.0D0
+           SV=0.0D0
+           F2=0.0D0
+           F1=1.0D-100
            F=0.0D0
-	   DO 15 K=M,0,-1
-	      F=2.0D0*(K+1.0D0)/X*F1-F2
-	      IF (K.LE.NM) BJ(K)=F
-	      IF (K.EQ.2*INT(K/2).AND.K.NE.0) THEN
-		 BS=BS+2.0D0*F
-		 SU=SU+(-1)**(K/2)*F/K
-	      ELSE IF (K.GT.1) THEN
-		 SV=SV+(-1)**(K/2)*K/(K*K-1.0)*F
-	      ENDIF
-	      F2=F1
+           DO 15 K=M,0,-1
+              F=2.0D0*(K+1.0D0)/X*F1-F2
+              IF (K.LE.NM) BJ(K)=F
+              IF (K.EQ.2*INT(K/2).AND.K.NE.0) THEN
+                 BS=BS+2.0D0*F
+                 SU=SU+(-1)**(K/2)*F/K
+              ELSE IF (K.GT.1) THEN
+                 SV=SV+(-1)**(K/2)*K/(K*K-1.0)*F
+              ENDIF
+              F2=F1
 15            F1=F
-	   S0=BS+F
-	   DO 20 K=0,NM
+           S0=BS+F
+           DO 20 K=0,NM
 20            BJ(K)=BJ(K)/S0
-	   EC=DLOG(X/2.0D0)+0.5772156649015329D0
-	   BY0=R2P*(EC*BJ(0)-4.0D0*SU/S0)
-	   BY(0)=BY0
-	   BY1=R2P*((EC-1.0D0)*BJ(1)-BJ(0)/X-4.0D0*SV/S0)
-	   BY(1)=BY1
-	ELSE
-	   DATA A/-.7031250000000000D-01,.1121520996093750D+00,
+           EC=DLOG(X/2.0D0)+0.5772156649015329D0
+           BY0=R2P*(EC*BJ(0)-4.0D0*SU/S0)
+           BY(0)=BY0
+           BY1=R2P*((EC-1.0D0)*BJ(1)-BJ(0)/X-4.0D0*SV/S0)
+           BY(1)=BY1
+        ELSE
+           DATA A/-.7031250000000000D-01,.1121520996093750D+00,
      &            -.5725014209747314D+00,.6074042001273483D+01/
-	   DATA B/ .7324218750000000D-01,-.2271080017089844D+00,
+           DATA B/ .7324218750000000D-01,-.2271080017089844D+00,
      &             .1727727502584457D+01,-.2438052969955606D+02/
-	   DATA A1/.1171875000000000D+00,-.1441955566406250D+00,
+           DATA A1/.1171875000000000D+00,-.1441955566406250D+00,
      &             .6765925884246826D+00,-.6883914268109947D+01/
-	   DATA B1/-.1025390625000000D+00,.2775764465332031D+00,
+           DATA B1/-.1025390625000000D+00,.2775764465332031D+00,
      &             -.1993531733751297D+01,.2724882731126854D+02/
-	   T1=X-0.25D0*PI
-	   P0=1.0D0
-	   Q0=-0.125D0/X
-	   DO 25 K=1,4
-	      P0=P0+A(K)*X**(-2*K)
+           T1=X-0.25D0*PI
+           P0=1.0D0
+           Q0=-0.125D0/X
+           DO 25 K=1,4
+              P0=P0+A(K)*X**(-2*K)
 25            Q0=Q0+B(K)*X**(-2*K-1)
-	   CU=DSQRT(R2P/X)
-	   BJ0=CU*(P0*DCOS(T1)-Q0*DSIN(T1))
-	   BY0=CU*(P0*DSIN(T1)+Q0*DCOS(T1))
-	   BJ(0)=BJ0
-	   BY(0)=BY0
-	   T2=X-0.75D0*PI
-	   P1=1.0D0
-	   Q1=0.375D0/X
-	   DO 30 K=1,4
-	      P1=P1+A1(K)*X**(-2*K)
+           CU=DSQRT(R2P/X)
+           BJ0=CU*(P0*DCOS(T1)-Q0*DSIN(T1))
+           BY0=CU*(P0*DSIN(T1)+Q0*DCOS(T1))
+           BJ(0)=BJ0
+           BY(0)=BY0
+           T2=X-0.75D0*PI
+           P1=1.0D0
+           Q1=0.375D0/X
+           DO 30 K=1,4
+              P1=P1+A1(K)*X**(-2*K)
 30            Q1=Q1+B1(K)*X**(-2*K-1)
-	   BJ1=CU*(P1*DCOS(T2)-Q1*DSIN(T2))
-	   BY1=CU*(P1*DSIN(T2)+Q1*DCOS(T2))
-	   BJ(1)=BJ1
-	   BY(1)=BY1
-	   DO 35 K=2,NM
-	      BJK=2.0D0*(K-1.0D0)/X*BJ1-BJ0
-	      BJ(K)=BJK
-	      BJ0=BJ1
+           BJ1=CU*(P1*DCOS(T2)-Q1*DSIN(T2))
+           BY1=CU*(P1*DSIN(T2)+Q1*DCOS(T2))
+           BJ(1)=BJ1
+           BY(1)=BY1
+           DO 35 K=2,NM
+              BJK=2.0D0*(K-1.0D0)/X*BJ1-BJ0
+              BJ(K)=BJK
+              BJ0=BJ1
 35            BJ1=BJK
-	ENDIF
-	DJ(0)=-BJ(1)
-	DO 40 K=1,NM
+        ENDIF
+        DJ(0)=-BJ(1)
+        DO 40 K=1,NM
 40         DJ(K)=BJ(K-1)-K/X*BJ(K)
-	DO 45 K=2,NM
-	   BYK=2.0D0*(K-1.0D0)*BY1/X-BY0
-	   BY(K)=BYK
-	   BY0=BY1
+        DO 45 K=2,NM
+           BYK=2.0D0*(K-1.0D0)*BY1/X-BY0
+           BY(K)=BYK
+           BY0=BY1
 45         BY1=BYK
-	DY(0)=-BY(1)
-	DO 50 K=1,NM
+        DY(0)=-BY(1)
+        DO 50 K=1,NM
 50         DY(K)=BY(K-1)-K*BY(K)/X
-	RETURN
-	END
+        RETURN
+        END
 
 
 C       **********************************
@@ -4474,54 +4474,54 @@ C       Routine called:
 C                SCKB for computing expansion coefficients ck
 C       ===========================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION CK(200),DF(200)
-	EPS=1.0D-14
-	X0=X
-	X=DABS(X)
-	IP=1
-	IF (N-M.EQ.2*INT((N-M)/2)) IP=0
-	NM=40+INT((N-M)/2+C)
-	NM2=NM/2-2
-	CALL SDMN(M,N,C,CV,KD,DF)
-	CALL SCKB(M,N,C,DF,CK)
-	X1=1.0D0-X*X
-	IF (M.EQ.0.AND.X1.EQ.0.0D0) THEN
-	   A0=1.0D0
-	ELSE
-	   A0=X1**(0.5D0*M)
-	ENDIF
-	SU1=CK(1)
-	DO 10 K=1,NM2
-	   R=CK(K+1)*X1**K
-	   SU1=SU1+R
-	   IF (K.GE.10.AND.DABS(R/SU1).LT.EPS) GO TO 15
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION CK(200),DF(200)
+        EPS=1.0D-14
+        X0=X
+        X=DABS(X)
+        IP=1
+        IF (N-M.EQ.2*INT((N-M)/2)) IP=0
+        NM=40+INT((N-M)/2+C)
+        NM2=NM/2-2
+        CALL SDMN(M,N,C,CV,KD,DF)
+        CALL SCKB(M,N,C,DF,CK)
+        X1=1.0D0-X*X
+        IF (M.EQ.0.AND.X1.EQ.0.0D0) THEN
+           A0=1.0D0
+        ELSE
+           A0=X1**(0.5D0*M)
+        ENDIF
+        SU1=CK(1)
+        DO 10 K=1,NM2
+           R=CK(K+1)*X1**K
+           SU1=SU1+R
+           IF (K.GE.10.AND.DABS(R/SU1).LT.EPS) GO TO 15
 10         CONTINUE
 15      S1F=A0*X**IP*SU1
-	IF (X.EQ.1.0D0) THEN
-	   IF (M.EQ.0) S1D=IP*CK(1)-2.0D0*CK(2)
-	   IF (M.EQ.1) S1D=-1.0D+100
-	   IF (M.EQ.2) S1D=-2.0D0*CK(1)
-	   IF (M.GE.3) S1D=0.0D0
-	ELSE
-	   D0=IP-M/X1*X**(IP+1.0D0)
-	   D1=-2.0D0*A0*X**(IP+1.0D0)
-	   SU2=CK(2)
-	   DO 20 K=2,NM2
-	      R=K*CK(K+1)*X1**(K-1.0D0)
-	      SU2=SU2+R
-	      IF (K.GE.10.AND.DABS(R/SU2).LT.EPS) GO TO 25
+        IF (X.EQ.1.0D0) THEN
+           IF (M.EQ.0) S1D=IP*CK(1)-2.0D0*CK(2)
+           IF (M.EQ.1) S1D=-1.0D+100
+           IF (M.EQ.2) S1D=-2.0D0*CK(1)
+           IF (M.GE.3) S1D=0.0D0
+        ELSE
+           D0=IP-M/X1*X**(IP+1.0D0)
+           D1=-2.0D0*A0*X**(IP+1.0D0)
+           SU2=CK(2)
+           DO 20 K=2,NM2
+              R=K*CK(K+1)*X1**(K-1.0D0)
+              SU2=SU2+R
+              IF (K.GE.10.AND.DABS(R/SU2).LT.EPS) GO TO 25
 20            CONTINUE
 25         S1D=D0*A0*SU1+D1*SU2
-	ENDIF
-	IF (X0.LT.0.0D0.AND.IP.EQ.0) S1D=-S1D
-	IF (X0.LT.0.0D0.AND.IP.EQ.1) S1F=-S1F
-	X=X0
-	RETURN
-	END
+        ENDIF
+        IF (X0.LT.0.0D0.AND.IP.EQ.0) S1D=-S1D
+        IF (X0.LT.0.0D0.AND.IP.EQ.1) S1F=-S1F
+        X=X0
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE JYNA(N,X,NM,BJ,DJ,BY,DY)
@@ -7478,83 +7478,83 @@ C                          CK(1), CK(2),... correspond to
 C                          c0, c2,...
 C       ======================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION CK(200)
-	IF (C.LE.1.0D-10) C=1.0D-10
-	NM=25+INT((N-M)/2+C)
-	CS=C*C*KD
-	IP=1
-	IF (N-M.EQ.2*INT((N-M)/2)) IP=0
-	FS=1.0D0
-	F1=0.0D0
-	F0=1.0D-100
-	KB=0
-	CK(NM+1)=0.0D0
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION CK(200)
+        IF (C.LE.1.0D-10) C=1.0D-10
+        NM=25+INT((N-M)/2+C)
+        CS=C*C*KD
+        IP=1
+        IF (N-M.EQ.2*INT((N-M)/2)) IP=0
+        FS=1.0D0
+        F1=0.0D0
+        F0=1.0D-100
+        KB=0
+        CK(NM+1)=0.0D0
         FL=0.0D0
-	DO 15 K=NM,1,-1
-	   F=(((2.0D0*K+M+IP)*(2.0D0*K+M+1.0D0+IP)-CV+CS)*F0
+        DO 15 K=NM,1,-1
+           F=(((2.0D0*K+M+IP)*(2.0D0*K+M+1.0D0+IP)-CV+CS)*F0
      &       -4.0D0*(K+1.0D0)*(K+M+1.0D0)*F1)/CS
-	   IF (DABS(F).GT.DABS(CK(K+1))) THEN
-	      CK(K)=F
-	      F1=F0
-	      F0=F
-	      IF (DABS(F).GT.1.0D+100) THEN
-		 DO 5 K1=NM,K,-1
+           IF (DABS(F).GT.DABS(CK(K+1))) THEN
+              CK(K)=F
+              F1=F0
+              F0=F
+              IF (DABS(F).GT.1.0D+100) THEN
+                 DO 5 K1=NM,K,-1
 5                   CK(K1)=CK(K1)*1.0D-100
-		 F1=F1*1.0D-100
-		 F0=F0*1.0D-100
-	      ENDIF
-	   ELSE
-	      KB=K
-	      FL=CK(K+1)
-	      F1=1.0D0
-	      F2=0.25D0*((M+IP)*(M+IP+1.0)-CV+CS)/(M+1.0)*F1
-	      CK(1)=F1
-	      IF (KB.EQ.1) THEN
-		 FS=F2
-	      ELSE IF (KB.EQ.2) THEN
-		 CK(2)=F2
-		 FS=0.125D0*(((M+IP+2.0)*(M+IP+3.0)-CV+CS)*F2
+                 F1=F1*1.0D-100
+                 F0=F0*1.0D-100
+              ENDIF
+           ELSE
+              KB=K
+              FL=CK(K+1)
+              F1=1.0D0
+              F2=0.25D0*((M+IP)*(M+IP+1.0)-CV+CS)/(M+1.0)*F1
+              CK(1)=F1
+              IF (KB.EQ.1) THEN
+                 FS=F2
+              ELSE IF (KB.EQ.2) THEN
+                 CK(2)=F2
+                 FS=0.125D0*(((M+IP+2.0)*(M+IP+3.0)-CV+CS)*F2
      &              -CS*F1)/(M+2.0)
-	      ELSE
-		 CK(2)=F2
-		 DO 10 J=3,KB+1
-		    F=0.25D0*(((2.0*J+M+IP-4.0)*(2.0*J+M+IP-
+              ELSE
+                 CK(2)=F2
+                 DO 10 J=3,KB+1
+                    F=0.25D0*(((2.0*J+M+IP-4.0)*(2.0*J+M+IP-
      &                3.0)-CV+CS)*F2-CS*F1)/((J-1.0)*(J+M-1.0))
-		    IF (J.LE.KB) CK(J)=F
-		    F1=F2
+                    IF (J.LE.KB) CK(J)=F
+                    F1=F2
 10                  F2=F
-		 FS=F
-	      ENDIF
-	      GO TO 20
-	   ENDIF
+                 FS=F
+              ENDIF
+              GO TO 20
+           ENDIF
 15      CONTINUE
 20      SU1=0.0D0
-	DO 25 K=1,KB
+        DO 25 K=1,KB
 25         SU1=SU1+CK(K)
-	SU2=0.0D0
-	DO 30 K=KB+1,NM
+        SU2=0.0D0
+        DO 30 K=KB+1,NM
 30         SU2=SU2+CK(K)
-	R1=1.0D0
-	DO 35 J=1,(N+M+IP)/2
+        R1=1.0D0
+        DO 35 J=1,(N+M+IP)/2
 35         R1=R1*(J+0.5D0*(N+M+IP))
-	R2=1.0D0
-	DO 40 J=1,(N-M-IP)/2
+        R2=1.0D0
+        DO 40 J=1,(N-M-IP)/2
 40         R2=-R2*J
-	IF (KB.EQ.0) THEN
-	    S0=R1/(2.0D0**N*R2*SU2)
-	ELSE
-	    S0=R1/(2.0D0**N*R2*(FL/FS*SU1+SU2))
-	ENDIF
-	DO 45 K=1,KB
+        IF (KB.EQ.0) THEN
+            S0=R1/(2.0D0**N*R2*SU2)
+        ELSE
+            S0=R1/(2.0D0**N*R2*(FL/FS*SU1+SU2))
+        ENDIF
+        DO 45 K=1,KB
 45         CK(K)=FL/FS*S0*CK(K)
-	DO 50 K=KB+1,NM
+        DO 50 K=KB+1,NM
 50         CK(K)=S0*CK(K)
-	RETURN
-	END
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE SCKB(M,N,C,DF,CK)
@@ -7571,43 +7571,43 @@ C                          CK(1), CK(2), ... correspond to
 C                          c0, c2, ...
 C       ======================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION DF(200),CK(200)
-	IF (C.LE.1.0D-10) C=1.0D-10
-	NM=25+INT(0.5*(N-M)+C)
-	IP=1
-	IF (N-M.EQ.2*INT((N-M)/2)) IP=0
-	REG=1.0D0
-	IF (M+NM.GT.80) REG=1.0D-200
-	FAC=-0.5D0**M
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION DF(200),CK(200)
+        IF (C.LE.1.0D-10) C=1.0D-10
+        NM=25+INT(0.5*(N-M)+C)
+        IP=1
+        IF (N-M.EQ.2*INT((N-M)/2)) IP=0
+        REG=1.0D0
+        IF (M+NM.GT.80) REG=1.0D-200
+        FAC=-0.5D0**M
         SW=0.0D0
-	DO 35 K=0,NM-1
-	   FAC=-FAC
-	   I1=2*K+IP+1
-	   R=REG
-	   DO 10 I=I1,I1+2*M-1
+        DO 35 K=0,NM-1
+           FAC=-FAC
+           I1=2*K+IP+1
+           R=REG
+           DO 10 I=I1,I1+2*M-1
 10            R=R*I
-	   I2=K+M+IP
-	   DO 15 I=I2,I2+K-1
+           I2=K+M+IP
+           DO 15 I=I2,I2+K-1
 15            R=R*(I+0.5D0)
-	   SUM=R*DF(K+1)
-	   DO 20 I=K+1,NM
-	      D1=2.0D0*I+IP
-	      D2=2.0D0*M+D1
-	      D3=I+M+IP-0.5D0
-	      R=R*D2*(D2-1.0D0)*I*(D3+K)/(D1*(D1-1.0D0)*(I-K)*D3)
-	      SUM=SUM+R*DF(I+1)
-	      IF (DABS(SW-SUM).LT.DABS(SUM)*1.0D-14) GOTO 25
+           SUM=R*DF(K+1)
+           DO 20 I=K+1,NM
+              D1=2.0D0*I+IP
+              D2=2.0D0*M+D1
+              D3=I+M+IP-0.5D0
+              R=R*D2*(D2-1.0D0)*I*(D3+K)/(D1*(D1-1.0D0)*(I-K)*D3)
+              SUM=SUM+R*DF(I+1)
+              IF (DABS(SW-SUM).LT.DABS(SUM)*1.0D-14) GOTO 25
 20            SW=SUM
 25         R1=REG
-	   DO 30 I=2,M+K
+           DO 30 I=2,M+K
 30            R1=R1*I
 35         CK(K+1)=FAC*SUM/R1
-	RETURN
-	END 
+        RETURN
+        END 
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE CPDLA(N,Z,CDN)
@@ -7620,22 +7620,22 @@ C                n   --- Order of Dn(z) (n = 0,ס1,ס2,תתת)
 C       Output:  CDN --- Dn(z)
 C       ===========================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Y)
-	IMPLICIT COMPLEX*16 (C,Z)
-	CB0=Z**N*CDEXP(-.25D0*Z*Z)
-	CR=(1.0D0,0.0D0)
-	CDN=(1.0D0,0.0D0)
-	DO 10 K=1,16
-	   CR=-0.5D0*CR*(2.0*K-N-1.0)*(2.0*K-N-2.0)/(K*Z*Z)
-	   CDN=CDN+CR
-	   IF (CDABS(CR).LT.CDABS(CDN)*1.0D-12) GO TO 15
+        IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Y)
+        IMPLICIT COMPLEX*16 (C,Z)
+        CB0=Z**N*CDEXP(-.25D0*Z*Z)
+        CR=(1.0D0,0.0D0)
+        CDN=(1.0D0,0.0D0)
+        DO 10 K=1,16
+           CR=-0.5D0*CR*(2.0*K-N-1.0)*(2.0*K-N-2.0)/(K*Z*Z)
+           CDN=CDN+CR
+           IF (CDABS(CR).LT.CDABS(CDN)*1.0D-12) GO TO 15
 10      CONTINUE
 15      CDN=CB0*CDN
-	RETURN
-	END
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE FCSZO(KF,NT,ZO)
@@ -7925,35 +7925,35 @@ C            (2) LPMNS for computing associated Legendre function
 C                of the first kind Pmn(x)
 C       ===========================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION DF(200),PM(0:251),PD(0:251)
-	EPS=1.0D-14
-	IP=1
-	IF (N-M.EQ.2*INT((N-M)/2)) IP=0
-	NM=25+INT((N-M)/2+C)
-	NM2=2*NM+M
-	CALL SDMN(M,N,C,CV,KD,DF)
-	CALL LPMNS(M,NM2,X,PM,PD)
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION DF(200),PM(0:251),PD(0:251)
+        EPS=1.0D-14
+        IP=1
+        IF (N-M.EQ.2*INT((N-M)/2)) IP=0
+        NM=25+INT((N-M)/2+C)
+        NM2=2*NM+M
+        CALL SDMN(M,N,C,CV,KD,DF)
+        CALL LPMNS(M,NM2,X,PM,PD)
         SW=0.0D0
-	SU1=0.0D0
-	DO 10 K=1,NM
-	   MK=M+2*(K-1)+IP
-	   SU1=SU1+DF(K)*PM(MK)
-	   IF (DABS(SW-SU1).LT.DABS(SU1)*EPS) GOTO 15
+        SU1=0.0D0
+        DO 10 K=1,NM
+           MK=M+2*(K-1)+IP
+           SU1=SU1+DF(K)*PM(MK)
+           IF (DABS(SW-SU1).LT.DABS(SU1)*EPS) GOTO 15
 10         SW=SU1
 15      S1F=(-1)**M*SU1
-	SU1=0.0D0
-	DO 20 K=1,NM
-	   MK=M+2*(K-1)+IP
-	   SU1=SU1+DF(K)*PD(MK)
-	   IF (DABS(SW-SU1).LT.DABS(SU1)*EPS) GOTO 25
+        SU1=0.0D0
+        DO 20 K=1,NM
+           MK=M+2*(K-1)+IP
+           SU1=SU1+DF(K)*PD(MK)
+           IF (DABS(SW-SU1).LT.DABS(SU1)*EPS) GOTO 25
 20         SW=SU1
 25      S1D=(-1)**M*SU1
-	RETURN
-	END
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE CHGUS(A,B,X,HU,ID)
@@ -8288,84 +8288,84 @@ C            (1) CPDSA for computing Dn(z) for a small |z|
 C            (2) CPDLA for computing Dn(z) for a large |z|
 C       ==================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Y)
-	IMPLICIT COMPLEX*16 (C,Z)
-	DIMENSION CPB(0:*),CPD(0:*)
-	PI=3.141592653589793D0
-	X=DBLE(Z)
-	A0=CDABS(Z)
-	C0=(0.0D0,0.0D0)
-	CA0=CDEXP(-0.25D0*Z*Z)
+        IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Y)
+        IMPLICIT COMPLEX*16 (C,Z)
+        DIMENSION CPB(0:*),CPD(0:*)
+        PI=3.141592653589793D0
+        X=DBLE(Z)
+        A0=CDABS(Z)
+        C0=(0.0D0,0.0D0)
+        CA0=CDEXP(-0.25D0*Z*Z)
         N0=0
-	IF (N.GE.0) THEN
-	   CF0=CA0
-	   CF1=Z*CA0
-	   CPB(0)=CF0
-	   CPB(1)=CF1
-	   DO 10 K=2,N
-	      CF=Z*CF1-(K-1.0D0)*CF0
-	      CPB(K)=CF
-	      CF0=CF1
+        IF (N.GE.0) THEN
+           CF0=CA0
+           CF1=Z*CA0
+           CPB(0)=CF0
+           CPB(1)=CF1
+           DO 10 K=2,N
+              CF=Z*CF1-(K-1.0D0)*CF0
+              CPB(K)=CF
+              CF0=CF1
 10            CF1=CF
-	ELSE
-	   N0=-N
-	   IF (X.LE.0.0.OR.CDABS(Z).EQ.0.0) THEN
-	      CF0=CA0
-	      CPB(0)=CF0
-	      Z1=-Z
-	      IF (A0.LE.7.0) THEN
-		 CALL CPDSA(-1,Z1,CF1)
-	      ELSE
-		 CALL CPDLA(-1,Z1,CF1)
-	      ENDIF
-	      CF1=DSQRT(2.0D0*PI)/CA0-CF1
-	      CPB(1)=CF1
-	      DO 15 K=2,N0
-		 CF=(-Z*CF1+CF0)/(K-1.0D0)
-		 CPB(K)=CF
-		 CF0=CF1
+        ELSE
+           N0=-N
+           IF (X.LE.0.0.OR.CDABS(Z).EQ.0.0) THEN
+              CF0=CA0
+              CPB(0)=CF0
+              Z1=-Z
+              IF (A0.LE.7.0) THEN
+                 CALL CPDSA(-1,Z1,CF1)
+              ELSE
+                 CALL CPDLA(-1,Z1,CF1)
+              ENDIF
+              CF1=DSQRT(2.0D0*PI)/CA0-CF1
+              CPB(1)=CF1
+              DO 15 K=2,N0
+                 CF=(-Z*CF1+CF0)/(K-1.0D0)
+                 CPB(K)=CF
+                 CF0=CF1
 15               CF1=CF
-	   ELSE
-	      IF (A0.LE.3.0) THEN
-		 CALL CPDSA(-N0,Z,CFA)
-		 CPB(N0)=CFA
-		 N1=N0+1
-		 CALL CPDSA(-N1,Z,CFB)
-		 CPB(N1)=CFB
-		 NM1=N0-1
-		 DO 20 K=NM1,0,-1
-		    CF=Z*CFA+(K+1.0D0)*CFB
-		    CPB(K)=CF
-		    CFB=CFA
+           ELSE
+              IF (A0.LE.3.0) THEN
+                 CALL CPDSA(-N0,Z,CFA)
+                 CPB(N0)=CFA
+                 N1=N0+1
+                 CALL CPDSA(-N1,Z,CFB)
+                 CPB(N1)=CFB
+                 NM1=N0-1
+                 DO 20 K=NM1,0,-1
+                    CF=Z*CFA+(K+1.0D0)*CFB
+                    CPB(K)=CF
+                    CFB=CFA
 20                  CFA=CF
-	      ELSE
-		 M=100+ABS(N)
-		 CFA=C0
-		 CFB=(1.0D-30,0.0D0)
-		 DO 25 K=M,0,-1
-		    CF=Z*CFB+(K+1.0D0)*CFA
-		    IF (K.LE.N0) CPB(K)=CF
-		    CFA=CFB
+              ELSE
+                 M=100+ABS(N)
+                 CFA=C0
+                 CFB=(1.0D-30,0.0D0)
+                 DO 25 K=M,0,-1
+                    CF=Z*CFB+(K+1.0D0)*CFA
+                    IF (K.LE.N0) CPB(K)=CF
+                    CFA=CFB
 25                  CFB=CF
-		 CS0=CA0/CF
-		 DO 30 K=0,N0
+                 CS0=CA0/CF
+                 DO 30 K=0,N0
 30                  CPB(K)=CS0*CPB(K)
-	      ENDIF
-	   ENDIF
-	ENDIF
-	CPD(0)=-0.5D0*Z*CPB(0)
-	IF (N.GE.0) THEN
-	   DO 35 K=1,N
+              ENDIF
+           ENDIF
+        ENDIF
+        CPD(0)=-0.5D0*Z*CPB(0)
+        IF (N.GE.0) THEN
+           DO 35 K=1,N
 35            CPD(K)=-0.5D0*Z*CPB(K)+K*CPB(K-1)
-	ELSE
-	   DO 40 K=1,N0
+        ELSE
+           DO 40 K=1,N0
 40            CPD(K)=0.5D0*Z*CPB(K)-CPB(K-1)
-	ENDIF
-	RETURN
-	END
+        ENDIF
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE IK01B(X,BI0,DI0,BI1,DI1,BK0,DK0,BK1,DK1)
@@ -8862,97 +8862,97 @@ C            (2) SPHJ for computing the spherical Bessel
 C                functions of the first kind     
 C       =======================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION CK(200),DF(200),SJ(0:251),DJ(0:251)
-	EPS=1.0D-14
-	IP=1
-	NM1=INT((N-M)/2)
-	IF (N-M.EQ.2*NM1) IP=0
-	NM=25+NM1+INT(C)
-	REG=1.0D0
-	IF (M+NM.GT.80) REG=1.0D-200
-	R0=REG
-	DO 10 J=1,2*M+IP
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION CK(200),DF(200),SJ(0:251),DJ(0:251)
+        EPS=1.0D-14
+        IP=1
+        NM1=INT((N-M)/2)
+        IF (N-M.EQ.2*NM1) IP=0
+        NM=25+NM1+INT(C)
+        REG=1.0D0
+        IF (M+NM.GT.80) REG=1.0D-200
+        R0=REG
+        DO 10 J=1,2*M+IP
 10         R0=R0*J
-	R=R0    
-	SUC=R*DF(1)
+        R=R0    
+        SUC=R*DF(1)
         SW=0.0D0
-	DO 15 K=2,NM
-	   R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
-	   SUC=SUC+R*DF(K)
-	   IF (K.GT.NM1.AND.DABS(SUC-SW).LT.DABS(SUC)*EPS) GO TO 20
+        DO 15 K=2,NM
+           R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
+           SUC=SUC+R*DF(K)
+           IF (K.GT.NM1.AND.DABS(SUC-SW).LT.DABS(SUC)*EPS) GO TO 20
 15         SW=SUC
 20      CONTINUE
-	IF (X.EQ.0.0) THEN
-	   CALL SCKB(M,N,C,DF,CK)
-	   SUM=0.0D0
+        IF (X.EQ.0.0) THEN
+           CALL SCKB(M,N,C,DF,CK)
+           SUM=0.0D0
            SW1=0.0D0
-	   DO 25 J=1,NM
-	      SUM=SUM+CK(J)
-	      IF (DABS(SUM-SW1).LT.DABS(SUM)*EPS) GO TO 30
+           DO 25 J=1,NM
+              SUM=SUM+CK(J)
+              IF (DABS(SUM-SW1).LT.DABS(SUM)*EPS) GO TO 30
 25            SW1=SUM
 30         R1=1.0D0
-	   DO 35 J=1,(N+M+IP)/2
+           DO 35 J=1,(N+M+IP)/2
 35            R1=R1*(J+0.5D0*(N+M+IP))
-	   R2=1.0D0
-	   DO 40 J=1,M
+           R2=1.0D0
+           DO 40 J=1,M
 40            R2=2.0D0*C*R2*J
-	   R3=1.0D0
-	   DO 45 J=1,(N-M-IP)/2
+           R3=1.0D0
+           DO 45 J=1,(N-M-IP)/2
 45            R3=R3*J
-	   SA0=(2.0*(M+IP)+1.0)*R1/(2.0**N*C**IP*R2*R3)
-	   IF (IP.EQ.0) THEN
-	      R1F=SUM/(SA0*SUC)*DF(1)*REG
-	      R1D=0.0D0
-	   ELSE IF (IP.EQ.1) THEN
-	      R1F=0.0D0
-	      R1D=SUM/(SA0*SUC)*DF(1)*REG
-	   ENDIF
-	   RETURN
-	ENDIF
-	CX=C*X
-	NM2=2*NM+M
-	CALL SPHJ(NM2,CX,NM2,SJ,DJ)
-	A0=(1.0D0-KD/(X*X))**(0.5D0*M)/SUC  
-	R1F=0.0D0
+           SA0=(2.0*(M+IP)+1.0)*R1/(2.0**N*C**IP*R2*R3)
+           IF (IP.EQ.0) THEN
+              R1F=SUM/(SA0*SUC)*DF(1)*REG
+              R1D=0.0D0
+           ELSE IF (IP.EQ.1) THEN
+              R1F=0.0D0
+              R1D=SUM/(SA0*SUC)*DF(1)*REG
+           ENDIF
+           RETURN
+        ENDIF
+        CX=C*X
+        NM2=2*NM+M
+        CALL SPHJ(NM2,CX,NM2,SJ,DJ)
+        A0=(1.0D0-KD/(X*X))**(0.5D0*M)/SUC  
+        R1F=0.0D0
         SW=0.0D0
         LG=0
-	DO 50 K=1,NM
-	   L=2*K+M-N-2+IP
-	   IF (L.EQ.4*INT(L/4)) LG=1
-	   IF (L.NE.4*INT(L/4)) LG=-1
-	   IF (K.EQ.1) THEN
-	      R=R0
-	   ELSE
-	      R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
-	   ENDIF
-	   NP=M+2*K-2+IP
-	   R1F=R1F+LG*R*DF(K)*SJ(NP)
-	   IF (K.GT.NM1.AND.DABS(R1F-SW).LT.DABS(R1F)*EPS) GO TO 55
+        DO 50 K=1,NM
+           L=2*K+M-N-2+IP
+           IF (L.EQ.4*INT(L/4)) LG=1
+           IF (L.NE.4*INT(L/4)) LG=-1
+           IF (K.EQ.1) THEN
+              R=R0
+           ELSE
+              R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
+           ENDIF
+           NP=M+2*K-2+IP
+           R1F=R1F+LG*R*DF(K)*SJ(NP)
+           IF (K.GT.NM1.AND.DABS(R1F-SW).LT.DABS(R1F)*EPS) GO TO 55
 50         SW=R1F
 55      R1F=R1F*A0
-	B0=KD*M/X**3.0D0/(1.0-KD/(X*X))*R1F    
-	SUD=0.0D0
+        B0=KD*M/X**3.0D0/(1.0-KD/(X*X))*R1F    
+        SUD=0.0D0
         SW=0.0D0
-	DO 60 K=1,NM
-	   L=2*K+M-N-2+IP
-	   IF (L.EQ.4*INT(L/4)) LG=1
-	   IF (L.NE.4*INT(L/4)) LG=-1
-	   IF (K.EQ.1) THEN
-	      R=R0
-	   ELSE
-	      R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
-	   ENDIF
-	   NP=M+2*K-2+IP
-	   SUD=SUD+LG*R*DF(K)*DJ(NP)
-	   IF (K.GT.NM1.AND.DABS(SUD-SW).LT.DABS(SUD)*EPS) GO TO 65
+        DO 60 K=1,NM
+           L=2*K+M-N-2+IP
+           IF (L.EQ.4*INT(L/4)) LG=1
+           IF (L.NE.4*INT(L/4)) LG=-1
+           IF (K.EQ.1) THEN
+              R=R0
+           ELSE
+              R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
+           ENDIF
+           NP=M+2*K-2+IP
+           SUD=SUD+LG*R*DF(K)*DJ(NP)
+           IF (K.GT.NM1.AND.DABS(SUD-SW).LT.DABS(SUD)*EPS) GO TO 65
 60         SW=SUD
 65      R1D=B0+A0*C*SUD
-	RETURN
-	END
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE DVSA(VA,X,PD)
@@ -9158,36 +9158,36 @@ C       Purpose: Compute gmn(-ic,ix) and its derivative for oblate
 C                radial functions with a small argument
 C       ===========================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION BK(200)
-	EPS=1.0D-14
-	IP=1
-	IF (N-M.EQ.2*INT((N-M)/2)) IP=0
-	NM=25+INT(0.5*(N-M)+C)
-	XM=(1.0D0+X*X)**(-0.5D0*M)
-	GF0=0.0D0
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION BK(200)
+        EPS=1.0D-14
+        IP=1
+        IF (N-M.EQ.2*INT((N-M)/2)) IP=0
+        NM=25+INT(0.5*(N-M)+C)
+        XM=(1.0D0+X*X)**(-0.5D0*M)
+        GF0=0.0D0
         GW=0.0D0
-	DO 10 K=1,NM
-	   GF0=GF0+BK(K)*X**(2.0*K-2.0)
-	   IF (DABS((GF0-GW)/GF0).LT.EPS.AND.K.GE.10) GO TO 15
+        DO 10 K=1,NM
+           GF0=GF0+BK(K)*X**(2.0*K-2.0)
+           IF (DABS((GF0-GW)/GF0).LT.EPS.AND.K.GE.10) GO TO 15
 10         GW=GF0
 15      GF=XM*GF0*X**(1-IP)
-	GD1=-M*X/(1.0D0+X*X)*GF
-	GD0=0.0D0
-	DO 20 K=1,NM
-	   IF (IP.EQ.0) THEN
-	      GD0=GD0+(2.0D0*K-1.0)*BK(K)*X**(2.0*K-2.0)
-	   ELSE
-	      GD0=GD0+2.0D0*K*BK(K+1)*X**(2.0*K-1.0)
-	   ENDIF
-	   IF (DABS((GD0-GW)/GD0).LT.EPS.AND.K.GE.10) GO TO 25
+        GD1=-M*X/(1.0D0+X*X)*GF
+        GD0=0.0D0
+        DO 20 K=1,NM
+           IF (IP.EQ.0) THEN
+              GD0=GD0+(2.0D0*K-1.0)*BK(K)*X**(2.0*K-2.0)
+           ELSE
+              GD0=GD0+2.0D0*K*BK(K+1)*X**(2.0*K-1.0)
+           ENDIF
+           IF (DABS((GD0-GW)/GD0).LT.EPS.AND.K.GE.10) GO TO 25
 20         GW=GD0
 25      GD=GD1+XM*GD0
-	RETURN
-	END
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE ITJYA(X,TJ,TY)
@@ -9920,51 +9920,51 @@ C            (6) RMN1 for computing the radial function of the first
 C                kind
 C       =============================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION BK(200),CK(200),DF(200),DN(200)
-	IF (DABS(DF(1)).LE.1.0D-280) THEN
-	   R2F=1.0D+300
-	   R2D=1.0D+300
-	   RETURN
-	ENDIF
-	EPS=1.0D-14
-	PI=3.141592653589793D0
-	NM=25+INT((N-M)/2+C)
-	IP=1
-	IF (N-M.EQ.2*INT((N-M)/2)) IP=0
-	CALL SCKB(M,N,C,DF,CK)
-	CALL KMN(M,N,C,CV,KD,DF,DN,CK1,CK2)
-	CALL QSTAR(M,N,C,CK,CK1,QS,QT)
-	CALL CBK(M,N,C,CV,QT,CK,BK)
-	IF (X.EQ.0.0D0) THEN
-	   SUM=0.0D0
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION BK(200),CK(200),DF(200),DN(200)
+        IF (DABS(DF(1)).LE.1.0D-280) THEN
+           R2F=1.0D+300
+           R2D=1.0D+300
+           RETURN
+        ENDIF
+        EPS=1.0D-14
+        PI=3.141592653589793D0
+        NM=25+INT((N-M)/2+C)
+        IP=1
+        IF (N-M.EQ.2*INT((N-M)/2)) IP=0
+        CALL SCKB(M,N,C,DF,CK)
+        CALL KMN(M,N,C,CV,KD,DF,DN,CK1,CK2)
+        CALL QSTAR(M,N,C,CK,CK1,QS,QT)
+        CALL CBK(M,N,C,CV,QT,CK,BK)
+        IF (X.EQ.0.0D0) THEN
+           SUM=0.0D0
            SW=0.0D0
-	   DO 10 J=1,NM
-	      SUM=SUM+CK(J)
-	      IF (DABS(SUM-SW).LT.DABS(SUM)*EPS) GO TO 15
+           DO 10 J=1,NM
+              SUM=SUM+CK(J)
+              IF (DABS(SUM-SW).LT.DABS(SUM)*EPS) GO TO 15
 10            SW=SUM
 15         IF (IP.EQ.0) THEN
-	      R1F=SUM/CK1
-	      R2F=-0.5D0*PI*QS*R1F
-	      R2D=QS*R1F+BK(1)
-	   ELSE IF (IP.EQ.1) THEN
-	      R1D=SUM/CK1
-	      R2F=BK(1)
-	      R2D=-0.5D0*PI*QS*R1D
-	   ENDIF
-	   RETURN
-	ELSE
-	   CALL GMN(M,N,C,X,BK,GF,GD)
-	   CALL RMN1(M,N,C,X,DF,KD,R1F,R1D)
-	   H0=DATAN(X)-0.5D0*PI
-	   R2F=QS*R1F*H0+GF
-	   R2D=QS*(R1D*H0+R1F/(1.0D0+X*X))+GD
-	ENDIF
-	RETURN
-	END
+              R1F=SUM/CK1
+              R2F=-0.5D0*PI*QS*R1F
+              R2D=QS*R1F+BK(1)
+           ELSE IF (IP.EQ.1) THEN
+              R1D=SUM/CK1
+              R2F=BK(1)
+              R2D=-0.5D0*PI*QS*R1D
+           ENDIF
+           RETURN
+        ELSE
+           CALL GMN(M,N,C,X,BK,GF,GD)
+           CALL RMN1(M,N,C,X,DF,KD,R1F,R1D)
+           H0=DATAN(X)-0.5D0*PI
+           R2F=QS*R1F*H0+GF
+           R2D=QS*(R1D*H0+R1F/(1.0D0+X*X))+GD
+        ENDIF
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE CSPHIK(N,Z,NM,CSI,CDI,CSK,CDK)
@@ -10106,55 +10106,55 @@ C                MSTA1 and MSTA2 for computing the starting
 C                point for backward recurrence
 C       =======================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION SJ(0:N),DJ(0:N)
-	NM=N
-	IF (DABS(X).LT.1.0D-100) THEN
-	   DO 10 K=0,N
-	      SJ(K)=0.0D0
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION SJ(0:N),DJ(0:N)
+        NM=N
+        IF (DABS(X).LT.1.0D-100) THEN
+           DO 10 K=0,N
+              SJ(K)=0.0D0
 10            DJ(K)=0.0D0
            SJ(0)=1.0D0
            IF (N.GT.0) THEN
               DJ(1)=.3333333333333333D0
            ENDIF
-	   RETURN
-	ENDIF
-	SJ(0)=DSIN(X)/X
-	DJ(0)=(DCOS(X)-DSIN(X)/X)/X
+           RETURN
+        ENDIF
+        SJ(0)=DSIN(X)/X
+        DJ(0)=(DCOS(X)-DSIN(X)/X)/X
         IF (N.LT.1) THEN
            RETURN
         ENDIF
         SJ(1)=(SJ(0)-DCOS(X))/X
-	IF (N.GE.2) THEN
-	   SA=SJ(0)
-	   SB=SJ(1)
-	   M=MSTA1(X,200)
-	   IF (M.LT.N) THEN
-	      NM=M
-	   ELSE
-	      M=MSTA2(X,N,15)
-	   ENDIF
+        IF (N.GE.2) THEN
+           SA=SJ(0)
+           SB=SJ(1)
+           M=MSTA1(X,200)
+           IF (M.LT.N) THEN
+              NM=M
+           ELSE
+              M=MSTA2(X,N,15)
+           ENDIF
            F=0.0D0
-	   F0=0.0D0
-	   F1=1.0D0-100
-	   DO 15 K=M,0,-1
-	      F=(2.0D0*K+3.0D0)*F1/X-F0
-	      IF (K.LE.NM) SJ(K)=F
-	      F0=F1
+           F0=0.0D0
+           F1=1.0D0-100
+           DO 15 K=M,0,-1
+              F=(2.0D0*K+3.0D0)*F1/X-F0
+              IF (K.LE.NM) SJ(K)=F
+              F0=F1
 15            F1=F
            CS=0.0D0
-	   IF (DABS(SA).GT.DABS(SB)) CS=SA/F
-	   IF (DABS(SA).LE.DABS(SB)) CS=SB/F0
-	   DO 20 K=0,NM
+           IF (DABS(SA).GT.DABS(SB)) CS=SA/F
+           IF (DABS(SA).LE.DABS(SB)) CS=SB/F0
+           DO 20 K=0,NM
 20            SJ(K)=CS*SJ(K)
-	ENDIF
-	DO 25 K=1,NM
+        ENDIF
+        DO 25 K=1,NM
 25         DJ(K)=SJ(K-1)-(K+1.0D0)*SJ(K)/X
-	RETURN
-	END
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE OTHPL(KF,N,X,PL,DPL)
@@ -10311,27 +10311,27 @@ C            (4) RMN2SO for computing oblate radial functions of
 C                the second kind for a small argument
 C       ==========================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION DF(200)
-	KD=-1
-	CALL SDMN(M,N,C,CV,KD,DF)
-	IF (KF.NE.2) THEN
-	   CALL RMN1(M,N,C,X,DF,KD,R1F,R1D)
-	ENDIF
-	IF (KF.GT.1) THEN
-	   ID=10
-	   IF (X.GT.1.0D-8) THEN
-	      CALL RMN2L(M,N,C,X,DF,KD,R2F,R2D,ID)
-	   ENDIF
-	   IF (ID.GT.-1) THEN
-	      CALL RMN2SO(M,N,C,X,CV,DF,KD,R2F,R2D)
-	   ENDIF
-	ENDIF
-	RETURN
-	END
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION DF(200)
+        KD=-1
+        CALL SDMN(M,N,C,CV,KD,DF)
+        IF (KF.NE.2) THEN
+           CALL RMN1(M,N,C,X,DF,KD,R1F,R1D)
+        ENDIF
+        IF (KF.GT.1) THEN
+           ID=10
+           IF (X.GT.1.0D-8) THEN
+              CALL RMN2L(M,N,C,X,DF,KD,R2F,R2D,ID)
+           ENDIF
+           IF (ID.GT.-1) THEN
+              CALL RMN2SO(M,N,C,X,CV,DF,KD,R2F,R2D)
+           ENDIF
+        ENDIF
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE CH12N(N,Z,NM,CHF1,CHD1,CHF2,CHD2)
@@ -10646,110 +10646,110 @@ C                          d0, d2, ... for even n-m and d1,
 C                          d3, ... for odd n-m
 C       =====================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION A(200),D(200),G(200),DF(200)
-	NM=25+INT(0.5*(N-M)+C)
-	IF (C.LT.1.0D-10) THEN
-	   DO 5 I=1,NM
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION A(200),D(200),G(200),DF(200)
+        NM=25+INT(0.5*(N-M)+C)
+        IF (C.LT.1.0D-10) THEN
+           DO 5 I=1,NM
 5             DF(I)=0D0
-	   DF((N-M)/2+1)=1.0D0
-	   RETURN
-	ENDIF   
-	CS=C*C*KD
-	IP=1
+           DF((N-M)/2+1)=1.0D0
+           RETURN
+        ENDIF   
+        CS=C*C*KD
+        IP=1
         K=0
-	IF (N-M.EQ.2*INT((N-M)/2)) IP=0
-	DO 10 I=1,NM+2
-	   IF (IP.EQ.0) K=2*(I-1)
-	   IF (IP.EQ.1) K=2*I-1
-	   DK0=M+K
-	   DK1=M+K+1
-	   DK2=2*(M+K)
-	   D2K=2*M+K
-	   A(I)=(D2K+2.0)*(D2K+1.0)/((DK2+3.0)*(DK2+5.0))*CS
-	   D(I)=DK0*DK1+(2.0*DK0*DK1-2.0*M*M-1.0)/((DK2-1.0)
+        IF (N-M.EQ.2*INT((N-M)/2)) IP=0
+        DO 10 I=1,NM+2
+           IF (IP.EQ.0) K=2*(I-1)
+           IF (IP.EQ.1) K=2*I-1
+           DK0=M+K
+           DK1=M+K+1
+           DK2=2*(M+K)
+           D2K=2*M+K
+           A(I)=(D2K+2.0)*(D2K+1.0)/((DK2+3.0)*(DK2+5.0))*CS
+           D(I)=DK0*DK1+(2.0*DK0*DK1-2.0*M*M-1.0)/((DK2-1.0)
      &          *(DK2+3.0))*CS
-	   G(I)=K*(K-1.0)/((DK2-3.0)*(DK2-1.0))*CS
+           G(I)=K*(K-1.0)/((DK2-3.0)*(DK2-1.0))*CS
 10      CONTINUE
-	FS=1.0D0
-	F1=0.0D0
-	F0=1.0D-100
-	KB=0
-	DF(NM+1)=0.0D0
+        FS=1.0D0
+        F1=0.0D0
+        F0=1.0D-100
+        KB=0
+        DF(NM+1)=0.0D0
         FL=0.0D0
-	DO 30 K=NM,1,-1
-	   F=-((D(K+1)-CV)*F0+A(K+1)*F1)/G(K+1)
-	   IF (DABS(F).GT.DABS(DF(K+1))) THEN
-	      DF(K)=F
-	      F1=F0
-	      F0=F
-	      IF (DABS(F).GT.1.0D+100) THEN
-		 DO 12 K1=K,NM
+        DO 30 K=NM,1,-1
+           F=-((D(K+1)-CV)*F0+A(K+1)*F1)/G(K+1)
+           IF (DABS(F).GT.DABS(DF(K+1))) THEN
+              DF(K)=F
+              F1=F0
+              F0=F
+              IF (DABS(F).GT.1.0D+100) THEN
+                 DO 12 K1=K,NM
 12                  DF(K1)=DF(K1)*1.0D-100
-		 F1=F1*1.0D-100
-		 F0=F0*1.0D-100
-	      ENDIF  
-	   ELSE
-	      KB=K
-	      FL=DF(K+1)
-	      F1=1.0D-100
-	      F2=-(D(1)-CV)/A(1)*F1
-	      DF(1)=F1
-	      IF (KB.EQ.1) THEN
-		 FS=F2
-	      ELSE IF (KB.EQ.2) THEN
-		 DF(2)=F2
-		 FS=-((D(2)-CV)*F2+G(2)*F1)/A(2)
-	      ELSE 
-		 DF(2)=F2
-		 DO 20 J=3,KB+1
-		    F=-((D(J-1)-CV)*F2+G(J-1)*F1)/A(J-1)
-		    IF (J.LE.KB) DF(J)=F
-		    IF (DABS(F).GT.1.0D+100) THEN
-		       DO 15 K1=1,J
+                 F1=F1*1.0D-100
+                 F0=F0*1.0D-100
+              ENDIF  
+           ELSE
+              KB=K
+              FL=DF(K+1)
+              F1=1.0D-100
+              F2=-(D(1)-CV)/A(1)*F1
+              DF(1)=F1
+              IF (KB.EQ.1) THEN
+                 FS=F2
+              ELSE IF (KB.EQ.2) THEN
+                 DF(2)=F2
+                 FS=-((D(2)-CV)*F2+G(2)*F1)/A(2)
+              ELSE 
+                 DF(2)=F2
+                 DO 20 J=3,KB+1
+                    F=-((D(J-1)-CV)*F2+G(J-1)*F1)/A(J-1)
+                    IF (J.LE.KB) DF(J)=F
+                    IF (DABS(F).GT.1.0D+100) THEN
+                       DO 15 K1=1,J
 15                        DF(K1)=DF(K1)*1.0D-100
-		       F=F*1.0D-100
-		       F2=F2*1.0D-100
-		    ENDIF  
-		    F1=F2
+                       F=F*1.0D-100
+                       F2=F2*1.0D-100
+                    ENDIF  
+                    F1=F2
 20                  F2=F
-		 FS=F
-	      ENDIF
-	      GO TO 35
-	   ENDIF
+                 FS=F
+              ENDIF
+              GO TO 35
+           ENDIF
 30      CONTINUE
 35      SU1=0.0D0
-	R1=1.0D0
-	DO 40 J=M+IP+1,2*(M+IP)
+        R1=1.0D0
+        DO 40 J=M+IP+1,2*(M+IP)
 40         R1=R1*J
-	SU1=DF(1)*R1
-	DO 45 K=2,KB
-	   R1=-R1*(K+M+IP-1.5D0)/(K-1.0D0)
+        SU1=DF(1)*R1
+        DO 45 K=2,KB
+           R1=-R1*(K+M+IP-1.5D0)/(K-1.0D0)
 45           SU1=SU1+R1*DF(K)
-	SU2=0.0D0
+        SU2=0.0D0
         SW=0.0D0
-	DO 50 K=KB+1,NM
-	   IF (K.NE.1) R1=-R1*(K+M+IP-1.5D0)/(K-1.0D0)
-	   SU2=SU2+R1*DF(K)
-	   IF (DABS(SW-SU2).LT.DABS(SU2)*1.0D-14) GOTO 55
+        DO 50 K=KB+1,NM
+           IF (K.NE.1) R1=-R1*(K+M+IP-1.5D0)/(K-1.0D0)
+           SU2=SU2+R1*DF(K)
+           IF (DABS(SW-SU2).LT.DABS(SU2)*1.0D-14) GOTO 55
 50         SW=SU2
 55      R3=1.0D0
-	DO 60 J=1,(M+N+IP)/2
+        DO 60 J=1,(M+N+IP)/2
 60         R3=R3*(J+0.5D0*(N+M+IP))
-	R4=1.0D0
-	DO 65 J=1,(N-M-IP)/2
+        R4=1.0D0
+        DO 65 J=1,(N-M-IP)/2
 65         R4=-4.0D0*R4*J
-	S0=R3/(FL*(SU1/FS)+SU2)/R4
-	DO 70 K=1,KB
+        S0=R3/(FL*(SU1/FS)+SU2)/R4
+        DO 70 K=1,KB
 70         DF(K)=FL/FS*S0*DF(K)
-	DO 75 K=KB+1,NM
+        DO 75 K=KB+1,NM
 75         DF(K)=S0*DF(K)
-	RETURN
-	END
+        RETURN
+        END
 
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE AJYIK(X,VJ1,VJ2,VY1,VY2,VI1,VI2,VK1,VK2)
@@ -11731,21 +11731,21 @@ C       Input :  x  --- Argument of ג(x), x = n/2, n=1,2,תתת
 C       Output:  GA --- ג(x)
 C       =====================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	PI=3.141592653589793D0
-	IF (X.EQ.INT(X).AND.X.GT.0.0) THEN
-	   GA=1.0D0
-	   M1=INT(X-1.0)
-	   DO 10 K=2,M1
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        PI=3.141592653589793D0
+        IF (X.EQ.INT(X).AND.X.GT.0.0) THEN
+           GA=1.0D0
+           M1=INT(X-1.0)
+           DO 10 K=2,M1
 10            GA=GA*K
-	ELSE IF (X+.5D0.EQ.INT(X+.5D0).AND.X.GT.0.0) THEN
-	   M=INT(X)
-	   GA=DSQRT(PI)
-	   DO 15 K=1,M
+        ELSE IF (X+.5D0.EQ.INT(X+.5D0).AND.X.GT.0.0) THEN
+           M=INT(X)
+           GA=DSQRT(PI)
+           DO 15 K=1,M
 15            GA=0.5D0*GA*(2.0D0*K-1.0D0)
-	ENDIF
-	RETURN
-	END
+        ENDIF
+        RETURN
+        END
 
 C       **********************************
 
@@ -11986,87 +11986,87 @@ C                EG(L) --- Characteristic value for mode m and n'
 C                          ( L = n' - m + 1 )
 C       =========================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION B(100),H(100),D(300),E(300),F(300),CV0(100),
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION B(100),H(100),D(300),E(300),F(300),CV0(100),
      &            A(300),G(300),EG(200)
-	IF (C.LT.1.0D-10) THEN
-	   DO 5 I=1,N-M+1
+        IF (C.LT.1.0D-10) THEN
+           DO 5 I=1,N-M+1
 5             EG(I)=(I+M)*(I+M-1.0D0)
-	   GO TO 70
-	ENDIF                                           
-	ICM=(N-M+2)/2
-	NM=10+INT(0.5*(N-M)+C)
-	CS=C*C*KD
+           GO TO 70
+        ENDIF                                           
+        ICM=(N-M+2)/2
+        NM=10+INT(0.5*(N-M)+C)
+        CS=C*C*KD
         K=0
-	DO 60 L=0,1
-	   DO 10 I=1,NM
-	      IF (L.EQ.0) K=2*(I-1)
-	      IF (L.EQ.1) K=2*I-1
-	      DK0=M+K
-	      DK1=M+K+1
-	      DK2=2*(M+K)
-	      D2K=2*M+K
-	      A(I)=(D2K+2.0)*(D2K+1.0)/((DK2+3.0)*(DK2+5.0))*CS
-	      D(I)=DK0*DK1+(2.0*DK0*DK1-2.0*M*M-1.0)/((DK2-1.0)
+        DO 60 L=0,1
+           DO 10 I=1,NM
+              IF (L.EQ.0) K=2*(I-1)
+              IF (L.EQ.1) K=2*I-1
+              DK0=M+K
+              DK1=M+K+1
+              DK2=2*(M+K)
+              D2K=2*M+K
+              A(I)=(D2K+2.0)*(D2K+1.0)/((DK2+3.0)*(DK2+5.0))*CS
+              D(I)=DK0*DK1+(2.0*DK0*DK1-2.0*M*M-1.0)/((DK2-1.0)
      &             *(DK2+3.0))*CS
 10            G(I)=K*(K-1.0)/((DK2-3.0)*(DK2-1.0))*CS
-	   DO 15 K=2,NM
-	      E(K)=DSQRT(A(K-1)*G(K))
+           DO 15 K=2,NM
+              E(K)=DSQRT(A(K-1)*G(K))
 15            F(K)=E(K)*E(K)
-	   F(1)=0.0D0
-	   E(1)=0.0D0
-	   XA=D(NM)+DABS(E(NM))
-	   XB=D(NM)-DABS(E(NM))
-	   NM1=NM-1
-	   DO 20 I=1,NM1
-	      T=DABS(E(I))+DABS(E(I+1))
-	      T1=D(I)+T
-	      IF (XA.LT.T1) XA=T1
-	      T1=D(I)-T
-	      IF (T1.LT.XB) XB=T1
+           F(1)=0.0D0
+           E(1)=0.0D0
+           XA=D(NM)+DABS(E(NM))
+           XB=D(NM)-DABS(E(NM))
+           NM1=NM-1
+           DO 20 I=1,NM1
+              T=DABS(E(I))+DABS(E(I+1))
+              T1=D(I)+T
+              IF (XA.LT.T1) XA=T1
+              T1=D(I)-T
+              IF (T1.LT.XB) XB=T1
 20         CONTINUE
-	   DO 25 I=1,ICM
-	      B(I)=XA
+           DO 25 I=1,ICM
+              B(I)=XA
 25            H(I)=XB
-	   DO 55 K=1,ICM
-	      DO 30 K1=K,ICM
-		 IF (B(K1).LT.B(K)) THEN
-		    B(K)=B(K1)
-		    GO TO 35
-		 ENDIF
+           DO 55 K=1,ICM
+              DO 30 K1=K,ICM
+                 IF (B(K1).LT.B(K)) THEN
+                    B(K)=B(K1)
+                    GO TO 35
+                 ENDIF
 30            CONTINUE
 35            IF (K.NE.1.AND.H(K).LT.H(K-1)) H(K)=H(K-1)
 40            X1=(B(K)+H(K))/2.0D0
-	      CV0(K)=X1
-	      IF (DABS((B(K)-H(K))/X1).LT.1.0D-14) GO TO 50
-	      J=0
-	      S=1.0D0
-	      DO 45 I=1,NM
-		 IF (S.EQ.0.0D0) S=S+1.0D-30
-		 T=F(I)/S
-		 S=D(I)-T-X1
-		 IF (S.LT.0.0D0) J=J+1
+              CV0(K)=X1
+              IF (DABS((B(K)-H(K))/X1).LT.1.0D-14) GO TO 50
+              J=0
+              S=1.0D0
+              DO 45 I=1,NM
+                 IF (S.EQ.0.0D0) S=S+1.0D-30
+                 T=F(I)/S
+                 S=D(I)-T-X1
+                 IF (S.LT.0.0D0) J=J+1
 45            CONTINUE
-	      IF (J.LT.K) THEN
-		 H(K)=X1
-	      ELSE
-		 B(K)=X1
-		 IF (J.GE.ICM) THEN
-		    B(ICM)=X1
-		 ELSE
-		    IF (H(J+1).LT.X1) H(J+1)=X1
-		    IF (X1.LT.B(J)) B(J)=X1
-		 ENDIF
-	      ENDIF
-	      GO TO 40
+              IF (J.LT.K) THEN
+                 H(K)=X1
+              ELSE
+                 B(K)=X1
+                 IF (J.GE.ICM) THEN
+                    B(ICM)=X1
+                 ELSE
+                    IF (H(J+1).LT.X1) H(J+1)=X1
+                    IF (X1.LT.B(J)) B(J)=X1
+                 ENDIF
+              ENDIF
+              GO TO 40
 50            CV0(K)=X1
-	      IF (L.EQ.0) EG(2*K-1)=CV0(K)
-	      IF (L.EQ.1) EG(2*K)=CV0(K)
+              IF (L.EQ.0) EG(2*K-1)=CV0(K)
+              IF (L.EQ.1) EG(2*K)=CV0(K)
 55         CONTINUE
 60      CONTINUE
 70      CV=EG(N-M+1)
-	RETURN
-	END
+        RETURN
+        END
 
 
 C       **********************************
@@ -12283,101 +12283,101 @@ C            (3) JYNB for computing Jn(x), Yn(x) and their
 C                derivatives
 C       ==============================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION FG(251),BJ1(0:251),DJ1(0:251),BJ2(0:251),DJ2(0:251),
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION FG(251),BJ1(0:251),DJ1(0:251),BJ2(0:251),DJ2(0:251),
      &            BY1(0:251),DY1(0:251),BY2(0:251),DY2(0:251)
-	EPS=1.0D-14
-	IF (KF.EQ.1.AND.M.EQ.2*INT(M/2)) KD=1
-	IF (KF.EQ.1.AND.M.NE.2*INT(M/2)) KD=2
-	IF (KF.EQ.2.AND.M.NE.2*INT(M/2)) KD=3
-	IF (KF.EQ.2.AND.M.EQ.2*INT(M/2)) KD=4
-	CALL CVA2(KD,M,Q,A)
-	IF (Q.LE.1.0D0) THEN
-	   QM=7.5+56.1*SQRT(Q)-134.7*Q+90.7*SQRT(Q)*Q
-	ELSE
-	   QM=17.0+3.1*SQRT(Q)-.126*Q+.0037*SQRT(Q)*Q
-	ENDIF
-	KM=INT(QM+0.5*M)              
-	CALL FCOEF(KD,M,Q,A,FG)
-	IC=INT(M/2)+1
-	IF (KD.EQ.4) IC=M/2
-	C1=DEXP(-X)
-	C2=DEXP(X)
-	U1=DSQRT(Q)*C1
-	U2=DSQRT(Q)*C2
-	CALL JYNB(KM,U1,NM,BJ1,DJ1,BY1,DY1)
-	CALL JYNB(KM,U2,NM,BJ2,DJ2,BY2,DY2)
+        EPS=1.0D-14
+        IF (KF.EQ.1.AND.M.EQ.2*INT(M/2)) KD=1
+        IF (KF.EQ.1.AND.M.NE.2*INT(M/2)) KD=2
+        IF (KF.EQ.2.AND.M.NE.2*INT(M/2)) KD=3
+        IF (KF.EQ.2.AND.M.EQ.2*INT(M/2)) KD=4
+        CALL CVA2(KD,M,Q,A)
+        IF (Q.LE.1.0D0) THEN
+           QM=7.5+56.1*SQRT(Q)-134.7*Q+90.7*SQRT(Q)*Q
+        ELSE
+           QM=17.0+3.1*SQRT(Q)-.126*Q+.0037*SQRT(Q)*Q
+        ENDIF
+        KM=INT(QM+0.5*M)              
+        CALL FCOEF(KD,M,Q,A,FG)
+        IC=INT(M/2)+1
+        IF (KD.EQ.4) IC=M/2
+        C1=DEXP(-X)
+        C2=DEXP(X)
+        U1=DSQRT(Q)*C1
+        U2=DSQRT(Q)*C2
+        CALL JYNB(KM,U1,NM,BJ1,DJ1,BY1,DY1)
+        CALL JYNB(KM,U2,NM,BJ2,DJ2,BY2,DY2)
         W1=0.0D0
         W2=0.0D0
-	IF (KC.EQ.2) GO TO 50
-	F1R=0.0D0
-	DO 30 K=1,KM
-	   IF (KD.EQ.1) THEN
-	      F1R=F1R+(-1)**(IC+K)*FG(K)*BJ1(K-1)*BJ2(K-1)
-	   ELSE IF (KD.EQ.2.OR.KD.EQ.3) THEN
-	      F1R=F1R+(-1)**(IC+K)*FG(K)*(BJ1(K-1)*BJ2(K)
+        IF (KC.EQ.2) GO TO 50
+        F1R=0.0D0
+        DO 30 K=1,KM
+           IF (KD.EQ.1) THEN
+              F1R=F1R+(-1)**(IC+K)*FG(K)*BJ1(K-1)*BJ2(K-1)
+           ELSE IF (KD.EQ.2.OR.KD.EQ.3) THEN
+              F1R=F1R+(-1)**(IC+K)*FG(K)*(BJ1(K-1)*BJ2(K)
      &            +(-1)**KD*BJ1(K)*BJ2(K-1))
-	   ELSE
-	      F1R=F1R+(-1)**(IC+K)*FG(K)*(BJ1(K-1)*BJ2(K+1)
+           ELSE
+              F1R=F1R+(-1)**(IC+K)*FG(K)*(BJ1(K-1)*BJ2(K+1)
      &            -BJ1(K+1)*BJ2(K-1))
-	   ENDIF
-	   IF (K.GE.5.AND.DABS(F1R-W1).LT.DABS(F1R)*EPS) GO TO 35
+           ENDIF
+           IF (K.GE.5.AND.DABS(F1R-W1).LT.DABS(F1R)*EPS) GO TO 35
 30         W1=F1R
 35      F1R=F1R/FG(1)
-	D1R=0.0D0
-	DO 40 K=1,KM
-	   IF (KD.EQ.1) THEN
-	      D1R=D1R+(-1)**(IC+K)*FG(K)*(C2*BJ1(K-1)*DJ2(K-1)
+        D1R=0.0D0
+        DO 40 K=1,KM
+           IF (KD.EQ.1) THEN
+              D1R=D1R+(-1)**(IC+K)*FG(K)*(C2*BJ1(K-1)*DJ2(K-1)
      &            -C1*DJ1(K-1)*BJ2(K-1))
-	   ELSE IF (KD.EQ.2.OR.KD.EQ.3) THEN
-	      D1R=D1R+(-1)**(IC+K)*FG(K)*(C2*(BJ1(K-1)*DJ2(K)
+           ELSE IF (KD.EQ.2.OR.KD.EQ.3) THEN
+              D1R=D1R+(-1)**(IC+K)*FG(K)*(C2*(BJ1(K-1)*DJ2(K)
      &            +(-1)**KD*BJ1(K)*DJ2(K-1))-C1*(DJ1(K-1)*BJ2(K)
      &            +(-1)**KD*DJ1(K)*BJ2(K-1)))
-	   ELSE
-	      D1R=D1R+(-1)**(IC+K)*FG(K)*(C2*(BJ1(K-1)*DJ2(K+1)
+           ELSE
+              D1R=D1R+(-1)**(IC+K)*FG(K)*(C2*(BJ1(K-1)*DJ2(K+1)
      &            -BJ1(K+1)*DJ2(K-1))-C1*(DJ1(K-1)*BJ2(K+1)
      &            -DJ1(K+1)*BJ2(K-1)))
-	   ENDIF
-	   IF (K.GE.5.AND.DABS(D1R-W2).LT.DABS(D1R)*EPS) GO TO 45
+           ENDIF
+           IF (K.GE.5.AND.DABS(D1R-W2).LT.DABS(D1R)*EPS) GO TO 45
 40         W2=D1R
 45      D1R=D1R*DSQRT(Q)/FG(1)
-	IF (KC.EQ.1) RETURN
+        IF (KC.EQ.1) RETURN
 50      F2R=0.0D0
-	DO 55 K=1,KM
-	   IF (KD.EQ.1) THEN
-	      F2R=F2R+(-1)**(IC+K)*FG(K)*BJ1(K-1)*BY2(K-1)
-	   ELSE IF (KD.EQ.2.OR.KD.EQ.3) THEN
-	      F2R=F2R+(-1)**(IC+K)*FG(K)*(BJ1(K-1)*BY2(K)
+        DO 55 K=1,KM
+           IF (KD.EQ.1) THEN
+              F2R=F2R+(-1)**(IC+K)*FG(K)*BJ1(K-1)*BY2(K-1)
+           ELSE IF (KD.EQ.2.OR.KD.EQ.3) THEN
+              F2R=F2R+(-1)**(IC+K)*FG(K)*(BJ1(K-1)*BY2(K)
      &            +(-1)**KD*BJ1(K)*BY2(K-1))
-	   ELSE
-	      F2R=F2R+(-1)**(IC+K)*FG(K)*(BJ1(K-1)*BY2(K+1)
+           ELSE
+              F2R=F2R+(-1)**(IC+K)*FG(K)*(BJ1(K-1)*BY2(K+1)
      &            -BJ1(K+1)*BY2(K-1))
-	   ENDIF
-	   IF (K.GE.5.AND.DABS(F2R-W1).LT.DABS(F2R)*EPS) GO TO 60
+           ENDIF
+           IF (K.GE.5.AND.DABS(F2R-W1).LT.DABS(F2R)*EPS) GO TO 60
 55         W1=F2R
 60      F2R=F2R/FG(1)
-	D2R=0.0D0
-	DO 65 K=1,KM
-	   IF (KD.EQ.1) THEN
-	      D2R=D2R+(-1)**(IC+K)*FG(K)*(C2*BJ1(K-1)*DY2(K-1)
+        D2R=0.0D0
+        DO 65 K=1,KM
+           IF (KD.EQ.1) THEN
+              D2R=D2R+(-1)**(IC+K)*FG(K)*(C2*BJ1(K-1)*DY2(K-1)
      &            -C1*DJ1(K-1)*BY2(K-1))
-	   ELSE IF (KD.EQ.2.OR.KD.EQ.3) THEN
-	      D2R=D2R+(-1)**(IC+K)*FG(K)*(C2*(BJ1(K-1)*DY2(K)
+           ELSE IF (KD.EQ.2.OR.KD.EQ.3) THEN
+              D2R=D2R+(-1)**(IC+K)*FG(K)*(C2*(BJ1(K-1)*DY2(K)
      &            +(-1)**KD*BJ1(K)*DY2(K-1))-C1*(DJ1(K-1)*BY2(K)
      &            +(-1)**KD*DJ1(K)*BY2(K-1)))
-	   ELSE
-	      D2R=D2R+(-1)**(IC+K)*FG(K)*(C2*(BJ1(K-1)*DY2(K+1)
+           ELSE
+              D2R=D2R+(-1)**(IC+K)*FG(K)*(C2*(BJ1(K-1)*DY2(K+1)
      &            -BJ1(K+1)*DY2(K-1))-C1*(DJ1(K-1)*BY2(K+1)
      &            -DJ1(K+1)*BY2(K-1)))
-	   ENDIF
-	   IF (K.GE.5.AND.DABS(D2R-W2).LT.DABS(D2R)*EPS) GO TO 70
+           ENDIF
+           IF (K.GE.5.AND.DABS(D2R-W2).LT.DABS(D2R)*EPS) GO TO 70
 65         W2=D2R
 70         D2R=D2R*DSQRT(Q)/FG(1)
-	RETURN
-	END
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE CIK01(Z,CBI0,CDI0,CBI1,CDI1,CBK0,CDK0,CBK1,CDK1)
@@ -12582,37 +12582,37 @@ C                DY(n) --- yn'(x)
 C                NM --- Highest order computed
 C       ======================================================
 C
-	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-	DIMENSION SY(0:N),DY(0:N)
-	NM=N
-	IF (X.LT.1.0D-60) THEN
-	   DO 10 K=0,N
-	      SY(K)=-1.0D+300
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        DIMENSION SY(0:N),DY(0:N)
+        NM=N
+        IF (X.LT.1.0D-60) THEN
+           DO 10 K=0,N
+              SY(K)=-1.0D+300
 10            DY(K)=1.0D+300
-	   RETURN
-	ENDIF
-	SY(0)=-DCOS(X)/X
-	F0=SY(0)
-	DY(0)=(DSIN(X)+DCOS(X)/X)/X
+           RETURN
+        ENDIF
+        SY(0)=-DCOS(X)/X
+        F0=SY(0)
+        DY(0)=(DSIN(X)+DCOS(X)/X)/X
         IF (N.LT.1) THEN 
            RETURN
         ENDIF
         SY(1)=(SY(0)-DSIN(X))/X
         F1=SY(1)
-	DO 15 K=2,N
-	   F=(2.0D0*K-1.0D0)*F1/X-F0
-	   SY(K)=F
-	   IF (DABS(F).GE.1.0D+300) GO TO 20              
-	   F0=F1
+        DO 15 K=2,N
+           F=(2.0D0*K-1.0D0)*F1/X-F0
+           SY(K)=F
+           IF (DABS(F).GE.1.0D+300) GO TO 20              
+           F0=F1
 15         F1=F
 20      NM=K-1
-	DO 25 K=1,NM
+        DO 25 K=1,NM
 25         DY(K)=SY(K-1)-(K+1.0D0)*SY(K)/X
-	RETURN
-	END
+        RETURN
+        END
 
 
-	
+        
 C       **********************************
 
         SUBROUTINE JELP(U,HK,ESN,ECN,EDN,EPH)
@@ -12760,6 +12760,6 @@ C
         END
 
 
-        
+
 C       **********************************
 
