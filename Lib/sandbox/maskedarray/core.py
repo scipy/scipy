@@ -1214,6 +1214,7 @@ If `value` is masked, masks those locations."""
         self._hardmask = False     
         
     def unshare_mask(self):
+        "Copies the mask and set the sharedmask flag to False."
         if self._sharedmask:
             self._mask = self._mask.copy()
             self._sharedmask = False
@@ -2010,6 +2011,7 @@ class _extrema_operation(object):
             kargs = { 'axis' : axis }
         else:
             kargs = {}
+            target = target.ravel()
 
         if m is nomask:
             t = self.ufunc.reduce(target, **kargs)
@@ -2645,6 +2647,5 @@ if __name__ == '__main__':
         assert_equal(y._mask, [True, True])
     #
     if 1:
-        x = arange(10)
-        x[0] = masked
-        print dot(x,x)
+        x = arange(64).reshape(8,8)
+        z = maximum(x)
