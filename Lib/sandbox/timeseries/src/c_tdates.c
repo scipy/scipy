@@ -2279,8 +2279,6 @@ static PyTypeObject DateType = {
 
 ///////////////////////////////////////////////////////////////////////
 
-char c_tdates_check_freq_doc[] =
-"translate user specified frequency into frequency constant";
 PyObject *
 c_tdates_check_freq(PyObject *self, PyObject *args) {
 
@@ -2293,8 +2291,6 @@ c_tdates_check_freq(PyObject *self, PyObject *args) {
     return PyInt_FromLong(freq_val);
 }
 
-char c_tdates_check_freq_str_doc[] =
-"translate user specified frequency into standard string representation";
 PyObject *
 c_tdates_check_freq_str(PyObject *self, PyObject *args) {
 
@@ -2312,8 +2308,6 @@ c_tdates_check_freq_str(PyObject *self, PyObject *args) {
     return result;
 }
 
-char c_tdates_get_freq_group_doc[] =
-"translate user specified frequency into frequency group constant";
 PyObject *
 c_tdates_get_freq_group(PyObject *self, PyObject *args) {
 
@@ -2326,12 +2320,6 @@ c_tdates_get_freq_group(PyObject *self, PyObject *args) {
     return PyInt_FromLong(get_freq_group(freq_val));
 }
 
-char c_tdates_thisday_doc[] =
-"Returns today's date, at the given frequency\n\n"
-":Parameters:\n"
-"   - freq : string/int\n"
-"       Frequency to convert the Date to. Accepts any valid frequency\n"
-"       specification (string or integer)\n";
 PyObject *
 c_tdates_thisday(PyObject *self, PyObject *args) {
 

@@ -118,7 +118,6 @@ TimeSeries_convert(PyObject *self, PyObject *args)
     long newStart, newStartTemp;
     long newEnd, newEndTemp;
     long newLen, newHeight;
-    int i;
     long currIndex, prevIndex;
     long nd;
     npy_intp *dim, *newIdx;
@@ -128,6 +127,7 @@ TimeSeries_convert(PyObject *self, PyObject *args)
     int fromFreq, toFreq;
     char relation;
     asfreq_info af_info;
+    Py_ssize_t i;
 
     PyObject *val, *valMask;
 
@@ -359,7 +359,8 @@ check_mov_args(PyObject *orig_arrayobj, int span, int min_win_size,
 
     {
         PyArrayObject *orig_mask_tmp;
-        int i, valid_points=0, is_masked;
+        int valid_points=0, is_masked;
+        Py_ssize_t i;
 
         orig_mask_tmp = (PyArrayObject*)orig_mask;
 
@@ -401,7 +402,7 @@ static PyObject*
 calc_mov_sum(PyArrayObject *orig_ndarray, int span, int rtype)
 {
     PyArrayObject *result_ndarray=NULL;
-    int i;
+    Py_ssize_t i;
 
     result_ndarray = (PyArrayObject*)PyArray_ZEROS(
                                        orig_ndarray->nd,
@@ -418,7 +419,7 @@ calc_mov_sum(PyArrayObject *orig_ndarray, int span, int rtype)
         if (i == 0) {
             mov_sum_val = val;
         } else {
-            int prev_idx = i-1;
+            Py_ssize_t prev_idx = i-1;
             PyObject *mov_sum_prevval;
             mov_sum_prevval= PyArray_GETITEM(result_ndarray,
                                    PyArray_GetPtr(result_ndarray, &prev_idx));
@@ -428,7 +429,7 @@ calc_mov_sum(PyArrayObject *orig_ndarray, int span, int rtype)
 
             if (i >= span) {
                 PyObject *temp_val, *rem_val;
-                int rem_idx = i-span;
+                Py_ssize_t rem_idx = i-span;
                 temp_val = mov_sum_val;
                 rem_val = PyArray_GETITEM(orig_ndarray,
                                    PyArray_GetPtr(orig_ndarray, &rem_idx));
@@ -552,8 +553,9 @@ calc_mov_median(PyArrayObject *orig_ndarray, int span, int rtype)
     PyObject **result_array, **ref_array, **even_array=NULL;
     PyObject *new_val, *old_val;
     PyObject *temp_add, *one_half;
-    int a, i, k, R, arr_size, z;
+    int a, k, R, arr_size, z;
     int *r;
+    Py_ssize_t i;
 
     arr_size = orig_ndarray->dimensions[0];
 
@@ -830,6 +832,7 @@ MaskedArray_mov_stddev(PyObject *self, PyObject *args, PyObject *kwds)
     Py_DECREF(result_ndarray);
     Py_DECREF(result_mask);
     return result_dict;
+
 }
 
 void import_c_tseries(PyObject *m) { import_array(); }

@@ -109,16 +109,10 @@ long (*get_asfreq_func(int, int, int))(long, char, asfreq_info*);
 PyObject *DateArray_asfreq(PyObject *, PyObject *);
 PyObject *DateArray_getDateInfo(PyObject *, PyObject *);
 
-char c_tdates_thisday_doc[];
+
 PyObject *c_tdates_thisday(PyObject *, PyObject *);
-
-char c_tdates_check_freq_doc[];
 PyObject *c_tdates_check_freq(PyObject *, PyObject *);
-
-char c_tdates_check_freq_str_doc[];
 PyObject *c_tdates_check_freq_str(PyObject *, PyObject *);
-
-char c_tdates_get_freq_group_doc[];
 PyObject *c_tdates_get_freq_group(PyObject *, PyObject *);
 
 PyObject *set_callback_DateFromString(PyObject *, PyObject *);
