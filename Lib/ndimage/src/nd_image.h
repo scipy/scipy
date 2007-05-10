@@ -287,7 +287,7 @@ NA_NewArray(void *buffer, NumarrayType type, int ndim, maybelong *shape)
 
 #define  NA_OutputArray (*(PyArrayObject* (*) (PyObject*,NumarrayType,int) ) (void *) NA_OutputArray)
 #define  NA_IoArray (*(PyArrayObject* (*) (PyObject*,NumarrayType,int) ) (void *) NA_IoArray)
-#define  NA_NewArray (*(PyArrayObject* (*) (void* buffer, NumarrayType type, int ndim, ...) ) (void *) NA_NewArray )
+#define  NA_NewArray (*(PyArrayObject* (*) (void* buffer, NumarrayType, int, ...) ) (void *) NA_NewArray )
 #define  NA_elements (*(unsigned long (*) (PyArrayObject*) ) (void *) NA_elements)
 #define  NA_InputArray (*(PyArrayObject* (*) (PyObject*,NumarrayType,int) ) (void *) NA_InputArray)
 
