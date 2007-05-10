@@ -88,16 +88,6 @@ NA_InputArray(PyObject *a, NumarrayType t, int requires)
         PyArray_CheckFromAny(a, descr, 0, 0, requires, NULL);
 }
 
-static unsigned long
-NA_elements(PyArrayObject  *a)
-{
-    int i;
-    unsigned long n = 1;
-    for(i = 0; i<a->nd; i++)
-        n *= a->dimensions[i];
-    return n;
-}
-
 /* satisfies ensures that 'a' meets a set of requirements and matches
 the specified type.
 */
@@ -247,8 +237,6 @@ NA_NewAllFromBuffer(int ndim, maybelong *shape, NumarrayType type,
     return self;
 }
 
-#define NA_NBYTES(a) (a->descr->elsize * NA_elements(a))
-
 static PyArrayObject *
 NA_NewAll(int ndim, maybelong *shape, NumarrayType type,
           void *buffer, maybelong byteoffset, maybelong bytestride,
@@ -265,9 +253,9 @@ NA_NewAll(int ndim, maybelong *shape, NumarrayType type,
             result = NULL;
         } else {
             if (buffer) {
-                memcpy(result->data, buffer, NA_NBYTES(result));
+                memcpy(result->data, buffer, PyArray_NBYTES(result));
             } else {
-                memset(result->data, 0, NA_NBYTES(result));
+                memset(result->data, 0, PyArray_NBYTES(result));
             }
         }
     }

@@ -101,7 +101,7 @@ NI_ObjectToLongSequenceAndLength(PyObject *object, maybelong **sequence)
 {
   long *pa, ii;
   PyArrayObject *array = NA_InputArray(object, PyArray_LONG, NPY_CARRAY);
-  maybelong length = NA_elements(array);
+  maybelong length = PyArray_SIZE(array);
 
   *sequence = (maybelong*)malloc(length * sizeof(maybelong));
   if (!*sequence) {
