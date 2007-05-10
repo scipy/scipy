@@ -127,7 +127,7 @@ TimeSeries_convert(PyObject *self, PyObject *args)
     int fromFreq, toFreq;
     char relation;
     asfreq_info af_info;
-    Py_ssize_t i;
+    int i;
 
     PyObject *val, *valMask;
 
@@ -241,12 +241,14 @@ TimeSeries_convert(PyObject *self, PyObject *args)
     //set values in the new array
     for (i = 0; i < array->dimensions[0]; i++) {
 
-        val = PyArray_GETITEM(array, PyArray_GetPtr(array, &i));
-        valMask = PyArray_GETITEM(mask, PyArray_GetPtr(mask, &i));
+        npy_intp idx = (npy_intp)i;
+
+        val = PyArray_GETITEM(array, PyArray_GetPtr(array, &idx));
+        valMask = PyArray_GETITEM(mask, PyArray_GetPtr(mask, &idx));
 
         CHECK_ASFREQ(currIndex = asfreq_main(startIndex + i, relation, &af_info));
 
-        newIdx[0] = currIndex-newStart;
+        newIdx[0] = (npy_intp)(currIndex-newStart);
 
         if (newHeight > 1) {
 
@@ -257,7 +259,7 @@ TimeSeries_convert(PyObject *self, PyObject *args)
                     prevIndex = currIndex;
                 }
 
-                newIdx[1] = currPerLen;
+                newIdx[1] = (npy_intp)currPerLen;
                 currPerLen++;
         }
 
@@ -359,19 +361,19 @@ check_mov_args(PyObject *orig_arrayobj, int span, int min_win_size,
 
     {
         PyArrayObject *orig_mask_tmp;
-        int valid_points=0, is_masked;
-        Py_ssize_t i;
+        int i, valid_points=0, is_masked;
 
         orig_mask_tmp = (PyArrayObject*)orig_mask;
 
         for (i=0; i<((*orig_ndarray_tmp)->dimensions[0]); i++) {
 
+            npy_intp idx = (npy_intp)i;
             is_masked=0;
 
             if (orig_mask != NULL) {
                 PyObject *valMask;
                 valMask = PyArray_GETITEM(orig_mask_tmp,
-                                          PyArray_GetPtr(orig_mask_tmp, &i));
+                                          PyArray_GetPtr(orig_mask_tmp, &idx));
                 is_masked = (int)PyInt_AsLong(valMask);
                 Py_DECREF(valMask);
             }
@@ -402,7 +404,7 @@ static PyObject*
 calc_mov_sum(PyArrayObject *orig_ndarray, int span, int rtype)
 {
     PyArrayObject *result_ndarray=NULL;
-    Py_ssize_t i;
+    int i;
 
     result_ndarray = (PyArrayObject*)PyArray_ZEROS(
                                        orig_ndarray->nd,
@@ -413,26 +415,27 @@ calc_mov_sum(PyArrayObject *orig_ndarray, int span, int rtype)
     for (i=0; i<orig_ndarray->dimensions[0]; i++) {
 
         PyObject *val=NULL, *mov_sum_val=NULL;
+        npy_intp idx = (npy_intp)i;
 
-        val = PyArray_GETITEM(orig_ndarray, PyArray_GetPtr(orig_ndarray, &i));
+        val = PyArray_GETITEM(orig_ndarray, PyArray_GetPtr(orig_ndarray, &idx));
 
         if (i == 0) {
             mov_sum_val = val;
         } else {
-            Py_ssize_t prev_idx = i-1;
+            idx = (npy_intp)(i-1);
             PyObject *mov_sum_prevval;
             mov_sum_prevval= PyArray_GETITEM(result_ndarray,
-                                   PyArray_GetPtr(result_ndarray, &prev_idx));
+                                   PyArray_GetPtr(result_ndarray, &idx));
             mov_sum_val = np_add(val, mov_sum_prevval);
             Py_DECREF(mov_sum_prevval);
             ERR_CHECK(mov_sum_val)
 
             if (i >= span) {
                 PyObject *temp_val, *rem_val;
-                Py_ssize_t rem_idx = i-span;
+                idx = (npy_intp)(i-span);
                 temp_val = mov_sum_val;
                 rem_val = PyArray_GETITEM(orig_ndarray,
-                                   PyArray_GetPtr(orig_ndarray, &rem_idx));
+                                   PyArray_GetPtr(orig_ndarray, &idx));
 
                 mov_sum_val = np_subtract(temp_val, rem_val);
                 ERR_CHECK(mov_sum_val)
@@ -442,8 +445,10 @@ calc_mov_sum(PyArrayObject *orig_ndarray, int span, int rtype)
             }
         }
 
+        idx = (npy_intp)i;
+
         PyArray_SETITEM(result_ndarray,
-                        PyArray_GetPtr(result_ndarray, &i),
+                        PyArray_GetPtr(result_ndarray, &idx),
                         mov_sum_val);
 
         if (mov_sum_val != val) { Py_DECREF(val); }
@@ -553,11 +558,11 @@ calc_mov_median(PyArrayObject *orig_ndarray, int span, int rtype)
     PyObject **result_array, **ref_array, **even_array=NULL;
     PyObject *new_val, *old_val;
     PyObject *temp_add, *one_half;
-    int a, k, R, arr_size, z;
+    int a, i, k, R, arr_size, z;
     int *r;
-    Py_ssize_t i;
+    npy_intp idx;
 
-    arr_size = orig_ndarray->dimensions[0];
+    arr_size = (int)(orig_ndarray->dimensions[0]);
 
     result_ndarray = (PyArrayObject*)PyArray_ZEROS(
                                        orig_ndarray->nd,
@@ -576,7 +581,8 @@ calc_mov_median(PyArrayObject *orig_ndarray, int span, int rtype)
         MEM_CHECK(ref_array)
 
         for (i=0; i<arr_size; i++) {
-            ref_array[i] = PyArray_GETITEM(orig_ndarray, PyArray_GetPtr(orig_ndarray, &i));
+            idx = (npy_intp)i;
+            ref_array[i] = PyArray_GETITEM(orig_ndarray, PyArray_GetPtr(orig_ndarray, &idx));
         }
 
         /* this array wll be used for keeping track of the "ranks" of the values
@@ -686,8 +692,9 @@ calc_mov_median(PyArrayObject *orig_ndarray, int span, int rtype)
         Py_DECREF(one_half);
 
         for (i=span-1; i<arr_size; i++) {
+            idx = (npy_intp)i;
             PyArray_SETITEM(result_ndarray,
-                            PyArray_GetPtr(result_ndarray, &i),
+                            PyArray_GetPtr(result_ndarray, &idx),
                             result_array[i]);
         }
 
