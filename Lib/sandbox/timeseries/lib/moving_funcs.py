@@ -80,10 +80,9 @@ def mov_sum(data, span, dtype=None):
     $$dtype$$"""
 
     kwargs = {'span':span}
-    if dtype is None: dtype = data.dtype
-    kwargs['dtype'] = dtype
-        
-
+    if dtype is not None:
+        kwargs['dtype'] = dtype
+ 
     return _moving_func(data, MA_mov_sum, kwargs)
 #...............................................................................
 def mov_median(data, span, dtype=None):
@@ -95,8 +94,8 @@ def mov_median(data, span, dtype=None):
     $$dtype$$"""
 
     kwargs = {'span':span}
-    if dtype is None: dtype = data.dtype
-    kwargs['dtype'] = dtype
+    if dtype is not None:
+        kwargs['dtype'] = dtype
 
     return _moving_func(data, MA_mov_median, kwargs)
 #...............................................................................

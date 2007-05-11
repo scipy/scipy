@@ -289,7 +289,7 @@ TimeSeries_convert(PyObject *self, PyObject *args)
 }
 
 
-/* This function is directly copied from direct copy of function in  */
+/* This function is directly copied from the numpy source  */
 /* Return typenumber from dtype2 unless it is NULL, then return
    NPY_DOUBLE if dtype1->type_num is integer or bool
    and dtype1->type_num otherwise.
@@ -297,19 +297,29 @@ TimeSeries_convert(PyObject *self, PyObject *args)
 static int
 _get_type_num_double(PyArray_Descr *dtype1, PyArray_Descr *dtype2)
 {
-        if (dtype2 != NULL)
-                return dtype2->type_num;
+    if (dtype2 != NULL) {
+        return dtype2->type_num;
+    }
 
-        /* For integer or bool data-types */
-        if (dtype1->type_num < NPY_FLOAT) {
-                return NPY_DOUBLE;
-        }
-        else {
-                return dtype1->type_num;
-        }
+    /* For integer or bool data-types */
+    if (dtype1->type_num < NPY_FLOAT) {
+        return NPY_DOUBLE;
+    }
+    else {
+        return dtype1->type_num;
+    }
 }
 
-#define _CHKTYPENUM(typ) ((typ) ? (typ)->type_num : PyArray_NOTYPE)
+static int
+_get_type_num(PyArray_Descr *dtype1, PyArray_Descr *dtype2)
+{
+    if (dtype2 != NULL) {
+        return dtype2->type_num;
+    } else {
+        return dtype1->type_num;
+    }
+}
+
 
 /* validates the standard arguments to moving functions and set the original
    mask, original ndarray, and mask for the result */
@@ -480,7 +490,7 @@ MaskedArray_mov_sum(PyObject *self, PyObject *args, PyObject *kwds)
     check_mov_args(orig_arrayobj, span, 1,
                    &orig_ndarray, &result_mask);
 
-    rtype = _CHKTYPENUM(dtype);
+    rtype = _get_type_num(((PyArrayObject*)orig_ndarray)->descr, dtype);
 
     result_ndarray = calc_mov_sum((PyArrayObject*)orig_ndarray,
                                   span, rtype);
@@ -735,7 +745,11 @@ MaskedArray_mov_median(PyObject *self, PyObject *args, PyObject *kwds)
     check_mov_args(orig_arrayobj, span, 1,
                    &orig_ndarray, &result_mask);
 
-    rtype = _CHKTYPENUM(dtype);
+    if ((span % 2) == 0) {
+        rtype = _get_type_num_double(((PyArrayObject*)orig_ndarray)->descr, dtype);
+    } else {
+        rtype = _get_type_num(((PyArrayObject*)orig_ndarray)->descr, dtype);
+    }
 
     result_ndarray = calc_mov_median((PyArrayObject*)orig_ndarray,
                                      span, rtype);
