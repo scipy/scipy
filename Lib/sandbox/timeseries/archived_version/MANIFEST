@@ -1,8 +1,0 @@
-setup.py
-./__init__.py
-./corelib.py
-./cseries.c
-./shiftingarray.py
-./timeseries.py
-./tsdate.py
-./examples/example.py

@@ -1,2 +1,0 @@
-The page can be accessed at:
-http://www.scipy.org/TimeSeriesPackage
