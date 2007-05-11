@@ -156,8 +156,9 @@ class test_notmasked(NumpyTestCase):
                                [1,1,1,1,1,1,1,1],
                                [0,0,0,0,0,0,1,0],])
         tmp = notmasked_contiguous(a, None)
-        assert_equal(tmp[-1], (6, (16,21)))
-        assert_equal(tmp[-2], (4, (0,3)))
+        assert_equal(tmp[-1], slice(23,23,None))
+        assert_equal(tmp[-2], slice(16,21,None))
+        assert_equal(tmp[-3], slice(0,3,None))
         #
         tmp = notmasked_contiguous(a, 0)
         assert(len(tmp[-1]) == 1)
@@ -166,9 +167,10 @@ class test_notmasked(NumpyTestCase):
         assert(len(tmp[0]) == 2)
         #
         tmp = notmasked_contiguous(a, 1)
-        assert_equal(tmp[0][-1], (4, (0,3)))
+        assert_equal(tmp[0][-1], slice(0,3,None))
         assert(tmp[1] is None)
-        assert_equal(tmp[2][-1], (6, (0,5)))
+        assert_equal(tmp[2][-1], slice(7,7,None))
+        assert_equal(tmp[2][-2], slice(0,5,None))
         
 class test_2dfunctions(NumpyTestCase):
     "Tests 2D functions"

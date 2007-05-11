@@ -1722,7 +1722,7 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
     `axis` : Integer *[None]*
         Axis to be indirectly sorted (default -1)
     `fill_value` : var *[None]*
-        Default filling value. If None, uses the data type default.
+        Default filling value. If None, uses the minimum default for the data type.
         """
         if fill_value is None:
             fill_value = minimum_fill_value(self)
@@ -1733,7 +1733,7 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
         """Returns the array of indices for the maximum values of `a` along the
     specified axis.
     Masked values are treated as if they had the value `fill_value`.
-    If `fill_value` is None, the default for the data type is used.
+    If `fill_value` is None, the maximum default for the data type is used.
     Returns a numpy array.
 
 :Keywords:
@@ -2632,20 +2632,6 @@ def loads(strg):
 ################################################################################
 
 if __name__ == '__main__':
-    import numpy as N
-    from maskedarray.testutils import assert_equal, assert_array_equal
-    marray = masked_array
-    #
-    if 0:
-        x = masked_array([1,2])
-        y = x * masked
-        print y
-        assert_equal(y.shape, x.shape)
-        assert_equal(y._mask, [True, True])
-        y = x + masked
-        assert_equal(y.shape, x.shape)
-        assert_equal(y._mask, [True, True])
-    #
     if 1:
-        x = arange(64).reshape(8,8)
-        z = maximum(x)
+        x = arange(10)
+        assert(x.ctypes.data == x.filled().ctypes.data)

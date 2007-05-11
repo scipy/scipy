@@ -18,7 +18,7 @@ from numpy.testing import NumpyTest, NumpyTestCase
 from numpy.testing.utils import build_err_msg, rand
 
 import core
-from core import mask_or, getmask, getmaskarray, masked_array, nomask
+from core import mask_or, getmask, getmaskarray, masked_array, nomask, masked
 from core import filled, equal, less
 
 #------------------------------------------------------------------------------
@@ -67,6 +67,10 @@ def assert_equal(actual,desired,err_msg=''):
         assert desired == actual, msg
         return
     # Case #4. arrays or equivalent
+    if ((actual is masked) and not (desired is masked)) or \
+        ((desired is masked) and not (actual is masked)):
+        msg = build_err_msg([actual, desired], err_msg, header='', names=('x', 'y'))
+        raise ValueError(msg)    
     actual = N.array(actual, copy=False, subok=True)
     desired = N.array(desired, copy=False, subok=True)
     if actual.dtype.char in "OS" and desired.dtype.char in "OS":
@@ -115,6 +119,12 @@ def assert_array_compare(comparison, x, y, err_msg='', header='',
     
     x = masked_array(xf, copy=False, mask=m).filled(fill_value)
     y = masked_array(yf, copy=False, mask=m).filled(fill_value)
+    
+    if ((x is masked) and not (y is masked)) or \
+        ((y is masked) and not (x is masked)):
+        msg = build_err_msg([x, y], err_msg, header=header, names=('x', 'y'))
+        raise ValueError(msg)
+    
     if (x.dtype.char != "O") and (x.dtype.char != "S"):
         x = x.astype(float_)
         if isinstance(x, N.ndarray) and x.size > 1:
@@ -196,3 +206,7 @@ def assert_mask_equal(m1, m2):
     if m2 is nomask:
         assert(m1 is nomask)
     assert_array_equal(m1, m2)
+    
+if __name__ == '__main__':
+    a = 12
+    assert_equal(a, masked)

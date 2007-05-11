@@ -15,7 +15,7 @@ __all__ = [
 'apply_along_axis', 'atleast_1d', 'atleast_2d', 'atleast_3d', 'average',
 'vstack', 'hstack', 'dstack', 'row_stack', 'column_stack',
 'compress_rowcols', 'compress_rows', 'compress_cols', 'count_masked', 
-'dot', 
+'dot', 'hsplit',
 'mask_rowcols','mask_rows','mask_cols','masked_all','masked_all_like', 
 'mediff1d', 'mr_',
 'notmasked_edges','notmasked_contiguous',
@@ -154,6 +154,8 @@ vstack = row_stack = _fromnxfunction('vstack')
 hstack = _fromnxfunction('hstack')
 column_stack = _fromnxfunction('column_stack')
 dstack = _fromnxfunction('dstack')
+
+hsplit = _fromnxfunction('hsplit')
 
 #####--------------------------------------------------------------------------
 #---- 
