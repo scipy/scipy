@@ -996,7 +996,7 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         if not isinstance(data, MaskedArray): 
             _data = _data.view(cls)
         elif not subok:
-            _data = _data.view(cls)
+            _data = data.view(cls)
         else:
             _data = _data.view(type(data))
         # Backwards compat .......

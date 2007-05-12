@@ -134,10 +134,12 @@ class test_subclassing(NumpyTestCase):
         mxsub = masked_array(xsub, subok=False)
         assert not isinstance(mxsub, MSubArray)
         assert isinstance(mxsub, MaskedArray)
+        assert_equal(mxsub._mask, m)
         #
         mxsub = masked_array(xsub, subok=True)
         assert isinstance(mxsub, MSubArray)
         assert_equal(mxsub.info, xsub.info)
+        assert_equal(mxsub._mask, xsub._mask)
         
         
 ################################################################################

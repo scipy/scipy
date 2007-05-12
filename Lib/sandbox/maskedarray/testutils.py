@@ -117,8 +117,8 @@ def assert_array_compare(comparison, x, y, err_msg='', header='',
     yf = filled(y)
     m = mask_or(getmask(x), getmask(y))
     
-    x = masked_array(xf, copy=False, mask=m).filled(fill_value)
-    y = masked_array(yf, copy=False, mask=m).filled(fill_value)
+    x = masked_array(xf, copy=False, subok=False, mask=m).filled(fill_value)
+    y = masked_array(yf, copy=False, subok=False, mask=m).filled(fill_value)
     
     if ((x is masked) and not (y is masked)) or \
         ((y is masked) and not (x is masked)):
