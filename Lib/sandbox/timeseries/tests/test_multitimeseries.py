@@ -72,6 +72,7 @@ class test_mrecords(NumpyTestCase):
         assert(mts['2007-01']._data == mrec[0])
         assert_equal(mts['2007-01']._dates, dates[0])       
         #
+        assert(isinstance(mts.f0, TimeSeries))
         assert_equal(mts.f0, time_series(d, dates=dates, mask=m))
         assert_equal(mts.f1, time_series(d[::-1], dates=dates, mask=m[::-1]))
         assert((mts._fieldmask == N.core.records.fromarrays([m, m[::-1]])).all())

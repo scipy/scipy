@@ -458,7 +458,9 @@ def guess_freq(dates):
     Returns a frequency code (alpha character)."""
     ddif = numeric.asarray(numpy.diff(dates))
     ddif.sort()
-    if ddif[0] == ddif[-1] == 1.:
+    if ddif.size == 0:
+        fcode = _c.FR_UND
+    elif ddif[0] == ddif[-1] == 1.:
         fcode = _c.FR_DAY
     elif (ddif[0] == 1.) and (ddif[-1] == 3.):
         fcode = _c.FR_BUS

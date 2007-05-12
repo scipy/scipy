@@ -28,7 +28,8 @@ from maskedarray.testutils import assert_equal, assert_array_equal
 from timeseries import tseries
 from timeseries import Date, date_array_fromlist, date_array, thisday
 from timeseries import time_series, TimeSeries, adjust_endpoints, \
-    mask_period, align_series, fill_missing_dates, tsmasked, concatenate_series
+    mask_period, align_series, fill_missing_dates, tsmasked, concatenate_series,\
+    stack, split
 
 class test_creation(NumpyTestCase):
     "Base test class for MaskedArrays."
@@ -76,15 +77,14 @@ class test_creation(NumpyTestCase):
         "Tests the creation of a series from a datearray"
         _, dates, _ = self.d
         data = dates
-
+        #
         series = time_series(data, dates)
         assert(isinstance(series, TimeSeries))
         assert_equal(series._dates, dates)
         assert_equal(series._data, data)
         assert_equal(series.freqstr, 'D')
-
+        #
         series[5] = MA.masked
-
         # ensure that series can be represented by a string after masking a value
         # (there was a bug before that prevented this from working when using a
         # DateArray for the data)
@@ -99,7 +99,7 @@ class test_creation(NumpyTestCase):
         assert_equal(series._data.size, 15)
         
     def test_unsorted(self):
-        "Tests that the data are porperly sorted along the dates."
+        "Tests that the data are properly sorted along the dates."
         dlist = ['2007-01-%02i' % i for i in (3,2,1)]
         data = [10,20,30]
         series = time_series(data,dlist)
@@ -368,6 +368,19 @@ class test_functions(NumpyTestCase):
         assert_array_equal(shift_negative, shift_negative_result)
         assert_array_equal(shift_positive, shift_positive_result)
     #
+    def test_split(self):
+        """Test the split function."""
+        ms = time_series(N.arange(62).reshape(31,2),
+                         start_date=Date(freq='d', year=2005, month=7, day=1))
+        d1,d2 = split(ms)
+        assert_array_equal(d1.data, ms.data[:,0])
+        assert_array_equal(d1.dates, ms.dates)
+        assert_array_equal(d2.data, ms.data[:,1])
+
+        series = self.d[0]
+        ss = split(series)[0]
+        assert_array_equal(series, ss)
+    #
     def test_convert(self):
         """Test convert function
 
@@ -379,6 +392,8 @@ test_dates test suite.
                                     start_date=Date(freq='m', year=2005, month=6))
         highFreqSeries = time_series(N.arange(100),
                                     start_date=Date(freq='b', year=2005, month=6, day=1))
+        ndseries = time_series(N.arange(124).reshape(62,2), 
+                             start_date=Date(freq='d', year=2005, month=7, day=1))
 
         lowToHigh_start = lowFreqSeries.convert('B', position='START')
 
@@ -411,6 +426,8 @@ test_dates test suite.
                      (Date(freq='b', year=2005, month=6, day=1) + 99).asfreq('M'))
 
         assert_array_equal(lowFreqSeries, lowFreqSeries.convert("M"))
+                
+        assert_equal(ndseries.convert('M',sum), [[930,961],[2852,2883]])
     #
     def test_fill_missing_dates(self):
         """Test fill_missing_dates function"""
@@ -451,8 +468,6 @@ test_dates test suite.
                            inplace=False)
         result = N.array([0,0,0,0,0,1,1,1,1,1,1,1,0,0,0])
         assert_equal(mask._mask, result.repeat(2).reshape(-1,2))
-
-
     #
     def test_pickling(self):
         "Tests pickling/unpickling"
@@ -575,7 +590,6 @@ test_dates test suite.
         assert_equal(newseries._data,[0,1,2,0,1,2,3,4])
         assert_equal(newseries._mask,[1,0,0,1,0,0,0,0])
         #
-
 
 
 

@@ -28,7 +28,7 @@ from numpy.core.records import fromarrays as recfromarrays
 
 import maskedarray as MA
 from maskedarray import MaskedArray, MAError, masked, nomask, \
-    filled, getmask, getmaskarray, make_mask_none, mask_or, make_mask, \
+    filled, getmask, getmaskarray, hsplit, make_mask_none, mask_or, make_mask, \
     masked_array
 
 import tcore as corelib
@@ -49,7 +49,7 @@ __all__ = [
 'time_series', 'tsmasked',
 'mask_period','mask_inside_period','mask_outside_period','compressed',
 'adjust_endpoints','align_series','aligned','convert','group_byperiod',
-'pct','tshift','fill_missing_dates', 'stack', 'concatenate_series',
+'pct','tshift','fill_missing_dates', 'split', 'stack', 'concatenate_series',
 'empty_like',
 'day_of_week','day_of_year','day','month','quarter','year',
 'hour','minute','second',
@@ -505,14 +505,14 @@ Sets item described by index. If value is masked, masks those locations.
            it is enabled. Otherwise fill with fill value.
         """
         desc = """\
-timeseries(data  =
+timeseries(
  %(data)s,
            dates =
  %(time)s,
            freq  = %(freq)s)
 """
         desc_short = """\
-timeseries(data  = %(data)s,
+timeseries(%(data)s,
            dates = %(time)s,
            freq  = %(freq)s)
 """
@@ -717,6 +717,30 @@ timeseries(data  = %(data)s,
                 result = super(TimeSeries, self).transpose(*axes)
                 result._dates = self._dates
         return result
+    
+    def split(self):
+        """Split a multiple series into individual columns."""
+        if self.ndim == 1:
+            return [self]
+        else:
+            n = self.shape[1]
+            arr = hsplit(self, n)[0]
+            return [self.__class__(numpy.squeeze(a), 
+                                   self._dates, 
+                                   **_attrib_dict(self)) for a in arr]        
+    
+    def filled(self, fill_value=None):
+        """Returns an array of the same class as `_data`,
+ with masked values filled with `fill_value`.
+Subclassing is preserved.
+
+If `fill_value` is None, uses self.fill_value.
+        """
+        result = self._series.filled(fill_value=fill_value).view(type(self))
+        result._dates = self._dates
+        result.copy_attributes(self)
+        return result
+    
     #......................................................
     def copy_attributes(self, oldseries, exclude=[]):
         "Copies the attributes from oldseries if they are not in the exclude list."
@@ -850,6 +874,9 @@ day = _frommethod('day')
 hour = _frommethod('hour')
 minute = _frommethod('minute')
 second = _frommethod('second')
+
+split = _frommethod('split')
+
 #
 ##### ---------------------------------------------------------------------------
 #---- ... Additional methods ...
@@ -1172,8 +1199,8 @@ def align_series(*series, **kwargs):
     return [adjust_endpoints(x, start_date, end_date) for x in series]
 aligned = align_series
 #....................................................................
-def convert(series, freq, func='auto', position='END'):
-    """Converts a series to a frequency.
+def _convert1d(series, freq, func='auto', position='END'):
+    """Converts a series to a frequency. Private function called by convert
 
     When converting to a lower frequency, func is a function that acts
     on a 1-d array and returns a scalar or 1-d array. func should handle
@@ -1207,7 +1234,8 @@ def convert(series, freq, func='auto', position='END'):
             "Cannot adjust a series with missing or duplicated dates."
 
     if position.upper() not in ('END','START'):
-        raise ValueError("invalid value for position argument: (%s)",str(position))
+        raise ValueError("Invalid value for position argument: (%s). "\
+                         "Should be in ['END','START']," % str(position))
 
     start_date = series._dates[0]
 
@@ -1240,6 +1268,37 @@ def convert(series, freq, func='auto', position='END'):
                                   freq=toFreq)
     newseries.copy_attributes(series)
     return newseries
+
+def convert(series, freq, func='auto', position='END'):
+    """Converts a series to a frequency. Private function called by convert
+
+    When converting to a lower frequency, func is a function that acts
+    on a 1-d array and returns a scalar or 1-d array. func should handle
+    masked values appropriately. If func is "auto", then an
+    appropriate function is determined based on the observed attribute
+    of the series. If func is None, then a 2D array is returned, where each
+    column represents the values appropriately grouped into the new frequency.
+    interp and position will be ignored in this case.
+
+    When converting to a higher frequency, position is 'START' or 'END'
+    and determines where the data point is in each period (eg. if going
+    from monthly to daily, and position is 'END', then each data point is
+    placed at the end of the month).
+    """
+    if series.ndim == 1:
+        obj = _convert1d(series, freq, func, position)
+    elif series.ndim == 2:
+        base = _convert1d(series[:,0], freq, func, position)
+        obj = MA.column_stack([_convert1d(m,freq,func,position)._series 
+                               for m in series.split()]).view(type(series))
+        obj._dates = base._dates                        
+        if func is None or (func,series.observed) == ('auto','UNDEFINED'):         
+            shp = obj.shape
+            ncols = base.shape[-1]
+            obj.shape = (shp[0], shp[-1]//ncols, ncols)
+            obj = numpy.swapaxes(obj,1,2)
+    return obj
+        
 
 def group_byperiod(series, freq, position='END'):
     """Converts a series to a frequency, without any processing. If the series
@@ -1422,7 +1481,7 @@ The data corresponding to the initially missing dates are masked, or filled to
 #    return time_series(newdata.reshape(nshp), newdates)
 #...............................................................................
 def stack(*series):
-    """performs a column_stack on the data from each series, and the
+    """Performs a column_stack on the data from each series, and the
 resulting series has the same dates as each individual series. All series
 must be date compatible.
 
@@ -1514,3 +1573,23 @@ if __name__ == '__main__':
         # (there was a bug before that prevented this from working when using a
         # DateArray for the data)
         strrep = str(series)
+    
+    if 0:
+        series = time_series(numpy.arange(1,501),
+                             start_date=Date('D', string='2007-01-01'))
+        mseries = convert(series, 'M')
+        aseries = convert(mseries, 'A')
+        (freq, func, position) = ('A', None, 'END')
+        
+        tmp = mseries[:,0].convert('A')
+        aseries = MA.concatenate([_convert1d(m,'A')._series for m in mseries.split()],
+                                 axis=-1).view(type(series))
+        aseries._dates = tmp._dates                                 
+        shp = aseries.shape
+        aseries.shape = (shp[0], shp[-1]//tmp.shape[-1], tmp.shape[-1])
+        numpy.swapaxes(aseries,1,2)
+    
+    if 1:
+        series = time_series(N.arange(124).reshape(62,2), 
+                             start_date=Date(freq='d', year=2005, month=7, day=1))
+        assert_equal(series.convert('M',sum), [[930,961],[2852,2883]])

@@ -109,6 +109,10 @@ class test_creation(NumpyTestCase):
         dobj = [DateFromString(d) for d in dlist]
         odates = date_array_fromlist(dobj)
         assert_equal(dates,odates)
+        #
+        D = date_array_fromlist(dlist=['2006-01'])
+        assert_equal(D.tovalue(), [732312, ])
+        assert_equal(D.freq, C.FR_UND)
         print "finished test_fromsobjects"
 
     def test_consistent_value(self):

@@ -122,7 +122,8 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
         if isinstance(obj, (MaskedRecords)):
             self.__dict__.update(_fieldmask=obj._fieldmask,
                                  _hardmask=obj._hardmask,
-                                 _fill_value=obj._fill_value,                                 
+                                 _fill_value=obj._fill_value,    
+                                 _names = obj.dtype.names                             
                                  )
             if isinstance(obj, MultiTimeSeries):
                 self.__dict__.update(observed=obj.observed,
@@ -135,7 +136,8 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
                                  observed=None,
                                  _fieldmask = nomask,
                                  _hardmask = False,
-                                 fill_value = None
+                                 fill_value = None,
+                                 _names = self.dtype.names
                                 )
         return
     
@@ -152,27 +154,14 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
     
     #......................................................
     def __getattribute__(self, attr):
-        return MaskedRecords.__getattribute__(self,attr)
-#        try:
-#            # Returns a generic attribute
-#            return object.__getattribute__(self,attr)
-#        except AttributeError: 
-#            # OK, so attr must be a field name
-#            pass
-#        # Get the list of fields ......
-#        _names = self.dtype.names
-#        _local = self.__dict__
-#        _mask = _local['_fieldmask']
-#        if attr in _names:
-#            _data = self._data
-#            obj = numeric.asarray(_data.__getattribute__(attr)).view(MaskedArray)
-#            obj._mask = make_mask(_mask.__getattribute__(attr))
-#            return obj
-#        elif attr == '_mask':
-#            if self.size > 1:
-#                return _mask.view((bool_, len(self.dtype))).all(1)
-#            return _mask.view((bool_, len(self.dtype)))
-#        raise AttributeError,"No attribute '%s' !" % attr
+        getattribute = MaskedRecords.__getattribute__
+        _dict = getattribute(self,'__dict__')
+        if attr in _dict.get('_names',[]):
+            obj = getattribute(self,attr).view(TimeSeries)
+            obj._dates = _dict['_dates']
+            return obj
+        return getattribute(self,attr)
+
             
     def __setattr__(self, attr, val):
         newattr = attr not in self.__dict__
@@ -526,7 +515,9 @@ if __name__ == '__main__':
         mts = MultiTimeSeries(mrec,dates)
         self_data = [d, m, mrec, dlist, dates, ts, mts]
         
-    if 1:        
+        assert(isinstance(mts.f0, TimeSeries))
+        
+    if 0:        
         mts[:2] = 5
         assert_equal(mts.f0._data, [5,5,2,3,4])
         assert_equal(mts.f1._data, [5,5,2,1,0])
