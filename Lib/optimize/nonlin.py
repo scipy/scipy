@@ -11,11 +11,13 @@ Example:
 
 def F(x):
     "Should converge to x=[0,0,0,0,0]"
-    d=numpy.array([3,2,1.5,1,0.5])
-    c=0.01
+    import numpy
+    d = numpy.array([3,2,1.5,1,0.5])
+    c = 0.01
     return -d*numpy.array(x)-c*numpy.array(x)**3
 
-x= solvers.broyden2(F,[1,1,1,1,1])
+from scipy.optimize import nonlin
+x = nonlin.broyden2(F,[1,1,1,1,1])
 
 All solvers have the parameter iter (the number of iterations to compute), some
 of them have other parameters of the solver, see the particular solver for
