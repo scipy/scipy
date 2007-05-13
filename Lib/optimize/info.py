@@ -59,6 +59,29 @@ Optimization Tools
 
    fixed_point --  Single-variable fixed-point solver.
 
+ A collection of general-purpose nonlinear multidimensional solvers.
+
+   broyden1            --  Broyden's first method - is a quasi-Newton-Raphson
+                           method for updating an approximate Jacobian and then
+                           inverting it
+   broyden2            --  Broyden's second method - the same as broyden1, but
+                           updates the inverse Jacobian directly
+   broyden3            --  Broyden's second method - the same as broyden2, but
+                           instead of directly computing the inverse Jacobian,
+                           it remembers how to construct it using vectors, and
+                           when computing inv(J)*F, it uses those vectors to
+                           compute this product, thus avoding the expensive NxN
+                           matrix multiplication.  
+   broyden_generalized --  Generalized Broyden's method, the same as broyden2,
+                           but instead of approximating the full NxN Jacobian,
+                           it construct it at every iteration in a way that
+                           avoids the NxN matrix multiplication.  This is not
+                           as precise as broyden3.
+   anderson            --  extended Anderson method, the same as the
+                           broyden_generalized, but added w_0^2*I to before
+                           taking inversion to improve the stability
+   anderson2           --  the Anderson method, the same as anderson, but
+                           formulated differently
 
  Utility Functions
 
