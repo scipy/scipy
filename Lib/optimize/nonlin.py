@@ -16,8 +16,8 @@ def F(x):
     c = 0.01
     return -d*numpy.array(x)-c*numpy.array(x)**3
 
-from scipy.optimize import nonlin
-x = nonlin.broyden2(F,[1,1,1,1,1])
+from scipy import optimize
+x = optimize.broyden2(F,[1,1,1,1,1])
 
 All solvers have the parameter iter (the number of iterations to compute), some
 of them have other parameters of the solver, see the particular solver for
