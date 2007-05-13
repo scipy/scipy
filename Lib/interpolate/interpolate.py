@@ -4,14 +4,14 @@
 # !! Need to find argument for keeping initialize.  If it isn't
 # !! found, get rid of it!
 
-__all__ = ['interp1d', 'interp2d']
+__all__ = ['interp1d', 'interp2d', 'cspline', 'cspeval', 'csprep']
 
 from numpy import shape, sometrue, rank, array, transpose, \
      swapaxes, searchsorted, clip, take, ones, putmask, less, greater, \
      logical_or, atleast_1d, atleast_2d, meshgrid, ravel
 import numpy as np
 
-import fitpack
+#import fitpack
 
 def reduce_sometrue(a):
     all = a
@@ -295,3 +295,159 @@ class interp1d(object):
         out_of_bounds = logical_or(below_bounds, above_bounds)
         return out_of_bounds
 
+
+def _get_cspline_Bb(yk, xk, kind, conds):
+    # internal function to compute different tri-diagonal system
+    # depending on the kind of spline requested.
+    # conds is only used for 'second' and 'first' 
+    Np1 = len(xk)
+    if kind in ['natural', 'second']:
+        if kind == 'natural':
+            m0, mN = 0.0, 0.0
+        else:
+            m0, mN = conds
+
+        # the matrix to invert is (N-1,N-1)
+        beta = 2*(xk[2:]-xk[:-2])
+        alpha = xk[1:]-xk[:-1]
+        B = np.diag(alpha[1:-1],k=-1) + np.diag(beta) + np.diag(alpha[2:],k=1)
+        dyk = yk[1:]-yk[:-1]
+        b = (dyk[1:]/alpha[1:] - dyk[:-1]/alpha[:-1])
+        b *= 6
+        b[0] -= m0
+        b[-1] -= mN
+
+        # put m0 and mN into the correct shape for
+        #  concatenation
+        m0 = array(m0,copy=0,ndmin=yk.ndim)
+        mN = array(mN,copy=0,ndmin=yk.ndim)
+        if m0.shape[1:] != yk.shape[1:]:
+            m0 = m0*(ones(yk.shape[1:])[newaxis,...])
+        if mN.shape[1:] != yk.shape[1:]:
+            mN = mN*(ones(yk.shape[1:])[newaxis,...])
+
+        return B, b, m0, mN           
+
+
+    elif kind in ['clamped', 'endslope', 'first', 'not-a-knot', 'runout',
+                  'parabolic']:
+        if kind == 'endslope':
+            # match slope of lagrange interpolating polynomial of
+            # order 3 at end-points. 
+            x0,x1,x2,x3 = xk[:4]
+            sl_0 = (1./(x0-x1)+1./(x0-x2)+1./(x0-x3))*yk[0]
+            sl_0 += (x0-x2)*(x0-x3)/((x1-x0)*(x1-x2)*(x1-x3))*yk[1]
+            sl_0 += (x0-x1)*(x0-x3)/((x2-x0)*(x2-x1)*(x3-x2))*yk[2]
+            sl_0 += (x0-x1)*(x0-x2)/((x3-x0)*(x3-x1)*(x3-x2))*yk[3]
+
+            xN3,xN2,xN1,xN0 = xk[-4:]
+            sl_N = (1./(xN0-xN1)+1./(xN0-xN2)+1./(xN0-xN3))*yk[-1]
+            sl_N += (xN0-xN2)*(xN0-xN3)/((xN1-xN0)*(xN1-xN2)*(xN1-xN3))*yk[-2]
+            sl_N += (xN0-xN1)*(xN0-xN3)/((xN2-xN0)*(xN2-xN1)*(xN3-xN2))*yk[-3]
+            sl_N += (xN0-xN1)*(xN0-xN2)/((xN3-xN0)*(xN3-xN1)*(xN3-xN2))*yk[-4]
+        elif kind == 'clamped':
+            sl_0,sl_N = 0.0, 0.0
+        elif kind == 'first':
+            sl_0, sl_N = conds
+
+        # Now set up the (N+1)x(N+1) system of equations
+        beta = np.r_[0,2*(xk[2:]-xk[:-2]),0]
+        alpha = xk[1:]-xk[:-1]
+        gamma = np.r_[0,alpha[1:]]
+        B = np.diag(alpha,k=-1) + np.diag(beta) + np.diag(gamma,k=1)
+        d1 = alpha[0]
+        dN = alpha[-1]
+        if kind == 'not-a-knot':
+            d2 = alpha[1]
+            dN1 = alpha[-2]
+            B[0,:3] = [d2,-d1-d2,d1]
+            B[-1,-3:] = [dN,-dN1-dN,dN1]
+        elif kind == 'runout':
+            B[0,:3] = [1,-2,1]
+            b[-1,-3:] = [1,-2,1]
+        elif kind == 'parabolic':
+            B[0,:2] = [1,-1]
+            B[-1,-2:] = [-1,1]
+        elif kind == 'periodic':
+            raise NotImplementedError
+        elif kind == 'symmetric':
+            raise NotImplementedError
+        else:
+            B[0,:2] = [2*d1,d1]
+            B[-1,-2:] = [dN,2*dN]
+            
+        b = np.empty((Np1,)*yk.shape[1:])
+        dyk = (yk[1:]-yk[:-1])*1.0
+        if kind in ['not-a-knot', 'runout', 'parabolic']:
+            b[0] = b[-1] = 0.0
+        elif kind == 'periodic':
+            raise NotImplementedError
+        elif kind == 'symmetric':
+            raise NotImplementedError
+        else:
+            b[0] = (dyk[0]/d1 - sl_0)
+            b[-1] = (dyk[-1]/dN - sl_N)
+        b[1:-1,...] = (dyk[1:]/alpha[1:]-dyk[:-1]/alpha[:-1])
+        b *= 6.0
+        return B, b, None, None
+    else:
+        raise ValueError, "%s not supported" % kind
+        
+
+def cspeval((mk,xk,yk),xnew):
+    """Evaluate a cubic-spline representation of the points (xk,yk)
+    at the new values xnew.  The mk values are the second derivatives at xk
+    The xk vector must be sorted.
+    
+    More than one curve can be represented using 2-d arrays for mk and yk.
+    However, the last dimension must have the same shape as the 1-d array xk.
+    The first-dimension will be considered the interpolating dimension. 
+    """
+    indxs = np.searchsorted(xk, xnew)
+    indxsm1 = indxs-1
+    xkm1 = xk[indxsm1]
+    xkvals = xk[indxs]
+    dm1 = xnew - xkm1
+    d = xkvals - xnew
+    mk0 = mk[indxs]
+    mkm1 = mk[indxsm1]
+    dk = xkvals-xkm1
+    val = (mk0*dm1**3. + mkm1*d**3.)/(6*dk)
+    val += (yk[indxsm1]/dk - mkm1*dk/6.)*d
+    val += (yk[indxs]/dk - mk0*dk/6.)*dm1
+    return val
+
+def csprep(yk,xk=None,kind='not-a-knot',conds=None):
+    """Return a (Spp,xk,yk) representation of a cubic spline given data-points
+
+    yk can be a 2-d array to represent more than one curve, through
+    the same xk points. The first dimension is assumed to be the
+    interpolating dimenion.
+
+    If xk is None, then x=arange(len(yk)) will be assumed
+
+    kind can be 'natural', 'second', 'clamped', 'endslope', 'periodic',
+                'symmetric', 'parabolic', 'not-a-knot', 'runout'
+
+    for 'second', and 'clamped' conditions can be given which should
+    be the desired second and first derivatives at
+    the end-points, respectively. 
+    """
+    yk = np.asanyarray(yk)
+    N = yk.shape[0]-1
+    if xk is None:
+        xk = arange(N+1,dtype=float)
+        factor = 1.0
+    else:
+        deltax = (xk[-1]-xk[0])/float(N)
+        factor = deltax**2
+    B,b,first,last = _get_cspline_Bb(yk, xk, kind, conds)
+    mk = np.dual.solve(B,b)
+    if first is not None:
+        mk = np.concatenate((first, mk), axis=0)
+    if last is not None:
+        mk = np.concatenate((mk, last), axis=0)
+    return mk/factor, xk, yk
+
+def cspline(yk,xk,xnew,kind='not-a-knot',conds=None):
+    return cspeval(csprep(yk,xk,kind=kind,conds=conds),xnew)

@@ -11,14 +11,16 @@ The main developers on SciPy are Travis Oliphant, Pearu Peterson, and Eric
 Jones.  Travis and Eric each contributed about half the orginal code.  Pearu 
 developed f2py, which is the integral to wrapping the many Fortran libraries 
 used in SciPy.  All three continually work on both algorithm development and 
-improvements to the feature set, build process, and robustness of SciPy.
+improvements to the feature set, build process, and robustness of SciPy.  
 
+Please add names as needed so that we can keep up with all the contributors. 
 
 Nathan Bell         -- sparsetools reimplementation (CSR/CSC matrix operations)
 Robert Cimrman      -- UMFpack wrapper for sparse matrix module
 David M. Cooke      -- improvements to system_info, and LBFGSB wrapper
 Chuck Harris        -- Zeros package in optimize (1d root-finding algorithms)
 Prabhu Ramachandran -- improvements to gui_thread
+Robert Kern         -- improvements to stats and bug-fixes
 Jean-Sebastien Roy  -- fmin_tnc code which he adapted from Stephen Nash's 
                        original Fortran
 Ed Schofield        -- Maximum entropy and Monte Carlo modules, help with
