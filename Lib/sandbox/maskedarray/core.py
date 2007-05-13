@@ -913,6 +913,7 @@ If `onmask` is False, the new mask is just a reference to the initial mask.
         mask = self.obj._mask
         cls = type(self.obj)
         result = getattr(data, methodname)(*args, **params).view(cls)
+        result._smallmask = self.obj._smallmask
         if result.ndim:
             if not self._onmask:
                 result._mask = mask
@@ -1115,6 +1116,7 @@ Returns the item described by i. Not a copy as in previous versions.
         if hasattr(dout, 'shape') and len(dout.shape) > 0:
             # Not a scalar: make sure that dout is a MA
             dout = dout.view(type(self))
+            dout._smallmask = self._smallmask
             if m is not nomask:
                 # use _set_mask to take care of the shape
                 dout.__setmask__(m[indx])
@@ -1179,8 +1181,8 @@ Sets a slice i:j to `value`.
 If `value` is masked, masks those locations."""
         self.__setitem__(slice(i,j), value)
     #............................................
-    def __setmask__(self, mask):
-        newmask = make_mask(mask, copy=False, small_mask=self._smallmask)
+    def __setmask__(self, mask, copy=False):
+        newmask = make_mask(mask, copy=copy, small_mask=self._smallmask)
 #        self.unshare_mask()
         if self._mask is nomask:
             self._mask = newmask
@@ -1291,6 +1293,8 @@ If `fill_value` is None, uses self.fill_value.
         "A 1-D array of all the non-masked data."
         d = self.ravel()
         if self._mask is nomask:
+            return d
+        elif not self._smallmask and not self._mask.any():
             return d
         else:
             return d[numeric.logical_not(d._mask)]
@@ -1440,10 +1444,11 @@ scalar or the masked singleton."""
         """Reshapes the array to shape s.
 Returns a new masked array.
 If you want to modify the shape in place, please use `a.shape = s`"""
-        # TODO: Do we keep super, or reshape _data and take a view ?
-        result = super(MaskedArray, self).reshape(*s)
-        if self._mask is not nomask:
-            result._mask = self._mask.reshape(*s)
+        result = self._data.reshape(*s).view(type(self))
+        result.__dict__.update(self.__dict__)
+        if result._mask is not nomask:
+            result._mask = self._mask.copy()
+            result._mask.shape = result.shape
         return result
     #
     repeat = _arraymethod('repeat')
@@ -2635,3 +2640,9 @@ if __name__ == '__main__':
     if 1:
         x = arange(10)
         assert(x.ctypes.data == x.filled().ctypes.data)
+    if 1:
+        a = array([1,2,3,4],mask=[0,0,0,0],small_mask=False)
+        assert(a.ravel()._mask, [0,0,0,0])
+        assert(a.compressed(), a)
+        a[0] = masked
+        assert(a.compressed()._mask, [0,0,0])

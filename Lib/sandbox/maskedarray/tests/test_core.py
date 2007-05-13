@@ -1178,6 +1178,34 @@ class test_array_methods(NumpyTestCase):
         aravel = a.ravel()
         assert_equal(a.shape,(1,5))
         assert_equal(a._mask.shape, a.shape)
+        # Checs that small_mask is preserved
+        a = array([1,2,3,4],mask=[0,0,0,0],small_mask=False)
+        assert_equal(a.ravel()._mask, [0,0,0,0])
+        
+    def check_reshape(self):
+        "Tests reshape"
+        x = arange(4)
+        x[0] = masked
+        y = x.reshape(2,2)
+        assert_equal(y.shape, (2,2,))
+        assert_equal(y._mask.shape, (2,2,))
+        assert_equal(x.shape, (4,))
+        assert_equal(x._mask.shape, (4,))
+        
+    def check_compressed(self):
+        "Tests compressed"
+        a = array([1,2,3,4],mask=[0,0,0,0],small_mask=False)
+        b = a.compressed()
+        assert_equal(b, a)
+        assert_equal(b._mask, a._mask)
+        a[0] = masked
+        b = a.compressed()
+        assert_equal(b._data, [2,3,4])
+        assert_equal(b._mask, [0,0,0])
+        a._smallmask = True
+        b = a.compressed()
+        assert_equal(b._data, [2,3,4])
+        assert_equal(b._mask, nomask)
         
 #..............................................................................
 
