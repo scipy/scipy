@@ -951,7 +951,7 @@ TimeSeries.flatten = flatten
 #---- --- TimeSeries creator ---
 ##### -------------------------------------------------------------------------
 def time_series(data, dates=None, freq=None, observed=None,
-                start_date=None, end_date=None, length=None, include_last=True,
+                start_date=None, end_date=None, length=None,
                 mask=nomask,
                 dtype=None, copy=False, fill_value=None,
                 keep_mask=True, small_mask=True, hard_mask=False):
@@ -971,8 +971,7 @@ def time_series(data, dates=None, freq=None, observed=None,
                 length = dshape[0]
         if len(dshape) > 0:
             dates = date_array(start_date=start_date, end_date=end_date,
-                               length=length, include_last=include_last,
-                               freq=freq)
+                               length=length, freq=freq)
         else:
             dates = date_array([], freq=freq)
     elif not isinstance(dates, DateArray):
@@ -1435,7 +1434,7 @@ The data corresponding to the initially missing dates are masked, or filled to
         return time_series(data, dflat)
     # ...and now, fill it ! ......
     (tstart, tend) = dflat[[0,-1]]
-    newdates = date_array(start_date=tstart, end_date=tend, include_last=True)
+    newdates = date_array(start_date=tstart, end_date=tend)
     nsize = newdates.size
     #.............................
     # Get the steps between consecutive data.

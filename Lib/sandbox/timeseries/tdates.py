@@ -541,7 +541,7 @@ def _listparser(dlist, freq=None):
 
 
 def date_array(dlist=None, start_date=None, end_date=None, length=None,
-               include_last=True, freq=None):
+               freq=None):
     """Constructs a DateArray from:
     - a starting date and either an ending date or a given length.
     - a list of dates.
@@ -583,9 +583,7 @@ def date_array(dlist=None, start_date=None, end_date=None, length=None,
     else:
         if not isDate(end_date):
             raise DateError, "Ending date should be a valid Date instance!"
-        length = int(end_date - start_date)
-        if include_last:
-            length += 1
+        length = int(end_date - start_date) + 1
 #    dlist = [(start_date+i).value for i in range(length)]
     dlist = numeric.arange(length, dtype=int_)
     dlist += start_date.value
@@ -599,11 +597,11 @@ def date_array_fromlist(dlist, freq=None):
     return date_array(dlist=dlist, freq=freq)
 
 def date_array_fromrange(start_date, end_date=None, length=None,
-                         include_last=True, freq=None):
+                         freq=None):
     """Constructs a DateArray from a starting date and either an ending date or
     a length."""
     return date_array(start_date=start_date, end_date=end_date,
-                      length=length, include_last=include_last, freq=freq)
+                      length=length, freq=freq)
 
 #####---------------------------------------------------------------------------
 #---- --- Definition of functions from the corresponding methods ---
