@@ -4,7 +4,8 @@
 # !! Need to find argument for keeping initialize.  If it isn't
 # !! found, get rid of it!
 
-__all__ = ['interp1d', 'interp2d', 'cspline', 'cspeval', 'csprep']
+__all__ = ['interp1d', 'interp2d', 'cspline', 'cspeval', 'csprep', 'csp2pp',
+           'ppval']
 
 from numpy import shape, sometrue, rank, array, transpose, \
      swapaxes, searchsorted, clip, take, ones, putmask, less, greater, \
@@ -296,7 +297,7 @@ class interp1d(object):
         return out_of_bounds
 
 
-def _get_cspline_Bb(yk, xk, kind, conds):
+def _get_cspline_Bb(xk, yk, kind, conds):
     # internal function to compute different tri-diagonal system
     # depending on the kind of spline requested.
     # conds is only used for 'second' and 'first' 
@@ -346,7 +347,7 @@ def _get_cspline_Bb(yk, xk, kind, conds):
             sl_N += (xN0-xN1)*(xN0-xN3)/((xN2-xN0)*(xN2-xN1)*(xN3-xN2))*yk[-3]
             sl_N += (xN0-xN1)*(xN0-xN2)/((xN3-xN0)*(xN3-xN1)*(xN3-xN2))*yk[-4]
         elif kind == 'clamped':
-            sl_0,sl_N = 0.0, 0.0
+            sl_0, sl_N = 0.0, 0.0
         elif kind == 'first':
             sl_0, sl_N = conds
 
@@ -375,8 +376,9 @@ def _get_cspline_Bb(yk, xk, kind, conds):
         else:
             B[0,:2] = [2*d1,d1]
             B[-1,-2:] = [dN,2*dN]
-            
-        b = np.empty((Np1,)*yk.shape[1:])
+
+        # Set up RHS (b)
+        b = np.empty((Np1,)+yk.shape[1:])
         dyk = (yk[1:]-yk[:-1])*1.0
         if kind in ['not-a-knot', 'runout', 'parabolic']:
             b[0] = b[-1] = 0.0
@@ -386,7 +388,7 @@ def _get_cspline_Bb(yk, xk, kind, conds):
             raise NotImplementedError
         else:
             b[0] = (dyk[0]/d1 - sl_0)
-            b[-1] = (dyk[-1]/dN - sl_N)
+            b[-1] = -(dyk[-1]/dN - sl_N)
         b[1:-1,...] = (dyk[1:]/alpha[1:]-dyk[:-1]/alpha[:-1])
         b *= 6.0
         return B, b, None, None
@@ -404,6 +406,7 @@ def cspeval((mk,xk,yk),xnew):
     The first-dimension will be considered the interpolating dimension. 
     """
     indxs = np.searchsorted(xk, xnew)
+    indxs[indxs==0] = 1
     indxsm1 = indxs-1
     xkm1 = xk[indxsm1]
     xkvals = xk[indxs]
@@ -417,14 +420,45 @@ def cspeval((mk,xk,yk),xnew):
     val += (yk[indxs]/dk - mk0*dk/6.)*dm1
     return val
 
-def csprep(yk,xk=None,kind='not-a-knot',conds=None):
-    """Return a (Spp,xk,yk) representation of a cubic spline given data-points
+def csp2pp(mk,xk,yk):
+    """Return an N-d array providing the piece-wise polynomial form.
 
-    yk can be a 2-d array to represent more than one curve, through
+    mk - second derivative at the knots
+    xk - knot-points
+    yk - values of the curve at the knots
+    
+    The first 2 dimensions are the polynomial for a particular
+    curve.  The first dimension provides the coefficients for the
+    polynomial and the second dimension provides the different pieces
+    """
+    dk = xk[1:] - xk[:-1]
+    temp1 = mk[1:] - mk[:-1]
+    temp2 = mk[1:]*xk[:-1]-mk[:-1]*xk[1:]
+    c3 = temp1/(6*dk)
+    c2 = -temp2/(2*dk)
+    c1 = (mk[1:]*xk[:-1]**2 - mk[:-1]*xk[1:]**2)/(2*dk)
+    c1 -= temp1*dk/6.
+    c1 += (yk[1:]-yk[:-1])/dk
+    c0 = (mk[:-1]*xk[1:]**3 - mk[1:]*xk[:-1]**3)/(6*dk)
+    c0 += temp2*dk/6.
+    c0 += (yk[:-1]*xk[1:] - yk[1:]*xk[:-1])/dk
+    return np.array([c3,c2,c1,c0])    
+
+def ppval(pp, xk, xnew):
+    """Compute a piece-wise polynomial defined by the array of
+    coefficents pp and the break-points xk on the grid xnew
+    """
+    indxs = numpy.searchsorted(xk, xnew)-1
+    indxs[indxs<0]=0
+    return array([numpy.polyval(pp[:,k],xnew[i]) for i,k in enumerate(indxs)])
+
+def csprep(xk,yk,kind='not-a-knot',conds=None):
+    """Return a (Spp,xk,yk) representation of a cubic spline given
+    data-points
+
+    yk can be an N-d array to represent more than one curve, through
     the same xk points. The first dimension is assumed to be the
     interpolating dimenion.
-
-    If xk is None, then x=arange(len(yk)) will be assumed
 
     kind can be 'natural', 'second', 'clamped', 'endslope', 'periodic',
                 'symmetric', 'parabolic', 'not-a-knot', 'runout'
@@ -435,19 +469,13 @@ def csprep(yk,xk=None,kind='not-a-knot',conds=None):
     """
     yk = np.asanyarray(yk)
     N = yk.shape[0]-1
-    if xk is None:
-        xk = arange(N+1,dtype=float)
-        factor = 1.0
-    else:
-        deltax = (xk[-1]-xk[0])/float(N)
-        factor = deltax**2
-    B,b,first,last = _get_cspline_Bb(yk, xk, kind, conds)
+    B,b,first,last = _get_cspline_Bb(xk, yk, kind, conds)
     mk = np.dual.solve(B,b)
     if first is not None:
         mk = np.concatenate((first, mk), axis=0)
     if last is not None:
         mk = np.concatenate((mk, last), axis=0)
-    return mk/factor, xk, yk
+    return mk, xk, yk
 
-def cspline(yk,xk,xnew,kind='not-a-knot',conds=None):
-    return cspeval(csprep(yk,xk,kind=kind,conds=conds),xnew)
+def cspline(xk,yk,xnew,kind='not-a-knot',conds=None):
+    return cspeval(csprep(xk,yk,kind=kind,conds=conds),xnew)
