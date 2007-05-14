@@ -11,7 +11,7 @@ from numpy import shape, sometrue, rank, array, transpose, \
      logical_or, atleast_1d, atleast_2d, meshgrid, ravel
 import numpy as np
 
-#import fitpack
+import fitpack
 
 def reduce_sometrue(a):
     all = a
