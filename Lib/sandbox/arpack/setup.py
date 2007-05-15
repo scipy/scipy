@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os
+from os.path import join
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
@@ -13,13 +13,13 @@ def configuration(parent_package='',top_path=None):
 
     config = Configuration('arpack', parent_package, top_path)
 
-    arpack_sources=[os.path.join('ARPACK','SRC', '*.f')]
-    arpack_sources.extend([os.path.join('ARPACK','UTIL', '*.f')])
-#    arpack_sources.extend([os.path.join('ARPACK','BLAS', '*.f')])
-    arpack_sources.extend([os.path.join('ARPACK','LAPACK', '*.f')])
+    arpack_sources=[join('ARPACK','SRC', '*.f')]
+    arpack_sources.extend([join('ARPACK','UTIL', '*.f')])
+#    arpack_sources.extend([join('ARPACK','BLAS', '*.f')])
+    arpack_sources.extend([join('ARPACK','LAPACK', '*.f')])
 
     config.add_library('arpack', sources=arpack_sources,
-                       include_dirs=[os.path.join('ARPACK', 'SRC')])
+                       include_dirs=[join('ARPACK', 'SRC')])
 
 
     config.add_extension('_arpack',

@@ -1,8 +1,7 @@
-## Automatically adapted for scipy Oct 31, 2005 by
-
 #!/usr/bin/env python
 
-import os
+from os import environ
+from os.path import abspath, dirname, join
 import sys
 from distutils import dir_util
 from distutils.sysconfig import get_python_lib
@@ -37,7 +36,7 @@ if sys.platform=='win32':
 x11 = 0
 if not (windows or cygwin or macosx):
     x11 = 1
-if 'NO_XLIB' in os.environ:
+if 'NO_XLIB' in environ:
     x11 = 0
 
 
@@ -193,15 +192,15 @@ def getallparams(gistpath,local_path,config_path):
 
     include_dirs = ['src/gist', 'src/play', 'src/play/unix' ]
 
-    library_dirs = [os.path.join(local_path,x) for x in ['.','src']]
+    library_dirs = [join(local_path,x) for x in ['.','src']]
     library_dirs.extend(x11_info.get('library_dirs',[]))
     library_dirs.extend(get_special_dirs(sys.platform))
 
-    include_dirs = [os.path.join(local_path,x) for x in include_dirs]
+    include_dirs = [join(local_path,x) for x in include_dirs]
     include_dirs.extend(x11_info.get('include_dirs',[]))
 
     if 1:
-        inputfile = open(os.path.join(config_path,"Make.cfg"))
+        inputfile = open(join(config_path,"Make.cfg"))
         lines = inputfile.readlines()
         inputfile.close()
         for line in lines:
@@ -240,11 +239,11 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('xplt',parent_package, top_path)
     local_path = config.local_path
 
-    all_playsource = [os.path.join('src','play','*','*.c'),
-                      os.path.join('src','play','*.h')
+    all_playsource = [join('src','play','*','*.c'),
+                      join('src','play','*.h')
                       ]
 
-    gistpath = os.path.join(get_python_lib(1),config.path_in_package,"gistdata")
+    gistpath = join(get_python_lib(1),config.path_in_package,"gistdata")
     gistpath = gistpath.replace("\\",r"\\\\")
 
     def get_playsource(extension,build_dir):
@@ -256,9 +255,9 @@ def configuration(parent_package='',top_path=None):
             playsource = unixsource + macsource + allsource
         else:
             playsource = unixsource + x11source + allsource
-        sources = [os.path.join(local_path,n) for n in playsource]
+        sources = [join(local_path,n) for n in playsource]
 
-        config_path = os.path.join(build_dir,'config_pygist')
+        config_path = join(build_dir,'config_pygist')
         dir_util.mkpath(config_path)
         conf = config_pygist(local_path,config_path)
         # Look to see if compiler is set on command line and add it
@@ -279,7 +278,7 @@ def configuration(parent_package='',top_path=None):
         include_dirs, library_dirs, libraries, \
                       extra_compile_args, extra_link_args \
                       = getallparams(gistpath,local_path,config_path)
-        include_dirs.insert(0,os.path.dirname(conf.config_h))
+        include_dirs.insert(0,dirname(conf.config_h))
 
         extension.include_dirs.extend(include_dirs)
         extension.library_dirs.extend(library_dirs)
@@ -291,7 +290,7 @@ def configuration(parent_package='',top_path=None):
 
 
 
-    gistC = os.path.join('pygist','gistCmodule.c')
+    gistC = join('pygist','gistCmodule.c')
     sources = gistsource
     sources = [gistC] + sources + [get_playsource]
 
@@ -300,16 +299,16 @@ def configuration(parent_package='',top_path=None):
                          depends = ['src']
                          )
     config.add_extension('gistfuncs',
-                         [os.path.join('pygist','gistfuncsmodule.c')])
+                         [join('pygist','gistfuncsmodule.c')])
 
 
     file_ext = ['*.gs','*.gp', '*.ps', '*.help']
-    xplt_files = [os.path.join('gistdata',x) for x in file_ext]
-    xplt_files += [os.path.join('src','g',x) for x in file_ext]
+    xplt_files = [join('gistdata',x) for x in file_ext]
+    xplt_files += [join('src','g',x) for x in file_ext]
 
     config.add_data_dir('gistdata')
-    config.add_data_dir((os.path.join(config.path_in_package,'gistdata'),
-                         os.path.abspath(config.paths('src/g')[0])))
+    config.add_data_dir((join(config.path_in_package,'gistdata'),
+                         abspath(config.paths('src/g')[0])))
 
     return config
 

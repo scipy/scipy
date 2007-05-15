@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from os.path import join
+
 def configuration(parent_package='',top_path=None):
     # The following two lines with `return config` constitutes a
     # minimal contents of configuration(..) that is suitable for pure
@@ -15,9 +17,8 @@ def configuration(parent_package='',top_path=None):
 
     # exmplpackage generates source code, that will be processed with f2py
     def generate_spam_pyf(ext, build_dir):
-        import os
         from distutils.dep_util import newer
-        target = os.path.join(build_dir,'spam.pyf')
+        target = join(build_dir,'spam.pyf')
         source = ext.depends[0]
         if newer(source,target):
             fin = open(source)

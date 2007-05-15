@@ -10,20 +10,19 @@ directory from pysparse.so to spmatrix.so.  Then you can import using:
 working around PySparse's weird inconsistency in its module name.)
 """
 
-import os
-from numpy.distutils.core import Extension
-from numpy.distutils.misc_util import get_path,Configuration,dot_join
-join = os.path.join
-import glob
+from os.path import join
+from glob import glob
+
 
 def configuration(parent_package='',parent_path=None):
+    from numpy.distutils.misc_util import Configuration
     from numpy.distutils.system_info import get_info
     config = Configuration('pysparse', parent_package, parent_path)
 
     config.add_data_dir('docs')
     config.add_data_dir('examples')
     config.add_data_dir('tests')
-    headers = glob.glob(os.path.join ("include","pysparse","*.h"))
+    headers = glob(join("include","pysparse","*.h"))
     config.add_extension('pysparse',
         sources = ['src/spmatrixmodule.c'],
         include_dirs = ['include/']

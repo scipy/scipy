@@ -1,18 +1,11 @@
 #!/usr/bin/env python
 
 from os.path import join
-from distutils import dep_util
-from glob import glob
-import warnings
-
-from numpy.distutils.core import Extension
-from numpy.distutils.misc_util import get_path, Configuration, dot_join
-
-from numpy.distutils.system_info import get_info,dict_append,\
-     AtlasNotFoundError,LapackNotFoundError,BlasNotFoundError,\
-     LapackSrcNotFoundError,BlasSrcNotFoundError
 
 def configuration(parent_package='', top_path=None):
+    import warnings
+    from numpy.distutils.misc_util import Configuration
+    from numpy.distutils.system_info import get_info, BlasNotFoundError
     config = Configuration('odr', parent_package, top_path)
 
     libodr_files = ['d_odr.f',
