@@ -426,22 +426,22 @@ def mask_cols(a, axis=None):
     return mask_rowcols(a, 1)
 
         
-def dot(a,b):
+def dot(a,b, strict=False):
     """Returns the dot product of two 2D masked arrays a and b.
     Like the generic numpy equivalent the product sum is over
     the last dimension of a and the second-to-last dimension of b.
     
-    Masked values are propagated: if a masked value appears in a row or column,
-    the whole row or column is considered masked.
+    If strict is True, masked values are propagated: if a masked value appears 
+    in a row or column, the whole row or column is considered masked.
     
     NB: The first argument is not conjugated.
     """
     #TODO: Works only with 2D arrays. There should be a way to get it to run with higher dimension
-    if (a.ndim == 2) and (b.ndim == 2):
+    if strict and (a.ndim == 2) and (b.ndim == 2):
         a = mask_rows(a)
         b = mask_cols(b)
     #
-    d = numpy.dot(a.filled(0), b.filled(0))
+    d = numpy.dot(filled(a, 0), filled(b, 0))
     #
     am = (~getmaskarray(a))
     bm = (~getmaskarray(b))
@@ -495,6 +495,9 @@ def mediff1d(array, to_end=None, to_begin=None):
         r_data = dd
         r_mask = dm
     return masked_array(r_data, mask=r_mask)
+
+
+
 
 #####--------------------------------------------------------------------------
 #---- --- Concatenation helpers ---

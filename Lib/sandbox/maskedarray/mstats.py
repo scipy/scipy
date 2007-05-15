@@ -15,12 +15,13 @@ __date__     = '$Date$'
 import numpy
 from numpy import bool_, float_, int_
 from numpy import array as narray
-from numpy.core import numeric as numeric
+import numpy.core.numeric as numeric
+from numpy.core.numeric import concatenate
 
 import maskedarray as MA
 from maskedarray.core import masked, nomask, MaskedArray
 from maskedarray.core import masked_array as marray
-from maskedarray.extras import apply_along_axis
+from maskedarray.extras import apply_along_axis, dot
 
 
 def _quantiles_1D(data,m,p):
@@ -149,6 +150,51 @@ def mmedian(data):
 #        return med
     return apply_along_axis(_median1d, 0, data)
     
+def cov(x, y=None, rowvar=True, bias=False, strict=False):
+    """
+    Estimate the covariance matrix.
+
+    If x is a vector, return the variance.  For matrices, returns the covariance 
+    matrix.
+
+    If y is given, it is treated as an additional (set of) variable(s).
+
+    Normalization is by (N-1) where N is the number of observations (unbiased 
+    estimate).  If bias is True then normalization is by N.
+
+    If rowvar is non-zero (default), then each row is a variable with observations 
+    in the columns, otherwise each column is a variable  and the observations  are 
+    in the rows.
+    
+    If strict is True, masked values are propagated: if a masked value appears in 
+    a row or column, the whole row or column is considered masked.
+    """
+    X = narray(x, ndmin=2, subok=True, dtype=float)
+    if X.shape[0] == 1:
+        rowvar = True
+    if rowvar:
+        axis = 0
+        tup = (slice(None),None)
+    else:
+        axis = 1
+        tup = (None, slice(None))
+    #
+    if y is not None:
+        y = narray(y, copy=False, ndmin=2, subok=True, dtype=float)
+        X = concatenate((X,y),axis)
+    #
+    X -= X.mean(axis=1-axis)[tup]
+    n = X.count(1-axis)
+    #
+    if bias:
+        fact = n*1.0
+    else:
+        fact = n-1.0
+    #
+    if not rowvar:
+        return (dot(X.T, X.conj(), strict=False) / fact).squeeze()
+    else:
+        return (dot(X, X.T.conj(), strict=False) / fact).squeeze()
 
 
 ################################################################################

@@ -66,13 +66,10 @@ from numpy import bool_, complex_, float_, int_, object_, str_
 
 import numpy.core.umath as umath
 import numpy.core.fromnumeric  as fromnumeric
-from numpy.core.numeric import ndarray
-from numpy.core.fromnumeric import amax, amin
-import numpy.core.numerictypes as ntypes
-from numpy.core.numerictypes import bool_, typecodes
-from numpy.core.multiarray import dtype
 import numpy.core.numeric as numeric
-from numpy.lib.shape_base import expand_dims as n_expand_dims
+import numpy.core.numerictypes as ntypes
+from numpy import bool_, dtype, typecodes, amax, amin, ndarray
+from numpy import expand_dims as n_expand_dims
 import warnings
 
 
@@ -1713,7 +1710,7 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
         """
         if fill_value is None:
             fill_value = default_fill_value(self)
-        d = self.filled(fill_value)
+        d = self.filled(fill_value).view(ndarray)
         return d.argsort(axis=axis, kind=kind, order=order)
     #........................
     def argmin(self, axis=None, fill_value=None):

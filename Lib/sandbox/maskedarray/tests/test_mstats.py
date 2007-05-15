@@ -18,7 +18,7 @@ from maskedarray import masked, masked_array
 import maskedarray.testutils
 from maskedarray.testutils import *
 
-from maskedarray.mstats import mquantiles, mmedian
+from maskedarray.mstats import mquantiles, mmedian, cov
 
 #..............................................................................
 class test_quantiles(NumpyTestCase):
@@ -109,6 +109,20 @@ class test_median(NumpyTestCase):
         x = maskedarray.arange(24).reshape(4,3,2)
         x[x%5==0] = masked
         assert_equal(mmedian(x), [[12,10],[8,9],[16,17]])
+        
+class test_misc(NumpyTestCase):
+    def __init__(self, *args, **kwds):
+        NumpyTestCase.__init__(self, *args, **kwds)    
+        
+    def check_cov(self): 
+        "Tests the cov function."
+        x = masked_array([[1,2,3],[4,5,6]], mask=[[1,0,0],[0,0,0]])
+        c = cov(x[0])
+        assert_equal(c, (x[0].anom()**2).sum())
+        c = cov(x[1])
+        assert_equal(c, (x[1].anom()**2).sum()/2.)
+        c = cov(x)
+        assert_equal(c[1,0], (x[0].anom()*x[1].anom()).sum())
         
 ###############################################################################
 #------------------------------------------------------------------------------
