@@ -178,14 +178,14 @@ class interp1d(object):
         self.fill_value = fill_value
 
 
-        if isinstance(kind, integer):
+        if isinstance(kind, int):
             kind = {0:'zero',
                     1:'slinear',
                     2:'quadratic',
-                    3:'cubic'}.get(kind,'bad')
+                    3:'cubic'}.get(kind,'none')
 
         if kind not in ['zero', 'linear', 'slinear', 'quadratic', 'cubic']:
-            raise NotImplementedError("%d unsupported: Use fitpack "\
+            raise NotImplementedError("%d is unsupported: Use fitpack "\
                                       "routines for other types.")
         x = array(x, copy=self.copy)
         y = array(y, copy=self.copy)

@@ -39,9 +39,16 @@ class test_interp1d(NumpyTestCase):
         are given to the constructor.
         """
 
-        # Only kind='linear' is implemented.
-        self.assertRaises(NotImplementedError, interp1d, self.x10, self.y10, kind='cubic')
+        # These should all work. 
         interp1d(self.x10, self.y10, kind='linear')
+        interp1d(self.x10, self.y10, kind='cubic')
+        interp1d(self.x10, self.y10, kind='slinear')
+        interp1d(self.x10, self.y10, kind='quadratic')
+        interp1d(self.x10, self.y10, kind='zero')
+        interp1d(self.x10, self.y10, kind=0)
+        interp1d(self.x10, self.y10, kind=1)
+        interp1d(self.x10, self.y10, kind=2)
+        interp1d(self.x10, self.y10, kind=3)                
 
         # x array must be 1D.
         self.assertRaises(ValueError, interp1d, self.x25, self.y10)
