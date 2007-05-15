@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os
+from os.path import join
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -8,7 +8,7 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('interpolate', parent_package, top_path)
 
     config.add_library('fitpack',
-                       sources=[os.path.join('fitpack', '*.f')],
+                       sources=[join('fitpack', '*.f')],
                       )
 
     config.add_extension('_fitpack',

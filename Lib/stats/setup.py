@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os
+from os.path import join
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -9,7 +9,7 @@ def configuration(parent_package='',top_path=None):
     config.add_data_dir('tests')
 
     config.add_library('statlib',
-                       sources=[os.path.join('statlib', '*.f')])
+                       sources=[join('statlib', '*.f')])
 
     # add statlib module
     config.add_extension('statlib',

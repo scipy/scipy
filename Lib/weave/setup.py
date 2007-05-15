@@ -1,11 +1,13 @@
 #!/usr/bin/env python
-import os
+
+from os.path import join
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('weave',parent_package,top_path)
     config.add_data_dir('tests')
     config.add_data_dir('scxx')
-    config.add_data_dir(os.path.join('blitz','blitz'))
+    config.add_data_dir(join('blitz','blitz'))
     config.add_data_dir('doc')
     config.add_data_dir('examples')
     return config

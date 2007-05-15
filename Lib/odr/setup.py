@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os,sys,re
+from os.path import join
 from distutils import dep_util
 from glob import glob
 import warnings
@@ -26,7 +26,7 @@ def configuration(parent_package='', top_path=None):
         warnings.warn(BlasNotFoundError.__doc__)
         libodr_files.append('d_lpkbls.f')
 
-    libodr = [os.path.join('odrpack', x) for x in libodr_files]
+    libodr = [join('odrpack', x) for x in libodr_files]
     config.add_library('odrpack', sources=libodr)
     sources = ['__odrpack.c']
     libraries = ['odrpack'] + blas_info.pop('libraries', [])
