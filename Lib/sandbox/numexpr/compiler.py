@@ -185,47 +185,29 @@ class Immediate(Register):
     def __str__(self):
         return 'Immediate(%d)' % (self.node.value,)
 
-def makeExpressions(context):
-    """Make private copy of the expressions module with a custom get_context().
-
-    An attempt was made to make this threadsafe, but I can't guarantee it's
-    bulletproof.
-    """
-    import sys, imp
-    modname = __name__[:__name__.rfind('.')] + '.expressions'
-    # get our own, private copy of expressions
-    imp.acquire_lock()
-    try:
-        old = sys.modules.pop(modname)
-        import expressions
-        private = sys.modules.pop(modname)
-        sys.modules[modname] = old
-    finally:
-        imp.release_lock()
-    def get_context():
-        return context
-    private.get_context = get_context
-    return private
-
 def stringToExpression(s, types, context):
     """Given a string, convert it to a tree of ExpressionNode's.
     """
-    expr = makeExpressions(context)
-    # first compile to a code object to determine the names
-    c = compile(s, '<expr>', 'eval')
-    # make VariableNode's for the names
-    names = {}
-    for name in c.co_names:
-        if name == "None":
-            names[name] = None
-        else:
-            t = types.get(name, float)
-            names[name] = expr.VariableNode(name, type_to_kind[t])
-    names.update(expr.functions)
-    # now build the expression
-    ex = eval(c, names)
-    if expressions.isConstant(ex):
-        ex = expr.ConstantNode(ex, expressions.getKind(ex))
+    old_ctx = expressions._context.ctx
+    try:
+        expressions._context.ctx = context
+        # first compile to a code object to determine the names
+        c = compile(s, '<expr>', 'eval')
+        # make VariableNode's for the names
+        names = {}
+        for name in c.co_names:
+            if name == "None":
+                names[name] = None
+            else:
+                t = types.get(name, float)
+                names[name] = expressions.VariableNode(name, type_to_kind[t])
+        names.update(expressions.functions)
+        # now build the expression
+        ex = eval(c, names)
+        if expressions.isConstant(ex):
+            ex = expressions.ConstantNode(ex, expressions.getKind(ex))
+    finally:
+        expressions._context.ctx = old_ctx
     return ex
 
 

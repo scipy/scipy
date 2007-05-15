@@ -1,8 +1,10 @@
 __all__ = ['E']
 
 import operator
-import numpy
 import sys
+import threading
+
+import numpy
 
 import interpreter
 
@@ -18,12 +20,16 @@ class Expression(object):
 
 E = Expression()
 
+try:
+    _context = threading.local()
+except AttributeError:
+    class Context(object):
+        pass
+    _context = Context()
+_context.ctx = {}
 
-def get_context():
-    """Context used to evaluate expression. Typically overridden in compiler."""
-    return {}
 def get_optimization():
-    return get_context().get('optimization', 'none')
+    return _context.ctx.get('optimization', 'none')
 
 # helper functions for creating __magic__ methods
 def ophelper(f):
