@@ -517,5 +517,3 @@ def sp2rep(xk,yk):
 
 def sp2eval(xk,yk):
     pass
-
-def 
