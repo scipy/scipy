@@ -356,8 +356,9 @@ def _get_spline2_Bb(xk, yk, kind, conds):
     Np1 = len(xk)
     dk = xk[1:]-xk[:-1]
     if kind == 'not-a-knot':
+        # use banded-solver
         nlu = (1,1)
-        B = np.ones((3,Np1))
+        B = ones((3,Np1))
         alpha = 2*(yk[1:]-yk[:-1])/dk
         zrs = np.zeros((1,)+yk.shape[1:])
         row = (Np1-1)//2
@@ -383,9 +384,14 @@ def _get_spline3_Bb(xk, yk, kind, conds):
             m0, mN = conds
 
         # the matrix to invert is (N-1,N-1)
+        # use banded solver
         beta = 2*(xk[2:]-xk[:-2])
         alpha = xk[1:]-xk[:-1]
-        B = np.diag(alpha[1:-1],k=-1) + np.diag(beta) + np.diag(alpha[2:],k=1)
+        nlu = (1,1)
+        B = np.empty((3,Np1-2))
+        B[0,1:] = alpha[2:]
+        B[1,:] = beta
+        B[2,:-1] = alpha[1:-1]
         dyk = yk[1:]-yk[:-1]
         b = (dyk[1:]/alpha[1:] - dyk[:-1]/alpha[:-1])
         b *= 6
@@ -395,17 +401,17 @@ def _get_spline3_Bb(xk, yk, kind, conds):
         def append_func(mk):
             # put m0 and mN into the correct shape for
             #  concatenation
-            m0 = array(m0,copy=0,ndmin=yk.ndim)
-            mN = array(mN,copy=0,ndmin=yk.ndim)
-            if m0.shape[1:] != yk.shape[1:]:
-                m0 = m0*(ones(yk.shape[1:])[newaxis,...])
-            if mN.shape[1:] != yk.shape[1:]:
-                mN = mN*(ones(yk.shape[1:])[newaxis,...])
-            mk = concatenate((m0,mk),axis=0)
-            mk = concatenate((mk,mN),axis=0)
+            ma = array(m0,copy=0,ndmin=yk.ndim)
+            mb = array(mN,copy=0,ndmin=yk.ndim)
+            if ma.shape[1:] != yk.shape[1:]:
+                ma = ma*(ones(yk.shape[1:])[np.newaxis,...])
+            if mb.shape[1:] != yk.shape[1:]:
+                mb = mb*(ones(yk.shape[1:])[np.newaxis,...])
+            mk = np.concatenate((ma,mk),axis=0)
+            mk = np.concatenate((mk,mb),axis=0)
             return mk
 
-        return B, b, append_func, None
+        return B, b, append_func, nlu
 
 
     elif kind in ['clamped', 'endslope', 'first', 'not-a-knot', 'runout',
