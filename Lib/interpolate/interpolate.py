@@ -1,13 +1,14 @@
 """ Classes for interpolating values.
 """
 
-__all__ = ['interp1d', 'interp2d', 'spline3', 'sp3eval', 'sp3rep', 'sp3topp',
+__all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
            'ppform']
 
 from numpy import shape, sometrue, rank, array, transpose, \
      swapaxes, searchsorted, clip, take, ones, putmask, less, greater, \
      logical_or, atleast_1d, atleast_2d, meshgrid, ravel
 import numpy as np
+import scipy.linalg as slin
 
 import fitpack
 
@@ -152,7 +153,7 @@ class interp1d(object):
             axis must be equal to the length of x.
         kind : str
             Specifies the kind of interpolation. At the moment,
-            only 'linear' and 'cubic' are implemented.
+            only 'linear' and 'cubic' are implemented for now.
         axis : int
             Specifies the axis of y along which to interpolate. Interpolation
             defaults to the last axis of y.
@@ -176,10 +177,16 @@ class interp1d(object):
         self.bounds_error = bounds_error
         self.fill_value = fill_value
 
-        if kind not in ['linear', 'cubic']:
-            raise NotImplementedError("Only linear and cubic supported for " \
-                                      "now. Use fitpack routines "\
-                                      "for other types.")
+
+        if isinstance(kind, integer):
+            kind = {0:'zero',
+                    1:'slinear',
+                    2:'quadratic',
+                    3:'cubic'}.get(kind,'bad')
+
+        if kind not in ['zero', 'linear', 'slinear', 'quadratic', 'cubic']:
+            raise NotImplementedError("%d unsupported: Use fitpack "\
+                                      "routines for other types.")
         x = array(x, copy=self.copy)
         y = array(y, copy=self.copy)
 
@@ -201,10 +208,11 @@ class interp1d(object):
             self._call = self._call_linear
         else:
             oriented_y = y.swapaxes(0, axis)
-            minval = 4
+            order = {'zero':0,'slinear':1,'quadratic':2, 'cubic':3}[kind]
+            minval = order + 1
             len_y = oriented_y.shape[0]
-            self._call = self._call_cubic
-            self._spline = sp3rep(x,oriented_y)
+            self._call = self._call_spline
+            self._spline = splmake(x,oriented_y,order=order)
         
         len_x = len(x)
         if len_x != len_y:
@@ -246,8 +254,10 @@ class interp1d(object):
 
         return y_new
 
-    def _call_cubic(self, x_new):
-        return sp3eval(self._spline,x_new)
+    def _call_spline(self, x_new):
+        x_new = asarray(x_new)
+        result = spleval(self._spline,x_new.ravel())
+        return result.reshape(x_new.shape+result.shape[1:])
 
     def __call__(self, x_new):
         """ Find linearly interpolated y_new = f(x_new).
@@ -271,22 +281,27 @@ class interp1d(object):
 
         y_new = self._call(x_new)
 
-        if self._kind == 'linear':
-            # 6. Fill any values that were out of bounds with fill_value.
-            y_new[..., out_of_bounds] = self.fill_value
-        else:
-            y_new[out_of_bounds] = self.fill_value
-
         # Rotate the values of y_new back so that they correspond to the
-        # correct x_new values. For N-D x_new, take the last N axes from y_new
-        # and insert them where self.axis was in the list of axes.
+        # correct x_new values. For N-D x_new, take the last (for linear)
+        # or first (for other splines) N axes
+        # from y_new and insert them where self.axis was in the list of axes.
         nx = x_new.ndim
         ny = y_new.ndim
-        axes = range(ny - nx)
-        axes[self.axis:self.axis] = range(ny - nx, ny)
-        result = y_new.transpose(axes)
-        return result
-                
+
+        # 6. Fill any values that were out of bounds with fill_value.
+        # and
+        # 7. Rotate the values back to their proper place.
+
+        if self._kind == 'linear':
+            y_new[..., out_of_bounds] = self.fill_value
+            axes = range(ny - nx)            
+            axes[self.axis:self.axis] = range(ny - nx, ny)
+            return y_new.transpose(axes)
+        else:
+            y_new[out_of_bounds] = self.fill_value
+            axes = range(ny - nx, ny)
+            axes[self.axis:self.axis] = range(ny - nx)
+            return y_new.transpose(axes)  
 
     def _check_bounds(self, x_new):
         """ Check the inputs for being in the bounds of the interpolated data.
@@ -330,12 +345,31 @@ class ppform(object):
         self.N = self.coeffs.shape[0]
     def __call__(self, xnew):
         indxs = np.searchsorted(self.breaks, xnew)-1
-        indxs[indxs<0]=0
+        indxs = indxs.clip(0,len(self.breaks))
         pp = self.coeffs
         V = np.vander(xnew,N=self.N)
         # res = np.diag(np.dot(V,pp[:,indxs]))
         res = array([np.dot(V[k,:],pp[:,indxs[k]]) for k in xrange(len(xnew))])
         return res
+
+def _get_spline2_Bb(xk, yk, kind, conds):
+    Np1 = len(xk)
+    dk = xk[1:]-xk[:-1]
+    if kind == 'not-a-knot':
+        nlu = (1,1)
+        B = np.ones((3,Np1))
+        alpha = 2*(yk[1:]-yk[:-1])/dk
+        zrs = np.zeros((1,)+yk.shape[1:])
+        row = (Np1-1)//2
+        b = np.concatenate((alpha[:row],zrs,alpha[row:]),axis=0)
+        B[0,row+2:] = 0
+        B[2,:(row-1)] = 0
+        B[0,row+1] = dk[row-1]
+        B[1,row] = -dk[row]-dk[row-1]
+        B[2,row-1] = dk[row]
+        return B, b, None, nlu
+    else:
+        raise NotImplementedError("quadratic %s is not available" % kind)
 
 def _get_spline3_Bb(xk, yk, kind, conds):
     # internal function to compute different tri-diagonal system
@@ -358,16 +392,20 @@ def _get_spline3_Bb(xk, yk, kind, conds):
         b[0] -= m0
         b[-1] -= mN
 
-        # put m0 and mN into the correct shape for
-        #  concatenation
-        m0 = array(m0,copy=0,ndmin=yk.ndim)
-        mN = array(mN,copy=0,ndmin=yk.ndim)
-        if m0.shape[1:] != yk.shape[1:]:
-            m0 = m0*(ones(yk.shape[1:])[newaxis,...])
-        if mN.shape[1:] != yk.shape[1:]:
-            mN = mN*(ones(yk.shape[1:])[newaxis,...])
+        def append_func(mk):
+            # put m0 and mN into the correct shape for
+            #  concatenation
+            m0 = array(m0,copy=0,ndmin=yk.ndim)
+            mN = array(mN,copy=0,ndmin=yk.ndim)
+            if m0.shape[1:] != yk.shape[1:]:
+                m0 = m0*(ones(yk.shape[1:])[newaxis,...])
+            if mN.shape[1:] != yk.shape[1:]:
+                mN = mN*(ones(yk.shape[1:])[newaxis,...])
+            mk = concatenate((m0,mk),axis=0)
+            mk = concatenate((mk,mN),axis=0)
+            return mk
 
-        return B, b, m0, mN           
+        return B, b, append_func, None
 
 
     elif kind in ['clamped', 'endslope', 'first', 'not-a-knot', 'runout',
@@ -434,9 +472,33 @@ def _get_spline3_Bb(xk, yk, kind, conds):
         return B, b, None, None
     else:
         raise ValueError, "%s not supported" % kind
-        
 
-def sp3eval((mk,xk,yk),xnew):
+def _sp0eval((mk,xk,yk),xnew):
+    indxs = np.searchsorted(xk, xnew).clip(1,len(xk))
+    return yk[indxs-1]
+
+def _sp0topp(mk,xk,yk):
+    c0 = yk
+    return ppform(array([c0]),xk)
+
+def _sp1eval((mk,xk,yk),xnew):
+    indxs = np.searchsorted(xk, xnew).clip(1,len(xk))
+    indxsm1 = indxs-1
+    d = xnew - xk[indxs]
+    dk = (x[1:]-x[:-1])[indxsm1]
+    wk = yk[indxs]
+    wkm1 = yk[indxsm1]
+    res = (wk-wkm1)/dk
+    res *= d
+    res += wk
+    return res
+
+def _sp1topp(mk,xk,yk):
+    c1 = (yk[1:]-yk[:-1])/(xk[1:]-xk[:-1])
+    c0 = yk[1:] - c1*xk[1:]
+    return ppform(array([c1,c0]), xk)
+
+def _sp3eval((mk,xk,yk),xnew):
     """Evaluate a cubic-spline representation of the points (xk,yk)
     at the new values xnew.  The mk values are the second derivatives at xk
     The xk vector must be sorted.
@@ -446,7 +508,7 @@ def sp3eval((mk,xk,yk),xnew):
     The first-dimension will be considered the interpolating dimension. 
     """
     indxs = np.searchsorted(xk, xnew)
-    indxs[indxs==0] = 1
+    indxs = indxs.clip(1,len(xk))
     indxsm1 = indxs-1
     xkm1 = xk[indxsm1]
     xkvals = xk[indxs]
@@ -460,7 +522,7 @@ def sp3eval((mk,xk,yk),xnew):
     val += (yk[indxs]/dk - mk0*dk/6.)*dm1
     return val
 
-def sp3topp(mk,xk,yk):
+def _sp3topp(mk,xk,yk):
     """Return an N-d array providing the piece-wise polynomial form.
 
     mk - second derivative at the knots
@@ -484,36 +546,136 @@ def sp3topp(mk,xk,yk):
     c0 += (yk[:-1]*xk[1:] - yk[1:]*xk[:-1])/dk
     return ppform([c3,c2,c1,c0], xk)
 
-def sp3rep(xk,yk,kind='not-a-knot',conds=None):
-    """Return a (Spp,xk,yk) representation of a cubic spline given
+def splmake(xk,yk,order=3,kind='not-a-knot',conds=None):
+    """Return an (mk,xk,yk) representation of a spline given
     data-points
 
     yk can be an N-d array to represent more than one curve, through
     the same xk points. The first dimension is assumed to be the
     interpolating dimenion.
 
-    kind can be 'natural', 'second', 'clamped', 'endslope', 'periodic',
-                'symmetric', 'parabolic', 'not-a-knot', 'runout'
+    kind can be 'natural', 'second', 'first', 'clamped', 'endslope',
+                'periodic', 'symmetric', 'parabolic', 'not-a-knot',
+                'runout'
 
-    for 'second', and 'clamped' conditions can be given which should
+    for 'second', and 'first' conditions can be given which should
     be the desired second and first derivatives at
     the end-points, respectively. 
     """
     yk = np.asanyarray(yk)
     N = yk.shape[0]-1
-    B,b,first,last = _get_spline3_Bb(xk, yk, kind, conds)
-    mk = np.dual.solve(B,b)
-    if first is not None:
-        mk = np.concatenate((first, mk), axis=0)
-    if last is not None:
-        mk = np.concatenate((mk, last), axis=0)
-    return mk, xk, yk
 
-def spline3(xk,yk,xnew,kind='not-a-knot',conds=None):
-    return sp3eval(sp3rep(xk,yk,kind=kind,conds=conds),xnew)
+    order = int(order)
+    if order in [0,1]:
+        return order, xk, yk, order
+    if order < 2:
+        raise ValueError("order cannot be negative")
 
-def sp2rep(xk,yk):
-    pass
+    try:
+        func = eval('_get_spline%d_Bb'%order)
+    except NameError:
+        raise ValueError("order %d not available" % order)
 
-def sp2eval(xk,yk):
-    pass
+    B,b,exfunc,nlu = func(xk, yk, kind, conds)
+
+    if nlu is None:
+        mk = np.dual.solve(B,b)
+    else:
+        mk = slin.solve_banded(nlu,B,b)
+
+    if exfunc is not None:
+        # need to add additional values to mk
+        #  using the returned function
+        mk = exfunc(mk)
+        
+    return mk, xk, yk, order
+
+def spleval((mk,xk,yk,order),xnew):
+    func = eval('_sp%deval'%order)
+    return func((mk,xk,yk),xnew)
+
+def spltopp(mk,xk,yk,order=3):
+    return eval('_sp%dtopp'%order)(mk,xk,yk)
+
+def spline(xk,yk,xnew,order=3,kwds='not-a-knot',conds=None):
+    func = eval('_sp%deval'%order)
+    return func(splmake(xk,yk,order=order,kind=kind,conds=conds),xnew)
+
+def _sp2topp(zk,xk,yk):
+    dk = xk[1:]-xk[:-1]
+    c2 = (zk[1:]-zk[:-1])/(2*dk)
+    c1 = (xk[1:]*zk[:-1]-xk[:-1]*zk[1:])/dk
+    c0 = (zk[1:]*xk[:-1]**2 - zk[:-1]*xk[1:]**2)/(2*dk)
+    c0 += yk[1:]- zk[1:]*dk/2.
+    return ppform([c2,c1,c0],xk)
+
+def _sp2eval((zk,xk,yk),xnew):
+    indxs = np.searchsorted(xk, xnew)
+    indxs = indxs.clip(1,len(xk))
+    indxsm1 = indxs-1
+    dk = (xk[1:]-xk[:-1])[indxsm1]
+    d = xnew - xk[indxs]
+    zk0 = zk[indxs]
+    res = (zk0-zk[indxsm1])/(2*dk)
+    res *= d
+    res += zk0
+    res *= d
+    res += wk[indxs]
+    return res
+    
+def _sp4topp(mk,xk,yk):
+    raise NotImplementedError
+
+def _sp4eval((mk,xk,yk),xnew):
+    nk = mk[1::2] # second-derivatives
+    mk = mk[::2]  # third-derivatives
+    indxs = np.searchsorted(xk, xnew).clip(1,len(xk))
+    indxsm1 = indxs-1
+    dk = (xk[1:]-xk[:-1])[indxsm1]
+    d = xnew - xk[indxs]
+    nk0 = nk[indxs]
+    nkm1 = nk[indxsm1]
+    mk0 = mk[indxs]
+    wk = yk[indxs]
+    wkm1 = yk[indxsm1]
+    res = (nk0-nkm1)/(24*dk)*d
+    res += nk0/6.
+    res *= d
+    res += mk0/2.
+    res *= d
+    res += mk0*dk/2. + (wk-wkm1)/dk - (3*nk0+nkm1)*(dk**2)/24.
+    res *= d
+    res += wk
+    return res
+
+def _sp5topp(mk,xk,yk):
+    raise NotImplementedError
+
+def _sp5eval((mk,xk,yk),xnew):
+    mk = mk[::3]    
+    nk = mk[1::3]
+    ok = mk[2::3]
+    indxs = np.searchsorted(xk, xnew).clip(1,len(xk))
+    indxsm1 = indxs-1
+    dk = (xk[1:]-xk[:-1])[indxsm1]
+    d = xnew - xk[indxs]
+    ok0 = ok[indxs]
+    okm1 = ok[indxsm1]
+    nk0 = nk[indxs]
+    mk0 = mk[indxs]
+    wk = yk[indxs]
+    wkm1 = yk[indxsm1]
+    res = (ok0-ok1)/(120*dk)
+    res *= d
+    res += ok0/24.
+    res *= d
+    res += nk0/6.
+    res *= d
+    res += mk0/2.
+    res *= d
+    res += (4*ok0+okm1)*(dk**3)/120. - nk0*(dk**2)/6.
+    res += mk0*dk/2. + (wk-wkm1)/dk
+    res *= d
+    res += wk
+    return res    
+
