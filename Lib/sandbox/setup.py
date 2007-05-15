@@ -1,4 +1,6 @@
-import os
+#!/usr/bin/env python
+
+from os.path import join
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -6,8 +8,8 @@ def configuration(parent_package='',top_path=None):
 
     sandbox_packages = []
     try:
-        sandbox_file = open(os.path.join(config.package_path,
-                                         'enabled_packages.txt'), 'rU')
+        sandbox_file = open(join(config.package_path,
+                                 'enabled_packages.txt'), 'rU')
     except IOError:
         pass
     else:
