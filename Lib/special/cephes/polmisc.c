@@ -4,7 +4,9 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
+#ifndef __APPLE__
+#include <malloc.h>
+#endif
 #include "mconf.h"
 #ifndef ANSIPROT
 double atan2(), sqrt(), fabs(), sin(), cos();
