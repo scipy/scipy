@@ -699,7 +699,7 @@ C
         DO 10 K=1,NM
           J=2*K-2+M+IP
           SU0=SU0+DF(K)*QM(J)
-          IF (K.GT.NM1.AND.DABS(SU0-SW).LT.DABS(SU0)*EPS) GO TO 15                                                                   
+          IF (K.GT.NM1.AND.DABS(SU0-SW).LT.DABS(SU0)*EPS) GO TO 15
 10        SW=SU0
 15      SD0=0.0D0
         DO 20 K=1,NM
@@ -1144,7 +1144,7 @@ C
               IF (K.LE.NM) CSJ(K)=CF
               CF0=CF1
 15            CF1=CF
-           IF (CDABS(CSA).GT.CDABS(CSB)) CS=CSA/CF
+           IF (CDABS(CSA).GT.CDABS(CSB)) CS=CSA/CF1
            IF (CDABS(CSA).LE.CDABS(CSB)) CS=CSB/CF0
            DO 20 K=0,NM
 20            CSJ(K)=CS*CSJ(K)
@@ -1609,7 +1609,7 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         IF (M.LE.12.OR.Q.LE.3.0*M.OR.Q.GT.M*M) THEN
             CALL CV0(KD,M,Q,A)
-            IF (Q.NE.0.0D0) CALL REFINE(KD,M,Q,A,1)
+            IF (Q.NE.0.0D0) CALL REFINE(KD,M,Q,A)
         ELSE
            NDIV=10
            DELTA=(M-3.0)*M/NDIV
@@ -1626,7 +1626,7 @@ C
                  A=(A1*Q2-A2*Q1+(A2-A1)*QQ)/(Q2-Q1)
                  IFLAG=1
                  IF (I.EQ.NN) IFLAG=-1
-                 CALL REFINE(KD,M,QQ,A,IFLAG)
+                 CALL REFINE(KD,M,QQ,A)
                  Q1=Q2
                  Q2=QQ
                  A1=A2
@@ -1650,7 +1650,7 @@ C
                  A=(A1*Q2-A2*Q1+(A2-A1)*QQ)/(Q2-Q1)
                  IFLAG=1
                  IF (I.EQ.NN) IFLAG=-1
-                 CALL REFINE(KD,M,QQ,A,IFLAG)
+                 CALL REFINE(KD,M,QQ,A)
                  Q1=Q2
                  Q2=QQ
                  A1=A2
@@ -2007,7 +2007,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE REFINE(KD,M,Q,A,IFLAG)
+        SUBROUTINE REFINE(KD,M,Q,A)
 C
 C       =====================================================
 C       Purpose: calculate the accurate characteristic value
@@ -2029,7 +2029,7 @@ C
         CALL CVF(KD,M,Q,X0,MJ,F0)
         X1=1.002*A
         CALL CVF(KD,M,Q,X1,MJ,F1)
-5       DO 10 IT=1,100
+        DO 10 IT=1,100
            MJ=MJ+1
            X=X1-(X1-X0)/(1.0D0-F0/F1)
            CALL CVF(KD,M,Q,X,MJ,F)
@@ -6307,7 +6307,7 @@ C           WRITE(*,*)'The hypergeometric series is divergent'
 150           ZHF=ZF0+ZF1
            ENDIF
         ENDIF
-155     A=AA
+        A=AA
         B=BB
         IF (K.GT.150) WRITE(*,160)
 160     FORMAT(1X,'Warning! You should check the accuracy')
@@ -9750,7 +9750,7 @@ C       ===========================================================
         Z=ZERO
         W=0.0D0
         DO 35 NR=1,NT
-10         IF (NR.NE.1) Z=ZO(NR-1)-H
+           IF (NR.NE.1) Z=ZO(NR-1)-H
            IT=0
 15         IT=IT+1
            CALL CY01(KF,Z,ZF,ZD)

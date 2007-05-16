@@ -60,14 +60,8 @@
  */
 
 #include <stdio.h>
-void exit(int);
-#ifndef NULL
-#define NULL 0
-#endif
+#include <stdlib.h>
 #include "mconf.h"
-#ifndef __APPLE__
-#include <malloc.h>
-#endif
 
 /* near pointer version of malloc() */
 /*

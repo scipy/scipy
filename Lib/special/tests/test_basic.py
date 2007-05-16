@@ -193,7 +193,8 @@ class test_cephes(NumpyTestCase):
         cephes.hankel2e(1,1)
 
     def check_hyp1f1(self):
-        cephes.hyp1f1(1,1,1)
+        assert_approx_equal(cephes.hyp1f1(1,1,1), exp(1.0))
+        assert_approx_equal(cephes.hyp1f1(3,4,-6), 0.026056422099537251095)
     def check_hyp1f2(self):
         cephes.hyp1f2(1,1,1,1)
     def check_hyp2f0(self):
