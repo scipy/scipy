@@ -1092,6 +1092,19 @@ class test_array_methods(NumpyTestCase):
         xh[0:1] = 999    
         assert_equal(xh._data,[999,1,2,3,4])
         
+    def check_smallmask(self):
+        "Checks the behaviour of _smallmask"
+        a = arange(10)
+        a[1] = masked
+        a[1] = 1
+        assert_equal(a._mask, nomask)
+        a = arange(10)
+        a._smallmask = False
+        a[1] = masked
+        a[1] = 1    
+        assert_equal(a._mask, zeros(10))
+    
+        
     def check_sort(self):
         "Test sort"
         x = array([1,4,2,3],mask=[0,1,0,0],dtype=N.uint8)

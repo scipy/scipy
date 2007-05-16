@@ -1146,11 +1146,12 @@ Sets item described by index. If value is masked, masks those locations.
                 self._mask = make_mask_none(self.shape)
                 self._mask[indx] = valmask
         elif not self._hardmask:
-            self._mask = self._mask.copy()
+            _mask = self._mask.copy()
             if valmask is nomask:
-                self._mask[indx] = False
+                _mask[indx] = False
             else:
-                self._mask[indx] = valmask
+                _mask[indx] = valmask
+            self._set_mask(_mask)
         elif hasattr(indx, 'dtype') and (indx.dtype==bool_):
             indx = indx * umath.logical_not(self._mask)
         else:
