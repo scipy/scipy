@@ -132,6 +132,7 @@ double *err;
 {
 double n, a0, sum, t, u, temp;
 double an, bn, maxt;
+double y, c, sumc;
 
 
 /* set up for power series summation */
@@ -139,6 +140,7 @@ an = a;
 bn = b;
 a0 = 1.0;
 sum = 1.0;
+c = 0.0;
 n = 1.0;
 t = 1.0;
 maxt = 0.0;
@@ -167,17 +169,14 @@ while( t > MACHEP )
 		}
 
 	a0 *= u;
-	sum += a0;
+
+	y = a0 - c;
+	sumc = sum + y;
+	c = (sumc - sum) - y;
+	sum = sumc;
+
 	t = fabs(a0);
-	if( t > maxt )
-		maxt = t;
-/*
-	if( (maxt/fabs(sum)) > 1.0e17 )
-		{
-		pcanc = 1.0;
-		goto blowup;
-		}
-*/
+
 	an += 1.0;
 	bn += 1.0;
 	n += 1.0;
@@ -186,10 +185,11 @@ while( t > MACHEP )
 pdone:
 
 /* estimate error due to roundoff and cancellation */
-if( sum != 0.0 )
-	maxt /= fabs(sum);
-maxt *= MACHEP; 	/* this way avoids multiply overflow */
-*err = fabs( MACHEP * n  +  maxt );
+if (sum != 0.0) {
+	*err = fabs(c / sum);
+} else {
+	*err = fabs(c);
+}
 
 return( sum );
 }
