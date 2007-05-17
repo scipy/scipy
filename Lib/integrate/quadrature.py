@@ -116,8 +116,6 @@ def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50, vec_func=True):
         n = n + 1
     if n == maxiter:
         print "maxiter (%d) exceeded. Latest difference = %e" % (n,err)
-    else:
-        print "Took %d points." % n
     return val, err
 
 def tupleset(t, i, value):
