@@ -54,14 +54,13 @@ __all__ = [
 #---- --- Date Exceptions ---
 #####---------------------------------------------------------------------------
 class DateError(Exception):
-    """Defines a generic DateArrayError."""
-    def __init__ (self, args=None):
-        "Create an exception"
-        Exception.__init__(self)
-        self.args = args
+    "Defines a generic DateArrayError."
+    def __init__ (self, value=None):
+        "Creates an exception."
+        self.value = value
     def __str__(self):
-        "Calculate the string representation"
-        return str(self.args)
+        "Calculates the string representation."
+        return str(self.value)
     __repr__ = __str__
 
 class InsufficientDateError(DateError):

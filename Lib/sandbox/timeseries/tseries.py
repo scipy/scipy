@@ -99,13 +99,12 @@ check_observed = fmtObserv
 #### --------------------------------------------------------------------------
 class TimeSeriesError(Exception):
     "Class for TS related errors."
-    def __init__ (self, args=None):
+    def __init__ (self, value=None):
         "Creates an exception."
-        Exception.__init__(self)
-        self.args = args
+        self.value = value
     def __str__(self):
         "Calculates the string representation."
-        return str(self.args)
+        return str(self.value)
     __repr__ = __str__
 
 class TimeSeriesCompatibilityError(TimeSeriesError):
