@@ -366,7 +366,7 @@ The combination of `series` and `dates` is the `data` part.
     #............................................
     def __array_finalize__(self,obj):
         MaskedArray.__array_finalize__(self, obj)
-        self._dates = getattr(obj, '_dates', [])
+        self._dates = getattr(obj, '_dates', DateArray([]))
         self.observed = getattr(obj, 'observed', None)
         return
     #..................................
@@ -428,7 +428,6 @@ Returns the item described by i. Not a copy as in previous versions.
         (sindx, dindx) = self.__checkindex(indx)
         newdata = numeric.array(self._series[sindx], copy=False, subok=True)
         newdate = self._dates[dindx]
-        m = self._mask
         singlepoint = (len(numeric.shape(newdate))==0)
         if singlepoint:
             newdate = DateArray(newdate)
@@ -475,8 +474,7 @@ Sets item described by index. If value is masked, masks those locations.
         """
         if self is masked:
             raise MAError, 'Cannot alter the masked element.'
-        (sindx, dindx) = self.__checkindex(indx)
-        #....
+        (sindx, _) = self.__checkindex(indx)
         super(TimeSeries, self).__setitem__(sindx, value)
     #........................
     def __getslice__(self, i, j):
@@ -1163,7 +1161,7 @@ def adjust_endpoints(a, start_date=None, end_date=None):
         newseries[start_date:end_date] = a[start_date:end_date]
     newseries.copy_attributes(a)
     return newseries
-#....................................................................
+#.....................................................
 def align_series(*series, **kwargs):
     """Aligns several TimeSeries, so that their starting and ending dates match.
     Series are resized and filled with mased values accordingly.
@@ -1196,6 +1194,19 @@ def align_series(*series, **kwargs):
 
     return [adjust_endpoints(x, start_date, end_date) for x in series]
 aligned = align_series
+
+#.....................................................
+def align_with(*series):
+    """Aligns several TimeSeries to the first of the list, so that their 
+    starting and ending dates match.
+    Series are resized and filled with mased values accordingly.
+    """
+    if len(series) < 2:
+        return series
+    dates = series[0]._dates[[0,-1]]
+    return [adjust_endpoints(x, dates[0], dates[-1]) for x in series[1:]]
+    
+    
 #....................................................................
 def _convert1d(series, freq, func='auto', position='END'):
     """Converts a series to a frequency. Private function called by convert
@@ -1538,56 +1549,17 @@ def empty_like(series):
 ################################################################################
 if __name__ == '__main__':
     from maskedarray.testutils import assert_equal, assert_array_equal
-    import numpy as N
-
     if 1:
-        dlist = ['2007-01-%02i' % i for i in range(1,11)]
+        dlist = ['2007-01-%02i' % i for i in range(1,16)]
         dates = date_array_fromlist(dlist)
-        data = masked_array(numeric.arange(10), mask=[1,0,0,0,0]*2, dtype=float_)
+        data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3)
+        series = time_series(data, dlist)
+        #
+        aseries = time_series(data, dates+10)
+        bseries = time_series(data, dates-10)
+        (a, b) = align_with(series, aseries, bseries)
+        assert_equal(a._dates, series._dates)
+        assert_equal(b._dates, series._dates)
+        assert_equal(a[-5:], series[:5])
+        assert_equal(b[:5], series[-5:])
 
-    if 0:
-        ser1d = time_series(data, dlist)
-
-        serfolded = ser1d.reshape((5,2))
-        assert_equal(serfolded._dates.shape, (5,2))
-        assert_equal(serfolded[0], time_series([0,1],mask=[1,0],
-                                               start_date=dates[0]))
-        assert_equal(serfolded[:,0],
-                     time_series(ser1d[::2], dates=dates[::2]))
-        sertrans = serfolded.transpose()
-        assert_equal(sertrans.shape, (2,5))
-
-    if 1:
-        data = dates
-        series = time_series(data, dates)
-        assert(isinstance(series, TimeSeries))
-        assert_equal(series._dates, dates)
-        assert_equal(series._data, data)
-        assert_equal(series.freqstr, 'D')
-
-        series[5] = MA.masked
-
-        # ensure that series can be represented by a string after masking a value
-        # (there was a bug before that prevented this from working when using a
-        # DateArray for the data)
-        strrep = str(series)
-    
-    if 0:
-        series = time_series(numpy.arange(1,501),
-                             start_date=Date('D', string='2007-01-01'))
-        mseries = convert(series, 'M')
-        aseries = convert(mseries, 'A')
-        (freq, func, position) = ('A', None, 'END')
-        
-        tmp = mseries[:,0].convert('A')
-        aseries = MA.concatenate([_convert1d(m,'A')._series for m in mseries.split()],
-                                 axis=-1).view(type(series))
-        aseries._dates = tmp._dates                                 
-        shp = aseries.shape
-        aseries.shape = (shp[0], shp[-1]//tmp.shape[-1], tmp.shape[-1])
-        numpy.swapaxes(aseries,1,2)
-    
-    if 1:
-        series = time_series(N.arange(124).reshape(62,2), 
-                             start_date=Date(freq='d', year=2005, month=7, day=1))
-        assert_equal(series.convert('M',sum), [[930,961],[2852,2883]])

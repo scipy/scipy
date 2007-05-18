@@ -346,11 +346,23 @@ class test_functions(NumpyTestCase):
                                    end_date=Date('D', string='2007-01-31'))
         assert_equal(dseries.size, 26)
         assert_equal(dseries._mask, N.r_[series._mask[5:], [1]*16])
+    #
+    def test_alignseries(self):
+        "Tests align_series & align_with"
+        (series, data, dates) = self.d
         #
         empty_series = time_series([], freq='d')
         a, b = align_series(series, empty_series)
         assert_equal(a.start_date, b.start_date)
         assert_equal(a.end_date, b.end_date)
+        #
+        aseries = time_series(data, dates+10)
+        bseries = time_series(data, dates-10)
+        (a, b) = align_with(series, aseries, bseries)
+        assert_equal(a._dates, series._dates)
+        assert_equal(b._dates, series._dates)
+        assert_equal(a[-5:], series[:5])
+        assert_equal(b[:5], series[-5:])
     #
     def test_tshift(self):
         "Test tshift function"

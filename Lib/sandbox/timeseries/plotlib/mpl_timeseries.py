@@ -719,6 +719,7 @@ This command accepts the same keywords as `matplotlib.plot`."""
         parms = self._check_plot_params(*parms)
         self.legendlabels.append(kwargs.get('label',None))
         Subplot.plot(self, *parms,**kwargs)
+        self.format_dateaxis()
     #............................................
     def format_dateaxis(self,maj_spacing=None, min_spacing=None,
                         strformat="%Y", rotate=True):

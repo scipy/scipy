@@ -213,8 +213,10 @@ accesses the array element by element. Therefore, `d` is a Date object.
         return
 
     def __getitem__(self, indx):
+        reset_full = True
         if isinstance(indx, Date):
             indx = self.find_dates(indx)
+            reset_full = False
         elif numeric.asarray(indx).dtype.kind == 'O':
             try:
                 indx = self.find_dates(indx)
@@ -231,11 +233,26 @@ accesses the array element by element. Therefore, `d` is a Date object.
             return Date(self.freq, value=r.item())
         else:
             if hasattr(r, '_cachedinfo'):
-                r._cachedinfo.update(dict(steps=None, full=None, hasdups=None))
-                for attr in ('tostr','toobj','toord'):
-                    if r._cachedinfo[attr] is not None:
-                        r._cachedinfo[attr] = r._cachedinfo[attr][indx]
+                _cache = r._cachedinfo
+                _cache.update(dict([(k,_cache[k][indx])
+                                    for k in ('toobj', 'tostr', 'toord')
+                                    if _cache[k] is not None]))
+                _cache['steps'] = None
+            if reset_full:
+                _cache['full'] = None
+                _cache['hasdups'] = None
+                
             return r
+
+    def __getslice__(self, i, j):
+        r = ndarray.__getslice__(self, i, j)
+        if hasattr(r, '_cachedinfo'):
+            _cache = r._cachedinfo
+            _cache.update(dict([(k,_cache[k][i:j])
+                                for k in ('toobj', 'tostr', 'toord')
+                                if _cache[k] is not None]))
+            _cache['steps'] = None
+        return r
 
     def __repr__(self):
         return ndarray.__repr__(self)[:-1] + \
@@ -676,7 +693,6 @@ if __name__ == '__main__':
         hodie = today('D')
         D = DateArray(today('D'))
         assert_equal(D.freq, 6000)
-
     if 0:
         freqs = [x[0] for x in corelib.freq_dict.values() if x[0] != 'U']
         print freqs
@@ -684,18 +700,20 @@ if __name__ == '__main__':
             print f
             today = thisday(f)
             assert(Date(freq=f, value=today.value) == today)
-
-    if 1:
+    if 0:
         D = date_array(freq='U', start_date=Date('U',1), length=10)
-
-    if 1:
+    if 0:
         dlist = ['2007-01-%02i' % i for i in (1,2,4,5,7,8,10,11,13)]
-
-
         ords = numpy.fromiter((DateTimeFromString(s).toordinal() for s in dlist),
                                float_)
-
-    if 1:
+    if 0:
         "Tests the automatic sorting of dates."
         D = date_array_fromlist(dlist=['2006-01','2005-01','2004-01'],freq='M')
         assert_equal(D.view(ndarray), [24037, 24049, 24061])
+
+    if 1:
+        dlist = ['2007-%02i' % i for i in range(1,5)+range(7,13)]
+        mdates = date_array_fromlist(dlist, 'M')
+        
+        print mdates.tostr()
+        
