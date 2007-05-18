@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <ctype.h>
 
+#define NO_IMPORT_ARRAY
 #include "numpy/libnumarray.h"
 
 #define MAX_ARRAYS 1024
@@ -224,12 +225,7 @@ static PyMethodDef _combineMethods[] = {
     {NULL, NULL} /* Sentinel */
 };
 
-/* platform independent*/
-#ifdef MS_WIN32
-__declspec(dllexport)
-#endif
-
-void init_combine(void)
+PyMODINIT_FUNC init_combine(void)
 {
 	PyObject *m, *d;
 	m = Py_InitModule("_combine", _combineMethods);

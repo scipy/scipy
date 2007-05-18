@@ -29,6 +29,7 @@
 
 #include <math.h>
 
+#define NO_IMPORT_ARRAY
 #include "numpy/libnumarray.h"
 
 
@@ -360,7 +361,7 @@ static PyMethodDef _lineshape_Methods[] = {
 
 /*** module initialization ***/
 
-DL_EXPORT(void) init_lineshape(void)
+PyMODINIT_FUNC init_lineshape(void)
 {
     PyObject *m, *d;
     m = Py_InitModule("_lineshape", _lineshape_Methods);

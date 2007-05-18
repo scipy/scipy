@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <ctype.h>
 
+#define NO_IMPORT_ARRAY
 #include "numpy/libnumarray.h"
 
 typedef enum
@@ -666,12 +667,7 @@ static PyMethodDef _correlateMethods[] = {
     {NULL, NULL} /* Sentinel */
 };
 
-/* platform independent*/
-#ifdef MS_WIN32
-__declspec(dllexport)
-#endif
-
-void init_correlate(void)
+PyMODINIT_FUNC init_correlate(void)
 {
 	PyObject *m, *d;
 	m = Py_InitModule("_correlate", _correlateMethods);
