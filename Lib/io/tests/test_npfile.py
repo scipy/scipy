@@ -12,6 +12,7 @@ class test_npfile(NumpyTestCase):
 
     def test_init(self):
         fd, fname = mkstemp()
+        os.close(fd)
         npf = npfile(fname)
         arr = N.reshape(N.arange(10), (5,2))
         self.assertRaises(IOError, npf.write_array, arr)
