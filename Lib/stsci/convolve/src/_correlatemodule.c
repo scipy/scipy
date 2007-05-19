@@ -5,7 +5,6 @@
 #include <signal.h>
 #include <ctype.h>
 
-#define NO_IMPORT_ARRAY
 #include "numpy/libnumarray.h"
 
 typedef enum

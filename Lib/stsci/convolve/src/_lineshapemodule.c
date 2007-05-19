@@ -29,7 +29,6 @@
 
 #include <math.h>
 
-#define NO_IMPORT_ARRAY
 #include "numpy/libnumarray.h"
 
 
