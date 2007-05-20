@@ -6,267 +6,71 @@
 
 #include "fftpack.h"
 
-/**************** FFTWORK *****************************/
-
-#ifdef WITH_FFTWORK
-GEN_CACHE(zfftwork,(int n)
-	  ,coef_dbl* coef;
-	  ,caches_zfftwork[i].n==n
-	  ,caches_zfftwork[id].coef = (coef_dbl*)malloc(sizeof(coef_dbl)*(n));
-	   fft_coef_dbl(caches_zfftwork[id].coef,n);
-	  ,free(caches_zfftwork[id].coef);
-	  ,10)
-#endif
-
-/**************** DJBFFT *****************************/
-#ifndef WITH_MKL
-#ifdef WITH_DJBFFT
-GEN_CACHE(zdjbfft,(int n)
-	  ,unsigned int* f;
-	   double* ptr;
-	  ,caches_zdjbfft[i].n==n
-	  ,caches_zdjbfft[id].f = (unsigned int*)malloc(sizeof(unsigned int)*(n));
-	   caches_zdjbfft[id].ptr = (double*)malloc(sizeof(double)*(2*n));
-	   fftfreq_ctable(caches_zdjbfft[id].f,n);
-           for(i=0;i<n;++i) 
-	     caches_zdjbfft[id].f[i] = (n-caches_zdjbfft[id].f[i])%n;
-	  ,free(caches_zdjbfft[id].f);
-	   free(caches_zdjbfft[id].ptr);
-	  ,10)
-#endif
-#endif
-
-/**************** INTEL MKL **************************/
-#ifdef WITH_MKL
-GEN_CACHE(zmklfft,(int n)
-	  ,DFTI_DESCRIPTOR_HANDLE desc_handle;
-	  ,(caches_zmklfft[i].n==n)
-      ,DftiCreateDescriptor(&caches_zmklfft[id].desc_handle, DFTI_DOUBLE, DFTI_COMPLEX, 1, (long)n); 
-       DftiCommitDescriptor(caches_zmklfft[id].desc_handle);
-	  ,DftiFreeDescriptor(&caches_zmklfft[id].desc_handle);
-	  ,10)
-
-/**************** FFTW3 *****************************/
-#elif defined WITH_FFTW3
-GEN_CACHE(zfftw,(int n,int d)
-	,int direction;
-	fftw_plan plan;
-	fftw_complex* ptr;
-	,((caches_zfftw[i].n==n) &&
-	    (caches_zfftw[i].direction==d))
-	,caches_zfftw[id].direction = d;
-	caches_zfftw[id].ptr = fftw_malloc(sizeof(fftw_complex)*(n));
-	    caches_zfftw[id].plan = fftw_plan_dft_1d(n, caches_zfftw[id].ptr,
-	caches_zfftw[id].ptr,
-		(d>0?FFTW_FORWARD:FFTW_BACKWARD),
-		FFTW_ESTIMATE);
-	,fftw_destroy_plan(caches_zfftw[id].plan);
-	fftw_free(caches_zfftw[id].ptr);
-	,10)
-
-#elif defined WITH_FFTW
-/**************** FFTW2 *****************************/
-GEN_CACHE(zfftw,(int n,int d)
-	  ,int direction;
-	   fftw_plan plan;
-	  ,((caches_zfftw[i].n==n) && 
-	    (caches_zfftw[i].direction==d))
-	  ,caches_zfftw[id].direction = d;
-	   caches_zfftw[id].plan = fftw_create_plan(n,
-		(d>0?FFTW_FORWARD:FFTW_BACKWARD),
-		FFTW_IN_PLACE|FFTW_ESTIMATE);
-	  ,fftw_destroy_plan(caches_zfftw[id].plan);
-	  ,10)
-#else
-/**************** FFTPACK ZFFT **********************/
-extern void F_FUNC(zfftf,ZFFTF)(int*,double*,double*);
-extern void F_FUNC(zfftb,ZFFTB)(int*,double*,double*);
-extern void F_FUNC(zffti,ZFFTI)(int*,double*);
-GEN_CACHE(zfftpack,(int n)
-	  ,double* wsave;
-	  ,(caches_zfftpack[i].n==n)
-	  ,caches_zfftpack[id].wsave = (double*)malloc(sizeof(double)*(4*n+15));
-	   F_FUNC(zffti,ZFFTI)(&n,caches_zfftpack[id].wsave);
-	  ,free(caches_zfftpack[id].wsave);
-	  ,10)
-#endif
-
-extern void destroy_zfft_cache(void) {
-#ifdef WITH_FFTWORK
-  destroy_zfftwork_caches();
-#endif
-#ifndef WITH_MKL
-#ifdef WITH_DJBFFT
-  destroy_zdjbfft_caches();
-#endif
-#endif
-#ifdef WITH_MKL
-  destroy_zmklfft_caches();
-#elif defined WITH_FFTW3
-  destroy_zfftw_caches();
-#elif defined WITH_FFTW
-  destroy_zfftw_caches();
-#else
-  destroy_zfftpack_caches();
-#endif
+/* The following macro convert private backend specific function to the public
+ * functions exported by the module  */
+#define GEN_PUBLIC_API(name) \
+void destroy_zfft_cache(void)\
+{\
+        destroy_z##name##_caches();\
+}\
+\
+void zfft(complex_double *inout, int n, \
+        int direction, int howmany, int normalize)\
+{\
+        zfft_##name(inout, n, direction, howmany, normalize);\
 }
 
-/**************** ZFFT function **********************/
-extern void zfft(complex_double *inout,
-		 int n,int direction,int howmany,int normalize) {
-  int i;
-  complex_double *ptr = inout;
-#ifndef WITH_MKL
+/* ************** Definition of backend specific functions ********* */
+
+/*
+ * To add a backend :
+ *  - create a file zfft_name.c, where you define a function zfft_name where
+ *  name is the name of your backend. If you do not use the GEN_CACHE macro,
+ *  you will need to define a function void destroy_zname_caches(void), 
+ *  which can do nothing
+ *  - in zfft.c, include the zfft_name.c file, and add the 3 following lines
+ *  just after it:
+ *  #ifndef WITH_DJBFFT
+ *      GEN_PUBLIC_API(name)
+ *  #endif
+ */
+
 #ifdef WITH_FFTW3
-  fftw_complex *ptrm = NULL;
-#endif
-#if defined(WITH_FFTW) || defined(WITH_FFTW3)
-  fftw_plan plan = NULL;
-#endif
-#endif
-#if defined WITH_MKL
-  DFTI_DESCRIPTOR_HANDLE desc_handle;
-#else
-  double* wsave = NULL;
-#endif
-#ifdef WITH_FFTWORK
-  coef_dbl* coef = NULL;
-#endif
-#ifndef WITH_MKL
-#ifdef WITH_DJBFFT
-  int j;
-  complex_double *ptrc = NULL;
-  unsigned int *f = NULL;
-#endif
-#endif
-#ifdef WITH_FFTWORK
-  if (ispow2le2e30(n)) {
-    i = get_cache_id_zfftwork(n);
-    coef = caches_zfftwork[i].coef;
-  } else
-#endif
-#ifndef WITH_MKL
-#ifdef WITH_DJBFFT
-  switch (n) {
-  case 2:;case 4:;case 8:;case 16:;case 32:;case 64:;case 128:;case 256:;
-  case 512:;case 1024:;case 2048:;case 4096:;case 8192:
-    i = get_cache_id_zdjbfft(n);
-    f = caches_zdjbfft[i].f;
-    ptrc = (complex_double*)caches_zdjbfft[i].ptr;
-  }
-  if (f==0)
-#endif
-#endif
-#ifdef WITH_MKL
-  desc_handle = caches_zmklfft[get_cache_id_zmklfft(n)].desc_handle;
-#elif defined WITH_FFTW3
-    plan = caches_zfftw[get_cache_id_zfftw(n,direction)].plan;
+    #include "zfft_fftw3.c"
+    #ifndef WITH_DJBFFT
+        GEN_PUBLIC_API(fftw3)
+    #endif
 #elif defined WITH_FFTW
-    plan = caches_zfftw[get_cache_id_zfftw(n,direction)].plan;
-#else
-    wsave = caches_zfftpack[get_cache_id_zfftpack(n)].wsave;
+    #include "zfft_fftw.c"
+    #ifndef WITH_DJBFFT
+        GEN_PUBLIC_API(fftw)
+    #endif
+#elif defined WITH_MKL
+    #include "zfft_mkl.c"
+    #ifndef WITH_DJBFFT
+        GEN_PUBLIC_API(mkl)
+    #endif
+#else /* Use fftpack by default */
+    #include "zfft_fftpack.c"
+    #ifndef WITH_DJBFFT
+        GEN_PUBLIC_API(fftpack)
+    #endif 
 #endif
 
-  switch (direction) {
-
-  case 1:
-    for (i=0;i<howmany;++i,ptr+=n) {
-#ifdef WITH_FFTWORK
-      if (coef!=NULL) {
-        fft_for_cplx_flt((cplx_dbl*)ptr,coef,n);
-      } else
-#endif
-#ifndef WITH_MKL
+/* 
+ * djbfft must be used at the end, because it needs another backend (defined
+ * above) for non 2^n * size 
+ */
 #ifdef WITH_DJBFFT
-      if (f!=NULL) {
-	memcpy(ptrc,ptr,2*n*sizeof(double));
-	switch (n) {
-#define TMPCASE(N) case N:  fftc8_##N(ptrc); break
-	  TMPCASE(2);TMPCASE(4);TMPCASE(8);TMPCASE(16);TMPCASE(32);
-	  TMPCASE(64);TMPCASE(128);TMPCASE(256);TMPCASE(512);
-	  TMPCASE(1024);TMPCASE(2048);TMPCASE(4096);TMPCASE(8192);
-#undef TMPCASE
-	}
-	for (j=0;j<n;++j) *(ptr+f[j]) = *(ptrc+j);
-      } else
-#endif
-#endif
-#ifdef WITH_MKL
-    DftiComputeForward(desc_handle, (double *)ptr);
-#elif defined WITH_FFTW3
-	ptrm = caches_zfftw[get_cache_id_zfftw(n,direction)].ptr;
-	memcpy(ptrm, ptr, sizeof(double)*2*n);
-	fftw_execute(plan);
-	memcpy(ptr, ptrm, sizeof(double)*2*n);
-#elif defined WITH_FFTW
-        fftw_one(plan,(fftw_complex*)ptr,NULL);
-#else
-	F_FUNC(zfftf,ZFFTF)(&n,(double*)(ptr),wsave);
-#endif
+    #include "zfft_djbfft.c"
+    void destroy_zfft_cache(void)
+    {
+        destroy_zdjbfft_caches();
+        zfft_def_destroy_cache();
     }
-    break;
-
-  case -1:
-    for (i=0;i<howmany;++i,ptr+=n) {
-#ifdef WITH_FFTWORK
-      if (coef!=NULL) {
-	fft_bak_cplx_flt((cplx_dbl*)ptr,coef,n);
-      } else
-#endif
-#ifndef WITH_MKL
-#ifdef WITH_DJBFFT
-      if (f!=NULL) {
-	for (j=0;j<n;++j) *(ptrc+j) = *(ptr+f[j]);
-	switch (n) {
-#define TMPCASE(N) case N:  fftc8_un##N(ptrc); break
-	  TMPCASE(2);TMPCASE(4);TMPCASE(8);TMPCASE(16);TMPCASE(32);
-	  TMPCASE(64);TMPCASE(128);TMPCASE(256);TMPCASE(512);
-	  TMPCASE(1024);TMPCASE(2048);TMPCASE(4096);TMPCASE(8192);
-#undef TMPCASE
-	}
-	memcpy(ptr,ptrc,2*n*sizeof(double));
-      } else
-#endif
-#endif
-#ifdef WITH_MKL
-    DftiComputeBackward(desc_handle, (double *)ptr);
-#elif defined WITH_FFTW3
-	ptrm = caches_zfftw[get_cache_id_zfftw(n,direction)].ptr;
-	memcpy(ptrm, ptr, sizeof(double)*2*n);
-	fftw_execute(plan);
-	memcpy(ptr, ptrm, sizeof(double)*2*n);
-#elif defined WITH_FFTW
-        fftw_one(plan,(fftw_complex*)ptr,NULL);
-#else
-	F_FUNC(zfftb,ZFFTB)(&n,(double*)(ptr),wsave);
-#endif
+    void zfft(complex_double *inout, int n, 
+            int direction, int howmany, int normalize)
+    {
+        zfft_djbfft(inout, n, direction, howmany, normalize);
     }
-    break;
-
-  default:
-    fprintf(stderr,"zfft: invalid direction=%d\n",direction);
-  }
-
-  if (normalize) {
-    ptr = inout;
-#ifndef WITH_MKL
-#ifdef WITH_DJBFFT
-    if (f!=NULL) {
-      for (i=0;i<howmany;++i,ptr+=n) {
-	switch (n) {
-#define TMPCASE(N) case N:  fftc8_scale##N(ptr); break
-	  TMPCASE(2);TMPCASE(4);TMPCASE(8);TMPCASE(16);TMPCASE(32);
-	  TMPCASE(64);TMPCASE(128);TMPCASE(256);TMPCASE(512);
-	  TMPCASE(1024);TMPCASE(2048);TMPCASE(4096);TMPCASE(8192);
-#undef TMPCASE
-	}
-      }
-    } else
 #endif
-#endif
-      for (i=n*howmany-1;i>=0;--i) {
-	*((double*)(ptr)) /= n;
-	*((double*)(ptr++)+1) /= n;
-      }
-  }
-}
