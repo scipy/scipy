@@ -67,7 +67,7 @@ def freqs(b,a,worN=None,plot=None):
         plot(w, h)
     return w, h
 
-def freqz(b, a, worN=None, whole=0, plot=None):
+def freqz(b, a=1, worN=None, whole=0, plot=None):
     """Compute frequency response of a digital filter.
 
     Description:
@@ -95,6 +95,7 @@ def freqz(b, a, worN=None, whole=0, plot=None):
 
        w -- The frequencies at which h was computed.
        h -- The frequency response.
+
     """
     b, a = map(atleast_1d, (b,a))
     if whole:
