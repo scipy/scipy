@@ -268,6 +268,7 @@ If `ondates` is False, the `_dates` part remains unchanged.
             result._dates = getattr(instance._dates, _name)(*args)
         else:
             result._dates = instance._dates
+        result.copy_attributes(instance)
         return result
 
 class _tsaxismethod(object):
