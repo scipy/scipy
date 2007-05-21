@@ -1,9 +1,9 @@
-GEN_CACHE(zmklfft,(int n)
+GEN_CACHE(zmkl,(int n)
 	  ,DFTI_DESCRIPTOR_HANDLE desc_handle;
-	  ,(caches_zmklfft[i].n==n)
-      ,DftiCreateDescriptor(&caches_zmklfft[id].desc_handle, DFTI_DOUBLE, DFTI_COMPLEX, 1, (long)n); 
-       DftiCommitDescriptor(caches_zmklfft[id].desc_handle);
-	  ,DftiFreeDescriptor(&caches_zmklfft[id].desc_handle);
+	  ,(caches_zmkl[i].n==n)
+      ,DftiCreateDescriptor(&caches_zmkl[id].desc_handle, DFTI_DOUBLE, DFTI_COMPLEX, 1, (long)n); 
+       DftiCommitDescriptor(caches_zmkl[id].desc_handle);
+	  ,DftiFreeDescriptor(&caches_zmkl[id].desc_handle);
 	  ,10)
 
 static void zfft_mkl(complex_double * inout,
@@ -12,7 +12,7 @@ static void zfft_mkl(complex_double * inout,
 	int i;
 	complex_double *ptr = inout;
 	DFTI_DESCRIPTOR_HANDLE desc_handle;
-	desc_handle = caches_zmklfft[get_cache_id_zmklfft(n)].desc_handle;
+	desc_handle = caches_zmkl[get_cache_id_zmkl(n)].desc_handle;
 
 	switch (direction) {
 
