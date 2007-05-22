@@ -9,6 +9,7 @@ from numpy import shape, sometrue, rank, array, transpose, \
      logical_or, atleast_1d, atleast_2d, meshgrid, ravel
 import numpy as np
 import scipy.linalg as slin
+import math
 
 import fitpack
 
@@ -352,6 +353,57 @@ class ppform(object):
         res = array([np.dot(V[k,:],pp[:,indxs[k]]) for k in xrange(len(xnew))])
         return res
 
+def _setdiag(a, k, v):
+    assert (a.ndim==2)
+    M,N = a.shape
+    if k > 0:
+        start = k
+        num = N-k
+    else:
+        num = M+k
+        start = abs(k)*N
+    end = start + num*(N+1)-1
+    a.flat[start:end:(N+1)] = v
+
+# Return the spline that minimizes the dis-continuity of the
+# "order-th" derivative; for order >= 2.  
+
+def _find_smoothest2(xk, yk):
+    N = len(xk)-1
+    Np1 = N+1
+    # find pseudo-inverse of B directly.
+    Bd = np.empty((Np1,N))
+    for k in range(-N,N):
+        if (k<0):
+            l = np.arange(-k,Np1)
+            v = (l+k+1)
+            if ((k+1) % 2):
+                v = -v
+        else:
+            l = np.arange(k,N)
+            v = N-l
+            if ((k % 2)):
+                v = -v
+        _setdiag(Bd,k,v)
+    Bd /= (Np1)
+    V2 = np.ones((Np1,))
+    V2[1::2] = -1
+    V2 /= math.sqrt(Np1)
+    dk = np.diff(xk)
+    b = 2*np.diff(yk)/dk
+    J = np.zeros((N-1,N+1))
+    idk = 1.0/dk
+    _setdiag(J,0,idk[:-1])
+    _setdiag(J,1,-idk[1:]-idk[:-1])
+    _setdiag(J,2,idk[1:])
+    A = np.dot(J.T,J)
+    val = np.dot(V2,np.dot(A,V2))
+    res1 = np.dot(np.outer(V2,V2)/val,A)
+    mk = np.dot(np.eye(Np1)-res1,np.dot(Bd,b))
+    return mk    
+    
+    
+
 def _get_spline2_Bb(xk, yk, kind, conds):
     Np1 = len(xk)
     dk = xk[1:]-xk[:-1]
@@ -552,6 +604,7 @@ def _sp3topp(mk,xk,yk):
     c0 += (yk[:-1]*xk[1:] - yk[1:]*xk[:-1])/dk
     return ppform([c3,c2,c1,c0], xk)
 
+
 def splmake(xk,yk,order=3,kind='not-a-knot',conds=None):
     """Return an (mk,xk,yk,order) representation of a spline given
     data-points
@@ -562,7 +615,7 @@ def splmake(xk,yk,order=3,kind='not-a-knot',conds=None):
 
     kind can be 'natural', 'second', 'first', 'clamped', 'endslope',
                 'periodic', 'symmetric', 'parabolic', 'not-a-knot',
-                'runout'
+                'runout', 'smoothest'
 
     for 'second', and 'first' conditions can be given which should
     be the desired second and first derivatives at
@@ -577,10 +630,16 @@ def splmake(xk,yk,order=3,kind='not-a-knot',conds=None):
     if order < 2:
         raise ValueError("order cannot be negative")
 
+    if kind == 'smoothest':
+        func = eval('_find_smoothest%d' % order)
+        mk = func(xk,yk)
+        return mk, xk, yk, order        
+
     try:
         func = eval('_get_spline%d_Bb'%order)
     except NameError:
         raise ValueError("order %d not available" % order)
+
 
     B,b,exfunc,nlu = func(xk, yk, kind, conds)
 
@@ -597,13 +656,19 @@ def splmake(xk,yk,order=3,kind='not-a-knot',conds=None):
     return mk, xk, yk, order
 
 def spleval((mk,xk,yk,order),xnew):
+    """Evaluate a spline represented by a tuple at the new x-values.
+    """
     func = eval('_sp%deval'%order)
     return func((mk,xk,yk),xnew)
 
 def spltopp(mk,xk,yk,order=3):
+    """Return a piece-wise polynomial object from a spline tuple.
+    """
     return eval('_sp%dtopp'%order)(mk,xk,yk)
 
 def spline(xk,yk,xnew,order=3,kind='not-a-knot',conds=None):
+    """Interpolate a curve (xk,yk) at points xnew using a spline fit.
+    """
     func = eval('_sp%deval'%order)
     return func(splmake(xk,yk,order=order,kind=kind,conds=conds)[:-1],xnew)
 
