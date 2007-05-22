@@ -27,16 +27,18 @@ def configuration(parent_package='',top_path=None):
                'src/zfftnd.c']
 
     config.add_extension('_fftpack',
-                         sources=sources,
-                         libraries=['dfftpack'],
-                         extra_info = [fft_opt_info, djbfft_info],
-                         )
+        sources=sources,
+        libraries=['dfftpack'],
+        extra_info=[fft_opt_info, djbfft_info],
+        depends=['src/zfft_djbfft.c', 'src/zfft_fftpack.c', 'src/zfft_fftw.c',
+            'src/zfft_fftw3.c', 'src/zfft_mkl.c'],
+    )
 
     config.add_extension('convolve',
-                         sources = ['convolve.pyf','src/convolve.c'],
-                         libraries = ['dfftpack'],
-                         extra_info = [fft_opt_info, djbfft_info],
-                         )
+        sources=['convolve.pyf','src/convolve.c'],
+        libraries=['dfftpack'],
+        extra_info=[fft_opt_info, djbfft_info],
+    )
     return config
 
 if __name__ == '__main__':
