@@ -145,7 +145,7 @@ def lobpcg( blockVectorX, operatorA,
 ##               operatorA.shape
 
     if residualTolerance is None:
-        residualTolerance = sqrt( 1e-15 ) * n
+        residualTolerance = nm.sqrt( 1e-15 ) * n
 
     maxIterations = min( n, maxIterations )
 
@@ -283,8 +283,9 @@ def lobpcg( blockVectorX, operatorA,
 
         ##
         # Apply constraints to the preconditioned residuals.
-        applyConstraints( activeBlockVectorR,
-                          gramYBY, blockVectorBY, blockVectorY )
+        if blockVectorY is not None:
+            applyConstraints( activeBlockVectorR,
+                              gramYBY, blockVectorBY, blockVectorY )
 
 #        assert nm.all( blockVectorR == activeBlockVectorR )
 
