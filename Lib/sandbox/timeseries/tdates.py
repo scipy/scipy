@@ -336,7 +336,8 @@ For non-quarterly dates, this simply returns the year of the date."""
 
     def __getdateinfo__(self, info):
         return numeric.asarray(cseries.DA_getDateInfo(numeric.asarray(self),
-                                                      self.freq, info),
+                                                      self.freq, info,
+                                                      int(self.isfull())),
                                dtype=int_)
     __getDateInfo = __getdateinfo__
     #.... Conversion methods ....................
