@@ -401,7 +401,34 @@ def _find_smoothest2(xk, yk):
     res1 = np.dot(np.outer(V2,V2)/val,A)
     mk = np.dot(np.eye(Np1)-res1,np.dot(Bd,b))
     return mk    
-    
+
+def _find_smoothest3(xk, yk):
+    N = len(xk)-1
+    Np1 = N+1
+    Nm1 = N-1
+    dk = np.diff(xk)    
+    # find B and then take pseudo-inverse
+    B = np.zeros((Nm1,Np1))
+    _setdiag(B,0,dk[:-1])
+    _setdiag(B,1,2*(dk[1:]+dk[:-1]))
+    _setdiag(B,2,dk[1:])
+    u,s,vh = np.dual.svd(B)
+    V2 = vh[-2:,:].T
+    Bd = np.dot(vh[:-2,:].T, np.dot(diag(1.0/s),u.T))
+    b0 = np.diff(yk)/dk
+    b = 6*np.diff(b0)
+    J = np.zeros((N-1,N+1))
+    idk = 1.0/dk
+    _setdiag(J,0,idk[:-1])
+    _setdiag(J,1,-idk[1:]-idk[:-1])
+    _setdiag(J,2,idk[1:])
+    A = np.dot(J.T,J)
+    sub = np.dot(V2.T,np.dot(A,V2))
+    subi = np.linalg.inv(sub)
+    res0 = np.dot(V2,subi)
+    res1 = np.dot(res0,np.dot(V2.T,A))
+    mk = np.dot(np.eye(Np1)-res1,np.dot(Bd,b))
+    return mk        
     
 
 def _get_spline2_Bb(xk, yk, kind, conds):
