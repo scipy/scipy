@@ -37,9 +37,28 @@ NC_ATTRIBUTE = '\x00\x00\x00\x0c'
 class netcdf_file(object):
     """A NetCDF file parser."""
 
-    def __init__(self, file):
-        self._buffer = open(file, 'rb')
-        self._parse()
+    def __init__(self, file, mode):
+        mode += 'b'
+        self._buffer = open(file, mode)
+        if mode in ['rb', 'r+b']:
+            self._parse()
+        elif mode == 'ab':
+            raise NotImplementedError
+
+    def flush(self):
+        pass
+
+    def sync(self):
+        pass
+
+    def close(self):
+        pass
+
+    def create_dimension(self, name, length):
+        pass
+
+    def create_variable(self, name, type, dimensions):
+        pass
 
     def read(self, size=-1):
         """Alias for reading the file buffer."""
@@ -225,6 +244,11 @@ class netcdf_variable(object):
         if isrec:
             # Record variables are not stored contiguosly on disk, so we 
             # need to create a separate array for each record.
+            #
+            # TEO:  This will copy data from the newly-created array
+            #  into the __array_data__ region, thus removing any benefit of using
+            #  a memory-mapped file.  You might as well just read the data
+            #  in directly. 
             self.__array_data__ = zeros(shape, dtype)
             bytes += (shape[0] - 1) * recsize
             for n in range(shape[0]):
@@ -250,6 +274,10 @@ class netcdf_variable(object):
         """For scalars."""
         return self.__array_data__.item()
 
+    def assignValue(self, value):
+        """For scalars."""
+        self.__array_data__.itemset(value)
+    
     def typecode(self):
         return ['b', 'c', 'h', 'i', 'f', 'd'][self._nc_type-1]
 

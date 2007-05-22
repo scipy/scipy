@@ -553,7 +553,7 @@ def _sp3topp(mk,xk,yk):
     return ppform([c3,c2,c1,c0], xk)
 
 def splmake(xk,yk,order=3,kind='not-a-knot',conds=None):
-    """Return an (mk,xk,yk) representation of a spline given
+    """Return an (mk,xk,yk,order) representation of a spline given
     data-points
 
     yk can be an N-d array to represent more than one curve, through
@@ -603,9 +603,9 @@ def spleval((mk,xk,yk,order),xnew):
 def spltopp(mk,xk,yk,order=3):
     return eval('_sp%dtopp'%order)(mk,xk,yk)
 
-def spline(xk,yk,xnew,order=3,kwds='not-a-knot',conds=None):
+def spline(xk,yk,xnew,order=3,kind='not-a-knot',conds=None):
     func = eval('_sp%deval'%order)
-    return func(splmake(xk,yk,order=order,kind=kind,conds=conds),xnew)
+    return func(splmake(xk,yk,order=order,kind=kind,conds=conds)[:-1],xnew)
 
 def _sp2topp(zk,xk,yk):
     dk = xk[1:]-xk[:-1]
@@ -626,7 +626,7 @@ def _sp2eval((zk,xk,yk),xnew):
     res *= d
     res += zk0
     res *= d
-    res += wk[indxs]
+    res += yk[indxs]
     return res
     
 def _sp4topp(mk,xk,yk):
