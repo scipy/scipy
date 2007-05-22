@@ -122,24 +122,36 @@ class TimeSeriesCompatibilityError(TimeSeriesError):
         TimeSeriesError.__init__(self, msg)
 
 #def _compatibilitycheck(a, b):
-def _timeseriescompat(a, b):
+def _timeseriescompat(a, b, raise_error=True):
     """Checks the date compatibility of two TimeSeries object.
     Returns True if everything's fine, or raises an exception."""
     if not (hasattr(a,'freq') and hasattr(b, 'freq')):
         return True
     if a.freq != b.freq:
-        raise TimeSeriesCompatibilityError('freq', a.freq, b.freq)
+        if raise_error:
+            raise TimeSeriesCompatibilityError('freq', a.freq, b.freq)
+        else:
+            return False
     elif a.start_date != b.start_date:
-        raise TimeSeriesCompatibilityError('start_date',
-                                           a.start_date, b.start_date)
+        if raise_error:
+            raise TimeSeriesCompatibilityError('start_date',
+                                               a.start_date, b.start_date)
+        else:
+            return False
     else:
         step_diff = a._dates.get_steps() != b._dates.get_steps()
         if (step_diff is True) or (hasattr(step_diff, "any") and step_diff.any()):
-            raise TimeSeriesCompatibilityError('time_steps',
-                                               a._dates.get_steps(), b._dates.get_steps())
+            if raise_error:
+                raise TimeSeriesCompatibilityError('time_steps',
+                                                   a._dates.get_steps(), b._dates.get_steps())
+            else:
+                return False
         elif a.shape != b.shape:
-            raise TimeSeriesCompatibilityError('size', "1: %s" % str(a.shape),
-                                                   "2: %s" % str(b.shape))
+            if raise_error:
+                raise TimeSeriesCompatibilityError('size', "1: %s" % str(a.shape),
+                                                       "2: %s" % str(b.shape))
+            else:
+                return False
     return True
 
 
@@ -234,10 +246,16 @@ The `_dates` part remains unchanged.
         "Execute the call behavior."
         instance = self.obj
         if isinstance(other, TimeSeries):
-            assert(_timeseriescompat(instance, other))
+            compat = _timeseriescompat(instance, other, raise_error=False)
+        else:
+            compat = True
+
         func = getattr(super(TimeSeries, instance), self._name)
-        result = func(other, *args).view(type(instance))
-        result._dates = instance._dates
+        if compat:
+            result = func(other, *args).view(type(instance))
+            result._dates = instance._dates
+        else:
+            result = func(other, *args)._series
         return result
 
 class _tsarraymethod(object):
