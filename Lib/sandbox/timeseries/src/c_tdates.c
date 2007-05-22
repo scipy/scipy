@@ -2429,19 +2429,169 @@ DateArray_asfreq(PyObject *self, PyObject *args)
 
 }
 
+/**************************************************************
+** The following functions are used by DateArray_getDateInfo **
+** to determine how many consecutive periods will have the   **
+** same result                                               **
+**************************************************************/
+
+// also used for qyear
+static int __skip_periods_year(int freq) {
+
+    int freq_group = get_freq_group(freq);
+
+    switch(freq_group)
+    {
+        case FR_QTR:
+            return 4;
+        case FR_MTH:
+            return 12;
+        case FR_WK:
+            return 51;
+        case FR_BUS:
+            return 260;
+        case FR_DAY:
+            return 365;
+        case FR_HR:
+            return 365*24;
+        case FR_MIN:
+            return 365*24*60;
+        case FR_SEC:
+            return 365*24*60*60;
+        default:
+            return 1;
+    }
+}
+
+static int __skip_periods_quarter(int freq) {
+
+    int freq_group = get_freq_group(freq);
+
+    switch(freq_group)
+    {
+        case FR_MTH:
+            return 3;
+        case FR_WK:
+            return 12;
+        case FR_BUS:
+            return 64;
+        case FR_DAY:
+            return 90;
+        case FR_HR:
+            return 90*24;
+        case FR_MIN:
+            return 90*24*60;
+        case FR_SEC:
+            return 90*24*60*60;
+        default:
+            return 1;
+    }
+}
+
+static int __skip_periods_month(int freq) {
+
+    int freq_group = get_freq_group(freq);
+
+    switch(freq_group)
+    {
+        case FR_WK:
+            return 3;
+        case FR_BUS:
+            return 20;
+        case FR_DAY:
+            return 28;
+        case FR_HR:
+            return 28*24;
+        case FR_MIN:
+            return 28*24*60;
+        case FR_SEC:
+            return 28*24*60*60;
+        default:
+            return 1;
+    }
+}
+
+// also used for day_of_year, day_of_week
+static int __skip_periods_day(int freq) {
+
+    int freq_group = get_freq_group(freq);
+
+    switch(freq_group)
+    {
+        case FR_HR:
+            return 24;
+        case FR_MIN:
+            return 24*60;
+        case FR_SEC:
+            return 24*60*60;
+        default:
+            return 1;
+    }
+}
+
+static int __skip_periods_week(int freq) {
+
+    int freq_group = get_freq_group(freq);
+
+    switch(freq_group)
+    {
+        case FR_BUS:
+            return 5;
+        case FR_DAY:
+            return 7;
+        case FR_HR:
+            return 7*28*24;
+        case FR_MIN:
+            return 7*28*24*60;
+        case FR_SEC:
+            return 7*28*24*60*60;
+        default:
+            return 1;
+    }
+}
+
+static int __skip_periods_hour(int freq) {
+
+    int freq_group = get_freq_group(freq);
+
+    switch(freq_group)
+    {
+        case FR_MIN:
+            return 60;
+        case FR_SEC:
+            return 60*60;
+        default:
+            return 1;
+    }
+}
+
+static int __skip_periods_minute(int freq) {
+
+    int freq_group = get_freq_group(freq);
+
+    switch(freq_group)
+    {
+        case FR_SEC:
+            return 60;
+        default:
+            return 1;
+    }
+}
+
 PyObject *
 DateArray_getDateInfo(PyObject *self, PyObject *args)
 {
-    int freq;
+    int freq, is_full, skip_periods, counter=1, val_changed=0;
     char *info;
 
-    PyArrayObject *array;
-    PyArrayObject *newArray;
+    PyObject *prev_val=NULL;
+    PyArrayObject *array, *newArray;
     PyArrayIterObject *iterSource, *iterResult;
 
     PyObject* (*getDateInfo)(DateObject*, void*) = NULL;
 
-    if (!PyArg_ParseTuple(args, "Ois:getDateInfo(array, freq, info)", &array, &freq, &info)) return NULL;
+    if (!PyArg_ParseTuple(args, "Oisi:getDateInfo(array, freq, info, is_full)",
+                                &array, &freq, &info, &is_full)) return NULL;
     newArray = (PyArrayObject *)PyArray_Copy(array);
 
     iterSource = (PyArrayIterObject *)PyArray_IterNew((PyObject *)array);
@@ -2452,59 +2602,95 @@ DateArray_getDateInfo(PyObject *self, PyObject *args)
     {
         case 'Y': //year
             getDateInfo = &DateObject_year;
+            skip_periods = __skip_periods_year(freq);
             break;
         case 'F': //"fiscal" year
             getDateInfo = &DateObject_qyear;
+            skip_periods = __skip_periods_year(freq);
             break;
         case 'Q': //quarter
             getDateInfo = &DateObject_quarter;
+            skip_periods = __skip_periods_quarter(freq);
             break;
         case 'M': //month
             getDateInfo = &DateObject_month;
+            skip_periods = __skip_periods_month(freq);
             break;
         case 'D': //day
             getDateInfo = &DateObject_day;
+            skip_periods = __skip_periods_day(freq);
             break;
         case 'R': //day of year
             getDateInfo = &DateObject_day_of_year;
+            skip_periods = __skip_periods_day(freq);
             break;
         case 'W': //day of week
             getDateInfo = &DateObject_day_of_week;
+            skip_periods = __skip_periods_day(freq);
             break;
         case 'I': //week of year
             getDateInfo = &DateObject_week;
+            skip_periods = __skip_periods_week(freq);
             break;
         case 'H': //hour
             getDateInfo = &DateObject_hour;
+            skip_periods = __skip_periods_hour(freq);
             break;
         case 'T': //minute
             getDateInfo = &DateObject_minute;
+            skip_periods = __skip_periods_minute(freq);
             break;
         case 'S': //second
             getDateInfo = &DateObject_second;
+            skip_periods = 1;
             break;
         default:
             return NULL;
     }
 
-    while (iterSource->index < iterSource->size) {
+    {
         DateObject *curr_date;
         PyObject *val, *dInfo;
 
-        val = PyArray_GETITEM(array, iterSource->dataptr);
-        curr_date = DateObject_FromFreqAndValue(freq, PyInt_AsLong(val));
-        dInfo = getDateInfo(curr_date, NULL);
+        while (iterSource->index < iterSource->size) {
 
-        PyArray_SETITEM(newArray, iterResult->dataptr, dInfo);
+            if ((val_changed == 0) ||
+                (is_full == 0) ||
+                (prev_val == NULL) ||
+                (counter >= skip_periods)) {
 
-        Py_DECREF(val);
-        Py_DECREF(curr_date);
-        Py_DECREF(dInfo);
+                   val = PyArray_GETITEM(array, iterSource->dataptr);
+                   curr_date = DateObject_FromFreqAndValue(freq, PyInt_AsLong(val));
+                   dInfo = getDateInfo(curr_date, NULL);
 
-        PyArray_ITER_NEXT(iterSource);
-        PyArray_ITER_NEXT(iterResult);
+                   if ((prev_val != NULL) &&
+                       (PyInt_AsLong(prev_val) != PyInt_AsLong(dInfo))) {
+                       val_changed = 1;
+                       counter = 0;
+                   }
+
+                   Py_DECREF(val);
+                   Py_DECREF(curr_date);
+
+                   if (prev_val != NULL) {
+                       Py_DECREF(prev_val);
+                   }
+
+                   prev_val = dInfo;
+            }
+
+            PyArray_SETITEM(newArray, iterResult->dataptr, dInfo);
+
+            PyArray_ITER_NEXT(iterSource);
+            PyArray_ITER_NEXT(iterResult);
+
+            counter += 1;
+        }
     }
 
+    if (prev_val != NULL) {
+        Py_DECREF(prev_val);
+    }
     Py_DECREF(iterSource);
     Py_DECREF(iterResult);
 
