@@ -15,7 +15,7 @@ typedef Float64 (*combiner)(int, int, int, Float64 temp[MAX_ARRAYS]);
 
 
 static int
-_mask_and_sort(int ninputs, int index, Float64 **inputs, Bool **masks,
+_mask_and_sort(int ninputs, int index, Float64 **inputs, UInt8 **masks,
 	       Float64 temp[MAX_ARRAYS])
 {
 	int i, j, goodpix;
@@ -97,7 +97,7 @@ _combine(combiner f, int dim, int maxdim, int ninputs, int nlow, int nhigh,
 	if (dim == maxdim-1) {
 		Float64 sorted[MAX_ARRAYS];
 		Float64 *tinputs[MAX_ARRAYS];
-		Bool    *tmasks[MAX_ARRAYS];
+		UInt8    *tmasks[MAX_ARRAYS];
 		Float64 *toutput;
 		int cols = inputs[0]->dimensions[dim];
 
@@ -106,7 +106,7 @@ _combine(combiner f, int dim, int maxdim, int ninputs, int nlow, int nhigh,
 			tinputs[i] = (Float64 *) inputs[i]->data;
 		if (masks) {
 			for(i=0; i<ninputs; i++)
-				tmasks[i] = (Bool *) masks[i]->data;
+				tmasks[i] = (UInt8 *) masks[i]->data;
 		}
 		toutput = (Float64 *) output->data;
 		
@@ -185,7 +185,7 @@ _Py_combine(PyObject *obj, PyObject *args, PyObject *kw)
 		if (badmasks != Py_None) {
 			a =  PySequence_GetItem(badmasks, i);
 			if (!a) return NULL;	
-			bmk[i] = NA_InputArray(a, tBool, C_ARRAY);
+			bmk[i] = NA_InputArray(a, tUInt8, C_ARRAY);
 			if (!bmk[i]) return NULL;
 			Py_DECREF(a);
 		}

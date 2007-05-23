@@ -1,6 +1,6 @@
 import numpy as num
-import scipy.stsci.convolve as convolve
-import scipy.stsci.convolve._correlate as _correlate
+import convolve
+import convolve._correlate as _correlate
 MLab=num
 
 def _translate(a, dx, dy, output=None, mode="nearest", cval=0.0):
