@@ -238,10 +238,9 @@ accesses the array element by element. Therefore, `d` is a Date object.
                                     for k in ('toobj', 'tostr', 'toord')
                                     if _cache[k] is not None]))
                 _cache['steps'] = None
-            if reset_full:
-                _cache['full'] = None
-                _cache['hasdups'] = None
-                
+                if reset_full:
+                    _cache['full'] = None
+                    _cache['hasdups'] = None
             return r
 
     def __getslice__(self, i, j):

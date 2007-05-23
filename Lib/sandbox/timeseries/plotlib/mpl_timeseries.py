@@ -857,7 +857,12 @@ def tsfigure(series=None, **figargs):
 def add_tsplot(axes, *args, **kwargs):
     kwargs.update(SubplotClass=TimeSeriesPlot)
     if 'series' not in kwargs.keys():
-        kwargs['series'] = None
+        if hasattr(axes, 'series'):
+            kwargs['series'] = axes.series
+        elif hasattr(axes, '_series'):
+            kwargs['series'] = axes._series
+        else:
+            kwargs['series'] = None
     return add_generic_subplot(axes, *args, **kwargs)
 Figure.add_tsplot = add_tsplot
 

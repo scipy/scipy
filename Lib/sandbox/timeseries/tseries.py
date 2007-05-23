@@ -48,7 +48,7 @@ __all__ = [
 'TimeSeriesError','TimeSeriesCompatibilityError','TimeSeries','isTimeSeries',
 'time_series', 'tsmasked',
 'mask_period','mask_inside_period','mask_outside_period','compressed',
-'adjust_endpoints','align_series','aligned','convert','group_byperiod',
+'adjust_endpoints','align_series','align_with','aligned','convert','group_byperiod',
 'pct','tshift','fill_missing_dates', 'split', 'stack', 'concatenate_series',
 'empty_like',
 'day_of_week','day_of_year','day','month','quarter','year',

@@ -28,8 +28,8 @@ from maskedarray.testutils import assert_equal, assert_array_equal
 from timeseries import tseries
 from timeseries import Date, date_array_fromlist, date_array, thisday
 from timeseries import time_series, TimeSeries, adjust_endpoints, \
-    mask_period, align_series, fill_missing_dates, tsmasked, concatenate_series,\
-    stack, split
+    mask_period, align_series, align_with, fill_missing_dates, tsmasked, \
+    concatenate_series, stack, split
 
 class test_creation(NumpyTestCase):
     "Base test class for MaskedArrays."
