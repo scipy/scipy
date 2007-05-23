@@ -18,12 +18,15 @@ from numpy.testing import NumpyTest, NumpyTestCase
 import maskedarray.testutils
 from maskedarray.testutils import *
 
+import maskedarray as MA
 import maskedarray.core as coremodule
 from maskedarray.core import MaskedArray, masked
+from maskedarray import mstats
 
+import timeseries as TS
 from timeseries import time_series, thisday
 
-from timeseries.lib.moving_funcs import cmov_average
+from timeseries.lib import moving_funcs as MF
 
 class test_cmov_average(NumpyTestCase):
     
@@ -37,7 +40,7 @@ class test_cmov_average(NumpyTestCase):
         data = self.data
         for width in [3,5,7]:
             k = (width-1)/2
-            ravg = cmov_average(data,width)
+            ravg = MF.cmov_average(data,width)
             assert(isinstance(ravg, MaskedArray))
             assert_equal(ravg, data)
             assert_equal(ravg._mask, [1]*k+[0]*(len(data)-2*k)+[1]*k)
@@ -46,7 +49,7 @@ class test_cmov_average(NumpyTestCase):
         data = self.maskeddata
         for width in [3,5,7]:
             k = (width-1)/2
-            ravg = cmov_average(data,width)
+            ravg = MF.cmov_average(data,width)
             assert(isinstance(ravg, MaskedArray))
             assert_equal(ravg, data)
             m = N.zeros(len(data), N.bool_)
@@ -57,7 +60,7 @@ class test_cmov_average(NumpyTestCase):
         data = time_series(self.maskeddata, start_date=thisday('D'))
         for width in [3,5,7]:
             k = (width-1)/2
-            ravg = cmov_average(data,width)
+            ravg = MF.cmov_average(data,width)
             assert(isinstance(ravg, MaskedArray))
             assert_equal(ravg, data)
             m = N.zeros(len(data), N.bool_)
@@ -71,13 +74,72 @@ class test_cmov_average(NumpyTestCase):
         data = time_series(maskeddata, start_date=thisday('D'))
         for width in [3,5,7]:
             k = (width-1)/2
-            ravg = cmov_average(data,width)
+            ravg = MF.cmov_average(data,width)
             assert(isinstance(ravg, MaskedArray))
             assert_almost_equal(ravg[18].squeeze(), data[18-k:18+k+1].mean(0))
             m = N.zeros(data.shape, N.bool_)
             m[:k] = m[-k:] = m[10-k:10+k+1] = True
             assert_equal(ravg._mask, m)
             assert_equal(ravg._dates, data._dates)
+
+
+
+class test_mov_funcs(NumpyTestCase):
+    
+    def __init__(self, *args, **kwds):
+        NumpyTestCase.__init__(self, *args, **kwds)
+        self.data = numeric.arange(25)
+        self.maskeddata = MaskedArray(self.data)
+        self.maskeddata[10] = masked
+        self.func_pairs = [
+            (MF.mov_average, MA.mean),
+            (MF.mov_median, mstats.mmedian),
+            ((lambda x, span : MF.mov_stddev(x, span, bias=True)), MA.std)]
+    #         
+    def test_onregulararray(self):
+        data = self.data
+        for Mfunc, Nfunc in self.func_pairs:
+            for k in [3,4,5]:
+                result = Mfunc(data, k)
+                assert(isinstance(result, MaskedArray))
+                for x in range(len(data)-k+1):
+                    assert_almost_equal(result[x+k-1], Nfunc(data[x:x+k]))
+                assert_equal(result._mask, [1]*(k-1)+[0]*(len(data)-k+1))
+
+    #
+    def test_onmaskedarray(self):
+        data = self.maskeddata
+
+        for Mfunc, Nfunc in self.func_pairs:
+            for k in [3,4,5]:
+                result = Mfunc(data, k)
+                assert(isinstance(result, MaskedArray))
+                for x in range(len(data)-k+1):
+                    if result[x+k-1] is not MA.masked:
+                        assert_almost_equal(result[x+k-1], Nfunc(data[x:x+k]))
+                result_mask = N.array([1]*(k-1)+[0]*(len(data)-k+1))
+                result_mask[10:10+k] = 1
+                assert_equal(result._mask, result_mask)
+
+    #
+    def test_ontimeseries(self):
+
+        data = time_series(self.maskeddata, start_date=thisday('D'))
+
+        for Mfunc, Nfunc in self.func_pairs:
+            for k in [3,4,5]:
+                result = Mfunc(data, k)
+                assert(isinstance(result, MaskedArray))
+                for x in range(len(data)-k+1):
+                    if result[x+k-1] is not TS.tsmasked:
+                        assert_almost_equal(
+                                N.asarray(result[x+k-1]),
+                                N.asarray(Nfunc(data[x:x+k])))
+                result_mask = N.array([1]*(k-1)+[0]*(len(data)-k+1))
+                result_mask[10:10+k] = 1
+                assert_equal(result._mask, result_mask)
+                assert_equal(result._dates, data._dates)
+
 
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
