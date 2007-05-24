@@ -770,7 +770,10 @@ static long asfreq_QtoS(long fromDate, char relation, asfreq_info *af_info)
 
 static long asfreq_AtoD(long fromDate, char relation, asfreq_info *af_info) {
     long absdate, year, final_adj;
-    int month = (af_info->from_a_year_end + 1) % 12;
+    int month = (af_info->from_a_year_end) % 12;
+
+    if (month == 0) { month = 1; }
+    else { month += 1; }
 
     if (relation == 'B') {
         if (af_info->from_a_year_end == 12) {year = fromDate;}
@@ -1384,7 +1387,9 @@ DateObject_init(DateObject *self, PyObject *args, PyObject *kwds) {
                                       &freq, &value, &string,
                                       &year, &month, &day, &quarter,
                                       &hour, &minute, &second,
-                                      &datetime)) return -1;
+                                      &datetime)) {
+        return -1;
+    }
 
     if (PyObject_HasAttrString(freq, "freq")) {
         PyObject *freq_attr = PyObject_GetAttrString(freq, "freq");
@@ -1610,8 +1615,13 @@ DateObject_asfreq(DateObject *self, PyObject *args, PyObject *kwds)
                 strcmp(relation_uc, "B") == 0 ||
                 strcmp(relation_uc, "AFTER") == 0 ||
                 strcmp(relation_uc, "A") == 0) {
-                 relation = relation_uc[0];
+                 if(relation_uc[0] == 'A') { relation = 'A'; }
+                 else { relation = 'B'; }
+
             } else { invalid_relation=1; }
+
+            free(relation_uc);
+
         } else {
             invalid_relation=1;
         }
@@ -1630,6 +1640,8 @@ DateObject_asfreq(DateObject *self, PyObject *args, PyObject *kwds)
     asfreq_func = get_asfreq_func(self->freq, toFreq, 0);
 
     result_val = asfreq_func(self->value, relation, &af_info);
+
+    if (result_val == INT_ERR_CODE) return NULL;
 
     result->freq = toFreq;
     result->value = result_val;

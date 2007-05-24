@@ -260,6 +260,7 @@ class test_freq_conversion(NumpyTestCase):
 
             date_AJAN = dWrap(Date(freq=C.FR_ANNJAN, year=2007))
             date_AJUN = dWrap(Date(freq=C.FR_ANNJUN, year=2007))
+            date_ANOV = dWrap(Date(freq=C.FR_ANNNOV, year=2007))
 
             date_A_to_Q_before = dWrap(Date(freq='Q', year=2007, quarter=1))
             date_A_to_Q_after = dWrap(Date(freq='Q', year=2007, quarter=4))
@@ -288,6 +289,8 @@ class test_freq_conversion(NumpyTestCase):
             date_AJAN_to_D_before = dWrap(Date(freq='D', year=2006, month=2, day=1))
             date_AJUN_to_D_after = dWrap(Date(freq='D', year=2007, month=6, day=30))
             date_AJUN_to_D_before = dWrap(Date(freq='D', year=2006, month=7, day=1))
+            date_ANOV_to_D_after = dWrap(Date(freq='D', year=2007, month=11, day=30))
+            date_ANOV_to_D_before = dWrap(Date(freq='D', year=2006, month=12, day=1))
 
             assert_func(date_A.asfreq('Q', "BEFORE"), date_A_to_Q_before)
             assert_func(date_A.asfreq('Q', "AFTER"), date_A_to_Q_after)
@@ -311,6 +314,9 @@ class test_freq_conversion(NumpyTestCase):
 
             assert_func(date_AJUN.asfreq('D', "BEFORE"), date_AJUN_to_D_before)
             assert_func(date_AJUN.asfreq('D', "AFTER"), date_AJUN_to_D_after)
+
+            assert_func(date_ANOV.asfreq('D', "BEFORE"), date_ANOV_to_D_before)
+            assert_func(date_ANOV.asfreq('D', "AFTER"), date_ANOV_to_D_after)
 
     def test_conv_quarterly(self):
         "frequency conversion tests: from Quarterly Frequency"
