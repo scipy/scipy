@@ -34,8 +34,8 @@ value of the function, and whose second argument is the gradient of the function
 (as a list of values); or None, to abort the minimization.
 """
 
-import moduleTNC
-from numpy import asarray
+from scipy.optimize import moduleTNC
+from numpy import asarray, inf
 
 MSG_NONE = 0 # No messages
 MSG_ITER = 1 # One line per iteration
@@ -52,9 +52,6 @@ MSGS = {
         MSG_EXIT : "Exit reasons",
         MSG_ALL  : "All messages"
 }
-
-HUGE_VAL=1e500 # No standard representation of Infinity in Python 2.3.3
-               # FIXME: can we use inf now that we have numpy and IEEE floats?
 
 EINVAL       = -2 # Invalid parameters (n<1)
 INFEASIBLE   = -1 # Infeasible (low > up)
@@ -92,83 +89,89 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon
     """Minimize a function with variables subject to bounds, using gradient
     information.
 
-    returns (rc, nfeval, x).
+    :Parameters:
 
-    Inputs:
+        func : callable func(x, *args)
+            Function to minimize.
+        x0 : float
+            Initial guess to minimum.
+        fprime : callable fprime(x, *args)
+            Gradient of func. If None, then func must return the
+            function value and the gradient, e.g.
+            f,g = func(x,*args).
+        args : tuple
+            Arguments to pass to function.
+        approx_grad : bool
+            If true, approximate the gradient numerically.
+        bounds : list
+               (min, max) pairs for each element in x, defining the
+               bounds on that parameter. Use None for one of min or
+               max when there is no bound in that direction
+        scale : list of floats
+            Scaling factors to apply to each variable.  If None, the
+            factors are up-low for interval bounded variables and
+            1+|x] fo the others.  Defaults to None.
+        messages :
+            Bit mask used to select messages display during
+            minimization values defined in the optimize.tnc.MSGS dict.
+            defaults to optimize.tnc.MGS_ALL.
+        maxCGit : int
+            Maximum number of hessian*vector evaluation per main
+            iteration.  If maxCGit == 0, the direction chosen is
+            -gradient.  If maxCGit < 0, maxCGit is set to
+            max(1,min(50,n/2)).  Defaults to -1.
+        maxfun : int
+            Maximum number of function evaluation.  If None, maxfun
+            is set to max(1000, 100*len(x0)).  Defaults to None.
+        eta : float
+            Severity of the line search. if < 0 or > 1, set to 0.25.
+            Defaults to -1.
+        stepmx : float
+            Maximum step for the line search.  May be increased during
+            call.  If too small, will be set to 10.0.  Defaults to 0.
+        accuracy : float
+            Relative precision for finite difference calculations.  If
+            <= machine_precision, set to sqrt(machine_precision).
+            Defaults to 0.
+        fmin : float
+            Minimum function value estimate.  Defaults to 0.
+        ftol : float
+            Precision goal for the value of f in the stoping criterion
+            relative to the machine precision and the value of f.  If
+            ftol < 0.0, ftol is set to 0.0.  Defaults to 0.
+        rescale : float
+            Scaling factor (in log10) used to trigger rescaling.  If
+            0, rescale at each iteration.  If a large value, never
+            rescale.  If < 0, rescale is set to 1.3.
 
-    func    -- function to minimize. Called as func(x, *args)
+    :Returns:
 
-    x0      -- initial guess to minimum
+        x : list of floats
+            The solution.
+        nfeval : int
+            The number of function evaluations.
+        rc :
+            Return code (corresponding message in optimize.tnc.RCSTRINGS).
 
-    fprime  -- gradient of func. If None, then func returns the function
-               value and the gradient ( f, g = func(x, *args) ).
-               Called as fprime(x, *args)
+    :SeeAlso:
 
-    args    -- arguments to pass to function
+      - fmin, fmin_powell, fmin_cg, fmin_bfgs, fmin_ncg : multivariate
+        local optimizers
 
-    approx_grad -- if true, approximate the gradient numerically
+      - leastsq : nonlinear least squares minimizer
 
-    bounds  -- a list of (min, max) pairs for each element in x, defining
-               the bounds on that parameter. Use None for one of min or max
-               when there is no bound in that direction
+      - fmin_l_bfgs_b, fmin_tnc, fmin_cobyla : constrained
+        multivariate optimizers
 
-        scale     : scaling factors to apply to each variable (a list of floats)
-                    if None, the factors are up-low for interval bounded variables
-                    and 1+|x] fo the others.
-                    defaults to None
-        messages  : bit mask used to select messages display during minimization
-                    values defined in the optimize.tnc.MSGS dict.
-                    defaults to optimize.tnc.MGS_ALL
-        maxCGit   : max. number of hessian*vector evaluation per main iteration
-                    if maxCGit == 0, the direction chosen is -gradient
-                    if maxCGit < 0, maxCGit is set to max(1,min(50,n/2))
-                    defaults to -1
-        maxfun    : max. number of function evaluation
-                    if None, maxnfeval is set to max(1000, 100*len(x0))
-                    defaults to None
-        eta       : severity of the line search. if < 0 or > 1, set to 0.25
-                    defaults to -1
-        stepmx    : maximum step for the line search. may be increased during call
-                    if too small, will be set to 10.0
-                    defaults to 0
-        accuracy  : relative precision for finite difference calculations
-                    if <= machine_precision, set to sqrt(machine_precision)
-                    defaults to 0
-        fmin      : minimum function value estimate
-                    defaults to 0
-        ftol      : precision goal for the value of f in the stoping criterion
-                    relative to the machine precision and the value of f.
-                    if ftol < 0.0, ftol is set to 0.0
-                    defaults to 0
-        rescale   : Scaling factor (in log10) used to trigger rescaling
-                    if 0, rescale at each iteration
-                    if a large value, never rescale
-                    if < 0, rescale is set to 1.3
+      - anneal, brute : global optimizers
 
-    Outputs:
+      - fminbound, brent, golden, bracket : local scalar minimizers
 
-        x         : the solution (a list of floats)
-        nfeval    : the number of function evaluations
-        rc        : return code (corresponding message in optimize.tnc.RCSTRINGS)
+      - fsolve : n-dimenstional root-finding
 
-    See also:
+      - brentq, brenth, ridder, bisect, newton : one-dimensional root-finding
 
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
-
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
-
-      anneal, brute -- global optimizers
-
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimenstional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-      fixed_point -- scalar fixed-point finder
+      - fixed_point : scalar fixed-point finder
 
     """
 
@@ -202,11 +205,11 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon
     for i in range(n):
         l,u = bounds[i]
         if l is None:
-            low[i] = -HUGE_VAL
+            low[i] = -inf
         else:
             low[i] = l
         if u is None:
-            up[i] = HUGE_VAL
+            up[i] = inf
         else:
             up[i] = u
 
@@ -236,7 +239,7 @@ if __name__ == '__main__':
             return f, g
 
         # Optimizer call
-        rc, nf, x = fmin_tnc(function, [-7, 3], bounds=([-10, 10], [1, 10]))
+        x, nf, rc = fmin_tnc(function, [-7, 3], bounds=([-10, 10], [1, 10]))
 
         print "After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc]
         print "x =", x
@@ -244,98 +247,3 @@ if __name__ == '__main__':
         print
 
     example()
-
-    # Tests
-    # These tests are taken from Prof. K. Schittkowski test examples for
-    # constrained nonlinear programming.
-    # http://www.uni-bayreuth.de/departments/math/~kschittkowski/home.htm
-    tests = []
-    def test1fg(x):
-        f = 100.0*pow((x[1]-pow(x[0],2)),2)+pow(1.0-x[0],2)
-        dif = [0,0]
-        dif[1] = 200.0*(x[1]-pow(x[0],2))
-        dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
-        return f, dif
-    tests.append ((test1fg, [-2,1], ([-HUGE_VAL,None],[-1.5,None]), [1,1]))
-
-    def test2fg(x):
-        f = 100.0*pow((x[1]-pow(x[0],2)),2)+pow(1.0-x[0],2)
-        dif = [0,0]
-        dif[1] = 200.0*(x[1]-pow(x[0],2))
-        dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
-        return f, dif
-    tests.append ((test2fg, [-2,1], [(-HUGE_VAL,None),(1.5,None)], [-1.2210262419616387,1.5]))
-
-    def test3fg(x):
-        f = x[1]+pow(x[1]-x[0],2)*1.0e-5
-        dif = [0,0]
-        dif[0] = -2.0*(x[1]-x[0])*1.0e-5
-        dif[1] = 1.0-dif[0]
-        return f, dif
-    tests.append ((test3fg, [10,1], [(-HUGE_VAL,None),(0.0, None)], [0,0]))
-
-    def test4fg(x):
-        f = pow(x[0]+1.0,3)/3.0+x[1]
-        dif = [0,0]
-        dif[0] = pow(x[0]+1.0,2)
-        dif[1] = 1.0
-        return f, dif
-    tests.append ((test4fg, [1.125,0.125], [(1, None),(0, None)], [1,0]))
-
-    from math import *
-
-    def test5fg(x):
-        f = sin(x[0]+x[1])+pow(x[0]-x[1],2)-1.5*x[0]+2.5*x[1]+1.0
-        dif = [0,0]
-        v1 = cos(x[0]+x[1]);
-        v2 = 2.0*(x[0]-x[1]);
-
-        dif[0] = v1+v2-1.5;
-        dif[1] = v1-v2+2.5;
-        return f, dif
-    tests.append ((test5fg, [0,0], [(-1.5, 4),(-3,3)], [-0.54719755119659763, -1.5471975511965976]))
-
-    def test38fg(x):
-        f = (100.0*pow(x[1]-pow(x[0],2),2)+pow(1.0-x[0],2)+90.0*pow(x[3]-pow(x[2],2),2) \
-                +pow(1.0-x[2],2)+10.1*(pow(x[1]-1.0,2)+pow(x[3]-1.0,2)) \
-                +19.8*(x[1]-1.0)*(x[3]-1.0))*1.0e-5
-        dif = [0,0,0,0]
-        dif[0] = (-400.0*x[0]*(x[1]-pow(x[0],2))-2.0*(1.0-x[0]))*1.0e-5
-        dif[1] = (200.0*(x[1]-pow(x[0],2))+20.2*(x[1]-1.0)+19.8*(x[3]-1.0))*1.0e-5
-        dif[2] = (-360.0*x[2]*(x[3]-pow(x[2],2))-2.0*(1.0-x[2]))*1.0e-5
-        dif[3] = (180.0*(x[3]-pow(x[2],2))+20.2*(x[3]-1.0)+19.8*(x[1]-1.0))*1.0e-5
-        return f, dif
-    tests.append ((test38fg, [-3,-1,-3,-1], [(-10,10)]*4, [1]*4))
-
-    def test45fg(x):
-        f = 2.0-x[0]*x[1]*x[2]*x[3]*x[4]/120.0
-        dif = [0]*5
-        dif[0] = -x[1]*x[2]*x[3]*x[4]/120.0
-        dif[1] = -x[0]*x[2]*x[3]*x[4]/120.0
-        dif[2] = -x[0]*x[1]*x[3]*x[4]/120.0
-        dif[3] = -x[0]*x[1]*x[2]*x[4]/120.0
-        dif[4] = -x[0]*x[1]*x[2]*x[3]/120.0
-        return f, dif
-    tests.append ((test45fg, [2]*5, [(0,1),(0,2),(0,3),(0,4),(0,5)], [1,2,3,4,5]))
-
-    def test(fg, x, bounds, xopt):
-        print "** Test", fg.__name__
-        rc, nf, x = fmin_tnc(fg, x, bounds=bounds,  messages = MSG_NONE, maxnfeval = 200)
-        print "After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc]
-        print "x =", x
-        print "exact value =", xopt
-        enorm = 0.0
-        norm = 1.0
-        for y,yo in zip(x, xopt):
-            enorm += (y-yo)*(y-yo)
-            norm += yo*yo
-        e = pow(enorm/norm, 0.5)
-        print "Error =", e
-        if e > 1e-8:
-            raise "Test "+fg.__name__+" failed"
-
-    for fg, x, bounds, xopt in tests:
-        test(fg, x, bounds, xopt)
-
-    print
-    print "** All TNC tests passed."

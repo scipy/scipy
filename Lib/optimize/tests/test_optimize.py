@@ -7,9 +7,11 @@ from numpy.testing import *
 
 set_package_path()
 from scipy import optimize
-from numpy import array, zeros, float64, dot, log, exp
+from numpy import array, zeros, float64, dot, log, exp, inf
+from scipy.optimize.tnc import RCSTRINGS, MSG_NONE
 restore_path()
 
+from math import sin, cos, pow
 
 class test_optimize(NumpyTestCase):
     """ Test case for a simple constrained entropy maximization problem
@@ -99,9 +101,10 @@ class test_optimize(NumpyTestCase):
     def check_ncg(self):
         """ line-search Newton conjugate gradient optimization routine
         """
-        retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,\
-                                    args=(), maxiter=self.maxiter, \
-                                    full_output=False, disp=False, retall=False)
+        retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,
+                                   args=(), maxiter=self.maxiter,
+                                   full_output=False, disp=False,
+                                   retall=False)
 
         params = retval
 
@@ -113,8 +116,9 @@ class test_optimize(NumpyTestCase):
     def check_l_bfgs_b(self):
         """ limited-memory bound-constrained BFGS algorithm
         """
-        retval = optimize.fmin_l_bfgs_b(self.func, self.startparams, self.grad,\
-                                    args=(), maxfun=self.maxiter)
+        retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
+                                        self.grad, args=(),
+                                        maxfun=self.maxiter)
 
         (params, fopt, d) = retval
 
@@ -122,6 +126,104 @@ class test_optimize(NumpyTestCase):
         #print "LBFGSB: Difference is: " + str(err)
         assert err < 1e-6
 
+class test_tnc(NumpyTestCase):
+    """TNC non-linear optimization.
+
+    These tests are taken from Prof. K. Schittkowski's test examples
+    for constrained non-linear programming.
+
+    http://www.uni-bayreuth.de/departments/math/~kschittkowski/home.htm
+
+    """
+    tests = []
+
+    def setUp(self):
+        def test1fg(x):
+            f = 100.0*pow((x[1]-pow(x[0],2)),2)+pow(1.0-x[0],2)
+            dif = [0,0]
+            dif[1] = 200.0*(x[1]-pow(x[0],2))
+            dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
+            return f, dif
+        self.tests.append((test1fg, [-2,1], ([-inf,None],[-1.5,None]),
+                           [1,1]))
+        def test2fg(x):
+            f = 100.0*pow((x[1]-pow(x[0],2)),2)+pow(1.0-x[0],2)
+            dif = [0,0]
+            dif[1] = 200.0*(x[1]-pow(x[0],2))
+            dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
+            return f, dif
+        self.tests.append((test2fg, [-2,1], [(-inf,None),(1.5,None)],
+                      [-1.2210262419616387,1.5]))
+
+        def test3fg(x):
+            f = x[1]+pow(x[1]-x[0],2)*1.0e-5
+            dif = [0,0]
+            dif[0] = -2.0*(x[1]-x[0])*1.0e-5
+            dif[1] = 1.0-dif[0]
+            return f, dif
+        self.tests.append((test3fg, [10,1], [(-inf,None),(0.0, None)],
+                           [0,0]))
+
+        def test4fg(x):
+            f = pow(x[0]+1.0,3)/3.0+x[1]
+            dif = [0,0]
+            dif[0] = pow(x[0]+1.0,2)
+            dif[1] = 1.0
+            return f, dif
+        self.tests.append((test4fg, [1.125,0.125], [(1, None),(0, None)],
+                           [1,0]))
+
+        def test5fg(x):
+            f = sin(x[0]+x[1])+pow(x[0]-x[1],2)-1.5*x[0]+2.5*x[1]+1.0
+            dif = [0,0]
+            v1 = cos(x[0]+x[1]);
+            v2 = 2.0*(x[0]-x[1]);
+
+            dif[0] = v1+v2-1.5;
+            dif[1] = v1-v2+2.5;
+            return f, dif
+        self.tests.append((test5fg, [0,0], [(-1.5, 4),(-3,3)],
+                           [-0.54719755119659763, -1.5471975511965976]))
+
+        def test38fg(x):
+            f = (100.0*pow(x[1]-pow(x[0],2),2) + \
+                 pow(1.0-x[0],2)+90.0*pow(x[3]-pow(x[2],2),2) + \
+                 pow(1.0-x[2],2)+10.1*(pow(x[1]-1.0,2)+pow(x[3]-1.0,2)) + \
+                 19.8*(x[1]-1.0)*(x[3]-1.0))*1.0e-5
+            dif = [0,0,0,0]
+            dif[0] = (-400.0*x[0]*(x[1]-pow(x[0],2))-2.0*(1.0-x[0]))*1.0e-5
+            dif[1] = (200.0*(x[1]-pow(x[0],2))+20.2 \
+                      *(x[1]-1.0)+19.8*(x[3]-1.0))*1.0e-5
+            dif[2] = (-360.0*x[2]*(x[3]-pow(x[2],2))-2.0\
+                      *(1.0-x[2]))*1.0e-5
+            dif[3] = (180.0*(x[3]-pow(x[2],2))+20.2\
+                      *(x[3]-1.0)+19.8*(x[1]-1.0))*1.0e-5
+            return f, dif
+        self.tests.append ((test38fg, [-3,-1,-3,-1], [(-10,10)]*4, [1]*4))
+
+        def test45fg(x):
+            f = 2.0-x[0]*x[1]*x[2]*x[3]*x[4]/120.0
+            dif = [0]*5
+            dif[0] = -x[1]*x[2]*x[3]*x[4]/120.0
+            dif[1] = -x[0]*x[2]*x[3]*x[4]/120.0
+            dif[2] = -x[0]*x[1]*x[3]*x[4]/120.0
+            dif[3] = -x[0]*x[1]*x[2]*x[4]/120.0
+            dif[4] = -x[0]*x[1]*x[2]*x[3]/120.0
+            return f, dif
+        self.tests.append ((test45fg, [2]*5, [(0,1),(0,2),(0,3),(0,4),(0,5)],
+                       [1,2,3,4,5]))
+
+    def test_tnc(self):
+        for fg, x, bounds, xopt in self.tests:
+            x, nf, rc = optimize.fmin_tnc(fg, x, bounds=bounds,
+                                          messages=MSG_NONE, maxfun=200)
+            err = "Failed optimization of %s.\n" \
+                  "After %d function evaluations, TNC returned: %s.""" % \
+                  (fg.__name__, nf, RCSTRINGS[rc])
+
+            assert_array_almost_equal(array(x,dtype=float),
+                                      array(xopt,dtype=float),
+                                      err_msg=err)
 
 if __name__ == "__main__":
     NumpyTest().run()

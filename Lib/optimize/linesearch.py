@@ -1,6 +1,6 @@
 ## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
 
-import minpack2
+from scipy.optimize import minpack2
 import numpy
 import sys
 

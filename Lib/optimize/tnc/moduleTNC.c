@@ -288,7 +288,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
     return NULL;
   }
 
-  return Py_BuildValue("(iiN)", rc, nfeval, py_list);;
+  return Py_BuildValue("(Nii)", py_list, nfeval, rc);
 }
 
 static PyMethodDef moduleTNC_methods[] =
