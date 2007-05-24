@@ -104,9 +104,9 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon
         approx_grad : bool
             If true, approximate the gradient numerically.
         bounds : list
-               (min, max) pairs for each element in x, defining the
-               bounds on that parameter. Use None for one of min or
-               max when there is no bound in that direction
+            (min, max) pairs for each element in x, defining the
+            bounds on that parameter. Use None for one of min or max
+            when there is no bound in that direction
         scale : list of floats
             Scaling factors to apply to each variable.  If None, the
             factors are up-low for interval bounded variables and

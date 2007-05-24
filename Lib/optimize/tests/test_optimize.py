@@ -153,7 +153,7 @@ class test_tnc(NumpyTestCase):
             dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
             return f, dif
         self.tests.append((test2fg, [-2,1], [(-inf,None),(1.5,None)],
-                      [-1.2210262419616387,1.5]))
+                           [-1.2210262419616387,1.5]))
 
         def test3fg(x):
             f = x[1]+pow(x[1]-x[0],2)*1.0e-5
@@ -199,7 +199,7 @@ class test_tnc(NumpyTestCase):
             dif[3] = (180.0*(x[3]-pow(x[2],2))+20.2\
                       *(x[3]-1.0)+19.8*(x[1]-1.0))*1.0e-5
             return f, dif
-        self.tests.append ((test38fg, [-3,-1,-3,-1], [(-10,10)]*4, [1]*4))
+        self.tests.append((test38fg, [-3,-1,-3,-1], [(-10,10)]*4, [1]*4))
 
         def test45fg(x):
             f = 2.0-x[0]*x[1]*x[2]*x[3]*x[4]/120.0
@@ -210,8 +210,8 @@ class test_tnc(NumpyTestCase):
             dif[3] = -x[0]*x[1]*x[2]*x[4]/120.0
             dif[4] = -x[0]*x[1]*x[2]*x[3]/120.0
             return f, dif
-        self.tests.append ((test45fg, [2]*5, [(0,1),(0,2),(0,3),(0,4),(0,5)],
-                       [1,2,3,4,5]))
+        self.tests.append((test45fg, [2]*5, [(0,1),(0,2),(0,3),(0,4),(0,5)],
+                           [1,2,3,4,5]))
 
     def test_tnc(self):
         for fg, x, bounds, xopt in self.tests:
