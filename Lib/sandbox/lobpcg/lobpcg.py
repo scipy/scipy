@@ -5,7 +5,12 @@ http://www-math.cudenver.edu/~aknyazev/software/BLOPEX/
 
 License: BSD
 
+Depends upon symeig (http://mdp-toolkit.sourceforge.net/symeig.html) for the
+moment, as the symmetric eigenvalue solvers were not available in scipy.
+
 (c) Robert Cimrman, Andrew Knyazev
+
+Examples in tests directory contributed by Nils Wagner.
 """
 
 import numpy as nm
@@ -25,6 +30,10 @@ def save( ar, fileName ):
 ##
 # 21.05.2007, c
 def as2d( ar ):
+    """
+    If the input array is 2D return it, if it is 1D, append a dimension,
+    making it a column vector.
+    """
     if ar.ndim == 2:
         return ar
     else: # Assume 1!
@@ -35,11 +44,23 @@ def as2d( ar ):
 ##
 # 05.04.2007, c
 # 10.04.2007
+# 24.05.2007
 def makeOperator( operatorInput, expectedShape ):
+    """
+    Internal. Takes a dense numpy array or a sparse matrix or a function and
+    makes an operator performing matrix * vector product.
+
+    :Example:
+
+    operatorA = makeOperator( arrayA, (n, n) )
+    vectorB = operatorA( vectorX )
+    """
     class Operator( object ):
         def __call__( self, vec ):
             return self.call( vec )
-    
+        def asMatrix( self ):
+            return self._asMatrix( self )
+        
     operator = Operator()
     operator.obj = operatorInput
     
@@ -55,23 +76,30 @@ def makeOperator( operatorInput, expectedShape ):
                 if sp.issparse( out ):
                     out = out.toarray()
                 return as2d( out )
+            def asMatrix( op ):
+                return op.obj.toarray()
         else:
             def call( vec ):
                 return as2d( nm.asarray( sc.dot( operator.obj, vec ) ) )
+            def asMatrix( op ):
+                return op.obj
         operator.call = call
+        operator._asMatrix = asMatrix
+        operator.kind = 'matrix'
 
     elif isinstance( operatorInput, types.FunctionType ) or \
          isinstance( operatorInput, types.BuiltinFunctionType ):
         operator.shape = expectedShape
         operator.dtype = nm.float64
         operator.call = operatorInput
+        operator.kind = 'function'
 
     return operator
 
 ##
 # 05.04.2007, c
 def applyConstraints( blockVectorV, factYBY, blockVectorBY, blockVectorY ):
-    """Changes blockVectorV in place."""
+    """Internal. Changes blockVectorV in place."""
     gramYBV = sc.dot( blockVectorBY.T, blockVectorV )
     tmp = la.cho_solve( factYBY, gramYBV )
     blockVectorV -= sc.dot( blockVectorY, tmp )
@@ -80,7 +108,7 @@ def applyConstraints( blockVectorV, factYBY, blockVectorBY, blockVectorY ):
 # 05.04.2007, c
 def b_orthonormalize( operatorB, blockVectorV,
                       blockVectorBV = None, retInvR = False ):
-
+    """Internal."""
     if blockVectorBV is None:
         if operatorB is not None:
             blockVectorBV = operatorB( blockVectorV )
@@ -104,13 +132,67 @@ def b_orthonormalize( operatorB, blockVectorV,
 # 05.04.2007
 # 06.04.2007
 # 10.04.2007
+# 24.05.2007
 def lobpcg( blockVectorX, operatorA,
             operatorB = None, operatorT = None, blockVectorY = None,
             residualTolerance = None, maxIterations = 20,
             largest = True, verbosityLevel = 0,
             retLambdaHistory = False, retResidualNormsHistory = False ):
+    """
+    LOBPCG solves symmetric partial eigenproblems using preconditioning.
 
-    exitFlag = 0
+    Required input: 
+
+    blockVectorX - initial approximation to eigenvectors, full or sparse matrix
+    n-by-blockSize
+
+    operatorA - the operator of the problem, can be given as a matrix or as an
+    M-file
+
+
+    Optional input:
+
+    operatorB - the second operator, if solving a generalized eigenproblem; by
+    default, or if empty, operatorB = I.
+
+    operatorT - preconditioner; by default, operatorT = I.
+
+
+    Optional constraints input:
+
+    blockVectorY - n-by-sizeY matrix of constraints, sizeY < n.  The iterations
+    will be performed in the (operatorB-) orthogonal complement of the
+    column-space of blockVectorY. blockVectorY must be full rank.
+
+
+    Optional scalar input parameters:
+
+    residualTolerance - tolerance, by default, residualTolerance=n*sqrt(eps)
+
+    maxIterations - max number of iterations, by default, maxIterations =
+    min(n,20)
+
+    largest - when true, solve for the largest eigenvalues, otherwise for the
+    smallest
+
+    verbosityLevel - by default, verbosityLevel = 0.
+
+    retLambdaHistory - return eigenvalue history
+
+    retResidualNormsHistory - return history of residual norms
+
+    Output:
+
+    blockVectorX and lambda are computed blockSize eigenpairs, where
+    blockSize=size(blockVectorX,2) for the initial guess blockVectorX if it is
+    full rank.
+
+    If both retLambdaHistory and retResidualNormsHistory are True, the
+    return tuple has the flollowing order:
+
+    lambda, blockVectorX, lambda history, residual norms history
+    """
+    failureFlag = True
 
     if blockVectorY is not None:
         sizeY = blockVectorY.shape[1]
@@ -132,6 +214,33 @@ def lobpcg( blockVectorX, operatorA,
 
     if operatorB is not None:
         operatorB = makeOperator( operatorB, (n, n) )
+
+    if (n - sizeY) < (5 * sizeX):
+        print 'The problem size is too small, compared to the block size,  for LOBPCG to run.'
+        print 'Trying to use symeig instead, without preconditioning.'
+        if blockVectorY is not None:
+            print 'symeig does not support constraints'
+            raise ValueError
+
+        if largest:
+            lohi = (n - sizeX, n)
+        else:
+            lohi = (1, sizeX)
+
+        if operatorA.kind == 'function':
+            print 'symeig does not support matrix A given by function'
+
+        if operatorB is not None:
+            if operatorB.kind == 'function':
+                print 'symeig does not support matrix B given by function'
+
+            _lambda, eigBlockVector = symeig( operatorA.asMatrix(),
+                                              operatorB.asMatrix(),
+                                              range = lohi )
+        else:
+            _lambda, eigBlockVector = symeig( operatorA.asMatrix(),
+                                              range = lohi )
+        return _lambda, eigBlockVector
 
     if operatorT is not None:
         operatorT = makeOperator( operatorT, (n, n) )
@@ -254,9 +363,8 @@ def lobpcg( blockVectorX, operatorA,
             previousBlockSize = currentBlockSize
             ident = nm.eye( currentBlockSize, dtype = operatorA.dtype )
 
-
         if currentBlockSize == 0:
-            failureFlag = 0 # All eigenpairs converged.
+            failureFlag = False # All eigenpairs converged.
             break
 
         if verbosityLevel > 0:
@@ -377,6 +485,9 @@ def lobpcg( blockVectorX, operatorA,
         
         _lambda = _lambda[ii].astype( nm.float64 )
         eigBlockVector = nm.asarray( eigBlockVector[:,ii].astype( nm.float64 ) )
+
+        lambdaHistory.append( _lambda )
+
         if verbosityLevel > 10:
             print 'lambda:', _lambda
 ##         # Normalize eigenvectors!
@@ -437,8 +548,16 @@ def lobpcg( blockVectorX, operatorA,
         print 'final eigenvalue:', _lambda
         print 'final residual norms:', residualNorms
 
-
-    return _lambda, eigBlockVectorX
+    if retLambdaHistory:
+        if retResidualNormsHistory:
+            return _lambda, eigBlockVectorX, lambdaHistory, residualNormsHistory
+        else:
+            return _lambda, eigBlockVectorX, lambdaHistory
+    else:
+        if retResidualNormsHistory:
+            return _lambda, eigBlockVectorX, residualNormsHistory
+        else:
+            return _lambda, eigBlockVectorX
 
 ###########################################################################
 if __name__ == '__main__':
@@ -457,7 +576,7 @@ if __name__ == '__main__':
     Y = nm.eye( n, 3 )
 
 
-##    X = sc.rand( n, 3 )
+#    X = sc.rand( n, 3 )
     xfile = {100 : 'X.txt', 1000 : 'X2.txt', 10000 : 'X3.txt'}
     X = nm.fromfile( xfile[n], dtype = nm.float64, sep = ' ' )
     X.shape = (n, 3)
@@ -470,6 +589,8 @@ if __name__ == '__main__':
             y = y.toarray()
 
         return as2d( y )
+
+#    precond = spdiags( ivals, 0, n, n )
 
     tt = time.clock()
     eigs, vecs = lobpcg( X, operatorA, operatorB, blockVectorY = Y,
