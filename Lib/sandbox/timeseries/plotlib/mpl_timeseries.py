@@ -175,8 +175,13 @@ def _daily_finder(vmin, vmax, freq, aslocator):
 
     if freq == _c.FR_BUS:
         periodsperyear = 261
+        periodspermonth = 19
     elif freq == _c.FR_DAY:
         periodsperyear = 365
+        periodspermonth = 28
+    elif TS.get_freq_group(freq) == _c.FR_WK:
+        periodsperyear = 52
+        periodspermonth = 3
     else:
         raise ValueError("unexpected frequency")
 
@@ -195,7 +200,7 @@ def _daily_finder(vmin, vmax, freq, aslocator):
         else: return label_flags[0]
 
     # Case 1. Less than a month
-    if span <= (periodsperyear//12 - 2):
+    if span <= periodspermonth:
         month_start = period_break(dates,'month')
         if aslocator:
             major = default[month_start]
@@ -377,7 +382,7 @@ def _monthly_finder(vmin, vmax, freq, aslocator):
         return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
 #...............................................................................
 def _quarterly_finder(vmin, vmax, freq, aslocator):
-    if freq != _c.FR_QTR:
+    if TS.get_freq_group(freq) != _c.FR_QTR:
         raise ValueError("unexpected frequency")
     periodsperyear = 4
     (vmin, vmax) = (int(vmin), int(vmax))
@@ -394,20 +399,20 @@ def _quarterly_finder(vmin, vmax, freq, aslocator):
             minor = dates
         else:
             format[:] = 'Q%q'
-            format[year_start] = 'Q%q\n%Y'
+            format[year_start] = 'Q%q\n%F'
             if not has_level_label(year_start):
                 if dates.size > 1:
                     idx = 1
                 else:
                     idx = 0
-                format[idx] = 'Q%q\n%Y'
+                format[idx] = 'Q%q\n%F'
     #............................................
     elif span <= 11 * periodsperyear:
         if aslocator:
             major = dates[year_start]
             minor = dates
         else:
-            format[year_start] = '%Y'
+            format[year_start] = '%F'
     #............................................
     else:
         years = dates[year_start]//4 + 1
@@ -418,7 +423,7 @@ def _quarterly_finder(vmin, vmax, freq, aslocator):
             major = dates[major_idx]
             minor = dates[year_start[(years % min_anndef == 0)]]
         else:
-            format[major_idx] = '%Y'
+            format[major_idx] = '%F'
     #............................................
     if aslocator:
         return minor, major
@@ -466,11 +471,11 @@ class TimeSeries_DateLocator(Locator):
         #.....
         if fgroup == _c.FR_ANN:
             self.finder = _annual_finder
-        elif freq == _c.FR_QTR:
+        elif fgroup == _c.FR_QTR:
             self.finder = _quarterly_finder
         elif freq == _c.FR_MTH:
             self.finder = _monthly_finder
-        elif freq in (_c.FR_BUS, _c.FR_DAY):
+        elif freq in (_c.FR_BUS, _c.FR_DAY) or fgroup == _c.FR_WK:
             self.finder = _daily_finder
 
     def asminor(self):
@@ -536,11 +541,11 @@ class TimeSeries_DateFormatter(Formatter):
         #.....
         if fgroup == _c.FR_ANN:
             self.finder = _annual_finder
-        elif freq == _c.FR_QTR:
+        elif fgroup == _c.FR_QTR:
             self.finder = _quarterly_finder
         elif freq == _c.FR_MTH:
             self.finder = _monthly_finder
-        elif freq in (_c.FR_BUS, _c.FR_DAY):
+        elif freq in (_c.FR_BUS, _c.FR_DAY) or fgroup == _c.FR_WK:
             self.finder = _daily_finder
 
     def asminor(self):
