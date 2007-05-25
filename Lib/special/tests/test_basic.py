@@ -1171,6 +1171,9 @@ class test_hyp2f1(NumpyTestCase):
                       gamma(1+5-2)/gamma(1+0.5*5-2)/gamma(0.5+0.5*5)],
                   [4, 0.5+4, 1.5-2*4, -1./3, (8./9)**(-2*4)*gamma(4./3)*
                       gamma(1.5-2*4)/gamma(3./2)/gamma(4./3-2*4)],
+                  # and some others
+                  # ticket #424
+                  [1.5, -0.5, 1.0, -10.0, 4.1300097765277476484],
                   ]
         for i, (a, b, c, x, v) in enumerate(values):
             cv = hyp2f1(a, b, c, x)

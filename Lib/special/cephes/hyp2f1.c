@@ -181,8 +181,10 @@ if (x < -1.0) {
     double t1;
     t1 = fabs(b - a);
     if (fabs(t1 - round(t1)) < EPS) {
-        /* this transformation has a pole for b-a= +-integer */
-        goto hypdiv;
+        /* this transformation has a pole for b-a= +-integer,
+           so we average around it.
+         */
+        return 0.5*(hyp2f1(a, b*(1+1e-9), c, x) + hyp2f1(a, b*(1-1e-9), c, x));
     }
     p = hyp2f1(a, 1-c+a, 1-b+a, 1.0/x);
     q = hyp2f1(b, 1-c+b, 1-a+b, 1.0/x);
