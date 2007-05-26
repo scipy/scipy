@@ -402,6 +402,15 @@ def _find_smoothest2(xk, yk):
     mk = np.dot(np.eye(Np1)-res1,np.dot(Bd,b))
     return mk    
 
+def _calc_fromJBd(J, Bd, b, V2, NN):
+    A = np.dot(J.T,J)
+    sub = np.dot(V2.T,np.dot(A,V2))
+    subi = np.linalg.inv(sub)
+    res0 = np.dot(V2,subi)
+    res1 = np.dot(res0,np.dot(V2.T,A))
+    mk = np.dot(np.eye(NN)-res1,np.dot(Bd,b))
+    return mk
+    
 def _find_smoothest3(xk, yk):
     N = len(xk)-1
     Np1 = N+1
@@ -422,14 +431,13 @@ def _find_smoothest3(xk, yk):
     _setdiag(J,0,idk[:-1])
     _setdiag(J,1,-idk[1:]-idk[:-1])
     _setdiag(J,2,idk[1:])
-    A = np.dot(J.T,J)
-    sub = np.dot(V2.T,np.dot(A,V2))
-    subi = np.linalg.inv(sub)
-    res0 = np.dot(V2,subi)
-    res1 = np.dot(res0,np.dot(V2.T,A))
-    mk = np.dot(np.eye(Np1)-res1,np.dot(Bd,b))
-    return mk        
-    
+    return _calc_fromJBd(J, Bd, b, V2, Np1)
+
+def _find_smoothest4(xk, yk):
+    raise NotImplementedError
+
+def _find_smoothest5(xk, yk):
+    raise NotImplementedError
 
 def _get_spline2_Bb(xk, yk, kind, conds):
     Np1 = len(xk)
@@ -654,8 +662,8 @@ def splmake(xk,yk,order=3,kind='not-a-knot',conds=None):
     order = int(order)
     if order in [0,1]:
         return order, xk, yk, order
-    if order < 2:
-        raise ValueError("order cannot be negative")
+    if order < 2 or order > 5:
+        raise ValueError("order must be between 0 and 5 inclusive")
 
     if kind == 'smoothest':
         func = eval('_find_smoothest%d' % order)

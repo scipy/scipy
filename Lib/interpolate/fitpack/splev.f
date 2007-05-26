@@ -60,7 +60,7 @@ c++..
 c..++
       real*8 arg,sp,tb,te
 c  ..local array..
-      real*8 h(6)
+      real*8 h(20)
 c  ..
 c  before starting computations a data check is made. if the input data
 c  are invalid control is immediately repassed to the calling program.

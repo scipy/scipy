@@ -588,5 +588,319 @@ static PyObject *fitpack_insert(PyObject *dummy, PyObject*args) {
   }
 
 
+static void
+_deBoor(double *t, double x, int k, int ell, double *result) {
+    /* On completion the result array stores 
+       the k+1 non-zero values of beta_i,k(x):  for i=ell, ell-1, ell-2, ell-k.
+       Where t[ell] <= x < t[ell+1]. 
+    */
+    /* Implements the recursive algorithm of deBoor and Cox
+       Equivalent to what is done in fpbspl.f in fitpack except
+       their is no upper bound on the order of the spline. 
+    */
+
+    double *hh = result + k + 1;
+    double *h = result;
+    double xb, xa, w;
+    int ind, j, m;
+    
+    result[0] = 1.0;
+    for (j=1; j<=k; j++) {
+        memcpy(hh, h, j*sizeof(double));
+        h[0] = 0.0;
+        for (m=1; m<=j; m++) {
+            ind = ell + m;
+            xb = t[ind];
+            xa = t[ind-j];
+            if (xb == xa) {
+                h[m] = 0.0;
+                continue;
+            }
+            w = hh[m-1]/(xb-xa);
+            h[m-1] += w*(xb-x);
+            h[m] = w*(x-xa);
+        }
+    }
+}
+
+
+/* Given a set of (N+1) samples:  A default set of knots is constructed
+   using the samples xk plus 2*(K-1) additional knots where 
+   K = max(order,1) and the knots are chosen so that distances
+   are symmetric around the first and last samples: x_0 and x_N.
+
+   There should be a vector of N+K coefficients for the spline
+   curve in coef.  These coefficients form the curve as
+   
+   s(x) = sum(c_j B_{j,K}(x), j=-K..N-1)
+
+   The spline function is evaluated at all points xx. 
+   The approximation interval is from xk[0] to xk[-1]
+   Any xx outside that interval is set automatically to 0.0
+ */
+static char doc_bspleval[] = "y = _bspleval(xx,xk,coef,order)";
+static PyObject *_bspleval(PyObject *dummy, PyObject *args) {
+    int k,kk,N,i,ell;
+    PyObject *xx_py=NULL, *coef_py=NULL, *x_i_py=NULL;
+    PyArrayObject *xx=NULL, *coef=NULL, *x_i=NULL, *yy=NULL;
+    PyArrayIterObject *xx_iter;
+    double *t=NULL, *h=NULL, *ptr;
+    double x0, xN, xN1, arg, sp, cval;
+    if (!PyArg_ParseTuple(args, "OOOi", &xx_py, &x_i_py, &coef_py, &k)) 
+        return NULL;
+    if (k < 0) {
+        PyErr_Format(PyExc_ValueError, "order (%d) must be >=0", k);
+        return NULL;
+    }
+    kk = k;
+    if (k==0) kk = 1;        
+    x_i = (PyArrayObject *)PyArray_FROMANY(x_i_py, NPY_DOUBLE, 1, 1, NPY_ALIGNED);
+    coef = (PyArrayObject *)PyArray_FROMANY(coef_py, NPY_DOUBLE, 1, 1, NPY_ALIGNED);
+    xx = (PyArrayObject *)PyArray_FROMANY(xx_py, NPY_DOUBLE, 0, 0, NPY_ALIGNED);
+    if (x_i == NULL || coef == NULL || xx == NULL) goto fail;
+
+    N = PyArray_DIM(x_i,0)-1;
+
+    if (PyArray_DIM(coef,0) < (N+kk)) {
+        PyErr_Format(PyExc_ValueError, "too few coefficients (have %d need at least %d)", 
+                     PyArray_DIM(coef,0), N+kk);
+        goto fail;
+    }
+    
+    /* create output values */
+    yy = (PyArrayObject *)PyArray_EMPTY(xx->nd, xx->dimensions, NPY_DOUBLE, 0);
+    if (yy == NULL) goto fail;
+    /* create dummy knot array with new knots inserted at the end
+       selected as mirror symmetric versions of the old knots
+     */
+    t = (double *)malloc(sizeof(double)*(N+2*kk-1));
+    if (t==NULL) {
+        PyErr_NoMemory();
+        goto fail;
+    }
+    x0 = *((double *)PyArray_DATA(x_i));
+    xN = *((double *)PyArray_DATA(x_i) + N);
+    for (i=0; i<kk-1; i++) { /* fill in ends if kk > 1*/
+        t[i] = 2*x0 - *((double *)(PyArray_GETPTR1(x_i,kk-1-i)));
+        t[kk+N+i] = 2*xN - *((double *)(PyArray_GETPTR1(x_i,N-1-i)));
+    }
+    ptr = t + (kk-1);
+    for (i=0; i<=N; i++) {
+        *ptr++ = *((double *)(PyArray_GETPTR1(x_i, i)));
+    }
+   
+    /* Create work array to hold computed non-zero values for
+       the spline for a value of x. 
+    */
+    h = (double *)malloc(sizeof(double)*(2*kk+1));
+    if (h==NULL) {
+        PyErr_NoMemory();
+        goto fail;
+    }
+
+    /* Determine the spline for each value of x */ 
+    xx_iter = (PyArrayIterObject *)PyArray_IterNew((PyObject *)xx);
+    if (xx_iter == NULL) goto fail;
+    ptr = PyArray_DATA(yy);
+    while(PyArray_ITER_NOTDONE(xx_iter)) {
+        arg = *((double *)PyArray_ITER_DATA(xx_iter));
+        if ((arg < x0) || (arg > xN)) {
+            /* If we are outside the interpolation region, 
+               fill with zeros
+            */
+            *ptr++ = 0.0;
+        }
+        else {
+            /* Find the interval that arg lies between in the set of knots 
+               t[ell] <= arg < t[ell+1] (last-knot use the previous interval) */
+            xN1 = *((double *)PyArray_DATA(x_i) + N-1);
+            if (arg >= xN1) {
+                ell = N + kk - 2;
+            }
+            else {
+                ell = kk-1;
+                while ((arg > t[ell])) ell++;
+                ell -= 1;
+            }
+            
+            _deBoor(t, arg, k, ell, h);
+           
+            sp = 0.0;
+            for (i=0; i<=k; i++) {
+                cval = *((double *)(PyArray_GETPTR1(coef, ell-i+1)));
+                sp += cval*h[k-i];
+            }
+            *ptr++ = sp;
+        }
+        PyArray_ITER_NEXT(xx_iter);
+    }
+    Py_DECREF(xx_iter);
+    Py_DECREF(x_i);
+    Py_DECREF(coef);
+    Py_DECREF(xx);
+    free(t);
+    free(h);
+    return PyArray_Return(yy);
+  
+ fail:
+    Py_XDECREF(xx);
+    Py_XDECREF(coef);
+    Py_XDECREF(x_i);
+    Py_XDECREF(yy);
+    if (t != NULL) free(t);
+    if (h != NULL) free(h);
+    return NULL;
+}
+
+
+/* Given a set of (N+1) sample positions:
+   Construct the diagonals of the (N+1) x (N+K) matrix that is needed to find
+   the coefficients of a spline fit of order K.  
+       Note that K>=2 because for K=0,1, the coefficients are just the 
+       sample values themselves.
+
+   The equation that expresses the constraints is
+   
+     s(x_i) = sum(c_j B_{j,K}(x_i), j=-K..N-1) = w_i   for i=0..N
+
+   This is equivalent to 
+
+     w = B*c   where c.T = [c_{-K}, c{-K+1}, ..., c_{N-1}] and
+                     w.T = [w_{0}, w_{1}, ..., w_{N}]
+
+   Therefore B is an (N+1) times (N+K) matrix with entries
+
+   B_{j,K}(x_i)  for column j=-K..N-1 
+                 and row i=0..N
+
+   This routine takes the N+1 sample positions and the order k and 
+      constructs the banded constraint matrix B (with k+1 non-zero diagonals)
+
+   The returned array is (N+1) times (N+K) ready to be either used
+   to compute a minimally Kth-order derivative discontinuous spline
+   or to be expanded with an additional K-1 constraints to be used in 
+   an exact reconstruction approach.  
+ */
+static char doc_bsplmat[] = "B = _bsplmat(order,xk)\n"
+"Construct the constraint matrix for spline fitting of order k\n"
+"given sample positions in xk.\n"
+"\n"
+"If xk is an integer (N+1), then the result is equivalent to\n"
+"xk=arange(N+1)+x0 for any value of x0.   This produces the\n"
+"integer-spaced, or cardinal spline matrix a bit faster.";
+static PyObject *_bsplmat(PyObject *dummy, PyObject *args) {
+    int k,N,i,numbytes,j, equal;
+    int dims[2];
+    PyObject *x_i_py=NULL;
+    PyArrayObject *x_i=NULL, *BB=NULL;
+    double *t=NULL, *h=NULL, *ptr;
+    double x0, xN, arg;
+    if (!PyArg_ParseTuple(args, "iO", &k, &x_i_py)) 
+        return NULL;
+    if (k < 2) {
+        PyErr_Format(PyExc_ValueError, "order (%d) must be >=2", k);
+        return NULL;
+    }
+
+    equal = 0;
+    N = PySequence_Length(x_i_py);
+    if (N == -1 && PyErr_Occurred()) {
+        PyErr_Clear();
+        N = PyInt_AsLong(x_i_py);
+        if (N==-1 && PyErr_Occurred()) goto fail;
+        equal = 1;
+    }
+    N -= 1;
+    
+    /* create output matrix */
+    dims[0] = N+1;
+    dims[1] = N+k;
+    BB = (PyArrayObject *)PyArray_ZEROS(2, dims, NPY_DOUBLE, 0);
+    if (BB == NULL) goto fail;
+
+    t = (double *)malloc(sizeof(double)*(N+2*k-1));
+    if (t==NULL) {
+        PyErr_NoMemory();
+        goto fail;
+    }
+
+    /* Create work array to hold computed non-zero values for
+       the spline for a value of x. 
+    */
+    h = (double *)malloc(sizeof(double)*(2*k+1));
+    if (h==NULL) {
+        PyErr_NoMemory();
+        goto fail;
+    }
+
+    numbytes = k*sizeof(double);
+
+    if (equal) { /* points equally spaced by 1 */
+        /* we run deBoor's algorithm one time with artificially created knots
+           Then, we keep copying the result to every row */
+
+        /* Create knots at equally-spaced locations from -(K-1) to N+K-1 */
+        ptr = t;
+        for (i=-k+1; i<N+k; i++) *ptr++ = i;
+        j = k-1;
+        _deBoor(t, 0, k, k-1, h);
+        ptr = PyArray_DATA(BB);
+        N = N+1;
+        for (i=0; i<N; i++) {
+            memcpy(ptr, h, numbytes);
+            ptr += (N+k);
+        }
+        goto finish;
+    }
+
+    /* Not-equally spaced */
+    x_i = (PyArrayObject *)PyArray_FROMANY(x_i_py, NPY_DOUBLE, 1, 1, NPY_ALIGNED);
+    if (x_i == NULL) return NULL;
+
+    /* create dummy knot array with new knots inserted at the end
+       selected as mirror symmetric versions of the old knots
+     */
+    x0 = *((double *)PyArray_DATA(x_i));
+    xN = *((double *)PyArray_DATA(x_i) + N);
+    for (i=0; i<k-1; i++) { /* fill in ends if k > 1*/
+        t[i] = 2*x0 - *((double *)(PyArray_GETPTR1(x_i,k-1-i)));
+        t[k+N+i] = 2*xN - *((double *)(PyArray_GETPTR1(x_i,N-1-i)));
+    }
+    ptr = t + (k-1);
+    for (i=0; i<=N; i++) {
+        *ptr++ = *((double *)(PyArray_GETPTR1(x_i, i)));
+    }
+   
+
+    /* Determine the K+1 non-zero values of the spline and place them in the 
+       correct location in the matrix for each row (along the diagonals). 
+       In fact, the last member is always zero so only K non-zero values
+       are present. 
+    */
+    ptr = PyArray_DATA(BB);
+    for (i=0,j=k-1; i<N; i++,j++) {
+        arg = *((double *)PyArray_DATA(x_i) + i);
+        _deBoor(t, arg, k, j, h);
+        memcpy(ptr, h, numbytes);
+        ptr += (N+k+1);  /* advance to next row shifted over one */
+    }
+    /* Last row is different the first coefficient is zero.*/
+    _deBoor(t, xN, k, j-1, h);
+    memcpy(ptr, h+1, numbytes);
+
+ finish:
+    Py_XDECREF(x_i);
+    free(t);
+    free(h);
+    return (PyObject *)BB;
+  
+ fail:
+    Py_XDECREF(x_i);
+    Py_XDECREF(BB);
+    if (t != NULL) free(t);
+    if (h != NULL) free(h);
+    return NULL;
+}
+
 
 

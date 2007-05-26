@@ -14,7 +14,7 @@ c  ..local scalars..
       integer i,ik,j,jj,j1,j2,ki,kj,li,lj,lk
       real*8 ak,fac,one
 c  ..local array..
-      real*8 h(6)
+      real*8 h(20)
 c  ..
       one = 0.1d+01
       lk = l-k1

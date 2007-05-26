@@ -15,6 +15,8 @@ static struct PyMethodDef fitpack_module_methods[] = {
 {"_surfit", fitpack_surfit, METH_VARARGS, doc_surfit},
 {"_bispev", fitpack_bispev, METH_VARARGS, doc_bispev},
 {"_insert", fitpack_insert, METH_VARARGS, doc_insert},
+{"_bspleval", _bspleval, METH_VARARGS, doc_bspleval},
+{"_bsplmat", _bsplmat, METH_VARARGS, doc_bsplmat},
 {NULL,		NULL, 0, NULL}
 };
 PyMODINIT_FUNC init_fitpack(void) {
@@ -23,7 +25,7 @@ PyMODINIT_FUNC init_fitpack(void) {
   import_array();
   d = PyModule_GetDict(m);
 
-  s = PyString_FromString(" 1.6 ");
+  s = PyString_FromString(" 1.7 ");
   PyDict_SetItemString(d, "__version__", s);
   fitpack_error = PyErr_NewException ("fitpack.error", NULL, NULL);
   Py_DECREF(s);
