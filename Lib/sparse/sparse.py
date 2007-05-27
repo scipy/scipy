@@ -162,9 +162,6 @@ class spmatrix(object):
             val = val + self.listprint(0, nnz)
         return val[:-1]
 
-    def __cmp__(self, other):
-        raise NotImplementedError, "comparison of sparse matrices not implemented"
-
     def __nonzero__(self):  # Simple -- other ideas?
         return self.getnnz() > 0
 
