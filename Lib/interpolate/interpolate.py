@@ -6,12 +6,14 @@ __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
 
 from numpy import shape, sometrue, rank, array, transpose, \
      swapaxes, searchsorted, clip, take, ones, putmask, less, greater, \
-     logical_or, atleast_1d, atleast_2d, meshgrid, ravel
+     logical_or, atleast_1d, atleast_2d, meshgrid, ravel, dot
 import numpy as np
 import scipy.linalg as slin
+import scipy.special as spec
 import math
 
 import fitpack
+import _fitpack
 
 def reduce_sometrue(a):
     all = a
@@ -337,21 +339,78 @@ class interp1d(object):
         return out_of_bounds
 
 class ppform(object):
-    def __init__(self, coeffs, breaks, dosort=False):
+    """The ppform of the piecewise polynomials is given in terms of coefficients
+    and breaks.  The polynomial in the ith interval is
+    x_{i} <= x < x_{i+1}
+
+    S_i = sum(coefs[m,i]*(x-breaks[i])^(k-m), m=0..k)
+    where k is the degree of the polynomial. 
+    """
+    def __init__(self, coeffs, breaks, fill=0.0, sort=False):
         self.coeffs = np.asarray(coeffs)
-        if dosort:
+        if sort:
             self.breaks = np.sort(breaks)
         else:
             self.breaks = np.asarray(breaks)
-        self.N = self.coeffs.shape[0]
+        self.K = self.coeffs.shape[0]
+        self.fill = fill
+        self.a = self.breaks[0]
+        self.b = self.breaks[-1]
+
     def __call__(self, xnew):
-        indxs = np.searchsorted(self.breaks, xnew)-1
+        saveshape = np.shape(xnew)
+        xnew = np.ravel(xnew)
+        res = np.empty_like(xnew)
+        mask = (xnew >= self.a) & (xnew <= self.b)        
+        res[~mask] = self.fill
+        xx = xnew.compress(mask) 
+        indxs = np.searchsorted(self.breaks, xx)-1
         indxs = indxs.clip(0,len(self.breaks))
         pp = self.coeffs
-        V = np.vander(xnew,N=self.N)
-        # res = np.diag(np.dot(V,pp[:,indxs]))
-        res = array([np.dot(V[k,:],pp[:,indxs[k]]) for k in xrange(len(xnew))])
+        diff = xx - self.breaks.take(indxs)
+        V = np.vander(diff,N=self.K)
+        # values = np.diag(dot(V,pp[:,indxs]))
+        values = array([dot(V[k,:],pp[:,indxs[k]]) for k in xrange(len(xx))])
+        res[mask] = values
+        res.shape = saveshape
         return res
+
+    def fromspline(cls, xk, cvals, order, fill=0.0):
+        N = len(xk)-1
+        sivals = np.empty((order+1,N), dtype=float)
+        for m in xrange(order,-1,-1):
+            fact = spec.gamma(m+1)
+            res = _fitpack._bspleval(xk[:-1], xk, cvals, order, m)
+            res /= fact
+            sivals[order-m,:] = res
+        return cls(sivals, xk, fill=fill)
+    fromspline = classmethod(fromspline)
+
+
+def _find_smoothest(xk, yk, order):
+    # construct Bmatrix, and Jmatrix
+    # e = J*c
+    # minimize norm(e,2) given B*c=yk
+    N = len(xk)-1
+    K = order
+    B = _fitpack._bsplmat(order, xk)
+    J = _fitpack._bspldismat(order, xk)
+    u,s,vh = np.dual.svd(B)
+    ind = K-1
+    V2 = vh[-ind:,:].T
+    V1 = vh[:-ind,:].T
+    A = dot(J.T,J)
+    tmp = dot(V2.T,A)
+    Q = dot(tmp,V2)
+    p = np.dual.solve(Q,tmp)
+    tmp = dot(V2,p)
+    tmp = np.eye(N+K) - tmp
+    tmp = dot(tmp,V1)
+    tmp = dot(tmp,np.diag(1.0/s))
+    tmp = dot(tmp,u.T)
+    return dot(tmp, yk)
+    
+        
 
 def _setdiag(a, k, v):
     assert (a.ndim==2)
@@ -396,19 +455,19 @@ def _find_smoothest2(xk, yk):
     _setdiag(J,0,idk[:-1])
     _setdiag(J,1,-idk[1:]-idk[:-1])
     _setdiag(J,2,idk[1:])
-    A = np.dot(J.T,J)
-    val = np.dot(V2,np.dot(A,V2))
-    res1 = np.dot(np.outer(V2,V2)/val,A)
-    mk = np.dot(np.eye(Np1)-res1,np.dot(Bd,b))
+    A = dot(J.T,J)
+    val = dot(V2,dot(A,V2))
+    res1 = dot(np.outer(V2,V2)/val,A)
+    mk = dot(np.eye(Np1)-res1,dot(Bd,b))
     return mk    
 
 def _calc_fromJBd(J, Bd, b, V2, NN):
-    A = np.dot(J.T,J)
-    sub = np.dot(V2.T,np.dot(A,V2))
+    A = dot(J.T,J)
+    sub = dot(V2.T,dot(A,V2))
     subi = np.linalg.inv(sub)
-    res0 = np.dot(V2,subi)
-    res1 = np.dot(res0,np.dot(V2.T,A))
-    mk = np.dot(np.eye(NN)-res1,np.dot(Bd,b))
+    res0 = dot(V2,subi)
+    res1 = dot(res0,dot(V2.T,A))
+    mk = dot(np.eye(NN)-res1,dot(Bd,b))
     return mk
     
 def _find_smoothest3(xk, yk):
@@ -423,7 +482,7 @@ def _find_smoothest3(xk, yk):
     _setdiag(B,2,dk[1:])
     u,s,vh = np.dual.svd(B)
     V2 = vh[-2:,:].T
-    Bd = np.dot(vh[:-2,:].T, np.dot(diag(1.0/s),u.T))
+    Bd = dot(vh[:-2,:].T, dot(np.diag(1.0/s),u.T))
     b0 = np.diff(yk)/dk
     b = 6*np.diff(b0)
     J = np.zeros((N-1,N+1))
@@ -432,12 +491,6 @@ def _find_smoothest3(xk, yk):
     _setdiag(J,1,-idk[1:]-idk[:-1])
     _setdiag(J,2,idk[1:])
     return _calc_fromJBd(J, Bd, b, V2, Np1)
-
-def _find_smoothest4(xk, yk):
-    raise NotImplementedError
-
-def _find_smoothest5(xk, yk):
-    raise NotImplementedError
 
 def _get_spline2_Bb(xk, yk, kind, conds):
     Np1 = len(xk)
@@ -566,87 +619,14 @@ def _get_spline3_Bb(xk, yk, kind, conds):
     else:
         raise ValueError, "%s not supported" % kind
 
-def _sp0eval((mk,xk,yk),xnew):
-    indxs = np.searchsorted(xk, xnew).clip(1,len(xk))
-    return yk[indxs-1]
 
-def _sp0topp(mk,xk,yk):
-    c0 = yk
-    return ppform(array([c0]),xk)
-
-def _sp1eval((mk,xk,yk),xnew):
-    indxs = np.searchsorted(xk, xnew).clip(1,len(xk))
-    indxsm1 = indxs-1
-    d = xnew - xk[indxs]
-    dk = (x[1:]-x[:-1])[indxsm1]
-    wk = yk[indxs]
-    wkm1 = yk[indxsm1]
-    res = (wk-wkm1)/dk
-    res *= d
-    res += wk
-    return res
-
-def _sp1topp(mk,xk,yk):
-    c1 = (yk[1:]-yk[:-1])/(xk[1:]-xk[:-1])
-    c0 = yk[1:] - c1*xk[1:]
-    return ppform(array([c1,c0]), xk)
-
-def _sp3eval((mk,xk,yk),xnew):
-    """Evaluate a cubic-spline representation of the points (xk,yk)
-    at the new values xnew.  The mk values are the second derivatives at xk
-    The xk vector must be sorted.
-    
-    More than one curve can be represented using 2-d arrays for mk and yk.
-    However, the last dimension must have the same shape as the 1-d array xk.
-    The first-dimension will be considered the interpolating dimension. 
-    """
-    indxs = np.searchsorted(xk, xnew)
-    indxs = indxs.clip(1,len(xk))
-    indxsm1 = indxs-1
-    xkm1 = xk[indxsm1]
-    xkvals = xk[indxs]
-    dm1 = xnew - xkm1
-    d = xkvals - xnew
-    mk0 = mk[indxs]
-    mkm1 = mk[indxsm1]
-    dk = xkvals-xkm1
-    val = (mk0*dm1**3. + mkm1*d**3.)/(6*dk)
-    val += (yk[indxsm1]/dk - mkm1*dk/6.)*d
-    val += (yk[indxs]/dk - mk0*dk/6.)*dm1
-    return val
-
-def _sp3topp(mk,xk,yk):
-    """Return an N-d array providing the piece-wise polynomial form.
-
-    mk - second derivative at the knots
-    xk - knot-points
-    yk - values of the curve at the knots
-    
-    The first 2 dimensions are the polynomial for a particular
-    curve.  The first dimension provides the coefficients for the
-    polynomial and the second dimension provides the different pieces
-    """
-    dk = xk[1:] - xk[:-1]
-    temp1 = mk[1:] - mk[:-1]
-    temp2 = mk[1:]*xk[:-1]-mk[:-1]*xk[1:]
-    c3 = temp1/(6*dk)
-    c2 = -temp2/(2*dk)
-    c1 = (mk[1:]*xk[:-1]**2 - mk[:-1]*xk[1:]**2)/(2*dk)
-    c1 -= temp1*dk/6.
-    c1 += (yk[1:]-yk[:-1])/dk
-    c0 = (mk[:-1]*xk[1:]**3 - mk[1:]*xk[:-1]**3)/(6*dk)
-    c0 += temp2*dk/6.
-    c0 += (yk[:-1]*xk[1:] - yk[1:]*xk[:-1])/dk
-    return ppform([c3,c2,c1,c0], xk)
-
-
-def splmake(xk,yk,order=3,kind='not-a-knot',conds=None):
-    """Return an (mk,xk,yk,order) representation of a spline given
-    data-points
+def splmake(xk,yk,order=3,kind='smoothest',conds=None):
+    """Return a (xk, cvals, k) representation of a spline given
+    data-points where the (internal) knots are at the data-points.
 
     yk can be an N-d array to represent more than one curve, through
     the same xk points. The first dimension is assumed to be the
-    interpolating dimenion.
+    interpolating dimension.
 
     kind can be 'natural', 'second', 'first', 'clamped', 'endslope',
                 'periodic', 'symmetric', 'parabolic', 'not-a-knot',
@@ -660,128 +640,70 @@ def splmake(xk,yk,order=3,kind='not-a-knot',conds=None):
     N = yk.shape[0]-1
 
     order = int(order)
-    if order in [0,1]:
-        return order, xk, yk, order
-    if order < 2 or order > 5:
-        raise ValueError("order must be between 0 and 5 inclusive")
+    if order < 0:
+        raise ValueError("order must not be negative")        
+    if order == 0:
+        return xk, yk[:-1], order
+    elif order == 1:
+        return xk, yk, order
 
     if kind == 'smoothest':
-        func = eval('_find_smoothest%d' % order)
-        mk = func(xk,yk)
-        return mk, xk, yk, order        
+        coefs = _find_smoothest(xk,yk,order)
+        return xk, coefs, order
 
-    try:
-        func = eval('_get_spline%d_Bb'%order)
-    except NameError:
-        raise ValueError("order %d not available" % order)
+    raise NotImplementedError
 
 
-    B,b,exfunc,nlu = func(xk, yk, kind, conds)
+##    try:
+##        func = eval('_get_spline%d_Bb'%order)
+##    except NameError:
+##        raise ValueError("order %d not available" % order)
 
-    if nlu is None:
-        mk = np.dual.solve(B,b)
-    else:
-        mk = slin.solve_banded(nlu,B,b)
 
-    if exfunc is not None:
-        # need to add additional values to mk
-        #  using the returned function
-        mk = exfunc(mk)
+##    B,b,exfunc,nlu = func(xk, yk, kind, conds)
+
+##    if nlu is None:
+##        mk = np.dual.solve(B,b)
+##    else:
+##        mk = slin.solve_banded(nlu,B,b)
+
+##    if exfunc is not None:
+##        # need to add additional values to mk
+##        #  using the returned function
+##        mk = exfunc(mk)
         
-    return mk, xk, yk, order
+##    return mk, xk, yk, order
 
-def spleval((mk,xk,yk,order),xnew):
-    """Evaluate a spline represented by a tuple at the new x-values.
+def spleval((xk,cvals,k),xnew,deriv=0):
+    """Evaluate a fixed spline represented by the given tuple at the new x-values.
+    The xk values are the interior knot points.  The approximation region is
+    xk[0] to xk[-1].  If N+1 is the length of xk, then cvals should be N+k where
+    k is the order of the spline.
+
+    Internally, an additional max(k-1,0) knot points are added on either
+    side of the spline.
+
+    If cvals represents more than one curve and/or xnew is N-d, then the result is
+    xnew.shape + cvals.shape[1:] providing the interpolation of multiple curves.
     """
-    func = eval('_sp%deval'%order)
-    return func((mk,xk,yk),xnew)
+    oldshape = np.shape(xnew)
+    xx = np.ravel(xnew)
+    sh = cvals.shape[1:]
+    res = np.empty(xx.shape + sh)
+    for index in np.ndindex(*sh):
+        sl = (slice(None),)+index
+        res[sl] = _fitpack._bspleval(xx,xk,cvals[sl],k,deriv)
+    res.shape = oldshape + sh
+    return res
+                    
 
-def spltopp(mk,xk,yk,order=3):
-    """Return a piece-wise polynomial object from a spline tuple.
+def spltopp(xk,cvals,k):
+    """Return a piece-wise polynomial object from a fixed-spline tuple.
     """
-    return eval('_sp%dtopp'%order)(mk,xk,yk)
+    return ppform.fromspline(xk, cvals, k)
 
-def spline(xk,yk,xnew,order=3,kind='not-a-knot',conds=None):
+def spline(xk,yk,xnew,order=3,kind='smoothest',conds=None):
     """Interpolate a curve (xk,yk) at points xnew using a spline fit.
     """
-    func = eval('_sp%deval'%order)
-    return func(splmake(xk,yk,order=order,kind=kind,conds=conds)[:-1],xnew)
-
-def _sp2topp(zk,xk,yk):
-    dk = xk[1:]-xk[:-1]
-    c2 = (zk[1:]-zk[:-1])/(2*dk)
-    c1 = (xk[1:]*zk[:-1]-xk[:-1]*zk[1:])/dk
-    c0 = (zk[1:]*xk[:-1]**2 - zk[:-1]*xk[1:]**2)/(2*dk)
-    c0 += yk[1:]- zk[1:]*dk/2.
-    return ppform([c2,c1,c0],xk)
-
-def _sp2eval((zk,xk,yk),xnew):
-    indxs = np.searchsorted(xk, xnew)
-    indxs = indxs.clip(1,len(xk))
-    indxsm1 = indxs-1
-    dk = (xk[1:]-xk[:-1])[indxsm1]
-    d = xnew - xk[indxs]
-    zk0 = zk[indxs]
-    res = (zk0-zk[indxsm1])/(2*dk)
-    res *= d
-    res += zk0
-    res *= d
-    res += yk[indxs]
-    return res
-    
-def _sp4topp(mk,xk,yk):
-    raise NotImplementedError
-
-def _sp4eval((mk,xk,yk),xnew):
-    nk = mk[1::2] # second-derivatives
-    mk = mk[::2]  # third-derivatives
-    indxs = np.searchsorted(xk, xnew).clip(1,len(xk))
-    indxsm1 = indxs-1
-    dk = (xk[1:]-xk[:-1])[indxsm1]
-    d = xnew - xk[indxs]
-    nk0 = nk[indxs]
-    nkm1 = nk[indxsm1]
-    mk0 = mk[indxs]
-    wk = yk[indxs]
-    wkm1 = yk[indxsm1]
-    res = (nk0-nkm1)/(24*dk)*d
-    res += nk0/6.
-    res *= d
-    res += mk0/2.
-    res *= d
-    res += mk0*dk/2. + (wk-wkm1)/dk - (3*nk0+nkm1)*(dk**2)/24.
-    res *= d
-    res += wk
-    return res
-
-def _sp5topp(mk,xk,yk):
-    raise NotImplementedError
-
-def _sp5eval((mk,xk,yk),xnew):
-    mk = mk[::3]    
-    nk = mk[1::3]
-    ok = mk[2::3]
-    indxs = np.searchsorted(xk, xnew).clip(1,len(xk))
-    indxsm1 = indxs-1
-    dk = (xk[1:]-xk[:-1])[indxsm1]
-    d = xnew - xk[indxs]
-    ok0 = ok[indxs]
-    okm1 = ok[indxsm1]
-    nk0 = nk[indxs]
-    mk0 = mk[indxs]
-    wk = yk[indxs]
-    wkm1 = yk[indxsm1]
-    res = (ok0-ok1)/(120*dk)
-    res *= d
-    res += ok0/24.
-    res *= d
-    res += nk0/6.
-    res *= d
-    res += mk0/2.
-    res *= d
-    res += (4*ok0+okm1)*(dk**3)/120. - nk0*(dk**2)/6.
-    res += mk0*dk/2. + (wk-wkm1)/dk
-    res *= d
-    res += wk
-    return res    
+    return spleval(splmake(xk,yk,order=order,kind=kind,conds=conds),xnew)
 

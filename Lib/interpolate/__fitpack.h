@@ -589,72 +589,58 @@ static PyObject *fitpack_insert(PyObject *dummy, PyObject*args) {
 
 
 static void
-_deBoor(double *t, double x, int k, int ell, double *result) {
+_deBoor_D(double *t, double x, int k, int ell, int m, double *result) {
     /* On completion the result array stores 
-       the k+1 non-zero values of beta_i,k(x):  for i=ell, ell-1, ell-2, ell-k.
+       the k+1 non-zero values of beta^(m)_i,k(x):  for i=ell, ell-1, ell-2, ell-k.
        Where t[ell] <= x < t[ell+1]. 
     */
-    /* Implements the recursive algorithm of deBoor and Cox
-       Equivalent to what is done in fpbspl.f in fitpack except
-       their is no upper bound on the order of the spline. 
+    /* Implements a recursive algorithm similar to the original algorithm of 
+       deBoor. 
     */
 
     double *hh = result + k + 1;
     double *h = result;
     double xb, xa, w;
-    int ind, j, m;
-    
+    int ind, j, n;
+
+    /* Perform k-m "standard" deBoor iterations */
+    /* so that h contains the k+1 non-zero values of beta_{ell,k-m}(x) */
+    /* needed to calculate the remaining derivatives. */
+
     result[0] = 1.0;
-    for (j=1; j<=k; j++) {
+    for (j=1; j<=k-m; j++) {
         memcpy(hh, h, j*sizeof(double));
         h[0] = 0.0;
-        for (m=1; m<=j; m++) {
-            ind = ell + m;
+        for (n=1; n<=j; n++) {
+            ind = ell + n;
             xb = t[ind];
             xa = t[ind-j];
             if (xb == xa) {
-                h[m] = 0.0;
+                h[n] = 0.0;
                 continue;
             }
-            w = hh[m-1]/(xb-xa);
-            h[m-1] += w*(xb-x);
-            h[m] = w*(x-xa);
+            w = hh[n-1]/(xb-xa);
+            h[n-1] += w*(xb-x);
+            h[n] = w*(x-xa);
         }
     }
-}
 
-
-static void
-_deBoor_kth_derivative(double *t, int k, int ell, double *result) {
-    /* On completion the result array stores 
-       the k+1 non-zero values of beta^{(k)}_{i,k}(x):  for i=ell, ell-1, ell-2, ell-k.
-       Where t[ell] <= x < t[ell+1]. 
-    */
-    /* Implements a modified recursive algorithm similar to the one
-       to compute the value of the B-spline.  But, modified to compute
-       the last derivative 
-    */
-
-    double *hh = result + k + 1;
-    double *h = result;
-    double xb, xa, w;
-    int ind, j, m;
-    
-    result[0] = 1.0;
-    for (j=1; j<=k; j++) {
+    /* Now do m "derivative" recursions */
+    /* to convert the values of beta into the mth derivative */
+    for (j=k-m+1; j<=k; j++) {
         memcpy(hh, h, j*sizeof(double));
         h[0] = 0.0;
-        for (m=1; m<=j; m++) {
-            ind = ell + m;
+        for (n=1; n<=j; n++) {
+            ind = ell + n;
             xb = t[ind];
             xa = t[ind-j];
             if (xb == xa) {
                 h[m] = 0.0;
                 continue;
             }
-            w = j*hh[m-1]/(xb-xa);
-            h[m-1] -= w;
-            h[m] = w;
+            w = j*hh[n-1]/(xb-xa);
+            h[n-1] -= w;
+            h[n] = w;
         }
     }
 }
@@ -674,22 +660,38 @@ _deBoor_kth_derivative(double *t, int k, int ell, double *result) {
    The approximation interval is from xk[0] to xk[-1]
    Any xx outside that interval is set automatically to 0.0
  */
-static char doc_bspleval[] = "y = _bspleval(xx,xk,coef,order)";
+static char doc_bspleval[] = "y = _bspleval(xx,xk,coef,k,{deriv (0)})\n"
+    "\n"
+    "The spline is defined by the approximation interval xk[0] to xk[-1],\n"
+    "the length of xk (N+1), the order of the spline, k, and \n"
+    "the number of coeficients N+k.  The coefficients range from xk_{-K}\n"
+    "to xk_{N-1} inclusive and are all the coefficients needed to define\n"
+    "an arbitrary spline of order k, on the given approximation interval\n"
+    "\n"
+    "Extra knot points are internally added using knot-point symmetry \n"
+    "around xk[0] and xk[-1]";
+
 static PyObject *_bspleval(PyObject *dummy, PyObject *args) {
-    int k,kk,N,i,ell;
+    int k,kk,N,i,ell,dk,deriv=0;
     PyObject *xx_py=NULL, *coef_py=NULL, *x_i_py=NULL;
     PyArrayObject *xx=NULL, *coef=NULL, *x_i=NULL, *yy=NULL;
     PyArrayIterObject *xx_iter;
     double *t=NULL, *h=NULL, *ptr;
     double x0, xN, xN1, arg, sp, cval;
-    if (!PyArg_ParseTuple(args, "OOOi", &xx_py, &x_i_py, &coef_py, &k)) 
+    if (!PyArg_ParseTuple(args, "OOOi|i", &xx_py, &x_i_py, &coef_py, &k, &deriv)) 
         return NULL;
     if (k < 0) {
         PyErr_Format(PyExc_ValueError, "order (%d) must be >=0", k);
         return NULL;
     }
+    if (deriv > k) {
+        PyErr_Format(PyExc_ValueError, "derivative (%d) must be <= order (%d)", 
+                     deriv, k);
+        return NULL;
+    }
     kk = k;
-    if (k==0) kk = 1;        
+    if (k==0) kk = 1;       
+    dk = (k == 0 ? 0 : 1);
     x_i = (PyArrayObject *)PyArray_FROMANY(x_i_py, NPY_DOUBLE, 1, 1, NPY_ALIGNED);
     coef = (PyArrayObject *)PyArray_FROMANY(coef_py, NPY_DOUBLE, 1, 1, NPY_ALIGNED);
     xx = (PyArrayObject *)PyArray_FROMANY(xx_py, NPY_DOUBLE, 0, 0, NPY_ALIGNED);
@@ -697,9 +699,9 @@ static PyObject *_bspleval(PyObject *dummy, PyObject *args) {
 
     N = PyArray_DIM(x_i,0)-1;
 
-    if (PyArray_DIM(coef,0) < (N+kk)) {
+    if (PyArray_DIM(coef,0) < (N+k)) {
         PyErr_Format(PyExc_ValueError, "too few coefficients (have %d need at least %d)", 
-                     PyArray_DIM(coef,0), N+kk);
+                     PyArray_DIM(coef,0), N+k);
         goto fail;
     }
     
@@ -738,6 +740,7 @@ static PyObject *_bspleval(PyObject *dummy, PyObject *args) {
     xx_iter = (PyArrayIterObject *)PyArray_IterNew((PyObject *)xx);
     if (xx_iter == NULL) goto fail;
     ptr = PyArray_DATA(yy);
+
     while(PyArray_ITER_NOTDONE(xx_iter)) {
         arg = *((double *)PyArray_ITER_DATA(xx_iter));
         if ((arg < x0) || (arg > xN)) {
@@ -756,14 +759,14 @@ static PyObject *_bspleval(PyObject *dummy, PyObject *args) {
             else {
                 ell = kk-1;
                 while ((arg > t[ell])) ell++;
-                ell -= 1;
+                if (arg != t[ell]) ell--;
             }
             
-            _deBoor(t, arg, k, ell, h);
-           
+            _deBoor_D(t, arg, k, ell, deriv, h);
+            
             sp = 0.0;
             for (i=0; i<=k; i++) {
-                cval = *((double *)(PyArray_GETPTR1(coef, ell-i+1)));
+                cval = *((double *)(PyArray_GETPTR1(coef, ell-i+dk)));
                 sp += cval*h[k-i];
             }
             *ptr++ = sp;
@@ -879,7 +882,7 @@ static PyObject *_bsplmat(PyObject *dummy, PyObject *args) {
         ptr = t;
         for (i=-k+1; i<N+k; i++) *ptr++ = i;
         j = k-1;
-        _deBoor(t, 0, k, k-1, h);
+        _deBoor_D(t, 0, k, k-1, 0, h);
         ptr = PyArray_DATA(BB);
         N = N+1;
         for (i=0; i<N; i++) {
@@ -916,12 +919,12 @@ static PyObject *_bsplmat(PyObject *dummy, PyObject *args) {
     ptr = PyArray_DATA(BB);
     for (i=0,j=k-1; i<N; i++,j++) {
         arg = *((double *)PyArray_DATA(x_i) + i);
-        _deBoor(t, arg, k, j, h);
+        _deBoor_D(t, arg, k, j, 0, h);
         memcpy(ptr, h, numbytes);
         ptr += (N+k+1);  /* advance to next row shifted over one */
     }
     /* Last row is different the first coefficient is zero.*/
-    _deBoor(t, xN, k, j-1, h);
+    _deBoor_D(t, xN, k, j-1, 0, h);
     memcpy(ptr, h+1, numbytes);
 
  finish:
@@ -1039,10 +1042,10 @@ static PyObject *_bspldismat(PyObject *dummy, PyObject *args) {
         ptr = t;
         for (i=-k+1; i<N+k; i++) *ptr++ = i;
         j = k-1;
-        _deBoor_kth_derivative(t, k, k-1, h);
+        _deBoor_D(t, 0, k, k-1, k, h);
         ptr = tmp;
         for (m=0; m<=k; m++) *ptr++ = -h[m];
-        _deBoor_kth_derivative(t, k, k, h);
+        _deBoor_D(t, 0, k, k, k, h);
         ptr = tmp+1;
         for (m=0; m<=k; m++) *ptr++ += h[m];
         if (dx != 1.0) {
@@ -1091,7 +1094,7 @@ static PyObject *_bspldismat(PyObject *dummy, PyObject *args) {
     ptr = PyArray_DATA(BB);
     dptr = ptr;
     for (i=0,j=k-1; i<N-1; i++,j++) {
-        _deBoor_kth_derivative(t, k, j, h);
+        _deBoor_D(t, 0, k, j, k, h);
         /* We need to copy over but negate the terms */
         for (m=0; m<=k; m++) *ptr++ = -h[m];
         /* If we are past the first row, then we need to also add the current
@@ -1104,7 +1107,7 @@ static PyObject *_bspldismat(PyObject *dummy, PyObject *args) {
         ptr += N;  /* advance to next row shifted over one */
     }
     /* We need to finish the result for the last row. */
-    _deBoor_kth_derivative(t, k, j, h);
+    _deBoor_D(t, 0, k, j, k, h);
     for (m=0; m<=k; m++) *dptr++ += h[m];
 
  finish:
