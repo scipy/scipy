@@ -43,12 +43,18 @@ def _make_complex_eigvecs(w,vin,cmplx_tcode):
         count += 1
     return v
 
+
+
 def _datanotshared(a1,a):
     if a1 is a:
-        return 0
-    if hasattr(a,"__array_data__"):
-        return a1.__array_data__[0] != a.__array_data__[0]
-    return 1
+        return False
+    else:
+        #try comparing data pointers
+        try:
+            return a1.__array_interface__['data'][0] != a.__array_interface__['data'][0]
+        except:
+            return True
+
 
 def _geneig(a1,b,left,right,overwrite_a,overwrite_b):
     b1 = asarray(b)

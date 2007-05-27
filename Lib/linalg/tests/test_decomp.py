@@ -736,5 +736,25 @@ class test_hessenberg(NumpyTestCase):
             h1 = dot(transp(conj(q)),dot(a,q))
             assert_array_almost_equal(h1,h)
 
+
+
+class test_datanotshared(NumpyTestCase):
+    
+    def check_datanotshared(self):
+        from linalg.decomp import _datanotshared
+
+        M = matrix([[0,1],[2,3]])
+        A = asarray(M)
+        L = M.tolist()
+        M2 = M.copy()
+
+        assert_equal(_datanotshared(M,M),False)
+        assert_equal(_datanotshared(M,A),False)
+        
+        assert_equal(_datanotshared(M,L),True)
+        assert_equal(_datanotshared(M,M2),True)
+        assert_equal(_datanotshared(A,M2),True)
+        
+
 if __name__ == "__main__":
     NumpyTest().run()
