@@ -624,6 +624,42 @@ _deBoor(double *t, double x, int k, int ell, double *result) {
 }
 
 
+static void
+_deBoor_kth_derivative(double *t, int k, int ell, double *result) {
+    /* On completion the result array stores 
+       the k+1 non-zero values of beta^{(k)}_{i,k}(x):  for i=ell, ell-1, ell-2, ell-k.
+       Where t[ell] <= x < t[ell+1]. 
+    */
+    /* Implements a modified recursive algorithm similar to the one
+       to compute the value of the B-spline.  But, modified to compute
+       the last derivative 
+    */
+
+    double *hh = result + k + 1;
+    double *h = result;
+    double xb, xa, w;
+    int ind, j, m;
+    
+    result[0] = 1.0;
+    for (j=1; j<=k; j++) {
+        memcpy(hh, h, j*sizeof(double));
+        h[0] = 0.0;
+        for (m=1; m<=j; m++) {
+            ind = ell + m;
+            xb = t[ind];
+            xa = t[ind-j];
+            if (xb == xa) {
+                h[m] = 0.0;
+                continue;
+            }
+            w = j*hh[m-1]/(xb-xa);
+            h[m-1] -= w;
+            h[m] = w;
+        }
+    }
+}
+
+
 /* Given a set of (N+1) samples:  A default set of knots is constructed
    using the samples xk plus 2*(K-1) additional knots where 
    K = max(order,1) and the knots are chosen so that distances
@@ -774,12 +810,12 @@ static PyObject *_bspleval(PyObject *dummy, PyObject *args) {
                  and row i=0..N
 
    This routine takes the N+1 sample positions and the order k and 
-      constructs the banded constraint matrix B (with k+1 non-zero diagonals)
+      constructs the banded constraint matrix B (with k non-zero diagonals)
 
    The returned array is (N+1) times (N+K) ready to be either used
    to compute a minimally Kth-order derivative discontinuous spline
    or to be expanded with an additional K-1 constraints to be used in 
-   an exact reconstruction approach.  
+   an exact spline specification.
  */
 static char doc_bsplmat[] = "B = _bsplmat(order,xk)\n"
 "Construct the constraint matrix for spline fitting of order k\n"
@@ -887,6 +923,189 @@ static PyObject *_bsplmat(PyObject *dummy, PyObject *args) {
     /* Last row is different the first coefficient is zero.*/
     _deBoor(t, xN, k, j-1, h);
     memcpy(ptr, h+1, numbytes);
+
+ finish:
+    Py_XDECREF(x_i);
+    free(t);
+    free(h);
+    return (PyObject *)BB;
+  
+ fail:
+    Py_XDECREF(x_i);
+    Py_XDECREF(BB);
+    if (t != NULL) free(t);
+    if (h != NULL) free(h);
+    return NULL;
+}
+
+
+
+/* Given a set of (N+1) sample positions:
+   Construct the (N-1) x (N+K) error matrix J_{ij} such that
+
+   for i=1..N-1,
+   
+   e_i = sum(J_{ij}c_{j},j=-K..N-1) 
+
+   is the discontinuity of the Kth derivative at the point i in the spline. 
+
+   This routine takes the N+1 sample positions and the order k and 
+      constructs the banded matrix J 
+
+   The returned array is (N+1) times (N+K) ready to be either used
+   to compute a minimally Kth-order derivative discontinuous spline
+   or to be expanded with an additional K-1 constraints to be used in 
+   an exact reconstruction approach.  
+ */
+static char doc_bspldismat[] = "B = _bspldismat(order,xk)\n"
+"Construct the kth derivative discontinuity jump constraint matrix \n"
+"for spline fitting of order k given sample positions in xk.\n"
+"\n"
+"If xk is an integer (N+1), then the result is equivalent to\n"
+"xk=arange(N+1)+x0 for any value of x0.   This produces the\n"
+"integer-spaced matrix a bit faster.  If xk is a 2-tuple (N+1,dx)\n"
+"then it produces the result as if the sample distance were dx";
+static PyObject *_bspldismat(PyObject *dummy, PyObject *args) {
+    int k,N,i,j, equal, m;
+    int dims[2];
+    PyObject *x_i_py=NULL;
+    PyArrayObject *x_i=NULL, *BB=NULL;
+    double *t=NULL, *h=NULL, *ptr, *dptr;
+    double x0, xN, dx;
+    if (!PyArg_ParseTuple(args, "iO", &k, &x_i_py)) 
+        return NULL;
+    if (k < 2) {
+        PyErr_Format(PyExc_ValueError, "order (%d) must be >=2", k);
+        return NULL;
+    }
+
+    equal = 0;
+    N = PySequence_Length(x_i_py);
+    if (N==2 || (N == -1 && PyErr_Occurred())) {
+        PyErr_Clear();
+        if (PyTuple_Check(x_i_py)) {
+            /* x_i_py = (N+1, dx) */
+            N = PyInt_AsLong(PyTuple_GET_ITEM(x_i_py, 0));
+            dx = PyFloat_AsDouble(PyTuple_GET_ITEM(x_i_py, 1));
+        }
+        else {
+            N = PyInt_AsLong(x_i_py);
+            if (N==-1 && PyErr_Occurred()) goto fail;
+            dx = 1.0;
+        }
+        equal = 1;
+    }
+    N -= 1;
+
+    if (N < 2) {
+        PyErr_Format(PyExc_ValueError, "too few samples (%d)", N);
+        return NULL;
+    }
+    /* create output matrix */
+    dims[0] = N-1;
+    dims[1] = N+k;
+    BB = (PyArrayObject *)PyArray_ZEROS(2, dims, NPY_DOUBLE, 0);
+    if (BB == NULL) goto fail;
+
+    t = (double *)malloc(sizeof(double)*(N+2*k-1));
+    if (t==NULL) {
+        PyErr_NoMemory();
+        goto fail;
+    }
+
+    /* Create work array to hold computed non-zero values for
+       the spline for a value of x. 
+    */
+    h = (double *)malloc(sizeof(double)*(2*k+1));
+    if (h==NULL) {
+        PyErr_NoMemory();
+        goto fail;
+    }
+
+    if (equal) { /* points equally spaced by 1 */
+        /* we run deBoor's full derivative algorithm twice, subtract the results
+           offset by one and then copy the result one time with artificially created knots
+           Then, we keep copying the result to every row */
+
+        /* Create knots at equally-spaced locations from -(K-1) to N+K-1 */
+        double *tmp, factor;
+        int numbytes;
+        numbytes = (k+2)*sizeof(double);
+        tmp = malloc(numbytes);
+        if (tmp==NULL) {
+            PyErr_NoMemory();
+            goto fail;
+        }
+        ptr = t;
+        for (i=-k+1; i<N+k; i++) *ptr++ = i;
+        j = k-1;
+        _deBoor_kth_derivative(t, k, k-1, h);
+        ptr = tmp;
+        for (m=0; m<=k; m++) *ptr++ = -h[m];
+        _deBoor_kth_derivative(t, k, k, h);
+        ptr = tmp+1;
+        for (m=0; m<=k; m++) *ptr++ += h[m];
+        if (dx != 1.0) {
+            factor = pow(dx, (double)k);
+            for (m=0; m<(k+2); m++) {
+                tmp[m] /= factor;
+            }
+        }
+        ptr = PyArray_DATA(BB);
+        for (i=0; i<(N-1); i++) {
+            memcpy(ptr, tmp, numbytes);
+            ptr += (N+k+1);
+        }
+        free(tmp);
+        goto finish;
+    }
+
+    /* Not-equally spaced */
+    x_i = (PyArrayObject *)PyArray_FROMANY(x_i_py, NPY_DOUBLE, 1, 1, NPY_ALIGNED);
+    if (x_i == NULL) return NULL;
+
+    /* create dummy knot array with new knots inserted at the end
+       selected as mirror symmetric versions of the old knots
+     */
+    x0 = *((double *)PyArray_DATA(x_i));
+    xN = *((double *)PyArray_DATA(x_i) + N);
+    for (i=0; i<k-1; i++) { /* fill in ends if k > 1*/
+        t[i] = 2*x0 - *((double *)(PyArray_GETPTR1(x_i,k-1-i)));
+        t[k+N+i] = 2*xN - *((double *)(PyArray_GETPTR1(x_i,N-1-i)));
+    }
+    ptr = t + (k-1);
+    for (i=0; i<=N; i++) {
+        *ptr++ = *((double *)(PyArray_GETPTR1(x_i, i)));
+    }
+   
+
+    /* Determine the K+1 non-zero values of the discontinuity jump matrix
+       and place them in the correct location in the matrix for each row
+       (along the diagonals). 
+
+       The matrix is
+       
+       J_{ij} = b^{(k)}_{j,k}(x^{+}_i) - b^{(k)}_{j,k}(x^{-}_i)
+
+    */
+    ptr = PyArray_DATA(BB);
+    dptr = ptr;
+    for (i=0,j=k-1; i<N-1; i++,j++) {
+        _deBoor_kth_derivative(t, k, j, h);
+        /* We need to copy over but negate the terms */
+        for (m=0; m<=k; m++) *ptr++ = -h[m];
+        /* If we are past the first row, then we need to also add the current
+           values result to the previous row */
+        if (i>0) {
+            for (m=0; m<=k; m++) *dptr++ += h[m];
+        }
+        /* store location of last start position plus one.*/
+        dptr = ptr - k; 
+        ptr += N;  /* advance to next row shifted over one */
+    }
+    /* We need to finish the result for the last row. */
+    _deBoor_kth_derivative(t, k, j, h);
+    for (m=0; m<=k; m++) *dptr++ += h[m];
 
  finish:
     Py_XDECREF(x_i);

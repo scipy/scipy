@@ -17,6 +17,7 @@ static struct PyMethodDef fitpack_module_methods[] = {
 {"_insert", fitpack_insert, METH_VARARGS, doc_insert},
 {"_bspleval", _bspleval, METH_VARARGS, doc_bspleval},
 {"_bsplmat", _bsplmat, METH_VARARGS, doc_bsplmat},
+{"_bspldismat", _bspldismat, METH_VARARGS, doc_bspldismat},
 {NULL,		NULL, 0, NULL}
 };
 PyMODINIT_FUNC init_fitpack(void) {
