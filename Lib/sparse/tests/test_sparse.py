@@ -84,7 +84,9 @@ class _test_cs:
         a[1,2] = 4.0
         a[0,1] = 3
         a[2,0] = 2.0
-        assert_array_equal(a.todense(),[[0,3,0,0],[0,0,4,0],[2,0,0,0]])
+        a[0,-1] = 8
+        a[-1,-2] = 7
+        assert_array_equal(a.todense(),[[0,3,0,8],[0,0,4,0],[2,0,7,0]])
 
     def check_add(self):
         a = self.datsp
@@ -691,11 +693,7 @@ class test_dok(_test_cs, NumpyTestCase):
             A[:,1] = A.copy()
         except:
             caught += 1
-        try:
-            A[:,-1] = range(5)
-        except IndexError:
-            caught += 1
-        assert caught == 6
+        assert_equal(caught,5)
 
 
 class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase):

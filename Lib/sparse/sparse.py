@@ -859,6 +859,9 @@ class csc_matrix(_cs_matrix):
             raise ValueError, "nzmax must not be less than nnz"
         if (nnz>0) and (amax(self.indices[:nnz]) >= M):
             raise ValueError, "row values must be < M"
+        if (nnz>0) and (amin(self.indices[:nnz]) < 0):
+            raise ValueError, "row values must be >= 0"
+
         if (self.indptr[-1] > len(self.indices)):
             raise ValueError, \
                   "Last value of index list should be less than "\
@@ -1232,7 +1235,9 @@ class csr_matrix(_cs_matrix):
         if (len(self.indptr) != M+1):
             raise ValueError, "index pointer should be of length #rows + 1"
         if (nnz>0) and (amax(self.indices[:nnz]) >= N):
-            raise ValueError, "column-values must be < N"
+            raise ValueError, "column values must be < N"
+        if (nnz>0) and (amin(self.indices[:nnz]) < 0):
+            raise ValueError, "column values must be >= 0"
         if (nnz > nzmax):
             raise ValueError, \
                   "last value of index list should be less than "\
@@ -1553,11 +1558,16 @@ class dok_matrix(spmatrix, dict):
         except (ValueError, TypeError):
             raise TypeError, "index must be a pair of integers or slices"
 
+
         # Bounds checking
         if isintlike(i):
+            if i < 0:
+                i += self.shape[0]
             if i < 0 or i >= self.shape[0]:
                 raise IndexError, "index out of bounds"
         if isintlike(j):
+            if j < 0:
+                j += self.shape[1]
             if j < 0 or j >= self.shape[1]:
                 raise IndexError, "index out of bounds"
 
@@ -1644,8 +1654,14 @@ class dok_matrix(spmatrix, dict):
                     " sequences"
         i, j = key
 
+
         # First deal with the case where both i and j are integers
         if isintlike(i) and isintlike(j):
+            if i < 0:
+                i += self.shape[0]
+            if j < 0:
+                j += self.shape[1]
+
             if i < 0 or i >= self.shape[0] or j < 0 or j >= self.shape[1]:
                 raise IndexError, "index out of bounds"
             if isintlike(value) and value == 0:
@@ -2277,8 +2293,12 @@ class lil_matrix(spmatrix):
     def _get1(self, i, j):
         row = self.rows[i]
         data = self.data[i]
-        if j > self.shape[1]:
-            raise IndexError
+
+        if j < 0:
+            j += self.shape[1]
+        
+        if j < 0 or j > self.shape[1]:
+            raise IndexError,'column index out of bounds'
 
         pos = bisect_left(row, j)
         if pos != len(data) and row[pos] == j:
@@ -2314,7 +2334,7 @@ class lil_matrix(spmatrix):
             raise IndexError, "invalid index"
 
         if isscalar(i):
-            if isscalar(j):                
+            if isscalar(j):
                 return self._get1(i, j)
             if isinstance(j, slice):
                 j = self._slicetoseq(j, self.shape[1])
@@ -2345,6 +2365,13 @@ class lil_matrix(spmatrix):
     def _insertat2(self, row, data, j, x):
         """ helper for __setitem__: insert a value in the given row/data at
         column j. """
+        
+        if j < 0: #handle negative column indices
+            j += self.shape[1]
+
+        if j < 0 or j >= self.shape[1]:
+            raise IndexError,'column index out of bounds'
+            
         pos = bisect_left(row, j)
         if x != 0:
             if pos == len(row):
