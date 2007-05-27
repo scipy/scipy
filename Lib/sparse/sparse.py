@@ -951,7 +951,7 @@ class csc_matrix(_cs_matrix):
         return _cs_matrix._matvec(self, other, cscmux)
 
     def rmatvec(self, other, conjugate=True):
-        return _cs_matrix._rmatvec(self, other, shape[1], shape[0], cscmux, conjugate=conjugate)
+        return _cs_matrix._rmatvec(self, other, self.shape[1], self.shape[0], cscmux, conjugate=conjugate)
 
     def matmat(self, other):
         return _cs_matrix._matmat(self, other, cscmucsc)
@@ -1301,7 +1301,7 @@ class csr_matrix(_cs_matrix):
         return _cs_matrix._matvec(self, other, csrmux)
         
     def rmatvec(self, other, conjugate=True):
-        return _cs_matrix._rmatvec(self, other, shape[0], shape[1], csrmux, conjugate=conjugate)
+        return _cs_matrix._rmatvec(self, other, self.shape[0], self.shape[1], csrmux, conjugate=conjugate)
 
     def matmat(self, other):
         return _cs_matrix._matmat(self, other, csrmucsr)
