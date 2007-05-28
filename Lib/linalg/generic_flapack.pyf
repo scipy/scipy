@@ -439,6 +439,25 @@ interface
      integer intent(out) :: info
    end subroutine <tchar=s,d,c,z>geqrf
 
+   subroutine <tchar=s,d,c,z>gerqf(m,n,a,tau,work,lwork,info)
+
+   ! rq_a,tau,work,info = gerqf(a,lwork=3*n,overwrite_a=0)
+   ! Compute an RQ factorization of a real M-by-N matrix A:
+   !   A = R * Q.
+
+     callstatement (*f2py_func)(&m,&n,a,&m,tau,work,&lwork,&info)
+     callprotoargument int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,int*
+
+     integer intent(hide),depend(a):: m = shape(a,0)
+     integer intent(hide),depend(a):: n = shape(a,1)
+     <type_in> dimension(m,n),intent(in,out,copy,out=qr) :: a
+     <type_in> dimension(MIN(m,n)),intent(out) :: tau
+
+     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*n
+     <type_in> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+     integer intent(out) :: info
+   end subroutine <tchar=s,d,c,z>gerqf
+
    subroutine <tchar=s,d>orgqr(m,n,k,a,tau,work,lwork,info)
 
    ! q,work,info = orgqr(a,lwork=3*n,overwrite_a=0)

@@ -18,11 +18,11 @@ import sys
 from numpy.testing import *
 
 set_package_path()
-from linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr,schur,rsf2csf
-from linalg import lu_solve,lu_factor,solve,diagsvd,hessenberg
-from linalg import eig_banded,eigvals_banded
-from linalg.flapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs
-from linalg.flapack import dsbev, dsbevd, dsbevx, zhbevd, zhbevx
+from scipy.linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr,schur,rsf2csf
+from scipy.linalg import lu_solve,lu_factor,solve,diagsvd,hessenberg,rq
+from scipy.linalg import eig_banded,eigvals_banded
+from scipy.linalg.flapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs
+from scipy.linalg.flapack import dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 
 restore_path()
 
@@ -674,6 +674,68 @@ class test_qr(NumpyTestCase):
             assert_array_almost_equal(dot(conj(transpose(q)),q),identity(n))
             assert_array_almost_equal(dot(q,r),a)
 
+class test_rq(NumpyTestCase):
+
+    def check_simple(self):
+        a = [[8,2,3],[2,9,3],[5,3,6]]
+        r,q = rq(a)
+        assert_array_almost_equal(dot(transpose(q),q),identity(3))
+        assert_array_almost_equal(dot(r,q),a)
+
+    def check_random(self):
+        n = 20
+        for k in range(2):
+            a = random([n,n])
+            r,q = rq(a)
+            assert_array_almost_equal(dot(transpose(q),q),identity(n))
+            assert_array_almost_equal(dot(r,q),a)
+            
+# TODO: implement support for non-square and complex arrays
+
+##    def check_simple_trap(self):
+##        a = [[8,2,3],[2,9,3]]
+##        r,q = rq(a)
+##        assert_array_almost_equal(dot(transpose(q),q),identity(2))
+##        assert_array_almost_equal(dot(r,q),a)
+
+##    def check_simple_tall(self):
+##        a = [[8,2],[2,9],[5,3]]
+##        r,q = rq(a)
+##        assert_array_almost_equal(dot(transpose(q),q),identity(3))
+##        assert_array_almost_equal(dot(r,q),a)
+
+##    def check_simple_complex(self):
+##        a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
+##        r,q = rq(a)
+##        assert_array_almost_equal(dot(conj(transpose(q)),q),identity(3))
+##        assert_array_almost_equal(dot(r,q),a)
+
+##    def check_random_tall(self):
+##        m = 200
+##        n = 100
+##        for k in range(2):
+##            a = random([m,n])
+##            r,q = rq(a)
+##            assert_array_almost_equal(dot(transpose(q),q),identity(m))
+##            assert_array_almost_equal(dot(r,q),a)
+
+##    def check_random_trap(self):
+##        m = 100
+##        n = 200
+##        for k in range(2):
+##            a = random([m,n])
+##            r,q = rq(a)
+##            assert_array_almost_equal(dot(transpose(q),q),identity(m))
+##            assert_array_almost_equal(dot(r,q),a)
+
+##    def check_random_complex(self):
+##        n = 20
+##        for k in range(2):
+##            a = random([n,n])+1j*random([n,n])
+##            r,q = rq(a)
+##            assert_array_almost_equal(dot(conj(transpose(q)),q),identity(n))
+##            assert_array_almost_equal(dot(r,q),a)
+
 transp = transpose
 any = sometrue
 
@@ -741,7 +803,7 @@ class test_hessenberg(NumpyTestCase):
 class test_datanotshared(NumpyTestCase):
     
     def check_datanotshared(self):
-        from linalg.decomp import _datanotshared
+        from scipy.linalg.decomp import _datanotshared
 
         M = matrix([[0,1],[2,3]])
         A = asarray(M)

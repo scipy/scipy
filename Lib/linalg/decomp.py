@@ -7,9 +7,10 @@
 # additions by Eric Jones,      June 2002
 # additions by Johannes Loehnert, June 2006
 # additions by Bart Vandereycken, June 2006
+# additions by Andrew D Straw, May 2007
 
 __all__ = ['eig','eigh','eig_banded','eigvals','eigvalsh', 'eigvals_banded',
-           'lu','svd','svdvals','diagsvd','cholesky','qr','qr_old',
+           'lu','svd','svdvals','diagsvd','cholesky','qr','qr_old','rq',
            'schur','rsf2csf','lu_factor','cho_factor','cho_solve','orth',
            'hessenberg']
 
@@ -23,7 +24,7 @@ from flinalg import get_flinalg_funcs
 from scipy.linalg import calc_lwork
 import numpy
 from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
-        single, isfinite, inexact
+        single, isfinite, inexact, complexfloating
 
 cast = numpy.cast
 r_ = numpy.r_
@@ -592,8 +593,8 @@ def qr(a,overwrite_a=0,lwork=None,econ=False,mode='qr'):
 
     Description:
 
-      Find a unitary matrix, q, and an upper-trapezoidal matrix r
-      such that q * r = a
+      Find a unitary (orthogonal) matrix, q, and an upper-triangular
+      matrix r such that q * r = a
 
     Inputs:
 
@@ -675,8 +676,8 @@ def qr_old(a,overwrite_a=0,lwork=None):
 
     Description:
 
-      Find a unitary matrix, q, and an upper-trapezoidal matrix r
-      such that q * r = a
+      Find a unitary (orthogonal) matrix, q, and an upper-triangular
+      matrix r such that q * r = a
 
     Inputs:
 
@@ -718,6 +719,64 @@ def qr_old(a,overwrite_a=0,lwork=None):
         H = gemm(-tau[i],v,v,1+0j,ident,trans_b=2)
         Q = gemm(1,Q,H)
     return Q, R
+
+
+
+def rq(a,overwrite_a=0,lwork=None):
+    """RQ decomposition of an M x N matrix a.
+
+    Description:
+
+      Find an upper-triangular matrix r and a unitary (orthogonal)
+      matrix q such that r * q = a
+
+    Inputs:
+
+      a -- the matrix
+      overwrite_a=0 -- if non-zero then discard the contents of a,
+                     i.e. a is used as a work array if possible.
+
+      lwork=None -- >= shape(a)[1]. If None (or -1) compute optimal
+                    work array size.
+
+    Outputs:
+
+      r, q -- matrices such that r * q = a
+
+    """
+    # TODO: implement support for non-square and complex arrays
+    a1 = asarray_chkfinite(a)
+    if len(a1.shape) != 2:
+        raise ValueError, 'expected matrix'
+    M,N = a1.shape
+    if M != N:
+        raise ValueError, 'expected square matrix'
+    if issubclass(a1.dtype.type,complexfloating):
+        raise ValueError, 'expected real (non-complex) matrix'
+    overwrite_a = overwrite_a or (_datanotshared(a1,a))
+    gerqf, = get_lapack_funcs(('gerqf',),(a1,))
+    if lwork is None or lwork == -1:
+        # get optimal work array
+        rq,tau,work,info = gerqf(a1,lwork=-1,overwrite_a=1)
+        lwork = work[0]
+    rq,tau,work,info = gerqf(a1,lwork=lwork,overwrite_a=overwrite_a)
+    if info<0: raise ValueError, \
+       'illegal value in %-th argument of internal geqrf'%(-info)
+    gemm, = get_blas_funcs(('gemm',),(rq,))
+    t = rq.dtype.char
+    R = basic.triu(rq)
+    Q = numpy.identity(M,dtype=t)
+    ident = numpy.identity(M,dtype=t)
+    zeros = numpy.zeros
+
+    k = min(M,N)
+    for i in range(k):
+        v = zeros((M,),t)
+        v[N-k+i] = 1
+        v[0:N-k+i] = rq[M-k+i,0:N-k+i]
+        H = gemm(-tau[i],v,v,1+0j,ident,trans_b=2)
+        Q = gemm(1,Q,H)
+    return R, Q
 
 _double_precision = ['i','l','d']
 
