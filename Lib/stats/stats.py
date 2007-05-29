@@ -21,7 +21,6 @@ stats.py module
 
 #################################################
 #######  Written by:  Gary Strangman  ###########
-#######  Last modified:  Apr 13, 2000 ###########
 #################################################
 
 A collection of basic statistical functions for python.  The function
@@ -124,7 +123,8 @@ Statistics Tables and Formulae_. Chapman & Hall: New York. 2000.
 """
 ## CHANGE LOG:
 ## ===========
-## 29-11-05 ... fixed default axis to be 0 for consistency with scipy;
+## since 2001-06-25 ... see scipy SVN changelog
+## 05-11-29 ... fixed default axis to be 0 for consistency with scipy;
 ##              cleanup of redundant imports, dead code, {0,1} -> booleans
 ## 02-02-10 ... require Numeric, eliminate "list-only" functions
 ##              (only 1 set of functions now and no Dispatch class),
@@ -861,8 +861,8 @@ def normaltest(a, axis=0):
     Based on the D'Agostino and Pearson's test that combines skew and
     kurtosis to produce an omnibus test of normality.
 
-    D'Agostino, R. B. and Pearson, E. S. (1971), "An Omnibus Test of Normality for
-    Moderate and Large Sample Size," Biometrika, 58, 341-348
+    D'Agostino, R. B. and Pearson, E. S. (1971), "An Omnibus Test of
+    Normality for Moderate and Large Sample Size," Biometrika, 58, 341-348
 
     D'Agostino, R. B. and Pearson, E. S. (1973), "Testing for departures from
     Normality," Biometrika, 60, 613-622
@@ -1297,7 +1297,7 @@ def cov(m, y=None, rowvar=False, bias=False):
     Normalization is by (N-1) where N is the number of observations
     (unbiased estimate).  If bias is True then normalization is by N.
 
-    If rowvar is False, then each row is a variables with
+    If rowvar is False, then each row is a variable with
     observations in the columns.
     """
     m = asarray(m)
@@ -1372,18 +1372,18 @@ def pearsonr(x, y):
     """Calculates a Pearson correlation coefficient and the p-value for testing
     non-correlation.
 
-    The Pearson correlation coefficient measures the linear relationship between
-    two datasets. Strictly speaking, Pearson's correlation requires that each
-    dataset be normally distributed. Like other correlation coefficients, this
-    one varies between -1 and +1 with 0 implying no correlation. Correlations of
-    -1 or +1 imply an exact linear relationship. Positive correlations imply
-    that as x increases, so does y. Negative correlations imply that as
-    x increases, y decreases.
+    The Pearson correlation coefficient measures the linear relationship
+    between two datasets. Strictly speaking, Pearson's correlation requires
+    that each dataset be normally distributed. Like other correlation
+    coefficients, this one varies between -1 and +1 with 0 implying no
+    correlation. Correlations of -1 or +1 imply an exact linear
+    relationship. Positive correlations imply that as x increases, so does
+    y. Negative correlations imply that as x increases, y decreases.
    
     The p-value roughly indicates the probability of an uncorrelated system
-    producing datasets that have a Pearson correlation at least as extreme as
-    the one computed from these datasets. The p-values are not entirely reliable
-    but are probably reasonable for datasets larger than 500 or so.
+    producing datasets that have a Pearson correlation at least as extreme
+    as the one computed from these datasets. The p-values are not entirely
+    reliable but are probably reasonable for datasets larger than 500 or so.
 
     Parameters
     ----------
@@ -1431,15 +1431,16 @@ def spearmanr(x, y):
     The Spearman correlation is a nonparametric measure of the linear
     relationship between two datasets. Unlike the Pearson correlation, the
     Spearman correlation does not assume that both datasets are normally
-    distributed. Like other correlation coefficients, this one varies between -1
-    and +1 with 0 implying no correlation. Correlations of -1 or +1 imply an
-    exact linear relationship. Positive correlations imply that as x increases,
-    so does y. Negative correlations imply that as x increases, y decreases.
+    distributed. Like other correlation coefficients, this one varies
+    between -1 and +1 with 0 implying no correlation. Correlations of -1 or
+    +1 imply an exact linear relationship. Positive correlations imply that
+    as x increases, so does y. Negative correlations imply that as x
+    increases, y decreases.
 
     The p-value roughly indicates the probability of an uncorrelated system
-    producing datasets that have a Spearman correlation at least as extreme as
-    the one computed from these datasets. The p-values are not entirely reliable
-    but are probably reasonable for datasets larger than 500 or so.
+    producing datasets that have a Spearman correlation at least as extreme
+    as the one computed from these datasets. The p-values are not entirely
+    reliable but are probably reasonable for datasets larger than 500 or so.
 
     Parameters
     ----------
@@ -1487,10 +1488,11 @@ def pointbiserialr(x, y):
     """Calculates a point biserial correlation coefficient and the associated
     p-value.
 
-    The point biserial correlation is used to measure the relationship between
-    a binary variable, x, and a continuous variable, y. Like other correlation
-    coefficients, this one varies between -1 and +1 with 0 implying no
-    correlation. Correlations of -1 or +1 imply a determinative relationship. 
+    The point biserial correlation is used to measure the relationship
+    between a binary variable, x, and a continuous variable, y. Like other
+    correlation coefficients, this one varies between -1 and +1 with 0
+    implying no correlation. Correlations of -1 or +1 imply a determinative
+    relationship. 
 
     Parameters
     ----------
@@ -1569,13 +1571,12 @@ def kendalltau(x, y):
 
 
 def linregress(*args):
+    """Calculates a regression line on two arrays, x and y, corresponding to
+    x,y pairs.  If a single 2D array is passed, linregress finds dim with 2
+    levels and splits data into x,y pairs along that dim.
+    
+    Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
     """
-Calculates a regression line on two arrays, x and y, corresponding to x,y
-pairs.  If a single 2D array is passed, linregress finds dim with 2 levels
-and splits data into x,y pairs along that dim.
-
-Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
-"""
     TINY = 1.0e-20
     if len(args) == 1:  # more than 1D array?
         args = asarray(args[0])
@@ -1633,14 +1634,12 @@ Returns: t-value, two-tailed prob
 
 
 def ttest_ind(a, b, axis=0):
+    """Calculates the t-obtained T-test on TWO INDEPENDENT samples of scores
+    a, and b.  From Numerical Recipies, p.483. Axis can equal None (ravel
+    array first), or an integer (the axis over which to operate on a and b).
+    
+    Returns: t-value, two-tailed p-value
     """
-Calculates the t-obtained T-test on TWO INDEPENDENT samples of scores
-a, and b.  From Numerical Recipies, p.483. Axis
-can equal None (ravel array first), or an integer (the axis over
-which to operate on a and b).
-
-Returns: t-value, two-tailed p-value
-"""
     a, b, axis = _chk2_asarray(a, b, axis)
     x1 = mean(a,axis)
     x2 = mean(b,axis)
@@ -1663,14 +1662,12 @@ Returns: t-value, two-tailed p-value
 
 
 def ttest_rel(a,b,axis=None):
+    """Calculates the t-obtained T-test on TWO RELATED samples of scores, a
+    and b.  From Numerical Recipies, p.483. Axis can equal None (ravel array
+    first), or an integer (the axis over which to operate on a and b).
+    
+    Returns: t-value, two-tailed p-value
     """
-Calculates the t-obtained T-test on TWO RELATED samples of scores, a
-and b.  From Numerical Recipies, p.483. Axis
-can equal None (ravel array first), or an integer (the axis over
-which to operate on a and b).
-
-Returns: t-value, two-tailed p-value
-"""
     a, b, axis = _chk2_asarray(a, b, axis)
     if len(a)!=len(b):
         raise ValueError, 'unequal length arrays'
@@ -1698,11 +1695,10 @@ Returns: t-value, two-tailed p-value
 import scipy.stats
 import distributions
 def kstest(rvs, cdf, args=(), N=20):
-    """Return the D-value and the p-value for a
-    Kolmogorov-Smirnov test of the null that N RV's generated by
-    the rvs fits the cdf given the extra arguments.  rvs
-    needs to accept the size= keyword if a function.  rvs can also
-    be a vector of RVs.
+    """Return the D-value and the p-value for a Kolmogorov-Smirnov test of
+    the null that N RV's generated by the rvs fits the cdf given the extra
+    arguments.  rvs needs to accept the size= keyword if a function.  rvs
+    can also be a vector of RVs.
 
     cdf can be a function or a string indicating the distriubtion type.
 
@@ -1729,13 +1725,12 @@ def kstest(rvs, cdf, args=(), N=20):
     return D, distributions.ksone.sf(D,N)
 
 def chisquare(f_obs, f_exp=None):
+    """ Calculates a one-way chi square for array of observed frequencies
+    and returns the result.  If no expected frequencies are given, the total
+    N is assumed to be equally distributed across all groups.
+    
+    Returns: chisquare-statistic, associated p-value
     """
-Calculates a one-way chi square for array of observed frequencies and returns
-the result.  If no expected frequencies are given, the total N is assumed to
-be equally distributed across all groups.
-
-Returns: chisquare-statistic, associated p-value
-"""
 
     f_obs = asarray(f_obs)
     k = len(f_obs)
@@ -1747,13 +1742,12 @@ Returns: chisquare-statistic, associated p-value
 
 
 def ks_2samp(data1, data2):
+    """ Computes the Kolmogorov-Smirnof statistic on 2 samples.  Modified
+    from Numerical Recipies in C, page 493.  Returns KS D-value, prob.  Not
+    ufunc- like.
+    
+    Returns: KS D-value, p-value
     """
-Computes the Kolmogorov-Smirnof statistic on 2 samples.  Modified from
-Numerical Recipies in C, page 493.  Returns KS D-value, prob.  Not ufunc-
-like.
-
-Returns: KS D-value, p-value
-"""
     data1, data2 = map(asarray, (data1, data2))
     j1 = 0    # zeros(data1.shape[1:]) TRIED TO MAKE THIS UFUNC-LIKE
     j2 = 0    # zeros(data2.shape[1:])
@@ -1787,15 +1781,14 @@ Returns: KS D-value, p-value
 
 
 def mannwhitneyu(x, y):
+    """Calculates a Mann-Whitney U statistic on the provided scores and
+    returns the result.  Use only when the n in each condition is < 20 and
+    you have 2 independent samples of ranks.  REMEMBER: Mann-Whitney U is
+    significant if the u-obtained is LESS THAN or equal to the critical
+    value of U.
+    
+    Returns: u-statistic, one-tailed p-value (i.e., p(z(U)))
     """
-Calculates a Mann-Whitney U statistic on the provided scores and
-returns the result.  Use only when the n in each condition is < 20 and
-you have 2 independent samples of ranks.  REMEMBER: Mann-Whitney U is
-significant if the u-obtained is LESS THAN or equal to the critical
-value of U.
-
-Returns: u-statistic, one-tailed p-value (i.e., p(z(U)))
-"""
     x = asarray(x)
     y = asarray(y)
     n1 = len(x)
@@ -1816,14 +1809,13 @@ Returns: u-statistic, one-tailed p-value (i.e., p(z(U)))
 
 
 def tiecorrect(rankvals):
+    """Tie-corrector for ties in Mann Whitney U and Kruskal Wallis H tests.
+    See Siegel, S. (1956) Nonparametric Statistics for the Behavioral
+    Sciences.  New York: McGraw-Hill.  Code adapted from |Stat rankind.c
+    code.
+    
+    Returns: T correction factor for U or H
     """
-Tie-corrector for ties in Mann Whitney U and Kruskal Wallis H tests.
-See Siegel, S. (1956) Nonparametric Statistics for the Behavioral
-Sciences.  New York: McGraw-Hill.  Code adapted from |Stat rankind.c
-code.
-
-Returns: T correction factor for U or H
-"""
     sorted,posn = fastsort(asarray(rankvals))
     n = len(sorted)
     T = 0.0
@@ -1841,12 +1833,11 @@ Returns: T correction factor for U or H
 
 
 def ranksums(x, y):
+    """Calculates the rank sums statistic on the provided scores and
+    returns the result.
+    
+    Returns: z-statistic, two-tailed p-value
     """
-Calculates the rank sums statistic on the provided scores and returns
-the result.
-
-Returns: z-statistic, two-tailed p-value
-"""
     x,y = map(np.asarray, (x, y))
     n1 = len(x)
     n2 = len(y)
@@ -1863,14 +1854,13 @@ Returns: z-statistic, two-tailed p-value
 
 
 def kruskal(*args):
-    """
-The Kruskal-Wallis H-test is a non-parametric ANOVA for 2 or more
-groups, requiring at least 5 subjects in each group.  This function
-calculates the Kruskal-Wallis H and associated p-value for 2 or more
-independent samples.
+    """The Kruskal-Wallis H-test is a non-parametric ANOVA for 2 or more
+    groups, requiring at least 5 subjects in each group.  This function
+    calculates the Kruskal-Wallis H and associated p-value for 2 or more
+    independent samples.
 
-Returns: H-statistic (corrected for ties), associated p-value
-"""
+    Returns: H-statistic (corrected for ties), associated p-value
+    """
     assert len(args) >= 2, "Need at least 2 groups in stats.kruskal()"
     n = map(len,args)
     all = []
@@ -1897,16 +1887,15 @@ Returns: H-statistic (corrected for ties), associated p-value
 
 
 def friedmanchisquare(*args):
+    """Friedman Chi-Square is a non-parametric, one-way within-subjects
+    ANOVA.  This function calculates the Friedman Chi-square test for
+    repeated measures and returns the result, along with the associated
+    probability value.  It assumes 3 or more repeated measures.  Only 3
+    levels requires a minimum of 10 subjects in the study.  Four levels
+    requires 5 subjects per level(??).
+    
+    Returns: chi-square statistic, associated p-value
     """
-Friedman Chi-Square is a non-parametric, one-way within-subjects
-ANOVA.  This function calculates the Friedman Chi-square test for
-repeated measures and returns the result, along with the associated
-probability value.  It assumes 3 or more repeated measures.  Only 3
-levels requires a minimum of 10 subjects in the study.  Four levels
-requires 5 subjects per level(??).
-
-Returns: chi-square statistic, associated p-value
-"""
     k = len(args)
     if k < 3:
         raise ValueError, '\nLess than 3 levels.  Friedman test not appropriate.\n'
@@ -1928,8 +1917,8 @@ zprob = special.ndtr
 erfc = special.erfc
 
 def chisqprob(chisq, df):
-    """Returns the (1-tail) probability value associated with the provided chi-square
-    value and degrees of freedom.
+    """Returns the (1-tail) probability value associated with the provided
+    chi-square value and degrees of freedom.
 
     Broadcasting rules apply.
 
@@ -1978,15 +1967,15 @@ def betai(a, b, x):
 #####################################
 
 def glm(data, para):
-    """
-Calculates a linear model fit ... anova/ancova/lin-regress/t-test/etc. Taken
-from:
+    """Calculates a linear model fit ...
+    anova/ancova/lin-regress/t-test/etc. Taken from:
+    
     Peterson et al. Statistical limitations in functional neuroimaging
     I. Non-inferential methods and statistical models.  Phil Trans Royal Soc
     Lond B 354: 1239-1260.
-
-Returns: statistic, p-value ???
-"""
+    
+    Returns: statistic, p-value ???
+    """
     if len(para) != len(data):
         print "data and para must be same length in aglm"
         return
@@ -2011,11 +2000,9 @@ Returns: statistic, p-value ???
 
 
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
+    """Calculation of Wilks lambda F-statistic for multivarite data, per
+    Maxwell & Delaney p.657.
     """
-Calculation of Wilks lambda F-statistic for multivarite data, per
-Maxwell & Delaney p.657.
-
-"""
     if isinstance(ER, (int, float)):
         ER = array([[ER]])
     if isinstance(EF, (int, float)):
@@ -2030,26 +2017,24 @@ Maxwell & Delaney p.657.
     return n_um / d_en
 
 def f_value(ER, EF, dfR, dfF):
-    """
-Returns an F-statistic given the following:
+    """Returns an F-statistic given the following:
         ER  = error associated with the null hypothesis (the Restricted model)
         EF  = error associated with the alternate hypothesis (the Full model)
         dfR = degrees of freedom the Restricted model
         dfF = degrees of freedom associated with the Restricted model
-"""
+    """
     return ((ER-EF)/float(dfR-dfF) / (EF/float(dfF)))
 
 
 
 def f_value_multivariate(ER, EF, dfnum, dfden):
-    """
-Returns an F-statistic given the following:
+    """Returns an F-statistic given the following:
         ER  = error associated with the null hypothesis (the Restricted model)
         EF  = error associated with the alternate hypothesis (the Full model)
         dfR = degrees of freedom the Restricted model
         dfF = degrees of freedom associated with the Restricted model
-where ER and EF are matrices from a multivariate F calculation.
-"""
+    where ER and EF are matrices from a multivariate F calculation.
+    """
     if isinstance(ER, (int, float)):
         ER = array([[ER]])
     if isinstance(EF, (int, float)):
@@ -2064,8 +2049,8 @@ where ER and EF are matrices from a multivariate F calculation.
 #####################################
 
 def ss(a, axis=0):
-    """Squares each value in the passed array, adds these squares, and returns the
-    result.
+    """Squares each value in the passed array, adds these squares, and
+    returns the result.
 
     Parameters
     ----------
@@ -2115,9 +2100,9 @@ def fastsort(a):
 def rankdata(a):
     """Ranks the data in a, dealing with ties appropriately.
 
-    Equal values are assigned a rank that is the average of the ranks that would
-    have been otherwise assigned to all of the values within that set. Ranks
-    begin at 1, not 0.
+    Equal values are assigned a rank that is the average of the ranks that
+    would have been otherwise assigned to all of the values within that set.
+    Ranks begin at 1, not 0.
 
     Example
     -------
