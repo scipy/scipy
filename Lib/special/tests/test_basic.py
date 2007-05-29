@@ -40,7 +40,6 @@ from special import *
 import scipy.special._cephes as cephes
 restore_path()
 
-
 class test_cephes(NumpyTestCase):
     def check_airy(self):
         cephes.airy(0)
@@ -458,7 +457,6 @@ class test_cephes(NumpyTestCase):
         cephes.wofz(0)
 
 class test_airy(NumpyTestCase):
-
     def check_airy(self):
         #This tests the airy function to ensure 8 place accuracy in computation
 
@@ -468,8 +466,6 @@ class test_airy(NumpyTestCase):
         assert_array_almost_equal(x,array([0.25238916,-.23480512,0.80686202,0.51053919]),8)
         x = airy(-.36)
         assert_array_almost_equal(x,array([0.44508477,-0.23186773,0.44939534,0.48105354]),8)
-
-class test_airye(NumpyTestCase):
 
     def check_airye(self):
         a = airye(0.01)
@@ -481,26 +477,13 @@ class test_airye(NumpyTestCase):
             b1[n] = b[n]*exp(-abs(real(2.0/3.0*0.01*sqrt(0.01))))
         assert_array_almost_equal(a,b1,6)
 
-class test_arange(NumpyTestCase):
-
-    def check_arange(self):
-        numstring = arange(0,2.21,.1)
-        assert_almost_equal(numstring,array([0.,0.1,0.2,0.3,
-                                      0.4,0.5,0.6,0.7,
-                                      0.8,0.9,1.,1.1,
-                                      1.2,1.3,1.4,1.5,
-                                      1.6,1.7,1.8,1.9,
-                                      2.,2.1,2.2]))
-        numstringa = arange(3,4,.3)
-        assert_array_almost_equal(numstringa, array([3.,3.3,3.6,3.9]))
-        numstringb = arange(3,27,3)
-        assert_array_equal(numstringb,array([3,6,9,12,
-                                             15,18,21,24]))
-        numstringc = arange(3.3,27,4)
-        assert_array_equal(numstringc,array([3.3,7.3,11.3,15.3,
-                                             19.3,23.3]))
-
-class test_ai_zeros(NumpyTestCase):
+    def check_bi_zeros(self):
+        bi = bi_zeros(2)
+        bia = (array([-1.17371322, -3.2710930]),
+        array([-2.29443968, -4.07315509]),
+        array([-0.45494438,  0.39652284]),
+        array([ 0.60195789 , -0.76031014]))
+        assert_array_almost_equal(bi,bia,4)
 
     def check_ai_zeros(self):
         ai = ai_zeros(1)
@@ -509,18 +492,7 @@ class test_ai_zeros(NumpyTestCase):
                                      array([ 0.5357]),
                                      array([ 0.7012])),4)
 
-class test_array(NumpyTestCase):
-
-    def check_array(self):
-        x = array([1,2,3,4])
-        y = array([1,2,3,4])
-        z = x*y
-        assert_array_equal(z,array([1,4,9,16]))
-        a = arange(1,5,1)
-        assert_array_equal(a,x)
-
 class test_assoc_laguerre(NumpyTestCase):
-
     def check_assoc_laguerre(self):
         a1 = genlaguerre(11,1)
         a2 = assoc_laguerre(.2,11,1)
@@ -529,35 +501,25 @@ class test_assoc_laguerre(NumpyTestCase):
         assert_array_almost_equal(a2,a1(1),8)
 
 class test_besselpoly(NumpyTestCase):
-
     def check_besselpoly(self):
         pass
 
-class test_bei(NumpyTestCase):
-
+class test_kelvin(NumpyTestCase):
     def check_bei(self):
         mbei = bei(2)
         assert_almost_equal(mbei, 0.9722916273066613,5)#this may not be exact
-
-class test_beip(NumpyTestCase):
 
     def check_beip(self):
         mbeip = beip(2)
         assert_almost_equal(mbeip,0.91701361338403631,5)#this may not be exact
 
-class test_ber(NumpyTestCase):
-
     def check_ber(self):
         mber = ber(2)
         assert_almost_equal(mber,0.75173418271380821,5)#this may not be exact
 
-class test_berp(NumpyTestCase):
-
     def check_berp(self):
         mberp = berp(2)
         assert_almost_equal(mberp,-0.49306712470943909,5)#this may not be exact
-
-class test_bei_zeros(NumpyTestCase):
 
     def check_bei_zeros(self):
         bi = bi_zeros(5)
@@ -586,8 +548,6 @@ class test_bei_zeros(NumpyTestCase):
                                                0.929983638568022]),11)
 
 
-class test_beip_zeros(NumpyTestCase):
-
     def check_beip_zeros(self):
         bip = beip_zeros(5)
         assert_array_almost_equal(bip,array([  3.772673304934953,
@@ -595,7 +555,6 @@ class test_beip_zeros(NumpyTestCase):
                                                12.742147523633703,
                                                17.193431752512542,
                                                21.641143941167325]),4)
-class test_ber_zeros(NumpyTestCase):
 
     def check_ber_zeros(self):
         ber = ber_zeros(5)
@@ -605,8 +564,119 @@ class test_ber_zeros(NumpyTestCase):
                                              16.11356,
                                              20.55463]),4)
 
-class test_bernoulli(NumpyTestCase):
+    def check_berp_zeros(self):
+        brp = berp_zeros(5)
+        assert_array_almost_equal(brp,array([6.03871,
+                                             10.51364,
+                                             14.96844,
+                                             19.41758,
+                                             23.86430]),4)
 
+    def check_kelvin(self):
+        mkelv = kelvin(2)
+        assert_array_almost_equal(mkelv,(ber(2)+bei(2)*1j,
+                                         ker(2)+kei(2)*1j,
+                                         berp(2)+beip(2)*1j,
+                                         kerp(2)+keip(2)*1j),8)
+
+    def check_kei(self):
+        mkei = kei(2)
+        assert_almost_equal(mkei,-0.20240006776470432,5)
+
+    def  check_keip(self):
+        mkeip = keip(2)
+        assert_almost_equal(mkeip,0.21980790991960536,5)
+
+    def check_ker(self):
+        mker = ker(2)
+        assert_almost_equal(mker,-0.041664513991509472,5)
+
+    def check_kerp(self):
+        mkerp = kerp(2)
+        assert_almost_equal(mkerp,-0.10660096588105264,5)
+
+    def check_kei_zeros(self):
+        kei = kei_zeros(5)
+        assert_array_almost_equal(kei,array([  3.91467,
+                                              8.34422,
+                                              12.78256,
+                                              17.22314,
+                                              21.66464]),4)
+
+    def check_keip_zeros(self):
+        keip = keip_zeros(5)
+        assert_array_almost_equal(keip,array([  4.93181,
+                                                9.40405,
+                                                13.85827,
+                                                18.30717,
+                                                22.75379]),4)
+
+
+
+    # numbers come from 9.9 of A&S pg. 381
+    def check_kelvin_zeros(self):
+        tmp = kelvin_zeros(5)
+        berz,beiz,kerz,keiz,berpz,beipz,kerpz,keipz = tmp
+        assert_array_almost_equal(berz,array([ 2.84892,
+                                               7.23883,
+                                               11.67396,
+                                               16.11356,
+                                               20.55463]),4)
+        assert_array_almost_equal(beiz,array([ 5.02622,
+                                               9.45541,
+                                               13.89349,
+                                               18.33398,
+                                               22.77544]),4)
+        assert_array_almost_equal(kerz,array([ 1.71854,
+                                               6.12728,
+                                               10.56294,
+                                               15.00269,
+                                               19.44382]),4)
+        assert_array_almost_equal(keiz,array([ 3.91467,
+                                               8.34422,
+                                               12.78256,
+                                               17.22314,
+                                               21.66464]),4)
+        assert_array_almost_equal(berpz,array([ 6.03871,
+                                                10.51364,
+                                                14.96844,
+                                                19.41758,
+                                                23.86430]),4)
+        assert_array_almost_equal(beipz,array([ 3.77267,
+                 # table from 1927 had 3.77320
+                 #  but this is more accurate
+                                                8.28099,
+                                                12.74215,
+                                                17.19343,
+                                                21.64114]),4)
+        assert_array_almost_equal(kerpz,array([ 2.66584,
+                                                7.17212,
+                                                11.63218,
+                                                16.08312,
+                                                20.53068]),4)
+        assert_array_almost_equal(keipz,array([ 4.93181,
+                                                9.40405,
+                                                13.85827,
+                                                18.30717,
+                                                22.75379]),4)
+
+    def check_ker_zeros(self):
+        ker = ker_zeros(5)
+        assert_array_almost_equal(ker,array([  1.71854,
+                                               6.12728,
+                                               10.56294,
+                                               15.00269,
+                                               19.44381]),4)
+
+    def check_kerp_zeros(self):
+        kerp = kerp_zeros(5)
+        assert_array_almost_equal(kerp,array([  2.66584,
+                                                7.17212,
+                                                11.63218,
+                                                16.08312,
+                                                20.53068]),4)
+
+class test_bernoulli(NumpyTestCase):
     def check_bernoulli(self):
         brn = bernoulli(5)
         assert_array_almost_equal(brn,array([1.0000,
@@ -616,54 +686,27 @@ class test_bernoulli(NumpyTestCase):
                                              -0.0333,
                                              0.0000]),4)
 
-class test_berp_zeros(NumpyTestCase):
-
-    def check_berp_zeros(self):
-        brp = berp_zeros(5)
-        assert_array_almost_equal(brp,array([6.03871,
-                                             10.51364,
-                                             14.96844,
-                                             19.41758,
-                                             23.86430]),4)
 class test_beta(NumpyTestCase):
-
     def check_beta(self):
         bet = beta(2,4)
         betg = (gamma(2)*gamma(4))/gamma(6)
         assert_almost_equal(bet,betg,8)
-
-class test_betaln(NumpyTestCase):
 
     def check_betaln(self):
         betln = betaln(2,4)
         bet = log(abs(beta(2,4)))
         assert_almost_equal(betln,bet,8)
 
-class test_betainc(NumpyTestCase):
-
     def check_betainc(self):
         btinc = betainc(1,1,.2)
         assert_almost_equal(btinc,0.2,8)
-
-class test_betaincinv(NumpyTestCase):
 
     def check_betaincinv(self):
         y = betaincinv(2,4,.5)
         comp = betainc(2,4,y)
         assert_almost_equal(comp,.5,5)
 
-class test_bi_zeros(NumpyTestCase):
-
-    def check_bi_zeros(self):
-        bi = bi_zeros(2)
-        bia = (array([-1.17371322, -3.2710930]),
-        array([-2.29443968, -4.07315509]),
-        array([-0.45494438,  0.39652284]),
-        array([ 0.60195789 , -0.76031014]))
-        assert_array_almost_equal(bi,bia,4)
-
-class test_chebyc(NumpyTestCase):
-
+class test_cheby(NumpyTestCase):
     def check_chebyc(self):
         C0 = chebyc(0)
         C1 = chebyc(1)
@@ -679,8 +722,6 @@ class test_chebyc(NumpyTestCase):
         assert_array_almost_equal(C4.c,[1,0,-4,0,2],13)
         assert_array_almost_equal(C5.c,[1,0,-5,0,5,0],13)
 
-class test_chebys(NumpyTestCase):
-
     def check_chebys(self):
         S0 = chebys(0)
         S1 = chebys(1)
@@ -694,8 +735,6 @@ class test_chebys(NumpyTestCase):
         assert_array_almost_equal(S3.c,[1,0,-2,0],13)
         assert_array_almost_equal(S4.c,[1,0,-3,0,1],13)
         assert_array_almost_equal(S5.c,[1,0,-4,0,3,0],13)
-
-class test_chebyt(NumpyTestCase):
 
     def check_chebyt(self):
         T0 = chebyt(0)
@@ -711,8 +750,6 @@ class test_chebyt(NumpyTestCase):
         assert_array_almost_equal(T4.c,[8,0,-8,0,1],13)
         assert_array_almost_equal(T5.c,[16,0,-20,0,5,0],13)
 
-class test_chebyu(NumpyTestCase):
-
     def check_chebyu(self):
         U0 = chebyu(0)
         U1 = chebyu(1)
@@ -727,15 +764,7 @@ class test_chebyu(NumpyTestCase):
         assert_array_almost_equal(U4.c,[16,0,-12,0,1],13)
         assert_array_almost_equal(U5.c,[32,0,-32,0,6,0],13)
 
-class test_choose(NumpyTestCase):
-
-    def check_choose(self):
-        carray = [1,3,2,4,6,5]
-        chose = choose([1,3,5],carray)
-        assert_array_equal(chose,array([3,4,5]))
-
-class test_cbrt(NumpyTestCase):
-
+class test_trigonometric(NumpyTestCase):
     def check_cbrt(self):
         cb = cbrt(27)
         cbrl = 27**(1.0/3.0)
@@ -745,8 +774,6 @@ class test_cbrt(NumpyTestCase):
         cb1 = cbrt(27.9)
         cbrl1 = 27.9**(1.0/3.0)
         assert_almost_equal(cb1,cbrl1,8)
-
-class test_cosdg(NumpyTestCase):
 
     def check_cosdg(self):
         cdg = cosdg(90)
@@ -758,14 +785,10 @@ class test_cosdg(NumpyTestCase):
         cdgmrl = cos(pi/6.0)
         assert_almost_equal(cdgm,cdgmrl,8)
 
-class test_cosm1(NumpyTestCase):
-
     def check_cosm1(self):
         cs = (cosm1(0),cosm1(.3),cosm1(pi/10))
         csrl = (cos(0)-1,cos(.3)-1,cos(pi/10)-1)
         assert_array_almost_equal(cs,csrl,8)
-
-class test_cotdg(NumpyTestCase):
 
     def check_cotdg(self):
         ct = cotdg(30)
@@ -792,20 +815,65 @@ class test_cotdg(NumpyTestCase):
         assert_almost_equal(cotdg(-315), 1.0, 14)
         assert_almost_equal(cotdg(765), 1.0, 14)
 
-class test_ellipj(NumpyTestCase):
+    def check_sinc(self):
+        c = arange(-2,2,.1)
+        y = sinc(c)
+        yre = sin(pi*c)/(pi*c)
+        yre[20] = 1.0
+        assert_array_almost_equal(y, yre, 4)
+    def check_0(self):
+        x = 0.0
+        assert_equal(sinc(x),1.0)
 
+    def check_sindg(self):
+        sn = sindg(90)
+        assert_equal(sn,1.0)
+
+    def check_sindgmore(self):
+        snm = sindg(30)
+        snmrl = sin(pi/6.0)
+        assert_almost_equal(snm,snmrl,8)
+        snm1 = sindg(45)
+        snmrl1 = sin(pi/4.0)
+        assert_almost_equal(snm1,snmrl1,8)
+
+class test_tandg(NumpyTestCase):
+
+    def check_tandg(self):
+        tn = tandg(30)
+        tnrl = tan(pi/6.0)
+        assert_almost_equal(tn,tnrl,8)
+
+    def check_tandgmore(self):
+        tnm = tandg(45)
+        tnmrl = tan(pi/4.0)
+        assert_almost_equal(tnm,tnmrl,8)
+        tnm1 = tandg(60)
+        tnmrl1 = tan(pi/3.0)
+        assert_almost_equal(tnm1,tnmrl1,8)
+
+    def check_specialpoints(self):
+        assert_almost_equal(tandg(0), 0.0, 14)
+        assert_almost_equal(tandg(45), 1.0, 14)
+        assert_almost_equal(tandg(-45), -1.0, 14)
+        assert_almost_equal(tandg(135), -1.0, 14)
+        assert_almost_equal(tandg(-135), 1.0, 14)
+        assert_almost_equal(tandg(180), 0.0, 14)
+        assert_almost_equal(tandg(-180), 0.0, 14)
+        assert_almost_equal(tandg(225), 1.0, 14)
+        assert_almost_equal(tandg(-225), -1.0, 14)
+        assert_almost_equal(tandg(315), -1.0, 14)
+        assert_almost_equal(tandg(-315), 1.0, 14)
+
+class test_ellip(NumpyTestCase):
     def check_ellipj(self):
         el = ellipj(0.2,0)
         rel = [sin(0.2),cos(0.2),1.0,0.20]
         assert_array_almost_equal(el,rel,13)
 
-class test_ellipk(NumpyTestCase):
-
     def check_ellipk(self):
         elk = ellipk(.2)
         assert_almost_equal(elk,1.659623598610528,11)
-
-class test_ellipkinc(NumpyTestCase):
 
     def check_ellipkinc(self):
         elkinc = ellipkinc(pi/2,.2)
@@ -818,14 +886,9 @@ class test_ellipkinc(NumpyTestCase):
         assert_almost_equal(elkinc,0.79398143,8)
         # From pg. 614 of A & S
 
-
-class test_ellipe(NumpyTestCase):
-
     def check_ellipe(self):
         ele = ellipe(.2)
         assert_almost_equal(ele,1.4890350580958529,8)
-
-class test_ellipeinc(NumpyTestCase):
 
     def check_ellipeinc(self):
         eleinc = ellipeinc(pi/2,.2)
@@ -844,8 +907,6 @@ class test_erf(NumpyTestCase):
         er = erf(.25)
         assert_almost_equal(er,0.2763263902,8)
 
-class test_erf_zeros(NumpyTestCase):
-
     def check_erf_zeros(self):
         erz = erf_zeros(5)
         erzr= array([1.45061616+1.88094300j,
@@ -855,19 +916,13 @@ class test_erf_zeros(NumpyTestCase):
                      3.76900557+4.06069723j])
         assert_array_almost_equal(erz,erzr,4)
 
-class test_erfcinv(NumpyTestCase):
-
     def check_erfcinv(self):
         i = erfcinv(1)
         assert_equal(i,0)
 
-class test_erfinv(NumpyTestCase):
-
     def check_erfinv(self):
         i = erfinv(0)
         assert_equal(i,0)
-
-class test_errprint(NumpyTestCase):
 
     def check_errprint(self):
         a = errprint()
@@ -879,7 +934,6 @@ class test_errprint(NumpyTestCase):
         #assert_equal(d,1-a)
 
 class test_euler(NumpyTestCase):
-
     def check_euler(self):
         eu0 = euler(0)
         eu1 = euler(1)
@@ -901,8 +955,7 @@ class test_euler(NumpyTestCase):
         errmax = max(err)
         assert_almost_equal(errmax, 0.0, 14)
 
-class test_exp2(NumpyTestCase):
-
+class test_exp(NumpyTestCase):
     def check_exp2(self):
         ex = exp2(2)
         exrl = 2**2
@@ -913,8 +966,6 @@ class test_exp2(NumpyTestCase):
         exmrl = 2**(2.5)
         assert_almost_equal(exm,exmrl,8)
 
-class test_exp10(NumpyTestCase):
-
     def check_exp10(self):
         ex = exp10(2)
         exrl = 10**2
@@ -924,8 +975,6 @@ class test_exp10(NumpyTestCase):
         exm = exp10(2.5)
         exmrl = 10**(2.5)
         assert_almost_equal(exm,exmrl,8)
-
-class test_expm1(NumpyTestCase):
 
     def check_expm1(self):
         ex = (expm1(2),expm1(3),expm1(4))
@@ -938,12 +987,9 @@ class test_expm1(NumpyTestCase):
         assert_array_almost_equal(ex1,exrl1,8)
 
 class test_fresnel(NumpyTestCase):
-
     def check_fresnel(self):
         frs = array(fresnel(.5))
         assert_array_almost_equal(frs,array([0.064732432859999287, 0.49234422587144644]),8)
-
-class test_fresnel_zeros(NumpyTestCase):
 
     # values from pg 329  Table 7.11 of A & S
     #  slightly corrected in 4th decimal place
@@ -978,47 +1024,40 @@ class test_fresnel_zeros(NumpyTestCase):
 
 
 class test_gamma(NumpyTestCase):
-
     def check_gamma(self):
-
         gam = gamma(5)
         assert_equal(gam,24.0)
-
-class test_gammaln(NumpyTestCase):
 
     def check_gammaln(self):
         gamln = gammaln(3)
         lngam = log(gamma(3))
         assert_almost_equal(gamln,lngam,8)
 
-class test_gammainc(NumpyTestCase):
-
     def check_gammainc(self):
         gama = gammainc(.5,.5)
         assert_almost_equal(gama,.7,1)
-
-class test_gammaincc(NumpyTestCase):
 
     def check_gammaincc(self):
         gicc = gammaincc(.5,.5)
         greal = 1 - gammainc(.5,.5)
         assert_almost_equal(gicc,greal,8)
 
-class test_gammainccinv(NumpyTestCase):
-
     def check_gammainccinv(self):
         gccinv = gammainccinv(.5,.5)
         gcinv = gammaincinv(.5,.5)
         assert_almost_equal(gccinv,gcinv,8)
-
-class test_gammaincinv(NumpyTestCase):
 
     def check_gammaincinv(self):
         y = gammaincinv(.4,.4)
         x = gammainc(.4,y)
         assert_almost_equal(x,0.4,1)
 
-class test_hankel1(NumpyTestCase):
+    def check_rgamma(self):
+        rgam = rgamma(8)
+        rlgam = 1/gamma(8)
+        assert_almost_equal(rgam,rlgam,8)
+
+class test_hankel(NumpyTestCase):
     def check_negv(self):
         assert_almost_equal(hankel1(-3,2), -hankel1(3,2), 14)
 
@@ -1027,7 +1066,6 @@ class test_hankel1(NumpyTestCase):
         hankrl = (jv(1,.1)+yv(1,.1)*1j)
         assert_almost_equal(hank1,hankrl,8)
 
-class test_hankel1e(NumpyTestCase):
     def check_negv(self):
         assert_almost_equal(hankel1e(-3,2), -hankel1e(3,2), 14)
 
@@ -1036,7 +1074,6 @@ class test_hankel1e(NumpyTestCase):
         hankrle = hankel1(1,.1)*exp(-.1j)
         assert_almost_equal(hank1e,hankrle,8)
 
-class test_hankel2(NumpyTestCase):
     def check_negv(self):
         assert_almost_equal(hankel2(-3,2), -hankel2(3,2), 14)
 
@@ -1045,7 +1082,6 @@ class test_hankel2(NumpyTestCase):
         hankrl2 = (jv(1,.1)-yv(1,.1)*1j)
         assert_almost_equal(hank2,hankrl2,8)
 
-class test_hankel2e(NumpyTestCase):
     def check_negv(self):
         assert_almost_equal(hankel2e(-3,2), -hankel2e(3,2), 14)
 
@@ -1055,7 +1091,6 @@ class test_hankel2e(NumpyTestCase):
         assert_almost_equal(hank2e,hankrl2e,8)
 
 class test_hermite(NumpyTestCase):
-
     def check_hermite(self):
         H0 = hermite(0)
         H1 = hermite(1)
@@ -1118,44 +1153,30 @@ class test_gegenbauer(NumpyTestCase):
                                                0,15*poch(a,3),0])/15.0,11)
 
 
-class test_h1vp(NumpyTestCase):
-
+class test_hyper(NumpyTestCase):
     def check_h1vp(self):
-
         h1 = h1vp(1,.1)
         h1real = (jvp(1,.1)+yvp(1,.1)*1j)
         assert_almost_equal(h1,h1real,8)
-
-class test_h2vp(NumpyTestCase):
 
     def check_h2vp(self):
         h2 = h2vp(1,.1)
         h2real = (jvp(1,.1)-yvp(1,.1)*1j)
         assert_almost_equal(h2,h2real,8)
 
-class test_hyp0f1(NumpyTestCase):
-
     def check_hyp0f1(self):
         pass
 
-class test_hyp1f1(NumpyTestCase):
-
     def check_hyp1f1(self):
-
         hyp1 = hyp1f1(.1,.1,.3)
         assert_almost_equal(hyp1, 1.3498588075760032,7)
-
-class test_hyp1f2(NumpyTestCase):
 
     def check_hyp1f2(self):
         pass
 
-class test_hyp2f0(NumpyTestCase):
-
     def check_hyp2f0(self):
         pass
 
-class test_hyp2f1(NumpyTestCase):
     def check_hyp2f1(self):
         # a collection of special cases taken from AMS 55
         values = [[0.5, 1, 1.5, 0.2**2, 0.5/0.2*log((1+0.2)/(1-0.2))],
@@ -1179,12 +1200,8 @@ class test_hyp2f1(NumpyTestCase):
             cv = hyp2f1(a, b, c, x)
             assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
 
-class test_hyp3f0(NumpyTestCase):
-
     def check_hyp3f0(self):
         pass
-
-class test_hyperu(NumpyTestCase):
 
     def check_hyperu(self):
         val1 = hyperu(1,0.1,100)
@@ -1199,7 +1216,7 @@ class test_hyperu(NumpyTestCase):
                                /(gamma(a)*gamma(2-b)))
         assert_array_almost_equal(hypu,hprl,12)
 
-class test_i0(NumpyTestCase):
+class test_bessel(NumpyTestCase):
     def check_i0(self):
         values = [[0.0, 1.0],
                   [1e-10, 1.0],
@@ -1214,14 +1231,10 @@ class test_i0(NumpyTestCase):
             cv = i0(x) * exp(-x)
             assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
 
-class test_i0e(NumpyTestCase):
-
     def check_i0e(self):
         oize = i0e(.1)
         oizer = ive(0,.1)
         assert_almost_equal(oize,oizer,8)
-
-class test_i1(NumpyTestCase):
 
     def check_i1(self):
         values = [[0.0, 0.0],
@@ -1236,38 +1249,27 @@ class test_i1(NumpyTestCase):
             cv = i1(x) * exp(-x)
             assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
 
-class test_i1e(NumpyTestCase):
-
     def check_i1e(self):
         oi1e = i1e(.1)
         oi1er = ive(1,.1)
         assert_almost_equal(oi1e,oi1er,8)
 
-class test_iti0k0(NumpyTestCase):
-
     def check_iti0k0(self):
         iti0 = array(iti0k0(5))
         assert_array_almost_equal(iti0,array([31.848667776169801, 1.5673873907283657]),5)
-
-class test_it2i0k0(NumpyTestCase):
 
     def check_it2i0k0(self):
         it2k = it2i0k0(.1)
         assert_array_almost_equal(it2k,array([0.0012503906973464409, 3.3309450354686687]),6)
 
-class test_itj0y0(NumpyTestCase):
-
     def check_itj0y0(self):
         it0 = array(itj0y0(.2))
         assert_array_almost_equal(it0,array([0.19933433254006822, -0.34570883800412566]),8)
-
-class test_it2j0y0(NumpyTestCase):
 
     def check_it2j0y0(self):
         it2 = array(it2j0y0(.2))
         assert_array_almost_equal(it2,array([0.0049937546274601858, -0.43423067011231614]),8)
 
-class test_iv(NumpyTestCase):
     def check_negv(self):
         assert_equal(iv(3,2), iv(-3,2))
 
@@ -1275,7 +1277,6 @@ class test_iv(NumpyTestCase):
         iv1 = iv(0,.1)*exp(-.1)
         assert_almost_equal(iv1,0.90710092578230106,10)
 
-class test_ive(NumpyTestCase):
     def check_negv(self):
         assert_equal(ive(3,2), ive(-3,2))
 
@@ -1284,7 +1285,6 @@ class test_ive(NumpyTestCase):
         iv1 = iv(0,.1)*exp(-.1)
         assert_almost_equal(ive1,iv1,10)
 
-class test_ivp(NumpyTestCase):
     def check_ivp0(self):
         assert_almost_equal(iv(1,2), ivp(0,2), 10)
 
@@ -1293,48 +1293,20 @@ class test_ivp(NumpyTestCase):
         x = ivp(1,2)
         assert_almost_equal(x,y,10)
 
-class test_j0(NumpyTestCase):
-
     def check_j0(self):
         oz = j0(.1)
         ozr = jn(0,.1)
         assert_almost_equal(oz,ozr,8)
-
-class test_j1(NumpyTestCase):
 
     def check_j1(self):
         o1 = j1(.1)
         o1r = jn(1,.1)
         assert_almost_equal(o1,o1r,8)
 
-class test_jacobi(NumpyTestCase):
-
-    def check_jacobi(self):
-        a = 5*rand() - 1
-        b = 5*rand() - 1
-        P0 = jacobi(0,a,b)
-        P1 = jacobi(1,a,b)
-        P2 = jacobi(2,a,b)
-        P3 = jacobi(3,a,b)
-
-        assert_array_almost_equal(P0.c,[1],13)
-        assert_array_almost_equal(P1.c,array([a+b+2,a-b])/2.0,13)
-        cp = [(a+b+3)*(a+b+4), 4*(a+b+3)*(a+2), 4*(a+1)*(a+2)]
-        p2c = [cp[0],cp[1]-2*cp[0],cp[2]-cp[1]+cp[0]]
-        assert_array_almost_equal(P2.c,array(p2c)/8.0,13)
-        cp = [(a+b+4)*(a+b+5)*(a+b+6),6*(a+b+4)*(a+b+5)*(a+3),
-              12*(a+b+4)*(a+2)*(a+3),8*(a+1)*(a+2)*(a+3)]
-        p3c = [cp[0],cp[1]-3*cp[0],cp[2]-2*cp[1]+3*cp[0],cp[3]-cp[2]+cp[1]-cp[0]]
-        assert_array_almost_equal(P3.c,array(p3c)/48.0,13)
-
-
-class test_jn(NumpyTestCase):
-
     def check_jn(self):
         jnnr = jn(1,.2)
         assert_almost_equal(jnnr,0.099500832639235995,8)
 
-class test_jv(NumpyTestCase):
     def check_negv(self):
         assert_almost_equal(jv(-3,2), -jv(3,2), 14)
 
@@ -1349,7 +1321,6 @@ class test_jv(NumpyTestCase):
             yc = jv(v, x)
             assert_almost_equal(yc, y, 8, err_msg='test #%d' % i)
 
-class test_jve(NumpyTestCase):
     def check_negv(self):
         assert_almost_equal(jve(-3,2), -jve(3,2), 14)
 
@@ -1360,8 +1331,6 @@ class test_jve(NumpyTestCase):
         z = .2+1j
         jvexpr = jv(1,z)*exp(-abs(z.imag))
         assert_almost_equal(jvexp1,jvexpr,8)
-
-class test_jn_zeros(NumpyTestCase):
 
     def check_jn_zeros(self):
         jn0 = jn_zeros(0,5)
@@ -1377,16 +1346,12 @@ class test_jn_zeros(NumpyTestCase):
                                               13.32369,
                                               16.47063]),4)
 
-class test_jnjnp_zeros(NumpyTestCase):
-
     def check_jnjnp_zeros(self):
         pass
         #jnjp = jnjnp(3)
         #assert_array_almost_equal(jnjp,(array([
         #I don't think specfun jdzo is working properly the outputs do not seem to correlate
         #to the inputs
-
-class test_jnp_zeros(NumpyTestCase):
 
     def check_jnp_zeros(self):
         jnp = jnp_zeros(1,5)
@@ -1395,8 +1360,6 @@ class test_jnp_zeros(NumpyTestCase):
                                                 8.53632,
                                                 11.70600,
                                                 14.86359]),4)
-
-class test_jnyn_zeros(NumpyTestCase):
 
     def check_jnyn_zeros(self):
         jnz = jnyn_zeros(1,5)
@@ -1421,172 +1384,53 @@ class test_jnyn_zeros(NumpyTestCase):
                                                 13.28576,
                                                 16.44006])),4)
 
-class test_jvp(NumpyTestCase):
-
     def check_jvp(self):
         jvprim = jvp(2,2)
         jv0 = (jv(1,2)-jv(3,2))/2
         assert_almost_equal(jvprim,jv0,10)
-
-class test_k0(NumpyTestCase):
 
     def check_k0(self):
         ozk = k0(.1)
         ozkr = kv(0,.1)
         assert_almost_equal(ozk,ozkr,8)
 
-class test_k0e(NumpyTestCase):
-
     def check_k0e(self):
         ozke = k0e(.1)
         ozker = kve(0,.1)
         assert_almost_equal(ozke,ozker,8)
-
-class test_k1(NumpyTestCase):
 
     def check_k1(self):
         o1k = k1(.1)
         o1kr = kv(1,.1)
         assert_almost_equal(o1k,o1kr,8)
 
-class test_k1e(NumpyTestCase):
-
     def check_k1e(self):
         o1ke = k1e(.1)
         o1ker = kve(1,.1)
         assert_almost_equal(o1ke,o1ker,8)
 
-class test_kei(NumpyTestCase):
+    def check_jacobi(self):
+        a = 5*rand() - 1
+        b = 5*rand() - 1
+        P0 = jacobi(0,a,b)
+        P1 = jacobi(1,a,b)
+        P2 = jacobi(2,a,b)
+        P3 = jacobi(3,a,b)
 
-    def check_kei(self):
-        mkei = kei(2)
-        assert_almost_equal(mkei,-0.20240006776470432,5)
-
-class test_kelvin(NumpyTestCase):
-
-    def check_kelvin(self):
-        mkelv = kelvin(2)
-        assert_array_almost_equal(mkelv,(ber(2)+bei(2)*1j,
-                                         ker(2)+kei(2)*1j,
-                                         berp(2)+beip(2)*1j,
-                                         kerp(2)+keip(2)*1j),8)
-
-class test_keip(NumpyTestCase):
-
-    def  check_keip(self):
-        mkeip = keip(2)
-        assert_almost_equal(mkeip,0.21980790991960536,5)
-
-class test_ker(NumpyTestCase):
-
-    def check_ker(self):
-        mker = ker(2)
-        assert_almost_equal(mker,-0.041664513991509472,5)
-
-class test_kerp(NumpyTestCase):
-
-    def check_kerp(self):
-        mkerp = kerp(2)
-        assert_almost_equal(mkerp,-0.10660096588105264,5)
-
-class test_kei_zeros(NumpyTestCase):
-
-    def check_kei_zeros(self):
-        kei = kei_zeros(5)
-        assert_array_almost_equal(kei,array([  3.91467,
-                                              8.34422,
-                                              12.78256,
-                                              17.22314,
-                                              21.66464]),4)
-
-class test_keip_zeros(NumpyTestCase):
-
-    def check_keip_zeros(self):
-        keip = keip_zeros(5)
-        assert_array_almost_equal(keip,array([  4.93181,
-                                                9.40405,
-                                                13.85827,
-                                                18.30717,
-                                                22.75379]),4)
-
-
-
-class test_kelvin_zeros(NumpyTestCase):
-
-    # numbers come from 9.9 of A&S pg. 381
-    def check_kelvin_zeros(self):
-        tmp = kelvin_zeros(5)
-        berz,beiz,kerz,keiz,berpz,beipz,kerpz,keipz = tmp
-        assert_array_almost_equal(berz,array([ 2.84892,
-                                               7.23883,
-                                               11.67396,
-                                               16.11356,
-                                               20.55463]),4)
-        assert_array_almost_equal(beiz,array([ 5.02622,
-                                               9.45541,
-                                               13.89349,
-                                               18.33398,
-                                               22.77544]),4)
-        assert_array_almost_equal(kerz,array([ 1.71854,
-                                               6.12728,
-                                               10.56294,
-                                               15.00269,
-                                               19.44382]),4)
-        assert_array_almost_equal(keiz,array([ 3.91467,
-                                               8.34422,
-                                               12.78256,
-                                               17.22314,
-                                               21.66464]),4)
-        assert_array_almost_equal(berpz,array([ 6.03871,
-                                                10.51364,
-                                                14.96844,
-                                                19.41758,
-                                                23.86430]),4)
-        assert_array_almost_equal(beipz,array([ 3.77267,
-                 # table from 1927 had 3.77320
-                 #  but this is more accurate
-                                                8.28099,
-                                                12.74215,
-                                                17.19343,
-                                                21.64114]),4)
-        assert_array_almost_equal(kerpz,array([ 2.66584,
-                                                7.17212,
-                                                11.63218,
-                                                16.08312,
-                                                20.53068]),4)
-        assert_array_almost_equal(keipz,array([ 4.93181,
-                                                9.40405,
-                                                13.85827,
-                                                18.30717,
-                                                22.75379]),4)
-
-class test_ker_zeros(NumpyTestCase):
-
-    def check_ker_zeros(self):
-        ker = ker_zeros(5)
-        assert_array_almost_equal(ker,array([  1.71854,
-                                               6.12728,
-                                               10.56294,
-                                               15.00269,
-                                               19.44381]),4)
-
-class test_kerp_zeros(NumpyTestCase):
-
-    def check_kerp_zeros(self):
-        kerp = kerp_zeros(5)
-        assert_array_almost_equal(kerp,array([  2.66584,
-                                                7.17212,
-                                                11.63218,
-                                                16.08312,
-                                                20.53068]),4)
-
-class test_kn(NumpyTestCase):
+        assert_array_almost_equal(P0.c,[1],13)
+        assert_array_almost_equal(P1.c,array([a+b+2,a-b])/2.0,13)
+        cp = [(a+b+3)*(a+b+4), 4*(a+b+3)*(a+2), 4*(a+1)*(a+2)]
+        p2c = [cp[0],cp[1]-2*cp[0],cp[2]-cp[1]+cp[0]]
+        assert_array_almost_equal(P2.c,array(p2c)/8.0,13)
+        cp = [(a+b+4)*(a+b+5)*(a+b+6),6*(a+b+4)*(a+b+5)*(a+3),
+              12*(a+b+4)*(a+2)*(a+3),8*(a+1)*(a+2)*(a+3)]
+        p3c = [cp[0],cp[1]-3*cp[0],cp[2]-2*cp[1]+3*cp[0],cp[3]-cp[2]+cp[1]-cp[0]]
+        assert_array_almost_equal(P3.c,array(p3c)/48.0,13)
 
     def check_kn(self):
         kn1 = kn(0,.2)
         assert_almost_equal(kn1,1.7527038555281462,8)
 
-class test_kv(NumpyTestCase):
     def check_negv(self):
         assert_equal(kv(3.0, 2.2), kv(-3.0, 2.2))
 
@@ -1601,7 +1445,6 @@ class test_kv(NumpyTestCase):
         assert_almost_equal(kv2, 49.51242928773287, 10)
 
 
-class test_kve(NumpyTestCase):
     def check_negv(self):
         assert_equal(kve(3.0, 2.2), kve(-3.0, 2.2))
 
@@ -1614,7 +1457,6 @@ class test_kve(NumpyTestCase):
         kv2 = kv(0,z)*exp(z)
         assert_almost_equal(kve2,kv2,8)
 
-class test_kvp(NumpyTestCase):
     def check_kvp_v0n1(self):
         z = 2.2
         assert_almost_equal(-kv(1,z), kvp(0,z, n=1), 10)
@@ -1633,8 +1475,69 @@ class test_kvp(NumpyTestCase):
         x = kvp(v, z, n=2)
         assert_almost_equal(xc, x, 10)
 
-class test_laguerre(NumpyTestCase):
+    def check_y0(self):
+        oz = y0(.1)
+        ozr = yn(0,.1)
+        assert_almost_equal(oz,ozr,8)
 
+    def check_y1(self):
+        o1 = y1(.1)
+        o1r = yn(1,.1)
+        assert_almost_equal(o1,o1r,8)
+
+    def check_y0_zeros(self):
+        yo,ypo = y0_zeros(2)
+        zo,zpo = y0_zeros(2,complex=1)
+        all = r_[yo,zo]
+        allval = r_[ypo,zpo]
+        assert_array_almost_equal(abs(yv(0.0,all)),0.0,11)
+        assert_array_almost_equal(abs(yv(1,all)-allval),0.0,11)
+
+
+    def check_y1_zeros(self):
+        y1 = y1_zeros(1)
+        assert_array_almost_equal(y1,(array([2.19714]),array([0.52079])),5)
+
+    def check_y1p_zeros(self):
+        y1p = y1p_zeros(1,complex=1)
+        assert_array_almost_equal(y1p,(array([ 0.5768+0.904j]), array([-0.7635+0.5892j])),3)
+
+    def check_yn_zeros(self):
+        an = yn_zeros(4,2)
+        assert_array_almost_equal(an,array([ 5.64515,  9.36162]),5)
+
+    def check_ynp_zeros(self):
+        ao = ynp_zeros(0,2)
+        assert_array_almost_equal(ao,array([ 2.19714133, 5.42968104]),6)
+
+    def check_yn(self):
+        yn2n = yn(1,.2)
+        assert_almost_equal(yn2n,-3.3238249881118471,8)
+
+    def check_negv(self):
+        assert_almost_equal(yv(-3,2), -yv(3,2), 14)
+
+    def check_yv(self):
+        yv2 = yv(1,.2)
+        assert_almost_equal(yv2,-3.3238249881118471,8)
+
+    def check_negv(self):
+        assert_almost_equal(yve(-3,2), -yve(3,2), 14)
+
+    def check_yve(self):
+        yve2 = yve(1,.2)
+        assert_almost_equal(yve2,-3.3238249881118471,8)
+        yve2r = yv(1,.2+1j)*exp(-1)
+        yve22 = yve(1,.2+1j)
+        assert_almost_equal(yve22,yve2r,8)
+
+    def check_yvp(self):
+        yvpr = (yv(1,.2) - yv(3,.2))/2.0
+        yvp1 = yvp(2,.2)
+        assert_array_almost_equal(yvp1,yvpr,10)
+
+
+class test_laguerre(NumpyTestCase):
     def check_laguerre(self):
         lag0 = laguerre(0)
         lag1 = laguerre(1)
@@ -1663,7 +1566,6 @@ class test_laguerre(NumpyTestCase):
 
 # Base polynomials come from Abrahmowitz and Stegan
 class test_legendre(NumpyTestCase):
-
     def check_legendre(self):
         leg0 = legendre(0)
         leg1 = legendre(1)
@@ -1679,8 +1581,7 @@ class test_legendre(NumpyTestCase):
         assert_almost_equal(leg5.c,array([63,0,-70,0,15,0])/8.0)
 
 
-class test_lmbda(NumpyTestCase):
-
+class test_lambda(NumpyTestCase):
     def check_lmbda(self):
         lam = lmbda(1,.1)
         lamr = (array([jn(0,.1), 2*jn(1,.1)/.1]),
@@ -1688,7 +1589,6 @@ class test_lmbda(NumpyTestCase):
         assert_array_almost_equal(lam,lamr,8)
 
 class test_log1p(NumpyTestCase):
-
     def check_log1p(self):
         l1p = (log1p(10),log1p(11),log1p(12))
         l1prl = (log(11),log(12),log(13))
@@ -1699,10 +1599,8 @@ class test_log1p(NumpyTestCase):
         l1pmrl = (log(2),log(2.1),log(2.2))
         assert_array_almost_equal(l1pm,l1pmrl,8)
 
-class test_lpmn(NumpyTestCase):
-
+class test_legendre_functions(NumpyTestCase):
     def check_lpmn(self):
-
         lp = lpmn(0,2,.5)
         assert_array_almost_equal(lp,(array([       [ 1.00000 ,
                                                       0.50000,
@@ -1710,8 +1608,6 @@ class test_lpmn(NumpyTestCase):
                                       array([       [ 0.00000 ,
                                                       1.00000 ,
                                                       1.50000]])),4)
-
-class test_lpn(NumpyTestCase):
 
     def check_lpn(self):
         lpnf = lpn(2,.5)
@@ -1722,13 +1618,9 @@ class test_lpn(NumpyTestCase):
                                                       1.00000 ,
                                                       1.50000])),4)
 
-class test_lpmv(NumpyTestCase):
-
     def check_lpmv(self):
         lp = lpmv(0,2,.5)
         assert_almost_equal(lp,-0.125,3)
-
-class test_lqmn(NumpyTestCase):
 
     def check_lqmn(self):
         lqmnf = lqmn(0,2,.5)
@@ -1737,45 +1629,33 @@ class test_lqmn(NumpyTestCase):
         assert_array_almost_equal(lqmnf[0][0],lqf[0],4)
         assert_array_almost_equal(lqmnf[1][0],lqf[1],4)
 
-
-
-
-class test_lqn(NumpyTestCase):
-
     def check_lqn(self):
         lqf = lqn(2,.5)
         assert_array_almost_equal(lqf,(array([ 0.5493, -0.7253, -0.8187]),
                                        array([ 1.3333,  1.216 , -0.8427])),4)
 
-class test_mathieu_a(NumpyTestCase):
+class test_mathieu(NumpyTestCase):
 
     def check_mathieu_a(self):
         pass
-
-class test_mathieu_even_coef(NumpyTestCase):
 
     def check_mathieu_even_coef(self):
         mc =  mathieu_even_coef(2,5)
         #Q not defined broken and cannot figure out proper reporting order
 
-class test_mathieu_odd_coef(NumpyTestCase):
-
     def check_mathieu_odd_coef(self):
         pass
             #same problem as above
 
-class test_modfresnelp(NumpyTestCase):
+class test_fresnel_integral(NumpyTestCase):
 
     def check_modfresnelp(self):
         pass
-
-class test_modfresnelm(NumpyTestCase):
 
     def check_modfresnelm(self):
         pass
 
 class test_obl_cv_seq(NumpyTestCase):
-
     def check_obl_cv_seq(self):
         obl = obl_cv_seq(0,3,1)
         assert_array_almost_equal(obl,array([ -0.348602,
@@ -1783,8 +1663,7 @@ class test_obl_cv_seq(NumpyTestCase):
                                               5.486800,
                                               11.492120]),5)
 
-class test_pbdn_seq(NumpyTestCase):
-
+class test_parabolic_cylinder(NumpyTestCase):
     def check_pbdn_seq(self):
         pb = pbdn_seq(1,.1)
         assert_array_almost_equal(pb,(array([ 0.9975,
@@ -1792,26 +1671,16 @@ class test_pbdn_seq(NumpyTestCase):
                                       array([-0.0499,
                                              0.9925])),4)
 
-class test_pbdv(NumpyTestCase):
-
     def check_pbdv(self):
         pbv = pbdv(1,.2)
         derrl = 1/2*(.2)*pbdv(1,.2)[0] - pbdv(0,.2)[0]
-
-class _test_pbdv_seq(NumpyTestCase):
 
     def check_pbdv_seq(self):
         pbn = pbdn_seq(1,.1)
         pbv = pbdv_seq(1,.1)
         assert_array_almost_equal(pbv,(real(pbn[0]),real(pbn[1])),4)
 
-class test_pbvv_seq(NumpyTestCase):
-
-    def check_pbvv_seq(self):
-        pass
-
 class test_polygamma(NumpyTestCase):
-
     # from Table 6.2 (pg. 271) of A&S
     def check_polygamma(self):
         poly2 = polygamma(2,1)
@@ -1820,7 +1689,6 @@ class test_polygamma(NumpyTestCase):
         assert_almost_equal(poly3,6.4939394023,10)
 
 class test_pro_cv_seq(NumpyTestCase):
-
     def check_pro_cv_seq(self):
         prol = pro_cv_seq(0,3,1)
         assert_array_almost_equal(prol,array([  0.319000,
@@ -1829,13 +1697,11 @@ class test_pro_cv_seq(NumpyTestCase):
                                                12.514462]),5)
 
 class test_psi(NumpyTestCase):
-
     def check_psi(self):
         ps = psi(1)
         assert_almost_equal(ps,-0.57721566490153287,8)
 
 class test_radian(NumpyTestCase):
-
     def check_radian(self):
         rad = radian(90,0,0)
         assert_almost_equal(rad,pi/2.0,5)
@@ -1844,33 +1710,11 @@ class test_radian(NumpyTestCase):
         rad1 = radian(90,1,60)
         assert_almost_equal(rad1,pi/2+0.0005816135199345904,5)
 
-class test_reshape(NumpyTestCase):
-
-    def check_reshape(self):
-        a = (array([1,2,3]),array([4,5,6]))
-        b = reshape(a,(2,3))
-        assert_array_equal(b,array([[1, 2, 3],
-                                    [4, 5, 6]]))
-        c = reshape(a,(3,2))
-        assert_array_equal(c,array([[1, 2],
-                                    [3, 4],
-                                    [5, 6]]))
-
-class test_rgamma(NumpyTestCase):
-
-    def check_rgamma(self):
-        rgam = rgamma(8)
-        rlgam = 1/gamma(8)
-        assert_almost_equal(rgam,rlgam,8)
-
-class test_riccati_jn(NumpyTestCase):
-
+class test_riccati(NumpyTestCase):
     def check_riccati_jn(self):
         jnrl = (sph_jn(1,.2)[0]*.2,sph_jn(1,.2)[0]+sph_jn(1,.2)[1]*.2)
         ricjn = riccati_jn(1,.2)
         assert_array_almost_equal(ricjn,jnrl,8)
-
-class test_riccati_yn(NumpyTestCase):
 
     def check_riccati_yn(self):
         ynrl = (sph_yn(1,.2)[0]*.2,sph_yn(1,.2)[0]+sph_yn(1,.2)[1]*.2)
@@ -1878,7 +1722,6 @@ class test_riccati_yn(NumpyTestCase):
         assert_array_almost_equal(ricyn,ynrl,8)
 
 class test_round(NumpyTestCase):
-
     def check_round(self):
         rnd = map(int,(round(10.1),round(10.4),round(10.5),round(10.6)))
 
@@ -1992,40 +1835,9 @@ class _test_sh_jacobi(NumpyTestCase):
         assert_array_almost_equal(G4.c,ge4.c,13)
         assert_array_almost_equal(G5.c,ge5.c,13)
 
-
-class test_sinc(NumpyTestCase):
-
-    def check_sinc(self):
-        c = arange(-2,2,.1)
-        y = sinc(c)
-        yre = sin(pi*c)/(pi*c)
-        yre[20] = 1.0
-        assert_array_almost_equal(y, yre, 4)
-    def check_0(self):
-        x = 0.0
-        assert_equal(sinc(x),1.0)
-
-class test_sindg(NumpyTestCase):
-
-    def check_sindg(self):
-        sn = sindg(90)
-        assert_equal(sn,1.0)
-
-    def check_sindgmore(self):
-        snm = sindg(30)
-        snmrl = sin(pi/6.0)
-        assert_almost_equal(snm,snmrl,8)
-        snm1 = sindg(45)
-        snmrl1 = sin(pi/4.0)
-        assert_almost_equal(snm1,snmrl1,8)
-
-class test_sph_harm(NumpyTestCase):
-
+class test_spherical(NumpyTestCase):
     def check_sph_harm(self):
         pass
-
-
-class test_sph_in(NumpyTestCase):
 
     def check_sph_in(self):
         i1n = sph_in(1,.2)
@@ -2035,14 +1847,10 @@ class test_sph_in(NumpyTestCase):
                                                 0.066933714568029540839]),12)
         assert_array_almost_equal(i1n[1],[inp0,inp1],12)
 
-class test_sph_inkn(NumpyTestCase):
-
     def check_sph_inkn(self):
         spikn = r_[sph_in(1,.2)+sph_kn(1,.2)]
         inkn = r_[sph_inkn(1,.2)]
         assert_array_almost_equal(inkn,spikn,10)
-
-class test_sph_jn(NumpyTestCase):
 
     def check_sph_jn(self):
         s1 = sph_jn(2,.2)
@@ -2054,14 +1862,10 @@ class test_sph_jn(NumpyTestCase):
                                       0.0026590560795273856680],12)
         assert_array_almost_equal(s1[1],[s10,s11,s12],12)
 
-class test_sph_jnyn(NumpyTestCase):
-
     def check_sph_jnyn(self):
         jnyn = r_[sph_jn(1,.2) + sph_yn(1,.2)]  # tuple addition
         jnyn1 = r_[sph_jnyn(1,.2)]
         assert_array_almost_equal(jnyn1,jnyn,9)
-
-class test_sph_kn(NumpyTestCase):
 
     def check_sph_kn(self):
         kn = sph_kn(2,.2)
@@ -2073,8 +1877,6 @@ class test_sph_kn(NumpyTestCase):
                                          585.15696310385559829],12)
         assert_array_almost_equal(kn[1],[kn0,kn1,kn2],9)
 
-class test_sph_yn(NumpyTestCase):
-
     def check_sph_yn(self):
         sy1 = sph_yn(2,.2)[0][2]
         sy2 = sph_yn(0,.2)[0][0]
@@ -2083,131 +1885,6 @@ class test_sph_yn(NumpyTestCase):
         assert_almost_equal(sy2,-4.9003329,5)
         sy3 = sph_yn(1,.2)[1][1]
         assert_almost_equal(sy3,sphpy,4) #compare correct derivative val. (correct =-system val).
-
-class test_take(NumpyTestCase):
-
-    def check_take(self):
-        a = array([0,1,2,3,4,5,6,7,8])
-        tka = take(a,(0,4,5,8),axis=0)
-        assert_array_equal(tka,array([0,4,5,8]))
-
-class test_tandg(NumpyTestCase):
-
-    def check_tandg(self):
-        tn = tandg(30)
-        tnrl = tan(pi/6.0)
-        assert_almost_equal(tn,tnrl,8)
-
-    def check_tandgmore(self):
-        tnm = tandg(45)
-        tnmrl = tan(pi/4.0)
-        assert_almost_equal(tnm,tnmrl,8)
-        tnm1 = tandg(60)
-        tnmrl1 = tan(pi/3.0)
-        assert_almost_equal(tnm1,tnmrl1,8)
-
-    def check_specialpoints(self):
-        assert_almost_equal(tandg(0), 0.0, 14)
-        assert_almost_equal(tandg(45), 1.0, 14)
-        assert_almost_equal(tandg(-45), -1.0, 14)
-        assert_almost_equal(tandg(135), -1.0, 14)
-        assert_almost_equal(tandg(-135), 1.0, 14)
-        assert_almost_equal(tandg(180), 0.0, 14)
-        assert_almost_equal(tandg(-180), 0.0, 14)
-        assert_almost_equal(tandg(225), 1.0, 14)
-        assert_almost_equal(tandg(-225), -1.0, 14)
-        assert_almost_equal(tandg(315), -1.0, 14)
-        assert_almost_equal(tandg(-315), 1.0, 14)
-
-class test_y0(NumpyTestCase):
-
-    def check_y0(self):
-        oz = y0(.1)
-        ozr = yn(0,.1)
-        assert_almost_equal(oz,ozr,8)
-
-class test_y1(NumpyTestCase):
-
-    def check_y1(self):
-        o1 = y1(.1)
-        o1r = yn(1,.1)
-        assert_almost_equal(o1,o1r,8)
-
-class test_y0_zeros(NumpyTestCase):
-
-    def check_y0_zeros(self):
-        yo,ypo = y0_zeros(2)
-        zo,zpo = y0_zeros(2,complex=1)
-        all = r_[yo,zo]
-        allval = r_[ypo,zpo]
-        assert_array_almost_equal(abs(yv(0.0,all)),0.0,11)
-        assert_array_almost_equal(abs(yv(1,all)-allval),0.0,11)
-
-
-class test_y1_zeros(NumpyTestCase):
-
-    def check_y1_zeros(self):
-        y1 = y1_zeros(1)
-        assert_array_almost_equal(y1,(array([2.19714]),array([0.52079])),5)
-
-class test_y1p_zeros(NumpyTestCase):
-
-    def check_y1p_zeros(self):
-        y1p = y1p_zeros(1,complex=1)
-        assert_array_almost_equal(y1p,(array([ 0.5768+0.904j]), array([-0.7635+0.5892j])),3)
-
-class test_yn_zeros(NumpyTestCase):
-
-    def check_yn_zeros(self):
-        an = yn_zeros(4,2)
-        assert_array_almost_equal(an,array([ 5.64515,  9.36162]),5)
-
-class test_ynp_zeros(NumpyTestCase):
-
-    def check_ynp_zeros(self):
-        ao = ynp_zeros(0,2)
-        assert_array_almost_equal(ao,array([ 2.19714133, 5.42968104]),6)
-
-class test_yn(NumpyTestCase):
-
-    def check_yn(self):
-        yn2n = yn(1,.2)
-        assert_almost_equal(yn2n,-3.3238249881118471,8)
-
-class test_yv(NumpyTestCase):
-    def check_negv(self):
-        assert_almost_equal(yv(-3,2), -yv(3,2), 14)
-
-    def check_yv(self):
-        yv2 = yv(1,.2)
-        assert_almost_equal(yv2,-3.3238249881118471,8)
-
-class test_yve(NumpyTestCase):
-    def check_negv(self):
-        assert_almost_equal(yve(-3,2), -yve(3,2), 14)
-
-    def check_yve(self):
-        yve2 = yve(1,.2)
-        assert_almost_equal(yve2,-3.3238249881118471,8)
-        yve2r = yv(1,.2+1j)*exp(-1)
-        yve22 = yve(1,.2+1j)
-        assert_almost_equal(yve22,yve2r,8)
-
-class test_yvp(NumpyTestCase):
-
-    def check_yvp(self):
-        yvpr = (yv(1,.2) - yv(3,.2))/2.0
-        yvp1 = yvp(2,.2)
-        assert_array_almost_equal(yvp1,yvpr,10)
-
-class test_zeros(NumpyTestCase):
-
-    def check_zeros(self):
-        b = zeros((1,11))
-        assert_array_equal(b,array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]))
-        c = zeros((2,2))
-        assert_array_equal(c,array([[0, 0],
-                                    [0, 0]]))
 
 if __name__ == "__main__":
     NumpyTest().run()

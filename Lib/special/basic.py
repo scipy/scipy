@@ -661,11 +661,11 @@ def pbdv_seq(v,x):
         raise ValueError, "arguments must be scalars."
     n = int(v)
     v0 = v-n
-    if (n < 2): n1=2
+    if (n < 1): n1=1
     else: n1 = n
     v1 = n1 + v0
     dv,dp,pdf,pdd = specfun.pbdv(v1,x)
-    return dv[:(n1+1)],dp[:(n1+1)]
+    return dv[:n1+1],dp[:n1+1]
 
 def pbvv_seq(v,x):
     """Compute sequence of parabolic cylinder functions Dv(x) and
@@ -675,11 +675,11 @@ def pbvv_seq(v,x):
         raise ValueError, "arguments must be scalars."
     n = int(v)
     v0 = v-n
-    if (n < 2): n1=2
+    if (n <= 1): n1=1
     else: n1 = n
     v1 = n1 + v0
     dv,dp,pdf,pdd = specfun.pbvv(v1,x)
-    return dv[:(n1+1)],dp[:(n1+1)]
+    return dv[:n1+1],dp[:n1+1]
 
 def pbdn_seq(n,z):
     """Compute sequence of parabolic cylinder functions Dn(z) and
@@ -690,11 +690,11 @@ def pbdn_seq(n,z):
     if (floor(n)!=n):
         raise ValueError, "n must be an integer."
     if (abs(n) <= 1):
-        n1 = 2
+        n1 = 1
     else:
         n1 = n
     cpb,cpd = specfun.cpbdn(n1,z)
-    return cpb[:n+1],cpd[:n+1]
+    return cpb[:n1+1],cpd[:n1+1]
 
 def ber_zeros(nt):
     """Compute nt zeros of the kelvin function ber x
