@@ -612,39 +612,39 @@ def _find_user(xk, yk, order, conds, B):
 #  at K-1 farthest separated points in the interval
 def _find_not_a_knot(xk, yk, order, conds, B):
     raise NotImplementedError
-    return _find_user(xk, yk, order, conds, B):
+    return _find_user(xk, yk, order, conds, B)
 
 # If conds is None, then ensure zero-valued second
 #  derivative at K-1 farthest separated points
 def _find_natural(xk, yk, order, conds, B):
     raise NotImplementedError
-    return _find_user(xk, yk, order, conds, B):
+    return _find_user(xk, yk, order, conds, B)
 
 # If conds is None, then ensure zero-valued first
 #  derivative at K-1 farthest separated points
 def _find_clamped(xk, yk, order, conds, B):
     raise NotImplementedError
-    return _find_user(xk, yk, order, conds, B):
+    return _find_user(xk, yk, order, conds, B)
 
 def _find_fixed(xk, yk, order, conds, B):
     raise NotImplementedError
-    return _find_user(xk, yk, order, conds, B):
+    return _find_user(xk, yk, order, conds, B)
 
 # If conds is None, then use coefficient periodicity
 # If conds is 'function' then use function periodicity
 def _find_periodic(xk, yk, order, conds, B):
     raise NotImplementedError
-    return _find_user(xk, yk, order, conds, B):
+    return _find_user(xk, yk, order, conds, B)
 
 # Doesn't use conds
 def _find_symmetric(xk, yk, order, conds, B):
     raise NotImplementedError
-    return _find_user(xk, yk, order, conds, B):
+    return _find_user(xk, yk, order, conds, B)
 
 # conds is a dictionary with multiple values
 def _find_mixed(xk, yk, order, conds, B):
     raise NotImplementedError
-    return _find_user(xk, yk, order, conds, B):
+    return _find_user(xk, yk, order, conds, B)
 
 
 def splmake(xk,yk,order=3,kind='smoothest',conds=None):
