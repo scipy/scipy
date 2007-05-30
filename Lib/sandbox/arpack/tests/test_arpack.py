@@ -307,7 +307,7 @@ class test_eigen_complex_symmetric(NumpyTestCase):
         a,aw = self.get_a1(typ)
         w,v = eigen(a,k,which='LM')
         for i in range(k):
-            assert_array_almost_equal(sb.dot(a,v[:,i]),w[i]*v[:,i])
+            assert_array_almost_equal(sb.dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
         aw.real.sort()
         w.real.sort()
         assert_array_almost_equal(w,aw[-k:])
