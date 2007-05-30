@@ -1,3 +1,5 @@
+
+
 """ Classes for interpolating values.
 """
 
@@ -387,13 +389,16 @@ class ppform(object):
     fromspline = classmethod(fromspline)
 
 
-def _find_smoothest(xk, yk, order):
+def _find_smoothest(xk, yk, order, conds=None, B=None):
     # construct Bmatrix, and Jmatrix
     # e = J*c
     # minimize norm(e,2) given B*c=yk
+    # if desired B can be given
+    # conds is ignored
     N = len(xk)-1
     K = order
-    B = _fitpack._bsplmat(order, xk)
+    if B is None:
+        B = _fitpack._bsplmat(order, xk)
     J = _fitpack._bspldismat(order, xk)
     u,s,vh = np.dual.svd(B)
     ind = K-1
@@ -411,7 +416,6 @@ def _find_smoothest(xk, yk, order):
     return dot(tmp, yk)
     
         
-
 def _setdiag(a, k, v):
     assert (a.ndim==2)
     M,N = a.shape
@@ -459,38 +463,7 @@ def _find_smoothest2(xk, yk):
     val = dot(V2,dot(A,V2))
     res1 = dot(np.outer(V2,V2)/val,A)
     mk = dot(np.eye(Np1)-res1,dot(Bd,b))
-    return mk    
-
-def _calc_fromJBd(J, Bd, b, V2, NN):
-    A = dot(J.T,J)
-    sub = dot(V2.T,dot(A,V2))
-    subi = np.linalg.inv(sub)
-    res0 = dot(V2,subi)
-    res1 = dot(res0,dot(V2.T,A))
-    mk = dot(np.eye(NN)-res1,dot(Bd,b))
-    return mk
-    
-def _find_smoothest3(xk, yk):
-    N = len(xk)-1
-    Np1 = N+1
-    Nm1 = N-1
-    dk = np.diff(xk)    
-    # find B and then take pseudo-inverse
-    B = np.zeros((Nm1,Np1))
-    _setdiag(B,0,dk[:-1])
-    _setdiag(B,1,2*(dk[1:]+dk[:-1]))
-    _setdiag(B,2,dk[1:])
-    u,s,vh = np.dual.svd(B)
-    V2 = vh[-2:,:].T
-    Bd = dot(vh[:-2,:].T, dot(np.diag(1.0/s),u.T))
-    b0 = np.diff(yk)/dk
-    b = 6*np.diff(b0)
-    J = np.zeros((N-1,N+1))
-    idk = 1.0/dk
-    _setdiag(J,0,idk[:-1])
-    _setdiag(J,1,-idk[1:]-idk[:-1])
-    _setdiag(J,2,idk[1:])
-    return _calc_fromJBd(J, Bd, b, V2, Np1)
+    return mk 
 
 def _get_spline2_Bb(xk, yk, kind, conds):
     Np1 = len(xk)
@@ -619,6 +592,60 @@ def _get_spline3_Bb(xk, yk, kind, conds):
     else:
         raise ValueError, "%s not supported" % kind
 
+# conds is a tuple of an array and a vector
+#  giving the left-hand and the right-hand side
+#  of the additional equations to add to B
+def _find_user(xk, yk, order, conds, B):
+    lh = conds[0]
+    rh = conds[1]
+    B = concatenate((B,lh),axis=0)
+    w = concatenate((yk,rh),axis=0)
+    M,N = B.shape
+    if (M>N):
+        raise ValueError("over-specification of conditions")
+    elif (M<N):
+        return _find_smoothest(xk, yk, order, None, B)
+    else:
+        return np.dual.solve(B, w)    
+
+# If conds is None, then use the not_a_knot condition
+#  at K-1 farthest separated points in the interval
+def _find_not_a_knot(xk, yk, order, conds, B):
+    raise NotImplementedError
+    return _find_user(xk, yk, order, conds, B):
+
+# If conds is None, then ensure zero-valued second
+#  derivative at K-1 farthest separated points
+def _find_natural(xk, yk, order, conds, B):
+    raise NotImplementedError
+    return _find_user(xk, yk, order, conds, B):
+
+# If conds is None, then ensure zero-valued first
+#  derivative at K-1 farthest separated points
+def _find_clamped(xk, yk, order, conds, B):
+    raise NotImplementedError
+    return _find_user(xk, yk, order, conds, B):
+
+def _find_fixed(xk, yk, order, conds, B):
+    raise NotImplementedError
+    return _find_user(xk, yk, order, conds, B):
+
+# If conds is None, then use coefficient periodicity
+# If conds is 'function' then use function periodicity
+def _find_periodic(xk, yk, order, conds, B):
+    raise NotImplementedError
+    return _find_user(xk, yk, order, conds, B):
+
+# Doesn't use conds
+def _find_symmetric(xk, yk, order, conds, B):
+    raise NotImplementedError
+    return _find_user(xk, yk, order, conds, B):
+
+# conds is a dictionary with multiple values
+def _find_mixed(xk, yk, order, conds, B):
+    raise NotImplementedError
+    return _find_user(xk, yk, order, conds, B):
+
 
 def splmake(xk,yk,order=3,kind='smoothest',conds=None):
     """Return a (xk, cvals, k) representation of a spline given
@@ -628,13 +655,11 @@ def splmake(xk,yk,order=3,kind='smoothest',conds=None):
     the same xk points. The first dimension is assumed to be the
     interpolating dimension.
 
-    kind can be 'natural', 'second', 'first', 'clamped', 'endslope',
-                'periodic', 'symmetric', 'parabolic', 'not-a-knot',
-                'runout', 'smoothest'
+    kind can be 'smoothest', 'not_a_knot', 'fixed',
+                'clamped', 'natural', 'periodic', 'symmetric',
+                'user', 'mixed'
 
-    for 'second', and 'first' conditions can be given which should
-    be the desired second and first derivatives at
-    the end-points, respectively. 
+                it is ignored if order < 2
     """
     yk = np.asanyarray(yk)
     N = yk.shape[0]-1
@@ -647,44 +672,28 @@ def splmake(xk,yk,order=3,kind='smoothest',conds=None):
     elif order == 1:
         return xk, yk, order
 
-    if kind == 'smoothest':
-        coefs = _find_smoothest(xk,yk,order)
-        return xk, coefs, order
+    try:
+        func = eval('_find_%s' % kind)
+    except:
+        raise NotImplementedError
 
-    raise NotImplementedError
+    # the constraint matrix
+    B = _fitpack._bsplmat(order, xk)
+    coefs = func(xk, yk, order, conds, B)
+    return xk, coefs, order
 
+def spleval((xj,cvals,k),xnew,deriv=0):
+    """Evaluate a fixed spline represented by the given tuple at the new
+    x-values. The xj values are the interior knot points.  The approximation
+    region is xj[0] to xj[-1].  If N+1 is the length of xj, then cvals should
+    have length N+k where k is the order of the spline.
 
-##    try:
-##        func = eval('_get_spline%d_Bb'%order)
-##    except NameError:
-##        raise ValueError("order %d not available" % order)
+    Internally, an additional k-1 knot points are added on either side of
+    the spline.
 
-
-##    B,b,exfunc,nlu = func(xk, yk, kind, conds)
-
-##    if nlu is None:
-##        mk = np.dual.solve(B,b)
-##    else:
-##        mk = slin.solve_banded(nlu,B,b)
-
-##    if exfunc is not None:
-##        # need to add additional values to mk
-##        #  using the returned function
-##        mk = exfunc(mk)
-        
-##    return mk, xk, yk, order
-
-def spleval((xk,cvals,k),xnew,deriv=0):
-    """Evaluate a fixed spline represented by the given tuple at the new x-values.
-    The xk values are the interior knot points.  The approximation region is
-    xk[0] to xk[-1].  If N+1 is the length of xk, then cvals should be N+k where
-    k is the order of the spline.
-
-    Internally, an additional max(k-1,0) knot points are added on either
-    side of the spline.
-
-    If cvals represents more than one curve and/or xnew is N-d, then the result is
-    xnew.shape + cvals.shape[1:] providing the interpolation of multiple curves.
+    If cvals represents more than one curve (cvals.ndim > 1) and/or xnew is
+    N-d, then the result is xnew.shape + cvals.shape[1:] providing the
+    interpolation of multiple curves.
     """
     oldshape = np.shape(xnew)
     xx = np.ravel(xnew)
@@ -696,7 +705,6 @@ def spleval((xk,cvals,k),xnew,deriv=0):
     res.shape = oldshape + sh
     return res
                     
-
 def spltopp(xk,cvals,k):
     """Return a piece-wise polynomial object from a fixed-spline tuple.
     """
