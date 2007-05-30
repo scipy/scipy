@@ -21,7 +21,7 @@
 *     ..
 *     .. External Functions ..
       REAL               ETIME
-      EXTERNAL           ETIME
+*      EXTERNAL           ETIME
 *     ..
 *     .. Executable Statements ..
 *
