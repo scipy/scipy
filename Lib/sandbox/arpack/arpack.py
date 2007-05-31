@@ -98,9 +98,8 @@ def eigen(A,k=6,M=None,ncv=None,which='LM',
     return_eigenvectors -- True|False, return eigenvectors 
 
     """
-    A=sb.asanyarray(A)
-    n,ny=A.shape
     try:
+        n,ny=A.shape
         n==ny
     except:
         raise AttributeError("matrix is not square")
@@ -283,9 +282,8 @@ def eigen_symmetric(A,k=6,M=None,ncv=None,which='LM',
     return_eigenvectors -- True|False, return eigenvectors 
 
     """
-    A=sb.asanyarray(A)
-    n,ny=A.shape
     try:
+        n,ny=A.shape
         n==ny
     except:
         raise AttributeError("matrix is not square")
