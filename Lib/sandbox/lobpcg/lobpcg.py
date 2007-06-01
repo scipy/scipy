@@ -536,7 +536,7 @@ def lobpcg( blockVectorX, operatorA,
         blockVectorBX = sc.dot( blockVectorBX, eigBlockVectorX ) + bpp
 
         blockVectorP, blockVectorAP, blockVectorBP = pp, app, bpp
-
+        
     aux = blockVectorBX * _lambda[nm.newaxis,:]
     blockVectorR = blockVectorAX - aux
 
@@ -550,14 +550,14 @@ def lobpcg( blockVectorX, operatorA,
 
     if retLambdaHistory:
         if retResidualNormsHistory:
-            return _lambda, eigBlockVectorX, lambdaHistory, residualNormsHistory
+            return _lambda, blockVectorX, lambdaHistory, residualNormsHistory
         else:
-            return _lambda, eigBlockVectorX, lambdaHistory
+            return _lambda, blockVectorX, lambdaHistory
     else:
         if retResidualNormsHistory:
-            return _lambda, eigBlockVectorX, residualNormsHistory
+            return _lambda, blockVectorX, residualNormsHistory
         else:
-            return _lambda, eigBlockVectorX
+            return _lambda, blockVectorX
 
 ###########################################################################
 if __name__ == '__main__':
@@ -600,3 +600,4 @@ if __name__ == '__main__':
     print 'solution time:', time.clock() - tt
     print eigs
     
+    print vecs
