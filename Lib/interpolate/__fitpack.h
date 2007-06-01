@@ -829,7 +829,7 @@ static char doc_bsplmat[] = "B = _bsplmat(order,xk)\n"
 "integer-spaced, or cardinal spline matrix a bit faster.";
 static PyObject *_bsplmat(PyObject *dummy, PyObject *args) {
     int k,N,i,numbytes,j, equal;
-    int dims[2];
+    npy_intp dims[2];
     PyObject *x_i_py=NULL;
     PyArrayObject *x_i=NULL, *BB=NULL;
     double *t=NULL, *h=NULL, *ptr;
@@ -970,7 +970,7 @@ static char doc_bspldismat[] = "B = _bspldismat(order,xk)\n"
 "then it produces the result as if the sample distance were dx";
 static PyObject *_bspldismat(PyObject *dummy, PyObject *args) {
     int k,N,i,j, equal, m;
-    int dims[2];
+    npy_intp dims[2];
     PyObject *x_i_py=NULL;
     PyArrayObject *x_i=NULL, *BB=NULL;
     double *t=NULL, *h=NULL, *ptr, *dptr;

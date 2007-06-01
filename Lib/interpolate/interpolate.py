@@ -4,7 +4,7 @@
 """
 
 __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
-           'ppform']
+           'ppform', 'lagrange']
 
 from numpy import shape, sometrue, rank, array, transpose, \
      swapaxes, searchsorted, clip, take, ones, putmask, less, greater, \
@@ -22,6 +22,21 @@ def reduce_sometrue(a):
     while len(shape(all)) > 1:
         all = sometrue(all,axis=0)
     return all
+
+def lagrange(x, w):
+    """Return the Lagrange interpolating polynomial of the data-points (x,w)
+    """
+    M = len(x)
+    p = poly1d(0.0)
+    for j in xrange(M):
+        pt = poly1d(w[j])
+        for k in xrange(M):
+            if k == j: continue
+            fac = x[j]-x[k]
+            pt *= poly1d([1.0,-x[k]])/fac
+        p += pt
+    return p
+
 
 # !! Need to find argument for keeping initialize.  If it isn't
 # !! found, get rid of it!
