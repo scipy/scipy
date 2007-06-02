@@ -1088,7 +1088,9 @@ static PyObject *Py_Histogram(PyObject *obj, PyObject *args)
                       &max_label, &n_results))
     goto exit;
 
-  histograms = (PyArrayObject**)malloc(input->nd * n_results *
+  /* Set all pointers to NULL, so that freeing the memory */
+  /* doesn't cause problems. */
+  histograms = (PyArrayObject**)calloc(input->nd * n_results,
                                        sizeof(PyArrayObject*));
   if (!histograms) {
     PyErr_NoMemory();
