@@ -13,12 +13,20 @@
         Calculate code book membership of obs
     kmeans(obs,k_or_guess,iter=20,thresh=1e-5) --
         Train a codebook for mimimum distortion using the kmeans algorithm
+    kmeans2
+        Similar to kmeans, but with several initialization methods.
 
 """
 __docformat__ = 'restructuredtext'
 
 __all__ = ['whiten', 'vq', 'kmeans', 'kmeans2']
 
+# TODO:
+#   - implements high level method for running several times kmeans with
+#   different initialialization 
+#   - warning: what happens if different number of clusters ? For now, emit a
+#   warning, but it is not great, because I am not sure it really make sense to
+#   succeed in this case (maybe an exception is better ?)
 import warnings
 
 from numpy.random import randint
