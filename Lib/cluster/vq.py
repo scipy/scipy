@@ -479,8 +479,8 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit='random'):
             dimensional data, rank 2 multidimensional data, in which case one
             row is one observation.
         k : int or ndarray
-            Number of clusters. If a ndarray is given instead, it is
-            interpreted as initial cluster to use instead.
+            Number of clusters. If minit arg is 'matrix', or if a ndarray is
+            given instead, it is interpreted as initial cluster to use instead.
         niter : int
             Number of iterations to run.
         thresh : float
@@ -495,7 +495,10 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit='random'):
             points choses k points at random from the points in data.
 
             uniform choses k points from the data such are they form a uniform
-            grid od the dataset.
+            grid od the dataset (not supported yet).
+
+            matrix means that k has to be interpreted as initial clusters
+            (format is the same than data).
 
     :Returns:
         clusters : ndarray
@@ -517,7 +520,7 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit='random'):
 
     # If k is not a single value, then it should be compatible with data's
     # shape
-    if N.size(k) > 1:
+    if N.size(k) > 1 or minit == 'matrix':
         if not nd == N.ndim(k):
             raise ValueError("k is not an int and has not same rank than data")
         if d == 1:
@@ -529,7 +532,9 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit='random'):
                         data")
         clusters = k.copy()
     else:
-        nc = k
+        nc = int(k)
+        if not nc == k:
+            warnings.warn("k was not an integer, was converted.")
         try:
             init = _valid_init_meth[minit]
         except KeyError:
