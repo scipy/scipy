@@ -483,7 +483,7 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit='random'):
             interpreted as initial cluster to use instead.
         niter : int
             Number of iterations to run.
-        niter : float
+        thresh : float
             (not used yet).
         minit : string
             Method for initialization. Available methods are random, points and
