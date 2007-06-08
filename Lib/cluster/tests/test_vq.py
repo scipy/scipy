@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 # David Cournapeau
-# Last Change: Sat May 05 06:00 PM 2007 J
+# Last Change: Fri Jun 08 12:00 PM 2007 J
 
 # For now, just copy the tests from sandbox.pyem, so we can check that
 # kmeans works OK for trivial examples.
@@ -72,6 +72,7 @@ class test_vq(NumpyTestCase):
     #    print _py_vq_1d(data, initc)
 
 class test_kmean(NumpyTestCase):
+    #def check_kmeans
     def check_kmeans_simple(self, level=1):
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
@@ -93,8 +94,8 @@ class test_kmean(NumpyTestCase):
         """Testing simple call to kmeans2 and its results."""
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
-        code1 = kmeans2(X, code, niter = 1)[0]
-        code2 = kmeans2(X, code, niter = 2)[0]
+        code1 = kmeans2(X, code, iter = 1)[0]
+        code2 = kmeans2(X, code, iter = 2)[0]
 
         assert_array_almost_equal(code1, CODET1)
         assert_array_almost_equal(code2, CODET2)

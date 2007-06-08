@@ -466,7 +466,7 @@ def _krandinit(data, k):
 
 _valid_init_meth = {'random': _krandinit, 'points': _kpoints}
 
-def kmeans2(data, k, minit='random', niter=10):
+def kmeans2(data, k, iter = 10, thresh = 1e-5, minit='random'):
     """Classify a set of points into k clusters using kmean algorithm.
 
     The algorithm works by minimizing the euclidian distance between data points
@@ -481,6 +481,10 @@ def kmeans2(data, k, minit='random', niter=10):
         k : int or ndarray
             Number of clusters. If a ndarray is given instead, it is
             interpreted as initial cluster to use instead.
+        niter : int
+            Number of iterations to run.
+        niter : float
+            (not used yet).
         minit : string
             Method for initialization. Available methods are random, points and
             uniform:
@@ -492,9 +496,6 @@ def kmeans2(data, k, minit='random', niter=10):
 
             uniform choses k points from the data such are they form a uniform
             grid od the dataset.
-
-        niter : int
-            Number of iterations to run.
 
     :Returns:
         clusters : ndarray
@@ -535,8 +536,8 @@ def kmeans2(data, k, minit='random', niter=10):
             raise ValueError("unknown init method %s" % str(minit))
         clusters = init(data, k)
 
-    assert not niter == 0
-    return _kmeans2(data, clusters, niter, nc)
+    assert not iter == 0
+    return _kmeans2(data, clusters, iter, nc)
 
 def _kmeans2(data, code, niter, nc):
     """ "raw" version of kmeans2. Do not use directly.
