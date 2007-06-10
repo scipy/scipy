@@ -25,26 +25,29 @@ fi = rbf(xi)
 p.subplot(2,1,2)
 p.plot(x,y,'bo',xi,fi,'g',xi, s.sin(xi),'r')
 p.title('RBF interpolation - multiquadrics')
-p.show()
+p.savefig('rbf1d.png')
+p.close()
 
 # 2-d tests - setup scattered data
-x = s.rand(50,1)*4-2
-y = s.rand(50,1)*4-2
+x = s.rand(100)*4.0-2.0
+y = s.rand(100)*4.0-2.0
 z = x*s.exp(-x**2-y**2)
-ti = s.linspace(-2.0,2.0,81)
+ti = s.linspace(-2.0,2.0,100)
 (XI,YI) = s.meshgrid(ti,ti)
 
 # use RBF
-rbf = Rbf(x.flatten(),y.flatten(),z.flatten(),eps=2)
-ZI = rbf(XI.flatten(), YI.flatten())
-ZI.shape = XI.shape
+rbf = Rbf(x,y,z,epsilon=2)
+ZI = rbf(XI, YI)
 
 # plot the result
-from enthought.tvtk.tools import mlab
-f=mlab.figure(browser=False)
-su=mlab.Surf(XI,YI,ZI,ZI,scalar_visibility=True)
-f.add(su)
-su.lut_type='blue-red'
-f.objects[0].axis.z_label='value'
-pp = mlab.Spheres(s.c_[x.flatten(), y.flatten(), z.flatten()],radius=0.03)
-f.add(pp)
+n = p.normalize(-2., 2.)
+p.subplot(1,1,1)
+p.pcolor(XI,YI,ZI,cmap=p.cm.jet)
+p.scatter(x,y,100,z,cmap=p.cm.jet)
+p.title('RBF interpolation - multiquadrics')
+p.xlim(-2,2)
+p.ylim(-2,2)
+p.colorbar()
+p.savefig('rbf2d.png')
+p.close()
+

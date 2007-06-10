@@ -56,9 +56,9 @@ class Rbf(object):
     
     def _function(self, r):
         if self.function.lower() == 'multiquadric':
-            return sqrt((self.epsilon*r)**2 + 1)
+            return sqrt((1.0/self.epsilon*r)**2 + 1)
         elif self.function.lower() == 'inverse multiquadric':
-            return 1.0/sqrt((self.epsilon*r)**2 + 1)
+            return 1.0/sqrt((1.0/self.epsilon*r)**2 + 1)
         elif self.function.lower() == 'gausian':
             return exp(-(self.epsilon*r)**2)
         elif self.function.lower() == 'cubic':
