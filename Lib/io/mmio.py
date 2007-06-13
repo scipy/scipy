@@ -333,10 +333,10 @@ def mmwrite(target,a,comment='',field=None,precision=None):
         assert symm=='general',`symm`
         if field in ['real','integer']:
             for i in range(entries):
-                target.write(format % (a.row[i]+1,a.col[i]+1,a.data[i]))
+                target.write(format % (a.rowcol(i)[0] + 1,a.rowcol(i)[1] + 1,a.getdata(i))) #convert base 0 to base 1
         elif field=='complex':
             for i in range(entries):
-                target.write(format % (a.row[i]+1,a.col[i]+1,reak(a.data[i]),imag(a.data[i])))
+                target.write(format % (a.rowcol(i)[0] + 1,a.rowcol(i)[1] + 1,real(a.getdata(i)),imag(a.getdata(i))))
         elif field=='pattern':
             raise NotImplementedError,`field`
         else:
