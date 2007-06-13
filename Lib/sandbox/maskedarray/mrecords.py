@@ -341,13 +341,13 @@ Subclassing is preserved.
 If `fill_value` is None, uses self.fill_value.
         """
         _localdict = self.__dict__
-        d = _localdict['_data']
+        d = self._data
         fm = _localdict['_fieldmask']
         if not numeric.asarray(fm, dtype=bool_).any():
             return d
         #
         if fill_value is None:
-            value = _localdict['fill_value']
+            value = _localdict['_fill_value']
         else:
             value = fill_value
             if numeric.size(value) == 1:

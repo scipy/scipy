@@ -2638,8 +2638,10 @@ if __name__ == '__main__':
     if 1:
         x = arange(10)
         assert(x.ctypes.data == x.filled().ctypes.data)
-    if 1:
-        a = array([1,2,3,4],mask=[0,0,0,0],small_mask=False)
+    if 0:
+        a = array([1,2,3,4],mask=[0,0,0,0],small_mask=True)
+        a[1] = masked
+        a[1] = 1
         assert(a.ravel()._mask, [0,0,0,0])
         assert(a.compressed(), a)
         a[0] = masked
