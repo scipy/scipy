@@ -6,6 +6,7 @@ from numpy import array,transpose
 
 set_package_path()
 from io.mmio import mminfo,mmread,mmwrite
+import scipy
 restore_path()
 
 class test_mmio_array(NumpyTestCase):
@@ -150,6 +151,26 @@ class test_mmio_coordinate(NumpyTestCase):
              [0,    0,      0,       0,     12]]
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
+
+    def check_simple_write_read(self):
+        I = array([0, 0, 1, 2, 3, 3, 3, 4])
+        J = array([0, 3, 1, 2, 1, 3, 4, 4])
+        V = array([  1.0,   6.0,   10.5, 0.015,   250.5,  -280.0, 33.32, 12.0 ])
+        
+        b = scipy.sparse.coo_matrix((V,(I,J)),dims=(5,5))
+
+        fn = mktemp()
+        mmwrite(fn,b)
+        
+        assert_equal(mminfo(fn),(5,5,8,'coordinate','real','general'))
+        a = [[1,    0,      0,       6,      0],
+             [0,   10.5,    0,       0,      0],
+             [0,    0,    .015,      0,      0],
+             [0,  250.5,    0,     -280,    33.32],
+             [0,    0,      0,       0,     12]]
+        b = mmread(fn).todense()
+        assert_array_almost_equal(a,b)
+
 
 if __name__ == "__main__":
     NumpyTest().run()
