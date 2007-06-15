@@ -202,7 +202,7 @@ def mov_average_expw(data, span, tol=1e-6):
     #
     k = 2./float(span + 1)
     def expmave_sub(a, b):
-        return b + k * (a - b)
+        return a + k * (b - a)
     #
     data._data.flat = N.frompyfunc(expmave_sub, 2, 1).accumulate(_data)
     if ismasked:
