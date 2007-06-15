@@ -2094,8 +2094,8 @@ def fastsort(a):
     )
     """
     it = np.argsort(a)
-    as = a[it]
-    return as, it
+    as_ = a[it]
+    return as_, it
 
 def rankdata(a):
     """Ranks the data in a, dealing with ties appropriately.
