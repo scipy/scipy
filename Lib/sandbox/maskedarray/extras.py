@@ -411,6 +411,7 @@ def mask_rowcols(a, axis=None):
     if m is nomask or not m.any():
         return a
     maskedval = m.nonzero()
+    a._mask = a._mask.copy()
     if not axis:
         a[function_base.unique(maskedval[0])] = masked
     if axis in [None, 1, -1]:
@@ -648,7 +649,15 @@ def notmasked_contiguous(a, axis=None):
 ################################################################################
 if __name__ == '__main__':
     #
+    import numpy as N
+    from maskedarray.testutils import assert_equal
     if 1:
-        x = arange(10)
-        x[0] = masked
-        print dot(x,x)
+        n = N.arange(1,7)
+        #
+        m = [1,0,0,0,0,0]
+        a = masked_array(n, mask=m).reshape(2,3)
+        b = masked_array(n, mask=m).reshape(3,2)
+        c = dot(a,b, True)
+        assert_equal(c.mask, [[1,1],[1,0]])
+        c = dot(a,b,False)
+        assert_equal(c, N.dot(a.filled(0), b.filled(0)))

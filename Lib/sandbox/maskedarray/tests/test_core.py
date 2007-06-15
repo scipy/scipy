@@ -240,7 +240,6 @@ class test_ma(NumpyTestCase):
         assert(minimum(xm, xm).mask)
         assert(xm.filled().dtype is xm.data.dtype)
         x = array(0, mask=0)
-#        assert(x.filled() is x.data)
         assert_equal(x.filled().ctypes.data, x.ctypes.data)
         assert_equal(str(xm), str(masked_print_option))
     #.........................

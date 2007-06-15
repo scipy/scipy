@@ -1132,11 +1132,13 @@ Sets item described by index. If value is masked, masks those locations.
 #            raise IndexError, msg
         #....
         if value is masked:
-            if self._mask is nomask:
-                self._mask = make_mask_none(self.shape)
-            else:
-                self._mask = self._mask.copy()
-            self._mask[indx] = True
+            m = self._mask
+            if m is nomask:
+                m = make_mask_none(self.shape)
+#            else:
+#                m = m.copy()
+            m[indx] = True
+            self.__setmask__(m)
             return
         #....
         dval = numeric.asarray(value).astype(self.dtype)
@@ -1261,7 +1263,7 @@ Subclassing is preserved.
 If `fill_value` is None, uses self.fill_value.
         """
         m = self._mask
-        if m is nomask:
+        if m is nomask or not m.any():
             return self._data
         #
         if fill_value is None:
@@ -2646,3 +2648,12 @@ if __name__ == '__main__':
         assert(a.compressed(), a)
         a[0] = masked
         assert(a.compressed()._mask, [0,0,0])
+    if 1:
+        x = array(0, mask=0)
+        I = x.ctypes.data
+        J = x.filled().ctypes.data
+        print (I,J)
+        x = array([0,0], mask=0)
+        (I,J) = (x.ctypes.data, x.filled().ctypes.data)
+        print (I,J)
+        

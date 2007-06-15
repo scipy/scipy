@@ -115,7 +115,7 @@ class MaskedRecords(MaskedArray, object):
         if names is not None:
             descr = _checknames(descr,names)
         _names = descr.names    
-        mdescr = [(t[0],'|b1') for t in descr.descr]
+        mdescr = [(n,'|b1') for n in _names]
         #
         shape = numeric.asarray(data[0]).shape
         if isinstance(shape, int):
@@ -129,7 +129,11 @@ class MaskedRecords(MaskedArray, object):
             _fieldmask = data._fieldmask
         elif isinstance(data, recarray):
             _data = data
-            _fieldmask = mask
+            if mask is nomask:
+                _fieldmask = data.astype(mdescr)
+                _fieldmask.flat = tuple([False]*len(mdescr))
+            else:
+                _fieldmask = mask
         else:
             _data = recarray(shape, dtype=descr)
             _fieldmask = recarray(shape, dtype=mdescr)
@@ -179,7 +183,7 @@ class MaskedRecords(MaskedArray, object):
             _data = self._data
             _mask = self._fieldmask
             obj = numeric.asarray(_data.__getattribute__(attr)).view(MaskedArray)
-            obj._mask = make_mask(_mask.__getattribute__(attr))
+            obj.__setmask__(_mask.__getattribute__(attr))
             return obj
         raise AttributeError,"No attribute '%s' !" % attr
             
@@ -232,6 +236,10 @@ class MaskedRecords(MaskedArray, object):
         obj = ndarray.__getitem__(self, indx).view(type(self))
         obj._fieldmask = _localdict['_fieldmask'][indx]
         return obj
+    #............................................
+    def __setitem__(self, indx, value):
+        """Sets the given record to value."""
+        MaskedArray.__setitem__(self, indx, value)
         
 #    def __getslice__(self, i, j):
 #        """Returns the slice described by [i,j]."""
@@ -243,13 +251,12 @@ class MaskedRecords(MaskedArray, object):
     def __setslice__(self, i, j, value):
         """Sets the slice described by [i,j] to `value`."""
         _localdict = self.__dict__
-        
         d = self._data
         m = _localdict['_fieldmask']
         names = self.dtype.names
         if value is masked:
             for n in names:
-                m[i:j][n] = masked
+                m[i:j][n] = True
         elif not self._hardmask:
             fval = filled(value)
             mval = getmaskarray(value)
@@ -484,7 +491,7 @@ def fromrecords(reclist, dtype=None, shape=None, formats=None, names=None,
         descr = parsed._descr
 
     try:
-        retval = numeric.array(reclist, dtype = descr)
+        retval = numeric.array(reclist, dtype = descr).view(recarray)
     except TypeError:  # list of lists instead of list of tuples
         if (shape is None or shape == 0):
             shape = len(reclist)*2
@@ -645,13 +652,27 @@ set to 'fi', where `i` is the number of existing fields.
 ################################################################################
 if __name__ == '__main__':
     import numpy as N
+    from maskedarray.testutils import assert_equal
     if 1:
         d = N.arange(5)
         m = MA.make_mask([1,0,0,1,1])
         base_d = N.r_[d,d[::-1]].reshape(2,-1).T
         base_m = N.r_[[m, m[::-1]]].T
         base = MA.array(base_d, mask=base_m)    
-        mrecord = fromarrays(base.T,)
-        
+        mrecord = fromarrays(base.T,dtype=[('a',N.float_),('b',N.float_)])
         mrec = MaskedRecords(mrecord)
+        #
+        mrec.a[3:] = 5
+        assert_equal(mrec.a, [0,1,2,5,5])
+        assert_equal(mrec.a._mask, [1,0,0,0,0])
+        #
+        mrec.b[3:] = masked
+        assert_equal(mrec.b, [4,3,2,1,0])
+        assert_equal(mrec.b._mask, [1,1,0,1,1])
+        #
+        mrec[:2] = masked
+        assert_equal(mrec._mask, [1,1,0,0,0])
+        mrec[-1] = masked
+        assert_equal(mrec._mask, [1,1,0,0,1])
+
         
