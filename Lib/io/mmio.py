@@ -115,7 +115,7 @@ def mmread(source):
     elif field=='complex':
         dtype='D'
     elif field=='pattern':
-        raise NotImplementedError,`field`
+        dtype='d'
     else:
         raise ValueError,`field`
 
@@ -123,7 +123,8 @@ def mmread(source):
     is_complex = field=='complex'
     is_skew = symm=='skew-symmetric'
     is_herm = symm=='hermitian'
-
+    is_pattern = field=='pattern'
+    
     if rep == 'array':
         a = zeros((rows,cols),dtype=dtype)
         line = 1
@@ -193,7 +194,9 @@ def mmread(source):
                 l = line.split()
                 i = int(l[0])-1
                 j = int(l[1])-1
-                if is_complex:
+                if is_pattern:
+                    aij = 1.0 #use 1.0 for pattern matrices
+                elif is_complex:
                     aij = complex(*map(float,l[2:]))
                 else:
                     aij = float(l[2])
