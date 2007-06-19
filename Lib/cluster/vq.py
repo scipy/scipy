@@ -139,9 +139,9 @@ def vq(obs, code_book):
         c_obs = obs.astype(ct)
         c_code_book = code_book.astype(ct)
         if ct is single:
-            results = _vq.float_vq(c_obs, c_code_book)
+            results = _vq.vq(c_obs, c_code_book)
         elif ct is double:
-            results = _vq.double_vq(c_obs, c_code_book)
+            results = _vq.vq(c_obs, c_code_book)
         else:
             results = py_vq(obs, code_book)
     except ImportError:
@@ -512,7 +512,7 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit='random'):
     nd  = N.ndim(data)
     if nd == 1:
         d = 1
-        raise ValueError("Input of rank 1 not supported yet")
+        #raise ValueError("Input of rank 1 not supported yet")
     elif nd == 2:
         d = data.shape[1]
     else:
@@ -560,9 +560,21 @@ def _kmeans2(data, code, niter, nc):
         for j in range(nc):
             mbs = N.where(label==j)
             if mbs[0].size > 0:
-                code[j,:] = N.mean(data[mbs], axis=0)
+                code[j] = N.mean(data[mbs], axis=0)
             else:
                 warnings.warn("One of the clusters are empty. " \
                               "Re-run kmean with a different initialization.")
 
     return code, label
+
+if __name__  == '__main__':
+    import _vq
+    a = N.random.randn(4, 2)
+    b = N.random.randn(2, 2)
+
+    print _vq.vq(a, b)
+    print _vq.vq(N.array([[1], [2], [3], [4], [5], [6.]]), N.array([[2.], [5.]]))
+    print _vq.vq(N.array([1, 2, 3, 4, 5, 6.]), N.array([2., 5.]))
+    _vq.vq(a.astype(N.float32), b.astype(N.float32))
+    _vq.vq(a, b.astype(N.float32))
+    _vq.vq([0], b)
