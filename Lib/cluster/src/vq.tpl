@@ -1,6 +1,10 @@
 [+ AutoGen5 template c +]
 /*
  * vim:syntax=c
+ *
+ * This file implements vq for float and double in C. It is a direct
+ * translation from the swig interface which could not be generated anymore
+ * with recent swig
  */
 #include <stddef.h>
 #include <math.h>

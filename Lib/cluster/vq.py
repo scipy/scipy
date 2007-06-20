@@ -181,7 +181,8 @@ def py_vq(obs, code_book):
     # d = number of features
     if N.ndim(obs) == 1:
         if not N.ndim(obs) == N.ndim(code_book):
-            raise ValueError("Observation and code_book should have the same rank")
+            raise ValueError(
+                    "Observation and code_book should have the same rank")
         else:
             return _py_vq_1d(obs, code_book)
     else:
@@ -192,7 +193,8 @@ def py_vq(obs, code_book):
         raise ValueError("Observation and code_book should have the same rank")
     elif not d == code_book.shape[1]:
         raise ValueError("Code book(%d) and obs(%d) should have the same " \
-                         "number of features (eg columns)""" % (code_book.shape[1], d))
+                         "number of features (eg columns)""" %
+                         (code_book.shape[1], d))
 
     code = zeros(n, dtype=int)
     min_dist = zeros(n)
@@ -547,11 +549,7 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit='random'):
 def _kmeans2(data, code, niter, nc):
     """ "raw" version of kmeans2. Do not use directly.
 
-    Run kmeans with a given initial codebook.
-
-    :undocumented
-
-    """
+    Run kmeans with a given initial codebook.  """
     for i in range(niter):
         # Compute the nearest neighbour for each obs
         # using the current code book
@@ -568,13 +566,15 @@ def _kmeans2(data, code, niter, nc):
     return code, label
 
 if __name__  == '__main__':
-    import _vq
-    a = N.random.randn(4, 2)
-    b = N.random.randn(2, 2)
+    pass
+    #import _vq
+    #a = N.random.randn(4, 2)
+    #b = N.random.randn(2, 2)
 
-    print _vq.vq(a, b)
-    print _vq.vq(N.array([[1], [2], [3], [4], [5], [6.]]), N.array([[2.], [5.]]))
-    print _vq.vq(N.array([1, 2, 3, 4, 5, 6.]), N.array([2., 5.]))
-    _vq.vq(a.astype(N.float32), b.astype(N.float32))
-    _vq.vq(a, b.astype(N.float32))
-    _vq.vq([0], b)
+    #print _vq.vq(a, b)
+    #print _vq.vq(N.array([[1], [2], [3], [4], [5], [6.]]), 
+    #        N.array([[2.], [5.]]))
+    #print _vq.vq(N.array([1, 2, 3, 4, 5, 6.]), N.array([2., 5.]))
+    #_vq.vq(a.astype(N.float32), b.astype(N.float32))
+    #_vq.vq(a, b.astype(N.float32))
+    #_vq.vq([0], b)

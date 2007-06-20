@@ -1,5 +1,5 @@
 /*
- * Last Change: Tue Jun 19 11:00 PM 2007 J
+ * Last Change: Wed Jun 20 04:00 PM 2007 J
  *
  */
 #include <Python.h>
@@ -97,24 +97,24 @@ PyObject* compute_vq(PyObject* self, PyObject* args)
             if (dist_a == NULL) {
                 goto clean_code_a;
             }
-            index_a = (PyArrayObject*)PyArray_EMPTY(1, &n, NPY_INT, 0);
+            index_a = (PyArrayObject*)PyArray_EMPTY(1, &n, PyArray_INTP, 0);
             if (index_a == NULL) {
                 goto clean_dist_a;
             }
             float_tvq((float*)obs_a->data, (float*)code_a->data, n, nc, d,
-                    (int*)index_a->data, (float*)dist_a->data);
+                    (npy_intp*)index_a->data, (float*)dist_a->data);
             break;
         case NPY_DOUBLE:
             dist_a = (PyArrayObject*)PyArray_EMPTY(1, &n, typenum1, 0);
             if (dist_a == NULL) {
                 goto clean_code_a;
             }
-            index_a = (PyArrayObject*)PyArray_EMPTY(1, &n, NPY_INT, 0);
+            index_a = (PyArrayObject*)PyArray_EMPTY(1, &n, PyArray_INTP, 0);
             if (index_a == NULL) {
                 goto clean_dist_a;
             }
             double_tvq((double*)obs_a->data, (double*)code_a->data, n, nc, d,
-                    (int*)index_a->data, (double*)dist_a->data);
+                    (npy_intp*)index_a->data, (double*)dist_a->data);
             break;
         default:
             PyErr_Format(PyExc_ValueError,
@@ -151,4 +151,3 @@ clean_obs_a:
     Py_DECREF(obs_a);
     return NULL;
 }
-

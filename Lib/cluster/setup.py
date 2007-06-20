@@ -2,19 +2,15 @@
 
 from os.path import join
 
-def configuration(parent_package='',top_path=None):
+def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
-    config = Configuration('cluster',parent_package,top_path)
+    config = Configuration('cluster', parent_package, top_path)
 
     config.add_data_dir('tests')
 
     config.add_extension('_vq',
         sources=[join('src', 'vq_module.c'), join('src', 'vq.c')],
         include_dirs = [get_numpy_include_dirs()])
-    #config.add_extension('_vq',
-    #    sources=[join('src', 'vq_wrap.cpp')])
-    #config.add_extension('_c_vq',
-    #    sources=[join('src', 'vq.c') ])
 
     return config
 
