@@ -19,7 +19,7 @@ const static double rbig = 1e100;
 [+ FOR data_type +]
 static int [+ (get "type_name") +]_vq_1d(const [+ (get "type_name") +] *in, int n, 
     const [+ (get "type_name") +] *init, int ncode, 
-    int *code, [+ (get "type_name") +] *mdist)
+    long long *code, [+ (get "type_name") +] *mdist)
 {
     int i, j;
     [+ (get "data_type") +] m, d;
@@ -42,7 +42,7 @@ static int [+ (get "type_name") +]_vq_1d(const [+ (get "type_name") +] *in, int 
 
 static int [+ (get "type_name") +]_vq_obs(const [+ (get "data_type") +] *obs,
     [+ (get "data_type") +] *code_book, int Ncodes, int Nfeatures,
-       int* code, [+ (get "data_type") +] *lowest_dist)
+       long long* code, [+ (get "data_type") +] *lowest_dist)
 {
 	int i,j,k=0;
 	[+ (get "data_type") +] dist, diff;
@@ -69,7 +69,7 @@ int [+ (get "type_name") +]_tvq(
     [+ (get "data_type") +]* obs,
     [+ (get "data_type") +]* code_book, 
     int Nobs, int Ncodes, int Nfeatures,
-    int* codes, [+ (get "data_type") +]* lowest_dist)
+    long long* codes, [+ (get "data_type") +]* lowest_dist)
 {
     int i;
 	for( i = 0; i < Nobs; i++) {		

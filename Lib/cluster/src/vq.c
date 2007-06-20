@@ -1,5 +1,9 @@
 /*
  * vim:syntax=c
+ *
+ * This file implements vq for float and double in C. It is a direct
+ * translation from the swig interface which could not be generated anymore
+ * with recent swig
  */
 #include <stddef.h>
 #include <math.h>
@@ -14,7 +18,7 @@ const static double rbig = 1e100;
 
 static int float_vq_1d(const float *in, int n, 
     const float *init, int ncode, 
-    int *code, float *mdist)
+    long long *code, float *mdist)
 {
     int i, j;
     float m, d;
@@ -37,7 +41,7 @@ static int float_vq_1d(const float *in, int n,
 
 static int float_vq_obs(const float *obs,
     float *code_book, int Ncodes, int Nfeatures,
-       int* code, float *lowest_dist)
+       long long* code, float *lowest_dist)
 {
 	int i,j,k=0;
 	float dist, diff;
@@ -64,7 +68,7 @@ int float_tvq(
     float* obs,
     float* code_book, 
     int Nobs, int Ncodes, int Nfeatures,
-    int* codes, float* lowest_dist)
+    long long* codes, float* lowest_dist)
 {
     int i;
 	for( i = 0; i < Nobs; i++) {		
@@ -78,7 +82,7 @@ int float_tvq(
 
 static int double_vq_1d(const double *in, int n, 
     const double *init, int ncode, 
-    int *code, double *mdist)
+    long long *code, double *mdist)
 {
     int i, j;
     double m, d;
@@ -101,7 +105,7 @@ static int double_vq_1d(const double *in, int n,
 
 static int double_vq_obs(const double *obs,
     double *code_book, int Ncodes, int Nfeatures,
-       int* code, double *lowest_dist)
+       long long* code, double *lowest_dist)
 {
 	int i,j,k=0;
 	double dist, diff;
@@ -128,7 +132,7 @@ int double_tvq(
     double* obs,
     double* code_book, 
     int Nobs, int Ncodes, int Nfeatures,
-    int* codes, double* lowest_dist)
+    long long* codes, double* lowest_dist)
 {
     int i;
 	for( i = 0; i < Nobs; i++) {		

@@ -27,7 +27,8 @@ PyObject* compute_vq(PyObject* self, PyObject* args)
     PyArrayObject *obs_a, *code_a;
     PyArrayObject *index_a, *dist_a;
     int typenum1, typenum2;
-    int n, nc, d, nd;
+    int nc, nd;
+    npy_intp n, d;
 
     if ( !PyArg_ParseTuple(args, "OO", &obs, &code) ) {
         return NULL;
