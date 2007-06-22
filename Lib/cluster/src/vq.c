@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <math.h>
 
+#include "vq.h"
 /*
  * results is put into code, which contains initially the initial code
  *
@@ -16,9 +17,10 @@
 const static double rbig = 1e100;
 
 
+#if 0
 static int float_vq_1d(const float *in, int n, 
     const float *init, int ncode, 
-    long long *code, float *mdist)
+    npy_intp *code, float *mdist)
 {
     int i, j;
     float m, d;
@@ -38,10 +40,11 @@ static int float_vq_1d(const float *in, int n,
     }
     return 0;
 }
+#endif
 
 static int float_vq_obs(const float *obs,
     float *code_book, int Ncodes, int Nfeatures,
-       long long* code, float *lowest_dist)
+       npy_intp* code, float *lowest_dist)
 {
 	int i,j,k=0;
 	float dist, diff;
@@ -68,7 +71,7 @@ int float_tvq(
     float* obs,
     float* code_book, 
     int Nobs, int Ncodes, int Nfeatures,
-    long long* codes, float* lowest_dist)
+    npy_intp* codes, float* lowest_dist)
 {
     int i;
 	for( i = 0; i < Nobs; i++) {		
@@ -80,9 +83,10 @@ int float_tvq(
     return 0;
 }
 
+#if 0
 static int double_vq_1d(const double *in, int n, 
     const double *init, int ncode, 
-    long long *code, double *mdist)
+    npy_intp *code, double *mdist)
 {
     int i, j;
     double m, d;
@@ -102,10 +106,11 @@ static int double_vq_1d(const double *in, int n,
     }
     return 0;
 }
+#endif
 
 static int double_vq_obs(const double *obs,
     double *code_book, int Ncodes, int Nfeatures,
-       long long* code, double *lowest_dist)
+       npy_intp* code, double *lowest_dist)
 {
 	int i,j,k=0;
 	double dist, diff;
@@ -132,7 +137,7 @@ int double_tvq(
     double* obs,
     double* code_book, 
     int Nobs, int Ncodes, int Nfeatures,
-    long long* codes, double* lowest_dist)
+    npy_intp* codes, double* lowest_dist)
 {
     int i;
 	for( i = 0; i < Nobs; i++) {		
