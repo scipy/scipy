@@ -3913,7 +3913,7 @@ class geom_gen(rv_discrete):
     def _argcheck(self, pr):
         return (pr<=1) & (pr >= 0)
     def _pmf(self, k, pr):
-        return (1-pr)**k * pr
+        return (1-pr)**(k-1) * pr
     def _cdf(self, x, pr):
         k = floor(x)
         return (1.0-(1.0-pr)**k)

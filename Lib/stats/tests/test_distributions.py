@@ -7,7 +7,7 @@ from numpy.testing import *
 
 set_package_path()
 import numpy
-from numpy import typecodes
+from numpy import typecodes, array
 import stats
 restore_path()
 
@@ -137,6 +137,18 @@ class test_geom(NumpyTestCase):
         val = stats.geom.rvs(0.75)
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
+
+    def check_pmf(self):
+        vals = stats.geom.pmf([1,2,3],0.5)
+        assert_array_almost_equal(vals,[0.5,0.25,0.125])
+
+    def check_cdf_sf(self):
+        vals = stats.geom.cdf([1,2,3],0.5)
+        vals_sf = stats.geom.sf([1,2,3],0.5)
+        expected = array([0.5,0.75,0.875])
+        assert_array_almost_equal(vals,expected)
+        assert_array_almost_equal(vals_sf,1-expected)
+
 
 class test_hypergeom(NumpyTestCase):
     def check_rvs(self):
