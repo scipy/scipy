@@ -25,10 +25,10 @@ def diric(x,n):
     x,n = asarray(x), asarray(n)
     n = asarray(n + (x-x))
     x = asarray(x + (n-n))
-    if x.dtype.char in ['fFdD']:
-        ytype = x.dtype.char
+    if issubdtype(x.dtype, inexact):
+        ytype = x.dtype
     else:
-        ytype = 'd'
+        ytype = float
     y = zeros(x.shape,ytype)
 
     mask1 = (n <= 0) | (n <> floor(n))
@@ -406,7 +406,7 @@ def hyp0f1(v,z):
     Limit as q->infinity of 1F1(q;a;z/q)
     """
     z = asarray(z)
-    if z.dtype.char in ['F', 'D']:
+    if issubdtype(z.dtype, complexfloating):
         arg = 2*sqrt(abs(z))
         num = where(z>=0, iv(v-1,arg), jv(v-1,arg))
         den = abs(z)**((v-1.0)/2)
