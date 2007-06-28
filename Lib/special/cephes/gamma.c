@@ -291,6 +291,13 @@ static double stirf(double x)
 {
 double y, w, v;
 
+if (x >= MAXGAM) {
+#ifdef INFINITIES
+	return (INFINITY);
+#else
+	return (MAXNUM);
+#endif
+}
 w = 1.0/x;
 w = 1.0 + w * polevl( w, STIR, 4 );
 y = exp(x);
