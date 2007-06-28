@@ -2,7 +2,7 @@
 # special - Special Functions
 #
 
-from info import __doc__
+from info import __doc__, __docformat__
 #from special_version import special_version as __version__
 
 from basic import *
