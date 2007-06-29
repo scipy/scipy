@@ -27,7 +27,7 @@ restore_path()
 def callback(x):
     global A, b
     res = b-dot(A,x)
-    print "||A.x - b|| = " + str(norm(dot(A,x)-b))
+    #print "||A.x - b|| = " + str(norm(dot(A,x)-b))
 
 class test_iterative_solvers(NumpyTestCase):
     def __init__(self, *args, **kwds):

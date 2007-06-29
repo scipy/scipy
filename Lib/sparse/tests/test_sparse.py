@@ -516,15 +516,15 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_arith, NumpyTestCase):
             assert(e.A.dtype.type == mytype)
 
     def check_ensure_sorted_indices(self):
-        print 'sorting CSR indices'
+        #print 'sorting CSR indices'
         data = arange( 5 )
         col = array( [7, 2, 1, 5, 4] )
         ptr = [0, 3, 5]
         asp = csr_matrix( (data, col, ptr), dims = (2,10) )
         bsp = asp.copy()
-        print 'in\n', asp
+        #print 'in\n', asp
         asp.ensure_sorted_indices( inplace = True )
-        print 'out\n', asp
+        #print 'out\n', asp
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
         for ir in range( asp.shape[0] ):
             for ic in range( asp.shape[1] ):
@@ -575,15 +575,15 @@ class test_csc(_test_cs, _test_vert_slicing, _test_arith, NumpyTestCase):
             assert(e.A.dtype.type == mytype)
 
     def check_ensure_sorted_indices(self):
-        print 'sorting CSC indices'
+        #print 'sorting CSC indices'
         data = arange( 5 )
         row = array( [7, 2, 1, 5, 4] )
         ptr = [0, 3, 5]
         asp = csc_matrix( (data, row, ptr), dims = (10,2) )
         bsp = asp.copy()
-        print 'in\n', asp
+        #print 'in\n', asp
         asp.ensure_sorted_indices( inplace = True )
-        print 'out\n', asp
+        #print 'out\n', asp
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
         for ir in range( asp.shape[0] ):
             for ic in range( asp.shape[1] ):

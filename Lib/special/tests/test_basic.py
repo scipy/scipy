@@ -1814,7 +1814,7 @@ class _test_sh_jacobi(NumpyTestCase):
         psub = poly1d([2,-1])
         q = 4*rand()
         p = q-1 + 2*rand()
-        print "shifted jacobi p,q = ", p, q
+        #print "shifted jacobi p,q = ", p, q
         G0 = sh_jacobi(0,p,q)
         G1 = sh_jacobi(1,p,q)
         G2 = sh_jacobi(2,p,q)
