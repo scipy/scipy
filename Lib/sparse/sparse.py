@@ -667,29 +667,11 @@ class _cs_matrix(spmatrix):
 
     def _transpose(self, cls, copy=False):
         M, N = self.shape
-        if copy:
-            data   = self.data.copy()
-            index = self.indices.copy()
-            indptr = self.indptr.copy()
-        else:
-            data   = self.data
-            index = self.indices
-            indptr = self.indptr
-        return cls((data,index,indptr),(N,M))
+        return cls((self.data,self.indices,self.indptr),(N,M),copy=copy)
         
 
     def conj(self, copy=False):
-        new = self.__class__(self.shape, nzmax=self.nzmax, dtype=self.dtype)
-        if copy:
-            new.data = self.data.conj().copy()
-            new.indices = self.indices.conj().copy()
-            new.indptr = self.indptr.conj().copy()
-        else:
-            new.data = self.data.conj()
-            new.indices = self.indices.conj()
-            new.indptr = self.indptr.conj()
-        new._check()
-        return new
+        return self.__class__((self.data.conj(),self.indices,self.indptr),self.shape,copy=copy)
 
     def _ensure_sorted_indices(self, shape0, shape1, inplace=False):
         """Return a copy of this matrix where the row indices are sorted
