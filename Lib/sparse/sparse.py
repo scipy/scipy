@@ -498,7 +498,7 @@ class _cs_matrix(spmatrix):
                                          self.indptr, self.indices, \
                                          self.data, other.indptr, \
                                          other.indices, other.data)
-            return self.__class__((data, ind, indptr), self.shape)
+            return self.__class__((data, ind, indptr), self.shape, check=False)
         elif isdense(other):
             # Convert this matrix to a dense matrix and add them
             return other + self.todense()
@@ -558,7 +558,7 @@ class _cs_matrix(spmatrix):
                                                self.indptr, self.indices, \
                                                self.data, other.indptr, \
                                                other.indices, other.data)
-            return self.__class__((data, ind, indptr), self.shape)
+            return self.__class__((data, ind, indptr), self.shape, check=False)
         else:
             raise TypeError, "unsupported type for sparse matrix power"
 
@@ -573,7 +573,7 @@ class _cs_matrix(spmatrix):
             indptr, ind, data = fn(M, N, self.indptr, self.indices, \
                                    self.data, other.indptr, \
                                    other.indices, other.data)
-            return self.__class__((data, ind, indptr), (M, N))      
+            return self.__class__((data, ind, indptr), (M, N),check=False)      
         elif isdense(other):
             # This is SLOW!  We need a more efficient implementation
             # of sparse * dense matrix multiplication!
@@ -636,12 +636,8 @@ class _cs_matrix(spmatrix):
 
 
     def copy(self):
-        new = self.__class__(self.shape, nzmax=self.nzmax, dtype=self.dtype)
-        new.data = self.data.copy()
-        new.indices = self.indices.copy()
-        new.indptr = self.indptr.copy()
-        new._check()
-        return new
+        return self.__class__((self.data.copy(),self.indices.copy(),self.indptr.copy()), \
+                              self.shape, dtype=self.dtype, check=False)
 
 
     def _get_slice(self, i, start, stop, stride, dims):
@@ -667,11 +663,11 @@ class _cs_matrix(spmatrix):
 
     def _transpose(self, cls, copy=False):
         M, N = self.shape
-        return cls((self.data,self.indices,self.indptr),(N,M),copy=copy)
+        return cls((self.data,self.indices,self.indptr),(N,M),copy=copy,check=False)
         
 
     def conj(self, copy=False):
-        return self.__class__((self.data.conj(),self.indices,self.indptr),self.shape,copy=copy)
+        return self.__class__((self.data.conj(),self.indices,self.indptr),self.shape,copy=copy,check=False)
 
     def _ensure_sorted_indices(self, shape0, shape1, inplace=False):
         """Return a copy of this matrix where the row indices are sorted
@@ -706,7 +702,7 @@ class csc_matrix(_cs_matrix):
           - csc_matrix((data, row, ptr), [(M, N)])
             standard CSC representation
     """
-    def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False):
+    def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False, check=True):
         _cs_matrix.__init__(self)
         if isdense(arg1):
             self.dtype = getdtype(dtype, arg1)
@@ -776,11 +772,11 @@ class csc_matrix(_cs_matrix):
                         self.dtype = getdtype(dtype, s)
                         if copy:
                             self.data = array(s)
-                            self.indices = array(rowind)
+                            self.indices = array(rowind, dtype=intc)
                             self.indptr = array(indptr, dtype=intc)
                         else:
                             self.data = asarray(s)
-                            self.indices = asarray(rowind)
+                            self.indices = asarray(rowind, dtype=intc)
                             self.indptr = asarray(indptr, dtype=intc)
                     except:
                         raise ValueError, "unrecognized form for csc_matrix constructor"
@@ -797,29 +793,37 @@ class csc_matrix(_cs_matrix):
         else:
             raise ValueError, "unrecognized form for csc_matrix constructor"
 
-        # Read existing matrix dimensions
-        try:
-            (oldM, oldN) = self.shape
-        except:
-            oldM = oldN = None
+
+
         # Read matrix dimensions given, if any
         if dims is not None:
             try:
                 (M, N) = dims
+                M,N = int(M),int(N)
             except (TypeError, ValueError), e:
                 raise TypeError, "dimensions not understood"
         else:
-            M = N = None
-        if len(self.indices) > 0:
-            M = max(oldM, M, int(amax(self.indices)) + 1)
-        else:
-            # Matrix is completely empty
-            M = max(oldM, M)
-        N = max(0, oldN, N, len(self.indptr) - 1)
-        self.shape = (M, N)
-        self._check()
+            # Read existing matrix dimensions
+            try:
+                (oldM, oldN) = self.shape
+            except:
+                oldM = oldN = None
 
-    def _check(self):
+            # Expand if necessary
+            M = N = None
+            N = max(0, oldN, N, len(self.indptr) - 1)
+            if len(self.indices) > 0:
+                M = max(oldM, M, int(amax(self.indices)) + 1)
+            else:
+                # Matrix is completely empty
+                M = max(oldM, M)
+                
+        self.shape = (M, N)
+
+        self._check(check)
+
+
+    def _check(self,full_check=True):
         # some functions pass floats
         self.shape = tuple([int(x) for x in self.shape])
 
@@ -832,14 +836,22 @@ class csc_matrix(_cs_matrix):
                   "should be rank 1"
         if (len(self.data) != nzmax):
             raise ValueError, "data and row list should have same length"
+        if (self.indptr[0] != 0):
+            raise ValueError,"index pointer should start with 0"
         if (len(self.indptr) != N+1):
             raise ValueError, "index pointer should be of of size N+1"
         if (nzmax < nnz):
             raise ValueError, "nzmax must not be less than nnz"
-        if (nnz>0) and (amax(self.indices[:nnz]) >= M):
-            raise ValueError, "row values must be < M"
-        if (nnz>0) and (amin(self.indices[:nnz]) < 0):
-            raise ValueError, "row values must be >= 0"
+
+        if full_check:
+            #check format validity (more expensive)
+            if nnz > 0:
+                if amax(self.indices[:nnz]) >= M:
+                    raise ValueError, "row values must be < M"
+                if amin(self.indices[:nnz]) < 0:
+                    raise ValueError, "row values must be >= 0"
+            if numpy.diff(self.indptr).min() < 0:
+                raise ValueError,'indptr values must form a non-decreasing sequence'
 
         if (self.indptr[-1] > len(self.indices)):
             raise ValueError, \
@@ -883,7 +895,7 @@ class csc_matrix(_cs_matrix):
                                             self.indptr, self.indices, \
                                             self.data, ocs.indptr, \
                                             ocs.indices, ocs.data)
-            return csc_matrix((data, rowind, indptr), self.shape)
+            return csc_matrix((data, rowind, indptr), self.shape, check=False)
         elif isdense(other):
             # Convert this matrix to a dense matrix and add them.
             return self.todense() + other
@@ -1040,7 +1052,7 @@ class csc_matrix(_cs_matrix):
     def tocsr(self):
         indptr, colind, data = csctocsr(self.shape[0], self.shape[1], \
                                         self.indptr, self.indices, self.data)
-        return csr_matrix((data, colind, indptr), self.shape)
+        return csr_matrix((data, colind, indptr), self.shape, check=False)
 
     def _toother(self):
         return self.tocsr()
@@ -1092,7 +1104,7 @@ class csr_matrix(_cs_matrix):
           - csr_matrix((data, col, ptr), [dims=(M, N)])
             standard CSR representation
     """
-    def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False):
+    def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False, check=True):
         _cs_matrix.__init__(self)
         if isdense(arg1):
             self.dtype = getdtype(dtype, arg1)
@@ -1157,11 +1169,11 @@ class csr_matrix(_cs_matrix):
                         self.dtype = getdtype(dtype, s)
                         if copy:
                             self.data = array(s, dtype=self.dtype)
-                            self.indices = array(colind)
+                            self.indices = array(colind, dtype=intc)
                             self.indptr = array(indptr, dtype=intc)
                         else:
                             self.data = asarray(s, dtype=self.dtype)
-                            self.indices = asarray(colind)
+                            self.indices = asarray(colind, dtype=intc)
                             self.indptr = asarray(indptr, dtype=intc)
                 else:
                     # (data, ij) format
@@ -1176,11 +1188,7 @@ class csr_matrix(_cs_matrix):
         else:
             raise ValueError, "unrecognized form for csr_matrix constructor"
 
-        # Read existing matrix dimensions
-        try:
-            (oldM, oldN) = self.shape
-        except:
-            oldM = oldN = None
+            
         # Read matrix dimensions given, if any
         if dims is not None:
             try:
@@ -1188,17 +1196,25 @@ class csr_matrix(_cs_matrix):
             except (TypeError, ValueError), e:
                 raise TypeError, "dimensions not understood"
         else:
-            M = N = None
-        M = max(0, oldM, M, len(self.indptr) - 1)
-        if len(self.indices) > 0:
-            N = max(oldN, N, int(amax(self.indices)) + 1)
-        else:
-            # Matrix is completely empty
-            N = max(oldN, N)
-        self.shape = (M, N)
-        self._check()
+            # Read existing matrix dimensions
+            try:
+                (oldM, oldN) = self.shape
+            except:
+                oldM = oldN = None
 
-    def _check(self):
+            M = N = None
+            M = max(0, oldM, M, len(self.indptr) - 1)
+            if len(self.indices) > 0:
+                N = max(oldN, N, int(amax(self.indices)) + 1)
+            else:
+                # Matrix is completely empty
+                N = max(oldN, N)
+
+        self.shape = (M, N)
+        
+        self._check(check)
+
+    def _check(self,full_check=True):
         # some functions pass floats
         self.shape = tuple([int(x) for x in self.shape])
 
@@ -1211,12 +1227,22 @@ class csr_matrix(_cs_matrix):
                   "should be rank 1"
         if (len(self.data) != nzmax):
             raise ValueError, "data and row list should have same length"
+        if (self.indptr[0] != 0):
+            raise ValueError,"index pointer should start with 0"
         if (len(self.indptr) != M+1):
             raise ValueError, "index pointer should be of length #rows + 1"
-        if (nnz>0) and (amax(self.indices[:nnz]) >= N):
-            raise ValueError, "column values must be < N"
-        if (nnz>0) and (amin(self.indices[:nnz]) < 0):
-            raise ValueError, "column values must be >= 0"
+
+
+        if full_check:
+            #check format validity (more expensive)
+            if nnz > 0:
+                if amax(self.indices[:nnz]) >= N:
+                    raise ValueError, "column values must be < N"
+                if amin(self.indices[:nnz]) < 0:
+                    raise ValueError, "column values must be >= 0"
+            if numpy.diff(self.indptr).min() < 0:
+                raise ValueError,'indptr values must form a non-decreasing sequence'
+
         if (nnz > nzmax):
             raise ValueError, \
                   "last value of index list should be less than "\
@@ -1388,7 +1414,7 @@ class csr_matrix(_cs_matrix):
     def tocsc(self):
         indptr, rowind, data = csrtocsc(self.shape[0], self.shape[1], \
                                         self.indptr, self.indices, self.data)
-        return csc_matrix((data, rowind, indptr), self.shape)
+        return csc_matrix((data, rowind, indptr), self.shape, check=False)
 
     def _toother(self):
         return self.tocsc()
