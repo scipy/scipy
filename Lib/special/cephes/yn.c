@@ -60,7 +60,10 @@ extern double log ( double );
 #else
 double y0(), y1(), log();
 #endif
-extern double MAXNUM, MAXLOG;
+extern double MAXNUM, MAXLOG, INFINITY;
+#ifdef NANS
+extern double NAN;
+#endif
 
 double yn( n, x )
 int n;
@@ -87,10 +90,17 @@ if( n == 1 )
 	return( sign * y1(x) );
 
 /* test for overflow */
-if( x <= 0.0 )
+if (x == 0.0) {
+    return -INFINITY;
+}
+else if( x < 0.0 )
 	{
 	mtherr( "yn", SING );
+#ifdef NANS
+        return (NAN);
+#else
 	return( -MAXNUM );
+#endif
 	}
 
 /* forward recurrence on n */
