@@ -286,19 +286,21 @@ extern double sqrt ( double );
 double chbevl(), exp(), i1(), log(), sqrt();
 #endif
 extern double PI;
-extern double MINLOG, MAXNUM;
+extern double MINLOG, INFINITY, NAN;
 
 double k1(x)
 double x;
 {
 double y, z;
 
+if (x == 0.0) {
+	mtherr("k1", SING);
+	return INFINITY;
+} else if (x < 0.0) {
+	mtherr("k1", DOMAIN);
+	return NAN;
+}
 z = 0.5 * x;
-if( z <= 0.0 )
-	{
-	mtherr( "k1", DOMAIN );
-	return( MAXNUM );
-	}
 
 if( x <= 2.0 )
 	{
@@ -318,11 +320,13 @@ double x;
 {
 double y;
 
-if( x <= 0.0 )
-	{
-	mtherr( "k1e", DOMAIN );
-	return( MAXNUM );
-	}
+if (x == 0.0) {
+	mtherr("k1e", SING);
+	return INFINITY;
+} else if (x < 0.0) {
+	mtherr("k1e", DOMAIN);
+	return NAN;
+}
 
 if( x <= 2.0 )
 	{

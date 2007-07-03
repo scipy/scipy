@@ -485,7 +485,7 @@ return( p * SQ2OPI / sqrt(x) );
 }
 
 
-extern double MAXNUM;
+extern double INFINITY, NAN;
 
 double y1(x)
 double x;
@@ -494,11 +494,13 @@ double w, z, p, q, xn;
 
 if( x <= 5.0 )
 	{
-	if( x <= 0.0 )
-		{
-		mtherr( "y1", DOMAIN );
-		return( -MAXNUM );
-		}
+	if (x == 0.0) {
+		mtherr("y1", SING);
+		return -INFINITY;
+	} else if (x <= 0.0) {
+		mtherr("y1", DOMAIN);
+		return NAN;
+	}
 	z = x * x;
 	w = x * (polevl( z, YP, 5 ) / p1evl( z, YQ, 8 ));
 	w += TWOOPI * ( j1(x) * log(x)  -  1.0/x );

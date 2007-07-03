@@ -283,18 +283,20 @@ extern double sqrt ( double );
 double chbevl(), exp(), i0(), log(), sqrt();
 #endif
 extern double PI;
-extern double MAXNUM;
+extern double INFINITY, NAN;
 
 double k0(x)
 double x;
 {
 double y, z;
 
-if( x <= 0.0 )
-	{
-	mtherr( "k0", DOMAIN );
-	return( MAXNUM );
-	}
+if (x == 0.0) {
+	mtherr("k0", SING);
+	return INFINITY;
+} else if (x < 0.0) {
+	mtherr("k0", DOMAIN);
+	return NAN;
+}
 
 if( x <= 2.0 )
 	{
@@ -315,11 +317,13 @@ double x;
 {
 double y;
 
-if( x <= 0.0 )
-	{
+if (x == 0.0) {
+	mtherr("k0e", SING);
+	return INFINITY;
+} else if (x < 0.0) {
 	mtherr( "k0e", DOMAIN );
-	return( MAXNUM );
-	}
+	return NAN;
+}
 
 if( x <= 2.0 )
 	{

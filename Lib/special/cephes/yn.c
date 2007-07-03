@@ -91,17 +91,12 @@ if( n == 1 )
 
 /* test for overflow */
 if (x == 0.0) {
-    return -INFINITY;
+	mtherr("yn", SING);
+	return -INFINITY;
+} else if (x < 0.0) {
+	mtherr("yn", DOMAIN);
+        return NAN;
 }
-else if( x < 0.0 )
-	{
-	mtherr( "yn", SING );
-#ifdef NANS
-        return (NAN);
-#else
-	return( -MAXNUM );
-#endif
-	}
 
 /* forward recurrence on n */
 

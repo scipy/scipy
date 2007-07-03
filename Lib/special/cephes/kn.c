@@ -89,7 +89,7 @@ extern double sqrt ( double );
 #else
 double fabs(), exp(), log(), sqrt();
 #endif
-extern double MACHEP, MAXNUM, MAXLOG, PI;
+extern double MACHEP, MAXNUM, MAXLOG, PI, INFINITY, NAN;
 
 double kn( nn, x )
 int nn;
@@ -111,14 +111,15 @@ overf:
 	return( MAXNUM );
 	}
 
-if( x <= 0.0 )
-	{
-	if( x < 0.0 )
-		mtherr( "kn", DOMAIN );
-	else
-		mtherr( "kn", SING );
-	return( MAXNUM );
+if(x <= 0.0) {
+	if( x < 0.0 ) {
+		mtherr("kn", DOMAIN);
+                return NAN;
+	} else {
+		mtherr("kn", SING);
+		return INFINITY;
 	}
+}
 
 
 if( x > 9.55 )
