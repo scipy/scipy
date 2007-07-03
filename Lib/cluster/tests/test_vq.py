@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 # David Cournapeau
-# Last Change: Tue Jun 19 10:00 PM 2007 J
+# Last Change: Tue Jul 03 08:00 PM 2007 J
 
 # For now, just copy the tests from sandbox.pyem, so we can check that
 # kmeans works OK for trivial examples.
@@ -12,7 +12,7 @@ from numpy.testing import *
 import numpy as N
 
 set_package_path()
-from cluster.vq import kmeans, kmeans2, py_vq, py_vq2, _py_vq_1d, vq
+from cluster.vq import kmeans, kmeans2, py_vq, py_vq2, _py_vq_1d, vq, ClusterError
 try:
     from cluster import _vq
     TESTC=True
@@ -21,10 +21,10 @@ except ImportError:
     TESTC=False
 restore_path()
 
+import os.path
 #Optional:
 set_local_path()
 # import modules that are located in the same directory as this file.
-import os.path
 DATAFILE1 = os.path.join(sys.path[0], "data.txt")
 restore_path()
 
@@ -106,6 +106,12 @@ class test_kmean(NumpyTestCase):
                          [-2.31149087,-0.05160469]])
 
         res = kmeans(data, initk)
+        res = kmeans2(data, initk, missing = 'warn')
+        try :
+            res = kmeans2(data, initk, missing = 'raise')
+            raise AssertionError("Exception not raised ! Should not happen")
+        except ClusterError, e:
+            print "exception raised as expected: " + str(e)
 
     def check_kmeans2_simple(self, level=1):
         """Testing simple call to kmeans2 and its results."""
