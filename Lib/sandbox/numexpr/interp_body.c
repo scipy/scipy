@@ -89,6 +89,11 @@
         unsigned int arg2 = params.program[pc+3];
         #define      arg3   params.program[pc+5]
         #define store_index params.index_data[store_in]
+        
+       /* WARNING: From now on, only do references to params.mem[arg[123]]
+         & params.memsteps[arg[123]] inside the VEC_ARG[123] macros,
+          or you will risk accessing invalid addresses.  */
+        
         #define reduce_ptr  (dest + flat_index(&store_index, j))
         #define i_reduce    *(long *)reduce_ptr
         #define f_reduce    *(double *)reduce_ptr
