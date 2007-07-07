@@ -19,7 +19,7 @@
 
 
 #include <vector>
-
+#include <algorithm>
 
 
 
@@ -29,7 +29,7 @@
  *
  *  this is a workaround for NumPy complex types 
  *  where T x = 0; doesn't make sense.
- *
+*
  */
 template <class T> 
 T ZERO(){
@@ -145,14 +145,18 @@ void csrtocsc(const I n_row,
  */
 template <class I, class T>
 void csrtocoo(const I n_row,
-	      const I n_col, 
-	      const I Ap [], 
-	      const I Aj[], 
-	      const T Ax[],
-	      std::vector<I>* Bi,
-	      std::vector<I>* Bj,
-	      std::vector<T>* Bx)
+	          const I n_col, 
+              const I Ap [], 
+              const I Aj[], 
+              const T Ax[],
+              std::vector<I>* Bi,
+              std::vector<I>* Bj,
+              std::vector<T>* Bx)
 {
+  I NNZ = Ap[n_row];
+  Bi->reserve(NNZ);
+  Bi->reserve(NNZ);
+  Bx->reserve(NNZ);
   for(I i = 0; i < n_row; i++){
     I row_start = Ap[i];
     I row_end   = Ap[i+1];
@@ -208,16 +212,16 @@ void csrtocoo(const I n_row,
  */
 template <class I, class T>
 void csrmucsr(const I n_row,
-	      const I n_col, 
-	      const I Ap[], 
-	      const I Aj[], 
-	      const T Ax[],
-	      const I Bp[],
-	      const I Bj[],
-	      const T Bx[],
-	      std::vector<I>* Cp,
-	      std::vector<I>* Cj,
-	      std::vector<T>* Cx)
+      	      const I n_col, 
+      	      const I Ap[], 
+      	      const I Aj[], 
+      	      const T Ax[],
+      	      const I Bp[],
+      	      const I Bj[],
+      	      const T Bx[],
+      	      std::vector<I>* Cp,
+      	      std::vector<I>* Cj,
+      	      std::vector<T>* Cx)
 {
   *Cp = std::vector<I>(n_row+1,0);
   
@@ -233,22 +237,22 @@ void csrmucsr(const I n_row,
     for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
       I j = Aj[jj];
       for(I kk = Bp[j]; kk < Bp[j+1]; kk++){
-	I k = Bj[kk];
+    	I k = Bj[kk];
         
-	sums[k] += Ax[jj]*Bx[kk];
+	    sums[k] += Ax[jj]*Bx[kk];
         
-	if(index[k] == -1){
-	  index[k] = istart;                        
-	  istart = k;
-	  length++;
-	}
+	    if(index[k] == -1){
+	        index[k] = istart;                        
+	        istart = k;
+	        length++;
+	    }
       }
     }         
 
     for(I jj = 0; jj < length; jj++){
       if(sums[istart] != zero){
-	Cj->push_back(istart);
-	Cx->push_back(sums[istart]);
+	    Cj->push_back(istart);
+	    Cx->push_back(sums[istart]);
       }
 	
       I temp = istart;                
@@ -323,9 +327,9 @@ void csrplcsr(const I n_row,
       sums[j] += Ax[jj];
               
       if(index[j] == -1){
-	index[j] = istart;                        
-	istart = j;
-	length++;
+	    index[j] = istart;                        
+	    istart = j;
+	    length++;
       }
     }
     
@@ -335,17 +339,17 @@ void csrplcsr(const I n_row,
       sums[j] += Bx[jj];
 
       if(index[j] == -1){
-	index[j] = istart;                        
-	istart = j;
-	length++;
+	    index[j] = istart;                        
+	    istart = j;
+	    length++;
       }
     }
 
 
     for(I jj = 0; jj < length; jj++){
       if(sums[istart] != zero){
-	Cj->push_back(istart);
-	Cx->push_back(sums[istart]);
+	    Cj->push_back(istart);
+	    Cx->push_back(sums[istart]);
       }
       
       I temp = istart;                
@@ -389,16 +393,16 @@ void csrplcsr(const I n_row,
  */
 template <class I, class T>
 void csrelmulcsr(const I n_row,
-		 const I n_col, 
-		 const I Ap [], 
-		 const I Aj[], 
-		 const T Ax[],
-		 const I Bp[],
-		 const I Bj[],
-		 const T Bx[],
-		 std::vector<I>* Cp,
-		 std::vector<I>* Cj,
-		 std::vector<T>* Cx)
+                 const I n_col, 
+                 const I Ap [], 
+                 const I Aj[], 
+                 const T Ax[],
+                 const I Bp[],
+                 const I Bj[],
+                 const T Bx[],
+                 std::vector<I>* Cp,
+                 std::vector<I>* Cj,
+                 std::vector<T>* Cx)
 {
   *Cp = std::vector<I>(n_row+1,0);
   
@@ -419,9 +423,9 @@ void csrelmulcsr(const I n_row,
       A_row[j] += Ax[jj];
       
       if(index[j] == -1){
-	index[j] = istart;                        
-	istart = j;
-	length++;
+	    index[j] = istart;                        
+	    istart = j;
+	    length++;
       }
     }
     
@@ -432,9 +436,9 @@ void csrelmulcsr(const I n_row,
       B_row[j] += Bx[jj];
 
       if(index[j] == -1){
-	index[j] = istart;                        
-	istart = j;
-	length++;
+          index[j] = istart;                        
+	      istart = j;
+	      length++;
       }
     }
 
@@ -443,8 +447,8 @@ void csrelmulcsr(const I n_row,
       T prod = A_row[istart] * B_row[istart];
       
       if(prod != zero){
-	Cj->push_back(istart);
-	Cx->push_back(prod);
+	    Cj->push_back(istart);
+	    Cx->push_back(prod);
       }
       
       I temp = istart;                
@@ -489,14 +493,14 @@ void csrelmulcsr(const I n_row,
  */
 template <class I, class T>
 void cootocsr(const I n_row,
-	      const I n_col,
-	      const I NNZ,
-	      const I Ai[],
-	      const I Aj[],
-	      const T Ax[],
-	      std::vector<I>* Bp,
-	      std::vector<I>* Bj,
-	      std::vector<T>* Bx)
+              const I n_col,
+              const I NNZ,
+              const I Ai[],
+              const I Aj[],
+              const T Ax[],
+              std::vector<I>* Bp,
+              std::vector<I>* Bj,
+              std::vector<T>* Bx)
 {
   std::vector<I> tempBp(n_row+1,0);
   std::vector<I> tempBj(NNZ);
@@ -533,9 +537,9 @@ void cootocsr(const I n_row,
   std::vector<I> Xp(n_row+1,0); //row pointer for an empty matrix
 
   csrplcsr<I,T>(n_row,n_col,
-		&tempBp[0],&tempBj[0],&tempBx[0],
-		&Xp[0],NULL,NULL,
-		Bp,Bj,Bx);    	   
+                &tempBp[0],&tempBj[0],&tempBx[0],
+                &Xp[0],NULL,NULL,
+                Bp,Bj,Bx);    	   
 }
 	    
 
@@ -664,13 +668,13 @@ void cscmux(const I n_row,
  */
 template <class I, class T>
 void spdiags(const I n_row,
-	     const I n_col,
-	     const I n_diag,
-	     const I offsets[],
-	     const T diags[],
-	     std::vector<I> * Ap,
-	     std::vector<I> * Ai,
-	     std::vector<T> * Ax)
+             const I n_col,
+             const I n_diag,
+             const I offsets[],
+             const T diags[],
+             std::vector<I> * Ap,
+             std::vector<I> * Ai,
+             std::vector<T> * Ax)
 {
   const I diags_length = std::min(n_row,n_col);
   Ap->push_back(0);
@@ -678,18 +682,16 @@ void spdiags(const I n_row,
   for(I i = 0; i < n_col; i++){
     for(I j = 0; j < n_diag; j++){
       if(offsets[j] <= 0){              //sub-diagonal
-	I row = i - offsets[j];
-	if (row >= n_row){ continue; }
-	
-	Ai->push_back(row);
-	Ax->push_back(diags[j*diags_length + i]);
-
+    	I row = i - offsets[j];
+	    if (row >= n_row){ continue; }
+        
+	    Ai->push_back(row);
+        Ax->push_back(diags[j*diags_length + i]);
       } else {                          //super-diagonal
-	I row = i - offsets[j];
-	if (row < 0 || row >= n_row){ continue; }
-
-	Ai->push_back(row);
-	Ax->push_back(diags[j*diags_length + row]);
+	    I row = i - offsets[j];
+	    if (row < 0 || row >= n_row){ continue; }
+        Ai->push_back(row);
+        Ax->push_back(diags[j*diags_length + row]);
       }
     }
     Ap->push_back(Ai->size());
@@ -716,11 +718,11 @@ void spdiags(const I n_row,
  */
 template <class I, class T>
 void csrtodense(const I  n_row,
-		const I  n_col,
-		const I  Ap[],
-		const I  Aj[],
-		const T  Ax[],
-		      T  Mx[])
+                const I  n_col,
+                const I  Ap[],
+                const I  Aj[],
+                const T  Ax[],
+                      T  Mx[])
 {
   I row_base = 0;
   for(I i = 0; i < n_row; i++){
@@ -728,7 +730,6 @@ void csrtodense(const I  n_row,
     I row_end   = Ap[i+1];
     for(I jj = row_start; jj < row_end; jj++){
       I j = Aj[jj];
-
       Mx[row_base + j] = Ax[jj];
     }	
     row_base += n_col;
@@ -754,11 +755,11 @@ void csrtodense(const I  n_row,
  */
 template <class I, class T>
 void densetocsr(const I n_row,
-		const I n_col,
-		const T Mx[],
-		std::vector<I>* Ap,
-		std::vector<I>* Aj,
-		std::vector<T>* Ax)
+                const I n_col,
+                const T Mx[],
+                std::vector<I>* Ap,
+                std::vector<I>* Aj,
+                std::vector<T>* Ax)
 {
   const T  zero  = ZERO<T>();
   const T* x_ptr = Mx;
@@ -767,8 +768,8 @@ void densetocsr(const I n_row,
   for(I i = 0; i < n_row; i++){
     for(I j = 0; j < n_col; j++){
       if(*x_ptr != zero){
-	Aj->push_back(j);
-	Ax->push_back(*x_ptr);
+	    Aj->push_back(j);
+	    Ax->push_back(*x_ptr);
       }
       x_ptr++;
     }
@@ -778,182 +779,138 @@ void densetocsr(const I n_row,
 
 
 
+
+
+/*
+ * Sort CSR column indices inplace
+ *
+ * Input Arguments:
+ *   I  n_row           - number of rows in A
+ *   I  n_col           - number of columns in A
+ *   I  Ap[n_row+1]     - row pointer
+ *   I  Aj[nnz(A)]      - column indices
+ *   T  Ax[nnz(A)]      - nonzeros 
+ *
+ */
+template< class T1, class T2 >
+bool kv_pair_less(const std::pair<T1,T2>& x, const std::pair<T1,T2>& y){
+    return x.first < y.first;
+}
+
+template<class I, class T>
+void sort_csr_indices(const I n_row,
+                      const I n_col,
+                      const I Ap[], 
+                      I       Aj[], 
+                      T       Ax[])
+{
+  std::vector< std::pair<I,T> > temp;
+
+  for(I i = 0; i < n_row; i++){
+      I row_start = Ap[i];
+      I row_end   = Ap[i+1];
+
+      temp.clear();
+
+      for(I jj = row_start; jj < row_end; jj++){
+          temp.push_back(std::make_pair(Aj[jj],Ax[jj]));
+      }
+
+      std::sort(temp.begin(),temp.end(),kv_pair_less<I,T>);
+
+      for(I jj = row_start, n = 0; jj < row_end; jj++, n++){
+          Aj[jj] = temp[n].first;
+          Ax[jj] = temp[n].second;
+      }
+    }    
+}
+
+
 /*
  * Derived methods
  */
 template <class I, class T>
 void csctocsr(const I n_row,
-	      const I n_col, 
-	      const I Ap[], 
-	      const I Ai[], 
-	      const T Ax[],
-	      std::vector<I>* Bp,
-	      std::vector<I>* Bj,
-	      std::vector<T>* Bx)
+              const I n_col, 
+              const I Ap[], 
+              const I Ai[], 
+              const T Ax[],
+              std::vector<I>* Bp,
+              std::vector<I>* Bj,
+              std::vector<T>* Bx)
 { csrtocsc<I,T>(n_col,n_row,Ap,Ai,Ax,Bp,Bj,Bx); }
 
 template <class I, class T>
 void csctocoo(const I n_row,
-	      const I n_col, 
-	      const I Ap[], 
-	      const I Ai[], 
-	      const T Ax[],
-	      std::vector<I>* Bi,
-	      std::vector<I>* Bj,
-	      std::vector<T>* Bx)
+              const I n_col, 
+              const I Ap[], 
+              const I Ai[], 
+              const T Ax[],
+              std::vector<I>* Bi,
+              std::vector<I>* Bj,
+              std::vector<T>* Bx)
 { csrtocoo<I,T>(n_col,n_row,Ap,Ai,Ax,Bj,Bi,Bx); }
 
 template <class I, class T>
 void cscmucsc(const I n_row,
-	      const I n_col, 
-	      const I Ap[], 
-	      const I Ai[], 
-	      const T Ax[],
-	      const I Bp[],
-	      const I Bi[],
-	      const T Bx[],
-	      std::vector<I>* Cp,
-	      std::vector<I>* Ci,
-	      std::vector<T>* Cx)
+              const I n_col, 
+              const I Ap[], 
+              const I Ai[], 
+              const T Ax[],
+              const I Bp[],
+              const I Bi[],
+              const T Bx[],
+              std::vector<I>* Cp,
+              std::vector<I>* Ci,
+              std::vector<T>* Cx)
 { csrmucsr<I,T>(n_col,n_row,Bp,Bi,Bx,Ap,Ai,Ax,Cp,Ci,Cx); }
 
 template <class I, class T>
 void cscplcsc(const I n_row,
-	      const I n_col, 
-	      const I Ap[], 
-	      const I Ai[], 
-	      const T Ax[],
-	      const I Bp[],
-	      const I Bi[],
-	      const T Bx[],
-	      std::vector<I>* Cp,
-	      std::vector<I>* Ci,
-	      std::vector<T>* Cx)
+              const I n_col, 
+              const I Ap[], 
+              const I Ai[], 
+              const T Ax[],
+              const I Bp[],
+              const I Bi[],
+              const T Bx[],
+              std::vector<I>* Cp,
+              std::vector<I>* Ci,
+              std::vector<T>* Cx)
 { csrplcsr<I,T>(n_col,n_row,Ap,Ai,Ax,Bp,Bi,Bx,Cp,Ci,Cx); }
 
 template <class I, class T>
 void cscelmulcsc(const I n_row,
-		 const I n_col, 
-		 const I Ap[], 
-		 const I Ai[], 
-		 const T Ax[],
-		 const I Bp[],
-		 const I Bi[],
-		 const T Bx[],
-		 std::vector<I>* Cp,
-		 std::vector<I>* Ci,
-		 std::vector<T>* Cx)
+                 const I n_col, 
+                 const I Ap[], 
+                 const I Ai[], 
+                 const T Ax[],
+                 const I Bp[],
+                 const I Bi[],
+                 const T Bx[],
+                 std::vector<I>* Cp,
+                 std::vector<I>* Ci,
+                 std::vector<T>* Cx)
 { csrelmulcsr<I,T>(n_col,n_row,Ap,Ai,Ax,Bp,Bi,Bx,Cp,Ci,Cx); }
 
 template<class I, class T>
 void cootocsc(const I n_row,
-	      const I n_col,
-	      const I NNZ,
-	      const I Ai[],
-	      const I Aj[],
-	      const T Ax[],
-	      std::vector<I>* Bp,
-	      std::vector<I>* Bi,
-	      std::vector<T>* Bx)
+      	      const I n_col,
+      	      const I NNZ,
+      	      const I Ai[],
+      	      const I Aj[],
+      	      const T Ax[],
+      	      std::vector<I>* Bp,
+      	      std::vector<I>* Bi,
+      	      std::vector<T>* Bx)
 { cootocsr<I,T>(n_col,n_row,NNZ,Aj,Ai,Ax,Bp,Bi,Bx); }
 
-/* Taken from numpy. */
-#define PYA_QS_STACK 100
-#define SMALL_QUICKSORT 15
-#define STDC_LT(a,b) ((a) < (b))
-#define STDC_LE(a,b) ((a) <= (b))
-#define STDC_EQ(a,b) ((a) == (b))
-#define SWAP(a,b) {SWAP_temp = (b); (b)=(a); (a) = SWAP_temp;}
-template<class I, class Ip>
-void int_aquicksort(I *v, Ip* tosort, Ip num, void *unused)
-{
-  I vp;
-  Ip *pl, *pr, SWAP_temp;
-  Ip *stack[PYA_QS_STACK], **sptr=stack, *pm, *pi, *pj, *pt, vi;
-
-  pl = tosort;
-  pr = tosort + num - 1;
-
-  for(;;) {
-    while ((pr - pl) > SMALL_QUICKSORT) {
-      /* quicksort partition */
-      pm = pl + ((pr - pl) >> 1);
-      if (STDC_LT(v[*pm],v[*pl])) SWAP(*pm,*pl);
-      if (STDC_LT(v[*pr],v[*pm])) SWAP(*pr,*pm);
-      if (STDC_LT(v[*pm],v[*pl])) SWAP(*pm,*pl);
-      vp = v[*pm];
-      pi = pl;
-      pj = pr - 1;
-      SWAP(*pm,*pj);
-      for(;;) {
-	do ++pi; while (STDC_LT(v[*pi],vp));
-	do --pj; while (STDC_LT(vp,v[*pj]));
-	if (pi >= pj)  break;
-	SWAP(*pi,*pj);
-      }
-      SWAP(*pi,*(pr-1));
-      /* push largest partition on stack */
-      if (pi - pl < pr - pi) {
-	*sptr++ = pi + 1;
-	*sptr++ = pr;
-	pr = pi - 1;
-      }else{
-	*sptr++ = pl;
-	*sptr++ = pi - 1;
-	pl = pi + 1;
-      }
-    }
-    /* insertion sort */
-    for(pi = pl + 1; pi <= pr; ++pi) {
-      vi = *pi;
-      vp = v[vi];
-      for(pj = pi, pt = pi - 1; \
-	    pj > pl && STDC_LT(vp, v[*pt]);)
-	{
-	  *pj-- = *pt--;
-	}
-      *pj = vi;
-    }
-    if (sptr == stack) break;
-    pr = *(--sptr);
-    pl = *(--sptr);
-  }
-}
-
 template<class I, class T>
-void ensure_sorted_indices(const I n_row,
-			   const I n_col,
-			   const I Ap[], 
-			   I Aj[], 
-			   T Ax[])
-{
-  const T zero = ZERO<T>();
-  I* isort = new I[ n_col ];
-  std::vector<I> itemp(n_col,0);
-  std::vector<T> atemp(n_col,zero);
-
-  for(I i = 0; i < n_row; i++){
-    I row_start = Ap[i];
-    I row_end   = Ap[i+1];
-    I ncol = row_end - row_start;
-    I ii;
-
-    for(I jj = 0; jj < ncol; jj++){
-      isort[jj] = jj;
-      atemp[jj] = Ax[row_start + jj];
-      itemp[jj] = Aj[row_start + jj];
-    }    
-    int_aquicksort( Aj + row_start, isort, ncol, 0 );
-    
-    /* Permute in-place both Aj and Ax of row i. */
-    for(I jj = row_start; jj < row_end; jj++){
-      ii = isort[jj-row_start];
-      Aj[jj] = itemp[ii];
-      Ax[jj] = atemp[ii];
-    }
-  }
-  delete[] isort;
-}
-			   
+void sort_csc_indices(const I n_row,
+                      const I n_col,
+                      const I Ap[], 
+                      I       Ai[], 
+                      T       Ax[])
+{ sort_csr_indices(n_col,n_row,Ap,Ai,Ax); }
 
 #endif

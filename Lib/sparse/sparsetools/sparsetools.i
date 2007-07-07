@@ -203,6 +203,18 @@ T_INPLACE_ARRAY2( double      )
 T_INPLACE_ARRAY2( npy_cfloat  )
 T_INPLACE_ARRAY2( npy_cdouble )
 
+
+
+%define I_INPLACE_ARRAY1( ctype )
+%apply ctype * INPLACE_ARRAY {
+  ctype Aj [ ]
+};
+%enddef
+
+I_INPLACE_ARRAY1( int         )
+I_INPLACE_ARRAY1( long        )
+
+
 %define T_INPLACE_ARRAY1( ctype )
 %apply ctype * INPLACE_ARRAY {
   ctype Ax [ ]
@@ -215,11 +227,14 @@ T_INPLACE_ARRAY1( double      )
 T_INPLACE_ARRAY1( npy_cfloat  )
 T_INPLACE_ARRAY1( npy_cdouble )
 
-%apply int * INPLACE_ARRAY { int Aj [] }
+
+
+
+
 
 %include "sparsetools.h"
  /*
-  * Order may be important here, list float before npy_float64, scalar before complex
+  * Order may be important here, list float before double, scalar before complex
   */
 
 %define INSTANTIATE_ALL( f_name )		     
@@ -287,5 +302,6 @@ INSTANTIATE_ALL(densetocsr)
 /*
  * Ensure sorted CSR/CSC indices.
  */
-%template(int_aquicksort) int_aquicksort<int,unsigned int>;
-INSTANTIATE_ALL(ensure_sorted_indices)
+INSTANTIATE_ALL(sort_csr_indices)
+INSTANTIATE_ALL(sort_csc_indices)
+

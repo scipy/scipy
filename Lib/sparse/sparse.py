@@ -545,11 +545,9 @@ class _cs_matrix(spmatrix):
         case return the matrix power.)
         """
         if isscalarlike(other):
-            new = self.copy()
-            new.data = new.data ** other
-            new.dtype = new.data.dtype
-            new.ftype = _transtabl[new.dtype.char]
-            return new
+            return self.__class_((self.data ** other, self.indices.copy(), self.indptr.copy()), \
+                                    dims=self.shape, check=False)
+        
         elif isspmatrix(other):
             other = self._tothis(other)
             if (other.shape != self.shape):
@@ -573,7 +571,7 @@ class _cs_matrix(spmatrix):
             indptr, ind, data = fn(M, N, self.indptr, self.indices, \
                                    self.data, other.indptr, \
                                    other.indices, other.data)
-            return self.__class__((data, ind, indptr), (M, N),check=False)      
+            return self.__class__((data, ind, indptr), (M, N), check=False)      
         elif isdense(other):
             # This is SLOW!  We need a more efficient implementation
             # of sparse * dense matrix multiplication!
@@ -673,9 +671,9 @@ class _cs_matrix(spmatrix):
         """Return a copy of this matrix where the row indices are sorted
         """
         if inplace:
-            sparsetools.ensure_sorted_indices(shape0, shape1,
-                                              self.indptr, self.indices,
-                                              self.data )
+            sparsetools.sort_csr_indices(shape0, shape1,
+                                         self.indptr, self.indices,
+                                         self.data )
         else:
             return self._toother()._toother()
 
