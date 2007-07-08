@@ -1726,6 +1726,8 @@ int require_size(PyArrayObject* ary, npy_intp * size, int n) {
 
 
 
+
+
 /*!
   Appends @a what to @a where. On input, @a where need not to be a tuple, but on
   return it always is.
@@ -1753,6 +1755,10 @@ PyObject *helper_appendToTuple( PyObject *where, PyObject *what ) {
   }
   return where;
 }
+
+
+
+
 
 
 #include <limits.h>

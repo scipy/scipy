@@ -21,77 +21,6 @@
 %}
 
 
-%{
-/*!
-  Appends @a what to @a where. On input, @a where need not to be a tuple, but on
-  return it always is.
-
-  @par Revision history:
-  - 17.02.2005, c
-*/
-PyObject *helper_appendToTuple( PyObject *where, PyObject *what ) {
-  PyObject *o2, *o3;
-
-  if ((!where) || (where == Py_None)) {
-    where = what;
-  } else {
-    if (!PyTuple_Check( where )) {
-      o2 = where;
-      where = PyTuple_New( 1 );
-      PyTuple_SetItem( where, 0, o2 );
-    }
-    o3 = PyTuple_New( 1 );
-    PyTuple_SetItem( o3, 0, what );
-    o2 = where;
-    where = PySequence_Concat( o2, o3 );
-    Py_DECREF( o2 );
-    Py_DECREF( o3 );
-  }
-  return where;
-}
-%} //end inline code
-
-
-
-/*
- * Use STL vectors for ARGOUTs
- */
-%define VEC_ARRAY_ARGOUT( ctype, atype  ) 
-%typemap( in, numinputs=0 ) std::vector<ctype>* array_argout( std::vector<ctype>* tmp ) {
-  tmp = new std::vector<ctype>(); 
-  $1 = tmp; 
-}; 
-%typemap( argout ) std::vector<ctype>* array_argout { 
-  int length = ($1)->size(); 
-  PyObject *obj = PyArray_FromDims(1, &length, PyArray_##atype); 
-  memcpy(PyArray_DATA(obj),&((*($1))[0]),sizeof(ctype)*length);	 
-  delete $1; 
-  $result = helper_appendToTuple( $result, (PyObject *)obj ); 
-}; 
-%enddef
-
-
-
- /*
-  * make typechecks - used for overloading
-  */
-%include "typemaps.i"
-
-%define NPY_TYPECHECK( ctype, atype )
-%typemap(typecheck) ctype *, const ctype *, ctype [], const ctype []
-{
-  $1 = (is_array($input) && PyArray_CanCastSafely(PyArray_TYPE($input),PyArray_##atype)) ? 1 : 0;
-};
-%enddef
-
-NPY_TYPECHECK(         int,      INT )
-NPY_TYPECHECK(        long,     LONG )
-NPY_TYPECHECK(       float,    FLOAT )
-NPY_TYPECHECK(      double,   DOUBLE )
-NPY_TYPECHECK(  npy_cfloat,   CFLOAT )
-NPY_TYPECHECK(  npy_cdouble, CDOUBLE )
-
-
 
  /*
   * IN types
@@ -300,7 +229,7 @@ INSTANTIATE_ALL(csrtodense)
 INSTANTIATE_ALL(densetocsr)
 
 /*
- * Ensure sorted CSR/CSC indices.
+ * Sort CSR/CSC indices.
  */
 INSTANTIATE_ALL(sort_csr_indices)
 INSTANTIATE_ALL(sort_csc_indices)
