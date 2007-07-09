@@ -1218,11 +1218,13 @@ aligned = align_series
 def align_with(*series):
     """Aligns several TimeSeries to the first of the list, so that their 
     starting and ending dates match.
-    Series are resized and filled with mased values accordingly.
+    Series are resized and filled with masked values accordingly.
     """
     if len(series) < 2:
         return series
     dates = series[0]._dates[[0,-1]]
+    if len(series) == 2:
+        return adjust_endpoints(series[-1], dates[0], dates[-1])
     return [adjust_endpoints(x, dates[0], dates[-1]) for x in series[1:]]
     
     

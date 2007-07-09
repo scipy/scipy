@@ -14,6 +14,7 @@ __date__     = '$Date$'
 
 import matplotlib
 from matplotlib import pylab, rcParams
+from matplotlib import _pylab_helpers
 from matplotlib.artist import setp
 from matplotlib.axes import Subplot, PolarSubplot
 from matplotlib.cbook import flatten
@@ -720,7 +721,9 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
     def tsplot(self,*parms,**kwargs):
         """Plots the data parsed in argument.
 This command accepts the same keywords as `matplotlib.plot`."""
-        #print "Parameters: %s - %i" % (parms, len(parms))
+#        parms = tuple(list(parms) + kwargs.pop('series',None))
+#        print "Parameters: %s - %i" % (parms, len(parms))
+#        print "OPtions: %s - %i" % (kwargs, len(kwargs))
         parms = self._check_plot_params(*parms)
         self.legendlabels.append(kwargs.get('label',None))
         Subplot.plot(self, *parms,**kwargs)
@@ -872,19 +875,32 @@ def add_tsplot(axes, *args, **kwargs):
 Figure.add_tsplot = add_tsplot
 
 
-def tsplot(*args, **kwargs):
+def tsplot(series, *args, **kwargs):
+    """Plots the series to the current TimeSeries subplot.
+    If the current plot is not a TimeSeriesPlot, a new TimeSeriesFigure is created."""
     # allow callers to override the hold state by passing hold=True|False
     b = pylab.ishold()
     h = kwargs.pop('hold', None)
     if h is not None:
         pylab.hold(h)
+    # Get the current figure, or create one
+    figManager = _pylab_helpers.Gcf.get_active()
+    if figManager is not None :
+        fig = figManager.canvas.figure
+        if not isinstance(fig, TimeSeriesFigure):
+            fig = tsfigure(series=series)
+    else:
+        fig = tsfigure(series=series)
+    # Get the current axe, or create one
+    sub = fig._axstack()
+    if sub is None:
+        sub = fig.add_tsplot(111,series=series,**kwargs)
     try:
-        ret =  pylab.gca().add_tsplot(*args, **kwargs)
+        ret = sub.tsplot(series, *args, **kwargs)
         pylab.draw_if_interactive()
     except:
         pylab.hold(b)
         raise
-
     pylab.hold(b)
     return ret
 
