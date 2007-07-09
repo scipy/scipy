@@ -46,5 +46,7 @@ for i in range(cv.size):
     print "=============== iteration %d / %d ============" % (i, cv.size)
     cv[i] = train_svm(c[i], g[i])
 
-v = P.contour(gr[0], gr[1], cv.reshape(g_range.size, c_range.size), 8)
+v = P.contourf(N.log2(gr[0]), N.log2(gr[1]), cv.reshape(g_range.size, c_range.size), 10)
+v = P.contour(N.log2(gr[0]), N.log2(gr[1]), cv.reshape(g_range.size, c_range.size), 10)
+P.clabel(v, inline = 1, fontsize = 10)
 P.show()
