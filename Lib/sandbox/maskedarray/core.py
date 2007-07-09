@@ -1731,7 +1731,7 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
         """
         if fill_value is None:
             fill_value = minimum_fill_value(self)
-        d = self.filled(fill_value)
+        d = self.filled(fill_value).view(ndarray)
         return d.argmin(axis)
     #........................
     def argmax(self, axis=None, fill_value=None):
@@ -1749,7 +1749,7 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
         """
         if fill_value is None:
             fill_value = maximum_fill_value(self._data)
-        d = self.filled(fill_value)
+        d = self.filled(fill_value).view(ndarray)
         return d.argmax(axis)
 
     def sort(self, axis=-1, kind='quicksort', order=None, 

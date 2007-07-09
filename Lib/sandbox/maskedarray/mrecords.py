@@ -675,4 +675,10 @@ if __name__ == '__main__':
         mrec[-1] = masked
         assert_equal(mrec._mask, [1,1,0,0,1])
 
+    if 1:
+        x = [(1.,10.,'a'),(2.,20,'b'),(3.14,30,'c'),(5.55,40,'d')]
+        desc = [('ffloat', N.float_), ('fint', N.int_), ('fstr', 'S10')] 
+        mr = MaskedRecords(x,dtype=desc)
+        mr[0] = masked
+        mr.ffloat[-1] = masked
         

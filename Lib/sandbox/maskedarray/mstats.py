@@ -13,39 +13,186 @@ __date__     = '$Date$'
 
 
 import numpy
-from numpy import bool_, float_, int_
+from numpy import bool_, float_, int_, \
+    sqrt
 from numpy import array as narray
 import numpy.core.numeric as numeric
 from numpy.core.numeric import concatenate
 
 import maskedarray as MA
-from maskedarray.core import masked, nomask, MaskedArray
-from maskedarray.core import masked_array as marray
+from maskedarray.core import masked, nomask, MaskedArray, masked_array
 from maskedarray.extras import apply_along_axis, dot
 
+__all__ = ['cov','meppf','plotting_positions','meppf','mmedian','mquantiles',
+           'stde_median','trim_tail','trim_both','trimmed_mean','trimmed_stde',
+           'winsorize']
 
-def _quantiles_1D(data,m,p):
-    """Returns quantiles for 1D compressed data. 
-    Used internally by `mquantiles`.
-    
-:Parameters:
-    data : ndarray
-        Array to quantize
-    m : Sequence
-    p : float ndarray
-        Quantiles to compute
+#####--------------------------------------------------------------------------
+#---- -- Trimming ---
+#####--------------------------------------------------------------------------
+
+def winsorize(data, alpha=0.2):
+    """Returns a Winsorized version of the input array: the (alpha/2.) lowest
+    values are set to the (alpha/2.)th percentile, and the (alpha/2.) highest
+    values are set to the (1-alpha/2.)th percentile 
+    Masked values are skipped. The input array is first flattened.
     """
-    n = data.count()
-    if n == 0:
-        return MA.resize(masked, len(p))
-    elif n == 1:
-        return MA.resize(data,len(p))
-    data = data.compressed()
-    aleph = (n*p + m)
-    k = numpy.floor(aleph.clip(1, n-1)).astype(int_)
-    gamma = (aleph-k).clip(0,1)
-    y = MA.sort(data)
-    return (1.-gamma)*y[(k-1).tolist()] + gamma*y[k.tolist()]
+    data = masked_array(data, copy=False).ravel()
+    idxsort = data.argsort()
+    (nsize, ncounts) = (data.size, data.count())
+    ntrim = int(alpha * ncounts)
+    (xmin,xmax) = data[idxsort[[ntrim, ncounts-nsize-ntrim-1]]]
+    return masked_array(numpy.clip(data, xmin, xmax), mask=data._mask) 
+
+#..............................................................................  
+def trim_both(data, proportiontocut=0.2, axis=None):
+    """Trims the data by masking the int(trim*n) smallest and int(trim*n) largest 
+    values of data along the given axis, where n is the number of unmasked values.
+    
+:Inputs: 
+    data : MaskedArray
+        Data to trim.
+    trim : float *[0.2]*
+        Percentage of trimming. If n is the number of unmasked values before trimming, 
+        the number of values after trimming is (1-2*trim)*n.
+    axis : integer *[None]*
+        Axis along which to perform the trimming.
+    """
+    #...................
+    def _trim_1D(data, trim):
+        "Private function: return a trimmed 1D array."
+        nsize = data.size
+        ncounts = data.count()
+        ntrim = int(trim * ncounts)
+        idxsort = data.argsort()
+        data[idxsort[:ntrim]] = masked
+        data[idxsort[ncounts-nsize-ntrim:]] = masked
+        return data
+    #...................
+    data = masked_array(data, copy=False, subok=True)
+    data.unshare_mask()
+    if (axis is None): 
+        return _trim_1D(data.ravel(), proportiontocut)
+    else:
+        assert data.ndim <= 2, "Array should be 2D at most !"
+        return apply_along_axis(_trim_1D, axis, data, proportiontocut)
+
+#..............................................................................
+def trim_tail(data, proportiontocut=0.2, tail='left', axis=None):
+    """Trims the data by masking int(trim*n) values from ONE tail of the data
+    along the given axis, where n is the number of unmasked values.
+    
+:Inputs: 
+    data : MaskedArray
+        Data to trim.
+    trim : float *[0.2]*
+        Percentage of trimming. If n is the number of unmasked values before trimming, 
+        the number of values after trimming is (1-2*trim)*n.
+    axis : integer *[None]*
+        Axis along which to perform the trimming.
+    """
+    #...................
+    def _trim_1D(data, trim, left):
+        "Private function: return a trimmed 1D array."
+        nsize = data.size
+        ncounts = data.count()
+        ntrim = int(trim * ncounts)
+        idxsort = data.argsort()
+        if left:
+            data[idxsort[:ntrim]] = masked
+        else:
+            data[idxsort[ncounts-nsize-ntrim:]] = masked
+        return data
+    #...................
+    data = masked_array(data, copy=False, subok=True)
+    data.unshare_mask()
+    #
+    if not isinstance(tail, str):
+        raise TypeError("The tail argument should be in ('left','right')")
+    tail = tail.lower()[0]
+    if tail == 'l':
+        left = True
+    elif tail == 'r':
+        left=False
+    else:
+        raise ValueError("The tail argument should be in ('left','right')")
+    #
+    if (axis is None): 
+        return _trim_1D(data.ravel(), proportiontocut, left)
+    else:
+        assert data.ndim <= 2, "Array should be 2D at most !"
+        return apply_along_axis(_trim_1D, axis, data, proportiontocut, left)
+
+#..............................................................................    
+def trimmed_mean(data, proportiontocut=0.2, axis=None):
+    """Returns the trimmed mean of the data along the given axis. Trimming is
+    performed on both ends of the distribution.
+    
+:Inputs: 
+    data : MaskedArray
+        Data to trim.
+    proportiontocut : float *[0.2]*
+        Proportion of the data to cut from each side of the data . 
+        As a result, (2*proportiontocut*n) values are actually trimmed.
+    axis : integer *[None]*
+        Axis along which to perform the trimming.    
+    """
+    return trim_both(data, proportiontocut=proportiontocut, axis=axis).mean(axis=axis)
+
+#..............................................................................   
+def trimmed_stde(data, proportiontocut=0.2, axis=None):
+    """Returns the standard error of the trimmed mean for the input data, 
+    along the given axis. Trimming is performed on both ends of the distribution.
+    
+:Inputs: 
+    data : MaskedArray
+        Data to trim.
+    proportiontocut : float *[0.2]*
+        Proportion of the data to cut from each side of the data . 
+        As a result, (2*proportiontocut*n) values are actually trimmed.
+    axis : integer *[None]*
+        Axis along which to perform the trimming.  
+    """
+    #........................
+    def _trimmed_stde_1D(data, trim=0.2):
+        "Returns the standard error of the trimmed mean for a 1D input data."
+        winsorized = winsorize(data)
+        nsize = winsorized.count()
+        winstd = winsorized.stdu()
+        return winstd / ((1-2*trim) * numpy.sqrt(nsize))
+    #........................
+    data = masked_array(data, copy=False, subok=True)
+    data.unshare_mask()
+    if (axis is None): 
+        return _trimmed_stde_1D(data.ravel(), proportiontocut)
+    else:
+        assert data.ndim <= 2, "Array should be 2D at most !"
+        return apply_along_axis(_trimmed_stde_1D, axis, data, proportiontocut)
+
+#.............................................................................
+def stde_median(data, axis=None):
+    """Returns the McKean-Schrader estimate of the standard error of the sample
+    median along the given axis.
+    """
+    def _stdemed_1D(data):
+        sorted = numpy.sort(data.compressed())
+        n = len(sorted)
+        z = 2.5758293035489004
+        k = int(round((n+1)/2. - z * sqrt(n/4.),0))
+        return ((sorted[n-k] - sorted[k-1])/(2.*z))
+    #
+    data = masked_array(data, copy=False, subok=True)
+    if (axis is None):
+        return _stdemed_1D(data)
+    else:
+        assert data.ndim <= 2, "Array should be 2D at most !"
+        return apply_along_axis(_stdemed_1D, axis, data)
+
+
+#####--------------------------------------------------------------------------
+#---- --- Quantiles ---
+#####--------------------------------------------------------------------------
+
 
 def mquantiles(data, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None):
     """Computes empirical quantiles for a *1xN* data array.
@@ -83,73 +230,77 @@ Typical values of (alpha,beta) are:
         Axis along which to compute quantiles. If *None*, uses the whole 
         (flattened/compressed) dataset.
     """
+    def _quantiles1D(data,m,p):
+        x = numpy.sort(data.compressed())
+        n = len(x)
+        if n == 0:
+            return masked_array(numpy.empty(len(p), dtype=float_), mask=True)
+        elif n == 1:
+            return masked_array(numpy.resize(x, p.shape), mask=nomask)
+        aleph = (n*p + m)
+        k = numpy.floor(aleph.clip(1, n-1)).astype(int_)
+        gamma = (aleph-k).clip(0,1)
+        return (1.-gamma)*x[(k-1).tolist()] + gamma*x[k.tolist()]
 
     # Initialization & checks ---------
-    data = marray(data, copy=False)
-    assert data.ndim <= 2, "Array should be 2D at most !"
+    data = masked_array(data, copy=False)
     p = narray(prob, copy=False, ndmin=1)
     m = alphap + p*(1.-alphap-betap)
     # Computes quantiles along axis (or globally)
     if (axis is None): 
-        return _quantiles_1D(data, m, p)
+        return _quantiles1D(data, m, p)
     else:
-        return apply_along_axis(_quantiles_1D, axis, data, m, p)
+        assert data.ndim <= 2, "Array should be 2D at most !"
+        return apply_along_axis(_quantiles1D, axis, data, m, p)
     
 
-def _median1d(data):
-    """Returns the median of a 1D masked array. Used internally by mmedian."""
-    datac = data.compressed()
-    if datac.size > 0:
-        return numpy.median(data.compressed())
-    return masked
-
-def _median2d_1(data):
-    data = marray(data, subok=True, copy=True)
-    if data._mask is nomask:
-        return numpy.median(data)
-    if data.ndim != 2 :
-        raise ValueError("Input array should be 2D!")
-    (n,p) = data.shape
-    if p < n//3:
-        return apply_along_axis(_median1d, 0, data)
-    data.sort(axis=0)
-    counts = data.count(axis=0)
-    midx = (counts//2)
-    midx_even = (counts%2==0)
-    med = marray(numeric.empty((data.shape[-1],), dtype=data.dtype))
-    med[midx_even] = (data[midx-1]+data[midx])/2.
-    med[numpy.logical_not(midx_even)] = data[midx]
-    if not med._mask.any():
-        med._mask = nomask
-    return med
-             
-def _median2d_2(data):
-    return apply_along_axis(_median1d, 0, data)
+def plotting_positions(data, alpha=0.4, beta=0.4):
+    """Returns the plotting positions (or empirical percentile points) for the
+    data.
+    Plotting positions are defined as (i-alpha)/(n-alpha-beta), where:
+        - i is the rank order statistics
+        - n is the number of unmasked values along the given axis
+        - alpha and beta are two parameters.
     
+    Typical values for alpha and beta are:     
+        - (0,1)    : *p(k) = k/n* : linear interpolation of cdf (R, type 4)
+        - (.5,.5)  : *p(k) = (k-1/2.)/n* : piecewise linear function (R, type 5)
+        - (0,0)    : *p(k) = k/(n+1)* : Weibull (R type 6)
+        - (1,1)    : *p(k) = (k-1)/(n-1)*. In this case, p(k) = mode[F(x[k])].
+          That's R default (R type 7)
+        - (1/3,1/3): *p(k) = (k-1/3)/(n+1/3)*. Then p(k) ~ median[F(x[k])].
+          The resulting quantile estimates are approximately median-unbiased
+          regardless of the distribution of x. (R type 8)
+        - (3/8,3/8): *p(k) = (k-3/8)/(n+1/4)*. Blom.
+          The resulting quantile estimates are approximately unbiased
+          if x is normally distributed (R type 9)
+        - (.4,.4)  : approximately quantile unbiased (Cunnane)
+        - (.35,.35): APL, used with PWM
+    """
+    data = masked_array(data, copy=False).reshape(1,-1)
+    n = data.count()
+    plpos = numpy.empty(data.size, dtype=float_)
+    plpos[n:] = 0
+    plpos[data.argsort()[:n]] = (numpy.arange(1,n+1) - alpha)/(n+1-alpha-beta)
+    return masked_array(plpos, mask=data._mask)
 
-def mmedian(data):
-    """Returns the median of data along the first axis. Missing data are discarded."""
-    data = marray(data, subok=True, copy=True)
-    if data._mask is nomask:
-        return numpy.median(data)
-    if data.ndim == 1:
-        return _median1d(data)
-#    elif data.ndim == 2:
-#        (n, p) = data.shape
-#        if p < n//3:
-#            return apply_along_axis(_median1d, 0, data)
-#        data.sort(axis=0)
-#        counts = data.count(axis=0)
-#        midx = (counts//2)
-#        midx_even = (counts%2==0)
-#        med = marray(numeric.empty((p,), dtype=data.dtype))
-#        med[midx_even] = (data[midx-1]+data[midx])/2.
-#        med[numpy.logical_not(midx_even)] = data[midx]
-#        if not med._mask.any():
-#            med._mask = nomask
-#        return med
-    return apply_along_axis(_median1d, 0, data)
+meppf = plotting_positions
+
+ 
+def mmedian(data, axis=None):
+    """Returns the median of data along the given axis. Missing data are discarded."""
+    def _median1D(data):
+        x = numpy.sort(data.compressed())
+        if x.size == 0:
+            return masked
+        return numpy.median(x)
+    data = masked_array(data, subok=True, copy=True)
+    if axis is None:
+        return _median1D(data)
+    else:
+        return apply_along_axis(_median1D, axis, data)
     
+   
 def cov(x, y=None, rowvar=True, bias=False, strict=False):
     """
     Estimate the covariance matrix.
@@ -197,59 +348,47 @@ def cov(x, y=None, rowvar=True, bias=False, strict=False):
         return (dot(X, X.T.conj(), strict=False) / fact).squeeze()
 
 
-################################################################################
-if __name__ == '__main__':
-    from maskedarray.testutils import assert_almost_equal, assert_equal
-    import timeit
-    import maskedarray
+def idealfourths(data, axis=None):
+    """Returns an estimate of the interquartile range of the data along the given
+    axis, as computed with the ideal fourths.
+    """
+    def _idf(data):
+        x = numpy.sort(data.compressed())
+        n = len(x)
+        (j,h) = divmod(n/4. + 5/12.,1)
+        qlo = (1-h)*x[j] + h*x[j+1]
+        k = n - j
+        qup = (1-h)*x[k] + h*x[k-1]
+        return qup - qlo
+    data = masked_array(data, copy=False)
+    if (axis is None): 
+        return _idf(data)
+    else:
+        return apply_along_axis(_idf, axis, data) 
     
-    if 1:
-        (n,p) = (101,30)
-        x = marray(numpy.linspace(-1.,1.,n),)
-        x[:10] = x[-10:] = masked
-        z = marray(numpy.empty((n,p), dtype=numpy.float_))
-        z[:,0] = x[:]
-        idx = numpy.arange(len(x))
-        for i in range(1,p):
-            numpy.random.shuffle(idx)
-            z[:,i] = x[idx]
     
-        assert_equal(mmedian(z[:,0]), 0)
-        assert_equal(mmedian(z), numpy.zeros((p,)))
-        
-        x = maskedarray.arange(24).reshape(3,4,2)
-        x[x%3==0] = masked
-        assert_equal(mmedian(x), [[12,9],[6,15],[12,9],[18,15]])
-        x.shape = (4,3,2)
-        assert_equal(mmedian(x),[[99,10],[11,99],[13,14]])
-        x = maskedarray.arange(24).reshape(4,3,2)
-        x[x%5==0] = masked
-        assert_equal(mmedian(x), [[12,10],[8,9],[16,17]])
-        
-        
-        """  [[[0 1],  [2  3],  [4 5]]
-              [[6 7],  [8  9],  [10 11]]
-              [[9 13]  [14 15]  [16 17]]
-             [[18 19]  [20 21]  [22 23]]],
+def rsh(data, points=None):
+    """Evalutates Rosenblatt's shifted histogram estimators for each
+    point of 'points' on the dataset 'data'.
+    
+:Inputs:
+    data : sequence
+        Input data. Masked values are discarded.
+    points : 
+        Sequence of points where to evaluate Rosenblatt shifted histogram. 
+        If None, use the data.        
+    """
+    data = masked_array(data, copy=False)
+    if points is None:
+        points = data
+    else:
+        points = numpy.array(points, copy=False, ndmin=1)
+    if data.ndim != 1:
+        raise AttributeError("The input array should be 1D only !")
+    n = data.count()
+    h = 1.2 * idealfourths(data) / n**(1./5)
+    nhi = (data[:,None] <= points[None,:] + h).sum(0)
+    nlo = (data[:,None] < points[None,:] - h).sum(0)
+    return (nhi-nlo) / (2.*n*h)
 
- [[[-- 1]  [2 --]  [4 5]   [-- 7]]
-  [[8 --]  [10 11] [-- 13] [14 --]]
- [[16 17]  [-- 19] [20 --] [22 23]]],
-
-        """
     
-    if 0:
-        print "GO!"
-        med_setup1 = "from __main__ import _median2d_1,z"
-        med_setup3 = "from __main__ import mmedian,z"
-        med_setup2 = "from __main__ import _median2d_2,z"
-        (nrep, nloop) = (3,10)
-        med_r1 = timeit.Timer("_median2d_1(z)", med_setup1).repeat(nrep,nloop)
-        med_r2 = timeit.Timer("_median2d_2(z)", med_setup2).repeat(nrep,nloop)
-        med_r3 = timeit.Timer("mmedian(z)", med_setup3).repeat(nrep,nloop)
-        med_r1 = numpy.sort(med_r1)
-        med_r2 = numpy.sort(med_r2)
-        med_r3 = numpy.sort(med_r3)
-        print "median2d_1 : %s" % med_r1
-        print "median2d_2 : %s" % med_r2
-        print "median     : %s" % med_r3

@@ -18,7 +18,7 @@ from maskedarray import masked, masked_array
 import maskedarray.testutils
 from maskedarray.testutils import *
 
-from maskedarray.mstats import mquantiles, mmedian, cov
+from maskedarray.mstats import *
 
 #..............................................................................
 class test_quantiles(NumpyTestCase):
@@ -103,13 +103,56 @@ class test_median(NumpyTestCase):
         "Tests median w/ 3D"
         x = maskedarray.arange(24).reshape(3,4,2)
         x[x%3==0] = masked
-        assert_equal(mmedian(x), [[12,9],[6,15],[12,9],[18,15]])
+        assert_equal(mmedian(x,0), [[12,9],[6,15],[12,9],[18,15]])
         x.shape = (4,3,2)
-        assert_equal(mmedian(x),[[99,10],[11,99],[13,14]])
+        assert_equal(mmedian(x,0),[[99,10],[11,99],[13,14]])
         x = maskedarray.arange(24).reshape(4,3,2)
         x[x%5==0] = masked
-        assert_equal(mmedian(x), [[12,10],[8,9],[16,17]])
-        
+        assert_equal(mmedian(x,0), [[12,10],[8,9],[16,17]])
+
+#..............................................................................
+class test_trimming(NumpyTestCase):
+    #
+    def __init__(self, *args, **kwds):
+        NumpyTestCase.__init__(self, *args, **kwds)
+    #
+    def test_trim(self):
+        "Tests trimming."
+        x = maskedarray.arange(100)
+        assert_equal(trim_both(x).count(), 60)
+        assert_equal(trim_tail(x,tail='r').count(), 80)
+        x[50:70] = masked
+        trimx = trim_both(x)
+        assert_equal(trimx.count(), 48)
+        assert_equal(trimx._mask, [1]*16 + [0]*34 + [1]*20 + [0]*14 + [1]*16)
+        x._mask = nomask
+        x.shape = (10,10)
+        assert_equal(trim_both(x).count(), 60)
+        assert_equal(trim_tail(x).count(), 80)
+    #
+    def test_trimmedmean(self):
+        "Tests the trimmed mean."
+        data = masked_array([ 77, 87, 88,114,151,210,219,246,253,262,
+                             296,299,306,376,428,515,666,1310,2611])
+        assert_almost_equal(trimmed_mean(data,0.1), 343, 0)
+        assert_almost_equal(trimmed_mean(data,0.2), 283, 0)
+    #
+    def test_trimmed_stde(self):
+        "Tests the trimmed mean standard error."
+        data = masked_array([ 77, 87, 88,114,151,210,219,246,253,262,
+                             296,299,306,376,428,515,666,1310,2611])
+        assert_almost_equal(trimmed_stde(data,0.2), 56.1, 1)
+    #
+    def test_winsorization(self):
+        "Tests the Winsorization of the data."
+        data = masked_array([ 77, 87, 88,114,151,210,219,246,253,262,
+                             296,299,306,376,428,515,666,1310,2611])
+        assert_almost_equal(winsorize(data).varu(), 21551.4, 1)
+        data[5] = masked
+        winsorized = winsorize(data)
+        assert_equal(winsorized.mask, data.mask)
+#..............................................................................
+
 class test_misc(NumpyTestCase):
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)    
@@ -123,6 +166,7 @@ class test_misc(NumpyTestCase):
         assert_equal(c, (x[1].anom()**2).sum()/2.)
         c = cov(x)
         assert_equal(c[1,0], (x[0].anom()*x[1].anom()).sum())
+
         
 ###############################################################################
 #------------------------------------------------------------------------------

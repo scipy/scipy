@@ -85,9 +85,11 @@ def varu(a, axis=None, dtype=None):
     dvar = anom.sum(axis) / (cnt-1)
     if axis is None:
         return dvar
-    return a.__class__(dvar, 
-                          mask=mask_or(a._mask.all(axis), (cnt==1)),
-                          fill_value=a._fill_value)
+    dvar.__setmask__(mask_or(a._mask.all(axis), (cnt==1)))
+    return dvar
+#    return a.__class__(dvar, 
+#                          mask=mask_or(a._mask.all(axis), (cnt==1)),
+#                          fill_value=a._fill_value)
             
 def stdu(a, axis=None, dtype=None):
     """a.var(axis=None, dtype=None)
@@ -104,8 +106,9 @@ def stdu(a, axis=None, dtype=None):
         else:
             # Should we use umath.sqrt instead ?
             return sqrt(dvar)
-    return a.__class__(sqrt(dvar._data), mask=dvar._mask, 
-                          fill_value=a._fill_value)
+    return sqrt(dvar)
+#    return a.__class__(sqrt(dvar._data), mask=dvar._mask, 
+#                          fill_value=a._fill_value)
 
 MaskedArray.stdu = stdu
 MaskedArray.varu = varu
@@ -160,12 +163,22 @@ hsplit = _fromnxfunction('hsplit')
 #####--------------------------------------------------------------------------
 #---- 
 #####--------------------------------------------------------------------------
-def apply_along_axis(func1d,axis,arr,*args):
+def flatten_inplace(seq):
+    """Flattens a sequence in place."""
+    k = 0
+    while (k != len(seq)):
+        while hasattr(seq[k],'__iter__'):
+            seq[k:(k+1)] = seq[k]
+        k += 1
+    return seq
+
+
+def apply_along_axis(func1d,axis,arr,*args,**kwargs):
     """ Execute func1d(arr[i],*args) where func1d takes 1-D arrays
         and arr is an N-d array.  i varies so as to apply the function
         along the given axis for each 1-d subarray in arr.
     """
-    arr = numeric.asanyarray(arr)
+    arr = core.array(arr, copy=False, subok=True)
     nd = arr.ndim
     if axis < 0:
         axis += nd
@@ -179,7 +192,8 @@ def apply_along_axis(func1d,axis,arr,*args):
     i[axis] = slice(None,None)
     outshape = numeric.asarray(arr.shape).take(indlist)
     i.put(indlist, ind)
-    res = func1d(arr[tuple(i.tolist())],*args)
+    j = i.copy()
+    res = func1d(arr[tuple(i.tolist())],*args,**kwargs)
     #  if res is a number, then we have a smaller output array
     asscalar = numeric.isscalar(res)
     if not asscalar:
@@ -206,18 +220,23 @@ def apply_along_axis(func1d,axis,arr,*args):
                 ind[n] = 0
                 n -= 1
             i.put(indlist,ind)
-            res = func1d(arr[tuple(i.tolist())],*args)
+            res = func1d(arr[tuple(i.tolist())],*args,**kwargs)
             outarr[tuple(ind)] = res
             dtypes.append(asarray(res).dtype)
             k += 1
     else:
+        res = core.array(res, copy=False, subok=True)
+        j = i.copy()
+        j[axis] = ([slice(None,None)] * res.ndim)
+        j.put(indlist, ind)
         Ntot = numeric.product(outshape)
         holdshape = outshape
         outshape = list(arr.shape)
-        outshape[axis] = len(res)
+        outshape[axis] = res.shape
         dtypes.append(asarray(res).dtype)
+        outshape = flatten_inplace(outshape)
         outarr = zeros(outshape, object_)
-        outarr[tuple(i.tolist())] = res
+        outarr[tuple(flatten_inplace(j.tolist()))] = res
         k = 1
         while k < Ntot:
             # increment the index
@@ -228,8 +247,9 @@ def apply_along_axis(func1d,axis,arr,*args):
                 ind[n] = 0
                 n -= 1
             i.put(indlist, ind)
-            res = func1d(arr[tuple(i.tolist())],*args)
-            outarr[tuple(i.tolist())] = res
+            j.put(indlist, ind)
+            res = func1d(arr[tuple(i.tolist())],*args,**kwargs)
+            outarr[tuple(flatten_inplace(j.tolist()))] = res
             dtypes.append(asarray(res).dtype)
             k += 1
     max_dtypes = numeric.dtype(numeric.asarray(dtypes).max())
