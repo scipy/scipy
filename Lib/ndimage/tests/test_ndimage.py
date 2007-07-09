@@ -35,7 +35,11 @@ import numpy
 from numpy import fft
 from numpy.testing import *
 set_package_path()
-import scipy.ndimage as ndimage
+try:
+    import scipy.ndimage as ndimage
+except:
+    import ndimage
+
 restore_path()
 #import numarray.numinclude as numinclude
 
