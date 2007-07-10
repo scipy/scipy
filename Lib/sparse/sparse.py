@@ -588,41 +588,24 @@ class _cs_matrix(spmatrix):
             oth = numpy.ravel(other)            
             y = fn(self.shape[0], self.shape[1], \
                    self.indptr, self.indices, self.data, oth)
-            if isinstance(other, matrix):
+            if isinstance(other, matrix):                
                 y = asmatrix(y)
+            if other.ndim == 2 and other.shape[1] == 1:
                 # If 'other' was an (nx1) column vector, transpose the result
                 # to obtain an (mx1) column vector.
-                if other.ndim == 2 and other.shape[1] == 1:
-                    y = y.T
+                y = y.T
             return y
+
         elif isspmatrix(other):
             raise TypeError, "use matmat() for sparse * sparse"
         else:
             raise TypeError, "need a dense vector"
 
-    def _rmatvec(self, other, shape0, shape1, fn, conjugate=True):
-        if isdense(other):
-            # This check is too harsh -- it prevents a column vector from
-            # being created on-the-fly like dense matrix objects can.
-            # if len(other) != self.shape[0]:
-            #    raise ValueError, "dimension mismatch"
-            if conjugate:
-                cd = conj(self.data)
-            else:
-                cd = self.data
-            oth = numpy.ravel(other)            
-            y = fn(shape0, shape1, self.indptr, self.indices, cd, oth)
-            if isinstance(other, matrix):
-                y = asmatrix(y)
-                # In the (unlikely) event that this matrix is 1x1 and 'other'
-                # was an (mx1) column vector, transpose the result.
-                if other.ndim == 2 and other.shape[1] == 1:
-                    y = y.T
-            return y
-        elif isspmatrix(other):
-            raise TypeError, "use matmat() for sparse * sparse"
+    def rmatvec(self, other, conjugate=True):
+        if conjugate:
+            return self.transpose().conj() * other
         else:
-            raise TypeError, "need a dense vector"
+            return self.transpose() * other
 
     def getdata(self, ind):
         return self.data[ind]
@@ -942,12 +925,8 @@ class csc_matrix(_cs_matrix):
     def matvec(self, other):
         return _cs_matrix._matvec(self, other, cscmux)
 
-    def rmatvec(self, other, conjugate=True):
-        return _cs_matrix._rmatvec(self, other, self.shape[1], self.shape[0], cscmux, conjugate=conjugate)
-
     def matmat(self, other):
         return _cs_matrix._matmat(self, other, cscmucsc)
-
 
     def __getitem__(self, key):
         if isinstance(key, tuple):
@@ -1307,9 +1286,6 @@ class csr_matrix(_cs_matrix):
 
     def matvec(self, other):
         return _cs_matrix._matvec(self, other, csrmux)
-        
-    def rmatvec(self, other, conjugate=True):
-        return _cs_matrix._rmatvec(self, other, self.shape[0], self.shape[1], csrmux, conjugate=conjugate)
 
     def matmat(self, other):
         return _cs_matrix._matmat(self, other, csrmucsr)
