@@ -77,7 +77,7 @@ def _get_output(output, input, output_type = None, shape = None):
     if shape is None:
         shape = input.shape
     if output is None:
-        output = numpy.zeros(shape, dtype = input.dtype)
+        output = numpy.zeros(shape, dtype = input.dtype.name)
         return_value = output
     elif type(output) in [type(types.TypeType), type(numpy.zeros((4,)).dtype)]:
         output = numpy.zeros(shape, dtype = output)
