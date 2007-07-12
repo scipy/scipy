@@ -1,8 +1,7 @@
 """ Scipy 2D sparse matrix module.
 
 Original code by Travis Oliphant.
-Modified and extended by Ed Schofield and Robert Cimrman.
-Revision of sparsetools by Nathan Bell
+Modified and extended by Ed Schofield, Robert Cimrman, and Nathan Bell
 """
 
 import warnings
@@ -182,11 +181,15 @@ class spmatrix(object):
     #   and operations return in csc format
     #  thus, a new sparse matrix format just needs to define
     #  a tocsc method
+    
+    def __abs__(self):
+        csc = self.tocsc()
+        return abs(csc)
 
     def __add__(self, other):
         csc = self.tocsc()
         return csc + other
-
+    
     def __radd__(self, other):  # other + self
         csc = self.tocsc()
         return csc.__radd__(other)
@@ -201,7 +204,11 @@ class spmatrix(object):
 
     def __mul__(self, other):
         csc = self.tocsc()
-        return csc * other
+        return csc.__mul__(other)
+
+    def __rmul__(self, other):
+        csc = self.tocsc()
+        return csc.__rmul__(other)
 
     def __truediv__(self, other):
         if isscalarlike(other):
@@ -219,11 +226,7 @@ class spmatrix(object):
     def __pow__(self, other):
         csc = self.tocsc()
         return csc ** other
-
-    def __rmul__(self, other):
-        csc = self.tocsc()
-        return csc.__rmul__(other)
-
+    
     def __neg__(self):
         csc = self.tocsc()
         return -csc
@@ -405,10 +408,8 @@ class spmatrix(object):
             return self * o
         elif axis == None:
             # sum over rows and columns
-            m, n = self.shape
-            o0 = asmatrix(ones((1, m), dtype=self.dtype))
             o1 = asmatrix(ones((n, 1), dtype=self.dtype))
-            return (o0 * (self * o1)).A.squeeze()
+            return (self * o1).sum()
         else:
             raise ValueError, "axis out of bounds"
 
@@ -480,15 +481,17 @@ class _cs_matrix(spmatrix):
                "elements (space for %d)\n\tin %s format>" % \
                (self.shape + (self.dtype.type, self.getnnz(), self.nzmax, \
                    _formats[format][1]))
-
-
-
+    
+    def __abs__(self):
+        return self.__class__((abs(self.data),self.indices.copy(),self.indptr.copy()), \
+                                dims=self.shape,dtype=self.dtype,check=False)
+               
     def __add__(self, other, fn):
         # First check if argument is a scalar
         if isscalarlike(other):
             # Now we would add this scalar to every element.
             raise NotImplementedError, 'adding a scalar to a CSC or CSR ' \
-                  'matrix is not yet supported'
+                  'matrix is not supported'
         elif isspmatrix(other):
             other = other.tocsc()
             if (other.shape != self.shape):
@@ -506,26 +509,19 @@ class _cs_matrix(spmatrix):
             raise TypeError, "unsupported type for sparse matrix addition"
 
 
-    def __mul__(self, other):
+    def __mul__(self, other): # self * other 
         """ Scalar, vector, or matrix multiplication
         """
         if isscalarlike(other):
-            new = self.copy()
-            new.data = other * new.data         # allows type conversion
-            new.dtype = new.data.dtype
-            new.ftype = _transtabl[new.dtype.char]
-            return new
+            return self.__class__((self.data * other, self.indices.copy(), self.indptr.copy()), \
+                                    dims=self.shape, check=False)
         else:
             return self.dot(other)
 
 
-    def __rmul__(self, other):  # other * self
+    def __rmul__(self, other): # other * self 
         if isscalarlike(other):
-            new = self.copy()
-            new.data = other * new.data         # allows type conversion
-            new.dtype = new.data.dtype
-            new.ftype = _transtabl[new.dtype.char]
-            return new
+            return self * other  # use __mul__
         else:
             # Don't use asarray unless we have to
             try:
@@ -545,7 +541,7 @@ class _cs_matrix(spmatrix):
         case return the matrix power.)
         """
         if isscalarlike(other):
-            return self.__class_((self.data ** other, self.indices.copy(), self.indptr.copy()), \
+            return self.__class__((self.data ** other, self.indices.copy(), self.indptr.copy()), \
                                     dims=self.shape, check=False)
         
         elif isspmatrix(other):
@@ -614,6 +610,19 @@ class _cs_matrix(spmatrix):
         rows, cols, data = fn(self.shape[0], self.shape[1], \
                               self.indptr, self.indices, self.data)
         return coo_matrix((data, (rows, cols)), self.shape)
+
+    
+    def sum(self, axis=None):
+        """Sum the matrix over the given axis.  If the axis is None, sum
+        over both rows and columns, returning a scalar.
+        """
+        # The spmatrix base class already does axis=0 and axis=1 efficiently
+        # so we only do the case axis=None here
+        if axis == None:
+            return self.data[:self.indptr[-1]].sum()
+        else:
+            return spmatrix.sum(self,axis)
+            raise ValueError, "axis out of bounds"
 
 
     def copy(self):
@@ -867,7 +876,7 @@ class csc_matrix(_cs_matrix):
         """
         if isscalarlike(other):
             raise NotImplementedError, 'adding a scalar to a CSC matrix is ' \
-                    'not yet supported'
+                    'not supported'
         elif isspmatrix(other):
             ocs = other.tocsc()
             if (ocs.shape != self.shape):
@@ -888,40 +897,15 @@ class csc_matrix(_cs_matrix):
 
     def __pow__(self, other):
         return _cs_matrix.__pow__(self, other, cscelmulcsc)
+    
+
 
     def transpose(self, copy=False):
         return _cs_matrix._transpose(self, csr_matrix, copy)
 
-
     def conj(self, copy=False):
         return _cs_matrix.conj(self, copy)
 
-    def sum(self, axis=None):
-        # Override the base class sum method for efficiency in the cases
-        # axis=0 and axis=None.
-        m, n = self.shape
-        data = self.data
-        if axis in (0, None):
-            out = empty(n, dtype=self.dtype)
-            # The first element in column j has index indptr[j], the last
-            # indptr[j+1]
-            indptr = self.indptr
-            for i in xrange(n):
-                out[i] = data[indptr[i] : indptr[i+1]].sum()
-            if axis == 0:
-                # Output is a (1 x n) dense matrix
-                return asmatrix(out)
-            else:
-                return out.sum()
-        else:
-            index = self.indices
-            out = zeros(m, dtype=self.dtype)
-            # Loop over non-zeros
-            for k in xrange(self.nnz):
-                out[index[k]] += data[k]
-            # Output is a (m x 1) dense matrix
-            return asmatrix(out).T
-                    
     def matvec(self, other):
         return _cs_matrix._matvec(self, other, cscmux)
 
@@ -1258,38 +1242,11 @@ class csr_matrix(_cs_matrix):
     def conj(self, copy=False):
         return _cs_matrix.conj(self, copy)
 
-    def sum(self, axis=None):
-        # Override the base class sum method for efficiency in the cases
-        # axis=1 and axis=None.
-        m, n = self.shape
-        data = self.data
-        if axis in (1, None):
-            out = empty(m, dtype=self.dtype)
-            # The first element in row i has index indptr[i], the last
-            # indptr[i+1]
-            indptr = self.indptr
-            for i in xrange(m):
-                out[i] = data[indptr[i] : indptr[i+1]].sum()
-            if axis == 1:
-                # Output is a (m x 1) dense matrix
-                return asmatrix(out).T
-            else:
-                return out.sum()
-        else:
-            index = self.indices
-            out = zeros(n, dtype=self.dtype)
-            # Loop over non-zeros
-            for k in xrange(self.nnz):
-                out[index[k]] += data[k]
-            # Output is a (1 x n) dense matrix
-            return asmatrix(out)
-
     def matvec(self, other):
         return _cs_matrix._matvec(self, other, csrmux)
 
     def matmat(self, other):
         return _cs_matrix._matmat(self, other, csrmucsr)
-
 
     def __getitem__(self, key):
         if isinstance(key, tuple):

@@ -38,6 +38,10 @@ class _test_cs:
         assert_equal(self.datsp[1,0],3)
         assert_equal(self.datsp[2,1],2)
 
+    def check_abs(self):
+        A = matrix([[-1, 0, 17],[0, -5, 0],[1, -4, 0],[0,0,0]],'d')
+        assert_equal(abs(A),abs(self.spmatrix(A)).todense())
+
     def check_sum(self):
         """Does the matrix's sum(,axis=0) method work?
         """
@@ -88,6 +92,14 @@ class _test_cs:
         a[-1,-2] = 7
         assert_array_equal(a.todense(),[[0,3,0,8],[0,0,4,0],[2,0,7,0]])
 
+    def check_mul_scalar(self):
+        assert_array_equal(self.dat*2,(self.datsp*2).todense())
+        assert_array_equal(self.dat*17.3,(self.datsp*17.3).todense())
+
+    def check_rmul_scalar(self):
+        assert_array_equal(2*self.dat,(2*self.datsp).todense())
+        assert_array_equal(17.3*self.dat,(17.3*self.datsp).todense())
+        
     def check_add(self):
         a = self.datsp
         b = self.datsp.copy()
