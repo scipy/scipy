@@ -192,11 +192,6 @@ INSTANTIATE_ALL(csctocoo)
 INSTANTIATE_ALL(cootocsr)
 INSTANTIATE_ALL(cootocsc)
 
-/*
- * CSR+CSR and CSC+CSC
- */
-INSTANTIATE_ALL(csrplcsr)
-INSTANTIATE_ALL(cscplcsc)
 
 /*
  * CSR*CSR and CSC*CSC
@@ -211,10 +206,18 @@ INSTANTIATE_ALL(csrmux)
 INSTANTIATE_ALL(cscmux)
 
 /*
- * CSR(elmul)CSR and CSC(elmul)CSC
+ * CSR (binary op) CSR and CSC (binary op) CSC
  */
-INSTANTIATE_ALL(csrelmulcsr)
-INSTANTIATE_ALL(cscelmulcsc)
+INSTANTIATE_ALL(csr_elmul_csr)
+INSTANTIATE_ALL(csr_eldiv_csr)
+INSTANTIATE_ALL(csr_plus_csr)
+INSTANTIATE_ALL(csr_minus_csr)
+
+INSTANTIATE_ALL(csc_elmul_csc)
+INSTANTIATE_ALL(csc_eldiv_csc)
+INSTANTIATE_ALL(csc_plus_csc)
+INSTANTIATE_ALL(csc_minus_csc)
+
 
 
 /*

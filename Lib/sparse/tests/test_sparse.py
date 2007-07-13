@@ -106,6 +106,13 @@ class _test_cs:
         b[0,2] = 2.0
         c = a + b
         assert_array_equal(c.todense(),[[2,0,2,4],[6,0,2,0],[0,4,0,0]])
+    
+    def check_sub(self):
+        assert_array_equal((self.datsp - self.datsp).todense(),[[0,0,0,0],[0,0,0,0],[0,0,0,0]])
+
+        A = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
+        assert_array_equal((self.datsp - A).todense(),self.dat - A.todense())
+        assert_array_equal((A - self.datsp).todense(),A.todense() - self.dat)
 
     def check_elmul(self):
         a = self.datsp
@@ -113,6 +120,13 @@ class _test_cs:
         b[0,2] = 2.0
         c = a ** b
         assert_array_equal(c.todense(),[[1,0,0,4],[9,0,1,0],[0,4,0,0]])
+    
+    def check_eldiv(self):
+        assert_array_equal((self.datsp / self.datsp).todense(),[[1,0,0,1],[1,0,1,0],[0,1,0,0]])
+
+        denom = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
+        res = matrix([[1,0,0,0.5],[-3,0,numpy.inf,0],[0,0.25,0,0]],'d')
+        assert_array_equal((self.datsp / denom).todense(),res)
 
     def check_rmatvec(self):
         M = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
