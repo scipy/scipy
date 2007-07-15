@@ -61,15 +61,15 @@ T_IN_ARRAY1( int         )
 T_IN_ARRAY1( long        )
 T_IN_ARRAY1( float       )
 T_IN_ARRAY1( double      )
-T_IN_ARRAY1( npy_cfloat  )
-T_IN_ARRAY1( npy_cdouble )
+T_IN_ARRAY1( npy_cfloat_wrapper  )
+T_IN_ARRAY1( npy_cdouble_wrapper )
 
 T_IN_ARRAY2( int         )
 T_IN_ARRAY2( long        )
 T_IN_ARRAY2( float       )
 T_IN_ARRAY2( double      )
-T_IN_ARRAY2( npy_cfloat  )
-T_IN_ARRAY2( npy_cdouble )
+T_IN_ARRAY2( npy_cfloat_wrapper  )
+T_IN_ARRAY2( npy_cdouble_wrapper )
 
 
 
@@ -111,8 +111,8 @@ T_ARRAY_ARGOUT( int,         INT     )
 T_ARRAY_ARGOUT( long,        LONG    )
 T_ARRAY_ARGOUT( float,       FLOAT   )
 T_ARRAY_ARGOUT( double,      DOUBLE  )
-T_ARRAY_ARGOUT( npy_cfloat,  CFLOAT  )
-T_ARRAY_ARGOUT( npy_cdouble, CDOUBLE )
+T_ARRAY_ARGOUT( npy_cfloat_wrapper,  CFLOAT  )
+T_ARRAY_ARGOUT( npy_cdouble_wrapper, CDOUBLE )
 
 
 
@@ -129,8 +129,8 @@ T_INPLACE_ARRAY2( int         )
 T_INPLACE_ARRAY2( long        )
 T_INPLACE_ARRAY2( float       )
 T_INPLACE_ARRAY2( double      )
-T_INPLACE_ARRAY2( npy_cfloat  )
-T_INPLACE_ARRAY2( npy_cdouble )
+T_INPLACE_ARRAY2( npy_cfloat_wrapper  )
+T_INPLACE_ARRAY2( npy_cdouble_wrapper )
 
 
 
@@ -154,8 +154,8 @@ I_INPLACE_ARRAY1( long        )
 T_INPLACE_ARRAY1( long        )
 T_INPLACE_ARRAY1( float       )
 T_INPLACE_ARRAY1( double      )
-T_INPLACE_ARRAY1( npy_cfloat  )
-T_INPLACE_ARRAY1( npy_cdouble )
+T_INPLACE_ARRAY1( npy_cfloat_wrapper  )
+T_INPLACE_ARRAY1( npy_cdouble_wrapper )
 
 
 
@@ -172,8 +172,8 @@ T_INPLACE_ARRAY1( npy_cdouble )
 %template(f_name)   f_name<int,long>;
 %template(f_name)   f_name<int,float>;
 %template(f_name)   f_name<int,double>;
-%template(f_name)   f_name<int,npy_cfloat>;
-%template(f_name)   f_name<int,npy_cdouble>;
+%template(f_name)   f_name<int,npy_cfloat_wrapper>;
+%template(f_name)   f_name<int,npy_cdouble_wrapper>;
 /* 64-bit indices would go here */
 %enddef
 

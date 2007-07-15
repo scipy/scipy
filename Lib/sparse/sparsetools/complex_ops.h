@@ -5,235 +5,85 @@
  *  Functions to handle arithmetic operations on NumPy complex values
  */
 
+#include <numpy/arrayobject.h>
 
 
+template <class c_type, class npy_type>
+class complex_wrapper : public npy_type {
+    public:
+        complex_wrapper( const c_type r = c_type(0), const c_type i = c_type(0) ){
+            npy_type::real = r;
+            npy_type::imag = i;
+        }
+        complex_wrapper operator-() const {
+          return complex_wrapper(-npy_type::real,-npy_type::imag);
+        }
+        complex_wrapper operator+(const complex_wrapper& B) const {
+          return complex_wrapper(npy_type::real + B.real, npy_type::imag + B.imag);
+        }
+        complex_wrapper operator-(const complex_wrapper& B) const {
+          return complex_wrapper(npy_type::real - B.real, npy_type::imag - B.imag);
+        }
+        complex_wrapper operator*(const complex_wrapper& B) const {
+          return complex_wrapper(npy_type::real * B.real - npy_type::imag * B.imag, 
+                                 npy_type::real * B.imag + npy_type::imag * B.real);
+        }
+        complex_wrapper operator/(const complex_wrapper& B) const {
+          complex_wrapper result;
+          c_type denom = 1.0 / (B.real * B.real + B.imag * B.imag);
+          result.real = (npy_type::real * npy_type::real + npy_type::imag * B.imag) * denom;
+          result.imag = (npy_type::real * npy_type::imag - npy_type::imag * B.real) * denom;
+          return result;
+        }
+        complex_wrapper& operator+=(const complex_wrapper & B){
+          npy_type::real += B.real;
+          npy_type::imag += B.imag;
+          return (*this);
+        }
+        complex_wrapper& operator-=(const complex_wrapper & B){
+          npy_type::real -= B.real;
+          npy_type::imag -= B.imag;
+          return (*this);
+        }
+        complex_wrapper& operator*=(const complex_wrapper & B){
+          c_type temp    = npy_type::real * B.real - npy_type::imag * B.imag;
+          npy_type::imag = npy_type::real * B.imag + npy_type::imag * B.real;
+          npy_type::real = temp;
+          return (*this);
+        }
+        complex_wrapper& operator/=(const complex_wrapper & B){
+          c_type denom   = 1.0 / (B.real * B.real + B.imag * B.imag);
+          c_type temp    = (npy_type::real * B.real + npy_type::imag * B.imag) * denom; 
+          npy_type::imag = (npy_type::real * B.imag - npy_type::imag * B.real) * denom;
+          npy_type::real = temp;
+          return (*this);
+        }
+        bool operator==(const complex_wrapper& B) const{
+          return npy_type::real == B.real && npy_type::imag == B.imag;
+        }
+        bool operator!=(const complex_wrapper& B) const{
+          return npy_type::real != B.real || npy_type::imag != B.imag;
+        }
+        bool operator==(const c_type& B) const{
+          return npy_type::real == B && npy_type::imag == c_type(0);
+        }
+        bool operator!=(const c_type& B) const{
+          return npy_type::real != B || npy_type::imag != c_type(0);
+        }
+        complex_wrapper& operator=(const complex_wrapper& B){
+          npy_type::real = B.real;
+          npy_type::imag = B.imag;
+          return (*this);
+        }
+        complex_wrapper& operator=(const c_type& B){
+          npy_type::real = B;
+          npy_type::imag = c_type(0);
+          return (*this);
+        }
+};
 
-/*
- * Addition
- */
-inline npy_cfloat operator+(const npy_cfloat& A, const npy_cfloat& B){
-  npy_cfloat result;
-  result.real = A.real + B.real;
-  result.imag = A.imag + B.imag;
-  return result;
-}
-inline npy_cdouble operator+(const npy_cdouble& A, const npy_cdouble& B){
-  npy_cdouble result;
-  result.real = A.real + B.real;
-  result.imag = A.imag + B.imag;
-  return result;
-}
-inline npy_clongdouble operator+(const npy_clongdouble& A, const npy_clongdouble& B){
-  npy_clongdouble result;
-  result.real = A.real + B.real;
-  result.imag = A.imag + B.imag;
-  return result;
-}
+typedef complex_wrapper<float, npy_cfloat>  npy_cfloat_wrapper;
+typedef complex_wrapper<double,npy_cdouble> npy_cdouble_wrapper;
 
-inline npy_cfloat& operator+=(npy_cfloat& A, const npy_cfloat& B){
-  A.real += B.real;
-  A.imag += B.imag;
-  return A;
-}
-inline npy_cdouble& operator+=(npy_cdouble& A, const npy_cdouble& B){
-  A.real += B.real;
-  A.imag += B.imag;
-  return A;
-}
-inline npy_clongdouble& operator+=(npy_clongdouble& A, const npy_clongdouble& B){
-  A.real += B.real;
-  A.imag += B.imag;
-  return A;
-}
-
-
-
-/*
- * Subtraction
- */
-inline npy_cfloat operator-(const npy_cfloat& A, const npy_cfloat& B){
-  npy_cfloat result;
-  result.real = A.real - B.real;
-  result.imag = A.imag - B.imag;
-  return result;
-}
-inline npy_cdouble operator-(const npy_cdouble& A, const npy_cdouble& B){
-  npy_cdouble result;
-  result.real = A.real - B.real;
-  result.imag = A.imag - B.imag;
-  return result;
-}
-inline npy_clongdouble operator-(const npy_clongdouble& A, const npy_clongdouble& B){
-  npy_clongdouble result;
-  result.real = A.real - B.real;
-  result.imag = A.imag - B.imag;
-  return result;
-}
-
-inline npy_cfloat& operator-=(npy_cfloat& A, const npy_cfloat& B){
-  A.real -= B.real;
-  A.imag -= B.imag;
-  return A;
-}
-inline npy_cdouble& operator-=(npy_cdouble& A, const npy_cdouble& B){
-  A.real -= B.real;
-  A.imag -= B.imag;
-  return A;
-}
-inline npy_clongdouble& operator-=(npy_clongdouble& A, const npy_clongdouble& B){
-  A.real -= B.real;
-  A.imag -= B.imag;
-  return A;
-}
-
-
-/*
- * Multiplication
- */
-inline npy_cfloat operator*(const npy_cfloat& A, const npy_cfloat& B){
-  npy_cfloat result;
-  result.real = A.real * B.real - A.imag * B.imag;
-  result.imag = A.real * B.imag + A.imag * B.real;
-  return result;
-}
-inline npy_cdouble operator*(const npy_cdouble& A, const npy_cdouble& B){
-  npy_cdouble result;
-  result.real = A.real * B.real - A.imag * B.imag;
-  result.imag = A.real * B.imag + A.imag * B.real;
-  return result;
-}
-inline npy_clongdouble operator*(const npy_clongdouble& A, const npy_clongdouble& B){
-  npy_clongdouble result;
-  result.real = A.real * B.real - A.imag * B.imag;
-  result.imag = A.real * B.imag + A.imag * B.real;
-  return result;
-}
-
-inline npy_cfloat& operator*=(npy_cfloat& A, const npy_cfloat& B){
-  npy_float temp = A.real * B.real - A.imag * B.imag;
-  A.imag = A.real * B.imag + A.imag * B.real;
-  A.real = temp;
-  return A;
-}
-inline npy_cdouble& operator*=(npy_cdouble& A, const npy_cdouble& B){
-  npy_double temp = A.real * B.real - A.imag * B.imag;
-  A.imag = A.real * B.imag + A.imag * B.real;
-  A.real = temp;
-  return A;
-}
-inline npy_clongdouble& operator*=(npy_clongdouble& A, const npy_clongdouble& B){
-  npy_longdouble temp = A.real * B.real - A.imag * B.imag;
-  A.imag = A.real * B.imag + A.imag * B.real;
-  A.real = temp;
-  return A;
-}
-
-
-/*
- * Division
- */
-inline npy_cfloat operator/(const npy_cfloat& A, const npy_cfloat& B){
-  npy_cfloat result;
-  npy_float denom = 1.0 / (B.real * B.real + B.imag * B.imag);
-  result.real = (A.real * B.real + A.imag * B.imag) * denom;
-  result.imag = (A.real * B.imag - A.imag * B.real) * denom;
-  return result;
-}
-inline npy_cdouble operator/(const npy_cdouble& A, const npy_cdouble& B){
-  npy_cdouble result;
-  npy_double denom = 1.0 / (B.real * B.real + B.imag * B.imag);
-  result.real = (A.real * B.real + A.imag * B.imag) * denom;
-  result.imag = (A.real * B.imag - A.imag * B.real) * denom;
-  return result;
-}
-inline npy_clongdouble operator/(const npy_clongdouble& A, const npy_clongdouble& B){
-  npy_clongdouble result;
-  npy_longdouble denom = 1.0 / (B.real * B.real + B.imag * B.imag);
-  result.real = (A.real * B.real + A.imag * B.imag) * denom;
-  result.imag = (A.real * B.imag - A.imag * B.real) * denom;
-  return result;
-}
-
-inline npy_cfloat& operator/=(npy_cfloat& A, const npy_cfloat& B){
-  A = A*B;
-  return A;
-}
-inline npy_cdouble& operator/=(npy_cdouble& A, const npy_cdouble& B){
-  A = A*B;
-  return A;
-}
-inline npy_clongdouble& operator/=(npy_clongdouble& A, const npy_clongdouble& B){
-  A = A*B;
-  return A;
-}
-
-/*
- * Equality (complex==complex)
- */
-inline bool operator==(const npy_cfloat& A, const npy_cfloat& B){
-  return A.real == B.real && A.imag == B.imag;
-}
-inline bool operator==(const npy_cdouble& A, const npy_cdouble& B){
-  return A.real == B.real && A.imag == B.imag;
-}
-inline bool operator==(const npy_clongdouble& A, const npy_clongdouble& B){
-  return A.real == B.real && A.imag == B.imag;
-}
-
-inline bool operator!=(const npy_cfloat& A, const npy_cfloat& B){
-  return A.real != B.real || A.imag != B.imag;
-}
-inline bool operator!=(const npy_cdouble& A, const npy_cdouble& B){
-  return A.real != B.real || A.imag != B.imag;
-}
-inline bool operator!=(const npy_clongdouble& A, const npy_clongdouble& B){
-  return A.real != B.real || A.imag != B.imag;
-}
-
-/*
- * Equality (complex==scalar)
- */
-inline bool operator==(const npy_cfloat& A, const npy_float& B){
-  return A.real == B && A.imag == 0;
-}
-inline bool operator==(const npy_cdouble& A, const npy_double& B){
-  return A.real == B && A.imag == 0;
-}
-inline bool operator==(const npy_clongdouble& A, const npy_longdouble& B){
-  return A.real == B && A.imag == 0;
-}
-
-inline bool operator!=(const npy_cfloat& A, const npy_float& B){
-  return A.real != B || A.imag != 0;
-}
-inline bool operator!=(const npy_cdouble& A, const npy_double& B){
-  return A.real != B || A.imag != 0;
-}
-inline bool operator!=(const npy_clongdouble& A, const npy_longdouble& B){
-  return A.real != B || A.imag != 0;
-}
-
-/*
- * Equality (scalar==complex)
- */
-inline bool operator==(const npy_float& A, const npy_cfloat& B){
-  return A == B.real && 0 == B.imag;
-}
-inline bool operator==(const npy_double& A, const npy_cdouble& B){
-  return A == B.real && 0 == B.imag;
-}
-inline bool operator==(const npy_longdouble& A, const npy_clongdouble& B){
-  return A == B.real && 0 == B.imag;
-}
-
-inline bool operator!=(const npy_float& A, const npy_cfloat& B){
-  return A != B.real || 0 != B.imag;
-}
-inline bool operator!=(const npy_double& A, const npy_cdouble& B){
-  return A != B.real || 0 != B.imag;
-}
-inline bool operator!=(const npy_longdouble& A, const npy_clongdouble& B){
-  return A != B.real || 0 != B.imag;
-}
 
 #endif

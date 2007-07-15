@@ -2473,8 +2473,8 @@ SWIG_Python_MustGetPtr(PyObject *obj, swig_type_info *ty, int argnum, int flags)
 #define SWIGTYPE_p_std__vectorTfloat_t swig_types[3]
 #define SWIGTYPE_p_std__vectorTint_t swig_types[4]
 #define SWIGTYPE_p_std__vectorTlong_t swig_types[5]
-#define SWIGTYPE_p_std__vectorTnpy_cdouble_t swig_types[6]
-#define SWIGTYPE_p_std__vectorTnpy_cfloat_t swig_types[7]
+#define SWIGTYPE_p_std__vectorTnpy_cdouble_wrapper_t swig_types[6]
+#define SWIGTYPE_p_std__vectorTnpy_cfloat_wrapper_t swig_types[7]
 static swig_type_info *swig_types[9];
 static swig_module_info swig_module = {swig_types, 8, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
@@ -2578,6 +2578,8 @@ namespace swig {
 #endif
 #include "stdio.h"
 #include <numpy/arrayobject.h>
+#include "complex_ops.h"
+
 
 /* The following code originally appeared in enthought/kiva/agg/src/numeric.i,
  * author unknown.  It was translated from C++ to C by John Hunter.  Bill
@@ -3516,10 +3518,10 @@ SWIGINTERN PyObject *_wrap_csrtocsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   std::vector<int > *arg6 = (std::vector<int > *) 0 ;
   std::vector<int > *arg7 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg8 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg8 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -3532,7 +3534,7 @@ SWIGINTERN PyObject *_wrap_csrtocsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object5 ;
   std::vector<int > *tmp6 ;
   std::vector<int > *tmp7 ;
-  std::vector<npy_cfloat > *tmp8 ;
+  std::vector<npy_cfloat_wrapper > *tmp8 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -3548,7 +3550,7 @@ SWIGINTERN PyObject *_wrap_csrtocsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg7 = tmp7; 
   }
   {
-    tmp8 = new std::vector<npy_cfloat>(); 
+    tmp8 = new std::vector<npy_cfloat_wrapper>(); 
     arg8 = tmp8; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:csrtocsc",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
@@ -3584,9 +3586,9 @@ SWIGINTERN PyObject *_wrap_csrtocsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
-  csrtocsc<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,arg6,arg7,arg8);
+  csrtocsc<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg6)->size(); 
@@ -3605,7 +3607,7 @@ SWIGINTERN PyObject *_wrap_csrtocsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg8)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg8; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -3639,10 +3641,10 @@ SWIGINTERN PyObject *_wrap_csrtocsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   std::vector<int > *arg6 = (std::vector<int > *) 0 ;
   std::vector<int > *arg7 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg8 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg8 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -3655,7 +3657,7 @@ SWIGINTERN PyObject *_wrap_csrtocsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object5 ;
   std::vector<int > *tmp6 ;
   std::vector<int > *tmp7 ;
-  std::vector<npy_cdouble > *tmp8 ;
+  std::vector<npy_cdouble_wrapper > *tmp8 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -3671,7 +3673,7 @@ SWIGINTERN PyObject *_wrap_csrtocsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg7 = tmp7; 
   }
   {
-    tmp8 = new std::vector<npy_cdouble>(); 
+    tmp8 = new std::vector<npy_cdouble_wrapper>(); 
     arg8 = tmp8; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:csrtocsc",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
@@ -3707,9 +3709,9 @@ SWIGINTERN PyObject *_wrap_csrtocsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
-  csrtocsc<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,arg6,arg7,arg8);
+  csrtocsc<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg6)->size(); 
@@ -3728,7 +3730,7 @@ SWIGINTERN PyObject *_wrap_csrtocsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg8)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg8; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -3954,7 +3956,7 @@ SWIGINTERN PyObject *_wrap_csrtocsc(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csrtocsc'.\n  Possible C/C++ prototypes are:\n    csrtocsc<(int,int)>(int const,int const,int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csrtocsc<(int,long)>(int const,int const,int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csrtocsc<(int,float)>(int const,int const,int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csrtocsc<(int,double)>(int const,int const,int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csrtocsc<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    csrtocsc<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csrtocsc'.\n  Possible C/C++ prototypes are:\n    csrtocsc<(int,int)>(int const,int const,int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csrtocsc<(int,long)>(int const,int const,int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csrtocsc<(int,float)>(int const,int const,int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csrtocsc<(int,double)>(int const,int const,int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csrtocsc<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    csrtocsc<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -4457,10 +4459,10 @@ SWIGINTERN PyObject *_wrap_csctocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   std::vector<int > *arg6 = (std::vector<int > *) 0 ;
   std::vector<int > *arg7 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg8 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg8 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -4473,7 +4475,7 @@ SWIGINTERN PyObject *_wrap_csctocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object5 ;
   std::vector<int > *tmp6 ;
   std::vector<int > *tmp7 ;
-  std::vector<npy_cfloat > *tmp8 ;
+  std::vector<npy_cfloat_wrapper > *tmp8 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -4489,7 +4491,7 @@ SWIGINTERN PyObject *_wrap_csctocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg7 = tmp7; 
   }
   {
-    tmp8 = new std::vector<npy_cfloat>(); 
+    tmp8 = new std::vector<npy_cfloat_wrapper>(); 
     arg8 = tmp8; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:csctocsr",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
@@ -4525,9 +4527,9 @@ SWIGINTERN PyObject *_wrap_csctocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
-  csctocsr<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,arg6,arg7,arg8);
+  csctocsr<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg6)->size(); 
@@ -4546,7 +4548,7 @@ SWIGINTERN PyObject *_wrap_csctocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg8)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg8; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -4580,10 +4582,10 @@ SWIGINTERN PyObject *_wrap_csctocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   std::vector<int > *arg6 = (std::vector<int > *) 0 ;
   std::vector<int > *arg7 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg8 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg8 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -4596,7 +4598,7 @@ SWIGINTERN PyObject *_wrap_csctocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object5 ;
   std::vector<int > *tmp6 ;
   std::vector<int > *tmp7 ;
-  std::vector<npy_cdouble > *tmp8 ;
+  std::vector<npy_cdouble_wrapper > *tmp8 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -4612,7 +4614,7 @@ SWIGINTERN PyObject *_wrap_csctocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg7 = tmp7; 
   }
   {
-    tmp8 = new std::vector<npy_cdouble>(); 
+    tmp8 = new std::vector<npy_cdouble_wrapper>(); 
     arg8 = tmp8; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:csctocsr",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
@@ -4648,9 +4650,9 @@ SWIGINTERN PyObject *_wrap_csctocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
-  csctocsr<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,arg6,arg7,arg8);
+  csctocsr<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg6)->size(); 
@@ -4669,7 +4671,7 @@ SWIGINTERN PyObject *_wrap_csctocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg8)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg8; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -4895,7 +4897,7 @@ SWIGINTERN PyObject *_wrap_csctocsr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csctocsr'.\n  Possible C/C++ prototypes are:\n    csctocsr<(int,int)>(int const,int const,int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csctocsr<(int,long)>(int const,int const,int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csctocsr<(int,float)>(int const,int const,int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csctocsr<(int,double)>(int const,int const,int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csctocsr<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    csctocsr<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csctocsr'.\n  Possible C/C++ prototypes are:\n    csctocsr<(int,int)>(int const,int const,int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csctocsr<(int,long)>(int const,int const,int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csctocsr<(int,float)>(int const,int const,int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csctocsr<(int,double)>(int const,int const,int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csctocsr<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    csctocsr<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -5398,10 +5400,10 @@ SWIGINTERN PyObject *_wrap_csrtocoo__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   std::vector<int > *arg6 = (std::vector<int > *) 0 ;
   std::vector<int > *arg7 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg8 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg8 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -5414,7 +5416,7 @@ SWIGINTERN PyObject *_wrap_csrtocoo__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object5 ;
   std::vector<int > *tmp6 ;
   std::vector<int > *tmp7 ;
-  std::vector<npy_cfloat > *tmp8 ;
+  std::vector<npy_cfloat_wrapper > *tmp8 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -5430,7 +5432,7 @@ SWIGINTERN PyObject *_wrap_csrtocoo__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg7 = tmp7; 
   }
   {
-    tmp8 = new std::vector<npy_cfloat>(); 
+    tmp8 = new std::vector<npy_cfloat_wrapper>(); 
     arg8 = tmp8; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:csrtocoo",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
@@ -5466,9 +5468,9 @@ SWIGINTERN PyObject *_wrap_csrtocoo__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
-  csrtocoo<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,arg6,arg7,arg8);
+  csrtocoo<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg6)->size(); 
@@ -5487,7 +5489,7 @@ SWIGINTERN PyObject *_wrap_csrtocoo__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg8)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg8; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -5521,10 +5523,10 @@ SWIGINTERN PyObject *_wrap_csrtocoo__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   std::vector<int > *arg6 = (std::vector<int > *) 0 ;
   std::vector<int > *arg7 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg8 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg8 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -5537,7 +5539,7 @@ SWIGINTERN PyObject *_wrap_csrtocoo__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object5 ;
   std::vector<int > *tmp6 ;
   std::vector<int > *tmp7 ;
-  std::vector<npy_cdouble > *tmp8 ;
+  std::vector<npy_cdouble_wrapper > *tmp8 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -5553,7 +5555,7 @@ SWIGINTERN PyObject *_wrap_csrtocoo__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg7 = tmp7; 
   }
   {
-    tmp8 = new std::vector<npy_cdouble>(); 
+    tmp8 = new std::vector<npy_cdouble_wrapper>(); 
     arg8 = tmp8; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:csrtocoo",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
@@ -5589,9 +5591,9 @@ SWIGINTERN PyObject *_wrap_csrtocoo__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
-  csrtocoo<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,arg6,arg7,arg8);
+  csrtocoo<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg6)->size(); 
@@ -5610,7 +5612,7 @@ SWIGINTERN PyObject *_wrap_csrtocoo__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg8)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg8; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -5836,7 +5838,7 @@ SWIGINTERN PyObject *_wrap_csrtocoo(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csrtocoo'.\n  Possible C/C++ prototypes are:\n    csrtocoo<(int,int)>(int const,int const,int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csrtocoo<(int,long)>(int const,int const,int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csrtocoo<(int,float)>(int const,int const,int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csrtocoo<(int,double)>(int const,int const,int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csrtocoo<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    csrtocoo<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csrtocoo'.\n  Possible C/C++ prototypes are:\n    csrtocoo<(int,int)>(int const,int const,int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csrtocoo<(int,long)>(int const,int const,int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csrtocoo<(int,float)>(int const,int const,int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csrtocoo<(int,double)>(int const,int const,int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csrtocoo<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    csrtocoo<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -6339,10 +6341,10 @@ SWIGINTERN PyObject *_wrap_csctocoo__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   std::vector<int > *arg6 = (std::vector<int > *) 0 ;
   std::vector<int > *arg7 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg8 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg8 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -6355,7 +6357,7 @@ SWIGINTERN PyObject *_wrap_csctocoo__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object5 ;
   std::vector<int > *tmp6 ;
   std::vector<int > *tmp7 ;
-  std::vector<npy_cfloat > *tmp8 ;
+  std::vector<npy_cfloat_wrapper > *tmp8 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -6371,7 +6373,7 @@ SWIGINTERN PyObject *_wrap_csctocoo__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg7 = tmp7; 
   }
   {
-    tmp8 = new std::vector<npy_cfloat>(); 
+    tmp8 = new std::vector<npy_cfloat_wrapper>(); 
     arg8 = tmp8; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:csctocoo",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
@@ -6407,9 +6409,9 @@ SWIGINTERN PyObject *_wrap_csctocoo__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
-  csctocoo<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,arg6,arg7,arg8);
+  csctocoo<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg6)->size(); 
@@ -6428,7 +6430,7 @@ SWIGINTERN PyObject *_wrap_csctocoo__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg8)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg8; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -6462,10 +6464,10 @@ SWIGINTERN PyObject *_wrap_csctocoo__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   std::vector<int > *arg6 = (std::vector<int > *) 0 ;
   std::vector<int > *arg7 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg8 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg8 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -6478,7 +6480,7 @@ SWIGINTERN PyObject *_wrap_csctocoo__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object5 ;
   std::vector<int > *tmp6 ;
   std::vector<int > *tmp7 ;
-  std::vector<npy_cdouble > *tmp8 ;
+  std::vector<npy_cdouble_wrapper > *tmp8 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -6494,7 +6496,7 @@ SWIGINTERN PyObject *_wrap_csctocoo__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg7 = tmp7; 
   }
   {
-    tmp8 = new std::vector<npy_cdouble>(); 
+    tmp8 = new std::vector<npy_cdouble_wrapper>(); 
     arg8 = tmp8; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:csctocoo",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
@@ -6530,9 +6532,9 @@ SWIGINTERN PyObject *_wrap_csctocoo__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
-  csctocoo<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,arg6,arg7,arg8);
+  csctocoo<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg6)->size(); 
@@ -6551,7 +6553,7 @@ SWIGINTERN PyObject *_wrap_csctocoo__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg8)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg8; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -6777,7 +6779,7 @@ SWIGINTERN PyObject *_wrap_csctocoo(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csctocoo'.\n  Possible C/C++ prototypes are:\n    csctocoo<(int,int)>(int const,int const,int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csctocoo<(int,long)>(int const,int const,int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csctocoo<(int,float)>(int const,int const,int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csctocoo<(int,double)>(int const,int const,int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csctocoo<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    csctocoo<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csctocoo'.\n  Possible C/C++ prototypes are:\n    csctocoo<(int,int)>(int const,int const,int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csctocoo<(int,long)>(int const,int const,int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csctocoo<(int,float)>(int const,int const,int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csctocoo<(int,double)>(int const,int const,int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csctocoo<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    csctocoo<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -7317,10 +7319,10 @@ SWIGINTERN PyObject *_wrap_cootocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg3 ;
   int *arg4 ;
   int *arg5 ;
-  npy_cfloat *arg6 ;
+  npy_cfloat_wrapper *arg6 ;
   std::vector<int > *arg7 = (std::vector<int > *) 0 ;
   std::vector<int > *arg8 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg9 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg9 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -7335,7 +7337,7 @@ SWIGINTERN PyObject *_wrap_cootocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object6 ;
   std::vector<int > *tmp7 ;
   std::vector<int > *tmp8 ;
-  std::vector<npy_cfloat > *tmp9 ;
+  std::vector<npy_cfloat_wrapper > *tmp9 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -7352,7 +7354,7 @@ SWIGINTERN PyObject *_wrap_cootocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg8 = tmp8; 
   }
   {
-    tmp9 = new std::vector<npy_cfloat>(); 
+    tmp9 = new std::vector<npy_cfloat_wrapper>(); 
     arg9 = tmp9; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOO:cootocsr",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
@@ -7393,9 +7395,9 @@ SWIGINTERN PyObject *_wrap_cootocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_CFLOAT, &is_new_object6);
     if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)) SWIG_fail;
-    arg6 = (npy_cfloat*) array6->data;
+    arg6 = (npy_cfloat_wrapper*) array6->data;
   }
-  cootocsr<int,npy_cfloat >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cfloat const (*))arg6,arg7,arg8,arg9);
+  cootocsr<int,npy_cfloat_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg7)->size(); 
@@ -7414,7 +7416,7 @@ SWIGINTERN PyObject *_wrap_cootocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg9)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg9))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg9))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg9; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -7449,10 +7451,10 @@ SWIGINTERN PyObject *_wrap_cootocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg3 ;
   int *arg4 ;
   int *arg5 ;
-  npy_cdouble *arg6 ;
+  npy_cdouble_wrapper *arg6 ;
   std::vector<int > *arg7 = (std::vector<int > *) 0 ;
   std::vector<int > *arg8 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg9 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg9 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -7467,7 +7469,7 @@ SWIGINTERN PyObject *_wrap_cootocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object6 ;
   std::vector<int > *tmp7 ;
   std::vector<int > *tmp8 ;
-  std::vector<npy_cdouble > *tmp9 ;
+  std::vector<npy_cdouble_wrapper > *tmp9 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -7484,7 +7486,7 @@ SWIGINTERN PyObject *_wrap_cootocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg8 = tmp8; 
   }
   {
-    tmp9 = new std::vector<npy_cdouble>(); 
+    tmp9 = new std::vector<npy_cdouble_wrapper>(); 
     arg9 = tmp9; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOO:cootocsr",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
@@ -7525,9 +7527,9 @@ SWIGINTERN PyObject *_wrap_cootocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_CDOUBLE, &is_new_object6);
     if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)) SWIG_fail;
-    arg6 = (npy_cdouble*) array6->data;
+    arg6 = (npy_cdouble_wrapper*) array6->data;
   }
-  cootocsr<int,npy_cdouble >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cdouble const (*))arg6,arg7,arg8,arg9);
+  cootocsr<int,npy_cdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg7)->size(); 
@@ -7546,7 +7548,7 @@ SWIGINTERN PyObject *_wrap_cootocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg9)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg9))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg9))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg9; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -7808,7 +7810,7 @@ SWIGINTERN PyObject *_wrap_cootocsr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'cootocsr'.\n  Possible C/C++ prototypes are:\n    cootocsr<(int,int)>(int const,int const,int const,int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    cootocsr<(int,long)>(int const,int const,int const,int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    cootocsr<(int,float)>(int const,int const,int const,int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    cootocsr<(int,double)>(int const,int const,int const,int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    cootocsr<(int,npy_cfloat)>(int const,int const,int const,int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    cootocsr<(int,npy_cdouble)>(int const,int const,int const,int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'cootocsr'.\n  Possible C/C++ prototypes are:\n    cootocsr<(int,int)>(int const,int const,int const,int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    cootocsr<(int,long)>(int const,int const,int const,int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    cootocsr<(int,float)>(int const,int const,int const,int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    cootocsr<(int,double)>(int const,int const,int const,int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    cootocsr<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    cootocsr<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -8348,10 +8350,10 @@ SWIGINTERN PyObject *_wrap_cootocsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg3 ;
   int *arg4 ;
   int *arg5 ;
-  npy_cfloat *arg6 ;
+  npy_cfloat_wrapper *arg6 ;
   std::vector<int > *arg7 = (std::vector<int > *) 0 ;
   std::vector<int > *arg8 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg9 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg9 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -8366,7 +8368,7 @@ SWIGINTERN PyObject *_wrap_cootocsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object6 ;
   std::vector<int > *tmp7 ;
   std::vector<int > *tmp8 ;
-  std::vector<npy_cfloat > *tmp9 ;
+  std::vector<npy_cfloat_wrapper > *tmp9 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -8383,7 +8385,7 @@ SWIGINTERN PyObject *_wrap_cootocsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg8 = tmp8; 
   }
   {
-    tmp9 = new std::vector<npy_cfloat>(); 
+    tmp9 = new std::vector<npy_cfloat_wrapper>(); 
     arg9 = tmp9; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOO:cootocsc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
@@ -8424,9 +8426,9 @@ SWIGINTERN PyObject *_wrap_cootocsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_CFLOAT, &is_new_object6);
     if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)) SWIG_fail;
-    arg6 = (npy_cfloat*) array6->data;
+    arg6 = (npy_cfloat_wrapper*) array6->data;
   }
-  cootocsc<int,npy_cfloat >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cfloat const (*))arg6,arg7,arg8,arg9);
+  cootocsc<int,npy_cfloat_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg7)->size(); 
@@ -8445,7 +8447,7 @@ SWIGINTERN PyObject *_wrap_cootocsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg9)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg9))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg9))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg9; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -8480,10 +8482,10 @@ SWIGINTERN PyObject *_wrap_cootocsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg3 ;
   int *arg4 ;
   int *arg5 ;
-  npy_cdouble *arg6 ;
+  npy_cdouble_wrapper *arg6 ;
   std::vector<int > *arg7 = (std::vector<int > *) 0 ;
   std::vector<int > *arg8 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg9 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg9 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -8498,7 +8500,7 @@ SWIGINTERN PyObject *_wrap_cootocsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object6 ;
   std::vector<int > *tmp7 ;
   std::vector<int > *tmp8 ;
-  std::vector<npy_cdouble > *tmp9 ;
+  std::vector<npy_cdouble_wrapper > *tmp9 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -8515,7 +8517,7 @@ SWIGINTERN PyObject *_wrap_cootocsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg8 = tmp8; 
   }
   {
-    tmp9 = new std::vector<npy_cdouble>(); 
+    tmp9 = new std::vector<npy_cdouble_wrapper>(); 
     arg9 = tmp9; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOO:cootocsc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
@@ -8556,9 +8558,9 @@ SWIGINTERN PyObject *_wrap_cootocsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_CDOUBLE, &is_new_object6);
     if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)) SWIG_fail;
-    arg6 = (npy_cdouble*) array6->data;
+    arg6 = (npy_cdouble_wrapper*) array6->data;
   }
-  cootocsc<int,npy_cdouble >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cdouble const (*))arg6,arg7,arg8,arg9);
+  cootocsc<int,npy_cdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg7)->size(); 
@@ -8577,7 +8579,7 @@ SWIGINTERN PyObject *_wrap_cootocsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg9)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg9))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg9))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg9; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -8839,7 +8841,7 @@ SWIGINTERN PyObject *_wrap_cootocsc(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'cootocsc'.\n  Possible C/C++ prototypes are:\n    cootocsc<(int,int)>(int const,int const,int const,int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    cootocsc<(int,long)>(int const,int const,int const,int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    cootocsc<(int,float)>(int const,int const,int const,int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    cootocsc<(int,double)>(int const,int const,int const,int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    cootocsc<(int,npy_cfloat)>(int const,int const,int const,int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    cootocsc<(int,npy_cdouble)>(int const,int const,int const,int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'cootocsc'.\n  Possible C/C++ prototypes are:\n    cootocsc<(int,int)>(int const,int const,int const,int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    cootocsc<(int,long)>(int const,int const,int const,int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    cootocsc<(int,float)>(int const,int const,int const,int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    cootocsc<(int,double)>(int const,int const,int const,int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    cootocsc<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    cootocsc<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -9558,13 +9560,13 @@ SWIGINTERN PyObject *_wrap_csrmucsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cfloat *arg8 ;
+  npy_cfloat_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg11 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg11 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -9583,7 +9585,7 @@ SWIGINTERN PyObject *_wrap_csrmucsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cfloat > *tmp11 ;
+  std::vector<npy_cfloat_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -9602,7 +9604,7 @@ SWIGINTERN PyObject *_wrap_csrmucsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cfloat>(); 
+    tmp11 = new std::vector<npy_cfloat_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csrmucsr",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -9638,7 +9640,7 @@ SWIGINTERN PyObject *_wrap_csrmucsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -9662,9 +9664,9 @@ SWIGINTERN PyObject *_wrap_csrmucsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CFLOAT, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cfloat*) array8->data;
+    arg8 = (npy_cfloat_wrapper*) array8->data;
   }
-  csrmucsr<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat const (*))arg8,arg9,arg10,arg11);
+  csrmucsr<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -9683,7 +9685,7 @@ SWIGINTERN PyObject *_wrap_csrmucsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -9735,13 +9737,13 @@ SWIGINTERN PyObject *_wrap_csrmucsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cdouble *arg8 ;
+  npy_cdouble_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg11 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg11 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -9760,7 +9762,7 @@ SWIGINTERN PyObject *_wrap_csrmucsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cdouble > *tmp11 ;
+  std::vector<npy_cdouble_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -9779,7 +9781,7 @@ SWIGINTERN PyObject *_wrap_csrmucsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cdouble>(); 
+    tmp11 = new std::vector<npy_cdouble_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csrmucsr",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -9815,7 +9817,7 @@ SWIGINTERN PyObject *_wrap_csrmucsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -9839,9 +9841,9 @@ SWIGINTERN PyObject *_wrap_csrmucsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CDOUBLE, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cdouble*) array8->data;
+    arg8 = (npy_cdouble_wrapper*) array8->data;
   }
-  csrmucsr<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble const (*))arg8,arg9,arg10,arg11);
+  csrmucsr<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -9860,7 +9862,7 @@ SWIGINTERN PyObject *_wrap_csrmucsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -10194,7 +10196,7 @@ SWIGINTERN PyObject *_wrap_csrmucsr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csrmucsr'.\n  Possible C/C++ prototypes are:\n    csrmucsr<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csrmucsr<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csrmucsr<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csrmucsr<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csrmucsr<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    csrmucsr<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csrmucsr'.\n  Possible C/C++ prototypes are:\n    csrmucsr<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csrmucsr<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csrmucsr<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csrmucsr<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csrmucsr<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    csrmucsr<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -10913,13 +10915,13 @@ SWIGINTERN PyObject *_wrap_cscmucsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cfloat *arg8 ;
+  npy_cfloat_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg11 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg11 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -10938,7 +10940,7 @@ SWIGINTERN PyObject *_wrap_cscmucsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cfloat > *tmp11 ;
+  std::vector<npy_cfloat_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -10957,7 +10959,7 @@ SWIGINTERN PyObject *_wrap_cscmucsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cfloat>(); 
+    tmp11 = new std::vector<npy_cfloat_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:cscmucsc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -10993,7 +10995,7 @@ SWIGINTERN PyObject *_wrap_cscmucsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -11017,9 +11019,9 @@ SWIGINTERN PyObject *_wrap_cscmucsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CFLOAT, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cfloat*) array8->data;
+    arg8 = (npy_cfloat_wrapper*) array8->data;
   }
-  cscmucsc<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat const (*))arg8,arg9,arg10,arg11);
+  cscmucsc<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -11038,7 +11040,7 @@ SWIGINTERN PyObject *_wrap_cscmucsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -11090,13 +11092,13 @@ SWIGINTERN PyObject *_wrap_cscmucsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cdouble *arg8 ;
+  npy_cdouble_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg11 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg11 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -11115,7 +11117,7 @@ SWIGINTERN PyObject *_wrap_cscmucsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cdouble > *tmp11 ;
+  std::vector<npy_cdouble_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -11134,7 +11136,7 @@ SWIGINTERN PyObject *_wrap_cscmucsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cdouble>(); 
+    tmp11 = new std::vector<npy_cdouble_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:cscmucsc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -11170,7 +11172,7 @@ SWIGINTERN PyObject *_wrap_cscmucsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -11194,9 +11196,9 @@ SWIGINTERN PyObject *_wrap_cscmucsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CDOUBLE, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cdouble*) array8->data;
+    arg8 = (npy_cdouble_wrapper*) array8->data;
   }
-  cscmucsc<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble const (*))arg8,arg9,arg10,arg11);
+  cscmucsc<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -11215,7 +11217,7 @@ SWIGINTERN PyObject *_wrap_cscmucsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyOb
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -11549,7 +11551,7 @@ SWIGINTERN PyObject *_wrap_cscmucsc(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'cscmucsc'.\n  Possible C/C++ prototypes are:\n    cscmucsc<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    cscmucsc<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    cscmucsc<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    cscmucsc<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    cscmucsc<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    cscmucsc<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'cscmucsc'.\n  Possible C/C++ prototypes are:\n    cscmucsc<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    cscmucsc<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    cscmucsc<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    cscmucsc<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    cscmucsc<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    cscmucsc<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -12020,9 +12022,9 @@ SWIGINTERN PyObject *_wrap_csrmux__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObje
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
-  npy_cfloat *arg6 ;
-  std::vector<npy_cfloat > *arg7 = (std::vector<npy_cfloat > *) 0 ;
+  npy_cfloat_wrapper *arg5 ;
+  npy_cfloat_wrapper *arg6 ;
+  std::vector<npy_cfloat_wrapper > *arg7 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -12035,7 +12037,7 @@ SWIGINTERN PyObject *_wrap_csrmux__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObje
   int is_new_object5 ;
   PyArrayObject *array6 = NULL ;
   int is_new_object6 ;
-  std::vector<npy_cfloat > *tmp7 ;
+  std::vector<npy_cfloat_wrapper > *tmp7 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -12044,7 +12046,7 @@ SWIGINTERN PyObject *_wrap_csrmux__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObje
   PyObject * obj5 = 0 ;
   
   {
-    tmp7 = new std::vector<npy_cfloat>(); 
+    tmp7 = new std::vector<npy_cfloat_wrapper>(); 
     arg7 = tmp7; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOO:csrmux",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
@@ -12080,7 +12082,7 @@ SWIGINTERN PyObject *_wrap_csrmux__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObje
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -12088,14 +12090,14 @@ SWIGINTERN PyObject *_wrap_csrmux__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObje
     };
     array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_CFLOAT, &is_new_object6);
     if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)) SWIG_fail;
-    arg6 = (npy_cfloat*) array6->data;
+    arg6 = (npy_cfloat_wrapper*) array6->data;
   }
-  csrmux<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,(npy_cfloat const (*))arg6,arg7);
+  csrmux<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg7)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg7))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg7))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg7; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -12135,9 +12137,9 @@ SWIGINTERN PyObject *_wrap_csrmux__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObje
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
-  npy_cdouble *arg6 ;
-  std::vector<npy_cdouble > *arg7 = (std::vector<npy_cdouble > *) 0 ;
+  npy_cdouble_wrapper *arg5 ;
+  npy_cdouble_wrapper *arg6 ;
+  std::vector<npy_cdouble_wrapper > *arg7 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -12150,7 +12152,7 @@ SWIGINTERN PyObject *_wrap_csrmux__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObje
   int is_new_object5 ;
   PyArrayObject *array6 = NULL ;
   int is_new_object6 ;
-  std::vector<npy_cdouble > *tmp7 ;
+  std::vector<npy_cdouble_wrapper > *tmp7 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -12159,7 +12161,7 @@ SWIGINTERN PyObject *_wrap_csrmux__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObje
   PyObject * obj5 = 0 ;
   
   {
-    tmp7 = new std::vector<npy_cdouble>(); 
+    tmp7 = new std::vector<npy_cdouble_wrapper>(); 
     arg7 = tmp7; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOO:csrmux",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
@@ -12195,7 +12197,7 @@ SWIGINTERN PyObject *_wrap_csrmux__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObje
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -12203,14 +12205,14 @@ SWIGINTERN PyObject *_wrap_csrmux__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObje
     };
     array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_CDOUBLE, &is_new_object6);
     if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)) SWIG_fail;
-    arg6 = (npy_cdouble*) array6->data;
+    arg6 = (npy_cdouble_wrapper*) array6->data;
   }
-  csrmux<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,(npy_cdouble const (*))arg6,arg7);
+  csrmux<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg7)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg7))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg7))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg7; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -12472,7 +12474,7 @@ SWIGINTERN PyObject *_wrap_csrmux(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csrmux'.\n  Possible C/C++ prototypes are:\n    csrmux<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],std::vector<int > *)\n    csrmux<(int,long)>(int const,int const,int const [],int const [],long const [],long const [],std::vector<long > *)\n    csrmux<(int,float)>(int const,int const,int const [],int const [],float const [],float const [],std::vector<float > *)\n    csrmux<(int,double)>(int const,int const,int const [],int const [],double const [],double const [],std::vector<double > *)\n    csrmux<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],npy_cfloat const [],std::vector<npy_cfloat > *)\n    csrmux<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],npy_cdouble const [],std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csrmux'.\n  Possible C/C++ prototypes are:\n    csrmux<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],std::vector<int > *)\n    csrmux<(int,long)>(int const,int const,int const [],int const [],long const [],long const [],std::vector<long > *)\n    csrmux<(int,float)>(int const,int const,int const [],int const [],float const [],float const [],std::vector<float > *)\n    csrmux<(int,double)>(int const,int const,int const [],int const [],double const [],double const [],std::vector<double > *)\n    csrmux<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper const [],std::vector<npy_cfloat_wrapper > *)\n    csrmux<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper const [],std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -12943,9 +12945,9 @@ SWIGINTERN PyObject *_wrap_cscmux__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObje
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
-  npy_cfloat *arg6 ;
-  std::vector<npy_cfloat > *arg7 = (std::vector<npy_cfloat > *) 0 ;
+  npy_cfloat_wrapper *arg5 ;
+  npy_cfloat_wrapper *arg6 ;
+  std::vector<npy_cfloat_wrapper > *arg7 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -12958,7 +12960,7 @@ SWIGINTERN PyObject *_wrap_cscmux__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObje
   int is_new_object5 ;
   PyArrayObject *array6 = NULL ;
   int is_new_object6 ;
-  std::vector<npy_cfloat > *tmp7 ;
+  std::vector<npy_cfloat_wrapper > *tmp7 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -12967,7 +12969,7 @@ SWIGINTERN PyObject *_wrap_cscmux__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObje
   PyObject * obj5 = 0 ;
   
   {
-    tmp7 = new std::vector<npy_cfloat>(); 
+    tmp7 = new std::vector<npy_cfloat_wrapper>(); 
     arg7 = tmp7; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOO:cscmux",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
@@ -13003,7 +13005,7 @@ SWIGINTERN PyObject *_wrap_cscmux__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObje
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -13011,14 +13013,14 @@ SWIGINTERN PyObject *_wrap_cscmux__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObje
     };
     array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_CFLOAT, &is_new_object6);
     if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)) SWIG_fail;
-    arg6 = (npy_cfloat*) array6->data;
+    arg6 = (npy_cfloat_wrapper*) array6->data;
   }
-  cscmux<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,(npy_cfloat const (*))arg6,arg7);
+  cscmux<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg7)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg7))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg7))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg7; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -13058,9 +13060,9 @@ SWIGINTERN PyObject *_wrap_cscmux__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObje
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
-  npy_cdouble *arg6 ;
-  std::vector<npy_cdouble > *arg7 = (std::vector<npy_cdouble > *) 0 ;
+  npy_cdouble_wrapper *arg5 ;
+  npy_cdouble_wrapper *arg6 ;
+  std::vector<npy_cdouble_wrapper > *arg7 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -13073,7 +13075,7 @@ SWIGINTERN PyObject *_wrap_cscmux__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObje
   int is_new_object5 ;
   PyArrayObject *array6 = NULL ;
   int is_new_object6 ;
-  std::vector<npy_cdouble > *tmp7 ;
+  std::vector<npy_cdouble_wrapper > *tmp7 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -13082,7 +13084,7 @@ SWIGINTERN PyObject *_wrap_cscmux__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObje
   PyObject * obj5 = 0 ;
   
   {
-    tmp7 = new std::vector<npy_cdouble>(); 
+    tmp7 = new std::vector<npy_cdouble_wrapper>(); 
     arg7 = tmp7; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOO:cscmux",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
@@ -13118,7 +13120,7 @@ SWIGINTERN PyObject *_wrap_cscmux__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObje
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -13126,14 +13128,14 @@ SWIGINTERN PyObject *_wrap_cscmux__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObje
     };
     array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_CDOUBLE, &is_new_object6);
     if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)) SWIG_fail;
-    arg6 = (npy_cdouble*) array6->data;
+    arg6 = (npy_cdouble_wrapper*) array6->data;
   }
-  cscmux<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,(npy_cdouble const (*))arg6,arg7);
+  cscmux<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg7)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg7))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg7))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg7; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -13395,7 +13397,7 @@ SWIGINTERN PyObject *_wrap_cscmux(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'cscmux'.\n  Possible C/C++ prototypes are:\n    cscmux<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],std::vector<int > *)\n    cscmux<(int,long)>(int const,int const,int const [],int const [],long const [],long const [],std::vector<long > *)\n    cscmux<(int,float)>(int const,int const,int const [],int const [],float const [],float const [],std::vector<float > *)\n    cscmux<(int,double)>(int const,int const,int const [],int const [],double const [],double const [],std::vector<double > *)\n    cscmux<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],npy_cfloat const [],std::vector<npy_cfloat > *)\n    cscmux<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],npy_cdouble const [],std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'cscmux'.\n  Possible C/C++ prototypes are:\n    cscmux<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],std::vector<int > *)\n    cscmux<(int,long)>(int const,int const,int const [],int const [],long const [],long const [],std::vector<long > *)\n    cscmux<(int,float)>(int const,int const,int const [],int const [],float const [],float const [],std::vector<float > *)\n    cscmux<(int,double)>(int const,int const,int const [],int const [],double const [],double const [],std::vector<double > *)\n    cscmux<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper const [],std::vector<npy_cfloat_wrapper > *)\n    cscmux<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper const [],std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -14114,13 +14116,13 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cfloat *arg8 ;
+  npy_cfloat_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg11 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg11 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -14139,7 +14141,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cfloat > *tmp11 ;
+  std::vector<npy_cfloat_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -14158,7 +14160,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cfloat>(); 
+    tmp11 = new std::vector<npy_cfloat_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csr_elmul_csr",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -14194,7 +14196,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -14218,9 +14220,9 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CFLOAT, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cfloat*) array8->data;
+    arg8 = (npy_cfloat_wrapper*) array8->data;
   }
-  csr_elmul_csr<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -14239,7 +14241,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -14291,13 +14293,13 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cdouble *arg8 ;
+  npy_cdouble_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg11 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg11 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -14316,7 +14318,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cdouble > *tmp11 ;
+  std::vector<npy_cdouble_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -14335,7 +14337,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cdouble>(); 
+    tmp11 = new std::vector<npy_cdouble_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csr_elmul_csr",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -14371,7 +14373,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -14395,9 +14397,9 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CDOUBLE, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cdouble*) array8->data;
+    arg8 = (npy_cdouble_wrapper*) array8->data;
   }
-  csr_elmul_csr<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -14416,7 +14418,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -14750,7 +14752,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_elmul_csr'.\n  Possible C/C++ prototypes are:\n    csr_elmul_csr<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csr_elmul_csr<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csr_elmul_csr<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csr_elmul_csr<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csr_elmul_csr<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    csr_elmul_csr<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_elmul_csr'.\n  Possible C/C++ prototypes are:\n    csr_elmul_csr<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csr_elmul_csr<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csr_elmul_csr<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csr_elmul_csr<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csr_elmul_csr<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    csr_elmul_csr<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -15469,13 +15471,13 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cfloat *arg8 ;
+  npy_cfloat_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg11 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg11 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -15494,7 +15496,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cfloat > *tmp11 ;
+  std::vector<npy_cfloat_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -15513,7 +15515,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cfloat>(); 
+    tmp11 = new std::vector<npy_cfloat_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csr_eldiv_csr",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -15549,7 +15551,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -15573,9 +15575,9 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CFLOAT, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cfloat*) array8->data;
+    arg8 = (npy_cfloat_wrapper*) array8->data;
   }
-  csr_eldiv_csr<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -15594,7 +15596,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -15646,13 +15648,13 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cdouble *arg8 ;
+  npy_cdouble_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg11 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg11 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -15671,7 +15673,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cdouble > *tmp11 ;
+  std::vector<npy_cdouble_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -15690,7 +15692,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cdouble>(); 
+    tmp11 = new std::vector<npy_cdouble_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csr_eldiv_csr",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -15726,7 +15728,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -15750,9 +15752,9 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CDOUBLE, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cdouble*) array8->data;
+    arg8 = (npy_cdouble_wrapper*) array8->data;
   }
-  csr_eldiv_csr<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -15771,7 +15773,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -16105,7 +16107,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_eldiv_csr'.\n  Possible C/C++ prototypes are:\n    csr_eldiv_csr<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csr_eldiv_csr<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csr_eldiv_csr<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csr_eldiv_csr<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csr_eldiv_csr<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    csr_eldiv_csr<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_eldiv_csr'.\n  Possible C/C++ prototypes are:\n    csr_eldiv_csr<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csr_eldiv_csr<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csr_eldiv_csr<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csr_eldiv_csr<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csr_eldiv_csr<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    csr_eldiv_csr<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -16824,13 +16826,13 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cfloat *arg8 ;
+  npy_cfloat_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg11 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg11 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -16849,7 +16851,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cfloat > *tmp11 ;
+  std::vector<npy_cfloat_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -16868,7 +16870,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cfloat>(); 
+    tmp11 = new std::vector<npy_cfloat_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csr_plus_csr",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -16904,7 +16906,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -16928,9 +16930,9 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CFLOAT, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cfloat*) array8->data;
+    arg8 = (npy_cfloat_wrapper*) array8->data;
   }
-  csr_plus_csr<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -16949,7 +16951,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -17001,13 +17003,13 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cdouble *arg8 ;
+  npy_cdouble_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg11 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg11 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -17026,7 +17028,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cdouble > *tmp11 ;
+  std::vector<npy_cdouble_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -17045,7 +17047,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cdouble>(); 
+    tmp11 = new std::vector<npy_cdouble_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csr_plus_csr",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -17081,7 +17083,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -17105,9 +17107,9 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CDOUBLE, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cdouble*) array8->data;
+    arg8 = (npy_cdouble_wrapper*) array8->data;
   }
-  csr_plus_csr<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -17126,7 +17128,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -17460,7 +17462,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_plus_csr'.\n  Possible C/C++ prototypes are:\n    csr_plus_csr<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csr_plus_csr<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csr_plus_csr<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csr_plus_csr<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csr_plus_csr<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    csr_plus_csr<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_plus_csr'.\n  Possible C/C++ prototypes are:\n    csr_plus_csr<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csr_plus_csr<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csr_plus_csr<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csr_plus_csr<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csr_plus_csr<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    csr_plus_csr<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -18179,13 +18181,13 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cfloat *arg8 ;
+  npy_cfloat_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg11 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg11 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -18204,7 +18206,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cfloat > *tmp11 ;
+  std::vector<npy_cfloat_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -18223,7 +18225,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cfloat>(); 
+    tmp11 = new std::vector<npy_cfloat_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csr_minus_csr",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -18259,7 +18261,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -18283,9 +18285,9 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CFLOAT, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cfloat*) array8->data;
+    arg8 = (npy_cfloat_wrapper*) array8->data;
   }
-  csr_minus_csr<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -18304,7 +18306,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -18356,13 +18358,13 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cdouble *arg8 ;
+  npy_cdouble_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg11 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg11 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -18381,7 +18383,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cdouble > *tmp11 ;
+  std::vector<npy_cdouble_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -18400,7 +18402,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cdouble>(); 
+    tmp11 = new std::vector<npy_cdouble_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csr_minus_csr",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -18436,7 +18438,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -18460,9 +18462,9 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CDOUBLE, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cdouble*) array8->data;
+    arg8 = (npy_cdouble_wrapper*) array8->data;
   }
-  csr_minus_csr<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -18481,7 +18483,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -18815,7 +18817,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_minus_csr'.\n  Possible C/C++ prototypes are:\n    csr_minus_csr<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csr_minus_csr<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csr_minus_csr<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csr_minus_csr<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csr_minus_csr<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    csr_minus_csr<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_minus_csr'.\n  Possible C/C++ prototypes are:\n    csr_minus_csr<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csr_minus_csr<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csr_minus_csr<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csr_minus_csr<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csr_minus_csr<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    csr_minus_csr<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -19534,13 +19536,13 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cfloat *arg8 ;
+  npy_cfloat_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg11 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg11 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -19559,7 +19561,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cfloat > *tmp11 ;
+  std::vector<npy_cfloat_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -19578,7 +19580,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cfloat>(); 
+    tmp11 = new std::vector<npy_cfloat_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csc_elmul_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -19614,7 +19616,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -19638,9 +19640,9 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CFLOAT, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cfloat*) array8->data;
+    arg8 = (npy_cfloat_wrapper*) array8->data;
   }
-  csc_elmul_csc<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -19659,7 +19661,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -19711,13 +19713,13 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cdouble *arg8 ;
+  npy_cdouble_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg11 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg11 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -19736,7 +19738,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cdouble > *tmp11 ;
+  std::vector<npy_cdouble_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -19755,7 +19757,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cdouble>(); 
+    tmp11 = new std::vector<npy_cdouble_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csc_elmul_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -19791,7 +19793,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -19815,9 +19817,9 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CDOUBLE, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cdouble*) array8->data;
+    arg8 = (npy_cdouble_wrapper*) array8->data;
   }
-  csc_elmul_csc<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -19836,7 +19838,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -20170,7 +20172,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_elmul_csc'.\n  Possible C/C++ prototypes are:\n    csc_elmul_csc<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csc_elmul_csc<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csc_elmul_csc<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csc_elmul_csc<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csc_elmul_csc<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    csc_elmul_csc<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_elmul_csc'.\n  Possible C/C++ prototypes are:\n    csc_elmul_csc<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csc_elmul_csc<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csc_elmul_csc<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csc_elmul_csc<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csc_elmul_csc<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    csc_elmul_csc<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -20889,13 +20891,13 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cfloat *arg8 ;
+  npy_cfloat_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg11 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg11 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -20914,7 +20916,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cfloat > *tmp11 ;
+  std::vector<npy_cfloat_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -20933,7 +20935,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cfloat>(); 
+    tmp11 = new std::vector<npy_cfloat_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csc_eldiv_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -20969,7 +20971,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -20993,9 +20995,9 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CFLOAT, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cfloat*) array8->data;
+    arg8 = (npy_cfloat_wrapper*) array8->data;
   }
-  csc_eldiv_csc<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -21014,7 +21016,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -21066,13 +21068,13 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cdouble *arg8 ;
+  npy_cdouble_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg11 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg11 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -21091,7 +21093,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cdouble > *tmp11 ;
+  std::vector<npy_cdouble_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -21110,7 +21112,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cdouble>(); 
+    tmp11 = new std::vector<npy_cdouble_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csc_eldiv_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -21146,7 +21148,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -21170,9 +21172,9 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CDOUBLE, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cdouble*) array8->data;
+    arg8 = (npy_cdouble_wrapper*) array8->data;
   }
-  csc_eldiv_csc<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -21191,7 +21193,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -21525,7 +21527,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_eldiv_csc'.\n  Possible C/C++ prototypes are:\n    csc_eldiv_csc<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csc_eldiv_csc<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csc_eldiv_csc<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csc_eldiv_csc<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csc_eldiv_csc<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    csc_eldiv_csc<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_eldiv_csc'.\n  Possible C/C++ prototypes are:\n    csc_eldiv_csc<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csc_eldiv_csc<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csc_eldiv_csc<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csc_eldiv_csc<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csc_eldiv_csc<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    csc_eldiv_csc<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -22244,13 +22246,13 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cfloat *arg8 ;
+  npy_cfloat_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg11 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg11 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -22269,7 +22271,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cfloat > *tmp11 ;
+  std::vector<npy_cfloat_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -22288,7 +22290,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cfloat>(); 
+    tmp11 = new std::vector<npy_cfloat_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csc_plus_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -22324,7 +22326,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -22348,9 +22350,9 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CFLOAT, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cfloat*) array8->data;
+    arg8 = (npy_cfloat_wrapper*) array8->data;
   }
-  csc_plus_csc<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -22369,7 +22371,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -22421,13 +22423,13 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cdouble *arg8 ;
+  npy_cdouble_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg11 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg11 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -22446,7 +22448,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cdouble > *tmp11 ;
+  std::vector<npy_cdouble_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -22465,7 +22467,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cdouble>(); 
+    tmp11 = new std::vector<npy_cdouble_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csc_plus_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -22501,7 +22503,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -22525,9 +22527,9 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CDOUBLE, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cdouble*) array8->data;
+    arg8 = (npy_cdouble_wrapper*) array8->data;
   }
-  csc_plus_csc<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -22546,7 +22548,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -22880,7 +22882,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_plus_csc'.\n  Possible C/C++ prototypes are:\n    csc_plus_csc<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csc_plus_csc<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csc_plus_csc<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csc_plus_csc<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csc_plus_csc<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    csc_plus_csc<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_plus_csc'.\n  Possible C/C++ prototypes are:\n    csc_plus_csc<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csc_plus_csc<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csc_plus_csc<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csc_plus_csc<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csc_plus_csc<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    csc_plus_csc<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -23599,13 +23601,13 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cfloat *arg8 ;
+  npy_cfloat_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg11 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg11 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -23624,7 +23626,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cfloat > *tmp11 ;
+  std::vector<npy_cfloat_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -23643,7 +23645,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cfloat>(); 
+    tmp11 = new std::vector<npy_cfloat_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csc_minus_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -23679,7 +23681,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -23703,9 +23705,9 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CFLOAT, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cfloat*) array8->data;
+    arg8 = (npy_cfloat_wrapper*) array8->data;
   }
-  csc_minus_csc<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -23724,7 +23726,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -23776,13 +23778,13 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   int *arg6 ;
   int *arg7 ;
-  npy_cdouble *arg8 ;
+  npy_cdouble_wrapper *arg8 ;
   std::vector<int > *arg9 = (std::vector<int > *) 0 ;
   std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg11 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg11 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -23801,7 +23803,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   int is_new_object8 ;
   std::vector<int > *tmp9 ;
   std::vector<int > *tmp10 ;
-  std::vector<npy_cdouble > *tmp11 ;
+  std::vector<npy_cdouble_wrapper > *tmp11 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -23820,7 +23822,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     arg10 = tmp10; 
   }
   {
-    tmp11 = new std::vector<npy_cdouble>(); 
+    tmp11 = new std::vector<npy_cdouble_wrapper>(); 
     arg11 = tmp11; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csc_minus_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
@@ -23856,7 +23858,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
   {
     npy_intp size[1] = {
@@ -23880,9 +23882,9 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     };
     array8 = obj_to_array_contiguous_allow_conversion(obj7, PyArray_CDOUBLE, &is_new_object8);
     if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)) SWIG_fail;
-    arg8 = (npy_cdouble*) array8->data;
+    arg8 = (npy_cdouble_wrapper*) array8->data;
   }
-  csc_minus_csc<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
@@ -23901,7 +23903,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   {
     int length = (arg11)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -24235,7 +24237,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_minus_csc'.\n  Possible C/C++ prototypes are:\n    csc_minus_csc<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csc_minus_csc<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csc_minus_csc<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csc_minus_csc<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csc_minus_csc<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],int const [],int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    csc_minus_csc<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],int const [],int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_minus_csc'.\n  Possible C/C++ prototypes are:\n    csc_minus_csc<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    csc_minus_csc<(int,long)>(int const,int const,int const [],int const [],long const [],int const [],int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    csc_minus_csc<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    csc_minus_csc<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    csc_minus_csc<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    csc_minus_csc<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -24702,10 +24704,10 @@ SWIGINTERN PyObject *_wrap_spdiags__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObj
   int arg2 ;
   int arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   std::vector<int > *arg6 = (std::vector<int > *) 0 ;
   std::vector<int > *arg7 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg8 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg8 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -24718,7 +24720,7 @@ SWIGINTERN PyObject *_wrap_spdiags__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObj
   int is_new_object5 ;
   std::vector<int > *tmp6 ;
   std::vector<int > *tmp7 ;
-  std::vector<npy_cfloat > *tmp8 ;
+  std::vector<npy_cfloat_wrapper > *tmp8 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -24734,7 +24736,7 @@ SWIGINTERN PyObject *_wrap_spdiags__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObj
     arg7 = tmp7; 
   }
   {
-    tmp8 = new std::vector<npy_cfloat>(); 
+    tmp8 = new std::vector<npy_cfloat_wrapper>(); 
     arg8 = tmp8; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:spdiags",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
@@ -24767,9 +24769,9 @@ SWIGINTERN PyObject *_wrap_spdiags__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObj
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,2) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
-  spdiags<int,npy_cfloat >(arg1,arg2,arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,arg6,arg7,arg8);
+  spdiags<int,npy_cfloat_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg6)->size(); 
@@ -24788,7 +24790,7 @@ SWIGINTERN PyObject *_wrap_spdiags__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObj
   {
     int length = (arg8)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg8; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -24816,10 +24818,10 @@ SWIGINTERN PyObject *_wrap_spdiags__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObj
   int arg2 ;
   int arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   std::vector<int > *arg6 = (std::vector<int > *) 0 ;
   std::vector<int > *arg7 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg8 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg8 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -24832,7 +24834,7 @@ SWIGINTERN PyObject *_wrap_spdiags__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObj
   int is_new_object5 ;
   std::vector<int > *tmp6 ;
   std::vector<int > *tmp7 ;
-  std::vector<npy_cdouble > *tmp8 ;
+  std::vector<npy_cdouble_wrapper > *tmp8 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -24848,7 +24850,7 @@ SWIGINTERN PyObject *_wrap_spdiags__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObj
     arg7 = tmp7; 
   }
   {
-    tmp8 = new std::vector<npy_cdouble>(); 
+    tmp8 = new std::vector<npy_cdouble_wrapper>(); 
     arg8 = tmp8; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:spdiags",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
@@ -24881,9 +24883,9 @@ SWIGINTERN PyObject *_wrap_spdiags__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObj
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,2) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
-  spdiags<int,npy_cdouble >(arg1,arg2,arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,arg6,arg7,arg8);
+  spdiags<int,npy_cdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg6)->size(); 
@@ -24902,7 +24904,7 @@ SWIGINTERN PyObject *_wrap_spdiags__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObj
   {
     int length = (arg8)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg8; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -25128,7 +25130,7 @@ SWIGINTERN PyObject *_wrap_spdiags(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'spdiags'.\n  Possible C/C++ prototypes are:\n    spdiags<(int,int)>(int const,int const,int const,int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    spdiags<(int,long)>(int const,int const,int const,int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    spdiags<(int,float)>(int const,int const,int const,int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    spdiags<(int,double)>(int const,int const,int const,int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    spdiags<(int,npy_cfloat)>(int const,int const,int const,int const [],npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    spdiags<(int,npy_cdouble)>(int const,int const,int const,int const [],npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'spdiags'.\n  Possible C/C++ prototypes are:\n    spdiags<(int,int)>(int const,int const,int const,int const [],int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    spdiags<(int,long)>(int const,int const,int const,int const [],long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    spdiags<(int,float)>(int const,int const,int const,int const [],float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    spdiags<(int,double)>(int const,int const,int const,int const [],double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    spdiags<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const [],npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    spdiags<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const [],npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -25507,8 +25509,8 @@ SWIGINTERN PyObject *_wrap_csrtodense__SWIG_5(PyObject *SWIGUNUSEDPARM(self), Py
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
-  npy_cfloat *arg6 ;
+  npy_cfloat_wrapper *arg5 ;
+  npy_cfloat_wrapper *arg6 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -25560,14 +25562,14 @@ SWIGINTERN PyObject *_wrap_csrtodense__SWIG_5(PyObject *SWIGUNUSEDPARM(self), Py
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cfloat*) array5->data;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
   }
   {
     temp6 = obj_to_array_no_conversion(obj5,PyArray_CFLOAT);
     if (!temp6 || !require_contiguous(temp6)) SWIG_fail;
-    arg6 = (npy_cfloat*) temp6->data;
+    arg6 = (npy_cfloat_wrapper*) temp6->data;
   }
-  csrtodense<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat const (*))arg5,arg6);
+  csrtodense<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -25599,8 +25601,8 @@ SWIGINTERN PyObject *_wrap_csrtodense__SWIG_6(PyObject *SWIGUNUSEDPARM(self), Py
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
-  npy_cdouble *arg6 ;
+  npy_cdouble_wrapper *arg5 ;
+  npy_cdouble_wrapper *arg6 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -25652,14 +25654,14 @@ SWIGINTERN PyObject *_wrap_csrtodense__SWIG_6(PyObject *SWIGUNUSEDPARM(self), Py
     };
     array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
     if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
-    arg5 = (npy_cdouble*) array5->data;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
   }
   {
     temp6 = obj_to_array_no_conversion(obj5,PyArray_CDOUBLE);
     if (!temp6 || !require_contiguous(temp6)) SWIG_fail;
-    arg6 = (npy_cdouble*) temp6->data;
+    arg6 = (npy_cdouble_wrapper*) temp6->data;
   }
-  csrtodense<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble const (*))arg5,arg6);
+  csrtodense<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -25913,7 +25915,7 @@ SWIGINTERN PyObject *_wrap_csrtodense(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csrtodense'.\n  Possible C/C++ prototypes are:\n    csrtodense<(int,int)>(int const,int const,int const [],int const [],int const [],int [])\n    csrtodense<(int,long)>(int const,int const,int const [],int const [],long const [],long [])\n    csrtodense<(int,float)>(int const,int const,int const [],int const [],float const [],float [])\n    csrtodense<(int,double)>(int const,int const,int const [],int const [],double const [],double [])\n    csrtodense<(int,npy_cfloat)>(int const,int const,int const [],int const [],npy_cfloat const [],npy_cfloat [])\n    csrtodense<(int,npy_cdouble)>(int const,int const,int const [],int const [],npy_cdouble const [],npy_cdouble [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csrtodense'.\n  Possible C/C++ prototypes are:\n    csrtodense<(int,int)>(int const,int const,int const [],int const [],int const [],int [])\n    csrtodense<(int,long)>(int const,int const,int const [],int const [],long const [],long [])\n    csrtodense<(int,float)>(int const,int const,int const [],int const [],float const [],float [])\n    csrtodense<(int,double)>(int const,int const,int const [],int const [],double const [],double [])\n    csrtodense<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n    csrtodense<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -26270,10 +26272,10 @@ SWIGINTERN PyObject *_wrap_densetocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), Py
   PyObject *resultobj = 0;
   int arg1 ;
   int arg2 ;
-  npy_cfloat *arg3 ;
+  npy_cfloat_wrapper *arg3 ;
   std::vector<int > *arg4 = (std::vector<int > *) 0 ;
   std::vector<int > *arg5 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat > *arg6 = (std::vector<npy_cfloat > *) 0 ;
+  std::vector<npy_cfloat_wrapper > *arg6 = (std::vector<npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -26282,7 +26284,7 @@ SWIGINTERN PyObject *_wrap_densetocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), Py
   int is_new_object3 ;
   std::vector<int > *tmp4 ;
   std::vector<int > *tmp5 ;
-  std::vector<npy_cfloat > *tmp6 ;
+  std::vector<npy_cfloat_wrapper > *tmp6 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -26296,7 +26298,7 @@ SWIGINTERN PyObject *_wrap_densetocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), Py
     arg5 = tmp5; 
   }
   {
-    tmp6 = new std::vector<npy_cfloat>(); 
+    tmp6 = new std::vector<npy_cfloat_wrapper>(); 
     arg6 = tmp6; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOO:densetocsr",&obj0,&obj1,&obj2)) SWIG_fail;
@@ -26316,9 +26318,9 @@ SWIGINTERN PyObject *_wrap_densetocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), Py
     };
     array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_CFLOAT, &is_new_object3);
     if (!array3 || !require_dimensions(array3,2) || !require_size(array3,size,1)) SWIG_fail;
-    arg3 = (npy_cfloat*) array3->data;
+    arg3 = (npy_cfloat_wrapper*) array3->data;
   }
-  densetocsr<int,npy_cfloat >(arg1,arg2,(npy_cfloat const (*))arg3,arg4,arg5,arg6);
+  densetocsr<int,npy_cfloat_wrapper >(arg1,arg2,(npy_cfloat_wrapper const (*))arg3,arg4,arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg4)->size(); 
@@ -26337,7 +26339,7 @@ SWIGINTERN PyObject *_wrap_densetocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), Py
   {
     int length = (arg6)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CFLOAT); 
-    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(npy_cfloat)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(npy_cfloat_wrapper)*length);	 
     delete arg6; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -26357,10 +26359,10 @@ SWIGINTERN PyObject *_wrap_densetocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), Py
   PyObject *resultobj = 0;
   int arg1 ;
   int arg2 ;
-  npy_cdouble *arg3 ;
+  npy_cdouble_wrapper *arg3 ;
   std::vector<int > *arg4 = (std::vector<int > *) 0 ;
   std::vector<int > *arg5 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble > *arg6 = (std::vector<npy_cdouble > *) 0 ;
+  std::vector<npy_cdouble_wrapper > *arg6 = (std::vector<npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -26369,7 +26371,7 @@ SWIGINTERN PyObject *_wrap_densetocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), Py
   int is_new_object3 ;
   std::vector<int > *tmp4 ;
   std::vector<int > *tmp5 ;
-  std::vector<npy_cdouble > *tmp6 ;
+  std::vector<npy_cdouble_wrapper > *tmp6 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -26383,7 +26385,7 @@ SWIGINTERN PyObject *_wrap_densetocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), Py
     arg5 = tmp5; 
   }
   {
-    tmp6 = new std::vector<npy_cdouble>(); 
+    tmp6 = new std::vector<npy_cdouble_wrapper>(); 
     arg6 = tmp6; 
   }
   if (!PyArg_ParseTuple(args,(char *)"OOO:densetocsr",&obj0,&obj1,&obj2)) SWIG_fail;
@@ -26403,9 +26405,9 @@ SWIGINTERN PyObject *_wrap_densetocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), Py
     };
     array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_CDOUBLE, &is_new_object3);
     if (!array3 || !require_dimensions(array3,2) || !require_size(array3,size,1)) SWIG_fail;
-    arg3 = (npy_cdouble*) array3->data;
+    arg3 = (npy_cdouble_wrapper*) array3->data;
   }
-  densetocsr<int,npy_cdouble >(arg1,arg2,(npy_cdouble const (*))arg3,arg4,arg5,arg6);
+  densetocsr<int,npy_cdouble_wrapper >(arg1,arg2,(npy_cdouble_wrapper const (*))arg3,arg4,arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg4)->size(); 
@@ -26424,7 +26426,7 @@ SWIGINTERN PyObject *_wrap_densetocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), Py
   {
     int length = (arg6)->size(); 
     PyObject *obj = PyArray_FromDims(1, &length, PyArray_CDOUBLE); 
-    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(npy_cdouble)*length);	 
+    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(npy_cdouble_wrapper)*length);	 
     delete arg6; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
@@ -26578,7 +26580,7 @@ SWIGINTERN PyObject *_wrap_densetocsr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'densetocsr'.\n  Possible C/C++ prototypes are:\n    densetocsr<(int,int)>(int const,int const,int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    densetocsr<(int,long)>(int const,int const,long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    densetocsr<(int,float)>(int const,int const,float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    densetocsr<(int,double)>(int const,int const,double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    densetocsr<(int,npy_cfloat)>(int const,int const,npy_cfloat const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat > *)\n    densetocsr<(int,npy_cdouble)>(int const,int const,npy_cdouble const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'densetocsr'.\n  Possible C/C++ prototypes are:\n    densetocsr<(int,int)>(int const,int const,int const [],std::vector<int > *,std::vector<int > *,std::vector<int > *)\n    densetocsr<(int,long)>(int const,int const,long const [],std::vector<int > *,std::vector<int > *,std::vector<long > *)\n    densetocsr<(int,float)>(int const,int const,float const [],std::vector<int > *,std::vector<int > *,std::vector<float > *)\n    densetocsr<(int,double)>(int const,int const,double const [],std::vector<int > *,std::vector<int > *,std::vector<double > *)\n    densetocsr<(int,npy_cfloat_wrapper)>(int const,int const,npy_cfloat_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n    densetocsr<(int,npy_cdouble_wrapper)>(int const,int const,npy_cdouble_wrapper const [],std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -26846,7 +26848,7 @@ SWIGINTERN PyObject *_wrap_sort_csr_indices__SWIG_5(PyObject *SWIGUNUSEDPARM(sel
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -26888,9 +26890,9 @@ SWIGINTERN PyObject *_wrap_sort_csr_indices__SWIG_5(PyObject *SWIGUNUSEDPARM(sel
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_CFLOAT);
     if (!temp5  || !require_contiguous(temp5)) SWIG_fail;
-    arg5 = (npy_cfloat*) temp5->data;
+    arg5 = (npy_cfloat_wrapper*) temp5->data;
   }
-  sort_csr_indices<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,arg4,arg5);
+  sort_csr_indices<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -26910,7 +26912,7 @@ SWIGINTERN PyObject *_wrap_sort_csr_indices__SWIG_6(PyObject *SWIGUNUSEDPARM(sel
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -26952,9 +26954,9 @@ SWIGINTERN PyObject *_wrap_sort_csr_indices__SWIG_6(PyObject *SWIGUNUSEDPARM(sel
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_CDOUBLE);
     if (!temp5  || !require_contiguous(temp5)) SWIG_fail;
-    arg5 = (npy_cdouble*) temp5->data;
+    arg5 = (npy_cdouble_wrapper*) temp5->data;
   }
-  sort_csr_indices<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,arg4,arg5);
+  sort_csr_indices<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -27166,7 +27168,7 @@ SWIGINTERN PyObject *_wrap_sort_csr_indices(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'sort_csr_indices'.\n  Possible C/C++ prototypes are:\n    sort_csr_indices<(int,int)>(int const,int const,int const [],int [],int [])\n    sort_csr_indices<(int,long)>(int const,int const,int const [],int [],long [])\n    sort_csr_indices<(int,float)>(int const,int const,int const [],int [],float [])\n    sort_csr_indices<(int,double)>(int const,int const,int const [],int [],double [])\n    sort_csr_indices<(int,npy_cfloat)>(int const,int const,int const [],int [],npy_cfloat [])\n    sort_csr_indices<(int,npy_cdouble)>(int const,int const,int const [],int [],npy_cdouble [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'sort_csr_indices'.\n  Possible C/C++ prototypes are:\n    sort_csr_indices<(int,int)>(int const,int const,int const [],int [],int [])\n    sort_csr_indices<(int,long)>(int const,int const,int const [],int [],long [])\n    sort_csr_indices<(int,float)>(int const,int const,int const [],int [],float [])\n    sort_csr_indices<(int,double)>(int const,int const,int const [],int [],double [])\n    sort_csr_indices<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int [],npy_cfloat_wrapper [])\n    sort_csr_indices<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int [],npy_cdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -27438,7 +27440,7 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_5(PyObject *SWIGUNUSEDPARM(sel
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -27481,9 +27483,9 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_5(PyObject *SWIGUNUSEDPARM(sel
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_CFLOAT);
     if (!temp5  || !require_contiguous(temp5)) SWIG_fail;
-    arg5 = (npy_cfloat*) temp5->data;
+    arg5 = (npy_cfloat_wrapper*) temp5->data;
   }
-  sort_csc_indices<int,npy_cfloat >(arg1,arg2,(int const (*))arg3,arg4,arg5);
+  sort_csc_indices<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -27503,7 +27505,7 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_6(PyObject *SWIGUNUSEDPARM(sel
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -27546,9 +27548,9 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_6(PyObject *SWIGUNUSEDPARM(sel
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_CDOUBLE);
     if (!temp5  || !require_contiguous(temp5)) SWIG_fail;
-    arg5 = (npy_cdouble*) temp5->data;
+    arg5 = (npy_cdouble_wrapper*) temp5->data;
   }
-  sort_csc_indices<int,npy_cdouble >(arg1,arg2,(int const (*))arg3,arg4,arg5);
+  sort_csc_indices<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -27760,7 +27762,7 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'sort_csc_indices'.\n  Possible C/C++ prototypes are:\n    sort_csc_indices<(int,int)>(int const,int const,int const [],int [],int [])\n    sort_csc_indices<(int,long)>(int const,int const,int const [],int [],long [])\n    sort_csc_indices<(int,float)>(int const,int const,int const [],int [],float [])\n    sort_csc_indices<(int,double)>(int const,int const,int const [],int [],double [])\n    sort_csc_indices<(int,npy_cfloat)>(int const,int const,int const [],int [],npy_cfloat [])\n    sort_csc_indices<(int,npy_cdouble)>(int const,int const,int const [],int [],npy_cdouble [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'sort_csc_indices'.\n  Possible C/C++ prototypes are:\n    sort_csc_indices<(int,int)>(int const,int const,int const [],int [],int [])\n    sort_csc_indices<(int,long)>(int const,int const,int const [],int [],long [])\n    sort_csc_indices<(int,float)>(int const,int const,int const [],int [],float [])\n    sort_csc_indices<(int,double)>(int const,int const,int const [],int [],double [])\n    sort_csc_indices<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int [],npy_cfloat_wrapper [])\n    sort_csc_indices<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int [],npy_cdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -27988,7 +27990,7 @@ SWIGINTERN PyObject *_wrap_sum_csr_duplicates__SWIG_5(PyObject *SWIGUNUSEDPARM(s
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -28026,9 +28028,9 @@ SWIGINTERN PyObject *_wrap_sum_csr_duplicates__SWIG_5(PyObject *SWIGUNUSEDPARM(s
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_CFLOAT);
     if (!temp5  || !require_contiguous(temp5)) SWIG_fail;
-    arg5 = (npy_cfloat*) temp5->data;
+    arg5 = (npy_cfloat_wrapper*) temp5->data;
   }
-  sum_csr_duplicates<int,npy_cfloat >(arg1,arg2,arg3,arg4,arg5);
+  sum_csr_duplicates<int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -28042,7 +28044,7 @@ SWIGINTERN PyObject *_wrap_sum_csr_duplicates__SWIG_6(PyObject *SWIGUNUSEDPARM(s
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -28080,9 +28082,9 @@ SWIGINTERN PyObject *_wrap_sum_csr_duplicates__SWIG_6(PyObject *SWIGUNUSEDPARM(s
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_CDOUBLE);
     if (!temp5  || !require_contiguous(temp5)) SWIG_fail;
-    arg5 = (npy_cdouble*) temp5->data;
+    arg5 = (npy_cdouble_wrapper*) temp5->data;
   }
-  sum_csr_duplicates<int,npy_cdouble >(arg1,arg2,arg3,arg4,arg5);
+  sum_csr_duplicates<int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -28288,7 +28290,7 @@ SWIGINTERN PyObject *_wrap_sum_csr_duplicates(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'sum_csr_duplicates'.\n  Possible C/C++ prototypes are:\n    sum_csr_duplicates<(int,int)>(int const,int const,int [],int [],int [])\n    sum_csr_duplicates<(int,long)>(int const,int const,int [],int [],long [])\n    sum_csr_duplicates<(int,float)>(int const,int const,int [],int [],float [])\n    sum_csr_duplicates<(int,double)>(int const,int const,int [],int [],double [])\n    sum_csr_duplicates<(int,npy_cfloat)>(int const,int const,int [],int [],npy_cfloat [])\n    sum_csr_duplicates<(int,npy_cdouble)>(int const,int const,int [],int [],npy_cdouble [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'sum_csr_duplicates'.\n  Possible C/C++ prototypes are:\n    sum_csr_duplicates<(int,int)>(int const,int const,int [],int [],int [])\n    sum_csr_duplicates<(int,long)>(int const,int const,int [],int [],long [])\n    sum_csr_duplicates<(int,float)>(int const,int const,int [],int [],float [])\n    sum_csr_duplicates<(int,double)>(int const,int const,int [],int [],double [])\n    sum_csr_duplicates<(int,npy_cfloat_wrapper)>(int const,int const,int [],int [],npy_cfloat_wrapper [])\n    sum_csr_duplicates<(int,npy_cdouble_wrapper)>(int const,int const,int [],int [],npy_cdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -28520,7 +28522,7 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_5(PyObject *SWIGUNUSEDPARM(s
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cfloat *arg5 ;
+  npy_cfloat_wrapper *arg5 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -28559,9 +28561,9 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_5(PyObject *SWIGUNUSEDPARM(s
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_CFLOAT);
     if (!temp5  || !require_contiguous(temp5)) SWIG_fail;
-    arg5 = (npy_cfloat*) temp5->data;
+    arg5 = (npy_cfloat_wrapper*) temp5->data;
   }
-  sum_csc_duplicates<int,npy_cfloat >(arg1,arg2,arg3,arg4,arg5);
+  sum_csc_duplicates<int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -28575,7 +28577,7 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_6(PyObject *SWIGUNUSEDPARM(s
   int arg2 ;
   int *arg3 ;
   int *arg4 ;
-  npy_cdouble *arg5 ;
+  npy_cdouble_wrapper *arg5 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -28614,9 +28616,9 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_6(PyObject *SWIGUNUSEDPARM(s
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_CDOUBLE);
     if (!temp5  || !require_contiguous(temp5)) SWIG_fail;
-    arg5 = (npy_cdouble*) temp5->data;
+    arg5 = (npy_cdouble_wrapper*) temp5->data;
   }
-  sum_csc_duplicates<int,npy_cdouble >(arg1,arg2,arg3,arg4,arg5);
+  sum_csc_duplicates<int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -28822,7 +28824,7 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'sum_csc_duplicates'.\n  Possible C/C++ prototypes are:\n    sum_csc_duplicates<(int,int)>(int const,int const,int [],int [],int [])\n    sum_csc_duplicates<(int,long)>(int const,int const,int [],int [],long [])\n    sum_csc_duplicates<(int,float)>(int const,int const,int [],int [],float [])\n    sum_csc_duplicates<(int,double)>(int const,int const,int [],int [],double [])\n    sum_csc_duplicates<(int,npy_cfloat)>(int const,int const,int [],int [],npy_cfloat [])\n    sum_csc_duplicates<(int,npy_cdouble)>(int const,int const,int [],int [],npy_cdouble [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'sum_csc_duplicates'.\n  Possible C/C++ prototypes are:\n    sum_csc_duplicates<(int,int)>(int const,int const,int [],int [],int [])\n    sum_csc_duplicates<(int,long)>(int const,int const,int [],int [],long [])\n    sum_csc_duplicates<(int,float)>(int const,int const,int [],int [],float [])\n    sum_csc_duplicates<(int,double)>(int const,int const,int [],int [],double [])\n    sum_csc_duplicates<(int,npy_cfloat_wrapper)>(int const,int const,int [],int [],npy_cfloat_wrapper [])\n    sum_csc_duplicates<(int,npy_cdouble_wrapper)>(int const,int const,int [],int [],npy_cdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -28837,12 +28839,12 @@ static PyMethodDef SwigMethods[] = {
 		"    std::vector<(int)> Bi, std::vector<(float)> Bx)\n"
 		"csrtocsc(int n_row, int n_col, int Ap, int Aj, double Ax, std::vector<(int)> Bp, \n"
 		"    std::vector<(int)> Bi, std::vector<(double)> Bx)\n"
-		"csrtocsc(int n_row, int n_col, int Ap, int Aj, npy_cfloat Ax, \n"
+		"csrtocsc(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, \n"
 		"    std::vector<(int)> Bp, std::vector<(int)> Bi, \n"
-		"    std::vector<(npy_cfloat)> Bx)\n"
-		"csrtocsc(int n_row, int n_col, int Ap, int Aj, npy_cdouble Ax, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Bx)\n"
+		"csrtocsc(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, \n"
 		"    std::vector<(int)> Bp, std::vector<(int)> Bi, \n"
-		"    std::vector<(npy_cdouble)> Bx)\n"
+		"    std::vector<(npy_cdouble_wrapper)> Bx)\n"
 		""},
 	 { (char *)"csctocsr", _wrap_csctocsr, METH_VARARGS, (char *)"\n"
 		"csctocsr(int n_row, int n_col, int Ap, int Ai, int Ax, std::vector<(int)> Bp, \n"
@@ -28853,12 +28855,12 @@ static PyMethodDef SwigMethods[] = {
 		"    std::vector<(int)> Bj, std::vector<(float)> Bx)\n"
 		"csctocsr(int n_row, int n_col, int Ap, int Ai, double Ax, std::vector<(int)> Bp, \n"
 		"    std::vector<(int)> Bj, std::vector<(double)> Bx)\n"
-		"csctocsr(int n_row, int n_col, int Ap, int Ai, npy_cfloat Ax, \n"
+		"csctocsr(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, \n"
 		"    std::vector<(int)> Bp, std::vector<(int)> Bj, \n"
-		"    std::vector<(npy_cfloat)> Bx)\n"
-		"csctocsr(int n_row, int n_col, int Ap, int Ai, npy_cdouble Ax, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Bx)\n"
+		"csctocsr(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, \n"
 		"    std::vector<(int)> Bp, std::vector<(int)> Bj, \n"
-		"    std::vector<(npy_cdouble)> Bx)\n"
+		"    std::vector<(npy_cdouble_wrapper)> Bx)\n"
 		""},
 	 { (char *)"csrtocoo", _wrap_csrtocoo, METH_VARARGS, (char *)"\n"
 		"csrtocoo(int n_row, int n_col, int Ap, int Aj, int Ax, std::vector<(int)> Bi, \n"
@@ -28869,12 +28871,12 @@ static PyMethodDef SwigMethods[] = {
 		"    std::vector<(int)> Bj, std::vector<(float)> Bx)\n"
 		"csrtocoo(int n_row, int n_col, int Ap, int Aj, double Ax, std::vector<(int)> Bi, \n"
 		"    std::vector<(int)> Bj, std::vector<(double)> Bx)\n"
-		"csrtocoo(int n_row, int n_col, int Ap, int Aj, npy_cfloat Ax, \n"
+		"csrtocoo(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, \n"
 		"    std::vector<(int)> Bi, std::vector<(int)> Bj, \n"
-		"    std::vector<(npy_cfloat)> Bx)\n"
-		"csrtocoo(int n_row, int n_col, int Ap, int Aj, npy_cdouble Ax, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Bx)\n"
+		"csrtocoo(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, \n"
 		"    std::vector<(int)> Bi, std::vector<(int)> Bj, \n"
-		"    std::vector<(npy_cdouble)> Bx)\n"
+		"    std::vector<(npy_cdouble_wrapper)> Bx)\n"
 		""},
 	 { (char *)"csctocoo", _wrap_csctocoo, METH_VARARGS, (char *)"\n"
 		"csctocoo(int n_row, int n_col, int Ap, int Ai, int Ax, std::vector<(int)> Bi, \n"
@@ -28885,12 +28887,12 @@ static PyMethodDef SwigMethods[] = {
 		"    std::vector<(int)> Bj, std::vector<(float)> Bx)\n"
 		"csctocoo(int n_row, int n_col, int Ap, int Ai, double Ax, std::vector<(int)> Bi, \n"
 		"    std::vector<(int)> Bj, std::vector<(double)> Bx)\n"
-		"csctocoo(int n_row, int n_col, int Ap, int Ai, npy_cfloat Ax, \n"
+		"csctocoo(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, \n"
 		"    std::vector<(int)> Bi, std::vector<(int)> Bj, \n"
-		"    std::vector<(npy_cfloat)> Bx)\n"
-		"csctocoo(int n_row, int n_col, int Ap, int Ai, npy_cdouble Ax, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Bx)\n"
+		"csctocoo(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, \n"
 		"    std::vector<(int)> Bi, std::vector<(int)> Bj, \n"
-		"    std::vector<(npy_cdouble)> Bx)\n"
+		"    std::vector<(npy_cdouble_wrapper)> Bx)\n"
 		""},
 	 { (char *)"cootocsr", _wrap_cootocsr, METH_VARARGS, (char *)"\n"
 		"cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, int Ax, \n"
@@ -28905,12 +28907,12 @@ static PyMethodDef SwigMethods[] = {
 		"cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, double Ax, \n"
 		"    std::vector<(int)> Bp, std::vector<(int)> Bj, \n"
 		"    std::vector<(double)> Bx)\n"
-		"cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cfloat Ax, \n"
+		"cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cfloat_wrapper Ax, \n"
 		"    std::vector<(int)> Bp, std::vector<(int)> Bj, \n"
-		"    std::vector<(npy_cfloat)> Bx)\n"
-		"cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cdouble Ax, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Bx)\n"
+		"cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cdouble_wrapper Ax, \n"
 		"    std::vector<(int)> Bp, std::vector<(int)> Bj, \n"
-		"    std::vector<(npy_cdouble)> Bx)\n"
+		"    std::vector<(npy_cdouble_wrapper)> Bx)\n"
 		""},
 	 { (char *)"cootocsc", _wrap_cootocsc, METH_VARARGS, (char *)"\n"
 		"cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, int Ax, \n"
@@ -28925,12 +28927,12 @@ static PyMethodDef SwigMethods[] = {
 		"cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, double Ax, \n"
 		"    std::vector<(int)> Bp, std::vector<(int)> Bi, \n"
 		"    std::vector<(double)> Bx)\n"
-		"cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cfloat Ax, \n"
+		"cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cfloat_wrapper Ax, \n"
 		"    std::vector<(int)> Bp, std::vector<(int)> Bi, \n"
-		"    std::vector<(npy_cfloat)> Bx)\n"
-		"cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cdouble Ax, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Bx)\n"
+		"cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cdouble_wrapper Ax, \n"
 		"    std::vector<(int)> Bp, std::vector<(int)> Bi, \n"
-		"    std::vector<(npy_cdouble)> Bx)\n"
+		"    std::vector<(npy_cdouble_wrapper)> Bx)\n"
 		""},
 	 { (char *)"csrmucsr", _wrap_csrmucsr, METH_VARARGS, (char *)"\n"
 		"csrmucsr(int n_row, int n_col, int Ap, int Aj, int Ax, int Bp, \n"
@@ -28945,12 +28947,14 @@ static PyMethodDef SwigMethods[] = {
 		"csrmucsr(int n_row, int n_col, int Ap, int Aj, double Ax, int Bp, \n"
 		"    int Bj, double Bx, std::vector<(int)> Cp, \n"
 		"    std::vector<(int)> Cj, std::vector<(double)> Cx)\n"
-		"csrmucsr(int n_row, int n_col, int Ap, int Aj, npy_cfloat Ax, \n"
-		"    int Bp, int Bj, npy_cfloat Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Cj, std::vector<(npy_cfloat)> Cx)\n"
-		"csrmucsr(int n_row, int n_col, int Ap, int Aj, npy_cdouble Ax, \n"
-		"    int Bp, int Bj, npy_cdouble Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Cj, std::vector<(npy_cdouble)> Cx)\n"
+		"csrmucsr(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, \n"
+		"    int Bp, int Bj, npy_cfloat_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Cj, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Cx)\n"
+		"csrmucsr(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, \n"
+		"    int Bp, int Bj, npy_cdouble_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Cj, \n"
+		"    std::vector<(npy_cdouble_wrapper)> Cx)\n"
 		""},
 	 { (char *)"cscmucsc", _wrap_cscmucsc, METH_VARARGS, (char *)"\n"
 		"cscmucsc(int n_row, int n_col, int Ap, int Ai, int Ax, int Bp, \n"
@@ -28965,12 +28969,14 @@ static PyMethodDef SwigMethods[] = {
 		"cscmucsc(int n_row, int n_col, int Ap, int Ai, double Ax, int Bp, \n"
 		"    int Bi, double Bx, std::vector<(int)> Cp, \n"
 		"    std::vector<(int)> Ci, std::vector<(double)> Cx)\n"
-		"cscmucsc(int n_row, int n_col, int Ap, int Ai, npy_cfloat Ax, \n"
-		"    int Bp, int Bi, npy_cfloat Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Ci, std::vector<(npy_cfloat)> Cx)\n"
-		"cscmucsc(int n_row, int n_col, int Ap, int Ai, npy_cdouble Ax, \n"
-		"    int Bp, int Bi, npy_cdouble Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Ci, std::vector<(npy_cdouble)> Cx)\n"
+		"cscmucsc(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, \n"
+		"    int Bp, int Bi, npy_cfloat_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Ci, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Cx)\n"
+		"cscmucsc(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, \n"
+		"    int Bp, int Bi, npy_cdouble_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Ci, \n"
+		"    std::vector<(npy_cdouble_wrapper)> Cx)\n"
 		""},
 	 { (char *)"csrmux", _wrap_csrmux, METH_VARARGS, (char *)"\n"
 		"csrmux(int n_row, int n_col, int Ap, int Aj, int Ax, int Xx, \n"
@@ -28981,10 +28987,10 @@ static PyMethodDef SwigMethods[] = {
 		"    std::vector<(float)> Yx)\n"
 		"csrmux(int n_row, int n_col, int Ap, int Aj, double Ax, double Xx, \n"
 		"    std::vector<(double)> Yx)\n"
-		"csrmux(int n_row, int n_col, int Ap, int Aj, npy_cfloat Ax, \n"
-		"    npy_cfloat Xx, std::vector<(npy_cfloat)> Yx)\n"
-		"csrmux(int n_row, int n_col, int Ap, int Aj, npy_cdouble Ax, \n"
-		"    npy_cdouble Xx, std::vector<(npy_cdouble)> Yx)\n"
+		"csrmux(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, \n"
+		"    npy_cfloat_wrapper Xx, std::vector<(npy_cfloat_wrapper)> Yx)\n"
+		"csrmux(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, \n"
+		"    npy_cdouble_wrapper Xx, std::vector<(npy_cdouble_wrapper)> Yx)\n"
 		""},
 	 { (char *)"cscmux", _wrap_cscmux, METH_VARARGS, (char *)"\n"
 		"cscmux(int n_row, int n_col, int Ap, int Ai, int Ax, int Xx, \n"
@@ -28995,10 +29001,10 @@ static PyMethodDef SwigMethods[] = {
 		"    std::vector<(float)> Yx)\n"
 		"cscmux(int n_row, int n_col, int Ap, int Ai, double Ax, double Xx, \n"
 		"    std::vector<(double)> Yx)\n"
-		"cscmux(int n_row, int n_col, int Ap, int Ai, npy_cfloat Ax, \n"
-		"    npy_cfloat Xx, std::vector<(npy_cfloat)> Yx)\n"
-		"cscmux(int n_row, int n_col, int Ap, int Ai, npy_cdouble Ax, \n"
-		"    npy_cdouble Xx, std::vector<(npy_cdouble)> Yx)\n"
+		"cscmux(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, \n"
+		"    npy_cfloat_wrapper Xx, std::vector<(npy_cfloat_wrapper)> Yx)\n"
+		"cscmux(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, \n"
+		"    npy_cdouble_wrapper Xx, std::vector<(npy_cdouble_wrapper)> Yx)\n"
 		""},
 	 { (char *)"csr_elmul_csr", _wrap_csr_elmul_csr, METH_VARARGS, (char *)"\n"
 		"csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, int Ax, int Bp, \n"
@@ -29013,12 +29019,14 @@ static PyMethodDef SwigMethods[] = {
 		"csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, double Ax, int Bp, \n"
 		"    int Bj, double Bx, std::vector<(int)> Cp, \n"
 		"    std::vector<(int)> Cj, std::vector<(double)> Cx)\n"
-		"csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, npy_cfloat Ax, \n"
-		"    int Bp, int Bj, npy_cfloat Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Cj, std::vector<(npy_cfloat)> Cx)\n"
-		"csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, npy_cdouble Ax, \n"
-		"    int Bp, int Bj, npy_cdouble Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Cj, std::vector<(npy_cdouble)> Cx)\n"
+		"csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, \n"
+		"    int Bp, int Bj, npy_cfloat_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Cj, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Cx)\n"
+		"csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, \n"
+		"    int Bp, int Bj, npy_cdouble_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Cj, \n"
+		"    std::vector<(npy_cdouble_wrapper)> Cx)\n"
 		""},
 	 { (char *)"csr_eldiv_csr", _wrap_csr_eldiv_csr, METH_VARARGS, (char *)"\n"
 		"csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, int Ax, int Bp, \n"
@@ -29033,12 +29041,14 @@ static PyMethodDef SwigMethods[] = {
 		"csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, double Ax, int Bp, \n"
 		"    int Bj, double Bx, std::vector<(int)> Cp, \n"
 		"    std::vector<(int)> Cj, std::vector<(double)> Cx)\n"
-		"csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, npy_cfloat Ax, \n"
-		"    int Bp, int Bj, npy_cfloat Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Cj, std::vector<(npy_cfloat)> Cx)\n"
-		"csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, npy_cdouble Ax, \n"
-		"    int Bp, int Bj, npy_cdouble Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Cj, std::vector<(npy_cdouble)> Cx)\n"
+		"csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, \n"
+		"    int Bp, int Bj, npy_cfloat_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Cj, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Cx)\n"
+		"csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, \n"
+		"    int Bp, int Bj, npy_cdouble_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Cj, \n"
+		"    std::vector<(npy_cdouble_wrapper)> Cx)\n"
 		""},
 	 { (char *)"csr_plus_csr", _wrap_csr_plus_csr, METH_VARARGS, (char *)"\n"
 		"csr_plus_csr(int n_row, int n_col, int Ap, int Aj, int Ax, int Bp, \n"
@@ -29053,12 +29063,14 @@ static PyMethodDef SwigMethods[] = {
 		"csr_plus_csr(int n_row, int n_col, int Ap, int Aj, double Ax, int Bp, \n"
 		"    int Bj, double Bx, std::vector<(int)> Cp, \n"
 		"    std::vector<(int)> Cj, std::vector<(double)> Cx)\n"
-		"csr_plus_csr(int n_row, int n_col, int Ap, int Aj, npy_cfloat Ax, \n"
-		"    int Bp, int Bj, npy_cfloat Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Cj, std::vector<(npy_cfloat)> Cx)\n"
-		"csr_plus_csr(int n_row, int n_col, int Ap, int Aj, npy_cdouble Ax, \n"
-		"    int Bp, int Bj, npy_cdouble Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Cj, std::vector<(npy_cdouble)> Cx)\n"
+		"csr_plus_csr(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, \n"
+		"    int Bp, int Bj, npy_cfloat_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Cj, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Cx)\n"
+		"csr_plus_csr(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, \n"
+		"    int Bp, int Bj, npy_cdouble_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Cj, \n"
+		"    std::vector<(npy_cdouble_wrapper)> Cx)\n"
 		""},
 	 { (char *)"csr_minus_csr", _wrap_csr_minus_csr, METH_VARARGS, (char *)"\n"
 		"csr_minus_csr(int n_row, int n_col, int Ap, int Aj, int Ax, int Bp, \n"
@@ -29073,12 +29085,14 @@ static PyMethodDef SwigMethods[] = {
 		"csr_minus_csr(int n_row, int n_col, int Ap, int Aj, double Ax, int Bp, \n"
 		"    int Bj, double Bx, std::vector<(int)> Cp, \n"
 		"    std::vector<(int)> Cj, std::vector<(double)> Cx)\n"
-		"csr_minus_csr(int n_row, int n_col, int Ap, int Aj, npy_cfloat Ax, \n"
-		"    int Bp, int Bj, npy_cfloat Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Cj, std::vector<(npy_cfloat)> Cx)\n"
-		"csr_minus_csr(int n_row, int n_col, int Ap, int Aj, npy_cdouble Ax, \n"
-		"    int Bp, int Bj, npy_cdouble Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Cj, std::vector<(npy_cdouble)> Cx)\n"
+		"csr_minus_csr(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, \n"
+		"    int Bp, int Bj, npy_cfloat_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Cj, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Cx)\n"
+		"csr_minus_csr(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, \n"
+		"    int Bp, int Bj, npy_cdouble_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Cj, \n"
+		"    std::vector<(npy_cdouble_wrapper)> Cx)\n"
 		""},
 	 { (char *)"csc_elmul_csc", _wrap_csc_elmul_csc, METH_VARARGS, (char *)"\n"
 		"csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, int Ax, int Bp, \n"
@@ -29093,12 +29107,14 @@ static PyMethodDef SwigMethods[] = {
 		"csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, double Ax, int Bp, \n"
 		"    int Bi, double Bx, std::vector<(int)> Cp, \n"
 		"    std::vector<(int)> Ci, std::vector<(double)> Cx)\n"
-		"csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, npy_cfloat Ax, \n"
-		"    int Bp, int Bi, npy_cfloat Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Ci, std::vector<(npy_cfloat)> Cx)\n"
-		"csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, npy_cdouble Ax, \n"
-		"    int Bp, int Bi, npy_cdouble Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Ci, std::vector<(npy_cdouble)> Cx)\n"
+		"csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, \n"
+		"    int Bp, int Bi, npy_cfloat_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Ci, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Cx)\n"
+		"csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, \n"
+		"    int Bp, int Bi, npy_cdouble_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Ci, \n"
+		"    std::vector<(npy_cdouble_wrapper)> Cx)\n"
 		""},
 	 { (char *)"csc_eldiv_csc", _wrap_csc_eldiv_csc, METH_VARARGS, (char *)"\n"
 		"csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, int Ax, int Bp, \n"
@@ -29113,12 +29129,14 @@ static PyMethodDef SwigMethods[] = {
 		"csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, double Ax, int Bp, \n"
 		"    int Bi, double Bx, std::vector<(int)> Cp, \n"
 		"    std::vector<(int)> Ci, std::vector<(double)> Cx)\n"
-		"csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, npy_cfloat Ax, \n"
-		"    int Bp, int Bi, npy_cfloat Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Ci, std::vector<(npy_cfloat)> Cx)\n"
-		"csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, npy_cdouble Ax, \n"
-		"    int Bp, int Bi, npy_cdouble Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Ci, std::vector<(npy_cdouble)> Cx)\n"
+		"csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, \n"
+		"    int Bp, int Bi, npy_cfloat_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Ci, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Cx)\n"
+		"csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, \n"
+		"    int Bp, int Bi, npy_cdouble_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Ci, \n"
+		"    std::vector<(npy_cdouble_wrapper)> Cx)\n"
 		""},
 	 { (char *)"csc_plus_csc", _wrap_csc_plus_csc, METH_VARARGS, (char *)"\n"
 		"csc_plus_csc(int n_row, int n_col, int Ap, int Ai, int Ax, int Bp, \n"
@@ -29133,12 +29151,14 @@ static PyMethodDef SwigMethods[] = {
 		"csc_plus_csc(int n_row, int n_col, int Ap, int Ai, double Ax, int Bp, \n"
 		"    int Bi, double Bx, std::vector<(int)> Cp, \n"
 		"    std::vector<(int)> Ci, std::vector<(double)> Cx)\n"
-		"csc_plus_csc(int n_row, int n_col, int Ap, int Ai, npy_cfloat Ax, \n"
-		"    int Bp, int Bi, npy_cfloat Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Ci, std::vector<(npy_cfloat)> Cx)\n"
-		"csc_plus_csc(int n_row, int n_col, int Ap, int Ai, npy_cdouble Ax, \n"
-		"    int Bp, int Bi, npy_cdouble Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Ci, std::vector<(npy_cdouble)> Cx)\n"
+		"csc_plus_csc(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, \n"
+		"    int Bp, int Bi, npy_cfloat_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Ci, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Cx)\n"
+		"csc_plus_csc(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, \n"
+		"    int Bp, int Bi, npy_cdouble_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Ci, \n"
+		"    std::vector<(npy_cdouble_wrapper)> Cx)\n"
 		""},
 	 { (char *)"csc_minus_csc", _wrap_csc_minus_csc, METH_VARARGS, (char *)"\n"
 		"csc_minus_csc(int n_row, int n_col, int Ap, int Ai, int Ax, int Bp, \n"
@@ -29153,12 +29173,14 @@ static PyMethodDef SwigMethods[] = {
 		"csc_minus_csc(int n_row, int n_col, int Ap, int Ai, double Ax, int Bp, \n"
 		"    int Bi, double Bx, std::vector<(int)> Cp, \n"
 		"    std::vector<(int)> Ci, std::vector<(double)> Cx)\n"
-		"csc_minus_csc(int n_row, int n_col, int Ap, int Ai, npy_cfloat Ax, \n"
-		"    int Bp, int Bi, npy_cfloat Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Ci, std::vector<(npy_cfloat)> Cx)\n"
-		"csc_minus_csc(int n_row, int n_col, int Ap, int Ai, npy_cdouble Ax, \n"
-		"    int Bp, int Bi, npy_cdouble Bx, std::vector<(int)> Cp, \n"
-		"    std::vector<(int)> Ci, std::vector<(npy_cdouble)> Cx)\n"
+		"csc_minus_csc(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, \n"
+		"    int Bp, int Bi, npy_cfloat_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Ci, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Cx)\n"
+		"csc_minus_csc(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, \n"
+		"    int Bp, int Bi, npy_cdouble_wrapper Bx, \n"
+		"    std::vector<(int)> Cp, std::vector<(int)> Ci, \n"
+		"    std::vector<(npy_cdouble_wrapper)> Cx)\n"
 		""},
 	 { (char *)"spdiags", _wrap_spdiags, METH_VARARGS, (char *)"\n"
 		"spdiags(int n_row, int n_col, int n_diag, int offsets, int diags, \n"
@@ -29173,22 +29195,22 @@ static PyMethodDef SwigMethods[] = {
 		"spdiags(int n_row, int n_col, int n_diag, int offsets, double diags, \n"
 		"    std::vector<(int)> Ap, std::vector<(int)> Ai, \n"
 		"    std::vector<(double)> Ax)\n"
-		"spdiags(int n_row, int n_col, int n_diag, int offsets, npy_cfloat diags, \n"
-		"    std::vector<(int)> Ap, std::vector<(int)> Ai, \n"
-		"    std::vector<(npy_cfloat)> Ax)\n"
-		"spdiags(int n_row, int n_col, int n_diag, int offsets, npy_cdouble diags, \n"
-		"    std::vector<(int)> Ap, std::vector<(int)> Ai, \n"
-		"    std::vector<(npy_cdouble)> Ax)\n"
+		"spdiags(int n_row, int n_col, int n_diag, int offsets, npy_cfloat_wrapper diags, \n"
+		"    std::vector<(int)> Ap, \n"
+		"    std::vector<(int)> Ai, std::vector<(npy_cfloat_wrapper)> Ax)\n"
+		"spdiags(int n_row, int n_col, int n_diag, int offsets, npy_cdouble_wrapper diags, \n"
+		"    std::vector<(int)> Ap, \n"
+		"    std::vector<(int)> Ai, std::vector<(npy_cdouble_wrapper)> Ax)\n"
 		""},
 	 { (char *)"csrtodense", _wrap_csrtodense, METH_VARARGS, (char *)"\n"
 		"csrtodense(int n_row, int n_col, int Ap, int Aj, int Ax, int Mx)\n"
 		"csrtodense(int n_row, int n_col, int Ap, int Aj, long Ax, long Mx)\n"
 		"csrtodense(int n_row, int n_col, int Ap, int Aj, float Ax, float Mx)\n"
 		"csrtodense(int n_row, int n_col, int Ap, int Aj, double Ax, double Mx)\n"
-		"csrtodense(int n_row, int n_col, int Ap, int Aj, npy_cfloat Ax, \n"
-		"    npy_cfloat Mx)\n"
-		"csrtodense(int n_row, int n_col, int Ap, int Aj, npy_cdouble Ax, \n"
-		"    npy_cdouble Mx)\n"
+		"csrtodense(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, \n"
+		"    npy_cfloat_wrapper Mx)\n"
+		"csrtodense(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, \n"
+		"    npy_cdouble_wrapper Mx)\n"
 		""},
 	 { (char *)"densetocsr", _wrap_densetocsr, METH_VARARGS, (char *)"\n"
 		"densetocsr(int n_row, int n_col, int Mx, std::vector<(int)> Ap, \n"
@@ -29199,42 +29221,42 @@ static PyMethodDef SwigMethods[] = {
 		"    std::vector<(int)> Aj, std::vector<(float)> Ax)\n"
 		"densetocsr(int n_row, int n_col, double Mx, std::vector<(int)> Ap, \n"
 		"    std::vector<(int)> Aj, std::vector<(double)> Ax)\n"
-		"densetocsr(int n_row, int n_col, npy_cfloat Mx, std::vector<(int)> Ap, \n"
-		"    std::vector<(int)> Aj, std::vector<(npy_cfloat)> Ax)\n"
-		"densetocsr(int n_row, int n_col, npy_cdouble Mx, std::vector<(int)> Ap, \n"
-		"    std::vector<(int)> Aj, std::vector<(npy_cdouble)> Ax)\n"
+		"densetocsr(int n_row, int n_col, npy_cfloat_wrapper Mx, std::vector<(int)> Ap, \n"
+		"    std::vector<(int)> Aj, std::vector<(npy_cfloat_wrapper)> Ax)\n"
+		"densetocsr(int n_row, int n_col, npy_cdouble_wrapper Mx, std::vector<(int)> Ap, \n"
+		"    std::vector<(int)> Aj, std::vector<(npy_cdouble_wrapper)> Ax)\n"
 		""},
 	 { (char *)"sort_csr_indices", _wrap_sort_csr_indices, METH_VARARGS, (char *)"\n"
 		"sort_csr_indices(int n_row, int n_col, int Ap, int Aj, int Ax)\n"
 		"sort_csr_indices(int n_row, int n_col, int Ap, int Aj, long Ax)\n"
 		"sort_csr_indices(int n_row, int n_col, int Ap, int Aj, float Ax)\n"
 		"sort_csr_indices(int n_row, int n_col, int Ap, int Aj, double Ax)\n"
-		"sort_csr_indices(int n_row, int n_col, int Ap, int Aj, npy_cfloat Ax)\n"
-		"sort_csr_indices(int n_row, int n_col, int Ap, int Aj, npy_cdouble Ax)\n"
+		"sort_csr_indices(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax)\n"
+		"sort_csr_indices(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax)\n"
 		""},
 	 { (char *)"sort_csc_indices", _wrap_sort_csc_indices, METH_VARARGS, (char *)"\n"
 		"sort_csc_indices(int n_row, int n_col, int Ap, int Ai, int Ax)\n"
 		"sort_csc_indices(int n_row, int n_col, int Ap, int Ai, long Ax)\n"
 		"sort_csc_indices(int n_row, int n_col, int Ap, int Ai, float Ax)\n"
 		"sort_csc_indices(int n_row, int n_col, int Ap, int Ai, double Ax)\n"
-		"sort_csc_indices(int n_row, int n_col, int Ap, int Ai, npy_cfloat Ax)\n"
-		"sort_csc_indices(int n_row, int n_col, int Ap, int Ai, npy_cdouble Ax)\n"
+		"sort_csc_indices(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax)\n"
+		"sort_csc_indices(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax)\n"
 		""},
 	 { (char *)"sum_csr_duplicates", _wrap_sum_csr_duplicates, METH_VARARGS, (char *)"\n"
 		"sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, int Ax)\n"
 		"sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, long Ax)\n"
 		"sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, float Ax)\n"
 		"sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, double Ax)\n"
-		"sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, npy_cfloat Ax)\n"
-		"sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, npy_cdouble Ax)\n"
+		"sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax)\n"
+		"sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax)\n"
 		""},
 	 { (char *)"sum_csc_duplicates", _wrap_sum_csc_duplicates, METH_VARARGS, (char *)"\n"
 		"sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, int Ax)\n"
 		"sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, long Ax)\n"
 		"sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, float Ax)\n"
 		"sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, double Ax)\n"
-		"sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, npy_cfloat Ax)\n"
-		"sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, npy_cdouble Ax)\n"
+		"sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax)\n"
+		"sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax)\n"
 		""},
 	 { NULL, NULL, 0, NULL }
 };
@@ -29248,8 +29270,8 @@ static swig_type_info _swigt__p_std__vectorTdouble_t = {"_p_std__vectorTdouble_t
 static swig_type_info _swigt__p_std__vectorTfloat_t = {"_p_std__vectorTfloat_t", "std::vector<float > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorTint_t = {"_p_std__vectorTint_t", "std::vector<int > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorTlong_t = {"_p_std__vectorTlong_t", "std::vector<long > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTnpy_cdouble_t = {"_p_std__vectorTnpy_cdouble_t", "std::vector<npy_cdouble > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTnpy_cfloat_t = {"_p_std__vectorTnpy_cfloat_t", "std::vector<npy_cfloat > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorTnpy_cdouble_wrapper_t = {"_p_std__vectorTnpy_cdouble_wrapper_t", "std::vector<npy_cdouble_wrapper > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorTnpy_cfloat_wrapper_t = {"_p_std__vectorTnpy_cfloat_wrapper_t", "std::vector<npy_cfloat_wrapper > *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_char,
@@ -29258,8 +29280,8 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_std__vectorTfloat_t,
   &_swigt__p_std__vectorTint_t,
   &_swigt__p_std__vectorTlong_t,
-  &_swigt__p_std__vectorTnpy_cdouble_t,
-  &_swigt__p_std__vectorTnpy_cfloat_t,
+  &_swigt__p_std__vectorTnpy_cdouble_wrapper_t,
+  &_swigt__p_std__vectorTnpy_cfloat_wrapper_t,
 };
 
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
@@ -29268,8 +29290,8 @@ static swig_cast_info _swigc__p_std__vectorTdouble_t[] = {  {&_swigt__p_std__vec
 static swig_cast_info _swigc__p_std__vectorTfloat_t[] = {  {&_swigt__p_std__vectorTfloat_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorTint_t[] = {  {&_swigt__p_std__vectorTint_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorTlong_t[] = {  {&_swigt__p_std__vectorTlong_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTnpy_cdouble_t[] = {  {&_swigt__p_std__vectorTnpy_cdouble_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTnpy_cfloat_t[] = {  {&_swigt__p_std__vectorTnpy_cfloat_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorTnpy_cdouble_wrapper_t[] = {  {&_swigt__p_std__vectorTnpy_cdouble_wrapper_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorTnpy_cfloat_wrapper_t[] = {  {&_swigt__p_std__vectorTnpy_cfloat_wrapper_t, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_char,
@@ -29278,8 +29300,8 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_std__vectorTfloat_t,
   _swigc__p_std__vectorTint_t,
   _swigc__p_std__vectorTlong_t,
-  _swigc__p_std__vectorTnpy_cdouble_t,
-  _swigc__p_std__vectorTnpy_cfloat_t,
+  _swigc__p_std__vectorTnpy_cdouble_wrapper_t,
+  _swigc__p_std__vectorTnpy_cfloat_wrapper_t,
 };
 
 
