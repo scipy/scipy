@@ -511,3 +511,25 @@ def sort_csc_indices(*args):
     """
   return _sparsetools.sort_csc_indices(*args)
 
+def sum_csr_duplicates(*args):
+  """
+    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, int Ax)
+    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, long Ax)
+    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, float Ax)
+    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, double Ax)
+    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, npy_cfloat Ax)
+    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, npy_cdouble Ax)
+    """
+  return _sparsetools.sum_csr_duplicates(*args)
+
+def sum_csc_duplicates(*args):
+  """
+    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, int Ax)
+    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, long Ax)
+    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, float Ax)
+    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, double Ax)
+    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, npy_cfloat Ax)
+    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, npy_cdouble Ax)
+    """
+  return _sparsetools.sum_csc_duplicates(*args)
+

@@ -190,21 +190,18 @@ class spmatrix(object):
         csc = self.tocsc()
         return abs(csc)
 
-    def __add__(self, other):
+    def __add__(self, other):   # self + other
         csc = self.tocsc()
-        return csc + other
+        return csc.__add__(other)
     
     def __radd__(self, other):  # other + self
-        csc = self.tocsc()
-        return csc.__radd__(other)
+        return self.__add__(other)
 
     def __sub__(self, other):   # self - other
-        neg_other = -other
-        return self + neg_other
+        return self.__add__(-other)
 
     def __rsub__(self, other):  # other - self
-        neg_self = -self
-        return other + neg_self
+        return (-self).__add__(other)
 
     def __mul__(self, other):
         csc = self.tocsc()
@@ -246,6 +243,8 @@ class spmatrix(object):
             return self._imag()
         elif attr == 'size':
             return self.getnnz()
+        elif attr == 'ftype':
+            return _transtabl.get(self.dtype.char,'')
         else:
             raise AttributeError, attr + " not found"
 
@@ -267,17 +266,11 @@ class spmatrix(object):
 
     def _real(self):
         csc = self.tocsc()
-        csc.data = real(csc.data)
-        csc.dtype = csc.data.dtype
-        csc.ftype = _transtabl[csc.dtype.char]
-        return csc
+        return csc._real()
 
     def _imag(self):
         csc = self.tocsc()
-        csc.data = imag(csc.data)
-        csc.dtype = csc.data.dtype
-        csc.ftype = _transtabl[csc.dtype.char]
-        return csc
+        return csc._imag()
 
     def getcol(self, j):
         """Returns a copy of column j of the matrix, as an (m x 1) sparse
@@ -469,13 +462,8 @@ class spmatrix(object):
         fd.close()
 
 class _cs_matrix(spmatrix):
-
     def astype(self, t):
-        out = self.copy()
-        out.data = out.data.astype(t)
-        out.dtype = out.data.dtype
-        out.ftype = _transtabl[out.dtype.char]
-        return out
+        return self._with_data(self.data.astype(t))
 
     def __repr__(self):
         format = self.getformat()
@@ -484,11 +472,30 @@ class _cs_matrix(spmatrix):
                (self.shape + (self.dtype.type, self.getnnz(), self.nzmax, \
                    _formats[format][1]))
     
-    def __abs__(self):
-        return self.__class__((abs(self.data),self.indices.copy(),self.indptr.copy()), \
-                                dims=self.shape,dtype=self.dtype,check=False)
+    def _with_data(self,data,copy=False):
+        """
+        Return a matrix with the same sparsity structure as self,
+        but with different data.  By default the structure arrays
+        (i.e. .indptr and .indices) are not copied.
+        """
+        if copy:
+            return self.__class__((data,self.indices.copy(),self.indptr.copy()), \
+                                   dims=self.shape,dtype=data.dtype,check=False)
+        else:
+            return self.__class__((data,self.indices,self.indptr), \
+                                   dims=self.shape,dtype=data.dtype,check=False)
     
-    def __binopt__(self, other, fn, in_shape=None, out_shape=None):
+    def __abs__(self):
+        return self._with_data(abs(self.data))
+    
+    def _real(self):
+        return self._with_data(numpy.real(self.data))
+    
+    def _imag(self):
+        return self._with_data(numpy.imag(self.data))
+        
+    
+    def _binopt(self, other, fn, in_shape=None, out_shape=None):
         """apply the binary operation fn to two sparse matrices"""
         other = self._tothis(other)
 
@@ -502,7 +509,7 @@ class _cs_matrix(spmatrix):
                                other.indptr, other.indices, other.data)
         return self.__class__((data, ind, indptr), dims=out_shape, check=False)
             
-    def __addsub__(self, other, fn):
+    def __addsub(self, other, fn):
         # First check if argument is a scalar
         if isscalarlike(other):
             # Now we would add this scalar to every element.
@@ -511,32 +518,31 @@ class _cs_matrix(spmatrix):
         elif isspmatrix(other):
             if (other.shape != self.shape):
                 raise ValueError, "inconsistent shapes"
-            return self.__binopt__(other,fn)
+            return self._binopt(other,fn)
         elif isdense(other):
             # Convert this matrix to a dense matrix and add them
             return other + self.todense()
         else:
-            raise TypeError, "unsupported type for sparse matrix arithmetic"
+            raise NotImplemented
         
     def __add__(self,other,fn):
-        return self.__addsub__(other,fn)
+        return self.__addsub(other,fn)
    
     def __sub__(self,other,fn):
-        return self.__addsub__(other,fn)
+        return self.__addsub(other,fn)
     
     def __mul__(self, other): # self * other 
         """ Scalar, vector, or matrix multiplication
         """
         if isscalarlike(other):
-            return self.__class__((self.data * other, self.indices.copy(), self.indptr.copy()), \
-                                    dims=self.shape, check=False)
+            return self._with_data(self.data * other)
         else:
             return self.dot(other)
 
 
     def __rmul__(self, other): # other * self 
         if isscalarlike(other):
-            return self * other  # use __mul__
+            return self.__mul__(other)
         else:
             # Don't use asarray unless we have to
             try:
@@ -547,10 +553,7 @@ class _cs_matrix(spmatrix):
 
 
     def __neg__(self):
-        new = self.copy()
-        new.data *= -1
-        return new
-
+        return self._with_data(-self.data)
 
     def __truediv__(self,other,fn):
         if isscalarlike(other):
@@ -559,9 +562,9 @@ class _cs_matrix(spmatrix):
             other = self._tothis(other)
             if (other.shape != self.shape):
                 raise ValueError, "inconsistent shapes"
-            return self.__binopt__(other,fn)
+            return self._binopt(other,fn)
         else:
-            raise TypeError, "unsupported type for sparse matrix power"
+            raise NotImplemented
 
 
     def __pow__(self, other, fn):
@@ -569,12 +572,11 @@ class _cs_matrix(spmatrix):
         case return the matrix power.)
         """
         if isscalarlike(other):
-            return self.__class__((self.data ** other, self.indices.copy(), self.indptr.copy()), \
-                                    dims=self.shape, check=False)
+            return self._with_data(self.data**other)
         elif isspmatrix(other):
-            return self.__binopt__(other,fn)
+            return self._binopt(other,fn)
         else:
-            raise TypeError, "unsupported type for sparse matrix power"
+            raise NotImplemented
 
 
     def _matmat(self, other, fn):
@@ -584,7 +586,7 @@ class _cs_matrix(spmatrix):
             if (K1 != K2):
                 raise ValueError, "shape mismatch error"
             other = self._tothis(other)
-            return self.__binopt__(other,fn,in_shape=(M,N),out_shape=(M,N))
+            return self._binopt(other,fn,in_shape=(M,N),out_shape=(M,N))
         elif isdense(other):
             # This is SLOW!  We need a more efficient implementation
             # of sparse * dense matrix multiplication!
@@ -643,10 +645,8 @@ class _cs_matrix(spmatrix):
 
 
     def copy(self):
-        return self.__class__((self.data.copy(),self.indices.copy(),self.indptr.copy()), \
-                              self.shape, dtype=self.dtype, check=False)
-
-
+        return self._with_data(self.data.copy(),copy=True)
+    
     def _get_slice(self, i, start, stop, stride, dims):
         """Returns a view of the elements [i, myslice.start:myslice.stop].
         """
@@ -674,7 +674,7 @@ class _cs_matrix(spmatrix):
         
 
     def conj(self, copy=False):
-        return self.__class__((self.data.conj(),self.indices,self.indptr),self.shape,copy=copy,check=False)
+        return self._with_data(self.data.conj(),copy=copy)
 
     def _ensure_sorted_indices(self, shape0, shape1, inplace=False):
         """Return a copy of this matrix where the row indices are sorted
@@ -876,9 +876,6 @@ class csc_matrix(_cs_matrix):
             self.data = 1.0 * self.data
             self.dtype = self.data.dtype
 
-        self.ftype = _transtabl[self.dtype.char]
-
-
     def __getattr__(self, attr):
         if attr == 'rowind':
             warnings.warn("rowind attribute no longer in use. Use .indices instead",
@@ -890,15 +887,9 @@ class csc_matrix(_cs_matrix):
     
     def __add__(self, other):
         return _cs_matrix.__add__(self, other, csc_plus_csc)
-   
-    def __radd__(self,other):
-        return self.__add__(other)
     
     def __sub__(self, other):
         return _cs_matrix.__sub__(self, other, csc_minus_csc)
-
-    def __rsub__(self,other):
-        return self.__sub__(other)
 
     def __truediv__(self,other):
         return _cs_matrix.__truediv__(self,other, csc_eldiv_csc)
@@ -1226,8 +1217,6 @@ class csr_matrix(_cs_matrix):
             self.data = self.data + 0.0
             self.dtype = self.data.dtype
 
-        self.ftype = _transtabl[self.dtype.char]
-
     def __getattr__(self, attr):
         if attr == 'colind':
             warnings.warn("colind attribute no longer in use. Use .indices instead",
@@ -1239,15 +1228,9 @@ class csr_matrix(_cs_matrix):
     def __add__(self, other):
         return _cs_matrix.__add__(self, other, csr_plus_csr)
    
-    def __radd__(self,other):
-        return self.__add__(other)
-    
     def __sub__(self, other):
         return _cs_matrix.__sub__(self, other, csr_minus_csr)
     
-    def __rsub__(self,other):
-        return self.__sub__(other)
-
     def __truediv__(self,other):
         return _cs_matrix.__truediv__(self,other, csr_eldiv_csr)
 
@@ -2088,7 +2071,6 @@ class coo_matrix(spmatrix):
         # some functions pass floats
         self.shape = tuple([int(x) for x in self.shape])
         self.nnz = nnz
-        self.ftype = _transtabl.get(self.dtype.char,'')
 
     def _normalize(self, rowfirst=False):
         if rowfirst:

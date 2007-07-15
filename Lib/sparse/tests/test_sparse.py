@@ -107,12 +107,26 @@ class _test_cs:
         c = a + b
         assert_array_equal(c.todense(),[[2,0,2,4],[6,0,2,0],[0,4,0,0]])
     
+    def check_radd(self):
+        a = self.datsp
+        b = self.datsp.copy()
+        b[0,2] = 2.0
+        c = a.todense() + b
+        assert_array_equal(c,[[2,0,2,4],[6,0,2,0],[0,4,0,0]])
+    
     def check_sub(self):
         assert_array_equal((self.datsp - self.datsp).todense(),[[0,0,0,0],[0,0,0,0],[0,0,0,0]])
 
         A = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
         assert_array_equal((self.datsp - A).todense(),self.dat - A.todense())
         assert_array_equal((A - self.datsp).todense(),A.todense() - self.dat)
+    
+    def check_rsub(self):
+        assert_array_equal((self.dat - self.datsp),[[0,0,0,0],[0,0,0,0],[0,0,0,0]])
+
+        A = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
+        assert_array_equal((self.dat - A),self.dat - A.todense())
+        assert_array_equal((A.todense() - self.datsp),A.todense() - self.dat)
 
     def check_elmul(self):
         a = self.datsp

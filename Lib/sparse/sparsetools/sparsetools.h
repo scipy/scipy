@@ -10,6 +10,8 @@
  *    Nathan Bell
  *
  * Revisions:
+ *    07/14/2007 - added sum_csr_duplicates
+ *    07/12/2007 - added templated function for binary arithmetic ops
  *    01/09/2007 - index type is now templated
  *    01/06/2007 - initial inclusion into SciPy
  *
@@ -414,6 +416,72 @@ void csr_minus_csr(const I n_row, const I n_col,
 
 
 
+/*
+ * Sum together duplicate column entries in each row of CSR matrix A
+ *
+ *   
+ * Input Arguments:
+ *   I    n_row       - number of rows in A (and B)
+ *   I    n_col       - number of columns in A (and B)
+ *   I    Ap[n_row+1] - row pointer
+ *   I    Aj[nnz(A)]  - column indices
+ *   T    Ax[nnz(A)]  - nonzeros
+ *   
+ * Note:
+ *   Ap,Aj, and Ax will be modified *inplace*
+ *
+ */
+template <class I, class T>
+void sum_csr_duplicates(const I n_row,
+                        const I n_col, 
+                              I Ap[], 
+                              I Aj[], 
+                              T Ax[])
+{
+  const T zero = ZERO<T>();
+
+  std::vector<I>  next(n_col,-1);
+  std::vector<T>  sums(n_col,zero);
+
+  I NNZ = 0;
+
+  I row_start = 0;
+  I row_end   = 0;
+  
+  for(I i = 0; i < n_row; i++){
+    I head = -2;
+    
+    row_start = row_end; //Ap[i] may have been changed
+    row_end   = Ap[i+1]; //Ap[i+1] is safe
+    
+    for(I jj = row_start; jj < row_end; jj++){
+      I j = Aj[jj];
+
+      sums[j] += Ax[jj];
+      
+      if(next[j] == -1){
+	    next[j] = head;                        
+	    head    = j;
+      }
+    }
+
+    while(head != -2){
+        I curr = head; //current column
+        head   = next[curr];
+
+        Aj[NNZ] = curr;
+        Ax[NNZ] = sums[curr];
+
+        next[curr] = -1;
+        sums[curr] = zero;
+
+        NNZ++;
+    }
+    Ap[i+1] = NNZ;
+  }
+}
+
+
 
 /*
  * Compute B = A for COO matrix A, CSR matrix B
@@ -453,10 +521,10 @@ void cootocsr(const I n_row,
               std::vector<I>* Bj,
               std::vector<T>* Bx)
 {
-  std::vector<I> tempBp(n_row+1,0);
-  std::vector<I> tempBj(NNZ);
-  std::vector<T> tempBx(NNZ);
-
+  Bp->resize(n_row+1,0);
+  Bj->resize(NNZ);
+  Bx->resize(NNZ);
+  
   std::vector<I> nnz_per_row(n_row,0); //temp array
 
   //compute nnz per row, then compute Bp
@@ -464,33 +532,30 @@ void cootocsr(const I n_row,
     nnz_per_row[Ai[i]]++;
   }
   for(I i = 0, cumsum = 0; i < n_row; i++){
-    tempBp[i]      = cumsum;
+    (*Bp)[i]          = cumsum;
     cumsum        += nnz_per_row[i];
     nnz_per_row[i] = 0; //reset count
   }
-  tempBp[n_row] = NNZ;
+  (*Bp)[n_row] = NNZ;
 
 
   //write Aj,Ax Io tempBj,tempBx
   for(I i = 0; i < NNZ; i++){
     I row = Ai[i];
-    I n   = tempBp[row] + nnz_per_row[row];
+    I n   = (*Bp)[row] + nnz_per_row[row];
 
-    tempBj[n] = Aj[i];
-    tempBx[n] = Ax[i];
+    (*Bj)[n] = Aj[i];
+    (*Bx)[n] = Ax[i];
 
     nnz_per_row[row]++;
   }
   //now tempBp,tempBj,tempBx form a CSR representation (with duplicates)
 
+  sum_csr_duplicates(n_row,n_col,&(*Bp)[0],&(*Bj)[0],&(*Bx)[0]);
 
-  //use (tempB + 0) to sum duplicates
-  std::vector<I> Xp(n_row+1,0); //row pointer for an empty matrix
-
-  csr_plus_csr<I,T>(n_row,n_col,
-                    &tempBp[0],&tempBj[0],&tempBx[0],
-                    &Xp[0],NULL,NULL,
-                    Bp,Bj,Bx);    	   
+  //trim unused space at the end
+  Bj->resize(Bp->back());
+  Bx->resize(Bp->back());
 }
 	    
 
@@ -869,6 +934,13 @@ void csc_minus_csc(const I n_row, const I n_col,
 
 
 
+template <class I, class T>
+void sum_csc_duplicates(const I n_row,
+                        const I n_col, 
+                              I Ap[], 
+                              I Ai[], 
+                              T Ax[])
+{ sum_csr_duplicates(n_col,n_row,Ap,Ai,Ax); }
 
 
 template<class I, class T>

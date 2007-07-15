@@ -136,6 +136,7 @@ T_INPLACE_ARRAY2( npy_cdouble )
 
 %define I_INPLACE_ARRAY1( ctype )
 %apply ctype * INPLACE_ARRAY {
+  ctype Ap [ ],
   ctype Aj [ ]
 };
 %enddef
@@ -236,4 +237,11 @@ INSTANTIATE_ALL(densetocsr)
  */
 INSTANTIATE_ALL(sort_csr_indices)
 INSTANTIATE_ALL(sort_csc_indices)
+
+/*
+ * Sum duplicate CSR/CSC entries.
+ */
+INSTANTIATE_ALL(sum_csr_duplicates)
+INSTANTIATE_ALL(sum_csc_duplicates)
+
 
