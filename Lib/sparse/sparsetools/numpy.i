@@ -330,39 +330,10 @@ PyObject *helper_appendToTuple( PyObject *where, PyObject *what ) {
   if (!array || !require_dimensions(array,1) || !require_size(array,size,1)) SWIG_fail;
   $1 = (type*) array->data;
 }
-%typemap(freearg) type* IN_ARRAY1 {
+%typemap(freearg) type*  IN_ARRAY1 {
   if (is_new_object$argnum && array$argnum) Py_DECREF(array$argnum);
 }
 %enddef
-
-/* Define concrete examples of the TYPEMAP_IN1 macros */
-TYPEMAP_IN1(char,          PyArray_CHAR  )
-TYPEMAP_IN1(unsigned char, PyArray_UBYTE )
-TYPEMAP_IN1(signed char,   PyArray_BYTE  )
-TYPEMAP_IN1(short,         PyArray_SHORT )
-TYPEMAP_IN1(int,           PyArray_INT   )
-TYPEMAP_IN1(long,          PyArray_LONG  )
-TYPEMAP_IN1(float,         PyArray_FLOAT )
-TYPEMAP_IN1(double,        PyArray_DOUBLE)
-TYPEMAP_IN1(long double,        PyArray_LONGDOUBLE)
-TYPEMAP_IN1(npy_cfloat_wrapper,         PyArray_CFLOAT )
-TYPEMAP_IN1(npy_cdouble_wrapper,        PyArray_CDOUBLE)
-TYPEMAP_IN1(npy_clongdouble,    PyArray_CLONGDOUBLE)
-TYPEMAP_IN1(const char,          PyArray_CHAR  )
-TYPEMAP_IN1(const unsigned char, PyArray_UBYTE )
-TYPEMAP_IN1(const signed char,   PyArray_BYTE  )
-TYPEMAP_IN1(const short,         PyArray_SHORT )
-TYPEMAP_IN1(const int,           PyArray_INT   )
-TYPEMAP_IN1(const long,          PyArray_LONG  )
-TYPEMAP_IN1(const float,         PyArray_FLOAT )
-TYPEMAP_IN1(const double,        PyArray_DOUBLE)
-TYPEMAP_IN1(const long double,        PyArray_LONGDOUBLE)
-TYPEMAP_IN1(const npy_cfloat_wrapper,         PyArray_CFLOAT )
-TYPEMAP_IN1(const npy_cdouble_wrapper,        PyArray_CDOUBLE)
-TYPEMAP_IN1(const npy_clongdouble,    PyArray_CLONGDOUBLE)
-TYPEMAP_IN1(PyObject,      PyArray_OBJECT)
-
-#undef TYPEMAP_IN1
 
 
 
@@ -380,35 +351,6 @@ TYPEMAP_IN1(PyObject,      PyArray_OBJECT)
   if (is_new_object$argnum && array$argnum) Py_DECREF(array$argnum);
 }
 %enddef
-
-/* Define concrete examples of the TYPEMAP_IN2 macros */
-TYPEMAP_IN2(char,          PyArray_CHAR  )
-TYPEMAP_IN2(unsigned char, PyArray_UBYTE )
-TYPEMAP_IN2(signed char,   PyArray_BYTE  )
-TYPEMAP_IN2(short,         PyArray_SHORT )
-TYPEMAP_IN2(int,           PyArray_INT   )
-TYPEMAP_IN2(long,          PyArray_LONG  )
-TYPEMAP_IN2(float,         PyArray_FLOAT )
-TYPEMAP_IN2(double,        PyArray_DOUBLE)
-TYPEMAP_IN2(long double,        PyArray_LONGDOUBLE)
-TYPEMAP_IN2(npy_cfloat_wrapper,         PyArray_CFLOAT )
-TYPEMAP_IN2(npy_cdouble_wrapper,        PyArray_CDOUBLE)
-TYPEMAP_IN2(npy_clongdouble,    PyArray_CLONGDOUBLE)
-TYPEMAP_IN2(const char,          PyArray_CHAR  )
-TYPEMAP_IN2(const unsigned char, PyArray_UBYTE )
-TYPEMAP_IN2(const signed char,   PyArray_BYTE  )
-TYPEMAP_IN2(const short,         PyArray_SHORT )
-TYPEMAP_IN2(const int,           PyArray_INT   )
-TYPEMAP_IN2(const long,          PyArray_LONG  )
-TYPEMAP_IN2(const float,         PyArray_FLOAT )
-TYPEMAP_IN2(const double,        PyArray_DOUBLE)
-TYPEMAP_IN2(const long double,        PyArray_LONGDOUBLE)
-TYPEMAP_IN2(const npy_cfloat_wrapper,         PyArray_CFLOAT )
-TYPEMAP_IN2(const npy_cdouble_wrapper,        PyArray_CDOUBLE)
-TYPEMAP_IN2(const npy_clongdouble,    PyArray_CLONGDOUBLE)
-TYPEMAP_IN2(PyObject,      PyArray_OBJECT)
-
-#undef TYPEMAP_IN2
 
 
 /* TYPEMAP_INPLACE macros
@@ -444,36 +386,6 @@ TYPEMAP_IN2(PyObject,      PyArray_OBJECT)
 }
 %enddef
 
-/* Define concrete examples of the TYPEMAP_INPLACE1 macro */
-TYPEMAP_INPLACE1(char,          PyArray_CHAR  )
-TYPEMAP_INPLACE1(unsigned char, PyArray_UBYTE )
-TYPEMAP_INPLACE1(signed char,   PyArray_BYTE  )
-TYPEMAP_INPLACE1(short,         PyArray_SHORT )
-TYPEMAP_INPLACE1(int,           PyArray_INT   )
-TYPEMAP_INPLACE1(long,          PyArray_LONG  )
-TYPEMAP_INPLACE1(float,         PyArray_FLOAT )
-TYPEMAP_INPLACE1(double,        PyArray_DOUBLE)
-TYPEMAP_INPLACE1(long double,        PyArray_LONGDOUBLE)
-TYPEMAP_INPLACE1(npy_cfloat_wrapper,         PyArray_CFLOAT )
-TYPEMAP_INPLACE1(npy_cdouble_wrapper,        PyArray_CDOUBLE)
-TYPEMAP_INPLACE1(npy_clongdouble,    PyArray_CLONGDOUBLE)
-TYPEMAP_INPLACE1(const char,          PyArray_CHAR  )
-TYPEMAP_INPLACE1(const unsigned char, PyArray_UBYTE )
-TYPEMAP_INPLACE1(const signed char,   PyArray_BYTE  )
-TYPEMAP_INPLACE1(const short,         PyArray_SHORT )
-TYPEMAP_INPLACE1(const int,           PyArray_INT   )
-TYPEMAP_INPLACE1(const long,          PyArray_LONG  )
-TYPEMAP_INPLACE1(const float,         PyArray_FLOAT )
-TYPEMAP_INPLACE1(const double,        PyArray_DOUBLE)
-TYPEMAP_INPLACE1(const long double,        PyArray_LONGDOUBLE)
-TYPEMAP_INPLACE1(const npy_cfloat_wrapper,         PyArray_CFLOAT )
-TYPEMAP_INPLACE1(const npy_cdouble_wrapper,        PyArray_CDOUBLE)
-TYPEMAP_INPLACE1(const npy_clongdouble,    PyArray_CLONGDOUBLE)
-TYPEMAP_INPLACE1(PyObject,      PyArray_OBJECT)
-
-#undef TYPEMAP_INPLACE1
-
-
 
 
 
@@ -485,35 +397,6 @@ TYPEMAP_INPLACE1(PyObject,      PyArray_OBJECT)
   $1 = (type*) temp->data;
 }
 %enddef
-
-/* Define concrete examples of the TYPEMAP_INPLACE2 macro */
-TYPEMAP_INPLACE2(char,          PyArray_CHAR  )
-TYPEMAP_INPLACE2(unsigned char, PyArray_UBYTE )
-TYPEMAP_INPLACE2(signed char,   PyArray_BYTE  )
-TYPEMAP_INPLACE2(short,         PyArray_SHORT )
-TYPEMAP_INPLACE2(int,           PyArray_INT   )
-TYPEMAP_INPLACE2(long,          PyArray_LONG  )
-TYPEMAP_INPLACE2(float,         PyArray_FLOAT )
-TYPEMAP_INPLACE2(double,        PyArray_DOUBLE)
-TYPEMAP_INPLACE2(long double,        PyArray_LONGDOUBLE)
-TYPEMAP_INPLACE2(npy_cfloat_wrapper,         PyArray_CFLOAT )
-TYPEMAP_INPLACE2(npy_cdouble_wrapper,        PyArray_CDOUBLE)
-TYPEMAP_INPLACE2(npy_clongdouble,    PyArray_CLONGDOUBLE)
-TYPEMAP_INPLACE2(const char,          PyArray_CHAR  )
-TYPEMAP_INPLACE2(const unsigned char, PyArray_UBYTE )
-TYPEMAP_INPLACE2(const signed char,   PyArray_BYTE  )
-TYPEMAP_INPLACE2(const short,         PyArray_SHORT )
-TYPEMAP_INPLACE2(const int,           PyArray_INT   )
-TYPEMAP_INPLACE2(const long,          PyArray_LONG  )
-TYPEMAP_INPLACE2(const float,         PyArray_FLOAT )
-TYPEMAP_INPLACE2(const double,        PyArray_DOUBLE)
-TYPEMAP_INPLACE2(const long double,        PyArray_LONGDOUBLE)
-TYPEMAP_INPLACE2(const npy_cfloat_wrapper,         PyArray_CFLOAT )
-TYPEMAP_INPLACE2(const npy_cdouble_wrapper,        PyArray_CDOUBLE)
-TYPEMAP_INPLACE2(const npy_clongdouble,    PyArray_CLONGDOUBLE)
-TYPEMAP_INPLACE2(PyObject,      PyArray_OBJECT)
-
-#undef TYPEMAP_INPLACE2
 
 
 
@@ -557,22 +440,6 @@ TYPEMAP_INPLACE2(PyObject,      PyArray_OBJECT)
 }
 %enddef
 
-/* Define concrete examples of the TYPEMAP_ARGOUT1 macro */
-TYPEMAP_ARGOUT1(char,          PyArray_CHAR  )
-TYPEMAP_ARGOUT1(unsigned char, PyArray_UBYTE )
-TYPEMAP_ARGOUT1(signed char,   PyArray_BYTE  )
-TYPEMAP_ARGOUT1(short,         PyArray_SHORT )
-TYPEMAP_ARGOUT1(int,           PyArray_INT   )
-TYPEMAP_ARGOUT1(long,          PyArray_LONG  )
-TYPEMAP_ARGOUT1(float,         PyArray_FLOAT )
-TYPEMAP_ARGOUT1(double,        PyArray_DOUBLE)
-TYPEMAP_ARGOUT1(long double,        PyArray_LONGDOUBLE)
-TYPEMAP_ARGOUT1(npy_cfloat_wrapper,         PyArray_CFLOAT )
-TYPEMAP_ARGOUT1(npy_cdouble_wrapper,        PyArray_CDOUBLE)
-TYPEMAP_ARGOUT1(npy_clongdouble,    PyArray_CLONGDOUBLE)
-TYPEMAP_ARGOUT1(PyObject,      PyArray_OBJECT)
-
-#undef TYPEMAP_ARGOUT1
 
  /* Two dimensional input/output arrays */
 %define TYPEMAP_ARGOUT2(type,typecode)
@@ -585,22 +452,8 @@ TYPEMAP_ARGOUT1(PyObject,      PyArray_OBJECT)
 }
 %enddef
 
-/* Define concrete examples of the TYPEMAP_ARGOUT2 macro */
-TYPEMAP_ARGOUT2(char,          PyArray_CHAR  )
-TYPEMAP_ARGOUT2(unsigned char, PyArray_UBYTE )
-TYPEMAP_ARGOUT2(signed char,   PyArray_BYTE  )
-TYPEMAP_ARGOUT2(short,         PyArray_SHORT )
-TYPEMAP_ARGOUT2(int,           PyArray_INT   )
-TYPEMAP_ARGOUT2(long,          PyArray_LONG  )
-TYPEMAP_ARGOUT2(float,         PyArray_FLOAT )
-TYPEMAP_ARGOUT2(double,        PyArray_DOUBLE)
-TYPEMAP_ARGOUT2(long double,        PyArray_LONGDOUBLE)
-TYPEMAP_ARGOUT2(npy_cfloat_wrapper,         PyArray_CFLOAT )
-TYPEMAP_ARGOUT2(npy_cdouble_wrapper,        PyArray_CDOUBLE)
-TYPEMAP_ARGOUT2(npy_clongdouble,    PyArray_CLONGDOUBLE)
-TYPEMAP_ARGOUT2(PyObject,      PyArray_OBJECT)
 
-#undef TYPEMAP_ARGOUT2
+
 
 
 
@@ -619,7 +472,7 @@ TYPEMAP_ARGOUT2(PyObject,      PyArray_OBJECT)
 }; 
 %typemap( argout ) std::vector<ctype>* array_argout { 
   int length = ($1)->size(); 
-  PyObject *obj = PyArray_FromDims(1, &length, PyArray_##atype); 
+  PyObject *obj = PyArray_FromDims(1, &length, ##atype); 
   memcpy(PyArray_DATA(obj),&((*($1))[0]),sizeof(ctype)*length);	 
   delete $1; 
   $result = helper_appendToTuple( $result, (PyObject *)obj ); 
@@ -636,14 +489,47 @@ TYPEMAP_ARGOUT2(PyObject,      PyArray_OBJECT)
 %define NPY_TYPECHECK( ctype, atype )
 %typemap(typecheck) ctype *, const ctype *, ctype [], const ctype []
 {
-  $1 = (is_array($input) && PyArray_CanCastSafely(PyArray_TYPE($input),PyArray_##atype)) ? 1 : 0;
+  $1 = (is_array($input) && PyArray_CanCastSafely(PyArray_TYPE($input), ##atype)) ? 1 : 0;
 };
 %enddef
 
-NPY_TYPECHECK(         int,      INT )
-NPY_TYPECHECK(        long,     LONG )
-NPY_TYPECHECK(       float,    FLOAT )
-NPY_TYPECHECK(      double,   DOUBLE )
-NPY_TYPECHECK(  npy_cfloat_wrapper,   CFLOAT )
-NPY_TYPECHECK(  npy_cdouble_wrapper, CDOUBLE )
+
+
+%define INSTANTIATE_TYPEMAPS(type,typecode)
+TYPEMAP_IN1(      type,typecode)
+TYPEMAP_IN1(const type,typecode)
+TYPEMAP_IN2(      type,typecode)
+TYPEMAP_IN2(const type,typecode)
+TYPEMAP_INPLACE1(type,typecode)
+TYPEMAP_INPLACE2(type,typecode)
+TYPEMAP_ARGOUT1(type, typecode)
+TYPEMAP_ARGOUT2(type, typecode)
+VEC_ARRAY_ARGOUT(type, typecode)
+NPY_TYPECHECK(type, typecode)
+%enddef
+
+
+INSTANTIATE_TYPEMAPS(char,                 PyArray_CHAR       )
+INSTANTIATE_TYPEMAPS(unsigned char,        PyArray_UBYTE      )
+INSTANTIATE_TYPEMAPS(signed char,          PyArray_BYTE       )
+INSTANTIATE_TYPEMAPS(short,                PyArray_SHORT      )
+INSTANTIATE_TYPEMAPS(int,                  PyArray_INT        )
+INSTANTIATE_TYPEMAPS(long,                 PyArray_LONG       )
+INSTANTIATE_TYPEMAPS(float,                PyArray_FLOAT      )
+INSTANTIATE_TYPEMAPS(double,               PyArray_DOUBLE     )
+INSTANTIATE_TYPEMAPS(long double,          PyArray_LONGDOUBLE )
+INSTANTIATE_TYPEMAPS(npy_cfloat_wrapper,   PyArray_CFLOAT     )
+INSTANTIATE_TYPEMAPS(npy_cdouble_wrapper,  PyArray_CDOUBLE    )
+INSTANTIATE_TYPEMAPS(npy_clongdouble,      PyArray_CLONGDOUBLE)
+INSTANTIATE_TYPEMAPS(PyObject,             PyArray_OBJECT     )
+
+
+
+#undef TYPEMAP_IN1
+#undef TYPEMAP_IN2
+#undef TYPEMAP_INPLACE1
+#undef TYPEMAP_INPLACE2
+#undef TYPEMAP_ARGOUT1
+#undef TYPEMAP_ARGOUT2
+#under NPY_TYPECHECK
 

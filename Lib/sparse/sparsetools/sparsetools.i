@@ -76,8 +76,7 @@ T_IN_ARRAY2( npy_cdouble_wrapper )
  /*
   * OUT types
   */
-%define I_ARRAY_ARGOUT( ctype, atype )
-VEC_ARRAY_ARGOUT( ctype, atype )
+%define I_ARRAY_ARGOUT( ctype )
 %apply std::vector<ctype>* array_argout {
     std::vector<ctype>* Ap,
     std::vector<ctype>* Ai,
@@ -91,8 +90,7 @@ VEC_ARRAY_ARGOUT( ctype, atype )
 };
 %enddef
 
-%define T_ARRAY_ARGOUT( ctype, atype )
-VEC_ARRAY_ARGOUT( ctype, atype )
+%define T_ARRAY_ARGOUT( ctype )
 %apply std::vector<ctype>* array_argout {
     std::vector<ctype>* Ax, 
     std::vector<ctype>* Bx,
@@ -104,15 +102,15 @@ VEC_ARRAY_ARGOUT( ctype, atype )
 
 
 
-I_ARRAY_ARGOUT( int,   INT)
-I_ARRAY_ARGOUT( long, LONG)
+I_ARRAY_ARGOUT( int  )
+I_ARRAY_ARGOUT( long )
 
-T_ARRAY_ARGOUT( int,         INT     )
-T_ARRAY_ARGOUT( long,        LONG    )
-T_ARRAY_ARGOUT( float,       FLOAT   )
-T_ARRAY_ARGOUT( double,      DOUBLE  )
-T_ARRAY_ARGOUT( npy_cfloat_wrapper,  CFLOAT  )
-T_ARRAY_ARGOUT( npy_cdouble_wrapper, CDOUBLE )
+T_ARRAY_ARGOUT( int                 )
+T_ARRAY_ARGOUT( long                )
+T_ARRAY_ARGOUT( float               )
+T_ARRAY_ARGOUT( double              )
+T_ARRAY_ARGOUT( npy_cfloat_wrapper  )
+T_ARRAY_ARGOUT( npy_cdouble_wrapper )
 
 
 
