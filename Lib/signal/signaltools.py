@@ -831,7 +831,7 @@ def general_gaussian(M,p,sig,sym=1):
     return w
 
 
-# contributed by Kumanna
+# contributed by Kumar Appaiah.
 def chebwin(M, at, sym=1):
     """Dolph-Chebyshev window.
 

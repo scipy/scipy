@@ -27,6 +27,7 @@ Ed Schofield        -- Maximum entropy and Monte Carlo modules, help with
                        sparse matrix module
 Travis Vaught       -- initial work on stats module clean up
 Jeff Whitaker       -- Mac OS X support
+Kumar Appaiah       -- Dolph Chebyshev window
 
 
 Testing:
