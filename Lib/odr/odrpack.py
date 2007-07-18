@@ -140,7 +140,7 @@ def report_error(info):
                   'Sum of squares convergence',
                   'Parameter convergence',
                   'Both sum of squares and parameter convergence',
-                  'Iteration limit reached')[info % 10]
+                  'Iteration limit reached')[info % 5]
 
     if info >= 5:
         # questionable results or fatal error
