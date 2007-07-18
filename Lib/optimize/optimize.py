@@ -21,7 +21,7 @@ __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'line_search', 'check_grad']
 
 import numpy
-from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
+from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, empty, \
      squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf, asfarray, isinf
 import linesearch
 
@@ -306,7 +306,12 @@ def _cubicmin(a,fa,fpa,b,fb,c,fc):
     dc = c-a
     if (db == 0) or (dc == 0) or (b==c): return None
     denom = (db*dc)**2 * (db-dc)
-    [A,B] = numpy.dot([[dc**2, -db**2],[-dc**3, db**3]],[fb-fa-C*db,fc-fa-C*dc])
+    d1 = empty((2,2))
+    d1[0,0] = dc**2
+    d1[0,1] = -db**2
+    d1[1,0] = -dc**3
+    d1[1,1] = db**3
+    [A,B] = numpy.dot(d1,asarray([fb-fa-C*db,fc-fa-C*dc]).flatten())
     A /= denom
     B /= denom
     radical = B*B-3*A*C
