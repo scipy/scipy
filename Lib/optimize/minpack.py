@@ -19,7 +19,7 @@ def check_func(thefunc, x0, args, numinputs, output_shape=None):
     return shape(res)
 
 
-def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8,maxfev=0,band=None,epsfcn=0.0,factor=100,diag=None):
+def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8,maxfev=0,band=None,epsfcn=0.0,factor=100,diag=None, warning=True):
     """Find the roots of a function.
 
   Description:
@@ -40,7 +40,8 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
     col_deriv -- non-zero to specify that the Jacobian function
                  computes derivatives down the columns (faster, because
                  there is no transpose operation).
-
+    warning -- True to print a warning message when the call is
+                unsuccessful; False to suppress the warning message.
   Outputs: (x, {infodict, ier, mesg})
 
     x -- the solution (or the result of the last iteration for an
@@ -136,7 +137,7 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
     info = retval[-1]    # The FORTRAN return value
     if (info != 1 and not full_output):
         if info in [2,3,4,5]:
-            print "Warning: " + errors[info][0]
+            if warning:  print "Warning: " + errors[info][0]
         else:
             try:
                 raise errors[info][1], errors[info][0]
@@ -155,7 +156,7 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
         return retval[0]
 
 
-def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,xtol=1.49012e-8,gtol=0.0,maxfev=0,epsfcn=0.0,factor=100,diag=None):
+def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,xtol=1.49012e-8,gtol=0.0,maxfev=0,epsfcn=0.0,factor=100,diag=None,warning=True):
     """Minimize the sum of squares of a set of equations.
 
   Description:
@@ -181,6 +182,8 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     col_deriv -- non-zero to specify that the Jacobian function
                  computes derivatives down the columns (faster, because
                  there is no transpose operation).
+	warning -- True to print a warning message when the call is
+             unsuccessful; False to suppress the warning message.
 
   Outputs: (x, {cov_x, infodict, mesg}, ier)
 
@@ -288,7 +291,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
 
     if (info not in [1,2,3,4] and not full_output):
         if info in [5,6,7,8]:
-            print "Warning: " + errors[info][0]
+            if warning:  print "Warning: " + errors[info][0]
         else:
             try:
                 raise errors[info][1], errors[info][0]
