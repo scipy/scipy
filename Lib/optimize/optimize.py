@@ -22,7 +22,7 @@ __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
 
 import numpy
 from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
-     squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf, asfarray
+     squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf, asfarray, isinf
 import linesearch
 
 # These have been copied from Numeric's MLab.py
@@ -707,10 +707,13 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         if (gnorm <= gtol):
             break
 
-        try:
-            rhok = 1 / (numpy.dot(yk,sk))
-        except ZeroDivisionError:
-            rhok = 1000.
+        try: # this was handled in numeric, let it remaines for more safety
+            rhok = 1.0 / (numpy.dot(yk,sk))
+        except ZeroDivisionError: 
+            rhok = 1000.0
+            print "Divide-by-zero encountered: rhok assumed large"
+        if isinf(rhok): # this is patch for numpy
+            rhok = 1000.0
             print "Divide-by-zero encountered: rhok assumed large"
         A1 = I - sk[:,numpy.newaxis] * yk[numpy.newaxis,:] * rhok
         A2 = I - yk[:,numpy.newaxis] * sk[numpy.newaxis,:] * rhok
