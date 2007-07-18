@@ -10,7 +10,7 @@ fmin_coblya(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
 
 from __future__ import nested_scopes
 import _cobyla
-
+from numpy import copy
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
                 iprint=1, maxfun=1000):
     """
@@ -91,7 +91,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
             k += 1
         return f
 
-    xopt = _cobyla.minimize(calcfc, m=m, x=x0, rhobeg=rhobeg, rhoend=rhoend,
+    xopt = _cobyla.minimize(calcfc, m=m, x=copy(x0), rhobeg=rhobeg, rhoend=rhoend,
                             iprint=iprint, maxfun=maxfun)
 
     return xopt
