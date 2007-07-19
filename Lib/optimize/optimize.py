@@ -526,7 +526,7 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
 
     fc = 0
     phi0 = old_fval                            # compute f(xk) -- done in past loop
-    phi_a0 = apply(f,(xk+alpha0*pk,)+args)     # compute f
+    phi_a0 = f(*((xk+alpha0*pk,)+args))     
     fc = fc + 1
     derphi0 = numpy.dot(gfk,pk)
 
@@ -536,7 +536,7 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     # Otherwise compute the minimizer of a quadratic interpolant:
 
     alpha1 = -(derphi0) * alpha0**2 / 2.0 / (phi_a0 - phi0 - derphi0 * alpha0)
-    phi_a1 = apply(f,(xk+alpha1*pk,)+args)
+    phi_a1 = f(*((xk+alpha1*pk,)+args))
     fc = fc + 1
 
     if (phi_a1 <= phi0 + c1*alpha1*derphi0):
@@ -557,7 +557,7 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
         b = b / factor
 
         alpha2 = (-b + numpy.sqrt(abs(b**2 - 3 * a * derphi0))) / (3.0*a)
-        phi_a2 = apply(f,(xk+alpha2*pk,)+args)
+        phi_a2 = f(*((xk+alpha2*pk,)+args))
         fc = fc + 1
 
         if (phi_a2 <= phi0 + c1*alpha2*derphi0):
@@ -573,12 +573,12 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
 
 
 def approx_fprime(xk,f,epsilon,*args):
-    f0 = apply(f,(xk,)+args)
+    f0 = f(*((xk,)+args))
     grad = numpy.zeros((len(xk),), float)
     ei = numpy.zeros((len(xk),), float)
     for k in range(len(xk)):
         ei[k] = epsilon
-        grad[k] = (apply(f,(xk+ei,)+args) - f0)/epsilon
+        grad[k] = (f(*((xk+ei,)+args)) - f0)/epsilon
         ei[k] = 0.0
     return grad
 
@@ -586,8 +586,8 @@ def check_grad(func, grad, x0, *args):
     return sqrt(sum((grad(x0,*args)-approx_fprime(x0,func,_epsilon,*args))**2))
 
 def approx_fhess_p(x0,p,fprime,epsilon,*args):
-    f2 = apply(fprime,(x0+epsilon*p,)+args)
-    f1 = apply(fprime,(x0,)+args)
+    f2 = fprime(*((x0+epsilon*p,)+args))
+    f1 = fprime(*((x0,)+args))
     return (f2 - f1)/epsilon
 
 
@@ -1024,7 +1024,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         dri0 = numpy.dot(ri,ri)
 
         if fhess is not None:             # you want to compute hessian once.
-            A = apply(fhess,(xk,)+args)
+            A = fhess(*(xk,)+args)
             hcalls = hcalls + 1
 
         while numpy.add.reduce(abs(ri)) > termcond:
@@ -1311,16 +1311,16 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
         if (xa > xc):  # swap so xa < xc can be assumed
             dum = xa; xa=xc; xc=dum
         assert ((xa < xb) and (xb < xc)), "Not a bracketing interval."
-        fa = apply(func, (xa,)+args)
-        fb = apply(func, (xb,)+args)
-        fc = apply(func, (xc,)+args)
+        fa = func(*((xa,)+args))
+        fb = func(*((xb,)+args))
+        fc = func(*((xc,)+args))
         assert ((fb<fa) and (fb < fc)), "Not a bracketing interval."
         funcalls = 3
     else:
         raise ValueError, "Bracketing interval must be length 2 or 3 sequence."
 
     x=w=v=xb
-    fw=fv=fx=apply(func, (x,)+args)
+    fw=fv=fx=func(*((x,)+args))
     if (xa < xc):
         a = xa; b = xc
     else:
@@ -1365,7 +1365,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
             else: u = x - tol1
         else:
             u = x + rat
-        fu = apply(func, (u,)+args)      # calculate new output value
+        fu = func(*((u,)+args))      # calculate new output value
         funcalls += 1
 
         if (fu > fx):                 # if it's bigger than current
@@ -1429,9 +1429,9 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
         if (xa > xc):  # swap so xa < xc can be assumed
             dum = xa; xa=xc; xc=dum
         assert ((xa < xb) and (xb < xc)), "Not a bracketing interval."
-        fa = apply(func, (xa,)+args)
-        fb = apply(func, (xb,)+args)
-        fc = apply(func, (xc,)+args)
+        fa = func(*((xa,)+args))
+        fb = func(*((xb,)+args))
+        fc = func(*((xc,)+args))
         assert ((fb<fa) and (fb < fc)), "Not a bracketing interval."
         funcalls = 3
     else:
@@ -1447,16 +1447,16 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     else:
         x2 = xb
         x1 = xb - _gC*(xb-xa)
-    f1 = apply(func, (x1,)+args)
-    f2 = apply(func, (x2,)+args)
+    f1 = func(*((x1,)+args))
+    f2 = func(*((x2,)+args))
     funcalls += 2
     while (abs(x3-x0) > tol*(abs(x1)+abs(x2))):
         if (f2 < f1):
             x0 = x1; x1 = x2; x2 = _gR*x1 + _gC*x3
-            f1 = f2; f2 = apply(func, (x2,)+args)
+            f1 = f2; f2 = func(*((x2,)+args))
         else:
             x3 = x2; x2 = x1; x1 = _gR*x2 + _gC*x0
-            f2 = f1; f1 = apply(func, (x1,)+args)
+            f2 = f1; f1 = func(*((x1,)+args))
         funcalls += 1
     if (f1 < f2):
         xmin = x1
@@ -1478,13 +1478,13 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     """
     _gold = 1.618034
     _verysmall_num = 1e-21
-    fa = apply(func, (xa,)+args)
-    fb = apply(func, (xb,)+args)
+    fa = func(*(xa,)+args)
+    fb = func(*(xb,)+args)
     if (fa < fb):                      # Switch so fa > fb
         dum = xa; xa = xb; xb = dum
         dum = fa; fa = fb; fb = dum
     xc = xb + _gold*(xb-xa)
-    fc = apply(func, (xc,)+args)
+    fc = func(*((xc,)+args))
     funcalls = 3
     iter = 0
     while (fc < fb):
@@ -1501,7 +1501,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
             raise RuntimeError, "Too many iterations."
         iter += 1
         if (w-xc)*(xb-w) > 0.0:
-            fw = apply(func, (w,)+args)
+            fw = func(*((w,)+args))
             funcalls += 1
             if (fw < fc):
                 xa = xb; xb=w; fa=fb; fb=fw
@@ -1510,18 +1510,18 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
                 xc = w; fc=fw
                 return xa, xb, xc, fa, fb, fc, funcalls
             w = xc + _gold*(xc-xb)
-            fw = apply(func, (w,)+args)
+            fw = func(*((w,)+args))
             funcalls += 1
         elif (w-wlim)*(wlim-xc) >= 0.0:
             w = wlim
-            fw = apply(func, (w,)+args)
+            fw = func(*((w,)+args))
             funcalls += 1
         elif (w-wlim)*(xc-w) > 0.0:
-            fw = apply(func, (w,)+args)
+            fw = func(*((w,)+args))
             funcalls += 1
             if (fw < fc):
                 xb=xc; xc=w; w=xc+_gold*(xc-xb)
-                fb=fc; fc=fw; fw=apply(func, (w,)+args)
+                fb=fc; fc=fw; fw=func(*((w,)+args))
                 funcalls += 1
         else:
             w = xc + _gold*(xc-xb)
