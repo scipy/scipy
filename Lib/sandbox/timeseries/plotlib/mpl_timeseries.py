@@ -29,12 +29,11 @@ from matplotlib.ticker import Formatter, ScalarFormatter, FuncFormatter, \
                               Locator, FixedLocator
 #from matplotlib.transforms import nonsingular
 
-import numpy as N
+import numpy
 import maskedarray as MA
 
 import timeseries
-import timeseries as TS
-from timeseries import date_array, Date, DateArray, TimeSeries
+from timeseries import date_array, Date, DateArray, TimeSeries, get_freq_group
 from timeseries import const as _c
 
 import warnings
@@ -180,7 +179,7 @@ def _daily_finder(vmin, vmax, freq, aslocator):
     elif freq == _c.FR_DAY:
         periodsperyear = 365
         periodspermonth = 28
-    elif TS.get_freq_group(freq) == _c.FR_WK:
+    elif get_freq_group(freq) == _c.FR_WK:
         periodsperyear = 52
         periodspermonth = 3
     else:
@@ -190,10 +189,10 @@ def _daily_finder(vmin, vmax, freq, aslocator):
     span = vmax - vmin + 1
     dates = date_array(start_date=Date(freq,vmin),
                        end_date=Date(freq, vmax))
-    default = N.arange(vmin, vmax+1)
+    default = numpy.arange(vmin, vmax+1)
     # Initialize the output
     if not aslocator:
-        format = N.empty(default.shape, dtype="|S10")
+        format = numpy.empty(default.shape, dtype="|S10")
         format.flat = ''
 
     def first_label(label_flags):
@@ -244,8 +243,8 @@ def _daily_finder(vmin, vmax, freq, aslocator):
         if aslocator:
             d_minus_1 = dates-1
 
-            month_diff = N.abs(dates.month - d_minus_1.month)
-            week_diff = N.abs(dates.week - d_minus_1.week)
+            month_diff = numpy.abs(dates.month - d_minus_1.month)
+            week_diff = numpy.abs(dates.week - d_minus_1.week)
             minor_idx = (month_diff + week_diff).nonzero()[0]
 
             major = default[month_diff != 0]
@@ -312,14 +311,14 @@ def _daily_finder(vmin, vmax, freq, aslocator):
 #...............................................................................
 def _monthly_finder(vmin, vmax, freq, aslocator):
     if freq != _c.FR_MTH:
-        raise ValueError("unexpected frequency")
+        raise ValueError("Unexpected frequency")
     periodsperyear = 12
 
     (vmin, vmax) = (int(vmin), int(vmax))
     span = vmax - vmin + 1
     #............................................
-    dates = N.arange(vmin, vmax+1)
-    format = N.empty(span, dtype="|S8")
+    dates = numpy.arange(vmin, vmax+1)
+    format = numpy.empty(span, dtype="|S8")
     format.flat = ''
     year_start = (dates % 12 == 1).nonzero()[0]
     #............................................
@@ -383,14 +382,14 @@ def _monthly_finder(vmin, vmax, freq, aslocator):
         return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
 #...............................................................................
 def _quarterly_finder(vmin, vmax, freq, aslocator):
-    if TS.get_freq_group(freq) != _c.FR_QTR:
-        raise ValueError("unexpected frequency")
+    if get_freq_group(freq) != _c.FR_QTR:
+        raise ValueError("Unexpected frequency")
     periodsperyear = 4
     (vmin, vmax) = (int(vmin), int(vmax))
     span = vmax - vmin + 1
     #............................................
-    dates = N.arange(vmin, vmax+1)
-    format = N.empty(span, dtype="|S8")
+    dates = numpy.arange(vmin, vmax+1)
+    format = numpy.empty(span, dtype="|S8")
     format.flat = ''
     year_start = (dates % 4 == 1).nonzero()[0]
     #............................................
@@ -433,13 +432,13 @@ def _quarterly_finder(vmin, vmax, freq, aslocator):
         return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
 #...............................................................................
 def _annual_finder(vmin, vmax, freq, aslocator):
-    if TS.get_freq_group(freq) != _c.FR_ANN:
-        raise ValueError("unexpected frequency")
+    if get_freq_group(freq) != _c.FR_ANN:
+        raise ValueError("Unexpected frequency")
     (vmin, vmax) = (int(vmin), int(vmax+1))
     span = vmax - vmin + 1
     #............................................
-    dates = N.arange(vmin, vmax+1)
-    format = N.empty(span, dtype="|S8")
+    dates = numpy.arange(vmin, vmax+1)
+    format = numpy.empty(span, dtype="|S8")
     format.flat = ''
     #............................................
     (min_anndef, maj_anndef) = _get_default_annual_spacing(span)
@@ -464,7 +463,7 @@ class TimeSeries_DateLocator(Locator):
                  base=1, quarter=1, month=1, day=1):
         self.freq = freq
         self.base = base
-        fgroup = TS.get_freq_group(freq)
+        fgroup = get_freq_group(freq)
         (self.quarter, self.month, self.day) = (quarter, month, day)
         self.isminor = minor_locator
         self.isdynamic = dynamic_mode
@@ -538,7 +537,7 @@ class TimeSeries_DateFormatter(Formatter):
         self.isminor = minor_locator
         self.isdynamic = dynamic_mode
         self.offset = 0
-        fgroup = TS.get_freq_group(freq)
+        fgroup = get_freq_group(freq)
         #.....
         if fgroup == _c.FR_ANN:
             self.finder = _annual_finder
@@ -625,7 +624,7 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
         # Get the data to plot
         self.legendsymbols = []
         self.legendlabels = []
-    #............................................
+    #......................................................
     def set_ydata(self, series=None):
         """Sets the base time series."""
         if self._series is not None:
@@ -638,7 +637,7 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
         """Gets the base time series."""
         return self._series
     ydata = property(fget=get_ydata, fset=set_ydata, doc='Time series')
-    #............................................
+    #......................................................
     def _check_plot_params(self,*args):
         """Defines the plot coordinates (and basic plotting arguments)."""
         remaining = list(args)
@@ -717,7 +716,7 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
             output = list(output)
             output[0] = output[0].asfreq(self.freq)
         return output
-    #............................................
+    #......................................................
     def tsplot(self,*parms,**kwargs):
         """Plots the data parsed in argument.
 This command accepts the same keywords as `matplotlib.plot`."""
@@ -728,7 +727,7 @@ This command accepts the same keywords as `matplotlib.plot`."""
         self.legendlabels.append(kwargs.get('label',None))
         Subplot.plot(self, *parms,**kwargs)
         self.format_dateaxis()
-    #............................................
+    #......................................................
     def format_dateaxis(self,maj_spacing=None, min_spacing=None,
                         strformat="%Y", rotate=True):
         """Pretty-formats the date axis (x-axis).
@@ -762,6 +761,44 @@ This command accepts the same keywords as `matplotlib.plot`."""
 #        if self.is_last_row():
 #            if rotate:
 #                setp(self.get_xticklabels(),rotation=45)
+    #......................................................
+    def set_datelimits(self, start_date=None, end_date=None):
+        """Sets the date limits of the plot to start_date and end_date.
+    The dates can be given as timeseries.Date objects, strings or integers.
+        
+:Inputs:
+    start_date : var *[None]*
+        Starting date of the plot. If None, the current left limit is used.
+    end_date : var *[None]*
+        Ending date of the plot. If None, the current right limit is used.
+        """
+        freq = self.freq
+        if freq is None:
+            raise ValueError("Undefined frequency! Date limits can't be fixed!")
+        current_limits = self.get_xlim()
+        #
+        def get_datevalue(date, freq):
+            if isinstance(date, timeseries.Date):
+                return date.asfreq(freq).value
+            elif isinstance(date, str):
+                return timeseries.Date(freq, string=date).value
+            elif isinstance(date, (int,float)) or \
+                (isinstance(date, numpy.ndarray) and (date.size == 1)):
+                return date
+            raise ValueError("Unrecognizable date '%s'" % date)
+        # Fix left limit ..............
+        if start_date is None:
+            xleft = current_limits[0]
+        else:
+            xleft = get_datevalue(start_date, freq)
+        # Fix right limit .......
+        if end_date is None:
+            xright = current_limits[-1]
+        else:
+            xright = get_datevalue(end_date, freq)
+        self.set_xlim(xleft, xright)
+        return (xleft, xright)
+    
 
 TSPlot = TimeSeriesPlot
 

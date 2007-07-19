@@ -1101,6 +1101,11 @@ def compressed(series):
         if series._dates.ndim == 2:
             series = series.ravel()
             keeper = ~(series._mask)
+        # 2D series w/ only one date : return a new series ....
+        elif series._dates.size == 1:
+            result = series._series.compressed().view(type(series))
+            result._dates = series.dates
+            return result
         # a 2D series: suppress the rows (dates are in columns)
         else:
             keeper = ~(series._mask.any(-1))
@@ -1227,9 +1232,9 @@ def align_with(*series):
         return adjust_endpoints(series[-1], dates[0], dates[-1])
     return [adjust_endpoints(x, dates[0], dates[-1]) for x in series[1:]]
     
-    
+
 #....................................................................
-def _convert1d(series, freq, func='auto', position='END'):
+def _convert1d(series, freq, func='auto', position='END', *args, **kwargs):
     """Converts a series to a frequency. Private function called by convert
 
     When converting to a lower frequency, func is a function that acts
@@ -1291,7 +1296,7 @@ def _convert1d(series, freq, func='auto', position='END'):
     tempData = masked_array(_values, mask=_mask)
 
     if tempData.ndim == 2 and func is not None:
-        tempData = MA.apply_along_axis(func, -1, tempData)
+        tempData = MA.apply_along_axis(func, -1, tempData, *args, **kwargs)
 
     newseries = tempData.view(type(series))
     newseries._dates = date_array(start_date=start_date, length=len(newseries),
@@ -1299,7 +1304,7 @@ def _convert1d(series, freq, func='auto', position='END'):
     newseries.copy_attributes(series)
     return newseries
 
-def convert(series, freq, func='auto', position='END'):
+def convert(series, freq, func='auto', position='END', *args, **kwargs):
     """Converts a series to a frequency. Private function called by convert
 
     When converting to a lower frequency, func is a function that acts
@@ -1316,19 +1321,20 @@ def convert(series, freq, func='auto', position='END'):
     placed at the end of the month).
     """
     if series.ndim == 1:
-        obj = _convert1d(series, freq, func, position)
+        obj = _convert1d(series, freq, func, position, *args, **kwargs)
     elif series.ndim == 2:
-        base = _convert1d(series[:,0], freq, func, position)
-        obj = MA.column_stack([_convert1d(m,freq,func,position)._series 
+        base = _convert1d(series[:,0], freq, func, position, *args, **kwargs)
+        obj = MA.column_stack([_convert1d(m,freq,func,position,
+                                          *args, **kwargs)._series
                                for m in series.split()]).view(type(series))
-        obj._dates = base._dates                        
-        if func is None or (func,series.observed) == ('auto','UNDEFINED'):         
+        obj._dates = base._dates
+        if func is None or (func,series.observed) == ('auto','UNDEFINED'):
             shp = obj.shape
             ncols = base.shape[-1]
             obj.shape = (shp[0], shp[-1]//ncols, ncols)
             obj = numpy.swapaxes(obj,1,2)
     return obj
-        
+
 
 def group_byperiod(series, freq, position='END'):
     """Converts a series to a frequency, without any processing. If the series
@@ -1562,7 +1568,7 @@ def concatenate_series(*series, **kwargs):
 #...............................................................................
 def empty_like(series):
     """Returns an empty series with the same dtype, mask and dates as series."""
-    result = N.empty_like(series).view(type(series))
+    result = numpy.empty_like(series).view(type(series))
     result._dates = series._dates
     result._mask = series._mask
     return result
