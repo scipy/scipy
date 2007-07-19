@@ -1525,7 +1525,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
                 funcalls += 1
         else:
             w = xc + _gold*(xc-xb)
-            fw = apply(func, (w,)+args)
+            fw = func(*((w,)+args))
             funcalls += 1
         xa=xb; xb=xc; xc=w
         fa=fb; fb=fc; fc=fw
