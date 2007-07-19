@@ -58,13 +58,15 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     """
     def _hd_1D(data,prob,var):
         "Computes the HD quantiles for a 1D array."
-        xsorted = numpy.sort(data.compressed().view(ndarray))
+        xsorted = numpy.squeeze(numpy.sort(data.compressed().view(ndarray)))
         n = len(xsorted)
         #.........
         hd = empty((2,len(prob)), float_)
         if n < 2:
             hd.flat = numpy.nan
-            return hd
+            if var:
+                return hd
+            return hd[0]
         #......... 
         v = arange(n+1) / float(n)
         betacdf = beta.cdf
@@ -87,7 +89,7 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     p = numpy.array(prob, copy=False, ndmin=1)
     # Computes quantiles along axis (or globally)
     if (axis is None): 
-        result = _hd_1D(data.compressed(), p, var)
+        result = _hd_1D(data, p, var)
     else:
         assert data.ndim <= 2, "Array should be 2D at most !"
         result = apply_along_axis(_hd_1D, axis, data, p, var)
