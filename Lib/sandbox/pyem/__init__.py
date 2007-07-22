@@ -1,5 +1,11 @@
 #! /usr/bin/env python
-# Last Change: Sat Jun 09 10:00 PM 2007 J
+# Last Change: Sun Jul 22 11:00 AM 2007 J
+
+raise ImportError(
+"""pyem has been moved to scikits and renamed to em. Please install
+scikits.learn instead, and change your import to the following:
+
+from scickits.learn.machine import em.""")
 
 from info import __doc__
 
