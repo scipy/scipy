@@ -139,6 +139,7 @@ class ascii_stream(object):
         self.comment = comment
         self.lencomment = len(comment)
         self.file = get_open_file(fileobject, mode='r')
+        self.should_close_file = not (self.file is fileobject)
         self._pos = self.file.tell()
         self._lineindex = 0
         if self.linelist[-1] < 0:
@@ -166,7 +167,7 @@ class ascii_stream(object):
             return lines[:-1]
 
     def __del__(self):
-        if hasattr(self.file,'close'):
+        if hasattr(self.file,'close') and self.should_close_file:
             self.file.close()
 
     def __getitem__(self, item):
