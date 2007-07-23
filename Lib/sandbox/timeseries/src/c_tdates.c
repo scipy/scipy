@@ -2377,7 +2377,7 @@ c_tdates_thisday(PyObject *self, PyObject *args) {
         get_asfreq_info(FR_SEC, freq_val, &af_info);
         asfreq_func = get_asfreq_func(FR_SEC, freq_val, 0);
 
-        date_val = asfreq_func(secondly_date->value, 'A', &af_info);
+        date_val = asfreq_func(secondly_date->value, 'B', &af_info);
 
         Py_DECREF(secondly_date);
 
