@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Last Change: Mon Jul 23 04:00 PM 2007 J
+# Last Change: Mon Jul 23 09:00 PM 2007 J
 
 # Copyright (c) 2001, 2002 Enthought, Inc.
 # 
@@ -59,8 +59,8 @@ def multigammaln(a, d):
     \Gamma_d(a) = \int_{A>0}{e^{-tr(A)\cdot{|A|}^{a - (m+1)/2}dA}}
 
     with the condition a > (d-1)/2, and A>0 being the set of all the positive
-    definite matrices. Note that a is a scalar: the integration is
-    multivariate, the argument is not.
+    definite matrices of dimension s. Note that a is a scalar: the integration
+    is multivariate, the argument is not.
 
     This can be proven to be equal to the much friendler equation:
 

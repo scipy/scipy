@@ -2,8 +2,7 @@ import numpy as N
 from numpy.testing import *
 
 set_package_path()
-from spfun_stats import multigammaln
-from special import gammaln
+from scipy.special import gammaln, multigammaln
 restore_path()
 
 class test_multigammaln(NumpyTestCase):
