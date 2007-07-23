@@ -109,7 +109,46 @@ class test_eig(NumpyTestCase):
             assert_array_almost_equal(dot(conjugate(transpose(a)),vl[:,i]),
                                       conjugate(w[i])*vl[:,i])
 
+    def test_singular(self):
+        """Test singular pair"""
+        # Example taken from
+        # http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
+        A = array(( [22,34,31,31,17], [45,45,42,19,29], [39,47,49,26,34],
+            [27,31,26,21,15], [38,44,44,24,30]))
 
+        B = array(( [13,26,25,17,24], [31,46,40,26,37], [26,40,19,25,25],
+            [16,25,27,14,23], [24,35,18,21,22]))
+
+        w, vr = eig(A,B)
+        wt = eigvals(A,B)
+        val1 = dot(A, vr)
+        val2 = dot(B, vr) * w
+        res = val1 - val2
+        for i in range(res.shape[1]):
+            if all(isfinite(res[:, i])):
+                assert_array_almost_equal(res[:, i], 0)
+        
+        assert_array_almost_equal(w[isfinite(w)], wt[isfinite(w)])
+
+    def test_falker(self):
+        """Test matrices giving some Nan generalized eigen values."""
+        M = diag(array(([1,0,3])))
+        K = array(([2,-1,-1],[-1,2,-1],[-1,-1,2]))
+        D = array(([1,-1,0],[-1,1,0],[0,0,0]))
+        Z = zeros((3,3))
+        I = identity(3)
+        A = bmat([[I,Z],[Z,-K]])
+        B = bmat([[Z,I],[M,D]])
+        A = asarray(A)
+        B = asarray(B)
+
+        w, vr = eig(A,B)
+        val1 = dot(A, vr)
+        val2 = dot(B, vr) * w
+        res = val1 - val2
+        for i in range(res.shape[1]):
+            if all(isfinite(res[:, i])):
+                assert_array_almost_equal(res[:, i], 0)
 
 class test_eig_banded(NumpyTestCase):
 
