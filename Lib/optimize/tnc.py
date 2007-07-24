@@ -171,7 +171,7 @@ See also:
 
   fixed_point -- scalar fixed-point finder
 """
-
+    x0 = asarray(x0, dtype=float).tolist()
     n = len(x0)
 
     if bounds is None:
@@ -285,7 +285,7 @@ if __name__ == '__main__':
         dif[0] = -2.0*(x[1]-x[0])*1.0e-5
         dif[1] = 1.0-dif[0]
         return f, dif
-    tests.append ((test3fg, [10,1], ([-HUGE_VAL, 0.0], None), [0,0]))
+    tests.append ((test3fg, asarray([10,1]), ([-HUGE_VAL, 0.0], None), [0,0]))
 
     def test4fg(x):
         f = pow(x[0]+1.0,3)/3.0+x[1]
