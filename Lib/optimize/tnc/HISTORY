@@ -1,13 +1,16 @@
 # TNC Release History
-# $Jeannot: HISTORY,v 1.12 2004/04/14 21:04:42 js Exp $
+# $Jeannot: HISTORY,v 1.15 2005/01/28 18:27:31 js Exp $
 
+01/28/2005, V1.3   : Fix a bug in the anti-zigzaging mechanism (many thanks
+                     to S.G. NASH).
+                     Warning: API changes: refined stopping criterions (xtol,
+                     pgtol). ftol is no more relative to the value of f.
+                     new parameter offset to translate the coordinates
+04/18/2004, V1.2.5 : n==0 is now valid
 04/14/2004, V1.2.4 : Fix a potential bug in the Python interface (infinity==0)
 04/14/2004, V1.2.3 : Fix a bug in the Python interface (reference counting)
 04/13/2004, V1.2.2 : Fix a bug in the Python interface (memory allocation)
 04/13/2004, V1.2.1 : Fix a bug in the Python interface (scaling ignored)
-
-04/08/2004          Included into SciPy
-
 04/03/2004, V1.2   : Memory allocation checks
 04/02/2004, V1.1   : Setup script for the python module
                      Ability to abort the minimization at any time

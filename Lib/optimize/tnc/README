@@ -1,8 +1,8 @@
 # TNC : truncated newton bound contrained minimization in C
-# Version 1.2
-# Copyright J.S. Roy (js@jeannot.org), 2002-2004
+# Version 1.3
+# Copyright J.S. Roy (js@jeannot.org), 2002-2005
 # See the LICENSE file for copyright information.
-# $Jeannot: README,v 1.26 2004/04/03 16:01:48 js Exp $
+# $Jeannot: README,v 1.32 2005/01/28 15:12:09 js Exp $
 
 This software is a C implementation of TNBC, a truncated newton minimization
 package originally developed by Stephen G. Nash in Fortran.

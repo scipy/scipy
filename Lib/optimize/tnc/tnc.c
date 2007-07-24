@@ -1,9 +1,9 @@
-/* tnc : truncated newton bound contrained minimization
+/* tnc : truncated newton bound constrained minimization
          using gradient information, in C */
 
 /*
- * Copyright (c) 2002-2004, Jean-Sebastien Roy (js@jeannot.org)
- * 
+ * Copyright (c) 2002-2005, Jean-Sebastien Roy (js@jeannot.org)
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -11,10 +11,10 @@
  * distribute, sublicense, and/or sell copies of the Software, and to
  * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included
  * in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -27,12 +27,12 @@
 /*
  * This software is a C implementation of TNBC, a truncated newton minimization
  * package originally developed by Stephen G. Nash in Fortran.
- * 
+ *
  * The original source code can be found at :
  * http://iris.gmu.edu/~snash/nash/software/software.html
- * 
+ *
  * Copyright for the original TNBC fortran routines:
- * 
+ *
  *   TRUNCATED-NEWTON METHOD:  SUBROUTINES
  *     WRITTEN BY:  STEPHEN G. NASH
  *           SCHOOL OF INFORMATION TECHNOLOGY & ENGINEERING
@@ -46,7 +46,7 @@
  */
 
 static char const rcsid[] =
-  "@(#) $Jeannot: tnc.c,v 1.201 2004/04/02 22:36:25 js Exp $";
+  "@(#) $Jeannot: tnc.c,v 1.205 2005/01/28 18:27:31 js Exp $";
 
 static char const copyright[] =
   "(c) 2002-2003, Jean-Sebastien Roy (js@jeannot.org)";
@@ -67,13 +67,14 @@ typedef enum
  * Return code strings
  */
 
-char *tnc_rc_string[10] =
+char *tnc_rc_string[11] =
 {
   "Memory allocation failed",
-  "Invalid parameters (less than 1 dimension)",
+  "Invalid parameters (n<0)",
   "Infeasible (low bound > up bound)",
   "Local minima reach (|pg| ~= 0)",
   "Converged (|f_n-f_(n-1)| ~= 0)",
+  "Converged (|x_n-x_(n-1)| ~= 0)",
   "Maximum number of function evaluations reached",
   "Linear search failed",
   "All lower bounds are equal to the upper bounds",
@@ -108,30 +109,30 @@ typedef enum
  * Prototypes
  */
 static tnc_rc tnc_minimize(int n, double x[], double *f, double g[],
-  tnc_function *function, void *state, 
-  double xscale[], double *fscale,
+  tnc_function *function, void *state,
+  double xscale[], double xoffset[], double *fscale,
   double low[], double up[], tnc_message messages,
   int maxCGit, int maxnfeval, int *nfeval,
   double eta, double stepmx, double accuracy,
-  double fmin, double ftol, double rescale);
+  double fmin, double ftol, double xtol, double pgtol, double rescale);
 
-static getptc_rc getptcInit(double *reltol, double *abstol, double tnytol, 
-  double eta, double rmu, double xbnd, 
+static getptc_rc getptcInit(double *reltol, double *abstol, double tnytol,
+  double eta, double rmu, double xbnd,
   double *u, double *fu, double *gu, double *xmin,
-  double *fmin, double *gmin, double *xw, double *fw, 
-  double *gw, double *a, double *b, double *oldf, 
-  double *b1, double *scxbnd, double *e, double *step, 
-  double *factor, logical *braktd, double *gtest1, 
+  double *fmin, double *gmin, double *xw, double *fw,
+  double *gw, double *a, double *b, double *oldf,
+  double *b1, double *scxbnd, double *e, double *step,
+  double *factor, logical *braktd, double *gtest1,
   double *gtest2, double *tol);
 
-static getptc_rc getptcIter(double big, double 
-  rtsmll, double *reltol, double *abstol, double tnytol, 
-  double fpresn, double xbnd, 
+static getptc_rc getptcIter(double big, double
+  rtsmll, double *reltol, double *abstol, double tnytol,
+  double fpresn, double xbnd,
   double *u, double *fu, double *gu, double *xmin,
-  double *fmin, double *gmin, double *xw, double *fw, 
-  double *gw, double *a, double *b, double *oldf, 
-  double *b1, double *scxbnd, double *e, double *step, 
-  double *factor, logical *braktd, double *gtest1, 
+  double *fmin, double *gmin, double *xw, double *fw,
+  double *gw, double *a, double *b, double *oldf,
+  double *b1, double *scxbnd, double *e, double *step,
+  double *factor, logical *braktd, double *gtest1,
   double *gtest2, double *tol);
 
 static void printCurrentIteration(int n, double f, double g[], int niter,
@@ -141,63 +142,63 @@ static double initialStep(double fnew, double fmin, double gtp, double smax);
 
 static ls_rc linearSearch(int n, tnc_function *function, void *state,
   double low[], double up[],
-  double xscale[], double fscale, int pivot[],
-  double eta, double ftol, double xbnd, 
-  double p[], double x[], double *f, 
+  double xscale[], double xoffset[], double fscale, int pivot[],
+  double eta, double ftol, double xbnd,
+  double p[], double x[], double *f,
   double *alpha, double gfull[], int maxnfeval, int *nfeval);
 
 static int tnc_direction(double *zsol, double *diagb,
   double *x, double *g, int n,
-  int maxCGit, int maxnfeval, int *nfeval, 
+  int maxCGit, int maxnfeval, int *nfeval,
   logical upd1, double yksk, double yrsr,
   double *sk, double *yk, double *sr, double *yr,
-  logical lreset, tnc_function *function, void *state, 
-  double xscale[], double fscale,
+  logical lreset, tnc_function *function, void *state,
+  double xscale[], double xoffset[], double fscale,
   int *pivot, double accuracy,
   double gnorm, double xnorm, double *low, double *up);
 
-static double stepMax(double step, int n, double x[], double p[], int pivot[], 
-  double low[], double up[], double xscale[]);
+static double stepMax(double step, int n, double x[], double p[], int pivot[],
+  double low[], double up[], double xscale[], double xoffset[]);
 
 /* Active set of constraints */
-static void setContraints(int n, double x[], int pivot[], double xscale[],
-  double low[], double up[]);
+static void setConstraints(int n, double x[], int pivot[], double xscale[],
+  double xoffset[], double low[], double up[]);
 
 static logical addConstraint(int n, double x[], double p[], int pivot[],
-  double low[], double up[], double xscale[]);
+  double low[], double up[], double xscale[], double xoffset[]);
 
-static logical removeConstraint(double gtpnew, double f, 
-  double *fLastConstraint, double g[], int pivot[], int n);
+static logical removeConstraint(double gtpnew, double gnorm, double pgtolfs,
+  double f, double fLastConstraint, double g[], int pivot[], int n);
 
 static void project(int n, double x[], int pivot[]);
 
-static int hessianTimesVector(double v[], double gv[], int n, 
-  double x[], double g[], tnc_function *function, void *state, 
-  double xscale[], double fscale,
+static int hessianTimesVector(double v[], double gv[], int n,
+  double x[], double g[], tnc_function *function, void *state,
+  double xscale[], double xoffset[], double fscale,
   double accuracy, double xnorm, double low[], double up[]);
 
-static int msolve(double g[], double *y, int n, 
-  double sk[], double yk[], double diagb[], double sr[], 
-  double yr[], logical upd1, double yksk, double yrsr, 
+static int msolve(double g[], double *y, int n,
+  double sk[], double yk[], double diagb[], double sr[],
+  double yr[], logical upd1, double yksk, double yrsr,
   logical lreset);
 
 static void diagonalScaling(int n, double e[], double v[], double gv[],
   double r[]);
 
 static void ssbfgs(int n, double gamma, double sj[], double *hjv,
-  double hjyj[], double yjsj, 
+  double hjyj[], double yjsj,
   double yjhyj, double vsj, double vhyj, double hjp1v[]);
 
-static int initPreconditioner(double diagb[], double emat[], int n, 
+static int initPreconditioner(double diagb[], double emat[], int n,
   logical lreset, double yksk, double yrsr,
-  double sk[], double yk[], double sr[], double yr[], 
+  double sk[], double yk[], double sr[], double yr[],
   logical upd1);
 
 /* Scaling */
 static void coercex(int n, double x[], double low[], double up[]);
-static void unscalex(int n, double x[], double xscale[]);
+static void unscalex(int n, double x[], double xscale[], double xoffset[]);
 static void scaleg(int n, double g[], double xscale[], double fscale);
-static void scalex(int n, double x[], double xscale[]);
+static void scalex(int n, double x[], double xscale[], double xoffset[]);
 static void projectConstants(int n, double x[], double xscale[]);
 
 /* Machine precision */
@@ -212,15 +213,14 @@ static double dnrm21(int n, double dx[]);
 
 /* additionnal blas-like functions */
 static void dneg1(int n, double v[]);
-static double dnrmi1(int n, double v[]);
 
 /*
  * This routine solves the optimization problem
- * 
+ *
  *   minimize   f(x)
  *     x
  *   subject to   low <= x <= up
- * 
+ *
  * where x is a vector of n real variables. The method used is
  * a truncated-newton algorithm (see "newton-type minimization via
  * the lanczos algorithm" by s.g. nash (technical report 378, math.
@@ -230,17 +230,18 @@ static double dnrmi1(int n, double v[]);
  * global solution), but does assume that the function is bounded below.
  * it can solve problems having any number of variables, but it is
  * especially useful when the number of variables (n) is large.
- * 
+ *
  */
 extern int tnc(int n, double x[], double *f, double g[], tnc_function *function,
-  void *state, double low[], double up[], double scale[], int messages, 
-  int maxCGit, int maxnfeval, double eta, double stepmx, 
-  double accuracy, double fmin, double ftol, double rescale, int *nfeval)
+  void *state, double low[], double up[], double scale[], double offset[],
+  int messages, int maxCGit, int maxnfeval, double eta, double stepmx,
+  double accuracy, double fmin, double ftol, double xtol, double pgtol,
+  double rescale, int *nfeval)
 {
   int rc, frc, i, nc, nfeval_local,
     free_low = TNC_FALSE, free_up = TNC_FALSE,
     free_g = TNC_FALSE;
-  double *xscale = NULL, fscale, epsmch, rteps;
+  double *xscale = NULL, fscale, epsmch, rteps, *xoffset = NULL;
 
   if(nfeval==NULL)
   {
@@ -248,7 +249,7 @@ extern int tnc(int n, double x[], double *f, double g[], tnc_function *function,
     nfeval = &nfeval_local;
   }
   *nfeval = 0;
-  
+
   /* Version info */
   if (messages & TNC_MSG_VERS)
   {
@@ -257,12 +258,18 @@ extern int tnc(int n, double x[], double *f, double g[], tnc_function *function,
   }
 
   /* Check for errors in the input parameters */
-  if (n < 1)
+  if (n == 0)
+  {
+    rc = TNC_CONSTANT;
+    goto cleanup;
+  }
+
+  if (n < 0)
   {
     rc = TNC_EINVAL;
     goto cleanup;
   }
-  
+
   /* Check bounds arrays */
   if (low == NULL)
   {
@@ -305,7 +312,7 @@ extern int tnc(int n, double x[], double *f, double g[], tnc_function *function,
     rc = TNC_MAXFUN;
     goto cleanup;
   }
-  
+
   /* Allocate g if necessary */
   if(g == NULL)
   {
@@ -318,7 +325,7 @@ extern int tnc(int n, double x[], double *f, double g[], tnc_function *function,
     free_g = TNC_TRUE;
   }
 
-  /* Initial function evaluation */  
+  /* Initial function evaluation */
   frc = function(x, f, g, state);
   (*nfeval) ++;
   if (frc)
@@ -326,7 +333,7 @@ extern int tnc(int n, double x[], double *f, double g[], tnc_function *function,
     rc = TNC_USERABORT;
     goto cleanup;
   }
-    
+
   /* Constant problem ? */
   for (nc = 0, i = 0 ; i < n ; i++)
     if ((low[i] == up[i]) || (scale != NULL && scale[i] == 0.0))
@@ -338,9 +345,15 @@ extern int tnc(int n, double x[], double *f, double g[], tnc_function *function,
     goto cleanup;
   }
 
-  /* Scaling parameters */  
+  /* Scaling parameters */
   xscale = malloc(sizeof(*xscale)*n);
   if (xscale == NULL)
+  {
+    rc = TNC_ENOMEM;
+    goto cleanup;
+  }
+  xoffset = malloc(sizeof(*xoffset)*n);
+  if (xoffset == NULL)
   {
     rc = TNC_ENOMEM;
     goto cleanup;
@@ -353,12 +366,20 @@ extern int tnc(int n, double x[], double *f, double g[], tnc_function *function,
     {
       xscale[i] = fabs(scale[i]);
       if (xscale[i] == 0.0)
-        low[i] = up[i] = x[i];
+        xoffset[i] = low[i] = up[i] = x[i];
     }
     else if (low[i] != -HUGE_VAL && up[i] != HUGE_VAL)
+    {
       xscale[i] = up[i] - low[i];
+      xoffset[i] = (up[i]+low[i])*0.5;
+    }
     else
+    {
       xscale[i] = 1.0+fabs(x[i]);
+      xoffset[i] = x[i];
+    }
+    if (offset != NULL)
+      xoffset[i] = offset[i];
   }
 
   /* Default values for parameters */
@@ -375,13 +396,16 @@ extern int tnc(int n, double x[], double *f, double g[], tnc_function *function,
     else if (maxCGit > 50) maxCGit = 50;
   }
   if (maxCGit > n) maxCGit = n;
-  if (ftol < 0.0) ftol = 0.0;
   if (accuracy <= epsmch) accuracy = rteps;
+  if (ftol < 0.0) ftol = accuracy;
+  if (pgtol < 0.0) pgtol = 1e-2 * sqrt(accuracy);
+  if (xtol < 0.0) xtol = rteps;
 
   /* Optimisation */
   rc = tnc_minimize(n, x, f, g, function, state,
-    xscale, &fscale, low, up, messages, 
-    maxCGit, maxnfeval, nfeval, eta, stepmx, accuracy, fmin, ftol, rescale);
+    xscale, xoffset, &fscale, low, up, messages,
+    maxCGit, maxnfeval, nfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
+    rescale);
 
 cleanup:
   if (messages & TNC_MSG_EXIT)
@@ -391,7 +415,8 @@ cleanup:
   if (free_low) free(low);
   if (free_up) free(up);
   if (free_g) free(g);
-  
+  if (xoffset) free(xoffset);
+
   return rc;
 }
 
@@ -399,7 +424,7 @@ cleanup:
 static void coercex(int n, double x[], double low[], double up[])
 {
   int i;
-  
+
   for (i = 0 ; i < n ; i++)
   {
     if (x[i]<low[i]) x[i] = low[i];
@@ -408,20 +433,20 @@ static void coercex(int n, double x[], double low[], double up[])
 }
 
 /* Unscale x */
-static void unscalex(int n, double x[], double xscale[])
+static void unscalex(int n, double x[], double xscale[], double xoffset[])
 {
   int i;
   for (i = 0 ; i < n ; i++)
-    x[i] *= xscale[i];
+    x[i] = x[i]*xscale[i]+xoffset[i];
 }
 
 /* Scale x */
-static void scalex(int n, double x[], double xscale[])
+static void scalex(int n, double x[], double xscale[], double xoffset[])
 {
   int i;
   for (i = 0 ; i < n ; i++)
     if (xscale[i]>0.0)
-      x[i] /= xscale[i];
+      x[i] = (x[i]-xoffset[i])/xscale[i];
 }
 
 /* Scale g */
@@ -433,18 +458,16 @@ static void scaleg(int n, double g[], double xscale[], double fscale)
 }
 
 /* Caculate the pivot vector */
-static void setContraints(int n, double x[], int pivot[], double xscale[],
-  double low[], double up[])
+static void setConstraints(int n, double x[], int pivot[], double xscale[],
+  double xoffset[], double low[], double up[])
 {
   int i;
   double epsmch;
-  
+
   epsmch = mchpr1();
 
   for (i = 0; i < n; i++)
   {
-    double tol;
-
     /* tolerances should be better ajusted */
     if (xscale[i] == 0.0)
     {
@@ -452,13 +475,13 @@ static void setContraints(int n, double x[], int pivot[], double xscale[],
     }
     else
     {
-       tol = epsmch * 10.0 * (fabs(low[i]) + 1.0);
-      if ((x[i]*xscale[i] - low[i] <= tol) && low[i] != - HUGE_VAL)
+      if (low[i] != - HUGE_VAL &&
+  (x[i]*xscale[i]+xoffset[i] - low[i] <= epsmch * 10.0 * (fabs(low[i]) + 1.0)))
         pivot[i] = -1;
       else
       {
-         tol = epsmch * 10.0 * (fabs(up[i]) + 1.0);
-        if ((x[i]*xscale[i] - up[i] >= tol) && up[i] != HUGE_VAL)
+        if (up[i] != HUGE_VAL &&
+  (x[i]*xscale[i]+xoffset[i] - up[i] >= epsmch * 10.0 * (fabs(up[i]) + 1.0)))
           pivot[i] = 1;
         else
           pivot[i] = 0;
@@ -474,15 +497,16 @@ static void setContraints(int n, double x[], int pivot[], double xscale[],
  * in this routine) with a further diagonal scaling
  * (see routine diagonalscaling).
  */
-static tnc_rc tnc_minimize(int n, double x[], 
-  double *f, double gfull[], tnc_function *function, void *state, 
-  double xscale[], double *fscale,
-  double low[], double up[], tnc_message messages, 
-  int maxCGit, int maxnfeval, int *nfeval, double eta, double stepmx, 
-  double accuracy, double fmin, double ftol, double rescale)
+static tnc_rc tnc_minimize(int n, double x[],
+  double *f, double gfull[], tnc_function *function, void *state,
+  double xscale[], double xoffset[], double *fscale,
+  double low[], double up[], tnc_message messages,
+  int maxCGit, int maxnfeval, int *nfeval, double eta, double stepmx,
+  double accuracy, double fmin, double ftol, double xtol, double pgtol,
+  double rescale)
 {
   double fLastReset, difnew, epsmch, epsred, oldgtp,
-    difold, oldf, rteps, xnorm, newscale,
+    difold, oldf, xnorm, newscale,
     gnorm, ustpmax, fLastConstraint, spe, yrsr, yksk,
     *temp = NULL, *sk = NULL, *yk = NULL, *diagb = NULL, *sr = NULL,
     *yr = NULL, *oldg = NULL, *pk = NULL, *g = NULL;
@@ -491,7 +515,7 @@ static tnc_rc tnc_minimize(int n, double x[],
   logical lreset, newcon, upd1, remcon;
   tnc_rc rc = TNC_ENOMEM; /* Default error */
 
-  /* Allocate temporary vectors */  
+  /* Allocate temporary vectors */
   oldg = malloc(sizeof(*oldg)*n);
    if (oldg == NULL) goto cleanup;
   g = malloc(sizeof(*g)*n);
@@ -517,25 +541,24 @@ static tnc_rc tnc_minimize(int n, double x[],
 
   /* Initialize variables */
   epsmch = mchpr1();
-  rteps = sqrt(epsmch);
 
   difnew = 0.0;
   epsred = 0.05;
   upd1 = TNC_TRUE;
   icycle = n - 1;
   newcon = TNC_TRUE;
-  
+
   /* Uneeded initialisations */
   lreset = TNC_FALSE;
   yrsr = 0.0;
   yksk = 0.0;
-  
+
   /* Initial scaling */
-  scalex(n, x, xscale);
+  scalex(n, x, xscale, xoffset);
   (*f) *= *fscale;
 
   /* initial pivot calculation */
-  setContraints(n, x, pivot, xscale, low, up);
+  setConstraints(n, x, pivot, xscale, xoffset, low, up);
 
   dcopy1(n, gfull, g);
   scaleg(n, g, xscale, *fscale);
@@ -564,14 +587,14 @@ static tnc_rc tnc_minimize(int n, double x[],
   /* Start of main iterative loop */
   while(TNC_TRUE)
   {
-    /* Tolerance should be user modifiable */
-    if (dnrmi1(n, g) <= 1.0e-2*rteps*fabs(*f))
+    /* Local minimum test */
+    if (dnrm21(n, g) <= pgtol * (*fscale))
     {
       /* |PG| == 0.0 => local minimum */
       dcopy1(n, gfull, g);
       project(n, g, pivot);
       if (messages & TNC_MSG_INFO) fprintf(stderr,
-        "tnc: |pg| = %g -> local minimum\n",dnrmi1(n, g));
+        "tnc: |pg| = %g -> local minimum\n", dnrm21(n, g) / (*fscale));
       rc = TNC_LOCALMINIMUM;
       break;
     }
@@ -584,11 +607,11 @@ static tnc_rc tnc_minimize(int n, double x[],
     }
 
     /* Rescale function if necessary */
-    newscale = dnrmi1(n, g);
+    newscale = dnrm21(n, g);
     if ((newscale > epsmch) && (fabs(log10(newscale)) > rescale))
     {
       newscale = 1.0/newscale;
-      
+
       *f *= newscale;
       *fscale *= newscale;
       gnorm *= newscale;
@@ -603,7 +626,7 @@ static tnc_rc tnc_minimize(int n, double x[],
       icycle = n - 1;
       newcon = TNC_TRUE;
 
-      if (messages & TNC_MSG_INFO) fprintf(stderr, 
+      if (messages & TNC_MSG_INFO) fprintf(stderr,
         "tnc: fscale = %g\n", *fscale);
     }
 
@@ -615,7 +638,7 @@ static tnc_rc tnc_minimize(int n, double x[],
     /* Compute the new search direction */
     frc = tnc_direction(pk, diagb, x, g, n, maxCGit, maxnfeval, nfeval,
       upd1, yksk, yrsr, sk, yk, sr, yr,
-      lreset, function, state, xscale, *fscale,
+      lreset, function, state, xscale, xoffset, *fscale,
       pivot, accuracy, gnorm, xnorm, low, up);
 
     if (frc == -1)
@@ -658,8 +681,8 @@ static tnc_rc tnc_minimize(int n, double x[],
     ustpmax = stepmx / (dnrm21(n, pk) + epsmch);
 
     /* Maximum constrained step length */
-    spe = stepMax(ustpmax, n, x, pk, pivot, low, up, xscale);
-    
+    spe = stepMax(ustpmax, n, x, pk, pivot, low, up, xscale, xoffset);
+
     if (spe > 0.0)
     {
       ls_rc lsrc;
@@ -668,7 +691,7 @@ static tnc_rc tnc_minimize(int n, double x[],
 
       /* Perform the linear search */
       lsrc = linearSearch(n, function, state, low, up,
-        xscale, *fscale, pivot,
+        xscale, xoffset, *fscale, pivot,
         eta, ftol, spe, pk, x, f, &alpha, gfull, maxnfeval, nfeval);
 
       if (lsrc == LS_ENOMEM)
@@ -680,6 +703,12 @@ static tnc_rc tnc_minimize(int n, double x[],
       if (lsrc == LS_USERABORT)
       {
         rc = TNC_USERABORT;
+        break;
+      }
+
+      if (lsrc == LS_FAIL)
+      {
+        rc = TNC_LSFAIL;
         break;
       }
 
@@ -717,7 +746,7 @@ static tnc_rc tnc_minimize(int n, double x[],
 
     if (newcon)
     {
-      if(!addConstraint(n, x, pk, pivot, low, up, xscale))
+      if(!addConstraint(n, x, pk, pivot, low, up, xscale, xoffset))
       {
         if(*nfeval == oldnfeval)
         {
@@ -725,6 +754,7 @@ static tnc_rc tnc_minimize(int n, double x[],
           break;
         }
       }
+
       fLastConstraint = *f;
     }
 
@@ -750,16 +780,34 @@ static tnc_rc tnc_minimize(int n, double x[],
     gnorm = dnrm21(n, temp);
 
     /* Reset pivot */
-    remcon = removeConstraint(oldgtp, *f, &fLastConstraint, g, pivot, n);
+    remcon = removeConstraint(oldgtp, gnorm, pgtol * (*fscale), *f,
+      fLastConstraint, g, pivot, n);
+
+    /* If a constraint is removed */
+    if (remcon)
+    {
+      /* Recalculate gnorm and reset fLastConstraint */
+      dcopy1(n, g, temp);
+      project(n, temp, pivot);
+      gnorm = dnrm21(n, temp);
+      fLastConstraint = *f;
+    }
 
     if (!remcon && !newcon)
     {
-      /* No constraint removed & no new constraint : test for convergence */
-      if (fabs(difnew) <= ftol*epsmch*0.5*(fabs(oldf)+fabs(*f)))
+      /* No constraint removed & no new constraint : tests for convergence */
+      if (fabs(difnew) <= ftol * (*fscale))
       {
-        if (messages & TNC_MSG_INFO) fprintf(stderr, 
-          "tnc: |fn-fn-1] = %g -> convergence\n",fabs(difnew));
-        rc = TNC_CONVERGED;
+        if (messages & TNC_MSG_INFO) fprintf(stderr,
+          "tnc: |fn-fn-1] = %g -> convergence\n", fabs(difnew) / (*fscale));
+        rc = TNC_FCONVERGED;
+        break;
+      }
+      if (alpha * dnrm21(n, pk) <= xtol)
+      {
+        if (messages & TNC_MSG_INFO) fprintf(stderr,
+          "tnc: |xn-xn-1] = %g -> convergence\n", alpha * dnrm21(n, pk));
+        rc = TNC_XCONVERGED;
         break;
       }
     }
@@ -781,7 +829,7 @@ static tnc_rc tnc_minimize(int n, double x[],
 
       /* Set up parameters used in updating the preconditioning strategy */
       yksk = ddot1(n, yk, sk);
-      
+
       if (icycle == (n - 1) || difnew < epsred * (fLastReset - *f))
         lreset = TNC_TRUE;
       else
@@ -798,11 +846,11 @@ static tnc_rc tnc_minimize(int n, double x[],
     niter, *nfeval, pivot);
 
   /* Unscaling */
-  unscalex(n, x, xscale);
+  unscalex(n, x, xscale, xoffset);
   coercex(n, x, low, up);
   (*f) /= *fscale;
 
-cleanup: 
+cleanup:
   if (oldg) free(oldg);
   if (g) free(g);
   if (temp) free(temp);
@@ -813,7 +861,7 @@ cleanup:
   if (yk) free(yk);
   if (sr) free(sr);
   if (yr) free(yr);
-  
+
   if (pivot) free(pivot);
 
   return rc;
@@ -835,7 +883,7 @@ static void printCurrentIteration(int n, double f, double g[], int niter,
 }
 
 /*
- * Set x[i] = 0.0 if direction i is currently constrained 
+ * Set x[i] = 0.0 if direction i is currently constrained
  */
 static void project(int n, double x[], int pivot[])
 {
@@ -860,7 +908,7 @@ static void projectConstants(int n, double x[], double xscale[])
  * Compute the maximum allowable step length
  */
 static double stepMax(double step, int n, double x[], double dir[],
-  int pivot[], double low[], double up[], double xscale[])
+  int pivot[], double low[], double up[], double xscale[], double xoffset[])
 {
   int i;
   double t;
@@ -872,17 +920,17 @@ static double stepMax(double step, int n, double x[], double dir[],
     {
       if (dir[i] < 0.0)
       {
-        t = low[i]/xscale[i] - x[i];
+        t = (low[i]-xoffset[i])/xscale[i] - x[i];
         if (t > step * dir[i]) step = t / dir[i];
       }
       else
       {
-        t = up[i]/xscale[i] - x[i];
+        t = (up[i]-xoffset[i])/xscale[i] - x[i];
         if (t < step * dir[i]) step = t / dir[i];
       }
     }
   }
-  
+
   return step;
 }
 
@@ -890,7 +938,7 @@ static double stepMax(double step, int n, double x[], double dir[],
  * Update the constraint vector pivot if a new constraint is encountered
  */
 static logical addConstraint(int n, double x[], double p[], int pivot[],
-  double low[], double up[], double xscale[])
+  double low[], double up[], double xscale[], double xoffset[])
 {
   int i, newcon = TNC_FALSE;
   double tol, epsmch;
@@ -904,20 +952,20 @@ static logical addConstraint(int n, double x[], double p[], int pivot[],
        if (p[i] < 0.0 && low[i] != - HUGE_VAL)
       {
          tol = epsmch * 10.0 * (fabs(low[i]) + 1.0);
-        if (x[i]*xscale[i] - low[i] <= tol)
+        if (x[i]*xscale[i]+xoffset[i] - low[i] <= tol)
         {
           pivot[i] = -1;
-          x[i] = low[i]/xscale[i];
+          x[i] = (low[i]-xoffset[i])/xscale[i];
           newcon = TNC_TRUE;
         }
       }
       else if (up[i] != HUGE_VAL)
       {
         tol = epsmch * 10.0 * (fabs(up[i]) + 1.0);
-        if (up[i] - x[i]*xscale[i] <= tol)
+        if (up[i] - (x[i]*xscale[i]+xoffset[i]) <= tol)
         {
           pivot[i] = 1;
-          x[i] = up[i]/xscale[i];
+          x[i] = (up[i]-xoffset[i])/xscale[i];
           newcon = TNC_TRUE;
         }
       }
@@ -929,36 +977,33 @@ static logical addConstraint(int n, double x[], double p[], int pivot[],
 /*
  * Check if a constraint is no more active
  */
-static logical removeConstraint(double gtpnew, double f, 
-  double *fLastConstraint, double g[], int pivot[], int n)
+static logical removeConstraint(double gtpnew, double gnorm, double pgtolfs,
+  double f, double fLastConstraint, double g[], int pivot[], int n)
 {
   double cmax, t;
   int imax, i;
-  logical ltest;
+
+  if (((fLastConstraint - f) <= (gtpnew * -0.5)) && (gnorm > pgtolfs))
+    return TNC_FALSE;
 
   imax = -1;
   cmax = 0.0;
-  ltest = (*fLastConstraint - f) <= (gtpnew * -0.5);
+
   for (i = 0; i < n; i++)
   {
-    if (pivot[i] != 2)
+    if (pivot[i] == 2)
+      continue;
+    t = -pivot[i] * g[i];
+    if (t < cmax)
     {
-      t = -pivot[i] * g[i];
-      if (t < 0.0)
-      {
-        if ((!ltest) && (cmax > t))
-        {
-          cmax = t;
-          imax = i;
-        }
-      }
+      cmax = t;
+      imax = i;
     }
   }
 
   if (imax != -1)
   {
     pivot[imax] = 0;
-    *fLastConstraint = f;
     return TNC_TRUE;
   }
   else
@@ -981,11 +1026,11 @@ static logical removeConstraint(double gtpnew, double f,
  */
 static int tnc_direction(double *zsol, double *diagb,
   double *x, double g[], int n,
-  int maxCGit, int maxnfeval, int *nfeval, 
+  int maxCGit, int maxnfeval, int *nfeval,
   logical upd1, double yksk, double yrsr,
   double *sk, double *yk, double *sr, double *yr,
-  logical lreset, tnc_function *function, void *state, 
-  double xscale[], double fscale,
+  logical lreset, tnc_function *function, void *state,
+  double xscale[], double xoffset[], double fscale,
   int *pivot, double accuracy,
   double gnorm, double xnorm, double low[], double up[])
 {
@@ -1063,7 +1108,7 @@ static int tnc_direction(double *zsol, double *diagb,
 
     project(n, v, pivot);
     frc = hessianTimesVector(v, gv, n, x, g, function, state,
-      xscale, fscale, accuracy, xnorm, low, up);
+      xscale, xoffset, fscale, accuracy, xnorm, low, up);
     ++(*nfeval);
     if (frc) goto cleanup;
     project(n, gv, pivot);
@@ -1123,7 +1168,7 @@ cleanup:
   return frc;
 }
 
-/* 
+/*
  * Update the preconditioning matrix based on a diagonal version
  * of the bfgs quasi-newton update.
  */
@@ -1161,14 +1206,14 @@ static double initialStep(double fnew, double fmin, double gtp, double smax)
 /*
  * Hessian vector product through finite differences
  */
-static int hessianTimesVector(double v[], double gv[], int n, 
-  double x[], double g[], tnc_function *function, void *state, 
-  double xscale[], double fscale,
+static int hessianTimesVector(double v[], double gv[], int n,
+  double x[], double g[], tnc_function *function, void *state,
+  double xscale[], double xoffset[], double fscale,
   double accuracy, double xnorm, double low[], double up[])
 {
   double dinv, f, delta, *xv;
   int i, frc;
-  
+
   xv = malloc(sizeof(*xv)*n);
   if (xv == NULL) return -1;
 
@@ -1176,7 +1221,7 @@ static int hessianTimesVector(double v[], double gv[], int n,
   for (i = 0; i < n; i++)
     xv[i] = x[i] + delta * v[i];
 
-  unscalex(n, xv, xscale);
+  unscalex(n, xv, xscale, xoffset);
   coercex(n, xv, low, up);
   frc = function(xv, &f, gv, state);
   free(xv);
@@ -1186,22 +1231,22 @@ static int hessianTimesVector(double v[], double gv[], int n,
   dinv = 1.0 / delta;
   for (i = 0; i < n; i++)
     gv[i] = (gv[i] - g[i]) * dinv;
-    
+
   projectConstants(n, gv, xscale);
 
   return 0;
 }
 
 /*
- * This routine acts as a preconditioning step for the 
- * linear conjugate-gradient routine. It is also the 
- * method of computing the search direction from the 
- * gradient for the non-linear conjugate-gradient code. 
- * It represents a two-step self-scaled bfgs formula. 
+ * This routine acts as a preconditioning step for the
+ * linear conjugate-gradient routine. It is also the
+ * method of computing the search direction from the
+ * gradient for the non-linear conjugate-gradient code.
+ * It represents a two-step self-scaled bfgs formula.
  */
-static int msolve(double g[], double y[], int n, 
-  double sk[], double yk[], double diagb[], double sr[], 
-  double yr[], logical upd1, double yksk, double yrsr, 
+static int msolve(double g[], double y[], int n,
+  double sk[], double yk[], double diagb[], double sr[],
+  double yr[], logical upd1, double yksk, double yrsr,
   logical lreset)
 {
   double ghyk, ghyr, yksr, ykhyk, ykhyr, yrhyr, rdiagb, gsr, gsk;
@@ -1257,12 +1302,12 @@ static int msolve(double g[], double y[], int n,
     ghyk = ddot1(n, hyk, g);
     ssbfgs(n, 1.0, sk, hg, hyk, yksk, ykhyk, gsk, ghyk, y);
   }
-  
+
 cleanup:
   if (hg) free(hg);
   if (hyk) free(hyk);
   if (hyr) free(hyr);
-  
+
   return frc;
 }
 
@@ -1270,7 +1315,7 @@ cleanup:
  * Self-scaled BFGS
  */
 static void ssbfgs(int n, double gamma, double sj[], double hjv[],
-  double hjyj[], double yjsj, 
+  double hjyj[], double yjsj,
   double yjhyj, double vsj, double vhyj, double hjp1v[])
 {
   double beta, delta;
@@ -1294,9 +1339,9 @@ static void ssbfgs(int n, double gamma, double sj[], double hjv[],
 /*
  * Initialize the preconditioner
  */
-static int initPreconditioner(double diagb[], double emat[], int n, 
+static int initPreconditioner(double diagb[], double emat[], int n,
   logical lreset, double yksk, double yrsr,
-  double sk[], double yk[], double sr[], double yr[], 
+  double sk[], double yk[], double sr[], double yr[],
   logical upd1)
 {
   double srds, yrsk, td, sds;
@@ -1308,11 +1353,11 @@ static int initPreconditioner(double diagb[], double emat[], int n,
     dcopy1(n, diagb, emat);
     return 0;
   }
-  
+
   bsk = malloc(sizeof(*bsk)*n);
   if (bsk == NULL) return -1;
-  
-  if (lreset) 
+
+  if (lreset)
   {
     for (i = 0; i < n; i++) bsk[i] = diagb[i] * sk[i];
     sds = ddot1(n, sk, bsk);
@@ -1344,7 +1389,7 @@ static int initPreconditioner(double diagb[], double emat[], int n,
     for (i = 0; i < n; i++)
       emat[i] = emat[i] - bsk[i] * bsk[i] / sds + yk[i] * yk[i] / yksk;
   }
-  
+
   free(bsk);
   return 0;
 }
@@ -1355,7 +1400,7 @@ static int initPreconditioner(double diagb[], double emat[], int n,
  */
 static ls_rc linearSearch(int n, tnc_function *function, void *state,
   double low[], double up[],
-  double xscale[], double fscale, int pivot[],
+  double xscale[], double xoffset[], double fscale, int pivot[],
   double eta, double ftol, double xbnd,
   double p[], double x[], double *f,
   double *alpha, double gfull[], int maxnfeval, int *nfeval)
@@ -1368,7 +1413,7 @@ static ls_rc linearSearch(int n, tnc_function *function, void *state,
   ls_rc rc;
   getptc_rc itest;
   logical braktd;
-  
+
   rc = LS_ENOMEM;
   temp = malloc(sizeof(*temp)*n);
   if (temp == NULL) goto cleanup;
@@ -1401,7 +1446,7 @@ static ls_rc linearSearch(int n, tnc_function *function, void *state,
   itcnt = 0;
 
   /* Set the estimated relative precision in f(x). */
-  fpresn = epsmch * ftol;
+  fpresn = ftol;
 
   u = *alpha;
   fu = *f;
@@ -1409,11 +1454,11 @@ static ls_rc linearSearch(int n, tnc_function *function, void *state,
   rmu = 1e-4;
 
   /* Setup */
-  itest = getptcInit(&reltol, &abstol, tnytol, eta, rmu, 
+  itest = getptcInit(&reltol, &abstol, tnytol, eta, rmu,
     xbnd, &u, &fu, &gu, alpha, &fmin, &gmin, &xw, &fw, &gw, &a, &b,
     &oldf, &b1, &scxbnd, &e, &step, &factor, &braktd, &gtest1, &gtest2, &tol);
 
-  /* If itest == GETPTC_EVAL, the algorithm requires the function value to be 
+  /* If itest == GETPTC_EVAL, the algorithm requires the function value to be
     calculated */
   while(itest == GETPTC_EVAL)
   {
@@ -1425,7 +1470,7 @@ static ls_rc linearSearch(int n, tnc_function *function, void *state,
       temp[i] = x[i] + ualpha * p[i];
 
     /* Function evaluation */
-    unscalex(n, temp, xscale);
+    unscalex(n, temp, xscale, xoffset);
     coercex(n, temp, low, up);
 
     frc = function(temp, &fu, tempgfull, state);
@@ -1445,7 +1490,7 @@ static ls_rc linearSearch(int n, tnc_function *function, void *state,
     itest = getptcIter(big, rtsmll, &reltol, &abstol, tnytol, fpresn,
       xbnd, &u, &fu, &gu, alpha, &fmin, &gmin, &xw, &fw, &gw, &a, &b,
       &oldf, &b1, &scxbnd, &e, &step, &factor, &braktd, &gtest1, &gtest2, &tol);
-    
+
     /* New best point ? */
     if (*alpha == ualpha)
       dcopy1(n, tempgfull, newgfull);
@@ -1481,17 +1526,18 @@ cleanup:
  * in which a lower point is to be found and from this getptc computes a
  * point at which the function can be evaluated by the calling program.
  */
-static getptc_rc getptcInit(double *reltol, double *abstol, double tnytol, 
-  double eta, double rmu, double xbnd, 
+static getptc_rc getptcInit(double *reltol, double *abstol, double tnytol,
+  double eta, double rmu, double xbnd,
   double *u, double *fu, double *gu, double *xmin,
-  double *fmin, double *gmin, double *xw, double *fw, 
-  double *gw, double *a, double *b, double *oldf, 
-  double *b1, double *scxbnd, double *e, double *step, 
-  double *factor, logical *braktd, double *gtest1, 
+  double *fmin, double *gmin, double *xw, double *fw,
+  double *gw, double *a, double *b, double *oldf,
+  double *b1, double *scxbnd, double *e, double *step,
+  double *factor, logical *braktd, double *gtest1,
   double *gtest2, double *tol)
 {
   /* Check input parameters */
-  if (*u <= 0.0 || xbnd <= tnytol || *gu > 0.0) return GETPTC_EINVAL;
+  if (*u <= 0.0 || xbnd <= tnytol || *gu > 0.0)
+    return GETPTC_EINVAL;
   if (xbnd < *abstol) *abstol = xbnd;
   *tol = *abstol;
 
@@ -1530,7 +1576,7 @@ static getptc_rc getptcInit(double *reltol, double *abstol, double tnytol,
   /* If the step is too large, replace by the scaled bound (so as to */
   /* compute the new point on the boundary). */
   if (*step >= *scxbnd)
-  {  
+  {
     *step = *scxbnd;
     /* Move sxbd to the left so that sbnd + tol(xbnd) = xbnd. */
     *scxbnd -= (*reltol * fabs(xbnd) + *abstol) / (1.0 + *reltol);
@@ -1541,17 +1587,17 @@ static getptc_rc getptcInit(double *reltol, double *abstol, double tnytol,
   return GETPTC_EVAL;
 }
 
-static getptc_rc getptcIter(double big, double 
-  rtsmll, double *reltol, double *abstol, double tnytol, 
+static getptc_rc getptcIter(double big, double
+  rtsmll, double *reltol, double *abstol, double tnytol,
   double fpresn, double xbnd,
   double *u, double *fu, double *gu, double *xmin,
-  double *fmin, double *gmin, double *xw, double *fw, 
-  double *gw, double *a, double *b, double *oldf, 
-  double *b1, double *scxbnd, double *e, double *step, 
-  double *factor, logical *braktd, double *gtest1, 
+  double *fmin, double *gmin, double *xw, double *fw,
+  double *gw, double *a, double *b, double *oldf,
+  double *b1, double *scxbnd, double *e, double *step,
+  double *factor, logical *braktd, double *gtest1,
   double *gtest2, double *tol)
 {
-  double abgw, absr, p, q, r, s, scale, denom, 
+  double abgw, absr, p, q, r, s, scale, denom,
     a1, d1, d2, sumsq, abgmin, chordm, chordu,
     xmidpt, twotol;
   logical convrg;
@@ -1625,7 +1671,7 @@ ConvergenceCheck:
   xmidpt = 0.5 * (*a + *b);
 
   /* Check termination criteria */
-  convrg = (fabs(xmidpt) <= twotol - 0.5 * (*b - *a)) || 
+  convrg = (fabs(xmidpt) <= twotol - 0.5 * (*b - *a)) ||
     (fabs(*gmin) <= *gtest2 && *fmin < *oldf && ((fabs(*xmin - xbnd) > *tol) ||
     (! (*braktd))));
   if (convrg)
@@ -1638,7 +1684,7 @@ ConvergenceCheck:
      * unimodality constant, tol. If the change in f(x) is larger than
      * expected, reduce the value of tol.
      */
-    if (fabs(*oldf - *fw) <= fpresn * 0.5 * (fabs(*fw) + fabs(*oldf)))
+    if (fabs(*oldf - *fw) <= fpresn)
       return GETPTC_FAIL;
     *tol = 0.1 * *tol;
     if (*tol < tnytol) return GETPTC_FAIL;
@@ -1664,7 +1710,7 @@ ConvergenceCheck:
       abgw = fabs(*gw);
       abgmin = fabs(*gmin);
       s = sqrt(abgmin) * sqrt(abgw);
-      if (*gw / abgw * *gmin > 0.0) 
+      if (*gw / abgw * *gmin > 0.0)
       {
         if (r >= s || r <= -s)
         {
@@ -1777,7 +1823,7 @@ MinimumFound:
   /* If the step is too large, replace by the scaled bound (so as to */
   /* compute the new point on the boundary). */
   if (*step >= *scxbnd)
-  {  
+  {
     *step = *scxbnd;
     /* Move sxbd to the left so that sbnd + tol(xbnd) = xbnd. */
     *scxbnd -= (*reltol * fabs(xbnd) + *abstol) / (1.0 + *reltol);
@@ -1795,7 +1841,7 @@ MinimumFound:
 static double mchpr1(void)
 {
   static double epsmch = 0.0;
-  
+
   if (epsmch == 0.0)
   {
     double eps = 1.0;
@@ -1850,16 +1896,6 @@ static double ddot1(int n, double dx[], double dy[])
   for (i = 0; i < n; i++)
     dtemp += dy[i]*dx[i];
   return dtemp;
-}
-
-/* Infinity norm */
-static double dnrmi1(int n, double v[])
-{
-  int i;
-  double dtemp, dmax;
-  for (dmax = fabs(v[0]), i = 1; i < n; i++)
-    if ((dtemp = fabs(v[i])) > dmax) dmax = dtemp;
-  return dmax;
 }
 
 /* Euclidian norm */

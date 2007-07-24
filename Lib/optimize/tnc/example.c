@@ -1,5 +1,5 @@
 /* TNC : Minimization example */
-/* $Jeannot: example.c,v 1.17 2004/04/02 18:51:04 js Exp $ */
+/* $Jeannot: example.c,v 1.19 2005/01/28 18:27:31 js Exp $ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,13 +26,15 @@ int main(int argc, char **argv)
     xopt[2] = {0.0, 1.0},
     low[2], up[2],
     eta = -1.0, stepmx = -1.0,
-    accuracy = -1.0, fmin = 0.0, ftol = -1.0, rescale = -1.0;
-  
+    accuracy = -1.0, fmin = 0.0, ftol = -1.0, xtol = -1.0, pgtol = -1.0,
+    rescale = -1.0;
+
   low[0] = - HUGE_VAL; low[1] = 1.0;
   up[0] = HUGE_VAL; up[1] = HUGE_VAL;
-  
-  rc = tnc(2, x, &f, g, function, NULL, low, up, NULL, TNC_MSG_ALL,
-    maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, rescale, &nfeval);
+
+  rc = tnc(2, x, &f, g, function, NULL, low, up, NULL, NULL, TNC_MSG_ALL,
+    maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
+    rescale, &nfeval);
 
   printf("After %d function evaluations, TNC returned:\n%s\n", nfeval,
     tnc_rc_string[rc - TNC_MINRC]);
