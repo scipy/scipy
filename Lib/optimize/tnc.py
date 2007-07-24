@@ -229,9 +229,10 @@ See also:
     if maxfun == None:
         maxfun = max(100, 10*len(x0))
 
-    return moduleTNC.minimize(func_and_grad, x0, low, up, scale, offset,
+    rc, nf, x = moduleTNC.minimize(func_and_grad, x0, low, up, scale, offset,
             messages, maxCGit, maxfun, eta, stepmx, accuracy,
             fmin, ftol, xtol, pgtol, rescale)
+    return x, nf, rc
 
 if __name__ == '__main__':
     # Examples for TNC
@@ -249,7 +250,7 @@ if __name__ == '__main__':
             return f, g
 
         # Optimizer call
-        rc, nf, x = fmin_tnc(function, [-7, 3], bounds=([-10, 1], [10, 10]))
+        x, nf, rc = fmin_tnc(function, [-7, 3], bounds=([-10, 1], [10, 10]))
 
         print "After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc]
         print "x =", x
@@ -333,7 +334,7 @@ if __name__ == '__main__':
 
     def test(fg, x, bounds, xopt):
         print "** Test", fg.__name__
-        rc, nf, x = fmin_tnc(fg, x, bounds=bounds, messages = MSG_NONE, maxfun = 200)
+        x, nf, rc = fmin_tnc(fg, x, bounds=bounds, messages = MSG_NONE, maxfun = 200)
         print "After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc]
         print "x =", x
         print "exact value =", xopt

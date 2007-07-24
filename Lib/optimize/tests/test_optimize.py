@@ -199,7 +199,7 @@ class test_tnc(NumpyTestCase):
             dif[3] = (180.0*(x[3]-pow(x[2],2))+20.2\
                       *(x[3]-1.0)+19.8*(x[1]-1.0))*1.0e-5
             return f, dif
-        self.tests.append((test38fg, [-3,-1,-3,-1], [(-10,10)]*4, [1]*4))
+        self.tests.append((test38fg, array([-3,-1,-3,-1]), [(-10,10)]*4, [1]*4))
 
         def test45fg(x):
             f = 2.0-x[0]*x[1]*x[2]*x[3]*x[4]/120.0
@@ -220,10 +220,11 @@ class test_tnc(NumpyTestCase):
             err = "Failed optimization of %s.\n" \
                   "After %d function evaluations, TNC returned: %s.""" % \
                   (fg.__name__, nf, RCSTRINGS[rc])
-
-            assert_array_almost_equal(array(x,dtype=float),
-                                      array(xopt,dtype=float),
-                                      err_msg=err)
+        
+        ef = abs(fg(xopt)[0] - fg(x)[0])
+        print "F Error =", ef
+        if ef > 1e-8:
+            raise err
 
 if __name__ == "__main__":
     NumpyTest().run()
