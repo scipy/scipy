@@ -5,7 +5,8 @@ Modified and extended by Ed Schofield, Robert Cimrman, and Nathan Bell
 """
 
 
-__all__ = ['csc_matrix','csr_matrix','coo_matrix','lil_matrix','dok_matrix', 
+__all__ = ['spmatrix','csc_matrix','csr_matrix','coo_matrix',
+            'lil_matrix','dok_matrix', 
             'spdiags','speye','spidentity', 
             'isspmatrix','issparse','isspmatrix_csc','isspmatrix_csr',
             'isspmatrix_lil','isspmatrix_dok' ]
