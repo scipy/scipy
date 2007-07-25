@@ -517,7 +517,8 @@ class _cs_matrix(spmatrix):
                                other.indptr, other.indices, other.data)
         return self.__class__((data, ind, indptr), dims=out_shape, check=False)
             
-    def __addsub(self, other, fn):
+        
+    def __add__(self,other,fn):
         # First check if argument is a scalar
         if isscalarlike(other):
             # Now we would add this scalar to every element.
@@ -529,15 +530,26 @@ class _cs_matrix(spmatrix):
             return self._binopt(other,fn)
         elif isdense(other):
             # Convert this matrix to a dense matrix and add them
-            return other + self.todense()
+            return self.todense() + other
         else:
             raise NotImplemented
-        
-    def __add__(self,other,fn):
-        return self.__addsub(other,fn)
    
     def __sub__(self,other,fn):
-        return self.__addsub(other,fn)
+        # First check if argument is a scalar
+        if isscalarlike(other):
+            # Now we would add this scalar to every element.
+            raise NotImplementedError, 'adding a scalar to a CSC or CSR ' \
+                  'matrix is not supported'
+        elif isspmatrix(other):
+            if (other.shape != self.shape):
+                raise ValueError, "inconsistent shapes"
+            return self._binopt(other,fn)
+        elif isdense(other):
+            # Convert this matrix to a dense matrix and add them
+            return self.todense() - other
+        else:
+            raise NotImplemented
+   
     
     def __mul__(self, other): # self * other 
         """ Scalar, vector, or matrix multiplication
