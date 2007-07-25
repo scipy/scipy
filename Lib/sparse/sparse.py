@@ -4,6 +4,13 @@ Original code by Travis Oliphant.
 Modified and extended by Ed Schofield, Robert Cimrman, and Nathan Bell
 """
 
+
+__all__ = ['csc_matrix','csr_matrix','coo_matrix','lil_matrix','dok_matrix', 
+            'spdiags','speye','spidentity', 
+            'isspmatrix','issparse','isspmatrix_csc','isspmatrix_csr',
+            'isspmatrix_lil','isspmatrix_dok' ]
+                        
+
 import warnings
 
 from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
@@ -2104,7 +2111,7 @@ class coo_matrix(spmatrix):
             indptr, rowind, data = cootocsc(self.shape[0], self.shape[1], \
                                             self.size, self.row, self.col, \
                                             self.data)
-            return csc_matrix((data, rowind, indptr), self.shape)
+            return csc_matrix((data, rowind, indptr), self.shape, check=False)
 
     
     def tocsr(self):
@@ -2114,7 +2121,7 @@ class coo_matrix(spmatrix):
             indptr, colind, data = cootocsr(self.shape[0], self.shape[1], \
                                             self.size, self.row, self.col, \
                                             self.data)        
-            return csr_matrix((data, colind, indptr), self.shape)
+            return csr_matrix((data, colind, indptr), self.shape, check=False)
             
     def tocoo(self, copy=False):
         return self.toself(copy)
@@ -2599,49 +2606,4 @@ def speye(n, m, k = 0, dtype = 'd'):
 def issequence(t):
     return isinstance(t, (list, tuple))
 
-
-def _testme():
-    a = csc_matrix((arange(1, 9), \
-            transpose([[0, 1, 1, 2, 2, 3, 3, 4], [0, 1, 3, 0, 2, 3, 4, 4]])))
-    print "Representation of a matrix:"
-    print repr(a)
-    print "How a matrix prints:"
-    print a
-    print "Adding two matrices:"
-    b = a+a
-    print b
-    print "Subtracting two matrices:"
-    c = b - a
-    print c
-    print "Multiplying a sparse matrix by a dense vector:"
-    d = a*[1, 2, 3, 4, 5]
-    print d
-    print [1, 2, 3, 4, 5]*a
-
-    print "Inverting a sparse linear system:"
-    print "The sparse matrix (constructed from diagonals):"
-    a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
-    b = array([1, 2, 3, 4, 5])
-    
-    print "(Various small tests follow ...)\n"
-    print "Dictionary of keys matrix:"
-    a = dok_matrix(shape=(10, 10))
-    a[1, 1] = 1.
-    a[1, 5] = 1.
-    print a
-    print "Adding it to itself:"
-    print a + a
-
-    print "Multiplying by a scalar:"
-    print a * 100
-
-    print "Dense representation:"
-    print a.todense()
-
-    print "Converting to a CSR matrix:"
-    c = a.tocsr()
-    print c
-
-if __name__ == "__main__":
-    _testme()
 
