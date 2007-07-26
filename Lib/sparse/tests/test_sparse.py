@@ -42,6 +42,10 @@ class _test_cs:
         A = matrix([[-1, 0, 17],[0, -5, 0],[1, -4, 0],[0,0,0]],'d')
         assert_equal(abs(A),abs(self.spmatrix(A)).todense())
 
+    def check_neg(self):
+        A = matrix([[-1, 0, 17],[0, -5, 0],[1, -4, 0],[0,0,0]],'d')
+        assert_equal(-A,(-self.spmatrix(A)).todense())
+
     def check_sum(self):
         """Does the matrix's sum(,axis=0) method work?
         """
@@ -123,10 +127,13 @@ class _test_cs:
     
     def check_rsub(self):
         assert_array_equal((self.dat - self.datsp),[[0,0,0,0],[0,0,0,0],[0,0,0,0]])
+        assert_array_equal((self.datsp - self.dat),[[0,0,0,0],[0,0,0,0],[0,0,0,0]])
 
         A = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
         assert_array_equal((self.dat - A),self.dat - A.todense())
-        assert_array_equal((A.todense() - self.datsp),A.todense() - self.dat)
+        assert_array_equal((A - self.dat),A.todense() - self.dat)
+        assert_array_equal(A.todense() - self.datsp,A.todense() - self.dat)
+        assert_array_equal(self.datsp - A.todense(),self.dat - A.todense())
 
     def check_elmul(self):
         a = self.datsp
@@ -275,6 +282,15 @@ class _test_cs:
         assert_array_equal(sum1, 2*self.dat)
         sum2 = self.datsp + self.dat
         assert_array_equal(sum2, 2*self.dat)
+
+    def check_sub_dense(self):
+        """ Check whether adding a dense matrix to a sparse matrix works
+        """
+        sum1 = 3*self.dat - self.datsp
+        assert_array_equal(sum1, 2*self.dat)
+        sum2 = 3*self.datsp - self.dat
+        assert_array_equal(sum2, 2*self.dat)
+
 
     def check_copy(self):
         """ Check whether the copy=True and copy=False keywords work
@@ -429,7 +445,7 @@ class _test_arith:
         
         self.dtypes =  [float32,float64,complex64,complex128]
 
-    def check_pl(self):
+    def check_add_sub(self):
         self.arith_init()
         
         #basic tests
@@ -448,10 +464,10 @@ class _test_arith:
                     Bsp = self.spmatrix(B)
                     Csp = self.spmatrix(C)
 
+                    #addition
                     D1 = A + B
                     D2 = A + C
                     D3 = B + C
-
                     S1 = Asp + Bsp
                     S2 = Asp + Csp
                     S3 = Bsp + Csp
@@ -459,11 +475,37 @@ class _test_arith:
                     assert_array_equal(D1,S1.todense())
                     assert_array_equal(D2,S2.todense())
                     assert_array_equal(D3,S3.todense())
-
                     assert_array_equal(D1.dtype,S1.dtype)
                     assert_array_equal(D2.dtype,S2.dtype)
                     assert_array_equal(D3.dtype,S3.dtype)
+                    assert_array_equal(D1,Asp + B)          #check sparse + dense
+                    assert_array_equal(D2,Asp + C)
+                    assert_array_equal(D3,Bsp + C)
+                    assert_array_equal(D1,A + Bsp)          #check dense + sparse
+                    assert_array_equal(D2,A + Csp)
+                    assert_array_equal(D3,B + Csp)
+
+                    #subtraction
+                    D1 = A - B
+                    D2 = A - C
+                    D3 = B - C
+                    S1 = Asp - Bsp
+                    S2 = Asp - Csp
+                    S3 = Bsp - Csp
                     
+                    assert_array_equal(D1,S1.todense())
+                    assert_array_equal(D2,S2.todense())
+                    assert_array_equal(D3,S3.todense())
+                    assert_array_equal(D1.dtype,S1.dtype)
+                    assert_array_equal(D2.dtype,S2.dtype)
+                    assert_array_equal(D3.dtype,S3.dtype)
+                    assert_array_equal(D1,Asp - B)          #check sparse - dense
+                    assert_array_equal(D2,Asp - C)
+                    assert_array_equal(D3,Bsp - C)
+                    assert_array_equal(D1,A - Bsp)          #check dense - sparse
+                    assert_array_equal(D2,A - Csp)
+                    assert_array_equal(D3,B - Csp)
+
 
     def check_mu(self):
         self.arith_init()
@@ -495,7 +537,6 @@ class _test_arith:
                     assert_array_equal(D1,S1.todense())
                     assert_array_equal(D2,S2.todense())
                     assert_array_equal(D3,S3.todense())
-
                     assert_array_equal(D1.dtype,S1.dtype)
                     assert_array_equal(D2.dtype,S2.dtype)
                     assert_array_equal(D3.dtype,S3.dtype)
