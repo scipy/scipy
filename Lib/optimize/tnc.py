@@ -145,7 +145,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon
                 if < 0, rescale is set to 1.3
 
     Outputs:
-    x         : the solution (a list of floats)
+    x         : the solution
     nfeval    : the number of function evaluations
     rc        : return code as defined in the RCSTRINGS dict
 
