@@ -243,7 +243,16 @@ def _chk2_asarray(a, b, axis):
 
 def nanmean(x, axis=0):
     """Compute the mean over the given axis ignoring nans.
-    """
+
+    :Parameters:
+        x : ndarray
+            input array
+        axis : int
+            axis along which the mean is computed.
+
+    :Results:
+        m : float
+            the mean."""
     x, axis = _chk_asarray(x,axis)
     x = x.copy()
     Norig = x.shape[axis]
@@ -254,7 +263,19 @@ def nanmean(x, axis=0):
 
 def nanstd(x, axis=0, bias=False):
     """Compute the standard deviation over the given axis ignoring nans
-    """
+
+    :Parameters:
+        x : ndarray
+            input array
+        axis : int
+            axis along which the standard deviation is computed.
+        bias : boolean
+            If true, the biased (normalized by N) definition is used. If false, 
+            the unbiased is used (the default).
+
+    :Results:
+        s : float
+            the standard deviation."""
     x, axis = _chk_asarray(x,axis)
     x = x.copy()
     Norig = x.shape[axis]
@@ -284,6 +305,15 @@ def nanstd(x, axis=0, bias=False):
     return np.sqrt(m2c)
 
 def _nanmedian(arr1d):  # This only works on 1d arrays
+    """Private function for rank a arrays. Compute the median ignoring Nan.
+
+    :Parameters:
+        arr1d : rank 1 ndarray
+            input array
+
+    :Results:
+        m : float
+            the median."""
     cond = 1-np.isnan(arr1d)
     x = np.sort(np.compress(cond,arr1d,axis=-1))
     if x.size == 0:
@@ -292,7 +322,16 @@ def _nanmedian(arr1d):  # This only works on 1d arrays
 
 def nanmedian(x, axis=0):
     """ Compute the median along the given axis ignoring nan values
-    """
+
+    :Parameters:
+        x : ndarray
+            input array
+        axis : int
+            axis along which the median is computed.
+
+    :Results:
+        m : float
+            the median."""
     x, axis = _chk_asarray(x,axis)
     x = x.copy()
     return np.apply_along_axis(_nanmedian,axis,x)
