@@ -43,12 +43,12 @@ cf2py callprotoargument double*,double*,double*,double*,int*,int*,int*,int*,int*
  10      continue
  20   continue
       if (permute_l.ne.0) then
-         call dlaswp(n,l,m,1,k,piv,1)
+         call dlaswp(k,l,m,1,k,piv,-1)
       else
          do 25 i=1,m
             p(i,i)=1d0
  25       continue
-         call dlaswp(m,p,m,1,k,piv,1)
+         call dlaswp(m,p,m,1,k,piv,-1)
       endif
       end
 
@@ -90,12 +90,12 @@ cf2py callprotoargument double*,complex_double*,complex_double*,complex_double*,
  10      continue
  20   continue
       if (permute_l.ne.0) then
-         call zlaswp(n,l,m,1,k,piv,1)
+         call zlaswp(k,l,m,1,k,piv,-1)
       else
          do 25 i=1,m
             p(i,i)=1d0
  25       continue
-         call dlaswp(m,p,m,1,k,piv,1)
+         call dlaswp(m,p,m,1,k,piv,-1)
       endif
       end
 
@@ -137,12 +137,12 @@ cf2py callprotoargument float*,float*,float*,float*,int*,int*,int*,int*,int*,int
  10      continue
  20   continue
       if (permute_l.ne.0) then
-         call slaswp(n,l,m,1,k,piv,1)
+         call slaswp(k,l,m,1,k,piv,-1)
       else
          do 25 i=1,m
             p(i,i)=1e0
  25       continue
-         call slaswp(m,p,m,1,k,piv,1)
+         call slaswp(m,p,m,1,k,piv,-1)
       endif
       end
 
@@ -184,11 +184,11 @@ cf2py callprotoargument float*,complex_float*,complex_float*,complex_float*,int*
  10      continue
  20   continue
       if (permute_l.ne.0) then
-         call claswp(n,l,m,1,k,piv,1)
+         call claswp(k,l,m,1,k,piv,-1)
       else
          do 25 i=1,m
             p(i,i)=1e0
  25       continue
-         call slaswp(m,p,m,1,k,piv,1)
+         call slaswp(m,p,m,1,k,piv,-1)
       endif
       end
