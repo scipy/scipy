@@ -32,7 +32,7 @@ value of the function, and whose second argument is the gradient of the function
 (as a list of values); or None, to abort the minimization.
 """
 from scipy.optimize import moduleTNC
-from numpy import asarray, inf
+from numpy import asarray, inf, array
 
 MSG_NONE = 0 # No messages
 MSG_ITER = 1 # One line per iteration
@@ -227,7 +227,7 @@ See also:
     rc, nf, x = moduleTNC.minimize(func_and_grad, x0, low, up, scale, offset,
             messages, maxCGit, maxfun, eta, stepmx, accuracy,
             fmin, ftol, xtol, pgtol, rescale)
-    return x, nf, rc
+    return array(x), nf, rc
 
 if __name__ == '__main__':
     # Examples for TNC
