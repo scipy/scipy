@@ -258,22 +258,36 @@ def nanstd(x, axis=0, bias=False):
     x, axis = _chk_asarray(x,axis)
     x = x.copy()
     Norig = x.shape[axis]
-    n = Norig - np.sum(np.isnan(x),axis)*1.0
-    factor = n/Norig
 
-    x[np.isnan(x)] = 0
-    m1 = np.mean(x,axis)
-    m1c = m1/factor
-    m2 = np.mean((x-m1c)**2.0,axis)
-    if bias:
-        m2c = m2/factor
+    Nnan = np.sum(np.isnan(x),axis)*1.0
+    n = Norig - Nnan
+     
+    x[np.isnan(x)] = 0.
+    m1 = np.sum(x,axis)/n
+
+    # Kludge to subtract m1 from the correct axis
+    if axis!=0:
+        shape = np.arange(x.ndim).tolist()
+        shape.remove(axis)
+        shape.insert(0,axis)
+        x = x.transpose(tuple(shape))
+        d = (x-m1)**2.0
+        shape = tuple(array(shape).argsort())
+        d = d.transpose(shape)
     else:
-        m2c = m2*Norig/(n-1.0)
-    return m2c
+        d = (x-m1)**2.0
+    m2 = np.sum(d,axis)-(m1*m1)*Nnan
+    if bias:
+        m2c = m2 / n
+    else:
+        m2c = m2 / (n - 1.)
+    return np.sqrt(m2c)
 
 def _nanmedian(arr1d):  # This only works on 1d arrays
     cond = 1-np.isnan(arr1d)
     x = np.sort(np.compress(cond,arr1d,axis=-1))
+    if x.size == 0:
+        return np.nan
     return median(x)
 
 def nanmedian(x, axis=0):

@@ -184,6 +184,64 @@ class test_basicstats(NumpyTestCase):
         y = scipy.stats.std(ROUND)
         assert_approx_equal(y, 2.738612788)
 
+class test_nanfunc(NumpyTestCase):
+    def __init__(self, *args, **kw):
+        NumpyTestCase.__init__(self, *args, **kw)
+        self.X = X.copy()
+
+        self.Xall = X.copy()
+        self.Xall[:] = numpy.nan
+
+        self.Xsome = X.copy()
+        self.Xsomet = X.copy()
+        self.Xsome[0] = numpy.nan
+        self.Xsomet = self.Xsomet[1:]
+
+    def check_nanmean_none(self):
+        """Check nanmean when no values are nan."""
+        m = stats.stats.nanmean(X)
+        assert_approx_equal(m, X[4])
+
+    def check_nanmean_some(self):
+        """Check nanmean when some values only are nan."""
+        m = stats.stats.nanmean(self.Xsome)
+        assert_approx_equal(m, 5.5)
+
+    def check_nanmean_all(self):
+        """Check nanmean when all values are nan."""
+        m = stats.stats.nanmean(self.Xall)
+        assert numpy.isnan(m)
+
+    def check_nanstd_none(self):
+        """Check nanstd when no values are nan."""
+        s = stats.stats.nanstd(self.X)
+        assert_approx_equal(s, stats.stats.std(self.X))
+
+    def check_nanstd_some(self):
+        """Check nanstd when some values only are nan."""
+        s = stats.stats.nanstd(self.Xsome)
+        assert_approx_equal(s, stats.stats.std(self.Xsomet))
+
+    def check_nanstd_all(self):
+        """Check nanstd when all values are nan."""
+        s = stats.stats.nanstd(self.Xall)
+        assert numpy.isnan(s)
+
+    def check_nanmedian_none(self):
+        """Check nanmedian when no values are nan."""
+        m = stats.stats.nanmedian(self.X)
+        assert_approx_equal(m, stats.stats.median(self.X))
+
+    def check_nanmedian_some(self):
+        """Check nanmedian when some values only are nan."""
+        m = stats.stats.nanmedian(self.Xsome)
+        assert_approx_equal(m, stats.stats.median(self.Xsomet))
+
+    def check_nanmedian_all(self):
+        """Check nanmedian when all values are nan."""
+        m = stats.stats.nanmedian(self.Xall)
+        assert numpy.isnan(m)
+
 class test_corr(NumpyTestCase):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
