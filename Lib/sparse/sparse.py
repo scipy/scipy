@@ -480,11 +480,11 @@ class _cs_matrix(spmatrix):
                (self.shape + (self.dtype.type, self.getnnz(), self.nzmax, \
                    _formats[format][1]))
     
-    def _with_data(self,data,copy=False):
+    def _with_data(self,data,copy=True):
         """
         Return a matrix with the same sparsity structure as self,
         but with different data.  By default the structure arrays
-        (i.e. .indptr and .indices) are not copied.
+        (i.e. .indptr and .indices) are copied.
         """
         if copy:
             return self.__class__((data,self.indices.copy(),self.indptr.copy()), \
