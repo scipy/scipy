@@ -32,7 +32,7 @@ value of the function, and whose second argument is the gradient of the function
 (as a list of values); or None, to abort the minimization.
 """
 from scipy.optimize import moduleTNC
-from numpy import asarray
+from numpy import asarray, inf
 
 MSG_NONE = 0 # No messages
 MSG_ITER = 1 # One line per iteration
@@ -49,9 +49,6 @@ MSGS = {
         MSG_EXIT : "Exit reasons",
         MSG_ALL  : "All messages"
 }
-
-HUGE_VAL=1e200*1e200 # No standard representation of Infinity in Python 2.3.3
-               # FIXME: can we use inf now that we have numpy and IEEE floats?
 
 INFEASIBLE   = -1 # Infeasible (low > up)
 LOCALMINIMUM =  0 # Local minima reach (|pg| ~= 0)
@@ -101,7 +98,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon
     args      : arguments to pass to function
     approx_grad : if true, approximate the gradient numerically
     bounds    : a list of (min, max) pairs for each element in x, defining
-                the bounds on that parameter. Use None for one of min or max
+                the bounds on that parameter. Use None or +/-inf for one of min or max
                 when there is no bound in that direction
     scale     : scaling factors to apply to each variable (a list of floats)
                 if None, the factors are up-low for interval bounded variables
@@ -199,8 +196,6 @@ See also:
 
     """
     low, up   : the bounds (lists of floats)
-                set low[i] to -HUGE_VAL to remove the lower bound
-                set up[i] to HUGE_VAL to remove the upper bound
                 if low == None, the lower bounds are removed.
                 if up == None, the upper bounds are removed.
                 low and up defaults to None
@@ -208,15 +203,15 @@ See also:
     low = [0]*n
     up = [0]*n
     for i in range(n):
-        if bounds[i] is None: l, u = -HUGE_VAL, HUGE_VAL
+        if bounds[i] is None: l, u = -inf, inf
         else:
             l,u = bounds[i]
             if l is None:
-                low[i] = -HUGE_VAL
+                low[i] = -inf
             else:
                 low[i] = l
             if u is None:
-                up[i] = HUGE_VAL
+                up[i] = inf
             else:
                 up[i] = u
 
@@ -270,7 +265,7 @@ if __name__ == '__main__':
         dif[1] = 200.0*(x[1]-pow(x[0],2))
         dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
         return f, dif
-    tests.append ((test1fg, [-2,1], ([-HUGE_VAL, None], [-1.5, None]), [1,1]))
+    tests.append ((test1fg, [-2,1], ([-inf, None], [-1.5, None]), [1,1]))
 
     def test2fg(x):
         f = 100.0*pow((x[1]-pow(x[0],2)),2)+pow(1.0-x[0],2)
@@ -278,7 +273,7 @@ if __name__ == '__main__':
         dif[1] = 200.0*(x[1]-pow(x[0],2))
         dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
         return f, dif
-    tests.append ((test2fg, [-2,1], ([-HUGE_VAL, None], [1.5,None]), [-1.2210262419616387,1.5]))
+    tests.append ((test2fg, [-2,1], ([-inf, None], [1.5,None]), [-1.2210262419616387,1.5]))
 
     def test3fg(x):
         f = x[1]+pow(x[1]-x[0],2)*1.0e-5
@@ -286,7 +281,7 @@ if __name__ == '__main__':
         dif[0] = -2.0*(x[1]-x[0])*1.0e-5
         dif[1] = 1.0-dif[0]
         return f, dif
-    tests.append ((test3fg, asarray([10,1]), ([-HUGE_VAL, 0.0], None), [0,0]))
+    tests.append ((test3fg, asarray([10,1]), ([-inf, 0.0], None), [0,0]))
 
     def test4fg(x):
         f = pow(x[0]+1.0,3)/3.0+x[1]
