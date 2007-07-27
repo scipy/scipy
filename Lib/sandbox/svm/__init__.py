@@ -59,6 +59,15 @@ How To Use This Module
        v = results.predict_values(testdata)
 """
 
+raise ImportError(
+"""svm has been moved to scikits. Please install
+scikits.learn instead, and change your import to the following:
+
+from scikits.learn.machine import svm
+
+For informations about scikits, see:
+http://projects.scipy.org/scipy/scikits/""")
+
 from classification import *
 from regression import *
 from oneclass import *
