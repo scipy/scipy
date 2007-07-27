@@ -94,7 +94,7 @@ the result tuple when the full_output argument is non-zero.
     diag = (double *)ap_diag -> data; \
     mode = 2; } }
 
-#define MATRIXC2F(jac,data,n,m) {double *p1=(double *)(jac), *p2, *p3=(double *)(data);\
+#define MATRIXC2F(jac,data,m,n) {double *p1=(double *)(jac), *p2, *p3=(double *)(data);\
 int i,j;\
 for (j=0;j<(m);p3++,j++) \
   for (p2=p3,i=0;i<(n);p2+=(m),i++,p1++) \
