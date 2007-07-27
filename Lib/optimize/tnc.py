@@ -84,9 +84,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon
     """Minimize a function with variables subject to bounds, using gradient
     information.
 
-    returns (rc, nfeval, x).
-
-    Inputs:
+    :Parameters:
     func      : the function to minimize. Must take one argument, x and return
                 f and g, where f is the value of the function and g its
                 gradient (a list of floats).
@@ -144,12 +142,13 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon
                 if a large value, never rescale
                 if < 0, rescale is set to 1.3
 
-    Outputs:
+
+    :Returnss:
     x         : the solution
     nfeval    : the number of function evaluations
     rc        : return code as defined in the RCSTRINGS dict
 
-See also:
+    :SeeAlso:
 
   fmin, fmin_powell, fmin_cg,
          fmin_bfgs, fmin_ncg -- multivariate local optimizers
