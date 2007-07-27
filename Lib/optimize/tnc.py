@@ -78,94 +78,110 @@ RCSTRINGS = {
 import optimize
 approx_fprime = optimize.approx_fprime
 
-def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon=1e-8,
-        scale=None, offset=None, messages=MSG_ALL, maxCGit=-1, maxfun=None, eta=-1,
-        stepmx=0, accuracy=0, fmin=0, ftol=-1, xtol=-1, pgtol=-1, rescale=-1):
-    """Minimize a function with variables subject to bounds, using gradient
-    information.
+def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
+             bounds=None, epsilon=1e-8, scale=None, offset=None,
+             messages=MSG_ALL, maxCGit=-1, maxfun=None, eta=-1,
+             stepmx=0, accuracy=0, fmin=0, ftol=-1, xtol=-1, pgtol=-1,
+             rescale=-1):
+    """Minimize a function with variables subject to bounds, using
+    gradient information.
 
     :Parameters:
-    func      : the function to minimize. Must take one argument, x and return
-                f and g, where f is the value of the function and g its
-                gradient (a list of floats).
-                if the function returns None, the minimization is aborted.
-    x0        : initial estimate (a list of floats)
-    fprime    : gradient of func. If None, then func returns the function
-                value and the gradient ( f, g = func(x, *args) ).
-                Called as fprime(x, *args)
-    args      : arguments to pass to function
-    approx_grad : if true, approximate the gradient numerically
-    bounds    : a list of (min, max) pairs for each element in x, defining
-                the bounds on that parameter. Use None or +/-inf for one of min or max
-                when there is no bound in that direction
-    scale     : scaling factors to apply to each variable (a list of floats)
-                if None, the factors are up-low for interval bounded variables
-                and 1+|x] fo the others.
-                defaults to None
-    offset    : constant to substract to each variable
-                if None, the constant are (up+low)/2 for interval bounded
-                variables and x for the others.
-    messages  : bit mask used to select messages display during minimization
-                values defined in the MSGS dict.
-                defaults to MGS_ALL
-    maxCGit   : max. number of hessian*vector evaluation per main iteration
-                if maxCGit == 0, the direction chosen is -gradient
-                if maxCGit < 0, maxCGit is set to max(1,min(50,n/2))
-                defaults to -1
-    maxfun    : max. number of function evaluation
-                if None, maxfun is set to max(100, 10*len(x0))
-                defaults to None
-    eta       : severity of the line search. if < 0 or > 1, set to 0.25
-                defaults to -1
-    stepmx    : maximum step for the line search. may be increased during call
-                if too small, will be set to 10.0
-                defaults to 0
-    accuracy  : relative precision for finite difference calculations
-                if <= machine_precision, set to sqrt(machine_precision)
-                defaults to 0
-    fmin      : minimum function value estimate
-                defaults to 0
-    ftol      : precision goal for the value of f in the stoping criterion
-                if ftol < 0.0, ftol is set to 0.0
-                defaults to -1
-    xtol      : precision goal for the value of x in the stopping criterion
-                (after applying x scaling factors)
-                if xtol < 0.0, xtol is set to sqrt(machine_precision)
-                defaults to -1
-    pgtol     : precision goal for the value of the projected gradient in the
-                stopping criterion (after applying x scaling factors)
-                if pgtol < 0.0, pgtol is set to 1e-2 * sqrt(accuracy)
-                setting it to 0.0 is not recommended.
-                defaults to -1
-    rescale   : f scaling factor (in log10) used to trigger f value rescaling
-                if 0, rescale at each iteration
-                if a large value, never rescale
-                if < 0, rescale is set to 1.3
+        func : callable func(x, *args)
+            Function to minimize.  Should return f and g, where f is
+            the value of the function and g its gradient (a list of
+            floats).  If the function returns None, the minimization
+            is aborted.
+        x0 : list of floats
+            Initial estimate of minimum.
+        fprime : callable fprime(x, *args)
+            Gradient of func. If None, then func must return the
+            function value and the gradient (f,g = func(x, *args)).
+        args : tuple
+            Arguments to pass to function.
+        approx_grad : bool
+            If true, approximate the gradient numerically.
+        bounds : list
+            (min, max) pairs for each element in x, defining the
+            bounds on that parameter. Use None or +/-inf for one of
+            min or max when there is no bound in that direction.
+        scale : list of floats
+            Scaling factors to apply to each variable.  If None, the
+            factors are up-low for interval bounded variables and
+            1+|x] fo the others.  Defaults to None
+        offset : float
+            Value to substract from each variable.  If None, the
+            offsets are (up+low)/2 for interval bounded variables
+            and x for the others.
+        messages :
+            Bit mask used to select messages display during
+            minimization values defined in the MSGS dict.  Defaults to
+            MGS_ALL.
+        maxCGit : int
+            Maximum number of hessian*vector evaluations per main
+            iteration.  If maxCGit == 0, the direction chosen is
+            -gradient if maxCGit < 0, maxCGit is set to
+            max(1,min(50,n/2)).  Defaults to -1.
+        maxfun : int
+            Maximum number of function evaluation.  if None, maxfun is
+            set to max(100, 10*len(x0)).  Defaults to None.
+        eta : float
+            Severity of the line search. if < 0 or > 1, set to 0.25.
+            Defaults to -1.
+        stepmx : float
+            Maximum step for the line search.  May be increased during
+            call.  If too small, it will be set to 10.0.  Defaults to 0.
+        accuracy : float
+            Relative precision for finite difference calculations.  If
+            <= machine_precision, set to sqrt(machine_precision).
+            Defaults to 0.
+        fmin : float
+            Minimum function value estimate.  Defaults to 0.
+        ftol : float
+            Precision goal for the value of f in the stoping criterion.
+            If ftol < 0.0, ftol is set to 0.0 defaults to -1.
+        xtol : float
+            Precision goal for the value of x in the stopping
+            criterion (after applying x scaling factors).  If xtol <
+            0.0, xtol is set to sqrt(machine_precision).  Defaults to
+            -1.
+        pgtol : float
+            Precision goal for the value of the projected gradient in
+            the stopping criterion (after applying x scaling factors).
+            If pgtol < 0.0, pgtol is set to 1e-2 * sqrt(accuracy).
+            Setting it to 0.0 is not recommended.  Defaults to -1.
+        rescale : float
+            Scaling factor (in log10) used to trigger f value
+            rescaling.  If 0, rescale at each iteration.  If a large
+            value, never rescale.  If < 0, rescale is set to 1.3.
 
-
-    :Returnss:
-    x         : the solution
-    nfeval    : the number of function evaluations
-    rc        : return code as defined in the RCSTRINGS dict
+    :Returns:
+        x : list of floats
+            The solution.
+        nfeval : int
+            The number of function evaluations.
+        rc :
+            Return code as defined in the RCSTRINGS dict.
 
     :SeeAlso:
+      - fmin, fmin_powell, fmin_cg, fmin_bfgs, fmin_ncg :
+         multivariate local optimizers
 
-  fmin, fmin_powell, fmin_cg,
-         fmin_bfgs, fmin_ncg -- multivariate local optimizers
-  leastsq -- nonlinear least squares minimizer
+      - leastsq : nonlinear least squares minimizer
 
-  fmin_l_bfgs_b, fmin_tnc,
-         fmin_cobyla -- constrained multivariate optimizers
+      - fmin_l_bfgs_b, fmin_tnc, fmin_cobyla : constrained
+        multivariate optimizers
 
-  anneal, brute -- global optimizers
+      - anneal, brute : global optimizers
 
-  fminbound, brent, golden, bracket -- local scalar minimizers
+      - fminbound, brent, golden, bracket : local scalar minimizers
 
-  fsolve -- n-dimenstional root-finding
+      - fsolve : n-dimenstional root-finding
 
-  brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+      - brentq, brenth, ridder, bisect, newton : one-dimensional root-finding
 
-  fixed_point -- scalar fixed-point finder
+      - fixed_point : scalar fixed-point finder
+
 """
     x0 = asarray(x0, dtype=float).tolist()
     n = len(x0)
@@ -252,100 +268,3 @@ if __name__ == '__main__':
         print
 
     example()
-
-    # Tests
-    # These tests are taken from Prof. K. Schittkowski test examples for
-    # constrained nonlinear programming.
-    # http://www.uni-bayreuth.de/departments/math/~kschittkowski/home.htm
-    tests = []
-    def test1fg(x):
-        f = 100.0*pow((x[1]-pow(x[0],2)),2)+pow(1.0-x[0],2)
-        dif = [0,0]
-        dif[1] = 200.0*(x[1]-pow(x[0],2))
-        dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
-        return f, dif
-    tests.append ((test1fg, [-2,1], ([-inf, None], [-1.5, None]), [1,1]))
-
-    def test2fg(x):
-        f = 100.0*pow((x[1]-pow(x[0],2)),2)+pow(1.0-x[0],2)
-        dif = [0,0]
-        dif[1] = 200.0*(x[1]-pow(x[0],2))
-        dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
-        return f, dif
-    tests.append ((test2fg, [-2,1], ([-inf, None], [1.5,None]), [-1.2210262419616387,1.5]))
-
-    def test3fg(x):
-        f = x[1]+pow(x[1]-x[0],2)*1.0e-5
-        dif = [0,0]
-        dif[0] = -2.0*(x[1]-x[0])*1.0e-5
-        dif[1] = 1.0-dif[0]
-        return f, dif
-    tests.append ((test3fg, asarray([10,1]), ([-inf, 0.0], None), [0,0]))
-
-    def test4fg(x):
-        f = pow(x[0]+1.0,3)/3.0+x[1]
-        dif = [0,0]
-        dif[0] = pow(x[0]+1.0,2)
-        dif[1] = 1.0
-        return f, dif
-    tests.append ((test4fg, [1.125,0.125], ([1, None], [0,None]), [1,0]))
-
-    from math import *
-
-    def test5fg(x):
-        f = sin(x[0]+x[1])+pow(x[0]-x[1],2)-1.5*x[0]+2.5*x[1]+1.0
-        dif = [0,0]
-        v1 = cos(x[0]+x[1]);
-        v2 = 2.0*(x[0]-x[1]);
-
-        dif[0] = v1+v2-1.5;
-        dif[1] = v1-v2+2.5;
-        return f, dif
-    tests.append ((test5fg, [0,0], ([-1.5, 3], [-3,4]), [-0.54719755119659763, -1.5471975511965976]))
-
-    def test38fg(x):
-        f = (100.0*pow(x[1]-pow(x[0],2),2)+pow(1.0-x[0],2)+90.0*pow(x[3]-pow(x[2],2),2) \
-                +pow(1.0-x[2],2)+10.1*(pow(x[1]-1.0,2)+pow(x[3]-1.0,2)) \
-                +19.8*(x[1]-1.0)*(x[3]-1.0))*1.0e-5
-        dif = [0,0,0,0]
-        dif[0] = (-400.0*x[0]*(x[1]-pow(x[0],2))-2.0*(1.0-x[0]))*1.0e-5
-        dif[1] = (200.0*(x[1]-pow(x[0],2))+20.2*(x[1]-1.0)+19.8*(x[3]-1.0))*1.0e-5
-        dif[2] = (-360.0*x[2]*(x[3]-pow(x[2],2))-2.0*(1.0-x[2]))*1.0e-5
-        dif[3] = (180.0*(x[3]-pow(x[2],2))+20.2*(x[3]-1.0)+19.8*(x[1]-1.0))*1.0e-5
-        return f, dif
-    tests.append ((test38fg, [-3,-1,-3,-1], (([-10, 10],)*4), [1]*4))
-
-    def test45fg(x):
-        f = 2.0-x[0]*x[1]*x[2]*x[3]*x[4]/120.0
-        dif = [0]*5
-        dif[0] = -x[1]*x[2]*x[3]*x[4]/120.0
-        dif[1] = -x[0]*x[2]*x[3]*x[4]/120.0
-        dif[2] = -x[0]*x[1]*x[3]*x[4]/120.0
-        dif[3] = -x[0]*x[1]*x[2]*x[4]/120.0
-        dif[4] = -x[0]*x[1]*x[2]*x[3]/120.0
-        return f, dif
-    tests.append ((test45fg, [2]*5, ([0,1], [0,2], [0,3], [0,4], [0,5],), [1,2,3,4,5]))
-
-    def test(fg, x, bounds, xopt):
-        print "** Test", fg.__name__
-        x, nf, rc = fmin_tnc(fg, x, bounds=bounds, messages = MSG_NONE, maxfun = 200)
-        print "After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc]
-        print "x =", x
-        print "exact value =", xopt
-        enorm = 0.0
-        norm = 1.0
-        for y,yo in zip(x, xopt):
-            enorm += (y-yo)*(y-yo)
-            norm += yo*yo
-        ex = pow(enorm/norm, 0.5)
-        print "X Error =", ex
-        ef = abs(fg(xopt)[0] - fg(x)[0])
-        print "F Error =", ef
-        if ef > 1e-8:
-            raise "Test "+fg.__name__+" failed"
-
-    for fg, x, bounds, xopt in tests:
-        test(fg, x, bounds, xopt)
-
-    print
-    print "** All TNC tests passed."

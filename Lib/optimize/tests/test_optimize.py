@@ -220,9 +220,8 @@ class test_tnc(NumpyTestCase):
             err = "Failed optimization of %s.\n" \
                   "After %d function evaluations, TNC returned: %s.""" % \
                   (fg.__name__, nf, RCSTRINGS[rc])
-        
+
         ef = abs(fg(xopt)[0] - fg(x)[0])
-        print "F Error =", ef
         if ef > 1e-8:
             raise err
 
