@@ -26,7 +26,7 @@ import maskedarray.testutils
 from maskedarray.testutils import assert_equal, assert_array_equal
 
 from timeseries import tseries
-from timeseries import Date, date_array_fromlist, date_array, thisday
+from timeseries import Date, date_array_fromlist, date_array_fromrange, date_array, thisday
 from timeseries import time_series, TimeSeries, adjust_endpoints, \
     mask_period, align_series, align_with, fill_missing_dates, tsmasked, \
     concatenate_series, stack, split
@@ -445,16 +445,35 @@ test_dates test suite.
         """Test fill_missing_dates function"""
         _start = Date(freq='m', year=2005, month=1)
         _end = Date(freq='m', year=2005, month=4)
-
+        #
         dates = date_array([_start, _end], freq='M')
         series = time_series([1, 2], dates)
         filled_ser = fill_missing_dates(series)
-
+        #
         assert_equal(filled_ser.start_date, _start)
         assert_equal(filled_ser.end_date, _end)
         assert(filled_ser.isfull())
         assert(not filled_ser.has_duplicated_dates())
         assert_equal(filled_ser.size, _end - _start + 1)
+        #
+        data = N.arange(5*24).reshape(5,24)
+        datelist = ['2007-07-01','2007-07-02','2007-07-03','2007-07-05','2007-07-06']
+        dates = date_array_fromlist(datelist, 'D')
+        dseries = time_series(data, dates)
+        ndates = date_array_fromrange(start_date=dates[0],end_date=dates[-2])
+        #
+        fseries = fill_missing_dates(dseries)
+        assert_equal(fseries.shape, (6,24))
+        assert_equal(fseries._mask[:,0], [0,0,0,1,0,0])
+        #
+        fseries = fill_missing_dates(dseries[:,0])
+        assert_equal(fseries.shape, (6,))
+        assert_equal(fseries._mask, [0,0,0,1,0,0])
+        #
+        series = time_series(data.ravel()[:4].reshape(2,2),dates=dates[:-1])
+        fseries = fill_missing_dates(series)
+        assert_equal(fseries.shape, (5,))
+        assert_equal(fseries._mask, [0,0,0,1,0,])
     #
     def test_maskperiod(self):
         "Test mask_period"

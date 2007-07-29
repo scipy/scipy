@@ -1440,44 +1440,52 @@ The data corresponding to the initially missing dates are masked, or filled to
     `fill_value` : float *[None]*
         Default value for missing data. If None, the data are just masked.
     """
-
+    # Check the frequency ........
     orig_freq = freq
     freq = check_freq(freq)
-
     if orig_freq is not None and freq == _c.FR_UND:
         freqstr = check_freq_str(freq)
         raise ValueError,\
               "Unable to define a proper date resolution (found %s)." % freqstr
+    # Check the dates .............
     if dates is None:
         if not isTimeSeries(data):
             raise InsufficientDateError
         dates = data._dates
-        freq = dates.freq
-        datad = data._series._data
-        datam = data._series._mask
-#        if fill_value is None:
-#            fill_value = data._fill_value
-    elif not isinstance(dates, DateArray):
-        dates = DateArray(dates, freq)
-        if isinstance(data, MaskedArray):
-            datad = data._data
-            datam = data._mask
-        else:
-            datad = data
-            datam = nomask
+    else:
+        if not isinstance(dates, DateArray):
+            dates = DateArray(dates, freq)
     dflat = dates.asfreq(freq).ravel()
-    n = len(dflat)
     if not dflat.has_missing_dates():
-        return time_series(data, dflat)
+        if isinstance(data, TimeSeries):
+            return data
+        data = data.view(TimeSeries)
+        data._dates = dflat
+        return data
+    # Check the data ..............
+    if isinstance(data, MaskedArray):
+        datad = data._data
+        datam = data._mask
+        if isinstance(data, TimeSeries):
+            datat = type(data)
+        else:
+            datat = TimeSeries
+    else:
+        datad = numpy.asarray(data)
+        datam = nomask
+        datat = TimeSeries
+    # Check whether we need to flatten the data
+    if dates.ndim > 1 and dates.ndim == datad.ndim:
+        datad.shape = -1
     # ...and now, fill it ! ......
     (tstart, tend) = dflat[[0,-1]]
     newdates = date_array(start_date=tstart, end_date=tend)
-    nsize = newdates.size
+    (osize, nsize) = (dflat.size, newdates.size)
     #.............................
     # Get the steps between consecutive data.
     delta = dflat.get_steps()-1
     gap = delta.nonzero()
-    slcid = numpy.r_[[0,], numpy.arange(1,n)[gap], [n,]]
+    slcid = numpy.r_[[0,], numpy.arange(1,osize)[gap], [osize,]]
     oldslc = numpy.array([slice(i,e)
                           for (i,e) in numpy.broadcast(slcid[:-1],slcid[1:])])
     addidx = delta[gap].astype(int_).cumsum()
@@ -1493,9 +1501,10 @@ The data corresponding to the initially missing dates are masked, or filled to
         assert numpy.equal(vdflat[osl],vnewdates[nsl]).all(),\
             "Slicing mishap ! Please check %s (old) and %s (new)" % (osl,nsl)
     #.............................
-    data = MA.asarray(data)
-    newdatad = numeric.empty(nsize, data.dtype)
-    newdatam = numeric.ones(nsize, bool_)
+    newshape = list(datad.shape)
+    newshape[0] = nsize
+    newdatad = numeric.empty(newshape, data.dtype)
+    newdatam = numeric.ones(newshape, bool_)
     #....
     if datam is nomask:
         for (new,old) in zip(newslc,oldslc):
@@ -1506,12 +1515,13 @@ The data corresponding to the initially missing dates are masked, or filled to
             newdatad[new] = datad[old]
             newdatam[new] = datam[old]
     newdata = MA.masked_array(newdatad, mask=newdatam, fill_value=fill_value)
-    # Get new shape ..............
-    if data.ndim == 1:
-        nshp = (newdates.size,)
-    else:
-        nshp = tuple([-1,] + list(data.shape[1:]))
-    _data = newdata.reshape(nshp).view(type(data))
+#    # Get new shape ..............
+#    if data.ndim == 1:
+#        nshp = (newdates.size,)
+#    else:
+#        nshp = tuple([-1,] + list(data.shape[1:]))
+#    _data = newdata.reshape(nshp).view(type(data))
+    _data = newdata.view(datat)
     _data._dates = newdates
     return _data
 #    return time_series(newdata.reshape(nshp), newdates)
@@ -1589,4 +1599,26 @@ if __name__ == '__main__':
         assert_equal(b._dates, series._dates)
         assert_equal(a[-5:], series[:5])
         assert_equal(b[:5], series[-5:])
-
+    #
+    if 1:
+        data = numpy.arange(5*24).reshape(5,24)
+        datelist = ['2007-07-01','2007-07-02','2007-07-03','2007-07-05','2007-07-06']
+        dates = date_array_fromlist(datelist, 'D')
+        dseries = time_series(data, dates)
+        ndates = date_array_fromrange(start_date=dates[0],end_date=dates[-2])
+        #
+        fseries = fill_missing_dates(dseries)
+        assert_equal(fseries.shape, (6,24))
+        assert_equal(fseries._mask[:,0], [0,0,0,1,0,0])
+        #
+        fseries = fill_missing_dates(dseries[:,0])
+        assert_equal(fseries.shape, (6,))
+        assert_equal(fseries._mask, [0,0,0,1,0,0])
+        #
+        series = time_series(data.ravel()[:4].reshape(2,2),dates=dates[:-1])
+        fseries = fill_missing_dates(series)
+        assert_equal(fseries.shape, (5,))
+        assert_equal(fseries._mask, [0,0,0,1,0,])
+        #
+        fseries = fill_missing_dates(data, date_array_fromlist(datelist,'D'))
+        
