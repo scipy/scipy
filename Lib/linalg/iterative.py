@@ -131,7 +131,7 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
 
     Optional Inputs:
 
-    x0  -- (0) default starting guess (overwritten with final value)
+    x0  -- (0) default starting guess.
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
     xtype  --  The type of the result.  If None, then it will be
@@ -250,7 +250,7 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
 
     Optional Inputs:
 
-    x0  -- (0) default starting guess (overwritten with final value)
+    x0  -- (0) default starting guess.
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
     xtype  --  The type of the result.  If None, then it will be
@@ -362,7 +362,7 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
 
     Optional Inputs:
 
-    x0  -- (0) default starting guess (overwritten with final value)
+    x0  -- (0) default starting guess.
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
     xtype  --  The type of the result.  If None, then it will be
@@ -474,7 +474,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
 
     Optional Inputs:
 
-    x0  -- (0) default starting guess (overwritten with final value)
+    x0  -- (0) default starting guess.
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
     xtype  --  The type of the result.  If None, then it will be
@@ -585,7 +585,7 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, callba
 
     Optional Inputs:
 
-    x0  -- (0) default starting guess (overwritten with final value)
+    x0  -- (0) default starting guess.
     tol -- (1e-5) relative tolerance to achieve
     restrt -- (n) When to restart (change this to get faster performance -- but
                    may not converge).
@@ -700,7 +700,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
 
     Optional Inputs:
 
-    x0  -- (0) default starting guess (overwritten with final value)
+    x0  -- (0) default starting guess.
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
     xtype  --  The type of the result.  If None, then it will be
