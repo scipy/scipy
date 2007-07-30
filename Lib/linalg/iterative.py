@@ -12,6 +12,7 @@
 __all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
 from scipy.linalg import _iterative
 import numpy as sb
+import copy
 
 try:
     False, True
@@ -148,9 +149,10 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
     if maxiter is None:
         maxiter = n*10
 
-    x = x0
-    if x is None:
+    if x0 is None:
         x = sb.zeros(n)
+    else:
+        x = copy.copy(x0)
 
     if xtype is None:
         try:
@@ -266,9 +268,11 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
     if maxiter is None:
         maxiter = n*10
 
-    x = x0
-    if x is None:
+    if x0 is None:
         x = sb.zeros(n)
+    else:
+        x = copy.copy(x0)
+
 
     if xtype is None:
         try:
@@ -376,9 +380,11 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
     if maxiter is None:
         maxiter = n*10
 
-    x = x0
-    if x is None:
+    if x0 is None:
         x = sb.zeros(n)
+    else:
+        x = copy.copy(x0)
+
 
     if xtype is None:
         try:
@@ -486,9 +492,10 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
     if maxiter is None:
         maxiter = n*10
 
-    x = x0
-    if x is None:
+    if x0 is None:
         x = sb.zeros(n)
+    else:
+        x = copy.copy(x0)
 
     if xtype is None:
         try:
@@ -598,9 +605,10 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, callba
     if maxiter is None:
         maxiter = n*10
 
-    x = x0
-    if x is None:
+    if x0 is None:
         x = sb.zeros(n)
+    else:
+        x = copy.copy(x0)
 
     if xtype is None:
         try:
@@ -710,9 +718,10 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
     if maxiter is None:
         maxiter = n*10
 
-    x = x0
-    if x is None:
+    if x0 is None:
         x = sb.zeros(n)
+    else:
+        x = copy.copy(x0)
 
     if xtype is None:
         try:

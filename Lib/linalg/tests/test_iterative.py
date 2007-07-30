@@ -45,27 +45,39 @@ class test_iterative_solvers(NumpyTestCase):
         b = self.b
 
     def check_cg(self):
+        bx0 = self.x0.copy()
         x, info = cg(self.A, self.b, self.x0, callback=callback)
+        assert_array_equal(bx0, self.x0)
         assert norm(dot(self.A, x) - self.b) < 5*self.tol
 
     def check_bicg(self):
+        bx0 = self.x0.copy()
         x, info = bicg(self.A, self.b, self.x0, callback=callback)
+        assert_array_equal(bx0, self.x0)
         assert norm(dot(self.A, x) - self.b) < 5*self.tol
 
     def check_cgs(self):
+        bx0 = self.x0.copy()
         x, info = cgs(self.A, self.b, self.x0, callback=callback)
+        assert_array_equal(bx0, self.x0)
         assert norm(dot(self.A, x) - self.b) < 5*self.tol
 
     def check_bicgstab(self):
+        bx0 = self.x0.copy()
         x, info = bicgstab(self.A, self.b, self.x0, callback=callback)
+        assert_array_equal(bx0, self.x0)
         assert norm(dot(self.A, x) - self.b) < 5*self.tol
 
     def check_gmres(self):
+        bx0 = self.x0.copy()
         x, info = gmres(self.A, self.b, self.x0, callback=callback)
+        assert_array_equal(bx0, self.x0)
         assert norm(dot(self.A, x) - self.b) < 5*self.tol
 
     def check_qmr(self):
+        bx0 = self.x0.copy()
         x, info = qmr(self.A, self.b, self.x0, callback=callback)
+        assert_array_equal(bx0, self.x0)
         assert norm(dot(self.A, x) - self.b) < 5*self.tol
 
 if __name__ == "__main__":
