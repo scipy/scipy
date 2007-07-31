@@ -443,14 +443,15 @@ void sum_csr_duplicates(const I n_row,
     while(head != -2){
         I curr = head; //current column
         head   = next[curr];
-
-        Aj[NNZ] = curr;
-        Ax[NNZ] = sums[curr];
-
+        
+        if(sums[curr] != 0){
+            Aj[NNZ] = curr;
+            Ax[NNZ] = sums[curr];
+            NNZ++;
+        }
+        
         next[curr] = -1;
         sums[curr] =  0;
-
-        NNZ++;
     }
     Ap[i+1] = NNZ;
   }
