@@ -9,7 +9,7 @@ __all__ = ['spmatrix','csc_matrix','csr_matrix','coo_matrix',
             'lil_matrix','dok_matrix', 
             'spdiags','speye','spidentity', 
             'isspmatrix','issparse','isspmatrix_csc','isspmatrix_csr',
-            'isspmatrix_lil','isspmatrix_dok', 'lil_eye' ]
+            'isspmatrix_lil','isspmatrix_dok', 'lil_eye', 'lil_diags' ]
 
 import warnings
 
@@ -2672,6 +2672,51 @@ def lil_eye((r,c), k=0, dtype=float):
     for c in xrange(clip(k,0,c),clip(r+k,0,c)):
         out.rows[c-k].append(c)
         out.data[c-k].append(1)
+    return out
+
+def lil_diags(diags,offsets,(m,n),dtype=float):
+    """Generate a lil_matrix with the given diagonals.
+
+    :Parameters:
+        diags : list of list of values e.g. [[1,2,3],[4,5]]
+            Values to be placed on each indicated diagonal.
+        offsets : list of ints
+            Diagonal offsets.  This indicates the diagonal on which
+            the given values should be placed.
+        (r,c) : tuple of ints
+            Row and column dimensions of the output.
+        dtype : dtype
+           Output data-type.
+
+    Example:
+    -------
+
+    >>> lil_diags([[1,2,3],[4,5],[6]],[0,1,2],(3,3)).todense()
+    matrix([[ 1.,  4.,  6.],
+            [ 0.,  2.,  5.],
+            [ 0.,  0.,  3.]])
+
+    """
+    offsets_unsorted = list(offsets)
+    diags_unsorted = list(diags)
+    if len(diags) != len(offsets):
+        raise ValueError("Number of diagonals provided should "
+                         "agree with offsets.")
+
+    sort_indices = numpy.argsort(offsets_unsorted)
+    diags = [diags_unsorted[k] for k in sort_indices]
+    offsets = [offsets_unsorted[k] for k in sort_indices]
+
+    for i,k in enumerate(offsets):
+        if len(diags[i]) < m-abs(k):
+            raise ValueError("Not enough values specified to fill "
+                             "diagonal %s." % k)
+
+    out = lil_matrix((m,n),dtype=dtype)
+    for k,diag in itertools.izip(offsets,diags):
+        for ix,c in enumerate(xrange(clip(k,0,n),clip(m+k,0,n))):
+            out.rows[c-k].append(c)
+            out.data[c-k].append(diag[ix])
     return out
 
 def issequence(t):

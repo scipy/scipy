@@ -22,7 +22,7 @@ import random
 from numpy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, coo_matrix, \
-     spidentity, speye, lil_matrix, lil_eye
+     spidentity, speye, lil_matrix, lil_eye, lil_diags
 from scipy.linsolve import splu
 restore_path()
 
@@ -32,7 +32,7 @@ class _test_cs:
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
 
-    def check_getelement(self):        
+    def check_getelement(self):
         assert_equal(self.datsp[0,0],1)
         assert_equal(self.datsp[0,1],0)
         assert_equal(self.datsp[1,0],3)
@@ -872,6 +872,36 @@ class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase):
                 assert_array_equal(lil_eye(dim,k).todense(),
                                    speye(r,c,k).todense())
 
+    def check_lil_diags(self):
+        assert_array_equal(lil_diags([[1,2,3],[4,5],[6]],
+                                     [0,1,2],(3,3)).todense(),
+                           [[1,4,6],
+                            [0,2,5],
+                            [0,0,3]])
+
+        assert_array_equal(lil_diags([[6],[4,5],[1,2,3]],
+                                     [2,1,0],(3,3)).todense(),
+                           [[1,4,6],
+                            [0,2,5],
+                            [0,0,3]])
+
+        assert_array_equal(lil_diags([[6,7,8],[4,5],[1,2,3]],
+                                     [2,1,0],(3,3)).todense(),
+                           [[1,4,6],
+                            [0,2,5],
+                            [0,0,3]])
+
+        assert_array_equal(lil_diags([[1,2,3],[4,5],[6]],
+                                     [0,-1,-2],(3,3)).todense(),
+                           [[1,0,0],
+                            [4,2,0],
+                            [6,5,3]])
+
+        assert_array_equal(lil_diags([[6,7,8],[4,5]],
+                                     [-2,-1],(3,3)).todense(),
+                           [[0,0,0],
+                            [4,0,0],
+                            [6,5,0]])
 
 class test_construct_utils(NumpyTestCase):
     def check_identity(self):
