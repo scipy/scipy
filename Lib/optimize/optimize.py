@@ -156,7 +156,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
       """
     fcalls, func = wrap_function(func, args)
-    x0 = atleast_1d(asfarray(x0))
+    x0 = asfarray(x0).flatten()
     N = len(x0)
     rank = len(x0.shape)
     if not -1 < rank < 2:
@@ -829,7 +829,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
       fixed_point -- scalar fixed-point finder
 
       """
-    x0 = atleast_1d(asarray(x0))
+    x0 = asarray(x0).flatten()
     if maxiter is None:
         maxiter = len(x0)*200
     func_calls, f = wrap_function(f, args)
@@ -997,7 +997,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
       fixed_point -- scalar fixed-point finder
 
     """
-    x0 = atleast_1d(asarray(x0))
+    x0 = asarray(x0).flatten()
     fcalls, f = wrap_function(f, args)
     gcalls, fprime = wrap_function(fprime, args)
     hcalls = 0
@@ -1662,7 +1662,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     # we need to use a mutable object here that we can update in the
     # wrapper function
     fcalls, func = wrap_function(func, args)
-    x = atleast_1d(asarray(x0))
+    x = asarray(x0).flatten()
     if retall:
         allvecs = [x]
     N = len(x)
