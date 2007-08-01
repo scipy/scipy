@@ -10,7 +10,7 @@ import sys
 from scipy.io.mio4 import MatFile4Reader, MatFile4Writer
 from scipy.io.mio5 import MatFile5Reader, MatFile5Writer
 
-__all__ = ['find_mat_file','mat_reader_factory','loadmat', 'savemat']
+__all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat']
 
 def find_mat_file(file_name, appendmat=True):
     ''' Try to find .mat file on system path
@@ -21,14 +21,14 @@ def find_mat_file(file_name, appendmat=True):
     if appendmat and file_name[-4:] == ".mat":
         file_name = file_name[:-4]
     if os.sep in file_name:
-        full_file_name = file_name
+        full_name = file_name
         if appendmat:
             full_name = file_name + ".mat"
     else:
         full_name = None
-        junk,file_name = os.path.split(file_name)
+        junk, file_name = os.path.split(file_name)
         for path in sys.path:
-            test_name = os.path.join(path,file_name)
+            test_name = os.path.join(path, file_name)
             if appendmat:
                 test_name += ".mat"
             try:
@@ -117,7 +117,8 @@ def savemat(file_name, mdict, appendmat=True):
         try:
             file_name.write('')
         except AttributeError:
-            raise IOError, 'Writer needs file name or writeable file-like object'
+            raise IOError, 'Writer needs file name or writeable '\
+                           'file-like object'
         file_stream = file_name
         
     MW = MatFile4Writer(file_stream)
