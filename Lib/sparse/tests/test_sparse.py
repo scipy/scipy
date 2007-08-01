@@ -779,7 +779,7 @@ class test_dok(_test_cs, NumpyTestCase):
 
 class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase):
     spmatrix = lil_matrix
-    def check_mult(self):
+    def check_dot(self):
         A = matrix(zeros((10,10)))
         A[0,3] = 10
         A[5,6] = 20
@@ -828,6 +828,42 @@ class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase):
         C = B.tocsr()
         D = lil_matrix(C)
         assert_array_equal(C.A, D.A)
+
+    def check_scalar_add(self):
+        a = lil_matrix((3,3))
+        a[0,0] = 1
+        a[0,1] = 2
+        a[1,1] = 3
+        a[2,1] = 4
+        a[2,2] = 5
+
+        assert_array_equal((a-5).todense(),
+                           [[-4,-3,0],
+                            [ 0,-2,0],
+                            [ 0,-1,0]])
+
+    def check_point_wise_multiply(self):
+        l = lil_matrix((4,3))
+        l[0,0] = 1
+        l[1,1] = 2
+        l[2,2] = 3
+        l[3,1] = 4
+
+        m = lil_matrix((4,3))
+        m[0,0] = 1
+        m[0,1] = 2
+        m[2,2] = 3
+        m[3,1] = 4
+        m[3,2] = 4
+
+        assert_array_equal(l.multiply(m).todense(),
+                           m.multiply(l).todense())
+
+        assert_array_equal(l.multiply(m).todense(),
+                           [[1,0,0],
+                            [0,0,0],
+                            [0,0,9],
+                            [0,16,0]])
 
 
 class test_construct_utils(NumpyTestCase):

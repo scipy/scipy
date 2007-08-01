@@ -10,7 +10,6 @@ __all__ = ['spmatrix','csc_matrix','csr_matrix','coo_matrix',
             'spdiags','speye','spidentity', 
             'isspmatrix','issparse','isspmatrix_csc','isspmatrix_csr',
             'isspmatrix_lil','isspmatrix_dok' ]
-                        
 
 import warnings
 
@@ -2413,13 +2412,53 @@ class lil_matrix(spmatrix):
         else:
             return self.dot(other)
 
+    def multiply(self, other):
+        """Point-wise multiplication by another lil_matrix.
+
+        """
+        if isscalar(other):
+            return self.__mul__(other)
+
+        if isspmatrix_lil(other):
+            reference,target = self,other
+
+            if reference.shape != target.shape:
+                raise ValueError("Dimensions do not match.")
+
+            if len(reference.data) > len(target.data):
+                reference,target = target,reference
+
+            new = lil_matrix(reference.shape)
+            for r,row in enumerate(reference.rows):
+                tr = target.rows[r]
+                td = target.data[r]
+                rd = reference.data[r]
+                L = len(tr)
+                for c,column in enumerate(row):
+                    ix = bisect_left(tr,column)
+                    if ix < L and tr[ix] == column:
+                        new.rows[r].append(column)
+                        new.data[r].append(rd[c] * td[ix])
+            return new
+        else:
+            raise ValueError("Point-wise multiplication only allowed "
+                             "with another lil_matrix.")
+
     def copy(self):
         new = lil_matrix(self.shape, dtype=self.dtype)
         new.data = copy.deepcopy(self.data)
         new.rows = copy.deepcopy(self.rows)
         return new
-    
-    
+
+    def __add__(self, other):
+        if isscalar(other):
+            new = self.copy()
+            new.data = numpy.array([[val+other for val in rowvals] for
+                                    rowvals in new.data], dtype=object)
+            return new
+        else:
+            return spmatrix.__add__(self, other)
+
     def __rmul__(self, other):          # other * self
         if isscalarlike(other):
             # Multiplication by a scalar is symmetric
