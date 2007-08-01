@@ -8,8 +8,7 @@ error = _minpack.error
 __all__ = ['fsolve', 'leastsq', 'newton', 'fixed_point','bisection']
 
 def check_func(thefunc, x0, args, numinputs, output_shape=None):
-    args = (x0[:numinputs],) + args
-    res = atleast_1d(apply(thefunc,args))
+    res = atleast_1d(thefunc(*((x0[:numinputs],)+args)))
     if (output_shape != None) and (shape(res) != output_shape):
         if (output_shape[0] != 1):
             if len(output_shape) > 1:
@@ -392,8 +391,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
     else: # Secant method
         p0 = x0
         p1 = x0*(1+1e-4)
-        q0 = apply(func,(p0,)+args)
-        q1 = apply(func,(p1,)+args)
+        q0 = func(*((p0,)+args))
+        q1 = func(*((p1,)+args))
         for iter in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
@@ -406,7 +405,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
             p0 = p1
             q0 = q1
             p1 = p
-            q1 = apply(func,(p1,)+args)
+            q1 = func(*((p1,)+args))
     raise RuntimeError, "Failed to converge after %d iterations, value is %s" % (maxiter,p)
 
 
@@ -438,8 +437,8 @@ def fixed_point(func, x0, args=(), xtol=1e-10, maxiter=500):
 
     p0 = x0
     for iter in range(maxiter):
-        p1 = apply(func,(p0,)+args)
-        p2 = apply(func,(p1,)+args)
+        p1 = func(*((p0,)+args))
+        p2 = func(*((p1,)+args))
         d = p2 - 2.0 * p1 + p0
         if d == 0.0:
             print "Warning: Difference in estimates is %g" % (abs(p2-p1))
