@@ -22,7 +22,7 @@ import random
 from numpy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, coo_matrix, \
-     spidentity, speye, lil_matrix
+     spidentity, speye, lil_matrix, lil_eye
 from scipy.linsolve import splu
 restore_path()
 
@@ -864,6 +864,13 @@ class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase):
                             [0,0,0],
                             [0,0,9],
                             [0,16,0]])
+
+    def check_lil_eye(self):
+        for dim in [(3,5),(5,3)]:
+            for k in range(-5,5):
+                r,c = dim
+                assert_array_equal(lil_eye(dim,k).todense(),
+                                   speye(r,c,k).todense())
 
 
 class test_construct_utils(NumpyTestCase):

@@ -9,14 +9,14 @@ __all__ = ['spmatrix','csc_matrix','csr_matrix','coo_matrix',
             'lil_matrix','dok_matrix', 
             'spdiags','speye','spidentity', 
             'isspmatrix','issparse','isspmatrix_csc','isspmatrix_csr',
-            'isspmatrix_lil','isspmatrix_dok' ]
+            'isspmatrix_lil','isspmatrix_dok', 'lil_eye' ]
 
 import warnings
 
 from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
                   ndarray, amax, amin, rank, conj, searchsorted, ndarray,   \
                   less, where, greater, array, transpose, empty, ones, \
-                  arange, shape, intc
+                  arange, shape, intc, clip
 import numpy
 from scipy.sparse.sparsetools import cscmux, csrmux, \
      cootocsr, csrtocoo, cootocsc, csctocoo, csctocsr, csrtocsc, \
@@ -2654,6 +2654,25 @@ def speye(n, m, k = 0, dtype = 'd'):
     diags = ones((1, n), dtype = dtype)
     return spdiags(diags, k, n, m)
 
+def lil_eye((r,c), k=0, dtype=float):
+    """Generate a lil_matrix of dimensions (r,c) with the k-th
+    diagonal set to 1.
+
+    :Parameters:
+        r,c : int
+            Row and column-dimensions of the output.
+        k : int
+            Diagonal offset.  In the output matrix,
+            out[m,m+k] == 1 for all m.
+        dtype : dtype
+            Data-type of the output array.
+
+    """
+    out = lil_matrix((r,c),dtype=dtype)
+    for c in xrange(clip(k,0,c),clip(r+k,0,c)):
+        out.rows[c-k].append(c)
+        out.data[c-k].append(1)
+    return out
 
 def issequence(t):
     return isinstance(t, (list, tuple))
