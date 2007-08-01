@@ -32,7 +32,7 @@ static void drfft_fftw3(double *inout, int n, int direction, int
     double *ptrc = NULL;
     fftw_plan plan = NULL;
 
-    i = get_cache_id_drfftw3(n, direction, (1U << 6));
+    i = get_cache_id_drfftw3(n, direction, FFTW_ESTIMATE);
     plan = caches_drfftw3[i].plan;
     ptrc = caches_drfftw3[i].ptr;
     switch (direction) {
