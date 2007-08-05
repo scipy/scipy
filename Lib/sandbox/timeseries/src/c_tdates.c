@@ -1033,7 +1033,7 @@ static double getAbsTime(int freq, long dailyDate, long originalDate) {
             periodsPerDay = 24*60*60;
             break;
         default:
-            return 0;
+            return 24*60*60 - 1;
     }
 
     startOfDay = asfreq_DtoHIGHFREQ(dailyDate, 'B', periodsPerDay);
