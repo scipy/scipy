@@ -40,6 +40,10 @@ class test_cspline1d_eval(NumpyTestCase):
         # make sure interpolated values are on knot points
         assert_array_almost_equal(y2[::10], y, decimal=5)
 
+class test_order_filt(NumpyTestCase):
+    def check_basic(self):
+        assert_array_equal(signal.order_filter([1,2,3],[1,0,1],1),
+                           [2,3,2])
 
 if __name__ == "__main__":
     NumpyTest().run()

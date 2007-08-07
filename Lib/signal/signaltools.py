@@ -157,7 +157,7 @@ def convolve(in1, in2, mode='full'):
 
     return sigtools._correlateND(volume,kernel[slice_obj],val)
 
-def order_filter(a, domain, order):
+def order_filter(a, domain, rank):
     """Perform an order filter on an N-dimensional array.
 
   Description:
@@ -188,7 +188,7 @@ def order_filter(a, domain, order):
     for k in range(len(size)):
         if (size[k] % 2) != 1:
             raise ValueError, "Each dimension of domain argument should have an odd number of elements."
-    return sigtools._orderfilterND(a, domain, rank)
+    return sigtools._order_filterND(a, domain, rank)
 
 
 def medfilt(volume,kernel_size=None):
