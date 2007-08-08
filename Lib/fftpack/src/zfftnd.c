@@ -5,6 +5,20 @@
  */
 #include "fftpack.h"
 
+/* The following macro convert private backend specific function to the public
+ * functions exported by the module  */
+#define GEN_PUBLIC_API(name) \
+void destroy_zfftnd_cache(void)\
+{\
+        destroy_zfftnd_##name##_caches();\
+}\
+\
+void zfftnd(complex_double * inout, int rank,\
+		           int *dims, int direction, int howmany, int normalize)\
+{\
+        zfftnd_##name(inout, rank, dims, direction, howmany, normalize);\
+}
+
 #if defined(WITH_FFTW) || defined(WITH_MKL)
 static
 int equal_dims(int rank,int *dims1,int *dims2) {
@@ -15,6 +29,22 @@ int equal_dims(int rank,int *dims1,int *dims2) {
   return 1;
 }
 #endif
+
+#ifdef WITH_FFTW3
+    #include "zfftnd_fftw3.c"
+    GEN_PUBLIC_API(fftw3)
+#elif defined WITH_FFTW
+    #include "zfftnd_fftw.c"
+    GEN_PUBLIC_API(fftw)
+#elif defined WITH_MKL
+    #include "zfftnd_mkl.c"
+    GEN_PUBLIC_API(mkl)
+#else /* Use fftpack by default */
+    #include "zfftnd_fftpack.c"
+    GEN_PUBLIC_API(fftpack)
+#endif
+
+#if 0
 /**************** INTEL MKL **************************/
 #ifdef WITH_MKL
 long* convert_dims(int n, int *dims)
@@ -93,43 +123,6 @@ extern void destroy_zfftnd_cache(void) {
 }
 #if defined(WITH_FFTW) || defined(WITH_FFTW3) || defined(WITH_MKL)
 #else
-static
-/*inline : disabled because MSVC6.0 fails to compile it. */
-int next_comb(int *ia,int *da,int m) {
-  while (m>=0 && ia[m]==da[m]) ia[m--] = 0;
-  if (m<0) return 0;
-  ia[m]++;
-  return 1;
-}
-static
-void flatten(complex_double *dest,complex_double *src,
-	     int rank,int strides_axis,int dims_axis,int unflat,int *tmp) {
-  int *new_strides = tmp+rank;
-  int *new_dims = tmp+2*rank;
-  int *ia = tmp+3*rank;
-  int rm1=rank-1,rm2=rank-2;
-  int i,j,k;
-  for (i=0;i<rm2;++i) ia[i]=0;ia[rm2] = -1;
-  j = 0;
-  if (unflat)
-    while (next_comb(ia,new_dims,rm2)) {
-      k = 0;
-      for(i=0;i<rm1;++i)
-	k += ia[i] * new_strides[i];
-      for(i=0;i<dims_axis;++i)
-	*(dest+k+i*strides_axis) = *(src+j++);
-    }
-  else
-    while (next_comb(ia,new_dims,rm2)) {
-      k = 0;
-      for(i=0;i<rm1;++i)
-	k += ia[i] * new_strides[i];
-      for(i=0;i<dims_axis;++i)
-	*(dest+j++) = *(src+k+i*strides_axis);
-    }
-}
-extern void zfft(complex_double *inout,
-		 int n,int direction,int howmany,int normalize);
 #endif
 /**************** ZFFTND function **********************/
 extern void zfftnd(complex_double *inout,int rank,
@@ -223,3 +216,4 @@ extern void zfftnd(complex_double *inout,int rank,
   }
 #endif
 }
+#endif
