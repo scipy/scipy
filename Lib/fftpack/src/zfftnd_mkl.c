@@ -6,6 +6,17 @@
  * Last Change: Wed Aug 08 03:00 PM 2007 J
  */
 
+static long *convert_dims(int n, int *dims)
+{
+    long *ndim;
+    int i;
+    ndim = (long *) malloc(sizeof(long) * n);
+    for (i = 0; i < n; i++) {
+        ndim[i] = (long) dims[i];
+    }
+    return ndim;
+}
+
 GEN_CACHE(zfftnd_mkl, (int n, int *dims)
 	  , DFTI_DESCRIPTOR_HANDLE desc_handle;
 	  int *dims;
@@ -23,17 +34,6 @@ GEN_CACHE(zfftnd_mkl, (int n, int *dims)
 	  free(caches_zfftnd_mkl[id].dims);
 	  free(caches_zfftnd_mkl[id].ndims);, 10)
 
-static long *convert_dims(int n, int *dims)
-{
-    long *ndim;
-    int i;
-    ndim = (long *) malloc(sizeof(long) * n);
-    for (i = 0; i < n; i++) {
-        ndim[i] = (long) dims[i];
-    }
-    return ndim;
-}
-
 extern void zfftnd_mkl(complex_double * inout, int rank,
 		       int *dims, int direction, int howmany,
 		       int normalize)
@@ -48,7 +48,7 @@ extern void zfftnd_mkl(complex_double * inout, int rank,
     }
 
     desc_handle =
-	caches_zmklfftnd[get_cache_id_zmklfftnd(rank, dims)].desc_handle;
+	caches_zfftnd_mkl[get_cache_id_zfftnd_mkl(rank, dims)].desc_handle;
     for (i = 0; i < howmany; ++i, ptr += sz) {
         if (direction == 1) {
             DftiComputeForward(desc_handle, (double *) ptr);
