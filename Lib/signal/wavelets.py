@@ -1,8 +1,8 @@
+__all__ = ['daub','qmf','cascade']
 
 import numpy as sb
 from numpy.dual import eig
 from scipy.misc import comb
-
 
 def daub(p):
     """The coefficients for the FIR low-pass filter producing Daubechies wavelets.
@@ -47,7 +47,8 @@ def daub(p):
             if (abs(z1)) < 1:
                 z1 = const - part
             q = q * [1,-z1]
-        q = sb.real(q) * c
+
+        q = c * sb.real(q)
         # Normalize result
         q = q / sb.sum(q) * sqrt(2)
         return q.c[::-1]
@@ -74,7 +75,7 @@ def cascade(hk,J=7):
       J   -- values will be computed at grid points $K/2^J$
 
     Outputs:
-      x   -- the dyadic points $K/2^J$ for $K=0...N*2^J-1$
+      x   -- the dyadic points $K/2^J$ for $K=0...N*(2^J)-1$
               where len(hk)=len(gk)=N+1
       phi -- the scaling function phi(x) at x
                $\phi(x) = \sum_{k=0}^{N} h_k \phi(2x-k)$
@@ -118,7 +119,7 @@ def cascade(hk,J=7):
     m *= s2
 
     # construct the grid of points
-    x = sb.arange(0,N*(1<<J),dtype=sb.Float) / (1<<J)
+    x = sb.arange(0,N*(1<<J),dtype=sb.float) / (1<<J)
     phi = 0*x
 
     psi = 0*x
