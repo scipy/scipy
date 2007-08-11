@@ -22,5 +22,14 @@ class test_wavelets(NumpyTestCase):
                 assert len(x) == len(phi) == len(psi)
                 assert_equal(len(x),(k-1)*2**J)
 
+    def check_morlet(self):
+        x = wavelets.morlet(50,4.1,complete=True)
+        y = wavelets.morlet(50,4.1,complete=False)
+        assert_equal(len(x),len(y))
+
+        x = wavelets.morlet(10,50,complete=False)
+        y = wavelets.morlet(10,50,complete=True)
+        assert_equal(x,y)
+
 if __name__ == "__main__":
     NumpyTest().run()
