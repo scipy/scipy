@@ -301,6 +301,10 @@ class test_ma(NumpyTestCase):
         assert_equal(maximum(x,y), where(greater(x,y), x, y))
         assert minimum(x) == 0
         assert maximum(x) == 4
+        #
+        x = arange(4).reshape(2,2)
+        x[-1,-1] = masked
+        assert_equal(maximum(x), 2)
         
     def check_minmax_methods(self):        
         "Additional tests on max/min"

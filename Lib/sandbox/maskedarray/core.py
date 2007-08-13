@@ -2017,7 +2017,8 @@ class _extrema_operation(object):
         else:
             kargs = {}
             target = target.ravel()
-
+            if not (m is nomask):
+                m = m.ravel()
         if m is nomask:
             t = self.ufunc.reduce(target, **kargs)
         else:
