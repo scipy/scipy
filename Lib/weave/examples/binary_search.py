@@ -104,7 +104,7 @@ try:
                {
                    if (max < min )
                    {
-                       return_val = PyInt_FromLong(-1);
+                       return_val = -1;
                        break;
                    }
                    m = (min + max) / 2;
@@ -115,7 +115,7 @@ try:
                        max = m - 1;
                    else
                    {
-                       return_val = PyInt_FromLong(m);
+                       return_val = m;
                        break;
                    }
                }
