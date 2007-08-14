@@ -919,6 +919,17 @@ def tofile(self, output, sep='\t', format_dates=None):
 TimeSeries.tofile = tofile
 
 #............................................
+def tolist(self, fill_value=None):
+    """Copies the date and data portion of the time series to a hierarchical
+python list and returns that list. Data items are converted to the nearest
+compatible Python type. Dates are converted to standard Python datetime
+objects. Masked values are filled with `fill_value`"""
+    return [(d.datetime, v) for (d,v) in \
+                                zip(self.dates, self._series.tolist())]
+TimeSeries.tolist = tolist
+
+#............................................
+
 def asrecords(series):
     """Returns the masked time series as a recarray.
 Fields are `_dates`, `_data` and _`mask`.
