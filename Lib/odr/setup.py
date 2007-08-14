@@ -1,18 +1,11 @@
 #!/usr/bin/env python
 
-import os,sys,re
-from distutils import dep_util
-from glob import glob
-import warnings
-
-from numpy.distutils.core import Extension
-from numpy.distutils.misc_util import get_path, Configuration, dot_join
-
-from numpy.distutils.system_info import get_info,dict_append,\
-     AtlasNotFoundError,LapackNotFoundError,BlasNotFoundError,\
-     LapackSrcNotFoundError,BlasSrcNotFoundError
+from os.path import join
 
 def configuration(parent_package='', top_path=None):
+    import warnings
+    from numpy.distutils.misc_util import Configuration
+    from numpy.distutils.system_info import get_info, BlasNotFoundError
     config = Configuration('odr', parent_package, top_path)
 
     libodr_files = ['d_odr.f',
@@ -26,7 +19,7 @@ def configuration(parent_package='', top_path=None):
         warnings.warn(BlasNotFoundError.__doc__)
         libodr_files.append('d_lpkbls.f')
 
-    libodr = [os.path.join('odrpack', x) for x in libodr_files]
+    libodr = [join('odrpack', x) for x in libodr_files]
     config.add_library('odrpack', sources=libodr)
     sources = ['__odrpack.c']
     libraries = ['odrpack'] + blas_info.pop('libraries', [])
@@ -38,6 +31,7 @@ def configuration(parent_package='', top_path=None):
         **blas_info
     )
 
+    config.add_data_dir('tests')
     return config
 
 if __name__ == '__main__':

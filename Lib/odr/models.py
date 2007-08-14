@@ -1,9 +1,8 @@
 """ Collection of Model instances for use with the odrpack fitting package.
 """
 
-# Scipy imports.
-from scipy.sandbox.odr.odrpack import Model
 import numpy as np
+from scipy.odr.odrpack import Model
 
 
 def _lin_fcn(B, x):

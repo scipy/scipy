@@ -100,7 +100,7 @@ robert.kern@gmail.com
 """
 
 import numpy
-from scipy.sandbox.odr import __odrpack
+from scipy.odr import __odrpack
 
 odr = __odrpack.odr
 odr_error = __odrpack.odr_error
@@ -140,7 +140,7 @@ def report_error(info):
                   'Sum of squares convergence',
                   'Parameter convergence',
                   'Both sum of squares and parameter convergence',
-                  'Iteration limit reached')[info % 10]
+                  'Iteration limit reached')[info % 5]
 
     if info >= 5:
         # questionable results or fatal error
@@ -320,7 +320,7 @@ class RealData(Data):
     covx and covy are arrays of covariance matrices and are converted to weights
     by performing a matrix inversion on each observation's covariance matrix.
 
-      E.g.  we[i] = scipy.linalg.inv(covy[i])  # i in range(len(covy))
+      E.g.  we[i] = numpy.linalg.inv(covy[i])  # i in range(len(covy))
                                                #   if covy.shape == (n,q,q)
 
     These arguments follow the same structured argument conventions as wd and we
@@ -376,15 +376,15 @@ class RealData(Data):
         """ Convert covariance matrix(-ices) to weights.
         """
 
-        from scipy import linalg
+        from numpy.dual import inv
 
         if len(cov.shape) == 2:
-            return linalg.inv(cov)
+            return inv(cov)
         else:
             weights = numpy.zeros(cov.shape, float)
 
             for i in range(cov.shape[-1]):  # n
-                weights[:,:,i] = linalg.inv(cov[:,:,i])
+                weights[:,:,i] = inv(cov[:,:,i])
 
             return weights
 
