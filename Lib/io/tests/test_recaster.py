@@ -10,7 +10,7 @@ try:  # Python 2.3 support
 except:
     pass
 
-class test_recaster(ScipyTestCase):
+class test_recaster(NumpyTestCase):
     def setUp(self):
         self.valid_types = [N.int32, N.complex128, N.float64]
         self.recaster = Recaster(self.valid_types)

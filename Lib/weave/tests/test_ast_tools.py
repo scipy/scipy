@@ -8,7 +8,7 @@ set_local_path()
 from weave_test_utils import *
 restore_path()
 
-class test_harvest_variables(ScipyTestCase):
+class test_harvest_variables(NumpyTestCase):
     """ Not much testing going on here, but
         at least it is a flame test.
     """
@@ -28,4 +28,4 @@ class test_harvest_variables(ScipyTestCase):
         self.generic_test(expr,desired)
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

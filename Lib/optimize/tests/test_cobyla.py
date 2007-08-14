@@ -6,7 +6,7 @@ from optimize import cobyla as co
 restore_path()
 import math
 
-class test_cobyla(ScipyTestCase):
+class test_cobyla(NumpyTestCase):
     def check_simple(self, level=1):
 
         function = lambda x: x[0]**2 + abs(x[1])**3
@@ -20,4 +20,4 @@ class test_cobyla(ScipyTestCase):
         assert_almost_equal(x, [x0, x1], decimal=5)
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

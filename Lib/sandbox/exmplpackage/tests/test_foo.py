@@ -22,15 +22,15 @@ set_package_path()
 from exmplpackage.foo import *
 del sys.path[0]
 
-class test_foo_bar(ScipyTestCase):
+class test_foo_bar(NumpyTestCase):
 
     def check_simple(self, level=1):
         assert exmplpackage_foo_bar()=='Hello from exmplpackage_foo_bar'
 
-class test_foo_gun(ScipyTestCase):
+class test_foo_gun(NumpyTestCase):
 
     def check_simple(self, level=1):
         assert foo_gun()=='Hello from foo_gun'
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

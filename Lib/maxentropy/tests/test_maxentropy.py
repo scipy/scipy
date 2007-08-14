@@ -16,7 +16,7 @@ restore_path()
 import unittest
 
 
-class test_maxentropy(ScipyTestCase):
+class test_maxentropy(NumpyTestCase):
     """Test whether logsumexp() function correctly handles large
     inputs.
     """
@@ -41,4 +41,4 @@ class test_maxentropy(ScipyTestCase):
 
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

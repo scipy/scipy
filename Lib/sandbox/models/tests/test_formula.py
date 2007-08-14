@@ -43,7 +43,7 @@ class test_term(unittest.TestCase):
         f = intercept * t1
         self.assertEqual(str(f), str(formula.formula(t1)))
 
-class test_formula(ScipyTestCase):
+class test_formula(NumpyTestCase):
 
     def setUp(self):
         self.X = R.standard_normal((40,10))

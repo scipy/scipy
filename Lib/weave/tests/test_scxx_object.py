@@ -8,7 +8,7 @@ set_package_path()
 from weave import inline_tools
 restore_path()
 
-class test_object_construct(ScipyTestCase):
+class test_object_construct(NumpyTestCase):
     #------------------------------------------------------------------------
     # Check that construction from basic types is allowed and have correct
     # reference counts
@@ -66,7 +66,7 @@ class test_object_construct(ScipyTestCase):
         assert sys.getrefcount(res) == 2
         assert res == "hello"
 
-class test_object_print(ScipyTestCase):
+class test_object_print(NumpyTestCase):
     #------------------------------------------------------------------------
     # Check the object print protocol.
     #------------------------------------------------------------------------
@@ -101,7 +101,7 @@ class test_object_print(ScipyTestCase):
 ##            pass
 
 
-class test_object_cast(ScipyTestCase):
+class test_object_cast(NumpyTestCase):
     def check_int_cast(self,level=5):
         code = """
                py::object val = 1;
@@ -147,7 +147,7 @@ class str_obj:
     def __str__(self):
         return "b"
 
-class test_object_hasattr(ScipyTestCase):
+class test_object_hasattr(NumpyTestCase):
     def check_string(self,level=5):
         a = foo()
         a.b = 12345
@@ -203,7 +203,7 @@ class test_object_hasattr(ScipyTestCase):
         res = inline_tools.inline(code,['a'])
         assert res
 
-class test_object_attr(ScipyTestCase):
+class test_object_attr(NumpyTestCase):
 
     def generic_attr(self,code,args=['a']):
         a = foo()
@@ -261,7 +261,7 @@ class test_object_attr(ScipyTestCase):
         assert res == "bar results"
         assert first == second
 
-class test_object_set_attr(ScipyTestCase):
+class test_object_set_attr(NumpyTestCase):
 
     def generic_existing(self, code, desired):
         args = ['a']
@@ -325,7 +325,7 @@ class test_object_set_attr(ScipyTestCase):
                """
         self.generic_existing(code,"hello")
 
-class test_object_del(ScipyTestCase):
+class test_object_del(NumpyTestCase):
     def generic(self, code):
         args = ['a']
         a = foo()
@@ -348,7 +348,7 @@ class test_object_del(ScipyTestCase):
                """
         self.generic(code)
 
-class test_object_cmp(ScipyTestCase):
+class test_object_cmp(NumpyTestCase):
     def check_equal(self,level=5):
         a,b = 1,1
         res = inline_tools.inline('return_val = (a == b);',['a','b'])
@@ -411,7 +411,7 @@ class test_object_cmp(ScipyTestCase):
         res = inline_tools.inline(code,['a'])
         assert res == (a == "hello")
 
-class test_object_repr(ScipyTestCase):
+class test_object_repr(NumpyTestCase):
     def check_repr(self,level=5):
         class foo:
             def __str__(self):
@@ -427,7 +427,7 @@ class test_object_repr(ScipyTestCase):
         assert first == second
         assert res == "repr return"
 
-class test_object_str(ScipyTestCase):
+class test_object_str(NumpyTestCase):
     def check_str(self,level=5):
         class foo:
             def __str__(self):
@@ -444,7 +444,7 @@ class test_object_str(ScipyTestCase):
         print res
         assert res == "str return"
 
-class test_object_unicode(ScipyTestCase):
+class test_object_unicode(NumpyTestCase):
     # This ain't going to win awards for test of the year...
     def check_unicode(self,level=5):
         class foo:
@@ -461,7 +461,7 @@ class test_object_unicode(ScipyTestCase):
         assert first == second
         assert res == "unicode"
 
-class test_object_is_callable(ScipyTestCase):
+class test_object_is_callable(NumpyTestCase):
     def check_true(self,level=5):
         class foo:
             def __call__(self):
@@ -476,7 +476,7 @@ class test_object_is_callable(ScipyTestCase):
         res = inline_tools.inline('return_val = a.is_callable();',['a'])
         assert not res
 
-class test_object_call(ScipyTestCase):
+class test_object_call(NumpyTestCase):
     def check_noargs(self,level=5):
         def foo():
             return (1,2,3)
@@ -532,7 +532,7 @@ class test_object_call(ScipyTestCase):
         # first should == second, but the weird refcount error
         assert second == third
 
-class test_object_mcall(ScipyTestCase):
+class test_object_mcall(NumpyTestCase):
     def check_noargs(self,level=5):
         a = foo()
         res = inline_tools.inline('return_val = a.mcall("bar");',['a'])
@@ -626,7 +626,7 @@ class test_object_mcall(ScipyTestCase):
         # first should == second, but the weird refcount error
         assert second == third
 
-class test_object_hash(ScipyTestCase):
+class test_object_hash(NumpyTestCase):
     def check_hash(self,level=5):
         class foo:
             def __hash__(self):
@@ -636,7 +636,7 @@ class test_object_hash(ScipyTestCase):
         print 'hash:', res
         assert res == 123
 
-class test_object_is_true(ScipyTestCase):
+class test_object_is_true(NumpyTestCase):
     def check_true(self,level=5):
         class foo:
             pass
@@ -648,7 +648,7 @@ class test_object_is_true(ScipyTestCase):
         res = inline_tools.inline('return_val = a.is_true();',['a'])
         assert res == 0
 
-class test_object_is_true(ScipyTestCase):
+class test_object_is_true(NumpyTestCase):
     def check_false(self,level=5):
         class foo:
             pass
@@ -660,7 +660,7 @@ class test_object_is_true(ScipyTestCase):
         res = inline_tools.inline('return_val = a.not();',['a'])
         assert res == 1
 
-class test_object_type(ScipyTestCase):
+class test_object_type(NumpyTestCase):
     def check_type(self,level=5):
         class foo:
             pass
@@ -668,7 +668,7 @@ class test_object_type(ScipyTestCase):
         res = inline_tools.inline('return_val = a.type();',['a'])
         assert res == type(a)
 
-class test_object_size(ScipyTestCase):
+class test_object_size(NumpyTestCase):
     def check_size(self,level=5):
         class foo:
             def __len__(self):
@@ -692,7 +692,7 @@ class test_object_size(ScipyTestCase):
         assert res == len(a)
 
 from UserList import UserList
-class test_object_set_item_op_index(ScipyTestCase):
+class test_object_set_item_op_index(NumpyTestCase):
     def check_list_refcount(self,level=5):
         a = UserList([1,2,3])
         # temporary refcount fix until I understand why it incs by one.
@@ -727,7 +727,7 @@ class test_object_set_item_op_index(ScipyTestCase):
         assert a[1] == 1+1j
 
 from UserDict import UserDict
-class test_object_set_item_op_key(ScipyTestCase):
+class test_object_set_item_op_key(NumpyTestCase):
     def check_key_refcount(self,level=5):
         a = UserDict()
         code =  """
@@ -818,4 +818,4 @@ class test_object_set_item_op_key(ScipyTestCase):
         assert a['first'] == a['second']
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

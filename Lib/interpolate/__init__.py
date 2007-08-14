@@ -11,5 +11,5 @@ from fitpack import *
 from fitpack2 import *
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
-from numpy.testing import ScipyTest
-test = ScipyTest().test
+from numpy.testing import NumpyTest
+test = NumpyTest().test

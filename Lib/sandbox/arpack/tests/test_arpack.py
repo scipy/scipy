@@ -19,7 +19,7 @@ del sys.path[0]
 import numpy 
 from scipy.linalg import eig,eigh,norm
 
-class test_eigen_nonsymmetric(ScipyTestCase):
+class test_eigen_nonsymmetric(NumpyTestCase):
 
     def get_a1(self,typ):
         mat=numpy.array([[-2., -8.,  1.,  2., -5.],
@@ -121,7 +121,7 @@ class test_eigen_nonsymmetric(ScipyTestCase):
 
 
 
-class test_eigen_complex_nonsymmetric(ScipyTestCase):
+class test_eigen_complex_nonsymmetric(NumpyTestCase):
 
     def get_a1(self,typ):
         mat=numpy.array([[-2., -8.,  1.,  2., -5.],
@@ -218,7 +218,7 @@ class test_eigen_complex_nonsymmetric(ScipyTestCase):
 
 
     
-class test_eigen_symmetric(ScipyTestCase):
+class test_eigen_symmetric(NumpyTestCase):
 
     def get_a1(self,typ):
         mat_a1=numpy.array([[ 2.,  0.,  0., -1.,  0., -1.],
@@ -290,7 +290,7 @@ class test_eigen_symmetric(ScipyTestCase):
             self.end_eigenvalues(typ,k)
     
 
-class test_eigen_complex_symmetric(ScipyTestCase):
+class test_eigen_complex_symmetric(NumpyTestCase):
 
     def get_a1(self,typ):
         mat_a1=numpy.array([[ 2.,  0.,  0., -1.,  0., -1.],
@@ -352,4 +352,4 @@ class test_eigen_complex_symmetric(ScipyTestCase):
 
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

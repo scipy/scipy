@@ -28,7 +28,7 @@ def print_assert_equal(test_string,actual,desired):
         pprint.pprint(desired,msg)
         raise AssertionError, msg.getvalue()
 
-class test_array_converter(ScipyTestCase):
+class test_array_converter(NumpyTestCase):
     def check_type_match_string(self):
         s = standard_array_spec.array_converter()
         assert( not s.type_match('string') )
@@ -40,4 +40,4 @@ class test_array_converter(ScipyTestCase):
         assert(s.type_match(arange(4)))
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

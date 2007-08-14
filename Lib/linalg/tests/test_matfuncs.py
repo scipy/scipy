@@ -25,7 +25,7 @@ import linalg
 from linalg import signm,logm,funm, sqrtm, expm, expm2, expm3
 restore_path()
 
-class test_signm(ScipyTestCase):
+class test_signm(NumpyTestCase):
 
     def check_nils(self):
         a = array([[ 29.2, -24.2,  69.5,  49.8,   7. ],
@@ -67,7 +67,7 @@ class test_signm(ScipyTestCase):
         r = signm(a)
         #XXX: what would be the correct result?
 
-class test_logm(ScipyTestCase):
+class test_logm(NumpyTestCase):
 
     def check_nils(self):
         a = array([[ -2.,  25.,   0.,   0.,   0.,   0.,   0.],
@@ -81,7 +81,7 @@ class test_logm(ScipyTestCase):
         logm(m)
 
 
-class test_sqrtm(ScipyTestCase):
+class test_sqrtm(NumpyTestCase):
     def check_bad(self):
         # See http://www.maths.man.ac.uk/~nareports/narep336.ps.gz
         e = 2**-5
@@ -98,7 +98,7 @@ class test_sqrtm(ScipyTestCase):
         esa = sqrtm(a)
         assert_array_almost_equal(dot(esa,esa),a)
 
-class test_expm(ScipyTestCase):
+class test_expm(NumpyTestCase):
     def check_zero(self):
         a = array([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
@@ -106,4 +106,4 @@ class test_expm(ScipyTestCase):
         assert_array_almost_equal(expm3(a),[[1,0],[0,1]])
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

@@ -21,5 +21,5 @@ except ImportError:
 
 __all__ += common.__all__
 
-from numpy.testing import ScipyTest
-test = ScipyTest().test
+from numpy.testing import NumpyTest
+test = NumpyTest().test

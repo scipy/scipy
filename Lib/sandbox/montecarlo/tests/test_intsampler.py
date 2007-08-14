@@ -30,7 +30,7 @@ restore_path()
 import unittest
 
 
-class test_intsampler(ScipyTestCase):
+class test_intsampler(NumpyTestCase):
     def check_simple(self):
         # Sample from a Poisson distribution, P(lambda = 10.0)
         lam = 10.0
@@ -71,4 +71,4 @@ class test_intsampler(ScipyTestCase):
 
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

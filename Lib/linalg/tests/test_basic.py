@@ -39,7 +39,7 @@ def get_mat(n):
     data = add.outer(data,data)
     return data
 
-class test_solve_banded(ScipyTestCase):
+class test_solve_banded(NumpyTestCase):
 
     def check_simple(self):
 
@@ -54,7 +54,7 @@ class test_solve_banded(ScipyTestCase):
             x = solve_banded((l,u),ab,b)
             assert_array_almost_equal(numpy.dot(a,x),b)
 
-class test_solve(ScipyTestCase):
+class test_solve(NumpyTestCase):
 
     def check_20Feb04_bug(self):
         a = [[1,1],[1.0,0]] # ok
@@ -193,7 +193,7 @@ class test_solve(ScipyTestCase):
 
             print '   (secs for %s calls)' % (repeat)
 
-class test_inv(ScipyTestCase):
+class test_inv(NumpyTestCase):
 
     def check_simple(self):
         a = [[1,2],[3,4]]
@@ -265,7 +265,7 @@ class test_inv(ScipyTestCase):
             print '   (secs for %s calls)' % (repeat)
 
 
-class test_det(ScipyTestCase):
+class test_det(NumpyTestCase):
 
     def check_simple(self):
         a = [[1,2],[3,4]]
@@ -340,7 +340,7 @@ def direct_lstsq(a,b,cmplx=0):
     b1 = dot(at, b)
     return solve(a1, b1)
 
-class test_lstsq(ScipyTestCase):
+class test_lstsq(NumpyTestCase):
     def check_random_overdet_large(self):
         #bug report: Nils Wagner
         n = 200
@@ -510,7 +510,7 @@ class test_hankel(unittest.TestCase):
         y = hankel([1,2,3],[3,4,5])
         assert_array_equal(y,[[1,2,3],[2,3,4],[3,4,5]])
 
-class test_pinv(ScipyTestCase):
+class test_pinv(NumpyTestCase):
 
     def check_simple(self):
         a=array([[1,2,3],[4,5,6.],[7,8,10]])
@@ -538,4 +538,4 @@ class test_pinv(ScipyTestCase):
         assert_array_almost_equal(a_pinv,a_pinv2)
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

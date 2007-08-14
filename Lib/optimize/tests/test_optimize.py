@@ -11,7 +11,7 @@ from numpy import array, zeros, float64, dot, log, exp
 restore_path()
 
 
-class test_optimize(ScipyTestCase):
+class test_optimize(NumpyTestCase):
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
@@ -124,4 +124,4 @@ class test_optimize(ScipyTestCase):
 
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

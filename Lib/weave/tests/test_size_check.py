@@ -11,7 +11,7 @@ import numpy as nx
 empty = array(())
 
 
-class test_make_same_length(ScipyTestCase):
+class test_make_same_length(NumpyTestCase):
 
     def generic_test(self,x,y,desired):
         actual = size_check.make_same_length(x,y)
@@ -39,7 +39,7 @@ class test_make_same_length(ScipyTestCase):
         desired = array((1,2,3)),array((1,1,2))
         self.generic_test(x,y,desired)
 
-class test_binary_op_size(ScipyTestCase):
+class test_binary_op_size(NumpyTestCase):
     def generic_test(self,x,y,desired):
         actual = size_check.binary_op_size(x,y)
         desired = desired
@@ -115,7 +115,7 @@ class test_dummy_array(test_binary_op_size):
     def desired_type(self,val):
         return size_check.dummy_array(array(val),1)
 
-class test_dummy_array_indexing(ScipyTestCase):
+class test_dummy_array_indexing(NumpyTestCase):
     def generic_test(self,ary,expr,desired):
         a = size_check.dummy_array(ary)
         actual = eval(expr).shape
@@ -269,7 +269,7 @@ class test_dummy_array_indexing(ScipyTestCase):
             except IndexError:
                 pass
 
-class test_reduction(ScipyTestCase):
+class test_reduction(NumpyTestCase):
     def check_1d_0(self):
         a = ones((5,))
         actual = size_check.reduction(a,0)
@@ -303,7 +303,7 @@ class test_reduction(ScipyTestCase):
         except ValueError:
             pass
 
-class test_expressions(ScipyTestCase):
+class test_expressions(NumpyTestCase):
     def generic_test(self,expr,desired,**kw):
         import parser
         ast_list = parser.expr(expr).tolist()
@@ -372,4 +372,4 @@ class test_expressions(ScipyTestCase):
 
 
 if __name__ == "__main__":
-    ScipyTest('weave.size_check').run()
+    NumpyTest('weave.size_check').run()

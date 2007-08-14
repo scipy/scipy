@@ -7,7 +7,7 @@ from interpolate import interp1d, interp2d
 restore_path()
 
 
-class test_interp2d(ScipyTestCase):
+class test_interp2d(NumpyTestCase):
     def test_interp2d(self):
         y, x = mgrid[0:pi:20j, 0:pi:21j]
         z = sin(x+y)
@@ -18,7 +18,7 @@ class test_interp2d(ScipyTestCase):
         assert_almost_equal(I(u.ravel(), v.ravel()), sin(v+u), decimal=2)
 
 
-class test_interp1d(ScipyTestCase):
+class test_interp1d(NumpyTestCase):
 
     def setUp(self):
         self.x10 = np.arange(10.)
@@ -195,4 +195,4 @@ class test_interp1d(ScipyTestCase):
 
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

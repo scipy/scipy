@@ -14,7 +14,7 @@ from weave_test_utils import *
 restore_path()
 
 
-class test_ast_to_blitz_expr(ScipyTestCase):
+class test_ast_to_blitz_expr(NumpyTestCase):
 
     def generic_test(self,expr,desired):
         import parser
@@ -57,7 +57,7 @@ class test_ast_to_blitz_expr(ScipyTestCase):
                   '-hy(_all,blitz::Range(1,_end),blitz::Range(_beg,Nhy(2)-1-1)));'
         self.generic_test(expr,desired)
 
-class test_blitz(ScipyTestCase):
+class test_blitz(NumpyTestCase):
     """* These are long running tests...
 
          I'd like to benchmark these things somehow.
@@ -174,4 +174,4 @@ class test_blitz(ScipyTestCase):
         self.generic_2d(expr,complex128)
 
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

@@ -62,7 +62,7 @@ def diff(a, b):
     return math.sqrt(t)
 
 
-class test_ndimage(ScipyTestCase):
+class test_ndimage(NumpyTestCase):
 
     def setUp(self):
         # list of numarray data types
@@ -5523,4 +5523,4 @@ class test_ndimage(ScipyTestCase):
 
 if __name__ == "__main__":
     #unittest.main()
-    ScipyTest().run()
+    NumpyTest().run()
