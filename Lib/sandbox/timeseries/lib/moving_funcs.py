@@ -33,14 +33,17 @@ __all__ = ['mov_sum', 'mov_median',
 def _process_result_dict(orig_data, result_dict):
     "process the results from the c function"
 
+    rarray = result_dict['array']
     rtype = result_dict['array'].dtype
     rmask = result_dict['mask']
 
     # makes a copy of the appropriate type
-    data = orig_data.astype(rtype)
-    data[:] = result_dict['array']
-
-    return marray(data, mask=rmask, copy=False, subok=True)
+    data = orig_data.astype(rtype).copy()
+    data.flat = result_dict['array'].ravel()
+    if not hasattr(data, '__setmask__'):
+        data = data.view(MA.MaskedArray)
+    data.__setmask__(rmask)
+    return data
 
 def _moving_func(data, cfunc, kwargs):
 
@@ -327,3 +330,29 @@ for fn in (x for x in __all__ if x[:4] == 'mov_' and x[4:] != 'mean'):
         fdoc = fdoc.replace('$$'+prm+'$$', dc)
     fdoc += mov_result_doc
     _g[fn].func_doc = fdoc
+
+
+###############################################################################
+if __name__ == '__main__':
+    from timeseries import time_series, today
+    from maskedarray.testutils import assert_equal, assert_almost_equal
+    #
+    series = time_series(N.arange(10),start_date=today('D'))
+    #
+    filtered = mov_sum(series,3)
+    assert_equal(filtered, [0,1,3,6,9,12,15,18,21,24])
+    assert_equal(filtered._mask, [1,1,0,0,0,0,0,0,0,0])
+    assert_equal(filtered._dates, series._dates)
+    assert_equal(series, N.arange(10))
+    #
+    filtered = mov_average(series,3)
+    assert_equal(filtered, [0,1,1,2,3,4,5,6,7,8])
+    assert_equal(filtered._mask, [1,1,0,0,0,0,0,0,0,0])
+    assert_equal(filtered._dates, series._dates)
+    assert_equal(series, N.arange(10))
+    #
+    filtered = mov_average(series._data,3)
+    assert_equal(filtered, [0,1,1,2,3,4,5,6,7,8])
+    assert_equal(filtered._mask, [1,1,0,0,0,0,0,0,0,0])
+    assert_equal(series, N.arange(10))
+    
