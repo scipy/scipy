@@ -135,11 +135,22 @@ class MaskedRecords(MaskedArray, object):
             else:
                 _fieldmask = mask
         else:
-            _data = recarray(shape, dtype=descr)
-            _fieldmask = recarray(shape, dtype=mdescr)
-            for (n,v) in zip(_names, data):
-                _data[n] = numeric.asarray(v).view(ndarray)
-                _fieldmask[n] = getmaskarray(v)
+            try:
+                data = numeric.array(data, dtype=descr).view(recarray)
+                _data = data
+                if mask is nomask:
+                    _fieldmask = data.astype(mdescr)
+                    _fieldmask.flat = tuple([False]*len(mdescr))
+                else:
+                    _fieldmask = mask
+            except:
+                _data = recarray(shape, dtype=descr)
+                _fieldmask = recarray(shape, dtype=mdescr)
+                for (n,v) in zip(_names, data):
+                    print n, v
+                    print _data[n]
+                    _data[n] = numeric.asarray(v).view(ndarray)
+                    _fieldmask[n] = getmaskarray(v)
         #........................................
         _data = _data.view(cls)
         _data._fieldmask = _fieldmask
@@ -653,7 +664,7 @@ set to 'fi', where `i` is the number of existing fields.
 if __name__ == '__main__':
     import numpy as N
     from maskedarray.testutils import assert_equal
-    if 1:
+    if 0:
         d = N.arange(5)
         m = MA.make_mask([1,0,0,1,1])
         base_d = N.r_[d,d[::-1]].reshape(2,-1).T
