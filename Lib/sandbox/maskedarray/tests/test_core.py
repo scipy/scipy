@@ -12,10 +12,11 @@ __date__     = '$Date$'
 
 import types
 
-import numpy as N
+import numpy
 import numpy.core.fromnumeric  as fromnumeric
 from numpy.testing import NumpyTest, NumpyTestCase
 from numpy.testing.utils import build_err_msg
+from numpy import array as narray
 
 import maskedarray.testutils
 from maskedarray.testutils import *
@@ -23,7 +24,7 @@ from maskedarray.testutils import *
 import maskedarray.core as coremodule
 from maskedarray.core import *
 
-pi = N.pi
+pi = numpy.pi
 
 #..............................................................................
 class test_ma(NumpyTestCase):
@@ -34,16 +35,16 @@ class test_ma(NumpyTestCase):
 
     def setUp (self):
         "Base data definition."
-        x = N.array([1.,1.,1.,-2., pi/2.0, 4., 5., -10., 10., 1., 2., 3.])
-        y = N.array([5.,0.,3., 2., -1., -4., 0., -10., 10., 1., 0., 3.])
+        x = narray([1.,1.,1.,-2., pi/2.0, 4., 5., -10., 10., 1., 2., 3.])
+        y = narray([5.,0.,3., 2., -1., -4., 0., -10., 10., 1., 0., 3.])
         a10 = 10.
         m1 = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0]
         m2 = [0, 0, 1, 0, 0, 1, 1, 0, 0, 0 ,0, 1]
         xm = masked_array(x, mask=m1)
         ym = masked_array(y, mask=m2)
-        z = N.array([-.5, 0., .5, .8])
+        z = narray([-.5, 0., .5, .8])
         zm = masked_array(z, mask=[0,1,0,0])
-        xf = N.where(m1, 1.e+20, x)
+        xf = numpy.where(m1, 1.e+20, x)
         xm.set_fill_value(1.e+20)  
         self.d = (x, y, a10, m1, m2, xm, ym, z, zm, xf)
     #........................
@@ -55,7 +56,7 @@ class test_ma(NumpyTestCase):
         assert((xm-ym).filled(0).any())
         fail_if_equal(xm.mask.astype(int_), ym.mask.astype(int_))
         s = x.shape
-        assert_equal(N.shape(xm), s)
+        assert_equal(numpy.shape(xm), s)
         assert_equal(xm.shape, s)
         assert_equal(xm.dtype, x.dtype)
         assert_equal(zm.dtype, z.dtype)
@@ -115,14 +116,14 @@ class test_ma(NumpyTestCase):
             assert_equal(x**2, xm**2)
             assert_equal(abs(x)**2.5, abs(xm) **2.5)
             assert_equal(x**y, xm**ym)
-            assert_equal(N.add(x,y), add(xm, ym))
-            assert_equal(N.subtract(x,y), subtract(xm, ym))
-            assert_equal(N.multiply(x,y), multiply(xm, ym))
-            assert_equal(N.divide(x,y), divide(xm, ym))
+            assert_equal(numpy.add(x,y), add(xm, ym))
+            assert_equal(numpy.subtract(x,y), subtract(xm, ym))
+            assert_equal(numpy.multiply(x,y), multiply(xm, ym))
+            assert_equal(numpy.divide(x,y), divide(xm, ym))
     #........................
     def check_mixed_arithmetic(self):
         "Tests mixed arithmetics."
-        na = N.array([1])
+        na = narray([1])
         ma = array([1])
         self.failUnless(isinstance(na + ma, MaskedArray))
         self.failUnless(isinstance(ma + na, MaskedArray))   
@@ -246,28 +247,28 @@ class test_ma(NumpyTestCase):
     def check_basic_ufuncs (self):
         "Test various functions such as sin, cos."
         (x, y, a10, m1, m2, xm, ym, z, zm, xf) = self.d
-        assert_equal(N.cos(x), cos(xm))
-        assert_equal(N.cosh(x), cosh(xm))
-        assert_equal(N.sin(x), sin(xm))
-        assert_equal(N.sinh(x), sinh(xm))
-        assert_equal(N.tan(x), tan(xm))
-        assert_equal(N.tanh(x), tanh(xm))
-        assert_equal(N.sqrt(abs(x)), sqrt(xm))
-        assert_equal(N.log(abs(x)), log(xm))
-        assert_equal(N.log10(abs(x)), log10(xm))
-        assert_equal(N.exp(x), exp(xm))
-        assert_equal(N.arcsin(z), arcsin(zm))
-        assert_equal(N.arccos(z), arccos(zm))
-        assert_equal(N.arctan(z), arctan(zm))
-        assert_equal(N.arctan2(x, y), arctan2(xm, ym))
-        assert_equal(N.absolute(x), absolute(xm))
-        assert_equal(N.equal(x,y), equal(xm, ym))
-        assert_equal(N.not_equal(x,y), not_equal(xm, ym))
-        assert_equal(N.less(x,y), less(xm, ym))
-        assert_equal(N.greater(x,y), greater(xm, ym))
-        assert_equal(N.less_equal(x,y), less_equal(xm, ym))
-        assert_equal(N.greater_equal(x,y), greater_equal(xm, ym))
-        assert_equal(N.conjugate(x), conjugate(xm))
+        assert_equal(numpy.cos(x), cos(xm))
+        assert_equal(numpy.cosh(x), cosh(xm))
+        assert_equal(numpy.sin(x), sin(xm))
+        assert_equal(numpy.sinh(x), sinh(xm))
+        assert_equal(numpy.tan(x), tan(xm))
+        assert_equal(numpy.tanh(x), tanh(xm))
+        assert_equal(numpy.sqrt(abs(x)), sqrt(xm))
+        assert_equal(numpy.log(abs(x)), log(xm))
+        assert_equal(numpy.log10(abs(x)), log10(xm))
+        assert_equal(numpy.exp(x), exp(xm))
+        assert_equal(numpy.arcsin(z), arcsin(zm))
+        assert_equal(numpy.arccos(z), arccos(zm))
+        assert_equal(numpy.arctan(z), arctan(zm))
+        assert_equal(numpy.arctan2(x, y), arctan2(xm, ym))
+        assert_equal(numpy.absolute(x), absolute(xm))
+        assert_equal(numpy.equal(x,y), equal(xm, ym))
+        assert_equal(numpy.not_equal(x,y), not_equal(xm, ym))
+        assert_equal(numpy.less(x,y), less(xm, ym))
+        assert_equal(numpy.greater(x,y), greater(xm, ym))
+        assert_equal(numpy.less_equal(x,y), less_equal(xm, ym))
+        assert_equal(numpy.greater_equal(x,y), greater_equal(xm, ym))
+        assert_equal(numpy.conjugate(x), conjugate(xm))
     #........................
     def check_count_func (self):
         "Tests count"
@@ -286,7 +287,7 @@ class test_ma(NumpyTestCase):
     def check_minmax_func (self):
         "Tests minimum and maximum."
         (x, y, a10, m1, m2, xm, ym, z, zm, xf) = self.d
-        xr = N.ravel(x) #max doesn't work if shaped
+        xr = numpy.ravel(x) #max doesn't work if shaped
         xmr = ravel(xm)
         assert_equal(max(xr), maximum(xmr)) #true because of careful selection of data
         assert_equal(min(xr), minimum(xmr)) #true because of careful selection of data
@@ -326,50 +327,50 @@ class test_ma(NumpyTestCase):
     def check_addsumprod (self):
         "Tests add, sum, product."
         (x, y, a10, m1, m2, xm, ym, z, zm, xf) = self.d
-        assert_equal(N.add.reduce(x), add.reduce(x))
-        assert_equal(N.add.accumulate(x), add.accumulate(x))
+        assert_equal(numpy.add.reduce(x), add.reduce(x))
+        assert_equal(numpy.add.accumulate(x), add.accumulate(x))
         assert_equal(4, sum(array(4),axis=0))
         assert_equal(4, sum(array(4), axis=0))
-        assert_equal(N.sum(x,axis=0), sum(x,axis=0))
-        assert_equal(N.sum(filled(xm,0),axis=0), sum(xm,axis=0))
-        assert_equal(N.sum(x,0), sum(x,0))
-        assert_equal(N.product(x,axis=0), product(x,axis=0))
-        assert_equal(N.product(x,0), product(x,0))
-        assert_equal(N.product(filled(xm,1),axis=0), product(xm,axis=0))
+        assert_equal(numpy.sum(x,axis=0), sum(x,axis=0))
+        assert_equal(numpy.sum(filled(xm,0),axis=0), sum(xm,axis=0))
+        assert_equal(numpy.sum(x,0), sum(x,0))
+        assert_equal(numpy.product(x,axis=0), product(x,axis=0))
+        assert_equal(numpy.product(x,0), product(x,0))
+        assert_equal(numpy.product(filled(xm,1),axis=0), product(xm,axis=0))
         s = (3,4)
         x.shape = y.shape = xm.shape = ym.shape = s
         if len(s) > 1:
-            assert_equal(N.concatenate((x,y),1), concatenate((xm,ym),1))
-            assert_equal(N.add.reduce(x,1), add.reduce(x,1))
-            assert_equal(N.sum(x,1), sum(x,1))
-            assert_equal(N.product(x,1), product(x,1))
+            assert_equal(numpy.concatenate((x,y),1), concatenate((xm,ym),1))
+            assert_equal(numpy.add.reduce(x,1), add.reduce(x,1))
+            assert_equal(numpy.sum(x,1), sum(x,1))
+            assert_equal(numpy.product(x,1), product(x,1))
     #.........................
     def check_concat(self):
         "Tests concatenations."
         (x, y, a10, m1, m2, xm, ym, z, zm, xf) = self.d
         # basic concatenation
-        assert_equal(N.concatenate((x,y)), concatenate((xm,ym)))
-        assert_equal(N.concatenate((x,y)), concatenate((x,y)))
-        assert_equal(N.concatenate((x,y)), concatenate((xm,y)))
-        assert_equal(N.concatenate((x,y,x)), concatenate((x,ym,x)))
+        assert_equal(numpy.concatenate((x,y)), concatenate((xm,ym)))
+        assert_equal(numpy.concatenate((x,y)), concatenate((x,y)))
+        assert_equal(numpy.concatenate((x,y)), concatenate((xm,y)))
+        assert_equal(numpy.concatenate((x,y,x)), concatenate((x,ym,x)))
         # Concatenation along an axis
         s = (3,4)
         x.shape = y.shape = xm.shape = ym.shape = s
-        assert_equal(xm.mask, N.reshape(m1, s))
-        assert_equal(ym.mask, N.reshape(m2, s))
+        assert_equal(xm.mask, numpy.reshape(m1, s))
+        assert_equal(ym.mask, numpy.reshape(m2, s))
         xmym = concatenate((xm,ym),1)
-        assert_equal(N.concatenate((x,y),1), xmym)
-        assert_equal(N.concatenate((xm.mask,ym.mask),1), xmym._mask)
+        assert_equal(numpy.concatenate((x,y),1), xmym)
+        assert_equal(numpy.concatenate((xm.mask,ym.mask),1), xmym._mask)
     #........................
     def check_indexing(self):
         "Tests conversions and indexing"
-        x1 = N.array([1,2,4,3])
+        x1 = numpy.array([1,2,4,3])
         x2 = array(x1, mask=[1,0,0,0])
         x3 = array(x1, mask=[0,1,0,1])
         x4 = array(x1)
     # test conversion to strings
         junk, garbage = str(x2), repr(x2)
-        assert_equal(N.sort(x1),sort(x2,endwith=False))
+        assert_equal(numpy.sort(x1),sort(x2,endwith=False))
     # tests of indexing
         assert type(x2[1]) is type(x1[1])
         assert x1[1] == x2[1]
@@ -396,14 +397,14 @@ class test_ma(NumpyTestCase):
         x4[:] = masked_array([1,2,3,4],[0,1,1,0])
         assert allequal(getmask(x4), array([0,1,1,0]))
         assert allequal(x4, array([1,2,3,4]))
-        x1 = N.arange(5)*1.0
+        x1 = numpy.arange(5)*1.0
         x2 = masked_values(x1, 3.0)
         assert_equal(x1,x2)
         assert allequal(array([0,0,0,1,0],MaskType), x2.mask)
 #FIXME: Well, eh, fill_value is now a property        assert_equal(3.0, x2.fill_value())
         assert_equal(3.0, x2.fill_value)
         x1 = array([1,'hello',2,3],object)
-        x2 = N.array([1,'hello',2,3],object)
+        x2 = numpy.array([1,'hello',2,3],object)
         s1 = x1[1]
         s2 = x2[1]
         assert_equal(type(s2), str)
@@ -420,7 +421,7 @@ class test_ma(NumpyTestCase):
         m3 = make_mask(m, copy=1)
         assert(m is not m3)
 
-        x1 = N.arange(5)
+        x1 = numpy.arange(5)
         y1 = array(x1, mask=m)
         #assert( y1._data is x1)
         assert_equal(y1._data.__array_interface__, x1.__array_interface__)
@@ -585,15 +586,15 @@ class test_ma(NumpyTestCase):
     def check_TakeTransposeInnerOuter(self):
         "Test of take, transpose, inner, outer products"
         x = arange(24)
-        y = N.arange(24)
+        y = numpy.arange(24)
         x[5:6] = masked
         x = x.reshape(2,3,4)
         y = y.reshape(2,3,4)
-        assert_equal(N.transpose(y,(2,0,1)), transpose(x,(2,0,1)))
-        assert_equal(N.take(y, (2,0,1), 1), take(x, (2,0,1), 1))
-        assert_equal(N.inner(filled(x,0),filled(y,0)),
+        assert_equal(numpy.transpose(y,(2,0,1)), transpose(x,(2,0,1)))
+        assert_equal(numpy.take(y, (2,0,1), 1), take(x, (2,0,1), 1))
+        assert_equal(numpy.inner(filled(x,0),filled(y,0)),
                             inner(x, y))
-        assert_equal(N.outer(filled(x,0),filled(y,0)),
+        assert_equal(numpy.outer(filled(x,0),filled(y,0)),
                             outer(x, y))
         y = array(['abc', 1, 'def', 2, 3], object)
         y[2] = masked
@@ -642,7 +643,7 @@ class test_ma(NumpyTestCase):
         assert_equal(1, int(array([[[1]]])))
         assert_equal(1.0, float(array([[1]])))
         self.failUnlessRaises(ValueError, float, array([1,1]))
-        assert N.isnan(float(array([1],mask=[1])))
+        assert numpy.isnan(float(array([1],mask=[1])))
 #TODO: Check how bool works...        
 #TODO:        self.failUnless(bool(array([0,1])))
 #TODO:        self.failUnless(bool(array([0,0],mask=[0,1])))
@@ -722,11 +723,11 @@ class test_ma(NumpyTestCase):
         assert_equal(a_pickled._data, a._data)
         assert_equal(a_pickled.fill_value, 999)
         #
-        a = array(N.matrix(range(10)), mask=[1,0,1,0,0]*2)
+        a = array(numpy.matrix(range(10)), mask=[1,0,1,0,0]*2)
         a_pickled = cPickle.loads(a.dumps())
         assert_equal(a_pickled._mask, a._mask)
         assert_equal(a_pickled, a)
-        assert(isinstance(a_pickled._data,N.matrix))
+        assert(isinstance(a_pickled._data,numpy.matrix))
         
 #...............................................................................
         
@@ -795,7 +796,7 @@ class test_array_methods(NumpyTestCase):
     "Test class for miscellaneous MaskedArrays methods."
     def setUp(self):
         "Base data definition."
-        x = N.array([ 8.375,  7.545,  8.828,  8.5  ,  1.757,  5.928,  
+        x = numpy.array([ 8.375,  7.545,  8.828,  8.5  ,  1.757,  5.928,  
                       8.43 ,  7.78 ,  9.865,  5.878,  8.979,  4.732,  
                       3.012,  6.022,  5.095,  3.116,  5.238,  3.957,  
                       6.04 ,  9.63 ,  7.712,  3.382,  4.489,  6.479,
@@ -804,7 +805,7 @@ class test_array_methods(NumpyTestCase):
         X = x.reshape(6,6)
         XX = x.reshape(3,2,2,3)
     
-        m = N.array([0, 1, 0, 1, 0, 0, 
+        m = numpy.array([0, 1, 0, 1, 0, 0, 
                      1, 0, 1, 1, 0, 1, 
                      0, 0, 0, 1, 0, 1, 
                      0, 0, 0, 1, 1, 1, 
@@ -814,7 +815,7 @@ class test_array_methods(NumpyTestCase):
         mX = array(data=X,mask=m.reshape(X.shape))
         mXX = array(data=XX,mask=m.reshape(XX.shape))
     
-        m2 = N.array([1, 1, 0, 1, 0, 0, 
+        m2 = numpy.array([1, 1, 0, 1, 0, 0, 
                       1, 1, 1, 1, 0, 1, 
                       0, 0, 1, 1, 0, 1, 
                       0, 0, 0, 1, 1, 1, 
@@ -847,8 +848,8 @@ class test_array_methods(NumpyTestCase):
         (x,X,XX,m,mx,mX,mXX,m2x,m2X,m2XX) = self.d
         (n,m) = X.shape
         assert_equal(mx.ptp(),mx.compressed().ptp())
-        rows = N.zeros(n,N.float_)
-        cols = N.zeros(m,N.float_)
+        rows = numpy.zeros(n,numpy.float_)
+        cols = numpy.zeros(m,numpy.float_)
         for k in range(m):
             cols[k] = mX[:,k].compressed().ptp()
         for k in range(n):
@@ -888,7 +889,7 @@ class test_array_methods(NumpyTestCase):
         for k in range(6):
             assert_almost_equal(mXvar1[k],mX[k].compressed().var())
             assert_almost_equal(mXvar0[k],mX[:,k].compressed().var())
-            assert_almost_equal(N.sqrt(mXvar0[k]), mX[:,k].compressed().std())
+            assert_almost_equal(numpy.sqrt(mXvar0[k]), mX[:,k].compressed().std())
     
     def check_argmin(self):
         "Tests argmin & argmax on MaskedArrays."
@@ -969,16 +970,16 @@ class test_array_methods(NumpyTestCase):
         #........................
     def check_anyall(self):
         """Checks the any/all methods/functions."""
-        x = N.array([[ 0.13,  0.26,  0.90],
+        x = numpy.array([[ 0.13,  0.26,  0.90],
                      [ 0.28,  0.33,  0.63],
                      [ 0.31,  0.87,  0.70]])
-        m = N.array([[ True, False, False],
+        m = numpy.array([[ True, False, False],
                      [False, False, False],
-                     [True,  True, False]], dtype=N.bool_)
+                     [True,  True, False]], dtype=numpy.bool_)
         mx = masked_array(x, mask=m)
-        xbig = N.array([[False, False,  True],
+        xbig = numpy.array([[False, False,  True],
                         [False, False,  True],
-                        [False,  True,  True]], dtype=N.bool_)
+                        [False,  True,  True]], dtype=numpy.bool_)
         mxbig = (mx > 0.5)
         mxsmall = (mx < 0.5)
         #
@@ -996,24 +997,24 @@ class test_array_methods(NumpyTestCase):
         assert_equal(mxsmall.any(0), [True,   True, False])
         assert_equal(mxsmall.any(1), [True,   True, False])
         #
-        X = N.matrix(x)
+        X = numpy.matrix(x)
         mX = masked_array(X, mask=m)
         mXbig = (mX > 0.5)
         mXsmall = (mX < 0.5)
         #
         assert (mXbig.all()==False)
         assert (mXbig.any()==True)
-        assert_equal(mXbig.all(0), N.matrix([False, False, True]))
-        assert_equal(mXbig.all(1), N.matrix([False, False, True]).T)
-        assert_equal(mXbig.any(0), N.matrix([False, False, True]))
-        assert_equal(mXbig.any(1), N.matrix([ True,  True, True]).T)
+        assert_equal(mXbig.all(0), numpy.matrix([False, False, True]))
+        assert_equal(mXbig.all(1), numpy.matrix([False, False, True]).T)
+        assert_equal(mXbig.any(0), numpy.matrix([False, False, True]))
+        assert_equal(mXbig.any(1), numpy.matrix([ True,  True, True]).T)
         #
         assert (mXsmall.all()==False)
         assert (mXsmall.any()==True)
-        assert_equal(mXsmall.all(0), N.matrix([True,   True, False]))
-        assert_equal(mXsmall.all(1), N.matrix([False, False, False]).T)
-        assert_equal(mXsmall.any(0), N.matrix([True,   True, False]))
-        assert_equal(mXsmall.any(1), N.matrix([True,   True, False]).T)
+        assert_equal(mXsmall.all(0), numpy.matrix([True,   True, False]))
+        assert_equal(mXsmall.all(1), numpy.matrix([False, False, False]).T)
+        assert_equal(mXsmall.any(0), numpy.matrix([True,   True, False]))
+        assert_equal(mXsmall.any(1), numpy.matrix([True,   True, False]).T)
    
     def check_keepmask(self):
         "Tests the keep mask flag"        
@@ -1110,7 +1111,7 @@ class test_array_methods(NumpyTestCase):
         
     def check_sort(self):
         "Test sort"
-        x = array([1,4,2,3],mask=[0,1,0,0],dtype=N.uint8)
+        x = array([1,4,2,3],mask=[0,1,0,0],dtype=numpy.uint8)
         #
         sortedx = sort(x)
         assert_equal(sortedx._data,[1,2,3,4])
@@ -1124,7 +1125,7 @@ class test_array_methods(NumpyTestCase):
         assert_equal(x._data,[1,2,3,4])
         assert_equal(x._mask,[0,0,0,1])
         #
-        x = array([1,4,2,3],mask=[0,1,0,0],dtype=N.uint8)
+        x = array([1,4,2,3],mask=[0,1,0,0],dtype=numpy.uint8)
         x.sort(endwith=False)
         assert_equal(x._data, [4,1,2,3])
         assert_equal(x._mask, [1,0,0,0])
@@ -1133,10 +1134,10 @@ class test_array_methods(NumpyTestCase):
         sortedx = sort(x)
         assert(not isinstance(sorted, MaskedArray))
         #
-        x = array([0,1,-1,-2,2], mask=nomask, dtype=N.int8)
+        x = array([0,1,-1,-2,2], mask=nomask, dtype=numpy.int8)
         sortedx = sort(x, endwith=False)
         assert_equal(sortedx._data, [-2,-1,0,1,2])
-        x = array([0,1,-1,-2,2], mask=[0,1,0,0,1], dtype=N.int8)
+        x = array([0,1,-1,-2,2], mask=[0,1,0,0,1], dtype=numpy.int8)
         sortedx = sort(x, endwith=False)
         assert_equal(sortedx._data, [1,2,-2,-1,0])
         assert_equal(sortedx._mask, [1,1,0,0,0])
@@ -1190,7 +1191,7 @@ class test_array_methods(NumpyTestCase):
         a = array([0,0], mask=[1,1])
         aravel = a.ravel()
         assert_equal(a._mask.shape, a.shape)
-        a = array(N.matrix([1,2,3,4,5]), mask=[[0,1,0,0,0]])
+        a = array(numpy.matrix([1,2,3,4,5]), mask=[[0,1,0,0,0]])
         aravel = a.ravel()
         assert_equal(a.shape,(1,5))
         assert_equal(a._mask.shape, a.shape)
@@ -1222,6 +1223,21 @@ class test_array_methods(NumpyTestCase):
         b = a.compressed()
         assert_equal(b._data, [2,3,4])
         assert_equal(b._mask, nomask)
+        
+    def check_tolist(self):
+        "Tests to list"
+        x = array(numpy.arange(12))
+        x[[1,-2]] = masked
+        xlist = x.tolist()
+        assert(xlist[1] is None)
+        assert(xlist[-2] is None)
+        #
+        x.shape = (3,4) 
+        xlist = x.tolist()
+        #
+        assert_equal(xlist[0],[0,None,2,3])
+        assert_equal(xlist[1],[4,5,6,7])
+        assert_equal(xlist[2],[8,9,None,11])
         
 #..............................................................................
 
