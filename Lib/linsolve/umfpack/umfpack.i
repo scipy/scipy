@@ -1,3 +1,6 @@
+/* -*- C -*- */
+#ifdef SWIGPYTHON
+
 %module _umfpack
 
 /*
@@ -91,7 +94,7 @@ PyArrayObject *helper_getCArrayObject( PyObject *input, int type,
   - 30.11.2005, c
 */
 #define ARRAY_IN( rtype, ctype, atype ) \
-%typemap( python, in ) (ctype *array) { \
+%typemap( in ) (ctype *array) { \
   PyArrayObject *obj; \
   obj = helper_getCArrayObject( $input, PyArray_##atype, 1, 1 ); \
   if (!obj) return NULL; \
@@ -104,7 +107,7 @@ PyArrayObject *helper_getCArrayObject( PyObject *input, int type,
   - 30.11.2005, c
 */
 #define CONF_IN( arSize ) \
-%typemap( python, in ) (double conf [arSize]) { \
+%typemap( in ) (double conf [arSize]) { \
   PyArrayObject *obj; \
   obj = helper_getCArrayObject( $input, PyArray_DOUBLE, 1, 1 ); \
   if (!obj) return NULL; \
@@ -114,6 +117,7 @@ PyArrayObject *helper_getCArrayObject( PyObject *input, int type,
     return NULL; \
   } \
   $1 = (double *) obj->data; \
+  Py_DECREF( obj ); \
 };
 
 /*!
@@ -122,12 +126,12 @@ PyArrayObject *helper_getCArrayObject( PyObject *input, int type,
   - 02.12.2005
 */
 #define OPAQUE_ARGOUT( ttype ) \
-%typemap( python, in, numinputs=0 ) ttype* opaque_argout( ttype tmp ) { \
+%typemap( in, numinputs=0 ) ttype* opaque_argout( ttype tmp ) { \
   $1 = &tmp; \
 }; \
-%typemap( python, argout ) ttype* opaque_argout { \
+%typemap( argout ) ttype* opaque_argout { \
   PyObject *obj; \
-  obj = SWIG_NewPointerObj( (ttype) (*$1), $*1_descriptor, 1 ); \
+  obj = SWIG_NewPointerObj( (ttype) (*$1), $*1_descriptor, 0 ); \
   $result = helper_appendToTuple( $result, obj ); \
 };
 
@@ -136,14 +140,14 @@ PyArrayObject *helper_getCArrayObject( PyObject *input, int type,
   - 02.12.2005, c
 */
 #define OPAQUE_ARGINOUT( ttype ) \
-%typemap( python, in ) ttype* opaque_arginout( ttype tmp ) { \
+%typemap( in ) ttype* opaque_arginout( ttype tmp ) { \
   if ((SWIG_ConvertPtr( $input,(void **) &tmp, $*1_descriptor, \
 			SWIG_POINTER_EXCEPTION)) == -1) return NULL; \
   $1 = &tmp; \
 }; \
-%typemap( python, argout ) ttype* opaque_arginout { \
+%typemap( argout ) ttype* opaque_arginout { \
   PyObject *obj; \
-  obj = SWIG_NewPointerObj( (ttype) (*$1), $*1_descriptor, 1 ); \
+  obj = SWIG_NewPointerObj( (ttype) (*$1), $*1_descriptor, 0 ); \
   $result = helper_appendToTuple( $result, obj ); \
 };
 
@@ -266,3 +270,5 @@ ARRAY_IN( int, int, INT )
 };
 %apply int  *OUTPUT { int *do_recip};
 %include <umfpack_get_numeric.h>
+
+#endif
