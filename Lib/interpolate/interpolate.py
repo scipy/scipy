@@ -197,16 +197,15 @@ class interp1d(object):
         self.bounds_error = bounds_error
         self.fill_value = fill_value
 
-
-        if isinstance(kind, int):
-            kind = {0:'zero',
-                    1:'slinear',
-                    2:'quadratic',
-                    3:'cubic'}.get(kind,'none')
-
-        if kind not in ['zero', 'linear', 'slinear', 'quadratic', 'cubic']:
-            raise NotImplementedError("%d is unsupported: Use fitpack "\
-                                      "routines for other types.")
+        if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
+            order = {'zero':0,'slinear':1,'quadratic':2, 'cubic':3}[kind]
+            kind = 'spline'
+        elif isinstance(kind, int):
+            order = kind
+            kind = 'spline'
+        elif kind != 'linear':
+            raise NotImplementedError("%s is unsupported: Use fitpack "\
+                                      "routines for other types." % kind)
         x = array(x, copy=self.copy)
         y = array(y, copy=self.copy)
 
@@ -228,7 +227,6 @@ class interp1d(object):
             self._call = self._call_linear
         else:
             oriented_y = y.swapaxes(0, axis)
-            order = {'zero':0,'slinear':1,'quadratic':2, 'cubic':3}[kind]
             minval = order + 1
             len_y = oriented_y.shape[0]
             self._call = self._call_spline
@@ -275,7 +273,7 @@ class interp1d(object):
         return y_new
 
     def _call_spline(self, x_new):
-        x_new = asarray(x_new)
+        x_new =np.asarray(x_new)
         result = spleval(self._spline,x_new.ravel())
         return result.reshape(x_new.shape+result.shape[1:])
 
@@ -716,7 +714,7 @@ def spleval((xj,cvals,k),xnew,deriv=0):
     res = np.empty(xx.shape + sh)
     for index in np.ndindex(*sh):
         sl = (slice(None),)+index
-        res[sl] = _fitpack._bspleval(xx,xk,cvals[sl],k,deriv)
+        res[sl] = _fitpack._bspleval(xx,xj,cvals[sl],k,deriv)
     res.shape = oldshape + sh
     return res
                     
