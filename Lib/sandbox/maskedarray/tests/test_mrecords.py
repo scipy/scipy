@@ -50,7 +50,7 @@ class test_mrecords(NumpyTestCase):
         mrec = mrec.copy()
         assert_equal(mrec.a, MA.array(d,mask=m))
         assert_equal(mrec.b, MA.array(d[::-1],mask=m[::-1]))
-        assert((mrec._fieldmask == N.core.records.fromarrays([m, m[::-1]])).all())
+        assert((mrec._fieldmask == N.core.records.fromarrays([m, m[::-1]], dtype=mrec._fieldmask.dtype)).all())
         assert_equal(mrec._mask, N.r_[[m,m[::-1]]].all(0))
         assert_equal(mrec.a[1], mrec[1].a)
         #
@@ -138,7 +138,7 @@ class test_mrecords(NumpyTestCase):
         mrecfr = fromrecords(tmp)
         assert_equal(mrecfr.a, mrec.a[::-1])
         #....................        
-        mrecfr = fromrecords(nrec.tolist())
+        mrecfr = fromrecords(nrec.tolist(), names=nrec.dtype.names)
         assert_equal(mrecfr.a, mrec.a)
         assert_equal(mrecfr.dtype, mrec.dtype)
         
