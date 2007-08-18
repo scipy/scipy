@@ -20,6 +20,7 @@ import numpy
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
 from scipy.special import gammaln as gamln
+from copy import copy
 
 __all__ = [
            'rv_continuous',
@@ -3289,7 +3290,9 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
 
 def reverse_dict(dict):
     newdict = {}
-    for key in dict.keys():
+    sorted_keys = copy(dict.keys())
+    sorted_keys.sort()
+    for key in sorted_keys[::-1]:
         newdict[dict[key]] = key
     return newdict
 

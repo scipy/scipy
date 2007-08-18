@@ -200,5 +200,16 @@ class test_dlaplace(NumpyTestCase):
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
+class test_rv_discrete(NumpyTestCase):
+    def check_rvs(self):
+        states = [-1,0,1,2,3,4]
+        probability = [0.0,0.3,0.4,0.0,0.3,0.0]
+        samples = 1000
+        r = stats.rv_discrete(name='sample',values=(states,probability))
+        x = r.rvs(size=samples)
+
+        for s,p in zip(states,probability):
+            assert abs(sum(x == s)/float(samples) - p) < 0.05
+
 if __name__ == "__main__":
     NumpyTest('stats.distributions').run()
