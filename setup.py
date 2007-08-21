@@ -16,10 +16,10 @@ def configuration(parent_package='',top_path=None):
                          delegate_options_to_subpackages=True,
                          quiet=True)
 
-      config.add_subpackage('Lib')
+      config.add_subpackage('scipy')
       config.add_data_files(('scipy','*.txt'))
 
-      config.get_version('Lib/version.py') # sets config.version
+      config.get_version('scipy/version.py') # sets config.version
 
       return config
 
@@ -32,7 +32,7 @@ def setup_package():
     local_path = os.path.dirname(os.path.abspath(sys.argv[0]))
     os.chdir(local_path)
     sys.path.insert(0,local_path)
-    sys.path.insert(0,os.path.join(local_path,'Lib')) # to retrive version
+    sys.path.insert(0,os.path.join(local_path,'scipy')) # to retrive version
 
     try:
         from version import version as version
