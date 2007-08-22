@@ -2576,6 +2576,8 @@ namespace swig {
 #endif
 #include "stdio.h"
 #include <numpy/arrayobject.h>
+#include "complex_ops.h"
+
 
 /* The following code originally appeared in enthought/kiva/agg/src/numeric.i,
  * author unknown.  It was translated from C++ to C by John Hunter.  Bill
@@ -3089,7 +3091,7 @@ SWIGINTERN PyObject *_wrap_sa_get_aggregates(PyObject *SWIGUNUSEDPARM(self), PyO
   resultobj = SWIG_Py_Void();
   {
     int length = (arg4)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg4))[0]),sizeof(int)*length);	 
     delete arg4; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
@@ -3192,21 +3194,21 @@ SWIGINTERN PyObject *_wrap_rs_strong_connections__SWIG_1(PyObject *SWIGUNUSEDPAR
   resultobj = SWIG_Py_Void();
   {
     int length = (arg6)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(int)*length);	 
     delete arg6; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg7)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg7))[0]),sizeof(int)*length);	 
     delete arg7; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg8)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_FLOAT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_FLOAT); 
     memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(float)*length);	 
     delete arg8; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
@@ -3315,21 +3317,21 @@ SWIGINTERN PyObject *_wrap_rs_strong_connections__SWIG_2(PyObject *SWIGUNUSEDPAR
   resultobj = SWIG_Py_Void();
   {
     int length = (arg6)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(int)*length);	 
     delete arg6; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg7)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg7))[0]),sizeof(int)*length);	 
     delete arg7; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg8)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_DOUBLE); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_DOUBLE); 
     memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(double)*length);	 
     delete arg8; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
@@ -3580,21 +3582,21 @@ SWIGINTERN PyObject *_wrap_rs_interpolation__SWIG_1(PyObject *SWIGUNUSEDPARM(sel
   resultobj = SWIG_Py_Void();
   {
     int length = (arg11)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(int)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg12)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg12))[0]),sizeof(int)*length);	 
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg13)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_FLOAT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_FLOAT); 
     memcpy(PyArray_DATA(obj),&((*(arg13))[0]),sizeof(float)*length);	 
     delete arg13; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
@@ -3802,21 +3804,21 @@ SWIGINTERN PyObject *_wrap_rs_interpolation__SWIG_2(PyObject *SWIGUNUSEDPARM(sel
   resultobj = SWIG_Py_Void();
   {
     int length = (arg11)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(int)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg12)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg12))[0]),sizeof(int)*length);	 
     delete arg12; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg13)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_DOUBLE); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_DOUBLE); 
     memcpy(PyArray_DATA(obj),&((*(arg13))[0]),sizeof(double)*length);	 
     delete arg13; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
@@ -4088,21 +4090,21 @@ SWIGINTERN PyObject *_wrap_sa_strong_connections__SWIG_1(PyObject *SWIGUNUSEDPAR
   resultobj = SWIG_Py_Void();
   {
     int length = (arg6)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(int)*length);	 
     delete arg6; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg7)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg7))[0]),sizeof(int)*length);	 
     delete arg7; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg8)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_FLOAT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_FLOAT); 
     memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(float)*length);	 
     delete arg8; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
@@ -4211,21 +4213,21 @@ SWIGINTERN PyObject *_wrap_sa_strong_connections__SWIG_2(PyObject *SWIGUNUSEDPAR
   resultobj = SWIG_Py_Void();
   {
     int length = (arg6)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(int)*length);	 
     delete arg6; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg7)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg7))[0]),sizeof(int)*length);	 
     delete arg7; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg8)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_DOUBLE); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_DOUBLE); 
     memcpy(PyArray_DATA(obj),&((*(arg8))[0]),sizeof(double)*length);	 
     delete arg8; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
@@ -4449,21 +4451,21 @@ SWIGINTERN PyObject *_wrap_sa_smoother__SWIG_1(PyObject *SWIGUNUSEDPARM(self), P
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg9))[0]),sizeof(int)*length);	 
     delete arg9; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg10)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg10))[0]),sizeof(int)*length);	 
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg11)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_FLOAT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_FLOAT); 
     memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(float)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
@@ -4626,21 +4628,21 @@ SWIGINTERN PyObject *_wrap_sa_smoother__SWIG_2(PyObject *SWIGUNUSEDPARM(self), P
   resultobj = SWIG_Py_Void();
   {
     int length = (arg9)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg9))[0]),sizeof(int)*length);	 
     delete arg9; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg10)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_INT); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
     memcpy(PyArray_DATA(obj),&((*(arg10))[0]),sizeof(int)*length);	 
     delete arg10; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
   }
   {
     int length = (arg11)->size(); 
-    PyObject *obj = PyArray_FromDims(1, &length, PyArray_DOUBLE); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_DOUBLE); 
     memcpy(PyArray_DATA(obj),&((*(arg11))[0]),sizeof(double)*length);	 
     delete arg11; 
     resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 

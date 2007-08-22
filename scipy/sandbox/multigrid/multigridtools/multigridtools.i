@@ -16,7 +16,7 @@
 
 %feature("autodoc", "1");
 
-%include "../../../sparse/sparsetools/numpy.i"
+%include "numpy.i"
 
 %init %{
     import_array();
@@ -61,7 +61,7 @@
 %enddef
 
 
-I_IN_ARRAY1( int  )
+I_IN_ARRAY1( int         )
 T_IN_ARRAY1( float       )
 T_IN_ARRAY1( double      )
 
@@ -70,8 +70,7 @@ T_IN_ARRAY1( double      )
  /*
   * OUT types
   */
-%define I_ARRAY_ARGOUT( ctype, atype )
-VEC_ARRAY_ARGOUT( ctype, atype )
+%define I_ARRAY_ARGOUT( ctype )
 %apply std::vector<ctype>* array_argout {
     std::vector<ctype>* Ap,
     std::vector<ctype>* Ai,
@@ -91,8 +90,7 @@ VEC_ARRAY_ARGOUT( ctype, atype )
 };
 %enddef
 
-%define T_ARRAY_ARGOUT( ctype, atype )
-VEC_ARRAY_ARGOUT( ctype, atype )
+%define T_ARRAY_ARGOUT( ctype )
 %apply std::vector<ctype>* array_argout {
     std::vector<ctype>* Ax, 
     std::vector<ctype>* Bx,
@@ -104,9 +102,9 @@ VEC_ARRAY_ARGOUT( ctype, atype )
 };
 %enddef
 
-I_ARRAY_ARGOUT( int,   INT)
-T_ARRAY_ARGOUT( float,       FLOAT   )
-T_ARRAY_ARGOUT( double,      DOUBLE  )
+I_ARRAY_ARGOUT( int    )
+T_ARRAY_ARGOUT( float  )
+T_ARRAY_ARGOUT( double )
 
 
 

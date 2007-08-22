@@ -8,6 +8,19 @@ import numpy
     
 from pydec import gauss_seidel,diag_sparse,inf_norm
 
+
+def poisson_problem1D(N):
+    """
+    Return a sparse CSC matrix for the 2d N*N poisson problem
+    with standard 5-point finite difference stencil
+    """
+    D = 2*numpy.ones(N)
+    O =  -numpy.ones(N)
+    return scipy.sparse.spdiags([D,O,O],[0,-1,1],N,N)
+
+
+
+
 def poisson_problem(N):
     """
     Return a sparse CSC matrix for the 2d N*N poisson problem
@@ -49,6 +62,17 @@ def sa_strong_connections(A,epsilon):
 
     Sp,Sj,Sx = multigridtools.sa_strong_connections(A.shape[0],epsilon,A.indptr,A.indices,A.data)
     return scipy.sparse.csr_matrix((Sx,Sj,Sp),A.shape)
+
+
+def sa_no_threshold(A):
+    if not scipy.sparse.isspmatrix_csr(A): raise TypeError('expected sparse.csr_matrix')
+    
+    #tentative (non-smooth) interpolation operator I
+    Ij = multigridtools.sa_get_aggregates(A.shape[0],A.indptr,A.indices)
+    Ip = numpy.arange(len(Ij)+1)
+    Ix = numpy.ones(len(Ij))
+    
+    return scipy.sparse.csr_matrix((Ix,Ij,Ip))
 
 
 def sa_constant_interpolation(A,epsilon=0.08):
