@@ -84,6 +84,10 @@ def configuration(parent_package='',top_path=None):
     # Radial basis functions package
     #config.add_subpackage('rbf')
 
+    # Multigrid Solvers
+    #config.add_subpackage('multigrid')
+
+
     return config
 
 if __name__ == '__main__':

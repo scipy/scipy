@@ -4,7 +4,7 @@ import multigridtools
 import scipy
 import numpy
     
-from pydec import diag_sparse,inf_norm
+from utils import diag_sparse,inf_norm
 
 
 def rs_strong_connections(A,theta):
