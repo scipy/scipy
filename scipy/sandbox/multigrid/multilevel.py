@@ -1,5 +1,10 @@
+__all__ = ['poisson_problem1D','poisson_problem2D',
+           'ruge_stuben_solver','smoothed_aggregation_solver',
+           'multilevel_solver']
+
+
 from numpy.linalg import norm
-from numpy import zeros_like
+from numpy import zeros,zeros_like,array
 import scipy
 import numpy
 
@@ -10,17 +15,17 @@ from relaxation import gauss_seidel,jacobi
 
 def poisson_problem1D(N):
     """
-    Return a sparse CSC matrix for the 1d poisson problem
+    Return a sparse CSR matrix for the 1d poisson problem
     with standard 3-point finite difference stencil on a
     grid with N points.
     """
     D = 2*numpy.ones(N)
     O =  -numpy.ones(N)
-    return scipy.sparse.spdiags([D,O,O],[0,-1,1],N,N)
+    return scipy.sparse.spdiags([D,O,O],[0,-1,1],N,N).tocsr()
 
 def poisson_problem2D(N):
     """
-    Return a sparse CSC matrix for the 2d poisson problem
+    Return a sparse CSR matrix for the 2d poisson problem
     with standard 5-point finite difference stencil on a
     square N-by-N grid.
     """
@@ -28,7 +33,7 @@ def poisson_problem2D(N):
     T =  -numpy.ones(N*N)
     O =  -numpy.ones(N*N)
     T[N-1::N] = 0
-    return scipy.sparse.spdiags([D,O,T,T,O],[0,-N,-1,1,N],N*N,N*N)
+    return scipy.sparse.spdiags([D,O,T,T,O],[0,-N,-1,1,N],N*N,N*N).tocsr()
 
 def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
     As = [A]
