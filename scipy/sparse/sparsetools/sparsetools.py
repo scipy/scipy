@@ -50,6 +50,32 @@ del types
 
 
 
+def extract_csr_diagonal(*args):
+  """
+    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, int Ax, std::vector<(int)> Yx)
+    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, long Ax, std::vector<(long)> Yx)
+    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, float Ax, std::vector<(float)> Yx)
+    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, double Ax, std::vector<(double)> Yx)
+    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
+        std::vector<(npy_cfloat_wrapper)> Yx)
+    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
+        std::vector<(npy_cdouble_wrapper)> Yx)
+    """
+  return _sparsetools.extract_csr_diagonal(*args)
+
+def extract_csc_diagonal(*args):
+  """
+    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, int Ax, std::vector<(int)> Yx)
+    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, long Ax, std::vector<(long)> Yx)
+    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, float Ax, std::vector<(float)> Yx)
+    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, double Ax, std::vector<(double)> Yx)
+    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
+        std::vector<(npy_cfloat_wrapper)> Yx)
+    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
+        std::vector<(npy_cdouble_wrapper)> Yx)
+    """
+  return _sparsetools.extract_csc_diagonal(*args)
+
 def csrtocsc(*args):
   """
     csrtocsc(int n_row, int n_col, int Ap, int Aj, int Ax, std::vector<(int)> Bp, 

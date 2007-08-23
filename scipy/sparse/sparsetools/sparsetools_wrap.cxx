@@ -3020,6 +3020,1576 @@ SWIG_AsVal_int (PyObject * obj, int *val)
 #ifdef __cplusplus
 extern "C" {
 #endif
+SWIGINTERN PyObject *_wrap_extract_csr_diagonal__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int *arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  std::vector<int > *arg6 = (std::vector<int > *) 0 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  std::vector<int > *tmp6 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  
+  {
+    tmp6 = new std::vector<int>(); 
+    arg6 = tmp6; 
+  }
+  if (!PyArg_ParseTuple(args,(char *)"OOOOO:extract_csr_diagonal",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "extract_csr_diagonal" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "extract_csr_diagonal" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_INT, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)) SWIG_fail;
+    arg3 = (int*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)) SWIG_fail;
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
+    arg5 = (int*) array5->data;
+  }
+  extract_csr_diagonal<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,arg6);
+  resultobj = SWIG_Py_Void();
+  {
+    int length = (arg6)->size(); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
+    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(int)*length);	 
+    delete arg6; 
+    resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
+  }
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_extract_csr_diagonal__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int *arg3 ;
+  int *arg4 ;
+  long *arg5 ;
+  std::vector<long > *arg6 = (std::vector<long > *) 0 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  std::vector<long > *tmp6 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  
+  {
+    tmp6 = new std::vector<long>(); 
+    arg6 = tmp6; 
+  }
+  if (!PyArg_ParseTuple(args,(char *)"OOOOO:extract_csr_diagonal",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "extract_csr_diagonal" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "extract_csr_diagonal" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_INT, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)) SWIG_fail;
+    arg3 = (int*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)) SWIG_fail;
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_LONG, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
+    arg5 = (long*) array5->data;
+  }
+  extract_csr_diagonal<int,long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long const (*))arg5,arg6);
+  resultobj = SWIG_Py_Void();
+  {
+    int length = (arg6)->size(); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_LONG); 
+    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(long)*length);	 
+    delete arg6; 
+    resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
+  }
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_extract_csr_diagonal__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int *arg3 ;
+  int *arg4 ;
+  float *arg5 ;
+  std::vector<float > *arg6 = (std::vector<float > *) 0 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  std::vector<float > *tmp6 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  
+  {
+    tmp6 = new std::vector<float>(); 
+    arg6 = tmp6; 
+  }
+  if (!PyArg_ParseTuple(args,(char *)"OOOOO:extract_csr_diagonal",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "extract_csr_diagonal" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "extract_csr_diagonal" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_INT, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)) SWIG_fail;
+    arg3 = (int*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)) SWIG_fail;
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_FLOAT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
+    arg5 = (float*) array5->data;
+  }
+  extract_csr_diagonal<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,arg6);
+  resultobj = SWIG_Py_Void();
+  {
+    int length = (arg6)->size(); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_FLOAT); 
+    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(float)*length);	 
+    delete arg6; 
+    resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
+  }
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_extract_csr_diagonal__SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int *arg3 ;
+  int *arg4 ;
+  double *arg5 ;
+  std::vector<double > *arg6 = (std::vector<double > *) 0 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  std::vector<double > *tmp6 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  
+  {
+    tmp6 = new std::vector<double>(); 
+    arg6 = tmp6; 
+  }
+  if (!PyArg_ParseTuple(args,(char *)"OOOOO:extract_csr_diagonal",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "extract_csr_diagonal" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "extract_csr_diagonal" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_INT, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)) SWIG_fail;
+    arg3 = (int*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)) SWIG_fail;
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_DOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
+    arg5 = (double*) array5->data;
+  }
+  extract_csr_diagonal<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,arg6);
+  resultobj = SWIG_Py_Void();
+  {
+    int length = (arg6)->size(); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_DOUBLE); 
+    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(double)*length);	 
+    delete arg6; 
+    resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
+  }
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_extract_csr_diagonal__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int *arg3 ;
+  int *arg4 ;
+  npy_cfloat_wrapper *arg5 ;
+  std::vector<npy_cfloat_wrapper > *arg6 = (std::vector<npy_cfloat_wrapper > *) 0 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  std::vector<npy_cfloat_wrapper > *tmp6 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  
+  {
+    tmp6 = new std::vector<npy_cfloat_wrapper>(); 
+    arg6 = tmp6; 
+  }
+  if (!PyArg_ParseTuple(args,(char *)"OOOOO:extract_csr_diagonal",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "extract_csr_diagonal" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "extract_csr_diagonal" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_INT, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)) SWIG_fail;
+    arg3 = (int*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)) SWIG_fail;
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
+  }
+  extract_csr_diagonal<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6);
+  resultobj = SWIG_Py_Void();
+  {
+    int length = (arg6)->size(); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_CFLOAT); 
+    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(npy_cfloat_wrapper)*length);	 
+    delete arg6; 
+    resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
+  }
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_extract_csr_diagonal__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int *arg3 ;
+  int *arg4 ;
+  npy_cdouble_wrapper *arg5 ;
+  std::vector<npy_cdouble_wrapper > *arg6 = (std::vector<npy_cdouble_wrapper > *) 0 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  std::vector<npy_cdouble_wrapper > *tmp6 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  
+  {
+    tmp6 = new std::vector<npy_cdouble_wrapper>(); 
+    arg6 = tmp6; 
+  }
+  if (!PyArg_ParseTuple(args,(char *)"OOOOO:extract_csr_diagonal",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "extract_csr_diagonal" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "extract_csr_diagonal" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_INT, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)) SWIG_fail;
+    arg3 = (int*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)) SWIG_fail;
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
+  }
+  extract_csr_diagonal<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6);
+  resultobj = SWIG_Py_Void();
+  {
+    int length = (arg6)->size(); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_CDOUBLE); 
+    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(npy_cdouble_wrapper)*length);	 
+    delete arg6; 
+    resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
+  }
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_extract_csr_diagonal(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[6];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 5); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),PyArray_INT)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              return _wrap_extract_csr_diagonal__SWIG_1(self, args);
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),PyArray_INT)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_LONG)) ? 1 : 0;
+            }
+            if (_v) {
+              return _wrap_extract_csr_diagonal__SWIG_2(self, args);
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),PyArray_INT)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_FLOAT)) ? 1 : 0;
+            }
+            if (_v) {
+              return _wrap_extract_csr_diagonal__SWIG_3(self, args);
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),PyArray_INT)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_DOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              return _wrap_extract_csr_diagonal__SWIG_4(self, args);
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),PyArray_INT)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_CFLOAT)) ? 1 : 0;
+            }
+            if (_v) {
+              return _wrap_extract_csr_diagonal__SWIG_5(self, args);
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),PyArray_INT)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_CDOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              return _wrap_extract_csr_diagonal__SWIG_6(self, args);
+            }
+          }
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'extract_csr_diagonal'.\n  Possible C/C++ prototypes are:\n    extract_csr_diagonal<(int,int)>(int const,int const,int const [],int const [],int const [],std::vector<int > *)\n    extract_csr_diagonal<(int,long)>(int const,int const,int const [],int const [],long const [],std::vector<long > *)\n    extract_csr_diagonal<(int,float)>(int const,int const,int const [],int const [],float const [],std::vector<float > *)\n    extract_csr_diagonal<(int,double)>(int const,int const,int const [],int const [],double const [],std::vector<double > *)\n    extract_csr_diagonal<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],std::vector<npy_cfloat_wrapper > *)\n    extract_csr_diagonal<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],std::vector<npy_cdouble_wrapper > *)\n");
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_extract_csc_diagonal__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int *arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  std::vector<int > *arg6 = (std::vector<int > *) 0 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  std::vector<int > *tmp6 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  
+  {
+    tmp6 = new std::vector<int>(); 
+    arg6 = tmp6; 
+  }
+  if (!PyArg_ParseTuple(args,(char *)"OOOOO:extract_csc_diagonal",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "extract_csc_diagonal" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "extract_csc_diagonal" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_INT, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)) SWIG_fail;
+    arg3 = (int*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)) SWIG_fail;
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
+    arg5 = (int*) array5->data;
+  }
+  extract_csc_diagonal<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,arg6);
+  resultobj = SWIG_Py_Void();
+  {
+    int length = (arg6)->size(); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_INT); 
+    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(int)*length);	 
+    delete arg6; 
+    resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
+  }
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_extract_csc_diagonal__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int *arg3 ;
+  int *arg4 ;
+  long *arg5 ;
+  std::vector<long > *arg6 = (std::vector<long > *) 0 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  std::vector<long > *tmp6 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  
+  {
+    tmp6 = new std::vector<long>(); 
+    arg6 = tmp6; 
+  }
+  if (!PyArg_ParseTuple(args,(char *)"OOOOO:extract_csc_diagonal",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "extract_csc_diagonal" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "extract_csc_diagonal" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_INT, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)) SWIG_fail;
+    arg3 = (int*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)) SWIG_fail;
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_LONG, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
+    arg5 = (long*) array5->data;
+  }
+  extract_csc_diagonal<int,long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long const (*))arg5,arg6);
+  resultobj = SWIG_Py_Void();
+  {
+    int length = (arg6)->size(); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_LONG); 
+    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(long)*length);	 
+    delete arg6; 
+    resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
+  }
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_extract_csc_diagonal__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int *arg3 ;
+  int *arg4 ;
+  float *arg5 ;
+  std::vector<float > *arg6 = (std::vector<float > *) 0 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  std::vector<float > *tmp6 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  
+  {
+    tmp6 = new std::vector<float>(); 
+    arg6 = tmp6; 
+  }
+  if (!PyArg_ParseTuple(args,(char *)"OOOOO:extract_csc_diagonal",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "extract_csc_diagonal" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "extract_csc_diagonal" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_INT, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)) SWIG_fail;
+    arg3 = (int*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)) SWIG_fail;
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_FLOAT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
+    arg5 = (float*) array5->data;
+  }
+  extract_csc_diagonal<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,arg6);
+  resultobj = SWIG_Py_Void();
+  {
+    int length = (arg6)->size(); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_FLOAT); 
+    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(float)*length);	 
+    delete arg6; 
+    resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
+  }
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_extract_csc_diagonal__SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int *arg3 ;
+  int *arg4 ;
+  double *arg5 ;
+  std::vector<double > *arg6 = (std::vector<double > *) 0 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  std::vector<double > *tmp6 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  
+  {
+    tmp6 = new std::vector<double>(); 
+    arg6 = tmp6; 
+  }
+  if (!PyArg_ParseTuple(args,(char *)"OOOOO:extract_csc_diagonal",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "extract_csc_diagonal" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "extract_csc_diagonal" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_INT, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)) SWIG_fail;
+    arg3 = (int*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)) SWIG_fail;
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_DOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
+    arg5 = (double*) array5->data;
+  }
+  extract_csc_diagonal<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,arg6);
+  resultobj = SWIG_Py_Void();
+  {
+    int length = (arg6)->size(); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_DOUBLE); 
+    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(double)*length);	 
+    delete arg6; 
+    resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
+  }
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_extract_csc_diagonal__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int *arg3 ;
+  int *arg4 ;
+  npy_cfloat_wrapper *arg5 ;
+  std::vector<npy_cfloat_wrapper > *arg6 = (std::vector<npy_cfloat_wrapper > *) 0 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  std::vector<npy_cfloat_wrapper > *tmp6 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  
+  {
+    tmp6 = new std::vector<npy_cfloat_wrapper>(); 
+    arg6 = tmp6; 
+  }
+  if (!PyArg_ParseTuple(args,(char *)"OOOOO:extract_csc_diagonal",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "extract_csc_diagonal" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "extract_csc_diagonal" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_INT, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)) SWIG_fail;
+    arg3 = (int*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)) SWIG_fail;
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CFLOAT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
+    arg5 = (npy_cfloat_wrapper*) array5->data;
+  }
+  extract_csc_diagonal<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6);
+  resultobj = SWIG_Py_Void();
+  {
+    int length = (arg6)->size(); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_CFLOAT); 
+    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(npy_cfloat_wrapper)*length);	 
+    delete arg6; 
+    resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
+  }
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_extract_csc_diagonal__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int *arg3 ;
+  int *arg4 ;
+  npy_cdouble_wrapper *arg5 ;
+  std::vector<npy_cdouble_wrapper > *arg6 = (std::vector<npy_cdouble_wrapper > *) 0 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  std::vector<npy_cdouble_wrapper > *tmp6 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  
+  {
+    tmp6 = new std::vector<npy_cdouble_wrapper>(); 
+    arg6 = tmp6; 
+  }
+  if (!PyArg_ParseTuple(args,(char *)"OOOOO:extract_csc_diagonal",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "extract_csc_diagonal" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "extract_csc_diagonal" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_INT, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)) SWIG_fail;
+    arg3 = (int*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)) SWIG_fail;
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_CDOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)) SWIG_fail;
+    arg5 = (npy_cdouble_wrapper*) array5->data;
+  }
+  extract_csc_diagonal<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6);
+  resultobj = SWIG_Py_Void();
+  {
+    int length = (arg6)->size(); 
+    PyObject *obj = PyArray_FromDims(1, &length,PyArray_CDOUBLE); 
+    memcpy(PyArray_DATA(obj),&((*(arg6))[0]),sizeof(npy_cdouble_wrapper)*length);	 
+    delete arg6; 
+    resultobj = helper_appendToTuple( resultobj, (PyObject *)obj ); 
+  }
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) Py_DECREF(array3);
+  }
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_extract_csc_diagonal(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[6];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 5); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),PyArray_INT)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              return _wrap_extract_csc_diagonal__SWIG_1(self, args);
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),PyArray_INT)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_LONG)) ? 1 : 0;
+            }
+            if (_v) {
+              return _wrap_extract_csc_diagonal__SWIG_2(self, args);
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),PyArray_INT)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_FLOAT)) ? 1 : 0;
+            }
+            if (_v) {
+              return _wrap_extract_csc_diagonal__SWIG_3(self, args);
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),PyArray_INT)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_DOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              return _wrap_extract_csc_diagonal__SWIG_4(self, args);
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),PyArray_INT)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_CFLOAT)) ? 1 : 0;
+            }
+            if (_v) {
+              return _wrap_extract_csc_diagonal__SWIG_5(self, args);
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),PyArray_INT)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_CDOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              return _wrap_extract_csc_diagonal__SWIG_6(self, args);
+            }
+          }
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'extract_csc_diagonal'.\n  Possible C/C++ prototypes are:\n    extract_csc_diagonal<(int,int)>(int const,int const,int const [],int const [],int const [],std::vector<int > *)\n    extract_csc_diagonal<(int,long)>(int const,int const,int const [],int const [],long const [],std::vector<long > *)\n    extract_csc_diagonal<(int,float)>(int const,int const,int const [],int const [],float const [],std::vector<float > *)\n    extract_csc_diagonal<(int,double)>(int const,int const,int const [],int const [],double const [],std::vector<double > *)\n    extract_csc_diagonal<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],std::vector<npy_cfloat_wrapper > *)\n    extract_csc_diagonal<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],std::vector<npy_cdouble_wrapper > *)\n");
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_csrtocsc__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   int arg1 ;
@@ -28830,6 +30400,26 @@ fail:
 
 
 static PyMethodDef SwigMethods[] = {
+	 { (char *)"extract_csr_diagonal", _wrap_extract_csr_diagonal, METH_VARARGS, (char *)"\n"
+		"extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, int Ax, std::vector<(int)> Yx)\n"
+		"extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, long Ax, std::vector<(long)> Yx)\n"
+		"extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, float Ax, std::vector<(float)> Yx)\n"
+		"extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, double Ax, std::vector<(double)> Yx)\n"
+		"extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Yx)\n"
+		"extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, \n"
+		"    std::vector<(npy_cdouble_wrapper)> Yx)\n"
+		""},
+	 { (char *)"extract_csc_diagonal", _wrap_extract_csc_diagonal, METH_VARARGS, (char *)"\n"
+		"extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, int Ax, std::vector<(int)> Yx)\n"
+		"extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, long Ax, std::vector<(long)> Yx)\n"
+		"extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, float Ax, std::vector<(float)> Yx)\n"
+		"extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, double Ax, std::vector<(double)> Yx)\n"
+		"extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, \n"
+		"    std::vector<(npy_cfloat_wrapper)> Yx)\n"
+		"extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, \n"
+		"    std::vector<(npy_cdouble_wrapper)> Yx)\n"
+		""},
 	 { (char *)"csrtocsc", _wrap_csrtocsc, METH_VARARGS, (char *)"\n"
 		"csrtocsc(int n_row, int n_col, int Ap, int Aj, int Ax, std::vector<(int)> Bp, \n"
 		"    std::vector<(int)> Bi, std::vector<(int)> Bx)\n"

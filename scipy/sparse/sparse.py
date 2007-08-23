@@ -7,7 +7,7 @@ Modified and extended by Ed Schofield, Robert Cimrman, and Nathan Bell
 
 __all__ = ['spmatrix','csc_matrix','csr_matrix','coo_matrix',
             'lil_matrix','dok_matrix', 
-            'spdiags','speye','spidentity', 
+            'spdiags','speye','spidentity','extract_diagonal', 
             'isspmatrix','issparse','isspmatrix_csc','isspmatrix_csr',
             'isspmatrix_lil','isspmatrix_dok', 'lil_eye', 'lil_diags' ]
 
@@ -2636,7 +2636,25 @@ def spdiags(diags, offsets, M, N):
     assert(len(offsets) == diags.shape[0])
     indptr, rowind, data = sparsetools.spdiags(M, N, len(offsets), offsets, diags)
     return csc_matrix((data, rowind, indptr), (M, N))
-    
+   
+def extract_diagonal(A):
+    """
+    extract_diagonal(A) returns the main diagonal of A.
+    """
+    if isspmatrix_csr(A):
+        return sparsetools.extract_csr_diagonal(A.shape[0],A.shape[1],
+                                                A.indptr,A.indices,A.data)
+    elif isspmatrix_csc(A):
+        return sparsetools.extract_csc_diagonal(A.shape[0],A.shape[1],
+                                                A.indptr,A.indices,A.data)
+    elif isspmatrix(A):
+        return extract_diagonal(A.tocsr())
+    else:
+        raise ValueError,'expected sparse matrix'
+
+
+
+
 def spidentity(n, dtype='d'):
     """
     spidentity( n ) returns the identity matrix of shape (n, n) stored

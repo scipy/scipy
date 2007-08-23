@@ -163,6 +163,8 @@ T_INPLACE_ARRAY1( npy_cdouble_wrapper )
 %include "sparsetools.h"
  /*
   * Order may be important here, list float before double, scalar before complex
+  * 
+  * Should we permit unsigned types as array indices?  Do any functions require signedness? -- Nathan (Aug 2007)
   */
 
 %define INSTANTIATE_ALL( f_name )		     
@@ -175,6 +177,12 @@ T_INPLACE_ARRAY1( npy_cdouble_wrapper )
 /* 64-bit indices would go here */
 %enddef
 
+
+/*
+ *  diag(CSR) and diag(CSC)
+ */
+INSTANTIATE_ALL(extract_csr_diagonal)
+INSTANTIATE_ALL(extract_csc_diagonal)
 
 
 /*

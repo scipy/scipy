@@ -24,6 +24,52 @@
 #include <algorithm>
 
 
+/*
+ * Extract main diagonal of CSR matrix A
+ *
+ * Input Arguments:
+ *   I  n_row         - number of rows in A
+ *   I  n_col         - number of columns in A
+ *   I  Ap[n_row+1]   - row pointer
+ *   I  Aj[nnz(A)]    - column indices
+ *   T  Ax[n_col]     - nonzeros
+ *
+ * Output Arguments:
+ *   vec<T> Yx - diagonal entries
+ *
+ * Note:
+ *   Output array Yx will be allocated within in the method
+ *   Duplicate entries will be summed.
+ *
+ *   Complexity: Linear.  Specifically O(nnz(A) + min(n_row,n_col))
+ * 
+ */
+template <class I, class T>
+void extract_csr_diagonal(const I n_row,
+                          const I n_col, 
+	                      const I Ap[], 
+	                      const I Aj[], 
+	                      const T Ax[],
+	                      std::vector<T>*  Yx)
+{
+  const I N = std::min(n_row, n_col);
+  
+  Yx->resize(N);
+
+  for(I i = 0; i < N; i++){
+    I row_start = Ap[i];
+    I row_end   = Ap[i+1];
+    
+    T diag = 0;
+    for(I jj = row_start; jj < row_end; jj++){
+        if (Aj[jj] == i)
+            diag += Ax[jj];
+    }
+    
+    (*Yx)[i] = diag;
+  }
+}
+
 
 /*
  * Compute B = A for CSR matrix A, CSC matrix B
@@ -132,7 +178,7 @@ void csrtocsc(const I n_row,
 template <class I, class T>
 void csrtocoo(const I n_row,
 	          const I n_col, 
-              const I Ap [], 
+              const I Ap[], 
               const I Aj[], 
               const T Ax[],
               std::vector<I>* Bi,
@@ -551,7 +597,7 @@ void cootocsr(const I n_row,
  *   T  Xx[n_col]     - nonzeros
  *
  * Output Arguments:
- *   vec<T> Yx - nonzeros (real part)
+ *   vec<T> Yx - nonzeros 
  *
  * Note:
  *   Output array Xx will be allocated within in the method
@@ -562,7 +608,7 @@ void cootocsr(const I n_row,
 template <class I, class T>
 void csrmux(const I n_row,
 	        const I n_col, 
-	        const I Ap [], 
+	        const I Ap[], 
 	        const I Aj[], 
 	        const T Ax[],
 	        const T Xx[],
@@ -593,12 +639,11 @@ void csrmux(const I n_row,
  *   I  n_col         - number of columns in A
  *   I  Ap[n_row+1]   - column pointer
  *   I  Ai[nnz(A)]    - row indices
- *   T    Ax[n_col]     - nonzeros (real part)
- *   T    Xx[n_col]     - nonzeros (real part)
- *   bool do_complex    - switch scalar/complex modes
+ *   T  Ax[n_col]     - nonzeros 
+ *   T  Xx[n_col]     - nonzeros
  *
  * Output Arguments:
- *   vec<T> Yx - nonzeros (real part)
+ *   vec<T> Yx - nonzeros 
  *
  * Note:
  *   Output arrays Xx will be allocated within in the method
@@ -817,6 +862,18 @@ void sort_csr_indices(const I n_row,
 /*
  * Derived methods
  */
+
+template <class I, class T>
+void extract_csc_diagonal(const I n_row,
+                          const I n_col, 
+	                      const I Ap[], 
+	                      const I Aj[], 
+	                      const T Ax[],
+	                      std::vector<T>*  Yx){
+    extract_csr_diagonal(n_col, n_row, Ap, Aj, Ax, Yx);
+}
+
+
 template <class I, class T>
 void csctocsr(const I n_row,
               const I n_col, 

@@ -22,7 +22,7 @@ import random
 from numpy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, coo_matrix, \
-     spidentity, speye, lil_matrix, lil_eye, lil_diags
+     spidentity, speye, extract_diagonal, lil_matrix, lil_eye, lil_diags
 from scipy.linsolve import splu
 restore_path()
 
@@ -329,6 +329,19 @@ class _test_cs:
         xx = splu(B).solve(r)
         # Don't actually test the output until we know what it should be ...
 
+    def check_extract_diagonal(self):
+        """
+        Test extraction of main diagonal from sparse matrices
+        """
+        L = []
+        L.append(array([[0,0,3],[1,6,4],[5,2,0]]))
+        L.append(array([[1,2,3]]))
+        L.append(array([[7],[6],[5]]))
+        L.append(array([[2]]))
+
+        for A in L:
+            assert_array_equal(numpy.diag(A),extract_diagonal(self.spmatrix(A)))
+            
 
 class _test_horiz_slicing:
     """Tests vertical slicing (e.g. [:, 0]).  Tests for individual sparse
@@ -924,6 +937,8 @@ class test_construct_utils(NumpyTestCase):
 #        print a, a.__repr__
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
         assert_array_equal(a.toarray(), b)
+
+                   
 
 class test_coo(NumpyTestCase):
     def check_constructor1(self):
