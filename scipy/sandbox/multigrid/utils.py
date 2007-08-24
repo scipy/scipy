@@ -3,7 +3,8 @@ __all__ =['inf_norm','diag_sparse']
 import numpy,scipy,scipy.sparse,scipy.weave
 from numpy import ravel,arange
 from scipy.sparse import isspmatrix,isspmatrix_csr,isspmatrix_csc, \
-                        csr_matrix,csc_matrix
+                        csr_matrix,csc_matrix,extract_diagonal
+
 
 def inf_norm(A):
     """
@@ -26,31 +27,8 @@ def diag_sparse(A):
        - return a csr_matrix with A on the diagonal
     """
     
-    if isspmatrix_csr(A) or isspmatrix_csc(A):
-        n_row = len(A.indptr) - 1
-        data,indices,indptr = A.data,A.indices,A.indptr
-
-        diag = numpy.zeros(n_row,dtype=A.dtype)
-        
-        code = """
-        #line 33 "sparse.py"
-
-        for(int i = 0; i < n_row; i++){
-          for(int jj = indptr(i); jj < indptr(i+1); jj++){
-            if(indices(jj) == i){
-              diag(i) = data(jj);
-            }
-          }
-        }
-        """
-
-        err = scipy.weave.inline(code,
-                                 ['data', 'indices', 'indptr', 'n_row', 'diag'],
-                                 type_converters = scipy.weave.converters.blitz,
-                                 compiler = 'gcc')
-        return diag
-    elif isspmatrix(A): 
-        return ravel(array([float(A[i,i]) for i in range(min(A.shape))]))
+    if isspmatrix(A):
+        return extract_diagonal(A)
     else:
         return csr_matrix((A,arange(len(A)),arange(len(A)+1)),(len(A),len(A)))
 

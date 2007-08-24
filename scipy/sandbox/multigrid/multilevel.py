@@ -154,7 +154,7 @@ class multilevel_solver:
 
 if __name__ == '__main__':
     from scipy import *
-    A = poisson_problem2D(200).T
+    A = poisson_problem2D(200)
     asa = smoothed_aggregation_solver(A)
     #asa = ruge_stuben_solver(A)
     x = rand(A.shape[0])
