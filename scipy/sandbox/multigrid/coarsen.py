@@ -35,10 +35,13 @@ def sa_strong_connections(A,epsilon):
     Sp,Sj,Sx = multigridtools.sa_strong_connections(A.shape[0],epsilon,A.indptr,A.indices,A.data)
     return scipy.sparse.csr_matrix((Sx,Sj,Sp),A.shape)
 
-def sa_constant_interpolation(A,epsilon=0.08):
+def sa_constant_interpolation(A,epsilon=None):
     if not scipy.sparse.isspmatrix_csr(A): raise TypeError('expected sparse.csr_matrix')
     
-    S = sa_strong_connections(A,epsilon)
+    if epsilon is not None:
+        S = sa_strong_connections(A,epsilon)
+    else:
+        S = A
     
     #tentative (non-smooth) interpolation operator I
     Ij = multigridtools.sa_get_aggregates(A.shape[0],S.indptr,S.indices)
@@ -48,7 +51,7 @@ def sa_constant_interpolation(A,epsilon=0.08):
     return scipy.sparse.csr_matrix((Ix,Ij,Ip))
 
 
-def sa_interpolation(A,epsilon=0.08,omega=4.0/3.0):
+def sa_interpolation(A,epsilon,omega=4.0/3.0):
     if not scipy.sparse.isspmatrix_csr(A): raise TypeError('expected sparse.csr_matrix')
     
     I = sa_constant_interpolation(A,epsilon)

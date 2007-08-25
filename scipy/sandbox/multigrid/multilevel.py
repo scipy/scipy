@@ -36,6 +36,15 @@ def poisson_problem2D(N):
     return scipy.sparse.spdiags([D,O,T,T,O],[0,-N,-1,1,N],N*N,N*N).tocsr()
 
 def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
+    """
+    Create a multilevel solver using Ruge-Stuben coarsening (Classical AMG)
+    
+        References:
+            "Multigrid"
+            Trottenberg, U., C. W. Oosterlee, and Anton Schuller. San Diego: Academic Press, 2001.
+            See Appendix A
+    
+    """
     As = [A]
     Ps = []
     
@@ -50,11 +59,20 @@ def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
     return multilevel_solver(As,Ps)
 
 def smoothed_aggregation_solver(A,max_levels=10,max_coarse=500):
+    """
+    Create a multilevel solver using Smoothed Aggregation (SA)
+
+        References:
+            "Algebraic Multigrid by Smoothed Aggregation for Second and Fourth Order Elliptic Problems",
+                Petr Vanek and Jan Mandel and Marian Brezina
+                http://citeseer.ist.psu.edu/vanek96algebraic.html
+    
+    """
     As = [A]
     Ps = []
     
     while len(As) < max_levels  and A.shape[0] > max_coarse:
-        P = sa_interpolation(A)
+        P = sa_interpolation(A,epsilon=0.08*0.5**(len(As)-1))
         
         A = (P.T.tocsr() * A) * P     #galerkin operator
 
@@ -135,6 +153,7 @@ class multilevel_solver:
         coarse_b = self.Ps[lvl].T * residual
         
         if lvl == len(self.As) - 2:
+            #direct solver on coarsest level
             coarse_x[:] = scipy.linalg.solve(self.As[-1].todense(),coarse_b)
         else:   
             self.__solve(lvl+1,coarse_x,coarse_b)
@@ -155,15 +174,15 @@ class multilevel_solver:
 if __name__ == '__main__':
     from scipy import *
     A = poisson_problem2D(200)
-    asa = smoothed_aggregation_solver(A)
-    #asa = ruge_stuben_solver(A)
+    ml = smoothed_aggregation_solver(A)
+    #ml = ruge_stuben_solver(A)
     x = rand(A.shape[0])
     b = zeros_like(x)
     
     resid = []
     
     for n in range(10):
-        x = asa.solve(b,x,maxiter=1)
+        x = ml.solve(b,x,maxiter=1)
         resid.append(linalg.norm(A*x))
 
 
