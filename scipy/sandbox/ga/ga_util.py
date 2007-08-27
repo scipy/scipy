@@ -1,61 +1,61 @@
-#base definitions for genetic algorithms
-import scipy.stats as rv
-stats = rv
+""" Basic utilities for the GA package.
+"""
 
-GAError = 'GA Error'
+from numpy import mean, std
 
-def nop(x): return x
-def flip_coin(p): return (rv.random() < p)
+from prng import prng
 
-import random
 
-def flip_coin2(p): return (random.random() < p)
-class empty_class: pass
+class GAError(Exception):
+    """ Error from the GA code.
+    """
+
+def nop(x):
+    """ Basic 'no-op' stub useful for interfaces which require a function.
+    """
+    return x
+
+def flip_coin(p):
+    """ Return True with probability p.
+    """
+    return (prng.random() < p)
+
+class empty_class:
+    """ Dummy class for cloning objects.
+    """
+    pass
 
 def shallow_clone(item):
+    """ Make a simple clone of an object.
+
+    The attributes are not copied, just referenced.
+    """
     new = empty_class()
     new.__class__ = item.__class__
     new.__dict__.update(item.__dict__)
     return new
-#these are exacly correct, but htey prevent problems with -Inf and Inf
-def my_std(s):
-#       try:
-    a = remove_NaN(s)
-    if len(a) > 1: return stats.std(a)
-    else: return 0.
-#       except:
-#               import pdb
-#               pdb.set_trace()
-def my_mean(s):
-    a = remove_NaN(s)
-    if len(a) > 1: return stats.mean(a)
-    else: return 0.
-
-def testflip():
-
-    import time
-    b = time.clock()
-    for i in range(10000): a = flip_coin(.5)
-    e = time.clock()
-    print 'rv_flip',e-b
-    b = time.clock()
-    for i in range(10000): a = flip_coin2(.5)
-    e = time.clock()
-    print 'wh_flip',e-b
-    from rv import random
-    b = time.clock()
-    for i in range(10000):
-        a = random() < .5
-    e = time.clock()
-    print 'rv',e-b
-    from random import random
-    b = time.clock()
-    for i in range(10000):
-        a = random() < .5
-    e = time.clock()
-    print 'wh',e-b
-
 
 def remove_NaN(z):
-    from numpy import isnan, isinf, compress, logical_not
-    return compress(logical_not( isnan(z)+isinf(z)),z,axis=-1)
+    """ Return an array with only finite (non-NaN, non-inf) values.
+    """
+    from numpy import isfinite
+    return z[isfinite(z)]
+
+def my_std(s):
+    """ Standard deviation robust to NaNs and infs.
+    """
+    a = remove_NaN(s)
+    if len(a) > 1:
+        return std(a)
+    else:
+        return 0.
+
+def my_mean(s):
+    """ Mean robust to NaNs and infs.
+    """
+    a = remove_NaN(s)
+    if len(a) > 0:
+        return mean(a)
+    else:
+        return 0.
+

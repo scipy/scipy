@@ -12,14 +12,15 @@ history:
 12/31/98 documentation added ej
 """
 
-from ga_util import *
-import scipy.stats as rv
-from random import random
-from numpy import *
-import copy
-from scipy.ga.tree import tree_node
+from numpy import array, log10
 
-class gene:
+from tree import tree_node
+from ga_util import GAError, nop, shallow_clone
+from prng import prng
+
+
+
+class gene(object):
     """
     Genes are the most basic building block in this genetic algorithm library.
     A gene represents a particular trait of an individual solution.  The gene class
@@ -61,20 +62,27 @@ class gene:
     mutator = None
     initializer = None
     is_gene = 1
+
     def clone(self):
-        """Makes a shallow copy of the object.  override if you need more specialized behavior
+        """ Makes a shallow copy of the object.
+        
+        Override if you need more specialized behavior.
         """
         return shallow_clone(self)
-    def replicate(self,cnt):
-        """Returns a list with cnt copies of this object in it
+
+    def replicate(self, count):
+        """ Returns a list with count copies of this object in it.
         """
-        return map(lambda x: x.clone(),[self]*cnt)
+        return map(lambda x: x.clone(),[self]*count)
+
     def initialize(self):
-        """Calls the initializer objects evaluate() function to initialize the gene
+        """ Calls the initializer objects evaluate() function to initialize the
+        gene.
         """
         self._value = self.initializer.evaluate(self)
         return self.value()
-    def set_mutation(self,mrate):
+
+    def set_mutation(self, mrate):
         """
         Set the mutation rate of the gene.
 
@@ -90,7 +98,7 @@ class gene:
             try: del self.mutation_rate #remove local mrates and use gene classes mrate
             except AttributeError: pass
         elif(mrate=='adapt'):
-            self.mutation_rate = rv.uniform(self.mr_bounds[0],self.mr_bounds[1])[0]
+            self.mutation_rate = prng.uniform(self.mr_bounds[0], self.mr_bounds[1])
         else:
             self.__class__.mutation_rate = mrate
 
@@ -102,7 +110,7 @@ class gene:
             mutation_rate of the time. Otherwise, it does nothing.
         """
         #inlined 'flip_coin' for speed
-        if random() < self.mutation_rate:
+        if prng.random() < self.mutation_rate:
             self._value = self.mutator.evaluate(self)
             return 1
         return 0
@@ -152,15 +160,16 @@ class gene:
         except AttributeError: v2 = other
         return cmp(v1,v2)
 
-class list_gene_uniform_mutator:
+class list_gene_uniform_mutator(object):
     """
     This class randomly chooses a new gene value from the allele set
     in a list_gene.  It is also useful as an initializer for list_gene.
     """
     def evaluate(self,gene):
         """ return a randomly chosen value from the genes allele set """
-        return rv.choice(gene.allele_set)
-class list_gene_gaussian_mutator:
+        return prng.choice(gene.allele_set)
+
+class list_gene_gaussian_mutator(object):
     """
     This class chooses a new gene value from the allele set
     in a list_gene.  The new value is chosen from a gaussian
@@ -195,12 +204,12 @@ class list_gene_gaussian_mutator:
         old = gene.index()
         new = -1; f = -1
         while not (0 <= new < size):
-            f = rv.norm.rvs(old,w)[0]
+            f = prng.normal(old,w)
             new = round(f)
             if(old == new and f > new): new = new + 1
             if(old == new and f < new): new = new - 1
         return gene.allele_set[int(new)]
-class list_gene_walk_mutator:
+class list_gene_walk_mutator(object):
     """
       This class chooses a new gene value from the allele set
       in a list_gene.  The newly chosen value is +/-1 element
@@ -209,7 +218,7 @@ class list_gene_walk_mutator:
     """
     def evaluate(self,gene):
         old = gene.index()
-        move = rv.choice((-1,1))
+        move = prng.choice((-1,1))
         return gene.allele_set[old + move]
 
 class list_gene(gene):
@@ -243,17 +252,19 @@ class list2_gene(list_gene):
     and resistor values during evaluation
     """
     func = nop
-    def value(self): return func(self._value)
-    def __repr__(self): return `self._value` #???
+    def value(self): 
+        return self.func(self._value)
+    def __repr__(self):
+        return repr(self._value) #???
 
-class float_gene_uniform_mutator:
+class float_gene_uniform_mutator(object):
     """ randomly choose a value within the float_gene's bounds"""
     def evaluate(self,gene):
         bounds=gene.bounds
-        new =rv.uniform(bounds[0], bounds[1]-bounds[0] ).rvs()[0]
+        new = prng.uniform(bounds[0], bounds[1]-bounds[0])
         return new
 
-class float_gene_gaussian_mutator:
+class float_gene_gaussian_mutator(object):
     """
     chooses a new value for a float_gene with gaussian
     shaped distribution around the current value.
@@ -271,10 +282,10 @@ class float_gene_gaussian_mutator:
         dev = (gene.bounds[1]-gene.bounds[0]) * self.dev_width
         new = gene.bounds[1]
 #       while not (gene.bounds[0] <= new < gene.bounds[1]):
-#           new = rv.norm.rvs(gene.value(),dev)[0]
-#       new = rv.norm(gene.value(),dev)[0]
+#           new = prng.normal(gene.value(),dev)
+#       new = prng.normal(gene.value(),dev)
         #get the _value explicitly so mutator will work for log_float also
-        new = rv.norm.rvs(gene._value,dev)[0]
+        new = prng.normal(gene._value,dev)
         if new > gene.bounds[1]: new = gene.bounds[1]
         if new < gene.bounds[0]: new = gene.bounds[0]
         return new
@@ -313,7 +324,7 @@ class log_float_gene(float_gene):
         try: return 10.**(self._value)
         except AttributeError: raise GAError, 'gene not initialized'
 
-class frozen:
+class frozen(object):
     """frozen is a gene that always maintains the same value.
     """
     def __init__(self,val): self._value = val
@@ -370,7 +381,7 @@ class tree_gene(tree_node):
             try: del self.mutation_rate #remove local mrates and use gene classes mrate
             except AttributeError: pass
         elif(mrate=='adapt'):
-            self.mutation_rate = rv.uniform(self.mr_bounds[0],self.mr_bounds[1])[0]
+            self.mutation_rate = prng.uniform(self.mr_bounds[0],self.mr_bounds[1])
         else:
             self.__class__.mutation_rate = mrate
         for child in self._children: child.set_mutation(mrate)

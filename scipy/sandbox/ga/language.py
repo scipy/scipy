@@ -1,13 +1,21 @@
 import types
-import  time
-from random import *
-SymbolError = 'Symbol Error'
-DepthError = 'Depth Error'
+
+from prng import prng
 
 
-class language:
+class SymbolError(Exception):
+    """ Error finding a symbol.
+    """
+
+class DepthError(Exception):
+    """ Tree tried to grow beyond the configured maximum depth.
+    """
+
+
+class language(object):
     max_depth = 20
     dont_cross = ['ST']  # dont perform crossovers at the start symbol node
+
     def __init__(self,lang):
         self.lang = lang
         self.dsc = 0
@@ -30,7 +38,7 @@ class language:
         new_active_node = active_node
         if type(cur_sym) == types.StringType:
             if self.lang.has_key(cur_sym):
-                rule = choice(self.lang[cur_sym])
+                rule = prng.choice(self.lang[cur_sym])
                 for sym in rule:
                     new_active_node = self._gen(sym,new_active_node,depth)
             else:

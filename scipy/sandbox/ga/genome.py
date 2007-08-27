@@ -14,18 +14,20 @@ operators are already defined for this class.  All you need to do is assign
 it an evaluator class and you are in business.
 """
 
-from ga_util import *
-import scipy.stats as rv
-import Numeric, copy
-import tree
+from numpy import array
 
-class default_evaluator:
+from ga_util import GAError, shallow_clone
+import language
+from prng import prng
+
+
+class default_evaluator(object):
     """ This default evaluator class just reminds you to define your own. """
     def evaluate(self,genome):
         return genome.performance() #if a performance() method is available, use it!
         #raise GAError, 'objective must be specified'
 
-class genome:
+class genome(object):
     """
     The class genome is used as the base class for genome classes that you
     use in your program.  It should not be used directly.  In particular, the **clone()**
@@ -140,7 +142,7 @@ class genome:
         """
         return 1
 
-class list_genome_default_initializer:
+class list_genome_default_initializer(object):
     """ The evaluate() function for this class simply calls the **initialize()**
         function for each gene in the **list_genome**.
     """
@@ -148,7 +150,7 @@ class list_genome_default_initializer:
         for gene in genome: gene.initialize()
     def __call__(self,genome): return self.evaluate(genome)
 
-class list_genome_default_mutator:
+class list_genome_default_mutator(object):
     """ The evaluate() function for this class simply calls the **mutate()**
         function for each gene in the **list_genome**. It returns 1 if
         any of the genes were mutated
@@ -159,14 +161,14 @@ class list_genome_default_mutator:
         return mutated
     def __call__(self,genome): return self.evaluate(genome)
 
-class list_genome_singlepoint_crossover:
+class list_genome_singlepoint_crossover(object):
     def evaluate(self,parents):
         #assume mom and dad are the same length
         mom = parents[0]; dad = parents[1]
         if(len(mom) > 1):
-            crosspoint = rv.randint(1,len(mom)-1).rvs()[0]
+            crosspoint = prng.randint(1,len(mom)-1).rvs()
         else:
-            crosspoint = rv.randint(0,len(mom)).rvs()[0]
+            crosspoint = prng.randint(0,len(mom)).rvs()
         brother = (mom[:crosspoint] + dad[crosspoint:]).clone()
         sister = (dad[:crosspoint] + mom[crosspoint:]).clone()
         return brother, sister
@@ -224,7 +226,7 @@ class list_genome(genome,ga_list.ga_list):
         """Most of the time, the genes in this genome specify numeric parameters.
            This method returns the values of the genes in an array (NumPy)
         """
-        return Numeric.array(self.get_values())
+        return array(self.get_values())
     def set_values(self,x):
         """ Set the values of the genes
         """
@@ -248,7 +250,7 @@ class list_genome(genome,ga_list.ga_list):
 def dict_choice(dict):
     tot = 0
     for key in dict.keys(): tot = tot + len(dict[key])
-    index = rv.choice(xrange(0,tot))
+    index = prng.choice(xrange(0,tot))
     for key in dict.keys():
         if index >= len(dict[key]):
             index = index - len(dict[key])
@@ -265,7 +267,7 @@ def in_list     (list,val):
 
 SymbolError = 'SymbolError'
 NoneError = 'NoneError'
-class tree_crossover:
+class tree_crossover(object):
     cross_rejects = ['ST']
     def __init__(self):
         self.cross_point = {}
@@ -320,7 +322,7 @@ class tree_crossover:
                 msg = "chosen symbol not found in dad (%s tries)" % `tries`
                 raise SymbolError, msg
             else: tried_sym.append(sym)
-        node_b = rv.choice(bro.symbol_table[sym])
+        node_b = prng.choice(bro.symbol_table[sym])
         idx = 0
         try:
             for child in node_a.get_parent().children():
@@ -346,12 +348,11 @@ class tree_crossover:
         return sib1,sib2
     def __call__(self,genome): return self.evaluate(genome)
 
-import language
-class tree_genome_default_initializer:
+class tree_genome_default_initializer(object):
     def evaluate(self,genome): genome.generate()
     def __call__(self,genome): return self.evaluate(genome)
 
-class tree_genome_default_mutator:
+class tree_genome_default_mutator(object):
     def evaluate(self,genome): return genome.root.mutate()
     def __call__(self,genome): return self.evaluate(genome)
 
@@ -372,7 +373,9 @@ class tree_genome(genome):
     def initialize(self,settings = None):
         genome.initialize(self,settings)
         if settings and settings.has_key('p_mutate'):
-            g.root.set_mutation(settings['p_mutate'])
+            raise NotImplementedError
+            # XXX: what is g?
+            #g.root.set_mutation(settings['p_mutate'])
     def defaultize(self):
         """ set the nodes to their default values"""
         if self.root is None:

@@ -1,6 +1,5 @@
-from ga_util import *
+from ga_util import shallow_clone
 import UserList
-import copy
 
 class ga_list(UserList.UserList):
     def data_clone(self):

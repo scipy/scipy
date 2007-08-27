@@ -1,74 +1,84 @@
-from ga_util import *
-import scipy.stats as stats
-rv = stats
-#import scipy.io.dumb_shelve
-import string
-import os, sys
-import time, pprint, types,copy
+import copy
 import dumbdbm
-#import thread, sync
+import pprint
+import sys
+import time
+
+from ga_util import flip_coin, my_mean, my_std
+from prng import prng
+
+
 if sys.platform != 'win32':
-    import fcntl
     timer = time.clock      #clock behaves differently work on linux
 else:
     timer = time.time
 
 dberror = dumbdbm.error
 
-def max_score(pop): return max(map(lambda x: x.score(),pop))
-
-class galg:
-    """A basic genetic algorithm.  The genetic algorithm is responsible
-       for evolving a population of genomes.  While the population and
-       the genomes are in charge of defining most of the genetic operators
-       such as selection, scaling, mutation, and crossover, it is the
-       genetic algorithm class that orchestrates the evolution and calls
-       the operators in the correct order.  Most of the work is done
-       in the **step()** method.
+def max_score(pop):
+    """ Find the maximum score in a population.
     """
-    valid_settings = ['pop_size','p_replace',
-                            'p_cross', 'p_mutate','p_deviation',
-                            'gens','rand_seed','rand_alg','dbase','update_rate']
-    output_settings = ['crossover','selector', 'scaler','genome_type']
-    default_settings = {'pop_size':150,'p_replace':.8,
-                            'p_cross': .8, 'p_mutate':'gene',
-                            'p_deviation': 0.,'gens':35,
-                            'rand_seed':0,'rand_alg':'CMRG',
-                            'update_rate': 10000,'dbase':''}
+    return max([x.score() for x in pop])
+
+class galg(object):
+    """ A basic genetic algorithm.
+
+    The genetic algorithm is responsible for evolving a population of genomes.
+    While the population and the genomes are in charge of defining most of the
+    genetic operators such as selection, scaling, mutation, and crossover, it is
+    the genetic algorithm class that orchestrates the evolution and calls the
+    operators in the correct order.  Most of the work is done in the **step()**
+    method.
+    """
+    valid_settings = ['pop_size', 'p_replace', 'p_cross', 'p_mutate',
+        'p_deviation', 'gens', 'rand_seed', 'dbase', 'update_rate']
+    output_settings = ['crossover', 'selector', 'scaler', 'genome_type']
+    default_settings = dict(
+        pop_size = 150,
+        p_replace = .8,
+        p_cross = .8,
+        p_mutate = 'gene',
+        p_deviation = 0.,
+        gens = 35,
+        rand_seed = 0,
+        update_rate = 10000,
+        dbase = '',
+    )
     default_verbose = 1
 
-    def __init__(self,pop):
+    def __init__(self, pop):
         self.verbose = self.default_verbose
         self.settings = copy.copy(galg.default_settings)
         self.pop = pop
-    def test_settings(self,settings):
-        for key in settings.keys():
-            try:
-                self.output_settings.index(key)
-                print 'Warning: The key "%s" in settings is readonly.' % key
-            except ValueError:
-                try: self.valid_settings.index(key)
-                except ValueError:
-                    print 'Warning: The key "%s" in not a valid setting.' % key
-                    print 'The valid settings are %s' % self.valid_settings
 
-    def initialize(self,reseed = 1):
+    def test_settings(self, settings):
+        """ Check that a settings dictionary is consistent with the settings
+        that we can accept.
+        """
+        for key in settings.keys():
+            if key in self.output_settings:
+                print 'Warning: The key "%s" in settings is readonly.' % key
+            elif key not in self.valid_settings:
+                print 'Warning: The key "%s" in not a valid setting.' % key
+                print 'The valid settings are %s' % self.valid_settings
+
+    def initialize(self, reseed=True):
         b = timer()
         self.test_settings(self.settings)
         self.gen = 0
-        sd = self.settings['rand_seed']; alg = self.settings['rand_alg']
-        if reseed: rv.initialize(seed = sd, algorithm = alg)
-        self.settings['seed_used'] = rv.initial_seed()
+        sd = self.settings['rand_seed']
+        if reseed:
+            prng.seed(sd)
+        self.settings['seed_used'] = sd
         self._print('initializing... seed = %d' % self.settings['seed_used'])
         self.crossover = self.pop.model_genome.crossover # get the crossover op from the first genome
         self.pop.settings = self.settings #should these be shared?
         self.size_pop(self.settings['pop_size'])
 
-        self.settings['crossover'] = string.split(str(self.crossover))[0][1:]
-        self.settings['selector'] = string.split(str(self.pop.selector))[0][1:]
-        self.settings['scaler'] = string.split(str(self.pop.scaler))[0][1:]
-        self.settings['genome_type'] = string.split(str(self.pop.model_genome))[0][1:]
-#               self._print(self.settings)
+        self.settings['crossover'] = str(self.crossover).split()[0][1:]
+        self.settings['selector'] = str(self.pop.selector).split()[0][1:]
+        self.settings['scaler'] = str(self.pop.scaler).split()[0][1:]
+        self.settings['genome_type'] = str(self.pop.model_genome).split()[0][1:]
 
         self.pop.initialize(self.settings);
         self.stats = {'selections':0,'crossovers':0,'mutations':0,
@@ -76,11 +86,16 @@ class galg:
         self.stats.update(self.pop.stats)
         self.step_time = timer() - b
         self.init_dbase()
-    def size_pop(self,s):
+
+    def size_pop(self, s):
+        """ Set the size of the population.
+        """
         self.settings['pop_size'] = s
         self.pop._size(s)
 
-    def step(self,steps=1):
+    def step(self, steps=1):
+        """ Perform a number of steps.
+        """
         sz = len(self.pop)
         replace = int(self.settings['p_replace'] * len(self.pop))
         p_crossover = self.settings['p_cross']
@@ -139,6 +154,7 @@ class galg:
         self.post_evolve()
         self.db_entry['run_time'] = timer() - b
         self.write_dbase()
+
     def iteration_output(self):
         output = ( 'gen: ' + `self.gen` + ' '
                  + 'max: ' + `self.stats['current']['max']`  + ' '
@@ -164,7 +180,7 @@ class galg:
         self.db_entry['best_scores'] = [self.stats['current']['max']]
         self.db_entry['stats'] = [copy.deepcopy(self.stats)]
         self.db_entry['step_time'] = [self.step_time]
-        self.db_entry['optimization_type'] = string.split(str(self.__class__))[0][1:]
+        self.db_entry['optimization_type'] = str(self.__class__).split()[0][1:]
 
     def update_dbase(self):
 #               self.db_entry['best_scores'].append(self.pop.best().score())
@@ -178,50 +194,56 @@ class galg:
            On NT, hopefully we're using the gdbm module which does automatic
            file locking.
         """
-        if(self.settings['dbase'] != ''):
-            fname= self.settings['dbase']
-            try:
-                if sys.platform == 'win32': pass
-                else:
-                    f = open(fname +'.lock','a')
-                    fcntl.flock(f.fileno(),fcntl.LOCK_EX)
-                try:
-                    try: db = my_shelve.open(fname,'w')
-                    except dberror: db = my_shelve.open(fname,'c')
-                    keys = db.keys()
-                    if(len(keys) == 0): self.dbkey = `1`
-                    else:
-                        gkeys=[]
-                        for k in keys:
-                            try: gkeys.append(string.atoi(k))
-                            except ValueError: pass
-                        self.dbkey = `max(gkeys)+1`
-                    print 'DB NAME: ', self.settings['dbase'], 'KEY: ', self.dbkey
-                    db[self.dbkey] = self.db_entry
-                    db.close()
-                except: pass #if an error occured, we still need to unlock the db
-                if sys.platform == 'win32': pass
-                else:
-                    fcntl.flock(f.fileno(),fcntl.LOCK_UN)
-                    f.close()
-            except:
-                if sys.platform == 'win32': pass
-                else:
-                    f = open('error.lock','a')
-                    f.write(os.environ['HOST'])
-                    f.close()
+        # XXX: broken. No my_shelve. Rewrite.
+        raise NotImplementedError
+#        if(self.settings['dbase'] != ''):
+#            fname= self.settings['dbase']
+#            try:
+#                if sys.platform == 'win32': pass
+#                else:
+#                    f = open(fname +'.lock','a')
+#                    fcntl.flock(f.fileno(),fcntl.LOCK_EX)
+#                try:
+#                    try: db = my_shelve.open(fname,'w')
+#                    except dberror: db = my_shelve.open(fname,'c')
+#                    keys = db.keys()
+#                    if(len(keys) == 0): self.dbkey = `1`
+#                    else:
+#                        gkeys=[]
+#                        for k in keys:
+#                            try: gkeys.append(string.atoi(k))
+#                            except ValueError: pass
+#                        self.dbkey = `max(gkeys)+1`
+#                    print 'DB NAME: ', self.settings['dbase'], 'KEY: ', self.dbkey
+#                    db[self.dbkey] = self.db_entry
+#                    db.close()
+#                except: pass #if an error occured, we still need to unlock the db
+#                if sys.platform == 'win32': pass
+#                else:
+#                    fcntl.flock(f.fileno(),fcntl.LOCK_UN)
+#                    f.close()
+#            except:
+#                if sys.platform == 'win32': pass
+#                else:
+#                    f = open('error.lock','a')
+#                    f.write(os.environ['HOST'])
+#                    f.close()
+#
+#        else:   "no dbase specified"
 
-        else:   "no dbase specified"
-
-    def _print(self,val, level = 1):
+    def _print(self, val, level=1):
         if(self.verbose >= level):
-            if type(val) == types.StringType: print val
+            if isinstance(val, basestring):
+                print val
             else:
                 pp = pprint.PrettyPrinter(indent=4)
                 pp.pprint(val)
 
 
     ALL = -1
+
+
+
 class m_galg(galg):
     valid_settings = galg.valid_settings + ['num_pops', 'migrants']
     default_settings = galg.default_settings
@@ -229,19 +251,21 @@ class m_galg(galg):
     default_settings['migrants'] = 2
 
     verbose = 1
+
     def __init__(self,pop):
         galg.__init__(self,pop)
 #               self.GAs = self.GAs + [galg(pop.clone())]
         self.settings = copy.copy(self.default_settings)
 
-    def initialize(self, mode = 'serial'):
+    def initialize(self, mode='serial', reseed=True):
         b = timer()
         #same as galg
         self.test_settings(self.settings)
         self.gen = 0
-        sd = self.settings['rand_seed']; alg = self.settings['rand_alg']
-        rv.initialize(seed = sd, algorithm = alg)
-        self.settings['seed_used'] = rv.initial_seed()
+        sd = self.settings['rand_seed']
+        if reseed:
+            prng.seed(sd)
+        self.settings['seed_used'] = sd
         self._print('initializing... seed = %d' % self.settings['seed_used'])
         self.crossover = self.pop[0].crossover # get the crossover op from the first genome
         self.pop.settings = self.settings
@@ -262,13 +286,14 @@ class m_galg(galg):
             self.GAs.append(galg(self.pop.clone()))
             self.GAs[i].settings = sub_ga_settings.copy()
 
-        self.settings['crossover'] = string.split(str(self.crossover))[0][1:]
-        self.settings['selector'] = string.split(str(self.pop.selector))[0][1:]
-        self.settings['scaler'] = string.split(str(self.pop.scaler))[0][1:]
-        self.settings['genome_type'] = string.split(str(self.pop.model_genome))[0][1:]
+        self.settings['crossover'] = str(self.crossover).split()[0][1:]
+        self.settings['selector'] = str(self.pop.selector).split()[0][1:]
+        self.settings['scaler'] = str(self.pop.scaler).split()[0][1:]
+        self.settings['genome_type'] = str(self.pop.model_genome).split()[0][1:]
         self._print(self.settings)
 
         if mode[0] == 'p' or mode[0] == 'P':
+            # XXX: what?
             """
                 sys.setcheckinterval(1000)
                 finished = sync.event()
@@ -279,7 +304,7 @@ class m_galg(galg):
                 sys.setcheckinterval(10)
                 """
         else:
-            for ga in self.GAs: ga.initialize(reseed = 0)
+            for ga in self.GAs: ga.initialize(reseed = False)
         cnt = 0
         for ga in self.GAs:
             self.pop[cnt] = ga.pop.best()
@@ -318,7 +343,7 @@ class m_galg(galg):
         try: self.pop.stats['overall']['min'] = min(self.pop.stats['overall']['min'],
                                                             self.pop.stats['current']['min'])
         except KeyError: self.pop.stats['overall']['min'] = self.pop.stats['current']['min']
-        self.pop.stats
+        self.pop.stats  # XXX: Is this a no-op?
         self.pop.stats['pop_evals'] = self.GAs[0].stats['pop_evals']
         self.stats.update(self.pop.stats)
 
@@ -417,7 +442,7 @@ def GA_stepper(bar,finished,GA):
 
 def GA_initializer(bar,finished,GA):
         t1 = timer()
-        GA.initialize(reseed = 0)
+        GA.initialize(reseed = False)
         t2 = timer()
         print 'thread ' + `thread.get_ident()` + 'time ' + `t2-t1` + ' sec.'
         bar.enter()

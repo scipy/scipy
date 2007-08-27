@@ -1,30 +1,35 @@
 #genetic algorithm population
 #based on galib.
+import re
 import time
+
+from numpy import array
+
 import ga_list
-import re, copy
 import scaling
 import selection
-import Numeric
-import scipy.stats as stats
-from ga_util import *
-import pdb
+from ga_util import GAError, my_mean, my_std
+
 
 def ftn_minimize(x,y):
     """Minimization comparator for fitness (scaled score)."""
     return cmp(x.fitness(),y.fitness())
+
 def ftn_maximize(x,y):
     """Maximization comparator for fitness (scaled score)."""
     return cmp(y.fitness(),x.fitness())
+
 def sc_minimize(x,y):
     """Minimization comparator for raw score."""
 #       return cmp(x.score(),y.score())
     #removed one function call
     return cmp(x.evaluate(),y.evaluate())
+
 def sc_maximize(x,y):
     """Maximization comparator for raw score."""
 #       return cmp(y.score(),x.score())
     return cmp(y.evaluate(),x.evaluate())
+
 class default_pop_evaluator:
     """The **evaluate()** method simply calls the **evaluate()**
        method for all the genomes in the population
@@ -33,18 +38,21 @@ class default_pop_evaluator:
         try:
             evals = 0
             if not pop.evaluated or force:
-                for ind in pop: ind.evaluate(force)
+                for ind in pop:
+                    ind.evaluate(force)
         except:
             #this makes where a pop evaluator can simply evaluate a list
             #of genomes - might be useful to simplify remote evaluation
-            for ind in pop: ind.evaluate(force)
+            for ind in pop:
+                ind.evaluate(force)
 
 class default_pop_initializer:
-    """The **evaluate()** method simply calls the **evaluate()**
-       method for all the genomes in the population
+    """ The **evaluate()** method simply calls the **evaluate()** method for all
+    the genomes in the population
     """
     def evaluate(self,pop,settings):
-        for i in pop: i.initialize(settings)
+        for i in pop:
+            i.initialize(settings)
 
 class population(ga_list.ga_list):
     """A population of genomes.  The population is constructed by cloning a
@@ -106,6 +114,7 @@ class population(ga_list.ga_list):
         self._size(size)
         self.selector = population.default_selector() #why'd I do this?
         self.stats={}
+
     def initialize(self,settings = None):
         """This method **must** be called before a genetic algorithm
            begins evolving the population.  It takes care of initializing
@@ -136,6 +145,7 @@ class population(ga_list.ga_list):
         self.stats['initial']['max'] = self.stats['current']['max']
         self.stats['initial']['min'] = self.stats['current']['min']
         self.stats['initial']['dev'] = self.stats['current']['dev']
+
     def clone(self):
         """Returns a population that has a shallow copy the all the
            attributes and clone of all the genomes in the original
@@ -145,15 +155,22 @@ class population(ga_list.ga_list):
         new.stats = {}
         new.stats.update(self.stats)
         return new
+
     def touch(self):
         """Reset all the flags for the population."""
-        self.evaluated = 0; self.scaled = 0; self.sorted = 0; self.select_ready = 0
+        self.evaluated = 0
+        self.scaled = 0
+        self.sorted = 0
+        self.select_ready = 0
         self.stated = 0
+
     def _size(self, l):
         """Resize the population."""
         del self[l:len(self)]
-        for i in range(len(self),l): self.append(self.model_genome.clone())
+        for i in range(len(self),l):
+            self.append(self.model_genome.clone())
         return len(self)
+
     def evaluate(self, force = 0):
         """Call the **evaluator.evaluate()** method to evaluate
            the population.  The population is also sorted so that
@@ -180,9 +197,11 @@ class population(ga_list.ga_list):
         self.evaluated = 1
         e4 = time.clock()
         #print 'eval:',e1-b, 'sort:',e2-e1, 'stats:',e3-e2, 'touch:',e4-e3
+
     def mutate(self):
         mutations = 0
-        for ind in self: mutations  =  mutations + ind.mutate()
+        for ind in self:
+            mutations  =  mutations + ind.mutate()
         return mutations
 
     def sort(self,type = 'raw', force = 0):
@@ -199,10 +218,14 @@ class population(ga_list.ga_list):
            force -- forces the sort even if sorted = 1
         """
 #               if not self.sorted or force:
-        if(type == 'scaled'): self.data.sort(self.ftn_comparator)
-        elif(type == 'raw'): self.data.sort(self.sc_comparator)
-        else: raise GAError, 'sort type must be "scaled" or "raw"'
+        if type == 'scaled':
+            self.data.sort(self.ftn_comparator)
+        elif type == 'raw':
+            self.data.sort(self.sc_comparator)
+        else:
+            raise GAError('sort type must be "scaled" or "raw"')
         self.sorted = 1
+
     def select(self, cnt = 1):
         """Calls the selector and returns *cnt* individuals.
 
@@ -214,6 +237,7 @@ class population(ga_list.ga_list):
             self.selector.update(self)
             self.select_ready = 1
         return self.selector.select(self,cnt)
+
     def scale(self, force = 0):
         """Calls the **scaler.scale()** method and updates
            the fitness of each individual.
@@ -225,16 +249,19 @@ class population(ga_list.ga_list):
         if not (self.scaled or force):
             self.scaler.scale(self)
         self.scaled = 1
+
     def fitnesses(self):
-        """Returns the fitness (scaled score) of all the
-           individuals in a population as a Numeric array.
+        """ Returns the fitness (scaled score) of all the individuals in
+        a population as an array.
         """
-        return Numeric.array(map(lambda x: x.fitness(),self))
+        return array([x.fitness() for x in self])
+
     def scores(self):
-        """Returns the scores (raw) of all the
-           individuals in a population as a Numeric array.
+        """ Returns the scores (raw) of all the individuals in a population as
+        an array.
         """
-        return Numeric.array(map(lambda x: x.score(),self))
+        return array([x.score() for x in self])
+
     def best(self, ith_best = 1):
         """Returns the best individual in the population.
            *It assumes the population has been sorted.*
@@ -245,6 +272,7 @@ class population(ga_list.ga_list):
                        best individual in the population.
         """
         return self[ith_best - 1]
+
     def worst(self,ith_worst = 1):
         """Returns the worst individual in the population.
            *It assumes the population has been sorted.*
@@ -255,6 +283,7 @@ class population(ga_list.ga_list):
                        worst individual in the population.
         """
         return self[-ith_worst]
+
     def min_or_max(self,*which_one):
         """Returns or set 'min' or 'max' indicating whether the
            population is to be minimized or maximized.
@@ -274,20 +303,30 @@ class population(ga_list.ga_list):
             elif (re.match('max.*',which_one[0],re.I)):
                 self.ftn_comparator = ftn_maximize
                 self.sc_comparator = sc_maximize
-            else:   raise GaError, "min_or_max expects 'min' or 'max'"
-        if self.ftn_comparator == ftn_minimize: return 'min'
-        elif self.ftn_comparator == ftn_maximize: return 'max'
+            else:
+                raise GAError("min_or_max expects 'min' or 'max'")
+        if self.ftn_comparator == ftn_minimize:
+            return 'min'
+        elif self.ftn_comparator == ftn_maximize:
+            return 'max'
+
     def update_stats(self):
         """Update the statistics for the population."""
         s = self.scores()
         self.stats['current']['max'] = max(s)
         self.stats['current']['avg'] = my_mean(s)
         self.stats['current']['min'] = min(s)
-        if len(s) > 1: self.stats['current']['dev'] = my_std(s)
-        else: self.stats['current']['dev'] = 0
-        try: self.stats['overall']['max'] = max(self.stats['overall']['max'],
-                                                            self.stats['current']['max'])
-        except KeyError: self.stats['overall']['max'] = self.stats['current']['max']
-        try: self.stats['overall']['min'] = min(self.stats['overall']['min'],
-                                                            self.stats['current']['min'])
-        except KeyError: self.stats['overall']['min'] = self.stats['current']['min']
+        if len(s) > 1:
+            self.stats['current']['dev'] = my_std(s)
+        else:
+            self.stats['current']['dev'] = 0
+        try:
+            self.stats['overall']['max'] = max(self.stats['overall']['max'],
+                                               self.stats['current']['max'])
+        except KeyError:
+            self.stats['overall']['max'] = self.stats['current']['max']
+        try:
+            self.stats['overall']['min'] = min(self.stats['overall']['min'],
+                                               self.stats['current']['min'])
+        except KeyError:
+            self.stats['overall']['min'] = self.stats['current']['min']

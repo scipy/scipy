@@ -54,8 +54,15 @@ def ex1():
     #
     galg = ga.algorithm.galg(pop)
     # change a few settings
-    settings = {'pop_size':250,'p_replace':.8,'p_cross': .8, 'p_mutate':'gene',
-                'p_deviation': 0.,'gens':35,'rand_seed':0,'rand_alg':'CMRG'}
+    settings = dict(
+        pop_size = 250,
+        p_replace = .8,
+        p_cross = .8,
+        p_mutate = 'gene',
+        p_deviation = 0.,
+        gens = 35,
+        rand_seed = 0,
+    )
     galg.settings.update(settings)
     galg.evolve()
     print galg.pop.best()
