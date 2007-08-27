@@ -1,16 +1,30 @@
 import common_info
 from c_spec import common_base_converter
 import sys,os
+import glob
 
-# these may need user configuration.
-if sys.platform == "win32":
-    wx_base = r'c:\third\wxpython-2.4.0.7'
-else:
-    # probably should do some more discovery here.
-    wx_base = '/usr/lib/wxPython'
+def find_base_dir():
+    searched_locations = ['c:\third\wxpython*',
+                          '/usr/lib/wx*']
+
+    candidate_locations = []
+    for pattern in searched_locations:
+        candidate_locations.extend(glob.glob(pattern))
+    candidate_locations.sort()
+
+    if len(candidate_locations) == 0:
+        raise RuntimeError("Could not locate wxPython base directory.")
+    else:
+        return candidate_locations[-1]
+
+wx_base = find_base_dir()
 
 def get_wxconfig(flag):
     wxconfig = os.path.join(wx_base,'bin','wx-config')
+    if not os.path.exists(wxconfig):
+        # Could not locate wx-config, assume it is on the path.
+        wxconfig = 'wx-config'
+
     import commands
     res,settings = commands.getstatusoutput(wxconfig + ' --' + flag)
     if res:

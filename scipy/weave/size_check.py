@@ -162,11 +162,7 @@ class dummy_array(object):
     def __len__(self):
         return self.shape[0]
     def __getslice__(self,i,j):
-        # enabling the following would make class compatible with
-        # lists.  Its current incarnation is compatible with arrays.
-        # Both this and Numeric should have this FIXED to correspond
-        # to lists.
-        #i = max(i, 0); j = max(j, 0)
+        i = max(i, 0); j = max(j, 0)
         return self.__getitem__((slice(i,j),))
     def __getitem__(self,indices):
         # ayeyaya this is a mess

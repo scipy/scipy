@@ -93,7 +93,7 @@ class test_binary_op_size(NumpyTestCase):
     def check_error1(self):
         x,y = (5,),(4,)
         self.generic_error_test(x,y)
-        
+
     def check_error2(self):
         x,y = (5,5),(4,5)
         self.generic_error_test(x,y)
@@ -163,8 +163,6 @@ class test_dummy_array_indexing(NumpyTestCase):
     def check_1d_2(self):
         self.generic_1d('a[-1:]')
     def check_1d_3(self):
-        # dummy_array is "bug for bug" equiv to numpy.numerix.array
-        # on wrapping of indices.
         self.generic_1d('a[-11:]')
     def check_1d_4(self):
         self.generic_1d('a[:1]')
@@ -246,7 +244,7 @@ class test_dummy_array_indexing(NumpyTestCase):
                 end2 = random.choice(choices)
                 step2 = random.choice(choices)
                 if step in ['0',0]: step = 'None'
-                if step2 in ['0',0]: step2 = 'None'  
+                if step2 in ['0',0]: step2 = 'None'
                 expr = 'a[%s:%s:%s,%s:%s:%s]' %(beg,end,step,beg2,end2,step2)
                 self.generic_2d(expr)
             except IndexError:
@@ -263,7 +261,7 @@ class test_dummy_array_indexing(NumpyTestCase):
                     val = random.choice(choices)
                     if (i+1) % 3 == 0 and val in ['0',0]:
                         val = 'None'
-                    idx.append(val)                    
+                    idx.append(val)
                 expr = 'a[%s:%s:%s,%s:%s:%s,%s:%s:%s]' % tuple(idx)
                 self.generic_3d(expr)
             except IndexError:
