@@ -289,8 +289,9 @@ def get_catalog(module_path,mode='r'):
         msg = " mode must be 'c', 'n', 'r', or 'w'.  See anydbm for more info"
         raise ValueError, msg
     catalog_file = catalog_path(module_path)
-    if (dumb and os.path.exists(catalog_file+'.dat')) \
-           or os.path.exists(catalog_file):
+    if (catalog_file is not None) \
+           and ((dumb and os.path.exists(catalog_file+'.dat')) \
+                or os.path.exists(catalog_file)):
         sh = shelve.open(catalog_file,mode)
     else:
         if mode=='r':
@@ -552,7 +553,7 @@ class catalog(object):
             function exists with a warning.
         """
         writable_cat = None
-        if not os.path.exists(catalog_path):
+        if (catalog_path is not None) and (not os.path.exists(catalog_path)):
             return
         try:
             writable_cat = get_catalog(catalog_path,'w')
