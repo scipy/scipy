@@ -252,7 +252,7 @@ extern "C" {
     def warning_code(self):
         all_warnings = self.build_information().warnings()
         w=map(lambda x: "#pragma warning(%s)\n" % x,all_warnings)
-        return ''.join(w)
+        return '#ifndef __GNUC__\n' + ''.join(w) + '\n#endif'
 
     def header_code(self):
         h = self.get_headers()

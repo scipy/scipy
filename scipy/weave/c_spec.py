@@ -268,8 +268,6 @@ class file_converter(common_base_converter):
         code = """
                PyObject* file_to_py(FILE* file, char* name, char* mode)
                {
-                   PyObject* py_obj = NULL;
-                   //extern int fclose(FILE *);
                    return (PyObject*) PyFile_FromFile(file, name, mode, fclose);
                }
                """
