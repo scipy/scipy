@@ -177,8 +177,11 @@ def default_dir():
 
     # Use a cached value for fast return if possible
     try:
+        assert os.path.exists(default_dir.cached_path)
         return default_dir.cached_path
     except AttributeError:
+        pass
+    except AssertionError:
         pass
 
     python_name = "python%d%d_compiled" % tuple(sys.version_info[:2])
