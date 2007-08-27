@@ -211,5 +211,9 @@ class test_rv_discrete(NumpyTestCase):
         for s,p in zip(states,probability):
             assert abs(sum(x == s)/float(samples) - p) < 0.05
 
+class test_expon(NumpyTestCase):
+    def check_zero(self):
+        assert_equal(stats.expon.pdf(0),1)
+
 if __name__ == "__main__":
     NumpyTest('stats.distributions').run()

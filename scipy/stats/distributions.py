@@ -13,7 +13,7 @@ import inspect
 from numpy import alltrue, where, arange, put, putmask, \
      ravel, take, ones, sum, shape, product, repeat, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
-     arctan, tanh, ndarray, cos, cosh, sinh, newaxis
+     arctan, tanh, ndarray, cos, cosh, sinh, newaxis, array
 from numpy import atleast_1d, polyval, angle, ceil, place, extract, \
      any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isnan, isinf
 import numpy
@@ -467,10 +467,10 @@ class rv_continuous(object):
         args = tuple(map(arr,args))
         x = arr((x-loc)*1.0/scale)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
+        cond1 = (scale > 0) & (x >= self.a) & (x <= self.b)
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        putmask(output,(1-cond0)*array(cond1,bool),self.badvalue)
         goodargs = argsreduce(cond, *((x,)+args+(scale,)))
         scale, goodargs = goodargs[-1], goodargs[:-1]
         place(output,cond,self._pdf(*goodargs) / scale)
