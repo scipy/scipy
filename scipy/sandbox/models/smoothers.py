@@ -10,7 +10,7 @@ from scipy.linalg import solveh_banded
 from scipy.optimize import golden
 
 from scipy.sandbox.models import _bspline
-from scipy.sandbox.models.bspline import bspline, band2array
+from scipy.sandbox.models.bspline import bspline, _band2array
 
 
 class poly_smoother:
@@ -103,7 +103,7 @@ class smoothing_spline(bspline):
         self.N = y.shape[0]
         if not banded:
             self.btb = N.dot(bt, bt.T)
-            _g = band2array(self.g, lower=1, symmetric=True)
+            _g = _band2array(self.g, lower=1, symmetric=True)
             self.coef, _, self.rank = L.lstsq(self.btb + pen*_g, bty)[0:3]
             self.rank = min(self.rank, self.btb.shape[0])
         else:

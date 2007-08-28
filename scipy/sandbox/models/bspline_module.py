@@ -132,11 +132,11 @@ def setup_bspline_module():
     PyArrayObject *basis;
     double *data;
 
-
     basis = (PyArrayObject *) PyArray_SimpleNew(2, dim, PyArray_DOUBLE);
     data = (double *) basis->data;
     bspline(&data, x, Nx[0], knots, Nknots[0], m, d, lower, upper);
     return_val = (PyObject *) basis;
+    Py_DECREF((PyObject *) basis); 
 
     '''    
 
@@ -184,7 +184,9 @@ def setup_bspline_module():
     
     double bspline_quad(double *knots, int nknots,
                         int m, int l, int r, int dl, int dr) 
+
         /* This is based on scipy.integrate.fixed_quad */
+
     {
         double *y;
         double qx[%(nq)d]={%(qx)s};
@@ -202,8 +204,8 @@ def setup_bspline_module():
         lower = l - m - 1; 
 	if (lower < 0) { lower = 0;}
 	upper = lower + 2 * m + 4;
-	if (upper > nknots - 1) {upper = nknots-1;}
-/*	upper = nknots - m; */
+	if (upper > nknots - 1) { upper = nknots-1; }
+
         for (k=lower; k<upper; k++) {
             partial = 0.;
             a = knots[k]; b=knots[k+1];
@@ -216,7 +218,10 @@ def setup_bspline_module():
             for (kk=0; kk<nq; kk++) {
                 partial += y[kk] * qw[kk];
             }
+            free(y); /* bspline_prod malloc's memory, but does not free it */
+
             result += (b - a) * partial / 2.;
+
         }
 
         return(result);
@@ -260,6 +265,7 @@ def setup_bspline_module():
     data = (double *) gram->data;
     bspline_gram(&data, knots, Nknots[0], m, dl, dr);
     return_val = (PyObject *) gram;
+    Py_DECREF((PyObject *) gram); 
 
     '''    
 
@@ -324,7 +330,8 @@ def setup_bspline_module():
     data = (double *) invband->data;
     invband_compute(&data, L, NL[1], NL[0]-1);
 
-     return_val = (PyObject *) invband;
+    return_val = (PyObject *) invband;
+    Py_DECREF((PyObject *) invband); 
 
     '''    
 

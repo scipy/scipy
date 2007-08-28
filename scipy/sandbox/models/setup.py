@@ -8,6 +8,8 @@ def configuration(parent_package='',top_path=None, package_name='models'):
     config.add_data_dir('tests')
 
     try:
+        import sys
+        print sys.path
         from scipy.sandbox.models.bspline_module import mod
         n, s, d = weave_ext(mod)
         config.add_extension(n, s, **d)

@@ -6,7 +6,7 @@ Statistical models
 
   - `ols_model` (ordinary least square regression)
   - `wls_model` (weighted least square regression)
-  - `ar_model` (autoregression)
+  - `ar_model` (autoregressive model)
 
  - `glm.model` (generalized linear models)
  - robust statistical models

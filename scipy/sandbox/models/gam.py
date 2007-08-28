@@ -1,6 +1,8 @@
 """
 Generalized additive models
+
 """
+
 import numpy as N
 
 from scipy.sandbox.models import family
@@ -12,7 +14,7 @@ def default_smoother(x):
     _x.sort()
     n = x.shape[0]
     # taken form smooth.spline in R
-    print "herenow"
+
     if n < 50:
         nknots = n
     else:
@@ -29,7 +31,8 @@ def default_smoother(x):
         else:
             nknots = 200 + (n - 3200.)**0.2
         knots = _x[N.linspace(0, n-1, nknots).astype(N.int32)]
-    s = SmoothingSpline(knots)
+
+    s = SmoothingSpline(knots, x=x.copy())
     s.gram(d=2)
     s.target_df = 5
     return s
@@ -41,7 +44,7 @@ class offset:
         self.offset = offset
 
     def __call__(self, *args, **kw):
-        return self.fn(*args, **kw) + offset
+        return self.fn(*args, **kw) + self.offset
 
 class results:
 
@@ -62,7 +65,7 @@ class results:
         return N.sum(self.smoothed(design), axis=0) + self.alpha
 
     def smoothed(self, design):
-        return N.array([self.smoothers[i](design[:,i]) + self.offset[i] for i in range(design.shape[1])])
+        return N.array([self.smoothers[i]() + self.offset[i] for i in range(design.shape[1])])
 
 class additive_model:
 
@@ -89,16 +92,16 @@ class additive_model:
         offset = N.zeros(self.design.shape[1], N.float64)
         alpha = (Y * self.weights).sum() / self.weights.sum()
         for i in range(self.design.shape[1]):
-            tmp = self.smoothers[i](self.design[:,i])
-            self.smoothers[i].smooth(Y - alpha - mu + tmp, x=self.design[:,i],
+            tmp = self.smoothers[i]()
+            self.smoothers[i].smooth(Y - alpha - mu + tmp,
 				     weights=self.weights)
-            tmp2 = self.smoothers[i](self.design[:,i])
+            tmp2 = self.smoothers[i]()
             offset[i] = -(tmp2*self.weights).sum() / self.weights.sum()
             mu += tmp2 - tmp
 
         return results(Y, alpha, self.design, self.smoothers, self.family, offset)
 
-    def cont(self, tol=1.0e-02):
+    def cont(self, tol=1.0e-04):
 	
         curdev = (((self.results.Y - self.results.predict(self.design))**2) * self.weights).sum()
 
@@ -124,9 +127,9 @@ class additive_model:
         offset = N.zeros(self.design.shape[1], N.float64)
 
         for i in range(self.design.shape[1]):
-            self.smoothers[i].smooth(Y - alpha - mu, x=self.design[:,i],
+            self.smoothers[i].smooth(Y - alpha - mu,
 				     weights=self.weights)
-            tmp = self.smoothers[i](self.design[:,i])
+            tmp = self.smoothers[i]()
             offset[i] = (tmp * self.weights).sum() / self.weights.sum()
             tmp -= tmp.sum()
             mu += tmp
@@ -190,8 +193,7 @@ class model(glm, additive_model):
         return self.results
 
 
-if __name__ == "__main__":
-
+def _run():
     import numpy.random as R
     n = lambda x: (x - x.mean()) / x.std()
     n_ = lambda x: (x - x.mean()) 
@@ -220,11 +222,11 @@ if __name__ == "__main__":
     toc = time.time()
     m.fit(b)
     tic = time.time()
-    import pylab
-    pylab.figure(num=1)
-    pylab.plot(x1, n(m.smoothers[0](x1))); pylab.plot(x1, n(f1(x1)), linewidth=2)
-    pylab.figure(num=2)
-    pylab.plot(x2, n(m.smoothers[1](x2))); pylab.plot(x2, n(f2(x2)), linewidth=2); 
+##     import pylab
+##     pylab.figure(num=1)
+##     pylab.plot(x1, n(m.smoothers[0](x1)), 'r'); pylab.plot(x1, n(f1(x1)), linewidth=2)
+##     pylab.figure(num=2)
+##     pylab.plot(x2, n(m.smoothers[1](x2)), 'r'); pylab.plot(x2, n(f2(x2)), linewidth=2); 
     print tic-toc
 
     f = family.Poisson()
@@ -235,9 +237,12 @@ if __name__ == "__main__":
     m.fit(p)
     tic = time.time()
     print tic-toc
-    pylab.figure(num=1)
-    pylab.plot(x1, n(m.smoothers[0](x1))); pylab.plot(x1, n(f1(x1)), linewidth=2) 
-    pylab.figure(num=2)
-    pylab.plot(x2, n(m.smoothers[1](x2))); pylab.plot(x2, n(f2(x2)), linewidth=2)
-    pylab.show()
+##     pylab.figure(num=1)
+##     pylab.plot(x1, n(m.smoothers[0](x1)), 'b'); pylab.plot(x1, n(f1(x1)), linewidth=2) 
+##     pylab.figure(num=2)
+##     pylab.plot(x2, n(m.smoothers[1](x2)), 'b'); pylab.plot(x2, n(f2(x2)), linewidth=2)
+##     pylab.show()
 
+
+if __name__ == "__main__":
+    _run()

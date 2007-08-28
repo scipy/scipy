@@ -1,5 +1,6 @@
 """
-General linear model
+General linear models
+--------------------
 """
 import numpy as N
 from scipy.sandbox.models import family
@@ -14,7 +15,7 @@ class model(wls_model):
         self.weights = 1
         self.initialize(design)
 
-    def __iter__(self):
+    def __iter__(self):                                                   
         self.iter = 0
         self.dev = N.inf
         return self
