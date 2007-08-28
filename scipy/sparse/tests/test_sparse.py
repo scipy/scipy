@@ -813,6 +813,17 @@ class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase):
         x = x*0
         assert_equal(x[0,0],0)
 
+    def check_reshape(self):
+        x = lil_matrix((4,3))
+        x[0,0] = 1
+        x[2,1] = 3
+        x[3,2] = 5
+        x[0,2] = 7
+
+        for s in [(12,1),(1,12)]:
+            assert_array_equal(x.reshape(s).todense(),
+                               x.todense().reshape(s))
+
     def check_lil_lil_assignment(self):
         """ Tests whether a row of one lil_matrix can be assigned to
         another.
