@@ -46,53 +46,26 @@ def imsave(name, arr):
     return
 
 def fromimage(im, flatten=0):
-    """Takes a PIL image and returns a copy of the image in a numpy container.
-    If the image is RGB returns a 3-dimensional array:  arr[:,:,n] is each channel
+    """Return a copy of a PIL image as a numpy array.
 
-    Optional arguments:
+    :Parameters:
+        im : PIL image
+            Input image.
+        flatten : bool
+            If true, convert the output to grey-scale.
 
-    - flatten (0): if true, the image is flattened by calling convert('F') on
-    the image object before extracting the numerical data.  This flattens the
-    color layers into a single grayscale layer.  Note that the supplied image
-    object is NOT modified.
+    :Returns:
+        img_array : ndarray
+            The different colour bands/channels are stored in the
+            third dimension, such that a grey-image is MxN, an
+            RGB-image MxNx3 and an RGBA-image MxNx4.
+
     """
-    assert Image.isImageType(im), "Not a PIL image."
+    if not Image.isImageType(im):
+        raise TypeError("Input is not a PIL image.")
     if flatten:
         im = im.convert('F')
-    mode = im.mode
-    adjust = 0
-    if mode == '1':
-        im = im.convert(mode='L')
-        mode = 'L'
-        adjust = 1
-    str = im.tostring()
-    type = uint8
-    if mode == 'F':
-        type = numpy.float32
-    elif mode == 'I':
-        type = numpy.uint32
-    elif mode == 'I;16':
-        type = numpy.uint16
-    arr = numpy.fromstring(str,type)
-    shape = list(im.size)
-    shape.reverse()
-    if mode == 'P':
-        arr.shape = shape
-        if im.palette.rawmode != 'RGB':
-            print "Warning: Image has invalid palette."
-            return arr
-        pal = numpy.fromstring(im.palette.data,type)
-        N = len(pal)
-        pal.shape = (int(N/3.0),3)
-        return arr, pal
-    if mode in ['RGB','YCbCr']:
-        shape += [3]
-    elif mode in ['CMYK','RGBA']:
-        shape += [4]
-    arr.shape = shape
-    if adjust:
-        arr = (arr != 0)
-    return arr
+    return array(im)
 
 _errstr = "Mode is unknown or incompatible with input array shape."
 def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
