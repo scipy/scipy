@@ -44,7 +44,7 @@ Currently SciPy consists of the following files and directories:
     Additions to distutils-generated SciPy tar-balls.  Its usage is
     deprecated.
 
-  Lib/
+  scipy/
     Contains SciPy __init__.py and the directories of SciPy modules.
 
 
@@ -54,7 +54,7 @@ SciPy modules
 -------------
 
 In the following, a *SciPy module* is defined as a Python package, say
-xxx, that is located in the Lib/ directory.  All SciPy modules should
+xxx, that is located in the scipy/ directory.  All SciPy modules should
 follow the following conventions:
 
 * Ideally, each SciPy module should be as self-contained as possible.
