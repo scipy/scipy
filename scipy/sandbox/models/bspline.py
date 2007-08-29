@@ -1,3 +1,20 @@
+'''
+Bspines and smoothing splines.
+
+General references:
+
+    Craven, P. and Wahba, G. (1978) "Smoothing noisy data with spline functions.
+    Estimating the correct degree of smoothing by
+    the method of generalized cross-validation."
+    Numerische Mathematik, 31(4), 377-403.
+
+    Hastie, Tibshirani and Friedman (2001). "The Elements of Statistical
+    Learning." Springer-Verlag. 536 pages.
+
+    Hutchison, M. and Hoog, F. "Smoothing noisy data with spline functions."
+    Numerische Mathematik, 47(1), 99-106.
+'''
+
 import numpy as N
 import numpy.linalg as L
 
@@ -259,7 +276,7 @@ class BSpline(object):
             x.shape = (1,)
         x.shape = (N.product(_shape,axis=0),)
         if i < self.tau.shape[0] - 1:
-            ## TODO: OWNDATA flags...
+           ## TODO: OWNDATA flags...
             v = _bspline.evaluate(x, self.tau, self.m, d, i, i+1)
         else:
             return N.zeros(x.shape, N.float64)
@@ -499,7 +516,10 @@ class SmoothingSpline(BSpline):
         """
         Generalized cross-validation score of current fit.
 
-        TODO: addin a reference to Wahba, and whoever else I used.
+        Craven, P. and Wahba, G.  "Smoothing noisy data with spline functions.
+        Estimating the correct degree of smoothing by
+        the method of generalized cross-validation."
+        Numerische Mathematik, 31(4), 377-403.
         """
 
         norm_resid = (self.resid**2).sum()
