@@ -569,7 +569,7 @@ class _cs_matrix(spmatrix):
             # Convert this matrix to a dense matrix and add them
             return self.todense() + other
         else:
-            raise NotImplemented
+            raise NotImplementedError
 
     def __sub__(self,other,fn):
         # First check if argument is a scalar
