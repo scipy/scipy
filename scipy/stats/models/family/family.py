@@ -18,11 +18,12 @@ class Family(object):
     valid = [-N.inf, N.inf]
 
     tol = 1.0e-05
+    links = []
 
     def _setlink(self, link):
         self._link = link
         if hasattr(self, "links"):
-            if link not in links:
+            if link not in self.links:
                 raise ValueError, 'invalid link for family, should be in %s' % `self.links`
 
     def _getlink(self):
