@@ -124,6 +124,10 @@ class spmatrix(object):
         csc = self.tocsc()
         return csc.astype(t)
 
+    def __iter__(self):
+        for r in xrange(self.shape[0]):
+            yield self[r,:]
+
     def getmaxprint(self):
         try:
             maxprint = self.maxprint
@@ -258,6 +262,18 @@ class spmatrix(object):
     def __neg__(self):
         csc = self.tocsc()
         return -csc
+
+    def __iadd__(self, other):
+        raise NotImplementedError
+
+    def __isub__(self, other):
+        raise NotImplementedError
+
+    def __imul__(self, other):
+        raise NotImplementedError
+
+    def __idiv__(self, other):
+        raise TypeError("No support for matrix division.")
 
     def __getattr__(self, attr):
         if attr == 'A':
@@ -925,6 +941,10 @@ class csc_matrix(_cs_matrix):
         else:
             return _cs_matrix.__getattr__(self, attr)
 
+    def __iter__(self):
+        csr = self.tocsr()
+        for r in xrange(self.shape[0]):
+            yield csr[r,:]
 
     def __add__(self, other):
         return _cs_matrix.__add__(self, other, csc_plus_csc)
@@ -985,6 +1005,9 @@ class csc_matrix(_cs_matrix):
         if isinstance(key, tuple):
             row = key[0]
             col = key[1]
+            if not (isscalarlike(row) and isscalarlike(col)):
+                raise NotImplementedError("Fancy indexing in assignments not"
+                                          "supported for csc matrices.")
             M, N = self.shape
             if (row < 0):
                 row = M + row
@@ -1330,6 +1353,9 @@ class csr_matrix(_cs_matrix):
         if isinstance(key, tuple):
             row = key[0]
             col = key[1]
+            if not (isscalarlike(row) and isscalarlike(col)):
+                raise NotImplementedError("Fancy indexing in assignment not "
+                                          "supported for csr matrices.")
             M, N = self.shape
             if (row < 0):
                 row = M + row
@@ -1573,7 +1599,7 @@ class dok_matrix(spmatrix, dict):
                     #         [self.get((element, j), 0) for element in seq]
                     # ** Instead just add the non-zero elements.  This uses
                     # ** linear time in the number of non-zeros:
-                    for (ii, jj) in self:
+                    for (ii, jj) in self.keys():
                         if jj == j and ii >= first and ii <= last:
                             dict.__setitem__(new, (ii-first, 0), \
                                              dict.__getitem__(self, (ii,jj)))
@@ -1608,7 +1634,7 @@ class dok_matrix(spmatrix, dict):
             #         [self.get((i, element), 0) for element in seq]
             # ** Instead loop over the non-zero elements.  This is slower
             # ** if there are many non-zeros
-            for (ii, jj) in self:
+            for (ii, jj) in self.keys():
                 if ii == i and jj >= first and jj <= last:
                     dict.__setitem__(new, (0, jj-first), \
                                      dict.__getitem__(self, (ii,jj)))
@@ -1634,7 +1660,7 @@ class dok_matrix(spmatrix, dict):
             if i < 0 or i >= self.shape[0] or j < 0 or j >= self.shape[1]:
                 raise IndexError, "index out of bounds"
             if isintlike(value) and value == 0:
-                if key in self:  # get rid of it something already there
+                if key in self.keys():  # get rid of it something already there
                     del self[key]
             else:
                 # Ensure value is a single element, not a sequence
@@ -1745,7 +1771,7 @@ class dok_matrix(spmatrix, dict):
             # the two matrices to be summed.  Would this be a good idea?
             new = dok_matrix(self.shape, dtype=self.dtype)
             new.update(self)
-            for key in other:
+            for key in other.keys():
                 new[key] += other[key]
         elif isspmatrix(other):
             csc = self.tocsc()
@@ -1785,7 +1811,7 @@ class dok_matrix(spmatrix, dict):
 
     def __neg__(self):
         new = dok_matrix(self.shape, dtype=self.dtype)
-        for key in self:
+        for key in self.keys():
             new[key] = -self[key]
         return new
 
@@ -1851,13 +1877,13 @@ class dok_matrix(spmatrix, dict):
         indx = int((columns == 1))
         N = len(cols_or_rows)
         if indx: # columns
-            for key in self:
+            for key in self.keys():
                 num = searchsorted(cols_or_rows, key[1])
                 if num < N:
                     newkey = (key[0], num)
                     new[newkey] = self[key]
         else:
-            for key in self:
+            for key in self.keys():
                 num = searchsorted(cols_or_rows, key[0])
                 if num < N:
                     newkey = (num, key[1])
@@ -1871,7 +1897,7 @@ class dok_matrix(spmatrix, dict):
         ext = dok_matrix()
         indx = int((columns == 1))
         if indx:
-            for key in self:
+            for key in self.keys():
                 num = searchsorted(cols_or_rows, key[1])
                 if cols_or_rows[num] == key[1]:
                     newkey = (key[0], num)
@@ -1880,7 +1906,7 @@ class dok_matrix(spmatrix, dict):
                     newkey = (key[0], key[1]-num)
                     base[newkey] = self[key]
         else:
-            for key in self:
+            for key in self.keys():
                 num = searchsorted(cols_or_rows, key[0])
                 if cols_or_rows[num] == key[0]:
                     newkey = (num, key[1])
@@ -1896,7 +1922,7 @@ class dok_matrix(spmatrix, dict):
             if other.shape[0] != self.shape[1]:
                 raise ValueError, "dimensions do not match"
             new = [0] * self.shape[0]
-            for key in self:
+            for key in self.keys():
                 new[int(key[0])] += self[key] * other[int(key[1]), ...]
             new = array(new)
             if isinstance(other, matrix):
@@ -1913,7 +1939,7 @@ class dok_matrix(spmatrix, dict):
             if other.shape[-1] != self.shape[0]:
                 raise ValueError, "dimensions do not match"
             new = [0] * self.shape[1]
-            for key in self:
+            for key in self.keys():
                 new[int(key[1])] += other[..., int(key[0])] * conj(self[key])
             new = array(new)
             if isinstance(other, matrix):
@@ -1959,7 +1985,7 @@ class dok_matrix(spmatrix, dict):
         """ Return Compressed Sparse Column format arrays for this matrix
         """
         # Fast sort on columns using the Schwartzian transform
-        keys = [(k[1], k[0]) for k in self]
+        keys = [(k[1], k[0]) for k in self.keys()]
         keys.sort()
         keys = [(k[1], k[0]) for k in keys]
 
@@ -1986,7 +2012,7 @@ class dok_matrix(spmatrix, dict):
 
     def toarray(self):
         new = zeros(self.shape, dtype=self.dtype)
-        for key in self:
+        for key in self.keys():
             ikey0 = int(key[0])
             ikey1 = int(key[1])
             new[ikey0, ikey1] = self[key]
@@ -2220,6 +2246,20 @@ class lil_matrix(spmatrix):
             for i in xrange(A.shape[0]):
                 self[i, :] = A[i, :]
 
+    def __iadd__(self,other):
+        self[:,:] = self + other
+        return self
+
+    def __isub__(self,other):
+        self[:,:] = self - other
+        return self
+
+    def __imul__(self,other):
+        if isscalarlike(other):
+            self[:,:] = self * other
+            return self
+        else:
+            raise TypeError("In-place matrix multiplication not supported.")
 
     # Whenever the dimensions change, empty lists should be created for each
     # row
@@ -2255,8 +2295,6 @@ class lil_matrix(spmatrix):
         new.rows[0] = self.rows[i][:]
         new.data[0] = self.data[i][:]
         return new
-
-
 
     def _get1(self, i, j):
         row = self.rows[i]
@@ -2473,11 +2511,9 @@ class lil_matrix(spmatrix):
         return new
 
     def __add__(self, other):
-        if isscalar(other):
-            new = self.copy()
-            new.data = numpy.array([[val+other for val in rowvals] for
-                                    rowvals in new.data], dtype=object)
-            return new
+        if isscalar(other) and other != 0:
+            raise ValueError("Refusing to destroy sparsity. "
+                             "Use x.todense() + c instead.")
         else:
             return spmatrix.__add__(self, other)
 

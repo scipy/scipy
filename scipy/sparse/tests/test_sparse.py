@@ -27,7 +27,6 @@ from scipy.linsolve import splu
 restore_path()
 
 class _test_cs:
-
     def setUp(self):
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
@@ -623,7 +622,7 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_arith, NumpyTestCase):
         for ir in range( asp.shape[0] ):
             for ic in range( asp.shape[1] ):
                 assert_equal( asp[ir, ic], bsp[ir, ic] )
-                
+
 class test_csc(_test_cs, _test_vert_slicing, _test_arith, NumpyTestCase):
     spmatrix = csc_matrix
 
@@ -698,7 +697,7 @@ class test_dok(_test_cs, NumpyTestCase):
         A = dok_matrix((3,2))
         A[0,1] = -10
         A[2,0] = 20
-        A += 10
+        A = A + 10
         B = matrix([[10, 0], [10, 10], [30, 10]])
         assert_array_equal(A.todense(), B)
 
@@ -790,8 +789,16 @@ class test_dok(_test_cs, NumpyTestCase):
         assert_equal(caught,5)
 
 
-class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase):
+class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase,
+               ParametricTestCase):
     spmatrix = lil_matrix
+
+    B = lil_matrix((4,3))
+    B[0,0] = 2
+    B[1,2] = 7
+    B[2,1] = 3
+    B[3,0] = 10
+
     def check_dot(self):
         A = matrix(zeros((10,10)))
         A[0,3] = 10
@@ -828,16 +835,53 @@ class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase):
         """ Tests whether a row of one lil_matrix can be assigned to
         another.
         """
-        B = lil_matrix((10,10))
-        B[0,3] = 10
-        B[5,6] = 20
-        B[8,3] = 30
-        B[3,8] = 40
-        B[8,9] = 50
+        B = self.B.copy()
         A = B / 10
-        B[0, :] = A[0, :]
-        assert_array_equal(A[0, :].A, B[0, :].A)
-        assert_array_equal(A[0, :].A, array([[0, 0, 0, 1, 0, 0, 0, 0, 0, 0.]]))
+        B[0,:] = A[0,:]
+        assert_array_equal(A[0,:].A, B[0,:].A)
+
+    def tst_inplace_op(self,op,arr,other,result):
+        cpy = arr
+        getattr(arr,"__i%s__" % op)(other)
+
+        assert_array_equal(cpy.todense(),arr.todense())
+        assert_array_equal(arr.todense(),result)
+
+    def testip_inplace_ops(self):
+        B = self.B[:3,:3].copy()
+        B[:,:] = B-B
+        C = B.todense()
+
+        data = {'add':(B,C+C),
+                'sub':(B,zeros(B.shape)),
+                'mul':(3,C*3)}
+
+        return [(self.tst_inplace_op,op,B,other,result)
+                for op,(other,result) in data.iteritems()]
+
+    def check_lil_slice_assignment(self):
+        B = lil_matrix((4,3))
+        B[0,0] = 5
+        B[1,2] = 3
+        B[2,1] = 7
+
+        expected = array([[10,0,0],
+                          [0,0,6],
+                          [0,14,0],
+                          [0,0,0]])
+
+        B[:,:] = B+B
+        assert_array_equal(B.todense(),expected)
+
+        block = [[1,0],[0,4]]
+        B[:2,:2] = csc_matrix(array(block))
+        assert_array_equal(B.todense()[:2,:2],block)
+
+    def check_lil_iteration(self):
+        row_data = [[1,2,3],[4,5,6]]
+        B = lil_matrix(array(row_data))
+        for r,row in enumerate(B):
+            assert_array_equal(row.todense(),array(row_data[r],ndmin=2))
 
     def check_lil_from_csr(self):
         """ Tests whether a lil_matrix can be constructed from a
@@ -852,19 +896,6 @@ class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase):
         C = B.tocsr()
         D = lil_matrix(C)
         assert_array_equal(C.A, D.A)
-
-    def check_scalar_add(self):
-        a = lil_matrix((3,3))
-        a[0,0] = 1
-        a[0,1] = 2
-        a[1,1] = 3
-        a[2,1] = 4
-        a[2,2] = 5
-
-        assert_array_equal((a-5).todense(),
-                           [[-4,-3,0],
-                            [ 0,-2,0],
-                            [ 0,-1,0]])
 
     def check_point_wise_multiply(self):
         l = lil_matrix((4,3))
