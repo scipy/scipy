@@ -164,6 +164,8 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
             Return code as defined in the RCSTRINGS dict.
 
     :SeeAlso:
+      - scikits.openopt, which offers a unified syntax to call this and other solvers
+      
       - fmin, fmin_powell, fmin_cg, fmin_bfgs, fmin_ncg :
          multivariate local optimizers
 

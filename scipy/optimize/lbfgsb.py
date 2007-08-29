@@ -119,6 +119,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
        ACM Transactions on Mathematical Software, Vol 23, Num. 4, pp. 550 - 560.
 
     See also:
+        scikits.openopt, which offers a unified syntax to call this and other solvers
 
         fmin, fmin_powell, fmin_cg,
                fmin_bfgs, fmin_ncg -- multivariate local optimizers
