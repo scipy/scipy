@@ -5,7 +5,7 @@ from numpy.linalg import inv
 from scipy.sandbox.models.contrast import ContrastResults
 from scipy.sandbox.models.utils import recipr
 
-class Model:
+class Model(object):
     """
     A (predictive) statistical model. The class Model itself does nothing
     but lays out the methods expected of any subclass.

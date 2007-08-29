@@ -12,8 +12,7 @@ class model(wls_model):
     
     def __init__(self, design, family=family.Gaussian()):
         self.family = family
-        self.weights = 1
-        self.initialize(design)
+        super(model, self).__init__(design, weights=1)
 
     def __iter__(self):                                                   
         self.iter = 0
@@ -39,7 +38,7 @@ class model(wls_model):
         self.weights = self.family.weights(results.mu)
         self.initialize(self.design)
         Z = results.predict + self.family.link.deriv(results.mu) * (Y - results.mu)
-        newresults = wls_model.fit(self, Z)
+        newresults = super(model, self).fit(self, Z)
         newresults.Y = Y
         newresults.mu = self.family.link.inverse(newresults.predict)
         self.iter += 1
@@ -70,12 +69,14 @@ class model(wls_model):
         if Y is None:
             Y = self.Y
         resid = Y - results.mu
-        return (N.power(resid, 2) / self.family.variance(results.mu)).sum() / results.df_resid
-    
+        return ((N.power(resid, 2) / self.family.variance(results.mu)).sum()
+                / results.df_resid)
+
     def fit(self, Y):
         self.Y = N.asarray(Y, N.float64)
         iter(self)
-        self.results = wls_model.fit(self, self.family.link.initialize(Y))
+        self.results = super(model, self).fit(
+            self.family.link.initialize(Y))
         self.results.mu = self.family.link.inverse(self.results.predict)
         self.scale = self.results.scale = self.estimate_scale()
         

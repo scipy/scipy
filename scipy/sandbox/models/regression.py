@@ -22,7 +22,8 @@ import numpy as N
 import numpy.linalg as L
 from scipy.linalg import norm, toeplitz
 
-from scipy.sandbox.models.model import likelihood_model, likelihood_model_results
+from scipy.sandbox.models.model import likelihood_model, \
+     likelihood_model_results
 from scipy.sandbox.models import utils
 
 class ols_model(likelihood_model):
@@ -65,7 +66,7 @@ class ols_model(likelihood_model):
             design : TODO
                 TODO
         """
-        likelihood_model.__init__(self)
+        super(ols_model, self).__init__()
         self.initialize(design)
 
     def initialize(self, design):
@@ -89,7 +90,6 @@ class ols_model(likelihood_model):
         """
         OLS model whitener does nothing: returns Y.
         """
-
         return Y
     
     def est_coef(self, Y):
@@ -98,7 +98,6 @@ class ols_model(likelihood_model):
         and coefficients, but initialize is not called so no
         psuedo-inverse is calculated.
         """
-            
         Z = self.whiten(Y)
 
         lfit = regression_results(L.lstsq(self.wdesign, Z)[0], Y)
@@ -111,7 +110,6 @@ class ols_model(likelihood_model):
         (whitened) residuals and scale. 
 
         """
-    
         Z = self.whiten(Y)
 
         lfit = regression_results(N.dot(self.calc_beta, Z), Y,
@@ -173,7 +171,6 @@ class ar_model(ols_model):
     >>> print model.rho
     [-0.61887622 -0.88137957]
     """
-
     def __init__(self, design, rho):
         if type(rho) is type(1):
             self.order = rho
@@ -185,7 +182,7 @@ class ar_model(ols_model):
             if self.rho.shape == ():
                 self.rho.shape = (1,)
             self.order = self.rho.shape[0]
-        ols_model.__init__(self, design)
+        super(ar_model, self).__init__(design)
 
     def iterative_fit(self, Y, niter=3):
         """
@@ -202,7 +199,6 @@ class ar_model(ols_model):
             self.initialize(self.design)
             results = self.fit(Y)
             self.rho, _ = self.yule_walker(Y - results.predict)
-
 
     def whiten(self, X):
         """
@@ -297,16 +293,23 @@ class wls_model(ols_model):
     >>> print results.Fcontrast(N.identity(2))
     <F contrast: F=26.9986072423, df_denom=5, df_num=2>
     """
-
     def __init__(self, design, weights=1):
-        self.weights = weights
-        ols_model.__init__(self, design)
+        weights = N.array(weights)
+        if weights.shape == (): # scalar
+            self.weights = weights
+        else: 
+            design_rows = design.shape[0]
+            if not(weights.shape[0] == design_rows and
+                   weights.size == design_rows) :
+                raise ValueError(
+                    'Weights must be scalar or same length as design')
+            self.weights = weights.reshape(design_rows)
+        super(wls_model, self).__init__(design)
 
     def whiten(self, X):
         """
         Whitener for WLS model, multiplies by sqrt(self.weights)
         """
-
         X = N.asarray(X, N.float64)
 
         if X.ndim == 1:
@@ -326,7 +329,9 @@ class regression_results(likelihood_model_results):
     """
 
     def __init__(self, beta, Y, normalized_cov_beta=None, scale=1.):
-        likelihood_model_results.__init__(self, beta, normalized_cov_beta, scale)
+        super(regression_results, self).__init__(beta,
+                                                 normalized_cov_beta,
+                                                 scale)
         self.Y = Y
 
     def norm_resid(self):
@@ -335,7 +340,6 @@ class regression_results(likelihood_model_results):
 
         Note: residuals are whitened residuals.
         """
-
         if not hasattr(self, 'resid'):
             raise ValueError, 'need normalized residuals to estimate standard deviation'
 
@@ -364,7 +368,6 @@ def isestimable(C, D):
     if the contrast C is estimable by looking at the rank of vstack([C,D]) and
     verifying it is the same as the rank of D.
     """
-
     if C.ndim == 1:
         C.shape = (C.shape[0], 1)
     new = N.vstack([C, D])
