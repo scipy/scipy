@@ -9,7 +9,7 @@ import numpy.random as R
 import numpy.linalg as L
 from numpy.testing import assert_almost_equal, NumpyTest, NumpyTestCase
 
-from scipy.sandbox.models import utils, formula, contrast
+from scipy.stats.models import utils, formula, contrast
 
 class test_term(NumpyTestCase):
 

@@ -20,7 +20,7 @@ import numpy.linalg as L
 
 from scipy.linalg import solveh_banded
 from scipy.optimize import golden
-from scipy.sandbox.models import _bspline
+from scipy.stats.models import _bspline
 
 def _band2array(a, lower=0, symmetric=False, hermitian=False):
     """

@@ -5,7 +5,7 @@ Test functions for models.rlm
 import numpy.random as R
 from numpy.testing import NumpyTest, NumpyTestCase
 
-import scipy.sandbox.models.rlm as models
+import scipy.stats.models.rlm as models
 
 W = R.standard_normal
 

@@ -5,7 +5,7 @@ Test functions for models.regression
 from numpy.random import standard_normal
 from numpy.testing import NumpyTest, NumpyTestCase
 
-from scipy.sandbox.models.regression import ols_model, ar_model
+from scipy.stats.models.regression import ols_model, ar_model
 
 W = standard_normal
 

@@ -22,9 +22,9 @@ import numpy as N
 import numpy.linalg as L
 from scipy.linalg import norm, toeplitz
 
-from scipy.sandbox.models.model import likelihood_model, \
+from scipy.stats.models.model import likelihood_model, \
      likelihood_model_results
-from scipy.sandbox.models import utils
+from scipy.stats.models import utils
 
 class ols_model(likelihood_model):
     """
@@ -34,8 +34,8 @@ class ols_model(likelihood_model):
     --------
     >>> import numpy as N
     >>> 
-    >>> from scipy.sandbox.models.formula import term, I
-    >>> from scipy.sandbox.models.regression import ols_model
+    >>> from scipy.stats.models.formula import term, I
+    >>> from scipy.stats.models.regression import ols_model
     >>> 
     >>> data={'Y':[1,3,4,5,2,3,4],
     ...       'X':range(1,8)}
@@ -136,8 +136,8 @@ class ar_model(ols_model):
     >>> import numpy as N
     >>> import numpy.random as R
     >>> 
-    >>> from scipy.sandbox.models.formula import term, I
-    >>> from scipy.sandbox.models.regression import ar_model
+    >>> from scipy.stats.models.formula import term, I
+    >>> from scipy.stats.models.regression import ar_model
     >>> 
     >>> data={'Y':[1,3,4,5,8,10,9],
     ...       'X':range(1,8)}
@@ -273,8 +273,8 @@ class wls_model(ols_model):
 
     >>> import numpy as N
     >>> 
-    >>> from scipy.sandbox.models.formula import term, I
-    >>> from scipy.sandbox.models.regression import wls_model
+    >>> from scipy.stats.models.formula import term, I
+    >>> from scipy.stats.models.regression import wls_model
     >>> 
     >>> data={'Y':[1,3,4,5,2,3,4],
     ...       'X':range(1,8)}

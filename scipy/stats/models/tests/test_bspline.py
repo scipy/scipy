@@ -5,8 +5,8 @@ Test functions for models.glm
 import numpy as N
 from numpy.testing import NumpyTest, NumpyTestCase
 
-import scipy.sandbox.models as S
-import scipy.sandbox.models.bspline as B
+import scipy.stats.models as S
+import scipy.stats.models.bspline as B
 
 
 class test_BSpline(NumpyTestCase):

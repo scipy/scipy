@@ -3,8 +3,8 @@ General linear models
 --------------------
 """
 import numpy as N
-from scipy.sandbox.models import family
-from scipy.sandbox.models.regression import wls_model
+from scipy.stats.models import family
+from scipy.stats.models.regression import wls_model
 
 class model(wls_model):
 

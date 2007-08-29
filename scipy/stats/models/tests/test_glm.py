@@ -6,8 +6,8 @@ import numpy as N
 import numpy.random as R
 from numpy.testing import NumpyTest, NumpyTestCase
 
-import scipy.sandbox.models as S
-import scipy.sandbox.models.glm as models
+import scipy.stats.models as S
+import scipy.stats.models.glm as models
 
 W = R.standard_normal
 

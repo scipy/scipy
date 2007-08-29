@@ -10,7 +10,7 @@ These families are described in
 
 '''
 
-from scipy.sandbox.models.family.family import Gaussian, Family, \
+from scipy.stats.models.family.family import Gaussian, Family, \
      Poisson, Gamma, InverseGaussian, Binomial
 
 

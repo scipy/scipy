@@ -10,7 +10,7 @@ def configuration(parent_package='',top_path=None, package_name='models'):
     try:
         import sys
         print sys.path
-        from scipy.sandbox.models.bspline_module import mod
+        from scipy.stats.models.bspline_module import mod
         n, s, d = weave_ext(mod)
         config.add_extension(n, s, **d)
     except ImportError: pass
@@ -26,4 +26,4 @@ def weave_ext(mod):
 if __name__ == '__main__':
 
     from numpy.distutils.core import setup
-    setup(**configuration(top_path='', package_name='scipy.sandbox.models').todict())
+    setup(**configuration(top_path='', package_name='scipy.stats.models').todict())

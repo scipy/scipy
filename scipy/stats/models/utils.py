@@ -82,7 +82,7 @@ class StepFunction:
     Examples
     --------
     >>> from numpy import arange
-    >>> from scipy.sandbox.models.utils import StepFunction
+    >>> from scipy.stats.models.utils import StepFunction
     >>>
     >>> x = arange(20)
     >>> y = arange(20)

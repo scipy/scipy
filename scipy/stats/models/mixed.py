@@ -4,7 +4,7 @@ Mixed effects models
 
 import numpy as N
 import numpy.linalg as L
-from scipy.sandbox.models.formula import formula, I
+from scipy.stats.models.formula import formula, I
 
 class Unit:
     """
@@ -311,7 +311,7 @@ if __name__ == '__main__':
     
     n = 3
 
-    from scipy.sandbox.models.formula import term
+    from scipy.stats.models.formula import term
     fixed = term('f')
     random = term('r')
     response = term('y')

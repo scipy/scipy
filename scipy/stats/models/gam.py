@@ -5,9 +5,9 @@ Generalized additive models
 
 import numpy as N
 
-from scipy.sandbox.models import family
-from scipy.sandbox.models.bspline import SmoothingSpline
-from scipy.sandbox.models.glm import model as glm
+from scipy.stats.models import family
+from scipy.stats.models.bspline import SmoothingSpline
+from scipy.stats.models.glm import model as glm
 
 def default_smoother(x):
     _x = x.copy()

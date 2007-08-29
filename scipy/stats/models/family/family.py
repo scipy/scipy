@@ -1,6 +1,6 @@
 import numpy as N
-from scipy.sandbox.models.family import links as L
-from scipy.sandbox.models.family import varfuncs as V
+from scipy.stats.models.family import links as L
+from scipy.stats.models.family import varfuncs as V
 
 class Family(object):
 

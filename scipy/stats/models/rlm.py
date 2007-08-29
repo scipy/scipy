@@ -3,8 +3,8 @@ Robust linear models
 """
 import numpy as N
 
-from scipy.sandbox.models.regression import wls_model
-from scipy.sandbox.models.robust import norms, scale
+from scipy.stats.models.regression import wls_model
+from scipy.stats.models.robust import norms, scale
 
 class model(wls_model):
 
