@@ -69,12 +69,27 @@ class likelihood_model(Model):
 #             return -self.logL(theta)
 #         self.results = optimize.fmin(f, theta)
         
-class likelihood_model_results:
-
+class likelihood_model_results(object):
+    ''' Class to contain results from likelihood models '''
     def __init__(self, beta, normalized_cov_beta=None, scale=1.):
+        ''' Set up results structure
+        beta     - parameter estimates from estimated model
+        normalized_cov_beta -
+           Normalized (before scaling) covariance of betas
+        scale    - scalar
+
+        normalized_cov_betas is also known as the hat matrix or H
+        (Semiparametric regression, Ruppert, Wand, Carroll; CUP 2003)
+        
+        The covariance of betas is given by scale times
+        normalized_cov_beta
+
+        For (some subset of models) scale will typically be the
+        mean square error from the estimated model (sigma^2)
+        '''
         self.beta = beta
         self.normalized_cov_beta = normalized_cov_beta
-        self.scale = 1.
+        self.scale = scale
 
     def t(self, column=None):
         """
