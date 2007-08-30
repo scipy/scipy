@@ -1,4 +1,4 @@
-version = '0.6'
+version = '0.6.0'
 release=False
 
 if not release:
