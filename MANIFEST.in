@@ -42,10 +42,6 @@ include scipy/sandbox/gplt/*
 include scipy/sandbox/image/*
 include scipy/sandbox/maskedarray/*
 include scipy/sandbox/maskedarray/tests/*
-include scipy/sandbox/models/*
-include scipy/sandbox/models/family/*
-include scipy/sandbox/models/robust/*
-include scipy/sandbox/models/tests/*
 include scipy/sandbox/montecarlo/*
 include scipy/sandbox/montecarlo/src/*
 include scipy/sandbox/montecarlo/tests/*
