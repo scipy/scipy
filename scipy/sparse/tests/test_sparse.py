@@ -789,8 +789,7 @@ class test_dok(_test_cs, NumpyTestCase):
         assert_equal(caught,5)
 
 
-class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase,
-               ParametricTestCase):
+class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase):
     spmatrix = lil_matrix
 
     B = lil_matrix((4,3))
@@ -840,14 +839,7 @@ class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase,
         B[0,:] = A[0,:]
         assert_array_equal(A[0,:].A, B[0,:].A)
 
-    def tst_inplace_op(self,op,arr,other,result):
-        cpy = arr
-        getattr(arr,"__i%s__" % op)(other)
-
-        assert_array_equal(cpy.todense(),arr.todense())
-        assert_array_equal(arr.todense(),result)
-
-    def testip_inplace_ops(self):
+    def test_inplace_ops(self):
         B = self.B[:3,:3].copy()
         B[:,:] = B-B
         C = B.todense()
@@ -856,8 +848,13 @@ class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase,
                 'sub':(B,zeros(B.shape)),
                 'mul':(3,C*3)}
 
-        return [(self.tst_inplace_op,op,B,other,result)
-                for op,(other,result) in data.iteritems()]
+        for op,(other,result) in data.iteritems():
+            arr = B.copy()
+            cpy = arr
+            getattr(arr,"__i%s__" % op)(other)
+
+            assert_array_equal(cpy.todense(),arr.todense())
+            assert_array_equal(arr.todense(),result)
 
     def check_lil_slice_assignment(self):
         B = lil_matrix((4,3))

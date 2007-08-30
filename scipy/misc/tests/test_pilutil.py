@@ -8,9 +8,9 @@ import glob
 import os.path
 import numpy as N
 
-datapath = os.path.dirname(__file__)
+datapath = os.path.join(os.path.dirname(__file__),'data')
 
-class test_pilutil(ParametricTestCase):
+class test_pilutil(NumpyTestCase):
     def test_imresize(self):
         im = N.random.random((10,20))
         for T in N.sctypes['float'] + [float]:
@@ -23,19 +23,16 @@ class test_pilutil(ParametricTestCase):
         assert_equal(pilutil.bytescale(x),x)
         assert_equal(pilutil.bytescale(y),[0,127,255])
 
-    def tst_fromimage(self,filename,irange):
-        img = pilutil.fromimage(PIL.Image.open(filename))
-        imin,imax = irange
-        assert img.min() >= imin
-        assert img.max() <= imax
-
-    def testip_fromimage(self):
+    def test_fromimage(self):
         data = {'icon.png':(0,255),
                 'icon_mono.png':(0,2),
                 'icon_mono_flat.png':(0,1)}
 
-        return ((self.tst_fromimage,os.path.join(datapath,'data',fn),irange)
-                for fn,irange in data.iteritems())
+        for fn,irange in data.iteritems():
+            img = pilutil.fromimage(PIL.Image.open(os.path.join(datapath,fn)))
+            imin,imax = irange
+            assert img.min() >= imin
+            assert img.max() <= imax
 
 if __name__ == "__main__":
     NumpyTest().run()
