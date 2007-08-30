@@ -171,9 +171,10 @@ class interp1d(object):
         y : array
             An N-D array of real values.  y's length along the interpolation
             axis must be equal to the length of x.
-        kind : str
-            Specifies the kind of interpolation. At the moment,
-            only 'linear' and 'cubic' are implemented for now.
+        kind : str or int
+            Specifies the kind of interpolation as a string ('linear',
+            'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an integer
+            specifying the order of the spline interpolator to use. 
         axis : int
             Specifies the axis of y along which to interpolate. Interpolation
             defaults to the last axis of y.
@@ -197,8 +198,9 @@ class interp1d(object):
         self.bounds_error = bounds_error
         self.fill_value = fill_value
 
-        if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
-            order = {'zero':0,'slinear':1,'quadratic':2, 'cubic':3}[kind]
+        if kind in ['zero', 'slinear', 'quadratic', 'cubic', 'nearest']:
+            order = {'nearest':0, 'zero':0,'slinear':1,
+                     'quadratic':2, 'cubic':3}[kind]
             kind = 'spline'
         elif isinstance(kind, int):
             order = kind
