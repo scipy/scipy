@@ -20,6 +20,7 @@ import sys
 from numpy.testing import *
 set_package_path()
 from linalg import fblas
+print fblas
 from linalg import cblas
 restore_path()
 
@@ -69,12 +70,18 @@ class test_fblas1_simple(NumpyTestCase):
             f = getattr(fblas,p+'dot',None)
             if f is None: continue
             assert_almost_equal(f([3,-4,5],[2,5,1]),-9)
+    def check_complex_dotu(self):
         for p in 'cz':
             f = getattr(fblas,p+'dotu',None)
             if f is None: continue
             assert_almost_equal(f([3j,-4,3-4j],[2,3,1]),-9+2j)
-            f = getattr(fblas,p+'dotc')
+
+    def check_complex_dotc(self):
+        for p in 'cz':
+            f = getattr(fblas,p+'dotc',None)
+            if f is None: continue
             assert_almost_equal(f([3j,-4,3-4j],[2,3j,1]),3-14j)
+
     def check_nrm2(self):
         for p in 'sd':
             f = getattr(fblas,p+'nrm2',None)

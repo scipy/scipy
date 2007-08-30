@@ -23,6 +23,23 @@ using_lapack_blas = 0
 
 #--------------------
 
+def needs_cblas_wrapper(info):
+    """Returns true if needs c wrapper around cblas for calling from
+    fortran."""
+    import re
+    r_accel = re.compile("Accelerate")
+    r_vec = re.compile("vecLib")
+    res = False
+    try:
+        tmpstr = info['extra_link_args']
+        for i in tmpstr:
+            if r_accel.search(i) or r_vec.search(i):
+                res = True
+    except KeyError:
+        pass
+
+    return res
+    
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
 
@@ -98,16 +115,28 @@ def configuration(parent_package='',top_path=None):
         return target
 
     # fblas:
-    config.add_extension('fblas',
-                         sources = [generate_pyf,
-                                    join('src','fblaswrap.f')],
-                         depends = ['generic_fblas.pyf',
-                                    'generic_fblas1.pyf',
-                                    'generic_fblas2.pyf',
-                                    'generic_fblas3.pyf',
-                                    'interface_gen.py'],
-                         extra_info = lapack_opt
-                         )
+    if needs_cblas_wrapper(lapack_opt):
+        config.add_extension('fblas',
+                             sources = [generate_pyf,
+                                        join('src','fblaswrap_veclib_c.c')],
+                             depends = ['generic_fblas.pyf',
+                                        'generic_fblas1.pyf',
+                                        'generic_fblas2.pyf',
+                                        'generic_fblas3.pyf',
+                                        'interface_gen.py'],
+                             extra_info = lapack_opt
+                             )
+    else:
+        config.add_extension('fblas',
+                             sources = [generate_pyf,
+                                        join('src','fblaswrap.f')],
+                             depends = ['generic_fblas.pyf',
+                                        'generic_fblas1.pyf',
+                                        'generic_fblas2.pyf',
+                                        'generic_fblas3.pyf',
+                                        'interface_gen.py'],
+                             extra_info = lapack_opt
+                             )
 
     # cblas:
     config.add_extension('cblas',
