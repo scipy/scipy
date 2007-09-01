@@ -1,4 +1,4 @@
-"""Differantial Evolution Optimization
+"""Differential Evolution Optimization
 
 :Author: Robert Kern
 
@@ -143,7 +143,7 @@ class DiffEvolver(object):
             scale=None, strategy=('rand', 2, 'bin'), eps=1e-6):
         lbound = sp.asarray(lbound)
         ubound = sp.asarray(ubound)
-        pop0 = stats.rand(npop, len(lbound))*(ubound-lbound) + lbound
+        pop0 = sp.rand(npop, len(lbound))*(ubound-lbound) + lbound
         return cls(func, pop0, crossover_rate=crossover_rate, scale=scale,
             strategy=strategy, eps=eps)
     frombounds = classmethod(frombounds)
@@ -154,13 +154,13 @@ class DiffEvolver(object):
         return max(0.3, 1.-rat)
 
     def bin_crossover(self, oldgene, newgene):
-        mask = stats.rand(self.ndim) < self.crossover_rate
+        mask = sp.rand(self.ndim) < self.crossover_rate
         return sp.where(mask, newgene, oldgene)
 
     def select_samples(self, candidate, nsamples):
         possibilities = range(self.npop)
         possibilities.remove(candidate)
-        return stats.permutation(possibilities)[:nsamples]
+        return stats.distributions.permutation(possibilities)[:nsamples]
 
     def diff1(self, candidate):
         i1, i2 = self.select_samples(candidate, 2)
