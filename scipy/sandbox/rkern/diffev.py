@@ -5,12 +5,11 @@
 Copyright 2005 by Robert Kern.
 """
 
-import scipy as sp
-from scipy import stats
+import numpy as np
 
 
 # Notes: for future modifications:
-# Ali, M. M., and A. Toern. Topographical differential evoltion using
+# Ali, M. M., and A. Toern. Topographical differential evolution using
 # pre-calculated differentials. _Stochastic and Global Optimization_. 1--17.
 #
 #  A good scale value:
@@ -75,6 +74,8 @@ class DiffEvolver(object):
         The third element is (currently) 'bin' to specify binomial crossover.
       eps -- if the maximum and minimum function values of a given generation are
         with eps of each other, convergence has been achieved.
+      prng -- a RandomState instance. By default, this is the global
+        numpy.random instance.
 
     DiffEvolver.frombounds(func, lbound, ubound, npop, crossover_rate=0.5,
         scale=None, strategy=('rand', 2, 'bin'), eps=1e-6)
@@ -101,9 +102,9 @@ class DiffEvolver(object):
     func, args, crossover_rate, scale, strategy, eps -- from constructor
     """
     def __init__(self, func, pop0, args=(), crossover_rate=0.5, scale=None,
-            strategy=('rand', 2, 'bin'), eps=1e-6):
+            strategy=('rand', 2, 'bin'), eps=1e-6, prng=np.random):
         self.func = func
-        self.population = sp.array(pop0)
+        self.population = np.array(pop0)
         self.npop, self.ndim = self.population.shape
         self.args = args
         self.crossover_rate = crossover_rate
@@ -111,7 +112,7 @@ class DiffEvolver(object):
         self.eps = eps
 
         self.pop_values = [self.func(m, *args) for m in self.population]
-        bestidx = sp.argmin(self.pop_values)
+        bestidx = np.argmin(self.pop_values)
         self.best_vector = self.population[bestidx]
         self.best_value = self.pop_values[bestidx]
 
@@ -140,10 +141,10 @@ class DiffEvolver(object):
         self.pop_values = [self.func(m, *self.args) for m in self.population]
 
     def frombounds(cls, func, lbound, ubound, npop, crossover_rate=0.5,
-            scale=None, strategy=('rand', 2, 'bin'), eps=1e-6):
-        lbound = sp.asarray(lbound)
-        ubound = sp.asarray(ubound)
-        pop0 = sp.rand(npop, len(lbound))*(ubound-lbound) + lbound
+            scale=None, strategy=('rand', 2, 'bin'), eps=1e-6, prng=np.random):
+        lbound = np.asarray(lbound)
+        ubound = np.asarray(ubound)
+        pop0 = prng.uniform(lbound, ubound, size=(npop, len(lbound)))
         return cls(func, pop0, crossover_rate=crossover_rate, scale=scale,
             strategy=strategy, eps=eps)
     frombounds = classmethod(frombounds)
@@ -154,13 +155,13 @@ class DiffEvolver(object):
         return max(0.3, 1.-rat)
 
     def bin_crossover(self, oldgene, newgene):
-        mask = sp.rand(self.ndim) < self.crossover_rate
-        return sp.where(mask, newgene, oldgene)
+        mask = self.prng.rand(self.ndim) < self.crossover_rate
+        return np.where(mask, newgene, oldgene)
 
     def select_samples(self, candidate, nsamples):
         possibilities = range(self.npop)
         possibilities.remove(candidate)
-        return stats.distributions.permutation(possibilities)[:nsamples]
+        return self.prng.permutation(possibilities)[:nsamples]
 
     def diff1(self, candidate):
         i1, i2 = self.select_samples(candidate, 2)
@@ -175,7 +176,7 @@ class DiffEvolver(object):
         return self.best_vector
 
     def choose_rand(self, candidate):
-        i = self.select_samples(candidate, 1)
+        i = self.select_samples(candidate, 1)[0]
         return self.population[i]
 
     def choose_rand_to_best(self, candidate):
