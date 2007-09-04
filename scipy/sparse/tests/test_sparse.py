@@ -99,6 +99,24 @@ class _test_cs:
         assert_array_equal(self.dat*2,(self.datsp*2).todense())
         assert_array_equal(self.dat*17.3,(self.datsp*17.3).todense())
 
+    def check_imul_scalar(self):
+        a = self.datsp.copy()
+        a *= 2
+        assert_array_equal(self.dat*2,a.todense())
+
+        a = self.datsp.copy()
+        a *= 17.3
+        assert_array_equal(self.dat*17.3,a.todense())
+
+    def check_idiv_scalar(self):
+        a = self.datsp.copy()
+        a /= 2
+        assert_array_equal(self.dat/2,a.todense())
+
+        a = self.datsp.copy()
+        a /= 17.3
+        assert_array_equal(self.dat/17.3,a.todense())
+
     def check_rmul_scalar(self):
         assert_array_equal(2*self.dat,(2*self.datsp).todense())
         assert_array_equal(17.3*self.dat,(17.3*self.datsp).todense())

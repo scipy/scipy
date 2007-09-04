@@ -271,9 +271,12 @@ class spmatrix(object):
 
     def __imul__(self, other):
         raise NotImplementedError
-
+    
     def __idiv__(self, other):
-        raise TypeError("No support for matrix division.")
+        return self.__itruediv__(other)
+
+    def __itruediv__(self, other):
+        raise NotImplementedError
 
     def __getattr__(self, attr):
         if attr == 'A':
@@ -585,7 +588,7 @@ class _cs_matrix(spmatrix):
             # Convert this matrix to a dense matrix and add them
             return self.todense() - other
         else:
-            raise NotImplemented
+            raise NotImplementedError
 
 
     def __mul__(self, other): # self * other
@@ -608,6 +611,12 @@ class _cs_matrix(spmatrix):
                 tr = asarray(other).transpose()
             return self.transpose().dot(tr).transpose()
 
+    def __imul__(self, other): #self *= other
+        if isscalarlike(other):
+            self.data *= other
+            return self
+        else:
+            raise NotImplementedError
 
     def __neg__(self):
         return self._with_data(-self.data)
@@ -621,8 +630,15 @@ class _cs_matrix(spmatrix):
                 raise ValueError, "inconsistent shapes"
             return self._binopt(other,fn)
         else:
-            raise NotImplemented
-
+            raise NotImplementedError
+    
+    def __itruediv__(self, other): #self *= other
+        if isscalarlike(other):
+            recip = 1.0 / other
+            self.data *= recip
+            return self
+        else:
+            raise NotImplementedError
 
     def __pow__(self, other, fn):
         """ Element-by-element power (unless other is a scalar, in which
@@ -633,7 +649,7 @@ class _cs_matrix(spmatrix):
         elif isspmatrix(other):
             return self._binopt(other,fn)
         else:
-            raise NotImplemented
+            raise NotImplementedError
 
 
     def _matmat(self, other, fn):
@@ -1826,6 +1842,16 @@ class dok_matrix(spmatrix, dict):
         else:
             return self.dot(other)
 
+    def __imul__(self, other):           # self * other
+        if isscalarlike(other):
+            # Multiply this scalar by every element.
+            for (key, val) in self.iteritems():
+                self[key] = val * other
+            #new.dtype.char = self.dtype.char
+            return self
+        else:
+            return NotImplementedError
+
     def __rmul__(self, other):          # other * self
         if isscalarlike(other):
             new = dok_matrix(self.shape, dtype=self.dtype)
@@ -1841,6 +1867,27 @@ class dok_matrix(spmatrix, dict):
             except AttributeError:
                 tr = asarray(other).transpose()
             return self.transpose().dot(tr).transpose()
+    
+    def __truediv__(self, other):           # self * other
+        if isscalarlike(other):
+            new = dok_matrix(self.shape, dtype=self.dtype)
+            # Multiply this scalar by every element.
+            for (key, val) in self.iteritems():
+                new[key] = val / other
+            #new.dtype.char = self.dtype.char
+            return new
+        else:
+            return self.tocsr() / other
+
+    
+    def __itruediv__(self, other):           # self * other
+        if isscalarlike(other):
+            # Multiply this scalar by every element.
+            for (key, val) in self.iteritems():
+                self[key] = val / other
+            return self
+        else:
+            return NotImplementedError
 
     # What should len(sparse) return? For consistency with dense matrices,
     # perhaps it should be the number of rows?  For now it returns the number
@@ -2259,7 +2306,14 @@ class lil_matrix(spmatrix):
             self[:,:] = self * other
             return self
         else:
-            raise TypeError("In-place matrix multiplication not supported.")
+            raise NotImplementedError
+
+    def __itruediv__(self,other):
+        if isscalarlike(other):
+            self[:,:] = self / other
+            return self
+        else:
+            raise NotImplementedError
 
     # Whenever the dimensions change, empty lists should be created for each
     # row
@@ -2462,6 +2516,16 @@ class lil_matrix(spmatrix):
             return new
         else:
             return self.dot(other)
+
+    def __truediv__(self, other):           # self / other
+        if isscalarlike(other):
+            new = self.copy()
+            # Divide every element by this scalar
+            new.data = numpy.array([[val/other for val in rowvals] for
+                                    rowvals in new.data], dtype=object)
+            return new
+        else:
+            return self.tocsr() / other
 
     def multiply(self, other):
         """Point-wise multiplication by another lil_matrix.
