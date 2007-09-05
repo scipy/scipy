@@ -858,6 +858,59 @@ void sort_csr_indices(const I n_row,
     }    
 }
 
+template<class I, class T>
+void get_csr_submatrix(const I n_row,
+		       const I n_col,
+		       const I Ap[], 
+		       const I Aj[], 
+		       const T Ax[],
+		       const I ir0,
+		       const I ir1,
+		       const I ic0,
+		       const I ic1,
+		       std::vector<I>* Bp,
+		       std::vector<I>* Bj,
+		       std::vector<T>* Bx)
+{
+  I new_n_row = ir1 - ir0;
+  I new_n_col = ic1 - ic0;
+  I new_nnz = 0;
+  I kk = 0;
+
+  // Count nonzeros total/per row.
+  for(I i = 0; i < new_n_row; i++){
+    I row_start = Ap[ir0+i];
+    I row_end   = Ap[ir0+i+1];
+
+    for(I jj = row_start; jj < row_end; jj++){
+      if ((Aj[jj] >= ic0) && (Aj[jj] < ic1)) {
+	new_nnz++;
+      }
+    }
+  }
+
+  // Allocate.
+  Bp->resize(new_n_row+1);
+  Bj->resize(new_nnz);
+  Bx->resize(new_nnz);
+
+  // Assign.
+  (*Bp)[0] = 0;
+  for(I i = 0; i < new_n_row; i++){
+    I row_start = Ap[ir0+i];
+    I row_end   = Ap[ir0+i+1];
+
+    for(I jj = row_start; jj < row_end; jj++){
+      if ((Aj[jj] >= ic0) && (Aj[jj] < ic1)) {
+	(*Bj)[kk] = Aj[jj] - ic0;
+	(*Bx)[kk] = Ax[jj];
+	kk++;
+      }
+    }
+    (*Bp)[i+1] = kk;
+  }
+}
+
 
 /*
  * Derived methods

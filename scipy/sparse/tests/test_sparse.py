@@ -641,6 +641,19 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_arith, NumpyTestCase):
             for ic in range( asp.shape[1] ):
                 assert_equal( asp[ir, ic], bsp[ir, ic] )
 
+    def check_get_submatrix(self):
+        a = sp.csr_matrix( array([[1,2,3],[1,2,3],[0,2,0]]) )
+        i0 = slice( 0, 2 )
+        i1 = slice( 1, 3 )
+        b = a.get_submatrix( i0, i1 )
+
+        aa = a.toarray()
+        ab = b.toarray()
+
+        assert b.dtype == a.dtype
+        assert b.shape == (2,2)
+        assert_equal( ab, aa[i0,i1] )
+
 class test_csc(_test_cs, _test_vert_slicing, _test_arith, NumpyTestCase):
     spmatrix = csc_matrix
 

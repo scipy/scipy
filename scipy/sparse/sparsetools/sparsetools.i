@@ -244,10 +244,11 @@ INSTANTIATE_ALL(densetocsr)
 INSTANTIATE_ALL(sort_csr_indices)
 INSTANTIATE_ALL(sort_csc_indices)
 
+
 /*
  * Sum duplicate CSR/CSC entries.
  */
 INSTANTIATE_ALL(sum_csr_duplicates)
 INSTANTIATE_ALL(sum_csc_duplicates)
 
-
+INSTANTIATE_ALL(get_csr_submatrix)

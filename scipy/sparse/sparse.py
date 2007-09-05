@@ -1462,6 +1462,17 @@ class csr_matrix(_cs_matrix):
         """
         return _cs_matrix._ensure_sorted_indices(self, self.shape[0], self.shape[1], inplace)
 
+    def get_submatrix( self, slice0, slice1 ):
+        """Return a submatrix of this matrix (new matrix is created)."""
+        aux = sparsetools.get_csr_submatrix( self.shape[0], self.shape[1],
+                                             self.indptr, self.indices,
+                                             self.data,
+                                             slice0.start, slice0.stop,
+                                             slice1.start, slice1.stop )
+        data, indices, indptr = aux[2], aux[1], aux[0]
+        return self.__class__( (data, indices, indptr),
+                               dims = (slice0.stop - slice0.start,
+                                       slice1.stop - slice1.start) )
 
 # This function was for sorting dictionary keys by the second tuple element.
 # (We now use the Schwartzian transform instead for efficiency.)
