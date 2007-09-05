@@ -419,6 +419,9 @@ class spmatrix(object):
         csc = self.tocsc()
         return csc.tocoo()
 
+    def tolil(self):
+        return lil_matrix(self.tocsr())
+
     def toself(self, copy=False):
         if copy:
             new = self.copy()

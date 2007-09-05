@@ -642,7 +642,7 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_arith, NumpyTestCase):
                 assert_equal( asp[ir, ic], bsp[ir, ic] )
 
     def check_get_submatrix(self):
-        a = sp.csr_matrix( array([[1,2,3],[1,2,3],[0,2,0]]) )
+        a = csr_matrix( array([[1,2,3],[1,2,3],[0,2,0]]) )
         i0 = slice( 0, 2 )
         i1 = slice( 1, 3 )
         b = a.get_submatrix( i0, i1 )
