@@ -28,7 +28,8 @@ from maskedarray.testutils import assert_equal, assert_array_equal
 import timeseries as ts
 from timeseries import const as C
 from timeseries.parser import DateFromString, DateTimeFromString
-from timeseries import *
+from timeseries import Date, DateArray,\
+    thisday, today, date_array, date_array_fromlist
 from timeseries.cseries import freq_dict
 
 

@@ -18,7 +18,7 @@ __date__     = '$Date$'
 
 import numpy
 from numpy import ndarray
-from numpy.core import bool_, complex_, float_, int_, object_
+from numpy import bool_, complex_, float_, int_, object_
 from numpy.core.multiarray import dtype
 import numpy.core.fromnumeric as fromnumeric
 import numpy.core.numeric as numeric
@@ -222,7 +222,7 @@ def _compare_frequencies(*series):
         common_freq = unique_freqs.item()
     except ValueError:
         raise TimeSeriesError, \
-            "All series must have same frequency!"
+            "All series must have same frequency! (got %s instead)" % unique_freqs
     return common_freq
 
 ##### --------------------------------------------------------------------------
@@ -337,49 +337,63 @@ The combination of `series` and `dates` is the `data` part.
     options = None
     _defaultobserved = None
     _genattributes = ['fill_value', 'observed']
-    def __new__(cls, data, dates=None, mask=nomask,
-                freq=None, observed=None, start_date=None, length=None,
+    def __new__(cls, data, dates, mask=nomask,
+#                freq=None, 
+                observed=None, #start_date=None, length=None,
                 dtype=None, copy=False, fill_value=None, subok=True,
                 keep_mask=True, small_mask=True, hard_mask=False, **options):
         maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value,subok=subok,
                        keep_mask=keep_mask, small_mask=small_mask,
                        hard_mask=hard_mask,)
         _data = MaskedArray(data, mask=mask, **maparms)
-        # Get the frequency ..........................
-        freq = check_freq(freq)
+#        # Get the frequency ..........................
+#        freq = check_freq(freq)
         # Get the dates ..............................
-        if dates is None:
-            newdates = getattr(data, '_dates', None)
-        else:
-            newdates = dates
-        if newdates is not None:
-            if not hasattr(newdates, 'freq'):
-                newdates = date_array(dlist=dates, freq=freq)
-            if freq != _c.FR_UND and newdates.freq != freq:
-                newdates = newdates.asfreq(freq)
-        else:
-            dshape = _data.shape
-            if len(dshape) > 0:
-                if length is None:
-                    length = dshape[0]
-                newdates = date_array(start_date=start_date, length=length,
-                                      freq=freq)
-            else:
-                newdates = date_array([], freq=freq)
+        if not isinstance(dates, (Date, DateArray)):
+            raise TypeError("The input dates should be a valid Date or DateArray object! "\
+                            "(got %s instead)" % type(dates))
+#            newdates = date_array(dates)
+#        elif isinstance(dates, (tuple, list, ndarray)):
+#            newdates = date_array(dlist=dates, freq=freq)
+#        if newdates is not None:
+#            if freq != _c.FR_UND and newdates.freq != freq:
+#                newdates = newdates.asfreq(freq)
+#        else:
+#            dshape = _data.shape
+#            if len(dshape) > 0:
+#                if length is None:
+#                    length = dshape[0]
+#                newdates = date_array(start_date=start_date, length=length,
+#                                      freq=freq)
+#            else:
+#                newdates = date_array([], freq=freq)
         # Get observed ...............................
         observed = getattr(data, 'observed', fmtObserv(observed))
         # Get the data ...............................
-        if newdates._unsorted is not None:
-            _data = _data[newdates._unsorted]
         if not subok or not isinstance(_data,TimeSeries):
             _data = _data.view(cls)
         if _data is masked:
             assert(numeric.size(newdates)==1)
             return _data.view(cls)
-        assert(_datadatescompat(_data,newdates))
-        _data._dates = newdates
-        if _data._dates.size == _data.size and _data.ndim > 1:
-            _data._dates.shape = _data.shape
+        assert(_datadatescompat(_data,dates))
+#        assert(_datadatescompat(_data,newdates))
+        #
+#        _data._dates = newdates
+        _data._dates = dates
+        if _data._dates.size == _data.size: 
+            if _data.ndim > 1:
+                current_shape = data.shape
+#                if newdates._unsorted is not None:
+                if dates._unsorted is not None:
+                    _data.shape = (-1,)
+#                    _data = _data[newdates._unsorted]
+                    _data = _data[dates._unsorted]
+                    _data.shape = current_shape
+                _data._dates.shape = current_shape
+            elif dates._unsorted is not None:
+                _data = _data[dates._unsorted]
+#            elif newdates._unsorted is not None:
+#                _data = _data[newdates._unsorted]
         _data.observed = observed
         return _data
     #............................................
@@ -919,17 +933,6 @@ def tofile(self, output, sep='\t', format_dates=None):
 TimeSeries.tofile = tofile
 
 #............................................
-def tolist(self, fill_value=None):
-    """Copies the date and data portion of the time series to a hierarchical
-python list and returns that list. Data items are converted to the nearest
-compatible Python type. Dates are converted to standard Python datetime
-objects. Masked values are filled with `fill_value`"""
-    return [(d.datetime, v) for (d,v) in \
-                                zip(self.dates, self._series.tolist())]
-TimeSeries.tolist = tolist
-
-#............................................
-
 def asrecords(series):
     """Returns the masked time series as a recarray.
 Fields are `_dates`, `_data` and _`mask`.
@@ -990,27 +993,45 @@ def time_series(data, dates=None, freq=None, observed=None,
     `data` :
         Array of data.
     """
-    data = numeric.array(data, copy=False, subok=True)
+    maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value, subok=True,
+                   keep_mask=keep_mask, small_mask=small_mask,
+                   hard_mask=hard_mask,)
+    data = masked_array(data, mask=mask, **maparms)
+    #   data = data.view(MaskedArray)
+    freq = check_freq(freq)
+    #
     if dates is None:
+        _dates = getattr(data, '_dates', None)        
+    elif isinstance(dates, (Date, DateArray)):
+        _dates = date_array(dates)
+    elif isinstance(dates, (tuple, list, ndarray)):
+        _dates = date_array(dlist=dates, freq=freq)
+    else:
+        _dates = date_array([], freq=freq)
+    #
+    if _dates is not None:
+        # Make sure _dates has the proper freqncy
+        if (freq != _c.FR_UND) and (_dates.freq != freq):
+            _dates = _dates.asfreq(freq)
+    else:
         dshape = data.shape
         if len(dshape) > 0:
             if length is None:
                 length = dshape[0]
         if len(dshape) > 0:
-            dates = date_array(start_date=start_date, end_date=end_date,
+            _dates = date_array(start_date=start_date, end_date=end_date,
                                length=length, freq=freq)
         else:
-            dates = date_array([], freq=freq)
-    elif not isinstance(dates, DateArray):
-        dates = date_array(dlist=dates, freq=freq)
-    if dates._unsorted is not None:
-        idx = dates._unsorted
+            _dates = date_array([], freq=freq)
+    #
+    if _dates._unsorted is not None:
+        idx = _dates._unsorted
         data = data[idx]
-        if mask is not nomask:
-            mask = mask[idx]
-        dates._unsorted = None
-    return TimeSeries(data=data, dates=dates, mask=mask, 
-                      observed=observed, copy=copy, dtype=dtype, 
+        _dates._unsorted = None
+    return TimeSeries(data=data, dates=_dates, mask=data._mask,
+#                      freq=freq, 
+                      observed=observed,
+                      copy=copy, dtype=dtype, 
                       fill_value=fill_value, keep_mask=keep_mask, 
                       small_mask=small_mask, hard_mask=hard_mask,)
 
@@ -1597,7 +1618,7 @@ def empty_like(series):
 ################################################################################
 if __name__ == '__main__':
     from maskedarray.testutils import assert_equal, assert_array_equal
-    if 1:
+    if 0:
         dlist = ['2007-01-%02i' % i for i in range(1,16)]
         dates = date_array_fromlist(dlist)
         data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3)
@@ -1611,7 +1632,7 @@ if __name__ == '__main__':
         assert_equal(a[-5:], series[:5])
         assert_equal(b[:5], series[-5:])
     #
-    if 1:
+    if 0:
         data = numpy.arange(5*24).reshape(5,24)
         datelist = ['2007-07-01','2007-07-02','2007-07-03','2007-07-05','2007-07-06']
         dates = date_array_fromlist(datelist, 'D')
@@ -1632,4 +1653,49 @@ if __name__ == '__main__':
         assert_equal(fseries._mask, [0,0,0,1,0,])
         #
         fseries = fill_missing_dates(data, date_array_fromlist(datelist,'D'))
+    #
+    if 0:
+        "Make sure we're not losing the fill_value"
+        dlist = ['2007-01-%02i' % i for i in range(1,16)]
+        dates = date_array_fromlist(dlist)
+        series = time_series(MA.zeros(dates.shape), dates=dates, fill_value=-9999)
+        assert_equal(series.fill_value, -9999)
+    if 0:
+        "Check time_series w/ an existing time series"
+        dlist = ['2007-01-%02i' % i for i in range(1,16)]
+        dates = date_array_fromlist(dlist)
+        series = time_series(MA.zeros(dates.shape), dates=dates, fill_value=-9999)
+        newseries = time_series(series, fill_value=+9999)
+        assert_equal(newseries._data, series._data)
+        assert_equal(newseries._mask, series._mask)
+        assert_equal(newseries.fill_value, +9999)
         
+    if 0:
+        data = numpy.arange(5*24).reshape(5,24)
+        datelist = ['2007-07-01','2007-07-02','2007-07-03','2007-07-05','2007-07-06']
+        dates = date_array_fromlist(datelist, 'D')
+#        dseries = time_series(data, dates)
+        ndates = date_array_fromrange(start_date=dates[0],end_date=dates[-2])
+        #
+        (A,B) = (data.ravel()[:4].reshape(2,2), dates[:-1])
+        series = time_series(A,B)
+        fseries = fill_missing_dates(series)
+        assert_equal(fseries.shape, (5,))
+        assert_equal(fseries._mask, [0,0,0,1,0,])
+    #
+    if 1:        
+        dlist = ['2007-01-%02i' % i for i in (3,2,1)]
+        data = [10,20,30]
+#        series = time_series(data, dlist, mask=[1,0,0])
+#        data = masked_array([10,20,30],mask=[1,0,0])
+#        series = time_series(data, dlist)
+        series = time_series(data, dlist, mask=[1,0,0])
+        assert_equal(series._mask,[0,0,1])
+    if 1:
+        dlist = ['2007-01-%02i' % i for i in range(1,16)]
+        dates = date_array_fromlist(dlist)
+        data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3)
+        series = time_series(data, dlist)
+        
+        empty_series = time_series([], freq='d')
+        a, b = align_series(series, empty_series)

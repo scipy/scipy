@@ -516,16 +516,9 @@ if __name__ == '__main__':
         self_data = [d, m, mrec, dlist, dates, ts, mts]
         
         assert(isinstance(mts.f0, TimeSeries))
-        
-    if 0:        
-        mts[:2] = 5
-        assert_equal(mts.f0._data, [5,5,2,3,4])
-        assert_equal(mts.f1._data, [5,5,2,1,0])
-        assert_equal(mts.f0._mask, [0,0,0,1,1])
-        assert_equal(mts.f1._mask, [0,0,0,0,1])
-        mts.harden_mask()
-        mts[-2:] = 5
-        assert_equal(mts.f0._data, [5,5,2,3,4])
-        assert_equal(mts.f1._data, [5,5,2,5,0])
-        assert_equal(mts.f0._mask, [0,0,0,1,1])
-        assert_equal(mts.f1._mask, [0,0,0,0,1]) 
+    #
+    if 1:
+        recfirst = mts._data[0]
+        print recfirst, type(recfirst)
+        print mrec[0], type(mrec[0])
+    

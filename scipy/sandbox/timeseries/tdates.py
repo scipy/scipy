@@ -214,6 +214,7 @@ accesses the array element by element. Therefore, `d` is a Date object.
 
     def __getitem__(self, indx):
         reset_full = True
+        # Determine what kind of index is used
         if isinstance(indx, Date):
             indx = self.find_dates(indx)
             reset_full = False
@@ -222,7 +223,12 @@ accesses the array element by element. Therefore, `d` is a Date object.
                 indx = self.find_dates(indx)
             except AttributeError:
                 pass
+        # Select the data
         r = ndarray.__getitem__(self, indx)
+        # Select the corresponding unsorted indices (if needed)
+        if self._unsorted is not None:
+            unsorted = self._unsorted[indx]
+        # Case 1. A simple integer
         if isinstance(r, (generic, int)):
             return Date(self.freq, value=r)
         elif hasattr(r, 'size') and r.size == 1:
@@ -679,41 +685,42 @@ def period_break(dates, period):
 if __name__ == '__main__':
     import maskedarray.testutils
     from maskedarray.testutils import assert_equal
-    if 0:
-        dlist = ['2007-%02i' % i for i in range(1,5)+range(7,13)]
-        mdates = date_array_fromlist(dlist, 'M')
-        # Using an integer
-        assert_equal(mdates[0].value, 24073)
-        assert_equal(mdates[-1].value, 24084)
-        # Using a date
-        lag = mdates.find_dates(mdates[0])
-        print mdates[lag]
-        assert_equal(mdates[lag], mdates[0])
-    if 0:
-        hodie = today('D')
-        D = DateArray(today('D'))
-        assert_equal(D.freq, 6000)
-    if 0:
-        freqs = [x[0] for x in corelib.freq_dict.values() if x[0] != 'U']
-        print freqs
-        for f in freqs:
-            print f
-            today = thisday(f)
-            assert(Date(freq=f, value=today.value) == today)
-    if 0:
-        D = date_array(freq='U', start_date=Date('U',1), length=10)
-    if 0:
-        dlist = ['2007-01-%02i' % i for i in (1,2,4,5,7,8,10,11,13)]
-        ords = numpy.fromiter((DateTimeFromString(s).toordinal() for s in dlist),
-                               float_)
-    if 0:
-        "Tests the automatic sorting of dates."
-        D = date_array_fromlist(dlist=['2006-01','2005-01','2004-01'],freq='M')
-        assert_equal(D.view(ndarray), [24037, 24049, 24061])
+#    if 0:
+#        dlist = ['2007-%02i' % i for i in range(1,5)+range(7,13)]
+#        mdates = date_array_fromlist(dlist, 'M')
+#        # Using an integer
+#        assert_equal(mdates[0].value, 24073)
+#        assert_equal(mdates[-1].value, 24084)
+#        # Using a date
+#        lag = mdates.find_dates(mdates[0])
+#        print mdates[lag]
+#        assert_equal(mdates[lag], mdates[0])
+#    if 0:
+#        hodie = today('D')
+#        D = DateArray(today('D'))
+#        assert_equal(D.freq, 6000)
+#    if 0:
+#        freqs = [x[0] for x in corelib.freq_dict.values() if x[0] != 'U']
+#        print freqs
+#        for f in freqs:
+#            print f
+#            today = thisday(f)
+#            assert(Date(freq=f, value=today.value) == today)
+#    if 0:
+#        D = date_array(freq='U', start_date=Date('U',1), length=10)
+#    if 0:
+#        dlist = ['2007-01-%02i' % i for i in (1,2,4,5,7,8,10,11,13)]
+#        ords = numpy.fromiter((DateTimeFromString(s).toordinal() for s in dlist),
+#                               float_)
+#    if 0:
+#        "Tests the automatic sorting of dates."
+#        D = date_array_fromlist(dlist=['2006-01','2005-01','2004-01'],freq='M')
+#        assert_equal(D.view(ndarray), [24037, 24049, 24061])
 
     if 1:
         dlist = ['2007-%02i' % i for i in range(1,5)+range(7,13)]
         mdates = date_array_fromlist(dlist, 'M')
         
-        print mdates.tostr()
-        
+    if 2:
+        dlist = ['2007-01','2007-03','2007-04','2007-02']
+        mdates = date_array_fromlist(dlist, 'M')

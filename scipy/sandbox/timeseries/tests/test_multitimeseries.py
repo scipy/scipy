@@ -12,7 +12,7 @@ __date__     = '$Date$'
 
 import types
 
-import numpy as N
+import numpy
 import numpy.core.fromnumeric  as fromnumeric
 from numpy.testing import NumpyTest, NumpyTestCase
 from numpy.testing.utils import build_err_msg
@@ -41,10 +41,10 @@ class test_mrecords(NumpyTestCase):
         
     def setup(self):       
         "Generic setup" 
-        d = N.arange(5)
+        d = numpy.arange(5)
         m = MA.make_mask([1,0,0,1,1])
-        base_d = N.r_[d,d[::-1]].reshape(2,-1).T
-        base_m = N.r_[[m, m[::-1]]].T
+        base_d = numpy.r_[d,d[::-1]].reshape(2,-1).T
+        base_m = numpy.r_[[m, m[::-1]]].T
         base = MA.array(base_d, mask=base_m)    
         mrec = MR.fromarrays(base.T,)
         dlist = ['2007-%02i' % (i+1) for i in d]
@@ -62,9 +62,10 @@ class test_mrecords(NumpyTestCase):
         assert_equal(mts['f0']._mask, m)
         #
         assert(isinstance(mts[0], MultiTimeSeries))
-        assert_equal(mts._data[0], mrec[0])
+        assert_equal(mts._data[0], mrec._data[0])
         # We can't use assert_equal here, as it tries to convert the tuple into a singleton
-        assert(mts[0]._data.view(N.ndarray) == mrec[0])
+#        assert(mts[0]._data.view(numpyndarray) == mrec[0])
+        assert_equal(numpy.asarray(mts._data[0]), mrec[0])
         assert_equal(mts._dates[0], dates[0])  
         assert_equal(mts[0]._dates, dates[0])
         #
@@ -75,8 +76,8 @@ class test_mrecords(NumpyTestCase):
         assert(isinstance(mts.f0, TimeSeries))
         assert_equal(mts.f0, time_series(d, dates=dates, mask=m))
         assert_equal(mts.f1, time_series(d[::-1], dates=dates, mask=m[::-1]))
-        assert((mts._fieldmask == N.core.records.fromarrays([m, m[::-1]])).all())
-        assert_equal(mts._mask, N.r_[[m,m[::-1]]].all(0))
+        assert((mts._fieldmask == numpy.core.records.fromarrays([m, m[::-1]])).all())
+        assert_equal(mts._mask, numpy.r_[[m,m[::-1]]].all(0))
         assert_equal(mts.f0[1], mts[1].f0)
         #
         assert(isinstance(mts[:2], MultiTimeSeries))
@@ -124,7 +125,7 @@ class test_mrecords(NumpyTestCase):
         mts.harden_mask()
         assert(mts._hardmask)
         mts._mask = nomask
-        assert_equal(mts._mask, N.r_[[m,m[::-1]]].all(0))
+        assert_equal(mts._mask, numpy.r_[[m,m[::-1]]].all(0))
         mts.soften_mask()
         assert(not mts._hardmask)
         mts._mask = nomask
@@ -141,7 +142,7 @@ class test_mrecords(NumpyTestCase):
     def test_fromrecords(self):
         "Test from recarray."
         [d, m, mrec, dlist, dates, ts, mts] = self.data
-        nrec = N.core.records.fromarrays(N.r_[[d,d[::-1]]])
+        nrec = numpy.core.records.fromarrays(numpy.r_[[d,d[::-1]]])
         mrecfr = fromrecords(nrec.tolist(), dates=dates)
         assert_equal(mrecfr.f0, mrec.f0)
         assert_equal(mrecfr.dtype, mrec.dtype)
