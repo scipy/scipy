@@ -3,7 +3,7 @@
  *
  * Original code by Pearu Peaterson
  *
- * Last Change: Wed Aug 08 03:00 PM 2007 J
+ * Last Change: Thu Sep 06 05:00 PM 2007 J
  */
 
 GEN_CACHE(zfftnd_fftw, (int n, int *dims, int d, int flags)
@@ -25,7 +25,7 @@ GEN_CACHE(zfftnd_fftw, (int n, int *dims, int d, int flags)
 	  free(caches_zfftnd_fftw[id].dims);, 10)
 
 
-extern void zfftnd_mkl(complex_double * inout, int rank,
+extern void zfftnd_fftw(complex_double * inout, int rank,
 		       int *dims, int direction, int howmany,
 		       int normalize)
 {
