@@ -728,6 +728,12 @@ class test_ma(NumpyTestCase):
         assert_equal(a_pickled._mask, a._mask)
         assert_equal(a_pickled, a)
         assert(isinstance(a_pickled._data,numpy.matrix))
+    #
+    def check_fillvalue(self):
+        "Check that we don't lose the fill_value"
+        data = masked_array([1,2,3],fill_value=-999)
+        series = data[[0,2,1]]
+        assert_equal(series._fill_value, data._fill_value)
         
 #...............................................................................
         

@@ -31,7 +31,7 @@ __all__ = ['MAError', 'MaskType', 'MaskedArray',
            'bitwise_and', 'bitwise_or', 'bitwise_xor',
            'ceil', 'choose', 'compressed', 'concatenate', 'conjugate',
                'cos', 'cosh', 'count',
-           'diagonal', 'divide', 'dump', 'dumps',
+           'default_fill_value', 'diagonal', 'divide', 'dump', 'dumps',
            'empty', 'empty_like', 'equal', 'exp',
            'fabs', 'fmod', 'filled', 'floor', 'floor_divide',
            'getmask', 'getmaskarray', 'greater', 'greater_equal', 'hypot',
@@ -111,12 +111,12 @@ default_filler = {'b': True,
                   'V' : '???',
                   }
 max_filler = ntypes._minvals
-max_filler.update([(k,-numeric.inf) for k in [numpy.float32, numpy.float64]])
+max_filler.update([(k,-numpy.inf) for k in [numpy.float32, numpy.float64]])
 min_filler = ntypes._maxvals
-min_filler.update([(k,numeric.inf) for k in [numpy.float32, numpy.float64]])
+min_filler.update([(k,numpy.inf) for k in [numpy.float32, numpy.float64]])
 if 'float128' in ntypes.typeDict:
-    max_filler.update([(numpy.float128,-numeric.inf)])
-    min_filler.update([(numpy.float128, numeric.inf)])
+    max_filler.update([(numpy.float128,-numpy.inf)])
+    min_filler.update([(numpy.float128, numpy.inf)])
 
 
 def default_fill_value(obj):
@@ -236,6 +236,21 @@ def get_masked_subclass(*arrays):
             if issubclass(cls, rcls):
                 rcls = cls
     return rcls
+
+def get_data(a, copy=False, subok=True):
+    """Return the ._data part of a (if any), or a as a ndarray."""
+    if hasattr(a,'_data'):
+        if copy:
+            if subok:
+                return a._data.copy()
+            return a._data.view(ndarray).copy()
+        elif subok:
+            return a._data
+        return a._data.view(ndarray)
+    return numpy.ndarray(a, copy=copy, subok=subok)
+
+
+
 
 #####--------------------------------------------------------------------------
 #---- --- Ufuncs ---
@@ -1033,9 +1048,11 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
                     
                     
         # Update fill_value.......
-        _data._fill_value = getattr(data, '_fill_value', fill_value)
-        if _data._fill_value is None:
-            _data._fill_value = default_fill_value(_data)
+        if fill_value is None:
+            _data._fill_value = getattr(data, '_fill_value', 
+                                        default_fill_value(_data))
+        else:
+            _data._fill_value = fill_value
         # Process extra options ..
         _data._hardmask = hard_mask
         _data._smallmask = small_mask
@@ -1115,6 +1132,8 @@ Returns the item described by i. Not a copy as in previous versions.
             # Not a scalar: make sure that dout is a MA
             dout = dout.view(type(self))
             dout._smallmask = self._smallmask
+            dout._hardmask = self._hardmask
+            dout._fill_value = self._fill_value
             if m is not nomask:
                 # use _set_mask to take care of the shape
                 dout.__setmask__(m[indx])
@@ -1275,7 +1294,8 @@ If `fill_value` is None, uses self.fill_value.
         else:
             result = self._data.copy()
             try:
-                result[m] = fill_value
+                numpy.putmask(result, m, fill_value)
+                #result[m] = fill_value
             except (TypeError, AttributeError):
                 fill_value = numeric.array(fill_value, dtype=object)
                 d = result.astype(object)
@@ -2661,7 +2681,7 @@ def loads(strg):
 
 if __name__ == '__main__':
     from testutils import assert_equal, assert_almost_equal
-    if 1:
+    if 0:
         x = arange(10)
         assert(x.ctypes.data == x.filled().ctypes.data)
     if 0:
@@ -2680,7 +2700,7 @@ if __name__ == '__main__':
         x = array([0,0], mask=0)
         (I,J) = (x.ctypes.data, x.filled().ctypes.data)
         print (I,J)
-    if 1:
+    if 0:
         x = array(numpy.arange(12))
         x[[1,-2]] = masked
         xlist = x.tolist()
@@ -2694,5 +2714,34 @@ if __name__ == '__main__':
         assert_equal(xlist[1],[4,5,6,7])
         assert_equal(xlist[2],[8,9,None,11])
         
+    if 0:
+        xl = numpy.random.rand(100,100)
+        yl = numpy.random.rand(100,100)
+        maskx = xl > 0.8
+        masky = yl < 0.2
+        mxl = array(xl, mask=maskx)
+        myl = array(yl, mask=masky)
         
+        zz = mxl + myl
+    
+    if 0:
+        print "x is ndarray"
+        x = array(numpy.random.rand(50,50))
+        print "set x._mask"
+        x[x > 0.8] = masked
+        print "set y"
+        y = array(numpy.random.rand(50,50))
+        print "set y._mask"
+        ymask = y._data < 0.2
+        print "set y._mask"
+        y.__setmask__(ymask)
+        print "add x + y"
+        z = x + y
         
+        r.__setmask__()
+        
+    if 1:
+        "Check that we don't lose the fill_value"
+        data = masked_array([1,2,3],fill_value=-999)
+        series = data[[0,2,1]]
+        assert_equal(series._fill_value, data._fill_value)
