@@ -6,17 +6,18 @@ from scipy.sparse import isspmatrix,isspmatrix_csr,isspmatrix_csc, \
                         csr_matrix,csc_matrix,extract_diagonal
 
 
-def inf_norm(A):
+def infinity_norm(A):
     """
     Infinity norm of a sparse matrix (maximum absolute row sum).  This serves 
     as an upper bound on spectral radius.
     """
     
-    if not isspmatrix_csr(A):
-        return ValueError,'expected csr_matrix'
-    
-    abs_A = csr_matrix((abs(A.data),A.indices,A.indptr),dims=A.shape,check=False)
-    return (abs_A * numpy.ones(A.shape[1],dtype=A.dtype)).max()
+    if isspmatrix_csr(A) or isspmatrix_csc(A):
+        #avoid copying index and ptr arrays
+        abs_A = A.__class__((abs(A.data),A.indices,A.indptr),dims=A.shape,check=False)
+        return (abs_A * numpy.ones(A.shape[1],dtype=A.dtype)).max()
+    else:
+        return (abs(A) * numpy.ones(A.shape[1],dtype=A.dtype)).max()
 
 def diag_sparse(A):
     """

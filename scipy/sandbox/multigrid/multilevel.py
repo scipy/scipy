@@ -10,7 +10,7 @@ import numpy
 
 from coarsen import sa_interpolation,rs_interpolation
 from relaxation import gauss_seidel,jacobi 
-
+from utils import infinity_norm
 
 
 def poisson_problem1D(N):
@@ -21,7 +21,7 @@ def poisson_problem1D(N):
     """
     D = 2*numpy.ones(N)
     O =  -numpy.ones(N)
-    return scipy.sparse.spdiags([D,O,O],[0,-1,1],N,N).tocsr()
+    return scipy.sparse.spdiags([D,O,O],[0,-1,1],N,N).tocoo().tocsr() #eliminate zeros
 
 def poisson_problem2D(N):
     """
@@ -33,7 +33,8 @@ def poisson_problem2D(N):
     T =  -numpy.ones(N*N)
     O =  -numpy.ones(N*N)
     T[N-1::N] = 0
-    return scipy.sparse.spdiags([D,O,T,T,O],[0,-N,-1,1,N],N*N,N*N).tocsr()
+    return scipy.sparse.spdiags([D,O,T,T,O],[0,-N,-1,1,N],N*N,N*N).tocoo().tocsr() #eliminate zeros
+    
 
 def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
     """
@@ -41,8 +42,8 @@ def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
     
         References:
             "Multigrid"
-            Trottenberg, U., C. W. Oosterlee, and Anton Schuller. San Diego: Academic Press, 2001.
-            See Appendix A
+                Trottenberg, U., C. W. Oosterlee, and Anton Schuller. San Diego: Academic Press, 2001.
+                See Appendix A
     
     """
     As = [A]
@@ -58,7 +59,7 @@ def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
         
     return multilevel_solver(As,Ps)
 
-def smoothed_aggregation_solver(A,max_levels=10,max_coarse=500):
+def smoothed_aggregation_solver(A,max_levels=10,max_coarse=500,epsilon=0.08):
     """
     Create a multilevel solver using Smoothed Aggregation (SA)
 
@@ -72,8 +73,9 @@ def smoothed_aggregation_solver(A,max_levels=10,max_coarse=500):
     Ps = []
     
     while len(As) < max_levels  and A.shape[0] > max_coarse:
-        P = sa_interpolation(A,epsilon=0.08*0.5**(len(As)-1))
-        
+        P = sa_interpolation(A,epsilon=epsilon*0.5**(len(As)-1))
+        #P = sa_interpolation(A,epsilon=0.0)
+
         A = (P.T.tocsr() * A) * P     #galerkin operator
 
         As.append(A)
@@ -108,7 +110,10 @@ class multilevel_solver:
         """number of unknowns on all levels / number of unknowns on the finest level"""
         return sum([A.shape[0] for A in self.As])/float(self.As[0].shape[0])
     
-            
+
+    def psolve(self, b):
+        return self.solve(b,maxiter=1)
+
     def solve(self, b, x0=None, tol=1e-5, maxiter=100, callback=None, return_residuals=False):
         """
         TODO
@@ -122,12 +127,12 @@ class multilevel_solver:
 
         #TODO change use of tol (relative tolerance) to agree with other iterative solvers
         A = self.As[0]
-        residuals = [norm(b-A*x,2)]
+        residuals = [scipy.linalg.norm(b-A*x)]
 
         while len(residuals) <= maxiter and residuals[-1]/residuals[0] > tol:
             self.__solve(0,x,b)
 
-            residuals.append(scipy.linalg.norm(b-A*x,2))
+            residuals.append(scipy.linalg.norm(b-A*x))
 
             if callback is not None:
                 callback(x)
@@ -142,11 +147,11 @@ class multilevel_solver:
         A = self.As[lvl]
         
         if len(self.As) == 1:
-            x[:] = scipy.linalg.solve(A.todense(),b)
-            return x
+            x[:] = scipy.linsolve.spsolve(A,b)
+            return 
 
         self.presmoother(A,x,b)
-            
+
         residual = b - A*x                                
 
         coarse_x = zeros((self.As[lvl+1].shape[0]))
@@ -154,7 +159,9 @@ class multilevel_solver:
         
         if lvl == len(self.As) - 2:
             #direct solver on coarsest level
-            coarse_x[:] = scipy.linalg.solve(self.As[-1].todense(),coarse_b)
+            coarse_x[:] = scipy.linsolve.spsolve(self.As[-1],coarse_b)
+            #coarse_x[:] = scipy.linalg.cg(self.As[-1],coarse_b,tol=1e-12)[0]
+            #print "coarse residual norm",scipy.linalg.norm(coarse_b - self.As[-1]*coarse_x)
         else:   
             self.__solve(lvl+1,coarse_x,coarse_b)
                 
@@ -165,26 +172,32 @@ class multilevel_solver:
 
     def presmoother(self,A,x,b):
         gauss_seidel(A,x,b,iterations=1,sweep="forward")
+        #x += 4.0/(3.0*infinity_norm(A))*(b - A*x)
     
     def postsmoother(self,A,x,b):
-        gauss_seidel(A,x,b,iterations=1,sweep="backward")
+        gauss_seidel(A,x,b,iterations=1,sweep="forward")
+        #gauss_seidel(A,x,b,iterations=1,sweep="backward")
+        #x += 4.0/(3.0*infinity_norm(A))*(b - A*x)
 
 
 
 if __name__ == '__main__':
     from scipy import *
     A = poisson_problem2D(200)
+    #A = io.mmread("rocker_arm_surface.mtx").tocsr()
+
     ml = smoothed_aggregation_solver(A)
     #ml = ruge_stuben_solver(A)
+
     x = rand(A.shape[0])
     b = zeros_like(x)
+    #b = rand(A.shape[0])
     
-    resid = []
-    
-    for n in range(10):
-        x = ml.solve(b,x,maxiter=1)
-        resid.append(linalg.norm(A*x))
+    x_sol,residuals = ml.solve(b,x0=x,maxiter=40,tol=1e-10,return_residuals=True)
 
+    residuals = array(residuals)/residuals[0]
+
+    print residuals
 
 
 

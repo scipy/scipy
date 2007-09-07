@@ -13,6 +13,12 @@ def gauss_seidel(A,x,b,iterations=1,sweep='forward'):
          iterations - number of iterations to perform (default: 1)
          sweep      - slice of unknowns to relax (default: all in forward direction)
     """ 
+    if A.shape[0] != A.shape[1]:
+        raise ValueError,'expected symmetric matrix'
+
+    if A.shape[1] != len(x) or len(x) != len(b):
+        raise ValueError,'unexpected number of unknowns'
+
     if sweep == 'forward':
         row_start,row_stop,row_step = 0,len(x),1
     elif sweep == 'backward':

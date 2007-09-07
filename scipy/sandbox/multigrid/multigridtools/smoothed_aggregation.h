@@ -5,7 +5,7 @@
 #include <vector>
 #include <iterator>
 #include <assert.h>
-
+#include <cmath>
 
 //#define DEBUG
 
@@ -20,23 +20,21 @@ void sa_strong_connections(const int n_row,
   Sp->push_back(0);
 
   //compute diagonal values
-  std::vector<T> diags(n_row);
+  std::vector<T> diags(n_row,T(0));
   for(int i = 0; i < n_row; i++){
     int row_start = Ap[i];
     int row_end   = Ap[i+1];
     for(int jj = row_start; jj < row_end; jj++){
-      if(Aj[jj] == i){
-	diags[i] = Ax[jj];
-	break;
-      }
+        if(Aj[jj] == i){
+        	diags[i] = Ax[jj];
+        	break;
+        }
     }    
   }
 
 #ifdef DEBUG
   for(int i = 0; i < n_row; i++){ assert(diags[i] > 0); }
 #endif
-    
-
 
   for(int i = 0; i < n_row; i++){
     int row_start = Ap[i];
@@ -45,14 +43,15 @@ void sa_strong_connections(const int n_row,
     T eps_Aii = epsilon*epsilon*diags[i];
 
     for(int jj = row_start; jj < row_end; jj++){
-      const int&   j = Aj[jj];
-      const T&   Aij = Ax[jj];
+      const int   j = Aj[jj];
+      const T   Aij = Ax[jj];
 
       if(i == j){continue;}
 
-      if(Aij*Aij >= eps_Aii * diags[j]){
-	Sj->push_back(j);
-	Sx->push_back(Aij);
+      //  |A(i,j)| < epsilon * sqrt(|A(i,i)|*|A(j,j)|) 
+      if(Aij*Aij >= std::abs(eps_Aii * diags[j])){    
+          Sj->push_back(j);
+          Sx->push_back(Aij);
       }
     }
     Sp->push_back(Sj->size());
@@ -61,9 +60,9 @@ void sa_strong_connections(const int n_row,
 
 
 void sa_get_aggregates(const int n_row,
-		       const int Ap[], const int Aj[],
-		       std::vector<int> * Bj){
-
+        		       const int Ap[], const int Aj[],
+		               std::vector<int> * Bj)
+{
   std::vector<int> aggregates(n_row,-1);
 
   int num_aggregates = 0;
@@ -72,20 +71,18 @@ void sa_get_aggregates(const int n_row,
   for(int i = 0; i < n_row; i++){
     if(aggregates[i] >= 0){ continue; } //already marked
 
-    const int& row_start = Ap[i];
-    const int& row_end   = Ap[i+1];
+    const int row_start = Ap[i];
+    const int row_end   = Ap[i+1];
     
-
     //Determine whether all neighbors of this node are free (not already aggregates)
     bool free_neighborhood = true;
     for(int jj = row_start; jj < row_end; jj++){
       if(aggregates[Aj[jj]] >= 0){
-	free_neighborhood = false;
-	break;
+    	free_neighborhood = false;
+	    break;
       }
     }    
     if(!free_neighborhood){ continue; } //bail out
-
 
     //Make an aggregate out of this node and its strong neigbors
     aggregates[i] = num_aggregates;
@@ -96,52 +93,49 @@ void sa_get_aggregates(const int n_row,
   }
 
 
-
   //Pass #2
   std::vector<int> aggregates_copy(aggregates);
   for(int i = 0; i < n_row; i++){
     if(aggregates[i] >= 0){ continue; } //already marked
 
-    const int& row_start = Ap[i];
-    const int& row_end   = Ap[i+1];
+    const int row_start = Ap[i];
+    const int row_end   = Ap[i+1];
     
     for(int jj = row_start; jj < row_end; jj++){
-      const int& j = Aj[jj];
+      const int j = Aj[jj];
 
       if(aggregates_copy[j] >= 0){
-	aggregates[i] = aggregates_copy[j];
-	break;
+    	aggregates[i] = aggregates_copy[j];
+	    break;
       }
     }    
   }
 
 
-
   //Pass #3
   for(int i = 0; i < n_row; i++){
     if(aggregates[i] >= 0){ continue; } //already marked
-
-    const int& row_start = Ap[i];
-    const int& row_end   = Ap[i+1];
+  
+    const int row_start = Ap[i];
+    const int row_end   = Ap[i+1];
     
     aggregates[i] = num_aggregates;
 
     for(int jj = row_start; jj < row_end; jj++){
-      const int& j = Aj[jj];
+      const int j = Aj[jj];
 
       if(aggregates[j] < 0){ //unmarked neighbors
-	aggregates[j] = num_aggregates;
+    	aggregates[j] = num_aggregates;
       }
     }  
     num_aggregates++;
   }
 
-
 #ifdef DEBUG
   for(int i = 0; i < n_row; i++){ assert(aggregates[i] >= 0 && aggregates[i] < num_aggregates); }
 #endif
   
-  *Bj = aggregates;  
+  aggregates.swap(*Bj);  
 }
 
 

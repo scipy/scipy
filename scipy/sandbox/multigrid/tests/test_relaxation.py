@@ -7,6 +7,7 @@ from scipy.sparse import spdiags
 
 
 set_package_path()
+import scipy.multigrid
 from scipy.multigrid.relaxation import polynomial_smoother,gauss_seidel,jacobi
 restore_path()
 
@@ -35,6 +36,50 @@ class test_relaxation(NumpyTestCase):
         x  = x0.copy()
         polynomial_smoother(A,x,b,[-0.14285714,  1., -2.])
         assert_almost_equal(x,x0 - 0.14285714*A*A*r + A*r - 2*r)
+
+    def check_jacobi(self):
+        N = 1
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        x = arange(N).astype(numpy.float64)
+        b = zeros(N)
+        jacobi(A,x,b)
+        assert_almost_equal(x,array([0]))
+
+        N = 3
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        x = zeros(N)
+        b = arange(N).astype(numpy.float64)
+        jacobi(A,x,b)
+        assert_almost_equal(x,array([0.0,0.5,1.0]))
+
+        N = 3
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        x = arange(N).astype(numpy.float64)
+        b = zeros(N)
+        jacobi(A,x,b)
+        assert_almost_equal(x,array([0.5,1.0,0.5]))
+
+        N = 1
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        x = arange(N).astype(numpy.float64)
+        b = array([10])
+        jacobi(A,x,b)
+        assert_almost_equal(x,array([5]))
+
+        N = 3
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        x = arange(N).astype(numpy.float64)
+        b = array([10,20,30])
+        jacobi(A,x,b)
+        assert_almost_equal(x,array([5.5,11.0,15.5]))
+
+        N = 3
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        x = arange(N).astype(numpy.float64)
+        x_copy = x.copy()
+        b = array([10,20,30])
+        jacobi(A,x,b,omega=1.0/3.0)
+        assert_almost_equal(x,2.0/3.0*x_copy + 1.0/3.0*array([5.5,11.0,15.5]))
 
 
     def check_gauss_seidel(self):
