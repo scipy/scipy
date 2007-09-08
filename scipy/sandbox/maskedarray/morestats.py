@@ -29,7 +29,7 @@ from maskedarray.mstats import trim_both, trimmed_stde, mquantiles, mmedian, std
 from scipy.stats.distributions import norm, beta, t, binom
 from scipy.stats.morestats import find_repeats
 
-__all__ = ['hdquantiles', 'hdquantiles_sd',
+__all__ = ['hdquantiles', 'hdmedian', 'hdquantiles_sd',
            'trimmed_mean_ci', 'mjci', 'rank_data']
 
 
@@ -57,9 +57,10 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     The function is restricted to 2D arrays.
     """
     def _hd_1D(data,prob,var):
-        "Computes the HD quantiles for a 1D array."
+        "Computes the HD quantiles for a 1D array. Returns nan for invalid data."
         xsorted = numpy.squeeze(numpy.sort(data.compressed().view(ndarray)))
-        n = len(xsorted)
+        # Don't use length here, in case we have a numpy scalar
+        n = xsorted.size
         #.........
         hd = empty((2,len(prob)), float_)
         if n < 2:
@@ -88,13 +89,29 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     data = masked_array(data, copy=False, dtype=float_)
     p = numpy.array(prob, copy=False, ndmin=1)
     # Computes quantiles along axis (or globally)
-    if (axis is None): 
+    if (axis is None) or (data.ndim == 1): 
         result = _hd_1D(data, p, var)
     else:
         assert data.ndim <= 2, "Array should be 2D at most !"
         result = apply_along_axis(_hd_1D, axis, data, p, var)
     #
     return masked_array(result, mask=numpy.isnan(result))
+    
+#..............................................................................
+def hdmedian(data, axis=-1, var=False):
+    """Returns the Harrell-Davis estimate of the median along the given axis.
+    
+:Inputs:
+    data: ndarray
+        Data array.    
+    axis : integer *[None]*
+        Axis along which to compute the quantiles. If None, use a flattened array.
+    var : boolean *[False]*
+        Whether to return the variance of the estimate.
+    """
+    result = hdquantiles(data,[0.5], axis=axis, var=var)
+    return result.squeeze()
+
     
 #..............................................................................
 def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):

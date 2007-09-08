@@ -1245,6 +1245,16 @@ class test_array_methods(NumpyTestCase):
         assert_equal(xlist[1],[4,5,6,7])
         assert_equal(xlist[2],[8,9,None,11])
         
+    def check_squeeze(self):
+        "Check squeeze"
+        data = masked_array([[1,2,3]])
+        assert_equal(data.squeeze(), [1,2,3])
+        data = masked_array([[1,2,3]], mask=[[1,1,1]])
+        assert_equal(data.squeeze(), [1,2,3])
+        assert_equal(data.squeeze()._mask, [1,1,1])
+        data = masked_array([[1]], mask=True)
+        assert(data.squeeze() is masked)
+        
 #..............................................................................
 
 ###############################################################################

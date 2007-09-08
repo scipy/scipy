@@ -932,6 +932,9 @@ If `onmask` is False, the new mask is just a reference to the initial mask.
                 result._mask = mask
             elif mask is not nomask:
                 result.__setmask__(getattr(mask, methodname)(*args, **params))
+        else:
+            if mask.ndim and mask.all():
+                return masked
         return result
 #..........................................................
 
@@ -2745,3 +2748,14 @@ if __name__ == '__main__':
         data = masked_array([1,2,3],fill_value=-999)
         series = data[[0,2,1]]
         assert_equal(series._fill_value, data._fill_value)
+        
+    if 1:
+        "Check squeeze"
+        data = masked_array([[1,2,3]])
+        assert_equal(data.squeeze(), [1,2,3])
+        data = masked_array([[1,2,3]], mask=[[1,1,1]])
+        assert_equal(data.squeeze(), [1,2,3])
+        assert_equal(data.squeeze()._mask, [1,1,1])
+        data = masked_array([[1]], mask=True)
+        assert(data.squeeze() is masked)
+        
