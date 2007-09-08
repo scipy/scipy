@@ -21,12 +21,22 @@ default = [c_spec.int_converter(),
           #common_spec.module_converter()]
 
 #----------------------------------------------------------------------------
-#  add numeric array converters to the default
+# add numpy array converters to the default
 # converter list.
 #----------------------------------------------------------------------------
 try:
     import standard_array_spec
     default.append(standard_array_spec.array_converter())
+except ImportError:
+    pass
+
+#----------------------------------------------------------------------------
+# add numpy scalar converters to the default
+# converter list.
+#----------------------------------------------------------------------------
+try:
+    import numpy_scalar_spec
+    default.append(numpy_scalar_spec.numpy_complex_scalar_converter())
 except ImportError:
     pass
 
