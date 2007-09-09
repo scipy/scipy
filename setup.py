@@ -35,10 +35,8 @@ def setup_package():
     sys.path.insert(0,os.path.join(local_path,'scipy')) # to retrive version
 
     try:
-        from version import version as version
         setup(
             name = 'scipy',
-            version = version, # will be overwritten by configuration version
             maintainer = "SciPy Developers",
             maintainer_email = "scipy-dev@scipy.org",
             description = "Scientific Algorithms Library for Python",
