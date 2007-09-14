@@ -247,7 +247,7 @@ class quantitative(term):
     of another term, i.e. to take powers:
 
     >>> import numpy as N
-    >>> from scipy.stats.models import formula
+    >>> from scipy.sandbox.models import formula
     >>> X = N.linspace(0,10,101)
     >>> x = formula.term('X')
     >>> x.namespace={'X':X}
@@ -600,7 +600,7 @@ Intercept term in a formula. If intercept is the
 only term in the formula, then a keywords argument
 \'nrow\' is needed.
 
->>> from scipy.stats.models.formula import formula, I
+>>> from scipy.sandbox.models.formula import formula, I
 >>> I()
 array(1.0)
 >>> I(nrow=5)

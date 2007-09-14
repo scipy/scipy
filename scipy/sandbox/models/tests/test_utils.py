@@ -6,7 +6,7 @@ import numpy as N
 import numpy.random as R
 from numpy.testing import assert_almost_equal, NumpyTest, NumpyTestCase
 
-from scipy.stats.models import utils
+from scipy.sandbox.models import utils
 
 class test_Utils(NumpyTestCase):
 
