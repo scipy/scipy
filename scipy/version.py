@@ -1,5 +1,5 @@
 version = '0.6.0'
-release=False
+release=True
 
 if not release:
     import os
