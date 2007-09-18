@@ -34,11 +34,11 @@ except ImportError:
 # add numpy scalar converters to the default
 # converter list.
 #----------------------------------------------------------------------------
-#try:
-#    import numpy_scalar_spec
-#    default.append(numpy_scalar_spec.numpy_complex_scalar_converter())
-#except ImportError:
-#    pass
+try:
+    import numpy_scalar_spec
+    default.append(numpy_scalar_spec.numpy_complex_scalar_converter())
+except ImportError:
+    pass
 
 #----------------------------------------------------------------------------
 # Add wxPython support

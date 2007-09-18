@@ -16,5 +16,4 @@ class numpy_complex_scalar_converter(c_spec.complex_converter):
         
         # But set this converter up to match the numpy complex 
         # types.
-        self.matching_types = [numpy.complex128, numpy.complex192,
-                               numpy.complex64]
+        self.matching_types = numpy.sctypes['complex']
