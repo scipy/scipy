@@ -1,19 +1,5 @@
 """TimeSeries
 
-
-__author__ = "Pierre GF Gerard-Marchant  & Matt Knox ($Author$)"
-__version__ = '1.0'
-__revision__ = "$Revision$"
-__date__     = '$Date$'
-
-import tcore
-from tcore import *
-import tdates
-from tdates import *
-import tseries
-from tseries import *
-import tmulti
-from tmulti import *
 :author: Pierre GF Gerard-Marchant & Matt Knox
 :contact: pierregm_at_uga_dot_edu - mattknox_ca_at_hotmail_dot_com
 :version: $Id$
@@ -25,9 +11,6 @@ __version__ = '1.0'
 __revision__ = "$Revision$"
 __date__     = '$Date$'
 
-# initialize python callbacks for C code
-import tcore
-from tcore import *
 import const
 import tdates
 from tdates import *

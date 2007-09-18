@@ -29,10 +29,10 @@ import maskedarray as MA
 
 from parser import DateFromString, DateTimeFromString
 
-import tcore as corelib
 import const as _c
 import cseries
 
+# initialize python callbacks for C code
 cseries.set_callback_DateFromString(DateFromString)
 cseries.set_callback_DateTimeFromString(DateTimeFromString)
 
@@ -396,9 +396,28 @@ For non-quarterly dates, this simply returns the year of the date."""
     #......................................................
     def find_dates(self, *dates):
         "Returns the indices corresponding to given dates, as an array."
+
+        #http://aspn.activestate.com/ASPN/Mail/Message/python-tutor/2302348
+        def flatten_sequence(iterable):
+            """Flattens a compound of nested iterables."""
+            itm = iter(iterable)
+            for elm in itm:
+                if hasattr(elm,'__iter__') and not isinstance(elm, basestring):
+                    for f in flatten_sequence(elm):
+                        yield f
+                else:
+                    yield elm
+
+        def flatargs(*args):
+            "Flattens the arguments."
+            if not hasattr(args, '__iter__'):
+                return args
+            else:
+                return flatten_sequence(args)
+
         ifreq = self.freq
         c = numpy.zeros(self.shape, bool_)
-        for d in corelib.flatargs(*dates):
+        for d in flatargs(*dates):
             if d.freq != ifreq:
                 d = d.asfreq(ifreq)
             c += (self == d.value)
@@ -685,37 +704,6 @@ def period_break(dates, period):
 if __name__ == '__main__':
     import maskedarray.testutils
     from maskedarray.testutils import assert_equal
-#    if 0:
-#        dlist = ['2007-%02i' % i for i in range(1,5)+range(7,13)]
-#        mdates = date_array_fromlist(dlist, 'M')
-#        # Using an integer
-#        assert_equal(mdates[0].value, 24073)
-#        assert_equal(mdates[-1].value, 24084)
-#        # Using a date
-#        lag = mdates.find_dates(mdates[0])
-#        print mdates[lag]
-#        assert_equal(mdates[lag], mdates[0])
-#    if 0:
-#        hodie = today('D')
-#        D = DateArray(today('D'))
-#        assert_equal(D.freq, 6000)
-#    if 0:
-#        freqs = [x[0] for x in corelib.freq_dict.values() if x[0] != 'U']
-#        print freqs
-#        for f in freqs:
-#            print f
-#            today = thisday(f)
-#            assert(Date(freq=f, value=today.value) == today)
-#    if 0:
-#        D = date_array(freq='U', start_date=Date('U',1), length=10)
-#    if 0:
-#        dlist = ['2007-01-%02i' % i for i in (1,2,4,5,7,8,10,11,13)]
-#        ords = numpy.fromiter((DateTimeFromString(s).toordinal() for s in dlist),
-#                               float_)
-#    if 0:
-#        "Tests the automatic sorting of dates."
-#        D = date_array_fromlist(dlist=['2006-01','2005-01','2004-01'],freq='M')
-#        assert_equal(D.view(ndarray), [24037, 24049, 24061])
 
     if 1:
         dlist = ['2007-%02i' % i for i in range(1,5)+range(7,13)]

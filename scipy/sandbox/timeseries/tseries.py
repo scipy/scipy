@@ -31,7 +31,6 @@ from maskedarray import MaskedArray, MAError, masked, nomask, \
     filled, getmask, getmaskarray, hsplit, make_mask_none, mask_or, make_mask, \
     masked_array
 
-import tcore as corelib
 import const as _c
 
 import tdates
@@ -54,6 +53,7 @@ __all__ = [
 'day_of_week','day_of_year','day','month','quarter','year',
 'hour','minute','second',
 'tofile','asrecords','flatten', 'check_observed',
+'first_unmasked_val', 'last_unmasked_val'
            ]
 
 
@@ -68,9 +68,19 @@ fmtobs_dict = {'UNDEFINED': ['UNDEF','UNDEFINED',None],
                'MAXIMUM': ['MAX','MAXIMUM','HIGH'],
                'MINIMUM': ['MIN','MINIMUM','LOW']}
 
+def first_unmasked_val(a):
+    "Returns the first unmasked value in a 1d maskedarray."
+    (i,j) = MA.extras.flatnotmasked_edges(a)
+    return a[i]
+
+def last_unmasked_val(a):
+    "Returns the last unmasked value in a 1d maskedarray."
+    (i,j) = MA.extras.flatnotmasked_edges(a)
+    return a[j]
+
 obs_dict = {"UNDEFINED":None,
-            "BEGINNING": corelib.first_unmasked_val,
-            "ENDING": corelib.last_unmasked_val,
+            "BEGINNING": first_unmasked_val,
+            "ENDING": last_unmasked_val,
             "AVERAGED": MA.average,
             "SUMMED": MA.sum,
             "MAXIMUM": MA.maximum,
@@ -82,7 +92,14 @@ for ob, aliases in fmtobs_dict.iteritems():
     for al in aliases:
         alias_obs_dict[al] = obs_dict[ob]
 obs_dict.update(alias_obs_dict)
-fmtobs_revdict = corelib.reverse_dict(fmtobs_dict)
+
+def _reverse_dict(d):
+    "Reverses the keys and values of a dictionary."
+    alt = []
+    tmp = [alt.extend([(w,k) for w in v]) for (k,v) in d.iteritems()]
+    return dict(alt)
+
+fmtobs_revdict = _reverse_dict(fmtobs_dict)
 
 def fmtObserv(obStr):
     "Converts a possible 'Observed' string into acceptable values."
