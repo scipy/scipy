@@ -26,11 +26,9 @@ set_callback_DateTimeFromString(PyObject *dummy, PyObject *args) {
 
 //DERIVED FROM mx.DateTime
 /*
-=====================================================
-== Functions in the following section are borrowed ==
-== from mx.DateTime, and in many cases slightly    ==
-== modified                                        ==
-=====================================================
+	Functions in the following section are borrowed from mx.DateTime version
+	2.0.6, and hence this code is subject to the terms of the egenix public
+	license version 1.0.0
 */
 
 #define Py_AssertWithArg(x,errortype,errorstr,a1) {if (!(x)) {PyErr_Format(errortype,errorstr,a1);goto onError;}}

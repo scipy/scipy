@@ -2,22 +2,23 @@
 """ Date/Time string parsing module.
 
 This code is a slightly modified version of Parser.py found in mx.DateTime
+version 3.0.0
 
-As such, it is subject to the terms of the eGenix public license. Please see
-license.txt for more details.
+As such, it is subject to the terms of the eGenix public license version 1.1.0.
+Please see license.txt for more details.
 """
-import re,string
-import datetime as dt
-from string import atoi, atof, lower, upper
 
 __all__ = [
 'DateFromString', 'DateTimeFromString'
            ]
 
-# Enable to produce debugging output
-_debug = 0
+import types,re,string
+import datetime as dt
 
 class RangeError(Exception): pass
+
+# Enable to produce debugging output
+_debug = 0
 
 # REs for matching date and time parts in a string; These REs
 # parse a superset of ARPA, ISO, American and European style dates.
@@ -80,33 +81,34 @@ _relday = '(?:\((?P<relday>[-+]?\d+)\))'
 
 _hour = '(?P<hour>[012]?\d)'
 _minute = '(?P<minute>[0-6]\d)'
-_second = '(?P<second>[0-6]\d(?:\.\d+)?)'
+_second = '(?P<second>[0-6]\d(?:[.,]\d+)?)'
 
-_days = '(?P<days>\d*\d(?:\.\d+)?)'
-_hours = '(?P<hours>\d*\d(?:\.\d+)?)'
-_minutes = '(?P<minutes>\d*\d(?:\.\d+)?)'
-_seconds = '(?P<seconds>\d*\d(?:\.\d+)?)'
+_days = '(?P<days>\d*\d(?:[.,]\d+)?)'
+_hours = '(?P<hours>\d*\d(?:[.,]\d+)?)'
+_minutes = '(?P<minutes>\d*\d(?:[.,]\d+)?)'
+_seconds = '(?P<seconds>\d*\d(?:[.,]\d+)?)'
 
-_reldays = '(?:\((?P<reldays>[-+]?\d+(?:\.\d+)?)\))'
-_relhours = '(?:\((?P<relhours>[-+]?\d+(?:\.\d+)?)\))'
-_relminutes = '(?:\((?P<relminutes>[-+]?\d+(?:\.\d+)?)\))'
-_relseconds = '(?:\((?P<relseconds>[-+]?\d+(?:\.\d+)?)\))'
+_reldays = '(?:\((?P<reldays>[-+]?\d+(?:[.,]\d+)?)\))'
+_relhours = '(?:\((?P<relhours>[-+]?\d+(?:[.,]\d+)?)\))'
+_relminutes = '(?:\((?P<relminutes>[-+]?\d+(?:[.,]\d+)?)\))'
+_relseconds = '(?:\((?P<relseconds>[-+]?\d+(?:[.,]\d+)?)\))'
 
 _sign = '(?:(?P<sign>[-+]) *)'
 _week = 'W(?P<week>\d?\d)'
-_zone = ('(?P<zone>[A-Z]+|[+-]\d\d?:?(?:\d\d)?)')
+_zone = '(?P<zone>[A-Z]+|[+-]\d\d?:?(?:\d\d)?)'
 _ampm = '(?P<ampm>[ap][m.]+)'
 
-_time = (_hour + ':' + _minute + '(?::' + _second + ')? *'
+_time = (_hour + ':' + _minute + '(?::' + _second + '|[^:]|$) *'
          + _ampm + '? *' + _zone + '?')
 _isotime = _hour + ':?' + _minute + ':?' + _second + '? *' + _zone + '?'
 
 _weekdate = _year + '-?(?:' + _week + '-?' + _day + '?)?'
 _eurodate = _day + '\.' + _month + '\.' + _year_epoch + '?'
-_usdate = _month + '/' + _day + '(?:/' + _year_epoch + ')?'
+_usdate = _month + '/' + _day + '(?:/' + _year_epoch + '|[^/]|$)'
 _altusdate = _month + '-' + _day + '-' + _fullyear_epoch
-_isodate = _year + '-' + _fullmonth + '-?' + _fullday + '?(?!:)'
+_isodate = _year + '-' + _month + '-?' + _day + '?(?!:)'
 _altisodate = _year + _fullmonth + _fullday + '(?!:)'
+_usisodate = _fullyear + '/' + _fullmonth + '/' + _fullday
 _litdate = ('(?:'+ _litday + ',? )? *' + 
             _usday + ' *' + 
             '[- ] *(?:' + _litmonth + '|'+ _month +') *[- ] *' +
@@ -147,11 +149,15 @@ _litdelta = (_sign + '?' +
              '(?:' + _hours + ' *h[a-z]*[,; ]*)?' + 
              '(?:' + _minutes + ' *m[a-z]*[,; ]*)?' +
              '(?:' + _seconds + ' *s[a-z]*[,; ]*)?')
+_litdelta2 = (_sign + '?' +
+             '(?:' + _days + ' *d[a-z]*[,; ]*)?' + 
+              _hours + ':' + _minutes + '(?::' + _seconds + ')?')
 
 _timeRE = re.compile(_time, re.I)
 _isotimeRE = re.compile(_isotime, re.I)
 _isodateRE = re.compile(_isodate, re.I)
 _altisodateRE = re.compile(_altisodate, re.I)
+_usisodateRE = re.compile(_usisodate, re.I)
 _eurodateRE = re.compile(_eurodate, re.I)
 _usdateRE = re.compile(_usdate, re.I)
 _altusdateRE = re.compile(_altusdate, re.I)
@@ -164,29 +170,32 @@ _isodelta1RE = re.compile(_isodelta1)
 _isodelta2RE = re.compile(_isodelta2)
 _isodelta3RE = re.compile(_isodelta3)
 _litdeltaRE = re.compile(_litdelta)
+_litdelta2RE = re.compile(_litdelta2)
 _relisotimeRE = re.compile(_relisotime, re.I)
 
 # Available date parsers
 _date_formats = ('euro',
-                 'us', 'altus',
-                 'iso', 'altiso',
+                 'usiso', 'us', 'altus',
+                 'iso', 'altiso', 
                  'lit', 'altlit', 'eurlit',
                  'unknown')
 
+# Available time parsers
+_time_formats = ('standard',
+                 'iso',
+                 'unknown')
 
-# time zone parsing
+_zoneoffset = ('(?:'
+              '(?P<zonesign>[+-])?'
+              '(?P<hours>\d\d?)'
+              ':?'
+              '(?P<minutes>\d\d)?'
+              '(?P<extra>\d+)?'
+              ')'
+              )
 
-_zoneoffset = '(?:(?P<zonesign>[+-])?(?P<hours>\d\d?):?(?P<minutes>\d\d)?)'
-
-# Compiled RE objects
 _zoneoffsetRE = re.compile(_zoneoffset)
 
-
-### Time zone offset table
-#
-# The offset given here represent the difference between UTC and the
-# given time zone.
-#
 _zonetable = {
               # Timezone abbreviations
               # Std     Summer
@@ -219,6 +228,7 @@ _zonetable = {
               'CAST':9.5, 'CADT':10.5, # Central
               'EAST':10,  'EADT':11,   # Eastern
               'WAST':8,   'WADT':9,    # Western
+              'SAST':9.5, 'SADT':10.5, # Southern
 
               # US military time zones
               'Z': 0,
@@ -248,6 +258,7 @@ _zonetable = {
               'Y':-12
               }    
 
+
 def utc_offset(zone):
     """ utc_offset(zonestring)
 
@@ -263,31 +274,33 @@ def utc_offset(zone):
     """
     if not zone:
         return 0
-    uzone = upper(zone)
+    uzone = zone.upper()
     if _zonetable.has_key(uzone):
         return _zonetable[uzone]*60
     offset = _zoneoffsetRE.match(zone)
     if not offset:
         raise ValueError,'wrong format or unkown time zone: "%s"' % zone
-    zonesign,hours,minutes = offset.groups()
+    zonesign,hours,minutes,extra = offset.groups()
+    if extra:
+        raise ValueError,'illegal time zone offset: "%s"' % zone
     offset = int(hours or 0) * 60 + int(minutes or 0)
     if zonesign == '-':
         offset = -offset
     return offset
 
 def add_century(year):
+    
     """ Sliding window approach to the Y2K problem: adds a suitable
         century to the given year and returns it as integer.
 
-        The window used depends on the current year (at import time).
-        If adding the current century to the given year gives a year
-        within the range current_year-70...current_year+30 [both
-        inclusive], then the current century is added. Otherwise the
-        century (current + 1 or - 1) producing the least difference is
-        chosen.
+        The window used depends on the current year. If adding the current
+        century to the given year gives a year within the range
+        current_year-70...current_year+30 [both inclusive], then the
+        current century is added. Otherwise the century (current + 1 or
+        - 1) producing the least difference is chosen.
 
     """
-    
+
     current_year=dt.datetime.now().year
     current_century=(dt.datetime.now().year / 100) * 100
     
@@ -303,8 +316,8 @@ def add_century(year):
     else:
         return year - 100
 
-def _parse_date(text, formats=_date_formats, defaultdate=None,
-                now=dt.datetime.now):
+
+def _parse_date(text):
 
     """ Parses the date part given in text and returns a tuple
         (text,day,month,year,style) with the following
@@ -320,6 +333,7 @@ def _parse_date(text, formats=_date_formats, defaultdate=None,
           'altus' - the alternative US date parser (with '-' instead of '/')
           'iso' - the ISO date parser
           'altiso' - the alternative ISO date parser (without '-')
+          'usiso' - US style ISO date parser (yyyy/mm/dd)
           'lit' - the US literal date parser
           'altlit' - the alternative US literal date parser
           'eurlit' - the Eurpean literal date parser
@@ -339,7 +353,14 @@ def _parse_date(text, formats=_date_formats, defaultdate=None,
     """
     match = None
     style = ''
+
+    formats = _date_formats
     
+    us_formats=('us', 'altus')
+    iso_formats=('iso', 'altiso', 'usiso')
+
+    now=dt.datetime.now
+
     # Apply parsers in the order given in formats
     for format in formats:
 
@@ -351,24 +372,57 @@ def _parse_date(text, formats=_date_formats, defaultdate=None,
                 if year:
                     if len(year) == 2:
                         # Y2K problem:
-                        year = add_century(atoi(year))
+                        year = add_century(int(year))
                     else:
-                        year = atoi(year)
+                        year = int(year)
                 else:
-                    if defaultdate is None:
-                        defaultdate = dt.datetime.now()
+                    defaultdate = now()
                     year = defaultdate.year
                 if epoch and 'B' in epoch:
                     year = -year + 1
-                month = atoi(month)
+                month = int(month)
+                day = int(day)
                 # Could have mistaken euro format for us style date
                 # which uses month, day order
                 if month > 12 or month == 0:
+                    match = None
                     continue
-                day = atoi(day)
                 break
 
-        elif format == 'us' or format == 'altus':
+        elif format in iso_formats:
+            # ISO style date
+            if format == 'iso':
+                match = _isodateRE.search(text)
+            elif format == 'altiso':
+                match = _altisodateRE.search(text)
+                # Avoid mistaking ISO time parts ('Thhmmss') for dates
+                if match is not None:
+                    left, right = match.span()
+                    if left > 0 and \
+                       text[left - 1:left] == 'T':
+                        match = None
+                        continue
+            else:
+                match = _usisodateRE.search(text)
+            if match is not None:
+                year,month,day = match.groups()
+                if len(year) == 2:
+                    # Y2K problem:
+                    year = add_century(int(year))
+                else:
+                    year = int(year)
+                # Default to January 1st
+                if not month:
+                    month = 1
+                else:
+                    month = int(month)
+                if not day:
+                    day = 1
+                else:
+                    day = int(day)
+                break
+
+        elif format in us_formats:
             # US style date
             if format == 'us':
                 match = _usdateRE.search(text)
@@ -379,55 +433,25 @@ def _parse_date(text, formats=_date_formats, defaultdate=None,
                 if year:
                     if len(year) == 2:
                         # Y2K problem:
-                        year = add_century(atoi(year))
+                        year = add_century(int(year))
                     else:
-                        year = atoi(year)
+                        year = int(year)
                 else:
-                    if defaultdate is None:
-                        defaultdate = dt.datetime.now()
+                    defaultdate = now()
                     year = defaultdate.year
                 if epoch and 'B' in epoch:
                     year = -year + 1
-                month = atoi(month)
+                # Default to 1 if no day is given
+                if day:
+                    day = int(day)
+                else:
+                    day = 1
+                month = int(month)
                 # Could have mistaken us format for euro style date
                 # which uses day, month order
                 if month > 12 or month == 0:
+                    match = None
                     continue
-                # Default to 1 if no day is given
-                if day:
-                    day = atoi(day)
-                else:
-                    day = 1
-                break
-
-        elif format == 'iso' or format == 'altiso':
-            # ISO style date
-            if format == 'iso':
-                match = _isodateRE.search(text)
-            else:
-                match = _altisodateRE.search(text)
-                # Avoid mistaking ISO time parts ('Thhmmss') for dates
-                if match is not None:
-                    left, right = match.span()
-                    if left > 0 and \
-                       text[left - 1:left] == 'T':
-                        continue
-            if match is not None:
-                year,month,day = match.groups()
-                if len(year) == 2:
-                    # Y2K problem:
-                    year = add_century(atoi(year))
-                else:
-                    year = atoi(year)
-                # Default to January 1st
-                if not month:
-                    month = 1
-                else:
-                    month = atoi(month)
-                if not day:
-                    day = 1
-                else:
-                    day = atoi(day)
                 break
 
         elif format == 'lit':
@@ -455,8 +479,7 @@ def _parse_date(text, formats=_date_formats, defaultdate=None,
 
         elif format == 'unknown':
             # No date part: use defaultdate
-            if defaultdate is None:
-                defaultdate = dt.datetime.now()
+            defaultdate = now()
             year = defaultdate.year
             month = defaultdate.month
             day = defaultdate.day
@@ -482,36 +505,36 @@ def _parse_date(text, formats=_date_formats, defaultdate=None,
         if 0 and _debug: print match.groups()
         # Default to current year, January 1st
         if not year:
-            if defaultdate is None:
-                defaultdate = dt.datetime.now()
+            defaultdate = now()
             year = defaultdate.year
         else:
             if len(year) == 2:
                 # Y2K problem:
-                year = add_century(atoi(year))
+                year = add_century(int(year))
             else:
-                year = atoi(year)
+                year = int(year)
         if epoch and 'B' in epoch:
             year = -year + 1
         if litmonth:
-            litmonth = lower(litmonth)
+            litmonth = litmonth.lower()
             try:
                 month = litmonthtable[litmonth]
             except KeyError:
                 raise ValueError,\
                       'wrong month name: "%s"' % litmonth
         elif month:
-            month = atoi(month)
+            month = int(month)
         else:
             month = 1
         if day:
-            day = atoi(day)
+            day = int(day)
         else:
             day = 1
 
+    #print '_parse_date:',text,day,month,year,style
     return text,day,month,year,style
 
-def _parse_time(text, formats=('iso','unknown')):
+def _parse_time(text):
 
     """ Parses a time part given in text and returns a tuple
         (text,hour,minute,second,offset,style) with the following
@@ -536,6 +559,8 @@ def _parse_time(text, formats=('iso','unknown')):
     """
     match = None
     style = ''
+
+    formats=_time_formats
 
     # Apply parsers in the order given in formats
     for format in formats:
@@ -569,23 +594,33 @@ def _parse_time(text, formats=('iso','unknown')):
 
     # Post-processing
     if match is not None:
+    
         if zone:
             # Convert to UTC offset
             offset = utc_offset(zone)
         else:
             offset = 0
-        hour = atoi(hour)
+
+        hour = int(hour)
         if ampm:
             if ampm[0] in ('p', 'P'):
-                hour = hour + 12
+                # 12pm = midday
+                if hour < 12:
+                    hour = hour + 12
+            else:
+                # 12am = midnight 
+                if hour >= 12:
+                    hour = hour - 12
         if minute:
-            minute = atoi(minute)
+            minute = int(minute)
         else:
             minute = 0
         if not second:
             second = 0.0
         else:
-            second = atof(second)
+            if ',' in second:
+                second = second.replace(',', '.')
+            second = float(second)
 
         # Remove time from text
         left,right = match.span()
@@ -594,11 +629,12 @@ def _parse_time(text, formats=('iso','unknown')):
                   'giving:',hour,minute,second,offset
         text = text[:left] + text[right:]
 
+    #print '_parse_time:',text,hour,minute,second,offset,style
     return text,hour,minute,second,offset,style
 
 ###
 
-def DateTimeFromString(text, formats=_date_formats, defaultdate=None):
+def DateTimeFromString(text):
 
     """ DateTimeFromString(text, [formats, defaultdate])
     
@@ -616,71 +652,54 @@ def DateTimeFromString(text, formats=_date_formats, defaultdate=None):
           'altus' - the alternative US date parser (with '-' instead of '/')
           'iso' - the ISO date parser
           'altiso' - the alternative ISO date parser (without '-')
+          'usiso' - US style ISO date parser (yyyy/mm/dd)
           'lit' - the US literal date parser
           'altlit' - the alternative US literal date parser
           'eurlit' - the Eurpean literal date parser
           'unknown' - if no date part is found, use defaultdate
 
         defaultdate provides the defaults to use in case no date part
-        is found. Most other parsers default to the current year
+        is found. Most of the parsers default to the current year
         January 1 if some of these date parts are missing.
 
-        If 'unknown' is not given in formats and the date/time cannot
+        If 'unknown' is not given in formats and the date cannot
+        be parsed, a ValueError is raised.
+
+        time_formats may be set to a tuple of strings specifying which
+        of the following parsers to use and in which order to try
+        them. Default is to try all of them in the order given below:
+
+          'standard' - standard time format HH:MM:SS (with ':' delimiter)
+          'iso' - ISO time format (superset of 'standard')
+          'unknown' - default to 00:00:00 in case the time format
+                      cannot be parsed
+
+        Defaults to 00:00:00.00 for time parts that are not included
+        in the textual representation.
+
+        If 'unknown' is not given in time_formats and the time cannot
         be parsed, a ValueError is raised.
 
     """
     origtext = text
-    formats = tuple(formats)
 
-    if formats is _date_formats or \
-       'iso' in formats or \
-       'altiso' in formats:
-        # First try standard order (parse time, then date)
-        if formats[0] not in ('iso', 'altiso'):
-            text,hour,minute,second,offset,timestyle = _parse_time(
-                origtext,
-                ('standard', 'iso', 'unknown'))
-            text,day,month,year,datestyle = _parse_date(
-                text,
-                formats + ('unknown',),
-                defaultdate)
-            if 0 and _debug:
-                print 'tried time/date on %s, date=%s, time=%s' % (origtext,
-                                                                   datestyle,
-                                                                   timestyle)
-        else:
-            timestyle = 'iso'
-            
-        # If this fails, try the ISO order
-        if timestyle in ('iso', 'unknown'):
-            text,day,month,year,datestyle = _parse_date(
-                origtext,
-                formats,
-                defaultdate)
-            text,hour,minute,second,offset,timestyle = _parse_time(
-                text,
-                ('iso', 'unknown'))
-            if 0 and _debug:
-                print 'tried ISO on %s, date=%s, time=%s' % (origtext,
-                                                             datestyle,
-                                                             timestyle)
-    else:
-        # Standard order: time part, then date part
-        text,hour,minute,second,offset,timestyle = _parse_time(
-            origtext,
-            ('standard', 'unknown'))
-        text,day,month,year,datestyle = _parse_date(
-            text,
-            formats,
-            defaultdate)
+    text,hour,minute,second,offset,timestyle = _parse_time(origtext)
+    text,day,month,year,datestyle = _parse_date(text)
 
-    if (datestyle == 'unknown' or \
-        timestyle == 'unknown') and \
-        'unknown' not in formats:
-        raise ValueError,\
-              'Failed to parse "%s": found "%s" date, "%s" time' % \
-              (origtext, datestyle, timestyle)
-    
+    if 0 and _debug:
+        print 'tried time/date on %s, date=%s, time=%s' % (origtext,
+                                                           datestyle,
+                                                           timestyle)
+
+    # If this fails, try the ISO order (date, then time)
+    if timestyle in ('iso', 'unknown'):
+        text,day,month,year,datestyle = _parse_date(origtext)
+        text,hour,minute,second,offset,timestyle = _parse_time(text)
+        if 0 and _debug:
+            print 'tried ISO on %s, date=%s, time=%s' % (origtext,
+                                                         datestyle,
+                                                         timestyle)
+
     try:
         microsecond = int(1000000 * (second % 1))
         second = int(second)
@@ -690,7 +709,7 @@ def DateTimeFromString(text, formats=_date_formats, defaultdate=None):
         raise RangeError,\
               'Failed to parse "%s": %s' % (origtext, why)
 
-def DateFromString(text, formats=_date_formats, defaultdate=None):
+def DateFromString(text):
 
     """ DateFromString(text, [formats, defaultdate])
     
@@ -701,13 +720,7 @@ def DateFromString(text, formats=_date_formats, defaultdate=None):
         DateTimeFromString().
 
     """
-    _text,day,month,year,datestyle = _parse_date(text, formats, defaultdate)
-
-    if datestyle == 'unknown' and \
-       'unknown' not in formats:
-        raise ValueError,\
-              'Failed to parse "%s": found "%s" date' % \
-              (origtext, datestyle)
+    _text,day,month,year,datestyle = _parse_date(text)
 
     try:
         return dt.datetime(year,month,day)
@@ -715,7 +728,7 @@ def DateFromString(text, formats=_date_formats, defaultdate=None):
         raise RangeError,\
               'Failed to parse "%s": %s' % (text, why)
 
-def validateDateTimeString(text, formats=_date_formats):
+def validateDateTimeString(text):
 
     """ validateDateTimeString(text, [formats, defaultdate])
 
@@ -729,16 +742,14 @@ def validateDateTimeString(text, formats=_date_formats):
         XXX Undocumented !
     
     """
-    formats = list(formats)
-    if 'unknown' in formats:
-        formats.remove('unknown')
     try:
-        DateTimeFromString(text, formats)
+        DateTimeFromString(text)
     except ValueError, why:
         return 0
     return 1
 
-def validateDateString(text, formats=_date_formats):
+
+def validateDateString(text):
 
     """ validateDateString(text, [formats, defaultdate])
 
@@ -752,15 +763,11 @@ def validateDateString(text, formats=_date_formats):
         XXX Undocumented !
     
     """
-    formats = list(formats)
-    if 'unknown' in formats:
-        formats.remove('unknown')
     try:
-        DateFromString(text, formats)
+        DateFromString(text)
     except ValueError, why:
         return 0
     return 1
-
 
 ### Tests
 
@@ -769,6 +776,7 @@ def _test():
     import sys
 
     t = dt.datetime.now()
+    _date = t.strftime('%Y-%m-%d')
 
     print 'Testing DateTime Parser...'
 
@@ -788,6 +796,7 @@ def _test():
         ('Sonntag, der 6. November 1994, 08:49:37 GMT', '1994-11-06 08:49:37.00'),
         ('6. November 2001, 08:49:37', '2001-11-06 08:49:37.00'),
         ('sep 6', '%s-09-06 00:00:00.00' % t.year),
+        ('sep 6 2000', '2000-09-06 00:00:00.00'),
         ('September 29', '%s-09-29 00:00:00.00' % t.year),
         ('Sep. 29', '%s-09-29 00:00:00.00' % t.year),
         ('6 sep', '%s-09-06 00:00:00.00' % t.year),
@@ -799,6 +808,7 @@ def _test():
         ('sep 6 01', '2001-09-06 00:00:00.00'),
         ('Sep 6, 01', '2001-09-06 00:00:00.00'),
         ('September 6, 01', '2001-09-06 00:00:00.00'),
+        ('30 Apr 2006 20:19:00', '2006-04-30 20:19:00.00'),
         
         # ISO formats
         ('1994-11-06 08:49:37', '1994-11-06 08:49:37.00'),
@@ -815,7 +825,15 @@ def _test():
         ('20000824T020301', '2000-08-24 02:03:01.00'),
         ('20000824 020301', '2000-08-24 02:03:01.00'),
         ('2000-08-24 02:03:01.00', '2000-08-24 02:03:01.00'),
-        ('T020311', '%s 02:03:11.00' % t.strftime('%Y-%m-%d')),
+        ('T020311', '%s 02:03:11.00' % _date),
+        ('2003-12-9', '2003-12-09 00:00:00.00'),
+        ('03-12-9', '2003-12-09 00:00:00.00'),
+        ('003-12-9', '0003-12-09 00:00:00.00'),
+        ('0003-12-9', '0003-12-09 00:00:00.00'),
+        ('2003-1-9', '2003-01-09 00:00:00.00'),
+        ('03-1-9', '2003-01-09 00:00:00.00'),
+        ('003-1-9', '0003-01-09 00:00:00.00'),
+        ('0003-1-9', '0003-01-09 00:00:00.00'),
 
         # US formats
         ('06/11/94 08:49:37', '1994-06-11 08:49:37.00'),
@@ -834,21 +852,62 @@ def _test():
         ('09-6-2001', '2001-09-06 00:00:00.00'),
         ('9-06-2001', '2001-09-06 00:00:00.00'),
         ('09-06-2001', '2001-09-06 00:00:00.00'),
+        ('2002/05/28 13:10:56.1147 GMT+2', '2002-05-28 13:10:56.114699'),
+        ('1970/01/01', '1970-01-01 00:00:00.00'),
+        ('20021025 12:00 PM', '2002-10-25 12:00:00.00'),
+        ('20021025 12:30 PM', '2002-10-25 12:30:00.00'),
+        ('20021025 12:00 AM', '2002-10-25 00:00:00.00'),
+        ('20021025 12:30 AM', '2002-10-25 00:30:00.00'),
+        ('20021025 1:00 PM', '2002-10-25 13:00:00.00'),
+        ('20021025 2:00 AM', '2002-10-25 02:00:00.00'),
+        ('Thursday, February 06, 2003 12:40 PM', '2003-02-06 12:40:00.00'),
+        ('Mon, 18 Sep 2006 23:03:00', '2006-09-18 23:03:00.00'),
 
         # European formats
         ('6.11.2001, 08:49:37', '2001-11-06 08:49:37.00'),
         ('06.11.2001, 08:49:37', '2001-11-06 08:49:37.00'),
         ('06.11. 08:49:37', '%s-11-06 08:49:37.00' % t.year),
+        #('21/12/2002', '2002-12-21 00:00:00.00'),
+        #('21/08/2002', '2002-08-21 00:00:00.00'),
+        #('21-08-2002', '2002-08-21 00:00:00.00'),
+        #('13/01/03', '2003-01-13 00:00:00.00'),
+        #('13/1/03', '2003-01-13 00:00:00.00'),
+        #('13/1/3', '2003-01-13 00:00:00.00'),
+        #('13/01/3', '2003-01-13 00:00:00.00'),
 
         # Time only formats
-        ('01:03', '%s 01:03:00.00' % t.strftime('%Y-%m-%d')),
-        ('01:03:11', '%s 01:03:11.00' % t.strftime('%Y-%m-%d')),
-        ('01:03:11.50', '%s 01:03:11.50' % t.strftime('%Y-%m-%d')),
-        ('01:03:11.50 AM', '%s 01:03:11.50' % t.strftime('%Y-%m-%d')),
-        ('01:03:11.50 PM', '%s 13:03:11.50' % t.strftime('%Y-%m-%d')),
-        ('01:03:11.50 a.m.', '%s 01:03:11.50' % t.strftime('%Y-%m-%d')),
-        ('01:03:11.50 p.m.', '%s 13:03:11.50' % t.strftime('%Y-%m-%d')),
+        ('01:03', '%s 01:03:00.00' % _date),
+        ('01:03:11', '%s 01:03:11.00' % _date),
+        ('01:03:11.50', '%s 01:03:11.500000' % _date),
+        ('01:03:11.50 AM', '%s 01:03:11.500000' % _date),
+        ('01:03:11.50 PM', '%s 13:03:11.500000' % _date),
+        ('01:03:11.50 a.m.', '%s 01:03:11.500000' % _date),
+        ('01:03:11.50 p.m.', '%s 13:03:11.500000' % _date),
+
+        # Invalid formats
+        ('6..2001, 08:49:37', '%s 08:49:37.00' % _date),
+        ('9//2001', 'ignore'),
+        ('06--94 08:49:37', 'ignore'),
+        ('20-03 00:00:00.00', 'ignore'),
+        ('9/2001', 'ignore'),
+        ('9-6', 'ignore'),
+        ('09-6', 'ignore'),
+        ('9-06', 'ignore'),
+        ('09-06', 'ignore'),
+        ('20000824/23', 'ignore'),
+        ('November 1994 08:49:37', 'ignore'),
         ]
+
+    # Add Unicode versions
+    try:
+        unicode
+    except NameError:
+        pass
+    else:
+        k = []
+        for text, result in l:
+            k.append((unicode(text), result))
+        l.extend(k)
 
     for text, reference in l:
         try:
@@ -860,10 +919,9 @@ def _test():
                 value = str(sys.exc_info()[1])
         valid_datetime = validateDateTimeString(text)
         valid_date = validateDateString(text)
-        
+
         if reference[-3:] == '.00': reference = reference[:-3]
-        elif reference[-3:] == '.50': reference = reference + '0000'
-        
+
         if str(value) != reference and \
            not reference == 'ignore':
             print 'Failed to parse "%s"' % text
@@ -877,6 +935,8 @@ def _test():
             if not valid_date:
                 print '  "%s" failed date validation' % text
 
+    et = dt.datetime.now()
+    print 'done. (after %f seconds)' % ((et-t).seconds)
 
 if __name__ == '__main__':
     _test()
