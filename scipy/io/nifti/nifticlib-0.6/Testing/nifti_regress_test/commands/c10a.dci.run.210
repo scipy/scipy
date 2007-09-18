@@ -1,0 +1,16 @@
+
+# get the time series for a slice, get the same sub-bricks,
+# compare nifti_images, and display the time series again
+#
+# this should match the previous
+
+nifti_tool -keep_hist -cci 3 3 3 -1 -1 -1 -1 -prefix r.333 -infiles run.210.nii
+nifti_tool -keep_hist -cci 3 3 3 -1 1 1 1 -prefix r.333.111 -infiles run.210.nii
+nifti_tool -disp_ci -1 -1 -1 -1 -1 -1 -1 -infiles r.333.111.nii -quiet \
+        | tee o.10a.dci.1
+nifti_tool -disp_ci  0  0  0 -1  1  1  1 -infiles r.333.nii -quiet \
+        | tee o.10a.dci.2
+
+diff o.10a.dci.?
+if( $status ) echo '** failure, o.10a.dci timeseries files differ'
+

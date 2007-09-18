@@ -1,0 +1,5 @@
+include AUTHOR COPYING Makefile README.html MANIFEST.in
+include Changelog TODO
+include man/*
+include tests/* tests/data/*
+prune nifti/wrap.py

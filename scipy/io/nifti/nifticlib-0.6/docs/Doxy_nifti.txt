@@ -1,0 +1,123 @@
+# Doxyfile 1.2.4
+
+# This file describes the settings to be used by doxygen for a project
+#
+# All text after a hash (#) is considered a comment and will be ignored
+# The format is:
+#       TAG = value [value, ...]
+# For lists items can also be appended using:
+#       TAG += value [value, ...]
+# Values that contain spaces should be placed between quotes (" ")
+
+#---------------------------------------------------------------------------
+# General configuration options
+#---------------------------------------------------------------------------
+
+# The PROJECT_NAME tag is a single word (or a sequence of words surrounded 
+# by quotes) that should identify the project. 
+
+PROJECT_NAME           = nifti1_io
+
+
+# The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
+# base path where the generated documentation will be put. 
+# If a relative path is entered, it will be relative to the location 
+# where doxygen was started. If left blank the current directory will be used.
+
+OUTPUT_DIRECTORY       = 
+
+
+#---------------------------------------------------------------------------
+# configuration options related to the input files
+#---------------------------------------------------------------------------
+
+# The INPUT tag can be used to specify the files and/or directories that contain 
+# documented source files. You may enter file names like "myfile.cpp" or 
+# directories like "/usr/src/myproject". Separate the files or directories 
+# with spaces. 
+
+INPUT                  = ../fsliolib ../niftilib ../znzlib
+
+# If the value of the INPUT tag contains directories, you can use the 
+# FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
+# and *.h) to filter out the source-files in the directories. If left 
+# blank all files are included. 
+
+FILE_PATTERNS          = *.c *.h
+
+# The RECURSIVE tag can be used to turn specify whether or not subdirectories 
+# should be searched for input files as well. Possible values are YES and NO. 
+# If left blank NO is used. 
+
+RECURSIVE              = NO
+
+# The EXCLUDE tag can be used to specify files and/or directories that should 
+# excluded from the INPUT source files. This way you can easily exclude a 
+# subdirectory from a directory tree whose root is specified with the INPUT tag. 
+
+EXCLUDE                = testprog.c nifti1_test.c mjtest.c
+
+# If the value of the INPUT tag contains directories, you can use the 
+# EXCLUDE_PATTERNS tag to specify one or more wildcard patterns to exclude 
+# certain files from those directories. 
+
+EXCLUDE_PATTERNS       = 
+
+
+#---------------------------------------------------------------------------
+# configuration options related to the HTML output
+#---------------------------------------------------------------------------
+
+# If the GENERATE_HTML tag is set to YES (the default) Doxygen will 
+# generate HTML output. 
+
+GENERATE_HTML          = YES
+
+# The HTML_OUTPUT tag is used to specify where the HTML docs will be put. 
+# If a relative path is entered the value of OUTPUT_DIRECTORY will be 
+# put in front of it. If left blank `html' will be used as the default path. 
+
+HTML_OUTPUT            = html
+
+
+#---------------------------------------------------------------------------
+# configuration options related to the LaTeX output
+#---------------------------------------------------------------------------
+
+# If the GENERATE_LATEX tag is set to YES (the default) Doxygen will 
+# generate Latex output. 
+
+GENERATE_LATEX         = NO
+
+
+#---------------------------------------------------------------------------
+# configuration options related to the RTF output
+#---------------------------------------------------------------------------
+
+# If the GENERATE_RTF tag is set to YES Doxygen will generate RTF output 
+# The RTF output is optimised for Word 97 and may not look very pretty with 
+# other RTF readers or editors.
+
+GENERATE_RTF           = NO
+
+
+#---------------------------------------------------------------------------
+# configuration options related to the man page output
+#---------------------------------------------------------------------------
+
+# If the GENERATE_MAN tag is set to YES (the default) Doxygen will 
+# generate man pages 
+
+GENERATE_MAN           = NO
+
+#---------------------------------------------------------------------------
+# configuration options related to the XML output
+#---------------------------------------------------------------------------
+
+# If the GENERATE_XML tag is set to YES Doxygen will 
+# generate an XML file that captures the structure of 
+# the code including all documentation. Warning: This feature 
+# is still experimental and very incomplete.
+
+GENERATE_XML           = NO
+

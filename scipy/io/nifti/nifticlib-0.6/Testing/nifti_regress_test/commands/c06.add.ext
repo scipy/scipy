@@ -1,0 +1,10 @@
+
+#  - add junk extensions to the new anat, overwriting it
+#  - display extensions for the two files 
+#  - again, compare the headers
+
+nifti_tool -add_afni_ext 'wow, my first extension :)'    \
+           -add_afni_ext 'look, my second..'             \
+           -overwrite -infiles anat1.nii
+nifti_tool -disp_exts -infiles anat0.nii anat1.nii
+nifti_tool -diff_hdr -infiles anat0.nii anat1.nii

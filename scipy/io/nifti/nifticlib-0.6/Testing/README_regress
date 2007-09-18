@@ -1,0 +1,50 @@
+Background:
+
+This is to perform regression testing, which is to say, make sure the
+software works the same way that it used to.  This is not to test new
+features (see "modify an existing tree" for that).
+
+When code has been changed for a certain program that is involved in a
+regression testing tree, go to that tree, run the test, and make sure
+that the results have not changed (in any bad way).  This is meant to
+be fast and easy.
+
+The test consists of command scripts that were written before.  The
+scripts are executed, and the output is compared with the output of
+an older execution.  The should ususally be identical.
+
+---------------------------------------------------------------------------
+
+To perform regression testing, one needs the data (via 'make regress_data').
+Given that, only the @test and @show_diffs are needed (sample commands are
+shown with a preceeding prompt, '> ').
+
+    1. Run the regression testing script.  It goes through the steps:
+
+       a. Create a "results" directory, including a timestamp.
+       b. Copy all "data" files into it.
+       c. 'cd' into the "results" directory.
+       d. For each command script in the commands directory, execute it,
+          storing all output text into a file called e."command name".
+
+        > ./@test
+
+
+    2. To compare against an older execution, run the @show_diffs script.
+       It goes through the steps:
+
+       a. Make a list of the "results" directories.
+       b. Create a new "diffs" directory.
+       c. Compare files between the newest and oldest "results" dirs:
+            - cd into newest "results" directory
+            - foreach file (*)
+                diff $file ../other.result/$file >& ../diffs/d.$file
+
+        > ./@show_diffs
+
+
+    3. Look at the sizes of the diff files, or the contents (only
+       expected differences should exist).
+
+        > ls -l diffs
+        > cat diffs/*

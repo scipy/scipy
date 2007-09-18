@@ -1,0 +1,6 @@
+
+# display header, nifti_image and extensions for default anat
+
+nifti_tool -disp_hdr -infiles anat0
+nifti_tool -disp_nim -infiles anat0
+nifti_tool -disp_ext -infiles anat0

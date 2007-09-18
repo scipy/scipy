@@ -1,0 +1,115 @@
+pynifti (0.20070905.1-1) unstable; urgency=low
+
+  [ Yaroslav Halchenko ]
+  * Fixed a bug in the qform/quaternion handling that caused changes to the
+    qform to vanish when saving to file.
+
+  [ Michael Hanke ]
+  * Added more unit tests.
+  * 'dim' vector in the NIfTI header is now guaranteed to only contain
+    non-zero elements. This caused problems with some applications.
+
+ -- Michael Hanke <michael.hanke@gmail.com>  Wed,  5 Sep 2007 20:54:18 +0200
+
+pynifti (0.20070803.1-1) unstable; urgency=low
+
+  * Does not depend on SciPy anymore.
+  * Initial steps towards a unittest suite.
+  * pynifti_pst can now print the peristimulus signal matrix for a single
+    voxel (onsets x time) for easier processing of this information in
+    external applications.
+  * utils.getPeristimulusTimeseries() can now be used to compute mean and
+    variance of the signal (among others).
+  * debian/{copyright|watch} now point to the new home of pynifti in the
+    niftilib project on SourceForge.
+  * pynifti_pst is able to compute more than just the mean peristimulus
+    timeseries (e.g. variance and standard deviation).
+  * Relaxed build-dependency on libniftiio to any SO-version of the library.
+  * Set default image description when saving a file if none is present.
+  * Improved documentation.
+
+ -- Michael Hanke <michael.hanke@gmail.com>  Fri,  3 Aug 2007 15:47:26 +0200
+
+pynifti (0.20070425.1-1) unstable; urgency=low
+
+  * Improved documentation. Added note about the special usage of the header
+    property. Also added notes about the relevant properties in the docstring
+    of the corresponding accessor methods.
+  * Added property and accessor methods to access/modify the repetition time
+    of timeseries (dt).
+  * Added functions to manipulate the pixdim values.
+  * Added utils.py with some utility functions.
+  * Added functions/property to determine the bounding box of an image.
+  * Fixed a bug that caused a corrupted sform matrix when converting a NumPy
+    array and a header dictionary into a NIfTI image.
+  * Added script to compute peristimulus timeseries (pynifti_pst).
+  * Package now depends on python-scipy.
+
+ -- Michael Hanke <michael.hanke@gmail.com>  Wed, 25 Apr 2007 23:12:22 +0200
+
+pynifti (0.20070315.1-1) unstable; urgency=low
+
+  [ Yaroslav Halchenko ]
+  * Removed functionality for "NiftiImage.save() raises an IOError
+    exception when writing the image file fails."
+
+  [ Michael Hanke ]
+  * Added ability to force a filetype when setting the filename or saving 
+    a file.
+  * Reverse the order of the 'header' and 'load' argument in the NiftiImage
+    constructor. 'header' is now first as it seems to be used more often.
+  * Improved the source code documentation.
+  * Added getScaledData() method to NiftiImage that returns a copy of the data
+    array that is scaled with the slope and intercept stored in the NIfTI
+    header.
+
+ -- Michael Hanke <michael.hanke@gmail.com>  Thu, 15 Mar 2007 18:25:52 +0100
+
+pynifti (0.20070301.2-1) unstable; urgency=low
+
+  * Fixed wrong link to the source tarball in README.html. 
+
+ -- Michael Hanke <michael.hanke@gmail.com>  Thu,  1 Mar 2007 22:27:26 +0100
+
+pynifti (0.20070301.1-1) unstable; urgency=low
+
+  [ Michael Hanke ]
+  * Updated build-depends to comply to the latest Python policy.
+  * Initial upload to the Debian archive. (Closes: #413049)
+  * NiftiImage.save() raises an IOError exception when writing the image file
+    fails.
+
+  [ Yaroslav Halchenko ]
+  * Added extent, volextent, and timepoints properties to NiftiImage
+    class.
+
+ -- Michael Hanke <michael.hanke@gmail.com>  Thu,  1 Mar 2007 22:08:15 +0100
+
+pynifti (0.20070220.1-1) unstable; urgency=low
+
+  * NiftiFile class is renamed to NiftiImage.
+  * SWIG-wrapped libniftiio functions are no available in the nifticlib
+    module.
+  * Fixed broken NiftiImage from Numpy array constructor.
+  * Added initial documentation in README.html.
+  * Fulfilled a number of Yarik's wishes ;)
+
+ -- Michael Hanke <michael.hanke@gmail.com>  Tue, 20 Feb 2007 17:36:08 +0100
+
+pynifti (0.20070214.1-1) unstable; urgency=low
+
+  * Does not depend on libfslio anymore.
+  * Up to seven-dimensional dataset are supported (as much as NIfTI can do).
+  * The complete NIfTI header dataset is modifiable.
+  * Most image properties are accessable via class attributes and accessor
+    methods.
+  * Improved documentation (but still a long way to go).
+
+ -- Michael Hanke <michael.hanke@gmail.com>  Wed, 14 Feb 2007 10:11:55 +0100
+
+pynifti (0.20061114-1) unstable; urgency=low
+
+  * Initial release. 
+
+ -- Michael Hanke <michael.hanke@gmail.com>  Tue, 14 Nov 2006 19:36:51 +0100
+

@@ -1,0 +1,65 @@
+#!/bin/sh
+
+#   imcp - copy image files
+#
+#   Stephen Smith and Mark Jenkinson, FMRIB Image Analysis Group
+#
+#
+#   The imcp file was originally part of FSL - FMRIB's Software Library
+#   http://www.fmrib.ox.ac.uk/fsl
+#   imcp has now been placed in the public domain.
+#   
+#   
+#   Developed at FMRIB (Oxford Centre for Functional Magnetic Resonance
+#   Imaging of the Brain), Department of Clinical Neurology, Oxford
+#   University, Oxford, UK
+#   
+#   
+
+if [ $# -lt 1 ] ; then
+  echo "Usage: $0 <file1> <file2>"
+  echo "Usage: $0 <file1> <file2> ... <fileN> <directory>"
+  echo "  Copies images from file1 to file2 (including all extensions)"
+  echo "  NB: filenames can be basenames or include an extension"
+  exit 1;
+fi
+
+if [ $# -eq 2 -a ! -d $2 ] ; then
+  f1=`${FSLDIR}/bin/remove_ext $1`;
+  f2=`${FSLDIR}/bin/remove_ext $2`;
+  # do the copies
+  if [ -f ${f1}.hdr ] ; then /bin/cp ${f1}.hdr ${f2}.hdr ; fi
+  if [ -f ${f1}.hdr.gz ] ; then /bin/cp ${f1}.hdr.gz ${f2}.hdr.gz ; fi 
+  if [ -f ${f1}.img ] ; then /bin/cp ${f1}.img ${f2}.img ; fi 
+  if [ -f ${f1}.img.gz ] ; then /bin/cp ${f1}.img.gz ${f2}.img.gz ; fi 
+  if [ -f ${f1}.nii ] ; then /bin/cp ${f1}.nii ${f2}.nii ; fi 
+  if [ -f ${f1}.nii.gz ] ; then /bin/cp ${f1}.nii.gz ${f2}.nii.gz ; fi 
+  if [ -f ${f1}.mnc ] ; then /bin/cp ${f1}.mnc ${f2}.mnc ; fi 
+  if [ -f ${f1}.mnc.gz ] ; then /bin/cp ${f1}.mnc.gz ${f2}.mnc.gz ; fi 
+fi
+
+if [ $# -gt 2 -o -d $2 ] ; then
+  for nm in $@ ; do
+      dir=$nm;
+  done
+  if [ ! -d $dir ] ; then
+      echo "When using multiple arguments, last name must be a directory"
+      exit 1;
+  fi
+  # remove directory from list of files
+  flist="echo $@ | sed s/$dir \*\$//";
+  for fn in $flist ; do
+      f1=`${FSLDIR}/bin/remove_ext $fn`;
+      # do the copies
+      if [ -f ${f1}.hdr ] ; then /bin/cp ${f1}.hdr ${dir} ; fi
+      if [ -f ${f1}.hdr.gz ] ; then /bin/cp ${f1}.hdr.gz ${dir} ; fi 
+      if [ -f ${f1}.img ] ; then /bin/cp ${f1}.img ${dir} ; fi 
+      if [ -f ${f1}.img.gz ] ; then /bin/cp ${f1}.img.gz ${dir} ; fi 
+      if [ -f ${f1}.nii ] ; then /bin/cp ${f1}.nii ${dir} ; fi 
+      if [ -f ${f1}.nii.gz ] ; then /bin/cp ${f1}.nii.gz ${dir} ; fi 
+      if [ -f ${f1}.mnc ] ; then /bin/cp ${f1}.mnc ${dir} ; fi 
+      if [ -f ${f1}.mnc.gz ] ; then /bin/cp ${f1}.mnc.gz ${dir} ; fi 
+  done
+fi
+
+

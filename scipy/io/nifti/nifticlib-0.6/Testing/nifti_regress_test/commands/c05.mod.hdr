@@ -1,0 +1,9 @@
+
+# modify the header of default anat, creating a new anat
+# 
+# then compare the resulting headers
+
+nifti_tool -mod_hdr -prefix anat1 -infiles anat0.nii     \
+           -mod_field qoffset_x -17.325 -mod_field slice_start 1  \
+           -mod_field descrip 'beer, brats and cheese, mmmmm...'
+nifti_tool -diff_hdr -infiles anat0.nii anat1.nii

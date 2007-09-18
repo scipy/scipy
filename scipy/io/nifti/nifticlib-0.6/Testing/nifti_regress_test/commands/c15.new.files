@@ -1,0 +1,23 @@
+
+# test writing various output file types
+nifti_tool -make_im -prefix new1.hdr
+nifti_tool -make_im -prefix new2.hdr.gz
+nifti_tool -make_im -prefix new3.img.gz
+nifti_tool -make_im -prefix new4.nii.gz
+nifti_tool -make_im -prefix new5.nia
+nifti_tool -make_im -prefix new6.nia.gz
+
+# test reading them
+nifti_tool -copy_im -prefix ncopy1.nii -infiles new1.hdr
+nifti_tool -copy_im -prefix ncopy2.nii -infiles new2.hdr.gz
+nifti_tool -copy_im -prefix ncopy3.nii -infiles new3.img.gz
+nifti_tool -copy_im -prefix ncopy4.nii -infiles new4.nii.gz
+nifti_tool -copy_im -prefix ncopy5.nii -infiles new5.nia
+nifti_tool -copy_im -prefix ncopy6.nii -infiles new6.nia.gz
+
+# verify that they are all the same
+set count = 0
+foreach index ( 2 3 4 5 6 )
+    diff ncopy1.nii ncopy$index.nii
+    if ( $status ) echo "-- failure on test index $index --"
+end

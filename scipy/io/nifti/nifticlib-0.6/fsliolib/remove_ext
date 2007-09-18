@@ -1,0 +1,33 @@
+#!/bin/sh
+
+#   remove_ext - remove extension from image filename
+#
+#   Stephen Smith and Mark Jenkinson, FMRIB Image Analysis Group
+#
+#
+#   The remove_ext file was originally part of FSL - FMRIB's Software Library
+#   http://www.fmrib.ox.ac.uk/fsl
+#   remove_ext has now been placed in the public domain.
+#   
+#   Developed at FMRIB (Oxford Centre for Functional Magnetic Resonance
+#   Imaging of the Brain), Department of Clinical Neurology, Oxford
+#   University, Oxford, UK
+#   
+#   
+
+
+if [ $# -lt 1 ] ; then
+  exit 0
+fi
+
+lst="";
+for fn in $@ ; do
+    # for the ones at the end of the line
+  f=`echo "$fn" | sed 's/\.hdr\.gz$//' | sed 's/\.img\.gz$//' | sed 's/\.hdr$//' | sed 's/\.img$//' | sed 's/\.nii.gz$//' | sed 's/\.nii$//' | sed 's/\.mnc.gz$//' | sed 's/\.mnc$//' | sed 's/\.$//'`;
+    # for the ones in the middle of the line
+  f=`echo "$f" | sed 's/\.hdr\.gz[ 	]/ /g' | sed 's/\.img\.gz[ 	]/ /g' | sed 's/\.hdr[ 	]/ /g' | sed 's/\.img[ 	]/ /g' | sed 's/\.nii\.gz[ 	]/ /g' | sed 's/\.nii[ 	]/ /g' | sed 's/\.mnc\.gz[ 	]/ /g' | sed 's/\.mnc[ 	]/ /g' |sed 's/\.[ 	]/ /g'`;
+  lst="$lst $f";
+done
+echo $lst;
+
+

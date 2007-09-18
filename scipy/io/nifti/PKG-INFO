@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: pynifti
+Version: 0.20070905.1
+Summary: Python interface for the NIfTI IO libraries
+Home-page: http://apsy.gse.uni-magdeburg.de/hanke
+Author: Michael Hanke
+Author-email: michael.hanke@gmail.com
+License: LGPL
+Description: 
+Platform: UNKNOWN

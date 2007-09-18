@@ -1,0 +1,55 @@
+
+Yarik's wishes sorted - please remove or fulfill:
+-------------------------------------------------
+
+- as it is now: getHeader returns a header dictionary which is not
+   binded to the object. so direct manipulation to it such as
+
+   inNifti.header['bla']='bleh'
+   are lost and the only way to introduce a change to the field seems
+   to operate as
+   h = inNifti.header
+   h['bla'] = 'bleh'
+   inNifti.header = h
+   which is at least should be documented in capital letters! ;-)
+
+   Proposed solution:
+
+   introduce private __header, which would result in singleton behavior
+   of getHeader -- on first call it does all the querying from
+   self.__nimg and nhdr2dict,
+   but on consequtive calls - simply return __header.
+
+   may be nhdr (result of _nim2nhdr) should be also stored as __nhdr
+   to avoid consequtive invocations of a costly function
+
+    Then updateHeader should
+    * allow not specified hdrdict (default to None)
+    * not query __nimg if __header/__nhdr is not None
+      and simply use nhdr=self.__nhdr
+    * if hdrdict=None (ie not specified) make a copy
+      hdrdict == self.__header.copy(), so del commands
+      dont' do evil things, and proceed further ;-)
+
+   save method also should invoke updateHeader I guess so that if
+   there were any changes to the header dictionary, they get saved..
+
+   Michael's comment:
+   ------------------
+      Although this would be nice to have, I really think it could be the
+      source of some ugly bugs. Maintaining a separate copy of the header means
+      that PyNifit has to keep track of all possible dependencies between the
+      image properties by itself, instead of relying on the nifticlib to do.
+      this. I'd prefer to implement as much accessor methods or properties as
+      necessary to make calls to the header property superflous.
+
+      BTW: The same behavior is true for the qform and sform properties
+      (including their inverse versions).
+
+
+Possibly wrong/incorrect/wontfix suggestions:
+---------------------------------------------
+
+- [gs]etVoxDims should work with all dimensions up to 7 as they are
+   defined in nifti1_io.h
+   hanke: maybe, but that would mix different units, which I'd rather not do.

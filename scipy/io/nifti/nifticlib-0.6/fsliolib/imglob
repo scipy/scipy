@@ -1,0 +1,59 @@
+#!/bin/sh
+
+#   imglob - expand list of image filenames
+#
+#   Stephen Smith and Mark Jenkinson, FMRIB Image Analysis Group
+#
+#
+#   The imglob file was originally part of FSL - FMRIB's Software Library
+#   http://www.fmrib.ox.ac.uk/fsl
+#   imglob has now been placed in the public domain.
+#   
+#   
+#   Developed at FMRIB (Oxford Centre for Functional Magnetic Resonance
+#   Imaging of the Brain), Department of Clinical Neurology, Oxford
+#   University, Oxford, UK
+#   
+#   
+
+if [ $# -lt 1 ] ; then
+  echo "Usage: $0 [-oneperimage] <list of names>"
+  exit 0;
+fi
+
+oneperimg=0;
+if [ X"$1"X = "X-oneperimageX" ] ; then
+  oneperimg=1;
+  shift;
+fi
+
+# process each argument, removing any possible extension and
+#  then expanding for valid extensions
+
+lst="";
+for aa in $@ ; do
+  # repeat remove_ext a few times to expand out all wildmasking
+  a=`${FSLDIR}/bin/remove_ext ${aa}`;
+  # at this point variable 'a' may have been expanded into a list
+  for b in $a ; do
+    if [ $oneperimg = 1 ] ; then
+      fn=`echo ${b}.hdr ${b}.hdr.gz ${b}.nii ${b}.nii.gz ${b}.mnc ${b}.mnc.gz`;
+    else
+      fn=`echo ${b}.hdr ${b}.hdr.gz ${b}.nii ${b}.nii.gz ${b}.mnc ${b}.mnc.gz ${b}.img ${b}.img.gz`;
+    fi
+    lst="$lst $fn";
+  done
+done
+
+# remove any instances of unmatched wildmasks (still with * in them)
+lst2="";
+for fn in $lst ; do
+  if [ -f $fn ] ; then
+     lst2="$lst2 $fn";
+  fi
+done
+
+# make list unique
+lst=`echo $lst2 | tr ' ' '\n' | sort -u`;
+echo $lst
+
