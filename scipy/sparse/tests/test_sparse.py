@@ -361,7 +361,7 @@ class _test_cs:
             
 
 class _test_horiz_slicing:
-    """Tests vertical slicing (e.g. [:, 0]).  Tests for individual sparse
+    """Tests horizontal slicing (e.g. [:, 0]).  Tests for individual sparse
     matrix types that implement this should derive from this class.
     """
     def check_get_horiz_slice(self):
@@ -428,6 +428,23 @@ class _test_vert_slicing:
             caught += 1
         assert caught == 2
 
+class _test_slicing:
+    """Tests vertical and horizontal slicing (e.g. [:,0:2]). Tests for
+    individual sparse matrix types that implement this should derive from this
+    class.
+    """
+    def check_get_slices(self):
+        B = asmatrix(arange(50.).reshape(5,10))
+        A = self.spmatrix(B)
+        assert_array_equal(B[2:5,0:3], A[2:5,0:3].todense())
+        assert_array_equal(B[1:,:-1], A[1:,:-1].todense())
+        assert_array_equal(B[:-1,1:], A[:-1,1:].todense())
+        
+        # Now test slicing when a column contains only zeros
+        E = matrix([[1, 0, 1], [4, 0, 0], [0, 0, 0], [0, 0, 1]])
+        F = self.spmatrix(E)
+        assert_array_equal(E[1:2, 1:2], F[1:2, 1:2].todense())
+        assert_array_equal(E[:, 1:], F[:, 1:].todense())
 
 class _test_fancy_indexing:
     """Tests fancy indexing features.  The tests for any matrix formats
@@ -574,7 +591,8 @@ class _test_arith:
 
 
 
-class test_csr(_test_cs, _test_horiz_slicing, _test_arith, NumpyTestCase):
+class test_csr(_test_cs, _test_horiz_slicing, _test_vert_slicing,
+               _test_slicing, _test_arith, NumpyTestCase):
     spmatrix = csr_matrix
 
     def check_constructor1(self):
@@ -642,9 +660,9 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_arith, NumpyTestCase):
                 assert_equal( asp[ir, ic], bsp[ir, ic] )
 
     def check_get_submatrix(self):
-        a = csr_matrix( array([[1,2,3],[1,2,3],[0,2,0]]) )
+        a = csr_matrix( array([[1,2,3,4],[1,2,3,5],[0,2,0,1]]) )
         i0 = slice( 0, 2 )
-        i1 = slice( 1, 3 )
+        i1 = ( 1, 3 )
         b = a.get_submatrix( i0, i1 )
 
         aa = a.toarray()
@@ -652,9 +670,10 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_arith, NumpyTestCase):
 
         assert b.dtype == a.dtype
         assert b.shape == (2,2)
-        assert_equal( ab, aa[i0,i1] )
+        assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
-class test_csc(_test_cs, _test_vert_slicing, _test_arith, NumpyTestCase):
+class test_csc(_test_cs, _test_horiz_slicing, _test_vert_slicing,
+               _test_slicing, _test_arith, NumpyTestCase):
     spmatrix = csc_matrix
 
     def check_constructor1(self):
@@ -712,6 +731,19 @@ class test_csc(_test_cs, _test_vert_slicing, _test_arith, NumpyTestCase):
         for ir in range( asp.shape[0] ):
             for ic in range( asp.shape[1] ):
                 assert_equal( asp[ir, ic], bsp[ir, ic] )
+
+    def check_get_submatrix(self):
+        a = csc_matrix( array([[1,2,3,4],[1,2,3,5],[0,2,0,1]]) )
+        i0 = slice( 0, 2 )
+        i1 = ( 1, 3 )
+        b = a.get_submatrix( i0, i1 )
+
+        aa = a.toarray()
+        ab = b.toarray()
+
+        assert b.dtype == a.dtype
+        assert b.shape == (2,2)
+        assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
 class test_dok(_test_cs, NumpyTestCase):
     spmatrix = dok_matrix

@@ -762,6 +762,49 @@ class _cs_matrix(spmatrix):
         else:
             return self._toother()._toother()
 
+    def _get_submatrix( self, shape0, shape1, slice0, slice1 ):
+        """Return a submatrix of this matrix (new matrix is created)."""
+        def _process_slice( sl, num ):
+            if isinstance( sl, slice ):
+                i0, i1 = sl.start, sl.stop
+                if i0 is None:
+                    i0 = 0
+                elif i0 < 0:
+                    i0 = num + i0
+
+                if i1 is None:
+                    i1 = num
+                elif i1 < 0:
+                    i1 = num + i1
+
+                return i0, i1
+            
+            elif isscalar( sl ):
+                if sl < 0:
+                    sl += num
+
+                return sl, sl + 1
+
+            else:
+                return sl[0], sl[1]
+
+        def _in_bounds( i0, i1, num ):
+            if not (0<=i0<num) or not (0<i1<=num) or not (i0<i1):
+                raise IndexError,\
+                      "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %\
+                      (i0, num, i1, num, i0, i1)
+
+        i0, i1 = _process_slice( slice0, shape0 )
+        j0, j1 = _process_slice( slice1, shape1 )
+        _in_bounds( i0, i1, shape0 )
+        _in_bounds( j0, j1, shape1 )
+
+        aux = sparsetools.get_csr_submatrix( shape0, shape1,
+                                             self.indptr, self.indices,
+                                             self.data,
+                                             i0, i1, j0, j1 )
+        data, indices, indptr = aux[2], aux[1], aux[0]
+        return data, indices, indptr, i1 - i0, j1 - j0
 
 
 class csc_matrix(_cs_matrix):
@@ -922,9 +965,12 @@ class csc_matrix(_cs_matrix):
         if (self.indptr[0] != 0):
             raise ValueError,"index pointer should start with 0"
         if (len(self.indptr) != N+1):
-            raise ValueError, "index pointer should be of of size N+1"
+            raise ValueError, \
+                  "index pointer size (%d) should be N+1 (%d)" %\
+                  (len(self.indptr), N+1)
         if (nzmax < nnz):
-            raise ValueError, "nzmax must not be less than nnz"
+            raise ValueError, "nzmax (%d) must not be less than nnz (%d)" %\
+                  (nzmax, nnz)
 
         if full_check:
             #check format validity (more expensive)
@@ -994,8 +1040,8 @@ class csc_matrix(_cs_matrix):
             row = key[0]
             col = key[1]
             if isinstance(col, slice):
-                raise IndexError, "csc_matrix supports slices only of a single"\
-                                  " column"
+                # Returns a new matrix!
+                return self.get_submatrix( row, col )
             elif isinstance(row, slice):
                 return self._getslice(row, col)
             M, N = self.shape
@@ -1123,6 +1169,14 @@ class csc_matrix(_cs_matrix):
         """
         return _cs_matrix._ensure_sorted_indices(self, self.shape[1], self.shape[0], inplace)
 
+    def get_submatrix( self, slice0, slice1 ):
+        """Return a submatrix of this matrix (new matrix is created).
+        Rows and columns can be selected using slice instances, tuples,
+        or scalars."""
+        aux = _cs_matrix._get_submatrix( self, self.shape[1], self.shape[0],
+                                         slice1, slice0 )
+        nr, nc = aux[3:]
+        return self.__class__( aux[:3], dims = (nc, nr) )
 
 class csr_matrix(_cs_matrix):
     """ Compressed sparse row matrix
@@ -1337,8 +1391,8 @@ class csr_matrix(_cs_matrix):
             row = key[0]
             col = key[1]
             if isinstance(row, slice):
-                raise IndexError, "csr_matrix supports slices only of a single"\
-                                  " row"
+                # Returns a new matrix!
+                return self.get_submatrix( row, col )
             elif isinstance(col, slice):
                 return self._getslice(row, col)
             M, N = self.shape
@@ -1466,16 +1520,13 @@ class csr_matrix(_cs_matrix):
         return _cs_matrix._ensure_sorted_indices(self, self.shape[0], self.shape[1], inplace)
 
     def get_submatrix( self, slice0, slice1 ):
-        """Return a submatrix of this matrix (new matrix is created)."""
-        aux = sparsetools.get_csr_submatrix( self.shape[0], self.shape[1],
-                                             self.indptr, self.indices,
-                                             self.data,
-                                             slice0.start, slice0.stop,
-                                             slice1.start, slice1.stop )
-        data, indices, indptr = aux[2], aux[1], aux[0]
-        return self.__class__( (data, indices, indptr),
-                               dims = (slice0.stop - slice0.start,
-                                       slice1.stop - slice1.start) )
+        """Return a submatrix of this matrix (new matrix is created)..
+        Rows and columns can be selected using slice instances, tuples,
+        or scalars."""
+        aux = _cs_matrix._get_submatrix( self, self.shape[0], self.shape[1],
+                                         slice0, slice1 )
+        nr, nc = aux[3:]
+        return self.__class__( aux[:3], dims = (nr, nc) )
 
 # This function was for sorting dictionary keys by the second tuple element.
 # (We now use the Schwartzian transform instead for efficiency.)
