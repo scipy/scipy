@@ -1,6 +1,17 @@
 #!/usr/bin/env python
-from os.path import join
+import os
+from os.path import isfile, join, dirname
 import sys
+import numpy
+
+nifti_wrapper_file = join('nifti', 'nifticlib.py')
+
+# create an empty file to workaround crappy swig wrapper installation
+if not isfile(nifti_wrapper_file):
+    open(nifti_wrapper_file, 'w')
+
+# find numpy headers
+numpy_headers = join(dirname(numpy.__file__),'core','include')
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -9,18 +20,26 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('nifti',parent_package,top_path)
     #config.add_data_dir('tests')
 
-    include_dirs = ['.']
+    include_dirs = [
+      '.',
+      './nifticlib/fsliolib',
+      './nifticlib/niftilib',
+      './nifticlib/znzlib']
 
     # Libraries
-    config.add_library('fslio', sources=['fslio.c'], include_dirs=include_dirs)
-    config.add_library('niftiio', sources=['nifti1_io.c'], include_dirs=include_dirs)
-    config.add_library('znz', sources=['znzlib.c'], include_dirs=include_dirs)
+    config.add_library('fslio',
+      sources=['./nifticlib/fsliolib/fslio.c'], include_dirs=include_dirs)
+    config.add_library('niftiio',
+      sources=['./nifticlib/niftilib/nifti1_io.c'], include_dirs=include_dirs)
+    config.add_library('znz',
+      sources=['./nifticlib/znzlib/znzlib.c'], include_dirs=include_dirs)
 
     # Extension
     config.add_extension('_nifticlib',
-      sources = ['nifticlib_wrap.c'],
-      include_dirs=include_dirs,
-      libraries = ['niftiio', 'fslio', 'znz',])
+      sources = ['nifticlib.i', 'nifticlib_wrap.c'],
+      include_dirs = include_dirs,
+      libraries = ['niftiio', 'fslio', 'znz',],
+      swig_opts = ['-I/usr/include/nifti', '-I'+numpy_headers])
 
     return config
 
