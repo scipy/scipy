@@ -50,21 +50,9 @@ __all__ = [
 'empty_like',
 'day_of_week','day_of_year','day','month','quarter','year',
 'hour','minute','second',
-'tofile','asrecords','flatten', 'check_observed',
+'tofile','asrecords','flatten',
 'first_unmasked_val', 'last_unmasked_val'
            ]
-
-
-#####---------------------------------------------------------------------------
-#---- --- Observed options ---
-#####---------------------------------------------------------------------------
-fmtobs_dict = {'UNDEFINED': ['UNDEF','UNDEFINED',None],
-               'BEGINNING': ['BEGIN','BEGINNING'],
-               'ENDING': ['END','ENDING'],
-               'AVERAGED': ['AVERAGE','AVERAGED','MEAN'],
-               'SUMMED': ['SUM','SUMMED'],
-               'MAXIMUM': ['MAX','MAXIMUM','HIGH'],
-               'MINIMUM': ['MIN','MINIMUM','LOW']}
 
 def first_unmasked_val(a):
     "Returns the first unmasked value in a 1d maskedarray."
@@ -75,39 +63,6 @@ def last_unmasked_val(a):
     "Returns the last unmasked value in a 1d maskedarray."
     (i,j) = MA.extras.flatnotmasked_edges(a)
     return a[j]
-
-obs_dict = {"UNDEFINED":None,
-            "BEGINNING": first_unmasked_val,
-            "ENDING": last_unmasked_val,
-            "AVERAGED": MA.average,
-            "SUMMED": MA.sum,
-            "MAXIMUM": MA.maximum,
-            "MINIMUM": MA.minimum,
-            }
-
-alias_obs_dict = {}
-for ob, aliases in fmtobs_dict.iteritems():
-    for al in aliases:
-        alias_obs_dict[al] = obs_dict[ob]
-obs_dict.update(alias_obs_dict)
-
-def _reverse_dict(d):
-    "Reverses the keys and values of a dictionary."
-    alt = []
-    tmp = [alt.extend([(w,k) for w in v]) for (k,v) in d.iteritems()]
-    return dict(alt)
-
-fmtobs_revdict = _reverse_dict(fmtobs_dict)
-
-def fmtObserv(obStr):
-    "Converts a possible 'Observed' string into acceptable values."
-    if obStr is None:
-        return fmtobs_revdict[None]
-    elif obStr.upper() in fmtobs_revdict:
-        return fmtobs_revdict[obStr.upper()]
-    else:
-        raise ValueError("Invalid value for observed attribute: %s " % str(obStr))
-check_observed = fmtObserv
 
 #### --------------------------------------------------------------------------
 #--- ... TimeSeriesError class ...
@@ -136,7 +91,6 @@ class TimeSeriesCompatibilityError(TimeSeriesError):
         msg = msg % (first, second)
         TimeSeriesError.__init__(self, msg)
 
-#def _compatibilitycheck(a, b):
 def _timeseriescompat(a, b, raise_error=True):
     """Checks the date compatibility of two TimeSeries object.
     Returns True if everything's fine, or raises an exception."""
@@ -350,40 +304,20 @@ A time series is here defined as the combination of three arrays:
 The combination of `series` and `dates` is the `data` part.
     """
     options = None
-    _defaultobserved = None
-    _genattributes = ['fill_value', 'observed']
+    _genattributes = ['fill_value']
     def __new__(cls, data, dates, mask=nomask,
-#                freq=None, 
-                observed=None, #start_date=None, length=None,
                 dtype=None, copy=False, fill_value=None, subok=True,
                 keep_mask=True, small_mask=True, hard_mask=False, **options):
         maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value,subok=subok,
                        keep_mask=keep_mask, small_mask=small_mask,
                        hard_mask=hard_mask,)
         _data = MaskedArray(data, mask=mask, **maparms)
-#        # Get the frequency ..........................
-#        freq = check_freq(freq)
+
         # Get the dates ..............................
         if not isinstance(dates, (Date, DateArray)):
             raise TypeError("The input dates should be a valid Date or DateArray object! "\
                             "(got %s instead)" % type(dates))
-#            newdates = date_array(dates)
-#        elif isinstance(dates, (tuple, list, ndarray)):
-#            newdates = date_array(dlist=dates, freq=freq)
-#        if newdates is not None:
-#            if freq != _c.FR_UND and newdates.freq != freq:
-#                newdates = newdates.asfreq(freq)
-#        else:
-#            dshape = _data.shape
-#            if len(dshape) > 0:
-#                if length is None:
-#                    length = dshape[0]
-#                newdates = date_array(start_date=start_date, length=length,
-#                                      freq=freq)
-#            else:
-#                newdates = date_array([], freq=freq)
-        # Get observed ...............................
-        observed = getattr(data, 'observed', fmtObserv(observed))
+
         # Get the data ...............................
         if not subok or not isinstance(_data,TimeSeries):
             _data = _data.view(cls)
@@ -391,31 +325,23 @@ The combination of `series` and `dates` is the `data` part.
             assert(numeric.size(newdates)==1)
             return _data.view(cls)
         assert(_datadatescompat(_data,dates))
-#        assert(_datadatescompat(_data,newdates))
-        #
-#        _data._dates = newdates
         _data._dates = dates
         if _data._dates.size == _data.size: 
             if _data.ndim > 1:
                 current_shape = data.shape
-#                if newdates._unsorted is not None:
+
                 if dates._unsorted is not None:
                     _data.shape = (-1,)
-#                    _data = _data[newdates._unsorted]
                     _data = _data[dates._unsorted]
                     _data.shape = current_shape
                 _data._dates.shape = current_shape
             elif dates._unsorted is not None:
                 _data = _data[dates._unsorted]
-#            elif newdates._unsorted is not None:
-#                _data = _data[newdates._unsorted]
-        _data.observed = observed
         return _data
     #............................................
     def __array_finalize__(self,obj):
         MaskedArray.__array_finalize__(self, obj)
         self._dates = getattr(obj, '_dates', DateArray([]))
-        self.observed = getattr(obj, 'observed', None)
         return
     #..................................
     def __array_wrap__(self, obj, context=None):
@@ -849,8 +775,7 @@ def _tsreconstruct(genclass, baseclass, baseshape, dateshape, basetype, fill_val
 def _attrib_dict(series, exclude=[]):
     """this function is used for passing through attributes of one
 time series to a new one being created"""
-    result = {'fill_value':series.fill_value,
-              'observed':series.observed}
+    result = {'fill_value':series.fill_value}
     return dict(filter(lambda x: x[0] not in exclude, result.iteritems()))
 
 
@@ -982,24 +907,13 @@ def flatten(series):
     return time_series(newseries, newdates)
 TimeSeries.flatten = flatten
 
-
-
-#####---------------------------------------------------------------------------
-#---- --- Archiving ---
-#####---------------------------------------------------------------------------
-
-#TimeSeries.__dump__ = dump
-#TimeSeries.__dumps__ = dumps
-
-
 ##### -------------------------------------------------------------------------
 #---- --- TimeSeries creator ---
 ##### -------------------------------------------------------------------------
-def time_series(data, dates=None, freq=None, observed=None,
-                start_date=None, end_date=None, length=None,
-                mask=nomask,
-                dtype=None, copy=False, fill_value=None,
-                keep_mask=True, small_mask=True, hard_mask=False):
+def time_series(data, dates=None, freq=None, start_date=None, end_date=None,
+                length=None, mask=nomask, dtype=None, copy=False,
+                fill_value=None, keep_mask=True, small_mask=True,
+                hard_mask=False):
     """Creates a TimeSeries object
 
 :Parameters:
@@ -1012,9 +926,9 @@ def time_series(data, dates=None, freq=None, observed=None,
                    keep_mask=keep_mask, small_mask=small_mask,
                    hard_mask=hard_mask,)
     data = masked_array(data, mask=mask, **maparms)
-    #   data = data.view(MaskedArray)
+
     freq = check_freq(freq)
-    #
+
     if dates is None:
         _dates = getattr(data, '_dates', None)        
     elif isinstance(dates, (Date, DateArray)):
@@ -1023,7 +937,7 @@ def time_series(data, dates=None, freq=None, observed=None,
         _dates = date_array(dlist=dates, freq=freq)
     else:
         _dates = date_array([], freq=freq)
-    #
+
     if _dates is not None:
         # Make sure _dates has the proper freqncy
         if (freq != _c.FR_UND) and (_dates.freq != freq):
@@ -1038,14 +952,12 @@ def time_series(data, dates=None, freq=None, observed=None,
                                length=length, freq=freq)
         else:
             _dates = date_array([], freq=freq)
-    #
+
     if _dates._unsorted is not None:
         idx = _dates._unsorted
         data = data[idx]
         _dates._unsorted = None
     return TimeSeries(data=data, dates=_dates, mask=data._mask,
-#                      freq=freq, 
-                      observed=observed,
                       copy=copy, dtype=dtype, 
                       fill_value=fill_value, keep_mask=keep_mask, 
                       small_mask=small_mask, hard_mask=hard_mask,)
@@ -1281,22 +1193,8 @@ def align_with(*series):
     
 
 #....................................................................
-def _convert1d(series, freq, func='auto', position='END', *args, **kwargs):
-    """Converts a series to a frequency. Private function called by convert
-
-    When converting to a lower frequency, func is a function that acts
-    on a 1-d array and returns a scalar or 1-d array. func should handle
-    masked values appropriately. If func is "auto", then an
-    appropriate function is determined based on the observed attribute
-    of the series. If func is None, then a 2D array is returned, where each
-    column represents the values appropriately grouped into the new frequency.
-    interp and position will be ignored in this case.
-
-    When converting to a higher frequency, position is 'START' or 'END'
-    and determines where the data point is in each period (eg. if going
-    from monthly to daily, and position is 'END', then each data point is
-    placed at the end of the month).
-    """
+def _convert1d(series, freq, func=None, position='END', *args, **kwargs):
+    "helper function for `convert` function"
     if not isinstance(series,TimeSeries):
         raise TypeError, "The argument should be a valid TimeSeries!"
 
@@ -1324,8 +1222,6 @@ def _convert1d(series, freq, func='auto', position='END', *args, **kwargs):
     if series.size == 0:
         return TimeSeries(series, freq=toFreq,
                           start_date=start_date.asfreq(toFreq))
-    if func == 'auto':
-        func = obs_dict[series.observed]
 
     tempData = series._series.filled()
     tempMask = getmaskarray(series)
@@ -1356,11 +1252,9 @@ def convert(series, freq, func='auto', position='END', *args, **kwargs):
 
     When converting to a lower frequency, func is a function that acts
     on a 1-d array and returns a scalar or 1-d array. func should handle
-    masked values appropriately. If func is "auto", then an
-    appropriate function is determined based on the observed attribute
-    of the series. If func is None, then a 2D array is returned, where each
-    column represents the values appropriately grouped into the new frequency.
-    interp and position will be ignored in this case.
+    masked values appropriately. If func is None, then a 2D array is returned,
+    where each column represents the values appropriately grouped into the new
+    frequency. `position` will be ignored in this case.
 
     When converting to a higher frequency, position is 'START' or 'END'
     and determines where the data point is in each period (eg. if going
@@ -1375,11 +1269,15 @@ def convert(series, freq, func='auto', position='END', *args, **kwargs):
                                           *args, **kwargs)._series
                                for m in series.split()]).view(type(series))
         obj._dates = base._dates
-        if func is None or (func,series.observed) == ('auto','UNDEFINED'):
+        if func is None:
             shp = obj.shape
             ncols = base.shape[-1]
             obj.shape = (shp[0], shp[-1]//ncols, ncols)
             obj = numpy.swapaxes(obj,1,2)
+    else:
+        raise ValueError(
+            "only series with ndim == 1 or ndim == 2 may be converted")
+
     return obj
 
 
@@ -1562,17 +1460,10 @@ The data corresponding to the initially missing dates are masked, or filled to
             newdatad[new] = datad[old]
             newdatam[new] = datam[old]
     newdata = MA.masked_array(newdatad, mask=newdatam, fill_value=fill_value)
-#    # Get new shape ..............
-#    if data.ndim == 1:
-#        nshp = (newdates.size,)
-#    else:
-#        nshp = tuple([-1,] + list(data.shape[1:]))
-#    _data = newdata.reshape(nshp).view(type(data))
     _data = newdata.view(datat)
     _data._dates = newdates
     return _data
-#    return time_series(newdata.reshape(nshp), newdates)
-#...............................................................................
+#..............................................................................
 def stack(*series):
     """Performs a column_stack on the data from each series, and the
 resulting series has the same dates as each individual series. All series
