@@ -12,27 +12,22 @@ __revision__ = "$Revision$"
 __date__     = '$Date$'
 
 import const
-import tdates
-from tdates import *
+import dates
+from dates import *
 import tseries
 from tseries import *
-import tmulti
-from tmulti import *
-import reportlib
+import trecords
+from trecords import *
 
-from reportlib import *
+import report
+from report import *
+
 import lib
 from lib import filters, interpolate, moving_funcs
 
-
-__all__ = ['tdates', 'tseries','tmulti','reportlib','filters','interpolate']
-__all__ += tdates.__all__
-__all__ += tseries.__all__
-
-__all__ = ['const', 'tdates','tseries','tmulti','reportlib','filters',
+__all__ = ['const', 'dates','tseries','trecords','report','filters',
            'interpolate', 'moving_funcs']
-__all__ += tdates.__all__
+__all__ += dates.__all__
 __all__ += tseries.__all__
-__all__ += tmulti.__all__
-__all__ += reportlib.__all__
-
+__all__ += trecords.__all__
+__all__ += report.__all__

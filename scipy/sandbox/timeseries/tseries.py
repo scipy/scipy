@@ -33,15 +33,13 @@ from maskedarray import MaskedArray, MAError, masked, nomask, \
 
 import const as _c
 
-import tdates
-from tdates import DateError, InsufficientDateError
-from tdates import Date, isDate, DateArray, isDateArray, \
+import dates
+from dates import DateError, InsufficientDateError
+from dates import Date, isDate, DateArray, isDateArray, \
     date_array, date_array_fromlist, date_array_fromrange, thisday, today, \
     check_freq, check_freq_str
 
 import cseries
-
-
 
 __all__ = [
 'TimeSeriesError','TimeSeriesCompatibilityError','TimeSeries','isTimeSeries',

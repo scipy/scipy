@@ -1,5 +1,5 @@
 # pylint: disable-msg=W0611, W0612, W0511,R0201
-"""Tests suite for mrecarray.
+"""Tests suite for trecords.
 
 :author: Pierre Gerard-Marchant & Matt Knox
 :contact: pierregm_at_uga_dot_edu  & mattknox_ca_at_hotmail_dot_com
@@ -26,8 +26,8 @@ from maskedarray.mrecords import addfield
 
 from maskedarray.core import getmaskarray, nomask, masked_array
 
-from timeseries import tmulti
-from timeseries.tmulti import MultiTimeSeries, TimeSeries,\
+from timeseries import trecords
+from timeseries.trecords import TimeSeriesRecords, TimeSeries,\
     fromarrays, fromtextfile, fromrecords, \
     date_array, time_series
 
@@ -50,7 +50,7 @@ class test_mrecords(NumpyTestCase):
         dlist = ['2007-%02i' % (i+1) for i in d]
         dates = date_array(dlist)
         ts = time_series(mrec,dates)
-        mts = MultiTimeSeries(mrec,dates)
+        mts = TimeSeriesRecords(mrec,dates)
         self.data = [d, m, mrec, dlist, dates, ts, mts]
         
     def test_get(self):
@@ -61,7 +61,7 @@ class test_mrecords(NumpyTestCase):
         assert_equal(mts['f0']._data, d)
         assert_equal(mts['f0']._mask, m)
         #
-        assert(isinstance(mts[0], MultiTimeSeries))
+        assert(isinstance(mts[0], TimeSeriesRecords))
         assert_equal(mts._data[0], mrec._data[0])
         # We can't use assert_equal here, as it tries to convert the tuple into a singleton
 #        assert(mts[0]._data.view(numpyndarray) == mrec[0])
@@ -69,7 +69,7 @@ class test_mrecords(NumpyTestCase):
         assert_equal(mts._dates[0], dates[0])  
         assert_equal(mts[0]._dates, dates[0])
         #
-        assert(isinstance(mts['2007-01'], MultiTimeSeries))
+        assert(isinstance(mts['2007-01'], TimeSeriesRecords))
         assert(mts['2007-01']._data == mrec[0])
         assert_equal(mts['2007-01']._dates, dates[0])       
         #
@@ -80,7 +80,7 @@ class test_mrecords(NumpyTestCase):
         assert_equal(mts._mask, numpy.r_[[m,m[::-1]]].all(0))
         assert_equal(mts.f0[1], mts[1].f0)
         #
-        assert(isinstance(mts[:2], MultiTimeSeries))
+        assert(isinstance(mts[:2], TimeSeriesRecords))
         assert_equal(mts[:2]._data.f0, mrec[:2].f0)
         assert_equal(mts[:2]._data.f1, mrec[:2].f1)
         assert_equal(mts[:2]._dates, dates[:2])
@@ -152,7 +152,7 @@ class test_mrecords(NumpyTestCase):
         assert_equal(mrecfr.f0, mrec.f0)
         assert_equal(mrecfr.dtype, mrec.dtype)
         #....................
-        tmp = MultiTimeSeries(mts._series[::-1], dates=mts.dates)
+        tmp = TimeSeriesRecords(mts._series[::-1], dates=mts.dates)
         mrecfr = fromrecords(tmp)
         assert_equal(mrecfr.f0, mrec.f0[::-1])
         
@@ -176,7 +176,7 @@ class test_mrecords(NumpyTestCase):
         os.unlink(fname)
         #
         dlist = ['2007-%02i' % i for i in (1,2,3,5)]
-        assert(isinstance(mrectxt, MultiTimeSeries))
+        assert(isinstance(mrectxt, TimeSeriesRecords))
         assert_equal(mrectxt._dates, date_array(dlist,'M'))
         assert_equal(mrectxt.dtype.names, ['B','C','D','E','F','G'])
         assert_equal(mrectxt.G, [1,1,1,1])

@@ -39,7 +39,7 @@ from maskedarray.mrecords import _checknames, _guessvartypes, openfile,\
 from maskedarray.mrecords import fromrecords as mrecfromrecords
 
 from tseries import TimeSeries, time_series, _getdatalength
-from tdates import Date, DateArray, date_array
+from dates import Date, DateArray, date_array
 
 #ndarray = numeric.ndarray
 _byteorderconv = numpy.core.records._byteorderconv
@@ -50,7 +50,7 @@ reserved_fields = MR.reserved_fields + ['_dates']
 import warnings
 
 __all__ = [
-'MultiTimeSeries','fromarrays','fromrecords','fromtextfile',           
+'TimeSeriesRecords','fromarrays','fromrecords','fromtextfile',           
 ]
 
 def _getformats(data):
@@ -74,7 +74,7 @@ def _getformats(data):
     
 
 
-class MultiTimeSeries(TimeSeries, MaskedRecords, object):
+class TimeSeriesRecords(TimeSeries, MaskedRecords, object):
     """
     
 :IVariables:
@@ -97,7 +97,7 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
                          formats=formats, names=names, titles=titles, 
                          byteorder=byteorder, aligned=aligned)
         #
-        if isinstance(data, MultiTimeSeries):
+        if isinstance(data, TimeSeriesRecords):
 #            if copy:
 #                data = data.copy()
             data._hardmask = data._hardmask | hard_mask
@@ -125,7 +125,7 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
                                  _fill_value=obj._fill_value,    
                                  _names = obj.dtype.names                             
                                  )
-            if isinstance(obj, MultiTimeSeries):
+            if isinstance(obj, TimeSeriesRecords):
                 self.__dict__.update(observed=obj.observed,
                                      _dates=obj._dates)
             else:
@@ -232,8 +232,8 @@ class MultiTimeSeries(TimeSeries, MaskedRecords, object):
     def __getslice__(self, i, j):
         """Returns the slice described by [i,j]."""
         _localdict = self.__dict__
-        (si, di) = super(MultiTimeSeries, self)._TimeSeries__checkindex(i)
-        (sj, dj) = super(MultiTimeSeries, self)._TimeSeries__checkindex(j)
+        (si, di) = super(TimeSeriesRecords, self)._TimeSeries__checkindex(i)
+        (sj, dj) = super(TimeSeriesRecords, self)._TimeSeries__checkindex(j)
         newdata = self._data[si:sj].view(type(self))
         newdata.__dict__.update(_dates=_localdict['_dates'][di:dj],
                                 _mask=_localdict['_fieldmask'][si:sj])
@@ -272,7 +272,7 @@ Otherwise fill with fill value.
             timestr = str(_dates)
         fmt = "%%%is : %%s" % (max([len(n) for n in _names])+4,)
         reprstr = [fmt % (f,getattr(self,f)) for f in self.dtype.names]
-        reprstr.insert(0,'multitimeseries(')
+        reprstr.insert(0,'TimeSeriesRecords(')
         reprstr.extend([fmt % ('dates', timestr),
                         fmt % ('    fill_value', self._fill_value), 
                          '               )'])
@@ -281,7 +281,7 @@ Otherwise fill with fill value.
     def copy(self):
         "Returns a copy of the argument."
         _localdict = self.__dict__
-        return MultiTimeSeries(_localdict['_data'].copy(),
+        return TimeSeriesRecords(_localdict['_data'].copy(),
                        dates=_localdict['_dates'].copy(),
                         mask=_localdict['_fieldmask'].copy(),
                        dtype=self.dtype)
@@ -352,7 +352,7 @@ def fromarrays(arraylist, dates=None,
         if testshape != shape:
             raise ValueError, "Array-shape mismatch in array %d" % k
     # Reconstruct the descriptor, by creating a _data and _mask version
-    return MultiTimeSeries(arraylist, dtype=descr)
+    return TimeSeriesRecords(arraylist, dtype=descr)
 
 def __getdates(dates=None, newdates=None, length=None, freq=None, 
                start_date=None):
@@ -385,10 +385,10 @@ def fromrecords(reclist, dates=None, freq=None, start_date=None,
     tuples rather than a list of lists for faster processing.
     """    
     # reclist is in fact a mrecarray .................
-    if isinstance(reclist, MultiTimeSeries):
+    if isinstance(reclist, TimeSeriesRecords):
         mdescr = reclist.dtype
         shape = reclist.shape
-        return MultiTimeSeries(reclist, dtype=mdescr)
+        return TimeSeriesRecords(reclist, dtype=mdescr)
     # No format, no dtype: create from to arrays .....
     _data = mrecfromrecords(reclist, dtype=dtype, shape=shape, formats=formats, 
                             names=names, titles=titles, aligned=aligned, 
@@ -408,14 +408,14 @@ def fromrecords(reclist, dates=None, freq=None, start_date=None,
     newdates = __getdates(dates=dates, newdates=newdates, length=len(_data), 
                           freq=freq, start_date=start_date)
     #
-    return MultiTimeSeries(_data, dates=newdates, dtype=_dtype,
+    return TimeSeriesRecords(_data, dates=newdates, dtype=_dtype,
                            names=_names)
 
 
 def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
                  dates_column=None, varnames=None, vartypes=None,
                  dates=None):
-    """Creates a multitimeseries from data stored in the file `filename`.
+    """Creates a TimeSeriesRecords from data stored in the file `filename`.
 
 :Parameters:
     - `filename` : file name/handle
@@ -494,7 +494,7 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
     #
     newdates = __getdates(dates=dates, newdates=newdates, length=nvars, 
                           freq=None, start_date=None)
-    return MultiTimeSeries(_datalist, dates=newdates, dtype=mdescr)
+    return TimeSeriesRecords(_datalist, dates=newdates, dtype=mdescr)
     
 
     
@@ -512,7 +512,7 @@ if __name__ == '__main__':
         dlist = ['2007-%02i' % (i+1) for i in d]
         dates = date_array(dlist)
         ts = time_series(mrec,dates)
-        mts = MultiTimeSeries(mrec,dates)
+        mts = TimeSeriesRecords(mrec,dates)
         self_data = [d, m, mrec, dlist, dates, ts, mts]
         
         assert(isinstance(mts.f0, TimeSeries))
