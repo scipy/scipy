@@ -4,7 +4,7 @@ from os.path import isfile, join, dirname
 import sys
 import numpy
 
-nifti_wrapper_file = join('nifti', 'nifticlib.py')
+nifti_wrapper_file = join('nifticlib.py')
 
 # create an empty file to workaround crappy swig wrapper installation
 if not isfile(nifti_wrapper_file):
@@ -18,13 +18,16 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info
 
     config = Configuration('nifti',parent_package,top_path)
-    #config.add_data_dir('tests')
+    config.add_data_dir('tests')
 
     include_dirs = [
       '.',
       './nifticlib/fsliolib',
       './nifticlib/niftilib',
       './nifticlib/znzlib']
+
+    nifticlib_headers = ' -I'.join(include_dirs)
+    swig_opts = ['-I'+nifticlib_headers, '-I'+numpy_headers]
 
     # Libraries
     config.add_library('fslio',
@@ -36,10 +39,10 @@ def configuration(parent_package='',top_path=None):
 
     # Extension
     config.add_extension('_nifticlib',
-      sources = ['nifticlib.i', 'nifticlib_wrap.c'],
+      sources = ['nifticlib.i'],
       include_dirs = include_dirs,
       libraries = ['niftiio', 'fslio', 'znz',],
-      swig_opts = ['-I/usr/include/nifti', '-I'+numpy_headers])
+      swig_opts = swig_opts)
 
     return config
 
