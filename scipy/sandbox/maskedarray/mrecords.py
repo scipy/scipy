@@ -330,9 +330,9 @@ Otherwise, fills with fill value.
                     for s in zip(*[getattr(self,f) for f in self.dtype.names])]
             return "[%s]" % ", ".join(mstr)
         else:
-            mstr = numeric.asarray(self._data.item(), dtype=object_)
-            mstr[list(self._fieldmask)] = masked_print_option
-            return str(mstr)
+            mstr = ["%s" % ",".join([str(i) for i in s])
+                    for s in zip([getattr(self,f) for f in self.dtype.names])]
+            return "(%s)" % ", ".join(mstr)
     
     def __repr__(self):
         """x.__repr__() <==> repr(x)
@@ -709,14 +709,14 @@ if __name__ == '__main__':
         mrecfr = fromrecords(nrec.tolist(), names=nrec.dtype.names)
         assert_equal(mrecfr.a, mrec.a)
         assert_equal(mrecfr.dtype, mrec.dtype)
-    if 1:
+    if 0:
         assert_equal(mrec.a, MA.array(d,mask=m))
         assert_equal(mrec.b, MA.array(d[::-1],mask=m[::-1]))
         assert((mrec._fieldmask == N.core.records.fromarrays([m, m[::-1]])).all())
         assert_equal(mrec._mask, N.r_[[m,m[::-1]]].all(0))
         assert_equal(mrec.a[1], mrec[1].a)
 
-    if 1:
+    if 0:
         x = [(1.,10.,'a'),(2.,20,'b'),(3.14,30,'c'),(5.55,40,'d')]
         desc = [('ffloat', N.float_), ('fint', N.int_), ('fstr', 'S10')] 
         mr = MaskedRecords(x,dtype=desc)

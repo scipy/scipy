@@ -47,6 +47,14 @@ def _assert_equal_on_sequences(actual, desired, err_msg=''):
         assert_equal(actual[k], desired[k], 'item=%r\n%s' % (k,err_msg))
     return
     
+def assert_equal_records(a,b):
+    """Asserts that two records are equal. Pretty crude for now."""
+    assert_equal(a.dtype, b.dtype)
+    for f in a.dtype.names:
+        (af, bf) = (getattr(a,f), getattr(b,f))
+        if not (af is masked) and not (bf is masked):
+            assert_equal(getattr(a,f), getattr(b,f))
+    return
 
 def assert_equal(actual,desired,err_msg=''):
     """Asserts that two items are equal.
