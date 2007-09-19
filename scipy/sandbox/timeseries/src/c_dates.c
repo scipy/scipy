@@ -1,4 +1,4 @@
-#include "c_tdates.h"
+#include "c_dates.h"
 #include <datetime.h>
 #include <time.h>
 
@@ -2290,7 +2290,7 @@ static PyTypeObject DateType = {
 ///////////////////////////////////////////////////////////////////////
 
 PyObject *
-c_tdates_check_freq(PyObject *self, PyObject *args) {
+c_dates_check_freq(PyObject *self, PyObject *args) {
 
     PyObject *freq;
     int freq_val;
@@ -2302,11 +2302,11 @@ c_tdates_check_freq(PyObject *self, PyObject *args) {
 }
 
 PyObject *
-c_tdates_check_freq_str(PyObject *self, PyObject *args) {
+c_dates_check_freq_str(PyObject *self, PyObject *args) {
 
     PyObject *alias_tuple, *result, *freq_key;
 
-    if ((freq_key = c_tdates_check_freq(self, args)) == NULL) return NULL;
+    if ((freq_key = c_dates_check_freq(self, args)) == NULL) return NULL;
 
     alias_tuple = PyDict_GetItem(freq_dict, freq_key);
     result = PyTuple_GET_ITEM(alias_tuple, 0);
@@ -2319,7 +2319,7 @@ c_tdates_check_freq_str(PyObject *self, PyObject *args) {
 }
 
 PyObject *
-c_tdates_get_freq_group(PyObject *self, PyObject *args) {
+c_dates_get_freq_group(PyObject *self, PyObject *args) {
 
     PyObject *freq;
     int freq_val;
@@ -2331,7 +2331,7 @@ c_tdates_get_freq_group(PyObject *self, PyObject *args) {
 }
 
 PyObject *
-c_tdates_thisday(PyObject *self, PyObject *args) {
+c_dates_thisday(PyObject *self, PyObject *args) {
 
     PyObject *freq, *init_args, *init_kwargs;
     time_t rawtime;
@@ -2708,15 +2708,15 @@ DateArray_getDateInfo(PyObject *self, PyObject *args)
 }
 
 
-void import_c_tdates(PyObject *m)
+void import_c_dates(PyObject *m)
 {
 
     if (PyType_Ready(&DateType) < 0) return;
 
     DateCalc_Error =
-        PyErr_NewException("c_tdates.DateCalc_Error", NULL, NULL);
+        PyErr_NewException("c_dates.DateCalc_Error", NULL, NULL);
     DateCalc_RangeError =
-        PyErr_NewException("c_tdates.DateCalc_RangeError", NULL, NULL);
+        PyErr_NewException("c_dates.DateCalc_RangeError", NULL, NULL);
 
     import_array();
     PyDateTime_IMPORT;
@@ -2727,7 +2727,7 @@ void import_c_tdates(PyObject *m)
     if(build_freq_dict() == INT_ERR_CODE) {
         PyErr_SetString(                    \
             PyExc_ImportError,              \
-            "initialization of module timeseries.c_tdates failed");
+            "initialization of module timeseries.c_dates failed");
         return;
     };
 

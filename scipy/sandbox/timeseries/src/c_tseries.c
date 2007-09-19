@@ -1,4 +1,4 @@
-#include "c_tdates.h"
+#include "c_dates.h"
 #include "c_tseries.h"
 
 /* Helper function for TimeSeries_convert:

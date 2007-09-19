@@ -1,5 +1,5 @@
-#ifndef C_TDATES_H
-#define C_TDATES_H
+#ifndef C_DATES_H
+#define C_DATES_H
 
 #include "c_lib.h"
 
@@ -110,14 +110,14 @@ PyObject *DateArray_asfreq(PyObject *, PyObject *);
 PyObject *DateArray_getDateInfo(PyObject *, PyObject *);
 
 
-PyObject *c_tdates_thisday(PyObject *, PyObject *);
-PyObject *c_tdates_check_freq(PyObject *, PyObject *);
-PyObject *c_tdates_check_freq_str(PyObject *, PyObject *);
-PyObject *c_tdates_get_freq_group(PyObject *, PyObject *);
+PyObject *c_dates_thisday(PyObject *, PyObject *);
+PyObject *c_dates_check_freq(PyObject *, PyObject *);
+PyObject *c_dates_check_freq_str(PyObject *, PyObject *);
+PyObject *c_dates_get_freq_group(PyObject *, PyObject *);
 
 PyObject *set_callback_DateFromString(PyObject *, PyObject *);
 PyObject *set_callback_DateTimeFromString(PyObject *, PyObject *);
 
-void import_c_tdates(PyObject *);
+void import_c_dates(PyObject *);
 
 #endif

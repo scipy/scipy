@@ -11,7 +11,7 @@ def configuration(parent_package='',top_path=None):
     nxheader = join(get_numpy_include_dirs()[0],'numpy',)
     confgr = Configuration('timeseries',parent_package,top_path)
     sources = [join('src', x) for x in ('c_lib.c',
-                                        'c_tdates.c',
+                                        'c_dates.c',
                                         'c_tseries.c',
                                         'cseries.c')]
     confgr.add_extension('cseries',
@@ -19,8 +19,6 @@ def configuration(parent_package='',top_path=None):
                          include_dirs=[nxheader, 'include'])
 
     confgr.add_subpackage('lib')
-    confgr.add_subpackage('io')
-    confgr.add_subpackage('plotlib')
     confgr.add_subpackage('tests')
     return confgr
 

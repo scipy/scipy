@@ -1,5 +1,5 @@
 #include "c_lib.h"
-#include "c_tdates.h"
+#include "c_dates.h"
 #include "c_tseries.h"
 
 static PyMethodDef cseries_methods[] = {
@@ -22,7 +22,7 @@ static PyMethodDef cseries_methods[] = {
      METH_VARARGS, ""},
 
 
-    {"thisday", (PyCFunction)c_tdates_thisday,
+    {"thisday", (PyCFunction)c_dates_thisday,
      METH_VARARGS,
         "Returns today's date, at the given frequency\n\n"
         ":Parameters:\n"
@@ -30,15 +30,15 @@ static PyMethodDef cseries_methods[] = {
         "       Frequency to convert the Date to. Accepts any valid frequency\n"
         "       specification (string or integer)\n"},
 
-    {"check_freq", (PyCFunction)c_tdates_check_freq,
+    {"check_freq", (PyCFunction)c_dates_check_freq,
      METH_VARARGS,
         "translate user specified frequency into frequency constant"},
 
-    {"check_freq_str", (PyCFunction)c_tdates_check_freq_str,
+    {"check_freq_str", (PyCFunction)c_dates_check_freq_str,
      METH_VARARGS,
         "translate user specified frequency into standard string representation"},
 
-    {"get_freq_group", (PyCFunction)c_tdates_get_freq_group,
+    {"get_freq_group", (PyCFunction)c_dates_get_freq_group,
      METH_VARARGS,
         "translate user specified frequency into frequency group constant"},
 
@@ -61,7 +61,7 @@ initcseries(void)
       return;
 
     import_c_lib(m);
-    import_c_tdates(m);
+    import_c_dates(m);
     import_c_tseries(m);
 
 }
