@@ -11,7 +11,7 @@ Data input and output
 
   Functions
 
-     read_array -- reading ascii streams into Numeric arrays
+     read_array -- reading ascii streams into NumPy arrays
      write_array -- write an array to an ascii stream
      loadmat -- read a MATLAB style mat file (version 4 and 5)
      savemat -- write a MATLAB (version <= 4) style mat file
