@@ -18,7 +18,7 @@ from numpy.testing import NumpyTest, NumpyTestCase
 from numpy.testing.utils import build_err_msg
 
 import maskedarray.testutils
-from maskedarray.testutils import assert_equal, assert_array_equal
+from maskedarray.testutils import assert_equal, assert_array_equal, assert_equal_records
 
 import maskedarray.core as MA
 import maskedarray.mrecords as MR
@@ -65,12 +65,12 @@ class test_mrecords(NumpyTestCase):
         assert_equal(mts._data[0], mrec._data[0])
         # We can't use assert_equal here, as it tries to convert the tuple into a singleton
 #        assert(mts[0]._data.view(numpyndarray) == mrec[0])
-        assert_equal(numpy.asarray(mts._data[0]), mrec[0])
+        assert_equal_records(mts._data[0], mrec[0])
         assert_equal(mts._dates[0], dates[0])  
         assert_equal(mts[0]._dates, dates[0])
         #
         assert(isinstance(mts['2007-01'], TimeSeriesRecords))
-        assert(mts['2007-01']._data == mrec[0])
+        assert_equal_records(mts['2007-01']._data, mrec[0])
         assert_equal(mts['2007-01']._dates, dates[0])       
         #
         assert(isinstance(mts.f0, TimeSeries))
