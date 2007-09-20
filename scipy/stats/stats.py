@@ -966,24 +966,25 @@ def _interpolate(a, b, fraction):
     return a + (b - a)*fraction;
 
 def scoreatpercentile(a, per, limit=()):
-    """Calculates the score at the given 'per' percentile of the sequence
-    a.  For example, the score at per=50 is the median.
+    """Calculate the score at the given 'per' percentile of the
+    sequence a.  For example, the score at per=50 is the median.
 
-    If the desired quantile lies between two data points, we interpolate
-    between them.
-    
+    If the desired quantile lies between two data points, we
+    interpolate between them.
+
     If the parameter 'limit' is provided, it should be a tuple (lower,
-    upper) of two values.  Values of 'a' outside this (closed) interval
-    will be ignored.
+    upper) of two values.  Values of 'a' outside this (closed)
+    interval will be ignored.
+
     """
     # TODO: this should be a simple wrapper around a well-written quantile
     # function.  GNU R provides 9 quantile algorithms (!), with differing
     # behaviour at, for example, discontinuities.
-    values = np.sort(a)
+    values = np.sort(a,axis=0)
     if limit:
         values = values[(limit[0] < a) & (a < limit[1])]
-    
-    idx = per /100. * (len(values) - 1)
+
+    idx = per /100. * (values.shape[0] - 1)
     if (idx % 1 == 0):
         return values[idx]
     else:
