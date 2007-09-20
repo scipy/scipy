@@ -4,7 +4,10 @@ Data input and output
 
   Classes
 
-     fopen -- a class for easily reading and writing binary data.
+     npfile -- a class for reading and writing numpy arrays from / to binary files
+     Cache
+     DataSource
+     Repository
 
   Functions
 
