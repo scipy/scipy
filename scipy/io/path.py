@@ -2,12 +2,10 @@
 
 Example:
 
-from path import path
+from scipy.io.path import path
 d = path('/home/guido/bin')
 for f in d.files('*.py'):
     f.chmod(0755)
-
-This module requires Python 2.2 or later.
 
 
 URL:     http://www.jorendorff.com/articles/python/path
@@ -26,8 +24,6 @@ Date:    9 Mar 2007
 #   - Add methods for regex find and replace.
 #   - guess_content_type() method?
 #   - Perhaps support arguments to touch().
-
-from __future__ import generators
 
 import sys, warnings, os, fnmatch, glob, shutil, codecs, md5
 
