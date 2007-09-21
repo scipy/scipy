@@ -54,19 +54,49 @@ __all__ = [
 'first_unmasked_val', 'last_unmasked_val'
            ]
 
-def first_unmasked_val(a):
-    "Returns the first unmasked value in a 1d maskedarray."
-    (i,j) = MA.extras.flatnotmasked_edges(a)
-    return a[i]
+def _unmasked_val(marray, x):
+    "helper function for first_unmasked_val and last_unmasked_val"
+    try:
+        assert(marray.ndim == 1)
+    except AssertionError:
+        raise ValueError("array must have ndim == 1")
+    
+    idx = MA.extras.flatnotmasked_edges(marray)
+    if idx is None:
+        return MA.masked
+    return marray[idx[x]]
 
-def last_unmasked_val(a):
-    "Returns the last unmasked value in a 1d maskedarray."
-    (i,j) = MA.extras.flatnotmasked_edges(a)
-    return a[j]
+def first_unmasked_val(marray):
+    """Retrieve the first unmasked value in a 1d maskedarray.
 
-#### --------------------------------------------------------------------------
+*Parameters*:
+    marray : {MaskedArray}
+        marray must be 1 dimensional.
+
+*Returns*:
+    val : {marray.dtype}
+        first unmasked value in marray. If all values in marray are masked,
+        the function returns the maskedarray.masked constant
+"""
+    return _unmasked_val(marray, 0)
+
+def last_unmasked_val(marray):
+    """Retrieve the last unmasked value in a 1d maskedarray.
+
+*Parameters*:
+    marray : {MaskedArray}
+        marray must be 1 dimensional.
+
+*Returns*:
+    val : {marray.dtype}
+        last unmasked value in marray. If all values in marray are masked,
+        the function returns the maskedarray.masked constant
+"""
+    return _unmasked_val(marray, 1)
+
+#### -------------------------------------------------------------------------
 #--- ... TimeSeriesError class ...
-#### --------------------------------------------------------------------------
+#### -------------------------------------------------------------------------
 class TimeSeriesError(Exception):
     "Class for TS related errors."
     def __init__ (self, value=None):
@@ -109,16 +139,19 @@ def _timeseriescompat(a, b, raise_error=True):
             return False
     else:
         step_diff = a._dates.get_steps() != b._dates.get_steps()
-        if (step_diff is True) or (hasattr(step_diff, "any") and step_diff.any()):
+        if (step_diff is True) or \
+           (hasattr(step_diff, "any") and step_diff.any()):
             if raise_error:
                 raise TimeSeriesCompatibilityError('time_steps',
-                                                   a._dates.get_steps(), b._dates.get_steps())
+                                                   a._dates.get_steps(),
+                                                   b._dates.get_steps())
             else:
                 return False
         elif a.shape != b.shape:
             if raise_error:
-                raise TimeSeriesCompatibilityError('size', "1: %s" % str(a.shape),
-                                                       "2: %s" % str(b.shape))
+                raise TimeSeriesCompatibilityError(
+                        'size', "1: %s" % str(a.shape),
+                        "2: %s" % str(b.shape))
             else:
                 return False
     return True
@@ -156,7 +189,7 @@ def _timeseriescompat_multiple(*series):
     return True
 
 
-def _datadatescompat(data,dates):
+def _datadatescompat(data, dates):
     """Checks the compatibility of dates and data at the creation of a TimeSeries.
     Returns True if everything's fine, raises an exception otherwise."""
     # If there's only 1 element, the date is a Date object, which has no size...
@@ -166,7 +199,6 @@ def _datadatescompat(data,dates):
     if dsize == tsize:
         return True
     elif data.ndim > 1:
-        #dsize = numeric.asarray(data.shape)[:-1].prod()
         dsize = data.shape[0]
         if dsize == tsize:
             return True
@@ -194,9 +226,9 @@ def _compare_frequencies(*series):
             "All series must have same frequency! (got %s instead)" % unique_freqs
     return common_freq
 
-##### --------------------------------------------------------------------------
+##### ------------------------------------------------------------------------
 ##--- ... Time Series ...
-##### --------------------------------------------------------------------------
+##### ------------------------------------------------------------------------
 class _tsmathmethod(object):
     """Defines a wrapper for arithmetic array methods (add, mul...).
 When called, returns a new TimeSeries object, with the new series the result of
@@ -205,12 +237,12 @@ The `_dates` part remains unchanged.
     """
     def __init__ (self, methodname):
         self._name = methodname
-    #
+
     def __get__(self, obj, objtype=None):
         "Gets the calling object."
         self.obj = obj
         return self
-    #
+
     def __call__ (self, other, *args):
         "Execute the call behavior."
         instance = self.obj
@@ -229,22 +261,22 @@ The `_dates` part remains unchanged.
 
 class _tsarraymethod(object):
     """Defines a wrapper for basic array methods.
-When called, returns a new TimeSeries object, with the new series the result of
-the method applied on the original series.
+When called, returns a new TimeSeries object, with the new series the result
+of the method applied on the original series.
 If `ondates` is True, the same operation is performed on the `_dates`.
 If `ondates` is False, the `_dates` part remains unchanged.
-    """
+"""
     def __init__ (self, methodname, ondates=False):
         """abfunc(fillx, filly) must be defined.
            abinop(x, filly) = x for all x to enable reduce.
         """
         self._name = methodname
         self._ondates = ondates
-    #
+
     def __get__(self, obj, objtype=None):
         self.obj = obj
         return self
-    #
+
     def __call__ (self, *args):
         "Execute the call behavior."
         _name = self._name
@@ -260,18 +292,19 @@ If `ondates` is False, the `_dates` part remains unchanged.
 
 class _tsaxismethod(object):
     """Defines a wrapper for array methods working on an axis (mean...).
-When called, returns a ndarray, as the result of the method applied on the series.
-    """
+When called, returns a ndarray, as the result of the method applied on the
+series.
+"""
     def __init__ (self, methodname):
         """abfunc(fillx, filly) must be defined.
            abinop(x, filly) = x for all x to enable reduce.
         """
         self._name = methodname
-    #
+
     def __get__(self, obj, objtype=None):
         self.obj = obj
         return self
-    #
+
     def __call__ (self, *args, **params):
         "Execute the call behavior."
         (_dates, _series) = (self.obj._dates, self.obj._series)
@@ -285,40 +318,51 @@ When called, returns a ndarray, as the result of the method applied on the serie
                 if axis in [-1, _series.ndim-1]:
                     result = result.view(type(self.obj))
                     result._dates = _dates
-#                    result = TimeSeries(result, dates=_dates)
             except IndexError:
                 pass
             return result
 
 class TimeSeries(MaskedArray, object):
     """Base class for the definition of time series.
-A time series is here defined as the combination of three arrays:
 
-    - `series` : *[ndarray]*
+A time series is here defined as the combination of two arrays:
+
+    series : {MaskedArray}
         Data part
-    - `mask` : *[ndarray]*
-        Mask part
-    - `dates` : *[DateArray]*
+    dates : {DateArray}
         Date part
 
-The combination of `series` and `dates` is the `data` part.
-    """
-    options = None
+*Construction*:
+    data : {array_like}
+        data portion of the array. Any data that is valid for constructing a
+        MaskedArray can be used here.
+    dates : {DateArray}
+
+*Other Parameters*:
+    all other parameters are the same as for MaskedArray. Please see the
+    documentation for the MaskedArray class in the maskedarray module
+    for details.
+
+*Notes*:
+    it is typically recommended to use the `time_series` function for
+    construction as it allows greater flexibility and convenience.
+"""
     _genattributes = ['fill_value']
-    def __new__(cls, data, dates, mask=nomask,
-                dtype=None, copy=False, fill_value=None, subok=True,
-                keep_mask=True, small_mask=True, hard_mask=False, **options):
-        maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value,subok=subok,
+    def __new__(cls, data, dates, mask=nomask, dtype=None, copy=False,
+                fill_value=None, subok=True, keep_mask=True, small_mask=True,
+                hard_mask=False, **options):
+
+        maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value, subok=subok,
                        keep_mask=keep_mask, small_mask=small_mask,
-                       hard_mask=hard_mask,)
+                       hard_mask=hard_mask)
         _data = MaskedArray(data, mask=mask, **maparms)
 
-        # Get the dates ..............................
+        # Get the dates ......................................................
         if not isinstance(dates, (Date, DateArray)):
-            raise TypeError("The input dates should be a valid Date or DateArray object! "\
-                            "(got %s instead)" % type(dates))
+            raise TypeError("The input dates should be a valid Date or " + \
+                            "DateArray object (got %s instead)" % type(dates))
 
-        # Get the data ...............................
+        # Get the data .......................................................
         if not subok or not isinstance(_data,TimeSeries):
             _data = _data.view(cls)
         if _data is masked:
@@ -338,24 +382,24 @@ The combination of `series` and `dates` is the `data` part.
             elif dates._unsorted is not None:
                 _data = _data[dates._unsorted]
         return _data
-    #............................................
+    #.........................................................................
     def __array_finalize__(self,obj):
         MaskedArray.__array_finalize__(self, obj)
         self._dates = getattr(obj, '_dates', DateArray([]))
         return
-    #..................................
+    #.........................................................................
     def __array_wrap__(self, obj, context=None):
         result = super(TimeSeries, self).__array_wrap__(obj, context)
         result._dates = self._dates
         return result
-    #............................................
+    #.........................................................................
     def _get_series(self):
         "Returns the series as a regular masked array."
         if self._mask.ndim == 0 and self._mask:
             return masked
         return self.view(MaskedArray)
     _series = property(fget=_get_series)
-    #............................................
+    #.........................................................................
     def __checkindex(self, indx):
         "Checks the validity of an index."
         if isinstance(indx, int):
@@ -385,9 +429,6 @@ The combination of `series` and `dates` is the `data` part.
             if self._dates.size == self.size:
                 return (indx, indx)
             return (indx,indx[0])
-#            elif len(indx)==2:
-#                return (indx,indx[0])
-#            return (indx,indx[:-1])
         elif isTimeSeries(indx):
             indx = indx._series
         if getmask(indx) is not nomask:
@@ -397,8 +438,8 @@ The combination of `series` and `dates` is the `data` part.
 
     def __getitem__(self, indx):
         """x.__getitem__(y) <==> x[y]
-Returns the item described by i. Not a copy as in previous versions.
-        """
+Returns the item described by i. Not a copy.
+"""
         (sindx, dindx) = self.__checkindex(indx)
         newdata = numeric.array(self._series[sindx], copy=False, subok=True)
         newdate = self._dates[dindx]
@@ -416,36 +457,11 @@ Returns the item described by i. Not a copy as in previous versions.
         newdata = newdata.view(type(self))
         newdata._dates = newdate
         return newdata
-# CHECK : The implementation below should work, but does not. Why ?
-#        newdata = numeric.array(self._data[sindx], copy=False)
-#        newdates = self._dates[dindx]
-#        if self._mask is not nomask:
-#            newmask = self._mask.copy()[sindx]
-#        else:
-#            newmask = nomask
-#        singlepoint = (len(numeric.shape(newdates))==0)
-#        if singlepoint:
-#            if newmask.ndim == 0 and newmask:
-#                output = tsmasked
-#                output._dates = newdates
-#                return output
-#            if self.ndim > 1:
-#                # CHECK: use reshape, or set shape ?
-#                newdata = newdata.reshape((list((1,)) + list(newdata.shape)))
-#                if newmask is not nomask:
-#                    newmask.shape = newdata.shape
-#        newdata = newdata.view(type(self))
-#        newdata._dates = newdates
-#        newdata._mask = newmask
-#        return newdata
-
-
-
     #........................
     def __setitem__(self, indx, value):
         """x.__setitem__(i, y) <==> x[i]=y
 Sets item described by index. If value is masked, masks those locations.
-        """
+"""
         if self is masked:
             raise MAError, 'Cannot alter the masked element.'
         (sindx, _) = self.__checkindex(indx)
@@ -472,9 +488,9 @@ Sets item described by index. If value is masked, masks those locations.
         """Returns a string representation of self (w/o the dates...)"""
         return str(self._series)
     def __repr__(self):
-        """Calculates the repr representation, using masked for fill if
-           it is enabled. Otherwise fill with fill value.
-        """
+        """Calculates the repr representation, using masked for fill if it is
+enabled. Otherwise fill with fill value.
+"""
         desc = """\
 timeseries(
  %(data)s,
@@ -537,23 +553,14 @@ timeseries(%(data)s,
     stdu = _tsaxismethod('stdu')
     all = _tsaxismethod('all')
     any = _tsaxismethod('any')
-
-
-#    def nonzero(self):
-#        """Returns a tuple of ndarrays, one for each dimension of the array,
-#    containing the indices of the non-zero elements in that dimension."""
-#        return self._series.nonzero()
-
-#    filled = _tsarraymethod('filled', ondates=False)
-
-    #............................................
+    #.........................................................................
     def ids (self):
         """Return the ids of the data, dates and mask areas"""
         return (id(self._series), id(self.dates),)
-    #------------------------------------------------------
+    #.........................................................................
     @property
     def series(self):
-        "Returns the series."
+        """Returns the series."""
         return self._series
     @property
     def dates(self):
@@ -569,43 +576,43 @@ timeseries(%(data)s,
         return self._dates.freqstr
     @property
     def day(self):
-        "Returns the day of month for each date in self._dates."
+        """Returns the day of month for each date in self._dates."""
         return self._dates.day
     @property
     def day_of_week(self):
-        "Returns the day of week for each date in self._dates."
+        """Returns the day of week for each date in self._dates."""
         return self._dates.day_of_week
     @property
     def day_of_year(self):
-        "Returns the day of year for each date in self._dates."
+        """Returns the day of year for each date in self._dates."""
         return self._dates.day_of_year
     @property
     def month(self):
-        "Returns the month for each date in self._dates."
+        """Returns the month for each date in self._dates."""
         return self._dates.month
     @property
     def quarter(self):
-        "Returns the quarter for each date in self._dates."
+        """Returns the quarter for each date in self._dates."""
         return self._dates.quarter
     @property
     def year(self):
-        "Returns the year for each date in self._dates."
+        """Returns the year for each date in self._dates."""
         return self._dates.year
     @property
     def second(self):
-        "Returns the seconds for each date in self._dates."
+        """Returns the second for each date in self._dates."""
         return self._dates.second
     @property
     def minute(self):
-        "Returns the minutes for each date in self._dates."
+        """Returns the minute for each date in self._dates."""
         return self._dates.minute
     @property
     def hour(self):
-        "Returns the hour for each date in self._dates."
+        """Returns the hour for each date in self._dates."""
         return self._dates.hour
     @property
     def week(self):
-        "Returns the week for each date in self._dates."
+        """Returns the week for each date in self._dates."""
         return self._dates.week
 
     days = day
@@ -659,14 +666,33 @@ timeseries(%(data)s,
         return self._dates.has_duplicated_dates()
 
     def date_to_index(self, date):
-        "Returns the index corresponding to a given date, as an integer."
+        """Returns the index corresponding to a given date, as an integer."""
         return self._dates.date_to_index(date)
     #.....................................................
-    def asfreq(self, freq=None):
-        "Converts the dates to another frequency."
-        if freq is None:
-            return self
-        return TimeSeries(self._series, dates=self._dates.asfreq(freq))
+    def asfreq(self, freq, relation="AFTER"):
+        """Converts the dates portion of the TimeSeries to another frequency.
+
+The resulting TimeSeries will have the same shape and dimensions as the
+original series (unlike the `convert` method). 
+
+*Parameters*:
+    freq : {freq_spec}
+    relation : {'AFTER', 'BEFORE'} , optional
+
+*Returns*:
+    a new TimeSeries (data copied) with the .dates DateArray at the specified
+    frequency (the .asfreq method of the .dates property will be called)
+
+*Notes*:
+    The parameters are the exact same as for DateArray.asfreq , please see the
+    __doc__ string for that method for details on the parameters and how the
+    actual conversion is performed.
+"""
+        if freq is None: return self
+
+        return TimeSeries(self._series,
+                          dates=self._dates.asfreq(freq, relation=relation),
+                          copy=True)
     #.....................................................
     def transpose(self, *axes):
         """ a.transpose(*axes)
@@ -1193,7 +1219,7 @@ def align_with(*series):
     
 
 #....................................................................
-def _convert1d(series, freq, func=None, position='END', *args, **kwargs):
+def _convert1d(series, freq, func, position, *args, **kwargs):
     "helper function for `convert` function"
     if not isinstance(series,TimeSeries):
         raise TypeError, "The argument should be a valid TimeSeries!"
@@ -1247,7 +1273,7 @@ def _convert1d(series, freq, func=None, position='END', *args, **kwargs):
     newseries.copy_attributes(series)
     return newseries
 
-def convert(series, freq, func='auto', position='END', *args, **kwargs):
+def convert(series, freq, func=None, position='END', *args, **kwargs):
     """Converts a series to a frequency. Private function called by convert
 
     When converting to a lower frequency, func is a function that acts
@@ -1280,6 +1306,7 @@ def convert(series, freq, func='auto', position='END', *args, **kwargs):
 
     return obj
 
+TimeSeries.convert = convert
 
 def group_byperiod(series, freq, position='END'):
     """Converts a series to a frequency, without any processing. If the series
@@ -1292,7 +1319,6 @@ def group_byperiod(series, freq, position='END'):
         series = fill_missing_dates(series)
     return convert(series, freq, func=None, position=position)
 
-TimeSeries.convert = convert
 TimeSeries.group_byperiod = group_byperiod
 
 #...............................................................................
