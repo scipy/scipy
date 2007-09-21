@@ -1,3 +1,8 @@
+"""Utilities for importing (possibly compressed) data sets from an URL
+(or file) and possibly caching them.
+
+"""
+
 import os
 import gzip
 import bz2
@@ -6,7 +11,7 @@ from urllib2 import urlopen
 from tempfile import mkstemp
 
 # TODO: replace with newer tuple-based path module
-from path import path
+from scipy.io.path import path
 
 zipexts = (".gz",".bz2")
 file_openers = {".gz":gzip.open, ".bz2":bz2.BZ2File, None:file}
@@ -107,7 +112,7 @@ class Cache (object):
         if not self.path.exists():
             ensuredirs(self.path)
 
-    def tempfile(self,suffix='', prefix=''):
+    def tempfile(self, suffix='', prefix=''):
         """ Return an temporary file name in the cache"""
         _, fname = mkstemp(suffix, prefix, self.path)
         return fname
@@ -148,8 +153,8 @@ class Cache (object):
 
         :Returns: ``None``
         """
-        for f in self.path.files():
-            f.rm()
+        for file in self.path.files():
+            file.rm()
         
     def iscached(self, uri):
         """ Check if a file exists in the cache.
@@ -175,7 +180,7 @@ class DataSource (object):
     def __init__(self, cachepath=os.curdir):
         self._cache = Cache(cachepath)
 
-    def tempfile(self,suffix='', prefix=''):
+    def tempfile(self, suffix='', prefix=''):
         ''' Return an temporary file name in the cache'''
         return self._cache.tempfile(suffix, prefix)
 
