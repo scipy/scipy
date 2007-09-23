@@ -12,13 +12,21 @@ General
 --------
 
 * distributions heavy use of extract and insert (could use fancy indexing?) -- but we should wait until we learn how slow fancy indexing is....)
+
 * Use of old Numeric C-API.  Using it means an extra C-level function call, but ...
+
 * Make use of type addition to extend certain ufuncs with cephes quad types
+
 * Use finfo(foo).bar instead of limits.foo_bar
+
 * Get rid of sandbox
+
  * move packages to
+
   * scipy
+
   * scikits
+
   * or a branch
 
 
@@ -32,6 +40,7 @@ Packages
 --------
 
 * consider reorganizing the namespace
+
  * scipy.tests, scipy.misc, scipy.stsci
 
 IO (scipy.io)
