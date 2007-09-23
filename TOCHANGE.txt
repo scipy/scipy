@@ -1,7 +1,27 @@
-Changes that should be made someday:
+=================================================
+Development Plans for SciPy 1.0
+=================================================
 
-* io rewritten to use internal writing capabilities of arrays
+See http://www.scipy.org/scipy/scipy/wiki/GetCode
+for updates of this document.
+
+.. Contents::
+
+General
+--------
+
 * distributions heavy use of extract and insert (could use fancy indexing?) -- but we should wait until we learn how slow fancy indexing is....)
 * Use of old Numeric C-API.  Using it means an extra C-level function call, but ...
 * Make use of type addition to extend certain ufuncs with cephes quad types
 * Use finfo(foo).bar instead of limits.foo_bar
+
+Handling Data IO
+----------------
+
+* io rewritten to use internal writing capabilities of arrays
+
+Image Processing
+----------------
+
+
+
