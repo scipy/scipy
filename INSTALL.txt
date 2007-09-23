@@ -10,7 +10,7 @@ Building and installing SciPy
 :Revision: $Revision$
 :Discussions to: scipy-user@scipy.org
 
-See http://new.scipy.org/Wiki/Installing_SciPy
+See http://www.scipy.org/scipy/scipy/wiki/GetCode
 for updates of this document.
 
 .. Contents::
