@@ -7,6 +7,7 @@ for updates of this document.
 
 .. Contents::
 
+
 General
 --------
 
@@ -14,14 +15,35 @@ General
 * Use of old Numeric C-API.  Using it means an extra C-level function call, but ...
 * Make use of type addition to extend certain ufuncs with cephes quad types
 * Use finfo(foo).bar instead of limits.foo_bar
+* Get rid of sandbox
+ * move packages to
+  * scipy
+  * scikits
+  * or a branch
 
-Handling Data IO
-----------------
+
+Documentation
+-------------
+
+* use new docstring format
+
+
+Packages
+--------
+
+* consider reorganizing the namespace
+ * scipy.tests, scipy.misc, scipy.stsci
+
+IO (scipy.io)
++++++++++++++
 
 * io rewritten to use internal writing capabilities of arrays
 
-Image Processing
-----------------
+Image Processing (scipy.ndimage)
+++++++++++++++++++++++++++++++++
 
 
+Statistical Analysis (scipy.stats)
+++++++++++++++++++++++++++++++++++
 
+* add statistical models
