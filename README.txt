@@ -98,7 +98,7 @@ follow the following conventions:
 
 For details, read:
 
-  http://svn.scipy.org/svn/numpy/trunk/numpy/doc/DISTUTILS.txt
+  http://projects.scipy.org/scipy/numpy/wiki/DistutilsDoc
 
 
 Documentation
@@ -170,7 +170,7 @@ Mailing Lists
 -------------
 
 Please see the developer's list here
-    http://projects.scipy.org/mailman/listinfo/scipy-devel
+    http://projects.scipy.org/mailman/listinfo/scipy-dev
 
 
 Bug reports
@@ -189,3 +189,4 @@ License information
 See the file "LICENSE" for information on the history of this
 software, terms & conditions for usage, and a DISCLAIMER OF ALL
 WARRANTIES.
+

@@ -9,7 +9,7 @@ reminders follow:
 
    o Only 80 characters on a line.
 
-   o use all lowercase function/class names with underscore separated words:
+   o use all lowercase function names with underscore separated words:
 
         def set_some_value()
 
@@ -17,8 +17,11 @@ reminders follow:
 
         def setSomeValue()
 
-     There is no differentiation between classes, functions, verbs, nouns, etc. 
-     This simple scheme aims to make it easier for non-programmers to become 
-     familiar with the interface.  For those that object, you are skilled 
-     enough to deal with the limitation.
 
+   o use CamelCase class names:
+
+        def BaseClass()
+
+     instead of:
+
+        def base_class()
