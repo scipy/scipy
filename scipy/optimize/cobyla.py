@@ -47,6 +47,8 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
 
     See also:
 
+	scikits.openopt, which offers a unified syntax to call this and other solvers
+
 	fmin, fmin_powell, fmin_cg, 
 	      fmin_bfgs, fmin_ncg -- multivariate local optimizers
 	leastsq -- nonlinear least squares minimizer

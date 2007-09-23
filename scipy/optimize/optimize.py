@@ -684,7 +684,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         return a list of results at each iteration if non-zero
 
     :SeeAlso:
-
+    
+      scikits.openopt, which offers a unified syntax to call this and other solvers
+      
       fmin, fmin_powell, fmin_cg,
              fmin_bfgs, fmin_ncg -- multivariate local optimizers
       leastsq -- nonlinear least squares minimizer
