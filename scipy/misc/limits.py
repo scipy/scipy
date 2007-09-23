@@ -1,6 +1,11 @@
 """ Machine limits for Float32 and Float64.
 """
 
+import warnings
+warnings.warn('limits module is deprecated, please use numpy.finfo instead',
+              DeprecationWarning)
+
+
 __all__ = ['float_epsilon','float_tiny','float_min',
            'float_max','float_precision','float_resolution',
            'single_epsilon','single_tiny','single_min','single_max',
