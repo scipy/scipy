@@ -19,6 +19,12 @@ General
 
 * Use finfo(foo).bar instead of limits.foo_bar (see r3358 and r3362)
 
+* Comply with Python Style Guide
+
+ * use CamelCase for class names
+
+* Improve testing (e.g., increased coverage)
+
 * Get rid of sandbox
 
  * move packages to
