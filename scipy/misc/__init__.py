@@ -1,9 +1,8 @@
 
 from info import __doc__
 
-__all__ = ['limits', 'who', 'source', 'info']
+__all__ = ['who', 'source', 'info']
 
-import limits
 from common import *
 from numpy import who, source, info as _info
 
