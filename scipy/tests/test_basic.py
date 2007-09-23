@@ -3,7 +3,6 @@
 """
 
 import unittest
-import numpy.utils.limits as limits
 from numpy.test.testing import assert_array_equal, assert_equal
 from numpy.test.testing import assert_almost_equal, assert_array_almost_equal
 from scipy import *
@@ -45,7 +44,7 @@ class test_randn(unittest.TestCase):
         assert_almost_equal(std,1.0,1)
 
 
-val = limits.double_resolution
+#val = limits.double_resolution
 
 class test_eye(unittest.TestCase):
     def check_basic(self):
