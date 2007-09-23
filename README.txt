@@ -1,20 +1,40 @@
 .. -*- rest -*-
-.. NB! Keep this document a valid restructured document.
-
-
+=================================================
 Developing SciPy
-================
+=================================================
 
 :Author: Pearu Peterson <pearu@cens.ioc.ee>
 :Modified by: Ed Schofield <edschofield@gmail.com>
+:Modified by: Jarrod Millman <millman AT berkeley.edu>
 :Last changed: $Date$
 :Revision: $Revision$
 :Discussions to: scipy-dev@scipy.org
 
 .. Contents::
 
-Introduction
-------------
+
+What is SciPY?
+--------------
+
+SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
+science, and engineering.  It includes modules for statistics, optimization,
+integration, linear algebra, Fourier transforms, signal and image processing,
+genetic algorithms, ODE solvers, and more.  It is also the name of a very
+popular conference on scientific programming with Python.
+
+The SciPy library depends on NumPy, which provides convenient and fast
+N-dimensional array manipulation. The SciPy library is built to work with
+NumPy arrays, and provides many user-friendly and efficient numerical routines
+such as routines for numerical integration and optimization. Together, they
+run on all popular operating systems, are quick to install, and are free of
+charge. NumPy and SciPy are easy to use, but powerful enough to be depended
+upon by some of the world's leading scientists and engineers. If you need to
+manipulate numbers on a computer and display or publish the results, give
+SciPy a try!
+
+
+SciPy structure
+---------------
 
 SciPy aims at being a robust and efficient "super-package" of a number
 of modules, each of a non-trivial size and complexity.  In order for
@@ -22,9 +42,6 @@ of modules, each of a non-trivial size and complexity.  In order for
 certain rules that are described in this document. Hopefully this
 document will be helpful for SciPy contributors and developers as a
 basic reference about the structure of the SciPy package.
-
-SciPy structure
----------------
 
 Currently SciPy consists of the following files and directories:
 
@@ -47,11 +64,8 @@ Currently SciPy consists of the following files and directories:
   scipy/
     Contains SciPy __init__.py and the directories of SciPy modules.
 
-
-
-
 SciPy modules
--------------
++++++++++++++
 
 In the following, a *SciPy module* is defined as a Python package, say
 xxx, that is located in the scipy/ directory.  All SciPy modules should
@@ -86,11 +100,9 @@ For details, read:
 
   http://svn.scipy.org/svn/numpy/trunk/numpy/doc/DISTUTILS.txt
 
-Open issues and discussion
---------------------------
 
 Documentation
-+++++++++++++
+-------------
 
 This is an important feature where SciPy is currently lacking. A few
 SciPy modules have some documentation but they use different formats
@@ -144,4 +156,36 @@ requirements that documentation tools should satsify:
   concept (e.g. tutorial, users guide, manual) based docs.
   
 
+Web sites
+---------
 
+The user's site is here
+    http://www.scipy.org/
+
+The developer's site is here
+    http://projects.scipy.org/scipy/scipy/wiki
+
+
+Mailing Lists
+-------------
+
+Please see the developer's list here
+    http://projects.scipy.org/mailman/listinfo/scipy-devel
+
+
+Bug reports
+-----------
+
+To search for bugs, please use the NIPY Bug Tracker at
+    http://projects.scipy.org/scipy/scipy/query
+
+To report a bug, please use the NIPY Bug Tracker at
+    http://projects.scipy.org/scipy/scipy/newticket
+
+
+License information
+-------------------
+
+See the file "LICENSE" for information on the history of this
+software, terms & conditions for usage, and a DISCLAIMER OF ALL
+WARRANTIES.
