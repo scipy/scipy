@@ -2,7 +2,7 @@
 Development Plans for SciPy 1.0
 =================================================
 
-See http://www.scipy.org/scipy/scipy/wiki/GetCode
+See http://www.scipy.org/scipy/scipy/wiki/DevelopmentPlan
 for updates of this document.
 
 .. Contents::
