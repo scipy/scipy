@@ -2933,6 +2933,11 @@ class test_ndimage(NumpyTestCase):
                                                index = [2, 3, 8])
             self.failUnless(output == [3.0, 4.0, 0.0])
 
+    def test_maximum05(self):
+        "Ticket #501"
+        x = numpy.array([-3,-2,-1])
+        assert_equal(ndimage.maximum(x),-1)
+
     def test_variance01(self):
         "variance 1"
         for type in self.types:

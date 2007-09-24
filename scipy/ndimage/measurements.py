@@ -197,12 +197,13 @@ def minimum(input, labels = None, index = None):
     return _nd_image.statistics(input, labels, index, 3)
 
 
-def maximum(input, labels = None, index = None):
-    """Calculate the maximum of the values of the array.
+def maximum(input, labels=None, index=None):
+    """Return the maximum input value.
 
     The index parameter is a single label number or a sequence of
     label numbers of the objects to be measured. If index is None, all
     values are used where labels is larger than zero.
+
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):

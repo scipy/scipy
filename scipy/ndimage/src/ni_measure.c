@@ -545,7 +545,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
     if (minimum)
       minimum[jj] = DBL_MAX;
     if (maximum)
-      maximum[jj] = DBL_MIN;
+      maximum[jj] = -DBL_MAX;
     if (min_pos)
       min_pos[jj] = 0;
     if (max_pos)
@@ -576,7 +576,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
         if (min_pos)
           min_pos[idx] = jj;
       }
-      if (maximum && val > maximum[idx]) {
+      if (maximum && (val > maximum[idx])) {
         maximum[idx] = val;
         if (max_pos)
           max_pos[idx] = jj;
@@ -596,7 +596,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
   }
   if (maximum) {
     for(jj = 0; jj < n_results; jj++) {
-      if (!(maximum[jj] > DBL_MIN))
+      if (!(maximum[jj] > -DBL_MAX))
         maximum[jj] = 0.0;
     }
   }
