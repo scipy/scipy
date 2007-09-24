@@ -15,7 +15,7 @@ def configuration(parent_package='',top_path=None):
     else:
         for line in sandbox_file:
             p = line.strip()
-            if line.startswith('#'):
+            if not p or p.startswith('#'):
                 continue
             sandbox_packages.append(p)
         sandbox_file.close()
