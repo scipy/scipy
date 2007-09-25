@@ -20,6 +20,8 @@ __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'rosen_hess', 'rosen_hess_prod', 'brute', 'approx_fprime',
            'line_search', 'check_grad']
 
+__docformat__ = "restructuredtext en"
+
 import numpy
 from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, empty, \
      squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf, asfarray, isinf
@@ -98,76 +100,58 @@ def wrap_function(function, args):
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
          full_output=0, disp=1, retall=0, callback=None):
     """Minimize a function using the downhill simplex algorithm.
-    
-    :Parameters:
 
-      func : the Python function or method to be minimized.
-      x0 : ndarray - the initial guess.
-      args : extra arguments for func.
-      callback : an optional user-supplied function to call after each
-                  iteration.  It is called as callback(xk), where xk is the
-                  current parameter vector.
+    *Parameters*:
 
-    :Returns: (xopt, {fopt, iter, funcalls, warnflag})
+      func : callable func(x,*args)
+          The objective function to be minimized.
+      x0 : ndarray
+          Initial guess.
+      args : tuple
+          Extra arguments passed to func, i.e. ``f(x,*args)``.
+      callback : callable
+          Called after each iteration, as callback(xk), where xk is the
+          current parameter vector.
 
-      xopt : ndarray 
-        minimizer of function
-      fopt : number 
-        value of function at minimum: fopt = func(xopt)
-      iter : number 
-        number of iterations
-      funcalls : number
-        number of function calls
-      warnflag : number 
-        Integer warning flag:
-                  1 : 'Maximum number of function evaluations.'
-                  2 : 'Maximum number of iterations.'
-      allvecs : Python list 
-        a list of solutions at each iteration
+    *Returns*: (xopt, {fopt, iter, funcalls, warnflag})
 
-    :OtherParameters:
+      xopt : ndarray
+          Parameter that minimizes function.
+      fopt : float
+          Value of function at minimum: ``fopt = func(xopt)``.
+      iter : int
+          Number of iterations performed.
+      funcalls : int
+          Number of function calls made.
+      warnflag : int
+          1 : Maximum number of function evaluations made.
+          2 : Maximum number of iterations reached.
+      allvecs : list
+          Solution at each iteration.
 
-      xtol : number 
-        acceptable relative error in xopt for convergence.
-      ftol : number 
-        acceptable relative error in func(xopt) for convergence.
-      maxiter : number 
-        the maximum number of iterations to perform.
-      maxfun : number 
-        the maximum number of function evaluations.
-      full_output : number 
-        non-zero if fval and warnflag outputs are desired.
-      disp : number 
-        non-zero to print convergence messages.
-      retall : number 
-        non-zero to return list of solutions at each iteration
+    *Other Parameters*:
 
-    :SeeAlso:
+      xtol : float
+          Relative error in xopt acceptable for convergence.
+      ftol : number
+          Relative error in func(xopt) acceptable for convergence.
+      maxiter : int
+          Maximum number of iterations to perform.
+      maxfun : number
+          Maximum number of function evaluations to make.
+      full_output : bool
+          Set to True if fval and warnflag outputs are desired.
+      disp : bool
+          Set to True to print convergence messages.
+      retall : bool
+          Set to True to return list of solutions at each iteration.
 
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
+    *Notes*
 
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
+        Uses a Nelder-Mead simplex algorithm to find the minimum of
+        function of one or more variables.
 
-      anneal, brute -- global optimizers
-
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimenstional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-      fixed_point -- scalar fixed-point finder
-      
-    Notes
-    
-    -----------
-    
-      Uses a Nelder-Mead simplex algorithm to find the minimum of function
-      of one or more variables.
-      """
+    """
     fcalls, func = wrap_function(func, args)
     x0 = asfarray(x0).flatten()
     N = len(x0)
@@ -421,33 +405,43 @@ def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
 def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
                 args=(), c1=1e-4, c2=0.9, amax=50):
     """Find alpha that satisfies strong Wolfe conditions.
-    
-    :Parameters:
-    
-    f : objective function
-    myfprime : objective function gradient (can be None)
-    xk : ndarray -- start point 
-    pk : ndarray -- search direction
-    gfk : ndarray -- gradient value for x=xk 
-    args : additional arguments for user functions
-    c1 : number -- parameter for Armijo condition rule
-    c2 : number - parameter for curvature condition rule
-    
-    :Returns: 
-    
-    alpha0 : number -- required alpha (x_new = x0 + alpha * pk)
-    fc : number of function evaluations 
-    gc : number of gradient evaluations 
-    
-    
-    Notes
-    
-    --------------------------------
-    
-    Uses the line search algorithm to enforce strong Wolfe conditions
-    Wright and Nocedal, 'Numerical Optimization', 1999, pg. 59-60
 
-    For the zoom phase it uses an algorithm by
+    *Parameters*:
+
+        f : callable f(x,*args)
+            Objective function.
+        myfprime : callable f'(x,*args)
+            Objective function gradient (can be None).
+        xk : ndarray
+            Starting point.
+        pk : ndarray
+            Search direction.
+        gfk : ndarray
+            Gradient value for x=xk (xk being the current parameter
+            estimate).
+        args : tuple
+            Additional arguments passed to objective function.
+        c1 : float
+            Parameter for Armijo condition rule.
+        c2 : float
+            Parameter for curvature condition rule.
+
+    *Returns*:
+
+        alpha0 : float
+            Alpha for which ``x_new = x0 + alpha * pk``.
+        fc : int
+            Number of function evaluations made.
+        gc : int
+            Number of gradient evaluations made.
+
+    *Notes*
+
+        Uses the line search algorithm to enforce strong Wolfe
+        conditions.  See Wright and Nocedal, 'Numerical Optimization',
+        1999, pg. 59-60.
+
+        For the zoom phase it uses an algorithm by [...].
 
     """
 
@@ -541,28 +535,29 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
             break
 
     if fprime_star is not None:
-        # fprime_star is a number (derphi) -- so use the most recently calculated gradient
-        #                                     used in computing it derphi = gfk*pk
-        #                                     this is the gradient at the next step
-        #                                     no need to compute it again in the outer loop.
+        # fprime_star is a number (derphi) -- so use the most recently
+        # calculated gradient used in computing it derphi = gfk*pk
+        # this is the gradient at the next step no need to compute it
+        # again in the outer loop.
         fprime_star = _ls_ingfk
 
     return alpha_star, _ls_fc, _ls_gc, fval_star, old_fval, fprime_star
 
 
 def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
-    """Minimize over alpha, the function f(xk+alpha pk)
+    """Minimize over alpha, the function ``f(xk+alpha pk)``.
 
     Uses the interpolation algorithm (Armiijo backtracking) as suggested by
     Wright and Nocedal in 'Numerical Optimization', 1999, pg. 56-57
 
-    :Returns: (alpha, fc, gc)
+    *Returns*: (alpha, fc, gc)
+
     """
-    
+
     xk = atleast_1d(xk)
     fc = 0
-    phi0 = old_fval                            # compute f(xk) -- done in past loop
-    phi_a0 = f(*((xk+alpha0*pk,)+args))     
+    phi0 = old_fval # compute f(xk) -- done in past loop
+    phi_a0 = f(*((xk+alpha0*pk,)+args))
     fc = fc + 1
     derphi0 = numpy.dot(gfk,pk)
 
@@ -631,87 +626,72 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
               retall=0, callback=None):
     """Minimize a function using the BFGS algorithm.
-    
-    :Parameters:
 
-      f : the Python function or method to be minimized.
+    *Parameters*:
+
+      f : callable f(x,*args)
+          Objective function to be minimized.
       x0 : ndarray
-        the initial guess for the minimizer.
+          Initial guess.
+      fprime : callable f'(x,*args)
+          Gradient of f.
+      args : tuple
+          Extra arguments passed to f and fprime.
+      gtol : float
+          Gradient norm must be less than gtol before succesful termination.
+      norm : float
+          Order of norm (Inf is max, -Inf is min)
+      epsilon : int or ndarray
+          If fprime is approximated, use this value for the step size.
+      callback : callable
+          An optional user-supplied function to call after each
+          iteration.  Called as callback(xk), where xk is the
+          current parameter vector.
 
-      fprime : a function to compute the gradient of f.
-      args : extra arguments to f and fprime.
-      gtol : number
-        gradient norm must be less than gtol before succesful termination
-      norm : number
-        order of norm (Inf is max, -Inf is min)
-      epsilon : number
-        if fprime is approximated use this value for
-                 the step size (can be scalar or vector)
-      callback : an optional user-supplied function to call after each
-                  iteration.  It is called as callback(xk), where xk is the
-                  current parameter vector.
+    *Returns*: (xopt, {fopt, gopt, Hopt, func_calls, grad_calls, warnflag}, <allvecs>)
 
-    :Returns: (xopt, {fopt, gopt, Hopt, func_calls, grad_calls, warnflag}, <allvecs>)
+        xopt : ndarray
+            Parameters which minimize f, i.e. f(xopt) == fopt.
+        fopt : float
+            Minimum value.
+        gopt : ndarray
+            Value of gradient at minimum, f'(xopt), which should be near 0.
+        Bopt : ndarray
+            Value of 1/f''(xopt), i.e. the inverse hessian matrix.
+        func_calls : int
+            Number of function_calls made.
+        grad_calls : int
+            Number of gradient calls made.
+        warnflag : integer
+            1 : Maximum number of iterations exceeded.
+            2 : Gradient and/or function calls not changing.
+        allvecs  :  list
+            Results at each iteration.  Only returned if retall is True.
 
-      xopt : ndarray
-        the minimizer of f.
+    *Other Parameters*:
+        maxiter : int
+            Maximum number of iterations to perform.
+        full_output : bool
+            If True,return fopt, func_calls, grad_calls, and warnflag
+            in addition to xopt.
+        disp : bool
+            Print convergence message if True.
+        retall : bool
+            Return a list of results at each iteration if True.
 
-      fopt : number
-        the value of f(xopt).
-      gopt : ndarray
-        the value of f'(xopt).  (Should be near 0)
-      Bopt : ndarray
-        the value of 1/f''(xopt).  (inverse hessian matrix)
-      func_calls : number
-        the number of function_calls.
-      grad_calls : number
-        the number of gradient calls.
-      warnflag : integer
-                  1 : 'Maximum number of iterations exceeded.'
-                  2 : 'Gradient and/or function calls not changing'
-      allvecs  :  a list of all iterates  (only returned if retall==1)
+    *Notes*
 
-    :OtherParameters:
+        Optimize the function, f, whose gradient is given by fprime
+        using the quasi-Newton method of Broyden, Fletcher, Goldfarb,
+        and Shanno (BFGS) See Wright, and Nocedal 'Numerical
+        Optimization', 1999, pg. 198.
 
-      maxiter : number
-        the maximum number of iterations.
-      full_output : number
-        if non-zero then return fopt, func_calls, grad_calls,
-                     and warnflag in addition to xopt.
-      disp : number
-        print convergence message if non-zero.
-      retall : number
-        return a list of results at each iteration if non-zero
+    *See Also*:
 
-    :SeeAlso:
-    
-      scikits.openopt, which offers a unified syntax to call this and other solvers
-      
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
+      scikits.openopt : SciKit which offers a unified syntax to call
+                        this and other solvers.
 
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
-
-      anneal, brute -- global optimizers
-
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimenstional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-      fixed_point -- scalar fixed-point finder
-      
-    Notes
-    
-    ----------------------------------
-
-      Optimize the function, f, whose gradient is given by fprime using the
-      quasi-Newton method of Broyden, Fletcher, Goldfarb, and Shanno (BFGS)
-      See Wright, and Nocedal 'Numerical Optimization', 1999, pg. 198.
-      """
+    """
     x0 = asarray(x0).squeeze()
     if x0.ndim == 0:
         x0.shape = (1,)
@@ -747,7 +727,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             if alpha_k is None:
                 # This line search also failed to find a better solution.
                 warnflag = 2
-                break                
+                break
         xkp1 = xk + alpha_k * pk
         if retall:
             allvecs.append(xkp1)
@@ -767,7 +747,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
         try: # this was handled in numeric, let it remaines for more safety
             rhok = 1.0 / (numpy.dot(yk,sk))
-        except ZeroDivisionError: 
+        except ZeroDivisionError:
             rhok = 1000.0
             print "Divide-by-zero encountered: rhok assumed large"
         if isinf(rhok): # this is patch for numpy
@@ -782,7 +762,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         fval = old_fval
     if warnflag == 2:
         if disp:
-            print "Warning: Desired error not necessarily achieved due to precision loss"
+            print "Warning: Desired error not necessarily achieved" \
+                  "due to precision loss"
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
@@ -818,81 +799,65 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
 def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
               maxiter=None, full_output=0, disp=1, retall=0, callback=None):
-    """Minimize a function with nonlinear conjugate gradient algorithm.
+    """Minimize a function using a nonlinear conjugate gradient algorithm.
 
-    :Parameters:
+    *Parameters*:
+        f : callable f(x,*args)
+            Objective function to be minimized.
+        x0 : ndarray
+            Initial guess.
+        fprime : callable f'(x,*args)
+            Function which omputes the gradient of f.
+        args : tuple
+            Extra arguments passed to f and fprime.
+        gtol : float
+            Stop when norm of gradient is less than gtol.
+        norm : float
+            Order of vector norm to use.  -Inf is min, Inf is max.
+        epsilon : float or ndarray
+            If fprime is approximated, use this value for the step
+            size (can be scalar or vector).
+        callback : callable
+            An optional user-supplied function, called after each
+            iteration.  Called as callback(xk), where xk is the
+            current parameter vector.
 
-      f -- the Python function or method to be minimized.
-      x0 : ndarray -- the initial guess for the minimizer.
+    *Returns*: (xopt, {fopt, func_calls, grad_calls, warnflag}, {allvecs})
 
-      fprime -- a function to compute the gradient of f.
-      args -- extra arguments to f and fprime.
-      gtol : number
-        stop when norm of gradient is less than gtol
-      norm : number
-        order of vector norm to use
-      epsilon :number
-        if fprime is approximated use this value for
-                 the step size (can be scalar or vector)
-      callback -- an optional user-supplied function to call after each
-                  iteration.  It is called as callback(xk), where xk is the
-                  current parameter vector.
+        xopt : ndarray
+            Parameters which minimize f, i.e. f(xopt) == fopt.
+        fopt : float
+            Minimum value found, f(xopt).
+        func_calls : int
+            The number of function_calls made.
+        grad_calls : int
+            The number of gradient calls made.
+        warnflag : int
+            1 : Maximum number of iterations exceeded.
+            2 : Gradient and/or function calls not changing.
+        allvecs : ndarray
+            If retall is True (see other parameters below), then this
+            vector containing the result at each iteration is returned.
 
-    :Returns: (xopt, {fopt, func_calls, grad_calls, warnflag}, {allvecs})
+    *Other Parameters*:
+      maxiter : int
+          Maximum number of iterations to perform.
+      full_output : bool
+          If True then return fopt, func_calls, grad_calls, and
+          warnflag in addition to xopt.
+      disp : bool
+          Print convergence message if True.
+      retall : bool
+        return a list of results at each iteration if True.
 
-      xopt : ndarray 
-        the minimizer of f.
-      fopt :number
-        the value of f(xopt).
-      func_calls : number 
-        the number of function_calls.
-      grad_calls : number
-        the number of gradient calls.
-      warnflag :number 
-        an integer warning flag:
-                  1 : 'Maximum number of iterations exceeded.'
-                  2 : 'Gradient and/or function calls not changing'
-      allvecs : ndarray
-        if retall then this vector of the iterates is returned
+    *Notes*
 
-    :OtherParameters:
+        Optimize the function, f, whose gradient is given by fprime
+        using the nonlinear conjugate gradient algorithm of Polak and
+        Ribiere See Wright, and Nocedal 'Numerical Optimization',
+        1999, pg. 120-122.
 
-      maxiter :number
-        the maximum number of iterations.
-      full_output : number 
-        if non-zero then return fopt, func_calls, grad_calls,
-                     and warnflag in addition to xopt.
-      disp : number
-        print convergence message if non-zero.
-      retall : number
-        return a list of results at each iteration if True
-
-    :SeeAlso:
-
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
-
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
-
-      anneal, brute -- global optimizers
-
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimenstional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-      fixed_point -- scalar fixed-point finder
-      
-    Notes
-    ---------------------------------------------
-
-      Optimize the function, f, whose gradient is given by fprime using the
-      nonlinear conjugate gradient algorithm of Polak and Ribiere
-      See Wright, and Nocedal 'Numerical Optimization', 1999, pg. 120-122.
-      """
+    """
     x0 = asarray(x0).flatten()
     if maxiter is None:
         maxiter = len(x0)*200
@@ -988,88 +953,74 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
              epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
              callback=None):
-    """ Minimize the function f using the Newton-CG method. 
+    """Minimize a function using the Newton-CG method.
 
-    :Parameters:
+    *Parameters*:
 
-    f -- the Python function or method to be minimized.
-    x0 : ndarray -- the initial guess for the minimizer.
-    fprime -- a function to compute the gradient of f: fprime(x, *args)
-    fhess_p -- a function to compute the Hessian of f times an
-               arbitrary vector: fhess_p (x, p, *args)
-    fhess -- a function to compute the Hessian matrix of f.
-    args -- extra arguments for f, fprime, fhess_p, and fhess (the same
-            set of extra arguments is supplied to all of these functions).
+        f : callable f(x,*args)
+            Objective function to be minimized.
+        x0 : ndarray
+            Initial guess.
+        fprime : callable f'(x,*args)
+            Gradient of f.
+        fhess_p : callable fhess_p(x,p,*args)
+            Function which computes the Hessian of f times an
+            arbitrary vector, p.
+        fhess : callable fhess(x,*args)
+            Function to compute the Hessian matrix of f.
+        args : tuple
+            Extra arguments passed to f, fprime, fhess_p, and fhess
+            (the same set of extra arguments is supplied to all of
+            these functions).
+        epsilon : float or ndarray
+            If fhess is approximated, use this value for the step size.
+        callback : callable
+            An optional user-supplied function which is called after
+            each iteration.  Called as callback(xk), where xk is the
+            current parameter vector.
 
-    epsilon : number 
-        if fhess is approximated use this value for
-                 the step size (can be scalar or vector)
-    callback -- an optional user-supplied function to call after each
-                iteration.  It is called as callback(xk), where xk is the
-                current parameter vector.
+    *Returns*: (xopt, {fopt, fcalls, gcalls, hcalls, warnflag},{allvecs})
 
-    :Returns: (xopt, {fopt, fcalls, gcalls, hcalls, warnflag},{allvecs})
+        xopt : ndarray
+            Parameters which minimizer f, i.e. ``f(xopt) == fopt``.
+        fopt : float
+            Value of the function at xopt, i.e. ``fopt = f(xopt)``.
+        fcalls : int
+            Number of function calls made.
+        gcalls : int
+            Number of gradient calls made.
+        hcalls : int
+            Number of hessian calls made.
+        warnflag : int
+            Warnings generated by the algorithm.
+            1 : Maximum number of iterations exceeded.
+        allvecs : list
+            The result at each iteration, if retall is True (see below).
 
-    xopt : ndarray
-        the minimizer of f
-    fopt : number
-        the value of the function at xopt: fopt = f(xopt)
-    fcalls : number
-        the number of function calls
-    gcalls : number
-        the number of gradient calls
-    hcalls : number 
-        the number of hessian calls.
-    warnflag : number
-        algorithm warnings:
-                1 : 'Maximum number of iterations exceeded.'
-    allvecs : Python list
-        a list of all tried iterates
+    *Other Parameters*:
 
-    :OtherParameters:
+        avextol : float
+            Convergence is assumed when the average relative error in
+            the minimizer falls below this amount.
+        maxiter : int
+            Maximum number of iterations to perform.
+        full_output : bool
+            If True, return the optional outputs.
+        disp : bool
+            If True, print convergence message.
+        retall : bool
+            If True, return a list of results at each iteration.
 
-    avextol : number
-        Convergence is assumed when the average relative error in
-               the minimizer falls below this amount.
-    maxiter : number
-        Maximum number of iterations to allow.
-    full_output : number
-        If non-zero return the optional outputs.
-    disp : number
-        If non-zero print convergence message.
-    retall : bool
-        return a list of results at each iteration if True
+    *Notes*
 
-    :SeeAlso:
-
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
-
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
-
-      anneal, brute -- global optimizers
-
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimenstional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-      fixed_point -- scalar fixed-point finder
-
-    Notes
-    
-    ---------------------------------------------
-    
-    Only one of fhess_p or fhess need be given.  If fhess is provided,
-    then fhess_p will be ignored.  If neither fhess nor fhess_p is
-    provided, then the hessian product will be approximated using finite
-    differences on fprime. fhess_p must compute the hessian times an arbitrary
-    vector. If it is not given, finite-differences on fprime are used to
-    compute it. See Wright, and Nocedal 'Numerical Optimization', 1999,
-    pg. 140.
+      Only one of `fhess_p` or `fhess` need to be given.  If `fhess`
+      is provided, then `fhess_p` will be ignored.  If neither `fhess`
+      nor `fhess_p` is provided, then the hessian product will be
+      approximated using finite differences on `fprime`. `fhess_p`
+      must compute the hessian times an arbitrary vector. If it is not
+      given, finite-differences on `fprime` are used to compute
+      it. See Wright, and Nocedal 'Numerical Optimization', 1999,
+      pg. 140.
 
     """
     x0 = asarray(x0).flatten()
@@ -1181,68 +1132,50 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
               full_output=0, disp=1):
     """Bounded minimization for scalar functions.
 
-    :Parameters:
+    *Parameters*:
 
-      func -- the function to be minimized (must accept scalar input and return
-              scalar output).
-      x1, x2 : ndarray 
-        the optimization bounds.
-      args -- extra arguments to pass to function.
-      xtol : number
-        the convergence tolerance.
-      maxfun : number
-        maximum function evaluations.
-      full_output : number
-        Non-zero to return optional outputs.
-      disp : number
-        Non-zero to print messages.
+      func : callable f(x,*args)
+          Objective function to be minimized (must accept and return scalars).
+      x1, x2 : ndarray
+          The optimization bounds.
+      args : tuple
+          Extra arguments passed to function.
+      xtol : float
+          The convergence tolerance.
+      maxfun : int
+          Maximum number of function evaluations allowed.
+      full_output : bool
+          If True, return optional outputs.
+      disp : int
+          If non-zero, print messages.
               0 : no message printing.
               1 : non-convergence notification messages only.
               2 : print a message on convergence too.
               3 : print iteration results.
 
 
-    :Returns: (xopt, {fval, ierr, numfunc})
+    *Returns*: (xopt, {fval, ierr, numfunc})
 
       xopt : ndarray
-        The minimizer of the function over the interval.
+          Parameters (over given interval) which minimize the
+          objective function.
       fval : number
-        The function value at the minimum point.
-      ierr : number
-        An error flag (0 if converged, 1 if maximum number of
-              function calls reached).
-      numfunc : number
-        The number of function calls.
+          The function value at the minimum point.
+      ierr : int
+          An error flag (0 if converged, 1 if maximum number of
+          function calls reached).
+      numfunc : int
+        The number of function calls made.
 
-    :SeeAlso:
 
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
+    *Notes*
 
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
-
-      anneal, brute -- global optimizers
-
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimenstional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-      fixed_point -- scalar fixed-point finder
-
-    Notes
-    
-    -------------------------------------------------------
-    
-    Finds a local minimizer of the scalar function func in the interval
-      x1 < xopt < x2 using Brent's method.  (See brent for auto-bracketing).
+        Finds a local minimizer of the scalar function `func` in the
+        interval x1 < xopt < x2 using Brent's method.  (See `brent`
+        for auto-bracketing).
 
 
     """
-
     if x1 > x2:
         raise ValueError, "The lower bound exceeds the upper bound."
 
@@ -1287,7 +1220,8 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
             e = rat
 
             # Check for acceptability of parabola
-            if ( (abs(p) < abs(0.5*q*r)) and (p > q*(a-xf)) and (p < q*(b-xf))):
+            if ( (abs(p) < abs(0.5*q*r)) and (p > q*(a-xf)) and \
+                 (p < q*(b-xf))):
                 rat = (p+0.0) / q;
                 x = xf + rat
                 step = '       parabolic'
@@ -1358,7 +1292,8 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
 
 class Brent:
     #need to rethink design of __init__
-    def __init__(self, func, args=(), tol=1.48e-8, maxiter=500, full_output=0):
+    def __init__(self, func, args=(), tol=1.48e-8, maxiter=500,
+                 full_output=0):
         self.func = func
         self.args = args
         self.tol = tol
@@ -1369,7 +1304,7 @@ class Brent:
         self.fval = None
         self.iter = 0
         self.funcalls = 0
-        
+
     #need to rethink design of set_bracket (new options, etc)
     def set_bracket(self, brack = None):
         self.brack = brack
@@ -1490,55 +1425,39 @@ class Brent:
 
 
 def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
-    """ Given a function of one-variable and a possible bracketing interval,
+    """Given a function of one-variable and a possible bracketing interval,
     return the minimum of the function isolated to a fractional precision of
-    tol. 
-    
-    :Parameters:
-    
-    func - objective func
-    args - additional arguments (if present)
-    brack - triple (a,b,c) where (a<b<c) and
-        func(b) < func(a),func(c).  If bracket is two numbers (a,c) then they are
-        assumed to be a starting interval for a downhill bracket search
-        (see bracket); it doesn't always mean that obtained solution will satisfy a<=x<=c.
-        
-    full_output : number
-        0 - return only x (default)
-        1 - return all output args (xmin, fval, iter, funcalls)
-        
-    :Returns:
-    
-    xmin : ndarray
-        optim point
-    fval : number
-        optim value 
-    iter : number
-        number of iterations
-    funcalls : number
-        number of objective function evaluations
-        
-    :SeeAlso:
+    tol.
 
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
+    *Parameters*:
 
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
+        func : callable f(x,*args)
+            Objective function.
+        args
+            Additional arguments (if present).
+        brack : tuple
+            Triple (a,b,c) where (a<b<c) and func(b) <
+            func(a),func(c).  If bracket consists of two numbers (a,c)
+            then they are assumed to be a starting interval for a
+            downhill bracket search (see `bracket`); it doesn't always
+            mean that the obtained solution will satisfy a<=x<=c.
+        full_output : bool
+            If True, return all output args (xmin, fval, iter,
+            funcalls).
 
-      anneal, brute -- global optimizers
+    *Returns*:
 
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimenstional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-      fixed_point -- scalar fixed-point finder
+        xmin : ndarray
+            Optimum point.
+        fval : float
+            Optimum value.
+        iter : int
+            Number of iterations.
+        funcalls : int
+            Number of objective function evaluations made.
 
     Notes
-    
+
     ----------------------------
 
     Uses inverse parabolic interpolation when possible to speed up convergence
@@ -1556,46 +1475,30 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
 def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     """ Given a function of one-variable and a possible bracketing interval,
     return the minimum of the function isolated to a fractional precision of
-    tol. 
+    tol.
 
-    :Parameters:
-    
-    func - objective function
-    args - additional arguments (if present)
-    brack : a triple (a,b,c) where (a<b<c) and
-        func(b) < func(a),func(c).  If bracket is two numbers (a, c) then they are
-        assumed to be a starting interval for a downhill bracket search
-        (see bracket); it doesn't always mean that obtained solution will satisfy a<=x<=c
-    tol : number 
-        x tolerance stop criterion
-    full_output : number
-        0 for false
-        1 for true
-        
-    :SeeAlso:
+    *Parameters*:
 
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
+        func : callable func(x,*args)
+            Objective function to minimize.
+        args : tuple
+            Additional arguments (if present), passed to func.
+        brack : tuple
+            Triple (a,b,c), where (a<b<c) and func(b) <
+            func(a),func(c).  If bracket consists of two numbers (a,
+            c), then they are assumed to be a starting interval for a
+            downhill bracket search (see `bracket`); it doesn't always
+            mean that obtained solution will satisfy a<=x<=c.
+        tol : float
+            x tolerance stop criterion
+        full_output : bool
+            If True, return optional outputs.
 
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
+    *Notes*
 
-      anneal, brute -- global optimizers
+        Uses analog of bisection method to decrease the bracketed
+        interval.
 
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimenstional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-      fixed_point -- scalar fixed-point finder
-
-    Notes
-    
-    ---------------------------------------
-    
-    Uses analog of bisection method to decrease the bracketed interval.
     """
     if brack is None:
         xa,xb,xc,fa,fb,fc,funcalls = bracket(func, args=args)
@@ -1648,30 +1551,34 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
 
 
 def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
-    """Given a function and distinct initial points, search in the downhill
-    direction (as defined by the initital points) and return new points
-    xa, xb, xc that bracket the minimum of the function:
-    f(xa) > f(xb) < f(xc). It doesn't always mean that obtained solution will satisfy xa<=x<=xb
-    
-    :Parameters:
-    
-    func -- objective func
-    xa, xb : number
-        bracketing interval
-    args -- additional arguments (if present)
-    grow_limit : number
-        max grow limit
-    maxiter : number
-        max iterations number
-    
-    :Returns: xa, xb, xc, fa, fb, fc, funcalls
-    
-    xa, xb, xc : number
-        bracket
-    fa, fb, fc : number
-        objective function values in bracket
-    funcalls : number
-        number of function evaluations
+    """Given a function and distinct initial points, search in the
+    downhill direction (as defined by the initital points) and return
+    new points xa, xb, xc that bracket the minimum of the function
+    f(xa) > f(xb) < f(xc). It doesn't always mean that obtained
+    solution will satisfy xa<=x<=xb
+
+    *Parameters*:
+
+        func : callable f(x,*args)
+            Objective function to minimize.
+        xa, xb : float
+            Bracketing interval.
+        args : tuple
+            Additional arguments (if present), passed to `func`.
+        grow_limit : float
+            Maximum grow limit.
+        maxiter : int
+            Maximum number of iterations to perform.
+
+    *Returns*: xa, xb, xc, fa, fb, fc, funcalls
+
+        xa, xb, xc : float
+            Bracket.
+        fa, fb, fc : float
+            Objective function values in bracket.
+        funcalls : int
+            Number of function evaluations made.
+
     """
     _gold = 1.618034
     _verysmall_num = 1e-21
@@ -1731,9 +1638,11 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
 
 
 def _linesearch_powell(func, p, xi, tol=1e-3):
-    # line-search algorithm using fminbound
-    #  find the minimium of the function
-    #  func(x0+ alpha*direc)
+    """Line-search algorithm using fminbound.
+
+    Find the minimium of the function ``func(x0+ alpha*direc)``.
+
+    """
     def myfunc(alpha):
         return func(p + alpha * xi)
     alpha_min, fret, iter, num = brent(myfunc, full_output=1, tol=tol)
@@ -1746,79 +1655,65 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
                 direc=None):
     """Minimize a function using modified Powell's method.
 
-    :Parameters:
+    *Parameters*:
 
-      func -- the Python function or method to be minimized.
+      func : callable f(x,*args)
+          Objective function to be minimized.
       x0 : ndarray
-        the initial guess.
-      args -- extra arguments for func
-      callback -- an optional user-supplied function to call after each
-                  iteration.  It is called as callback(xk), where xk is the
-                  current parameter vector
-      direc -- initial direction set
+          Initial guess.
+      args : tuple
+          Eextra arguments passed to func.
+      callback : callable
+          An optional user-supplied function, called after each
+          iteration.  Called as ``callback(xk)``, where ``xk`` is the
+          current parameter vector.
+      direc : ndarray
+          Initial direction set.
 
-    :Returns: (xopt, {fopt, xi, direc, iter, funcalls, warnflag}, {allvecs})
+    *Returns*: (xopt, {fopt, xi, direc, iter, funcalls, warnflag}, {allvecs})
 
-      xopt : ndarray
-        minimizer of function
+        xopt : ndarray
+            Parameter which minimizes `func`.
+        fopt : number
+            Value of function at minimum: ``fopt = func(xopt)``.
+        direc : ndarray
+            Current direction set.
+        iter : int
+            Number of iterations.
+        funcalls : int
+            Number of function calls made.
+        warnflag : int
+            Integer warning flag:
+                1 : Maximum number of function evaluations.
+                2 : Maximum number of iterations.
+        allvecs : list
+            List of solutions at each iteration.
 
-      fopt : number
-        value of function at minimum: fopt = func(xopt)
-      direc -- current direction set
-      iter : number
-        number of iterations
-      funcalls : number 
-        number of function calls
-      warnflag : number
-        Integer warning flag:
-                  1 : 'Maximum number of function evaluations.'
-                  2 : 'Maximum number of iterations.'
-      allvecs : Python list
-        a list of solutions at each iteration
+    *Other Parameters*:
 
-    :OtherParameters:
+      xtol : float
+          Line-search error tolerance.
+      ftol : float
+          Relative error in ``func(xopt)`` acceptable for convergence.
+      maxiter : int
+          Maximum number of iterations to perform.
+      maxfun : int
+          Maximum number of function evaluations to make.
+      full_output : bool
+          If True, fopt, xi, direc, iter, funcalls, and
+          warnflag are returned.
+      disp : bool
+          If True, print convergence messages.
+      retall : bool
+          If True, return a list of the solution at each iteration.
 
-      xtol : number
-        line-search error tolerance.
-      ftol : number
-        acceptable relative error in func(xopt) for convergence.
-      maxiter : number
-        the maximum number of iterations to perform.
-      maxfun : number
-        the maximum number of function evaluations.
-      full_output : number
-        non-zero if fval and warnflag outputs are desired.
-      disp : number
-        non-zero to print convergence messages.
-      retall : number
-        non-zero to return a list of the solution at each iteration
 
-    :SeeAlso:
+    *Notes*
 
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
+        Uses a modification of Powell's method to find the minimum of
+        a function of N variables.
 
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
-
-      anneal, brute -- global optimizers
-
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimenstional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-      fixed_point -- scalar fixed-point finder
-      
-    Notes
-    
-    -----------------------
-
-      Uses a modification of Powell's method to find the minimum of a function
-      of N variables
-      """
+    """
     # we need to use a mutable object here that we can update in the
     # wrapper function
     fcalls, func = wrap_function(func, args)
@@ -1877,7 +1772,8 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             temp = fx-fx2
             t -= delta*temp*temp
             if t < 0.0:
-                fval, x, direc1 = _linesearch_powell(func, x, direc1, tol=xtol*100)
+                fval, x, direc1 = _linesearch_powell(func, x, direc1,
+                                                     tol=xtol*100)
                 direc[bigind] = direc[-1]
                 direc[-1] = direc1
 
@@ -1917,67 +1813,54 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
 def _endprint(x, flag, fval, maxfun, xtol, disp):
     if flag == 0:
         if disp > 1:
-            print "\nOptimization terminated successfully;\n the returned value" + \
-                  " satisfies the termination criteria\n (using xtol = ", xtol, ")"
+            print "\nOptimization terminated successfully;\n" \
+                  "The returned value satisfies the termination criteria\n" \
+                  "(using xtol = ", xtol, ")"
     if flag == 1:
-        print "\nMaximum number of function evaluations exceeded --- increase maxfun argument.\n"
+        print "\nMaximum number of function evaluations exceeded --- " \
+              "increase maxfun argument.\n"
     return
 
 
 def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
     """Minimize a function over a given range by brute force.
 
-    :Parameters:
+    *Parameters*:
 
-    func -- Function to be optimized
-    ranges : tuple 
-        Tuple where each element is a tuple of parameters
-                      or a slice object to be handed to numpy.mgrid
+        func : callable f(x,*args)
+            Objective function to be minimized.
+        ranges : tuple
+            Each element is a tuple of parameters or a slice object to
+            be handed to ``numpy.mgrid``.
+        args : tuple
+            Extra arguments passed to function.
+        Ns : int
+            Default number of samples, if those are not provided.
+        full_output : bool
+            If True, return the evaluation grid.
 
-    args  -- Extra arguments to function.
-    Ns : number 
-        Default number of samples if not given
-    full_output : number 
-        Nonzero to return evaluation grid.
+    *Returns*: (x0, fval, {grid, Jout})
 
-    :Returns: (x0, fval, {grid, Jout})
+        x0 : ndarray
+            Value of arguments to `func`, giving minimum over the grid.
+        fval : int
+            Function value at minimum.
+        grid : tuple
+            Representation of the evaluation grid.  It has the same
+            length as x0.
+        Jout : ndarray
+            Function values over grid:  ``Jout = func(*grid)``.
 
-    x0 : ndarray
-        Value of arguments giving minimum over the grird
-    fval : number
-        Function value at minimum
-    grid : tuple
-        tuple with same length as x0 representing the  evaluation grid
-    Jout : ndarray -- Function values over grid:  Jout = func(*grid)
+    *Notes*
 
-    :SeeAlso:
+        Find the minimum of a function evaluated on a grid given by
+        the tuple ranges.
 
-      fmin, fmin_powell, fmin_cg,
-             fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
-
-      fmin_l_bfgs_b, fmin_tnc,
-             fmin_cobyla -- constrained multivariate optimizers
-
-      anneal, brute -- global optimizers
-
-      fminbound, brent, golden, bracket -- local scalar minimizers
-
-      fsolve -- n-dimenstional root-finding
-
-      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-
-      fixed_point -- scalar fixed-point finder
-
-    Notes
-    
-    ------------------
-    
-    Find the minimum of a function evaluated on a grid given by the tuple ranges.
     """
     N = len(ranges)
     if N > 40:
-        raise ValueError, "Brute Force not possible with more than 40 variables."
+        raise ValueError, "Brute Force not possible with more " \
+              "than 40 variables."
     lrange = list(ranges)
     for k in range(N):
         if type(lrange[k]) is not type(slice(None)):
