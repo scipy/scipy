@@ -36,7 +36,7 @@ from numpy import *
 
 from numpy.testing import *
 set_package_path()
-from special import *
+from scipy.special import *
 import scipy.special._cephes as cephes
 restore_path()
 
