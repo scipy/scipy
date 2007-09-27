@@ -807,7 +807,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         x0 : ndarray
             Initial guess.
         fprime : callable f'(x,*args)
-            Function which omputes the gradient of f.
+            Function which computes the gradient of f.
         args : tuple
             Extra arguments passed to f and fprime.
         gtol : float
