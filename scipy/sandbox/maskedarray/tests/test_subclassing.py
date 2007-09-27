@@ -45,8 +45,8 @@ class MSubArray(SubArray,MaskedArray):
         _data.info = subarr.info
         return _data
     def __array_finalize__(self,obj):
-        SubArray.__array_finalize__(self, obj)
-        MaskedArray.__array_finalize__(self,obj)    
+        MaskedArray.__array_finalize__(self,obj)   
+        SubArray.__array_finalize__(self, obj) 
         return
     def _get_series(self):
         return self.view(MaskedArray)
@@ -136,15 +136,38 @@ class test_subclassing(NumpyTestCase):
         assert isinstance(mxsub, MaskedArray)
         assert_equal(mxsub._mask, m)
         #
+        mxsub = asarray(xsub)
+        assert not isinstance(mxsub, MSubArray)
+        assert isinstance(mxsub, MaskedArray)
+        assert_equal(mxsub._mask, m)
+        #
         mxsub = masked_array(xsub, subok=True)
         assert isinstance(mxsub, MSubArray)
         assert_equal(mxsub.info, xsub.info)
         assert_equal(mxsub._mask, xsub._mask)
+        #
+        mxsub = asanyarray(xsub)
+        assert isinstance(mxsub, MSubArray)
+        assert_equal(mxsub.info, xsub.info)
+        assert_equal(mxsub._mask, m)
         
         
 ################################################################################
 if __name__ == '__main__':
     NumpyTest().run()
+    #
+    if 0:
+        x = array(arange(5), mask=[0]+[1]*4)
+        my = masked_array(subarray(x))
+        ym = msubarray(x)
+        #
+        z = (my+1)
+        assert isinstance(z,MaskedArray)
+        assert not isinstance(z, MSubArray)
+        assert isinstance(z._data, SubArray)
+        assert_equal(z._data.info, {})
+        #
+        z = ym+1
 
                      
 

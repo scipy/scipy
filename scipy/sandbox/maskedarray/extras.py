@@ -672,12 +672,7 @@ if __name__ == '__main__':
     import numpy as N
     from maskedarray.testutils import assert_equal
     if 1:
-        n = N.arange(1,7)
-        #
-        m = [1,0,0,0,0,0]
-        a = masked_array(n, mask=m).reshape(2,3)
-        b = masked_array(n, mask=m).reshape(3,2)
-        c = dot(a,b, True)
-        assert_equal(c.mask, [[1,1],[1,0]])
-        c = dot(a,b,False)
-        assert_equal(c, N.dot(a.filled(0), b.filled(0)))
+        b = ones(5)
+        m = [1,0,0,0,0]
+        d = masked_array(b,mask=m)
+        c = mr_[d,0,0,d]

@@ -15,6 +15,7 @@ import types
 
 import numpy
 from numpy import bool_, complex_, float_, int_, str_, object_
+from numpy import array as narray
 import numpy.core.numeric as numeric
 import numpy.core.numerictypes as ntypes
 from numpy.core.defchararray import chararray
@@ -27,10 +28,9 @@ ndarray = numeric.ndarray
 _byteorderconv = numpy.core.records._byteorderconv
 _typestr = ntypes._typestr
 
-import maskedarray as MA
-from maskedarray import masked, nomask, mask_or, filled, getmask, getmaskarray, \
-    masked_array, make_mask
-from maskedarray import MaskedArray
+import maskedarray
+from maskedarray import MaskedArray, masked, nomask, masked_array,\
+    make_mask, mask_or, getmask, getmaskarray, filled     
 from maskedarray.core import default_fill_value, masked_print_option
 
 import warnings
@@ -194,9 +194,12 @@ class MaskedRecords(MaskedArray, object):
         if attr in _names:
             _data = self._data
             _mask = self._fieldmask
-            obj = numeric.asarray(_data.__getattribute__(attr)).view(MaskedArray)
-            obj.__setmask__(_mask.__getattribute__(attr))
-            if (obj.ndim == 0) and obj._mask:
+#            obj = masked_array(_data.__getattribute__(attr), copy=False,
+#                               mask=_mask.__getattribute__(attr))
+            # Use a view in order to avoid the copy of the mask in MaskedArray.__new__
+            obj = narray(_data.__getattribute__(attr), copy=False).view(MaskedArray)
+            obj._mask = _mask.__getattribute__(attr)
+            if not obj.ndim and obj._mask:
                 return masked
             return obj
         raise AttributeError,"No attribute '%s' !" % attr
@@ -213,7 +216,7 @@ class MaskedRecords(MaskedArray, object):
                 exctype, value = sys.exc_info()[:2]
                 raise exctype, value
         else:
-            if attr not in list(self.dtype.names) + ['_mask']:
+            if attr not in list(self.dtype.names) + ['_mask','mask']:
                 return ret
             if newattr:         # We just added this one
                 try:            #  or this setattr worked on an internal
@@ -245,6 +248,9 @@ class MaskedRecords(MaskedArray, object):
         if isinstance(indx, str):           
             obj = _data[indx].view(MaskedArray)
             obj._set_mask(_localdict['_fieldmask'][indx])
+            # Force to nomask if the mask is empty
+            if not obj._mask.any():
+                obj._mask = nomask
             return obj
         # We want some elements ..
         # First, the data ........
@@ -309,6 +315,7 @@ class MaskedRecords(MaskedArray, object):
         else:
             for n in names:
                 fmask[n].flat = newmask
+        return
                 
     def _getmask(self):
         """Returns the mask of the mrecord: a record is masked when all the fields
@@ -435,7 +442,7 @@ def fromarrays(arraylist, dtype=None, shape=None, formats=None,
        
 
     """
-    arraylist = [MA.asarray(x) for x in arraylist]
+    arraylist = [masked_array(x) for x in arraylist]
     # Define/check the shape.....................
     if shape is None or shape == 0:
         shape = arraylist[0].shape
@@ -611,7 +618,7 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
     if varnames is None:
         varnames = _varnames
     # Get the data ..............................
-    _variables = MA.asarray([line.strip().split(delimitor) for line in f
+    _variables = masked_array([line.strip().split(delimitor) for line in f
                                   if line[0] != commentchar and len(line) > 1])
     (_, nfields) = _variables.shape
     # Try to guess the dtype ....................
@@ -643,7 +650,7 @@ set to 'fi', where `i` is the number of existing fields.
     _mask = mrecord._fieldmask
     if newfieldname is None or newfieldname in reserved_fields:
         newfieldname = 'f%i' % len(_data.dtype)
-    newfield = MA.asarray(newfield)
+    newfield = masked_array(newfield)
     # Get the new data ............
     # Create a new empty recarray
     newdtype = numeric.dtype(_data.dtype.descr + \
@@ -674,58 +681,23 @@ if __name__ == '__main__':
     from maskedarray.testutils import assert_equal
     if 1:
         d = N.arange(5)
-        m = MA.make_mask([1,0,0,1,1])
+        m = maskedarray.make_mask([1,0,0,1,1])
         base_d = N.r_[d,d[::-1]].reshape(2,-1).T
         base_m = N.r_[[m, m[::-1]]].T
-        base = MA.array(base_d, mask=base_m).T
+        base = masked_array(base_d, mask=base_m).T
         mrecord = fromarrays(base,dtype=[('a',N.float_),('b',N.float_)])
         mrec = MaskedRecords(mrecord.copy())
         #
-        mrec.a[3:] = 5
-        assert_equal(mrec.a, [0,1,2,5,5])
-        assert_equal(mrec.a._mask, [1,0,0,0,0])
-        #
-        mrec.b[3:] = masked
-        assert_equal(mrec.b, [4,3,2,1,0])
-        assert_equal(mrec.b._mask, [1,1,0,1,1])
-        #
-        mrec[:2] = masked
-        assert_equal(mrec._mask, [1,1,0,0,0])
-        mrec[-1] = masked
-        assert_equal(mrec._mask, [1,1,0,0,1])
-    if 1:
-        nrec = N.core.records.fromarrays(N.r_[[d,d[::-1]]],
-                                         dtype=[('a',N.float_),('b',N.float_)])
-        mrec = mrecord
-        #....................
-        mrecfr = fromrecords(nrec)
-        assert_equal(mrecfr.a, mrec.a)
-        assert_equal(mrecfr.dtype, mrec.dtype)
-        #....................
-        tmp = mrec[::-1] #.tolist()
-        mrecfr = fromrecords(tmp)
-        assert_equal(mrecfr.a, mrec.a[::-1])
-        #....................        
-        mrecfr = fromrecords(nrec.tolist(), names=nrec.dtype.names)
-        assert_equal(mrecfr.a, mrec.a)
-        assert_equal(mrecfr.dtype, mrec.dtype)
-    if 0:
-        assert_equal(mrec.a, MA.array(d,mask=m))
-        assert_equal(mrec.b, MA.array(d[::-1],mask=m[::-1]))
-        assert((mrec._fieldmask == N.core.records.fromarrays([m, m[::-1]])).all())
+    if 1:   
+        mrec = mrec.copy()
+        mrec.harden_mask()
+        assert(mrec._hardmask)
+        mrec._mask = nomask
         assert_equal(mrec._mask, N.r_[[m,m[::-1]]].all(0))
-        assert_equal(mrec.a[1], mrec[1].a)
-
-    if 0:
-        x = [(1.,10.,'a'),(2.,20,'b'),(3.14,30,'c'),(5.55,40,'d')]
-        desc = [('ffloat', N.float_), ('fint', N.int_), ('fstr', 'S10')] 
-        mr = MaskedRecords(x,dtype=desc)
-        mr[0] = masked
-        mr.ffloat[-1] = masked
-        #
-        mrlast = mr[-1]
-        assert(isinstance(mrlast,MaskedRecords))
-        assert(hasattr(mrlast,'ffloat'))
-        assert_equal(mrlast.ffloat, masked)
-        
+        mrec.soften_mask()
+        assert(not mrec._hardmask)
+        mrec.mask = nomask
+        tmp = mrec['b']._mask
+        assert(mrec['b']._mask is nomask)
+        assert_equal(mrec['a']._mask,mrec['b']._mask)   
         

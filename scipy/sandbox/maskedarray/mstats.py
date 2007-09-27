@@ -19,7 +19,7 @@ from numpy import array as narray
 import numpy.core.numeric as numeric
 from numpy.core.numeric import concatenate
 
-import maskedarray as MA
+import maskedarray
 from maskedarray.core import masked, nomask, MaskedArray, masked_array
 from maskedarray.extras import apply_along_axis, dot
 
@@ -391,4 +391,14 @@ def rsh(data, points=None):
     nlo = (data[:,None] < points[None,:] - h).sum(0)
     return (nhi-nlo) / (2.*n*h)
 
-    
+################################################################################
+if __name__ == '__main__':
+    from maskedarray.testutils import assert_almost_equal
+    if 1:
+        a = maskedarray.arange(1,101)
+        a[1::2] = masked
+        b = maskedarray.resize(a, (100,100))
+        assert_almost_equal(mquantiles(b), [25., 50., 75.])
+        assert_almost_equal(mquantiles(b, axis=0), maskedarray.resize(a,(3,100)))
+        assert_almost_equal(mquantiles(b, axis=1), 
+                            maskedarray.resize([24.9, 50., 75.1], (100,3)))        

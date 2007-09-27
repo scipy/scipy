@@ -20,7 +20,9 @@ from numpy.testing.utils import build_err_msg
 import maskedarray.testutils
 from maskedarray.testutils import *
 
-import maskedarray.core as MA
+import maskedarray
+from maskedarray import masked_array, masked, nomask
+
 #import maskedarray.mrecords
 #from maskedarray.mrecords import mrecarray, fromarrays, fromtextfile, fromrecords
 import maskedarray.mrecords
@@ -37,10 +39,10 @@ class test_mrecords(NumpyTestCase):
     def setup(self):       
         "Generic setup" 
         d = N.arange(5)
-        m = MA.make_mask([1,0,0,1,1])
+        m = maskedarray.make_mask([1,0,0,1,1])
         base_d = N.r_[d,d[::-1]].reshape(2,-1).T
         base_m = N.r_[[m, m[::-1]]].T
-        base = MA.array(base_d, mask=base_m)    
+        base = masked_array(base_d, mask=base_m)    
         mrecord = fromarrays(base.T, dtype=[('a',N.float_),('b',N.float_)])
         self.data = [d, m, mrecord]
         
@@ -48,8 +50,8 @@ class test_mrecords(NumpyTestCase):
         "Tests fields retrieval"
         [d, m, mrec] = self.data
         mrec = mrec.copy()
-        assert_equal(mrec.a, MA.array(d,mask=m))
-        assert_equal(mrec.b, MA.array(d[::-1],mask=m[::-1]))
+        assert_equal(mrec.a, masked_array(d,mask=m))
+        assert_equal(mrec.b, masked_array(d[::-1],mask=m[::-1]))
         assert((mrec._fieldmask == N.core.records.fromarrays([m, m[::-1]], dtype=mrec._fieldmask.dtype)).all())
         assert_equal(mrec._mask, N.r_[[m,m[::-1]]].all(0))
         assert_equal(mrec.a[1], mrec[1].a)
@@ -65,13 +67,13 @@ class test_mrecords(NumpyTestCase):
         mrecord.a = 1
         assert_equal(mrecord['a']._data, [1]*5)
         assert_equal(getmaskarray(mrecord['a']), [0]*5)
-        mrecord.b = MA.masked
+        mrecord.b = masked
         assert_equal(mrecord.b.mask, [1]*5)
         assert_equal(getmaskarray(mrecord['b']), [1]*5)
-        mrecord._mask = MA.masked
+        mrecord._mask = masked
         assert_equal(getmaskarray(mrecord['b']), [1]*5)
         assert_equal(mrecord['a']._mask, mrecord['b']._mask)
-        mrecord._mask = MA.nomask
+        mrecord._mask = nomask
         assert_equal(getmaskarray(mrecord['b']), [0]*5)
         assert_equal(mrecord['a']._mask, mrecord['b']._mask)   
         #

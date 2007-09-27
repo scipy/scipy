@@ -229,6 +229,17 @@ class test_ma(NumpyTestCase):
         assert_equal(x,y/a)
         assert_equal(xm,y/a)
         assert_equal(xm.mask, mask_or(mask_or(m,a.mask), (a==0))) 
+        #
+        (x, y, a10, m1, m2, xm, ym, z, zm, xf) = self.d
+        z = xm/ym
+        assert_equal(z._mask, [1,1,1,0,0,1,1,0,0,0,1,1])
+        assert_equal(z._data, [0.2,1.,1./3.,-1.,-pi/2.,-1.,5.,1.,1.,1.,2.,1.])
+        xm = xm.copy()
+        xm /= ym
+        assert_equal(xm._mask, [1,1,1,0,0,1,1,0,0,0,1,1])
+        assert_equal(xm._data, [1/5.,1.,1./3.,-1.,-pi/2.,-1.,5.,1.,1.,1.,2.,1.])
+        
+        
     #..........................
     def check_scalararithmetic(self):
         "Tests some scalar arithmetics on MaskedArrays."
@@ -479,6 +490,46 @@ class test_ma(NumpyTestCase):
 #        assert_not_equal(id(y._mask), id(x._mask))
         assert_not_equal(y._data.ctypes.data, x._data.ctypes.data)
         assert_not_equal(y._mask.ctypes.data, x._mask.ctypes.data)
+    #........................
+    def check_where(self):
+        "Test the where function"
+        (x, y, a10, m1, m2, xm, ym, z, zm, xf) = self.d
+        d = where(xm>2,xm,-9)
+        assert_equal(d, [-9.,-9.,-9.,-9., -9., 4., -9., -9., 10., -9., -9., 3.])
+        assert_equal(d._mask, xm._mask)
+        d = where(xm>2,-9,ym)
+        assert_equal(d, [5.,0.,3., 2., -1.,-9.,-9., -10., -9., 1., 0., -9.])
+        assert_equal(d._mask, [1,0,1,0,0,0,1,0,0,0,0,0])
+        d = where(xm>2, xm, masked)
+        assert_equal(d, [-9.,-9.,-9.,-9., -9., 4., -9., -9., 10., -9., -9., 3.])
+        tmp = xm._mask.copy()
+        tmp[(xm<=2).filled(True)] = True
+        assert_equal(d._mask, tmp)
+        #
+        ixm = xm.astype(int_)
+        d = where(ixm>2, ixm, masked)
+        assert_equal(d, [-9,-9,-9,-9, -9, 4, -9, -9, 10, -9, -9, 3])
+        assert_equal(d.dtype, ixm.dtype)
+        #
+        x = arange(10)
+        x[3] = masked
+        c = x >= 8
+        z = where(c , x, masked)
+        assert z.dtype is x.dtype
+        assert z[3] is masked
+        assert z[4] is masked
+        assert z[7] is masked
+        assert z[8] is not masked
+        assert z[9] is not masked
+        assert_equal(x,z)
+        #
+        z = where(c , masked, x)
+        assert z.dtype is x.dtype
+        assert z[3] is masked
+        assert z[4] is not masked
+        assert z[7] is not masked
+        assert z[8] is masked
+        assert z[9] is masked
         
     #........................
     def check_oddfeatures_1(self):
@@ -499,23 +550,6 @@ class test_ma(NumpyTestCase):
         c = x >= 8
         assert count(where(c,masked,masked)) == 0
         assert shape(where(c,masked,masked)) == c.shape
-        #
-        z = where(c , x, masked)
-        assert z.dtype is x.dtype
-        assert z[3] is masked
-        assert z[4] is masked
-        assert z[7] is masked
-        assert z[8] is not masked
-        assert z[9] is not masked
-        assert_equal(x,z)
-        #
-        z = where(c , masked, x)
-        assert z.dtype is x.dtype
-        assert z[3] is masked
-        assert z[4] is not masked
-        assert z[7] is not masked
-        assert z[8] is masked
-        assert z[9] is masked
         #
         z = masked_where(c, x)
         assert z.dtype is x.dtype
@@ -631,6 +665,8 @@ class test_ma(NumpyTestCase):
         y = x * masked
         assert_equal(y.shape, x.shape)
         assert_equal(y._mask, [True, True])
+        y = x[0] * masked
+        assert y is masked
         y = x + masked
         assert_equal(y.shape, x.shape)
         assert_equal(y._mask, [True, True])
@@ -734,6 +770,19 @@ class test_ma(NumpyTestCase):
         data = masked_array([1,2,3],fill_value=-999)
         series = data[[0,2,1]]
         assert_equal(series._fill_value, data._fill_value)
+    #
+    def check_asarray(self):
+        (x, y, a10, m1, m2, xm, ym, z, zm, xf) = self.d
+        xmm = asarray(xm)
+        assert_equal(xmm._data, xm._data)
+        assert_equal(xmm._mask, xm._mask)
+    #
+    def check_fix_invalid(self):
+        "Checks fix_invalid."
+        data = masked_array(numpy.sqrt([-1., 0., 1.]), mask=[0,0,1])
+        data_fixed = fix_invalid(data)
+        assert_equal(data_fixed._data, [data.fill_value, 0., 1.])
+        assert_equal(data_fixed._mask, [1., 0., 1.])    
         
 #...............................................................................
         
@@ -784,6 +833,7 @@ class test_ufuncs(NumpyTestCase):
         assert(sometrue(a,axis=0))
         assert_equal(sum(a[:3],axis=0), 0)
         assert_equal(product(a,axis=0), 0)
+        assert_equal(add.reduce(a), pi)
     #........................
     def test_minmax(self):
         "Tests extrema on MaskedArrays."
@@ -929,7 +979,7 @@ class test_array_methods(NumpyTestCase):
         assert( x[3] is masked)
         assert( x[4] is masked)
         x[[1,4]] = [10,40]
-        assert( x.mask is not m)
+#        assert( x.mask is not m)
         assert( x[3] is masked)
         assert( x[4] is not masked)
         assert_equal(x, [0,10,2,-1,40])        
@@ -1202,7 +1252,7 @@ class test_array_methods(NumpyTestCase):
         assert_equal(a.shape,(1,5))
         assert_equal(a._mask.shape, a.shape)
         # Checs that small_mask is preserved
-        a = array([1,2,3,4],mask=[0,0,0,0],small_mask=False)
+        a = array([1,2,3,4],mask=[0,0,0,0],shrink=False)
         assert_equal(a.ravel()._mask, [0,0,0,0])
         
     def check_reshape(self):
@@ -1217,15 +1267,11 @@ class test_array_methods(NumpyTestCase):
         
     def check_compressed(self):
         "Tests compressed"
-        a = array([1,2,3,4],mask=[0,0,0,0],small_mask=False)
+        a = array([1,2,3,4],mask=[0,0,0,0])
         b = a.compressed()
         assert_equal(b, a)
-        assert_equal(b._mask, a._mask)
+        assert_equal(b._mask, nomask)
         a[0] = masked
-        b = a.compressed()
-        assert_equal(b._data, [2,3,4])
-        assert_equal(b._mask, [0,0,0])
-        a._smallmask = True
         b = a.compressed()
         assert_equal(b._data, [2,3,4])
         assert_equal(b._mask, nomask)

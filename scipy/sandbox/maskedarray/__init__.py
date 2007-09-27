@@ -17,6 +17,7 @@ from core import *
 import extras
 from extras import *
 
+import _nfcore
 
 __all__ = ['core', 'extras']
 __all__ += core.__all__
