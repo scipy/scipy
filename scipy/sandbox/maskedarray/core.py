@@ -2653,7 +2653,7 @@ Notes
 
 def arange(stop, start=None, step=1, dtype=None):
     "maskedarray version of the numpy function."
-    return numpy.arange(start, stop, step, dtype).view(MaskedArray)
+    return numpy.arange(stop, start, step, dtype).view(MaskedArray)
 arange.__doc__ = numpy.arange.__doc__
 
 def inner(a, b):
