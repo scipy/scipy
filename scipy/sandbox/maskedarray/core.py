@@ -362,9 +362,10 @@ where invalid values are pre-masked.
         d1 = get_data(a)
         if self.domain is not None:
             dm = narray(self.domain(d1), copy=False)
-            m = mask_or(m, narray(self.domain(d1)))
+            m = numpy.logical_or(m, dm)
             # The following two lines control the domain filling methods.
             d1 = d1.copy()
+#            d1[dm] = self.fill
             numpy.putmask(d1, dm, self.fill)
         # Take care of the masked singletong first ...
         if not m.ndim and m:
@@ -1252,6 +1253,13 @@ If `value` is masked, masks those locations."""
         if self._sharedmask:
             self._mask = self._mask.copy()
             self._sharedmask = False
+            
+    def shrink_mask(self):
+        "Reduces a mask to nomask when possible."
+        m = self._mask
+        if m.ndim and not m.any():
+            self._mask = nomask
+            
     #............................................
     def _get_data(self):
         "Returns the current data (as a view of the original underlying data)>"
@@ -2159,7 +2167,7 @@ masked = masked_singleton
 masked_array = MaskedArray
 
 def array(data, dtype=None, copy=False, order=False, mask=nomask, subok=True,
-          keep_mask=True, hard_mask=False, fill_value=None):
+          keep_mask=True, hard_mask=False, fill_value=None, shrink=True):
     """array(data, dtype=None, copy=True, order=False, mask=nomask,
              keep_mask=True, shrink=True, fill_value=None)
 Acts as shortcut to MaskedArray, with options in a different order for convenience.
@@ -2778,14 +2786,32 @@ def loads(strg):
 
 ###############################################################################
 
-#if __name__ == '__main__':
-    #from maskedarray.testutils import assert_equal, assert_almost_equal
+if __name__ == '__main__':
+    from maskedarray.testutils import assert_equal, assert_almost_equal
     
-    #xm = array(numpy.random.uniform(-1,1,25))
-    #xm[xm>0.5] = masked
-    #xm.fill_value = -999
-    ##
-    #z = 3//where(xm.mask,0,xm)
-    #assert_equal(z._mask, numpy.logical_or(xm==0,xm._mask))
-    #assert_equal(z._data[xm._mask], 1)
-
+    # Small arrays ..................................
+    xs = numpy.random.uniform(-1,1,6).reshape(2,3)
+    ys = numpy.random.uniform(-1,1,6).reshape(2,3)
+    zs = xs + 1j * ys
+    m1 = [[True, False, False], [False, False, True]]
+    m2 = [[True, False, True], [False, False, True]]
+    nmxs = numpy.ma.array(xs, mask=m1)
+    nmys = numpy.ma.array(ys, mask=m2)
+    nmzs = numpy.ma.array(zs, mask=m1)
+    mmxs = array(xs, mask=m1)
+    mmys = array(ys, mask=m2)
+    mmzs = array(zs, mask=m1)
+    # Big arrays ....................................
+    xl = numpy.random.uniform(-1,1,100*100).reshape(100,100)
+    yl = numpy.random.uniform(-1,1,100*100).reshape(100,100)
+    zl = xl + 1j * yl
+    maskx = xl > 0.8
+    masky = yl < -0.8
+    nmxl = numpy.ma.array(xl, mask=maskx)
+    nmyl = numpy.ma.array(yl, mask=masky)
+    nmzl = numpy.ma.array(zl, mask=maskx)
+    mmxl = array(xl, mask=maskx, shrink=True)
+    mmyl = array(yl, mask=masky, shrink=True)
+    mmzl = array(zl, mask=maskx, shrink=True)
+    #
+    z = log(mmxl)

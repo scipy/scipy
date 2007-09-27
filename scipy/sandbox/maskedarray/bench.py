@@ -72,17 +72,17 @@ def compare_functions_1v(func, nloop=500, test=True,
     if test:
         assert_equal(filled(eval("numpy.ma.%s(nmxs)" % funcname),0),
                      filled(eval("maskedarray.%s(mmxs)" % funcname),0))
-    for (module, data) in zip(("numpy", "numpy.ma","maskedarray","maskedarray._nfcore"),
-                              ("xs","nmxs","mmxs","mmxs")):
-        timer("%(module)s.%(funcname)s(%(data)s)" % locals())
+    for (module, data) in zip(("numpy", "numpy.ma","maskedarray"),
+                              ("xs","nmxs","mmxs")):
+        timer("%(module)s.%(funcname)s(%(data)s)" % locals(), v="%11s" % module, nloop=nloop)
     #
     print "%s on large arrays" % funcname
     if test:
         assert_equal(filled(eval("numpy.ma.%s(nmxl)" % funcname),0), 
                      filled(eval("maskedarray.%s(mmxl)" % funcname),0))
-    for (module, data) in zip(("numpy", "numpy.ma","maskedarray","maskedarray._nfcore"),
-                              ("xl","nmxl","mmxl","mmxl")):
-        timer("%(module)s.%(funcname)s(%(data)s)" % locals())
+    for (module, data) in zip(("numpy", "numpy.ma","maskedarray"),
+                              ("xl","nmxl","mmxl")):
+        timer("%(module)s.%(funcname)s(%(data)s)" % locals(), v="%11s" % module, nloop=nloop)
     return
 
 def compare_methods(methodname, args, vars='x', nloop=500, test=True,
@@ -115,17 +115,17 @@ def compare_functions_2v(func, nloop=500, test=True,
     if test:
         assert_equal(filled(eval("numpy.ma.%s(nmxs,nmys)" % funcname),0), 
                      filled(eval("maskedarray.%s(mmxs,mmys)" % funcname),0))
-    for (module, data) in zip(("numpy", "numpy.ma","maskedarray","maskedarray._nfcore"),
-                              ("xs,ys","nmxs,nmys","mmxs,mmys","mmxs,mmys")):
-        timer("%(module)s.%(funcname)s(%(data)s)" % locals())
+    for (module, data) in zip(("numpy", "numpy.ma","maskedarray"),
+                              ("xs,ys","nmxs,nmys","mmxs,mmys")):
+        timer("%(module)s.%(funcname)s(%(data)s)" % locals(), v="%11s" % module, nloop=nloop)
     #
     print "%s on large arrays" % funcname
     if test:
         assert_equal(filled(eval("numpy.ma.%s(nmxl, nmyl)" % funcname),0), 
                      filled(eval("maskedarray.%s(mmxl, mmyl)" % funcname),0))
-    for (module, data) in zip(("numpy", "numpy.ma","maskedarray","maskedarray._nfcore"),
-                              ("xl,yl","nmxl,nmyl","mmxl,mmyl","mmxl,mmyl")):
-        timer("%(module)s.%(funcname)s(%(data)s)" % locals())
+    for (module, data) in zip(("numpy", "numpy.ma","maskedarray"),
+                              ("xl,yl","nmxl,nmyl","mmxl,mmyl")):
+        timer("%(module)s.%(funcname)s(%(data)s)" % locals(), v="%11s" % module, nloop=nloop)
     return
 
 
