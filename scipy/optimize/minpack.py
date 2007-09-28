@@ -88,6 +88,8 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
 
   See also:
 
+      scikits.openopt, which offers a unified syntax to call this and other solvers
+
       fmin, fmin_powell, fmin_cg,
 	     fmin_bfgs, fmin_ncg -- multivariate local optimizers
       leastsq -- nonlinear least squares minimizer
