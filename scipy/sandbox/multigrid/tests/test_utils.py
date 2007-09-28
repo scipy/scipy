@@ -7,7 +7,7 @@ from scipy.sparse import csr_matrix
 
 
 set_package_path()
-from scipy.multigrid.utils import infinity_norm,diag_sparse
+from scipy.sandbox.multigrid.utils import infinity_norm,diag_sparse
 restore_path()
 
 

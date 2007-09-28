@@ -6,9 +6,9 @@ from scipy.sparse import spdiags,csr_matrix,lil_matrix
 import numpy
 
 set_package_path()
-import scipy.multigrid
-from scipy.multigrid.coarsen import sa_strong_connections,sa_constant_interpolation
-from scipy.multigrid.multilevel import poisson_problem1D,poisson_problem2D
+import scipy.sandbox.multigrid
+from scipy.sandbox.multigrid.coarsen import sa_strong_connections,sa_constant_interpolation
+from scipy.sandbox.multigrid.multilevel import poisson_problem1D,poisson_problem2D
 restore_path()
 
 
@@ -38,7 +38,6 @@ def reference_sa_constant_interpolation(A,epsilon):
 
     aggregates = empty(n,dtype=A.indices.dtype)
     aggregates[:] = -1
-
 
     # Pass #1
     for i,row in enumerate(S):
@@ -120,17 +119,10 @@ class test_sa_strong_connections(NumpyTestCase):
                 S_expected = reference_sa_strong_connections(A,epsilon)
                 assert_array_equal(S_result.todense(),S_expected.todense())
 
-##    def check_sample_data(self):
-##        for filename in all_matrices:
-##            A = open_matrix(filename)
 
-
-S_result = None
-S_expected = None
 class test_sa_constant_interpolation(NumpyTestCase):
     def check_random(self):
         numpy.random.seed(0)
-
         for N in [2,3,5,10]:
             A = csr_matrix(rand(N,N))
             for epsilon in [0.0,0.1,0.5,0.8,1.0]:
@@ -154,6 +146,15 @@ class test_sa_constant_interpolation(NumpyTestCase):
                 S_expected = reference_sa_constant_interpolation(A,epsilon)
                 assert_array_equal(S_result.todense(),S_expected.todense())
 
+    def check_sample_data(self):
+        from examples import all_examples,read_matrix
+
+        for filename in all_examples:
+            A = read_matrix(filename)            
+            for epsilon in [0.0,0.08,0.51,1.0]:
+                S_result   = sa_constant_interpolation(A,epsilon)
+                S_expected = reference_sa_constant_interpolation(A,epsilon)
+                assert_array_equal((S_result - S_expected).nnz,0)
 
 if __name__ == '__main__':
     NumpyTest().run()

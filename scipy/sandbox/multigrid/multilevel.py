@@ -2,14 +2,13 @@ __all__ = ['poisson_problem1D','poisson_problem2D',
            'ruge_stuben_solver','smoothed_aggregation_solver',
            'multilevel_solver']
 
-
 from numpy.linalg import norm
 from numpy import zeros,zeros_like,array
 import scipy
 import numpy
 
 from coarsen import sa_interpolation,rs_interpolation
-from relaxation import gauss_seidel,jacobi 
+from relaxation import gauss_seidel,jacobi,sor
 from utils import infinity_norm
 
 
@@ -59,7 +58,7 @@ def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
         
     return multilevel_solver(As,Ps)
 
-def smoothed_aggregation_solver(A,max_levels=10,max_coarse=500,epsilon=0.08):
+def smoothed_aggregation_solver(A,blocks=None,max_levels=10,max_coarse=500,epsilon=0.08,omega=4.0/3.0):
     """
     Create a multilevel solver using Smoothed Aggregation (SA)
 
@@ -73,7 +72,7 @@ def smoothed_aggregation_solver(A,max_levels=10,max_coarse=500,epsilon=0.08):
     Ps = []
     
     while len(As) < max_levels  and A.shape[0] > max_coarse:
-        P = sa_interpolation(A,epsilon=epsilon*0.5**(len(As)-1))
+        P = sa_interpolation(A,blocks=blocks,epsilon=epsilon*0.5**(len(As)-1),omega=omega)
         #P = sa_interpolation(A,epsilon=0.0)
 
         A = (P.T.tocsr() * A) * P     #galerkin operator
@@ -172,28 +171,42 @@ class multilevel_solver:
 
     def presmoother(self,A,x,b):
         gauss_seidel(A,x,b,iterations=1,sweep="forward")
+        gauss_seidel(A,x,b,iterations=1,sweep="backward")
+        #sor(A,x,b,omega=1.85,iterations=1,sweep="backward")
+
         #x += 4.0/(3.0*infinity_norm(A))*(b - A*x)
     
     def postsmoother(self,A,x,b):
+        #sor(A,x,b,omega=1.85,iterations=1,sweep="forward")
         gauss_seidel(A,x,b,iterations=1,sweep="forward")
-        #gauss_seidel(A,x,b,iterations=1,sweep="backward")
+        gauss_seidel(A,x,b,iterations=1,sweep="backward")
         #x += 4.0/(3.0*infinity_norm(A))*(b - A*x)
 
 
 
 if __name__ == '__main__':
     from scipy import *
-    A = poisson_problem2D(200)
+    #A = poisson_problem2D(100)
     #A = io.mmread("rocker_arm_surface.mtx").tocsr()
+    #A = io.mmread("9pt-100x100.mtx").tocsr()
+    A = io.mmread("/home/nathan/Desktop/9pt/9pt-100x100.mtx").tocsr()
+    #A = io.mmread("/home/nathan/Desktop/BasisShift_W_EnergyMin_Luke/9pt-5x5.mtx").tocsr()
 
-    ml = smoothed_aggregation_solver(A)
+    ml = smoothed_aggregation_solver(A,max_coarse=100,max_levels=3)
     #ml = ruge_stuben_solver(A)
 
     x = rand(A.shape[0])
     b = zeros_like(x)
     #b = rand(A.shape[0])
     
-    x_sol,residuals = ml.solve(b,x0=x,maxiter=40,tol=1e-10,return_residuals=True)
+    if True:
+        x_sol,residuals = ml.solve(b,x0=x,maxiter=30,tol=1e-12,return_residuals=True)
+    else:
+        residuals = []
+        def add_resid(x):
+            residuals.append(linalg.norm(b - A*x))
+        A.psolve = ml.psolve
+        x_sol = linalg.cg(A,b,x0=x,maxiter=12,tol=1e-100,callback=add_resid)[0]
 
     residuals = array(residuals)/residuals[0]
 

@@ -7,8 +7,8 @@ from scipy.sparse import spdiags
 
 
 set_package_path()
-import scipy.multigrid
-from scipy.multigrid.relaxation import polynomial_smoother,gauss_seidel,jacobi
+import scipy.sandbox.multigrid
+from scipy.sandbox.multigrid.relaxation import polynomial_smoother,gauss_seidel,jacobi
 restore_path()
 
 

@@ -1,12 +1,12 @@
 import numpy,scipy,scipy.sparse
-from numpy import sqrt,ravel,diff,zeros,zeros_like,inner,concatenate
+from numpy import sqrt,ravel,diff,zeros,zeros_like,inner,concatenate,asarray
 from scipy.sparse import csr_matrix,coo_matrix
 
 from relaxation import gauss_seidel
 from multilevel import multilevel_solver
 from coarsen import sa_constant_interpolation
-from utils import infinity_norm
-
+#from utils import infinity_norm
+from utils import approximate_spectral_radius
 
 def fit_candidate(I,x):
     """
@@ -18,9 +18,11 @@ def fit_candidate(I,x):
     In otherwords, find a prolongator Q with orthonormal columns so that
     x is represented exactly on the coarser level by R.
     """
+    x = asarray(x)
     Q = csr_matrix((x.copy(),I.indices,I.indptr),dims=I.shape,check=False)
     R = sqrt(ravel(csr_matrix((x*x,I.indices,I.indptr),dims=I.shape,check=False).sum(axis=0)))  #column 2-norms  
-    Q.data *= (1.0/R)[Q.indices]
+
+    Q.data *= (1.0/R)[Q.indices]  #normalize columns of Q
    
     #print "norm(R)",scipy.linalg.norm(R)
     #print "min(R),max(R)",min(R),max(R)
@@ -28,6 +30,60 @@ def fit_candidate(I,x):
     #print "norm(Q*R - x)",scipy.linalg.norm(Q*R - x)
     #print "norm(x - Q*Q.Tx)",scipy.linalg.norm(x - Q*(Q.T*x))
     return Q,R
+
+
+def fit_candidates(AggOp,candidates):
+    K = len(candidates)
+
+    N_fine,N_coarse = AggOp.shape
+
+    if len(candidates[0]) == K*N_fine:
+        #see if fine space has been expanded (all levels except for first)
+        AggOp = csr_matrix((AggOp.data.repeat(K),AggOp.indices.repeat(K),arange(K*N_fine + 1)),dims=(K*N_fine,N_coarse))
+        N_fine = K*N_fine
+
+    R = zeros((K*N_coarse,K))
+
+    candidate_matrices = []
+    for i,c in enumerate(candidates):
+        X = csr_matrix((c.copy(),AggOp.indices,AggOp.indptr),dims=AggOp.shape)
+       
+        #TODO optimize this  
+
+        #orthogonalize X against previous
+        for j,A in enumerate(candidate_matrices):
+            D_AtX = csr_matrix((A.data*X.data,X.indices,X.indptr),dims=X.shape).sum(axis=0).A.flatten() #same as diagonal of A.T * X            
+            R[j::K,i] = D_AtX
+            X.data -= D_AtX[X.indices] * A.data
+
+            #AtX = csr_matrix(A.T.tocsr() * X
+            #R[j::K,i] = AtX.data
+            #X = X - A * AtX 
+    
+        #normalize X
+        XtX = X.T.tocsr() * X
+        col_norms = sqrt(XtX.sum(axis=0)).flatten()
+        R[i::K,i] = col_norms
+        col_norms = 1.0/col_norms
+        col_norms[isinf(col_norms)] = 0
+        X.data *= col_norms[X.indices]
+
+        candidate_matrices.append(X)
+
+
+    Q_indptr  = K*AggOp.indptr
+    Q_indices = (K*AggOp.indices).repeat(K)
+    for i in range(K):
+        Q_indices[i::K] += i
+    Q_data = empty(N_fine * K)
+    for i,X in enumerate(candidate_matrices):
+        Q_data[i::K] = X.data
+    Q = csr_matrix((Q_data,Q_indices,Q_indptr),dims=(N_fine,K*N_coarse))
+
+    coarse_candidates = [R[:,i] for i in range(K)]
+
+    return Q,coarse_candidates
+
 
 
 ##def orthonormalize_candidate(I,x,basis):
@@ -110,15 +166,18 @@ def orthonormalize_prolongator(P_l,x_l,W_l,W_m):
 
 def smoothed_prolongator(P,A):
     #just use Richardson for now
-    #omega = 4.0/(3.0*infinity_norm(A))
+    #omega = 4.0/(3.0*approximate_spectral_radius(A))
     #return P - omega*(A*P)
-    #return P
+    #return P  #TEST
+    
     D = diag_sparse(A)
     D_inv_A = diag_sparse(1.0/D)*A
-    omega = 4.0/(3.0*infinity_norm(D_inv_A))
+    omega = 4.0/(3.0*approximate_spectral_radius(D_inv_A))
+    print "spectral radius",approximate_spectral_radius(D_inv_A)
     D_inv_A *= omega
     return P - D_inv_A*P
  
+
 
 def sa_hierarchy(A,Ws,x):
     """
@@ -138,7 +197,8 @@ def sa_hierarchy(A,Ws,x):
     Ps = []
 
     for W in Ws:
-        P,x = fit_candidate(W,x)
+        #P,x = fit_candidate(W,x)
+        P,x = fit_candidates(W,x)
         I   = smoothed_prolongator(P,A)  
         A   = I.T.tocsr() * A * I
         As.append(A)
@@ -152,59 +212,57 @@ def make_bridge(I,N):
     return csr_matrix((I.data,I.indices,ptr),dims=(N,I.shape[1]),check=False)
 
 class adaptive_sa_solver:
-    def __init__(self,A,options=None):
+    def __init__(self,A,options=None,max_levels=10,max_coarse=100,max_candidates=1,mu=5,epsilon=0.1):
         self.A = A
 
         self.Rs = [] 
-        self.__construct_hierarchy(A)
-
-    def __construct_hierarchy(self,A):
+        
         #if self.A.shape[0] <= self.opts['coarse: max size']:
         #    raise ValueError,'small matrices not handled yet'
         
-        x,AggOps = self.__initialization_stage(A) #first candidate
+        x,AggOps = self.__initialization_stage(A,max_levels=max_levels,max_coarse=max_coarse,mu=mu,epsilon=epsilon) #first candidate
+        
         Ws = AggOps
 
-        #x[:] = 1  #TEST
-    
         self.candidates = [x]
-        #self.candidates = [1.0/D.data]
 
         #create SA using x here
-        As,Is,Ps = sa_hierarchy(A,Ws,x)
+        As,Is,Ps = sa_hierarchy(A,Ws,self.candidates)
 
-        for i in range(0):
-            x           = self.__develop_candidate(A,As,Is,Ps,Ws,AggOps)
-            #if i == 0:
-            #    x = arange(20).repeat(20).astype(float)
-            #elif i == 1:
-            #    x = arange(20).repeat(20).astype(float)
-            #    x = numpy.ravel(transpose(x.reshape((20,20))))
-
-            As,Is,Ps,Ws = self.__augment_cycle(A,As,Ps,Ws,AggOps,x)
-             
+        for i in range(max_candidates - 1):
+            x = self.__develop_candidate(A,As,Is,Ps,Ws,AggOps,mu=mu)    
+            
             self.candidates.append(x)
-        
+
+            #if i == 0:
+            #    x = arange(50).repeat(50).astype(float)
+            #elif i == 1:
+            #    x = arange(50).repeat(50).astype(float)
+            #    x = numpy.ravel(transpose(x.reshape((50,50))))
+           
+            #As,Is,Ps,Ws = self.__augment_cycle(A,As,Ps,Ws,AggOps,x)             
+            As,Is,Ps = sa_hierarchy(A,AggOps,self.candidates)
+   
+            #random.seed(0)
+            #solver = multilevel_solver(As,Is)
+            #x = solver.solve(zeros(A.shape[0]), x0=rand(A.shape[0]), tol=1e-12, maxiter=30)
+            #self.candidates.append(x)
+
         self.Ps = Ps 
         self.solver = multilevel_solver(As,Is)
         self.AggOps = AggOps
                 
 
 
-    def __develop_candidate(self,A,As,Is,Ps,Ws,AggOps):
+    def __develop_candidate(self,A,As,Is,Ps,Ws,AggOps,mu):
+        #scipy.random.seed(0)  #TEST
         x = scipy.rand(A.shape[0])
         b = zeros_like(x)
 
-        
-        #x = arange(200).repeat(200).astype(float)
-        #x[:] = 1 #TEST
-
-        mu = 5
- 
         solver = multilevel_solver(As,Is)
 
-        for n in range(mu):
-            x = solver.solve(b, x0=x, tol=1e-8, maxiter=1)
+        x = solver.solve(b, x0=x, tol=1e-10, maxiter=mu)
+    
         #TEST FOR CONVERGENCE HERE
  
         A_l,P_l,W_l,x_l = As[0],Ps[0],Ws[0],x
@@ -271,18 +329,15 @@ class adaptive_sa_solver:
         return new_As,new_Is,new_Ps,new_Ws
 
 
-    def __initialization_stage(self,A):
-        max_levels = 10
-        max_coarse = 50
-
+    def __initialization_stage(self,A,max_levels,max_coarse,mu,epsilon):
         AggOps = []
         Is     = []
 
         # aSA parameters 
-        mu      = 5    # number of test relaxation iterations
-        epsilon = 0.1  # minimum acceptable relaxation convergence factor 
+        # mu      - number of test relaxation iterations
+        # epsilon - minimum acceptable relaxation convergence factor 
         
-        scipy.random.seed(0) 
+        #scipy.random.seed(0) #TEST
 
         #step 1
         A_l = A
@@ -291,15 +346,15 @@ class adaptive_sa_solver:
         
         #step 2
         b = zeros_like(x)
-        gauss_seidel(A_l,x,b,iterations=mu)
+        gauss_seidel(A_l,x,b,iterations=mu,sweep='symmetric')
         #step 3
         #test convergence rate here 
       
         As = [A]
 
         while len(AggOps) + 1 < max_levels  and A_l.shape[0] > max_coarse:
-            W_l   = sa_constant_interpolation(A_l,epsilon=0.08*0.5**(len(AggOps)-1))           #step 4b  #TEST
-            #W_l   = sa_constant_interpolation(A_l,epsilon=0)           #step 4b  #TEST
+            #W_l   = sa_constant_interpolation(A_l,epsilon=0.08*0.5**(len(AggOps)-1))           #step 4b  #TEST
+            W_l   = sa_constant_interpolation(A_l,epsilon=0)              #step 4b
             P_l,x = fit_candidate(W_l,x)                                  #step 4c  
             I_l   = smoothed_prolongator(P_l,A_l)                         #step 4d
             A_l   = I_l.T.tocsr() * A_l * I_l                             #step 4e
@@ -312,10 +367,10 @@ class adaptive_sa_solver:
 
             if not skip_f_to_i:
                 print "."
-                x_hat = x.copy()                                        #step 4g
-                gauss_seidel(A_l,x,zeros_like(x),iterations=mu)         #step 4h
+                x_hat = x.copy()                                                   #step 4g
+                gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')  #step 4h
                 x_A_x = inner(x,A_l*x) 
-                if (x_A_x/inner(x_hat,A_l*x_hat))**(1.0/mu) < epsilon:  #step 4i
+                if (x_A_x/inner(x_hat,A_l*x_hat))**(1.0/mu) < epsilon:             #step 4i
                     print "sufficient convergence, skipping"
                     skip_f_to_i = True
                     if x_A_x == 0:       
@@ -323,7 +378,7 @@ class adaptive_sa_solver:
         
         #update fine-level candidate
         for A_l,I in reversed(zip(As[1:],Is)):
-            gauss_seidel(A_l,x,zeros_like(x),iterations=mu)         #TEST
+            gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')         #TEST
             x = I * x
         
         gauss_seidel(A,x,b,iterations=mu)         #TEST
@@ -336,23 +391,39 @@ class adaptive_sa_solver:
 from scipy import *
 from utils import diag_sparse
 from multilevel import poisson_problem1D,poisson_problem2D
-#A = poisson_problem2D(100)
-A = io.mmread("tests/sample_data/laplacian_40_3dcube.mtx").tocsr()
+A = poisson_problem2D(50)
+#A = io.mmread("tests/sample_data/laplacian_41_3dcube.mtx").tocsr()
+#A = io.mmread("laplacian_40_3dcube.mtx").tocsr()
+#A = io.mmread("/home/nathan/Desktop/9pt/9pt-100x100.mtx").tocsr()
+#A = io.mmread("/home/nathan/Desktop/BasisShift_W_EnergyMin_Luke/9pt-5x5.mtx").tocsr()
 
 #A = A*A
 #D = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
 #A = D * A * D
 #A = io.mmread("nos2.mtx").tocsr()
-asa = adaptive_sa_solver(A)
+asa = adaptive_sa_solver(A,max_candidates=1)
+#x = arange(A.shape[0]).astype('d') + 1
+scipy.random.seed(0)  #TEST
 x = rand(A.shape[0])
 b = zeros_like(x)
 
 
 print "solving"
-x_sol,residuals = asa.solver.solve(b,x,tol=1e-12,maxiter=30,return_residuals=True)
+#x_sol,residuals = asa.solver.solve(b,x,tol=1e-8,maxiter=30,return_residuals=True)
+if True:
+    x_sol,residuals = asa.solver.solve(b,x0=x,maxiter=10,tol=1e-12,return_residuals=True)
+else:
+    residuals = []
+    def add_resid(x):
+        residuals.append(linalg.norm(b - A*x))
+    A.psolve = asa.solver.psolve
+    x_sol = linalg.cg(A,b,x0=x,maxiter=20,tol=1e-100,callback=add_resid)[0]
 residuals = array(residuals)/residuals[0]
 print "residuals ",residuals
+print "mean convergence factor",(residuals[-1]/residuals[0])**(1.0/len(residuals))
+print "last convergence factor",residuals[-1]/residuals[-2]
 
+print
 print asa.solver
 
 print "constant Rayleigh quotient",dot(ones(A.shape[0]),A*ones(A.shape[0]))/float(A.shape[0])
