@@ -146,15 +146,15 @@ class test_sa_constant_interpolation(NumpyTestCase):
                 S_expected = reference_sa_constant_interpolation(A,epsilon)
                 assert_array_equal(S_result.todense(),S_expected.todense())
 
-    def check_sample_data(self):
-        from examples import all_examples,read_matrix
-
-        for filename in all_examples:
-            A = read_matrix(filename)            
-            for epsilon in [0.0,0.08,0.51,1.0]:
-                S_result   = sa_constant_interpolation(A,epsilon)
-                S_expected = reference_sa_constant_interpolation(A,epsilon)
-                assert_array_equal((S_result - S_expected).nnz,0)
+##    def check_sample_data(self):
+##        from examples import all_examples,read_matrix
+##
+##        for filename in all_examples:
+##            A = read_matrix(filename)            
+##            for epsilon in [0.0,0.08,0.51,1.0]:
+##                S_result   = sa_constant_interpolation(A,epsilon)
+##                S_expected = reference_sa_constant_interpolation(A,epsilon)
+##                assert_array_equal((S_result - S_expected).nnz,0)
 
 if __name__ == '__main__':
     NumpyTest().run()
