@@ -17,51 +17,88 @@ zipexts = (".gz",".bz2")
 file_openers = {".gz":gzip.open, ".bz2":bz2.BZ2File, None:file}
 
 def iszip(filename):
-    """ Is this filename a zip file.
+    """Is filename a zip file.
 
-    :Returns: ``bool``
+    *Parameters*:
+
+        filename : {string}
+            Filename to test.
+            
+    *Returns*:
+
+        bool
+            Results of test.
+    
     """
-    _, ext = path(filename).splitext()
+    
+    _tmp, ext = path(filename).splitext()
     return ext in zipexts
 
 def unzip(filename):
-    """ Unzip the given file into another file.  Return the new file's name.
+    """Unzip filename into another file.
 
-    :Returns: ``string``
+    *Parameters*:
+
+        filename : {string}
+            Filename to unzip.
+            
+    *Returns*:
+
+        string
+            Name of the unzipped file.
+            
     """
+    
     if not iszip(filename):
         raise ValueError("file %s is not zipped"%filename)
     unzip_name, zipext = splitzipext(filename)
     opener = file_openers[zipext]
-    outfile = file(unzip_name,'w')
+    outfile = file(unzip_name, 'w')
     outfile.write(opener(filename).read())
     outfile.close()
     return unzip_name
 
 def iswritemode(mode):
-    """ Test if the given mode will open a file for writing.
+    """Test if the given mode will open a file for writing.
 
-    :Parameters:
-        `mode` : string
-            The mode to be checked
+    *Parameters*:
 
-    :Returns: ``bool``
+        mode : {string}
+            The mode to be checked.
+
+    *Returns*:
+
+        bool
+            Result of test.
+
     """
+
     return mode.find("w")>-1 or mode.find("+")>-1
 
 
-
 def splitzipext(filename):
+    """Return a tuple containing the filename and the zip extension separated.
+
+    If the filename does not have a zip extension then:
+        base -> filename
+        zip_ext -> None
+        
+    *Parameters*:
+
+        filename : {string}
+            Filename to split.
+
+    *Returns*:
+
+        base, zip_ext : {tuple}
+            Tuple containing the base file...
+            
     """
-    return (base, zip_extension) from filename.
-    If filename does not have a zip extention then
-    base = filename and zip_extension = None
-    """
+
     if iszip(filename):
         return path(filename).splitext()
     else:
         return filename, None
-
 
 
 
@@ -97,24 +134,27 @@ def ensuredirs(directory):
 
 
 class Cache (object):
-    """
-    A file cache. The path of the cache can be specified
-    or else use ~/.nipy/cache by default.
+    """A file cache.
+
+    The path of the cache can be specified or else use ~/.scipy/cache
+    by default.
+
+    
     """
     
     def __init__(self, cachepath=None):
         if cachepath is not None: 
             self.path = path(cachepath)
         elif os.name == 'posix':
-            self.path = path(os.environ["HOME"]).joinpath(".nipy","cache")
+            self.path = path(os.environ["HOME"]).joinpath(".scipy","cache")
         elif os.name == 'nt':
-            self.path = path(os.environ["HOMEPATH"]).joinpath(".nipy","cache")
+            self.path = path(os.environ["HOMEPATH"]).joinpath(".scipy","cache")
         if not self.path.exists():
             ensuredirs(self.path)
 
     def tempfile(self, suffix='', prefix=''):
         """ Return an temporary file name in the cache"""
-        _, fname = mkstemp(suffix, prefix, self.path)
+        _tmp, fname = mkstemp(suffix, prefix, self.path)
         return fname
 
     def filepath(self, uri):
@@ -153,8 +193,8 @@ class Cache (object):
 
         :Returns: ``None``
         """
-        for file in self.path.files():
-            file.rm()
+        for _file in self.path.files():
+            _file.rm()
         
     def iscached(self, uri):
         """ Check if a file exists in the cache.
@@ -176,12 +216,19 @@ class Cache (object):
 
 
 class DataSource (object):
+    """A generic data source class.
 
+    Data could be from a file, URL, cached file.
+
+    TODO: Improve DataSource docstring
+
+    """
+    
     def __init__(self, cachepath=os.curdir):
         self._cache = Cache(cachepath)
 
     def tempfile(self, suffix='', prefix=''):
-        ''' Return an temporary file name in the cache'''
+        """Return an temporary file name in the cache."""
         return self._cache.tempfile(suffix, prefix)
 
     def _possible_names(self, filename):
@@ -234,7 +281,13 @@ class DataSource (object):
 
 
 class Repository (DataSource):
-    """DataSource with an implied root."""
+    """Multiple DataSource's that share one base url.
+
+    TODO: Improve Repository docstring.
+
+    """
+    
+    #"""DataSource with an implied root."""
     def __init__(self, baseurl, cachepath=None):
         DataSource.__init__(self, cachepath=cachepath)
         self._baseurl = baseurl
