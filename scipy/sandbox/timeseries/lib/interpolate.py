@@ -10,7 +10,6 @@ __version__ = '1.0'
 __revision__ = "$Revision$"
 __date__     = '$Date$'
 
-
 import numpy.core.numeric as numeric
 
 from scipy.interpolate import fitpack
@@ -20,13 +19,9 @@ from maskedarray.core import masked, nomask, getmask
 from maskedarray.extras import flatnotmasked_edges
 marray = MA.array
 
-
 __all__ = [
     'forward_fill', 'backward_fill', 'interp_masked1d',
           ]
-
-
-
 
 #####---------------------------------------------------------------------------
 #---- --- Functions for filling in masked values in a masked array ---
@@ -35,8 +30,9 @@ def forward_fill(marr, maxgap=None):
     """forward_fill(marr, maxgap=None)
 
 Forward fills masked values in a 1-d array when there are less maxgap
-consecutive masked values. If maxgap is None, then forward fill all
-masked values."""
+consecutive masked values. If maxgap is None, then forward fill all masked
+values.
+"""
     # Initialization ..................
     if numeric.ndim(marr) > 1:
         raise ValueError,"The input array should be 1D only!"
@@ -63,17 +59,16 @@ masked values."""
                 marr._data[i] = marr._data[i-1]
                 marr._mask[i] = False
     return marr
-#..........................................................
+#.............................................................................
 def backward_fill(marr, maxgap=None):
     """backward_fill(marr, maxgap=None)
 
 Backward fills masked values in a 1-d array when there are less than maxgap
 consecutive masked values. If maxgap is None, then backward fills all
 masked values.
-    """
+"""
     return forward_fill(marr[::-1], maxgap=maxgap)[::-1]
-
-#..........................................................
+#.............................................................................
 def interp_masked1d(marr, kind='linear'):
     """interp_masked1d(marr, king='linear')
 
@@ -112,4 +107,3 @@ kind must be one of 'constant', 'linear', 'cubic', quintic'
                                   (maskedIndices < last_unmasked)]
     marr[interpIndices] = fitpack.splev(interpIndices, tck).astype(marr.dtype)
     return marr
-

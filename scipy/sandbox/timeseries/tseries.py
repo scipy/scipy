@@ -19,8 +19,7 @@ __date__     = '$Date$'
 import numpy
 from numpy import ndarray
 from numpy import bool_, complex_, float_, int_, object_
-from numpy.core.multiarray import dtype
-import numpy.core.fromnumeric as fromnumeric
+from numpy import dtype
 import numpy.core.numeric as numeric
 import numpy.core.umath as umath
 from numpy.core.records import recarray
@@ -74,7 +73,7 @@ def first_unmasked_val(marray):
         marray must be 1 dimensional.
 
 *Returns*:
-    val : {marray.dtype}
+    val : {singleton of type marray.dtype}
         first unmasked value in marray. If all values in marray are masked,
         the function returns the maskedarray.masked constant
 """
@@ -88,7 +87,7 @@ def last_unmasked_val(marray):
         marray must be 1 dimensional.
 
 *Returns*:
-    val : {marray.dtype}
+    val : {singleton of type marray.dtype}
         last unmasked value in marray. If all values in marray are masked,
         the function returns the maskedarray.masked constant
 """
@@ -156,7 +155,6 @@ def _timeseriescompat(a, b, raise_error=True):
                 return False
     return True
 
-
 def _timeseriescompat_multiple(*series):
     """Checks the date compatibility of multiple TimeSeries objects.
     Returns True if everything's fine, or raises an exception. Unlike
@@ -173,26 +171,31 @@ def _timeseriescompat_multiple(*series):
 
     if len(set(start_dates)) > 1:
         errItems = tuple(set(start_dates))
-        raise TimeSeriesCompatibilityError('start_dates', errItems[0], errItems[1])
-
+        raise TimeSeriesCompatibilityError('start_dates',
+                                           errItems[0], errItems[1])
 
     if max(steps) == True:
         bad_index = [x for x, val in enumerate(steps) if val][0]
         raise TimeSeriesCompatibilityError('time_steps',
-                series[0]._dates.get_steps(), series[bad_index]._dates.get_steps())
+                series[0]._dates.get_steps(),
+                series[bad_index]._dates.get_steps())
 
     if len(set(shapes)) > 1:
         errItems = tuple(set(shapes))
-        raise TimeSeriesCompatibilityError('size', "1: %s" % str(errItems[0].shape),
-                                                   "2: %s" % str(errItems[1].shape))
+        raise TimeSeriesCompatibilityError('size',
+                                           "1: %s" % str(errItems[0].shape),
+                                           "2: %s" % str(errItems[1].shape))
 
     return True
 
-
 def _datadatescompat(data, dates):
-    """Checks the compatibility of dates and data at the creation of a TimeSeries.
-    Returns True if everything's fine, raises an exception otherwise."""
-    # If there's only 1 element, the date is a Date object, which has no size...
+    """Checks the compatibility of dates and data at the creation of a
+TimeSeries.
+
+Returns True if everything's fine, raises an exception otherwise.
+"""
+    # If there's only 1 element, the date is a Date object, which has no
+    # size...
     tsize = numeric.size(dates)
     dsize = data.size
     # Only one data
@@ -216,14 +219,17 @@ def _getdatalength(data):
 
 def _compare_frequencies(*series):
     """Compares the frequencies of a sequence of series.
-    Returns the common frequency, or raises an exception if series have different
-    frequencies."""
+
+Returns the common frequency, or raises an exception if series have different
+frequencies.
+"""
     unique_freqs = numpy.unique([x.freqstr for x in series])
     try:
         common_freq = unique_freqs.item()
     except ValueError:
         raise TimeSeriesError, \
-            "All series must have same frequency! (got %s instead)" % unique_freqs
+            "All series must have same frequency! (got %s instead)" % \
+            unique_freqs
     return common_freq
 
 ##### ------------------------------------------------------------------------
@@ -231,10 +237,10 @@ def _compare_frequencies(*series):
 ##### ------------------------------------------------------------------------
 class _tsmathmethod(object):
     """Defines a wrapper for arithmetic array methods (add, mul...).
-When called, returns a new TimeSeries object, with the new series the result of
-the method applied on the original series.
-The `_dates` part remains unchanged.
-    """
+When called, returns a new TimeSeries object, with the new series the result
+of the method applied on the original series. The `_dates` part remains
+unchanged.
+"""
     def __init__ (self, methodname):
         self._name = methodname
 
@@ -287,11 +293,11 @@ If `ondates` is False, the `_dates` part remains unchanged.
             result._dates = getattr(instance._dates, _name)(*args)
         else:
             result._dates = instance._dates
-        result.copy_attributes(instance)
         return result
 
 class _tsaxismethod(object):
     """Defines a wrapper for array methods working on an axis (mean...).
+
 When called, returns a ndarray, as the result of the method applied on the
 series.
 """
@@ -347,7 +353,6 @@ A time series is here defined as the combination of two arrays:
     it is typically recommended to use the `time_series` function for
     construction as it allows greater flexibility and convenience.
 """
-    _genattributes = ['fill_value']
     def __new__(cls, data, dates, mask=nomask, dtype=None, copy=False,
                 fill_value=None, subok=True, keep_mask=True, small_mask=True,
                 hard_mask=False, **options):
@@ -405,7 +410,8 @@ A time series is here defined as the combination of two arrays:
         if isinstance(indx, int):
             return (indx, indx)
         elif isinstance(indx, str):
-            indx = self._dates.date_to_index(Date(self._dates.freq, string=indx))
+            indx = self._dates.date_to_index(
+                                    Date(self._dates.freq, string=indx))
             return (indx, indx)
         elif isDate(indx):
             indx = self._dates.date_to_index(indx)
@@ -432,7 +438,8 @@ A time series is here defined as the combination of two arrays:
         elif isTimeSeries(indx):
             indx = indx._series
         if getmask(indx) is not nomask:
-            msg = "Masked arrays must be filled before they can be used as indices!"
+            msg = "Masked arrays must be filled before they can be used " + \
+                  "as indices!"
             raise IndexError, msg
         return (indx,indx)
 
@@ -680,8 +687,9 @@ original series (unlike the `convert` method).
     relation : {'AFTER', 'BEFORE'} , optional
 
 *Returns*:
-    a new TimeSeries (data copied) with the .dates DateArray at the specified
-    frequency (the .asfreq method of the .dates property will be called)
+    a new TimeSeries with the .dates DateArray at the specified frequency (the
+    .asfreq method of the .dates property will be called). The data in the
+    resulting series will be a VIEW of the original series.
 
 *Notes*:
     The parameters are the exact same as for DateArray.asfreq , please see the
@@ -691,18 +699,23 @@ original series (unlike the `convert` method).
         if freq is None: return self
 
         return TimeSeries(self._series,
-                          dates=self._dates.asfreq(freq, relation=relation),
-                          copy=True)
+                          dates=self._dates.asfreq(freq, relation=relation))
     #.....................................................
     def transpose(self, *axes):
-        """ a.transpose(*axes)
+        """Returns a view of the series with axes transposed
 
-    Returns a view of 'a' with axes transposed. If no axes are given,
-    or None is passed, switches the order of the axes. For a 2-d
-    array, this is the usual matrix transpose. If axes are given,
-    they describe how the axes are permuted.
+*Parameters*:
+    *axes : {integers}
+        the axes to swap
 
-        """
+*Returns*:
+    a VIEW of the series with axes for both the data and dates transposed
+
+*Notes*:
+    If no axes are given, the order of the axes are switches. For a 2-d array,
+    this is the usual matrix transpose. If axes are given, they describe how
+    the axes are permuted.
+"""
         if self._dates.size == self.size:
             result = super(TimeSeries, self).transpose(*axes)
             result._dates = self._dates.transpose(*axes)
@@ -716,7 +729,7 @@ original series (unlike the `convert` method).
         return result
     
     def split(self):
-        """Split a multiple series into individual columns."""
+        """Split a multi-dimensional series into individual columns."""
         if self.ndim == 1:
             return [self]
         else:
@@ -727,27 +740,17 @@ original series (unlike the `convert` method).
                                    **_attrib_dict(self)) for a in arr]        
     
     def filled(self, fill_value=None):
-        """Returns an array of the same class as `_data`,
- with masked values filled with `fill_value`.
-Subclassing is preserved.
+        """Returns an array of the same class as `_data`,  with masked values
+filled with `fill_value`. Subclassing is preserved.
 
-If `fill_value` is None, uses self.fill_value.
-        """
+*Parameters*:
+    fill_value : {None, singleton of type self.dtype}, optional
+        The value to fill in masked values with. If `fill_value` is None, uses
+        self.fill_value.
+"""
         result = self._series.filled(fill_value=fill_value).view(type(self))
         result._dates = self._dates
-        result.copy_attributes(self)
         return result
-    
-    #......................................................
-    def copy_attributes(self, oldseries, exclude=[]):
-        "Copies the attributes from oldseries if they are not in the exclude list."
-        attrlist = type(self)._genattributes
-        if not isinstance(oldseries, TimeSeries):
-            msg = "Series should be a valid TimeSeries object! (got <%s> instead)"
-            raise TimeSeriesError, msg % type(oldseries)
-        for attr in attrlist:
-            if not attr in exclude:
-                setattr(self, attr, getattr(oldseries, attr))
     #......................................................
     # Pickling
     def __getstate__(self):
@@ -855,7 +858,7 @@ class _frommethod(object):
             if hasattr(method, '__call__'):
                 return method.__call__(*args, **params)
             return method
-        method = getattr(fromnumeric.asarray(caller), self._methodname)
+        method = getattr(numpy.asarray(caller), self._methodname)
         try:
             return method(*args, **params)
         except SystemError:
@@ -1168,7 +1171,7 @@ def adjust_endpoints(a, start_date=None, end_date=None):
         start_date = max(start_date, dstart)
         end_date = min(end_date, dend) + 1
         newseries[start_date:end_date] = a[start_date:end_date]
-    newseries.copy_attributes(a)
+    newseries._update_from(a)
     return newseries
 #.....................................................
 def align_series(*series, **kwargs):
@@ -1270,7 +1273,7 @@ def _convert1d(series, freq, func, position, *args, **kwargs):
     newseries = tempData.view(type(series))
     newseries._dates = date_array(start_date=start_date, length=len(newseries),
                                   freq=toFreq)
-    newseries.copy_attributes(series)
+    newseries._update_from(series)
     return newseries
 
 def convert(series, freq, func=None, position='END', *args, **kwargs):
@@ -1362,7 +1365,7 @@ timeseries(data  = [-- 0 1 2],
         newdata = inidata
     newseries = newdata.view(type(series))
     newseries._dates = series._dates
-    newseries.copy_attributes(series)
+    newseries._update_from(series)
     return newseries
 TimeSeries.tshift = tshift
 #...............................................................................
@@ -1392,7 +1395,7 @@ timeseries(data  = [-- -- 0.0 200.0],
         newdata[nper:] = 100*(series._series[nper:]/series._series[:-nper] - 1)
     newseries = newdata.view(type(series))
     newseries._dates = series._dates
-    newseries.copy_attributes(series)
+    newseries._update_from(series)
     return newseries
 TimeSeries.pct = pct
 #...............................................................................

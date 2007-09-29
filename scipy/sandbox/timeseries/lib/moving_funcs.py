@@ -34,12 +34,11 @@ def _process_result_dict(orig_data, result_dict):
     "process the results from the c function"
 
     rarray = result_dict['array']
-    rtype = result_dict['array'].dtype
     rmask = result_dict['mask']
 
     # makes a copy of the appropriate type
-    data = orig_data.astype(rtype).copy()
-    data.flat = result_dict['array'].ravel()
+    data = orig_data.astype(rarray.dtype).copy()
+    data.flat = rarray.ravel()
     if not hasattr(data, '__setmask__'):
         data = data.view(MA.MaskedArray)
     data.__setmask__(rmask)
@@ -77,7 +76,7 @@ def _moving_func(data, cfunc, kwargs):
 def mov_sum(data, span, dtype=None):
     """Calculates the moving sum of a series.
 
-:Parameters:
+*Parameters*:
     $$data$$
     $$span$$
     $$dtype$$"""
@@ -91,7 +90,7 @@ def mov_sum(data, span, dtype=None):
 def mov_median(data, span, dtype=None):
     """Calculates the moving median of a series.
 
-:Parameters:
+*Parameters*:
     $$data$$
     $$span$$
     $$dtype$$"""
@@ -105,7 +104,7 @@ def mov_median(data, span, dtype=None):
 def mov_average(data, span, dtype=None):
     """Calculates the moving average of a series.
 
-:Parameters:
+*Parameters*:
     $$data$$
     $$span$$
     $$dtype$$"""
@@ -131,7 +130,7 @@ def _mov_var_stddev(data, span, is_variance, bias, dtype):
 def mov_var(data, span, bias=False, dtype=None):
     """Calculates the moving variance of a 1-D array.
 
-:Parameters:
+*Parameters*:
     $$data$$
     $$span$$
     $$bias$$
@@ -143,7 +142,7 @@ def mov_var(data, span, bias=False, dtype=None):
 def mov_stddev(data, span, bias=False, dtype=None):
     """Calculates the moving standard deviation of a 1-D array.
 
-:Parameters:
+*Parameters*:
     $$data$$
     $$span$$
     $$bias$$
@@ -155,7 +154,7 @@ def mov_stddev(data, span, bias=False, dtype=None):
 def mov_covar(x, y, span, bias=False, dtype=None):
     """Calculates the moving covariance of two 1-D arrays.
 
-:Parameters:
+*Parameters*:
     $$x$$
     $$y$$
     $$span$$
@@ -173,7 +172,7 @@ def mov_covar(x, y, span, bias=False, dtype=None):
 def mov_corr(x, y, span, dtype=None):
     """Calculates the moving correlation of two 1-D arrays.
 
-:Parameters:
+*Parameters*:
     $$x$$
     $$y$$
     $$span$$
@@ -188,15 +187,16 @@ def mov_corr(x, y, span, dtype=None):
 def mov_average_expw(data, span, tol=1e-6):
     """Calculates the exponentially weighted moving average of a series.
 
-:Parameters:
+*Parameters*:
     $$data$$
     span : int 
         Time periods. The smoothing factor is 2/(span + 1)
     tol : float, *[1e-6]*
         Tolerance for the definition of the mask. When data contains masked 
-        values, this parameter determinea what points in the result should be masked.
-        Values in the result that would not be "significantly" impacted (as 
-        determined by this parameter) by the masked values are left unmasked."""
+        values, this parameter determinea what points in the result shoud be
+        masked. Values in the result that would not be "significantly"
+        impacted (as determined by this parameter) by the masked values are
+        left unmasked."""
 
     data = marray(data, copy=True, subok=True)
     ismasked = (data._mask is not nomask)
@@ -215,37 +215,38 @@ def mov_average_expw(data, span, tol=1e-6):
     data._mask[0] = True
     #
     return data
-#...............................................................................
+#.............................................................................
 def cmov_window(data, span, window_type):
-    """Applies a centered moving window of type window_type and size span on the
-data.
+    """Applies a centered moving window of type window_type and size span on
+the data.
 
 Returns a (subclass of) MaskedArray. The k first and k last data are always 
 masked (with k=span//2). When data has a missing value at position i, the
 result has missing values in the interval [i-k:i+k+1].
     
     
-:Parameters:
-    data : ndarray
-        Data to process. The array should be at most 2D. On 2D arrays, the window
-        is applied recursively on each column.
-    span : integer
+*Parameters*:
+    data : {ndarray}
+        Data to process. The array should be at most 2D. On 2D arrays, the
+        window is applied recursively on each column.
+    span : {int}
         The width of the window.
-    window_type : string/tuple/float
+    window_type : {string/tuple/float}
         Window type (see Notes)
         
-Notes
------
+*Notes*:
 
-The recognized window types are: boxcar, triang, blackman, hamming, hanning, 
-bartlett, parzen, bohman, blackmanharris, nuttall, barthann, kaiser (needs beta), 
-gaussian (needs std), general_gaussian (needs power, width), slepian (needs width).
-If the window requires parameters, the window_type argument should be a tuple
-with the first argument the string name of the window, and the next arguments 
-the needed parameters. If window_type is a floating point number, it is interpreted 
-as the beta parameter of the kaiser window.
+    The recognized window types are: boxcar, triang, blackman, hamming,
+    hanning, bartlett, parzen, bohman, blackmanharris, nuttall, barthann,
+    kaiser (needs beta), gaussian (needs std), general_gaussian (needs power,
+    width), slepian (needs width). If the window requires parameters, the
+    window_type argument should be a tuple with the first argument the string
+    name of the window, and the next arguments the needed parameters. If
+    window_type is a floating point number, it is interpreted as the beta
+    parameter of the kaiser window.
 
-Note also that only boxcar has been thoroughly tested."""
+    Note also that only boxcar has been thoroughly tested.
+"""
 
     data = marray(data, copy=True, subok=True)
     if data._mask is nomask:
@@ -269,57 +270,60 @@ Note also that only boxcar has been thoroughly tested."""
 def cmov_average(data, span):
     """Computes the centered moving average of size span on the data.
     
-    Returns a (subclass of) MaskedArray. The k first and k last data are always 
-    masked (with k=span//2). When data has a missing value at position i, 
-    the result has missing values in the interval [i-k:i+k+1].
-    
-:Parameters:
-    data : ndarray
-        Data to process. The array should be at most 2D. On 2D arrays, the window
-        is applied recursively on each column.
-    span : integer
-        The width of the window."""
+*Parameters*:
+    data : {ndarray}
+        Data to process. The array should be at most 2D. On 2D arrays, the
+        window is applied recursively on each column.
+    span : {int}
+        The width of the window.
+
+*Returns*:    
+    A (subclass of) MaskedArray. The k first and k last data are always masked
+    (with k=span//2). When data has a missing value at position i, the result
+    has missing values in the interval [i-k:i+k+1].
+"""
     return cmov_window(data, span, 'boxcar')
 
 cmov_mean = cmov_average
 
 param_doc = {}
 param_doc['data'] = \
-"""data : ndarray
+"""data : {ndarray}
         Data must be an ndarray (or subclass). In particular, note that
         TimeSeries objects are valid here."""
 
 param_doc['x'] = \
-"""x : ndarray
+"""x : {ndarray}
         First array to be included in the calculation. x must be an ndarray (or
         subclass). In particular, note that TimeSeries objects are valid here."""
 
 param_doc['y'] = \
-"""y : ndarray
+"""y : {ndarray}
         Second array to be included in the calculation. y must be an ndarray (or
         subclass). In particular, note that TimeSeries objects are valid here."""
 
 param_doc['span'] = \
-"""span : int 
+"""span : {int }
         Time periods to use for each calculation."""
 
 param_doc['bias'] = \
-"""bias : boolean (*False*)
+"""bias : {False, True}, optional
         If False, Normalization is by (N-1) where N == span (unbiased
         estimate).  If True then normalization is by N."""
 
 param_doc['dtype'] = \
-"""dtype : numpy data type specification (*None*)
+"""dtype : {numpy data type specification}, optional
         dtype for the result"""
 
 mov_result_doc = \
 """
 
-:Return value:
+*Returns*:
     The result is always a masked array (preserves subclass attributes). The
-    result at index i uses values from [i-span:i+1], and will be masked for the
-    first `span` values. The result will also be masked at i if any of the
-    input values in the slice [i-span:i+1] are masked."""
+    result at index i uses values from [i-span:i+1], and will be masked for
+    the first `span` values. The result will also be masked at i if any of the
+    input values in the slice [i-span:i+1] are masked.
+"""
 
 _g = globals()
 
