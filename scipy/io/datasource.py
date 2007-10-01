@@ -3,6 +3,8 @@
 
 """
 
+__docformat__ = "restructuredtext en"
+
 import os
 import gzip
 import bz2
@@ -23,14 +25,14 @@ def iszip(filename):
 
         filename : {string}
             Filename to test.
-            
+
     *Returns*:
 
         bool
             Results of test.
-    
+
     """
-    
+
     _tmp, ext = path(filename).splitext()
     return ext in zipexts
 
@@ -41,14 +43,14 @@ def unzip(filename):
 
         filename : {string}
             Filename to unzip.
-            
+
     *Returns*:
 
         string
             Name of the unzipped file.
-            
+
     """
-    
+
     if not iszip(filename):
         raise ValueError("file %s is not zipped"%filename)
     unzip_name, zipext = splitzipext(filename)
@@ -82,7 +84,7 @@ def splitzipext(filename):
     If the filename does not have a zip extension then:
         base -> filename
         zip_ext -> None
-        
+
     *Parameters*:
 
         filename : {string}
@@ -92,7 +94,7 @@ def splitzipext(filename):
 
         base, zip_ext : {tuple}
             Tuple containing the base file...
-            
+
     """
 
     if iszip(filename):
@@ -109,7 +111,7 @@ def isurl(pathstr):
     :Parameters:
         `pathstr` : string
             The string to be checked.
-    
+
     :Returns: ``bool``
     """
     scheme, netloc, _, _, _, _ = urlparse(pathstr)
@@ -139,11 +141,11 @@ class Cache (object):
     The path of the cache can be specified or else use ~/.scipy/cache
     by default.
 
-    
+
     """
-    
+
     def __init__(self, cachepath=None):
-        if cachepath is not None: 
+        if cachepath is not None:
             self.path = path(cachepath)
         elif os.name == 'posix':
             self.path = path(os.environ["HOME"]).joinpath(".scipy","cache")
@@ -164,14 +166,14 @@ class Cache (object):
         (_, netloc, upath, _, _, _) = urlparse(uri)
         return self.path.joinpath(netloc, upath[1:])
 
-    def filename(self, uri): 
+    def filename(self, uri):
         """
         Return the complete path + filename within the cache.
 
         :Returns: ``string``
         """
         return str(self.filepath(uri))
-    
+
     def cache(self, uri):
         """
         Copy a file into the cache.
@@ -187,7 +189,7 @@ class Cache (object):
         except:
             raise IOError("url not found: "+str(uri))
         file(upath, 'w').write(openedurl.read())
-        
+
     def clear(self):
         """ Delete all files in the cache.
 
@@ -195,14 +197,14 @@ class Cache (object):
         """
         for _file in self.path.files():
             _file.rm()
-        
+
     def iscached(self, uri):
         """ Check if a file exists in the cache.
 
         :Returns: ``bool``
         """
         return self.filepath(uri).exists()
-        
+
     def retrieve(self, uri):
         """
         Retrieve a file from the cache.
@@ -223,7 +225,7 @@ class DataSource (object):
     TODO: Improve DataSource docstring
 
     """
-    
+
     def __init__(self, cachepath=os.curdir):
         self._cache = Cache(cachepath)
 
@@ -245,7 +247,7 @@ class DataSource (object):
     def filename(self, pathstr):
         found = None
         for name in self._possible_names(pathstr):
-            try:                
+            try:
                 if isurl(name):
                     self.cache(name)
                     found = self._cache.filename(name)
@@ -286,7 +288,7 @@ class Repository (DataSource):
     TODO: Improve Repository docstring.
 
     """
-    
+
     #"""DataSource with an implied root."""
     def __init__(self, baseurl, cachepath=None):
         DataSource.__init__(self, cachepath=cachepath)
