@@ -40,6 +40,7 @@ Documentation
 -------------
 
 See http://projects.scipy.org/scipy/numpy/wiki/CodingStyleGuidelines
+
 * use new docstring format
 
 
