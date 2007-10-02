@@ -8,7 +8,7 @@ from svm.dataset import convert_to_svm_node, svm_node_dot
 from svm.libsvm import svm_node_dtype
 restore_path()
 
-class test_dataset(NumpyTestCase):
+class TestDataset(NumpyTestCase):
     def check_convert_dict(self):
         x = N.array([(-1,0.)], dtype=svm_node_dtype)
         assert_array_equal(convert_to_svm_node({}), x)
@@ -73,7 +73,7 @@ class test_dataset(NumpyTestCase):
         for i, x in enumerate(dataset):
             assert_array_equal(data[i], x[1]['value'][:-1])
 
-class test_svm_node_dot(NumpyTestCase):
+class TestSVMNodeDot(NumpyTestCase):
     def check_basics(self):
         kernel = LinearKernel()
 
@@ -88,7 +88,7 @@ class test_svm_node_dot(NumpyTestCase):
         y = N.array([(3,2.),(-1,0.)], dtype=svm_node_dtype)
         self.assertAlmostEqual(svm_node_dot(x, y, kernel), 4.)
 
-class test_precomputed_dataset(NumpyTestCase):
+class TestPrecomputedDataset(NumpyTestCase):
     def check_precompute(self):
         degree, gamma, coef0 = 4, 3.0, 2.0
         kernels = [

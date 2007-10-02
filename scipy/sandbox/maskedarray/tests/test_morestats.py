@@ -24,7 +24,7 @@ import maskedarray.testutils
 from maskedarray.testutils import *
 
 
-class test_misc(NumpyTestCase):
+class TestMisc(NumpyTestCase):
     #
     def __init__(self, *args, **kwargs):
         NumpyTestCase.__init__(self, *args, **kwargs)
@@ -43,7 +43,7 @@ class test_misc(NumpyTestCase):
         assert_equal(numpy.round(trimmed_mean_ci(data,0.2),1), [561.8, 630.6])
 
 #..............................................................................
-class test_ranking(NumpyTestCase):
+class TestRanking(NumpyTestCase):
     #
     def __init__(self, *args, **kwargs):
         NumpyTestCase.__init__(self, *args, **kwargs)
@@ -63,7 +63,7 @@ class test_ranking(NumpyTestCase):
         assert_almost_equal(rank_data(x,axis=0),[[1,1,1,1,1],[2,2,2,2,2,]])
 
 #..............................................................................
-class test_quantiles(NumpyTestCase):
+class TestQuantiles(NumpyTestCase):
     #
     def __init__(self, *args, **kwargs):
         NumpyTestCase.__init__(self, *args, **kwargs)

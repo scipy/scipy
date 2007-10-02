@@ -10,7 +10,7 @@ try:  # Python 2.3 support
 except:
     pass
 
-class test_recaster(NumpyTestCase):
+class TestRecaster(NumpyTestCase):
     
     def test_init(self):
         # Setting sctype_list

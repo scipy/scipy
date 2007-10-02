@@ -12,7 +12,7 @@ restore_path()
 def is_writable(val):
     return os.access(val,os.W_OK)
 
-class test_configure_build_dir(NumpyTestCase):
+class TestConfigureBuildDir(NumpyTestCase):
     def check_default(self):
         " default behavior is to return current directory "
         d = build_tools.configure_build_dir()
@@ -46,7 +46,7 @@ class test_configure_temp_dir(test_configure_build_dir):
         assert(d == tempfile.gettempdir())
         assert(is_writable(d))
 
-class test_configure_sys_argv(NumpyTestCase):
+class TestConfigureSysArgv(NumpyTestCase):
     def check_simple(self):
         build_dir = 'build_dir'
         temp_dir = 'temp_dir'

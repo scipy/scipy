@@ -5,7 +5,7 @@ set_package_path()
 from scipy.signal import wavelets
 restore_path()
 
-class test_wavelets(NumpyTestCase):
+class TestWavelets(NumpyTestCase):
     def check_qmf(self):
         assert_array_equal(wavelets.qmf([1,1]),[1,-1])
 

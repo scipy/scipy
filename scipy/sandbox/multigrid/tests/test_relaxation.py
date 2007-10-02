@@ -12,7 +12,7 @@ from scipy.sandbox.multigrid.relaxation import polynomial_smoother,gauss_seidel,
 restore_path()
 
 
-class test_relaxation(NumpyTestCase):
+class TestRelaxation(NumpyTestCase):
     def check_polynomial(self):
         N  = 3
         A  = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T

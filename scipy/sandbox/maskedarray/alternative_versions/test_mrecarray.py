@@ -26,7 +26,7 @@ from maskedarray.mrecords import mrecarray, fromarrays, fromtextfile, fromrecord
 
 
 #..............................................................................
-class test_mrecarray(NumpyTestCase):
+class TestMrecarray(NumpyTestCase):
     "Base test class for MaskedArrays."
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)

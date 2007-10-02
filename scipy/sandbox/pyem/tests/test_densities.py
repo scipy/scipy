@@ -105,7 +105,7 @@ class test_py_implementation(TestDensities):
 #=====================
 # Basic speed tests
 #=====================
-class test_speed(NumpyTestCase):
+class TestSpeed(NumpyTestCase):
     def __init__(self, *args, **kw):
         NumpyTestCase.__init__(self, *args, **kw)
         import sys
@@ -234,7 +234,7 @@ class test_c_implementation(TestDensities):
         self._generate_test_data_2d_full()
         self._test(level)
 
-class test_gauss_ell(NumpyTestCase):
+class TestGaussEll(NumpyTestCase):
     def test_dim(self):
         pyem.densities.gauss_ell([0, 1], [1, 2.], [0, 1])
         try:

@@ -9,7 +9,7 @@ import scipy.stats.models as S
 import scipy.stats.models.bspline as B
 
 
-class test_BSpline(NumpyTestCase):
+class TestBSpline(NumpyTestCase):
 
     def test1(self):
         b = B.BSpline(N.linspace(0,10,11), x=N.linspace(0,10,101))

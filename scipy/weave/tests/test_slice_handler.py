@@ -22,7 +22,7 @@ def print_assert_equal(test_string,actual,desired):
         pprint.pprint(desired,msg)
         raise AssertionError, msg.getvalue()
 
-class test_build_slice_atom(NumpyTestCase):
+class TestBuildSliceAtom(NumpyTestCase):
     def generic_test(self,slice_vars,desired):
         pos = slice_vars['pos']
         ast_list = slice_handler.build_slice_atom(slice_vars,pos)
@@ -34,7 +34,7 @@ class test_build_slice_atom(NumpyTestCase):
         desired = 'slice(1,2-1)'
         self.generic_test(slice_vars,desired)
 
-class test_slice(NumpyTestCase):
+class TestSlice(NumpyTestCase):
 
     def generic_test(self,suite_string,desired):
         import parser
@@ -135,7 +135,7 @@ def replace_whitespace(in_str):
     out = string.replace(out,"\n","")
     return out
 
-class test_transform_slices(NumpyTestCase):
+class TestTransformSlices(NumpyTestCase):
     def generic_test(self,suite_string,desired):
         import parser
         ast_list = parser.suite(suite_string).tolist()

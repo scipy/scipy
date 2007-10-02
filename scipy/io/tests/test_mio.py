@@ -23,9 +23,9 @@ except:
 
 test_data_path = os.path.join(os.path.dirname(__file__), './data')
 
-class test_mio_array(NumpyTestCase):    
+class TestMIOArray(NumpyTestCase):
     def __init__(self, *args, **kwargs):
-        super(test_mio_array, self).__init__(*args, **kwargs)
+        super(TestMIOArray, self).__init__(*args, **kwargs)
 
     def _check_level(self, label, expected, actual):
         """ Check one level of a potentially nested object / list """

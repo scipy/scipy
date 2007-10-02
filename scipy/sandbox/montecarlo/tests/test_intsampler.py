@@ -30,7 +30,7 @@ restore_path()
 import unittest
 
 
-class test_intsampler(NumpyTestCase):
+class TestIntSampler(NumpyTestCase):
     def check_simple(self):
         # Sample from a Poisson distribution, P(lambda = 10.0)
         lam = 10.0

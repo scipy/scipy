@@ -29,7 +29,7 @@ def callback(x):
     res = b-dot(A,x)
     #print "||A.x - b|| = " + str(norm(dot(A,x)-b))
 
-class test_iterative_solvers(NumpyTestCase):
+class TestIterativeSolvers(NumpyTestCase):
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)
         self.setUp()

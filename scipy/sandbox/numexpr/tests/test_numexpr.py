@@ -6,7 +6,7 @@ set_package_path()
 from numexpr import E, numexpr, evaluate, disassemble
 restore_path()
 
-class test_numexpr(NumpyTestCase):
+class TestNumExpr(NumpyTestCase):
     def check_simple(self):
         ex = 2.0 * E.a + 3.0 * E.b * E.c
         func = numexpr(ex, signature=[('a', float), ('b', float), ('c', float)])
@@ -95,7 +95,7 @@ class test_numexpr(NumpyTestCase):
                     [('mul_fff', 'r0', 'r1[x]', 'r1[x]'),
                      ('add_fff', 'r0', 'r0', 'c2[2.0]')])
 
-class test_evaluate(NumpyTestCase):
+class TestEvaluate(NumpyTestCase):
     def check_simple(self):
         a = array([1., 2., 3.])
         b = array([4., 5., 6.])
@@ -239,7 +239,7 @@ def equal(a, b, exact):
 
 class Skip(Exception): pass
 
-class test_expressions(NumpyTestCase):
+class TestExpressions(NumpyTestCase):
     pass
 
 def generate_check_expressions():

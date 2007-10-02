@@ -8,7 +8,7 @@ set_package_path()
 from weave import inline_tools
 restore_path()
 
-class test_object_construct(NumpyTestCase):
+class TestObjectConstruct(NumpyTestCase):
     #------------------------------------------------------------------------
     # Check that construction from basic types is allowed and have correct
     # reference counts
@@ -66,7 +66,7 @@ class test_object_construct(NumpyTestCase):
         assert_equal(sys.getrefcount(res),2)
         assert_equal(res,"hello")
 
-class test_object_print(NumpyTestCase):
+class TestObjectPrint(NumpyTestCase):
     #------------------------------------------------------------------------
     # Check the object print protocol.
     #------------------------------------------------------------------------
@@ -101,7 +101,7 @@ class test_object_print(NumpyTestCase):
 ##            pass
 
 
-class test_object_cast(NumpyTestCase):
+class TestObjectCast(NumpyTestCase):
     def check_int_cast(self,level=5):
         code = """
                py::object val = 1;
@@ -147,7 +147,7 @@ class str_obj:
     def __str__(self):
         return "b"
 
-class test_object_hasattr(NumpyTestCase):
+class TestObjectHasattr(NumpyTestCase):
     def check_string(self,level=5):
         a = foo()
         a.b = 12345
@@ -203,7 +203,7 @@ class test_object_hasattr(NumpyTestCase):
         res = inline_tools.inline(code,['a'])
         assert res
 
-class test_object_attr(NumpyTestCase):
+class TestObjectAttr(NumpyTestCase):
 
     def generic_attr(self,code,args=['a']):
         a = foo()
@@ -261,7 +261,7 @@ class test_object_attr(NumpyTestCase):
         assert_equal(res,"bar results")
         assert_equal(first,second)
 
-class test_object_set_attr(NumpyTestCase):
+class TestObjectSetAttr(NumpyTestCase):
 
     def generic_existing(self, code, desired):
         args = ['a']
@@ -325,7 +325,7 @@ class test_object_set_attr(NumpyTestCase):
                """
         self.generic_existing(code,"hello")
 
-class test_object_del(NumpyTestCase):
+class TestObjectDel(NumpyTestCase):
     def generic(self, code):
         args = ['a']
         a = foo()
@@ -348,7 +348,7 @@ class test_object_del(NumpyTestCase):
                """
         self.generic(code)
 
-class test_object_cmp(NumpyTestCase):
+class TestObjectCmp(NumpyTestCase):
     def check_equal(self,level=5):
         a,b = 1,1
         res = inline_tools.inline('return_val = (a == b);',['a','b'])
@@ -411,7 +411,7 @@ class test_object_cmp(NumpyTestCase):
         res = inline_tools.inline(code,['a'])
         assert_equal(res,(a == "hello"))
 
-class test_object_repr(NumpyTestCase):
+class TestObjectRepr(NumpyTestCase):
     def check_repr(self,level=5):
         class foo:
             def __str__(self):
@@ -427,7 +427,7 @@ class test_object_repr(NumpyTestCase):
         assert_equal(first,second)
         assert_equal(res,"repr return")
 
-class test_object_str(NumpyTestCase):
+class TestObjectStr(NumpyTestCase):
     def check_str(self,level=5):
         class foo:
             def __str__(self):
@@ -444,7 +444,7 @@ class test_object_str(NumpyTestCase):
         print res
         assert_equal(res,"str return")
 
-class test_object_unicode(NumpyTestCase):
+class TestObjectUnicode(NumpyTestCase):
     # This ain't going to win awards for test of the year...
     def check_unicode(self,level=5):
         class foo:
@@ -461,7 +461,7 @@ class test_object_unicode(NumpyTestCase):
         assert_equal(first,second)
         assert_equal(res,"unicode")
 
-class test_object_is_callable(NumpyTestCase):
+class TestObjectIsCallable(NumpyTestCase):
     def check_true(self,level=5):
         class foo:
             def __call__(self):
@@ -476,7 +476,7 @@ class test_object_is_callable(NumpyTestCase):
         res = inline_tools.inline('return_val = a.is_callable();',['a'])
         assert not res
 
-class test_object_call(NumpyTestCase):
+class TestObjectCall(NumpyTestCase):
     def check_noargs(self,level=5):
         def foo():
             return (1,2,3)
@@ -532,7 +532,7 @@ class test_object_call(NumpyTestCase):
         # first should == second, but the weird refcount error
         assert_equal(second,third)
 
-class test_object_mcall(NumpyTestCase):
+class TestObjectMcall(NumpyTestCase):
     def check_noargs(self,level=5):
         a = foo()
         res = inline_tools.inline('return_val = a.mcall("bar");',['a'])
@@ -626,7 +626,7 @@ class test_object_mcall(NumpyTestCase):
         # first should == second, but the weird refcount error
         assert_equal(second,third)
 
-class test_object_hash(NumpyTestCase):
+class TestObjectHash(NumpyTestCase):
     def check_hash(self,level=5):
         class foo:
             def __hash__(self):
@@ -636,7 +636,7 @@ class test_object_hash(NumpyTestCase):
         print 'hash:', res
         assert_equal(res,123)
 
-class test_object_is_true(NumpyTestCase):
+class TestObjectIsTrue(NumpyTestCase):
     def check_true(self,level=5):
         class foo:
             pass
@@ -648,7 +648,7 @@ class test_object_is_true(NumpyTestCase):
         res = inline_tools.inline('return_val = a.is_true();',['a'])
         assert_equal(res,0)
 
-class test_object_is_true(NumpyTestCase):
+class TestObjectIsTrue(NumpyTestCase):
     def check_false(self,level=5):
         class foo:
             pass
@@ -660,7 +660,7 @@ class test_object_is_true(NumpyTestCase):
         res = inline_tools.inline('return_val = a.mcall("not");',['a'])
         assert_equal(res,1)
 
-class test_object_type(NumpyTestCase):
+class TestObjectType(NumpyTestCase):
     def check_type(self,level=5):
         class foo:
             pass
@@ -668,7 +668,7 @@ class test_object_type(NumpyTestCase):
         res = inline_tools.inline('return_val = a.type();',['a'])
         assert_equal(res,type(a))
 
-class test_object_size(NumpyTestCase):
+class TestObjectSize(NumpyTestCase):
     def check_size(self,level=5):
         class foo:
             def __len__(self):
@@ -692,7 +692,7 @@ class test_object_size(NumpyTestCase):
         assert_equal(res,len(a))
 
 from UserList import UserList
-class test_object_set_item_op_index(NumpyTestCase):
+class TestObjectSetItemOpIndex(NumpyTestCase):
     def check_list_refcount(self,level=5):
         a = UserList([1,2,3])
         # temporary refcount fix until I understand why it incs by one.
@@ -727,7 +727,7 @@ class test_object_set_item_op_index(NumpyTestCase):
         assert_equal(a[1],1+1j)
 
 from UserDict import UserDict
-class test_object_set_item_op_key(NumpyTestCase):
+class TestObjectSetItemOpKey(NumpyTestCase):
     def check_key_refcount(self,level=5):
         a = UserDict()
         code =  """

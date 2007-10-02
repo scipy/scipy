@@ -12,7 +12,7 @@ restore_path()
 # # import modules that are located in the same directory as this file.
 # restore_path()
 
-class test_examples(NumpyTestCase):
+class TestExamples(NumpyTestCase):
     def test_ex1(self, level = 3):
         ex1()
 

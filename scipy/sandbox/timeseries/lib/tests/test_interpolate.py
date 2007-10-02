@@ -21,7 +21,7 @@ from maskedarray.core import MaskedArray, masked
 
 from timeseries.lib.interpolate import backward_fill, forward_fill, interp_masked1d
 
-class test_funcs(NumpyTestCase):
+class TestFuncs(NumpyTestCase):
     
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)

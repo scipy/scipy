@@ -8,7 +8,7 @@ set_package_path()
 from io.npfile import npfile, sys_endian_code
 restore_path()
 
-class test_npfile(NumpyTestCase):
+class TestNpFile(NumpyTestCase):
 
     def test_init(self):
         fd, fname = mkstemp()

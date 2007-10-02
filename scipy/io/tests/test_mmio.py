@@ -9,7 +9,7 @@ from io.mmio import mminfo,mmread,mmwrite
 import scipy
 restore_path()
 
-class test_mmio_array(NumpyTestCase):
+class TestMMIOArray(NumpyTestCase):
 
     def check_simple(self):
         a = [[1,2],[3,4]]
@@ -136,7 +136,7 @@ _exmpl_mtx = '''\
     5     5   1.200e+01
 '''
 
-class test_mmio_coordinate(NumpyTestCase):
+class TestMMIOCoordinate(NumpyTestCase):
 
     def check_simple_todense(self):
         fn = mktemp()

@@ -31,7 +31,7 @@ from numpy.random import rand
 def random(size):
     return rand(*size)
 
-class test_eigvals(NumpyTestCase):
+class TestEigVals(NumpyTestCase):
 
     def check_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
@@ -77,7 +77,7 @@ class test_eigvals(NumpyTestCase):
 
             print '   (secs for %s calls)' % (repeat)
 
-class test_eig(NumpyTestCase):
+class TestEig(NumpyTestCase):
 
     def check_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
@@ -151,7 +151,7 @@ class test_eig(NumpyTestCase):
             if all(isfinite(res[:, i])):
                 assert_array_almost_equal(res[:, i], 0)
 
-class test_eig_banded(NumpyTestCase):
+class TestEigBanded(NumpyTestCase):
 
     def __init__(self, *args):
         NumpyTestCase.__init__(self, *args)
@@ -436,7 +436,7 @@ class test_eig_banded(NumpyTestCase):
 
 
 
-class test_lu(NumpyTestCase):
+class TestLU(NumpyTestCase):
 
     def __init__(self, *args, **kw):
         NumpyTestCase.__init__(self, *args, **kw)
@@ -519,7 +519,7 @@ class test_lu_single(test_lu):
         self.med = self.vrect.astype(float32)
         self.cmed = self.vrect.astype(complex64)
 
-class test_lu_solve(NumpyTestCase):
+class TestLuSolve(NumpyTestCase):
     def check_lu(self):
         a = random((10,10))
         b = random((10,))
@@ -531,7 +531,7 @@ class test_lu_solve(NumpyTestCase):
 
         assert_array_equal(x1,x2)
 
-class test_svd(NumpyTestCase):
+class TestSvd(NumpyTestCase):
 
     def check_simple(self):
         a = [[1,2,3],[1,20,3],[2,5,6]]
@@ -604,7 +604,7 @@ class test_svd(NumpyTestCase):
                 for i in range(len(s)): sigma[i,i] = s[i]
                 assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
-class test_svdvals(NumpyTestCase):
+class TestSVDVals(NumpyTestCase):
 
     def check_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
@@ -642,12 +642,12 @@ class test_svdvals(NumpyTestCase):
         assert len(s)==2
         assert s[0]>=s[1]
 
-class test_diagsvd(NumpyTestCase):
+class TestDiagsvd(NumpyTestCase):
 
     def check_simple(self):
         assert_array_almost_equal(diagsvd([1,0,0],3,3),[[1,0,0],[0,0,0],[0,0,0]])
 
-class test_cholesky(NumpyTestCase):
+class TestCholesky(NumpyTestCase):
 
     def check_simple(self):
         a = [[8,2,3],[2,9,3],[3,3,6]]
@@ -696,7 +696,7 @@ class test_cholesky(NumpyTestCase):
             assert_array_almost_equal(cholesky(a,lower=1),c)
 
 
-class test_qr(NumpyTestCase):
+class TestQr(NumpyTestCase):
 
     def check_simple(self):
         a = [[8,2,3],[2,9,3],[5,3,6]]
@@ -779,7 +779,7 @@ class test_qr(NumpyTestCase):
             assert_array_almost_equal(dot(conj(transpose(q)),q),identity(n))
             assert_array_almost_equal(dot(q,r),a)
 
-class test_rq(NumpyTestCase):
+class TestRq(NumpyTestCase):
 
     def check_simple(self):
         a = [[8,2,3],[2,9,3],[5,3,6]]
@@ -844,7 +844,7 @@ class test_rq(NumpyTestCase):
 transp = transpose
 any = sometrue
 
-class test_schur(NumpyTestCase):
+class TestSchur(NumpyTestCase):
 
     def check_simple(self):
         a = [[8,12,3],[2,9,3],[10,3,6]]
@@ -856,7 +856,7 @@ class test_schur(NumpyTestCase):
         tc2,zc2 = rsf2csf(tc,zc)
         assert_array_almost_equal(dot(dot(zc2,tc2),transp(conj(zc2))),a)
 
-class test_hessenberg(NumpyTestCase):
+class TestHessenberg(NumpyTestCase):
 
     def check_simple(self):
         a = [[-149, -50,-154],
@@ -905,7 +905,7 @@ class test_hessenberg(NumpyTestCase):
 
 
 
-class test_datanotshared(NumpyTestCase):
+class TestDatanotshared(NumpyTestCase):
     
     def check_datanotshared(self):
         from scipy.linalg.decomp import _datanotshared

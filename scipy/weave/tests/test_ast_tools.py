@@ -8,7 +8,7 @@ set_local_path()
 from weave_test_utils import *
 restore_path()
 
-class test_harvest_variables(NumpyTestCase):
+class TestHarvestVariables(NumpyTestCase):
     """ Not much testing going on here, but
         at least it is a flame test.
     """

@@ -22,12 +22,12 @@ set_package_path()
 from exmplpackage.foo import *
 del sys.path[0]
 
-class test_foo_bar(NumpyTestCase):
+class TestFooBar(NumpyTestCase):
 
     def check_simple(self, level=1):
         assert exmplpackage_foo_bar()=='Hello from exmplpackage_foo_bar'
 
-class test_foo_gun(NumpyTestCase):
+class TestFooGun(NumpyTestCase):
 
     def check_simple(self, level=1):
         assert foo_gun()=='Hello from foo_gun'

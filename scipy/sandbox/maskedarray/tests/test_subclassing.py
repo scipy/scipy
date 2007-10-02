@@ -69,7 +69,7 @@ mmatrix = MMatrix
         
 
 
-class test_subclassing(NumpyTestCase):
+class TestSubclassing(NumpyTestCase):
     """Test suite for masked subclasses of ndarray."""
                 
     def check_data_subclassing(self):

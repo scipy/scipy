@@ -11,7 +11,7 @@ import scipy.stats.models.glm as models
 
 W = R.standard_normal
 
-class test_Regression(NumpyTestCase):
+class TestRegression(NumpyTestCase):
 
     def check_Logistic(self):
         X = W((40,10))

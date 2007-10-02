@@ -14,7 +14,7 @@ restore_path()
 # # import modules that are located in the same directory as this file.
 # restore_path()
 
-class test_segment(NumpyTestCase):
+class TestSegment(NumpyTestCase):
     def check_simple(self):
         assert_equal(segment_axis(N.arange(6),length=3,overlap=0),
                          N.array([[0,1,2],[3,4,5]]))

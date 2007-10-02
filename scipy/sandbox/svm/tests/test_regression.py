@@ -8,7 +8,7 @@ from svm.predict import *
 from svm.regression import *
 restore_path()
 
-class test_regression(NumpyTestCase):
+class TestRegression(NumpyTestCase):
     def check_basics(self):
         Model = LibSvmEpsilonRegressionModel
         kernel = LinearKernel()

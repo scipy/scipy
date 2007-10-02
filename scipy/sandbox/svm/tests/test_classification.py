@@ -9,7 +9,7 @@ from svm.kernel import *
 from svm.predict import *
 restore_path()
 
-class test_classification(NumpyTestCase):
+class TestClassification(NumpyTestCase):
     def check_basics(self):
         kernel = LinearKernel()
         # C-SVC

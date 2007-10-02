@@ -41,7 +41,7 @@ xff1    = xff[0]
 # This class uses lpc in 1 dimension and loop on the axis. Is tested against
 # a direct matrix inversion of the autocorrelation matrix (using matrix inverse 
 # instead of levinson durbin)
-class test_lpc_py(NumpyTestCase):
+class TestLpcPy(NumpyTestCase):
     def check_float(self):
         # Axis -1
         xt      = xcf
@@ -100,7 +100,7 @@ class test_lpc_py(NumpyTestCase):
 
         assert_array_almost_equal(tmp, a)
 
-class test_lpc(NumpyTestCase):
+class TestLpc(NumpyTestCase):
     def check_float(self):
         # Axis -1 
         xt      = xcf

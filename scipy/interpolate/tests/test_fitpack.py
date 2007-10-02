@@ -22,7 +22,7 @@ from interpolate.fitpack2 import LSQBivariateSpline, SmoothBivariateSpline,\
      RectBivariateSpline
 restore_path()
 
-class test_UnivariateSpline(NumpyTestCase):
+class TestUnivariateSpline(NumpyTestCase):
     def check_linear_constant(self):
         x = [1,2,3]
         y = [3,3,3]
@@ -41,7 +41,7 @@ class test_UnivariateSpline(NumpyTestCase):
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2]),[0,1,2])
 
-class test_LSQBivariateSpline(NumpyTestCase):
+class TestLSQBivariateSpline(NumpyTestCase):
     def check_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
@@ -54,7 +54,7 @@ class test_LSQBivariateSpline(NumpyTestCase):
         #print lut.get_coeffs()
         #print lut.get_residual()
 
-class test_SmoothBivariateSpline(NumpyTestCase):
+class TestSmoothBivariateSpline(NumpyTestCase):
     def check_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
@@ -75,7 +75,7 @@ class test_SmoothBivariateSpline(NumpyTestCase):
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[0,0],[1,1],[2,2]])
 
-class test_RectBivariateSpline(NumpyTestCase):
+class TestRectBivariateSpline(NumpyTestCase):
     def check_defaults(self):
         x = array([1,2,3,4,5])
         y = array([1,2,3,4,5])

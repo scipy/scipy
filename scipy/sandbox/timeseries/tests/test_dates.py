@@ -33,7 +33,7 @@ from timeseries import Date, DateArray,\
 from timeseries.cseries import freq_dict
 
 
-class test_creation(NumpyTestCase):
+class TestCreation(NumpyTestCase):
     "Base test class for MaskedArrays."
 
     def __init__(self, *args, **kwds):
@@ -140,7 +140,7 @@ class test_creation(NumpyTestCase):
         assert_equal(date_array(n, n+2), d)
         print "finished test_shortcuts"
 
-class test_date_properties(NumpyTestCase):
+class TestDateProperties(NumpyTestCase):
     "Test properties such as year, month, day_of_week, etc...."
 
     def __init__(self, *args, **kwds):
@@ -245,7 +245,7 @@ def dArrayWrap(date):
 
 def noWrap(item): return item
 
-class test_freq_conversion(NumpyTestCase):
+class TestFreqConversion(NumpyTestCase):
     "Test frequency conversion of date objects"
 
     def __init__(self, *args, **kwds):
@@ -833,7 +833,7 @@ class test_freq_conversion(NumpyTestCase):
             assert_func(date_S_end_of_minute.asfreq('T'), date_S_to_T)
 
 
-class test_methods(NumpyTestCase):
+class TestMethods(NumpyTestCase):
     "Base test class for MaskedArrays."
 
     def __init__(self, *args, **kwds):

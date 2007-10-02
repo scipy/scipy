@@ -25,7 +25,7 @@ def F(x):
 
     return tuple(f.flat)
 
-class test_nonlin(NumpyTestCase):
+class TestNonlin(NumpyTestCase):
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)

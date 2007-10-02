@@ -79,7 +79,7 @@ def reference_sa_constant_interpolation(A,epsilon):
  
     return csr_matrix((Px,Pj,Pp))
 
-class test_sa_strong_connections(NumpyTestCase):
+class TestSaStrongConnections(NumpyTestCase):
     def check_simple(self):
         N = 4
         A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).tocsr()
@@ -120,7 +120,7 @@ class test_sa_strong_connections(NumpyTestCase):
                 assert_array_equal(S_result.todense(),S_expected.todense())
 
 
-class test_sa_constant_interpolation(NumpyTestCase):
+class TestSaConstantInterpolation(NumpyTestCase):
     def check_random(self):
         numpy.random.seed(0)
         for N in [2,3,5,10]:

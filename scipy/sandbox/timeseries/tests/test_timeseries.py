@@ -31,7 +31,7 @@ from timeseries import time_series, TimeSeries, adjust_endpoints, \
     mask_period, align_series, align_with, fill_missing_dates, tsmasked, \
     concatenate_series, stack, split
 
-class test_creation(NumpyTestCase):
+class TestCreation(NumpyTestCase):
     "Base test class for MaskedArrays."
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)
@@ -117,7 +117,7 @@ class test_creation(NumpyTestCase):
         assert_equal(series._mask,[0,0,1])
 #...............................................................................
 
-class test_arithmetics(NumpyTestCase):
+class TestArithmetics(NumpyTestCase):
     "Some basic arithmetic tests"
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)
@@ -215,7 +215,7 @@ class test_arithmetics(NumpyTestCase):
 
 #...............................................................................
 
-class test_getitem(NumpyTestCase):
+class TestGetitem(NumpyTestCase):
     "Some getitem tests"
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)
@@ -320,7 +320,7 @@ class test_getitem(NumpyTestCase):
         assert_equal(series[:,:,0], series._data[:,:,0])
         assert_equal(series[:,:,0]._dates, series._dates)
 
-class test_functions(NumpyTestCase):
+class TestFunctions(NumpyTestCase):
     "Some getitem tests"
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)

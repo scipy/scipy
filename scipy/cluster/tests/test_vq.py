@@ -43,7 +43,7 @@ CODET2  = N.array([[11.0/3, 8.0/3],
 
 LABEL1  = N.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
-class test_vq(NumpyTestCase):
+class TestVq(NumpyTestCase):
     def check_py_vq(self, level=1):
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
@@ -89,7 +89,7 @@ class test_vq(NumpyTestCase):
         else:
             print "== not testing C imp of vq (rank 1) =="
 
-class test_kmean(NumpyTestCase):
+class TestKMean(NumpyTestCase):
     def check_kmeans_simple(self, level=1):
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()

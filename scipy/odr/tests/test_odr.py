@@ -8,7 +8,7 @@ from numpy.testing import NumpyTest, NumpyTestCase, assert_array_almost_equal
 from scipy.odr import Data, Model, ODR, RealData, odr_stop
 
 
-class test_odr(NumpyTestCase):
+class TestODR(NumpyTestCase):
 
     # Explicit Example
 

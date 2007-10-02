@@ -1021,7 +1021,7 @@ class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase,
                             [4,0,0],
                             [6,5,0]])
 
-class test_construct_utils(NumpyTestCase):
+class TestConstructUtils(NumpyTestCase):
     def check_identity(self):
         a = spidentity(3)
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
@@ -1045,7 +1045,7 @@ class test_construct_utils(NumpyTestCase):
 
                    
 
-class test_coo(NumpyTestCase):
+class TestCoo(NumpyTestCase):
     def check_constructor1(self):
         row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
         col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])

@@ -7,7 +7,7 @@ set_package_path()
 from yyy import fun
 del sys.path[0]
 
-class test_fun(NumpyTestCase):
+class TestFun(NumpyTestCase):
     def check_simple(self, level=1):
         assert fun()=='Hello from yyy.fun'
     #...

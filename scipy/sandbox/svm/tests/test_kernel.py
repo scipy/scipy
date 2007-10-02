@@ -8,7 +8,7 @@ restore_path()
 def kernelfunc(x, y):
     return 8 * N.dot(x, y.T)
 
-class test_kernel(NumpyTestCase):
+class TestKernel(NumpyTestCase):
     def check_linear_kernel(self):
         kernel = LinearKernel()
         x = N.array([2.])

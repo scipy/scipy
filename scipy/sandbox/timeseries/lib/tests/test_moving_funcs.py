@@ -28,7 +28,7 @@ from timeseries import time_series, thisday
 
 from timeseries.lib import moving_funcs as MF
 
-class test_cmov_average(NumpyTestCase):
+class TestCMovAverage(NumpyTestCase):
     
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)
@@ -84,7 +84,7 @@ class test_cmov_average(NumpyTestCase):
 
 
 
-class test_mov_funcs(NumpyTestCase):
+class TestMovFuncs(NumpyTestCase):
     
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)

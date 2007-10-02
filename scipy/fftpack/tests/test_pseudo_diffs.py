@@ -77,7 +77,7 @@ def direct_shift(x,a,period=None):
     return ifft(fft(x)*exp(k*a)).real
 
 
-class test_diff(NumpyTestCase):
+class TestDiff(NumpyTestCase):
 
     def check_definition(self):
         for n in [16,17,64,127,32]:
@@ -216,7 +216,7 @@ class test_diff(NumpyTestCase):
             print ' (secs for %s calls)' % (repeat)
 
 
-class test_tilbert(NumpyTestCase):
+class TestTilbert(NumpyTestCase):
 
     def check_definition(self):
         for h in [0.1,0.5,1,5.5,10]:
@@ -277,7 +277,7 @@ class test_tilbert(NumpyTestCase):
             sys.stdout.flush()
             print ' (secs for %s calls)' % (repeat)
 
-class test_itilbert(NumpyTestCase):
+class TestITilbert(NumpyTestCase):
 
     def check_definition(self):
         for h in [0.1,0.5,1,5.5,10]:
@@ -291,7 +291,7 @@ class test_itilbert(NumpyTestCase):
                 assert_array_almost_equal(itilbert(sin(2*x),h),
                                           direct_itilbert(sin(2*x),h))
 
-class test_hilbert(NumpyTestCase):
+class TestHilbert(NumpyTestCase):
 
     def check_definition(self):
         for n in [16,17,64,127]:
@@ -360,7 +360,7 @@ class test_hilbert(NumpyTestCase):
             sys.stdout.flush()
             print ' (secs for %s calls)' % (repeat)
 
-class test_ihilbert(NumpyTestCase):
+class TestIHilbert(NumpyTestCase):
 
     def check_definition(self):
         for n in [16,17,64,127]:
@@ -381,7 +381,7 @@ class test_ihilbert(NumpyTestCase):
             y2 = itilbert(f,h=10)
             assert_array_almost_equal (y,y2)
 
-class test_shift(NumpyTestCase):
+class TestShift(NumpyTestCase):
 
     def check_definition(self):
         for n in [18,17,64,127,32,2048,256]:

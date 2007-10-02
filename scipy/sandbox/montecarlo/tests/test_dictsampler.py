@@ -21,7 +21,7 @@ restore_path()
 import unittest
 
 
-class test_dictsampler(NumpyTestCase):
+class TestDictSampler(NumpyTestCase):
     def check_simple(self):
         """
         # Sample from this discrete distribution:

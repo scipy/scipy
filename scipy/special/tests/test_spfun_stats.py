@@ -5,7 +5,7 @@ set_package_path()
 from scipy.special import gammaln, multigammaln
 restore_path()
 
-class test_multigammaln(NumpyTestCase):
+class TestMultiGammaLn(NumpyTestCase):
     def test1(self):
         a = N.abs(N.random.randn())
         assert_array_equal(multigammaln(a, 1), gammaln(a))

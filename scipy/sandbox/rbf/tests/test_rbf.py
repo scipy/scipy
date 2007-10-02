@@ -9,7 +9,7 @@ set_package_path()
 from rbf.rbf import Rbf
 restore_path()
 
-class test_Rbf1D(NumpyTestCase):
+class TestRbf1d(NumpyTestCase):
     def check_multiquadrics(self):
         x = linspace(0,10,9)
         y = sin(x) 
@@ -17,7 +17,7 @@ class test_Rbf1D(NumpyTestCase):
         yi = rbf(x)
         assert_array_almost_equal(y, yi)
 
-class test_Rbf2D(NumpyTestCase):
+class TestRbf2d(NumpyTestCase):
     def check_multiquadrics(self):
         x = random.rand(50,1)*4-2
         y = random.rand(50,1)*4-2
@@ -27,7 +27,7 @@ class test_Rbf2D(NumpyTestCase):
         zi.shape = x.shape
         assert_array_almost_equal(z, zi)
 
-class test_Rbf3D(NumpyTestCase):
+class TestRbf3d(NumpyTestCase):
     def check_multiquadrics(self):
         x = random.rand(50,1)*4-2
         y = random.rand(50,1)*4-2

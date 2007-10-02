@@ -27,7 +27,7 @@ set_local_path()
 from dierckx_test_data import *
 restore_path()
 
-class test_UnivariateSpline(NumpyTestCase):
+class TestUnivariateSpline(NumpyTestCase):
     def check_linear_constant(self):
         x = [1,2,3]
         y = [3,3,3]
@@ -103,7 +103,7 @@ class test_UnivariateSpline(NumpyTestCase):
         ex = array([0.0, pi, 2.0*pi, 3.0*pi, 4.0*pi])
         assert_array_almost_equal(uspl.roots(),ex, decimal=3)
     
-class test_LSQUnivariateSpline(NumpyTestCase):
+class TestLSQUnivariateSpline(NumpyTestCase):
     def check_curfit_against_dierckx(self):
         """ Test against results obtined from the pure fortran routines.
             
@@ -121,7 +121,7 @@ class test_LSQUnivariateSpline(NumpyTestCase):
             assert_array_almost_equal(around(lsquspl(x),1),
                                       curfit_test_lsq['sp'][i])
 
-class test_LSQBivariateSpline(NumpyTestCase):
+class TestLSQBivariateSpline(NumpyTestCase):
     def check_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
@@ -134,7 +134,7 @@ class test_LSQBivariateSpline(NumpyTestCase):
         #print lut.get_coeffs()
         #print lut.get_residual()
 
-class test_SmoothBivariateSpline(NumpyTestCase):
+class TestSmoothBivariateSpline(NumpyTestCase):
     def check_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
@@ -155,7 +155,7 @@ class test_SmoothBivariateSpline(NumpyTestCase):
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[0,0],[1,1],[2,2]])
 
-class test_RectBivariateSpline(NumpyTestCase):
+class TestRectBivariateSpline(NumpyTestCase):
     def check_defaults(self):
         x = array([1,2,3,4,5])
         y = array([1,2,3,4,5])

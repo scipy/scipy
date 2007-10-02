@@ -11,7 +11,7 @@ from numpy.testing import assert_almost_equal, NumpyTest, NumpyTestCase
 
 from scipy.stats.models import utils, formula, contrast
 
-class test_term(NumpyTestCase):
+class TestTerm(NumpyTestCase):
 
     def test_init(self):
         t1 = formula.term("trivial")
@@ -47,7 +47,7 @@ class test_term(NumpyTestCase):
         f = intercept * t1
         self.assertEqual(str(f), str(formula.formula(t1)))
 
-class test_formula(NumpyTestCase):
+class TestFormula(NumpyTestCase):
 
     def setUp(self):
         self.X = R.standard_normal((40,10))

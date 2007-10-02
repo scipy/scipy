@@ -7,7 +7,7 @@ restore_path()
 
 from numpy import arange, add, array,sin,cos,pi
 
-class test_diff(NumpyTestCase):
+class TestDiff(NumpyTestCase):
     def check_1(self):
         for n in [64,100,125,4000]:
             x = arange(n)*2*pi/n

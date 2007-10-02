@@ -23,7 +23,7 @@ from maskedarray.core import *
 import maskedarray.extras
 from maskedarray.extras import *
 
-class test_average(NumpyTestCase):        
+class TestAverage(NumpyTestCase):        
     "Several tests of average. Why so many ? Good point..."
     def check_testAverage1(self):
         "Test of average."
@@ -98,7 +98,7 @@ class test_average(NumpyTestCase):
         a2dma = average(a2dm, axis=1)
         assert_equal(a2dma, [1.5, 4.0])
        
-class test_concatenator(NumpyTestCase):
+class TestConcatenator(NumpyTestCase):
     "Tests for mr_, the equivalent of r_ for masked arrays."
     def check_1d(self):
         "Tests mr_ on 1D arrays."
@@ -130,7 +130,7 @@ class test_concatenator(NumpyTestCase):
         assert_array_equal(d[5:,:],b_2)
         assert_array_equal(d.mask, N.r_[m_1,m_2])
 
-class test_notmasked(NumpyTestCase):
+class TestNotMasked(NumpyTestCase):
     "Tests notmasked_edges and notmasked_contiguous."
     def check_edges(self):
         "Tests unmasked_edges"
@@ -172,7 +172,7 @@ class test_notmasked(NumpyTestCase):
         assert_equal(tmp[2][-1], slice(7,7,None))
         assert_equal(tmp[2][-2], slice(0,5,None))
         
-class test_2dfunctions(NumpyTestCase):
+class Test2DFunctions(NumpyTestCase):
     "Tests 2D functions"
     def check_compress2d(self):
         "Tests compress2d"
@@ -316,7 +316,7 @@ class test_2dfunctions(NumpyTestCase):
         assert_equal(dx._data, N.r_[0,difx_d,0])
         assert_equal(dx._mask, N.r_[1,0,0,0,0,1])
 
-class test_apply_along_axis(NumpyTestCase):
+class TestApplyAlongAxis(NumpyTestCase):
     "Tests 2D functions"
     def check_3d(self):
         a = arange(12.).reshape(2,2,3)

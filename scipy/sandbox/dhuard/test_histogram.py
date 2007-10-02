@@ -4,7 +4,7 @@ from histogram import _histogram_fixed_binsize, _histogram_digitize,\
 import numpy as np
 from numpy.random import rand
 
-class test_histogram1d_functions(NumpyTestCase):
+class TestHistogram1DFunctions(NumpyTestCase):
     def check_consistency(self):
         n = 100
         r = rand(n)*12-1
@@ -15,7 +15,7 @@ class test_histogram1d_functions(NumpyTestCase):
         assert_array_equal(a,b)
         assert_array_equal(c,b)
         
-class test_histogram(NumpyTestCase):
+class TestHistogram(NumpyTestCase):
     def check_simple(self):
         n=100
         v=rand(n)

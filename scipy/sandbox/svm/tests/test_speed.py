@@ -8,7 +8,7 @@ from svm.kernel import *
 from svm.predict import *
 restore_path()
 
-class test_classification_speed(NumpyTestCase):
+class TestClassificationSpeed(NumpyTestCase):
     def check_large_test_dataset(self):
         x = N.random.randn(150, 3)
 

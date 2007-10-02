@@ -5,7 +5,7 @@ set_local_path('../..')
 import svm.libsvm as libsvm
 restore_path()
 
-class test_libsvm(NumpyTestCase):
+class TestLibSVM(NumpyTestCase):
     def check_svm_node(self):
         node = libsvm.svm_node()
         node = N.empty((), dtype=libsvm.svm_node_dtype)

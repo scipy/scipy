@@ -21,7 +21,7 @@ from maskedarray.testutils import *
 from maskedarray.mstats import *
 
 #..............................................................................
-class test_quantiles(NumpyTestCase):
+class TestQuantiles(NumpyTestCase):
     "Base test class for MaskedArrays."
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)
@@ -81,7 +81,7 @@ class test_quantiles(NumpyTestCase):
         assert_almost_equal(mquantiles(b, axis=1), 
                             maskedarray.resize([24.9, 50., 75.1], (100,3)))        
         
-class test_median(NumpyTestCase):
+class TestMedian(NumpyTestCase):
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)
         
@@ -111,7 +111,7 @@ class test_median(NumpyTestCase):
         assert_equal(mmedian(x,0), [[12,10],[8,9],[16,17]])
 
 #..............................................................................
-class test_trimming(NumpyTestCase):
+class TestTrimming(NumpyTestCase):
     #
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)
@@ -153,7 +153,7 @@ class test_trimming(NumpyTestCase):
         assert_equal(winsorized.mask, data.mask)
 #..............................................................................
 
-class test_misc(NumpyTestCase):
+class TestMisc(NumpyTestCase):
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)    
         

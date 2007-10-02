@@ -7,7 +7,7 @@ set_package_path()
 from scipy.integrate import quadrature, romberg, romb
 restore_path()
 
-class test_quadrature(NumpyTestCase):
+class TestQuadrature(NumpyTestCase):
     def quad(self, x, a, b, args):
         raise NotImplementedError
 

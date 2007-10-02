@@ -6,7 +6,7 @@ from optimize import cobyla as co
 restore_path()
 import math
 
-class test_cobyla(NumpyTestCase):
+class TestCobyla(NumpyTestCase):
     def check_simple(self, level=1):
 
         function = lambda x: x[0]**2 + abs(x[1])**3

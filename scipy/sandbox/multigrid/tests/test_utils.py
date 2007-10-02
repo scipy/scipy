@@ -11,7 +11,7 @@ from scipy.sandbox.multigrid.utils import infinity_norm,diag_sparse
 restore_path()
 
 
-class test_utils(NumpyTestCase):
+class TestUtils(NumpyTestCase):
     def check_infinity_norm(self):
         A = matrix([[-4]])
         assert_equal(infinity_norm(csr_matrix(A)),4)

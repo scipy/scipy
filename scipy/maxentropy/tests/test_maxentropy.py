@@ -16,7 +16,7 @@ restore_path()
 import unittest
 
 
-class test_maxentropy(NumpyTestCase):
+class TestMaxentropy(NumpyTestCase):
     """Test whether logsumexp() function correctly handles large
     inputs.
     """

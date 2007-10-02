@@ -10,7 +10,7 @@ def assert_quad((value, err), tabledValue, errTol=1.5e-8):
     if errTol is not None:
         assert err < errTol, (err, errTol)
 
-class test_quad(NumpyTestCase):
+class TestQuad(NumpyTestCase):
     def check_typical(self):
         # 1) Typical function with two extra arguments:
         def myfunc(x,n,z):       # Bessel function integrand

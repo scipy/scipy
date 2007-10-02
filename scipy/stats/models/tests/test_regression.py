@@ -9,7 +9,7 @@ from scipy.stats.models.regression import ols_model, ar_model
 
 W = standard_normal
 
-class test_Regression(NumpyTestCase):
+class TestRegression(NumpyTestCase):
 
     def testOLS(self):
         X = W((40,10))

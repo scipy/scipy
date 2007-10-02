@@ -48,7 +48,7 @@ def print_assert_equal(test_string,actual,desired):
 # Scalar conversion test classes
 #   int, float, complex
 #----------------------------------------------------------------------------
-class test_int_converter(NumpyTestCase):
+class TestIntConverter(NumpyTestCase):
     compiler = ''
     def check_type_match_string(self,level=5):
         s = c_spec.int_converter()
@@ -103,7 +103,7 @@ class test_int_converter(NumpyTestCase):
 
         assert( c == 3)
 
-class test_float_converter(NumpyTestCase):
+class TestFloatConverter(NumpyTestCase):
     compiler = ''
     def check_type_match_string(self,level=5):
         s = c_spec.float_converter()
@@ -158,7 +158,7 @@ class test_float_converter(NumpyTestCase):
         c = test(b)
         assert( c == 3.)
 
-class test_complex_converter(NumpyTestCase):
+class TestComplexConverter(NumpyTestCase):
     compiler = ''
     def check_type_match_string(self,level=5):
         s = c_spec.complex_converter()
@@ -216,7 +216,7 @@ class test_complex_converter(NumpyTestCase):
 # File conversion tests
 #----------------------------------------------------------------------------
 
-class test_file_converter(NumpyTestCase):
+class TestFileConverter(NumpyTestCase):
     compiler = ''
     def check_py_to_file(self,level=5):
         import tempfile
@@ -250,14 +250,14 @@ class test_file_converter(NumpyTestCase):
 # Instance conversion tests
 #----------------------------------------------------------------------------
 
-class test_instance_converter(NumpyTestCase):
+class TestInstanceConverter(NumpyTestCase):
     pass
 
 #----------------------------------------------------------------------------
 # Callable object conversion tests
 #----------------------------------------------------------------------------
 
-class test_callable_converter(NumpyTestCase):
+class TestCallableConverter(NumpyTestCase):
     compiler=''
     def check_call_function(self,level=5):
         import string
@@ -277,7 +277,7 @@ class test_callable_converter(NumpyTestCase):
         desired = func(search_str,sub_str)
         assert(desired == actual)
 
-class test_sequence_converter(NumpyTestCase):
+class TestSequenceConverter(NumpyTestCase):
     compiler = ''
     def check_convert_to_dict(self,level=5):
         d = {}
@@ -292,7 +292,7 @@ class test_sequence_converter(NumpyTestCase):
         t = ()
         inline_tools.inline("",['t'],compiler=self.compiler,force=1)
 
-class test_string_converter(NumpyTestCase):
+class TestStringConverter(NumpyTestCase):
     compiler = ''
     def check_type_match_string(self,level=5):
         s = c_spec.string_converter()
@@ -347,7 +347,7 @@ class test_string_converter(NumpyTestCase):
         c = test(b)
         assert( c == 'hello')
 
-class test_list_converter(NumpyTestCase):
+class TestListConverter(NumpyTestCase):
     compiler = ''
     def check_type_match_bad(self,level=5):
         s = c_spec.list_converter()
@@ -458,7 +458,7 @@ class test_list_converter(NumpyTestCase):
         print 'python:', t2 - t1
         assert( sum1 == sum2 and sum1 == sum3)
 
-class test_tuple_converter(NumpyTestCase):
+class TestTupleConverter(NumpyTestCase):
     compiler = ''
     def check_type_match_bad(self,level=5):
         s = c_spec.tuple_converter()
@@ -511,7 +511,7 @@ class test_tuple_converter(NumpyTestCase):
         assert( c == ('hello',None))
 
 
-class test_dict_converter(NumpyTestCase):
+class TestDictConverter(NumpyTestCase):
     """ Base Class for dictionary conversion tests.
     """
 

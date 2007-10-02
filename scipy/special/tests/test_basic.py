@@ -40,7 +40,7 @@ from scipy.special import *
 import scipy.special._cephes as cephes
 restore_path()
 
-class test_cephes(NumpyTestCase):
+class TestCephes(NumpyTestCase):
     def check_airy(self):
         cephes.airy(0)
     def check_airye(self):
@@ -456,7 +456,7 @@ class test_cephes(NumpyTestCase):
     def check_wofz(self):
         cephes.wofz(0)
 
-class test_airy(NumpyTestCase):
+class TestAiry(NumpyTestCase):
     def check_airy(self):
         #This tests the airy function to ensure 8 place accuracy in computation
 
@@ -492,7 +492,7 @@ class test_airy(NumpyTestCase):
                                      array([ 0.5357]),
                                      array([ 0.7012])),4)
 
-class test_assoc_laguerre(NumpyTestCase):
+class TestAssocLaguerre(NumpyTestCase):
     def check_assoc_laguerre(self):
         a1 = genlaguerre(11,1)
         a2 = assoc_laguerre(.2,11,1)
@@ -500,11 +500,11 @@ class test_assoc_laguerre(NumpyTestCase):
         a2 = assoc_laguerre(1,11,1)
         assert_array_almost_equal(a2,a1(1),8)
 
-class test_besselpoly(NumpyTestCase):
+class TestBesselpoly(NumpyTestCase):
     def check_besselpoly(self):
         pass
 
-class test_kelvin(NumpyTestCase):
+class TestKelvin(NumpyTestCase):
     def check_bei(self):
         mbei = bei(2)
         assert_almost_equal(mbei, 0.9722916273066613,5)#this may not be exact
@@ -676,7 +676,7 @@ class test_kelvin(NumpyTestCase):
                                                 16.08312,
                                                 20.53068]),4)
 
-class test_bernoulli(NumpyTestCase):
+class TestBernoulli(NumpyTestCase):
     def check_bernoulli(self):
         brn = bernoulli(5)
         assert_array_almost_equal(brn,array([1.0000,
@@ -686,7 +686,7 @@ class test_bernoulli(NumpyTestCase):
                                              -0.0333,
                                              0.0000]),4)
 
-class test_beta(NumpyTestCase):
+class TestBeta(NumpyTestCase):
     def check_beta(self):
         bet = beta(2,4)
         betg = (gamma(2)*gamma(4))/gamma(6)
@@ -706,7 +706,7 @@ class test_beta(NumpyTestCase):
         comp = betainc(2,4,y)
         assert_almost_equal(comp,.5,5)
 
-class test_cheby(NumpyTestCase):
+class TestCheby(NumpyTestCase):
     def check_chebyc(self):
         C0 = chebyc(0)
         C1 = chebyc(1)
@@ -764,7 +764,7 @@ class test_cheby(NumpyTestCase):
         assert_array_almost_equal(U4.c,[16,0,-12,0,1],13)
         assert_array_almost_equal(U5.c,[32,0,-32,0,6,0],13)
 
-class test_trigonometric(NumpyTestCase):
+class TestTrigonometric(NumpyTestCase):
     def check_cbrt(self):
         cb = cbrt(27)
         cbrl = 27**(1.0/3.0)
@@ -837,7 +837,7 @@ class test_trigonometric(NumpyTestCase):
         snmrl1 = sin(pi/4.0)
         assert_almost_equal(snm1,snmrl1,8)
 
-class test_tandg(NumpyTestCase):
+class TestTandg(NumpyTestCase):
 
     def check_tandg(self):
         tn = tandg(30)
@@ -865,7 +865,7 @@ class test_tandg(NumpyTestCase):
         assert_almost_equal(tandg(315), -1.0, 14)
         assert_almost_equal(tandg(-315), 1.0, 14)
 
-class test_ellip(NumpyTestCase):
+class TestEllip(NumpyTestCase):
     def check_ellipj(self):
         el = ellipj(0.2,0)
         rel = [sin(0.2),cos(0.2),1.0,0.20]
@@ -901,7 +901,7 @@ class test_ellip(NumpyTestCase):
         assert_almost_equal(eleinc, 0.58823065, 8)
 
 
-class test_erf(NumpyTestCase):
+class TestErf(NumpyTestCase):
 
     def check_erf(self):
         er = erf(.25)
@@ -933,7 +933,7 @@ class test_erf(NumpyTestCase):
         assert_equal(d,b) #makes sure state was returned
         #assert_equal(d,1-a)
 
-class test_euler(NumpyTestCase):
+class TestEuler(NumpyTestCase):
     def check_euler(self):
         eu0 = euler(0)
         eu1 = euler(1)
@@ -955,7 +955,7 @@ class test_euler(NumpyTestCase):
         errmax = max(err)
         assert_almost_equal(errmax, 0.0, 14)
 
-class test_exp(NumpyTestCase):
+class TestExp(NumpyTestCase):
     def check_exp2(self):
         ex = exp2(2)
         exrl = 2**2
@@ -986,7 +986,7 @@ class test_exp(NumpyTestCase):
         exrl1 = (exp(2)-1,exp(2.1)-1,exp(2.2)-1)
         assert_array_almost_equal(ex1,exrl1,8)
 
-class test_fresnel(NumpyTestCase):
+class TestFresnel(NumpyTestCase):
     def check_fresnel(self):
         frs = array(fresnel(.5))
         assert_array_almost_equal(frs,array([0.064732432859999287, 0.49234422587144644]),8)
@@ -1023,7 +1023,7 @@ class test_fresnel(NumpyTestCase):
         assert_array_almost_equal(frs,szo,12)
 
 
-class test_gamma(NumpyTestCase):
+class TestGamma(NumpyTestCase):
     def check_gamma(self):
         gam = gamma(5)
         assert_equal(gam,24.0)
@@ -1057,7 +1057,7 @@ class test_gamma(NumpyTestCase):
         rlgam = 1/gamma(8)
         assert_almost_equal(rgam,rlgam,8)
 
-class test_hankel(NumpyTestCase):
+class TestHankel(NumpyTestCase):
     def check_negv(self):
         assert_almost_equal(hankel1(-3,2), -hankel1(3,2), 14)
 
@@ -1090,7 +1090,7 @@ class test_hankel(NumpyTestCase):
         hankrl2e = hankel2e(1,.1)
         assert_almost_equal(hank2e,hankrl2e,8)
 
-class test_hermite(NumpyTestCase):
+class TestHermite(NumpyTestCase):
     def check_hermite(self):
         H0 = hermite(0)
         H1 = hermite(1)
@@ -1130,7 +1130,7 @@ class test_hermite(NumpyTestCase):
 
 _gam = cephes.gamma
 
-class test_gegenbauer(NumpyTestCase):
+class TestGegenbauer(NumpyTestCase):
 
     def check_gegenbauer(self):
         a = 5*rand()-0.5
@@ -1153,7 +1153,7 @@ class test_gegenbauer(NumpyTestCase):
                                                0,15*poch(a,3),0])/15.0,11)
 
 
-class test_hyper(NumpyTestCase):
+class TestHyper(NumpyTestCase):
     def check_h1vp(self):
         h1 = h1vp(1,.1)
         h1real = (jvp(1,.1)+yvp(1,.1)*1j)
@@ -1216,7 +1216,7 @@ class test_hyper(NumpyTestCase):
                                /(gamma(a)*gamma(2-b)))
         assert_array_almost_equal(hypu,hprl,12)
 
-class test_bessel(NumpyTestCase):
+class TestBessel(NumpyTestCase):
     def check_i0(self):
         values = [[0.0, 1.0],
                   [1e-10, 1.0],
@@ -1537,7 +1537,7 @@ class test_bessel(NumpyTestCase):
         assert_array_almost_equal(yvp1,yvpr,10)
 
 
-class test_laguerre(NumpyTestCase):
+class TestLaguerre(NumpyTestCase):
     def check_laguerre(self):
         lag0 = laguerre(0)
         lag1 = laguerre(1)
@@ -1565,7 +1565,7 @@ class test_laguerre(NumpyTestCase):
 
 
 # Base polynomials come from Abrahmowitz and Stegan
-class test_legendre(NumpyTestCase):
+class TestLegendre(NumpyTestCase):
     def check_legendre(self):
         leg0 = legendre(0)
         leg1 = legendre(1)
@@ -1581,14 +1581,14 @@ class test_legendre(NumpyTestCase):
         assert_almost_equal(leg5.c,array([63,0,-70,0,15,0])/8.0)
 
 
-class test_lambda(NumpyTestCase):
+class TestLambda(NumpyTestCase):
     def check_lmbda(self):
         lam = lmbda(1,.1)
         lamr = (array([jn(0,.1), 2*jn(1,.1)/.1]),
                 array([jvp(0,.1), -2*jv(1,.1)/.01 + 2*jvp(1,.1)/.1]))
         assert_array_almost_equal(lam,lamr,8)
 
-class test_log1p(NumpyTestCase):
+class TestLog1p(NumpyTestCase):
     def check_log1p(self):
         l1p = (log1p(10),log1p(11),log1p(12))
         l1prl = (log(11),log(12),log(13))
@@ -1599,7 +1599,7 @@ class test_log1p(NumpyTestCase):
         l1pmrl = (log(2),log(2.1),log(2.2))
         assert_array_almost_equal(l1pm,l1pmrl,8)
 
-class test_legendre_functions(NumpyTestCase):
+class TestLegendreFunctions(NumpyTestCase):
     def check_lpmn(self):
         lp = lpmn(0,2,.5)
         assert_array_almost_equal(lp,(array([       [ 1.00000 ,
@@ -1634,7 +1634,7 @@ class test_legendre_functions(NumpyTestCase):
         assert_array_almost_equal(lqf,(array([ 0.5493, -0.7253, -0.8187]),
                                        array([ 1.3333,  1.216 , -0.8427])),4)
 
-class test_mathieu(NumpyTestCase):
+class TestMathieu(NumpyTestCase):
 
     def check_mathieu_a(self):
         pass
@@ -1647,7 +1647,7 @@ class test_mathieu(NumpyTestCase):
         pass
             #same problem as above
 
-class test_fresnel_integral(NumpyTestCase):
+class TestFresnelIntegral(NumpyTestCase):
 
     def check_modfresnelp(self):
         pass
@@ -1655,7 +1655,7 @@ class test_fresnel_integral(NumpyTestCase):
     def check_modfresnelm(self):
         pass
 
-class test_obl_cv_seq(NumpyTestCase):
+class TestOblCvSeq(NumpyTestCase):
     def check_obl_cv_seq(self):
         obl = obl_cv_seq(0,3,1)
         assert_array_almost_equal(obl,array([ -0.348602,
@@ -1663,7 +1663,7 @@ class test_obl_cv_seq(NumpyTestCase):
                                               5.486800,
                                               11.492120]),5)
 
-class test_parabolic_cylinder(NumpyTestCase):
+class TestParabolicCylinder(NumpyTestCase):
     def check_pbdn_seq(self):
         pb = pbdn_seq(1,.1)
         assert_array_almost_equal(pb,(array([ 0.9975,
@@ -1680,7 +1680,7 @@ class test_parabolic_cylinder(NumpyTestCase):
         pbv = pbdv_seq(1,.1)
         assert_array_almost_equal(pbv,(real(pbn[0]),real(pbn[1])),4)
 
-class test_polygamma(NumpyTestCase):
+class TestPolygamma(NumpyTestCase):
     # from Table 6.2 (pg. 271) of A&S
     def check_polygamma(self):
         poly2 = polygamma(2,1)
@@ -1688,7 +1688,7 @@ class test_polygamma(NumpyTestCase):
         assert_almost_equal(poly2,-2.4041138063,10)
         assert_almost_equal(poly3,6.4939394023,10)
 
-class test_pro_cv_seq(NumpyTestCase):
+class TestProCvSeq(NumpyTestCase):
     def check_pro_cv_seq(self):
         prol = pro_cv_seq(0,3,1)
         assert_array_almost_equal(prol,array([  0.319000,
@@ -1696,12 +1696,12 @@ class test_pro_cv_seq(NumpyTestCase):
                                                6.533471,
                                                12.514462]),5)
 
-class test_psi(NumpyTestCase):
+class TestPsi(NumpyTestCase):
     def check_psi(self):
         ps = psi(1)
         assert_almost_equal(ps,-0.57721566490153287,8)
 
-class test_radian(NumpyTestCase):
+class TestRadian(NumpyTestCase):
     def check_radian(self):
         rad = radian(90,0,0)
         assert_almost_equal(rad,pi/2.0,5)
@@ -1710,7 +1710,7 @@ class test_radian(NumpyTestCase):
         rad1 = radian(90,1,60)
         assert_almost_equal(rad1,pi/2+0.0005816135199345904,5)
 
-class test_riccati(NumpyTestCase):
+class TestRiccati(NumpyTestCase):
     def check_riccati_jn(self):
         jnrl = (sph_jn(1,.2)[0]*.2,sph_jn(1,.2)[0]+sph_jn(1,.2)[1]*.2)
         ricjn = riccati_jn(1,.2)
@@ -1721,7 +1721,7 @@ class test_riccati(NumpyTestCase):
         ricyn = riccati_yn(1,.2)
         assert_array_almost_equal(ricyn,ynrl,8)
 
-class test_round(NumpyTestCase):
+class TestRound(NumpyTestCase):
     def check_round(self):
         rnd = map(int,(round(10.1),round(10.4),round(10.5),round(10.6)))
 
@@ -1835,7 +1835,7 @@ class _test_sh_jacobi(NumpyTestCase):
         assert_array_almost_equal(G4.c,ge4.c,13)
         assert_array_almost_equal(G5.c,ge5.c,13)
 
-class test_spherical(NumpyTestCase):
+class TestSpherical(NumpyTestCase):
     def check_sph_harm(self):
         pass
 

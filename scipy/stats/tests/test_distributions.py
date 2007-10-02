@@ -59,7 +59,7 @@ for dist in dists:
     else:
         args = str(tuple(1.0+rand(nargs)))
     exstr = r"""
-class test_%s(NumpyTestCase):
+class Test%s(NumpyTestCase):
     def check_cdf(self):
         D,pval = stats.kstest('%s','',args=%s,N=30)
         if (pval < %f):
@@ -71,7 +71,7 @@ class test_%s(NumpyTestCase):
     exec exstr
 
 
-class test_randint(NumpyTestCase):
+class TestRandInt(NumpyTestCase):
     def check_rvs(self):
         vals = stats.randint.rvs(5,30,size=100)
         assert(numpy.all(vals < 30) & numpy.all(vals >= 5))
@@ -97,7 +97,7 @@ class test_randint(NumpyTestCase):
         vals = stats.randint.cdf(x,5,30)
         assert_array_almost_equal(vals, out, decimal=12)
 
-class test_binom(NumpyTestCase):
+class TestBinom(NumpyTestCase):
     def check_rvs(self):
         vals = stats.binom.rvs(10, 0.75, size=(2, 50))
         assert(numpy.all(vals >= 0) & numpy.all(vals <= 10))
@@ -108,7 +108,7 @@ class test_binom(NumpyTestCase):
         assert(val.dtype.char in typecodes['AllInteger'])
 
 
-class test_bernoulli(NumpyTestCase):
+class TestBernoulli(NumpyTestCase):
     def check_rvs(self):
         vals = stats.bernoulli.rvs(0.75, size=(2, 50))
         assert(numpy.all(vals >= 0) & numpy.all(vals <= 1))
@@ -118,7 +118,7 @@ class test_bernoulli(NumpyTestCase):
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
-class test_nbinom(NumpyTestCase):
+class TestNBinom(NumpyTestCase):
     def check_rvs(self):
         vals = stats.nbinom.rvs(10, 0.75, size=(2, 50))
         assert(numpy.all(vals >= 0))
@@ -128,7 +128,7 @@ class test_nbinom(NumpyTestCase):
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
-class test_geom(NumpyTestCase):
+class TestGeom(NumpyTestCase):
     def check_rvs(self):
         vals = stats.geom.rvs(0.75, size=(2, 50))
         assert(numpy.all(vals >= 0))
@@ -150,7 +150,7 @@ class test_geom(NumpyTestCase):
         assert_array_almost_equal(vals_sf,1-expected)
 
 
-class test_hypergeom(NumpyTestCase):
+class TestHypergeom(NumpyTestCase):
     def check_rvs(self):
         vals = stats.hypergeom.rvs(20, 10, 3, size=(2, 50))
         assert(numpy.all(vals >= 0) &
@@ -161,7 +161,7 @@ class test_hypergeom(NumpyTestCase):
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
-class test_logser(NumpyTestCase):
+class TestLogser(NumpyTestCase):
     def check_rvs(self):
         vals = stats.logser.rvs(0.75, size=(2, 50))
         assert(numpy.all(vals >= 1))
@@ -171,7 +171,7 @@ class test_logser(NumpyTestCase):
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
-class test_poisson(NumpyTestCase):
+class TestPoisson(NumpyTestCase):
     def check_rvs(self):
         vals = stats.poisson.rvs(0.5, size=(2, 50))
         assert(numpy.all(vals >= 0))
@@ -181,7 +181,7 @@ class test_poisson(NumpyTestCase):
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
-class test_zipf(NumpyTestCase):
+class TestZipf(NumpyTestCase):
     def check_rvs(self):
         vals = stats.zipf.rvs(1.5, size=(2, 50))
         assert(numpy.all(vals >= 1))
@@ -191,7 +191,7 @@ class test_zipf(NumpyTestCase):
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
-class test_dlaplace(NumpyTestCase):
+class TestDLaplace(NumpyTestCase):
     def check_rvs(self):
         vals = stats.dlaplace.rvs(1.5 , size=(2, 50))
         assert(numpy.shape(vals) == (2, 50))
@@ -200,7 +200,7 @@ class test_dlaplace(NumpyTestCase):
         assert(isinstance(val, numpy.ndarray))
         assert(val.dtype.char in typecodes['AllInteger'])
 
-class test_rv_discrete(NumpyTestCase):
+class TestRvDiscrete(NumpyTestCase):
     def check_rvs(self):
         states = [-1,0,1,2,3,4]
         probability = [0.0,0.3,0.4,0.0,0.3,0.0]
@@ -211,7 +211,7 @@ class test_rv_discrete(NumpyTestCase):
         for s,p in zip(states,probability):
             assert abs(sum(x == s)/float(samples) - p) < 0.05
 
-class test_expon(NumpyTestCase):
+class TestExpon(NumpyTestCase):
     def check_zero(self):
         assert_equal(stats.expon.pdf(0),1)
 

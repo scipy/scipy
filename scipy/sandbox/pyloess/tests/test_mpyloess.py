@@ -34,7 +34,7 @@ from mpyloess import lowess, stl, loess, loess_anova
 #####---------------------------------------------------------------------------
 #---- --- LOWESS ---
 #####---------------------------------------------------------------------------
-class test_lowess(NumpyTestCase):
+class TestLowess(NumpyTestCase):
     "Test class for lowess."
     #
     def __init__(self, *args, **kwds):
@@ -95,7 +95,7 @@ class test_lowess(NumpyTestCase):
 #####---------------------------------------------------------------------------
 #---- --- STL ---
 #####---------------------------------------------------------------------------
-class test_stl(NumpyTestCase):
+class TestStl(NumpyTestCase):
     "Tests STL."
     #
     def __init__(self, *args, **kwds):
@@ -141,7 +141,7 @@ class test_stl(NumpyTestCase):
 #---- --- LOESS ---
 #####---------------------------------------------------------------------------
 
-class test_loess2d(NumpyTestCase):
+class TestLoess2D(NumpyTestCase):
     "Test class for lowess."
     #
     def __init__(self, *args, **kwds):
@@ -292,7 +292,7 @@ class test_loess2d(NumpyTestCase):
 #####---------------------------------------------------------------------------
 #---- --- test 1D ---
 #####---------------------------------------------------------------------------
-class test_loess_gas(NumpyTestCase):
+class TestLoessGas(NumpyTestCase):
     "Test class for lowess."
     #
     def __init__(self, *args, **kwds):

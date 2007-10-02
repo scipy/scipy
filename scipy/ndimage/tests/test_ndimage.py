@@ -66,7 +66,7 @@ def diff(a, b):
     return math.sqrt(t)
 
 
-class test_ndimage(NumpyTestCase):
+class TestNdimage(NumpyTestCase):
 
     def setUp(self):
         # list of numarray data types

@@ -9,7 +9,7 @@ import scipy.stats.models.rlm as models
 
 W = R.standard_normal
 
-class test_Regression(NumpyTestCase):
+class TestRegression(NumpyTestCase):
 
     def test_Robust(self):
         X = W((40,10))

@@ -8,7 +8,7 @@ from numpy.testing import assert_almost_equal, NumpyTest, NumpyTestCase
 
 from scipy.stats.models import utils
 
-class test_Utils(NumpyTestCase):
+class TestUtils(NumpyTestCase):
 
     def test_recipr(self):
         X = N.array([[2,1],[-1,0]])

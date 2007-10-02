@@ -8,7 +8,7 @@ from scipy.sandbox.multigrid.adaptive import fit_candidates
 restore_path()
 
 
-class test_fit_candidates(NumpyTestCase):
+class TestFitCandidates(NumpyTestCase):
     def setUp(self):
         self.cases = []
 

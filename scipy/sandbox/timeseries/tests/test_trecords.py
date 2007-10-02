@@ -33,7 +33,7 @@ from timeseries.trecords import TimeSeriesRecords, TimeSeries,\
 
 
 #..............................................................................
-class test_mrecords(NumpyTestCase):
+class TestMRecords(NumpyTestCase):
     "Base test class for MaskedArrays."
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)

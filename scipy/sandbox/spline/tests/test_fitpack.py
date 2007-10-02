@@ -24,7 +24,7 @@ set_local_path()
 from dierckx_test_data import *
 restore_path()
 
-class test_splrep_splev(NumpyTestCase):
+class TestSplrepSplev(NumpyTestCase):
     def check_curfit_against_dierckx_smth(self):
         x,y = curfit_test['x'],curfit_test['y']
         k,s = curfit_test_smth['k'],curfit_test_smth['s']
@@ -83,7 +83,7 @@ class test_splrep_splev(NumpyTestCase):
                 yy = asarray(splev(x,tck))
                 assert_array_almost_equal(yy,sp[i], decimal=3)
             
-class test_splprep_splev(NumpyTestCase):
+class TestSplprepSplev(NumpyTestCase):
     def check_parcur_against_dierckx(self):
         xa,xo = parcur_test['xa'], parcur_test['xo']
         k,s = parcur_test['k'], parcur_test['s']
@@ -155,7 +155,7 @@ class test_splprep_splev(NumpyTestCase):
             yy[1::2] = y[1,:-1]
             assert_array_almost_equal(yy,sp[i], decimal=3)
 
-class test_splint_spalde(NumpyTestCase):
+class TestSplintSpalde(NumpyTestCase):
     def check_splint_spalde(self):
         per = [0, 1, 0]
         N = [20, 20, 50]
@@ -178,7 +178,7 @@ class test_splint_spalde(NumpyTestCase):
                         assert_almost_equal(1, ddr/f1(dx,d), decimal=2)
                     d=d+1
 
-class test_splder(NumpyTestCase):
+class TestSplder(NumpyTestCase):
     def check_splder(self):
         N = 50
         a,b = 0,2*pi
@@ -192,7 +192,7 @@ class test_splder(NumpyTestCase):
             d2 = splev(dx,tck,der=1)
             assert_almost_equal(1, dr[1]/f1(dx,1.0), decimal=2)
 
-class test_sproot(NumpyTestCase):
+class TestSproot(NumpyTestCase):
     def check_sproot(self):
         a=0
         b=15
@@ -204,7 +204,7 @@ class test_sproot(NumpyTestCase):
         ex = array([0.0, pi, 2.0*pi, 3.0*pi, 4.0*pi])
         assert_array_almost_equal(sproot(tck),ex, decimal=3)
 
-class test_bisplev_bisplrep(NumpyTestCase):
+class TestBisplevBisplrep(NumpyTestCase):
     def test_bisplev_bisplrep(self):
         f=f2; kx=3; ky=3; xb=0; xe=2*pi
         yb=0; ye=2*pi; Nx=20; Ny=20; s=0
@@ -219,7 +219,7 @@ class test_bisplev_bisplrep(NumpyTestCase):
         v2.shape=len(tt[0]),len(tt[1])
         assert_almost_equal(0.0, norm2(ravel(v1-v2)), decimal=5)
 
-class test_parcur(NumpyTestCase):
+class TestParcur(NumpyTestCase):
     def check_parcur(self):
         f=f1; per=0; s=0; a=0; b=2*pi;
         N=[20,50]

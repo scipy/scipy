@@ -23,7 +23,7 @@ from timeseries import extras
 from timeseries.extras import *
 
 #..............................................................................
-class test_misc(NumpyTestCase):
+class TestMisc(NumpyTestCase):
     "Base test class for MaskedArrays."
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)
@@ -33,7 +33,7 @@ class test_misc(NumpyTestCase):
         assert_equal(leap, [0,0,0,0,1,1,0,0,0,1]) 
         
 #..............................................................................
-class test_countmissing(NumpyTestCase):
+class TestCountmissing(NumpyTestCase):
     #
     def __init__(self, *args, **kwds):    
         NumpyTestCase.__init__(self, *args, **kwds)

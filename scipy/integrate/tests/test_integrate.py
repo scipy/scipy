@@ -14,7 +14,7 @@ set_package_path()
 from scipy.integrate import odeint
 restore_path()
 
-class test_odeint(NumpyTestCase):
+class TestODEInt(NumpyTestCase):
     """ Test odeint: free vibration of a simple oscillator
         m \ddot{u} + k u = 0, u(0) = u_0 \dot{u}(0) \dot{u}_0
 

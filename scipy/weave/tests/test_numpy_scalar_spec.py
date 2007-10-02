@@ -52,7 +52,7 @@ def print_assert_equal(test_string,actual,desired):
 #   int, float, complex
 #----------------------------------------------------------------------------
 
-class test_numpy_complex_scalar_converter(NumpyTestCase):
+class TestNumpyComplexScalarConverter(NumpyTestCase):
     compiler = ''
 
     def setUp(self):

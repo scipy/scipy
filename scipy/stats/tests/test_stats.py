@@ -48,7 +48,7 @@ X7 = X6 * X
 X8 = X7 * X
 X9 = X8 * X
 
-class test_round(NumpyTestCase):
+class TestRound(NumpyTestCase):
     """ W.II. ROUND
 
         You should get the numbers 1 to 9.  Many language compilers,
@@ -98,7 +98,7 @@ class test_round(NumpyTestCase):
         y=(int(round((3-numpy.exp(numpy.log(numpy.sqrt(2.0)*numpy.sqrt(2.0)))))))
         assert_equal(y,1)
 
-class test_basicstats(NumpyTestCase):
+class TestBasicStats(NumpyTestCase):
     """ W.II.C. Compute basic statistic on all the variables.
 
         The means should be the fifth value of all the variables (case FIVE).
@@ -184,7 +184,7 @@ class test_basicstats(NumpyTestCase):
         y = scipy.stats.std(ROUND)
         assert_approx_equal(y, 2.738612788)
 
-class test_nanfunc(NumpyTestCase):
+class TestNanFunc(NumpyTestCase):
     def __init__(self, *args, **kw):
         NumpyTestCase.__init__(self, *args, **kw)
         self.X = X.copy()
@@ -242,7 +242,7 @@ class test_nanfunc(NumpyTestCase):
         m = stats.stats.nanmedian(self.Xall)
         assert numpy.isnan(m)
 
-class test_corr(NumpyTestCase):
+class TestCorr(NumpyTestCase):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
         All the correlations, except for ZERO and MISS, shoud be exactly 1.
@@ -429,7 +429,7 @@ class test_corr(NumpyTestCase):
 ### I need to figure out how to do this one.
 
 
-class test_regression(NumpyTestCase):
+class TestRegression(NumpyTestCase):
     def check_linregressBIGX(self):
         """ W.II.F.  Regress BIG on X.
 
@@ -494,7 +494,7 @@ def compare_results(res,desired):
 ##################################################
 ### Test for sum
 
-class test_gmean(NumpyTestCase):
+class TestGMean(NumpyTestCase):
 
     def check_1D_list(self):
         a = (1,2,3,4)
@@ -533,7 +533,7 @@ class test_gmean(NumpyTestCase):
         desired = array((v,v,v))
         assert_array_almost_equal(desired,actual,decimal=14)
 
-class test_hmean(NumpyTestCase):
+class TestHMean(NumpyTestCase):
     def check_1D_list(self):
         a = (1,2,3,4)
         actual= stats.hmean(a)
@@ -573,7 +573,7 @@ class test_hmean(NumpyTestCase):
         assert_array_almost_equal(desired1,actual1,decimal=14)
 
 
-class test_mean(NumpyTestCase):
+class TestMean(NumpyTestCase):
     def check_basic(self):
         a = [3,4,5,10,-3,-5,6]
         af = [3.,4,5,10,-3,-5,-6]
@@ -610,7 +610,7 @@ class test_mean(NumpyTestCase):
             A += val
         assert_almost_equal(stats.mean(a,axis=None),A/(5*3.0*5))
 
-class test_median(NumpyTestCase):
+class TestMedian(NumpyTestCase):
     def check_basic(self):
         a1 = [3,4,5,10,-3,-5,6]
         a2 = [3,-6,-2,8,7,4,2,1]
@@ -619,7 +619,7 @@ class test_median(NumpyTestCase):
         assert_equal(stats.median(a2),2.5)
         assert_equal(stats.median(a3),3.5)
 
-class test_percentile(NumpyTestCase):
+class TestPercentile(NumpyTestCase):
     def setUp(self):
         self.a1 = [3,4,5,10,-3,-5,6]
         self.a2 = [3,-6,-2,8,7,4,2,1]
@@ -646,7 +646,7 @@ class test_percentile(NumpyTestCase):
                            [1,1,1])
 
 
-class test_std(NumpyTestCase):
+class TestStd(NumpyTestCase):
     def check_basic(self):
         a = [3,4,5,10,-3,-5,6]
         b = [3,4,5,10,-3,-5,-6]
@@ -665,21 +665,21 @@ class test_std(NumpyTestCase):
         assert_array_almost_equal(stats.std(a,axis=1),b2,11)
 
 
-class test_cmedian(NumpyTestCase):
+class TestCMedian(NumpyTestCase):
     def check_basic(self):
         data = [1,2,3,1,5,3,6,4,3,2,4,3,5,2.0]
         assert_almost_equal(stats.cmedian(data,5),3.2916666666666665)
         assert_almost_equal(stats.cmedian(data,3),3.083333333333333)
         assert_almost_equal(stats.cmedian(data),3.0020020020020022)
 
-class test_median(NumpyTestCase):
+class TestMedian(NumpyTestCase):
     def check_basic(self):
         data1 = [1,3,5,2,3,1,19,-10,2,4.0]
         data2 = [3,5,1,10,23,-10,3,-2,6,8,15]
         assert_almost_equal(stats.median(data1),2.5)
         assert_almost_equal(stats.median(data2),5)
 
-class test_mode(NumpyTestCase):
+class TestMode(NumpyTestCase):
     def check_basic(self):
         data1 = [3,5,1,10,23,3,2,6,8,6,10,6]
         vals = stats.mode(data1)
@@ -687,7 +687,7 @@ class test_mode(NumpyTestCase):
         assert_almost_equal(vals[1][0],3)
 
 
-class test_variability(NumpyTestCase):
+class TestVariability(NumpyTestCase):
     """  Comparison numbers are found using R v.1.5.1
          note that length(testcase) = 4
     """
@@ -767,7 +767,7 @@ class test_variability(NumpyTestCase):
 
 
 
-class test_moments(NumpyTestCase):
+class TestMoments(NumpyTestCase):
     """
         Comparison numbers are found using R v.1.5.1
         note that length(testcase) = 4
@@ -827,7 +827,7 @@ class test_moments(NumpyTestCase):
         y = scipy.stats.kurtosis(self.testcase,0,0)
         assert_approx_equal(y,1.64)
 
-class test_threshold(NumpyTestCase):
+class TestThreshold(NumpyTestCase):
     def check_basic(self):
         a = [-1,2,3,4,5,-1,-2]
         assert_array_equal(stats.threshold(a),a)

@@ -20,7 +20,7 @@ from linalg import flapack
 from linalg import clapack
 restore_path()
 
-class test_flapack_simple(NumpyTestCase):
+class TestFlapackSimple(NumpyTestCase):
 
     def check_gebal(self):
         a = [[1,2,3],[4,5,6],[7,8,9]]
@@ -52,7 +52,7 @@ class test_flapack_simple(NumpyTestCase):
             ht,tau,info = f(a)
             assert not info,`info`
 
-class test_lapack(NumpyTestCase):
+class TestLapack(NumpyTestCase):
 
     def check_flapack(self):
         if hasattr(flapack,'empty_module'):

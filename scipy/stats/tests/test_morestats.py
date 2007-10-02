@@ -23,7 +23,7 @@ g8 = [0.998, 1.000, 1.006, 1.000, 1.002, 0.996, 0.998, 0.996, 1.002, 1.006]
 g9 = [1.002, 0.998, 0.996, 0.995, 0.996, 1.004, 1.004, 0.998, 0.999, 0.991]
 g10= [0.991, 0.995, 0.984, 0.994, 0.997, 0.997, 0.991, 0.998, 1.004, 0.997]
 
-class test_shapiro(NumpyTestCase):
+class TestShapiro(NumpyTestCase):
     def check_basic(self):
         x1 = [0.11,7.87,4.61,10.14,7.95,3.14,0.46,
               4.43,0.21,4.75,0.71,1.52,3.24,
@@ -38,7 +38,7 @@ class test_shapiro(NumpyTestCase):
         assert_almost_equal(w,0.9590270,6)
         assert_almost_equal(pw,0.52460,3)
 
-class test_anderson(NumpyTestCase):
+class TestAnderson(NumpyTestCase):
     def check_normal(self):
         rs = RandomState(1234567890)
         x1 = rs.standard_exponential(size=50)
@@ -57,7 +57,7 @@ class test_anderson(NumpyTestCase):
         A,crit,sig = scipy.stats.anderson(x2,'expon')
         assert_array_less(crit[:-1], A)
 
-class test_ansari(NumpyTestCase):
+class TestAnsari(NumpyTestCase):
     def check_small(self):
         x = [1,2,3,3,4]
         y = [3,2,6,1,6,1,4,1]
@@ -79,7 +79,7 @@ class test_ansari(NumpyTestCase):
         assert_almost_equal(W,10.0,11)
         assert_almost_equal(pval,0.533333333333333333,7)
 
-class test_bartlett(NumpyTestCase):
+class TestBartlett(NumpyTestCase):
     def check_data(self):
         args = []
         for k in range(1,11):
@@ -88,7 +88,7 @@ class test_bartlett(NumpyTestCase):
         assert_almost_equal(T,20.78587342806484,7)
         assert_almost_equal(pval,0.0136358632781,7)
 
-class test_levene(NumpyTestCase):
+class TestLevene(NumpyTestCase):
     def check_data(self):
         args = []
         for k in range(1,11):
@@ -97,7 +97,7 @@ class test_levene(NumpyTestCase):
         assert_almost_equal(W,1.7059176930008939,7)
         assert_almost_equal(pval,0.0990829755522,7)
 
-class test_binom_test(NumpyTestCase):
+class TestBinomTest(NumpyTestCase):
     def check_data(self):
         pval = stats.binom_test(100,250)
         assert_almost_equal(pval,0.0018833009350757682,11)
@@ -106,7 +106,7 @@ class test_binom_test(NumpyTestCase):
         pval = stats.binom_test([682,243],p=3.0/4)
         assert_almost_equal(pval,0.38249155957481695,11)
 
-class test_find_repeats(NumpyTestCase):
+class TestFindRepeats(NumpyTestCase):
     def check_basic(self):
         a = [1,2,3,4,1,2,3,4,1,2,5]
         res,nums = scipy.stats.find_repeats(a)

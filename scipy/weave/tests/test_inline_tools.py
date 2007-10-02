@@ -9,7 +9,7 @@ set_local_path()
 from test_scxx import *
 restore_path()
 
-class test_inline(NumpyTestCase):
+class TestInline(NumpyTestCase):
     """ These are long running tests...
 
          I'd like to benchmark these things somehow.

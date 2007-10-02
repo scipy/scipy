@@ -17,7 +17,7 @@ restore_path()
 build_dir = empty_temp_dir()
 print 'building extensions here:', build_dir
 
-class test_ext_module(NumpyTestCase):
+class TestExtModule(NumpyTestCase):
     #should really do some testing of where modules end up
     def check_simple(self,level=5):
         """ Simplest possible module """
@@ -94,7 +94,7 @@ class test_ext_module(NumpyTestCase):
         c,d = ext_return_tuple.test(a)
         assert(c==a and d == a+1)
 
-class test_ext_function(NumpyTestCase):
+class TestExtFunction(NumpyTestCase):
     #should really do some testing of where modules end up
     def check_simple(self,level=5):
         """ Simplest possible function """
@@ -107,7 +107,7 @@ class test_ext_function(NumpyTestCase):
         import simple_ext_function
         simple_ext_function.test()
 
-class test_assign_variable_types(NumpyTestCase):
+class TestAssignVariableTypes(NumpyTestCase):
     def check_assign_variable_types(self):
         try:
             from numpy.numerix import arange, Float32, Float64

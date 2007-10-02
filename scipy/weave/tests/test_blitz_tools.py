@@ -14,7 +14,7 @@ from weave_test_utils import *
 restore_path()
 
 
-class test_ast_to_blitz_expr(NumpyTestCase):
+class TestAstToBlitzExpr(NumpyTestCase):
 
     def generic_test(self,expr,desired):
         import parser
@@ -57,7 +57,7 @@ class test_ast_to_blitz_expr(NumpyTestCase):
                   '-hy(_all,blitz::Range(1,_end),blitz::Range(_beg,Nhy(2)-1-1)));'
         self.generic_test(expr,desired)
 
-class test_blitz(NumpyTestCase):
+class TestBlitz(NumpyTestCase):
     """* These are long running tests...
 
          I'd like to benchmark these things somehow.

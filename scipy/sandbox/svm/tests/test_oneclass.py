@@ -8,7 +8,7 @@ from svm.oneclass import *
 from svm.predict import *
 restore_path()
 
-class test_oneclass(NumpyTestCase):
+class TestOneclass(NumpyTestCase):
     def check_basics(self):
         ModelType = LibSvmOneClassModel
         kernel = LinearKernel()

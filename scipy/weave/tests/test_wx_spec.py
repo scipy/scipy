@@ -15,7 +15,7 @@ restore_path()
 
 import wx
 
-class test_wx_converter(NumpyTestCase):
+class TestWxConverter(NumpyTestCase):
     def setUp(self):
         self.app = wx.App()
         self.s = wx_spec.wx_converter()

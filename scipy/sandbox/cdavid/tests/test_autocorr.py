@@ -42,7 +42,7 @@ xff1    = xff[0]
 
 # This class tests the C functions directly. This is more a debugging tool
 # that a test case, as the tested functions are not part of the public API
-class test_ctype_1d(NumpyTestCase):
+class TestCType1D(NumpyTestCase):
     def check_contiguous_double(self):
         # double test
         xt      = xc1
@@ -85,7 +85,7 @@ class test_ctype_1d(NumpyTestCase):
         assert_array_equal(yt, yr)
 
 # Test autocorrelation for rank 1 arrays
-class test_autocorr_1d(NumpyTestCase):
+class TestAutoCorr1D(NumpyTestCase):
     def check_contiguous_double(self):
         # double test
         xt      = xc1
@@ -131,7 +131,7 @@ class test_autocorr_1d(NumpyTestCase):
 # with rank 2 arrays. This will be used in the above test cases;
 # this function implements the expected behaviour of the public 
 # autocorr function.
-class test_autocorr_py(NumpyTestCase):
+class TestAutoCorrPy(NumpyTestCase):
     def check_full(self):
         xt      = xc
         axis    = -1
@@ -179,7 +179,7 @@ class test_autocorr_py(NumpyTestCase):
             assert_array_equal(tmp[center:center+1+lag], yt[:, i])
 
 # Test autocorrelation for rank 2 arrays
-class test_autocorr_2d(NumpyTestCase):
+class TestAutoCorr2D(NumpyTestCase):
     def check_double_full(self):
         # C, axis 1 test
         xt      = xc
@@ -291,7 +291,7 @@ class test_autocorr_2d(NumpyTestCase):
         yr      = autocorr_py(xt, lag, axis = axis)
         assert_array_equal(yt, yr)
 
-class test_autocorr_fft(NumpyTestCase):
+class TestAutoCorrFFT(NumpyTestCase):
     n   = 5
     d   = 3
     def check_nextpow2(self):
@@ -347,7 +347,7 @@ class test_autocorr_fft(NumpyTestCase):
 if __name__ == "__main__":
     NumpyTest().run()
 
-#class test_autocorr_2d(NumpyTestCase):
+#class TestAutocorr2d(NumpyTestCase):
 #    def check_double(self):
 #        # C, axis 1 test
 #        xt      = xc

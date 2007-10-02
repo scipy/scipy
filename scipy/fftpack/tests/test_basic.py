@@ -90,7 +90,7 @@ def direct_irdft(x):
             x1[0] = x[0]
     return direct_idft(x1).real
 
-class test_fft(NumpyTestCase):
+class TestFft(NumpyTestCase):
 
     def check_definition(self):
         x = [1,2,3,4+1j,1,2,3,4+2j]
@@ -162,7 +162,7 @@ class test_fft(NumpyTestCase):
             print ' (secs for %s calls)' % (repeat)
         sys.stdout.flush()
 
-class test_ifft(NumpyTestCase):
+class TestIfft(NumpyTestCase):
 
     def check_definition(self):
         x = [1,2,3,4+1j,1,2,3,4+2j]
@@ -237,7 +237,7 @@ class test_ifft(NumpyTestCase):
             print ' (secs for %s calls)' % (repeat)
         sys.stdout.flush()
 
-class test_rfft(NumpyTestCase):
+class TestRfft(NumpyTestCase):
 
     def check_definition(self):
         x = [1,2,3,4,1,2,3,4]
@@ -292,7 +292,7 @@ class test_rfft(NumpyTestCase):
             print ' (secs for %s calls)' % (repeat)
         sys.stdout.flush()
 
-class test_irfft(NumpyTestCase):
+class TestIrfft(NumpyTestCase):
 
     def check_definition(self):
         x = [1,2,3,4,1,2,3,4]
@@ -368,7 +368,7 @@ class test_irfft(NumpyTestCase):
 
         sys.stdout.flush()
 
-class test_fftn(NumpyTestCase):
+class TestFftn(NumpyTestCase):
 
     def check_definition(self):
         x = [[1,2,3],[4,5,6],[7,8,9]]
@@ -529,7 +529,7 @@ class test_fftn(NumpyTestCase):
 
         sys.stdout.flush()
 
-class test_ifftn(NumpyTestCase):
+class TestIfftn(NumpyTestCase):
 
     def check_definition(self):
         x = [[1,2,3],[4,5,6],[7,8,9]]
