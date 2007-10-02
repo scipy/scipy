@@ -1,0 +1,18 @@
+#include <vecLib/vecLib.h>
+
+//#define WRAP_F77(a) wcblas_##a##_
+#define WRAP_F77(a) w##a##_
+
+/**begin repeat
+#p2=c,z,c,z#
+#s2=u,u,c,c#
+#ctype2=complex,double complex,complex,double complex#
+*/
+
+void WRAP_F77(@p2@dot@s2@)(@ctype2@ *dot@s2@, const int *N, const @ctype2@ *X, const int *incX, const @ctype2@ *Y, const int *incY)
+{
+    cblas_@p2@dot@s2@_sub(*N, X, *incX, Y, *incY, dot@s2@);
+}
+
+/**end repeat**/
+

@@ -21,6 +21,22 @@ using_lapack_blas = 0
 
 #--------------------
 
+def needs_cblas_wrapper(info):
+    """Returns true if needs c wrapper around cblas for calling from
+    fortran."""
+    r_accel = re.compile("Accelerate")
+    r_vec = re.compile("vecLib")
+    res = False
+    try:
+        tmpstr = info['extra_link_args']
+        for i in tmpstr:
+            if r_accel.search(i) or r_vec.search(i):
+                res = True
+    except KeyError:
+        pass
+
+    return res
+
 tmpl_empty_cblas_pyf = '''
 python module cblas
   usercode void empty_module(void) {}
@@ -62,14 +78,19 @@ def configuration(parent_package='',top_path=None):
         skip_names['fblas'].extend(\
             'drotmg srotmg drotm srotm'.split())
 
+    depends = [__file__, 'fblas_l?.pyf.src', 'fblas.pyf.src','fblaswrap.f.src',
+               'fblaswrap_veclib_c.c.src']
     # fblas:
+    if needs_cblas_wrapper(blas_opt):
+        sources = ['fblas.pyf.src', 'fblaswrap_veclib_c.c.src'],
+    else:
+        sources = ['fblas.pyf.src','fblaswrap.f.src']
     config.add_extension('fblas',
-                         sources = ['fblas.pyf.src','fblaswrap.f.src'],
-                         depends = [__file__,'fblas_l?.pyf.src'],
+                         sources = sources,
+                         depends = depends,
                          f2py_options = ['skip:']+skip_names['fblas']+[':'],
                          extra_info = blas_opt
                          )
-
     # cblas:
     def get_cblas_source(ext, build_dir):
         name = ext.name.split('.')[-1]
