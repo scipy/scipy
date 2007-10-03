@@ -58,7 +58,7 @@ def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
         
     return multilevel_solver(As,Ps)
 
-def smoothed_aggregation_solver(A,blocks=None,max_levels=10,max_coarse=500,epsilon=0.08,omega=4.0/3.0):
+def smoothed_aggregation_solver(A,candidates=None,blocks=None,max_levels=10,max_coarse=500,epsilon=0.08,omega=4.0/3.0):
     """
     Create a multilevel solver using Smoothed Aggregation (SA)
 
@@ -71,8 +71,11 @@ def smoothed_aggregation_solver(A,blocks=None,max_levels=10,max_coarse=500,epsil
     As = [A]
     Ps = []
     
+    if candidates is None:
+        candidates = [ ones(A.shape[0]) ] # use constant vector
+        
     while len(As) < max_levels  and A.shape[0] > max_coarse:
-        P = sa_interpolation(A,blocks=blocks,epsilon=epsilon*0.5**(len(As)-1),omega=omega)
+        P,candidates = sa_interpolation(A,candidates,epsilon*0.5**(len(As)-1),omega=omega,blocks=blocks)
         #P = sa_interpolation(A,epsilon=0.0)
 
         A = (P.T.tocsr() * A) * P     #galerkin operator
@@ -157,7 +160,7 @@ class multilevel_solver:
         coarse_b = self.Ps[lvl].T * residual
         
         if lvl == len(self.As) - 2:
-            #direct solver on coarsest level
+            #use direct solver on coarsest level
             coarse_x[:] = scipy.linsolve.spsolve(self.As[-1],coarse_b)
             #coarse_x[:] = scipy.linalg.cg(self.As[-1],coarse_b,tol=1e-12)[0]
             #print "coarse residual norm",scipy.linalg.norm(coarse_b - self.As[-1]*coarse_x)
@@ -170,29 +173,26 @@ class multilevel_solver:
 
 
     def presmoother(self,A,x,b):
-        gauss_seidel(A,x,b,iterations=1,sweep="forward")
-        gauss_seidel(A,x,b,iterations=1,sweep="backward")
-        #sor(A,x,b,omega=1.85,iterations=1,sweep="backward")
-
-        #x += 4.0/(3.0*infinity_norm(A))*(b - A*x)
+        gauss_seidel(A,x,b,iterations=1,sweep="symmetric")
     
     def postsmoother(self,A,x,b):
-        #sor(A,x,b,omega=1.85,iterations=1,sweep="forward")
-        gauss_seidel(A,x,b,iterations=1,sweep="forward")
-        gauss_seidel(A,x,b,iterations=1,sweep="backward")
-        #x += 4.0/(3.0*infinity_norm(A))*(b - A*x)
+        gauss_seidel(A,x,b,iterations=1,sweep="symmetric")
 
 
 
 if __name__ == '__main__':
     from scipy import *
-    #A = poisson_problem2D(100)
+    candidates = None
+    A = poisson_problem2D(100)
     #A = io.mmread("rocker_arm_surface.mtx").tocsr()
     #A = io.mmread("9pt-100x100.mtx").tocsr()
-    A = io.mmread("/home/nathan/Desktop/9pt/9pt-100x100.mtx").tocsr()
+    #A = io.mmread("/home/nathan/Desktop/9pt/9pt-100x100.mtx").tocsr()
     #A = io.mmread("/home/nathan/Desktop/BasisShift_W_EnergyMin_Luke/9pt-5x5.mtx").tocsr()
-
-    ml = smoothed_aggregation_solver(A,max_coarse=100,max_levels=3)
+    #A = io.mmread('tests/sample_data/elas30_A.mtx').tocsr()
+    #candidates = io.mmread('tests/sample_data/elas30_nullspace.mtx')
+    #candidates = [ array(candidates[:,x]) for x in range(candidates.shape[1]) ]
+    
+    ml = smoothed_aggregation_solver(A,candidates,max_coarse=100,max_levels=3)
     #ml = ruge_stuben_solver(A)
 
     x = rand(A.shape[0])

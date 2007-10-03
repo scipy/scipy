@@ -32,58 +32,6 @@ def fit_candidate(I,x):
     return Q,R
 
 
-def fit_candidates(AggOp,candidates):
-    K = len(candidates)
-
-    N_fine,N_coarse = AggOp.shape
-
-    if len(candidates[0]) == K*N_fine:
-        #see if fine space has been expanded (all levels except for first)
-        AggOp = csr_matrix((AggOp.data.repeat(K),AggOp.indices.repeat(K),arange(K*N_fine + 1)),dims=(K*N_fine,N_coarse))
-        N_fine = K*N_fine
-
-    R = zeros((K*N_coarse,K))
-
-    candidate_matrices = []
-    for i,c in enumerate(candidates):
-        X = csr_matrix((c.copy(),AggOp.indices,AggOp.indptr),dims=AggOp.shape)
-       
-        #TODO optimize this  
-
-        #orthogonalize X against previous
-        for j,A in enumerate(candidate_matrices):
-            D_AtX = csr_matrix((A.data*X.data,X.indices,X.indptr),dims=X.shape).sum(axis=0).A.flatten() #same as diagonal of A.T * X            
-            R[j::K,i] = D_AtX
-            X.data -= D_AtX[X.indices] * A.data
-
-            #AtX = csr_matrix(A.T.tocsr() * X
-            #R[j::K,i] = AtX.data
-            #X = X - A * AtX 
-    
-        #normalize X
-        XtX = X.T.tocsr() * X
-        col_norms = sqrt(XtX.sum(axis=0)).flatten()
-        R[i::K,i] = col_norms
-        col_norms = 1.0/col_norms
-        col_norms[isinf(col_norms)] = 0
-        X.data *= col_norms[X.indices]
-
-        candidate_matrices.append(X)
-
-
-    Q_indptr  = K*AggOp.indptr
-    Q_indices = (K*AggOp.indices).repeat(K)
-    for i in range(K):
-        Q_indices[i::K] += i
-    Q_data = empty(N_fine * K)
-    for i,X in enumerate(candidate_matrices):
-        Q_data[i::K] = X.data
-    Q = csr_matrix((Q_data,Q_indices,Q_indptr),dims=(N_fine,K*N_coarse))
-
-    coarse_candidates = [R[:,i] for i in range(K)]
-
-    return Q,coarse_candidates
-
 
 
 ##def orthonormalize_candidate(I,x,basis):
