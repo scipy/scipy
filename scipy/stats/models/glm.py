@@ -1,18 +1,20 @@
 """
 General linear models
 --------------------
+
 """
+
 import numpy as N
 from scipy.stats.models import family
-from scipy.stats.models.regression import wls_model
+from scipy.stats.models.regression import WLSModel
 
-class model(wls_model):
+class Model(WLSModel):
 
     niter = 10
     
     def __init__(self, design, family=family.Gaussian()):
         self.family = family
-        super(model, self).__init__(design, weights=1)
+        super(Model, self).__init__(design, weights=1)
 
     def __iter__(self):                                                   
         self.iter = 0
@@ -21,7 +23,7 @@ class model(wls_model):
 
     def deviance(self, Y=None, results=None, scale = 1.):
         """
-        Return (unnormalized) log-likelihood for glm.
+        Return (unnormalized) log-likelihood for GLM.
 
         Note that self.scale is interpreted as a variance in old_model, so
         we divide the residuals by its sqrt.
@@ -38,7 +40,7 @@ class model(wls_model):
         self.weights = self.family.weights(results.mu)
         self.initialize(self.design)
         Z = results.predict + self.family.link.deriv(results.mu) * (Y - results.mu)
-        newresults = super(model, self).fit(self, Z)
+        newresults = super(Model, self).fit(self, Z)
         newresults.Y = Y
         newresults.mu = self.family.link.inverse(newresults.predict)
         self.iter += 1
@@ -48,7 +50,7 @@ class model(wls_model):
         """
         Continue iterating, or has convergence been obtained?
         """
-        if self.iter >= model.niter:
+        if self.iter >= Model.niter:
             return False
 
         curdev = self.deviance(results=self.results)
@@ -75,7 +77,7 @@ class model(wls_model):
     def fit(self, Y):
         self.Y = N.asarray(Y, N.float64)
         iter(self)
-        self.results = super(model, self).fit(
+        self.results = super(Model, self).fit(
             self.family.link.initialize(Y))
         self.results.mu = self.family.link.inverse(self.results.predict)
         self.scale = self.results.scale = self.estimate_scale()

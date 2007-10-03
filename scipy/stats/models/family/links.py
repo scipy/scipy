@@ -134,7 +134,7 @@ class Power(Link):
         g(x) = x**(1/self.power)
 
         INPUTS:
-           z   -- linear predictors in glm
+           z   -- linear predictors in GLM
 
         OUTPUTS: x
            x   -- mean parameters
@@ -227,7 +227,7 @@ class Log(Link):
         g(x) = exp(x)
 
         INPUTS:
-           z   -- linear predictors in glm
+           z   -- linear predictors in GLM
 
         OUTPUTS: x
            x   -- exp(z)
@@ -289,7 +289,7 @@ class CDFLink(Logit):
         g(z) = self.dbn.cdf(z)
 
         INPUTS:
-           z   -- linear predictors in glm
+           z   -- linear predictors in GLM
 
         OUTPUTS: p
            p   -- inverse of CDF link of z

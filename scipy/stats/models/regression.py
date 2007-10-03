@@ -22,11 +22,11 @@ import numpy as N
 import numpy.linalg as L
 from scipy.linalg import norm, toeplitz
 
-from scipy.stats.models.model import likelihood_model, \
-     likelihood_model_results
+from scipy.stats.models.model import LikelihoodModel, \
+     LikelihoodModelResults
 from scipy.stats.models import utils
 
-class ols_model(likelihood_model):
+class OLSModel(LikelihoodModel):
     """
     A simple ordinary least squares model.
 
@@ -34,15 +34,15 @@ class ols_model(likelihood_model):
     --------
     >>> import numpy as N
     >>> 
-    >>> from scipy.stats.models.formula import term, I
-    >>> from scipy.stats.models.regression import ols_model
+    >>> from scipy.stats.models.formula import Term, I
+    >>> from scipy.stats.models.regression import OLSModel
     >>> 
     >>> data={'Y':[1,3,4,5,2,3,4],
     ...       'X':range(1,8)}
     >>> f = term("X") + I
     >>> f.namespace = data
     >>> 
-    >>> model = ols_model(f.design())
+    >>> model = OLSModel(f.design())
     >>> results = model.fit(data['Y'])
     >>> 
     >>> results.beta
@@ -60,13 +60,13 @@ class ols_model(likelihood_model):
 
     def __init__(self, design):
         """
-        Create a `ols_model` from a design.
+        Create a `OLSModel` from a design.
 
         :Parameters:
             design : TODO
                 TODO
         """
-        super(ols_model, self).__init__()
+        super(OLSModel, self).__init__()
         self.initialize(design)
 
     def initialize(self, design):
@@ -100,7 +100,7 @@ class ols_model(likelihood_model):
         """
         Z = self.whiten(Y)
 
-        lfit = regression_results(L.lstsq(self.wdesign, Z)[0], Y)
+        lfit = RegressionResults(L.lstsq(self.wdesign, Z)[0], Y)
         lfit.predict = N.dot(self.design, lfit.beta)
 
 
@@ -112,7 +112,7 @@ class ols_model(likelihood_model):
         """
         Z = self.whiten(Y)
 
-        lfit = regression_results(N.dot(self.calc_beta, Z), Y,
+        lfit = RegressionResults(N.dot(self.calc_beta, Z), Y,
                        normalized_cov_beta=self.normalized_cov_beta)
 
         lfit.df_resid = self.df_resid
@@ -124,7 +124,7 @@ class ols_model(likelihood_model):
         
         return lfit
 
-class ar_model(ols_model):
+class ARModel(OLSModel):
     """
     A regression model with an AR(p) covariance structure.
 
@@ -136,20 +136,20 @@ class ar_model(ols_model):
     >>> import numpy as N
     >>> import numpy.random as R
     >>> 
-    >>> from scipy.stats.models.formula import term, I
-    >>> from scipy.stats.models.regression import ar_model
+    >>> from scipy.stats.models.formula import Term, I
+    >>> from scipy.stats.models.regression import ARModel
     >>> 
     >>> data={'Y':[1,3,4,5,8,10,9],
     ...       'X':range(1,8)}
     >>> f = term("X") + I
     >>> f.namespace = data
     >>> 
-    >>> model = ar_model(f.design(), 2)
+    >>> model = ARModel(f.design(), 2)
     >>> for i in range(6):
     ...     results = model.fit(data['Y'])
     ...     print "AR coefficients:", model.rho
     ...     rho, sigma = model.yule_walker(data["Y"] - results.predict)
-    ...     model = ar_model(model.design, rho)
+    ...     model = ARModel(model.design, rho)
     ... 
     AR coefficients: [ 0.  0.]
     AR coefficients: [-0.52571491 -0.84496178]
@@ -182,7 +182,7 @@ class ar_model(ols_model):
             if self.rho.shape == ():
                 self.rho.shape = (1,)
             self.order = self.rho.shape[0]
-        super(ar_model, self).__init__(design)
+        super(ARModel, self).__init__(design)
 
     def iterative_fit(self, Y, niter=3):
         """
@@ -264,7 +264,7 @@ class ar_model(ols_model):
         sigmasq = r[0] - (r[1:]*rho).sum()
         return rho, N.sqrt(sigmasq)
 
-class wls_model(ols_model):
+class WLSModel(OLSModel):
     """
     A regression model with diagonal but non-identity covariance
     structure. The weights are presumed to be
@@ -273,15 +273,15 @@ class wls_model(ols_model):
 
     >>> import numpy as N
     >>> 
-    >>> from scipy.stats.models.formula import term, I
-    >>> from scipy.stats.models.regression import wls_model
+    >>> from scipy.stats.models.formula import Term, I
+    >>> from scipy.stats.models.regression import WLSModel
     >>> 
     >>> data={'Y':[1,3,4,5,2,3,4],
     ...       'X':range(1,8)}
     >>> f = term("X") + I
     >>> f.namespace = data
     >>> 
-    >>> model = wls_model(f.design(), weights=range(1,8))
+    >>> model = WLSModel(f.design(), weights=range(1,8))
     >>> results = model.fit(data['Y'])
     >>> 
     >>> results.beta
@@ -304,7 +304,7 @@ class wls_model(ols_model):
                 raise ValueError(
                     'Weights must be scalar or same length as design')
             self.weights = weights.reshape(design_rows)
-        super(wls_model, self).__init__(design)
+        super(WLSModel, self).__init__(design)
 
     def whiten(self, X):
         """
@@ -321,7 +321,7 @@ class wls_model(ols_model):
                 v[:,i] = X[:,i] * c
             return v
     
-class regression_results(likelihood_model_results):
+class RegressionResults(LikelihoodModelResults):
     """
     This class summarizes the fit of a linear regression model.
 
@@ -329,7 +329,7 @@ class regression_results(likelihood_model_results):
     """
 
     def __init__(self, beta, Y, normalized_cov_beta=None, scale=1.):
-        super(regression_results, self).__init__(beta,
+        super(RegressionResults, self).__init__(beta,
                                                  normalized_cov_beta,
                                                  scale)
         self.Y = Y

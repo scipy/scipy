@@ -41,7 +41,7 @@ class Model(object):
         """
         raise NotImplementedError
 
-class likelihood_model(Model):
+class LikelihoodModel(Model):
 
     def logL(self, theta):
         """
@@ -69,7 +69,7 @@ class likelihood_model(Model):
 #             return -self.logL(theta)
 #         self.results = optimize.fmin(f, theta)
         
-class likelihood_model_results(object):
+class LikelihoodModelResults(object):
     ''' Class to contain results from likelihood models '''
     def __init__(self, beta, normalized_cov_beta=None, scale=1.):
         ''' Set up results structure

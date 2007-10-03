@@ -1,5 +1,5 @@
 """
-Test functions for models.glm
+Test functions for models.GLM
 """
 
 import numpy as N

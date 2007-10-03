@@ -9,7 +9,7 @@ __docformat__ = 'restructuredtext'
 
 default_namespace = {}
 
-class term(object):
+class Term(object):
     """
     This class is very simple: it is just a named term in a model formula.
 
@@ -35,7 +35,7 @@ class term(object):
         else:
             name = '%s^%0.2f' % (self.name, power)
 
-        value = quantitative(name, func=self, transform=lambda x: N.power(x, power))
+        value = Quantitative(name, func=self, transform=lambda x: N.power(x, power))
         value.power = power
         value.namespace = self.namespace
         return value
@@ -73,24 +73,24 @@ class term(object):
 
     def __add__(self, other):
         """
-        formula(self) + formula(other)
+        Formula(self) + Formula(other)
         """
-        other = formula(other, namespace=self.namespace)
+        other = Formula(other, namespace=self.namespace)
         f = other + self
         f.namespace = self.namespace
         return f
 
     def __mul__(self, other):
         """
-        formula(self) * formula(other)
+        Formula(self) * Formula(other)
         """
 
         if other.name is 'intercept':
-            f = formula(self, namespace=self.namespace)
+            f = Formula(self, namespace=self.namespace)
         elif self.name is 'intercept':
-            f = formula(other, namespace=other.namespace)
+            f = Formula(other, namespace=other.namespace)
         else:
-            other = formula(other, namespace=self.namespace)
+            other = Formula(other, namespace=self.namespace)
             f = other * self
         f.namespace = self.namespace
         return f
@@ -126,13 +126,8 @@ class term(object):
         val = N.asarray(val)
         return N.squeeze(val)
 
-class factor(term):
-
-    """
-    A categorical factor.
-    """
-
-
+class Factor(Term):
+    """A categorical factor."""
 
     def __init__(self, termname, keys, ordinal=False):
         """
@@ -151,7 +146,7 @@ class factor(term):
         else:
             name = ['(%s==%s)' % (self.termname, str(key)) for key in self.keys]
 
-        term.__init__(self, name, termname=self.termname, func=self.get_columns)
+        Term.__init__(self, name, termname=self.termname, func=self.get_columns)
 
     def get_columns(self, *args, **kw):
         """
@@ -199,18 +194,18 @@ class factor(term):
 
     def __add__(self, other):
         """
-        formula(self) + formula(other)
+        Formula(self) + Formula(other)
 
         When adding \'intercept\' to a factor, this just returns 
 
-        formula(self, namespace=self.namespace)
+        Formula(self, namespace=self.namespace)
 
         """
         
         if other.name is 'intercept':
-            return formula(self, namespace=self.namespace)
+            return Formula(self, namespace=self.namespace)
         else:
-            return term.__add__(self, other)
+            return Term.__add__(self, other)
 
     def main_effect(self, reference=None):
         """
@@ -235,13 +230,13 @@ class factor(term):
         keep.pop(reference)
         __names = self.names()
         _names = ['%s-%s' % (__names[keep[i]], __names[reference]) for i in range(len(keep))]
-        value = quantitative(_names, func=self, 
+        value = Quantitative(_names, func=self, 
                      termname='%s:maineffect' % self.termname,
                      transform=maineffect_func)
         value.namespace = self.namespace
         return value
 
-class quantitative(term):
+class Quantitative(Term):
     """
     A subclass of term that can be used to apply point transformations
     of another term, i.e. to take powers:
@@ -249,29 +244,31 @@ class quantitative(term):
     >>> import numpy as N
     >>> from scipy.stats.models import formula
     >>> X = N.linspace(0,10,101)
-    >>> x = formula.term('X')
+    >>> x = formula.Term('X')
     >>> x.namespace={'X':X}
     >>> x2 = x**2
     >>> print N.allclose(x()**2, x2())
     True
-    >>> x3 = formula.quantitative('x2', func=x, transform=lambda x: x**2)
+    >>> x3 = formula.Quantitative('x2', func=x, transform=lambda x: x**2)
     >>> x3.namespace = x.namespace
     >>> print N.allclose(x()**2, x3())
     True
+
     """
 
     def __init__(self, name, func=None, termname=None, transform=lambda x: x):
         self.transform = transform
-        term.__init__(self, name, func=func, termname=termname)
+        Term.__init__(self, name, func=func, termname=termname)
 
     def __call__(self, *args, **kw):
         """
         A quantitative is just like term, except there is an additional
         transformation: self.transform.
-        """
-        return self.transform(term.__call__(self, *args, **kw))
 
-class formula(object):
+        """
+        return self.transform(Term.__call__(self, *args, **kw))
+
+class Formula(object):
     """
     A formula object for manipulating design matrices in regression models,
     essentially consisting of a list of term instances.
@@ -279,6 +276,7 @@ class formula(object):
     The object supports addition and multiplication which correspond
     to concatenation and pairwise multiplication, respectively,
     of the columns of the two formulas.
+
     """
     
     def _get_namespace(self): 
@@ -304,11 +302,11 @@ class formula(object):
 
 
         self.__namespace = namespace
-        if isinstance(termlist, formula):
+        if isinstance(termlist, Formula):
             self.terms = copy.copy(list(termlist.terms))
         elif type(termlist) is types.ListType:
             self.terms = termlist
-        elif isinstance(termlist, term):
+        elif isinstance(termlist, Term):
             self.terms = [termlist]
         else: 
             raise ValueError
@@ -388,11 +386,11 @@ class formula(object):
         Determine whether a given term is in a formula.
         """
 
-        if not isinstance(query_term, formula):
+        if not isinstance(query_term, Formula):
             if type(query_term) == type("name"):
                 try: query = self[query_term]
                 except: return False
-            elif isinstance(query_term, term):
+            elif isinstance(query_term, Term):
                 return query_term.termname in self.termnames()
         elif len(query_term.terms) == 1:
             query_term = query_term.terms[0]
@@ -462,7 +460,7 @@ class formula(object):
         TO DO: check for nesting relationship. Should not be too difficult.
         """
 
-        other = formula(other, namespace=self.namespace)
+        other = Formula(other, namespace=self.namespace)
 
         selftermnames = self.termnames()
         othertermnames = other.termnames()
@@ -517,14 +515,14 @@ class formula(object):
                     sumterms.terms = [self, other] # enforce the order we want
                     sumterms.namespace = self.namespace
 
-                    _term = quantitative(names, func=sumterms, termname=termname,
+                    _term = Quantitative(names, func=sumterms, termname=termname,
                                          transform=product_func)
                     _term.namespace = self.namespace
 
 
                 terms.append(_term)
 
-        return formula(terms, namespace=self.namespace)
+        return Formula(terms, namespace=self.namespace)
     
     def __add__(self, other):
 
@@ -535,12 +533,12 @@ class formula(object):
         terms in the formula are sorted alphabetically.
         """
 
-        other = formula(other, namespace=self.namespace)
+        other = Formula(other, namespace=self.namespace)
         terms = self.terms + other.terms
         pieces = [(term.name, term) for term in terms]
         pieces.sort()
         terms = [piece[1] for piece in pieces]
-        return formula(terms, namespace=self.namespace)
+        return Formula(terms, namespace=self.namespace)
 
     def __sub__(self, other):
 
@@ -550,7 +548,7 @@ class formula(object):
         function does not raise an exception.
         """
 
-        other = formula(other, namespace=self.namespace)
+        other = Formula(other, namespace=self.namespace)
         terms = copy.copy(self.terms)
 
         for term in other.terms:
@@ -558,7 +556,7 @@ class formula(object):
                 if terms[i].termname == term.termname:
                     terms.pop(i)
                     break 
-        return formula(terms, namespace=self.namespace)
+        return Formula(terms, namespace=self.namespace)
 
 def isnested(A, B, namespace=globals()):
     """
@@ -594,18 +592,19 @@ def isnested(A, B, namespace=globals()):
 
 def _intercept_fn(nrow=1, **extra):
     return N.ones((1,nrow))
-I = term('intercept', func=_intercept_fn)
+
+I = Term('intercept', func=_intercept_fn)
 I.__doc__ = """
 Intercept term in a formula. If intercept is the
 only term in the formula, then a keywords argument
 \'nrow\' is needed.
 
->>> from scipy.stats.models.formula import formula, I
+>>> from scipy.stats.models.formula import Formula, I
 >>> I()
 array(1.0)
 >>> I(nrow=5)
 array([ 1.,  1.,  1.,  1.,  1.])
->>> f=formula(I)
+>>> f=Formula(I)
 >>> f(nrow=5)
 array([1, 1, 1, 1, 1])
 

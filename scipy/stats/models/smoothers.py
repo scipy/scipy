@@ -13,7 +13,7 @@ from scipy.stats.models import _bspline
 from scipy.stats.models.bspline import bspline, _band2array
 
 
-class poly_smoother:
+class PolySmoother:
     """
     Polynomial smoother up to a given order.
     Fit based on weighted least squares.
@@ -52,7 +52,7 @@ class poly_smoother:
         _w = N.sqrt(weights)
         if x is None:
             if not hasattr(self, "X"):
-                raise ValueError, "x needed to fit poly_smoother"
+                raise ValueError, "x needed to fit PolySmoother"
         else:
             self.X = N.array([(x**i) for i in range(self.order+1)])
 
@@ -61,7 +61,7 @@ class poly_smoother:
         _y = y * _w
         self.coef = N.dot(L.pinv(X).T, _y)
 
-class smoothing_spline(bspline):
+class SmoothingSpline(bspline):
 
     penmax = 30.
 
@@ -159,7 +159,7 @@ class smoothing_spline(bspline):
         else:
             return self.rank
 
-class smoothing_spline_fixeddf(smoothing_spline):
+class SmoothingSplineFixedDF(SmoothingSpline):
     """
     Fit smoothing spline with approximately df degrees of freedom
     used in the fit, i.e. so that self.trace() is approximately df.
@@ -187,7 +187,7 @@ class smoothing_spline_fixeddf(smoothing_spline):
         if not self.target_reached:
             while True:
                 curpen = 0.5 * (apen + bpen)
-                smoothing_spline.fit(self, y, x=x, weights=weights, pen=curpen)
+                SmoothingSpline.fit(self, y, x=x, weights=weights, pen=curpen)
                 curdf = self.trace()
                 if curdf > df:
                     apen, bpen = curpen, 2 * curpen
@@ -199,9 +199,9 @@ class smoothing_spline_fixeddf(smoothing_spline):
                     self.target_reached = True
                     break
         else:
-            smoothing_spline.fit(self, y, x=x, weights=weights, pen=self.pen)
+            SmoothingSpline.fit(self, y, x=x, weights=weights, pen=self.pen)
 
-class smoothing_spline_gcv(smoothing_spline):
+class SmoothingSplineGCV(SmoothingSpline):
 
     """
     Fit smoothing spline trying to optimize GCV.
@@ -218,7 +218,7 @@ class smoothing_spline_gcv(smoothing_spline):
             bracket=(0,1.0e-03)):
     
         def _gcv(pen, y, x):
-            smoothing_spline.fit(y, x=x, pen=N.exp(pen), weights=weights)
+            SmoothingSpline.fit(y, x=x, pen=N.exp(pen), weights=weights)
             a = self.gcv()
             return a
 

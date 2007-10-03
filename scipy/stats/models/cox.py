@@ -5,7 +5,7 @@ import numpy as N
 
 from scipy.stats.models import survival, model
 
-class discrete:
+class Discrete:
 
     """
     A simple little class for working with discrete random vectors.
@@ -37,7 +37,7 @@ class discrete:
         dx = self.x - N.multiply.outer(mu, self.x.shape[1])
         return N.dot(dx, N.transpose(dx))
 
-class observation(survival.right_censored):
+class Observation(survival.RightCensored):
 
     def __getitem__(self, item):
         if self.namespace is not None:
@@ -47,12 +47,13 @@ class observation(survival.right_censored):
 
     def __init__(self, time, delta, namespace=None):
         self.namespace = namespace
-        survival.right_censored.__init__(self, time, delta)
+        survival.RightCensored.__init__(self, time, delta)
 
     def __call__(self, formula, time=None, **extra):
         return formula(namespace=self, time=time, **extra)
 
-class coxph(model.likelihood_model):
+class CoxPH(model.LikelihoodModel):
+    """Cox proportional hazards regression model."""
 
     def __init__(self, subjects, formula, time_dependent=False):
         self.subjects, self.formula = subjects, formula

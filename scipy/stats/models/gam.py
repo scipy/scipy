@@ -7,7 +7,7 @@ import numpy as N
 
 from scipy.stats.models import family
 from scipy.stats.models.bspline import SmoothingSpline
-from scipy.stats.models.glm import model as glm
+from scipy.stats.models.glm import Model as GLM
 
 def default_smoother(x):
     _x = x.copy()
@@ -37,7 +37,7 @@ def default_smoother(x):
     s.target_df = 5
     return s
 
-class offset:
+class Offset:
 
     def __init__(self, fn, offset):
         self.fn = fn
@@ -46,7 +46,7 @@ class offset:
     def __call__(self, *args, **kw):
         return self.fn(*args, **kw) + self.offset
 
-class results:
+class Results:
 
     def __init__(self, Y, alpha, design, smoothers, family, offset):
         self.Y = Y
@@ -67,7 +67,7 @@ class results:
     def smoothed(self, design):
         return N.array([self.smoothers[i]() + self.offset[i] for i in range(design.shape[1])])
 
-class additive_model:
+class AdditiveModel:
 
     def __init__(self, design, smoothers=None, weights=None):
         self.design = design
@@ -141,13 +141,13 @@ class additive_model:
 
         return self.results 
 
-class model(glm, additive_model):
+class Model(GLM, AdditiveModel):
 
     niter = 10
 
     def __init__(self, design, smoothers=None, family=family.Gaussian()):
-        glm.__init__(self, design, family=family)
-        additive_model.__init__(self, design, smoothers=smoothers)
+        GLM.__init__(self, design, family=family)
+        AdditiveModel.__init__(self, design, smoothers=smoothers)
         self.family = family
 
     def next(self):
@@ -155,7 +155,7 @@ class model(glm, additive_model):
         _results.mu = self.family.link.inverse(_results.predict(self.design))
         self.weights = self.family.weights(_results.mu)
         Z = _results.predict(self.design) + self.family.link.deriv(_results.mu) * (Y - _results.mu)
-        m = additive_model(self.design, smoothers=self.smoothers, weights=self.weights)
+        m = AdditiveModel(self.design, smoothers=self.smoothers, weights=self.weights)
         _results = m.fit(Z) 
         _results.Y = Y
         _results.mu = self.family.link.inverse(_results.predict(self.design))
@@ -172,7 +172,7 @@ class model(glm, additive_model):
         if Y is None:
             Y = self.Y
         resid = Y - self.results.mu
-        return (N.power(resid, 2) / self.family.variance(self.results.mu)).sum() / additive_model.df_resid(self)
+        return (N.power(resid, 2) / self.family.variance(self.results.mu)).sum() / AdditiveModel.df_resid(self)
     
     def fit(self, Y):
         self.Y = N.asarray(Y, N.float64)
@@ -180,7 +180,7 @@ class model(glm, additive_model):
         iter(self)
         alpha = self.Y.mean()
         Z = self.family.link(alpha) + self.family.link.deriv(alpha) * (Y - alpha)
-        m = additive_model(self.design, smoothers=self.smoothers)
+        m = AdditiveModel(self.design, smoothers=self.smoothers)
         self.results = m.fit(Z) 
         self.results.mu = self.family.link.inverse(self.results.predict(self.design))
         self.results.Y = Y
@@ -209,7 +209,7 @@ def _run():
 
     y += z
     d = N.array([x1,x2]).T
-    m = additive_model(d)
+    m = AdditiveModel(d)
     m.fit(y)
     x = N.linspace(-2,2,50)
 

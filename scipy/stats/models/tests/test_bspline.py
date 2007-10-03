@@ -1,5 +1,5 @@
 """
-Test functions for models.glm
+Test functions for models.bspline
 """
 
 import numpy as N

@@ -14,38 +14,38 @@ from scipy.stats.models import utils, formula, contrast
 class TestTerm(NumpyTestCase):
 
     def test_init(self):
-        t1 = formula.term("trivial")
+        t1 = formula.Term("trivial")
         sqr = lambda x: x*x
 
-        t2 = formula.term("not_so_trivial", sqr, "sqr")
+        t2 = formula.Term("not_so_trivial", sqr, "sqr")
 
-        self.assertRaises(ValueError, formula.term, "name", termname=0)
+        self.assertRaises(ValueError, formula.Term, "name", termname=0)
 
 
     def test_str(self):
-        t = formula.term("name")
+        t = formula.Term("name")
         s = str(t)
 
     def test_add(self):
-        t1 = formula.term("t1")
-        t2 = formula.term("t2")
+        t1 = formula.Term("t1")
+        t2 = formula.Term("t2")
         f = t1 + t2
-        self.assert_(isinstance(f, formula.formula))
+        self.assert_(isinstance(f, formula.Formula))
         self.assert_(f.hasterm(t1))
         self.assert_(f.hasterm(t2))
 
     def test_mul(self):
-        t1 = formula.term("t1")
-        t2 = formula.term("t2")
+        t1 = formula.Term("t1")
+        t2 = formula.Term("t2")
         f = t1 * t2
-        self.assert_(isinstance(f, formula.formula))
+        self.assert_(isinstance(f, formula.Formula))
 
-        intercept = formula.term("intercept")
+        intercept = formula.Term("intercept")
         f = t1 * intercept
-        self.assertEqual(str(f), str(formula.formula(t1)))
+        self.assertEqual(str(f), str(formula.Formula(t1)))
 
         f = intercept * t1
-        self.assertEqual(str(f), str(formula.formula(t1)))
+        self.assertEqual(str(f), str(formula.Formula(t1)))
 
 class TestFormula(NumpyTestCase):
 
@@ -56,7 +56,7 @@ class TestFormula(NumpyTestCase):
         for i in range(10):
             name = '%s' % string.uppercase[i]
             self.namespace[name] = self.X[:,i]
-            self.terms.append(formula.term(name))
+            self.terms.append(formula.Term(name))
 
         self.formula = self.terms[0]
         for i in range(1, 10):
@@ -66,8 +66,8 @@ class TestFormula(NumpyTestCase):
     def test_namespace(self):
         space1 = {'X':N.arange(50), 'Y':N.arange(50)*2}
         space2 = {'X':N.arange(20), 'Y':N.arange(20)*2}
-        X = formula.term('X')
-        Y = formula.term('Y')
+        X = formula.Term('X')
+        Y = formula.Term('Y')
 
         X.namespace = space1 
         assert_almost_equal(X(), N.arange(50))
@@ -89,12 +89,12 @@ class TestFormula(NumpyTestCase):
 
 
     def test_termcolumns(self):
-        t1 = formula.term("A")
-        t2 = formula.term("B")
+        t1 = formula.Term("A")
+        t2 = formula.Term("B")
         f = t1 + t2 + t1 * t2
         def other(val):
             return N.array([3.2*val,4.342*val**2, 5.234*val**3])
-        q = formula.quantitative(['other%d' % i for i in range(1,4)], termname='other', func=t1, transform=other)
+        q = formula.Quantitative(['other%d' % i for i in range(1,4)], termname='other', func=t1, transform=other)
         f += q
         q.namespace = f.namespace = self.formula.namespace
         assert_almost_equal(q(), f()[f.termcolumns(q)])
@@ -150,7 +150,7 @@ class TestFormula(NumpyTestCase):
 
     def test_contrast2(self):
     
-        dummy = formula.term('zero')
+        dummy = formula.Term('zero')
         self.namespace['zero'] = N.zeros((40,), N.float64)
         term = dummy + self.terms[2]
         c = contrast.Contrast(term, self.formula)
@@ -163,7 +163,7 @@ class TestFormula(NumpyTestCase):
         X = self.formula.design()
         P = N.dot(X, L.pinv(X))
         
-        dummy = formula.term('noise')
+        dummy = formula.Term('noise')
         resid = N.identity(40) - P
         self.namespace['noise'] = N.transpose(N.dot(resid, R.standard_normal((40,5))))
         terms = dummy + self.terms[2]
@@ -181,32 +181,32 @@ class TestFormula(NumpyTestCase):
 
     def test_quantitative(self):
         t = self.terms[2]
-        sint = formula.quantitative('t', func=t, transform=N.sin)
+        sint = formula.Quantitative('t', func=t, transform=N.sin)
         t.namespace = sint.namespace = self.formula.namespace
         assert_almost_equal(N.sin(t()), sint())
 
     def test_factor1(self):
         f = ['a','b','c']*10
-        fac = formula.factor('ff', set(f))
+        fac = formula.Factor('ff', set(f))
         fac.namespace = {'ff':f}
         self.assertEquals(list(fac.values()), f)
 
     def test_factor2(self):
         f = ['a','b','c']*10
-        fac = formula.factor('ff', set(f))
+        fac = formula.Factor('ff', set(f))
         fac.namespace = {'ff':f}
         self.assertEquals(fac().shape, (3,30))
 
     def test_factor3(self):
         f = ['a','b','c']*10
-        fac = formula.factor('ff', set(f))
+        fac = formula.Factor('ff', set(f))
         fac.namespace = {'ff':f}
         m = fac.main_effect(reference=1)
         self.assertEquals(m().shape, (2,30))
 
     def test_factor4(self):
         f = ['a','b','c']*10
-        fac = formula.factor('ff', set(f))
+        fac = formula.Factor('ff', set(f))
         fac.namespace = {'ff':f}
         m = fac.main_effect(reference=2)
         r = N.array([N.identity(3)]*10)

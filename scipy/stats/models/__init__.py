@@ -11,8 +11,8 @@ import scipy.stats.models.formula
 import scipy.stats.models.regression
 import scipy.stats.models.robust
 import scipy.stats.models.family
-from scipy.stats.models.glm import model as glm
-from scipy.stats.models.rlm import model as rlm
+from scipy.stats.models.glm import Model as glm
+from scipy.stats.models.rlm import Model as rlm
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 

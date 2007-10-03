@@ -5,7 +5,7 @@ Test functions for models.regression
 from numpy.random import standard_normal
 from numpy.testing import NumpyTest, NumpyTestCase
 
-from scipy.stats.models.regression import ols_model, ar_model
+from scipy.stats.models.regression import OLSModel, ARModel
 
 W = standard_normal
 
@@ -14,14 +14,14 @@ class TestRegression(NumpyTestCase):
     def testOLS(self):
         X = W((40,10))
         Y = W((40,))
-        model = ols_model(design=X)
+        model = OLSModel(design=X)
         results = model.fit(Y)
         self.assertEquals(results.df_resid, 30)
 
     def testAR(self):
         X = W((40,10))
         Y = W((40,))
-        model = ar_model(design=X, rho=0.4)
+        model = ARModel(design=X, rho=0.4)
         results = model.fit(Y)
         self.assertEquals(results.df_resid, 30)
 
@@ -29,7 +29,7 @@ class TestRegression(NumpyTestCase):
         X = W((40,10))
         X[:,0] = X[:,1] + X[:,2]
         Y = W((40,))
-        model = ols_model(design=X)
+        model = OLSModel(design=X)
         results = model.fit(Y)
         self.assertEquals(results.df_resid, 31)
 
@@ -37,7 +37,7 @@ class TestRegression(NumpyTestCase):
         X = W((40,10))
         X[:,0] = X[:,1] + X[:,2]
         Y = W((40,))
-        model = ar_model(design=X, rho=0.9)
+        model = ARModel(design=X, rho=0.9)
         results = model.fit(Y)
         self.assertEquals(results.df_resid, 31)
 
