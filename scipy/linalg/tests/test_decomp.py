@@ -500,7 +500,7 @@ class TestLU(NumpyTestCase):
         """Check lu decomposition on medium size, rectangular matrix."""
         self._test_common(self.cmed)
 
-class test_lu_single(test_lu):
+class TestLUSingle(TestLU):
     """LU testers for single precision, real and double"""
     def __init__(self, *args, **kw):
         test_lu.__init__(self, *args, **kw)
@@ -519,7 +519,7 @@ class test_lu_single(test_lu):
         self.med = self.vrect.astype(float32)
         self.cmed = self.vrect.astype(complex64)
 
-class TestLuSolve(NumpyTestCase):
+class TestLUSolve(NumpyTestCase):
     def check_lu(self):
         a = random((10,10))
         b = random((10,))
@@ -531,7 +531,7 @@ class TestLuSolve(NumpyTestCase):
 
         assert_array_equal(x1,x2)
 
-class TestSvd(NumpyTestCase):
+class TestSVD(NumpyTestCase):
 
     def check_simple(self):
         a = [[1,2,3],[1,20,3],[2,5,6]]
@@ -642,7 +642,7 @@ class TestSVDVals(NumpyTestCase):
         assert len(s)==2
         assert s[0]>=s[1]
 
-class TestDiagsvd(NumpyTestCase):
+class TestDiagSVD(NumpyTestCase):
 
     def check_simple(self):
         assert_array_almost_equal(diagsvd([1,0,0],3,3),[[1,0,0],[0,0,0],[0,0,0]])
@@ -696,7 +696,7 @@ class TestCholesky(NumpyTestCase):
             assert_array_almost_equal(cholesky(a,lower=1),c)
 
 
-class TestQr(NumpyTestCase):
+class TestQR(NumpyTestCase):
 
     def check_simple(self):
         a = [[8,2,3],[2,9,3],[5,3,6]]
@@ -779,7 +779,7 @@ class TestQr(NumpyTestCase):
             assert_array_almost_equal(dot(conj(transpose(q)),q),identity(n))
             assert_array_almost_equal(dot(q,r),a)
 
-class TestRq(NumpyTestCase):
+class TestRQ(NumpyTestCase):
 
     def check_simple(self):
         a = [[8,2,3],[2,9,3],[5,3,6]]
@@ -905,7 +905,7 @@ class TestHessenberg(NumpyTestCase):
 
 
 
-class TestDatanotshared(NumpyTestCase):
+class TestDataNotShared(NumpyTestCase):
     
     def check_datanotshared(self):
         from scipy.linalg.decomp import _datanotshared
