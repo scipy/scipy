@@ -503,7 +503,7 @@ class TestLU(NumpyTestCase):
 class TestLUSingle(TestLU):
     """LU testers for single precision, real and double"""
     def __init__(self, *args, **kw):
-        test_lu.__init__(self, *args, **kw)
+        TestLU.__init__(self, *args, **kw)
 
         self.a = self.a.astype(float32)
         self.ca = self.ca.astype(complex64)
