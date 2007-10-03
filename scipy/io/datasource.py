@@ -19,7 +19,7 @@ zipexts = (".gz",".bz2")
 file_openers = {".gz":gzip.open, ".bz2":bz2.BZ2File, None:file}
 
 def iszip(filename):
-    """Is filename a zip file.
+    """Test if the given file is a zip file.
 
     *Parameters*:
 
@@ -37,17 +37,17 @@ def iszip(filename):
     return ext in zipexts
 
 def unzip(filename):
-    """Unzip filename into another file.
+    """Unzip the given file and return the path object to the new file.
 
     *Parameters*:
 
-        filename : {string}
+        filename : string
             Filename to unzip.
 
     *Returns*:
 
-        string
-            Name of the unzipped file.
+        path
+            Path object of the unzipped file.
 
     """
 
@@ -75,8 +75,10 @@ def iswritemode(mode):
 
     """
 
-    return mode.find("w")>-1 or mode.find("+")>-1
-
+    _writemodes = ("w", "+", "a")
+    for c in mode:
+        if c in _writemodes: return True
+    return False
 
 def splitzipext(filename):
     """Return a tuple containing the filename and the zip extension separated.
@@ -105,35 +107,38 @@ def splitzipext(filename):
 
 
 def isurl(pathstr):
-    """
-    Check whether a given string can be parsed as a URL.
+    """Test whether a given string can be parsed as a URL.
 
-    :Parameters:
-        `pathstr` : string
+    *Parameters*
+        pathstr : {string}
             The string to be checked.
 
-    :Returns: ``bool``
+    *Returns*:
+        bool
+            Results of test.
+
     """
-    scheme, netloc, _, _, _, _ = urlparse(pathstr)
+
+    scheme, netloc, _tmp, _tmp, _tmp, _tmp = urlparse(pathstr)
     return bool(scheme and netloc)
 
-
-
-
 def ensuredirs(directory):
-    """
-    Ensure that the given directory path actually exists.
-    If it doesn't, create it.
+    """Ensure that the given directory path actually exists.
 
-    :Returns: ``None``
+    If the directory does not exist, it is created.
+
+    *Parameters*:
+        directory : {path object}
+        
+    *Returns*:
+        None
+
     """
+
     if not isinstance(directory, path):
         directory = path(directory)
     if not directory.exists():
         directory.makedirs()
-
-
-
 
 class Cache (object):
     """A file cache.
