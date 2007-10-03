@@ -7,7 +7,8 @@ import numpy
 
 set_package_path()
 import scipy.sandbox.multigrid
-from scipy.sandbox.multigrid.coarsen import sa_strong_connections,sa_constant_interpolation
+from scipy.sandbox.multigrid.sa import sa_strong_connections, sa_constant_interpolation, \
+                                        sa_interpolation, sa_fit_candidates
 from scipy.sandbox.multigrid.multilevel import poisson_problem1D,poisson_problem2D
 restore_path()
 
@@ -23,6 +24,46 @@ def reference_sa_strong_connections(A,epsilon):
             S[i,j] = v
 
     return S.tocsr()
+
+class TestSAStrongConnections(NumpyTestCase):
+    def check_simple(self):
+        N = 4
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).tocsr()
+        S = spdiags([ -ones(N),-ones(N)],[-1,1],N,N).tocsr()
+        assert_array_equal(sa_strong_connections(A,0.50).todense(),S.todense())   #all connections are strong
+        assert_array_equal(sa_strong_connections(A,0.51).todense(),0*S.todense()) #no connections are strong
+       
+        N = 100
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).tocsr()
+        S = spdiags([ -ones(N),-ones(N)],[-1,1],N,N).tocsr()
+        assert_array_equal(sa_strong_connections(A,0.50).todense(),S.todense())   #all connections are strong
+        assert_array_equal(sa_strong_connections(A,0.51).todense(),0*S.todense()) #no connections are strong
+
+    def check_random(self):
+        numpy.random.seed(0)
+
+        for N in [2,3,5]:
+            A = csr_matrix(rand(N,N))
+            for epsilon in [0.0,0.1,0.5,1.0,10.0]:
+                S_result = sa_strong_connections(A,epsilon)
+                S_expected = reference_sa_strong_connections(A,epsilon)
+                assert_array_equal(S_result.todense(),S_expected.todense())
+
+    def check_poisson1D(self):
+        for N in [2,3,5,7,10,11,19]:
+            A = poisson_problem1D(N)
+            for epsilon in [0.0,0.1,0.5,1.0]:
+                S_result   = sa_strong_connections(A,epsilon)
+                S_expected = reference_sa_strong_connections(A,epsilon)
+                assert_array_equal(S_result.todense(),S_expected.todense())
+
+    def check_poisson2D(self):
+        for N in [2,3,5,7,10,11]:
+            A = poisson_problem2D(N)
+            for epsilon in [0.0,0.1,0.5,1.0]:
+                S_result   = sa_strong_connections(A,epsilon)
+                S_expected = reference_sa_strong_connections(A,epsilon)
+                assert_array_equal(S_result.todense(),S_expected.todense())
 
 
 # note that this method only tests the current implementation, not
@@ -60,7 +101,6 @@ def reference_sa_constant_interpolation(A,epsilon):
                 R.remove(i)
                 break
 
-
     # Pass #3
     for i,row in enumerate(S):
         if i not in R: continue
@@ -79,53 +119,12 @@ def reference_sa_constant_interpolation(A,epsilon):
  
     return csr_matrix((Px,Pj,Pp))
 
-class TestSaStrongConnections(NumpyTestCase):
-    def check_simple(self):
-        N = 4
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).tocsr()
-        S = spdiags([ -ones(N),-ones(N)],[-1,1],N,N).tocsr()
-        assert_array_equal(sa_strong_connections(A,0.50).todense(),S.todense())   #all connections are strong
-        assert_array_equal(sa_strong_connections(A,0.51).todense(),0*S.todense()) #no connections are strong
-       
-        N = 100
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).tocsr()
-        S = spdiags([ -ones(N),-ones(N)],[-1,1],N,N).tocsr()
-        assert_array_equal(sa_strong_connections(A,0.50).todense(),S.todense())   #all connections are strong
-        assert_array_equal(sa_strong_connections(A,0.51).todense(),0*S.todense()) #no connections are strong
-
-    def check_random(self):
-        numpy.random.seed(0)
-
-        for N in [2,3,5,10]:
-            A = csr_matrix(rand(N,N))
-            for epsilon in [0.0,0.1,0.5,0.8,1.0,10.0]:
-                S_result = sa_strong_connections(A,epsilon)
-                S_expected = reference_sa_strong_connections(A,epsilon)
-                assert_array_equal(S_result.todense(),S_expected.todense())
-
-    def check_poisson1D(self):
-        for N in [2,3,5,7,10,11,19]:
-            A = poisson_problem1D(N)
-            for epsilon in [0.0,0.1,0.5,0.8,1.0]:
-                S_result   = sa_strong_connections(A,epsilon)
-                S_expected = reference_sa_strong_connections(A,epsilon)
-                assert_array_equal(S_result.todense(),S_expected.todense())
-
-    def check_poisson2D(self):
-        for N in [2,3,5,7,10,11,19]:
-            A = poisson_problem2D(N)
-            for epsilon in [0.0,0.1,0.5,0.8,1.0]:
-                S_result   = sa_strong_connections(A,epsilon)
-                S_expected = reference_sa_strong_connections(A,epsilon)
-                assert_array_equal(S_result.todense(),S_expected.todense())
-
-
-class TestSaConstantInterpolation(NumpyTestCase):
+class TestSAConstantInterpolation(NumpyTestCase):
     def check_random(self):
         numpy.random.seed(0)
         for N in [2,3,5,10]:
             A = csr_matrix(rand(N,N))
-            for epsilon in [0.0,0.1,0.5,0.8,1.0]:
+            for epsilon in [0.0,0.1,0.5,1.0]:
                 S_result   = sa_constant_interpolation(A,epsilon)
                 S_expected = reference_sa_constant_interpolation(A,epsilon)
                 assert_array_equal(S_result.todense(),S_expected.todense())
@@ -133,15 +132,15 @@ class TestSaConstantInterpolation(NumpyTestCase):
     def check_poisson1D(self):
         for N in [2,3,5,7,10,11,20,21,29,30]:
             A = poisson_problem1D(N)
-            for epsilon in [0.0,0.1,0.5,0.8,1.0]:
+            for epsilon in [0.0,0.1,0.5,1.0]:
                 S_result   = sa_constant_interpolation(A,epsilon)
                 S_expected = reference_sa_constant_interpolation(A,epsilon)
                 assert_array_equal(S_result.todense(),S_expected.todense())
 
     def check_poisson2D(self):
-        for N in [2,3,5,7,10,11,20,21,29,30]:
+        for N in [2,3,5,7,10,11]:
             A = poisson_problem2D(N)
-            for epsilon in [0.0,0.1,0.5,0.8,1.0]:
+            for epsilon in [0.0,0.1,0.5,1.0]:
                 S_result   = sa_constant_interpolation(A,epsilon)
                 S_expected = reference_sa_constant_interpolation(A,epsilon)
                 assert_array_equal(S_result.todense(),S_expected.todense())

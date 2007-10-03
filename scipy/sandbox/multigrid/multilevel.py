@@ -2,12 +2,13 @@ __all__ = ['poisson_problem1D','poisson_problem2D',
            'ruge_stuben_solver','smoothed_aggregation_solver',
            'multilevel_solver']
 
-from numpy.linalg import norm
-from numpy import zeros,zeros_like,array
 import scipy
 import numpy
+from numpy import zeros,zeros_like,array
+from numpy.linalg import norm
 
-from coarsen import sa_interpolation,rs_interpolation
+from sa import sa_interpolation
+from rs import rs_interpolation
 from relaxation import gauss_seidel,jacobi,sor
 from utils import infinity_norm
 
@@ -188,11 +189,12 @@ if __name__ == '__main__':
     #A = io.mmread("9pt-100x100.mtx").tocsr()
     #A = io.mmread("/home/nathan/Desktop/9pt/9pt-100x100.mtx").tocsr()
     #A = io.mmread("/home/nathan/Desktop/BasisShift_W_EnergyMin_Luke/9pt-5x5.mtx").tocsr()
+    
     #A = io.mmread('tests/sample_data/elas30_A.mtx').tocsr()
     #candidates = io.mmread('tests/sample_data/elas30_nullspace.mtx')
     #candidates = [ array(candidates[:,x]) for x in range(candidates.shape[1]) ]
     
-    ml = smoothed_aggregation_solver(A,candidates,max_coarse=100,max_levels=3)
+    ml = smoothed_aggregation_solver(A,candidates,max_coarse=10,max_levels=10)
     #ml = ruge_stuben_solver(A)
 
     x = rand(A.shape[0])

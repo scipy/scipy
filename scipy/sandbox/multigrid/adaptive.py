@@ -4,32 +4,32 @@ from scipy.sparse import csr_matrix,coo_matrix
 
 from relaxation import gauss_seidel
 from multilevel import multilevel_solver
-from coarsen import sa_constant_interpolation
+from sa import sa_constant_interpolation
 #from utils import infinity_norm
 from utils import approximate_spectral_radius
 
-def fit_candidate(I,x):
-    """
-    For each aggregate in I (i.e. each column of I) compute vector R and 
-    sparse matrix Q (having the sparsity of I) such that the following holds:
-
-        Q*R = x     and   Q^T*Q = I
-
-    In otherwords, find a prolongator Q with orthonormal columns so that
-    x is represented exactly on the coarser level by R.
-    """
-    x = asarray(x)
-    Q = csr_matrix((x.copy(),I.indices,I.indptr),dims=I.shape,check=False)
-    R = sqrt(ravel(csr_matrix((x*x,I.indices,I.indptr),dims=I.shape,check=False).sum(axis=0)))  #column 2-norms  
-
-    Q.data *= (1.0/R)[Q.indices]  #normalize columns of Q
-   
-    #print "norm(R)",scipy.linalg.norm(R)
-    #print "min(R),max(R)",min(R),max(R)
-    #print "infinity_norm(Q.T*Q - I) ",infinity_norm((Q.T.tocsr() * Q - scipy.sparse.spidentity(Q.shape[1])))
-    #print "norm(Q*R - x)",scipy.linalg.norm(Q*R - x)
-    #print "norm(x - Q*Q.Tx)",scipy.linalg.norm(x - Q*(Q.T*x))
-    return Q,R
+##def fit_candidate(I,x):
+##    """
+##    For each aggregate in I (i.e. each column of I) compute vector R and 
+##    sparse matrix Q (having the sparsity of I) such that the following holds:
+##
+##        Q*R = x     and   Q^T*Q = I
+##
+##    In otherwords, find a prolongator Q with orthonormal columns so that
+##    x is represented exactly on the coarser level by R.
+##    """
+##    x = asarray(x)
+##    Q = csr_matrix((x.copy(),I.indices,I.indptr),dims=I.shape,check=False)
+##    R = sqrt(ravel(csr_matrix((x*x,I.indices,I.indptr),dims=I.shape,check=False).sum(axis=0)))  #column 2-norms  
+##
+##    Q.data *= (1.0/R)[Q.indices]  #normalize columns of Q
+##   
+##    #print "norm(R)",scipy.linalg.norm(R)
+##    #print "min(R),max(R)",min(R),max(R)
+##    #print "infinity_norm(Q.T*Q - I) ",infinity_norm((Q.T.tocsr() * Q - scipy.sparse.spidentity(Q.shape[1])))
+##    #print "norm(Q*R - x)",scipy.linalg.norm(Q*R - x)
+##    #print "norm(x - Q*Q.Tx)",scipy.linalg.norm(x - Q*(Q.T*x))
+##    return Q,R
 
 
 
@@ -61,7 +61,6 @@ def hstack_csr(A,B):
     J = concatenate((A.col,B.col+A.shape[1]))
     V = concatenate((A.data,B.data))
     return coo_matrix((V,(I,J)),dims=(A.shape[0],A.shape[1]+B.shape[1])).tocsr()
-
 
 def vstack_csr(A,B):
     #OPTIMIZE THIS
@@ -145,7 +144,6 @@ def sa_hierarchy(A,Ws,x):
     Ps = []
 
     for W in Ws:
-        #P,x = fit_candidate(W,x)
         P,x = fit_candidates(W,x)
         I   = smoothed_prolongator(P,A)  
         A   = I.T.tocsr() * A * I
