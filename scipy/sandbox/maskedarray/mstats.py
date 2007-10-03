@@ -32,10 +32,17 @@ __all__ = ['cov','meppf','plotting_positions','meppf','mmedian','mquantiles',
 #####--------------------------------------------------------------------------
 
 def winsorize(data, alpha=0.2):
-    """Returns a Winsorized version of the input array: the (alpha/2.) lowest
-    values are set to the (alpha/2.)th percentile, and the (alpha/2.) highest
-    values are set to the (1-alpha/2.)th percentile 
-    Masked values are skipped. The input array is first flattened.
+    """Returns a Winsorized version of the input array.
+    
+The (alpha/2.) lowest values are set to the (alpha/2.)th percentile, and 
+the (alpha/2.) highest values are set to the (1-alpha/2.)th percentile 
+Masked values are skipped. 
+
+*Parameters*:
+    data : {ndarray}
+        Input data to Winsorize. The data is first flattened.
+    alpha : {float}, optional
+        Percentage of total Winsorization : alpha/2. on the left, alpha/2. on the right
     """
     data = masked_array(data, copy=False).ravel()
     idxsort = data.argsort()
@@ -47,16 +54,17 @@ def winsorize(data, alpha=0.2):
 #..............................................................................  
 def trim_both(data, proportiontocut=0.2, axis=None):
     """Trims the data by masking the int(trim*n) smallest and int(trim*n) largest 
-    values of data along the given axis, where n is the number of unmasked values.
+values of data along the given axis, where n is the number of unmasked values.
     
-:Inputs: 
-    data : MaskedArray
+*Parameters*:
+    data : {ndarray}
         Data to trim.
-    trim : float *[0.2]*
+    proportiontocut : {float}
         Percentage of trimming. If n is the number of unmasked values before trimming, 
         the number of values after trimming is (1-2*trim)*n.
-    axis : integer *[None]*
-        Axis along which to perform the trimming.
+    axis : {integer}
+        Axis along which to perform the trimming. If None, the input array is first 
+        flattened.
     """
     #...................
     def _trim_1D(data, trim):
@@ -80,16 +88,21 @@ def trim_both(data, proportiontocut=0.2, axis=None):
 #..............................................................................
 def trim_tail(data, proportiontocut=0.2, tail='left', axis=None):
     """Trims the data by masking int(trim*n) values from ONE tail of the data
-    along the given axis, where n is the number of unmasked values.
-    
-:Inputs: 
-    data : MaskedArray
+along the given axis, where n is the number of unmasked values.
+
+*Parameters*:
+    data : {ndarray}
         Data to trim.
-    trim : float *[0.2]*
+    proportiontocut : {float}
         Percentage of trimming. If n is the number of unmasked values before trimming, 
-        the number of values after trimming is (1-2*trim)*n.
-    axis : integer *[None]*
-        Axis along which to perform the trimming.
+        the number of values after trimming is (1-trim)*n.
+    tail : {string}
+        Trimming direction, in ('left', 'right'). If left, the proportiontocut 
+        lowest values are set to the corresponding percentile. If right, the
+        proportiontocut highest values are used instead.
+    axis : {integer}
+        Axis along which to perform the trimming. If None, the input array is first 
+        flattened.
     """
     #...................
     def _trim_1D(data, trim, left):
@@ -126,32 +139,34 @@ def trim_tail(data, proportiontocut=0.2, tail='left', axis=None):
 #..............................................................................    
 def trimmed_mean(data, proportiontocut=0.2, axis=None):
     """Returns the trimmed mean of the data along the given axis. Trimming is
-    performed on both ends of the distribution.
+performed on both ends of the distribution.
     
-:Inputs: 
-    data : MaskedArray
+*Parameters*:
+    data : {ndarray}
         Data to trim.
-    proportiontocut : float *[0.2]*
+    proportiontocut : {float}
         Proportion of the data to cut from each side of the data . 
         As a result, (2*proportiontocut*n) values are actually trimmed.
-    axis : integer *[None]*
-        Axis along which to perform the trimming.    
+    axis : {integer}
+        Axis along which to perform the trimming. If None, the input array is first 
+        flattened.
     """
     return trim_both(data, proportiontocut=proportiontocut, axis=axis).mean(axis=axis)
 
 #..............................................................................   
 def trimmed_stde(data, proportiontocut=0.2, axis=None):
     """Returns the standard error of the trimmed mean for the input data, 
-    along the given axis. Trimming is performed on both ends of the distribution.
+along the given axis. Trimming is performed on both ends of the distribution.
     
-:Inputs: 
-    data : MaskedArray
+*Parameters*:
+    data : {ndarray}
         Data to trim.
-    proportiontocut : float *[0.2]*
+    proportiontocut : {float}
         Proportion of the data to cut from each side of the data . 
         As a result, (2*proportiontocut*n) values are actually trimmed.
-    axis : integer *[None]*
-        Axis along which to perform the trimming.  
+    axis : {integer}
+        Axis along which to perform the trimming. If None, the input array is first 
+        flattened.
     """
     #........................
     def _trimmed_stde_1D(data, trim=0.2):
@@ -172,7 +187,15 @@ def trimmed_stde(data, proportiontocut=0.2, axis=None):
 #.............................................................................
 def stde_median(data, axis=None):
     """Returns the McKean-Schrader estimate of the standard error of the sample
-    median along the given axis.
+median along the given axis.
+
+    
+*Parameters*:
+    data : {ndarray}
+        Data to trim.
+    axis : {integer}
+        Axis along which to perform the trimming. If None, the input array is first 
+        flattened.
     """
     def _stdemed_1D(data):
         sorted = numpy.sort(data.compressed())
@@ -217,18 +240,18 @@ Typical values of (alpha,beta) are:
     - (.4,.4)  : approximately quantile unbiased (Cunnane)
     - (.35,.35): APL, used with PWM
 
-:Parameters:
-    x : Sequence
+*Parameters*:
+    x : {sequence}
         Input data, as a sequence or array of dimension at most 2.
-    prob : Sequence *[(0.25, 0.5, 0.75)]*
+    prob : {sequence}
         List of quantiles to compute.
-    alpha : Float (*[0.4]*)
+    alpha : {float}
         Plotting positions parameter.
-    beta : Float (*[0.4]*)
+    beta : {float}
         Plotting positions parameter.
-    axis : Integer *[None]*
-        Axis along which to compute quantiles. If *None*, uses the whole 
-        (flattened/compressed) dataset.
+    axis : {integer}
+        Axis along which to perform the trimming. If None, the input array is first 
+        flattened.
     """
     def _quantiles1D(data,m,p):
         x = numpy.sort(data.compressed())
@@ -302,23 +325,29 @@ def mmedian(data, axis=None):
     
    
 def cov(x, y=None, rowvar=True, bias=False, strict=False):
-    """
-    Estimate the covariance matrix.
+    """Estimates the covariance matrix.
 
-    If x is a vector, return the variance.  For matrices, returns the covariance 
-    matrix.
 
-    If y is given, it is treated as an additional (set of) variable(s).
+Normalization is by (N-1) where N is the number of observations (unbiased 
+estimate).  If bias is True then normalization is by N.
 
-    Normalization is by (N-1) where N is the number of observations (unbiased 
-    estimate).  If bias is True then normalization is by N.
-
-    If rowvar is non-zero (default), then each row is a variable with observations 
-    in the columns, otherwise each column is a variable  and the observations  are 
-    in the rows.
-    
-    If strict is True, masked values are propagated: if a masked value appears in 
-    a row or column, the whole row or column is considered masked.
+*Parameters*:
+    x : {ndarray}
+        Input data. If x is a 1D array, returns the variance. If x is a 2D array,
+        returns the covariance matrix.
+    y : {ndarray}, optional
+        Optional set of variables.
+    rowvar : {boolean}
+        If rowvar is true, then each row is a variable with obersvations in columns.
+        If rowvar is False, each column is a variable and the observations are in
+        the rows.
+    bias : {boolean}
+        Whether to use a biased or unbiased estimate of the covariance.
+        If bias is True, then the normalization is by N, the number of observations.
+        Otherwise, the normalization is by (N-1)
+    strict : {boolean}
+        If strict is True, masked values are propagated: if a masked value appears in 
+        a row or column, the whole row or column is considered masked.
     """
     X = narray(x, ndmin=2, subok=True, dtype=float)
     if X.shape[0] == 1:
@@ -350,7 +379,7 @@ def cov(x, y=None, rowvar=True, bias=False, strict=False):
 
 def idealfourths(data, axis=None):
     """Returns an estimate of the interquartile range of the data along the given
-    axis, as computed with the ideal fourths.
+axis, as computed with the ideal fourths.
     """
     def _idf(data):
         x = numpy.sort(data.compressed())
@@ -368,13 +397,13 @@ def idealfourths(data, axis=None):
     
     
 def rsh(data, points=None):
-    """Evalutates Rosenblatt's shifted histogram estimators for each
-    point of 'points' on the dataset 'data'.
+    """Evalutates Rosenblatt's shifted histogram estimators for each point 
+on the dataset 'data'.
     
-:Inputs:
-    data : sequence
-        Input data. Masked values are discarded.
-    points : 
+*Parameters* :
+    data : {sequence}
+        Input data. Masked values are ignored.
+    points : {sequence}
         Sequence of points where to evaluate Rosenblatt shifted histogram. 
         If None, use the data.        
     """

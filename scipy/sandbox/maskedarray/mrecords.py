@@ -38,8 +38,7 @@ import warnings
 reserved_fields = ['_data','_mask','_fieldmask', 'dtype']
 
 def _getformats(data):
-    """Returns the formats of each array of arraylist as a comma-separated 
-    string."""
+    "Returns the formats of each array of arraylist as a comma-separated string."
     if hasattr(data,'dtype'):
         return ",".join([desc[1] for desc in data.dtype.descr])
     
@@ -56,9 +55,9 @@ def _getformats(data):
     return formats[:-1]    
 
 def _checknames(descr, names=None):
-    """Checks that the field names of the descriptor `descr` are not some 
-    reserved keywords. If this is the case, a default 'f%i' is substituted.
-    If the argument `names` is not None, updates the field names to valid names.    
+    """Checks that the field names of the descriptor ``descr`` are not some 
+reserved keywords. If this is the case, a default 'f%i' is substituted.
+If the argument `names` is not None, updates the field names to valid names.    
     """    
     ndescr = len(descr)
     default_names = ['f%i' % i for i in range(ndescr)]
@@ -90,12 +89,15 @@ def _checknames(descr, names=None):
 class MaskedRecords(MaskedArray, object):
     """
     
-:IVariables:
-    - `__localfdict` : Dictionary
-        Dictionary of local fields (`f0_data`, `f0_mask`...)
-    - `__globalfdict` : Dictionary
-        Dictionary of global fields, as the combination of a `_data` and a `_mask`.
-        (`f0`)
+*IVariables*:
+    _data : {recarray}
+        Underlying data, as a record array.
+    _mask : {boolean array}
+        Mask of the records. A record is masked when all its fields are masked.
+    _fieldmask : {boolean recarray}
+        Record array of booleans, setting the mask of each individual field of each record.
+    _fill_value : {record}
+        Filling values for each field.
     """
     _defaultfieldmask = nomask
     _defaulthardmask = False
@@ -183,6 +185,7 @@ class MaskedRecords(MaskedArray, object):
     
     #......................................................
     def __getattribute__(self, attr):
+        "Returns the given attribute."
         try:
             # Returns a generic attribute
             return object.__getattribute__(self,attr)
@@ -205,6 +208,7 @@ class MaskedRecords(MaskedArray, object):
         raise AttributeError,"No attribute '%s' !" % attr
             
     def __setattr__(self, attr, val):
+        "Sets the attribute attr to the value val."
         newattr = attr not in self.__dict__
         try:
             # Is attr a generic attribute ?
@@ -241,7 +245,7 @@ class MaskedRecords(MaskedArray, object):
     #............................................
     def __getitem__(self, indx):
         """Returns all the fields sharing the same fieldname base.
-    The fieldname base is either `_data` or `_mask`."""
+The fieldname base is either `_data` or `_mask`."""
         _localdict = self.__dict__
         _data = self._data
         # We want a field ........
@@ -263,18 +267,12 @@ class MaskedRecords(MaskedArray, object):
         return obj
     #............................................
     def __setitem__(self, indx, value):
-        """Sets the given record to value."""
+        "Sets the given record to value."
         MaskedArray.__setitem__(self, indx, value)
         
-#    def __getslice__(self, i, j):
-#        """Returns the slice described by [i,j]."""
-#        _localdict = self.__dict__
-#        return MaskedRecords(_localdict['_data'][i:j], 
-#                        mask=_localdict['_fieldmask'][i:j],
-#                       dtype=self.dtype)      
-#        
+
     def __setslice__(self, i, j, value):
-        """Sets the slice described by [i,j] to `value`."""
+        "Sets the slice described by [i,j] to `value`."
         _localdict = self.__dict__
         d = self._data
         m = _localdict['_fieldmask']
@@ -305,6 +303,7 @@ class MaskedRecords(MaskedArray, object):
         
     #.....................................................           
     def __setmask__(self, mask):
+        "Sets the mask."
         names = self.dtype.names
         fmask = self.__dict__['_fieldmask']
         newmask = make_mask(mask, copy=False)
@@ -328,10 +327,7 @@ are masked."""
         
     #......................................................
     def __str__(self):
-        """x.__str__() <==> str(x)
-Calculates the string representation, using masked for fill if it is enabled. 
-Otherwise, fills with fill value.
-        """
+        "Calculates the string representation."
         if self.size > 1:
             mstr = ["(%s)" % ",".join([str(i) for i in s])  
                     for s in zip(*[getattr(self,f) for f in self.dtype.names])]
@@ -342,10 +338,7 @@ Otherwise, fills with fill value.
             return "(%s)" % ", ".join(mstr)
     
     def __repr__(self):
-        """x.__repr__() <==> repr(x)
-Calculates the repr representation, using masked for fill if it is enabled. 
-Otherwise fill with fill value.
-        """
+        "Calculates the repr representation."
         _names = self.dtype.names
         fmt = "%%%is : %%s" % (max([len(n) for n in _names])+4,)
         reprstr = [fmt % (f,getattr(self,f)) for f in self.dtype.names]
@@ -367,11 +360,12 @@ Otherwise fill with fill value.
         return ndarray.view(self, obj)            
     #......................................................
     def filled(self, fill_value=None):
-        """Returns an array of the same class as `_data`,
- with masked values filled with `fill_value`.
+        """Returns an array of the same class as ``_data``, with masked values
+filled with ``fill_value``. If ``fill_value`` is None, ``self.fill_value`` is
+used instead.
+ 
 Subclassing is preserved.
         
-If `fill_value` is None, uses self.fill_value.
         """
         _localdict = self.__dict__
         d = self._data
@@ -419,28 +413,31 @@ def fromarrays(arraylist, dtype=None, shape=None, formats=None,
                names=None, titles=None, aligned=False, byteorder=None):
     """Creates a mrecarray from a (flat) list of masked arrays.
 
-:Parameters:
-    - `arraylist` : Sequence
-      A list of (masked) arrays. Each element of the sequence is first converted
-      to a masked array if needed. If a 2D array is passed as argument, it is
-      processed line by line
-    - `dtype` : numeric.dtype
-      Data type descriptor.
-    - `shape` : Integer *[None]*
-      Number of records. If None, `shape` is defined from the shape of the first
-      array in the list.
-    - `formats` :
+*Parameters*:
+    arraylist : {sequence}
+        A list of (masked) arrays. Each element of the sequence is first converted
+        to a masked array if needed. If a 2D array is passed as argument, it is
+        processed line by line
+    dtype : {numeric.dtype}
+        Data type descriptor.
+    {shape} : {integer}
+        Number of records. If None, ``shape`` is defined from the shape of the 
+        first array in the list.
+    formats : {sequence}
+        Sequence of formats for each individual field. If None, the formats will
+        be autodetected by inspecting the fields and selecting the highest dtype
+        possible.
+    names : {sequence}
+        Sequence of the names of each field.
+    -titles : {sequence}
       (Description to write)
-    - `names` : 
-      (description to write)
-    - `titles`:
-      (Description to write)
-    - `aligned`: Boolen *[False]*
+    aligned : {boolean}
       (Description to write, not used anyway)   
-    - `byteorder`: Boolen *[None]*
+    byteorder: {boolean}
       (Description to write, not used anyway)
-       
-
+      
+*Notes*:
+    Lists of tuples should be preferred over lists of lists for faster processing.
     """
     arraylist = [masked_array(x) for x in arraylist]
     # Define/check the shape.....................
@@ -481,13 +478,31 @@ def fromrecords(reclist, dtype=None, shape=None, formats=None, names=None,
                 titles=None, aligned=False, byteorder=None):
     """Creates a MaskedRecords from a list of records.
 
-    The data in the same field can be heterogeneous, they will be promoted
-    to the highest data type.  This method is intended for creating
-    smaller record arrays.  If used to create large array without formats
-    defined, it can be slow.
+*Parameters*:
+    arraylist : {sequence}
+        A list of (masked) arrays. Each element of the sequence is first converted
+        to a masked array if needed. If a 2D array is passed as argument, it is
+        processed line by line
+    dtype : {numeric.dtype}
+        Data type descriptor.
+    {shape} : {integer}
+        Number of records. If None, ``shape`` is defined from the shape of the 
+        first array in the list.
+    formats : {sequence}
+        Sequence of formats for each individual field. If None, the formats will
+        be autodetected by inspecting the fields and selecting the highest dtype
+        possible.
+    names : {sequence}
+        Sequence of the names of each field.
+    -titles : {sequence}
+      (Description to write)
+    aligned : {boolean}
+      (Description to write, not used anyway)   
+    byteorder: {boolean}
+      (Description to write, not used anyway)
 
-    If formats is None, then this will auto-detect formats. Use a list of
-    tuples rather than a list of lists for faster processing.
+*Notes*:
+    Lists of tuples should be preferred over lists of lists for faster processing.
     """    
     # reclist is in fact a mrecarray .................
     if isinstance(reclist, MaskedRecords):
@@ -537,9 +552,9 @@ def fromrecords(reclist, dtype=None, shape=None, formats=None, names=None,
 
 def _guessvartypes(arr):        
     """Tries to guess the dtypes of the str_ ndarray `arr`, by testing element-wise
-    conversion. Returns a list of dtypes.
-    The array is first converted to ndarray. If the array is 2D, the test is 
-    performed on the first line. An exception is raised if the file is 3D or more.
+conversion. Returns a list of dtypes.
+The array is first converted to ndarray. If the array is 2D, the test is performed 
+on the first line. An exception is raised if the file is 3D or more.
     """
     vartypes = []
     arr = numeric.asarray(arr)
@@ -587,22 +602,22 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
                  varnames=None, vartypes=None):
     """Creates a mrecarray from data stored in the file `filename`.
 
-:Parameters:
-    - `filename` : file name/handle
-      Handle of an opened file.  
-    - `delimitor` : Character *None*
-      Alphanumeric character used to separate columns in the file.
-      If None, any (group of) white spacestring(s) will be used.
-    - `commentchar` : String *['#']*
-      Alphanumeric character used to mark the start of a comment.
-    - `missingchar` : String *['']*
-      String indicating missing data, and used to create the masks.
-    - `varnames` : Sequence *[None]*
-      Sequence of the variable names. If None, a list will be created from
-      the first non empty line of the file.
-    - `vartypes` : Sequence *[None]*
-      Sequence of the variables dtypes. If None, the sequence will be estimated
-      from the first non-commented line.  
+*Parameters* :
+    filename : {file name/handle}
+        Handle of an opened file.  
+    delimitor : {string}
+        Alphanumeric character used to separate columns in the file.
+        If None, any (group of) white spacestring(s) will be used.
+    commentchar : {string}
+        Alphanumeric character used to mark the start of a comment.
+    missingchar` : {string}
+        String indicating missing data, and used to create the masks.
+    varnames : {sequence}
+        Sequence of the variable names. If None, a list will be created from
+        the first non empty line of the file.
+    vartypes : {sequence}
+        Sequence of the variables dtypes. If None, it will be estimated from 
+        the first non-commented line.  
     
     
     Ultra simple: the varnames are in the header, one line"""

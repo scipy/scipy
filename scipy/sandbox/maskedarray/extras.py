@@ -50,13 +50,24 @@ def issequence(seq):
     return False
 
 def count_masked(arr, axis=None):
-    """Counts the number of masked elements along the given axis."""
+    """Counts the number of masked elements along the given axis.
+    
+*Parameters*:
+    axis : {integer}, optional
+        Axis along which to count.
+        If None (default), a flattened version of the array is used.
+    """
     m = getmaskarray(arr)
     return m.sum(axis)
 
 def masked_all(shape, dtype=float_):
     """Returns an empty masked array of the given shape and dtype,
-    where all the data are masked."""
+    where all the data are masked.
+    
+*Parameters*:
+    dtype : {dtype}, optional
+        Data type of the output.    
+    """
     a = masked_array(numeric.empty(shape, dtype),
                      mask=numeric.ones(shape, bool_))
     return a
@@ -72,11 +83,20 @@ def masked_all_like(arr):
 #---- --- New methods ---
 #####-------------------------------------------------------------------------- 
 def varu(a, axis=None, dtype=None):
-    """a.var(axis=None, dtype=None)
-    Returns an unbiased estimate of the variance.
+    """Returns an unbiased estimate of the variance.
+    i.e. var = sum((x - x.mean())**2)/(size(x,axis)-1)
     
-    Instead of dividing the sum of squared anomalies (SSA) by n, the number of 
-    elements, the SSA is divided by n-1.
+*Parameters*:
+    axis : {integer}, optional
+        Axis along which to perform the operation.
+        If None, applies to a flattened version of the array.
+    dtype : {dtype}, optional
+        Datatype for the intermediary computation. If not given, the current dtype
+        is used instead.
+
+*Notes*:
+    The value returned is an unbiased estimate of the true variance.
+    For the (less standard) biased estimate, use var.       
         """
     a = asarray(a)
     cnt = a.count(axis=axis)
@@ -92,11 +112,21 @@ def varu(a, axis=None, dtype=None):
 #                          fill_value=a._fill_value)
             
 def stdu(a, axis=None, dtype=None):
-    """a.var(axis=None, dtype=None)
-    Returns an unbiased estimate of the standard deviation.
+    """Returns an unbiased estimate of the standard deviation.
+    The standard deviation is the square root of the average of the squared
+    deviations from the mean, i.e. stdu = sqrt(varu(x)).    
 
-    Instead of dividing the sum of squared anomalies (SSA) by n, the number of 
-    elements, the SSA is divided by n-1.
+*Parameters*:
+    axis : {integer}, optional
+        Axis along which to perform the operation.
+        If None, applies to a flattened version of the array.
+    dtype : {dtype}, optional
+        Datatype for the intermediary computation. 
+        If not given, the current dtype is used instead.
+        
+*Notes*:
+    The value returned is an unbiased estimate of the true standard deviation.
+    For the (less standard) biased estimate, use std.       
         """
     a = asarray(a)
     dvar = a.varu(axis,dtype)
@@ -124,7 +154,7 @@ class _fromnxfunction:
     def getdoc(self):
         "Retrieves the __doc__ string from the function."
         return getattr(numpy, self._function).__doc__ +\
-            "(The function is applied to both the _data and the mask, if any.)"
+            "*Notes*:\n    (The function is applied to both the _data and the _mask, if any.)"
     def __call__(self, *args, **params):
         func = getattr(numpy, self._function)
         if len(args)==1:
@@ -260,31 +290,21 @@ def apply_along_axis(func1d,axis,arr,*args,**kwargs):
         result.fill_value = core.default_fill_value(result)
     return result
 
-def average (a, axis=None, weights=None, returned = 0):
-    """average(a, axis=None weights=None, returned=False)
-
-    Averages the array over the given axis.  If the axis is None, averages
-    over all dimensions of the array.  Equivalent to a.mean(axis)
-
-    If an integer axis is given, this equals:
-        a.sum(axis) * 1.0 / size(a, axis)
-
-    If axis is None, this equals:
-        a.sum(axis) * 1.0 / a.size
-
-    If weights are given, result is:
-        sum(a * weights,axis) / sum(weights,axis),
-    where the weights must have a's shape or be 1D with length the
-    size of a in the given axis. Integer weights are converted to
-    Float.  Not specifying weights is equivalent to specifying
-    weights that are all 1.
-
-    If 'returned' is True, return a tuple: the result and the sum of
-    the weights or count of values. The shape of these two results
-    will be the same.
-
-    Returns masked values instead of ZeroDivisionError if appropriate.
+def average (a, axis=None, weights=None, returned=False):
+    """Averages the array over the given axis.  
     
+*Parameters*:
+    axis : {integer}, optional
+        Axis along which to perform the operation.
+        If None, applies to a flattened version of the array.
+    weights : {sequence}, optional
+        Sequence of weights.
+        The weights must have the shape of a, or be 1D with length the size of a
+        along the given axis.
+        If no weights are given, weights are assumed to be 1.
+    returned : {boolean}
+        Flag indicating whether a tuple (result, sum of weights/counts) should be
+        returned as output (True), or just the result (False).    
     """
     a = asarray(a)
     mask = a.mask
@@ -380,14 +400,17 @@ def average (a, axis=None, weights=None, returned = 0):
 #..............................................................................
 def compress_rowcols(x, axis=None):
     """Suppresses the rows and/or columns of a 2D array that contains masked values.
+    
     The suppression behavior is selected with the `axis`parameter.
         - If axis is None, rows and columns are suppressed. 
         - If axis is 0, only rows are suppressed. 
         - If axis is 1 or -1, only columns are suppressed.
-    Returns a *pure* ndarray.    
+        
+*Returns*:        
+    compressed_array : a ndarray.    
     """
     x = asarray(x)
-    if x.ndim <> 2:
+    if x.ndim != 2:
         raise NotImplementedError, "compress2d works for 2D arrays only."
     m = getmask(x)
     # Nothing is masked: return x
@@ -418,9 +441,9 @@ def compress_cols(a):
 def mask_rowcols(a, axis=None):
     """Masks whole rows and/or columns of a 2D array that contain masked values.
     The masking behavior is selected with the `axis`parameter.
-        - If axis is None, rows and columns are suppressed. 
-        - If axis is 0, only rows are suppressed. 
-        - If axis is 1 or -1, only columns are suppressed.
+        - If axis is None, rows and columns are masked. 
+        - If axis is 0, only rows are masked. 
+        - If axis is 1 or -1, only columns are masked.
     Returns a *pure* ndarray.    
     """
     a = asarray(a)
@@ -449,13 +472,18 @@ def mask_cols(a, axis=None):
         
 def dot(a,b, strict=False):
     """Returns the dot product of two 2D masked arrays a and b.
-    Like the generic numpy equivalent the product sum is over
-    the last dimension of a and the second-to-last dimension of b.
     
+    Like the generic numpy equivalent, the product sum is over the last dimension 
+    of a and the second-to-last dimension of b.
     If strict is True, masked values are propagated: if a masked value appears 
     in a row or column, the whole row or column is considered masked.
     
-    NB: The first argument is not conjugated.
+*Parameters*:
+    strict : {boolean}
+        Whether masked data are propagated (True) or set to 0 for the computation.
+    
+*Note*:
+    The first argument is not conjugated.
     """
     #TODO: Works only with 2D arrays. There should be a way to get it to run with higher dimension
     if strict and (a.ndim == 2) and (b.ndim == 2):
@@ -471,7 +499,23 @@ def dot(a,b, strict=False):
 
 #...............................................................................
 def mediff1d(array, to_end=None, to_begin=None):
-    """Array difference with prefixed and/or appended value."""
+    """Returns the differences between consecutive elements of an array, possibly with
+    prefixed and/or appended values.
+
+*Parameters*:
+    array : {array}
+        Input array,  will be flattened before the difference is taken.
+    to_end : {number}, optional
+        If provided, this number will be tacked onto the end of the returned
+        differences.
+    to_begin : {number}, optional
+        If provided, this number will be taked onto the beginning of the
+        returned differences.
+
+*Returns*:
+      ed : {array}
+        The differences. Loosely, this will be (ary[1:] - ary[:-1]).
+    """
     a = masked_array(array, copy=True)
     if a.ndim > 1:
         a.reshape((a.size,))
@@ -585,7 +629,7 @@ class mr_class(mconcatenator):
     """Translates slice objects to concatenation along the first axis.
 
         For example:
-        >>> r_[array([1,2,3]), 0, 0, array([4,5,6])]
+        >>> mr_[array([1,2,3]), 0, 0, array([4,5,6])]
         array([1, 2, 3, 0, 0, 4, 5, 6])
     """
     def __init__(self):
@@ -598,7 +642,7 @@ mr_ = mr_class()
 #####--------------------------------------------------------------------------
 
 def flatnotmasked_edges(a):
-    """Finds the indices of the first and last not masked values in a  1D masked array.
+    """Finds the indices of the first and last not masked values in a 1D masked array.
     If all values are masked, returns None.
     """
     m = getmask(a)

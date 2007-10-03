@@ -22,13 +22,14 @@ from core import mask_or, getmask, getmaskarray, masked_array, nomask, masked
 from core import filled, equal, less
 
 #------------------------------------------------------------------------------
-def approx (a, b, fill_value=1, rtol=1.e-5, atol=1.e-8):
+def approx (a, b, fill_value=True, rtol=1.e-5, atol=1.e-8):
     """Returns true if all components of a and b are equal subject to given tolerances.
-    If fill_value is 1, masked values considered equal.
-    If fill_value is 0, masked values considered unequal.
-    The relative error rtol should be positive and << 1.0
-    The absolute error atol comes into play for those elements of b that are 
-    very small or zero; it says how small a must be also.
+    
+If fill_value is True, masked values considered equal. Otherwise, masked values
+are considered unequal.
+The relative error rtol should be positive and << 1.0
+The absolute error atol comes into play for those elements of b that are very 
+small or zero; it says how small a must be also.
     """
     m = mask_or(getmask(a), getmask(b))
     d1 = filled(a)
@@ -183,8 +184,7 @@ def assert_array_equal(x, y, err_msg=''):
                          header='Arrays are not equal')
 ##............................
 def fail_if_array_equal(x, y, err_msg=''):
-    """Raises an assertion error if two masked arrays are not equal 
-    (elem by elem.)"""
+    "Raises an assertion error if two masked arrays are not equal (elementwise)."
     def compare(x,y):
         
         return (not N.alltrue(approx(x, y)))

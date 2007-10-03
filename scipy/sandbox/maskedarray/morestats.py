@@ -38,20 +38,21 @@ __all__ = ['hdquantiles', 'hdmedian', 'hdquantiles_sd',
 #####--------------------------------------------------------------------------
 def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     """Computes quantile estimates with the Harrell-Davis method, where the estimates
-    are calculated as a weighted linear combination of order statistics.
-    If var=True, the variance of the estimate is also returned. 
-    Depending on var, returns a (p,) array of quantiles or a (2,p) array of quantiles
-    and variances.
+are calculated as a weighted linear combination of order statistics.
     
-:Inputs:
-    data: ndarray
+*Parameters* :
+    data: {ndarray}
         Data array.    
-    prob: Sequence
-        List of quantiles to compute.
-    axis : integer *[None]*
+    prob: {sequence}
+        Sequence of quantiles to compute.
+    axis : {integer}
         Axis along which to compute the quantiles. If None, use a flattened array.
-    var : boolean *[False]*
+    var : {boolean}
         Whether to return the variance of the estimate.
+
+*Returns*
+    A (p,) array of quantiles (if ``var`` is False), or a (2,p) array of quantiles
+    and variances (if ``var`` is True), where ``p`` is the number of quantiles.
         
 :Note:
     The function is restricted to 2D arrays.
@@ -101,12 +102,12 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
 def hdmedian(data, axis=-1, var=False):
     """Returns the Harrell-Davis estimate of the median along the given axis.
     
-:Inputs:
-    data: ndarray
+*Parameters* :
+    data: {ndarray}
         Data array.    
-    axis : integer *[None]*
+    axis : {integer}
         Axis along which to compute the quantiles. If None, use a flattened array.
-    var : boolean *[False]*
+    var : {boolean}
         Whether to return the variance of the estimate.
     """
     result = hdquantiles(data,[0.5], axis=axis, var=var)
@@ -117,19 +118,16 @@ def hdmedian(data, axis=-1, var=False):
 def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
     """Computes the standard error of the Harrell-Davis quantile estimates by jackknife.
     
-:Inputs:
-    data: ndarray
+
+*Parameters* :
+    data: {ndarray}
         Data array.    
-    prob: Sequence
-        List of quantiles to compute.
-    axis : integer *[None]*
+    prob: {sequence}
+        Sequence of quantiles to compute.
+    axis : {integer}
         Axis along which to compute the quantiles. If None, use a flattened array.
-    var : boolean *[False]*
-        Whether to return the variance of the estimate.
-    stderr : boolean *[False]*
-        Whether to return the standard error of the estimate.
         
-:Note:
+*Note*:
     The function is restricted to 2D arrays.
     """  
     def _hdsd_1D(data,prob):
@@ -172,18 +170,18 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
 
 def trimmed_mean_ci(data, proportiontocut=0.2, alpha=0.05, axis=None):
     """Returns the selected confidence interval of the trimmed mean along the
-    given axis.
+given axis.
     
-:Inputs:
-    data : sequence
+*Parameters* :
+    data : {sequence}
         Input data. The data is transformed to a masked array
-    proportiontocut : float *[0.2]*
+    proportiontocut : {float}
         Proportion of the data to cut from each side of the data . 
         As a result, (2*proportiontocut*n) values are actually trimmed.
-    alpha : float *[0.05]*
-        Confidence level of the intervals
-    axis : integer *[None]*
-        Axis along which to cut.
+    alpha : {float}
+        Confidence level of the intervals.
+    axis : {integer}
+        Axis along which to cut. If None, uses a flattened version of the input.
     """
     data = masked_array(data, copy=False)
     trimmed = trim_both(data, proportiontocut=proportiontocut, axis=axis)
@@ -196,15 +194,15 @@ def trimmed_mean_ci(data, proportiontocut=0.2, alpha=0.05, axis=None):
 #..............................................................................
 def mjci(data, prob=[0.25,0.5,0.75], axis=None):
     """Returns the Maritz-Jarrett estimators of the standard error of selected 
-    experimental quantiles of the data.
+experimental quantiles of the data.  
     
-:Input:
-    data : sequence
-        Input data.
-    prob : sequence *[0.25,0.5,0.75]*
-        Sequence of quantiles whose standard error must be estimated.
-    axis : integer *[None]*
-        Axis along which to compute the standard error.
+*Parameters* :
+    data: {ndarray}
+        Data array.    
+    prob: {sequence}
+        Sequence of quantiles to compute.
+    axis : {integer}
+        Axis along which to compute the quantiles. If None, use a flattened array.
     """
     def _mjci_1D(data, p):
         data = data.compressed()
@@ -236,17 +234,17 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
 #..............................................................................
 def mquantiles_cimj(data, prob=[0.25,0.50,0.75], alpha=0.05, axis=None):
     """Computes the alpha confidence interval for the selected quantiles of the
-    data, with Maritz-Jarrett estimators.
+data, with Maritz-Jarrett estimators.
     
-:Input:
-    data : sequence
-        Input data.
-    prob : sequence *[0.25,0.5,0.75]*
-        Sequence of quantiles whose standard error must be estimated.
-    alpha : float *[0.05]*
-        Confidence degree.
-    axis : integer *[None]*
-        Axis along which to compute the standard error.
+*Parameters* :
+    data: {ndarray}
+        Data array.    
+    prob: {sequence}
+        Sequence of quantiles to compute.
+    alpha : {float}
+        Confidence level of the intervals.        
+    axis : {integer}
+        Axis along which to compute the quantiles. If None, use a flattened array.
     """
     alpha = min(alpha, 1-alpha)
     z = norm.ppf(1-alpha/2.)
@@ -258,13 +256,16 @@ def mquantiles_cimj(data, prob=[0.25,0.50,0.75], alpha=0.05, axis=None):
 #.............................................................................
 def median_cihs(data, alpha=0.05, axis=None):
     """Computes the alpha-level confidence interval for the median of the data,
-    following the Hettmasperger-Sheather method.
+following the Hettmasperger-Sheather method.
     
-:Inputs:
-    data : sequence
-        Input data. Masked values are discarded. The input should be 1D only
-    alpha : float *[0.05]*
-        Confidence degree.
+*Parameters* :
+    data : {sequence}
+        Input data. Masked values are discarded. The input should be 1D only, or
+        axis should be set to None.
+    alpha : {float}
+        Confidence level of the intervals.        
+    axis : {integer}
+        Axis along which to compute the quantiles. If None, use a flattened array.
     """
     def _cihs_1D(data, alpha):
         data = numpy.sort(data.compressed())
@@ -294,17 +295,21 @@ def median_cihs(data, alpha=0.05, axis=None):
 #..............................................................................
 def compare_medians_ms(group_1, group_2, axis=None):
     """Compares the medians from two independent groups along the given axis.
-    Returns an array of p values.
-    The comparison is performed using the McKean-Schrader estimate of the standard
-    error of the medians.    
+
+The comparison is performed using the McKean-Schrader estimate of the standard
+error of the medians.    
     
-:Inputs:
-    group_1 : sequence
+*Parameters* :
+    group_1 : {sequence}
         First dataset.
-    group_2 : sequence
+    group_2 : {sequence}
         Second dataset.
-    axis : integer *[None]*
+    axis : {integer}
         Axis along which the medians are estimated. If None, the arrays are flattened.
+
+*Returns* :
+    A (p,) array of comparison values.
+
     """
     (med_1, med_2) = (mmedian(group_1, axis=axis), mmedian(group_2, axis=axis))
     (std_1, std_2) = (stde_median(group_1, axis=axis), 
@@ -320,21 +325,22 @@ def compare_medians_ms(group_1, group_2, axis=None):
 #..............................................................................
 def rank_data(data, axis=None, use_missing=False):
     """Returns the rank (also known as order statistics) of each data point 
-    along the given axis.
-    If some values are tied, their rank is averaged.
-    If some values are masked, their rank is set to 0 if use_missing is False, or
-    set to the average rank of the unmasked values if use_missing is True.
+along the given axis.
+
+If some values are tied, their rank is averaged.
+If some values are masked, their rank is set to 0 if use_missing is False, or
+set to the average rank of the unmasked values if use_missing is True.
     
-:Inputs:
-    data : sequence
+*Parameters* :
+    data : {sequence}
         Input data. The data is transformed to a masked array
-    axis : integer *[None]*
+    axis : {integer} 
         Axis along which to perform the ranking. If None, the array is first
         flattened. An exception is raised if the axis is specified for arrays
         with a dimension larger than 2
-    use_missing : boolean *[False]*
-        Flag indicating whether the masked values have a rank of 0 (False) or
-        equal to the average rank of the unmasked values (True)    
+    use_missing : {boolean} 
+        Whether the masked values have a rank of 0 (False) or equal to the 
+        average rank of the unmasked values (True).
     """
     #
     def _rank1d(data, use_missing=False):
