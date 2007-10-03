@@ -1,6 +1,6 @@
 from numpy.testing import *
 
-from numpy import sqrt,empty,ones,arange,array_split
+from numpy import sqrt,empty,ones,arange,array_split,eye,array,zeros,diag
 from scipy import rand
 from scipy.sparse import spdiags,csr_matrix,lil_matrix
 import numpy
@@ -64,6 +64,8 @@ class TestSAStrongConnections(NumpyTestCase):
                 S_result   = sa_strong_connections(A,epsilon)
                 S_expected = reference_sa_strong_connections(A,epsilon)
                 assert_array_equal(S_result.todense(),S_expected.todense())
+
+
 
 
 # note that this method only tests the current implementation, not
@@ -154,6 +156,59 @@ class TestSAConstantInterpolation(NumpyTestCase):
 ##                S_result   = sa_constant_interpolation(A,epsilon)
 ##                S_expected = reference_sa_constant_interpolation(A,epsilon)
 ##                assert_array_equal((S_result - S_expected).nnz,0)
+
+class TestFitCandidates(NumpyTestCase):
+    def setUp(self):
+        self.normal_cases = []
+
+        #one candidate
+        self.normal_cases.append((csr_matrix((ones(5),array([0,0,0,1,1]),arange(6)),dims=(5,2)),[ones(5)]))
+        self.normal_cases.append((csr_matrix((ones(5),array([1,1,0,0,0]),arange(6)),dims=(5,2)),[ones(5)]))
+        self.normal_cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),dims=(9,3)),[ones(9)]))
+        self.normal_cases.append((csr_matrix((ones(9),array([2,1,0,0,1,2,1,0,2]),arange(10)),dims=(9,3)),[arange(9)]))
+
+        #two candidates
+        self.normal_cases.append((csr_matrix((ones(4),array([0,0,1,1]),arange(5)),dims=(4,2)),[ones(4),arange(4)]))
+        self.normal_cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),dims=(9,3)),[ones(9),arange(9)]))
+        self.normal_cases.append((csr_matrix((ones(9),array([0,0,1,1,2,2,3,3,3]),arange(10)),dims=(9,4)),[ones(9),arange(9)]))
+
+        #block candidates
+        self.normal_cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),dims=(9,3)),[array([1]*9 + [0]*9),arange(2*9)]))
+
+        #TODO add test case where aggregation operator has holes
+
+    def check_normal(self):
+        """Test case where aggregation includes all fine nodes"""
+        
+        for AggOp,fine_candidates in self.normal_cases:
+            Q,coarse_candidates = sa_fit_candidates(AggOp,fine_candidates)
+
+            assert_equal(len(coarse_candidates),len(fine_candidates))
+
+            #each fine level candidate should be fit exactly
+            for fine,coarse in zip(fine_candidates,coarse_candidates):
+                assert_almost_equal(fine,Q*coarse)
+                assert_almost_equal(Q*(Q.T*fine),fine)
+
+
+            #aggregate one more level (to a single aggregate)
+            K = len(coarse_candidates)
+            N = K*AggOp.shape[1]
+            AggOp = csr_matrix((ones(N),zeros(N),arange(N + 1)),dims=(N,1)) #aggregate to a single point
+            fine_candidates = coarse_candidates
+            
+            #now check the coarser problem
+            Q,coarse_candidates = sa_fit_candidates(AggOp,fine_candidates)
+
+            assert_equal(len(coarse_candidates),len(fine_candidates))
+
+            for fine,coarse in zip(fine_candidates,coarse_candidates):
+                assert_almost_equal(fine,Q*coarse)
+                assert_almost_equal(Q*(Q.T*fine),fine)
+
+
+
+
 
 if __name__ == '__main__':
     NumpyTest().run()
