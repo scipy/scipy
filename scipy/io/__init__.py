@@ -16,7 +16,10 @@ from recaster import sctype_attributes, Recaster
 from array_import import *
 from data_store import *
 from pickler import *
-from scipy.io.nifti import NiftiImage
+
+# Comment out until we resolve nifti build on Windows. 
+#from scipy.io.nifti import NiftiImage
+#del nifti
 
 from mmio import mminfo,mmread,mmwrite
 
