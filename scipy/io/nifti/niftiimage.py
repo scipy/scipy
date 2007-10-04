@@ -52,7 +52,6 @@ class NiftiImage(object):
                             }
 
 
-    @staticmethod
     def numpydtype2niftidtype(array):
         """ Return the NIfTI datatype id for a corrsponding numpy array
         datatype.
@@ -64,9 +63,8 @@ class NiftiImage(object):
             raise ValueError, "Unsupported datatype '%s'" % str(array.dtype)
 
         return NiftiImage.numpy2nifti_dtype_map[dtype]
+    numpydtype2niftidtype = staticmethod(numpydtype2niftidtype)
 
-
-    @staticmethod
     def splitFilename(filename):
         """ Split a NIfTI filename and returns a tuple of basename and
         extension. If no valid NIfTI filename extension is found, the whole
@@ -85,9 +83,8 @@ class NiftiImage(object):
                 return filename, ''
             else:
                 return '.'.join(parts[:-1]), parts[-1]
+    splitFilename = staticmethod(splitFilename)
 
-
-    @staticmethod
     def nhdr2dict(nhdr):
         """ Convert a NIfTI header struct into a python dictionary.
 
@@ -138,9 +135,8 @@ class NiftiImage(object):
         h['qoffset'] = [ nhdr.qoffset_x, nhdr.qoffset_y, nhdr.qoffset_z ]
 
         return h
+    nhdr2dict = staticmethod(nhdr2dict)
 
-
-    @staticmethod
     def updateNiftiHeaderFromDict(nhdr, hdrdict):
         """ Update a NIfTI header struct with data from a dictionary.
 
@@ -289,7 +285,7 @@ class NiftiImage(object):
                 raise ValueError, \
                       "Nifti header property 'magic' must be 'ni1' or 'n+1'."
             nhdr.magic = hdrdict['magic']
-
+    updateNiftiHeaderFromDict = staticmethod(updateNiftiHeaderFromDict)
 
     def __init__(self, source, header = {}, load=False ):
         """ Create a Niftifile object.
