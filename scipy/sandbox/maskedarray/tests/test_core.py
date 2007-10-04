@@ -27,7 +27,7 @@ from maskedarray.core import *
 pi = numpy.pi
 
 #..............................................................................
-class TestMa(NumpyTestCase):
+class TestMA(NumpyTestCase):
     "Base test class for MaskedArrays."
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)

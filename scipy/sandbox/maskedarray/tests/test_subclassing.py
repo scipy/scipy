@@ -65,7 +65,7 @@ class MMatrix(MaskedArray, N.matrix,):
         MaskedArray.__array_finalize__(self,obj)
         return     
     def _get_series(self):
-        _view =  self.view(MaskedArray)
+        _view = self.view(MaskedArray)
         _view._sharedmask = False
         return _view
     _series = property(fget=_get_series)
@@ -171,8 +171,15 @@ if __name__ == '__main__':
         assert isinstance(z._data, SubArray)
         assert_equal(z._data.info, {})
         #
-        z = ym+1
-
-                     
+        z = (ym+1)
+        assert isinstance(z, MaskedArray)
+        assert isinstance(z, MSubArray)
+        assert isinstance(z._data, SubArray)
+        assert z._data.info['added'] > 0
+        #
+        ym._set_mask([1,0,0,0,1])
+        assert_equal(ym._mask, [1,0,0,0,1])
+        ym._series._set_mask([0,0,0,0,1])
+        assert_equal(ym._mask, [0,0,0,0,1])
 
 

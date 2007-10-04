@@ -30,7 +30,7 @@ from maskedarray.mrecords import MaskedRecords, \
     fromarrays, fromtextfile, fromrecords, addfield
 
 #..............................................................................
-class TestMrecords(NumpyTestCase):
+class TestMRecords(NumpyTestCase):
     "Base test class for MaskedArrays."
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)

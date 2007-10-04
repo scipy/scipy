@@ -3,12 +3,12 @@
 
 :author: Pierre Gerard-Marchant
 :contact: pierregm_at_uga_dot_edu
-:version: $Id: test_morestats.py 240 2007-07-09 15:36:48Z backtopop $
+:version: $Id: test_morestats.py 317 2007-10-04 19:31:14Z backtopop $
 """
 __author__ = "Pierre GF Gerard-Marchant ($Author: backtopop $)"
 __version__ = '1.0'
-__revision__ = "$Revision: 240 $"
-__date__     = '$Date: 2007-07-09 11:36:48 -0400 (Mon, 09 Jul 2007) $'
+__revision__ = "$Revision: 317 $"
+__date__     = '$Date: 2007-10-04 15:31:14 -0400 (Thu, 04 Oct 2007) $'
 
 import numpy
 
