@@ -17,7 +17,7 @@
 
 # the swig wrapper if the NIfTI C library
 import numpy
-import nifticlib
+from scipy.io.nifti import nifticlib
 
 class NiftiImage(object):
     """Wrapper class for convenient access to NIfTI data.
