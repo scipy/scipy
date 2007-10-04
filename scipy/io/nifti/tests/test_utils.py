@@ -15,7 +15,7 @@
 #
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 
-import nifti.utils
+import scipy.io.nifti.utils
 import numpy
 import unittest
 

@@ -15,13 +15,13 @@
 #
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 
-import nifti
 import unittest
 import md5
 import tempfile
 import shutil
 import os
 import numpy as np
+import scipy.io.nifti
 
 
 def md5sum(filename):

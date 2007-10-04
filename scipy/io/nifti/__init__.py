@@ -15,4 +15,4 @@
 #
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 
-from niftiimage import *
+from scipy.io.nifti.niftiimage import *

@@ -15,8 +15,8 @@
 #
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ##
 
-import nifti
 import numpy
+import scipy.io.nifti
 
 def time2vol( t, tr, lag=0.0, decimals=0 ):
     """ Translates a time 't' into a volume number. By default function returns
