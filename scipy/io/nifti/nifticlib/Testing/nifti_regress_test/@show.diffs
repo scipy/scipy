@@ -1,0 +1,33 @@
+#! /usr/bin/env tcsh
+
+set ddir = diffs
+set rdirs = ( results_* )
+
+# verify that there are differences to view
+if ( $#rdirs < 2 ) then
+    echo cannot proceed, we need at least 2 result directories
+    exit
+endif
+
+# make sure the output directory exists
+if ( -d $ddir ) then
+    echo removing old diffs
+    \rm -f $ddir/* >& /dev/null
+else
+    mkdir $ddir
+    if ( ! -d $ddir ) then
+        echo failed to make output directory, $ddir
+        exit
+    endif
+endif
+
+set r1 = $rdirs[1]
+set r2 = $rdirs[$#rdirs]
+
+cd $r2
+
+foreach file (*)
+    echo $file...
+    diff ../$r1/$file $file >& ../$ddir/d.$file
+end
+

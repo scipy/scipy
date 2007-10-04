@@ -1,0 +1,8 @@
+
+# - copy some of the sub-bricks of the default stat file,
+#   storing the history (command), and writing to a new 'f4.nii'
+# - compare these nifti_image structs
+
+
+nifti_tool -keep_hist -cbl -infiles stat0.nii'[178..$,0,1]' -prefix f4
+nifti_tool -diff_nim -infiles stat0.nii f4.nii

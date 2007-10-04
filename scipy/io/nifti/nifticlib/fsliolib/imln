@@ -1,0 +1,37 @@
+#!/bin/sh
+
+#   imln - make symbolic link(s) to image file(s)
+#
+#   Stephen Smith and Mark Jenkinson, FMRIB Image Analysis Group
+#
+#
+#   The imln file was originally part of FSL - FMRIB's Software Library
+#   http://www.fmrib.ox.ac.uk/fsl
+#   imln has now been placed in the public domain.
+#   
+#   
+#   Developed at FMRIB (Oxford Centre for Functional Magnetic Resonance
+#   Imaging of the Brain), Department of Clinical Neurology, Oxford
+#   University, Oxford, UK
+#   
+#   
+
+if [ $# -lt 2 ] ; then
+  echo "Usage: $0 <file1> <file2>"
+  echo "  Makes a link (called file2) to file1"
+  echo "  NB: filenames can be basenames or include an extension"
+  exit 1;
+fi
+
+f1=`${FSLDIR}/bin/remove_ext $1`;
+f2=`${FSLDIR}/bin/remove_ext $2`;
+
+if [ -f ${f1}.hdr ] ; then ln -fs ${f1}.hdr ${f2}.hdr ; fi
+if [ -f ${f1}.hdr.gz ] ; then ln -fs ${f1}.hdr.gz ${f2}.hdr.gz ; fi 
+if [ -f ${f1}.img ] ; then ln -fs ${f1}.img ${f2}.img ; fi 
+if [ -f ${f1}.img.gz ] ; then ln -fs ${f1}.img.gz ${f2}.img.gz ; fi 
+if [ -f ${f1}.nii ] ; then ln -fs ${f1}.nii ${f2}.nii ; fi 
+if [ -f ${f1}.nii.gz ] ; then ln -fs ${f1}.nii.gz ${f2}.nii.gz ; fi 
+if [ -f ${f1}.mnc ] ; then ln -fs ${f1}.mnc ${f2}.mnc ; fi 
+if [ -f ${f1}.mnc.gz ] ; then ln -fs ${f1}.mnc.gz ${f2}.mnc.gz ; fi 
+

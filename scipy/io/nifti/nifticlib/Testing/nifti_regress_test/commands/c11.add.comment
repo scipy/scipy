@@ -1,0 +1,8 @@
+
+# add some comment and afni extensions, then display them
+
+nifti_tool -keep_hist -prefix f4.comment -infiles f.19.36.t4.nii   \
+           -add_comment '4 slice time series'                      \
+           -add_afni_ext 'and an AFNI extension'                   \
+           -add_comment 'how about a question AND a comment?'
+nifti_tool -disp_ext -infiles f4.comment.nii

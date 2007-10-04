@@ -1,0 +1,7 @@
+
+# duplicate a dataset, and strip the extras, then compare
+
+nifti_tool -cbl -infiles f4.comment.nii -prefix f4.to.clear.nii
+nifti_tool -overwrite -strip -infiles f4.to.clear.nii
+nifti_tool -disp_ext -infiles f4.to.clear.nii
+nifti_tool -diff_nim -infiles f4.comment.nii f4.to.clear.nii

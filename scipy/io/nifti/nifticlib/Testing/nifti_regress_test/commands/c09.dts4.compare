@@ -1,0 +1,9 @@
+
+# get some time series values in multiple ways, and compare
+
+nifti_tool -quiet -disp_ts 19 36 11 -infiles stat0.nii \
+        | awk '{print $(NF-1), $NF, $1, $2}' | tee o.09.ts4.1.awk
+nifti_tool -quiet -disp_ts 19 36 11 -infiles f4.nii | tee o.09.ts4.2.awk
+
+diff o.09.ts4.1.awk o.09.ts4.2.awk
+if( $status ) echo '** failure, ts4 files differ'

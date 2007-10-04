@@ -1,0 +1,5 @@
+
+# check the nifti_1_header and nifti_image structes of the .nii files
+
+nifti_tool -check_hdr -infiles *.nii
+nifti_tool -check_nim -infiles *.nii

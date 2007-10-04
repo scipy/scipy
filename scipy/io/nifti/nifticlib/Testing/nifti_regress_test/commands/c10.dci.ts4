@@ -1,0 +1,15 @@
+
+# get the time series for a slice, get the same sub-bricks,
+# compare nifti_images, and display the time series again
+#
+# this should match the previous
+
+nifti_tool -keep_hist -cci 19 36 -1 -1 0 0 0 -prefix f.19.36 -infiles stat0.nii
+nifti_tool -keep_hist -cbl -prefix f.19.36.t4.nii \
+           -infiles f.19.36.nii'[178..$,0,1]'
+nifti_tool -diff_nim -infiles f.19.36.nii f.19.36.t4.nii | tee o.10.diff_nim
+nifti_tool -quiet -disp_ci 0 0 11 -1 0 0 0 -infiles f.19.36.t4.nii \
+          | tee o.10.dci.4
+
+diff o.09.ts4.1.awk o.10.dci.4
+if( $status ) echo '** failure, o.09 and o.10 ts files differ'

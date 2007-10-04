@@ -1,0 +1,21 @@
+
+# - create datasets out of nothing
+#
+# - modify some fields and compare against other datasets
+
+# just test a basic make im, mostly to capture the debug output
+nifti_tool -make_im -debug 3 -new_dim 4 64 64 21 180 0 0 0 -prefix new_epi.nii
+
+# compare hdr and nim in a fresh image to the existing one
+nifti_tool -diff_hdr -new_dim 4 64 64 21 180 0 0 0      \
+           -infiles MAKE_IM stat0.nii
+nifti_tool -diff_nim -new_dim 4 64 64 21 180 0 0 0      \
+           -infiles MAKE_IM stat0.nii
+
+# clean up the nim by adjusting pixdim (from empty MAKE_IM)
+nifti_tool -mod_hdr -new_dim 4 64 64 21 180 0 0 0               \
+           -mod_field pixdim '0.0 4.0 4.0 6.0 3.0 1.0 1.0 1.0'  \
+           -prefix epi_180_pixdim.nii -infiles MAKE_IM
+
+# and compare again
+nifti_tool -diff_nim -infiles stat0.nii epi_180_pixdim.nii

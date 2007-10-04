@@ -1,0 +1,4 @@
+
+# display a time series from our stat brick
+
+nifti_tool -quiet -disp_ts 19 36 11 -infiles stat0.nii | tee o.08.ts.19.36.11

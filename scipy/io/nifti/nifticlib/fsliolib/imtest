@@ -1,0 +1,53 @@
+#!/bin/sh
+
+#   imtest - test to see if a valid image file exists with this name (root)
+#
+#   Stephen Smith and Mark Jenkinson, FMRIB Image Analysis Group
+#
+#
+#   The fslio.c file was originally part of FSL - FMRIB's Software Library
+#   http://www.fmrib.ox.ac.uk/fsl
+#   imtest has now been placed in the public domain.
+#   
+#   Developed at FMRIB (Oxford Centre for Functional Magnetic Resonance
+#   Imaging of the Brain), Department of Clinical Neurology, Oxford
+#   University, Oxford, UK
+#   
+#   
+
+# return 0 if no image exists or 1 if the image exists
+
+if [ $# -lt 1 ] ; then
+ echo "0";
+ exit;
+fi
+
+filename=`${FSLDIR}/bin/remove_ext $1`;
+
+if [ -r ${filename}.nii -o -r ${filename}.nii.gz ] ; then
+  echo "1";
+  exit;
+fi
+
+if [ -r ${filename}.mnc -o -r ${filename}.mnc.gz ] ; then
+  echo "1";
+  exit;
+fi
+
+if [ ! -r ${filename}.hdr -a ! -r ${filename}.hdr.gz ] ; then
+  # return 0 here as no header exists and no single image means no image!
+  echo "0";
+  exit;
+fi
+
+if [ ! -r ${filename}.img -a ! -r ${filename}.img.gz ] ; then
+  # return 0 here as no img file exists and no single image means no image!
+  echo "0";
+  exit;
+fi
+
+# only gets to here if there was a hdr and an img file
+
+echo "1";
+exit;
+

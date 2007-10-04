@@ -1,0 +1,5 @@
+
+# check the version numbers for the library and tool
+
+nifti_tool -nifti_ver
+nifti_tool -ver
