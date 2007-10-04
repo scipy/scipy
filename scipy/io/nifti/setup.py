@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-import os
+
 from os.path import isfile, join, dirname
-import sys
 import numpy
 
 nifti_wrapper_file = join('nifticlib.py')
@@ -11,13 +10,12 @@ if not isfile(nifti_wrapper_file):
     open(nifti_wrapper_file, 'w')
 
 # find numpy headers
-numpy_headers = join(dirname(numpy.__file__),'core','include')
+numpy_headers = join(dirname(numpy.__file__), 'core', 'include')
 
-def configuration(parent_package='',top_path=None):
+def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from numpy.distutils.system_info import get_info
+    config = Configuration('nifti', parent_package, top_path)
 
-    config = Configuration('nifti',parent_package,top_path)
     config.add_data_dir('tests')
 
     include_dirs = [

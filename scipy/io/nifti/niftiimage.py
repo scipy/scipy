@@ -16,9 +16,8 @@
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ##
 
 # the swig wrapper if the NIfTI C library
-import nifticlib
-import os
 import numpy
+import scipy.io.nifticlib as nifticlib
 
 
 class NiftiImage(object):
