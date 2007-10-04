@@ -1503,7 +1503,7 @@ masked_%(name)s(data = %(data)s,
     def __idiv__(self, other):
         "Divides self by other in place."
         other_data = getdata(other)
-        dom_mask = domain_safe_divide().__call__(self._data, other_data)
+        dom_mask = _DomainSafeDivide().__call__(self._data, other_data)
         other_mask = getmask(other)
         new_mask = mask_or(other_mask, dom_mask)
         # The following 3 lines control the domain filling
@@ -1700,14 +1700,14 @@ Masked values are considered as True during computation.
     An exception is raised if ``out`` is not None and not of the same type as self.
         """
         if out is None:
-            d = self.filled(True).any(axis=axis).view(type(self))
+            d = self.filled(False).any(axis=axis).view(type(self))
             if d.ndim > 0:
                 d.__setmask__(self._mask.all(axis))
             return d
         elif type(out) is not type(self):
             raise TypeError("The external array should have a type %s (got %s instead)" %\
                             (type(self), type(out)))
-        self.filled(True).any(axis=axis, out=out)
+        self.filled(False).any(axis=axis, out=out)
         if out.ndim:
             out.__setmask__(self._mask.all(axis))
         return out
@@ -2934,4 +2934,25 @@ if __name__ == '__main__':
     #
     z = empty(3,)
     mmys.all(0, out=z)
+    
+    if 1:
+        x = numpy.array([[ 0.13,  0.26,  0.90],
+                     [ 0.28,  0.33,  0.63],
+                     [ 0.31,  0.87,  0.70]])
+        m = numpy.array([[ True, False, False],
+                     [False, False, False],
+                     [True,  True, False]], dtype=numpy.bool_)
+        mx = masked_array(x, mask=m)
+        xbig = numpy.array([[False, False,  True],
+                        [False, False,  True],
+                        [False,  True,  True]], dtype=numpy.bool_)
+        mxbig = (mx > 0.5)
+        mxsmall = (mx < 0.5)
+        #
+        assert (mxbig.all()==False)
+        assert (mxbig.any()==True)
+        assert_equal(mxbig.all(0),[False, False, True])
+        assert_equal(mxbig.all(1), [False, False, True])
+        assert_equal(mxbig.any(0),[False, False, True])
+        assert_equal(mxbig.any(1), [True, True, True])
     

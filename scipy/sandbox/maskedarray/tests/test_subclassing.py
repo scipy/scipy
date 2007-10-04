@@ -49,7 +49,9 @@ class MSubArray(SubArray,MaskedArray):
         SubArray.__array_finalize__(self, obj) 
         return
     def _get_series(self):
-        return self.view(MaskedArray)
+        _view = self.view(MaskedArray)
+        _view._sharedmask = False
+        return _view
     _series = property(fget=_get_series)
 msubarray = MSubArray
 
@@ -63,7 +65,9 @@ class MMatrix(MaskedArray, N.matrix,):
         MaskedArray.__array_finalize__(self,obj)
         return     
     def _get_series(self):
-        return self.view(MaskedArray)
+        _view =  self.view(MaskedArray)
+        _view._sharedmask = False
+        return _view
     _series = property(fget=_get_series)
 mmatrix = MMatrix 
         
