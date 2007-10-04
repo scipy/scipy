@@ -19,9 +19,10 @@ import unittest
 import md5
 import tempfile
 import shutil
-import os
+from os.path import join
+
 import numpy as np
-import scipy.io.nifti
+from scipy.io.nifti import NiftiImage
 
 
 def md5sum(filename):
@@ -37,25 +38,25 @@ def md5sum(filename):
     return sum.hexdigest()
 
 
-class FileIOTests(unittest.TestCase):
+class TestNiftiImage(unittest.TestCase):
     def setUp(self):
         self.workdir = tempfile.mkdtemp('pynifti_test')
 
     def tearDown(self):
         shutil.rmtree(self.workdir)
 
-    def testIdempotentLoadSaveCycle(self):
+    def test_idempotent_load_save_cycle(self):
         """ check if file is unchanged by load/save cycle.
         """
         md5_orig = md5sum('data/example4d.nii.gz')
-        nimg = nifti.NiftiImage('data/example4d.nii.gz')
-        nimg.save( os.path.join( self.workdir, 'iotest.nii.gz') )
-        md5_io =  md5sum( os.path.join( self.workdir, 'iotest.nii.gz') )
+        nimg = NiftiImage('data/example4d.nii.gz')
+        nimg.save( join( self.workdir, 'iotest.nii.gz') )
+        md5_io =  md5sum( join( self.workdir, 'iotest.nii.gz') )
 
         self.failUnlessEqual(md5_orig, md5_io)
 
-    def testQFormSetting(self):
-        nimg = nifti.NiftiImage('data/example4d.nii.gz')
+    def test_qform_setting(self):
+        nimg = NiftiImage('data/example4d.nii.gz')
         # 4x4 identity matrix
         ident = np.identity(4)
         self.failIf( (nimg.qform == ident).all() )
@@ -65,17 +66,12 @@ class FileIOTests(unittest.TestCase):
         self.failUnless( (nimg.qform == ident).all() )
 
         # test save/load cycle
-        nimg.save( os.path.join( self.workdir, 'qformtest.nii.gz') )
-        nimg2 = nifti.NiftiImage( os.path.join( self.workdir, 
-                                               'qformtest.nii.gz') )
+        nimg.save( join( self.workdir, 'qformtest.nii.gz') )
+        nimg2 = NiftiImage( join( self.workdir, 'qformtest.nii.gz') )
 
         self.failUnless( (nimg.qform == nimg2.qform).all() )
 
 
-def suite():
-    return unittest.makeSuite(FileIOTests)
-
-
 if __name__ == '__main__':
-    unittest.main()
+    NumpyTest.run()
 
