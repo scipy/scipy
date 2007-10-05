@@ -131,8 +131,7 @@ class gaussian_kde(object):
                 energy = sum(diff*tdiff,axis=0)/2.0
                 result[i] = sum(exp(-energy),axis=0)
 
-        det_cov = linalg.det(2*pi*self.covariance)
-        result /= sqrt(det_cov)*self.n
+        result /= self._norm_factor
 
         return result
 
