@@ -10,68 +10,138 @@ PyNIfTI - Python-style access to NIfTI and ANALYZE files
 NIfTI
 +++++
 
-NIfTI is a new Analyze-style data format, proposed by the NIfTI Data Format Working Group as a "short-term measure to facilitate inter-operation of functional MRI data analysis software packages".
+NIfTI is a new Analyze-style data format, proposed by the NIfTI Data Format 
+Working Group as a "short-term measure to facilitate inter-operation of 
+functional MRI data analysis software packages".
 
-Meanwhile a number of toolkits are NIfTI-aware (e.g. FSL, AFNI, SPM, Freesurfer and Brainvoyager). Additionally, dicomnifti allows the direct conversion from DICOM images into the NIfTI format.
+Meanwhile a number of toolkits are NIfTI-aware (e.g. FSL, AFNI, SPM, 
+Freesurfer and to a certain degree also Brainvoyager). Additionally, 
+dicomnifti allows the direct conversion from DICOM images into the NIfTI format.
 
-With libniftiio there is a reference implementation of a C library to read, write and manipulate NIfTI images. The library source code is put into the public domain and a corresponding project is hosted at SourceForge.
+With libniftiio there is a reference implementation of a C library to read, 
+write and manipulate NIfTI images. The library source code is put into the 
+public domain and a corresponding project is hosted at SourceForge.
 
-In addition to the C library, there is also an IO library written in Java and Matlab functions to make use of NIfTI files from within Matlab.
+In addition to the C library, there is also an IO library written in Java and 
+Matlab functions to make use of NIfTI files from within Matlab.
 
 Python
 ++++++
 
-Unfortunately, it is not that trivial to read NIfTI images with Python. This is particularly sad, because there is a large number of easy-to-use, high-quality libraries for signal processing available for Python (e.g. SciPy).
+Unfortunately, it is not that trivial to read NIfTI images with Python. 
+This is particularly sad, because there is a large number of easy-to-use, 
+high-quality libraries for signal processing available for Python (e.g. SciPy).
 
-Moreover Python has bindings to almost any important language/program in the fields of maths, statistics and/or engineering. If you want to use R to calculate some stats in a Python script, simply use RPy and pass any data to R. If you don't care about R, but Matlab is your one and only friend, there are at least two different Python modules to control Matlab from within Python scripts. Python is the glue between all those helpers and the Python user is able to combine as many tools as necessary to solve a given problem -- the easiest way.
+Moreover Python has bindings to almost any important language/program in the 
+fields of maths, statistics and/or engineering. If you want to use R to 
+calculate some stats in a Python script, simply use RPy and pass any data 
+to R. If you don't care about R, but Matlab is your one and only friend, 
+there are at least two different Python modules to control Matlab from within 
+Python scripts. Python is the glue between all those helpers and the Python 
+user is able to combine as many tools as necessary to solve a given problem 
+-- the easiest way.
 
 PyNIfTI
 +++++++
 
-PyNIfTI aims to provide easy access to NIfTI images from within Python. It uses SWIG-generated wrappers for the NIfTI reference library and provides the NiftiImage class for Python-style access to the image data.
+PyNIfTI aims to provide easy access to NIfTI images from within Python. 
+It uses SWIG-generated wrappers for the NIfTI reference library and 
+provides the NiftiImage class for Python-style access to the image data.
 
-While PyNIfTI is not yet complete, it already provides access to the most important features of the NIfTI-1 data format and libniftiio capabilities. The following features are currently implemented:
+While PyNIfTI is not yet complete (i.e. doesn't support everything the 
+C library can do), it already provides access to the most important features 
+of the NIfTI-1 data format and libniftiio capabilities. The following 
+features are currently implemented:
 
- * PyNIfTI can read and write any file format supported by libniftiio. This includes NIfTI (single and pairs) as well as ANALYZE files.
- * PyNIfTI provides fast and convenient access to the image data via NumPy arrays. This should enable users to process image data with most (if not all) numerical routines available for Python. The NumPy array automatically uses a datatype corresponding to the NIfTI image data -- no unnecessary upcasting is performed.
- * PyNIfTI provides full read and write access to the NIfTI header data. Header information can be exported to a Python dictionary and can also be updated by using information from a dictionary.
- * Instead of accessing NIfTI data from files, PyNIfTI is able to create NIfTI images from NumPy arrays. The appropriate NIfTI header information is determined from the array properties. Additional header information can be optionally specified -- making it easy to clone NIfTI images if necessary, but with minor modifications.
- * Most properties of NIfTI images are accessible via attributes and/or accessor functions of the NiftiImage. Inter-dependent properties are automatically updated if necessary (e.g. modifying the Q-Form matrix also updates the pixdim properties and quaternion representation).
- * All properties are accessible via Python-style datatypes: A 4x4 matrix is an array not 16 individual numbers.
- * PyNIfTI should be resonably fast. Image data will only be loaded into the memory if necessary. Simply opening a NIfTI file to access some header data is performed with virtually no delay independent of the size of the image. Unless image resizing or datatype conversion must be performed the image data can be shared by the NIfTI image and accessing NumPy arrays, and therefore memory won't be wasted memory with redundant copies of the image data. However, one should be careful to make a copy of the image data if you intend to resize and cast the image data (see the docstring of the NiftiImage.asarray() method).
+ * PyNIfTI can read and write any file format supported by libniftiio. 
+   This includes NIfTI (single and pairs) as well as ANALYZE files.
+ * PyNIfTI provides fast and convenient access to the image data via NumPy 
+   arrays. This should enable users to process image data with most 
+   (if not all) numerical routines available for Python. The NumPy array 
+   automatically uses a datatype corresponding to the NIfTI image data 
+   -- no unnecessary upcasting is performed.
+ * PyNIfTI provides full read and write access to the NIfTI header data. 
+   Header information can be exported to a Python dictionary and can also 
+   be updated by using information from a dictionary.
+ * Instead of accessing NIfTI data from files, PyNIfTI is able to create 
+   NIfTI images from NumPy arrays. The appropriate NIfTI header information 
+   is determined from the array properties. Additional header information 
+   can be optionally specified -- making it easy to clone NIfTI images if 
+   necessary, but with minor modifications.
+ * Most properties of NIfTI images are accessible via attributes and/or 
+   accessor functions of the NiftiImage. Inter-dependent properties are 
+   automatically updated if necessary (e.g. modifying the Q-Form matrix also 
+   updates the pixdim properties and quaternion representation).
+ * All properties are accessible via Python-style datatypes: A 4x4 matrix 
+   is an array not 16 individual numbers.
+ * PyNIfTI should be resonably fast. Image data will only be loaded into 
+   the memory if necessary. Simply opening a NIfTI file to access some header 
+   data is performed with virtually no delay independent of the size of the 
+   image. Unless image resizing or datatype conversion must be performed the 
+   image data can be shared by the NIfTI image and accessing NumPy arrays, 
+   and therefore memory won't be wasted memory with redundant copies of the 
+   image data. However, one should be careful to make a copy of the image data 
+   if you intend to resize and cast the image data (see the docstring of 
+   the NiftiImage.asarray() method).
 
 Scripts
 +++++++
 
-Some functions provided by PyNIfTI also might be useful outside the Python environment. Therefore I plan to add some command line scripts to the package.
-Currently there is only one: pynifti_pst (pst: peristimulus timecourse). Using this script one can compute the signal timecourse for a certain condition for all voxels in a volume at once. This might be useful for exploring a dataset and accompanies similar tools like FSL's tsplot.
+Some functions provided by PyNIfTI also might be useful outside the Python 
+environment. Therefore I plan to add some command line scripts to the package.
+Currently there is only one: pynifti_pst (pst: peristimulus timecourse). 
+Using this script one can compute the signal timecourse for a certain 
+condition for all voxels in a volume at once. This might be useful for 
+exploring a dataset and accompanies similar tools like FSL's tsplot.
 
-The output of pynifti_pst can be loaded into FSLView to simultaneously look at statistics and signal timecourses. Please see the corresponding example below.
+The output of pynifti_pst can be loaded into FSLView to simultaneously look at 
+statistics and signal timecourses. Please see the corresponding example below.
 
 Known issues aka bugs
 +++++++++++++++++++++
 
-  * PyNIfTI currently ignores the origin field of ANALYZE files - it is neither read nor written. A possible workaround is to convert ANALYZE files into the NIfTI format using FSL's avwchfiletype.
+  * PyNIfTI currently ignores the origin field of ANALYZE files - it is 
+    neither read nor written. A possible workaround is to convert ANALYZE 
+    files into the NIfTI format using FSL's avwchfiletype.
 
 2. License
 ----------
 
-PyNIfTI is written by Michael Hanke as free software (both beer and speech) and licensed under the GNU Lesser General Public License.
+PyNIfTI is written by Michael Hanke as free software (both beer and speech) 
+and licensed under the MIT License.
 
 3. Download
 -----------
 
-As PyNIfTI is still pretty young, a number of significant improvements/modifications are very likely to happen in the near future. If you discover any bugs or you are missing some features, please be sure to check the SVN repository (read below) if your problem is already solved.
-Source code
+As PyNIfTI is still pretty young, a number of significant 
+improvements/modifications are very likely to happen in the near future. 
+If you discover any bugs or you are missing some features, please be sure to 
+check the SVN repository (read below) to seefif your problem is already solved.
 
-Since June 2007 PyNIfTI is part of the niftilibs family. The PyNIfTI source code can be obtained from the Sourceforge project site.
+Source Code
+-----------
 
-Source code is also available from the SVN repository of the Debian Experimental Psychology Project. To checkout the latest version use this command:
+Since June 2007 PyNIfTI is part of the `niftilibs family
+<http://niftilib.sourceforge.net>`_. 
+The PyNIfTI source code can be obtained from the `Sourceforge project site
+<http://sourceforge.net/projects/niftilib>`_.
 
-svn co svn://svn.debian.org/svn/pkg-exppsy/pynifti/trunk pynifti-latest
 Binary packages
+---------------
 
-Binary packages for some Debian and (K)Ubuntu versions are available. Please visit this page to read about how you have to setup your system to retrieve the PyNIfTI package via your package manager and stay in sync with future releases.
+GNU/Linux
+---------
+
+PyNIfTI is available in recent versions of the Debian (since lenny) and
+Ubuntu (since gutsy in universe) distributions. The name of the binary package
+is *python-nifti* in both cases:
+
+  * `PyNIfTI versions in Debian <http://packages.debian.org/python-nifti>`_.
+  * `PyNIfTI versions in Ubuntu <http://packages.ubuntu.com/python-nifti>`_.
+
+
+Binary packages for some Debian and (K)Ubuntu versions are also available. 
+Please visit this page to read about how you have to setup your system to retrieve the PyNIfTI package via your package manager and stay in sync with future releases.
 
 4. Installation
 ---------------
