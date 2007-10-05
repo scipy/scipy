@@ -15,6 +15,22 @@ from tempfile import mkstemp
 # TODO: replace with newer tuple-based path module
 from scipy.io.path import path
 
+import warnings
+
+# datasource has been used for a while in the NiPy project for analyzing
+# large fmri imaging files hosted over a network.  Data would be fetched
+# via URLs, cached locally and analyzed. Under these conditions the code
+# worked well, however it needs to be documented, tested and reviewed
+# before being fully exposed to SciPy.  We hope to do this before the
+# 0.7 release.
+_api_warning = "The datasource API will be changing frequently before \
+the 0.7 release as the code is ported from the NiPy project to SciPy. \
+Some of the current public interface may become private during the port! \
+Use this module minimally, if at all, until it is stabilized."
+
+warnings.warn(_api_warning)
+
+# TODO: .zip support
 zipexts = (".gz",".bz2")
 file_openers = {".gz":gzip.open, ".bz2":bz2.BZ2File, None:file}
 
@@ -46,7 +62,7 @@ def unzip(filename):
 
     *Returns*:
 
-        path
+        path_obj
             Path object of the unzipped file.
 
     """
@@ -81,12 +97,11 @@ def iswritemode(mode):
     return False
 
 def splitzipext(filename):
-    """Return a tuple containing the filename and the zip extension separated.
+    """Split the filename into a path object and a zip extension.
 
-    If the filename does not have a zip extension then:
-        base -> filename
-        zip_ext -> None
-
+    If the filename does not have a zip extension the zip_ext in the
+    return will be None.
+    
     *Parameters*:
 
         filename : {string}
@@ -95,7 +110,7 @@ def splitzipext(filename):
     *Returns*:
 
         base, zip_ext : {tuple}
-            Tuple containing the base file...
+            Tuple containing a path object to the file and the zip extension.
 
     """
 
@@ -104,12 +119,11 @@ def splitzipext(filename):
     else:
         return filename, None
 
-
-
 def isurl(pathstr):
     """Test whether a given string can be parsed as a URL.
 
-    *Parameters*
+    *Parameters*:
+    
         pathstr : {string}
             The string to be checked.
 
@@ -123,9 +137,7 @@ def isurl(pathstr):
     return bool(scheme and netloc)
 
 def ensuredirs(directory):
-    """Ensure that the given directory path actually exists.
-
-    If the directory does not exist, it is created.
+    """Ensure that the given directory path exists.  If not, create it.
 
     *Parameters*:
         directory : {path object}
@@ -141,10 +153,10 @@ def ensuredirs(directory):
         directory.makedirs()
 
 class Cache (object):
-    """A file cache.
+    """A local file cache for URL datasources.
 
-    The path of the cache can be specified or else use ~/.scipy/cache
-    by default.
+    The path of the cache can be specified on intialization.  The default
+    path is ~/.scipy/cache
 
 
     """
@@ -160,36 +172,92 @@ class Cache (object):
             ensuredirs(self.path)
 
     def tempfile(self, suffix='', prefix=''):
-        """ Return an temporary file name in the cache"""
+        """Create and return a temporary file in the cache.
+
+        *Parameters*:
+            suffix : {''}, optional
+
+            prefix : {''}, optional
+
+        *Returns*:
+            tmpfile : {string}
+                String containing the full path to the temporary file.
+
+        *Examples*
+
+            >>> mycache = datasource.Cache()
+            >>> mytmpfile = mycache.tempfile()
+            >>> mytmpfile
+            '/home/guido/.scipy/cache/GUPhDv'
+
+        """
+
         _tmp, fname = mkstemp(suffix, prefix, self.path)
         return fname
 
     def filepath(self, uri):
+        """Return a path object to the uri in the cache.
+
+        *Parameters*:
+            uri : {string}
+                Filename to use in the returned path object.
+
+        *Returns*:
+            path_obj
+                Path object for the given uri.
+                
+        *Examples*
+
+            >>> mycache = datasource.Cache()
+            >>> mycache.filepath('xyzcoords.txt')
+            path('/home/guido/.scipy/cache/yzcoords.txt')
+
         """
-        Return the complete path + filename within the cache.
-        """
-        (_, netloc, upath, _, _, _) = urlparse(uri)
+        # TODO: Change to non-public?
+        # TODO: BUG: First character is removed in the returned path. Why?
+        #       It appears the Cache is designed to work with URLs only!
+
+        (_tmp, netloc, upath, _tmp, _tmp, _tmp) = urlparse(uri)
         return self.path.joinpath(netloc, upath[1:])
 
     def filename(self, uri):
-        """
-        Return the complete path + filename within the cache.
+        """Return the complete path + filename within the cache.
 
-        :Returns: ``string``
+        *Parameters*:
+            uri : {string}
+                Filename to usein the returned path.
+                
+        *Returns*:
+            filename
+
+        *Examples*
+
+            >>> mycache = datasource.Cache()
+            >>> mycache.filename('xyzcoords.txt')
+            '/home/guido/.scipy/cache/yzcoords.txt'
+
         """
+        # TODO: Change to non-public?
+                
         return str(self.filepath(uri))
 
     def cache(self, uri):
-        """
-        Copy a file into the cache.
+        """Copy a file into the cache.
 
         :Returns: ``None``
         """
         if self.iscached(uri):
             return
+
+        print 'cache uri:', uri
+        
         upath = self.filepath(uri)
+
+        print 'upath:', upath
+        
         ensuredirs(upath.dirname())
         try:
+            print 'uri:', uri
             openedurl = urlopen(uri)
         except:
             raise IOError("url not found: "+str(uri))
@@ -225,7 +293,8 @@ class Cache (object):
 class DataSource (object):
     """A generic data source class.
 
-    Data could be from a file, URL, cached file.
+    Data sets could be from a file, a URL, or a cached file.  They may also
+    be compressed or uncompressed.
 
     TODO: Improve DataSource docstring
 
