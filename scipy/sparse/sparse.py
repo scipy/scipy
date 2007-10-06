@@ -9,7 +9,8 @@ __all__ = ['spmatrix','csc_matrix','csr_matrix','coo_matrix',
             'lil_matrix','dok_matrix',
             'spdiags','speye','spidentity','extract_diagonal',
             'isspmatrix','issparse','isspmatrix_csc','isspmatrix_csr',
-            'isspmatrix_lil','isspmatrix_dok', 'lil_eye', 'lil_diags' ]
+            'isspmatrix_lil','isspmatrix_dok', 'isspmatrix_coo',
+            'lil_eye', 'lil_diags' ]
 
 import warnings
 
