@@ -17,14 +17,14 @@ from scipy.io.path import path
 
 import warnings
 
-# datasource has been used for a while in the NiPy project for analyzing
+# datasource has been used for a while in the NIPY project for analyzing
 # large fmri imaging files hosted over a network.  Data would be fetched
 # via URLs, cached locally and analyzed. Under these conditions the code
 # worked well, however it needs to be documented, tested and reviewed
 # before being fully exposed to SciPy.  We hope to do this before the
 # 0.7 release.
 _api_warning = "The datasource API will be changing frequently before \
-the 0.7 release as the code is ported from the NiPy project to SciPy. \
+the 0.7 release as the code is ported from the NIPY project to SciPy. \
 Some of the current public interface may become private during the port! \
 Use this module minimally, if at all, until it is stabilized."
 
@@ -210,15 +210,14 @@ class Cache (object):
 
             >>> mycache = datasource.Cache()
             >>> mycache.filepath('xyzcoords.txt')
-            path('/home/guido/.scipy/cache/yzcoords.txt')
+            path('/home/guido/.scipy/cache/xyzcoords.txt')
 
         """
         # TODO: Change to non-public?
-        # TODO: BUG: First character is removed in the returned path. Why?
-        #       It appears the Cache is designed to work with URLs only!
 
+        #       It appears the Cache is designed to work with URLs only!
         (_tmp, netloc, upath, _tmp, _tmp, _tmp) = urlparse(uri)
-        return self.path.joinpath(netloc, upath[1:])
+        return self.path.joinpath(netloc, upath.strip('/'))
 
     def filename(self, uri):
         """Return the complete path + filename within the cache.
@@ -364,6 +363,7 @@ class Repository (DataSource):
     """
 
     #"""DataSource with an implied root."""
+
     def __init__(self, baseurl, cachepath=None):
         DataSource.__init__(self, cachepath=cachepath)
         self._baseurl = baseurl
