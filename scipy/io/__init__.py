@@ -17,10 +17,6 @@ from array_import import *
 from data_store import *
 from pickler import *
 
-# Comment out until we resolve nifti build on Windows. 
-#from scipy.io.nifti import NiftiImage
-#del nifti
-
 from mmio import mminfo,mmread,mmwrite
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
