@@ -2926,4 +2926,5 @@ def lil_diags(diags,offsets,(m,n),dtype=float):
     return out
 
 def issequence(t):
-    return isinstance(t, (list, tuple))
+    return isinstance(t, (list, tuple))\
+           or (isinstance(t, ndarray) and (t.ndim == 1))

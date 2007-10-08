@@ -940,6 +940,19 @@ class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase,
         B[:2,:2] = csc_matrix(array(block))
         assert_array_equal(B.todense()[:2,:2],block)
 
+    def check_lil_sequence_assignement(self):
+        A = lil_matrix((4,3))
+        B = lil_eye((3,4))
+
+        i0 = [0,1,2]
+        i1 = (0,1,2)
+        i2 = array( i0 )
+
+        A[0,i0] = B[i0,0]
+        A[1,i1] = B[i1,1]
+        A[2,i2] = B[i2,2]
+        assert_array_equal(A.todense(),B.T.todense())
+
     def check_lil_iteration(self):
         row_data = [[1,2,3],[4,5,6]]
         B = lil_matrix(array(row_data))
