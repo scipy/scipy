@@ -14,6 +14,7 @@ NIfTI
 .. _SourceForge: http://sourceforge.net/projects/niftilib
 .. _SWIG: http://www.swig.org/
 .. _NumPy: http://numpy.scipy.org/
+.. _SciPy: http://www.scipy.org/
 .. _Matplotlib: http://matplotlib.sourceforge.net/
 .. _R: http://www.r-project.org/
 .. _RPy: http://rpy.sourceforge.net/
@@ -42,7 +43,7 @@ Python
 
 Unfortunately, it is not that trivial to read NIfTI images with Python. 
 This is particularly sad, because there is a large number of easy-to-use, 
-high-quality libraries for signal processing available for Python (e.g. SciPy).
+high-quality libraries for signal processing available for Python (e.g. SciPy_).
 
 Moreover Python has bindings to almost any important language/program in the 
 fields of maths, statistics and/or engineering. If you want to use R_ to 
@@ -58,11 +59,11 @@ PyNIfTI
 
 PyNIfTI aims to provide easy access to NIfTI images from within Python. 
 It uses SWIG_ -generated wrappers for the NIfTI reference library and 
-provides the NiftiImage class for Python-style access to the image data.
+provides the ``NiftiImage`` class for Python-style access to the image data.
 
 While PyNIfTI is not yet complete (i.e. doesn't support everything the 
 C library can do), it already provides access to the most important features 
-of the NIfTI-1 data format and libniftiio capabilities. The following 
+of the NIfTI-1 data format and *libniftiio* capabilities. The following 
 features are currently implemented:
 
  * PyNIfTI can read and write any file format supported by libniftiio. 
@@ -81,32 +82,33 @@ features are currently implemented:
    can be optionally specified -- making it easy to clone NIfTI images if 
    necessary, but with minor modifications.
  * Most properties of NIfTI images are accessible via attributes and/or 
-   accessor functions of the NiftiImage. Inter-dependent properties are 
+   accessor functions of the ``NiftiImage.`` Inter-dependent properties are 
    automatically updated if necessary (e.g. modifying the Q-Form matrix also 
    updates the pixdim properties and quaternion representation).
  * All properties are accessible via Python-style datatypes: A 4x4 matrix 
    is an array not 16 individual numbers.
- * PyNIfTI should be resonably fast. Image data will only be loaded into 
+ * PyNIfTI should be reasonably fast. Image data will only be loaded into 
    the memory if necessary. Simply opening a NIfTI file to access some header 
-   data is performed with virtually no delay independent of the size of the 
-   image. Unless image resizing or datatype conversion must be performed the 
+   data is performed with virtually no delay, independent of the size of the 
+   image. Unless image resizing or datatype conversion must be performed, the 
    image data can be shared by the NIfTI image and accessing NumPy arrays, 
    and therefore memory won't be wasted memory with redundant copies of the 
    image data. However, one should be careful to make a copy of the image data 
    if you intend to resize and cast the image data (see the docstring of 
-   the NiftiImage.asarray() method).
+   the ``NiftiImage.asarray()`` method).
 
 Scripts
 +++++++
 
 Some functions provided by PyNIfTI also might be useful outside the Python 
 environment. Therefore I plan to add some command line scripts to the package.
-Currently there is only one: pynifti_pst (pst: peristimulus timecourse). 
+
+Currently there is only one: *pynifti_pst* (pst: peristimulus timecourse). 
 Using this script one can compute the signal timecourse for a certain 
 condition for all voxels in a volume at once. This might be useful for 
 exploring a dataset and accompanies similar tools like FSL's tsplot.
 
-The output of pynifti_pst can be loaded into FSLView to simultaneously look at 
+The output of *pynifti_pst* can be loaded into FSLView to simultaneously look at
 statistics and signal timecourses. Please see the corresponding example below.
 
 Known issues aka bugs
@@ -114,7 +116,7 @@ Known issues aka bugs
 
   * PyNIfTI currently ignores the origin field of ANALYZE files - it is 
     neither read nor written. A possible workaround is to convert ANALYZE 
-    files into the NIfTI format using FSL's avwchfiletype.
+    files into the NIfTI format using FSL's *avwchfiletype.*
 
 2. License
 ----------
@@ -186,7 +188,7 @@ PyNIfTI needs a few things to build and run properly:
 
 Make sure that the compiled nifticlibs and the corresponding headers are 
 available to your compiler. If they are located in a custom directory, you 
-might have to specify --include-dirs and --library-dirs options to the 
+might have to specify ``--include-dirs`` and ``--library-dirs`` options to the 
 build command below.
 
 Once you have downloaded the sources, extract the tarball and enter the 
@@ -199,7 +201,8 @@ you need to do is install the modules by invoking::
 
   sudo python setup.py install
 
-If sudo is not configured (or even installed) you might have to use su instead.
+If sudo is not configured (or even installed) you might have to use ``su`` 
+instead.
 
 Now fire up Python and try importing the module to see if everything is fine. 
 It should look similar to this::
@@ -224,9 +227,10 @@ MacOS X and MacPython
 
 When you are comiling PyNIfTI on MacOS X and want to use it with MacPython, 
 please make sure that the NIfTI C libraries are compiled as fat binaries 
-(compiled for both ppc and i386). Otherwise PyNIfTI extensions will not compile.
+(compiled for both *ppc* and *i386*). Otherwise PyNIfTI extensions will not 
+compile.
 
-One can achieve this by adding both architectures to the CFLAGS definition 
+One can achieve this by adding both architectures to the ``CFLAGS`` definition 
 in the toplevel Makefile of the NIfTI C library source code. Like this::
 
   CFLAGS = $(ANSI_FLAGS) -arch ppc -arch i386
@@ -249,15 +253,15 @@ should be reported.
 Windows
 +++++++
 
-As always, click Next as long as necessary and finally Finish. 
+As always, click *Next* as long as necessary and finally *Finish.*
 
 Troubleshooting
 +++++++++++++++
 
-If you get an error when importing the nifti module in Python complaining 
+If you get an error when importing the *nifti* module in Python complaining 
 about missing symbols your niftiio library contains references to some 
-unresolved symbols. Try adding znzlib and zlib to the linker options the 
-PyNIfTI setup.py, like this::
+unresolved symbols. Try adding *znzlib* and *zlib* to the linker options the 
+PyNIfTI ``setup.py``, like this::
 
   libraries = [ 'niftiio', 'znz', 'z' ],
 
@@ -266,12 +270,13 @@ PyNIfTI setup.py, like this::
 
 When accessing NIfTI image data through NumPy arrays the order of the 
 dimensions is reversed. If the x, y, z, t dimensions of a NIfTI image are 
-64, 64, 32, 456 (as for example reported by nifti_tool), the shape of the 
-NumPy array (e.g. as returned by NiftiImage.asarray()) will be: 456, 32, 64, 64.
+64, 64, 32, 456 (as for example reported by *nifti_tool*), the shape of the 
+NumPy array (e.g. as returned by ``NiftiImage.asarray()``) 
+will be: 456, 32, 64, 64.
 
 This is done to be able to slice the data array much easier in the most common 
 cases. For example, if you are interested in a certain volume of a timeseries 
-it is much easier to write data[2] instead of data[:,:,:,2], right?.
+it is much easier to write ``data[2]`` instead of ``data[:,:,:,2]``, right?.
 
 6. Examples
 -----------
@@ -303,7 +308,7 @@ save this image as a single gzipped NIfTI file simply do::
 
 The filetype is determined from the filename. If you want to save to gzipped 
 ANALYZE file pairs instead the following would be an alternative to calling 
-the save() with a new filename::
+the ``save()`` with a new filename::
 
   nim.filename = 'mni_analyze.img.gz'
   nim.save()
@@ -326,8 +331,8 @@ slices and a 32x32 inplane matrix::
 
 Please notice the order in which the dimensions are specified: (t, z, y, x).
 
-The datatype of the array will most likely be float64 -- which can be verified 
-by invoking noise.dtype.
+The datatype of the array will most likely be *float64* -- which can be 
+verified by invoking ``noise.dtype``.
 
 Converting this dataset into a NIfTI image is done by invoking the NiftiImage 
 constructor with the noise dataset as argument::
@@ -352,7 +357,7 @@ Also the datatype was set appropriately. The expression::
 
 will evaluate to True.
 
-To save the noise file to disk, just call the save() method::
+To save the noise file to disk, just call the ``save()`` method::
 
   nim.save('noise.nii.gz')
 
@@ -383,7 +388,7 @@ d) Linear detrending of timeseries
 Let's load another 4d NIfTI file and perform a linear detrending, by fitting 
 a straight line to the timeseries of each voxel and substract that fit from 
 the data. Although this might sound complicated at first, thanks to the 
-excellent SciPy module it is just a few lines of code::
+excellent SciPy_ module it is just a few lines of code::
 
   nim = NiftiImage('timeseries.nii')
 
@@ -453,7 +458,7 @@ This example demonstrates how to use the Matlab-style plotting of Matplotlib_
 to view a slice from a 3d volume.
 
 This time I assume that a 3d nifti file is already opened and available in the 
-nim3d object. At first we need to load the necessary Python module::
+``nim3d`` object. At first we need to load the necessary Python module::
 
   from pylab import *
 
@@ -462,7 +467,7 @@ If everything went fine, we can now view a slice (x,y)::
   imshow(nim3d.data[200], interpolation='nearest', cmap=cm.gray)
   show()
 
-It is necessary to call the show() function one time after importing pylab 
+It is necessary to call the ``show()`` function one time after importing pylab 
 to actually see the image when running Python interactively (`screenshot xyslice
 <http://apsy.gse.uni-magdeburg.de/main/pics/hanke/pynifti/matplotlib_xyslice.png>`_
 ).
@@ -504,9 +509,10 @@ An example call could look like this::
 
 This computes a peristimulus timeseries using the preprocessed fMRI from a 
 FEAT output directory and two custom EV files that both together make up 
-condition A. --times indicates that the EV files list onset times (not volume 
-ids) and --nvols requests the mean peristimulus timecourse for 4 volumes after 
-stimulus onset (5 including onset). -p recodes the peristimulus timeseries into 
+condition A.``--times`` indicates that the EV files list onset times 
+(not volume ids) and ``--nvols`` requests the mean peristimulus timecourse 
+for 4 volumes after stimulus onset (5 including onset). 
+``-p`` recodes the peristimulus timeseries into 
 percent signalchange, where the onset is always zero and any following value 
 is the signal change with respect to the onset volume.
 
