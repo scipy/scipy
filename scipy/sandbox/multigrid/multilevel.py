@@ -4,8 +4,9 @@ __all__ = ['poisson_problem1D','poisson_problem2D',
 
 import scipy
 import numpy
-from numpy import zeros,zeros_like,array
+from numpy import ones,zeros,zeros_like,array
 from numpy.linalg import norm
+from scipy.linsolve import spsolve
 
 from sa import sa_interpolation
 from rs import rs_interpolation
@@ -19,8 +20,8 @@ def poisson_problem1D(N):
     with standard 3-point finite difference stencil on a
     grid with N points.
     """
-    D = 2*numpy.ones(N)
-    O =  -numpy.ones(N)
+    D = 2*ones(N)
+    O =  -ones(N)
     return scipy.sparse.spdiags([D,O,O],[0,-1,1],N,N).tocoo().tocsr() #eliminate zeros
 
 def poisson_problem2D(N):
@@ -29,9 +30,9 @@ def poisson_problem2D(N):
     with standard 5-point finite difference stencil on a
     square N-by-N grid.
     """
-    D = 4*numpy.ones(N*N)
-    T =  -numpy.ones(N*N)
-    O =  -numpy.ones(N*N)
+    D = 4*ones(N*N)
+    T =  -ones(N*N)
+    O =  -ones(N*N)
     T[N-1::N] = 0
     return scipy.sparse.spdiags([D,O,T,T,O],[0,-N,-1,1,N],N*N,N*N).tocoo().tocsr() #eliminate zeros
     
@@ -130,12 +131,12 @@ class multilevel_solver:
 
         #TODO change use of tol (relative tolerance) to agree with other iterative solvers
         A = self.As[0]
-        residuals = [scipy.linalg.norm(b-A*x)]
+        residuals = [ norm(b-A*x) ]
 
         while len(residuals) <= maxiter and residuals[-1]/residuals[0] > tol:
             self.__solve(0,x,b)
 
-            residuals.append(scipy.linalg.norm(b-A*x))
+            residuals.append( norm(b-A*x) )
 
             if callback is not None:
                 callback(x)
@@ -150,7 +151,7 @@ class multilevel_solver:
         A = self.As[lvl]
         
         if len(self.As) == 1:
-            x[:] = scipy.linsolve.spsolve(A,b)
+            x[:] = spsolve(A,b)
             return 
 
         self.presmoother(A,x,b)
@@ -162,7 +163,7 @@ class multilevel_solver:
         
         if lvl == len(self.As) - 2:
             #use direct solver on coarsest level
-            coarse_x[:] = scipy.linsolve.spsolve(self.As[-1],coarse_b)
+            coarse_x[:] = spsolve(self.As[-1],coarse_b)
             #coarse_x[:] = scipy.linalg.cg(self.As[-1],coarse_b,tol=1e-12)[0]
             #print "coarse residual norm",scipy.linalg.norm(coarse_b - self.As[-1]*coarse_x)
         else:   

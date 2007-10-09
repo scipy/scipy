@@ -10,8 +10,8 @@ def approximate_spectral_radius(A,tol=0.1,maxiter=20):
     """
     Approximate the spectral radius of a symmetric matrix using ARPACK
     """
-    from scipy.sandbox.arpack import eigen_symmetric
-    return eigen_symmetric(A, k=1, ncv=10, which='LM', maxiter=maxiter, tol=tol, return_eigenvectors=False)[0]
+    from scipy.sandbox.arpack import eigen
+    return eigen(A, k=1, ncv=10, which='LM', maxiter=maxiter, tol=tol, return_eigenvectors=False)[0]
 
 
 

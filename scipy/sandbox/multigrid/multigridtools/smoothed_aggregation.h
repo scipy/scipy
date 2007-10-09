@@ -42,18 +42,26 @@ void sa_strong_connections(const int n_row,
 
     T eps_Aii = epsilon*epsilon*diags[i];
 
+    T weak_sum = 0.0;
+
     for(int jj = row_start; jj < row_end; jj++){
       const int   j = Aj[jj];
       const T   Aij = Ax[jj];
 
-      if(i == j){continue;}
+      if(i == j){continue;} //skip diagonal until end of row
 
       //  |A(i,j)| < epsilon * sqrt(|A(i,i)|*|A(j,j)|) 
       if(Aij*Aij >= std::abs(eps_Aii * diags[j])){    
           Sj->push_back(j);
           Sx->push_back(Aij);
+      } else {
+          weak_sum += Aij;
       }
     }
+    //Add modified diagonal entry
+    Sj->push_back(i);
+    Sx->push_back(diags[i] + weak_sum); //filtered matrix
+
     Sp->push_back(Sj->size());
   }
 }

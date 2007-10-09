@@ -4,7 +4,7 @@ from scipy.sparse import csr_matrix,coo_matrix
 
 from relaxation import gauss_seidel
 from multilevel import multilevel_solver
-from sa import sa_constant_interpolation
+from sa import sa_constant_interpolation,sa_fit_candidates
 #from utils import infinity_norm
 from utils import approximate_spectral_radius
 
@@ -144,7 +144,7 @@ def sa_hierarchy(A,Ws,x):
     Ps = []
 
     for W in Ws:
-        P,x = fit_candidates(W,x)
+        P,x = sa_fit_candidates(W,x)
         I   = smoothed_prolongator(P,A)  
         A   = I.T.tocsr() * A * I
         As.append(A)
@@ -301,7 +301,8 @@ class adaptive_sa_solver:
         while len(AggOps) + 1 < max_levels  and A_l.shape[0] > max_coarse:
             #W_l   = sa_constant_interpolation(A_l,epsilon=0.08*0.5**(len(AggOps)-1))           #step 4b  #TEST
             W_l   = sa_constant_interpolation(A_l,epsilon=0)              #step 4b
-            P_l,x = fit_candidate(W_l,x)                                  #step 4c  
+            P_l,x = sa_fit_candidates(W_l,[x])                            #step 4c  
+            x = x[0]  #TODO make sa_fit_candidates accept a single x
             I_l   = smoothed_prolongator(P_l,A_l)                         #step 4d
             A_l   = I_l.T.tocsr() * A_l * I_l                             #step 4e
             
@@ -337,15 +338,15 @@ class adaptive_sa_solver:
 from scipy import *
 from utils import diag_sparse
 from multilevel import poisson_problem1D,poisson_problem2D
-A = poisson_problem2D(50)
+A = poisson_problem2D(200)
 #A = io.mmread("tests/sample_data/laplacian_41_3dcube.mtx").tocsr()
 #A = io.mmread("laplacian_40_3dcube.mtx").tocsr()
 #A = io.mmread("/home/nathan/Desktop/9pt/9pt-100x100.mtx").tocsr()
 #A = io.mmread("/home/nathan/Desktop/BasisShift_W_EnergyMin_Luke/9pt-5x5.mtx").tocsr()
 
 #A = A*A
-#D = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
-#A = D * A * D
+D = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
+A = D * A * D
 #A = io.mmread("nos2.mtx").tocsr()
 asa = adaptive_sa_solver(A,max_candidates=1)
 #x = arange(A.shape[0]).astype('d') + 1
