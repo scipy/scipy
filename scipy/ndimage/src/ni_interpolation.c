@@ -130,7 +130,7 @@ map_coordinate(double in, maybelong len, int mode)
       if (len <= 1) {
         in = 0;
       } else {
-        maybelong sz2 = 2 * len - 1;
+        maybelong sz2 = 2 * len;
         if (in < -sz2)
           in = sz2 * (maybelong)(-in / sz2) + in;
         in = in < -len ? in + sz2 : -in - 1;
@@ -140,7 +140,7 @@ map_coordinate(double in, maybelong len, int mode)
       if (len <= 1) {
         in = 0;
       } else {
-        maybelong sz = len;
+        maybelong sz = len - 1;
         // Integer division of -in/sz gives (-in mod sz)
         // Note that 'in' is negative
         in += sz * ((maybelong)(-in / sz) + 1);
@@ -179,7 +179,7 @@ map_coordinate(double in, maybelong len, int mode)
       if (len <= 1) {
         in = 0;
       } else {
-        maybelong sz = len;
+        maybelong sz = len - 1;
         in -= sz * (maybelong)(in / sz);
       }
       break;

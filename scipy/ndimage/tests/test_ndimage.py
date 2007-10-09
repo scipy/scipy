@@ -76,7 +76,7 @@ class TestNdimage(NumpyTestCase):
                       numpy.float32, numpy.float64]
 
         # list of boundary modes:
-        self.modes = ['nearest', 'wrap', 'reflect', 'constant']
+        self.modes = ['nearest', 'wrap', 'reflect', 'mirror', 'constant']
 
     def test_correlate01(self):
         "correlation 1"
@@ -1166,11 +1166,12 @@ class TestNdimage(NumpyTestCase):
         true_values = [[1, 1, 2],
                        [3, 1, 2],
                        [1, 1, 2],
+                       [2, 1, 2],
                        [0, 1, 2]]
         for mode, true_value in zip(self.modes, true_values):
             output = ndimage.correlate1d(array, weights, 0,
-                                                   mode = mode, cval = 0)
-            self.failUnless(diff(output, true_value) < eps)
+                                         mode = mode, cval = 0)
+            assert_array_equal(output,true_value)
 
     def test_extend02(self):
         "line extension 2"
@@ -1179,11 +1180,12 @@ class TestNdimage(NumpyTestCase):
         true_values = [[1, 1, 1],
                        [3, 1, 2],
                        [3, 3, 2],
+                       [1, 2, 3],
                        [0, 0, 0]]
         for mode, true_value in zip(self.modes, true_values):
             output = ndimage.correlate1d(array, weights, 0,
-                                                   mode = mode, cval = 0)
-            self.failUnless(diff(output, true_value) < eps)
+                                         mode = mode, cval = 0)
+            assert_array_equal(output, true_value)
 
     def test_extend03(self):
         "line extension 3"
@@ -1192,11 +1194,12 @@ class TestNdimage(NumpyTestCase):
         true_values = [[2, 3, 3],
                        [2, 3, 1],
                        [2, 3, 3],
+                       [2, 3, 2],
                        [2, 3, 0]]
         for mode, true_value in zip(self.modes, true_values):
             output = ndimage.correlate1d(array, weights, 0,
-                                                   mode = mode, cval = 0)
-            self.failUnless(diff(output, true_value) < eps)
+                                         mode = mode, cval = 0)
+            assert_array_equal(output, true_value)
 
     def test_extend04(self):
         "line extension 4"
@@ -1205,27 +1208,29 @@ class TestNdimage(NumpyTestCase):
         true_values = [[3, 3, 3],
                        [2, 3, 1],
                        [2, 1, 1],
+                       [1, 2, 3],
                        [0, 0, 0]]
         for mode, true_value in zip(self.modes, true_values):
             output = ndimage.correlate1d(array, weights, 0,
-                                                   mode = mode, cval = 0)
-            self.failUnless(diff(output, true_value) < eps)
+                                         mode = mode, cval = 0)
+            assert_array_equal(output, true_value)
 
 
     def test_extend05(self):
         "line extension 5"
         array = numpy.array([[1, 2, 3],
-                                [4, 5, 6],
-                                [7, 8, 9]])
+                             [4, 5, 6],
+                             [7, 8, 9]])
         weights = numpy.array([[1, 0], [0, 0]])
         true_values = [[[1, 1, 2], [1, 1, 2], [4, 4, 5]],
                        [[9, 7, 8], [3, 1, 2], [6, 4, 5]],
                        [[1, 1, 2], [1, 1, 2], [4, 4, 5]],
+                       [[5, 4, 5], [2, 1, 2], [5, 4, 5]],
                        [[0, 0, 0], [0, 1, 2], [0, 4, 5]]]
         for mode, true_value in zip(self.modes, true_values):
             output = ndimage.correlate(array, weights,
-                                                 mode = mode, cval = 0)
-            self.failUnless(diff(output, true_value) < eps)
+                                       mode = mode, cval = 0)
+            assert_array_equal(output, true_value)
 
 
     def test_extend06(self):
@@ -1237,11 +1242,12 @@ class TestNdimage(NumpyTestCase):
         true_values = [[[5, 6, 6], [8, 9, 9], [8, 9, 9]],
                        [[5, 6, 4], [8, 9, 7], [2, 3, 1]],
                        [[5, 6, 6], [8, 9, 9], [8, 9, 9]],
+                       [[5, 6, 5], [8, 9, 8], [5, 6, 5]],
                        [[5, 6, 0], [8, 9, 0], [0, 0, 0]]]
         for mode, true_value in zip(self.modes, true_values):
             output = ndimage.correlate(array, weights,
-                                                 mode = mode, cval = 0)
-            self.failUnless(diff(output, true_value) < eps)
+                                       mode = mode, cval = 0)
+            assert_array_equal(output, true_value)
 
 
     def test_extend07(self):
@@ -1251,11 +1257,12 @@ class TestNdimage(NumpyTestCase):
         true_values = [[3, 3, 3],
                        [2, 3, 1],
                        [2, 1, 1],
+                       [1, 2, 3],
                        [0, 0, 0]]
         for mode, true_value in zip(self.modes, true_values):
             output = ndimage.correlate(array, weights,
                                                  mode = mode, cval = 0)
-            self.failUnless(diff(output, true_value) < eps)
+            assert_array_equal(output, true_value)
 
     def test_extend08(self):
         "line extension 8"
@@ -1265,11 +1272,12 @@ class TestNdimage(NumpyTestCase):
         true_values = [[[3], [3], [3]],
                        [[2], [3], [1]],
                        [[2], [1], [1]],
+                       [[1], [2], [3]],
                        [[0], [0], [0]]]
         for mode, true_value in zip(self.modes, true_values):
             output = ndimage.correlate(array, weights,
                                                  mode = mode, cval = 0)
-            self.failUnless(diff(output, true_value) < eps)
+            assert_array_equal(output, true_value)
 
     def test_extend09(self):
         "line extension 9"
@@ -1278,11 +1286,12 @@ class TestNdimage(NumpyTestCase):
         true_values = [[3, 3, 3],
                        [2, 3, 1],
                        [2, 1, 1],
+                       [1, 2, 3],
                        [0, 0, 0]]
         for mode, true_value in zip(self.modes, true_values):
             output = ndimage.correlate(array, weights,
-                                                 mode = mode, cval = 0)
-            self.failUnless(diff(output, true_value) < eps)
+                                       mode = mode, cval = 0)
+            assert_array_equal(output, true_value)
 
     def test_extend10(self):
         "line extension 10"
@@ -1292,29 +1301,47 @@ class TestNdimage(NumpyTestCase):
         true_values = [[[3], [3], [3]],
                        [[2], [3], [1]],
                        [[2], [1], [1]],
+                       [[1], [2], [3]],
                        [[0], [0], [0]]]
         for mode, true_value in zip(self.modes, true_values):
             output = ndimage.correlate(array, weights,
-                                                 mode = mode, cval = 0)
-            self.failUnless(diff(output, true_value) < eps)
+                                       mode = mode, cval = 0)
+            assert_array_equal(output, true_value)
 
     def test_boundaries(self):
         "boundary modes"
         def shift(x):
-            return (x[0] + 0.1,)
+            return (x[0] + 0.5,)
 
-        data = numpy.array([1,2,3,4])
-        expected = {'constant': [1,2,3,-1,-1,-1],
-                    'wrap': [1,2,3,4,1,2],
-                    'reflect' : [1,2,3,4,4,3],
-                    'mirror' : [1,2,3,4,3,2],                    
-                    'nearest' : [1,2,3,4,4,4]}
+        data = numpy.array([1,2,3,4.])
+        expected = {'constant': [1.5,2.5,3.5,-1,-1,-1,-1],
+                    'wrap': [1.5,2.5,3.5,1.5,2.5,3.5,1.5],
+                    'mirror' : [1.5,2.5,3.5,3.5,2.5,1.5,1.5],
+                    'nearest' : [1.5,2.5,3.5,4,4,4,4]}
 
         for mode in expected.keys():
             assert_array_equal(expected[mode],
                                ndimage.geometric_transform(data,shift,
                                                            cval=-1,mode=mode,
-                                                           output_shape=(6,)))
+                                                           output_shape=(7,),
+                                                           order=1))
+
+    def test_boundaries2(self):
+        "boundary modes 2"
+        def shift(x):
+            return (x[0] - 0.9,)
+
+        data = numpy.array([1,2,3,4])
+        expected = {'constant': [-1,1,2,3],
+                    'wrap': [3,1,2,3],
+                    'mirror' : [2,1,2,3],
+                    'nearest' : [1,1,2,3]}
+
+        for mode in expected.keys():
+            assert_array_equal(expected[mode],
+                               ndimage.geometric_transform(data,shift,
+                                                           cval=-1,mode=mode,
+                                                           output_shape=(4,)))
 
     def test_fourier_gaussian_real01(self):
         "gaussian fourier filter for real transforms 1"
@@ -2247,7 +2274,7 @@ class TestNdimage(NumpyTestCase):
             out = ndimage.rotate(data, 90)
             for i in range(3):
                 self.failUnless(diff(out[:,:,i], true) < eps)
-                
+
     def test_rotate06(self):
         "rotate 6"
         data = numpy.empty((3,4,3))
@@ -2265,7 +2292,7 @@ class TestNdimage(NumpyTestCase):
             out = ndimage.rotate(data, 90)
             for i in range(3):
                 self.failUnless(diff(out[:,:,i], true) < eps)
-                
+
     def test_rotate07(self):
         "rotate 7"
         data = numpy.array([[[0, 0, 0, 0, 0],

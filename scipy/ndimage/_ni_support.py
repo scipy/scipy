@@ -41,7 +41,7 @@ def _extend_mode_to_code(mode):
     elif mode == 'reflect':
         return 2
     elif mode == 'mirror':
-        return 3    
+        return 3
     elif mode == 'constant':
         return 4
     else:
