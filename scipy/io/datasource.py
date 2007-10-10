@@ -1,7 +1,11 @@
-"""Utilities for importing (possibly compressed) data sets from an URL
-(or file) and possibly caching them.
+"""A generic interface for importing data.  Data sources can originate from
+URLs or local paths and can be in compressed or uncompressed form.
 
 """
+
+# TODO: Make DataSource and Repository the public interface.
+#       Cache will be used internally.  Add methods in DataSource to expose
+#       some of the functionality that exists only in Cache currently.
 
 __docformat__ = "restructuredtext en"
 
@@ -31,8 +35,8 @@ Use this module minimally, if at all, until it is stabilized."
 warnings.warn(_api_warning)
 
 # TODO: .zip support
-zipexts = (".gz",".bz2")
-file_openers = {".gz":gzip.open, ".bz2":bz2.BZ2File, None:file}
+_zipexts = (".gz",".bz2")
+_file_openers = {".gz":gzip.open, ".bz2":bz2.BZ2File, None:file}
 
 def iszip(filename):
     """Test if the given file is a zip file.
@@ -50,7 +54,7 @@ def iszip(filename):
     """
 
     _tmp, ext = path(filename).splitext()
-    return ext in zipexts
+    return ext in _zipexts
 
 def unzip(filename):
     """Unzip the given file and return the path object to the new file.
@@ -70,7 +74,7 @@ def unzip(filename):
     if not iszip(filename):
         raise ValueError("file %s is not zipped"%filename)
     unzip_name, zipext = splitzipext(filename)
-    opener = file_openers[zipext]
+    opener = _file_openers[zipext]
     outfile = file(unzip_name, 'w')
     outfile.write(opener(filename).read())
     outfile.close()
@@ -119,7 +123,7 @@ def splitzipext(filename):
     else:
         return filename, None
 
-def isurl(pathstr):
+def _isurl(pathstr):
     """Test whether a given string can be parsed as a URL.
 
     *Parameters*:
@@ -133,7 +137,7 @@ def isurl(pathstr):
 
     """
 
-    scheme, netloc, _tmp, _tmp, _tmp, _tmp = urlparse(pathstr)
+    scheme, netloc, _path, _params, _query, _frag = urlparse(pathstr)
     return bool(scheme and netloc)
 
 def ensuredirs(directory):
@@ -233,7 +237,7 @@ class Cache (object):
 
             >>> mycache = datasource.Cache()
             >>> mycache.filename('xyzcoords.txt')
-            '/home/guido/.scipy/cache/yzcoords.txt'
+            '/home/guido/.scipy/cache/xyzcoords.txt'
 
         """
         # TODO: Change to non-public?
@@ -263,13 +267,15 @@ class Cache (object):
         file(upath, 'w').write(openedurl.read())
 
     def clear(self):
-        """ Delete all files in the cache.
+        """Delete all files in the cache."""
 
-        :Returns: ``None``
-        """
+        # TODO: This deletes all files in the cache directory, regardless
+        #       of if this instance created them.  Too destructive and
+        #       unexpected behavior.
+        
         for _file in self.path.files():
-            _file.rm()
-
+            os.remove(file)
+            
     def iscached(self, uri):
         """ Check if a file exists in the cache.
 
@@ -303,25 +309,54 @@ class DataSource (object):
         self._cache = Cache(cachepath)
 
     def tempfile(self, suffix='', prefix=''):
-        """Return an temporary file name in the cache."""
+        """Create a temporary file in the cache.
+
+        *Parameters*:
+            suffix : {''}, optional
+
+            prefix : {''}, optional
+
+        *Returns*:
+            tmpfile : {string}
+                String containing the full path to the temporary file.
+
+        *Examples*
+
+            >>> datasrc = datasource.DataSource()
+            >>> tmpfile = datasrc.tempfile()
+            >>> tmpfile
+            '/home/guido/src/scipy-trunk/scipy/io/PZTuKo'
+
+        """
         return self._cache.tempfile(suffix, prefix)
 
     def _possible_names(self, filename):
+        """Return a tuple containing compressed filenames."""
         names = [filename]
         if not iszip(filename):
-            for zipext in zipexts:
+            for zipext in _zipexts:
                 names.append(filename+zipext)
         return tuple(names)
 
     def cache(self, pathstr):
-        if isurl(pathstr):
+        # TODO: Should work with files also, not just urls.
+        if _isurl(pathstr):
             self._cache.cache(pathstr)
 
+    def clear(self):
+        # TODO: Implement a clear interface for deleting tempfiles.
+        #       There's a problem with the way this is handled in the Cache,
+        #       All files in the cache directory will be deleted.  In the
+        #       default instance, that's the os.curdir.  I doubt this is what
+        #       people would want.  The instance should only delete files that
+        #       it created!
+        pass
+    
     def filename(self, pathstr):
         found = None
         for name in self._possible_names(pathstr):
             try:
-                if isurl(name):
+                if _isurl(name):
                     self.cache(name)
                     found = self._cache.filename(name)
                 else:
@@ -343,13 +378,13 @@ class DataSource (object):
             return False
 
     def open(self, pathstr, mode='r'):
-        if isurl(pathstr) and iswritemode(mode):
+        if _isurl(pathstr) and iswritemode(mode):
             raise ValueError("URLs are not writeable")
         found = self.filename(pathstr)
         _, ext = splitzipext(found)
         if ext == 'bz2':
             mode.replace("+", "")
-        return file_openers[ext](found, mode=mode)
+        return _file_openers[ext](found, mode=mode)
 
     def _fullpath(self, pathstr):
         return pathstr
