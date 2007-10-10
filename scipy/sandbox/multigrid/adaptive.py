@@ -345,8 +345,8 @@ A = poisson_problem2D(200)
 #A = io.mmread("/home/nathan/Desktop/BasisShift_W_EnergyMin_Luke/9pt-5x5.mtx").tocsr()
 
 #A = A*A
-D = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
-A = D * A * D
+#D = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
+#A = D * A * D
 #A = io.mmread("nos2.mtx").tocsr()
 asa = adaptive_sa_solver(A,max_candidates=1)
 #x = arange(A.shape[0]).astype('d') + 1
