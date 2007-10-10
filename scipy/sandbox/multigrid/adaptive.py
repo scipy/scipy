@@ -5,52 +5,8 @@ from scipy.sparse import csr_matrix,coo_matrix
 from relaxation import gauss_seidel
 from multilevel import multilevel_solver
 from sa import sa_constant_interpolation,sa_fit_candidates
-#from utils import infinity_norm
 from utils import approximate_spectral_radius
 
-##def fit_candidate(I,x):
-##    """
-##    For each aggregate in I (i.e. each column of I) compute vector R and 
-##    sparse matrix Q (having the sparsity of I) such that the following holds:
-##
-##        Q*R = x     and   Q^T*Q = I
-##
-##    In otherwords, find a prolongator Q with orthonormal columns so that
-##    x is represented exactly on the coarser level by R.
-##    """
-##    x = asarray(x)
-##    Q = csr_matrix((x.copy(),I.indices,I.indptr),dims=I.shape,check=False)
-##    R = sqrt(ravel(csr_matrix((x*x,I.indices,I.indptr),dims=I.shape,check=False).sum(axis=0)))  #column 2-norms  
-##
-##    Q.data *= (1.0/R)[Q.indices]  #normalize columns of Q
-##   
-##    #print "norm(R)",scipy.linalg.norm(R)
-##    #print "min(R),max(R)",min(R),max(R)
-##    #print "infinity_norm(Q.T*Q - I) ",infinity_norm((Q.T.tocsr() * Q - scipy.sparse.spidentity(Q.shape[1])))
-##    #print "norm(Q*R - x)",scipy.linalg.norm(Q*R - x)
-##    #print "norm(x - Q*Q.Tx)",scipy.linalg.norm(x - Q*(Q.T*x))
-##    return Q,R
-
-
-
-
-##def orthonormalize_candidate(I,x,basis):
-##    Px = csr_matrix((x,I.indices,I.indptr),dims=I.shape,check=False) 
-##    Rs = []
-##    #othogonalize columns of Px against other candidates 
-##    for b in basis:
-##        Pb = csr_matrix((b,I.indices,I.indptr),dims=I.shape,check=False)
-##        R  = ravel(csr_matrix((Pb.data*Px.data,I.indices,I.indptr),dims=I.shape,check=False).sum(axis=0)) # columnwise projection of Px on Pb
-##        Px.data -= R[I.indices] * Pb.data   #subtract component in b direction
-##        Rs.append(R)
-##
-##    #filter columns here, set unused cols to 0, add to mask
-##    
-##    #normalize columns of Px
-##    R = ravel(csr_matrix((x**x,I.indices,I.indptr),dims=I.shape,check=False).sum(axis=0))
-##    Px.data *= (1.0/R)[I.indices]
-##    Rs.append(R.reshape(-1,1))
-##    return Rs
 
 def hstack_csr(A,B):
     #OPTIMIZE THIS
@@ -327,7 +283,6 @@ class adaptive_sa_solver:
         for A_l,I in reversed(zip(As[1:],Is)):
             gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')         #TEST
             x = I * x
-        
         gauss_seidel(A,x,b,iterations=mu)         #TEST
     
         return x,AggOps  #first candidate,aggregation
@@ -344,28 +299,30 @@ A = poisson_problem2D(200)
 #A = io.mmread("/home/nathan/Desktop/9pt/9pt-100x100.mtx").tocsr()
 #A = io.mmread("/home/nathan/Desktop/BasisShift_W_EnergyMin_Luke/9pt-5x5.mtx").tocsr()
 
-#A = A*A
+
 #D = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
 #A = D * A * D
-#A = io.mmread("nos2.mtx").tocsr()
-asa = adaptive_sa_solver(A,max_candidates=1)
-#x = arange(A.shape[0]).astype('d') + 1
-scipy.random.seed(0)  #TEST
+
+#A = io.mmread("tests/sample_data/elas30_A.mtx").tocsr()
+
+asa = adaptive_sa_solver(A,max_candidates=1,mu=5)
+scipy.random.seed(0)  #make tests repeatable
 x = rand(A.shape[0])
-b = zeros_like(x)
+b = A*rand(A.shape[0])
 
 
 print "solving"
-#x_sol,residuals = asa.solver.solve(b,x,tol=1e-8,maxiter=30,return_residuals=True)
-if True:
+if False:
     x_sol,residuals = asa.solver.solve(b,x0=x,maxiter=10,tol=1e-12,return_residuals=True)
 else:
     residuals = []
     def add_resid(x):
         residuals.append(linalg.norm(b - A*x))
     A.psolve = asa.solver.psolve
-    x_sol = linalg.cg(A,b,x0=x,maxiter=20,tol=1e-100,callback=add_resid)[0]
+    x_sol = linalg.cg(A,b,x0=x,maxiter=20,tol=1e-12,callback=add_resid)[0]
+
 residuals = array(residuals)/residuals[0]
+
 print "residuals ",residuals
 print "mean convergence factor",(residuals[-1]/residuals[0])**(1.0/len(residuals))
 print "last convergence factor",residuals[-1]/residuals[-2]
