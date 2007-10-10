@@ -272,7 +272,7 @@ class spmatrix(object):
 
     def __imul__(self, other):
         raise NotImplementedError
-    
+
     def __idiv__(self, other):
         return self.__itruediv__(other)
 
@@ -635,7 +635,7 @@ class _cs_matrix(spmatrix):
             return self._binopt(other,fn)
         else:
             raise NotImplementedError
-    
+
     def __itruediv__(self, other): #self *= other
         if isscalarlike(other):
             recip = 1.0 / other
@@ -779,7 +779,7 @@ class _cs_matrix(spmatrix):
                     i1 = num + i1
 
                 return i0, i1
-            
+
             elif isscalar( sl ):
                 if sl < 0:
                     sl += num
@@ -1933,7 +1933,7 @@ class dok_matrix(spmatrix, dict):
             except AttributeError:
                 tr = asarray(other).transpose()
             return self.transpose().dot(tr).transpose()
-    
+
     def __truediv__(self, other):           # self * other
         if isscalarlike(other):
             new = dok_matrix(self.shape, dtype=self.dtype)
@@ -1945,7 +1945,7 @@ class dok_matrix(spmatrix, dict):
         else:
             return self.tocsr() / other
 
-    
+
     def __itruediv__(self, other):           # self * other
         if isscalarlike(other):
             # Multiply this scalar by every element.
@@ -2788,12 +2788,6 @@ def getdtype(dtype, a=None, default=None):
     else:
         newdtype = numpy.dtype(dtype)
 
-    allowed = 'fdFD'
-    if newdtype.char not in allowed:
-        if default is None or canCast:
-            newdtype = numpy.dtype( 'd' )
-        else:
-            raise TypeError, "dtype must be one of 'fdFD'"
     return newdtype
 
 
