@@ -5,28 +5,9 @@ from scipy.sparse import csr_matrix,coo_matrix
 from relaxation import gauss_seidel
 from multilevel import multilevel_solver
 from sa import sa_constant_interpolation,sa_fit_candidates
-from utils import approximate_spectral_radius
+from utils import approximate_spectral_radius,hstack_csr,vstack_csr
 
 
-def hstack_csr(A,B):
-    #OPTIMIZE THIS
-    assert(A.shape[0] == B.shape[0])
-    A = A.tocoo()
-    B = B.tocoo()
-    I = concatenate((A.row,B.row))
-    J = concatenate((A.col,B.col+A.shape[1]))
-    V = concatenate((A.data,B.data))
-    return coo_matrix((V,(I,J)),dims=(A.shape[0],A.shape[1]+B.shape[1])).tocsr()
-
-def vstack_csr(A,B):
-    #OPTIMIZE THIS
-    assert(A.shape[1] == B.shape[1])
-    A = A.tocoo()
-    B = B.tocoo()
-    I = concatenate((A.row,B.row+A.shape[0]))
-    J = concatenate((A.col,B.col))
-    V = concatenate((A.data,B.data))
-    return coo_matrix((V,(I,J)),dims=(A.shape[0]+B.shape[0],A.shape[1])).tocsr()
     
 
 
@@ -34,7 +15,9 @@ def orthonormalize_prolongator(P_l,x_l,W_l,W_m):
     """
      
     """
-    X = csr_matrix((x_l,W_l.indices,W_l.indptr),dims=W_l.shape,check=False)  #candidate prolongator (assumes every value from x is used)
+
+    #candidate prolongator (assumes every value from x is used)
+    X = csr_matrix((x_l,W_l.indices,W_l.indptr),dims=W_l.shape,check=False)  
     
     R = (P_l.T.tocsr() * X)  # R has at most 1 nz per row
     X = X - P_l*R            # othogonalize X against P_l
@@ -78,6 +61,7 @@ def smoothed_prolongator(P,A):
     omega = 4.0/(3.0*approximate_spectral_radius(D_inv_A))
     print "spectral radius",approximate_spectral_radius(D_inv_A)
     D_inv_A *= omega
+
     return P - D_inv_A*P
  
 
@@ -114,15 +98,20 @@ def make_bridge(I,N):
     return csr_matrix((I.data,I.indices,ptr),dims=(N,I.shape[1]),check=False)
 
 class adaptive_sa_solver:
-    def __init__(self,A,options=None,max_levels=10,max_coarse=100,max_candidates=1,mu=5,epsilon=0.1):
+    def __init__(self,A,blocks=None,options=None,max_levels=10,max_coarse=100,\
+                        max_candidates=1,mu=5,epsilon=0.1):
+
         self.A = A
 
         self.Rs = [] 
         
-        #if self.A.shape[0] <= self.opts['coarse: max size']:
-        #    raise ValueError,'small matrices not handled yet'
-        
-        x,AggOps = self.__initialization_stage(A,max_levels=max_levels,max_coarse=max_coarse,mu=mu,epsilon=epsilon) #first candidate
+        if self.A.shape[0] <= self.opts['coarse: max size']:
+            raise ValueError,'small matrices not handled yet'
+       
+        #first candidate 
+        x,AggOps = self.__initialization_stage(A,blocks=blocks,\
+                            max_levels=max_levels,max_coarse=max_coarse,\
+                            mu=mu,epsilon=epsilon) 
         
         Ws = AggOps
 
@@ -135,25 +124,70 @@ class adaptive_sa_solver:
             x = self.__develop_candidate(A,As,Is,Ps,Ws,AggOps,mu=mu)    
             
             self.candidates.append(x)
-
-            #if i == 0:
-            #    x = arange(50).repeat(50).astype(float)
-            #elif i == 1:
-            #    x = arange(50).repeat(50).astype(float)
-            #    x = numpy.ravel(transpose(x.reshape((50,50))))
            
             #As,Is,Ps,Ws = self.__augment_cycle(A,As,Ps,Ws,AggOps,x)             
             As,Is,Ps = sa_hierarchy(A,AggOps,self.candidates)
-   
-            #random.seed(0)
-            #solver = multilevel_solver(As,Is)
-            #x = solver.solve(zeros(A.shape[0]), x0=rand(A.shape[0]), tol=1e-12, maxiter=30)
-            #self.candidates.append(x)
 
         self.Ps = Ps 
         self.solver = multilevel_solver(As,Is)
         self.AggOps = AggOps
                 
+
+    def __initialization_stage(self,A,max_levels,max_coarse,mu,epsilon):
+        AggOps = []
+        Is     = []
+
+        # aSA parameters 
+        # mu      - number of test relaxation iterations
+        # epsilon - minimum acceptable relaxation convergence factor 
+        
+        #step 1
+        A_l = A
+        x   = scipy.rand(A_l.shape[0])
+        skip_f_to_i = False
+        
+        #step 2
+        b = zeros_like(x)
+        gauss_seidel(A_l,x,b,iterations=mu,sweep='symmetric')
+
+        #step 3
+        #TODO test convergence rate here 
+      
+        As = [A]
+
+        while len(AggOps) + 1 < max_levels  and A_l.shape[0] > max_coarse:
+            W_l   = sa_constant_interpolation(A_l,epsilon=0,blocks=blocks) #step 4b
+            P_l,x = sa_fit_candidates(W_l,[x])                             #step 4c  
+            x = x[0]  #TODO make sa_fit_candidates accept a single x
+            I_l   = smoothed_prolongator(P_l,A_l)                          #step 4d
+            A_l   = I_l.T.tocsr() * A_l * I_l                              #step 4e
+            
+            AggOps.append(W_l)
+            Is.append(I_l)
+            As.append(A_l)
+
+            if A_l.shape <= max_coarse:  break
+
+            if not skip_f_to_i:
+                print "."
+                x_hat = x.copy()                                                   #step 4g
+                gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')  #step 4h
+                x_A_x = inner(x,A_l*x) 
+                if (x_A_x/inner(x_hat,A_l*x_hat))**(1.0/mu) < epsilon:             #step 4i
+                    print "sufficient convergence, skipping"
+                    skip_f_to_i = True
+                    if x_A_x == 0:       
+                        x = x_hat  #need to restore x
+        
+        #update fine-level candidate
+        for A_l,I in reversed(zip(As[1:],Is)):
+            gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')         #TEST
+            x = I * x
+        gauss_seidel(A,x,b,iterations=mu)         #TEST
+    
+        return x,AggOps  #first candidate,aggregation
+
+
 
 
     def __develop_candidate(self,A,As,Is,Ps,Ws,AggOps,mu):
@@ -229,64 +263,6 @@ class adaptive_sa_solver:
         new_Ps.append(P_l_new)
 
         return new_As,new_Is,new_Ps,new_Ws
-
-
-    def __initialization_stage(self,A,max_levels,max_coarse,mu,epsilon):
-        AggOps = []
-        Is     = []
-
-        # aSA parameters 
-        # mu      - number of test relaxation iterations
-        # epsilon - minimum acceptable relaxation convergence factor 
-        
-        #scipy.random.seed(0) #TEST
-
-        #step 1
-        A_l = A
-        x   = scipy.rand(A_l.shape[0])
-        skip_f_to_i = False
-        
-        #step 2
-        b = zeros_like(x)
-        gauss_seidel(A_l,x,b,iterations=mu,sweep='symmetric')
-        #step 3
-        #test convergence rate here 
-      
-        As = [A]
-
-        while len(AggOps) + 1 < max_levels  and A_l.shape[0] > max_coarse:
-            #W_l   = sa_constant_interpolation(A_l,epsilon=0.08*0.5**(len(AggOps)-1))           #step 4b  #TEST
-            W_l   = sa_constant_interpolation(A_l,epsilon=0)              #step 4b
-            P_l,x = sa_fit_candidates(W_l,[x])                            #step 4c  
-            x = x[0]  #TODO make sa_fit_candidates accept a single x
-            I_l   = smoothed_prolongator(P_l,A_l)                         #step 4d
-            A_l   = I_l.T.tocsr() * A_l * I_l                             #step 4e
-            
-            AggOps.append(W_l)
-            Is.append(I_l)
-            As.append(A_l)
-
-            if A_l.shape <= max_coarse:  break
-
-            if not skip_f_to_i:
-                print "."
-                x_hat = x.copy()                                                   #step 4g
-                gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')  #step 4h
-                x_A_x = inner(x,A_l*x) 
-                if (x_A_x/inner(x_hat,A_l*x_hat))**(1.0/mu) < epsilon:             #step 4i
-                    print "sufficient convergence, skipping"
-                    skip_f_to_i = True
-                    if x_A_x == 0:       
-                        x = x_hat  #need to restore x
-        
-        #update fine-level candidate
-        for A_l,I in reversed(zip(As[1:],Is)):
-            gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')         #TEST
-            x = I * x
-        gauss_seidel(A,x,b,iterations=mu)         #TEST
-    
-        return x,AggOps  #first candidate,aggregation
-
 
 
 

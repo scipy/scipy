@@ -1,30 +1,63 @@
 import scipy
 import numpy
-from numpy import array,arange,ones,zeros,sqrt,isinf,asarray,empty
+from numpy import array,arange,ones,zeros,sqrt,isinf,asarray,empty,diff
 from scipy.sparse import csr_matrix,isspmatrix_csr
 
 from utils import diag_sparse,approximate_spectral_radius
 import multigridtools
 
-__all__ = ['sa_strong_connections','sa_constant_interpolation',
+__all__ = ['sa_filtered_matrix','sa_strong_connections','sa_constant_interpolation',
            'sa_interpolation','sa_fit_candidates']
 
 
-def sa_strong_connections(A,epsilon):
+def sa_filtered_matrix(A,epsilon,blocks=None):
     if not isspmatrix_csr(A): raise TypeError('expected csr_matrix')
 
-    Sp,Sj,Sx = multigridtools.sa_strong_connections(A.shape[0],epsilon,A.indptr,A.indices,A.data)
+    if epsilon == 0:
+        A_filtered = A
 
-    #D = diag_sparse(D)
-    #I,J,V = arange(A.shape[0]).repeat(diff(A.indptr)),A.indices,A.data  #COO format for A
-    #diag_mask = (I == J)
+    else:
+        if blocks is None:
+            Sp,Sj,Sx = multigridtools.sa_strong_connections(A.shape[0],epsilon,A.indptr,A.indices,A.data)
+            A_filtered = csr_matrix((Sx,Sj,Sp),A.shape)
+
+        else:
+            num_dofs   = A.shape[0]
+            num_blocks = blocks.max()
+            
+            if num_dofs != len(blocks):
+                raise ValueError,'improper block specification'
+            
+            # for non-scalar problems, use pre-defined blocks in aggregation
+            # the strength of connection matrix is based on the Frobenius norms of the blocks
+            
+            B  = csr_matrix((ones(num_dofs),blocks,arange(num_dofs + 1)),dims=(num_dofs,num_blocks))
+            Bt = B.T.tocsr()
+            
+            #Frobenius norms of blocks entries of A
+            #TODO change to 1-norm ?
+            Block_Frob = Bt * csr_matrix((A.data**2,A.indices,A.indptr),dims=A.shape) * B 
+    
+            S = sa_strong_connections(Block_Frob,epsilon)       
+            S.data[:] = 1
+
+            Mask = B * S * Bt
+
+            A_filtered = A ** Mask
+
+    return A_filtered          
+
+
+def sa_strong_connections(A,epsilon,blocks=None):
+    if not isspmatrix_csr(A): raise TypeError('expected csr_matrix')
+    
+    Sp,Sj,Sx = multigridtools.sa_strong_connections(A.shape[0],epsilon,A.indptr,A.indices,A.data)
 
     return csr_matrix((Sx,Sj,Sp),A.shape)
 
+
 def sa_constant_interpolation(A,epsilon,blocks=None):
     if not isspmatrix_csr(A): raise TypeError('expected csr_matrix')
-    
-    #TODO handle epsilon = 0 case without creating strength of connection matrix?
     
     if blocks is not None:
         num_dofs   = A.shape[0]
@@ -35,9 +68,11 @@ def sa_constant_interpolation(A,epsilon,blocks=None):
         
         # for non-scalar problems, use pre-defined blocks in aggregation
         # the strength of connection matrix is based on the Frobenius norms of the blocks
-        
+       
+        #TODO change this to matrix 1 norm?
         B  = csr_matrix((ones(num_dofs),blocks,arange(num_dofs + 1)),dims=(num_dofs,num_blocks))
-        Block_Frob = B.T.tocsr() * csr_matrix((A.data**2,A.indices,A.indptr),dims=A.shape) * B #Frobenius norms of blocks entries of A
+        #Frobenius norms of blocks entries of A
+        Block_Frob = B.T.tocsr() * csr_matrix((A.data**2,A.indices,A.indptr),dims=A.shape) * B 
 
         S = sa_strong_connections(Block_Frob,epsilon)
     
@@ -70,8 +105,8 @@ def sa_fit_candidates(AggOp,candidates):
 
     candidate_matrices = []
     for i,c in enumerate(candidates):
-        #TODO permit incomplete AggOps here (for k-form problems) (other modifications necessary?)
-        X = csr_matrix((c.copy(),AggOp.indices,AggOp.indptr),dims=AggOp.shape)
+        c = c[diff(AggOp.indptr) == 1]  #eliminate DOFs that aggregation misses
+        X = csr_matrix((c,AggOp.indices,AggOp.indptr),dims=AggOp.shape)
        
 
         #orthogonalize X against previous
@@ -79,7 +114,6 @@ def sa_fit_candidates(AggOp,candidates):
             D_AtX = csr_matrix((A.data*X.data,X.indices,X.indptr),dims=X.shape).sum(axis=0).A.flatten() #same as diagonal of A.T * X            
             R[j::K,i] = D_AtX
             X.data -= D_AtX[X.indices] * A.data
-
          
         #normalize X
         D_XtX = csr_matrix((X.data**2,X.indices,X.indptr),dims=X.shape).sum(axis=0).A.flatten() #same as diagonal of X.T * X            
@@ -95,7 +129,7 @@ def sa_fit_candidates(AggOp,candidates):
     Q_indices = (K*AggOp.indices).repeat(K)
     for i in range(K):
         Q_indices[i::K] += i
-    Q_data = empty(N_fine * K)
+    Q_data = empty(AggOp.indptr[-1] * K) #if AggOp includes all nodes, then this is (N_fine * K)
     for i,X in enumerate(candidate_matrices):
         Q_data[i::K] = X.data
     Q = csr_matrix((Q_data,Q_indices,Q_indptr),dims=(N_fine,K*N_coarse))
@@ -107,16 +141,17 @@ def sa_fit_candidates(AggOp,candidates):
     
 def sa_interpolation(A,candidates,epsilon,omega=4.0/3.0,blocks=None):
     if not isspmatrix_csr(A): raise TypeError('expected csr_matrix')
-   
-    AggOp  = sa_constant_interpolation(A,epsilon=epsilon,blocks=blocks)
-    T,coarse_candidates = sa_fit_candidates(AggOp,candidates)
 
-    #TODO use filtered matrix here for anisotropic problems
-    A_filtered = A 
-    D_inv = diag_sparse(1.0/diag_sparse(A_filtered))       
+    AggOp  = sa_constant_interpolation(A,epsilon=epsilon,blocks=blocks)
+    T,coarse_candidates = sa_fit_candidates(AggOp,candidates)  
+
+    A_filtered = sa_filtered_matrix(A,epsilon,blocks) #use filtered matrix for anisotropic problems
+
+    D_inv    = diag_sparse(1.0/diag_sparse(A_filtered))       
     D_inv_A  = D_inv * A_filtered
     D_inv_A *= omega/approximate_spectral_radius(D_inv_A)
 
+    # smooth tentative prolongator T
     P = T - (D_inv_A*T)
            
     return P,coarse_candidates
