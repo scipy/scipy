@@ -202,7 +202,7 @@ class gaussian_kde(object):
         if self.d != 1:
             raise ValueError("integrate_box_1d() only handles 1D pdfs")
 
-        stdev = np.ravel(sqrt(self.covariance))[0]
+        stdev = ravel(sqrt(self.covariance))[0]
 
         normalized_low = ravel((low - self.dataset)/stdev)
         normalized_high = ravel((high - self.dataset)/stdev)
