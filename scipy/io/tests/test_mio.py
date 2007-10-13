@@ -13,7 +13,6 @@ import scipy.sparse as SP
 set_package_path()
 from scipy.io.mio import loadmat, savemat
 from scipy.io.mio5 import mat_obj, mat_struct
-from scipy.io.mio4 import MatFile4Writer
 restore_path()
 
 try:  # Python 2.3 support
@@ -87,10 +86,10 @@ class TestMIOArray(NumpyTestCase):
         return cc
 
     # Add the round trip tests dynamically, with given parameters
-    def _make_rt_check_case(name, expected):
+    def _make_rt_check_case(name, expected, format):
         def cc(self):
             mat_stream = StringIO()
-            savemat(mat_stream, expected)
+            savemat(mat_stream, expected, format)
             mat_stream.seek(0)
             self._check_case(name, [mat_stream], expected)
         cc.__doc__ = "check loadmat case %s" % name
@@ -226,10 +225,12 @@ class TestMIOArray(NumpyTestCase):
         assert files, "No files for test %s using filter %s" % (name, filt)
         exec 'check_%s = _make_check_case(name, files, expected)' % name
     # round trip tests
-    for case in case_table4:
+    for case in case_table4 + case_table5:
         name = case['name'] + '_round_trip'
         expected = case['expected']
-        exec 'check_%s = _make_rt_check_case(name, expected)' % name
+        format = case in case_table4 and '4' or '5'
+        exec 'check_%s = _make_rt_check_case(name, expected, format)' \
+             % name
 
 
 if __name__ == "__main__":

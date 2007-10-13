@@ -27,7 +27,7 @@ def find_mat_file(file_name, appendmat=True):
     else:
         full_name = None
         junk, file_name = os.path.split(file_name)
-        for path in sys.path:
+        for path in [os.curdir] + list(sys.path):
             test_name = os.path.join(path, file_name)
             if appendmat:
                 test_name += ".mat"
@@ -100,13 +100,14 @@ def loadmat(file_name,  mdict=None, appendmat=True, basename='raw', **kwargs):
         mdict = matfile_dict
     return mdict
 
-def savemat(file_name, mdict, appendmat=True):
+def savemat(file_name, mdict, appendmat=True, format='4'):
     """Save a dictionary of names and arrays into the MATLAB-style .mat file.
 
     This saves the arrayobjects in the given dictionary to a matlab
-    Version 4 style .mat file.
+    style .mat file.
     
-    @appendmat  - if true, appends '.mat' extension to filename, if not present
+    appendmat  - if true, appends '.mat' extension to filename, if not present
+    format     - '4' for matlab 4 mat files, '5' for matlab 5 onwards
     """
     file_is_string = isinstance(file_name, basestring)
     if file_is_string:
@@ -121,7 +122,12 @@ def savemat(file_name, mdict, appendmat=True):
                            'file-like object'
         file_stream = file_name
         
-    MW = MatFile4Writer(file_stream)
+    if format == '4':
+        MW = MatFile4Writer(file_stream)
+    elif format == '5':
+        MW = MatFile5Writer(file_stream)
+    else:
+        raise ValueError, 'Format should be 4 or 5'
     MW.put_variables(mdict)
     if file_is_string:
         file_stream.close()

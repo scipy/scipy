@@ -105,6 +105,41 @@ mclass_dtypes_template = {
     mxDOUBLE_CLASS: 'f8',
     }
 
+
+np_to_mtypes = {
+    'f8': miDOUBLE,
+    'c32': miDOUBLE,    
+    'c24': miDOUBLE,
+    'c16': miDOUBLE,
+    'f4': miSINGLE,
+    'c8': miSINGLE,
+    'i1': miINT8,
+    'i2': miINT16,
+    'i4': miINT32,
+    'u1': miUINT8,
+    'u4': miUINT32,
+    'u2': miUINT16,
+    'S1': miUINT8,
+    'U1': miUTF16,
+    }
+
+
+np_to_mxtypes = {
+    'f8': mxDOUBLE_CLASS,
+    'c32': mxDOUBLE_CLASS,    
+    'c24': mxDOUBLE_CLASS,
+    'c16': mxDOUBLE_CLASS,
+    'f4': mxSINGLE_CLASS,
+    'c8': mxSINGLE_CLASS,
+    'i4': mxINT32_CLASS,
+    'i2': mxINT16_CLASS,
+    'u2': mxUINT16_CLASS,
+    'u1': mxUINT8_CLASS,
+    'S1': mxUINT8_CLASS,
+    }
+
+
+
 ''' Before release v7.1 (release 14) matlab (TM) used the system
 default character encoding scheme padded out to 16-bits. Release 14
 and later use Unicode. When saving character data, R14 checks if it
@@ -532,12 +567,22 @@ class Mat5MatrixWriter(MatStreamWriter):
         self.is_global = is_global
 
     def write_dtype(self, arr):
-        self.file_stream.write(arr.tostring)
+        self.file_stream.write(arr.tostring())
 
-    def write_element(self, arr):
-        # check if small element works - do it
+    def write_element(self, arr, mdtype=None):
         # write tag, data
-        pass
+        tag = N.zeros((), mdtypes_template['tag_full'])
+        if mdtype is None:
+            tag['mdtype'] = np_to_mtypes[arr.dtype.str[1:]]
+        else:
+            tag['mdtype'] = mdtype
+        tag['byte_count'] =  arr.size*arr.itemsize
+        self.write_dtype(tag)
+        self.write_bytes(arr)
+        # do 8 byte padding if needed
+        if tag['byte_count']%8 != 0:
+            pad = (1+tag['byte_count']//8)*8 - tag['byte_count']
+            self.write_bytes(N.zeros((pad,),dtype='u1'))
 
     def write_header(self, mclass,
                      is_global=False,
@@ -561,8 +606,11 @@ class Mat5MatrixWriter(MatStreamWriter):
         af['flags_class'] = mclass | flags << 8
         af['nzmax'] = nzmax
         self.write_dtype(af)
+        # write array shape
+        self.arr=N.atleast_2d(self.arr)
         self.write_element(N.array(self.arr.shape, dtype='i4'))
-        self.write_element(self.name)
+        # write name
+        self.write_element(N.ndarray(shape=len(self.name), dtype='S1', buffer=self.name))
 
     def update_matrix_tag(self):
         curr_pos = self.file_stream.tell()
@@ -578,32 +626,41 @@ class Mat5MatrixWriter(MatStreamWriter):
 class Mat5NumericWriter(Mat5MatrixWriter):
 
     def write(self):
-        # identify matlab type for array
-        # make at least 2d
-        # maybe downcast array to smaller matlab type
-        # write real
-        # write imaginary
-        # put padded length in miMATRIX tag
-        pass
-    
+        imagf = self.arr.dtype.kind == 'c'
+        try:
+            mclass = np_to_mxtypes[self.arr.dtype.str[1:]]
+        except KeyError:
+            if imagf:
+                self.arr = self.arr.astype('c128')
+            else:
+                self.arr = self.arr.astype('f8')
+            mclass = mxDOUBLE_CLASS
+        self.write_header(mclass=mclass,is_complex=imagf)
+        if imagf:
+            self.write_element(self.arr.real)
+            self.write_element(self.arr.imag)
+        else:
+            self.write_element(self.arr)
+        self.update_matrix_tag()
 
 class Mat5CharWriter(Mat5MatrixWriter):
-
+    codec='ascii'
     def write(self):
         self.arr_to_chars()
-        self.arr_to_2d()
-        dims = self.arr.shape
-        self.write_header(P=miUINT8,
-                          T=mxCHAR_CLASS)
+        self.write_header(mclass=mxCHAR_CLASS)
         if self.arr.dtype.kind == 'U':
-            # Recode unicode to ascii
-            n_chars = N.product(dims)
+            # Recode unicode using self.codec
+            n_chars = N.product(self.arr.shape)
             st_arr = N.ndarray(shape=(),
                              dtype=self.arr_dtype_number(n_chars),
                              buffer=self.arr)
-            st = st_arr.item().encode('ascii')
-            self.arr = N.ndarray(shape=dims, dtype='S1', buffer=st)
-        self.write_bytes(self.arr)
+            st = st_arr.item().encode(self.codec)
+            self.arr = N.ndarray(shape=(len(st)), dtype='u1', buffer=st)
+        self.write_element(self.arr,mdtype=miUTF8)
+        self.update_matrix_tag()
+
+class Mat5UniCharWriter(Mat5CharWriter):
+    codec='UTF8'
 
 
 class Mat5SparseWriter(Mat5MatrixWriter):
@@ -650,7 +707,7 @@ class Mat5WriterGetter(object):
                 return Mat5SparseWriter(self.stream, arr, name, is_global)
         arr = N.array(arr)
         if arr.dtype.hasobject:
-            types, arr_type = classify_mobjects(arr)
+            types, arr_type = self.classify_mobjects(arr)
             if arr_type == 'c':
                 return Mat5CellWriter(self.stream, arr, name, is_global, types)
             elif arr_type == 's':
@@ -658,10 +715,10 @@ class Mat5WriterGetter(object):
             elif arr_type == 'o':
                 return Mat5ObjectWriter(self.stream, arr, name, is_global)
         if arr.dtype.kind in ('U', 'S'):
-            if self.unicode_strings:
+           if self.unicode_strings:
                 return Mat5UniCharWriter(self.stream, arr, name, is_global)
-            else:
-                return Mat5IntCharWriter(self.stream, arr, name, is_global)            
+           else:
+                return Mat5CharWriter(self.stream, arr, name, is_global)            
         else:
             return Mat5NumericWriter(self.stream, arr, name, is_global)
                     
@@ -678,12 +735,12 @@ class Mat5WriterGetter(object):
                         s  - struct array
                         o  - object array
         '''
-        N = objarr.size
-        types = N.empty((N,), dtype='S1')
+        n = objarr.size
+        types = N.empty((n,), dtype='S1')
         types[:] = 'i'
         type_set = set()
         flato = objarr.flat
-        for i in range(N):
+        for i in range(n):
             obj = flato[i]
             if isinstance(obj, N.ndarray):
                 types[i] = 'a'
@@ -719,8 +776,16 @@ class MatFile5Writer(MatFileWriter):
         else:
             self.global_vars = []
         self.writer_getter = Mat5WriterGetter(
-            StringIO,
+            StringIO(),
             unicode_strings)
+        # write header
+        import os, time
+        hdr =  N.zeros((), mdtypes_template['file_header'])
+        hdr['description']='MATLAB 5.0 MAT-file Platform: %s, Created on: %s' % (
+                            os.name,time.asctime())
+        hdr['version']= 0x0100
+        hdr['endian_test']=N.ndarray(shape=(),dtype='S2',buffer=N.uint16(0x4d49))
+        file_stream.write(hdr.tostring())
 
     def get_unicode_strings(self):
         return self.write_getter.unicode_strings
@@ -740,11 +805,12 @@ class MatFile5Writer(MatFileWriter):
                 name,
                 is_global,
                 ).write()
+            stream = self.writer_getter.stream
             if self.do_compression:
-                str = zlib.compress(stream.getvalue())
+                str = zlib.compress(stream.getvalue(stream.tell()))
                 tag = N.empty((), mdtypes_template['tag_full'])
                 tag['mdtype'] = miCOMPRESSED
                 tag['byte_count'] = len(str)
                 self.file_stream.write(tag.tostring() + str)
             else:
-                self.file_stream.write(stream.getvalue())
+                self.file_stream.write(stream.getvalue(stream.tell()))
