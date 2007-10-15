@@ -16,14 +16,14 @@ def orthonormalize_prolongator(P_l,x_l,W_l,W_m):
      
     """
 
-    #candidate prolongator (assumes every value from x is used)
+    #candidate prolongator (assumes every value from x is used)  #TODO permit gaps
     X = csr_matrix((x_l,W_l.indices,W_l.indptr),dims=W_l.shape,check=False)  
     
     R = (P_l.T.tocsr() * X)  # R has at most 1 nz per row
     X = X - P_l*R            # othogonalize X against P_l
     
-    #DROP REDUNDANT COLUMNS FROM P (AND R?) HERE (NULL OUT R ACCORDINGLY?)    
-    #REMOVE CORRESPONDING COLUMNS FROM W_l AND ROWS FROM A_m ALSO
+    #TODO DROP REDUNDANT COLUMNS FROM P (AND R?) HERE (NULL OUT R ACCORDINGLY?)    
+    #TODO REMOVE CORRESPONDING COLUMNS FROM W_l AND ROWS FROM A_m ALSO
     W_l_new = W_l
     W_m_new = W_m
 
@@ -59,7 +59,7 @@ def smoothed_prolongator(P,A):
     D = diag_sparse(A)
     D_inv_A = diag_sparse(1.0/D)*A
     omega = 4.0/(3.0*approximate_spectral_radius(D_inv_A))
-    print "spectral radius",approximate_spectral_radius(D_inv_A)
+    print "spectral radius",approximate_spectral_radius(D_inv_A) #TODO remove this
     D_inv_A *= omega
 
     return P - D_inv_A*P
@@ -124,8 +124,9 @@ class adaptive_sa_solver:
             x = self.__develop_candidate(A,As,Is,Ps,Ws,AggOps,mu=mu)    
             
             self.candidates.append(x)
-           
-            #As,Is,Ps,Ws = self.__augment_cycle(A,As,Ps,Ws,AggOps,x)             
+            
+            #TODO which is faster?
+            #As,Is,Ps,Ws = self.__augment_cycle(A,As,Ps,Ws,AggOps,x)  
             As,Is,Ps = sa_hierarchy(A,AggOps,self.candidates)
 
         self.Ps = Ps 

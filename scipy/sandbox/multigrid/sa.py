@@ -1,6 +1,7 @@
 import scipy
 import numpy
-from numpy import array,arange,ones,zeros,sqrt,isinf,asarray,empty,diff
+from numpy import array,arange,ones,zeros,sqrt,isinf,asarray,empty,diff,\
+                  ascontiguousarray
 from scipy.sparse import csr_matrix,isspmatrix_csr
 
 from utils import diag_sparse,approximate_spectral_radius
@@ -23,7 +24,7 @@ def sa_filtered_matrix(A,epsilon,blocks=None):
 
         else:
             num_dofs   = A.shape[0]
-            num_blocks = blocks.max()
+            num_blocks = blocks.max() + 1
             
             if num_dofs != len(blocks):
                 raise ValueError,'improper block specification'
@@ -34,11 +35,10 @@ def sa_filtered_matrix(A,epsilon,blocks=None):
             B  = csr_matrix((ones(num_dofs),blocks,arange(num_dofs + 1)),dims=(num_dofs,num_blocks))
             Bt = B.T.tocsr()
             
-            #Frobenius norms of blocks entries of A
-            #TODO change to 1-norm ?
-            Block_Frob = Bt * csr_matrix((A.data**2,A.indices,A.indptr),dims=A.shape) * B 
+            #1-norms of blocks entries of A
+            Block_A = Bt * csr_matrix((abs(A.data),A.indices,A.indptr),dims=A.shape) * B 
     
-            S = sa_strong_connections(Block_Frob,epsilon)       
+            S = sa_strong_connections(Block_A,epsilon)       
             S.data[:] = 1
 
             Mask = B * S * Bt
@@ -61,20 +61,20 @@ def sa_constant_interpolation(A,epsilon,blocks=None):
     
     if blocks is not None:
         num_dofs   = A.shape[0]
-        num_blocks = blocks.max()
+        num_blocks = blocks.max() + 1
         
         if num_dofs != len(blocks):
             raise ValueError,'improper block specification'
-        
+       
+        print "SA has blocks"
         # for non-scalar problems, use pre-defined blocks in aggregation
         # the strength of connection matrix is based on the Frobenius norms of the blocks
        
-        #TODO change this to matrix 1 norm?
         B  = csr_matrix((ones(num_dofs),blocks,arange(num_dofs + 1)),dims=(num_dofs,num_blocks))
-        #Frobenius norms of blocks entries of A
-        Block_Frob = B.T.tocsr() * csr_matrix((A.data**2,A.indices,A.indptr),dims=A.shape) * B 
+        #1-norms of blocks entries of A
+        Block_A = B.T.tocsr() * csr_matrix((abs(A.data),A.indices,A.indptr),dims=A.shape) * B 
 
-        S = sa_strong_connections(Block_Frob,epsilon)
+        S = sa_strong_connections(Block_A,epsilon)
     
         Pj = multigridtools.sa_get_aggregates(S.shape[0],S.indptr,S.indices)
         Pj = Pj[blocks] #expand block aggregates into constituent dofs
@@ -108,7 +108,6 @@ def sa_fit_candidates(AggOp,candidates):
         c = c[diff(AggOp.indptr) == 1]  #eliminate DOFs that aggregation misses
         X = csr_matrix((c,AggOp.indices,AggOp.indptr),dims=AggOp.shape)
        
-
         #orthogonalize X against previous
         for j,A in enumerate(candidate_matrices):
             D_AtX = csr_matrix((A.data*X.data,X.indices,X.indptr),dims=X.shape).sum(axis=0).A.flatten() #same as diagonal of A.T * X            
@@ -134,15 +133,22 @@ def sa_fit_candidates(AggOp,candidates):
         Q_data[i::K] = X.data
     Q = csr_matrix((Q_data,Q_indices,Q_indptr),dims=(N_fine,K*N_coarse))
 
-    coarse_candidates = [array(R[:,i]) for i in range(K)]
+    coarse_candidates = [ascontiguousarray(R[:,i]) for i in range(K)]
 
     return Q,coarse_candidates
     
     
-def sa_interpolation(A,candidates,epsilon,omega=4.0/3.0,blocks=None):
+def sa_interpolation(A,candidates,epsilon=0.0,omega=4.0/3.0,blocks=None,AggOp=None):
     if not isspmatrix_csr(A): raise TypeError('expected csr_matrix')
 
-    AggOp  = sa_constant_interpolation(A,epsilon=epsilon,blocks=blocks)
+    if AggOp is None:
+        AggOp = sa_constant_interpolation(A,epsilon=epsilon,blocks=blocks)
+    else:
+        if not isspmatrix_csr(AggOp):
+            raise TypeError,'aggregation is specified by a list of csr_matrix objects'
+        if A.shape[1] != AggOp.shape[0]:
+            raise ValueError,'incompatible aggregation operator'
+
     T,coarse_candidates = sa_fit_candidates(AggOp,candidates)  
 
     A_filtered = sa_filtered_matrix(A,epsilon,blocks) #use filtered matrix for anisotropic problems

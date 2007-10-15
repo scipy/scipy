@@ -22,7 +22,7 @@ def poisson_problem1D(N):
     """
     D = 2*ones(N)
     O =  -ones(N)
-    return scipy.sparse.spdiags([D,O,O],[0,-1,1],N,N).tocoo().tocsr() #eliminate zeros
+    return scipy.sparse.spdiags([D,O,O],[0,-1,1],N,N).tocoo().tocsr() #eliminate explicit zeros
 
 def poisson_problem2D(N):
     """
@@ -34,7 +34,7 @@ def poisson_problem2D(N):
     T =  -ones(N*N)
     O =  -ones(N*N)
     T[N-1::N] = 0
-    return scipy.sparse.spdiags([D,O,T,T,O],[0,-N,-1,1,N],N*N,N*N).tocoo().tocsr() #eliminate zeros
+    return scipy.sparse.spdiags([D,O,T,T,O],[0,-N,-1,1,N],N*N,N*N).tocoo().tocsr() #eliminate explicit zeros
     
 
 def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
@@ -60,7 +60,7 @@ def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
         
     return multilevel_solver(As,Ps)
 
-def smoothed_aggregation_solver(A,candidates=None,blocks=None,max_levels=10,max_coarse=500,epsilon=0.08,omega=4.0/3.0):
+def smoothed_aggregation_solver(A,candidates=None,blocks=None,aggregation=None,max_levels=10,max_coarse=500,epsilon=0.08,omega=4.0/3.0):
     """
     Create a multilevel solver using Smoothed Aggregation (SA)
 
@@ -75,15 +75,25 @@ def smoothed_aggregation_solver(A,candidates=None,blocks=None,max_levels=10,max_
     
     if candidates is None:
         candidates = [ ones(A.shape[0]) ] # use constant vector
-        
-    while len(As) < max_levels  and A.shape[0] > max_coarse:
-        P,candidates = sa_interpolation(A,candidates,epsilon*0.5**(len(As)-1),omega=omega,blocks=blocks)
-        #P = sa_interpolation(A,epsilon=0.0)
 
-        A = (P.T.tocsr() * A) * P     #galerkin operator
+    if aggregation is None:
+        while len(As) < max_levels  and A.shape[0] > max_coarse:
+            P,candidates = sa_interpolation(A,candidates,epsilon*0.5**(len(As)-1),omega=omega,blocks=blocks)
+            blocks = None #only used for 1st level
 
-        As.append(A)
-        Ps.append(P)
+            A = (P.T.tocsr() * A) * P     #galerkin operator
+
+            As.append(A)
+            Ps.append(P)
+    else:
+        #use user-defined aggregation
+        for AggOp in aggregation:
+            P,candidates = sa_interpolation(A,candidates,omega=omega,AggOp=AggOp)
+
+            A = (P.T.tocsr() * A) * P     #galerkin operator
+
+            As.append(A)
+            Ps.append(P)
         
     return multilevel_solver(As,Ps)
 
@@ -163,7 +173,7 @@ class multilevel_solver:
         
         if lvl == len(self.As) - 2:
             #use direct solver on coarsest level
-            coarse_x[:] = spsolve(self.As[-1],coarse_b)
+            coarse_x[:] = spsolve(self.As[-1],coarse_b)  #TODO reuse factors for efficiency?
             #coarse_x[:] = scipy.linalg.cg(self.As[-1],coarse_b,tol=1e-12)[0]
             #print "coarse residual norm",scipy.linalg.norm(coarse_b - self.As[-1]*coarse_x)
         else:   
@@ -185,17 +195,19 @@ class multilevel_solver:
 if __name__ == '__main__':
     from scipy import *
     candidates = None
-    A = poisson_problem2D(100)
+    blocks = None
+    #A = poisson_problem2D(100)
     #A = io.mmread("rocker_arm_surface.mtx").tocsr()
     #A = io.mmread("9pt-100x100.mtx").tocsr()
     #A = io.mmread("/home/nathan/Desktop/9pt/9pt-100x100.mtx").tocsr()
     #A = io.mmread("/home/nathan/Desktop/BasisShift_W_EnergyMin_Luke/9pt-5x5.mtx").tocsr()
     
-    #A = io.mmread('tests/sample_data/elas30_A.mtx').tocsr()
-    #candidates = io.mmread('tests/sample_data/elas30_nullspace.mtx')
-    #candidates = [ array(candidates[:,x]) for x in range(candidates.shape[1]) ]
-    
-    ml = smoothed_aggregation_solver(A,candidates,max_coarse=10,max_levels=10)
+    A = io.mmread('tests/sample_data/elas30_A.mtx').tocsr()
+    candidates = io.mmread('tests/sample_data/elas30_nullspace.mtx')
+    candidates = [ array(candidates[:,x]) for x in range(candidates.shape[1]) ]
+    blocks = arange(A.shape[0]/2).repeat(2)
+     
+    ml = smoothed_aggregation_solver(A,candidates,blocks=blocks,max_coarse=10,max_levels=10)
     #ml = ruge_stuben_solver(A)
 
     x = rand(A.shape[0])
@@ -210,8 +222,12 @@ if __name__ == '__main__':
             residuals.append(linalg.norm(b - A*x))
         A.psolve = ml.psolve
         x_sol = linalg.cg(A,b,x0=x,maxiter=12,tol=1e-100,callback=add_resid)[0]
+            
 
     residuals = array(residuals)/residuals[0]
+    avg_convergence_ratio = residuals[-1]**(1.0/len(residuals))
+    print "average convergence ratio",avg_convergence_ratio
+    print "last convergence ratio",residuals[-1]/residuals[-2]
 
     print residuals
 
