@@ -176,6 +176,22 @@ class _test_cs:
         M = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
         col = matrix([1,2,3]).T
         assert_array_almost_equal(M * col, M.todense() * col)
+        
+        #check result dimensions (ticket #514) 
+        assert_equal((M * array([1,2,3])).shape,(4,)) 
+        assert_equal((M * array([[1],[2],[3]])).shape,(4,1)) 
+        assert_equal((M * matrix([[1],[2],[3]])).shape,(4,1)) 
+
+        #ensure exception is raised for improper dimensions
+        bad_vecs = [array([1,2]), array([1,2,3,4]), array([[1],[2]]), 
+                    matrix([1,2,3]), matrix([[1],[2]])]
+        caught = 0
+        for x in bad_vecs:
+            try:
+                y = M * x
+            except ValueError:
+                caught += 1
+        assert_equal(caught,len(bad_vecs))
 
         # Should this be supported or not?!
         #flat = array([1,2,3])

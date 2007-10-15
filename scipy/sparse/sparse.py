@@ -673,23 +673,25 @@ class _cs_matrix(spmatrix):
 
     def _matvec(self, other, fn):
         if isdense(other):
-            # This check is too harsh -- it prevents a column vector from
-            # being created on-the-fly like dense matrix objects can.
-            #if len(other) != self.shape[1]:
-            #    raise ValueError, "dimension mismatch"
-            oth = numpy.ravel(other)
+            if other.size != self.shape[1] or \
+                    (other.ndim == 2 and self.shape[1] != other.shape[0]):
+                raise ValueError, "dimension mismatch"
+            
             y = fn(self.shape[0], self.shape[1], \
-                   self.indptr, self.indices, self.data, oth)
+                   self.indptr, self.indices, self.data, numpy.ravel(other))
+
             if isinstance(other, matrix):
                 y = asmatrix(y)
+
             if other.ndim == 2 and other.shape[1] == 1:
-                # If 'other' was an (nx1) column vector, transpose the result
-                # to obtain an (mx1) column vector.
-                y = y.T
+                # If 'other' was an (nx1) column vector, reshape the result
+                y = y.reshape(-1,1)
+            
             return y
 
         elif isspmatrix(other):
             raise TypeError, "use matmat() for sparse * sparse"
+
         else:
             raise TypeError, "need a dense vector"
 
