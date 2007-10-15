@@ -2588,7 +2588,7 @@ This gives different behavior than a[mask] = values."""
     try:
         return a.putmask(values, mask)
     except AttributeError:
-        return narray(a, copy=False).putmask(values, mask)
+        return numpy.putmask(narray(a, copy=False), mask, values)
 
 def transpose(a,axes=None):
     """Returns a view of the array with dimensions permuted according to axes, 
