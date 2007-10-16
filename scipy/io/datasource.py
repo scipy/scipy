@@ -4,8 +4,8 @@ URLs or local paths and can be in compressed or uncompressed form.
 """
 
 # TODO: Make DataSource and Repository the public interface.
-#       Cache will be used internally.  Add methods in DataSource to expose
-#       some of the functionality that exists only in Cache currently.
+#       _Cache will be used internally.  Add methods in DataSource to expose
+#       some of the functionality that exists only in _Cache currently.
 
 __docformat__ = "restructuredtext en"
 
@@ -13,11 +13,8 @@ import os
 import gzip
 import bz2
 from urlparse import urlparse
-from urllib2 import urlopen
+from urllib2 import urlopen, URLError
 from tempfile import mkstemp
-
-# TODO: replace with newer tuple-based path module
-from scipy.io.path import path
 
 import warnings
 
@@ -34,129 +31,88 @@ Use this module minimally, if at all, until it is stabilized."
 
 warnings.warn(_api_warning)
 
-# TODO: .zip support
-_zipexts = (".gz",".bz2")
+# TODO: Don't check file extensions, just try and open zip files?
+#       Follow the, it's easier to get forgiveness than permission?
+#       And because this shouldn't succeed:
+#           In [134]: datasource._iszip('/my/fake/dir/foobar.gz')
+#           Out[134]: True
+
+# TODO: .zip support, .tar support?
 _file_openers = {".gz":gzip.open, ".bz2":bz2.BZ2File, None:file}
 
-def iszip(filename):
+def _iszip(filename):
     """Test if the given file is a zip file.
 
-    *Parameters*:
-
-        filename : {string}
-            Filename to test.
-
-    *Returns*:
-
-        bool
-            Results of test.
-
+    Currently only looks at the file extension, not very robust.
     """
 
-    _tmp, ext = path(filename).splitext()
-    return ext in _zipexts
+    fname, ext = os.path.splitext(filename)
+    return ext in _file_openers.keys()
 
-def unzip(filename):
-    """Unzip the given file and return the path object to the new file.
+def _unzip(filename):
+    """Unzip the given file and return the path object to the new file."""
 
-    *Parameters*:
-
-        filename : string
-            Filename to unzip.
-
-    *Returns*:
-
-        path_obj
-            Path object of the unzipped file.
-
-    """
-
-    if not iszip(filename):
+    # This function is not used in datasource.  Appears it was created
+    # so users could unzip a file without having to import the corresponding
+    # compression module.  Should this be part of datasource?
+    if not _iszip(filename):
         raise ValueError("file %s is not zipped"%filename)
-    unzip_name, zipext = splitzipext(filename)
+    unzip_name, zipext = _splitzipext(filename)
     opener = _file_openers[zipext]
     outfile = file(unzip_name, 'w')
     outfile.write(opener(filename).read())
     outfile.close()
     return unzip_name
 
-def iswritemode(mode):
-    """Test if the given mode will open a file for writing.
-
-    *Parameters*:
-
-        mode : {string}
-            The mode to be checked.
-
-    *Returns*:
-
-        bool
-            Result of test.
-
-    """
+def _iswritemode(mode):
+    """Test if the given mode will open a file for writing."""
 
     _writemodes = ("w", "+", "a")
     for c in mode:
         if c in _writemodes: return True
     return False
 
-def splitzipext(filename):
+def _splitzipext(filename):
     """Split the filename into a path object and a zip extension.
 
     If the filename does not have a zip extension the zip_ext in the
     return will be None.
     
-    *Parameters*:
+    Parameters:
 
         filename : {string}
             Filename to split.
 
-    *Returns*:
+    Returns:
 
         base, zip_ext : {tuple}
             Tuple containing a path object to the file and the zip extension.
 
     """
 
-    if iszip(filename):
-        return path(filename).splitext()
+    if _iszip(filename):
+        return os.path.splitext(filename)
     else:
         return filename, None
 
 def _isurl(pathstr):
     """Test whether a given string can be parsed as a URL.
 
-    *Parameters*:
-    
-        pathstr : {string}
-            The string to be checked.
-
-    *Returns*:
-        bool
-            Results of test.
+    A pathstr with a valid network scheme (http, ftp, ...) will return true.
+    A pathstr with a 'file' scheme will return false.
 
     """
 
-    scheme, netloc, _path, _params, _query, _frag = urlparse(pathstr)
+    scheme, netloc, upath, uparams, uquery, ufrag = urlparse(pathstr)
     return bool(scheme and netloc)
 
-def ensuredirs(directory):
-    """Ensure that the given directory path exists.  If not, create it.
+def _ensuredirs(directory):
+    """Ensure that the given directory path exists.  If not, create it."""
 
-    *Parameters*:
-        directory : {path object}
-        
-    *Returns*:
-        None
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
-    """
-
-    if not isinstance(directory, path):
-        directory = path(directory)
-    if not directory.exists():
-        directory.makedirs()
-
-class Cache (object):
+class _Cache (object):
     """A local file cache for URL datasources.
 
     The path of the cache can be specified on intialization.  The default
@@ -167,29 +123,29 @@ class Cache (object):
 
     def __init__(self, cachepath=None):
         if cachepath is not None:
-            self.path = path(cachepath)
+            self.path = cachepath
         elif os.name == 'posix':
-            self.path = path(os.environ["HOME"]).joinpath(".scipy","cache")
+            self.path = os.path.join(os.environ["HOME"], ".scipy", "cache")
         elif os.name == 'nt':
-            self.path = path(os.environ["HOMEPATH"]).joinpath(".scipy","cache")
-        if not self.path.exists():
-            ensuredirs(self.path)
+            self.path = os.path.join(os.environ["HOMEPATH"], ".scipy", "cache")
+        if not os.path.exists(self.path):
+            _ensuredirs(self.path)
 
     def tempfile(self, suffix='', prefix=''):
         """Create and return a temporary file in the cache.
 
-        *Parameters*:
+        Parameters:
             suffix : {''}, optional
 
             prefix : {''}, optional
 
-        *Returns*:
+        Returns:
             tmpfile : {string}
                 String containing the full path to the temporary file.
 
-        *Examples*
+        Examples
 
-            >>> mycache = datasource.Cache()
+            >>> mycache = datasource._Cache()
             >>> mytmpfile = mycache.tempfile()
             >>> mytmpfile
             '/home/guido/.scipy/cache/GUPhDv'
@@ -202,97 +158,91 @@ class Cache (object):
     def filepath(self, uri):
         """Return a path object to the uri in the cache.
 
-        *Parameters*:
+        Parameters:
             uri : {string}
                 Filename to use in the returned path object.
 
-        *Returns*:
-            path_obj
-                Path object for the given uri.
+        Returns:
+            path : {string}
+                Complete path for the given uri.
                 
-        *Examples*
+        Examples
 
-            >>> mycache = datasource.Cache()
+            >>> mycache = datasource._Cache()
             >>> mycache.filepath('xyzcoords.txt')
-            path('/home/guido/.scipy/cache/xyzcoords.txt')
-
-        """
-        # TODO: Change to non-public?
-
-        #       It appears the Cache is designed to work with URLs only!
-        (_tmp, netloc, upath, _tmp, _tmp, _tmp) = urlparse(uri)
-        return self.path.joinpath(netloc, upath.strip('/'))
-
-    def filename(self, uri):
-        """Return the complete path + filename within the cache.
-
-        *Parameters*:
-            uri : {string}
-                Filename to usein the returned path.
-                
-        *Returns*:
-            filename
-
-        *Examples*
-
-            >>> mycache = datasource.Cache()
-            >>> mycache.filename('xyzcoords.txt')
             '/home/guido/.scipy/cache/xyzcoords.txt'
 
         """
-        # TODO: Change to non-public?
-                
-        return str(self.filepath(uri))
+
+        scheme, netloc, upath, uparams, uquery, ufrag = urlparse(uri)
+        return os.path.join(self.path, netloc, upath.strip('/'))
 
     def cache(self, uri):
-        """Copy a file into the cache.
+        """Copy the file at uri into the cache.
 
-        :Returns: ``None``
+        Parameters:
+            uri : {string}
+                path or url of source file to cache.
+                
+        Returns:
+            None
+
         """
+
         if self.iscached(uri):
             return
 
-        print 'cache uri:', uri
-        
         upath = self.filepath(uri)
+        _ensuredirs(os.path.dirname(upath))
 
-        print 'upath:', upath
-        
-        ensuredirs(upath.dirname())
-        try:
-            print 'uri:', uri
-            openedurl = urlopen(uri)
-        except:
-            raise IOError("url not found: "+str(uri))
-        file(upath, 'w').write(openedurl.read())
+        print 'cache - source:', uri
+        print 'cache - destination:', upath
+
+        if _isurl(uri):
+            try:
+                openedurl = urlopen(uri)
+                file(upath, 'w').write(openedurl.read())
+            except URLError:
+                raise URLError("URL not found: " + str(uri))
+        else:
+            try:
+                fp = file(uri, 'r')
+                file(upath, 'w').write(fp.read())
+            except IOError:
+                raise IOError("File not founcd: " + str(uri))
 
     def clear(self):
         """Delete all files in the cache."""
-
+    
         # TODO: This deletes all files in the cache directory, regardless
         #       of if this instance created them.  Too destructive and
-        #       unexpected behavior.
-        
-        for _file in self.path.files():
-            os.remove(file)
+        #       unexpected behavior.        
+        #for _file in self.path.files():
+        #    os.remove(file)
+        raise NotImplementedError
             
     def iscached(self, uri):
         """ Check if a file exists in the cache.
 
-        :Returns: ``bool``
+        Returns
+            boolean
+
         """
-        return self.filepath(uri).exists()
+
+        upath = self.filepath(uri)
+        return os.path.exists(upath)
 
     def retrieve(self, uri):
-        """
-        Retrieve a file from the cache.
-        If not already there, create the file and
-        add it to the cache.
+        """Retrieve a file from the cache.
+        If not already there, create the file and add it to the cache.
 
-        :Returns: ``file``
+        Returns
+            open file object
+
         """
+
         self.cache(uri)
-        return file(self.filename(uri))
+        return file(self.filepath(uri))
 
 
 class DataSource (object):
@@ -306,21 +256,21 @@ class DataSource (object):
     """
 
     def __init__(self, cachepath=os.curdir):
-        self._cache = Cache(cachepath)
+        self._cache = _Cache(cachepath)
 
     def tempfile(self, suffix='', prefix=''):
-        """Create a temporary file in the cache.
+        """Create a temporary file in the DataSource cache.
 
-        *Parameters*:
+        Parameters:
             suffix : {''}, optional
 
             prefix : {''}, optional
 
-        *Returns*:
+        Returns:
             tmpfile : {string}
                 String containing the full path to the temporary file.
 
-        *Examples*
+        Examples
 
             >>> datasrc = datasource.DataSource()
             >>> tmpfile = datasrc.tempfile()
@@ -333,36 +283,55 @@ class DataSource (object):
     def _possible_names(self, filename):
         """Return a tuple containing compressed filenames."""
         names = [filename]
-        if not iszip(filename):
-            for zipext in _zipexts:
+        if not _iszip(filename):
+            for zipext in _file_openers.keys():
                 names.append(filename+zipext)
         return tuple(names)
 
     def cache(self, pathstr):
-        # TODO: Should work with files also, not just urls.
-        if _isurl(pathstr):
-            self._cache.cache(pathstr)
+        """Cache the file specified by pathstr.
+        
+        Creates a copy of file pathstr in the datasource cache.
+        
+        """
+        
+        self._cache.cache(pathstr)
 
     def clear(self):
         # TODO: Implement a clear interface for deleting tempfiles.
-        #       There's a problem with the way this is handled in the Cache,
+        #       There's a problem with the way this is handled in the _Cache,
         #       All files in the cache directory will be deleted.  In the
         #       default instance, that's the os.curdir.  I doubt this is what
         #       people would want.  The instance should only delete files that
         #       it created!
-        pass
+        raise NotImplementedError
     
     def filename(self, pathstr):
+        """Searches for pathstr file and returns full path if found.
+
+        If pathstr is an URL, filename will cache a local copy and return
+        the path to the cached file.
+        If pathstr is a local file, filename will return a path to that local
+        file.
+        BUG:  This should be modified so the behavior is identical for both
+              types of files!
+
+        The search will include possible compressed versions of the files.
+        BUG:  Will return the first occurence found, regardless of which
+              version is newer.
+
+        """
+
         found = None
         for name in self._possible_names(pathstr):
             try:
                 if _isurl(name):
                     self.cache(name)
-                    found = self._cache.filename(name)
+                    found = self._cache.filepath(name)
                 else:
                     raise Exception
             except:
-                if path(name).exists():
+                if os.path.exists(name):
                     found = name
             if found:
                 break
@@ -371,23 +340,37 @@ class DataSource (object):
         return found
 
     def exists(self, pathstr):
+        """Test if pathstr exists in the cache or the current directory.
+
+        If pathstr is an URL, it will be fetched and cached.
+
+        """
+        
+        # Is this method doing to much?  At very least may want an option to
+        # not fetch and cache URLs.
+
         try:
-            _ = self.filename(pathstr)
+            _datafile = self.filename(pathstr)
             return True
         except IOError:
             return False
 
     def open(self, pathstr, mode='r'):
-        if _isurl(pathstr) and iswritemode(mode):
+        """Open pathstr and return file object.
+
+        If pathstr is an URL, it will be fetched and cached.
+
+        """
+
+        # Is this method doing to much?  Should it be fetching and caching?
+
+        if _isurl(pathstr) and _iswritemode(mode):
             raise ValueError("URLs are not writeable")
         found = self.filename(pathstr)
-        _, ext = splitzipext(found)
+        _fname, ext = _splitzipext(found)
         if ext == 'bz2':
             mode.replace("+", "")
         return _file_openers[ext](found, mode=mode)
-
-    def _fullpath(self, pathstr):
-        return pathstr
 
 
 class Repository (DataSource):
@@ -397,20 +380,19 @@ class Repository (DataSource):
 
     """
 
-    #"""DataSource with an implied root."""
-
     def __init__(self, baseurl, cachepath=None):
         DataSource.__init__(self, cachepath=cachepath)
         self._baseurl = baseurl
 
     def _fullpath(self, pathstr):
-        return path(self._baseurl).joinpath(pathstr)
+        return os.path.join(self._baseurl, pathstr)
 
     def filename(self, pathstr):
-        return DataSource.filename(self, str(self._fullpath(pathstr)))
+        return DataSource.filename(self, self._fullpath(pathstr))
 
     def exists(self, pathstr):
         return DataSource.exists(self, self._fullpath(pathstr))
 
     def open(self, pathstr, mode='r'):
         return DataSource.open(self, self._fullpath(pathstr), mode)
+
