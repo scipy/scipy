@@ -1,7 +1,7 @@
 from numpy.testing import *
 
 from numpy import sqrt,empty,ones,arange,array_split,eye,array, \
-                  zeros,diag,zeros_like,diff
+                  zeros,diag,zeros_like,diff,matrix
 from numpy.linalg import norm                  
 from scipy import rand
 from scipy.sparse import spdiags,csr_matrix,lil_matrix, \
@@ -51,18 +51,41 @@ class TestSA(NumpyTestCase):
     def check_sa_strong_connections(self):
         for A in self.cases:
             for epsilon in [0.0,0.1,0.5,1.0,10.0]:
-                S_result = sa_strong_connections(A,epsilon)
                 S_expected = reference_sa_strong_connections(A,epsilon)
+                S_result = sa_strong_connections(A,epsilon)
                 assert_almost_equal(S_result.todense(),S_expected.todense())
                 #assert_array_equal(sparsity(S_result).todense(),sparsity(S_expected).todense())
 
     def check_sa_constant_interpolation(self):
         for A in self.cases:
             for epsilon in [0.0,0.1,0.5,1.0]:
-                S_result   = sa_constant_interpolation(A,epsilon)
                 S_expected = reference_sa_constant_interpolation(A,epsilon)
+                
+                S_result   = sa_constant_interpolation(A,epsilon,blocks=None)
+                assert_array_equal(S_result.todense(),S_expected.todense())
+               
+                #blocks=1...N should be the same as blocks=None
+                S_result   = sa_constant_interpolation(A,epsilon,blocks=arange(A.shape[0]))
                 assert_array_equal(S_result.todense(),S_expected.todense())
 
+        #check simple block examples
+        A = csr_matrix(arange(16).reshape(4,4))
+        A = A + A.T
+        blocks = array([0,0,1,1])
+
+        S_result   = sa_constant_interpolation(A,epsilon=0.0,blocks=blocks)
+        S_expected = matrix([1,1,1,1]).T
+        assert_array_equal(S_result.todense(),S_expected)
+
+        S_result   = sa_constant_interpolation(A,epsilon=0.5,blocks=blocks)
+        S_expected = matrix([1,1,1,1]).T
+        assert_array_equal(S_result.todense(),S_expected)
+
+        S_result   = sa_constant_interpolation(A,epsilon=2.0,blocks=blocks)
+        S_expected = matrix([[1,0],[1,0],[0,1],[0,1]])
+        assert_array_equal(S_result.todense(),S_expected)
+
+                  
 
 class TestFitCandidates(NumpyTestCase):
     def setUp(self):

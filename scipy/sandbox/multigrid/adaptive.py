@@ -105,13 +105,13 @@ class adaptive_sa_solver:
 
         self.Rs = [] 
         
-        if self.A.shape[0] <= self.opts['coarse: max size']:
+        if self.A.shape[0] <= max_coarse:
             raise ValueError,'small matrices not handled yet'
        
         #first candidate 
-        x,AggOps = self.__initialization_stage(A,blocks=blocks,\
-                            max_levels=max_levels,max_coarse=max_coarse,\
-                            mu=mu,epsilon=epsilon) 
+        x,AggOps = self.__initialization_stage(A, blocks=blocks,\
+                                               max_levels=max_levels, max_coarse=max_coarse,\
+                                               mu=mu, epsilon=epsilon) 
         
         Ws = AggOps
 
@@ -134,7 +134,7 @@ class adaptive_sa_solver:
         self.AggOps = AggOps
                 
 
-    def __initialization_stage(self,A,max_levels,max_coarse,mu,epsilon):
+    def __initialization_stage(self,A,blocks,max_levels,max_coarse,mu,epsilon):
         AggOps = []
         Is     = []
 
@@ -270,6 +270,9 @@ class adaptive_sa_solver:
 from scipy import *
 from utils import diag_sparse
 from multilevel import poisson_problem1D,poisson_problem2D
+
+blocks = None
+
 A = poisson_problem2D(200)
 #A = io.mmread("tests/sample_data/laplacian_41_3dcube.mtx").tocsr()
 #A = io.mmread("laplacian_40_3dcube.mtx").tocsr()
@@ -280,16 +283,17 @@ A = poisson_problem2D(200)
 #D = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
 #A = D * A * D
 
-#A = io.mmread("tests/sample_data/elas30_A.mtx").tocsr()
+A = io.mmread("tests/sample_data/elas30_A.mtx").tocsr()
+blocks = arange(A.shape[0]/2).repeat(2)
 
-asa = adaptive_sa_solver(A,max_candidates=1,mu=5)
+asa = adaptive_sa_solver(A,max_candidates=4,mu=12)
 scipy.random.seed(0)  #make tests repeatable
 x = rand(A.shape[0])
 b = A*rand(A.shape[0])
 
 
 print "solving"
-if False:
+if True:
     x_sol,residuals = asa.solver.solve(b,x0=x,maxiter=10,tol=1e-12,return_residuals=True)
 else:
     residuals = []

@@ -21,34 +21,37 @@ def sa_filtered_matrix(A,epsilon,blocks=None):
         if blocks is None:
             Sp,Sj,Sx = multigridtools.sa_strong_connections(A.shape[0],epsilon,A.indptr,A.indices,A.data)
             A_filtered = csr_matrix((Sx,Sj,Sp),A.shape)
-
         else:
-            num_dofs   = A.shape[0]
-            num_blocks = blocks.max() + 1
-            
-            if num_dofs != len(blocks):
-                raise ValueError,'improper block specification'
-            
-            # for non-scalar problems, use pre-defined blocks in aggregation
-            # the strength of connection matrix is based on the Frobenius norms of the blocks
-            
-            B  = csr_matrix((ones(num_dofs),blocks,arange(num_dofs + 1)),dims=(num_dofs,num_blocks))
-            Bt = B.T.tocsr()
-            
-            #1-norms of blocks entries of A
-            Block_A = Bt * csr_matrix((abs(A.data),A.indices,A.indptr),dims=A.shape) * B 
-    
-            S = sa_strong_connections(Block_A,epsilon)       
-            S.data[:] = 1
+            A_filtered = A  #TODO subtract weak blocks from diagonal blocks?
 
-            Mask = B * S * Bt
-
-            A_filtered = A ** Mask
+##            num_dofs   = A.shape[0]
+##            num_blocks = blocks.max() + 1
+##            
+##            if num_dofs != len(blocks):
+##                raise ValueError,'improper block specification'
+##            
+##            # for non-scalar problems, use pre-defined blocks in aggregation
+##            # the strength of connection matrix is based on the 1-norms of the blocks
+##            
+##            B  = csr_matrix((ones(num_dofs),blocks,arange(num_dofs + 1)),dims=(num_dofs,num_blocks))
+##            Bt = B.T.tocsr()
+##            
+##            #1-norms of blocks entries of A
+##            Block_A = Bt * csr_matrix((abs(A.data),A.indices,A.indptr),dims=A.shape) * B 
+##    
+##            S = sa_strong_connections(Block_A,epsilon)       
+##            S.data[:] = 1
+##
+##            Mask = B * S * Bt
+##
+##            A_strong = A ** Mask
+##            #A_weak   = A - A_strong
+##            A_filtered = A_strong
 
     return A_filtered          
 
 
-def sa_strong_connections(A,epsilon,blocks=None):
+def sa_strong_connections(A,epsilon):
     if not isspmatrix_csr(A): raise TypeError('expected csr_matrix')
     
     Sp,Sj,Sx = multigridtools.sa_strong_connections(A.shape[0],epsilon,A.indptr,A.indices,A.data)
@@ -66,7 +69,7 @@ def sa_constant_interpolation(A,epsilon,blocks=None):
         if num_dofs != len(blocks):
             raise ValueError,'improper block specification'
        
-        print "SA has blocks"
+        #print "SA has blocks"
         # for non-scalar problems, use pre-defined blocks in aggregation
         # the strength of connection matrix is based on the Frobenius norms of the blocks
        

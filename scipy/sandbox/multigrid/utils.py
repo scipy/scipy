@@ -3,10 +3,11 @@ __all__ =['approximate_spectral_radius','infinity_norm','diag_sparse',
 
 import numpy
 import scipy
-from numpy import ravel,arange
+from numpy import ravel,arange,concatenate
 from scipy.linalg import norm
 from scipy.sparse import isspmatrix,isspmatrix_csr,isspmatrix_csc, \
-                        csr_matrix,csc_matrix,extract_diagonal
+                        csr_matrix,csc_matrix,extract_diagonal, \
+                        coo_matrix
 
 
 def approximate_spectral_radius(A,tol=0.1,maxiter=20):
