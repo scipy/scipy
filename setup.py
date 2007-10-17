@@ -1,6 +1,41 @@
 #!/usr/bin/env python
+"""SciPy: Scientific Library for Python
+
+SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
+science, and engineering. The SciPy library
+depends on NumPy, which provides convenient and fast N-dimensional
+array manipulation. The SciPy library is built to work with NumPy
+arrays, and provides many user-friendly and efficient numerical
+routines such as routines for numerical integration and optimization.
+Together, they run on all popular operating systems, are quick to
+install, and are free of charge.  NumPy and SciPy are easy to use,
+but powerful enough to be depended upon by some of the world's
+leading scientists and engineers. If you need to manipulate
+numbers on a computer and display or publish the results,
+give SciPy a try!
+
+"""
+
+DOCLINES = __doc__.split("\n")
+
 import os
 import sys
+
+CLASSIFIERS = """\
+Development Status :: 4 - Beta
+Intended Audience :: Science/Research
+Intended Audience :: Developers
+License :: OSI Approved
+Programming Language :: C
+Programming Language :: Python
+Topic :: Software Development
+Topic :: Scientific/Engineering
+Operating System :: Microsoft :: Windows
+Operating System :: POSIX
+Operating System :: Unix
+Operating System :: MacOS
+
+"""
 
 # BEFORE importing distutils, remove MANIFEST. distutils doesn't properly
 # update it when the contents of directories change.
@@ -39,9 +74,13 @@ def setup_package():
             name = 'scipy',
             maintainer = "SciPy Developers",
             maintainer_email = "scipy-dev@scipy.org",
-            description = "Scientific Algorithms Library for Python",
+            description = DOCLINES[0],
+            long_description = "\n".join(DOCLINES[2:]),
             url = "http://www.scipy.org",
+            download_url = "http://sourceforge.net/project/showfiles.php?group_id=27747&package_id=19531",
             license = 'BSD',
+            classifiers=filter(None, CLASSIFIERS.split('\n')),
+            platforms = ["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
             configuration=configuration )
     finally:
         del sys.path[0]
