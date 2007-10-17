@@ -1,18 +1,40 @@
 import numpy as N
-from scipy import median
-from scipy.stats import norm
+from scipy.stats import norm, median
 
-def MAD(a, c=0.6745):
+def unsqueeze(data, axis, oldshape):
     """
-    Median Absolute Deviation along first axis of an array:
+    unsqueeze a collapsed array
+
+    >>> from numpy import mean
+    >>> from numpy.random import standard_normal
+    >>> x = standard_normal((3,4,5))
+    >>> m = mean(x, axis=1)
+    >>> m.shape
+    (3, 5)
+    >>> unsqueeze(m, 1, x.shape)
+    >>> m.shape
+    (3, 1, 5)
+    >>>                       
+    """
+    
+    newshape = list(oldshape)
+    newshape[axis] = 1
+    data.shape = newshape
+    
+
+def MAD(a, c=0.6745, axis=0):
+    """
+    Median Absolute Deviation along given axis of an array:
 
     median(abs(a - median(a))) / c
 
     """
 
     a = N.asarray(a, N.float64)
-    d = N.multiply.outer(median(a), N.ones(a.shape[1:]))
-    return median(N.fabs(a - d) / c)
+    d = median(a, axis=axis)
+    unsqueeze(d, axis, a.shape)
+
+    return median(N.fabs(a - d) / c, axis=axis)
 
 class Huber:
     """
@@ -29,19 +51,20 @@ class Huber:
     gamma = tmp + c**2 * (1 - tmp) - 2 * c * norm.pdf(c)
     del(tmp)
     
-    niter = 10
+    niter = 30
 
-    def __call__(self, a, mu=None, scale=None):
+    def __call__(self, a, mu=None, scale=None, axis=0):
         """
         Compute Huber\'s proposal 2 estimate of scale, using an optional
         initial value of scale and an optional estimate of mu. If mu
         is supplied, it is not reestimated.
         """
 
+        self.axis = axis
         self.a = N.asarray(a, N.float64)
         if mu is None:
             self.n = self.a.shape[0] - 1
-            self.mu = N.multiply.outer(median(self.a), N.ones(self.a.shape[1:]))
+            self.mu = median(self.a, axis=axis)
             self.est_mu = True
         else:
             self.n = self.a.shape[0]
@@ -49,14 +72,18 @@ class Huber:
             self.est_mu = False
 
         if scale is None:
-            self.scale = MAD(self.a)**2
+            self.scale = MAD(self.a, axis=self.axis)**2
         else:
             self.scale = scale
+
+        unsqueeze(self.scale, self.axis, self.a.shape)
+        unsqueeze(self.mu, self.axis, self.a.shape)
 
         for donothing in self:
             pass
 
-        self.s = N.sqrt(self.scale)
+        self.s = N.squeeze(N.sqrt(self.scale))
+        del(self.scale); del(self.mu); del(self.a)
         return self.s
 
     def __iter__(self):
@@ -67,22 +94,24 @@ class Huber:
         a = self.a
         subset = self.subset(a)
         if self.est_mu:
-            mu = (subset * a).sum() / a.shape[0]
+            mu = N.sum(subset * a + (1 - Huber.c) * subset, axis=self.axis) / a.shape[self.axis]
         else:
             mu = self.mu
+        unsqueeze(mu, self.axis, self.a.shape)
             
-        scale = N.sum(subset * (a - mu)**2, axis=0) / (self.n * Huber.gamma - N.sum(1. - subset, axis=0) * Huber.c**2)
+        scale = N.sum(subset * (a - mu)**2, axis=self.axis) / (self.n * Huber.gamma - N.sum(1. - subset, axis=self.axis) * Huber.c**2)
 
         self.iter += 1
 
-        if (N.fabs(N.sqrt(scale) - N.sqrt(self.scale)) <= N.sqrt(self.scale) * Huber.tol and
-            N.fabs(mu - self.mu) <= N.sqrt(self.scale) * Huber.tol):
+        if N.alltrue(N.less_equal(N.fabs(N.sqrt(scale) - N.sqrt(self.scale)), N.sqrt(self.scale) * Huber.tol)) and N.alltrue(N.less_equal(N.fabs(mu - self.mu), N.sqrt(self.scale) * Huber.tol)):
             self.scale = scale
             self.mu = mu
             raise StopIteration
         else:
             self.scale = scale
             self.mu = mu
+
+        unsqueeze(self.scale, self.axis, self.a.shape)
 
         if self.iter >= self.niter:
             raise StopIteration
