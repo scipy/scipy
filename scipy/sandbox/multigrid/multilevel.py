@@ -77,9 +77,8 @@ def smoothed_aggregation_solver(A,candidates=None,blocks=None,aggregation=None,m
         candidates = [ ones(A.shape[0]) ] # use constant vector
 
     if aggregation is None:
-        while len(As) < max_levels  and A.shape[0] > max_coarse:
-            P,candidates = sa_interpolation(A,candidates,epsilon*0.5**(len(As)-1),omega=omega,blocks=blocks)
-            blocks = None #only used for 1st level
+        while len(As) < max_levels and A.shape[0] > max_coarse:
+            P,candidates,blocks = sa_interpolation(A,candidates,epsilon*0.5**(len(As)-1),omega=omega,blocks=blocks)
 
             A = (P.T.tocsr() * A) * P     #galerkin operator
 
@@ -207,12 +206,12 @@ if __name__ == '__main__':
     candidates = [ array(candidates[:,x]) for x in range(candidates.shape[1]) ]
     blocks = arange(A.shape[0]/2).repeat(2)
      
-    ml = smoothed_aggregation_solver(A,candidates,blocks=blocks,max_coarse=10,max_levels=10)
+    ml = smoothed_aggregation_solver(A,candidates,blocks=blocks,epsilon=0,max_coarse=10,max_levels=10)
     #ml = ruge_stuben_solver(A)
 
     x = rand(A.shape[0])
-    b = zeros_like(x)
-    #b = rand(A.shape[0])
+    #b = zeros_like(x)
+    b = A*rand(A.shape[0])
     
     if True:
         x_sol,residuals = ml.solve(b,x0=x,maxiter=30,tol=1e-12,return_residuals=True)
@@ -221,7 +220,7 @@ if __name__ == '__main__':
         def add_resid(x):
             residuals.append(linalg.norm(b - A*x))
         A.psolve = ml.psolve
-        x_sol = linalg.cg(A,b,x0=x,maxiter=12,tol=1e-100,callback=add_resid)[0]
+        x_sol = linalg.cg(A,b,x0=x,maxiter=25,tol=1e-12,callback=add_resid)[0]
             
 
     residuals = array(residuals)/residuals[0]
@@ -230,6 +229,8 @@ if __name__ == '__main__':
     print "last convergence ratio",residuals[-1]/residuals[-2]
 
     print residuals
+
+
 
 
 

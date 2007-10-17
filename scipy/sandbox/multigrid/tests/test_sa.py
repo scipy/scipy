@@ -12,7 +12,8 @@ import numpy
 set_package_path()
 import scipy.sandbox.multigrid
 from scipy.sandbox.multigrid.sa import sa_strong_connections, sa_constant_interpolation, \
-                                        sa_interpolation, sa_fit_candidates
+                                        sa_interpolation, sa_fit_candidates, \
+                                        sa_smoothed_prolongator
 from scipy.sandbox.multigrid.multilevel import poisson_problem1D,poisson_problem2D, \
                                         smoothed_aggregation_solver
 from scipy.sandbox.multigrid.utils import diag_sparse
@@ -68,6 +69,15 @@ class TestSA(NumpyTestCase):
                 S_result   = sa_constant_interpolation(A,epsilon,blocks=arange(A.shape[0]))
                 assert_array_equal(S_result.todense(),S_expected.todense())
 
+        # two aggregates in 1D
+        A = poisson_problem1D(6)
+        AggOp = csr_matrix((ones(6),array([0,0,0,1,1,1]),arange(7)),dims=(6,2))
+        candidates = [ones(6)]
+
+        T_result,coarse_candidates_result = sa_fit_candidates(AggOp,candidates)
+        T_expected = csr_matrix((sqrt(1.0/3.0)*ones(6),array([0,0,0,1,1,1]),arange(7)),dims=(6,2))
+        assert_almost_equal(T_result.todense(),T_expected.todense())
+
         #check simple block examples
         A = csr_matrix(arange(16).reshape(4,4))
         A = A + A.T
@@ -84,6 +94,32 @@ class TestSA(NumpyTestCase):
         S_result   = sa_constant_interpolation(A,epsilon=2.0,blocks=blocks)
         S_expected = matrix([[1,0],[1,0],[0,1],[0,1]])
         assert_array_equal(S_result.todense(),S_expected)
+
+
+    def check_user_aggregation(self):
+        """check that the sa_interpolation accepts user-defined aggregates"""
+
+        user_cases = []
+
+        #simple 1d example w/ two aggregates
+        A = poisson_problem1D(6)
+        AggOp = csr_matrix((ones(6),array([0,0,0,1,1,1]),arange(7)),dims=(6,2))
+        candidates = [ones(6)]
+        user_cases.append((A,AggOp,candidates))
+
+        #simple 1d example w/ two aggregates (not all nodes are aggregated)
+        A = poisson_problem1D(6)
+        AggOp = csr_matrix((ones(4),array([0,0,1,1]),array([0,1,1,2,3,3,4])),dims=(6,2))
+        candidates = [ones(6)]
+        user_cases.append((A,AggOp,candidates))
+
+        for A,AggOp,candidates in user_cases:
+            T,coarse_candidates_result = sa_fit_candidates(AggOp,candidates)
+
+            P_result = sa_interpolation(A,candidates,omega=4.0/3.0,AggOp=AggOp)[0]
+            P_expected = sa_smoothed_prolongator(A,T,epsilon=0.0,omega=4.0/3.0)
+
+            assert_almost_equal(P_result.todense(),P_expected.todense())
 
                   
 
@@ -149,9 +185,7 @@ class TestFitCandidates(NumpyTestCase):
 
 
 
-
-
-class TestSASolver(NumpyTestCase):
+class TestSASolverPerformance(NumpyTestCase):
     def setUp(self):
         self.cases = []
 

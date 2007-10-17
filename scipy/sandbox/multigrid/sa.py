@@ -8,7 +8,7 @@ from utils import diag_sparse,approximate_spectral_radius
 import multigridtools
 
 __all__ = ['sa_filtered_matrix','sa_strong_connections','sa_constant_interpolation',
-           'sa_interpolation','sa_fit_candidates']
+           'sa_interpolation','sa_smoothed_prolongator','sa_fit_candidates']
 
 
 def sa_filtered_matrix(A,epsilon,blocks=None):
@@ -83,6 +83,7 @@ def sa_constant_interpolation(A,epsilon,blocks=None):
         Pj = Pj[blocks] #expand block aggregates into constituent dofs
         Pp = B.indptr
         Px = B.data
+        
     else:
         S = sa_strong_connections(A,epsilon)
         
@@ -140,20 +141,7 @@ def sa_fit_candidates(AggOp,candidates):
 
     return Q,coarse_candidates
     
-    
-def sa_interpolation(A,candidates,epsilon=0.0,omega=4.0/3.0,blocks=None,AggOp=None):
-    if not isspmatrix_csr(A): raise TypeError('expected csr_matrix')
-
-    if AggOp is None:
-        AggOp = sa_constant_interpolation(A,epsilon=epsilon,blocks=blocks)
-    else:
-        if not isspmatrix_csr(AggOp):
-            raise TypeError,'aggregation is specified by a list of csr_matrix objects'
-        if A.shape[1] != AggOp.shape[0]:
-            raise ValueError,'incompatible aggregation operator'
-
-    T,coarse_candidates = sa_fit_candidates(AggOp,candidates)  
-
+def sa_smoothed_prolongator(A,T,epsilon,omega,blocks=None):
     A_filtered = sa_filtered_matrix(A,epsilon,blocks) #use filtered matrix for anisotropic problems
 
     D_inv    = diag_sparse(1.0/diag_sparse(A_filtered))       
@@ -162,8 +150,37 @@ def sa_interpolation(A,candidates,epsilon=0.0,omega=4.0/3.0,blocks=None,AggOp=No
 
     # smooth tentative prolongator T
     P = T - (D_inv_A*T)
-           
-    return P,coarse_candidates
+
+    return P
+
+def sa_interpolation(A,candidates,epsilon=0.0,omega=4.0/3.0,blocks=None,AggOp=None):
+    if not isspmatrix_csr(A): raise TypeError('expected csr_matrix')
+
+    if AggOp is None:
+        AggOp = sa_constant_interpolation(A,epsilon=epsilon,blocks=blocks)
+    else:
+        if not isspmatrix_csr(AggOp):
+            raise TypeError,'expected csr_matrix for argument AggOp'
+        if A.shape[1] != AggOp.shape[0]:
+            raise ValueError,'incompatible aggregation operator'
+
+    T,coarse_candidates = sa_fit_candidates(AggOp,candidates)  
+
+    A_filtered = sa_filtered_matrix(A,epsilon,blocks) #use filtered matrix for anisotropic problems
+
+    P = sa_smoothed_prolongator(A,T,epsilon,omega,blocks)
+
+##    D_inv    = diag_sparse(1.0/diag_sparse(A_filtered))       
+##    D_inv_A  = D_inv * A_filtered
+##    D_inv_A *= omega/approximate_spectral_radius(D_inv_A)
+##
+##    # smooth tentative prolongator T
+##    P = T - (D_inv_A*T)
+
+    if blocks is not None:
+        blocks = arange(AggOp.shape[1]).repeat(len(candidates))
+          
+    return P,coarse_candidates,blocks
 
 
 
