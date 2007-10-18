@@ -2,28 +2,53 @@ import scipy
 import numpy
 from numpy import array,arange,ones,zeros,sqrt,isinf,asarray,empty,diff,\
                   ascontiguousarray
-from scipy.sparse import csr_matrix,isspmatrix_csr
+from scipy.sparse import csr_matrix,isspmatrix_csr,spidentity
 
-from utils import diag_sparse,approximate_spectral_radius
+from utils import diag_sparse,approximate_spectral_radius,expand_into_blocks
 import multigridtools
 
 __all__ = ['sa_filtered_matrix','sa_strong_connections','sa_constant_interpolation',
            'sa_interpolation','sa_smoothed_prolongator','sa_fit_candidates']
 
 
+##    nnz = A.nnz
+##
+##    indptr  = A.indptr
+##    indices = A.indices
+##    data    = A.data
+##
+##    if n != 1:
+##        # expand horizontally
+##        indptr = n*A.indptr
+##        indices = (n*indices).repeat(n) + tile(arange(n),nnz) 
+##
+##    if m != 1:
+##        #expand vertically
+##        indptr  = concatenate( (array([0]), cumsum(diff(A).repeat(m))) )
+##        indices = indices.repeat(m)
+##
+##    if m != 1 or n != 1:
+##        data = A.data.repeat(m*n)
+
+
 def sa_filtered_matrix(A,epsilon,blocks=None):
+    """The filtered matrix is obtained from A by lumping all weak off-diagonal 
+    entries onto the diagonal.  Weak off-diagonals are determined by
+    the standard strength of connection measure using the parameter epsilon.
+
+    In the case epsilon = 0.0, (i.e. no weak connections) A is returned.
+    """
+
     if not isspmatrix_csr(A): raise TypeError('expected csr_matrix')
 
     if epsilon == 0:
         A_filtered = A
-
     else:
         if blocks is None:
             Sp,Sj,Sx = multigridtools.sa_strong_connections(A.shape[0],epsilon,A.indptr,A.indices,A.data)
             A_filtered = csr_matrix((Sx,Sj,Sp),A.shape)
         else:
             A_filtered = A  #TODO subtract weak blocks from diagonal blocks?
-
 ##            num_dofs   = A.shape[0]
 ##            num_blocks = blocks.max() + 1
 ##            
@@ -49,7 +74,6 @@ def sa_filtered_matrix(A,epsilon,blocks=None):
 ##            A_filtered = A_strong
 
     return A_filtered          
-
 
 def sa_strong_connections(A,epsilon):
     if not isspmatrix_csr(A): raise TypeError('expected csr_matrix')
@@ -101,7 +125,9 @@ def sa_fit_candidates(AggOp,candidates):
 
     if K > 1 and len(candidates[0]) == K*N_fine:
         #see if fine space has been expanded (all levels except for first)
-        AggOp = csr_matrix((AggOp.data.repeat(K),AggOp.indices.repeat(K),arange(K*N_fine + 1)),dims=(K*N_fine,N_coarse))
+        #TODO fix this and add unittests
+        #AggOp = csr_matrix((AggOp.data.repeat(K),AggOp.indices.repeat(K),arange(K*N_fine + 1)),dims=(K*N_fine,N_coarse))
+        AggOp = expand_into_blocks(AggOp,K,1).tocsr()
         N_fine = K*N_fine
 
     #TODO convert this to list of coarse candidates
@@ -142,6 +168,20 @@ def sa_fit_candidates(AggOp,candidates):
     return Q,coarse_candidates
     
 def sa_smoothed_prolongator(A,T,epsilon,omega,blocks=None):
+    """For a given matrix A and tentative prolongator T return the 
+    smoothed prolongator P
+
+        P = (I - omega/rho(S) S) * T
+
+    where S is a Jacobi smoothing operator defined as follows:
+
+        omega      - damping parameter
+        rho(S)     - spectral radius of S (estimated)
+        S          - inv(diag(A_filtered)) * A_filtered   (Jacobi smoother)
+        A_filtered - sa_filtered_matrix(A,epsilon)
+    """
+     
+
     A_filtered = sa_filtered_matrix(A,epsilon,blocks) #use filtered matrix for anisotropic problems
 
     D_inv    = diag_sparse(1.0/diag_sparse(A_filtered))       
@@ -150,6 +190,9 @@ def sa_smoothed_prolongator(A,T,epsilon,omega,blocks=None):
 
     # smooth tentative prolongator T
     P = T - (D_inv_A*T)
+    
+    #S = (spidentity(A.shape[0]).tocsr() - D_inv_A) #TODO drop this?
+    #P = S * ( S * T)
 
     return P
 
@@ -163,19 +206,14 @@ def sa_interpolation(A,candidates,epsilon=0.0,omega=4.0/3.0,blocks=None,AggOp=No
             raise TypeError,'expected csr_matrix for argument AggOp'
         if A.shape[1] != AggOp.shape[0]:
             raise ValueError,'incompatible aggregation operator'
+        
 
     T,coarse_candidates = sa_fit_candidates(AggOp,candidates)  
+    #T = AggOp #TODO test
 
     A_filtered = sa_filtered_matrix(A,epsilon,blocks) #use filtered matrix for anisotropic problems
 
     P = sa_smoothed_prolongator(A,T,epsilon,omega,blocks)
-
-##    D_inv    = diag_sparse(1.0/diag_sparse(A_filtered))       
-##    D_inv_A  = D_inv * A_filtered
-##    D_inv_A *= omega/approximate_spectral_radius(D_inv_A)
-##
-##    # smooth tentative prolongator T
-##    P = T - (D_inv_A*T)
 
     if blocks is not None:
         blocks = arange(AggOp.shape[1]).repeat(len(candidates))

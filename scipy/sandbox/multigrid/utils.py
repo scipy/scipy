@@ -1,9 +1,9 @@
 __all__ =['approximate_spectral_radius','infinity_norm','diag_sparse',
-          'hstack_csr','vstack_csr']
+          'hstack_csr','vstack_csr','expand_into_blocks']
 
 import numpy
 import scipy
-from numpy import ravel,arange,concatenate
+from numpy import ravel,arange,concatenate,tile
 from scipy.linalg import norm
 from scipy.sparse import isspmatrix,isspmatrix_csr,isspmatrix_csc, \
                         csr_matrix,csc_matrix,extract_diagonal, \
@@ -66,4 +66,48 @@ def vstack_csr(A,B):
     J = concatenate((A.col,B.col))
     V = concatenate((A.data,B.data))
     return coo_matrix((V,(I,J)),dims=(A.shape[0]+B.shape[0],A.shape[1])).tocsr()
+
+
+def expand_into_blocks(A,m,n):
+    """Expand each element in a sparse matrix A into an m-by-n block.  
+                
+          Example: 
+          >>> A.todense()
+          matrix([[ 1.,  2.],
+                  [ 4.,  5.]])
+          
+          >>> expand_into_blocks(A,2,2).todense()
+          matrix([[ 1.,  1.,  2.,  2.],
+                  [ 1.,  1.,  2.,  2.],
+                  [ 4.,  4.,  5.,  5.],
+                  [ 4.,  4.,  5.,  5.]])
+              
+    """
+    #TODO EXPLAIN MORE
+
+    if n is None:
+        n = m
+
+    if m == 1 and n == 1:
+        return A #nothing to do
+
+    A = A.tocoo()
+
+    # expand 1x1 -> mxn
+    row  = ( m*A.row ).repeat(m*n).reshape(-1,m,n)
+    col  = ( n*A.col ).repeat(m*n).reshape(-1,m,n)
+
+    # increment indices
+    row += tile(arange(m).reshape(-1,1),(1,n))
+    col += tile(arange(n).reshape(1,-1),(m,1))
+
+    # flatten
+    row = row.reshape(-1)
+    col = col.reshape(-1)
+
+    data = A.data.repeat(m*n)
+
+    return coo_matrix((data,(row,col)),dims=(m*A.shape[0],n*A.shape[1]))
+
+
 

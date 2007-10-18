@@ -294,7 +294,7 @@ b = A*rand(A.shape[0])
 
 print "solving"
 if True:
-    x_sol,residuals = asa.solver.solve(b,x0=x,maxiter=10,tol=1e-12,return_residuals=True)
+    x_sol,residuals = asa.solver.solve(b,x0=x,maxiter=25,tol=1e-8,return_residuals=True)
 else:
     residuals = []
     def add_resid(x):

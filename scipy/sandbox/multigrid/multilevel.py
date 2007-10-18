@@ -87,7 +87,7 @@ def smoothed_aggregation_solver(A,candidates=None,blocks=None,aggregation=None,m
     else:
         #use user-defined aggregation
         for AggOp in aggregation:
-            P,candidates = sa_interpolation(A,candidates,omega=omega,AggOp=AggOp)
+            P,candidates,blocks = sa_interpolation(A,candidates,omega=omega,AggOp=AggOp)
 
             A = (P.T.tocsr() * A) * P     #galerkin operator
 
@@ -210,11 +210,11 @@ if __name__ == '__main__':
     #ml = ruge_stuben_solver(A)
 
     x = rand(A.shape[0])
-    #b = zeros_like(x)
-    b = A*rand(A.shape[0])
+    b = zeros_like(x)
+    #b = A*rand(A.shape[0])
     
     if True:
-        x_sol,residuals = ml.solve(b,x0=x,maxiter=30,tol=1e-12,return_residuals=True)
+        x_sol,residuals = ml.solve(b,x0=x,maxiter=30,tol=1e-8,return_residuals=True)
     else:
         residuals = []
         def add_resid(x):
