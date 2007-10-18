@@ -89,7 +89,7 @@ class TestMIOArray(NumpyTestCase):
     def _make_rt_check_case(name, expected, format):
         def cc(self):
             mat_stream = StringIO()
-            savemat(mat_stream, expected, format)
+            savemat(mat_stream, expected, format=format)
             mat_stream.seek(0)
             self._check_case(name, [mat_stream], expected)
         cc.__doc__ = "check loadmat case %s" % name
@@ -162,6 +162,10 @@ class TestMIOArray(NumpyTestCase):
         {'name': '3dmatrix',
          'expected': {'test3dmatrix': transpose(reshape(range(1,25), (4,3,2)))}
          })
+    case_table5_rt = [
+        {'name': '3dmatrix',
+         'expected': {'test3dmatrix': transpose(reshape(range(1,25), (4,3,2)))}
+         }]
     st = mat_struct()
     st.stringfield = u'Rats live on no evil star.'
     st.doublefield = array([sqrt(2),exp(1),pi])
@@ -225,7 +229,7 @@ class TestMIOArray(NumpyTestCase):
         assert files, "No files for test %s using filter %s" % (name, filt)
         exec 'check_%s = _make_check_case(name, files, expected)' % name
     # round trip tests
-    for case in case_table4 + case_table5:
+    for case in case_table4 + case_table5_rt:
         name = case['name'] + '_round_trip'
         expected = case['expected']
         format = case in case_table4 and '4' or '5'
