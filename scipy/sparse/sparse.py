@@ -175,8 +175,8 @@ class spmatrix(object):
     def listprint(self, start, stop):
         """Provides a way to print over a single index.
         """
-        return '\n'.join('  %s\t%s' % (self.rowcol(ind), self.getdata(ind))
-                         for ind in xrange(start,stop)) + '\n'
+        return '\n'.join(['  %s\t%s' % (self.rowcol(ind), self.getdata(ind))
+                         for ind in xrange(start,stop)]) + '\n'
 
     def __repr__(self):
         nnz = self.getnnz()
