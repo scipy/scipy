@@ -7,7 +7,7 @@ Modified and extended by Ed Schofield, Robert Cimrman, and Nathan Bell
 
 __all__ = ['spmatrix','csc_matrix','csr_matrix','coo_matrix',
             'lil_matrix','dok_matrix',
-            'spdiags','speye','spidentity','extract_diagonal',
+            'spdiags','speye','spidentity','spkron','extract_diagonal',
             'isspmatrix','issparse','isspmatrix_csc','isspmatrix_csr',
             'isspmatrix_lil','isspmatrix_dok', 'isspmatrix_coo',
             'lil_eye', 'lil_diags' ]
@@ -2853,6 +2853,65 @@ def speye(n, m, k = 0, dtype = 'd'):
     """
     diags = ones((1, n), dtype = dtype)
     return spdiags(diags, k, n, m)
+
+def spkron(a,b):
+    """kronecker product of sparse matrices a and b 
+    in COOrdinate format.
+    
+    *Parameters*:
+        a,b : sparse matrices 
+            E.g. csr_matrix, csc_matrix, coo_matrix, etc.
+
+    *Returns*:
+        coo_matrix 
+            kronecker product in COOrdinate format
+
+    *Example*:
+    -------
+
+    >>> a = csr_matrix(array([[0,2],[5,0]]))
+    >>> b = csr_matrix(array([[1,2],[3,4]]))
+    >>> spkron(a,b).todense()
+    matrix([[  0.,   0.,   2.,   4.],
+            [  0.,   0.,   6.,   8.],
+            [  5.,  10.,   0.,   0.],
+            [ 15.,  20.,   0.,   0.]])
+
+    """
+    if not isspmatrix(a) and isspmatrix(b):
+        raise ValueError,'expected sparse matrix'
+
+    a,b = a.tocoo(),b.tocoo()
+    output_shape = (a.shape[0]*b.shape[0],a.shape[1]*b.shape[1])  
+
+    if a.nnz == 0 or b.nnz == 0:
+        # kronecker product is the zero matrix
+        return coo_matrix(None, dims=output_shape)
+            
+
+    # expand entries of a into blocks
+    row  = a.row.repeat(b.nnz)
+    col  = a.col.repeat(b.nnz)
+    data = a.data.repeat(b.nnz)
+    
+    row *= b.shape[0]
+    col *= b.shape[1]
+
+    # increment block indices
+    row,col = row.reshape(-1,b.nnz),col.reshape(-1,b.nnz)
+    row += b.row
+    col += b.col
+    row,col = row.reshape(-1),col.reshape(-1)
+
+    # compute block entries
+    data = data.reshape(-1,b.nnz)
+    data *= b.data
+    data = data.reshape(-1)
+
+    return coo_matrix((data,(row,col)), dims=output_shape)
+
+
+
 
 def lil_eye((r,c), k=0, dtype=float):
     """Generate a lil_matrix of dimensions (r,c) with the k-th

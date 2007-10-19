@@ -22,7 +22,7 @@ import random
 from numpy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, coo_matrix, \
-     spidentity, speye, extract_diagonal, lil_matrix, lil_eye, lil_diags
+     spidentity, speye, spkron, extract_diagonal, lil_matrix, lil_eye, lil_diags
 from scipy.linsolve import splu
 restore_path()
 
@@ -1072,9 +1072,32 @@ class TestConstructUtils(NumpyTestCase):
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
         assert_array_equal(a.toarray(), b)
 
-                   
+    def check_spkron(self):
+        from numpy import kron
 
-class TestCoo(NumpyTestCase):
+        cases = []
+
+        cases.append(array([[ 0]]))
+        cases.append(array([[-1]]))
+        cases.append(array([[ 4]]))
+        cases.append(array([[10]]))
+        cases.append(array([[0],[0]]))
+        cases.append(array([[0,0]]))
+        cases.append(array([[1,2],[3,4]]))
+        cases.append(array([[0,2],[5,0]]))
+        cases.append(array([[0,2,-6],[8,0,14]]))
+        cases.append(array([[5,4],[0,0],[6,0]]))
+        cases.append(array([[5,4,4],[1,0,0],[6,0,8]]))
+        cases.append(array([[0,1,0,2,0,5,8]]))
+
+        for a in cases:
+            for b in cases:
+                result = spkron(csr_matrix(a),csr_matrix(b)).todense()
+                expected = kron(a,b)
+        
+                assert_array_equal(result,expected)
+
+class TestCOO(NumpyTestCase):
     def check_constructor1(self):
         row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
         col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
