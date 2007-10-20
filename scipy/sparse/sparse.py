@@ -2855,8 +2855,7 @@ def speye(n, m, k = 0, dtype = 'd'):
     return spdiags(diags, k, n, m)
 
 def spkron(a,b):
-    """kronecker product of sparse matrices a and b 
-    in COOrdinate format.
+    """kronecker product of sparse matrices a and b
     
     *Parameters*:
         a,b : sparse matrices 
