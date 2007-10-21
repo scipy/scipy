@@ -273,12 +273,6 @@ NA_NewArray(void *buffer, NumarrayType type, int ndim, maybelong *shape)
                                        NA_ByteOrder(), 1, 1);
 }
 
-#define  NA_OutputArray (*(PyArrayObject* (*) (PyObject*,NumarrayType,int) ) (void *) NA_OutputArray)
-#define  NA_IoArray (*(PyArrayObject* (*) (PyObject*,NumarrayType,int) ) (void *) NA_IoArray)
-#define  NA_NewArray (*(PyArrayObject* (*) (void* buffer, NumarrayType, int, ...) ) (void *) NA_NewArray )
-#define  NA_elements (*(unsigned long (*) (PyArrayObject*) ) (void *) NA_elements)
-#define  NA_InputArray (*(PyArrayObject* (*) (PyObject*,NumarrayType,int) ) (void *) NA_InputArray)
-
 #endif /* ND_IMPORT_ARRAY */
 
 #endif /* ND_IMAGE_H */
