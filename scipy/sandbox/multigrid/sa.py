@@ -11,25 +11,6 @@ __all__ = ['sa_filtered_matrix','sa_strong_connections','sa_constant_interpolati
            'sa_interpolation','sa_smoothed_prolongator','sa_fit_candidates']
 
 
-##    nnz = A.nnz
-##
-##    indptr  = A.indptr
-##    indices = A.indices
-##    data    = A.data
-##
-##    if n != 1:
-##        # expand horizontally
-##        indptr = n*A.indptr
-##        indices = (n*indices).repeat(n) + tile(arange(n),nnz) 
-##
-##    if m != 1:
-##        #expand vertically
-##        indptr  = concatenate( (array([0]), cumsum(diff(A).repeat(m))) )
-##        indices = indices.repeat(m)
-##
-##    if m != 1 or n != 1:
-##        data = A.data.repeat(m*n)
-
 
 def sa_filtered_matrix(A,epsilon,blocks=None):
     """The filtered matrix is obtained from A by lumping all weak off-diagonal 
@@ -48,7 +29,8 @@ def sa_filtered_matrix(A,epsilon,blocks=None):
             Sp,Sj,Sx = multigridtools.sa_strong_connections(A.shape[0],epsilon,A.indptr,A.indices,A.data)
             A_filtered = csr_matrix((Sx,Sj,Sp),A.shape)
         else:
-            A_filtered = A  #TODO subtract weak blocks from diagonal blocks?
+            raise NotImplementedError,'blocks not handled yet'
+##            #TODO subtract weak blocks from diagonal blocks?
 ##            num_dofs   = A.shape[0]
 ##            num_blocks = blocks.max() + 1
 ##            
@@ -99,6 +81,7 @@ def sa_constant_interpolation(A,epsilon,blocks=None):
        
         B  = csr_matrix((ones(num_dofs),blocks,arange(num_dofs + 1)),dims=(num_dofs,num_blocks))
         #1-norms of blocks entries of A
+        #TODO figure out what to do for blocks here
         Block_A = B.T.tocsr() * csr_matrix((abs(A.data),A.indices,A.indptr),dims=A.shape) * B 
 
         S = sa_strong_connections(Block_A,epsilon)
@@ -119,22 +102,22 @@ def sa_constant_interpolation(A,epsilon,blocks=None):
 
 
 def sa_fit_candidates(AggOp,candidates):
-    K = len(candidates)
+    
+    K = candidates.shape[1] # num candidates
 
     N_fine,N_coarse = AggOp.shape
 
-    if K > 1 and len(candidates[0]) == K*N_fine:
+    if K > 1 and candidates.shape[0] == K*N_fine:
         #see if fine space has been expanded (all levels except for first)
-        #TODO fix this and add unittests
-        #AggOp = csr_matrix((AggOp.data.repeat(K),AggOp.indices.repeat(K),arange(K*N_fine + 1)),dims=(K*N_fine,N_coarse))
         AggOp = expand_into_blocks(AggOp,K,1).tocsr()
         N_fine = K*N_fine
 
-    #TODO convert this to list of coarse candidates
     R = zeros((K*N_coarse,K)) #storage for coarse candidates
 
     candidate_matrices = []
-    for i,c in enumerate(candidates):
+
+    for i in range(K):
+        c = candidates[:,i]
         c = c[diff(AggOp.indptr) == 1]  #eliminate DOFs that aggregation misses
         X = csr_matrix((c,AggOp.indices,AggOp.indptr),dims=AggOp.shape)
        
@@ -154,6 +137,7 @@ def sa_fit_candidates(AggOp,candidates):
 
         candidate_matrices.append(X)
 
+    # expand AggOp blocks horizontally 
     Q_indptr  = K*AggOp.indptr
     Q_indices = (K*AggOp.indices).repeat(K)
     for i in range(K):
@@ -163,9 +147,7 @@ def sa_fit_candidates(AggOp,candidates):
         Q_data[i::K] = X.data
     Q = csr_matrix((Q_data,Q_indices,Q_indptr),dims=(N_fine,K*N_coarse))
 
-    coarse_candidates = [ascontiguousarray(R[:,i]) for i in range(K)]
-
-    return Q,coarse_candidates
+    return Q,R
     
 def sa_smoothed_prolongator(A,T,epsilon,omega,blocks=None):
     """For a given matrix A and tentative prolongator T return the 
@@ -216,7 +198,7 @@ def sa_interpolation(A,candidates,epsilon=0.0,omega=4.0/3.0,blocks=None,AggOp=No
     P = sa_smoothed_prolongator(A,T,epsilon,omega,blocks)
 
     if blocks is not None:
-        blocks = arange(AggOp.shape[1]).repeat(len(candidates))
+        blocks = arange(AggOp.shape[1]).repeat(candidates.shape[1])
           
     return P,coarse_candidates,blocks
 

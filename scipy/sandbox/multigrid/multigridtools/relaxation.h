@@ -29,9 +29,10 @@ void gauss_seidel(const I n_row,
                 rsum += Ax[jj]*x[j];
         }
         
-        assert(diag != 0);
-        
-        x[i] = (b[i] - rsum)/diag;
+        //TODO raise error? inform user?
+        if (diag != 0){
+            x[i] = (b[i] - rsum)/diag;
+        }
     }
 }
 
@@ -64,9 +65,10 @@ void jacobi(const I n_row,
                 rsum += Ax[jj]*temp[j];
         }
         
-        assert(diag != 0);
-        
-        x[i] = (1 - omega) * temp[i] + omega * ((b[i] - rsum)/diag);
+        //TODO raise error? inform user?
+        if (diag != 0){ 
+            x[i] = (1 - omega) * temp[i] + omega * ((b[i] - rsum)/diag);
+        }
     }
 }
 

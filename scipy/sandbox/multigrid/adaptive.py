@@ -66,13 +66,13 @@ def smoothed_prolongator(P,A):
  
 
 
-def sa_hierarchy(A,Ws,x):
+def sa_hierarchy(A,Ws,B):
     """
     Construct multilevel hierarchy using Smoothed Aggregation
         Inputs:
           A  - matrix
           Is - list of constant prolongators
-          x  - "candidate" basis function to be approximated
+          B  - "candidate" basis function to be approximated
         Ouputs:
           (As,Is,Ps) - tuple of lists
                   - As - [A, Ps[0].T*A*Ps[0], Ps[1].T*A*Ps[1], ... ]
@@ -84,7 +84,7 @@ def sa_hierarchy(A,Ws,x):
     Ps = []
 
     for W in Ws:
-        P,x = sa_fit_candidates(W,x)
+        P,B = sa_fit_candidates(W,B)
         I   = smoothed_prolongator(P,A)  
         A   = I.T.tocsr() * A * I
         As.append(A)
@@ -109,19 +109,21 @@ class adaptive_sa_solver:
             raise ValueError,'small matrices not handled yet'
        
         #first candidate 
-        x,AggOps = self.__initialization_stage(A, blocks=blocks,\
-                                               max_levels=max_levels, max_coarse=max_coarse,\
-                                               mu=mu, epsilon=epsilon) 
+        x,AggOps = self.__initialization_stage(A, blocks = blocks, \
+                                               max_levels = max_levels, \
+                                               max_coarse = max_coarse, \
+                                               mu = mu, epsilon = epsilon) 
         
         Ws = AggOps
 
         self.candidates = [x]
 
         #create SA using x here
-        As,Is,Ps = sa_hierarchy(A,Ws,self.candidates)
+        As,Is,Ps, = sa_hierarchy(A,AggOps,self.candidates)
 
         for i in range(max_candidates - 1):
-            x = self.__develop_candidate(A,As,Is,Ps,Ws,AggOps,mu=mu)    
+            #x = self.__develop_candidate(A,As,Is,Ps,Ws,AggOps,mu=mu)    
+            x = self.__develop_candidate(As,Is,Ps,AggOps,self.candidates,mu=mu)    
             
             self.candidates.append(x)
             
@@ -189,9 +191,7 @@ class adaptive_sa_solver:
         return x,AggOps  #first candidate,aggregation
 
 
-
-
-    def __develop_candidate(self,A,As,Is,Ps,Ws,AggOps,mu):
+    def __develop_candidate(self,As,Is,Ps,AggOps,candidates,mu):
         #scipy.random.seed(0)  #TEST
         x = scipy.rand(A.shape[0])
         b = zeros_like(x)
@@ -201,7 +201,9 @@ class adaptive_sa_solver:
         x = solver.solve(b, x0=x, tol=1e-10, maxiter=mu)
     
         #TEST FOR CONVERGENCE HERE
- 
+
+        #TODO augment candiates each time, then call fit_candidates?
+
         A_l,P_l,W_l,x_l = As[0],Ps[0],Ws[0],x
         
         temp_Is = []
@@ -229,6 +231,46 @@ class adaptive_sa_solver:
             x = I*x
         
         return x
+
+
+##    def __develop_candidate(self,A,As,Is,Ps,Ws,AggOps,mu):
+##        #scipy.random.seed(0)  #TEST
+##        x = scipy.rand(A.shape[0])
+##        b = zeros_like(x)
+##
+##        solver = multilevel_solver(As,Is)
+##
+##        x = solver.solve(b, x0=x, tol=1e-10, maxiter=mu)
+##    
+##        #TEST FOR CONVERGENCE HERE
+## 
+##        A_l,P_l,W_l,x_l = As[0],Ps[0],Ws[0],x
+##        
+##        temp_Is = []
+##        for i in range(len(As) - 2):
+##            P_l_new, x_m, W_l_new, W_m_new = orthonormalize_prolongator(P_l, x_l, W_l, AggOps[i+1])    
+## 
+##            I_l_new = smoothed_prolongator(P_l_new,A_l)
+##            A_m_new = I_l_new.T.tocsr() * A_l * I_l_new
+##            bridge = make_bridge(Is[i+1],A_m_new.shape[0]) 
+## 
+##            temp_solver = multilevel_solver( [A_m_new] + As[i+2:], [bridge] + Is[i+2:] )
+## 
+##            for n in range(mu):
+##                x_m = temp_solver.solve(zeros_like(x_m), x0=x_m, tol=1e-8, maxiter=1)
+## 
+##            temp_Is.append(I_l_new)
+## 
+##            W_l = vstack_csr(Ws[i+1],W_m_new)  #prepare for next iteration
+##            A_l = A_m_new
+##            x_l = x_m
+##            P_l = make_bridge(Ps[i+1],A_m_new.shape[0])
+## 
+##        x = x_l
+##        for I in reversed(temp_Is):
+##            x = I*x
+##        
+##        return x
            
 
     def __augment_cycle(self,A,As,Ps,Ws,AggOps,x):
@@ -286,15 +328,16 @@ A = poisson_problem2D(200)
 A = io.mmread("tests/sample_data/elas30_A.mtx").tocsr()
 blocks = arange(A.shape[0]/2).repeat(2)
 
-asa = adaptive_sa_solver(A,max_candidates=4,mu=12)
+asa = adaptive_sa_solver(A,max_candidates=4,mu=10)
 scipy.random.seed(0)  #make tests repeatable
 x = rand(A.shape[0])
-b = A*rand(A.shape[0])
+#b = A*rand(A.shape[0])
+b = zeros(A.shape[0])
 
 
 print "solving"
 if True:
-    x_sol,residuals = asa.solver.solve(b,x0=x,maxiter=25,tol=1e-8,return_residuals=True)
+    x_sol,residuals = asa.solver.solve(b,x0=x,maxiter=25,tol=1e-7,return_residuals=True)
 else:
     residuals = []
     def add_resid(x):

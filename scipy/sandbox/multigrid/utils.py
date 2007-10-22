@@ -3,20 +3,19 @@ __all__ =['approximate_spectral_radius','infinity_norm','diag_sparse',
 
 import numpy
 import scipy
-from numpy import ravel,arange,concatenate,tile
+from numpy import ravel,arange,concatenate,tile,asarray
 from scipy.linalg import norm
 from scipy.sparse import isspmatrix,isspmatrix_csr,isspmatrix_csc, \
                         csr_matrix,csc_matrix,extract_diagonal, \
                         coo_matrix
 
 
-def approximate_spectral_radius(A,tol=0.1,maxiter=20):
+def approximate_spectral_radius(A,tol=0.1,maxiter=None):
     """
     Approximate the spectral radius of a symmetric matrix using ARPACK
     """
     from scipy.sandbox.arpack import eigen
-    return norm(eigen(A, k=1, ncv=10, which='LM', maxiter=maxiter, tol=tol, return_eigenvectors=False)[0])
-
+    return norm(eigen(A, k=1, ncv=10, which='LM', maxiter=maxiter, tol=tol, return_eigenvectors=False))
 
 
 def infinity_norm(A):
@@ -44,12 +43,16 @@ def diag_sparse(A):
     if isspmatrix(A):
         return extract_diagonal(A)
     else:
-        return csr_matrix((A,arange(len(A)),arange(len(A)+1)),(len(A),len(A)))
+        return csr_matrix((asarray(A),arange(len(A)),arange(len(A)+1)),(len(A),len(A)))
 
 
 def hstack_csr(A,B):
-    #TODO OPTIMIZE THIS
-    assert(A.shape[0] == B.shape[0])
+    if not isspmatrix(A) or not isspmatrix(B):
+        raise TypeError,'expected sparse matrix'
+
+    if A.shape[0] != B.shape[0]:
+        raise ValueError,'row dimensions must agree'
+
     A = A.tocoo()
     B = B.tocoo()
     I = concatenate((A.row,B.row))
@@ -59,7 +62,12 @@ def hstack_csr(A,B):
 
 def vstack_csr(A,B):
     #TODO OPTIMIZE THIS
-    assert(A.shape[1] == B.shape[1])
+    if not isspmatrix(A) or not isspmatrix(B):
+        raise TypeError,'expected sparse matrix'
+    
+    if A.shape[0] != B.shape[0]:
+        raise ValueError,'row dimensions must agree'
+
     A = A.tocoo()
     B = B.tocoo()
     I = concatenate((A.row,B.row+A.shape[0]))
@@ -84,6 +92,7 @@ def expand_into_blocks(A,m,n):
               
     """
     #TODO EXPLAIN MORE
+    #TODO use spkron instead, time for compairson
 
     if n is None:
         n = m

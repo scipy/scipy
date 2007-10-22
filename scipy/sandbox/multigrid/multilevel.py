@@ -61,20 +61,53 @@ def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
     return multilevel_solver(As,Ps)
 
 def smoothed_aggregation_solver(A,candidates=None,blocks=None,aggregation=None,max_levels=10,max_coarse=500,epsilon=0.08,omega=4.0/3.0):
-    """
-    Create a multilevel solver using Smoothed Aggregation (SA)
+    """Create a multilevel solver using Smoothed Aggregation (SA)
 
-        References:
-            "Algebraic Multigrid by Smoothed Aggregation for Second and Fourth Order Elliptic Problems",
-                Petr Vanek and Jan Mandel and Marian Brezina
-                http://citeseer.ist.psu.edu/vanek96algebraic.html
+    *Parameters*:
+        
+        A : {csr_matrix}
+            NxN matrix in CSR format
+        B : {None, array_like} : optional
+            Near-nullspace candidates stored in the columns of an NxK array.
+            The default value B=None is equivalent to B=ones((N,1))
+        blocks : {None, array_like} : optional
+            Array of length N that groups the variables into 'superblocks'.
+            For example, in a 2d vector-valued problem where the even 
+            variables [0,2,4,...N-2] correspond to the x-components and the 
+            odd variables [1,3,5,...,N-1] correspond to the y-components then
+            blocks=[0,0,1,1,2,2,...,N/2,N/2] is expected.  The default 
+            value blocks=None is equivalent to blocks=[0,1,2,..,N] which 
+            implies that each variable should be aggregated seperately.
+            The default is appropriate for scalar valued problems.
+        aggregation: {None, list of csr_matrix} : optional
+            List of csr_matrix objects that describe a user-defined 
+            multilevel aggregation of the variables.
+            TODO ELABORATE
+        max_levels: {integer} : optional
+            Maximum number of levels to be used in the multilevel solver.
+        max_coarse: {integer} : optional
+            Maximum number of variables permitted on the coarse grid.
+        epsilon: {float} : optional
+            Strength of connection parameter used in aggregation.
+        omega: {float} : optional
+            Damping parameter used in prolongator smoothing (0 < omega < 2)
+
+    *Example*:
+        TODO
+
+    *References*:
+        "Algebraic Multigrid by Smoothed Aggregation for Second and Fourth Order Elliptic Problems",
+            Petr Vanek and Jan Mandel and Marian Brezina
+            http://citeseer.ist.psu.edu/vanek96algebraic.html
     
     """
     As = [A]
     Ps = []
     
     if candidates is None:
-        candidates = [ ones(A.shape[0]) ] # use constant vector
+        candidates = ones((A.shape[0],1),dtype=A.dtype) # use constant vector
+    else:
+        candiates = asarray(candidates)
 
     if aggregation is None:
         while len(As) < max_levels and A.shape[0] > max_coarse:
@@ -203,10 +236,10 @@ if __name__ == '__main__':
     
     A = io.mmread('tests/sample_data/elas30_A.mtx').tocsr()
     candidates = io.mmread('tests/sample_data/elas30_nullspace.mtx')
-    candidates = [ array(candidates[:,x]) for x in range(candidates.shape[1]) ]
+    #candidates = [ array(candidates[:,x]) for x in range(candidates.shape[1]) ]
     blocks = arange(A.shape[0]/2).repeat(2)
      
-    ml = smoothed_aggregation_solver(A,candidates,blocks=blocks,epsilon=0,max_coarse=10,max_levels=10)
+    ml = smoothed_aggregation_solver(A,candidates,blocks=blocks,epsilon=0,max_coarse=100,max_levels=2)
     #ml = ruge_stuben_solver(A)
 
     x = rand(A.shape[0])
