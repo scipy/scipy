@@ -1,5 +1,6 @@
 import numpy,scipy,scipy.sparse
-from numpy import sqrt,ravel,diff,zeros,zeros_like,inner,concatenate,asarray
+from numpy import sqrt, ravel, diff, zeros, zeros_like, inner, concatenate, \
+                  asarray, hstack
 from scipy.sparse import csr_matrix,coo_matrix
 
 from relaxation import gauss_seidel
@@ -116,16 +117,16 @@ class adaptive_sa_solver:
         
         Ws = AggOps
 
-        self.candidates = [x]
+        self.candidates = x
 
         #create SA using x here
-        As,Is,Ps, = sa_hierarchy(A,AggOps,self.candidates)
+        As,Is,Ps = sa_hierarchy(A,AggOps,self.candidates)
 
         for i in range(max_candidates - 1):
             #x = self.__develop_candidate(A,As,Is,Ps,Ws,AggOps,mu=mu)    
             x = self.__develop_candidate(As,Is,Ps,AggOps,self.candidates,mu=mu)    
             
-            self.candidates.append(x)
+            self.candidates = hstack((self.candidates,x))
             
             #TODO which is faster?
             #As,Is,Ps,Ws = self.__augment_cycle(A,As,Ps,Ws,AggOps,x)  
@@ -146,12 +147,11 @@ class adaptive_sa_solver:
         
         #step 1
         A_l = A
-        x   = scipy.rand(A_l.shape[0])
+        x   = scipy.rand(A_l.shape[0],1)
         skip_f_to_i = False
         
         #step 2
-        b = zeros_like(x)
-        gauss_seidel(A_l,x,b,iterations=mu,sweep='symmetric')
+        gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')
 
         #step 3
         #TODO test convergence rate here 
@@ -160,11 +160,11 @@ class adaptive_sa_solver:
 
         while len(AggOps) + 1 < max_levels  and A_l.shape[0] > max_coarse:
             W_l   = sa_constant_interpolation(A_l,epsilon=0,blocks=blocks) #step 4b
-            P_l,x = sa_fit_candidates(W_l,[x])                             #step 4c  
-            x = x[0]  #TODO make sa_fit_candidates accept a single x
+            P_l,x = sa_fit_candidates(W_l,x)                             #step 4c  
             I_l   = smoothed_prolongator(P_l,A_l)                          #step 4d
             A_l   = I_l.T.tocsr() * A_l * I_l                              #step 4e
-            
+           
+            print 'A_l.shape',A_l.shape
             AggOps.append(W_l)
             Is.append(I_l)
             As.append(A_l)
@@ -175,8 +175,8 @@ class adaptive_sa_solver:
                 print "."
                 x_hat = x.copy()                                                   #step 4g
                 gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')  #step 4h
-                x_A_x = inner(x,A_l*x) 
-                if (x_A_x/inner(x_hat,A_l*x_hat))**(1.0/mu) < epsilon:             #step 4i
+                x_A_x = dot(x.T,A_l*x)
+                if (x_A_x/dot(x_hat.T,A_l*x_hat))**(1.0/mu) < epsilon:             #step 4i
                     print "sufficient convergence, skipping"
                     skip_f_to_i = True
                     if x_A_x == 0:       
@@ -186,7 +186,7 @@ class adaptive_sa_solver:
         for A_l,I in reversed(zip(As[1:],Is)):
             gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')         #TEST
             x = I * x
-        gauss_seidel(A,x,b,iterations=mu)         #TEST
+        gauss_seidel(A,x,zeros_like(x),iterations=mu,sweep='symmetric')         #TEST
     
         return x,AggOps  #first candidate,aggregation
 
@@ -315,7 +315,7 @@ from multilevel import poisson_problem1D,poisson_problem2D
 
 blocks = None
 
-A = poisson_problem2D(200)
+A = poisson_problem2D(100)
 #A = io.mmread("tests/sample_data/laplacian_41_3dcube.mtx").tocsr()
 #A = io.mmread("laplacian_40_3dcube.mtx").tocsr()
 #A = io.mmread("/home/nathan/Desktop/9pt/9pt-100x100.mtx").tocsr()
@@ -325,10 +325,10 @@ A = poisson_problem2D(200)
 #D = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
 #A = D * A * D
 
-A = io.mmread("tests/sample_data/elas30_A.mtx").tocsr()
-blocks = arange(A.shape[0]/2).repeat(2)
+#A = io.mmread("tests/sample_data/elas30_A.mtx").tocsr()
+#blocks = arange(A.shape[0]/2).repeat(2)
 
-asa = adaptive_sa_solver(A,max_candidates=4,mu=10)
+asa = adaptive_sa_solver(A,max_candidates=1,mu=10)
 scipy.random.seed(0)  #make tests repeatable
 x = rand(A.shape[0])
 #b = A*rand(A.shape[0])
@@ -356,7 +356,7 @@ print asa.solver
 
 print "constant Rayleigh quotient",dot(ones(A.shape[0]),A*ones(A.shape[0]))/float(A.shape[0])
 
-for c in asa.candidates:
+for c in asa.candidates.T:
     print "candidate Rayleigh quotient",dot(c,A*c)/dot(c,c)
 
 

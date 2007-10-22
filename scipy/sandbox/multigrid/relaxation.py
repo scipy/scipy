@@ -1,5 +1,5 @@
 import multigridtools
-from numpy import empty_like
+from numpy import empty_like, asarray
 
 
 def sor(A,x,b,omega,iterations=1,sweep='forward'):
@@ -30,6 +30,9 @@ def gauss_seidel(A,x,b,iterations=1,sweep='forward'):
          sweep      - direction of sweep:
                         'forward' (default), 'backward', or 'symmetric'
     """ 
+    x = asarray(x).reshape(-1)
+    b = asarray(b).reshape(-1)
+
     if A.shape[0] != A.shape[1]:
         raise ValueError,'expected symmetric matrix'
 
