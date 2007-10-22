@@ -37,9 +37,6 @@ import _nd_image
 
 def _extend_mode_to_code(mode):
     mode = _ni_support._extend_mode_to_code(mode)
-    if mode == 2:
-        warnings.warn('Mode "reflect" may yield incorrect results on '
-                      'boundaries. Please use "mirror" instead.')
     return mode
 
 def spline_filter1d(input, order = 3, axis = -1, output = numpy.float64,
@@ -324,12 +321,11 @@ def zoom(input, zoom, output_type = None, output = None, order = 3,
         filtered = input
     zoom = _ni_support._normalize_sequence(zoom, input.ndim)
     output_shape = [int(ii * jj) for ii, jj in zip(input.shape, zoom)]
-    zoom = [1.0 / ii for ii in zoom]
+    zoom = (numpy.array(input.shape)-1)/(numpy.array(output_shape,float)-1)
     output, return_value = _ni_support._get_output(output, input,
                                         output_type, shape = output_shape)
     zoom = numpy.asarray(zoom, dtype = numpy.float64)
-    if not zoom.flags.contiguous:
-        zoom = shift.copy()
+    zoom = numpy.ascontiguousarray(zoom)
     _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval)
     return return_value
 
