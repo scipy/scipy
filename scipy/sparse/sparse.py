@@ -17,7 +17,7 @@ import warnings
 from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
                   ndarray, amax, amin, rank, conj, searchsorted, ndarray,   \
                   less, where, greater, array, transpose, empty, ones, \
-                  arange, shape, intc, clip, prod, unravel_index
+                  arange, shape, intc, clip, prod, unravel_index, hstack
 import numpy
 from scipy.sparse.sparsetools import cscmux, csrmux, \
      cootocsr, csrtocoo, cootocsc, csctocoo, csctocsr, csrtocsc, \
@@ -345,8 +345,7 @@ class spmatrix(object):
 
     def dot(self, other):
         """ A generic interface for matrix-matrix or matrix-vector
-        multiplication.  Returns A.transpose().conj() * other or
-        A.transpose() * other.
+        multiplication.  
         """
 
         try:
@@ -355,22 +354,15 @@ class spmatrix(object):
             # If it's a list or whatever, treat it like a matrix
             other = asmatrix(other)
 
-        if len(other.shape) == 1:
-            result = self.matvec(other)
-        elif isdense(other) and asarray(other).squeeze().ndim <= 1:
-            # If it's a row or column vector, return a DENSE result
-            result = self.matvec(other)
+        if isdense(other) and asarray(other).squeeze().ndim <= 1:
+            # it's a dense row or column vector
+            return self.matvec(other)
         elif len(other.shape) == 2:
-            # Return a sparse result
-            result = self.matmat(other)
+            # it's a 2d dense array, dense matrix, or sparse matrix
+            return self.matmat(other)
         else:
             raise ValueError, "could not interpret dimensions"
-
-        if isinstance(other, matrix) and isdense(result):
-            return asmatrix(result)
-        else:
-            # if the result is sparse or 'other' is an array:
-            return result
+        
 
     def matmat(self, other):
         csc = self.tocsc()
@@ -663,9 +655,10 @@ class _cs_matrix(spmatrix):
             other = self._tothis(other)
             return self._binopt(other,fn,in_shape=(M,N),out_shape=(M,N))
         elif isdense(other):
-            # This is SLOW!  We need a more efficient implementation
-            # of sparse * dense matrix multiplication!
-            return self.matmat(csc_matrix(other))
+            # TODO make sparse * dense matrix multiplication more efficient
+            
+            # matvec each column of other 
+            return hstack( [ self * col.reshape(-1,1) for col in other.T ] )
         else:
             raise TypeError, "need a dense or sparse matrix"
 

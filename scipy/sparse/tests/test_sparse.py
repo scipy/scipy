@@ -213,40 +213,40 @@ class _test_cs:
         # Currently M.matvec(asarray(col)) is rank-1, whereas M.matvec(col)
         # is rank-2.  Is this desirable?
 
-    def check_matmat(self):
+    def check_matmat_sparse(self):
         a = matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]])
         a2 = array([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]])
         b = matrix([[0,1],[1,0],[0,2]],'d')
         asp = self.spmatrix(a)
         bsp = self.spmatrix(b)
         assert_array_almost_equal((asp*bsp).todense(), a*b)
-        assert_array_almost_equal((asp*b).todense(), a*b)
-        assert_array_almost_equal((a*bsp).todense(), a*b)
-        assert_array_almost_equal((a2*bsp).todense(), a*b)
+        assert_array_almost_equal( asp*b, a*b)
+        assert_array_almost_equal( a*bsp, a*b)
+        assert_array_almost_equal( a2*bsp, a*b)
 
         # Now try performing cross-type multplication:
         csp = bsp.tocsc()
         c = b
         assert_array_almost_equal((asp*csp).todense(), a*c)
         assert_array_almost_equal((asp.matmat(csp)).todense(), a*c)
-        assert_array_almost_equal((asp*c).todense(), a*c)
+        assert_array_almost_equal( asp*c, a*c)
         
-        assert_array_almost_equal((a*csp).todense(), a*c)
-        assert_array_almost_equal((a2*csp).todense(), a*c)
+        assert_array_almost_equal( a*csp, a*c)
+        assert_array_almost_equal( a2*csp, a*c)
         csp = bsp.tocsr()
         assert_array_almost_equal((asp*csp).todense(), a*c)
         assert_array_almost_equal((asp.matmat(csp)).todense(), a*c)
-        assert_array_almost_equal((asp*c).todense(), a*c)
+        assert_array_almost_equal( asp*c, a*c)
 
-        assert_array_almost_equal((a*csp).todense(), a*c)
-        assert_array_almost_equal((a2*csp).todense(), a*c)
+        assert_array_almost_equal( a*csp, a*c)
+        assert_array_almost_equal( a2*csp, a*c)
         csp = bsp.tocoo()
         assert_array_almost_equal((asp*csp).todense(), a*c)
         assert_array_almost_equal((asp.matmat(csp)).todense(), a*c)
-        assert_array_almost_equal((asp*c).todense(), a*c)
+        assert_array_almost_equal( asp*c, a*c)
 
-        assert_array_almost_equal((a*csp).todense(), a*c)
-        assert_array_almost_equal((a2*csp).todense(), a*c)
+        assert_array_almost_equal( a*csp, a*c)
+        assert_array_almost_equal( a2*csp, a*c)
 
         # Test provided by Andy Fraser, 2006-03-26
         L = 30
@@ -262,6 +262,18 @@ class _test_cs:
         assert_array_almost_equal(B.todense(), A.todense() * A.T.todense())
         assert_array_almost_equal(B.todense(), A.todense() * A.todense().T)
     
+    def check_matmat_dense(self):
+        a = matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]])
+        asp = self.spmatrix(a)
+        
+        # check both array and matrix types
+        bs = [ array([[1,2],[3,4],[5,6]]), matrix([[1,2],[3,4],[5,6]]) ]
+
+        for b in bs:
+            result = asp*b
+            assert( isinstance(result, type(b)) )
+            assert_equal( result.shape, (4,2) )
+            assert_equal( result, dot(a,b) )
     
     def check_tocoo(self):
         a = self.datsp.tocoo()
