@@ -2114,90 +2114,22 @@ class TestNdimage(NumpyTestCase):
                                        [0, 4, 1, 3],
                                        [0, 7, 6, 8]]) < eps)
 
-    def test_zoom01(self):
+    def test_zoom1(self):
         "zoom 1"
-        data = numpy.ones([2], numpy.float64)
-        for order in range(0, 6):
-            out = ndimage.zoom(data, 2.0, order=order)
-            self.failUnless(diff(out, [1, 1, 1, 0]) < eps)
+        for order in range(0,6):
+            for z in [2,[2,2]]:
+                arr = numpy.array(range(25)).reshape((5,5)).astype(float)
+                arr = ndimage.zoom(arr, z, order=2)
+                assert_equal(arr.shape,(10,10))
+                assert numpy.all(arr[-1,:] != 0)
+                assert numpy.all(arr[-1,:] >= 20)
+                assert numpy.all(arr[0,:] <= 5)
 
-    def test_zoom02(self):
+    def test_zoom2(self):
         "zoom 2"
-        data = [1, 5, 2, 6, 3, 7, 4, 4]
-        for order in range(0, 6):
-            out = ndimage.zoom(data, 0.5, order=order)
-            self.failUnless(diff(out, [1, 2, 3, 4]) < eps)
-
-    def test_zoom03(self):
-        "zoom 3"
-        data = [1, 2, 3, 4]
-        for order in range(0, 6):
-            out = ndimage.zoom(data, 2, order=order)
-            self.failUnless(diff(out[::2], [1, 2, 3, 4]) < eps)
-
-    def test_zoom04(self):
-        "zoom 4"
-        data = [[1, 2, 3, 4],
-                [5, 6, 7, 8],
-                [9.0, 10, 11, 12]]
-        for order in range(0, 6):
-            out = ndimage.zoom(data, [1, 0.5], order=order)
-            self.failUnless(diff(out, [[1, 3], [5, 7], [9, 11]]) < eps)
-
-    def test_zoom05(self):
-        "zoom 5"
-        data = [[1, 2, 3, 4],
-                [5, 6, 7, 8],
-                [9, 10, 11, 12]]
-        for order in range(0, 6):
-            out = ndimage.zoom(data, [0.5, 1], order=order)
-            self.failUnless(diff(out, [[1, 2, 3, 4]]) < eps)
-
-    def test_zoom06(self):
-        "zoom 6"
-        data = [[1, 2, 3, 4],
-                [5, 6, 7, 8],
-                [9, 10, 11, 12]]
-        for order in range(0, 6):
-            out = ndimage.zoom(data, [0.5, 0.5], order=order)
-            self.failUnless(diff(out, [[1, 3]]) < eps)
-
-    def test_zoom07(self):
-        "zoom 7"
-        data = [[1, 2, 3, 4],
-                [5, 6, 7, 8],
-                [9, 10, 11, 12]]
-        for order in range(0, 6):
-            out = ndimage.zoom(data, [1, 2], order=order)
-            self.failUnless(diff(out[..., ::2], data) < eps)
-
-    def test_zoom08(self):
-        "zoom 8"
-        data = [[1, 2, 3, 4],
-                [5, 6, 7, 8],
-                [9, 10, 11, 12]]
-        for order in range(0, 6):
-            out = ndimage.zoom(data, [2, 1], order=order)
-            self.failUnless(diff(out[::2, ...], data) < eps)
-
-    def test_zoom09(self):
-        "zoom 9"
-        data = [[1, 2, 3, 4],
-                [5, 6, 7, 8],
-                [9, 10, 11, 12]]
-        for order in range(0, 6):
-            out = ndimage.zoom(data, [2, 2], order=order)
-            self.failUnless(diff(out[::2, ::2], data) < eps)
-
-    def test_zoom10(self):
-        "zoom 10"
-        data = numpy.array([[1, 2, 3, 4],
-                               [5, 6, 7, 8],
-                               [9, 10, 11, 12]], numpy.float64)
-        for order in range(0, 6):
-            out = ndimage.zoom(data, [2, 2], order=order)
-            out = ndimage.zoom(out, [0.5, 0.5], order=order)
-            self.failUnless(diff(out, data) < eps)
+        arr = numpy.arange(12).reshape((3,4))
+        out = ndimage.zoom(ndimage.zoom(arr,2),0.5)
+        assert_array_equal(out,arr)
 
     def test_zoom_affine01(self):
         "zoom by affine transformation 1"
