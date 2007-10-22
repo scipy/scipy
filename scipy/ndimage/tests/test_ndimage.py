@@ -2119,13 +2119,13 @@ class TestNdimage(NumpyTestCase):
         for order in range(0,6):
             for z in [2,[2,2]]:
                 arr = numpy.array(range(25)).reshape((5,5)).astype(float)
-                arr = ndimage.zoom(arr, z, order=2)
+                arr = ndimage.zoom(arr, z, order=order)
                 assert_equal(arr.shape,(10,10))
                 assert numpy.all(arr[-1,:] != 0)
-                assert numpy.all(arr[-1,:] >= 20)
-                assert numpy.all(arr[0,:] <= 5)
-                assert numpy.all(arr >= 0)
-                assert numpy.all(arr <= 24)
+                assert numpy.all(arr[-1,:] >= (20 - eps))
+                assert numpy.all(arr[0,:] <= (5 + eps))
+                assert numpy.all(arr >= (0 - eps))
+                assert numpy.all(arr <= (24 + eps))
 
     def test_zoom2(self):
         "zoom 2"
