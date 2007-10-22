@@ -2124,6 +2124,8 @@ class TestNdimage(NumpyTestCase):
                 assert numpy.all(arr[-1,:] != 0)
                 assert numpy.all(arr[-1,:] >= 20)
                 assert numpy.all(arr[0,:] <= 5)
+                assert numpy.all(arr >= 0)
+                assert numpy.all(arr <= 24)
 
     def test_zoom2(self):
         "zoom 2"
