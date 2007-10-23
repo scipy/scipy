@@ -77,6 +77,9 @@ def jacobi(A,x,b,iterations=1,omega=1.0):
          iterations - number of iterations to perform (default: 1)
          omega      - damping parameter (default: 1.0)
     """ 
+    x = asarray(x).reshape(-1)
+    b = asarray(b).reshape(-1)
+
     sweep = slice(None)
     (row_start,row_stop,row_step) = sweep.indices(A.shape[0])
     

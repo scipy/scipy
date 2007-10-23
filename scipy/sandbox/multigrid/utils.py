@@ -65,8 +65,8 @@ def vstack_csr(A,B):
     if not isspmatrix(A) or not isspmatrix(B):
         raise TypeError,'expected sparse matrix'
     
-    if A.shape[0] != B.shape[0]:
-        raise ValueError,'row dimensions must agree'
+    if A.shape[1] != B.shape[1]:
+        raise ValueError,'column dimensions must agree'
 
     A = A.tocoo()
     B = B.tocoo()
@@ -93,9 +93,6 @@ def expand_into_blocks(A,m,n):
     """
     #TODO EXPLAIN MORE
     #TODO use spkron instead, time for compairson
-
-    if n is None:
-        n = m
 
     if m == 1 and n == 1:
         return A #nothing to do

@@ -168,7 +168,7 @@ class multilevel_solver:
         if x0 is None:
             x = zeros_like(b)
         else:
-            x = array(x0)
+            x = array(x0) #copy
 
 
         #TODO change use of tol (relative tolerance) to agree with other iterative solvers
@@ -193,19 +193,21 @@ class multilevel_solver:
         A = self.As[lvl]
         
         if len(self.As) == 1:
-            x[:] = spsolve(A,b)
+            #TODO make spsolve preserve dimensions
+            x[:] = spsolve(A,b).reshape(x.shape)
             return 
 
         self.presmoother(A,x,b)
 
         residual = b - A*x                                
 
-        coarse_x = zeros((self.As[lvl+1].shape[0]))
         coarse_b = self.Ps[lvl].T * residual
+        coarse_x = zeros_like(coarse_b)
         
         if lvl == len(self.As) - 2:
             #use direct solver on coarsest level
-            coarse_x[:] = spsolve(self.As[-1],coarse_b)  #TODO reuse factors for efficiency?
+            #TODO reuse factors for efficiency?
+            coarse_x[:] = spsolve(self.As[-1],coarse_b).reshape(coarse_x.shape)
             #coarse_x[:] = scipy.linalg.cg(self.As[-1],coarse_b,tol=1e-12)[0]
             #print "coarse residual norm",scipy.linalg.norm(coarse_b - self.As[-1]*coarse_x)
         else:   
