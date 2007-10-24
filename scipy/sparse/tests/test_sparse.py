@@ -1111,6 +1111,7 @@ class TestConstructUtils(NumpyTestCase):
 
 class TestCOO(NumpyTestCase):
     def check_constructor1(self):
+        """unsorted triplet format"""
         row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
         col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
         data = numpy.array([  6.,  10.,   3.,   9.,   1.,   4.,
@@ -1121,7 +1122,7 @@ class TestCOO(NumpyTestCase):
         assert_array_equal(arange(12).reshape(4,3),coo.todense())
 
     def check_constructor2(self):
-        #duplicate entries should be summed        
+        """unsorted triplet format with duplicates (which are summed)"""
         row  = numpy.array([0,1,2,2,2,2,0,0,2,2])
         col  = numpy.array([0,2,0,2,1,1,1,0,0,2])
         data = numpy.array([2,9,-4,5,7,0,-1,2,1,-5])
@@ -1131,37 +1132,50 @@ class TestCOO(NumpyTestCase):
         
         assert_array_equal(mat,coo.todense())
 
-    def check_normalize( self ):
+    def check_constructor3(self):
+        """empty matrix"""
+        coo = coo_matrix(None,dims=(4,3))
         
-        row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
-        col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
-        data = numpy.array([  6.,  10.,   3.,   9.,   1.,   4.,
-                              11.,   2.,   8.,   5.,   7.])
+        assert_array_equal(zeros((4,3)),coo.todense())
 
-        # coo.todense()
-        #    matrix([[  0.,   1.,   2.],
-        #            [  3.,   4.,   5.],
-        #            [  6.,   7.,   8.],
-        #            [  9.,  10.,  11.]])
-        coo = coo_matrix((data,(row,col)),(4,3))
-
-        ndata,nrow,ncol = coo._normalize(rowfirst=True)
-        sorted_rcd = zip(row, col, data)
-        sorted_rcd.sort()
-        assert(zip(nrow,ncol,ndata) == sorted_rcd) #should sort by rows, then cols
-        assert_array_equal(coo.data, data)                        #coo.data has not changed
-        assert_array_equal(coo.row, row)                          #coo.row has not changed
-        assert_array_equal(coo.col, col)                          #coo.col has not changed
-
-
-        ndata,nrow,ncol = coo._normalize(rowfirst=False)
-        assert(zip(ncol,nrow,ndata) == sorted(zip(col,row,data))) #should sort by cols, then rows
-        assert_array_equal(coo.data, ndata)                       #coo.data has changed
-        assert_array_equal(coo.row, nrow)                         #coo.row has changed
-        assert_array_equal(coo.col, ncol)                         #coo.col has changed
-
-        assert_array_equal(coo.tocsr().todense(), coo.todense())
-        assert_array_equal(coo.tocsc().todense(), coo.todense())
+    def check_constructor4(self):
+        """from dense matrix"""
+        mat = numpy.array([[0,1,0,0],
+                           [7,0,3,0],
+                           [0,4,0,0]])
+        coo = coo_matrix(mat)
+        assert_array_equal(mat,coo.todense())
+        
+##    def check_normalize( self ):
+##        row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
+##        col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
+##        data = numpy.array([  6.,  10.,   3.,   9.,   1.,   4.,
+##                              11.,   2.,   8.,   5.,   7.])
+##
+##        # coo.todense()
+##        #    matrix([[  0.,   1.,   2.],
+##        #            [  3.,   4.,   5.],
+##        #            [  6.,   7.,   8.],
+##        #            [  9.,  10.,  11.]])
+##        coo = coo_matrix((data,(row,col)),(4,3))
+##
+##        ndata,nrow,ncol = coo._normalize(rowfirst=True)
+##        sorted_rcd = zip(row, col, data)
+##        sorted_rcd.sort()
+##        assert(zip(nrow,ncol,ndata) == sorted_rcd) #should sort by rows, then cols
+##        assert_array_equal(coo.data, data)                        #coo.data has not changed
+##        assert_array_equal(coo.row, row)                          #coo.row has not changed
+##        assert_array_equal(coo.col, col)                          #coo.col has not changed
+##
+##
+##        ndata,nrow,ncol = coo._normalize(rowfirst=False)
+##        assert(zip(ncol,nrow,ndata) == sorted(zip(col,row,data))) #should sort by cols, then rows
+##        assert_array_equal(coo.data, ndata)                       #coo.data has changed
+##        assert_array_equal(coo.row, nrow)                         #coo.row has changed
+##        assert_array_equal(coo.col, ncol)                         #coo.col has changed
+##
+##        assert_array_equal(coo.tocsr().todense(), coo.todense())
+##        assert_array_equal(coo.tocsc().todense(), coo.todense())
 
 
 if __name__ == "__main__":

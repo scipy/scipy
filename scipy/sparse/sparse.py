@@ -536,7 +536,6 @@ class _cs_matrix(spmatrix):
     def _imag(self):
         return self._with_data(numpy.imag(self.data))
 
-
     def _binopt(self, other, fn, in_shape=None, out_shape=None):
         """apply the binary operation fn to two sparse matrices"""
         other = self._tothis(other)
@@ -2150,10 +2149,12 @@ class coo_matrix(spmatrix):
     COO matrices are created either as:
         A = coo_matrix(None, dims=(m, n), [dtype])
     for a zero matrix, or as:
+        A = coo_matrix(M)
+    where M is a dense matrix or rank 2 ndarray, or as:
         A = coo_matrix((obj, ij), [dims])
     where the dimensions are optional.  If supplied, we set (M, N) = dims.
-    If not supplied, we infer these from the index arrays
-    ij[0][:] and ij[1][:]
+    If not supplied, we infer these from the index arrays:
+        ij[0][:] and ij[1][:]
 
     The arguments 'obj' and 'ij' represent three arrays:
         1. obj[:]    the entries of the matrix, in any order
@@ -2162,6 +2163,12 @@ class coo_matrix(spmatrix):
 
     So the following holds:
         A[ij[0][k], ij[1][k] = obj[k]
+
+    Note:
+        When converting to CSR or CSC format, duplicate (i,j) entries 
+        will be summed together.  This facilitates efficient construction 
+        of finite element matrices and the like.
+
     """
     def __init__(self, arg1, dims=None, dtype=None):
         spmatrix.__init__(self)
@@ -2170,6 +2177,29 @@ class coo_matrix(spmatrix):
                 obj, ij = arg1
             except:
                 raise TypeError, "invalid input format"
+
+            try:
+                if len(ij) != 2:
+                    raise TypeError
+            except TypeError:
+                raise TypeError, "invalid input format"
+            
+            self.row = asarray(ij[0], dtype=numpy.intc)
+            self.col = asarray(ij[1], dtype=numpy.intc)
+            self.data = asarray(obj)
+            self.dtype = self.data.dtype
+
+            if dims is None:
+                if len(self.row) == 0 or len(self.col) == 0:
+                    raise ValueError, "cannot infer dimensions from zero sized index arrays"
+                M = self.row.max() + 1
+                N = self.col.max() + 1
+                self.shape = (M, N)
+            else:
+                # Use 2 steps to ensure dims has length 2.
+                M, N = dims
+                self.shape = (M, N)
+
         elif arg1 is None:      # clumsy!  We should make ALL arguments
                                 # keyword arguments instead!
             # Initialize an empty matrix.
@@ -2180,34 +2210,22 @@ class coo_matrix(spmatrix):
             self.data = array([])
             self.row = array([])
             self.col = array([])
-            self._check()
-            return
         else:
-            raise TypeError, "invalid input format"
+            #dense argument
+            try:
+                M = asarray(arg1)
+            except:
+                raise TypeError, "invalid input format"
 
-        self.dtype = getdtype(dtype, obj, default=float)
+            if len(M.shape) != 2:
+                raise TypeError, "expected rank 2 array or matrix"
+            self.shape = M.shape
+            self.dtype = M.dtype
+            self.row,self.col = (M != 0).nonzero()
+            self.data  = M[self.row,self.col]
 
-        try:
-            if len(ij) != 2:
-                raise TypeError
-        except TypeError:
-            raise TypeError, "invalid input format"
-
-        if dims is None:
-            if len(ij[0]) == 0 or len(ij[1]) == 0:
-                raise ValueError, "cannot infer dimensions from zero sized index arrays"
-            M = int(amax(ij[0])) + 1
-            N = int(amax(ij[1])) + 1
-            self.shape = (M, N)
-        else:
-            # Use 2 steps to ensure dims has length 2.
-            M, N = dims
-            self.shape = (M, N)
-
-        self.row = asarray(ij[0], dtype=numpy.intc)
-        self.col = asarray(ij[1], dtype=numpy.intc)
-        self.data = asarray(obj, dtype=self.dtype)
         self._check()
+    
 
     def _check(self):
         """ Checks for consistency and stores the number of non-zeros as
@@ -2236,24 +2254,26 @@ class coo_matrix(spmatrix):
         self.shape = tuple([int(x) for x in self.shape])
         self.nnz = nnz
 
-    def _normalize(self, rowfirst=False):
-        if rowfirst:
-            #sort by increasing rows first, columns second
-            if getattr(self, '_is_normalized', None):
-                #columns already sorted, use stable sort for rows
-                P = numpy.argsort(self.row, kind='mergesort')
-                return self.data[P], self.row[P], self.col[P]
-            else:
-                #nothing already sorted
-                P  = numpy.lexsort(keys=(self.col, self.row))
-                return self.data[P], self.row[P], self.col[P]
-        if getattr(self, '_is_normalized', None):
-            return self.data, self.row, self.col
-        #sort by increasing rows first, columns second
-        P  = numpy.lexsort(keys=(self.row, self.col))
-        self.data, self.row, self.col = self.data[P], self.row[P], self.col[P]
-        setattr(self, '_is_normalized', 1)
-        return self.data, self.row, self.col
+##    _normalize shouldn't be necessary anymore
+
+##    def _normalize(self, rowfirst=False):
+##        if rowfirst:
+##            #sort by increasing rows first, columns second
+##            if getattr(self, '_is_normalized', None):
+##                #columns already sorted, use stable sort for rows
+##                P = numpy.argsort(self.row, kind='mergesort')
+##                return self.data[P], self.row[P], self.col[P]
+##            else:
+##                #nothing already sorted
+##                P  = numpy.lexsort(keys=(self.col, self.row))
+##                return self.data[P], self.row[P], self.col[P]
+##        if getattr(self, '_is_normalized', None):
+##            return self.data, self.row, self.col
+##        #sort by increasing rows first, columns second
+##        P  = numpy.lexsort(keys=(self.row, self.col))
+##        self.data, self.row, self.col = self.data[P], self.row[P], self.col[P]
+##        setattr(self, '_is_normalized', 1)
+##        return self.data, self.row, self.col
 
     def rowcol(self, num):
         return (self.row[num], self.col[num])
@@ -2266,7 +2286,7 @@ class coo_matrix(spmatrix):
             return csc_matrix(self.shape, dtype=self.dtype)
         else:
             indptr, rowind, data = cootocsc(self.shape[0], self.shape[1], \
-                                            self.size, self.row, self.col, \
+                                            self.nnz, self.row, self.col, \
                                             self.data)
             return csc_matrix((data, rowind, indptr), self.shape, check=False)
 
@@ -2276,7 +2296,7 @@ class coo_matrix(spmatrix):
             return csr_matrix(self.shape, dtype=self.dtype)
         else:
             indptr, colind, data = cootocsr(self.shape[0], self.shape[1], \
-                                            self.size, self.row, self.col, \
+                                            self.nnz, self.row, self.col, \
                                             self.data)
             return csr_matrix((data, colind, indptr), self.shape, check=False)
 
