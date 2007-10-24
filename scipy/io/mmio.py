@@ -14,6 +14,7 @@
 
 import os
 from numpy import asarray, real, imag, conj, zeros, ndarray
+from itertools import izip
 
 __all__ = ['mminfo','mmread','mmwrite']
 
@@ -334,12 +335,16 @@ def mmwrite(target,a,comment='',field=None,precision=None):
         format = '%i %i ' + format
         target.write('%i %i %i\n' % (rows,cols,entries))
         assert symm=='general',`symm`
+
+        coo = a.tocoo() # convert to COOrdinate format
+        I,J,V = coo.row + 1, coo.col + 1, coo.data # change base 0 -> base 1
+
         if field in ['real','integer']:
-            for i in range(entries):
-                target.write(format % (a.rowcol(i)[0] + 1,a.rowcol(i)[1] + 1,a.getdata(i))) #convert base 0 to base 1
+            for ijv_tuple in izip(I,J,V):
+                target.writelines(format % ijv_tuple)
         elif field=='complex':
-            for i in range(entries):
-                target.write(format % (a.rowcol(i)[0] + 1,a.rowcol(i)[1] + 1,real(a.getdata(i)),imag(a.getdata(i))))
+            for ijv_tuple in izip(I,J,V.real,V.imag):
+                target.writelines(format % ijv_tuple)
         elif field=='pattern':
             raise NotImplementedError,`field`
         else:
