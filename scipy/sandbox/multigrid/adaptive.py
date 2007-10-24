@@ -1,6 +1,7 @@
 import numpy,scipy,scipy.sparse
 from numpy import sqrt, ravel, diff, zeros, zeros_like, inner, concatenate, \
-                  asarray, hstack
+                  asarray, hstack, ascontiguousarray, isinf
+from numpy.random import randn
 from scipy.sparse import csr_matrix,coo_matrix
 
 from relaxation import gauss_seidel
@@ -10,11 +11,12 @@ from utils import approximate_spectral_radius,hstack_csr,vstack_csr,expand_into_
 
 
 
-def augment_candidates(AggOp, old_Q, old_R, new_candidate, level):
+def augment_candidates(AggOp, old_Q, old_R, new_candidate):
     K = old_R.shape[1]
     
     #determine blocksizes
-    if level == 0:
+    if new_candidate.shape[0] == old_Q.shape[0]:
+        #then this is the first prolongator
         old_bs = (1,K)  
         new_bs = (1,K+1)
     else:
@@ -22,42 +24,51 @@ def augment_candidates(AggOp, old_Q, old_R, new_candidate, level):
         new_bs = (K+1,K+1)
         
     AggOp = expand_into_blocks(AggOp,new_bs[0],1).tocsr() #TODO switch to block matrix
-
+    
+    
     # tentative prolongator 
     #TODO USE BSR
     Q_indptr  = (K+1)*AggOp.indptr  
     Q_indices = ((K+1)*AggOp.indices).repeat(K+1)
     for i in range(K+1):
         Q_indices[i::K+1] += i
-    Q_data = zeros((AggOp.shape[0]/new_bs[0],) + new_bs)
-    Q_data[:,:new_bs[0],:new_bs[1]] = old_Q.data.reshape((-1,) + old_bs)   #TODO BSR change 
+    Q_data = zeros((AggOp.indptr[-1]/new_bs[0],) + new_bs)
+    Q_data[:,:old_bs[0],:old_bs[1]] = old_Q.data.reshape((-1,) + old_bs)   #TODO BSR change 
 
     # coarse candidates
-    R = zeros(((K+1)*AggOp.shape[1],K+1)) 
-    for i in range(K):
-        R[i::K+1,:K] = old_R[i::K,:] 
+    #R = zeros(((K+1)*AggOp.shape[1],K+1)) 
+    #for i in range(K):
+    #    R[i::K+1,:K] = old_R[i::K,:] 
+    R = zeros((AggOp.shape[1],K+1,K+1)) 
+    R[:,:K,:K] = old_R.reshape(-1,K,K)
 
     c = new_candidate.reshape(-1)[diff(AggOp.indptr) == 1]  #eliminate DOFs that aggregation misses
+    threshold = 1e-10 / abs(c).max()   # cutoff for small basis functions
+
     X = csr_matrix((c,AggOp.indices,AggOp.indptr),dims=AggOp.shape)
 
     #orthogonalize X against previous
     for i in range(K):
         old_c = ascontiguousarray(Q_data[:,:,i].reshape(-1))
         D_AtX = csr_matrix((old_c*X.data,X.indices,X.indptr),dims=X.shape).sum(axis=0).A.flatten() #same as diagonal of A.T * X            
-        R[i::K+1,-1] = D_AtX
+        R[:,i,K] = D_AtX
         X.data -= D_AtX[X.indices] * old_c
      
     #normalize X
     D_XtX = csr_matrix((X.data**2,X.indices,X.indptr),dims=X.shape).sum(axis=0).A.flatten() #same as diagonal of X.T * X            
     col_norms = sqrt(D_XtX)
-    R[K::K+1,-1] = col_norms
-
+    mask = col_norms < threshold  # find small basis functions
+    col_norms[mask] = 0           # and set them to zero
+    
+    R[:,K,K] = col_norms      # store diagonal entry into R
+    
     col_norms = 1.0/col_norms
-    col_norms[isinf(col_norms)] = 0
+    col_norms[mask] = 0
     X.data *= col_norms[X.indices]
-    last_column = Q_data[:,:,-1].reshape(-1)
-    last_column = X.data.reshape(-1)
+    Q_data[:,:,-1] = X.data.reshape(-1,1)
+    
     Q_data = Q_data.reshape(-1)  #TODO BSR change
+    R = R.reshape(-1,K+1)
 
     Q = csr_matrix((Q_data,Q_indices,Q_indptr),dims=(AggOp.shape[0],(K+1)*AggOp.shape[1]))
 
@@ -171,8 +182,8 @@ class adaptive_sa_solver:
                                                max_coarse = max_coarse, \
                                                mu = mu, epsilon = epsilon) 
         
-        Ws = AggOps
-
+        #Ws = AggOps
+        x /= abs(x).max()
         fine_candidates = x
 
         #create SA using x here
@@ -186,6 +197,7 @@ class adaptive_sa_solver:
             
             #TODO which is faster?
             x = self.__develop_candidate(As,Ps,Ts,AggOps,self.candidates,mu=mu)    
+            x /= abs(x).max()
             fine_candidates = hstack((fine_candidates,x))
             As,Ps,Ts,self.candidates = sa_hierarchy(A,AggOps,fine_candidates)
 
@@ -204,7 +216,7 @@ class adaptive_sa_solver:
         
         #step 1
         A_l = A
-        x   = scipy.rand(A_l.shape[0],1)
+        x   = randn(A_l.shape[0],1)
         skip_f_to_i = False
         
         #step 2
@@ -251,7 +263,7 @@ class adaptive_sa_solver:
     def __develop_candidate(self,As,Ps,Ts,AggOps,candidates,mu):
         A = As[0]
         
-        x = A*scipy.rand(A.shape[0],1)
+        x = randn(A.shape[0],1)
         b = zeros_like(x)
 
         x = multilevel_solver(As,Ps).solve(b, x0=x, tol=1e-10, maxiter=mu)
@@ -270,22 +282,22 @@ class adaptive_sa_solver:
 
         for i in range(len(As) - 2):            
             #TODO test augment_candidates against fit candidates
-            if i == 0:
-                temp = hstack((candidates[0],x))
-            else:
-                K = candidates[i].shape[1] 
-                temp = zeros((x.shape[0]/(K+1),K+1,K + 1))
-                temp[:,:-1,:-1] = candidates[i].reshape(-1,K,K)
-                temp[:,:,-1] = x.reshape(-1,K+1,1)
-                temp = temp.reshape(-1,K+1)
-            T_,R_ = sa_fit_candidates(AggOps[i],temp)
-            #print "T - T_",(T - T_).data.max()
-            #assert((T - T_).data.max() < 1e-10)
-            #assert((R - R_).data.max() < 1e-10)
-            T,R = T_,R_
+            T,R = augment_candidates(AggOps[i], Ts[i], candidates[i+1], x)
+            #if i == 0:
+            #    temp = hstack((candidates[0],x))
+            #else:
+            #    K = candidates[i].shape[1] 
+            #    temp = zeros((x.shape[0]/(K+1),K+1,K + 1))
+            #    temp[:,:-1,:-1] = candidates[i].reshape(-1,K,K)
+            #    temp[:,:,-1] = x.reshape(-1,K+1,1)
+            #    temp = temp.reshape(-1,K+1)
+            #T_,R_ = sa_fit_candidates(AggOps[i],temp)
+            #print "T - T_",abs(T - T_).sum()
+            #assert(abs(T - T_).sum() < 1e-10)
+            #assert((R - R_).sum() < 1e-10)
+            #T,R = T_,R_
             #TODO end test
 
-            #T,R = augment_candidates(AggOps[i], Ts[i], candidates[i+1], x, i)
             P = smoothed_prolongator(T,A)
             A = P.T.tocsr() * A * P 
 
@@ -385,76 +397,83 @@ class adaptive_sa_solver:
         return new_As,new_Ps,new_Ts,new_Ws
 
 
+if __name__ == '__main__':
+    from scipy import *
+    from utils import diag_sparse
+    from multilevel import poisson_problem1D,poisson_problem2D
 
-from scipy import *
-from utils import diag_sparse
-from multilevel import poisson_problem1D,poisson_problem2D
-
-blocks = None
-
-A = poisson_problem2D(100)
-#A = io.mmread("tests/sample_data/laplacian_41_3dcube.mtx").tocsr()
-#A = io.mmread("laplacian_40_3dcube.mtx").tocsr()
-#A = io.mmread("/home/nathan/Desktop/9pt/9pt-100x100.mtx").tocsr()
-#A = io.mmread("/home/nathan/Desktop/BasisShift_W_EnergyMin_Luke/9pt-5x5.mtx").tocsr()
-
-
-#D = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
-#A = D * A * D
-
-A = io.mmread("tests/sample_data/elas30_A.mtx").tocsr()
-blocks = arange(A.shape[0]/2).repeat(2)
-
-asa = adaptive_sa_solver(A,max_candidates=4,mu=5)
-scipy.random.seed(0)  #make tests repeatable
-x = rand(A.shape[0])
-#b = A*rand(A.shape[0])
-b = zeros(A.shape[0])
-
-
-print "solving"
-if True:
-    x_sol,residuals = asa.solver.solve(b,x0=x,maxiter=25,tol=1e-7,return_residuals=True)
-else:
-    residuals = []
-    def add_resid(x):
-        residuals.append(linalg.norm(b - A*x))
-    A.psolve = asa.solver.psolve
-    x_sol = linalg.cg(A,b,x0=x,maxiter=20,tol=1e-12,callback=add_resid)[0]
-
-residuals = array(residuals)/residuals[0]
-
-print "residuals ",residuals
-print "mean convergence factor",(residuals[-1]/residuals[0])**(1.0/len(residuals))
-print "last convergence factor",residuals[-1]/residuals[-2]
-
-print
-print asa.solver
-
-print "constant Rayleigh quotient",dot(ones(A.shape[0]),A*ones(A.shape[0]))/float(A.shape[0])
-
-for c in asa.candidates[0].T:
-    print "candidate Rayleigh quotient",dot(c,A*c)/dot(c,c)
-
-
-
-##W = asa.AggOps[0]*asa.AggOps[1]
-##pcolor((W * rand(W.shape[1])).reshape((200,200)))
-
-def plot2d_arrows(x):
-    from pylab import quiver
-    x = x.reshape(-1)
-    N = (len(x)/2)**0.5
-    assert(2 * N * N == len(x))
-    X = linspace(-1,1,N).reshape(1,N).repeat(N,0).reshape(-1)
-    Y = linspace(-1,1,N).reshape(1,N).repeat(N,0).T.reshape(-1)
-
-    dX = x[0::2]
-    dY = x[1::2]
-
-    quiver(X,Y,dX,dY)
-
-def plot2d(x):
-    from pylab import pcolor
-    pcolor(x.reshape(sqrt(len(x)),sqrt(len(x))))
+    blocks = None
     
+    A = poisson_problem2D(100)
+    #A = io.mmread("tests/sample_data/laplacian_41_3dcube.mtx").tocsr()
+    #A = io.mmread("laplacian_40_3dcube.mtx").tocsr()
+    #A = io.mmread("/home/nathan/Desktop/9pt/9pt-100x100.mtx").tocsr()
+    #A = io.mmread("/home/nathan/Desktop/BasisShift_W_EnergyMin_Luke/9pt-5x5.mtx").tocsr()
+    
+    
+    #D = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
+    #A = D * A * D
+    
+    A = io.mmread("tests/sample_data/elas30_A.mtx").tocsr()
+    blocks = arange(A.shape[0]/2).repeat(2)
+    
+    asa = adaptive_sa_solver(A,max_candidates=3,mu=10)
+    #scipy.random.seed(0)  #make tests repeatable
+    x = randn(A.shape[0])
+    b = A*randn(A.shape[0])
+    #b = zeros(A.shape[0])
+    
+
+    print "solving"
+    if True:
+        x_sol,residuals = asa.solver.solve(b,x0=x,maxiter=20,tol=1e-12,return_residuals=True)
+    else:
+        residuals = []
+        def add_resid(x):
+            residuals.append(linalg.norm(b - A*x))
+        A.psolve = asa.solver.psolve
+        x_sol = linalg.cg(A,b,x0=x,maxiter=30,tol=1e-12,callback=add_resid)[0]
+    
+    residuals = array(residuals)/residuals[0]
+    
+    print "residuals ",residuals
+    print "mean convergence factor",(residuals[-1]/residuals[0])**(1.0/len(residuals))
+    print "last convergence factor",residuals[-1]/residuals[-2]
+    
+    print
+    print asa.solver
+    
+    print "constant Rayleigh quotient",dot(ones(A.shape[0]),A*ones(A.shape[0]))/float(A.shape[0])
+    
+    
+    def plot2d_arrows(x):
+        from pylab import figure,quiver,show
+        x = x.reshape(-1)
+        N = (len(x)/2)**0.5
+        assert(2 * N * N == len(x))
+        X = linspace(-1,1,N).reshape(1,N).repeat(N,0).reshape(-1)
+        Y = linspace(-1,1,N).reshape(1,N).repeat(N,0).T.reshape(-1)
+    
+        dX = x[0::2]
+        dY = x[1::2]
+    
+        figure()
+        quiver(X,Y,dX,dY)
+        show()
+    
+    def plot2d(x):
+        from pylab import pcolor,figure,show
+        figure()
+        pcolor(x.reshape(sqrt(len(x)),sqrt(len(x))))
+        show()
+    
+    for c in asa.candidates[0].T:
+        plot2d_arrows(c)
+        print "candidate Rayleigh quotient",dot(c,A*c)/dot(c,c)
+    
+    
+    
+    ##W = asa.AggOps[0]*asa.AggOps[1]
+    ##pcolor((W * rand(W.shape[1])).reshape((200,200)))
+    
+        

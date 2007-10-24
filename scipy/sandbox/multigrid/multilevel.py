@@ -4,7 +4,7 @@ __all__ = ['poisson_problem1D','poisson_problem2D',
 
 import scipy
 import numpy
-from numpy import ones,zeros,zeros_like,array
+from numpy import ones,zeros,zeros_like,array,asarray
 from numpy.linalg import norm
 from scipy.linsolve import spsolve
 

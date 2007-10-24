@@ -104,7 +104,7 @@ def sa_constant_interpolation(A,epsilon,blocks=None):
 def sa_fit_candidates(AggOp,candidates):
     
     K = candidates.shape[1] # num candidates
-
+    
     N_fine,N_coarse = AggOp.shape
 
     if K > 1 and candidates.shape[0] == K*N_fine:
@@ -112,27 +112,32 @@ def sa_fit_candidates(AggOp,candidates):
         AggOp = expand_into_blocks(AggOp,K,1).tocsr()
         N_fine = K*N_fine
 
-    R = zeros((K*N_coarse,K)) #storage for coarse candidates
+    R = zeros((N_coarse,K,K)) #storage for coarse candidates
 
     candidate_matrices = []
 
     for i in range(K):
         c = candidates[:,i]
-        c = c[diff(AggOp.indptr) == 1]  #eliminate DOFs that aggregation misses
+        c = c[diff(AggOp.indptr) == 1]     # eliminate DOFs that aggregation misses
+
+        threshold = 1e-10 / abs(c).max()   # cutoff for small basis functions
+
         X = csr_matrix((c,AggOp.indices,AggOp.indptr),dims=AggOp.shape)
        
         #orthogonalize X against previous
         for j,A in enumerate(candidate_matrices):
             D_AtX = csr_matrix((A.data*X.data,X.indices,X.indptr),dims=X.shape).sum(axis=0).A.flatten() #same as diagonal of A.T * X            
-            R[j::K,i] = D_AtX
+            R[:,j,i] = D_AtX
             X.data -= D_AtX[X.indices] * A.data
          
         #normalize X
         D_XtX = csr_matrix((X.data**2,X.indices,X.indptr),dims=X.shape).sum(axis=0).A.flatten() #same as diagonal of X.T * X            
         col_norms = sqrt(D_XtX)
-        R[i::K,i] = col_norms
+        mask = col_norms < threshold   # set small basis functions to 0
+        col_norms[mask] = 0
+        R[:,i,i] = col_norms
         col_norms = 1.0/col_norms
-        col_norms[isinf(col_norms)] = 0
+        col_norms[mask] = 0
         X.data *= col_norms[X.indices]
 
         candidate_matrices.append(X)
@@ -146,6 +151,8 @@ def sa_fit_candidates(AggOp,candidates):
     for i,X in enumerate(candidate_matrices):
         Q_data[i::K] = X.data
     Q = csr_matrix((Q_data,Q_indices,Q_indptr),dims=(N_fine,K*N_coarse))
+
+    R = R.reshape(-1,K)
 
     return Q,R
     

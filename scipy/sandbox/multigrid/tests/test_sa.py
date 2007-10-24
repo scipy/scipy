@@ -143,6 +143,10 @@ class TestFitCandidates(NumpyTestCase):
         ## tests where AggOp excludes some DOFs
         self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),dims=(5,2)), ones((5,1)) ))
         self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),dims=(5,2)), vstack((ones(5),arange(5))).T ))
+
+        # overdetermined blocks
+        self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),dims=(5,2)), vstack((ones(5),arange(5),arange(5)**2)).T  ))
+        self.cases.append((csr_matrix((ones(6),array([1,3,0,2,1,0]),array([0,0,1,2,2,3,4,5,5,6])),dims=(9,4)), vstack((ones(9),arange(9),arange(9)**2)).T ))
         self.cases.append((csr_matrix((ones(6),array([1,3,0,2,1,0]),array([0,0,1,2,2,3,4,5,5,6])),dims=(9,4)), vstack((ones(9),arange(9))).T ))
 
     def check_all_cases(self):
@@ -153,7 +157,6 @@ class TestFitCandidates(NumpyTestCase):
             candidates[diff(AggOp.indptr) == 0,:] = 0
 
         for AggOp,fine_candidates in self.cases:
-
             mask_candidate(AggOp,fine_candidates)
 
             Q,coarse_candidates = sa_fit_candidates(AggOp,fine_candidates)
