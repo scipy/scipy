@@ -1528,6 +1528,20 @@ masked_%(name)s(data = %(data)s,
             raise MAError, 'Cannot convert masked element to a Python int.'
         return int(self.item())
     #............................................
+    def get_imag(self):
+        result = self._data.imag.view(type(self))
+        result.__setmask__(self._mask)
+        return result
+    imag = property(fget=get_imag,doc="Imaginary part")
+    
+    def get_real(self):
+        result = self._data.real.view(type(self))
+        result.__setmask__(self._mask)
+        return result
+    real = property(fget=get_real,doc="Real part")
+    
+        
+    #............................................
     def count(self, axis=None):
         """Counts the non-masked elements of the array along the given axis.
 
@@ -2955,4 +2969,11 @@ if __name__ == '__main__':
         assert_equal(mxbig.all(1), [False, False, True])
         assert_equal(mxbig.any(0),[False, False, True])
         assert_equal(mxbig.any(1), [True, True, True])
+        
+    if 1:
+        xx = array([1+10j,20+2j], mask=[1,0])
+        assert_equal(xx.imag,[10,2])
+        assert_equal(xx.imag.filled(), [1e+20,2])
+        assert_equal(xx.real,[1,20])
+        assert_equal(xx.real.filled(), [1e+20,20])
     

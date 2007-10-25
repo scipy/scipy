@@ -783,6 +783,15 @@ class TestMA(NumpyTestCase):
         data_fixed = fix_invalid(data)
         assert_equal(data_fixed._data, [data.fill_value, 0., 1.])
         assert_equal(data_fixed._mask, [1., 0., 1.])    
+    #
+    def check_imag_real(self):
+        xx = array([1+10j,20+2j], mask=[1,0])
+        assert_equal(xx.imag,[10,2])
+        assert_equal(xx.imag.filled(), [1e+20,2])
+        assert_equal(xx.imag.dtype, xx._data.imag.dtype)
+        assert_equal(xx.real,[1,20])
+        assert_equal(xx.real.filled(), [1e+20,20])
+        assert_equal(xx.real.dtype, xx._data.real.dtype)
         
 #...............................................................................
         
