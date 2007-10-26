@@ -12,6 +12,8 @@ from utils import approximate_spectral_radius,hstack_csr,vstack_csr,expand_into_
 
 
 def augment_candidates(AggOp, old_Q, old_R, new_candidate):
+    #TODO update P also
+
     K = old_R.shape[1]
     
     #determine blocksizes
@@ -36,14 +38,11 @@ def augment_candidates(AggOp, old_Q, old_R, new_candidate):
     Q_data[:,:old_bs[0],:old_bs[1]] = old_Q.data.reshape((-1,) + old_bs)   #TODO BSR change 
 
     # coarse candidates
-    #R = zeros(((K+1)*AggOp.shape[1],K+1)) 
-    #for i in range(K):
-    #    R[i::K+1,:K] = old_R[i::K,:] 
     R = zeros((AggOp.shape[1],K+1,K+1)) 
     R[:,:K,:K] = old_R.reshape(-1,K,K)
 
     c = new_candidate.reshape(-1)[diff(AggOp.indptr) == 1]  #eliminate DOFs that aggregation misses
-    threshold = 1e-10 / abs(c).max()   # cutoff for small basis functions
+    threshold = 1e-10 * abs(c).max()   # cutoff for small basis functions
 
     X = csr_matrix((c,AggOp.indices,AggOp.indptr),dims=AggOp.shape)
 
@@ -65,7 +64,7 @@ def augment_candidates(AggOp, old_Q, old_R, new_candidate):
     col_norms = 1.0/col_norms
     col_norms[mask] = 0
     X.data *= col_norms[X.indices]
-    Q_data[:,:,-1] = X.data.reshape(-1,1)
+    Q_data[:,:,-1] = X.data.reshape(-1,new_bs[0])
     
     Q_data = Q_data.reshape(-1)  #TODO BSR change
     R = R.reshape(-1,K+1)
@@ -77,43 +76,6 @@ def augment_candidates(AggOp, old_Q, old_R, new_candidate):
 
 
 
-def orthonormalize_prolongator(P_l,x_l,W_l,W_m):
-    """
-     
-    """
-
-    #candidate prolongator (assumes every value from x is used)  #TODO permit gaps
-    X = csr_matrix((x_l,W_l.indices,W_l.indptr),dims=W_l.shape,check=False)  
-    
-    R = (P_l.T.tocsr() * X)  # R has at most 1 nz per row
-    X = X - P_l*R            # othogonalize X against P_l
-    
-    #TODO DROP REDUNDANT COLUMNS FROM P (AND R?) HERE (NULL OUT R ACCORDINGLY?)    
-    #TODO REMOVE CORRESPONDING COLUMNS FROM W_l AND ROWS FROM A_m ALSO
-    W_l_new = W_l
-    W_m_new = W_m
-
-    #normalize surviving columns of X
-    col_norms = ravel(sqrt(csr_matrix((X.data*X.data,X.indices,X.indptr),dims=X.shape,check=False).sum(axis=0)))
-    print "zero cols",sum(col_norms == 0)
-    print "small cols",sum(col_norms < 1e-8)
-    Xcopy = X.copy()
-    X.data *= (1.0/col_norms)[X.indices]
-
-    P_l_new = hstack_csr(P_l,X)
-
-
-    #check orthonormality
-    print "norm(P.T*P - I) ",scipy.linalg.norm((P_l_new.T * P_l_new - scipy.sparse.spidentity(P_l_new.shape[1])).data)
-    #assert(scipy.linalg.norm((P_l_new.T * P_l_new - scipy.sparse.spidentity(P_l_new.shape[1])).data)<1e-8)
-    
-    x_m = zeros(P_l_new.shape[1],dtype=x_l.dtype)
-    x_m[:P_l.shape[1]][diff(R.indptr).astype('bool')] = R.data
-    x_m[P_l.shape[1]:] = col_norms
-
-    print "||x_l - P_l*x_m||",scipy.linalg.norm(P_l_new* x_m - x_l) #see if x_l is represented exactly
-
-    return P_l_new,x_m,W_l,W_m
 
 
 def smoothed_prolongator(P,A):
@@ -132,7 +94,7 @@ def smoothed_prolongator(P,A):
  
 
 
-def sa_hierarchy(A,Ws,B):
+def sa_hierarchy(A,B,AggOps):
     """
     Construct multilevel hierarchy using Smoothed Aggregation
         Inputs:
@@ -150,8 +112,8 @@ def sa_hierarchy(A,Ws,B):
     Ts = []
     Bs = [B]
 
-    for W in Ws:
-        P,B = sa_fit_candidates(W,B)
+    for AggOp in AggOps:
+        P,B = sa_fit_candidates(AggOp,B)
         I   = smoothed_prolongator(P,A)  
         A   = I.T.tocsr() * A * I
         As.append(A)
@@ -160,14 +122,10 @@ def sa_hierarchy(A,Ws,B):
         Bs.append(B)
     return As,Ps,Ts,Bs
          
-def make_bridge(I,N):
-    tail = I.indptr[-1].repeat(N - I.shape[0])
-    ptr = concatenate((I.indptr,tail))
-    return csr_matrix((I.data,I.indices,ptr),dims=(N,I.shape[1]),check=False)
 
 class adaptive_sa_solver:
-    def __init__(self,A,blocks=None,options=None,max_levels=10,max_coarse=100,\
-                        max_candidates=1,mu=5,epsilon=0.1):
+    def __init__(self, A, blocks=None, max_levels=10, max_coarse=100,\
+                 max_candidates=1, mu=5, epsilon=0.1):
 
         self.A = A
 
@@ -181,29 +139,22 @@ class adaptive_sa_solver:
                                                max_levels = max_levels, \
                                                max_coarse = max_coarse, \
                                                mu = mu, epsilon = epsilon) 
-        
-        #Ws = AggOps
-        x /= abs(x).max()
-        fine_candidates = x
-
+       
         #create SA using x here
-        As,Ps,Ts,self.candidates = sa_hierarchy(A,AggOps,fine_candidates)
-        #self.candidates = [x]
+        As,Ps,Ts,Bs = sa_hierarchy(A,x,AggOps)
 
         for i in range(max_candidates - 1):
-            #x = self.__develop_candidate_OLD(A,As,Ps,Ts,Ws,AggOps,mu=mu)    
-            #As,Ps,Ts,Ws = self.__augment_cycle(A,As,Ts,Ws,AggOps,x)  
-            #self.candidates.append(x)
+            x = self.__develop_new_candidate(As,Ps,Ts,Bs,AggOps,mu=mu)    
             
             #TODO which is faster?
-            x = self.__develop_candidate(As,Ps,Ts,AggOps,self.candidates,mu=mu)    
-            x /= abs(x).max()
-            fine_candidates = hstack((fine_candidates,x))
-            As,Ps,Ts,self.candidates = sa_hierarchy(A,AggOps,fine_candidates)
+            #As,Ps,Ts,Bs = self.__augment_cycle(As,Ps,Ts,Bs,AggOps,x)
+            B = hstack((Bs[0],x))
+            As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
 
         self.Ts = Ts 
         self.solver = multilevel_solver(As,Ps)
         self.AggOps = AggOps
+        self.Bs = Bs
                 
 
     def __initialization_stage(self,A,blocks,max_levels,max_coarse,mu,epsilon):
@@ -232,6 +183,8 @@ class adaptive_sa_solver:
             P_l,x = sa_fit_candidates(W_l,x)                             #step 4c  
             I_l   = smoothed_prolongator(P_l,A_l)                          #step 4d
             A_l   = I_l.T.tocsr() * A_l * I_l                              #step 4e
+          
+            blocks = None #not needed on subsequent levels
            
             print 'A_l.shape',A_l.shape
             AggOps.append(W_l)
@@ -260,7 +213,7 @@ class adaptive_sa_solver:
         return x,AggOps  #first candidate,aggregation
 
 
-    def __develop_candidate(self,As,Ps,Ts,AggOps,candidates,mu):
+    def __develop_new_candidate(self,As,Ps,Ts,Bs,AggOps,mu):
         A = As[0]
         
         x = randn(A.shape[0],1)
@@ -281,22 +234,7 @@ class adaptive_sa_solver:
             return csr_matrix((P.data,P.indices,indptr),dims=(K*P.shape[0]/(K-1),P.shape[1]))
 
         for i in range(len(As) - 2):            
-            #TODO test augment_candidates against fit candidates
-            T,R = augment_candidates(AggOps[i], Ts[i], candidates[i+1], x)
-            #if i == 0:
-            #    temp = hstack((candidates[0],x))
-            #else:
-            #    K = candidates[i].shape[1] 
-            #    temp = zeros((x.shape[0]/(K+1),K+1,K + 1))
-            #    temp[:,:-1,:-1] = candidates[i].reshape(-1,K,K)
-            #    temp[:,:,-1] = x.reshape(-1,K+1,1)
-            #    temp = temp.reshape(-1,K+1)
-            #T_,R_ = sa_fit_candidates(AggOps[i],temp)
-            #print "T - T_",abs(T - T_).sum()
-            #assert(abs(T - T_).sum() < 1e-10)
-            #assert((R - R_).sum() < 1e-10)
-            #T,R = T_,R_
-            #TODO end test
+            T,R = augment_candidates(AggOps[i], Ts[i], Bs[i+1], x)
 
             P = smoothed_prolongator(T,A)
             A = P.T.tocsr() * A * P 
@@ -316,85 +254,30 @@ class adaptive_sa_solver:
             x = P * x
             gauss_seidel(A,x,zeros_like(x),iterations=mu,sweep='symmetric')
         
-        #for P in reversed(temp_Ps):
-        #    x = P*x
-        
         return x
 
-
-##    def __develop_candidate_OLD(self,A,As,Ps,Ts,Ws,AggOps,mu):
-##        #scipy.random.seed(0)  #TEST
-##        x = scipy.rand(A.shape[0])
-##        b = zeros_like(x)
-##
-##        solver = multilevel_solver(As,Ps)
-##
-##        x = solver.solve(b, x0=x, tol=1e-10, maxiter=mu)
-##    
-##        #TEST FOR CONVERGENCE HERE
-## 
-##        A_l,P_l,W_l,x_l = As[0],Ts[0],Ws[0],x
-##        
-##        temp_Ps = []
-##        for i in range(len(As) - 2):
-##            P_l_new, x_m, W_l_new, W_m_new = orthonormalize_prolongator(P_l, x_l, W_l, AggOps[i+1])    
-## 
-##            I_l_new = smoothed_prolongator(P_l_new,A_l)
-##            A_m_new = I_l_new.T.tocsr() * A_l * I_l_new
-##            bridge = make_bridge(Ps[i+1],A_m_new.shape[0]) 
-## 
-##            temp_solver = multilevel_solver( [A_m_new] + As[i+2:], [bridge] + Ps[i+2:] )
-## 
-##            for n in range(mu):
-##                x_m = temp_solver.solve(zeros_like(x_m), x0=x_m, tol=1e-8, maxiter=1)
-## 
-##            temp_Ps.append(I_l_new)
-## 
-##            W_l = vstack_csr(Ws[i+1],W_m_new)  #prepare for next iteration
-##            A_l = A_m_new
-##            x_l = x_m
-##            P_l = make_bridge(Ts[i+1],A_m_new.shape[0])
-## 
-##        x = x_l
-##        for I in reversed(temp_Ps):
-##            x = I*x
-##        
-##        return x
-           
-
-    def __augment_cycle(self,A,As,Ts,Ws,AggOps,x):
-        #make a new cycle using the new candidate
-        A_l,P_l,W_l,x_l = As[0],Ts[0],AggOps[0],x            
+    def __augment_cycle(self,As,Ps,Ts,Bs,AggOps,x):
+        A = As[0]
         
-        new_As,new_Ps,new_Ts,new_Ws = [A],[],[],[AggOps[0]]
+        new_As = [A]
+        new_Ps = []
+        new_Ts = []
+        new_Bs = [ hstack((Bs[0],x)) ]
 
-        for i in range(len(As) - 2):
-            P_l_new, x_m, W_l_new, W_m_new = orthonormalize_prolongator(P_l, x_l, W_l, AggOps[i+1])
+        for i in range(len(As) - 1):            
+            T,R = augment_candidates(AggOps[i], Ts[i], Bs[i+1], x)
 
-            I_l_new = smoothed_prolongator(P_l_new,A_l)
-            A_m_new = I_l_new.T.tocsr() * A_l * I_l_new
-            W_m_new = vstack_csr(Ws[i+1],W_m_new)
+            P = smoothed_prolongator(T,A)
+            A = P.T.tocsr() * A * P 
 
-            new_As.append(A_m_new)
-            new_Ws.append(W_m_new)
-            new_Ps.append(I_l_new)
-            new_Ts.append(P_l_new)
+            new_As.append(A)
+            new_Ps.append(P)
+            new_Ts.append(T)
+            new_Bs.append(R)
 
-            #prepare for next iteration
-            W_l = W_m_new 
-            A_l = A_m_new
-            x_l = x_m
-            P_l = make_bridge(Ts[i+1],A_m_new.shape[0]) 
+            x = R[:,-1].reshape(-1,1)
         
-        P_l_new, x_m, W_l_new, W_m_new = orthonormalize_prolongator(P_l, x_l, W_l, csr_matrix((P_l.shape[1],1)))
-        I_l_new = smoothed_prolongator(P_l_new,A_l)
-        A_m_new = I_l_new.T.tocsr() * A_l * I_l_new
-
-        new_As.append(A_m_new)
-        new_Ps.append(I_l_new)
-        new_Ts.append(P_l_new)
-
-        return new_As,new_Ps,new_Ts,new_Ws
+        return new_As,new_Ps,new_Ts,new_Bs
 
 
 if __name__ == '__main__':
@@ -416,8 +299,11 @@ if __name__ == '__main__':
     
     A = io.mmread("tests/sample_data/elas30_A.mtx").tocsr()
     blocks = arange(A.shape[0]/2).repeat(2)
-    
-    asa = adaptive_sa_solver(A,max_candidates=3,mu=10)
+   
+    from time import clock; start = clock()
+    asa = adaptive_sa_solver(A,max_candidates=5,mu=6,blocks=blocks)
+    print "Adaptive Solver Construction: %s seconds" % (clock() - start); del start
+
     #scipy.random.seed(0)  #make tests repeatable
     x = randn(A.shape[0])
     b = A*randn(A.shape[0])
@@ -445,7 +331,6 @@ if __name__ == '__main__':
     
     print "constant Rayleigh quotient",dot(ones(A.shape[0]),A*ones(A.shape[0]))/float(A.shape[0])
     
-    
     def plot2d_arrows(x):
         from pylab import figure,quiver,show
         x = x.reshape(-1)
@@ -467,7 +352,7 @@ if __name__ == '__main__':
         pcolor(x.reshape(sqrt(len(x)),sqrt(len(x))))
         show()
     
-    for c in asa.candidates[0].T:
+    for c in asa.Bs[0].T:
         plot2d_arrows(c)
         print "candidate Rayleigh quotient",dot(c,A*c)/dot(c,c)
     

@@ -101,8 +101,9 @@ def sa_constant_interpolation(A,epsilon,blocks=None):
     return csr_matrix((Px,Pj,Pp))
 
 
-def sa_fit_candidates(AggOp,candidates):
-    
+def sa_fit_candidates(AggOp,candidates,tol=1e-10):
+    #TODO handle non-floating point candidates better
+
     K = candidates.shape[1] # num candidates
     
     N_fine,N_coarse = AggOp.shape
@@ -115,12 +116,12 @@ def sa_fit_candidates(AggOp,candidates):
     R = zeros((N_coarse,K,K)) #storage for coarse candidates
 
     candidate_matrices = []
-
+        
     for i in range(K):
         c = candidates[:,i]
         c = c[diff(AggOp.indptr) == 1]     # eliminate DOFs that aggregation misses
 
-        threshold = 1e-10 / abs(c).max()   # cutoff for small basis functions
+        threshold = tol * abs(c).max()   # cutoff for small basis functions
 
         X = csr_matrix((c,AggOp.indices,AggOp.indptr),dims=AggOp.shape)
        

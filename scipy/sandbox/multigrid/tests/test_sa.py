@@ -129,25 +129,25 @@ class TestFitCandidates(NumpyTestCase):
 
         ## tests where AggOp includes all DOFs
         #one candidate
-        self.cases.append((csr_matrix((ones(5),array([0,0,0,1,1]),arange(6)),dims=(5,2)), ones((5,1)) ))
-        self.cases.append((csr_matrix((ones(5),array([1,1,0,0,0]),arange(6)),dims=(5,2)), ones((5,1)) ))
-        self.cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),dims=(9,3)), ones((9,1)) ))
+        #self.cases.append((csr_matrix((ones(5),array([0,0,0,1,1]),arange(6)),dims=(5,2)), ones((5,1)) ))
+        #self.cases.append((csr_matrix((ones(5),array([1,1,0,0,0]),arange(6)),dims=(5,2)), ones((5,1)) ))
+        #self.cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),dims=(9,3)), ones((9,1)) ))
         self.cases.append((csr_matrix((ones(9),array([2,1,0,0,1,2,1,0,2]),arange(10)),dims=(9,3)), arange(9).reshape(9,1) ))
         #two candidates
-        self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),arange(5)),dims=(4,2)), vstack((ones(4),arange(4))).T ))
-        self.cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),dims=(9,3)), vstack((ones(9),arange(9))).T ))
-        self.cases.append((csr_matrix((ones(9),array([0,0,1,1,2,2,3,3,3]),arange(10)),dims=(9,4)), vstack((ones(9),arange(9))).T ))
-        #block candidates
-        self.cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),dims=(9,3)), vstack((array([1]*9 + [0]*9),arange(2*9))).T ))
-        
-        ## tests where AggOp excludes some DOFs
-        self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),dims=(5,2)), ones((5,1)) ))
-        self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),dims=(5,2)), vstack((ones(5),arange(5))).T ))
+        #self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),arange(5)),dims=(4,2)), vstack((ones(4),arange(4))).T ))
+        #self.cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),dims=(9,3)), vstack((ones(9),arange(9))).T ))
+        #self.cases.append((csr_matrix((ones(9),array([0,0,1,1,2,2,3,3,3]),arange(10)),dims=(9,4)), vstack((ones(9),arange(9))).T ))
+        ##block candidates
+        #self.cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),dims=(9,3)), vstack((array([1]*9 + [0]*9),arange(2*9))).T ))
+        #
+        ### tests where AggOp excludes some DOFs
+        #self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),dims=(5,2)), ones((5,1)) ))
+        #self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),dims=(5,2)), vstack((ones(5),arange(5))).T ))
 
-        # overdetermined blocks
-        self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),dims=(5,2)), vstack((ones(5),arange(5),arange(5)**2)).T  ))
-        self.cases.append((csr_matrix((ones(6),array([1,3,0,2,1,0]),array([0,0,1,2,2,3,4,5,5,6])),dims=(9,4)), vstack((ones(9),arange(9),arange(9)**2)).T ))
-        self.cases.append((csr_matrix((ones(6),array([1,3,0,2,1,0]),array([0,0,1,2,2,3,4,5,5,6])),dims=(9,4)), vstack((ones(9),arange(9))).T ))
+        ## overdetermined blocks
+        #self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),dims=(5,2)), vstack((ones(5),arange(5),arange(5)**2)).T  ))
+        #self.cases.append((csr_matrix((ones(6),array([1,3,0,2,1,0]),array([0,0,1,2,2,3,4,5,5,6])),dims=(9,4)), vstack((ones(9),arange(9),arange(9)**2)).T ))
+        #self.cases.append((csr_matrix((ones(6),array([1,3,0,2,1,0]),array([0,0,1,2,2,3,4,5,5,6])),dims=(9,4)), vstack((ones(9),arange(9))).T ))
 
     def check_all_cases(self):
         """Test case where aggregation includes all fine nodes"""
