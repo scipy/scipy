@@ -1012,8 +1012,8 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             If True, return a list of results at each iteration.
 
     *Notes*
-
-      Only one of `fhess_p` or `fhess` need to be given.  If `fhess`
+      1. scikits.openopt offers a unified syntax to call this and other solvers.
+      2. Only one of `fhess_p` or `fhess` need to be given.  If `fhess`
       is provided, then `fhess_p` will be ignored.  If neither `fhess`
       nor `fhess_p` is provided, then the hessian product will be
       approximated using finite differences on `fprime`. `fhess_p`
