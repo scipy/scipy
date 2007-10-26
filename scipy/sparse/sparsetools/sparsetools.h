@@ -873,7 +873,7 @@ void get_csr_submatrix(const I n_row,
 		       std::vector<T>* Bx)
 {
   I new_n_row = ir1 - ir0;
-  I new_n_col = ic1 - ic0;
+  //I new_n_col = ic1 - ic0;  //currently unused
   I new_nnz = 0;
   I kk = 0;
 

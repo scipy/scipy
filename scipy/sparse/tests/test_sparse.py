@@ -15,8 +15,8 @@ Run tests if sparse is not installed:
 """
 
 import numpy
-from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, asarray, \
-        float32, float64, complex64, complex128
+from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, \
+        asarray, vstack
 
 import random
 from numpy.testing import *
@@ -502,24 +502,53 @@ class _test_arith:
     """
     def arith_init(self):
         #these can be represented exactly in FP (so arithmetic should be exact)
-        self.A = matrix([[-1.5,0,0,2.25],[3.125,0,-0.125,0],[0,-5.375,0,0]],float64)
-        self.B = matrix([[0,3.375,0,-7.875],[6.625,4.75,0,0],[3.5,6.0625,0,1]],float64)
+        self.A = matrix([[   -1.5,      0,       0,    2.25],
+                         [  3.125,      0,  -0.125,       0],
+                         [      0, -5.375,       0,       0]],'float64')
+        self.B = matrix([[      0,  3.375,       0,  -7.875],
+                         [  6.625,   4.75,       0,       0],
+                         [    3.5, 6.0625,       0,       1]],'float64')
         
-        self.C = matrix([[0.375,0,-5,2.5],[0,7.25,0,-4.875],[0,-0.0625,0,0]],complex128)
-        self.C.imag = matrix([[1.25,0,0,-3.875],[0,4.125,0,2.75],[-0.0625,0,0,1]],float64)
+        self.C = matrix([[  0.375,       0,      -5,     2.5],
+                         [      0,    7.25,       0,  -4.875],
+                         [      0, -0.0625,       0,       0]],'complex128')
+        self.C.imag = matrix([[    1.25,     0,  0, -3.875],
+                              [       0, 4.125,  0,   2.75],
+                              [ -0.0625,     0,  0,      1]],'float64')
 
         #fractions are all x/16ths
-        assert_array_equal((self.A*16).astype(numpy.int32),16*self.A)
-        assert_array_equal((self.B*16).astype(numpy.int32),16*self.B)
-        assert_array_equal((self.C.real*16).astype(numpy.int32),16*self.C.real)
-        assert_array_equal((self.C.imag*16).astype(numpy.int32),16*self.C.imag)
+        assert_array_equal((self.A*16).astype('int32'),16*self.A)
+        assert_array_equal((self.B*16).astype('int32'),16*self.B)
+        assert_array_equal((self.C.real*16).astype('int32'),16*self.C.real)
+        assert_array_equal((self.C.imag*16).astype('int32'),16*self.C.imag)
 
         self.Asp = self.spmatrix(self.A)
         self.Bsp = self.spmatrix(self.B)
         self.Csp = self.spmatrix(self.C)
-        
-        self.dtypes =  [float32,float64,complex64,complex128]
+    
+        #supported types
+        self.dtypes =  ['int8','uint8','int16','int32','int64',
+                        'float32','float64','complex64','complex128']
 
+    def check_conversion(self):
+        self.arith_init()
+        
+        #check whether dtype and value is preserved in conversion
+        for x in self.dtypes:
+            A = self.A.astype(x)
+            B = self.B.astype(x)
+            C = self.C.astype(x)
+                    
+            Asp = self.spmatrix(A)
+            Bsp = self.spmatrix(B)
+            Csp = self.spmatrix(C)
+            assert_equal(A.dtype,Asp.dtype)
+            assert_equal(B.dtype,Bsp.dtype)
+            assert_equal(C.dtype,Csp.dtype)
+            assert_array_equal(A,Asp.todense())
+            assert_array_equal(B,Bsp.todense())
+            assert_array_equal(C,Csp.todense())
+    
     def check_add_sub(self):
         self.arith_init()
         
@@ -547,12 +576,12 @@ class _test_arith:
                     S2 = Asp + Csp
                     S3 = Bsp + Csp
                     
+                    assert_equal(D1.dtype,S1.dtype)
+                    assert_equal(D2.dtype,S2.dtype)
+                    assert_equal(D3.dtype,S3.dtype)
                     assert_array_equal(D1,S1.todense())
                     assert_array_equal(D2,S2.todense())
                     assert_array_equal(D3,S3.todense())
-                    assert_array_equal(D1.dtype,S1.dtype)
-                    assert_array_equal(D2.dtype,S2.dtype)
-                    assert_array_equal(D3.dtype,S3.dtype)
                     assert_array_equal(D1,Asp + B)          #check sparse + dense
                     assert_array_equal(D2,Asp + C)
                     assert_array_equal(D3,Bsp + C)
@@ -568,17 +597,20 @@ class _test_arith:
                     S2 = Asp - Csp
                     S3 = Bsp - Csp
                     
+                    assert_equal(D1.dtype,S1.dtype)
+                    assert_equal(D2.dtype,S2.dtype)
+                    assert_equal(D3.dtype,S3.dtype)                    
                     assert_array_equal(D1,S1.todense())
                     assert_array_equal(D2,S2.todense())
                     assert_array_equal(D3,S3.todense())
-                    assert_array_equal(D1.dtype,S1.dtype)
-                    assert_array_equal(D2.dtype,S2.dtype)
-                    assert_array_equal(D3.dtype,S3.dtype)
                     assert_array_equal(D1,Asp - B)          #check sparse - dense
                     assert_array_equal(D2,Asp - C)
                     assert_array_equal(D3,Bsp - C)
                     assert_array_equal(D1,A - Bsp)          #check dense - sparse
-                    assert_array_equal(D2,A - Csp)
+                    try:
+                        assert_array_equal(D2,A - Csp)
+                    except:
+                        import pdb; pdb.set_trace()
                     assert_array_equal(D3,B - Csp)
 
 
@@ -612,9 +644,9 @@ class _test_arith:
                     assert_array_equal(D1,S1.todense())
                     assert_array_equal(D2,S2.todense())
                     assert_array_equal(D3,S3.todense())
-                    assert_array_equal(D1.dtype,S1.dtype)
-                    assert_array_equal(D2.dtype,S2.dtype)
-                    assert_array_equal(D3.dtype,S3.dtype)
+                    assert_equal(D1.dtype,S1.dtype)
+                    assert_equal(D2.dtype,S2.dtype)
+                    assert_equal(D3.dtype,S3.dtype)
 
 
 
@@ -625,15 +657,15 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_vert_slicing,
 
     def check_constructor1(self):
         b = matrix([[0,4,0],
-                   [3,0,1],
+                   [3,0,0],
                    [0,2,0]],'d')
         bsp = csr_matrix(b)
-        assert_array_almost_equal(bsp.data,[4,3,1,2])
-        assert_array_equal(bsp.indices,[1,0,2,1])
-        assert_array_equal(bsp.indptr,[0,1,3,4])
-        assert_equal(bsp.getnnz(),4)
+        assert_array_almost_equal(bsp.data,[4,3,2])
+        assert_array_equal(bsp.indices,[1,0,1])
+        assert_array_equal(bsp.indptr,[0,1,2,3])
+        assert_equal(bsp.getnnz(),3)
         assert_equal(bsp.getformat(),'csr')
-        assert_array_almost_equal(bsp.todense(),b)
+        assert_array_equal(bsp.todense(),b)
     
     def check_constructor2(self):
         b = zeros((6,6),'d')
@@ -654,6 +686,34 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_vert_slicing,
         assert_array_equal(bsp.indptr,[0,1,2,3])
         assert_array_almost_equal(bsp.todense(),b)
     
+    def check_constructor4(self):
+        """try using int64 indices"""
+        data = arange( 6 ) + 1
+        col = array( [1, 2, 1, 0, 0, 2], dtype='int64' )
+        ptr = array( [0, 2, 4, 6], dtype='int64' )
+
+        a = csr_matrix( (data, col, ptr), dims = (3,3) )
+        
+        b = matrix([[0,1,2],
+                    [4,3,0],
+                    [5,0,6]],'d')
+        
+        assert_equal(a.indptr.dtype,numpy.dtype('int64'))
+        assert_equal(a.indices.dtype,numpy.dtype('int64'))
+        assert_array_equal(a.todense(),b)
+
+    def check_constructor5(self):
+        """using (data, ij) format"""
+        row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
+        col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
+        data = numpy.array([  6.,  10.,   3.,   9.,   1.,   4.,
+                              11.,   2.,   8.,   5.,   7.])
+        
+        ij = vstack((row,col))
+        csr = csr_matrix((data,ij),(4,3))                
+        assert_array_equal(arange(12).reshape(4,3),csr.todense())
+
+
     def check_empty(self):
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
         """
@@ -661,7 +721,7 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_vert_slicing,
         # need a uniform argument order / syntax for constructing an
         # empty sparse matrix. (coo_matrix is currently different).
         shape = (5, 5)
-        for mytype in [float32, float64, complex64, complex128]:
+        for mytype in ['int32', 'float32', 'float64', 'complex64', 'complex128']:
             a = self.spmatrix(shape, dtype=mytype)
             b = a + a
             c = 2 * a
@@ -669,8 +729,8 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_vert_slicing,
             e = a * a.tocoo()
             assert_equal(e.A, a.A*a.A)
             # These fail in all revisions <= r1768:
-            assert(e.dtype.type == mytype)
-            assert(e.A.dtype.type == mytype)
+            assert_equal(e.dtype,mytype)
+            assert_equal(e.A.dtype,mytype)
 
     def check_ensure_sorted_indices(self):
         #print 'sorting CSR indices'
@@ -722,11 +782,22 @@ class test_csc(_test_cs, _test_horiz_slicing, _test_vert_slicing,
         assert_array_equal(bsp.indptr,[0,0,0,0,0,1,1])
 
     def check_constructor3(self):
-        b = matrix([[1,0],[0,2],[3,0]],'d')
+        b = matrix([[1,0],[0,0],[0,2]],'d')
         bsp = csc_matrix(b)
-        assert_array_almost_equal(bsp.data,[1,3,2])
-        assert_array_equal(bsp.indices,[0,2,1])
-        assert_array_equal(bsp.indptr,[0,2,3])
+        assert_array_almost_equal(bsp.data,[1,2])
+        assert_array_equal(bsp.indices,[0,2])
+        assert_array_equal(bsp.indptr,[0,1,2])
+
+    def check_constructor5(self):
+        """using (data, ij) format"""
+        row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
+        col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
+        data = numpy.array([  6.,  10.,   3.,   9.,   1.,   4.,
+                              11.,   2.,   8.,   5.,   7.])
+       
+        ij = vstack((row,col))
+        csc = csc_matrix((data,ij),(4,3))                
+        assert_array_equal(arange(12).reshape(4,3),csc.todense())
 
     def check_empty(self):
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
@@ -735,15 +806,15 @@ class test_csc(_test_cs, _test_horiz_slicing, _test_vert_slicing,
         # need a uniform argument order / syntax for constructing an
         # empty sparse matrix. (coo_matrix is currently different).
         shape = (5, 5)
-        for mytype in [float32, float64, complex64, complex128]:
+        for mytype in ['int32', 'float32', 'float64', 'complex64', 'complex128']:
             a = self.spmatrix(shape, dtype=mytype)
             b = a + a
             c = 2 * a
             d = a + a.tocsc()
             e = a * a.tocoo()
             assert_equal(e.A, a.A*a.A)
-            assert(e.dtype.type == mytype)
-            assert(e.A.dtype.type == mytype)
+            assert_equal(e.dtype, mytype)
+            assert_equal(e.A.dtype, mytype)
 
     def check_ensure_sorted_indices(self):
         #print 'sorting CSC indices'
@@ -769,8 +840,8 @@ class test_csc(_test_cs, _test_horiz_slicing, _test_vert_slicing,
         aa = a.toarray()
         ab = b.toarray()
 
-        assert b.dtype == a.dtype
-        assert b.shape == (2,2)
+        assert_equal(b.dtype, a.dtype)
+        assert_equal(b.shape, (2,2))
         assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
 class test_dok(_test_cs, NumpyTestCase):
@@ -816,7 +887,7 @@ class test_dok(_test_cs, NumpyTestCase):
         # now test CSR
         (m, n) = (n, m)
         b = a.transpose()
-        assert b.shape == (m, n)
+        assert_equal(b.shape, (m, n))
         # assert that the last row is all zeros
         assert_array_equal( b.toarray()[m-1,:], zeros(n,) )
 

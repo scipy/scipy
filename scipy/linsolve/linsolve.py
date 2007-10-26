@@ -10,6 +10,10 @@ else:
     isUmfpack = False
 useUmfpack = True
 
+#convert numpy char to superLU char
+superLU_transtabl = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} 
+
+
 def use_solver( **kwargs ):
     """
     Valid keyword arguments with defaults (other ignored):
@@ -21,8 +25,8 @@ def use_solver( **kwargs ):
     based solver to be used.
     
     Umfpack requires a CSR/CSC matrix to have sorted column/row indices. If
-    sure that the matrix fulfills this, pass assumeSortedIndices =
-    True to gain some speed.
+    sure that the matrix fulfills this, pass assumeSortedIndices=True 
+    to gain some speed.
     """
     if kwargs.has_key( 'useUmfpack' ):
         globals()['useUmfpack'] = kwargs['useUmfpack']
@@ -62,7 +66,12 @@ def spsolve(A, b, permc_spec=2):
             b = b.squeeze()
         else:
             raise ValueError, "rhs must be a vector (has shape %s)" % (b.shape,)
+   
+    if not isspmatrix(A):
+        raise TypeError,'expected sparse matrix'
     
+    A = A.asfptype()  #upcast to a floating point format
+
     if not hasattr(A, 'tocsr') and not hasattr(A, 'tocsc'):
         raise ValueError, "sparse matrix must be able to return CSC format--"\
               "A.tocsc()--or CSR format--A.tocsr()"
@@ -75,6 +84,8 @@ def spsolve(A, b, permc_spec=2):
     if M != b.size:
         raise ValueError, "matrix - rhs size mismatch (%s - %s)"\
               % (A.shape, b.shape)
+        
+        
        
     if isUmfpack and useUmfpack:
         mat = _toCS_umfpack( A )
@@ -90,8 +101,9 @@ def spsolve(A, b, permc_spec=2):
 
     else:
         mat, csc = _toCS_superLU( A )
+        ftype = superLU_transtabl[mat.dtype.char]
         index0 = mat.indices
-        ftype, lastel, data, index1 = mat.ftype, mat.nnz, mat.data, mat.indptr
+        lastel, data, index1 = mat.nnz, mat.data, mat.indptr
         gssv = eval('_superlu.' + ftype + 'gssv')
         b = asarray(b, dtype=data.dtype)
         return gssv(N, lastel, data, index0, index1, b, csc, permc_spec)[0]
@@ -114,7 +126,10 @@ def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
 ##         print "UMFPACK is present - try umfpack.numeric and umfpack.solve instead!"
 
     csc = A.tocsc()
-    gstrf = eval('_superlu.' + csc.ftype + 'gstrf')
+    csc = csc.asfptype()  #upcast to a floating point format
+    ftype = superLU_transtabl[csc.dtype.char]
+
+    gstrf = eval('_superlu.' + ftype + 'gstrf')
     return gstrf(N, csc.nnz, csc.data, csc.indices, csc.indptr, permc_spec,
                  diag_pivot_thresh, drop_tol, relax, panel_size)
 

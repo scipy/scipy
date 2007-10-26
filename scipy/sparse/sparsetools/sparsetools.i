@@ -54,25 +54,6 @@
 %enddef
 
 
-I_IN_ARRAY1( int  )
-I_IN_ARRAY1( long )
-
-T_IN_ARRAY1( int         )
-T_IN_ARRAY1( long        )
-T_IN_ARRAY1( float       )
-T_IN_ARRAY1( double      )
-T_IN_ARRAY1( npy_cfloat_wrapper  )
-T_IN_ARRAY1( npy_cdouble_wrapper )
-
-T_IN_ARRAY2( int         )
-T_IN_ARRAY2( long        )
-T_IN_ARRAY2( float       )
-T_IN_ARRAY2( double      )
-T_IN_ARRAY2( npy_cfloat_wrapper  )
-T_IN_ARRAY2( npy_cdouble_wrapper )
-
-
-
  /*
   * OUT types
   */
@@ -102,36 +83,10 @@ T_IN_ARRAY2( npy_cdouble_wrapper )
 
 
 
-I_ARRAY_ARGOUT( int  )
-I_ARRAY_ARGOUT( long )
-
-T_ARRAY_ARGOUT( int                 )
-T_ARRAY_ARGOUT( long                )
-T_ARRAY_ARGOUT( float               )
-T_ARRAY_ARGOUT( double              )
-T_ARRAY_ARGOUT( npy_cfloat_wrapper  )
-T_ARRAY_ARGOUT( npy_cdouble_wrapper )
-
-
 
  /*
   * INOUT types
   */
-%define T_INPLACE_ARRAY2( ctype )
-%apply ctype * INPLACE_ARRAY2 {
-  ctype Mx [ ]
-};
-%enddef
-
-T_INPLACE_ARRAY2( int         )
-T_INPLACE_ARRAY2( long        )
-T_INPLACE_ARRAY2( float       )
-T_INPLACE_ARRAY2( double      )
-T_INPLACE_ARRAY2( npy_cfloat_wrapper  )
-T_INPLACE_ARRAY2( npy_cdouble_wrapper )
-
-
-
 %define I_INPLACE_ARRAY1( ctype )
 %apply ctype * INPLACE_ARRAY {
   ctype Ap [ ],
@@ -139,23 +94,52 @@ T_INPLACE_ARRAY2( npy_cdouble_wrapper )
 };
 %enddef
 
-I_INPLACE_ARRAY1( int         )
-I_INPLACE_ARRAY1( long        )
-
-
 %define T_INPLACE_ARRAY1( ctype )
 %apply ctype * INPLACE_ARRAY {
   ctype Ax [ ]
 };
 %enddef
 
-T_INPLACE_ARRAY1( long        )
-T_INPLACE_ARRAY1( float       )
-T_INPLACE_ARRAY1( double      )
-T_INPLACE_ARRAY1( npy_cfloat_wrapper  )
-T_INPLACE_ARRAY1( npy_cdouble_wrapper )
+%define T_INPLACE_ARRAY2( ctype )
+%apply ctype * INPLACE_ARRAY2 {
+  ctype Mx [ ]
+};
+%enddef
 
 
+/*
+ * Macros to instantiate index types and data types
+ */
+%define DECLARE_INDEX_TYPE( ctype )
+I_IN_ARRAY1( ctype )
+I_ARRAY_ARGOUT( ctype )
+I_INPLACE_ARRAY1( ctype )
+%enddef
+
+%define DECLARE_DATA_TYPE( ctype )
+T_IN_ARRAY1( ctype )
+T_IN_ARRAY2( ctype )
+T_ARRAY_ARGOUT( ctype )
+T_INPLACE_ARRAY1( ctype )
+T_INPLACE_ARRAY2( ctype )
+%enddef
+
+
+/*
+ * Create all desired index and data types here
+ */
+DECLARE_INDEX_TYPE( int       )
+DECLARE_INDEX_TYPE( long long )
+
+DECLARE_DATA_TYPE( signed char         )
+DECLARE_DATA_TYPE( unsigned char       )
+DECLARE_DATA_TYPE( short               )
+DECLARE_DATA_TYPE( int                 )
+DECLARE_DATA_TYPE( long long           )
+DECLARE_DATA_TYPE( float               )
+DECLARE_DATA_TYPE( double              )
+DECLARE_DATA_TYPE( npy_cfloat_wrapper  )
+DECLARE_DATA_TYPE( npy_cdouble_wrapper )
 
 
 
@@ -164,17 +148,31 @@ T_INPLACE_ARRAY1( npy_cdouble_wrapper )
  /*
   * Order may be important here, list float before double, scalar before complex
   * 
-  * Should we permit unsigned types as array indices?  Do any functions require signedness? -- Nathan (Aug 2007)
+  * Should we permit unsigned types as array indices?  
+  * Do any functions require signedness? -- Nathan (Aug 2007)
   */
 
-%define INSTANTIATE_ALL( f_name )		     
+%define INSTANTIATE_ALL( f_name )
+/* 64-bit indices */
+%template(f_name)   f_name<int,signed char>;
+%template(f_name)   f_name<int,unsigned char>;
+%template(f_name)   f_name<int,short>;
 %template(f_name)   f_name<int,int>;
-%template(f_name)   f_name<int,long>;
+%template(f_name)   f_name<int,long long>;
 %template(f_name)   f_name<int,float>;
 %template(f_name)   f_name<int,double>;
 %template(f_name)   f_name<int,npy_cfloat_wrapper>;
 %template(f_name)   f_name<int,npy_cdouble_wrapper>;
-/* 64-bit indices would go here */
+/* 64-bit indices */
+%template(f_name)   f_name<long long,signed char>;
+%template(f_name)   f_name<long long,unsigned char>;
+%template(f_name)   f_name<long long,short>;
+%template(f_name)   f_name<long long,int>;
+%template(f_name)   f_name<long long,long long>;
+%template(f_name)   f_name<long long,float>;
+%template(f_name)   f_name<long long,double>;
+%template(f_name)   f_name<long long,npy_cfloat_wrapper>;
+%template(f_name)   f_name<long long,npy_cdouble_wrapper>;
 %enddef
 
 

@@ -40,6 +40,12 @@ MAXPRINT = 50
 ALLOCSIZE = 1000
 NZMAX = 100
 
+#TODO handle this in SWIG
+def to_native(A):
+    if not A.dtype.isnative:
+        return A.astype(A.dtype.newbyteorder('native'))
+    else:
+        return A
 
 # The formats that we might potentially understand.
 _formats = {'csc':[0, "Compressed Sparse Column"],
@@ -64,22 +70,6 @@ _formats = {'csc':[0, "Compressed Sparse Column"],
             'und':[19, "Undefined"]
             }
 
-
-
-_coerce_rules = {('f', 'f'):'f', ('f', 'd'):'d', ('f', 'F'):'F',
-                 ('f', 'D'):'D', ('d', 'f'):'d', ('d', 'd'):'d',
-                 ('d', 'F'):'D', ('d', 'D'):'D', ('F', 'f'):'F',
-                 ('F', 'd'):'D', ('F', 'F'):'F', ('F', 'D'):'D',
-                 ('D', 'f'):'D', ('D', 'd'):'d', ('D', 'F'):'D',
-                 ('D', 'D'):'D'}
-_transtabl = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
-_itranstabl = {'s':'f', 'd':'d', 'c':'F', 'z':'D'}
-def _convert_data(data1, data2, newtype):
-    if data1.dtype.char != newtype:
-        data1 = data1.astype(newtype)
-    if data2.dtype.char != newtype:
-        data2 = data2.astype(newtype)
-    return data1, data2
 
 
 
@@ -124,6 +114,21 @@ class spmatrix(object):
     def astype(self, t):
         csc = self.tocsc()
         return csc.astype(t)
+
+    def asfptype(self):
+        """Upcast matrix to a floating point format (if necessary)"""
+
+        fp_types = ['f','d','F','D']
+        
+        if self.dtype.char in fp_types:
+            return self
+        else:
+            for fp_type in fp_types:
+                if self.dtype <= numpy.dtype(fp_type):
+                    return self.astype(fp_type)
+
+            raise TypeError,'cannot upcast [%s] to a floating \
+                             point format' % self.dtype.name
 
     def __iter__(self):
         for r in xrange(self.shape[0]):
@@ -227,13 +232,17 @@ class spmatrix(object):
         return csc.__add__(other)
 
     def __radd__(self, other):  # other + self
-        return self.__add__(other)
+        csc = self.tocsc()
+        return csc.__radd__(other)
 
     def __sub__(self, other):   # self - other
-        return self.__add__(-other)
+        #note: this can't be replaced by self + (-other) for unsigned types
+        csc = self.tocsc()
+        return csc.__sub__(other)
 
     def __rsub__(self, other):  # other - self
-        return (-self).__add__(other)
+        csc = self.tocsc()
+        return csc.__rsub__(other)
 
     def __mul__(self, other):
         csc = self.tocsc()
@@ -290,8 +299,8 @@ class spmatrix(object):
             return self._imag()
         elif attr == 'size':
             return self.getnnz()
-        elif attr == 'ftype':
-            return _transtabl.get(self.dtype.char,'')
+#        elif attr == 'ftype':
+#            return _transtabl.get(self.dtype.char,'')
         else:
             raise AttributeError, attr + " not found"
 
@@ -504,6 +513,19 @@ class spmatrix(object):
         fd.close()
 
 class _cs_matrix(spmatrix):
+    def _check(self):
+        if self.indptr.dtype > numpy.dtype('int64'):
+            raise TypeError,'indptr array has invalid dtype'
+        if self.indices.dtype > numpy.dtype('int64'):
+            raise TypeError,'indices array has invalid dtype'
+
+        #TODO handle non-native byteorder better
+        self.indptr  = to_native(self.indptr)
+        self.indices = to_native(self.indices)
+        self.data    = to_native(self.data)
+
+        #TODO unify csr and csr _check
+    
     def astype(self, t):
         return self._with_data(self.data.astype(t))
 
@@ -567,6 +589,9 @@ class _cs_matrix(spmatrix):
         else:
             raise NotImplementedError
 
+    def __radd__(self,other):
+        return self.__add__(other)
+
     def __sub__(self,other,fn):
         # First check if argument is a scalar
         if isscalarlike(other):
@@ -578,8 +603,20 @@ class _cs_matrix(spmatrix):
                 raise ValueError, "inconsistent shapes"
             return self._binopt(other,fn)
         elif isdense(other):
-            # Convert this matrix to a dense matrix and add them
+            # Convert this matrix to a dense matrix and subtract them
             return self.todense() - other
+        else:
+            raise NotImplementedError
+
+    def __rsub__(self,other):  # other - self
+        #note: this can't be replaced by other + (-self) for unsigned types
+        if isscalarlike(other):
+            # Now we would add this scalar to every element.
+            raise NotImplementedError, 'adding a scalar to a CSC or CSR ' \
+                  'matrix is not supported'
+        elif isdense(other):
+            # Convert this matrix to a dense matrix and subtract them
+            return other - self.todense()
         else:
             raise NotImplementedError
 
@@ -830,16 +867,9 @@ class csc_matrix(_cs_matrix):
                 # Convert to a row vector
                 arg1 = arg1.reshape(1, arg1.shape[0])
             if rank(arg1) == 2:
-                #s = asarray(arg1)
-                s = arg1
-                if s.dtype.char not in 'fdFD':
-                    # Use a double array as the source (but leave it alone)
-                    s = s*1.0
-                if (rank(s) == 2):
-                    self.shape = s.shape
-                    self.indptr, self.indices, self.data = densetocsr(s.shape[1], \
-                                                                     s.shape[0], \
-                                                                     s.T)
+                self.shape = arg1.shape
+                self.indptr, self.indices, self.data = \
+                        densetocsr(arg1.shape[1], arg1.shape[0], arg1.T)
             else:
                 raise ValueError, "dense array must have rank 1 or 2"
         elif isspmatrix(arg1):
@@ -891,12 +921,12 @@ class csc_matrix(_cs_matrix):
                         self.dtype = getdtype(dtype, s)
                         if copy:
                             self.data = array(s)
-                            self.indices = array(rowind, dtype=intc)
-                            self.indptr = array(indptr, dtype=intc)
+                            self.indices = array(rowind)
+                            self.indptr = array(indptr)
                         else:
                             self.data = asarray(s)
-                            self.indices = asarray(rowind, dtype=intc)
-                            self.indptr = asarray(indptr, dtype=intc)
+                            self.indices = asarray(rowind)
+                            self.indptr = asarray(indptr)
                     except:
                         raise ValueError, "unrecognized form for csc_matrix constructor"
                 else:
@@ -943,6 +973,8 @@ class csc_matrix(_cs_matrix):
 
 
     def _check(self,full_check=True):
+        _cs_matrix._check(self)        
+        
         # some functions pass floats
         self.shape = tuple([int(x) for x in self.shape])
 
@@ -979,17 +1011,21 @@ class csc_matrix(_cs_matrix):
             raise ValueError, \
                   "Last value of index list should be less than "\
                   "the size of data list"
-        if (self.indices.dtype != numpy.intc):
-            self.indices = self.indices.astype(numpy.intc)
-        if (self.indptr.dtype != numpy.intc):
-            self.indptr = self.indptr.astype(numpy.intc)
+
+
+        #TODO remove
+        #if (self.indices.dtype != numpy.intc):
+        #    self.indices = self.indices.astype(numpy.intc)
+        #if (self.indptr.dtype != numpy.intc):
+        #    self.indptr = self.indptr.astype(numpy.intc)
 
         self.nnz = nnz
         self.nzmax = nzmax
         self.dtype = self.data.dtype
-        if self.dtype.char not in 'fdFD':
-            self.data = 1.0 * self.data
-            self.dtype = self.data.dtype
+        #TODO remove
+        #if self.dtype.char not in 'fdFD':
+        #    self.data = 1.0 * self.data
+        #    self.dtype = self.data.dtype
 
     def __getattr__(self, attr):
         if attr == 'rowind':
@@ -1201,12 +1237,9 @@ class csr_matrix(_cs_matrix):
                 # Convert to a row vector
                 arg1 = arg1.reshape(1, arg1.shape[0])
             if rank(arg1) == 2:
-                s = arg1
-                ocsc = csc_matrix(transpose(s))
-                self.indices = ocsc.indices
-                self.indptr = ocsc.indptr
-                self.data = ocsc.data
-                self.shape = (ocsc.shape[1], ocsc.shape[0])
+                self.shape = arg1.shape
+                self.indptr, self.indices, self.data = \
+                        densetocsr(arg1.shape[0], arg1.shape[1], arg1)
             else:
                 raise ValueError, "dense array must have rank 1 or 2"
         elif isspmatrix(arg1):
@@ -1257,16 +1290,16 @@ class csr_matrix(_cs_matrix):
                         self.dtype = getdtype(dtype, s)
                         if copy:
                             self.data = array(s, dtype=self.dtype)
-                            self.indices = array(colind, dtype=intc)
-                            self.indptr = array(indptr, dtype=intc)
+                            self.indices = array(colind)
+                            self.indptr  = array(indptr)
                         else:
                             self.data = asarray(s, dtype=self.dtype)
-                            self.indices = asarray(colind, dtype=intc)
-                            self.indptr = asarray(indptr, dtype=intc)
+                            self.indices = asarray(colind)
+                            self.indptr = asarray(indptr)
                 else:
                     # (data, ij) format
                     self.dtype = getdtype(dtype, s)
-                    ijnew = array([ij[1], ij[0]], copy=copy)
+                    ijnew = array(ij, copy=copy)
                     temp = coo_matrix((s, ijnew), dims=dims, \
                                       dtype=self.dtype).tocsr()
                     self.shape = temp.shape
@@ -1299,10 +1332,12 @@ class csr_matrix(_cs_matrix):
                 N = max(oldN, N)
 
         self.shape = (M, N)
-
+        
         self._check(check)
 
     def _check(self,full_check=True):
+        _cs_matrix._check(self)        
+
         # some functions pass floats
         self.shape = tuple([int(x) for x in self.shape])
 
@@ -1335,17 +1370,19 @@ class csr_matrix(_cs_matrix):
             raise ValueError, \
                   "last value of index list should be less than "\
                   "the size of data list"
-        if (self.indices.dtype != numpy.intc):
-            self.indices = self.indices.astype(numpy.intc)
-        if (self.indptr.dtype != numpy.intc):
-            self.indptr = self.indptr.astype(numpy.intc)
+        #TODO remove this
+        #if (self.indices.dtype != numpy.intc):
+        #    self.indices = self.indices.astype(numpy.intc)
+        #if (self.indptr.dtype != numpy.intc):
+        #    self.indptr = self.indptr.astype(numpy.intc)
 
         self.nnz = nnz
         self.nzmax = nzmax
         self.dtype = self.data.dtype
-        if self.dtype.char not in 'fdFD':
-            self.data = self.data + 0.0
-            self.dtype = self.data.dtype
+        #TODO remove
+        #if self.dtype.char not in 'fdFD':
+        #    self.data = self.data + 0.0
+        #    self.dtype = self.data.dtype
 
     def __getattr__(self, attr):
         if attr == 'colind':
@@ -2184,8 +2221,8 @@ class coo_matrix(spmatrix):
             except TypeError:
                 raise TypeError, "invalid input format"
             
-            self.row = asarray(ij[0], dtype=numpy.intc)
-            self.col = asarray(ij[1], dtype=numpy.intc)
+            self.row = asarray(ij[0])
+            self.col = asarray(ij[1])
             self.data = asarray(obj)
             self.dtype = self.data.dtype
 
@@ -2208,8 +2245,8 @@ class coo_matrix(spmatrix):
             self.shape = dims
             self.dtype = getdtype(dtype, default=float)
             self.data = array([])
-            self.row = array([])
-            self.col = array([])
+            self.row = array([],dtype=intc)
+            self.col = array([],dtype=intc)
         else:
             #dense argument
             try:
@@ -2235,10 +2272,21 @@ class coo_matrix(spmatrix):
         if (nnz != len(self.row)) or (nnz != len(self.col)):
             raise ValueError, "row, column, and data array must all be "\
                   "the same length"
-        if (self.row.dtype != numpy.intc):
-            self.row = self.row.astype(numpy.intc)
-        if (self.col.dtype != numpy.intc):
-            self.col = self.col.astype(numpy.intc)
+
+        if self.row.dtype > numpy.dtype('int64'):
+            raise TypeError,'row array has invalid dtype'
+        if self.col.dtype > numpy.dtype('int64'):
+            raise TypeError,'column array has invalid dtype'
+
+        #TODO fix this bandaid
+        self.row  = to_native(self.row)
+        self.col  = to_native(self.col)
+        self.data = to_native(self.data)
+
+        #if (self.row.dtype != numpy.intc):
+        #    self.row = self.row.astype(numpy.intc)
+        #if (self.col.dtype != numpy.intc):
+        #    self.col = self.col.astype(numpy.intc)
 
         if nnz > 0:
             if(amax(self.row) >= self.shape[0]):
@@ -2288,7 +2336,7 @@ class coo_matrix(spmatrix):
             indptr, rowind, data = cootocsc(self.shape[0], self.shape[1], \
                                             self.nnz, self.row, self.col, \
                                             self.data)
-            return csc_matrix((data, rowind, indptr), self.shape, check=False)
+            return csc_matrix((data, rowind, indptr), self.shape, check=True)
 
 
     def tocsr(self):
