@@ -166,7 +166,7 @@ class Mat4SparseGetter(Mat4MatrixGetter):
         res = self.read_array()
         tmp = res[:-1,:]
         dims = res[-1,0:2]
-        ij = N.transpose(tmp[:,0:2]) - 1 # for 1-based indexing
+        ij = N.transpose(tmp[:,0:2]).astype('i') - 1 # for 1-based indexing
         vals = tmp[:,2]
         if res.shape[1] == 4:
             vals = vals + res[:-1,3] * 1j
