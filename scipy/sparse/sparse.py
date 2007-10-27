@@ -514,10 +514,14 @@ class spmatrix(object):
 
 class _cs_matrix(spmatrix):
     def _check(self):
-        if self.indptr.dtype > numpy.dtype('int64'):
-            raise TypeError,'indptr array has invalid dtype'
-        if self.indices.dtype > numpy.dtype('int64'):
-            raise TypeError,'indices array has invalid dtype'
+        if self.indptr.dtype.kind != 'i':
+            warnings.warn("indptr array has non-integer dtype.  " \
+                          "Casting from %s to int" % self.indptr.dtype.name )
+            self.indptr = self.indptr.astype('i')
+        if self.indices.dtype.kind != 'i':
+            warnings.warn("indices array has non-integer dtype.  " \
+                          "Casting from %s to int" % self.indices.dtype.name )
+            self.indices = self.indices.astype('i')
 
         #TODO handle non-native byteorder better
         self.indptr  = to_native(self.indptr)
