@@ -25,7 +25,7 @@ import numpy.core.umath as umath
 from numpy.core.records import recarray
 from numpy.core.records import fromarrays as recfromarrays
 
-import maskedarray as MA
+import maskedarray
 from maskedarray import MaskedArray, MAError, masked, nomask, \
     filled, getmask, getmaskarray, hsplit, make_mask_none, mask_or, make_mask, \
     masked_array
@@ -43,15 +43,21 @@ import cseries
 __all__ = [
 'TimeSeriesError','TimeSeriesCompatibilityError','TimeSeries','isTimeSeries',
 'time_series', 'tsmasked',
-'mask_period','mask_inside_period','mask_outside_period','compressed',
-'adjust_endpoints','align_series','align_with','aligned','convert','group_byperiod',
-'pct','tshift','fill_missing_dates', 'split', 'stack', 'concatenate_series',
+'adjust_endpoints','align_series','align_with','aligned','asrecords',
+'compressed','concatenate', 'concatenate_series','convert',
+'day_of_week','day_of_year','day',
 'empty_like',
-'day_of_week','day_of_year','day','month','quarter','year',
-'hour','minute','second',
-'tofile','asrecords','flatten',
-'first_unmasked_val', 'last_unmasked_val'
-           ]
+'fill_missing_dates','first_unmasked_val','flatten',
+'group_byperiod',
+'hour',
+'last_unmasked_val',
+'mask_period','mask_inside_period','mask_outside_period','minute','month',
+'pct',
+'quarter',
+'second','split', 'stack', 
+'tofile','tshift', 
+'year',
+]
 
 def _unmasked_val(marray, x):
     "helper function for first_unmasked_val and last_unmasked_val"
@@ -60,9 +66,9 @@ def _unmasked_val(marray, x):
     except AssertionError:
         raise ValueError("array must have ndim == 1")
     
-    idx = MA.extras.flatnotmasked_edges(marray)
+    idx = maskedarray.extras.flatnotmasked_edges(marray)
     if idx is None:
-        return MA.masked
+        return masked
     return marray[idx[x]]
 
 def first_unmasked_val(marray):
@@ -1268,7 +1274,7 @@ def _convert1d(series, freq, func, position, *args, **kwargs):
     tempData = masked_array(_values, mask=_mask)
 
     if tempData.ndim == 2 and func is not None:
-        tempData = MA.apply_along_axis(func, -1, tempData, *args, **kwargs)
+        tempData = maskedarray.apply_along_axis(func, -1, tempData, *args, **kwargs)
 
     newseries = tempData.view(type(series))
     newseries._dates = date_array(start_date=start_date, length=len(newseries),
@@ -1294,7 +1300,7 @@ def convert(series, freq, func=None, position='END', *args, **kwargs):
         obj = _convert1d(series, freq, func, position, *args, **kwargs)
     elif series.ndim == 2:
         base = _convert1d(series[:,0], freq, func, position, *args, **kwargs)
-        obj = MA.column_stack([_convert1d(m,freq,func,position,
+        obj = maskedarray.column_stack([_convert1d(m,freq,func,position,
                                           *args, **kwargs)._series
                                for m in series.split()]).view(type(series))
         obj._dates = base._dates
@@ -1488,7 +1494,9 @@ The data corresponding to the initially missing dates are masked, or filled to
         for (new,old) in zip(newslc,oldslc):
             newdatad[new] = datad[old]
             newdatam[new] = datam[old]
-    newdata = MA.masked_array(newdatad, mask=newdatam, fill_value=fill_value)
+    if fill_value is None:
+        fill_value = getattr(data, 'fill_value', None)
+    newdata = maskedarray.masked_array(newdatad, mask=newdatam, fill_value=fill_value)
     _data = newdata.view(datat)
     _data._dates = newdates
     return _data
@@ -1498,50 +1506,74 @@ def stack(*series):
 resulting series has the same dates as each individual series. All series
 must be date compatible.
 
-:Parameters:
-    `*series` : the series to be stacked
+*Parameters*:
+    series : the series to be stacked
 """
     _timeseriescompat_multiple(*series)
-    return time_series(MA.column_stack(series), series[0]._dates,
+    return time_series(maskedarray.column_stack(series), series[0]._dates,
                        **_attrib_dict(series[0]))
 #...............................................................................
 def concatenate_series(*series, **kwargs):
-    """Concatenates a sequence of series, by chronological order.
-    Overlapping data are processed in a FIFO basis: the data from the first series
-    of the sequence will be overwritten by the data of the second series, and so forth.
-    If keep_gap is true, any gap between consecutive, non overlapping series are
-    kept: the corresponding data are masked.
+    msg = """The use of this function is deprecated.
+Please use concatenate instead.
+Note: Please pay attention to the order of the series!"""
+    raise NameError(msg)
+
+
+def concatenate(series, axis=0, remove_duplicates=True, fill_missing=False):
+    """Joins series together.
+    
+The series are joined in chronological order. Duplicated dates are handled with
+the `remove_duplicates` parameter. If remove_duplicate=False, duplicated dates are
+saved. Otherwise, only the first occurence of the date is conserved.
+
+Example
+>>> a = time_series([1,2,3], start_date=today('D'))
+>>> b = time_series([10,20,30], start_date=today('D')+1)
+>>> c = concatenate((a,b))
+>>> c._series
+masked_array(data = [ 1  2  3 30],
+      mask = False,
+      fill_value=999999)
+
+    
+*Parameters*:
+    series : {sequence}
+        Sequence of time series to join
+    axis : {integer}
+        Axis along which to join
+    remove_duplicates : boolean
+        Whether to remove duplicated dates.
+    fill_missing : {boolean}
+        Whether to fill the missing dates with missing values.
     """
-    
-    keep_gap = kwargs.pop('keep_gap', True)
-    if len(kwargs) > 0:
-        raise KeyError("unrecognized keyword: %s" % list(kwargs)[0])
-    
-    common_f = _compare_frequencies(*series)
-    start_date = min([s.start_date for s in series if s.start_date is not None])
-    end_date =   max([s.end_date for s in series if s.end_date is not None])
-    newdtype = max([s.dtype for s in series])
-    whichone = numeric.zeros((end_date-start_date+1), dtype=int_)
-    newseries = time_series(numeric.empty((end_date-start_date+1), dtype=newdtype),
-                            dates=date_array(start_date, end_date, freq=common_f),
-                            mask=True)
-    newdata = newseries._data
-    newmask = newseries._mask
-    for (k,s) in enumerate(series):
-        start = s.start_date - start_date
-        end = start + len(s)
-        whichone[start:end] = k+1
-        newdata[start:end] = s._data
-        if s._mask is nomask:
-            newmask[start:end] = False
-        else:
-            newmask[start:end] = s._mask
-    keeper = whichone.astype(bool_)
-    if not keep_gap:
-        newseries = newseries[keeper]
+    # Get the common frequency, raise an error if incompatibility
+    common_f = _compare_frequencies(*series)    
+    # Concatenate the order of series
+    sidx = numpy.concatenate([numpy.repeat(i,len(s)) 
+                              for (i,s) in enumerate(series)], axis=axis)
+    # Concatenate the dates and data
+    ndates = numpy.concatenate([s._dates for s in series], axis=axis)
+    ndata = maskedarray.concatenate([s._series for s in series], axis=axis)
+    # Resort the data chronologically
+    norder = ndates.argsort(kind='mergesort')
+    ndates = ndates[norder]
+    ndata = ndata[norder]
+    sidx = sidx[norder]
+    #
+    if not remove_duplicates:
+        ndates = date_array_fromlist(ndates, freq=common_f)
+        result = time_series(ndata, dates=ndates)
     else:
-        newdata[~keeper] = 0
-    return newseries
+        # Find the original dates
+        orig = numpy.concatenate([[True],(numpy.diff(ndates) != 0)])
+        result = time_series(ndata.compress(orig),
+                             dates=ndates.compress(orig),freq=common_f)
+    if fill_missing:
+        result = fill_missing_dates(result)    
+    return result
+
+
 #...............................................................................
 def empty_like(series):
     """Returns an empty series with the same dtype, mask and dates as series."""
@@ -1593,32 +1625,29 @@ if __name__ == '__main__':
         "Make sure we're not losing the fill_value"
         dlist = ['2007-01-%02i' % i for i in range(1,16)]
         dates = date_array_fromlist(dlist)
-        series = time_series(MA.zeros(dates.shape), dates=dates, fill_value=-9999)
+        series = time_series(maskedarray.zeros(dates.shape), dates=dates, fill_value=-9999)
         assert_equal(series.fill_value, -9999)
     if 0:
         "Check time_series w/ an existing time series"
         dlist = ['2007-01-%02i' % i for i in range(1,16)]
         dates = date_array_fromlist(dlist)
-        series = time_series(MA.zeros(dates.shape), dates=dates, fill_value=-9999)
+        series = time_series(maskedarray.zeros(dates.shape), dates=dates, fill_value=-9999)
         newseries = time_series(series, fill_value=+9999)
         assert_equal(newseries._data, series._data)
         assert_equal(newseries._mask, series._mask)
         assert_equal(newseries.fill_value, +9999)
-        
-    if 0:
-        data = numpy.arange(5*24).reshape(5,24)
+    if 1:
+        "Check that the fill_value is kept"
+        data = [0,1,2,3,4,]
         datelist = ['2007-07-01','2007-07-02','2007-07-03','2007-07-05','2007-07-06']
         dates = date_array_fromlist(datelist, 'D')
-#        dseries = time_series(data, dates)
+        dseries = time_series(data, dates, fill_value=-999)
         ndates = date_array_fromrange(start_date=dates[0],end_date=dates[-2])
-        #
-        (A,B) = (data.ravel()[:4].reshape(2,2), dates[:-1])
-        series = time_series(A,B)
-        fseries = fill_missing_dates(series)
-        assert_equal(fseries.shape, (5,))
-        assert_equal(fseries._mask, [0,0,0,1,0,])
+        fseries = fill_missing_dates(dseries)
+        assert_equal(dseries.fill_value, fseries.fill_value)
+        
     #
-    if 1:        
+    if 0:        
         dlist = ['2007-01-%02i' % i for i in (3,2,1)]
         data = [10,20,30]
 #        series = time_series(data, dlist, mask=[1,0,0])
@@ -1626,7 +1655,7 @@ if __name__ == '__main__':
 #        series = time_series(data, dlist)
         series = time_series(data, dlist, mask=[1,0,0])
         assert_equal(series._mask,[0,0,1])
-    if 1:
+    if 0:
         dlist = ['2007-01-%02i' % i for i in range(1,16)]
         dates = date_array_fromlist(dlist)
         data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3)
@@ -1634,3 +1663,10 @@ if __name__ == '__main__':
         
         empty_series = time_series([], freq='d')
         a, b = align_series(series, empty_series)
+        
+    if 1:
+        "Check concatenate..."
+        import dates
+        tt = time_series([.2,.2,.3],start_date=dates.Date('T',string='2007-10-10 01:10'))
+        tt._dates += [0, 9, 18]
+

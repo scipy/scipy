@@ -69,6 +69,22 @@ count_missing will discard these extra missing values.
         isfeb = (months == 2)
         missing[isfeb] -= 2
         missing[isfeb & ~isleapyear(series.year)] -= 1
+    elif period == 92 and (freq//_c.FR_QTR == 1):
+        # row: quarters, cold:days
+        months = series.months
+        if freq in (_c.FR_QTREJAN, _c.FR_QTRSJAN, _c.FR_QTREAPR, _c.FR_QTRSAPR,
+                    _c.FR_QTREOCT, _c.FR_QTRSOCT, _c.FR_QTREOCT, _c.FR_QTRSOCT):
+           isfeb = (months == 4)
+           missing[isfeb] -= 2 
+        elif freq in (_c.FR_QTREFEB, _c.FR_QTRSFEB, _c.FR_QTREMAY, _c.FR_QTRSMAY,
+                      _c.FR_QTREAUG, _c.FR_QTRSAUG, _c.FR_QTRENOV, _c.FR_QTRSNOV):
+           missing[numpy.array([m in [2,11] for m in months])] -= 1 
+           isfeb = (months == 2)
+        elif freq in (_c.FR_QTREMAR, _c.FR_QTRSMAR, _c.FR_QTREJUN, _c.FR_QTRSJUN,
+                      _c.FR_QTRESEP, _c.FR_QTRSSEP, _c.FR_QTREDEC, _c.FR_QTRSDEC):
+           missing[numpy.array([m in [3,6] for m in months])] -= 1 
+           isfeb = (months == 3)
+        missing[isfeb & ~isleapyear(series.year)] -= 1
     elif period not in (12,7):
         raise NotImplementedError, "Not yet implemented for that frequency..."
     return missing

@@ -255,9 +255,9 @@ Otherwise, fills with fill value.
                     for s in zip(*[getattr(self,f) for f in self.dtype.names])]
             return "[%s]" % ", ".join(mstr)
         else:
-            mstr = numeric.asarray(self._data.item(), dtype=object_)
-            mstr[list(self._fieldmask)] = masked_print_option
-            return str(mstr)
+            mstr = ["%s" % ",".join([str(i) for i in s])
+                    for s in zip([getattr(self,f) for f in self.dtype.names])]
+            return "(%s)" % ", ".join(mstr)
     
     def __repr__(self):
         """x.__repr__() <==> repr(x)
@@ -522,3 +522,4 @@ if __name__ == '__main__':
         print recfirst, type(recfirst)
         print mrec[0], type(mrec[0])
     
+
