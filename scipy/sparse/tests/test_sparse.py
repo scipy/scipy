@@ -559,59 +559,58 @@ class _test_arith:
         #check conversions
         for x in self.dtypes:
             for y in self.dtypes:
-                for z in self.dtypes:
-                    A = self.A.astype(x)
-                    B = self.B.astype(y)
-                    C = self.C.astype(z)
-                    
-                    Asp = self.spmatrix(A)
-                    Bsp = self.spmatrix(B)
-                    Csp = self.spmatrix(C)
+                A = self.A.astype(x)
+                B = self.B.astype(y)
+                C = self.C.astype(y)
+                
+                Asp = self.spmatrix(A)
+                Bsp = self.spmatrix(B)
+                Csp = self.spmatrix(C)
 
-                    #addition
-                    D1 = A + B
-                    D2 = A + C
-                    D3 = B + C
-                    S1 = Asp + Bsp
-                    S2 = Asp + Csp
-                    S3 = Bsp + Csp
-                    
-                    assert_equal(D1.dtype,S1.dtype)
-                    assert_equal(D2.dtype,S2.dtype)
-                    assert_equal(D3.dtype,S3.dtype)
-                    assert_array_equal(D1,S1.todense())
-                    assert_array_equal(D2,S2.todense())
-                    assert_array_equal(D3,S3.todense())
-                    assert_array_equal(D1,Asp + B)          #check sparse + dense
-                    assert_array_equal(D2,Asp + C)
-                    assert_array_equal(D3,Bsp + C)
-                    assert_array_equal(D1,A + Bsp)          #check dense + sparse
-                    assert_array_equal(D2,A + Csp)
-                    assert_array_equal(D3,B + Csp)
+                #addition
+                D1 = A + B
+                D2 = A + C
+                D3 = B + C
+                S1 = Asp + Bsp
+                S2 = Asp + Csp
+                S3 = Bsp + Csp
+                
+                assert_equal(D1.dtype,S1.dtype)
+                assert_equal(D2.dtype,S2.dtype)
+                assert_equal(D3.dtype,S3.dtype)
+                assert_array_equal(D1,S1.todense())
+                assert_array_equal(D2,S2.todense())
+                assert_array_equal(D3,S3.todense())
+                assert_array_equal(D1,Asp + B)          #check sparse + dense
+                assert_array_equal(D2,Asp + C)
+                assert_array_equal(D3,Bsp + C)
+                assert_array_equal(D1,A + Bsp)          #check dense + sparse
+                assert_array_equal(D2,A + Csp)
+                assert_array_equal(D3,B + Csp)
 
-                    #subtraction
-                    D1 = A - B
-                    D2 = A - C
-                    D3 = B - C
-                    S1 = Asp - Bsp
-                    S2 = Asp - Csp
-                    S3 = Bsp - Csp
-                    
-                    assert_equal(D1.dtype,S1.dtype)
-                    assert_equal(D2.dtype,S2.dtype)
-                    assert_equal(D3.dtype,S3.dtype)                    
-                    assert_array_equal(D1,S1.todense())
-                    assert_array_equal(D2,S2.todense())
-                    assert_array_equal(D3,S3.todense())
-                    assert_array_equal(D1,Asp - B)          #check sparse - dense
-                    assert_array_equal(D2,Asp - C)
-                    assert_array_equal(D3,Bsp - C)
-                    assert_array_equal(D1,A - Bsp)          #check dense - sparse
-                    try:
-                        assert_array_equal(D2,A - Csp)
-                    except:
-                        import pdb; pdb.set_trace()
-                    assert_array_equal(D3,B - Csp)
+                #subtraction
+                D1 = A - B
+                D2 = A - C
+                D3 = B - C
+                S1 = Asp - Bsp
+                S2 = Asp - Csp
+                S3 = Bsp - Csp
+                
+                assert_equal(D1.dtype,S1.dtype)
+                assert_equal(D2.dtype,S2.dtype)
+                assert_equal(D3.dtype,S3.dtype)                    
+                assert_array_equal(D1,S1.todense())
+                assert_array_equal(D2,S2.todense())
+                assert_array_equal(D3,S3.todense())
+                assert_array_equal(D1,Asp - B)          #check sparse - dense
+                assert_array_equal(D2,Asp - C)
+                assert_array_equal(D3,Bsp - C)
+                assert_array_equal(D1,A - Bsp)          #check dense - sparse
+                try:
+                    assert_array_equal(D2,A - Csp)
+                except:
+                    import pdb; pdb.set_trace()
+                assert_array_equal(D3,B - Csp)
 
 
     def check_mu(self):
@@ -621,32 +620,30 @@ class _test_arith:
         assert_array_equal(self.A*self.B.T,(self.Asp*self.Bsp.T).todense())
         assert_array_equal(self.A*self.C.T,(self.Asp*self.Csp.T).todense())
 
-        #check conversions
         for x in self.dtypes:
             for y in self.dtypes:
-                for z in self.dtypes:
-                    A = self.A.astype(x)
-                    B = self.B.astype(y)
-                    C = self.C.astype(z)
-                    
-                    Asp = self.spmatrix(A)
-                    Bsp = self.spmatrix(B)
-                    Csp = self.spmatrix(C)
+                A = self.A.astype(x)
+                B = self.B.astype(y)
+                C = self.C.astype(y)
+                
+                Asp = self.spmatrix(A)
+                Bsp = self.spmatrix(B)
+                Csp = self.spmatrix(C)
 
-                    D1 = A * B.T
-                    D2 = A * C.T
-                    D3 = B * C.T
+                D1 = A * B.T
+                D2 = A * C.T
+                D3 = B * C.T
 
-                    S1 = Asp * Bsp.T
-                    S2 = Asp * Csp.T
-                    S3 = Bsp * Csp.T
+                S1 = Asp * Bsp.T
+                S2 = Asp * Csp.T
+                S3 = Bsp * Csp.T
 
-                    assert_array_equal(D1,S1.todense())
-                    assert_array_equal(D2,S2.todense())
-                    assert_array_equal(D3,S3.todense())
-                    assert_equal(D1.dtype,S1.dtype)
-                    assert_equal(D2.dtype,S2.dtype)
-                    assert_equal(D3.dtype,S3.dtype)
+                assert_array_equal(D1,S1.todense())
+                assert_array_equal(D2,S2.todense())
+                assert_array_equal(D3,S3.todense())
+                assert_equal(D1.dtype,S1.dtype)
+                assert_equal(D2.dtype,S2.dtype)
+                assert_equal(D3.dtype,S3.dtype)
 
 
 
