@@ -299,8 +299,6 @@ class spmatrix(object):
             return self._imag()
         elif attr == 'size':
             return self.getnnz()
-#        elif attr == 'ftype':
-#            return _transtabl.get(self.dtype.char,'')
         else:
             raise AttributeError, attr + " not found"
 
@@ -443,19 +441,13 @@ class spmatrix(object):
         m, n = self.shape
         if axis == 0:
             # sum over columns
-            # Does the following multiplication work in NumPy now?
-            o = asmatrix(ones((1, m), dtype=self.dtype))
-            return o * self
-            # o = ones(m, dtype=self.dtype)
-            # return asmatrix(self.rmatvec(o))
+            return asmatrix(ones((1, m), dtype=self.dtype)) * self
         elif axis == 1:
             # sum over rows
-            o = asmatrix(ones((n, 1), dtype=self.dtype))
-            return self * o
+            return self * asmatrix(ones((n, 1), dtype=self.dtype))
         elif axis == None:
             # sum over rows and columns
-            o1 = asmatrix(ones((n, 1), dtype=self.dtype))
-            return (self * o1).sum()
+            return ( self * asmatrix(ones((n, 1), dtype=self.dtype)) ).sum()
         else:
             raise ValueError, "axis out of bounds"
 
@@ -513,7 +505,23 @@ class spmatrix(object):
         fd.close()
 
 class _cs_matrix(spmatrix):
-    def _check(self):
+    """base matrix class for compressed row and column oriented matrices"""
+    def _check_format(self, orientation, full_check):
+        # some functions pass floats
+        self.shape = tuple([int(x) for x in self.shape])
+
+        assert(orientation in ['row','column'])
+        if orientation == 'row':
+            primary,secondary = 'row','column'
+            indptr_size = self.shape[0] + 1
+            indices_bound = self.shape[1]
+        else:
+            primary,secondary = 'column','row'
+            indptr_size = self.shape[1] + 1
+            indices_bound = self.shape[0]
+
+
+        # index arrays should have integer data types
         if self.indptr.dtype.kind != 'i':
             warnings.warn("indptr array has non-integer dtype.  " \
                           "Casting from %s to int" % self.indptr.dtype.name )
@@ -527,8 +535,49 @@ class _cs_matrix(spmatrix):
         self.indptr  = to_native(self.indptr)
         self.indices = to_native(self.indices)
         self.data    = to_native(self.data)
+        
+        # set the data type
+        self.dtype = self.data.dtype
+        
+        
+        # check array shapes
+        if (rank(self.data) != 1) or (rank(self.indices) != 1) or \
+           (rank(self.indptr) != 1):
+            raise ValueError,"data, indices, and indptr should be rank 1"
 
-        #TODO unify csr and csr _check
+        # check index pointer
+        if (len(self.indptr) != indptr_size ):
+            raise ValueError, \
+                "index pointer size (%d) should be (%d)" % \
+                 (len(self.indptr), indptr_size)
+        if (self.indptr[0] != 0):
+            raise ValueError,"index pointer should start with 0"
+        
+        # check index and data arrays
+        if (len(self.indices) != len(self.data)):
+            raise ValueError,"indices and data should have the same size"
+        if (self.indptr[-1] > len(self.indices)):
+            raise ValueError, \
+                  "Last value of index pointer should be less than "\
+                  "the size of index and data arrays"
+
+        self.nnz   =  self.indptr[-1]
+        self.nzmax = len(self.indices)
+
+        if full_check:
+            #check format validity (more expensive)
+            if self.nnz > 0:
+                if amax(self.indices[:self.nnz]) >= indices_bound:
+                    raise ValueError, "%s index values must be < %d" % \
+                            (secondary,indices_bound)
+                if amin(self.indices[:self.nnz]) < 0:
+                    raise ValueError, "%s index values must be >= 0" % \
+                            secondary
+            if numpy.diff(self.indptr).min() < 0:
+                raise ValueError,'index pointer values must form a " \
+                                    "non-decreasing sequence'
+
+
     
     def astype(self, t):
         return self._with_data(self.data.astype(t))
@@ -541,17 +590,16 @@ class _cs_matrix(spmatrix):
                    _formats[format][1]))
 
     def _with_data(self,data,copy=True):
-        """
-        Return a matrix with the same sparsity structure as self,
+        """Returns a matrix with the same sparsity structure as self,
         but with different data.  By default the structure arrays
         (i.e. .indptr and .indices) are copied.
         """
         if copy:
             return self.__class__((data,self.indices.copy(),self.indptr.copy()), \
-                                   dims=self.shape,dtype=data.dtype,check=False)
+                                   dims=self.shape,dtype=data.dtype)
         else:
             return self.__class__((data,self.indices,self.indptr), \
-                                   dims=self.shape,dtype=data.dtype,check=False)
+                                   dims=self.shape,dtype=data.dtype)
 
     def __abs__(self):
         return self._with_data(abs(self.data))
@@ -574,7 +622,7 @@ class _cs_matrix(spmatrix):
         indptr, ind, data = fn(in_shape[0], in_shape[1], \
                                self.indptr, self.indices, self.data,
                                other.indptr, other.indices, other.data)
-        return self.__class__((data, ind, indptr), dims=out_shape, check=False)
+        return self.__class__((data, ind, indptr), dims=out_shape)
 
 
     def __add__(self,other,fn):
@@ -780,7 +828,7 @@ class _cs_matrix(spmatrix):
 
     def _transpose(self, cls, copy=False):
         M, N = self.shape
-        return cls((self.data,self.indices,self.indptr),(N,M),copy=copy,check=False)
+        return cls((self.data,self.indices,self.indptr),(N,M),copy=copy)
 
 
     def conj(self, copy=False):
@@ -862,8 +910,9 @@ class csc_matrix(_cs_matrix):
           - csc_matrix((data, row, ptr), [(M, N)])
             standard CSC representation
     """
-    def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False, check=True):
+    def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False):
         _cs_matrix.__init__(self)
+
         if isdense(arg1):
             self.dtype = getdtype(dtype, arg1)
             # Convert the dense array or matrix arg1 to CSC format
@@ -973,63 +1022,19 @@ class csc_matrix(_cs_matrix):
 
         self.shape = (M, N)
 
-        self._check(check)
+        self.check_format(full_check=False)
 
+    def check_format(self,full_check=True):
+        """check whether matrix is in valid CSC format
 
-    def _check(self,full_check=True):
-        _cs_matrix._check(self)        
-        
-        # some functions pass floats
-        self.shape = tuple([int(x) for x in self.shape])
+            *Parameters*:
+                full_check:
+                    True  - rigorous check, O(N) operations : default
+                    False - basic check, O(1) operations
 
-        M, N = self.shape
-        nnz = self.indptr[-1]
-        nzmax = len(self.indices)
-        if (rank(self.data) != 1) or (rank(self.indices) != 1) or \
-           (rank(self.indptr) != 1):
-            raise ValueError, "data, rowind, and indptr arrays "\
-                  "should be rank 1"
-        if (len(self.data) != nzmax):
-            raise ValueError, "data and row list should have same length"
-        if (self.indptr[0] != 0):
-            raise ValueError,"index pointer should start with 0"
-        if (len(self.indptr) != N+1):
-            raise ValueError, \
-                  "index pointer size (%d) should be N+1 (%d)" %\
-                  (len(self.indptr), N+1)
-        if (nzmax < nnz):
-            raise ValueError, "nzmax (%d) must not be less than nnz (%d)" %\
-                  (nzmax, nnz)
+        """
 
-        if full_check:
-            #check format validity (more expensive)
-            if nnz > 0:
-                if amax(self.indices[:nnz]) >= M:
-                    raise ValueError, "row values must be < M"
-                if amin(self.indices[:nnz]) < 0:
-                    raise ValueError, "row values must be >= 0"
-            if numpy.diff(self.indptr).min() < 0:
-                raise ValueError,'indptr values must form a non-decreasing sequence'
-
-        if (self.indptr[-1] > len(self.indices)):
-            raise ValueError, \
-                  "Last value of index list should be less than "\
-                  "the size of data list"
-
-
-        #TODO remove
-        #if (self.indices.dtype != numpy.intc):
-        #    self.indices = self.indices.astype(numpy.intc)
-        #if (self.indptr.dtype != numpy.intc):
-        #    self.indptr = self.indptr.astype(numpy.intc)
-
-        self.nnz = nnz
-        self.nzmax = nzmax
-        self.dtype = self.data.dtype
-        #TODO remove
-        #if self.dtype.char not in 'fdFD':
-        #    self.data = 1.0 * self.data
-        #    self.dtype = self.data.dtype
+        _cs_matrix._check_format(self,'column',full_check)        
 
     def __getattr__(self, attr):
         if attr == 'rowind':
@@ -1144,7 +1149,7 @@ class csc_matrix(_cs_matrix):
             else:
                 raise IndexError, "row index occurs more than once"
 
-            self._check()
+            self.check_format(full_check=False)
         else:
             # We should allow slices here!
             raise IndexError, "invalid index"
@@ -1172,7 +1177,7 @@ class csc_matrix(_cs_matrix):
     def tocsr(self):
         indptr, colind, data = csctocsr(self.shape[0], self.shape[1], \
                                         self.indptr, self.indices, self.data)
-        return csr_matrix((data, colind, indptr), self.shape, check=False)
+        return csr_matrix((data, colind, indptr), self.shape)
 
     def _toother(self):
         return self.tocsr()
@@ -1195,7 +1200,6 @@ class csc_matrix(_cs_matrix):
         self.data = self.data[:nnz]
         self.indices = self.indices[:nnz]
         self.nzmax = nnz
-        self._check()
 
     def ensure_sorted_indices(self, inplace=False):
         """Return a copy of this matrix where the row indices are sorted
@@ -1232,7 +1236,7 @@ class csr_matrix(_cs_matrix):
           - csr_matrix((data, col, ptr), [dims=(M, N)])
             standard CSR representation
     """
-    def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False, check=True):
+    def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False):
         _cs_matrix.__init__(self)
         if isdense(arg1):
             self.dtype = getdtype(dtype, arg1)
@@ -1336,57 +1340,20 @@ class csr_matrix(_cs_matrix):
                 N = max(oldN, N)
 
         self.shape = (M, N)
-        
-        self._check(check)
 
-    def _check(self,full_check=True):
-        _cs_matrix._check(self)        
+        self.check_format(full_check=False)
 
-        # some functions pass floats
-        self.shape = tuple([int(x) for x in self.shape])
+    def check_format(self,full_check=True):
+        """check whether matrix is in valid CSR format
 
-        M, N = self.shape
-        nnz = self.indptr[-1]
-        nzmax = len(self.indices)
-        if (rank(self.data) != 1) or (rank(self.indices) != 1) or \
-           (rank(self.indptr) != 1):
-            raise ValueError, "data, colind, and indptr arrays "\
-                  "should be rank 1"
-        if (len(self.data) != nzmax):
-            raise ValueError, "data and row list should have same length"
-        if (self.indptr[0] != 0):
-            raise ValueError,"index pointer should start with 0"
-        if (len(self.indptr) != M+1):
-            raise ValueError, "index pointer should be of length #rows + 1"
+            *Parameters*:
+                full_check:
+                    True  - perform rigorous checking - default
+                    False - perform basic format check
 
+        """
 
-        if full_check:
-            #check format validity (more expensive)
-            if nnz > 0:
-                if amax(self.indices[:nnz]) >= N:
-                    raise ValueError, "column values must be < N"
-                if amin(self.indices[:nnz]) < 0:
-                    raise ValueError, "column values must be >= 0"
-            if numpy.diff(self.indptr).min() < 0:
-                raise ValueError,'indptr values must form a non-decreasing sequence'
-
-        if (nnz > nzmax):
-            raise ValueError, \
-                  "last value of index list should be less than "\
-                  "the size of data list"
-        #TODO remove this
-        #if (self.indices.dtype != numpy.intc):
-        #    self.indices = self.indices.astype(numpy.intc)
-        #if (self.indptr.dtype != numpy.intc):
-        #    self.indptr = self.indptr.astype(numpy.intc)
-
-        self.nnz = nnz
-        self.nzmax = nzmax
-        self.dtype = self.data.dtype
-        #TODO remove
-        #if self.dtype.char not in 'fdFD':
-        #    self.data = self.data + 0.0
-        #    self.dtype = self.data.dtype
+        _cs_matrix._check_format(self,'row',full_check)        
 
     def __getattr__(self, attr):
         if attr == 'colind':
@@ -1501,7 +1468,7 @@ class csr_matrix(_cs_matrix):
             else:
                 raise IndexError, "row index occurs more than once"
 
-            self._check()
+            self.check_format(full_check=False)
         else:
             # We should allow slices here!
             raise IndexError, "invalid index"
@@ -1520,7 +1487,7 @@ class csr_matrix(_cs_matrix):
     def tocsc(self):
         indptr, rowind, data = csrtocsc(self.shape[0], self.shape[1], \
                                         self.indptr, self.indices, self.data)
-        return csc_matrix((data, rowind, indptr), self.shape, check=False)
+        return csc_matrix((data, rowind, indptr), self.shape)
 
     def _toother(self):
         return self.tocsc()
@@ -1546,7 +1513,6 @@ class csr_matrix(_cs_matrix):
         self.data = self.data[:nnz]
         self.indices = self.indices[:nnz]
         self.nzmax = nnz
-        self._check()
 
     def ensure_sorted_indices(self, inplace=False):
         """Return a copy of this matrix where the column indices are sorted
@@ -2276,21 +2242,21 @@ class coo_matrix(spmatrix):
         if (nnz != len(self.row)) or (nnz != len(self.col)):
             raise ValueError, "row, column, and data array must all be "\
                   "the same length"
+        
+        # index arrays should have integer data types
+        if self.row.dtype.kind != 'i':
+            warnings.warn("row index array has non-integer dtype.  " \
+                          "Casting from %s to int" % self.row.dtype.name )
+            self.row = self.row.astype('i')
+        if self.col.dtype.kind != 'i':
+            warnings.warn("column index array has non-integer dtype.  " \
+                          "Casting from %s to int" % self.col.dtype.name )
+            self.col = self.col.astype('i')
 
-        if self.row.dtype > numpy.dtype('int64'):
-            raise TypeError,'row array has invalid dtype'
-        if self.col.dtype > numpy.dtype('int64'):
-            raise TypeError,'column array has invalid dtype'
-
-        #TODO fix this bandaid
+        #TODO do this in SWIG 
         self.row  = to_native(self.row)
         self.col  = to_native(self.col)
         self.data = to_native(self.data)
-
-        #if (self.row.dtype != numpy.intc):
-        #    self.row = self.row.astype(numpy.intc)
-        #if (self.col.dtype != numpy.intc):
-        #    self.col = self.col.astype(numpy.intc)
 
         if nnz > 0:
             if(amax(self.row) >= self.shape[0]):
@@ -2340,7 +2306,7 @@ class coo_matrix(spmatrix):
             indptr, rowind, data = cootocsc(self.shape[0], self.shape[1], \
                                             self.nnz, self.row, self.col, \
                                             self.data)
-            return csc_matrix((data, rowind, indptr), self.shape, check=True)
+            return csc_matrix((data, rowind, indptr), self.shape)
 
 
     def tocsr(self):
@@ -2350,7 +2316,7 @@ class coo_matrix(spmatrix):
             indptr, colind, data = cootocsr(self.shape[0], self.shape[1], \
                                             self.nnz, self.row, self.col, \
                                             self.data)
-            return csr_matrix((data, colind, indptr), self.shape, check=False)
+            return csr_matrix((data, colind, indptr), self.shape)
 
     def tocoo(self, copy=False):
         return self.toself(copy)
