@@ -9,7 +9,7 @@ import pylab as p
 
 # 1d tests - setup data
 x = s.linspace(0,10,9)
-y = s.sin(x) 
+y = s.sin(x)
 xi = s.linspace(0,10,101)
 
 # use interpolate methods
@@ -50,4 +50,3 @@ p.ylim(-2,2)
 p.colorbar()
 p.savefig('rbf2d.png')
 p.close()
-

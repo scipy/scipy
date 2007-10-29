@@ -13,7 +13,7 @@ from numpy import exp, asarray, arange, \
 
 from numpy import who
 
-__all__ = ['factorial','factorial2','factorialk','comb', 
+__all__ = ['factorial','factorial2','factorialk','comb',
            'central_diff_weights', 'derivative', 'pade', 'lena']
 
 # XXX: the factorial functions could move to scipy.special, and the others
@@ -34,7 +34,7 @@ def factorial(n,exact=0):
             return 0L
         val = 1L
         for k in xrange(1,n+1):
-          val *= k
+            val *= k
         return val
     else:
         from scipy import special
@@ -63,7 +63,7 @@ def factorial2(n,exact=0):
             return 1L
         val = 1L
         for k in xrange(n,0,-2):
-          val *= k
+            val *= k
         return val
     else:
         from scipy import special
@@ -111,7 +111,7 @@ def comb(N,k,exact=0):
             return 0L
         val = 1L
         for j in xrange(min(k, N-k)):
-          val = (val*(N-j))//(j+1)
+            val = (val*(N-j))//(j+1)
         return val
     else:
         from scipy import special
@@ -216,4 +216,3 @@ def lena():
     lena = array(cPickle.load(f))
     f.close()
     return lena
-

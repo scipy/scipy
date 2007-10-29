@@ -15,13 +15,13 @@ class rbf:
 
 
     def __init__(self,ni,no,f='linear'):
-        """ Set up instance of RBF net. N.B. RBF centers and variance are selected at training time 
+        """ Set up instance of RBF net. N.B. RBF centers and variance are selected at training time
         Input:
             ni  - <int> # of inputs
             no  - <int> # of outputs
             f   - <str> output activation fxn
         """
-        
+
         self.ni = ni
         self.no = no
         self.outfxn = f
@@ -54,7 +54,7 @@ class rbf:
         # compute hidden unit values
         z = N.zeros((len(X),self.centers.shape[0]))
         for i in range(len(X)):
-             z[i] = N.exp((-1.0/(2*self.variance))*(N.sum((X[i]-self.centers)**2,axis=1)))
+            z[i] = N.exp((-1.0/(2*self.variance))*(N.sum((X[i]-self.centers)**2,axis=1)))
         # compute net outputs
         o = N.dot(z,self.w) + N.dot(N.ones((len(z),1)),self.b)
         # compute final output activations

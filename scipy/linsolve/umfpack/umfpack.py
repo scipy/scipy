@@ -30,7 +30,7 @@ def configure( **kwargs ):
     """
     if kwargs.has_key( 'assumeSortedIndices' ):
         globals()['assumeSortedIndices'] = kwargs['assumeSortedIndices']
-    
+
 
 ##
 # 30.11.2005, c
@@ -618,31 +618,31 @@ class UmfpackContext( Struct ):
         """
         Returns an LU decomposition of an m-by-n matrix in the form
         (L, U, P, Q, R, do_recip):
-        
+
             L - Lower triangular m-by-min(m,n) CSR matrix
             U - Upper triangular min(m,n)-by-n CSC matrix
             P - Vector of row permuations
-            Q - Vector of column permuations            
+            Q - Vector of column permuations
             R - Vector of diagonal row scalings
             do_recip - boolean
-            
-        For a given matrix A, the decomposition satisfies:  
+
+        For a given matrix A, the decomposition satisfies:
                 LU = PRAQ        when do_recip is true
                 LU = P(R^-1)AQ   when do_recip is false
-        """  
-        
+        """
+
         #this should probably be changed
-        mtx = mtx.tocsc()        
-        self.numeric( mtx )    
-    
+        mtx = mtx.tocsc()
+        self.numeric( mtx )
+
         #first find out how much space to reserve
         (status, lnz, unz, n_row, n_col, nz_udiag)\
                  = self.funs.get_lunz( self._numeric )
 
         if status != UMFPACK_OK:
             raise RuntimeError, '%s failed with %s' % (self.funs.get_lunz,
-                                                       umfStatus[status])                    
-        
+                                                       umfStatus[status])
+
         #allocate storage for decomposition data
         i_type = mtx.indptr.dtype
 
@@ -653,55 +653,54 @@ class UmfpackContext( Struct ):
         Up = nm.zeros( (n_col+1,), dtype = i_type )
         Ui = nm.zeros( (unz,), dtype = i_type )
         Ux = nm.zeros( (unz,), dtype = nm.double )
-        
+
         P  = nm.zeros( (n_row,), dtype = i_type )
         Q  = nm.zeros( (n_col,), dtype = i_type )
-        
+
         Dx = nm.zeros( (min(n_row,n_col),), dtype = nm.double )
-        
-        Rs = nm.zeros( (n_row,), dtype = nm.double )               
-  
-        if self.isReal:                     
+
+        Rs = nm.zeros( (n_row,), dtype = nm.double )
+
+        if self.isReal:
             (status,do_recip) = self.funs.get_numeric( Lp,Lj,Lx,Up,Ui,Ux,
                                                        P,Q,Dx,Rs,
                                                        self._numeric )
-            
+
             if status != UMFPACK_OK:
                 raise RuntimeError, '%s failed with %s'\
-                      % (self.funs.get_numeric, umfStatus[status])            
-            
+                      % (self.funs.get_numeric, umfStatus[status])
+
             L = sp.csr_matrix((Lx,Lj,Lp),(n_row,min(n_row,n_col)))
             U = sp.csc_matrix((Ux,Ui,Up),(min(n_row,n_col),n_col))
             R = Rs
-            
-            return (L,U,P,Q,R,bool(do_recip))  
-            
-        else:            
+
+            return (L,U,P,Q,R,bool(do_recip))
+
+        else:
             #allocate additional storage for imaginary parts
-            Lz = nm.zeros( (lnz,), dtype = nm.double )   
+            Lz = nm.zeros( (lnz,), dtype = nm.double )
             Uz = nm.zeros( (unz,), dtype = nm.double )
             Dz = nm.zeros( (min(n_row,n_col),), dtype = nm.double )
-            
+
             (status,do_recip) = self.funs.get_numeric(Lp,Lj,Lx,Lz,Up,Ui,Ux,Uz,
                                                       P,Q,Dx,Dz,Rs,
                                                       self._numeric)
-            
+
             if status != UMFPACK_OK:
                 raise RuntimeError, '%s failed with %s'\
-                      % (self.funs.get_numeric, umfStatus[status])            
-            
-            
+                      % (self.funs.get_numeric, umfStatus[status])
+
+
             Lxz = nm.zeros( (lnz,), dtype = nm.complex128 )
             Uxz = nm.zeros( (unz,), dtype = nm.complex128 )
             Dxz = nm.zeros( (min(n_row,n_col),), dtype = nm.complex128 )
-            
-            Lxz.real,Lxz.imag = Lx,Lz 
+
+            Lxz.real,Lxz.imag = Lx,Lz
             Uxz.real,Uxz.imag = Ux,Uz
             Dxz.real,Dxz.imag = Dx,Dz
-            
+
             L = sp.csr_matrix((Lxz,Lj,Lp),(n_row,min(n_row,n_col)))
             U = sp.csc_matrix((Uxz,Ui,Up),(min(n_row,n_col),n_col))
             R = Rs
 
             return (L,U,P,Q,R,bool(do_recip))
-

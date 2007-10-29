@@ -29,13 +29,13 @@ from timeseries import time_series, thisday
 from timeseries.lib import moving_funcs as MF
 
 class TestCMovAverage(NumpyTestCase):
-    
+
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)
         self.data = numeric.arange(25)
         self.maskeddata = MaskedArray(self.data)
         self.maskeddata[10] = masked
-    #         
+    #
     def test_onregulararray(self):
         data = self.data
         for width in [3,5,7]:
@@ -85,7 +85,7 @@ class TestCMovAverage(NumpyTestCase):
 
 
 class TestMovFuncs(NumpyTestCase):
-    
+
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)
         self.data = numeric.arange(25)
@@ -95,7 +95,7 @@ class TestMovFuncs(NumpyTestCase):
             (MF.mov_average, MA.mean),
             (MF.mov_median, mstats.mmedian),
             ((lambda x, span : MF.mov_stddev(x, span, bias=True)), MA.std)]
-    #         
+    #
     def test_onregulararray(self):
         data = self.data
         for Mfunc, Nfunc in self.func_pairs:
@@ -143,4 +143,4 @@ class TestMovFuncs(NumpyTestCase):
 
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
-    NumpyTest().run()                
+    NumpyTest().run()

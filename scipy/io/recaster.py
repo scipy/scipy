@@ -106,7 +106,7 @@ class Recaster(object):
         'prefer_int_type': 'i',
         }
         }
-    
+
     def __init__(self, sctype_list=None,
                  sctype_tols=None,
                  recast_options='only_if_none'):
@@ -124,7 +124,7 @@ class Recaster(object):
 
         recast_option strings can be:
         only_if_none - only attempts recast if the type is not in
-                       acceptable types 
+                       acceptable types
         smallest     - return array of smallest possible type within tolerance
         fairly_small - compromise set of options between speed of downcast and
                        size of output
@@ -173,7 +173,7 @@ class Recaster(object):
         else:
             self.recast_options = self._option_defaults['only_if_none']
             self.recast_options.update(recast_options)
-        # Cache sctype sizes, 
+        # Cache sctype sizes,
         self.sized_sctypes = {}
         for k in ('c', 'f', 'i', 'u'):
             self.sized_sctypes[k] = self.sctypes_by_size(k)
@@ -208,7 +208,7 @@ class Recaster(object):
                         break
                     fsz = sz
                 self._c2f_capable_sctype_sizes[k] = fsz
-            
+
     def default_sctype_tols(self):
         ''' Default allclose tolerance values for all dtypes '''
         t_dict = {}
@@ -299,7 +299,7 @@ class Recaster(object):
                         within tolerance and >= max_size
                         if True, continue downcasting within kind
                         to find smallest possible within tolerance
-                        
+
         If arr cannot be recast within given tolerances, and size,
         return None
         '''
@@ -317,7 +317,7 @@ class Recaster(object):
             else:
                 break
         return ret_arr
-        
+
     def smallest_int_sctype(self, mx, mn, prefer='i'):
         ''' Return integer type with smallest storage containing mx and mn
 
@@ -326,7 +326,7 @@ class Recaster(object):
         mn      - minumum value
         prefer  - if == 'i' prefer int for range also compatible
                   uint, else prefer uint in same situation
-                  
+
         Returns None if no integer can contain this range
         '''
         sct = None
@@ -350,7 +350,7 @@ class Recaster(object):
 
         prefer  - if == 'i' prefer int for range also compatible
                   uint, else prefer uint in same situation
-                  
+
         '''
         mx = amax(arr)
         mn = amin(arr)
@@ -361,7 +361,7 @@ class Recaster(object):
 
     def recast(self, arr):
         ''' Recast array to type in type list
-        
+
         If cannot recast to  an array within tolerance,
         raise error
         '''

@@ -14,9 +14,9 @@ __date__     = '$Date$'
 __all__ = [
 'apply_along_axis', 'atleast_1d', 'atleast_2d', 'atleast_3d', 'average',
 'vstack', 'hstack', 'dstack', 'row_stack', 'column_stack',
-'compress_rowcols', 'compress_rows', 'compress_cols', 'count_masked', 
+'compress_rowcols', 'compress_rows', 'compress_cols', 'count_masked',
 'dot', 'hsplit',
-'mask_rowcols','mask_rows','mask_cols','masked_all','masked_all_like', 
+'mask_rowcols','mask_rows','mask_cols','masked_all','masked_all_like',
 'mediff1d', 'mr_',
 'notmasked_edges','notmasked_contiguous',
 'stdu', 'varu',
@@ -29,7 +29,7 @@ from core import *
 
 import numpy
 from numpy import float_
-import numpy.core.umath as umath 
+import numpy.core.umath as umath
 import numpy.core.numeric as numeric
 from numpy.core.numeric import ndarray
 from numpy.core.numeric import array as nxarray
@@ -51,7 +51,7 @@ def issequence(seq):
 
 def count_masked(arr, axis=None):
     """Counts the number of masked elements along the given axis.
-    
+
 *Parameters*:
     axis : {integer}, optional
         Axis along which to count.
@@ -63,10 +63,10 @@ def count_masked(arr, axis=None):
 def masked_all(shape, dtype=float_):
     """Returns an empty masked array of the given shape and dtype,
     where all the data are masked.
-    
+
 *Parameters*:
     dtype : {dtype}, optional
-        Data type of the output.    
+        Data type of the output.
     """
     a = masked_array(numeric.empty(shape, dtype),
                      mask=numeric.ones(shape, bool_))
@@ -81,11 +81,11 @@ def masked_all_like(arr):
 
 #####--------------------------------------------------------------------------
 #---- --- New methods ---
-#####-------------------------------------------------------------------------- 
+#####--------------------------------------------------------------------------
 def varu(a, axis=None, dtype=None):
     """Returns an unbiased estimate of the variance.
     i.e. var = sum((x - x.mean())**2)/(size(x,axis)-1)
-    
+
 *Parameters*:
     axis : {integer}, optional
         Axis along which to perform the operation.
@@ -96,7 +96,7 @@ def varu(a, axis=None, dtype=None):
 
 *Notes*:
     The value returned is an unbiased estimate of the true variance.
-    For the (less standard) biased estimate, use var.       
+    For the (less standard) biased estimate, use var.
         """
     a = asarray(a)
     cnt = a.count(axis=axis)
@@ -107,26 +107,26 @@ def varu(a, axis=None, dtype=None):
         return dvar
     dvar.__setmask__(mask_or(a._mask.all(axis), (cnt==1)))
     return dvar
-#    return a.__class__(dvar, 
+#    return a.__class__(dvar,
 #                          mask=mask_or(a._mask.all(axis), (cnt==1)),
 #                          fill_value=a._fill_value)
-            
+
 def stdu(a, axis=None, dtype=None):
     """Returns an unbiased estimate of the standard deviation.
     The standard deviation is the square root of the average of the squared
-    deviations from the mean, i.e. stdu = sqrt(varu(x)).    
+    deviations from the mean, i.e. stdu = sqrt(varu(x)).
 
 *Parameters*:
     axis : {integer}, optional
         Axis along which to perform the operation.
         If None, applies to a flattened version of the array.
     dtype : {dtype}, optional
-        Datatype for the intermediary computation. 
+        Datatype for the intermediary computation.
         If not given, the current dtype is used instead.
-        
+
 *Notes*:
     The value returned is an unbiased estimate of the true standard deviation.
-    For the (less standard) biased estimate, use std.       
+    For the (less standard) biased estimate, use std.
         """
     a = asarray(a)
     dvar = a.varu(axis,dtype)
@@ -137,7 +137,7 @@ def stdu(a, axis=None, dtype=None):
             # Should we use umath.sqrt instead ?
             return sqrt(dvar)
     return sqrt(dvar)
-#    return a.__class__(sqrt(dvar._data), mask=dvar._mask, 
+#    return a.__class__(sqrt(dvar._data), mask=dvar._mask,
 #                          fill_value=a._fill_value)
 
 MaskedArray.stdu = stdu
@@ -178,10 +178,10 @@ class _fromnxfunction:
                 _m = func(getmaskarray(x), *args, **params)
                 res.append(masked_array(_d, mask=_m))
             return res
-                
-atleast_1d = _fromnxfunction('atleast_1d')     
-atleast_2d = _fromnxfunction('atleast_2d')  
-atleast_3d = _fromnxfunction('atleast_3d')             
+
+atleast_1d = _fromnxfunction('atleast_1d')
+atleast_2d = _fromnxfunction('atleast_2d')
+atleast_3d = _fromnxfunction('atleast_3d')
 
 vstack = row_stack = _fromnxfunction('vstack')
 hstack = _fromnxfunction('hstack')
@@ -191,7 +191,7 @@ dstack = _fromnxfunction('dstack')
 hsplit = _fromnxfunction('hsplit')
 
 #####--------------------------------------------------------------------------
-#---- 
+#----
 #####--------------------------------------------------------------------------
 def flatten_inplace(seq):
     """Flattens a sequence in place."""
@@ -291,8 +291,8 @@ def apply_along_axis(func1d,axis,arr,*args,**kwargs):
     return result
 
 def average (a, axis=None, weights=None, returned=False):
-    """Averages the array over the given axis.  
-    
+    """Averages the array over the given axis.
+
 *Parameters*:
     axis : {integer}, optional
         Axis along which to perform the operation.
@@ -304,7 +304,7 @@ def average (a, axis=None, weights=None, returned=False):
         If no weights are given, weights are assumed to be 1.
     returned : {boolean}
         Flag indicating whether a tuple (result, sum of weights/counts) should be
-        returned as output (True), or just the result (False).    
+        returned as output (True), or just the result (False).
     """
     a = asarray(a)
     mask = a.mask
@@ -378,11 +378,11 @@ def average (a, axis=None, weights=None, returned=False):
                 else:
                     raise ValueError, 'average: weights wrong shape.'
                 del w
-    if n is masked or d is masked: 
+    if n is masked or d is masked:
         return masked
     result = n/d
     del n
-    
+
     if isMaskedArray(result):
         if ((axis is None) or (axis==0 and a.ndim == 1)) and \
            (result.mask is nomask):
@@ -396,18 +396,18 @@ def average (a, axis=None, weights=None, returned=False):
         return result, d
     else:
         return result
-    
+
 #..............................................................................
 def compress_rowcols(x, axis=None):
     """Suppresses the rows and/or columns of a 2D array that contains masked values.
-    
+
     The suppression behavior is selected with the `axis`parameter.
-        - If axis is None, rows and columns are suppressed. 
-        - If axis is 0, only rows are suppressed. 
+        - If axis is None, rows and columns are suppressed.
+        - If axis is 0, only rows are suppressed.
         - If axis is 1 or -1, only columns are suppressed.
-        
-*Returns*:        
-    compressed_array : a ndarray.    
+
+*Returns*:
+    compressed_array : a ndarray.
     """
     x = asarray(x)
     if x.ndim != 2:
@@ -441,10 +441,10 @@ def compress_cols(a):
 def mask_rowcols(a, axis=None):
     """Masks whole rows and/or columns of a 2D array that contain masked values.
     The masking behavior is selected with the `axis`parameter.
-        - If axis is None, rows and columns are masked. 
-        - If axis is 0, only rows are masked. 
+        - If axis is None, rows and columns are masked.
+        - If axis is 0, only rows are masked.
         - If axis is 1 or -1, only columns are masked.
-    Returns a *pure* ndarray.    
+    Returns a *pure* ndarray.
     """
     a = asarray(a)
     if a.ndim != 2:
@@ -469,19 +469,19 @@ def mask_cols(a, axis=None):
     """Masks whole columns of a 2D array that contain masked values."""
     return mask_rowcols(a, 1)
 
-        
+
 def dot(a,b, strict=False):
     """Returns the dot product of two 2D masked arrays a and b.
-    
-    Like the generic numpy equivalent, the product sum is over the last dimension 
+
+    Like the generic numpy equivalent, the product sum is over the last dimension
     of a and the second-to-last dimension of b.
-    If strict is True, masked values are propagated: if a masked value appears 
+    If strict is True, masked values are propagated: if a masked value appears
     in a row or column, the whole row or column is considered masked.
-    
+
 *Parameters*:
     strict : {boolean}
         Whether masked data are propagated (True) or set to 0 for the computation.
-    
+
 *Note*:
     The first argument is not conjugated.
     """
@@ -588,7 +588,7 @@ class mconcatenator(concatenator):
                 step = key[k].step
                 start = key[k].start
                 stop = key[k].stop
-                if start is None: 
+                if start is None:
                     start = 0
                 if step is None:
                     step = 1
@@ -709,7 +709,7 @@ def notmasked_contiguous(a, axis=None):
         idx[other] = i
         result.append( flatnotmasked_contiguous(a[idx]) )
     return result
-  
+
 ################################################################################
 if __name__ == '__main__':
     #

@@ -41,8 +41,8 @@ class svm_node(Structure):
 
 class svm_parameter(Structure):
     _fields_ = [
-	('svm_type', c_int),
-	('kernel_type', c_int),
+        ('svm_type', c_int),
+        ('kernel_type', c_int),
         # degree in polynomial kernel function
         ('degree', c_int),
         # gamma in kernel function
@@ -65,7 +65,7 @@ class svm_parameter(Structure):
         # epsilon in loss function of epsilon-SVR
         ('p', c_double),
         # whether to use the shrinking heuristics
-	('shrinking', c_int),
+        ('shrinking', c_int),
         # whether to train a SVC or SVR model for probability estimates
         ('probability', c_int)
         ]

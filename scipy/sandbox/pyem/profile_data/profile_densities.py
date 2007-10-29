@@ -35,7 +35,7 @@ def bench(func, mode = 'diag'):
     print "Compute %d times densities, %d dimension, %d frames" % (niter, d, n)
     mu  = 0.1 * randn(d)
     va  = 0.1 * abs(randn(d))
-    
+
     X   = 0.1 * randn(n, d)
     for i in range(niter):
         Y   = func(X, mu, va)

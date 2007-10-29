@@ -73,14 +73,14 @@ def iter_1(data, gm):
     ogmm.init(init_data)
 
     # Forgetting param
-    ku		= 0.005
-    t0		= 200
-    lamb	= 1 - 1/(N.arange(-1, nframes-1) * ku + t0)
-    nu0		= 0.2
-    nu		= N.zeros((len(lamb), 1))
-    nu[0]	= nu0
+    ku          = 0.005
+    t0          = 200
+    lamb        = 1 - 1/(N.arange(-1, nframes-1) * ku + t0)
+    nu0         = 0.2
+    nu          = N.zeros((len(lamb), 1))
+    nu[0]       = nu0
     for i in range(1, len(lamb)):
-        nu[i]	= 1./(1 + lamb[i] / nu[i-1])
+        nu[i]   = 1./(1 + lamb[i] / nu[i-1])
 
     # object version of online EM
     for t in range(nframes):
@@ -103,14 +103,14 @@ def iter_2(data, gm):
     ogmm.init(init_data)
 
     # Forgetting param
-    ku		= 0.005
-    t0		= 200
-    lamb	= 1 - 1/(N.arange(-1, nframes-1) * ku + t0)
-    nu0		= 0.2
-    nu		= N.zeros((len(lamb), 1))
-    nu[0]	= nu0
+    ku          = 0.005
+    t0          = 200
+    lamb        = 1 - 1/(N.arange(-1, nframes-1) * ku + t0)
+    nu0         = 0.2
+    nu          = N.zeros((len(lamb), 1))
+    nu[0]       = nu0
     for i in range(1, len(lamb)):
-        nu[i]	= 1./(1 + lamb[i] / nu[i-1])
+        nu[i]   = 1./(1 + lamb[i] / nu[i-1])
 
     # object version of online EM
     for t in range(nframes):
@@ -137,14 +137,14 @@ def iter_3(data, gm):
     ogmm.init(init_data[:, 0])
 
     # Forgetting param
-    ku		= 0.005
-    t0		= 200
-    lamb	= 1 - 1/(N.arange(-1, nframes-1) * ku + t0)
-    nu0		= 0.2
-    nu		= N.zeros((len(lamb), 1))
-    nu[0]	= nu0
+    ku          = 0.005
+    t0          = 200
+    lamb        = 1 - 1/(N.arange(-1, nframes-1) * ku + t0)
+    nu0         = 0.2
+    nu          = N.zeros((len(lamb), 1))
+    nu[0]       = nu0
     for i in range(1, len(lamb)):
-        nu[i]	= 1./(1 + lamb[i] / nu[i-1])
+        nu[i]   = 1./(1 + lamb[i] / nu[i-1])
 
     # object version of online EM
     for t in range(nframes):
@@ -175,14 +175,14 @@ def iter_4(data, gm):
     ogmm.init(init_data[:, 0])
 
     # Forgetting param
-    ku		= 0.005
-    t0		= 200
-    lamb	= 1 - 1/(N.arange(-1, nframes-1) * ku + t0)
-    nu0		= 0.2
-    nu		= N.zeros((len(lamb), 1))
-    nu[0]	= nu0
+    ku          = 0.005
+    t0          = 200
+    lamb        = 1 - 1/(N.arange(-1, nframes-1) * ku + t0)
+    nu0         = 0.2
+    nu          = N.zeros((len(lamb), 1))
+    nu[0]       = nu0
     for i in range(1, len(lamb)):
-        nu[i]	= 1./(1 + lamb[i] / nu[i-1])
+        nu[i]   = 1./(1 + lamb[i] / nu[i-1])
 
     # object version of online EM
     def blop():

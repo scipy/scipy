@@ -26,7 +26,7 @@ code = """
        args[0] = 2;
        i = obj.mcall("inc",args);
        result[1] = i;
-       
+
        obj.set_attr("val",5);
        i = obj.attr("val");
        result[2] = i;

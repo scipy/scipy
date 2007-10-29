@@ -2,12 +2,12 @@
 # Last Change: Mon Jul 23 09:00 PM 2007 J
 
 # Copyright (c) 2001, 2002 Enthought, Inc.
-# 
+#
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #   a. Redistributions of source code must retain the above copyright notice,
 #      this list of conditions and the following disclaimer.
 #   b. Redistributions in binary form must reproduce the above copyright
@@ -16,8 +16,8 @@
 #   c. Neither the name of the Enthought nor the names of its contributors
 #      may be used to endorse or promote products derived from this software
 #      without specific prior written permission.
-# 
-# 
+#
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -38,8 +38,8 @@ from scipy.special import gammaln as loggam
 
 def multigammaln(a, d):
     """returns the log of multivariate gamma, also sometimes called the
-    generalized gamma. 
-    
+    generalized gamma.
+
     :Parameters:
         a : ndarray
             the multivariate gamma is computed for each item of a
@@ -47,7 +47,7 @@ def multigammaln(a, d):
             the dimension of the space of integration.
 
     :Returns:
-        res : ndarray 
+        res : ndarray
             the values of the log multivariate gamma at the given points a.
 
     Note
@@ -65,7 +65,7 @@ def multigammaln(a, d):
     This can be proven to be equal to the much friendler equation:
 
     \Gamma_d(a) = \pi^{d(d-1)/4}\prod_{i=1}^{d}{\Gamma(a - (i-1)/2)}.
-    
+
     Reference:
     ----------
 

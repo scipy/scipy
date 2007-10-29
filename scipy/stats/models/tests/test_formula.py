@@ -69,7 +69,7 @@ class TestFormula(NumpyTestCase):
         X = formula.Term('X')
         Y = formula.Term('Y')
 
-        X.namespace = space1 
+        X.namespace = space1
         assert_almost_equal(X(), N.arange(50))
 
         Y.namespace = space2
@@ -119,7 +119,7 @@ class TestFormula(NumpyTestCase):
         col = self.formula.termcolumns(prod, dict=False)
         assert_almost_equal(N.squeeze(x[:,col]), self.X[:,0] * self.X[:,2])
         assert_almost_equal(N.squeeze(p()), self.X[:,0] * self.X[:,2])
-        
+
     def test_intercept1(self):
         prod = self.terms[0] * self.terms[2]
         self.formula += formula.I
@@ -149,7 +149,7 @@ class TestFormula(NumpyTestCase):
         assert_almost_equal(c.matrix, test)
 
     def test_contrast2(self):
-    
+
         dummy = formula.Term('zero')
         self.namespace['zero'] = N.zeros((40,), N.float64)
         term = dummy + self.terms[2]
@@ -159,10 +159,10 @@ class TestFormula(NumpyTestCase):
         assert_almost_equal(c.matrix, test)
 
     def test_contrast3(self):
-    
+
         X = self.formula.design()
         P = N.dot(X, L.pinv(X))
-        
+
         dummy = formula.Term('noise')
         resid = N.identity(40) - P
         self.namespace['noise'] = N.transpose(N.dot(resid, R.standard_normal((40,5))))
@@ -173,7 +173,7 @@ class TestFormula(NumpyTestCase):
         self.assertEquals(c.matrix.shape, (10,))
 
     def test_power(self):
-    
+
         t = self.terms[2]
         t2 = t**2
         t.namespace = t2.namespace = self.formula.namespace
@@ -216,14 +216,14 @@ class TestFormula(NumpyTestCase):
         assert_almost_equal(_m, m())
 
     def test_contrast4(self):
-    
-        f = self.formula + self.terms[5] + self.terms[5] 
+
+        f = self.formula + self.terms[5] + self.terms[5]
 
         estimable = False
 
         c = contrast.Contrast(self.terms[5], f)
         c.getmatrix()
-        
+
         self.assertEquals(estimable, False)
 
 if __name__ == "__main__":

@@ -12,4 +12,3 @@ For informations about scikits, see:
 http://projects.scipy.org/scipy/scikits/""")
 
 __all__ = ['mlp','srn','rbf']
-

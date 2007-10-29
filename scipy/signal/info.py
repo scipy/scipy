@@ -51,7 +51,7 @@ Signal Processing Tools
 
     unique_roots  -- Unique roots and their multiplicities.
     residue       -- Partial fraction expansion of b(s) / a(s).
-    residuez      -- Partial fraction expansion of b(z) / a(z).    
+    residuez      -- Partial fraction expansion of b(z) / a(z).
     invres        -- Inverse partial fraction expansion.
 
  Matlab-style IIR filter design:

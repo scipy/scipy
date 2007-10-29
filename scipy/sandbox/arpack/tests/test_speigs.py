@@ -23,7 +23,7 @@ class TestEigs(NumpyTestCase):
         uv_sortind = vals.argsort()
         vals = vals[uv_sortind]
         vecs = vecs[:,uv_sortind]
-        
+
         from scipy.linalg.iterative import get_matvec
         matvec = get_matvec(A)
         #= lambda x: N.asarray(A*x)[0]
@@ -51,4 +51,3 @@ class TestEigs(NumpyTestCase):
 
 if __name__ == "__main__":
     NumpyTest().run()
-    

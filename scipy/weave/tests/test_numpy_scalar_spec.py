@@ -58,7 +58,7 @@ class TestNumpyComplexScalarConverter(NumpyTestCase):
     def setUp(self):
         self.converter = numpy_complex_scalar_converter()
 
-    def check_type_match_string(self,level=5):        
+    def check_type_match_string(self,level=5):
         assert( not self.converter.type_match('string') )
     def check_type_match_int(self,level=5):
         assert( not self.converter.type_match(5))
@@ -111,7 +111,7 @@ class TestNumpyComplexScalarConverter(NumpyTestCase):
         a = numpy.complex128(1+1j)
         result = inline_tools.inline("return_val=1.0/a;",['a'])
         assert( result==.5-.5j)
-                
+
 class test_msvc_numpy_complex_scalar_converter(
                   test_numpy_complex_scalar_converter):
     compiler = 'msvc'

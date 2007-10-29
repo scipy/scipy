@@ -13,7 +13,7 @@ def configuration(parent_package='',top_path=None):
 
     # Adding a Python file as a "source" file for an extension is something of
     # a hack, but it works to put it in the right place.
-    sources = [join('sparsetools', x) for x in 
+    sources = [join('sparsetools', x) for x in
         ['sparsetools.py', 'sparsetools_wrap.cxx']]
     config.add_extension('_sparsetools',
                          sources=sources,

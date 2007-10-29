@@ -27,7 +27,7 @@ a   = array([1, 2, 3.])
 b   = a + 3
 
 x   = concatenate((a, b)).reshape(2, 3)
-        
+
 # float and double C order
 xc      = require(x, dtype = numpy.float64, requirements = 'C')
 xcf     = require(x, dtype = numpy.float32, requirements = 'C')
@@ -129,7 +129,7 @@ class TestAutoCorr1D(NumpyTestCase):
 
 # This class is a pure python implementation of autocorrelation
 # with rank 2 arrays. This will be used in the above test cases;
-# this function implements the expected behaviour of the public 
+# this function implements the expected behaviour of the public
 # autocorr function.
 class TestAutoCorrPy(NumpyTestCase):
     def check_full(self):

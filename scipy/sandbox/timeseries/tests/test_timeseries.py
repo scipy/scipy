@@ -97,7 +97,7 @@ class TestCreation(NumpyTestCase):
         data = list(range(15))
         series = time_series(data, dates)
         assert_equal(series._data.size, 15)
-        
+
     def test_unsorted(self):
         "Tests that the data are properly sorted along the dates."
         dlist = ['2007-01-%02i' % i for i in (3,2,1)]
@@ -405,7 +405,7 @@ test_dates test suite.
                                     start_date=Date(freq='m', year=2005, month=6))
         highFreqSeries = time_series(numpy.arange(100),
                                     start_date=Date(freq='b', year=2005, month=6, day=1))
-        ndseries = time_series(numpy.arange(124).reshape(62,2), 
+        ndseries = time_series(numpy.arange(124).reshape(62,2),
                              start_date=Date(freq='d', year=2005, month=7, day=1))
 
         lowToHigh_start = lowFreqSeries.convert('B', position='START')
@@ -439,7 +439,7 @@ test_dates test suite.
                      (Date(freq='b', year=2005, month=6, day=1) + 99).asfreq('M'))
 
         assert_array_equal(lowFreqSeries, lowFreqSeries.convert("M"))
-                
+
         assert_equal(ndseries.convert('M',sum), [[930,961],[2852,2883]])
     #
     def test_fill_missing_dates(self):

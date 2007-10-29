@@ -4,7 +4,7 @@ import timeit
 #import IPython.ipapi
 #ip = IPython.ipapi.get()
 #from IPython import ipmagic
-import numpy 
+import numpy
 import maskedarray
 from maskedarray import filled
 from maskedarray.testutils import assert_equal
@@ -78,7 +78,7 @@ def compare_functions_1v(func, nloop=500, test=True,
     #
     print "%s on large arrays" % funcname
     if test:
-        assert_equal(filled(eval("numpy.ma.%s(nmxl)" % funcname),0), 
+        assert_equal(filled(eval("numpy.ma.%s(nmxl)" % funcname),0),
                      filled(eval("maskedarray.%s(mmxl)" % funcname),0))
     for (module, data) in zip(("numpy", "numpy.ma","maskedarray"),
                               ("xl","nmxl","mmxl")):
@@ -91,14 +91,14 @@ def compare_methods(methodname, args, vars='x', nloop=500, test=True,
     print "-"*50
     print "%s on small arrays" % methodname
     if test:
-        assert_equal(filled(eval("nm%ss.%s(%s)" % (vars,methodname,args)),0), 
+        assert_equal(filled(eval("nm%ss.%s(%s)" % (vars,methodname,args)),0),
                      filled(eval("mm%ss.%s(%s)" % (vars,methodname,args)),0))
     for (data, ver) in zip(["nm%ss" % vars, "mm%ss" % vars], ('numpy.ma   ','maskedarray')):
         timer("%(data)s.%(methodname)s(%(args)s)" % locals(), v=ver, nloop=nloop)
     #
     print "%s on large arrays" % methodname
     if test:
-        assert_equal(filled(eval("nm%sl.%s(%s)" % (vars,methodname,args)),0), 
+        assert_equal(filled(eval("nm%sl.%s(%s)" % (vars,methodname,args)),0),
                      filled(eval("mm%sl.%s(%s)" % (vars,methodname,args)),0))
     for (data, ver) in zip(["nm%sl" % vars, "mm%sl" % vars], ('numpy.ma   ','maskedarray')):
         timer("%(data)s.%(methodname)s(%(args)s)" % locals(), v=ver, nloop=nloop)
@@ -113,7 +113,7 @@ def compare_functions_2v(func, nloop=500, test=True,
     print "-"*50
     print "%s on small arrays" % funcname
     if test:
-        assert_equal(filled(eval("numpy.ma.%s(nmxs,nmys)" % funcname),0), 
+        assert_equal(filled(eval("numpy.ma.%s(nmxs,nmys)" % funcname),0),
                      filled(eval("maskedarray.%s(mmxs,mmys)" % funcname),0))
     for (module, data) in zip(("numpy", "numpy.ma","maskedarray"),
                               ("xs,ys","nmxs,nmys","mmxs,mmys")):
@@ -121,7 +121,7 @@ def compare_functions_2v(func, nloop=500, test=True,
     #
     print "%s on large arrays" % funcname
     if test:
-        assert_equal(filled(eval("numpy.ma.%s(nmxl, nmyl)" % funcname),0), 
+        assert_equal(filled(eval("numpy.ma.%s(nmxl, nmyl)" % funcname),0),
                      filled(eval("maskedarray.%s(mmxl, mmyl)" % funcname),0))
     for (module, data) in zip(("numpy", "numpy.ma","maskedarray"),
                               ("xl,yl","nmxl,nmyl","mmxl,mmyl")):
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     #....................................................................
     print "-"*50
     print "where on small arrays"
-    assert_equal(eval("numpy.ma.where(nmxs>2,nmxs,nmys)"), 
+    assert_equal(eval("numpy.ma.where(nmxs>2,nmxs,nmys)"),
                  eval("maskedarray.where(mmxs>2, mmxs,mmys)"))
     timer('numpy.ma.where(nmxs>2,nmxs,nmys)', 'numpy.ma   ',nloop=1000)
     timer('maskedarray.where(mmxs>2, mmxs,mmys)', 'maskedarray',nloop=1000)
@@ -196,4 +196,3 @@ if __name__ == '__main__':
     print "where on large arrays"
     timer('numpy.ma.where(nmxl>2,nmxl,nmyl)', 'numpy.ma   ',nloop=100)
     timer('maskedarray.where(mmxl>2, mmxl,mmyl)', 'maskedarray',nloop=100)
-    

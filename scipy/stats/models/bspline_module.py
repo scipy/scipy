@@ -17,13 +17,13 @@ def setup_bspline_module():
     d = 0
     lower = 0
     upper = 13
-    
+
     # Bspline code in C
     eval_code = '''
-    double *bspline(double **output, double *x, int nx, 
+    double *bspline(double **output, double *x, int nx,
                     double *knots, int nknots,
                     int m, int d, int lower, int upper)
-    {                   
+    {
        int nbasis;
        int index, i, j, k;
        double *result, *b, *b0, *b1;
@@ -47,7 +47,7 @@ def setup_bspline_module():
                            *result = (double) (x[k] >= knots[index]) * (x[k] < knots[index+1]);
                            result++;
                        }
-                   } 
+                   }
                    else {
                        for (k=0; k<nx; k++) {
                            *result = 0.;
@@ -62,7 +62,7 @@ def setup_bspline_module():
                    }
                }
             }
-        }    
+        }
         else {
             b = (double *) malloc(sizeof(*b) * (nbasis+1) * nx);
             bspline(&b, x, nx, knots, nknots, m-1, d-1, lower, upper+1);
@@ -74,7 +74,7 @@ def setup_bspline_module():
                 index = i+lower;
 
                 if ((knots[index] != knots[index+m-1]) && (index+m-1 < nknots)) {
-                    denom = knots[index+m-1] - knots[index];   
+                    denom = knots[index+m-1] - knots[index];
                     if (d <= 0) {
                         for (k=0; k<nx; k++) {
                             f0[k] = (x[k] - knots[index]) / denom;
@@ -96,16 +96,16 @@ def setup_bspline_module():
                 if ((knots[index] != knots[index+m-1]) && (index+m-1 < nknots)) {
                     denom = knots[index+m-1] - knots[index];
                     if (d <= 0) {
-                        for (k=0; k<nx; k++) { 
+                        for (k=0; k<nx; k++) {
                             f1[k] = (knots[index+m-1] - x[k]) / denom;
                         }
                     }
                     else {
-                        for (k=0; k<nx; k++) { 
+                        for (k=0; k<nx; k++) {
                             f1[k] = -(m-1) / (knots[index+m-1] - knots[index]);
                         }
                     }
-                }  
+                }
                 else {
                     for (k=0; k<nx; k++) {
                         f1[k] = 0.;
@@ -118,8 +118,8 @@ def setup_bspline_module():
                 }
             }
             free(b);
-        }    
-        free(f0); free(f1); 
+        }
+        free(f0); free(f1);
         result = result - nx * nbasis;
 
         return(result);
@@ -136,9 +136,9 @@ def setup_bspline_module():
     data = (double *) basis->data;
     bspline(&data, x, Nx[0], knots, Nknots[0], m, d, lower, upper);
     return_val = (PyObject *) basis;
-    Py_DECREF((PyObject *) basis); 
+    Py_DECREF((PyObject *) basis);
 
-    '''    
+    '''
 
     bspline_eval = ext_tools.ext_function('evaluate',
                                           eval_ext_code,
@@ -148,13 +148,13 @@ def setup_bspline_module():
     bspline_eval.customize.add_support_code(eval_code)
 
     nq = 18
-    qx, qw = scipy.special.orthogonal.p_roots(nq)   
+    qx, qw = scipy.special.orthogonal.p_roots(nq)
     dl = dr = 2
 
     gram_code = '''
 
     double *bspline_prod(double *x, int nx, double *knots, int nknots,
-                        int m, int l, int r, int dl, int dr) 
+                        int m, int l, int r, int dl, int dr)
     {
         double *result, *bl, *br;
         int k;
@@ -176,14 +176,14 @@ def setup_bspline_module():
             for (k=0; k<nx; k++) {
                 result[k] = 0.;
             }
-        }    
+        }
 
         return(result);
     }
 
-    
+
     double bspline_quad(double *knots, int nknots,
-                        int m, int l, int r, int dl, int dr) 
+                        int m, int l, int r, int dl, int dr)
 
         /* This is based on scipy.integrate.fixed_quad */
 
@@ -199,12 +199,12 @@ def setup_bspline_module():
 
         result = 0;
 
-	/* TO DO: figure out knot span more efficiently */
+        /* TO DO: figure out knot span more efficiently */
 
-        lower = l - m - 1; 
-	if (lower < 0) { lower = 0;}
-	upper = lower + 2 * m + 4;
-	if (upper > nknots - 1) { upper = nknots-1; }
+        lower = l - m - 1;
+        if (lower < 0) { lower = 0;}
+        upper = lower + 2 * m + 4;
+        if (upper > nknots - 1) { upper = nknots-1; }
 
         for (k=lower; k<upper; k++) {
             partial = 0.;
@@ -225,10 +225,10 @@ def setup_bspline_module():
         }
 
         return(result);
-    }    
+    }
 
     void bspline_gram(double **output, double *knots, int nknots,
-                        int m, int dl, int dr) 
+                        int m, int dl, int dr)
 
     /* Presumes that the first m and last m knots are to be ignored, i.e.
     the interior knots are knots[(m+1):-(m+1)] and the boundary knots are
@@ -244,14 +244,14 @@ def setup_bspline_module():
 
         result = *((double **) output);
         for (i=0; i<nbasis; i++) {
-	    for (j=0; j<m; j++) {
+            for (j=0; j<m; j++) {
                 l = i;
                 r = l+j;
                 *result = bspline_quad(knots, nknots, m, l, r, dl, dr);
-		result++;
+                result++;
             }
-        } 
-    }    
+        }
+    }
 
     ''' % {'qx':`[q for q in N.real(qx)]`[1:-1], 'qw':`[q for q in qw]`[1:-1], 'nq':nq}
 
@@ -265,9 +265,9 @@ def setup_bspline_module():
     data = (double *) gram->data;
     bspline_gram(&data, knots, Nknots[0], m, dl, dr);
     return_val = (PyObject *) gram;
-    Py_DECREF((PyObject *) gram); 
+    Py_DECREF((PyObject *) gram);
 
-    '''    
+    '''
 
     bspline_gram = ext_tools.ext_function('gram',
                                           gram_ext_code,
@@ -287,18 +287,18 @@ def setup_bspline_module():
 
         int i,j,k;
         int idx, idy;
-	double *data, *odata;
-	double diag;
+        double *data, *odata;
+        double diag;
 
-	data = *((double **) dataptr);
+        data = *((double **) dataptr);
 
-	for (i=0; i<n; i++) {
+        for (i=0; i<n; i++) {
              diag = L[i];
-	     data[i] = 1.0 / (diag*diag) ;
+             data[i] = 1.0 / (diag*diag) ;
 
-	     for (j=0; j<=m; j++) {
+             for (j=0; j<=m; j++) {
                  L[j*n+i] /= diag;
-		 if (j > 0) { data[j*n+i] = 0;}
+                 if (j > 0) { data[j*n+i] = 0;}
              }
          }
 
@@ -331,9 +331,9 @@ def setup_bspline_module():
     invband_compute(&data, L, NL[1], NL[0]-1);
 
     return_val = (PyObject *) invband;
-    Py_DECREF((PyObject *) invband); 
+    Py_DECREF((PyObject *) invband);
 
-    '''    
+    '''
 
     invband = ext_tools.ext_function('invband',
                                      invband_ext_code,
@@ -377,5 +377,5 @@ def build_bspline_module():
 ##         tic = time.time()
 ##         t += tic-toc
 ##         del(y); del(z)
-    
+
 ##     print t / 100

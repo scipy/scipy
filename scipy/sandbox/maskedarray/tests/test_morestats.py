@@ -102,14 +102,13 @@ class TestQuantiles(NumpyTestCase):
         assert_almost_equal(hdq[:,0], hdquantiles(data[:,0],[0.25,0.5,0.75]))
         assert_almost_equal(hdq[:,-1], hdquantiles(data[:,-1],[0.25,0.5,0.75]))
         hdq = hdquantiles(data,[0.25,0.5,0.75],axis=0,var=True)
-        assert_almost_equal(hdq[...,0], 
+        assert_almost_equal(hdq[...,0],
                             hdquantiles(data[:,0],[0.25,0.5,0.75],var=True))
-        assert_almost_equal(hdq[...,-1], 
+        assert_almost_equal(hdq[...,-1],
                             hdquantiles(data[:,-1],[0.25,0.5,0.75], var=True))
 
-        
+
 ###############################################################################
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
     NumpyTest().run()
-            

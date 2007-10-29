@@ -24,11 +24,11 @@ from core import filled, equal, less
 #------------------------------------------------------------------------------
 def approx (a, b, fill_value=True, rtol=1.e-5, atol=1.e-8):
     """Returns true if all components of a and b are equal subject to given tolerances.
-    
+
 If fill_value is True, masked values considered equal. Otherwise, masked values
 are considered unequal.
 The relative error rtol should be positive and << 1.0
-The absolute error atol comes into play for those elements of b that are very 
+The absolute error atol comes into play for those elements of b that are very
 small or zero; it says how small a must be also.
     """
     m = mask_or(getmask(a), getmask(b))
@@ -47,7 +47,7 @@ def _assert_equal_on_sequences(actual, desired, err_msg=''):
     for k in range(len(desired)):
         assert_equal(actual[k], desired[k], 'item=%r\n%s' % (k,err_msg))
     return
-    
+
 def assert_equal_records(a,b):
     """Asserts that two records are equal. Pretty crude for now."""
     assert_equal(a.dtype, b.dtype)
@@ -79,12 +79,12 @@ def assert_equal(actual,desired,err_msg=''):
     if ((actual is masked) and not (desired is masked)) or \
         ((desired is masked) and not (actual is masked)):
         msg = build_err_msg([actual, desired], err_msg, header='', names=('x', 'y'))
-        raise ValueError(msg)    
+        raise ValueError(msg)
     actual = N.array(actual, copy=False, subok=True)
     desired = N.array(desired, copy=False, subok=True)
     if actual.dtype.char in "OS" and desired.dtype.char in "OS":
-        return _assert_equal_on_sequences(actual.tolist(), 
-                                          desired.tolist(), 
+        return _assert_equal_on_sequences(actual.tolist(),
+                                          desired.tolist(),
                                           err_msg='')
     return assert_array_equal(actual, desired, err_msg)
 #.............................
@@ -118,22 +118,22 @@ def assert_almost_equal(actual,desired,decimal=7,err_msg=''):
     msg = build_err_msg([actual, desired], err_msg)
     assert round(abs(desired - actual),decimal) == 0, msg
 #............................
-def assert_array_compare(comparison, x, y, err_msg='', header='', 
+def assert_array_compare(comparison, x, y, err_msg='', header='',
                          fill_value=True):
     """Asserts that a comparison relation between two masked arrays is satisfied
     elementwise."""
     xf = filled(x)
     yf = filled(y)
     m = mask_or(getmask(x), getmask(y))
-    
+
     x = masked_array(xf, copy=False, subok=False, mask=m).filled(fill_value)
     y = masked_array(yf, copy=False, subok=False, mask=m).filled(fill_value)
-    
+
     if ((x is masked) and not (y is masked)) or \
         ((y is masked) and not (x is masked)):
         msg = build_err_msg([x, y], err_msg, header=header, names=('x', 'y'))
         raise ValueError(msg)
-    
+
     if (x.dtype.char != "O") and (x.dtype.char != "S"):
         x = x.astype(float_)
         if isinstance(x, N.ndarray) and x.size > 1:
@@ -186,18 +186,18 @@ def assert_array_equal(x, y, err_msg=''):
 def fail_if_array_equal(x, y, err_msg=''):
     "Raises an assertion error if two masked arrays are not equal (elementwise)."
     def compare(x,y):
-        
+
         return (not N.alltrue(approx(x, y)))
     assert_array_compare(compare, x, y, err_msg=err_msg,
                          header='Arrays are not equal')
 #............................
 def assert_array_almost_equal(x, y, decimal=6, err_msg=''):
-    """Checks the elementwise equality of two masked arrays, up to a given 
+    """Checks the elementwise equality of two masked arrays, up to a given
     number of decimals."""
     def compare(x, y):
         "Returns the result of the loose comparison between x and y)."
         return approx(x,y, rtol=10.**-decimal)
-    assert_array_compare(compare, x, y, err_msg=err_msg, 
+    assert_array_compare(compare, x, y, err_msg=err_msg,
                          header='Arrays are not almost equal')
 #............................
 def assert_array_less(x, y, err_msg=''):
@@ -214,7 +214,7 @@ def assert_mask_equal(m1, m2):
     if m2 is nomask:
         assert(m1 is nomask)
     assert_array_equal(m1, m2)
-    
+
 if __name__ == '__main__':
     a = 12
     assert_equal(a, masked)

@@ -820,8 +820,8 @@ column = measured values.
     withinvec = [0]*numfact
     for col in range(1,numfact+1):
         # get 1 level of this factor
-        rows = _support.linexand(data,col,_support.unique(_support.colex(data,1))[0])  
+        rows = _support.linexand(data,col,_support.unique(_support.colex(data,1))[0])
         # if fewer subjects than scores on this factor
-        if len(_support.unique(_support.colex(rows,0))) < len(rows):   
+        if len(_support.unique(_support.colex(rows,0))) < len(rows):
             withinvec[col-1] = 1
     return withinvec

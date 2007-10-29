@@ -109,17 +109,17 @@ _altusdate = _month + '-' + _day + '-' + _fullyear_epoch
 _isodate = _year + '-' + _month + '-?' + _day + '?(?!:)'
 _altisodate = _year + _fullmonth + _fullday + '(?!:)'
 _usisodate = _fullyear + '/' + _fullmonth + '/' + _fullday
-_litdate = ('(?:'+ _litday + ',? )? *' + 
-            _usday + ' *' + 
+_litdate = ('(?:'+ _litday + ',? )? *' +
+            _usday + ' *' +
             '[- ] *(?:' + _litmonth + '|'+ _month +') *[- ] *' +
             _year_epoch + '?')
-_altlitdate = ('(?:'+ _litday + ',? )? *' + 
+_altlitdate = ('(?:'+ _litday + ',? )? *' +
                _litmonth + '[ ,.a-z]+' +
-               _usday + 
+               _usday +
                '(?:[ a-z]+' + _year_epoch + ')?')
-_eurlitdate = ('(?:'+ _litday + ',?[ a-z]+)? *' + 
+_eurlitdate = ('(?:'+ _litday + ',?[ a-z]+)? *' +
                '(?:'+ _usday + '[ a-z]+)? *' +
-               _litmonth + 
+               _litmonth +
                '(?:[ ,.a-z]+' + _year_epoch + ')?')
 
 _relany = '[*%?a-zA-Z]+'
@@ -128,10 +128,10 @@ _relisodate = ('(?:(?:' + _relany + '|' + _year + '|' + _relyear + ')-' +
                '(?:' + _relany + '|' + _month + '|' + _relmonth + ')-' +
                '(?:' + _relany + '|' + _day + '|' + _relday + '))')
 
-_asctime = ('(?:'+ _litday + ',? )? *' + 
-                _usday + ' *' + 
+_asctime = ('(?:'+ _litday + ',? )? *' +
+                _usday + ' *' +
                 '[- ] *(?:' + _litmonth + '|'+ _month +') *[- ]' +
-                '(?:[0-9: ]+)' + 
+                '(?:[0-9: ]+)' +
                 _year_epoch + '?')
 
 _relisotime = ('(?:(?:' + _relany + '|' + _hour + '|' + _relhours + '):' +
@@ -140,17 +140,17 @@ _relisotime = ('(?:(?:' + _relany + '|' + _hour + '|' + _relhours + '):' +
 
 _isodelta1 = (_sign + '?' +
               _days + ':' + _hours + ':' + _minutes + ':' + _seconds)
-_isodelta2 = (_sign + '?' + 
+_isodelta2 = (_sign + '?' +
               _hours + ':' + _minutes + ':' + _seconds)
-_isodelta3 = (_sign + '?' + 
+_isodelta3 = (_sign + '?' +
               _hours + ':' + _minutes)
 _litdelta = (_sign + '?' +
-             '(?:' + _days + ' *d[a-z]*[,; ]*)?' + 
-             '(?:' + _hours + ' *h[a-z]*[,; ]*)?' + 
+             '(?:' + _days + ' *d[a-z]*[,; ]*)?' +
+             '(?:' + _hours + ' *h[a-z]*[,; ]*)?' +
              '(?:' + _minutes + ' *m[a-z]*[,; ]*)?' +
              '(?:' + _seconds + ' *s[a-z]*[,; ]*)?')
 _litdelta2 = (_sign + '?' +
-             '(?:' + _days + ' *d[a-z]*[,; ]*)?' + 
+             '(?:' + _days + ' *d[a-z]*[,; ]*)?' +
               _hours + ':' + _minutes + '(?::' + _seconds + ')?')
 
 _timeRE = re.compile(_time, re.I)
@@ -176,7 +176,7 @@ _relisotimeRE = re.compile(_relisotime, re.I)
 # Available date parsers
 _date_formats = ('euro',
                  'usiso', 'us', 'altus',
-                 'iso', 'altiso', 
+                 'iso', 'altiso',
                  'lit', 'altlit', 'eurlit',
                  'unknown')
 
@@ -256,7 +256,7 @@ _zonetable = {
               'W':-10,
               'X':-11,
               'Y':-12
-              }    
+              }
 
 
 def utc_offset(zone):
@@ -289,7 +289,7 @@ def utc_offset(zone):
     return offset
 
 def add_century(year):
-    
+
     """ Sliding window approach to the Y2K problem: adds a suitable
         century to the given year and returns it as integer.
 
@@ -303,7 +303,7 @@ def add_century(year):
 
     current_year=dt.datetime.now().year
     current_century=(dt.datetime.now().year / 100) * 100
-    
+
     if year > 99:
         # Take it as-is
         return year
@@ -355,7 +355,7 @@ def _parse_date(text):
     style = ''
 
     formats = _date_formats
-    
+
     us_formats=('us', 'altus')
     iso_formats=('iso', 'altiso', 'usiso')
 
@@ -464,7 +464,7 @@ def _parse_date(text):
         elif format == 'altlit':
             # Alternative US style literal date
             match = _altlitdateRE.search(text)
-            if match is not None: 
+            if match is not None:
                 litday,litmonth,day,year,epoch = match.groups()
                 month = '<missing>'
                 break
@@ -472,7 +472,7 @@ def _parse_date(text):
         elif format == 'eurlit':
             # European style literal date
             match = _eurlitdateRE.search(text)
-            if match is not None: 
+            if match is not None:
                 litday,day,litmonth,year,epoch = match.groups()
                 month = '<missing>'
                 break
@@ -495,7 +495,7 @@ def _parse_date(text):
                   'giving:',year,month,day
         text = text[:left] + text[right:]
         style = format
-        
+
     elif not style:
         # Not recognized: raise an error
         raise ValueError, 'unknown date format: "%s"' % text
@@ -594,7 +594,7 @@ def _parse_time(text):
 
     # Post-processing
     if match is not None:
-    
+
         if zone:
             # Convert to UTC offset
             offset = utc_offset(zone)
@@ -608,7 +608,7 @@ def _parse_time(text):
                 if hour < 12:
                     hour = hour + 12
             else:
-                # 12am = midnight 
+                # 12am = midnight
                 if hour >= 12:
                     hour = hour - 12
         if minute:
@@ -624,7 +624,7 @@ def _parse_time(text):
 
         # Remove time from text
         left,right = match.span()
-        if 0 and _debug: 
+        if 0 and _debug:
             print 'parsed time:',repr(text[left:right]),\
                   'giving:',hour,minute,second,offset
         text = text[:left] + text[right:]
@@ -637,7 +637,7 @@ def _parse_time(text):
 def DateTimeFromString(text):
 
     """ DateTimeFromString(text, [formats, defaultdate])
-    
+
         Returns a datetime instance reflecting the date and time given
         in text. In case a timezone is given, the returned instance
         will point to the corresponding UTC time value. Otherwise, the
@@ -712,7 +712,7 @@ def DateTimeFromString(text):
 def DateFromString(text):
 
     """ DateFromString(text, [formats, defaultdate])
-    
+
         Returns a datetime instance reflecting the date given in
         text. A possibly included time part is ignored.
 
@@ -740,7 +740,7 @@ def validateDateTimeString(text):
         same list of parsers as for DateTimeFromString().
 
         XXX Undocumented !
-    
+
     """
     try:
         DateTimeFromString(text)
@@ -759,9 +759,9 @@ def validateDateString(text):
         formats works just like for DateTimeFromString() and defines
         the order of date/time parsers to apply. It defaults to the
         same list of parsers as for DateTimeFromString().
-    
+
         XXX Undocumented !
-    
+
     """
     try:
         DateFromString(text)
@@ -809,7 +809,7 @@ def _test():
         ('Sep 6, 01', '2001-09-06 00:00:00.00'),
         ('September 6, 01', '2001-09-06 00:00:00.00'),
         ('30 Apr 2006 20:19:00', '2006-04-30 20:19:00.00'),
-        
+
         # ISO formats
         ('1994-11-06 08:49:37', '1994-11-06 08:49:37.00'),
         ('010203', '2001-02-03 00:00:00.00'),

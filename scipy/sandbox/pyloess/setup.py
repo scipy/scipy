@@ -23,12 +23,12 @@ def configuration(parent_package='',top_path=None):
                          )
     # Configuration of LOESS
     f_sources = ('loessf.f', 'linpack_lite.f')
-    confgr.add_library('floess', 
+    confgr.add_library('floess',
                        sources = [join('src',x) for x in f_sources])
     blas_info = get_info('blas_opt')
     build_info = {}
     dict_append(build_info, **blas_info)
-    dict_append(build_info, libraries=['floess'])    
+    dict_append(build_info, libraries=['floess'])
     c_sources = ['loess.c', 'loessc.c', 'misc.c', 'predict.c',]
     confgr.add_extension('_loess',
                          sources=[join('src','_loess.c')] + \
@@ -53,5 +53,5 @@ def configuration(parent_package='',top_path=None):
 
 if __name__ == "__main__":
     from numpy.distutils.core import setup
-    config = configuration(top_path='').todict() 
+    config = configuration(top_path='').todict()
     setup(**config)

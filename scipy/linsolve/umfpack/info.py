@@ -107,13 +107,13 @@ Then:
            L - Lower triangular m-by-min(m,n) CSR matrix
            U - Upper triangular min(m,n)-by-n CSC matrix
            P - Vector of row permuations
-           Q - Vector of column permuations            
+           Q - Vector of column permuations
            R - Vector of diagonal row scalings
            do_recip - boolean
-           
-       For a given matrix A, the decomposition satisfies:  
+
+       For a given matrix A, the decomposition satisfies:
                LU = PRAQ        when do_recip is true
-               LU = P(R^-1)AQ   when do_recip is false     
+               LU = P(R^-1)AQ   when do_recip is false
 
 Description of arguments of UmfpackContext solution methods:
 =============================================

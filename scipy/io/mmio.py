@@ -125,7 +125,7 @@ def mmread(source):
     is_skew = symm=='skew-symmetric'
     is_herm = symm=='hermitian'
     is_pattern = field=='pattern'
-    
+
     if rep == 'array':
         a = zeros((rows,cols),dtype=dtype)
         line = 1

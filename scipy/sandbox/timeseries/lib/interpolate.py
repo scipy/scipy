@@ -51,7 +51,7 @@ values.
                 elif currGap == maxgap + 1:
                     marr._mask[i-maxgap:i] = True
             else:
-                currGap = 0               
+                currGap = 0
     else:
         for i in range(1, marr.size):
             # CHECK: We should probable be able to speed things up here
@@ -75,19 +75,19 @@ def interp_masked1d(marr, kind='linear'):
 Interpolates masked values in marr according to method kind.
 kind must be one of 'constant', 'linear', 'cubic', quintic'
 """
-    if numeric.ndim(marr) > 1: 
+    if numeric.ndim(marr) > 1:
         raise ValueError("array must be 1 dimensional!")
     #
     marr = marray(marr, copy=True)
-    if getmask(marr) is nomask: 
+    if getmask(marr) is nomask:
         return marr
     #
     unmaskedIndices = (~marr._mask).nonzero()[0]
-    if unmaskedIndices.size < 2: 
+    if unmaskedIndices.size < 2:
         return marr
-    #    
+    #
     kind = kind.lower()
-    if kind == 'constant': 
+    if kind == 'constant':
         return forward_fill(marr)
     try:
         k = {'linear' : 1,
@@ -95,13 +95,13 @@ kind must be one of 'constant', 'linear', 'cubic', quintic'
              'quintic' : 5}[kind.lower()]
     except KeyError:
         raise ValueError("Unsupported interpolation type.")
-    
+
     first_unmasked, last_unmasked = flatnotmasked_edges(marr)
-    
+
     vals = marr.data[unmaskedIndices]
-    
+
     tck = fitpack.splrep(unmaskedIndices, vals, k=k)
-    
+
     maskedIndices = marr._mask.nonzero()[0]
     interpIndices = maskedIndices[(maskedIndices > first_unmasked) & \
                                   (maskedIndices < last_unmasked)]

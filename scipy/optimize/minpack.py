@@ -91,20 +91,20 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
       scikits.openopt, which offers a unified syntax to call this and other solvers
 
       fmin, fmin_powell, fmin_cg,
-	     fmin_bfgs, fmin_ncg -- multivariate local optimizers
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
       leastsq -- nonlinear least squares minimizer
-  
+
       fmin_l_bfgs_b, fmin_tnc,
-	     fmin_cobyla -- constrained multivariate optimizers
-  
+             fmin_cobyla -- constrained multivariate optimizers
+
       anneal, brute -- global optimizers
-  
+
       fminbound, brent, golden, bracket -- local scalar minimizers
-  
+
       fsolve -- n-dimenstional root-finding
-  
+
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-  
+
       fixed_point -- scalar fixed-point finder
 
     """
@@ -183,7 +183,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     col_deriv -- non-zero to specify that the Jacobian function
                  computes derivatives down the columns (faster, because
                  there is no transpose operation).
-	warning -- True to print a warning message when the call is
+        warning -- True to print a warning message when the call is
              unsuccessful; False to suppress the warning message.
 
   Outputs: (x, {cov_x, infodict, mesg}, ier)
@@ -194,7 +194,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     cov_x -- uses the fjac and ipvt optional outputs to construct an
              estimate of the covariance matrix of the solution.
              None if a singular matrix encountered (indicates
-             infinite covariance in some direction). 
+             infinite covariance in some direction).
     infodict -- a dictionary of optional outputs with the keys:
                 'nfev' : the number of function calls
                 'njev' : the number of jacobian calls
@@ -215,7 +215,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     ier -- an integer flag.  If it is equal to 1 the solution was
            found.  If it is not equal to 1, the solution was not
            found and the following message gives more information.
-             
+
 
   Extended Inputs:
 
@@ -245,20 +245,20 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
       scikits.openopt, which offers a unified syntax to call this and other solvers
 
       fmin, fmin_powell, fmin_cg,
-	     fmin_bfgs, fmin_ncg -- multivariate local optimizers
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
       leastsq -- nonlinear least squares minimizer
-  
+
       fmin_l_bfgs_b, fmin_tnc,
-	     fmin_cobyla -- constrained multivariate optimizers
-  
+             fmin_cobyla -- constrained multivariate optimizers
+
       anneal, brute -- global optimizers
-  
+
       fminbound, brent, golden, bracket -- local scalar minimizers
-  
+
       fsolve -- n-dimenstional root-finding
-  
+
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-  
+
       fixed_point -- scalar fixed-point finder
 
     """
@@ -361,20 +361,20 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
     See also:
 
       fmin, fmin_powell, fmin_cg,
-	     fmin_bfgs, fmin_ncg -- multivariate local optimizers
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
       leastsq -- nonlinear least squares minimizer
-  
+
       fmin_l_bfgs_b, fmin_tnc,
-	     fmin_cobyla -- constrained multivariate optimizers
-  
+             fmin_cobyla -- constrained multivariate optimizers
+
       anneal, brute -- global optimizers
-  
+
       fminbound, brent, golden, bracket -- local scalar minimizers
-  
+
       fsolve -- n-dimenstional root-finding
-  
+
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-  
+
       fixed_point -- scalar fixed-point finder
 
     """
@@ -421,20 +421,20 @@ def fixed_point(func, x0, args=(), xtol=1e-10, maxiter=500):
     See also:
 
       fmin, fmin_powell, fmin_cg,
-	     fmin_bfgs, fmin_ncg -- multivariate local optimizers
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
       leastsq -- nonlinear least squares minimizer
-  
+
       fmin_l_bfgs_b, fmin_tnc,
-	     fmin_cobyla -- constrained multivariate optimizers
-  
+             fmin_cobyla -- constrained multivariate optimizers
+
       anneal, brute -- global optimizers
-  
+
       fminbound, brent, golden, bracket -- local scalar minimizers
-  
+
       fsolve -- n-dimenstional root-finding
-  
+
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-  
+
       fixed_point -- scalar fixed-point finder
 
     """
@@ -462,20 +462,20 @@ def bisection(func, a, b, args=(), xtol=1e-10, maxiter=400):
     See also:
 
       fmin, fmin_powell, fmin_cg,
-	     fmin_bfgs, fmin_ncg -- multivariate local optimizers
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
       leastsq -- nonlinear least squares minimizer
-  
+
       fmin_l_bfgs_b, fmin_tnc,
-	     fmin_cobyla -- constrained multivariate optimizers
-  
+             fmin_cobyla -- constrained multivariate optimizers
+
       anneal, brute -- global optimizers
-  
+
       fminbound, brent, golden, bracket -- local scalar minimizers
-  
+
       fsolve -- n-dimenstional root-finding
-  
+
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
-  
+
       fixed_point -- scalar fixed-point finder
 
     """

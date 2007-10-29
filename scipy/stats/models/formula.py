@@ -14,8 +14,8 @@ class Term(object):
     This class is very simple: it is just a named term in a model formula.
 
     It is also callable: by default it namespace[self.name], where namespace
-    defaults to formula.default_namespace. 
-    When called in an instance of formula, 
+    defaults to formula.default_namespace.
+    When called in an instance of formula,
     the namespace used is that formula's namespace.
     """
 
@@ -41,7 +41,7 @@ class Term(object):
         return value
 
     def __init__(self, name, func=None, termname=None):
-        
+
         self.name = name
         self.__namespace = None
         if termname is None:
@@ -56,9 +56,9 @@ class Term(object):
 
     # Namespace in which self.name will be looked up in, if needed
 
-    def _get_namespace(self): 
-        if isinstance(self.__namespace, N.ndarray): 
-            return self.__namespace 
+    def _get_namespace(self):
+        if isinstance(self.__namespace, N.ndarray):
+            return self.__namespace
         else: return self.__namespace or default_namespace
 
     def _set_namespace(self, value):  self.__namespace = value
@@ -113,7 +113,7 @@ class Term(object):
         else, it returns
         ``self.func(*args, **kw)``
         """
-        
+
         if not hasattr(self, 'func'):
             val = self.namespace[self.termname]
         else:
@@ -134,7 +134,7 @@ class Factor(Term):
         factor is initialized with keys, representing all valid
         levels of the factor.
         """
-        
+
         self.keys = list(set(keys))
         self.keys.sort()
         self._name = termname
@@ -155,11 +155,11 @@ class Factor(Term):
 
         v = self.namespace[self._name]
         while True:
-            if callable(v): 
+            if callable(v):
                 if hasattr(v, "namespace"):
                     v.namespace = self.namespace
                 v = v(*args, **kw)
-            else: break 
+            else: break
 
         if self.ordinal:
             col = [float(self.keys.index(v[i])) for i in range(len(self.keys))]
@@ -175,7 +175,7 @@ class Factor(Term):
 
     def values(self, *args, **kw):
         """
-        Return the keys of the factor, rather than the columns of the design 
+        Return the keys of the factor, rather than the columns of the design
         matrix.
         """
 
@@ -196,12 +196,12 @@ class Factor(Term):
         """
         Formula(self) + Formula(other)
 
-        When adding \'intercept\' to a factor, this just returns 
+        When adding \'intercept\' to a factor, this just returns
 
         Formula(self, namespace=self.namespace)
 
         """
-        
+
         if other.name is 'intercept':
             return Formula(self, namespace=self.namespace)
         else:
@@ -225,12 +225,12 @@ class Factor(Term):
             for i in range(len(keep)):
                 rvalue.append(value[keep[i]] - value[reference])
             return N.array(rvalue)
-        
+
         keep = range(len(self.names()))
         keep.pop(reference)
         __names = self.names()
         _names = ['%s-%s' % (__names[keep[i]], __names[reference]) for i in range(len(keep))]
-        value = Quantitative(_names, func=self, 
+        value = Quantitative(_names, func=self,
                      termname='%s:maineffect' % self.termname,
                      transform=maineffect_func)
         value.namespace = self.namespace
@@ -278,10 +278,10 @@ class Formula(object):
     of the columns of the two formulas.
 
     """
-    
-    def _get_namespace(self): 
-        if isinstance(self.__namespace, N.ndarray): 
-            return self.__namespace 
+
+    def _get_namespace(self):
+        if isinstance(self.__namespace, N.ndarray):
+            return self.__namespace
         else: return self.__namespace or default_namespace
 
     def _set_namespace(self, value):  self.__namespace = value
@@ -308,7 +308,7 @@ class Formula(object):
             self.terms = termlist
         elif isinstance(termlist, Term):
             self.terms = [termlist]
-        else: 
+        else:
             raise ValueError
 
         self._terms_changed()
@@ -335,7 +335,7 @@ class Formula(object):
             namespace = kw['namespace']
         else:
             namespace = self.namespace
-            
+
 
         allvals = []
         intercept = False
@@ -347,7 +347,7 @@ class Formula(object):
 
             isintercept = False
             if hasattr(t, "termname"):
-                if t.termname == 'intercept': 
+                if t.termname == 'intercept':
                     intercept = True
                     isintercept = True
                     interceptindex = iindex
@@ -372,15 +372,15 @@ class Formula(object):
                     n = allvals[0].shape[1]
                 else:
                     n = allvals[1].shape[1]
-                allvals[interceptindex] = N.ones((1,n), N.float64) 
+                allvals[interceptindex] = N.ones((1,n), N.float64)
                 allvals = N.concatenate(allvals)
-            elif nrow <= 1: 
+            elif nrow <= 1:
                 raise ValueError, 'with only intercept in formula, keyword \'nrow\' argument needed'
             else:
                 allvals = I(nrow=nrow)
                 allvals.shape = (1,) + allvals.shape
         return allvals
-    
+
     def hasterm(self, query_term):
         """
         Determine whether a given term is in a formula.
@@ -397,7 +397,7 @@ class Formula(object):
             return query_term.termname in self.termnames()
         else:
             raise ValueError, 'more than one term passed to hasterm'
-        
+
     def __getitem__(self, name):
         t = self.termnames()
         if name in t:
@@ -492,7 +492,7 @@ class Formula(object):
                 else:
                     names = []
 
-                    d1 = len(selfnames) 
+                    d1 = len(selfnames)
                     d2 = len(othernames)
 
                     for r in range(d1):
@@ -523,7 +523,7 @@ class Formula(object):
                 terms.append(_term)
 
         return Formula(terms, namespace=self.namespace)
-    
+
     def __add__(self, other):
 
         """
@@ -555,7 +555,7 @@ class Formula(object):
             for i in range(len(terms)):
                 if terms[i].termname == term.termname:
                     terms.pop(i)
-                    break 
+                    break
         return Formula(terms, namespace=self.namespace)
 
 def isnested(A, B, namespace=globals()):
@@ -570,7 +570,7 @@ def isnested(A, B, namespace=globals()):
 
     a = A(namespace, values=True)[0]
     b = B(namespace, values=True)[0]
-    
+
     if len(a) != len(b):
         raise ValueError, 'A() and B() should be sequences of the same length'
 

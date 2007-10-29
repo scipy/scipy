@@ -91,7 +91,7 @@ class fopen(object):
         else:
             raise TypeError, 'Need filename or open file as input'
         self.setformat(format)
-        
+
     def __del__(self):
         try:
             self.file.close()
@@ -106,7 +106,7 @@ class fopen(object):
 
     def tell(self):
         return self.file.tell()
-        
+
     def raw_read(self, size=-1):
         """Read raw bytes from file as string."""
         return self.file.read(size)
@@ -355,5 +355,3 @@ class fopen(object):
             if (self.raw_read(nn) == ''):
                 raise ValueError, "Unexpected end of file..."
             return retval
-        
-

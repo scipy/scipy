@@ -23,7 +23,7 @@ seed(1)
 #   - mode: Mode of covariance matrix: full or diag (string)
 #   - nframes: number of frames (frame = one data point = one
 #   row of d elements)
-k       = 2 
+k       = 2
 d       = 2
 mode    = 'diag'
 nframes = 1e3
@@ -66,7 +66,7 @@ level   = 0.8
 if not d == 1:
     P.plot(data[:, 0], data[:, 1], '.', label = '_nolegend_')
 
-    # h keeps the handles of the plot, so that you can modify 
+    # h keeps the handles of the plot, so that you can modify
     # its parameters like label or color
     h   = gm.plot(level = level)
     [i.set_color('g') for i in h]

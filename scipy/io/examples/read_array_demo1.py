@@ -1,8 +1,8 @@
 #=========================================================================
 # NAME: read_array_demo1
 #
-# DESCRIPTION: Examples to read 2 columns from a multicolumn ascii text 
-# file, skipping the first line of header. First example reads into 
+# DESCRIPTION: Examples to read 2 columns from a multicolumn ascii text
+# file, skipping the first line of header. First example reads into
 # 2 separate arrays. Second example reads into a single array. Data are
 # then plotted.
 #
@@ -16,7 +16,7 @@
 #
 # USAGE:
 # python read_array_demo1.py
-#       
+#
 # PARAMETERS:
 #
 # DEPENDENCIES:
@@ -48,7 +48,7 @@ def main():
 
     #Second example, read the file into a single arry
     z=read_array("test.txt",lines=(1,-1), columns=(0,2))
-    
+
     # Plot the data
     plot(x,y,'r--',z[:,0],z[:,1])
     show()

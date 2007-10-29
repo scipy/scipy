@@ -156,12 +156,12 @@ class TestMMIOCoordinate(NumpyTestCase):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
         V = array([  1.0,   6.0,   10.5, 0.015,   250.5,  -280.0, 33.32, 12.0 ])
-        
+
         b = scipy.sparse.coo_matrix((V,(I,J)),dims=(5,5))
 
         fn = mktemp()
         mmwrite(fn,b)
-        
+
         assert_equal(mminfo(fn),(5,5,8,'coordinate','real','general'))
         a = b.todense()
         b = mmread(fn).todense()
@@ -170,14 +170,14 @@ class TestMMIOCoordinate(NumpyTestCase):
     def check_complex_write_read(self):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
-        V = array([  1.0 + 3j,    6.0 + 2j,  10.50 + 0.9j, 0.015 + -4.4j,   
+        V = array([  1.0 + 3j,    6.0 + 2j,  10.50 + 0.9j, 0.015 + -4.4j,
                    250.5 + 0j, -280.0 + 5j,  33.32 + 6.4j, 12.00 + 0.8j])
-        
+
         b = scipy.sparse.coo_matrix((V,(I,J)),dims=(5,5))
-        
+
         fn = mktemp()
         mmwrite(fn,b)
-        
+
         assert_equal(mminfo(fn),(5,5,8,'coordinate','complex','general'))
         a = b.todense()
         b = mmread(fn).todense()

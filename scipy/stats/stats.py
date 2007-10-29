@@ -270,7 +270,7 @@ def nanstd(x, axis=0, bias=False):
         axis : int
             axis along which the standard deviation is computed.
         bias : boolean
-            If true, the biased (normalized by N) definition is used. If false, 
+            If true, the biased (normalized by N) definition is used. If false,
             the unbiased is used (the default).
 
     :Results:
@@ -282,7 +282,7 @@ def nanstd(x, axis=0, bias=False):
 
     Nnan = np.sum(np.isnan(x),axis)*1.0
     n = Norig - Nnan
-     
+
     x[np.isnan(x)] = 0.
     m1 = np.sum(x,axis)/n
 
@@ -365,8 +365,8 @@ def gmean(a, axis=0):
 def hmean(a, axis=0):
     """Calculates the harmonic mean of the values in the passed array.
 
-    That is:  n / (1/x1 + 1/x2 + ... + 1/xn)  
-    
+    That is:  n / (1/x1 + 1/x2 + ... + 1/xn)
+
     Parameters
     ----------
     a : array
@@ -410,7 +410,7 @@ def cmedian(a, numbins=1000):
     """Returns the computed median value of an array.
 
     All of the values in the input array are used. The input array is first
-    histogrammed using numbins bins. The bin containing the median is 
+    histogrammed using numbins bins. The bin containing the median is
     selected by searching for the halfway point in the cumulative histogram.
     The median value is then computed by linearly interpolating across that bin.
 
@@ -420,7 +420,7 @@ def cmedian(a, numbins=1000):
     numbins : int
         The number of bins used to histogram the data. More bins give greater
         accuracy to the approximation of the median.
-    
+
     Returns
     -------
     A floating point value approximating the median.
@@ -438,7 +438,7 @@ def cmedian(a, numbins=1000):
     amax = a.max()
     estbinwidth = (amax - amin)/float(numbins - 1)
     binsize = (amax - amin + estbinwidth) / float(numbins)
-    (hist, bins) = np.histogram(a, numbins, 
+    (hist, bins) = np.histogram(a, numbins,
         range=(amin-binsize*0.5, amax+binsize*0.5))
     binsize = bins[1] - bins[0]
     cumhist = np.cumsum(hist)           # make cumulative histogram
@@ -453,7 +453,7 @@ def cmedian(a, numbins=1000):
     return median
 
 def median(a, axis=0):
-    # fixme: This would be redundant with numpy.median() except that the latter 
+    # fixme: This would be redundant with numpy.median() except that the latter
     # does not deal with arbitrary axes.
     """Returns the median of the passed array along the given axis.
 
@@ -548,7 +548,7 @@ def mask_to_limits(a, limits, inclusive):
 def tmean(a, limits=None, inclusive=(True, True)):
     """Returns the arithmetic mean of all values in an array, ignoring values
     strictly outside given limits.
-    
+
     Parameters
     ----------
     a : array
@@ -641,7 +641,7 @@ def tsem(a, limits=None, inclusive=(True,True)):
     """
     a = np.asarray(a).ravel()
     if limits is None:
-        n = float(len(a))    
+        n = float(len(a))
         return a.std()/np.sqrt(n)
     am = mask_to_limits(a.ravel(), limits, inclusive)
     sd = np.sqrt(masked_var(am))
@@ -654,7 +654,7 @@ def tsem(a, limits=None, inclusive=(True,True)):
 
 def moment(a, moment=1, axis=0):
     """Calculates the nth moment about the mean for a sample.
-    
+
     Generally used to calculate coefficients of skewness and
     kurtosis.
 
@@ -666,7 +666,7 @@ def moment(a, moment=1, axis=0):
 
     Returns
     -------
-    The appropriate moment along the given axis or over all values if axis is 
+    The appropriate moment along the given axis or over all values if axis is
     None.
     """
     a, axis = _chk_asarray(a, axis)
@@ -689,7 +689,7 @@ def moment(a, moment=1, axis=0):
 def variation(a, axis=0):
     """Computes the coefficient of variation, the ratio of the biased standard
     deviation to the mean.
-    
+
     Parameters
     ----------
     a : array
@@ -701,15 +701,15 @@ def variation(a, axis=0):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    return a.std(axis)/a.mean(axis) 
+    return a.std(axis)/a.mean(axis)
 
 
 def skew(a, axis=0, bias=True):
     """Computes the skewness of a data set.
-    
+
     For normally distributed data, the skewness should be about 0. A skewness
-    value > 0 means that there is more weight in the left tail of the 
-    distribution. The function skewtest() can be used to determine if the 
+    value > 0 means that there is more weight in the left tail of the
+    distribution. The function skewtest() can be used to determine if the
     skewness value is close enough to 0, statistically speaking.
 
     Parameters
@@ -721,7 +721,7 @@ def skew(a, axis=0, bias=True):
 
     Returns
     -------
-    The skewness of values along an axis, returning 0 where all values are 
+    The skewness of values along an axis, returning 0 where all values are
     equal.
 
     References
@@ -736,7 +736,7 @@ def skew(a, axis=0, bias=True):
     vals = np.where(zero, 0, m3 / m2**1.5)
     if not bias:
         can_correct = (n > 2) & (m2 > 0)
-        if np.any(can_correct):
+        if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m3 = np.extract(can_correct, m3)
             nval = np.sqrt((n-1.0)*n)/(n-2.0)*m3/m2**1.5
@@ -767,7 +767,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 
     Returns
     -------
-    The kurtosis of values along an axis, returning 0 where all values are 
+    The kurtosis of values along an axis, returning 0 where all values are
     equal.
 
     References
@@ -847,7 +847,7 @@ def skewtest(a, axis=0):
     n = float(a.shape[axis])
     if n < 8:
         warnings.warn(
-            "skewtest only valid for n>=8 ... continuing anyway, n=%i" % 
+            "skewtest only valid for n>=8 ... continuing anyway, n=%i" %
             int(n))
     y = b2 * math.sqrt(((n+1)*(n+3)) / (6.0*(n-2)) )
     beta2 = ( 3.0*(n*n+27*n-70)*(n+1)*(n+3) ) / ( (n-2.0)*(n+5)*(n+7)*(n+9) )
@@ -861,7 +861,7 @@ def skewtest(a, axis=0):
 
 def kurtosistest(a, axis=0):
     """Tests whether a dataset has normal kurtosis (i.e.,
-    kurtosis=3(n-1)/(n+1)). 
+    kurtosis=3(n-1)/(n+1)).
 
     Valid only for n>20.
 
@@ -880,7 +880,7 @@ def kurtosistest(a, axis=0):
     n = float(a.shape[axis])
     if n < 20:
         warnings.warn(
-            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" % 
+            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
             int(n))
     b2 = kurtosis(a, axis, fisher=False)
     E = 3.0*(n-1) /(n+1)
@@ -919,7 +919,7 @@ def normaltest(a, axis=0):
 
     D'Agostino, R. B. and Pearson, E. S. (1973), "Testing for departures from
     Normality," Biometrika, 60, 613-622
-    
+
     """
     a, axis = _chk_asarray(a, axis)
     s,p = skewtest(a,axis)
@@ -988,7 +988,7 @@ def scoreatpercentile(a, per, limit=()):
     if (idx % 1 == 0):
         return values[idx]
     else:
-        return _interpolate(values[int(idx)], values[int(idx) + 1], idx % 1) 
+        return _interpolate(values[int(idx)], values[int(idx) + 1], idx % 1)
 
 
 def percentileofscore(a, score, histbins=10, defaultlimits=None):
@@ -1266,7 +1266,7 @@ of the compare array.
 
 def threshold(a, threshmin=None, threshmax=None, newval=0):
     """Clip array to a given value.
-    
+
 Similar to numpy.clip(), except that values less than threshmin or
 greater than threshmax are replaced by newval, instead of by
 threshmin and threshmax respectively.
@@ -1433,7 +1433,7 @@ def pearsonr(x, y):
     correlation. Correlations of -1 or +1 imply an exact linear
     relationship. Positive correlations imply that as x increases, so does
     y. Negative correlations imply that as x increases, y decreases.
-   
+
     The p-value roughly indicates the probability of an uncorrelated system
     producing datasets that have a Pearson correlation at least as extreme
     as the one computed from these datasets. The p-values are not entirely
@@ -1466,11 +1466,11 @@ def pearsonr(x, y):
 
     # Presumably, if r > 1, then it is only some small artifact of floating
     # point arithmetic.
-    r = min(r, 1.0)  
+    r = min(r, 1.0)
     df = n-2
 
     # Use a small floating point value to prevent divide-by-zero nonsense
-    # fixme: TINY is probably not the right value and this is probably not 
+    # fixme: TINY is probably not the right value and this is probably not
     # the way to be robust. The scheme used in spearmanr is probably better.
     TINY = 1.0e-20
     t = r*np.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
@@ -1479,7 +1479,7 @@ def pearsonr(x, y):
 
 
 def spearmanr(x, y):
-    """Calculates a Spearman rank-order correlation coefficient and the p-value 
+    """Calculates a Spearman rank-order correlation coefficient and the p-value
     to test for non-correlation.
 
     The Spearman correlation is a nonparametric measure of the linear
@@ -1546,7 +1546,7 @@ def pointbiserialr(x, y):
     between a binary variable, x, and a continuous variable, y. Like other
     correlation coefficients, this one varies between -1 and +1 with 0
     implying no correlation. Correlations of -1 or +1 imply a determinative
-    relationship. 
+    relationship.
 
     Parameters
     ----------
@@ -1555,7 +1555,7 @@ def pointbiserialr(x, y):
 
     Returns
     -------
-    (point-biserial r, 
+    (point-biserial r,
      2-tailed p-value)
 
     References
@@ -1628,7 +1628,7 @@ def linregress(*args):
     """Calculates a regression line on two arrays, x and y, corresponding to
     x,y pairs.  If a single 2D array is passed, linregress finds dim with 2
     levels and splits data into x,y pairs along that dim.
-    
+
     Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
     """
     TINY = 1.0e-20
@@ -1691,7 +1691,7 @@ def ttest_ind(a, b, axis=0):
     """Calculates the t-obtained T-test on TWO INDEPENDENT samples of scores
     a, and b.  From Numerical Recipies, p.483. Axis can equal None (ravel
     array first), or an integer (the axis over which to operate on a and b).
-    
+
     Returns: t-value, two-tailed p-value
     """
     a, b, axis = _chk2_asarray(a, b, axis)
@@ -1719,7 +1719,7 @@ def ttest_rel(a,b,axis=None):
     """Calculates the t-obtained T-test on TWO RELATED samples of scores, a
     and b.  From Numerical Recipies, p.483. Axis can equal None (ravel array
     first), or an integer (the axis over which to operate on a and b).
-    
+
     Returns: t-value, two-tailed p-value
     """
     a, b, axis = _chk2_asarray(a, b, axis)
@@ -1782,7 +1782,7 @@ def chisquare(f_obs, f_exp=None):
     """ Calculates a one-way chi square for array of observed frequencies
     and returns the result.  If no expected frequencies are given, the total
     N is assumed to be equally distributed across all groups.
-    
+
     Returns: chisquare-statistic, associated p-value
     """
 
@@ -1799,7 +1799,7 @@ def ks_2samp(data1, data2):
     """ Computes the Kolmogorov-Smirnof statistic on 2 samples.  Modified
     from Numerical Recipies in C, page 493.  Returns KS D-value, prob.  Not
     ufunc- like.
-    
+
     Returns: KS D-value, p-value
     """
     data1, data2 = map(asarray, (data1, data2))
@@ -1840,7 +1840,7 @@ def mannwhitneyu(x, y):
     you have 2 independent samples of ranks.  REMEMBER: Mann-Whitney U is
     significant if the u-obtained is LESS THAN or equal to the critical
     value of U.
-    
+
     Returns: u-statistic, one-tailed p-value (i.e., p(z(U)))
     """
     x = asarray(x)
@@ -1867,7 +1867,7 @@ def tiecorrect(rankvals):
     See Siegel, S. (1956) Nonparametric Statistics for the Behavioral
     Sciences.  New York: McGraw-Hill.  Code adapted from |Stat rankind.c
     code.
-    
+
     Returns: T correction factor for U or H
     """
     sorted,posn = fastsort(asarray(rankvals))
@@ -1889,7 +1889,7 @@ def tiecorrect(rankvals):
 def ranksums(x, y):
     """Calculates the rank sums statistic on the provided scores and
     returns the result.
-    
+
     Returns: z-statistic, two-tailed p-value
     """
     x,y = map(np.asarray, (x, y))
@@ -1947,7 +1947,7 @@ def friedmanchisquare(*args):
     probability value.  It assumes 3 or more repeated measures.  Only 3
     levels requires a minimum of 10 subjects in the study.  Four levels
     requires 5 subjects per level(??).
-    
+
     Returns: chi-square statistic, associated p-value
     """
     k = len(args)
@@ -2010,7 +2010,7 @@ def betai(a, b, x):
 
     Returns
     -------
-    
+
     """
     x = np.asarray(x)
     x = np.where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
@@ -2023,11 +2023,11 @@ def betai(a, b, x):
 def glm(data, para):
     """Calculates a linear model fit ...
     anova/ancova/lin-regress/t-test/etc. Taken from:
-    
+
     Peterson et al. Statistical limitations in functional neuroimaging
     I. Non-inferential methods and statistical models.  Phil Trans Royal Soc
     Lond B 354: 1239-1260.
-    
+
     Returns: statistic, p-value ???
     """
     if len(para) != len(data):
@@ -2188,5 +2188,3 @@ def rankdata(a):
             sumranks = 0
             dupcount = 0
     return newarray
-
-

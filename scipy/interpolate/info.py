@@ -15,12 +15,12 @@ Wrappers around FITPACK functions:
 
   UnivariateSpline             -- A more recent, object-oriented wrapper;
                                   finds a (possibly smoothed) interpolating
-				  spline.
+                                  spline.
   InterpolatedUnivariateSpline
   LSQUnivariateSpline
   BivariateSpline              -- A more recent, object-oriented wrapper;
-                                  finds a interpolating spline for a 
-				  bivariate function.
+                                  finds a interpolating spline for a
+                                  bivariate function.
 
   SmoothBivariateSpline
 

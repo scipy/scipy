@@ -24,16 +24,16 @@ pi = _math.pi
 golden = golden_ratio = (1 + _math.sqrt(5)) / 2
 
 #SI prefixes
-yotta = 1e24 
-zetta = 1e21 
-exa = 1e18 
-peta = 1e15 
-tera = 1e12 
-giga = 1e9 
-mega = 1e6 
-kilo = 1e3 
-hecto = 1e2 
-deka = 1e1 
+yotta = 1e24
+zetta = 1e21
+exa = 1e18
+peta = 1e15
+tera = 1e12
+giga = 1e9
+mega = 1e6
+kilo = 1e3
+hecto = 1e2
+deka = 1e1
 deci = 1e-1
 centi = 1e-2
 milli = 1e-3
@@ -74,7 +74,7 @@ Rydberg = _cd('Rydberg constant')
 #weight in kg
 gram = 1e-3
 metric_ton = 1e3
-grain = 64.79891e-6 
+grain = 64.79891e-6
 lb = pound = 7000 * grain #avoirdupois
 oz = ounce = pound / 16
 stone = 14 * pound
@@ -122,7 +122,7 @@ parsec = au / arcsec
 
 #pressure in pascal
 atm = atmosphere = _cd('standard atmosphere')
-bar = 1e5 
+bar = 1e5
 torr = mmHg = atm / 760
 psi = pound * g / (inch * inch)
 
@@ -158,7 +158,7 @@ erg = 1e-7
 Btu_th = pound * degree_Fahrenheit * calorie_th / gram
 Btu = Btu_IT = pound * degree_Fahrenheit * calorie_IT / gram
 ton_TNT = 1e9 * calorie_th
-#Wh = watt_hour 
+#Wh = watt_hour
 
 #power in watt
 hp = horsepower = 550 * foot * pound * g

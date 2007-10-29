@@ -6,7 +6,7 @@
 from warnings import warn
 
 import numpy as _N
-import scipy.signal as _sig 
+import scipy.signal as _sig
 
 from scipy.linalg import toeplitz, inv
 
@@ -69,7 +69,7 @@ _lpc.flt_levinson2d.argtypes   = [arg1, arg2, arg3, arg4, arg5, arg6]
 _lpc.flt_levinson2d.restype    = c_int
 
 def lpc_ref(signal, order):
-    """ Return the order + 1 LPC coefficients 
+    """ Return the order + 1 LPC coefficients
     for the signal. This is just for reference, as it is using
     the direct inversion of the toeplitz matrix, which is really slow"""
     if signal.ndim > 1:
@@ -79,7 +79,7 @@ def lpc_ref(signal, order):
     return _N.concatenate(([1.],  _N.dot(inv(toeplitz(r[:-1])), -r[1:])))
 
 def lpc(signal, order):
-    """ Return the order + 1 LPC coefficients 
+    """ Return the order + 1 LPC coefficients
     for the signal using levinson durbin algorithm """
     if signal.ndim > 1:
         warn("Warning, not tested for rank > 1")
@@ -112,7 +112,7 @@ def _lpc2_py(signal, order, axis = -1):
     """python implementation of lpc for rank 2., Do not use, for testing purpose only"""
     if signal.ndim > 2:
         raise NotImplemented("only for rank <=2")
-    
+
     if signal.ndim < 2:
         return lpc(_N.require(signal, requirements = 'C'), order)
 

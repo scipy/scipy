@@ -6,7 +6,7 @@ classes changed to underscore_separated instead of CamelCase
 
 TODO:
 
-  Add write capability. 
+  Add write capability.
 """
 
 #__author__ = "Roberto De Almeida <rob@pydap.org>"
@@ -23,7 +23,7 @@ from numpy import ndarray, zeros, array
 
 ABSENT       = '\x00' * 8
 ZERO         = '\x00' * 4
-NC_BYTE      = '\x00\x00\x00\x01' 
+NC_BYTE      = '\x00\x00\x00\x01'
 NC_CHAR      = '\x00\x00\x00\x02'
 NC_SHORT     = '\x00\x00\x00\x03'
 NC_INT       = '\x00\x00\x00\x04'
@@ -138,7 +138,7 @@ class netcdf_file(object):
     def _read_recsize(self):
         """Read all variables and compute record bytes."""
         pos = self._buffer.tell()
-        
+
         recsize = 0
         count = self._unpack_int()
         for variable in range(count):
@@ -181,7 +181,7 @@ class netcdf_file(object):
         attributes = self._att_array()
         nc_type = self._unpack_int()
         vsize = self._unpack_int()
-        
+
         # Read offset.
         begin = [self._unpack_int, self._unpack_int64][self.version_byte-1]()
 
@@ -190,15 +190,15 @@ class netcdf_file(object):
     def _read_values(self, n, nc_type):
         bytes = [1, 1, 2, 4, 4, 8]
         typecodes = ['b', 'c', 'h', 'i', 'f', 'd']
-        
+
         count = n * bytes[nc_type-1]
         values = self.read(count)
         padding = self.read((4 - (count % 4)) % 4)
-        
+
         typecode = typecodes[nc_type-1]
-        if nc_type != 2:  # not char 
+        if nc_type != 2:  # not char
             values = struct.unpack('>%s' % (typecode * n), values)
-            values = array(values, dtype=typecode) 
+            values = array(values, dtype=typecode)
         else:
             # Remove EOL terminator.
             if values.endswith('\x00'): values = values[:-1]
@@ -239,16 +239,16 @@ class netcdf_variable(object):
         self._bytes = [1, 1, 2, 4, 4, 8][self._nc_type-1]
         type_ = ['i', 'S', 'i', 'i', 'f', 'f'][self._nc_type-1]
         dtype = '>%s%d' % (type_, self._bytes)
-        bytes = self._begin + self._vsize 
+        bytes = self._begin + self._vsize
 
         if isrec:
-            # Record variables are not stored contiguosly on disk, so we 
+            # Record variables are not stored contiguosly on disk, so we
             # need to create a separate array for each record.
             #
             # TEO:  This will copy data from the newly-created array
             #  into the __array_data__ region, thus removing any benefit of using
             #  a memory-mapped file.  You might as well just read the data
-            #  in directly. 
+            #  in directly.
             self.__array_data__ = zeros(shape, dtype)
             bytes += (shape[0] - 1) * recsize
             for n in range(shape[0]):
@@ -277,11 +277,11 @@ class netcdf_variable(object):
     def assignValue(self, value):
         """For scalars."""
         self.__array_data__.itemset(value)
-    
+
     def typecode(self):
         return ['b', 'c', 'h', 'i', 'f', 'd'][self._nc_type-1]
 
-            
+
 def _test():
     import doctest
     doctest.testmod()

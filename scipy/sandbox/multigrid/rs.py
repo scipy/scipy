@@ -19,7 +19,7 @@ def rs_strong_connections(A,theta):
 
 def rs_interpolation(A,theta=0.25):
     if not isspmatrix_csr(A): raise TypeError('expected csr_matrix')
-    
+
     S = rs_strong_connections(A,theta)
 
     T = S.T.tocsr()  #transpose S for efficient column access
@@ -28,10 +28,5 @@ def rs_interpolation(A,theta=0.25):
                                                A.indptr,A.indices,A.data,\
                                                S.indptr,S.indices,S.data,\
                                                T.indptr,T.indices,T.data)
-    
+
     return csr_matrix((Ix,Ij,Ip))
-
-
-
-
-

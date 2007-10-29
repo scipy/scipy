@@ -3,7 +3,7 @@
 """ Test functions for rbf module """
 
 from numpy.testing import *
-from numpy import linspace, sin, random, exp 
+from numpy import linspace, sin, random, exp
 
 set_package_path()
 from rbf.rbf import Rbf
@@ -12,7 +12,7 @@ restore_path()
 class TestRbf1d(NumpyTestCase):
     def check_multiquadrics(self):
         x = linspace(0,10,9)
-        y = sin(x) 
+        y = sin(x)
         rbf = Rbf(x, y)
         yi = rbf(x)
         assert_array_almost_equal(y, yi)
@@ -37,6 +37,6 @@ class TestRbf3d(NumpyTestCase):
         di = rbf(x, y, z)
         di.shape = x.shape
         assert_array_almost_equal(di, d)
-    
+
 if __name__ == "__main__":
     NumpyTest().run()

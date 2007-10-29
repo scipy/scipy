@@ -116,16 +116,16 @@ _autocorr.flt_xcorr_nofft_2d_noncontiguous.restype   = c_int
 def _raw_autocorr_1d(signal, lag):
     assert signal.ndim == 1
     assert signal.flags['CONTIGUOUS']
-    
+
     if lag >= signal.size:
         raise RuntimeError("lag should be < to input size")
 
     if signal.dtype == N.float64:
         res = N.zeros((lag+1), N.float64)
-        _autocorr.dbl_xcorr_nofft_1d(signal, signal.size, res, lag) 
+        _autocorr.dbl_xcorr_nofft_1d(signal, signal.size, res, lag)
     elif signal.dtype == N.float32:
         res = N.zeros((lag+1), N.float32)
-        _autocorr.flt_xcorr_nofft_1d(signal, signal.size, res, lag) 
+        _autocorr.flt_xcorr_nofft_1d(signal, signal.size, res, lag)
     else:
         raise TypeError("only float 32 and 64 bits supported for now")
 
@@ -133,18 +133,18 @@ def _raw_autocorr_1d(signal, lag):
 
 def _raw_autocorr_1d_noncontiguous(signal, lag):
     assert signal.ndim == 1
-    
+
     if lag >= signal.size:
         raise RuntimeError("lag should be < to input size")
 
     if signal.dtype == N.float64:
         res = N.zeros((lag+1), N.float64)
-        _autocorr.dbl_xcorr_nofft_1d_noncontiguous(signal, signal.size, 
-                signal.strides[0], res, res.strides[0], lag) 
+        _autocorr.dbl_xcorr_nofft_1d_noncontiguous(signal, signal.size,
+                signal.strides[0], res, res.strides[0], lag)
     elif signal.dtype == N.float32:
         res = N.zeros((lag+1), N.float32)
-        _autocorr.flt_xcorr_nofft_1d_noncontiguous(signal, signal.size, 
-                signal.strides[0], res, res.strides[0], lag) 
+        _autocorr.flt_xcorr_nofft_1d_noncontiguous(signal, signal.size,
+                signal.strides[0], res, res.strides[0], lag)
     else:
         raise TypeError("only float 32 and 64 bits supported for now")
 
@@ -154,7 +154,7 @@ def _raw_autocorr_1d_noncontiguous(signal, lag):
 def _autocorr_oneside_nofft_py(signal, lag, axis = -1):
     if signal.ndim > 2:
         raise NotImplemented("only for rank <=2")
-    
+
     if axis  % 2 == 0:
         res     = N.zeros((lag+1, signal.shape[1]), signal.dtype)
         center  = signal.shape[0] - 1
@@ -179,7 +179,7 @@ def _autocorr_oneside_nofft_py(signal, lag, axis = -1):
 #=============
 def autocorr_oneside_nofft(signal, lag, axis = -1):
     """Compute the righ side of autocorrelation along the axis, for lags up to lag.
-    
+
     This implementation does NOT use FFT."""
     # TODO  For rank < 2, the overhead of python code may be significant. Should
     # TODO not be difficult to do in C anyway (we can still use ctypes)
@@ -194,24 +194,24 @@ def autocorr_oneside_nofft(signal, lag, axis = -1):
 
         if signal.flags['CONTIGUOUS']:
             if signal.dtype == N.float64:
-                _autocorr.dbl_xcorr_nofft_1d(signal, size, res, lag) 
+                _autocorr.dbl_xcorr_nofft_1d(signal, size, res, lag)
             elif signal.dtype == N.float32:
-                _autocorr.flt_xcorr_nofft_1d(signal, size, res, lag) 
+                _autocorr.flt_xcorr_nofft_1d(signal, size, res, lag)
             else:
                 raise TypeError("only float 32 and 64 bits supported for now")
         else:
             istride = signal.strides[0]
             ostride = signal.itemsize
             if signal.dtype == N.float64:
-                _autocorr.dbl_xcorr_nofft_1d_noncontiguous(signal, size, istride, 
-                        res, ostride,  lag) 
+                _autocorr.dbl_xcorr_nofft_1d_noncontiguous(signal, size, istride,
+                        res, ostride,  lag)
             elif signal.dtype == N.float32:
-                _autocorr.flt_xcorr_nofft_1d_noncontiguous(signal, size, istride, 
-                        res, ostride,  lag) 
+                _autocorr.flt_xcorr_nofft_1d_noncontiguous(signal, size, istride,
+                        res, ostride,  lag)
             else:
                 raise TypeError("only float 32 and 64 bits supported for now")
 
-    # rank 2 case 
+    # rank 2 case
     elif signal.ndim == 2:
         size    = signal.shape[axis]
         if lag >= size:
@@ -224,54 +224,54 @@ def autocorr_oneside_nofft(signal, lag, axis = -1):
             # contiguous case
             if signal.flags['C'] and axis % 2 == 1:
                 res = N.zeros((signal.shape[0], lag+1), signal.dtype)
-                _autocorr.dbl_xcorr_nofft_2d(signal, signal.shape[0], signal.shape[1], 
-                        res, lag) 
+                _autocorr.dbl_xcorr_nofft_2d(signal, signal.shape[0], signal.shape[1],
+                        res, lag)
             # contiguous case
             elif signal.flags['F'] and axis % 2 == 0:
                 res = N.zeros((lag+1, signal.shape[1]), signal.dtype, order = 'F')
-                _autocorr.dbl_xcorr_nofft_2d(signal, signal.shape[1], signal.shape[0], 
-                        res, lag) 
+                _autocorr.dbl_xcorr_nofft_2d(signal, signal.shape[1], signal.shape[0],
+                        res, lag)
             # non contiguous case
             elif axis % 2 == 0:
                 res = N.zeros((lag+1, signal.shape[1]), signal.dtype)
                 warn("non contiguous used, this will be slow")
-                _autocorr.dbl_xcorr_nofft_2d_noncontiguous(signal, 
-                        signal.shape[1], signal.shape[0], 
+                _autocorr.dbl_xcorr_nofft_2d_noncontiguous(signal,
+                        signal.shape[1], signal.shape[0],
                         signal.strides[1], signal.strides[0],
-                        res, res.strides[1], res.strides[0], lag) 
+                        res, res.strides[1], res.strides[0], lag)
             elif axis % 2 == 1:
                 res = N.zeros((signal.shape[0], lag+1), signal.dtype)
                 warn("non contiguous used, this will be slow")
-                _autocorr.dbl_xcorr_nofft_2d_noncontiguous(signal, 
-                        signal.shape[0], signal.shape[1], 
+                _autocorr.dbl_xcorr_nofft_2d_noncontiguous(signal,
+                        signal.shape[0], signal.shape[1],
                         signal.strides[0], signal.strides[1],
-                        res, res.strides[0], res.strides[1], lag) 
+                        res, res.strides[0], res.strides[1], lag)
         elif signal.dtype == N.float32:
             # contiguous case
             if signal.flags['C'] and axis % 2 == 1:
                 res = N.zeros((signal.shape[0], lag+1), signal.dtype)
-                _autocorr.flt_xcorr_nofft_2d(signal, signal.shape[0], signal.shape[1], 
-                        res, lag) 
+                _autocorr.flt_xcorr_nofft_2d(signal, signal.shape[0], signal.shape[1],
+                        res, lag)
             # contiguous case
             elif signal.flags['F'] and axis % 2 == 0:
                 res = N.zeros((lag+1, signal.shape[1]), signal.dtype, order = 'F')
-                _autocorr.flt_xcorr_nofft_2d(signal, signal.shape[1], signal.shape[0], 
-                        res, lag) 
+                _autocorr.flt_xcorr_nofft_2d(signal, signal.shape[1], signal.shape[0],
+                        res, lag)
             # non contiguous case
             elif axis % 2 == 0:
                 res = N.zeros((lag+1, signal.shape[1]), signal.dtype)
                 warn("non contiguous used, this will be slow")
-                _autocorr.flt_xcorr_nofft_2d_noncontiguous(signal, 
-                        signal.shape[1], signal.shape[0], 
+                _autocorr.flt_xcorr_nofft_2d_noncontiguous(signal,
+                        signal.shape[1], signal.shape[0],
                         signal.strides[1], signal.strides[0],
-                        res, res.strides[1], res.strides[0], lag) 
+                        res, res.strides[1], res.strides[0], lag)
             elif axis % 2 == 1:
                 res = N.zeros((signal.shape[0], lag+1), signal.dtype)
                 warn("non contiguous used, this will be slow")
-                _autocorr.flt_xcorr_nofft_2d_noncontiguous(signal, 
-                        signal.shape[0], signal.shape[1], 
+                _autocorr.flt_xcorr_nofft_2d_noncontiguous(signal,
+                        signal.shape[0], signal.shape[1],
                         signal.strides[0], signal.strides[1],
-                        res, res.strides[0], res.strides[1], lag) 
+                        res, res.strides[0], res.strides[1], lag)
         else:
             raise TypeError("only float 32 and 64 bits supported for now")
     else:
@@ -309,11 +309,11 @@ def autocorr_fft(signal, axis = -1):
             return N.require(N.concatenate( (au[-lag:], au[:lag+1]), axis = axis), \
                     dtype = signal.dtype)
         else:
-            return N.require(N.concatenate( (au[:, -lag:], au[:, :lag+1]), 
+            return N.require(N.concatenate( (au[:, -lag:], au[:, :lag+1]),
                         axis = axis), dtype = signal.dtype)
     else:
         raise RuntimeError("rank >2 not supported yet")
-        
+
 def bench():
     size    = 256
     nframes = 4000

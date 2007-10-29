@@ -15,7 +15,7 @@ from pyem import GM, GMM, EM
 
 def generate_dataset(d, k, mode, nframes):
     """Generate a dataset useful for EM anf GMM testing.
-    
+
     returns:
         data : ndarray
             data from the true model.

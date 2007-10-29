@@ -13,7 +13,7 @@ import os
 
 from info import version as cdavid_version
 
-DISTNAME        = 'cdavid' 
+DISTNAME        = 'cdavid'
 VERSION         = cdavid_version
 DESCRIPTION     ='A scipy package for various speech processing tools lpc'
 MAINTAINER      ='David Cournapeau',

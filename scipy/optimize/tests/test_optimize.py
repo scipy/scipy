@@ -137,7 +137,7 @@ class TestOptimize(NumpyTestCase):
         err3 = abs(x[0] - 1.5)
         x = optimize.brent(lambda x: (x-1.5)**2-0.8, brack = (-15,-1,15))
         err4 = abs(x - 1.5)
-        
+
         assert max((err1,err2,err3,err4)) < 1e-6
 
 

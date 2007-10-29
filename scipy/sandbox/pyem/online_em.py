@@ -4,7 +4,7 @@
 # This is not meant to be used yet !!!! I am not sure how to integrate this
 # stuff inside the package yet. The cases are:
 #   - we have a set of data, and we want to test online EM compared to normal
-#   EM 
+#   EM
 #   - we do not have all the data before putting them in online EM: eg current
 #   frame depends on previous frame in some way.
 
@@ -45,7 +45,7 @@ class OnGmmParamError:
     """
     def __init__(self, message):
         self.message    = message
-    
+
     def __str__(self):
         return self.message
 
@@ -72,7 +72,7 @@ class OnGMM(ExpMixtureModel):
             va = N.zeros((k, d))
             for i in range(k):
                 for j in range(d):
-                    va [i, j] = N.cov(init_data[N.where(label==i), j], 
+                    va [i, j] = N.cov(init_data[N.where(label==i), j],
                             rowvar = 0)
         else:
             raise OnGmmParamError("""init_online not implemented for
@@ -103,13 +103,13 @@ class OnGMM(ExpMixtureModel):
             self.cxx = N.outer(w, mean(init_data ** 2, 0))
 
             # w, mu and va init is the same that in the standard case
-            (code, label) = kmean(init_data, init_data[0:k, :], 
+            (code, label) = kmean(init_data, init_data[0:k, :],
                     iter = niter, minit = 'matrix')
             mu = code.copy()
             va = N.zeros((k, d))
             for i in range(k):
                 for j in range(d):
-                    va[i, j] = N.cov(init_data[N.where(label==i), j], 
+                    va[i, j] = N.cov(init_data[N.where(label==i), j],
                             rowvar = 0)
         else:
             raise OnGmmParamError("""init_online not implemented for
@@ -133,7 +133,7 @@ class OnGMM(ExpMixtureModel):
 
     def __init__(self, gm, init_data, init = 'kmean'):
         self.gm = gm
-        
+
         # Possible init methods
         init_methods = {'kmean' : self.init_kmean}
 
@@ -141,14 +141,14 @@ class OnGMM(ExpMixtureModel):
 
     def compute_sufficient_statistics_frame(self, frame, nu):
         """ sufficient_statistics(frame, nu) for one frame of data
-        
+
         frame has to be rank 1 !"""
         gamma   = multiple_gauss_den_frame(frame, self.pmu, self.pva)
         gamma   *= self.pw
         gamma   /= N.sum(gamma)
         # <1>(t) = cw(t), self.cw = cw(t), each element is one component running weight
-        #self.cw	= (1 - nu) * self.cw + nu * gamma
-        self.cw	*= (1 - nu)
+        #self.cw        = (1 - nu) * self.cw + nu * gamma
+        self.cw *= (1 - nu)
         self.cw += nu * gamma
 
         for k in range(self.gm.k):
@@ -159,12 +159,12 @@ class OnGMM(ExpMixtureModel):
         for k in range(self.gm.k):
             self.cmu[k]  = self.cx[k] / self.cw[k]
             self.cva[k]  = self.cxx[k] / self.cw[k] - self.cmu[k] ** 2
-    
+
 import _rawden
 
 class OnGMM1d(ExpMixtureModel):
     """Special purpose case optimized for 1d dimensional cases.
-    
+
     Require each frame to be a float, which means the API is a bit
     different than OnGMM. You are trading elegance for speed here !"""
     def init_kmean(self, init_data, niter = 5):
@@ -213,19 +213,19 @@ class OnGMM1d(ExpMixtureModel):
     def compute_sufficient_statistics_frame(self, frame, nu):
         """expects frame and nu to be float. Returns
         cw, cxx and cxx, eg the sufficient statistics."""
-        _rawden.compute_ss_frame_1d(frame, self.cw, self.cmu, self.cva, 
+        _rawden.compute_ss_frame_1d(frame, self.cw, self.cmu, self.cva,
                 self.cx, self.cxx, nu)
         return self.cw, self.cx, self.cxx
 
     def update_em_frame(self, cw, cx, cxx):
-        """Update EM state using SS as returned by 
+        """Update EM state using SS as returned by
         compute_sufficient_statistics_frame. """
         self.cmu    = cx / cw
         self.cva    = cxx / cw - self.cmu ** 2
 
     def compute_em_frame(self, frame, nu):
         """Run a whole em step for one frame. frame and nu should be float;
-        if you don't need to split E and M steps, this is faster than calling 
+        if you don't need to split E and M steps, this is faster than calling
         compute_sufficient_statistics_frame and update_em_frame"""
         _rawden.compute_em_frame_1d(frame, self.cw, self.cmu, self.cva, \
                 self.cx, self.cxx, nu)
@@ -247,7 +247,7 @@ class OnGMM1d(ExpMixtureModel):
 def multiple_gauss_den_frame(data, mu, va):
     """Helper function to generate several Gaussian
     pdf (different parameters) from one frame of data.
-    
+
     Semantics depending on data's rank
         - rank 0: mu and va expected to have rank 0 or 1
         - rank 1: mu and va expected to have rank 2."""
@@ -273,12 +273,12 @@ def multiple_gauss_den_frame(data, mu, va):
         else:
             raise RuntimeError("full not implemented yet")
             #for i in range(K):
-            #    y[i] = D.gauss_den(data, mu[i, :], 
+            #    y[i] = D.gauss_den(data, mu[i, :],
             #                va[d*i:d*i+d, :])
             #return y.T
     else:
         raise RuntimeError("frame should be rank 0 or 1 only")
-        
+
 
 if __name__ == '__main__':
     pass
@@ -322,14 +322,14 @@ if __name__ == '__main__':
     #ogmm.init(init_data)
 
     ## Forgetting param
-    #ku		= 0.005
-    #t0		= 200
-    #lamb	= 1 - 1/(N.arange(-1, nframes-1) * ku + t0)
-    #nu0		= 0.2
-    #nu		= N.zeros((len(lamb), 1))
-    #nu[0]	= nu0
+    #ku         = 0.005
+    #t0         = 200
+    #lamb       = 1 - 1/(N.arange(-1, nframes-1) * ku + t0)
+    #nu0                = 0.2
+    #nu         = N.zeros((len(lamb), 1))
+    #nu[0]      = nu0
     #for i in range(1, len(lamb)):
-    #    nu[i]	= 1./(1 + lamb[i] / nu[i-1])
+    #    nu[i]  = 1./(1 + lamb[i] / nu[i-1])
 
     #print "meth1"
     ## object version of online EM
@@ -365,19 +365,19 @@ if __name__ == '__main__':
     #    # Draw what is happening
     #    P.plot(data[:, 0], data[:, 1], '.', label = '_nolegend_')
 
-    #    h   = gm.plot()    
+    #    h   = gm.plot()
     #    [i.set_color('g') for i in h]
     #    h[0].set_label('true confidence ellipsoides')
 
-    #    h   = gm0.plot()    
+    #    h   = gm0.plot()
     #    [i.set_color('k') for i in h]
     #    h[0].set_label('initial confidence ellipsoides')
 
-    #    h   = lgm.plot()    
+    #    h   = lgm.plot()
     #    [i.set_color('r') for i in h]
     #    h[0].set_label('confidence ellipsoides found by EM')
 
-    #    h   = ogmm.gm.plot()    
+    #    h   = ogmm.gm.plot()
     #    [i.set_color('m') for i in h]
     #    h[0].set_label('confidence ellipsoides found by Online EM')
 

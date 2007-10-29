@@ -21,7 +21,7 @@ __version__ = '1.0'
 __revision__ = "$Revision$"
 __date__     = '$Date$'
 
-__docformat__ = "restructuredtext en" 
+__docformat__ = "restructuredtext en"
 
 __all__ = ['MAError', 'MaskType', 'MaskedArray',
            'bool_', 'complex_', 'float_', 'int_', 'object_',
@@ -180,7 +180,7 @@ def maximum_fill_value(obj):
 def set_fill_value(a, fill_value):
     """Sets the filling value of a, if a is a masked array.
 Otherwise, does nothing.
-    
+
 *Returns*:
     None
     """
@@ -218,7 +218,7 @@ If a is already a ndarray, a itself is returned.
         An input object.
     value : {var}, optional
         Filling value. If not given, the output of get_fill_value(a) is used instead.
-        
+
 *Returns*:
     A ndarray.
 
@@ -234,7 +234,7 @@ If a is already a ndarray, a itself is returned.
 
 #####--------------------------------------------------------------------------
 def get_masked_subclass(*arrays):
-    """Returns the youngest subclass of MaskedArray from a list of (masked) arrays. 
+    """Returns the youngest subclass of MaskedArray from a list of (masked) arrays.
 In case of siblings, the first takes over."""
     if len(arrays) == 1:
         arr = arrays[0]
@@ -255,13 +255,13 @@ In case of siblings, the first takes over."""
 #####--------------------------------------------------------------------------
 def get_data(a, subok=True):
     """Returns the _data part of a (if any), or a as a ndarray.
-    
+
 *Parameters* :
     a : {ndarray}
         A ndarray or a subclass of.
     subok : {boolean}
         Whether to force the output to a 'pure' ndarray (False) or to return a subclass
-        of ndarray if approriate (True). 
+        of ndarray if approriate (True).
     """
     data = getattr(a, '_data', numpy.array(a, subok=subok))
     if not subok:
@@ -272,16 +272,16 @@ getdata = get_data
 def fix_invalid(a, copy=False, fill_value=None):
     """Returns (a copy of) a where invalid data (nan/inf) are masked and replaced
 by fill_value.
-    
+
 *Parameters*:
     a : {ndarray}
         A (subclass of) ndarray.
     copy : {boolean}
         Whether to use a copy of a (True) or to fix a in place (False).
     fill_value : {var}, optional
-        Value used for fixing invalid data. 
+        Value used for fixing invalid data.
         If not given, the output of get_fill_value(a) is used instead.
-        
+
 *Returns* :
     MaskedArray object
     """
@@ -292,8 +292,8 @@ by fill_value.
         fill_value = a.fill_value
     a._data[invalid] = fill_value
     return a
-    
-    
+
+
 
 #####--------------------------------------------------------------------------
 #---- --- Ufuncs ---
@@ -352,7 +352,7 @@ class _DomainGreaterEqual:
     def __call__ (self, x):
         "Executes the call behavior."
         return umath.less(x, self.critical_value)
-    
+
 #..............................................................................
 class _MaskedUnaryOperation:
     """Defines masked version of unary operations, where invalid values are pre-masked.
@@ -402,7 +402,7 @@ class _MaskedUnaryOperation:
     #
     def __str__ (self):
         return "Masked version of %s. [Invalid values are masked]" % str(self.f)
-    
+
 #..............................................................................
 class _MaskedBinaryOperation:
     """Defines masked version of binary operations,
@@ -496,7 +496,7 @@ where invalid values are pre-masked.
 
     def __str__ (self):
         return "Masked version of " + str(self.f)
-    
+
 #..............................................................................
 class _DomainedBinaryOperation:
     """Defines binary operations that have a domain, like divide.
@@ -536,7 +536,7 @@ They have no reduce, outer or accumulate.
             numpy.putmask(d2, t, self.filly)
         m = mask_or(ma, mb)
         if (not m.ndim) and m:
-            return masked       
+            return masked
         result =  self.f(d1, d2).view(get_masked_subclass(a,b))
         if result.ndim > 0:
             result._mask = m
@@ -565,19 +565,19 @@ ceil = _MaskedUnaryOperation(umath.ceil)
 around = _MaskedUnaryOperation(fromnumeric.round_)
 logical_not = _MaskedUnaryOperation(umath.logical_not)
 # Domained unary ufuncs .......................................................
-sqrt = _MaskedUnaryOperation(umath.sqrt, 0.0, 
+sqrt = _MaskedUnaryOperation(umath.sqrt, 0.0,
                              _DomainGreaterEqual(0.0))
-log = _MaskedUnaryOperation(umath.log, 1.0, 
+log = _MaskedUnaryOperation(umath.log, 1.0,
                             _DomainGreater(0.0))
-log10 = _MaskedUnaryOperation(umath.log10, 1.0, 
+log10 = _MaskedUnaryOperation(umath.log10, 1.0,
                               _DomainGreater(0.0))
-tan = _MaskedUnaryOperation(umath.tan, 0.0, 
+tan = _MaskedUnaryOperation(umath.tan, 0.0,
                             _DomainTan(1.e-35))
 arcsin = _MaskedUnaryOperation(umath.arcsin, 0.0,
                                _DomainCheckInterval(-1.0, 1.0))
 arccos = _MaskedUnaryOperation(umath.arccos, 0.0,
                                _DomainCheckInterval(-1.0, 1.0))
-arccosh = _MaskedUnaryOperation(umath.arccosh, 1.0, 
+arccosh = _MaskedUnaryOperation(umath.arccosh, 1.0,
                                 _DomainGreaterEqual(1.0))
 arctanh = _MaskedUnaryOperation(umath.arctanh, 0.0,
                                 _DomainCheckInterval(-1.0+1e-15, 1.0-1e-15))
@@ -683,7 +683,7 @@ Does not check that contents must be 0s and 1s.
 
 def make_mask_none(s):
     """Returns a mask of shape s, filled with False.
-    
+
 *Parameters*:
     s : {tuple}
         A tuple indicating the shape of the final mask.
@@ -775,8 +775,8 @@ def masked_inside(x, v1, v2, copy=True):
     """Shortcut to masked_where, where condition is True for x inside the interval
 [v1,v2] (v1 <= x <= v2).
 The boundaries v1 and v2 can be given in either order.
-    
-*Note*: 
+
+*Note*:
     The array x is prefilled with its filling value.
     """
     if v2 < v1:
@@ -789,8 +789,8 @@ def masked_outside(x, v1, v2, copy=True):
     """Shortcut to masked_where, where condition is True for x outside the interval
 [v1,v2] (x < v1)|(x > v2).
 The boundaries v1 and v2 can be given in either order.
-    
-*Note*: 
+
+*Note*:
     The array x is prefilled with its filling value.
     """
     if v2 < v1:
@@ -802,7 +802,7 @@ The boundaries v1 and v2 can be given in either order.
 #
 def masked_object(x, value, copy=True):
     """Masks the array x where the data are exactly equal to value.
-    
+
 This function is suitable only for object arrays: for floating point, please use
 ``masked_values`` instead.
 
@@ -844,11 +844,11 @@ The mask is set to nomask if posible.
     else:
         condition = umath.equal(xnew, value)
         mask = nomask
-    mask = mask_or(mask, make_mask(condition, shrink=True))    
+    mask = mask_or(mask, make_mask(condition, shrink=True))
     return masked_array(xnew, mask=mask, copy=copy, fill_value=value)
 
 def masked_invalid(a, copy=True):
-    """Masks the array for invalid values (nans or infs). 
+    """Masks the array for invalid values (nans or infs).
     Any preexisting mask is conserved."""
     a = narray(a, copy=copy, subok=True)
     condition = (numpy.isnan(a) | numpy.isinf(a))
@@ -906,7 +906,7 @@ class _arraymethod(object):
 Upon call, returns a masked array, where the new _data array is the output of
 the corresponding method called on the original _data.
 
-If onmask is True, the new mask is the output of the method called on the initial 
+If onmask is True, the new mask is the output of the method called on the initial
 mask. Otherwise, the new mask is just a reference to the initial mask.
 
 :IVariables:
@@ -991,7 +991,7 @@ Construction:
     data : {var}
         Input data.
     mask : {nomask, sequence}
-        Mask. 
+        Mask.
         Must be convertible to an array of booleans with the same shape as data:
         True indicates a masked (eg., invalid) data.
     dtype : {dtype}
@@ -1001,7 +1001,7 @@ Construction:
         Whether to copy the input data (True), or to use a reference instead.
         Note: data are NOT copied by default.
     fill_value : {var}
-        Value used to fill in the masked values when necessary. If None, a default 
+        Value used to fill in the masked values when necessary. If None, a default
         based on the datatype is used.
     keep_mask : {True, boolean}
         Whether to combine mask with the mask of the input data, if any (True),
@@ -1013,12 +1013,12 @@ Construction:
         Whether to return a subclass of MaskedArray (if possible) or a plain
         MaskedArray.
     """
-    
+
     __array_priority__ = 15
     _defaultmask = nomask
     _defaulthardmask = False
     _baseclass =  numeric.ndarray
-    
+
     def __new__(cls, data=None, mask=nomask, dtype=None, copy=False, fill_value=None,
                 keep_mask=True, hard_mask=False, flag=None,
                 subok=True, **options):
@@ -1033,7 +1033,7 @@ Construction:
         _data = narray(data, dtype=dtype, copy=copy, subok=True)
         _baseclass = getattr(data, '_baseclass', type(_data))
         _basedict = getattr(data, '_basedict', getattr(data, '__dict__', None))
-        if not isinstance(data, MaskedArray) or not subok: 
+        if not isinstance(data, MaskedArray) or not subok:
             _data = _data.view(cls)
         else:
             _data = _data.view(type(data))
@@ -1053,7 +1053,7 @@ Construction:
         else:
             mask = narray(mask, dtype=MaskType, copy=copy)
             if mask.shape != _data.shape:
-                (nd, nm) = (_data.size, mask.size) 
+                (nd, nm) = (_data.size, mask.size)
                 if nm == 1:
                     mask = numeric.resize(mask, _data.shape)
                 elif nm == nd:
@@ -1072,11 +1072,11 @@ Construction:
                     _data._sharedmask = not copy
                 else:
                     _data._mask = umath.logical_or(mask, _data._mask)
-                    _data._sharedmask = False                   
-                    
+                    _data._sharedmask = False
+
         # Update fill_value.......
         if fill_value is None:
-            _data._fill_value = getattr(data, '_fill_value', 
+            _data._fill_value = getattr(data, '_fill_value',
                                         default_fill_value(_data))
         else:
             _data._fill_value = fill_value
@@ -1143,7 +1143,7 @@ Wraps the numpy array and sets the mask according to context.
                     fill_value = self.fill_value
                 result = result.copy()
                 numpy.putmask(result, d, fill_value)
-                # Update the mask 
+                # Update the mask
                 if m is nomask:
                     if d is not nomask:
                         m = d
@@ -1276,30 +1276,30 @@ Sets the slice (i,j) of a to value. If value is masked, masks those locations.
     def harden_mask(self):
         "Forces the mask to hard."
         self._hardmask = True
-        
+
     def soften_mask(self):
         "Forces the mask to soft."
-        self._hardmask = False     
-        
+        self._hardmask = False
+
     def unshare_mask(self):
         "Copies the mask and set the sharedmask flag to False."
         if self._sharedmask:
             self._mask = self._mask.copy()
             self._sharedmask = False
-            
+
     def shrink_mask(self):
         "Reduces a mask to nomask when possible."
         m = self._mask
         if m.ndim and not m.any():
             self._mask = nomask
-            
+
     #............................................
     def _get_data(self):
         "Returns the current data, as a view of the original underlying data."
         return self.view(self._baseclass)
-    _data = property(fget=_get_data)        
+    _data = property(fget=_get_data)
     data = property(fget=_get_data)
-    
+
     def raw_data(self):
         """Returns the _data part of the MaskedArray.
 DEPRECATED: You should really use ``.data`` instead..."""
@@ -1314,7 +1314,7 @@ DEPRECATED: You should really use ``.data`` instead..."""
         y = self.ravel()
         y[:] = value
     #
-    flat = property(fget=_get_flat, fset=_set_flat, 
+    flat = property(fget=_get_flat, fset=_set_flat,
                     doc="Flat version of the array.")
     #............................................
     def get_fill_value(self):
@@ -1334,15 +1334,15 @@ If value is None, uses a default based on the data type."""
                           doc="Filling value.")
 
     def filled(self, fill_value=None):
-        """Returns a copy of self._data, where masked values are filled with 
-fill_value. 
-    
+        """Returns a copy of self._data, where masked values are filled with
+fill_value.
+
 If fill_value is None, self.fill_value is used instead.
 
-*Note*: 
+*Note*:
     + Subclassing is preserved
     + The result is NOT a MaskedArray !
-    
+
 *Examples*:
     >>> x = array([1,2,3,4,5], mask=[0,0,1,0,1], fill_value=-999)
     >>> x.filled()
@@ -1468,7 +1468,7 @@ masked_%(name)s(data = %(data)s,
     def __floordiv__(self, other):
         "Divides other to self, and returns a new masked array."
         return floor_divide(self, other)
-    
+
     #............................................
     def __iadd__(self, other):
         "Adds other to self in place."
@@ -1533,14 +1533,14 @@ masked_%(name)s(data = %(data)s,
         result.__setmask__(self._mask)
         return result
     imag = property(fget=get_imag,doc="Imaginary part")
-    
+
     def get_real(self):
         result = self._data.real.view(type(self))
         result.__setmask__(self._mask)
         return result
     real = property(fget=get_real,doc="Real part")
-    
-        
+
+
     #............................................
     def count(self, axis=None):
         """Counts the non-masked elements of the array along the given axis.
@@ -1594,7 +1594,7 @@ masked_%(name)s(data = %(data)s,
         """Reshapes the array to shape s.
 
 *Returns*:
-    A new masked array. 
+    A new masked array.
 
 *Notes:
     If you want to modify the shape in place, please use ``a.shape = s``
@@ -1626,7 +1626,7 @@ The array must own its own memory and not be referenced by other arrays.
     #
     def put(self, indices, values, mode='raise'):
         """Sets storage-indexed locations to corresponding values.
-        
+
 a.put(values, indices, mode) sets a.flat[n] = values[n] for each n in indices.
 If values is shorter than indices then it will repeat.
 If values has some masked values, the initial mask is updated in consequence,
@@ -1657,15 +1657,15 @@ else the corresponding values are unmasked.
     #............................................
     def ids (self):
         """Returns the addresses of the data and mask areas."""
-        return (self.ctypes.data, self._mask.ctypes.data)    
+        return (self.ctypes.data, self._mask.ctypes.data)
     #............................................
     def all(self, axis=None, out=None):
         """Returns True if all entries along the given axis are True, False otherwise.
 Masked values are considered as True during computation.
-        
+
 *Parameters*
     axis : {integer}, optional
-        Axis along which the operation is performed. 
+        Axis along which the operation is performed.
         If None, the operation is performed on a flatten array
     out : {MaskedArray}, optional
         Alternate optional output.
@@ -1674,7 +1674,7 @@ Masked values are considered as True during computation.
 
 *Returns*
     A masked array, where the mask is True if all data along the axis are masked.
-    
+
 *Notes*
     An exception is raised if ``out`` is not None and not of the same type as self.
         """
@@ -1690,17 +1690,17 @@ Masked values are considered as True during computation.
         if out.ndim:
             out.__setmask__(self._mask.all(axis))
         return out
-            
+
 
     def any(self, axis=None, out=None):
         """Returns True if at least one entry along the given axis is True.
 
 Returns False if all entries are False.
 Masked values are considered as True during computation.
-        
+
 *Parameters*
     axis : {integer}, optional
-        Axis along which the operation is performed. 
+        Axis along which the operation is performed.
         If None, the operation is performed on a flatten array
     out : {MaskedArray}, optional
         Alternate optional output.
@@ -1709,7 +1709,7 @@ Masked values are considered as True during computation.
 
 *Returns*
     A masked array, where the mask is True if all data along the axis are masked.
-    
+
 *Notes*
     An exception is raised if ``out`` is not None and not of the same type as self.
         """
@@ -1726,7 +1726,7 @@ Masked values are considered as True during computation.
             out.__setmask__(self._mask.all(axis))
         return out
 
-    
+
     def nonzero(self):
         """Returns the indices of the elements of a that are not zero nor masked,
 as a tuple of arrays.
@@ -1737,7 +1737,7 @@ be obtained with ``a[a.nonzero()]``.
 
 To group the indices by element, rather than dimension, use instead:
 ``transpose(a.nonzero())``.
-        
+
 The result of this is always a 2d array, with a row for each non-zero element.
         """
         return narray(self.filled(0), copy=False).nonzero()
@@ -1760,7 +1760,7 @@ Returns the sum along the offset diagonal of the array's indicated `axis1` and `
         """Sums the array over the given axis.
 
 Masked elements are set to 0 internally.
-    
+
 *Parameters*:
     axis : {integer}, optional
         Axis along which to perform the operation.
@@ -1784,7 +1784,7 @@ Masked elements are set to 0 internally.
         """Returns the cumulative sum of the elements of the array along the given axis.
 
 Masked values are set to 0 internally.
-    
+
 *Parameters*:
     axis : {integer}, optional
         Axis along which to perform the operation.
@@ -1801,7 +1801,7 @@ Masked values are set to 0 internally.
         """Returns the product of the elements of the array along the given axis.
 
 Masked elements are set to 1 internally.
-    
+
 *Parameters*:
     axis : {integer}, optional
         Axis along which to perform the operation.
@@ -1826,7 +1826,7 @@ Masked elements are set to 1 internally.
         """Returns the cumulative product of the elements of the array along the given axis.
 
 Masked values are set to 1 internally.
-    
+
 *Parameters*:
     axis : {integer}, optional
         Axis along which to perform the operation.
@@ -1842,8 +1842,8 @@ Masked values are set to 1 internally.
     def mean(self, axis=None, dtype=None):
         """Averages the array over the given axis.  Equivalent to
 
-      a.sum(axis, dtype) / a.size(axis).    
-    
+      a.sum(axis, dtype) / a.size(axis).
+
 *Parameters*:
     axis : {integer}, optional
         Axis along which to perform the operation.
@@ -1861,7 +1861,7 @@ Masked values are set to 1 internally.
 
     def anom(self, axis=None, dtype=None):
         """Returns the anomalies (deviations from the average) along the given axis.
-    
+
 *Parameters*:
     axis : {integer}, optional
         Axis along which to perform the operation.
@@ -1878,10 +1878,10 @@ Masked values are set to 1 internally.
 
     def var(self, axis=None, dtype=None):
         """Returns the variance, a measure of the spread of a distribution.
-        
+
 The variance is the average of the squared deviations from the mean,
 i.e. var = mean((x - x.mean())**2).
-    
+
 *Parameters*:
     axis : {integer}, optional
         Axis along which to perform the operation.
@@ -1892,7 +1892,7 @@ i.e. var = mean((x - x.mean())**2).
 
 *Notes*:
     The value returned is a biased estimate of the true variance.
-    For the (more standard) unbiased estimate, use varu.        
+    For the (more standard) unbiased estimate, use varu.
         """
         if self._mask is nomask:
             # TODO: Do we keep super, or var _data and take a view ?
@@ -1911,25 +1911,25 @@ i.e. var = mean((x - x.mean())**2).
         """Returns the standard deviation, a measure of the spread of a distribution.
 
 The standard deviation is the square root of the average of the squared
-deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).    
+deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
 
 *Parameters*:
     axis : {integer}, optional
         Axis along which to perform the operation.
         If None, applies to a flattened version of the array.
     dtype : {dtype}, optional
-        Datatype for the intermediary computation. 
+        Datatype for the intermediary computation.
         If not given, the current dtype is used instead.
-        
+
 *Notes*:
     The value returned is a biased estimate of the true standard deviation.
-    For the more standard unbiased estimate, use stdu.        
+    For the more standard unbiased estimate, use stdu.
         """
         dvar = self.var(axis,dtype)
         if axis is not None or dvar is not masked:
             dvar = sqrt(dvar)
         return dvar
-        
+
     #............................................
     def argsort(self, axis=None, fill_value=None, kind='quicksort',
                 order=None):
@@ -1939,23 +1939,23 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
 
 *Parameters*:
     axis : {integer}, optional
-        Axis to be indirectly sorted. 
+        Axis to be indirectly sorted.
         If not given, uses a flatten version of the array.
     fill_value : {var}
-        Value used to fill in the masked values. 
+        Value used to fill in the masked values.
         If not given, self.fill_value is used instead.
     kind : {string}
         Sorting algorithm (default 'quicksort')
         Possible values: 'quicksort', 'mergesort', or 'heapsort'
 
-*Notes*:     
+*Notes*:
     This method executes an indirect sort along the given axis using the algorithm
     specified by the kind keyword. It returns an array of indices of the same shape
     as 'a' that index data along the given axis in sorted order.
 
     The various sorts are characterized by average speed, worst case performance
-    need for work space, and whether they are stable.  A stable sort keeps items 
-    with the same key in the same relative order. The three available algorithms 
+    need for work space, and whether they are stable.  A stable sort keeps items
+    with the same key in the same relative order. The three available algorithms
     have the following properties:
 
     |------------------------------------------------------|
@@ -2013,7 +2013,7 @@ Masked values are treated as if they had the value fill_value.
         d = self.filled(fill_value).view(ndarray)
         return d.argmax(axis)
 
-    def sort(self, axis=-1, kind='quicksort', order=None, 
+    def sort(self, axis=-1, kind='quicksort', order=None,
              endwith=True, fill_value=None):
         """Sort a along the given axis.
 
@@ -2025,13 +2025,13 @@ Masked values are treated as if they had the value fill_value.
         Possible values: 'quicksort', 'mergesort', or 'heapsort'.
     order : {var}
         If a has fields defined, then the order keyword can be the field
-        name to sort on or a list (or tuple) of field names to indicate 
+        name to sort on or a list (or tuple) of field names to indicate
         the order that fields should be used to define the sort.
     fill_value : {var}
         Value used to fill in the masked values.
         If None, use the the output of minimum_fill_value().
     endwith : {boolean}
-        Whether missing values (if any) should be forced in the upper indices 
+        Whether missing values (if any) should be forced in the upper indices
         (at the end of the array) (True) or lower indices (at the beginning).
 
 *Returns*:
@@ -2075,20 +2075,20 @@ Masked values are treated as if they had the value fill_value.
             self.flat = tmp_data
             self._mask.flat = tmp_mask
         return
-            
+
     #............................................
     def min(self, axis=None, fill_value=None):
         """Returns the minimum of a along the given axis.
-        
+
 Masked values are filled with fill_value.
-        
+
 *Parameters*:
     axis : {integer}, optional
         Axis along which to perform the operation.
         If None, applies to a flattened version of the array.
     fill_value : {var}, optional
         Value used to fill in the masked values.
-        If None, use the the output of minimum_fill_value().        
+        If None, use the the output of minimum_fill_value().
     """
         mask = self._mask
         # Check all/nothing case ......
@@ -2114,14 +2114,14 @@ Masked values are filled with fill_value.
         """Returns the maximum/a along the given axis.
 
 Masked values are filled with fill_value.
-        
+
 *Parameters*:
     axis : {integer}, optional
         Axis along which to perform the operation.
         If None, applies to a flattened version of the array.
     fill_value : {var}, optional
         Value used to fill in the masked values.
-        If None, use the the output of maximum_fill_value().    
+        If None, use the the output of maximum_fill_value().
         """
         mask = self._mask
         # Check all/nothing case ......
@@ -2145,14 +2145,14 @@ Masked values are filled with fill_value.
     #........................
     def ptp(self, axis=None, fill_value=None):
         """Returns the visible data range (max-min) along the given axis.
-        
+
 *Parameters*:
     axis : {integer}, optional
         Axis along which to perform the operation.
         If None, applies to a flattened version of the array.
     fill_value : {var}, optional
         Value used to fill in the masked values.
-        If None, the maximum uses the maximum default, the minimum uses 
+        If None, the maximum uses the maximum default, the minimum uses
         the minimum default.
         """
         return self.max(axis, fill_value) - self.min(axis, fill_value)
@@ -2174,9 +2174,9 @@ Masked values are filled with fill_value.
     #--------------------------------------------
     def tolist(self, fill_value=None):
         """Copies the data portion of the array to a hierarchical python list and
-returns that list. 
-    
-Data items are converted to the nearest compatible Python type. 
+returns that list.
+
+Data items are converted to the nearest compatible Python type.
 Masked values are converted to fill_value. If fill_value is None, the corresponding
 entries in the output list will be ``None``.
     """
@@ -2196,11 +2196,11 @@ entries in the output list will be ``None``.
                 for i in idx[:-1]:
                     tmp = tmp[i]
                 tmp[idx[-1]] = None
-        return result           
+        return result
     #........................
     def tostring(self, fill_value=None, order='C'):
         """Returns a copy of array data as a Python string containing the raw
-bytes in the array. 
+bytes in the array.
 
 *Parameters*:
     fill_value : {var}, optional
@@ -2213,7 +2213,7 @@ bytes in the array.
         "Any"     -- Current order of array.
         None      -- Same as "Any"
     """
-        return self.filled(fill_value).tostring(order=order)   
+        return self.filled(fill_value).tostring(order=order)
     #--------------------------------------------
     # Pickling
     def __getstate__(self):
@@ -2226,12 +2226,12 @@ bytes in the array.
                  getmaskarray(self).tostring(),
                  self._fill_value,
                  )
-        return state    
+        return state
     #
     def __setstate__(self, state):
         """Restores the internal state of the masked array, for pickling purposes.
 ``state`` is typically the output of the ``__getstate__`` output, and is a 5-tuple:
-    
+
         - class name
         - a tuple giving the shape of the data
         - a typecode for the data
@@ -2248,8 +2248,8 @@ bytes in the array.
         return (_mareconstruct,
                 (self.__class__, self._baseclass, (0,), 'b', ),
                 self.__getstate__())
-    
-    
+
+
 def _mareconstruct(subtype, baseclass, baseshape, basetype,):
     """Internal function that builds a new MaskedArray from the information stored
 in a pickle."""
@@ -2258,8 +2258,8 @@ in a pickle."""
     return subtype.__new__(subtype, _data, mask=_mask, dtype=basetype, shrink=False)
 #MaskedArray.__dump__ = dump
 #MaskedArray.__dumps__ = dumps
-    
-    
+
+
 
 #####--------------------------------------------------------------------------
 #---- --- Shortcuts ---
@@ -2284,7 +2284,7 @@ And backwards compatibility...
     """
     #TODO: we should try to put 'order' somwehere
     return MaskedArray(data, mask=mask, dtype=dtype, copy=copy, subok=subok,
-                       keep_mask=keep_mask, hard_mask=hard_mask, 
+                       keep_mask=keep_mask, hard_mask=hard_mask,
                        fill_value=fill_value)
 array.__doc__ = masked_array.__doc__
 
@@ -2344,7 +2344,7 @@ class _extrema_operation(object):
         result = self.ufunc.outer(filled(a), filled(b))
         result._mask = m
         return result
-        
+
 #............................
 class _minimum_operation(_extrema_operation):
     "Object to calculate minima"
@@ -2356,7 +2356,7 @@ In one argument case, returns the scalar minimum.
         self.afunc = amin
         self.compare = less
         self.fill_value_func = minimum_fill_value
-        
+
 #............................
 class _maximum_operation(_extrema_operation):
     "Object to calculate maxima"
@@ -2368,7 +2368,7 @@ class _maximum_operation(_extrema_operation):
         self.afunc = amax
         self.compare = greater
         self.fill_value_func = maximum_fill_value
-        
+
 #..........................................................
 def min(array, axis=None, out=None):
     """Returns the minima along the given axis.
@@ -2517,7 +2517,7 @@ def sort(a, axis=-1, kind='quicksort', order=None, endwith=True, fill_value=None
     indx = numpy.indices(a.shape).tolist()
     indx[axis] = filled(a,filler).argsort(axis=axis,kind=kind,order=order)
     return a[indx]
-sort.__doc__ = MaskedArray.sort.__doc__    
+sort.__doc__ = MaskedArray.sort.__doc__
 
 
 def compressed(x):
@@ -2582,7 +2582,7 @@ def right_shift (a, n):
     else:
         d = umath.right_shift(filled(a, 0), n)
         return masked_array(d, mask=m)
-    
+
 #......................................
 def put(a, indices, values, mode='raise'):
     """Sets storage-indexed locations to corresponding values.
@@ -2594,9 +2594,9 @@ Values and indices are filled if necessary."""
         return narray(a, copy=False).put(indices, values, mode=mode)
 
 def putmask(a, mask, values): #, mode='raise'):
-    """Sets a.flat[n] = values[n] for each n where mask.flat[n] is true.  
-    
-If values is not the same size of a and mask then it will repeat as necessary. 
+    """Sets a.flat[n] = values[n] for each n where mask.flat[n] is true.
+
+If values is not the same size of a and mask then it will repeat as necessary.
 This gives different behavior than a[mask] = values."""
     # We can't use 'frommethod', the order of arguments is different
     try:
@@ -2605,7 +2605,7 @@ This gives different behavior than a[mask] = values."""
         return numpy.putmask(narray(a, copy=False), mask, values)
 
 def transpose(a,axes=None):
-    """Returns a view of the array with dimensions permuted according to axes, 
+    """Returns a view of the array with dimensions permuted according to axes,
 as a masked array.
 
 If ``axes`` is None (default), the output view has reversed dimensions compared
@@ -2665,10 +2665,10 @@ size.__doc__ = numpy.size.__doc__
 def where (condition, x=None, y=None):
     """where(condition | x, y)
 
-Returns a (subclass of) masked array, shaped like condition, where the elements 
-are x when condition is True, and  y otherwise.   If neither x nor y are given, 
-returns a tuple of indices where condition is True (a la condition.nonzero()).  
-    
+Returns a (subclass of) masked array, shaped like condition, where the elements
+are x when condition is True, and  y otherwise.   If neither x nor y are given,
+returns a tuple of indices where condition is True (a la condition.nonzero()).
+
 *Parameters*:
     condition : {var}
         The condition to meet. Must be convertible to an integer array.
@@ -2749,19 +2749,19 @@ def choose (indices, t, out=None, mode='raise'):
 
 def round_(a, decimals=0, out=None):
     """Returns a copy of a, rounded to 'decimals' places.
-    
-When 'decimals' is negative, it specifies the number of positions to the left of 
-the decimal point.  The real and imaginary parts of complex numbers are rounded 
-separately. Nothing is done if the array is not of float type and 'decimals' is 
+
+When 'decimals' is negative, it specifies the number of positions to the left of
+the decimal point.  The real and imaginary parts of complex numbers are rounded
+separately. Nothing is done if the array is not of float type and 'decimals' is
 greater than or equal to 0.
 
 *Parameters*:
     decimals : {integer}
-        Number of decimals to round to. May be negative. 
+        Number of decimals to round to. May be negative.
     out : {ndarray}
         Existing array to use for output.
         If not given, returns a default copy of a.
-        
+
 *Notes*:
     If out is given and does not have a mask attribute, the mask of a is lost!
     """
@@ -2793,7 +2793,7 @@ def inner(a, b):
     if len(fb.shape) == 0:
         fb.shape = (1,)
     return numpy.inner(fa, fb).view(MaskedArray)
-inner.__doc__ = numpy.inner.__doc__ 
+inner.__doc__ = numpy.inner.__doc__
 inner.__doc__ += "\n*Notes*:\n    Masked values are replaced by 0."
 innerproduct = inner
 
@@ -2810,12 +2810,12 @@ def outer(a, b):
     mb = getmaskarray(b)
     m = make_mask(1-numeric.outer(1-ma, 1-mb), copy=0)
     return masked_array(d, mask=m)
-outer.__doc__ = numpy.outer.__doc__ 
+outer.__doc__ = numpy.outer.__doc__
 outer.__doc__ += "\n*Notes*:\n    Masked values are replaced by 0."
 outerproduct = outer
 
 def allequal (a, b, fill_value=True):
-    """Returns True if all entries of  a and b are equal, using fill_value 
+    """Returns True if all entries of  a and b are equal, using fill_value
 as a truth value where either or both are masked.
     """
     m = mask_or(getmask(a), getmask(b))
@@ -2838,7 +2838,7 @@ def allclose (a, b, fill_value=True, rtol=1.e-5, atol=1.e-8):
 If fill_value is True, masked values are considered equal.
 If fill_value is False, masked values considered unequal.
 The relative error rtol should be positive and << 1.0
-The absolute error atol comes into play for those elements of b that are very small 
+The absolute error atol comes into play for those elements of b that are very small
 or zero; it says how small `a` must be also.
     """
     m = mask_or(getmask(a), getmask(b))
@@ -2920,7 +2920,7 @@ def loads(strg):
 
 if __name__ == '__main__':
     from maskedarray.testutils import assert_equal, assert_almost_equal
-    
+
     # Small arrays ..................................
     xs = numpy.random.uniform(-1,1,6).reshape(2,3)
     ys = numpy.random.uniform(-1,1,6).reshape(2,3)
@@ -2948,7 +2948,7 @@ if __name__ == '__main__':
     #
     z = empty(3,)
     mmys.all(0, out=z)
-    
+
     if 1:
         x = numpy.array([[ 0.13,  0.26,  0.90],
                      [ 0.28,  0.33,  0.63],
@@ -2969,11 +2969,10 @@ if __name__ == '__main__':
         assert_equal(mxbig.all(1), [False, False, True])
         assert_equal(mxbig.any(0),[False, False, True])
         assert_equal(mxbig.any(1), [True, True, True])
-        
+
     if 1:
         xx = array([1+10j,20+2j], mask=[1,0])
         assert_equal(xx.imag,[10,2])
         assert_equal(xx.imag.filled(), [1e+20,2])
         assert_equal(xx.real,[1,20])
         assert_equal(xx.real.filled(), [1e+20,20])
-    

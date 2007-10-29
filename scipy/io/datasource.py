@@ -77,7 +77,7 @@ def _splitzipext(filename):
 
     If the filename does not have a zip extension the zip_ext in the
     return will be None.
-    
+
     Parameters:
 
         filename : {string}
@@ -165,7 +165,7 @@ class _Cache (object):
         Returns:
             path : {string}
                 Complete path for the given uri.
-                
+
         Examples
 
             >>> mycache = datasource._Cache()
@@ -183,7 +183,7 @@ class _Cache (object):
         Parameters:
             uri : {string}
                 path or url of source file to cache.
-                
+
         Returns:
             None
 
@@ -213,14 +213,14 @@ class _Cache (object):
 
     def clear(self):
         """Delete all files in the cache."""
-    
+
         # TODO: This deletes all files in the cache directory, regardless
         #       of if this instance created them.  Too destructive and
-        #       unexpected behavior.        
+        #       unexpected behavior.
         #for _file in self.path.files():
         #    os.remove(file)
         raise NotImplementedError
-            
+
     def iscached(self, uri):
         """ Check if a file exists in the cache.
 
@@ -290,11 +290,11 @@ class DataSource (object):
 
     def cache(self, pathstr):
         """Cache the file specified by pathstr.
-        
+
         Creates a copy of file pathstr in the datasource cache.
-        
+
         """
-        
+
         self._cache.cache(pathstr)
 
     def clear(self):
@@ -305,7 +305,7 @@ class DataSource (object):
         #       people would want.  The instance should only delete files that
         #       it created!
         raise NotImplementedError
-    
+
     def filename(self, pathstr):
         """Searches for pathstr file and returns full path if found.
 
@@ -345,7 +345,7 @@ class DataSource (object):
         If pathstr is an URL, it will be fetched and cached.
 
         """
-        
+
         # Is this method doing to much?  At very least may want an option to
         # not fetch and cache URLs.
 
@@ -395,4 +395,3 @@ class Repository (DataSource):
 
     def open(self, pathstr, mode='r'):
         return DataSource.open(self, self._fullpath(pathstr), mode)
-

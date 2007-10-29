@@ -7,8 +7,8 @@ import time
 
 def sakurai(n):
     """ Example taken from
-        T. Sakurai, H. Tadano, Y. Inadomi and U. Nagashima 
-        A moment-based method for large-scale generalized eigenvalue problems 
+        T. Sakurai, H. Tadano, Y. Inadomi and U. Nagashima
+        A moment-based method for large-scale generalized eigenvalue problems
         Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004) """
 
     A = speye( n, n )
@@ -28,7 +28,7 @@ m = 3  # Blocksize
 # Large scale
 #
 n = 25000
-A,B, w_ex = sakurai(n) # Mikota pair 
+A,B, w_ex = sakurai(n) # Mikota pair
 X = rand(n,m)
 data=[]
 tt = time.clock()

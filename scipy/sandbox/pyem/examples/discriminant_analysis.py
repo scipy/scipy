@@ -37,8 +37,8 @@ ldata = {}
 for i in cnames:
     xdata[i] = data[i]['sepal width']
     ydata[i] = data[i]['petal width']
-    ldata[i] = N.concatenate((xdata[i][:ln, N.newaxis], 
-                              ydata[i][:ln, N.newaxis]), 
+    ldata[i] = N.concatenate((xdata[i][:ln, N.newaxis],
+                              ydata[i][:ln, N.newaxis]),
                              axis = 1)
 
 tx = N.concatenate([xdata[i][ln:] for i in cnames])
@@ -116,10 +116,10 @@ P.legend(loc = 'best')
 # incorrectly classified)
 P.subplot(2, 1, 2)
 for i in cnames:
-    P.plot(tx[correct[i]], ty[correct[i]], 'g' + csym[i], 
+    P.plot(tx[correct[i]], ty[correct[i]], 'g' + csym[i],
            label = '%s (correctly classified)' % i)
     if len(incorrect[i]) > 0:
-        P.plot(tx[incorrect[i]], ty[incorrect[i]], 'r' + csym[i], 
+        P.plot(tx[incorrect[i]], ty[incorrect[i]], 'r' + csym[i],
                label = '%s (incorrectly classified)' % i)
 P.legend(loc = 'best', prop = prop)
 P.xlabel('sepal width')

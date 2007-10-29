@@ -63,14 +63,14 @@ class interp2d(object):
             the rows and colums, i.e.
 
             x = [0,1,2]  y = [0,1,2]
-            
+
             otherwise x and y must specify the full coordinates, i.e.
-            
+
             x = [0,1,2,0,1.5,2,0,1,2]  y = [0,1,2,0,1,2,0,1,2]
-            
+
             If x and y are 2-dimensional, they are flattened (allowing
             the use of meshgrid, for example).
-            
+
         z : 1D array
             The values of the interpolated function on the grid
             points. If z is a 2-dimensional array, it is flattened.
@@ -91,7 +91,7 @@ class interp2d(object):
         ------
         ValueError when inputs are invalid.
 
-        """        
+        """
         self.x, self.y, self.z = map(ravel, map(array, [x, y, z]))
         if not map(rank, [self.x, self.y, self.z]) == [1,1,1]:
             raise ValueError("One of the input arrays is not 1-d.")
@@ -102,14 +102,14 @@ class interp2d(object):
             self.x, self.y = map(ravel, [self.x, self.y])
         if len(self.z) != len(self.x):
             raise ValueError("Invalid length for input z")
-        
+
         try:
             kx = ky = {'linear' : 1,
                        'cubic' : 3,
                        'quintic' : 5}[kind]
         except KeyError:
             raise ValueError("Unsupported interpolation type.")
-        
+
         self.tck = fitpack.bisplrep(self.x, self.y, self.z, kx=kx, ky=ky, s=0.)
 
     def __call__(self,x,y,dx=0,dy=0):
@@ -142,7 +142,7 @@ class interp2d(object):
 
 class interp1d(object):
     """ Interpolate a 1D function.
-    
+
     See Also
     --------
     splrep, splev - spline interpolation based on FITPACK
@@ -174,12 +174,12 @@ class interp1d(object):
         kind : str or int
             Specifies the kind of interpolation as a string ('linear',
             'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an integer
-            specifying the order of the spline interpolator to use. 
+            specifying the order of the spline interpolator to use.
         axis : int
             Specifies the axis of y along which to interpolate. Interpolation
             defaults to the last axis of y.
         copy : bool
-            If True, the class makes internal copies of x and y.  
+            If True, the class makes internal copies of x and y.
             If False, references to x and y are used.
             The default is to copy.
         bounds_error : bool
@@ -219,7 +219,7 @@ class interp1d(object):
         # Normalize the axis to ensure that it is positive.
         self.axis = axis % len(y.shape)
         self._kind = kind
-        
+
         if kind == 'linear':
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
@@ -233,11 +233,11 @@ class interp1d(object):
             len_y = oriented_y.shape[0]
             self._call = self._call_spline
             self._spline = splmake(x,oriented_y,order=order)
-        
+
         len_x = len(x)
         if len_x != len_y:
-                raise ValueError("x and y arrays must be equal in length along"
-                "interpolation axis.")
+            raise ValueError("x and y arrays must be equal in length along"
+            "interpolation axis.")
         if len_x < minval:
             raise ValueError("x and y arrays must have at " \
                              "least %d entries" % minval)
@@ -291,7 +291,7 @@ class interp1d(object):
         -------
         y_new : number or array
             Linearly interpolated value(s) corresponding to x_new.
-        """        
+        """
 
         # 1. Handle values in x_new that are outside of x.  Throw error,
         #    or return a list of mask array indicating the outofbounds values.
@@ -314,14 +314,14 @@ class interp1d(object):
 
         if self._kind == 'linear':
             y_new[..., out_of_bounds] = self.fill_value
-            axes = range(ny - nx)            
+            axes = range(ny - nx)
             axes[self.axis:self.axis] = range(ny - nx, ny)
             return y_new.transpose(axes)
         else:
             y_new[out_of_bounds] = self.fill_value
             axes = range(ny - nx, ny)
             axes[self.axis:self.axis] = range(ny - nx)
-            return y_new.transpose(axes)  
+            return y_new.transpose(axes)
 
     def _check_bounds(self, x_new):
         """ Check the inputs for being in the bounds of the interpolated data.
@@ -361,7 +361,7 @@ class ppform(object):
     x_{i} <= x < x_{i+1}
 
     S_i = sum(coefs[m,i]*(x-breaks[i])^(k-m), m=0..k)
-    where k is the degree of the polynomial. 
+    where k is the degree of the polynomial.
     """
     def __init__(self, coeffs, breaks, fill=0.0, sort=False):
         self.coeffs = np.asarray(coeffs)
@@ -378,9 +378,9 @@ class ppform(object):
         saveshape = np.shape(xnew)
         xnew = np.ravel(xnew)
         res = np.empty_like(xnew)
-        mask = (xnew >= self.a) & (xnew <= self.b)        
+        mask = (xnew >= self.a) & (xnew <= self.b)
         res[~mask] = self.fill
-        xx = xnew.compress(mask) 
+        xx = xnew.compress(mask)
         indxs = np.searchsorted(self.breaks, xx)-1
         indxs = indxs.clip(0,len(self.breaks))
         pp = self.coeffs
@@ -429,8 +429,8 @@ def _find_smoothest(xk, yk, order, conds=None, B=None):
     tmp = dot(tmp,np.diag(1.0/s))
     tmp = dot(tmp,u.T)
     return dot(tmp, yk)
-    
-        
+
+
 def _setdiag(a, k, v):
     assert (a.ndim==2)
     M,N = a.shape
@@ -444,7 +444,7 @@ def _setdiag(a, k, v):
     a.flat[start:end:(N+1)] = v
 
 # Return the spline that minimizes the dis-continuity of the
-# "order-th" derivative; for order >= 2.  
+# "order-th" derivative; for order >= 2.
 
 def _find_smoothest2(xk, yk):
     N = len(xk)-1
@@ -478,7 +478,7 @@ def _find_smoothest2(xk, yk):
     val = dot(V2,dot(A,V2))
     res1 = dot(np.outer(V2,V2)/val,A)
     mk = dot(np.eye(Np1)-res1,dot(Bd,b))
-    return mk 
+    return mk
 
 def _get_spline2_Bb(xk, yk, kind, conds):
     Np1 = len(xk)
@@ -503,7 +503,7 @@ def _get_spline2_Bb(xk, yk, kind, conds):
 def _get_spline3_Bb(xk, yk, kind, conds):
     # internal function to compute different tri-diagonal system
     # depending on the kind of spline requested.
-    # conds is only used for 'second' and 'first' 
+    # conds is only used for 'second' and 'first'
     Np1 = len(xk)
     if kind in ['natural', 'second']:
         if kind == 'natural':
@@ -546,7 +546,7 @@ def _get_spline3_Bb(xk, yk, kind, conds):
                   'parabolic']:
         if kind == 'endslope':
             # match slope of lagrange interpolating polynomial of
-            # order 3 at end-points. 
+            # order 3 at end-points.
             x0,x1,x2,x3 = xk[:4]
             sl_0 = (1./(x0-x1)+1./(x0-x2)+1./(x0-x3))*yk[0]
             sl_0 += (x0-x2)*(x0-x3)/((x1-x0)*(x1-x2)*(x1-x3))*yk[1]
@@ -621,7 +621,7 @@ def _find_user(xk, yk, order, conds, B):
     elif (M<N):
         return _find_smoothest(xk, yk, order, None, B)
     else:
-        return np.dual.solve(B, w)    
+        return np.dual.solve(B, w)
 
 # If conds is None, then use the not_a_knot condition
 #  at K-1 farthest separated points in the interval
@@ -681,7 +681,7 @@ def splmake(xk,yk,order=3,kind='smoothest',conds=None):
 
     order = int(order)
     if order < 0:
-        raise ValueError("order must not be negative")        
+        raise ValueError("order must not be negative")
     if order == 0:
         return xk, yk[:-1], order
     elif order == 1:
@@ -719,7 +719,7 @@ def spleval((xj,cvals,k),xnew,deriv=0):
         res[sl] = _fitpack._bspleval(xx,xj,cvals[sl],k,deriv)
     res.shape = oldshape + sh
     return res
-                    
+
 def spltopp(xk,cvals,k):
     """Return a piece-wise polynomial object from a fixed-spline tuple.
     """
@@ -729,4 +729,3 @@ def spline(xk,yk,xnew,order=3,kind='smoothest',conds=None):
     """Interpolate a curve (xk,yk) at points xnew using a spline fit.
     """
     return spleval(splmake(xk,yk,order=order,kind=kind,conds=conds),xnew)
-

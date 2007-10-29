@@ -20,13 +20,13 @@ MAX_DBL_DEV    = 1e-10
 ## # max conditional number allowed
 ## _MAX_COND       = 1e8
 ## _MIN_INV_COND   = 1/_MAX_COND
-## 
+##
 ## # Default alpha for regularization
 ## _DEF_ALPHA  = 1e-1
-## 
+##
 ## # Default min delta for regularization
 ## _MIN_DBL_DELTA  = 1e-5
-## 
+##
 
 class curry:
     def __init__(self, fun, *args, **kwargs):

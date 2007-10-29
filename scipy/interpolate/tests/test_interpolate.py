@@ -39,7 +39,7 @@ class TestInterp1D(NumpyTestCase):
         are given to the constructor.
         """
 
-        # These should all work. 
+        # These should all work.
         interp1d(self.x10, self.y10, kind='linear')
         interp1d(self.x10, self.y10, kind='cubic')
         interp1d(self.x10, self.y10, kind='slinear')
@@ -48,7 +48,7 @@ class TestInterp1D(NumpyTestCase):
         interp1d(self.x10, self.y10, kind=0)
         interp1d(self.x10, self.y10, kind=1)
         interp1d(self.x10, self.y10, kind=2)
-        interp1d(self.x10, self.y10, kind=3)                
+        interp1d(self.x10, self.y10, kind=3)
 
         # x array must be 1D.
         self.assertRaises(ValueError, interp1d, self.x25, self.y10)
@@ -80,7 +80,7 @@ class TestInterp1D(NumpyTestCase):
         self.assert_(not interp1d(self.x10, self.y10, bounds_error=False).bounds_error)
         self.assert_(np.isnan(interp1d(self.x10, self.y10).fill_value))
         self.assertEqual(
-            interp1d(self.x10, self.y10, fill_value=3.0).fill_value, 
+            interp1d(self.x10, self.y10, fill_value=3.0).fill_value,
             3.0,
         )
         self.assertEqual(
@@ -175,7 +175,7 @@ class TestInterp1D(NumpyTestCase):
             np.array([[1.5, 2.4],
                       [11.5, 12.4]]),
         )
-        
+
         interp102 = interp1d(self.x10, self.y102, axis=0)
         assert_array_almost_equal(
             interp102(1.5),

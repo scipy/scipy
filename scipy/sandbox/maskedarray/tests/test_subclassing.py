@@ -45,8 +45,8 @@ class MSubArray(SubArray,MaskedArray):
         _data.info = subarr.info
         return _data
     def __array_finalize__(self,obj):
-        MaskedArray.__array_finalize__(self,obj)   
-        SubArray.__array_finalize__(self, obj) 
+        MaskedArray.__array_finalize__(self,obj)
+        SubArray.__array_finalize__(self, obj)
         return
     def _get_series(self):
         _view = self.view(MaskedArray)
@@ -63,19 +63,19 @@ class MMatrix(MaskedArray, N.matrix,):
     def __array_finalize__(self,obj):
         N.matrix.__array_finalize__(self, obj)
         MaskedArray.__array_finalize__(self,obj)
-        return     
+        return
     def _get_series(self):
         _view = self.view(MaskedArray)
         _view._sharedmask = False
         return _view
     _series = property(fget=_get_series)
-mmatrix = MMatrix 
-        
+mmatrix = MMatrix
+
 
 
 class TestSubclassing(NumpyTestCase):
     """Test suite for masked subclasses of ndarray."""
-                
+
     def check_data_subclassing(self):
         "Tests whether the subclass is kept."
         x = N.arange(5)
@@ -85,7 +85,7 @@ class TestSubclassing(NumpyTestCase):
         assert isinstance(xmsub, MaskedArray)
         assert_equal(xmsub._data, xsub)
         assert isinstance(xmsub._data, SubArray)
-        
+
     def check_maskedarray_subclassing(self):
         "Tests subclassing MaskedArray"
         x = N.arange(5)
@@ -127,7 +127,7 @@ class TestSubclassing(NumpyTestCase):
         mxsub = masked_array(xsub)
         assert hasattr(mxsub, 'info')
         assert_equal(mxsub.info, xsub.info)
-    
+
     def check_subclasspreservation(self):
         "Checks that masked_array(...,subok=True) preserves the class."
         x = N.arange(5)
@@ -154,8 +154,8 @@ class TestSubclassing(NumpyTestCase):
         assert isinstance(mxsub, MSubArray)
         assert_equal(mxsub.info, xsub.info)
         assert_equal(mxsub._mask, m)
-        
-        
+
+
 ################################################################################
 if __name__ == '__main__':
     NumpyTest().run()
@@ -181,5 +181,3 @@ if __name__ == '__main__':
         assert_equal(ym._mask, [1,0,0,0,1])
         ym._series._set_mask([0,0,0,0,1])
         assert_equal(ym._mask, [0,0,0,0,1])
-
-

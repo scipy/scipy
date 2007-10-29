@@ -15,7 +15,7 @@ d   = 2
 #   - mean is expected to be rank 2 with one row for one component
 #   - variances are also expteced to be rank 2. For diagonal, one row
 #   is one diagonal, for full, the first d rows are the first variance,
-#   etc... In this case, the variance matrix should be k*d rows and d 
+#   etc... In this case, the variance matrix should be k*d rows and d
 #   colums
 w   = N.array([0.2, 0.45, 0.35])
 mu  = N.array([[4.1, 3], [1, 5], [-2, -3]])

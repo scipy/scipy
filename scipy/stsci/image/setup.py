@@ -13,10 +13,9 @@ def configuration(parent_package='',top_path=None):
 
 if __name__ == "__main__":
     from numpy.distutils.core import setup
-    config = configuration(top_path='').todict() 
+    config = configuration(top_path='').todict()
     setup(author='Todd Miller',
           author_email = 'help@stsci.edu',
           description = 'image array manipulation functions',
           version = '2.0',
           **config)
-

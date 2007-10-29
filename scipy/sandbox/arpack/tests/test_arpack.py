@@ -2,7 +2,7 @@
 __usage__ = """
 First ensure that scipy core modules are installed.
 
-Build interface to arpack 
+Build interface to arpack
   python setup.py build
 Run tests locally:
   python tests/test_arpack.py [-l<int>] [-v<int>]
@@ -16,7 +16,7 @@ set_package_path()
 from arpack import *
 del sys.path[0]
 
-import numpy 
+import numpy
 from scipy.linalg import eig,eigh,norm
 
 class TestEigenNonsymmetric(NumpyTestCase):
@@ -217,7 +217,7 @@ class TestEigenComplexNonsymmetric(NumpyTestCase):
 
 
 
-    
+
 class TestEigenSymmetric(NumpyTestCase):
 
     def get_a1(self,typ):
@@ -288,7 +288,7 @@ class TestEigenSymmetric(NumpyTestCase):
             self.large_eigenvalues(typ,k)
             self.small_eigenvalues(typ,k)
             self.end_eigenvalues(typ,k)
-    
+
 
 class TestEigenComplexSymmetric(NumpyTestCase):
 

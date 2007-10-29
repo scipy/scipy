@@ -516,9 +516,9 @@ class TestDictConverter(NumpyTestCase):
     """
 
     # Default string specifying the compiler to use.  While this is set
-    # in all sub-classes, this base test class is found by the test 
-    # infrastructure and run. Therefore, we give it a default value 
-    # so that it can run on its own. 
+    # in all sub-classes, this base test class is found by the test
+    # infrastructure and run. Therefore, we give it a default value
+    # so that it can run on its own.
     compiler=''
 
     def check_type_match_bad(self,level=5):

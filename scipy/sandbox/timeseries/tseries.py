@@ -54,8 +54,8 @@ __all__ = [
 'mask_period','mask_inside_period','mask_outside_period','minute','month',
 'pct',
 'quarter',
-'second','split', 'stack', 
-'tofile','tshift', 
+'second','split', 'stack',
+'tofile','tshift',
 'year',
 ]
 
@@ -65,7 +65,7 @@ def _unmasked_val(marray, x):
         assert(marray.ndim == 1)
     except AssertionError:
         raise ValueError("array must have ndim == 1")
-    
+
     idx = maskedarray.extras.flatnotmasked_edges(marray)
     if idx is None:
         return masked
@@ -380,7 +380,7 @@ A time series is here defined as the combination of two arrays:
             return _data.view(cls)
         assert(_datadatescompat(_data,dates))
         _data._dates = dates
-        if _data._dates.size == _data.size: 
+        if _data._dates.size == _data.size:
             if _data.ndim > 1:
                 current_shape = data.shape
 
@@ -685,7 +685,7 @@ timeseries(%(data)s,
         """Converts the dates portion of the TimeSeries to another frequency.
 
 The resulting TimeSeries will have the same shape and dimensions as the
-original series (unlike the `convert` method). 
+original series (unlike the `convert` method).
 
 *Parameters*:
     freq : {freq_spec}
@@ -732,7 +732,7 @@ original series (unlike the `convert` method).
                 result = super(TimeSeries, self).transpose(*axes)
                 result._dates = self._dates
         return result
-    
+
     def split(self):
         """Split a multi-dimensional series into individual columns."""
         if self.ndim == 1:
@@ -740,10 +740,10 @@ original series (unlike the `convert` method).
         else:
             n = self.shape[1]
             arr = hsplit(self, n)[0]
-            return [self.__class__(numpy.squeeze(a), 
-                                   self._dates, 
-                                   **_attrib_dict(self)) for a in arr]        
-    
+            return [self.__class__(numpy.squeeze(a),
+                                   self._dates,
+                                   **_attrib_dict(self)) for a in arr]
+
     def filled(self, fill_value=None):
         """Returns an array of the same class as `_data`,  with masked values
 filled with `fill_value`. Subclassing is preserved.
@@ -980,7 +980,7 @@ def time_series(data, dates=None, start_date=None, freq=None, mask=nomask,
     freq = check_freq(freq)
 
     if dates is None:
-        _dates = getattr(data, '_dates', None)        
+        _dates = getattr(data, '_dates', None)
     elif isinstance(dates, (Date, DateArray)):
         _dates = date_array(dates)
     elif isinstance(dates, (tuple, list, ndarray)):
@@ -1005,8 +1005,8 @@ def time_series(data, dates=None, start_date=None, freq=None, mask=nomask,
         data = data[idx]
         _dates._unsorted = None
     return TimeSeries(data=data, dates=_dates, mask=data._mask,
-                      copy=copy, dtype=dtype, 
-                      fill_value=fill_value, keep_mask=keep_mask, 
+                      copy=copy, dtype=dtype,
+                      fill_value=fill_value, keep_mask=keep_mask,
                       hard_mask=hard_mask,)
 
 
@@ -1227,7 +1227,7 @@ aligned = align_series
 
 #.....................................................
 def align_with(*series):
-    """Aligns several TimeSeries to the first of the list, so that their 
+    """Aligns several TimeSeries to the first of the list, so that their
     starting and ending dates match.
     Series are resized and filled with masked values accordingly.
     """
@@ -1237,7 +1237,7 @@ def align_with(*series):
     if len(series) == 2:
         return adjust_endpoints(series[-1], dates[0], dates[-1])
     return [adjust_endpoints(x, dates[0], dates[-1]) for x in series[1:]]
-    
+
 
 #....................................................................
 def _convert1d(series, freq, func, position, *args, **kwargs):
@@ -1534,7 +1534,7 @@ Note: Please pay attention to the order of the series!"""
 
 def concatenate(series, axis=0, remove_duplicates=True, fill_missing=False):
     """Joins series together.
-    
+
 The series are joined in chronological order. Duplicated dates are handled with
 the `remove_duplicates` parameter. If remove_duplicate=False, duplicated dates are
 saved. Otherwise, only the first occurence of the date is conserved.
@@ -1548,7 +1548,7 @@ masked_array(data = [ 1  2  3 30],
       mask = False,
       fill_value=999999)
 
-    
+
 *Parameters*:
     series : {sequence}
         Sequence of time series to join
@@ -1560,9 +1560,9 @@ masked_array(data = [ 1  2  3 30],
         Whether to fill the missing dates with missing values.
     """
     # Get the common frequency, raise an error if incompatibility
-    common_f = _compare_frequencies(*series)    
+    common_f = _compare_frequencies(*series)
     # Concatenate the order of series
-    sidx = numpy.concatenate([numpy.repeat(i,len(s)) 
+    sidx = numpy.concatenate([numpy.repeat(i,len(s))
                               for (i,s) in enumerate(series)], axis=axis)
     # Concatenate the dates and data
     ndates = numpy.concatenate([s._dates for s in series], axis=axis)
@@ -1582,7 +1582,7 @@ masked_array(data = [ 1  2  3 30],
         result = time_series(ndata.compress(orig),
                              dates=ndates.compress(orig),freq=common_f)
     if fill_missing:
-        result = fill_missing_dates(result)    
+        result = fill_missing_dates(result)
     return result
 
 
@@ -1657,9 +1657,9 @@ if __name__ == '__main__':
         ndates = date_array_fromrange(start_date=dates[0],end_date=dates[-2])
         fseries = fill_missing_dates(dseries)
         assert_equal(dseries.fill_value, fseries.fill_value)
-        
+
     #
-    if 0:        
+    if 0:
         dlist = ['2007-01-%02i' % i for i in (3,2,1)]
         data = [10,20,30]
 #        series = time_series(data, dlist, mask=[1,0,0])
@@ -1672,13 +1672,12 @@ if __name__ == '__main__':
         dates = date_array_fromlist(dlist)
         data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3)
         series = time_series(data, dlist)
-        
+
         empty_series = time_series([], freq='d')
         a, b = align_series(series, empty_series)
-        
+
     if 1:
         "Check concatenate..."
         import dates
         tt = time_series([.2,.2,.3],start_date=dates.Date('T',string='2007-10-10 01:10'))
         tt._dates += [0, 9, 18]
-

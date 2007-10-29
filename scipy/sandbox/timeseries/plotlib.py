@@ -765,7 +765,7 @@ This command accepts the same keywords as `matplotlib.plot`."""
     def set_datelimits(self, start_date=None, end_date=None):
         """Sets the date limits of the plot to start_date and end_date.
     The dates can be given as timeseries.Date objects, strings or integers.
-        
+
 :Inputs:
     start_date : var *[None]*
         Starting date of the plot. If None, the current left limit is used.
@@ -798,14 +798,14 @@ This command accepts the same keywords as `matplotlib.plot`."""
             xright = get_datevalue(end_date, freq)
         self.set_xlim(xleft, xright)
         return (xleft, xright)
-    
+
 
 TSPlot = TimeSeriesPlot
 
 def add_yaxis(fsp=None, position='right', yscale=None, basey=10, subsy=None,
               **kwargs):
     """Adds a second y-axis to a plot.
- 
+
 :Parameters:
     `fsp` : Subplot *[None]*
         Subplot to which the secondary y-axis is added. If *None*, the current
@@ -813,18 +813,18 @@ def add_yaxis(fsp=None, position='right', yscale=None, basey=10, subsy=None,
     `position` : String in `('left','right')` *['right']*
         Position of the new axis.
     `yscale` : String, in `('log', 'linear')` *[None]*
-        Scale of the new axis. If None, uses the same scale as the first y 
+        Scale of the new axis. If None, uses the same scale as the first y
 axis
     `basey` : Integer *[10]*
         Base of the logarithm for the new axis (if needed).
     `subsy` : sequence *[None]*
         Sequence of the location of the minor ticks;
-        None defaults to autosubs, which depend on the number of decades in 
-the plot.  
-        Eg for base 10, subsy=(1,2,5) will  put minor ticks on 1,2,5,11,12,15, 
+        None defaults to autosubs, which depend on the number of decades in
+the plot.
+        Eg for base 10, subsy=(1,2,5) will  put minor ticks on 1,2,5,11,12,15,
 21, ....
         To turn off minor ticking, set subsy=[]
- 
+
     """
     if fsp is None:
         fsp = pylab.gca()
@@ -845,7 +845,7 @@ the plot.
     fsp.yaxis.set_label_position(inipos)
     # Force 2nd ticks to the other side..
     fsp_alt.yaxis.set_ticks_position(newpos)
-    fsp_alt.yaxis.set_label_position(newpos) 
+    fsp_alt.yaxis.set_label_position(newpos)
     # Force period axis scale..........
     if yscale is None:
         yscale = fsp.get_yscale()
@@ -857,7 +857,7 @@ the plot.
     # Guess we're good ................
     fsp_alt.set_xticks('')
     fsp_alt.set_xticklabels('')
-    
+
     pylab.draw_if_interactive()
     return fsp_alt
 

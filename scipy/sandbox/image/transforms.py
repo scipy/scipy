@@ -4,7 +4,7 @@ from scipy import linalg
 
 
 __all__ = """dct idct dct2 idct2 dctn idctn dct2raw idct2raw
-dst idst dst2 idst2 dstn idstn 
+dst idst dst2 idst2 dstn idstn
 digitrevorder bitrevorder wht
 """.split()
 

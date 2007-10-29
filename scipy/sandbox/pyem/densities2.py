@@ -13,13 +13,13 @@ from scipy.stats import chi2
 # Error classes
 class DenError(Exception):
     """Base class for exceptions in this module.
-    
+
     Attributes:
         expression -- input expression in which the error occurred
         message -- explanation of the error"""
     def __init__(self, message):
         self.message    = message
-    
+
     def __str__(self):
         return self.message
 
@@ -29,21 +29,21 @@ class DenError(Exception):
 # The following function do all the fancy stuff to check that parameters
 # are Ok, and call the right implementation if args are OK.
 def gauss_den(x, mu, va, log = False, axis = -1):
-    """ Compute multivariate Gaussian density at points x for 
+    """ Compute multivariate Gaussian density at points x for
     mean mu and variance va along specified axis:
-        
+
     requirements:
         * mean must be rank 0 (1d) or rank 1 (multi variate gaussian)
-        * va must be rank 0 (1d), rank 1(multi variate, diag covariance) or rank 2 
+        * va must be rank 0 (1d), rank 1(multi variate, diag covariance) or rank 2
         (multivariate, full covariance).
         * in 1 dimension case, any rank for mean and va is ok, as long as their size
         is 1 (eg they contain only 1 element)
-    
+
     Caution: if x is rank 1, it is assumed you have a 1d problem. You cannot compute
     the gaussian densities of only one sample of dimension d; for this, you have
     to use a rank 2 !
 
-    If log is True, than the log density is returned 
+    If log is True, than the log density is returned
     (useful for underflow ?)"""
 
     # If data is rank 1, then we have 1 dimension problem.
@@ -52,10 +52,10 @@ def gauss_den(x, mu, va, log = False, axis = -1):
         n   = x.size
         if not N.size(mu) == 1:
             raise DenError("for 1 dimension problem, mean must have only one element")
-            
+
         if not N.size(va) == 1:
             raise DenError("for 1 dimension problem, mean must have only one element")
-        
+
         return _scalar_gauss_den(x, mu, va, log)
     # If data is rank 2, then we may have 1 dimension or multi-variate problem
     elif x.ndim == 2:
@@ -71,7 +71,7 @@ def gauss_den(x, mu, va, log = False, axis = -1):
         if not N.size(mu) == d or not mu.ndim == 1:
             raise DenError("data is %d dimension, but mean's shape is %s" \
                     % (d, N.shape(mu)) + " (should be (%d,))" % d)
-            
+
         isfull  = (va.ndim == 2)
         if not (N.size(va) == d or (isfull and va.shape[0] == va.shape[1] == d)):
             raise DenError("va has an invalid shape or number of elements")
@@ -86,16 +86,16 @@ def gauss_den(x, mu, va, log = False, axis = -1):
             return _diag_gauss_den(x, mu, va, log, axis)
     else:
         raise RuntimeError("Sorry, only rank up to 2 supported")
-        
+
 # To plot a confidence ellipse from multi-variate gaussian pdf
 def gauss_ell(mu, va, dim = [0, 1], npoints = 100, level = 0.39):
     """ Given a mean and covariance for multi-variate
     gaussian, returns npoints points for the ellipse
     of confidence given by level (all points will be inside
     the ellipsoides with a probability equal to level)
-    
+
     Returns the coordinate x and y of the ellipse"""
-    
+
     c       = N.array(dim)
 
     if mu.size < 2:
@@ -115,7 +115,7 @@ def gauss_ell(mu, va, dim = [0, 1], npoints = 100, level = 0.39):
     # If X ~ N(mu, va), then [X` * va^(-1/2) * X] ~ Chi2
     chi22d  = chi2(2)
     mahal   = N.sqrt(chi22d.ppf(level))
-    
+
     # Generates a circle of npoints
     theta   = N.linspace(0, 2 * N.pi, npoints)
     circle  = mahal * N.array([N.cos(theta), N.sin(theta)])
@@ -129,9 +129,9 @@ def gauss_ell(mu, va, dim = [0, 1], npoints = 100, level = 0.39):
     elif mode == 'full':
         va  = va[c,:][:,c]
         # Method: compute the cholesky decomp of each cov matrix, that is
-        # compute cova such as va = cova * cova' 
+        # compute cova such as va = cova * cova'
         # WARN: scipy is different than matlab here, as scipy computes a lower
-        # triangular cholesky decomp: 
+        # triangular cholesky decomp:
         #   - va = cova * cova' (scipy)
         #   - va = cova' * cova (matlab)
         # So take care when comparing results with matlab !
@@ -151,7 +151,7 @@ def _scalar_gauss_den(x, mu, va, log):
     """ This function is the actual implementation
     of gaussian pdf in scalar case. It assumes all args
     are conformant, so it should not be used directly
-    
+
     Call gauss_den instead"""
     inva    = 1/va
     fac     = (2*N.pi) ** (-1/2.0) * N.sqrt(inva)
@@ -162,12 +162,12 @@ def _scalar_gauss_den(x, mu, va, log):
         y   = y + log(fac)
 
     return y
-    
+
 def _diag_gauss_den(x, mu, va, log, axis):
     """ This function is the actual implementation
     of gaussian pdf in scalar case. It assumes all args
     are conformant, so it should not be used directly
-    
+
     Call gauss_den instead"""
     # Diagonal matrix case
     d   = mu.size
@@ -192,12 +192,12 @@ def _diag_gauss_den(x, mu, va, log, axis):
 
 def _full_gauss_den(x, mu, va, log, axis):
     """ This function is the actual implementation
-    of gaussian pdf in full matrix case. 
-    
-    It assumes all args are conformant, so it should 
+    of gaussian pdf in full matrix case.
+
+    It assumes all args are conformant, so it should
     not be used directly Call gauss_den instead
-    
-    Does not check if va is definite positive (on inversible 
+
+    Does not check if va is definite positive (on inversible
     for that matter), so the inverse computation and/or determinant
     would throw an exception."""
     d       = mu.size
@@ -212,7 +212,7 @@ def _full_gauss_den(x, mu, va, log, axis):
     #              N.dot(inva, N.transpose(x[i,:])))
     # y *= -0.5
 
-    # we are using a trick with sum to "emulate" 
+    # we are using a trick with sum to "emulate"
     # the matrix multiplication inva * x without any explicit loop
     if axis % 2 == 1:
         y   = N.dot(inva, (x-mu))
@@ -225,7 +225,7 @@ def _full_gauss_den(x, mu, va, log, axis):
         y   = fac * N.exp(y)
     else:
         y   = y + N.log(fac)
- 
+
     return y
 
 if __name__ == "__main__":

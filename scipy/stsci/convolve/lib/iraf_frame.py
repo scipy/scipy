@@ -23,16 +23,16 @@ def frame_nearest(a, shape, cval=None):
            [12, 12, 12, 13, 14, 15, 15, 15],
            [12, 12, 12, 13, 14, 15, 15, 15],
            [12, 12, 12, 13, 14, 15, 15, 15]])
-           
+
     """
-    
+
     b = num.zeros(shape, dtype=a.dtype)
     delta = (num.array(b.shape) - num.array(a.shape))
     dy = delta[0] // 2
     dx = delta[1] // 2
     my = a.shape[0] + dy
     mx = a.shape[1] + dx
-    
+
     b[dy:my, dx:mx] = a                  # center
     b[:dy,dx:mx]  = a[0:1,:]               # top
     b[my:,dx:mx]  = a[-1:,:]              # bottom
@@ -42,7 +42,7 @@ def frame_nearest(a, shape, cval=None):
     b[:dy, mx:]   = a[0,-1]              # topright
     b[my:, :dx]   = a[-1, 0]             # bottomleft
     b[my:, mx:]   = a[-1, -1]            # bottomright
-    
+
     return b
 
 def frame_reflect(a, shape, cval=None):
@@ -63,7 +63,7 @@ def frame_reflect(a, shape, cval=None):
            [13, 12, 12, 13, 14, 15, 15, 14],
            [ 9,  8,  8,  9, 10, 11, 11, 10]])
     """
-    
+
     b = num.zeros(shape, dtype=a.dtype)
     delta = (num.array(b.shape) - num.array(a.shape))
     dy = delta[0] // 2
@@ -72,7 +72,7 @@ def frame_reflect(a, shape, cval=None):
     mx = a.shape[1] + dx
     sy = delta[0] - dy
     sx = delta[1] - dx
-    
+
     b[dy:my, dx:mx] = a                            # center
     b[:dy,dx:mx]  = a[:dy,:][::-1,:]               # top
     b[my:,dx:mx]  = a[-sy:,:][::-1,:]              # bottom
@@ -102,7 +102,7 @@ def frame_wrap(a, shape, cval=None):
            [ 6,  7,  4,  5,  6,  7,  4,  5]])
 
     """
-    
+
     b = num.zeros(shape, dtype=a.dtype)
     delta = (num.array(b.shape) - num.array(a.shape))
     dy = delta[0] // 2
@@ -111,7 +111,7 @@ def frame_wrap(a, shape, cval=None):
     mx = a.shape[1] + dx
     sy = delta[0] - dy
     sx = delta[1] - dx
-    
+
     b[dy:my, dx:mx] = a                  # center
     b[:dy,dx:mx]  = a[-dy:,:]            # top
     b[my:,dx:mx]  = a[:sy,:]             # bottom
@@ -141,14 +141,14 @@ def frame_constant(a, shape, cval=0):
            [42, 42, 42, 42, 42, 42, 42, 42]])
 
     """
-    
+
     b = num.zeros(shape, dtype=a.dtype)
     delta = (num.array(b.shape) - num.array(a.shape))
     dy = delta[0] // 2
     dx = delta[1] // 2
     my = a.shape[0] + dy
     mx = a.shape[1] + dx
-    
+
     b[dy:my, dx:mx] = a              # center
     b[:dy,dx:mx]  = cval             # top
     b[my:,dx:mx]  = cval             # bottom
@@ -164,9 +164,9 @@ _frame_dispatch = { "nearest": frame_nearest,
                     "reflect": frame_reflect,
                     "wrap": frame_wrap,
                     "constant" : frame_constant }
-             
+
 def frame(a, shape, mode="nearest", cval=0.0):
-    
+
     """frame creates an oversized copy of 'a' with new 'shape', with
     extra pixels being supplied according to IRAF boundary mode,
     'mode'.  """
@@ -175,7 +175,7 @@ def frame(a, shape, mode="nearest", cval=0.0):
         f = _frame_dispatch[mode]
     except KeyError:
         raise ValueError('invalid IRAF boundary mode: "%s"' % mode)
-    
+
     return f(a, shape, cval)
 
 def unframe(a, shape):
@@ -193,4 +193,3 @@ def unframe(a, shape):
 def test():
     import doctest, iraf_frame
     return doctest.testmod(iraf_frame)
-

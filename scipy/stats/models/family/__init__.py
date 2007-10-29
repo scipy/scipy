@@ -12,5 +12,3 @@ These families are described in
 
 from scipy.stats.models.family.family import Gaussian, Family, \
      Poisson, Gamma, InverseGaussian, Binomial
-
-

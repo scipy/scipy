@@ -23,7 +23,7 @@ __all__ = ['whiten', 'vq', 'kmeans', 'kmeans2']
 
 # TODO:
 #   - implements high level method for running several times kmeans with
-#   different initialialization 
+#   different initialialization
 #   - warning: what happens if different number of clusters ? For now, emit a
 #   warning, but it is not great, because I am not sure it really make sense to
 #   succeed in this case (maybe an exception is better ?)
@@ -590,7 +590,7 @@ if __name__  == '__main__':
     #b = N.random.randn(2, 2)
 
     #print _vq.vq(a, b)
-    #print _vq.vq(N.array([[1], [2], [3], [4], [5], [6.]]), 
+    #print _vq.vq(N.array([[1], [2], [3], [4], [5], [6.]]),
     #        N.array([[2.], [5.]]))
     #print _vq.vq(N.array([1, 2, 3, 4, 5, 6.]), N.array([2., 5.]))
     #_vq.vq(a.astype(N.float32), b.astype(N.float32))

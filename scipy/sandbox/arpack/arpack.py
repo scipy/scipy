@@ -6,7 +6,7 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 """
 __all___=['eigen','eigen_symmetric']
 
-import _arpack 
+import _arpack
 import numpy as sb
 import warnings
 
@@ -95,7 +95,7 @@ def eigen(A,k=6,M=None,ncv=None,which='LM',
 
     tol -- Relative accuracy for eigenvalues (stopping criterion)
 
-    return_eigenvectors -- True|False, return eigenvectors 
+    return_eigenvectors -- True|False, return eigenvectors
 
     """
     try:
@@ -105,7 +105,7 @@ def eigen(A,k=6,M=None,ncv=None,which='LM',
         raise AttributeError("matrix is not square")
     if M is not None:
         raise NotImplementedError("generalized eigenproblem not supported yet")
-        
+
     # some defaults
     if ncv is None:
         ncv=2*k+1
@@ -113,7 +113,7 @@ def eigen(A,k=6,M=None,ncv=None,which='LM',
     if maxiter==None:
         maxiter=n*10
 
-    # guess type        
+    # guess type
     resid = sb.zeros(n,'f')
     try:
         typ = A.dtype.char
@@ -155,7 +155,7 @@ def eigen(A,k=6,M=None,ncv=None,which='LM',
 
     # only supported mode is 1: Ax=lx
     ishfts = 1
-    mode1 = 1 
+    mode1 = 1
     bmat = 'I'
     iparam[0] = ishfts
     iparam[2] = maxiter
@@ -188,14 +188,14 @@ def eigen(A,k=6,M=None,ncv=None,which='LM',
 #        warnings.warn("Only %s eigenvalues converged"%iparam[3])
 
 
-    # now extract eigenvalues and (optionally) eigenvectors        
+    # now extract eigenvalues and (optionally) eigenvectors
     rvec = return_eigenvectors
     ierr = 0
     howmny = 'A' # return all eigenvectors
-    sselect = sb.zeros(ncv,'int') # unused 
+    sselect = sb.zeros(ncv,'int') # unused
     sigmai = 0.0 # no shifts, not implemented
     sigmar = 0.0 # no shifts, not implemented
-    workev = sb.zeros(3*ncv,typ) 
+    workev = sb.zeros(3*ncv,typ)
 
     if typ in 'fd':
         dr=sb.zeros(k+1,typ)
@@ -205,7 +205,7 @@ def eigen(A,k=6,M=None,ncv=None,which='LM',
             eigextract(rvec,howmny,sselect,sigmar,sigmai,workev,
                    bmat,which,k,tol,resid,v,iparam,ipntr,
                    workd,workl,info)
-        
+
         # make eigenvalues complex
         d=dr+1.0j*di
         # futz with the eigenvectors:
@@ -215,14 +215,14 @@ def eigen(A,k=6,M=None,ncv=None,which='LM',
             if di[i] > 0 :
                 z[:,i]=zr[:,i]+1.0j*zr[:,i+1]
                 z[:,i+1]=z[:,i].conjugate()
-                     
+
     else:
         d,z,info =\
               eigextract(rvec,howmny,sselect,sigmar,workev,
                          bmat,which,k,tol,resid,v,iparam,ipntr,
                          workd,workl,rwork,ierr)
 
-        
+
 
     if ierr != 0:
         raise RuntimeError("Error info=%d in arpack"%info)
@@ -255,7 +255,7 @@ def eigen_symmetric(A,k=6,M=None,ncv=None,which='LM',
 
     Outputs:
 
-    w -- An real array of k eigenvalues 
+    w -- An real array of k eigenvalues
 
     v -- An array of k real eigenvectors, k[i] is the eigenvector corresponding
          to the eigenvector w[i]
@@ -266,11 +266,11 @@ def eigen_symmetric(A,k=6,M=None,ncv=None,which='LM',
            and is recommended to be ncv > 2*k
 
     which -- String specifying which eigenvectors to compute.
-             Compute the k 
+             Compute the k
              'LA' - largest (algebraic) eigenvalues.
              'SA' - smallest (algebraic) eigenvalues.
              'LM' - largest (in magnitude) eigenvalues.
-             'SM' - smallest (in magnitude) eigenvalues. 
+             'SM' - smallest (in magnitude) eigenvalues.
              'BE' - eigenvalues, half from each end of the
                     spectrum.  When NEV is odd, compute one more from the
                     high end than from the low end.
@@ -279,7 +279,7 @@ def eigen_symmetric(A,k=6,M=None,ncv=None,which='LM',
 
     tol -- Relative accuracy for eigenvalues (stopping criterion)
 
-    return_eigenvectors -- True|False, return eigenvectors 
+    return_eigenvectors -- True|False, return eigenvectors
 
     """
     try:
@@ -296,7 +296,7 @@ def eigen_symmetric(A,k=6,M=None,ncv=None,which='LM',
         maxiter=n*10
 
 
-    # guess type        
+    # guess type
     resid = sb.zeros(n,'f')
     try:
         typ = A.dtype.char
@@ -359,11 +359,11 @@ def eigen_symmetric(A,k=6,M=None,ncv=None,which='LM',
     if info == -1:
         warnings.warn("Maximum number of iterations taken: %s"%iparam[2])
 
-    # now extract eigenvalues and (optionally) eigenvectors        
+    # now extract eigenvalues and (optionally) eigenvectors
     rvec = return_eigenvectors
     ierr = 0
     howmny = 'A' # return all eigenvectors
-    sselect = sb.zeros(ncv,'int') # unused 
+    sselect = sb.zeros(ncv,'int') # unused
     sigma = 0.0 # no shifts, not implemented
 
     d,z,info =\
@@ -377,5 +377,3 @@ def eigen_symmetric(A,k=6,M=None,ncv=None,which='LM',
     if return_eigenvectors:
         return d,z
     return d
-
-

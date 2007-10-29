@@ -90,7 +90,7 @@ def _centered(arr, newsize):
 
 def fftconvolve(in1, in2, mode="full"):
     """Convolve two N-dimensional arrays using FFT. See convolve.
-    
+
     """
     s1 = array(in1.shape)
     s2 = array(in2.shape)
@@ -369,7 +369,7 @@ def medfilt2d(input, kernel_size=3):
 
     out -- An array the same size as input containing the median filtered
            result.
-           
+
     """
     image = asarray(input)
     if kernel_size is None:
@@ -512,7 +512,7 @@ def lfiltic(b,a,y,x=None):
     The output vector zi contains
 
     zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}  where K=max(M,N).
-    
+
     """
     N = size(a)-1
     M = size(b)-1
@@ -540,7 +540,7 @@ def lfiltic(b,a,y,x=None):
 
 def deconvolve(signal, divisor):
     """Deconvolves divisor out of signal.
-    
+
     """
     num = atleast_1d(signal)
     den = atleast_1d(divisor)
@@ -559,13 +559,13 @@ def deconvolve(signal, divisor):
 
 def boxcar(M,sym=1):
     """The M-point boxcar window.
-    
+
     """
     return ones(M, float)
 
 def triang(M,sym=1):
     """The M-point triangular window.
-    
+
     """
     if M < 1:
         return array([])
@@ -588,7 +588,7 @@ def triang(M,sym=1):
 
 def parzen(M,sym=1):
     """The M-point Parzen window.
-    
+
     """
     if M < 1:
         return array([])
@@ -609,7 +609,7 @@ def parzen(M,sym=1):
 
 def bohman(M,sym=1):
     """The M-point Bohman window.
-    
+
     """
     if M < 1:
         return array([])
@@ -627,7 +627,7 @@ def bohman(M,sym=1):
 
 def blackman(M,sym=1):
     """The M-point Blackman window.
-    
+
     """
     if M < 1:
         return array([])
@@ -644,7 +644,7 @@ def blackman(M,sym=1):
 
 def nuttall(M,sym=1):
     """A minimum 4-term Blackman-Harris window according to Nuttall.
-    
+
     """
     if M < 1:
         return array([])
@@ -663,7 +663,7 @@ def nuttall(M,sym=1):
 
 def blackmanharris(M,sym=1):
     """The M-point minimum 4-term Blackman-Harris window.
-    
+
     """
     if M < 1:
         return array([])
@@ -682,7 +682,7 @@ def blackmanharris(M,sym=1):
 
 def flattop(M,sym=1):
     """The M-point Flat top window.
-    
+
     """
     if M < 1:
         return array([])
@@ -702,7 +702,7 @@ def flattop(M,sym=1):
 
 def bartlett(M,sym=1):
     """The M-point Bartlett window.
-    
+
     """
     if M < 1:
         return array([])
@@ -719,7 +719,7 @@ def bartlett(M,sym=1):
 
 def hanning(M,sym=1):
     """The M-point Hanning window.
-    
+
     """
     if M < 1:
         return array([])
@@ -738,7 +738,7 @@ hann = hanning
 
 def barthann(M,sym=1):
     """Return the M-point modified Bartlett-Hann window.
-    
+
     """
     if M < 1:
         return array([])
@@ -756,7 +756,7 @@ def barthann(M,sym=1):
 
 def hamming(M,sym=1):
     """The M-point Hamming window.
-    
+
     """
     if M < 1:
         return array([])
@@ -771,11 +771,11 @@ def hamming(M,sym=1):
         w = w[:-1]
     return w
 
-    
+
 
 def kaiser(M,beta,sym=1):
     """Return a Kaiser window of length M with shape parameter beta.
-    
+
     """
     if M < 1:
         return array([])
@@ -793,7 +793,7 @@ def kaiser(M,beta,sym=1):
 
 def gaussian(M,std,sym=1):
     """Return a Gaussian window of length M with standard-deviation std.
-    
+
     """
     if M < 1:
         return array([])
@@ -815,7 +815,7 @@ def general_gaussian(M,p,sig,sym=1):
     exp(-0.5*(x/sig)**(2*p))
 
     half power point is at (2*log(2)))**(1/(2*p))*sig
-    
+
     """
     if M < 1:
         return array([])
@@ -1405,7 +1405,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
 
     If bp is given, then it is a sequence of points at which to
        break a piecewise-linear fit to the data.
-       
+
     """
     if type not in ['linear','l','constant','c']:
         raise ValueError, "Trend type must be linear or constant"

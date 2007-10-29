@@ -255,7 +255,7 @@ def eigh(a, lower=True, eigvals_only=False, overwrite_a=False):
     return w, v
 
 
-    
+
 def eig_banded(a_band, lower=0, eigvals_only=0, overwrite_a_band=0,
                select='a', select_range=None, max_ev = 0):
     """ Solve real symmetric or complex hermetian band matrix problem.
@@ -368,7 +368,7 @@ def eig_banded(a_band, lower=0, eigvals_only=0, overwrite_a_band=0,
     if info<0: raise ValueError,\
     'illegal value in %-th argument of internal %s'%(-info, internal_name)
     if info>0: raise LinAlgError,"eig algorithm did not converge"
-        
+
     if eigvals_only:
         return w
     return w, v
@@ -612,14 +612,14 @@ def qr(a,overwrite_a=0,lwork=None,econ=False,mode='qr'):
 
     Outputs:
       q,r  - if mode=='qr'
-      r    - if mode=='r'       
-                    
+      r    - if mode=='r'
+
     """
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError("expected 2D array")
     M, N = a1.shape
-    overwrite_a = overwrite_a or (_datanotshared(a1,a))    
+    overwrite_a = overwrite_a or (_datanotshared(a1,a))
 
     geqrf, = get_lapack_funcs(('geqrf',),(a1,))
     if lwork is None or lwork == -1:
@@ -629,23 +629,23 @@ def qr(a,overwrite_a=0,lwork=None,econ=False,mode='qr'):
 
     qr,tau,work,info = geqrf(a1,lwork=lwork,overwrite_a=overwrite_a)
     if info<0:
-        raise ValueError("illegal value in %-th argument of internal geqrf" 
+        raise ValueError("illegal value in %-th argument of internal geqrf"
             % -info)
 
     if not econ or M<N:
         R = basic.triu(qr)
     else:
         R = basic.triu(qr[0:N,0:N])
-        
+
     if mode=='r':
         return R
-    
+
     if find_best_lapack_type((a1,))[0]=='s' or find_best_lapack_type((a1,))[0]=='d':
         gor_un_gqr, = get_lapack_funcs(('orgqr',),(qr,))
     else:
         gor_un_gqr, = get_lapack_funcs(('ungqr',),(qr,))
 
-    
+
     if M<N:
         # get optimal work array
         Q,work,info = gor_un_gqr(qr[:,0:M],tau,lwork=-1,overwrite_a=1)
@@ -655,20 +655,20 @@ def qr(a,overwrite_a=0,lwork=None,econ=False,mode='qr'):
         # get optimal work array
         Q,work,info = gor_un_gqr(qr,tau,lwork=-1,overwrite_a=1)
         lwork = work[0]
-        Q,work,info = gor_un_gqr(qr,tau,lwork=lwork,overwrite_a=1)      
-    else:       
+        Q,work,info = gor_un_gqr(qr,tau,lwork=lwork,overwrite_a=1)
+    else:
         t = qr.dtype.char
         qqr = numpy.empty((M,M),dtype=t)
         qqr[:,0:N]=qr
         # get optimal work array
         Q,work,info = gor_un_gqr(qqr,tau,lwork=-1,overwrite_a=1)
         lwork = work[0]
-        Q,work,info = gor_un_gqr(qqr,tau,lwork=lwork,overwrite_a=1)     
+        Q,work,info = gor_un_gqr(qqr,tau,lwork=lwork,overwrite_a=1)
 
     if info < 0:
-        raise ValueError("illegal value in %-th argument of internal gorgqr" 
+        raise ValueError("illegal value in %-th argument of internal gorgqr"
             % -info)
-        
+
     return Q, R
 
 

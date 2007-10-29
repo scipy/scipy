@@ -23,7 +23,7 @@ def convTest( conf, it, of, of0, ofgNorm = None ):
         status = 2
     elif (it > 0) and (abs(of0 - of) < (conf.epsRD * abs( of0 ))):
         status = 3
-        
+
     if (status == -1) and (it >= conf.iMax):
         status = 1
 
@@ -86,7 +86,7 @@ def checkGradient( xit, aofg, fn_of, delta, check ):
         pylab.legend( ('analytical', 'finite difference') )
         pylab.show()
     print 'gradient checking done'
-    
+
 ##
 # 19.04.2006, c
 # 20.04.2006
@@ -147,7 +147,7 @@ def fmin_sd( conf, x0, fn_of, fn_ofg, args = () ):
         else:
             alpha = 1.0
             ofg1 = None
-        
+
         if conf.log:
             log( of, ofgNorm, alpha )
 
@@ -156,7 +156,7 @@ def fmin_sd( conf, x0, fn_of, fn_ofg, args = () ):
             ofg = None
         else:
             ofg = ofg1.copy()
-        
+
         for key, val in timeStats.iteritems():
             if len( val ):
                 print '%10s: %7.2f [s]' % (key, val[-1])

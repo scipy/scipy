@@ -33,7 +33,7 @@ def fixed_quad(func,a,b,args=(),n=5):
     val -- Gaussian quadrature approximation to the integral.
 
   See also:
-    
+
     quad - adaptive quadrature using QUADPACK
     dblquad, tplquad - double and triple integrals
     romberg - adaptive Romberg quadrature
@@ -96,7 +96,7 @@ def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50, vec_func=True):
     err -- Difference between last two estimates of the integral.
 
   See also:
-    
+
     romberg - adaptive Romberg quadrature
     fixed_quad - fixed-order Gaussian quadrature
     quad - adaptive quadrature using QUADPACK
@@ -129,7 +129,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1):
     is assumed.
 
     See also:
-    
+
       quad - adaptive quadrature using QUADPACK
       romberg - adaptive Romberg quadrature
       quadrature - adaptive Gaussian quadrature
@@ -204,7 +204,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
         if the function is a polynomial of order 2 or less.
 
     See also:
-    
+
       quad - adaptive quadrature using QUADPACK
       romberg - adaptive Romberg quadrature
       quadrature - adaptive Gaussian quadrature
@@ -282,7 +282,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
     Output: ret
 
-       ret  - The integrated result for each axis. 
+       ret  - The integrated result for each axis.
 
     See also:
 
@@ -426,7 +426,7 @@ def romberg(function, a, b, args=(), tol=1.48E-8, show=False,
     assumed to support vector arguments.
 
     See also:
-    
+
       quad - adaptive quadrature using QUADPACK
       quadrature - adaptive Gaussian quadrature
       fixed_quad - fixed-order Gaussian quadrature
@@ -518,7 +518,7 @@ _builtincoeffs = {
                         -16802270373,12630121616,-6625093363,3501442784,
                         -770720657,710986864,90241897], -3740727473,
         1275983280000)
-    }           
+    }
 
 def newton_cotes(rn,equal=0):
     r"""Return weights and error coefficient for Netwon-Cotes integration.
@@ -531,7 +531,7 @@ def newton_cotes(rn,equal=0):
                                 + B_N (\Delta x)^{N+2} f^{N+1} (\xi)$
 
        where $\xi \in [x_0,x_N]$ and $\Delta x = \frac{x_N-x_0}{N}$ is the
-       averages samples spacing. 
+       averages samples spacing.
 
      If the samples are equally-spaced and N is even, then the error
      term is $B_N (\Delta x)^{N+3} f^{N+2}(\xi)$.
@@ -574,7 +574,7 @@ def newton_cotes(rn,equal=0):
     nvec = np.arange(0,N+1)
     C = np.mat(ti**nvec[:,np.newaxis])
     Cinv = C.I
-    # improve precision of result  
+    # improve precision of result
     Cinv = 2*Cinv - Cinv*C*Cinv
     Cinv = 2*Cinv - Cinv*C*Cinv
     Cinv = Cinv.A
@@ -597,4 +597,4 @@ def newton_cotes(rn,equal=0):
 
 # Should only use if samples are forced on you
 def composite(f,x=None,dx=1,axis=-1,n=5):
-    pass 
+    pass

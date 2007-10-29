@@ -22,10 +22,10 @@ the COO format may also be used to efficiently construct matrices.
 To perform manipulations such as multiplication or inversion, first
 convert the matrix to either CSC or CSR format. The lil_matrix format is
 row-based, so conversion to CSR is efficient, whereas conversion to CSC
-is less so.  
+is less so.
 
-All conversions among the CSR, CSC, and COO formats are efficient, 
-linear-time operations. 
+All conversions among the CSR, CSC, and COO formats are efficient,
+linear-time operations.
 
 Example:
     Construct a 1000x1000 lil_matrix and add some values to it:
@@ -63,20 +63,20 @@ Example:
 
     Notice that the indices do not need to be sorted.
 
-    Duplicate (i,j) entries are summed when converting to CSR or CSC. 
+    Duplicate (i,j) entries are summed when converting to CSR or CSC.
     >>> I = array([0,0,1,3,1,0,0])
     >>> J = array([0,2,1,3,1,0,0])
     >>> V = array([1,1,1,1,1,1,1])
     >>> B = sparse.coo_matrix((V,(I,J)),dims=(4,4)).tocsr()
-    
-    This is useful for constructing finite-element stiffness and 
+
+    This is useful for constructing finite-element stiffness and
     mass matrices.
-  
+
 Further Details:
     CSR column indices are not necessarily sorted.  Likewise for CSC row
-    indices.  Use the .ensure_sorted_indices() method when sorted indices 
-    are necessary.  Note that there is no expectation for sorted indices 
-    in the sparsetools module.  Furthermore some sparsetools functions 
+    indices.  Use the .ensure_sorted_indices() method when sorted indices
+    are necessary.  Note that there is no expectation for sorted indices
+    in the sparsetools module.  Furthermore some sparsetools functions
     produce matrices with unsorted indices even when sorted input is given.
 """
 

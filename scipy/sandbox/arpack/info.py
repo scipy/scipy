@@ -6,7 +6,7 @@ Arnoldi/Lanczos iterative methods from ARPACK.
 
 These methods are most useful for large sparse matrices.
 
- - eigen(A,k) 
+ - eigen(A,k)
  - eigen_symmetric(A,k)
 
 """

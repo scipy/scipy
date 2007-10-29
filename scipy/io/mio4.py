@@ -29,7 +29,7 @@ mdtypes_template = {
 
 np_to_mtypes = {
     'f8': miDOUBLE,
-    'c32': miDOUBLE,    
+    'c32': miDOUBLE,
     'c24': miDOUBLE,
     'c16': miDOUBLE,
     'f4': miSINGLE,
@@ -58,7 +58,7 @@ order_codes = {
 class Mat4ArrayReader(MatArrayReader):
     ''' Class for reading Mat4 arrays
     '''
-    
+
     def matrix_getter_factory(self):
         ''' Read header, return matrix getter '''
         data = self.read_dtype(self.dtypes['header'])
@@ -97,7 +97,7 @@ class Mat4MatrixGetter(MatMatrixGetter):
     # Mat4 variables never global or logical
     is_global = False
     is_logical = False
-    
+
     def read_array(self, copy=True):
         ''' Mat4 read array always uses header dtype and dims
         copy        - copies array if True
@@ -125,7 +125,7 @@ class Mat4FullGetter(Mat4MatrixGetter):
             self.mat_dtype = N.dtype(N.complex128)
         else:
             self.mat_dtype = N.dtype(N.float64)
-        
+
     def get_raw_array(self):
         if self.header['is_complex']:
             # avoid array copy to save memory
@@ -146,7 +146,7 @@ class Mat4CharGetter(Mat4MatrixGetter):
 
 
 class Mat4SparseGetter(Mat4MatrixGetter):
-    ''' Read sparse matrix type 
+    ''' Read sparse matrix type
 
     Matlab (TM) 4 real sparse arrays are saved in a N+1 by 3 array
     format, where N is the number of non-zero values.  Column 1 values
@@ -174,7 +174,7 @@ class Mat4SparseGetter(Mat4MatrixGetter):
             return scipy.sparse.csc_matrix((vals,ij), dims)
         return (dims, ij, vals)
 
-    
+
 class MatFile4Reader(MatFileReader):
     ''' Reader for Mat4 files '''
     def __init__(self, mat_stream, *args, **kwargs):
@@ -201,7 +201,7 @@ class MatFile4Reader(MatFileReader):
                              buffer = self.mat_stream.read(4))
         self.mat_stream.seek(0)
         return 0 in mopt_bytes
-    
+
     def guess_byte_order(self):
         self.mat_stream.seek(0)
         mopt = self.read_dtype(N.dtype('i4'))
@@ -226,7 +226,7 @@ class Mat4MatrixWriter(MatStreamWriter):
         M = not ByteOrder.little_endian
         O = 0
         header['mopt'] = (M * 1000 +
-                          O * 100 + 
+                          O * 100 +
                           P * 10 +
                           T)
         header['mrows'] = dims[0]
@@ -235,13 +235,13 @@ class Mat4MatrixWriter(MatStreamWriter):
         header['namlen'] = len(self.name) + 1
         self.write_bytes(header)
         self.write_string(self.name + '\0')
-        
+
     def arr_to_2d(self):
         self.arr = N.atleast_2d(self.arr)
         dims = self.arr.shape
         if len(dims) > 2:
             self.arr = self.arr.reshape(-1,dims[-1])
-            
+
     def write(self):
         assert False, 'Not implemented'
 
@@ -310,8 +310,8 @@ class Mat4SparseWriter(Mat4MatrixWriter):
                           T=mxSPARSE_CLASS,
                           dims=ijd.shape)
         self.write_bytes(ijd)
-        
-            
+
+
 def matrix_writer_factory(stream, arr, name):
     ''' Factory function to return matrix writer given variable to write
     stream      - file or file-like stream to write to
@@ -331,7 +331,7 @@ def matrix_writer_factory(stream, arr, name):
         return Mat4CharWriter(stream, arr, name)
     else:
         return Mat4NumericWriter(stream, arr, name)
-        
+
 
 class MatFile4Writer(MatFileWriter):
 

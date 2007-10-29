@@ -32,23 +32,23 @@ class Family(object):
     link = property(_getlink, _setlink)
 
     def __init__(self, link, variance):
-        
+
         self.link = link
         self.variance = variance
 
     def weights(self, mu):
-        
+
         """
         Weights for IRLS step.
 
         w = 1 / (link'(mu)**2 * variance(mu))
-        
+
         INPUTS:
            mu  -- mean parameter in exponential family
 
         OUTPUTS:
            w   -- weights used in WLS step of GLM/GAM fit
-                  
+
         """
 
         return 1. / (self.link.deriv(mu)**2 * self.variance(mu))
@@ -59,7 +59,7 @@ class Family(object):
         as the difference
 
         DEV = (SUM_i -2 log Likelihood(Y_i,mu_i) + 2 log Likelihood(mu_i,mu_i)) / scale
-    
+
         INPUTS:
            Y     -- response variable
            mu    -- mean parameter
@@ -68,8 +68,8 @@ class Family(object):
         OUTPUTS: dev
            dev   -- DEV, as described aboce
 
-        """   
-        
+        """
+
         return N.power(self.devresid(Y, mu), 2).sum() / scale
 
     def devresid(self, Y, mu):
@@ -88,7 +88,7 @@ class Family(object):
         OUTPUTS: resid
            resid -- deviance residuals
         """
-        
+
         return (Y - mu) * N.sqrt(self.weights(mu))
 
     def fitted(self, eta):
@@ -101,7 +101,7 @@ class Family(object):
 
         OUTPUTS: mu
            mu   -- link.inverse(eta), mean parameter based on eta
-           
+
         """
         return self.link.inverse(eta)
 
@@ -115,7 +115,7 @@ class Family(object):
         OUTPUTS: eta
            eta  -- link(mu), linear predictors, based on
                    mean parameters mu
-           
+
         """
         return self.link(mu)
 
@@ -202,7 +202,7 @@ class Gamma(Family):
     def __init__(self, link=L.identity):
         self.variance = Gamma.variance
         self.link = link
-    
+
 
 class Binomial(Family):
 
@@ -256,4 +256,3 @@ class InverseGaussian(Family):
         self.n = n
         self.variance = InverseGaussian.variance
         self.link = link
-

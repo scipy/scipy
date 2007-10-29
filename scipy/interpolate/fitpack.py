@@ -170,7 +170,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     See also:
       splrep, splev, sproot, spalde, splint - evaluation, roots, integral
       bisplrep, bisplev - bivariate splines
-      UnivariateSpline, BivariateSpline - an alternative wrapping 
+      UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
     """
     if task<=0:
@@ -316,20 +316,20 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     Remarks:
 
       See splev for evaluation of the spline and its derivatives.
-      
+
     Example:
-        
+
       x = linspace(0, 10, 10)
       y = sin(x)
       tck = splrep(x, y)
       x2 = linspace(0, 10, 200)
       y2 = splev(x2, tck)
       plot(x, y, 'o', x2, y2)
-      
+
     See also:
       splprep, splev, sproot, spalde, splint - evaluation, roots, integral
       bisplrep, bisplev - bivariate splines
-      UnivariateSpline, BivariateSpline - an alternative wrapping 
+      UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
     """
     if task<=0:
@@ -347,7 +347,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         raise TypeError, 'Lengths of the first three arguments (x,y,w) must be equal'
     if not (1<=k<=5):
         raise TypeError, 'Given degree of the spline (k=%d) is not supported. (1<=k<=5)'%(k)
-    if m<=k: raise TypeError, 'm>k must hold'     
+    if m<=k: raise TypeError, 'm>k must hold'
     if xb is None: xb=x[0]
     if xe is None: xe=x[-1]
     if not (-1<=task<=1): raise TypeError, 'task must be either -1,0, or 1'
@@ -434,7 +434,7 @@ def splev(x,tck,der=0):
     See also:
       splprep, splrep, sproot, spalde, splint - evaluation, roots, integral
       bisplrep, bisplev - bivariate splines
-      UnivariateSpline, BivariateSpline - an alternative wrapping 
+      UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
     """
     t,c,k=tck
@@ -446,14 +446,14 @@ def splev(x,tck,der=0):
     if parametric:
         return map(lambda c,x=x,t=t,k=k,der=der:splev(x,[t,c,k],der),c)
     else:
-      if not (0<=der<=k):
-          raise ValueError,"0<=der=%d<=k=%d must hold"%(der,k)
-      x=myasarray(x)
-      y,ier=_fitpack._spl_(x,der,t,c,k)
-      if ier==10: raise ValueError,"Invalid input data"
-      if ier: raise TypeError,"An error occurred"
-      if len(y)>1: return y
-      return y[0]
+        if not (0<=der<=k):
+            raise ValueError,"0<=der=%d<=k=%d must hold"%(der,k)
+        x=myasarray(x)
+        y,ier=_fitpack._spl_(x,der,t,c,k)
+        if ier==10: raise ValueError,"Invalid input data"
+        if ier: raise TypeError,"An error occurred"
+        if len(y)>1: return y
+        return y[0]
 
 def splint(a,b,tck,full_output=0):
     """Evaluate the definite integral of a B-spline.
@@ -479,7 +479,7 @@ def splint(a,b,tck,full_output=0):
     See also:
       splprep, splrep, sproot, spalde, splev - evaluation, roots, integral
       bisplrep, bisplev - bivariate splines
-      UnivariateSpline, BivariateSpline - an alternative wrapping 
+      UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
     """
     t,c,k=tck
@@ -517,7 +517,7 @@ def sproot(tck,mest=10):
     See also:
       splprep, splrep, splint, spalde, splev - evaluation, roots, integral
       bisplrep, bisplev - bivariate splines
-      UnivariateSpline, BivariateSpline - an alternative wrapping 
+      UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
     """
     t,c,k=tck
@@ -564,7 +564,7 @@ def spalde(x,tck):
     See also:
       splprep, splrep, splint, sproot, splev - evaluation, roots, integral
       bisplrep, bisplev - bivariate splines
-      UnivariateSpline, BivariateSpline - an alternative wrapping 
+      UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
     """
     t,c,k=tck
@@ -576,17 +576,17 @@ def spalde(x,tck):
     if parametric:
         return _ntlist(map(lambda c,x=x,t=t,k=k:spalde(x,[t,c,k]),c))
     else:
-      try: x=x.tolist()
-      except:
-          try: x=list(x)
-          except: x=[x]
-      if len(x)>1:
-          return map(lambda x,tck=tck:spalde(x,tck),x)
-      d,ier=_fitpack._spalde(t,c,k,x[0])
-      if ier==0: return d
-      if ier==10:
-          raise TypeError,"Invalid input data. t(k)<=x<=t(n-k+1) must hold."
-      raise TypeError,"Unknown error"
+        try: x=x.tolist()
+        except:
+            try: x=list(x)
+            except: x=[x]
+        if len(x)>1:
+            return map(lambda x,tck=tck:spalde(x,tck),x)
+        d,ier=_fitpack._spalde(t,c,k,x[0])
+        if ier==0: return d
+        if ier==10:
+            raise TypeError,"Invalid input data. t(k)<=x<=t(n-k+1) must hold."
+        raise TypeError,"Unknown error"
 
 #def _curfit(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
 #           full_output=0,nest=None,per=0,quiet=1):
@@ -651,7 +651,7 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
 
     See also:
       splprep, splrep, splint, sproot, splev - evaluation, roots, integral
-      UnivariateSpline, BivariateSpline - an alternative wrapping 
+      UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
     """
     x,y,z=map(myasarray,[x,y,z])
@@ -758,7 +758,7 @@ def bisplev(x,y,tck,dx=0,dy=0):
 
     See also:
       splprep, splrep, splint, sproot, splev - evaluation, roots, integral
-      UnivariateSpline, BivariateSpline - an alternative wrapping 
+      UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
     """
     tx,ty,c,kx,ky=tck
@@ -780,7 +780,7 @@ def insert(x,tck,m=1,per=0):
 
     Description:
 
-      Given the knots and coefficients of a B-spline representation, create a 
+      Given the knots and coefficients of a B-spline representation, create a
       new B-spline with a knot inserted m times at point x.
       This is a wrapper around the FORTRAN routine insert of FITPACK.
 
@@ -797,12 +797,12 @@ def insert(x,tck,m=1,per=0):
 
       tck -- (t,c,k) a tuple containing the vector of knots, the B-spline
              coefficients, and the degree of the new spline.
-    
+
     Requirements:
         t(k+1) <= x <= t(n-k), where k is the degree of the spline.
         In case of a periodic spline (per != 0) there must be
            either at least k interior knots t(j) satisfying t(k+1)<t(j)<=x
-           or at least k interior knots t(j) satisfying x<=t(j)<t(n-k).    
+           or at least k interior knots t(j) satisfying x<=t(j)<t(n-k).
     """
     t,c,k=tck
     try:
@@ -813,8 +813,8 @@ def insert(x,tck,m=1,per=0):
     if parametric:
         cc = []
         for c_vals in c:
-          tt, cc_val, kk = insert(x, [t, c_vals, k], m)
-          cc.append(cc_val)
+            tt, cc_val, kk = insert(x, [t, c_vals, k], m)
+            cc.append(cc_val)
         return (tt, cc, kk)
     else:
         tt, cc, ier = _fitpack._insert(per, t, c, k, x, m)

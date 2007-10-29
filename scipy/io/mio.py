@@ -42,7 +42,7 @@ def find_mat_file(file_name, appendmat=True):
 
 def mat_reader_factory(file_name, appendmat=True, **kwargs):
     """Create reader for matlab (TM) .mat format files
-    
+
     See docstring for loadmat for input options
     """
     if isinstance(file_name, basestring):
@@ -56,7 +56,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
         except AttributeError:
             raise IOError, 'Reader needs file name or open file-like object'
         byte_stream = file_name
-            
+
     MR = MatFile4Reader(byte_stream, **kwargs)
     if MR.format_looks_right():
         return MR
@@ -71,7 +71,7 @@ def loadmat(file_name,  mdict=None, appendmat=True, basename='raw', **kwargs):
                          the sys.path list and use the first one found (the
                          current directory is searched first).
                          Can also pass open file-like object
-    m_dict             - optional dictionary in which to insert matfile variables 
+    m_dict             - optional dictionary in which to insert matfile variables
     appendmat          - True to append the .mat extension to the end of the
                          given filename, if not already present
     base_name          - base name for unnamed variables (unused in code)
@@ -89,7 +89,7 @@ def loadmat(file_name,  mdict=None, appendmat=True, basename='raw', **kwargs):
                           (implies squeeze_me=False, chars_as_strings=False,
                           mat_dtype=True)
 
-    v4 (Level 1.0), v6 and v7.1 matfiles are supported.  
+    v4 (Level 1.0), v6 and v7.1 matfiles are supported.
 
     '''
     MR = mat_reader_factory(file_name, appendmat, **kwargs)
@@ -105,7 +105,7 @@ def savemat(file_name, mdict, appendmat=True, format='4'):
 
     This saves the arrayobjects in the given dictionary to a matlab
     style .mat file.
-    
+
     appendmat  - if true, appends '.mat' extension to filename, if not present
     format     - '4' for matlab 4 mat files, '5' for matlab 5 onwards
     """
@@ -121,7 +121,7 @@ def savemat(file_name, mdict, appendmat=True, format='4'):
             raise IOError, 'Writer needs file name or writeable '\
                            'file-like object'
         file_stream = file_name
-        
+
     if format == '4':
         MW = MatFile4Writer(file_stream)
     elif format == '5':
@@ -131,4 +131,3 @@ def savemat(file_name, mdict, appendmat=True, format='4'):
     MW.put_variables(mdict)
     if file_is_string:
         file_stream.close()
-    

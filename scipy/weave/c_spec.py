@@ -456,8 +456,8 @@ class catchall_converter(scxx_converter):
         return 1
 
 def test(level=10,verbosity=1):
-     from numpy.testing import NumpyTest
-     NumpyTest().test(level, verbosity)
+    from numpy.testing import NumpyTest
+    NumpyTest().test(level, verbosity)
 
 if __name__ == "__main__":
     x = list_converter().type_spec("x",1)
@@ -468,4 +468,3 @@ if __name__ == "__main__":
     print x.declaration_code(inline=1)
     print
     print x.cleanup_code()
-

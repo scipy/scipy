@@ -7,4 +7,3 @@ from segmentaxis import segment_axis
 
 from numpy.testing import NumpyTest
 test = NumpyTest().test
-

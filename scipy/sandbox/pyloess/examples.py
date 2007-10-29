@@ -24,7 +24,7 @@ import pyloess
 from pyloess import loess
 
 com_example = [
-"""               
+"""
 # Get some example data ...................................
 dfile = open(os.path.join('tests','madeup_data'), 'r')
 dfile.readline()
@@ -55,7 +55,7 @@ print madeup.model
 """
 ]
 
-        
+
 
 if 1:
     for com in com_example:

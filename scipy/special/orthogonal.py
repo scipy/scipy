@@ -104,8 +104,8 @@ def gen_roots_and_weights(n,an_func,sqrt_bn_func,mu):
     nn = np.arange(1.0,n)
     sqrt_bn = sqrt_bn_func(nn)
     an = an_func(np.concatenate(([0], nn)))
-    x, v = eig((np.diagflat(an) + 
-                np.diagflat(sqrt_bn,1) + 
+    x, v = eig((np.diagflat(an) +
+                np.diagflat(sqrt_bn,1) +
                 np.diagflat(sqrt_bn,-1)))
     answer = []
     sortind = x.real.argsort()

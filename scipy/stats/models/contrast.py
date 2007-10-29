@@ -12,7 +12,7 @@ class ContrastResults:
     def __init__(self, t=None, F=None, sd=None, effect=None, df_denom=None,
                  df_num=None):
         if F is not None:
-            self.F = F 
+            self.F = F
             self.df_denom = df_denom
             self.df_num = df_num
         else:
@@ -20,7 +20,7 @@ class ContrastResults:
             self.sd = sd
             self.effect = effect
             self.df_denom = df_denom
-            
+
     def __str__(self):
         if hasattr(self, 'F'):
             return '<F contrast: F=%s, df_denom=%d, df_num=%d>' % \
@@ -28,23 +28,23 @@ class ContrastResults:
         else:
             return '<T contrast: effect=%s, sd=%s, t=%s, df_denom=%d>' % \
                    (`self.effect`, `self.sd`, `self.t`, self.df_denom)
-            
+
 
 class Contrast:
     """
     This class is used to construct contrast matrices in regression models.
     They are specified by a (term, formula) pair.
-    
+
     The term, T,  is a linear combination of columns of the design
     matrix D=formula(). The getmatrix method constructs
     a contrast matrix C so that
 
-    colspan(dot(D, C)) = colspan(dot(D, dot(pinv(D), T))) 
+    colspan(dot(D, C)) = colspan(dot(D, dot(pinv(D), T)))
 
     where pinv(D) is the generalized inverse of D. Further, the matrix
 
     Tnew = dot(C, D)
-    
+
     is full rank. The rank attribute is the rank of
 
     dot(D, dot(pinv(D), T))
@@ -70,7 +70,7 @@ class Contrast:
         """
         Construct a contrast matrix C so that
 
-        colspan(dot(D, C)) = colspan(dot(D, dot(pinv(D), T))) 
+        colspan(dot(D, C)) = colspan(dot(D, dot(pinv(D), T)))
 
         where pinv(D) is the generalized inverse of D=self.D=self.formula().
 
@@ -83,7 +83,7 @@ class Contrast:
 
         if T.ndim == 1:
             T.shape = (T.shape[0], 1)
-        
+
         self.T = utils.clean0(T)
 
         self.D = self.formula.design(*args, **kw)
@@ -135,4 +135,3 @@ def contrastfromcols(T, D, pseudo=None):
         C = N.transpose(N.dot(pseudo, Tp))
 
     return N.squeeze(C)
-

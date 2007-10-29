@@ -15,7 +15,7 @@ Initial Fortran code available at:
 http://netlib.bell-labs.com/netlib/a/stl.gz
 Initial Authors: R. B. Cleveland, W. S. Cleveland, J. E. McRae, and
 I. Terpenning, 1990.
-Simple-to-double precision conversion of the Fortran code by Pierre 
+Simple-to-double precision conversion of the Fortran code by Pierre
 Gerard-Marchant, 2007/03.
 
 LOESS:
@@ -54,11 +54,11 @@ import _lowess, _stl, _mloess
 #####---------------------------------------------------------------------------
 class lowess:
     """An object for robust locally weighted regression.
-    
+
 :IVariables:
-    inputs : 
+    inputs :
     parameters :
-    outputs : 
+    outputs :
 
 
 Method
@@ -80,7 +80,7 @@ Method
     j-th point of X (the tricube  weight  times  the  robustness
     weight)  divided by the sum of all of the weights.  Finally,
     if the w[j] are all zero for the smooth at X[i], the  fitted
-    value is taken to be Y[i].    
+    value is taken to be Y[i].
 
 References
 ----------
@@ -96,37 +96,37 @@ References
 
     W. S. Cleveland, 1981. LOWESS: A Program for Smoothing Scatterplots
     by Robust Locally Weighted Regression. The American Statistician,
-    35:54.  
+    35:54.
     """
     #............................................
     class _inputs(object):
         """Inputs of the lowess fit.
-        
+
 :IVariables:
     x : ndarray
         A (n,) float ndarray of observations (sorted by increasing values).
     y : ndarray
         A (n,) float ndarray of responses (sorted by increasing x).
-        
+
         """
         def __init__(self, x, y):
             x = marray(x, copy=False, subok=True, dtype=float_, order='F').ravel()
             y = marray(y, copy=False, subok=True, dtype=float_, order='F').ravel()
             if x.size != y.size:
-                msg = "Incompatible size between observations (%s) and response (%s)!" 
+                msg = "Incompatible size between observations (%s) and response (%s)!"
                 raise ValueError(msg % (x.size, y.size))
             idx = x.argsort()
             self._x = x[idx]
             self._y = y[idx]
-            self._mask = mask_or(self._x._mask, self._y._mask, 
+            self._mask = mask_or(self._x._mask, self._y._mask,
                                  copy=False, small_mask=False)
         #.....
         x = property(fget=lambda self:self._x)
         y = property(fget=lambda self:self._y)
-    #............................................     
+    #............................................
     class _parameters(object):
         """Parameters of the lowess fit.
-        
+
 :IVariables:
     span : float *[0.5]*
         Fraction of the total number of points used to compute each fitted value.
@@ -182,7 +182,7 @@ References
             self._delta = delta
             if self.activated:
                 self._caller.fit()
-        delta = property(fget=_get_delta, fset=_set_delta)     
+        delta = property(fget=_get_delta, fset=_set_delta)
     #............................................
     class _outputs(object):
         """Outputs of the lowess fit.
@@ -202,7 +202,7 @@ References
         #.....
         fitted_values = property(fget=lambda self:self._fval)
         robust_weights = property(fget=lambda self:self._rw)
-        fitted_residuals = property(fget=lambda self:self._fres)        
+        fitted_residuals = property(fget=lambda self:self._fres)
     #............................................
     def __init__(self, x, y, span=0.5, nsteps=2, delta=0):
         """
@@ -214,7 +214,7 @@ References
         Ordinates of the points on the scatterplot.
     span : Float *[0.5]*
         Fraction of the total number of points used to compute each fitted value.
-        As span increases the smoothed values become smoother. Choosing span in 
+        As span increases the smoothed values become smoother. Choosing span in
         the range .2 to .8 usually results in a good fit.
     nsteps : Integer *[2]*
         Number of iterations in the robust fit. If nsteps=0, the nonrobust fit
@@ -232,13 +232,13 @@ References
         self.outputs = self._outputs(self.inputs._x.size)
         # Force a fit .................
         self.fit()
-        
+
     #............................................
     def fit(self):
         # Check the mask .........
         mask = self.inputs._mask
         if mask.any():
-            unmask = nlogical_not(mask) 
+            unmask = nlogical_not(mask)
             (x, y) = (self.inputs._x[unmask], self.inputs._y[unmask])
         else:
             unmask = slice(None,None)
@@ -273,11 +273,11 @@ class stl:
             if self._mask.any():
                 raise ValueError("Masked arrays should be filled first!")
             self.y_eff = self.y.compressed()
-    #............................................     
+    #............................................
     class _model(object):
         """Model parameters of the STL fit.
 
-:IVariables:        
+:IVariables:
     np : Integer *[12]*
         Period of the seasonal component.
         For example, if  the  time series is monthly with a yearly cycle, then
@@ -309,8 +309,8 @@ class stl:
         Degree of locally-fitted polynomial in low-pass smoothing.
         The value is 0 or 1.
         """
-        def __init__(self, 
-                     np=12, ns=7, nt=None, nl=13, 
+        def __init__(self,
+                     np=12, ns=7, nt=None, nl=13,
                      isdeg=1, itdeg=1, ildeg=1, caller=None):
             self._np = np
             self._ns = ns
@@ -342,7 +342,7 @@ class stl:
         def _set_np(self, np):
             "Sets the current seasonal period."
             self._np = max(np,2)
-            if self.activated: 
+            if self.activated:
                 self.caller.fit()
         np = property(fget=_get_np, fset=_set_np)
         #.....
@@ -353,8 +353,8 @@ class stl:
             "Sets the length of the seasonal smoother."
             self._ns = max(ns, 3)
             if self._ns %2 == 0:
-                self._ns += 1            
-            if self.activated: 
+                self._ns += 1
+            if self.activated:
                 self.caller.fit()
         ns = property(fget=_get_ns, fset=_set_ns)
         #.....
@@ -364,7 +364,7 @@ class stl:
         def _set_nt(self, nt):
             "Sets the length of the trend smoother."
             self._nt = nt
-            if self.activated: 
+            if self.activated:
                 self.caller.fit()
         nt = property(fget=_get_nt, fset=_set_nt)
         #.....
@@ -374,7 +374,7 @@ class stl:
         def _set_nl(self, nl):
             "Sets the length of the trend smoother."
             self._nl = nl
-            if self.activated: 
+            if self.activated:
                 self.caller.fit()
         nl = property(fget=_get_nl, fset=_set_nl)
         #.....
@@ -386,7 +386,7 @@ class stl:
             if isdeg > 2 or isdeg < 0:
                 raise ValueError("The degree of the seasonal smoother should be 1 or 0.")
             self._isdeg = int(isdeg)
-            if self.activated: 
+            if self.activated:
                 self.caller.fit()
         isdeg = property(fget=_get_isdeg, fset=_set_isdeg)
         #.....
@@ -398,7 +398,7 @@ class stl:
             if itdeg > 2 or itdeg < 0:
                 raise ValueError("The degree of the trend smoother should be 1 or 0.")
             self._itdeg = int(itdeg)
-            if self.activated: 
+            if self.activated:
                 self.caller.fit()
         itdeg = property(fget=_get_itdeg, fset=_set_itdeg)
         #.....
@@ -410,15 +410,15 @@ class stl:
             if ildeg > 2 or ildeg < 0:
                 raise ValueError("The degree of the low-pass smoother should be 1 or 0.")
             self._ildeg = int(ildeg)
-            if self.activated: 
+            if self.activated:
                 self.caller.fit()
         ildeg = property(fget=_get_ildeg, fset=_set_ildeg)
-            
-    #............................................     
+
+    #............................................
     class _control(object):
         """Control parameters of the STL fit.
-        
-:IVariables:        
+
+:IVariables:
     nsjump : Integer *[None]*
         Skipping value for seasonal smoothing.
         The seasonal smoother skips ahead nsjump points and then linearly
@@ -448,8 +448,8 @@ class stl:
         be better.  If no>0 then set ni to 1 or 2.
         If None, then no is set to 15 for robust fitting, to 0 otherwise.
         """
-        def __init__(self, 
-                     nsjump=None,ntjump=None,nljump=None, 
+        def __init__(self,
+                     nsjump=None,ntjump=None,nljump=None,
                      robust=True, ni=None,no=None, caller=None):
             (self._nsjump, self._ntjump, self._nljump) = (nsjump, ntjump, nljump)
             #...
@@ -531,10 +531,10 @@ class stl:
             if self.activated:
                 self.caller.fit()
         no = property(fget=_get_no, fset=_set_no)
-    #............................................     
+    #............................................
     class _outputs(object):
         """Outputs of the STL fit.
-        
+
 :IVariables:
     seasonal : ndarray
         Seasonal fitted values.
@@ -641,7 +641,7 @@ class stl:
         self.outputs = stl._outputs(len(self.inputs.y))
         # Force a fit .................
         self.fit()
-        
+
     #............................................
     def fit(self):
         # Get the input ...............
@@ -676,8 +676,8 @@ class stl:
         self.model.activated = self.control.activated = True
         del(trn, rw, szn)
         return self.outputs
-        
-   
+
+
 
 
 
@@ -813,7 +813,7 @@ if __name__ == '__main__':
     from maskedarray import masked_values
     from numpy import fromiter
     import os
-    
+
     if 1:
         NOx = marray([4.818, 2.849, 3.275, 4.691, 4.255, 5.064, 2.118, 4.602,
                       2.286, 0.970, 3.965, 5.344, 3.834, 1.990, 5.199, 5.283,
@@ -833,11 +833,11 @@ if __name__ == '__main__':
             rfile.readline()
             z = fromiter((float(v) for v in rfile.readline().rstrip().split()),
                          float_)
-            results.append(z)   
+            results.append(z)
         #
         gas = loess(E,NOx)
         gas.model.span = 2./3.
         gas.fit()
         assert_almost_equal(gas.outputs.fitted_values.compressed(), results[0], 6)
         assert_almost_equal(gas.outputs.enp, 5.5, 1)
-        assert_almost_equal(gas.outputs.s, 0.3404, 4) 
+        assert_almost_equal(gas.outputs.s, 0.3404, 4)

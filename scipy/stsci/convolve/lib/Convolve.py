@@ -52,7 +52,7 @@ def correlate(data, kernel, mode=FULL):
     Traceback (most recent call last):
     ...
     TypeError: array cannot be safely cast to required type
-    
+
     """
     data, kernel = _condition_inputs(data, kernel)
     lenk = len(kernel)
@@ -64,7 +64,7 @@ def correlate(data, kernel, mode=FULL):
         mode = convolution_modes[ mode ]
 
     result_type = max(kernel.dtype.name, data.dtype.name)
-    
+
     if mode == VALID:
         wdata = num.concatenate((kdata, data, kdata))
         result = wdata.astype(result_type)
@@ -85,7 +85,7 @@ def correlate(data, kernel, mode=FULL):
         _correlate.Correlate1d(kernel, data, result)
         return result
     else:
-        raise ValueError("Invalid convolution mode.") 
+        raise ValueError("Invalid convolution mode.")
 
 cross_correlate = correlate
 
@@ -136,7 +136,7 @@ def _gaussian(sigma, mew, npoints, sigmas):
                          2*sigmas*sigma/npoints, type=num.float64)
     x = ox-mew
     x /= sigma
-    x = x * x 
+    x = x * x
     x *= -1/2
     x = num.exp(x)
     return ox, 1/(sigma * num.sqrt(2*num.pi)) * x
@@ -149,7 +149,7 @@ def _correlate2d_fft(data0, kernel0, output=None, mode="nearest", cval=0.0):
         'nearest'   elements beyond boundary come from nearest edge pixel.
         'wrap'      elements beyond boundary come from the opposite array edge.
         'reflect'   elements beyond boundary come from reflection on same array edge.
-        'constant'  elements beyond boundary are set to 'cval' 
+        'constant'  elements beyond boundary are set to 'cval'
     """
     shape = data0.shape
     kshape = kernel0.shape
@@ -162,15 +162,15 @@ def _correlate2d_fft(data0, kernel0, output=None, mode="nearest", cval=0.0):
     kernel[:kshape[0], :kshape[1]] = kernel0[::-1,::-1]   # convolution <-> correlation
     data = iraf_frame.frame(data0, oversized, mode=mode, cval=cval)
 
-    complex_result = (isinstance(data, num.complexfloating) or 
+    complex_result = (isinstance(data, num.complexfloating) or
                       isinstance(kernel, num.complexfloating))
 
     Fdata = dft.fft2(data)
     del data
-    
+
     Fkernel = dft.fft2(kernel)
     del kernel
-    
+
     num.multiply(Fdata, Fkernel, Fdata)
     del Fkernel
 
@@ -178,7 +178,7 @@ def _correlate2d_fft(data0, kernel0, output=None, mode="nearest", cval=0.0):
         convolved = dft.irfft2( Fdata, s=oversized)
     else:
         convolved = dft.irfft2( Fdata, s=oversized)
-        
+
     result = convolved[ kshape[0]-1:shape[0]+kshape[0]-1, kshape[1]-1:shape[1]+kshape[1]-1 ]
 
     if output is not None:
@@ -186,7 +186,7 @@ def _correlate2d_fft(data0, kernel0, output=None, mode="nearest", cval=0.0):
     else:
         return result
 
-                     
+
 def _correlate2d_naive(data, kernel, output=None, mode="nearest", cval=0.0):
     return _correlate.Correlate2d(kernel, data, output, pix_modes[mode], cval)
 
@@ -260,7 +260,7 @@ def convolve2d(data, kernel, output=None, mode="nearest", cval=0.0, fft=0):
     >>> num.alltrue(num.ravel(rn-rf<1e-10))
     True
     """
-    data, kernel = _fix_data_kernel(data, kernel)    
+    data, kernel = _fix_data_kernel(data, kernel)
     kernel = kernel[::-1,::-1] # convolution -> correlation
     if fft:
         return _correlate2d_fft(data, kernel, output, mode, cval)
@@ -278,10 +278,10 @@ def _boxcar(data, output, boxshape, mode, cval):
 
 def boxcar(data, boxshape, output=None, mode="nearest", cval=0.0):
     """boxcar computes a 1D or 2D boxcar filter on every 1D or 2D subarray of data.
-    
+
     'boxshape' is a tuple of integers specifying the dimensions of the filter: e.g. (3,3)
 
-    if 'output' is specified, it should be the same shape as 'data' and 
+    if 'output' is specified, it should be the same shape as 'data' and
     None will be returned.
 
     supported 'mode's include:

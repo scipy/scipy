@@ -23,7 +23,7 @@ seed(2)
 #   - mode: Mode of covariance matrix: full or diag (string)
 #   - nframes: number of frames (frame = one data point = one
 #   row of d elements)
-k       = 4 
+k       = 4
 d       = 2
 mode    = 'diag'
 nframes = 1e3
@@ -45,7 +45,7 @@ lgm     = []
 kmax    = 6
 bics    = N.zeros(kmax)
 for i in range(kmax):
-    # Init the model with an empty Gaussian Mixture, and create a Gaussian 
+    # Init the model with an empty Gaussian Mixture, and create a Gaussian
     # Mixture Model from it
     lgm.append(GM(d, i+1, mode))
     gmm = GMM(lgm[i], 'kmean')
@@ -56,7 +56,7 @@ for i in range(kmax):
     em.train(data, gmm, maxiter = 30, thresh = 1e-10)
     bics[i] = gmm.bic(data)
 
-print "Original model has %d clusters, bics says %d" % (k, N.argmax(bics)+1) 
+print "Original model has %d clusters, bics says %d" % (k, N.argmax(bics)+1)
 
 #+++++++++++++++
 # Draw the model
@@ -72,7 +72,7 @@ for k in range(kmax):
     if not d == 1:
         P.plot(data[:, 0], data[:, 1], '.', label = '_nolegend_')
 
-        # h keeps the handles of the plot, so that you can modify 
+        # h keeps the handles of the plot, so that you can modify
         # its parameters like label or color
         h   = lgm[k].plot(level = level)
         [i.set_color('r') for i in h]

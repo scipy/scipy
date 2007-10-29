@@ -370,7 +370,7 @@ where invalid values are pre-masked.
             return masked
         d1 = filled(a, self.fillx)
         d2 = filled(b, self.filly)
-# CHECK : Do we really need to fill the arguments ? Pro'ly not        
+# CHECK : Do we really need to fill the arguments ? Pro'ly not
 #        result = self.f(a, b, *args, **kwargs).view(get_masked_subclass(a,b))
         result = self.f(d1, d2, *args, **kwargs).view(get_masked_subclass(a,b))
         if result.ndim > 0:
@@ -474,7 +474,7 @@ They have no reduce, outer or accumulate.
             mb = mask_or(mb, t)
         m = mask_or(ma, mb)
         if (not m.ndim) and m:
-            return masked       
+            return masked
         result =  self.f(d1, d2).view(get_masked_subclass(a,b))
         if result.ndim > 0:
             result._mask = m
@@ -992,7 +992,7 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         _data = numeric.array(data, dtype=dtype, copy=copy, subok=subok)
         _baseclass = getattr(data, '_baseclass', type(_data))
         _basedict = getattr(data, '_basedict', getattr(data, '__dict__', None))
-        if not isinstance(data, MaskedArray): 
+        if not isinstance(data, MaskedArray):
             _data = _data.view(cls)
         elif not subok:
             _data = data.view(cls)
@@ -1011,7 +1011,7 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         else:
             mask = numeric.array(mask, dtype=MaskType, copy=copy)
             if mask.shape != _data.shape:
-                (nd, nm) = (_data.size, mask.size) 
+                (nd, nm) = (_data.size, mask.size)
                 if nm == 1:
                     mask = numeric.resize(mask, _data.shape)
                 elif nm == nd:
@@ -1029,9 +1029,9 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
                 if not keep_mask:
                     _data._mask = mask
                 else:
-                    _data._mask = umath.logical_or(mask, _data._mask) 
-                    
-                    
+                    _data._mask = umath.logical_or(mask, _data._mask)
+
+
         # Update fill_value.......
         _data._fill_value = getattr(data, '_fill_value', fill_value)
         if _data._fill_value is None:
@@ -1066,7 +1066,7 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         """Special hook for ufuncs.
 Wraps the numpy array and sets the mask according to context.
         """
-        #TODO : Should we check for type result 
+        #TODO : Should we check for type result
         result = obj.view(type(self))
         #..........
         if context is not None:
@@ -1201,7 +1201,7 @@ If `value` is masked, masks those locations."""
         if self._mask.shape:
             self._mask = numeric.reshape(self._mask, self.shape)
     _set_mask = __setmask__
-    
+
     def _get_mask(self):
         """Returns the current mask."""
         return self._mask
@@ -1211,22 +1211,22 @@ If `value` is masked, masks those locations."""
     def harden_mask(self):
         "Forces the mask to hard."
         self._hardmask = True
-        
+
     def soften_mask(self):
         "Forces the mask to soft."
-        self._hardmask = False     
-        
+        self._hardmask = False
+
     def unshare_mask(self):
         "Copies the mask and set the sharedmask flag to False."
         if self._sharedmask:
             self._mask = self._mask.copy()
             self._sharedmask = False
-        
+
     #............................................
     def _get_data(self):
         "Returns the current data (as a view of the original underlying data)>"
         return self.view(self._baseclass)
-    _data = property(fget=_get_data)        
+    _data = property(fget=_get_data)
     #............................................
     def _get_flat(self):
         """Calculates the flat value.
@@ -1505,7 +1505,7 @@ else the corresponding values are unmasked.
     #............................................
     def ids (self):
         """Return the address of the data and mask areas."""
-        return (self.ctypes.data, self._mask.ctypes.data)    
+        return (self.ctypes.data, self._mask.ctypes.data)
     #............................................
     def all(self, axis=None, out=None):
         """a.all(axis) returns True if all entries along the axis are True.
@@ -1530,7 +1530,7 @@ else the corresponding values are unmasked.
         if d.ndim > 0:
             d.__setmask__(self._mask.all(axis))
         return d
-    
+
     def nonzero(self):
         """a.nonzero() returns a tuple of arrays
 
@@ -1754,7 +1754,7 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
         d = self.filled(fill_value).view(ndarray)
         return d.argmax(axis)
 
-    def sort(self, axis=-1, kind='quicksort', order=None, 
+    def sort(self, axis=-1, kind='quicksort', order=None,
              endwith=True, fill_value=None):
         """
         Sort a along the given axis.
@@ -1813,7 +1813,7 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
     #............................................
     def min(self, axis=None, fill_value=None):
         """Returns the minimum/a along the given axis.
-If `axis` is None, applies to the flattened array. Masked values are filled 
+If `axis` is None, applies to the flattened array. Masked values are filled
 with `fill_value` during processing. If `fill_value is None, it is set to the
 maximum_fill_value corresponding to the data type."""
         mask = self._mask
@@ -1838,7 +1838,7 @@ maximum_fill_value corresponding to the data type."""
     #........................
     def max(self, axis=None, fill_value=None):
         """Returns the maximum/a along the given axis.
-If `axis` is None, applies to the flattened array. Masked values are filled 
+If `axis` is None, applies to the flattened array. Masked values are filled
 with `fill_value` during processing. If `fill_value is None, it is set to the
 maximum_fill_value corresponding to the data type."""
         mask = self._mask
@@ -1884,8 +1884,8 @@ the maximum default, the minimum uses the minimum default."""
     #--------------------------------------------
     def tolist(self, fill_value=None):
         """Copies the data portion of the array to a hierarchical python list and
-    returns that list. Data items are converted to the nearest compatible Python 
-    type. 
+    returns that list. Data items are converted to the nearest compatible Python
+    type.
     Masked values are converted to `fill_value`. If `fill_value` is None, the
     corresponding entries in the output list will be None.
     """
@@ -1906,15 +1906,15 @@ the maximum default, the minimum uses the minimum default."""
                     tmp = tmp[i]
                 tmp[idx[-1]] = None
         return result
-            
-            
+
+
     #........................
     def tostring(self, fill_value=None):
         """a.tostring(order='C', fill_value=None) -> raw copy of array data as a Python string.
 
     Keyword arguments:
         order      : order of the data item in the copy {"C","F","A"} (default "C")
-        fill_value : value used in lieu of missing data 
+        fill_value : value used in lieu of missing data
 
     Construct a Python string containing the raw bytes in the array. The order
     of the data in arrays with ndim > 1 is specified by the 'order' keyword and
@@ -1925,10 +1925,10 @@ the maximum default, the minimum uses the minimum default."""
         "Fortran" -- Fortran order (column major)
         "Any"     -- Current order of array.
         None      -- Same as "Any"
-    
+
     Masked data are filled with fill_value. If fill_value is None, the data-type-
     dependent default is used."""
-        return self.filled(fill_value).tostring()   
+        return self.filled(fill_value).tostring()
     #--------------------------------------------
     # Backwards Compatibility. Heck...
     @property
@@ -1951,12 +1951,12 @@ You should really use `data` instead..."""
                  getmaskarray(self).tostring(),
                  self._fill_value,
                  )
-        return state    
+        return state
     #
     def __setstate__(self, state):
         """Restores the internal state of the masked array, for pickling purposes.
     `state` is typically the output of the ``__getstate__`` output, and is a 5-tuple:
-    
+
         - class name
         - a tuple giving the shape of the data
         - a typecode for the data
@@ -1973,8 +1973,8 @@ You should really use `data` instead..."""
         return (_mareconstruct,
                 (self.__class__, self._baseclass, (0,), 'b', ),
                 self.__getstate__())
-    
-    
+
+
 def _mareconstruct(subtype, baseclass, baseshape, basetype,):
     """Internal function that builds a new MaskedArray from the information stored
 in a pickle."""
@@ -1983,8 +1983,8 @@ in a pickle."""
     return subtype.__new__(subtype, _data, mask=_mask, dtype=basetype, small_mask=False)
 #MaskedArray.__dump__ = dump
 #MaskedArray.__dumps__ = dumps
-    
-    
+
+
 
 #####--------------------------------------------------------------------------
 #---- --- Shortcuts ---
@@ -2672,7 +2672,7 @@ if __name__ == '__main__':
         m2 = [0, 0, 1, 0, 0, 1, 1, 0, 0, 0 ,0, 1]
         xm = masked_array(x, mask=m1)
         ym = masked_array(y, mask=m2)
-        
+
     #
     if 1:
         n = [0,0,1,0,1]

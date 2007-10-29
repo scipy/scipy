@@ -44,47 +44,47 @@ _gden.gden_diag.restype     = c_int
 # Error classes
 class DenError(Exception):
     """Base class for exceptions in this module.
-    
+
     Attributes:
         expression -- input expression in which the error occurred
         message -- explanation of the error"""
     def __init__(self, message):
         self.message    = message
-    
+
     def __str__(self):
         return self.message
 
 # The following function do all the fancy stuff to check that parameters
 # are Ok, and call the right implementation if args are OK.
 def gauss_den(x, mu, va, log = False):
-    """ Compute multivariate Gaussian density at points x for 
+    """ Compute multivariate Gaussian density at points x for
     mean mu and variance va.
-    
+
     Vector are row vectors, except va which can be a matrix
     (row vector variance for diagonal variance)
-    
-    If log is True, than the log density is returned 
+
+    If log is True, than the log density is returned
     (useful for underflow ?)"""
     mu  = N.atleast_2d(mu)
     va  = N.atleast_2d(va)
     x   = N.atleast_2d(x)
-    
+
     #=======================#
     # Checking parameters   #
     #=======================#
     if len(N.shape(mu)) != 2:
         raise DenError("mu is not rank 2")
-        
+
     if len(N.shape(va)) != 2:
         raise DenError("va is not rank 2")
-        
+
     if len(N.shape(x)) != 2:
         raise DenError("x is not rank 2")
-        
+
     (n, d)      = N.shape(x)
     (dm0, dm1)  = N.shape(mu)
     (dv0, dv1)  = N.shape(va)
-    
+
     # Check x and mu same dimension
     if dm0 != 1:
         msg = "mean must be a row vector!"
@@ -120,7 +120,7 @@ def _scalar_gauss_den(x, mu, va, log):
     """ This function is the actual implementation
     of gaussian pdf in scalar case. It assumes all args
     are conformant, so it should not be used directly
-    
+
     ** Expect centered data (ie with mean removed) **
 
     Call gauss_den instead"""
@@ -134,12 +134,12 @@ def _scalar_gauss_den(x, mu, va, log):
         y   = y + log(fac)
 
     return y
-    
+
 def _diag_gauss_den(x, mu, va, log):
     """ This function is the actual implementation
     of gaussian pdf in scalar case. It assumes all args
     are conformant, so it should not be used directly
-    
+
     ** Expect centered data (ie with mean removed) **
 
     Call gauss_den instead"""
@@ -149,7 +149,7 @@ def _diag_gauss_den(x, mu, va, log):
     if not log:
         y       = N.zeros(n)
         vat     = va.copy()
-        # _gden.gden_diag(N.require(x, requirements = 'C'), n, d, 
+        # _gden.gden_diag(N.require(x, requirements = 'C'), n, d,
         #         N.require(mu, requirements = 'C'),
         #         N.require(inva, requirements = 'C'),
         #         N.require(y, requirements = 'C'))
@@ -178,21 +178,21 @@ def _diag_gauss_den(x, mu, va, log):
 
 def _full_gauss_den(x, mu, va, log):
     """ This function is the actual implementation
-    of gaussian pdf in full matrix case. 
-    
-    It assumes all args are conformant, so it should 
+    of gaussian pdf in full matrix case.
+
+    It assumes all args are conformant, so it should
     not be used directly Call gauss_den instead
-    
+
     ** Expect centered data (ie with mean removed) **
 
-    Does not check if va is definite positive (on inversible 
+    Does not check if va is definite positive (on inversible
     for that matter), so the inverse computation and/or determinant
     would throw an exception."""
     d       = mu.size
     inva    = lin.inv(va)
     fac     = 1 / N.sqrt( (2*N.pi) ** d * N.fabs(lin.det(va)))
 
-    # we are using a trick with sum to "emulate" 
+    # we are using a trick with sum to "emulate"
     # the matrix multiplication inva * x without any explicit loop
     y   = N.dot((x-mu), inva)
     y   = -0.5 * N.sum(y * (x-mu), 1)
@@ -201,7 +201,7 @@ def _full_gauss_den(x, mu, va, log):
         y   = fac * N.exp(y)
     else:
         y   = y + N.log(fac)
- 
+
     return y
 
 if __name__ == "__main__":

@@ -37,7 +37,7 @@ def bench1(mode = 'diag'):
     print "Init a model for learning, with kmean for initialization"
     lgm = GM(d, k, mode)
     gmm = GMM(lgm, 'kmean')
-    
+
     gmm.init(data)
     # Keep the initialized model for drawing
     gm0 = copy.copy(lgm)
@@ -65,4 +65,3 @@ if __name__ == "__main__":
     # import pstats
     # p = pstats.Stats('gmmprof')
     # print p.sort_stats('cumulative').print_stats(20)
-

@@ -21,7 +21,7 @@ class Link:
     def deriv(self, p):
         return NotImplementedError
 
-        
+
 class Logit(Link):
 
     """
@@ -44,13 +44,13 @@ class Logit(Link):
         OUTPUTS: pclip
            pclip -- clipped probabilities
         """
-        
+
         return N.clip(p, Logit.tol, 1. - Logit.tol)
 
     def __call__(self, p):
         """
         Logit transform
-        
+
         g(p) = log(p / (1 - p))
 
         INPUTS:
@@ -67,7 +67,7 @@ class Logit(Link):
     def inverse(self, z):
         """
         Inverse logit transform
-        
+
         h(z) = exp(z)/(1+exp(z))
 
         INPUTS:
@@ -84,7 +84,7 @@ class Logit(Link):
 
         """
         Derivative of logit transform
-        
+
         g(p) = 1 / (p * (1 - p))
 
         INPUTS:
@@ -114,7 +114,7 @@ class Power(Link):
     def __call__(self, x):
         """
         Power transform
-        
+
         g(x) = x**self.power
 
         INPUTS:
@@ -130,7 +130,7 @@ class Power(Link):
     def inverse(self, z):
         """
         Inverse of power transform
-        
+
         g(x) = x**(1/self.power)
 
         INPUTS:
@@ -145,7 +145,7 @@ class Power(Link):
     def deriv(self, x):
         """
         Derivative of power transform
-        
+
         g(x) = self.power * x**(self.power - 1)
 
         INPUTS:
@@ -207,7 +207,7 @@ class Log(Link):
     def __call__(self, x, **extra):
         """
         Log transform
-        
+
         g(x) = log(x)
 
         INPUTS:
@@ -223,7 +223,7 @@ class Log(Link):
     def inverse(self, z):
         """
         Inverse of log transform
-        
+
         g(x) = exp(x)
 
         INPUTS:
@@ -238,7 +238,7 @@ class Log(Link):
     def deriv(self, x):
         """
         Derivative of log transform
-        
+
         g(x) = 1/x
 
         INPUTS:
@@ -269,7 +269,7 @@ class CDFLink(Logit):
     def __call__(self, p):
         """
         CDF link
-        
+
         g(p) = self.dbn.pdf(p)
 
         INPUTS:
@@ -285,7 +285,7 @@ class CDFLink(Logit):
     def inverse(self, z):
         """
         Derivative of CDF link
-        
+
         g(z) = self.dbn.cdf(z)
 
         INPUTS:
@@ -300,7 +300,7 @@ class CDFLink(Logit):
     def deriv(self, p):
         """
         Derivative of CDF link
-        
+
         g(p) = 1/self.dbn.pdf(self.dbn.ppf(p))
 
         INPUTS:
@@ -343,7 +343,7 @@ class CLogLog(Logit):
     def __call__(self, p):
         """
         C-Log-Log transform
-        
+
         g(p) = log(-log(p))
 
         INPUTS:
@@ -359,7 +359,7 @@ class CLogLog(Logit):
     def inverse(self, z):
         """
         Inverse of C-Log-Log transform
-        
+
         g(z) = exp(-exp(z))
 
         INPUTS:
@@ -374,7 +374,7 @@ class CLogLog(Logit):
     def deriv(self, p):
         """
         Derivatve of C-Log-Log transform
-        
+
         g(p) = - 1 / (log(p) * p)
 
         INPUTS:
@@ -388,4 +388,3 @@ class CLogLog(Logit):
         return -1. / (N.log(p) * p)
 
 cloglog = CLogLog()
-

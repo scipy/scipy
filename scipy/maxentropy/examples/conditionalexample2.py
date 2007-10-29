@@ -7,11 +7,11 @@
 
     Consider the translation of the English word 'in' into French.  Suppose we
     notice the following facts in a corpus of parallel texts:
-        
+
         (1)    p(dans) + p(en) + p(à) + p(au cours de) + p(pendant) = 1
         (2)    p(dans | next English word = 'a' or 'the') = 8/10
         (3)    p(dans | c) + p(à | c)  = 1/2   for all other c
-        
+
     This code finds the probability distribution with maximal entropy
     subject to these constraints.
 """
@@ -115,4 +115,3 @@ for c, context in enumerate(contexts):
         print ("%12.3f" % p[c*numsamplepoints+x]),
 
 print
-

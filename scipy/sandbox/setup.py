@@ -69,7 +69,7 @@ def configuration(parent_package='',top_path=None):
     # Interpolating between sparse samples
     #config.add_subpackage('buildgrid')
 
-    # Package for Support Vector Machine 
+    # Package for Support Vector Machine
     #config.add_subpackage('svm')
 
     # Package for Gaussian Mixture Models
@@ -80,7 +80,7 @@ def configuration(parent_package='',top_path=None):
 
     # New spline package (based on scipy.interpolate)
     #config.add_subpackage('spline')
-    
+
     # Radial basis functions package
     #config.add_subpackage('rbf')
 

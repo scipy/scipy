@@ -17,8 +17,8 @@ class VarianceFunction:
 
         OUTPUTS: v
            v   -- ones(mu.shape)
-        """   
-         
+        """
+
         return N.ones(mu.shape, N.float64)
 
 constant = VarianceFunction()
@@ -28,7 +28,7 @@ class Power:
     Power variance function:
 
     V(mu) = fabs(mu)**power
-    
+
     INPUTS:
        power -- exponent used in power variance function
 
@@ -38,7 +38,7 @@ class Power:
         self.power = power
 
     def __call__(self, mu):
-        
+
         """
         Power variance function
 
@@ -47,7 +47,7 @@ class Power:
 
         OUTPUTS: v
            v   -- fabs(mu)**self.power
-        """   
+        """
         return N.power(N.fabs(mu), self.power)
 
 class Binomial:
@@ -57,7 +57,7 @@ class Binomial:
     p = mu / n; V(mu) = p * (1 - p) * n
 
     INPUTS:
-       n -- number of trials in Binomial 
+       n -- number of trials in Binomial
     """
 
     tol = 1.0e-10
@@ -77,7 +77,7 @@ class Binomial:
 
         OUTPUTS: v
            v   -- mu / self.n * (1 - mu / self.n) * self.n
-        """   
+        """
         p = self.clean(mu / self.n)
         return p * (1 - p) * self.n
 

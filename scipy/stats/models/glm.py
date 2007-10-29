@@ -11,12 +11,12 @@ from scipy.stats.models.regression import WLSModel
 class Model(WLSModel):
 
     niter = 10
-    
+
     def __init__(self, design, family=family.Gaussian()):
         self.family = family
         super(Model, self).__init__(design, weights=1)
 
-    def __iter__(self):                                                   
+    def __iter__(self):
         self.iter = 0
         self.dev = N.inf
         return self
@@ -58,14 +58,14 @@ class Model(WLSModel):
         if N.fabs((self.dev - curdev) / curdev) < tol:
             return False
         self.dev = curdev
-        
+
         return True
 
     def estimate_scale(self, Y=None, results=None):
         """
         Return Pearson\'s X^2 estimate of scale.
         """
-        
+
         if results is None:
             results = self.results
         if Y is None:
@@ -81,7 +81,7 @@ class Model(WLSModel):
             self.family.link.initialize(Y))
         self.results.mu = self.family.link.inverse(self.results.predict)
         self.scale = self.results.scale = self.estimate_scale()
-        
+
         while self.cont(self.results):
             self.results = self.next()
             self.scale = self.results.scale = self.estimate_scale()

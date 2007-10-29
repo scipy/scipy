@@ -79,8 +79,8 @@ class gaussian_kde(object):
         self.d, self.n = self.dataset.shape
 
         self._compute_covariance()
-        
-        
+
+
     def evaluate(self, points):
         """Evaluate the estimated pdf on a set of points.
 

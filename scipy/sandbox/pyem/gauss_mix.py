@@ -17,13 +17,13 @@ import misc
 
 # Right now, two main usages of a Gaussian Model are possible
 #   - init a Gaussian Model with meta-parameters, and trains it
-#   - set-up a Gaussian Model to sample it, draw ellipsoides 
+#   - set-up a Gaussian Model to sample it, draw ellipsoides
 #   of confidences. In this case, we would like to init it with
-#   known values of parameters. This can be done with the class method 
+#   known values of parameters. This can be done with the class method
 #   fromval
 
 # TODO:
-#   - change bounds methods of GM class instanciations so that it cannot 
+#   - change bounds methods of GM class instanciations so that it cannot
 #   be used as long as w, mu and va are not set
 #   - We have to use scipy now for chisquare pdf, so there may be other
 #   methods to be used, ie for implementing random index.
@@ -42,7 +42,7 @@ class GmParamError(Exception):
     def __init__(self, message):
         Exception.__init__(self)
         self.message    = message
-    
+
     def __str__(self):
         return self.message
 
@@ -103,11 +103,11 @@ class GM:
             self.__is1d = True
 
     def set_param(self, weights, mu, sigma):
-        """Set parameters of the model. 
-        
+        """Set parameters of the model.
+
         Args should be conformant with metparameters d and k given during
         initialisation.
-        
+
         :Parameters:
             weights : ndarray
                 weights of the mixture (k elements)
@@ -135,7 +135,7 @@ class GM:
         #XXX: when fromvalues is called, parameters are called twice...
         k, d, mode  = check_gmm_param(weights, mu, sigma)
         if not k == self.k:
-            raise GmParamError("Number of given components is %d, expected %d" 
+            raise GmParamError("Number of given components is %d, expected %d"
                     % (k, self.k))
         if not d == self.d:
             raise GmParamError("Dimension of the given model is %d, "\
@@ -153,7 +153,7 @@ class GM:
     def fromvalues(cls, weights, mu, sigma):
         """This class method can be used to create a GM model
         directly from its parameters weights, mean and variance
-        
+
         :Parameters:
             weights : ndarray
                 weights of the mixture (k elements)
@@ -177,7 +177,7 @@ class GM:
         >>> gm.set_param(w, mu, va)
 
         and
-        
+
         >>> w, mu, va   = GM.gen_param(d, k)
         >>> gm  = GM.fromvalue(w, mu, va)
 
@@ -186,28 +186,28 @@ class GM:
         res = cls(d, k, mode)
         res.set_param(weights, mu, sigma)
         return res
-        
+
     #=====================================================
     # Fundamental facilities (sampling, confidence, etc..)
     #=====================================================
     def sample(self, nframes):
         """ Sample nframes frames from the model.
-        
+
         :Parameters:
             nframes : int
                 number of samples to draw.
-        
+
         :Returns:
             samples : ndarray
                 samples in the format one sample per row (nframes, d)."""
         if not self.__is_valid:
-            raise GmParamError("""Parameters of the model has not been 
+            raise GmParamError("""Parameters of the model has not been
                 set yet, please set them using self.set_param()""")
 
         # State index (ie hidden var)
         sti = gen_rand_index(self.w, nframes)
         # standard gaussian samples
-        x   = randn(nframes, self.d)        
+        x   = randn(nframes, self.d)
 
         if self.mode == 'diag':
             x   = self.mu[sti, :]  + x * N.sqrt(self.va[sti, :])
@@ -228,7 +228,7 @@ class GM:
 
         return x
 
-    def conf_ellipses(self, dim = misc.DEF_VIS_DIM, npoints = misc.DEF_ELL_NP, 
+    def conf_ellipses(self, dim = misc.DEF_VIS_DIM, npoints = misc.DEF_ELL_NP,
             level = misc.DEF_LEVEL):
         """Returns a list of confidence ellipsoids describing the Gmm
         defined by mu and va. Check densities.gauss_ell for details
@@ -252,7 +252,7 @@ class GM:
         Examples
         --------
             Suppose we have w, mu and va as parameters for a mixture, then:
-            
+
             >>> gm      = GM(d, k)
             >>> gm.set_param(w, mu, va)
             >>> X       = gm.sample(1000)
@@ -260,7 +260,7 @@ class GM:
             >>> pylab.plot(X[:,0], X[:, 1], '.')
             >>> for k in len(w):
             ...    pylab.plot(Xe[k], Ye[k], 'r')
-                
+
             Will plot samples X draw from the mixture model, and
             plot the ellipses of equi-probability from the mean with
             default level of confidence."""
@@ -269,29 +269,29 @@ class GM:
                 "mixtures.")
 
         if not self.__is_valid:
-            raise GmParamError("""Parameters of the model has not been 
+            raise GmParamError("""Parameters of the model has not been
                 set yet, please set them using self.set_param()""")
 
         xe  = []
-        ye  = []   
+        ye  = []
         if self.mode == 'diag':
             for i in range(self.k):
-                x, y  = D.gauss_ell(self.mu[i, :], self.va[i, :], 
+                x, y  = D.gauss_ell(self.mu[i, :], self.va[i, :],
                         dim, npoints, level)
                 xe.append(x)
                 ye.append(y)
         elif self.mode == 'full':
             for i in range(self.k):
-                x, y  = D.gauss_ell(self.mu[i, :], 
-                        self.va[i*self.d:i*self.d+self.d, :], 
+                x, y  = D.gauss_ell(self.mu[i, :],
+                        self.va[i*self.d:i*self.d+self.d, :],
                         dim, npoints, level)
                 xe.append(x)
                 ye.append(y)
 
         return xe, ye
-    
+
     def check_state(self):
-        """Returns true if the parameters of the model are valid. 
+        """Returns true if the parameters of the model are valid.
 
         For Gaussian mixtures, this means weights summing to 1, and variances
         to be positive definite.
@@ -352,7 +352,7 @@ class GM:
             # If A is invertible, A'A is positive definite
             va  = randn(nc * d, d)
             for k in range(nc):
-                va[k*d:k*d+d]   = N.dot( va[k*d:k*d+d], 
+                va[k*d:k*d+d]   = N.dot( va[k*d:k*d+d],
                     va[k*d:k*d+d].transpose())
         else:
             raise GmParamError('cov matrix mode not recognized')
@@ -416,13 +416,13 @@ class GM:
     #=================
     # Plotting methods
     #=================
-    def plot(self, dim = misc.DEF_VIS_DIM, npoints = misc.DEF_ELL_NP, 
+    def plot(self, dim = misc.DEF_VIS_DIM, npoints = misc.DEF_ELL_NP,
             level = misc.DEF_LEVEL):
         """Plot the ellipsoides directly for the model
-        
+
         Returns a list of lines handle, so that their style can be modified. By
         default, the style is red color, and nolegend for all of them.
-        
+
         :Parameters:
             dim : sequence
                 sequence of two integers, the dimensions of interest.
@@ -430,7 +430,7 @@ class GM:
                 Number of points to use for the ellipsoids.
             level : int
                 level of confidence (to use with fill argument)
-        
+
         :Returns:
             h : sequence
                 Returns a list of lines handle so that their properties
@@ -439,7 +439,7 @@ class GM:
         Note
         ----
         Does not work for 1d. Requires matplotlib
-        
+
         :SeeAlso:
             conf_ellipses is used to compute the ellipses. Use this if you want
             to plot with something else than matplotlib."""
@@ -448,7 +448,7 @@ class GM:
                 "mixtures.")
 
         if not self.__is_valid:
-            raise GmParamError("""Parameters of the model has not been 
+            raise GmParamError("""Parameters of the model has not been
                 set yet, please set them using self.set_param()""")
 
         k       = self.k
@@ -462,7 +462,7 @@ class GM:
 
     def plot1d(self, level = misc.DEF_LEVEL, fill = False, gpdf = False):
         """Plots the pdf of each component of the 1d mixture.
-        
+
         :Parameters:
             level : int
                 level of confidence (to use with fill argument)
@@ -471,7 +471,7 @@ class GM:
                 confidence intervales is filled.
             gpdf : bool
                 if True, the global pdf is plot.
-        
+
         :Returns:
             h : dict
                 Returns a dictionary h of plot handles so that their properties
@@ -517,12 +517,12 @@ class GM:
                     id2 = pval[c] + self.mu[c]
                     xc  = x[:, N.where(x>id1)[0]]
                     xc  = xc[:, N.where(xc<id2)[0]]
-                    
+
                     # Compute the graph for filling
                     yf  = self.pdf_comp(xc, c)
                     xc  = N.concatenate(([xc[0]], xc, [xc[-1]]))
                     yf  = N.concatenate(([0], yf, [0]))
-                    h   = P.fill(xc, yf, facecolor = 'b', alpha = 0.1, 
+                    h   = P.fill(xc, yf, facecolor = 'b', alpha = 0.1,
                                  label='_nolegend_')
                     hp['conf'].extend(h)
             if gpdf:
@@ -536,7 +536,7 @@ class GM:
             nl = 20, maxlevel = 0.95, v = None):
         """Do all the necessary computation for contour plot of mixture's
         density.
-        
+
         :Parameters:
             dim : sequence
                 sequence of two integers, the dimensions of interest.
@@ -546,7 +546,7 @@ class GM:
                 Number of points to use for the y axis of the grid
             nl : int
                 Number of contour to plot.
-        
+
         :Returns:
             X : ndarray
                 points of the x axis of the grid
@@ -556,7 +556,7 @@ class GM:
                 values of the density on X and Y
             V : ndarray
                 Contour values to display.
-            
+
         Note
         ----
         X, Y, Z and V are as expected by matplotlib contour function."""
@@ -577,10 +577,10 @@ class GM:
 
         w = ax[1] - ax[0]
         h = ax[3] - ax[2]
-        x, y, lden = self._densityctr(N.linspace(ax[0]-0.2*w, 
-                                                 ax[1]+0.2*w, nx), 
-                                      N.linspace(ax[2]-0.2*h, 
-                                                 ax[3]+0.2*h, ny), 
+        x, y, lden = self._densityctr(N.linspace(ax[0]-0.2*w,
+                                                 ax[1]+0.2*w, nx),
+                                      N.linspace(ax[2]-0.2*h,
+                                                 ax[3]+0.2*h, ny),
                                       dim = dim)
         # XXX: how to find "good" values for level ?
         if v is None:
@@ -643,10 +643,10 @@ class GM:
 # Function to generate a random index: this is kept outside any class,
 # as the function can be useful for other
 def gen_rand_index(p, n):
-    """Generate a N samples vector containing random index between 1 
+    """Generate a N samples vector containing random index between 1
     and length(p), each index i with probability p(i)"""
     # TODO Check args here
-    
+
     # TODO: check each value of inverse distribution is
     # different
     invcdf  = N.cumsum(p)
@@ -655,19 +655,19 @@ def gen_rand_index(p, n):
 
     # This one should be a bit faster
     for k in range(len(p)-1, 0, -1):
-        blop        = N.where(N.logical_and(invcdf[k-1] <= uni, 
+        blop        = N.where(N.logical_and(invcdf[k-1] <= uni,
                     uni < invcdf[k]))
         index[blop] = k
-        
+
     return index
 
 def check_gmm_param(w, mu, va):
     """Check that w, mu and va are valid parameters for
     a mixture of gaussian.
-    
+
     w should sum to 1, there should be the same number of component in each
-    param, the variances should be positive definite, etc... 
-    
+    param, the variances should be positive definite, etc...
+
     :Parameters:
         w : ndarray
             vector or list of weigths of the mixture (K elements)
@@ -684,14 +684,14 @@ def check_gmm_param(w, mu, va):
         mode : string
             'diag' if diagonal covariance, 'full' of full matrices
     """
-        
+
     # Check that w is valid
     if not len(w.shape) == 1:
         raise GmParamError('weight should be a rank 1 array')
 
     if N.fabs(N.sum(w)  - 1) > misc.MAX_DBL_DEV:
         raise GmParamError('weight does not sum to 1')
-    
+
     # Check that mean and va have the same number of components
     k = len(w)
 
@@ -721,8 +721,8 @@ def check_gmm_param(w, mu, va):
         if not ka == km*d:
             msg = "not same number of dimensions in mean and variances"
             raise GmParamError(msg)
-        
+
     return k, d, mode
-        
+
 if __name__ == '__main__':
     pass

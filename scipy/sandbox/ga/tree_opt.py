@@ -100,10 +100,10 @@ class log_float_range(gene.log_float_gene,opt_object):
         return tree.tree_node.clone(self,parent)
 
     def mutate(self):
-            m=gene.log_float_gene.mutate(self)
-            if m and self.parent:
-                self.parent.recalc(force_parent=1)
-            return m
+        m=gene.log_float_gene.mutate(self)
+        if m and self.parent:
+            self.parent.recalc(force_parent=1)
+        return m
 
     def scale(self,sc):
         self.default = self.default*sc

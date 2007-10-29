@@ -18,7 +18,7 @@ class genericsampler(object):
         self.format = self.__class__.__name__[:3]
         if self.__class__.__name__ == "genericsampler":
             raise TypeError, "this class cannot be instantiated directly"
-    
+
     def seed(self, myseed):
         """Initializes the sampler with a given seed.  If the seed is 0, uses a
         seed from /dev/urandom or the system time.
@@ -124,8 +124,8 @@ class dictsampler(genericsampler):
             raise ValueError, "sum of table frequencies must be > 0"
 
         self.sampler =  intsampler(self.probs)
-    
-    
+
+
     def sample(self, size, return_probs=0):
         """Generates a sample of the given size from the specified
         discrete distribution, optionally returning the probabilities

@@ -27,8 +27,8 @@ def segment_axis(a, length, overlap=0, axis=None, end='cut', endvalue=0):
 
     endvalue    The value to use for end='pad'
 
-    The array is not copied unless necessary (either because it is 
-    unevenly strided and being flattened or because end is set to 
+    The array is not copied unless necessary (either because it is
+    unevenly strided and being flattened or because end is set to
     'pad' or 'wrap').
     """
 
@@ -66,7 +66,7 @@ def segment_axis(a, length, overlap=0, axis=None, end='cut', endvalue=0):
             elif end=='wrap':
                 b[...,l:] = a[...,:roundup-l]
             a = b
-        
+
         a = a.swapaxes(-1,axis)
 
 
@@ -80,7 +80,7 @@ def segment_axis(a, length, overlap=0, axis=None, end='cut', endvalue=0):
     newshape = a.shape[:axis]+(n,length)+a.shape[axis+1:]
     newstrides = a.strides[:axis]+((length-overlap)*s,s) + a.strides[axis+1:]
 
-    try: 
+    try:
         return N.ndarray.__new__(N.ndarray,strides=newstrides,shape=newshape,buffer=a,dtype=a.dtype)
     except TypeError:
         warnings.warn("Problem with ndarray creation forces copy.")
@@ -88,6 +88,3 @@ def segment_axis(a, length, overlap=0, axis=None, end='cut', endvalue=0):
         # Shape doesn't change but strides does
         newstrides = a.strides[:axis]+((length-overlap)*s,s) + a.strides[axis+1:]
         return N.ndarray.__new__(N.ndarray,strides=newstrides,shape=newshape,buffer=a,dtype=a.dtype)
-        
-
-

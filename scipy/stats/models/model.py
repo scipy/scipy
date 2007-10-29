@@ -22,7 +22,7 @@ class Model(object):
         """
         raise NotImplementedError
 
-    def fit(self): 
+    def fit(self):
         """
         Fit a model to data.
         """
@@ -68,7 +68,7 @@ class LikelihoodModel(Model):
 #         def f(theta):
 #             return -self.logL(theta)
 #         self.results = optimize.fmin(f, theta)
-        
+
 class LikelihoodModelResults(object):
     ''' Class to contain results from likelihood models '''
     def __init__(self, beta, normalized_cov_beta=None, scale=1.):
@@ -80,7 +80,7 @@ class LikelihoodModelResults(object):
 
         normalized_cov_betas is also known as the hat matrix or H
         (Semiparametric regression, Ruppert, Wand, Carroll; CUP 2003)
-        
+
         The covariance of betas is given by scale times
         normalized_cov_beta
 
@@ -149,7 +149,7 @@ class LikelihoodModelResults(object):
         Compute a Tcontrast for a row vector matrix. To get the t-statistic
         for a single column, use the 't' method.
         """
-        
+
         if self.normalized_cov_beta is None:
             raise ValueError, 'need covariance of parameters for computing T statistics'
 
@@ -164,7 +164,7 @@ class LikelihoodModelResults(object):
 
     def Fcontrast(self, matrix, eff=True, t=True, sd=True, scale=None, invcov=None):
         """
-        Compute an Fcontrast for a contrast matrix. 
+        Compute an Fcontrast for a contrast matrix.
 
         Here, matrix M is assumed to be non-singular. More precisely,
 
@@ -179,7 +179,7 @@ class LikelihoodModelResults(object):
         non-singular in the sense above.
 
         """
-        
+
         if self.normalized_cov_beta is None:
             raise ValueError, 'need covariance of parameters for computing F statistics'
 
@@ -190,5 +190,3 @@ class LikelihoodModelResults(object):
             invcov = inv(self.cov_beta(matrix=matrix, scale=1.0))
         F = N.add.reduce(N.dot(invcov, cbeta) * cbeta, 0) * recipr((q * self.scale))
         return ContrastResults(F=F, df_denom=self.df_resid, df_num=invcov.shape[0])
-
-

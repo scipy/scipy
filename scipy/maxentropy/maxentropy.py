@@ -8,7 +8,7 @@ from __future__ import division
 
 __author__ = "Ed Schofield"
 __version__ = '2.1'
-__changelog__ = """ 
+__changelog__ = """
 This module is an adaptation of "ftwmaxent" by Ed Schofield, first posted
 on SourceForge as part of the "textmodeller" project in 2002.  The
 official repository is now SciPy (since Nov 2005); the SourceForge
@@ -53,7 +53,7 @@ Using multiple static feature matrices is now supported.  The generator
 function supplied to generate feature matrices is called matrixtrials'
 times each iteration.  This is useful for variance estimation of the E
 and log Z estimators across the trials, without drawing another sample
-each iteration (when staticsample = True). 
+each iteration (when staticsample = True).
 
 Since v2.0-alpha1:
 Sample feature matrices, if used, are sampled on the fly with a supplied
@@ -80,23 +80,23 @@ class basemodel(object):
     """A base class providing generic functionality for both small and
     large maximum entropy models.  Cannot be instantiated.
     """
-    
+
     def __init__(self):
         self.format = self.__class__.__name__[:4]
         if self.format == 'base':
             raise ValueError, "this class cannot be instantiated directly"
         self.verbose = False
-        
+
         self.maxgtol = 1e-5
         # Required tolerance of gradient on average (closeness to zero,axis=0) for
         # CG optimization:
         self.avegtol = 1e-3
         # Default tolerance for the other optimization algorithms:
-        self.tol = 1e-4       
+        self.tol = 1e-4
         # Default tolerance for stochastic approximation: stop if
         # ||params_k - params_{k-1}|| < paramstol:
-        self.paramstol = 1e-5         
-        
+        self.paramstol = 1e-5
+
         self.maxiter = 1000
         self.maxfun = 1500
         self.mindual = -100.    # The entropy dual must actually be
@@ -108,7 +108,7 @@ class basemodel(object):
                                 # optimization algorithm
         self.fnevals = 0
         self.gradevals = 0
-        
+
         # Variances for a Gaussian prior on the parameters for smoothing
         self.sigma2 = None
 
@@ -117,7 +117,7 @@ class basemodel(object):
         self.duals = {}
         self.storegradnorms = False
         self.gradnorms = {}
-        
+
         # Do we seek to minimize the KL divergence between the model and a
         # prior density p_0?  If not, set this to None; then we maximize the
         # entropy.  If so, set this to an array of the log probability densities
@@ -133,7 +133,7 @@ class basemodel(object):
         # simplifies the code in dual() and grad().
         self.external = None
         self.externalpriorlogprobs = None
-        
+
 
     def fit(self, K, algorithm='CG'):
         """Fit the maxent model p whose feature expectations are given
@@ -142,11 +142,11 @@ class basemodel(object):
         Model expectations are computed either exactly or using Monte
         Carlo simulation, depending on the 'func' and 'grad' parameters
         passed to this function.
-        
+
         For 'model' instances, expectations are computed exactly, by summing
         over the given sample space.  If the sample space is continuous or too
         large to iterate over, use the 'bigmodel' class instead.
- 
+
         For 'bigmodel' instances, the model expectations are not computed
         exactly (by summing or integrating over a sample space) but
         approximately (by Monte Carlo simulation).  Simulation is necessary
@@ -164,16 +164,16 @@ class basemodel(object):
 
         The algorithm can be 'CG', 'BFGS', 'LBFGSB', 'Powell', or
         'Nelder-Mead'.
-        
+
         The CG (conjugate gradients) method is the default; it is quite fast
         and requires only linear space in the number of parameters, (not
         quadratic, like Newton-based methods).
-        
+
         The BFGS (Broyden-Fletcher-Goldfarb-Shanno) algorithm is a
         variable metric Newton method.  It is perhaps faster than the CG
         method but requires O(N^2) instead of O(N) memory, so it is
         infeasible for more than about 10^3 parameters.
-        
+
         The Powell algorithm doesn't require gradients.  For small models
         it is slow but robust.  For big models (where func and grad are
         simulated) with large variance in the function estimates, this
@@ -181,7 +181,7 @@ class basemodel(object):
         """
         dual = self.dual
         grad = self.grad
-        
+
         if isinstance(self, bigmodel):
             # Ensure the sample matrix has been set
             if not hasattr(self, 'sampleF') and hasattr(self, 'samplelogprobs'):
@@ -192,13 +192,13 @@ class basemodel(object):
             if not hasattr(self, 'F'):
                 raise AttributeError, "first specify a feature matrix" \
                                       " using setfeaturesandsamplespace()"
-        
+
         # First convert K to a numpy array if necessary
         K = numpy.asarray(K, float)
-            
+
         # Store the desired feature expectations as a member variable
         self.K = K
-        
+
         # Sanity checks
         try:
             self.params
@@ -206,14 +206,14 @@ class basemodel(object):
             self.reset(len(K))
         else:
             assert len(self.params) == len(K)
-        
+
         # Don't reset the number of function and gradient evaluations to zero
         # self.fnevals = 0
         # self.gradevals = 0
-        
+
         # Make a copy of the parameters
         oldparams = numpy.array(self.params)
-            
+
         callback = self.log
 
         if algorithm == 'CG':
@@ -221,7 +221,7 @@ class basemodel(object):
                                       maxiter=self.maxiter, full_output=1, \
                                       disp=self.verbose, retall=0,
                                       callback=callback)
-            
+
             (newparams, fopt, func_calls, grad_calls, warnflag) = retval
 
         elif algorithm == 'LBFGSB':
@@ -246,7 +246,7 @@ class basemodel(object):
                                         maxiter=self.maxiter, full_output=1, \
                                         disp=self.verbose, retall=0, \
                                         callback=callback)
-            
+
             (newparams, fopt, gopt, Lopt, func_calls, grad_calls, warnflag) = retval
 
         elif algorithm == 'Powell':
@@ -255,29 +255,29 @@ class basemodel(object):
                                    maxiter=self.maxiter, full_output=1, \
                                    disp=self.verbose, retall=0, \
                                    callback=callback)
-            
+
             (newparams, fopt, direc, numiter, func_calls, warnflag) = retval
-        
+
         elif algorithm == 'Nelder-Mead':
             retval = optimize.fmin(dual, oldparams, args=(), \
                                    xtol=self.tol, ftol = self.tol, \
                                    maxiter=self.maxiter, full_output=1, \
                                    disp=self.verbose, retall=0, \
                                    callback=callback)
-            
+
             (newparams, fopt, numiter, func_calls, warnflag) = retval
 
         else:
             raise AttributeError, "the specified algorithm '" + str(algorithm) \
                     + "' is unsupported.  Options are 'CG', 'LBFGSB', " \
                     "'Nelder-Mead', 'Powell', and 'BFGS'"
-        
+
         if numpy.any(self.params != newparams):
             self.setparams(newparams)
         self.func_calls = func_calls
-    
-  
-    
+
+
+
     def dual(self, params=None, ignorepenalty=False, ignoretest=False):
         """Computes the Lagrangian dual L(theta) of the entropy of the
         model, for the given vector theta=params.  Minimizing this
@@ -285,7 +285,7 @@ class basemodel(object):
         model subject to the given constraints.  These constraints are
         specified as the desired (target) values self.K for the
         expectations of the feature statistic.
-        
+
         This function is computed as:
             L(theta) = log(Z) - theta^T . K
 
@@ -301,32 +301,32 @@ class basemodel(object):
         use both the function and gradient. Note, however, that
         convergence guarantees break down for most optimization
         algorithms in the presence of stochastic error.
-        
+
         Note that, for 'bigmodel' objects, the dual estimate is
         deterministic for any given sample.  It is given as:
-        
+
             L_est = log Z_est - sum_i{theta_i K_i}
-        
+
         where
             Z_est = 1/m sum_{x in sample S_0} p_dot(x) / aux_dist(x),
-        
+
         and m = # observations in sample S_0, and K_i = the empirical
         expectation E_p_tilde f_i (X) = sum_x {p(x) f_i(x)}.
         """
-        
+
         if self.external is None and not self.callingback:
             if self.verbose:
                 print "Function eval #", self.fnevals
-            
+
         if params is not None:
             self.setparams(params)
-        
+
         # Subsumes both small and large cases:
         L = self.lognormconst() - numpy.dot(self.params, self.K)
-            
+
         if self.verbose and self.external is None:
             print "  dual is ", L
-        
+
         # Use a Gaussian prior for smoothing if requested.
         # This adds the penalty term \sum_{i=1}^m \params_i^2 / {2 \sigma_i^2}.
         # Define 0 / 0 = 0 here; this allows a variance term of
@@ -334,11 +334,11 @@ class basemodel(object):
         if self.sigma2 is not None and ignorepenalty==False:
             ratios = numpy.nan_to_num(self.params**2 / self.sigma2)
             # Why does the above convert inf to 1.79769e+308?
-            
+
             L += 0.5 * ratios.sum()
             if self.verbose and self.external is None:
                 print "  regularized dual is ", L
-        
+
         if not self.callingback and self.external is None:
             if hasattr(self, 'callback_dual') \
                                and self.callback_dual is not None:
@@ -347,17 +347,17 @@ class basemodel(object):
                 self.callingback = True
                 self.callback_dual(self)
                 self.callingback = False
-        
+
         if self.external is None and not self.callingback:
             self.fnevals += 1
-        
+
         # (We don't reset self.params to its prior value.)
         return L
- 
-   
+
+
     # An alias for the dual function:
     entropydual = dual
-    
+
     def log(self, params):
         """This method is called every iteration during the optimization
         process.  It calls the user-supplied callback function (if any),
@@ -366,7 +366,7 @@ class basemodel(object):
         indicate inconsistent constraints (or, for bigmodel instances,
         too large a variance in the estimates).
         """
-        
+
         if self.external is None and not self.callingback:
             if self.verbose:
                 print "Iteration #", self.iters
@@ -400,27 +400,27 @@ class basemodel(object):
                 raise DivergenceError, "dual is below the threshold 'mindual'" \
                         " and may be diverging to -inf.  Fix the constraints" \
                         " or lower the threshold!"
-        
+
         self.iters += 1
-        
-    
+
+
     def grad(self, params=None, ignorepenalty=False):
         """Computes or estimates the gradient of the entropy dual.
         """
-        
+
         if self.verbose and self.external is None and not self.callingback:
             print "Grad eval #" + str(self.gradevals)
 
         if params is not None:
             self.setparams(params)
-        
+
         G = self.expectations() - self.K
-        
+
         if self.verbose and self.external is None:
             print "  norm of gradient =",  norm(G)
 
         # (We don't reset params to its prior value.)
-        
+
         # Use a Gaussian prior for smoothing if requested.  The ith
         # partial derivative of the penalty term is \params_i /
         # \sigma_i^2.  Define 0 / 0 = 0 here; this allows a variance term
@@ -433,7 +433,7 @@ class basemodel(object):
             if self.verbose and self.external is None:
                 normG = norm(G)
                 print "  norm of regularized gradient =", normG
-        
+
         if not self.callingback and self.external is None:
             if hasattr(self, 'callback_grad') \
                                and self.callback_grad is not None:
@@ -442,24 +442,24 @@ class basemodel(object):
                 self.callingback = True
                 self.callback_grad(self)
                 self.callingback = False
-        
+
         if self.external is None and not self.callingback:
             self.gradevals += 1
-        
+
         return G
-            
-        
+
+
     def crossentropy(self, fx, log_prior_x=None, base=numpy.e):
         """Returns the cross entropy H(q, p) of the empirical
         distribution q of the data (with the given feature matrix fx)
         with respect to the model p.  For discrete distributions this is
         defined as:
-        
+
             H(q, p) = - n^{-1} \sum_{j=1}^n log p(x_j)
-        
+
         where x_j are the data elements assumed drawn from q whose
         features are given by the matrix fx = {f(x_j)}, j=1,...,n.
-        
+
         The 'base' argument specifies the base of the logarithm, which
         defaults to e.
 
@@ -471,7 +471,7 @@ class basemodel(object):
             return H / numpy.log(base)
         else:
             return H
-    
+
 
     def normconst(self):
         """Returns the normalization constant, or partition function, for
@@ -484,8 +484,8 @@ class basemodel(object):
         from aux_dist.
         """
         return numpy.exp(self.lognormconst())
-    
-    
+
+
     def setsmooth(sigma):
         """Speficies that the entropy dual and gradient should be
         computed with a quadratic penalty term on magnitude of the
@@ -495,12 +495,12 @@ class basemodel(object):
         high variance.  The smoothing mechanism is described in Chen and
         Rosenfeld, 'A Gaussian prior for smoothing maximum entropy
         models' (1999).
-        
+
         The parameter 'sigma' will be squared and stored as self.sigma2.
         """
         self.sigma2 = sigma**2
-    
-    
+
+
     def setparams(self, params):
         """Set the parameter vector to params, replacing the existing
         parameters.  params must be a list or numpy array of the same
@@ -508,14 +508,14 @@ class basemodel(object):
         """
 
         self.params = numpy.array(params, float)        # make a copy
-        
+
         # Log the new params to disk
         self.logparams()
-            
+
         # Delete params-specific stuff
         self.clearcache()
-        
-       
+
+
     def clearcache(self):
         """Clears the interim results of computations depending on the
         parameters and the sample.
@@ -544,20 +544,20 @@ class basemodel(object):
                 m = len(self.K)
             else:
                 raise ValueError, "specify the number of features / parameters"
-            
+
         # Set parameters, clearing cache variables
-        self.setparams(numpy.zeros(m, float))  
-        
+        self.setparams(numpy.zeros(m, float))
+
         # These bounds on the param values are only effective for the
         # L-BFGS-B optimizer:
-        self.bounds = [(-100., 100.)]*len(self.params)  
-        
+        self.bounds = [(-100., 100.)]*len(self.params)
+
         self.fnevals = 0
         self.gradevals = 0
         self.iters = 0
         self.callingback = False
-        
-        # Clear the stored duals and gradient norms 
+
+        # Clear the stored duals and gradient norms
         self.duals = {}
         self.gradnorms = {}
         if hasattr(self, 'external_duals'):
@@ -566,8 +566,8 @@ class basemodel(object):
             self.external_gradnorms = {}
         if hasattr(self, 'external'):
             self.external = None
-            
-    
+
+
     def setcallback(self, callback=None, callback_dual=None, \
                     callback_grad=None):
         """Sets callback functions to be called every iteration, every
@@ -581,7 +581,7 @@ class basemodel(object):
         self.callback = callback
         self.callback_dual = callback_dual
         self.callback_grad = callback_grad
-    
+
     def logparams(self):
         """Saves the model parameters if logging has been
         enabled and the # of iterations since the last save has reached
@@ -593,12 +593,12 @@ class basemodel(object):
         self.paramslogcounter += 1
         if not (self.paramslogcounter % self.paramslogfreq == 0):
             return
-        
+
         # Check whether the params are NaN
         if not numpy.all(self.params == self.params):
             raise FloatingPointError, "some of the parameters are NaN"
 
-        if self.verbose:                    
+        if self.verbose:
             print "Saving parameters ..."
         paramsfile = open(self.paramslogfilename + '.' + \
                           str(self.paramslogcounter) + '.pickle', 'wb')
@@ -608,7 +608,7 @@ class basemodel(object):
         #self.paramslogcounter = 0
         if self.verbose:
             print "Done."
-    
+
     def beginlogging(self, filename, freq=10):
         """Enable logging params for each fn evaluation to files named
         'filename.freq.pickle', 'filename.(2*freq).pickle', ... each
@@ -625,9 +625,9 @@ class basemodel(object):
         """Stop logging param values whenever setparams() is called.
         """
         del self.paramslogcounter
-        del self.paramslogfilename 
+        del self.paramslogfilename
         del self.paramslogfreq
- 
+
 
 
 
@@ -638,55 +638,55 @@ class model(basemodel):
     """
     def __init__(self, f=None, samplespace=None):
         super(model, self).__init__()
-        
+
         if f != None and samplespace != None:
             self.setfeaturesandsamplespace(f, samplespace)
         elif f != None and samplespace is None:
             raise ValueError, "not supported: specify both features and" \
                     " sample space or neither"
-        
-        
+
+
     def setfeaturesandsamplespace(self, f, samplespace):
         """Creates a new matrix self.F of features f of all points in the
         sample space. f is a list of feature functions f_i mapping the
         sample space to real values.  The parameter vector self.params is
         initialized to zero.
-        
+
         We also compute f(x) for each x in the sample space and store
         them as self.F.  This uses lots of memory but is much faster.
-        
+
         This is only appropriate when the sample space is finite.
         """
         self.f = f
         self.reset(numfeatures=len(f))
         self.samplespace = samplespace
         self.F = sparsefeaturematrix(f, samplespace, 'csr_matrix')
-    
-    
+
+
     def lognormconst(self):
         """Compute the log of the normalization constant (partition
         function) Z=sum_{x \in samplespace} p_0(x) exp(params . f(x)).
         The sample space must be discrete and finite.
-        """        
+        """
         # See if it's been precomputed
         if hasattr(self, 'logZ'):
             return self.logZ
-        
+
         # Has F = {f_i(x_j)} been precomputed?
         if not hasattr(self, 'F'):
             raise AttributeError, "first create a feature matrix F"
-        
+
         # Good, assume the feature matrix exists
         log_p_dot = innerprodtranspose(self.F, self.params)
 
         # Are we minimizing KL divergence?
         if self.priorlogprobs is not None:
             log_p_dot += self.priorlogprobs
-        
+
         self.logZ = logsumexp(log_p_dot)
         return self.logZ
-    
-    
+
+
     def expectations(self):
         """The vector E_p[f(X)] under the model p_params of the vector of
         feature functions f_i over the sample space.
@@ -694,11 +694,11 @@ class model(basemodel):
         # For discrete models, use the representation E_p[f(X)] = p . F
         if not hasattr(self, 'F'):
             raise AttributeError, "first set the feature matrix F"
-         
+
         # A pre-computed matrix of features exists
         p = self.pmf()
         return innerprod(self.F, p)
-    
+
     def logpmf(self):
         """Returns an array indexed by integers representing the
         logarithms of the probability mass function (pmf) at each point
@@ -708,11 +708,11 @@ class model(basemodel):
         # Have the features already been computed and stored?
         if not hasattr(self, 'F'):
             raise AttributeError, "first set the feature matrix F"
-        
+
         # Yes:
         # p(x) = exp(params.f(x)) / sum_y[exp params.f(y)]
         #      = exp[log p_dot(x) - logsumexp{log(p_dot(y))}]
-        
+
         log_p_dot = innerprodtranspose(self.F, self.params)
         # Do we have a prior distribution p_0?
         if self.priorlogprobs is not None:
@@ -721,8 +721,8 @@ class model(basemodel):
             # Compute the norm constant (quickly!)
             self.logZ = logsumexp(log_p_dot)
         return log_p_dot - self.logZ
-    
-    
+
+
     def pmf(self):
         """Returns an array indexed by integers representing the values
         of the probability mass function (pmf) at each point in the
@@ -732,16 +732,16 @@ class model(basemodel):
         Equivalent to exp(self.logpmf())
         """
         return arrayexp(self.logpmf())
-    
+
     # An alias for pmf
     probdist = pmf
-    
+
     def pmf_function(self, f=None):
         """Returns the pmf p_theta(x) as a function taking values on the
         model's sample space.  The returned pmf is defined as:
-            
+
             p_theta(x) = exp(theta.f(x) - log Z)
-        
+
         where theta is the current parameter vector self.params.  The
         returned function p_theta also satisfies
             all([p(x) for x in self.samplespace] == pmf()).
@@ -753,19 +753,19 @@ class model(basemodel):
         Requires that the sample space be discrete and finite, and stored
         as self.samplespace as a list or array.
         """
-        
+
         if hasattr(self, 'logZ'):
             logZ = self.logZ
         else:
             logZ = self.lognormconst()
-        
+
         if f is None:
             try:
                 f = self.f
             except AttributeError:
                 raise AttributeError, "either pass a list f of feature" \
                            " functions or set this as a member variable self.f"
-        
+
         # Do we have a prior distribution p_0?
         priorlogpmf = None
         if self.priorlogprobs is not None:
@@ -773,10 +773,10 @@ class model(basemodel):
                 priorlogpmf = self.priorlogpmf
             except AttributeError:
                 raise AttributeError, "prior probability mass function not set"
-        
+
         def p(x):
             f_x = numpy.array([f[i](x) for i in range(len(f))], float)
-            
+
             # Do we have a prior distribution p_0?
             if priorlogpmf is not None:
                 priorlogprob_x = priorlogpmf(x)
@@ -785,8 +785,8 @@ class model(basemodel):
             else:
                 return math.exp(numpy.dot(self.params, f_x) - logZ)
         return p
-    
-  
+
+
 class conditionalmodel(model):
     """A conditional maximum-entropy (exponential-form) model p(x|w) on a
     discrete sample space.  This is useful for classification problems:
@@ -819,10 +819,10 @@ class conditionalmodel(model):
 
     This method minimizes the Lagrangian dual L of the entropy, which is
     defined for conditional models as
-    
-        L(theta) = sum_w q(w) log Z(w; theta) 
-                   - sum_{w,x} q(w,x) [theta . f(w,x)] 
-    
+
+        L(theta) = sum_w q(w) log Z(w; theta)
+                   - sum_{w,x} q(w,x) [theta . f(w,x)]
+
     Note that both sums are only over the training set {w,x}, not the
     entire sample space, since q(w,x) = 0 for all w,x not in the training
     set.
@@ -830,28 +830,28 @@ class conditionalmodel(model):
     The partial derivatives of L are:
         dL / dtheta_i = K_i - E f_i(X, Y)
     where the expectation is as defined above.
-    
+
     """
     def __init__(self, F, counts, numcontexts):
         """The F parameter should be a (sparse) m x size matrix, where m
         is the number of features and size is |W| * |X|, where |W| is the
         number of contexts and |X| is the number of elements X in the
         sample space.
-        
+
         The 'counts' parameter should be a row vector stored as a (1 x
         |W|*|X|) sparse matrix, whose element i*|W|+j is the number of
         occurrences of x_j in context w_i in the training set.
-         
+
         This storage format allows efficient multiplication over all
         contexts in one operation.
         """
         # Ideally, the 'counts' parameter could be represented as a sparse
         # matrix of size C x X, whose ith row # vector contains all points x_j
         # in the sample space X in context c_i.  For example:
-        #     N = sparse.lil_matrix((len(contexts), len(samplespace)))   
+        #     N = sparse.lil_matrix((len(contexts), len(samplespace)))
         #     for (c, x) in corpus:
         #         N[c, x] += 1
-        
+
         # This would be a nicer input format, but computations are more
         # efficient internally with one long row vector.  What we really need is
         # for sparse matrices to offer a .reshape method so this conversion
@@ -862,10 +862,10 @@ class conditionalmodel(model):
         super(conditionalmodel, self).__init__()
         self.F = F
         self.numcontexts = numcontexts
-        
+
         S = F.shape[1] // numcontexts          # number of sample point
         assert isinstance(S, int)
-        
+
         # Set the empirical pmf:  p_tilde(w, x) = N(w, x) / \sum_c \sum_y N(c, y).
         # This is always a rank-2 beast with only one row (to support either
         # arrays or dense/sparse matrices.
@@ -889,7 +889,7 @@ class conditionalmodel(model):
                     p_tilde = counts
         # Make a copy -- don't modify 'counts'
         self.p_tilde = p_tilde / p_tilde.sum()
-        
+
         # As an optimization, p_tilde need not be copied or stored at all, since
         # it is only used by this function.
 
@@ -900,38 +900,38 @@ class conditionalmodel(model):
         # Now compute the vector K = (K_i) of expectations of the
         # features with respect to the empirical distribution p_tilde(w, x).
         # This is given by:
-        # 
+        #
         #     K_i = \sum_{w, x} q(w, x) f_i(w, x)
         #
         # This is independent of the model parameters.
         self.K = flatten(innerprod(self.F, self.p_tilde.transpose()))
         self.numsamplepoints = S
-    
-    
+
+
     def lognormconst(self):
         """Compute the elementwise log of the normalization constant
         (partition function) Z(w)=sum_{y \in Y(w)} exp(theta . f(w, y)).
         The sample space must be discrete and finite.  This is a vector
         with one element for each context w.
-        """        
+        """
         # See if it's been precomputed
         if hasattr(self, 'logZ'):
             return self.logZ
-        
+
         numcontexts = self.numcontexts
         S = self.numsamplepoints
         # Has F = {f_i(x_j)} been precomputed?
         if not hasattr(self, 'F'):
             raise AttributeError, "first create a feature matrix F"
-        
+
         # Good, assume F has been precomputed
-        
+
         log_p_dot = innerprodtranspose(self.F, self.params)
-        
+
         # Are we minimizing KL divergence?
         if self.priorlogprobs is not None:
             log_p_dot += self.priorlogprobs
-        
+
         self.logZ = numpy.zeros(numcontexts, float)
         for w in xrange(numcontexts):
             self.logZ[w] = logsumexp(log_p_dot[w*S: (w+1)*S])
@@ -940,9 +940,9 @@ class conditionalmodel(model):
 
     def dual(self, params=None, ignorepenalty=False):
         """The entropy dual function is defined for conditional models as
-        
-            L(theta) = sum_w q(w) log Z(w; theta) 
-                       - sum_{w,x} q(w,x) [theta . f(w,x)] 
+
+            L(theta) = sum_w q(w) log Z(w; theta)
+                       - sum_{w,x} q(w,x) [theta . f(w,x)]
 
         or equivalently as
 
@@ -952,11 +952,11 @@ class conditionalmodel(model):
         empirical probability mass function derived from observations of the
         context w in a training set.  Normally q(w, x) will be 1, unless the
         same class label is assigned to the same context more than once.
-        
+
         Note that both sums are only over the training set {w,x}, not the
         entire sample space, since q(w,x) = 0 for all w,x not in the training
         set.
-        
+
         The entropy dual function is proportional to the negative log
         likelihood.
 
@@ -966,18 +966,18 @@ class conditionalmodel(model):
         if not self.callingback:
             if self.verbose:
                 print "Function eval #", self.fnevals
-            
+
             if params is not None:
                 self.setparams(params)
-        
+
         logZs = self.lognormconst()
-        
+
         L = numpy.dot(self.p_tilde_context, logZs) - numpy.dot(self.params, \
                                                                self.K)
-        
+
         if self.verbose and self.external is None:
             print "  dual is ", L
-        
+
         # Use a Gaussian prior for smoothing if requested.
         # This adds the penalty term \sum_{i=1}^m \theta_i^2 / {2 \sigma_i^2}
         if self.sigma2 is not None and ignorepenalty==False:
@@ -985,26 +985,26 @@ class conditionalmodel(model):
             L += penalty
             if self.verbose and self.external is None:
                 print "  regularized dual is ", L
-        
+
         if not self.callingback:
             if hasattr(self, 'callback_dual'):
                 # Prevent infinite recursion if the callback function calls
                 # dual():
-                self.callingback = True   
+                self.callingback = True
                 self.callback_dual(self)
                 self.callingback = False
             self.fnevals += 1
-        
+
         # (We don't reset params to its prior value.)
         return L
-    
-    
+
+
     # These do not need to be overridden:
     #     grad
     #     pmf
     #     probdist
-    
-    
+
+
     def fit(self, algorithm='CG'):
         """Fits the conditional maximum entropy model subject to the
         constraints
@@ -1014,11 +1014,11 @@ class conditionalmodel(model):
         for i=1,...,m, where k_i is the empirical expectation
             k_i = sum_{w, x} p_tilde(w, x) f_i(w, x).
         """
-       
+
         # Call base class method
         return model.fit(self, self.K, algorithm)
-    
-    
+
+
     def expectations(self):
         """The vector of expectations of the features with respect to the
         distribution p_tilde(w) p(x | w), where p_tilde(w) is the
@@ -1027,9 +1027,9 @@ class conditionalmodel(model):
         """
         if not hasattr(self, 'F'):
             raise AttributeError, "need a pre-computed feature matrix F"
-        
+
         # A pre-computed matrix of features exists
-        
+
         numcontexts = self.numcontexts
         S = self.numsamplepoints
         p = self.pmf()
@@ -1038,14 +1038,14 @@ class conditionalmodel(model):
         # required for conditional modelling:
         for w in xrange(numcontexts):
             p[w*S : (w+1)*S] *= self.p_tilde_context[w]
-        
+
         # Use the representation E_p[f(X)] = p . F
         return flatten(innerprod(self.F, p))
 
         # # We only override to modify the documentation string.  The code
         # # is the same as for the model class.
         # return model.expectations(self)
-    
+
 
     def logpmf(self):
         """Returns a (sparse) row vector of logarithms of the conditional
@@ -1057,10 +1057,10 @@ class conditionalmodel(model):
         # Have the features already been computed and stored?
         if not hasattr(self, 'F'):
             raise AttributeError, "first set the feature matrix F"
-        
+
         # p(x | c) = exp(theta.f(x, c)) / sum_c[exp theta.f(x, c)]
         #      = exp[log p_dot(x) - logsumexp{log(p_dot(y))}]
-        
+
         numcontexts = self.numcontexts
         S = self.numsamplepoints
         log_p_dot = flatten(innerprodtranspose(self.F, self.params))
@@ -1077,7 +1077,7 @@ class conditionalmodel(model):
             log_p_dot[w*S : (w+1)*S] -= self.logZ[w]
         return log_p_dot
 
-    
+
 class bigmodel(basemodel):
     """A maximum-entropy (exponential-form) model on a large sample
     space.
@@ -1093,71 +1093,71 @@ class bigmodel(basemodel):
     distribution that should be close to the model for fast convergence.
     The tails should be fatter than the model.
     """
-    
+
     def __init__(self):
         super(bigmodel, self).__init__()
-        
+
         # Number of sample matrices to generate and use to estimate E and logZ
-        self.matrixtrials = 1 
+        self.matrixtrials = 1
 
         # Store the lowest dual estimate observed so far in the fitting process
         self.bestdual = float('inf')
 
-        # Most of the attributes below affect only the stochastic 
+        # Most of the attributes below affect only the stochastic
         # approximation procedure.  They should perhaps be removed, and made
         # arguments of stochapprox() instead.
-        
+
         # Use Kersten-Deylon accelerated convergence fo stoch approx
-        self.deylon = False             
-        
+        self.deylon = False
+
         # By default, use a stepsize decreasing as k^(-3/4)
-        self.stepdecreaserate = 0.75    
-        
+        self.stepdecreaserate = 0.75
+
         # If true, check convergence using the exact model.  Only useful for
         # testing small problems (e.g. with different parameters) when
         # simulation is unnecessary.
-        self.exacttest = False          
-        
+        self.exacttest = False
+
         # By default use Ruppert-Polyak averaging for stochastic approximation
-        self.ruppertaverage = True      
-        
+        self.ruppertaverage = True
+
         # Use the stoch approx scaling modification of Andradottir (1996)
-        self.andradottir = False    
-        
+        self.andradottir = False
+
         # Number of iterations to hold the stochastic approximation stepsize
         # a_k at a_0 for before decreasing it
-        self.a_0_hold = 0          
+        self.a_0_hold = 0
 
         # Whether or not to use the same sample for all iterations
-        self.staticsample = True    
-        
+        self.staticsample = True
+
         # How many iterations of stochastic approximation between testing for
         # convergence
-        self.testconvergefreq = 0  
-        
+        self.testconvergefreq = 0
+
         # How many sample matrices to average over when testing for convergence
         # in stochastic approx
-        self.testconvergematrices = 10  
-        
+        self.testconvergematrices = 10
+
         # Test for convergence every 'testevery' iterations, using one or
         # more external samples. If None, don't test.
         self.testevery = None
         # self.printevery = 1000
-        
-    
+
+
     def resample(self):
-        """(Re)samples the matrix F of sample features.  
+        """(Re)samples the matrix F of sample features.
         """
 
         if self.verbose >= 3:
             print "(sampling)"
-        
+
         # First delete the existing sample matrix to save memory
         # This matters, since these can be very large
         for var in ['sampleF, samplelogprobs, sample']:
             if hasattr(self, var):
                 exec('del self.' + var)
-        
+
         # Now generate a new sample
         output = self.sampleFgen.next()
         try:
@@ -1172,7 +1172,7 @@ class bigmodel(basemodel):
             (self.sampleF, self.samplelogprobs, self.sample) = output
         else:
             raise ValueError, "output of sampleFgen.next() not recognized"
-        
+
         # Check whether the number m of features is correct
         try:
             # The number of features is defined as the length of
@@ -1197,22 +1197,22 @@ class bigmodel(basemodel):
     def lognormconst(self):
         """Estimate the normalization constant (partition function) using
         the current sample matrix F.
-        """        
+        """
         # First see whether logZ has been precomputed
         if hasattr(self, 'logZapprox'):
             return self.logZapprox
- 
+
         # Compute log v = log [p_dot(s_j)/aux_dist(s_j)]   for
         # j=1,...,n=|sample| using a precomputed matrix of sample
         # features.
         logv = self._logv()
-        
+
         # Good, we have our logv.  Now:
         n = len(logv)
         self.logZapprox = logsumexp(logv) - math.log(n)
         return self.logZapprox
-    
-    
+
+
     def expectations(self):
         """Estimates the feature expectations E_p[f(X)] under the current
         model p = p_theta using the given sample feature matrix.  If
@@ -1226,7 +1226,7 @@ class bigmodel(basemodel):
             return self.mu
         self.estimate()
         return self.mu
-       
+
     def _logv(self):
         """This function helps with caching of interim computational
         results.  It is designed to be called internally, not by a user.
@@ -1241,7 +1241,7 @@ class bigmodel(basemodel):
         # First see whether logv has been precomputed
         if hasattr(self, 'logv'):
             return self.logv
- 
+
         # Compute log v = log [p_dot(s_j)/aux_dist(s_j)]   for
         # j=1,...,n=|sample| using a precomputed matrix of sample
         # features.
@@ -1260,17 +1260,17 @@ class bigmodel(basemodel):
             # density p_0?
             if self.externalpriorlogprobs is not None:
                 logv += self.externalpriorlogprobs[e]
-        
+
         # Good, we have our logv.  Now:
         self.logv = logv
         return logv
-    
-    
+
+
     def estimate(self):
         """This function approximates both the feature expectation vector
         E_p f(X) and the log of the normalization term Z with importance
         sampling.
-        
+
         It also computes the sample variance of the component estimates
         of the feature expectations as: varE = var(E_1, ..., E_T) where T
         is self.matrixtrials and E_t is the estimate of E_p f(X)
@@ -1292,30 +1292,30 @@ class bigmodel(basemodel):
         by calling resample().
 
         We use [Rosenfeld01Wholesentence]'s estimate of E_p[f_i] as:
-            {sum_j  p(s_j)/aux_dist(s_j) f_i(s_j) } 
+            {sum_j  p(s_j)/aux_dist(s_j) f_i(s_j) }
               / {sum_j p(s_j) / aux_dist(s_j)}.
-        
+
         Note that this is consistent but biased.
 
         This equals:
-            {sum_j  p_dot(s_j)/aux_dist(s_j) f_i(s_j) } 
+            {sum_j  p_dot(s_j)/aux_dist(s_j) f_i(s_j) }
               / {sum_j p_dot(s_j) / aux_dist(s_j)}
-        
+
         Compute the estimator E_p f_i(X) in log space as:
             num_i / denom,
         where
-            num_i = exp(logsumexp(theta.f(s_j) - log aux_dist(s_j) 
+            num_i = exp(logsumexp(theta.f(s_j) - log aux_dist(s_j)
                         + log f_i(s_j)))
         and
             denom = [n * Zapprox]
-        
+
         where Zapprox = exp(self.lognormconst()).
-        
+
         We can compute the denominator n*Zapprox directly as:
             exp(logsumexp(log p_dot(s_j) - log aux_dist(s_j)))
           = exp(logsumexp(theta.f(s_j) - log aux_dist(s_j)))
         """
-        
+
         if self.verbose >= 3:
             print "(estimating dual and gradient ...)"
 
@@ -1327,29 +1327,29 @@ class bigmodel(basemodel):
         for trial in range(self.matrixtrials):
             if self.verbose >= 2 and self.matrixtrials > 1:
                 print "(trial " + str(trial) + " ...)"
-            
+
             # Resample if necessary
             if (not self.staticsample) or self.matrixtrials > 1:
                 self.resample()
-            
+
             logv = self._logv()
             n = len(logv)
             logZ = self.lognormconst()
             logZs.append(logZ)
-            
+
             # We don't need to handle negative values separately,
             # because we don't need to take the log of the feature
             # matrix sampleF. See my thesis, Section 4.4
-            
+
             logu = logv - logZ
             if self.external is None:
-                averages = innerprod(self.sampleF, arrayexp(logu)) 
+                averages = innerprod(self.sampleF, arrayexp(logu))
             else:
                 averages = innerprod(self.externalFs[self.external], \
-                                     arrayexp(logu)) 
+                                     arrayexp(logu))
             averages /= n
             mus.append(averages)
-                        
+
         # Now we have T=trials vectors of the sample means.  If trials > 1,
         # estimate st dev of means and confidence intervals
         ttrials = len(mus)   # total number of trials performed
@@ -1364,22 +1364,22 @@ class bigmodel(basemodel):
         else:
             # The log of the variance of logZ is:
             #     -log(n-1) + logsumexp(2*log|Z_k - meanZ|)
-            
+
             self.logZapprox = logsumexp(logZs) - math.log(ttrials)
             stdevlogZ = numpy.array(logZs).std()
             mus = numpy.array(mus)
             self.varE = columnvariances(mus)
             self.mu = columnmeans(mus)
             return
-  
-    
+
+
     def setsampleFgen(self, sampler, staticsample=True):
         """Initializes the Monte Carlo sampler to use the supplied
         generator of samples' features and log probabilities.  This is an
         alternative to defining a sampler in terms of a (fixed size)
         feature matrix sampleF and accompanying vector samplelogprobs of
         log probabilities.
-            
+
         Calling sampler.next() should generate tuples (F, lp), where F is
         an (m x n) matrix of features of the n sample points x_1,...,x_n,
         and lp is an array of length n containing the (natural) log
@@ -1398,11 +1398,11 @@ class bigmodel(basemodel):
         (0,...,matrixtrials) for each iteration.  This allows using a set
         of feature matrices, each of which stays constant over all
         iterations.
-               
+
         We now insist that sampleFgen.next() return the entire sample
         feature matrix to be used each iteration to avoid overhead in
         extra function calls and memory copying (and extra code).
-        
+
         An alternative was to supply a list of samplers,
         sampler=[sampler0, sampler1, ..., sampler_{m-1}, samplerZ], one
         for each feature and one for estimating the normalization
@@ -1425,22 +1425,22 @@ class bigmodel(basemodel):
         <type 'generator'>
         >>> [model.sampleF[0,i] for i in range(3)]
         [1.0, 1.0, 1.0]
-       
+
         We now set matrixtrials as a class property instead, rather than
         passing it as an argument to this function, where it can be
         written over (perhaps with the default function argument by
         accident) when we re-call this func (e.g. to change the matrix
         size.)
         """
-        
+
         # if not sequential:
         assert type(sampler) is types.GeneratorType
         self.sampleFgen = sampler
         self.staticsample = staticsample
         if staticsample:
             self.resample()
-                
-       
+
+
     def pdf(self, fx):
         """Returns the estimated density p_theta(x) at the point x with
         feature statistic fx = f(x).  This is defined as
@@ -1449,7 +1449,7 @@ class bigmodel(basemodel):
         function.
         """
         return exp(self.logpdf(fx))
-    
+
     def pdf_function(self):
         """Returns the estimated density p_theta(x) as a function p(f)
         taking a vector f = f(x) of feature statistics at any point x.
@@ -1457,12 +1457,12 @@ class bigmodel(basemodel):
             p_theta(x) = exp(theta.f(x)) / Z
         """
         log_Z_est = self.lognormconst()
-        
+
         def p(fx):
             return numpy.exp(innerprodtranspose(fx, self.params) - log_Z_est)
         return p
-     
-    
+
+
     def logpdf(self, fx, log_prior_x=None):
         """Returns the log of the estimated density p(x) = p_theta(x) at
         the point x.  If log_prior_x is None, this is defined as:
@@ -1473,7 +1473,7 @@ class bigmodel(basemodel):
         each of its rows j=0,...,n-1 as a feature vector f(x_j), and
         returns an array containing the log pdf value of each point x_j
         under the current model.
-        
+
         log Z is estimated using the sample provided with
         setsampleFgen().
 
@@ -1492,8 +1492,8 @@ class bigmodel(basemodel):
         if log_prior_x is not None:
             logpdf += log_prior_x
         return logpdf
-    
-    
+
+
     def stochapprox(self, K):
         """Tries to fit the model to the feature expectations K using
         stochastic approximation, with the Robbins-Monro stochastic
@@ -1514,7 +1514,7 @@ class bigmodel(basemodel):
             #k = (self.paramslog-1)*self.paramslogfreq
         except:
             k = 0
-        
+
         try:
             a_k = self.a_0
         except AttributeError:
@@ -1567,7 +1567,7 @@ class bigmodel(basemodel):
             # otherwise leave step size unchanged
             if self.verbose:
                 print "  step size is: " + str(a_k)
-           
+
             self.matrixtrials = 1
             self.staticsample = False
             if self.andradottir:    # use Andradottir (1996)'s scaling?
@@ -1592,7 +1592,7 @@ class bigmodel(basemodel):
                 print "  approx dual fn is: " + str(self.logZapprox \
                             - numpy.dot(self.params, K))
                 print "  norm(mu_est - k) = " + str(norm_y_k)
-            
+
             # Update params (after the convergence tests too ... don't waste the
             # computation.)
             if self.ruppertaverage:
@@ -1606,13 +1606,13 @@ class bigmodel(basemodel):
             else:
                 # Use the standard Robbins-Monro estimator
                 self.setparams(self.params - a_k*y_k)
-            
+
             if k >= self.maxiter:
                 print "Reached maximum # iterations during stochastic" \
                         " approximation without convergence."
                 break
 
-                      
+
     def settestsamples(self, F_list, logprob_list, testevery=1, priorlogprob_list=None):
         """Requests that the model be tested every 'testevery' iterations
         during fitting using the provided list F_list of feature
@@ -1632,28 +1632,28 @@ class bigmodel(basemodel):
         distribution p0 for the sample points x_j for each of the test
         samples.
         """
-        # Sanity check 
+        # Sanity check
         assert len(F_list) == len(logprob_list)
-        
+
         self.testevery = testevery
         self.externalFs = F_list
         self.externallogprobs = logprob_list
         self.externalpriorlogprobs = priorlogprob_list
-        
+
         # Store the dual and mean square error based on the internal and
         # external (test) samples.  (The internal sample is used
         # statically for sample path optimization; the test samples are
         # used as a control for the process.)  The hash keys are the
         # number of function or gradient evaluations that have been made
         # before now.
-        
+
         # The mean entropy dual and mean square error estimates among the
         # t external (test) samples, where t = len(F_list) =
-        # len(logprob_list).  
+        # len(logprob_list).
         self.external_duals = {}
         self.external_gradnorms = {}
-    
-    
+
+
     def test(self):
         """Estimate the dual and gradient on the external samples,
         keeping track of the parameters that yield the minimum such dual.
@@ -1677,15 +1677,15 @@ class bigmodel(basemodel):
                 print "(testing with sample %d)" % e
             dualapprox.append(self.dual(ignorepenalty=True, ignoretest=True))
             gradnorms.append(norm(self.grad(ignorepenalty=True)))
-        
+
         # Reset to using the normal sample matrix sampleF
         self.external = None
         self.clearcache()
-        
+
         meandual = numpy.average(dualapprox,axis=0)
         self.external_duals[self.iters] = dualapprox
         self.external_gradnorms[self.iters] = gradnorms
-                
+
         if self.verbose:
             print "** Mean (unregularized) dual estimate from the %d" \
                   " external samples is %f" % \
@@ -1708,5 +1708,3 @@ def _test():
 
 if __name__ == "__main__":
     _test()
-
-

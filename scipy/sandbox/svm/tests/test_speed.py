@@ -12,7 +12,7 @@ class TestClassificationSpeed(NumpyTestCase):
     def check_large_test_dataset(self):
         x = N.random.randn(150, 3)
 
-        # XXX shows bug where we can't get any support vectors 
+        # XXX shows bug where we can't get any support vectors
         #x = N.random.randn(4, 2)
 
         #x = N.random.randn(10, 3)

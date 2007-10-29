@@ -96,7 +96,7 @@ class StepFunction:
     """
 
     def __init__(self, x, y, ival=0., sorted=False):
-            
+
         _x = N.asarray(x)
         _y = N.asarray(y)
 
@@ -147,6 +147,5 @@ def monotone_fn_inverter(fn, x, vectorized=True, **keywords):
         y = N.array(y)
 
     a = N.argsort(y)
-    
-    return scipy.interpolate.interp1d(y[a], x[a])
 
+    return scipy.interpolate.interp1d(y[a], x[a])

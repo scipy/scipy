@@ -27,7 +27,7 @@ class ByteOrder(object):
     little_endian = sys.byteorder == 'little'
     native_code = little_endian and '<' or '>'
     swapped_code = little_endian and '>' or '<'
-    
+
     def to_numpy_code(code):
         if code is None:
             return ByteOrder.native_code
@@ -67,7 +67,7 @@ class MatStreamAgent(object):
 
         Inputs
         a_dtype     - dtype of array
-        
+
         a_dtype is assumed to be correct endianness
         '''
         num_bytes = a_dtype.itemsize
@@ -80,7 +80,7 @@ class MatStreamAgent(object):
     def read_ztstring(self, num_bytes):
         return self.mat_stream.read(num_bytes).strip('\x00')
 
-        
+
 class MatFileReader(MatStreamAgent):
     """ Base object for reading mat files
 
@@ -129,7 +129,7 @@ class MatFileReader(MatStreamAgent):
             self._chars_as_strings = chars_as_strings
             self._mat_dtype = mat_dtype
             self.processor_func = self.get_processor_func()
-        
+
     def set_matlab_compatible(self):
         ''' Sets options to return arrays as matlab (tm) loads them '''
         self._mat_dtype = True
@@ -156,7 +156,7 @@ class MatFileReader(MatStreamAgent):
                           set_squeeze_me,
                           None,
                           'get/set squeeze me property')
-    
+
     def get_chars_as_strings(self):
         return self._chars_as_strings
     def set_chars_as_strings(self, chars_as_strings):
@@ -166,7 +166,7 @@ class MatFileReader(MatStreamAgent):
                                 set_chars_as_strings,
                                 None,
                                 'get/set squeeze me property')
-    
+
     def get_order_code(self):
         return self._order_code
     def set_order_code(self, order_code):
@@ -187,17 +187,17 @@ class MatFileReader(MatStreamAgent):
             dtypes[k] = N.dtype(dtypes[k]).newbyteorder(
                 self.order_code)
         return dtypes
-    
+
     def matrix_getter_factory(self):
         assert False, 'Not implemented'
-    
+
     def format_looks_right(self):
         "Return True if the format looks right for this object"
         assert False, 'Not implemented'
 
     def file_header(self):
         return {}
-    
+
     def guess_byte_order(self):
         assert 0, 'Not implemented'
 
@@ -213,13 +213,13 @@ class MatFileReader(MatStreamAgent):
         The read array is the first argument.
         The getter, passed as second argument to the function, must
         define properties, iff mat_dtype option is True:
-        
+
         mat_dtype    - data type when loaded into matlab (tm)
                        (None for no conversion)
 
         func returns the processed array
         '''
-        
+
         def func(arr, getter):
             if arr.dtype.kind == 'U' and self.chars_as_strings:
                 # Convert char array to string or array of strings
@@ -304,14 +304,14 @@ class MatMatrixGetter(MatStreamAgent):
     array_reader - array reading object (see below)
     header       - header dictionary for matrix being read
     """
-    
+
     def __init__(self, array_reader, header):
         super(MatMatrixGetter, self).__init__(array_reader.mat_stream)
         self.array_reader = array_reader
         self.dtypes = array_reader.dtypes
         self.header = header
         self.name = header['name']
-        
+
     def get_array(self):
         ''' Gets an array from matrix, and applies any necessary processing '''
         arr = self.get_raw_array()
@@ -351,7 +351,7 @@ class MatStreamWriter(object):
         if not dt.isnative:
             self.arr = self.arr.astype(dt.newbyteorder('='))
         self.name = name
-        
+
     def arr_dtype_number(self, num):
         ''' Return dtype for given number of items per element'''
         return N.dtype(self.arr.dtype.str[:2] + str(num))
@@ -377,4 +377,3 @@ class MatFileWriter(object):
     ''' Base class for Mat file writers '''
     def __init__(self, file_stream):
         self.file_stream = file_stream
-

@@ -43,8 +43,8 @@ class PolySmoother:
         if x is not None:
             X = N.array([(x**i) for i in range(self.order+1)])
         else: X = self.X
-        return N.squeeze(N.dot(X.T, self.coef)) 
-    
+        return N.squeeze(N.dot(X.T, self.coef))
+
     def fit(self, y, x=None, weights=None):
         self.N = y.shape[0]
         if weights is None:
@@ -73,10 +73,10 @@ class SmoothingSpline(bspline):
 
         if pen == 0.: # can't use cholesky for singular matrices
             banded = False
-            
+
         if x.shape != y.shape:
             raise ValueError, 'x and y shape do not agree, by default x are the Bspline\'s internal knots'
-        
+
         bt = self.basis(x)
         if pen >= self.penmax:
             pen = self.penmax
@@ -114,7 +114,7 @@ class SmoothingSpline(bspline):
                     self.btb[k, i] = (bt[i] * bt[i+k]).sum()
 
             bty.shape = (1, bty.shape[0])
-            self.chol, self.coef = solveh_banded(self.btb + 
+            self.chol, self.coef = solveh_banded(self.btb +
                                                  pen*self.g,
                                                  bty, lower=1)
 
@@ -136,14 +136,14 @@ class SmoothingSpline(bspline):
 
         where self.N is the number of observations of last fit.
         """
-        
+
         return self.N - self.trace()
 
     def df_fit(self):
         """
         = self.trace()
 
-        How many degrees of freedom used in the fit? 
+        How many degrees of freedom used in the fit?
         """
         return self.trace()
 
@@ -195,7 +195,7 @@ class SmoothingSplineFixedDF(SmoothingSpline):
                     apen, bpen = apen, curpen
                     if apen >= self.penmax:
                         raise ValueError, "penalty too large, try setting penmax higher or decreasing df"
-                if N.fabs(curdf - df) / df < tol: 
+                if N.fabs(curdf - df) / df < tol:
                     self.target_reached = True
                     break
         else:
@@ -209,14 +209,14 @@ class SmoothingSplineGCV(SmoothingSpline):
     Try to find a bracketing interval for scipy.optimize.golden
     based on bracket.
 
-    It is probably best to use target_df instead, as it is 
+    It is probably best to use target_df instead, as it is
     sometimes difficult to find a bracketing interval.
 
     """
 
     def fit(self, y, x=None, weights=None, tol=1.0e-03,
             bracket=(0,1.0e-03)):
-    
+
         def _gcv(pen, y, x):
             SmoothingSpline.fit(y, x=x, pen=N.exp(pen), weights=weights)
             a = self.gcv()
@@ -244,7 +244,7 @@ def _zero_triband(a, lower=0):
     """
 
     nrow, ncol = a.shape
-    if lower: 
+    if lower:
         for i in range(nrow): a[i,(ncol-i):] = 0.
     else:
         for i in range(nrow): a[i,0:i] = 0.

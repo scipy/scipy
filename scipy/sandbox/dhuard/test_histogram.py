@@ -14,7 +14,7 @@ class TestHistogram1DFunctions(NumpyTestCase):
         c = _histogram_searchsort(r,bins)
         assert_array_equal(a,b)
         assert_array_equal(c,b)
-        
+
 class TestHistogram(NumpyTestCase):
     def check_simple(self):
         n=100
@@ -35,7 +35,7 @@ class TestHistogram(NumpyTestCase):
         bins = [0,.5,.75,1]
         a,b = histogram(v, bins, normed=True)
         assert_almost_equal((a*np.diff(bins)).sum(), 1)
-        
+
     def check_axis(self):
         n,m = 100,20
         v = rand(n,m)
@@ -48,7 +48,7 @@ class TestHistogram(NumpyTestCase):
         # Check shape of new array is ok.
         assert(a.ndim == 2)
         assert_array_equal(a.shape,[7, m])
-        # Check normalization is consistent 
+        # Check normalization is consistent
         a,b = histogram(v, bins = 7, axis=0, normed=True)
         assert_array_almost_equal((a.T*np.diff(b['edges'])).sum(1), np.ones((m)),5)
         a,b = histogram(v, bins = 7, axis=1, normed=True)
@@ -57,7 +57,7 @@ class TestHistogram(NumpyTestCase):
         # Check results are consistent with 1d estimate
         a1, b1 = histogram(v[0,:], bins=b['edges'], normed=True)
         assert_array_almost_equal(a1, a[0,:],7)
-            
+
     def check_weights(self):
         # Check weights = constant gives the same answer as no weights.
         v = rand(100)
@@ -73,7 +73,7 @@ class TestHistogram(NumpyTestCase):
         w = np.concatenate((np.zeros(5), np.ones(5)))
         wa,wb = histogram(v, bins=np.linspace(0,10.01, 11),weights=w)
         assert_array_almost_equal(wa, w)
-        
+
     def check_strategies(self):
         v = rand(100)
         ae,be = histogram(v, strategy='binsize')
@@ -81,19 +81,19 @@ class TestHistogram(NumpyTestCase):
         as,bs = histogram(v, strategy='searchsort')
         assert_array_equal(ae, ab)
         assert_array_equal(ae, as)
-        
+
         w = rand(100)
         ae,be = histogram(v, weights=w, strategy='binsize')
         ab,bb = histogram(v, weights=w, strategy='digitize')
         as,bs = histogram(v, weights=w, strategy='searchsort')
         assert_array_almost_equal(ae, ab,8)
         assert_array_almost_equal(ae, as,8)
-    
+
     def check_automatic_binning(self):
         v = rand(100)
         h,b = histogram(v, 'Scott')
         h,b = histogram(v, 'Freedman')
-                            
-        
+
+
 if __name__ == "__main__":
     NumpyTest().run()

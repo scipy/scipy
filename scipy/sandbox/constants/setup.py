@@ -3,7 +3,7 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('constants',parent_package,top_path)
 
     config.add_subpackage('*')
-   
+
     return config
 
 if __name__ == '__main__':

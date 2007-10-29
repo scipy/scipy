@@ -16,23 +16,23 @@ import misc
 # Error classes
 class DenError(Exception):
     """Base class for exceptions in this module.
-    
+
     Attributes:
         expression -- input expression in which the error occurred
         message -- explanation of the error"""
     def __init__(self, message):
         self.message    = message
         Exception.__init__(self)
-    
+
     def __str__(self):
         return self.message
 
 # The following function do all the fancy stuff to check that parameters
 # are Ok, and call the right implementation if args are OK.
 def gauss_den(x, mu, va, log = False):
-    """Compute multivariate Gaussian density at points x for 
+    """Compute multivariate Gaussian density at points x for
     mean mu and variance va.
-    
+
     :Parameters:
         x : ndarray
             points where to estimate the pdf.  each row of the array is one
@@ -54,27 +54,27 @@ def gauss_den(x, mu, va, log = False):
     ----
         Vector are row vectors, except va which can be a matrix
         (row vector variance for diagonal variance)."""
-    
+
     lmu  = N.atleast_2d(mu)
     lva  = N.atleast_2d(va)
     lx   = N.atleast_2d(x)
-    
+
     #=======================#
     # Checking parameters   #
     #=======================#
     if len(N.shape(lmu)) != 2:
         raise DenError("mu is not rank 2")
-        
+
     if len(N.shape(lva)) != 2:
         raise DenError("va is not rank 2")
-        
+
     if len(N.shape(lx)) != 2:
         raise DenError("x is not rank 2")
-        
+
     d = N.shape(lx)[1]
     (dm0, dm1) = N.shape(lmu)
     (dv0, dv1) = N.shape(lva)
-    
+
     # Check x and mu same dimension
     if dm0 != 1:
         msg = "mean must be a row vector!"
@@ -110,7 +110,7 @@ def _scalar_gauss_den(x, mu, va, log):
     """ This function is the actual implementation
     of gaussian pdf in scalar case. It assumes all args
     are conformant, so it should not be used directly
-    
+
     Call gauss_den instead"""
     d       = mu.size
     inva    = 1/va
@@ -123,12 +123,12 @@ def _scalar_gauss_den(x, mu, va, log):
         y   += N.log(fac)
 
     return y
-    
+
 def _diag_gauss_den(x, mu, va, log):
     """ This function is the actual implementation
     of gaussian pdf in scalar case. It assumes all args
     are conformant, so it should not be used directly
-    
+
     Call gauss_den instead"""
     # Diagonal matrix case
     d   = mu.size
@@ -149,29 +149,29 @@ def _diag_gauss_den(x, mu, va, log):
 
 def _full_gauss_den(x, mu, va, log):
     """ This function is the actual implementation
-    of gaussian pdf in full matrix case. 
-    
-    It assumes all args are conformant, so it should 
+    of gaussian pdf in full matrix case.
+
+    It assumes all args are conformant, so it should
     not be used directly Call gauss_den instead
-    
-    Does not check if va is definite positive (on inversible 
+
+    Does not check if va is definite positive (on inversible
     for that matter), so the inverse computation and/or determinant
     would throw an exception."""
     d       = mu.size
     inva    = lin.inv(va)
     fac     = 1 / N.sqrt( (2*N.pi) ** d * N.fabs(lin.det(va)))
 
-    # we are using a trick with sum to "emulate" 
+    # we are using a trick with sum to "emulate"
     # the matrix multiplication inva * x without any explicit loop
     #y   = -0.5 * N.sum(N.dot((x-mu), inva) * (x-mu), 1)
-    y   = -0.5 * N.dot(N.dot((x-mu), inva) * (x-mu), 
+    y   = -0.5 * N.dot(N.dot((x-mu), inva) * (x-mu),
                        N.ones((mu.size, 1), x.dtype))[:, 0]
 
     if not log:
         y   = fac * N.exp(y)
     else:
         y   = y + N.log(fac)
- 
+
     return y
 
 # To get coordinatea of a confidence ellipse from multi-variate gaussian pdf
@@ -179,11 +179,11 @@ def gauss_ell(mu, va, dim = misc.DEF_VIS_DIM, npoints = misc.DEF_ELL_NP, \
         level = misc.DEF_LEVEL):
     """Given a mean and covariance for multi-variate
     gaussian, returns the coordinates of the confidense ellipsoid.
-    
+
     Compute npoints coordinates for the ellipse of confidence of given level
     (all points will be inside the ellipsoides with a probability equal to
     level).
-    
+
     :Parameters:
         mu : ndarray
             mean of the pdf
@@ -201,7 +201,7 @@ def gauss_ell(mu, va, dim = misc.DEF_VIS_DIM, npoints = misc.DEF_ELL_NP, \
         Returns the coordinate x and y of the ellipse."""
     if level >= 1 or level <= 0:
         raise ValueError("level should be a scale strictly between 0 and 1.""")
-    
+
     mu = N.atleast_1d(mu)
     va = N.atleast_1d(va)
     d = N.shape(mu)[0]
@@ -227,7 +227,7 @@ def gauss_ell(mu, va, dim = misc.DEF_VIS_DIM, npoints = misc.DEF_ELL_NP, \
     # functions)
     chi22d  = chi2(2)
     mahal   = N.sqrt(chi22d.ppf(level))
-    
+
     # Generates a circle of npoints
     theta   = N.linspace(0, 2 * N.pi, npoints)
     circle  = mahal * N.array([N.cos(theta), N.sin(theta)])
@@ -241,9 +241,9 @@ def gauss_ell(mu, va, dim = misc.DEF_VIS_DIM, npoints = misc.DEF_ELL_NP, \
     elif mode == 'full':
         va  = va[c, :][:, c]
         # Method: compute the cholesky decomp of each cov matrix, that is
-        # compute cova such as va = cova * cova' 
+        # compute cova such as va = cova * cova'
         # WARN: scipy is different than matlab here, as scipy computes a lower
-        # triangular cholesky decomp: 
+        # triangular cholesky decomp:
         #   - va = cova * cova' (scipy)
         #   - va = cova' * cova (matlab)
         # So take care when comparing results with matlab !
@@ -257,7 +257,7 @@ def gauss_ell(mu, va, dim = misc.DEF_VIS_DIM, npoints = misc.DEF_ELL_NP, \
 
 def logsumexp(x):
     """Compute log(sum(exp(x), 1)) while avoiding underflow.
-    
+
     :Parameters:
         x : ndarray
             data in log domain to sum"""
@@ -292,7 +292,7 @@ def multiple_gauss_den(data, mu, va, log = False):
     k = N.shape(mu)[0]
     n = N.shape(data)[0]
     d = N.shape(mu)[1]
-    
+
     y = N.zeros((k, n))
     if N.size(mu) == N.size(va):
         for i in range(k):

@@ -49,7 +49,7 @@ class OnlineEmTest(NumpyTestCase):
 
         self.data   = data
         self.gm     = lgm
-    
+
 class test_on_off_eq(OnlineEmTest):
     def check_1d(self, level = 1):
         d       = 1
@@ -101,16 +101,16 @@ class test_on_off_eq(OnlineEmTest):
         assert_array_equal(ogm0.va, self.gm0.va)
 
         # Forgetting param
-        lamb	= N.ones((nframes, 1))
+        lamb    = N.ones((nframes, 1))
         lamb[0] = 0
-        nu0		= 1.0
-        nu		= N.zeros((len(lamb), 1))
-        nu[0]	= nu0
+        nu0             = 1.0
+        nu              = N.zeros((len(lamb), 1))
+        nu[0]   = nu0
         for i in range(1, len(lamb)):
-            nu[i]	= 1./(1 + lamb[i] / nu[i-1])
+            nu[i]       = 1./(1 + lamb[i] / nu[i-1])
 
-        # object version of online EM: the p* arguments are updated only at each 
-        # epoch, which is equivalent to on full EM iteration on the 
+        # object version of online EM: the p* arguments are updated only at each
+        # epoch, which is equivalent to on full EM iteration on the
         # classic EM algorithm
         ogmm.pw    = ogmm.cw.copy()
         ogmm.pmu   = ogmm.cmu.copy()
@@ -120,7 +120,7 @@ class test_on_off_eq(OnlineEmTest):
                 ogmm.compute_sufficient_statistics_frame(self.data[t], nu[t])
                 ogmm.update_em_frame()
 
-            # Change pw args only a each epoch 
+            # Change pw args only a each epoch
             ogmm.pw  = ogmm.cw.copy()
             ogmm.pmu = ogmm.cmu.copy()
             ogmm.pva = ogmm.cva.copy()
@@ -131,13 +131,13 @@ class test_on_off_eq(OnlineEmTest):
         maxtestprec = 18
         try :
             for i in range(maxtestprec):
-                    assert_array_almost_equal(self.gm.w, ogmm.pw, decimal = i)
-                    assert_array_almost_equal(self.gm.mu, ogmm.pmu, decimal = i)
-                    assert_array_almost_equal(self.gm.va, ogmm.pva, decimal = i)
+                assert_array_almost_equal(self.gm.w, ogmm.pw, decimal = i)
+                assert_array_almost_equal(self.gm.mu, ogmm.pmu, decimal = i)
+                assert_array_almost_equal(self.gm.va, ogmm.pva, decimal = i)
             print "\t !! Precision up to %d decimals !! " % i
         except AssertionError:
             if i < AR_AS_PREC:
-                print """\t !!NOT OK: Precision up to %d decimals only, 
+                print """\t !!NOT OK: Precision up to %d decimals only,
                     outside the allowed range (%d) !! """ % (i, AR_AS_PREC)
                 raise AssertionError
             else:
@@ -153,7 +153,7 @@ class test_on(OnlineEmTest):
 
         self._create_model(d, k, mode, nframes, emiter)
         self._run_pure_online(d, k, mode, nframes)
-    
+
     def check_1d_imp(self):
         d       = 1
         k       = 2
@@ -164,7 +164,7 @@ class test_on(OnlineEmTest):
         self._create_model(d, k, mode, nframes, emiter)
         gmref   = self._run_pure_online(d, k, mode, nframes)
         gmtest  = self._run_pure_online_1d(d, k, mode, nframes)
-    
+
         assert_array_almost_equal(gmref.w, gmtest.w, AR_AS_PREC)
         assert_array_almost_equal(gmref.mu, gmtest.mu, AR_AS_PREC)
         assert_array_almost_equal(gmref.va, gmtest.va, AR_AS_PREC)
@@ -179,14 +179,14 @@ class test_on(OnlineEmTest):
         ogmm.init(init_data[:, 0])
 
         # Forgetting param
-        ku		= 0.005
-        t0		= 200
-        lamb	= 1 - 1/(N.arange(-1, nframes-1) * ku + t0)
-        nu0		= 0.2
-        nu		= N.zeros((len(lamb), 1))
-        nu[0]	= nu0
+        ku              = 0.005
+        t0              = 200
+        lamb    = 1 - 1/(N.arange(-1, nframes-1) * ku + t0)
+        nu0             = 0.2
+        nu              = N.zeros((len(lamb), 1))
+        nu[0]   = nu0
         for i in range(1, len(lamb)):
-            nu[i]	= 1./(1 + lamb[i] / nu[i-1])
+            nu[i]       = 1./(1 + lamb[i] / nu[i-1])
 
         # object version of online EM
         for t in range(nframes):
@@ -208,14 +208,14 @@ class test_on(OnlineEmTest):
         ogmm.init(init_data)
 
         # Forgetting param
-        ku		= 0.005
-        t0		= 200
-        lamb	= 1 - 1/(N.arange(-1, nframes-1) * ku + t0)
-        nu0		= 0.2
-        nu		= N.zeros((len(lamb), 1))
-        nu[0]	= nu0
+        ku              = 0.005
+        t0              = 200
+        lamb    = 1 - 1/(N.arange(-1, nframes-1) * ku + t0)
+        nu0             = 0.2
+        nu              = N.zeros((len(lamb), 1))
+        nu[0]   = nu0
         for i in range(1, len(lamb)):
-            nu[i]	= 1./(1 + lamb[i] / nu[i-1])
+            nu[i]       = 1./(1 + lamb[i] / nu[i-1])
 
         # object version of online EM
         for t in range(nframes):

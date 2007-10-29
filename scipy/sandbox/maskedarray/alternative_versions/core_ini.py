@@ -22,36 +22,36 @@ __date__     = '$Date$'
 __all__ = ['MAError', 'MaskType', 'MaskedArray',
            'bool_', 'complex_', 'float_', 'int_', 'object_',
            'abs', 'absolute', 'add', 'all', 'allclose', 'allequal', 'alltrue',
-               'amax', 'amin', 'anom', 'anomalies', 'any', 'arange', 
-               'arccos', 'arccosh', 'arcsin', 'arcsinh', 'arctan', 'arctan2', 
-               'arctanh', 'argmax', 'argmin', 'argsort', 'around', 
-               'array', 'asarray',  
+               'amax', 'amin', 'anom', 'anomalies', 'any', 'arange',
+               'arccos', 'arccosh', 'arcsin', 'arcsinh', 'arctan', 'arctan2',
+               'arctanh', 'argmax', 'argmin', 'argsort', 'around',
+               'array', 'asarray',
            'bitwise_and', 'bitwise_or', 'bitwise_xor',
-           'ceil', 'choose', 'compressed', 'concatenate', 'conjugate', 
+           'ceil', 'choose', 'compressed', 'concatenate', 'conjugate',
                'cos', 'cosh', 'count',
            'diagonal', 'divide', 'dump', 'dumps',
-           'empty', 'empty_like', 'equal', 'exp', 
-           'fabs', 'fmod', 'filled', 'floor', 'floor_divide', 
-           'getmask', 'getmaskarray', 'greater', 'greater_equal', 'hypot', 
+           'empty', 'empty_like', 'equal', 'exp',
+           'fabs', 'fmod', 'filled', 'floor', 'floor_divide',
+           'getmask', 'getmaskarray', 'greater', 'greater_equal', 'hypot',
            'ids', 'inner', 'innerproduct',
                'isMA', 'isMaskedArray', 'is_mask', 'is_masked', 'isarray',
-           'left_shift', 'less', 'less_equal', 'load', 'loads', 'log', 'log10', 
+           'left_shift', 'less', 'less_equal', 'load', 'loads', 'log', 'log10',
                'logical_and', 'logical_not', 'logical_or', 'logical_xor',
-           'make_mask', 'make_mask_none', 'mask_or', 'masked', 
+           'make_mask', 'make_mask_none', 'mask_or', 'masked',
                'masked_array', 'masked_equal', 'masked_greater',
-               'masked_greater_equal', 'masked_inside', 'masked_less', 
-               'masked_less_equal', 'masked_not_equal', 'masked_object', 
+               'masked_greater_equal', 'masked_inside', 'masked_less',
+               'masked_less_equal', 'masked_not_equal', 'masked_object',
                'masked_outside', 'masked_print_option', 'masked_singleton',
                'masked_values', 'masked_where', 'max', 'maximum', 'mean', 'min',
-               'minimum', 'multiply', 
+               'minimum', 'multiply',
            'negative', 'nomask', 'nonzero', 'not_equal',
-           'ones', 'outer', 'outerproduct', 
-           'power', 'product', 'ptp', 'put', 'putmask', 
-           'rank', 'ravel', 'remainder', 'repeat', 'reshape', 'resize', 
-               'right_shift', 'round_', 
-           'shape', 'sin', 'sinh', 'size', 'sometrue', 'sort', 'sqrt', 'std', 
+           'ones', 'outer', 'outerproduct',
+           'power', 'product', 'ptp', 'put', 'putmask',
+           'rank', 'ravel', 'remainder', 'repeat', 'reshape', 'resize',
+               'right_shift', 'round_',
+           'shape', 'sin', 'sinh', 'size', 'sometrue', 'sort', 'sqrt', 'std',
                'subtract', 'sum', 'swapaxes',
-           'take', 'tan', 'tanh', 'transpose', 'true_divide', 
+           'take', 'tan', 'tanh', 'transpose', 'true_divide',
            'var', 'where',
            'zeros']
 
@@ -62,7 +62,7 @@ import cPickle
 import numpy
 from numpy import bool_, complex_, float_, int_, object_, str_
 
-import numpy.core.umath as umath 
+import numpy.core.umath as umath
 import numpy.core.fromnumeric  as fromnumeric
 from numpy.core.numeric import ndarray
 from numpy.core.fromnumeric import amax, amin
@@ -139,7 +139,7 @@ default_filler = {'b': True,
                   'O' : '?',
                   'S' : 'N/A',
                   'u' : 999999,
-                  'V' : '???',        
+                  'V' : '???',
                   }
 #{0: <type 'numpy.bool_'>,
 # 1: <type 'numpy.int8'>,
@@ -162,13 +162,13 @@ default_filler = {'b': True,
 # 18: <type 'numpy.string_'>,
 # 19: <type 'numpy.unicode_'>,
 # 20: <type 'numpy.void'>,
-max_filler = ntypes._minvals   
-max_filler.update([(k,-numeric.inf) for k in [numpy.float32, numpy.float64]])         
+max_filler = ntypes._minvals
+max_filler.update([(k,-numeric.inf) for k in [numpy.float32, numpy.float64]])
 min_filler = ntypes._maxvals
-min_filler.update([(k,numeric.inf) for k in [numpy.float32, numpy.float64]])    
+min_filler.update([(k,numeric.inf) for k in [numpy.float32, numpy.float64]])
 if 'float128' in ntypes.typeDict:
     max_filler.update([(numpy.float128,-numeric.inf)])
-    min_filler.update([(numpy.float128, numeric.inf)])       
+    min_filler.update([(numpy.float128, numeric.inf)])
 
 
 def default_fill_value (obj):
@@ -245,7 +245,7 @@ def common_fill_value (a, b):
     "Returns the common fill_value of `a` and `b`, if any, or `None`."
     t1 = get_fill_value(a)
     t2 = get_fill_value(b)
-    if t1 == t2: 
+    if t1 == t2:
         return t1
     return None
 
@@ -257,7 +257,7 @@ is used instead.
 
 If `a` is already a contiguous numeric array, `a` itself is returned.
 
-`filled(a)` can be used to be sure that the result is numeric when passing 
+`filled(a)` can be used to be sure that the result is numeric when passing
 an object a to other software ignorant of MA, in particular to numpy itself.
     """
     if hasattr(a, 'filled'):
@@ -268,7 +268,7 @@ an object a to other software ignorant of MA, in particular to numpy itself.
         return numeric.array(a, 'O')
     else:
         return numeric.array(a)
-        
+
 #####--------------------------------------------------------------------------
 #---- --- Ufuncs ---
 #####--------------------------------------------------------------------------
@@ -276,7 +276,7 @@ ufunc_domain = {}
 ufunc_fills = {}
 
 class domain_check_interval:
-    """Defines a valid interval, 
+    """Defines a valid interval,
 so that `domain_check_interval(a,b)(x) = true` where `x < a` or `x > b`."""
     def __init__(self, a, b):
         "domain_check_interval(a,b)(x) = true where x < a or y > b"
@@ -312,7 +312,7 @@ class domain_greater:
     def __init__(self, critical_value):
         "domain_greater(v)(x) = true where x <= v"
         self.critical_value = critical_value
-        
+
     def __call__ (self, x):
         "Execute the call behavior."
         return umath.less_equal(x, self.critical_value)
@@ -329,12 +329,12 @@ class domain_greater_equal:
 #..............................................................................
 class masked_unary_operation:
     """Defines masked version of unary operations,
-where invalid values are pre-masked. 
+where invalid values are pre-masked.
 
 :IVariables:
     - `f` : function.
     - `fill` : Default filling value *[0]*.
-    - `domain` : Default domain *[None]*. 
+    - `domain` : Default domain *[None]*.
     """
     def __init__ (self, mufunc, fill=0, domain=None):
         """ masked_unary_operation(aufunc, fill=0, domain=None)
@@ -368,13 +368,13 @@ where invalid values are pre-masked.
 #..............................................................................
 class masked_binary_operation:
     """Defines masked version of binary operations,
-where invalid values are pre-masked. 
+where invalid values are pre-masked.
 
 :IVariables:
     - `f` : function.
     - `fillx` : Default filling value for first array*[0]*.
     - `filly` : Default filling value for second array*[0]*.
-    - `domain` : Default domain *[None]*. 
+    - `domain` : Default domain *[None]*.
     """
     def __init__ (self, mbfunc, fillx=0, filly=0):
         """abfunc(fillx, filly) must be defined.
@@ -453,21 +453,21 @@ where invalid values are pre-masked.
             tclass = masked_array
         t = filled(target, self.filly)
         return tclass(self.f.accumulate(t, axis))
-    
+
     def __str__ (self):
         return "Masked version of " + str(self.f)
 #..............................................................................
 class domained_binary_operation:
-    """Defines binary operations that have a domain, like divide. 
-    
-These are complicated so they are a separate class. 
+    """Defines binary operations that have a domain, like divide.
+
+These are complicated so they are a separate class.
 They have no reduce, outer or accumulate.
 
 :IVariables:
     - `f` : function.
     - `fillx` : Default filling value for first array*[0]*.
     - `filly` : Default filling value for second array*[0]*.
-    - `domain` : Default domain *[None]*. 
+    - `domain` : Default domain *[None]*.
     """
     def __init__ (self, dbfunc, domain, fillx=0, filly=0):
         """abfunc(fillx, filly) must be defined.
@@ -495,7 +495,7 @@ They have no reduce, outer or accumulate.
         m = mask_or(ma, mb)
         result =  self.f(d1, d2)
         if isinstance(result, MaskedArray):
-            return result.__class__(result, mask=m) 
+            return result.__class__(result, mask=m)
         return masked_array(result, mask=m)
 
     def __str__ (self):
@@ -525,12 +525,12 @@ sqrt = masked_unary_operation(umath.sqrt, 0.0, domain_greater_equal(0.0))
 log = masked_unary_operation(umath.log, 1.0, domain_greater(0.0))
 log10 = masked_unary_operation(umath.log10, 1.0, domain_greater(0.0))
 tan = masked_unary_operation(umath.tan, 0.0, domain_tan(1.e-35))
-arcsin = masked_unary_operation(umath.arcsin, 0.0, 
+arcsin = masked_unary_operation(umath.arcsin, 0.0,
                                 domain_check_interval(-1.0, 1.0))
-arccos = masked_unary_operation(umath.arccos, 0.0, 
+arccos = masked_unary_operation(umath.arccos, 0.0,
                                 domain_check_interval(-1.0, 1.0))
 arccosh = masked_unary_operation(umath.arccosh, 1.0, domain_greater_equal(1.0))
-arctanh = masked_unary_operation(umath.arctanh, 0.0, 
+arctanh = masked_unary_operation(umath.arctanh, 0.0,
                                  domain_check_interval(-1.0+1e-15, 1.0-1e-15))
 # Binary ufuncs
 add = masked_binary_operation(umath.add)
@@ -560,11 +560,11 @@ bitwise_xor = masked_binary_operation(umath.bitwise_xor)
 hypot = masked_binary_operation(umath.hypot)
 # Domained binary ufuncs
 divide = domained_binary_operation(umath.divide, domain_safe_divide(), 0, 1)
-true_divide = domained_binary_operation(umath.true_divide, 
+true_divide = domained_binary_operation(umath.true_divide,
                                         domain_safe_divide(), 0, 1)
-floor_divide = domained_binary_operation(umath.floor_divide, 
+floor_divide = domained_binary_operation(umath.floor_divide,
                                          domain_safe_divide(), 0, 1)
-remainder = domained_binary_operation(umath.remainder, 
+remainder = domained_binary_operation(umath.remainder,
                                       domain_safe_divide(), 0, 1)
 fmod = domained_binary_operation(umath.fmod, domain_safe_divide(), 0, 1)
 
@@ -603,7 +603,7 @@ Does not check contents, only type.
 def make_mask(m, copy=False, small_mask=True, flag=None):
     """make_mask(m, copy=0, small_mask=0)
 Returns `m` as a mask, creating a copy if necessary or requested.
-The function can accept any sequence of integers or `nomask`. 
+The function can accept any sequence of integers or `nomask`.
 Does not check that contents must be 0s and 1s.
 If `small_mask=True`, returns `nomask` if `m` contains no true elements.
 
@@ -650,11 +650,11 @@ The result may equal m1 or m2 if the other is nomask.
     - `copy` (boolean, *[False]*) : Returns a copy of `m` if true.
     - `small_mask` (boolean, *[False]*): Flattens mask to `nomask` if `m` is all false.
      """
-    if m1 is nomask: 
+    if m1 is nomask:
         return make_mask(m2, copy=copy, small_mask=small_mask)
-    if m2 is nomask: 
+    if m2 is nomask:
         return make_mask(m1, copy=copy, small_mask=small_mask)
-    if m1 is m2 and is_mask(m1): 
+    if m1 is m2 and is_mask(m1):
         return m1
     return make_mask(umath.logical_or(m1, m2), copy=copy, small_mask=small_mask)
 
@@ -709,7 +709,7 @@ For floating point, consider `masked_values(x, value)` instead.
 #    return array(d, mask=m, copy=copy)
 
 def masked_inside(x, v1, v2, copy=True):
-    """Shortcut to `masked_where`, where `condition` is True for x inside 
+    """Shortcut to `masked_where`, where `condition` is True for x inside
 the interval `[v1,v2]` ``(v1 <= x <= v2)``.
 The boundaries `v1` and `v2` can be given in either order.
     """
@@ -720,7 +720,7 @@ The boundaries `v1` and `v2` can be given in either order.
     return masked_where(condition, x, copy=copy)
 
 def masked_outside(x, v1, v2, copy=True):
-    """Shortcut to `masked_where`, where `condition` is True for x outside 
+    """Shortcut to `masked_where`, where `condition` is True for x outside
 the interval `[v1,v2]` ``(x < v1)|(x > v2)``.
 The boundaries `v1` and `v2` can be given in either order.
     """
@@ -733,7 +733,7 @@ The boundaries `v1` and `v2` can be given in either order.
 #
 def masked_object(x, value, copy=True):
     """Masks the array `x` where the data are exactly equal to `value`.
-This function is suitable only for `object` arrays: for floating point, 
+This function is suitable only for `object` arrays: for floating point,
 please use `masked_values` instead.
 The mask is set to `nomask` if posible.
 
@@ -818,8 +818,8 @@ Construction:
               mask = nomask, fill_value=None, small_mask=True)
 
 If copy=False, every effort is made not to copy the data:
-If `data` is a MaskedArray, and argument mask=nomask, then the candidate data 
-is `data._data` and the mask used is `data._mask`. 
+If `data` is a MaskedArray, and argument mask=nomask, then the candidate data
+is `data._data` and the mask used is `data._mask`.
 If `data` is a numeric array, it is used as the candidate raw data.
 If `dtype` is not None and is different from data.dtype.char then a data copy is required.
 Otherwise, the candidate is used.
@@ -827,12 +827,12 @@ Otherwise, the candidate is used.
 If a data copy is required, the raw (unmasked) data stored is the result of:
 numeric.array(data, dtype=dtype.char, copy=copy)
 
-If `mask` is `nomask` there are no masked values. 
+If `mask` is `nomask` there are no masked values.
 Otherwise mask must be convertible to an array of booleans with the same shape as x.
 If `small_mask` is True, a mask consisting of zeros (False) only is compressed to `nomask`.
 Otherwise, the mask is not compressed.
 
-fill_value is used to fill in masked values when necessary, such as when 
+fill_value is used to fill in masked values when necessary, such as when
 printing and in method/function filled().
 The fill_value is not used for computation within this module.
     """
@@ -844,9 +844,9 @@ The fill_value is not used for computation within this module.
                 keep_mask=True, small_mask=True, hard_mask=False, flag=None,
                 **options):
         """array(data, dtype=None, copy=True, mask=nomask, fill_value=None)
-        
+
 If `data` is already a ndarray, its dtype becomes the default value of dtype.
-        """  
+        """
         if flag is not None:
             warnings.warn("The flag 'flag' is now called 'small_mask'!",
                           DeprecationWarning)
@@ -863,7 +863,7 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
                     else:
                         cls._defaultmask = data._mask
                 else:
-                    cls._defaultmask = mask_or(data._mask, mask, 
+                    cls._defaultmask = mask_or(data._mask, mask,
                                                 copy=copy, small_mask=small_mask)
             else:
                 cls._defaultmask = make_mask(mask, copy=copy, small_mask=small_mask)
@@ -986,7 +986,7 @@ Wraps the numpy array and sets the mask according to context.
             MaskedArray._defaulthardmask = False
             MaskedArray._fill_value = None
 #        #
-        return    
+        return
     #............................................
     def __getitem__(self, indx):
         """x.__getitem__(y) <==> x[y]
@@ -998,7 +998,7 @@ Returns the item described by i. Not a copy as in previous versions.
         dout = self._data[indx]
         m = self._mask
         scalardout = (len(numeric.shape(dout))==0)
-        # 
+        #
         if m is nomask:
             if scalardout:
                 return dout
@@ -1036,7 +1036,7 @@ Sets item described by index. If value is masked, masks those locations.
             m[index] = True
             self._mask = m
             return
-        #....   
+        #....
         if m is nomask:
             d[index] = filled(value)
             valmask = getmask(value)
@@ -1055,7 +1055,7 @@ Sets item described by index. If value is masked, masks those locations.
             index *= ~m
             d[index] = filled(value)
 #        elif isinstance(index, int):
-        else:            
+        else:
             mindx = m[index]
             value = masked_array(value, mask=mindx, keep_mask=True)
             valdata = filled(value)
@@ -1068,7 +1068,7 @@ Sets item described by index. If value is masked, masks those locations.
                 d[index] = dindx
                 numeric.putmask(mindx, valmask, True)
                 m[index] = mindx
-        #.....    
+        #.....
         if not m.any():
             self._mask = nomask
         else:
@@ -1089,7 +1089,7 @@ The use of negative indices is not supported."""
     #........................
     def __setslice__(self, i, j, value):
         """x.__setslice__(i, j, value) <==> x[i:j]=value
-Sets a slice i:j to `value`. 
+Sets a slice i:j to `value`.
 If `value` is masked, masks those locations."""
         if self is masked:
             #TODO: Well, maybe we could/should
@@ -1103,7 +1103,7 @@ If `value` is masked, masks those locations."""
             m[i:j] = True
             self._mask = m
             return
-        #....   
+        #....
         if m is nomask:
             valmask = getmask(value)
             valdata = filled(value)
@@ -1128,7 +1128,7 @@ If `value` is masked, masks those locations."""
             elif valmask.size > 1:
                 d[i:j][~mindx] = value[~valmask]
                 m[i:j][valmask] = True
-        #.....    
+        #.....
         if not m.any():
             self._mask = nomask
         else:
@@ -1137,7 +1137,7 @@ If `value` is masked, masks those locations."""
     # If we don't want to crash the performance, we better leave __getattribute__ alone...
 #    def __getattribute__(self, name):
 #        """x.__getattribute__('name') = x.name
-#Returns the chosen attribute. 
+#Returns the chosen attribute.
 #If the attribute cannot be directly accessed, checks the _data section.
 #        """
 #        try:
@@ -1151,7 +1151,7 @@ If `value` is masked, masks those locations."""
     #............................................
     def __str__(self):
         """x.__str__() <==> str(x)
-Calculates the string representation, using masked for fill if it is enabled. 
+Calculates the string representation, using masked for fill if it is enabled.
 Otherwise, fills with fill value.
         """
         if masked_print_option.enabled():
@@ -1176,7 +1176,7 @@ Otherwise, fills with fill value.
 
     def __repr__(self):
         """x.__repr__() <==> repr(x)
-Calculates the repr representation, using masked for fill if it is enabled. 
+Calculates the repr representation, using masked for fill if it is enabled.
 Otherwise fill with fill value.
         """
         with_mask = """\
@@ -1209,7 +1209,7 @@ masked_%(name)s(data = %(data)s,
     #............................................
     def __abs__(self):
         """x.__abs__() <==> abs(x)
-Returns a masked array of the current subclass, with the new `_data` 
+Returns a masked array of the current subclass, with the new `_data`
 the absolute of the inital `_data`.
         """
         return self.__class__(self._data.__abs__(), mask=self._mask,
@@ -1217,7 +1217,7 @@ the absolute of the inital `_data`.
     #
     def __neg__(self):
         """x.__abs__() <==> neg(x)
-Returns a masked array of the current subclass, with the new `_data` 
+Returns a masked array of the current subclass, with the new `_data`
 the negative of the inital `_data`."""
         try:
             return self.__class__(self._data.__neg__(), mask=self._mask,
@@ -1227,7 +1227,7 @@ the negative of the inital `_data`."""
     #
     def __iadd__(self, other):
         "Adds other to self in place."
-        f = convert_typecode(filled(other, 0), self._data.dtype.char) 
+        f = convert_typecode(filled(other, 0), self._data.dtype.char)
         m = getmask(other)
         self._data += f
         if self._mask is nomask:
@@ -1238,7 +1238,7 @@ the negative of the inital `_data`."""
     #
     def __isub__(self, other):
         "Subtracts other from self in place."
-        f = convert_typecode(filled(other, 0), self._data.dtype.char) 
+        f = convert_typecode(filled(other, 0), self._data.dtype.char)
         m = getmask(other)
         self._data -= f
         if self._mask is nomask:
@@ -1249,7 +1249,7 @@ the negative of the inital `_data`."""
     #
     def __imul__(self, other):
         "Multiplies self by other in place."
-        f = convert_typecode(filled(other, 1), self._data.dtype.char) 
+        f = convert_typecode(filled(other, 1), self._data.dtype.char)
         m = getmask(other)
         self._data *= f
         if self._mask is nomask:
@@ -1260,14 +1260,14 @@ the negative of the inital `_data`."""
     #
     def __idiv__(self, other):
         "Divides self by other in place."
-        f = convert_typecode(filled(other, 0), self._data.dtype.char) 
+        f = convert_typecode(filled(other, 0), self._data.dtype.char)
         mo = getmask(other)
         result = divide(self, masked_array(f, mask=mo))
         self._data = result._data
         dm = result._mask
         if dm is not self._mask:
             self._mask = dm
-        return self    
+        return self
 
 #    #
 #    def __eq__(self, other):
@@ -1286,7 +1286,7 @@ the negative of the inital `_data`."""
 #        return greater(self,other)
 #
 #    def __ge__(self, other):
-#        return greater_equal(self,other)    
+#        return greater_equal(self,other)
 
     #............................................
     def __float__(self):
@@ -1301,13 +1301,13 @@ the negative of the inital `_data`."""
         "Converts self to int."
         if self._mask is not nomask:
             raise MAError, 'Cannot convert masked element to a Python int.'
-        return int(self._data.item())    
-    
+        return int(self._data.item())
+
     @property
     def dtype(self):
         """returns the data type of `_data`."""
         return self._data.dtype
-    
+
     def astype (self, tc):
         """Returns self as an array of given type.
 Subclassing is preserved."""
@@ -1317,11 +1317,11 @@ Subclassing is preserved."""
             return self.__class__(self, mask=self._mask, dtype=tc, copy=True,
                                   **self.options)
         except:
-#            d = self._data.astype(tc) 
-            return self.__class__(self._data.astype(tc), mask=self._mask, 
+#            d = self._data.astype(tc)
+            return self.__class__(self._data.astype(tc), mask=self._mask,
                                   dtype=tc, **self.options)
-#        
-#        
+#
+#
     #............................................
     def harden_mask(self):
         "Forces the mask to hard"
@@ -1329,7 +1329,7 @@ Subclassing is preserved."""
     def soften_mask(self):
         "Forces the mask to soft"
         self._hardmask = False
-    #............................................        
+    #............................................
     #TODO: FIX THAT: THAT"S NOT A REAL FLATITER
     def _get_flat(self):
         """Calculates the flat value.
@@ -1349,7 +1349,7 @@ Subclassing is preserved."""
         y[:] = value
     #
     flat = property(fget=_get_flat, fset=_set_flat, doc="Flat version")
-    #   
+    #
     #............................................
     def _get_real(self):
         "Returns the real part of a complex array."
@@ -1359,7 +1359,7 @@ Subclassing is preserved."""
         "Sets the real part of a complex array to `value`."
         y = self.real
         y[...] = value
-        
+
     real = property(fget=_get_real, fset=_set_real, doc="Get it real!")
 
     def _get_imaginary(self):
@@ -1371,8 +1371,8 @@ Subclassing is preserved."""
         "Sets the imaginary part of a complex array to `value`."
         y = self.imaginary
         y[...] = value
-        
-    imag = property(fget=_get_imaginary, fset=_set_imaginary, 
+
+    imag = property(fget=_get_imaginary, fset=_set_imaginary,
                     doc="Imaginary part.")
     imaginary = imag
     #............................................
@@ -1387,7 +1387,7 @@ Subclassing is preserved."""
                 raise ValueError, "Inconsistent shape between data and mask!"
             if mask.shape != self._data.shape:
                 mask.shape = self._data.shape
-            self._mask = mask  
+            self._mask = mask
         else:
             self._mask = nomask
     mask = property(fget=_get_mask, fset=_set_mask, doc="Mask")
@@ -1395,22 +1395,22 @@ Subclassing is preserved."""
     def get_fill_value(self):
         "Returns the filling value."
         return self._fill_value
-    
+
     def set_fill_value(self, value=None):
-        """Sets the filling value to `value`. 
+        """Sets the filling value to `value`.
 If None, uses the default, based on the data type."""
         if value is None:
             value = default_fill_value(self._data)
         self._fill_value = value
-        
+
     fill_value = property(fget=get_fill_value, fset=set_fill_value,
                           doc="Filling value")
-    
+
     def filled(self, fill_value=None):
         """Returns an array of the same class as `_data`,
  with masked values filled with `fill_value`.
 Subclassing is preserved.
-        
+
 If `fill_value` is None, uses self.fill_value.
         """
         d = self._data
@@ -1442,7 +1442,7 @@ If `fill_value` is None, uses self.fill_value.
                 else:
                     result = d
         return result
-    
+
     def compressed(self):
         "A 1-D array of all the non-masked data."
         d = self._data.ravel()
@@ -1470,7 +1470,7 @@ scalar or the masked singleton."""
                 n = s[axis]
                 t = list(s)
                 del t[axis]
-                return numeric.ones(t) * n      
+                return numeric.ones(t) * n
         n1 = fromnumeric.size(m, axis)
         n2 = m.astype(int_).sum(axis)
         if axis is None:
@@ -1489,7 +1489,7 @@ scalar or the masked singleton."""
             #self._mask = self._mask.copy()
             self._mask.shape = newshape
     #
-    shape = property(fget=_get_shape, fset=_set_shape, 
+    shape = property(fget=_get_shape, fset=_set_shape,
                      doc="Shape of the array, as a tuple.")
     #
     def _get_size(self):
@@ -1506,10 +1506,10 @@ scalar or the masked singleton."""
     #
     def reshape (self, *s):
         """Reshapes the array to shape s.
-Returns a new masked array. 
+Returns a new masked array.
 If you want to modify the shape in place, please use `a.shape = s`"""
         if self._mask is not nomask:
-            return self.__class__(self._data.reshape(*s), 
+            return self.__class__(self._data.reshape(*s),
                                   mask=self._mask.reshape(*s),
                                   fill_value=self.fill_value, **self.options)
         else:
@@ -1518,7 +1518,7 @@ If you want to modify the shape in place, please use `a.shape = s`"""
     #
     def repeat(self, repeats, axis=None):
         """Repeat elements of `a` `repeats` times along `axis`.
-`repeats` is a sequence of length `a.shape[axis]` telling how many times 
+`repeats` is a sequence of length `a.shape[axis]` telling how many times
 each element should be repeated.
 The mask is repeated accordingly.
         """
@@ -1529,17 +1529,17 @@ The mask is repeated accordingly.
             else:
                 num = f.shape[axis]
             repeats = tuple([repeats]*num)
-    
+
         m = self._mask
         if m is not nomask:
             m = fromnumeric.repeat(m, repeats, axis)
         d = fromnumeric.repeat(f, repeats, axis)
-        return self.__class__(d, mask=m, fill_value=self.fill_value, 
+        return self.__class__(d, mask=m, fill_value=self.fill_value,
                               **self.options)
     #
     def resize(self, newshape, refcheck=True, order=False):
-        """Attempts to modify size and shape of self inplace.  
-        The array must own its own memory and not be referenced by other arrays.    
+        """Attempts to modify size and shape of self inplace.
+        The array must own its own memory and not be referenced by other arrays.
         Returns None.
         """
         try:
@@ -1606,7 +1606,7 @@ else the corresponding values are unmasked.
         d = filled(self, False).any(axis)
         m = self._mask.all(axis)
         return self.__class__(d, mask=m, dtype=bool_,
-                              fill_value=self._fill_value, **self.options) 
+                              fill_value=self._fill_value, **self.options)
     def nonzero(self):
         """a.nonzero() returns a tuple of arrays
 
@@ -1629,15 +1629,15 @@ Returns the sum along the offset diagonal of the array's indicated `axis1` and `
         #TODO: What are we doing with `out`?
         (d,m) = (self._data, self._mask)
         if m is nomask:
-            return d.trace(offset=offset, axis1=axis1, axis2=axis2, 
+            return d.trace(offset=offset, axis1=axis1, axis2=axis2,
                            out=out).astype(dtype)
         else:
-            D = self.diagonal(offset=offset, axis1=axis1, axis2=axis2, 
+            D = self.diagonal(offset=offset, axis1=axis1, axis2=axis2,
                               ).astype(dtype)
             return D.sum(axis=None)
     #............................................
     def sum(self, axis=None, dtype=None):
-        """a.sum(axis=None, dtype=None) 
+        """a.sum(axis=None, dtype=None)
 Sums the array `a` over the given axis `axis`.
 Masked values are set to 0.
 If `axis` is None, applies to a flattened version of the array.
@@ -1654,10 +1654,10 @@ If `axis` is None, applies to a flattened version of the array.
             return self.__class__(self.filled(0).sum(axis, dtype=dtype),
                                   mask=self._mask.all(axis),
                                   fill_value=self.fill_value, **self.options)
-            
+
     def cumsum(self, axis=None, dtype=None):
         """a.cumprod(axis=None, dtype=None)
-Returns the cumulative sum of the elements of array `a` along the given axis `axis`. 
+Returns the cumulative sum of the elements of array `a` along the given axis `axis`.
 Masked values are set to 0.
 If `axis` is None, applies to a flattened version of the array.
         """
@@ -1672,10 +1672,10 @@ If `axis` is None, applies to a flattened version of the array.
             return self.__class__(self.filled(0).cumsum(axis=axis, dtype=dtype),
                                   mask=self._mask, fill_value=self.fill_value,
                                   **self.options)
-        
+
     def prod(self, axis=None, dtype=None):
         """a.prod(axis=None, dtype=None)
-Returns the product of the elements of array `a` along the given axis `axis`. 
+Returns the product of the elements of array `a` along the given axis `axis`.
 Masked elements are set to 1.
 If `axis` is None, applies to a flattened version of the array.
         """
@@ -1694,10 +1694,10 @@ If `axis` is None, applies to a flattened version of the array.
                                   fill_value=self.fill_value,
                                   **self.options)
     product = prod
-            
+
     def cumprod(self, axis=None, dtype=None):
         """a.cumprod(axis=None, dtype=None)
-Returns the cumulative product of ethe lements of array `a` along the given axis `axis`. 
+Returns the cumulative product of ethe lements of array `a` along the given axis `axis`.
 Masked values are set to 1.
 If `axis` is None, applies to a flattened version of the array.
         """
@@ -1712,11 +1712,11 @@ If `axis` is None, applies to a flattened version of the array.
 #                return self.filled(1).cumprod(None, dtype=dtype)
             return self.__class__(self.filled(1).cumprod(axis=axis, dtype=dtype),
                                   mask=self._mask,
-                                  fill_value=self.fill_value, **self.options)        
-            
+                                  fill_value=self.fill_value, **self.options)
+
     def mean(self, axis=None, dtype=None):
         """a.mean(axis=None, dtype=None)
-        
+
     Averages the array over the given axis.  If the axis is None,
     averages over all dimensions of the array.  Equivalent to
 
@@ -1741,17 +1741,17 @@ If `axis` is None, applies to a flattened version of the array.
                 return masked
             return self.__class__(dsum*1./cnt, mask=mask,
                                   fill_value=self.fill_value, **self.options)
-    
+
     def anom(self, axis=None, dtype=None):
         """a.anom(axis=None, dtype=None)
     Returns the anomalies, or deviation from the average.
-            """    
+            """
         m = self.mean(axis, dtype)
         if not axis:
             return (self - m)
         else:
             return (self - expand_dims(m,axis))
- 
+
     def var(self, axis=None, dtype=None):
         """a.var(axis=None, dtype=None)
 Returns the variance, a measure of the spread of a distribution.
@@ -1773,10 +1773,10 @@ i.e. var = mean((x - x.mean())**2).
 #            dvar /= cnt
             if axis is None:
                 return dvar
-            return self.__class__(dvar, 
+            return self.__class__(dvar,
                                   mask=mask_or(self._mask.all(axis), (cnt==1)),
                                   fill_value=self.fill_value, **self.options)
-            
+
     def std(self, axis=None, dtype=None):
         """a.std(axis=None, dtype=None)
 Returns the standard deviation, a measure of the spread of a distribution.
@@ -1798,7 +1798,7 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
     def argsort(self, axis=None, fill_value=None, kind='quicksort',
                 order=None):
         """Returns an array of indices that sort 'a' along the specified axis.
-    Masked values are filled beforehand to `fill_value`.        
+    Masked values are filled beforehand to `fill_value`.
     If `fill_value` is None, uses the default for the data type.
     Returns a numpy array.
 
@@ -1840,9 +1840,9 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
         return d.argsort(axis, kind=kind, order=order)
 
     def argmin(self, axis=None, fill_value=None):
-        """Returns the array of indices for the minimum values of `a` along the 
+        """Returns the array of indices for the minimum values of `a` along the
     specified axis.
-    Masked values are treated as if they had the value `fill_value`.        
+    Masked values are treated as if they had the value `fill_value`.
     If `fill_value` is None, the default for the data type is used.
     Returns a numpy array.
 
@@ -1860,9 +1860,9 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
         return d.argmin(axis)
 
     def argmax(self, axis=None, fill_value=None):
-        """Returns the array of indices for the maximum values of `a` along the 
+        """Returns the array of indices for the maximum values of `a` along the
     specified axis.
-    Masked values are treated as if they had the value `fill_value`.        
+    Masked values are treated as if they had the value `fill_value`.
     If `fill_value` is None, the default for the data type is used.
     Returns a numpy array.
 
@@ -1882,7 +1882,7 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
         if axis is None:
             return d.argmax()
         return d.argmax(axis)
-    
+
     def sort(self, axis=-1, kind='quicksort', order=None, endwith=True):
         """
         Sort a along the given axis.
@@ -1924,7 +1924,7 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
     and use less space than sorts along other axis.
 
     """
-        
+
         if endwith:
             filler = minimum_fill_value(self.dtype)
         else:
@@ -1934,16 +1934,16 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
         m = self._mask
         if m is not nomask:
             self._mask = m[indx]
-        return 
+        return
     #............................................
     # Backwards Compatibility. Heck...
     @property
     def data(self):
-        """Returns the `_data` part of the MaskedArray. 
+        """Returns the `_data` part of the MaskedArray.
 You should really use `_data` instead..."""
         return self._data
     def raw_data(self):
-        """Returns the `_data` part of the MaskedArray. 
+        """Returns the `_data` part of the MaskedArray.
 You should really use `_data` instead..."""
         return self._data
 
@@ -1953,7 +1953,7 @@ You should really use `_data` instead..."""
 
 #class _arithmethods:
 #    """Defines a wrapper for arithmetic methods.
-#Instead of directly calling a ufunc, the corresponding method of  the `array._data` 
+#Instead of directly calling a ufunc, the corresponding method of  the `array._data`
 #object is called instead.
 #    """
 #    def __init__ (self, methodname, fill_self=0, fill_other=0, domain=None):
@@ -1962,7 +1962,7 @@ You should really use `_data` instead..."""
 #    - `methodname` (String) : Method name.
 #    - `fill_self` (Float *[0]*) : Fill value for the instance.
 #    - `fill_other` (Float *[0]*) : Fill value for the target.
-#    - `domain` (Domain object *[None]*) : Domain of non-validity. 
+#    - `domain` (Domain object *[None]*) : Domain of non-validity.
 #        """
 #        self.methodname = methodname
 #        self.fill_self = fill_self
@@ -1982,7 +1982,7 @@ You should really use `_data` instead..."""
 #            else:
 #                domain = self.domain(target, base)
 #            if domain.any():
-#                #If `other` is a subclass of ndarray, `filled` must have the 
+#                #If `other` is a subclass of ndarray, `filled` must have the
 #                # same subclass, else we'll lose some info.
 #                #The easiest then is to fill `target` instead of creating
 #                # a pure ndarray.
@@ -1991,14 +1991,14 @@ You should really use `_data` instead..."""
 #                    if target is other:
 #                        # We don't want to modify other: let's copy target, then
 #                        target = target.copy()
-#                    target[:] = numeric.where(fromnumeric.asarray(domain), 
+#                    target[:] = numeric.where(fromnumeric.asarray(domain),
 #                                              self.fill_other, target)
 #                else:
-#                    target = numeric.where(fromnumeric.asarray(domain), 
+#                    target = numeric.where(fromnumeric.asarray(domain),
 #                                           self.fill_other, target)
 #                m_other = mask_or(m_other, domain)
-#        m = mask_or(m_self, m_other)      
-#        method = getattr(base, self.methodname)       
+#        m = mask_or(m_self, m_other)
+#        method = getattr(base, self.methodname)
 #        return instance.__class__(method(target, *args), mask=m)
 #    #
 #    def patch(self):
@@ -2007,7 +2007,7 @@ You should really use `_data` instead..."""
 #..............................................................................
 class _arithmethods(object):
     """Defines a wrapper for arithmetic methods.
-Instead of directly calling a ufunc, the corresponding method of  the `array._data` 
+Instead of directly calling a ufunc, the corresponding method of  the `array._data`
 object is called instead.
     """
     def __init__ (self, methodname, fill_self=0, fill_other=0, domain=None):
@@ -2016,7 +2016,7 @@ object is called instead.
     - `methodname` (String) : Method name.
     - `fill_self` (Float *[0]*) : Fill value for the instance.
     - `fill_other` (Float *[0]*) : Fill value for the target.
-    - `domain` (Domain object *[None]*) : Domain of non-validity. 
+    - `domain` (Domain object *[None]*) : Domain of non-validity.
         """
         self.methodname = methodname
         self.fill_self = fill_self
@@ -2050,7 +2050,7 @@ object is called instead.
             else:
                 domain = self.domain(target, base)
             if domain.any():
-                #If `other` is a subclass of ndarray, `filled` must have the 
+                #If `other` is a subclass of ndarray, `filled` must have the
                 # same subclass, else we'll lose some info.
                 #The easiest then is to fill `target` instead of creating
                 # a pure ndarray.
@@ -2060,14 +2060,14 @@ object is called instead.
                         # We don't want to modify other: let's copy target, then
                         # Same if target us base, instead...
                         target = target.copy()
-                    target[:] = numeric.where(fromnumeric.asarray(domain), 
+                    target[:] = numeric.where(fromnumeric.asarray(domain),
                                               self.fill_other, target)
                 else:
-                    target = numeric.where(fromnumeric.asarray(domain), 
+                    target = numeric.where(fromnumeric.asarray(domain),
                                            self.fill_other, target)
                 m_other = mask_or(m_other, domain)
-        m = mask_or(m_self, m_other)      
-        method = getattr(base, self.methodname)       
+        m = mask_or(m_self, m_other)
+        method = getattr(base, self.methodname)
         return instance.__class__(method(target, *args), mask=m,
                                   fill_value=instance.fill_value,
                                   **instance.options)
@@ -2082,7 +2082,7 @@ Instead of calling a ufunc, the method of the masked object is called.
     - `methodname` (String) : Method name.
     - `fill_self` (Float *[0]*) : Fill value for the instance.
     - `fill_other` (Float *[0]*) : Fill value for the target.
-    - `domain` (Domain object *[None]*) : Domain of non-validity. 
+    - `domain` (Domain object *[None]*) : Domain of non-validity.
         """
         self.methodname = methodname
         self.fill_self = fill_self
@@ -2107,9 +2107,9 @@ Instead of calling a ufunc, the method of the masked object is called.
         m = mask_or(instance._mask, getmask(other), small_mask=False)
         base = instance.filled(self.fill_self)
         target = filled(other, self.fill_other)
-        method = getattr(base, self.methodname)      
+        method = getattr(base, self.methodname)
         return instance.__class__(method(target, *args), mask=m,
-                                  **instance.options)  
+                                  **instance.options)
 #..........................................................
 MaskedArray.__add__ = _arithmethods('__add__')
 MaskedArray.__radd__ = _arithmethods('__add__')
@@ -2118,17 +2118,17 @@ MaskedArray.__rsub__ = _arithmethods('__rsub__')
 MaskedArray.__pow__ = _arithmethods('__pow__')
 MaskedArray.__mul__ = _arithmethods('__mul__', 1, 1)
 MaskedArray.__rmul__ = _arithmethods('__mul__', 1, 1)
-MaskedArray.__div__ = _arithmethods('__div__', 0, 1, 
+MaskedArray.__div__ = _arithmethods('__div__', 0, 1,
                                     domain_safe_divide())
-MaskedArray.__rdiv__ = _arithmethods('__rdiv__', 1, 0, 
+MaskedArray.__rdiv__ = _arithmethods('__rdiv__', 1, 0,
                                      domain_safe_divide())
-MaskedArray.__truediv__ = _arithmethods('__truediv__', 0, 1, 
+MaskedArray.__truediv__ = _arithmethods('__truediv__', 0, 1,
                                         domain_safe_divide())
-MaskedArray.__rtruediv__ = _arithmethods('__rtruediv__', 1, 0, 
+MaskedArray.__rtruediv__ = _arithmethods('__rtruediv__', 1, 0,
                                          domain_safe_divide())
-MaskedArray.__floordiv__ = _arithmethods('__floordiv__', 0, 1, 
+MaskedArray.__floordiv__ = _arithmethods('__floordiv__', 0, 1,
                                          domain_safe_divide())
-MaskedArray.__rfloordiv__ = _arithmethods('__rfloordiv__', 1, 0, 
+MaskedArray.__rfloordiv__ = _arithmethods('__rfloordiv__', 1, 0,
                                           domain_safe_divide())
 MaskedArray.__eq__ = _compamethods('__eq__')
 MaskedArray.__ne__ = _compamethods('__ne__')
@@ -2149,15 +2149,15 @@ masked_singleton = MaskedArray(0, dtype=int_, mask=True)
 masked = masked_singleton
 
 masked_array = MaskedArray
-def array(data, dtype=None, copy=False, order=False, mask=nomask, 
+def array(data, dtype=None, copy=False, order=False, mask=nomask,
           keep_mask=True, small_mask=True, hard_mask=None, fill_value=None):
-    """array(data, dtype=None, copy=True, order=False, mask=nomask, 
+    """array(data, dtype=None, copy=True, order=False, mask=nomask,
              keep_mask=True, small_mask=True, fill_value=None)
 Acts as shortcut to MaskedArray, with options in a different order for convenience.
 And backwards compatibility...
     """
-    return MaskedArray(data, mask=mask, dtype=dtype, copy=copy, 
-                       keep_mask=keep_mask, small_mask=small_mask, 
+    return MaskedArray(data, mask=mask, dtype=dtype, copy=copy,
+                       keep_mask=keep_mask, small_mask=small_mask,
                        hard_mask=hard_mask, fill_value=fill_value)
 
 def is_masked(x):
@@ -2180,10 +2180,10 @@ def is_masked(x):
 #
 #If `onmask` is True, the new mask is the output of the method calld on the initial mask.
 #If `onmask` is False, the new mask is just a reference to the initial mask.
-#    
+#
 #:Parameters:
 #    `funcname` : String
-#        Name of the function to apply on data. 
+#        Name of the function to apply on data.
 #    `onmask` : Boolean *[True]*
 #        Whether the mask must be processed also (True) or left alone (False).
 #    """
@@ -2201,13 +2201,13 @@ def is_masked(x):
 #            return C(getattr(d,methodname).__call__(*args, **params),
 #                     mask=getattr(m,methodname)(*args, **params) )
 #        else:
-#            return C(getattr(d,methodname).__call__(*args, **params), mask=m) 
-#        
+#            return C(getattr(d,methodname).__call__(*args, **params), mask=m)
+#
 #    def patch(self):
 #        "Adds the new method to MaskedArray."
 #        return types.MethodType(self, None, MaskedArray)
 ##......................................
-#MaskedArray.conj = MaskedArray.conjugate = _arraymethod('conjugate').patch()  
+#MaskedArray.conj = MaskedArray.conjugate = _arraymethod('conjugate').patch()
 #MaskedArray.diagonal = _arraymethod('diagonal').patch()
 #MaskedArray.take = _arraymethod('take').patch()
 #MaskedArray.ravel = _arraymethod('ravel').patch()
@@ -2226,10 +2226,10 @@ of the corresponding method called on the original `_data`.
 
 If `onmask` is True, the new mask is the output of the method calld on the initial mask.
 If `onmask` is False, the new mask is just a reference to the initial mask.
-    
+
 :Parameters:
     `funcname` : String
-        Name of the function to apply on data. 
+        Name of the function to apply on data.
     `onmask` : Boolean *[True]*
         Whether the mask must be processed also (True) or left alone (False).
     """
@@ -2265,10 +2265,10 @@ If `onmask` is False, the new mask is just a reference to the initial mask.
                      dtype=t, fill_value=f, **obj.options)
         else:
             return C(getattr(d,methodname).__call__(*args, **params), mask=m,
-                     dtype=t, fill_value=f, **obj.options) 
+                     dtype=t, fill_value=f, **obj.options)
 #......................................
-MaskedArray.conj = MaskedArray.conjugate = _arraymethod('conjugate') 
-MaskedArray.copy = _arraymethod('copy') 
+MaskedArray.conj = MaskedArray.conjugate = _arraymethod('conjugate')
+MaskedArray.copy = _arraymethod('copy')
 MaskedArray.diagonal = _arraymethod('diagonal')
 MaskedArray.take = _arraymethod('take')
 MaskedArray.ravel = _arraymethod('ravel')
@@ -2313,7 +2313,7 @@ In one argument case, returns the scalar minimum.
             t = filled(target)
             return masked_array (umath.minimum.reduce (t, axis))
         else:
-            t = umath.minimum.reduce(filled(target, minimum_fill_value(target)), 
+            t = umath.minimum.reduce(filled(target, minimum_fill_value(target)),
                                      axis)
             m = umath.logical_and.reduce(m, axis)
 #            return masked_array(t, mask=m, fill_value=get_fill_value(target))
@@ -2377,7 +2377,7 @@ class _maximum_operation:
             t = filled(target)
             return masked_array(umath.maximum.reduce (t, axis))
         else:
-            t = umath.maximum.reduce(filled(target, maximum_fill_value(target)), 
+            t = umath.maximum.reduce(filled(target, maximum_fill_value(target)),
                                      axis)
             m = umath.logical_and.reduce(m, axis)
             try:
@@ -2495,7 +2495,7 @@ def power(a, b, third=None):
 #..............................................................................
 def argsort(a, axis=None, kind='quicksort', fill_value=None):
     """Returns an array of indices that sort 'a' along the specified axis.
-    Masked values are filled beforehand to `fill_value`.        
+    Masked values are filled beforehand to `fill_value`.
     If `fill_value` is None, uses the default for the data type.
     Returns a numpy array.
 
@@ -2537,9 +2537,9 @@ def argsort(a, axis=None, kind='quicksort', fill_value=None):
     return d.argsort(axis, kind)
 
 def argmin(a, axis=None, fill_value=None):
-    """Returns the array of indices for the minimum values of `a` along the 
+    """Returns the array of indices for the minimum values of `a` along the
     specified axis.
-    Masked values are treated as if they had the value `fill_value`.        
+    Masked values are treated as if they had the value `fill_value`.
     If `fill_value` is None, the default for the data type is used.
     Returns a numpy array.
 
@@ -2557,9 +2557,9 @@ def argmin(a, axis=None, fill_value=None):
     return d.argmin(axis=axis)
 
 def argmax(a, axis=None, fill_value=None):
-    """Returns the array of indices for the maximum values of `a` along the 
+    """Returns the array of indices for the maximum values of `a` along the
     specified axis.
-    Masked values are treated as if they had the value `fill_value`.        
+    Masked values are treated as if they had the value `fill_value`.
     If `fill_value` is None, the default for the data type is used.
     Returns a numpy array.
 
@@ -2632,7 +2632,7 @@ and use less space than sorts along other axis.
 #    return
     indx = numpy.indices(a.shape).tolist()
     indx[axis] = filled(a,filler).argsort(axis=axis,kind=kind,order=order)
-    return a[indx]   
+    return a[indx]
 
 def compressed(x):
     """Returns a compressed version of a masked array (or just the array if it
@@ -2656,7 +2656,7 @@ def concatenate(arrays, axis=0):
         d.append(filled(x))
     d = numeric.concatenate(d, axis)
     for x in arrays:
-        if getmask(x) is not nomask: 
+        if getmask(x) is not nomask:
             break
     else:
         return masked_array(d)
@@ -2671,10 +2671,10 @@ def expand_dims(x,axis):
     if isinstance(x, MaskedArray):
         (d,m) = (x._data, x._mask)
         if m is nomask:
-            return masked_array(n_expand_dims(d,axis),                                
+            return masked_array(n_expand_dims(d,axis),
                                 dtype=d.dtype, fill_value=x._fill_value)
         else:
-            return masked_array(n_expand_dims(d,axis), 
+            return masked_array(n_expand_dims(d,axis),
                                 mask=n_expand_dims(m,axis),
                                 dtype=d.dtype, fill_value=x._fill_value)
     else:
@@ -2721,7 +2721,7 @@ In particular `v` can be a scalar or length 1 array."""
         return fromnumeric.asarray(a).putmask(values, mask)
 
 def transpose(a,axes=None):
-    """Returns a view of the array with dimensions permuted according to axes.  
+    """Returns a view of the array with dimensions permuted according to axes.
 If `axes` is None (default), returns array with dimensions reversed.
     """
     #We can't use 'frommethod', as 'transpose' doesn't take keywords
@@ -2729,7 +2729,7 @@ If `axes` is None (default), returns array with dimensions reversed.
         return a.transpose(axes)
     except AttributeError:
         return fromnumeric.asarray(a).transpose(axes)
-    
+
 def reshape(a, new_shape):
     """Changes the shape of the array `a` to `new_shape`."""
     #We can't use 'frommethod', it whine about some parameters. Dmmit.
@@ -2740,7 +2740,7 @@ def reshape(a, new_shape):
 
 def resize(x, new_shape):
     """resize(a,new_shape) returns a new array with the specified shape.
-    The total size of the original array can be any size. 
+    The total size of the original array can be any size.
     The new array is filled with repeated copies of a. If a was masked, the new
     array will be masked, and the new mask will be a repetition of the old one.
     """
@@ -2768,10 +2768,10 @@ def shape(obj):
     return fromnumeric.shape(filled(obj))
 #
 def size(obj, axis=None):
-    """Returns the number of elements in the array along the given axis, 
+    """Returns the number of elements in the array along the given axis,
 or in the sequence if `axis` is None.
     """
-    return fromnumeric.size(filled(obj), axis)    
+    return fromnumeric.size(filled(obj), axis)
 #................................................
 
 #####--------------------------------------------------------------------------
@@ -2800,15 +2800,15 @@ def choose (indices, t, out=None, mode='raise'):
     #TODO: implement options `out` and `mode`, if possible.
     def fmask (x):
         "Returns the filled array, or True if ``masked``."
-        if x is masked: 
+        if x is masked:
             return 1
         return filled(x)
     def nmask (x):
         "Returns the mask, True if ``masked``, False if ``nomask``."
-        if x is masked: 
+        if x is masked:
             return 1
         m = getmask(x)
-        if m is nomask: 
+        if m is nomask:
             return 0
         return m
     c = filled(indices, 0)
@@ -2849,7 +2849,7 @@ def arange(start, stop=None, step=1, dtype=None):
     by the keyword argument dtype.
     """
     return array(numeric.arange(start, stop, step, dtype), mask=nomask)
-    
+
 def inner(a, b):
     """inner(a,b) returns the dot product of two arrays, which has
     shape a.shape[:-1] + b.shape[:-1] with elements computed by summing the
@@ -2858,9 +2858,9 @@ def inner(a, b):
     """
     fa = filled(a, 0)
     fb = filled(b, 0)
-    if len(fa.shape) == 0: 
+    if len(fa.shape) == 0:
         fa.shape = (1,)
-    if len(fb.shape) == 0: 
+    if len(fb.shape) == 0:
         fb.shape = (1,)
     return masked_array(numeric.inner(fa, fb))
 innerproduct = inner
@@ -2878,7 +2878,7 @@ def outer(a, b):
     mb = getmaskarray(b)
     m = make_mask(1-numeric.outer(1-ma, 1-mb), copy=0)
     return masked_array(d, mask=m)
-outerproduct = outer    
+outerproduct = outer
 
 def allequal (a, b, fill_value=True):
     """
@@ -2899,13 +2899,13 @@ fill_value as a truth value where either or both are masked.
         return dm.filled(True).all(None)
     else:
         return False
-    
+
 def allclose (a, b, fill_value=True, rtol=1.e-5, atol=1.e-8):
     """ Returns `True` if all elements of `a` and `b` are equal subject to given tolerances.
 If `fill_value` is True, masked values are considered equal.
 If `fill_value` is False, masked values considered unequal.
 The relative error rtol should be positive and << 1.0
-The absolute error `atol` comes into play for those elements of `b` 
+The absolute error `atol` comes into play for those elements of `b`
  that are very small or zero; it says how small `a` must be also.
     """
     m = mask_or(getmask(a), getmask(b))
@@ -2934,17 +2934,17 @@ entries uninitialized. This can be faster than zeros."""
 def empty_like(a):
     """empty_like(a)
 Returns an empty (uninitialized) array of the shape and typecode of a.
-Note that this does NOT initialize the returned array.  
+Note that this does NOT initialize the returned array.
 If you require your array to be initialized, you should use zeros_like()."""
     return masked_array(numeric.empty_like(a), mask=nomask)
 
 def ones(new_shape, dtype=float):
-    """ones(shape, dtype=None) 
+    """ones(shape, dtype=None)
 Returns an array of the given dimensions, initialized to all ones."""
     return masked_array(numeric.ones(new_shape, dtype), mask=nomask)
 
 def zeros(new_shape, dtype=float):
-    """zeros(new_shape, dtype=None) 
+    """zeros(new_shape, dtype=None)
 Returns an array of the given dimensions, initialized to all zeros."""
     return masked_array(numeric.zeros(new_shape, dtype), mask=nomask)
 
@@ -2962,13 +2962,13 @@ in a pickle."""
 def _getstate(a):
     "Returns the internal state of the masked array, for pickling purposes."
     state = (1,
-             a.shape, 
+             a.shape,
              a.dtype,
              a.flags.fnc,
              (a._data).__reduce__()[-1][-1],
              getmaskarray(a).__reduce__()[-1][-1])
     return state
-    
+
 def _setstate(a, state):
     """Restores the internal state of the masked array, for pickling purposes.
 `state` is typically the output of the ``__getstate__`` output, and is a 5-tuple:
@@ -2982,13 +2982,13 @@ def _setstate(a, state):
     (ver, shp, typ, isf, raw, msk) = state
     (a._data).__setstate__((shp, typ, isf, raw))
     (a._mask).__setstate__((shp, dtype('|b1'), isf, msk))
-        
+
 def _reduce(a):
     """Returns a 3-tuple for pickling a MaskedArray."""
     return (_mareconstruct,
             (a.__class__, (0,), 'b', ),
             a.__getstate__())
-    
+
 def dump(a,F):
     """Pickles the MaskedArray `a` to the file `F`.
 `F` can either be the handle of an exiting file, or a string representing a file name.
@@ -2996,15 +2996,15 @@ def dump(a,F):
     if not hasattr(F,'readline'):
         F = open(F,'w')
     return cPickle.dump(a,F)
-    
+
 def dumps(a):
     """Returns a string corresponding to the pickling of the MaskedArray."""
-    return cPickle.dumps(a)  
+    return cPickle.dumps(a)
 
 def load(F):
     """Wrapper around ``cPickle.load`` which accepts either a file-like object or
  a filename."""
-    if not hasattr(F, 'readline'): 
+    if not hasattr(F, 'readline'):
         F = open(F,'r')
     return cPickle.load(F)
 

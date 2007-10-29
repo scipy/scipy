@@ -119,7 +119,7 @@ class spmatrix(object):
         """Upcast matrix to a floating point format (if necessary)"""
 
         fp_types = ['f','d','F','D']
-        
+
         if self.dtype.char in fp_types:
             return self
         else:
@@ -352,7 +352,7 @@ class spmatrix(object):
 
     def dot(self, other):
         """ A generic interface for matrix-matrix or matrix-vector
-        multiplication.  
+        multiplication.
         """
 
         try:
@@ -369,7 +369,7 @@ class spmatrix(object):
             return self.matmat(other)
         else:
             raise ValueError, "could not interpret dimensions"
-        
+
 
     def matmat(self, other):
         csc = self.tocsc()
@@ -535,11 +535,11 @@ class _cs_matrix(spmatrix):
         self.indptr  = to_native(self.indptr)
         self.indices = to_native(self.indices)
         self.data    = to_native(self.data)
-        
+
         # set the data type
         self.dtype = self.data.dtype
-        
-        
+
+
         # check array shapes
         if (rank(self.data) != 1) or (rank(self.indices) != 1) or \
            (rank(self.indptr) != 1):
@@ -552,7 +552,7 @@ class _cs_matrix(spmatrix):
                  (len(self.indptr), indptr_size)
         if (self.indptr[0] != 0):
             raise ValueError,"index pointer should start with 0"
-        
+
         # check index and data arrays
         if (len(self.indices) != len(self.data)):
             raise ValueError,"indices and data should have the same size"
@@ -578,7 +578,7 @@ class _cs_matrix(spmatrix):
                                     "non-decreasing sequence'
 
 
-    
+
     def astype(self, t):
         return self._with_data(self.data.astype(t))
 
@@ -744,8 +744,8 @@ class _cs_matrix(spmatrix):
             return self._binopt(other,fn,in_shape=(M,N),out_shape=(M,N))
         elif isdense(other):
             # TODO make sparse * dense matrix multiplication more efficient
-            
-            # matvec each column of other 
+
+            # matvec each column of other
             return hstack( [ self * col.reshape(-1,1) for col in other.T ] )
         else:
             raise TypeError, "need a dense or sparse matrix"
@@ -755,7 +755,7 @@ class _cs_matrix(spmatrix):
             if other.size != self.shape[1] or \
                     (other.ndim == 2 and self.shape[1] != other.shape[0]):
                 raise ValueError, "dimension mismatch"
-            
+
             y = fn(self.shape[0], self.shape[1], \
                    self.indptr, self.indices, self.data, numpy.ravel(other))
 
@@ -765,7 +765,7 @@ class _cs_matrix(spmatrix):
             if other.ndim == 2 and other.shape[1] == 1:
                 # If 'other' was an (nx1) column vector, reshape the result
                 y = y.reshape(-1,1)
-            
+
             return y
 
         elif isspmatrix(other):
@@ -1034,7 +1034,7 @@ class csc_matrix(_cs_matrix):
 
         """
 
-        _cs_matrix._check_format(self,'column',full_check)        
+        _cs_matrix._check_format(self,'column',full_check)
 
     def __getattr__(self, attr):
         if attr == 'rowind':
@@ -1353,7 +1353,7 @@ class csr_matrix(_cs_matrix):
 
         """
 
-        _cs_matrix._check_format(self,'row',full_check)        
+        _cs_matrix._check_format(self,'row',full_check)
 
     def __getattr__(self, attr):
         if attr == 'colind':
@@ -2172,8 +2172,8 @@ class coo_matrix(spmatrix):
         A[ij[0][k], ij[1][k] = obj[k]
 
     Note:
-        When converting to CSR or CSC format, duplicate (i,j) entries 
-        will be summed together.  This facilitates efficient construction 
+        When converting to CSR or CSC format, duplicate (i,j) entries
+        will be summed together.  This facilitates efficient construction
         of finite element matrices and the like.
 
     """
@@ -2190,7 +2190,7 @@ class coo_matrix(spmatrix):
                     raise TypeError
             except TypeError:
                 raise TypeError, "invalid input format"
-            
+
             self.row = asarray(ij[0])
             self.col = asarray(ij[1])
             self.data = asarray(obj)
@@ -2232,7 +2232,7 @@ class coo_matrix(spmatrix):
             self.data  = M[self.row,self.col]
 
         self._check()
-    
+
 
     def _check(self):
         """ Checks for consistency and stores the number of non-zeros as
@@ -2242,7 +2242,7 @@ class coo_matrix(spmatrix):
         if (nnz != len(self.row)) or (nnz != len(self.col)):
             raise ValueError, "row, column, and data array must all be "\
                   "the same length"
-        
+
         # index arrays should have integer data types
         if self.row.dtype.kind != 'i':
             warnings.warn("row index array has non-integer dtype.  " \
@@ -2253,7 +2253,7 @@ class coo_matrix(spmatrix):
                           "Casting from %s to int" % self.col.dtype.name )
             self.col = self.col.astype('i')
 
-        #TODO do this in SWIG 
+        #TODO do this in SWIG
         self.row  = to_native(self.row)
         self.col  = to_native(self.col)
         self.data = to_native(self.data)
@@ -2887,13 +2887,13 @@ def speye(n, m, k = 0, dtype = 'd'):
 
 def spkron(a,b):
     """kronecker product of sparse matrices a and b
-    
+
     *Parameters*:
-        a,b : sparse matrices 
+        a,b : sparse matrices
             E.g. csr_matrix, csc_matrix, coo_matrix, etc.
 
     *Returns*:
-        coo_matrix 
+        coo_matrix
             kronecker product in COOrdinate format
 
     *Example*:
@@ -2912,18 +2912,18 @@ def spkron(a,b):
         raise ValueError,'expected sparse matrix'
 
     a,b = a.tocoo(),b.tocoo()
-    output_shape = (a.shape[0]*b.shape[0],a.shape[1]*b.shape[1])  
+    output_shape = (a.shape[0]*b.shape[0],a.shape[1]*b.shape[1])
 
     if a.nnz == 0 or b.nnz == 0:
         # kronecker product is the zero matrix
         return coo_matrix(None, dims=output_shape)
-            
+
 
     # expand entries of a into blocks
     row  = a.row.repeat(b.nnz)
     col  = a.col.repeat(b.nnz)
     data = a.data.repeat(b.nnz)
-    
+
     row *= b.shape[0]
     col *= b.shape[1]
 

@@ -17,7 +17,7 @@ class Discrete:
             self.x = N.array([self.x])
         self.n = self.x.shape[0]
         if w is None:
-            w = N.ones(self.n, N.float64) 
+            w = N.ones(self.n, N.float64)
         else:
             if w.shape[0] != self.n:
                 raise ValueError, 'incompatible shape for weights w'
@@ -70,7 +70,7 @@ class CoxPH(model.LikelihoodModel):
                     self.failures[s.time] = [i]
                 else:
                     self.failures[s.time].append(i)
-        
+
         self.failure_times = self.failures.keys()
         self.failure_times.sort()
 
@@ -81,7 +81,7 @@ class CoxPH(model.LikelihoodModel):
         self.design = {}
         self.risk = {}
         first = True
-        
+
         for t in self.failures.keys():
             if self.time_dependent:
                 d = N.array([s(self.formula, time=t)

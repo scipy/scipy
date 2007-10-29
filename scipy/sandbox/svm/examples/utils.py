@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # Last Change: Mon Jul 09 05:00 PM 2007 J
 
-# Various utilities for examples 
+# Various utilities for examples
 
 import numpy as N
 from numpy.testing import set_package_path, restore_path
@@ -19,7 +19,7 @@ def get_faithful():
         if not (i[0] == 'L' or i[0] == 'M' or i[0] == 'S'):
             tmp1.append(i[0])
             tmp2.append(i[1])
-            
+
     waiting = N.array([int(i) for i in tmp1], dtype = N.float)
     duration = N.array([i for i in tmp2], dtype = N.float)
 
@@ -50,7 +50,7 @@ def scale(data, mode = 'sym'):
         s = m - n
     else:
         raise ValueError("Mode %s not recognized" % mode)
-    
+
     data -= t
     data /= s
     return t, s

@@ -14,13 +14,13 @@ def unsqueeze(data, axis, oldshape):
     >>> unsqueeze(m, 1, x.shape)
     >>> m.shape
     (3, 1, 5)
-    >>>                       
+    >>>
     """
-    
+
     newshape = list(oldshape)
     newshape[axis] = 1
     data.shape = newshape
-    
+
 
 def MAD(a, c=0.6745, axis=0):
     """
@@ -50,7 +50,7 @@ class Huber:
     tmp = 2 * norm.cdf(c) - 1
     gamma = tmp + c**2 * (1 - tmp) - 2 * c * norm.pdf(c)
     del(tmp)
-    
+
     niter = 30
 
     def __call__(self, a, mu=None, scale=None, axis=0):
@@ -98,7 +98,7 @@ class Huber:
         else:
             mu = self.mu
         unsqueeze(mu, self.axis, self.a.shape)
-            
+
         scale = N.sum(subset * (a - mu)**2, axis=self.axis) / (self.n * Huber.gamma - N.sum(1. - subset, axis=self.axis) * Huber.c**2)
 
         self.iter += 1
@@ -120,4 +120,4 @@ class Huber:
         tmp = (a - self.mu) / N.sqrt(self.scale)
         return N.greater(tmp, -Huber.c) * N.less(tmp, Huber.c)
 
-huber = Huber()    
+huber = Huber()

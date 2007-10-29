@@ -82,4 +82,3 @@ class TestIterativeSolvers(NumpyTestCase):
 
 if __name__ == "__main__":
     NumpyTest().run()
-

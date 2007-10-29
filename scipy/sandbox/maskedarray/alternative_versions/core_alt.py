@@ -473,7 +473,7 @@ They have no reduce, outer or accumulate.
             mb = mask_or(mb, t)
         m = mask_or(ma, mb)
         if (not m.ndim) and m:
-            return masked       
+            return masked
         result =  self.f(d1, d2).view(get_masked_subclass(a,b))
         if result.ndim > 0:
             result._mask = m
@@ -1004,7 +1004,7 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
         else:
             mask = numeric.array(mask, dtype=MaskType, copy=copy)
             if mask.shape != _data.shape:
-                (nd, nm) = (_data.size, mask.size) 
+                (nd, nm) = (_data.size, mask.size)
                 if nm == 1:
                     mask = numeric.resize(mask, _data.shape)
                 elif nm == nd:
@@ -1019,7 +1019,7 @@ If `data` is already a ndarray, its dtype becomes the default value of dtype.
                 _data._sharedmask = True
             else:
                 _data._masklayer = _data._masklayer.copy()
-                _data._mask.__ior__(mask) 
+                _data._mask.__ior__(mask)
                 _data._sharedmask = False
                 _data._hasmasked = True
         # Process extra options ..
@@ -1133,7 +1133,7 @@ Sets item described by index. If value is masked, masks those locations.
         #....
         dval = numeric.asarray(value).astype(self.dtype)
         valmask = getmask(value)
-        
+
         if not self._hasmasked:
             if valmask is not nomask:
                 self._masklayer[indx] = valmask
@@ -1195,13 +1195,13 @@ If `value` is masked, masks those locations."""
         if self._masklayer.shape:
             self._masklayer.shape = self.shape
     _set_mask = __setmask__
-    
+
     def _get_mask(self):
         """Returns the current mask."""
         if not self._hasmasked and self._smallmask:
             return nomask
         return self._masklayer
-    
+
 #    def _set_mask(self, mask):
 #        """Sets the mask to `mask`."""
 #        mask = make_mask(mask, copy=False, small_mask=self._smallmask)
@@ -1218,21 +1218,21 @@ If `value` is masked, masks those locations."""
     def harden_mask(self):
         "Forces the mask to hard."
         self._hardmask = True
-        
+
     def soften_mask(self):
         "Forces the mask to soft."
-        self._hardmask = False     
-        
+        self._hardmask = False
+
     def unshare_mask(self):
         if self._sharedmask:
             self._masklayer = self._masklayer.copy()
             self._sharedmask = False
-        
+
     #............................................
     def _get_data(self):
         "Returns the current data (as a view of the original underlying data)>"
         return self.view(self._baseclass)
-    _data = property(fget=_get_data)        
+    _data = property(fget=_get_data)
     #............................................
     def _get_flat(self):
         """Calculates the flat value.
@@ -1546,7 +1546,7 @@ else the corresponding values are unmasked.
     #............................................
     def ids (self):
         """Return the address of the data and mask areas."""
-        return (self.ctypes.data, self._mask.ctypes.data)    
+        return (self.ctypes.data, self._mask.ctypes.data)
     #............................................
     def all(self, axis=None, out=None):
         """a.all(axis) returns True if all entries along the axis are True.
@@ -1571,7 +1571,7 @@ else the corresponding values are unmasked.
         if d.ndim > 0:
             d.__setmask__(self._mask.all(axis))
         return d
-    
+
     def nonzero(self):
         """a.nonzero() returns a tuple of arrays
 
@@ -1796,7 +1796,7 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
         d = self.filled(fill_value)
         return d.argmax(axis)
 
-    def sort(self, axis=-1, kind='quicksort', order=None, 
+    def sort(self, axis=-1, kind='quicksort', order=None,
              endwith=True, fill_value=None):
         """
         Sort a along the given axis.
@@ -1851,7 +1851,7 @@ deviations from the mean, i.e. std = sqrt(mean((x - x.mean())**2)).
     #............................................
     def min(self, axis=None, fill_value=None):
         """Returns the minimum/a along the given axis.
-If `axis` is None, applies to the flattened array. Masked values are filled 
+If `axis` is None, applies to the flattened array. Masked values are filled
 with `fill_value` during processing. If `fill_value is None, it is set to the
 maximum_fill_value corresponding to the data type."""
         mask = self._mask
@@ -1876,7 +1876,7 @@ maximum_fill_value corresponding to the data type."""
     #........................
     def max(self, axis=None, fill_value=None):
         """Returns the maximum/a along the given axis.
-If `axis` is None, applies to the flattened array. Masked values are filled 
+If `axis` is None, applies to the flattened array. Masked values are filled
 with `fill_value` during processing. If `fill_value is None, it is set to the
 maximum_fill_value corresponding to the data type."""
         mask = self._mask
@@ -1922,7 +1922,7 @@ the maximum default, the minimum uses the minimum default."""
     #--------------------------------------------
     def tolist(self, fill_value=None):
         """Copies the data portion of the array to a hierarchical python list and
-    returns that list. Data items are converted to the nearest compatible Python 
+    returns that list. Data items are converted to the nearest compatible Python
     type. Masked values are filled with `fill_value`"""
         return self.filled(fill_value).tolist()
     #........................
@@ -1931,7 +1931,7 @@ the maximum default, the minimum uses the minimum default."""
 
     Keyword arguments:
         order      : order of the data item in the copy {"C","F","A"} (default "C")
-        fill_value : value used in lieu of missing data 
+        fill_value : value used in lieu of missing data
 
     Construct a Python string containing the raw bytes in the array. The order
     of the data in arrays with ndim > 1 is specified by the 'order' keyword and
@@ -1942,10 +1942,10 @@ the maximum default, the minimum uses the minimum default."""
         "Fortran" -- Fortran order (column major)
         "Any"     -- Current order of array.
         None      -- Same as "Any"
-    
+
     Masked data are filled with fill_value. If fill_value is None, the data-type-
     dependent default is used."""
-        return self.filled(fill_value).tostring()   
+        return self.filled(fill_value).tostring()
     #--------------------------------------------
     # Backwards Compatibility. Heck...
     @property
@@ -2787,23 +2787,23 @@ if __name__ == '__main__':
     from maskedarray.testutils import assert_equal, assert_array_equal, assert_mask_equal
     pi = N.pi
 #    coremodule = __main__
-    
+
     a = array([1,2,3,4,5],mask=[0,1,0,0,0])
     x = add.reduce(a)
     assert_equal(add.reduce(a), 13)
-    
-    if 0:        
+
+    if 0:
         x = masked_array([1,2,3], mask=[1,0,0])
         mx = masked_array(x)
         assert_equal(mx.mask, x.mask)
         mx = masked_array(x, mask=[0,1,0], keep_mask=False)
         assert_equal(mx.mask, [0,1,0])
         mx = masked_array(x, mask=[0,1,0], keep_mask=True)
-        assert_equal(mx.mask, [1,1,0])   
+        assert_equal(mx.mask, [1,1,0])
         #We default to true
         mx = masked_array(x, mask=[0,1,0])
         assert_equal(mx.mask, [1,1,0])
-    if 0:        
+    if 0:
         import numpy.core.ma as nma
         x = nma.arange(5)
         x[2] = nma.masked
@@ -2814,7 +2814,7 @@ if __name__ == '__main__':
         assert_equal(X._data, x._data)
         assert_equal(X._mask, x.mask)
         assert_equal(getmask(x), [0,0,1,0,0])
-    if 0:        
+    if 0:
         d = arange(5)
         n = [0,0,0,1,1]
         m = make_mask(n)
@@ -2825,7 +2825,7 @@ if __name__ == '__main__':
         assert( x.mask is not m)
         assert( x[3] is masked)
         assert( x[4] is not masked)
-        assert_equal(x, [0,10,2,-1,40])   
+        assert_equal(x, [0,10,2,-1,40])
     if 0:
         d = arange(5)
         n = [0,0,0,1,1]
@@ -2881,7 +2881,7 @@ if __name__ == '__main__':
         xh[filled(xh<5,False)] = 2
         assert_equal(xh._data, [[1,2],[2,5]])
         assert_equal(xh._mask, [[1,0],[0,0]])
-        #        
+        #
         "Another test of hardmask"
         d = arange(5)
         n = [0,0,0,1,1]
@@ -2889,9 +2889,9 @@ if __name__ == '__main__':
         xh = array(d, mask = m, hard_mask=True)
         xh[4:5] = 999
         #assert_equal(xh.mask.ctypes.data, m.ctypes.data)
-        xh[0:1] = 999    
+        xh[0:1] = 999
         assert_equal(xh._data,[999,1,2,3,4])
-    if 0:        
+    if 0:
         x = N.array([[ 0.13,  0.26,  0.90],
                      [ 0.28,  0.33,  0.63],
                      [ 0.31,  0.87,  0.70]])
@@ -2912,7 +2912,7 @@ if __name__ == '__main__':
         assert_equal(mxbig.all(1), [False, False, True])
         assert_equal(mxbig.any(0),[False, False, True])
         assert_equal(mxbig.any(1), [True, True, True])
-        
+
     if 1:
         "Tests put."
         d = arange(5)
@@ -2925,7 +2925,7 @@ if __name__ == '__main__':
         assert( x.mask is not m)
         assert( x[3] is masked)
         assert( x[4] is not masked)
-        assert_equal(x, [0,10,2,-1,40])        
+        assert_equal(x, [0,10,2,-1,40])
         #
         x = masked_array(arange(10), mask=[1,0,0,0,0]*2)
         i = [0,2,4,6]
@@ -2942,8 +2942,8 @@ if __name__ == '__main__':
         assert_equal(x.mask, [0,0,0,0,0,1,0,0,0,0])
         put(x, i, masked_array([0,2,4,6],[1,0,1,0]))
         assert_array_equal(x, [0,1,2,3,4,5,6,7,8,9,])
-        assert_equal(x.mask, [1,0,0,0,1,1,0,0,0,0])  
-        
+        assert_equal(x.mask, [1,0,0,0,1,1,0,0,0,0])
+
     if 1:
         x = arange(20)
         x = x.reshape(4,5)
@@ -2958,9 +2958,9 @@ if __name__ == '__main__':
         x = array([1.0, 0, -1, pi/2]*2, mask=[0,1]+[0]*6)
         y = array([1.0, 0, -1, pi/2]*2, mask=[1,0]+[0]*6)
         d = (x,y)
-        
+
         z = N.add(x, y)
-        
+
         for f in ['sqrt', 'log', 'log10', 'exp', 'conjugate',
                   'sin', 'cos', 'tan',
                   'arcsin', 'arccos', 'arctan',

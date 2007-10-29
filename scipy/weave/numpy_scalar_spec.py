@@ -13,7 +13,7 @@ class numpy_complex_scalar_converter(c_spec.complex_converter):
         # First, set up all the same specifications the normal
         # complex converter uses.
         c_spec.complex_converter.init_info(self)
-        
-        # But set this converter up to match the numpy complex 
+
+        # But set this converter up to match the numpy complex
         # types.
         self.matching_types = numpy.sctypes['complex']

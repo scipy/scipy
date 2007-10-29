@@ -22,17 +22,17 @@ class TestAugmentCandidates(NumpyTestCase):
 
         ##block candidates
         ##self.cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),dims=(9,3)), vstack((array([1]*9 + [0]*9),arange(2*9))).T ))
-        
-    
+
+
 
     def check_first_level(self):
-        cases = [] 
+        cases = []
 
         ## tests where AggOp includes all DOFs
         cases.append((csr_matrix((ones(4),array([0,0,1,1]),arange(5)),dims=(4,2)), vstack((ones(4),arange(4))).T ))
         cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),dims=(9,3)), vstack((ones(9),arange(9))).T ))
         cases.append((csr_matrix((ones(9),array([0,0,1,1,2,2,3,3,3]),arange(10)),dims=(9,4)), vstack((ones(9),arange(9))).T ))
-        
+
         ## tests where AggOp excludes some DOFs
         cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),dims=(5,2)), vstack((ones(5),arange(5))).T ))
 
@@ -51,7 +51,7 @@ class TestAugmentCandidates(NumpyTestCase):
 
             for i in range(1,fine_candidates.shape[1]):
                 Q_expected,R_expected = sa_fit_candidates(AggOp,fine_candidates[:,:i+1])
-                
+
                 old_Q, old_R = sa_fit_candidates(AggOp,fine_candidates[:,:i])
 
                 Q_result,R_result = augment_candidates(AggOp, old_Q, old_R, fine_candidates[:,[i]])
@@ -64,8 +64,6 @@ class TestAugmentCandidates(NumpyTestCase):
                 assert_almost_equal(fine_candidates[:,:i+1],Q_result*R_result)
                 assert_almost_equal(Q_result*(Q_result.T*fine_candidates[:,:i+1]),fine_candidates[:,:i+1])
 
-        
+
 if __name__ == '__main__':
     NumpyTest().run()
-      
-

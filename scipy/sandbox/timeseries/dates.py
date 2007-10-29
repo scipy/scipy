@@ -389,7 +389,7 @@ For non-quarterly dates, this simply returns the year of the date."""
         _rel = relation.upper()[0]
         fromfreq = self.freq
         if fromfreq == _c.FR_UND:
-             fromfreq = _c.FR_DAY
+            fromfreq = _c.FR_DAY
         new = cseries.DA_asfreq(numeric.asarray(self), fromfreq, tofreq, _rel)
         return DateArray(new, freq=freq)
 

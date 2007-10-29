@@ -10,7 +10,7 @@ class Log( Struct ):
     def fromConf( conf, dataNames ):
         obj = Log( dataNames = dataNames, seqDataNames = [], igs = [],
                    data = {}, nCalls = 0 )
-        
+
         for ig, names in enumerate( obj.dataNames ):
             for name in names:
                 obj.data[name] = []
@@ -18,15 +18,15 @@ class Log( Struct ):
                 obj.seqDataNames.append( name )
         obj.nArg = len( obj.igs )
         obj.nGr = len( obj.dataNames )
-        
+
         try:
             obj.isPlot = conf.isPlot
         except:
             obj.isPlot = True
-            
+
         return obj
     fromConf = staticmethod( fromConf )
-    
+
     ##
     # 20.04.2006, c
     # 21.04.2006
@@ -37,7 +37,7 @@ class Log( Struct ):
         if kwargs:
             if kwargs.has_key( 'finished' ):
                 finished = kwargs['finished']
-        
+
         ls = len( args ), self.nArg
         if ls[0] != ls[1]:
             raise IndexError, '%d == %d' % ls
@@ -53,7 +53,7 @@ class Log( Struct ):
                 for ig in range( self.nGr ):
                     self.ax.append( pylab.subplot( 100 * self.nGr + 11 + ig ) )
 
-            
+
             for ig in range( self.nGr ):
                 self.ax[ig].clear()
             for ii, name in enumerate( self.seqDataNames ):

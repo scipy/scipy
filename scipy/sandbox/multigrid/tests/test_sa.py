@@ -2,7 +2,7 @@ from numpy.testing import *
 
 from numpy import sqrt,empty,ones,arange,array_split,eye,array, \
                   zeros,diag,zeros_like,diff,matrix,hstack,vstack
-from numpy.linalg import norm                  
+from numpy.linalg import norm
 from scipy import rand
 from scipy.sparse import spdiags,csr_matrix,lil_matrix, \
                          isspmatrix_csr,isspmatrix_csc,isspmatrix_coo, \
@@ -38,10 +38,10 @@ class TestSA(NumpyTestCase):
         self.cases = []
 
         # random matrices
-        numpy.random.seed(0)        
+        numpy.random.seed(0)
         for N in [2,3,5]:
-            self.cases.append( csr_matrix(rand(N,N)) ) 
-        
+            self.cases.append( csr_matrix(rand(N,N)) )
+
         # poisson problems in 1D and 2D
         for N in [2,3,5,7,10,11,19]:
             self.cases.append( poisson_problem1D(N) )
@@ -61,10 +61,10 @@ class TestSA(NumpyTestCase):
         for A in self.cases:
             for epsilon in [0.0,0.1,0.5,1.0]:
                 S_expected = reference_sa_constant_interpolation(A,epsilon)
-                
+
                 S_result   = sa_constant_interpolation(A,epsilon,blocks=None)
                 assert_array_equal(S_result.todense(),S_expected.todense())
-               
+
                 #blocks=1...N should be the same as blocks=None
                 S_result   = sa_constant_interpolation(A,epsilon,blocks=arange(A.shape[0]))
                 assert_array_equal(S_result.todense(),S_expected.todense())
@@ -121,7 +121,7 @@ class TestSA(NumpyTestCase):
 
             assert_almost_equal(P_result.todense(),P_expected.todense())
 
-                  
+
 
 class TestFitCandidates(NumpyTestCase):
     def setUp(self):
@@ -151,7 +151,7 @@ class TestFitCandidates(NumpyTestCase):
 
     def check_all_cases(self):
         """Test case where aggregation includes all fine nodes"""
-        
+
         def mask_candidate(AggOp,candidates):
             #mask out all DOFs that are not included in the aggregation
             candidates[diff(AggOp.indptr) == 0,:] = 0
@@ -170,9 +170,9 @@ class TestFitCandidates(NumpyTestCase):
 ##            N = K*AggOp.shape[1]
 ##            AggOp = csr_matrix((ones(N),zeros(N),arange(N + 1)),dims=(N,1)) #aggregate to a single point
 ##            fine_candidates = coarse_candidates
-##            
+##
 ##            #mask_candidate(AggOp,fine_candidates)  #not needed
-##            
+##
 ##            #now check the coarser problem
 ##            Q,coarse_candidates = sa_fit_candidates(AggOp,fine_candidates)
 ##
@@ -187,7 +187,7 @@ class TestSASolverPerformance(NumpyTestCase):
         self.cases.append((poisson_problem1D(100),None))
         self.cases.append((poisson_problem2D(50),None))
         # TODO add unstructured tests
-       
+
 
     def check_basic(self):
         """check that method converges at a reasonable rate"""
@@ -196,32 +196,32 @@ class TestSASolverPerformance(NumpyTestCase):
             ml = smoothed_aggregation_solver(A,candidates,max_coarse=10,max_levels=10)
 
             numpy.random.seed(0) #make tests repeatable
-            
+
             x = rand(A.shape[0])
             b = A*rand(A.shape[0]) #zeros_like(x)
-            
+
             x_sol,residuals = ml.solve(b,x0=x,maxiter=20,tol=1e-12,return_residuals=True)
 
             avg_convergence_ratio = (residuals[-1]/residuals[0])**(1.0/len(residuals))
-            
+
             assert(avg_convergence_ratio < 0.5)
 
     def check_DAD(self):
         for A,candidates in self.cases:
 
             x = rand(A.shape[0])
-            b = A*rand(A.shape[0]) 
-            
+            b = A*rand(A.shape[0])
+
             D     = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
             D_inv = diag_sparse(1.0/D.data)
 
             DAD   = D*A*D
-           
+
             if candidates is None:
                 candidates = ones((A.shape[0],1))
-           
+
             DAD_candidates = D_inv * candidates
-           
+
             #TODO force 2 level method and check that result is the same
 
             #ml = smoothed_aggregation_solver(A,candidates,max_coarse=1,max_levels=2)
@@ -229,7 +229,7 @@ class TestSASolverPerformance(NumpyTestCase):
             ml = smoothed_aggregation_solver(DAD,DAD_candidates,max_coarse=100,max_levels=2)
 
             #print (D_inv*ml.Ps[0]).todense()
-            
+
             x_sol,residuals = ml.solve(b,x0=x,maxiter=10,tol=1e-12,return_residuals=True)
 
             avg_convergence_ratio = (residuals[-1]/residuals[0])**(1.0/len(residuals))
@@ -284,7 +284,7 @@ def reference_sa_constant_interpolation(A,epsilon):
     Old_R = R.copy()
     for i,row in enumerate(S):
         if i not in R: continue
-        
+
         for x in row:
             if x not in Old_R:
                 aggregates[i] = aggregates[x]
@@ -306,11 +306,10 @@ def reference_sa_constant_interpolation(A,epsilon):
     Pj = aggregates
     Pp = arange(n+1)
     Px = ones(n)
- 
+
     return csr_matrix((Px,Pj,Pp))
 
 
 
 if __name__ == '__main__':
     NumpyTest().run()
-

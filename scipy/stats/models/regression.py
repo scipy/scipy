@@ -2,8 +2,8 @@
 This module implements some standard regression models: OLS and WLS
 models, as well as an AR(p) regression model.
 
-Models are specified with a design matrix and are fit using their 
-'fit' method. 
+Models are specified with a design matrix and are fit using their
+'fit' method.
 
 Subclasses that have more complicated covariance matrices
 should write over the 'whiten' method as the fit method
@@ -33,18 +33,18 @@ class OLSModel(LikelihoodModel):
     Examples
     --------
     >>> import numpy as N
-    >>> 
+    >>>
     >>> from scipy.stats.models.formula import Term, I
     >>> from scipy.stats.models.regression import OLSModel
-    >>> 
+    >>>
     >>> data={'Y':[1,3,4,5,2,3,4],
     ...       'X':range(1,8)}
     >>> f = term("X") + I
     >>> f.namespace = data
-    >>> 
+    >>>
     >>> model = OLSModel(f.design())
     >>> results = model.fit(data['Y'])
-    >>> 
+    >>>
     >>> results.beta
     array([ 0.25      ,  2.14285714])
     >>> results.t()
@@ -91,7 +91,7 @@ class OLSModel(LikelihoodModel):
         OLS model whitener does nothing: returns Y.
         """
         return Y
-    
+
     def est_coef(self, Y):
         """
         Estimate coefficients using lstsq, returning fitted values, Y
@@ -106,8 +106,8 @@ class OLSModel(LikelihoodModel):
 
     def fit(self, Y):
         """
-        Full fit of the model including estimate of covariance matrix, 
-        (whitened) residuals and scale. 
+        Full fit of the model including estimate of covariance matrix,
+        (whitened) residuals and scale.
 
         """
         Z = self.whiten(Y)
@@ -120,8 +120,8 @@ class OLSModel(LikelihoodModel):
         lfit.resid = Z - N.dot(self.wdesign, lfit.beta)
         lfit.scale = N.add.reduce(lfit.resid**2) / lfit.df_resid
 
-        lfit.Z = Z 
-        
+        lfit.Z = Z
+
         return lfit
 
 class ARModel(OLSModel):
@@ -135,22 +135,22 @@ class ARModel(OLSModel):
     --------
     >>> import numpy as N
     >>> import numpy.random as R
-    >>> 
+    >>>
     >>> from scipy.stats.models.formula import Term, I
     >>> from scipy.stats.models.regression import ARModel
-    >>> 
+    >>>
     >>> data={'Y':[1,3,4,5,8,10,9],
     ...       'X':range(1,8)}
     >>> f = term("X") + I
     >>> f.namespace = data
-    >>> 
+    >>>
     >>> model = ARModel(f.design(), 2)
     >>> for i in range(6):
     ...     results = model.fit(data['Y'])
     ...     print "AR coefficients:", model.rho
     ...     rho, sigma = model.yule_walker(data["Y"] - results.predict)
     ...     model = ARModel(model.design, rho)
-    ... 
+    ...
     AR coefficients: [ 0.  0.]
     AR coefficients: [-0.52571491 -0.84496178]
     AR coefficients: [-0.620642   -0.88654567]
@@ -238,7 +238,7 @@ class ARModel(OLSModel):
                 then it is assumed the X has df degrees of
                 freedom rather than n.
         """
-        
+
         method = str(method).lower()
         if method not in ["unbiased", "mle"]:
             raise ValueError, "ACF estimation method must be 'unbiased' \
@@ -272,18 +272,18 @@ class WLSModel(OLSModel):
     variance of the observations.
 
     >>> import numpy as N
-    >>> 
+    >>>
     >>> from scipy.stats.models.formula import Term, I
     >>> from scipy.stats.models.regression import WLSModel
-    >>> 
+    >>>
     >>> data={'Y':[1,3,4,5,2,3,4],
     ...       'X':range(1,8)}
     >>> f = term("X") + I
     >>> f.namespace = data
-    >>> 
+    >>>
     >>> model = WLSModel(f.design(), weights=range(1,8))
     >>> results = model.fit(data['Y'])
-    >>> 
+    >>>
     >>> results.beta
     array([ 0.0952381 ,  2.91666667])
     >>> results.t()
@@ -297,7 +297,7 @@ class WLSModel(OLSModel):
         weights = N.array(weights)
         if weights.shape == (): # scalar
             self.weights = weights
-        else: 
+        else:
             design_rows = design.shape[0]
             if not(weights.shape[0] == design_rows and
                    weights.size == design_rows) :
@@ -320,7 +320,7 @@ class WLSModel(OLSModel):
             for i in range(X.shape[1]):
                 v[:,i] = X[:,i] * c
             return v
-    
+
 class RegressionResults(LikelihoodModelResults):
     """
     This class summarizes the fit of a linear regression model.
@@ -374,4 +374,3 @@ def isestimable(C, D):
     if utils.rank(new) != utils.rank(D):
         return False
     return True
-

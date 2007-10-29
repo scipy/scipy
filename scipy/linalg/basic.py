@@ -170,7 +170,7 @@ def solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0,
           'illegal value in %-th argument of internal gbsv'%(-info)
 
 def solveh_banded(ab, b, overwrite_ab=0, overwrite_b=0,
-    	          lower=0):
+                  lower=0):
     """ solveh_banded(ab, b, overwrite_ab=0, overwrite_b=0) -> c, x
 
     Solve a linear system of equations a * x = b for x where
@@ -194,7 +194,7 @@ def solveh_banded(ab, b, overwrite_ab=0, overwrite_b=0,
       overwrite_y - Discard data in y, where y is ab or b.
       lower - is ab in lower or upper form?
 
-    Outputs: 
+    Outputs:
 
       c:  the Cholesky factorization of ab
       x:  the solution to ab * x = b
@@ -210,14 +210,14 @@ def solveh_banded(ab, b, overwrite_ab=0, overwrite_b=0,
     if info==0:
         return c, x
     if info>0:
-        raise LinAlgError, "%d-th leading minor not positive definite" % info 
+        raise LinAlgError, "%d-th leading minor not positive definite" % info
     raise ValueError,\
           'illegal value in %d-th argument of internal pbsv'%(-info)
 
 def cholesky_banded(ab, overwrite_ab=0, lower=0):
     """ cholesky_banded(ab, overwrite_ab=0, lower=0) -> c
 
-    Compute the Cholesky decomposition of a 	
+    Compute the Cholesky decomposition of a
     banded symmetric or Hermitian positive definite
     matrix stored in lower diagonal ordered form (lower=1)
 
@@ -237,7 +237,7 @@ def cholesky_banded(ab, overwrite_ab=0, lower=0):
       overwrite_ab - Discard data in ab
       lower - is ab in lower or upper form?
 
-    Outputs:  
+    Outputs:
 
       c:  the Cholesky factorization of ab
 
@@ -252,7 +252,7 @@ def cholesky_banded(ab, overwrite_ab=0, lower=0):
     if info==0:
         return c
     if info>0:
-        raise LinAlgError, "%d-th leading minor not positive definite" % info 
+        raise LinAlgError, "%d-th leading minor not positive definite" % info
     raise ValueError,\
           'illegal value in %d-th argument of internal pbtrf'%(-info)
 

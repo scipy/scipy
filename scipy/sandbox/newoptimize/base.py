@@ -27,7 +27,7 @@ class Struct( object ):
     def __init__( self, **kwargs ):
         if kwargs:
             self.__dict__.update( kwargs )
-        
+
     # 08.03.2005
     def __str__( self ):
         ss = "%s\n" % self.__class__
@@ -54,4 +54,3 @@ class Struct( object ):
                 aux = aux.replace( "\n", "\n    " );
                 ss += "  %s:\n%s\n" % (key, aux[1:])
         return( ss.rstrip() )
-        

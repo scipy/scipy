@@ -307,7 +307,7 @@ class Data(object):
 
 class RealData(Data):
     """ The RealData class stores the weightings as actual standard deviations
-    and/or covariances. 
+    and/or covariances.
 
     The weights needed for ODRPACK are generated on-the-fly with __getattr__
     trickery.
@@ -448,7 +448,7 @@ class Model(object):
     Here are the rules for the shapes of the argument and return arrays:
 
       x -- if the input data is single-dimensional, then x is rank-1
-        array; i.e. x = array([1, 2, 3, ...]); x.shape = (n,) 
+        array; i.e. x = array([1, 2, 3, ...]); x.shape = (n,)
         If the input data is multi-dimensional, then x is a rank-2 array; i.e.
         x = array([[1, 2, ...], [2, 4, ...]]); x.shape = (m, n) In all cases, it
         has the same shape as the input data array passed to odr(). m is the
@@ -464,7 +464,7 @@ class Model(object):
         i.e. beta = array([B_1, B_2, ..., B_p])
 
       fjacb -- if the response variable is multi-dimensional, then the return
-        array's shape is (q, p, n) such that 
+        array's shape is (q, p, n) such that
         fjacb(x,beta)[l,k,i] = @f_l(X,B)/@B_k evaluated at the i'th data point.
         If q == 1, then the return array is only rank-2 and with shape (p, n).
 
@@ -972,7 +972,7 @@ class ODR(object):
                   [1, 2], # short, long
                   [2, 2]] # long,  long
 
-        if (self.rptfile is None and 
+        if (self.rptfile is None and
             (so_init is not None or
              so_iter is not None or
              so_final is not None)):

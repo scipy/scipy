@@ -24,4 +24,3 @@ if __name__ == '__main__':
         print filename
         print repr(read_matrix(filename))
         print "\n"
-

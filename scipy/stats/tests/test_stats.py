@@ -837,6 +837,6 @@ class TestThreshold(NumpyTestCase):
                            [-1,2,3,0,0,-1,-2])
         assert_array_equal(stats.threshold(a,2,4,0),
                            [0,2,3,4,0,0,0])
-        
+
 if __name__ == "__main__":
     NumpyTest().run()

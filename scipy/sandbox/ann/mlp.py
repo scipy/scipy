@@ -13,7 +13,7 @@ class mlp:
     _outfxns = ('linear','logistic','softmax')
 
     def __init__(self,ni,nh,no,f='linear',w=None):
-        """ Set up instance of mlp. Initial weights are drawn from a 
+        """ Set up instance of mlp. Initial weights are drawn from a
         zero-mean Gaussian w/ variance is scaled by fan-in.
         Input:
             ni  - <int> # of inputs
@@ -48,7 +48,7 @@ class mlp:
             self.pack()
 
     def unpack(self):
-        """ Decompose 1-d vector of weights w into appropriate weight 
+        """ Decompose 1-d vector of weights w into appropriate weight
         matrices (w1,b1,w2,b2) and reinsert them into net
         """
         self.w1 = N.array(self.wp)[:self.ni*self.nh].reshape(self.ni,self.nh)
@@ -66,10 +66,10 @@ class mlp:
                             self.b2.reshape(N.size(self.b2))])
 
     def fwd_all(self,x,w=None):
-        """ Propagate values forward through the net. 
+        """ Propagate values forward through the net.
         Input:
             x   - array (size>1) of input patterns
-            w   - optional 1-d vector of weights 
+            w   - optional 1-d vector of weights
         Returns:
             y   - array of outputs for all input patterns
         """
@@ -88,7 +88,7 @@ class mlp:
         elif self.outfxn == 'softmax':      # TODO: and here...
             tmp = N.exp(o)
             y = tmp/(N.sum(temp,1)*N.ones((1,self.no)))
-            
+
         return N.array(y)
 
     def errfxn(self,w,x,t):
@@ -100,11 +100,11 @@ class mlp:
     def train(self,x,t):
         """ Train network using scipy's leastsq optimizer
         Input:
-            x   - array of input data 
+            x   - array of input data
             t   - array of targets
-            
+
             N.B. x and t comprise the *entire* collection of training data
-            
+
         Returns:
             post-optimization weight vector
         """
@@ -121,7 +121,7 @@ class mlp:
         return N.sum(self.errfxn(self.wp,x,t),axis=0)
 
 def main():
-    """ Build/train/test MLP 
+    """ Build/train/test MLP
     """
     from scipy.io import read_array, write_array
     print "\nCreating 2-2-1 MLP with logistic outputs"
@@ -141,7 +141,6 @@ def main():
     print "\nFinal SSE:\n"
     print "\ttraining set: ",net.test_all(trn_input,trn_targs)
     print "\ttesting set: ",net.test_all(tst_input,tst_targs),"\n"
-        
+
 if __name__ == '__main__':
     main()
-

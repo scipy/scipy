@@ -44,7 +44,7 @@ class TestSegment(NumpyTestCase):
                          N.array([[0,1,2],[2,3,4],[4,5,-17]]))
 
     def check_multidimensional(self):
-        
+
         assert_equal(segment_axis(N.ones((2,3,4,5,6)),axis=3,length=3,overlap=1).shape,
                      (2,3,4,2,3,6))
 

@@ -17,7 +17,7 @@ interface defined in spline.spline:
                          on regular gridded rectangular data
 
 An alternative interface is a more direct wrapping of the fortran rountines:
-  
+
   splrep    -- find smoothing spline given (x,y) points on curve.
   splprep   -- find smoothing spline given parametrically defined curve.
   splev     -- evaluate the spline or its derivatives.

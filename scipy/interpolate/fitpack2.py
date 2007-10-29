@@ -136,7 +136,7 @@ class UnivariateSpline(object):
     def set_smoothing_factor(self, s):
         """ Continue spline computation with the given smoothing
         factor s and with the knots found at the last call.
-        
+
         """
         data = self._data
         if data[6]==-1:
@@ -155,7 +155,7 @@ class UnivariateSpline(object):
         """ Evaluate spline (or its nu-th derivative) at positions x.
         Note: x can be unordered but the evaluation is more efficient
         if x is (partially) ordered.
-        
+
         """
         if nu is None:
             return dfitpack.splev(*(self._eval_args+(x,)))
@@ -178,7 +178,7 @@ class UnivariateSpline(object):
     def get_residual(self):
         """Return weighted sum of squared residuals of the spline
         approximation: sum ((w[i]*(y[i]-s(x[i])))**2,axis=0)
-        
+
         """
         return self._data[10]
 
@@ -322,7 +322,7 @@ class BivariateSpline(object):
 
     bisplrep, bisplev - an older wrapping of FITPACK
     UnivariateSpline - a similar class for univariate spline interpolation
-    SmoothUnivariateSpline - to create a BivariateSpline through the 
+    SmoothUnivariateSpline - to create a BivariateSpline through the
                              given points
     LSQUnivariateSpline - to create a BivariateSpline using weighted
                           least-squares fitting
@@ -408,7 +408,7 @@ class LSQBivariateSpline(BivariateSpline):
 
     bisplrep, bisplev - an older wrapping of FITPACK
     UnivariateSpline - a similar class for univariate spline interpolation
-    SmoothUnivariateSpline - to create a BivariateSpline through the 
+    SmoothUnivariateSpline - to create a BivariateSpline through the
                              given points
     """
 
@@ -495,9 +495,9 @@ class RectBivariateSpline(BivariateSpline):
         if not all(diff(y) > 0.0):
             raise TypeError,'y must be strictly increasing'
         if not ((x.min() == x[0]) and (x.max() == x[-1])):
-            raise TypeError, 'x must be strictly ascending' 
+            raise TypeError, 'x must be strictly ascending'
         if not ((y.min() == y[0]) and (y.max() == y[-1])):
-            raise TypeError, 'y must be strictly ascending' 
+            raise TypeError, 'y must be strictly ascending'
         if not x.size == z.shape[0]:
             raise TypeError,\
                   'x dimension of z must have same number of elements as x'
@@ -518,4 +518,3 @@ class RectBivariateSpline(BivariateSpline):
         self.fp = fp
         self.tck = tx[:nx],ty[:ny],c[:(nx-kx-1)*(ny-ky-1)]
         self.degrees = kx,ky
-

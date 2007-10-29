@@ -11,7 +11,7 @@ else:
 useUmfpack = True
 
 #convert numpy char to superLU char
-superLU_transtabl = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} 
+superLU_transtabl = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 
 
 def use_solver( **kwargs ):
@@ -19,13 +19,13 @@ def use_solver( **kwargs ):
     Valid keyword arguments with defaults (other ignored):
       useUmfpack = True
       assumeSortedIndices = False
-      
+
     The default sparse solver is umfpack when available. This can be changed by
     passing useUmfpack = False, which then causes the always present SuperLU
     based solver to be used.
-    
+
     Umfpack requires a CSR/CSC matrix to have sorted column/row indices. If
-    sure that the matrix fulfills this, pass assumeSortedIndices=True 
+    sure that the matrix fulfills this, pass assumeSortedIndices=True
     to gain some speed.
     """
     if kwargs.has_key( 'useUmfpack' ):
@@ -66,10 +66,10 @@ def spsolve(A, b, permc_spec=2):
             b = b.squeeze()
         else:
             raise ValueError, "rhs must be a vector (has shape %s)" % (b.shape,)
-   
+
     if not isspmatrix(A):
         raise TypeError,'expected sparse matrix'
-    
+
     A = A.asfptype()  #upcast to a floating point format
 
     if not hasattr(A, 'tocsr') and not hasattr(A, 'tocsc'):
@@ -84,9 +84,9 @@ def spsolve(A, b, permc_spec=2):
     if M != b.size:
         raise ValueError, "matrix - rhs size mismatch (%s - %s)"\
               % (A.shape, b.shape)
-        
-        
-       
+
+
+
     if isUmfpack and useUmfpack:
         mat = _toCS_umfpack( A )
 
@@ -157,7 +157,7 @@ def factorized( A ):
 
         def solve( b ):
             return umf.solve( umfpack.UMFPACK_A, mat, b, autoTranspose = True )
-            
+
         return solve
     else:
         return splu( A ).solve

@@ -15,7 +15,7 @@ mesh_path = '../../../../../hirani_group/wnbell/meshes/'
 #mesh = read_mesh(mesh_path + 'genus3/genus3_455k.xml')
 mesh = read_mesh(mesh_path + '/torus/torus.xml')
 for i in range(3):
-    mesh['vertices'],mesh['elements'] = loop_subdivision(mesh['vertices'],mesh['elements']) 
+    mesh['vertices'],mesh['elements'] = loop_subdivision(mesh['vertices'],mesh['elements'])
 cmplx = simplicial_complex(mesh['vertices'],mesh['elements'])
 
 ## Construct mesh manually
@@ -40,7 +40,7 @@ def whitney_innerproduct_cache(cmplx,k):
         pydec.io.write_array(filename,M)
 
     return M
-     
+
 
 
 def cube_innerproduct_cache(cmplx,k):
@@ -56,7 +56,7 @@ def cube_innerproduct_cache(cmplx,k):
         M = regular_cube_innerproduct(cmplx,k)
         pydec.io.write_array(filename,M)
 
-    return M    
+    return M
 
 
 
@@ -68,7 +68,7 @@ cochain_complex = cmplx.cochain_complex()
 
 for i in [1]: #range(len(cochain_complex)-1):
     print "computing mass matrix"
-    
+
     if isinstance(cmplx,simplicial_complex):
         Mi = whitney_innerproduct_cache(cmplx,i+1)
     else:
@@ -85,19 +85,19 @@ for i in [1]: #range(len(cochain_complex)-1):
     while len(bh) < 3:
         bh.coarsen()
     print repr(bh)
-        
+
     N = len(cochain_complex) - 1
 
     B =  bh[0][N - i].B
 
     A = B.T.tocsr() * B
     #A = B.T.tocsr() * Mi * B
- 
+
     constant_prolongators = [lvl[N - i].I for lvl in bh[:-1]]
 
     if i == 0:
         candidates = None
-    else:        
+    else:
         #candidates = [ones(A.shape[0])]
 
         #TODO test
@@ -109,7 +109,7 @@ for i in [1]: #range(len(cochain_complex)-1):
 
         constant_prolongators = [constant_prolongators[0]] + \
                 [expand_into_blocks(T,K,1).tocsr() for T in constant_prolongators[1:] ]
-                
+
 
     ml = smoothed_aggregation_solver(A,candidates,aggregation=constant_prolongators)
     #ml = smoothed_aggregation_solver(A,candidates)
@@ -117,7 +117,7 @@ for i in [1]: #range(len(cochain_complex)-1):
     x = rand(A.shape[0])
     b = zeros_like(x)
     #b = A*rand(A.shape[0])
-    
+
     if True:
         x_sol,residuals = ml.solve(b,x0=x,maxiter=50,tol=1e-12,return_residuals=True)
     else:
@@ -126,7 +126,7 @@ for i in [1]: #range(len(cochain_complex)-1):
             residuals.append(linalg.norm(b - A*x))
         A.psolve = ml.psolve
         x_sol = linalg.cg(A,b,x0=x,maxiter=30,tol=1e-12,callback=add_resid)[0]
-            
+
 
     residuals = array(residuals)/residuals[0]
     avg_convergence_ratio = residuals[-1]**(1.0/len(residuals))
@@ -136,7 +136,7 @@ for i in [1]: #range(len(cochain_complex)-1):
     print residuals
 
 
-   
+
 
 ##candidates = None
 ##blocks = None
@@ -147,7 +147,7 @@ for i in [1]: #range(len(cochain_complex)-1):
 ##candidates = io.mmread('tests/sample_data/elas30_nullspace.mtx')
 ##candidates = [ array(candidates[:,x]) for x in range(candidates.shape[1]) ]
 ##blocks = arange(A.shape[0]/2).repeat(2)
-## 
+##
 ##ml = smoothed_aggregation_solver(A,candidates,blocks=blocks,epsilon=0,max_coarse=10,max_levels=10)
 ###ml = ruge_stuben_solver(A)
 ##
@@ -163,7 +163,7 @@ for i in [1]: #range(len(cochain_complex)-1):
 ##        residuals.append(linalg.norm(b - A*x))
 ##    A.psolve = ml.psolve
 ##    x_sol = linalg.cg(A,b,x0=x,maxiter=25,tol=1e-12,callback=add_resid)[0]
-##        
+##
 ##
 ##residuals = array(residuals)/residuals[0]
 ##avg_convergence_ratio = residuals[-1]**(1.0/len(residuals))

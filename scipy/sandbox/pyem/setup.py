@@ -17,7 +17,7 @@ for estimating meta parameters of mixtures. """
 from os.path import join
 from info import version as pyem_version
 
-DISTNAME    = 'pyem' 
+DISTNAME    = 'pyem'
 VERSION     = pyem_version
 DESCRIPTION ='A python module for Expectation Maximization learning of mixtures pdf',
 AUTHOR      ='David Cournapeau',

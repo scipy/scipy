@@ -39,7 +39,7 @@ class TestDensities(NumpyTestCase):
         #============================
         self.mu  = N.atleast_2d([-1.0, 2.0])
         self.va  = N.atleast_2d([2.0, 3.0])
-        
+
         self.X  = N.zeros((10, 2))
         self.X[:,0] = N.linspace(-2, 2, 10)
         self.X[:,1] = N.linspace(-1, 3, 10)
@@ -59,11 +59,11 @@ class TestDensities(NumpyTestCase):
         X1      = N.linspace(-2, 2, 10)[:, N.newaxis]
         X2      = N.linspace(-3, 3, 10)[:, N.newaxis]
         self.X  = N.concatenate(([X1, X2]), 1)
-        
+
         self.Yt = N.array([0.00096157109751, 0.01368908714856,
-            0.07380823191162, 0.15072050533842, 
+            0.07380823191162, 0.15072050533842,
             0.11656739937861, 0.03414436965525,
-            0.00378789836599, 0.00015915297541, 
+            0.00378789836599, 0.00015915297541,
             0.00000253261067, 0.00000001526368])
 
 #=====================
@@ -85,7 +85,7 @@ class test_py_implementation(TestDensities):
     def test_2d_full(self, level = 0):
         self._generate_test_data_2d_full()
         self._test(level)
-    
+
     def test_1d(self, level = 0):
         self._generate_test_data_1d()
         self._test(level)
@@ -140,7 +140,7 @@ class TestSpeed(NumpyTestCase):
         if self.hascpu:
             print "Cost per frame is %f; cost per sample is %f" % \
                     (st * self.fcpu / n, st * self.fcpu / n / d)
-    
+
     def test1(self, level = 5):
         cls = self.__class__
         for n, d in [(1e5, 1), (1e5, 5), (1e5, 10), (1e5, 30), (1e4, 100)]:
@@ -174,13 +174,13 @@ class test_py_logsumexp(TestDensities):
                                      "not be here")
             except FloatingPointError, e:
                 print "Catching underflow, as expected"
-            assert_array_almost_equal(pyem.densities.logsumexp(a), 
+            assert_array_almost_equal(pyem.densities.logsumexp(a),
                                       -998.90138771)
         finally:
             N.seterr(under=errst['under'])
 
     def naive_logsumexp(self, data):
-        return N.log(N.sum(N.exp(data), 1)) 
+        return N.log(N.sum(N.exp(data), 1))
 
     def test_1d(self):
         data = N.random.randn(1e1)[:, N.newaxis]
@@ -220,7 +220,7 @@ class test_c_implementation(TestDensities):
             assert_array_almost_equal(Y, self.Yt, decimal)
         except Exception, inst:
             print "Error while importing C implementation, not tested"
-            print " -> (Import error was %s)" % inst 
+            print " -> (Import error was %s)" % inst
 
     def test_1d(self, level = 0):
         self._generate_test_data_1d()

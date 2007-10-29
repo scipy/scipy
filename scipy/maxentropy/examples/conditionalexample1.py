@@ -58,4 +58,3 @@ for x in range(4):
         print ' \t %.3f' % pmf[w*numlabels + x],
         # print ' \t %.3f' % pmf[indices_context[w]][x],
 print
-

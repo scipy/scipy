@@ -12,7 +12,7 @@ def _read_fmt_chunk(fid):
             fid.read(size-16)
     return size, comp, noc, rate, sbytes, ba, bits
 
-# assumes file pointer is immediately 
+# assumes file pointer is immediately
 #   after the 'data' id
 def _read_data_chunk(fid, noc, bits):
     size = struct.unpack('l',fid.read(4))[0]
@@ -42,8 +42,8 @@ def read(file):
 
     The file can be an open file or a filename.
     The returned sample rate is a Python integer
-    The data is returned as a numpy array with a 
-        data-type determined from the file. 
+    The data is returned as a numpy array with a
+        data-type determined from the file.
     """
     if hasattr(file,'read'):
         fid = file
@@ -61,7 +61,7 @@ def read(file):
             size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(fid)
         elif chunk_id == 'data':
             print "Reading data chunk"
-            data = _read_data_chunk(fid, noc, bits) 
+            data = _read_data_chunk(fid, noc, bits)
         else:
             print "Warning:  %s chunk not understood"
             size = struct.unpack('L',fid.read(4))[0]
@@ -73,15 +73,15 @@ def read(file):
 # sample rate, data
 def write(filename, rate, data):
     """Write a numpy array as a WAV file
-    
+
     filename -- The name of the file to write (will be over-written)
     rate -- The sample rate (in samples/sec).
-    data -- A 1-d or 2-d numpy array of integer data-type. 
+    data -- A 1-d or 2-d numpy array of integer data-type.
             The bits-per-sample will be determined by the data-type
-            To write multiple-channels, use a 2-d array of shape 
+            To write multiple-channels, use a 2-d array of shape
             (Nsamples, Nchannels)
 
-    Writes a simple uncompressed WAV file. 
+    Writes a simple uncompressed WAV file.
     """
     fid = open(filename, 'wb')
     fid.write('RIFF')
@@ -102,7 +102,7 @@ def write(filename, rate, data):
     fid.write(struct.pack('l', data.nbytes))
     data.tofile(fid)
     # Determine file size and place it in correct
-    #  position at start of the file. 
+    #  position at start of the file.
     size = fid.tell()
     fid.seek(4)
     fid.write(struct.pack('l', size-8))

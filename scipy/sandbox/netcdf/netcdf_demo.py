@@ -5,20 +5,20 @@ import time
 
 def getUserName():
     try:
-	import os, pwd, string
+        import os, pwd, string
     except ImportError:
-	return 'unknown user'
+        return 'unknown user'
     pwd_entry = pwd.getpwuid(os.getuid())
     name = string.strip(string.splitfields(pwd_entry[4], ',')[0])
     if name == '':
-	name = pwd_entry[0]
+        name = pwd_entry[0]
     return name
 
 #
 # Creating a file
 #
 file = NetCDFFile('test.nc', 'w', 'Created ' + time.ctime(time.time())
-		  + ' by ' + getUserName())
+                  + ' by ' + getUserName())
 
 file.title = "Just some useless junk"
 file.version = 42

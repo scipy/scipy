@@ -49,7 +49,7 @@ for k in range(kmax):
     level   = 0.9
     P.plot(data[:, 0], data[:, 1], '.', label = '_nolegend_')
 
-    # h keeps the handles of the plot, so that you can modify 
+    # h keeps the handles of the plot, so that you can modify
     # its parameters like label or color
     h   = lgm[k].plot(level = level)
     [i.set_color('r') for i in h]
@@ -60,5 +60,5 @@ for k in range(kmax):
     h[0].set_label('Real confidence ellipsoides')
 
 P.legend(loc = 0)
-# depending on your configuration, you may have to call P.show() 
+# depending on your configuration, you may have to call P.show()
 # to actually display the figure

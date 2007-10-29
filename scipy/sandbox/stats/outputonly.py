@@ -175,5 +175,3 @@ Returns: None
         file.write(_support.list2string(['\nTest statistic = ',round(stat,4),'   p = ',round(prob,4),suffix,'\n\n']))
         file.close()
     return None
-
-

@@ -8,17 +8,17 @@ from scipy.stats.models.formula import formula, I
 
 class Unit:
     """
-    Individual experimental unit for 
+    Individual experimental unit for
     EM implementation of (repeated measures)
     mixed effects model.
 
     \'Maximum Likelihood Computations with Repeated Measures:
     Application of the EM Algorithm\'
 
-    Nan Laird; Nicholas Lange; Daniel Stram 
+    Nan Laird; Nicholas Lange; Daniel Stram
 
     Journal of the American Statistical Association,
-    Vol. 82, No. 397. (Mar., 1987), pp. 97-105. 
+    Vol. 82, No. 397. (Mar., 1987), pp. 97-105.
     """
 
     def __getitem__(self, item):
@@ -48,33 +48,33 @@ class Unit:
     def _compute_S(self, D, sigma):
         """
         Display (3.3) from Laird, Lange, Stram (see help(Unit))
-        """ 
+        """
         self.S = (N.identity(self.n) * sigma**2 +
                   N.dot(self.Z, N.dot(D, self.Z.T)))
 
     def _compute_W(self):
         """
         Display (3.2) from Laird, Lange, Stram (see help(Unit))
-        """ 
+        """
         self.W = L.inv(self.S)
 
     def compute_P(self, Sinv):
         """
         Display (3.10) from Laird, Lange, Stram (see help(Unit))
-        """ 
+        """
         t = N.dot(self.W, self.X)
         self.P = self.W - N.dot(N.dot(t, Sinv), t.T)
 
     def _compute_r(self, alpha):
         """
         Display (3.5) from Laird, Lange, Stram (see help(Unit))
-        """ 
+        """
         self.r = self.Y - N.dot(self.X, alpha)
 
     def _compute_b(self, D):
         """
         Display (3.4) from Laird, Lange, Stram (see help(Unit))
-        """ 
+        """
         self.b = N.dot(D, N.dot(N.dot(self.Z.T, self.W), self.r))
 
     def fit(self, a, D, sigma):
@@ -118,7 +118,7 @@ class Unit:
         contribution by default though this requires estimated
         fixed effect a to be passed as an argument.
         """
-        
+
         if ML:
             return (N.log(L.det(self.W)) - (self.r * N.dot(self.W, self.r)).sum()) / 2.
         else:
@@ -133,23 +133,23 @@ class Unit:
 class Mixed:
 
     """
-    Model for 
+    Model for
     EM implementation of (repeated measures)
     mixed effects model.
 
     \'Maximum Likelihood Computations with Repeated Measures:
     Application of the EM Algorithm\'
 
-    Nan Laird; Nicholas Lange; Daniel Stram 
+    Nan Laird; Nicholas Lange; Daniel Stram
 
     Journal of the American Statistical Association,
-    Vol. 82, No. 397. (Mar., 1987), pp. 97-105. 
+    Vol. 82, No. 397. (Mar., 1987), pp. 97-105.
     """
 
     def __init__(self, units, response, fixed=I, random=I):
         self.units = units
         self.m = len(self.units)
-        
+
         self.fixed = formula(fixed)
         self.random = formula(random)
         self.response = formula(response)
@@ -164,13 +164,13 @@ class Mixed:
         # Determine size of fixed effects
 
         d = self.units[0].design(self.fixed)
-        self.p = d.shape[1]  # d.shape = p 
+        self.p = d.shape[1]  # d.shape = p
         self.a = N.zeros(self.p, N.float64)
 
         # Determine size of D, and sensible initial estimates
-        # of sigma and D        
+        # of sigma and D
         d = self.units[0].design(self.random)
-        self.q = d.shape[1]  # d.shape = q 
+        self.q = d.shape[1]  # d.shape = q
 
         self.D = N.zeros((self.q,)*2, N.float64)
         self.sigma = 1.
@@ -189,10 +189,10 @@ class Mixed:
 
         S = sum([unit.compute_xtwx() for unit in self.units])
         Y = sum([unit.compute_xtwy() for unit in self.units])
-        
+
         self.Sinv = L.pinv(S)
         self.a = N.dot(self.Sinv, Y)
-            
+
     def _compute_sigma(self, ML=False):
         """
         Estimate sigma. If ML is True, return the ML estimate of sigma,
@@ -301,14 +301,14 @@ class Mixed:
             self._compute_D(ML=ML)
             if not self.cont(ML=ML):
                 break
-            
+
 
 if __name__ == '__main__':
     import numpy.random as R
 
     nsubj = 400
     units  = []
-    
+
     n = 3
 
     from scipy.stats.models.formula import term
@@ -344,5 +344,3 @@ if __name__ == '__main__':
 ## a.Z = a.design(random)
 
 ## print help(a.compute_S)
-
-

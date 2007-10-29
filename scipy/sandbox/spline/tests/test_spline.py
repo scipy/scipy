@@ -102,11 +102,11 @@ class TestUnivariateSpline(NumpyTestCase):
         uspl = UnivariateSpline(x,v,k=k,s=0)
         ex = array([0.0, pi, 2.0*pi, 3.0*pi, 4.0*pi])
         assert_array_almost_equal(uspl.roots(),ex, decimal=3)
-    
+
 class TestLSQUnivariateSpline(NumpyTestCase):
     def check_curfit_against_dierckx(self):
         """ Test against results obtined from the pure fortran routines.
-            
+
             Here we check simple spline creation and evaluation.
         """
         x,y = curfit_test['x'],curfit_test['y']

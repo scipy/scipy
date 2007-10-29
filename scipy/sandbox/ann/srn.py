@@ -13,7 +13,7 @@ class srn:
     _outfxns = ('linear','logistic','softmax')
 
     def __init__(self,ni,nh,no,f='linear',w=None):
-        """ Set up instance of srn. Initial weights are drawn from a 
+        """ Set up instance of srn. Initial weights are drawn from a
         zero-mean Gaussian w/ variance is scaled by fan-in.
         Input:
             ni  - <int> # of inputs
@@ -55,7 +55,7 @@ class srn:
             self.pack()
 
     def unpack(self):
-        """ Decompose 1-d vector of weights w into appropriate weight 
+        """ Decompose 1-d vector of weights w into appropriate weight
         matrices (w1,b1,w2,b2) and reinsert them into net
         """
         self.w1 = N.array(self.wp)[:self.ni*self.nh].reshape(self.ni,self.nh)
@@ -75,7 +75,7 @@ class srn:
                             self.b2.reshape(N.size(self.b2))])
 
     def fwd_all(self,x,w=None):
-        """ Propagate values forward through the net. 
+        """ Propagate values forward through the net.
         Input:
             x   - matrix of all input patterns
             w   - 1-d vector of weights
@@ -85,14 +85,14 @@ class srn:
         if w is not None:
             self.wp = w
         self.unpack()
-        
+
         ### NEW ATTEMPT ###
         z = N.array(N.ones(self.nh)*0.5)    # init to 0.5, it will be updated on-the-fly
         o = N.zeros((x.shape[0],self.no))   # this will hold the non-squashed outputs
         for i in range(len(x)):
             z = N.tanh(N.dot(x[i],self.w1) + N.dot(z,self.wc) + self.b1)
             o[i] = (N.dot(z,self.w2) + self.b2)[0]
-            
+
         # compute vector of context values for current weight matrix
         #c = N.tanh(N.dot(x,self.w1) + N.dot(N.ones((len(x),1)),self.b1))
         #c = N.vstack([c[1:],c[0]])
@@ -100,7 +100,7 @@ class srn:
         #z = N.tanh(N.dot(x,self.w1) + N.dot(c,self.wc) + N.dot(N.ones((len(x),1)),self.b1))
         # compute vector of net outputs
         #o = N.dot(z,self.w2) + N.dot(N.ones((len(z),1)),self.b2)
-        
+
         # compute final output activations
         if self.outfxn == 'linear':
             y = o
@@ -109,9 +109,9 @@ class srn:
         elif self.outfxn == 'softmax':      # TODO: and here...
             tmp = N.exp(o)
             y = tmp/(N.sum(temp,1)*N.ones((1,self.no)))
-            
+
         return y
-        
+
     def errfxn(self,w,x,t):
         """ Return vector of squared-errors for the leastsq optimizer
         """
@@ -137,8 +137,8 @@ class srn:
             sum-squared-error over all data
         """
         return N.sum(self.errfxn(self.wp,x,t),axis=0)
-                                                                                    
-    
+
+
 def main():
     """ Set up a 1-2-1 SRN to solve the temporal-XOR problem from Elman 1990.
     """
@@ -162,7 +162,6 @@ def main():
     print "\nFinal SSE:\n"
     print "\ttraining set: ",net.test_all(trn_input,trn_targs)
     print "\ttesting set: ",net.test_all(tst_input,tst_targs),"\n"
-    
+
 if __name__ == '__main__':
     main()
-

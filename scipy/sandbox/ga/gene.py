@@ -65,7 +65,7 @@ class gene(object):
 
     def clone(self):
         """ Makes a shallow copy of the object.
-        
+
         Override if you need more specialized behavior.
         """
         return shallow_clone(self)
@@ -252,7 +252,7 @@ class list2_gene(list_gene):
     and resistor values during evaluation
     """
     func = nop
-    def value(self): 
+    def value(self):
         return self.func(self._value)
     def __repr__(self):
         return repr(self._value) #???

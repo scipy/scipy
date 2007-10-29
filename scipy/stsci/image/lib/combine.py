@@ -19,7 +19,7 @@ def _combine_f(funcstr, arrays, output=None, outtype=None, nlow=0, nhigh=0, badm
     _comb(arrays, out, nlow, nhigh, badmasks, funcstr)
     if output is None:
         return out
-    
+
 def median( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
     """median() nominally computes the median pixels for a stack of
     identically shaped images.
@@ -43,7 +43,7 @@ def median( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
     badmasks   specifies boolean arrays corresponding to 'arrays', where true
                indicates that a particular pixel is not to be included in the
                median calculation.
-    
+
     >>> a = num.arange(4)
     >>> a = a.reshape((2,2))
     >>> arrays = [a*16, a*4, a*2, a*8]
@@ -93,7 +93,7 @@ def average( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
     badmasks   specifies boolean arrays corresponding to 'arrays', where true
                indicates that a particular pixel is not to be included in the
                average calculation.
-               
+
     >>> a = num.arange(4)
     >>> a = a.reshape((2,2))
     >>> arrays = [a*16, a*4, a*2, a*8]
@@ -117,7 +117,7 @@ def average( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
     >>> average(arrays, badmasks=threshhold(arrays, high=25))
     array([[ 0,  7],
            [ 9, 14]])
-    
+
     """
     return _combine_f("average", arrays, output, outtype, nlow, nhigh, badmasks)
 
@@ -144,7 +144,7 @@ def minimum( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
     badmasks   specifies boolean arrays corresponding to 'arrays', where true
                indicates that a particular pixel is not to be included in the
                minimum calculation.
-               
+
     >>> a = num.arange(4)
     >>> a = a.reshape((2,2))
     >>> arrays = [a*16, a*4, a*2, a*8]
@@ -168,7 +168,7 @@ def minimum( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
     >>> minimum(arrays, badmasks=threshhold(arrays, low=10))
     array([[ 0, 16],
            [16, 12]])
-    
+
     """
     return _combine_f("minimum", arrays, output, outtype, nlow, nhigh, badmasks)
 
@@ -224,12 +224,12 @@ def threshhold(arrays, low=None, high=None, outputs=None):
            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype=int8)
-    
+
     """
 
     if not isinstance(arrays[0],  num.ndarray):
         return threshhold( num.asarray(arrays), low, high, outputs)
-    
+
     if outputs is None:
         outs = num.zeros(shape=(len(arrays),)+arrays[0].shape,
                          dtype=num.bool8)
@@ -260,7 +260,7 @@ def _bench():
     t0 = time.clock()
     median(arrays)
     print "maskless:", time.clock()-t0
-    
+
     a = num.arange(10**6)
     a = a.reshape((1000, 1000))
     arrays = [a*2, a*64, a*16, a*8]

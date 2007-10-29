@@ -37,7 +37,7 @@ class HuberT(RobustNorm):
     """
 
     t = 1.345
-    
+
     def subset(self, z):
         z = N.asarray(z)
         return N.less_equal(N.fabs(z), HuberT.t)
@@ -126,7 +126,7 @@ class TrimmedMean(RobustNorm):
     """
 
     c = 2
-    
+
     def subset(self, z):
         z = N.asarray(z)
         return N.less_equal(N.fabs(z), TrimmedMean.c)
@@ -158,7 +158,7 @@ class Hampel(RobustNorm):
     a = 2
     b = 4
     c = 8
-    
+
     def subset(self, z):
         z = N.fabs(N.asarray(z))
         t1 = N.less_equal(z, Hampel.a)
@@ -185,7 +185,7 @@ class Hampel(RobustNorm):
              t3 * (a * (c * z - z**2 * 0.5) / (c - b) - 7 * a**2 / 2.) +
              (1 - t1 + t2 + t3) * a * (b + c - a))
         return v
-    
+
     def weights(self, z):
         z = N.asarray(z)
         test = N.not_equal(z, 0)
@@ -200,9 +200,9 @@ class TukeyBiweight(RobustNorm):
     Springer, New York, 2002.
     """
 
-    
+
     R = 4.685
-    
+
     def subset(self, z):
         z = N.fabs(N.asarray(z))
         return N.less_equal(z, self.R)
@@ -214,10 +214,8 @@ class TukeyBiweight(RobustNorm):
 
     def rho(self, z):
         subset = self.subset(z)
-        return -(1 - (z / self.R)**2)**3 * subset * self.R**2 / 6 
-    
+        return -(1 - (z / self.R)**2)**3 * subset * self.R**2 / 6
+
     def weights(self, z):
         subset = self.subset(z)
         return (1 - (z / self.R)**2)**2 * subset
-
-

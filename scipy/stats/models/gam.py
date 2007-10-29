@@ -27,7 +27,7 @@ def default_smoother(x):
         elif n < 800:
             nknots = 2**(a2 + (a3 - a2) * (n - 200)/600.)
         elif n < 3200:
-            nknots = 2**(a3 + (a4 - a3) * (n - 800)/2400.) 
+            nknots = 2**(a3 + (a4 - a3) * (n - 800)/2400.)
         else:
             nknots = 200 + (n - 3200.)**0.2
         knots = _x[N.linspace(0, n-1, nknots).astype(N.int32)]
@@ -73,7 +73,7 @@ class AdditiveModel:
         self.design = design
         if weights is not None:
             self.weights = weights
-        else: 
+        else:
             self.weights = N.ones(self.design.shape[0])
 
         self.smoothers = smoothers or [default_smoother(design[:,i]) for i in range(design.shape[1])]
@@ -94,7 +94,7 @@ class AdditiveModel:
         for i in range(self.design.shape[1]):
             tmp = self.smoothers[i]()
             self.smoothers[i].smooth(Y - alpha - mu + tmp,
-				     weights=self.weights)
+                                     weights=self.weights)
             tmp2 = self.smoothers[i]()
             offset[i] = -(tmp2*self.weights).sum() / self.weights.sum()
             mu += tmp2 - tmp
@@ -102,7 +102,7 @@ class AdditiveModel:
         return results(Y, alpha, self.design, self.smoothers, self.family, offset)
 
     def cont(self, tol=1.0e-04):
-	
+
         curdev = (((self.results.Y - self.results.predict(self.design))**2) * self.weights).sum()
 
         if N.fabs((self.dev - curdev) / curdev) < tol:
@@ -128,18 +128,18 @@ class AdditiveModel:
 
         for i in range(self.design.shape[1]):
             self.smoothers[i].smooth(Y - alpha - mu,
-				     weights=self.weights)
+                                     weights=self.weights)
             tmp = self.smoothers[i]()
             offset[i] = (tmp * self.weights).sum() / self.weights.sum()
             tmp -= tmp.sum()
             mu += tmp
 
         self.results = results(Y, alpha, self.design, self.smoothers, self.family, offset)
-	
+
         while self.cont():
             self.results = self.next()
 
-        return self.results 
+        return self.results
 
 class Model(GLM, AdditiveModel):
 
@@ -156,7 +156,7 @@ class Model(GLM, AdditiveModel):
         self.weights = self.family.weights(_results.mu)
         Z = _results.predict(self.design) + self.family.link.deriv(_results.mu) * (Y - _results.mu)
         m = AdditiveModel(self.design, smoothers=self.smoothers, weights=self.weights)
-        _results = m.fit(Z) 
+        _results = m.fit(Z)
         _results.Y = Y
         _results.mu = self.family.link.inverse(_results.predict(self.design))
         self.iter += 1
@@ -168,12 +168,12 @@ class Model(GLM, AdditiveModel):
         """
         Return Pearson\'s X^2 estimate of scale.
         """
-        
+
         if Y is None:
             Y = self.Y
         resid = Y - self.results.mu
         return (N.power(resid, 2) / self.family.variance(self.results.mu)).sum() / AdditiveModel.df_resid(self)
-    
+
     def fit(self, Y):
         self.Y = N.asarray(Y, N.float64)
 
@@ -181,7 +181,7 @@ class Model(GLM, AdditiveModel):
         alpha = self.Y.mean()
         Z = self.family.link(alpha) + self.family.link.deriv(alpha) * (Y - alpha)
         m = AdditiveModel(self.design, smoothers=self.smoothers)
-        self.results = m.fit(Z) 
+        self.results = m.fit(Z)
         self.results.mu = self.family.link.inverse(self.results.predict(self.design))
         self.results.Y = Y
 
@@ -196,7 +196,7 @@ class Model(GLM, AdditiveModel):
 def _run():
     import numpy.random as R
     n = lambda x: (x - x.mean()) / x.std()
-    n_ = lambda x: (x - x.mean()) 
+    n_ = lambda x: (x - x.mean())
     x1 = R.standard_normal(500)
     x1.sort()
     x2 = R.standard_normal(500)
@@ -226,7 +226,7 @@ def _run():
 ##     pylab.figure(num=1)
 ##     pylab.plot(x1, n(m.smoothers[0](x1)), 'r'); pylab.plot(x1, n(f1(x1)), linewidth=2)
 ##     pylab.figure(num=2)
-##     pylab.plot(x2, n(m.smoothers[1](x2)), 'r'); pylab.plot(x2, n(f2(x2)), linewidth=2); 
+##     pylab.plot(x2, n(m.smoothers[1](x2)), 'r'); pylab.plot(x2, n(f2(x2)), linewidth=2);
     print tic-toc
 
     f = family.Poisson()
@@ -238,7 +238,7 @@ def _run():
     tic = time.time()
     print tic-toc
 ##     pylab.figure(num=1)
-##     pylab.plot(x1, n(m.smoothers[0](x1)), 'b'); pylab.plot(x1, n(f1(x1)), linewidth=2) 
+##     pylab.plot(x1, n(m.smoothers[0](x1)), 'b'); pylab.plot(x1, n(f1(x1)), linewidth=2)
 ##     pylab.figure(num=2)
 ##     pylab.plot(x2, n(m.smoothers[1](x2)), 'b'); pylab.plot(x2, n(f2(x2)), linewidth=2)
 ##     pylab.show()

@@ -11,7 +11,7 @@ except:
     pass
 
 class TestRecaster(NumpyTestCase):
-    
+
     def test_init(self):
         # Setting sctype_list
         R = Recaster()
@@ -43,7 +43,7 @@ class TestRecaster(NumpyTestCase):
         # Sctype size lists
         # Integer sizes
         # Cabable types
-        
+
     def test_cast_to_fp(self):
         R = Recaster()
         # Define expected type output from fp recast of value
@@ -76,7 +76,7 @@ class TestRecaster(NumpyTestCase):
             dtt = arr.dtype.type
             assert dtt is outp, \
                    'Expected %s from %s, got %s' % (outp, inp, dtt)
-            
+
     def test_smallest_int_sctype(self):
         # Smallest int sctype with full recaster
         params = sctype_attributes()
@@ -117,7 +117,7 @@ class TestRecaster(NumpyTestCase):
         assert rt == N.int16, 'Expected int16, got %s' % rt
         rt = RF.smallest_int_sctype(mx, mn, prefer='u')
         assert rt == N.uint16, 'Expected uint16, got %s' % rt
-        
+
     def test_recasts(self):
         valid_types = [N.int32, N.complex128, N.float64]
         # Test smallest
@@ -173,4 +173,3 @@ class TestRecaster(NumpyTestCase):
             dtt = arr.dtype.type
             assert dtt is outp, \
                    'Expected %s from %s, got %s' % (outp, inp, dtt)
-            

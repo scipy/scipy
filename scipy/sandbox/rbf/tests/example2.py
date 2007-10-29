@@ -40,8 +40,7 @@ for idx, za in enumerate(zas):
     da = s(xa, ya, za*ones(xa.shape, 'f'))
     ax = fig.add_subplot(1,4,idx+1)
     ax.pcolor(xa, ya, da, norm=pl.normalize(0, 1), \
-	  shading='flat', cmap=pl.cm.jet)
+          shading='flat', cmap=pl.cm.jet)
     ax.set_aspect('equal')
 
 pl.show()
-

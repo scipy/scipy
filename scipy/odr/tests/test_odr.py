@@ -23,23 +23,23 @@ class TestODR(NumpyTestCase):
 
     def explicit_fjb(self, B, x):
         eBx = np.exp(B[2]*x)
-        res = np.vstack([np.ones(x.shape[-1]), 
+        res = np.vstack([np.ones(x.shape[-1]),
                          np.power(eBx-1.0, 2),
                          B[1]*2.0*(eBx-1.0)*eBx*x])
         return res
 
     def test_explicit(self):
         explicit_mod = Model(
-            self.explicit_fcn, 
+            self.explicit_fcn,
             fjacb=self.explicit_fjb,
-            fjacd=self.explicit_fjd, 
+            fjacd=self.explicit_fjd,
             meta=dict(name='Sample Explicit Model',
                       ref='ODRPACK UG, pg. 39'),
         )
         explicit_dat = Data([0.,0.,5.,7.,7.5,10.,16.,26.,30.,34.,34.5,100.],
                         [1265.,1263.6,1258.,1254.,1253.,1249.8,1237.,1218.,1220.6,
                          1213.8,1215.5,1212.])
-        explicit_odr = ODR(explicit_dat, explicit_mod, beta0=[1500.0, -50.0, -0.1], 
+        explicit_odr = ODR(explicit_dat, explicit_mod, beta0=[1500.0, -50.0, -0.1],
                        ifixx=[0,0,1,1,1,1,1,1,1,1,1,0])
         explicit_odr.set_job(deriv=2)
 
@@ -67,14 +67,14 @@ class TestODR(NumpyTestCase):
     # Implicit Example
 
     def implicit_fcn(self, B, x):
-        return (B[2]*np.power(x[0]-B[0], 2) + 
-                2.0*B[3]*(x[0]-B[0])*(x[1]-B[1]) + 
+        return (B[2]*np.power(x[0]-B[0], 2) +
+                2.0*B[3]*(x[0]-B[0])*(x[1]-B[1]) +
                 B[4]*np.power(x[1]-B[1], 2) - 1.0)
 
     def test_implicit(self):
         implicit_mod = Model(
-            self.implicit_fcn, 
-            implicit=1, 
+            self.implicit_fcn,
+            implicit=1,
             meta=dict(name='Sample Implicit Model',
                       ref='ODRPACK UG, pg. 49'),
         )
@@ -85,7 +85,7 @@ class TestODR(NumpyTestCase):
              -6.44,-6.44,-6.41,-6.25,-5.88,-5.5,-5.24,-4.86]],
             1,
         )
-        implicit_odr = ODR(implicit_dat, implicit_mod, 
+        implicit_odr = ODR(implicit_dat, implicit_mod,
             beta0=[-1.0, -3.0, 0.09, 0.02, 0.08])
 
         out = implicit_odr.run()
@@ -129,9 +129,9 @@ class TestODR(NumpyTestCase):
         stheta = np.sin(theta)
         omega = np.power(2.*pi*x*np.exp(-B[2]), B[3])
         phi = np.arctan2((omega*stheta), (1.0 + omega*ctheta))
-        r = (B[0] - B[1]) * np.power(np.sqrt(np.power(1.0 + omega*ctheta, 2) + 
+        r = (B[0] - B[1]) * np.power(np.sqrt(np.power(1.0 + omega*ctheta, 2) +
              np.power(omega*stheta, 2)), -B[4])
-        ret = np.vstack([B[1] + r*np.cos(B[4]*phi), 
+        ret = np.vstack([B[1] + r*np.cos(B[4]*phi),
                          r*np.sin(B[4]*phi)])
         return ret
 
@@ -148,7 +148,7 @@ class TestODR(NumpyTestCase):
         multi_y = np.array([
             [4.22, 4.167, 4.132, 4.038, 4.019, 3.956, 3.884, 3.784, 3.713,
              3.633, 3.54, 3.433, 3.358, 3.258, 3.193, 3.128, 3.059, 2.984,
-             2.934, 2.876, 2.838, 2.798, 2.759], 
+             2.934, 2.876, 2.838, 2.798, 2.759],
             [0.136, 0.167, 0.188, 0.212, 0.236, 0.257, 0.276, 0.297, 0.309,
              0.311, 0.314, 0.311, 0.305, 0.289, 0.277, 0.255, 0.24, 0.218,
              0.202, 0.182, 0.168, 0.153, 0.139],
@@ -180,7 +180,7 @@ class TestODR(NumpyTestCase):
 
         multi_dat = Data(multi_x, multi_y, wd=1e-4/np.power(multi_x, 2),
             we=multi_we)
-        multi_odr = ODR(multi_dat, multi_mod, beta0=[4.,2.,7.,.4,.5], 
+        multi_odr = ODR(multi_dat, multi_mod, beta0=[4.,2.,7.,.4,.5],
             delta0=multi_delta, ifixx=multi_ifixx)
         multi_odr.set_job(deriv=1, del_init=1)
 
@@ -266,7 +266,7 @@ class TestODR(NumpyTestCase):
     # The data is taken from one of the undergraduate physics labs I performed.
 
     def lorentz(self, beta, x):
-        return (beta[0]*beta[1]*beta[2] / np.sqrt(np.power(x*x - 
+        return (beta[0]*beta[1]*beta[2] / np.sqrt(np.power(x*x -
             beta[2]*beta[2], 2.0) + np.power(beta[1]*x, 2.0)))
 
     def test_lorentz(self):
@@ -279,15 +279,15 @@ class TestODR(NumpyTestCase):
         l_dat = RealData(
             [3.9094, 3.85945, 3.84976, 3.84716, 3.84551, 3.83964, 3.82608,
              3.78847, 3.78163, 3.72558, 3.70274, 3.6973, 3.67373, 3.65982,
-             3.6562, 3.62498, 3.55525, 3.41886], 
+             3.6562, 3.62498, 3.55525, 3.41886],
             [652, 910.5, 984, 1000, 1007.5, 1053, 1160.5, 1409.5, 1430, 1122,
-             957.5, 920, 777.5, 709.5, 698, 578.5, 418.5, 275.5], 
+             957.5, 920, 777.5, 709.5, 698, 578.5, 418.5, 275.5],
             sx=l_sx,
             sy=l_sy,
         )
         l_mod = Model(self.lorentz, meta=dict(name='Lorentz Peak'))
         l_odr = ODR(l_dat, l_mod, beta0=(1000., .1, 3.8))
-        
+
         out = l_odr.run()
         assert_array_almost_equal(
             out.beta,

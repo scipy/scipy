@@ -5,20 +5,20 @@ MLab=num
 
 def _translate(a, dx, dy, output=None, mode="nearest", cval=0.0):
     """_translate does positive sub-pixel shifts using bilinear interpolation."""
-    
+
     assert 0 <= dx < 1.0
     assert 0 <= dy < 1.0
-    
+
     w = (1-dy) * (1-dx)
     x = (1-dy) * dx
     y = (1-dx) * dy
     z = dx * dy
-    
+
     kernel = num.array([
         [ z, y ],
         [ x, w ],
         ])
-    
+
     return convolve.correlate2d(a, kernel, output, mode, cval)
 
 def translate(a, sdx, sdy, output=None, mode="nearest", cval=0.0):
@@ -34,9 +34,9 @@ def translate(a, sdx, sdy, output=None, mode="nearest", cval=0.0):
         'constant'  elements beyond boundary are set to 'cval'
     """
     a = num.asarray(a)
-    
+
     sdx, sdy = -sdx, -sdy     # Flip sign to match IRAF sign convention
-    
+
     # _translate works "backwords" due to implementation of 2x2 correlation.
     if sdx >= 0 and sdy >= 0:
         rotation = 2
@@ -59,4 +59,3 @@ def translate(a, sdx, sdy, output=None, mode="nearest", cval=0.0):
         output._copyFrom(MLab.rot90(output, -rotation%4))
     else:
         return MLab.rot90(d, -rotation % 4).astype(a.type())
-

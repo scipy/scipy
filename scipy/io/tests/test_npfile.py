@@ -30,7 +30,7 @@ class TestNpFile(NumpyTestCase):
         assert npf.order == 'F', 'Order not set correctly'
         npf.endian = '<'
         assert npf.endian == '<', 'Endian not set correctly'
-        
+
     def test_parse_endian(self):
         npf = npfile(StringIO())
         swapped_code = sys_endian_code == '<' and '>' or '<'
@@ -47,7 +47,7 @@ class TestNpFile(NumpyTestCase):
         npf.write_raw(str)
         npf.rewind()
         assert str == npf.read_raw(len(str))
-        
+
     def test_remaining_bytes(self):
         npf = npfile(StringIO())
         assert npf.remaining_bytes() == 0
@@ -93,7 +93,7 @@ class TestNpFile(NumpyTestCase):
         npf.rewind()
         assert_array_equal(npf.read_array(adt, shp),
                            cf_arr)
-        
+
         npf = npfile(StringIO(), endian='swapped', order='F')
         npf.write_array(arr)
         npf.rewind()
@@ -102,4 +102,3 @@ class TestNpFile(NumpyTestCase):
         assert_array_equal(npf.read_array(adt, shp, endian='dtype'), bs_arr)
         npf.rewind()
         assert_array_equal(npf.read_array(adt, shp, order='C'), cf_arr)
-        

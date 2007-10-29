@@ -25,7 +25,7 @@ a   = array([1, 2, 3.])
 b   = a + 3
 
 x   = concatenate((a, b)).reshape(2, 3)
-        
+
 # float and double C order
 xc      = require(x, dtype = numpy.float64, requirements = 'C')
 xcf     = require(x, dtype = numpy.float32, requirements = 'C')
@@ -39,7 +39,7 @@ xf1     = xf[0]
 xff1    = xff[0]
 
 # This class uses lpc in 1 dimension and loop on the axis. Is tested against
-# a direct matrix inversion of the autocorrelation matrix (using matrix inverse 
+# a direct matrix inversion of the autocorrelation matrix (using matrix inverse
 # instead of levinson durbin)
 class TestLpcPy(NumpyTestCase):
     def check_float(self):
@@ -72,7 +72,7 @@ class TestLpcPy(NumpyTestCase):
         assert_array_almost_equal(tmp, a)
 
     def check_double(self):
-        # Axis -1 
+        # Axis -1
         xt      = xc
         axis    = -1
         order   = 1
@@ -102,7 +102,7 @@ class TestLpcPy(NumpyTestCase):
 
 class TestLpc(NumpyTestCase):
     def check_float(self):
-        # Axis -1 
+        # Axis -1
         xt      = xcf
         axis    = -1
         order   = 1
@@ -116,7 +116,7 @@ class TestLpc(NumpyTestCase):
         assert_array_almost_equal(e, et)
         assert_array_almost_equal(k, kt)
 
-        # Axis 0 
+        # Axis 0
         xt      = xcf
         axis    = 0
         order   = 1
@@ -146,7 +146,7 @@ class TestLpc(NumpyTestCase):
         assert_array_almost_equal(k, kt)
 
     def check_double(self):
-        # Axis -1 
+        # Axis -1
         xt      = xc
         axis    = -1
         order   = 1
@@ -158,7 +158,7 @@ class TestLpc(NumpyTestCase):
         assert_array_almost_equal(e, et)
         assert_array_almost_equal(k, kt)
 
-        # Axis 0 
+        # Axis 0
         xt      = xc
         axis    = 0
         order   = 1

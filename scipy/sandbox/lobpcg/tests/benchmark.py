@@ -6,12 +6,12 @@ set_printoptions(precision=3,linewidth=90)
 import time
 
 def test(n):
-  x = arange(1,n+1)
-  B = diag(1./x)
-  y = arange(n-1,0,-1)
-  z = arange(2*n-1,0,-2)
-  A = diag(z)-diag(y,-1)-diag(y,1)
-  return A,B
+    x = arange(1,n+1)
+    B = diag(1./x)
+    y = arange(n-1,0,-1)
+    z = arange(2*n-1,0,-2)
+    A = diag(z)-diag(y,-1)-diag(y,1)
+    return A,B
 
 def as2d( ar ):
     if ar.ndim == 2:
@@ -32,29 +32,29 @@ data1=[]
 data2=[]
 
 for n in N:
-  print '******', n
-  A,B = test(n) # Mikota pair 
-  X = rand(n,m)
-  X = linalg.orth(X)
+    print '******', n
+    A,B = test(n) # Mikota pair
+    X = rand(n,m)
+    X = linalg.orth(X)
 
-  tt = time.clock()
-  (LorU, lower) = linalg.cho_factor(A, lower=0, overwrite_a=0)
-  eigs,vecs = lobpcg.lobpcg(X,A,B,operatorT = precond,
-                            residualTolerance = 1e-4, maxIterations = 40)
-  data1.append(time.clock()-tt)
-  eigs = sort(eigs)
-  print 
-  print 'Results by LOBPCG'
-  print
-  print n,eigs
+    tt = time.clock()
+    (LorU, lower) = linalg.cho_factor(A, lower=0, overwrite_a=0)
+    eigs,vecs = lobpcg.lobpcg(X,A,B,operatorT = precond,
+                              residualTolerance = 1e-4, maxIterations = 40)
+    data1.append(time.clock()-tt)
+    eigs = sort(eigs)
+    print
+    print 'Results by LOBPCG'
+    print
+    print n,eigs
 
-  tt = time.clock()
-  w,v=symeig(A,B,range=(1,m))
-  data2.append(time.clock()-tt)
-  print 
-  print 'Results by symeig'
-  print 
-  print n, w
+    tt = time.clock()
+    w,v=symeig(A,B,range=(1,m))
+    data2.append(time.clock()-tt)
+    print
+    print 'Results by symeig'
+    print
+    print n, w
 
 xlabel(r'Size $n$')
 ylabel(r'Elapsed time $t$')

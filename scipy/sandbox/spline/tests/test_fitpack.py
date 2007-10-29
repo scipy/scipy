@@ -44,7 +44,7 @@ class TestSplrepSplev(NumpyTestCase):
 
     def check_curfit_against_dierckx_lsq(self):
         """ Test against results obtined from the pure fortran routines.
-            
+
             Here we check simple spline creation and evaluation.
         """
         x,y = curfit_test['x'],curfit_test['y']
@@ -61,28 +61,28 @@ class TestSplrepSplev(NumpyTestCase):
                                       curfit_test_lsq['sp'][i])
 
     def check_percur_against_dierckx(self):
-            x,y = percur_test['x'], percur_test['y']
-            k,s = percur_test['k'], percur_test['s']
-            iopt, res = percur_test['iopt'], percur_test['res']
-            err = percur_test['err']
-            coef, knots = percur_test['coef'], percur_test['knots']
-            sp = percur_test['sp']
-            for i in range(len(k)):
-                if iopt[i] != -1:
-                    tck,fp,ier,msg = splrep(x,y,k=k[i],task=iopt[i],s=s[i],
-                                                    per=True,full_output=True)
-                else:
-                    tck,fp,ier,msg = splrep(x,y,t=knots[i],k=k[i],task=iopt[i],
-                                                     per=True,full_output=True)
-                tt,cc,kk = tck
-                tt,cc = asarray(tt), asarray(cc)
-                assert_almost_equal(ier,err[i])
-                assert_almost_equal(fp,res[i],decimal=1)
-                assert_array_almost_equal(tt,knots[i], decimal=3)
-                assert_array_almost_equal(cc,coef[i], decimal=3)
-                yy = asarray(splev(x,tck))
-                assert_array_almost_equal(yy,sp[i], decimal=3)
-            
+        x,y = percur_test['x'], percur_test['y']
+        k,s = percur_test['k'], percur_test['s']
+        iopt, res = percur_test['iopt'], percur_test['res']
+        err = percur_test['err']
+        coef, knots = percur_test['coef'], percur_test['knots']
+        sp = percur_test['sp']
+        for i in range(len(k)):
+            if iopt[i] != -1:
+                tck,fp,ier,msg = splrep(x,y,k=k[i],task=iopt[i],s=s[i],
+                                                per=True,full_output=True)
+            else:
+                tck,fp,ier,msg = splrep(x,y,t=knots[i],k=k[i],task=iopt[i],
+                                                 per=True,full_output=True)
+            tt,cc,kk = tck
+            tt,cc = asarray(tt), asarray(cc)
+            assert_almost_equal(ier,err[i])
+            assert_almost_equal(fp,res[i],decimal=1)
+            assert_array_almost_equal(tt,knots[i], decimal=3)
+            assert_array_almost_equal(cc,coef[i], decimal=3)
+            yy = asarray(splev(x,tck))
+            assert_array_almost_equal(yy,sp[i], decimal=3)
+
 class TestSplprepSplev(NumpyTestCase):
     def check_parcur_against_dierckx(self):
         xa,xo = parcur_test['xa'], parcur_test['xo']
@@ -119,7 +119,7 @@ class TestSplprepSplev(NumpyTestCase):
             yy[0:-1:2] = y[0]
             yy[1::2] = y[1]
             assert_array_almost_equal(yy,sp[i], decimal=3)
-    
+
     def check_clocur_against_dierckx(self):
         xa,xo = clocur_test['xa'], clocur_test['xo']
         k,s = clocur_test['k'], clocur_test['s']
@@ -129,7 +129,7 @@ class TestSplprepSplev(NumpyTestCase):
         knots = clocur_test['knots']
         sx, sy = clocur_test['sx'], clocur_test['sy']
         sp = clocur_test['sp']
-        x = array([xa, xo]) 
+        x = array([xa, xo])
         for i in range(len(k)):
             if iopt[i] != -1:
                 if ipar[i] == 1:
@@ -233,9 +233,9 @@ class TestParcur(NumpyTestCase):
                 tckp,u=splprep([x,v],s=s,per=per,k=k)
                 tck=splrep(x,v,s=s,per=per,k=k)
                 uv=splev(dx,tckp)
-                assert_almost_equal(0.0, around(abs(uv[1]-f(uv[0])),2), 
+                assert_almost_equal(0.0, around(abs(uv[1]-f(uv[0])),2),
                                                                     decimal=1)
-                assert_almost_equal(0.0, 
+                assert_almost_equal(0.0,
                         around(abs(splev(uv[0],tck)-f(uv[0])),2),decimal=1)
 
 if __name__ == "__main__":

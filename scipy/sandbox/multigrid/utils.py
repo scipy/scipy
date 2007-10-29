@@ -20,10 +20,10 @@ def approximate_spectral_radius(A,tol=0.1,maxiter=None):
 
 def infinity_norm(A):
     """
-    Infinity norm of a sparse matrix (maximum absolute row sum).  This serves 
+    Infinity norm of a sparse matrix (maximum absolute row sum).  This serves
     as an upper bound on spectral radius.
     """
-    
+
     if isspmatrix_csr(A) or isspmatrix_csc(A):
         #avoid copying index and ptr arrays
         abs_A = A.__class__((abs(A.data),A.indices,A.indptr),dims=A.shape,check=False)
@@ -39,7 +39,7 @@ def diag_sparse(A):
     Otherwise
        - return a csr_matrix with A on the diagonal
     """
-    
+
     if isspmatrix(A):
         return extract_diagonal(A)
     else:
@@ -64,7 +64,7 @@ def vstack_csr(A,B):
     #TODO OPTIMIZE THIS
     if not isspmatrix(A) or not isspmatrix(B):
         raise TypeError,'expected sparse matrix'
-    
+
     if A.shape[1] != B.shape[1]:
         raise ValueError,'column dimensions must agree'
 
@@ -77,19 +77,19 @@ def vstack_csr(A,B):
 
 
 def expand_into_blocks(A,m,n):
-    """Expand each element in a sparse matrix A into an m-by-n block.  
-                
-          Example: 
+    """Expand each element in a sparse matrix A into an m-by-n block.
+
+          Example:
           >>> A.todense()
           matrix([[ 1.,  2.],
                   [ 4.,  5.]])
-          
+
           >>> expand_into_blocks(A,2,2).todense()
           matrix([[ 1.,  1.,  2.,  2.],
                   [ 1.,  1.,  2.,  2.],
                   [ 4.,  4.,  5.,  5.],
                   [ 4.,  4.,  5.,  5.]])
-              
+
     """
     #TODO EXPLAIN MORE
     #TODO use spkron instead, time for compairson
@@ -114,6 +114,3 @@ def expand_into_blocks(A,m,n):
     data = A.data.repeat(m*n)
 
     return coo_matrix((data,(row,col)),dims=(m*A.shape[0],n*A.shape[1]))
-
-
-

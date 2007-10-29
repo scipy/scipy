@@ -8,7 +8,7 @@ the ExpectationMaximization algorithm."""
 __docformat__ = 'restructuredtext'
 
 # TODO:
-#   - which methods to avoid va shrinking to 0 ? There are several options, 
+#   - which methods to avoid va shrinking to 0 ? There are several options,
 #   not sure which ones are appropriates
 #   - improve EM trainer
 import numpy as N
@@ -40,7 +40,7 @@ class GmmParamError(GmmError):
     def __init__(self, message):
         GmmError.__init__(self)
         self.message    = message
-    
+
     def __str__(self):
         return self.message
 
@@ -100,16 +100,16 @@ class GMM(ExpMixtureModel):
             # If A is invertible, A'A is positive definite
             va  = randn(k * d, d)
             for i in range(k):
-                va[i*d:i*d+d]   = N.dot( va[i*d:i*d+d], 
+                va[i*d:i*d+d]   = N.dot( va[i*d:i*d+d],
                     va[i*d:i*d+d].T)
 
         self.gm.set_param(w, mu, va)
-        
+
         self.isinit = True
 
     def init_test(self, data):
         """Use values already in the model as initialization.
-        
+
         Useful for testing purpose when reproducability is necessary. This does
         nothing but checking that the mixture model has valid initial
         values."""
@@ -118,10 +118,10 @@ class GMM(ExpMixtureModel):
         except GmParamError, e:
             print "Model is not properly initalized, cannot init EM."
             raise ValueError("Message was %s" % str(e))
-        
+
     def __init__(self, gm, init = 'kmean'):
         """Initialize a mixture model.
-        
+
         Initialize the model from a GM instance. This class implements all the
         necessary functionalities for EM.
 
@@ -145,9 +145,9 @@ class GMM(ExpMixtureModel):
 
     def compute_responsabilities(self, data):
         """Compute responsabilities.
-        
+
         Return normalized and non-normalized respondabilities for the model.
-        
+
         Note
         ----
         Computes the latent variable distribution (a posteriori probability)
@@ -156,20 +156,20 @@ class GMM(ExpMixtureModel):
 
         This is basically the E step of EM for finite mixtures."""
         # compute the gaussian pdf
-        tgd	= densities.multiple_gauss_den(data, self.gm.mu, self.gm.va)
+        tgd     = densities.multiple_gauss_den(data, self.gm.mu, self.gm.va)
         # multiply by the weight
-        tgd	*= self.gm.w
+        tgd     *= self.gm.w
         # Normalize to get a pdf
-        gd	= tgd  / N.sum(tgd, axis=1)[:, N.newaxis]
+        gd      = tgd  / N.sum(tgd, axis=1)[:, N.newaxis]
 
         return gd, tgd
 
     def compute_log_responsabilities(self, data):
         """Compute log responsabilities.
-        
+
         Return normalized and non-normalized responsabilities for the model (in
         the log domain)
-        
+
         Note
         ----
         Computes the latent variable distribution (a posteriori probability)
@@ -178,12 +178,12 @@ class GMM(ExpMixtureModel):
 
         This is basically the E step of EM for finite mixtures."""
         # compute the gaussian pdf
-        tgd	= densities.multiple_gauss_den(data, self.gm.mu, 
+        tgd     = densities.multiple_gauss_den(data, self.gm.mu,
                                            self.gm.va, log = True)
         # multiply by the weight
-        tgd	+= N.log(self.gm.w)
+        tgd     += N.log(self.gm.w)
         # Normalize to get a (log) pdf
-        gd	= tgd  - densities.logsumexp(tgd)[:, N.newaxis]
+        gd      = tgd  - densities.logsumexp(tgd)[:, N.newaxis]
 
         return gd, tgd
 
@@ -231,11 +231,11 @@ class GMM(ExpMixtureModel):
 
         #XXX: caching SS may decrease memory consumption
         for c in range(k):
-            #x   = N.sum(N.outer(gamma[:, c], 
+            #x   = N.sum(N.outer(gamma[:, c],
             #            N.ones((1, d))) * data, axis = 0)
             x = N.dot(gamma.T[c:c+1, :], data)[0, :]
             xx = N.zeros((d, d))
-            
+
             # This should be much faster than recursing on n...
             for i in range(d):
                 for j in range(d):
@@ -270,15 +270,15 @@ class GMM(ExpMixtureModel):
         the data """
         assert(self.isinit)
         # compute the gaussian pdf
-        tgd	= densities.multiple_gauss_den(data, self.gm.mu, self.gm.va)
+        tgd     = densities.multiple_gauss_den(data, self.gm.mu, self.gm.va)
         # multiply by the weight
-        tgd	*= self.gm.w
+        tgd     *= self.gm.w
 
         return N.sum(N.log(N.sum(tgd, axis = 1)), axis = 0)
 
     def bic(self, data):
-        """ Returns the BIC (Bayesian Information Criterion), 
-        also called Schwarz information criterion. Can be used 
+        """ Returns the BIC (Bayesian Information Criterion),
+        also called Schwarz information criterion. Can be used
         to choose between different models which have different
         number of clusters. The BIC is defined as:
 
@@ -288,7 +288,7 @@ class GMM(ExpMixtureModel):
             * ln(L) is the log-likelihood of the estimated model
             * k is the number of degrees of freedom
             * n is the number of frames
-        
+
         Not that depending on the literature, BIC may be defined as the opposite
         of the definition given here. """
 
@@ -320,11 +320,11 @@ class GMM(ExpMixtureModel):
 class EM:
     """An EM trainer. An EM trainer
     trains from data, with a model
-    
+
     Not really useful yet"""
     def __init__(self):
         pass
-    
+
     def train(self, data, model, maxiter = 10, thresh = 1e-5, log = False):
         """Train a model using EM.
 
@@ -365,7 +365,7 @@ class EM:
         else:
             like = self._train_simple_em(data, model, maxiter, thresh)
         return like
-    
+
     def _train_simple_em(self, data, model, maxiter, thresh):
         # Likelihood is kept
         like    = N.zeros(maxiter)
@@ -497,7 +497,7 @@ def has_em_converged(like, plike, thresh):
 def regularize_diag(va, np, prior):
     """np * n is the number of prior counts (np is a proportion, and n is the
     number of point).
-    
+
     diagonal variance version"""
     k = va.shape[0]
 

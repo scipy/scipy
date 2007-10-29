@@ -7,20 +7,20 @@ def sor(A,x,b,omega,iterations=1,sweep='forward'):
     Perform SOR iteration on the linear system Ax=b
     """
     x_old = empty_like(x)
-        
+
     for i in range(iterations):
         x_old[:] = x
         gauss_seidel(A,x,b,iterations=1,sweep=sweep)
-        
+
         x     *= omega
         x_old *= (1-omega)
         x     += x_old
-        
-        
+
+
 def gauss_seidel(A,x,b,iterations=1,sweep='forward'):
     """
     Perform Gauss-Seidel iteration on the linear system Ax=b
- 
+
      Input:
          A - NxN csr_matrix
          x - rank 1 ndarray of length N
@@ -29,7 +29,7 @@ def gauss_seidel(A,x,b,iterations=1,sweep='forward'):
          iterations - number of iterations to perform (default: 1)
          sweep      - direction of sweep:
                         'forward' (default), 'backward', or 'symmetric'
-    """ 
+    """
     x = asarray(x).reshape(-1)
     b = asarray(b).reshape(-1)
 
@@ -58,17 +58,17 @@ def gauss_seidel(A,x,b,iterations=1,sweep='forward'):
             gauss_seidel(A,x,b,iterations=1,sweep='forward')
             gauss_seidel(A,x,b,iterations=1,sweep='backward')
     else:
-       raise ValueError,'valid sweep directions are \'forward\', \'backward\', and \'symmetric\''
+        raise ValueError,'valid sweep directions are \'forward\', \'backward\', and \'symmetric\''
 
 
 def jacobi(A,x,b,iterations=1,omega=1.0):
     """
     Perform Jacobi iteration on the linear system Ax=b
- 
+
        x <- (1 - omega) x  +  omega * D^-1 (b - (A - D) x)
-    
+
     where D is the diagonal of A.
-    
+
     Input:
          A - NxN csr_matrix
          x - rank 1 ndarray of length N
@@ -76,18 +76,18 @@ def jacobi(A,x,b,iterations=1,omega=1.0):
      Optional:
          iterations - number of iterations to perform (default: 1)
          omega      - damping parameter (default: 1.0)
-    """ 
+    """
     x = asarray(x).reshape(-1)
     b = asarray(b).reshape(-1)
 
     sweep = slice(None)
     (row_start,row_stop,row_step) = sweep.indices(A.shape[0])
-    
+
     if (row_stop - row_start) * row_step <= 0:  #no work to do
         return
 
     temp = empty_like(x)
-    
+
     for iter in xrange(iterations):
         multigridtools.jacobi(A.shape[0],
                               A.indptr, A.indices, A.data,
@@ -121,13 +121,11 @@ def polynomial_smoother(A,x,b,coeffs):
     """
 
     #TODO skip first matvec if x is all zero
-    
+
     residual = (b - A*x)
     h = coeffs[0]*residual
-    
+
     for c in coeffs[1:]:
         h = c*residual + A*h
-        
-    x += h
-    
 
+    x += h

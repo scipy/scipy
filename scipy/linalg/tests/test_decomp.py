@@ -159,7 +159,7 @@ class TestEigBanded(NumpyTestCase):
         self.create_bandmat()
 
     def create_bandmat(self):
-        """Create the full matrix `self.fullmat` and 
+        """Create the full matrix `self.fullmat` and
            the corresponding band matrix `self.bandmat`."""
         N  = 10
         self.KL = 2   # number of subdiagonals (below the diagonal)
@@ -167,7 +167,7 @@ class TestEigBanded(NumpyTestCase):
 
         # symmetric band matrix
         self.sym_mat = ( diag(1.0*ones(N))
-                     +  diag(-1.0*ones(N-1), -1) + diag(-1.0*ones(N-1), 1) 
+                     +  diag(-1.0*ones(N-1), -1) + diag(-1.0*ones(N-1), 1)
                      + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
 
         # hermitian band matrix
@@ -177,12 +177,12 @@ class TestEigBanded(NumpyTestCase):
 
         # general real band matrix
         self.real_mat = ( diag(1.0*ones(N))
-                     +  diag(-1.0*ones(N-1), -1) + diag(-3.0*ones(N-1), 1) 
+                     +  diag(-1.0*ones(N-1), -1) + diag(-3.0*ones(N-1), 1)
                      + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
 
         # general complex band matrix
         self.comp_mat = ( 1j*diag(1.0*ones(N))
-                     +  diag(-1.0*ones(N-1), -1) + 1j*diag(-3.0*ones(N-1), 1) 
+                     +  diag(-1.0*ones(N-1), -1) + 1j*diag(-3.0*ones(N-1), 1)
                      + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
 
 
@@ -202,7 +202,7 @@ class TestEigBanded(NumpyTestCase):
 
         # Extract upper bands from symmetric and hermitian band matrices
         # (for use in dsbevd, dsbevx, zhbevd, zhbevx
-        #  and their single precision versions) 
+        #  and their single precision versions)
         LDAB = self.KU + 1
         self.bandmat_sym  = zeros((LDAB, N), dtype=float)
         self.bandmat_herm = zeros((LDAB, N), dtype=complex)
@@ -232,12 +232,12 @@ class TestEigBanded(NumpyTestCase):
 
         # absolute value for linear equation system A*x = b
         self.b = 1.0*arange(N)
-        self.bc = self.b *(1 + 1j) 
-        
+        self.bc = self.b *(1 + 1j)
+
 
     #####################################################################
 
-        
+
     def check_dsbev(self):
         """Compare dsbev eigenvalues and eigenvectors with
            the result of linalg.eig."""
@@ -247,7 +247,7 @@ class TestEigBanded(NumpyTestCase):
         assert_array_almost_equal(abs(evec_), abs(self.evec_sym_lin))
 
 
-    
+
     def check_dsbevd(self):
         """Compare dsbevd eigenvalues and eigenvectors with
            the result of linalg.eig."""
@@ -304,7 +304,7 @@ class TestEigBanded(NumpyTestCase):
         assert_array_almost_equal(sort(w_herm), self.w_herm_lin)
 
         # extracting eigenvalues with respect to an index range
-        ind1 = 2   
+        ind1 = 2
         ind2 = 6
         w_sym_ind = eigvals_banded(self.bandmat_sym,
                                     select='i', select_range=(ind1, ind2) )
@@ -344,9 +344,9 @@ class TestEigBanded(NumpyTestCase):
         evec_herm_ = evec_herm[:,argsort(w_herm.real)]
         assert_array_almost_equal(sort(w_herm), self.w_herm_lin)
         assert_array_almost_equal(abs(evec_herm_), abs(self.evec_herm_lin))
-        
+
         # extracting eigenvalues with respect to an index range
-        ind1 = 2   
+        ind1 = 2
         ind2 = 6
         w_sym_ind, evec_sym_ind = eig_banded(self.bandmat_sym,
                                     select='i', select_range=(ind1, ind2) )
@@ -385,7 +385,7 @@ class TestEigBanded(NumpyTestCase):
     def check_dgbtrf(self):
         """Compare dgbtrf  LU factorisation with the LU factorisation result
            of linalg.lu."""
-        M,N = shape(self.real_mat)        
+        M,N = shape(self.real_mat)
         lu_symm_band, ipiv, info = dgbtrf(self.bandmat_real, self.KL, self.KU)
 
         # extract matrix u from lu_symm_band
@@ -400,7 +400,7 @@ class TestEigBanded(NumpyTestCase):
     def check_zgbtrf(self):
         """Compare zgbtrf  LU factorisation with the LU factorisation result
            of linalg.lu."""
-        M,N = shape(self.comp_mat)        
+        M,N = shape(self.comp_mat)
         lu_symm_band, ipiv, info = zgbtrf(self.bandmat_comp, self.KL, self.KU)
 
         # extract matrix u from lu_symm_band
@@ -416,7 +416,7 @@ class TestEigBanded(NumpyTestCase):
     def check_dgbtrs(self):
         """Compare dgbtrs  solutions for linear equation system  A*x = b
            with solutions of linalg.solve."""
-        
+
         lu_symm_band, ipiv, info = dgbtrf(self.bandmat_real, self.KL, self.KU)
         y, info = dgbtrs(lu_symm_band, self.KL, self.KU, self.b, ipiv)
 
@@ -426,7 +426,7 @@ class TestEigBanded(NumpyTestCase):
     def check_zgbtrs(self):
         """Compare zgbtrs  solutions for linear equation system  A*x = b
            with solutions of linalg.solve."""
-        
+
         lu_symm_band, ipiv, info = zgbtrf(self.bandmat_comp, self.KL, self.KU)
         y, info = zgbtrs(lu_symm_band, self.KL, self.KU, self.bc, ipiv)
 
@@ -794,7 +794,7 @@ class TestRQ(NumpyTestCase):
             r,q = rq(a)
             assert_array_almost_equal(dot(transpose(q),q),identity(n))
             assert_array_almost_equal(dot(r,q),a)
-            
+
 # TODO: implement support for non-square and complex arrays
 
 ##    def check_simple_trap(self):
@@ -906,7 +906,7 @@ class TestHessenberg(NumpyTestCase):
 
 
 class TestDataNotShared(NumpyTestCase):
-    
+
     def check_datanotshared(self):
         from scipy.linalg.decomp import _datanotshared
 
@@ -917,11 +917,11 @@ class TestDataNotShared(NumpyTestCase):
 
         assert_equal(_datanotshared(M,M),False)
         assert_equal(_datanotshared(M,A),False)
-        
+
         assert_equal(_datanotshared(M,L),True)
         assert_equal(_datanotshared(M,M2),True)
         assert_equal(_datanotshared(A,M2),True)
-        
+
 
 if __name__ == "__main__":
     NumpyTest().run()

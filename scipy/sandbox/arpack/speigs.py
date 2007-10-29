@@ -1,18 +1,18 @@
 import numpy as N
-import _arpack 
+import _arpack
 import warnings
 
 __all___=['ArpackException','ARPACK_eigs', 'ARPACK_gen_eigs']
 
 class ArpackException(RuntimeError):
     ARPACKErrors = { 0: """Normal exit.""",
-                     3: """No shifts could be applied during a cycle of the 
-                     Implicitly restarted Arnoldi iteration. One possibility 
+                     3: """No shifts could be applied during a cycle of the
+                     Implicitly restarted Arnoldi iteration. One possibility
                      is to increase the size of NCV relative to NEV.""",
                      -1: """N must be positive.""",
                      -2: """NEV must be positive.""",
                      -3: """NCV-NEV >= 2 and less than or equal to N.""",
-                     -4: """The maximum number of Arnoldi update iteration 
+                     -4: """The maximum number of Arnoldi update iteration
                      must be greater than zero.""",
                      -5: """WHICH must be one of 'LM', 'SM', 'LR', 'SR', 'LI', 'SI'""",
                      -6: """BMAT must be one of 'I' or 'G'.""",
@@ -31,7 +31,7 @@ class ArpackException(RuntimeError):
     def __str__(self):
         try: return self.ARPACKErrors[self.info]
         except KeyError: return "Unknown ARPACK error"
-        
+
 def check_init(n, nev, ncv):
     assert(nev <= n-4)  # ARPACK seems to cause a segfault otherwise
     if ncv is None:
@@ -43,11 +43,11 @@ def init_workspaces(n,nev,ncv):
     ipntr = N.zeros(14, N.int32) # Pointers into memory structure used by F77 calls
     d = N.zeros((ncv, 3), N.float64, order='FORTRAN') # Temp workspace
     # Temp workspace/error residuals upon iteration completion
-    resid = N.zeros(n, N.float64) 
+    resid = N.zeros(n, N.float64)
     workd = N.zeros(3*n, N.float64) # workspace
     workl = N.zeros(3*ncv*ncv+6*ncv, N.float64) # more workspace
     # Storage for the Arnoldi basis vectors
-    v = N.zeros((n, ncv), dtype=N.float64, order='FORTRAN') 
+    v = N.zeros((n, ncv), dtype=N.float64, order='FORTRAN')
     return (ipntr, d, resid, workd, workl, v)
 
 def init_debug():
@@ -79,7 +79,7 @@ def postproc(n, nev, ncv, sigmar, sigmai, bmat, which,
     dr,di,z,info = _arpack.dneupd(
         True, 'A', select, sigmar, sigmai, workev, bmat, which, nev, tol, resid, v,
         iparam, ipntr, workd, workl, info)
-    
+
     if N.abs(di[:-1]).max() == 0: dr = dr[:-1]
     else: dr =  dr[:-1] + 1j*di[:-1]
     return (dr, z[:,:-1])
@@ -108,14 +108,14 @@ def ARPACK_eigs(matvec, n, nev, which='SM', ncv=None, tol=1e-14):
     'SR' -> Request eigenvalues with smallest real part.
     'LI' -> Request eigenvalues with largest imaginary part.
     'SI' -> Request eigenvalues with smallest imaginary part.
-    
+
     Return Values
     =============
     (eig_vals, eig_vecs) where eig_vals are the requested eigenvalues and
     eig_vecs the corresponding eigenvectors. If all the eigenvalues are real,
     eig_vals is a real array but if some eigenvalues are complex it is a
     complex array.
-    
+
     """
     bmat = 'I'                          # Standard eigenproblem
     ncv, resid, iparam, ipntr, v, workd, workl, info = ARPACK_iteration(
@@ -157,7 +157,7 @@ def ARPACK_gen_eigs(matvec, sigma_solve, n, sigma, nev, which='LR', ncv=None, to
 
     Spectrum Selection
     ==================
-    which can take one of several values: 
+    which can take one of several values:
 
     'LM' -> Request spectrum shifted eigenvalues with largest magnitude.
     'SM' -> Request spectrum shifted eigenvalues with smallest magnitude.
@@ -169,7 +169,7 @@ def ARPACK_gen_eigs(matvec, sigma_solve, n, sigma, nev, which='LR', ncv=None, to
     The effect on the actual system is:
     'LM' -> Eigenvalues closest to sigma on the complex plane
     'LR' -> Eigenvalues with real part > sigma, provided they exist
-    
+
 
     Return Values
     =============
@@ -221,5 +221,5 @@ def ARPACK_iteration(matvec, sigma_solve, n, bmat, which, nev, tol, ncv, mode):
             warn.warn("Maximum number of iterations taken: %s"%iparam[2])
         elif info != 0:
             raise ArpackException(info)
-    
+
     return (ncv, resid, iparam, ipntr, v, workd, workl, info)

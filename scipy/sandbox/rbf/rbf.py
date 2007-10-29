@@ -50,10 +50,10 @@ class Rbf(object):
     """ A class for radial basis function approximation/interpolation of
         n-dimensional scattered data.
     """
-    
+
     def _euclidean_norm(self, x1, x2):
         return sqrt( ((x1 - x2)**2).sum(axis=0) )
-    
+
     def _function(self, r):
         if self.function.lower() == 'multiquadric':
             return sqrt((1.0/self.epsilon*r)**2 + 1)
@@ -69,68 +69,68 @@ class Rbf(object):
             return r**2 * log(r)
         else:
             raise ValueError, 'Invalid basis function name'
-    
+
     def __init__(self, *args, **kwargs):
         """ Constructor for Rbf class.
-            
+
             Inputs:
-                x, y, z, ..., d    
+                x, y, z, ..., d
                             Where x, y, z, ... are the coordinates of the nodes
                             and d is the array of values at the nodes
-                
-                function    the radial basis function, based on the radius, r, given 
+
+                function    the radial basis function, based on the radius, r, given
                             by the norm (defult is Euclidean distance); the default
                             is 'multiquadratic'.
-                            
+
                             'multiquadric': sqrt((self.epsilon*r)**2 + 1)
                             'inverse multiquadric': 1.0/sqrt((self.epsilon*r)**2 + 1)
                             'gausian': exp(-(self.epsilon*r)**2)
                             'cubic': r**3
                             'quintic': r**5
                             'thin-plate': r**2 * log(r)
-                            
+
                 epsilon     adjustable constant for gaussian or multiquadrics
                             functions - defaults to approximate average distance
                             between nodes (which is a good start)
-                            
+
                 smooth      values greater than zero increase the smoothness
-                            of the approximation. 
+                            of the approximation.
                             0 is for interpolation (default), the function will
                             always go through the nodal points in this case.
-                            
+
                 norm        A function that returns the 'distance' between two points,
                             with inputs as arrays of positions (x, y, z, ...), and an
                             output as an array of distance.  E.g, the default is
-                            
+
                                 def euclidean_norm(self, x1, x2):
                                     return sqrt( ((x1 - x2)**2).sum(axis=0) )
-                            
-                            which is called with x1 = x1[ndims, newaxis, :] and 
-                            x2 = x2[ndims, :, newaxis] such that the result is a 
+
+                            which is called with x1 = x1[ndims, newaxis, :] and
+                            x2 = x2[ndims, :, newaxis] such that the result is a
                             symetric, square matrix of the distances between each point
                             to each other point.
-            
-            Outputs: 
+
+            Outputs:
                 Interpolator object rbfi that returns interpolated values at new positions:
                 >>> rbfi = Rbf(x, y, z, d)      # radial basis function interpolator instance
                 >>> di = rbfi(xi, yi, zi)       # interpolated values
-        """        
+        """
         self.xi = asarray([asarray(a, dtype=float64).flatten() for a in args[:-1]])
         self.N = self.xi.shape[-1]
         self.di = asarray(args[-1], dtype=float64).flatten()
-        
+
         assert [x.size==self.di.size for x in self.xi], \
                'All arrays must be equal length'
-        
+
         self.norm = kwargs.pop('norm', self._euclidean_norm)
         r = self._call_norm(self.xi, self.xi)
         self.epsilon = kwargs.pop('epsilon', r.mean())
         self.function = kwargs.pop('function', 'multiquadric')
         self.smooth = kwargs.pop('smooth', 0.0)
-        
+
         self.A = self._function(r) - eye(self.N)*self.smooth
         self.nodes = scipy.linalg.solve(self.A, self.di)
-    
+
     def _call_norm(self, x1, x2):
         if len(x1.shape) == 1:
             x1 = x1[newaxis, :]
@@ -139,7 +139,7 @@ class Rbf(object):
         x1 = x1[..., :, newaxis]
         x2 = x2[..., newaxis, :]
         return self.norm(x1, x2)
-    
+
     def __call__(self, *args):
         assert all([x.shape == y.shape \
                     for x in args \
@@ -148,4 +148,3 @@ class Rbf(object):
         self.xa = asarray([a.flatten() for a in args], dtype=float64)
         r = self._call_norm(self.xa, self.xi)
         return dot(self._function(r), self.nodes).reshape(shp)
-

@@ -16,7 +16,7 @@ class TestUtils(NumpyTestCase):
     def check_infinity_norm(self):
         A = matrix([[-4]])
         assert_equal(infinity_norm(csr_matrix(A)),4)
-        
+
         A = matrix([[1,0,-5],[-2,5,0]])
         assert_equal(infinity_norm(csr_matrix(A)),7)
 
@@ -30,7 +30,7 @@ class TestUtils(NumpyTestCase):
         #check sparse -> array
         A = matrix([[-4]])
         assert_equal(diag_sparse(csr_matrix(A)),[-4])
-        
+
         A = matrix([[1,0,-5],[-2,5,0]])
         assert_equal(diag_sparse(csr_matrix(A)),[1,5])
 
@@ -78,4 +78,3 @@ class TestUtils(NumpyTestCase):
 
 if __name__ == '__main__':
     NumpyTest().run()
-

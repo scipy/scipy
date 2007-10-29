@@ -25,7 +25,7 @@ masked_values = maskedarray.masked_values
 from numpy.testing import NumpyTest, NumpyTestCase
 from maskedarray.testutils import build_err_msg, \
         assert_equal, assert_almost_equal
-        
+
 
 import mpyloess
 reload(mpyloess)
@@ -48,49 +48,49 @@ class TestLowess(NumpyTestCase):
         "Tests lowess on typical data. part #1."
         (X, Y) = self.data
         YS = [13.659,11.145, 8.701, 9.722,10.000,11.300,11.300,11.300,
-              11.300,11.300,11.300,11.300,11.300,11.300,11.300,13.000, 
+              11.300,11.300,11.300,11.300,11.300,11.300,11.300,13.000,
               6.440, 5.596,  5.456,18.998]
         Z = lowess(X, Y, span=0.25, nsteps=0, delta=0)
         assert_almost_equal(Z.outputs.fitted_values, YS, decimal=3)
-        assert_almost_equal(Z.outputs.fitted_residuals+Z.outputs.fitted_values, 
+        assert_almost_equal(Z.outputs.fitted_residuals+Z.outputs.fitted_values,
                             Z.inputs.y, decimal=3)
     #............................................
     def test_lowess_2(self):
         "Tests lowess on typical data. part #2."
         (X, Y) = self.data
         YS = [13.659,12.347,11.034, 9.722,10.511,11.300,11.300,11.300,
-              11.300,11.300,11.300,11.300,11.300,11.300,11.300,13.000, 
+              11.300,11.300,11.300,11.300,11.300,11.300,11.300,13.000,
                6.440, 5.596, 5.456,18.998]
         Z = lowess(X, Y, span=0.25, nsteps=0, delta=3)
         assert_almost_equal(Z.outputs.fitted_values, YS, decimal=3)
-        assert_almost_equal(Z.outputs.fitted_residuals+Z.outputs.fitted_values, 
-                            Z.inputs.y, decimal=3)        
+        assert_almost_equal(Z.outputs.fitted_residuals+Z.outputs.fitted_values,
+                            Z.inputs.y, decimal=3)
     #............................................
     def test_lowess_3(self):
         "Tests lowess on typical data. part #3."
         (X, Y) = self.data
         YS = [14.811,12.115, 8.984, 9.676,10.000,11.346,11.346,11.346,
-              11.346,11.346,11.346,11.346,11.346,11.346,11.346,13.000, 
+              11.346,11.346,11.346,11.346,11.346,11.346,11.346,13.000,
                6.734, 5.744, 5.415,18.998 ]
         Z = lowess(X, Y, span=0.25, nsteps=2, delta=0)
         assert_almost_equal(Z.outputs.fitted_values, YS, decimal=3)
-        assert_almost_equal(Z.outputs.fitted_residuals+Z.outputs.fitted_values, 
-                            Z.inputs.y, decimal=3)            
+        assert_almost_equal(Z.outputs.fitted_residuals+Z.outputs.fitted_values,
+                            Z.inputs.y, decimal=3)
     #............................................
     def test_lowess_4(self):
         "Tests lowess on masked data."
-        X = masked_values([ 1, 2, 3, 4, 5,-999, 6,   6, 6, 6, -999,-999, 
+        X = masked_values([ 1, 2, 3, 4, 5,-999, 6,   6, 6, 6, -999,-999,
                             6, 6, 6, 6, 6,   6, 8,-999,10,12,14,50,-999],-999)
         Y = marray([18, 2,15, 6,10,-999, 4,  16,11, 7, -999,-999,
                      3,14,17,20,12,   9,13,-999, 1, 8, 5,19,-999])
         YS = [14.811,12.115, 8.984, 9.676,10.000,11.346,11.346,11.346,
-              11.346,11.346,11.346,11.346,11.346,11.346,11.346,13.000, 
+              11.346,11.346,11.346,11.346,11.346,11.346,11.346,13.000,
                6.734, 5.744, 5.415,18.998 ]
         Z = lowess(X, Y, span=0.25, nsteps=2, delta=0)
         assert_almost_equal(Z.outputs.fitted_values.compressed(), YS, decimal=3)
-        assert_almost_equal(Z.outputs.fitted_residuals + Z.outputs.fitted_values, 
+        assert_almost_equal(Z.outputs.fitted_residuals + Z.outputs.fitted_values,
                             Z.inputs.y, decimal=3)
-#     
+#
 
 #####---------------------------------------------------------------------------
 #---- --- STL ---
@@ -100,7 +100,7 @@ class TestStl(NumpyTestCase):
     #
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)
-        # Get CO2 data ................    
+        # Get CO2 data ................
         filename = os.path.join('tests','co2_data')
         F = open(filename, 'r')
         data = []
@@ -113,7 +113,7 @@ class TestStl(NumpyTestCase):
         co2_results = []
         for line in F.readlines():
             co2_results.append(fromiter((float(x) for x in line.rstrip().split()),
-                                        float_))        
+                                        float_))
         #
         parameters = dict(np=12, ns=35, nt=19, nl=13, no=2, ni=1,
                           nsjump=4, ntjump=2, nljump=2,
@@ -150,7 +150,7 @@ class TestLoess2D(NumpyTestCase):
         dfile.readline()
         x = fromiter((float(v) for v in dfile.readline().rstrip().split()),
                      float_).reshape(-1,2)
-        x = marray(x) 
+        x = marray(x)
         dfile.readline()
         y = fromiter((float(v) for v in dfile.readline().rstrip().split()),
                      float_)
@@ -189,7 +189,7 @@ class TestLoess2D(NumpyTestCase):
 #        madeup.model.drop_square_flags[0] = True
 #        madeup.model.parametric_flags[0] = True
 #        assert_equal(madeup.model.parametric_flags[:2],[1,0])
-#        madeup.fit()        
+#        madeup.fit()
 #        assert_almost_equal(madeup.outputs.fitted_values, results[1], 5)
 #        assert_almost_equal(madeup.outputs.enp, 6.9, 1)
 #        assert_almost_equal(madeup.outputs.s, 1.4804, 4)
@@ -202,7 +202,7 @@ class TestLoess2D(NumpyTestCase):
         madeup.model.drop_square_flags = [True, False]
         madeup.model.parametric_flags = [True, False]
         assert_equal(madeup.model.parametric_flags[:2],[1,0])
-        madeup.fit()        
+        madeup.fit()
         assert_almost_equal(madeup.outputs.fitted_values, results[1], 5)
         assert_almost_equal(madeup.outputs.enp, 6.9, 1)
         assert_almost_equal(madeup.outputs.s, 1.4804, 4)
@@ -251,11 +251,11 @@ class TestLoess2D(NumpyTestCase):
         except ValueError:
             pass
         else:
-            raise AssertionError,"The test should have failed"   
+            raise AssertionError,"The test should have failed"
     #
     def test_2d_pred_stderr(self):
         "2D prediction - w/ stderr"
-        (_, _, results, _, newdata2, madeup) = self.d   
+        (_, _, results, _, newdata2, madeup) = self.d
         madeup.model.span = 0.5
         madeup.model.normalize = True
         madeup_pred = madeup.predict(newdata2, stderror=True)
@@ -272,23 +272,23 @@ class TestLoess2D(NumpyTestCase):
     #
     def test_2d_pred_confinv(self):
         "2D prediction - confidence"
-        (_, _, results, _, newdata2, madeup) = self.d   
+        (_, _, results, _, newdata2, madeup) = self.d
         madeup.model.span = 0.5
         madeup.model.normalize = True
-        madeup_pred = madeup.predict(newdata2, stderror=True)        
+        madeup_pred = madeup.predict(newdata2, stderror=True)
         madeup.predicted.confidence(coverage=0.99)
-        assert_almost_equal(madeup.predicted.confidence_intervals.lower, 
+        assert_almost_equal(madeup.predicted.confidence_intervals.lower,
                             results[6][::3], 5)
-        assert_almost_equal(madeup.predicted.confidence_intervals.fit, 
+        assert_almost_equal(madeup.predicted.confidence_intervals.fit,
                             results[6][1::3], 5)
-        assert_almost_equal(madeup.predicted.confidence_intervals.upper, 
+        assert_almost_equal(madeup.predicted.confidence_intervals.upper,
                             results[6][2::3], 5)
         # Direct access
         confinv = madeup.predicted.confidence(coverage=0.99)
         assert_almost_equal(confinv.lower, results[6][::3], 5)
         assert_almost_equal(confinv.fit, results[6][1::3], 5)
         assert_almost_equal(confinv.upper, results[6][2::3], 5)
-    
+
 #####---------------------------------------------------------------------------
 #---- --- test 1D ---
 #####---------------------------------------------------------------------------
@@ -314,7 +314,7 @@ class TestLoessGas(NumpyTestCase):
             rfile.readline()
             z = fromiter((float(v) for v in rfile.readline().rstrip().split()),
                          float_)
-            results.append(z)        
+            results.append(z)
         self.d = (E, NOx, gas_fit_E, newdata, coverage, results)
     #
     def test_1dbasic(self):
@@ -347,7 +347,7 @@ class TestLoessGas(NumpyTestCase):
     #
     def test_1dpredict_2(self):
         "Basic test 1d - new predictions"
-        (E, NOx, _, newdata, _, results) = self.d        
+        (E, NOx, _, newdata, _, results) = self.d
         gas = loess(E,NOx, span=2./3.)
         gas.predict(newdata, stderror=True)
         gas.predicted.confidence(0.99)
@@ -360,7 +360,7 @@ class TestLoessGas(NumpyTestCase):
     #
     def test_anova(self):
         "Tests anova"
-        (E, NOx, _, _, _, results) = self.d        
+        (E, NOx, _, _, _, results) = self.d
         gas = loess(E,NOx, span=2./3.)
         gas.fit()
         gas_null = loess(E, NOx, span=1.0)
@@ -374,7 +374,7 @@ class TestLoessGas(NumpyTestCase):
     #
     def test_failures(self):
         "Tests failures"
-        (E, NOx, gas_fit_E, _, _, _) = self.d       
+        (E, NOx, gas_fit_E, _, _, _) = self.d
         gas = loess(E,NOx, span=2./3.)
         # This one should fail (all parametric)
         gas.model.parametric_flags = True
@@ -392,7 +392,7 @@ class TestLoessGas(NumpyTestCase):
         # Now, for predict .................
         gas.predict(gas_fit_E, stderror=False)
         # This one should fail (extrapolation & blending)
-        self.assertRaises(ValueError, 
+        self.assertRaises(ValueError,
                           gas.predict, gas.predicted.values, stderror=False)
         # But this one should not ..........
         gas.predict(gas_fit_E, stderror=False)
@@ -416,24 +416,21 @@ class TestLoessGas(NumpyTestCase):
             rfile.readline()
             z = fromiter((float(v) for v in rfile.readline().rstrip().split()),
                          float_)
-            results.append(z)   
+            results.append(z)
         #
         gas = loess(E,NOx)
         gas.model.span = 2./3.
         gas.fit()
         assert_almost_equal(gas.outputs.fitted_values.compressed(), results[0], 6)
         assert_almost_equal(gas.outputs.enp, 5.5, 1)
-        assert_almost_equal(gas.outputs.s, 0.3404, 4) 
-        
-        
-        
-        
+        assert_almost_equal(gas.outputs.s, 0.3404, 4)
+
+
+
+
 
 
 
 ########################################################################
 if __name__ == '__main__':
-    NumpyTest().run()       
-
-    
-
+    NumpyTest().run()

@@ -43,7 +43,7 @@ if sys.modules.has_key('pythondoc'):
 
         All other attributes correspond to global attributes defined in the
         netCDF file. Global file attributes are created by assigning to
-        an attribute of the NetCDFFile object. 
+        an attribute of the NetCDFFile object.
         """
 
         def __init__(self, *args):
@@ -53,7 +53,7 @@ if sys.modules.has_key('pythondoc'):
             """Closes the file. Any read or write access to the file
             or one of its variables after closing raises an exception."""
             pass
-        
+
         def createDimension(self, name, length):
             """Creates a new dimension with the given |name| and
             |length|. |length| must be a positive integer or 'None',
@@ -96,7 +96,7 @@ if sys.modules.has_key('pythondoc'):
 
         All other attributes correspond to variable attributes defined in the
         netCDF file. Variable attributes are created by assigning to
-        an attribute of the NetCDFVariable object. 
+        an attribute of the NetCDFVariable object.
 
         Note:
         If a file open for reading is simultaneously written by another program,

@@ -52,13 +52,13 @@ class Model(WLSModel):
         if N.fabs((self.dev - curdev) / curdev) < tol:
             return False
         self.dev = curdev
-        
+
         return True
 
     def estimate_scale(self, results):
         """
         Note that self.scale is interpreted as a variance in OLSModel, so
-        we return MAD(resid)**2 by default. 
+        we return MAD(resid)**2 by default.
         """
         resid = results.Y - results.predict
         if self.scale_est == 'MAD':
@@ -67,13 +67,13 @@ class Model(WLSModel):
             return scale.huber(resid)**2
         else:
             return scale.scale_est(self, resid)**2
-        
+
     def fit(self, Y):
-        
+
         iter(self)
         self.results = WLSModel.fit(self, Y)
         self.scale = self.results.scale = self.estimate_scale(self.results)
-        
+
         while self.cont(self.results):
             self.results = self.next()
 

@@ -53,5 +53,3 @@ Returns: sum[(a-b)**2]
 
     a, b = _chk2_asarray(a, b, axis)
     return sum((a-b)**2,axis)
-
-

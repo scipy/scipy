@@ -13,9 +13,9 @@ def configuration(parent_package='', top_path=None):
                  "src/ni_morphology.c","src/ni_support.c"],
         include_dirs=['src']+[get_include()],
     )
-    
+
     config.add_data_dir('tests')
-    
+
     return config
 
 if __name__ == '__main__':

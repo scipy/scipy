@@ -68,7 +68,7 @@ class TestMIOArray(NumpyTestCase):
             assert isinstance(expected, typac), \
                    "Types %s and %s do not match at %s" % (typex, typac, label)
             assert_equal(actual, expected, err_msg=label)
-    
+
     def _check_case(self, name, files, case):
         for file_name in files:
             matdict = loadmat(file_name)
@@ -144,7 +144,7 @@ class TestMIOArray(NumpyTestCase):
          'expected': {'testcell':
                       array([u'This cell contains this string and 3 arrays of '+\
                              'increasing length',
-                             array(1), array([1,2]), array([1,2,3])], 
+                             array(1), array([1,2]), array([1,2,3])],
                             dtype=object)}
          }]
     case_table5.append(
@@ -171,7 +171,7 @@ class TestMIOArray(NumpyTestCase):
     st.doublefield = array([sqrt(2),exp(1),pi])
     st.complexfield = (1+1j)*array([sqrt(2),exp(1),pi])
     case_table5.append(
-        {'name': 'struct', 
+        {'name': 'struct',
          'expected': {'teststruct': st}
          })
     a = array([array(1),
@@ -239,4 +239,3 @@ class TestMIOArray(NumpyTestCase):
 
 if __name__ == "__main__":
     NumpyTest().run()
-

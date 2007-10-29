@@ -60,10 +60,10 @@ def makeOperator( operatorInput, expectedShape ):
             return self.call( vec )
         def asMatrix( self ):
             return self._asMatrix( self )
-        
+
     operator = Operator()
     operator.obj = operatorInput
-    
+
     if hasattr( operatorInput, 'shape' ):
         operator.shape = operatorInput.shape
         operator.dtype = operatorInput.dtype
@@ -141,7 +141,7 @@ def lobpcg( blockVectorX, operatorA,
     """
     LOBPCG solves symmetric partial eigenproblems using preconditioning.
 
-    Required input: 
+    Required input:
 
     blockVectorX - initial approximation to eigenvectors, full or sparse matrix
     n-by-blockSize
@@ -209,7 +209,7 @@ def lobpcg( blockVectorX, operatorA,
     if n < 1:
         raise ValueError,\
               'the matrix size is wrong (%d)' % n
-        
+
     operatorA = makeOperator( operatorA, (n, n) )
 
     if operatorB is not None:
@@ -287,7 +287,7 @@ def lobpcg( blockVectorX, operatorA,
             blockVectorBY = operatorB( blockVectorY )
         else:
             blockVectorBY = blockVectorY
-    
+
         # gramYBY is a dense array.
         gramYBY = sc.dot( blockVectorY.T, blockVectorBY )
         try:
@@ -320,7 +320,7 @@ def lobpcg( blockVectorX, operatorA,
     blockVectorAX = sc.dot( blockVectorAX, eigBlockVector )
     if operatorB is not None:
         blockVectorBX = sc.dot( blockVectorBX, eigBlockVector )
-    
+
     ##
     # Active index set.
     activeMask = nm.ones( (sizeX,), dtype = nm.bool )
@@ -331,7 +331,7 @@ def lobpcg( blockVectorX, operatorA,
     previousBlockSize = sizeX
     ident = nm.eye( sizeX, dtype = operatorA.dtype )
     ident0 = nm.eye( sizeX, dtype = operatorA.dtype )
-    
+
     ##
     # Main iteration loop.
     for iterationNumber in xrange( maxIterations ):
@@ -344,7 +344,7 @@ def lobpcg( blockVectorX, operatorA,
         aux = nm.sum( blockVectorR.conjugate() * blockVectorR, 0 )
         residualNorms = nm.sqrt( aux )
 
-        
+
 ##         if iterationNumber == 2:
 ##             print blockVectorAX
 ##             print blockVectorBX
@@ -375,7 +375,7 @@ def lobpcg( blockVectorX, operatorA,
             print eigBlockVector
 
         activeBlockVectorR = as2d( blockVectorR[:,activeMask] )
-        
+
         if iterationNumber > 0:
             activeBlockVectorP = as2d( blockVectorP[:,activeMask] )
             activeBlockVectorAP = as2d( blockVectorAP[:,activeMask] )
@@ -420,14 +420,14 @@ def lobpcg( blockVectorX, operatorA,
         xaw = sc.dot( blockVectorX.T, activeBlockVectorAR )
         waw = sc.dot( activeBlockVectorR.T, activeBlockVectorAR )
         xbw = sc.dot( blockVectorX.T, activeBlockVectorBR )
-        
+
         if iterationNumber > 0:
             xap = sc.dot( blockVectorX.T, activeBlockVectorAP )
             wap = sc.dot( activeBlockVectorR.T, activeBlockVectorAP )
             pap = sc.dot( activeBlockVectorP.T, activeBlockVectorAP )
             xbp = sc.dot( blockVectorX.T, activeBlockVectorBP )
             wbp = sc.dot( activeBlockVectorR.T, activeBlockVectorBP )
-            
+
             gramA = nm.bmat( [[nm.diag( _lambda ), xaw, xap],
                               [xaw.T, waw, wap],
                               [xap.T, wap.T, pap]] )
@@ -482,7 +482,7 @@ def lobpcg( blockVectorX, operatorA,
             ii = ii[::-1]
         if verbosityLevel > 10:
             print ii
-        
+
         _lambda = _lambda[ii].astype( nm.float64 )
         eigBlockVector = nm.asarray( eigBlockVector[:,ii].astype( nm.float64 ) )
 
@@ -536,7 +536,7 @@ def lobpcg( blockVectorX, operatorA,
         blockVectorBX = sc.dot( blockVectorBX, eigBlockVectorX ) + bpp
 
         blockVectorP, blockVectorAP, blockVectorBP = pp, app, bpp
-        
+
     aux = blockVectorBX * _lambda[nm.newaxis,:]
     blockVectorR = blockVectorAX - aux
 
@@ -599,5 +599,5 @@ if __name__ == '__main__':
                          largest = False, verbosityLevel = 1 )
     print 'solution time:', time.clock() - tt
     print eigs
-    
+
     print vecs

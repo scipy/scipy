@@ -70,7 +70,7 @@ def _gauss_mvs(x, n, alpha):
     sta = st - term
     stb = st + term
     return mp, (ma, mb), vp, (va, vb), st, (sta, stb)
-    
+
 
 ##  Assumes all is known is that mean, and std (variance,axis=0) exist
 ##   and are the same for all the data.  Uses Jeffrey's prior

@@ -84,7 +84,7 @@ mdtypes_template = {
     miUTF32: 'u4',
     'file_header': [('description', 'S116'),
                     ('subsystem_offset', 'i8'),
-                    ('version', 'u2'),        
+                    ('version', 'u2'),
                     ('endian_test', 'S2')],
     'tag_full': [('mdtype', 'u4'), ('byte_count', 'u4')],
     'array_flags': [('data_type', 'u4'),
@@ -108,7 +108,7 @@ mclass_dtypes_template = {
 
 np_to_mtypes = {
     'f8': miDOUBLE,
-    'c32': miDOUBLE,    
+    'c32': miDOUBLE,
     'c24': miDOUBLE,
     'c16': miDOUBLE,
     'f4': miSINGLE,
@@ -126,7 +126,7 @@ np_to_mtypes = {
 
 np_to_mxtypes = {
     'f8': mxDOUBLE_CLASS,
-    'c32': mxDOUBLE_CLASS,    
+    'c32': mxDOUBLE_CLASS,
     'c24': mxDOUBLE_CLASS,
     'c16': mxDOUBLE_CLASS,
     'f4': mxSINGLE_CLASS,
@@ -207,11 +207,11 @@ class Mat5ArrayReader(MatArrayReader):
         if mdtype == miMATRIX:
             return self.current_getter(byte_count).get_array()
         if mdtype in self.codecs: # encoded char data
-           raw_str = self.mat_stream.read(byte_count)
-           codec = self.codecs[mdtype]
-           if not codec:
-               raise TypeError, 'Do not support encoding %d' % mdtype
-           el = raw_str.decode(codec)
+            raw_str = self.mat_stream.read(byte_count)
+            codec = self.codecs[mdtype]
+            if not codec:
+                raise TypeError, 'Do not support encoding %d' % mdtype
+            el = raw_str.decode(codec)
         else: # numeric data
             dt = self.dtypes[mdtype]
             el_count = byte_count / dt.itemsize
@@ -240,7 +240,7 @@ class Mat5ArrayReader(MatArrayReader):
             getter = self.current_getter(byte_count)
         getter.next_position = next_pos
         return getter
-    
+
     def current_getter(self, byte_count):
         ''' Return matrix getter for current stream position
 
@@ -278,7 +278,7 @@ class Mat5ZArrayReader(Mat5ArrayReader):
     ''' Getter for compressed arrays
 
     Reads and uncompresses gzipped stream on init, providing wrapper
-    for this new sub-stream.  
+    for this new sub-stream.
     '''
     def __init__(self, array_reader, byte_count):
         '''Reads and uncompresses gzipped stream'''
@@ -289,14 +289,14 @@ class Mat5ZArrayReader(Mat5ArrayReader):
             array_reader.processor_func,
             array_reader.codecs,
             array_reader.class_dtypes)
-        
+
 
 class Mat5MatrixGetter(MatMatrixGetter):
     ''' Base class for getting Mat5 matrices
 
     Gets current read information from passed array_reader
     '''
-    
+
     def __init__(self, array_reader, header):
         super(Mat5MatrixGetter, self).__init__(array_reader, header)
         self.class_dtypes = array_reader.class_dtypes
@@ -306,7 +306,7 @@ class Mat5MatrixGetter(MatMatrixGetter):
 
     def read_element(self, *args, **kwargs):
         return self.array_reader.read_element(*args, **kwargs)
-    
+
 
 class Mat5EmptyMatrixGetter(Mat5MatrixGetter):
     ''' Dummy class to return empty array for empty matrix
@@ -318,7 +318,7 @@ class Mat5EmptyMatrixGetter(Mat5MatrixGetter):
         self.header = {}
         self.is_global = False
         self.mat_dtype = 'f8'
-    
+
     def get_raw_array(self):
         return N.array([[]])
 
@@ -344,7 +344,7 @@ class Mat5NumericMatrixGetter(Mat5MatrixGetter):
                        dtype=res.dtype,
                        buffer=res,
                        order='F')
-        
+
 
 class Mat5SparseMatrixGetter(Mat5MatrixGetter):
     def get_raw_array(self):
@@ -423,7 +423,7 @@ class Mat5StructMatrixGetter(Mat5CellMatrixGetter):
     def __init__(self, *args, **kwargs):
         super(Mat5StructMatrixGetter, self).__init__(*args, **kwargs)
         self.obj_template = mat_struct()
-        
+
     def get_raw_array(self):
         namelength = self.read_element()[0]
         # get field names
@@ -455,7 +455,7 @@ class MatFile5Reader(MatFileReader):
     ''' Reader for Mat 5 mat files
 
     Adds the following attribute to base class
-    
+
     uint16_codec       - char codec to use for uint16 char arrays
                           (defaults to system default codec)
    '''
@@ -527,7 +527,7 @@ class MatFile5Reader(MatFileReader):
         self._array_reader.codecs = self.codecs
         self._array_reader.dtypes = self.dtypes
         self._array_reader.class_dtypes = self.class_dtypes
-        
+
     def matrix_getter_factory(self):
         return self._array_reader.matrix_getter_factory()
 
@@ -546,7 +546,7 @@ class MatFile5Reader(MatFileReader):
         v_minor = hdr['version'] & 0xFF
         hdict['__version__'] = '%d.%d' % (v_major, v_minor)
         return hdict
-        
+
     def format_looks_right(self):
         # Mat4 files have a zero somewhere in first 4 bytes
         self.mat_stream.seek(0)
@@ -618,7 +618,7 @@ class Mat5MatrixWriter(MatStreamWriter):
         self.mat_tag['byte_count'] = curr_pos - self._mat_tag_pos - 8
         self.write_dtype(self.mat_tag)
         self.file_stream.seek(curr_pos)
-        
+
     def write(self):
         assert False, 'Not implemented'
 
@@ -715,13 +715,13 @@ class Mat5WriterGetter(object):
             elif arr_type == 'o':
                 return Mat5ObjectWriter(self.stream, arr, name, is_global)
         if arr.dtype.kind in ('U', 'S'):
-           if self.unicode_strings:
+            if self.unicode_strings:
                 return Mat5UniCharWriter(self.stream, arr, name, is_global)
-           else:
-                return Mat5CharWriter(self.stream, arr, name, is_global)            
+            else:
+                return Mat5CharWriter(self.stream, arr, name, is_global)
         else:
             return Mat5NumericWriter(self.stream, arr, name, is_global)
-                    
+
     def classify_mobjects(self, objarr):
         ''' Function to classify objects passed for writing
         returns
@@ -795,7 +795,7 @@ class MatFile5Writer(MatFileWriter):
                                set_unicode_strings,
                                None,
                                'get/set unicode strings property')
-        
+
     def put_variables(self, mdict):
         for name, var in mdict.items():
             is_global = name in self.global_vars

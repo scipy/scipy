@@ -10,7 +10,7 @@ Optimization Tools
                      function calls)
    fmin_cg     --  Non-linear (Polak-Ribiere) conjugate gradient algorithm
                      (can use function and gradient).
-   fmin_bfgs   --  Quasi-Newton method (Broydon-Fletcher-Goldfarb-Shanno); 
+   fmin_bfgs   --  Quasi-Newton method (Broydon-Fletcher-Goldfarb-Shanno);
                      (can use function and gradient)
    fmin_ncg    --  Line-search Newton Conjugate Gradient (can use
                      function, gradient and Hessian).
@@ -71,7 +71,7 @@ Optimization Tools
                            it remembers how to construct it using vectors, and
                            when computing inv(J)*F, it uses those vectors to
                            compute this product, thus avoding the expensive NxN
-                           matrix multiplication.  
+                           matrix multiplication.
    broyden_generalized --  Generalized Broyden's method, the same as broyden2,
                            but instead of approximating the full NxN Jacobian,
                            it construct it at every iteration in a way that

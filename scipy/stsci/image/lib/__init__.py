@@ -17,13 +17,13 @@ if sys.version_info < (2,4):
 else:
     def test():
         import doctest, _image, combine
-        
+
         finder=doctest.DocTestFinder()
         tests=finder.find(_image)
         tests.extend(finder.find(combine))
 
         runner=doctest.DocTestRunner(verbose=False)
-        
+
         for test in tests:
             runner.run(test)
         return runner.summarize()

@@ -22,7 +22,7 @@ class TestRelaxation(NumpyTestCase):
 
         r = (b - A*x0)
         polynomial_smoother(A,x,b,[-1.0/3.0])
-        
+
         assert_almost_equal(x,x0-1.0/3.0*r)
 
         x  = x0.copy()
@@ -141,4 +141,3 @@ class TestRelaxation(NumpyTestCase):
 
 if __name__ == '__main__':
     NumpyTest().run()
-

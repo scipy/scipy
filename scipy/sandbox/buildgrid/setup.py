@@ -7,7 +7,7 @@ def configuration(parent_package='',top_path=None):
                            'data in file/lists',
                            author='Eugene Druker',
                            author_email='eugene.druker@gmail.com')
-                          
+
     config.add_extension('build_grid',
                          sources = ['build_grid.c'])
     config.add_data_files('README')
@@ -15,5 +15,5 @@ def configuration(parent_package='',top_path=None):
 
 if __name__ == "__main__":
     from numpy.distutils.core import setup
-    config = configuration(top_path='').todict() 
+    config = configuration(top_path='').todict()
     setup(**config)

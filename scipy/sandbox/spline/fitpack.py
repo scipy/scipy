@@ -56,7 +56,7 @@ _iermess = {0:["""\
     s is too small (fp>s).""",ValueError],
             2:["""\
     A theoretically impossible results when finding a smoothin spline
-    with fp = s. Probably causes: s too small. 
+    with fp = s. Probably causes: s too small.
     (abs(fp-s)/s>0.001)""",ValueError],
             3:["""\
     The maximal number of iterations (20) allowed for finding smoothing
@@ -68,7 +68,7 @@ _iermess = {0:["""\
     An error occured""",TypeError]}
 
 _iermess2 = {0:["""\
-    The spline has a residual sum of squares fp such that 
+    The spline has a residual sum of squares fp such that
     abs(fp-s)/s<=0.001""",None],
             -1:["""\
     The spline is an interpolating spline (fp=0)""",None],
@@ -80,7 +80,7 @@ _iermess2 = {0:["""\
     norm least-squares solution of a rank deficient system.""",None],
             1:["""\
     The required storage space exceeds the available storage space.
-    Probably causes: nxest or nyest too small or s is too small. 
+    Probably causes: nxest or nyest too small or s is too small.
     (fp>s)""",ValueError],
             2:["""\
     A theoretically impossible results when finding a smoothin spline
@@ -114,8 +114,8 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     """Find the B-spline representation of an N-dimensional curve.
 
     Description:
-      Given a list of N rank-1 arrays, x, which represent a curve in 
-      N-dimensional space parametrized by u, find a smooth approximating 
+      Given a list of N rank-1 arrays, x, which represent a curve in
+      N-dimensional space parametrized by u, find a smooth approximating
       spline curve g(u).
       Uses the FORTRAN routine parcur from FITPACK
 
@@ -128,14 +128,14 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
            u[i] = v[i] / v[M-1]
       ub, ue -- The end-points of the parameters interval.  Defaults to
                 u[0] and u[-1].
-      k -- Degree of the spline.  Cubic splines are recommended.  Even values 
+      k -- Degree of the spline.  Cubic splines are recommended.  Even values
            of k should be avoided especially with a small s-value.
            1 <= k <= 5.
       task -- If task==0 find t and c for a given smoothing factor, s.
-              If task==1 find t and c for another value of the smoothing 
-              factor, s. There must have been a previous call with task=0 
+              If task==1 find t and c for another value of the smoothing
+              factor, s. There must have been a previous call with task=0
               or task=1 for the same set of data.
-              If task=-1 find the weighted least square spline for a given 
+              If task=-1 find the weighted least square spline for a given
               set of knots, t.
       s -- A smoothing condition.  The amount of smoothness is determined by
            satisfying the conditions: sum((w * (y - g))**2,axis=0) <= s where
@@ -152,7 +152,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
               help in determining the storage space.  By default nest=m/2.
               Always large enough is nest=m+k+1.
       per -- If non-zero, data points are considered periodic with period
-             x[m-1] - x[0] and a smooth periodic spline approximation is 
+             x[m-1] - x[0] and a smooth periodic spline approximation is
              returned.
              Values of y[m-1] and w[m-1] are not used.
       quiet -- Non-zero to suppress messages.
@@ -217,7 +217,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
             u,ub,ue,n,t,c,fp,wrk,iwrk,ier=dfitpack.parcur_smth0(ipar,idim,u,x,
                                                     w,ub,ue,nest,k=k,s=s)
     if task==1:
-        try: 
+        try:
             u=_parcur_cache['u']
             t=_parcur_cache['t']
             wrk=_parcur_cache['wrk']
@@ -377,7 +377,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     if per:
         if task == 0:
             n,t,c,fp,wrk,iwrk,ier = dfitpack.percur_smth0(x,y,w,k=k,s=s)
-        elif task ==1: 
+        elif task ==1:
             try:
                 t=_percur_cache['t']
                 wrk=_percur_cache['wrk']
@@ -526,7 +526,7 @@ def sproot(tck,mest=10):
 
     Inputs:
       tck -- A length 3 sequence describing the given spline (See splev).
-             The number of knots must be >= 8.  The knots must be a 
+             The number of knots must be >= 8.  The knots must be a
              montonically increasing sequence.
       mest -- An estimate of the number of zeros (Default is 10).
 
@@ -612,7 +612,7 @@ def insert(x,tck,m=1,per=0):
 
     Description:
 
-    Given the knots and coefficients of a B-spline representation, create a 
+    Given the knots and coefficients of a B-spline representation, create a
     new B-spline with a knot inserted m times at point x.
     This is a wrapper around the FORTRAN routine insert of FITPACK.
 
@@ -629,12 +629,12 @@ def insert(x,tck,m=1,per=0):
 
     tck -- (t,c,k) a tuple containing the vector of knots, the B-spline
             coefficients, and the degree of the new spline.
-    
+
     Requirements:
         t(k+1) <= x <= t(n-k), where k is the degree of the spline.
         In case of a periodic spline (per != 0) there must be
         either at least k interior knots t(j) satisfying t(k+1)<t(j)<=x
-        or at least k interior knots t(j) satisfying x<=t(j)<t(n-k).    
+        or at least k interior knots t(j) satisfying x<=t(j)<t(n-k).
     """
     t,c,k=tck
     try:

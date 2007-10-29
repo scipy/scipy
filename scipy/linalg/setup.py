@@ -39,7 +39,7 @@ def needs_cblas_wrapper(info):
         pass
 
     return res
-    
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
 

@@ -58,4 +58,3 @@ def my_mean(s):
         return mean(a)
     else:
         return 0.
-
