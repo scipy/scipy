@@ -53,7 +53,7 @@ class TestCreation(NumpyTestCase):
     def test_fromrange (self):
         "Base data definition."
         (dlist, dates, data) = self.d
-        series = time_series(data, start_date=dates[0], length=15)
+        series = time_series(data, start_date=dates[0])
         assert(isinstance(series, TimeSeries))
         assert_equal(series._mask, [1,0,0,0,0]*3)
         assert_equal(series._series, data)
@@ -530,28 +530,32 @@ test_dates test suite.
 
     def test__timeseriescompat_multiple(self):
         "Tests the compatibility of multiple time series."
-        seriesM_10 = time_series(numpy.arange(10),
-                                    date_array(
-                                      start_date=Date(freq='m', year=2005, month=1),
-                                      length=10)
+        seriesM_10 = time_series(
+                        numpy.arange(10),
+                        date_array(
+                            start_date=Date(freq='m', year=2005, month=1),
+                            length=10)
                                 )
 
-        seriesD_10 = time_series(numpy.arange(10),
-                                    date_array(
-                                      start_date=Date(freq='d', year=2005, month=1, day=1),
-                                      length=10)
+        seriesD_10 = time_series(
+                        numpy.arange(10),
+                        date_array(
+                            start_date=Date(freq='d', year=2005, month=1, day=1),
+                            length=10)
                                 )
 
-        seriesD_5 = time_series(numpy.arange(5),
-                                    date_array(
-                                      start_date=Date(freq='d', year=2005, month=1, day=1),
-                                      length=5)
+        seriesD_5 = time_series(
+                        numpy.arange(5),
+                        date_array(
+                            start_date=Date(freq='d', year=2005, month=1, day=1),
+                            length=5)
                                 )
 
-        seriesD_5_apr = time_series(numpy.arange(5),
-                                    date_array(
-                                      start_date=Date(freq='d', year=2005, month=4, day=1),
-                                      length=5)
+        seriesD_5_apr = time_series(
+                            numpy.arange(5),
+                            date_array(
+                                start_date=Date(freq='d', year=2005, month=4, day=1),
+                                length=5)
                                 )
 
         assert(tseries._timeseriescompat_multiple(seriesM_10, seriesM_10, seriesM_10))

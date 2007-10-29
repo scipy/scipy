@@ -360,12 +360,11 @@ A time series is here defined as the combination of two arrays:
     construction as it allows greater flexibility and convenience.
 """
     def __new__(cls, data, dates, mask=nomask, dtype=None, copy=False,
-                fill_value=None, subok=True, keep_mask=True, small_mask=True,
-                hard_mask=False, **options):
+                fill_value=None, subok=True, keep_mask=True, hard_mask=False,
+                **options):
 
         maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value, subok=subok,
-                       keep_mask=keep_mask, small_mask=small_mask,
-                       hard_mask=hard_mask)
+                       keep_mask=keep_mask, hard_mask=hard_mask)
         _data = MaskedArray(data, mask=mask, **maparms)
 
         # Get the dates ......................................................
@@ -945,21 +944,37 @@ TimeSeries.flatten = flatten
 ##### -------------------------------------------------------------------------
 #---- --- TimeSeries creator ---
 ##### -------------------------------------------------------------------------
-def time_series(data, dates=None, freq=None, start_date=None, end_date=None,
-                length=None, mask=nomask, dtype=None, copy=False,
-                fill_value=None, keep_mask=True, small_mask=True,
+def time_series(data, dates=None, start_date=None, freq=None, mask=nomask,
+                dtype=None, copy=False, fill_value=None, keep_mask=True,
                 hard_mask=False):
     """Creates a TimeSeries object
 
-:Parameters:
-    `dates` : ndarray
-        Array of dates.
-    `data` :
-        Array of data.
-    """
+*Parameters*:
+    data : {array_like}
+        data portion of the array. Any data that is valid for constructing a
+        MaskedArray can be used here. May also be a TimeSeries object
+    dates : {DateArray}, optional
+        Date part.
+    freq : {freq_spec}, optional
+        a valid frequency specification
+    start_date : {Date}, optional
+        date corresponding to index 0 in the data
+
+*Other Parameters*:
+    All other parameters that are accepted by the *array* function in the
+    maskedarray module are also accepted by this function.
+
+*Notes*:
+    the date portion of the time series must be specified in one of the
+    following ways:
+        - specify a TimeSeries object for the *data* parameter
+        - pass a DateArray for the *dates* parameter
+        - specify a start_date (a continuous DateArray will be automatically
+          constructed for the dates portion)
+        - specify just a frequency (for TimeSeries of size zero)
+"""
     maparms = dict(copy=copy, dtype=dtype, fill_value=fill_value, subok=True,
-                   keep_mask=keep_mask, small_mask=small_mask,
-                   hard_mask=hard_mask,)
+                   keep_mask=keep_mask, hard_mask=hard_mask,)
     data = masked_array(data, mask=mask, **maparms)
 
     freq = check_freq(freq)
@@ -980,11 +995,8 @@ def time_series(data, dates=None, freq=None, start_date=None, end_date=None,
     else:
         dshape = data.shape
         if len(dshape) > 0:
-            if length is None:
-                length = dshape[0]
-        if len(dshape) > 0:
-            _dates = date_array(start_date=start_date, end_date=end_date,
-                               length=length, freq=freq)
+            length = dshape[0]
+            _dates = date_array(start_date=start_date, freq=freq, length=length)
         else:
             _dates = date_array([], freq=freq)
 
@@ -995,7 +1007,7 @@ def time_series(data, dates=None, freq=None, start_date=None, end_date=None,
     return TimeSeries(data=data, dates=_dates, mask=data._mask,
                       copy=copy, dtype=dtype, 
                       fill_value=fill_value, keep_mask=keep_mask, 
-                      small_mask=small_mask, hard_mask=hard_mask,)
+                      hard_mask=hard_mask,)
 
 
 def isTimeSeries(series):
