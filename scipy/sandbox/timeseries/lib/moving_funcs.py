@@ -11,6 +11,12 @@ __version__ = '1.0'
 __revision__ = "$Revision: 2819 $"
 __date__     = '$Date: 2007-03-03 18:00:20 -0500 (Sat, 03 Mar 2007) $'
 
+__all__ = ['mov_sum', 'mov_median', 'mov_min', 'mov_max',
+           'mov_average', 'mov_mean', 'mov_average_expw',
+           'mov_stddev', 'mov_var', 'mov_covar', 'mov_corr',
+           'cmov_average', 'cmov_mean', 'cmov_window'
+           ]
+
 import numpy as N
 from numpy import bool_, float_
 narray = N.array
@@ -22,13 +28,7 @@ from maskedarray import MaskedArray, nomask, getmask, getmaskarray, masked
 marray = MA.array
 
 from timeseries.cseries import MA_mov_stddev, MA_mov_sum, MA_mov_average, \
-                               MA_mov_median
-
-__all__ = ['mov_sum', 'mov_median',
-           'mov_average', 'mov_mean', 'mov_average_expw',
-           'mov_stddev', 'mov_var', 'mov_covar', 'mov_corr',
-           'cmov_average', 'cmov_mean', 'cmov_window'
-           ]
+                               MA_mov_median, MA_mov_min, MA_mov_max
 
 def _process_result_dict(orig_data, result_dict):
     "process the results from the c function"
@@ -100,6 +100,34 @@ def mov_median(data, span, dtype=None):
         kwargs['dtype'] = dtype
 
     return _moving_func(data, MA_mov_median, kwargs)
+#...............................................................................
+def mov_min(data, span, dtype=None):
+    """Calculates the moving minimum of a series.
+
+*Parameters*:
+    $$data$$
+    $$span$$
+    $$dtype$$"""
+
+    kwargs = {'span':span}
+    if dtype is not None:
+        kwargs['dtype'] = dtype
+
+    return _moving_func(data, MA_mov_min, kwargs)
+#...............................................................................
+def mov_max(data, span, dtype=None):
+    """Calculates the moving max of a series.
+
+*Parameters*:
+    $$data$$
+    $$span$$
+    $$dtype$$"""
+
+    kwargs = {'span':span}
+    if dtype is not None:
+        kwargs['dtype'] = dtype
+
+    return _moving_func(data, MA_mov_max, kwargs)
 #...............................................................................
 def mov_average(data, span, dtype=None):
     """Calculates the moving average of a series.

@@ -552,17 +552,10 @@ MaskedArray_mov_average(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 
-/* computation portion of moving median. Appropriate mask is overlayed on top
-   afterwards.
 
-   The algorithm used here is based on the code found at:
-    http://cran.r-project.org/src/contrib/Devel/runStat_1.1.tar.gz
-
-   This code was originally released under the GPL, but the author
-   (David Brahm) has granted me (and scipy) permission to use it under the BSD
-   license. */
+//calc_mov_median(PyArrayObject *orig_ndarray, int span, int rtype)
 PyObject*
-calc_mov_median(PyArrayObject *orig_ndarray, int span, int rtype)
+calc_mov_ranked(PyArrayObject *orig_ndarray, int span, int rtype, char rank_type)
 {
     PyArrayObject *result_ndarray=NULL;
     PyObject **result_array, **ref_array, **even_array=NULL;
@@ -604,13 +597,29 @@ calc_mov_median(PyArrayObject *orig_ndarray, int span, int rtype)
             r[i] = 1;
         }
 
-        if ((span % 2) == 0) {
+        if (rank_type == 'E' && ((span % 2) == 0)) {
             // array to store two median values when span is an even #
             even_array = calloc(2, sizeof(PyObject*));
             MEM_CHECK(even_array)
         }
 
-        R = (span + 1)/2;
+		switch(rank_type) {
+			case 'E': // median
+				R = (span + 1)/2;
+				break;
+			case 'I': // min
+				R = 1;
+				break;
+			case 'A': // max
+				R = span;
+				break;
+			default:
+			{
+				PyErr_SetString(PyExc_RuntimeError, "unexpected rank type");
+		        return NULL;
+			}
+		}
+
         one_half = PyFloat_FromDouble(0.5);
 
         z = arr_size - span;
@@ -751,8 +760,8 @@ MaskedArray_mov_median(PyObject *self, PyObject *args, PyObject *kwds)
         rtype = _get_type_num(((PyArrayObject*)orig_ndarray)->descr, dtype);
     }
 
-    result_ndarray = calc_mov_median((PyArrayObject*)orig_ndarray,
-                                     span, rtype);
+    result_ndarray = calc_mov_ranked((PyArrayObject*)orig_ndarray,
+                                     span, rtype, 'E');
     ERR_CHECK(result_ndarray)
 
     result_dict = PyDict_New();
@@ -765,6 +774,75 @@ MaskedArray_mov_median(PyObject *self, PyObject *args, PyObject *kwds)
     return result_dict;
 }
 
+PyObject *
+MaskedArray_mov_min(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *orig_arrayobj=NULL, *orig_ndarray=NULL,
+             *result_ndarray=NULL, *result_mask=NULL, *result_dict=NULL;
+    PyArray_Descr *dtype=NULL;
+
+    int rtype, span;
+
+    static char *kwlist[] = {"array", "span", "dtype", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                "Oi|O&:mov_min(array, span, dtype)", kwlist,
+                &orig_arrayobj, &span,
+                PyArray_DescrConverter2, &dtype)) return NULL;
+
+    check_mov_args(orig_arrayobj, span, 1,
+                   &orig_ndarray, &result_mask);
+
+    rtype = _get_type_num(((PyArrayObject*)orig_ndarray)->descr, dtype);
+
+    result_ndarray = calc_mov_ranked((PyArrayObject*)orig_ndarray,
+                                     span, rtype, 'I');
+    ERR_CHECK(result_ndarray)
+
+    result_dict = PyDict_New();
+    MEM_CHECK(result_dict)
+    PyDict_SetItemString(result_dict, "array", result_ndarray);
+    PyDict_SetItemString(result_dict, "mask", result_mask);
+
+    Py_DECREF(result_ndarray);
+    Py_DECREF(result_mask);
+    return result_dict;
+}
+
+PyObject *
+MaskedArray_mov_max(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *orig_arrayobj=NULL, *orig_ndarray=NULL,
+             *result_ndarray=NULL, *result_mask=NULL, *result_dict=NULL;
+    PyArray_Descr *dtype=NULL;
+
+    int rtype, span;
+
+    static char *kwlist[] = {"array", "span", "dtype", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                "Oi|O&:mov_max(array, span, dtype)", kwlist,
+                &orig_arrayobj, &span,
+                PyArray_DescrConverter2, &dtype)) return NULL;
+
+    check_mov_args(orig_arrayobj, span, 1,
+                   &orig_ndarray, &result_mask);
+
+    rtype = _get_type_num(((PyArrayObject*)orig_ndarray)->descr, dtype);
+
+    result_ndarray = calc_mov_ranked((PyArrayObject*)orig_ndarray,
+                                     span, rtype, 'A');
+    ERR_CHECK(result_ndarray)
+
+    result_dict = PyDict_New();
+    MEM_CHECK(result_dict)
+    PyDict_SetItemString(result_dict, "array", result_ndarray);
+    PyDict_SetItemString(result_dict, "mask", result_mask);
+
+    Py_DECREF(result_ndarray);
+    Py_DECREF(result_mask);
+    return result_dict;
+}
 
 PyObject *
 MaskedArray_mov_stddev(PyObject *self, PyObject *args, PyObject *kwds)
