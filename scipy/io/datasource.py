@@ -1,20 +1,29 @@
-"""A generic file interface for handling data files.  The goal of datasource is
-to abstract some of the file system operations when dealing with files.
-Specifically acquiring the files.  DataSource files can originate locally or
-remotely, for example:
-    local files - '/home/name/blah/blah/blah/data.txt'
-    URLs (http, ftp, ...) - 'http://www.scipy.org/not/real/data.txt'
+"""A file interface for handling local and remote data files.
+The goal of datasource is to abstract some of the file system operations when 
+dealing with data files so the researcher doesn't have to know all the
+low-level details.  Through datasource, a researcher can obtain and use a 
+file with one function call, regardless of location of the file.
+
+DataSource files can originate locally or remotely:
+
+- local files : '/home/guido/src/local/data.txt'
+- URLs (http, ftp, ...) : 'http://www.scipy.org/not/real/data.txt'
 
 DataSource files can also be compressed or uncompressed.  Currently only gzip
 and bz2 are supported.
 
-In a typical use, you would pass a DataSource to a function that would open
-up the DataSource (as it would any file-like object) and read the file.
+Example:
 
-Ex:
-    >>> ds = datasource.DataSource()
+    >>> # Create a DataSource and use '/home/guido/tmpdata/' for local storage.
+    >>> ds = datasource.DataSource('/home/guido/tmpdata/')
+    >>>
+    >>> # Open a remote, gzipped file.
+    >>> # DataSource downloads the file, stores it locally in:
+    >>> #     '/home/guido/tmpdata/www.scipy.org/not/real/data.txt.gz'
+    >>> # opens the file with the gzip module and returns a file-like object.
+    >>>
     >>> fp = ds.open('http://www.scipy.org/not/real/data.txt.gz')
-    >>> fp.read()
+    >>> fp.read()    # Use the file
     >>> fp.close()
     >>> del ds, fp
 
@@ -52,8 +61,8 @@ _file_openers = {".gz":gzip.open, ".bz2":bz2.BZ2File, None:file}
 class DataSource (object):
     """A generic data source (file, http, ftp, ...).
 
-    DataSource could be from a local file or remote file/URL.  The file may also
-    be compressed or uncompressed.
+    DataSource could be from a local file or remote file/URL.  The file may
+    also be compressed or uncompressed.
 
     Ex URL DataSources:
         Initialize DataSource with a local directory.  Default is os.curdir
@@ -97,7 +106,8 @@ class DataSource (object):
         # Currently only used to test the bz2 files.  Not thoroughly tested!
         _writemodes = ("w", "+")
         for c in mode:
-            if c in _writemodes: return True
+            if c in _writemodes:
+                return True
         return False
 
     def _splitzipext(self, filename):
