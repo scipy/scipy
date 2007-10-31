@@ -4,7 +4,7 @@ import gzip
 import os
 import sys
 import struct
-from tempfile import mkdtemp, mkstemp
+from tempfile import mkdtemp, mkstemp, NamedTemporaryFile
 from shutil import rmtree
 from urlparse import urlparse
 
@@ -20,18 +20,21 @@ del sys.path[0]
 #from scipy.io import datasource
 #restore_path()
 
-# Can rebind urlopen for testing, so we don't open real net connection.
-#def urlopen(url, data=None):
-#    print 'test_datasource urlopen(', url, ')'
-#datasource.urlopen = urlopen
+def urlopen_stub(url, data=None):
+    '''Stub to replace urlopen for testing.'''
+    if url == valid_httpurl():
+        tmpfile = NamedTemporaryFile(prefix='urltmp_')
+        return tmpfile
+    else:
+        raise datasource.URLError('Name or service not known')
 
-#http_baseurl = 'http://nifti.nimh.nih.gov/nifti-1/data/'
-#http_filename = 'minimal.nii.gz'
-#http_abspath = os.path.join(http_baseurl, http_filename)
+# Rebind urlopen during testing.  For a 'real' test, uncomment the rebinding
+# below.
+datasource.urlopen = urlopen_stub
 
-# Temporarily use one of our files so we don't abuse someone elses server.
-http_path = 'https://cirl.berkeley.edu/twiki/pub/BIC/ImagingDocuments/'
-http_file = 'dork.pdf'
+# A valid website for more robust testing
+http_path = 'http://www.google.com/'
+http_file = 'index.html'
 
 http_fakepath = 'http://fake.abc.web/site/'
 http_fakefile = 'fake.txt'
@@ -42,13 +45,13 @@ magic_line = 'three is the magic number'
 # Utility functions used by many TestCases
 def valid_textfile(filedir):
     # Generate and return a valid temporary file.
-    fd, path = mkstemp(suffix='.txt', dir=filedir, text=True)
+    fd, path = mkstemp(suffix='.txt', prefix='dstmp_', dir=filedir, text=True)
     os.close(fd)
     return path
 
 def invalid_textfile(filedir):
     # Generate and return an invalid filename.
-    fd, path = mkstemp(suffix='.txt', dir=filedir)
+    fd, path = mkstemp(suffix='.txt', prefix='dstmp_',  dir=filedir)
     os.close(fd)
     os.remove(path)
     return path
@@ -88,18 +91,15 @@ class TestDataSourceOpen(NumpyTestCase):
 
     def test_ValidFile(self):
         local_file = valid_textfile(self.tmpdir)
-        #print '\nDataSourceOpen test_ValidFile:', local_file
         assert self.ds.open(local_file)
 
     def test_InvalidFile(self):
         invalid_file = invalid_textfile(self.tmpdir)
-        #print '\nDataSourceOpen test_InvalidFile:', invalid_file
         self.assertRaises(IOError, self.ds.open, invalid_file)
 
     def test_ValidGzipFile(self):
         # Test datasource's internal file_opener for Gzip files.
         filepath = os.path.join(self.tmpdir, 'foobar.txt.gz')
-        #print '\nDataSourceOpen test_ValidGzipFile:', filepath
         fp = gzip.open(filepath, 'w')
         fp.write(magic_line)
         fp.close()
@@ -111,7 +111,6 @@ class TestDataSourceOpen(NumpyTestCase):
     def test_ValidBz2File(self):
         # Test datasource's internal file_opener for BZip2 files.
         filepath = os.path.join(self.tmpdir, 'foobar.txt.bz2')
-        #print '\nDataSourceOpen test_ValidBZ2File:', filepath
         fp = bz2.BZ2File(filepath, 'w')
         fp.write(magic_line)
         fp.close()
@@ -131,21 +130,17 @@ class TestDataSourceExists(NumpyTestCase):
         del self.ds
 
     def test_ValidHTTP(self):
-        #print 'DataSourceExists test_ValidHTTP'
         assert self.ds.exists(valid_httpurl())
     
     def test_InvalidHTTP(self):
-        #print 'DataSourceExists test_InvalidHTTP'
         self.assertEqual(self.ds.exists(invalid_httpurl()), False)
 
     def test_ValidFile(self):
         tmpfile = valid_textfile(self.tmpdir)
-        #print 'DataSourceExists test_ValidFile:', tmpfile
         assert self.ds.exists(tmpfile)
 
     def test_InvalidFile(self):
         tmpfile = invalid_textfile(self.tmpdir)
-        #print 'DataSourceExists test_InvalidFile:', tmpfile
         self.assertEqual(self.ds.exists(tmpfile), False)
 
 
@@ -177,8 +172,7 @@ class TestDataSourceAbspath(NumpyTestCase):
         self.assertNotEqual(invalidhttp, self.ds.abspath(valid_httpurl()))
 
     def test_InvalidFile(self):
-        fd, invalidfile = mkstemp(suffix='.txt')
-        os.close(fd)
+        invalidfile = valid_textfile(self.tmpdir)
         tmpfile = valid_textfile(self.tmpdir)
         tmpfilename = os.path.split(tmpfile)[-1]
         # Test with filename only
