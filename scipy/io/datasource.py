@@ -1,20 +1,34 @@
-"""A generic interface for importing data.  Data sources can originate from
-URLs or local paths and can be in compressed or uncompressed form.
+"""A generic file interface for handling data files.  The goal of datasource is
+to abstract some of the file system operations when dealing with files.
+Specifically acquiring the files.  DataSource files can originate locally or
+remotely, for example:
+    local files - '/home/name/blah/blah/blah/data.txt'
+    URLs (http, ftp, ...) - 'http://www.scipy.org/not/real/data.txt'
+
+DataSource files can also be compressed or uncompressed.  Currently only gzip
+and bz2 are supported.
+
+In a typical use, you would pass a DataSource to a function that would open
+up the DataSource (as it would any file-like object) and read the file.
+
+Ex:
+    >>> ds = datasource.DataSource()
+    >>> fp = ds.open('http://www.scipy.org/not/real/data.txt.gz')
+    >>> fp.read()
+    >>> fp.close()
+    >>> del ds, fp
 
 """
 
-# TODO: Make DataSource and Repository the public interface.
-#       _Cache will be used internally.  Add methods in DataSource to expose
-#       some of the functionality that exists only in _Cache currently.
-
 __docformat__ = "restructuredtext en"
 
-import os
-import gzip
 import bz2
-from urlparse import urlparse
+import gzip
+import os
+import tempfile
+from shutil import rmtree
 from urllib2 import urlopen, URLError
-from tempfile import mkstemp
+from urlparse import urlparse
 
 import warnings
 
@@ -31,367 +45,252 @@ Use this module minimally, if at all, until it is stabilized."
 
 warnings.warn(_api_warning)
 
-# TODO: Don't check file extensions, just try and open zip files?
-#       Follow the, it's easier to get forgiveness than permission?
-#       And because this shouldn't succeed:
-#           In [134]: datasource._iszip('/my/fake/dir/foobar.gz')
-#           Out[134]: True
-
 # TODO: .zip support, .tar support?
 _file_openers = {".gz":gzip.open, ".bz2":bz2.BZ2File, None:file}
 
-def _iszip(filename):
-    """Test if the given file is a zip file.
-
-    Currently only looks at the file extension, not very robust.
-    """
-
-    fname, ext = os.path.splitext(filename)
-    return ext in _file_openers.keys()
-
-def _unzip(filename):
-    """Unzip the given file and return the path object to the new file."""
-
-    # This function is not used in datasource.  Appears it was created
-    # so users could unzip a file without having to import the corresponding
-    # compression module.  Should this be part of datasource?
-    if not _iszip(filename):
-        raise ValueError("file %s is not zipped"%filename)
-    unzip_name, zipext = _splitzipext(filename)
-    opener = _file_openers[zipext]
-    outfile = file(unzip_name, 'w')
-    outfile.write(opener(filename).read())
-    outfile.close()
-    return unzip_name
-
-def _iswritemode(mode):
-    """Test if the given mode will open a file for writing."""
-
-    _writemodes = ("w", "+", "a")
-    for c in mode:
-        if c in _writemodes: return True
-    return False
-
-def _splitzipext(filename):
-    """Split the filename into a path object and a zip extension.
-
-    If the filename does not have a zip extension the zip_ext in the
-    return will be None.
-
-    Parameters:
-
-        filename : {string}
-            Filename to split.
-
-    Returns:
-
-        base, zip_ext : {tuple}
-            Tuple containing a path object to the file and the zip extension.
-
-    """
-
-    if _iszip(filename):
-        return os.path.splitext(filename)
-    else:
-        return filename, None
-
-def _isurl(pathstr):
-    """Test whether a given string can be parsed as a URL.
-
-    A pathstr with a valid network scheme (http, ftp, ...) will return true.
-    A pathstr with a 'file' scheme will return false.
-
-    """
-
-    scheme, netloc, upath, uparams, uquery, ufrag = urlparse(pathstr)
-    return bool(scheme and netloc)
-
-def _ensuredirs(directory):
-    """Ensure that the given directory path exists.  If not, create it."""
-
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-class _Cache (object):
-    """A local file cache for URL datasources.
-
-    The path of the cache can be specified on intialization.  The default
-    path is ~/.scipy/cache
-
-
-    """
-
-    def __init__(self, cachepath=None):
-        if cachepath is not None:
-            self.path = cachepath
-        elif os.name == 'posix':
-            self.path = os.path.join(os.environ["HOME"], ".scipy", "cache")
-        elif os.name == 'nt':
-            self.path = os.path.join(os.environ["HOMEPATH"], ".scipy", "cache")
-        if not os.path.exists(self.path):
-            _ensuredirs(self.path)
-
-    def tempfile(self, suffix='', prefix=''):
-        """Create and return a temporary file in the cache.
-
-        Parameters:
-            suffix : {''}, optional
-
-            prefix : {''}, optional
-
-        Returns:
-            tmpfile : {string}
-                String containing the full path to the temporary file.
-
-        Examples
-
-            >>> mycache = datasource._Cache()
-            >>> mytmpfile = mycache.tempfile()
-            >>> mytmpfile
-            '/home/guido/.scipy/cache/GUPhDv'
-
-        """
-
-        _tmp, fname = mkstemp(suffix, prefix, self.path)
-        return fname
-
-    def filepath(self, uri):
-        """Return a path object to the uri in the cache.
-
-        Parameters:
-            uri : {string}
-                Filename to use in the returned path object.
-
-        Returns:
-            path : {string}
-                Complete path for the given uri.
-
-        Examples
-
-            >>> mycache = datasource._Cache()
-            >>> mycache.filepath('xyzcoords.txt')
-            '/home/guido/.scipy/cache/xyzcoords.txt'
-
-        """
-
-        scheme, netloc, upath, uparams, uquery, ufrag = urlparse(uri)
-        return os.path.join(self.path, netloc, upath.strip('/'))
-
-    def cache(self, uri):
-        """Copy the file at uri into the cache.
-
-        Parameters:
-            uri : {string}
-                path or url of source file to cache.
-
-        Returns:
-            None
-
-        """
-
-        if self.iscached(uri):
-            return
-
-        upath = self.filepath(uri)
-        _ensuredirs(os.path.dirname(upath))
-
-        print 'cache - source:', uri
-        print 'cache - destination:', upath
-
-        if _isurl(uri):
-            try:
-                openedurl = urlopen(uri)
-                file(upath, 'w').write(openedurl.read())
-            except URLError:
-                raise URLError("URL not found: " + str(uri))
-        else:
-            try:
-                fp = file(uri, 'r')
-                file(upath, 'w').write(fp.read())
-            except IOError:
-                raise IOError("File not founcd: " + str(uri))
-
-    def clear(self):
-        """Delete all files in the cache."""
-
-        # TODO: This deletes all files in the cache directory, regardless
-        #       of if this instance created them.  Too destructive and
-        #       unexpected behavior.
-        #for _file in self.path.files():
-        #    os.remove(file)
-        raise NotImplementedError
-
-    def iscached(self, uri):
-        """ Check if a file exists in the cache.
-
-        Returns
-            boolean
-
-        """
-
-        upath = self.filepath(uri)
-        return os.path.exists(upath)
-
-    def retrieve(self, uri):
-        """Retrieve a file from the cache.
-        If not already there, create the file and add it to the cache.
-
-        Returns
-            open file object
-
-        """
-
-        self.cache(uri)
-        return file(self.filepath(uri))
-
 
 class DataSource (object):
-    """A generic data source class.
+    """A generic data source (file, http, ftp, ...).
 
-    Data sets could be from a file, a URL, or a cached file.  They may also
+    DataSource could be from a local file or remote file/URL.  The file may also
     be compressed or uncompressed.
 
-    TODO: Improve DataSource docstring
+    Ex URL DataSources:
+        Initialize DataSource with a local directory.  Default is os.curdir
+
+        >>> ds = DataSource('/home/guido')
+        >>> ds.open('http://fake.xyz.web/site/xyz.txt')
+
+        Opened file exists here:  /home/guido/site/xyz.txt
+
+    Ex using DataSource for temporary files:
+        Initialize DataSource with 'None' for local directory.
+
+        >>> ds = DataSource(None)
+        >>> ds.open('/home/guido/foobar.txt')
+
+        Opened file exists in tempdir like: /tmp/tmpUnhcvM/foobar.txt
 
     """
 
-    def __init__(self, cachepath=os.curdir):
-        self._cache = _Cache(cachepath)
+    def __init__(self, destpath=os.curdir):
+        if destpath:
+            self._destpath = destpath
+            self._istmpdest = False
+        else:
+            self._destpath = tempfile.mkdtemp()
+            self._istmpdest = True
 
-    def tempfile(self, suffix='', prefix=''):
-        """Create a temporary file in the DataSource cache.
+    def __del__(self):
+        if self._istmpdest:
+            rmtree(self._destpath)
 
-        Parameters:
-            suffix : {''}, optional
+    def _iszip(self, filename):
+        """Test if the filename is a zip file by looking at the file extension.
+        """
+        fname, ext = os.path.splitext(filename)
+        return ext in _file_openers.keys()
 
-            prefix : {''}, optional
+    def _iswritemode(self, mode):
+        """Test if the given mode will open a file for writing."""
+
+        # Currently only used to test the bz2 files.  Not thoroughly tested!
+        _writemodes = ("w", "+")
+        for c in mode:
+            if c in _writemodes: return True
+        return False
+
+    def _splitzipext(self, filename):
+        """Split zip extension from filename and return filename.
 
         Returns:
-            tmpfile : {string}
-                String containing the full path to the temporary file.
-
-        Examples
-
-            >>> datasrc = datasource.DataSource()
-            >>> tmpfile = datasrc.tempfile()
-            >>> tmpfile
-            '/home/guido/src/scipy-trunk/scipy/io/PZTuKo'
+            base, zip_ext : {tuple}
 
         """
-        return self._cache.tempfile(suffix, prefix)
+
+        if self._iszip(filename):
+            return os.path.splitext(filename)
+        else:
+            return filename, None
 
     def _possible_names(self, filename):
-        """Return a tuple containing compressed filenames."""
+        """Return a tuple containing compressed filename variations."""
         names = [filename]
-        if not _iszip(filename):
+        if not self._iszip(filename):
             for zipext in _file_openers.keys():
-                names.append(filename+zipext)
-        return tuple(names)
+                if zipext:
+                    names.append(filename+zipext)
+        return names
 
-    def cache(self, pathstr):
-        """Cache the file specified by pathstr.
+    def _isurl(self, path):
+        """Test if path is a net location.  Tests the scheme and netloc."""
+        scheme, netloc, upath, uparams, uquery, ufrag = urlparse(path)
+        return bool(scheme and netloc)
 
-        Creates a copy of file pathstr in the datasource cache.
+    def _cache(self, path):
+        """Cache the file specified by path.
 
-        """
-
-        self._cache.cache(pathstr)
-
-    def clear(self):
-        # TODO: Implement a clear interface for deleting tempfiles.
-        #       There's a problem with the way this is handled in the _Cache,
-        #       All files in the cache directory will be deleted.  In the
-        #       default instance, that's the os.curdir.  I doubt this is what
-        #       people would want.  The instance should only delete files that
-        #       it created!
-        raise NotImplementedError
-
-    def filename(self, pathstr):
-        """Searches for pathstr file and returns full path if found.
-
-        If pathstr is an URL, filename will cache a local copy and return
-        the path to the cached file.
-        If pathstr is a local file, filename will return a path to that local
-        file.
-        BUG:  This should be modified so the behavior is identical for both
-              types of files!
-
-        The search will include possible compressed versions of the files.
-        BUG:  Will return the first occurence found, regardless of which
-              version is newer.
+        Creates a copy of the file in the datasource cache.
 
         """
 
-        found = None
-        for name in self._possible_names(pathstr):
+        upath = self.abspath(path)
+
+        # ensure directory exists
+        if not os.path.exists(os.path.dirname(upath)):
+            os.makedirs(os.path.dirname(upath))
+
+        # TODO: Doesn't handle compressed files!
+        if self._isurl(path):
             try:
-                if _isurl(name):
-                    self.cache(name)
-                    found = self._cache.filepath(name)
-                else:
-                    raise Exception
-            except:
-                if os.path.exists(name):
-                    found = name
-            if found:
-                break
-        if found is None:
-            raise IOError("%s not found"%pathstr)
-        return found
+                openedurl = urlopen(path)
+                file(upath, 'w').write(openedurl.read())
+            except URLError:
+                raise URLError("URL not found: ", path)
+        else:
+            try:
+                # TODO: Why not just copy the file with shutils.copyfile?
+                fp = file(path, 'r')
+                file(upath, 'w').write(fp.read())
+            except IOError:
+                raise IOError("File not found: ", path)
+        return upath
 
-    def exists(self, pathstr):
-        """Test if pathstr exists in the cache or the current directory.
+    def _findfile(self, path):
+        """Searches for path and returns full path if found.
 
-        If pathstr is an URL, it will be fetched and cached.
+        If path is an URL, _findfile will cache a local copy and return
+        the path to the cached file.
+        If path is a local file, _findfile will return a path to that local
+        file.
+
+        The search will include possible compressed versions of the file and
+        return the first occurence found.
 
         """
 
-        # Is this method doing to much?  At very least may want an option to
-        # not fetch and cache URLs.
+        # Build list of possible local file paths
+        filelist = self._possible_names(self.abspath(path))
+        if self._isurl(path):
+            # Add list of possible remote urls
+            filelist = filelist + self._possible_names(path)
 
-        try:
-            _datafile = self.filename(pathstr)
+        for name in filelist:
+            if self.exists(name):
+                if self._isurl(name):
+                    name = self._cache(name)
+                return name
+        return None
+
+    def abspath(self, path):
+        """Return an absolute path in the DataSource destination directory.
+
+        """
+
+        # handle case where path includes self._destpath
+        splitpath = path.split(self._destpath, 2)
+        if len(splitpath) > 1:
+            path = splitpath[1]
+        scheme, netloc, upath, uparams, uquery, ufrag = urlparse(path)
+        return os.path.join(self._destpath, netloc, upath.strip(os.sep))
+
+    def exists(self, path):
+        """Test if path exists.
+
+        Tests for local files, locally cached URLs and remote URLs.
+
+        """
+
+        upath = self.abspath(path)
+        if os.path.exists(upath):
             return True
-        except IOError:
+        elif self._isurl(path):
+            try:
+                netfile = urlopen(path)
+                # just validate existence, nothing more.
+                del(netfile)
+                return True
+            except URLError:
+                return False
+        else:
             return False
 
-    def open(self, pathstr, mode='r'):
-        """Open pathstr and return file object.
+    def open(self, path, mode='r'):
+        """Open path and return file object.
 
-        If pathstr is an URL, it will be fetched and cached.
+        If path is an URL, it will be downloaded, stored in the DataSource
+        directory and opened.
+
+        TODO: Currently only opening for reading has been tested.  There is no
+              support for opening a file for writing which doesn't exist yet
+              (creating a file).
 
         """
 
-        # Is this method doing to much?  Should it be fetching and caching?
-
-        if _isurl(pathstr) and _iswritemode(mode):
+        if self._isurl(path) and self._iswritemode(mode):
             raise ValueError("URLs are not writeable")
-        found = self.filename(pathstr)
-        _fname, ext = _splitzipext(found)
-        if ext == 'bz2':
-            mode.replace("+", "")
-        return _file_openers[ext](found, mode=mode)
+
+        # NOTE: _findfile will fail on a new file opened for writing.
+        found = self._findfile(path)
+        if found:
+            _fname, ext = self._splitzipext(found)
+            if ext == 'bz2':
+                mode.replace("+", "")
+            return _file_openers[ext](found, mode=mode)
+        else:
+            raise IOError("%s not found." % path)
 
 
 class Repository (DataSource):
-    """Multiple DataSource's that share one base url.
+    """A data repository where multiple DataSource's share one base URL.
 
-    TODO: Improve Repository docstring.
+    Use a Repository when you will be working with multiple files from one
+    base URL or directory.  Initialize the Respository with the base URL,
+    then refer to each file only by it's filename.
+
+    >>> repos = Repository('/home/user/data/dir/')
+    >>> fp = repos.open('data01.txt')
+    >>> fp.analyze()
+    >>> fp.close()
+
+    Similarly you could use a URL for a repository:
+    >>> repos = Repository('http://www.xyz.edu/data')
 
     """
 
-    def __init__(self, baseurl, cachepath=None):
-        DataSource.__init__(self, cachepath=cachepath)
+    def __init__(self, baseurl, destpath=os.curdir):
+        DataSource.__init__(self, destpath=destpath)
         self._baseurl = baseurl
 
-    def _fullpath(self, pathstr):
-        return os.path.join(self._baseurl, pathstr)
+    def _fullpath(self, path):
+        '''Return complete path for path.  Prepends baseurl if necessary.'''
+        #print 'Repository._fullpath:', path
+        #print '          ._baseurl: ', self._baseurl
+        splitpath = path.split(self._baseurl, 2)
+        if len(splitpath) == 1:
+            result = os.path.join(self._baseurl, path)
+        else:
+            result = path    # path contains baseurl already
+        return result
 
-    def filename(self, pathstr):
-        return DataSource.filename(self, self._fullpath(pathstr))
+    def _findfile(self, path):
+        #print 'Repository._findfile:', path
+        return DataSource._findfile(self, self._fullpath(path))
 
-    def exists(self, pathstr):
-        return DataSource.exists(self, self._fullpath(pathstr))
+    def abspath(self, path):
+        return DataSource.abspath(self, self._fullpath(path))
 
-    def open(self, pathstr, mode='r'):
-        return DataSource.open(self, self._fullpath(pathstr), mode)
+    def exists(self, path):
+        #print 'Respository.exists:', path
+        return DataSource.exists(self, self._fullpath(path))
+
+    def open(self, path, mode='r'):
+        #print 'Repository.open:', path
+        return DataSource.open(self, self._fullpath(path), mode)
+
+    def listdir(self):
+        '''List files in the source Repository.'''
+        if self._isurl(self._baseurl):
+            raise NotImplementedError
+        else:
+            return os.listdir(self._baseurl)
