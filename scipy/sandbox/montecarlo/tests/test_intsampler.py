@@ -2,8 +2,7 @@
 
 """ Test functions for generic discrete sampler 'intsampler'
 
-Author: Ed Schofield, 2003-2006
-Copyright: Ed Schofield, 2003-2006
+Author: Ed Schofield
 
 """
 
@@ -22,15 +21,12 @@ import sys
 from numpy.testing import *
 set_package_path()
 from numpy import *
-#from scipy.montecarlo import *
 from scipy.sandbox.montecarlo import *
 from scipy import stats
 restore_path()
 
-import unittest
 
-
-class TestIntSampler(NumpyTestCase):
+class test_int_sampler(NumpyTestCase):
     def check_simple(self):
         # Sample from a Poisson distribution, P(lambda = 10.0)
         lam = 10.0

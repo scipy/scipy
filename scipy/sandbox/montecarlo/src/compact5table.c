@@ -97,16 +97,6 @@ Sampler* init_sampler5tbl(double* weights, unsigned long n, unsigned long seed)
                 break;
             }
         }
-        // if (sampler->prob1event == -1)
-        // {
-        //     /* This has been tested above, so I think this should never
-        //        occur...  */
-        //     fprintf(stderr, "Error: invalid arguments to init_sampler5tbl()." \
-        //             "The sum of the probabilities is zero.  Aborting!\n");
-        //     free(P);
-        //     free(sampler);
-        //     return NULL;
-        // }
     }
     else
     {
@@ -207,11 +197,12 @@ unsigned long Dran(Sampler* sampler)
      */
     if (j - sampler->t4 >= sampler->sizeEE)
     {
-        /* The random number generated is larger than the sizes of all tables.
-         * This should happen only very rarely. For now, just generate another
-         * random number. */
-        fprintf(stderr, 
-            "Debug: random number is larger than the sizes of all tables!");
+        /* The random number generated is larger than the sizes of all
+         * tables. Why does this happen? Debug this! For now, just generate
+         * another random number.
+         */
+        /* fprintf(stderr, 
+            "Debug: random number (%d) is larger than the sizes of all tables!\n", j); */
         return Dran(sampler);
     }
     else
@@ -256,11 +247,11 @@ void Dran_array(Sampler* sampler, unsigned long* output, unsigned long samplesiz
         else if (j - sampler->t4 >= sampler->sizeEE)
         {
             /* The random number generated is larger than the sizes of all
-             * tables.  This should happen only very rarely. For now, just
-             * generate another random number.
+             * tables. Why does this happen? Debug this! For now, just generate
+             * another random number.
              */
-            fprintf(stderr,
-                "Debug: random number is larger than the sizes of all tables!");
+            /* fprintf(stderr,
+                "Debug: random number (%d) is larger than the sizes of all tables\n!", j); */
             i--;
         }
         else

@@ -3,13 +3,12 @@
 # Copyright: Ed Schofield, 2005-2006
 # License: BSD-style (see LICENSE.txt at root of scipy tree)
 
-__author__ = "Ed Schofield"
-
 from __future__ import division
 import numpy
 import scipy
 from scipy.sandbox.montecarlo._intsampler import _intsampler
 
+__author__ = "Ed Schofield"
 
 class genericsampler(object):
     """A base class for other samplers.
