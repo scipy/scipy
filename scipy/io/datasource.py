@@ -4,6 +4,9 @@ dealing with data files so the researcher doesn't have to know all the
 low-level details.  Through datasource, a researcher can obtain and use a 
 file with one function call, regardless of location of the file.
 
+DataSource is meant to augment standard python libraries, not replace them.
+It should work seemlessly with standard file IO operations and the os module.
+
 DataSource files can originate locally or remotely:
 
 - local files : '/home/guido/src/local/data.txt'
@@ -14,18 +17,18 @@ and bz2 are supported.
 
 Example:
 
-    >>> # Create a DataSource and use '/home/guido/tmpdata/' for local storage.
-    >>> ds = datasource.DataSource('/home/guido/tmpdata/')
+    >>> # Create a DataSource, use os.curdir (default) for local storage.
+    >>> ds = datasource.DataSource()
     >>>
-    >>> # Open a remote, gzipped file.
+    >>> # Open a remote file.
     >>> # DataSource downloads the file, stores it locally in:
-    >>> #     '/home/guido/tmpdata/www.scipy.org/not/real/data.txt.gz'
-    >>> # opens the file with the gzip module and returns a file-like object.
-    >>>
-    >>> fp = ds.open('http://www.scipy.org/not/real/data.txt.gz')
-    >>> fp.read()    # Use the file
+    >>> #     './www.google.com/index.html'
+    >>> # opens the file and returns a file object.
+    >>> fp = ds.open('http://www.google.com/index.html')
+    >>> 
+    >>> # Use the file as you normally would
+    >>> fp.read()
     >>> fp.close()
-    >>> del ds, fp
 
 """
 
@@ -79,12 +82,13 @@ class DataSource (object):
         >>> ds.open('/home/guido/foobar.txt')
 
         Opened file exists in tempdir like: /tmp/tmpUnhcvM/foobar.txt
+        Temporary directories are deleted when the DataSource is deleted.
 
     """
 
     def __init__(self, destpath=os.curdir):
         if destpath:
-            self._destpath = destpath
+            self._destpath = os.path.abspath(destpath)
             self._istmpdest = False
         else:
             self._destpath = tempfile.mkdtemp()
@@ -103,7 +107,7 @@ class DataSource (object):
     def _iswritemode(self, mode):
         """Test if the given mode will open a file for writing."""
 
-        # Currently only used to test the bz2 files.  Not thoroughly tested!
+        # Currently only used to test the bz2 files.
         _writemodes = ("w", "+")
         for c in mode:
             if c in _writemodes:
@@ -193,7 +197,19 @@ class DataSource (object):
         return None
 
     def abspath(self, path):
-        """Return an absolute path in the DataSource destination directory.
+        """Return absolute path in the DataSource destination directory.
+
+        Functionality is idential to os.path.abspath.  Returned path is not 
+        guaranteed to exist.
+
+        *Parameters*:
+
+            path : {string}
+                Can be a local file or a remote URL.
+
+        *Returns*:
+
+            Complete path, rooted in the DataSource destination directory.
 
         """
 
@@ -207,8 +223,33 @@ class DataSource (object):
     def exists(self, path):
         """Test if path exists.
 
-        Tests for local files, locally cached URLs and remote URLs.
+        Test if path exists as (in this order):
+        - a local file
+        - a remote URLs that have been downloaded and stored locally in the 
+          DataSource directory
+        - a remote URL that has not been downloaded, but is valid and 
+          accessible.
 
+        When path is an URL, `exist` will return True if it's stored
+        locally in the DataSource directory, or is a valid remote URL.  
+
+        *Parameters*:
+
+            path : {string}
+                Can be a local file or a remote URL.
+
+        *Returns*:
+
+            boolean
+
+        *See Also*:
+
+            `abspath`
+
+        *Examples*
+
+            >>> ds = datasource.DataSource()
+            >>> ds.exists('http://www.google.com')
         """
 
         upath = self.abspath(path)
