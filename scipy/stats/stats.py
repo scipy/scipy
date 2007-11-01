@@ -348,8 +348,9 @@ def gmean(a, axis=0):
 
     Parameters
     ----------
-    a : array
+    a : array of positive values
     axis : int or None
+    zero_sub : value to substitute for zero values. Default is 0.
 
     Returns
     -------
@@ -357,12 +358,11 @@ def gmean(a, axis=0):
     all values in the array if axis==None.
     """
     a, axis = _chk_asarray(a, axis)
-    size = a.shape[axis]
-    prod = np.product(a, axis)
-    return np.power(prod, 1./size)
+    log_a = np.log(a)
+    return np.exp(log_a.mean(axis=axis))
 
 
-def hmean(a, axis=0):
+def hmean(a, axis=0, zero_sub=0):
     """Calculates the harmonic mean of the values in the passed array.
 
     That is:  n / (1/x1 + 1/x2 + ... + 1/xn)

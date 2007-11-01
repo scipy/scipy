@@ -500,18 +500,19 @@ class TestGMean(NumpyTestCase):
         a = (1,2,3,4)
         actual= stats.gmean(a)
         desired = power(1*2*3*4,1./4.)
-        assert_almost_equal(desired,actual,decimal=14)
+        assert_almost_equal(actual, desired,decimal=14)
 
         desired1 = stats.gmean(a,axis=-1)
-        assert_almost_equal(desired1,actual,decimal=14)
+        assert_almost_equal(actual, desired1, decimal=14)
+
     def check_1D_array(self):
         a = array((1,2,3,4), float32)
         actual= stats.gmean(a)
         desired = power(1*2*3*4,1./4.)
-        assert_almost_equal(desired,actual,decimal=7)
+        assert_almost_equal(actual, desired, decimal=7)
 
         desired1 = stats.gmean(a,axis=-1)
-        assert_almost_equal(desired1,actual,decimal=7)
+        assert_almost_equal(actual, desired1, decimal=7)
 
     def check_2D_array_default(self):
         a = array(((1,2,3,4),
@@ -519,10 +520,10 @@ class TestGMean(NumpyTestCase):
                    (1,2,3,4)))
         actual= stats.gmean(a)
         desired = array((1,2,3,4))
-        assert_array_almost_equal(desired,actual,decimal=14)
+        assert_array_almost_equal(actual, desired, decimal=14)
 
         desired1 = stats.gmean(a,axis=0)
-        assert_array_almost_equal(desired1,actual,decimal=14)
+        assert_array_almost_equal(actual, desired1, decimal=14)
 
     def check_2D_array_dim1(self):
         a = array(((1,2,3,4),
@@ -531,25 +532,30 @@ class TestGMean(NumpyTestCase):
         actual= stats.gmean(a, axis=1)
         v = power(1*2*3*4,1./4.)
         desired = array((v,v,v))
-        assert_array_almost_equal(desired,actual,decimal=14)
+        assert_array_almost_equal(actual, desired, decimal=14)
+
+    def check_large_values(self):
+        a = array([1e100, 1e200, 1e300])
+        actual = stats.gmean(a)
+        assert_approx_equal(actual, 1e200, significant=14)
 
 class TestHMean(NumpyTestCase):
     def check_1D_list(self):
         a = (1,2,3,4)
         actual= stats.hmean(a)
         desired =  4. / (1./1 + 1./2 + 1./3 + 1./4)
-        assert_almost_equal(desired,actual,decimal=14)
+        assert_almost_equal(actual, desired, decimal=14)
 
         desired1 = stats.hmean(array(a),axis=-1)
-        assert_almost_equal(desired1,actual,decimal=14)
+        assert_almost_equal(actual, desired1, decimal=14)
     def check_1D_array(self):
         a = array((1,2,3,4), float64)
         actual= stats.hmean(a)
         desired =  4. / (1./1 + 1./2 + 1./3 + 1./4)
-        assert_almost_equal(desired,actual,decimal=14)
+        assert_almost_equal(actual, desired, decimal=14)
 
         desired1 = stats.hmean(a,axis=-1)
-        assert_almost_equal(desired1,actual,decimal=14)
+        assert_almost_equal(actual, desired1, decimal=14)
 
     def check_2D_array_default(self):
         a = array(((1,2,3,4),
@@ -557,10 +563,10 @@ class TestHMean(NumpyTestCase):
                    (1,2,3,4)))
         actual = stats.hmean(a)
         desired = array((1.,2.,3.,4.))
-        assert_array_almost_equal(desired,actual,decimal=14)
+        assert_array_almost_equal(actual, desired, decimal=14)
 
         actual1 = stats.hmean(a,axis=0)
-        assert_array_almost_equal(desired,actual1,decimal=14)
+        assert_array_almost_equal(actual1, desired, decimal=14)
 
     def check_2D_array_dim1(self):
         a = array(((1,2,3,4),
@@ -570,7 +576,7 @@ class TestHMean(NumpyTestCase):
         v = 4. / (1./1 + 1./2 + 1./3 + 1./4)
         desired1 = array((v,v,v))
         actual1 = stats.hmean(a, axis=1)
-        assert_array_almost_equal(desired1,actual1,decimal=14)
+        assert_array_almost_equal(actual1, desired1, decimal=14)
 
 
 class TestMean(NumpyTestCase):
@@ -592,16 +598,18 @@ class TestMean(NumpyTestCase):
         a = [[1.0, 2.0, 3.0],
              [2.0, 4.0, 6.0],
              [8.0, 12.0, 7.0]]
-        A = array(a,'d')
-        N1,N2 = (3,3)
-        mn1 = zeros(N2,'d')
+        A = array(a)
+        N1, N2 = (3, 3)
+        mn1 = zeros(N2, dtype=float)
         for k in range(N1):
             mn1 += A[k,:] / N1
-        allclose(stats.mean(a),mn1,rtol=1e-13,atol=1e-13)
-        mn2 = zeros(N1,'d')
+        assert_almost_equal(stats.mean(a, axis=0), mn1, decimal=13)
+        assert_almost_equal(stats.mean(a), mn1, decimal=13)
+        mn2 = zeros(N1, dtype=float)
         for k in range(N2):
-            mn2 += A[:,k] / N2
-        allclose(stats.mean(a,axis=0),mn2,rtol=1e-13,atol=1e-13)
+            mn2 += A[:,k]
+        mn2 /= N2
+        assert_almost_equal(stats.mean(a, axis=1), mn2, decimal=13)
 
     def check_ravel(self):
         a = rand(5,3,5)
