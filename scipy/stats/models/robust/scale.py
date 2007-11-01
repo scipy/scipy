@@ -11,7 +11,7 @@ def unsqueeze(data, axis, oldshape):
     >>> m = mean(x, axis=1)
     >>> m.shape
     (3, 5)
-    >>> unsqueeze(m, 1, x.shape)
+    >>> m = unsqueeze(m, 1, x.shape)
     >>> m.shape
     (3, 1, 5)
     >>>
@@ -19,7 +19,7 @@ def unsqueeze(data, axis, oldshape):
 
     newshape = list(oldshape)
     newshape[axis] = 1
-    data.shape = newshape
+    return data.reshape(newshape)
 
 
 def MAD(a, c=0.6745, axis=0):
@@ -32,7 +32,7 @@ def MAD(a, c=0.6745, axis=0):
 
     a = N.asarray(a, N.float64)
     d = median(a, axis=axis)
-    unsqueeze(d, axis, a.shape)
+    d = unsqueeze(d, axis, a.shape)
 
     return median(N.fabs(a - d) / c, axis=axis)
 
@@ -49,7 +49,7 @@ class Huber:
 
     tmp = 2 * norm.cdf(c) - 1
     gamma = tmp + c**2 * (1 - tmp) - 2 * c * norm.pdf(c)
-    del(tmp)
+    del tmp 
 
     niter = 30
 
@@ -76,8 +76,8 @@ class Huber:
         else:
             self.scale = scale
 
-        unsqueeze(self.scale, self.axis, self.a.shape)
-        unsqueeze(self.mu, self.axis, self.a.shape)
+        self.scale = unsqueeze(self.scale, self.axis, self.a.shape)
+        self.mu = unsqueeze(self.mu, self.axis, self.a.shape)
 
         for donothing in self:
             pass
@@ -97,7 +97,7 @@ class Huber:
             mu = N.sum(subset * a + (1 - Huber.c) * subset, axis=self.axis) / a.shape[self.axis]
         else:
             mu = self.mu
-        unsqueeze(mu, self.axis, self.a.shape)
+        self.axis = unsqueeze(mu, self.axis, self.a.shape)
 
         scale = N.sum(subset * (a - mu)**2, axis=self.axis) / (self.n * Huber.gamma - N.sum(1. - subset, axis=self.axis) * Huber.c**2)
 
@@ -111,7 +111,7 @@ class Huber:
             self.scale = scale
             self.mu = mu
 
-        unsqueeze(self.scale, self.axis, self.a.shape)
+        self.scale = unsqueeze(self.scale, self.axis, self.a.shape)
 
         if self.iter >= self.niter:
             raise StopIteration
