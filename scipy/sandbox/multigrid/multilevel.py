@@ -24,14 +24,14 @@ def poisson_problem1D(N):
     O =  -ones(N)
     return scipy.sparse.spdiags([D,O,O],[0,-1,1],N,N).tocoo().tocsr() #eliminate explicit zeros
 
-def poisson_problem2D(N):
+def poisson_problem2D(N,epsilon=1.0):
     """
     Return a sparse CSR matrix for the 2d poisson problem
     with standard 5-point finite difference stencil on a
     square N-by-N grid.
     """
-    D = 4*ones(N*N)
-    T =  -ones(N*N)
+    D = (2 + 2*epsilon)*ones(N*N)
+    T =  -epsilon * ones(N*N)
     O =  -ones(N*N)
     T[N-1::N] = 0
     return scipy.sparse.spdiags([D,O,T,T,O],[0,-N,-1,1,N],N*N,N*N).tocoo().tocsr() #eliminate explicit zeros
@@ -208,7 +208,9 @@ class multilevel_solver:
             #use direct solver on coarsest level
             #TODO reuse factors for efficiency?
             coarse_x[:] = spsolve(self.As[-1],coarse_b).reshape(coarse_x.shape)
-            #coarse_x[:] = scipy.linalg.cg(self.As[-1],coarse_b,tol=1e-12)[0]
+            #coarse_x[:] = scipy.linalg.cg(self.As[-1],coarse_b,tol=1e-12)[0].reshape(coarse_x.shape)
+            #A_inv = asarray(scipy.linalg.pinv2(self.As[-1].todense()))
+            #coarse_x[:] = scipy.dot(A_inv,coarse_b)
             #print "coarse residual norm",scipy.linalg.norm(coarse_b - self.As[-1]*coarse_x)
         else:
             self.__solve(lvl+1,coarse_x,coarse_b)
@@ -230,18 +232,17 @@ if __name__ == '__main__':
     from scipy import *
     candidates = None
     blocks = None
-    #A = poisson_problem2D(100)
+    A = poisson_problem2D(40,1e-2)
     #A = io.mmread("rocker_arm_surface.mtx").tocsr()
     #A = io.mmread("9pt-100x100.mtx").tocsr()
     #A = io.mmread("/home/nathan/Desktop/9pt/9pt-100x100.mtx").tocsr()
     #A = io.mmread("/home/nathan/Desktop/BasisShift_W_EnergyMin_Luke/9pt-5x5.mtx").tocsr()
 
-    A = io.mmread('tests/sample_data/elas30_A.mtx').tocsr()
-    candidates = io.mmread('tests/sample_data/elas30_nullspace.mtx')
-    #candidates = [ array(candidates[:,x]) for x in range(candidates.shape[1]) ]
-    blocks = arange(A.shape[0]/2).repeat(2)
+    #A = io.mmread('tests/sample_data/elas30_A.mtx').tocsr()
+    #candidates = io.mmread('tests/sample_data/elas30_nullspace.mtx')
+    #blocks = arange(A.shape[0]/2).repeat(2)
 
-    ml = smoothed_aggregation_solver(A,candidates,blocks=blocks,epsilon=0,max_coarse=100,max_levels=2)
+    ml = smoothed_aggregation_solver(A,candidates,blocks=blocks,epsilon=0.08,max_coarse=100,max_levels=10)
     #ml = ruge_stuben_solver(A)
 
     x = rand(A.shape[0])

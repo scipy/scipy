@@ -182,7 +182,7 @@ def sa_smoothed_prolongator(A,T,epsilon,omega,blocks=None):
     P = T - (D_inv_A*T)
 
     #S = (spidentity(A.shape[0]).tocsr() - D_inv_A) #TODO drop this?
-    #P = S * ( S * T)
+    #P = S *(S * ( S * T))
 
     return P
 
@@ -200,8 +200,6 @@ def sa_interpolation(A,candidates,epsilon=0.0,omega=4.0/3.0,blocks=None,AggOp=No
 
     T,coarse_candidates = sa_fit_candidates(AggOp,candidates)
     #T = AggOp #TODO test
-
-    A_filtered = sa_filtered_matrix(A,epsilon,blocks) #use filtered matrix for anisotropic problems
 
     P = sa_smoothed_prolongator(A,T,epsilon,omega,blocks)
 

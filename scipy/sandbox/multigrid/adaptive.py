@@ -1,18 +1,18 @@
 import numpy,scipy,scipy.sparse
 from numpy import sqrt, ravel, diff, zeros, zeros_like, inner, concatenate, \
-                  asarray, hstack, ascontiguousarray, isinf
+                  asarray, hstack, ascontiguousarray, isinf, dot
 from numpy.random import randn
 from scipy.sparse import csr_matrix,coo_matrix
 
 from relaxation import gauss_seidel
 from multilevel import multilevel_solver
 from sa import sa_constant_interpolation,sa_fit_candidates
-from utils import approximate_spectral_radius,hstack_csr,vstack_csr,expand_into_blocks
+from utils import approximate_spectral_radius,hstack_csr,vstack_csr,expand_into_blocks,diag_sparse
 
 
 
 def augment_candidates(AggOp, old_Q, old_R, new_candidate):
-    #TODO update P also
+    #TODO update P and A also
 
     K = old_R.shape[1]
 
@@ -124,7 +124,7 @@ def sa_hierarchy(A,B,AggOps):
 
 
 class adaptive_sa_solver:
-    def __init__(self, A, blocks=None, max_levels=10, max_coarse=100,\
+    def __init__(self, A, blocks=None, aggregation=None, max_levels=10, max_coarse=100,\
                  max_candidates=1, mu=5, epsilon=0.1):
 
         self.A = A
@@ -138,8 +138,9 @@ class adaptive_sa_solver:
         x,AggOps = self.__initialization_stage(A, blocks = blocks, \
                                                max_levels = max_levels, \
                                                max_coarse = max_coarse, \
-                                               mu = mu, epsilon = epsilon)
-
+                                               mu = mu, epsilon = epsilon, \
+                                               aggregation = aggregation ) 
+        
         #create SA using x here
         As,Ps,Ts,Bs = sa_hierarchy(A,x,AggOps)
 
@@ -147,8 +148,20 @@ class adaptive_sa_solver:
             x = self.__develop_new_candidate(As,Ps,Ts,Bs,AggOps,mu=mu)
 
             #TODO which is faster?
-            #As,Ps,Ts,Bs = self.__augment_cycle(As,Ps,Ts,Bs,AggOps,x)
-            B = hstack((Bs[0],x))
+            As,Ps,Ts,Bs = self.__augment_cycle(As,Ps,Ts,Bs,AggOps,x)
+
+            #B = hstack((Bs[0],x))
+            #As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
+
+        #improve candidates?
+        if True:
+            print "improving candidates"
+            B = Bs[0]
+            for i in range(max_candidates):
+                B = B[:,1:]
+                As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
+                x = self.__develop_new_candidate(As,Ps,Ts,Bs,AggOps,mu=mu)    
+                B = hstack((B,x))
             As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
 
         self.Ts = Ts
@@ -156,12 +169,12 @@ class adaptive_sa_solver:
         self.AggOps = AggOps
         self.Bs = Bs
 
+    def __initialization_stage(self,A,blocks,max_levels,max_coarse,mu,epsilon,aggregation):
+        if aggregation is not None:
+            max_coarse = 0
+            max_levels = len(aggregation) + 1
 
-    def __initialization_stage(self,A,blocks,max_levels,max_coarse,mu,epsilon):
-        AggOps = []
-        Ps     = []
-
-        # aSA parameters
+        # aSA parameters 
         # mu      - number of test relaxation iterations
         # epsilon - minimum acceptable relaxation convergence factor
 
@@ -177,9 +190,14 @@ class adaptive_sa_solver:
         #TODO test convergence rate here
 
         As = [A]
+        AggOps = []
+        Ps = []
 
-        while len(AggOps) + 1 < max_levels  and A_l.shape[0] > max_coarse:
-            W_l   = sa_constant_interpolation(A_l,epsilon=0,blocks=blocks) #step 4b
+        while len(AggOps) + 1 < max_levels and A_l.shape[0] > max_coarse:
+            if aggregation is None:
+                W_l   = sa_constant_interpolation(A_l,epsilon=0,blocks=blocks) #step 4b
+            else:
+                W_l   = aggregation[len(AggOps)]
             P_l,x = sa_fit_candidates(W_l,x)                             #step 4c
             I_l   = smoothed_prolongator(P_l,A_l)                          #step 4d
             A_l   = I_l.T.tocsr() * A_l * I_l                              #step 4e
@@ -286,8 +304,11 @@ if __name__ == '__main__':
     from multilevel import poisson_problem1D,poisson_problem2D
 
     blocks = None
+    aggregation = None
 
-    A = poisson_problem2D(100)
+    #A = poisson_problem2D(200,1e-2)
+    #aggregation = [ sa_constant_interpolation(A*A*A,epsilon=0.0) ] 
+
     #A = io.mmread("tests/sample_data/laplacian_41_3dcube.mtx").tocsr()
     #A = io.mmread("laplacian_40_3dcube.mtx").tocsr()
     #A = io.mmread("/home/nathan/Desktop/9pt/9pt-100x100.mtx").tocsr()
@@ -301,17 +322,17 @@ if __name__ == '__main__':
     blocks = arange(A.shape[0]/2).repeat(2)
 
     from time import clock; start = clock()
-    asa = adaptive_sa_solver(A,max_candidates=5,mu=6,blocks=blocks)
+    asa = adaptive_sa_solver(A,max_candidates=3,mu=5,blocks=blocks,aggregation=aggregation)
     print "Adaptive Solver Construction: %s seconds" % (clock() - start); del start
 
-    #scipy.random.seed(0)  #make tests repeatable
+    scipy.random.seed(0)  #make tests repeatable
     x = randn(A.shape[0])
     b = A*randn(A.shape[0])
     #b = zeros(A.shape[0])
 
 
     print "solving"
-    if True:
+    if False:
         x_sol,residuals = asa.solver.solve(b,x0=x,maxiter=20,tol=1e-12,return_residuals=True)
     else:
         residuals = []
@@ -352,10 +373,11 @@ if __name__ == '__main__':
         pcolor(x.reshape(sqrt(len(x)),sqrt(len(x))))
         show()
 
+  
     for c in asa.Bs[0].T:
+        #plot2d(c)
         plot2d_arrows(c)
         print "candidate Rayleigh quotient",dot(c,A*c)/dot(c,c)
-
 
 
     ##W = asa.AggOps[0]*asa.AggOps[1]
