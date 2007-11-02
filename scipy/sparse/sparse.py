@@ -959,10 +959,10 @@ class csc_matrix(_cs_matrix):
                 # It's a tuple of matrix dimensions (M, N)
                 self.shape = arg1   #spmatrix checks for errors here
                 M, N = self.shape
-                self.dtype = getdtype(dtype, default=float)
-                self.data = zeros((nzmax,), self.dtype)
+                self.dtype   = getdtype(dtype, default=float)
+                self.data    = zeros((nzmax,), self.dtype)
                 self.indices = zeros((nzmax,), intc)
-                self.indptr = zeros((N+1,), intc)
+                self.indptr  = zeros((N+1,), intc)
             else:
                 try:
                     # Try interpreting it as (data, ij)
@@ -977,14 +977,10 @@ class csc_matrix(_cs_matrix):
                         raise ValueError, "unrecognized form for csc_matrix constructor"
                     else:
                         self.dtype = getdtype(dtype, data)
-                        if copy:
-                            self.data    = array(data)
-                            self.indices = array(indices)
-                            self.indptr  = array(indptr)
-                        else:
-                            self.data    = asarray(data)
-                            self.indices = asarray(indices)
-                            self.indptr  = asarray(indptr)
+                        self.dtype   = getdtype(dtype, data)
+                        self.data    = array(data, copy=copy, dtype=self.dtype)
+                        self.indices = array(indices, copy=copy)
+                        self.indptr  = array(indptr, copy=copy)
                 else:
                     # (data, ij) format
                     other = coo_matrix((data, ij), dims=dims )
@@ -1248,10 +1244,10 @@ class csr_matrix(_cs_matrix):
                 # It's a tuple of matrix dimensions (M, N)
                 self.shape = arg1   #spmatrix checks for errors here
                 M, N = self.shape
-                self.dtype = getdtype(dtype, default=float)
-                self.data = zeros((nzmax,), self.dtype)
+                self.dtype   = getdtype(dtype, default=float)
+                self.data    = zeros((nzmax,), self.dtype)
                 self.indices = zeros((nzmax,), intc)
-                self.indptr = zeros((M+1,), intc)
+                self.indptr  = zeros((M+1,), intc)
             else:
                 try:
                     # Try interpreting it as (data, ij)
@@ -1265,15 +1261,10 @@ class csr_matrix(_cs_matrix):
                     except:
                         raise ValueError, "unrecognized form for csr_matrix constructor"
                     else:
-                        self.dtype = getdtype(dtype, data)
-                        if copy:
-                            self.data    = array(data, dtype=self.dtype)
-                            self.indices = array(indices)
-                            self.indptr  = array(indptr)
-                        else:
-                            self.data    = asarray(data, dtype=self.dtype)
-                            self.indices = asarray(indices)
-                            self.indptr  = asarray(indptr)
+                        self.dtype   = getdtype(dtype, data)
+                        self.data    = array(data, copy=copy, dtype=self.dtype)
+                        self.indices = array(indices, copy=copy)
+                        self.indptr  = array(indptr, copy=copy)
                 else:
                     # (data, ij) format
                     other = coo_matrix((data, ij), dims=dims )
