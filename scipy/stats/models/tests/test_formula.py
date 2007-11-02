@@ -187,26 +187,26 @@ class TestFormula(NumpyTestCase):
 
     def test_factor1(self):
         f = ['a','b','c']*10
-        fac = formula.Factor('ff', set(f))
+        fac = formula.Factor('ff', f)
         fac.namespace = {'ff':f}
         self.assertEquals(list(fac.values()), f)
 
     def test_factor2(self):
         f = ['a','b','c']*10
-        fac = formula.Factor('ff', set(f))
+        fac = formula.Factor('ff', f)
         fac.namespace = {'ff':f}
         self.assertEquals(fac().shape, (3,30))
 
     def test_factor3(self):
         f = ['a','b','c']*10
-        fac = formula.Factor('ff', set(f))
+        fac = formula.Factor('ff', f)
         fac.namespace = {'ff':f}
         m = fac.main_effect(reference=1)
         self.assertEquals(m().shape, (2,30))
 
     def test_factor4(self):
         f = ['a','b','c']*10
-        fac = formula.Factor('ff', set(f))
+        fac = formula.Factor('ff', f)
         fac.namespace = {'ff':f}
         m = fac.main_effect(reference=2)
         r = N.array([N.identity(3)]*10)

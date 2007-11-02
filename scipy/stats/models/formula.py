@@ -5,6 +5,11 @@ import copy
 import types
 import numpy as N
 
+try:
+    set
+except NameError:
+    from sets import Set as set
+
 __docformat__ = 'restructuredtext'
 
 default_namespace = {}
