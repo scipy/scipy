@@ -62,31 +62,54 @@ _file_openers = {".gz":gzip.open, ".bz2":bz2.BZ2File, None:file}
 
 
 class DataSource (object):
-    """A generic data source (file, http, ftp, ...).
+    """A generic data source file (file, http, ftp, ...).
 
-    DataSource could be from a local file or remote file/URL.  The file may
-    also be compressed or uncompressed.
+    DataSources could be local files or remote files/URLs.  The files may
+    also be compressed or uncompressed.  DataSource hides some of the low-level
+    details of downloading the file, allowing you to simply pass in a valid
+    file path (or URL) and obtain a file object.
 
-    Ex URL DataSources:
-        Initialize DataSource with a local directory.  Default is os.curdir
+    Methods:
 
-        >>> ds = DataSource('/home/guido')
-        >>> ds.open('http://fake.xyz.web/site/xyz.txt')
+        - exists : test if the file exists locally or remotely
+        - abspath : get absolute path of the file in the DataSource directory
+        - open : open the file
 
-        Opened file exists here:  /home/guido/site/xyz.txt
+    Example URL DataSource::
 
-    Ex using DataSource for temporary files:
-        Initialize DataSource with 'None' for local directory.
+        # Initialize DataSource with a local directory, default is os.curdir.
+        ds = DataSource('/home/guido')
+        
+        # Open remote file.
+        # File will be downloaded and opened from here:
+        #     /home/guido/site/xyz.txt
+        ds.open('http://fake.xyz.web/site/xyz.txt')
+        
+    Example using DataSource for temporary files::
 
-        >>> ds = DataSource(None)
-        >>> ds.open('/home/guido/foobar.txt')
+        # Initialize DataSource with 'None' for the local directory.
+        ds = DataSource(None)
+        
+        # Open local file.
+        # Opened file exists in a temporary directory like:
+        #     /tmp/tmpUnhcvM/foobar.txt
+        # Temporary directories are deleted when the DataSource is deleted.
+        ds.open('/home/guido/foobar.txt')
 
-        Opened file exists in tempdir like: /tmp/tmpUnhcvM/foobar.txt
-        Temporary directories are deleted when the DataSource is deleted.
+    *Notes*:
+        BUG : URLs require a scheme string ('http://') to be used.
+              www.google.com will fail.
+              
+              >>> repos.exists('www.google.com/index.html')
+              False
 
+              >>> repos.exists('http://www.google.com/index.html')
+              True
+ 
     """
 
     def __init__(self, destpath=os.curdir):
+        """Create a DataSource with a local path at destpath."""
         if destpath:
             self._destpath = os.path.abspath(destpath)
             self._istmpdest = False
@@ -117,7 +140,7 @@ class DataSource (object):
     def _splitzipext(self, filename):
         """Split zip extension from filename and return filename.
 
-        Returns:
+        *Returns*:
             base, zip_ext : {tuple}
 
         """
@@ -138,6 +161,13 @@ class DataSource (object):
 
     def _isurl(self, path):
         """Test if path is a net location.  Tests the scheme and netloc."""
+        
+        # BUG : URLs require a scheme string ('http://') to be used.
+        #       www.google.com will fail.
+        #       Should we prepend the scheme for those that don't have it and
+        #       test that also?  Similar to the way we append .gz and test for
+        #       for compressed versions of files.
+
         scheme, netloc, upath, uparams, uquery, ufrag = urlparse(path)
         return bool(scheme and netloc)
 
@@ -171,7 +201,7 @@ class DataSource (object):
         return upath
 
     def _findfile(self, path):
-        """Searches for path and returns full path if found.
+        """Searches for ``path`` and returns full path if found.
 
         If path is an URL, _findfile will cache a local copy and return
         the path to the cached file.
@@ -197,10 +227,13 @@ class DataSource (object):
         return None
 
     def abspath(self, path):
-        """Return absolute path in the DataSource destination directory.
+        """Return absolute path of ``path`` in the DataSource directory.
 
-        Functionality is idential to os.path.abspath.  Returned path is not 
-        guaranteed to exist.
+        If ``path`` is an URL, the ``abspath`` will be either the location
+        the file exists locally or the location it would exist when opened
+        using the ``open`` method.
+
+        The functionality is idential to os.path.abspath.
 
         *Parameters*:
 
@@ -210,6 +243,10 @@ class DataSource (object):
         *Returns*:
 
             Complete path, rooted in the DataSource destination directory.
+
+        *See Also*:
+
+            `open` : Method that downloads and opens files.
 
         """
 
@@ -221,17 +258,15 @@ class DataSource (object):
         return os.path.join(self._destpath, netloc, upath.strip(os.sep))
 
     def exists(self, path):
-        """Test if path exists.
+        """Test if ``path`` exists.
 
-        Test if path exists as (in this order):
-        - a local file
-        - a remote URLs that have been downloaded and stored locally in the 
-          DataSource directory
+        Test if ``path`` exists as (and in this order):
+
+        - a local file.
+        - a remote URL that have been downloaded and stored locally in the 
+          DataSource directory.
         - a remote URL that has not been downloaded, but is valid and 
           accessible.
-
-        When path is an URL, `exist` will return True if it's stored
-        locally in the DataSource directory, or is a valid remote URL.  
 
         *Parameters*:
 
@@ -246,10 +281,13 @@ class DataSource (object):
 
             `abspath`
 
-        *Examples*
+        *Notes*
 
-            >>> ds = datasource.DataSource()
-            >>> ds.exists('http://www.google.com')
+            When ``path`` is an URL, ``exist`` will return True if it's either
+            stored locally in the DataSource directory, or is a valid remote 
+            URL.  DataSource does not discriminate between to two, the file
+            is accessible if it exists in either location.
+
         """
 
         upath = self.abspath(path)
@@ -267,16 +305,29 @@ class DataSource (object):
             return False
 
     def open(self, path, mode='r'):
-        """Open path and return file object.
+        """Open ``path`` with ``mode`` and return the file object.
 
-        If path is an URL, it will be downloaded, stored in the DataSource
-        directory and opened.
+        If ``path`` is an URL, it will be downloaded, stored in the DataSource
+        directory and opened from there.
 
-        TODO: Currently only opening for reading has been tested.  There is no
-              support for opening a file for writing which doesn't exist yet
-              (creating a file).
+        *Parameters*:
+
+            path : {string}
+
+            mode : {string}, optional
+
+
+        *Returns*:
+
+            file object
 
         """
+
+        # TODO: There is no support for opening a file for writing which 
+        #       doesn't exist yet (creating a file).  Should there be?
+
+        # TODO: Add a ``subdir`` parameter for specifying the subdirectory
+        #       used to store URLs in self._destpath.  
 
         if self._isurl(path) and self._iswritemode(mode):
             raise ValueError("URLs are not writeable")
@@ -293,30 +344,39 @@ class DataSource (object):
 
 
 class Repository (DataSource):
-    """A data repository where multiple DataSource's share one base URL.
+    """A data repository where multiple DataSource's share a base URL/directory.
 
     Use a Repository when you will be working with multiple files from one
     base URL or directory.  Initialize the Respository with the base URL,
     then refer to each file only by it's filename.
 
-    >>> repos = Repository('/home/user/data/dir/')
-    >>> fp = repos.open('data01.txt')
-    >>> fp.analyze()
-    >>> fp.close()
+    Methods:
 
-    Similarly you could use a URL for a repository:
-    >>> repos = Repository('http://www.xyz.edu/data')
+        - exists : test if the file exists locally or remotely
+        - abspath : get absolute path of the file in the DataSource directory
+        - open : open the file
+
+    Toy example::
+    
+        # Analyze all files in the repository.
+        repos = Repository('/home/user/data/dir/')
+        for filename in filelist:
+            fp = repos.open(filename)
+            fp.analyze()
+            fp.close()
+
+        # Similarly you could use a URL for a repository.
+        repos = Repository('http://www.xyz.edu/data')
 
     """
 
     def __init__(self, baseurl, destpath=os.curdir):
+        """Create a Repository with a shared url or directory of baseurl."""
         DataSource.__init__(self, destpath=destpath)
         self._baseurl = baseurl
 
     def _fullpath(self, path):
-        '''Return complete path for path.  Prepends baseurl if necessary.'''
-        #print 'Repository._fullpath:', path
-        #print '          ._baseurl: ', self._baseurl
+        """Return complete path for path.  Prepends baseurl if necessary."""
         splitpath = path.split(self._baseurl, 2)
         if len(splitpath) == 1:
             result = os.path.join(self._baseurl, path)
@@ -325,17 +385,21 @@ class Repository (DataSource):
         return result
 
     def _findfile(self, path):
+        """Extend DataSource method to add baseurl to ``path``."""
         #print 'Repository._findfile:', path
         return DataSource._findfile(self, self._fullpath(path))
 
     def abspath(self, path):
+        """Extend DataSource method to add baseurl to ``path``."""
         return DataSource.abspath(self, self._fullpath(path))
 
-    def exists(self, path):
+    def exists(self, path): 
+        """Extend DataSource method to add baseurl to ``path``."""
         #print 'Respository.exists:', path
         return DataSource.exists(self, self._fullpath(path))
 
     def open(self, path, mode='r'):
+        """Extend DataSource method to add baseurl to ``path``."""
         #print 'Repository.open:', path
         return DataSource.open(self, self._fullpath(path), mode)
 
