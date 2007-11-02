@@ -136,8 +136,14 @@ class TestDataSourceExists(NumpyTestCase):
         self.assertEqual(self.ds.exists(invalid_httpurl()), False)
 
     def test_ValidFile(self):
+        # Test valid file in destpath
         tmpfile = valid_textfile(self.tmpdir)
         assert self.ds.exists(tmpfile)
+        # Test valid local file not in destpath
+        localdir = mkdtemp()
+        tmpfile = valid_textfile(localdir)
+        assert self.ds.exists(tmpfile)
+        rmtree(localdir)
 
     def test_InvalidFile(self):
         tmpfile = invalid_textfile(self.tmpdir)
@@ -183,9 +189,11 @@ class TestDataSourceAbspath(NumpyTestCase):
 
 class TestRespositoryAbspath(NumpyTestCase):
     def setUp(self):
-        self.repos = datasource.Repository(valid_baseurl(), None)
+        self.tmpdir = mkdtemp()
+        self.repos = datasource.Repository(valid_baseurl(), self.tmpdir)
 
     def tearDown(self):
+        rmtree(self.tmpdir)
         del self.repos
 
     def test_ValidHTTP(self):
@@ -194,6 +202,54 @@ class TestRespositoryAbspath(NumpyTestCase):
                                   upath.strip(os.sep))
         filepath = self.repos.abspath(valid_httpfile())
         self.assertEqual(local_path, filepath)
+
+
+class TestRepositoryExists(NumpyTestCase):
+    def setUp(self):
+        self.tmpdir = mkdtemp()
+        self.repos = datasource.Repository(valid_baseurl(), self.tmpdir)
+
+    def tearDown(self):
+        rmtree(self.tmpdir)
+        del self.repos
+
+    def test_ValidFile(self):
+        # Create local temp file
+        tmpfile = valid_textfile(self.tmpdir)
+        assert self.repos.exists(tmpfile)
+
+    def test_InvalidFile(self):
+        tmpfile = invalid_textfile(self.tmpdir)
+        self.assertEqual(self.repos.exists(tmpfile), False)
+
+    def test_RemoveHTTPFile(self):
+        assert self.repos.exists(valid_httpurl())
+
+    def test_CachedHTTPFile(self):
+        localfile = valid_httpurl()
+        # Create a locally cached temp file with an URL based
+        # directory structure.  This is similar to what Repository.open
+        # would do.
+        scheme, netloc, upath, pms, qry, frg = urlparse(localfile)
+        local_path = os.path.join(self.repos._destpath, netloc)
+        os.mkdir(local_path, 0700)
+        tmpfile = valid_textfile(local_path)
+        assert self.repos.exists(tmpfile)
+
+
+class TestOpenFunc(NumpyTestCase):
+    def setUp(self):
+        self.tmpdir = mkdtemp()
+    
+    def tearDown(self):
+        rmtree(self.tmpdir)
+
+    def test_DataSourceOpen(self):
+        local_file = valid_textfile(self.tmpdir)
+        # Test case where destpath is passed in
+        assert datasource.open(local_file, destpath=self.tmpdir)
+        # Test case where default destpath is used
+        assert datasource.open(local_file)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 """A file interface for handling local and remote data files.
-The goal of datasource is to abstract some of the file system operations when 
+The goal of datasource is to abstract some of the file system operations when
 dealing with data files so the researcher doesn't have to know all the
-low-level details.  Through datasource, a researcher can obtain and use a 
+low-level details.  Through datasource, a researcher can obtain and use a
 file with one function call, regardless of location of the file.
 
 DataSource is meant to augment standard python libraries, not replace them.
@@ -25,7 +25,7 @@ Example:
     >>> #     './www.google.com/index.html'
     >>> # opens the file and returns a file object.
     >>> fp = ds.open('http://www.google.com/index.html')
-    >>> 
+    >>>
     >>> # Use the file as you normally would
     >>> fp.read()
     >>> fp.close()
@@ -61,6 +61,31 @@ warnings.warn(_api_warning)
 _file_openers = {".gz":gzip.open, ".bz2":bz2.BZ2File, None:file}
 
 
+def open(path, mode='r', destpath=os.curdir):
+    """Open ``path`` with ``mode`` and return the file object.
+
+    If ``path`` is an URL, it will be downloaded, stored in the DataSource
+    directory and opened from there.
+
+    *Parameters*:
+
+        path : {string}
+
+        mode : {string}, optional
+
+        destpath : {string}, optional
+            Destination directory where URLs will be downloaded and stored.
+
+    *Returns*:
+
+        file object
+
+    """
+
+    ds = DataSource(destpath)
+    return ds.open(path, mode)
+
+
 class DataSource (object):
     """A generic data source file (file, http, ftp, ...).
 
@@ -69,27 +94,27 @@ class DataSource (object):
     details of downloading the file, allowing you to simply pass in a valid
     file path (or URL) and obtain a file object.
 
-    Methods:
+    *Methods*:
 
         - exists : test if the file exists locally or remotely
         - abspath : get absolute path of the file in the DataSource directory
         - open : open the file
 
-    Example URL DataSource::
+    *Example URL DataSource*::
 
         # Initialize DataSource with a local directory, default is os.curdir.
         ds = DataSource('/home/guido')
-        
+
         # Open remote file.
         # File will be downloaded and opened from here:
         #     /home/guido/site/xyz.txt
         ds.open('http://fake.xyz.web/site/xyz.txt')
-        
-    Example using DataSource for temporary files::
+
+    *Example using DataSource for temporary files*::
 
         # Initialize DataSource with 'None' for the local directory.
         ds = DataSource(None)
-        
+
         # Open local file.
         # Opened file exists in a temporary directory like:
         #     /tmp/tmpUnhcvM/foobar.txt
@@ -99,13 +124,13 @@ class DataSource (object):
     *Notes*:
         BUG : URLs require a scheme string ('http://') to be used.
               www.google.com will fail.
-              
+
               >>> repos.exists('www.google.com/index.html')
               False
 
               >>> repos.exists('http://www.google.com/index.html')
               True
- 
+
     """
 
     def __init__(self, destpath=os.curdir):
@@ -118,6 +143,7 @@ class DataSource (object):
             self._istmpdest = True
 
     def __del__(self):
+        # Remove temp directories
         if self._istmpdest:
             rmtree(self._destpath)
 
@@ -161,7 +187,7 @@ class DataSource (object):
 
     def _isurl(self, path):
         """Test if path is a net location.  Tests the scheme and netloc."""
-        
+
         # BUG : URLs require a scheme string ('http://') to be used.
         #       www.google.com will fail.
         #       Should we prepend the scheme for those that don't have it and
@@ -214,9 +240,15 @@ class DataSource (object):
         """
 
         # Build list of possible local file paths
-        filelist = self._possible_names(self.abspath(path))
-        if self._isurl(path):
-            # Add list of possible remote urls
+        if not self._isurl(path):
+            # Valid local paths
+            filelist = self._possible_names(path)
+            # Paths in self._destpath
+            filelist += self._possible_names(self.abspath(path))
+        else:
+            # Cached URLs in self._destpath
+            filelist = self._possible_names(self.abspath(path))
+            # Remote URLs
             filelist = filelist + self._possible_names(path)
 
         for name in filelist:
@@ -250,6 +282,13 @@ class DataSource (object):
 
         """
 
+        # TODO:  This should be more robust.  Handles case where path includes
+        #        the destpath, but not other sub-paths. Failing case:
+        #        path = /home/guido/datafile.txt
+        #        destpath = /home/alex/
+        #        upath = self.abspath(path)
+        #        upath == '/home/alex/home/guido/datafile.txt'
+
         # handle case where path includes self._destpath
         splitpath = path.split(self._destpath, 2)
         if len(splitpath) > 1:
@@ -263,9 +302,9 @@ class DataSource (object):
         Test if ``path`` exists as (and in this order):
 
         - a local file.
-        - a remote URL that have been downloaded and stored locally in the 
+        - a remote URL that have been downloaded and stored locally in the
           DataSource directory.
-        - a remote URL that has not been downloaded, but is valid and 
+        - a remote URL that has not been downloaded, but is valid and
           accessible.
 
         *Parameters*:
@@ -284,25 +323,30 @@ class DataSource (object):
         *Notes*
 
             When ``path`` is an URL, ``exist`` will return True if it's either
-            stored locally in the DataSource directory, or is a valid remote 
+            stored locally in the DataSource directory, or is a valid remote
             URL.  DataSource does not discriminate between to two, the file
             is accessible if it exists in either location.
 
         """
 
+        # Test local path
+        if os.path.exists(path):
+            return True
+
+        # Test cached url
         upath = self.abspath(path)
         if os.path.exists(upath):
             return True
-        elif self._isurl(path):
+
+        # Test remote url
+        if self._isurl(path):
             try:
                 netfile = urlopen(path)
-                # just validate existence, nothing more.
                 del(netfile)
                 return True
             except URLError:
                 return False
-        else:
-            return False
+        return False
 
     def open(self, path, mode='r'):
         """Open ``path`` with ``mode`` and return the file object.
@@ -323,11 +367,11 @@ class DataSource (object):
 
         """
 
-        # TODO: There is no support for opening a file for writing which 
+        # TODO: There is no support for opening a file for writing which
         #       doesn't exist yet (creating a file).  Should there be?
 
         # TODO: Add a ``subdir`` parameter for specifying the subdirectory
-        #       used to store URLs in self._destpath.  
+        #       used to store URLs in self._destpath.
 
         if self._isurl(path) and self._iswritemode(mode):
             raise ValueError("URLs are not writeable")
@@ -344,20 +388,21 @@ class DataSource (object):
 
 
 class Repository (DataSource):
-    """A data repository where multiple DataSource's share a base URL/directory.
+    """A data Repository where multiple DataSource's share a base URL/directory.
 
-    Use a Repository when you will be working with multiple files from one
-    base URL or directory.  Initialize the Respository with the base URL,
-    then refer to each file only by it's filename.
+    Repository extends DataSource by prepending a base URL (or directory) to
+    all the files it handles. Use a Repository when you will be working with
+    multiple files from one base URL.  Initialize the Respository with the
+    base URL, then refer to each file by it's filename only.
 
-    Methods:
+    *Methods*:
 
         - exists : test if the file exists locally or remotely
         - abspath : get absolute path of the file in the DataSource directory
         - open : open the file
 
-    Toy example::
-    
+    *Toy example*::
+
         # Analyze all files in the repository.
         repos = Repository('/home/user/data/dir/')
         for filename in filelist:
@@ -375,6 +420,9 @@ class Repository (DataSource):
         DataSource.__init__(self, destpath=destpath)
         self._baseurl = baseurl
 
+    def __del__(self):
+        DataSource.__del__(self)
+
     def _fullpath(self, path):
         """Return complete path for path.  Prepends baseurl if necessary."""
         splitpath = path.split(self._baseurl, 2)
@@ -385,27 +433,25 @@ class Repository (DataSource):
         return result
 
     def _findfile(self, path):
-        """Extend DataSource method to add baseurl to ``path``."""
-        #print 'Repository._findfile:', path
+        """Extend DataSource method to prepend baseurl to ``path``."""
         return DataSource._findfile(self, self._fullpath(path))
 
     def abspath(self, path):
-        """Extend DataSource method to add baseurl to ``path``."""
+        """Extend DataSource method to prepend baseurl to ``path``."""
         return DataSource.abspath(self, self._fullpath(path))
 
-    def exists(self, path): 
-        """Extend DataSource method to add baseurl to ``path``."""
-        #print 'Respository.exists:', path
+    def exists(self, path):
+        """Extend DataSource method to prepend baseurl to ``path``."""
         return DataSource.exists(self, self._fullpath(path))
 
     def open(self, path, mode='r'):
-        """Extend DataSource method to add baseurl to ``path``."""
-        #print 'Repository.open:', path
+        """Extend DataSource method to prepend baseurl to ``path``."""
         return DataSource.open(self, self._fullpath(path), mode)
 
     def listdir(self):
         '''List files in the source Repository.'''
         if self._isurl(self._baseurl):
-            raise NotImplementedError
+            raise NotImplementedError, \
+                  "Directory listing of URLs, not supported yet."
         else:
             return os.listdir(self._baseurl)
