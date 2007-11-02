@@ -91,10 +91,19 @@ class spmatrix(object):
         self.allocsize = allocsize
 
     def set_shape(self,shape):
-        s = tuple(shape)
-        if len(s) != 2:
+        shape = tuple(shape)
+        
+        if len(shape) != 2:
             raise ValueError("Only two-dimensional sparse arrays "
-                             "are supported.")
+                                     "are supported.")
+        try:
+            shape = int(shape[0]),int(shape[1]) #floats, other weirdness
+        except:
+            raise TypeError,'invalid shape'
+
+        if not (shape[0] >= 1 and shape[1] >= 1):
+            raise TypeError,'invalid shape'
+        
         if (self._shape != shape) and (self._shape is not None):
             try:
                 self = self.reshape(shape)
@@ -506,7 +515,10 @@ class spmatrix(object):
 
 class _cs_matrix(spmatrix):
     """base matrix class for compressed row and column oriented matrices"""
+
     def _set_self(self, other, copy=False):
+        """take the member variables of other and assign them to self"""
+        
         if copy:
             other = other.copy()
         
@@ -983,31 +995,18 @@ class csc_matrix(_cs_matrix):
             raise ValueError, "unrecognized form for csc_matrix constructor"
 
 
-
         # Read matrix dimensions given, if any
         if dims is not None:
-            try:
-                (M, N) = dims
-                M,N = int(M),int(N)
-            except (TypeError, ValueError), e:
-                raise TypeError, "dimensions not understood"
+            self.shape = dims
         else:
-            # Read existing matrix dimensions
-            try:
-                (oldM, oldN) = self.shape
-            except:
-                oldM = oldN = None
-
-            # Expand if necessary
-            M = N = None
-            N = max(0, oldN, N, len(self.indptr) - 1)
-            if len(self.indices) > 0:
-                M = max(oldM, M, int(amax(self.indices)) + 1)
-            else:
-                # Matrix is completely empty
-                M = max(oldM, M)
-
-        self.shape = (M, N)
+            if self.shape is None:                
+                # shape not already set, try to infer dimensions
+                try:
+                    M = self.indices.max() + 1
+                    N = len(self.indptr) - 1
+                    self.shape = (M,N)
+                except:
+                    raise ValueError,'unable to infer matrix dimensions'
 
         self.check_format(full_check=False)
 
@@ -1285,29 +1284,18 @@ class csr_matrix(_cs_matrix):
         else:
             raise ValueError, "unrecognized form for csr_matrix constructor"
 
-
         # Read matrix dimensions given, if any
         if dims is not None:
-            try:
-                (M, N) = dims
-            except (TypeError, ValueError), e:
-                raise TypeError, "dimensions not understood"
+            self.shape = dims
         else:
-            # Read existing matrix dimensions
-            try:
-                (oldM, oldN) = self.shape
-            except:
-                oldM = oldN = None
-
-            M = N = None
-            M = max(0, oldM, M, len(self.indptr) - 1)
-            if len(self.indices) > 0:
-                N = max(oldN, N, int(amax(self.indices)) + 1)
-            else:
-                # Matrix is completely empty
-                N = max(oldN, N)
-
-        self.shape = (M, N)
+            if self.shape is None:                
+                # shape not already set, try to infer dimensions
+                try:
+                    M = len(self.indptr) - 1
+                    N = self.indices.max() + 1
+                    self.shape = (M,N)
+                except:
+                    raise ValueError,'unable to infer matrix dimensions'
 
         self.check_format(full_check=False)
 
