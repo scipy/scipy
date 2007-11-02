@@ -69,7 +69,7 @@ def _gauss_mvs(x, n, alpha):
     term = fac2*val
     sta = st - term
     stb = st + term
-    return mp, (ma, mb), vp, (va, vb), st, (sta, stb)
+    return (mp, (ma, mb)), (vp, (va, vb)), (st, (sta, stb))
 
 
 ##  Assumes all is known is that mean, and std (variance,axis=0) exist
@@ -98,7 +98,7 @@ def bayes_mvs(data,alpha=0.90):
     assert(n > 1)
     assert(alpha < 1 and alpha > 0)
     n = float(n)
-    if (n > 1000): # just a guess.  The curves look similar at this point.
+    if (n > 1000): # just a guess.  The curves look very similar at this point.
         return _gauss_mvs(x, n, alpha)
     xbar = x.mean()
     C = x.var()
