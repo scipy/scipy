@@ -938,7 +938,7 @@ class csc_matrix(_cs_matrix):
 
         if isdense(arg1):
             self.dtype = getdtype(dtype, arg1)
-            # Convert the dense array or matrix arg1 to CSC format
+            # Convert the dense array or matrix arg1 to sparse format
             if rank(arg1) == 1:
                 # Convert to a row vector
                 arg1 = arg1.reshape(1, arg1.shape[0])
@@ -948,32 +948,34 @@ class csc_matrix(_cs_matrix):
                         densetocsr(arg1.shape[1], arg1.shape[0], arg1.T)
             else:
                 raise ValueError, "dense array must have rank 1 or 2"
+
         elif isspmatrix(arg1):
-            try:
-                other = arg1.tocsc(copy=copy)
-            except AttributeError:
-                raise AttributeError,'all sparse matrices must have .tocsc()'
-            else:
-                self._set_self( other )
+            if copy:
+                arg1 = arg1.copy()
+            self._set_self( self._tothis(arg1) )
+
         elif isinstance(arg1, tuple):
             if isshape(arg1):
-                self.dtype = getdtype(dtype, default=float)
                 # It's a tuple of matrix dimensions (M, N)
-                M, N = arg1
+                self.shape = arg1   #spmatrix checks for errors here
+                M, N = self.shape
+                self.dtype = getdtype(dtype, default=float)
                 self.data = zeros((nzmax,), self.dtype)
                 self.indices = zeros((nzmax,), intc)
                 self.indptr = zeros((N+1,), intc)
-                self.shape = (M, N)
             else:
                 try:
                     # Try interpreting it as (data, ij)
                     (data, ij) = arg1
                     assert isinstance(ij, ndarray) and (rank(ij) == 2) \
                             and (shape(ij) == (2, len(data)))
-                except (AssertionError, TypeError, ValueError):
+                except (AssertionError, TypeError, ValueError, AttributeError):
                     try:
                         # Try interpreting it as (data, indices, indptr)
                         (data, indices, indptr) = arg1
+                    except:
+                        raise ValueError, "unrecognized form for csc_matrix constructor"
+                    else:
                         self.dtype = getdtype(dtype, data)
                         if copy:
                             self.data    = array(data)
@@ -983,21 +985,19 @@ class csc_matrix(_cs_matrix):
                             self.data    = asarray(data)
                             self.indices = asarray(indices)
                             self.indptr  = asarray(indptr)
-                    except:
-                        raise ValueError, "unrecognized form for csc_matrix constructor"
                 else:
                     # (data, ij) format
-                    self.dtype = getdtype(dtype, data)
-                    ijnew = array(ij, copy=copy)
-                    self._set_self( coo_matrix((data, ijnew), dims=dims, \
-                                         dtype=self.dtype).tocsc() )
+                    other = coo_matrix((data, ij), dims=dims )
+                    other = self._tothis(other)
+                    self._set_self( other )
+
         else:
-            raise ValueError, "unrecognized form for csc_matrix constructor"
+            raise ValueError, "unrecognized form for csc_matrix constructor" 
 
 
         # Read matrix dimensions given, if any
         if dims is not None:
-            self.shape = dims
+            self.shape = dims   # spmatrix will check for errors
         else:
             if self.shape is None:                
                 # shape not already set, try to infer dimensions
@@ -1227,7 +1227,7 @@ class csr_matrix(_cs_matrix):
 
         if isdense(arg1):
             self.dtype = getdtype(dtype, arg1)
-            # Convert the dense array or matrix arg1 to CSR format
+            # Convert the dense array or matrix arg1 to sparse format
             if rank(arg1) == 1:
                 # Convert to a row vector
                 arg1 = arg1.reshape(1, arg1.shape[0])
@@ -1237,22 +1237,21 @@ class csr_matrix(_cs_matrix):
                         densetocsr(arg1.shape[0], arg1.shape[1], arg1)
             else:
                 raise ValueError, "dense array must have rank 1 or 2"
+
         elif isspmatrix(arg1):
-            try:
-                other = arg1.tocsr(copy=copy)
-            except AttributeError:
-                raise AttributeError,'all sparse matrices must have .tocsr()'
-            else:
-                self._set_self( other )
+            if copy:
+                arg1 = arg1.copy()
+            self._set_self( self._tothis(arg1) )
+        
         elif isinstance(arg1, tuple):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
-                M, N = arg1
+                self.shape = arg1   #spmatrix checks for errors here
+                M, N = self.shape
                 self.dtype = getdtype(dtype, default=float)
                 self.data = zeros((nzmax,), self.dtype)
                 self.indices = zeros((nzmax,), intc)
                 self.indptr = zeros((M+1,), intc)
-                self.shape = (M, N)
             else:
                 try:
                     # Try interpreting it as (data, ij)
@@ -1263,7 +1262,7 @@ class csr_matrix(_cs_matrix):
                     try:
                         # Try interpreting it as (data, indices, indptr)
                         (data, indices, indptr) = arg1
-                    except (TypeError, ValueError):
+                    except:
                         raise ValueError, "unrecognized form for csr_matrix constructor"
                     else:
                         self.dtype = getdtype(dtype, data)
@@ -1277,16 +1276,16 @@ class csr_matrix(_cs_matrix):
                             self.indptr  = asarray(indptr)
                 else:
                     # (data, ij) format
-                    self.dtype = getdtype(dtype, data)
-                    ijnew = array(ij, copy=copy)
-                    self._set_self( coo_matrix((data, ijnew), dims=dims, \
-                                      dtype=self.dtype).tocsr() )
+                    other = coo_matrix((data, ij), dims=dims )
+                    other = self._tothis(other)
+                    self._set_self( other )
+        
         else:
             raise ValueError, "unrecognized form for csr_matrix constructor"
 
         # Read matrix dimensions given, if any
         if dims is not None:
-            self.shape = dims
+            self.shape = dims   # spmatrix will check for errors
         else:
             if self.shape is None:                
                 # shape not already set, try to infer dimensions
