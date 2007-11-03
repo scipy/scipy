@@ -1,3 +1,6 @@
+#ifndef UFUNC_EXTRAS_H
+#define UFUNC_EXTRAS_H
+
 #include "Python.h"
 #include "numpy/noprefix.h"
 
@@ -76,4 +79,4 @@ extern void PyUFunc_ddddd_dd(char **args, intp *dimensions, intp *steps, void *f
 extern void PyUFunc_ffff_ff_As_dddi_dd(char **args, intp *dimensions, intp *steps, void *func);
 extern void PyUFunc_dddd_dd_As_dddi_dd(char **args, intp *dimensions, intp *steps, void *func);
 
-
+#endif /* UFUNC_EXTRAS_H */

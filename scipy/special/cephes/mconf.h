@@ -62,6 +62,9 @@ Cephes Math Library Release 2.3:  June, 1995
 Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
 */
 
+#ifndef CEPHES_MCONF_H
+#define CEPHES_MCONF_H
+
 #include "cephes_names.h"
 
 /* Constant definitions for math error conditions
@@ -174,3 +177,5 @@ int mtherr();
 extern int merror;
 
 #define gamma Gamma
+
+#endif /* CEPHES_MCONF_H */

@@ -35,6 +35,11 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_cephes', sources=sources,
                          libraries=['amos','toms','c_misc','cephes','mach',
                                     'cdf', 'specfun'],
+                         depends=["ufunc_extras.h", "cephes.h",
+                                  "amos_wrappers.h", "toms_wrappers.h",
+                                  "cdf_wrappers.h", "specfun_wrappers.h",
+                                  "c_misc/misc.h", "cephes_doc.h",
+                                  "cephes/mconf.h", "cephes/cephes_names.h"],
                          define_macros = define_macros
                          )
     # Extension specfun

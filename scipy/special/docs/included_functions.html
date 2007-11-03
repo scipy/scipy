@@ -13,8 +13,8 @@ evaluated at x of Ai and Bi respectively.
 <DT>(Aie,Aipe,Bie,Bipe) = airye(z)
 <DD>airye(z) calculates the exponentially scaled Airy functions and 
 their derivatives evaluated at real or complex number z.  
-airye(z)[0:2] = airy(z)[0:2] * exp(2.0/3.0*z*sqrt(z))
-airye(z)[2:4] = airy(z)[2:4] * exp(-abs(real((2.0/3.0*z*sqrt(z)))))
+airye(z)[0:1] = airy(z)[0:1] * exp(2.0/3.0*z*sqrt(z))
+airye(z)[2:3] = airy(z)[2:3] * exp(-abs((2.0/3.0*z*sqrt(z)).real))
 </DL>
 
 <DT>(Apt,Bpt,Ant,Bnt) = itairy(x)
@@ -467,33 +467,33 @@ se_m(z,q), of Mathieu's equation
 
 <DT>(y,yp) = mathieu_cem(m,q,x)
 <DD>mathieu_cem(m,q,x) returns the even Mathieu function, ce_m(x,q), 
-of order m and parameter q evaluated at x.  Also returns the derivative
-with respect to x of ce_m(x,q)
+of order m and parameter q evaluated at x (given in degrees).
+Also returns the derivative with respect to x of ce_m(x,q)
 
 <DT>(y,yp) = mathieu_sem(m,q,x)
 <DD>mathieu_sem(m,q,x) returns the odd Mathieu function, se_m(x,q), 
-of order m and parameter q evaluated at x.  Also returns the derivative
-with respect to x of se_m(x,q)
+of order m and parameter q evaluated at x (given in degrees).
+Also returns the derivative with respect to x of se_m(x,q).
 
 <DT>(y,yp) = mathieu_modcem1(m,q,x)
 <DD>mathieu_modcem1(m,q,x) evaluates the even modified Matheiu function 
-of the first  kind, Mc1m(x,q), and its derivative at x for order m and
-parameter q
+of the first kind, Mc1m(x,q), and its derivative at x for order m and
+parameter q.
 
 <DT>(y,yp) = mathieu_modcem2(m,q,x)
 <DD>mathieu_modcem2(m,q,x) evaluates the even modified Matheiu function 
-of the second kind, Mc2m(x,q), and its derivative at x for order m and 
-parameter q
+of the second kind, Mc2m(x,q), and its derivative at x (given in degrees)
+for order m and parameter q.
 
 <DT>(y,yp) = mathieu_modsem1(m,q,x)
 <DD>mathieu_modsem1(m,q,x) evaluates the odd modified Matheiu function 
-of the first kind, Ms1m(x,q), and its derivative at x for order m and 
-parameter q
+of the first kind, Ms1m(x,q), and its derivative at x (given in degrees)
+for order m and parameter q.
 
 <DT>(y,yp) = mathieu_modsem2(m,q,x)
 <DD>mathieu_modsem2(m,q,x) evaluates the odd modified Matheiu function
-of the second kind, Ms2m(x,q), and its derivative at x for order m and 
-parameter q
+of the second kind, Ms2m(x,q), and its derivative at x (given in degrees)
+for order m and parameter q.
 
 
 <h1> Spheroidal Wave Functions </h1>

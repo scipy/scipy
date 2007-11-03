@@ -7,6 +7,9 @@
  *   Created: Fri Mar 31 19:17:33 1995
  */
 
+#ifndef CEPHES_H
+#define CEPHES_H
+
 #include "cephes/cephes_names.h"
 
 extern int airy ( double x, double *ai, double *aip, double *bi, double *bip );
@@ -194,7 +197,4 @@ extern double smirnovi (int n, double p );
 extern double kolmogorov ( double x );
 extern double kolmogi ( double p );
 
-
-
-
-
+#endif /* CEPHES_H */

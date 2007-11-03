@@ -36,6 +36,9 @@ if __name__=="__main__":
     keys = d.keys()
     keys.sort()
     ofile=open("cephes_doc.h",'w')
+    ofile.write('#ifndef CEPHES_DOC_H\n')
+    ofile.write('#define CEPHES_DOC_H\n')
     for key in keys:
         ofile.write('#define %s_doc "%s"\n'%(key,repr(d[key])[1:-1]))
+    ofile.write('#endif /* CEPHES_DOC_H */\n')
     ofile.close()

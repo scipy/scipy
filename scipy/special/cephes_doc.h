@@ -1,3 +1,5 @@
+#ifndef CEPHES_DOC_H
+#define CEPHES_DOC_H
 #define airy_doc "(Ai,Aip,Bi,Bip)=airy(z) calculates the Airy functions and their derivatives\nevaluated at real or complex number z.  The Airy functions Ai and Bi \nare two independent solutions of y''(x)=xy.  Aip and Bip are the first derivatives\nevaluated at x of Ai and Bi respectively."
 #define airye_doc "(Aie,Aipe,Bie,Bipe)=airye(z) calculates the exponentially scaled Airy functions and \ntheir derivatives evaluated at real or complex number z.  \nairye(z)[0:1] = airy(z)[0:1] * exp(2.0/3.0*z*sqrt(z))\nairye(z)[2:3] = airy(z)[2:3] * exp(-abs((2.0/3.0*z*sqrt(z)).real))"
 #define bdtr_doc "y=bdtr(k,n,p) returns the sum of the terms 0 through k of the\nBinomial probability density:  sum(nCj p**j (1-p)**(n-j),j=0..k)"
@@ -96,12 +98,12 @@
 #define lpmv_doc "y=lpmv(m,v,x) returns the associated legendre function of integer order\nm and nonnegative degree v: |x|<=1."
 #define mathieu_a_doc "lmbda=mathieu_a(m,q) returns the characteristic value for the even solution, \nce_m(z,q), of Mathieu's equation"
 #define mathieu_b_doc "lmbda=mathieu_b(m,q) returns the characteristic value for the odd solution, \nse_m(z,q), of Mathieu's equation"
-#define mathieu_cem_doc "(y,yp)=mathieu_cem(m,q,x) returns the even Mathieu function, ce_m(x,q), \nof order m and parameter q evaluated at x (given in degrees).  Also returns the derivative\nwith respect to x of ce_m(x,q)"
-#define mathieu_modcem1_doc "(y,yp)=mathieu_modcem1(m,q,x) evaluates the even modified Matheiu function \nof the first  kind, Mc1m(x,q), and its derivative at x (given in degrees) for order m and\nparameter q"
-#define mathieu_modcem2_doc "(y,yp)=mathieu_modcem2(m,q,x) evaluates the even modified Matheiu function \nof the second kind, Mc2m(x,q), and its derivative at x (given in degrees) for order m and \nparameter q"
-#define mathieu_modsem1_doc "(y,yp)=mathieu_modsem1(m,q,x) evaluates the odd modified Matheiu function \nof the first kind, Ms1m(x,q), and its derivative at x (given in degrees) for order m and \nparameter q"
-#define mathieu_modsem2_doc "(y,yp)=mathieu_modsem2(m,q,x) evaluates the odd modified Matheiu function\nof the second kind, Ms2m(x,q), and its derivative at x (given in degrees) for order m and \nparameter q"
-#define mathieu_sem_doc "(y,yp)=mathieu_sem(m,q,x) returns the odd Mathieu function, se_m(x,q), \nof order m and parameter q evaluated at x (given in degrees).  Also returns the derivative\nwith respect to x (given in degrees) of se_m(x,q)"
+#define mathieu_cem_doc "(y,yp)=mathieu_cem(m,q,x) returns the even Mathieu function, ce_m(x,q), \nof order m and parameter q evaluated at x (given in degrees).\nAlso returns the derivative with respect to x of ce_m(x,q)"
+#define mathieu_modcem1_doc "(y,yp)=mathieu_modcem1(m,q,x) evaluates the even modified Matheiu function \nof the first kind, Mc1m(x,q), and its derivative at x for order m and\nparameter q."
+#define mathieu_modcem2_doc "(y,yp)=mathieu_modcem2(m,q,x) evaluates the even modified Matheiu function \nof the second kind, Mc2m(x,q), and its derivative at x (given in degrees)\nfor order m and parameter q."
+#define mathieu_modsem1_doc "(y,yp)=mathieu_modsem1(m,q,x) evaluates the odd modified Matheiu function \nof the first kind, Ms1m(x,q), and its derivative at x (given in degrees)\nfor order m and parameter q."
+#define mathieu_modsem2_doc "(y,yp)=mathieu_modsem2(m,q,x) evaluates the odd modified Matheiu function\nof the second kind, Ms2m(x,q), and its derivative at x (given in degrees)\nfor order m and parameter q."
+#define mathieu_sem_doc "(y,yp)=mathieu_sem(m,q,x) returns the odd Mathieu function, se_m(x,q), \nof order m and parameter q evaluated at x (given in degrees).\nAlso returns the derivative with respect to x of se_m(x,q)."
 #define modfresnelm_doc "(fm,km)=modfresnelp(x) returns the modified fresnel integrals F_-(x) amd K_-(x)\nas fp=integral(exp(-1j*t*t),t=x..inf) and kp=1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp"
 #define modfresnelp_doc "(fp,kp)=modfresnelp(x) returns the modified fresnel integrals F_+(x) and K_+(x)\nas fp=integral(exp(1j*t*t),t=x..inf) and kp=1/sqrt(pi)*exp(-1j*(x*x+pi/4))*fp"
 #define modstruve_doc "y=modstruve(v,x) returns the modified Struve function Lv(x) of order\nv at x, x must be positive unless v is an integer and it is recommended\nthat |v|<=20."
@@ -156,3 +158,4 @@
 #define yve_doc "y=yve(v,z) returns the exponentially scaled Bessel function of the second \nkind of real order v at complex z: yve(v,z) = yv(v,z) * exp(-abs(z.imag))"
 #define zeta_doc "y=zeta(x,q) returns the Riemann zeta function of two arguments:\nsum((k+q)**(-x),k=0..inf)"
 #define zetac_doc "y=zetac(x) returns 1.0 - the Riemann zeta function: sum(k**(-x), k=2..inf)"
+#endif /* CEPHES_DOC_H */
