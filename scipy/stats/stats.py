@@ -1754,7 +1754,7 @@ def kstest(rvs, cdf, args=(), N=20):
     arguments.  rvs needs to accept the size= keyword if a function.  rvs
     can also be a vector of RVs.
 
-    cdf can be a function or a string indicating the distriubtion type.
+    cdf can be a function or a string indicating the distribution type.
 
     if the p-value is greater than the significance level (say 5%), then we
     cannot reject the hypothesis that the data come from the given
@@ -2031,8 +2031,7 @@ def glm(data, para):
     Returns: statistic, p-value ???
     """
     if len(para) != len(data):
-        print "data and para must be same length in aglm"
-        return
+        raise ValueError("data and para must be same length in aglm")
     n = len(para)
     p = _support.unique(para)
     x = zeros((n,len(p)))  # design matrix
@@ -2051,6 +2050,8 @@ def glm(data, para):
         t = dot(c,b) / np.sqrt(s_sq*fact)
         probs = betai(0.5*df,0.5,float(df)/(df+t*t))
         return t, probs
+    else:
+        raise ValueError("only ttest_ind implemented")
 
 
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
