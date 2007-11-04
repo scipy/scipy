@@ -59,15 +59,15 @@ for dist in dists:
     else:
         args = str(tuple(1.0+rand(nargs)))
     exstr = r"""
-class Test%s(NumpyTestCase):
+class Test%(dist)s(NumpyTestCase):
     def check_cdf(self):
-        D,pval = stats.kstest('%s','',args=%s,N=30)
-        if (pval < %f):
-            D,pval = stats.kstest('%s','',args=%s,N=30)
-            #if (pval < %f):
-            #    D,pval = stats.kstest('%s','',args=%s,N=30)
-        assert (pval > %f), "D = " + str(D) + "; pval = " + str(pval) + "; alpha = " + str(alpha) + "\nargs = " + str(%s)
-""" % (dist,dist,args,alpha,dist,args,alpha,dist,args,alpha,args)
+        D,pval = stats.kstest('%(dist)s','',args=%(args)s,N=30)
+        if (pval < %(alpha)f):
+            D,pval = stats.kstest('%(dist)s','',args=%(args)s,N=30)
+            #if (pval < %(alpha)f):
+            #    D,pval = stats.kstest('%(dist)s','',args=%(args)s,N=30)
+        assert (pval > %(alpha)f), "D = " + str(D) + "; pval = " + str(pval) + "; alpha = " + str(alpha) + "\nargs = " + str(%(args)s)
+""" % {'dist' : dist, 'args' : args, 'alpha' : alpha}
     exec exstr
 
 
