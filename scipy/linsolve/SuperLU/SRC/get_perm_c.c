@@ -372,12 +372,12 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
     switch ( ispec ) {
         case 0: /* Natural ordering */
 	      for (i = 0; i < n; ++i) perm_c[i] = i;
-	      printf("Use natural column ordering.\n");
+	      /*printf("Use natural column ordering.\n");*/
 	      return;
         case 1: /* Minimum degree ordering on A'*A */
 	      getata(m, n, Astore->nnz, Astore->colptr, Astore->rowind,
 		     &bnz, &b_colptr, &b_rowind);
-	      printf("Use minimum degree ordering on A'*A.\n");
+	      /*printf("Use minimum degree ordering on A'*A.\n");*/
 	      t = SuperLU_timer_() - t;
 	      /*printf("Form A'*A time = %8.3f\n", t);*/
 	      break;
@@ -385,14 +385,14 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 	      if ( m != n ) ABORT("Matrix is not square");
 	      at_plus_a(n, Astore->nnz, Astore->colptr, Astore->rowind,
 			&bnz, &b_colptr, &b_rowind);
-	      printf("Use minimum degree ordering on A'+A.\n");
+	      /*printf("Use minimum degree ordering on A'+A.\n");*/
 	      t = SuperLU_timer_() - t;
 	      /*printf("Form A'+A time = %8.3f\n", t);*/
 	      break;
         case 3: /* Approximate minimum degree column ordering. */
 	      get_colamd(m, n, Astore->nnz, Astore->colptr, Astore->rowind,
 			 perm_c);
-	      printf(".. Use approximate minimum degree column ordering.\n");
+	      /*printf(".. Use approximate minimum degree column ordering.\n");*/
 	      return; 
         default:
 	      ABORT("Invalid ISPEC");
