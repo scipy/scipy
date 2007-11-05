@@ -107,14 +107,17 @@ odr_error = __odrpack.odr_error
 odr_stop = __odrpack.odr_stop
 
 
-def _conv(obj):
+def _conv(obj, dtype=None):
     """ Convert an object to the preferred form for input to the odr routine.
     """
 
     if obj is None:
         return obj
     else:
-        obj = numpy.asarray(obj)
+        if dtype is None:
+            obj = numpy.asarray(obj)
+        else:
+            obj = numpy.asarray(obj, dtype)
         if obj.shape == ():
             # Scalar.
             return obj.dtype.type(obj)
@@ -708,8 +711,11 @@ class ODR(object):
             self.beta0 = _conv(beta0)
 
         self.delta0 = _conv(delta0)
-        self.ifixx = _conv(ifixx)
-        self.ifixb = _conv(ifixb)
+        # These really are 32-bit integers in FORTRAN (gfortran), even on 64-bit
+        # platforms.
+        # XXX: some other FORTRAN compilers may not agree.
+        self.ifixx = _conv(ifixx, dtype=numpy.int32)
+        self.ifixb = _conv(ifixb, dtype=numpy.int32)
         self.job = job
         self.iprint = iprint
         self.errfile = errfile

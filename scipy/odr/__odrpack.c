@@ -920,7 +920,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   if (pifixb == NULL)
     {
       dim1[0] = np;
-      ifixb = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_LONG);
+      ifixb = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_INT);
       *(int *)(ifixb->data) = -1;      /* set first element negative */
     }
   else
@@ -928,7 +928,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
       /* pifixb is a sequence as checked before */
 
       if ((ifixb =
-           (PyArrayObject *) PyArray_CopyFromObject(pifixb, PyArray_LONG, 1,
+           (PyArrayObject *) PyArray_CopyFromObject(pifixb, PyArray_INT, 1,
                                                     1)) == NULL)
         {
           PYERR(PyExc_ValueError,
@@ -946,7 +946,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
     {
       dim2[0] = m;
       dim2[1] = 1;
-      ifixx = (PyArrayObject *) PyArray_FromDims(2, dim2, PyArray_LONG);
+      ifixx = (PyArrayObject *) PyArray_FromDims(2, dim2, PyArray_INT);
       *(int *)(ifixx->data) = -1;      /* set first element negative */
       ldifx = 1;
     }
@@ -955,7 +955,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
       /* pifixx is a sequence as checked before */
 
       if ((ifixx =
-           (PyArrayObject *) PyArray_CopyFromObject(pifixx, PyArray_LONG, 1,
+           (PyArrayObject *) PyArray_CopyFromObject(pifixx, PyArray_INT, 1,
                                                     2)) == NULL)
         {
           PYERR(PyExc_ValueError,
@@ -1169,7 +1169,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   if (piwork != NULL)
     {
       if ((iwork =
-           (PyArrayObject *) PyArray_CopyFromObject(piwork, PyArray_LONG, 1,
+           (PyArrayObject *) PyArray_CopyFromObject(piwork, PyArray_INT, 1,
                                                     1)) == NULL)
         {
           PYERR(PyExc_ValueError,
@@ -1185,7 +1185,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
     {
       /* initialize our own iwork array */
       dim1[0] = liwork;
-      iwork = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_LONG);
+      iwork = (PyArrayObject *) PyArray_FromDims(1, dim1, PyArray_INT);
     }                           /* iwork */
 
   /* check if what JOB requests can be done with what the user has 
