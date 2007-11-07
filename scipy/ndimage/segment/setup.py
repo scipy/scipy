@@ -12,6 +12,8 @@ def configuration(parent_package='',top_path=None):
                          depends = ['ndImage_Segmenter_structs.h']
     )
 
+    config.add_data_dir('tests')
+
     return config
 
 if __name__ == '__main__':
