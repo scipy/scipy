@@ -2,7 +2,7 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 
-static PyObject *NDI_Segmenter_CannyEdges(PyObject *self, PyObject *args)
+static PyObject *Segmenter_CannyEdges(PyObject *self, PyObject *args)
 {
 
     double sigma;
@@ -26,7 +26,7 @@ static PyObject *NDI_Segmenter_CannyEdges(PyObject *self, PyObject *args)
 
     //
     // pass in 2D LPF coefficients
-    if(!PyArg_Parse(args, "(dddiiidiO)", &sigma, &cannyLow, &cannyHigh, &mode, &lowThreshold, &highThreshold,
+    if(!PyArg_ParseTuple(args, "dddiiidiO", &sigma, &cannyLow, &cannyHigh, &mode, &lowThreshold, &highThreshold,
 			                 &BPHigh, &apearture, &iArray))
 	    goto exit;
 
@@ -53,7 +53,7 @@ exit:
 
 }
 
-static PyObject *NDI_Segmenter_SobelEdges(PyObject *self, PyObject *args)
+static PyObject *Segmenter_SobelEdges(PyObject *self, PyObject *args)
 {
 
     double sobelLow;
@@ -75,7 +75,7 @@ static PyObject *NDI_Segmenter_SobelEdges(PyObject *self, PyObject *args)
 
     //
     // pass in 2D LPF coefficients
-    if(!PyArg_Parse(args, "(diiidiO)", &sobelLow, &mode, &lowThreshold, &highThreshold, &BPHigh, &apearture, &iArray))
+    if(!PyArg_ParseTuple(args, "diiidiO", &sobelLow, &mode, &lowThreshold, &highThreshold, &BPHigh, &apearture, &iArray))
 	    goto exit;
 
     fP1  = (double *)PyArray_DATA(iArray);
@@ -105,7 +105,7 @@ exit:
 
 
 
-static PyObject *NDI_Segmenter_ShenCastanEdges(PyObject *self, PyObject *args)
+static PyObject *Segmenter_ShenCastanEdges(PyObject *self, PyObject *args)
 {
     int window;
     int lowThreshold;
@@ -123,7 +123,7 @@ static PyObject *NDI_Segmenter_ShenCastanEdges(PyObject *self, PyObject *args)
     PyObject *iArray = NULL;
     PyObject *eArray = NULL;
 
-    if(!PyArg_Parse(args, "(ddiiiO)", &ShenCastanLow, &b, &window, &lowThreshold, &highThreshold, &iArray))
+    if(!PyArg_ParseTuple(args, "ddiiiO", &ShenCastanLow, &b, &window, &lowThreshold, &highThreshold, &iArray))
 	    goto exit;
 
     fP1  = (double *)PyArray_DATA(iArray);
@@ -150,7 +150,7 @@ exit:
 
 }
 
-static PyObject *NDI_Segmenter_GetObjectStats(PyObject *self, PyObject *args)
+static PyObject *Segmenter_GetObjectStats(PyObject *self, PyObject *args)
 {
 
 
@@ -164,7 +164,7 @@ static PyObject *NDI_Segmenter_GetObjectStats(PyObject *self, PyObject *args)
     PyObject  *nArray = NULL;
     objStruct *myData;
 
-    if(!PyArg_Parse(args, "(OO)", &iArray, &nArray))
+    if(!PyArg_ParseTuple(args, "OO", &iArray, &nArray))
 	    goto exit;
 
     if(!PyArray_ISCONTIGUOUS(iArray) || !PyArray_ISCONTIGUOUS(nArray))
@@ -196,7 +196,7 @@ exit:
 
 }
 
-static PyObject *NDI_Segmenter_MorphoThinFilt(PyObject *self, PyObject *args)
+static PyObject *Segmenter_MorphoThinFilt(PyObject *self, PyObject *args)
 {
 
     int num;
@@ -209,7 +209,7 @@ static PyObject *NDI_Segmenter_MorphoThinFilt(PyObject *self, PyObject *args)
     PyObject  *nArray = NULL;
     objStruct *ROIList;
 
-    if(!PyArg_Parse(args, "(OO)", &iArray, &nArray))
+    if(!PyArg_ParseTuple(args, "OO", &iArray, &nArray))
 	    goto exit;
 
     fP1  = (unsigned short *)PyArray_DATA(iArray);
@@ -233,7 +233,7 @@ exit:
 
 }
 
-static PyObject *NDI_Segmenter_BuildBoundary(PyObject *self, PyObject *args)
+static PyObject *Segmenter_BuildBoundary(PyObject *self, PyObject *args)
 {
 
     int num;
@@ -246,7 +246,7 @@ static PyObject *NDI_Segmenter_BuildBoundary(PyObject *self, PyObject *args)
     PyObject  *nArray = NULL;
     objStruct *ROIList;
 
-    if(!PyArg_Parse(args, "(OO)", &iArray, &nArray))
+    if(!PyArg_ParseTuple(args, "OO", &iArray, &nArray))
 	    goto exit;
 
     fP1  = (unsigned short *)PyArray_DATA(iArray);
@@ -278,7 +278,7 @@ exit:
 }
 
 
-static PyObject *NDI_Segmenter_VoxelMeasures(PyObject *self, PyObject *args)
+static PyObject *Segmenter_VoxelMeasures(PyObject *self, PyObject *args)
 {
 
     int num;
@@ -293,7 +293,7 @@ static PyObject *NDI_Segmenter_VoxelMeasures(PyObject *self, PyObject *args)
     PyObject  *eArray = NULL;
     objStruct *ROIList;
 
-    if(!PyArg_Parse(args, "(OOO)", &iArray, &eArray, &nArray))
+    if(!PyArg_ParseTuple(args, "OOO", &iArray, &eArray, &nArray))
 	    goto exit;
 
     fP1  = (double *)PyArray_DATA(iArray);
@@ -326,7 +326,7 @@ exit:
 
 }
 
-static PyObject *NDI_Segmenter_TextureMeasures(PyObject *self, PyObject *args)
+static PyObject *Segmenter_TextureMeasures(PyObject *self, PyObject *args)
 {
 
     int num;
@@ -341,7 +341,7 @@ static PyObject *NDI_Segmenter_TextureMeasures(PyObject *self, PyObject *args)
     PyObject  *eArray = NULL;
     objStruct *ROIList;
 
-    if(!PyArg_Parse(args, "(OOO)", &iArray, &eArray, &nArray))
+    if(!PyArg_ParseTuple(args, "OOO", &iArray, &eArray, &nArray))
 	    goto exit;
 
     fP1  = (double *)PyArray_DATA(iArray);
@@ -374,7 +374,7 @@ exit:
 
 }
 
-static PyObject *NDI_Segmenter_RegionGrow(PyObject *self, PyObject *args)
+static PyObject *Segmenter_RegionGrow(PyObject *self, PyObject *args)
 {
 
     int lowThreshold;
@@ -394,7 +394,7 @@ static PyObject *NDI_Segmenter_RegionGrow(PyObject *self, PyObject *args)
 
     //
     // pass in 2D LPF coefficients
-    if(!PyArg_Parse(args, "(iiiiO)", &lowThreshold, &highThreshold, &closeWindow, &openWindow, &iArray))
+    if(!PyArg_ParseTuple(args, "iiiiO", &lowThreshold, &highThreshold, &closeWindow, &openWindow, &iArray))
 	    goto exit;
 
     fP1  = (double *)PyArray_DATA(iArray);
@@ -422,45 +422,23 @@ exit:
 
 }
 
-static PyMethodDef NDI_SegmenterMethods[] =
+static PyMethodDef SegmenterMethods[] =
 {
-    { "canny_edges",       NDI_Segmenter_CannyEdges,      METH_VARARGS },
-    { "shen_castan_edges", NDI_Segmenter_ShenCastanEdges, METH_VARARGS },
-    { "sobel_edges",       NDI_Segmenter_SobelEdges,      METH_VARARGS },
-    { "get_object_stats",  NDI_Segmenter_GetObjectStats,  METH_VARARGS },
-    { "morpho_thin_filt",  NDI_Segmenter_MorphoThinFilt,  METH_VARARGS },
-    { "build_boundary",    NDI_Segmenter_BuildBoundary,   METH_VARARGS },
-    { "voxel_measures",    NDI_Segmenter_VoxelMeasures,   METH_VARARGS },
-    { "texture_measures",  NDI_Segmenter_TextureMeasures, METH_VARARGS },
-    { "region_grow",       NDI_Segmenter_RegionGrow,      METH_VARARGS },
-    {  NULL, NULL },
+    { "canny_edges",       Segmenter_CannyEdges,      METH_VARARGS, NULL },
+    { "shen_castan_edges", Segmenter_ShenCastanEdges, METH_VARARGS, NULL },
+    { "sobel_edges",       Segmenter_SobelEdges,      METH_VARARGS, NULL },
+    { "get_object_stats",  Segmenter_GetObjectStats,  METH_VARARGS, NULL },
+    { "morpho_thin_filt",  Segmenter_MorphoThinFilt,  METH_VARARGS, NULL },
+    { "build_boundary",    Segmenter_BuildBoundary,   METH_VARARGS, NULL },
+    { "voxel_measures",    Segmenter_VoxelMeasures,   METH_VARARGS, NULL },
+    { "texture_measures",  Segmenter_TextureMeasures, METH_VARARGS, NULL },
+    { "region_grow",       Segmenter_RegionGrow,      METH_VARARGS, NULL },
+    {  NULL, NULL, 0, NULL},
 };
 
 void init_segmenter(void)
 {
-    Py_InitModule("_segmenter", NDI_SegmenterMethods);
+    Py_InitModule("_segmenter", SegmenterMethods);
     import_array();
 }
-
-/*
-static PyMethodDef NDI_SegmenterMethods[] =
-{
-    { "CannyEdges",       NDI_Segmenter_CannyEdges,      METH_VARARGS },
-    { "ShenCastanEdges",  NDI_Segmenter_ShenCastanEdges, METH_VARARGS },
-    { "SobelEdges",       NDI_Segmenter_SobelEdges,      METH_VARARGS },
-    { "GetObjectStats",   NDI_Segmenter_GetObjectStats,  METH_VARARGS },
-    { "MorphoThinFilt",   NDI_Segmenter_MorphoThinFilt,  METH_VARARGS },
-    { "BuildBoundary",    NDI_Segmenter_BuildBoundary,   METH_VARARGS },
-    { "VoxelMeasures",    NDI_Segmenter_VoxelMeasures,   METH_VARARGS },
-    { "TextureMeasures",  NDI_Segmenter_TextureMeasures, METH_VARARGS },
-    { "RegionGrow",       NDI_Segmenter_RegionGrow,      METH_VARARGS },
-    {  NULL, NULL },
-};
-
-void initNDI_Segmenter()
-{
-    Py_InitModule("NDI_Segmenter", NDI_SegmenterMethods);
-    import_array();
-}
-*/
 
