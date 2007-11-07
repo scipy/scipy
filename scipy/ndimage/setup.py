@@ -14,6 +14,7 @@ def configuration(parent_package='', top_path=None):
         include_dirs=['src']+[get_include()],
     )
 
+    config.add_subpackage('segment')
     config.add_data_dir('tests')
 
     return config

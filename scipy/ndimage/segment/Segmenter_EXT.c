@@ -386,7 +386,6 @@ static PyObject *NDI_Segmenter_RegionGrow(PyObject *self, PyObject *args)
     int type;
     int itype;
     int groups;
-    int mode;
     npy_intp *dims;
     double *fP1;
     unsigned short *fP2;
@@ -437,7 +436,7 @@ static PyMethodDef NDI_SegmenterMethods[] =
     {  NULL, NULL },
 };
 
-void init_segmenter()
+void init_segmenter(void)
 {
     Py_InitModule("_segmenter", NDI_SegmenterMethods);
     import_array();

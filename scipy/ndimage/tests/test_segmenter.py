@@ -1,30 +1,27 @@
 
 import numpy as N
+from numpy.testing import *
 import scipy.ndimage.segment as S
 
+inputname = 'slice112.raw'
+
+import os
+filename = os.path.join(os.path.split(__file__)[0],inputname)
+
+
 def shen_castan(image, IIRFilter=0.8, scLow=0.3, window=7, lowThreshold=220+2048, highThreshold=600+2048, dust=16):
-	datatype = [('L', 'i', 1), ('R', 'i', 1), ('T', 'i', 1), ('B', 'i', 1),
-            	    ('Label', 'i', 1), ('Area', 'i', 1), ('cX', 'f', 1), ('cY', 'f', 1),
-            	    ('curveClose', 'i', 1), ('cXB', 'f', 1), ('cYB', 'f', 1), ('bLength', 'f', 1),
-            	    ('minRadius', 'f', 1), ('maxRadius', 'f', 1), ('aveRadius', 'f', 1), ('ratio', 'f', 1),
-            	    ('compactness', 'f', 1), ('voxelMean', 'f', 1), ('voxelVar', 'f', 1), ('TEM', 'f', 20)]
 	labeledEdges, numberObjects = S.shen_castan_edges(scLow, IIRFilter, window, lowThreshold, highThreshold, image)
 	# allocated struct array for edge object measures. for now just the rect bounding box
-	ROIList = N.zeros(numberObjects, dtype=datatype)
+	ROIList = N.zeros(numberObjects, dtype=S.objstruct)
 	# return the bounding box for each connected edge
 	S.get_object_stats(labeledEdges, ROIList)
 	return labeledEdges, ROIList[ROIList['Area']>dust]
 
 def sobel(image, sLow=0.3, tMode=1, lowThreshold=220+2048, highThreshold=600+2048, BPHigh=10.0, apearture=21, dust=16):
-	datatype = [('L', 'i', 1), ('R', 'i', 1), ('T', 'i', 1), ('B', 'i', 1),
-            	    ('Label', 'i', 1), ('Area', 'i', 1), ('cX', 'f', 1), ('cY', 'f', 1),
-            	    ('curveClose', 'i', 1), ('cXB', 'f', 1), ('cYB', 'f', 1), ('bLength', 'f', 1),
-            	    ('minRadius', 'f', 1), ('maxRadius', 'f', 1), ('aveRadius', 'f', 1), ('ratio', 'f', 1),
-            	    ('compactness', 'f', 1), ('voxelMean', 'f', 1), ('voxelVar', 'f', 1), ('TEM', 'f', 20)]
 	# get sobel edge points. return edges that are labeled (1..numberObjects)
 	labeledEdges, numberObjects = S.sobel_edges(sLow, tMode, lowThreshold, highThreshold, BPHigh, apearture, image)
 	# allocated struct array for edge object measures. for now just the rect bounding box
-	ROIList = N.zeros(numberObjects, dtype=datatype)
+	ROIList = N.zeros(numberObjects, dtype=S.objstruct)
 	# return the bounding box for each connected edge
 	S.get_object_stats(labeledEdges, ROIList)
 	# thin (medial axis transform) of the sobel edges as the sobel produces a 'band edge'
@@ -33,16 +30,11 @@ def sobel(image, sLow=0.3, tMode=1, lowThreshold=220+2048, highThreshold=600+204
 
 def canny(image, cSigma=1.0, cLow=0.5, cHigh=0.8, tMode=1, lowThreshold=220+2048, highThreshold=600+2048,
           BPHigh=10.0, apearture=21, dust=16):
-	datatype = [('L', 'i', 1), ('R', 'i', 1), ('T', 'i', 1), ('B', 'i', 1),
-            	    ('Label', 'i', 1), ('Area', 'i', 1), ('cX', 'f', 1), ('cY', 'f', 1),
-            	    ('curveClose', 'i', 1), ('cXB', 'f', 1), ('cYB', 'f', 1), ('bLength', 'f', 1),
-            	    ('minRadius', 'f', 1), ('maxRadius', 'f', 1), ('aveRadius', 'f', 1), ('ratio', 'f', 1),
-            	    ('compactness', 'f', 1), ('voxelMean', 'f', 1), ('voxelVar', 'f', 1), ('TEM', 'f', 20)]
 	# get canny edge points. return edges that are labeled (1..numberObjects)
 	labeledEdges, numberObjects = S.canny_edges(cSigma, cLow, cHigh, tMode, lowThreshold, highThreshold, 
 			                           BPHigh, apearture, image)
 	# allocated struct array for edge object measures. for now just the rect bounding box
-	ROIList = N.zeros(numberObjects, dtype=datatype)
+	ROIList = N.zeros(numberObjects, dtype=S.objstruct)
 	# return the bounding box for each connected edge
 	S.get_object_stats(labeledEdges, ROIList)
 	return labeledEdges, ROIList[ROIList['Area']>dust]
@@ -73,7 +65,7 @@ def get_texture_measures(rawImage, labeledEdges, ROIList):
 
 def segment_regions():
 	# get slice from the CT volume
-	image = get_slice('slice112.raw')
+	image = get_slice(filename)
 	# need a copy of original image as filtering will occur on the extracted slice
     	sourceImage = image.copy()
 	# Sobel is the first level segmenter. Sobel magnitude and MAT (medial axis transform)
@@ -89,7 +81,7 @@ def segment_regions():
 
 def grow_regions():
 	# get slice from the CT volume
-	image = get_slice('slice112.raw')
+	image = get_slice(filename)
 	regionMask, numberRegions = region_grow(image)
 	return regionMask, numberRegions 
 
@@ -128,34 +120,23 @@ def save_slice(mySlice, filename='junk.raw', bytes=4):
         slice.tofile(filename)
 
 
-# test 1
-def test1():
-    import Segmenter as S
-    image = S.get_slice('slice112.raw')
-    sourceImage = image.copy()
-    edges, objects = S.sobel(image)
-    S.get_shape_mask(edges, objects)
-    S.get_voxel_measures(sourceImage, edges, objects)
-    S.get_texture_measures(sourceImage, edges, objects)
-
-# test 2
-def test2():
-    import volumeInput as V
-    import Segmenter as S
-    sourceImage, labeledMask, ROIList = S.segment_regions()
-
-
-# test 3
-def test3():
-    import Segmenter as S
-    regionMask, numberRegions = S.grow_regions()
-    regionMask.max()
-    S.save_slice(regionMask, 'regionMask.raw')
-
-
-
 class TestSegmenter(NumpyTestCase):
     def test_1(self):
+	image = get_slice(filename)
+	sourceImage = image.copy()
+	edges, objects = sobel(image)
+	get_shape_mask(edges, objects)
+	get_voxel_measures(sourceImage, edges, objects)
+	get_texture_measures(sourceImage, edges, objects)
 
+    def test_2(self):
+	sourceImage, labeledMask, ROIList = segment_regions()
+
+    def test_3(self):
+	regionMask, numberRegions = grow_regions()
+	regionMask.max()
+	#save_slice(regionMask, 'regionMask.raw')
 
     
+if __name__ == "__main__":
+    NumpyTest().run()

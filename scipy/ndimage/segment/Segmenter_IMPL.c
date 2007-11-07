@@ -1315,8 +1315,8 @@ void morphoFilterBinaryImage(int rows, int cols, unsigned short *edgeImage, int 
 	unsigned short omask[11][11];
 	int olapValuesC[4];
 	int olapValuesO[4];
-	int CloseMaskSize;
-	int OpenMaskSize;
+	int CloseMaskSize=1;
+	int OpenMaskSize=1;
 	int LowValue1, HighValue1;   
 	int LowValue2, HighValue2;  
 	int spadSize;
@@ -2735,7 +2735,7 @@ void computeLaws(LawsFilter7 lawsFilter, tTEM LawsFeatures[], RECT roi, int labe
 	float *colFilter;
 	float filterResult1;
 	float filterResult2;
-	float lawsLL;
+	float lawsLL=1.0;
 	float t;
 	float maxValue;
 	float scale;

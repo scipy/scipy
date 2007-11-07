@@ -1,3 +1,5 @@
+# Segmentation package 
+# Author: Tom Waite, 2007
 
-ver = '0.0.1'
-
+from _segmenter import *
+from objectdata import *
