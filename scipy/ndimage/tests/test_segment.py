@@ -120,8 +120,8 @@ def save_slice(mySlice, filename='junk.raw', bytes=4):
         slice.tofile(filename)
 
 
-class TestSegmenter(NumpyTestCase):
-    def test_1(self):
+class TestSegment(NumpyTestCase):
+    def test1(self):
 	image = get_slice(filename)
 	sourceImage = image.copy()
 	edges, objects = sobel(image)
@@ -129,10 +129,10 @@ class TestSegmenter(NumpyTestCase):
 	get_voxel_measures(sourceImage, edges, objects)
 	get_texture_measures(sourceImage, edges, objects)
 
-    def test_2(self):
+    def test2(self):
 	sourceImage, labeledMask, ROIList = segment_regions()
 
-    def test_3(self):
+    def test3(self):
 	regionMask, numberRegions = grow_regions()
 	regionMask.max()
 	#save_slice(regionMask, 'regionMask.raw')
