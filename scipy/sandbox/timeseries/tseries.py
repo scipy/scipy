@@ -268,7 +268,11 @@ unchanged.
             result = func(other, *args).view(type(instance))
             result._dates = instance._dates
         else:
-            result = func(other, *args)._series
+            _result = func(other, *args)
+            if hasattr(_result, '_series'):
+                result = _result._series
+            else:
+                result = _result
         return result
 
 class _tsarraymethod(object):
