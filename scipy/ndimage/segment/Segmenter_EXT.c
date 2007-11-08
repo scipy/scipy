@@ -24,10 +24,10 @@ static PyObject *Segmenter_CannyEdges(PyObject *self, PyObject *args)
     PyObject *iArray = NULL;
     PyObject *eArray = NULL;
 
-    //
-    // pass in 2D LPF coefficients
-    if(!PyArg_ParseTuple(args, "dddiiidiO", &sigma, &cannyLow, &cannyHigh, &mode, &lowThreshold, &highThreshold,
-			                 &BPHigh, &apearture, &iArray))
+    /* pass in 2D LPF coefficients */
+    if(!PyArg_ParseTuple(args, "dddiiidiO", &sigma, &cannyLow, &cannyHigh, 
+			 &mode, &lowThreshold, &highThreshold,
+			 &BPHigh, &apearture, &iArray))
 	    goto exit;
 
     fP1  = (double *)PyArray_DATA(iArray);
@@ -43,13 +43,15 @@ static PyObject *Segmenter_CannyEdges(PyObject *self, PyObject *args)
     if(!PyArray_ISCONTIGUOUS(iArray) || !PyArray_ISCONTIGUOUS(eArray))
 	    goto exit;
 
-    if(!NI_CannyEdges(num, (int)dims[0], (int)dims[1], sigma, cannyLow, cannyHigh, mode, lowThreshold,
+    if(!NI_CannyEdges(num, (int)dims[0], (int)dims[1], sigma, cannyLow, 
+		      cannyHigh, mode, lowThreshold,
 		      highThreshold, BPHigh, apearture, fP1, fP2, &groups))
 	    goto exit;
 
 exit:
 
-    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("Oi", eArray, groups);
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("Oi", eArray, 
+							      groups);
 
 }
 
@@ -75,7 +77,8 @@ static PyObject *Segmenter_SobelEdges(PyObject *self, PyObject *args)
 
     //
     // pass in 2D LPF coefficients
-    if(!PyArg_ParseTuple(args, "diiidiO", &sobelLow, &mode, &lowThreshold, &highThreshold, &BPHigh, &apearture, &iArray))
+    if(!PyArg_ParseTuple(args, "diiidiO", &sobelLow, &mode, &lowThreshold, 
+			 &highThreshold, &BPHigh, &apearture, &iArray))
 	    goto exit;
 
     fP1  = (double *)PyArray_DATA(iArray);
@@ -93,13 +96,15 @@ static PyObject *Segmenter_SobelEdges(PyObject *self, PyObject *args)
 	    goto exit;
 
     
-    if(!NI_SobelEdges(num, (int)dims[0], (int)dims[1], sobelLow, mode, lowThreshold, highThreshold, BPHigh, apearture,
+    if(!NI_SobelEdges(num, (int)dims[0], (int)dims[1], sobelLow, mode, 
+		      lowThreshold, highThreshold, BPHigh, apearture,
 		      fP1, fP2, &groups))
 	    goto exit;
 
 exit:
 
-    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("Oi", eArray, groups-1);
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("Oi", eArray, 
+							      groups-1);
 
 }
 
@@ -123,7 +128,8 @@ static PyObject *Segmenter_ShenCastanEdges(PyObject *self, PyObject *args)
     PyObject *iArray = NULL;
     PyObject *eArray = NULL;
 
-    if(!PyArg_ParseTuple(args, "ddiiiO", &ShenCastanLow, &b, &window, &lowThreshold, &highThreshold, &iArray))
+    if(!PyArg_ParseTuple(args, "ddiiiO", &ShenCastanLow, &b, &window, 
+			 &lowThreshold, &highThreshold, &iArray))
 	    goto exit;
 
     fP1  = (double *)PyArray_DATA(iArray);
@@ -140,13 +146,15 @@ static PyObject *Segmenter_ShenCastanEdges(PyObject *self, PyObject *args)
     if(!PyArray_ISCONTIGUOUS(iArray) || !PyArray_ISCONTIGUOUS(eArray))
 	    goto exit;
 
-    if(!NI_ShenCastanEdges(num, (int)dims[0], (int)dims[1], b, ShenCastanLow, window, lowThreshold, highThreshold, 
+    if(!NI_ShenCastanEdges(num, (int)dims[0], (int)dims[1], b, ShenCastanLow, 
+			   window, lowThreshold, highThreshold, 
 			   fP1, fP2, &groups))
 	    goto exit;
 
 exit:
 
-    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("Oi", eArray, groups-1);
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("Oi", eArray, 
+							      groups-1);
 
 }
 
