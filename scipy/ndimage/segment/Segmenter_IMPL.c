@@ -10,7 +10,8 @@
 #define FALSE 0
 #define TRUE  1
 
-int NI_GetObjectStats(int rows, int cols, int numberObjects, unsigned short *labeledEdges, objStruct objectMetrics[]){
+int NI_GetObjectStats(int rows, int cols, int numberObjects, unsigned short *labeledEdges,
+                      objStruct objectMetrics[]){
 
 	int i, j, k, m;
 	int offset;
@@ -47,7 +48,7 @@ int NI_GetObjectStats(int rows, int cols, int numberObjects, unsigned short *lab
 		}
 		offset += cols;
 	    }
-	    // the bounding box for the 2D blob
+	    /* the bounding box for the 2D blob */
 	    objectMetrics[k-1].L     = LowX;
 	    objectMetrics[k-1].R     = HighX;
 	    objectMetrics[k-1].B     = LowY;
@@ -75,11 +76,11 @@ void buildKernel(double BPHigh, int HalfFilterTaps, int apearture, float *kernel
 	HC = BPHigh * rad; 
 	t2 = (float)2.0*pi; 
 	t1 = (float)2.0*HalfFilterTaps + (float)1.0;
-	//
+	/*
 	// build the Filter Kernel 
 	// the kernel starts at 1 only because it is linked to the internal filter2D routine
 	// the code is not a Fortran code
-	//
+	*/
 	j = 1;
 	for(i = -HalfFilterTaps; i <= HalfFilterTaps; ++i){
 	    r = (float)i;
@@ -96,7 +97,7 @@ void buildKernel(double BPHigh, int HalfFilterTaps, int apearture, float *kernel
 	    kernel[j++] = t4;
 	}
 
-	// normalize the kernel so unity gain (as is LP filter this is easy)
+	/* normalize the kernel so unity gain (as is LP filter this is easy) */
 	t1 = (float)0.0;
 	for(j = 1; j <= apearture; ++j){  
 	    t1 += kernel[j];
@@ -112,7 +113,8 @@ void buildKernel(double BPHigh, int HalfFilterTaps, int apearture, float *kernel
 	return;
 }
 
-void filter2D(int HalfFilterTaps, int rows, int cols, int lowThreshold, int highThreshold, float *kernel, double *Image){
+void filter2D(int HalfFilterTaps, int rows, int cols, int lowThreshold, int highThreshold,
+              float *kernel, double *Image){
 
 	int i, j, k, n, num1;
     	int offset;
@@ -122,11 +124,11 @@ void filter2D(int HalfFilterTaps, int rows, int cols, int lowThreshold, int high
 	num1 = HalfFilterTaps + 1;
 	offset = 0;
 	for(i = 0; i < rows; ++i){
-	    // copy image row to local buffer 
+	    /* copy image row to local buffer  */
 	    for(j = 0; j < cols; ++j){
 		buffer[num1+j] = Image[offset+j];
 	    }
-	    // constant pad the ends of the buffer
+	    /* constant pad the ends of the buffer */
 	    for(j = 0; j < num1; ++j){
 		buffer[j] = buffer[num1];
 	    }
@@ -134,7 +136,7 @@ void filter2D(int HalfFilterTaps, int rows, int cols, int lowThreshold, int high
 		buffer[j] = buffer[cols-1+num1];
 	    }
 
-	    // Perform Symmetric Convolution in the X dimension.
+	    /* Perform Symmetric Convolution in the X dimension. */
 	    for(n = 0, j = num1; j < (cols+num1); ++j, ++n){
 	        sum = buffer[j] * kernel[num1];
 	        for(k = 1; k < num1; ++k){
@@ -147,13 +149,13 @@ void filter2D(int HalfFilterTaps, int rows, int cols, int lowThreshold, int high
 
 	offset = 0;
 	for(i = 0; i < cols; ++i){
-	    // copy image column to local buffer 
+	    /* copy image column to local buffer */
 	    offset = 0;
 	    for(j = 0; j < rows; ++j){
             buffer[num1+j] = Image[offset+i];
 	        offset += cols;
 	    }
-	    // constant pad the ends of the buffer
+	    /* constant pad the ends of the buffer */
 	    for(j = 0; j < num1; ++j){
 		buffer[j] = buffer[num1];
 	    }
@@ -161,7 +163,7 @@ void filter2D(int HalfFilterTaps, int rows, int cols, int lowThreshold, int high
 	        buffer[j] = buffer[rows-1+num1];
 	    }
 
-	    // Perform Symmetric Convolution in the Y dimension.
+	    /* Perform Symmetric Convolution in the Y dimension. */
 	    offset = 0;
 	    for(j = num1; j < (rows+num1); ++j){
 	        sum = buffer[j] * kernel[num1];
@@ -173,7 +175,7 @@ void filter2D(int HalfFilterTaps, int rows, int cols, int lowThreshold, int high
 	    }
 	}
 
-	// threshold the image
+	/* threshold the image */
 	offset = 0;
 	for(i = 0; i < rows; ++i){
 	    for(j = 0; j < cols; ++j){
@@ -189,13 +191,14 @@ void filter2D(int HalfFilterTaps, int rows, int cols, int lowThreshold, int high
 
 }
 
-void doPreProcess(int samples, int rows, int cols, double *rawImage, double BPHigh, int apearture, int lowThreshold, int highThreshold){
+void doPreProcess(int samples, int rows, int cols, double *rawImage, double BPHigh, 
+                  int apearture, int lowThreshold, int highThreshold){
 
-	//
+	/*
 	// 2D low pass filter using bisinc and threshold 
 	// this specific example is on cardiac CT and focuses on segmenting the
 	// aorta and blood-filled chambers. for MRI the threshold will be different
-	//
+	*/
 
 	float *kernel;
 	int HalfFilterTaps = (apearture-1)/2;
@@ -221,9 +224,9 @@ int ConnectedEdgePoints(int rows, int cols, unsigned short *connectedEdges){
 	bool           Change;
 	unsigned short T[12];
 
-	//
+	/*
 	// connected components labeling. pixels touch within 3x3 mask for edge connectedness. 
-	//
+	*/
 	Label  = 1;
 	offset = 0;
 	for(i = 0; i < rows; ++i){
@@ -237,9 +240,9 @@ int ConnectedEdgePoints(int rows, int cols, unsigned short *connectedEdges){
 
 	while(1){
 	    Change = FALSE;
-	    //
+	    /*
 	    // TOP-DOWN Pass for labeling
-	    //
+	    */
 	    offset = cols;
 	    for(i = 1; i < rows-1; ++i){
 		for(j = 1; j < cols-1; ++j){
@@ -267,9 +270,9 @@ int ConnectedEdgePoints(int rows, int cols, unsigned short *connectedEdges){
 		}
 		offset += cols;
 	    }
-	    //
+	    /*
 	    // BOTTOM-UP Pass for labeling
-	    //
+	    */
 	    offset = (rows-1)*cols;
 	    for(i = (rows-1); i > 1; --i){
 		for(j = (cols-1); j > 1; --j){
@@ -298,7 +301,7 @@ int ConnectedEdgePoints(int rows, int cols, unsigned short *connectedEdges){
 		offset -= cols;
 	    }
 	    if(!Change) break;
-	}   // end while loop
+	}   /* end while loop */
 
 	Classes[0] = 0;
 	Label      = 1;
@@ -314,7 +317,7 @@ int ConnectedEdgePoints(int rows, int cols, unsigned short *connectedEdges){
 		    if(NewLabel){
 			Classes[Label++] = m;
 			if(Label > 4000){
-			    return 0; // too many labeled regions. this is a pathology in the image slice
+			    return 0; /* too many labeled regions. this is a pathology */
 			}
 		    }
 		}
@@ -322,9 +325,9 @@ int ConnectedEdgePoints(int rows, int cols, unsigned short *connectedEdges){
 	    offset += cols;
 	}
 
-	//
+	/*
 	// re-label the connected blobs in continuous label order
-	//
+	*/
 	offset = cols;
 	for(i = 1; i < (rows-1); ++i){
 	    for(j = 1; j < (cols-1); ++j){
@@ -349,7 +352,8 @@ float magnitude(float X, float Y){
 	return (float)sqrt(X*X + Y*Y);
 }
 
-int traceEdge(int i, int j, int rows, int cols, double cannyLow, float *magImage, float *HYSImage){
+int traceEdge(int i, int j, int rows, int cols, double cannyLow, float *magImage,
+              float *HYSImage){
 
 	int n, m;
 	int ptr;
@@ -357,9 +361,9 @@ int traceEdge(int i, int j, int rows, int cols, double cannyLow, float *magImage
 
 	ptr = i * cols;
 	if(HYSImage[ptr+j] == (float)0.0){
-	    //
+	    /*
 	    // this point is above high threshold
-	    //
+	    */
 	    HYSImage[ptr+j] = (float)1.0;
 	    flag = 0;
 	    for(n = -1; n <= 1; ++n){
@@ -368,9 +372,9 @@ int traceEdge(int i, int j, int rows, int cols, double cannyLow, float *magImage
 		    if(((i+n) > 0) && ((j+m) > 0) && ((i+n) < rows) && ((j+m) < cols)){
 			ptr = (i+n) * cols;
 			if(magImage[ptr+j+m] > cannyLow){
-	    		    //
+	    		    /*
 	    		    // this point is above low threshold
-	    		    //
+	    		    */
 			    if(traceEdge(i+n, j+m, rows, cols, cannyLow, magImage, HYSImage)){
 				flag = 1;
 				break;
@@ -388,7 +392,8 @@ int traceEdge(int i, int j, int rows, int cols, double cannyLow, float *magImage
 }
 
 
-void edgeThreshold(int rows, int cols, double cannyLow, float *magImage, float *HYSImage){
+void edgeThreshold(int rows, int cols, double cannyLow, float *magImage, 
+                   float *HYSImage){
 
 	int i, j;
 	int ptr;
@@ -406,7 +411,8 @@ void edgeThreshold(int rows, int cols, double cannyLow, float *magImage, float *
 
 }
 
-void edgeHysteresis(int rows, int cols, double cannyLow, double cannyHigh, float *magImage, float *HYSImage){
+void edgeHysteresis(int rows, int cols, double cannyLow, double cannyHigh,
+                    float *magImage, float *HYSImage){
 
 	int i, j;
 	int ptr;
@@ -424,8 +430,9 @@ void edgeHysteresis(int rows, int cols, double cannyLow, double cannyHigh, float
 
 }
 
-void nonMaxSupress(int rows, int cols, float aveXValue, float aveYValue, double *cannyLow, double *cannyHigh,
-                   int mode, float *hDGImage, float *vDGImage, float *magImage){
+void nonMaxSupress(int rows, int cols, float aveXValue, float aveYValue,
+                   double *cannyLow, double *cannyHigh, int mode, 
+                   float *hDGImage, float *vDGImage, float *magImage){
 
 	int i, j;
 	int ptr, ptr_m1, ptr_p1;
@@ -452,7 +459,7 @@ void nonMaxSupress(int rows, int cols, float aveXValue, float aveYValue, double 
 		if((fabs(xC) < aveXValue) && (fabs(yC) < aveYValue)) continue;
 		G = magnitude(xC, yC);
 		if(fabs(yC) > fabs(xC)){
-		    // vertical gradient
+		    /* vertical gradient */
 		    xSlope = (float)(fabs(xC) / fabs(yC));
 		    ySlope = (float)1.0;
 		    G2 = magnitude(hDGImage[ptr_m1+j], vDGImage[ptr_m1+j]);
@@ -467,7 +474,7 @@ void nonMaxSupress(int rows, int cols, float aveXValue, float aveYValue, double 
 		    }
 		}
 		else{
-		    // horizontal gradient
+		    /* horizontal gradient */
 		    xSlope = (float)(fabs(yC) / fabs(xC));
 		    ySlope = (float)1.0;
 		    G2 = magnitude(hDGImage[ptr+j+1], vDGImage[ptr+j+1]);
@@ -481,7 +488,7 @@ void nonMaxSupress(int rows, int cols, float aveXValue, float aveYValue, double 
 			G3 = magnitude(hDGImage[ptr_p1+j-1], vDGImage[ptr_p1+j-1]);
 		    }
 		}
-		if( (G > (xSlope*G1 + (ySlope-xSlope)*G2)) && (G > (xSlope*G3 + (ySlope-xSlope)*G4)) ){
+		if((G > (xSlope*G1+(ySlope-xSlope)*G2))&&(G > (xSlope*G3+(ySlope-xSlope)*G4))){
 		    magImage[ptr+j] = G;	
 		}
 		if(magImage[ptr+j] > maxValue) maxValue = magImage[ptr+j];
@@ -517,9 +524,9 @@ void nonMaxSupress(int rows, int cols, float aveXValue, float aveYValue, double 
 		++ptr;
 	    }
 	}
-	//
+	/*
 	// now get the max after skipping the low values
-	//
+	*/
 	mValue = -1;
 	mIndex = 0;
 	for(i = 10; i < 256; ++i){
@@ -530,12 +537,12 @@ void nonMaxSupress(int rows, int cols, float aveXValue, float aveYValue, double 
 	}
 
 	if(mode == 1){
-	    // based on the mean value of edge energy
+	    /* based on the mean value of edge energy */
 	    *cannyLow  = ((*cannyLow)  * tAve);
 	    *cannyHigh = ((*cannyHigh) * tAve);
 	}
 	else{
-	    // based on the mode value of edge energy
+	    /* based on the mode value of edge energy */
 	    *cannyLow  = ((*cannyLow)  * ((float)mIndex/step));
 	    *cannyHigh = ((*cannyHigh) * ((float)mIndex/step));
 	}
@@ -548,9 +555,9 @@ void DGFilters(int samples, int rows, int cols, double cannySigma, int gWidth,
                float *aveXValue, float *aveYValue, double *rawImage,
                double *dgKernel, float *hDGImage, float *vDGImage){
 
-	//
+	/*
 	// implements the derivative of Gaussian filter. kernel set by CannyEdges
-	//
+	*/
 	int i, j, k;
 	int ptr;
 	int mLength;
@@ -564,9 +571,9 @@ void DGFilters(int samples, int rows, int cols, double cannySigma, int gWidth,
 	mLength = MAX(rows, cols) + 64;
 	tBuffer = calloc(mLength, sizeof(float));
 
-	//
+	/*
 	// filter X 
-	//
+	*/
 	count = 0;
 	for(i = 0; i < rows; ++i){
 	    ptr = i * cols;
@@ -585,11 +592,11 @@ void DGFilters(int samples, int rows, int cols, double cannySigma, int gWidth,
 	if(count){
 	    *aveXValue /= (float)count;
 	    *aveXValue = (float)0.5 * (*aveXValue);
-	    // this is 50% of the max, hardwirred for now, and is part of the threshold
+	    /* this is 50% of the max, hardwirred for now, and is part of the threshold */
 	}
-	//
+	/*
 	// filter Y 
-	//
+	*/
 	count = 0;
 	for(i = 0; i < cols; ++i){
 	    for(j = 0; j < rows; ++j){
@@ -612,7 +619,7 @@ void DGFilters(int samples, int rows, int cols, double cannySigma, int gWidth,
 	if(count){
 	    *aveYValue /= (float)count;
 	    *aveYValue = (float)0.5 * (*aveYValue);
-	    // this is 50% of the max, hardwirred for now, and is part of the threshold
+	    /* this is 50% of the max, hardwirred for now, and is part of the threshold */
 	}
 
 	free(tBuffer);
@@ -622,8 +629,10 @@ void DGFilters(int samples, int rows, int cols, double cannySigma, int gWidth,
 }
 
 
-int NI_CannyEdges(int samples, int rows, int cols, double cannySigma, double cannyLow, double cannyHigh, int mode, 
-                  int lowThreshold, int highThreshold, double BPHigh, int apearture, double *rawImage,
+int NI_CannyEdges(int samples, int rows, int cols, double cannySigma, 
+                  double cannyLow, double cannyHigh, int mode, 
+                  int lowThreshold, int highThreshold, double BPHigh,
+                  int apearture, double *rawImage,
 		  unsigned short *edgeImage, int *groups){
 
 	int i, j;
@@ -642,14 +651,12 @@ int NI_CannyEdges(int samples, int rows, int cols, double cannySigma, double can
 	float *magImage = NULL;
 	float *tBuffer  = NULL;
 
-	// filter
-	printf("do preProcess\n");
+	/* filter */
 	doPreProcess(samples, rows, cols, rawImage, BPHigh, apearture, lowThreshold, highThreshold);
-	printf("do Canny\n");
 
-	//
+	/*
 	// memory for magnitude, horizontal and vertical derivative of Gaussian filter
-	//
+	*/
 	mLength  = MAX(rows, cols) + 64;
 	HYSImage = calloc(samples, sizeof(float));
 	hDGImage = calloc(samples, sizeof(float));
@@ -657,10 +664,10 @@ int NI_CannyEdges(int samples, int rows, int cols, double cannySigma, double can
 	magImage = calloc(samples, sizeof(float));
 	tBuffer  = calloc(mLength, sizeof(float));
 
-	//
+	/*
 	// build derivative of Gaussian filter kernel
 	// kernel is anti-symmetric so convolution is k[j]*(v[i+j] - v[i-j]) 
-	//
+	*/
 	gWidth = 20;
 	for(i = 0; i < gWidth; ++i){
 	    t = (float)i;
@@ -671,8 +678,10 @@ int NI_CannyEdges(int samples, int rows, int cols, double cannySigma, double can
 	    HYSImage[i] = (float)0.0;
 	}
 
-	DGFilters(samples, rows, cols, cannySigma, gWidth, &aveXValue, &aveYValue, rawImage, dgKernel, hDGImage, vDGImage); 
-	nonMaxSupress(rows, cols, aveXValue, aveYValue, &cannyLow, &cannyHigh, mode, hDGImage, vDGImage, magImage);
+	DGFilters(samples, rows, cols, cannySigma, gWidth, &aveXValue, &aveYValue,
+	          rawImage, dgKernel, hDGImage, vDGImage); 
+	nonMaxSupress(rows, cols, aveXValue, aveYValue, &cannyLow, &cannyHigh,
+	              mode, hDGImage, vDGImage, magImage);
 	if(doHysteresis){
 	    edgeHysteresis(rows, cols, cannyLow, cannyHigh, magImage, HYSImage);
 	}
@@ -680,17 +689,17 @@ int NI_CannyEdges(int samples, int rows, int cols, double cannySigma, double can
 	    edgeThreshold(rows, cols, cannyLow, magImage, HYSImage);
 	}
 
-	//
+	/*
 	// edge image
-	//
+	*/
 	for(i = 0; i < samples; ++i){
 	    edgeImage[i] = (unsigned short)HYSImage[i];
 	}
 	*groups = ConnectedEdgePoints(rows, cols, edgeImage);
 
-	//
+	/*
 	// prune the isolated pixels
-	//
+	*/
 	offset  = 0;
 	for(i = 0; i < rows; ++i){
 	    for(j = 0; j < cols; ++j){
@@ -713,7 +722,8 @@ int NI_CannyEdges(int samples, int rows, int cols, double cannySigma, double can
 
 }
 
-void doSobel(int samples, int rows, int cols, double sobelLow, int mode, double *rawImage, unsigned short *edgeImage){
+void doSobel(int samples, int rows, int cols, double sobelLow, int mode, 
+             double *rawImage, unsigned short *edgeImage){
 
 	int i, j;
 	int p, m, n;
@@ -745,9 +755,9 @@ void doSobel(int samples, int rows, int cols, double sobelLow, int mode, double 
 	    offset += cols;
 	}
 
-	//
+	/*
 	// Sobel
-	//
+	*/
 	offset = cols;
 	for(i = 1; i < rows-1; ++i){
 	    offsetM1 = offset - cols;
@@ -769,7 +779,7 @@ void doSobel(int samples, int rows, int cols, double sobelLow, int mode, double 
 	    offset += cols;
 	}
 
-	// threshold based on ave
+	/* threshold based on ave */
 	pAve /= count;
 	scale = 1.0 / maxValue;
 
@@ -785,9 +795,9 @@ void doSobel(int samples, int rows, int cols, double sobelLow, int mode, double 
 	    }
 	    offset += cols;
 	}
-	//
+	/*
 	// now get the max after skipping the low values
-	//
+	*/
 	maxValue = -1;
 	maxIndex = 0;
 	for(i = 10; i < 256; ++i){
@@ -798,11 +808,11 @@ void doSobel(int samples, int rows, int cols, double sobelLow, int mode, double 
 	}
 
 	if(mode == 1){
-	    // based on the mean value of edge energy
+	    /* based on the mean value of edge energy */
 	    pThreshold = (int)(sobelLow * (float)pAve);
 	}
 	else{
-	    // based on the mode value of edge energy
+	    /* based on the mode value of edge energy */
 	    pThreshold = (sobelLow * (minValue + ((float)maxIndex/step)));
 	}
 
@@ -827,7 +837,8 @@ void doSobel(int samples, int rows, int cols, double sobelLow, int mode, double 
 
 }
 
-void estimateThreshold(float *lowThreshold, float *highThreshold, float ShenCastanLow, int rows, int cols, float *SourceImage){
+void estimateThreshold(float *lowThreshold, float *highThreshold, float ShenCastanLow, 
+                       int rows, int cols, float *SourceImage){
 
 	int i, j;
 	int offset;
@@ -862,9 +873,9 @@ void estimateThreshold(float *lowThreshold, float *highThreshold, float ShenCast
 	    offset += cols;
 	}
 
-	//
+	/*
 	// now get the edge energy mode
-	//
+	*/
 	value  = 0;
 	mIndex = 10;
 	for(i = 10; i < 256; ++i){
@@ -884,16 +895,17 @@ void estimateThreshold(float *lowThreshold, float *highThreshold, float ShenCast
 
 }
 
-void thresholdEdges(float *SourceImage, unsigned short *EdgeImage, double ShenCastanLow, int rows, int cols){
+void thresholdEdges(float *SourceImage, unsigned short *EdgeImage, double ShenCastanLow,
+                    int rows, int cols){
 
 	int i, j;
 	int offset;
 	float tLow, tHigh;
 
-	//
+	/*
 	// SourceImage contains the adaptive gradient
 	// get threshold from the mode of the edge energy
-	//
+	*/
 	estimateThreshold(&tLow, &tHigh, ShenCastanLow, rows, cols, SourceImage);
 
 	offset = 0;
@@ -913,7 +925,8 @@ void thresholdEdges(float *SourceImage, unsigned short *EdgeImage, double ShenCa
 
 }
 
-float adaptiveGradient(float *BLImage, float *FilterImage, int nrow, int ncol, int cols, int window){
+float adaptiveGradient(float *BLImage, float *FilterImage, int nrow, int ncol, 
+                       int cols, int window){
 
 	int i, j;
 	int offset;
@@ -957,7 +970,8 @@ float adaptiveGradient(float *BLImage, float *FilterImage, int nrow, int ncol, i
 
 }
 
-void getZeroCrossings(float *SourceImage, float *FilterImage, float *BLImage, int rows, int cols, int window){
+void getZeroCrossings(float *SourceImage, float *FilterImage, float *BLImage, 
+                      int rows, int cols, int window){
 
 	int i, j;
 	int offset;
@@ -996,7 +1010,7 @@ void getZeroCrossings(float *SourceImage, float *FilterImage, float *BLImage, in
 		    } 
 		}
 		if(validEdge){
-		    // adaptive gradeint is signed
+		    /* adaptive gradeint is signed */
 		    SourceImage[offset+j] = (float)fabs(adaptiveGradient(BLImage, FilterImage, i, j, cols, window));
 		}
 	    }
@@ -1014,9 +1028,9 @@ void computeBandedLaplacian(float *image1, float *image2, float *BLImage, int ro
 	int offset;
 	float t;
 
-	//
+	/*
 	// like an unsharp mask
-	//
+	*/
 	offset = 0;
 	for(i = 0; i < rows; ++i){
 	    for(j = 0; j < cols; ++j){
@@ -1060,7 +1074,8 @@ void thresholdImage(float *Raw, float *Filtered, int rows, int cols, int tLow, i
 
 }
 
-void ISEF_Vertical(float *SourceImage, float *FilterImage, float *A, float *B, int rows, int cols, double b){
+void ISEF_Vertical(float *SourceImage, float *FilterImage, float *A, float *B, 
+                   int rows, int cols, double b){
 
 
 	int i, j;
@@ -1070,40 +1085,40 @@ void ISEF_Vertical(float *SourceImage, float *FilterImage, float *A, float *B, i
 	b1 = ((float)1.0 - b)/((float)1.0 + b);
 	b2 = b * b1;
 
-	//
+	/*
 	// set the boundaries
-	//
+	*/
 	offset = (rows-1)*cols;
 	for(i = 0; i < cols; ++i){
-	    // process row 0
+	    /* process row 0 */
 	    A[i] = b1 * SourceImage[i];
-	    // process row N-1
+	    /* process row N-1 */
 	    B[offset+i] = b2 * SourceImage[offset+i];
 	}
 
-	//
+	/*
 	// causal component of IIR filter
-	//
+	*/
 	offset = cols;
 	for(i = 1; i < rows; ++i){
 	    for(j = 0; j < cols; ++j){
-		//
+		/*
 	        // IIR ISEF filter applied across rows
-		//
+		*/
 	        A[offset+j] = (b * A[offset-cols+j]) + (b1 * SourceImage[offset+j]);
 	    }
 	    offset += cols;
 	}
 
-	//
+	/*
 	// anti-causal component of IIR filter
-	//
+	*/
 	offset = (rows-2)*cols;
 	for(i = rows-2; i >= 0; --i){
 	    for(j = 0; j < cols; ++j){
-		//
+		/*
 	        // IIR ISEF filter applied across rows
-		//
+		*/
 	        B[offset+j] = (b * B[offset+cols+j]) + (b2 * SourceImage[offset+j]); 
 	    }
 	    offset -= cols;
@@ -1114,9 +1129,9 @@ void ISEF_Vertical(float *SourceImage, float *FilterImage, float *A, float *B, i
 	    FilterImage[offset+j] = A[offset+j];
 	}
 
-	//
+	/*
 	// add causal and anti-causal IIR parts
-	//
+	*/
 	offset = 0;
 	for(i = 1; i < rows-2; ++i){
 	    for(j = 0; j < cols-1; ++j){
@@ -1129,12 +1144,13 @@ void ISEF_Vertical(float *SourceImage, float *FilterImage, float *A, float *B, i
 
 }
 
-void ISEF_Horizontal(float *SourceImage, float *FilterImage, float *A, float *B, int rows, int cols, double b){
+void ISEF_Horizontal(float *SourceImage, float *FilterImage, float *A, float *B,
+                     int rows, int cols, double b){
 
 
-	//
+	/*
 	// source and smooth are the same in this pass of the 2D IIR
-	//
+	*/
 
 	int i, j;
 	int offset;
@@ -1143,9 +1159,9 @@ void ISEF_Horizontal(float *SourceImage, float *FilterImage, float *A, float *B,
 	b1 = ((float)1.0 - b)/((float)1.0 + b);
 	b2 = b * b1;
 
-	//
+	/*
 	// columns boundaries
-	//
+	*/
 	offset = 0;
 	for(i = 0; i < rows; ++i){
 	    // col 0
@@ -1154,9 +1170,9 @@ void ISEF_Horizontal(float *SourceImage, float *FilterImage, float *A, float *B,
 	    B[offset+cols-1] = b2 * SourceImage[offset+cols-1];
 	}
 
-	//
+	/*
 	// causal IIR part
-	//
+	*/
 	offset = 0;
 	for(j = 1; j < cols; ++j){
 	    for(i = 0; i < rows; ++i){
@@ -1165,9 +1181,9 @@ void ISEF_Horizontal(float *SourceImage, float *FilterImage, float *A, float *B,
 	    offset += cols;
 	}
 
-	//
+	/*
 	// anti-causal IIR part
-	//
+	*/
 	offset = 0;
 	for(j = cols-2; j > 0; --j){
 	    for(i = 0; i < rows; ++i){
@@ -1176,17 +1192,17 @@ void ISEF_Horizontal(float *SourceImage, float *FilterImage, float *A, float *B,
 	    offset += cols;
 	}
 
-	//
+	/*
 	// filtered output. this is 2-pass IIR and pass 1 is vertical
-	//
+	*/
 	offset = 0;
 	for(i = 0; i < rows; ++i){
 	    FilterImage[offset+cols-1] = A[offset+cols-1];
 	}
 
-	//
+	/*
 	// add causal and anti-causal IIR parts
-	//
+	*/
 	for(i = 0; i < rows; ++i){
 	    for(j = 0; j < cols-1; ++j){
 	        FilterImage[offset+j] = A[offset+j] + B[offset+j+1];
@@ -1218,7 +1234,8 @@ void computeISEF(float *SourceImage, float *FilterImage, int rows, int cols, dou
 
 }
 
-void Shen_Castan(double b, double ShenCastanLow, int rows, int cols, int window, int lowThreshold, int highThreshold,
+void Shen_Castan(double b, double ShenCastanLow, int rows, int cols, int window,
+                 int lowThreshold, int highThreshold,
 	       	 double *RawImage, unsigned short *EdgeImage){
 
 	int i;
@@ -1235,10 +1252,10 @@ void Shen_Castan(double b, double ShenCastanLow, int rows, int cols, int window,
 	    SourceImage[i] = RawImage[i];
 	}
 	computeISEF(SourceImage, FilterImage, rows, cols, b);
-	// optional thresholding based on low, high
+	/* optional thresholding based on low, high */
 	thresholdImage(SourceImage, FilterImage, rows, cols, lowThreshold, highThreshold);
 	computeBandedLaplacian(FilterImage, SourceImage, BinaryLaplacianImage, rows, cols);
-	// the new source image is now the adaptive gradient
+	/* the new source image is now the adaptive gradient */
 	getZeroCrossings(SourceImage, FilterImage, BinaryLaplacianImage, rows, cols, window);
 	thresholdEdges(SourceImage, EdgeImage, ShenCastanLow, rows, cols);
 
@@ -1250,8 +1267,9 @@ void Shen_Castan(double b, double ShenCastanLow, int rows, int cols, int window,
 
 }
 
-int NI_ShenCastanEdges(int samples, int rows, int cols, double b, double ShenCastanLow, int window, int lowThreshold,
-                       int highThreshold, double *rawImage, unsigned short *edgeImage, int *groups){
+int NI_ShenCastanEdges(int samples, int rows, int cols, double b, double ShenCastanLow,
+                       int window, int lowThreshold, int highThreshold, 
+                       double *rawImage, unsigned short *edgeImage, int *groups){
 
 
 	int i, j;
@@ -1281,7 +1299,8 @@ int NI_ShenCastanEdges(int samples, int rows, int cols, double b, double ShenCas
 
 }
 
-void buildBinaryImage(int rows, int cols, double *rawImage, unsigned short *edgeImage, int lowThreshold, int highThreshold){
+void buildBinaryImage(int rows, int cols, double *rawImage, unsigned short *edgeImage,
+                      int lowThreshold, int highThreshold){
 
 	int i, j;
 	int offset;
@@ -1306,7 +1325,8 @@ void buildBinaryImage(int rows, int cols, double *rawImage, unsigned short *edge
 
 
 
-void morphoFilterBinaryImage(int rows, int cols, unsigned short *edgeImage, int CloseSize, int OpenSize){
+void morphoFilterBinaryImage(int rows, int cols, unsigned short *edgeImage,
+                             int CloseSize, int OpenSize){
 
 
 	int i, j;
@@ -1315,8 +1335,8 @@ void morphoFilterBinaryImage(int rows, int cols, unsigned short *edgeImage, int 
 	unsigned short omask[11][11];
 	int olapValuesC[4];
 	int olapValuesO[4];
-	int CloseMaskSize=1;
-	int OpenMaskSize=1;
+	int CloseMaskSize = 1;
+	int OpenMaskSize = 1;
 	int LowValue1, HighValue1;   
 	int LowValue2, HighValue2;  
 	int spadSize;
@@ -1348,9 +1368,9 @@ void morphoFilterBinaryImage(int rows, int cols, unsigned short *edgeImage, int 
 	    olapValuesC[3] = HighValue2;
 	}
 
-	//
+	/*
 	// Open filter
-	//
+	*/
 	if(OpenSize){
 	    OpenMaskSize = (OpenSize-1)/2;
 	    for(i = 0; i < 2*OpenMaskSize+1; ++i){
@@ -1391,11 +1411,11 @@ void morphoFilterBinaryImage(int rows, int cols, unsigned short *edgeImage, int 
 	for(i = 0; i < rows; ++i){
 	    for(j = 0; j < cols; ++j){
 		if(ImageE[offset2+j] == 1){
-		    // this will activate some original off-pixels
+		    /* this will activate some original off-pixels */
 		    edgeImage[offset+j] = 1;
 		}
 		else{
-		    // this will zero some original on-pixels
+		    /* this will zero some original on-pixels */
 		    edgeImage[offset+j] = 0;
 		}
 	    }
@@ -1410,7 +1430,8 @@ void morphoFilterBinaryImage(int rows, int cols, unsigned short *edgeImage, int 
 
 }
 
-void doRegionGrow(int samples, int rows, int cols, double *rawImage, unsigned short *edgeImage, int lowThreshold, 
+void doRegionGrow(int samples, int rows, int cols, double *rawImage,
+                  unsigned short *edgeImage, int lowThreshold, 
 		  int highThreshold, int closeWindow, int openWindow){
 
 	buildBinaryImage(rows, cols, rawImage, edgeImage, lowThreshold, highThreshold);
@@ -1420,14 +1441,16 @@ void doRegionGrow(int samples, int rows, int cols, double *rawImage, unsigned sh
 
 }
 
-int NI_RegionGrow(int samples, int rows, int cols, int lowThreshold, int highThreshold, int closeWindow,   
-                  int openWindow, double *rawImage, unsigned short *edgeImage, int *groups){
+int NI_RegionGrow(int samples, int rows, int cols, int lowThreshold, int highThreshold,
+                   int closeWindow, int openWindow, double *rawImage, 
+                   unsigned short *edgeImage, int *groups){
 
 	int i, j;
 	int offset;
 	int status;
 
-	doRegionGrow(samples, rows, cols, rawImage, edgeImage, lowThreshold, highThreshold, closeWindow, openWindow);
+	doRegionGrow(samples, rows, cols, rawImage, edgeImage, lowThreshold,
+	             highThreshold, closeWindow, openWindow);
 	*groups = ConnectedEdgePoints(rows, cols, edgeImage);
 
 	//
@@ -1448,7 +1471,8 @@ int NI_RegionGrow(int samples, int rows, int cols, int lowThreshold, int highThr
 
 }
 
-int NI_SobelEdges(int samples, int rows, int cols, double sobelLow, int mode, int lowThreshold, int highThreshold, double BPHigh,   
+int NI_SobelEdges(int samples, int rows, int cols, double sobelLow, int mode,
+                  int lowThreshold, int highThreshold, double BPHigh,   
                   int apearture, double *rawImage, unsigned short *edgeImage, int *groups){
 
 
@@ -1461,9 +1485,9 @@ int NI_SobelEdges(int samples, int rows, int cols, double sobelLow, int mode, in
 	*groups = ConnectedEdgePoints(rows, cols, edgeImage);
 	
 	
-	//
+	/*
 	// prune the isolated pixels
-	//
+	*/
 	offset  = 0;
 	for(i = 0; i < rows; ++i){
 	    for(j = 0; j < cols; ++j){
@@ -1611,7 +1635,7 @@ void ThinningFilter(int regRows, int regColumns, int spadSize, int J_mask[3][30]
 
 	nloop = 0;
 	while(1){
-	    // erode
+	    /* erode */
 	    Column = 0;
 	    for(n = 0; n < 8; ++n){
 		for(i = 0; i < 3; ++i){
@@ -1644,7 +1668,7 @@ void ThinningFilter(int regRows, int regColumns, int spadSize, int J_mask[3][30]
 		    Offset += spadSize;
 		}
 
-		// dialate
+		/* dialate */
 		Offset = 0;
 		for(i = 0; i < N; ++i){
 		    for(j = 0; j < M; ++j){
@@ -1671,7 +1695,7 @@ void ThinningFilter(int regRows, int regColumns, int spadSize, int J_mask[3][30]
 		    Offset += spadSize;
 		}
 
-		// form the HMT
+		/* form the HMT */
 		Offset = 0;
 		for(i = 0; i < N; ++i){
 		    for(j = 0; j < M; ++j){
@@ -1681,7 +1705,7 @@ void ThinningFilter(int regRows, int regColumns, int spadSize, int J_mask[3][30]
 		    Offset += spadSize;
 		}
 
-		// Thin for stage n
+		/* Thin for stage n */
 
 		Offset = 0;
 		for(i = 0; i < N; ++i){
@@ -1701,7 +1725,7 @@ void ThinningFilter(int regRows, int regColumns, int spadSize, int J_mask[3][30]
 		}
 	    }
 
-	    // check for the NULL set
+	    /* check for no change */
 	    hit = 0;
 	    Offset = 0;
 	    for(i = 0; i < N; ++i){
@@ -1730,7 +1754,8 @@ void ThinningFilter(int regRows, int regColumns, int spadSize, int J_mask[3][30]
 }
 
 
-int NI_ThinFilter(int samples, int rows, int cols, int numberObjects, unsigned short *edgeImage, objStruct objectMetrics[]){
+int NI_ThinFilter(int samples, int rows, int cols, int numberObjects,
+                  unsigned short *edgeImage, objStruct objectMetrics[]){
 
 	int i, j;
 	int loop;
@@ -1752,9 +1777,9 @@ int NI_ThinFilter(int samples, int rows, int cols, int numberObjects, unsigned s
 	unsigned char *Copy;
 	unsigned short *thinEdgeImage;
 
-	//
+	/*
 	// scratch pad (spad) memory
-	//
+	*/
 	Input          = calloc(samples, sizeof(unsigned char));
 	CInput         = calloc(samples, sizeof(unsigned char));
 	ErosionStage   = calloc(samples, sizeof(unsigned char));
@@ -1773,9 +1798,9 @@ int NI_ThinFilter(int samples, int rows, int cols, int numberObjects, unsigned s
 	    roiRows = top-bottom+2*inflate;
 	    roiCols = right-left+2*inflate;
 
-	    //
+	    /*
 	    // clear the scratch pad
-	    //
+	    */
 	    srcOffset = 0;
 	    for(i = 0; i < roiRows; ++i){
 	        for(j = 0; j < roiCols; ++j){
@@ -1784,9 +1809,9 @@ int NI_ThinFilter(int samples, int rows, int cols, int numberObjects, unsigned s
 	        srcOffset += cols;
 	    }
 
-	    //
+	    /*
 	    // copy the ROI for MAT (medial axis transformation) filter
-	    //
+	    */
 	    dstOffset = inflate*rows;
 	    for(i = bottom; i < top; ++i){
 		srcOffset = i*cols;
@@ -1797,11 +1822,12 @@ int NI_ThinFilter(int samples, int rows, int cols, int numberObjects, unsigned s
 		}
 		dstOffset += cols;
 	    }
-	    ThinningFilter(roiRows, roiCols, cols, J_mask, K_mask, Input, CInput, ErosionStage, DialationStage, HMT, Copy);
+	    ThinningFilter(roiRows, roiCols, cols, J_mask, K_mask, Input, CInput,
+	                   ErosionStage, DialationStage, HMT, Copy);
 
-	    //
+	    /*
 	    // copy the MAT roi to the new edgeImage (clip the inflate border)
-	    //
+	    */
 	    dstOffset = inflate*rows;
 	    for(i = bottom; i < top; ++i){
 		srcOffset = i*cols;
@@ -1814,10 +1840,10 @@ int NI_ThinFilter(int samples, int rows, int cols, int numberObjects, unsigned s
 	    }
 	}
 
-	//
+	/*
 	// copy the MAT edges and return the thinned edges
 	// this will prune the isolated edge points from the edgeImage source
-	//
+	*/
 	for(i = 0; i < rows*cols; ++i){
 	    edgeImage[i] = thinEdgeImage[i];
 	}
@@ -1839,11 +1865,11 @@ int NI_ThinFilter(int samples, int rows, int cols, int numberObjects, unsigned s
 
 void generateMask(unsigned char *ImageH, bPOINT *boundary, int newSamples, int label, int cols){
 
-	//
+	/*
 	// get the boundary point pairs (left, right) for each line
 	// if there is no pair, then the boundary is open
 	// then fill the image in with the current label
-	//
+	*/
 
 	int i, j, k, m;
 	int list[2048];
@@ -1873,7 +1899,7 @@ void generateMask(unsigned char *ImageH, bPOINT *boundary, int newSamples, int l
 			}
 		    }
 		}
-		// now get the closest boundary
+		/* now get the closest boundary */
 		if(k){
 		    distance = maxDistance;
 		    index    = -1;
@@ -1899,9 +1925,9 @@ void generateMask(unsigned char *ImageH, bPOINT *boundary, int newSamples, int l
 			    low  = boundary[index].x;
 			    high = boundary[i].x;
 			}
-			//
+			/*
 			// do the fill
-			//
+			*/
 			offset = y * cols;
 			for(j = low; j <= high; ++j){
 			    ImageH[offset+j] = label;
@@ -1909,7 +1935,7 @@ void generateMask(unsigned char *ImageH, bPOINT *boundary, int newSamples, int l
 		    }
 		}
 		else{
-		    // boundary point is isolated
+		    /* boundary point is isolated */
 		    boundary[i].linkIndex = i;
 		}
 	    }
@@ -1919,7 +1945,8 @@ void generateMask(unsigned char *ImageH, bPOINT *boundary, int newSamples, int l
 
 }
 
-void getBoundaryMetrics(bPOINT *boundary, float *length, float *minRadius, float *maxRadius, float *aveRadius,
+void getBoundaryMetrics(bPOINT *boundary, float *length, float *minRadius,
+                        float *maxRadius, float *aveRadius,
 	         	float Xcenter, float Ycenter, int newSamples){
 
 	int j;
@@ -1990,11 +2017,6 @@ void trackBoundary(unsigned char *Input, blobBoundary lBoundary[], int mcount, i
 	p = 1;
 	while(p < mcount){
 	    offset = (CurI-inflate)*spadSize;
-	    if(offset < 0){
-	        printf("offset < 0 "); 
-	        printf("CurI [%d]. p [%d]. mcount [%d]\n", CurI, p, mcount); 
-	        getchar();
-	    }
 	    MinD = 1024;
 	    NewI = -1;
 	    NewJ = -1;
@@ -2002,7 +2024,7 @@ void trackBoundary(unsigned char *Input, blobBoundary lBoundary[], int mcount, i
 		for(j = CurJ-inflate; j < CurJ+inflate; ++j){
 		    m = Input[offset+j];
 		    if(m == 1){
-			// city block distance
+			/* city block distance */
 			k = abs(i-CurI) + abs(j-CurJ);
 			if(k < MinD){
 			    MinD = k;
@@ -2031,10 +2053,10 @@ void OpenCloseFilter(int olapValues[], int maskSize, int rows, int columns, int 
                      unsigned char *input, unsigned char *output, unsigned short mask[11][11]){
 
 
-	//
+	/*
 	// do morphological open/close image filtering. the olapValues array determines
     	// if the filter is Open or Close. 
-	//
+	*/
 	int i, j, k, l, m, overlap, hit;
 	int offset;
 	int LowValue1, HighValue1;   
@@ -2045,8 +2067,8 @@ void OpenCloseFilter(int olapValues[], int maskSize, int rows, int columns, int 
 	LowValue2  = olapValues[2];
 	HighValue2 = olapValues[3];
 
-	// close - step 1 is dialate
-	// open  - step 1 is erode
+	/* close - step 1 is dialate 
+	   open  - step 1 is erode */
 	offset = maskSize*spadSize;
 	for(i = maskSize; i < rows-maskSize; ++i){
 	    for(j = maskSize; j < columns-maskSize; ++j){
@@ -2065,8 +2087,8 @@ void OpenCloseFilter(int olapValues[], int maskSize, int rows, int columns, int 
 	    offset += spadSize;
 	}
 
-	// close - step 2 is erode
-	// open -  step 2 is dialate
+	/* close - step 2 is erode
+	   open -  step 2 is dialate */
 	offset = maskSize*spadSize;
 	for(i = maskSize; i < rows-maskSize; ++i){
 	    for(j = maskSize; j < columns-maskSize; ++j){
@@ -2088,7 +2110,8 @@ void OpenCloseFilter(int olapValues[], int maskSize, int rows, int columns, int 
 	return;
 }
 
-void getCompactness(unsigned char *Input, RECT roi, int label, int spadSize, float *vCompactness, float length){
+void getCompactness(unsigned char *Input, RECT roi, int label, int spadSize,
+                    float *vCompactness, float length){
 
 	int i, j;
 	int maskOffset;
@@ -2115,8 +2138,9 @@ void getCompactness(unsigned char *Input, RECT roi, int label, int spadSize, flo
 }
 
 
-void doMorphology(unsigned char *Input, unsigned char *ImageE, unsigned char *ImageC, unsigned char *ImageH,
-       	          int olapValuesC[],int olapValuesO[], unsigned short cmask[11][11], unsigned short omask[11][11],
+void doMorphology(unsigned char *Input, unsigned char *ImageE, unsigned char *ImageC,
+                  unsigned char *ImageH, int olapValuesC[], int olapValuesO[], 
+       	          unsigned short cmask[11][11], unsigned short omask[11][11],
 	          RECT roi, int label, int CloseMaskSize, int OpenMaskSize, int spadSize){
 
 	int i, j;
@@ -2133,9 +2157,9 @@ void doMorphology(unsigned char *Input, unsigned char *ImageE, unsigned char *Im
 	    ImageC[i] = 0;
 	}
 
-	//
+	/*
 	// put the ROI in the ImageE array centered in ULC
-	//
+	*/
 	dstOffset = 0;
 	for(i = roi.bottom; i < roi.top; ++i){
 	    srcOffset = i*spadSize;
@@ -2147,20 +2171,20 @@ void doMorphology(unsigned char *Input, unsigned char *ImageE, unsigned char *Im
 	    dstOffset += spadSize;
 	}
 
-	//
+	/*
 	// open
-	//
+	*/
 	maskSize = OpenMaskSize;
 	OpenCloseFilter(olapValuesO, maskSize, rows, cols, spadSize, ImageE, ImageC, omask);
-	//
+	/*
 	// close
-	//
+	*/
 	maskSize = CloseMaskSize;
 	OpenCloseFilter(olapValuesC, maskSize, rows, cols, spadSize, ImageE, ImageC, cmask);
 
-	//
+	/*
 	// put the closed ROI (in ImageE) back in its roi space
-	//
+	*/
 
 	srcOffset = 0;
 	for(i = roi.bottom; i < roi.top+2*maskSize+1; ++i){
@@ -2178,8 +2202,10 @@ void doMorphology(unsigned char *Input, unsigned char *ImageE, unsigned char *Im
 }
 
 
-void getBoundary(unsigned short *ThinEdgeImage, unsigned char *Input, blobBoundary *pBoundary, blobBoundary *lBoundary, 
-	         boundaryIndex *pBoundaryIndex, RECT boundBox, int label, int bBox, int nextSlot, int memOffset,
+void getBoundary(unsigned short *ThinEdgeImage, unsigned char *Input,
+                 blobBoundary *pBoundary, blobBoundary *lBoundary, 
+	         boundaryIndex *pBoundaryIndex, RECT boundBox, int label,
+	         int bBox, int nextSlot, int memOffset,
 		 int spadSize, int searchWindow){
 
 	int i, j;
@@ -2202,7 +2228,7 @@ void getBoundary(unsigned short *ThinEdgeImage, unsigned char *Input, blobBounda
 	    Input[i] = 0;
 	}
 
-	//copy to spad 
+	/* copy to spad */
 
 	count = 0;
 	rows    = boundBox.top-boundBox.bottom+2*inflate;
@@ -2227,7 +2253,7 @@ void getBoundary(unsigned short *ThinEdgeImage, unsigned char *Input, blobBounda
 		if(Input[srcOffset+j]){
 		    if(first){
 			first = FALSE;
-			// index of the seed sample
+			/* index of the seed sample */
 			value.xy.x = i;
 			value.xy.y = j;
 		    }
@@ -2243,12 +2269,10 @@ void getBoundary(unsigned short *ThinEdgeImage, unsigned char *Input, blobBounda
 	for(i = 0; i < mcount; ++i){
 	    value.xy.x = lBoundary[i].xy.x + boundBox.left   - inflate;
 	    value.xy.y = lBoundary[i].xy.y + boundBox.bottom - inflate + 1;
-	    //printf("[%d, %d]\n", value.xy.x, value.xy.y); 
 	    pBoundary[memOffset].xy.x = value.xy.x;
 	    pBoundary[memOffset].xy.y = value.xy.y;
 	    ++memOffset;
 	}
-	//getchar();
 
 	return;
 
@@ -2256,7 +2280,7 @@ void getBoundary(unsigned short *ThinEdgeImage, unsigned char *Input, blobBounda
 
 
 void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *ThinEdgeImage,
-		  int numberObjects, int srcRows, int srcCols){
+		   int numberObjects, int srcRows, int srcCols){
 
 	int i, j, k;
 	int count;
@@ -2267,7 +2291,7 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	int end;
 	int label;
 	int distance;
-	// these should be setup parameters
+	/* these will be user-setup parameters */
 	int closureDistance = 12;
 	int CloseSize       = 5;
 	int OpenSize        = 5;
@@ -2281,7 +2305,7 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	float maxRadius;
 	float aveRadius;
 	float vCompactness;
-	// for morphological close of mask. max structuring element is 11x11
+	/* for morphological close of mask. max structuring element is 11x11 */
 	unsigned short cmask[11][11];
 	unsigned short omask[11][11];
 	int olapValuesC[4];
@@ -2301,9 +2325,9 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	unsigned char *ImageC;
 	unsigned char *ImageH;
 
-	//
+	/*
 	// Close filter
-	//
+	*/
 	CloseMaskSize = (CloseSize-1)/2;
 	for(i = 0; i < 2*CloseMaskSize+1; ++i){
 	    for(j = 0; j < 2*CloseMaskSize+1; ++j){
@@ -2319,9 +2343,9 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	olapValuesC[2] = LowValue2;
 	olapValuesC[3] = HighValue2;
 
-	//
+	/*
 	// Open filter
-	//
+	*/
 	OpenMaskSize = (OpenSize-1)/2;
 	for(i = 0; i < 2*OpenMaskSize+1; ++i){
 	    for(j = 0; j < 2*OpenMaskSize+1; ++j){
@@ -2373,21 +2397,16 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	    bBox.bottom = objectMetrics[i].B;
 	    label       = objectMetrics[i].Label;
 	    pBoundaryIndex[i+1].Label = label;
-	    //printf("(%d, %d, %d, %d [%d])\n", bBox.left, bBox.right, bBox.top, bBox.bottom, label);
 	    getBoundary(ThinEdgeImage, Input, pBoundary, lBoundary, pBoundaryIndex, bBox, label,
 		        i, pBoundaryIndex[0].numberPoints, count, spadSize, searchWindow);
 	}
 
-	//
+	/*
 	// Input will now be used in the fill. Copy the labeled edge image
-	//
+	*/
 
-	//
-	// numBoundaries = numberObjects
-	//
 	offset = 0;
 	numBoundaries = pBoundaryIndex[0].numberPoints;
-	//printf("numBoundaries [%d]\n", numBoundaries);
 	for(i = 0; i < numBoundaries; ++i){
 	    numSamples = pBoundaryIndex[i+1].numberPoints;
 	    end        = numSamples-2; 
@@ -2397,9 +2416,9 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 		boundary[j].y = pBoundary[offset+j+1].xy.y;
 	    }
 
-	    //
+	    /*
 	    // clip off the ends where stray boundary pixels were left over
-	    //
+	    */
 	    while(1){
 		distance = abs(boundary[end].x-boundary[end-1].x) + abs(boundary[end].y-boundary[end-1].y);
 		if(distance > threshold){
@@ -2410,7 +2429,6 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 		    break;
 		}
 	    }
-	    //printf("[%d] newSamples [%d]\n", i, newSamples);
 
 	    distance = abs(boundary[0].x-boundary[end-2].x) + abs(boundary[0].y-boundary[end-2].y);
 	    pBoundaryIndex[i+1].curveClose = distance;
@@ -2429,7 +2447,8 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	        pBoundaryIndex[i+1].centroid.y /= newSamples;
 	    }
 	    getBoundaryMetrics(boundary, &length, &minRadius, &maxRadius, &aveRadius,
-		       	      (float)pBoundaryIndex[i+1].centroid.x, (float)pBoundaryIndex[i+1].centroid.y, newSamples);
+		       	      (float)pBoundaryIndex[i+1].centroid.x,
+		       	      (float)pBoundaryIndex[i+1].centroid.y, newSamples);
 	    pBoundaryIndex[i+1].boundaryLength = length;
 	    pBoundaryIndex[i+1].minRadius      = minRadius;
 	    pBoundaryIndex[i+1].maxRadius      = maxRadius;
@@ -2441,35 +2460,35 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	        pBoundaryIndex[i+1].ratio = -1.0;
 	    }
 
-	    //
+	    /*
 	    // augment the ROI boundary
-	    //
+	    */
 	    pBoundaryIndex[i+1].rectangle.left   -= 2*CloseMaskSize;
 	    pBoundaryIndex[i+1].rectangle.right  += 2*CloseMaskSize;
 	    pBoundaryIndex[i+1].rectangle.bottom -= 2*CloseMaskSize;
 	    pBoundaryIndex[i+1].rectangle.top    += 2*CloseMaskSize;
 	    label = pBoundaryIndex[i+1].Label;
 
-	    //
+	    /*
 	    // mask goes in ImageH. morpho filter the mask first
-	    //
+	    */
 	    generateMask(ImageH, boundary, newSamples, label, spadSize);
 
-	    //
+	    /*
 	    // open-close the mask 
-	    //
+	    */
 	    doMorphology(Input, ImageE, ImageC, ImageH, olapValuesC, olapValuesO, cmask, omask,
 		         pBoundaryIndex[i+1].rectangle, label, CloseMaskSize, OpenMaskSize, spadSize);
 
-	    //
+	    /*
 	    // now get the compactness metrics
-	    //
+	    */
 	    getCompactness(Input, pBoundaryIndex[i+1].rectangle, label, spadSize, &vCompactness, length);
 	    pBoundaryIndex[i+1].compactness = vCompactness;
 
-	    //
+	    /*
 	    // reset the ROI boundary
-	    //
+	    */
 	    pBoundaryIndex[i+1].rectangle.left   += 2*CloseMaskSize;
 	    pBoundaryIndex[i+1].rectangle.right  -= 2*CloseMaskSize;
 	    pBoundaryIndex[i+1].rectangle.bottom += 2*CloseMaskSize;
@@ -2509,9 +2528,9 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	    }
 	}
 
-	//
+	/*
 	// fill in the Python features
-	//
+	*/
 	for(i = 0; i < numBoundaries; ++i){
 	    objectMetrics[i].curveClose     = pBoundaryIndex[i+1].curveClose;
 	    objectMetrics[i].cXBoundary     = pBoundaryIndex[i+1].centroid.x;
@@ -2525,7 +2544,7 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	} 
 
 	// debug only
-	if(1){
+	if(0){
 	for(i = 0; i < numBoundaries; ++i){
 	    if(pBoundaryIndex[i+1].boundaryLength != (float)0.0){
 	        printf("boundary %d:\n", i);
@@ -2556,9 +2575,9 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	}
 	}
 
-	//
+	/*
 	// need to return input which is now mask image
-	//
+	*/
 
 	offset  = 0;
 	offset2 = 0;
@@ -2613,7 +2632,7 @@ void initLaws(LawsFilter7 *lawsFilter){
 	    lawsFilter->lawsKernel[5][i] = O7[i];
 	}
 
-	// DC filter is unity gain
+	/* L filter is unity gain */
 	sum = (float)0.0;
 	for(i = 0; i < 7; ++i){
 	    sum += lawsFilter->lawsKernel[0][i];
@@ -2633,7 +2652,7 @@ float lawsConvolution(float *image, float *rowFilter, float *colFilter, int kern
 	float result[7];
 	float sum;
 
-	// filter rows
+	/* filter rows */
 	for(i = 0; i < kernelSize; ++i){
 	    sum = (float)0.0;
 	    offset = i * kernelSize;
@@ -2643,7 +2662,7 @@ float lawsConvolution(float *image, float *rowFilter, float *colFilter, int kern
 	    result[i] = sum;
 	}
 
-	//filter columns
+	/* filter columns */
 	sum = (float)0.0;
 	for(j = 0; j < kernelSize; ++j){
 	    sum += (rowFilter[j]*result[j]);
@@ -2654,8 +2673,10 @@ float lawsConvolution(float *image, float *rowFilter, float *colFilter, int kern
 }
 
 
-void getLawsTexture(LawsFilter7 lawsFilter, tTEM LawsFeatures[], objStruct objectMetrics[], double *sourceImage, 
-	            unsigned short *MaskImage, int numberObjects, int srcRows, int srcCols){
+void getLawsTexture(LawsFilter7 lawsFilter, tTEM LawsFeatures[],
+                    objStruct objectMetrics[], double *sourceImage, 
+	            unsigned short *MaskImage, int numberObjects,
+	            int srcRows, int srcCols){
 
 	int i, j;
 	int label;
@@ -2676,15 +2697,15 @@ void getLawsTexture(LawsFilter7 lawsFilter, tTEM LawsFeatures[], objStruct objec
 	    bBox.bottom = objectMetrics[i].B;
 	    label       = objectMetrics[i].Label;
 	    if(objectMetrics[i].voxelMean != (float)0.0){
-		//
+		/*
 		// valid size region
-		//
+		*/
 	        computeLaws(lawsFilter, LawsFeatures, bBox, label, aperature, srcRows, srcCols, ImageH, ImageT,
 		            MaskImage, lawsImage, sourceImage);
 		for(j = 1; j < lawsFilter.numberFilterLayers; ++j){
 		    objectMetrics[i].TEM[j-1] = LawsFeatures[j].Variance;
 		}
-	        /*
+	        /* -- later will need to return a view of the texture images
 		int index;
 		int offset;
 		int layerStep = srcRows*srcCols;
@@ -2711,12 +2732,14 @@ void getLawsTexture(LawsFilter7 lawsFilter, tTEM LawsFeatures[], objStruct objec
 
 }
 
-void computeLaws(LawsFilter7 lawsFilter, tTEM LawsFeatures[], RECT roi, int label, int aperature, int srcRows, int srcCols, 
-	         unsigned char *ImageH, float *ImageT, unsigned short *MaskImage, float *lawsImage, double *sourceImage){
+void computeLaws(LawsFilter7 lawsFilter, tTEM LawsFeatures[], RECT roi, int label,
+                 int aperature, int srcRows, int srcCols, 
+	         unsigned char *ImageH, float *ImageT, unsigned short *MaskImage,
+	         float *lawsImage, double *sourceImage){
 
-	//
+	/*
 	// hard-wirred to Law's 7 kernels
-	//
+	*/
 	int i, j, k;
 	int lawsLayer;
 	int column, row;
@@ -2744,7 +2767,7 @@ void computeLaws(LawsFilter7 lawsFilter, tTEM LawsFeatures[], RECT roi, int labe
 	char dual[24];
 
 
-	// zero the laws mask memory first
+	/* zero the laws mask memory first */
 	for(i = 0; i < srcRows*srcCols; ++i){
 	    ImageH[i] = 0;
 	}
@@ -2760,9 +2783,9 @@ void computeLaws(LawsFilter7 lawsFilter, tTEM LawsFeatures[], RECT roi, int labe
 		dataOffset[row+aperature] = maskOffset[row+aperature];
 	    }
 	    for(j = roi.left+aperature; j < roi.right-aperature; ++j){
-		//
+		/*
 		// get 7x7 segment and make sure have 100% mask coverage
-		//
+		*/
 		count = 0;
 		for(row = -aperature; row <= aperature; ++row){
 		    rowNumber = (row+aperature)*kernelSize;
@@ -2774,22 +2797,22 @@ void computeLaws(LawsFilter7 lawsFilter, tTEM LawsFeatures[], RECT roi, int labe
 		    }
 		}
 		if(count == fullMask){
-		    //
-		    // full mask. 100% coverage. now do the Law's texture filters
-		    //
+		    /*
+		    // 100% coverage. now do the Law's texture filters
+		    */
 		    ImageH[i*srcCols+j] = 1;
 		    lawsLayer = 0;
 		    for(outerKernelNumber = 0; outerKernelNumber < lawsFilter.numberKernels; ++outerKernelNumber){
-			//
+			/*
 			// outer loop pulls the i'th kernel. kernel 0 is the LP kernel
 			// the outer loop is the iso-kernel
-			//
+			*/
 			I = lawsFilter.name[outerKernelNumber];
 			sprintf(dual, "%c_%c", I, I);
 			rowFilter = &lawsFilter.lawsKernel[outerKernelNumber][0];
 			colFilter = &lawsFilter.lawsKernel[outerKernelNumber][0];
 			filterResult1 = lawsConvolution(myImage, rowFilter, colFilter, kernelSize);
-			// lawsLayer 0 is the LP and needs to be used to scale.
+			/* lawsLayer 0 is the LP and needs to be used to scale. */
 			if(outerKernelNumber){
 			    lawsImage[lawsLayer*layerStep + i*srcCols + j] = (float)2.0 * filterResult1 / lawsLL;
 			}
@@ -2799,17 +2822,20 @@ void computeLaws(LawsFilter7 lawsFilter, tTEM LawsFeatures[], RECT roi, int labe
 			}
 			strcpy(&LawsFeatures[lawsLayer].filterName[0], dual);
 			++lawsLayer;
-			//
+			/*
 			// now do the inner loop and get the column filters for the other laws kernels
-			//
-			for(innerKernelNumber = outerKernelNumber+1; innerKernelNumber < lawsFilter.numberKernels; ++innerKernelNumber){
+			*/
+			for(innerKernelNumber = outerKernelNumber+1;
+			                        innerKernelNumber < lawsFilter.numberKernels;
+			                        ++innerKernelNumber){
 			    J = lawsFilter.name[innerKernelNumber];
 			    sprintf(combo, "%c_%c", I, J);
 			    strcpy(&LawsFeatures[lawsLayer].filterName[0], combo);
 			    colFilter = &lawsFilter.lawsKernel[innerKernelNumber][0];
 			    filterResult1 = lawsConvolution(myImage, rowFilter, colFilter, kernelSize);
 			    filterResult2 = lawsConvolution(myImage, colFilter, rowFilter, kernelSize);
-			    lawsImage[lawsLayer*layerStep + i*srcCols + j] = (filterResult1 / lawsLL) + (filterResult2 / lawsLL);
+			    lawsImage[lawsLayer*layerStep + i*srcCols + j] =
+			                        (filterResult1 / lawsLL) + (filterResult2 / lawsLL);
 			    ++lawsLayer;
 			}
 		    }
@@ -2837,6 +2863,7 @@ void computeLaws(LawsFilter7 lawsFilter, tTEM LawsFeatures[], RECT roi, int labe
 	}
 
 	if(count == 0){
+	    // debug statement
 	    printf("no samples for texture\n");
 	    return;
 	}
@@ -2861,9 +2888,9 @@ void computeLaws(LawsFilter7 lawsFilter, tTEM LawsFeatures[], RECT roi, int labe
 	    LawsFeatures[k].Variance = (float)(sqrt(LawsFeatures[k].Variance));
 	}
 
-	//
+	/*
 	// now normalize the variance feature (TEM)
-	//
+	*/
 	maxValue = (float)0.0;
 	for(i = 1; i < lawsFilter.numberFilterLayers; ++i){
 	    if((LawsFeatures[i].Variance) > maxValue) maxValue = LawsFeatures[i].Variance;
@@ -2878,8 +2905,9 @@ void computeLaws(LawsFilter7 lawsFilter, tTEM LawsFeatures[], RECT roi, int labe
 
 }
 
-void getVoxelMeasures(objStruct objectMetrics[], double *sourceImage, unsigned short *MaskImage,
-		      int numberObjects, int srcRows, int srcCols){
+void getVoxelMeasures(objStruct objectMetrics[], double *sourceImage,
+                      unsigned short *MaskImage, int numberObjects, 
+		      int srcRows, int srcCols){
 
 	int i, j, k;
 	int label;
@@ -2935,10 +2963,10 @@ void getVoxelMeasures(objStruct objectMetrics[], double *sourceImage, unsigned s
 
 }
 
-int NI_BuildBoundary(int samples, int rows, int cols, int numberObjects, unsigned short *edgeImage,
-	             objStruct objectMetrics[]){
+int NI_BuildBoundary(int samples, int rows, int cols, int numberObjects, 
+	             unsigned short *edgeImage, objStruct objectMetrics[]){
 
-	int searchWindow = 5;  // 5 is good value for Sobel - (should be 13 for Canny edges)
+	int searchWindow = 5;  // 5 is good value for Sobel
 	int status = 1;
 
 	buildBoundary(objectMetrics, searchWindow, edgeImage, numberObjects, rows, cols);
@@ -2966,7 +2994,8 @@ int NI_TextureMeasures(int samples, int rows, int cols, int numberObjects, doubl
 	tTEM LawsFeatures[21];
 
 	initLaws(&lawsFilter);
-	getLawsTexture(lawsFilter, LawsFeatures, objectMetrics, sourceImage, maskImage, numberObjects, rows, cols);
+	getLawsTexture(lawsFilter, LawsFeatures, objectMetrics, sourceImage,
+	               maskImage, numberObjects, rows, cols);
 
 	return status;
 
