@@ -3,7 +3,7 @@ __all__ =['approximate_spectral_radius','infinity_norm','diag_sparse',
 
 import numpy
 import scipy
-from numpy import ravel,arange,concatenate,tile,asarray
+from numpy import ravel,arange,concatenate,tile,asarray,sqrt,diff
 from scipy.linalg import norm
 from scipy.sparse import isspmatrix,isspmatrix_csr,isspmatrix_csc, \
                         csr_matrix,csc_matrix,extract_diagonal, \
@@ -26,7 +26,7 @@ def infinity_norm(A):
 
     if isspmatrix_csr(A) or isspmatrix_csc(A):
         #avoid copying index and ptr arrays
-        abs_A = A.__class__((abs(A.data),A.indices,A.indptr),dims=A.shape,check=False)
+        abs_A = A.__class__((abs(A.data),A.indices,A.indptr),dims=A.shape)
         return (abs_A * numpy.ones(A.shape[1],dtype=A.dtype)).max()
     else:
         return (abs(A) * numpy.ones(A.shape[1],dtype=A.dtype)).max()
@@ -40,10 +40,35 @@ def diag_sparse(A):
        - return a csr_matrix with A on the diagonal
     """
 
+    #TODO integrate into SciPy?
     if isspmatrix(A):
         return extract_diagonal(A)
     else:
         return csr_matrix((asarray(A),arange(len(A)),arange(len(A)+1)),(len(A),len(A)))
+
+
+def symmetric_rescaling(A):
+    if not (isspmatrix_csr(A) or isspmatrix_csc(A)):
+        raise TypeError,'expected csr_matrix or csc_matrix'
+
+    if A.shape[0] != A.shape[1]:
+        raise ValueError,'expected square matrix'
+
+    D = diag_sparse(A)
+    mask = D <= 0
+
+    D[mask] = 0
+    D_sqrt = sqrt(D)
+    D_sqrt_inv = 1.0/D_sqrt
+    D_sqrt_inv[mask] = 0
+    
+    #TODO time this against simple implementation
+    data = A.data * D_sqrt_inv[A.indices]
+    data *= D_sqrt_inv[arange(A.shape[0]).repeat(diff(A.indptr))]
+    
+    DAD = A.__class__((data,A.indices,A.indptr),dims=A.shape)
+
+    return D_sqrt,D_sqrt_inv,DAD
 
 
 def hstack_csr(A,B):

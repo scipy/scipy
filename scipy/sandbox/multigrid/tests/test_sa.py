@@ -226,7 +226,7 @@ class TestSASolverPerformance(NumpyTestCase):
 
             #ml = smoothed_aggregation_solver(A,candidates,max_coarse=1,max_levels=2)
 
-            ml = smoothed_aggregation_solver(DAD,DAD_candidates,max_coarse=100,max_levels=2)
+            ml = smoothed_aggregation_solver(DAD,DAD_candidates,max_coarse=100,max_levels=2,rescale=False)
 
             #print (D_inv*ml.Ps[0]).todense()
 

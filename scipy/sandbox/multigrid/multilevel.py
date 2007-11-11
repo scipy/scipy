@@ -11,7 +11,7 @@ from scipy.linsolve import spsolve
 from sa import sa_interpolation
 from rs import rs_interpolation
 from relaxation import gauss_seidel,jacobi,sor
-from utils import infinity_norm
+from utils import symmetric_rescaling, diag_sparse
 
 
 def poisson_problem1D(N):
@@ -43,8 +43,9 @@ def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
 
         References:
             "Multigrid"
-                Trottenberg, U., C. W. Oosterlee, and Anton Schuller. San Diego: Academic Press, 2001.
-                See Appendix A
+                Trottenberg, U., C. W. Oosterlee, and Anton Schuller. 
+                San Diego: Academic Press, 2001.
+                Appendix A
 
     """
     As = [A]
@@ -59,8 +60,14 @@ def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
         Ps.append(P)
 
     return multilevel_solver(As,Ps)
+        
 
-def smoothed_aggregation_solver(A,candidates=None,blocks=None,aggregation=None,max_levels=10,max_coarse=500,epsilon=0.08,omega=4.0/3.0):
+
+def smoothed_aggregation_solver(A, B=None, blocks=None, \
+                                aggregation=None, max_levels=10, \
+                                max_coarse=500, epsilon=0.0, \
+                                omega=4.0/3.0, symmetric=True, \
+                                rescale = True):
     """Create a multilevel solver using Smoothed Aggregation (SA)
 
     *Parameters*:
@@ -83,15 +90,20 @@ def smoothed_aggregation_solver(A,candidates=None,blocks=None,aggregation=None,m
             List of csr_matrix objects that describe a user-defined
             multilevel aggregation of the variables.
             TODO ELABORATE
-        max_levels: {integer} : optional
+        max_levels: {integer} : default 10
             Maximum number of levels to be used in the multilevel solver.
-        max_coarse: {integer} : optional
+        max_coarse: {integer} : default 500
             Maximum number of variables permitted on the coarse grid.
-        epsilon: {float} : optional
+        epsilon: {float} : default 0.0
             Strength of connection parameter used in aggregation.
-        omega: {float} : optional
+        omega: {float} : default 4.0/3.0
             Damping parameter used in prolongator smoothing (0 < omega < 2)
-
+        symmetric: {boolean} : default True 
+            True if A is symmetric, False otherwise
+        rescale: {boolean} : default True
+            If True, symmetrically rescale A by the diagonal
+            i.e. A -> D * A * D,  where D is diag(A)^-0.5
+            
     *Example*:
         TODO
 
@@ -101,17 +113,30 @@ def smoothed_aggregation_solver(A,candidates=None,blocks=None,aggregation=None,m
             http://citeseer.ist.psu.edu/vanek96algebraic.html
 
     """
+
+    if B is None:
+        B = ones((A.shape[0],1),dtype=A.dtype) # use constant vector
+    else:
+        B = asarray(B)
+
+    pre,post = None,None   #preprocess/postprocess
+    
+    if rescale:
+        D_sqrt,D_sqrt_inv,A = symmetric_rescaling(A)
+        D_sqrt,D_sqrt_inv = diag_sparse(D_sqrt),diag_sparse(D_sqrt_inv)
+        
+        B = D_sqrt * B  #scale candidates
+        def pre(x,b):
+            return D_sqrt*x,D_sqrt_inv*b
+        def post(x):
+            return D_sqrt_inv*x
+        
     As = [A]
     Ps = []
 
-    if candidates is None:
-        candidates = ones((A.shape[0],1),dtype=A.dtype) # use constant vector
-    else:
-        candiates = asarray(candidates)
-
     if aggregation is None:
         while len(As) < max_levels and A.shape[0] > max_coarse:
-            P,candidates,blocks = sa_interpolation(A,candidates,epsilon*0.5**(len(As)-1),omega=omega,blocks=blocks)
+            P,B,blocks = sa_interpolation(A,B,epsilon*0.5**(len(As)-1),omega=omega,blocks=blocks)
 
             A = (P.T.tocsr() * A) * P     #galerkin operator
 
@@ -120,20 +145,22 @@ def smoothed_aggregation_solver(A,candidates=None,blocks=None,aggregation=None,m
     else:
         #use user-defined aggregation
         for AggOp in aggregation:
-            P,candidates,blocks = sa_interpolation(A,candidates,omega=omega,AggOp=AggOp)
+            P,B,blocks = sa_interpolation(A,B,omega=omega,AggOp=AggOp)
 
             A = (P.T.tocsr() * A) * P     #galerkin operator
 
             As.append(A)
             Ps.append(P)
 
-    return multilevel_solver(As,Ps)
+    return multilevel_solver(As,Ps,preprocess=pre,postprocess=post)
 
 
 class multilevel_solver:
-    def __init__(self,As,Ps):
+    def __init__(self,As,Ps,preprocess=None,postprocess=None):
         self.As = As
         self.Ps = Ps
+        self.preprocess = preprocess
+        self.postprocess = postprocess
 
     def __repr__(self):
         output = 'multilevel_solver\n'
@@ -170,6 +197,8 @@ class multilevel_solver:
         else:
             x = array(x0) #copy
 
+        if self.preprocess is not None:
+            x,b = self.preprocess(x,b)
 
         #TODO change use of tol (relative tolerance) to agree with other iterative solvers
         A = self.As[0]
@@ -182,6 +211,9 @@ class multilevel_solver:
 
             if callback is not None:
                 callback(x)
+
+        if self.postprocess is not None:
+            x = self.postprocess(x)
 
         if return_residuals:
             return x,residuals

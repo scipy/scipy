@@ -2,12 +2,13 @@ from numpy.testing import *
 
 import numpy
 import scipy
-from scipy import matrix,array,diag,zeros
+from numpy import matrix,array,diag,zeros,sqrt
 from scipy.sparse import csr_matrix
 
 
 set_package_path()
 from scipy.sandbox.multigrid.utils import infinity_norm, diag_sparse, \
+                                          symmetric_rescaling, \
                                           expand_into_blocks
 restore_path()
 
@@ -52,6 +53,33 @@ class TestUtils(NumpyTestCase):
 
         A = matrix([[1.3,0,0],[0,5.5,0],[0,0,-2]])
         assert_equal(diag_sparse(array([1.3,5.5,-2])).todense(),csr_matrix(A).todense())
+
+
+    def check_symmetric_rescaling(self):
+        cases = []
+        cases.append( diag_sparse(array([1,2,3,4])) )
+        cases.append( diag_sparse(array([1,0,3,4])) )
+        
+        A = array([ [ 5.5,  3.5,  4.8],
+                    [ 2. ,  9.9,  0.5],
+                    [ 6.5,  2.6,  5.7]])
+        A = csr_matrix( A )
+        cases.append(A)
+        P = diag_sparse([1,0,1])
+        cases.append( P*A*P )
+        P = diag_sparse([0,1,0])
+        cases.append( P*A*P )
+        P = diag_sparse([1,-1,1])
+        cases.append( P*A*P )
+
+        for A in cases:
+            D_sqrt,D_sqrt_inv,DAD = symmetric_rescaling(A)
+
+            assert_almost_equal( diag_sparse(A) > 0, diag_sparse(DAD) )
+            assert_almost_equal( diag_sparse(DAD), D_sqrt*D_sqrt_inv )
+
+            D_sqrt,D_sqrt_inv = diag_sparse(D_sqrt),diag_sparse(D_sqrt_inv)
+            assert_almost_equal((D_sqrt_inv*A*D_sqrt_inv).todense(), DAD.todense())
 
     def check_expand_into_blocks(self):
         cases = []
