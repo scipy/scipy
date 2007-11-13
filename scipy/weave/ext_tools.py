@@ -85,7 +85,7 @@ class ext_function_from_specs(object):
         for arg in self.arg_specs:
             arg_strings.append(arg.declaration_code())
             arg_strings.append(arg.init_flag() +" = 1;\n")
-        code = (arg_strings.join("")
+        code = arg_strings.join("")
         return code
 
     def arg_cleanup_code(self):
