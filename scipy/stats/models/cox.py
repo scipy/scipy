@@ -66,7 +66,7 @@ class CoxPH(model.LikelihoodModel):
         for i in range(len(subjects)):
             s = subjects[i]
             if s.delta:
-                if not self.failures.has_key(s.time):
+                if s.time not in self.failures:
                     self.failures[s.time] = [i]
                 else:
                     self.failures[s.time].append(i)

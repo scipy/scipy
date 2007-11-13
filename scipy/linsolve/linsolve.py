@@ -28,7 +28,7 @@ def use_solver( **kwargs ):
     sure that the matrix fulfills this, pass assumeSortedIndices=True
     to gain some speed.
     """
-    if kwargs.has_key( 'useUmfpack' ):
+    if 'useUmfpack' in kwargs:
         globals()['useUmfpack'] = kwargs['useUmfpack']
 
     if isUmfpack:

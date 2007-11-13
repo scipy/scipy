@@ -371,7 +371,7 @@ class catalog(object):
             directories.  On Windows, a ';' separated list is used.
         """
         paths = []
-        if os.environ.has_key('PYTHONCOMPILED'):
+        if 'PYTHONCOMPILED' in os.environ:
             path_string = os.environ['PYTHONCOMPILED']
             if sys.platform == 'win32':
                 #probably should also look in registry
@@ -523,7 +523,7 @@ class catalog(object):
         function_list = []
         for path in self.build_search_order():
             cat = get_catalog(path,mode)
-            if cat is not None and cat.has_key(code):
+            if cat is not None and code in cat:
                 # set up the python path so that modules for this
                 # function can be loaded.
                 self.configure_path(cat,code)
@@ -565,7 +565,7 @@ class catalog(object):
             # close the catalog
             writable_cat.close()
             return
-        if writable_cat.has_key(code):
+        if code in writable_cat:
             print 'repairing catalog by removing key'
             del writable_cat[code]
 
@@ -573,7 +573,7 @@ class catalog(object):
         # registered was a built-in function), so we have to check if the path
         # exists before arbitrarily deleting it.
         path_key = self.path_key(code)
-        if writable_cat.has_key(path_key):
+        if path_key in writable_cat:
             del writable_cat[path_key]
         writable_cat.close()
 
@@ -603,7 +603,7 @@ class catalog(object):
             for more info on the search path.
         """
         # Fast!! try cache first.
-        if self.cache.has_key(code):
+        if code in self.cache:
             return self.cache[code]
 
         # 2. Slow!! read previously compiled functions from disk.
@@ -633,7 +633,7 @@ class catalog(object):
         """
 
         # 1. put it in the cache.
-        if self.cache.has_key(code):
+        if code in self.cache:
             if function not in self.cache[code]:
                 self.cache[code].insert(0,function)
             else:

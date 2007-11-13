@@ -12,7 +12,8 @@ __all__ = [
 'DateFromString', 'DateTimeFromString'
            ]
 
-import types,re,string
+import types
+import re
 import datetime as dt
 
 class RangeError(Exception): pass
@@ -275,7 +276,7 @@ def utc_offset(zone):
     if not zone:
         return 0
     uzone = zone.upper()
-    if _zonetable.has_key(uzone):
+    if uzone in _zonetable:
         return _zonetable[uzone]*60
     offset = _zoneoffsetRE.match(zone)
     if not offset:

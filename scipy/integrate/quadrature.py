@@ -1,6 +1,3 @@
-## Automatically adapted for scipy Oct 21, 2005 by
-
-# Author: Travis Oliphant
 
 __all__ = ['fixed_quad','quadrature','romberg','trapz','simps','romb',
            'cumtrapz','newton_cotes','composite']
@@ -562,7 +559,7 @@ def newton_cotes(rn,equal=0):
         rn = np.arange(N+1)
         equal = 1
 
-    if equal and _builtincoeffs.has_key(N):
+    if equal and N in _builtincoeffs:
         na, da, vi, nb, db = _builtincoeffs[N]
         return na*np.array(vi,float)/da, float(nb)/db
 

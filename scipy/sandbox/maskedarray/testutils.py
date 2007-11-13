@@ -65,7 +65,7 @@ def assert_equal(actual,desired,err_msg=''):
         assert isinstance(actual, dict), repr(type(actual))
         assert_equal(len(actual),len(desired),err_msg)
         for k,i in desired.items():
-            assert actual.has_key(k), repr(k)
+            assert k in actual, repr(k)
             assert_equal(actual[k], desired[k], 'key=%r\n%s' % (k,err_msg))
         return
     # Case #2: lists .....
@@ -95,7 +95,7 @@ def fail_if_equal(actual,desired,err_msg='',):
         assert isinstance(actual, dict), repr(type(actual))
         fail_if_equal(len(actual),len(desired),err_msg)
         for k,i in desired.items():
-            assert actual.has_key(k), repr(k)
+            assert k in actual, repr(k)
             fail_if_equal(actual[k], desired[k], 'key=%r\n%s' % (k,err_msg))
         return
     if isinstance(desired, (list,tuple)) and isinstance(actual, (list,tuple)):

@@ -703,7 +703,7 @@ class CXXCoder(ByteCodeMeaning):
     ##################################################################
     def evaluate(self, pc,code):
         # See if we posted any forwards for this offset
-        if self.forwards.has_key(pc):
+        if pc in self.forwards:
             for f in self.forwards[pc]:
                 f()
             self.forwards[pc] = []
@@ -948,7 +948,7 @@ class CXXCoder(ByteCodeMeaning):
     #                          MEMBER POST                           #
     ##################################################################
     def post(self,pc,action):
-        if not self.forwards.has_key(pc):
+        if pc not in self.forwards:
             self.forwards[pc] = []
         self.forwards[pc].append(action)
         return

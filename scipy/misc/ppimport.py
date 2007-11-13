@@ -101,7 +101,7 @@ class _AttrLoader(object):
         return getattr(attr, name)
 
     def __repr__(self):
-        if self.__dict__.has_key('_ppimport_attr'):
+        if '_ppimport_attr' in self.__dict__:
             return repr(self._ppimport_attr)
         module = self.__dict__['_ppimport_attr_module']
         name = self.__dict__['_ppimport_attr_name']
@@ -135,7 +135,7 @@ def ppimport(name):
 
     level = 1
     parent_frame = p_frame = _get_frame(level)
-    while not p_frame.f_locals.has_key('__name__'):
+    while '__name__' not in p_frame.f_locals:
         level = level + 1
         p_frame = _get_frame(level)
 
@@ -143,7 +143,7 @@ def ppimport(name):
     if p_name=='__main__':
         p_dir = ''
         fullname = name
-    elif p_frame.f_locals.has_key('__path__'):
+    elif '__path__' in_frame.f_locals:
         # python package
         p_path = p_frame.f_locals['__path__']
         p_dir = p_path[0]
@@ -310,9 +310,9 @@ class _ModuleLoader(object):
             except KeyError:
                 module = self._ppimport_importer()
             return module.__repr__()
-        if self.__dict__.has_key('_ppimport_module'):
+        if '_ppimport_module' in self.__dict__:
             status = 'imported'
-        elif self.__dict__.has_key('_ppimport_exc_info'):
+        elif '_ppimport_exc_info' in self.__dict__:
             status = 'import error'
         else:
             status = 'import postponed'
@@ -356,7 +356,7 @@ def ppresolve(a,ignore_failure=None):
             if ignore_failure and not hasattr(a, b[-1]):
                 a = '.'.join(ns+b)
                 b = '.'.join(b)
-                if sys.modules.has_key(b) and sys.modules[b] is None:
+                if b in sys.modules and sys.modules[b] is None:
                     del sys.modules[b]
                 return a
             a = getattr(a,b[-1])

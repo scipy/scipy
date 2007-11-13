@@ -1,7 +1,8 @@
 """ Test refcounting and behavior of SCXX.
 """
 import time
-import os,sys
+import os
+import sys
 
 from numpy.testing import *
 set_package_path()
@@ -33,7 +34,7 @@ class TestDictHasKey(NumpyTestCase):
         a = {}
         a[key] = 12345
         code = """
-               return_val = a.has_key(key);
+               return_val =  key in a;
                """
         res = inline_tools.inline(code,['a','key'])
         assert res
@@ -41,7 +42,7 @@ class TestDictHasKey(NumpyTestCase):
         a = {}
         a[1234] = 12345
         code = """
-               return_val = a.has_key(1234);
+               return_val = 1234 in a;
                """
         res = inline_tools.inline(code,['a'])
         assert res
@@ -49,7 +50,7 @@ class TestDictHasKey(NumpyTestCase):
         a = {}
         a[1234.] = 12345
         code = """
-               return_val = a.has_key(1234.);
+               return_val = 1234. in a;
                """
         res = inline_tools.inline(code,['a'])
         assert res
@@ -58,7 +59,7 @@ class TestDictHasKey(NumpyTestCase):
         a[1+1j] = 12345
         key = 1+1j
         code = """
-               return_val = a.has_key(key);
+               return_val = key in a;
                """
         res = inline_tools.inline(code,['a','key'])
         assert res
@@ -67,7 +68,7 @@ class TestDictHasKey(NumpyTestCase):
         a = {}
         a["b"] = 12345
         code = """
-               return_val = a.has_key("b");
+               return_val = "b" in a;
                """
         res = inline_tools.inline(code,['a'])
         assert res
@@ -76,7 +77,7 @@ class TestDictHasKey(NumpyTestCase):
         a["b"] = 12345
         key_name = "b"
         code = """
-               return_val = a.has_key(key_name);
+               return_val = key_name in a;
                """
         res = inline_tools.inline(code,['a','key_name'])
         assert res
@@ -84,7 +85,7 @@ class TestDictHasKey(NumpyTestCase):
         a = {}
         a["b"] = 12345
         code = """
-               return_val = a.has_key("c");
+               return_val = "c" in a;
                """
         res = inline_tools.inline(code,['a'])
         assert not res
@@ -207,11 +208,11 @@ class TestDictDel(NumpyTestCase):
         a = {}
         a[key] = 1
         inline_tools.inline("a.del(key);",['a','key'])
-        assert not a.has_key(key)
+        assert key not in a
         a[key] = 1
         before = sys.getrefcount(a), sys.getrefcount(key)
         inline_tools.inline("a.del(key);",['a','key'])
-        assert not a.has_key(key)
+        assert key not in a
         after = sys.getrefcount(a), sys.getrefcount(key)
         assert before[0] == after[0]
         assert before[1] == after[1] + 1

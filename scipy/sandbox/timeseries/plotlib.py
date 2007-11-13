@@ -67,7 +67,7 @@ The specific Subplot object class to add is given through the keywords
     except TypeError:
         key = str(key)
     #
-    if figure_instance._seen.has_key(key):
+    if key in figure_instance._seen:
         ax = figure_instance._seen[key]
         figure_instance.sca(ax)
         return ax

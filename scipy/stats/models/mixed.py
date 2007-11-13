@@ -36,7 +36,7 @@ class Unit:
         perform a check whether formula just has an intercept in it, in
         which case the number of rows must be computed.
         """
-        if hasattr(self, 'n') and not extra.has_key('nrow'):
+        if hasattr(self, 'n') and 'nrow' not in extra:
             extra['nrow'] = self.n
         return formula(namespace=self.dict, **extra)
 

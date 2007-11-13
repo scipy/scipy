@@ -102,7 +102,7 @@ class TestGetCatalog(NumpyTestCase):
 class TestCatalog(NumpyTestCase):
 
     def clear_environ(self):
-        if os.environ.has_key('PYTHONCOMPILED'):
+        if 'PYTHONCOMPILED' in os.environ:
             self.old_PYTHONCOMPILED = os.environ['PYTHONCOMPILED']
             del os.environ['PYTHONCOMPILED']
         else:

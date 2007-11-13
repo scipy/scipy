@@ -35,7 +35,7 @@ def configuration(parent_package='',top_path=None):
     libs = ['odepack','linpack_lite','mach']
 
     # Remove libraries key from blas_opt
-    if blas_opt.has_key('libraries'):    # key doesn't exist on OS X ...
+    if 'libraries' in blas_opt:    # key doesn't exist on OS X ...
         libs.extend(blas_opt['libraries'])
     newblas = {}
     for key in blas_opt.keys():

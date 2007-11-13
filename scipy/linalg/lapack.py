@@ -109,7 +109,7 @@ def get_lapack_funcs(names, arrays=()):
 
 _colmajor_func_template = '''\
 def %(func_name)s(*args,**kws):
-    if not kws.has_key("rowmajor"):
+    if "rowmajor" not in kws:
         kws["rowmajor"] = 0
     return clapack_func(*args,**kws)
 func_code = %(func_name)s.func_code

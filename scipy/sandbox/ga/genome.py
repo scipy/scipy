@@ -211,7 +211,7 @@ class list_genome(genome,ga_list.ga_list):
         ga_list.ga_list.__init__(self,list)
     def initialize(self,settings = None):
         genome.initialize(self,settings)
-        if settings and settings.has_key('p_mutate'):
+        if settings and 'p_mutate' in settings:
             for g in self: g.set_mutation(settings['p_mutate'])
     def clone(self):
         """This returns a new genome object.  The new genome is a shallow copy
@@ -316,7 +316,7 @@ class tree_crossover(object):
         tried_sym = []
         for i in range(tries):
             sym,node_a = dict_choice(sis.symbol_table)
-            if not self.bad_cross_point(sym) and bro.symbol_table.has_key(sym):
+            if not self.bad_cross_point(sym) and sym in bro.symbol_table:
                 break
             elif i == (tries - 1):
                 msg = "chosen symbol not found in dad (%s tries)" % `tries`
@@ -342,7 +342,7 @@ class tree_crossover(object):
         node_a.set_parent(node_b.get_parent())
         node_b.set_parent(temp)
         sib1.evaluated = 0; sib2.evaluated = 0
-        if self.cross_point.has_key(sym):
+        if sym in self.cross_point:
             self.cross_point[sym] =  self.cross_point[sym] + 1
         else: self.cross_point[sym] = 1
         return sib1,sib2
@@ -372,7 +372,7 @@ class tree_genome(genome):
 #       def touch(self): calls genome touch because of inheritance order
     def initialize(self,settings = None):
         genome.initialize(self,settings)
-        if settings and settings.has_key('p_mutate'):
+        if settings and 'p_mutate' in settings:
             raise NotImplementedError
             # XXX: what is g?
             #g.root.set_mutation(settings['p_mutate'])

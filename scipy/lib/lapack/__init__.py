@@ -40,7 +40,8 @@ def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
     ordering = []
     for i in range(len(arrays)):
         t = arrays[i].dtype.char
-        if not _type_conv.has_key(t): t = 'd'
+        if t not in _type_conv:
+            t = 'd'
         ordering.append((t,i))
     if ordering:
         ordering.sort()
@@ -83,7 +84,7 @@ def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
 
 _colmajor_func_template = '''\
 def %(func_name)s(*args,**kws):
-    if not kws.has_key("rowmajor"):
+    if "rowmajor" not in kws:
         kws["rowmajor"] = 0
     return clapack_func(*args,**kws)
 func_code = %(func_name)s.func_code

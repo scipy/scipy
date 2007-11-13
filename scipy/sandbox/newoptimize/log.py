@@ -35,7 +35,7 @@ class Log( Struct ):
 
         finished = False
         if kwargs:
-            if kwargs.has_key( 'finished' ):
+            if 'finished' in kwargs:
                 finished = kwargs['finished']
 
         ls = len( args ), self.nArg

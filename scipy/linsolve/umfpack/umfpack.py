@@ -28,7 +28,7 @@ def configure( **kwargs ):
     sure that the matrix fulfills this, pass assumeSortedIndices =
     True to gain some speed.
     """
-    if kwargs.has_key( 'assumeSortedIndices' ):
+    if 'assumeSortedIndices' in kwargs):
         globals()['assumeSortedIndices'] = kwargs['assumeSortedIndices']
 
 
@@ -297,7 +297,7 @@ class UmfpackContext( Struct ):
         maxLen = max( [len( name ) for name in umfControls] )
         format = '%%-%ds : %%d' % maxLen
         aux = [format % (name, self.control[umfDefines[name]])
-               for name in umfControls if umfDefines.has_key( name )]
+               for name in umfControls if name in umfDefines]
         return '\n'.join( aux )
 
     ##
@@ -306,7 +306,7 @@ class UmfpackContext( Struct ):
         maxLen = max( [len( name ) for name in umfInfo] )
         format = '%%-%ds : %%d' % maxLen
         aux = [format % (name, self.info[umfDefines[name]])
-               for name in umfInfo if umfDefines.has_key( name )]
+               for name in umfInfo if name in umfDefines]
         return '\n'.join( aux )
 
     ##
@@ -508,7 +508,7 @@ class UmfpackContext( Struct ):
             # UMFPACK uses CSC internally...
             if self.family in umfRealTypes: ii = 0
             else: ii = 1
-            if umfSys_transposeMap[ii].has_key( sys ):
+            if sys in umfSys_transposeMap[ii]:
                 sys = umfSys_transposeMap[ii][sys]
             else:
                 raise RuntimeError, 'autoTranspose ambiguous, switch it off'

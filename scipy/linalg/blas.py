@@ -31,7 +31,8 @@ def get_blas_funcs(names,arrays=(),debug=0):
     ordering = []
     for i in range(len(arrays)):
         t = arrays[i].dtype.char
-        if not _type_conv.has_key(t): t = 'd'
+        if t not in _type_conv:
+            t = 'd'
         ordering.append((t,i))
     if ordering:
         ordering.sort()

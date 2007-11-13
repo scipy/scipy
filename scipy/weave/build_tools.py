@@ -83,7 +83,7 @@ def create_extension(module_path, **kw):
 
     # this is a screwy trick to get rid of a ton of warnings on Unix
     distutils.sysconfig.get_config_vars()
-    if distutils.sysconfig._config_vars.has_key('OPT'):
+    if 'OPT' in distutils.sysconfig._config_vars:
         flags = distutils.sysconfig._config_vars['OPT']
         flags = flags.replace('-Wall','')
         distutils.sysconfig._config_vars['OPT'] = flags
@@ -103,7 +103,7 @@ def create_extension(module_path, **kw):
     # the user has also installed numerous packages in their own
     # location.
     #--------------------------------------------------------------------
-    if os.environ.has_key('PYTHONINCLUDE'):
+    if 'PYTHONINCLUDE' in os.environ:
         path_string = os.environ['PYTHONINCLUDE']
         if sys.platform == "win32":
             extra_include_dirs = path_string.split(';')
@@ -216,7 +216,7 @@ def build_extension(module_path,compiler_name = '',build_dir = None,
     # this is a screwy trick to get rid of a ton of warnings on Unix
     import distutils.sysconfig
     distutils.sysconfig.get_config_vars()
-    if distutils.sysconfig._config_vars.has_key('OPT'):
+    if 'OPT' in distutils.sysconfig._config_vars:
         flags = distutils.sysconfig._config_vars['OPT']
         flags = flags.replace('-Wall','')
         distutils.sysconfig._config_vars['OPT'] = flags

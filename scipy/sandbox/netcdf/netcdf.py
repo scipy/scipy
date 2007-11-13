@@ -4,7 +4,7 @@
 
 import sys
 
-if sys.modules.has_key('pythondoc'):
+if 'pythondoc' in sys.modules:
 
     # Fake code just for the docstrings!
 

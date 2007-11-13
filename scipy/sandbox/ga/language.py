@@ -37,7 +37,7 @@ class language(object):
             else:   self.derive_type = cur_sym.node_type
         new_active_node = active_node
         if type(cur_sym) == types.StringType:
-            if self.lang.has_key(cur_sym):
+            if cur_sym in self.lang:
                 rule = prng.choice(self.lang[cur_sym])
                 for sym in rule:
                     new_active_node = self._gen(sym,new_active_node,depth)

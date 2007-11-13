@@ -87,7 +87,7 @@ class base_tree_node(object):
         """
         for child in self._children:
             child._generate_symbol_table(symbol_table)
-        if symbol_table.has_key(self.derive_type):
+        if self.derive_type in symbol_table:
             symbol_table[self.derive_type].append(self)
         else:   symbol_table[self.derive_type] = [self]
 
@@ -206,11 +206,13 @@ class base_tree_node(object):
 #                if not hasattr(self,'parent'):
 #                        self.parent = weakdict.WeakDict()
 #                if parent: self.parent[0] = parent
-#                elif self.parent.has_key(0): del self.parent[0]
+#                elif 0 in self.parent:
+#                    del self.parent[0]
 #                print 'out set'
 #        def get_parent(self):
 #                print 'in get'
-#                if self.parent.has_key(0): p =  self.parent[0]
+#                if 0 in self.parent:
+#                    p =  self.parent[0]
 #                else: p = None
 #                print 'out get'
 #                return p
