@@ -9,7 +9,7 @@ __all__ = ['fsolve', 'leastsq', 'newton', 'fixed_point','bisection']
 
 def check_func(thefunc, x0, args, numinputs, output_shape=None):
     res = atleast_1d(thefunc(*((x0[:numinputs],)+args)))
-    if (output_shape != None) and (shape(res) != output_shape):
+    if (output_shape is not None) and (shape(res) != output_shape):
         if (output_shape[0] != 1):
             if len(output_shape) > 1:
                 if output_shape[1] == 1:

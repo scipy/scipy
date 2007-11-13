@@ -1051,7 +1051,7 @@ following: array of bin values, lowerreallimit, binsize, extrapoints.
 Returns: (array of bin counts, bin-minimum, min-width, #-points-outside-range)
 """
     a = np.ravel(a)               # flatten any >1D arrays
-    if (defaultlimits != None):
+    if (defaultlimits is not None):
         lowerreallimit = defaultlimits[0]
         upperreallimit = defaultlimits[1]
         binsize = (upperreallimit-lowerreallimit) / float(numbins)

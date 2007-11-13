@@ -128,7 +128,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
             origin[ii] = -origin[ii]
             if not structure.shape[ii] & 1:
                 origin[ii] -= 1
-        if mask != None:
+        if mask is not None:
             msk = numpy.asarray(mask)
             msk = mask.astype(numpy.int8)
             if msk is mask:
@@ -141,7 +141,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
         return return_value
     else:
         tmp_in = numpy.zeros(input.shape, bool)
-        if return_value == None:
+        if return_value is None:
             tmp_out = output
         else:
             tmp_out = numpy.zeros(input.shape, bool)
@@ -155,7 +155,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
             changed = _nd_image.binary_erosion(tmp_in, structure, mask,
                             tmp_out, border_value, origin, invert, cit, 0)
             ii += 1
-        if return_value != None:
+        if return_value is not None:
             return tmp_out
 
 
@@ -190,7 +190,7 @@ def binary_dilation(input, structure = None, iterations = 1, mask = None,
     modified at each iteration.
     """
     input = numpy.asarray(input)
-    if structure == None:
+    if structure is None:
         structure = generate_binary_structure(input.ndim, 1)
     origin = _ni_support._normalize_sequence(origin, input.ndim)
     structure = numpy.asarray(structure)
@@ -544,7 +544,7 @@ def distance_transform_bf(input, metric = "euclidean", sampling = None,
         metric = 3
     else:
         raise RuntimeError, 'distance metric not supported'
-    if sampling != None:
+    if sampling is not None:
         sampling = _ni_support._normalize_sequence(sampling, tmp1.ndim)
         sampling = numpy.asarray(sampling, dtype = numpy.float64)
         if not sampling.flags.contiguous:
@@ -554,7 +554,7 @@ def distance_transform_bf(input, metric = "euclidean", sampling = None,
     else:
         ft = None
     if return_distances:
-        if distances == None:
+        if distances is None:
             if metric == 1:
                 dt = numpy.zeros(tmp1.shape, dtype = numpy.float64)
             else:

@@ -202,8 +202,8 @@ See also:
     low, up   : the bounds (lists of floats)
                 set low[i] to -HUGE_VAL to remove the lower bound
                 set up[i] to HUGE_VAL to remove the upper bound
-                if low == None, the lower bounds are removed.
-                if up == None, the upper bounds are removed.
+                if low is None, the lower bounds are removed.
+                if up is None, the upper bounds are removed.
                 low and up defaults to None
     """
     low = [0]*n
@@ -219,13 +219,13 @@ See also:
         else:
             up[i] = u
 
-    if scale == None:
+    if scale is None:
         scale = []
 
-    if offset == None:
+    if offset is None:
         offset = []
 
-    if maxfun == None:
+    if maxfun is None:
         maxfun = max(100, 10*len(x0))
 
     return moduleTNC.minimize(func_and_grad, x0, low, up, scale, offset,

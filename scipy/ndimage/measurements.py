@@ -48,7 +48,7 @@ def label(input, structure = None, output = None):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if structure == None:
+    if structure is None:
         structure = morphology.generate_binary_structure(input.ndim, 1)
     structure = numpy.asarray(structure, dtype = bool)
     if structure.ndim != input.ndim:
@@ -65,7 +65,7 @@ def label(input, structure = None, output = None):
         output = numpy.int32
     output, return_value = _ni_support._get_output(output, input)
     max_label = _nd_image.label(input, structure, output)
-    if return_value == None:
+    if return_value is None:
         return max_label
     else:
         return return_value, max_label
@@ -136,7 +136,7 @@ def mean(input, labels = None, index = None):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if labels != None:
+    if labels is not None:
         labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
@@ -155,7 +155,7 @@ def variance(input, labels = None, index = None):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if labels != None:
+    if labels is not None:
         labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
@@ -188,7 +188,7 @@ def minimum(input, labels = None, index = None):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if labels != None:
+    if labels is not None:
         labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
@@ -208,7 +208,7 @@ def maximum(input, labels=None, index=None):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if labels != None:
+    if labels is not None:
         labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
@@ -241,7 +241,7 @@ def minimum_position(input, labels = None, index = None):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if labels != None:
+    if labels is not None:
         labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
@@ -264,7 +264,7 @@ def maximum_position(input, labels = None, index = None):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if labels != None:
+    if labels is not None:
         labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
@@ -288,7 +288,7 @@ def extrema(input, labels = None, index = None):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if labels != None:
+    if labels is not None:
         labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
@@ -316,7 +316,7 @@ def center_of_mass(input, labels = None, index = None):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if labels != None:
+    if labels is not None:
         labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
@@ -338,7 +338,7 @@ def histogram(input, min, max, bins, labels = None, index = None):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if labels != None:
+    if labels is not None:
         labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
@@ -363,7 +363,7 @@ def watershed_ift(input, markers, structure = None, output = None):
     input = numpy.asarray(input)
     if input.dtype.type not in [numpy.uint8, numpy.uint16]:
         raise TypeError, 'only 8 and 16 unsigned inputs are supported'
-    if structure == None:
+    if structure is None:
         structure = morphology.generate_binary_structure(input.ndim, 1)
     structure = numpy.asarray(structure, dtype = bool)
     if structure.ndim != input.ndim:

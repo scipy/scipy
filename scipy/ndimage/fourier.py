@@ -35,7 +35,7 @@ import _ni_support
 import _nd_image
 
 def _get_output_fourier(output, input):
-    if output == None:
+    if output is None:
         if input.dtype.type in [numpy.complex64, numpy.complex128,
                                 numpy.float32]:
             output = numpy.zeros(input.shape, dtype = input.dtype)
@@ -55,7 +55,7 @@ def _get_output_fourier(output, input):
     return output, return_value
 
 def _get_output_fourier_complex(output, input):
-    if output == None:
+    if output is None:
         if input.dtype.type in [numpy.complex64, numpy.complex128]:
             output = numpy.zeros(input.shape, dtype = input.dtype)
         else:

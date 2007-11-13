@@ -738,7 +738,7 @@ class CXXCoder(ByteCodeMeaning):
         code = self.codeobject.co_code
         bytes = len(code)
         pc = 0
-        while pc != None and pc < bytes:
+        while pc is not None and pc < bytes:
             pc = self.evaluate(pc,code)
 
         # -----------------------------------------------

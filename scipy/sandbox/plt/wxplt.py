@@ -585,7 +585,7 @@ class plot_window(plot_canvas):
 
     def printout(self, paper=None):
         """Print current plot."""
-        if paper != None:
+        if paper is not None:
             self.print_data.SetPaperId(paper)
         pdd = wx.wxPrintDialogData()
         pdd.SetPrintData(self.print_data)

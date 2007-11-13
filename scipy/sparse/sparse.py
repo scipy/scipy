@@ -454,7 +454,7 @@ class spmatrix(object):
         elif axis == 1:
             # sum over rows
             return self * asmatrix(ones((n, 1), dtype=self.dtype))
-        elif axis == None:
+        elif axis is None:
             # sum over rows and columns
             return ( self * asmatrix(ones((n, 1), dtype=self.dtype)) ).sum()
         else:
@@ -818,7 +818,7 @@ class _cs_matrix(spmatrix):
         """
         # The spmatrix base class already does axis=0 and axis=1 efficiently
         # so we only do the case axis=None here
-        if axis == None:
+        if axis is None:
             return self.data[:self.indptr[-1]].sum()
         else:
             return spmatrix.sum(self,axis)

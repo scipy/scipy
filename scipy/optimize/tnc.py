@@ -213,8 +213,8 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
 
     """
     low, up   : the bounds (lists of floats)
-                if low == None, the lower bounds are removed.
-                if up == None, the upper bounds are removed.
+                if low is None, the lower bounds are removed.
+                if up is None, the upper bounds are removed.
                 low and up defaults to None
     """
     low = [0]*n
@@ -232,13 +232,13 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
             else:
                 up[i] = u
 
-    if scale == None:
+    if scale is None:
         scale = []
 
-    if offset == None:
+    if offset is None:
         offset = []
 
-    if maxfun == None:
+    if maxfun is None:
         maxfun = max(100, 10*len(x0))
 
     rc, nf, x = moduleTNC.minimize(func_and_grad, x0, low, up, scale, offset,

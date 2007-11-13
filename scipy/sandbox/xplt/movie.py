@@ -86,7 +86,7 @@ def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
         elapsed0 = array(elapsed, copy = 1)
     i = i + 1
     more = draw_frame (i)
-    if lims != None:
+    if lims is not None:
         limits (lims [0], lims [1], lims [2], lims [3])
     else:
         limits (square = 1)
@@ -110,7 +110,7 @@ def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
         this_frame = zeros (3)
         i = i + 1
         more = draw_frame (i)
-        if lims != None:
+        if lims is not None:
             limits (lims [0], lims [1], lims [2], lims [3])
         else :
             limits (square = 1)

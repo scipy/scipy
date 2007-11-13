@@ -399,7 +399,7 @@ class Python2CXX(CXXCoder):
     def function_code(self):
         code = self.wrapped_code()
         for T in self.used:
-            if T != None and T.module_init_code:
+            if T is not None and T.module_init_code:
                 self.customize.add_module_init_code(T.module_init_code)
         return code
 

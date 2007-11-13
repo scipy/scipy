@@ -64,12 +64,12 @@ def _normalize_sequence(input, rank, array_type = None):
 
 import warnings
 def _get_output(output, input, output_type = None, shape = None):
-    if output_type != None:
+    if output_type is not None:
         msg = "'output_type' argument is deprecated."
         msg += " Assign type to 'output' instead."
         raise RuntimeError, msg
         warnings.warn(msg, DeprecationWarning)
-        if output == None:
+        if output is None:
             output = output_type
         elif ((type(output) is not type(types.TypeType)) or
               output.dtype != output_type):

@@ -110,7 +110,7 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
             jedge = tmp
             x = transpose (array (xyz1 [0]))
             y = transpose (array (xyz1 [1]))
-            if fill != None :
+            if fill is not None :
                 fill = transpose (fill)
         else :
             x = xyz1 [0]
@@ -123,12 +123,12 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
         if iedge < 0.0 :
             x = reverse (x, 0)
             y = reverse (y, 0)
-            if fill != None :
+            if fill is not None :
                 fill = reverse (fill, 0)
         if jedge < 0.0 :
             x = reverse (x, 1)
             y = reverse (y, 1)
-            if fill != None :
+            if fill is not None :
                 fill = reverse (fill, 1)
         xmax = maxelt_ (x)
         xmin = minelt_ (x)
@@ -151,7 +151,7 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
                 dif = (ydif - xdif) / 2.
                 xmin = xmin - dif
                 xmax = xmax + dif
-        if fill != None :
+        if fill is not None :
             if len (fill.shape) == 1:
                 fill = bytscl (fill)
             else:
@@ -159,29 +159,29 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
                 l = fill.shape [1]
                 fill = reshape ( bytscl (ravel (fill)), (k, l))
         if cull == 0 : #transparent mesh
-            if ecolor != None :
+            if ecolor is not None :
                 plm (y, x, color = ecolor)
             else :
                 plm (y, x)
-        elif ecolor != None and ewidth != None and cmax != None :
+        elif ecolor is not None and ewidth is not None and cmax is not None :
             plf (fill, y, x, edges = edges, ecolor = ecolor,
                  ewidth = ewidth, cmin = 0.0, cmax = cmax, legend = "")
-        elif ecolor != None and ewidth != None :
+        elif ecolor is not None and ewidth is not None :
             plf (fill, y, x, edges = edges, ewidth = ewidth,
                  cmin = 0.0, ecolor = ecolor, legend = "")
-        elif ecolor != None and cmax != None :
+        elif ecolor is not None and cmax is not None :
             plf (fill, y, x, edges = edges, ecolor = ecolor,
                  cmin = 0.0, cmax = cmax, legend = "")
-        elif ewidth != None and cmax != None :
+        elif ewidth is not None and cmax is not None :
             plf (fill, y, x, edges = edges,  ewidth = ewidth,
                  cmin = 0.0, cmax = cmax, legend = "")
-        elif ecolor != None :
+        elif ecolor is not None :
             plf (fill, y, x, edges = edges, ecolor = ecolor,
                  cmin = 0.0, legend = "")
-        elif ewidth != None :
+        elif ewidth is not None :
             plf (fill, y, x, edges = edges, ewidth = ewidth,
                  cmin = 0.0, legend = "")
-        elif cmax != None :
+        elif cmax is not None :
             plf (fill, y, x, edges = edges,
                  cmin = 0.0, cmax = cmax, legend = "")
         else :
@@ -256,8 +256,8 @@ def xyz_wf (z, y, x, scale = 1.0) :
         raise _Xyz_wfError, "impossible dimensions for z array"
     nx = shape (z) [0]
     ny = shape (z) [1]
-    if y == None or x == None :
-        if x != None or y != None :
+    if y is None or x is None :
+        if x is not None or y is not None :
             raise _Xyz_wfError, "either give y,x both or neither"
         x = span (0, ny - 1, ny, nx)
         y = transpose (span (0, nx - 1, nx, ny))
@@ -265,7 +265,7 @@ def xyz_wf (z, y, x, scale = 1.0) :
         raise _Xyz_wfError, "x, y, and z must all have same dimensions"
     xyscl = max (maxelt_ (x) - minelt_ (x),
                  maxelt_ (y) - minelt_ (y))
-    if scale != None:
+    if scale is not None:
         xyscl = xyscl * scale
     dz = maxelt_ (z) - minelt_ (z)
     zscl= dz + (dz == 0.0)

@@ -126,7 +126,7 @@ def geometric_transform(input, mapping, output_shape = None,
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if output_shape == None:
+    if output_shape is None:
         output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError, 'input and output rank must be > 0'
@@ -229,7 +229,7 @@ def affine_transform(input, matrix, offset = 0.0, output_shape = None,
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if output_shape == None:
+    if output_shape is None:
         output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError, 'input and output rank must be > 0'

@@ -639,9 +639,9 @@ class model(basemodel):
     def __init__(self, f=None, samplespace=None):
         super(model, self).__init__()
 
-        if f != None and samplespace != None:
+        if f is not None and samplespace is not None:
             self.setfeaturesandsamplespace(f, samplespace)
-        elif f != None and samplespace is None:
+        elif f is not None and samplespace is None:
             raise ValueError, "not supported: specify both features and" \
                     " sample space or neither"
 
@@ -1550,7 +1550,7 @@ class bigmodel(basemodel):
                     if self.verbose >= 2:
                         print "(using Deylon acceleration.  n is " + str(n) + " instead of " + str(k - self.a_0_hold) + "...)"
                 if self.ruppertaverage:
-                    if self.stepdecreaserate == None:
+                    if self.stepdecreaserate is None:
                         # Use log n / n as the default.  Note: this requires a
                         # different scaling of a_0 than a stepsize decreasing
                         # as, e.g., n^(-1/2).

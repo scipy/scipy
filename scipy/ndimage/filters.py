@@ -516,8 +516,8 @@ def _rank_filter(input, rank, size = None, footprint = None, output = None,
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     origins = _ni_support._normalize_sequence(origin, input.ndim)
-    if footprint == None:
-        if size == None:
+    if footprint is None:
+        if size is None:
             raise RuntimeError, "no footprint or filter size provided"
         sizes = _ni_support._normalize_sequence(size, input.ndim)
         footprint = numpy.ones(sizes, dtype = bool)
@@ -652,8 +652,8 @@ def generic_filter(input, function, size = None, footprint = None,
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     origins = _ni_support._normalize_sequence(origin, input.ndim)
-    if footprint == None:
-        if size == None:
+    if footprint is None:
+        if size is None:
             raise RuntimeError, "no footprint or filter size provided"
         sizes = _ni_support._normalize_sequence(size, input.ndim)
         footprint = numpy.ones(size, dtype = bool)
