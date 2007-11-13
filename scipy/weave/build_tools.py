@@ -17,7 +17,9 @@
     Note that you need write access to the pythonxx/lib directory to do this.
 """
 
-import sys,os,string,time
+import sys
+import os
+import time
 import tempfile
 import exceptions
 import commands
