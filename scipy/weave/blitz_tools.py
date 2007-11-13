@@ -94,7 +94,7 @@ def ast_to_blitz_expr(ast_seq):
     expr = expr.replace('slice', 'blitz::Range' )
     expr = expr.replace('[','(')
     expr = expr.replace(']', ')' )
-    expr = expr.replace)'_stp', '1' )
+    expr = expr.replace('_stp', '1' )
 
     # Instead of blitz::fromStart and blitz::toEnd.  This requires
     # the following in the generated code.
