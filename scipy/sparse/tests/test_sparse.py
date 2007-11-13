@@ -26,7 +26,7 @@ from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, coo_matrix, \
 from scipy.linsolve import splu
 restore_path()
 
-class _test_cs:
+class _TestCs:
     def setUp(self):
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
@@ -388,7 +388,7 @@ class _test_cs:
             assert_array_equal(numpy.diag(A),extract_diagonal(self.spmatrix(A)))
 
 
-class _test_horiz_slicing:
+class _TestHorizSlicing:
     """Tests horizontal slicing (e.g. [:, 0]).  Tests for individual sparse
     matrix types that implement this should derive from this class.
     """
@@ -422,7 +422,7 @@ class _test_horiz_slicing:
         assert caught == 2
 
 
-class _test_vert_slicing:
+class _TestVertSlicing:
     """Tests vertical slicing (e.g. [:, 0]).  Tests for individual sparse
     matrix types that implement this should derive from this class.
     """
@@ -648,7 +648,7 @@ class _test_arith:
 
 
 
-class test_csr(_test_cs, _test_horiz_slicing, _test_vert_slicing,
+class TestCsr(_TestCs, _TestHorizSlicing, _TestVertSlicing,
                _test_slicing, _test_arith, NumpyTestCase):
     spmatrix = csr_matrix
 
@@ -714,7 +714,7 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_vert_slicing,
     def check_empty(self):
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
         """
-        # This test should be made global (in _test_cs), but first we
+        # This test should be made global (in _TestCs), but first we
         # need a uniform argument order / syntax for constructing an
         # empty sparse matrix. (coo_matrix is currently different).
         shape = (5, 5)
@@ -757,7 +757,7 @@ class test_csr(_test_cs, _test_horiz_slicing, _test_vert_slicing,
         assert b.shape == (2,2)
         assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
-class test_csc(_test_cs, _test_horiz_slicing, _test_vert_slicing,
+class TestCsc(_TestCs, _TestHorizSlicing, _TestVertSlicing,
                _test_slicing, _test_arith, NumpyTestCase):
     spmatrix = csc_matrix
 
@@ -799,7 +799,7 @@ class test_csc(_test_cs, _test_horiz_slicing, _test_vert_slicing,
     def check_empty(self):
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
         """
-        # This test should be made global (in _test_cs), but first we
+        # This test should be made global (in _TestCs), but first we
         # need a uniform argument order / syntax for constructing an
         # empty sparse matrix. (coo_matrix is currently different).
         shape = (5, 5)
@@ -841,7 +841,7 @@ class test_csc(_test_cs, _test_horiz_slicing, _test_vert_slicing,
         assert_equal(b.shape, (2,2))
         assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
-class test_dok(_test_cs, NumpyTestCase):
+class TestDok(_TestCs, NumpyTestCase):
     spmatrix = dok_matrix
 
     def check_mult(self):
@@ -948,7 +948,7 @@ class test_dok(_test_cs, NumpyTestCase):
         assert_equal(caught,5)
 
 
-class test_lil(_test_cs, _test_horiz_slicing, NumpyTestCase,
+class TestLil(_TestCs, _TestHorizSlicing, NumpyTestCase,
                ParametricTestCase):
     spmatrix = lil_matrix
 

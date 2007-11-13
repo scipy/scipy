@@ -27,7 +27,7 @@ restore_path()
 
 #class _test_ev: pass
 
-class _test_lapack(NumpyTestCase,
+class _TestLapack(NumpyTestCase,
                    _test_ev,
                    _test_gev):
 
@@ -84,16 +84,16 @@ See scipy/INSTALL.txt for troubleshooting.
 ****************************************************************
 """
 else:
-    class test_flapack_double(_test_lapack):
+    class TestFlapackDouble(_TestLapack):
         lapack = PrefixWrapper(flapack,'d')
         decimal = 12
-    class test_flapack_float(_test_lapack):
+    class TestFlapackFloat(_TestLapack):
         lapack = PrefixWrapper(flapack,'s')
         decimal = 5
-    class test_flapack_complex(_test_lapack):
+    class TestFlapackComplex(_TestLapack):
         lapack = PrefixWrapper(flapack,'c')
         decimal = 5
-    class test_flapack_double_complex(_test_lapack):
+    class TestFlapackDoubleComplex(_TestLapack):
         lapack = PrefixWrapper(flapack,'z')
         decimal = 12
 
@@ -109,16 +109,16 @@ Notes:
 ****************************************************************
 """
 else:
-    class test_clapack_double(_test_lapack):
+    class TestClapackDouble(_TestLapack):
         lapack = PrefixWrapper(clapack,'d')
         decimal = 12
-    class test_clapack_float(_test_lapack):
+    class TestClapackFloat(_TestLapack):
         lapack = PrefixWrapper(clapack,'s')
         decimal = 5
-    class test_clapack_complex(_test_lapack):
+    class TestClapackComplex(_TestLapack):
         lapack = PrefixWrapper(clapack,'c')
         decimal = 5
-    class test_clapack_double_complex(_test_lapack):
+    class TestClapackDoubleComplex(_TestLapack):
         lapack = PrefixWrapper(clapack,'z')
         decimal = 12
 

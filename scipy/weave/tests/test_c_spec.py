@@ -570,84 +570,84 @@ class TestDictConverter(NumpyTestCase):
         c = test(b)
         assert( c['hello'] == 5)
 
-class test_msvc_int_converter(test_int_converter):
+class TestMsvcIntConverter(TestIntConverter):
     compiler = 'msvc'
-class test_unix_int_converter(test_int_converter):
+class TestUnixIntConverter(TestIntConverter):
     compiler = ''
-class test_gcc_int_converter(test_int_converter):
+class TestGccIntConverter(TestIntConverter):
     compiler = 'gcc'
 
-class test_msvc_float_converter(test_float_converter):
+class TestMsvcFloatConverter(TestFloatConverter):
     compiler = 'msvc'
 
-class test_msvc_float_converter(test_float_converter):
+class TestMsvcFloatConverter(TestFloatConverter):
     compiler = 'msvc'
-class test_unix_float_converter(test_float_converter):
+class TestUnixFloatConverter(TestFloatConverter):
     compiler = ''
-class test_gcc_float_converter(test_float_converter):
+class TestGccFloatConverter(TestFloatConverter):
     compiler = 'gcc'
 
-class test_msvc_complex_converter(test_complex_converter):
+class TestMsvcComplexConverter(TestComplexConverter):
     compiler = 'msvc'
-class test_unix_complex_converter(test_complex_converter):
+class TestUnixComplexConverter(TestComplexConverter):
     compiler = ''
-class test_gcc_complex_converter(test_complex_converter):
+class TestGccComplexConverter(TestComplexConverter):
     compiler = 'gcc'
 
-class test_msvc_file_converter(test_file_converter):
+class TestMsvcFileConverter(TestFileConverter):
     compiler = 'msvc'
-class test_unix_file_converter(test_file_converter):
+class TestUnixFileConverter(TestFileConverter):
     compiler = ''
-class test_gcc_file_converter(test_file_converter):
+class TestGccFileConverter(TestFileConverter):
     compiler = 'gcc'
 
-class test_msvc_callable_converter(test_callable_converter):
+class TestMsvcCallableConverter(TestCallableConverter):
     compiler = 'msvc'
-class test_unix_callable_converter(test_callable_converter):
+class TestUnixCallableConverter(TestCallableConverter):
     compiler = ''
-class test_gcc_callable_converter(test_callable_converter):
+class TestGccCallableConverter(TestCallableConverter):
     compiler = 'gcc'
 
-class test_msvc_sequence_converter(test_sequence_converter):
+class TestMsvcSequenceConverter(TestSequenceConverter):
     compiler = 'msvc'
-class test_unix_sequence_converter(test_sequence_converter):
+class TestUnixSequenceConverter(TestSequenceConverter):
     compiler = ''
-class test_gcc_sequence_converter(test_sequence_converter):
+class TestGccSequenceConverter(TestSequenceConverter):
     compiler = 'gcc'
 
-class test_msvc_string_converter(test_string_converter):
+class TestMsvcStringConverter(TestStringConverter):
     compiler = 'msvc'
-class test_unix_string_converter(test_string_converter):
+class TestUnixStringConverter(TestStringConverter):
     compiler = ''
-class test_gcc_string_converter(test_string_converter):
+class TestGccStringConverter(TestStringConverter):
     compiler = 'gcc'
 
-class test_msvc_list_converter(test_list_converter):
+class TestMsvcListConverter(TestListConverter):
     compiler = 'msvc'
-class test_unix_list_converter(test_list_converter):
+class TestUnixListConverter(TestListConverter):
     compiler = ''
-class test_gcc_list_converter(test_list_converter):
+class TestGccListConverter(TestListConverter):
     compiler = 'gcc'
 
-class test_msvc_tuple_converter(test_tuple_converter):
+class TestMsvcTupleConverter(TestTupleConverter):
     compiler = 'msvc'
-class test_unix_tuple_converter(test_tuple_converter):
+class TestUnixTupleConverter(TestTupleConverter):
     compiler = ''
-class test_gcc_tuple_converter(test_tuple_converter):
+class TestGccTupleConverter(TestTupleConverter):
     compiler = 'gcc'
 
-class test_msvc_dict_converter(test_dict_converter):
+class TestMsvcDictConverter(TestDictConverter):
     compiler = 'msvc'
-class test_unix_dict_converter(test_dict_converter):
+class TestUnixDictConverter(TestDictConverter):
     compiler = ''
-class test_gcc_dict_converter(test_dict_converter):
+class TestGccDictConverter(TestDictConverter):
     compiler = 'gcc'
 
-class test_msvc_instance_converter(test_instance_converter):
+class TestMsvcInstanceConverter(TestInstanceConverter):
     compiler = 'msvc'
-class test_unix_instance_converter(test_instance_converter):
+class TestUnixInstanceConverter(TestInstanceConverter):
     compiler = ''
-class test_gcc_instance_converter(test_instance_converter):
+class TestGccInstanceConverter(TestInstanceConverter):
     compiler = 'gcc'
 
 def setup_test_location():

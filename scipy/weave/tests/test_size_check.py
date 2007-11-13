@@ -98,7 +98,7 @@ class TestBinaryOpSize(NumpyTestCase):
         x,y = (5,5),(4,5)
         self.generic_error_test(x,y)
 
-class test_dummy_array(test_binary_op_size):
+class TestDummyArray(TestBinaryOpSize):
     def generic_test(self,x,y,desired):
         if type(x) is type(()):
             x = ones(x)

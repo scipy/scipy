@@ -20,7 +20,7 @@ restore_path()
 
 from UserList import UserList
 
-class _test_sequence_base(NumpyTestCase):
+class _TestSequenceBase(NumpyTestCase):
     seq_type = None
 
     def check_conversion(self,level=5):
@@ -179,7 +179,7 @@ class _test_sequence_base(NumpyTestCase):
         print 'weave:', t2 - t1
         assert list(b) == list(a)
 
-class test_tuple(_test_sequence_base):
+class TestTuple(_TestSequenceBase):
     seq_type = tuple
 
     def check_set_item_operator_equal_fail(self,level=5):
@@ -225,7 +225,7 @@ class test_tuple(_test_sequence_base):
         except IndexError:
             pass
 
-class test_list(_test_sequence_base):
+class TestList(_TestSequenceBase):
     seq_type = list
     def check_append_passed_item(self,level=5):
         a = []

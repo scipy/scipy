@@ -414,7 +414,7 @@ class TestLstsq(NumpyTestCase):
             #XXX: check definition of res
             assert_array_almost_equal(x,direct_lstsq(a,b,1))
 
-class test_tri(NumpyTestCase):
+class TestTri(NumpyTestCase):
     def check_basic(self):
         assert_equal(tri(4),array([[1,0,0,0],
                                    [1,1,0,0],
@@ -450,7 +450,7 @@ class test_tri(NumpyTestCase):
                                           [1,0,0],
                                           [1,1,0]]))
 
-class test_tril(NumpyTestCase):
+class TestTril(NumpyTestCase):
     def check_basic(self):
         a = (100*get_mat(5)).astype('l')
         b = a.copy()
@@ -472,7 +472,7 @@ class test_tril(NumpyTestCase):
                 b[k,l] = 0
         assert_equal(tril(a,k=-2),b)
 
-class test_triu(NumpyTestCase):
+class TestTriu(NumpyTestCase):
     def check_basic(self):
         a = (100*get_mat(5)).astype('l')
         b = a.copy()
@@ -494,14 +494,14 @@ class test_triu(NumpyTestCase):
                 b[l,k] = 0
         assert_equal(triu(a,k=-2),b)
 
-class test_toeplitz(NumpyTestCase):
+class TestToeplitz(NumpyTestCase):
     def check_basic(self):
         y = toeplitz([1,2,3])
         assert_array_equal(y,[[1,2,3],[2,1,2],[3,2,1]])
         y = toeplitz([1,2,3],[1,4,5])
         assert_array_equal(y,[[1,4,5],[2,1,4],[3,2,1]])
 
-class test_hankel(NumpyTestCase):
+class TestHankel(NumpyTestCase):
     def check_basic(self):
         y = hankel([1,2,3])
         assert_array_equal(y,[[1,2,3],[2,3,0],[3,0,0]])

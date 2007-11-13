@@ -112,14 +112,14 @@ class TestNumpyComplexScalarConverter(NumpyTestCase):
         result = inline_tools.inline("return_val=1.0/a;",['a'])
         assert( result==.5-.5j)
 
-class test_msvc_numpy_complex_scalar_converter(
-                  test_numpy_complex_scalar_converter):
+class TestMsvcNumpyComplexScalarConverter(
+                  TestNumpyComplexScalarConverter):
     compiler = 'msvc'
-class test_unix_numpy_complex_scalar_converter(
-                  test_numpy_complex_scalar_converter):
+class TestUnixNumpyComplexScalarConverter(
+                  TestNumpyComplexScalarConverter):
     compiler = ''
-class test_gcc_numpy_complex_scalar_converter(
-                  test_numpy_complex_scalar_converter):
+class TestGccNumpyComplexScalarConverter(
+                  TestNumpyComplexScalarConverter):
     compiler = 'gcc'
 
 

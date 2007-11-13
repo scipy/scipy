@@ -38,7 +38,7 @@ class TestConfigureBuildDir(NumpyTestCase):
         assert(d == d2)
         assert(is_writable(d))
 
-class test_configure_temp_dir(test_configure_build_dir):
+class TestConfigureTempDir(TestConfigureBuildDir):
     def check_default(self):
         " default behavior returns tempdir"
         # this'll fail if the temp directory isn't writable.

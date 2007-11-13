@@ -40,7 +40,7 @@ def matrixmultiply(a, b):
 ##################################################
 ### Test blas ?axpy
 
-class base_axpy(NumpyTestCase):
+class BaseAxpy(NumpyTestCase):
     def check_default_a(self):
         x = arange(3.,dtype=self.dtype)
         y = arange(3.,dtype=x.dtype)
@@ -92,21 +92,21 @@ class base_axpy(NumpyTestCase):
         assert(0)
 
 try:
-    class test_saxpy(base_axpy):
+    class TestSaxpy(BaseAxpy):
         blas_func = fblas.saxpy
         dtype = float32
 except AttributeError:
-    class test_saxpy: pass
-class test_daxpy(base_axpy):
+    class TestSaxpy: pass
+class TestDaxpy(BaseAxpy):
     blas_func = fblas.daxpy
     dtype = float64
 try:
-    class test_caxpy(base_axpy):
+    class TestCaxpy(BaseAxpy):
         blas_func = fblas.caxpy
         dtype = complex64
 except AttributeError:
-    class test_caxpy: pass
-class test_zaxpy(base_axpy):
+    class TestCaxpy: pass
+class TestZaxpy(BaseAxpy):
     blas_func = fblas.zaxpy
     dtype = complex128
 
@@ -114,7 +114,7 @@ class test_zaxpy(base_axpy):
 ##################################################
 ### Test blas ?scal
 
-class base_scal(NumpyTestCase):
+class BaseScal(NumpyTestCase):
     def check_simple(self):
         x = arange(3.,dtype=self.dtype)
         real_x = x*3.
@@ -135,21 +135,21 @@ class base_scal(NumpyTestCase):
         # should catch error and never get here
         assert(0)
 try:
-    class test_sscal(base_scal):
+    class TestSscal(BaseScal):
         blas_func = fblas.sscal
         dtype = float32
 except AttributeError:
-    class test_sscal: pass
-class test_dscal(base_scal):
+    class TestSscal: pass
+class TestDscal(BaseScal):
     blas_func = fblas.dscal
     dtype = float64
 try:
-    class test_cscal(base_scal):
+    class TestCscal(BaseScal):
         blas_func = fblas.cscal
         dtype = complex64
 except AttributeError:
-    class test_cscal: pass
-class test_zscal(base_scal):
+    class TestCscal: pass
+class TestZscal(BaseScal):
     blas_func = fblas.zscal
     dtype = complex128
 
@@ -159,7 +159,7 @@ class test_zscal(base_scal):
 ##################################################
 ### Test blas ?copy
 
-class base_copy(NumpyTestCase):
+class BaseCopy(NumpyTestCase):
     def check_simple(self):
         x = arange(3.,dtype=self.dtype)
         y = zeros(shape(x),x.dtype)
@@ -206,21 +206,21 @@ class base_copy(NumpyTestCase):
     #    assert_array_equal(x,y)
 
 try:
-    class test_scopy(base_copy):
+    class TestScopy(BaseCopy):
         blas_func = fblas.scopy
         dtype = float32
 except AttributeError:
-    class test_scopy: pass
-class test_dcopy(base_copy):
+    class TestScopy: pass
+class TestDcopy(BaseCopy):
     blas_func = fblas.dcopy
     dtype = float64
 try:
-    class test_ccopy(base_copy):
+    class TestCcopy(BaseCopy):
         blas_func = fblas.ccopy
         dtype = complex64
 except AttributeError:
-    class test_ccopy: pass
-class test_zcopy(base_copy):
+    class TestCcopy: pass
+class TestZcopy(BaseCopy):
     blas_func = fblas.zcopy
     dtype = complex128
 
@@ -228,7 +228,7 @@ class test_zcopy(base_copy):
 ##################################################
 ### Test blas ?swap
 
-class base_swap(NumpyTestCase):
+class BaseSwap(NumpyTestCase):
     def check_simple(self):
         x = arange(3.,dtype=self.dtype)
         y = zeros(shape(x),x.dtype)
@@ -282,21 +282,21 @@ class base_swap(NumpyTestCase):
         assert(0)
 
 try:
-    class test_sswap(base_swap):
+    class TestSswap(BaseSwap):
         blas_func = fblas.sswap
         dtype = float32
 except AttributeError:
-    class test_sswap: pass
-class test_dswap(base_swap):
+    class TestSswap: pass
+class TestDswap(BaseSwap):
     blas_func = fblas.dswap
     dtype = float64
 try:
-    class test_cswap(base_swap):
+    class TestCswap(BaseSwap):
         blas_func = fblas.cswap
         dtype = complex64
 except AttributeError:
-    class test_cswap: pass
-class test_zswap(base_swap):
+    class TestCswap: pass
+class TestZswap(BaseSwap):
     blas_func = fblas.zswap
     dtype = complex128
 
@@ -304,7 +304,7 @@ class test_zswap(base_swap):
 ### Test blas ?gemv
 ### This will be a mess to test all cases.
 
-class base_gemv(NumpyTestCase):
+class BaseGemv(NumpyTestCase):
     def get_data(self,x_stride=1,y_stride=1):
         mult = array(1, dtype = self.dtype)
         if self.dtype in [complex64, complex128]:
@@ -386,21 +386,21 @@ class base_gemv(NumpyTestCase):
             pass
 
 try:
-    class test_sgemv(base_gemv):
+    class TestSgemv(BaseGemv):
         blas_func = fblas.sgemv
         dtype = float32
 except AttributeError:
-    class test_sgemv: pass
-class test_dgemv(base_gemv):
+    class TestSgemv: pass
+class TestDgemv(BaseGemv):
     blas_func = fblas.dgemv
     dtype = float64
 try:
-    class test_cgemv(base_gemv):
+    class TestCgemv(BaseGemv):
         blas_func = fblas.cgemv
         dtype = complex64
 except AttributeError:
-    class test_cgemv: pass
-class test_zgemv(base_gemv):
+    class TestCgemv: pass
+class TestZgemv(BaseGemv):
     blas_func = fblas.zgemv
     dtype = complex128
 
@@ -409,7 +409,7 @@ class test_zgemv(base_gemv):
 ### Test blas ?ger
 ### This will be a mess to test all cases.
 
-class base_ger(NumpyTestCase):
+class BaseGer(NumpyTestCase):
     def get_data(self,x_stride=1,y_stride=1):
         from numpy.random import normal
         alpha = array(1., dtype = self.dtype)
@@ -449,10 +449,10 @@ class base_ger(NumpyTestCase):
         except:
             pass
 
-class test_sger(base_ger):
+class TestSger(BaseGer):
     blas_func = fblas.sger
     dtype = float32
-class test_dger(base_ger):
+class TestDger(BaseGer):
     blas_func = fblas.dger
     dtype = float64
 """
@@ -461,7 +461,7 @@ class test_dger(base_ger):
 ### This will be a mess to test all cases.
 
 """
-class base_ger_complex(base_ger):
+class BaseGerComplex(BaseGer):
     def get_data(self,x_stride=1,y_stride=1):
         from numpy.random import normal
         alpha = array(1+1j, dtype = self.dtype)
@@ -493,24 +493,24 @@ class base_ger_complex(base_ger):
     #    self.blas_func(x,y,a,incy=2)
     #    assert_array_almost_equal(desired_a,a)
 
-class test_cgeru(base_ger_complex):
+class TestCgeru(BaseGerComplex):
     blas_func = fblas.cgeru
     dtype = complex64
     def transform(self,x):
         return x
-class test_zgeru(base_ger_complex):
+class TestZgeru(BaseGerComplex):
     blas_func = fblas.zgeru
     dtype = complex128
     def transform(self,x):
         return x
 
-class test_cgerc(base_ger_complex):
+class TestCgerc(BaseGerComplex):
     blas_func = fblas.cgerc
     dtype = complex64
     def transform(self,x):
         return conjugate(x)
 
-class test_zgerc(base_ger_complex):
+class TestZgerc(BaseGerComplex):
     blas_func = fblas.zgerc
     dtype = complex128
     def transform(self,x):

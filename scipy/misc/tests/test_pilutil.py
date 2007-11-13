@@ -10,7 +10,7 @@ import numpy as N
 
 datapath = os.path.dirname(__file__)
 
-class test_pilutil(ParametricTestCase):
+class TestPILUtil(ParametricTestCase):
     def test_imresize(self):
         im = N.random.random((10,20))
         for T in N.sctypes['float'] + [float]:
