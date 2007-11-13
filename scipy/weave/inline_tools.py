@@ -1,8 +1,8 @@
 # should re-write compiled functions to take a local and global dict
 # as input.
-import sys,os
+import sys
+import os
 import ext_tools
-import string
 import catalog
 import common_info
 
@@ -60,21 +60,21 @@ class inline_ext_function(ext_tools.ext_function):
         arg_strings = []
         for arg in self.arg_specs:
             arg_strings.append(arg.declaration_code(inline=1))
-        code = string.join(arg_strings,"")
+        code = arg_strings.join("")
         return code
 
     def arg_cleanup_code(self):
         arg_strings = []
         for arg in self.arg_specs:
             arg_strings.append(arg.cleanup_code())
-        code = string.join(arg_strings,"")
+        code = arg_strings.join("")
         return code
 
     def arg_local_dict_code(self):
         arg_strings = []
         for arg in self.arg_specs:
             arg_strings.append(arg.local_dict_code())
-        code = string.join(arg_strings,"")
+        code = arg_strings.join("")
         return code
 
 

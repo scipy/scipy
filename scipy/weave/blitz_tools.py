@@ -1,5 +1,4 @@
 import parser
-import string
 import sys
 import ast_tools
 import slice_handler
@@ -91,18 +90,18 @@ def ast_to_blitz_expr(ast_seq):
     # be included in the generated code.
     # These could all alternatively be done to the ast in
     # build_slice_atom()
-    expr = string.replace(expr,'slice(_beg,_end)', '_all' )
-    expr = string.replace(expr,'slice', 'blitz::Range' )
-    expr = string.replace(expr,'[','(')
-    expr = string.replace(expr,']', ')' )
-    expr = string.replace(expr,'_stp', '1' )
+    expr = expr.replace('slice(_beg,_end)', '_all' )
+    expr = expr.replace('slice', 'blitz::Range' )
+    expr = expr.replace('[','(')
+    expr = expr.replace(']', ')' )
+    expr = expr.replace)'_stp', '1' )
 
     # Instead of blitz::fromStart and blitz::toEnd.  This requires
     # the following in the generated code.
     #   Range _beg = blitz::fromStart;
     #   Range _end = blitz::toEnd;
-    #expr = string.replace(expr,'_beg', 'blitz::fromStart' )
-    #expr = string.replace(expr,'_end', 'blitz::toEnd' )
+    #expr = expr.replace('_beg', 'blitz::fromStart' )
+    #expr = expr.replace('_end', 'blitz::toEnd' )
 
     return expr + ';\n'
 
