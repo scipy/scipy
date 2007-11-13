@@ -27,9 +27,9 @@ class TestDictConstruct(NumpyTestCase):
 
 class TestDictHasKey(NumpyTestCase):
     def check_obj(self,level=5):
-        class foo:
+        class Foo:
             pass
-        key = foo()
+        key = Foo()
         a = {}
         a[key] = 12345
         code = """
@@ -176,9 +176,9 @@ class TestDictSetOperator(NumpyTestCase):
         key,val = 1+1j,12345
         self.generic_new(key,val)
     def check_new_obj_int(self,level=5):
-        class foo:
+        class Foo:
             pass
-        key,val = foo(),12345
+        key,val = Foo(),12345
         self.generic_new(key,val)
 
     def check_overwrite_int_int(self,level=5):
@@ -194,9 +194,9 @@ class TestDictSetOperator(NumpyTestCase):
         key,val = 1+1j,12345
         self.generic_overwrite(key,val)
     def check_overwrite_obj_int(self,level=5):
-        class foo:
+        class Foo:
             pass
-        key,val = foo(),12345
+        key,val = Foo(),12345
         self.generic_overwrite(key,val)
 
 class TestDictDel(NumpyTestCase):
@@ -228,9 +228,9 @@ class TestDictDel(NumpyTestCase):
         key = 1+1j
         self.generic(key)
     def check_obj(self,level=5):
-        class foo:
+        class Foo:
             pass
-        key = foo()
+        key = Foo()
         self.generic(key)
 
 class TestDictOthers(NumpyTestCase):

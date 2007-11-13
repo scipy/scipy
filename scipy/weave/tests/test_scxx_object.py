@@ -1,7 +1,8 @@
 """ Test refcounting and behavior of SCXX.
 """
 import time
-import os,sys
+import os
+import sys
 
 from numpy.testing import *
 set_package_path()
@@ -135,7 +136,7 @@ class TestObjectCast(NumpyTestCase):
         inline_tools.inline(code)
 
 # test class used for testing python class access from C++.
-class foo:
+class Foo:
     def bar(self):
         return "bar results"
     def bar2(self,val1,val2):
@@ -143,13 +144,13 @@ class foo:
     def bar3(self,val1,val2,val3=1):
         return val1, val2, val3
 
-class str_obj:
-    def __str__(self):
-        return "b"
+#class StrObj:
+#    def __str__(self):
+#        return "b"
 
 class TestObjectHasattr(NumpyTestCase):
     def check_string(self,level=5):
-        a = foo()
+        a = Foo()
         a.b = 12345
         code = """
                return_val = a.hasattr("b");
@@ -157,7 +158,7 @@ class TestObjectHasattr(NumpyTestCase):
         res = inline_tools.inline(code,['a'])
         assert res
     def check_std_string(self,level=5):
-        a = foo()
+        a = Foo()
         a.b = 12345
         attr_name = "b"
         code = """
@@ -166,7 +167,7 @@ class TestObjectHasattr(NumpyTestCase):
         res = inline_tools.inline(code,['a','attr_name'])
         assert res
     def check_string_fail(self,level=5):
-        a = foo()
+        a = Foo()
         a.b = 12345
         code = """
                return_val = a.hasattr("c");
@@ -176,7 +177,7 @@ class TestObjectHasattr(NumpyTestCase):
     def check_inline(self,level=5):
         """ THIS NEEDS TO MOVE TO THE INLINE TEST SUITE
         """
-        a = foo()
+        a = Foo()
         a.b = 12345
         code = """
                throw_error(PyExc_AttributeError,"bummer");
@@ -195,7 +196,7 @@ class TestObjectHasattr(NumpyTestCase):
             pass
 
     def check_func(self,level=5):
-        a = foo()
+        a = Foo()
         a.b = 12345
         code = """
                return_val = a.hasattr("bar");
@@ -206,7 +207,7 @@ class TestObjectHasattr(NumpyTestCase):
 class TestObjectAttr(NumpyTestCase):
 
     def generic_attr(self,code,args=['a']):
-        a = foo()
+        a = Foo()
         a.b = 12345
 
         before = sys.getrefcount(a.b)
@@ -252,7 +253,7 @@ class TestObjectAttr(NumpyTestCase):
             pass
 
     def check_attr_call(self,level=5):
-        a = foo()
+        a = Foo()
         res = inline_tools.inline('return_val = a.attr("bar").call();',['a'])
         first = sys.getrefcount(res)
         del res
@@ -265,14 +266,14 @@ class TestObjectSetAttr(NumpyTestCase):
 
     def generic_existing(self, code, desired):
         args = ['a']
-        a = foo()
+        a = Foo()
         a.b = 12345
         res = inline_tools.inline(code,args)
         assert_equal(a.b,desired)
 
     def generic_new(self, code, desired):
         args = ['a']
-        a = foo()
+        a = Foo()
         res = inline_tools.inline(code,args)
         assert_equal(a.b,desired)
 
@@ -328,7 +329,7 @@ class TestObjectSetAttr(NumpyTestCase):
 class TestObjectDel(NumpyTestCase):
     def generic(self, code):
         args = ['a']
-        a = foo()
+        a = Foo()
         a.b = 12345
         res = inline_tools.inline(code,args)
         assert not hasattr(a,"b")
@@ -354,12 +355,12 @@ class TestObjectCmp(NumpyTestCase):
         res = inline_tools.inline('return_val = (a == b);',['a','b'])
         assert_equal(res,(a == b))
     def check_equal_objects(self,level=5):
-        class foo:
+        class Foo:
             def __init__(self,x):
                 self.x = x
             def __cmp__(self,other):
                 return cmp(self.x,other.x)
-        a,b = foo(1),foo(2)
+        a,b = Foo(1),Foo(2)
         res = inline_tools.inline('return_val = (a == b);',['a','b'])
         assert_equal(res,(a == b))
     def check_lt(self,level=5):
@@ -413,12 +414,12 @@ class TestObjectCmp(NumpyTestCase):
 
 class TestObjectRepr(NumpyTestCase):
     def check_repr(self,level=5):
-        class foo:
+        class Foo:
             def __str__(self):
                 return "str return"
             def __repr__(self):
                 return "repr return"
-        a = foo()
+        a = Foo()
         res = inline_tools.inline('return_val = a.repr();',['a'])
         first = sys.getrefcount(res)
         del res
@@ -429,12 +430,12 @@ class TestObjectRepr(NumpyTestCase):
 
 class TestObjectStr(NumpyTestCase):
     def check_str(self,level=5):
-        class foo:
+        class Foo:
             def __str__(self):
                 return "str return"
             def __repr__(self):
                 return "repr return"
-        a = foo()
+        a = Foo()
         res = inline_tools.inline('return_val = a.str();',['a'])
         first = sys.getrefcount(res)
         del res
@@ -447,12 +448,12 @@ class TestObjectStr(NumpyTestCase):
 class TestObjectUnicode(NumpyTestCase):
     # This ain't going to win awards for test of the year...
     def check_unicode(self,level=5):
-        class foo:
+        class Foo:
             def __repr__(self):
                 return "repr return"
             def __str__(self):
                 return "unicode"
-        a= foo()
+        a= Foo()
         res = inline_tools.inline('return_val = a.unicode();',['a'])
         first = sys.getrefcount(res)
         del res
@@ -463,40 +464,40 @@ class TestObjectUnicode(NumpyTestCase):
 
 class TestObjectIsCallable(NumpyTestCase):
     def check_true(self,level=5):
-        class foo:
+        class Foo:
             def __call__(self):
                 return 0
-        a= foo()
+        a= Foo()
         res = inline_tools.inline('return_val = a.is_callable();',['a'])
         assert res
     def check_false(self,level=5):
-        class foo:
+        class Foo:
             pass
-        a= foo()
+        a= Foo()
         res = inline_tools.inline('return_val = a.is_callable();',['a'])
         assert not res
 
 class TestObjectCall(NumpyTestCase):
     def check_noargs(self,level=5):
-        def foo():
+        def Foo():
             return (1,2,3)
-        res = inline_tools.inline('return_val = foo.call();',['foo'])
+        res = inline_tools.inline('return_val = Foo.call();',['Foo'])
         assert_equal(res,(1,2,3))
         assert_equal(sys.getrefcount(res),2)
     def check_args(self,level=5):
-        def foo(val1,val2):
+        def Foo(val1,val2):
             return (val1,val2)
         code = """
                py::tuple args(2);
                args[0] = 1;
                args[1] = "hello";
-               return_val = foo.call(args);
+               return_val = Foo.call(args);
                """
-        res = inline_tools.inline(code,['foo'])
+        res = inline_tools.inline(code,['Foo'])
         assert_equal(res,(1,"hello"))
         assert_equal(sys.getrefcount(res),2)
     def check_args_kw(self,level=5):
-        def foo(val1,val2,val3=1):
+        def Foo(val1,val2,val3=1):
             return (val1,val2,val3)
         code = """
                py::tuple args(2);
@@ -504,37 +505,37 @@ class TestObjectCall(NumpyTestCase):
                args[1] = "hello";
                py::dict kw;
                kw["val3"] = 3;
-               return_val = foo.call(args,kw);
+               return_val = Foo.call(args,kw);
                """
-        res = inline_tools.inline(code,['foo'])
+        res = inline_tools.inline(code,['Foo'])
         assert_equal(res,(1,"hello",3))
         assert_equal(sys.getrefcount(res),2)
     def check_noargs_with_args(self,level=5):
         # calling a function that does take args with args
         # should fail.
-        def foo():
+        def Foo():
             return "blah"
         code = """
                py::tuple args(2);
                args[0] = 1;
                args[1] = "hello";
-               return_val = foo.call(args);
+               return_val = Foo.call(args);
                """
         try:
-            first = sys.getrefcount(foo)
-            res = inline_tools.inline(code,['foo'])
+            first = sys.getrefcount(Foo)
+            res = inline_tools.inline(code,['Foo'])
         except TypeError:
-            second = sys.getrefcount(foo)
+            second = sys.getrefcount(Foo)
             try:
-                res = inline_tools.inline(code,['foo'])
+                res = inline_tools.inline(code,['Foo'])
             except TypeError:
-                third = sys.getrefcount(foo)
+                third = sys.getrefcount(Foo)
         # first should == second, but the weird refcount error
         assert_equal(second,third)
 
 class TestObjectMcall(NumpyTestCase):
     def check_noargs(self,level=5):
-        a = foo()
+        a = Foo()
         res = inline_tools.inline('return_val = a.mcall("bar");',['a'])
         assert_equal(res,"bar results")
         first = sys.getrefcount(res)
@@ -544,7 +545,7 @@ class TestObjectMcall(NumpyTestCase):
         second = sys.getrefcount(res)
         assert_equal(first,second)
     def check_args(self,level=5):
-        a = foo()
+        a = Foo()
         code = """
                py::tuple args(2);
                args[0] = 1;
@@ -555,7 +556,7 @@ class TestObjectMcall(NumpyTestCase):
         assert_equal(res,(1,"hello"))
         assert_equal(sys.getrefcount(res),2)
     def check_args_kw(self,level=5):
-        a = foo()
+        a = Foo()
         code = """
                py::tuple args(2);
                args[0] = 1;
@@ -568,7 +569,7 @@ class TestObjectMcall(NumpyTestCase):
         assert_equal(res,(1,"hello",3))
         assert_equal(sys.getrefcount(res),2)
     def check_std_noargs(self,level=5):
-        a = foo()
+        a = Foo()
         method = "bar"
         res = inline_tools.inline('return_val = a.mcall(method);',['a','method'])
         assert_equal(res,"bar results")
@@ -579,7 +580,7 @@ class TestObjectMcall(NumpyTestCase):
         second = sys.getrefcount(res)
         assert_equal(first,second)
     def check_std_args(self,level=5):
-        a = foo()
+        a = Foo()
         method = "bar2"
         code = """
                py::tuple args(2);
@@ -591,7 +592,7 @@ class TestObjectMcall(NumpyTestCase):
         assert_equal(res,(1,"hello"))
         assert_equal(sys.getrefcount(res),2)
     def check_std_args_kw(self,level=5):
-        a = foo()
+        a = Foo()
         method = "bar3"
         code = """
                py::tuple args(2);
@@ -607,7 +608,7 @@ class TestObjectMcall(NumpyTestCase):
     def check_noargs_with_args(self,level=5):
         # calling a function that does take args with args
         # should fail.
-        a = foo()
+        a = Foo()
         code = """
                py::tuple args(2);
                args[0] = 1;
@@ -628,19 +629,19 @@ class TestObjectMcall(NumpyTestCase):
 
 class TestObjectHash(NumpyTestCase):
     def check_hash(self,level=5):
-        class foo:
+        class Foo:
             def __hash__(self):
                 return 123
-        a= foo()
+        a= Foo()
         res = inline_tools.inline('return_val = a.hash(); ',['a'])
         print 'hash:', res
         assert_equal(res,123)
 
 class TestObjectIsTrue(NumpyTestCase):
     def check_true(self,level=5):
-        class foo:
+        class Foo:
             pass
-        a= foo()
+        a= Foo()
         res = inline_tools.inline('return_val = a.is_true();',['a'])
         assert_equal(res,1)
     def check_false(self,level=5):
@@ -650,9 +651,9 @@ class TestObjectIsTrue(NumpyTestCase):
 
 class TestObjectIsTrue(NumpyTestCase):
     def check_false(self,level=5):
-        class foo:
+        class Foo:
             pass
-        a= foo()
+        a= Foo()
         res = inline_tools.inline('return_val = a.mcall("not");',['a'])
         assert_equal(res,0)
     def check_true(self,level=5):
@@ -662,32 +663,32 @@ class TestObjectIsTrue(NumpyTestCase):
 
 class TestObjectType(NumpyTestCase):
     def check_type(self,level=5):
-        class foo:
+        class Foo:
             pass
-        a= foo()
+        a= Foo()
         res = inline_tools.inline('return_val = a.type();',['a'])
         assert_equal(res,type(a))
 
 class TestObjectSize(NumpyTestCase):
     def check_size(self,level=5):
-        class foo:
+        class Foo:
             def __len__(self):
                 return 10
-        a= foo()
+        a= Foo()
         res = inline_tools.inline('return_val = a.size();',['a'])
         assert_equal(res,len(a))
     def check_len(self,level=5):
-        class foo:
+        class Foo:
             def __len__(self):
                 return 10
-        a= foo()
+        a= Foo()
         res = inline_tools.inline('return_val = a.len();',['a'])
         assert_equal(res,len(a))
     def check_length(self,level=5):
-        class foo:
+        class Foo:
             def __len__(self):
                 return 10
-        a= foo()
+        a= Foo()
         res = inline_tools.inline('return_val = a.length();',['a'])
         assert_equal(res,len(a))
 
@@ -797,12 +798,12 @@ class TestObjectSetItemOpKey(NumpyTestCase):
 
     def check_set_class(self,level=5):
         a = UserDict()
-        class foo:
+        class Foo:
             def __init__(self,val):
                 self.val = val
             def __hash__(self):
                 return self.val
-        key = foo(4)
+        key = Foo(4)
         inline_tools.inline('a[key] = "bubba";',['a','key'])
         first = sys.getrefcount(key)
         inline_tools.inline('a[key] = "bubba";',['a','key'])
