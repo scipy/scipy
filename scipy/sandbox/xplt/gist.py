@@ -8,7 +8,7 @@
 #  SCIPY
 #  10/15/04 teo Added convert_bounding box.
 #  09/28/03 teo Changed eps file to accept noepsi when not available.
-#  09/28/03 teo Changed all is None to is None and is not None to not is None
+#  09/28/03 teo Changed all == None to is None and != None to not is None
 #
 #  CHANGES:
 #  11/08/04 mdh plh: Change test if color is a list; also test if array.
