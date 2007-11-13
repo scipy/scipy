@@ -76,7 +76,7 @@ class cpp_namespace_converter(base_converter):
     def type_match(self,value):
         try:
             cpp_ident = value.split('_')[2]
-            if cpp_ident.find(self.namespace) != -1:
+            if self.namespace in cpp.ident:
                 return 1
         except:
             pass

@@ -172,7 +172,7 @@ def gcc_exists(name = 'gcc'):
         w,r=os.popen4(cmd)
         w.close()
         str_result = r.read()
-        if str_result.find('Reading specs') != -1:
+        if 'Reading specs' in str_result:
             result = 1
     except:
         # This was needed because the msvc compiler messes with
@@ -190,7 +190,7 @@ def msvc_exists():
         w,r=os.popen4('cl')
         w.close()
         str_result = r.read()
-        if str_result.find('Microsoft') != -1:
+        if 'Microsoft' in str_result:
             result = 1
     except:
         #assume we're ok if devstudio exists

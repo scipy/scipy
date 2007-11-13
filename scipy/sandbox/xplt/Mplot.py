@@ -177,7 +177,7 @@ def _find_and_set(dict, str, default):
     import string
     value = default
     for k in dict.keys():
-        if string.find(str,k) >= 0:
+        if k in str:
             value = dict[k]
             break
     return value

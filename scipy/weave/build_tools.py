@@ -115,7 +115,7 @@ def create_extension(module_path, **kw):
     # http://mail.python.org/pipermail/python-dev/2001-March/013510.html
     platform = sys.platform
     version = sys.version.lower()
-    if platform[:5] == 'sunos' and version.find('gcc') != -1:
+    if platform[:5] == 'sunos' and 'gcc' in version:
         extra_link_args = kw.get('extra_link_args',[])
         kw['extra_link_args'] = ['-mimpure-text'] +  extra_link_args
 
@@ -345,7 +345,7 @@ def gcc_exists(name = 'gcc'):
         w.close()
         str_result = r.read()
         #print str_result
-        if string.find(str_result,'Reading specs') != -1:
+        if 'Reading specs' in str_result:
             result = 1
     except:
         # This was needed because the msvc compiler messes with
@@ -364,7 +364,7 @@ def msvc_exists():
         w.close()
         str_result = r.read()
         #print str_result
-        if string.find(str_result,'Microsoft') != -1:
+        if 'Microsoft' in str_result:
             result = 1
     except:
         #assume we're ok if devstudio exists

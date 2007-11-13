@@ -376,7 +376,7 @@ def find(sub) :
     result = []
     for key in physical_constants :
         l_key = string.lower(key)
-        if string.find(l_key,l_sub) >= 0 :
+        if l_sub in l_key:
             result.append(key)
     result.sort()
     for key in result :
