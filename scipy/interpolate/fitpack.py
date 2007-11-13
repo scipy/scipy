@@ -823,10 +823,10 @@ def insert(x,tck,m=1,per=0):
         return (tt, cc, k)
 
 if __name__ == "__main__":
-    import sys,string
+    import sys
     runtest=range(10)
     if len(sys.argv[1:])>0:
-        runtest=map(string.atoi,sys.argv[1:])
+        runtest=map(int,sys.argv[1:])
     put=sys.stdout.write
     def norm2(x):
         return dot(transpose(x),x)

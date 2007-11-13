@@ -1,7 +1,7 @@
 import distutils
 from distutils.core import setup, Extension
 import distutils.dep_util
-import os,string
+import os
 
 def fortran_extension(module_name, c_files, fortran_files, library_dirs,
                       libraries):
@@ -18,15 +18,14 @@ class f90_compiler:
     def __init__(self):
         self.compiler_name = 'g77'
     def to_object(self,dirty_files):
-        files = string.join(dirty_files)
+        files = dirty_files.join()
         cmd = self.compiler_name + ' -c ' + files
         print cmd
         failure = os.system(cmd)
         if failure:
             raise ValueError, 'failure during compile'
     def object_to_library(self,library_name,object_files):
-        import string
-        objects = string.join(object_files)
+        objects = object_files.join()
         cmd = 'ar -cr lib%s.a %s' % (library_name,objects)
         print cmd
         os.system(cmd)

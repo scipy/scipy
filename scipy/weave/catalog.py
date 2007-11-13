@@ -31,7 +31,8 @@
     persistent catalog for future use by python sessions.
 """
 
-import os,sys,string
+import os
+import sys
 import pickle
 import socket
 import tempfile
@@ -71,7 +72,7 @@ def getmodule(object):
                     # if a non-builtin also has it.  Otherwise quit and
                     # consider the module found. (ain't perfect, but will
                     # have to do for now).
-                    if string.find('(built-in)',str(mod)) is -1:
+                    if str(mod) not in '(built-in)':
                         break
 
             except (TypeError, KeyError, ImportError):

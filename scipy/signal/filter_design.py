@@ -1,6 +1,8 @@
 """Filter design.
 """
 
+import types
+
 import numpy
 from numpy import atleast_1d, poly, polyval, roots, real, asarray, allclose, \
     resize, pi, absolute, logspace, r_, sqrt, tan, log10, arctan, arcsinh, \
@@ -8,7 +10,6 @@ from numpy import atleast_1d, poly, polyval, roots, real, asarray, allclose, \
 from numpy import mintypecode
 from scipy import special, optimize
 from scipy.misc import comb
-import string, types
 
 
 abs = absolute
@@ -400,7 +401,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0, ftype='butter', o
     SEE ALSO butterord, cheb1ord, cheb2ord, ellipord
     """
 
-    ftype, btype, output = [string.lower(x) for x in (ftype, btype, output)]
+    ftype, btype, output = [x.lower() for x in (ftype, btype, output)]
     Wn = asarray(Wn)
     try:
         btype = band_dict[btype]

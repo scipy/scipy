@@ -2,7 +2,9 @@
 
 #!/usr/bin/env python
 
-import string,os,sys
+import os
+import sys
+
 if sys.version[:3]>='2.3':
     import re
 else:
@@ -19,7 +21,7 @@ def all_subroutines(interface_in):
     subroutine_list = subroutine_exp.findall(interface)
     function_list = function_exp.findall(interface)
     subroutine_list = subroutine_list + function_list
-    subroutine_list = map(lambda x: string.strip(x),subroutine_list)
+    subroutine_list = map(lambda x: x.strip(),subroutine_list)
     return subroutine_list
 
 def real_convert(val_string):
@@ -35,7 +37,7 @@ def convert_types(interface_in,converter):
         sub = regexp.search(interface)
         if sub is None: break
         converted = converter(sub.group(1))
-        interface = string.replace(interface,sub.group(),converted)
+        interface = interface.replace(sub.group(),converted)
     return interface
 
 def generic_expand(generic_interface,skip_names=[]):
@@ -80,33 +82,30 @@ def generic_expand(generic_interface,skip_names=[]):
             continue
         type_chars = m.group(1)
         # get rid of spaces
-        type_chars = string.replace(type_chars,' ','')
+        type_chars = type_chars.replace(' ','')
         # get a list of the characters (or character pairs)
-        type_chars = string.split(type_chars,',')
+        type_chars = type_chars.split(',')
         # Now get rid of the special tag that contained the types
         sub = re.sub(type_exp,'<tchar>',sub)
         m = TYPE_EXP.search(sub)
         if m is not None:
             sub = re.sub(TYPE_EXP,'<TCHAR>',sub)
-        sub_generic = string.strip(sub)
+        sub_generic = sub.strip()
         for char in type_chars:
             type_in,type_out,converter, rtype_in = generic_types[char]
             sub = convert_types(sub_generic,converter)
-            function_def = string.replace(sub,'<tchar>',char)
-            function_def = string.replace(function_def,'<TCHAR>',string.upper(char))
-
-            function_def = string.replace(function_def,'<type_in>',type_in)
-            function_def = string.replace(function_def,'<type_in_c>',
+            function_def = sub.replace('<tchar>',char)
+            function_def = function_def.replace('<TCHAR>',char.upper())
+            function_def = function_def.replace('<type_in>',type_in)
+            function_def = function_def.replace('<type_in_c>',
                                           generic_c_types[type_in])
-            function_def = string.replace(function_def,'<type_in_cc>',
+            function_def = function_def.replace('<type_in_cc>',
                                           generic_cc_types[type_in])
-
-            function_def = string.replace(function_def,'<rtype_in>',rtype_in)
-            function_def = string.replace(function_def,'<rtype_in_c>',
+            function_def = function_def.replace('<rtype_in>',rtype_in)
+            function_def = function_def.replace('<rtype_in_c>',
                                           generic_c_types[rtype_in])
-
-            function_def = string.replace(function_def,'<type_out>',type_out)
-            function_def = string.replace(function_def,'<type_out_c>',
+            function_def = function_def.replace('<type_out>',type_out)
+            function_def = function_def.replace('<type_out_c>',
                                           generic_c_types[type_out])
             m = routine_name.match(function_def)
             if m:
@@ -136,8 +135,7 @@ def process_includes(interface_in,sdir='.'):
     include_files = include_exp.findall(interface_in)
     for filename in include_files:
         f = open(os.path.join(sdir,filename))
-        interface_in = string.replace(interface_in,
-                                      '<include_file=%s>'%filename,
+        interface_in = interface_in.replace('<include_file=%s>'%filename,
                                       f.read())
         f.close()
     return interface_in

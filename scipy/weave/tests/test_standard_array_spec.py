@@ -6,10 +6,9 @@ from weave import standard_array_spec
 restore_path()
 
 def remove_whitespace(in_str):
-    import string
-    out = string.replace(in_str," ","")
-    out = string.replace(out,"\t","")
-    out = string.replace(out,"\n","")
+    out = in_str.replace(" ","")
+    out = out.replace("\t","")
+    out = out.replace("\n","")
     return out
 
 def print_assert_equal(test_string,actual,desired):

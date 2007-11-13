@@ -1,5 +1,6 @@
 import time
-import os,sys
+import os
+import sys
 
 # Note: test_dir is global to this file.
 #       It is made by setup_test_location()
@@ -22,10 +23,9 @@ def unique_mod(d,file_name):
     return m
 
 def remove_whitespace(in_str):
-    import string
-    out = string.replace(in_str," ","")
-    out = string.replace(out,"\t","")
-    out = string.replace(out,"\n","")
+    out = in_str.replace(" ","")
+    out = out.replace("\t","")
+    out = out.replace("\n","")
     return out
 
 def print_assert_equal(test_string,actual,desired):

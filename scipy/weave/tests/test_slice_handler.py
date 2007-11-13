@@ -129,10 +129,9 @@ class TestSlice(NumpyTestCase):
         self.generic_test(test,desired)
 
 def replace_whitespace(in_str):
-    import string
-    out = string.replace(in_str," ","")
-    out = string.replace(out,"\t","")
-    out = string.replace(out,"\n","")
+    out = in_str.replace(" ","")
+    out = out.replace("\t","")
+    out = out.replace("\n","")
     return out
 
 class TestTransformSlices(NumpyTestCase):
@@ -143,7 +142,6 @@ class TestTransformSlices(NumpyTestCase):
         actual = ast_to_string(ast_list)
         # Remove white space from expressions so that equivelant
         # but differently formatted string will compare equally
-        import string
         actual = replace_whitespace(actual)
         desired = replace_whitespace(desired)
         print_assert_equal(suite_string,actual,desired)

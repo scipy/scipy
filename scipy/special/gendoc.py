@@ -2,7 +2,6 @@
 
 """generate cephes_doc.h from included_functions.html"""
 
-import string
 
 def parse(infile):
     d={}
@@ -10,19 +9,19 @@ def parse(infile):
     val=''
     prev_line = ''
     for line in infile.readlines():
-        if not string.strip(line):
+        if not line.strip():
             continue
         if line[0]=='<':
             if key and val:
-                d[key]=string.strip(val)
+                d[key]=val.strip()
                 key,val=None,None
             if line[:4]=='<DT>':
-                tok=string.split(line)
-                tok=string.split(tok[-1],'(')
+                tok=line.split()
+                tok=tok[-1].split('(')
                 key=tok[0]
             elif line[:4]=='<DD>' and key:
                 prev_line = prev_line[4:]
-                tok = string.split(prev_line,' = ')
+                tok = prev_line.split(' = ')
                 val=tok[0]+'='+line[4:]
         else:
             if val:
