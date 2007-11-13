@@ -400,7 +400,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0, ftype='butter', o
     SEE ALSO butterord, cheb1ord, cheb2ord, ellipord
     """
 
-    ftype, btype, output = map(string.lower, (ftype, btype, output))
+    ftype, btype, output = [string.lower(x) for x in (ftype, btype, output)]
     Wn = asarray(Wn)
     try:
         btype = band_dict[btype]
