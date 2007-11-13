@@ -5,7 +5,6 @@ except ImportError:
     # Some python installations don't have zlib.
     pass
 
-from cStringIO import  StringIO
 import  cPickle
 
 class DbfilenameShelf(Shelf):
