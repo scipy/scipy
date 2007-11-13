@@ -29,8 +29,6 @@ from linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, tril
 from linalg import pinv, pinv2, solve_banded
 restore_path()
 
-import unittest
-
 def random(size):
     return rand(*size)
 
@@ -416,7 +414,7 @@ class TestLstsq(NumpyTestCase):
             #XXX: check definition of res
             assert_array_almost_equal(x,direct_lstsq(a,b,1))
 
-class test_tri(unittest.TestCase):
+class test_tri(NumpyTestCase):
     def check_basic(self):
         assert_equal(tri(4),array([[1,0,0,0],
                                    [1,1,0,0],
@@ -452,7 +450,7 @@ class test_tri(unittest.TestCase):
                                           [1,0,0],
                                           [1,1,0]]))
 
-class test_tril(unittest.TestCase):
+class test_tril(NumpyTestCase):
     def check_basic(self):
         a = (100*get_mat(5)).astype('l')
         b = a.copy()
@@ -474,7 +472,7 @@ class test_tril(unittest.TestCase):
                 b[k,l] = 0
         assert_equal(tril(a,k=-2),b)
 
-class test_triu(unittest.TestCase):
+class test_triu(NumpyTestCase):
     def check_basic(self):
         a = (100*get_mat(5)).astype('l')
         b = a.copy()
@@ -496,14 +494,14 @@ class test_triu(unittest.TestCase):
                 b[l,k] = 0
         assert_equal(triu(a,k=-2),b)
 
-class test_toeplitz(unittest.TestCase):
+class test_toeplitz(NumpyTestCase):
     def check_basic(self):
         y = toeplitz([1,2,3])
         assert_array_equal(y,[[1,2,3],[2,1,2],[3,2,1]])
         y = toeplitz([1,2,3],[1,4,5])
         assert_array_equal(y,[[1,4,5],[2,1,4],[3,2,1]])
 
-class test_hankel(unittest.TestCase):
+class test_hankel(NumpyTestCase):
     def check_basic(self):
         y = hankel([1,2,3])
         assert_array_equal(y,[[1,2,3],[2,3,0],[3,0,0]])
