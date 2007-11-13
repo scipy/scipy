@@ -143,7 +143,7 @@ def ppimport(name):
     if p_name=='__main__':
         p_dir = ''
         fullname = name
-    elif '__path__' in_frame.f_locals:
+    elif '__path__' in _frame.f_locals:
         # python package
         p_path = p_frame.f_locals['__path__']
         p_dir = p_path[0]

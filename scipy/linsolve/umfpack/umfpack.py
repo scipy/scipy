@@ -28,7 +28,7 @@ def configure( **kwargs ):
     sure that the matrix fulfills this, pass assumeSortedIndices =
     True to gain some speed.
     """
-    if 'assumeSortedIndices' in kwargs):
+    if 'assumeSortedIndices' in kwargs:
         globals()['assumeSortedIndices'] = kwargs['assumeSortedIndices']
 
 
