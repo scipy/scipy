@@ -45,14 +45,14 @@ class ext_function_from_specs(object):
                          'int exception_occured = 0;\n' \
                          'PyObject *py_local_dict = NULL;\n'
         arg_string_list = self.arg_specs.variable_as_strings() + ['"local_dict"']
-        arg_strings = arg_string_list.join(',')
+        arg_strings = ','.join(arg_string_list)
         if arg_strings: arg_strings += ','
         declare_kwlist = 'static char *kwlist[] = {%s NULL};\n' % arg_strings
 
-        py_objects = self.arg_specs.py_pointers().join(', ')
-        init_flags = self.arg_specs.init_flags().join(', ')
-        init_flags_init = self.arg_specs.init_flags().join('= ')
-        py_vars = self.arg_specs.py_variables().join(' = ')
+        py_objects = ', '.join(self.arg_specs.py_pointers())
+        init_flags = ', '.join(self.arg_specs.init_flags())
+        init_flags_init = '= '.join(self.arg_specs.init_flags())
+        py_vars = ' = '.join(self.arg_specs.py_variables())
         if py_objects:
             declare_py_objects  = 'PyObject ' + py_objects +';\n'
             declare_py_objects += 'int '+ init_flags + ';\n'
@@ -66,7 +66,7 @@ class ext_function_from_specs(object):
         #cnt = len(arg_list)
         #declare_cleanup = "blitz::TinyVector<PyObject*,%d> clean_up(0);\n" % cnt
 
-        ref_string = self.arg_specs.py_references().join(', ')
+        ref_string = ', '.join(self.arg_specs.py_references())
         if ref_string:
             ref_string += ', &py_local_dict'
         else:
@@ -85,7 +85,7 @@ class ext_function_from_specs(object):
         for arg in self.arg_specs:
             arg_strings.append(arg.declaration_code())
             arg_strings.append(arg.init_flag() +" = 1;\n")
-        code = arg_strings.join("")
+        code = "".join(arg_strings)
         return code
 
     def arg_cleanup_code(self):
@@ -97,14 +97,14 @@ class ext_function_from_specs(object):
             code +=     indent(arg.cleanup_code(),4)
             code += "}\n"
             arg_strings.append(code)
-        code = arg_strings.join("")
+        code = "".join(arg_strings)
         return code
 
     def arg_local_dict_code(self):
         arg_strings = []
         for arg in self.arg_specs:
             arg_strings.append(arg.local_dict_code())
-        code = arg_strings.join("")
+        code = "".join(arg_strings)
         return code
 
     def function_code(self):

@@ -57,26 +57,20 @@ class inline_ext_function(ext_tools.ext_function):
                  init_values + parse_tuple
 
     def arg_declaration_code(self):
-        arg_strings = []
-        for arg in self.arg_specs:
-            arg_strings.append(arg.declaration_code(inline=1))
-        code = arg_strings.join("")
-        return code
+        """Return the declaration code as a string."""
+        arg_strings = [arg.declaration_code(inline=1)
+                       for arg in self.arg_specs]
+        return "".join(arg_strings)
 
     def arg_cleanup_code(self):
-        arg_strings = []
-        for arg in self.arg_specs:
-            arg_strings.append(arg.cleanup_code())
-        code = arg_strings.join("")
-        return code
+        """Return the cleanup code as a string."""
+        arg_strings = [arg.cleanup_code() for arg in self.arg_specs]
+        return "".join(arg_strings)
 
     def arg_local_dict_code(self):
-        arg_strings = []
-        for arg in self.arg_specs:
-            arg_strings.append(arg.local_dict_code())
-        code = arg_strings.join("")
-        return code
-
+        """Return the code to create the local dict as a string."""
+        arg_strings = [arg.local_dict_code() for arg in self.arg_specs]
+        return "".join(arg_strings)
 
     def function_code(self):
         from ext_tools import indent

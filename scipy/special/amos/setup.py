@@ -18,14 +18,14 @@ class f90_compiler:
     def __init__(self):
         self.compiler_name = 'g77'
     def to_object(self,dirty_files):
-        files = dirty_files.join()
+        files = " ".join(dirty_files)
         cmd = self.compiler_name + ' -c ' + files
         print cmd
         failure = os.system(cmd)
         if failure:
             raise ValueError, 'failure during compile'
     def object_to_library(self,library_name,object_files):
-        objects = object_files.join()
+        objects = " ".join(object_files)
         cmd = 'ar -cr lib%s.a %s' % (library_name,objects)
         print cmd
         os.system(cmd)
