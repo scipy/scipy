@@ -107,6 +107,12 @@ def gauss_seidel(*args):
         int row_start, int row_stop, int row_step)
     gauss_seidel(int n_row, int Ap, int Aj, double Ax, double x, double b, 
         int row_start, int row_stop, int row_step)
+    gauss_seidel(long long n_row, long long Ap, long long Aj, float Ax, 
+        float x, float b, long long row_start, long long row_stop, 
+        long long row_step)
+    gauss_seidel(long long n_row, long long Ap, long long Aj, double Ax, 
+        double x, double b, long long row_start, 
+        long long row_stop, long long row_step)
     """
   return _multigridtools.gauss_seidel(*args)
 
@@ -118,6 +124,14 @@ def jacobi(*args):
     jacobi(int n_row, int Ap, int Aj, double Ax, double x, double b, 
         double temp, int row_start, int row_stop, 
         int row_step, double omega)
+    jacobi(long long n_row, long long Ap, long long Aj, float Ax, 
+        float x, float b, float temp, long long row_start, 
+        long long row_stop, long long row_step, 
+        float omega)
+    jacobi(long long n_row, long long Ap, long long Aj, double Ax, 
+        double x, double b, double temp, long long row_start, 
+        long long row_stop, long long row_step, 
+        double omega)
     """
   return _multigridtools.jacobi(*args)
 

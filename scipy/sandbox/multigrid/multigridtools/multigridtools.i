@@ -62,6 +62,7 @@
 
 
 I_IN_ARRAY1( int         )
+I_IN_ARRAY1( long long   )
 T_IN_ARRAY1( float       )
 T_IN_ARRAY1( double      )
 
@@ -103,6 +104,7 @@ T_IN_ARRAY1( double      )
 %enddef
 
 I_ARRAY_ARGOUT( int    )
+I_ARRAY_ARGOUT( long long    )
 T_ARRAY_ARGOUT( float  )
 T_ARRAY_ARGOUT( double )
 
@@ -125,6 +127,7 @@ T_ARRAY_ARGOUT( double )
 %enddef
 
 I_INPLACE_ARRAY1( int    )
+I_INPLACE_ARRAY1( long long    )
 T_INPLACE_ARRAY1( float  )
 T_INPLACE_ARRAY1( double )
 
@@ -140,12 +143,14 @@ T_INPLACE_ARRAY1( double )
 %define INSTANTIATE_BOTH( f_name )
 %template(f_name)   f_name<int,float>;
 %template(f_name)   f_name<int,double>;
+%template(f_name)   f_name<long long,float>;
+%template(f_name)   f_name<long long,double>;
 /* 64-bit indices would go here */
 %enddef
  
 %define INSTANTIATE_INDEX( f_name )
 %template(f_name)   f_name<int>;
-/* 64-bit indices would go here */
+%template(f_name)   f_name<long long>;
 %enddef
 
 %define INSTANTIATE_DATA( f_name )
