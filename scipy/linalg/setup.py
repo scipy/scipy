@@ -108,6 +108,8 @@ def configuration(parent_package='',top_path=None):
             f.close()
             return target
         if newer_group(extension.depends,target):
+            print "name %s, depends %s, target %s" % (name, extension.depends[0], target)
+            print "skipping %s" % skip_names[name]
             generate_interface(name,
                                extension.depends[0],
                                target,
