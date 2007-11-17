@@ -1,4 +1,4 @@
-
+import math
 import numpy as N
 import scipy.ndimage.segment as S
 
@@ -282,6 +282,7 @@ def get_slice2(image_name='slice112.raw', bytes=2, shape=(512,512)):
         mm = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
         slice = N.frombuffer(mm, dtype='u%d' % bytes).reshape(shape) 
         slice = slice.astype(float)
+	# this is for the test CT as spine runs off back of image
         slice[505:512,:] = 0
         return slice
 
@@ -290,4 +291,203 @@ def save_slice(mySlice, filename='junk.raw', bytes=4):
 	slice = mySlice.astype('u%d' % bytes)
         slice.tofile(filename)
 
+def build_d_gauss_kernel(gWidth=21, sigma=1.0):
+
+	"""
+	build the derivative of Gaussian kernel for Canny edge filter
+	DGFilter = build_d_gauss_kernel(gWidth, sigma)
+	Inputs:
+	    gWdith is width of derivative of Gaussian kernel
+	    sigma is sigma term of derivative of Gaussian kernel
+	Output:
+	    DGFilter (a struct). Use in Canny filter call
+
+	"""
+	kernel  = N.zeros((1+2*(gWidth-1)), dtype=float)
+	indices = range(1, gWidth)  
+
+	i = 0
+	kernel[gWidth-1]  = math.exp(((-i*i)/(2.0 * sigma * sigma)))
+	kernel[gWidth-1] *= -(i / (sigma * sigma))
+	for i in indices:
+		kernel[gWidth-1+i]  = math.exp(((-i*i)/(2.0 * sigma * sigma)))
+		kernel[gWidth-1+i] *= -(i / (sigma * sigma))
+		kernel[gWidth-1-i]  = -kernel[gWidth-1+i]
+
+	DGFilter= {'kernelSize' : gWidth, 'coefficients': kernel} 
+
+	return DGFilter
+
+def build_2d_kernel(aperature=21, hiFilterCutoff=10.0):
+
+	"""
+	build flat FIR filter with sinc kernel
+	this is bandpass, but low cutoff is 0.0
+	Use in Sobel and Canny filter edge find as image pre-process
+
+	FIRFilter = build_2d_kernel(aperature, hiFilterCutoff)
+	Inputs:
+	    aperature is number of FIR taps in sinc kernel 
+	    hiFilterCutoff is digital frequency cutoff in range (0.0, 180.0)
+	Output:
+	    FIRFilter (a struct)
+
+	"""
+
+	rad = math.pi / 180.0
+	HalfFilterTaps = (aperature-1) / 2
+	kernel = N.zeros((aperature), dtype=N.float32)
+	LC = 0.0
+	HC = hiFilterCutoff * rad 
+	t2 = 2.0 * math.pi
+	t1 = 2.0 * HalfFilterTaps + 1.0
+	indices = range(-HalfFilterTaps, HalfFilterTaps+1, 1)  
+	j = 0
+	for i in indices:
+	    if i == 0:
+		tLOW  = LC
+	        tHIGH = HC
+	    else:
+		tLOW  = math.sin(i*LC)/i
+	        tHIGH = math.sin(i*HC)/i
+	    # Hamming window
+	    t3 = 0.54 + 0.46*(math.cos(i*t2/t1))
+	    t4 = t3*(tHIGH-tLOW)
+	    kernel[j] = t4
+	    j += 1
+
+	# normalize the kernel
+	sum = kernel.sum()
+	kernel /= sum
+
+	FIRFilter= {'kernelSize' : aperature, 'coefficients': kernel} 
+
+	return FIRFilter
+
+
+def build_laws_kernel():
+
+	"""
+	build 6 length-7 Law's texture filter masks
+	mask names are: 'L', 'S', 'E', 'W', 'R', 'O'
+
+	LAWSFilter = build_laws_kernel()
+
+	Inputs:
+	    None
+
+	Output:
+	    LAWSFilter (a struct)
+
+	"""
+	aperature = (6, 7)
+	coefficients = N.zeros((aperature), dtype=N.float32)
+	names = ('L', 'E', 'S', 'W', 'R', 'O' )
+
+	coefficients[0, :] =  ( 1.0,  6.0,  15.0, 20.0,  15.0,  6.0,  1.0 )
+	coefficients[1, :] =  (-1.0, -4.0,  -5.0,  0.0,   5.0,  4.0,  1.0 )
+	coefficients[2, :] =  (-1.0, -2.0,   1.0,  4.0,   1.0, -2.0, -1.0 )
+	coefficients[3, :] =  (-1.0,  0.0,   3.0,  0.0,  -3.0,  0.0,  1.0 )
+	coefficients[4, :] =  ( 1.0, -2.0,  -1.0,  4.0,  -1.0, -2.0,  1.0 )
+	coefficients[5, :] =  (-1.0,  6.0, -15.0, 20.0, -15.0,  6.0, -1.0 )
+
+	LAWSFilter= {'numKernels' : 6, 'kernelSize' : 7, 'coefficients': coefficients, 'names': names} 
+
+	return LAWSFilter
+
+def build_morpho_thin_masks():
+
+	"""
+	build 2 sets (J and K) of 8 3x3 morphology masks (structuring elements)
+	to implement thinning (medial axis transformation - MAT)
+
+	MATFilter = build_morpho_thin_masks()
+
+	Inputs:
+	    None
+
+	Output:
+	    MATFilter (a struct)
+
+	"""
+
+	# (layers, rows, cols)
+	shape  = (8, 3, 3)
+	J_mask = N.zeros((shape), dtype=N.ushort)
+	K_mask = N.zeros((shape), dtype=N.ushort)
+
+	# load the 8 J masks for medial axis transformation
+   	J_mask[0][0][0] = 1;
+   	J_mask[0][0][1] = 1;
+   	J_mask[0][0][2] = 1;
+   	J_mask[0][1][1] = 1;
+
+   	J_mask[1][0][1] = 1;
+   	J_mask[1][1][1] = 1;
+   	J_mask[1][1][2] = 1;
+
+   	J_mask[2][0][0] = 1;
+   	J_mask[2][1][0] = 1;
+   	J_mask[2][2][0] = 1;
+   	J_mask[2][1][1] = 1;
+
+   	J_mask[3][0][1] = 1;
+   	J_mask[3][1][0] = 1;
+   	J_mask[3][1][1] = 1;
+
+   	J_mask[4][0][2] = 1;
+   	J_mask[4][1][1] = 1;
+   	J_mask[4][1][2] = 1;
+   	J_mask[4][2][2] = 1;
+
+   	J_mask[5][1][0] = 1;
+   	J_mask[5][1][1] = 1;
+   	J_mask[5][2][1] = 1;
+
+   	J_mask[6][1][1] = 1;
+   	J_mask[6][2][0] = 1;
+   	J_mask[6][2][1] = 1;
+   	J_mask[6][2][2] = 1;
+
+   	J_mask[7][1][1] = 1;
+   	J_mask[7][1][2] = 1;
+   	J_mask[7][2][1] = 1;
+
+
+	# load the 8 K masks for medial axis transformation
+   	K_mask[0][2][0] = 1;
+   	K_mask[0][2][1] = 1;
+   	K_mask[0][2][2] = 1;
+
+   	K_mask[1][1][0] = 1;
+   	K_mask[1][2][0] = 1;
+   	K_mask[1][2][1] = 1;
+
+   	K_mask[2][0][2] = 1;
+   	K_mask[2][1][2] = 1;
+   	K_mask[2][2][2] = 1;
+
+   	K_mask[3][1][2] = 1;
+   	K_mask[3][2][1] = 1;
+   	K_mask[3][2][2] = 1;
+
+   	K_mask[4][0][0] = 1;
+   	K_mask[4][1][0] = 1;
+   	K_mask[4][2][0] = 1;
+
+   	K_mask[5][0][1] = 1;
+   	K_mask[5][0][2] = 1;
+   	K_mask[5][1][2] = 1;
+
+   	K_mask[6][0][0] = 1;
+   	K_mask[6][0][1] = 1;
+   	K_mask[6][0][2] = 1;
+
+   	K_mask[7][0][0] = 1;
+   	K_mask[7][0][1] = 1;
+   	K_mask[7][1][0] = 1;
+
+	MATFilter = {'number3x3Masks' : 8, 'jmask' : J_mask, 'kmask' : K_mask} 
+
+	return MATFilter 
 
