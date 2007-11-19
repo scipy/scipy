@@ -125,30 +125,30 @@ def configuration(parent_package='',top_path=None):
                join('src','fblaswrap.f'),
                ]
 
-    # fblas:
-    if needs_cblas_wrapper(lapack_opt):
-        config.add_extension('fblas',
-                             sources = [generate_pyf,
-                                        join('src','fblaswrap_veclib_c.c')],
-                             depends = depends,
-                             extra_info = lapack_opt
-                             )
-    else:
-        config.add_extension('fblas',
-                             sources = [generate_pyf,
-                                        join('src','fblaswrap.f')],
-                             depends = depends,
-                             extra_info = lapack_opt
-                             )
+    # # fblas:
+    # if needs_cblas_wrapper(lapack_opt):
+    #     config.add_extension('fblas',
+    #                          sources = [generate_pyf,
+    #                                     join('src','fblaswrap_veclib_c.c')],
+    #                          depends = depends,
+    #                          extra_info = lapack_opt
+    #                          )
+    # else:
+    #     config.add_extension('fblas',
+    #                          sources = [generate_pyf,
+    #                                     join('src','fblaswrap.f')],
+    #                          depends = depends,
+    #                          extra_info = lapack_opt
+    #                          )
 
-    # cblas:
-    config.add_extension('cblas',
-                         sources = [generate_pyf],
-                         depends = ['generic_cblas.pyf',
-                                    'generic_cblas1.pyf',
-                                    'interface_gen.py'],
-                         extra_info = lapack_opt
-                         )
+    # # cblas:
+    # config.add_extension('cblas',
+    #                      sources = [generate_pyf],
+    #                      depends = ['generic_cblas.pyf',
+    #                                 'generic_cblas1.pyf',
+    #                                 'interface_gen.py'],
+    #                      extra_info = lapack_opt
+    #                      )
 
     # flapack:
     config.add_extension('flapack',
@@ -159,50 +159,50 @@ def configuration(parent_package='',top_path=None):
                          extra_info = lapack_opt
                          )
 
-    # clapack:
-    config.add_extension('clapack',
-                         sources = [generate_pyf],
-                         depends = ['generic_clapack.pyf',
-                                    'interface_gen.py'],
-                         extra_info = lapack_opt
-                         )
+    # # clapack:
+    # config.add_extension('clapack',
+    #                      sources = [generate_pyf],
+    #                      depends = ['generic_clapack.pyf',
+    #                                 'interface_gen.py'],
+    #                      extra_info = lapack_opt
+    #                      )
 
-    # _flinalg:
-    config.add_extension('_flinalg',
-                         sources = [join('src','det.f'),join('src','lu.f')],
-                         extra_info = lapack_opt
-                         )
+    # # _flinalg:
+    # config.add_extension('_flinalg',
+    #                      sources = [join('src','det.f'),join('src','lu.f')],
+    #                      extra_info = lapack_opt
+    #                      )
 
-    # calc_lwork:
-    config.add_extension('calc_lwork',
-                         [join('src','calc_lwork.f')],
-                         extra_info = lapack_opt
-                         )
+    # # calc_lwork:
+    # config.add_extension('calc_lwork',
+    #                      [join('src','calc_lwork.f')],
+    #                      extra_info = lapack_opt
+    #                      )
 
-    # atlas_version:
+    # # atlas_version:
 
-    config.add_extension('atlas_version',
-                         ['atlas_version.c'],
-                         extra_info = lapack_opt
-                         )
+    # config.add_extension('atlas_version',
+    #                      ['atlas_version.c'],
+    #                      extra_info = lapack_opt
+    #                      )
 
-    # iterative methods
-    methods = ['BiCGREVCOM.f.src',
-               'BiCGSTABREVCOM.f.src',
-               'CGREVCOM.f.src',
-               'CGSREVCOM.f.src',
-#               'ChebyREVCOM.f.src',
-               'GMRESREVCOM.f.src',
-#               'JacobiREVCOM.f.src',
-               'QMRREVCOM.f.src',
-#               'SORREVCOM.f.src'
-               ]
-    Util = ['STOPTEST2.f.src','getbreak.f.src']
-    sources = Util + methods + ['_iterative.pyf.src']
-    config.add_extension('_iterative',
-                         sources = [join('iterative',x) for x in sources],
-                         extra_info = lapack_opt
-                         )
+    # # iterative methods
+    # methods = ['BiCGREVCOM.f.src',
+    #            'BiCGSTABREVCOM.f.src',
+    #            'CGREVCOM.f.src',
+    #            'CGSREVCOM.f.src',
+#   #             'ChebyREVCOM.f.src',
+    #            'GMRESREVCOM.f.src',
+#   #             'JacobiREVCOM.f.src',
+    #            'QMRREVCOM.f.src',
+#   #             'SORREVCOM.f.src'
+    #            ]
+    # Util = ['STOPTEST2.f.src','getbreak.f.src']
+    # sources = Util + methods + ['_iterative.pyf.src']
+    # config.add_extension('_iterative',
+    #                      sources = [join('iterative',x) for x in sources],
+    #                      extra_info = lapack_opt
+    #                      )
 
     config.add_data_dir('tests')
 

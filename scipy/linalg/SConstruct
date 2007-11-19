@@ -1,4 +1,4 @@
-# Last Change: Fri Nov 16 09:00 PM 2007 J
+# Last Change: Mon Nov 19 07:00 PM 2007 J
 # vim:syntax=python
 
 #import os
@@ -71,86 +71,14 @@ config.Finish()
 #==========
 #  Build
 #==========
-#atlas_version = ([v[3:-3] for k,v in lapack_opt.get('define_macros',[]) \
-#                  if k=='ATLAS_INFO']+[None])[0]
-#if atlas_version:
-#    print 'ATLAS version',atlas_version
 
-target_dir = ''
-skip_names = {'clapack':[],'flapack':[],'cblas':[],'fblas':[]}
-if skip_single_routines:
-    target_dir = 'dbl'
-    skip_names['clapack'].extend(\
-        'sgesv cgesv sgetrf cgetrf sgetrs cgetrs sgetri cgetri'\
-        ' sposv cposv spotrf cpotrf spotrs cpotrs spotri cpotri'\
-        ' slauum clauum strtri ctrtri'.split())
-    skip_names['flapack'].extend(skip_names['clapack'])
-    skip_names['flapack'].extend(\
-        'sgesdd cgesdd sgelss cgelss sgeqrf cgeqrf sgeev cgeev'\
-        ' sgegv cgegv ssyev cheev slaswp claswp sgees cgees'
-        ' sggev cggev'.split())
-    skip_names['cblas'].extend('saxpy caxpy'.split())
-    skip_names['fblas'].extend(skip_names['cblas'])
-    skip_names['fblas'].extend(\
-        'srotg crotg srotmg srot csrot srotm sswap cswap sscal cscal'\
-        ' csscal scopy ccopy sdot cdotu cdotc snrm2 scnrm2 sasum scasum'\
-        ' isamax icamax sgemv cgemv chemv ssymv strmv ctrmv'\
-        ' sgemm cgemm'.split())
-
-if using_lapack_blas:
-    target_dir = join(target_dir,'blas')
-    skip_names['fblas'].extend(\
-        'drotmg srotmg drotm srotm'.split())
-
-#if atlas_version=='3.2.1_pre3.3.6':
-#    target_dir = join(target_dir,'atlas321')
-#    skip_names['clapack'].extend(\
-#        'sgetri dgetri cgetri zgetri spotri dpotri cpotri zpotri'\
-#        ' slauum dlauum clauum zlauum strtri dtrtri ctrtri ztrtri'.split())
-#elif atlas_version>'3.4.0' and atlas_version<='3.5.12':
-#    skip_names['clapack'].extend('cpotrf zpotrf'.split())
-
-def generate_pyf(target, source, env):
-    target = join(build_dir,target_dir,name+'.pyf')
-    if name[0]=='c' and atlas_version is None and newer(__file__,target):
-        print "============ %s =============" % target
-        f = open(target,'w')
-        f.write('python module '+name+'\n')
-        f.write('usercode void empty_module(void) {}\n')
-        f.write('interface\n')
-        f.write('subroutine empty_module()\n')
-        f.write('intent(c) empty_module\n')
-        f.write('end subroutine empty_module\n')
-        f.write('end interface\nend python module'+name+'\n')
-        f.close()
-        return target
-    if newer_group(extension.depends,target):
-        print name, extension.depend[0], target
-        raise "YATA:"
-        generate_interface(name,
-                           extension.depends[0],
-                           target,
-                           skip_names[name])
-    return target
-
-#-------------
-# Build fblas:
-#-------------
 # XXX: handle cblas wrapper for complex (check in numpy.scons or here ?)
 import os
-from os.path import join
+from os.path import join as pjoin
 
 from interface_gen import generate_interface
 
-src_files = ['generic_fblas.pyf',
-             'generic_fblas1.pyf',
-             'generic_fblas2.pyf',
-             'generic_fblas3.pyf',
-             'interface_gen.py',
-             join('src','fblaswrap_veclib_c.c'),
-             join('src','fblaswrap.f')]
-
-# fblas:
+env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 
 def do_generate_interface(target, source, env):
     """Generate a .pyf file from another pyf file (!)."""
@@ -164,14 +92,62 @@ def do_generate_interface(target, source, env):
     return 0
 
 def generate_interface_emitter(target, source, env):
+    source = [pjoin(env['build_dir'], str(i)) for i in source]
+    target = [pjoin(env['build_dir'], str(i)) for i in target]
     base = str(target[0])
     return (['%s.pyf' % base], source)
 
+def do_generate_fake_interface(target, source, env):
+    """Generate a (fake) .pyf file from another pyf file (!)."""
+    # XXX: do this correctly
+    target_name = str(target[0])
+    source_name = str(source[0])
+
+    # XXX handle skip names
+    name = os.path.splitext(os.path.basename(target_name))[0]
+    generate_interface(name, source_name, target_name)
+        
+    f = open(target_name, 'w')
+    f.write('python module '+name+'\n')
+    f.write('usercode void empty_module(void) {}\n')
+    f.write('interface\n')
+    f.write('subroutine empty_module()\n')
+    f.write('intent(c) empty_module\n')
+    f.write('end subroutine empty_module\n')
+    f.write('end interface\nend python module'+name+'\n')
+    f.close()
+
+    return 0
+
 env['BUILDERS']['haha'] = Builder(action = do_generate_interface,
                                   emitter = generate_interface_emitter)
-env.haha('build/scons/fblas', 'generic_fblas.pyf')
-env.NumpyPythonExtension('fblas', source = 'fblas.pyf')
 
-#if has_cblas:
-#    env.haha('cblas', 'generic_cblas.pyf')
-#    env.NumpyPythonExtension('cblas', source = 'cblas.pyf')
+env['BUILDERS']['hihi'] = Builder(action = do_generate_fake_interface,
+                                  emitter = generate_interface_emitter)
+
+# fblas:
+# XXX: handle Accelerate problem
+env.haha('fblas', 'generic_fblas.pyf')
+env.NumpyPythonExtension('fblas', source = ['fblas.pyf', pjoin('src', 'fblaswrap.f')])
+
+# cblas:
+if has_cblas:
+    env.haha('cblas', 'generic_cblas.pyf')
+else:
+    env.hihi('cblas', 'generic_cblas.pyf')
+env.NumpyPythonExtension('cblas', source = 'cblas.pyf')
+
+# flapack
+env.haha('flapack', 'generic_flapack.pyf')
+env.NumpyPythonExtension('flapack', source = 'flapack.pyf')
+
+# # clapack
+# if has_clapack:
+#     env.haha('build/scons/clapack', 'generic_clapack.pyf')
+# else:
+#     env.hihi('build/scons/clapack', 'generic_clapack.pyf')
+# env.NumpyPythonExtension('clapack', source = 'clapack.pyf')
+# 
+# # _flinalg
+# env.NumpyPythonExtension('_flinalg', source = [join('src', 'det.f'), 
+#                                                join('src', 'lu.f')])
