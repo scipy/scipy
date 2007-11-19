@@ -59,7 +59,7 @@ class TestUtils(NumpyTestCase):
         cases = []
         cases.append( diag_sparse(array([1,2,3,4])) )
         cases.append( diag_sparse(array([1,0,3,4])) )
-        
+
         A = array([ [ 5.5,  3.5,  4.8],
                     [ 2. ,  9.9,  0.5],
                     [ 6.5,  2.6,  5.7]])

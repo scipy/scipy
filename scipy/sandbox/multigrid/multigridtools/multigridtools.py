@@ -53,85 +53,84 @@ C_NODE = _multigridtools.C_NODE
 F_NODE = _multigridtools.F_NODE
 
 def sa_get_aggregates(*args):
-  """sa_get_aggregates(int n_row, int Ap, int Aj, std::vector<(int)> Bj)"""
-  return _multigridtools.sa_get_aggregates(*args)
+    """sa_get_aggregates(int n_row, int Ap, int Aj, std::vector<(int)> Bj)"""
+    return _multigridtools.sa_get_aggregates(*args)
 
 
 def rs_strong_connections(*args):
-  """
-    rs_strong_connections(int n_row, float theta, int Ap, int Aj, float Ax, std::vector<(int)> Sp, 
-        std::vector<(int)> Sj, 
-        std::vector<(float)> Sx)
-    rs_strong_connections(int n_row, double theta, int Ap, int Aj, double Ax, 
-        std::vector<(int)> Sp, std::vector<(int)> Sj, 
-        std::vector<(double)> Sx)
     """
-  return _multigridtools.rs_strong_connections(*args)
+      rs_strong_connections(int n_row, float theta, int Ap, int Aj, float Ax, std::vector<(int)> Sp,
+          std::vector<(int)> Sj,
+          std::vector<(float)> Sx)
+      rs_strong_connections(int n_row, double theta, int Ap, int Aj, double Ax,
+          std::vector<(int)> Sp, std::vector<(int)> Sj,
+          std::vector<(double)> Sx)
+      """
+    return _multigridtools.rs_strong_connections(*args)
 
 def rs_interpolation(*args):
-  """
-    rs_interpolation(int n_nodes, int Ap, int Aj, float Ax, int Sp, int Sj, 
-        float Sx, int Tp, int Tj, float Tx, std::vector<(int)> Bp, 
-        std::vector<(int)> Bj, std::vector<(float)> Bx)
-    rs_interpolation(int n_nodes, int Ap, int Aj, double Ax, int Sp, int Sj, 
-        double Sx, int Tp, int Tj, double Tx, std::vector<(int)> Bp, 
-        std::vector<(int)> Bj, std::vector<(double)> Bx)
     """
-  return _multigridtools.rs_interpolation(*args)
+      rs_interpolation(int n_nodes, int Ap, int Aj, float Ax, int Sp, int Sj,
+          float Sx, int Tp, int Tj, float Tx, std::vector<(int)> Bp,
+          std::vector<(int)> Bj, std::vector<(float)> Bx)
+      rs_interpolation(int n_nodes, int Ap, int Aj, double Ax, int Sp, int Sj,
+          double Sx, int Tp, int Tj, double Tx, std::vector<(int)> Bp,
+          std::vector<(int)> Bj, std::vector<(double)> Bx)
+      """
+    return _multigridtools.rs_interpolation(*args)
 
 def sa_strong_connections(*args):
-  """
-    sa_strong_connections(int n_row, float epsilon, int Ap, int Aj, float Ax, 
-        std::vector<(int)> Sp, std::vector<(int)> Sj, 
-        std::vector<(float)> Sx)
-    sa_strong_connections(int n_row, double epsilon, int Ap, int Aj, double Ax, 
-        std::vector<(int)> Sp, std::vector<(int)> Sj, 
-        std::vector<(double)> Sx)
     """
-  return _multigridtools.sa_strong_connections(*args)
+      sa_strong_connections(int n_row, float epsilon, int Ap, int Aj, float Ax,
+          std::vector<(int)> Sp, std::vector<(int)> Sj,
+          std::vector<(float)> Sx)
+      sa_strong_connections(int n_row, double epsilon, int Ap, int Aj, double Ax,
+          std::vector<(int)> Sp, std::vector<(int)> Sj,
+          std::vector<(double)> Sx)
+      """
+    return _multigridtools.sa_strong_connections(*args)
 
 def sa_smoother(*args):
-  """
-    sa_smoother(int n_row, float omega, int Ap, int Aj, float Ax, int Sp, 
-        int Sj, float Sx, std::vector<(int)> Bp, 
-        std::vector<(int)> Bj, std::vector<(float)> Bx)
-    sa_smoother(int n_row, double omega, int Ap, int Aj, double Ax, 
-        int Sp, int Sj, double Sx, std::vector<(int)> Bp, 
-        std::vector<(int)> Bj, std::vector<(double)> Bx)
     """
-  return _multigridtools.sa_smoother(*args)
+      sa_smoother(int n_row, float omega, int Ap, int Aj, float Ax, int Sp,
+          int Sj, float Sx, std::vector<(int)> Bp,
+          std::vector<(int)> Bj, std::vector<(float)> Bx)
+      sa_smoother(int n_row, double omega, int Ap, int Aj, double Ax,
+          int Sp, int Sj, double Sx, std::vector<(int)> Bp,
+          std::vector<(int)> Bj, std::vector<(double)> Bx)
+      """
+    return _multigridtools.sa_smoother(*args)
 
 def gauss_seidel(*args):
-  """
-    gauss_seidel(int n_row, int Ap, int Aj, float Ax, float x, float b, 
-        int row_start, int row_stop, int row_step)
-    gauss_seidel(int n_row, int Ap, int Aj, double Ax, double x, double b, 
-        int row_start, int row_stop, int row_step)
-    gauss_seidel(long long n_row, long long Ap, long long Aj, float Ax, 
-        float x, float b, long long row_start, long long row_stop, 
-        long long row_step)
-    gauss_seidel(long long n_row, long long Ap, long long Aj, double Ax, 
-        double x, double b, long long row_start, 
-        long long row_stop, long long row_step)
     """
-  return _multigridtools.gauss_seidel(*args)
+      gauss_seidel(int n_row, int Ap, int Aj, float Ax, float x, float b,
+          int row_start, int row_stop, int row_step)
+      gauss_seidel(int n_row, int Ap, int Aj, double Ax, double x, double b,
+          int row_start, int row_stop, int row_step)
+      gauss_seidel(long long n_row, long long Ap, long long Aj, float Ax,
+          float x, float b, long long row_start, long long row_stop,
+          long long row_step)
+      gauss_seidel(long long n_row, long long Ap, long long Aj, double Ax,
+          double x, double b, long long row_start,
+          long long row_stop, long long row_step)
+      """
+    return _multigridtools.gauss_seidel(*args)
 
 def jacobi(*args):
-  """
-    jacobi(int n_row, int Ap, int Aj, float Ax, float x, float b, 
-        float temp, int row_start, int row_stop, 
-        int row_step, float omega)
-    jacobi(int n_row, int Ap, int Aj, double Ax, double x, double b, 
-        double temp, int row_start, int row_stop, 
-        int row_step, double omega)
-    jacobi(long long n_row, long long Ap, long long Aj, float Ax, 
-        float x, float b, float temp, long long row_start, 
-        long long row_stop, long long row_step, 
-        float omega)
-    jacobi(long long n_row, long long Ap, long long Aj, double Ax, 
-        double x, double b, double temp, long long row_start, 
-        long long row_stop, long long row_step, 
-        double omega)
     """
-  return _multigridtools.jacobi(*args)
-
+      jacobi(int n_row, int Ap, int Aj, float Ax, float x, float b,
+          float temp, int row_start, int row_stop,
+          int row_step, float omega)
+      jacobi(int n_row, int Ap, int Aj, double Ax, double x, double b,
+          double temp, int row_start, int row_stop,
+          int row_step, double omega)
+      jacobi(long long n_row, long long Ap, long long Aj, float Ax,
+          float x, float b, float temp, long long row_start,
+          long long row_stop, long long row_step,
+          float omega)
+      jacobi(long long n_row, long long Ap, long long Aj, double Ax,
+          double x, double b, double temp, long long row_start,
+          long long row_stop, long long row_step,
+          double omega)
+      """
+    return _multigridtools.jacobi(*args)

@@ -43,7 +43,7 @@ def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
 
         References:
             "Multigrid"
-                Trottenberg, U., C. W. Oosterlee, and Anton Schuller. 
+                Trottenberg, U., C. W. Oosterlee, and Anton Schuller.
                 San Diego: Academic Press, 2001.
                 Appendix A
 
@@ -60,7 +60,7 @@ def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
         Ps.append(P)
 
     return multilevel_solver(As,Ps)
-        
+
 
 
 def smoothed_aggregation_solver(A, B=None, blocks=None, \
@@ -98,12 +98,12 @@ def smoothed_aggregation_solver(A, B=None, blocks=None, \
             Strength of connection parameter used in aggregation.
         omega: {float} : default 4.0/3.0
             Damping parameter used in prolongator smoothing (0 < omega < 2)
-        symmetric: {boolean} : default True 
+        symmetric: {boolean} : default True
             True if A is symmetric, False otherwise
         rescale: {boolean} : default True
             If True, symmetrically rescale A by the diagonal
             i.e. A -> D * A * D,  where D is diag(A)^-0.5
-            
+
     *Example*:
         TODO
 
@@ -120,17 +120,17 @@ def smoothed_aggregation_solver(A, B=None, blocks=None, \
         B = asarray(B)
 
     pre,post = None,None   #preprocess/postprocess
-    
+
     if rescale:
         D_sqrt,D_sqrt_inv,A = symmetric_rescaling(A)
         D_sqrt,D_sqrt_inv = diag_sparse(D_sqrt),diag_sparse(D_sqrt_inv)
-        
+
         B = D_sqrt * B  #scale candidates
         def pre(x,b):
             return D_sqrt*x,D_sqrt_inv*b
         def post(x):
             return D_sqrt_inv*x
-        
+
     As = [A]
     Ps = []
 
