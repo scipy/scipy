@@ -1,16 +1,17 @@
-# Last Change: Mon Nov 19 07:00 PM 2007 J
+# Last Change: Tue Nov 20 08:00 PM 2007 J
 # vim:syntax=python
 
-#import os
-#import sys
-#from os.path import join as pjoin, basename as pbasename, dirname as pdirname
-#from copy import deepcopy
- 
+import os
+from os.path import join as pjoin, splitext
+
 from numpy.distutils.misc_util import get_numpy_include_dirs
 from numpy.distutils.scons import get_python_inc#, get_pythonlib_dir
 from numpy.distutils.scons import GetNumpyEnvironment
 from numpy.distutils.scons import CheckCBLAS, CheckF77BLAS, CheckF77LAPACK,\
                                   CheckCLAPACK
+
+from scons_support import do_generate_interface, do_generate_fake_interface, \
+                          generate_interface_emitter
 #from numpy.distutils.scons.configuration import write_info
 
 #from scons_support import CheckBrokenMathlib, define_no_smp, \
@@ -73,51 +74,8 @@ config.Finish()
 #==========
 
 # XXX: handle cblas wrapper for complex (check in numpy.scons or here ?)
-import os
-from os.path import join as pjoin
-
-from interface_gen import generate_interface
-
 env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
-
-def do_generate_interface(target, source, env):
-    """Generate a .pyf file from another pyf file (!)."""
-    # XXX: do this correctly
-    target_name = str(target[0])
-    source_name = str(source[0])
-
-    # XXX handle skip names
-    name = os.path.splitext(os.path.basename(target_name))[0]
-    generate_interface(name, source_name, target_name)
-    return 0
-
-def generate_interface_emitter(target, source, env):
-    source = [pjoin(env['build_dir'], str(i)) for i in source]
-    target = [pjoin(env['build_dir'], str(i)) for i in target]
-    base = str(target[0])
-    return (['%s.pyf' % base], source)
-
-def do_generate_fake_interface(target, source, env):
-    """Generate a (fake) .pyf file from another pyf file (!)."""
-    # XXX: do this correctly
-    target_name = str(target[0])
-    source_name = str(source[0])
-
-    # XXX handle skip names
-    name = os.path.splitext(os.path.basename(target_name))[0]
-    generate_interface(name, source_name, target_name)
-        
-    f = open(target_name, 'w')
-    f.write('python module '+name+'\n')
-    f.write('usercode void empty_module(void) {}\n')
-    f.write('interface\n')
-    f.write('subroutine empty_module()\n')
-    f.write('intent(c) empty_module\n')
-    f.write('end subroutine empty_module\n')
-    f.write('end interface\nend python module'+name+'\n')
-    f.close()
-
-    return 0
+env.AppendUnique(F2PYOPTIONS = '--quiet')
 
 env['BUILDERS']['haha'] = Builder(action = do_generate_interface,
                                   emitter = generate_interface_emitter)
@@ -125,29 +83,85 @@ env['BUILDERS']['haha'] = Builder(action = do_generate_interface,
 env['BUILDERS']['hihi'] = Builder(action = do_generate_fake_interface,
                                   emitter = generate_interface_emitter)
 
-# fblas:
+#------------
+#   fblas
+#------------
 # XXX: handle Accelerate problem
 env.haha('fblas', 'generic_fblas.pyf')
 env.NumpyPythonExtension('fblas', source = ['fblas.pyf', pjoin('src', 'fblaswrap.f')])
 
-# cblas:
+#------------
+#   cblas
+#------------
 if has_cblas:
     env.haha('cblas', 'generic_cblas.pyf')
 else:
     env.hihi('cblas', 'generic_cblas.pyf')
 env.NumpyPythonExtension('cblas', source = 'cblas.pyf')
 
-# flapack
-env.haha('flapack', 'generic_flapack.pyf')
-env.NumpyPythonExtension('flapack', source = 'flapack.pyf')
+#------------
+#   flapack
+#------------
+yop = env.haha('flapack', 'generic_flapack.pyf')
+# XXX: automatically scan dependency on flapack_user_routines.pyf ?
+env.Depends(yop, pjoin(env['build_dir'], 'flapack_user_routines.pyf'))
+env.NumpyPythonExtension('flapack', source = ['flapack.pyf'])
 
-# # clapack
-# if has_clapack:
-#     env.haha('build/scons/clapack', 'generic_clapack.pyf')
-# else:
-#     env.hihi('build/scons/clapack', 'generic_clapack.pyf')
-# env.NumpyPythonExtension('clapack', source = 'clapack.pyf')
-# 
-# # _flinalg
-# env.NumpyPythonExtension('_flinalg', source = [join('src', 'det.f'), 
-#                                                join('src', 'lu.f')])
+#------------
+#   clapack
+#------------
+if has_clapack:
+    env.haha('clapack', 'generic_clapack.pyf')
+else:
+    env.hihi('clapack', 'generic_clapack.pyf')
+env.NumpyPythonExtension('clapack', source = 'clapack.pyf')
+
+#----------------
+#   _flinalg
+#----------------
+_flinalg_fsrc = ['det.f', 'lu.f']
+_flinalg_src = env.F2PY(
+    pjoin(env['build_dir'], 'src', '_flinalgmodule.c'), 
+    source = [pjoin(env['build_dir'], 'src', i) for i in _flinalg_fsrc])
+
+env.NumpyPythonExtension(
+    '_flinalg', source = _flinalg_src + [pjoin('src', i) for i in _flinalg_fsrc])
+
+#----------------
+# calc_lwork:
+#----------------
+calc_src = env.F2PY(pjoin(env['build_dir'], 'src', 'calc_lworkmodule.c'), 
+                    source = pjoin(env['build_dir'], 'src', 'calc_lwork.f'))
+env.NumpyPythonExtension('calc_lwork', 
+                         source = calc_src + [pjoin('src', 'calc_lwork.f')])
+
+#--------------------
+# iterative methods
+#--------------------
+methods = ['BiCGREVCOM.f.src',
+           'BiCGSTABREVCOM.f.src',
+           'CGREVCOM.f.src',
+           'CGSREVCOM.f.src',
+#               'ChebyREVCOM.f.src',
+           'GMRESREVCOM.f.src',
+#               'JacobiREVCOM.f.src',
+           'QMRREVCOM.f.src',
+#               'SORREVCOM.f.src'
+           ]
+Util = ['STOPTEST2.f.src','getbreak.f.src']
+raw_sources = methods + Util + ['_iterative.pyf.src']
+
+sources = []
+for method in raw_sources:
+    target = splitext(method)[0]
+    res = env.NumpyFromFTemplate(target, pjoin('iterative', method))
+    sources.append(res[0])
+
+env.NumpyPythonExtension('_iterative', source = sources)
+
+#--------------
+# Atlas version
+#--------------
+atlas_env = env.Copy()
+atlas_env.AppendUnique(CPPDEFINES = "NO_ATLAS_INFO")
+atlas_env.NumpyPythonExtension('atlas_version', 'atlas_version.c')

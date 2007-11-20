@@ -150,14 +150,14 @@ def configuration(parent_package='',top_path=None):
     #                      extra_info = lapack_opt
     #                      )
 
-    # flapack:
-    config.add_extension('flapack',
-                         sources = [generate_pyf],
-                         depends = ['generic_flapack.pyf',
-                                    'flapack_user_routines.pyf',
-                                    'interface_gen.py'],
-                         extra_info = lapack_opt
-                         )
+    # # flapack:
+    # config.add_extension('flapack',
+    #                      sources = [generate_pyf],
+    #                      depends = ['generic_flapack.pyf',
+    #                                 'flapack_user_routines.pyf',
+    #                                 'interface_gen.py'],
+    #                      extra_info = lapack_opt
+    #                      )
 
     # # clapack:
     # config.add_extension('clapack',
@@ -173,11 +173,11 @@ def configuration(parent_package='',top_path=None):
     #                      extra_info = lapack_opt
     #                      )
 
-    # # calc_lwork:
-    # config.add_extension('calc_lwork',
-    #                      [join('src','calc_lwork.f')],
-    #                      extra_info = lapack_opt
-    #                      )
+    # calc_lwork:
+    config.add_extension('calc_lwork',
+                         [join('src','calc_lwork.f')],
+                         extra_info = lapack_opt
+                         )
 
     # # atlas_version:
 
@@ -186,23 +186,23 @@ def configuration(parent_package='',top_path=None):
     #                      extra_info = lapack_opt
     #                      )
 
-    # # iterative methods
-    # methods = ['BiCGREVCOM.f.src',
-    #            'BiCGSTABREVCOM.f.src',
-    #            'CGREVCOM.f.src',
-    #            'CGSREVCOM.f.src',
-#   #             'ChebyREVCOM.f.src',
-    #            'GMRESREVCOM.f.src',
-#   #             'JacobiREVCOM.f.src',
-    #            'QMRREVCOM.f.src',
-#   #             'SORREVCOM.f.src'
-    #            ]
-    # Util = ['STOPTEST2.f.src','getbreak.f.src']
-    # sources = Util + methods + ['_iterative.pyf.src']
-    # config.add_extension('_iterative',
-    #                      sources = [join('iterative',x) for x in sources],
-    #                      extra_info = lapack_opt
-    #                      )
+#     # iterative methods
+#     methods = ['BiCGREVCOM.f.src',
+#                'BiCGSTABREVCOM.f.src',
+#                'CGREVCOM.f.src',
+#                'CGSREVCOM.f.src',
+# #               'ChebyREVCOM.f.src',
+#                'GMRESREVCOM.f.src',
+# #               'JacobiREVCOM.f.src',
+#                'QMRREVCOM.f.src',
+# #               'SORREVCOM.f.src'
+#                ]
+#     Util = ['STOPTEST2.f.src','getbreak.f.src']
+#     sources = Util + methods + ['_iterative.pyf.src']
+#     config.add_extension('_iterative',
+#                          sources = [join('iterative',x) for x in sources],
+#                          extra_info = lapack_opt
+#                          )
 
     config.add_data_dir('tests')
 
