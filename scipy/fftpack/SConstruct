@@ -11,6 +11,8 @@ env = GetNumpyEnvironment(ARGUMENTS)
 env.AppendUnique(CPPPATH = get_numpy_include_dirs())
 env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 
+# XXX: implement fft checkers ...
+
 # Build dfftpack
 src = glob.glob(pjoin('dfftpack', '*.f'))
 dfftpack = env.NumpyStaticExtLibrary('dfftpack', source = src)
