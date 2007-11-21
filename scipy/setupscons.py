@@ -1,7 +1,7 @@
 
 def configuration(parent_package='',top_path=None, setup_name = 'setupscons.py'):
     from numpy.distutils.misc_util import Configuration
-    config = Configuration('scipy',parent_package,top_path)
+    config = Configuration('scipy',parent_package,top_path, setup_name = 'setupscons.py')
     config.add_subpackage('cluster')
     config.add_subpackage('fftpack')
     config.add_subpackage('integrate')
