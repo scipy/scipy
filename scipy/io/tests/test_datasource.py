@@ -85,7 +85,7 @@ class TestDataSourceOpen(NumpyTestCase):
 
     def test_ValidHTTP(self):
         assert self.ds.open(valid_httpurl())
-    
+
     def test_InvalidHTTP(self):
         self.assertRaises(IOError, self.ds.open, invalid_httpurl())
 
@@ -131,7 +131,7 @@ class TestDataSourceExists(NumpyTestCase):
 
     def test_ValidHTTP(self):
         assert self.ds.exists(valid_httpurl())
-    
+
     def test_InvalidHTTP(self):
         self.assertEqual(self.ds.exists(invalid_httpurl()), False)
 
@@ -240,7 +240,7 @@ class TestRepositoryExists(NumpyTestCase):
 class TestOpenFunc(NumpyTestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
-    
+
     def tearDown(self):
         rmtree(self.tmpdir)
 
@@ -254,4 +254,3 @@ class TestOpenFunc(NumpyTestCase):
 
 if __name__ == "__main__":
     NumpyTest().run()
-

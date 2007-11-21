@@ -1331,8 +1331,8 @@ void morphoFilterBinaryImage(int rows, int cols, unsigned short *edgeImage,
 
 	int i, j;
 	int offset, offset2;
-	unsigned short cmask[11][11];
-	unsigned short omask[11][11];
+	unsigned short *cmask;
+	unsigned short *omask;
 	int olapValuesC[4];
 	int olapValuesO[4];
 	int CloseMaskSize = 1;
@@ -1340,6 +1340,7 @@ void morphoFilterBinaryImage(int rows, int cols, unsigned short *edgeImage,
 	int LowValue1, HighValue1;   
 	int LowValue2, HighValue2;  
 	int spadSize;
+	int maskSize = 11;
 	unsigned char *ImageE;
 	unsigned char *ImageC;
 
@@ -1348,6 +1349,9 @@ void morphoFilterBinaryImage(int rows, int cols, unsigned short *edgeImage,
 	ImageE = calloc(spadSize*spadSize, sizeof(unsigned char));
 	ImageC = calloc(spadSize*spadSize, sizeof(unsigned char));
 
+	cmask = calloc(11*11, sizeof(unsigned short));
+	omask = calloc(11*11, sizeof(unsigned short));
+
 	//
 	// Close filter
 	//
@@ -1355,7 +1359,7 @@ void morphoFilterBinaryImage(int rows, int cols, unsigned short *edgeImage,
 	    CloseMaskSize = (CloseSize-1)/2;
 	    for(i = 0; i < 2*CloseMaskSize+1; ++i){
 	        for(j = 0; j < 2*CloseMaskSize+1; ++j){
-	            cmask[i][j] = 1;
+	            cmask[i*maskSize+j] = 1;
 	        }
 	    }
 	    LowValue1      = 0;   
@@ -1375,7 +1379,7 @@ void morphoFilterBinaryImage(int rows, int cols, unsigned short *edgeImage,
 	    OpenMaskSize = (OpenSize-1)/2;
 	    for(i = 0; i < 2*OpenMaskSize+1; ++i){
 	        for(j = 0; j < 2*OpenMaskSize+1; ++j){
-	            omask[i][j] = 1;
+	            omask[i*maskSize+j] = 1;
 	        }
 	    }
 	    LowValue1      = 1;   
@@ -1426,6 +1430,9 @@ void morphoFilterBinaryImage(int rows, int cols, unsigned short *edgeImage,
 	free(ImageE);
 	free(ImageC);
 
+	free(cmask);
+	free(omask);
+
 	return;
 
 }
@@ -1442,8 +1449,8 @@ void doRegionGrow(int samples, int rows, int cols, double *rawImage,
 }
 
 int NI_RegionGrow(int samples, int rows, int cols, int lowThreshold, int highThreshold,
-                   int closeWindow, int openWindow, double *rawImage, 
-                   unsigned short *edgeImage, int *groups){
+                  int closeWindow, int openWindow, double *rawImage, 
+                  unsigned short *edgeImage, int *groups){
 
 	int i, j;
 	int offset;
@@ -1503,107 +1510,108 @@ int NI_SobelEdges(int samples, int rows, int cols, double sobelLow, int mode,
 
 }
 
-void initThinFilter(int J_mask[3][30], int K_mask[3][30]){
+void initThinFilter(int *J_mask, int *K_mask){
 
 	int i, j;
 	int Column;
+	int maskCols = 3;
 
 	for(i = 0; i < 3; ++i){
 	    for(j = 0; j < 30; ++j){
-		J_mask[i][j] = 0;
-		K_mask[i][j] = 0;
+		J_mask[i+j*maskCols] = 0;
+		K_mask[i+j*maskCols] = 0;
 	    }
 	}
 
 	Column = 0;
-   	J_mask[0][Column+0] = 1;
-   	J_mask[0][Column+1] = 1;
-   	J_mask[0][Column+2] = 1;
-   	J_mask[1][Column+1] = 1;
+   	J_mask[0+maskCols*(Column+0)] = 1;
+   	J_mask[0+maskCols*(Column+1)] = 1;
+   	J_mask[0+maskCols*(Column+2)] = 1;
+   	J_mask[1+maskCols*(Column+1)] = 1;
 
 	Column += 3;
-   	J_mask[0][Column+1] = 1;
-   	J_mask[1][Column+1] = 1;
-   	J_mask[1][Column+2] = 1;
+   	J_mask[0+maskCols*(Column+1)] = 1;
+   	J_mask[1+maskCols*(Column+1)] = 1;
+   	J_mask[1+maskCols*(Column+2)] = 1;
 
 	Column += 3;
-   	J_mask[0][Column+0] = 1;
-   	J_mask[1][Column+0] = 1;
-   	J_mask[2][Column+0] = 1;
-   	J_mask[1][Column+1] = 1;
+   	J_mask[0+maskCols*(Column+0)] = 1;
+   	J_mask[1+maskCols*(Column+0)] = 1;
+   	J_mask[2+maskCols*(Column+0)] = 1;
+   	J_mask[1+maskCols*(Column+1)] = 1;
 
 	Column += 3;
-   	J_mask[0][Column+1] = 1;
-   	J_mask[1][Column+0] = 1;
-   	J_mask[1][Column+1] = 1;
+   	J_mask[0+maskCols*(Column+1)] = 1;
+   	J_mask[1+maskCols*(Column+0)] = 1;
+   	J_mask[1+maskCols*(Column+1)] = 1;
 
 	Column += 3;
-   	J_mask[0][Column+2] = 1;
-   	J_mask[1][Column+1] = 1;
-   	J_mask[1][Column+2] = 1;
-   	J_mask[2][Column+2] = 1;
+   	J_mask[0+maskCols*(Column+2)] = 1;
+   	J_mask[1+maskCols*(Column+1)] = 1;
+   	J_mask[1+maskCols*(Column+2)] = 1;
+   	J_mask[2+maskCols*(Column+2)] = 1;
 
 	Column += 3;
-   	J_mask[1][Column+0] = 1;
-   	J_mask[1][Column+1] = 1;
-   	J_mask[2][Column+1] = 1;
+   	J_mask[1+maskCols*(Column+0)] = 1;
+   	J_mask[1+maskCols*(Column+1)] = 1;
+   	J_mask[2+maskCols*(Column+1)] = 1;
 
 	Column += 3;
-   	J_mask[1][Column+1] = 1;
-   	J_mask[2][Column+0] = 1;
-   	J_mask[2][Column+1] = 1;
-   	J_mask[2][Column+2] = 1;
+   	J_mask[1+maskCols*(Column+1)] = 1;
+   	J_mask[2+maskCols*(Column+0)] = 1;
+   	J_mask[2+maskCols*(Column+1)] = 1;
+   	J_mask[2+maskCols*(Column+2)] = 1;
 
 	Column += 3;
-   	J_mask[1][Column+1] = 1;
-   	J_mask[1][Column+2] = 1;
-   	J_mask[2][Column+1] = 1;
+   	J_mask[1+maskCols*(Column+1)] = 1;
+   	J_mask[1+maskCols*(Column+2)] = 1;
+   	J_mask[2+maskCols*(Column+1)] = 1;
 
 	Column = 0;
-   	K_mask[2][Column+0] = 1;
-   	K_mask[2][Column+1] = 1;
-   	K_mask[2][Column+2] = 1;
+   	K_mask[2+maskCols*(Column+0)] = 1;
+   	K_mask[2+maskCols*(Column+1)] = 1;
+   	K_mask[2+maskCols*(Column+2)] = 1;
 
 	Column += 3;
-   	K_mask[1][Column+0] = 1;
-   	K_mask[2][Column+0] = 1;
-   	K_mask[2][Column+1] = 1;
+   	K_mask[1+maskCols*(Column+0)] = 1;
+   	K_mask[2+maskCols*(Column+0)] = 1;
+   	K_mask[2+maskCols*(Column+1)] = 1;
 
 	Column += 3;
-   	K_mask[0][Column+2] = 1;
-   	K_mask[1][Column+2] = 1;
-   	K_mask[2][Column+2] = 1;
+   	K_mask[0+maskCols*(Column+2)] = 1;
+   	K_mask[1+maskCols*(Column+2)] = 1;
+   	K_mask[2+maskCols*(Column+2)] = 1;
 
 	Column += 3;
-   	K_mask[1][Column+2] = 1;
-   	K_mask[2][Column+1] = 1;
-   	K_mask[2][Column+2] = 1;
+   	K_mask[1+maskCols*(Column+2)] = 1;
+   	K_mask[2+maskCols*(Column+1)] = 1;
+   	K_mask[2+maskCols*(Column+2)] = 1;
 
 	Column += 3;
-   	K_mask[0][Column+0] = 1;
-   	K_mask[1][Column+0] = 1;
-   	K_mask[2][Column+0] = 1;
+   	K_mask[0+maskCols*(Column+0)] = 1;
+   	K_mask[1+maskCols*(Column+0)] = 1;
+   	K_mask[2+maskCols*(Column+0)] = 1;
 
 	Column += 3;
-   	K_mask[0][Column+1] = 1;
-   	K_mask[0][Column+2] = 1;
-   	K_mask[1][Column+2] = 1;
+   	K_mask[0+maskCols*(Column+1)] = 1;
+   	K_mask[0+maskCols*(Column+2)] = 1;
+   	K_mask[1+maskCols*(Column+2)] = 1;
 
 	Column += 3;
-   	K_mask[0][Column+0] = 1;
-   	K_mask[0][Column+1] = 1;
-   	K_mask[0][Column+2] = 1;
+   	K_mask[0+maskCols*(Column+0)] = 1;
+   	K_mask[0+maskCols*(Column+1)] = 1;
+   	K_mask[0+maskCols*(Column+2)] = 1;
 
 	Column += 3;
-   	K_mask[0][Column+0] = 1;
-   	K_mask[0][Column+1] = 1;
-   	K_mask[1][Column+0] = 1;
+   	K_mask[0+maskCols*(Column+0)] = 1;
+   	K_mask[0+maskCols*(Column+1)] = 1;
+   	K_mask[1+maskCols*(Column+0)] = 1;
 
 	return;
 
 }
 
-void ThinningFilter(int regRows, int regColumns, int spadSize, int J_mask[3][30], int K_mask[3][30],
+void ThinningFilter(int regRows, int regColumns, int spadSize, int *J_mask, int *K_mask,
 	            unsigned char *Input, unsigned char *CInput, unsigned char *ErosionStage,
 	            unsigned char *DialationStage, unsigned char *HMT, unsigned char *Copy){
 
@@ -1613,6 +1621,7 @@ void ThinningFilter(int regRows, int regColumns, int spadSize, int J_mask[3][30]
 	int Column, T, nloop;
 	int Offset;
 	int N, M;
+	int maskCols = 3;
 	int j_mask[3][3];
 	int k_mask[3][3];
 
@@ -1640,12 +1649,12 @@ void ThinningFilter(int regRows, int regColumns, int spadSize, int J_mask[3][30]
 	    for(n = 0; n < 8; ++n){
 		for(i = 0; i < 3; ++i){
 		    for(j = 0; j < 3; ++j){
-			j_mask[i][j] = J_mask[i][Column+j];
+			j_mask[i][j] = J_mask[i+maskCols*(Column+j)];
 		    }
 		}
 		for(i = 0; i < 3; ++i){
 		    for(j = 0; j < 3; ++j){
-			k_mask[i][j] = K_mask[i][Column+j];
+			k_mask[i][j] = K_mask[i+maskCols*(Column+j)];
 		    }
 		}
 		Column += 3;
@@ -1745,6 +1754,7 @@ void ThinningFilter(int regRows, int regColumns, int spadSize, int J_mask[3][30]
 		}
 		Offset += spadSize;
 	    }
+	    /* nloop is data dependent. */
 	    ++nloop;
 	}
 
@@ -1766,8 +1776,8 @@ int NI_ThinFilter(int samples, int rows, int cols, int numberObjects,
 	int dstOffset;
 	int status;
 	int inflate = 1;
-	int J_mask[3][30];
-	int K_mask[3][30];
+	int *J_mask;
+	int *K_mask;
 
 	unsigned char *Input;
 	unsigned char *CInput;
@@ -1787,6 +1797,8 @@ int NI_ThinFilter(int samples, int rows, int cols, int numberObjects,
 	HMT            = calloc(samples, sizeof(unsigned char));
 	Copy           = calloc(samples, sizeof(unsigned char));
 	thinEdgeImage  = calloc(samples, sizeof(unsigned short));
+	J_mask         = calloc(3*30,    sizeof(int));
+	K_mask         = calloc(3*30,    sizeof(int));
 
 	initThinFilter(J_mask, K_mask);
 	for(loop = 0; loop < numberObjects; ++loop){
@@ -1855,6 +1867,8 @@ int NI_ThinFilter(int samples, int rows, int cols, int numberObjects,
 	free(HMT);
 	free(Copy);
 	free(thinEdgeImage);
+	free(J_mask);
+	free(K_mask);
 
 	status = 1;
 
@@ -2050,7 +2064,7 @@ void trackBoundary(unsigned char *Input, blobBoundary lBoundary[], int mcount, i
 
 
 void OpenCloseFilter(int olapValues[], int maskSize, int rows, int columns, int spadSize, 
-                     unsigned char *input, unsigned char *output, unsigned short mask[11][11]){
+                     unsigned char *input, unsigned char *output, unsigned short *mask){
 
 
 	/*
@@ -2061,6 +2075,7 @@ void OpenCloseFilter(int olapValues[], int maskSize, int rows, int columns, int 
 	int offset;
 	int LowValue1, HighValue1;   
 	int LowValue2, HighValue2;  
+	int morphoMaskSize = 11;
 
 	LowValue1  = olapValues[0];
 	HighValue1 = olapValues[1];
@@ -2076,7 +2091,7 @@ void OpenCloseFilter(int olapValues[], int maskSize, int rows, int columns, int 
 		for(k = -maskSize; k < maskSize; ++k){
 	    	    m = k*spadSize;
 		    for(l = -maskSize; l < maskSize; ++l){
-	    		overlap = mask[k+maskSize][l+maskSize]*input[offset+m+j+l];
+	    		overlap = mask[morphoMaskSize*(k+maskSize)+(l+maskSize)]*input[offset+m+j+l];
 			if(overlap == HighValue1){
 			    hit = HighValue1;
 			}
@@ -2096,7 +2111,7 @@ void OpenCloseFilter(int olapValues[], int maskSize, int rows, int columns, int 
 		for(k = -maskSize; k < maskSize; ++k){
 	    	    m = k*spadSize;
 		    for(l = -maskSize; l < maskSize; ++l){
-	    		overlap = mask[k+maskSize][l+maskSize]*output[offset+m+j+l];
+	    		overlap = mask[morphoMaskSize*(k+maskSize)+(l+maskSize)]*output[offset+m+j+l];
 			if(overlap == HighValue2){
 			    hit = HighValue2;
 			}
@@ -2140,7 +2155,7 @@ void getCompactness(unsigned char *Input, RECT roi, int label, int spadSize,
 
 void doMorphology(unsigned char *Input, unsigned char *ImageE, unsigned char *ImageC,
                   unsigned char *ImageH, int olapValuesC[], int olapValuesO[], 
-       	          unsigned short cmask[11][11], unsigned short omask[11][11],
+       	          unsigned short *cmask, unsigned short *omask,
 	          RECT roi, int label, int CloseMaskSize, int OpenMaskSize, int spadSize){
 
 	int i, j;
@@ -2306,8 +2321,9 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	float aveRadius;
 	float vCompactness;
 	/* for morphological close of mask. max structuring element is 11x11 */
-	unsigned short cmask[11][11];
-	unsigned short omask[11][11];
+	unsigned short *cmask;
+	unsigned short *omask;
+	int maskSize = 11;
 	int olapValuesC[4];
 	int olapValuesO[4];
 	int CloseMaskSize;
@@ -2325,13 +2341,25 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	unsigned char *ImageC;
 	unsigned char *ImageH;
 
+	spadSize = srcCols;
+	pBoundaryIndex = calloc(srcRows+srcCols,   sizeof(boundaryIndex));
+	Input          = calloc(spadSize*spadSize, sizeof(unsigned char));
+	ImageE         = calloc(spadSize*spadSize, sizeof(unsigned char));
+	ImageC         = calloc(spadSize*spadSize, sizeof(unsigned char));
+	ImageH         = calloc(spadSize*spadSize, sizeof(unsigned char));
+	pBoundary      = calloc(srcRows*srcCols,   sizeof(blobBoundary));
+	lBoundary      = calloc(32767, sizeof(blobBoundary));
+	boundary       = calloc(32767, sizeof(POINT));
+	cmask          = calloc(11*11, sizeof(unsigned short));
+	omask          = calloc(11*11, sizeof(unsigned short));
+
 	/*
 	// Close filter
 	*/
 	CloseMaskSize = (CloseSize-1)/2;
 	for(i = 0; i < 2*CloseMaskSize+1; ++i){
 	    for(j = 0; j < 2*CloseMaskSize+1; ++j){
-	        cmask[i][j] = 1;
+	        cmask[i*maskSize+j] = 1;
 	    }
 	}
 	LowValue1      = 0;   
@@ -2349,7 +2377,7 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	OpenMaskSize = (OpenSize-1)/2;
 	for(i = 0; i < 2*OpenMaskSize+1; ++i){
 	    for(j = 0; j < 2*OpenMaskSize+1; ++j){
-	        omask[i][j] = 1;
+	        omask[i*maskSize+j] = 1;
 	    }
 	}
 	LowValue1      = 1;   
@@ -2361,19 +2389,6 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	olapValuesO[2] = LowValue2;
 	olapValuesO[3] = HighValue2;
 
-
-	//spadSize = MAX(srcRows, srcCols);
-	spadSize = srcCols;
-
-	pBoundaryIndex = calloc(srcRows+srcCols,   sizeof(boundaryIndex));
-	Input          = calloc(spadSize*spadSize, sizeof(unsigned char));
-	ImageE         = calloc(spadSize*spadSize, sizeof(unsigned char));
-	ImageC         = calloc(spadSize*spadSize, sizeof(unsigned char));
-	ImageH         = calloc(spadSize*spadSize, sizeof(unsigned char));
-	pBoundary      = calloc(srcRows*srcCols,   sizeof(blobBoundary));
-	lBoundary      = calloc(32767, sizeof(blobBoundary));
-	boundary       = calloc(32767, sizeof(POINT));
-
 	for(i = 0; i < (srcRows+srcCols); ++i){
 	    pBoundaryIndex[i].numberPoints = 0;
 	    pBoundaryIndex[i].curveClose   = 0;
@@ -2384,7 +2399,6 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 
 
 	for(i = 0; i < numberObjects; ++i){
-	//for(i = 0; i < 1; ++i){
 	    ++pBoundaryIndex[0].numberPoints;
 	    count = 0;
 	    j = 1;
@@ -2597,6 +2611,8 @@ void buildBoundary(objStruct objectMetrics[], int searchWindow, unsigned short *
 	free(pBoundary);
 	free(lBoundary);
 	free(boundary);
+	free(cmask);
+	free(omask);
 
 	return;
 
@@ -2949,14 +2965,13 @@ void getVoxelMeasures(objStruct objectMetrics[], double *sourceImage,
 	    if(count){
 	        std /= (float)count; 
 	        std = sqrt(std);
-	        objectMetrics[i].voxelMean = mean - 2048.0; // the 2048 is only for the cardiac CT volume
+	        objectMetrics[i].voxelMean = mean;
 	        objectMetrics[i].voxelVar  = std;
 	    }
 	    else{
 	        objectMetrics[i].voxelMean = 0.0;
 	        objectMetrics[i].voxelVar  = 0.0;
 	    }
-	    if(0) printf("(%d) mean %f, std %f\n", label, objectMetrics[i].voxelMean, objectMetrics[i].voxelVar); 
 	}
 
 	return;

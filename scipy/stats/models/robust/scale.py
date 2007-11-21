@@ -49,7 +49,7 @@ class Huber:
 
     tmp = 2 * norm.cdf(c) - 1
     gamma = tmp + c**2 * (1 - tmp) - 2 * c * norm.pdf(c)
-    del tmp 
+    del tmp
 
     niter = 30
 

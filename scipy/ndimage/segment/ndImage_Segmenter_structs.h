@@ -117,17 +117,17 @@ void buildBoundary(objStruct objectMetrics[], int, unsigned short *, int, int, i
 void getBoundary(unsigned short *, unsigned char *, blobBoundary *, blobBoundary *, 
 	         boundaryIndex *, RECT, int, int, int, int, int, int);
 void doMorphology(unsigned char *, unsigned char *, unsigned char *, unsigned char *, int olapValuesC[],
-       	          int olapValuesO[], unsigned short cmask[11][11], unsigned short omask[11][11],
+       	          int olapValuesO[], unsigned short *, unsigned short *,
 	          RECT, int, int, int, int);
 void getCompactness(unsigned char *, RECT, int, int, float *, float);
 void OpenCloseFilter(int olapValues[], int, int, int, int, unsigned char *,  
-                     unsigned char *, unsigned short mask[11][11]);
+                     unsigned char *, unsigned short *);
 void trackBoundary(unsigned char *, blobBoundary lBoundary[], int, int, blobBoundary, int); 
 void getBoundaryMetrics(bPOINT *, float *, float *, float *, float *, float, float, int);
 void generateMask(unsigned char *, bPOINT *, int, int, int);
-void ThinningFilter(int, int, int, int J_mask[3][30], int K_mask[3][30], unsigned char *, 
+void ThinningFilter(int, int, int, int *, int *, unsigned char *, 
 	            unsigned char *, unsigned char *, unsigned char *, unsigned char *, unsigned char *);
-void initThinFilter(int J_mask[3][30], int K_mask[3][30]);
+void initThinFilter(int *, int *);
 void Shen_Castan(double, double, int, int, int, int, int, double *, unsigned short *);
 void computeISEF(float *, float *, int, int, double);
 void ISEF_Horizontal(float *, float *, float *, float *, int, int, double);

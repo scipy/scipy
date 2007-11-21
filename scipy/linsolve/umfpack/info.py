@@ -2,6 +2,10 @@
 Interface to the UMFPACK library.
 =================================
 
+:Contains: UmfpackContext class
+
+:Description:
+-------------
 Routines for symbolic and numeric LU factorization of sparse
 matrices and for solving systems of linear equations with sparse matrices.
 
@@ -9,13 +13,12 @@ Tested with UMFPACK V4.4 (Jan. 28, 2005), V5.0 (May 5, 2006)
 Copyright (c) 2005 by Timothy A. Davis.  All Rights Reserved.
 UMFPACK homepage: http://www.cise.ufl.edu/research/sparse/umfpack
 
-Contains: UmfpackContext class
-
 Use 'print UmfpackContext().funs' to see all UMFPACK library functions the
 module exposes, if you need something not covered by the examples below.
 
-Installation:
-=============
+:Installation:
+--------------
+
 Example site.cfg entry:
 
 UMFPACK v4.4 in <dir>:
@@ -43,8 +46,8 @@ include_dirs = <dir>/UFsparse/UMFPACK/Include, <dir>/UFsparse/UFconfig
 umfpack_libs = umfpack
 
 
-Examples:
-=========
+:Examples:
+----------
 
 Assuming this module imported as um (import scipy.linsolve.umfpack as um)
 
@@ -115,8 +118,8 @@ Then:
                LU = PRAQ        when do_recip is true
                LU = P(R^-1)AQ   when do_recip is false
 
-Description of arguments of UmfpackContext solution methods:
-=============================================
+:Arguments of UmfpackContext solution methods:
+----------------------------------------------
 This holds for: umfpack(), umfpack.linsolve(), umfpack.solve()
 
  sys - one of UMFPACK system description constants, like
@@ -128,8 +131,9 @@ This holds for: umfpack(), umfpack.linsolve(), umfpack.solve()
        transposed type, if 'mtx' is in CSR, since UMFPACK
        assumes CSC internally
 
-Setting control parameters:
-===========================
+:Setting control parameters:
+----------------------------
+
 Assuming this module imported as um:
 
 List of control parameter names is accessible as 'um.umfControls' - their
@@ -143,9 +147,9 @@ umfpack = um.UmfpackContext()
 umfpack.control[um.UMFPACK_PRL] = 4 # Let's be more verbose.
 
 --
-Author: Robert Cimrman
+:Author: Robert Cimrman
 
-Other contributors: Nathan Bell (lu() method wrappers)
+:Other contributors: Nathan Bell (lu() method wrappers)
 """
 
 postpone_import = 1

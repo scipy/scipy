@@ -36,7 +36,8 @@ static PyObject *Segmenter_CannyEdges(PyObject *self, PyObject *args)
     type = PyArray_TYPE(iArray);
     num  = PyArray_SIZE(iArray);
 
-    itype  = 4;
+    //itype  = 4;
+    itype  = NPY_USHORT;
     eArray = (PyObject*)PyArray_SimpleNew(nd, dims, itype);
     fP2    = (unsigned short *)PyArray_DATA(eArray);
 
@@ -88,7 +89,8 @@ static PyObject *Segmenter_SobelEdges(PyObject *self, PyObject *args)
     num  = PyArray_SIZE(iArray);
 
     // this is int type and hard-wirred. pass this in from Python code
-    itype  = 4; // unsigned short
+    //itype  = 4; // unsigned short
+    itype  = NPY_USHORT;
     eArray = (PyObject*)PyArray_SimpleNew(nd, dims, itype);
     fP2    = (unsigned short *)PyArray_DATA(eArray);
 
@@ -139,7 +141,8 @@ static PyObject *Segmenter_ShenCastanEdges(PyObject *self, PyObject *args)
     num  = PyArray_SIZE(iArray);
 
     // this is int type and hard-wirred. pass this in from Python code
-    itype  = 4; // unsigned short
+    //itype  = 4; // unsigned short
+    itype  = NPY_USHORT;
     eArray = (PyObject*)PyArray_SimpleNew(nd, dims, itype);
     fP2    = (unsigned short *)PyArray_DATA(eArray);
 
@@ -325,7 +328,8 @@ static PyObject *Segmenter_VoxelMeasures(PyObject *self, PyObject *args)
     // replace the edgeImage with maskImage
     //
 
-    if(!NI_VoxelMeasures(num, (int)dims[0], (int)dims[1], (int)objNumber[0], fP1, fP2, ROIList))
+    if(!NI_VoxelMeasures(num, (int)dims[0], (int)dims[1], (int)objNumber[0], fP1,
+			 fP2, ROIList))
 	    goto exit;
 
 exit:
@@ -373,7 +377,8 @@ static PyObject *Segmenter_TextureMeasures(PyObject *self, PyObject *args)
     // replace the edgeImage with maskImage
     //
 
-    if(!NI_TextureMeasures(num, (int)dims[0], (int)dims[1], (int)objNumber[0], fP1, fP2, ROIList))
+    if(!NI_TextureMeasures(num, (int)dims[0], (int)dims[1], (int)objNumber[0], fP1,
+			   fP2, ROIList))
 	    goto exit;
 
 exit:
@@ -402,7 +407,8 @@ static PyObject *Segmenter_RegionGrow(PyObject *self, PyObject *args)
 
     //
     // pass in 2D LPF coefficients
-    if(!PyArg_ParseTuple(args, "iiiiO", &lowThreshold, &highThreshold, &closeWindow, &openWindow, &iArray))
+    if(!PyArg_ParseTuple(args, "iiiiO", &lowThreshold, &highThreshold, &closeWindow,
+		         &openWindow, &iArray))
 	    goto exit;
 
     fP1  = (double *)PyArray_DATA(iArray);
@@ -412,7 +418,8 @@ static PyObject *Segmenter_RegionGrow(PyObject *self, PyObject *args)
     num  = PyArray_SIZE(iArray);
 
     // this is int type and hard-wirred. pass this in from Python code
-    itype  = 4; // unsigned short
+    //itype  = 4; // unsigned short
+    itype  = NPY_USHORT;
     eArray = (PyObject*)PyArray_SimpleNew(nd, dims, itype);
     fP2    = (unsigned short *)PyArray_DATA(eArray);
 
@@ -420,8 +427,9 @@ static PyObject *Segmenter_RegionGrow(PyObject *self, PyObject *args)
 	    goto exit;
 
     
-    if(!NI_RegionGrow(num, (int)dims[0], (int)dims[1], lowThreshold, highThreshold, closeWindow, openWindow,
-		      fP1, fP2, &groups))
+    if(!NI_RegionGrow(num, (int)dims[0], (int)dims[1], lowThreshold, highThreshold,
+		      closeWindow, openWindow, fP1, fP2, &groups))
+		      
 	    goto exit;
 
 exit:

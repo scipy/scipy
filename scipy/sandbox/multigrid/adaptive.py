@@ -139,8 +139,8 @@ class adaptive_sa_solver:
                                                max_levels = max_levels, \
                                                max_coarse = max_coarse, \
                                                mu = mu, epsilon = epsilon, \
-                                               aggregation = aggregation ) 
-        
+                                               aggregation = aggregation )
+
         #create SA using x here
         As,Ps,Ts,Bs = sa_hierarchy(A,x,AggOps)
 
@@ -160,7 +160,7 @@ class adaptive_sa_solver:
             for i in range(max_candidates):
                 B = B[:,1:]
                 As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
-                x = self.__develop_new_candidate(As,Ps,Ts,Bs,AggOps,mu=mu)    
+                x = self.__develop_new_candidate(As,Ps,Ts,Bs,AggOps,mu=mu)
                 B = hstack((B,x))
             As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
 
@@ -174,7 +174,7 @@ class adaptive_sa_solver:
             max_coarse = 0
             max_levels = len(aggregation) + 1
 
-        # aSA parameters 
+        # aSA parameters
         # mu      - number of test relaxation iterations
         # epsilon - minimum acceptable relaxation convergence factor
 
@@ -307,7 +307,7 @@ if __name__ == '__main__':
     aggregation = None
 
     #A = poisson_problem2D(200,1e-2)
-    #aggregation = [ sa_constant_interpolation(A*A*A,epsilon=0.0) ] 
+    #aggregation = [ sa_constant_interpolation(A*A*A,epsilon=0.0) ]
 
     #A = io.mmread("tests/sample_data/laplacian_41_3dcube.mtx").tocsr()
     #A = io.mmread("laplacian_40_3dcube.mtx").tocsr()
@@ -373,7 +373,7 @@ if __name__ == '__main__':
         pcolor(x.reshape(sqrt(len(x)),sqrt(len(x))))
         show()
 
-  
+
     for c in asa.Bs[0].T:
         #plot2d(c)
         plot2d_arrows(c)

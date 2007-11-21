@@ -17,4 +17,3 @@ d = {'a':0.2,'b':0.3,'c':0.5}
 s = montecarlo.dictsampler(d)
 for i in range(10):
     temp = s.sample(10**7)
-

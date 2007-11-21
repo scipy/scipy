@@ -92,7 +92,7 @@ class spmatrix(object):
 
     def set_shape(self,shape):
         shape = tuple(shape)
-        
+
         if len(shape) != 2:
             raise ValueError("Only two-dimensional sparse arrays "
                                      "are supported.")
@@ -103,7 +103,7 @@ class spmatrix(object):
 
         if not (shape[0] >= 1 and shape[1] >= 1):
             raise TypeError,'invalid shape'
-        
+
         if (self._shape != shape) and (self._shape is not None):
             try:
                 self = self.reshape(shape)
@@ -518,16 +518,16 @@ class _cs_matrix(spmatrix):
 
     def _set_self(self, other, copy=False):
         """take the member variables of other and assign them to self"""
-        
+
         if copy:
             other = other.copy()
-        
+
         self.data    = other.data
         self.indices = other.indices
         self.indptr  = other.indptr
         self.shape   = other.shape
         self.dtype   = other.data.dtype
-          
+
 
     def _check_format(self, orientation, full_check):
         # some functions pass floats
@@ -988,14 +988,14 @@ class csc_matrix(_cs_matrix):
                     self._set_self( other )
 
         else:
-            raise ValueError, "unrecognized form for csc_matrix constructor" 
+            raise ValueError, "unrecognized form for csc_matrix constructor"
 
 
         # Read matrix dimensions given, if any
         if dims is not None:
             self.shape = dims   # spmatrix will check for errors
         else:
-            if self.shape is None:                
+            if self.shape is None:
                 # shape not already set, try to infer dimensions
                 try:
                     M = self.indices.max() + 1
@@ -1238,7 +1238,7 @@ class csr_matrix(_cs_matrix):
             if copy:
                 arg1 = arg1.copy()
             self._set_self( self._tothis(arg1) )
-        
+
         elif isinstance(arg1, tuple):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
@@ -1270,7 +1270,7 @@ class csr_matrix(_cs_matrix):
                     other = coo_matrix((data, ij), dims=dims )
                     other = self._tothis(other)
                     self._set_self( other )
-        
+
         else:
             raise ValueError, "unrecognized form for csr_matrix constructor"
 
@@ -1278,7 +1278,7 @@ class csr_matrix(_cs_matrix):
         if dims is not None:
             self.shape = dims   # spmatrix will check for errors
         else:
-            if self.shape is None:                
+            if self.shape is None:
                 # shape not already set, try to infer dimensions
                 try:
                     M = len(self.indptr) - 1

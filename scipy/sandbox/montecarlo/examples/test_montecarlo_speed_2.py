@@ -8,4 +8,3 @@ d = dict(zip(k, v))
 s = montecarlo.dictsampler(d)
 for i in range(10):
     temp = s.sample(10**7)
-

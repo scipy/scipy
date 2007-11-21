@@ -30,10 +30,10 @@ cmplx = simplicial_complex(mesh['vertices'],mesh['elements'])
 def curl_curl_prolongator(D_nodal,vertices):
     if not isspmatrix_csr(D_nodal):
         raise TypeError('expected csr_matrix')
-    
+
     A = D_nodal.T.tocsr() * D_nodal
     aggs = multigridtools.sa_get_aggregates(A.shape[0],A.indptr,A.indices)
-    
+
     num_edges = D_nodal.shape[0]
     num_basis = vertices.shape[1]
     num_aggs  = aggs.max() + 1
@@ -52,7 +52,7 @@ def curl_curl_prolongator(D_nodal,vertices):
     return coo_matrix((data,(row,col)),dims=(num_edges,num_basis*num_aggs)).tocsr()
 
 
-    
+
 
 
 def whitney_innerproduct_cache(cmplx,k):
@@ -102,33 +102,33 @@ for i in [1]: #range(len(cochain_complex)-1):
         Mi = whitney_innerproduct_cache(cmplx,i+1)
     else:
         Mi = regular_cube_innerproduct(cmplx,i+1)
-        
-        
+
+
     dimension = mesh['vertices'].shape[1]
 
     if True:
-    
+
         d0 = cmplx[0].d
         d1 = cmplx[1].d
-        
+
         #A = (d1.T.tocsr() * d1 + d0 * d0.T.tocsr()).astype('d')
         A = (d1.T.tocsr()  * d1).astype('d')
-    
+
         P = curl_curl_prolongator(d0,mesh['vertices'])
-        
+
         num_blocks = P.shape[1]/dimension
         blocks = arange(num_blocks).repeat(dimension)
-    
+
         P = sa_smoothed_prolongator(A,P,epsilon=0,omega=4.0/3.0)
-    
+
         PAP = P.T.tocsr() * A * P
-    
+
         candidates = None
         candidates = zeros((num_blocks,dimension,dimension))
         for n in range(dimension):
             candidates[:,n,n] = 1.0
         candidates = candidates.reshape(-1,dimension)
-        
+
         ml = smoothed_aggregation_solver(PAP,epsilon=0.0,candidates=candidates,blocks=blocks)
         #A = PAP
         ml = multilevel_solver([A] + ml.As, [P] + ml.Ps)
@@ -138,16 +138,16 @@ for i in [1]: #range(len(cochain_complex)-1):
         while len(bh) < 3:
             bh.coarsen()
         print repr(bh)
-    
+
         N = len(cochain_complex) - 1
-    
+
         B =  bh[0][N - i].B
-    
+
         A = (B.T.tocsr() * B).astype('d')
         #A = B.T.tocsr() * Mi * B
-    
+
         constant_prolongators = [lvl[N - i].I for lvl in bh[:-1]]
-   
+
         method = 'aSA'
 
         if method == 'RS':
@@ -157,28 +157,28 @@ for i in [1]: #range(len(cochain_complex)-1):
                 Ps.append( sa_smoothed_prolongator(As[-1],T,epsilon=0.0,omega=4.0/3.0) )
                 As.append(Ps[-1].T.tocsr() * As[-1] * Ps[-1])
             ml = multilevel_solver(As,Ps)
-        
+
         else:
             if method == 'BSA':
-                if i == 0:  
+                if i == 0:
                     candidates = None
                 else:
                     candidates = cmplx[0].d * mesh['vertices']
                     K = candidates.shape[1]
-                
+
                     constant_prolongators = [constant_prolongators[0]] + \
                             [expand_into_blocks(T,K,1).tocsr() for T in constant_prolongators[1:] ]
 
                     ml = smoothed_aggregation_solver(A,candidates,aggregation=constant_prolongators)
             elif method == 'aSA':
-                asa = adaptive_sa_solver(A,aggregation=constant_prolongators,max_candidates=dimension,epsilon=0.0) 
+                asa = adaptive_sa_solver(A,aggregation=constant_prolongators,max_candidates=dimension,epsilon=0.0)
                 ml = asa.solver
             else:
                 raise ValuerError,'unknown method'
-                
+
         #ml = smoothed_aggregation_solver(A,candidates)
 
-    #x = d0 * mesh['vertices'][:,0] 
+    #x = d0 * mesh['vertices'][:,0]
     x = rand(A.shape[0])
     b = zeros_like(x)
     #b = A*rand(A.shape[0])
