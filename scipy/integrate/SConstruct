@@ -1,0 +1,42 @@
+# Last Change: Wed Nov 21 08:00 PM 2007 J
+# vim:syntax=python
+from os.path import join as pjoin
+import glob
+
+from numpy.distutils.misc_util import get_numpy_include_dirs
+from numpy.distutils.scons import GetNumpyEnvironment
+
+env = GetNumpyEnvironment(ARGUMENTS)
+
+env.AppendUnique(CPPPATH = get_numpy_include_dirs())
+env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
+
+# XXX: blas/lapack integration
+
+# Build linpack_lite
+src = glob.glob(pjoin('linpack_lite', '*.f'))
+linpack_lite = env.NumpyStaticExtLibrary('linpack_lite', source = src)
+
+# Build mach
+src = glob.glob(pjoin('mach', '*.f'))
+mach = env.NumpyStaticExtLibrary('mach', source = src)
+
+# Build quadpack
+src = glob.glob(pjoin('quadpack', '*.f'))
+quadpack = env.NumpyStaticExtLibrary('quadpack', source = src)
+
+# Build odepack
+src = glob.glob(pjoin('odepack', '*.f'))
+odepack = env.NumpyStaticExtLibrary('odepack', source = src)
+
+env.AppendUnique(LIBS = ['linpack_lite', 'quadpack', 'odepack'])
+env.AppendUnique(LIBPATH = env['build_dir'])
+
+# Build _quadpack
+env.NumpyPythonExtension('_quadpack', source = '_quadpackmodule.c')
+
+# Build _odepack
+env.NumpyPythonExtension('_odepack', source = '_odepackmodule.c')
+
+# Build vode
+env.NumpyPythonExtension('vode', source = 'vode.pyf')
