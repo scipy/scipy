@@ -1,4 +1,4 @@
-# Last Change: Wed Nov 21 08:00 PM 2007 J
+# Last Change: Thu Nov 22 12:00 PM 2007 J
 # vim:syntax=python
 from os.path import join as pjoin
 import glob
@@ -21,11 +21,11 @@ env.AppendUnique(LIBPATH = env['build_dir'])
 
 # Build _fftpack
 src = ['src/zfft.c','src/drfft.c','src/zrfft.c', 'src/zfftnd.c']
-wsrc = env.F2PY(pjoin(env['build_dir'], '_fftpackmodule.c'),
+wsrc = env.F2py(pjoin(env['build_dir'], '_fftpackmodule.c'),
                 pjoin(env['build_dir'], 'fftpack.pyf'))
 env.NumpyPythonExtension('_fftpack', source = src + wsrc)
 
 # Build convolve
 src = ['src/convolve.c']
-wsrc = env.F2PY(pjoin(env['build_dir'], 'convolve.pyf'))
+wsrc = env.F2py(pjoin(env['build_dir'], 'convolve.pyf'))
 env.NumpyPythonExtension('convolve', source = src + wsrc)
