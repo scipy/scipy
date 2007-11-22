@@ -1,4 +1,4 @@
-# Last Change: Thu Nov 22 12:00 PM 2007 J
+# Last Change: Thu Nov 22 05:00 PM 2007 J
 # vim:syntax=python
 
 import os
@@ -8,25 +8,14 @@ from numpy.distutils.misc_util import get_numpy_include_dirs
 from numpy.distutils.scons import get_python_inc#, get_pythonlib_dir
 from numpy.distutils.scons import GetNumpyEnvironment
 from numpy.distutils.scons import CheckCBLAS, CheckF77BLAS, CheckF77LAPACK,\
-                                  CheckCLAPACK
+                                  CheckCLAPACK, IsVeclib, IsAccelerate, IsATLAS
 
 from scons_support import do_generate_interface, do_generate_fake_interface, \
                           generate_interface_emitter
-#from numpy.distutils.scons.configuration import write_info
+from numpy.distutils.scons.configuration import write_info
 
 #from scons_support import CheckBrokenMathlib, define_no_smp, \
 #    generate_config_header, generate_config_header_emitter
-
-#-------------------
-# To skip wrapping single precision atlas/lapack/blas routines, set
-# the following flag to True:
-skip_single_routines = 0
-
-# Some OS distributions (e.g. Redhat, Suse) provide a blas library that
-# is built using incomplete blas sources that come with lapack tar-ball.
-# In order to use such a library in scipy.linalg, the following flag
-# must be set to True:
-using_lapack_blas = 0
 
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
@@ -39,7 +28,6 @@ env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
 #=======================
 # Starting Configuration
 #=======================
-# XXX: separate env for configuration
 config = env.NumpyConfigure(custom_tests = {'CheckCBLAS' : CheckCBLAS,
                                             'CheckBLAS' : CheckF77BLAS,
                                             'CheckCLAPACK' : CheckCLAPACK,
@@ -67,7 +55,7 @@ else:
     has_clapack = 0
 
 config.Finish()
-#write_info(env)
+write_info(env)
 
 #==========
 #  Build
@@ -86,9 +74,13 @@ env['BUILDERS']['hihi'] = Builder(action = do_generate_fake_interface,
 #------------
 #   fblas
 #------------
-# XXX: handle Accelerate problem
 env.haha('fblas', 'generic_fblas.pyf')
-env.NumpyPythonExtension('fblas', source = ['fblas.pyf', pjoin('src', 'fblaswrap.f')])
+source = ['fblas.pyf']
+if IsVeclib(env, 'blas') or IsAccelerate(env, 'blas'):
+    source.append(pjoin('src', 'fblaswrap_veclib_c.c'))
+else:
+    source.append(pjoin('src', 'fblaswrap.f'))
+env.NumpyPythonExtension('fblas', source)
 
 #------------
 #   cblas
@@ -163,5 +155,6 @@ env.NumpyPythonExtension('_iterative', source = sources)
 # Atlas version
 #--------------
 atlas_env = env.Copy()
-atlas_env.AppendUnique(CPPDEFINES = "NO_ATLAS_INFO")
+if not IsATLAS(env, 'blas'):
+    atlas_env.AppendUnique(CPPDEFINES = "NO_ATLAS_INFO")
 atlas_env.NumpyPythonExtension('atlas_version', 'atlas_version.c')
