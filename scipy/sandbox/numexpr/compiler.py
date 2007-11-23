@@ -1,12 +1,12 @@
 import sys
 import numpy
 
-import interpreter, expressions
+from numexpr import interpreter, expressions
 
-typecode_to_kind = {'b': 'bool', 'i': 'int', 'f': 'float',
-                    'c': 'complex', 'n' : 'none'}
-kind_to_typecode = {'bool': 'b', 'int': 'i', 'float': 'f',
-                    'complex': 'c', 'none' : 'n'}
+typecode_to_kind = {'b': 'bool', 'i': 'int', 'l': 'long', 'f': 'float',
+                    'c': 'complex', 's': 'str', 'n' : 'none'}
+kind_to_typecode = {'bool': 'b', 'int': 'i', 'long': 'l', 'float': 'f',
+                    'complex': 'c', 'str': 's', 'none' : 'n'}
 type_to_kind = expressions.type_to_kind
 kind_to_type = expressions.kind_to_type
 
@@ -91,7 +91,7 @@ def sigPerms(s):
     """Generate all possible signatures derived by upcasting the given
     signature.
     """
-    codes = 'bifc'
+    codes = 'bilfc'
     if not s:
         yield ''
     elif s[0] in codes:
@@ -99,6 +99,9 @@ def sigPerms(s):
         for x in codes[start:]:
             for y in sigPerms(s[1:]):
                 yield x + y
+    elif s[0] == 's':  # numbers shall not be cast to strings
+        for y in sigPerms(s[1:]):
+            yield 's' + y
     else:
         yield s
 
@@ -198,6 +201,10 @@ def stringToExpression(s, types, context):
         for name in c.co_names:
             if name == "None":
                 names[name] = None
+            elif name == "True":
+                names[name] = True
+            elif name == "False":
+                names[name] = False
             else:
                 t = types.get(name, float)
                 names[name] = expressions.VariableNode(name, type_to_kind[t])
@@ -206,6 +213,8 @@ def stringToExpression(s, types, context):
         ex = eval(c, names)
         if expressions.isConstant(ex):
             ex = expressions.ConstantNode(ex, expressions.getKind(ex))
+        elif not isinstance(ex, expressions.ExpressionNode):
+            raise TypeError("unsupported expression type: %s" % type(ex))
     finally:
         expressions._context.ctx = old_ctx
     return ex
@@ -308,8 +317,8 @@ def optimizeTemporariesAllocation(ast):
         for c in n.children:
             if c.reg.temporary:
                 users_of[c.reg].add(n)
-    unused = {'bool' : set(), 'int' : set(),
-              'float' : set(), 'complex' : set()}
+    unused = {'bool' : set(), 'int' : set(), 'long': set(),
+              'float' : set(), 'complex' : set(), 'str': set()}
     for n in nodes:
         for reg, users in users_of.iteritems():
             if n in users:
@@ -435,7 +444,7 @@ def precompile(ex, signature=(), copy_args=(), **kwargs):
 
     ast = expressionToAST(ex)
 
-    # Add a copy for strided or unaligned arrays
+    # Add a copy for strided or unaligned unidimensional arrays
     for a in ast.postorderWalk():
         if a.astType == "variable" and a.value in copy_args:
             newVar = ASTNode(*a.key())
@@ -536,15 +545,19 @@ def disassemble(nex):
 
 
 def getType(a):
-    t = a.dtype.type
-    if issubclass(t, numpy.bool_):
+    kind = a.dtype.kind
+    if kind == 'b':
         return bool
-    if issubclass(t, numpy.integer):
+    if kind in 'iu':
+        if a.dtype.itemsize > 4:
+            return long  # ``long`` is for integers of more than 32 bits
         return int
-    if issubclass(t, numpy.floating):
+    if kind == 'f':
         return float
-    if issubclass(t, numpy.complexfloating):
+    if kind == 'c':
         return complex
+    if kind == 'S':
+        return str
     raise ValueError("unkown type %s" % a.dtype.name)
 
 
@@ -589,12 +602,29 @@ def evaluate(ex, local_dict=None, global_dict=None, **kwargs):
             a = local_dict[name]
         except KeyError:
             a = global_dict[name]
-        # byteswapped arrays are taken care of in the extension.
-        arguments.append(numpy.asarray(a)) # don't make a data copy, if possible
-        if (hasattr(a, "flags") and            # numpy object
-            (not a.flags.contiguous or
-             not a.flags.aligned)):
-            copy_args.append(name)    # do a copy to temporary
+        b = numpy.asarray(a)
+        # Byteswapped arrays are dealt with in the extension
+        # All the opcodes can deal with strided arrays directly as
+        # long as they are undimensional (strides in other
+        # dimensions are dealt within the extension), so we don't
+        # need a copy for the strided case.
+        if not b.flags.aligned:
+            # For the unaligned case, we have two cases:
+            if b.ndim == 1:
+                # For unidimensional arrays we can use the copy opcode
+                # because it can deal with unaligned arrays as long
+                # as they are unidimensionals with a possible stride
+                # (very common case for recarrays).  This can be up to
+                # 2x faster than doing a copy using NumPy.
+                copy_args.append(name)
+            else:
+                # For multimensional unaligned arrays do a plain copy.
+                # We could refine more this and do a plain copy only
+                # in the case that strides doesn't exist in dimensions
+                # other than the last one (whose case is supported by
+                # the copy opcode).
+                b = b.copy()
+        arguments.append(b)
 
     # Create a signature
     signature = [(name, getType(arg)) for (name, arg) in zip(names, arguments)]

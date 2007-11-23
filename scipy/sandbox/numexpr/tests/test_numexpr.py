@@ -6,7 +6,7 @@ set_package_path()
 from numexpr import E, numexpr, evaluate, disassemble
 restore_path()
 
-class TestNumExpr(NumpyTestCase):
+class test_numexpr(NumpyTestCase):
     def check_simple(self):
         ex = 2.0 * E.a + 3.0 * E.b * E.c
         func = numexpr(ex, signature=[('a', float), ('b', float), ('c', float)])
@@ -63,14 +63,14 @@ class TestNumExpr(NumpyTestCase):
         x = x.astype(int)
         assert_equal(evaluate("sum(x**2+2,axis=0)"), sum(x**2+2,axis=0))
         assert_equal(evaluate("prod(x**2+2,axis=0)"), prod(x**2+2,axis=0))
+        # Check longs
+        x = x.astype(long)
+        assert_equal(evaluate("sum(x**2+2,axis=0)"), sum(x**2+2,axis=0))
+        assert_equal(evaluate("prod(x**2+2,axis=0)"), prod(x**2+2,axis=0))
         # Check complex
         x = x + 5j
         assert_equal(evaluate("sum(x**2+2,axis=0)"), sum(x**2+2,axis=0))
         assert_equal(evaluate("prod(x**2+2,axis=0)"), prod(x**2+2,axis=0))
-        # Check boolean (should cast to integer)
-        x = (arange(10) % 2).astype(bool)
-        assert_equal(evaluate("prod(x,axis=0)"), prod(x,axis=0))
-        assert_equal(evaluate("sum(x,axis=0)"), sum(x,axis=0))
 
     def check_axis(self):
         y = arange(9.0).reshape(3,3)
@@ -95,7 +95,7 @@ class TestNumExpr(NumpyTestCase):
                     [('mul_fff', 'r0', 'r1[x]', 'r1[x]'),
                      ('add_fff', 'r0', 'r0', 'c2[2.0]')])
 
-class TestEvaluate(NumpyTestCase):
+class test_evaluate(NumpyTestCase):
     def check_simple(self):
         a = array([1., 2., 3.])
         b = array([4., 5., 6.])
@@ -187,8 +187,8 @@ tests = [
           '2*a + (cos(3)+5)*sinh(cos(b))',
           '2*a + arctan2(a, b)',
           'arcsin(0.5)',
-          'where(a, 2, b)',
-          'where((a-10).real, a, 2)',
+          'where(a != 0.0, 2, b)',
+          'where((a-10).real != 0.0, a, 2)',
           'cos(1+1)',
           '1+1',
           '1',
@@ -239,7 +239,7 @@ def equal(a, b, exact):
 
 class Skip(Exception): pass
 
-class TestExpressions(NumpyTestCase):
+class test_expressions(NumpyTestCase):
     pass
 
 def generate_check_expressions():
@@ -274,7 +274,7 @@ def generate_check_expressions():
                 new.instancemethod(method, None, test_expressions))
     x = None
     for test_scalar in [0,1,2]:
-        for dtype in [int, float, complex]:
+        for dtype in [int, long, float, complex]:
             array_size = 100
             a = arange(2*array_size, dtype=dtype)[::2]
             a2 = zeros([array_size, array_size], dtype=dtype)
@@ -298,13 +298,153 @@ def generate_check_expressions():
                                '<' in expr or '>' in expr or '%' in expr
                                or "arctan2" in expr or "fmod" in expr):
                             continue # skip complex comparisons
-                        if dtype == int and test_scalar and expr == '(a+1) ** -1':
+                        if dtype in (int, long) and test_scalar and expr == '(a+1) ** -1':
                             continue
                         make_check_method(a, a2, b, c, d, e, x,
                                           expr, test_scalar, dtype,
                                           optimization, exact)
 
 generate_check_expressions()
+
+class test_int32_int64(NumpyTestCase):
+    def check_small_long(self):
+        # Small longs should not be downgraded to ints.
+        res = evaluate('42L')
+        assert_array_equal(res, 42)
+        self.assertEqual(res.dtype.name, 'int64')
+
+    def check_big_int(self):
+        # Big ints should be promoted to longs.
+        # This test may only fail under 64-bit platforms.
+        res = evaluate('2**40')
+        assert_array_equal(res, 2**40)
+        self.assertEqual(res.dtype.name, 'int64')
+
+    def check_long_constant_promotion(self):
+        int32array = arange(100, dtype='int32')
+        res = int32array * 2
+        res32 = evaluate('int32array * 2')
+        res64 = evaluate('int32array * 2L')
+        assert_array_equal(res, res32)
+        assert_array_equal(res, res64)
+        self.assertEqual(res32.dtype.name, 'int32')
+        self.assertEqual(res64.dtype.name, 'int64')
+
+    def check_int64_array_promotion(self):
+        int32array = arange(100, dtype='int32')
+        int64array = arange(100, dtype='int64')
+        respy = int32array * int64array
+        resnx = evaluate('int32array * int64array')
+        assert_array_equal(respy, resnx)
+        self.assertEqual(resnx.dtype.name, 'int64')
+
+class test_strings(NumpyTestCase):
+    BLOCK_SIZE1 = 128
+    BLOCK_SIZE2 = 8
+    str_list1 = ['foo', 'bar', '', '  ']
+    str_list2 = ['foo', '', 'x', ' ']
+    str_nloops = len(str_list1) * (BLOCK_SIZE1 + BLOCK_SIZE2 + 1)
+    str_array1 = array(str_list1 * str_nloops)
+    str_array2 = array(str_list2 * str_nloops)
+    str_constant = 'doodoo'
+
+    def check_null_chars(self):
+        str_list = [
+            '\0\0\0', '\0\0foo\0', '\0\0foo\0b', '\0\0foo\0b\0',
+            'foo\0', 'foo\0b', 'foo\0b\0', 'foo\0bar\0baz\0\0' ]
+        for s in str_list:
+            r = evaluate('s')
+            self.assertEqual(s, r.tostring())  # check *all* stored data
+
+    def check_compare_copy(self):
+        sarr = self.str_array1
+        expr = 'sarr'
+        res1 = eval(expr)
+        res2 = evaluate(expr)
+        assert_array_equal(res1, res2)
+
+    def check_compare_array(self):
+        sarr1 = self.str_array1
+        sarr2 = self.str_array2
+        expr = 'sarr1 >= sarr2'
+        res1 = eval(expr)
+        res2 = evaluate(expr)
+        assert_array_equal(res1, res2)
+
+    def check_compare_variable(self):
+        sarr = self.str_array1
+        svar = self.str_constant
+        expr = 'sarr >= svar'
+        res1 = eval(expr)
+        res2 = evaluate(expr)
+        assert_array_equal(res1, res2)
+
+    def check_compare_constant(self):
+        sarr = self.str_array1
+        expr = 'sarr >= %r' % self.str_constant
+        res1 = eval(expr)
+        res2 = evaluate(expr)
+        assert_array_equal(res1, res2)
+
+    def check_add_string_array(self):
+        sarr1 = self.str_array1
+        sarr2 = self.str_array2
+        expr = 'sarr1 + sarr2'
+        self.assert_missing_op('add_sss', expr, locals())
+
+    def check_add_numeric_array(self):
+        sarr = self.str_array1
+        narr = arange(len(sarr), dtype='int32')
+        expr = 'sarr >= narr'
+        self.assert_missing_op('ge_bsi', expr, locals())
+
+    def assert_missing_op(self, op, expr, local_dict):
+        msg = "expected NotImplementedError regarding '%s'" % op
+        try:
+            evaluate(expr, local_dict)
+        except NotImplementedError, nie:
+            if "'%s'" % op not in nie.args[0]:
+                self.fail(msg)
+        else:
+            self.fail(msg)
+
+    def check_compare_prefix(self):
+        # Check comparing two strings where one is a prefix of the
+        # other.
+        for s1, s2 in [ ('foo', 'foobar'), ('foo', 'foo\0bar'),
+                        ('foo\0a', 'foo\0bar') ]:
+            self.assert_(evaluate('s1 < s2'))
+            self.assert_(evaluate('s1 <= s2'))
+            self.assert_(evaluate('~(s1 == s2)'))
+            self.assert_(evaluate('~(s1 >= s2)'))
+            self.assert_(evaluate('~(s1 > s2)'))
+
+        # Check for NumPy array-style semantics in string equality.
+        s1, s2 = 'foo', 'foo\0\0'
+        self.assert_(evaluate('s1 == s2'))
+
+# Case for testing selections in fields which are aligned but whose
+# data length is not an exact multiple of the length of the record.
+# The following test exposes the problem only in 32-bit machines,
+# because in 64-bit machines 'c2' is unaligned.  However, this should
+# check most platforms where, while not unaligned, 'len(datatype) >
+# boundary_alignment' is fullfilled.
+class test_irregular_stride(NumpyTestCase):
+    def check_select(self):
+        f0 = arange(10, dtype=int32)
+        f1 = arange(10, dtype=float64)
+
+        irregular = rec.fromarrays([f0, f1])
+
+        f0 = irregular['f0']
+        f1 = irregular['f1']
+
+        i0 = evaluate('f0 < 5')
+        i1 = evaluate('f1 < 5')
+
+        assert_array_equal(f0[i0], arange(5, dtype=int32))
+        assert_array_equal(f1[i1], arange(5, dtype=float64))
+
 
 if __name__ == '__main__':
     NumpyTest().run()

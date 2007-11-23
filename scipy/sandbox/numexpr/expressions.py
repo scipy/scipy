@@ -6,7 +6,7 @@ import threading
 
 import numpy
 
-import interpreter
+from numexpr import interpreter
 
 class Expression(object):
     def __init__(self):
@@ -55,25 +55,53 @@ def allConstantNodes(args):
 
 def isConstant(ex):
     "Returns True if ex is a constant scalar of an allowed type."
-    return isinstance(ex, (bool, int, float, complex))
+    return isinstance(ex, (bool, int, long, float, complex, str))
 
-type_to_kind = {bool: 'bool', int: 'int', float: 'float', complex: 'complex'}
-kind_to_type = {'bool': bool, 'int': int, 'float': float, 'complex': complex}
-kind_rank = ['bool', 'int', 'float', 'complex', 'none']
+type_to_kind = {bool: 'bool', int: 'int', long: 'long', float: 'float', complex: 'complex', str: 'str'}
+kind_to_type = {'bool': bool, 'int': int, 'long': long, 'float': float, 'complex': complex, 'str': str}
+kind_rank = ['bool', 'int', 'long', 'float', 'complex', 'none']
 
 def commonKind(nodes):
+    node_kinds = [node.astKind for node in nodes]
+    str_count = node_kinds.count('str')
+    if 0 < str_count < len(node_kinds):  # some args are strings, but not all
+        raise TypeError("strings can only be operated with strings")
+    if str_count > 0:  # if there are some, all of them must be
+        return 'str'
     n = -1
     for x in nodes:
         n = max(n, kind_rank.index(x.astKind))
     return kind_rank[n]
 
+max_int32 = 2147483647
+min_int32 = -max_int32 - 1
 def bestConstantType(x):
-    for converter in bool, int, float, complex:
+    if isinstance(x, str):  # ``numpy.string_`` is a subclass of ``str``
+        return str
+    # ``long`` objects are kept as is to allow the user to force
+    # promotion of results by using long constants, e.g. by operating
+    # a 32-bit array with a long (64-bit) constant.
+    if isinstance(x, (long, numpy.int64)):
+        return long
+    # Numeric conversion to boolean values is not tried because
+    # ``bool(1) == True`` (same for 0 and False), so 0 and 1 would be
+    # interpreted as booleans when ``False`` and ``True`` are already
+    # supported.
+    if isinstance(x, (bool, numpy.bool_)):
+        return bool
+    # ``long`` is not explicitly needed since ``int`` automatically
+    # returns longs when needed (since Python 2.3).
+    for converter in int, float, complex:
         try:
             y = converter(x)
         except StandardError, err:
             continue
         if x == y:
+            # Constants needing more than 32 bits are always
+            # considered ``long``, *regardless of the platform*, so we
+            # can clearly tell 32- and 64-bit constants apart.
+            if converter is int and not (min_int32 <= x <= max_int32):
+                return long
             return converter
 
 def getKind(x):
@@ -94,7 +122,7 @@ def binop(opname, reversed=False, kind=None):
             return OpNode(opname, (self, other), kind=kind)
     return operation
 
-def func(func, minkind=None):
+def func(func, minkind=None, maxkind=None):
     @ophelper
     def function(*args):
         if allConstantNodes(args):
@@ -102,6 +130,8 @@ def func(func, minkind=None):
         kind = commonKind(args)
         if minkind and kind_rank.index(minkind) > kind_rank.index(kind):
             kind = minkind
+        if maxkind and kind_rank.index(maxkind) < kind_rank.index(kind):
+            kind = maxkind
         return FuncNode(func.__name__, args, kind)
     return function
 
@@ -129,23 +159,17 @@ def sum_func(a, axis=-1):
     axis = encode_axis(axis)
     if isinstance(a, ConstantNode):
         return a
-    if isinstance(a, (bool, int, float, complex)):
+    if isinstance(a, (bool, int, long, float, complex)):
         a = ConstantNode(a)
-    kind = a.astKind
-    if kind == 'bool':
-        kind = 'int'
-    return FuncNode('sum', [a, axis], kind=kind)
+    return FuncNode('sum', [a, axis], kind=a.astKind)
 
 def prod_func(a, axis=-1):
     axis = encode_axis(axis)
-    if isinstance(a, (bool, int, float, complex)):
+    if isinstance(a, (bool, int, long, float, complex)):
         a = ConstantNode(a)
     if isinstance(a, ConstantNode):
         return a
-    kind = a.astKind
-    if kind == 'bool':
-        kind = 'int'
-    return FuncNode('prod', [a, axis], kind=kind)
+    return FuncNode('prod', [a, axis], kind=a.astKind)
 
 @ophelper
 def div_op(a, b):
@@ -182,7 +206,7 @@ def pow_op(a, b):
                     p = OpNode('mul', [p,p])
                 if ishalfpower:
                     kind = commonKind([a])
-                    if kind == 'int': kind = 'float'
+                    if kind in ('int', 'long'): kind = 'float'
                     r = multiply(r, OpNode('sqrt', [a], kind))
                 if r is None:
                     r = OpNode('ones_like', [a])
@@ -196,7 +220,7 @@ def pow_op(a, b):
                 return FuncNode('ones_like', [a])
             if x == 0.5:
                 kind = a.astKind
-                if kind == 'int': kind = 'float'
+                if kind in ('int', 'long'): kind = 'float'
                 return FuncNode('sqrt', [a], kind=kind)
             if x == 1:
                 return a
@@ -224,6 +248,8 @@ functions = {
 
     'where' : where_func,
 
+    'real': func(numpy.real, 'float', 'float'),
+    'imag': func(numpy.imag, 'float', 'float'),
     'complex' : func(complex, 'complex'),
 
     'sum' : sum_func,
@@ -306,7 +332,7 @@ class LeafNode(ExpressionNode):
 class VariableNode(LeafNode):
     astType = 'variable'
     def __init__(self, value=None, kind=None, children=None):
-        ExpressionNode.__init__(self, value=value, kind=kind)
+        LeafNode.__init__(self, value=value, kind=kind)
 
 class RawNode(object):
     """Used to pass raw integers to interpreter.

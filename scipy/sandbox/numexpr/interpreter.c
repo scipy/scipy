@@ -2,6 +2,8 @@
 #include "structmember.h"
 #include "numpy/noprefix.h"
 #include "math.h"
+#include "string.h"
+#include "assert.h"
 
 #include "complex_functions.inc"
 
@@ -25,17 +27,29 @@ enum OpCodes {
     OP_AND_BBB,
     OP_OR_BBB,
 
+    OP_EQ_BBB,
+    OP_NE_BBB,
+
     OP_GT_BII,
     OP_GE_BII,
     OP_EQ_BII,
     OP_NE_BII,
+
+    OP_GT_BLL,
+    OP_GE_BLL,
+    OP_EQ_BLL,
+    OP_NE_BLL,
 
     OP_GT_BFF,
     OP_GE_BFF,
     OP_EQ_BFF,
     OP_NE_BFF,
 
-    OP_CAST_IB,
+    OP_GT_BSS,
+    OP_GE_BSS,
+    OP_EQ_BSS,
+    OP_NE_BSS,
+
     OP_COPY_II,
     OP_ONES_LIKE_II,
     OP_NEG_II,
@@ -45,10 +59,22 @@ enum OpCodes {
     OP_DIV_III,
     OP_POW_III,
     OP_MOD_III,
-    OP_WHERE_IFII,
+    OP_WHERE_IBII,
 
-    OP_CAST_FB,
+    OP_CAST_LI,
+    OP_COPY_LL,
+    OP_ONES_LIKE_LL,
+    OP_NEG_LL,
+    OP_ADD_LLL,
+    OP_SUB_LLL,
+    OP_MUL_LLL,
+    OP_DIV_LLL,
+    OP_POW_LLL,
+    OP_MOD_LLL,
+    OP_WHERE_LBLL,
+
     OP_CAST_FI,
+    OP_CAST_FL,
     OP_COPY_FF,
     OP_ONES_LIKE_FF,
     OP_NEG_FF,
@@ -63,15 +89,15 @@ enum OpCodes {
     OP_TAN_FF,
     OP_SQRT_FF,
     OP_ARCTAN2_FFF,
-    OP_WHERE_FFFF,
+    OP_WHERE_FBFF,
     OP_FUNC_FF,
     OP_FUNC_FFF,
 
     OP_EQ_BCC,
     OP_NE_BCC,
 
-    OP_CAST_CB,
     OP_CAST_CI,
+    OP_CAST_CL,
     OP_CAST_CF,
     OP_ONES_LIKE_CC,
     OP_COPY_CC,
@@ -80,7 +106,7 @@ enum OpCodes {
     OP_SUB_CCC,
     OP_MUL_CCC,
     OP_DIV_CCC,
-    OP_WHERE_CFCC,
+    OP_WHERE_CBCC,
     OP_FUNC_CC,
     OP_FUNC_CCC,
 
@@ -88,15 +114,19 @@ enum OpCodes {
     OP_IMAG_FC,
     OP_COMPLEX_CFF,
 
+    OP_COPY_SS,
+
     OP_REDUCTION,
 
     OP_SUM,
     OP_SUM_IIN,
+    OP_SUM_LLN,
     OP_SUM_FFN,
     OP_SUM_CCN,
 
     OP_PROD,
     OP_PROD_IIN,
+    OP_PROD_LLN,
     OP_PROD_FFN,
     OP_PROD_CCN
 
@@ -116,6 +146,8 @@ op_signature(int op, int n) {
             break;
         case OP_AND_BBB:
         case OP_OR_BBB:
+        case OP_EQ_BBB:
+        case OP_NE_BBB:
             if (n == 0 || n == 1 || n == 2) return 'b';
             break;
         case OP_GT_BII:
@@ -125,6 +157,13 @@ op_signature(int op, int n) {
             if (n == 0) return 'b';
             if (n == 1 || n == 2) return 'i';
             break;
+        case OP_GT_BLL:
+        case OP_GE_BLL:
+        case OP_EQ_BLL:
+        case OP_NE_BLL:
+            if (n == 0) return 'b';
+            if (n == 1 || n == 2) return 'l';
+            break;
         case OP_GT_BFF:
         case OP_GE_BFF:
         case OP_EQ_BFF:
@@ -132,9 +171,12 @@ op_signature(int op, int n) {
             if (n == 0) return 'b';
             if (n == 1 || n == 2) return 'f';
             break;
-        case OP_CAST_IB:
-            if (n == 0) return 'i';
-            if (n == 1) return 'b';
+        case OP_GT_BSS:
+        case OP_GE_BSS:
+        case OP_EQ_BSS:
+        case OP_NE_BSS:
+            if (n == 0) return 'b';
+            if (n == 1 || n == 2) return 's';
             break;
         case OP_COPY_II:
         case OP_ONES_LIKE_II:
@@ -149,17 +191,38 @@ op_signature(int op, int n) {
         case OP_POW_III:
             if (n == 0 || n == 1 || n == 2) return 'i';
             break;
-        case OP_WHERE_IFII:
+        case OP_WHERE_IBII:
             if (n == 0 || n == 2 || n == 3) return 'i';
-            if (n == 1) return 'f';
+            if (n == 1) return 'b';
             break;
-        case OP_CAST_FB:
-            if (n == 0) return 'f';
+        case OP_CAST_LI:
+            if (n == 0) return 'l';
+            if (n == 1) return 'i';
+            break;
+        case OP_COPY_LL:
+        case OP_ONES_LIKE_LL:
+        case OP_NEG_LL:
+            if (n == 0 || n == 1) return 'l';
+            break;
+        case OP_ADD_LLL:
+        case OP_SUB_LLL:
+        case OP_MUL_LLL:
+        case OP_DIV_LLL:
+        case OP_MOD_LLL:
+        case OP_POW_LLL:
+            if (n == 0 || n == 1 || n == 2) return 'l';
+            break;
+        case OP_WHERE_LBLL:
+            if (n == 0 || n == 2 || n == 3) return 'l';
             if (n == 1) return 'b';
             break;
         case OP_CAST_FI:
             if (n == 0) return 'f';
             if (n == 1) return 'i';
+            break;
+        case OP_CAST_FL:
+            if (n == 0) return 'f';
+            if (n == 1) return 'l';
             break;
         case OP_COPY_FF:
         case OP_ONES_LIKE_FF:
@@ -179,8 +242,9 @@ op_signature(int op, int n) {
         case OP_ARCTAN2_FFF:
             if (n == 0 || n == 1 || n == 2) return 'f';
             break;
-        case OP_WHERE_FFFF:
-            if (n == 0 || n == 1 || n == 2 || n == 3) return 'f';
+        case OP_WHERE_FBFF:
+            if (n == 0 || n == 2 || n == 3) return 'f';
+            if (n == 1) return 'b';
             break;
         case OP_FUNC_FF:
             if (n == 0 || n == 1) return 'f';
@@ -195,13 +259,13 @@ op_signature(int op, int n) {
             if (n == 0) return 'b';
             if (n == 1 || n == 2) return 'c';
             break;
-        case OP_CAST_CB:
-            if (n == 0) return 'c';
-            if (n == 1) return 'b';
-            break;
         case OP_CAST_CI:
             if (n == 0) return 'c';
             if (n == 1) return 'i';
+            break;
+        case OP_CAST_CL:
+            if (n == 0) return 'c';
+            if (n == 1) return 'l';
             break;
         case OP_CAST_CF:
             if (n == 0) return 'c';
@@ -218,9 +282,9 @@ op_signature(int op, int n) {
         case OP_DIV_CCC:
             if (n == 0 || n == 1 || n == 2) return 'c';
             break;
-        case OP_WHERE_CFCC:
+        case OP_WHERE_CBCC:
             if (n == 0 || n == 2 || n == 3) return 'c';
-            if (n == 1) return 'f';
+            if (n == 1) return 'b';
             break;
         case OP_FUNC_CC:
             if (n == 0 || n == 1) return 'c';
@@ -239,9 +303,17 @@ op_signature(int op, int n) {
             if (n == 0) return 'c';
             if (n == 1 || n == 2) return 'f';
             break;
+        case OP_COPY_SS:
+            if (n == 0 || n == 1) return 's';
+            break;
         case OP_PROD_IIN:
         case OP_SUM_IIN:
             if (n == 0 || n == 1) return 'i';
+            if (n == 2) return 'n';
+            break;
+        case OP_PROD_LLN:
+        case OP_SUM_LLN:
+            if (n == 0 || n == 1) return 'l';
             if (n == 2) return 'n';
             break;
         case OP_PROD_FFN:
@@ -383,6 +455,7 @@ typedef struct
     char **mem;             /* pointers to registers */
     char *rawmem;           /* a chunks of raw memory for storing registers */
     intp *memsteps;
+    intp *memsizes;
     int  rawmemsize;
 } NumExprObject;
 
@@ -399,6 +472,7 @@ NumExpr_dealloc(NumExprObject *self)
     PyMem_Del(self->mem);
     PyMem_Del(self->rawmem);
     PyMem_Del(self->memsteps);
+    PyMem_Del(self->memsizes);
     self->ob_type->tp_free((PyObject*)self);
 }
 
@@ -425,6 +499,7 @@ NumExpr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->mem = NULL;
         self->rawmem = NULL;
         self->memsteps = NULL;
+        self->memsizes = NULL;
         self->rawmemsize = 0;
 #undef INIT_WITH
     }
@@ -454,11 +529,13 @@ size_from_char(char c)
 {
     switch (c) {
         case 'b': return sizeof(char);
-        case 'i': return sizeof(long);
+        case 'i': return sizeof(int);
+        case 'l': return sizeof(long long);
         case 'f': return sizeof(double);
         case 'c': return 2*sizeof(double);
+        case 's': return 0;  /* strings are ok but size must be computed */
         default:
-            PyErr_SetString(PyExc_TypeError, "signature value not in 'bifc'");
+            PyErr_SetString(PyExc_TypeError, "signature value not in 'bilfcs'");
             return -1;
     }
 }
@@ -482,11 +559,13 @@ typecode_from_char(char c)
 {
     switch (c) {
         case 'b': return PyArray_BOOL;
-        case 'i': return PyArray_LONG;
+        case 'i': return PyArray_INT;
+        case 'l': return PyArray_LONGLONG;
         case 'f': return PyArray_DOUBLE;
         case 'c': return PyArray_CDOUBLE;
+        case 's': return PyArray_STRING;
         default:
-            PyErr_SetString(PyExc_TypeError, "signature value not in 'ifc'");
+            PyErr_SetString(PyExc_TypeError, "signature value not in 'bilfcs'");
             return -1;
     }
 }
@@ -502,7 +581,6 @@ last_opcode(PyObject *program_object) {
 
 static int
 get_reduction_axis(PyObject* program) {
-    char last_opcode, sig;
     int end = PyString_Size(program);
     int axis = ((unsigned char *)PyString_AS_STRING(program))[end-1];
     if (axis != 255 && axis >= MAX_DIMS)
@@ -579,7 +657,7 @@ check_program(NumExprObject *self)
             }
             arg = program[argloc];
 
-            if (sig != 'n' && (arg >= n_buffers) || (arg < 0)) {
+            if (sig != 'n' && ((arg >= n_buffers) || (arg < 0))) {
                 PyErr_Format(PyExc_RuntimeError, "invalid program: buffer out of range (%i) at %i", arg, argloc);
                 return -1;
             }
@@ -630,8 +708,10 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     PyObject *signature = NULL, *tempsig = NULL, *constsig = NULL;
     PyObject *fullsig = NULL, *program = NULL, *constants = NULL;
     PyObject *input_names = NULL, *o_constants = NULL;
+    int *itemsizes = NULL;
     char **mem = NULL, *rawmem = NULL;
     intp *memsteps;
+    intp *memsizes;
     int rawmemsize;
     static char *kwlist[] = {"signature", "tempsig",
                              "program",  "constants",
@@ -660,33 +740,53 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
             Py_DECREF(constants);
             return -1;
         }
+        if (!(itemsizes = PyMem_New(int, n_constants))) {
+            Py_DECREF(constants);
+            return -1;
+        }
         for (i = 0; i < n_constants; i++) {
             PyObject *o;
             if (!(o = PySequence_GetItem(o_constants, i))) { /* new reference */
                 Py_DECREF(constants);
                 Py_DECREF(constsig);
+                PyMem_Del(itemsizes);
                 return -1;
             }
             PyTuple_SET_ITEM(constants, i, o); /* steals reference */
             if (PyBool_Check(o)) {
                 PyString_AS_STRING(constsig)[i] = 'b';
+                itemsizes[i] = size_from_char('b');
                 continue;
             }
             if (PyInt_Check(o)) {
                 PyString_AS_STRING(constsig)[i] = 'i';
+                itemsizes[i] = size_from_char('i');
+                continue;
+            }
+            if (PyLong_Check(o)) {
+                PyString_AS_STRING(constsig)[i] = 'l';
+                itemsizes[i] = size_from_char('l');
                 continue;
             }
             if (PyFloat_Check(o)) {
                 PyString_AS_STRING(constsig)[i] = 'f';
+                itemsizes[i] = size_from_char('f');
                 continue;
             }
             if (PyComplex_Check(o)) {
                 PyString_AS_STRING(constsig)[i] = 'c';
+                itemsizes[i] = size_from_char('c');
                 continue;
             }
-            PyErr_SetString(PyExc_TypeError, "constants must be of type int/float/complex");
+            if (PyString_Check(o)) {
+                PyString_AS_STRING(constsig)[i] = 's';
+                itemsizes[i] = PyString_GET_SIZE(o);
+                continue;
+            }
+            PyErr_SetString(PyExc_TypeError, "constants must be of type bool/int/long/float/complex/str");
             Py_DECREF(constsig);
             Py_DECREF(constants);
+            PyMem_Del(itemsizes);
             return -1;
         }
     } else {
@@ -705,23 +805,34 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     if (!fullsig) {
         Py_DECREF(constants);
         Py_DECREF(constsig);
+        PyMem_Del(itemsizes);
+        return -1;
     }
 
     if (!input_names) {
         input_names = Py_None;
     }
 
-    rawmemsize = BLOCK_SIZE1 * (size_from_sig(constsig) + size_from_sig(tempsig));
+    /* Compute the size of registers. */
+    rawmemsize = 0;
+    for (i = 0; i < n_constants; i++)
+        rawmemsize += itemsizes[i];
+    rawmemsize += size_from_sig(tempsig);  /* no string temporaries */
+    rawmemsize *= BLOCK_SIZE1;
+
     mem = PyMem_New(char *, 1 + n_inputs + n_constants + n_temps);
     rawmem = PyMem_New(char, rawmemsize);
-    memsteps = PyMem_New(int, 1 + n_inputs + n_constants + n_temps);
-    if (!mem || !rawmem || !memsteps) {
+    memsteps = PyMem_New(intp, 1 + n_inputs + n_constants + n_temps);
+    memsizes = PyMem_New(intp, 1 + n_inputs + n_constants + n_temps);
+    if (!mem || !rawmem || !memsteps || !memsizes) {
         Py_DECREF(constants);
         Py_DECREF(constsig);
         Py_DECREF(fullsig);
+        PyMem_Del(itemsizes);
         PyMem_Del(mem);
         PyMem_Del(rawmem);
         PyMem_Del(memsteps);
+        PyMem_Del(memsizes);
         return -1;
     }
     /*
@@ -734,10 +845,10 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     mem_offset = 0;
     for (i = 0; i < n_constants; i++) {
         char c = PyString_AS_STRING(constsig)[i];
-        int size = size_from_char(c);
+        int size = itemsizes[i];
         mem[i+n_inputs+1] = rawmem + mem_offset;
         mem_offset += BLOCK_SIZE1 * size;
-        memsteps[i+n_inputs+1] = size;
+        memsteps[i+n_inputs+1] = memsizes[i+n_inputs+1] = size;
         /* fill in the constants */
         if (c == 'b') {
             char *bmem = (char*)mem[i+n_inputs+1];
@@ -746,10 +857,16 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
                 bmem[j] = value;
             }
         } else if (c == 'i') {
-            long *imem = (long*)mem[i+n_inputs+1];
-            long value = PyInt_AS_LONG(PyTuple_GET_ITEM(constants, i));
+            int *imem = (int*)mem[i+n_inputs+1];
+            int value = (int)PyInt_AS_LONG(PyTuple_GET_ITEM(constants, i));
             for (j = 0; j < BLOCK_SIZE1; j++) {
                 imem[j] = value;
+            }
+        } else if (c == 'l') {
+            long long *lmem = (long long*)mem[i+n_inputs+1];
+            long long value = PyLong_AsLongLong(PyTuple_GET_ITEM(constants, i));
+            for (j = 0; j < BLOCK_SIZE1; j++) {
+                lmem[j] = value;
             }
         } else if (c == 'f') {
             double *dmem = (double*)mem[i+n_inputs+1];
@@ -764,14 +881,32 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
                 cmem[j] = value.real;
                 cmem[j+1] = value.imag;
             }
+        } else if (c == 's') {
+            char *smem = (char*)mem[i+n_inputs+1];
+            char *value = PyString_AS_STRING(PyTuple_GET_ITEM(constants, i));
+            for (j = 0; j < size*BLOCK_SIZE1; j+=size) {
+                memcpy(smem + j, value, size);
+            }
         }
     }
+    /* This is no longer needed since no unusual item sizes appear
+       in temporaries (there are no string temporaries). */
+    PyMem_Del(itemsizes);
+
     /* Fill in 'mem' for temps */
     for (i = 0; i < n_temps; i++) {
-        int size = size_from_char(PyString_AS_STRING(tempsig)[i]);
+        char c = PyString_AS_STRING(tempsig)[i];
+        int size = size_from_char(c);
+        /* XXX: This check is quite useless, since using a string temporary
+           still causes a crash when freeing rawmem.  Why? */
+        if (c == 's') {
+            PyErr_SetString(PyExc_NotImplementedError,
+                            "string temporaries are not supported");
+            break;
+        }
         mem[i+n_inputs+n_constants+1] = rawmem + mem_offset;
         mem_offset += BLOCK_SIZE1 * size;
-        memsteps[i+n_inputs+n_constants+1] = size;
+        memsteps[i+n_inputs+n_constants+1] = memsizes[i+n_inputs+n_constants+1] = size;
     }
     /* See if any errors occured (e.g., in size_from_char) or if mem_offset is wrong */
     if (PyErr_Occurred() || mem_offset != rawmemsize) {
@@ -784,6 +919,7 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
         PyMem_Del(mem);
         PyMem_Del(rawmem);
         PyMem_Del(memsteps);
+        PyMem_Del(memsizes);
         return -1;
     }
 
@@ -805,6 +941,7 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     REPLACE_MEM(mem);
     REPLACE_MEM(rawmem);
     REPLACE_MEM(memsteps);
+    REPLACE_MEM(memsizes);
     self->rawmemsize = rawmemsize;
 
     #undef REPLACE_OBJ
@@ -832,8 +969,8 @@ struct index_data {
     int count;
     int size;
     int findex;
-    int *shape;
-    int *strides;
+    intp *shape;
+    intp *strides;
     int *index;
     char *buffer;
 };
@@ -847,6 +984,7 @@ struct vm_params {
     char **inputs;
     char **mem;
     intp *memsteps;
+    intp *memsizes;
     struct index_data *index_data;
 };
 
@@ -885,6 +1023,26 @@ flat_index(struct index_data *id, unsigned int j) {
 #else
 #define BOUNDS_CHECK(arg)
 #endif
+
+int
+stringcmp(const char *s1, const char *s2, intp maxlen1, intp maxlen2)
+{
+    intp maxlen, nextpos;
+    /* Point to this when the end of a string is found,
+       to simulate infinte trailing NUL characters. */
+    const char null = 0;
+
+    maxlen = (maxlen1 > maxlen2) ? maxlen1 : maxlen2;
+    for (nextpos = 1;  nextpos <= maxlen;  nextpos++) {
+        if (*s1 < *s2)
+            return -1;
+        if (*s1 > *s2)
+            return +1;
+        s1 = (nextpos >= maxlen1) ? &null : s1+1;
+        s2 = (nextpos >= maxlen2) ? &null : s2+1;
+    }
+    return 0;
+}
 
 static inline int
 vm_engine_1(int start, int blen, struct vm_params params, int *pc_error)
@@ -943,6 +1101,7 @@ run_interpreter(NumExprObject *self, int len, char *output, char **inputs,
     params.index_data = index_data;
     params.mem = self->mem;
     params.memsteps = self->memsteps;
+    params.memsizes = self->memsizes;
     params.r_end = PyString_Size(self->fullsig);
     blen1 = len - len % BLOCK_SIZE1;
     r = vm_engine_1(0, blen1, params, pc_error);
@@ -966,7 +1125,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     PyObject *output = NULL, *a_inputs = NULL;
     struct index_data *inddata = NULL;
     unsigned int n_inputs, n_dimensions = 0;
-    int shape[MAX_DIMS];
+    intp shape[MAX_DIMS];
     int i, j, size, r, pc_error;
     char **inputs = NULL;
     intp strides[MAX_DIMS]; /* clean up XXX */
@@ -1004,7 +1163,12 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         int typecode = typecode_from_char(c);
         if (typecode == -1) goto cleanup_and_exit;
         /* Convert it just in case of a non-swapped array */
-        a = PyArray_FROM_OTF(o, typecode, NOTSWAPPED);
+        if (!PyArray_Check(o) || PyArray_TYPE(o) != PyArray_STRING) {
+            a = PyArray_FROM_OTF(o, typecode, NOTSWAPPED);
+        } else {
+            Py_INCREF(PyArray_DESCR(o));  /* typecode is not enough */
+            a = PyArray_FromAny(o, PyArray_DESCR(o), 0, 0, NOTSWAPPED, NULL);
+        }
         if (!a) goto cleanup_and_exit;
         PyTuple_SET_ITEM(a_inputs, i, a);  /* steals reference */
         if (PyArray_NDIM(a) > n_dimensions)
@@ -1042,7 +1206,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     for (i = 0; i < n_inputs; i++) {
         PyObject *a = PyTuple_GET_ITEM(a_inputs, i);
         PyObject *b;
-        int strides[MAX_DIMS];
+        intp strides[MAX_DIMS];
         int delta = n_dimensions - PyArray_NDIM(a);
         if (PyArray_NDIM(a)) {
             for (j = 0; j < n_dimensions; j++)
@@ -1071,15 +1235,25 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         if (PyArray_NDIM(a) == 0) {
             /* Broadcast scalars */
             intp dims[1] = {BLOCK_SIZE1};
-            b = PyArray_SimpleNew(1, dims, typecode);
+            Py_INCREF(PyArray_DESCR(a));
+            b = PyArray_SimpleNewFromDescr(1, dims, PyArray_DESCR(a));
             if (!b) goto cleanup_and_exit;
             self->memsteps[i+1] = 0;
+            self->memsizes[i+1] = PyArray_ITEMSIZE(a);
             PyTuple_SET_ITEM(a_inputs, i+2*n_inputs, b);  /* steals reference */
             inputs[i] = PyArray_DATA(b);
-            if (typecode == PyArray_LONG) {
-                long value = ((long*)PyArray_DATA(a))[0];
+            if (typecode == PyArray_BOOL) {
+                char value = ((char*)PyArray_DATA(a))[0];
                 for (j = 0; j < BLOCK_SIZE1; j++)
-                    ((long*)PyArray_DATA(b))[j] = value;
+                    ((char*)PyArray_DATA(b))[j] = value;
+            } else if (typecode == PyArray_INT) {
+                int value = ((int*)PyArray_DATA(a))[0];
+                for (j = 0; j < BLOCK_SIZE1; j++)
+                    ((int*)PyArray_DATA(b))[j] = value;
+            } else if (typecode == PyArray_LONGLONG) {
+                long long value = ((long long*)PyArray_DATA(a))[0];
+                for (j = 0; j < BLOCK_SIZE1; j++)
+                    ((long long*)PyArray_DATA(b))[j] = value;
             } else if (typecode == PyArray_DOUBLE) {
                 double value = ((double*)PyArray_DATA(a))[0];
                 for (j = 0; j < BLOCK_SIZE1; j++)
@@ -1091,17 +1265,25 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                     ((double*)PyArray_DATA(b))[j] = rvalue;
                     ((double*)PyArray_DATA(b))[j+1] = ivalue;
                 }
+            } else if (typecode == PyArray_STRING) {
+                int itemsize = PyArray_ITEMSIZE(a);
+                char *value = (char*)(PyArray_DATA(a));
+                for (j = 0; j < itemsize*BLOCK_SIZE1; j+=itemsize)
+                    memcpy((char*)(PyArray_DATA(b)) + j, value, itemsize);
             } else {
                 PyErr_SetString(PyExc_RuntimeError, "illegal typecode value");
                 goto cleanup_and_exit;
             }
         } else {
-            PyObject *origA = a;
-            int inner_size = -1;
-            /* Check array is contiguous */
-            for (j = PyArray_NDIM(a)-1; j >= 0; j--) {
-                if ((inner_size == -1 && PyArray_STRIDE(a, j) % PyArray_ITEMSIZE(a)) ||
-                    (inner_size != -1 && PyArray_STRIDE(a, j) != inner_size)) {
+            /* Check that discontiguous strides appear only on the last
+               dimension. If not, the arrays should be copied.
+               Furthermore, such arrays can appear when doing
+               broadcasting above, so this check really needs to be
+               here, and not in Python space. */
+            intp inner_size;
+            for (j = PyArray_NDIM(a)-2; j >= 0; j--) {
+                inner_size = PyArray_STRIDE(a, j) * PyArray_DIM(a, j);
+                if (PyArray_STRIDE(a, j+1) != inner_size) {
                     intp dims[1] = {BLOCK_SIZE1};
                     inddata[i+1].count = PyArray_NDIM(a);
                     inddata[i+1].findex = -1;
@@ -1112,20 +1294,24 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                     inddata[i+1].index = PyMem_New(int, inddata[i+1].count);
                     for (j = 0; j < inddata[i+1].count; j++)
                         inddata[i+1].index[j] = 0;
-                    a = PyArray_SimpleNew(1, dims, typecode);
-                    PyTuple_SET_ITEM(a_inputs, i+2*n_inputs, a);  /* steals reference */
+                    Py_INCREF(PyArray_DESCR(a));
+                    a = PyArray_SimpleNewFromDescr(1, dims, PyArray_DESCR(a));
+                    /* steals reference below */
+                    PyTuple_SET_ITEM(a_inputs, i+2*n_inputs, a);
                     break;
                 }
-                inner_size = PyArray_STRIDE(a, j) * PyArray_DIM(a, j);
             }
 
             self->memsteps[i+1] = PyArray_STRIDE(a, PyArray_NDIM(a)-1);
+            self->memsizes[i+1] = PyArray_ITEMSIZE(a);
             inputs[i] = PyArray_DATA(a);
 
         }
     }
 
     if (last_opcode(self->program) > OP_REDUCTION) {
+        /* A reduction can not result in a string,
+           so we don't need to worry about item sizes here. */
         char retsig = get_return_sig(self->program);
         int axis = get_reduction_axis(self->program);
         self->memsteps[0] = 0; /*size_from_char(retsig);*/
@@ -1188,10 +1374,26 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     }
     else {
         char retsig = get_return_sig(self->program);
-        self->memsteps[0] = size_from_char(retsig);
-        output = PyArray_SimpleNew(n_dimensions,
-                                   shape,
-                                   typecode_from_char(retsig));
+        if (retsig != 's') {
+            self->memsteps[0] = self->memsizes[0] = size_from_char(retsig);
+            output = PyArray_SimpleNew(
+                n_dimensions, shape, typecode_from_char(retsig));
+        } else {
+            /* Since the *only* supported operation returning a string
+             * is a copy, the size of returned strings
+             * can be directly gotten from the first (and only)
+             * input/constant/temporary. */
+            PyArray_Descr *descr;
+            if (n_inputs > 0) {  /* input, like in 'a' where a -> 'foo' */
+                descr = PyArray_DESCR(PyTuple_GET_ITEM(a_inputs, 1));
+            Py_INCREF(descr);
+            } else {  /* constant, like in '"foo"' */
+                descr = PyArray_DescrFromType(PyArray_STRING);
+                descr->elsize = self->memsizes[1];
+            }  /* no string temporaries, so no third case  */
+            self->memsteps[0] = self->memsizes[0] = self->memsizes[1];
+            output = PyArray_SimpleNewFromDescr(n_dimensions, shape, descr);
+        }
         if (!output) goto cleanup_and_exit;
     }
 
@@ -1311,17 +1513,30 @@ initinterpreter(void)
     add_op("invert_bb", OP_INVERT_BB);
     add_op("and_bbb", OP_AND_BBB);
     add_op("or_bbb", OP_OR_BBB);
+
+    add_op("eq_bbb", OP_EQ_BBB);
+    add_op("ne_bbb", OP_NE_BBB);
+
     add_op("gt_bii", OP_GT_BII);
     add_op("ge_bii", OP_GE_BII);
     add_op("eq_bii", OP_EQ_BII);
     add_op("ne_bii", OP_NE_BII);
+
+    add_op("gt_bll", OP_GT_BLL);
+    add_op("ge_bll", OP_GE_BLL);
+    add_op("eq_bll", OP_EQ_BLL);
+    add_op("ne_bll", OP_NE_BLL);
 
     add_op("gt_bff", OP_GT_BFF);
     add_op("ge_bff", OP_GE_BFF);
     add_op("eq_bff", OP_EQ_BFF);
     add_op("ne_bff", OP_NE_BFF);
 
-    add_op("cast_ib", OP_CAST_IB);
+    add_op("gt_bss", OP_GT_BSS);
+    add_op("ge_bss", OP_GE_BSS);
+    add_op("eq_bss", OP_EQ_BSS);
+    add_op("ne_bss", OP_NE_BSS);
+
     add_op("ones_like_ii", OP_ONES_LIKE_II);
     add_op("copy_ii", OP_COPY_II);
     add_op("neg_ii", OP_NEG_II);
@@ -1331,10 +1546,22 @@ initinterpreter(void)
     add_op("div_iii", OP_DIV_III);
     add_op("pow_iii", OP_POW_III);
     add_op("mod_iii", OP_MOD_III);
-    add_op("where_ifii", OP_WHERE_IFII);
+    add_op("where_ibii", OP_WHERE_IBII);
 
-    add_op("cast_fb", OP_CAST_FB);
+    add_op("cast_li", OP_CAST_LI);
+    add_op("ones_like_ll", OP_ONES_LIKE_LL);
+    add_op("copy_ll", OP_COPY_LL);
+    add_op("neg_ll", OP_NEG_LL);
+    add_op("add_lll", OP_ADD_LLL);
+    add_op("sub_lll", OP_SUB_LLL);
+    add_op("mul_lll", OP_MUL_LLL);
+    add_op("div_lll", OP_DIV_LLL);
+    add_op("pow_lll", OP_POW_LLL);
+    add_op("mod_lll", OP_MOD_LLL);
+    add_op("where_lbll", OP_WHERE_LBLL);
+
     add_op("cast_fi", OP_CAST_FI);
+    add_op("cast_fl", OP_CAST_FL);
     add_op("copy_ff", OP_COPY_FF);
     add_op("ones_like_ff", OP_ONES_LIKE_FF);
     add_op("neg_cc", OP_NEG_CC);
@@ -1350,15 +1577,15 @@ initinterpreter(void)
     add_op("tan_ff", OP_TAN_FF);
     add_op("sqrt_ff", OP_SQRT_FF);
     add_op("arctan2_fff", OP_ARCTAN2_FFF);
-    add_op("where_ffff", OP_WHERE_FFFF);
+    add_op("where_fbff", OP_WHERE_FBFF);
     add_op("func_ff", OP_FUNC_FF);
     add_op("func_fff", OP_FUNC_FFF);
 
     add_op("eq_bcc", OP_EQ_BCC);
     add_op("ne_bcc", OP_NE_BCC);
 
-    add_op("cast_cb", OP_CAST_CB);
     add_op("cast_ci", OP_CAST_CI);
+    add_op("cast_cl", OP_CAST_CL);
     add_op("cast_cf", OP_CAST_CF);
     add_op("copy_cc", OP_COPY_CC);
     add_op("ones_like_cc", OP_ONES_LIKE_CC);
@@ -1367,7 +1594,7 @@ initinterpreter(void)
     add_op("sub_ccc", OP_SUB_CCC);
     add_op("mul_ccc", OP_MUL_CCC);
     add_op("div_ccc", OP_DIV_CCC);
-    add_op("where_cfcc", OP_WHERE_CFCC);
+    add_op("where_cbcc", OP_WHERE_CBCC);
     add_op("func_cc", OP_FUNC_CC);
     add_op("func_ccc", OP_FUNC_CCC);
 
@@ -1375,11 +1602,15 @@ initinterpreter(void)
     add_op("imag_fc", OP_IMAG_FC);
     add_op("complex_cff", OP_COMPLEX_CFF);
 
+    add_op("copy_ss", OP_COPY_SS);
+
     add_op("sum_iin", OP_SUM_IIN);
+    add_op("sum_lln", OP_SUM_LLN);
     add_op("sum_ffn", OP_SUM_FFN);
     add_op("sum_ccn", OP_SUM_CCN);
 
     add_op("prod_iin", OP_PROD_IIN);
+    add_op("prod_lln", OP_PROD_LLN);
     add_op("prod_ffn", OP_PROD_FFN);
     add_op("prod_ccn", OP_PROD_CCN);
 

@@ -88,13 +88,13 @@ result = arange(%f, dtype=float)
 """ % ((array_size,)*3)
 expr5 = 'where(0.1*a > arctan2(a, b), 2*a, arctan2(a,b))'
 
-expr6 = 'where(a, 2, b)'
+expr6 = 'where(a != 0.0, 2, b)'
 
-expr7 = 'where(a-10, a, 2)'
+expr7 = 'where(a-10 != 0.0, a, 2)'
 
-expr8 = 'where(a%2, b+5, 2)'
+expr8 = 'where(a%2 != 0.0, b+5, 2)'
 
-expr9 = 'where(a%2, 2, b+5)'
+expr9 = 'where(a%2 != 0.0, 2, b+5)'
 
 expr10 = 'a**2 + (b+1)**-2.5'
 
@@ -131,6 +131,6 @@ def compare(check_only=False):
 
 if __name__ == '__main__':
     averages = []
-    for i in range(10):
+    for i in range(iterations):
         averages.append(compare())
     print "Averages:", ', '.join("%.2f" % x for x in averages)
