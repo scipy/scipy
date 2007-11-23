@@ -12,7 +12,6 @@ __date__     = '$Date$'
 
 import datetime as dt
 
-import operator
 import itertools
 import warnings
 import types
@@ -585,10 +584,10 @@ def _listparser(dlist, freq=None):
             dates = [Date(freq, datetime=m) for m in dlist]
         #...as datetime objects
         elif hasattr(template, 'toordinal'):
-            ords = numpy.fromiter((d.toordinal() for d in dlist), float_)
             if freq == _c.FR_UND:
+                ords = numpy.fromiter((d.toordinal() for d in dlist), float_)
                 freq = guess_freq(ords)
-            dates = [Date(freq, datetime=dt.datetime.fromordinal(a)) for a in ords]
+            dates = [Date(freq, datetime=d) for d in dlist]
     #
     result = DateArray(dates, freq)
     result._unsorted = idx
@@ -721,10 +720,20 @@ if __name__ == '__main__':
     import maskedarray.testutils
     from maskedarray.testutils import assert_equal
 
-    if 1:
+    if 0:
         dlist = ['2007-%02i' % i for i in range(1,5)+range(7,13)]
         mdates = date_array_fromlist(dlist, 'M')
-        
-    if 2:
+    #    
+    if 0:
         dlist = ['2007-01','2007-03','2007-04','2007-02']
         mdates = date_array_fromlist(dlist, 'M')
+    #
+    if 1:
+        import datetime
+        dlist = [dt.datetime(2001,1,1,0), 
+                 dt.datetime(2001,1,2,1),
+                 dt.datetime(2001,1,3,2)]
+        _dates = date_array(dlist,freq='H')
+        #
+        assert_equal(_dates.hour, [0,1,2])
+        assert_equal(_dates.day, [1,2,3])

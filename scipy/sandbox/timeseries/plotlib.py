@@ -30,6 +30,7 @@ from matplotlib.ticker import Formatter, ScalarFormatter, FuncFormatter, \
 #from matplotlib.transforms import nonsingular
 
 import numpy
+from numpy import int_, bool_
 import maskedarray as MA
 
 import timeseries
@@ -47,16 +48,18 @@ def add_generic_subplot(figure_instance, *args, **kwargs):
 The specific Subplot object class to add is given through the keywords
 `SubplotClass` or `class`.
 
-:Parameters:
-    `figure_instance` : Figure object
+*:Parameters*:
+    figure_instance : {Figure object}
         Figure to which the generic subplot should be attached.
-    `args` : Misc
+    args : {var}
         Miscellaneous arguments to the subplot.
-    `kwargs` : Dictionary
+    kwargs : {Dictionary}
         Keywords. Same keywords as `Subplot`, with the addition of
-        - `SubplotClass` : Type of subplot
-        - `subclass` : Shortcut to `SubplotClass`.
-        - any keyword required by the `SubplotClass` subclass.
+        * SubplotClass* : {string}
+            Type of subplot
+        *subclass* : {string}
+            Shortcut to SubplotClass.
+        * any keyword required by the `SubplotClass` subclass.
     """
 
     key = figure_instance._make_key(*args, **kwargs)
@@ -67,7 +70,7 @@ The specific Subplot object class to add is given through the keywords
     except TypeError:
         key = str(key)
     #
-    if key in figure_instance._seen:
+    if figure_instance._seen.has_key(key):
         ax = figure_instance._seen[key]
         figure_instance.sca(ax)
         return ax
@@ -171,7 +174,7 @@ one label for this level"""
     else:
         return True
 
-def _daily_finder(vmin, vmax, freq, aslocator):
+def _daily_finder(vmin, vmax, freq, asformatter):
 
     if freq == _c.FR_BUS:
         periodsperyear = 261
@@ -187,13 +190,13 @@ def _daily_finder(vmin, vmax, freq, aslocator):
 
     (vmin, vmax) = (int(vmin), int(vmax))
     span = vmax - vmin + 1
-    dates = date_array(start_date=Date(freq,vmin),
-                       end_date=Date(freq, vmax))
-    default = numpy.arange(vmin, vmax+1)
+    dates_ = date_array(start_date=Date(freq,vmin),
+                        end_date=Date(freq, vmax))
     # Initialize the output
-    if not aslocator:
-        format = numpy.empty(default.shape, dtype="|S10")
-        format.flat = ''
+    info = numpy.zeros(span,
+                       dtype=[('val',int_),('maj',bool_),('min',bool_),('fmt','|S10')])
+    info['val'] = numpy.arange(vmin, vmax+1)
+    info['fmt'] = ''
 
     def first_label(label_flags):
         if label_flags[0] == 0: return label_flags[1]
@@ -201,115 +204,103 @@ def _daily_finder(vmin, vmax, freq, aslocator):
 
     # Case 1. Less than a month
     if span <= periodspermonth:
-        month_start = period_break(dates,'month')
-        if aslocator:
-            major = default[month_start]
-            minor = default
-        else:
-            year_start = period_break(dates,'year')
-            format[:] = '%d'
-            format[month_start] = '%d\n%b'
-            format[year_start] = '%d\n%b\n%Y'
+        month_start = period_break(dates_,'month')
+        info['maj'][month_start] = True
+        info['min'] = True
+        if asformatter:
+            year_start = period_break(dates_,'year')
+            info['fmt'][:] = '%d'
+            info['fmt'][month_start] = '%d\n%b'
+            info['fmt'][year_start] = '%d\n%b\n%Y'
             if not has_level_label(year_start):
                 if not has_level_label(month_start):
-                    if dates.size > 1:
+                    if dates_.size > 1:
                         idx = 1
                     else:
                         idx = 0
-                    format[idx] = '%d\n%b\n%Y'
+                    info['fmt'][idx] = '%d\n%b\n%Y'
                 else:
-                    format[first_label(month_start)] = '%d\n%b\n%Y'
+                    info['fmt'][first_label(month_start)] = '%d\n%b\n%Y'
     # Case 2. Less than three months
     elif span <= periodsperyear//4:
         month_start = period_break(dates,'month')
-        if aslocator:
-            major = default[month_start]
-            minor = default
-        else:
-            week_start = period_break(dates,'week')
-            year_start = period_break(dates,'year')
+        info['maj'][month_start] = True
+        info['min'] = True
+        if asformatter:
+            week_start = period_break(dates_,'week')
+            year_start = period_break(dates_,'year')
 
-            format[week_start] = '%d'
-            format[month_start] = '\n\n%b'
-            format[year_start] = '\n\n%b\n%Y'
+            info['fmt'][week_start] = '%d'
+            info['fmt'][month_start] = '\n\n%b'
+            info['fmt'][year_start] = '\n\n%b\n%Y'
             if not has_level_label(year_start):
                 if not has_level_label(month_start):
-                    format[first_label(week_start)] = '\n\n%b\n%Y'
+                    info['fmt'][first_label(week_start)] = '\n\n%b\n%Y'
                 else:
-                    format[first_label(month_start)] = '\n\n%b\n%Y'
+                    info['fmt'][first_label(month_start)] = '\n\n%b\n%Y'
     # Case 3. Less than 14 months ...............
     elif span <= 1.15 * periodsperyear:
+        d_minus_1 = dates_-1
 
-        if aslocator:
-            d_minus_1 = dates-1
+        month_diff = numpy.abs(dates_.month - d_minus_1.month)
+        week_diff = numpy.abs(dates_.week - d_minus_1.week)
+        minor_idx = (month_diff + week_diff).nonzero()[0]
 
-            month_diff = numpy.abs(dates.month - d_minus_1.month)
-            week_diff = numpy.abs(dates.week - d_minus_1.week)
-            minor_idx = (month_diff + week_diff).nonzero()[0]
+        info['maj'][month_diff != 0] = True
+        info['min'][minor_idx] = True
+        if asformatter:
+            year_start = period_break(dates_,'year')
+            month_start = period_break(dates_,'month')
 
-            major = default[month_diff != 0]
-            minor = default[minor_idx]
-        else:
-            year_start = period_break(dates,'year')
-            month_start = period_break(dates,'month')
-
-            format[month_start] = '%b'
-            format[year_start] = '%b\n%Y'
+            info['fmt'][month_start] = '%b'
+            info['fmt'][year_start] = '%b\n%Y'
             if not has_level_label(year_start):
-                format[first_label(month_start)] = '%b\n%Y'
+                info['fmt'][first_label(month_start)] = '%b\n%Y'
     # Case 4. Less than 2.5 years ...............
     elif span <= 2.5 * periodsperyear:
-        year_start = period_break(dates,'year')
-        if aslocator:
-            month_start = period_break(dates, 'quarter')
-            major = default[year_start]
-            minor = default[month_start]
-        else:
-            quarter_start = period_break(dates, 'quarter')
-            format[quarter_start] = '%b'
-            format[year_start] = '%b\n%Y'
+        year_start = period_break(dates_,'year')
+        month_start = period_break(dates_, 'quarter')
+        info['maj'][year_start] = True
+        info['min'][month_start] = True
+        if asformatter:
+            quarter_start = period_break(dates_, 'quarter')
+            info['fmt'][quarter_start] = '%b'
+            info['fmt'][year_start] = '%b\n%Y'
     # Case 4. Less than 4 years .................
     elif span <= 4 * periodsperyear:
-        year_start = period_break(dates,'year')
-        month_start = period_break(dates, 'month')
-        if aslocator:
-            major = default[year_start]
-            minor = default[month_start]
-        else:
-            month_break = dates[month_start].month
+        year_start = period_break(dates_,'year')
+        month_start = period_break(dates_, 'month')
+        info['maj'][year_start] = True
+        info['min'][month_start] = True
+        if asformatter:
+            month_break = dates_[month_start].month
             jan_or_jul = month_start[(month_break == 1) | (month_break == 7)]
-            format[jan_or_jul] = '%b'
-            format[year_start] = '%b\n%Y'
+            info['fmt'][jan_or_jul] = '%b'
+            info['fmt'][year_start] = '%b\n%Y'
     # Case 5. Less than 11 years ................
     elif span <= 11 * periodsperyear:
-        year_start = period_break(dates,'year')
-        if aslocator:
-            quarter_start = period_break(dates, 'quarter')
-            major = default[year_start]
-            minor = default[quarter_start]
-        else:
-            format[year_start] = '%Y'
+        year_start = period_break(dates_,'year')
+        quarter_start = period_break(dates_, 'quarter')
+        info['maj'][year_start] = True
+        info['min'][quarter_start] = True
+        if asformatter:
+            info['fmt'][year_start] = '%Y'
     # Case 6. More than 12 years ................
     else:
         year_start = period_break(dates,'year')
-        year_break = dates[year_start].years
+        year_break = dates_[year_start].years
         nyears = span/periodsperyear
         (min_anndef, maj_anndef) = _get_default_annual_spacing(nyears)
         major_idx = year_start[(year_break % maj_anndef == 0)]
-        if aslocator:
-            major = default[major_idx]
-            minor_idx = year_start[(year_break % min_anndef == 0)]
-            minor = default[minor_idx]
-        else:
-            format[major_idx] = '%Y'
+        info['maj'][major_idx] = True
+        minor_idx = year_start[(year_break % min_anndef == 0)]
+        info['min'][minor_idx] = True
+        if asformatter:
+            info['fmt'][major_idx] = '%Y'
     #............................................
-    if aslocator:
-        return minor, major
-    else:
-        formatted = (format != '')
-        return dict([(d,f) for (d,f) in zip(default[formatted],format[formatted])])
+    return info
 #...............................................................................
-def _monthly_finder(vmin, vmax, freq, aslocator):
+def _monthly_finder(vmin, vmax, freq, asformatter):
     if freq != _c.FR_MTH:
         raise ValueError("Unexpected frequency")
     periodsperyear = 12
@@ -317,143 +308,128 @@ def _monthly_finder(vmin, vmax, freq, aslocator):
     (vmin, vmax) = (int(vmin), int(vmax))
     span = vmax - vmin + 1
     #............................................
-    dates = numpy.arange(vmin, vmax+1)
-    format = numpy.empty(span, dtype="|S8")
-    format.flat = ''
-    year_start = (dates % 12 == 1).nonzero()[0]
+    # Initialize the output
+    info = numpy.zeros(span,
+                       dtype=[('val',int_),('maj',bool_),('min',bool_),('fmt','|S8')])
+    info['val'] = numpy.arange(vmin, vmax+1)
+    dates_ = info['val']
+    info['fmt'] = ''
+    year_start = (dates_ % 12 == 1).nonzero()[0]
     #............................................
     if span <= 1.15 * periodsperyear:
-        if aslocator:
-            major = dates[year_start]
-            minor = dates
-        else:
-
-            format[:] = '%b'
-            format[year_start] = '%b\n%Y'
+        info['maj'][year_start] = True
+        info['min'] = True
+        if asformatter:
+            info['fmt'][:] = '%b'
+            info['fmt'][year_start] = '%b\n%Y'
 
             if not has_level_label(year_start):
-                if dates.size > 1:
+                if dates_.size > 1:
                     idx = 1
                 else:
                     idx = 0
-                format[idx] = '%b\n%Y'
+                info['fmt'][idx] = '%b\n%Y'
     #........................
     elif span <= 2.5 * periodsperyear:
-        if aslocator:
-            major = dates[year_start]
-            minor = dates
-        else:
-            quarter_start = (dates % 3 == 1).nonzero()
-            format[quarter_start] = '%b'
-            format[year_start] = '%b\n%Y'
+        info['maj'][year_start] = True
+        info['min'] = True
+        if asformatter:
+            quarter_start = (dates_ % 3 == 1).nonzero()
+            info['fmt'][quarter_start] = '%b'
+            info['fmt'][year_start] = '%b\n%Y'
     #.......................
     elif span <= 4 * periodsperyear:
-        if aslocator:
-            major = dates[year_start]
-            minor = dates
-        else:
-            jan_or_jul = (dates % 12 == 1) | (dates % 12 == 7)
-            format[jan_or_jul] = '%b'
-            format[year_start] = '%b\n%Y'
+        info['maj'][year_start] = True
+        info['min'] = True
+        if asformatter:
+            jan_or_jul = (dates_ % 12 == 1) | (dates_ % 12 == 7)
+            info['fmt'][jan_or_jul] = '%b'
+            info['fmt'][year_start] = '%b\n%Y'
     #........................
     elif span <= 11 * periodsperyear:
-        if aslocator:
-            quarter_start = (dates % 3 == 1).nonzero()
-            major = dates[year_start]
-            minor = dates[quarter_start]
-        else:
-            format[year_start] = '%Y'
+        quarter_start = (dates_ % 3 == 1).nonzero()
+        info['maj'][year_start] = True
+        info['min'][quarter_start] = True
+        if asformatter:
+            info['fmt'][year_start] = '%Y'
    #.........................
     else:
         nyears = span/periodsperyear
         (min_anndef, maj_anndef) = _get_default_annual_spacing(nyears)
-        years = dates[year_start]//12 + 1
+        years = dates_[year_start]//12 + 1
         major_idx = year_start[(years % maj_anndef == 0)]
-        if aslocator:
-            major = dates[major_idx]
-            minor = dates[year_start[(years % min_anndef == 0)]]
-        else:
-            format[major_idx] = '%Y'
+        info['maj'][major_idx] = True
+        info['min'][year_start[(years % min_anndef == 0)]] = True
+        if asformatter:
+            info['fmt'][major_idx] = '%Y'
     #........................
-    if aslocator:
-        return minor, major
-    else:
-        formatted = (format != '')
-        return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
+    return info
 #...............................................................................
-def _quarterly_finder(vmin, vmax, freq, aslocator):
+def _quarterly_finder(vmin, vmax, freq, asformatter):
     if get_freq_group(freq) != _c.FR_QTR:
         raise ValueError("Unexpected frequency")
     periodsperyear = 4
     (vmin, vmax) = (int(vmin), int(vmax))
     span = vmax - vmin + 1
     #............................................
-    dates = numpy.arange(vmin, vmax+1)
-    format = numpy.empty(span, dtype="|S8")
-    format.flat = ''
-    year_start = (dates % 4 == 1).nonzero()[0]
+    info = numpy.zeros(span,
+                       dtype=[('val',int_),('maj',bool_),('min',bool_),('fmt','|S8')])
+    info['val'] = numpy.arange(vmin, vmax+1)
+    info['fmt'] = ''
+    dates_ = info['val']
+    year_start = (dates_ % 4 == 1).nonzero()[0]
     #............................................
     if span <= 3.5 * periodsperyear:
-        if aslocator:
-            major = dates[year_start]
-            minor = dates
-        else:
-            format[:] = 'Q%q'
-            format[year_start] = 'Q%q\n%F'
+        info['maj'][year_start] = True
+        info['min'] = True
+        if asformatter:
+            info['fmt'][:] = 'Q%q'
+            info['fmt'][year_start] = 'Q%q\n%F'
             if not has_level_label(year_start):
-                if dates.size > 1:
+                if dates_.size > 1:
                     idx = 1
                 else:
                     idx = 0
-                format[idx] = 'Q%q\n%F'
+                info['fmt'][idx] = 'Q%q\n%F'
     #............................................
     elif span <= 11 * periodsperyear:
-        if aslocator:
-            major = dates[year_start]
-            minor = dates
-        else:
-            format[year_start] = '%F'
+        info['maj'][year_start] = True
+        info['min'] = True
+        if asformatter:
+            info['fmt'][year_start] = '%F'
     #............................................
     else:
-        years = dates[year_start]//4 + 1
+        years = dates_[year_start]//4 + 1
         nyears = span/periodsperyear
         (min_anndef, maj_anndef) = _get_default_annual_spacing(nyears)
         major_idx = year_start[(years % maj_anndef == 0)]
-        if aslocator:
-            major = dates[major_idx]
-            minor = dates[year_start[(years % min_anndef == 0)]]
-        else:
-            format[major_idx] = '%F'
+        info['maj'][major_idx] = True
+        info['min'][year_start[(years % min_anndef == 0)]] = True
+        if asformatter:
+            info['fmt'][major_idx] = '%F'
     #............................................
-    if aslocator:
-        return minor, major
-    else:
-        formatted = (format != '')
-        return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
+    return info
 #...............................................................................
-def _annual_finder(vmin, vmax, freq, aslocator):
+def _annual_finder(vmin, vmax, freq, asformatter):
     if get_freq_group(freq) != _c.FR_ANN:
         raise ValueError("Unexpected frequency")
     (vmin, vmax) = (int(vmin), int(vmax+1))
     span = vmax - vmin + 1
     #............................................
-    dates = numpy.arange(vmin, vmax+1)
-    format = numpy.empty(span, dtype="|S8")
-    format.flat = ''
+    info = numpy.zeros(span,
+                       dtype=[('val',int_),('maj',bool_),('min',bool_),('fmt','|S8')])
+    info['val'] = numpy.arange(vmin, vmax+1)
+    info['fmt'] = ''
+    dates_ = info['val']
     #............................................
     (min_anndef, maj_anndef) = _get_default_annual_spacing(span)
-    major_idx = dates % maj_anndef == 0
-    if aslocator:
-        major = dates[major_idx]
-        minor = dates[(dates % min_anndef == 0)]
-    else:
-        format[major_idx] = '%Y'
+    major_idx = dates_ % maj_anndef == 0
+    info['maj'][major_idx] = True
+    info['min'][(dates_ % min_anndef == 0)] = True
+    if asformatter:
+        info['fmt'][major_idx] = '%Y'
     #............................................
-    if aslocator:
-        return minor, major
-    else:
-        formatted = (format != '')
-        return dict([(d,f) for (d,f) in zip(dates[formatted],format[formatted])])
+    return info
 
 #...............................................................................
 class TimeSeries_DateLocator(Locator):
@@ -490,10 +466,10 @@ class TimeSeries_DateLocator(Locator):
 
     def _get_default_locs(self, vmin, vmax):
         "Returns the default locations of ticks."
-        (minor, major) = self.finder(vmin, vmax, self.freq, True)
+        locator = self.finder(vmin, vmax, self.freq, False)
         if self.isminor:
-            return minor
-        return major
+            return numpy.compress(locator['min'], locator['val'])
+        return numpy.compress(locator['maj'], locator['val'])
 
     def __call__(self):
         'Return the locations of the ticks.'
@@ -560,7 +536,13 @@ class TimeSeries_DateFormatter(Formatter):
 
     def _set_default_format(self, vmin, vmax):
         "Returns the default ticks spacing."
-        self.formatdict = self.finder(vmin, vmax, self.freq, False)
+        info = self.finder(vmin, vmax, self.freq, True)
+        if self.isminor:
+            format = numpy.compress(info['min'] & numpy.logical_not(info['maj']),
+                                    info)
+        else:
+            format = numpy.compress(info['maj'], info)
+        self.formatdict = dict([(x,f) for (x,_,_,f) in format])
         return self.formatdict
 
     def set_locs(self, locs):
@@ -571,15 +553,8 @@ class TimeSeries_DateFormatter(Formatter):
             self._set_default_format(locs[0], locs[-1])
     #
     def __call__(self, x, pos=0):
-        if self.isminor:
-            fmt = self.formatdict.pop(x, '')
-            if fmt is not '':
-                retval = Date(self.freq, value=int(x)).strftime(fmt)
-            else:
-                retval = ''
-        else:
-            retval = ''
-        return retval
+        fmt = self.formatdict.pop(x, '')
+        return Date(self.freq, value=int(x)).strfmt(fmt)
 
 
 
@@ -593,12 +568,10 @@ class TimeSeriesPlot(Subplot, object):
         """
 Accepts the same keywords as a standard subplot, plus a specific `series` keyword.
 
-:Parameters:
-    `fig` : Figure
+*Parameters*:
+    fig : {Figure}
         Base figure.
-
-:Keywords:
-    `series` : TimeSeries
+    series : {TimeSeries}, optional
         Data to plot
 
         """
@@ -719,26 +692,18 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
     #......................................................
     def tsplot(self,*parms,**kwargs):
         """Plots the data parsed in argument.
-This command accepts the same keywords as `matplotlib.plot`."""
+This command accepts the same keywords as matplotlib.plot."""
 #        parms = tuple(list(parms) + kwargs.pop('series',None))
 #        print "Parameters: %s - %i" % (parms, len(parms))
 #        print "OPtions: %s - %i" % (kwargs, len(kwargs))
         parms = self._check_plot_params(*parms)
         self.legendlabels.append(kwargs.get('label',None))
-        Subplot.plot(self, *parms,**kwargs)
+        plotted = Subplot.plot(self, *parms,**kwargs)
         self.format_dateaxis()
+        return plotted
     #......................................................
-    def format_dateaxis(self,maj_spacing=None, min_spacing=None,
-                        strformat="%Y", rotate=True):
+    def format_dateaxis(self):
         """Pretty-formats the date axis (x-axis).
-
-:Parameters:
-    `major` : Integer *[5]*
-        Major tick locator, in years (major tick every `major` years).
-    `minor` : Integer *[12]*
-        Minor tick locator, in months (minor ticks every `minor` months).
-    `strformat` : String *['%Y']*
-        String format for major ticks ("%Y").
         """
         # Get the locator class .................
         majlocator = TimeSeries_DateLocator(self.freq, dynamic_mode=True,
@@ -754,6 +719,7 @@ This command accepts the same keywords as `matplotlib.plot`."""
                                                 minor_locator=True)
         self.xaxis.set_major_formatter(majformatter)
         self.xaxis.set_minor_formatter(minformatter)
+        pylab.draw_if_interactive()
         #........................................
 #        if rcParams['backend'] == 'PS':
 #            rotate = False
@@ -766,10 +732,10 @@ This command accepts the same keywords as `matplotlib.plot`."""
         """Sets the date limits of the plot to start_date and end_date.
     The dates can be given as timeseries.Date objects, strings or integers.
 
-:Inputs:
-    start_date : var *[None]*
+*Parameters*:
+    start_date : {var}
         Starting date of the plot. If None, the current left limit is used.
-    end_date : var *[None]*
+    end_date : {var}
         Ending date of the plot. If None, the current right limit is used.
         """
         freq = self.freq
@@ -806,23 +772,23 @@ def add_yaxis(fsp=None, position='right', yscale=None, basey=10, subsy=None,
               **kwargs):
     """Adds a second y-axis to a plot.
 
-:Parameters:
-    `fsp` : Subplot *[None]*
-        Subplot to which the secondary y-axis is added. If *None*, the current
-        subplot is selected
-    `position` : String in `('left','right')` *['right']*
-        Position of the new axis.
-    `yscale` : String, in `('log', 'linear')` *[None]*
-        Scale of the new axis. If None, uses the same scale as the first y
-axis
-    `basey` : Integer *[10]*
+*Parameters*:
+    fsp : {Subplot}
+        Subplot to which the secondary y-axis is added. 
+        If None, the current subplot is selected
+    position : {string}
+        Position of the new axis, as either 'left' or 'right'.
+    yscale : {string}
+        Scale of the new axis, as either 'log', 'linear' or None. 
+        If None, uses the same scale as the first y axis
+    basey : {integer}
         Base of the logarithm for the new axis (if needed).
-    `subsy` : sequence *[None]*
+    subsy : {sequence}
         Sequence of the location of the minor ticks;
         None defaults to autosubs, which depend on the number of decades in
-the plot.
+        the plot.
         Eg for base 10, subsy=(1,2,5) will  put minor ticks on 1,2,5,11,12,15,
-21, ....
+        21, ....
         To turn off minor ticking, set subsy=[]
 
     """
@@ -888,10 +854,10 @@ TSFigure = TimeSeriesFigure
 def tsfigure(series=None, **figargs):
     """Creates a new `TimeSeriesFigure` object.
 
-:Parameters:
-    `series` : TimeSeries object
+*Parameters*:
+    series : {TimeSeries object}
         Input data.
-    `figargs` : Dictionary
+    figargs : {dictionary}
         Figure options [`figsize`, `dpi`, `facecolor`, `edgecolor`, `frameon`].
     """
     figargs.update(FigureClass=TSFigure)
