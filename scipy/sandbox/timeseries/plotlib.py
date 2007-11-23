@@ -574,7 +574,7 @@ class TimeSeries_DateFormatter(Formatter):
         if self.isminor:
             fmt = self.formatdict.pop(x, '')
             if fmt is not '':
-                retval = Date(self.freq, value=int(x)).strfmt(fmt)
+                retval = Date(self.freq, value=int(x)).strftime(fmt)
             else:
                 retval = ''
         else:

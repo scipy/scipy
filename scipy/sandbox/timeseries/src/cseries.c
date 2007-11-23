@@ -26,11 +26,11 @@ static PyMethodDef cseries_methods[] = {
      METH_VARARGS, ""},
 
 
-    {"thisday", (PyCFunction)c_dates_thisday,
+    {"now", (PyCFunction)c_dates_now,
      METH_VARARGS,
-        "Returns today's date, at the given frequency\n\n"
-        ":Parameters:\n"
-        "   - freq : string/int\n"
+        "Returns the current date/time, at the given frequency\n\n"
+        "*Parameters*:\n"
+        "   freq : {freq_spec}\n"
         "       Frequency to convert the Date to. Accepts any valid frequency\n"
         "       specification (string or integer)\n"},
 

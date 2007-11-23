@@ -35,7 +35,7 @@ import const as _c
 import dates
 from dates import DateError, InsufficientDateError
 from dates import Date, isDate, DateArray, isDateArray, \
-    date_array, date_array_fromlist, date_array_fromrange, thisday, today, \
+    date_array, date_array_fromlist, date_array_fromrange, now, \
     check_freq, check_freq_str
 
 import cseries
@@ -56,6 +56,7 @@ __all__ = [
 'quarter',
 'second','split', 'stack',
 'tofile','tshift',
+'week',
 'year',
 ]
 
@@ -595,9 +596,11 @@ timeseries(%(data)s,
         """Returns the day of month for each date in self._dates."""
         return self._dates.day
     @property
-    def day_of_week(self):
+    def weekday(self):
         """Returns the day of week for each date in self._dates."""
-        return self._dates.day_of_week
+        return self._dates.weekday
+    # deprecated alias for weekday
+    day_of_week = weekday
     @property
     def day_of_year(self):
         """Returns the day of year for each date in self._dates."""
@@ -632,7 +635,7 @@ timeseries(%(data)s,
         return self._dates.week
 
     days = day
-    weekdays = day_of_week
+    weekdays = weekday
     yeardays = day_of_year
     months = month
     quarters = quarter
@@ -873,8 +876,11 @@ class _frommethod(object):
         except SystemError:
             return getattr(numpy,self._methodname).__call__(caller, *args, **params)
 #............................
-day_of_week = _frommethod('day_of_week')
+weekday = _frommethod('weekday')
+# deprecated alias for weekday 
+day_of_week = weekday
 day_of_year = _frommethod('day_of_year')
+week = _frommethod('week')
 year = _frommethod('year')
 quarter = _frommethod('quarter')
 month = _frommethod('month')
@@ -1544,8 +1550,8 @@ the `remove_duplicates` parameter. If remove_duplicate=False, duplicated dates a
 saved. Otherwise, only the first occurence of the date is conserved.
 
 Example
->>> a = time_series([1,2,3], start_date=today('D'))
->>> b = time_series([10,20,30], start_date=today('D')+1)
+>>> a = time_series([1,2,3], start_date=now('D'))
+>>> b = time_series([10,20,30], start_date=now('D')+1)
 >>> c = concatenate((a,b))
 >>> c._series
 masked_array(data = [ 1  2  3 30],

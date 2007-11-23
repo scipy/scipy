@@ -12,6 +12,7 @@ __date__     = '$Date$'
 
 import datetime as dt
 
+import operator
 import itertools
 import warnings
 import types
@@ -36,17 +37,21 @@ import cseries
 cseries.set_callback_DateFromString(DateFromString)
 cseries.set_callback_DateTimeFromString(DateTimeFromString)
 
-from cseries import Date, thisday, check_freq, check_freq_str, get_freq_group,\
+from cseries import Date, now, check_freq, check_freq_str, get_freq_group,\
                     DateCalc_Error, DateCalc_RangeError
-today = thisday
+
+# aliases for `now` function. These are deprecated
+today = now
+thisday = now
 
 __all__ = [
 'Date', 'DateArray','isDate','isDateArray',
 'DateError', 'ArithmeticDateError', 'FrequencyDateError','InsufficientDateError',
 'datearray','date_array', 'date_array_fromlist', 'date_array_fromrange',
-'day_of_week','day_of_year','day','month','quarter','year','hour','minute',
-'second','thisday','today','prevbusday','period_break', 'check_freq',
-'check_freq_str','get_freq_group', 'DateCalc_Error', 'DateCalc_RangeError'
+'day_of_week','weekday','day_of_year','day','month','quarter','year','hour',
+'minute','second','now','thisday','today','prevbusday','period_break',
+'check_freq','check_freq_str','get_freq_group', 'DateCalc_Error',
+'DateCalc_RangeError'
            ]
 
 
@@ -93,22 +98,23 @@ class ArithmeticDateError(DateError):
 def prevbusday(day_end_hour=18, day_end_min=0):
     """Returns the previous business day (Monday-Friday) at business frequency.
 
-:Parameters:
-    - day_end_hour : (int, *[18]* )
-    - day_end_min : (int, *[0]*)
+*Parameters*:
+    day_end_hour : {18, int} (optional)
+    day_end_min : {0, int} (optional)
 
-:Return values:
+*Return values*:
     If it is currently Saturday or Sunday, then the preceding Friday will be
     returned. If it is later than the specified day_end_hour and day_end_min,
-    thisday('b') will be returned. Otherwise, thisday('b')-1 will be returned.
+    now('Business') will be returned. Otherwise, now('Business')-1 will be
+    returned.
 """
     tempDate = dt.datetime.now()
     dateNum = tempDate.hour + float(tempDate.minute)/60
     checkNum = day_end_hour + float(day_end_min)/60
     if dateNum < checkNum:
-        return thisday(_c.FR_BUS) - 1
+        return now(_c.FR_BUS) - 1
     else:
-        return thisday(_c.FR_BUS)
+        return now(_c.FR_BUS)
 
 
 def isDate(data):
@@ -283,9 +289,11 @@ accesses the array element by element. Therefore, `d` is a Date object.
         "Returns the day of month."
         return self.__getdateinfo__('D')
     @property
-    def day_of_week(self):
+    def weekday(self):
         "Returns the day of week."
         return self.__getdateinfo__('W')
+    # deprecated alias for weekday
+    day_of_week = weekday
     @property
     def day_of_year(self):
         "Returns the day of year."
@@ -329,7 +337,7 @@ For non-quarterly dates, this simply returns the year of the date."""
         return self.__getdateinfo__('I')
 
     days = day
-    weekdays = day_of_week
+    weekdays = weekday
     yeardays = day_of_year
     months = month
     quarters = quarter
@@ -355,7 +363,6 @@ For non-quarterly dates, this simply returns the year of the date."""
         "Converts the dates from values to ordinals."
         # Note: we better try to cache the result
         if self._cachedinfo['toord'] is None:
-#            diter = (Date(self.freq, value=d).toordinal() for d in self)
             if self.freq == _c.FR_UND:
                 diter = (d.value for d in self)
             else:
@@ -363,6 +370,13 @@ For non-quarterly dates, this simply returns the year of the date."""
             toord = numeric.fromiter(diter, dtype=float_)
             self._cachedinfo['toord'] = toord
         return self._cachedinfo['toord']
+    #
+    def tolist(self):
+        """Returns a hierarchical python list of standard datetime objects."""
+        _result = numpy.empty(self.shape, dtype=numpy.object_)
+        for idx, val in numpy.ndenumerate(self):
+            operator.setitem(_result, idx, Date(freq=self.freq, value=val).datetime)
+        return _result.tolist()
     #
     def tostring(self):
         "Converts the dates to strings."
@@ -674,7 +688,9 @@ class _frommethod(object):
         except SystemError:
             return getattr(numpy,self._methodname).__call__(caller, *args, **params)
 #............................
-day_of_week = _frommethod('day_of_week')
+weekday = _frommethod('day_of_week')
+# deprecated alias for weekday
+day_of_week = weekday
 day_of_year = _frommethod('day_of_year')
 year = _frommethod('year')
 quarter = _frommethod('quarter')

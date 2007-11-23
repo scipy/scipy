@@ -110,7 +110,7 @@ PyObject *DateArray_asfreq(PyObject *, PyObject *);
 PyObject *DateArray_getDateInfo(PyObject *, PyObject *);
 
 
-PyObject *c_dates_thisday(PyObject *, PyObject *);
+PyObject *c_dates_now(PyObject *, PyObject *);
 PyObject *c_dates_check_freq(PyObject *, PyObject *);
 PyObject *c_dates_check_freq_str(PyObject *, PyObject *);
 PyObject *c_dates_get_freq_group(PyObject *, PyObject *);
