@@ -373,8 +373,9 @@ For non-quarterly dates, this simply returns the year of the date."""
     def tolist(self):
         """Returns a hierarchical python list of standard datetime objects."""
         _result = numpy.empty(self.shape, dtype=numpy.object_)
-        for idx, val in numpy.ndenumerate(self):
-            operator.setitem(_result, idx, Date(freq=self.freq, value=val).datetime)
+        _result.flat = [d.datetime for d in self.ravel()]
+#        for idx, val in numpy.ndenumerate(self):
+#            operator.setitem(_result, idx, Date(freq=self.freq, value=val).datetime)
         return _result.tolist()
     #
     def tostring(self):
