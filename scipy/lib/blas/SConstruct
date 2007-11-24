@@ -13,6 +13,8 @@ from numpy.distutils.scons import CheckCBLAS, CheckF77BLAS,\
 
 from numpy.distutils.scons.configuration import write_info
 
+from scons_support import do_generate_fake_interface, generate_interface_emitter
+
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
 #if os.name == 'nt':
@@ -20,6 +22,9 @@ env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
 #    # simple code using only typedef and so on, so we need it for configuration
 #    # checks
 #    env.AppendUnique(LIBPATH = [get_pythonlib_dir()])
+
+env['BUILDERS']['GenerateFakePyf'] = Builder(action = do_generate_fake_interface,
+                                             emitter = generate_interface_emitter)
 
 #=======================
 # Starting Configuration
@@ -74,8 +79,6 @@ env.NumpyPythonExtension('fblas', source)
 source = ['cblas.pyf']
 if has_cblas:
     env.NumpyFromFTemplate('cblas.pyf', 'cblas.pyf.src')
+else:
+    print env.GenerateFakePyf('cblas', 'cblas.pyf.src')
 env.NumpyPythonExtension('cblas', source)
-#     env.haha('cblas', 'generic_cblas.pyf')
-# else:
-#     env.hihi('cblas', 'generic_cblas.pyf')
-# env.NumpyPythonExtension('cblas', source = 'cblas.pyf')
