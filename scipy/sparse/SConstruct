@@ -1,0 +1,18 @@
+# Last Change: Sat Nov 24 07:00 PM 2007 J
+# vim:syntax=python
+from os.path import join
+
+from numpy.distutils.misc_util import get_numpy_include_dirs
+from numpy.distutils.scons import GetNumpyEnvironment
+
+env = GetNumpyEnvironment(ARGUMENTS)
+
+env.AppendUnique(CPPPATH = get_numpy_include_dirs())
+
+env.NumpyPythonExtension('_sparsetools', 
+                         source = [join('sparsetools', 'sparsetools_wrap.cxx')])
+
+# Copy this python file into the distutils lib dir
+env.Command(join(env['distutils_installdir'], 'sparsetools.py'),
+            join('sparsetools', 'sparsetools.py'),
+            Copy('$TARGET', '$SOURCE'))
