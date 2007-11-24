@@ -1,0 +1,81 @@
+# Last Change: Sat Nov 24 04:00 PM 2007 J
+# vim:syntax=python
+
+import os
+from os.path import join as pjoin, splitext
+
+from numpy.distutils.misc_util import get_numpy_include_dirs
+from numpy.distutils.scons import get_python_inc#, get_pythonlib_dir
+from numpy.distutils.scons import GetNumpyEnvironment
+from numpy.distutils.scons import CheckCBLAS, CheckF77BLAS,\
+                                  IsVeclib, IsAccelerate, \
+                                  IsATLAS, GetATLASVersion
+
+from numpy.distutils.scons.configuration import write_info
+
+env = GetNumpyEnvironment(ARGUMENTS)
+env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
+#if os.name == 'nt':
+#    # NT needs the pythonlib to run any code importing Python.h, including
+#    # simple code using only typedef and so on, so we need it for configuration
+#    # checks
+#    env.AppendUnique(LIBPATH = [get_pythonlib_dir()])
+
+#=======================
+# Starting Configuration
+#=======================
+config = env.NumpyConfigure(custom_tests = {'CheckCBLAS' : CheckCBLAS,
+                                            'CheckBLAS' : CheckF77BLAS})
+
+#--------------
+# Checking Blas
+#--------------
+st = config.CheckBLAS(check_version = 1)
+if not st:
+    raise RuntimeError("no blas found, necessary for linalg module")
+if IsATLAS(env, 'blas'):
+    version = GetATLASVersion(env, 'blas')
+    env.Append(CPPDEFINES = [('ATLAS_INFO', '"\\"%s"\\"' % version)])
+else:
+    env.Append(CPPDEFINES = [('NO_ATLAS_INFO', 1)])
+
+if config.CheckCBLAS():
+    has_cblas = 1
+else:
+    has_cblas = 0
+
+config.Finish()
+write_info(env)
+
+#==========
+#  Build
+#==========
+
+# XXX: handle cblas wrapper for complex (check in numpy.scons or here ?)
+env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
+env.AppendUnique(F2PYOPTIONS = '--quiet')
+
+#------------
+#   fblas
+#------------
+env.NumpyFromFTemplate('fblas.pyf', 'fblas.pyf.src')
+source = ['fblas.pyf']
+if IsVeclib(env, 'blas') or IsAccelerate(env, 'blas'):
+    env.NumpyFromCTemplate('fblaswrap_veclib_c.c', 'fblaswrap_veclib_c.c.src')
+    source.append('fblaswrap_veclib_c.c')
+else:
+    env.NumpyFromFTemplate('fblaswrap.f', 'fblaswrap.f.src')
+    source.append('fblaswrap.f')
+env.NumpyPythonExtension('fblas', source)
+
+#------------
+#   cblas
+#------------
+source = ['cblas.pyf']
+if has_cblas:
+    env.NumpyFromFTemplate('cblas.pyf', 'cblas.pyf.src')
+env.NumpyPythonExtension('cblas', source)
+#     env.haha('cblas', 'generic_cblas.pyf')
+# else:
+#     env.hihi('cblas', 'generic_cblas.pyf')
+# env.NumpyPythonExtension('cblas', source = 'cblas.pyf')
