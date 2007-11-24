@@ -29,7 +29,7 @@ import timeseries as ts
 from timeseries import const as C
 from timeseries.parser import DateFromString, DateTimeFromString
 from timeseries import Date, DateArray,\
-    thisday, today, date_array, date_array_fromlist
+    now, date_array, date_array_fromlist
 from timeseries.cseries import freq_dict
 
 
@@ -122,8 +122,8 @@ class TestCreation(NumpyTestCase):
         freqs = [x[0] for x in freq_dict.values() if x[0] != 'U']
 
         for f in freqs:
-            today = thisday(f)
-            assert_equal(Date(freq=f, value=today.value), today)
+            _now = now(f)
+            assert_equal(Date(freq=f, value=_now.value), _now)
         print "finished test_consistent_value"
 
     def test_shortcuts(self):
@@ -134,14 +134,14 @@ class TestCreation(NumpyTestCase):
         assert_equal(Date('D','2007-01'), Date('D', value=732677))
         assert_equal(Date('D',732677), Date('D', value=732677))
         # DateArray shortcuts
-        n = today('M')
+        n = now('M')
         d = date_array(start_date=n, length=3)
         assert_equal(date_array(n,length=3), d)
         assert_equal(date_array(n, n+2), d)
         print "finished test_shortcuts"
 
 class TestDateProperties(NumpyTestCase):
-    "Test properties such as year, month, day_of_week, etc...."
+    "Test properties such as year, month, weekday, etc...."
 
     def __init__(self, *args, **kwds):
         NumpyTestCase.__init__(self, *args, **kwds)
@@ -201,21 +201,21 @@ class TestDateProperties(NumpyTestCase):
         assert_equal(b_date.quarter, 1)
         assert_equal(b_date.month, 1)
         assert_equal(b_date.day, 1)
-        assert_equal(b_date.day_of_week, 0)
+        assert_equal(b_date.weekday, 0)
         assert_equal(b_date.day_of_year, 1)
 
         assert_equal(d_date.year, 2007)
         assert_equal(d_date.quarter, 1)
         assert_equal(d_date.month, 1)
         assert_equal(d_date.day, 1)
-        assert_equal(d_date.day_of_week, 0)
+        assert_equal(d_date.weekday, 0)
         assert_equal(d_date.day_of_year, 1)
 
         assert_equal(h_date.year, 2007)
         assert_equal(h_date.quarter, 1)
         assert_equal(h_date.month, 1)
         assert_equal(h_date.day, 1)
-        assert_equal(h_date.day_of_week, 0)
+        assert_equal(h_date.weekday, 0)
         assert_equal(h_date.day_of_year, 1)
         assert_equal(h_date.hour, 0)
 
@@ -223,7 +223,7 @@ class TestDateProperties(NumpyTestCase):
         assert_equal(t_date.quarter, 1)
         assert_equal(t_date.month, 1)
         assert_equal(t_date.day, 1)
-        assert_equal(t_date.day_of_week, 0)
+        assert_equal(t_date.weekday, 0)
         assert_equal(t_date.day_of_year, 1)
         assert_equal(t_date.hour, 0)
         assert_equal(t_date.minute, 0)
@@ -232,7 +232,7 @@ class TestDateProperties(NumpyTestCase):
         assert_equal(s_date.quarter, 1)
         assert_equal(s_date.month, 1)
         assert_equal(s_date.day, 1)
-        assert_equal(s_date.day_of_week, 0)
+        assert_equal(s_date.weekday, 0)
         assert_equal(s_date.day_of_year, 1)
         assert_equal(s_date.hour, 0)
         assert_equal(s_date.minute, 0)
@@ -483,17 +483,17 @@ class TestFreqConversion(NumpyTestCase):
             date_W_to_Q = dWrap(Date(freq='Q', year=2007, quarter=1))
             date_W_to_M = dWrap(Date(freq='M', year=2007, month=1))
 
-            if Date(freq='D', year=2007, month=12, day=31).day_of_week == 6:
+            if Date(freq='D', year=2007, month=12, day=31).weekday == 6:
                 date_W_to_A_end_of_year = dWrap(Date(freq='A', year=2007))
             else:
                 date_W_to_A_end_of_year = dWrap(Date(freq='A', year=2008))
 
-            if Date(freq='D', year=2007, month=3, day=31).day_of_week == 6:
+            if Date(freq='D', year=2007, month=3, day=31).weekday == 6:
                 date_W_to_Q_end_of_quarter = dWrap(Date(freq='Q', year=2007, quarter=1))
             else:
                 date_W_to_Q_end_of_quarter = dWrap(Date(freq='Q', year=2007, quarter=2))
 
-            if Date(freq='D', year=2007, month=1, day=31).day_of_week == 6:
+            if Date(freq='D', year=2007, month=1, day=31).weekday == 6:
                 date_W_to_M_end_of_month = dWrap(Date(freq='M', year=2007, month=1))
             else:
                 date_W_to_M_end_of_month = dWrap(Date(freq='M', year=2007, month=2))
@@ -877,7 +877,7 @@ class TestMethods(NumpyTestCase):
         assert_equal(empty_darray.get_steps(), None)
 
     def test_cachedinfo(self):
-        D = date_array(start_date=thisday('D'), length=5)
+        D = date_array(start_date=now('D'), length=5)
         Dstr = D.tostring()
         assert_equal(D.tostring(), Dstr)
         DL = D[[0,-1]]

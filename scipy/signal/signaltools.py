@@ -12,7 +12,7 @@ from numpy import polyadd, polymul, polydiv, polysub, \
      ravel, size, less_equal, sum, r_, iscomplexobj, take, \
      argsort, allclose, expand_dims, unique, prod, sort, reshape, c_, \
      transpose, dot, any, minimum, maximum, mean, cosh, arccosh, \
-     arccos
+     arccos, concatenate
 import numpy
 from scipy.fftpack import fftn, ifftn, fft
 from scipy.misc import factorial

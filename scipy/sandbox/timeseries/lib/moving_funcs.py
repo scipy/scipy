@@ -366,10 +366,10 @@ for fn in (x for x in __all__ if x[:4] == 'mov_' and x[4:] != 'mean'):
 
 ###############################################################################
 if __name__ == '__main__':
-    from timeseries import time_series, today
+    from timeseries import time_series, now
     from maskedarray.testutils import assert_equal, assert_almost_equal
     #
-    series = time_series(N.arange(10),start_date=today('D'))
+    series = time_series(N.arange(10),start_date=now('D'))
     #
     filtered = mov_sum(series,3)
     assert_equal(filtered, [0,1,3,6,9,12,15,18,21,24])

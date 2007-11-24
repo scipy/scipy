@@ -328,7 +328,7 @@ to the instance.
         if datefmt is None:
             def datefmt_func(date): return str(date)
         else:
-            def datefmt_func(date): return date.strfmt(datefmt)
+            def datefmt_func(date): return date.strftime(datefmt)
 
         if dates is None:
             tseries = ts.align_series(*tseries)

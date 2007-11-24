@@ -1649,9 +1649,12 @@ DateObject_asfreq(DateObject *self, PyObject *args, PyObject *kwds)
 }
 
 static char DateObject_strfmt_doc[] =
+"Deprecated alias for strftime method";
+
+static char DateObject_strftime_doc[] =
 "Returns string representation of Date object according to format specified.\n\n"
-":Parameters:\n"
-"   - fmt : string\n"
+"*Parameters*:\n"
+"   fmt : {str}\n"
 "       Formatting string. Uses the same directives as in the time.strftime\n"
 "       function in the standard Python time module. In addition, a few other\n"
 "       directives are supported:\n"
@@ -1665,7 +1668,7 @@ static char DateObject_strfmt_doc[] =
 "                 the current quarter. This is the same as %Y unless the\n"
 "                 Date is one of the 'qtr-s' frequencies\n";
 static PyObject *
-DateObject_strfmt(DateObject *self, PyObject *args)
+DateObject_strftime(DateObject *self, PyObject *args)
 {
 
     char *orig_fmt_str, *fmt_str;
@@ -1689,7 +1692,7 @@ DateObject_strfmt(DateObject *self, PyObject *args)
     long (*toDaily)(long, char, asfreq_info*) = NULL;
     asfreq_info af_info;
 
-    if (!PyArg_ParseTuple(args, "s:strfmt(fmt)", &orig_fmt_str)) return NULL;
+    if (!PyArg_ParseTuple(args, "s:strftime(fmt)", &orig_fmt_str)) return NULL;
 
     toDaily = get_asfreq_func(self->freq, FR_DAY, 0);
     get_asfreq_info(self->freq, FR_DAY, &af_info);
@@ -1821,7 +1824,7 @@ DateObject___str__(DateObject* self)
 
     if (string_arg == NULL) { return NULL; }
 
-    retval = DateObject_strfmt(self, string_arg);
+    retval = DateObject_strftime(self, string_arg);
     Py_DECREF(string_arg);
 
     return retval;
@@ -2098,7 +2101,7 @@ DateObject_day(DateObject *self, void *closure) {
 }
 
 static PyObject *
-DateObject_day_of_week(DateObject *self, void *closure) {
+DateObject_weekday(DateObject *self, void *closure) {
     struct date_info dinfo;
     if(DateObject_set_date_info(self, &dinfo) == -1) return NULL;
     return PyInt_FromLong(dinfo.day_of_week);
@@ -2173,7 +2176,10 @@ static PyGetSetDef DateObject_getseters[] = {
             "Returns the week.", NULL},
     {"day", (getter)DateObject_day, (setter)DateObject_ReadOnlyErr,
             "Returns the day of month.", NULL},
-    {"day_of_week", (getter)DateObject_day_of_week, (setter)DateObject_ReadOnlyErr,
+    {"weekday", (getter)DateObject_weekday, (setter)DateObject_ReadOnlyErr,
+            "Returns the day of week.", NULL},
+	// deprecated alias for weekday property
+    {"day_of_week", (getter)DateObject_weekday, (setter)DateObject_ReadOnlyErr,
             "Returns the day of week.", NULL},
     {"day_of_year", (getter)DateObject_day_of_year, (setter)DateObject_ReadOnlyErr,
             "Returns the day of year.", NULL},
@@ -2223,7 +2229,10 @@ static PyNumberMethods DateObject_as_number = {
 static PyMethodDef DateObject_methods[] = {
     {"toordinal", (PyCFunction)DateObject_toordinal, METH_NOARGS,
      DateObject_toordinal_doc},
-    {"strfmt", (PyCFunction)DateObject_strfmt, METH_VARARGS,
+    {"strftime", (PyCFunction)DateObject_strftime, METH_VARARGS,
+     DateObject_strftime_doc},
+    // deprecated alias for strftime
+    {"strfmt", (PyCFunction)DateObject_strftime, METH_VARARGS,
      DateObject_strfmt_doc},
     {"asfreq", (PyCFunction)DateObject_asfreq, METH_VARARGS | METH_KEYWORDS,
      DateObject_asfreq_doc},
@@ -2331,7 +2340,7 @@ c_dates_get_freq_group(PyObject *self, PyObject *args) {
 }
 
 PyObject *
-c_dates_thisday(PyObject *self, PyObject *args) {
+c_dates_now(PyObject *self, PyObject *args) {
 
     PyObject *freq, *init_args, *init_kwargs;
     time_t rawtime;
@@ -2340,7 +2349,7 @@ c_dates_thisday(PyObject *self, PyObject *args) {
 
     DateObject *secondly_date;
 
-    if (!PyArg_ParseTuple(args, "O:thisday(freq)", &freq)) return NULL;
+    if (!PyArg_ParseTuple(args, "O:now(freq)", &freq)) return NULL;
 
     if ((freq_val = check_freq(freq)) == INT_ERR_CODE) return NULL;
 
@@ -2635,7 +2644,7 @@ DateArray_getDateInfo(PyObject *self, PyObject *args)
             skip_periods = __skip_periods_day(freq);
             break;
         case 'W': //day of week
-            getDateInfo = &DateObject_day_of_week;
+            getDateInfo = &DateObject_weekday;
             skip_periods = __skip_periods_day(freq);
             break;
         case 'I': //week of year
