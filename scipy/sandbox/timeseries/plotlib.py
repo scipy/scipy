@@ -70,7 +70,7 @@ The specific Subplot object class to add is given through the keywords
     except TypeError:
         key = str(key)
     #
-    if figure_instance._seen.has_key(key):
+    if key in figure_instance._seen:
         ax = figure_instance._seen[key]
         figure_instance.sca(ax)
         return ax
@@ -554,7 +554,7 @@ class TimeSeries_DateFormatter(Formatter):
     #
     def __call__(self, x, pos=0):
         fmt = self.formatdict.pop(x, '')
-        return Date(self.freq, value=int(x)).strfmt(fmt)
+        return Date(self.freq, value=int(x)).strftime(fmt)
 
 
 
