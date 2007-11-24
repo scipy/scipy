@@ -1,0 +1,55 @@
+# Last Change: Sat Nov 24 06:00 PM 2007 J
+# vim:syntax=python
+
+import os
+from os.path import join as pjoin, splitext
+
+from numpy.distutils.misc_util import get_numpy_include_dirs
+from numpy.distutils.scons import get_python_inc#, get_pythonlib_dir
+from numpy.distutils.scons import GetNumpyEnvironment
+from numpy.distutils.scons import CheckF77BLAS
+
+from numpy.distutils.scons.configuration import write_info
+
+env = GetNumpyEnvironment(ARGUMENTS)
+env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
+#if os.name == 'nt':
+#    # NT needs the pythonlib to run any code importing Python.h, including
+#    # simple code using only typedef and so on, so we need it for configuration
+#    # checks
+#    env.AppendUnique(LIBPATH = [get_pythonlib_dir()])
+
+#=======================
+# Starting Configuration
+#=======================
+config = env.NumpyConfigure(custom_tests = {'CheckBLAS' : CheckF77BLAS})
+
+#--------------
+# Checking Blas
+#--------------
+st = config.CheckBLAS()
+if not st:
+    has_blas = 0
+else:
+    has_blas = 1
+
+config.Finish()
+write_info(env)
+
+#==========
+#  Build
+#==========
+
+# odr lib
+libodr_src = [pjoin('odrpack', i) for i in ['d_odr.f', 'd_mprec.f', 'dlunoc.f']]
+if has_blas:
+    libodr_src.append(pjoin('odrpack', 'd_lpk.f'))
+else:
+    libodr_src.append(pjoin('odrpack', 'd_lpkbls.f'))
+
+env.NumpyStaticExtLibrary('odr', source = libodr_src)
+env.AppendUnique(LIBS = 'odr')
+env.AppendUnique(LIBPATH = env['build_dir'])
+
+# odr pyextension
+env.NumpyPythonExtension('__odrpack', '__odrpack.c')
