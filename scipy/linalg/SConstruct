@@ -1,4 +1,4 @@
-# Last Change: Thu Nov 22 05:00 PM 2007 J
+# Last Change: Sat Nov 24 12:00 PM 2007 J
 # vim:syntax=python
 
 import os
@@ -8,7 +8,8 @@ from numpy.distutils.misc_util import get_numpy_include_dirs
 from numpy.distutils.scons import get_python_inc#, get_pythonlib_dir
 from numpy.distutils.scons import GetNumpyEnvironment
 from numpy.distutils.scons import CheckCBLAS, CheckF77BLAS, CheckF77LAPACK,\
-                                  CheckCLAPACK, IsVeclib, IsAccelerate, IsATLAS
+                                  CheckCLAPACK, IsVeclib, IsAccelerate, \
+                                  IsATLAS, GetATLASVersion
 
 from scons_support import do_generate_interface, do_generate_fake_interface, \
                           generate_interface_emitter
@@ -36,9 +37,14 @@ config = env.NumpyConfigure(custom_tests = {'CheckCBLAS' : CheckCBLAS,
 #--------------
 # Checking Blas
 #--------------
-st = config.CheckBLAS()
+st = config.CheckBLAS(check_version = 1)
 if not st:
     raise RuntimeError("no blas found, necessary for linalg module")
+if IsATLAS(env, 'blas'):
+    version = GetATLASVersion(env, 'blas')
+    env.Append(CPPDEFINES = [('ATLAS_INFO', '"\\"%s"\\"' % version)])
+else:
+    env.Append(CPPDEFINES = [('NO_ATLAS_INFO', 1)])
 
 st = config.CheckLAPACK()
 if not st:
