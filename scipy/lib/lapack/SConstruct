@@ -1,4 +1,4 @@
-# Last Change: Sat Nov 24 05:00 PM 2007 J
+# Last Change: Sat Nov 24 08:00 PM 2007 J
 # vim:syntax=python
 
 import os
@@ -26,9 +26,7 @@ env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
 #=======================
 # Starting Configuration
 #=======================
-config = env.NumpyConfigure(custom_tests = {'CheckCBLAS' : CheckCBLAS,
-                                            'CheckBLAS' : CheckF77BLAS,
-                                            'CheckCLAPACK' : CheckCLAPACK,
+config = env.NumpyConfigure(custom_tests = {'CheckCLAPACK' : CheckCLAPACK,
                                             'CheckLAPACK' : CheckF77LAPACK})
 
 #--------------

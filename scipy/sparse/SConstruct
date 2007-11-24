@@ -1,4 +1,4 @@
-# Last Change: Sat Nov 24 07:00 PM 2007 J
+# Last Change: Sat Nov 24 08:00 PM 2007 J
 # vim:syntax=python
 from os.path import join
 
@@ -14,5 +14,5 @@ env.NumpyPythonExtension('_sparsetools',
 
 # Copy this python file into the distutils lib dir
 env.Command(join(env['distutils_installdir'], 'sparsetools.py'),
-            join('sparsetools', 'sparsetools.py'),
+            join(env['src_dir'], 'sparsetools', 'sparsetools.py'),
             Copy('$TARGET', '$SOURCE'))
