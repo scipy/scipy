@@ -34,7 +34,7 @@
 analysis."""
 
 import numpy as N
-from scipy.special import gammaln as loggam
+from _cephes import gammaln as loggam
 
 def multigammaln(a, d):
     """returns the log of multivariate gamma, also sometimes called the
