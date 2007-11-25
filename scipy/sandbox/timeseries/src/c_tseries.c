@@ -167,11 +167,11 @@ TimeSeries_convert(PyObject *self, PyObject *args)
     {
         case 'S':
             // start -> before
-            relation = 'B';
+            relation = 'S';
             break;
         case 'E':
             // end -> after
-            relation = 'A';
+            relation = 'E';
             break;
         default:
             return NULL;
@@ -184,16 +184,16 @@ TimeSeries_convert(PyObject *self, PyObject *args)
     asfreq_endpoints = get_asfreq_func(fromFreq, toFreq, 0);
 
     //convert start index to new frequency
-    CHECK_ASFREQ(newStartTemp = asfreq_main(startIndex, 'B', &af_info));
+    CHECK_ASFREQ(newStartTemp = asfreq_main(startIndex, 'S', &af_info));
     if (newStartTemp < 1) {
-        CHECK_ASFREQ(newStart = asfreq_endpoints(startIndex, 'A', &af_info));
+        CHECK_ASFREQ(newStart = asfreq_endpoints(startIndex, 'E', &af_info));
     }
     else { newStart = newStartTemp; }
 
     //convert end index to new frequency
-    CHECK_ASFREQ(newEndTemp = asfreq_main(startIndex+array->dimensions[0]-1, 'A', &af_info));
+    CHECK_ASFREQ(newEndTemp = asfreq_main(startIndex+array->dimensions[0]-1, 'E', &af_info));
     if (newEndTemp < 1) {
-        CHECK_ASFREQ(newEnd = asfreq_endpoints(startIndex+array->dimensions[0]-1, 'B', &af_info));
+        CHECK_ASFREQ(newEnd = asfreq_endpoints(startIndex+array->dimensions[0]-1, 'S', &af_info));
     }
     else { newEnd = newEndTemp; }
 
@@ -212,7 +212,7 @@ TimeSeries_convert(PyObject *self, PyObject *args)
         get_asfreq_info(toFreq, fromFreq, &af_info_rev);
         asfreq_reverse = get_asfreq_func(toFreq, fromFreq, 0);
 
-        CHECK_ASFREQ(tempval = asfreq_reverse(newStart, 'B', &af_info_rev));
+        CHECK_ASFREQ(tempval = asfreq_reverse(newStart, 'S', &af_info_rev));
         currPerLen = startIndex - tempval;
 
         nd = 2;
