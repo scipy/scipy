@@ -23,7 +23,7 @@ def configuration(parent_package='',top_path=None, setup_name = 'setupscons.py')
     #config.add_subpackage('stsci')
     config.add_subpackage('weave')
     config.make_svn_version_py()  # installs __svn_version__.py
-    config.make_config_py()
+    config.scons_make_config_py() # installs __config__.py
     return config
 
 if __name__ == '__main__':
