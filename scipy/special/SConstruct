@@ -1,12 +1,13 @@
 # Last Change: Sat Nov 24 08:00 PM 2007 J
 # vim:syntax=python
-from os.path import join as pjoin
-import glob
+from os.path import join as pjoin, basename as pbasename
 import sys
+import glob
 from distutils.sysconfig import get_python_inc
 
 from numpy.distutils.misc_util import get_numpy_include_dirs
 from numpy.distutils.scons import GetNumpyEnvironment
+from numpy.distutils.scons import CheckF77Clib
 
 env = GetNumpyEnvironment(ARGUMENTS)
 
@@ -18,20 +19,32 @@ if sys.platform=='win32':
 #        define_macros.append(('NONANS',None))
     env.AppendUnique(CPPDEFINES = '_USE_MATH_DEFINES')
 
-def build_lib(name, ext):
+config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib})
+if not config.CheckF77Clib():
+    raise RuntimeError("Could not get C/F77 runtime information")
+config.Finish()
+
+def build_lib(name, ext, libname = None):
     """ext should be .f or .c"""
-    src = glob.glob(pjoin(name, '*%s' % ext))
-    env.NumpyStaticExtLibrary(name, source = src)
+    if not libname:
+        libname = name
+    src = glob.glob(pjoin(env['src_dir'], name, '*%s' % ext))
+    assert len(src) > 0
+    env.NumpyStaticExtLibrary(libname, 
+                              source = [pjoin(name,
+                                             pbasename(i)) 
+                                        for i in src])
 
 # C libraries
 build_lib('c_misc', '.c')
 build_lib('cephes', '.c')
 
 # F libraries
+# XXX: handle no opt flags for mach
 build_lib('mach', '.f')
 build_lib('toms', '.f')
 build_lib('amos', '.f')
-build_lib('cdf', '.f')
+build_lib('cdflib', '.f', 'cdf')
 build_lib('specfun', '.f')
 
 env.AppendUnique(LIBPATH = env['build_dir'])
@@ -43,8 +56,10 @@ src = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
 env.NumpyPythonExtension('_cephes', 
                          source = src, 
                          LIBS = ['amos', 'toms', 'c_misc', 'cephes', 'mach',\
-                                 'cdf', 'specfun'])
+                                 'cdf', 'specfun'], 
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # Specfun extension
 env.NumpyPythonExtension('specfun', source = 'specfun.pyf', LIBS = 'specfun', \
-                         F2PYOPTIONS = ["--no-wrap-functions"])
+                         F2PYOPTIONS = ["--no-wrap-functions"],
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
