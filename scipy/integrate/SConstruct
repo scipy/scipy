@@ -1,4 +1,4 @@
-# Last Change: Mon Nov 26 04:00 PM 2007 J
+# Last Change: Mon Nov 26 05:00 PM 2007 J
 # vim:syntax=python
 from os.path import join as pjoin
 import warnings
@@ -12,8 +12,8 @@ env = GetNumpyEnvironment(ARGUMENTS)
 config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib,
                                             'CheckF77BLAS' : CheckF77BLAS})
 
-#if not config.CheckF77Clib():
-#    raise Exception("Could not check F77 runtime, needed for interpolate")
+if not config.CheckF77Clib():
+    raise Exception("Could not check F77 runtime, needed for interpolate")
 if not config.CheckF77BLAS():
     warnings.warn("Could not find F77 BLAS")
 
@@ -46,12 +46,15 @@ env.AppendUnique(LIBPATH = env['build_dir'])
 
 # Build _quadpack
 env.NumpyPythonExtension('_quadpack', source = '_quadpackmodule.c', 
-                         LIBS = ['quadpack', 'linpack_lite', 'mach'])
+                         LIBS = ['quadpack', 'linpack_lite', 'mach'],
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # Build _odepack
 env.NumpyPythonExtension('_odepack', source = '_odepackmodule.c',
-                         LIBS = ['odepack', 'linpack_lite', 'mach'])
+                         LIBS = ['odepack', 'linpack_lite', 'mach'],
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # Build vode
 env.NumpyPythonExtension('vode', source = 'vode.pyf',
-                         LIBS = ['odepack', 'linpack_lite', 'mach'])
+                         LIBS = ['odepack', 'linpack_lite', 'mach'],
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
