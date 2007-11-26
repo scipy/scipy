@@ -1,4 +1,4 @@
-# Last Change: Mon Nov 26 02:00 PM 2007 J
+# Last Change: Mon Nov 26 03:00 PM 2007 J
 # vim:syntax=python
 from os.path import join as pjoin, basename as pbasename
 import sys
@@ -20,9 +20,8 @@ if not config.CheckF77Clib():
 config.Finish()
 
 # Statlib library
-src = glob.glob(pjoin(env['src_dir'], 'statlib', '*.f' ))
-env.NumpyStaticExtLibrary('statlib', 
-                          source = [pjoin('statlib', pbasename(i)) for i in src])
+src = env.NumpyGlob(pjoin('statlib', '*.f' ))
+env.NumpyStaticExtLibrary('statlib', source = src)
 
 env.AppendUnique(LIBPATH = env['build_dir'])
 
@@ -36,4 +35,8 @@ env.NumpyPythonExtension('statlib', source = 'statlib.pyf',
 futil_src = env.F2py(pjoin(env['build_dir'], 'futilmodule.c'), 
                      pjoin(env['build_dir'], 'futil.f'))
 env.NumpyPythonExtension('futil', source = futil_src + ['futil.f'],
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
+
+# mvn extension
+env.NumpyPythonExtension('mvn', source = ['mvn.pyf', 'mvndst.f'],
                          LINKFLAGSEND = env['F77_LDFLAGS'])
