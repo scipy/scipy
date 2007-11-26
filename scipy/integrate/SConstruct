@@ -1,23 +1,35 @@
-# Last Change: Thu Nov 22 12:00 PM 2007 J
+# Last Change: Mon Nov 26 04:00 PM 2007 J
 # vim:syntax=python
 from os.path import join as pjoin
-
+import warnings
 
 from numpy.distutils.misc_util import get_numpy_include_dirs
-from numpy.distutils.scons import GetNumpyEnvironment
+from numpy.distutils.scons import GetNumpyEnvironment, CheckF77Clib, CheckF77BLAS
 
 env = GetNumpyEnvironment(ARGUMENTS)
+
+# Configuration
+config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib,
+                                            'CheckF77BLAS' : CheckF77BLAS})
+
+#if not config.CheckF77Clib():
+#    raise Exception("Could not check F77 runtime, needed for interpolate")
+if not config.CheckF77BLAS():
+    warnings.warn("Could not find F77 BLAS")
+
+config.Finish()
 
 env.AppendUnique(CPPPATH = get_numpy_include_dirs())
 env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 
-# XXX: blas/lapack integration
+# XXX: lapack integration
 
 # Build linpack_lite
 src = env.NumpyGlob(pjoin('linpack_lite', '*.f'))
 linpack_lite = env.NumpyStaticExtLibrary('linpack_lite', source = src)
 
 # Build mach
+# XXX: do not use optimization flags for mach
 src = env.NumpyGlob(pjoin('mach', '*.f'))
 mach = env.NumpyStaticExtLibrary('mach', source = src)
 
@@ -29,14 +41,17 @@ quadpack = env.NumpyStaticExtLibrary('quadpack', source = src)
 src = env.NumpyGlob(pjoin('odepack', '*.f'))
 odepack = env.NumpyStaticExtLibrary('odepack', source = src)
 
-env.AppendUnique(LIBS = ['linpack_lite', 'quadpack', 'odepack'])
+#env.AppendUnique(LIBS = ['linpack_lite', 'quadpack', 'odepack', 'mach'])
 env.AppendUnique(LIBPATH = env['build_dir'])
 
 # Build _quadpack
-env.NumpyPythonExtension('_quadpack', source = '_quadpackmodule.c')
+env.NumpyPythonExtension('_quadpack', source = '_quadpackmodule.c', 
+                         LIBS = ['quadpack', 'linpack_lite', 'mach'])
 
 # Build _odepack
-env.NumpyPythonExtension('_odepack', source = '_odepackmodule.c')
+env.NumpyPythonExtension('_odepack', source = '_odepackmodule.c',
+                         LIBS = ['odepack', 'linpack_lite', 'mach'])
 
 # Build vode
-env.NumpyPythonExtension('vode', source = 'vode.pyf')
+env.NumpyPythonExtension('vode', source = 'vode.pyf',
+                         LIBS = ['odepack', 'linpack_lite', 'mach'])
