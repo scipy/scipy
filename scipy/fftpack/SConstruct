@@ -1,4 +1,4 @@
-# Last Change: Thu Nov 22 12:00 PM 2007 J
+# Last Change: Mon Nov 26 03:00 PM 2007 J
 # vim:syntax=python
 from os.path import join as pjoin
 import glob
@@ -14,7 +14,7 @@ env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 # XXX: implement fft checkers ...
 
 # Build dfftpack
-src = glob.glob(pjoin('dfftpack', '*.f'))
+src = env.NumpyGlob(pjoin('dfftpack', '*.f'))
 dfftpack = env.NumpyStaticExtLibrary('dfftpack', source = src)
 env.AppendUnique(LIBS = ['dfftpack'])
 env.AppendUnique(LIBPATH = env['build_dir'])
