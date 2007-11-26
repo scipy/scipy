@@ -1,7 +1,7 @@
 # Last Change: Sat Nov 24 05:00 PM 2007 J
 # vim:syntax=python
 from os.path import join as pjoin
-import glob
+
 import sys
 from distutils.sysconfig import get_python_inc
 
@@ -21,7 +21,7 @@ else:
     superlu_defs = []
 
 # Build superlu 
-src = glob.glob(pjoin('SuperLU', 'SRC', '*.c'))
+src = env.NumpyGlob(pjoin('SuperLU', 'SRC', '*.c'))
 superlu = env.NumpyStaticExtLibrary('superlu_src', source = src, 
                                     CPPDEFINES = superlu_defs)
 

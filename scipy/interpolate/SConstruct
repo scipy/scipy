@@ -1,7 +1,7 @@
 # Last Change: Thu Nov 22 12:00 PM 2007 J
 # vim:syntax=python
 from os.path import join as pjoin
-import glob
+
 
 from numpy.distutils.misc_util import get_numpy_include_dirs
 from numpy.distutils.scons import GetNumpyEnvironment, CheckF77Clib
@@ -18,7 +18,7 @@ env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 env.AppendUnique(LINKFLAGS = env['F77_LDFLAGS'])
 
 # Build fitpack
-src = glob.glob(pjoin('fitpack', '*.f'))
+src = env.NumpyGlob(pjoin('fitpack', '*.f'))
 fitpack = env.NumpyStaticExtLibrary('fitpack', source = src)
 
 env.AppendUnique(LIBS = ['fitpack'])

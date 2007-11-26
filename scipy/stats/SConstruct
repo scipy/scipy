@@ -2,7 +2,7 @@
 # vim:syntax=python
 from os.path import join as pjoin, basename as pbasename
 import sys
-import glob
+
 from distutils.sysconfig import get_python_inc
 
 from numpy.distutils.misc_util import get_numpy_include_dirs

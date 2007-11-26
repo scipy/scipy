@@ -1,7 +1,7 @@
 # Last Change: Thu Nov 22 12:00 PM 2007 J
 # vim:syntax=python
 from os.path import join as pjoin
-import glob
+
 
 from numpy.distutils.misc_util import get_numpy_include_dirs
 from numpy.distutils.scons import GetNumpyEnvironment
@@ -14,19 +14,19 @@ env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 # XXX: blas/lapack integration
 
 # Build linpack_lite
-src = glob.glob(pjoin('linpack_lite', '*.f'))
+src = env.NumpyGlob(pjoin('linpack_lite', '*.f'))
 linpack_lite = env.NumpyStaticExtLibrary('linpack_lite', source = src)
 
 # Build mach
-src = glob.glob(pjoin('mach', '*.f'))
+src = env.NumpyGlob(pjoin('mach', '*.f'))
 mach = env.NumpyStaticExtLibrary('mach', source = src)
 
 # Build quadpack
-src = glob.glob(pjoin('quadpack', '*.f'))
+src = env.NumpyGlob(pjoin('quadpack', '*.f'))
 quadpack = env.NumpyStaticExtLibrary('quadpack', source = src)
 
 # Build odepack
-src = glob.glob(pjoin('odepack', '*.f'))
+src = env.NumpyGlob(pjoin('odepack', '*.f'))
 odepack = env.NumpyStaticExtLibrary('odepack', source = src)
 
 env.AppendUnique(LIBS = ['linpack_lite', 'quadpack', 'odepack'])

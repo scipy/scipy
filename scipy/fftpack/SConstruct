@@ -1,7 +1,7 @@
 # Last Change: Mon Nov 26 03:00 PM 2007 J
 # vim:syntax=python
 from os.path import join as pjoin
-import glob
+
 
 from numpy.distutils.misc_util import get_numpy_include_dirs
 from numpy.distutils.scons import GetNumpyEnvironment

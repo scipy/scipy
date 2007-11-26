@@ -1,9 +1,9 @@
-# Last Change: Sat Nov 24 07:00 PM 2007 J
+# Last Change: Mon Nov 26 03:00 PM 2007 J
 # vim:syntax=python
 
 import os
 from os.path import join as pjoin, splitext
-import glob
+
 
 from numpy.distutils.misc_util import get_numpy_include_dirs
 from numpy.distutils.scons import get_python_inc#, get_pythonlib_dir
@@ -43,11 +43,11 @@ write_info(env)
 #==========
 
 # minpack lib
-minpack_src = glob.glob(pjoin('minpack', '*.f'))
+minpack_src = env.NumpyGlob(pjoin('minpack', '*.f'))
 env.NumpyStaticExtLibrary('minpack', source = minpack_src)
 
 # rootfind lib
-rootfind_src = glob.glob(pjoin('Zeros', '*.c'))
+rootfind_src = env.NumpyGlob(pjoin('Zeros', '*.c'))
 env.NumpyStaticExtLibrary('rootfind', source = rootfind_src)
 
 env.AppendUnique(LIBS = ['minpack', 'rootfind'])

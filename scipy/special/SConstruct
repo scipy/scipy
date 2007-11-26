@@ -1,8 +1,8 @@
-# Last Change: Sat Nov 24 08:00 PM 2007 J
+# Last Change: Mon Nov 26 03:00 PM 2007 J
 # vim:syntax=python
 from os.path import join as pjoin, basename as pbasename
 import sys
-import glob
+
 from distutils.sysconfig import get_python_inc
 
 from numpy.distutils.misc_util import get_numpy_include_dirs
@@ -28,12 +28,8 @@ def build_lib(name, ext, libname = None):
     """ext should be .f or .c"""
     if not libname:
         libname = name
-    src = glob.glob(pjoin(env['src_dir'], name, '*%s' % ext))
-    assert len(src) > 0
-    env.NumpyStaticExtLibrary(libname, 
-                              source = [pjoin(name,
-                                             pbasename(i)) 
-                                        for i in src])
+    src = env.NumpyGlob(pjoin(name, '*%s' % ext))
+    env.NumpyStaticExtLibrary(libname, source = src)
 
 # C libraries
 build_lib('c_misc', '.c')
