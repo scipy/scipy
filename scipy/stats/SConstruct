@@ -1,0 +1,39 @@
+# Last Change: Mon Nov 26 02:00 PM 2007 J
+# vim:syntax=python
+from os.path import join as pjoin, basename as pbasename
+import sys
+import glob
+from distutils.sysconfig import get_python_inc
+
+from numpy.distutils.misc_util import get_numpy_include_dirs
+from numpy.distutils.scons import GetNumpyEnvironment
+from numpy.distutils.scons import CheckF77Clib
+
+env = GetNumpyEnvironment(ARGUMENTS)
+
+env.AppendUnique(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
+env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
+
+config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib})
+if not config.CheckF77Clib():
+    raise RuntimeError("Could not get C/F77 runtime information")
+config.Finish()
+
+# Statlib library
+src = glob.glob(pjoin(env['src_dir'], 'statlib', '*.f' ))
+env.NumpyStaticExtLibrary('statlib', 
+                          source = [pjoin('statlib', pbasename(i)) for i in src])
+
+env.AppendUnique(LIBPATH = env['build_dir'])
+
+# Statlib extension
+env.NumpyPythonExtension('statlib', source = 'statlib.pyf', 
+                         F2PYOPTIONS = ["--no-wrap-functions"],
+                         LIBS = 'statlib',
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
+
+# futil extension
+futil_src = env.F2py(pjoin(env['build_dir'], 'futilmodule.c'), 
+                     pjoin(env['build_dir'], 'futil.f'))
+env.NumpyPythonExtension('futil', source = futil_src + ['futil.f'],
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
