@@ -1,6 +1,6 @@
 """
-Interface to the UMFPACK library.
-=================================
+:Interface to the UMFPACK library:
+==================================
 
 :Contains: UmfpackContext class
 
@@ -21,6 +21,7 @@ module exposes, if you need something not covered by the examples below.
 
 Example site.cfg entry:
 
+<code>
 UMFPACK v4.4 in <dir>:
 
 [amd]
@@ -44,7 +45,7 @@ amd_libs = amd
 library_dirs = <dir>/UFsparse/UMFPACK/Lib
 include_dirs = <dir>/UFsparse/UMFPACK/Include, <dir>/UFsparse/UFconfig
 umfpack_libs = umfpack
-
+<code>
 
 :Examples:
 ----------
@@ -55,6 +56,7 @@ Sparse matrix in CSR or CSC format: mtx
 Righthand-side: rhs
 Solution: sol
 
+<code>
 # Contruct the solver.
 umfpack = um.UmfpackContext() # Use default 'di' family of UMFPACK routines.
 
@@ -62,9 +64,11 @@ umfpack = um.UmfpackContext() # Use default 'di' family of UMFPACK routines.
 sol = umfpack( um.UMFPACK_A, mtx, rhs, autoTranspose = True )
 # same as:
 sol = umfpack.linsolve( um.UMFPACK_A, mtx, rhs, autoTranspose = True )
+<code>
 
 -or-
 
+<code>
 # Make LU decomposition.
 umfpack.numeric( mtx )
 ...
@@ -74,15 +78,17 @@ sol2 = umfpack( um.UMFPACK_A, mtx, rhs2, autoTranspose = True )
 # same as:
 sol1 = umfpack.solve( um.UMFPACK_A, mtx, rhs1, autoTranspose = True )
 sol2 = umfpack.solve( um.UMFPACK_A, mtx, rhs2, autoTranspose = True )
+<code>
 
 -or-
 
+<code>
 # Make symbolic decomposition.
 umfpack.symbolic( mtx0 )
 # Print statistics.
 umfpack.report_symbolic()
 
-...
+# ...
 
 # Make LU decomposition of mtx1 which has same structure as mtx0.
 umfpack.numeric( mtx1 )
@@ -92,7 +98,7 @@ umfpack.report_numeric()
 # Use already LU-decomposed matrix.
 sol1 = umfpack( um.UMFPACK_A, mtx1, rhs1, autoTranspose = True )
 
-...
+# ...
 
 # Make LU decomposition of mtx2 which has same structure as mtx0.
 umfpack.numeric( mtx2 )
@@ -100,36 +106,42 @@ sol2 = umfpack.solve( um.UMFPACK_A, mtx2, rhs2, autoTranspose = True )
 
 # Print all statistics.
 umfpack.report_info()
+<code>
 
 -or-
 
+<code>
 # Get LU factors and permutation matrices of a matrix.
 L, U, P, Q, R, do_recip = umfpack.lu( mtx )
+<code>
 
-Then:
-           L - Lower triangular m-by-min(m,n) CSR matrix
-           U - Upper triangular min(m,n)-by-n CSC matrix
-           P - Vector of row permuations
-           Q - Vector of column permuations
-           R - Vector of diagonal row scalings
-           do_recip - boolean
+:Returns:
+  - `L` : Lower triangular m-by-min(m,n) CSR matrix
+  - `U` : Upper triangular min(m,n)-by-n CSC matrix
+  - `P` : Vector of row permuations
+  - `Q` : Vector of column permuations
+  - `R` : Vector of diagonal row scalings
+  - `do_recip` : boolean
 
-       For a given matrix A, the decomposition satisfies:
-               LU = PRAQ        when do_recip is true
-               LU = P(R^-1)AQ   when do_recip is false
+:Note:
+  For a given matrix A, the decomposition satisfies:
+          $LU = PRAQ$        when do_recip is true,
+          $LU = P(R^{-1})AQ$   when do_recip is false
 
-:Arguments of UmfpackContext solution methods:
-----------------------------------------------
-This holds for: umfpack(), umfpack.linsolve(), umfpack.solve()
+:UmfpackContext solution methods:
+---------------------------------
 
- sys - one of UMFPACK system description constants, like
-       UMFPACK_A, UMFPACK_At, see umfSys list and UMFPACK
-       docs
- mtx - sparse matrix (CSR or CSC)
- rhs - right hand side vector
- autoTranspose - automatically changes 'sys' to the
-       transposed type, if 'mtx' is in CSR, since UMFPACK
-       assumes CSC internally
+umfpack(), umfpack.linsolve(), umfpack.solve()
+
+:Parameters:
+  - `sys` : constant,
+       one of UMFPACK system description constants, like
+       UMFPACK_A, UMFPACK_At, see umfSys list and UMFPACK docs
+  - `mtx` : sparse matrix (CSR or CSC)
+  - `rhs` : right hand side vector
+  - `autoTranspose` : bool
+       automatically changes 'sys' to the transposed type, if 'mtx' is in CSR,
+       since UMFPACK assumes CSC internally
 
 :Setting control parameters:
 ----------------------------
@@ -143,8 +155,10 @@ for example 'um.UMFPACK_PRL' (controlling the verbosity of umfpack report
 functions).  These attributes are in fact indices into the control array
 - to set the corresponding control array value, just do the following:
 
+<code>
 umfpack = um.UmfpackContext()
 umfpack.control[um.UMFPACK_PRL] = 4 # Let's be more verbose.
+<code>
 
 --
 :Author: Robert Cimrman
