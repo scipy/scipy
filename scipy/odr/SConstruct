@@ -1,4 +1,4 @@
-# Last Change: Sat Nov 24 06:00 PM 2007 J
+# Last Change: Mon Nov 26 06:00 PM 2007 J
 # vim:syntax=python
 
 import os
@@ -7,7 +7,7 @@ from os.path import join as pjoin, splitext
 from numpy.distutils.misc_util import get_numpy_include_dirs
 from numpy.distutils.scons import get_python_inc#, get_pythonlib_dir
 from numpy.distutils.scons import GetNumpyEnvironment
-from numpy.distutils.scons import CheckF77BLAS
+from numpy.distutils.scons import CheckF77BLAS, CheckF77Clib
 
 from numpy.distutils.scons.configuration import write_info
 
@@ -22,7 +22,12 @@ env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
 #=======================
 # Starting Configuration
 #=======================
-config = env.NumpyConfigure(custom_tests = {'CheckBLAS' : CheckF77BLAS})
+config = env.NumpyConfigure(custom_tests = {'CheckBLAS' : CheckF77BLAS, 
+                                            'CheckF77Clib' : CheckF77Clib})
+
+if not config.CheckF77Clib():
+    raise RuntimeError("Could not check F/C runtime library for %s/%s, " \
+                       "contact the maintainer" % (env['CC'], env['F77']))
 
 #--------------
 # Checking Blas
@@ -47,9 +52,10 @@ if has_blas:
 else:
     libodr_src.append(pjoin('odrpack', 'd_lpkbls.f'))
 
-env.NumpyStaticExtLibrary('odr', source = libodr_src)
-env.AppendUnique(LIBS = 'odr')
+env.NumpyStaticExtLibrary('odrpack', source = libodr_src)
+env.AppendUnique(LIBS = 'odrpack')
 env.AppendUnique(LIBPATH = env['build_dir'])
 
 # odr pyextension
-env.NumpyPythonExtension('__odrpack', '__odrpack.c')
+env.NumpyPythonExtension('__odrpack', '__odrpack.c',
+                         LINKFLAGSEND = env['F77_LDFLAGS'])

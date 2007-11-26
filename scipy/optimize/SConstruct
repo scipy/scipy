@@ -1,4 +1,4 @@
-# Last Change: Mon Nov 26 03:00 PM 2007 J
+# Last Change: Mon Nov 26 05:00 PM 2007 J
 # vim:syntax=python
 
 import os
@@ -8,7 +8,7 @@ from os.path import join as pjoin, splitext
 from numpy.distutils.misc_util import get_numpy_include_dirs
 from numpy.distutils.scons import get_python_inc#, get_pythonlib_dir
 from numpy.distutils.scons import GetNumpyEnvironment
-from numpy.distutils.scons import CheckF77LAPACK
+from numpy.distutils.scons import CheckF77LAPACK, CheckF77Clib
 
 from numpy.distutils.scons.configuration import write_info
 
@@ -24,11 +24,16 @@ env.Append(CPPPATH = env['F2PYINCLUDEDIR'])
 #=======================
 # Starting Configuration
 #=======================
-config = env.NumpyConfigure(custom_tests = {'CheckLAPACK' : CheckF77LAPACK})
+config = env.NumpyConfigure(custom_tests = {'CheckLAPACK' : CheckF77LAPACK,
+                                            'CheckF77Clib' : CheckF77Clib})
 
 #-----------------
 # Checking Lapack
 #-----------------
+if not config.CheckF77Clib():
+    raise RuntimeLibrary("Could not check C/F runtime library for %s/%s"\
+                         " , contact the maintainer" % (env['CC'], env['F77']))
+
 st = config.CheckLAPACK()
 if not st:
     has_lapack = 0
@@ -54,7 +59,8 @@ env.AppendUnique(LIBS = ['minpack', 'rootfind'])
 env.AppendUnique(LIBPATH = env['build_dir'])
 
 # _minpack pyextension
-env.NumpyPythonExtension('_minpack', '_minpackmodule.c')
+env.NumpyPythonExtension('_minpack', '_minpackmodule.c',
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # _zeros pyextension
 env.NumpyPythonExtension('_zeros', 'zeros.c')
@@ -63,19 +69,22 @@ env.NumpyPythonExtension('_zeros', 'zeros.c')
 src = pjoin('lbfgsb', 'routines.f')
 lbfgsb_src = env.F2py(pjoin(env['build_dir'], '_lbfgsbmodule.c'), 
                       pjoin(env['build_dir'], 'lbfgsb', 'lbfgsb.pyf'))
-env.NumpyPythonExtension('_lbfgsb', source = [src] + lbfgsb_src)
+env.NumpyPythonExtension('_lbfgsb', source = [src] + lbfgsb_src,
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # _cobyla pyextension
 src = [pjoin('cobyla', i) for i in ['cobyla2.f', 'trstlp.f']]
 wrap_src = env.F2py(pjoin(env['build_dir'], 'cobyla', '_cobylamodule.c'), 
                     pjoin(env['build_dir'], 'cobyla', 'cobyla.pyf'))
-env.NumpyPythonExtension('_cobyla', source = src + wrap_src)
+env.NumpyPythonExtension('_cobyla', source = src + wrap_src,
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # _minpack2 pyextension
 src = [pjoin('minpack2', i) for i in ['dcsrch.f', 'dcstep.f']]
 wrap_src = env.F2py(pjoin(env['build_dir'], 'minpack2', 'minpack2module.c'), 
                     pjoin(env['build_dir'], 'minpack2', 'minpack2.pyf'))
-env.NumpyPythonExtension('minpack2', source = src + wrap_src)
+env.NumpyPythonExtension('minpack2', source = src + wrap_src,
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # moduleTNC pyextension
 env.NumpyPythonExtension('moduleTNC', 

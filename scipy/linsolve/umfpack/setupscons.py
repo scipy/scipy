@@ -9,6 +9,7 @@ def configuration(parent_package='',top_path=None):
     config = Configuration( 'umfpack', parent_package, top_path )
     config.add_data_dir('tests')
 
+    # XXX: Implement umfpack tester
 #    umf_info = get_info( 'umfpack', notfound_action = 1 )
 #
 #    umfpack_i_file = config.paths('umfpack.i')[0]

@@ -1,4 +1,4 @@
-# Last Change: Sat Nov 24 12:00 PM 2007 J
+# Last Change: Mon Nov 26 05:00 PM 2007 J
 # vim:syntax=python
 
 import os
@@ -9,7 +9,7 @@ from numpy.distutils.scons import get_python_inc#, get_pythonlib_dir
 from numpy.distutils.scons import GetNumpyEnvironment
 from numpy.distutils.scons import CheckCBLAS, CheckF77BLAS, CheckF77LAPACK,\
                                   CheckCLAPACK, IsVeclib, IsAccelerate, \
-                                  IsATLAS, GetATLASVersion
+                                  IsATLAS, GetATLASVersion, CheckF77Clib
 
 from scons_support import do_generate_interface, do_generate_fake_interface, \
                           generate_interface_emitter
@@ -32,11 +32,16 @@ env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
 config = env.NumpyConfigure(custom_tests = {'CheckCBLAS' : CheckCBLAS,
                                             'CheckBLAS' : CheckF77BLAS,
                                             'CheckCLAPACK' : CheckCLAPACK,
-                                            'CheckLAPACK' : CheckF77LAPACK})
+                                            'CheckLAPACK' : CheckF77LAPACK,
+                                            'CheckF77Clib' : CheckF77Clib})
 
 #--------------
 # Checking Blas
 #--------------
+if not config.CheckF77Clib():
+    raise RuntimeError("Could not check F/C runtime library for %s/%s, " \
+                       "contact the maintainer" % (env['CC'], env['F77']))
+
 st = config.CheckBLAS(check_version = 1)
 if not st:
     raise RuntimeError("no blas found, necessary for linalg module")
@@ -131,7 +136,8 @@ env.NumpyPythonExtension(
 calc_src = env.F2py(pjoin(env['build_dir'], 'src', 'calc_lworkmodule.c'), 
                     source = pjoin(env['build_dir'], 'src', 'calc_lwork.f'))
 env.NumpyPythonExtension('calc_lwork', 
-                         source = calc_src + [pjoin('src', 'calc_lwork.f')])
+                         source = calc_src + [pjoin('src', 'calc_lwork.f')],
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
 
 #--------------------
 # iterative methods

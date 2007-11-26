@@ -1,4 +1,4 @@
-# Last Change: Sat Nov 24 05:00 PM 2007 J
+# Last Change: Mon Nov 26 04:00 PM 2007 J
 # vim:syntax=python
 from os.path import join as pjoin
 
@@ -12,13 +12,21 @@ from numpy.distutils.scons import CheckF77LAPACK
 
 env = GetNumpyEnvironment(ARGUMENTS)
 
-env.AppendUnique(CPPPATH = get_numpy_include_dirs())
-env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
+# Configuration
+config = env.NumpyConfigure(custom_tests = {'CheckF77LAPACK' : CheckF77LAPACK})
+if not config.CheckF77LAPACK():
+    warnings.warn("Could not find F77 LAPACK")
+config.Finish()
 
 if sys.platform=='win32':
     superlu_defs = [('NO_TIMER',1)]
 else:
     superlu_defs = []
+superlu_defs.append(('USE_VENDOR_BLAS', 1))
+
+env.AppendUnique(CPPDEFINES = superlu_defs)
+env.AppendUnique(CPPPATH = get_numpy_include_dirs())
+env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 
 # Build superlu 
 src = env.NumpyGlob(pjoin('SuperLU', 'SRC', '*.c'))
