@@ -688,7 +688,7 @@ timeseries(%(data)s,
         """Returns the index corresponding to a given date, as an integer."""
         return self._dates.date_to_index(date)
     #.....................................................
-    def asfreq(self, freq, relation="AFTER"):
+    def asfreq(self, freq, relation="END"):
         """Converts the dates portion of the TimeSeries to another frequency.
 
 The resulting TimeSeries will have the same shape and dimensions as the
@@ -696,7 +696,7 @@ original series (unlike the `convert` method).
 
 *Parameters*:
     freq : {freq_spec}
-    relation : {'AFTER', 'BEFORE'} , optional
+    relation : {'END', 'START'} (optional)
 
 *Returns*:
     a new TimeSeries with the .dates DateArray at the specified frequency (the
@@ -1307,17 +1307,34 @@ def _convert1d(series, freq, func, position, *args, **kwargs):
 def convert(series, freq, func=None, position='END', *args, **kwargs):
     """Converts a series to a frequency. Private function called by convert
 
-    When converting to a lower frequency, func is a function that acts
-    on a 1-d array and returns a scalar or 1-d array. func should handle
-    masked values appropriately. If func is None, then a 2D array is returned,
-    where each column represents the values appropriately grouped into the new
-    frequency. `position` will be ignored in this case.
+*Parameters*:
+    series : {TimeSeries}
+        the series to convert. Skip this parameter if you are calling this as
+        a method of the TimeSeries object instead of the module function.
+    freq : {freq_spec}
+        Frequency to convert the TimeSeries to. Accepts any valid frequency
+        specification (string or integer)
+    func : {function} (optional)
+        When converting to a lower frequency, func is a function that acts on
+        one date's worth of data. func should handle masked values appropriately.
+        If func is None, then each data point in the resulting series will a
+        group of data points that fall into the date at the lower frequency.
 
-    When converting to a higher frequency, position is 'START' or 'END'
-    and determines where the data point is in each period (eg. if going
-    from monthly to daily, and position is 'END', then each data point is
-    placed at the end of the month).
-    """
+        For example, if converting from monthly to daily and you wanted each
+        data point in the resulting series to be the average value for each
+        month, you could specify maskedarray.average for the 'func' parameter.
+    position : {'END', 'START'} (optional)
+        When converting to a higher frequency, position is 'START' or 'END'
+        and determines where the data point is in each period. For example, if
+        going from monthly to daily, and position is 'END', then each data
+        point is placed at the end of the month.
+    *args : {extra arguments for func parameter} (optional)
+        if a func is specified that requires additional parameters, specify
+        them here.
+    **kwargs : {extra keyword arguments for func parameter} (optional)
+        if a func is specified that requires additional keyword parameters,
+        specify them here.
+"""
     if series.ndim == 1:
         obj = _convert1d(series, freq, func, position, *args, **kwargs)
     elif series.ndim == 2:
@@ -1341,8 +1358,8 @@ TimeSeries.convert = convert
 
 def group_byperiod(series, freq, position='END'):
     """Converts a series to a frequency, without any processing. If the series
-    has missing data, it is first filled with masked data. Duplicate values in the
-    series will raise an exception.
+has missing data, it is first filled with masked data. Duplicate values in the
+series will raise an exception.
     """
     if series.has_duplicated_dates():
         raise TimeSeriesError("The input series must not have duplicated dates!")
@@ -1357,16 +1374,16 @@ def tshift(series, nper, copy=True):
     """Returns a series of the same size as `series`, with the same
 start_date and end_date, but values shifted by `nper`.
 
-:Parameters:
-    - series : (TimeSeries)
+*Parameters*:
+    series : {TimeSeries}
         TimeSeries object to shift
-    - nper : (int)
+    nper : {int}
         number of periods to shift. Negative numbers shift values to the
         right, positive to the left
-    - copy : (boolean, *[True]*)
+    copy : {True, False} (optional)
         copies the data if True, returns a view if False.
 
-:Example:
+*Example*:
 >>> series = time_series([0,1,2,3], start_date=Date(freq='A', year=2005))
 >>> series
 timeseries(data  = [0 1 2 3],
@@ -1376,7 +1393,8 @@ timeseries(data  = [0 1 2 3],
 timeseries(data  = [-- 0 1 2],
            dates = [2005 ... 2008],
            freq  = A-DEC)
->>> pct_change = 100 * (series/tshift(series, -1, copy=False) - 1)"""
+>>> pct_change = 100 * (series/tshift(series, -1, copy=False) - 1)
+"""
     newdata = masked_array(numeric.empty(series.shape, dtype=series.dtype),
                            mask=True)
     if copy:
@@ -1400,13 +1418,13 @@ TimeSeries.tshift = tshift
 def pct(series, nper=1):
     """Returns the rolling percentage change of the series.
 
-:Parameters:
-    - series : (TimeSeries)
+*Parameters*:
+    series : {TimeSeries}
         TimeSeries object to to calculate percentage chage for
-    - nper : (int)
+    nper : {int}
         number of periods for percentage change
 
-:Example:
+*Example*:
 >>> series = time_series([2.,1.,2.,3.], start_date=Date(freq='A', year=2005))
 >>> pct(series)
 timeseries(data  = [-- -50.0 100.0 50.0],
@@ -1415,8 +1433,8 @@ timeseries(data  = [-- -50.0 100.0 50.0],
 >>> pct(series, 2)
 timeseries(data  = [-- -- 0.0 200.0],
            dates = [2005 ... 2008],
-           freq  = A-DEC)"""
-
+           freq  = A-DEC)
+"""
     newdata = masked_array(numeric.empty(series.shape, dtype=series.dtype),
                            mask=True)
     if nper < newdata.size:
@@ -1427,21 +1445,23 @@ timeseries(data  = [-- -- 0.0 200.0],
     return newseries
 TimeSeries.pct = pct
 #...............................................................................
-def fill_missing_dates(data, dates=None, freq=None,fill_value=None):
-    """Finds and fills the missing dates in a time series.
-The data corresponding to the initially missing dates are masked, or filled to
+def fill_missing_dates(data, dates=None, freq=None, fill_value=None):
+    """Finds and fills the missing dates in a time series. The data
+corresponding to the initially missing dates are masked, or filled to
 `fill_value`.
 
-:Parameters:
-    `data`
+*Parameters*:
+    data : {TimeSeries, ndarray}
         Initial array of data.
-    `dates`
-        Initial array of dates.
-    `freq` : float *[None]*
-        New date resolutions. If *None*, the initial resolution is used instead.
-    `fill_value` : float *[None]*
-        Default value for missing data. If None, the data are just masked.
-    """
+    dates : {DateArray} (optional)
+        Initial array of dates. Specify this if you are passing a plain ndarray
+        for the data instead of a TimeSeries.
+    freq : {freq_spec} (optional)
+        Frequency of result. If not specified, the initial frequency is used.
+    fill_value : {scalar of type data.dtype} (optional)
+        Default value for missing data. If Not specified, the data are just
+        masked.
+"""
     # Check the frequency ........
     orig_freq = freq
     freq = check_freq(freq)

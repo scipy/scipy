@@ -411,9 +411,9 @@ test_dates test suite.
         lowToHigh_start = lowFreqSeries.convert('B', position='START')
 
         assert_equal(lowToHigh_start.start_date,
-                     Date(freq='m', year=2005, month=6).asfreq("B", relation="BEFORE"))
+                     Date(freq='m', year=2005, month=6).asfreq("B", relation="START"))
         assert_equal(lowToHigh_start.end_date,
-                     (Date(freq='m', year=2005, month=6) + 9).asfreq("B", relation="AFTER"))
+                     (Date(freq='m', year=2005, month=6) + 9).asfreq("B", relation="END"))
 
         assert_equal(lowToHigh_start._mask[0], False)
         assert_equal(lowToHigh_start._mask[-1], True)
@@ -421,9 +421,9 @@ test_dates test suite.
         lowToHigh_end = lowFreqSeries.convert('B', position='END')
 
         assert_equal(lowToHigh_end.start_date,
-                     Date(freq='m', year=2005, month=6).asfreq("B", relation="BEFORE"))
+                     Date(freq='m', year=2005, month=6).asfreq("B", relation="START"))
         assert_equal(lowToHigh_end.end_date,
-                     (Date(freq='m', year=2005, month=6) + 9).asfreq("B", relation="AFTER"))
+                     (Date(freq='m', year=2005, month=6) + 9).asfreq("B", relation="END"))
 
         assert_equal(lowToHigh_end._mask[0], True)
         assert_equal(lowToHigh_end._mask[-1], False)

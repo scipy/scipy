@@ -427,7 +427,7 @@ static long absdate_from_ymd(int y, int m, int d) {
 ///////////////////////////////////////////////
 
 // frequency specifc conversion routines
-// each function must take an integer fromDate and a char relation ('B' or 'A' for 'BEFORE' or 'AFTER')
+// each function must take an integer fromDate and a char relation ('S' or 'E' for 'START' or 'END')
 
 //************ FROM DAILY ***************
 
@@ -487,7 +487,7 @@ static long asfreq_DtoB(long fromDate, char relation, asfreq_info *af_info) {
     if (dInfoCalc_SetFromAbsDate(&dinfo, fromDate,
                     GREGORIAN_CALENDAR)) return INT_ERR_CODE;
 
-    if (relation == 'B') {
+    if (relation == 'S') {
         return DtoB_WeekendToFriday(dinfo.absdate, dinfo.day_of_week);
     } else {
         return DtoB_WeekendToMonday(dinfo.absdate, dinfo.day_of_week);
@@ -512,7 +512,7 @@ static long asfreq_DtoD(long fromDate, char relation, asfreq_info *af_info) { re
 
 static long asfreq_DtoHIGHFREQ(long fromDate, char relation, long periodsPerDay) {
     if (fromDate >= HIGHFREQ_ORIG) {
-        if (relation == 'B') { return (fromDate - HIGHFREQ_ORIG)*(periodsPerDay) + 1; }
+        if (relation == 'S') { return (fromDate - HIGHFREQ_ORIG)*(periodsPerDay) + 1; }
         else                 { return (fromDate - HIGHFREQ_ORIG + 1)*(periodsPerDay); }
     } else { return -1; }
 }
@@ -568,7 +568,7 @@ static long asfreq_TtoB_forConvert(long fromDate, char relation, asfreq_info *af
 static long asfreq_TtoH(long fromDate, char relation, asfreq_info *af_info)
     { return (fromDate - 1)/60 + 1; }
 static long asfreq_TtoS(long fromDate, char relation, asfreq_info *af_info) {
-    if (relation == 'B') {  return fromDate*60 - 59; }
+    if (relation == 'S') {  return fromDate*60 - 59; }
     else                 {  return fromDate*60;      }}
 
 //************ FROM HOURLY ***************
@@ -593,7 +593,7 @@ static long asfreq_HtoB_forConvert(long fromDate, char relation, asfreq_info *af
 static long asfreq_HtoT(long fromDate, char relation, asfreq_info *af_info)
     { return asfreq_TtoS(fromDate, relation, &NULL_AF_INFO); }
 static long asfreq_HtoS(long fromDate, char relation, asfreq_info *af_info) {
-    if (relation == 'B') {  return fromDate*60*60 - 60*60 + 1; }
+    if (relation == 'S') {  return fromDate*60*60 - 60*60 + 1; }
     else                 {  return fromDate*60*60;             }}
 
 //************ FROM BUSINESS ***************
@@ -625,16 +625,16 @@ static long asfreq_BtoS(long fromDate, char relation, asfreq_info *af_info)
 //************ FROM WEEKLY ***************
 
 static long asfreq_WtoD(long fromDate, char relation, asfreq_info *af_info) {
-    if (relation == 'B') { return fromDate * 7 - 6 + af_info->from_week_end;}
+    if (relation == 'S') { return fromDate * 7 - 6 + af_info->from_week_end;}
     else                 { return fromDate * 7 + af_info->from_week_end; }
 }
 
 static long asfreq_WtoA(long fromDate, char relation, asfreq_info *af_info) {
-    return asfreq_DtoA(asfreq_WtoD(fromDate, 'A', af_info), relation, af_info); }
+    return asfreq_DtoA(asfreq_WtoD(fromDate, 'E', af_info), relation, af_info); }
 static long asfreq_WtoQ(long fromDate, char relation, asfreq_info *af_info) {
-    return asfreq_DtoQ(asfreq_WtoD(fromDate, 'A', af_info), relation, af_info); }
+    return asfreq_DtoQ(asfreq_WtoD(fromDate, 'E', af_info), relation, af_info); }
 static long asfreq_WtoM(long fromDate, char relation, asfreq_info *af_info) {
-    return asfreq_DtoM(asfreq_WtoD(fromDate, 'A', af_info), relation, &NULL_AF_INFO); }
+    return asfreq_DtoM(asfreq_WtoD(fromDate, 'E', af_info), relation, &NULL_AF_INFO); }
 
 static long asfreq_WtoW(long fromDate, char relation, asfreq_info *af_info)
     { return asfreq_DtoW(asfreq_WtoD(fromDate, relation, af_info), relation, af_info); }
@@ -645,7 +645,7 @@ static long asfreq_WtoB(long fromDate, char relation, asfreq_info *af_info) {
     if (dInfoCalc_SetFromAbsDate(&dinfo, asfreq_WtoD(fromDate, relation, af_info),
                     GREGORIAN_CALENDAR)) return INT_ERR_CODE;
 
-    if (relation == 'B') { return DtoB_WeekendToMonday(dinfo.absdate, dinfo.day_of_week); }
+    if (relation == 'S') { return DtoB_WeekendToMonday(dinfo.absdate, dinfo.day_of_week); }
     else                 { return DtoB_WeekendToFriday(dinfo.absdate, dinfo.day_of_week); }
 }
 
@@ -667,7 +667,7 @@ static long asfreq_MtoD(long fromDate, char relation, asfreq_info *af_info) {
 
     long y, m, absdate;
 
-    if (relation == 'B') {
+    if (relation == 'S') {
         MtoD_ym(fromDate, &y, &m);
         if ((absdate = absdate_from_ymd(y, m, 1)) == INT_ERR_CODE) return INT_ERR_CODE;
         return absdate;
@@ -679,10 +679,10 @@ static long asfreq_MtoD(long fromDate, char relation, asfreq_info *af_info) {
 }
 
 static long asfreq_MtoA(long fromDate, char relation, asfreq_info *af_info) {
-    return asfreq_DtoA(asfreq_MtoD(fromDate, 'A', &NULL_AF_INFO), relation, af_info); }
+    return asfreq_DtoA(asfreq_MtoD(fromDate, 'E', &NULL_AF_INFO), relation, af_info); }
 
 static long asfreq_MtoQ(long fromDate, char relation, asfreq_info *af_info) {
-    return asfreq_DtoQ(asfreq_MtoD(fromDate, 'A', &NULL_AF_INFO), relation, af_info); }
+    return asfreq_DtoQ(asfreq_MtoD(fromDate, 'E', &NULL_AF_INFO), relation, af_info); }
 
 static long asfreq_MtoW(long fromDate, char relation, asfreq_info *af_info)
     { return asfreq_DtoW(asfreq_MtoD(fromDate, relation, &NULL_AF_INFO), relation, af_info); }
@@ -693,7 +693,7 @@ static long asfreq_MtoB(long fromDate, char relation, asfreq_info *af_info) {
     if (dInfoCalc_SetFromAbsDate(&dinfo, asfreq_MtoD(fromDate, relation, &NULL_AF_INFO),
                     GREGORIAN_CALENDAR)) return INT_ERR_CODE;
 
-    if (relation == 'B') { return DtoB_WeekendToMonday(dinfo.absdate, dinfo.day_of_week); }
+    if (relation == 'S') { return DtoB_WeekendToMonday(dinfo.absdate, dinfo.day_of_week); }
     else                 { return DtoB_WeekendToFriday(dinfo.absdate, dinfo.day_of_week); }
 }
 
@@ -722,7 +722,7 @@ static long asfreq_QtoD(long fromDate, char relation, asfreq_info *af_info) {
 
     long y, m, absdate;
 
-    if (relation == 'B') {
+    if (relation == 'S') {
         QtoD_ym(fromDate, &y, &m, af_info);
         if ((absdate = absdate_from_ymd(y, m, 1)) == INT_ERR_CODE) return INT_ERR_CODE;
         return absdate;
@@ -751,7 +751,7 @@ static long asfreq_QtoB(long fromDate, char relation, asfreq_info *af_info) {
     if (dInfoCalc_SetFromAbsDate(&dinfo, asfreq_QtoD(fromDate, relation, af_info),
                     GREGORIAN_CALENDAR)) return INT_ERR_CODE;
 
-    if (relation == 'B') { return DtoB_WeekendToMonday(dinfo.absdate, dinfo.day_of_week); }
+    if (relation == 'S') { return DtoB_WeekendToMonday(dinfo.absdate, dinfo.day_of_week); }
     else                 { return DtoB_WeekendToFriday(dinfo.absdate, dinfo.day_of_week); }
 }
 
@@ -773,7 +773,7 @@ static long asfreq_AtoD(long fromDate, char relation, asfreq_info *af_info) {
     if (month == 0) { month = 1; }
     else { month += 1; }
 
-    if (relation == 'B') {
+    if (relation == 'S') {
         if (af_info->from_a_year_end == 12) {year = fromDate;}
         else {year = fromDate - 1;}
         final_adj = 0;
@@ -805,7 +805,7 @@ static long asfreq_AtoB(long fromDate, char relation, asfreq_info *af_info) {
     if (dInfoCalc_SetFromAbsDate(&dinfo, asfreq_AtoD(fromDate, relation, af_info),
                     GREGORIAN_CALENDAR)) return INT_ERR_CODE;
 
-    if (relation == 'B') { return DtoB_WeekendToMonday(dinfo.absdate, dinfo.day_of_week); }
+    if (relation == 'S') { return DtoB_WeekendToMonday(dinfo.absdate, dinfo.day_of_week); }
     else                 { return DtoB_WeekendToFriday(dinfo.absdate, dinfo.day_of_week); }
 }
 
@@ -1034,7 +1034,7 @@ static double getAbsTime(int freq, long dailyDate, long originalDate) {
             return 24*60*60 - 1;
     }
 
-    startOfDay = asfreq_DtoHIGHFREQ(dailyDate, 'B', periodsPerDay);
+    startOfDay = asfreq_DtoHIGHFREQ(dailyDate, 'S', periodsPerDay);
     return (24*60*60)*((double)(originalDate - startOfDay))/((double)periodsPerDay);
 }
 
@@ -1569,20 +1569,20 @@ DateObject_toordinal(DateObject* self)
         toDaily = get_asfreq_func(self->freq, FR_DAY, 0);
         get_asfreq_info(self->freq, FR_DAY, &af_info);
 
-        return PyInt_FromLong(toDaily(self->value, 'A', &af_info));
+        return PyInt_FromLong(toDaily(self->value, 'E', &af_info));
     }
 }
 
 static char DateObject_asfreq_doc[] =
 "Returns a date converted to a specified frequency.\n\n"
-":Parameters:\n"
-"   - freq : string/int\n"
-"       Frequency to convert the Date to. Accepts any valid frequency\n"
-"       specification (string or integer)\n"
-"   - relation :string *['After']*\n"
-"       Applies only when converting a lower frequency Date to a higher\n"
-"       frequency Date, or when converting a weekend Date to a business\n"
-"       frequency Date. Valid values are 'before', 'after', 'b', and 'a'.";
+"*Parameters*:\n"
+"    freq : {freq_spec}\n"
+"        Frequency to convert the Date to. Accepts any valid frequency\n"
+"        specification (string or integer)\n"
+"    relation : {'END', 'START'} (optional)\n"
+"        Applies only when converting a lower frequency Date to a higher\n"
+"        frequency Date, or when converting a weekend Date to a business\n"
+"        frequency Date. Valid values are 'START' and 'END'.";
 static PyObject *
 DateObject_asfreq(DateObject *self, PyObject *args, PyObject *kwds)
 {
@@ -1609,12 +1609,17 @@ DateObject_asfreq(DateObject *self, PyObject *args, PyObject *kwds)
             if((relation_uc = str_uppercase(relation_raw)) == NULL)
             {return PyErr_NoMemory();}
 
-            if (strcmp(relation_uc, "BEFORE") == 0 ||
+			// 'BEFORE' and 'AFTER' values for this parameter are deprecated
+            if (strcmp(relation_uc, "END") == 0 ||
+                strcmp(relation_uc, "E") == 0 ||
+                strcmp(relation_uc, "START") == 0 ||
+                strcmp(relation_uc, "S") == 0 ||
+                strcmp(relation_uc, "BEFORE") == 0 ||
                 strcmp(relation_uc, "B") == 0 ||
                 strcmp(relation_uc, "AFTER") == 0 ||
                 strcmp(relation_uc, "A") == 0) {
-                 if(relation_uc[0] == 'A') { relation = 'A'; }
-                 else { relation = 'B'; }
+                 if(relation_uc[0] == 'E' || relation_uc[0] == 'A') { relation = 'E'; }
+                 else { relation = 'S'; }
 
             } else { invalid_relation=1; }
 
@@ -1629,7 +1634,7 @@ DateObject_asfreq(DateObject *self, PyObject *args, PyObject *kwds)
             return NULL;
         }
     } else {
-        relation = 'A';
+        relation = 'E';
     }
 
     if ((toFreq = check_freq(freq)) == INT_ERR_CODE) return NULL;
@@ -1697,7 +1702,7 @@ DateObject_strftime(DateObject *self, PyObject *args)
     toDaily = get_asfreq_func(self->freq, FR_DAY, 0);
     get_asfreq_info(self->freq, FR_DAY, &af_info);
 
-    absdate = toDaily(self->value, 'A', &af_info);
+    absdate = toDaily(self->value, 'E', &af_info);
     abstime = getAbsTime(self->freq, absdate, self->value);
 
     if(dInfoCalc_SetFromAbsDateTime(&tempDate, absdate, abstime,
@@ -2384,7 +2389,7 @@ c_dates_now(PyObject *self, PyObject *args) {
         get_asfreq_info(FR_SEC, freq_val, &af_info);
         asfreq_func = get_asfreq_func(FR_SEC, freq_val, 0);
 
-        date_val = asfreq_func(secondly_date->value, 'B', &af_info);
+        date_val = asfreq_func(secondly_date->value, 'S', &af_info);
 
         Py_DECREF(secondly_date);
 

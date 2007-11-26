@@ -223,7 +223,7 @@ def _daily_finder(vmin, vmax, freq, asformatter):
                     info['fmt'][first_label(month_start)] = '%d\n%b\n%Y'
     # Case 2. Less than three months
     elif span <= periodsperyear//4:
-        month_start = period_break(dates,'month')
+        month_start = period_break(dates_,'month')
         info['maj'][month_start] = True
         info['min'] = True
         if asformatter:
@@ -287,7 +287,7 @@ def _daily_finder(vmin, vmax, freq, asformatter):
             info['fmt'][year_start] = '%Y'
     # Case 6. More than 12 years ................
     else:
-        year_start = period_break(dates,'year')
+        year_start = period_break(dates_,'year')
         year_break = dates_[year_start].years
         nyears = span/periodsperyear
         (min_anndef, maj_anndef) = _get_default_annual_spacing(nyears)

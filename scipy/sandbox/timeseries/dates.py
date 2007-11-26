@@ -392,15 +392,35 @@ For non-quarterly dates, this simply returns the year of the date."""
             self._cachedinfo['tostr'] = tostr
         return self._cachedinfo['tostr']
     #
-    def asfreq(self, freq=None, relation="AFTER"):
-        "Converts the dates to another frequency."
+    def asfreq(self, freq=None, relation="END"):
+        """Converts the dates to another frequency.
+
+*Parameters*:
+    freq : {freq_spec}
+        Frequency to convert the DateArray to. Accepts any valid frequency
+        specification (string or integer)
+    relation : {"END", "START"} (optional)
+        Applies only when converting a lower frequency Date to a higher
+        frequency Date, or when converting a weekend Date to a business
+        frequency Date. Valid values are 'START' and 'END'.
+       
+        For example, if converting a monthly date to a daily date, specifying
+        'START' ('END') would result in the first (last) day in the month.
+"""
         # Note: As we define a new object, we don't need caching
         if freq is None or freq == _c.FR_UND:
             return self
         tofreq = check_freq(freq)
         if tofreq == self.freq:
             return self
+
         _rel = relation.upper()[0]
+        
+        # support for deprecated values of relation parameter ('BEFORE' and
+        # 'AFTER')
+        if _rel == 'A': _rel = 'E'
+        if _rel == 'B': _rel = 'S'
+        
         fromfreq = self.freq
         if fromfreq == _c.FR_UND:
             fromfreq = _c.FR_DAY
