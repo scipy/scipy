@@ -22,7 +22,7 @@
 
 #include <vector>
 #include <algorithm>
-
+#include <functional>
 
 /*
  * Extract main diagonal of CSR matrix A
