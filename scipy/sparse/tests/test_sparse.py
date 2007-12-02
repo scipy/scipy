@@ -26,7 +26,7 @@ from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, coo_matrix, \
 from scipy.linsolve import splu
 restore_path()
 
-class _TestCs:
+class _TestCS:
     def setUp(self):
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
@@ -648,7 +648,7 @@ class _test_arith:
 
 
 
-class TestCsr(_TestCs, _TestHorizSlicing, _TestVertSlicing,
+class TestCSR(_TestCS, _TestHorizSlicing, _TestVertSlicing,
                _test_slicing, _test_arith, NumpyTestCase):
     spmatrix = csr_matrix
 
@@ -683,21 +683,22 @@ class TestCsr(_TestCs, _TestHorizSlicing, _TestVertSlicing,
         assert_array_equal(bsp.indptr,[0,1,2,3])
         assert_array_almost_equal(bsp.todense(),b)
 
-    def check_constructor4(self):
-        """try using int64 indices"""
-        data = arange( 6 ) + 1
-        col = array( [1, 2, 1, 0, 0, 2], dtype='int64' )
-        ptr = array( [0, 2, 4, 6], dtype='int64' )
-
-        a = csr_matrix( (data, col, ptr), dims = (3,3) )
-
-        b = matrix([[0,1,2],
-                    [4,3,0],
-                    [5,0,6]],'d')
-
-        assert_equal(a.indptr.dtype,numpy.dtype('int64'))
-        assert_equal(a.indices.dtype,numpy.dtype('int64'))
-        assert_array_equal(a.todense(),b)
+### currently disabled
+##    def check_constructor4(self):
+##        """try using int64 indices"""
+##        data = arange( 6 ) + 1
+##        col = array( [1, 2, 1, 0, 0, 2], dtype='int64' )
+##        ptr = array( [0, 2, 4, 6], dtype='int64' )
+##
+##        a = csr_matrix( (data, col, ptr), dims = (3,3) )
+##
+##        b = matrix([[0,1,2],
+##                    [4,3,0],
+##                    [5,0,6]],'d')
+##
+##        assert_equal(a.indptr.dtype,numpy.dtype('int64'))
+##        assert_equal(a.indices.dtype,numpy.dtype('int64'))
+##        assert_array_equal(a.todense(),b)
 
     def check_constructor5(self):
         """using (data, ij) format"""
@@ -714,7 +715,7 @@ class TestCsr(_TestCs, _TestHorizSlicing, _TestVertSlicing,
     def check_empty(self):
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
         """
-        # This test should be made global (in _TestCs), but first we
+        # This test should be made global (in _TestCS), but first we
         # need a uniform argument order / syntax for constructing an
         # empty sparse matrix. (coo_matrix is currently different).
         shape = (5, 5)
@@ -757,17 +758,18 @@ class TestCsr(_TestCs, _TestHorizSlicing, _TestVertSlicing,
         assert b.shape == (2,2)
         assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
-class TestCsc(_TestCs, _TestHorizSlicing, _TestVertSlicing,
+class TestCSC(_TestCS, _TestHorizSlicing, _TestVertSlicing,
                _test_slicing, _test_arith, NumpyTestCase):
     spmatrix = csc_matrix
 
     def check_constructor1(self):
-        b = matrix([[1,0,0],[3,0,1],[0,2,0]],'d')
+        b = matrix([[1,0,0,0],[0,0,1,0],[0,2,0,3]],'d')
         bsp = csc_matrix(b)
-        assert_array_almost_equal(bsp.data,[1,3,2,1])
-        assert_array_equal(bsp.indices,[0,1,2,1])
-        assert_array_equal(bsp.indptr,[0,2,3,4])
+        assert_array_almost_equal(bsp.data,[1,2,1,3])
+        assert_array_equal(bsp.indices,[0,2,1,2])
+        assert_array_equal(bsp.indptr,[0,1,2,3,4])
         assert_equal(bsp.getnnz(),4)
+        assert_equal(bsp.shape,b.shape)
         assert_equal(bsp.getformat(),'csc')
 
     def check_constructor2(self):
@@ -799,7 +801,7 @@ class TestCsc(_TestCs, _TestHorizSlicing, _TestVertSlicing,
     def check_empty(self):
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
         """
-        # This test should be made global (in _TestCs), but first we
+        # This test should be made global (in _TestCS), but first we
         # need a uniform argument order / syntax for constructing an
         # empty sparse matrix. (coo_matrix is currently different).
         shape = (5, 5)
@@ -841,7 +843,7 @@ class TestCsc(_TestCs, _TestHorizSlicing, _TestVertSlicing,
         assert_equal(b.shape, (2,2))
         assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
-class TestDok(_TestCs, NumpyTestCase):
+class TestDOK(_TestCS, NumpyTestCase):
     spmatrix = dok_matrix
 
     def check_mult(self):
@@ -948,7 +950,7 @@ class TestDok(_TestCs, NumpyTestCase):
         assert_equal(caught,5)
 
 
-class TestLil(_TestCs, _TestHorizSlicing, NumpyTestCase,
+class TestLIL(_TestCS, _TestHorizSlicing, NumpyTestCase,
                ParametricTestCase):
     spmatrix = lil_matrix
 
@@ -1204,6 +1206,10 @@ class TestCOO(NumpyTestCase):
         """empty matrix"""
         coo = coo_matrix(None,dims=(4,3))
 
+        assert_array_equal(coo.shape,(4,3))
+        assert_array_equal(coo.row,[])
+        assert_array_equal(coo.col,[])
+        assert_array_equal(coo.data,[])
         assert_array_equal(zeros((4,3)),coo.todense())
 
     def check_constructor4(self):
@@ -1213,37 +1219,6 @@ class TestCOO(NumpyTestCase):
                            [0,4,0,0]])
         coo = coo_matrix(mat)
         assert_array_equal(mat,coo.todense())
-
-##    def check_normalize( self ):
-##        row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
-##        col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
-##        data = numpy.array([  6.,  10.,   3.,   9.,   1.,   4.,
-##                              11.,   2.,   8.,   5.,   7.])
-##
-##        # coo.todense()
-##        #    matrix([[  0.,   1.,   2.],
-##        #            [  3.,   4.,   5.],
-##        #            [  6.,   7.,   8.],
-##        #            [  9.,  10.,  11.]])
-##        coo = coo_matrix((data,(row,col)),(4,3))
-##
-##        ndata,nrow,ncol = coo._normalize(rowfirst=True)
-##        sorted_rcd = zip(row, col, data)
-##        sorted_rcd.sort()
-##        assert(zip(nrow,ncol,ndata) == sorted_rcd) #should sort by rows, then cols
-##        assert_array_equal(coo.data, data)                        #coo.data has not changed
-##        assert_array_equal(coo.row, row)                          #coo.row has not changed
-##        assert_array_equal(coo.col, col)                          #coo.col has not changed
-##
-##
-##        ndata,nrow,ncol = coo._normalize(rowfirst=False)
-##        assert(zip(ncol,nrow,ndata) == sorted(zip(col,row,data))) #should sort by cols, then rows
-##        assert_array_equal(coo.data, ndata)                       #coo.data has changed
-##        assert_array_equal(coo.row, nrow)                         #coo.row has changed
-##        assert_array_equal(coo.col, ncol)                         #coo.col has changed
-##
-##        assert_array_equal(coo.tocsr().todense(), coo.todense())
-##        assert_array_equal(coo.tocsc().todense(), coo.todense())
 
 
 if __name__ == "__main__":

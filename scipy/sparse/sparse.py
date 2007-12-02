@@ -19,9 +19,8 @@ from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
                   less, where, greater, array, transpose, empty, ones, \
                   arange, shape, intc, clip, prod, unravel_index, hstack
 import numpy
-from scipy.sparse.sparsetools import cscmux, csrmux, \
-     cootocsr, csrtocoo, cootocsc, csctocoo, csctocsr, csrtocsc, \
-     densetocsr, csrtodense 
+from scipy.sparse.sparsetools import csrtodense, \
+     cootocsr, csrtocoo, cootocsc, csctocoo, csctocsr, csrtocsc 
 
 import sparsetools
 import itertools, operator, copy
@@ -416,8 +415,8 @@ class spmatrix(object):
         return asmatrix(self.toarray())
 
     def toarray(self):
-        csc = self.tocsc()
-        return csc.toarray()
+        csr = self.tocsr()
+        return csr.toarray()
 
     def tocoo(self):
         csc = self.tocsc()
@@ -512,6 +511,80 @@ class spmatrix(object):
 
 class _cs_matrix(spmatrix):
     """base matrix class for compressed row and column oriented matrices"""
+    
+    def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False):
+        spmatrix.__init__(self)
+
+        if isdense(arg1):
+            self.dtype = getdtype(dtype, arg1)
+            # Convert the dense array or matrix arg1 to sparse format
+            if rank(arg1) == 1:
+                # Convert to a row vector
+                arg1 = arg1.reshape(1, arg1.shape[0])
+            if rank(arg1) == 2:
+                self.shape = arg1.shape
+                self._set_self( self._tothis(coo_matrix(arg1)) )
+            else:
+                raise ValueError, "dense array must have rank 1 or 2"
+
+        elif isspmatrix(arg1):
+            if copy:
+                arg1 = arg1.copy()
+            self._set_self( self._tothis(arg1) )
+
+        elif isinstance(arg1, tuple):
+            if isshape(arg1):
+                # It's a tuple of matrix dimensions (M, N)
+                # create empty matrix
+                self.shape = arg1   #spmatrix checks for errors here
+                M, N = self.shape
+                self.dtype   = getdtype(dtype, default=float)
+                self.data    = zeros((nzmax,), self.dtype)
+                self.indices = zeros((nzmax,), intc)
+                if self.format[-1] == 'r':
+                    self.indptr = zeros(M+1, intc)
+                else:
+                    self.indptr = zeros(N+1,intc)
+            else:
+                try:
+                    # Try interpreting it as (data, ij)
+                    (data, ij) = arg1
+                    assert isinstance(ij, ndarray) and (rank(ij) == 2) \
+                           and (shape(ij) == (2, len(data)))
+                except (AssertionError, TypeError, ValueError, AttributeError):
+                    try:
+                        # Try interpreting it as (data, indices, indptr)
+                        (data, indices, indptr) = arg1
+                    except:
+                        raise ValueError, "unrecognized form for csr_matrix constructor"
+                    else:
+                        self.dtype   = getdtype(dtype, data)
+                        self.data    = array(data, copy=copy, dtype=self.dtype)
+                        self.indices = array(indices, copy=copy)
+                        self.indptr  = array(indptr, copy=copy)
+                else:
+                    # (data, ij) format
+                    other = coo_matrix((data, ij), dims=dims )
+                    other = self._tothis(other)
+                    self._set_self( other )
+
+        else:
+            raise ValueError, "unrecognized form for csr_matrix constructor"
+
+        # Read matrix dimensions given, if any
+        if dims is not None:
+            self.shape = dims   # spmatrix will check for errors
+        else:
+            if self.shape is None:
+                # shape not already set, try to infer dimensions
+                try:
+                    M = len(self.indptr) - 1
+                    N = self.indices.max() + 1
+                    self.shape = (M,N)
+                except:
+                    raise ValueError,'unable to infer matrix dimensions'
+
+        self.check_format(full_check=False)
 
     def _set_self(self, other, copy=False):
         """take the member variables of other and assign them to self"""
@@ -526,12 +599,11 @@ class _cs_matrix(spmatrix):
         self.dtype   = other.data.dtype
 
 
-    def _check_format(self, orientation, full_check):
-        # some functions pass floats
-        self.shape = tuple([int(x) for x in self.shape])
+    def _check_format(self, full_check):
+        self.shape = tuple([int(x) for x in self.shape])  # for floats etc.
 
-        assert(orientation in ['row','column'])
-        if orientation == 'row':
+        assert(self.format in ['csr','csc'])
+        if self.format[-1] == 'r':
             primary,secondary = 'row','column'
             indptr_size = self.shape[0] + 1
             indices_bound = self.shape[1]
@@ -540,25 +612,21 @@ class _cs_matrix(spmatrix):
             indptr_size = self.shape[1] + 1
             indices_bound = self.shape[0]
 
-
         # index arrays should have integer data types
         if self.indptr.dtype.kind != 'i':
-            warnings.warn("indptr array has non-integer dtype.  " \
-                          "Casting from %s to int" % self.indptr.dtype.name )
-            self.indptr = self.indptr.astype('i')
+            warnings.warn("indptr array has non-integer dtype (%s)"  \
+                                            % self.indptr.dtype.name )
         if self.indices.dtype.kind != 'i':
-            warnings.warn("indices array has non-integer dtype.  " \
-                          "Casting from %s to int" % self.indices.dtype.name )
-            self.indices = self.indices.astype('i')
+            warnings.warn("indices array has non-integer dtype (%s)" \
+                                            % self.indices.dtype.name )
 
-        #TODO handle non-native byteorder better
-        self.indptr  = to_native(self.indptr)
-        self.indices = to_native(self.indices)
+        # only support 32-bit ints for now
+        self.indptr  = self.indptr.astype('intc')
+        self.indices = self.indices.astype('intc')
         self.data    = to_native(self.data)
 
         # set the data type
         self.dtype = self.data.dtype
-
 
         # check array shapes
         if (rank(self.data) != 1) or (rank(self.indices) != 1) or \
@@ -960,79 +1028,7 @@ class csc_matrix(_cs_matrix):
           - csc_matrix((data, row, ptr), [(M, N)])
             standard CSC representation
     """
-    def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False):
-        _cs_matrix.__init__(self)
-
-        if isdense(arg1):
-            self.dtype = getdtype(dtype, arg1)
-            # Convert the dense array or matrix arg1 to sparse format
-            if rank(arg1) == 1:
-                # Convert to a row vector
-                arg1 = arg1.reshape(1, arg1.shape[0])
-            if rank(arg1) == 2:
-                self.shape = arg1.shape
-                self.indptr, self.indices, self.data = \
-                        densetocsr(arg1.shape[1], arg1.shape[0], arg1.T)
-            else:
-                raise ValueError, "dense array must have rank 1 or 2"
-
-        elif isspmatrix(arg1):
-            if copy:
-                arg1 = arg1.copy()
-            self._set_self( self._tothis(arg1) )
-
-        elif isinstance(arg1, tuple):
-            if isshape(arg1):
-                # It's a tuple of matrix dimensions (M, N)
-                self.shape = arg1   #spmatrix checks for errors here
-                M, N = self.shape
-                self.dtype   = getdtype(dtype, default=float)
-                self.data    = zeros((nzmax,), self.dtype)
-                self.indices = zeros((nzmax,), intc)
-                self.indptr  = zeros((N+1,), intc)
-            else:
-                try:
-                    # Try interpreting it as (data, ij)
-                    (data, ij) = arg1
-                    assert isinstance(ij, ndarray) and (rank(ij) == 2) \
-                            and (shape(ij) == (2, len(data)))
-                except (AssertionError, TypeError, ValueError, AttributeError):
-                    try:
-                        # Try interpreting it as (data, indices, indptr)
-                        (data, indices, indptr) = arg1
-                    except:
-                        raise ValueError, "unrecognized form for csc_matrix constructor"
-                    else:
-                        self.dtype = getdtype(dtype, data)
-                        self.dtype   = getdtype(dtype, data)
-                        self.data    = array(data, copy=copy, dtype=self.dtype)
-                        self.indices = array(indices, copy=copy)
-                        self.indptr  = array(indptr, copy=copy)
-                else:
-                    # (data, ij) format
-                    other = coo_matrix((data, ij), dims=dims )
-                    other = self._tothis(other)
-                    self._set_self( other )
-
-        else:
-            raise ValueError, "unrecognized form for csc_matrix constructor"
-
-
-        # Read matrix dimensions given, if any
-        if dims is not None:
-            self.shape = dims   # spmatrix will check for errors
-        else:
-            if self.shape is None:
-                # shape not already set, try to infer dimensions
-                try:
-                    M = self.indices.max() + 1
-                    N = len(self.indptr) - 1
-                    self.shape = (M,N)
-                except:
-                    raise ValueError,'unable to infer matrix dimensions'
-
-        self.check_format(full_check=False)
-
+    
     def check_format(self,full_check=True):
         """check whether matrix is in valid CSC format
 
@@ -1042,8 +1038,7 @@ class csc_matrix(_cs_matrix):
                     False - basic check, O(1) operations
 
         """
-
-        _cs_matrix._check_format(self,'column',full_check)
+        _cs_matrix._check_format(self,full_check)
 
     def __getattr__(self, attr):
         if attr == 'rowind':
@@ -1221,76 +1216,6 @@ class csr_matrix(_cs_matrix):
           - csr_matrix((data, col, ptr), [dims=(M, N)])
             standard CSR representation
     """
-    def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False):
-        _cs_matrix.__init__(self)
-
-        if isdense(arg1):
-            self.dtype = getdtype(dtype, arg1)
-            # Convert the dense array or matrix arg1 to sparse format
-            if rank(arg1) == 1:
-                # Convert to a row vector
-                arg1 = arg1.reshape(1, arg1.shape[0])
-            if rank(arg1) == 2:
-                self.shape = arg1.shape
-                self.indptr, self.indices, self.data = \
-                        densetocsr(arg1.shape[0], arg1.shape[1], arg1)
-            else:
-                raise ValueError, "dense array must have rank 1 or 2"
-
-        elif isspmatrix(arg1):
-            if copy:
-                arg1 = arg1.copy()
-            self._set_self( self._tothis(arg1) )
-
-        elif isinstance(arg1, tuple):
-            if isshape(arg1):
-                # It's a tuple of matrix dimensions (M, N)
-                self.shape = arg1   #spmatrix checks for errors here
-                M, N = self.shape
-                self.dtype   = getdtype(dtype, default=float)
-                self.data    = zeros((nzmax,), self.dtype)
-                self.indices = zeros((nzmax,), intc)
-                self.indptr  = zeros((M+1,), intc)
-            else:
-                try:
-                    # Try interpreting it as (data, ij)
-                    (data, ij) = arg1
-                    assert isinstance(ij, ndarray) and (rank(ij) == 2) \
-                           and (shape(ij) == (2, len(data)))
-                except (AssertionError, TypeError, ValueError, AttributeError):
-                    try:
-                        # Try interpreting it as (data, indices, indptr)
-                        (data, indices, indptr) = arg1
-                    except:
-                        raise ValueError, "unrecognized form for csr_matrix constructor"
-                    else:
-                        self.dtype   = getdtype(dtype, data)
-                        self.data    = array(data, copy=copy, dtype=self.dtype)
-                        self.indices = array(indices, copy=copy)
-                        self.indptr  = array(indptr, copy=copy)
-                else:
-                    # (data, ij) format
-                    other = coo_matrix((data, ij), dims=dims )
-                    other = self._tothis(other)
-                    self._set_self( other )
-
-        else:
-            raise ValueError, "unrecognized form for csr_matrix constructor"
-
-        # Read matrix dimensions given, if any
-        if dims is not None:
-            self.shape = dims   # spmatrix will check for errors
-        else:
-            if self.shape is None:
-                # shape not already set, try to infer dimensions
-                try:
-                    M = len(self.indptr) - 1
-                    N = self.indices.max() + 1
-                    self.shape = (M,N)
-                except:
-                    raise ValueError,'unable to infer matrix dimensions'
-
-        self.check_format(full_check=False)
 
     def check_format(self,full_check=True):
         """check whether matrix is in valid CSR format
@@ -1301,8 +1226,7 @@ class csr_matrix(_cs_matrix):
                     False - perform basic format check
 
         """
-
-        _cs_matrix._check_format(self,'row',full_check)
+        _cs_matrix._check_format(self,full_check)
 
     def __getattr__(self, attr):
         if attr == 'colind':
@@ -2170,17 +2094,15 @@ class coo_matrix(spmatrix):
 
         # index arrays should have integer data types
         if self.row.dtype.kind != 'i':
-            warnings.warn("row index array has non-integer dtype.  " \
-                          "Casting from %s to int" % self.row.dtype.name )
-            self.row = self.row.astype('i')
+            warnings.warn("row index array has non-integer dtype (%s)  " \
+                            % self.row.dtype.name )
         if self.col.dtype.kind != 'i':
-            warnings.warn("column index array has non-integer dtype.  " \
-                          "Casting from %s to int" % self.col.dtype.name )
-            self.col = self.col.astype('i')
-
-        #TODO do this in SWIG
-        self.row  = to_native(self.row)
-        self.col  = to_native(self.col)
+            warnings.warn("col index array has non-integer dtype (%s) " \
+                            % self.col.dtype.name )
+       
+        # only support 32-bit ints for now
+        self.row  = self.row.astype('intc')
+        self.col  = self.col.astype('intc')
         self.data = to_native(self.data)
 
         if nnz > 0:
@@ -2197,26 +2119,6 @@ class coo_matrix(spmatrix):
         self.shape = tuple([int(x) for x in self.shape])
         self.nnz = nnz
 
-##    _normalize shouldn't be necessary anymore
-
-##    def _normalize(self, rowfirst=False):
-##        if rowfirst:
-##            #sort by increasing rows first, columns second
-##            if getattr(self, '_is_normalized', None):
-##                #columns already sorted, use stable sort for rows
-##                P = numpy.argsort(self.row, kind='mergesort')
-##                return self.data[P], self.row[P], self.col[P]
-##            else:
-##                #nothing already sorted
-##                P  = numpy.lexsort(keys=(self.col, self.row))
-##                return self.data[P], self.row[P], self.col[P]
-##        if getattr(self, '_is_normalized', None):
-##            return self.data, self.row, self.col
-##        #sort by increasing rows first, columns second
-##        P  = numpy.lexsort(keys=(self.row, self.col))
-##        self.data, self.row, self.col = self.data[P], self.row[P], self.col[P]
-##        setattr(self, '_is_normalized', 1)
-##        return self.data, self.row, self.col
 
     def rowcol(self, num):
         return (self.row[num], self.col[num])

@@ -129,7 +129,6 @@ T_INPLACE_ARRAY2( ctype )
  * Create all desired index and data types here
  */
 DECLARE_INDEX_TYPE( int       )
-DECLARE_INDEX_TYPE( long long )
 
 DECLARE_DATA_TYPE( signed char         )
 DECLARE_DATA_TYPE( unsigned char       )
@@ -146,14 +145,12 @@ DECLARE_DATA_TYPE( npy_cdouble_wrapper )
 
 %include "sparsetools.h"
  /*
-  * Order may be important here, list float before double, scalar before complex
-  * 
-  * Should we permit unsigned types as array indices?  
-  * Do any functions require signedness? -- Nathan (Aug 2007)
+  * Order is important here, list int before float, float before 
+  * double, scalar before complex, etc.
   */
 
 %define INSTANTIATE_ALL( f_name )
-/* 64-bit indices */
+/* 32-bit indices */
 %template(f_name)   f_name<int,signed char>;
 %template(f_name)   f_name<int,unsigned char>;
 %template(f_name)   f_name<int,short>;
@@ -163,16 +160,7 @@ DECLARE_DATA_TYPE( npy_cdouble_wrapper )
 %template(f_name)   f_name<int,double>;
 %template(f_name)   f_name<int,npy_cfloat_wrapper>;
 %template(f_name)   f_name<int,npy_cdouble_wrapper>;
-/* 64-bit indices */
-%template(f_name)   f_name<long long,signed char>;
-%template(f_name)   f_name<long long,unsigned char>;
-%template(f_name)   f_name<long long,short>;
-%template(f_name)   f_name<long long,int>;
-%template(f_name)   f_name<long long,long long>;
-%template(f_name)   f_name<long long,float>;
-%template(f_name)   f_name<long long,double>;
-%template(f_name)   f_name<long long,npy_cfloat_wrapper>;
-%template(f_name)   f_name<long long,npy_cdouble_wrapper>;
+/* 64-bit indices would go here */
 %enddef
 
 
@@ -234,7 +222,7 @@ INSTANTIATE_ALL(spdiags)
  * CSR<->Dense
  */
 INSTANTIATE_ALL(csrtodense)
-INSTANTIATE_ALL(densetocsr)
+/*INSTANTIATE_ALL(densetocsr)*/ 
 
 /*
  * Sort CSR/CSC indices.
@@ -249,4 +237,7 @@ INSTANTIATE_ALL(sort_csc_indices)
 INSTANTIATE_ALL(sum_csr_duplicates)
 INSTANTIATE_ALL(sum_csc_duplicates)
 
+/*
+ * Extract submatrices
+ */
 INSTANTIATE_ALL(get_csr_submatrix)

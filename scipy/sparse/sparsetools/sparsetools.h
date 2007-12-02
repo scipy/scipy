@@ -884,7 +884,7 @@ void get_csr_submatrix(const I n_row,
 
     for(I jj = row_start; jj < row_end; jj++){
       if ((Aj[jj] >= ic0) && (Aj[jj] < ic1)) {
-	new_nnz++;
+	    new_nnz++;
       }
     }
   }
