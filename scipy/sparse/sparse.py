@@ -2761,8 +2761,7 @@ def spkron(a,b):
     row,col = row.reshape(-1),col.reshape(-1)
 
     # compute block entries
-    data = data.reshape(-1,b.nnz)
-    data *= b.data
+    data = data.reshape(-1,b.nnz) * b.data
     data = data.reshape(-1)
 
     return coo_matrix((data,(row,col)), dims=output_shape)
