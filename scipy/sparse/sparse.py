@@ -21,10 +21,7 @@ from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
 import numpy
 from scipy.sparse.sparsetools import cscmux, csrmux, \
      cootocsr, csrtocoo, cootocsc, csctocoo, csctocsr, csrtocsc, \
-     densetocsr, csrtodense, \
-     csrmucsr, cscmucsc, \
-     csr_plus_csr, csc_plus_csc, csr_minus_csr, csc_minus_csc, \
-     csr_elmul_csr, csc_elmul_csc, csr_eldiv_csr, csc_eldiv_csc
+     densetocsr, csrtodense 
 
 import sparsetools
 import itertools, operator, copy
@@ -600,8 +597,6 @@ class _cs_matrix(spmatrix):
                 raise ValueError,'index pointer values must form a " \
                                     "non-decreasing sequence'
 
-
-
     def astype(self, t):
         return self._with_data(self.data.astype(t))
 
@@ -633,7 +628,7 @@ class _cs_matrix(spmatrix):
     def _imag(self):
         return self._with_data(numpy.imag(self.data))
 
-    def _binopt(self, other, fn, in_shape=None, out_shape=None):
+    def _binopt(self, other, op, in_shape=None, out_shape=None):
         """apply the binary operation fn to two sparse matrices"""
         other = self._tothis(other)
 
@@ -642,13 +637,16 @@ class _cs_matrix(spmatrix):
         if out_shape is None:
             out_shape = self.shape
 
+        # e.g. csr_plus_csr, cscmucsc, etc.
+        fn = getattr(sparsetools, self.format + op + self.format)
+
         indptr, ind, data = fn(in_shape[0], in_shape[1], \
                                self.indptr, self.indices, self.data,
                                other.indptr, other.indices, other.data)
         return self.__class__((data, ind, indptr), dims=out_shape)
 
 
-    def __add__(self,other,fn):
+    def __add__(self,other):
         # First check if argument is a scalar
         if isscalarlike(other):
             # Now we would add this scalar to every element.
@@ -657,7 +655,8 @@ class _cs_matrix(spmatrix):
         elif isspmatrix(other):
             if (other.shape != self.shape):
                 raise ValueError, "inconsistent shapes"
-            return self._binopt(other,fn)
+            
+            return self._binopt(other,'_plus_')
         elif isdense(other):
             # Convert this matrix to a dense matrix and add them
             return self.todense() + other
@@ -667,7 +666,7 @@ class _cs_matrix(spmatrix):
     def __radd__(self,other):
         return self.__add__(other)
 
-    def __sub__(self,other,fn):
+    def __sub__(self,other):
         # First check if argument is a scalar
         if isscalarlike(other):
             # Now we would add this scalar to every element.
@@ -676,7 +675,8 @@ class _cs_matrix(spmatrix):
         elif isspmatrix(other):
             if (other.shape != self.shape):
                 raise ValueError, "inconsistent shapes"
-            return self._binopt(other,fn)
+
+            return self._binopt(other,'_minus_')
         elif isdense(other):
             # Convert this matrix to a dense matrix and subtract them
             return self.todense() - other
@@ -726,14 +726,14 @@ class _cs_matrix(spmatrix):
     def __neg__(self):
         return self._with_data(-self.data)
 
-    def __truediv__(self,other,fn):
+    def __truediv__(self,other):
         if isscalarlike(other):
             return self * (1./other)
         elif isspmatrix(other):
-            other = self._tothis(other)
             if (other.shape != self.shape):
                 raise ValueError, "inconsistent shapes"
-            return self._binopt(other,fn)
+            
+            return self._binopt(other,'_eldiv_')
         else:
             raise NotImplementedError
 
@@ -745,26 +745,30 @@ class _cs_matrix(spmatrix):
         else:
             raise NotImplementedError
 
-    def __pow__(self, other, fn):
+    def __pow__(self, other):
         """ Element-by-element power (unless other is a scalar, in which
         case return the matrix power.)
         """
         if isscalarlike(other):
             return self._with_data(self.data**other)
         elif isspmatrix(other):
-            return self._binopt(other,fn)
+            if (other.shape != self.shape):
+                raise ValueError, "inconsistent shapes"
+            
+            return self._binopt(other,'_elmul_')
         else:
             raise NotImplementedError
 
 
-    def _matmat(self, other, fn):
+    def matmat(self, other):
         if isspmatrix(other):
             M, K1 = self.shape
             K2, N = other.shape
             if (K1 != K2):
                 raise ValueError, "shape mismatch error"
             other = self._tothis(other)
-            return self._binopt(other,fn,in_shape=(M,N),out_shape=(M,N))
+
+            return self._binopt(other,'mu',in_shape=(M,N),out_shape=(M,N))
         elif isdense(other):
             # TODO make sparse * dense matrix multiplication more efficient
 
@@ -773,11 +777,14 @@ class _cs_matrix(spmatrix):
         else:
             raise TypeError, "need a dense or sparse matrix"
 
-    def _matvec(self, other, fn):
+    def matvec(self, other):
         if isdense(other):
             if other.size != self.shape[1] or \
                     (other.ndim == 2 and self.shape[1] != other.shape[0]):
                 raise ValueError, "dimension mismatch"
+
+            # csrmux, cscmux
+            fn = getattr(sparsetools,self.format + 'mux')
 
             y = fn(self.shape[0], self.shape[1], \
                    self.indptr, self.indices, self.data, numpy.ravel(other))
@@ -806,9 +813,30 @@ class _cs_matrix(spmatrix):
     def getdata(self, ind):
         return self.data[ind]
 
-    def _tocoo(self, fn):
+#    def _other_format(self):
+#        if self.format == 'csr':
+#            return 'csc'
+#        elif self.format == 'csc':
+#            return 'csr'
+#        else:
+#            raise TypeError,'unrecognized type'
+#    
+#    def _other__class__(self):
+#        if self.format == 'csr':
+#            return csc_matrix
+#        elif self.format == 'csc':
+#            return csr_matrix
+#        else:
+#            raise TypeError,'unrecognized type'
+
+    def tocoo(self):
+        #TODO implement with arange(N).repeat(diff(indptr))
+
+        fn = getattr(sparsetools, self.format + 'tocoo')
+        
         rows, cols, data = fn(self.shape[0], self.shape[1], \
                               self.indptr, self.indices, self.data)
+
         return coo_matrix((data, (rows, cols)), self.shape)
 
 
@@ -852,7 +880,6 @@ class _cs_matrix(spmatrix):
     def _transpose(self, cls, copy=False):
         M, N = self.shape
         return cls((self.data,self.indices,self.indptr),(N,M),copy=copy)
-
 
     def conj(self, copy=False):
         return self._with_data(self.data.conj(),copy=copy)
@@ -1031,29 +1058,8 @@ class csc_matrix(_cs_matrix):
         for r in xrange(self.shape[0]):
             yield csr[r,:]
 
-    def __add__(self, other):
-        return _cs_matrix.__add__(self, other, csc_plus_csc)
-
-    def __sub__(self, other):
-        return _cs_matrix.__sub__(self, other, csc_minus_csc)
-
-    def __truediv__(self,other):
-        return _cs_matrix.__truediv__(self,other, csc_eldiv_csc)
-
-    def __pow__(self, other):
-        return _cs_matrix.__pow__(self, other, csc_elmul_csc)
-
     def transpose(self, copy=False):
         return _cs_matrix._transpose(self, csr_matrix, copy)
-
-    def conj(self, copy=False):
-        return _cs_matrix.conj(self, copy)
-
-    def matvec(self, other):
-        return _cs_matrix._matvec(self, other, cscmux)
-
-    def matmat(self, other):
-        return _cs_matrix._matmat(self, other, cscmucsc)
 
     def __getitem__(self, key):
         if isinstance(key, tuple):
@@ -1152,20 +1158,17 @@ class csc_matrix(_cs_matrix):
 
     def tocsc(self, copy=False):
         return self.toself(copy)
-
-    def tocoo(self):
-        return _cs_matrix._tocoo(self, csctocoo)
-
-    def tocsr(self):
-        indptr, colind, data = csctocsr(self.shape[0], self.shape[1], \
-                                        self.indptr, self.indices, self.data)
-        return csr_matrix((data, colind, indptr), self.shape)
-
+    
     def _toother(self):
         return self.tocsr()
 
     def _tothis(self, other):
         return other.tocsc()
+
+    def tocsr(self):
+        indptr, colind, data = csctocsr(self.shape[0], self.shape[1], \
+                                        self.indptr, self.indices, self.data)
+        return csr_matrix((data, colind, indptr), self.shape)
 
     def toarray(self):
         return self.tocsr().toarray()
@@ -1309,29 +1312,8 @@ class csr_matrix(_cs_matrix):
         else:
             return _cs_matrix.__getattr__(self, attr)
 
-    def __add__(self, other):
-        return _cs_matrix.__add__(self, other, csr_plus_csr)
-
-    def __sub__(self, other):
-        return _cs_matrix.__sub__(self, other, csr_minus_csr)
-
-    def __truediv__(self,other):
-        return _cs_matrix.__truediv__(self,other, csr_eldiv_csr)
-
-    def __pow__(self, other):
-        return _cs_matrix.__pow__(self, other, csr_elmul_csr)
-
     def transpose(self, copy=False):
         return _cs_matrix._transpose(self, csc_matrix, copy)
-
-    def conj(self, copy=False):
-        return _cs_matrix.conj(self, copy)
-
-    def matvec(self, other):
-        return _cs_matrix._matvec(self, other, csrmux)
-
-    def matmat(self, other):
-        return _cs_matrix._matmat(self, other, csrmucsr)
 
     def __getitem__(self, key):
         if isinstance(key, tuple):
@@ -1426,9 +1408,6 @@ class csr_matrix(_cs_matrix):
 
     def tocsr(self, copy=False):
         return self.toself(copy)
-
-    def tocoo(self):
-        return _cs_matrix._tocoo(self, csrtocoo)
 
     def tocsc(self):
         indptr, rowind, data = csrtocsc(self.shape[0], self.shape[1], \
