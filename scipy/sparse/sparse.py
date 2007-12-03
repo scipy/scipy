@@ -542,9 +542,9 @@ class _cs_matrix(spmatrix):
                 self.data    = zeros((nzmax,), self.dtype)
                 self.indices = zeros((nzmax,), intc)
                 if self.format[-1] == 'r':
-                    self.indptr = zeros(M+1, intc)
+                    self.indptr = zeros(M+1, dtype='intc')
                 else:
-                    self.indptr = zeros(N+1,intc)
+                    self.indptr = zeros(N+1, dtype='intc')
             else:
                 try:
                     # Try interpreting it as (data, ij)
@@ -578,11 +578,17 @@ class _cs_matrix(spmatrix):
             if self.shape is None:
                 # shape not already set, try to infer dimensions
                 try:
-                    M = len(self.indptr) - 1
-                    N = self.indices.max() + 1
-                    self.shape = (M,N)
+                    first_dim  = len(self.indptr) - 1
+                    second_dim = self.indices.max() + 1
                 except:
                     raise ValueError,'unable to infer matrix dimensions'
+                else:
+                    if self.format[-1] == 'r':
+                        # row oriented matrix
+                        self.shape = (first_dim,second_dim)
+                    else:
+                        # column oriented matrix
+                        self.shape = (second_dim,first_dim)
 
         self.check_format(full_check=False)
 

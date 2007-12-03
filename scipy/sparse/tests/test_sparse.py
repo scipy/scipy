@@ -701,7 +701,7 @@ class TestCSR(_TestCS, _TestHorizSlicing, _TestVertSlicing,
 ##        assert_equal(a.indices.dtype,numpy.dtype('int64'))
 ##        assert_array_equal(a.todense(),b)
 
-    def check_constructor5(self):
+    def check_constructor4(self):
         """using (data, ij) format"""
         row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
         col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
@@ -712,7 +712,14 @@ class TestCSR(_TestCS, _TestHorizSlicing, _TestVertSlicing,
         csr = csr_matrix((data,ij),(4,3))
         assert_array_equal(arange(12).reshape(4,3),csr.todense())
 
-
+    def check_constructor5(self):
+        """infer dimensions from arrays"""
+        indptr  = array([0,1,3,3])
+        indices = array([0,5,1,2])
+        data    = array([1,2,3,4])
+        csr = csr_matrix((data, indices, indptr))
+        assert_array_equal(csr.shape,(3,6))
+    
     def check_empty(self):
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
         """
@@ -788,7 +795,7 @@ class TestCSC(_TestCS, _TestHorizSlicing, _TestVertSlicing,
         assert_array_equal(bsp.indices,[0,2])
         assert_array_equal(bsp.indptr,[0,1,2])
 
-    def check_constructor5(self):
+    def check_constructor4(self):
         """using (data, ij) format"""
         row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
         col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
@@ -799,6 +806,14 @@ class TestCSC(_TestCS, _TestHorizSlicing, _TestVertSlicing,
         csc = csc_matrix((data,ij),(4,3))
         assert_array_equal(arange(12).reshape(4,3),csc.todense())
 
+    def check_constructor5(self):
+        """infer dimensions from arrays"""
+        indptr  = array([0,1,3,3])
+        indices = array([0,5,1,2])
+        data    = array([1,2,3,4])
+        csc = csc_matrix((data, indices, indptr))
+        assert_array_equal(csc.shape,(6,3))
+    
     def check_empty(self):
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
         """
