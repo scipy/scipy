@@ -61,12 +61,6 @@
 %enddef
 
 
-I_IN_ARRAY1( int         )
-I_IN_ARRAY1( long long   )
-T_IN_ARRAY1( float       )
-T_IN_ARRAY1( double      )
-
-
 
  /*
   * OUT types
@@ -103,11 +97,6 @@ T_IN_ARRAY1( double      )
 };
 %enddef
 
-I_ARRAY_ARGOUT( int    )
-I_ARRAY_ARGOUT( long long    )
-T_ARRAY_ARGOUT( float  )
-T_ARRAY_ARGOUT( double )
-
 
 
  /*
@@ -126,10 +115,30 @@ T_ARRAY_ARGOUT( double )
 };
 %enddef
 
-I_INPLACE_ARRAY1( int    )
-I_INPLACE_ARRAY1( long long    )
-T_INPLACE_ARRAY1( float  )
-T_INPLACE_ARRAY1( double )
+
+
+/*
+ * Macros to instantiate index types and data types
+ */
+%define DECLARE_INDEX_TYPE( ctype )
+I_IN_ARRAY1( ctype )
+I_ARRAY_ARGOUT( ctype )
+I_INPLACE_ARRAY1( ctype )
+%enddef
+
+%define DECLARE_DATA_TYPE( ctype )
+T_IN_ARRAY1( ctype )
+T_ARRAY_ARGOUT( ctype )
+T_INPLACE_ARRAY1( ctype )
+%enddef
+
+/*
+ * Create all desired index and data types here
+ */
+DECLARE_INDEX_TYPE( int       )
+
+DECLARE_DATA_TYPE( float               )
+DECLARE_DATA_TYPE( double              )
 
 
 %include "ruge_stuben.h"
@@ -143,14 +152,11 @@ T_INPLACE_ARRAY1( double )
 %define INSTANTIATE_BOTH( f_name )
 %template(f_name)   f_name<int,float>;
 %template(f_name)   f_name<int,double>;
-%template(f_name)   f_name<long long,float>;
-%template(f_name)   f_name<long long,double>;
 /* 64-bit indices would go here */
 %enddef
  
 %define INSTANTIATE_INDEX( f_name )
 %template(f_name)   f_name<int>;
-%template(f_name)   f_name<long long>;
 %enddef
 
 %define INSTANTIATE_DATA( f_name )
@@ -159,14 +165,11 @@ T_INPLACE_ARRAY1( double )
 %enddef
  
  
+INSTANTIATE_INDEX(sa_get_aggregates)
 
-INSTANTIATE_DATA(rs_strong_connections)
-INSTANTIATE_DATA(rs_interpolation)
-
-INSTANTIATE_DATA(sa_strong_connections)
-INSTANTIATE_DATA(sa_smoother)
-/*INSTANTIATE_INDEX(sa_get_aggregates)*/
-
+INSTANTIATE_BOTH(rs_strong_connections)
+INSTANTIATE_BOTH(rs_interpolation)
+INSTANTIATE_BOTH(sa_strong_connections)
 INSTANTIATE_BOTH(gauss_seidel)
 INSTANTIATE_BOTH(jacobi)
 
