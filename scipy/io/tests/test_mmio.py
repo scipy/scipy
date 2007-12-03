@@ -102,7 +102,7 @@ class TestMMIOArray(NumpyTestCase):
         b = mmread(fn)
         assert_array_almost_equal(a,b)
 
-_exmpl_mtx = '''\
+_general_example = '''\
 %%MatrixMarket matrix coordinate real general
 %=================================================================================
 %
@@ -136,12 +136,60 @@ _exmpl_mtx = '''\
     5     5   1.200e+01
 '''
 
-class TestMMIOCoordinate(NumpyTestCase):
+_hermitian_example = '''\
+%%MatrixMarket matrix coordinate complex hermitian
+  5  5  7
+    1     1     1.0      0
+    2     2    10.5      0
+    4     2   250.5     22.22
+    3     3     1.5e-2   0
+    4     4    -2.8e2    0
+    5     5    12.       0
+    5     4     0       33.32
+'''
 
-    def check_simple_todense(self):
+_skew_example = '''\
+%%MatrixMarket matrix coordinate real skew-symmetric
+  5  5  7
+    1     1     1.0     
+    2     2    10.5     
+    4     2   250.5     
+    3     3     1.5e-2  
+    4     4    -2.8e2   
+    5     5    12.      
+    5     4     0        
+'''
+
+_symmetric_example = '''\
+%%MatrixMarket matrix coordinate real symmetric
+  5  5  7
+    1     1     1.0    
+    2     2    10.5    
+    4     2   250.5    
+    3     3     1.5e-2 
+    4     4    -2.8e2  
+    5     5    12.     
+    5     4     8     
+'''
+
+_symmetric_pattern_example = '''\
+%%MatrixMarket matrix coordinate pattern symmetric
+  5  5  7
+    1     1  
+    2     2  
+    4     2  
+    3     3  
+    4     4  
+    5     5  
+    5     4  
+'''
+
+class TestMMIOCoordinate(NumpyTestCase):
+    def check_read_geneal(self):
+        """read a general matrix"""
         fn = mktemp()
         f = open(fn,'w')
-        f.write(_exmpl_mtx)
+        f.write(_general_example)
         f.close()
         assert_equal(mminfo(fn),(5,5,8,'coordinate','real','general'))
         a = [[1,    0,      0,       6,      0],
@@ -151,6 +199,67 @@ class TestMMIOCoordinate(NumpyTestCase):
              [0,    0,      0,       0,     12]]
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
+
+    def check_read_hermitian(self):
+        """read a hermitian matrix"""
+        fn = mktemp()
+        f = open(fn,'w')
+        f.write(_hermitian_example)
+        f.close()
+        assert_equal(mminfo(fn),(5,5,7,'coordinate','complex','hermitian'))
+        a = [[1,      0,               0,       0,              0],
+             [0,     10.5,             0,    250.5 - 22.22j,    0],
+             [0,      0,            .015,       0,              0],
+             [0,  250.5 + 22.22j,      0,      -280,          -33.32j],
+             [0,      0,               0,     33.32j,          12]]
+        b = mmread(fn).todense()
+        assert_array_almost_equal(a,b)
+    
+    def check_read_skew(self):
+        """read a skew-symmetric matrix"""
+        fn = mktemp()
+        f = open(fn,'w')
+        f.write(_skew_example)
+        f.close()
+        assert_equal(mminfo(fn),(5,5,7,'coordinate','real','skew-symmetric'))
+        a = [[1,      0,               0,       0,     0],
+             [0,     10.5,             0,  -250.5,     0],
+             [0,      0,            .015,       0,     0],
+             [0,  250.5,               0,    -280,     0],
+             [0,      0,               0,       0,    12]]
+        b = mmread(fn).todense()
+        assert_array_almost_equal(a,b)
+    
+    def check_read_symmetric(self):
+        """read a symmetric matrix"""
+        fn = mktemp()
+        f = open(fn,'w')
+        f.write(_symmetric_example)
+        f.close()
+        assert_equal(mminfo(fn),(5,5,7,'coordinate','real','symmetric'))
+        a = [[1,      0,               0,       0,     0],
+             [0,     10.5,             0,   250.5,     0],
+             [0,      0,            .015,       0,     0],
+             [0,  250.5,               0,    -280,     8],
+             [0,      0,               0,       8,    12]]
+        b = mmread(fn).todense()
+        assert_array_almost_equal(a,b)
+
+    def check_read_symmetric(self):
+        """read a symmetric pattern matrix"""
+        fn = mktemp()
+        f = open(fn,'w')
+        f.write(_symmetric_pattern_example)
+        f.close()
+        assert_equal(mminfo(fn),(5,5,7,'coordinate','pattern','symmetric'))
+        a = [[1,     0,     0,     0,     0],
+             [0,     1,     0,     1,     0],
+             [0,     0,     1,     0,     0],
+             [0,     1,     0,     1,     1],
+             [0,     0,     0,     1,     1]]
+        b = mmread(fn).todense()
+        assert_array_almost_equal(a,b)
+
 
     def check_real_write_read(self):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
