@@ -22,7 +22,8 @@ import random
 from numpy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, coo_matrix, \
-     spidentity, speye, spkron, extract_diagonal, lil_matrix, lil_eye, lil_diags
+     spidentity, speye, spkron, extract_diagonal, lil_matrix, lil_eye, \
+     lil_diags, spdiags
 from scipy.linsolve import splu
 restore_path()
 
@@ -1220,6 +1221,61 @@ class TestCOO(NumpyTestCase):
                            [0,4,0,0]])
         coo = coo_matrix(mat)
         assert_array_equal(mat,coo.todense())
+
+def poisson2d(N,epsilon=1.0):
+    """
+    Return a sparse CSR matrix for the 2d poisson problem
+    with standard 5-point finite difference stencil on a
+    square N-by-N grid.
+    """
+
+    D = (2 + 2*epsilon)*ones(N*N)
+    T =  -epsilon * ones(N*N)
+    O =  -ones(N*N)
+    T[N-1::N] = 0
+    return spdiags([D,O,T,T,O],[0,-N,-1,1,N],N*N,N*N).tocoo().tocsr() #eliminate explicit zeros
+
+
+import time
+class TestSparseTools(NumpyTestCase):
+    def setUp(self):
+        self.matrices = []
+
+        self.matrices.append(('Identity',spidentity(10**5)))
+        self.matrices.append(('Poisson2d', poisson2d(250)))
+        self.matrices.append(('Poisson2d', poisson2d(500)))
+        self.matrices.append(('Poisson2d', poisson2d(1000)))
+
+    def bench_matvec(self,level=5):
+        print
+        print '                 Sparse Matrix Vector Product'
+        print '=================================================================='
+        print ' type |    name      |         shape        |    nnz   |  MFLOPs  '
+        print '------------------------------------------------------------------'
+        fmt = '  %3s | %12s | %20s | %8d |  %6.1f '
+
+        for name,A in self.matrices:
+            A = A.tocsr()
+            
+            x = ones(A.shape[1],dtype=A.dtype)
+
+            y = A*x  #warmup
+
+            start = time.clock()
+            iter = 0
+            while iter < 5 or time.clock() < start + 1:
+                y = A*x
+                iter += 1
+            end = time.clock()
+
+            name = name.center(12)
+            shape = ("%s" % (A.shape,)).center(20)
+            MFLOPs = (2*A.nnz*iter/(end-start))/float(1e6)
+
+            print fmt % (A.format,name,shape,A.nnz,MFLOPs)
+            
+            
+
 
 
 if __name__ == "__main__":
