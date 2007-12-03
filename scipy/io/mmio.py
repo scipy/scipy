@@ -182,8 +182,17 @@ def mmread(source):
         assert k==entries,`k,entries`
 
     elif rep=='coordinate':
-        from numpy import fromfile
-        flat_data = fromfile(source,sep=' ')
+        from numpy import fromfile,fromstring
+        try:
+            # fromfile works for normal files
+            flat_data = fromfile(source,sep=' ')
+        except:
+            # fallback - fromfile fails for some file-like objects
+            flat_data = fromstring(source.read(),sep=' ')
+            
+            # TODO use iterator (e.g. xreadlines) to avoid reading
+            # the whole file into memory
+        
         if is_pattern:
             flat_data = flat_data.reshape(-1,2)
             I = flat_data[:,0].astype('i')
@@ -222,6 +231,39 @@ def mmread(source):
             V = concatenate((V,od_V))
 
         a = coo_matrix((V, (I, J)), dims=(rows, cols), dtype=dtype)
+            
+#        k = 0
+#        data,row,col = [],[],[]
+#        row_append = row.append
+#        col_append = col.append
+#        data_append = data.append
+#        line = '%'
+#        while line:
+#            if not line.startswith('%'):
+#                l = line.split()
+#                i = int(l[0])-1
+#                j = int(l[1])-1
+#                if is_pattern:
+#                    aij = 1.0 #use 1.0 for pattern matrices
+#                elif is_complex:
+#                    aij = complex(*map(float,l[2:]))
+#                else:
+#                    aij = float(l[2])
+#                row_append(i)
+#                col_append(j)
+#                data_append(aij)
+#                if has_symmetry and i!=j:
+#                    if is_skew:
+#                        aij = -aij
+#                    elif is_herm:
+#                        aij = conj(aij)
+#                    row_append(j)
+#                    col_append(i)
+#                    data_append(aij)
+#                k += 1
+#            line = source.readline()
+#        assert k==entries,`k,entries`
+#        a = coo_matrix((data, (row, col)), dims=(rows, cols), dtype=dtype)
     else:
         raise NotImplementedError,`rep`
 
