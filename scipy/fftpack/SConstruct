@@ -1,4 +1,4 @@
-# Last Change: Tue Dec 04 03:00 PM 2007 J
+# Last Change: Tue Dec 04 04:00 PM 2007 J
 # vim:syntax=python
 from os.path import join as pjoin
 
@@ -6,6 +6,7 @@ from os.path import join as pjoin
 from numpy.distutils.misc_util import get_numpy_include_dirs
 from numpy.distutils.scons import GetNumpyEnvironment
 from numpy.distutils.scons import IsMKL, IsFFTW3, IsFFTW2, CheckFFT
+from numpy.distutils.scons.configuration import write_info
 
 env = GetNumpyEnvironment(ARGUMENTS)
 
@@ -16,7 +17,9 @@ env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 config = env.NumpyConfigure(custom_tests = {'CheckFFT': CheckFFT})
 st = config.CheckFFT()
 config.Finish()
+write_info(env)
 
+# Tweak defineds depending on the fft used
 if st:
     if IsMKL(env, 'fft'):
         env.Append(CPPDEFINES = "SCIPY_MKL_H")
