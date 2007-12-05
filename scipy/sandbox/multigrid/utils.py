@@ -3,19 +3,48 @@ __all__ =['approximate_spectral_radius','infinity_norm','diag_sparse',
 
 import numpy
 import scipy
-from numpy import ravel,arange,concatenate,tile,asarray,sqrt,diff
-from scipy.linalg import norm
+from scipy import ravel,arange,concatenate,tile,asarray,sqrt,diff, \
+                  rand,zeros,empty,asmatrix,dot
+from scipy.linalg import norm,eig
 from scipy.sparse import isspmatrix,isspmatrix_csr,isspmatrix_csc, \
                         csr_matrix,csc_matrix,extract_diagonal, \
                         coo_matrix
 
 
-def approximate_spectral_radius(A,tol=0.1,maxiter=None):
+def approximate_spectral_radius(A,tol=0.1,maxiter=8):
     """
-    Approximate the spectral radius of a symmetric matrix using ARPACK
+    Approximate the spectral radius of a matrix
     """
-    from scipy.sandbox.arpack import eigen
-    return norm(eigen(A, k=1, ncv=10, which='LM', maxiter=maxiter, tol=tol, return_eigenvectors=False))
+    #from scipy.sandbox.arpack import eigen
+    #return norm(eigen(A, k=1, ncv=10, which='LM', maxiter=maxiter, tol=tol, return_eigenvectors=False))
+   
+    numpy.random.seed(0)  #make results deterministic
+
+    #TODO profile vs V -> V.T
+    #TODO make algorithm adaptive
+
+    if not isspmatrix(A):
+        #convert dense arrays to matrix type
+        A = asmatrix(A)
+
+    v0 = rand(A.shape[0])
+    H  = zeros((maxiter+1,maxiter))
+    V  = zeros((A.shape[0],maxiter+1))
+ 
+    V[:,0]= v0/norm(v0)
+    for j in range(maxiter):
+        w = A * V[:,j]
+        for i in range(j+1):
+            H[i,j] = dot(w,V[:,i])
+            w -= H[i,j]*V[:,i]
+        H[j+1,j] = norm(w)
+        if (H[j+1,j] < 1e-12): break
+        V[:,j+1] = (1.0/H[j+1,j]) * w
+    # end
+    m=j
+    Heig,tmp = eig(H[0:m,0:m])
+    return max( [norm(x) for x in Heig] )
+
 
 
 def infinity_norm(A):
@@ -55,10 +84,10 @@ def symmetric_rescaling(A):
         raise ValueError,'expected square matrix'
 
     D = diag_sparse(A)
-    mask = D <= 0
+    mask = D == 0
 
-    D[mask] = 0
-    D_sqrt = sqrt(D)
+    #D[mask] = 0
+    D_sqrt = sqrt(abs(D))
     D_sqrt_inv = 1.0/D_sqrt
     D_sqrt_inv[mask] = 0
 
