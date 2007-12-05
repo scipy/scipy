@@ -13,7 +13,8 @@ __date__     = '$Date: 2007-03-03 18:00:20 -0500 (Sat, 03 Mar 2007) $'
 
 __all__ = ['mov_sum', 'mov_median', 'mov_min', 'mov_max',
            'mov_average', 'mov_mean', 'mov_average_expw',
-           'mov_stddev', 'mov_var', 'mov_covar', 'mov_corr',
+           'mov_stddev', 'mov_var', 
+#           'mov_covar', 'mov_corr',
            'cmov_average', 'cmov_mean', 'cmov_window'
            ]
 
@@ -179,38 +180,38 @@ def mov_stddev(data, span, bias=False, dtype=None):
     return _mov_var_stddev(data=data, span=span,
                            is_variance=0, bias=int(bias), dtype=dtype)
 #...............................................................................
-def mov_covar(x, y, span, bias=False, dtype=None):
-    """Calculates the moving covariance of two 1-D arrays.
-
-*Parameters*:
-    $$x$$
-    $$y$$
-    $$span$$
-    $$bias$$
-    $$dtype$$"""
-    
-    result = x - mov_average(x, span, dtype=dtype)
-    result = result * (y - mov_average(y, span, dtype=dtype))
-    
-    if bias: denom = span
-    else: denom = span - 1
-    
-    return result/denom
-#...............................................................................
-def mov_corr(x, y, span, dtype=None):
-    """Calculates the moving correlation of two 1-D arrays.
-
-*Parameters*:
-    $$x$$
-    $$y$$
-    $$span$$
-    $$dtype$$"""
-
-    result = mov_covar(x, y, span, bias=True, dtype=dtype)
-    result = result / mov_stddev(x, span, bias=True, dtype=dtype)
-    result = result / mov_stddev(y, span, bias=True, dtype=dtype)
-   
-    return result
+#def mov_covar(x, y, span, bias=False, dtype=None):
+#    """Calculates the moving covariance of two 1-D arrays.
+#
+#*Parameters*:
+#    $$x$$
+#    $$y$$
+#    $$span$$
+#    $$bias$$
+#    $$dtype$$"""
+#    
+#    result = x - mov_average(x, span, dtype=dtype)
+#    result = result * (y - mov_average(y, span, dtype=dtype))
+#    
+#    if bias: denom = span
+#    else: denom = span - 1
+#    
+#    return result/denom
+##...............................................................................
+#def mov_corr(x, y, span, dtype=None):
+#    """Calculates the moving correlation of two 1-D arrays.
+#
+#*Parameters*:
+#    $$x$$
+#    $$y$$
+#    $$span$$
+#    $$dtype$$"""
+#
+#    result = mov_covar(x, y, span, bias=True, dtype=dtype)
+#    result = result / mov_stddev(x, span, bias=True, dtype=dtype)
+#    result = result / mov_stddev(y, span, bias=True, dtype=dtype)
+#   
+#    return result
 #...............................................................................
 def mov_average_expw(data, span, tol=1e-6):
     """Calculates the exponentially weighted moving average of a series.
