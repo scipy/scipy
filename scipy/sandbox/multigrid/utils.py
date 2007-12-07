@@ -5,45 +5,102 @@ import numpy
 import scipy
 from scipy import ravel,arange,concatenate,tile,asarray,sqrt,diff, \
                   rand,zeros,empty,asmatrix,dot
-from scipy.linalg import norm,eig
+from scipy.linalg import norm,eigvals
 from scipy.sparse import isspmatrix,isspmatrix_csr,isspmatrix_csc, \
                         csr_matrix,csc_matrix,extract_diagonal, \
                         coo_matrix
 
 
-def approximate_spectral_radius(A,tol=0.1,maxiter=8):
-    """
-    Approximate the spectral radius of a matrix
+def approximate_spectral_radius(A,tol=0.1,maxiter=10,symmetric=None):
+    """approximate the spectral radius of a matrix
+
+    *Parameters*:
+        A : dense or sparse matrix 
+            E.g. csr_matrix, csc_matrix, ndarray, etc.
+
+        tol : {scalar}
+            Tolerance of approximation
+
+        maxiter : {integer}
+            Maximum number of iterations to perform
+
+        symmetric : {None,boolean}
+            True  - if A is symmetric
+                    Lanczos iteration is used (more efficient)
+            False - if A is non-symmetric
+                    Arnoldi iteration is used (less efficient)
+            None  - symmetry of A unknown
+                    Method chosen automatically (default)
+    *Returns*:
+        An approximation to the spectral radius of A (scalar value)
+
     """
     #from scipy.sandbox.arpack import eigen
     #return norm(eigen(A, k=1, ncv=10, which='LM', maxiter=maxiter, tol=tol, return_eigenvectors=False))
    
+    if not isspmatrix(A):
+        A = asmatrix(A) #convert dense arrays to matrix type
+    
+    if A.shape[0] != A.shape[1]:
+        raise ValueError,'expected square matrix'
+
+    #TODO make method adaptive
+
     numpy.random.seed(0)  #make results deterministic
 
-    #TODO profile vs V -> V.T
-    #TODO make algorithm adaptive
+    v0  = rand(A.shape[1],1)
+    v0 /= norm(v0)
 
-    if not isspmatrix(A):
-        #convert dense arrays to matrix type
-        A = asmatrix(A)
-
-    v0 = rand(A.shape[0])
     H  = zeros((maxiter+1,maxiter))
-    V  = zeros((A.shape[0],maxiter+1))
- 
-    V[:,0]= v0/norm(v0)
+    V = [v0]
+
+    #save past estimates
+    #estimates = []
+
     for j in range(maxiter):
-        w = A * V[:,j]
-        for i in range(j+1):
-            H[i,j] = dot(w,V[:,i])
-            w -= H[i,j]*V[:,i]
-        H[j+1,j] = norm(w)
-        if (H[j+1,j] < 1e-12): break
-        V[:,j+1] = (1.0/H[j+1,j]) * w
-    # end
-    m=j
-    Heig,tmp = eig(H[0:m,0:m])
-    return max( [norm(x) for x in Heig] )
+        w = A * V[-1]
+   
+        if symmetric:
+            if j >= 1:
+                H[j-1,j] = beta
+                w -= beta * V[-2]
+
+            alpha = dot(ravel(w),ravel(V[-1]))
+            H[j,j] = alpha
+            w -= alpha * V[-1]
+            
+            beta = norm(w)
+            if (H[j+1,j] < 1e-10): break
+            
+            w /= beta
+            H[j+1,j] = beta
+
+            V.append(w)
+            V = V[-2:] #retain only last two vectors
+        else:
+            #orthogonalize against Vs
+            for i,v in enumerate(V):
+                H[i,j] = dot(ravel(w),ravel(v))
+                w -= H[i,j]*v
+            H[j+1,j] = norm(w)
+            if (H[j+1,j] < 1e-10): break
+            
+            w /= H[j+1,j] 
+            V.append(w)
+   
+            # if upper 2x2 block of Hessenberg matrix H is almost symmetric,
+            # and the user has not explicitly specified symmetric=False,
+            # then switch to symmetric Lanczos algorithm
+            if symmetric is not False and j == 1:
+                if abs(H[1,0] - H[0,1]) < 1e-12:
+                    symmetric = True
+                    V = V[1:]
+                    H[1,0] = H[0,1]
+                    beta = H[2,1]
+       
+        #estimates.append( max( [norm(x) for x in eigvals(H[:j+1,:j+1])] ) )
+
+    return norm(H[:j+1,:j+1],2)
 
 
 
