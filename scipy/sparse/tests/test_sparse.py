@@ -1257,9 +1257,9 @@ class TestSparseTools(NumpyTestCase):
         self.matrices = []
 
         self.matrices.append(('Identity',spidentity(10**5)))
-        self.matrices.append(('Poisson2d', poisson2d(250)))
-        self.matrices.append(('Poisson2d', poisson2d(500)))
-        self.matrices.append(('Poisson2d', poisson2d(1000)))
+        self.matrices.append(('Poisson5pt', poisson2d(250)))
+        self.matrices.append(('Poisson5pt', poisson2d(500)))
+        self.matrices.append(('Poisson5pt', poisson2d(1000)))
 
     def bench_matvec(self,level=5):
         print

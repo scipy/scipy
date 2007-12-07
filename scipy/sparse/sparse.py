@@ -117,8 +117,7 @@ class spmatrix(object):
         raise NotImplementedError
 
     def astype(self, t):
-        csc = self.tocsc()
-        return csc.astype(t)
+        return self.tocsr().astype(t)
 
     def asfptype(self):
         """Upcast matrix to a floating point format (if necessary)"""
@@ -219,9 +218,9 @@ class spmatrix(object):
                          " or shape[0]"
 
     def asformat(self, format):
-        # default converter goes through the CSC format
-        csc = self.tocsc()
-        return eval('%s_matrix' % format)(csc)
+        # default converter goes through the CSR format
+        csr = self.tocsr()
+        return eval('%s_matrix' % format)(csr)
 
     # default operations use the CSC format as a base
     #   and operations return in csc format
@@ -229,40 +228,32 @@ class spmatrix(object):
     #  a tocsc method
 
     def __abs__(self):
-        csc = self.tocsc()
-        return abs(csc)
+        return abs(self.tocsr())
 
     def __add__(self, other):   # self + other
-        csc = self.tocsc()
-        return csc.__add__(other)
+        return self.tocsr().__add__(other)
 
     def __radd__(self, other):  # other + self
-        csc = self.tocsc()
-        return csc.__radd__(other)
+        return self.tocsr().__radd__(other)
 
     def __sub__(self, other):   # self - other
         #note: this can't be replaced by self + (-other) for unsigned types
-        csc = self.tocsc()
-        return csc.__sub__(other)
+        return self.tocsr().__sub__(other)
 
     def __rsub__(self, other):  # other - self
-        csc = self.tocsc()
-        return csc.__rsub__(other)
+        return self.tocsr().__rsub__(other)
 
     def __mul__(self, other):
-        csc = self.tocsc()
-        return csc.__mul__(other)
+        return self.tocsr().__mul__(other)
 
     def __rmul__(self, other):
-        csc = self.tocsc()
-        return csc.__rmul__(other)
+        return self.tocsr().__rmul__(other)
 
     def __truediv__(self, other):
         if isscalarlike(other):
             return self * (1./other)
         else:
-            csc = self.tocsc()
-            return csc.__truediv__(other)
+            return self.tocsr().__truediv__(other)
 
     def __div__(self, other):
         # Always do true division
@@ -308,28 +299,23 @@ class spmatrix(object):
             raise AttributeError, attr + " not found"
 
     def transpose(self):
-        csc = self.tocsc()
-        return csc.transpose()
+        return self.tocsr().transpose()
 
     def conj(self):
-        csc = self.tocsc()
-        return csc.conj()
+        return self.tocsr().conj()
 
     def conjugate(self):
-        csc = self.tocsc()
-        return csc.conj()
+        return self.tocsr().conj()
 
     # Renamed conjtranspose() -> getH() for compatibility with dense matrices
     def getH(self):
         return self.transpose().conj()
 
     def _real(self):
-        csc = self.tocsc()
-        return csc._real()
+        return self.tocsr()._real()
 
     def _imag(self):
-        csc = self.tocsc()
-        return csc._imag()
+        return self.tocsr()._imag()
 
     def getcol(self, j):
         """Returns a copy of column j of the matrix, as an (m x 1) sparse
@@ -377,15 +363,13 @@ class spmatrix(object):
 
 
     def matmat(self, other):
-        csc = self.tocsc()
-        return csc.matmat(other)
+        return self.tocsr().matmat(other)
 
     def matvec(self, other):
         """Multiplies the sparse matrix by the vector 'other', returning a
         dense vector as a result.
         """
-        csc = self.tocsc()
-        return csc.matvec(other)
+        return self.tocsr().matvec(other)
 
     def rmatvec(self, other, conjugate=True):
         """Multiplies the vector 'other' by the sparse matrix, returning a
@@ -396,8 +380,7 @@ class spmatrix(object):
         Otherwise:
             returns A.transpose() * other.
         """
-        csc = self.tocsc()
-        return csc.rmatvec(other, conjugate=conjugate)
+        return self.tocsr().rmatvec(other, conjugate=conjugate)
 
     #def rmatmat(self, other, conjugate=True):
     #    """ If 'conjugate' is True:
@@ -419,8 +402,7 @@ class spmatrix(object):
         return csr.toarray()
 
     def tocoo(self):
-        csc = self.tocsc()
-        return csc.tocoo()
+        return self.tocsr().tocoo()
 
     def tolil(self):
         return lil_matrix(self.tocsr())
@@ -433,8 +415,7 @@ class spmatrix(object):
         return new
 
     def copy(self):
-        csc = self.tocsc()
-        return csc.copy()
+        return self.tocsr().copy()
 
     def sum(self, axis=None):
         """Sum the matrix over the given axis.  If the axis is None, sum
