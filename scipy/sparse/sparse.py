@@ -18,7 +18,7 @@ from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
                   ndarray, amax, amin, rank, conj, searchsorted, ndarray,   \
                   less, where, greater, array, transpose, empty, ones, \
                   arange, shape, intc, clip, prod, unravel_index, hstack, \
-                  array_split
+                  array_split, concatenate, cumsum
 
 import numpy
 from scipy.sparse.sparsetools import csrtodense, \
@@ -1922,6 +1922,10 @@ class dok_matrix(spmatrix, dict):
         else:
             raise TypeError, "need a dense vector"
 
+#    def tocoo(self):
+#        """ Return a copy of this matrix in COOrdinate format"""
+
+
     def tocsr(self, nzmax=None):
         """ Return Compressed Sparse Row format arrays for this matrix
         """
@@ -2538,20 +2542,23 @@ class lil_matrix(spmatrix):
     def tocsr(self):
         """ Return Compressed Sparse Row format arrays for this matrix.
         """
-        nnz = self.getnnz()
-        data = zeros(nnz, dtype=self.dtype)
-        colind = zeros(nnz, dtype=intc)
-        row_ptr = empty(self.shape[0]+1, dtype=intc)
-        row_ptr[:] = nnz
-        k = 0
-        for i, row in enumerate(self.rows):
-            data[k : k+len(row)] = self.data[i]
-            colind[k : k+len(row)] = self.rows[i]
-            row_ptr[i] = k
-            k += len(row)
+        
+        indptr = asarray([len(x) for x in self.rows], dtype=intc)
+        indptr = concatenate( ( array([0],dtype=intc), cumsum(indptr) ) )
+        
+        nnz = indptr[-1]
+        
+        indices = []
+        for x in self.rows:
+            indices.extend(x)
+        indices = asarray(indices,dtype=intc)
 
-        row_ptr[-1] = nnz           # last row number + 1
-        return csr_matrix((data, colind, row_ptr), dims=self.shape)
+        data = []
+        for x in self.data:
+            data.extend(x)
+        data = asarray(data,dtype=self.dtype)
+
+        return csr_matrix((data, indices, indptr), dims=self.shape)
 
     def tocsc(self):
         """ Return Compressed Sparse Column format arrays for this matrix.

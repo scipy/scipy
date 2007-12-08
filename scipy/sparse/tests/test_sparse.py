@@ -1257,15 +1257,15 @@ def poisson2d(N,epsilon=1.0):
 
 import time
 class TestSparseTools(NumpyTestCase):
-    def setUp(self):
-        self.matrices = []
-
-        self.matrices.append(('Identity',spidentity(10**5)))
-        self.matrices.append(('Poisson5pt', poisson2d(250)))
-        self.matrices.append(('Poisson5pt', poisson2d(500)))
-        self.matrices.append(('Poisson5pt', poisson2d(1000)))
+    """Simple benchmarks for sparse matrix module"""
 
     def bench_matvec(self,level=5):
+        matrices = []
+        matrices.append(('Identity',spidentity(10**5)))
+        matrices.append(('Poisson5pt', poisson2d(250)))
+        matrices.append(('Poisson5pt', poisson2d(500)))
+        matrices.append(('Poisson5pt', poisson2d(1000)))
+
         print
         print '                 Sparse Matrix Vector Product'
         print '=================================================================='
@@ -1273,7 +1273,7 @@ class TestSparseTools(NumpyTestCase):
         print '------------------------------------------------------------------'
         fmt = '  %3s | %12s | %20s | %8d |  %6.1f '
 
-        for name,A in self.matrices:
+        for name,A in matrices:
             A = A.tocsr()
             
             x = ones(A.shape[1],dtype=A.dtype)
@@ -1293,7 +1293,41 @@ class TestSparseTools(NumpyTestCase):
 
             print fmt % (A.format,name,shape,A.nnz,MFLOPs)
             
-            
+    def bench_matvec(self,level=5):
+        """build matrices by inserting single values"""
+        matrices = []
+        matrices.append( ('Empty',csr_matrix((10000,10000))) )
+        matrices.append( ('Identity',spidentity(10000)) )
+        matrices.append( ('Poisson5pt', poisson2d(100)) )
+        
+        print
+        print '                    Sparse Matrix Construction'
+        print '===================================================================='
+        print ' type |    name      |         shape        |    nnz   | time (sec) '
+        print '--------------------------------------------------------------------'
+        fmt = '  %3s | %12s | %20s | %8d |   %6.4f '
+
+        for name,A in matrices:
+            A = A.tocoo()
+             
+            for format in ['lil','dok']: 
+
+                start = time.clock()
+                
+                iter = 0
+                while time.clock() < start + 0.1:
+                    T = eval(format + '_matrix')(A.shape)
+                    for i,j,v in zip(A.row,A.col,A.data):
+                        T[i,j] = v
+                    iter += 1
+                end = time.clock()
+
+                name = name.center(12)
+                shape = ("%s" % (A.shape,)).center(20)
+
+                print fmt % (format,name,shape,A.nnz,(end-start)/float(iter))
+
+
     def bench_conversion(self,level=5):
         A = poisson2d(30).todense()
 
