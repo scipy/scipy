@@ -1316,6 +1316,10 @@ class csr_matrix(_cs_matrix):
         row = searchsorted(self.indptr, ind+1)-1
         return (row, col)
 
+
+#    def tolil(self):
+#        pass
+
     def tocsr(self, copy=False):
         return self.toself(copy)
 
@@ -2513,13 +2517,18 @@ class lil_matrix(spmatrix):
         # csr -> csc conversion
         return self.tocsr().transpose()
 
-    def tocsr(self, nzmax=None):
+    def tolil(self, copy=False):
+        if copy:
+            return self.copy()
+        else:
+            return self
+
+    def tocsr(self):
         """ Return Compressed Sparse Row format arrays for this matrix.
         """
         nnz = self.getnnz()
-        nzmax = max(nnz, nzmax)
-        data = zeros(nzmax, dtype=self.dtype)
-        colind = zeros(nzmax, dtype=intc)
+        data = zeros(nnz, dtype=self.dtype)
+        colind = zeros(nnz, dtype=intc)
         row_ptr = empty(self.shape[0]+1, dtype=intc)
         row_ptr[:] = nnz
         k = 0
@@ -2530,12 +2539,12 @@ class lil_matrix(spmatrix):
             k += len(row)
 
         row_ptr[-1] = nnz           # last row number + 1
-        return csr_matrix((data, colind, row_ptr), dims=self.shape, nzmax=nzmax)
+        return csr_matrix((data, colind, row_ptr), dims=self.shape)
 
-    def tocsc(self, nzmax=None):
+    def tocsc(self):
         """ Return Compressed Sparse Column format arrays for this matrix.
         """
-        return self.tocsr(nzmax).tocsc()
+        return self.tocsr().tocsc()
 
 
 
