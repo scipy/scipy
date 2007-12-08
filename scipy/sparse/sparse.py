@@ -497,7 +497,6 @@ class _cs_matrix(spmatrix):
         spmatrix.__init__(self)
 
         if isdense(arg1):
-            self.dtype = getdtype(dtype, arg1)
             # Convert the dense array or matrix arg1 to sparse format
             if rank(arg1) == 1:
                 # Convert to a row vector
@@ -519,8 +518,7 @@ class _cs_matrix(spmatrix):
                 # create empty matrix
                 self.shape = arg1   #spmatrix checks for errors here
                 M, N = self.shape
-                self.dtype   = getdtype(dtype, default=float)
-                self.data    = zeros((nzmax,), self.dtype)
+                self.data    = zeros((nzmax,), getdtype(dtype, default=float))
                 self.indices = zeros((nzmax,), intc)
                 if self.format[-1] == 'r':
                     self.indptr = zeros(M+1, dtype='intc')
@@ -539,8 +537,7 @@ class _cs_matrix(spmatrix):
                     except:
                         raise ValueError, "unrecognized form for csr_matrix constructor"
                     else:
-                        self.dtype   = getdtype(dtype, data)
-                        self.data    = array(data, copy=copy, dtype=self.dtype)
+                        self.data    = array(data, copy=copy, dtype=getdtype(dtype, data))
                         self.indices = array(indices, copy=copy)
                         self.indptr  = array(indptr, copy=copy)
                 else:
@@ -583,9 +580,14 @@ class _cs_matrix(spmatrix):
         self.indices = other.indices
         self.indptr  = other.indptr
         self.shape   = other.shape
-        self.dtype   = other.data.dtype
 
 
+    def _get_dtype(self):
+        return self.data.dtype
+    def _set_dtype(self,newtype):
+        self.data.dtype = newtype
+    dtype = property(fget=_get_dtype,fset=_set_dtype)
+    
     def _check_format(self, full_check):
         self.shape = tuple([int(x) for x in self.shape])  # for floats etc.
 
@@ -611,9 +613,6 @@ class _cs_matrix(spmatrix):
         self.indptr  = self.indptr.astype('intc')
         self.indices = self.indices.astype('intc')
         self.data    = to_native(self.data)
-
-        # set the data type
-        self.dtype = self.data.dtype
 
         # check array shapes
         if (rank(self.data) != 1) or (rank(self.indices) != 1) or \

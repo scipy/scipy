@@ -1290,6 +1290,48 @@ class TestSparseTools(NumpyTestCase):
             print fmt % (A.format,name,shape,A.nnz,MFLOPs)
             
             
+    def bench_conversion(self,level=5):
+        A = poisson2d(30).todense()
+
+        formats = ['csr','csc','coo','lil','dok']
+       
+        print
+        print '                    Sparse Matrix Conversion'
+        print '===================================================================='
+        print ' format |  tocsr()  |  tocsc()  |  tocoo()  |  tolil()  |  todok()  '
+        print '--------------------------------------------------------------------'
+        fmt = '   %3s  | %5.2fs | %5.2fs | %5.2fs |  %5.2fs | %5.2fs | %5.2fs '
+        
+        for fromfmt in formats:
+            #base = getattr(A,'to' + fromfmt)()
+            base = eval(fromfmt + '_matrix')(A)
+ 
+            times = []
+
+            for tofmt in formats:
+                try:
+                    fn = getattr(base,'to' + tofmt)
+                except:
+                    times.append(None)
+                else:
+                    start = time.clock()
+                    iter = 0
+                    while time.clock() < start + 0.1:
+                        x = fn()
+                        iter += 1
+                    end = time.clock()
+            
+                    times.append( (end - start)/float(iter))
+
+            output = "  %3s   " % fromfmt
+            for t in times:
+                if t is None:
+                    output += '|    n/a    '
+                else:
+                    output += '| %9.6f ' % t 
+            print output
+
+                
 
 
 
