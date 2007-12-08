@@ -284,6 +284,10 @@ class _TestCS:
         a = self.datsp.tolil()
         assert_array_almost_equal(a.todense(), self.dat)
 
+    def check_todok(self):
+        a = self.datsp.todok()
+        assert_array_almost_equal(a.todense(), self.dat)
+    
     def check_tocsc(self):
         a = self.datsp.tocsc()
         assert_array_almost_equal(a.todense(), self.dat)
@@ -1338,7 +1342,6 @@ class TestSparseTools(NumpyTestCase):
         print '===================================================================='
         print ' format |  tocsr()  |  tocsc()  |  tocoo()  |  tolil()  |  todok()  '
         print '--------------------------------------------------------------------'
-        fmt = '   %3s  | %5.2fs | %5.2fs | %5.2fs |  %5.2fs | %5.2fs | %5.2fs '
         
         for fromfmt in formats:
             #base = getattr(A,'to' + fromfmt)()
@@ -1366,7 +1369,7 @@ class TestSparseTools(NumpyTestCase):
                 if t is None:
                     output += '|    n/a    '
                 else:
-                    output += '| %9.6f ' % t 
+                    output += '| %9.7f ' % t 
             print output
 
                 

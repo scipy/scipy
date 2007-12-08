@@ -403,6 +403,9 @@ class spmatrix(object):
         csr = self.tocsr()
         return csr.toarray()
 
+    def todok(self):
+        return self.tocoo().todok()
+    
     def tocoo(self):
         return self.tocsr().tocoo()
 
@@ -1404,7 +1407,7 @@ class dok_matrix(spmatrix, dict):
     structure for constructing sparse matrices for conversion to other
     sparse matrix types.
     """
-    def __init__(self, A=None, shape=None, dtype=None):
+    def __init__(self, A=None, shape=None, dtype=None, copy=False):
         """ Create a new dictionary-of-keys sparse matrix.  An optional
         argument A is accepted, which initializes the dok_matrix with it.
         This can be a tuple of dimensions (M, N) or a (dense) array
@@ -1423,21 +1426,17 @@ class dok_matrix(spmatrix, dict):
             elif isspmatrix(A):
                 # For sparse matrices, this is too inefficient; we need
                 # something else.
-                raise NotImplementedError, "initializing a dok_matrix with " \
-                        "a sparse matrix is not yet supported"
-            elif isdense(A):
-                # Convert to a (1 x n) row vector
-                if rank(A) == 1:
-                    A = A.reshape(1, len(A))
-                if rank(A) == 2:
-                    M, N = A.shape
-                    self.shape = (M, N)
-                    for i in xrange(M):
-                        for j in xrange(N):
-                            if A[i, j] != 0:
-                                self[i, j] = A[i, j]
+                if isspmatrix_dok(A) and copy:
+                    A = A.copy()
                 else:
-                    raise ValueError, "dense array must have rank 1 or 2"
+                    A = A.todok()
+                self.update( A )
+                self.shape = A.shape
+                self.dtype = A.dtype
+            elif isdense(A):
+                self.update( coo_matrix(A).todok() )
+                self.shape = A.shape
+                self.dtype = A.dtype
             else:
                 raise TypeError, "argument should be a tuple of dimensions " \
                         "or a sparse or dense matrix"
@@ -1928,6 +1927,11 @@ class dok_matrix(spmatrix, dict):
         indices = asarray(self.keys(),dtype=intc).T
         return coo_matrix((data,indices),dims=self.shape,dtype=self.dtype)
 
+    def todok(self,copy=False):
+        if copy:
+            return self.copy()
+        else:
+            return self
 
     def tocsr(self):
         """ Return a copy of this matrix in Compressed Sparse Row format"""
@@ -2114,6 +2118,11 @@ class coo_matrix(spmatrix):
 
     def tocoo(self, copy=False):
         return self.toself(copy)
+
+    def todok(self):
+        dok = dok_matrix((self.shape),dtype=self.dtype)
+        dok.update( zip(zip(self.row,self.col),self.data) )
+        return dok
 
 
 class lil_matrix(spmatrix):
