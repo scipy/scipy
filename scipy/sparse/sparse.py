@@ -17,7 +17,9 @@ import warnings
 from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
                   ndarray, amax, amin, rank, conj, searchsorted, ndarray,   \
                   less, where, greater, array, transpose, empty, ones, \
-                  arange, shape, intc, clip, prod, unravel_index, hstack
+                  arange, shape, intc, clip, prod, unravel_index, hstack, \
+                  array_split
+
 import numpy
 from scipy.sparse.sparsetools import csrtodense, \
      cootocsr, csrtocoo, cootocsc, csctocoo, csctocsr, csrtocsc 
@@ -405,7 +407,7 @@ class spmatrix(object):
         return self.tocsr().tocoo()
 
     def tolil(self):
-        return lil_matrix(self.tocsr())
+        return self.tocsr().tolil()
 
     def toself(self, copy=False):
         if copy:
@@ -1317,8 +1319,26 @@ class csr_matrix(_cs_matrix):
         return (row, col)
 
 
-#    def tolil(self):
-#        pass
+    def tolil(self):
+        lil = lil_matrix(self.shape,dtype=self.dtype)
+     
+        #TODO make this more efficient
+        csr = self.ensure_sorted_indices()
+        
+        rows,data = lil.rows,lil.data
+        ptr,ind,dat = csr.indptr,csr.indices,csr.data
+
+        for n in xrange(self.shape[0]):
+            start = ptr[n]
+            end   = ptr[n+1]
+            rows[n] = ind[start:end].tolist()
+            data[n] = dat[start:end].tolist()
+
+        lil.rows = rows
+        lil.data = data
+        #lil.shape = self.shape
+
+        return lil
 
     def tocsr(self, copy=False):
         return self.toself(copy)
@@ -2147,7 +2167,7 @@ class lil_matrix(spmatrix):
     (self.data) of lists of these elements.
     """
 
-    def __init__(self, A=None, shape=None, dtype=None):
+    def __init__(self, A=None, shape=None, dtype=None, copy=False):
         """ Create a new list-of-lists sparse matrix.  An optional
         argument A is accepted, which initializes the lil_matrix with it.
         This can be a tuple of dimensions (M, N) or a dense array /
@@ -2163,49 +2183,41 @@ class lil_matrix(spmatrix):
             if not isshape(shape):
                 raise TypeError, "need a valid shape"
             M, N = shape
+            self.shape = (M,N)
+            self.rows = numpy.empty((M,), dtype=object)
+            self.data = numpy.empty((M,), dtype=object)
+            for i in range(M):
+                self.rows[i] = []
+                self.data[i] = []
         else:
             if isshape(A):
                 M, N = A
-                A = None
+                self.shape = (M,N)
+                self.rows = numpy.empty((M,), dtype=object)
+                self.data = numpy.empty((M,), dtype=object)
+                for i in range(M):
+                    self.rows[i] = []
+                    self.data[i] = []
             else:
-                if not isdense(A):
-                    # A is not dense.  If it's a spmatrix, ensure it's a
-                    # csr_matrix or lil_matrix, which are the only types that
-                    # support row slices.
-                    if isinstance(A, spmatrix):
-                        if not isinstance(A, lil_matrix) and \
-                                not isinstance(A, csr_matrix):
-                            raise TypeError, "unsupported matrix type"
-
-                    # Otherwise, try converting to a matrix.  So if it's
-                    # a list (rank 1), it will become a row vector
+                if isspmatrix(A):                    
+                    if isspmatrix_lil(A) and copy:
+                        A = A.copy()
                     else:
-                        try:
-                            A = asmatrix(A)
-                        except TypeError:
-                            raise TypeError, "unsupported matrix type"
-                elif rank(A) == 1:
-                    # Construct a row vector
-                    A = asmatrix(A)
-                if rank(A) != 2:
-                    raise ValueError, "can only initialize with a rank 1 or" \
-                            " 2 array"
-                if shape is None:
-                    shape = (None, None)   # simplifies max() operation
-                M = max(shape[0], A.shape[0])
-                N = max(shape[1], A.shape[1])
-        self.shape = (M, N)
-
-        # Pluck out all non-zeros from the dense array/matrix A
-        self.rows = numpy.empty((M,), dtype=object)
-        self.data = numpy.empty((M,), dtype=object)
-        for i in range(M):
-            self.rows[i] = []
-            self.data[i] = []
-
-        if A is not None:
-            for i in xrange(A.shape[0]):
-                self[i, :] = A[i, :]
+                        A = A.tolil()
+                else:
+                    #assume A is dense
+                    try:
+                        A = asmatrix(A)
+                    except TypeError:
+                        raise TypeError, "unsupported matrix type"
+                    else:
+                        A = csr_matrix(A).tolil()
+                
+                #A is a lil matrix
+                self.shape = A.shape
+                self.dtype = A.dtype
+                self.rows  = A.rows
+                self.data  = A.data
 
     def __iadd__(self,other):
         self[:,:] = self + other

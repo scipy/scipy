@@ -280,6 +280,10 @@ class _TestCS:
         a = self.datsp.tocoo()
         assert_array_almost_equal(a.todense(), self.dat)
 
+    def check_tolil(self):
+        a = self.datsp.tolil()
+        assert_array_almost_equal(a.todense(), self.dat)
+
     def check_tocsc(self):
         a = self.datsp.tocsc()
         assert_array_almost_equal(a.todense(), self.dat)
@@ -1332,8 +1336,5 @@ class TestSparseTools(NumpyTestCase):
             print output
 
                 
-
-
-
 if __name__ == "__main__":
     NumpyTest().run()
