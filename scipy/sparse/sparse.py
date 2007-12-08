@@ -1922,68 +1922,21 @@ class dok_matrix(spmatrix, dict):
         else:
             raise TypeError, "need a dense vector"
 
-#    def tocoo(self):
-#        """ Return a copy of this matrix in COOrdinate format"""
+    def tocoo(self):
+        """ Return a copy of this matrix in COOrdinate format"""
+        data = asarray(self.values(),dtype=self.dtype)
+        indices = asarray(self.keys(),dtype=intc).T
+        return coo_matrix((data,indices),dims=self.shape,dtype=self.dtype)
 
 
-    def tocsr(self, nzmax=None):
-        """ Return Compressed Sparse Row format arrays for this matrix
-        """
-        keys = self.keys()
-        keys.sort()
+    def tocsr(self):
+        """ Return a copy of this matrix in Compressed Sparse Row format"""
+        return self.tocoo().tocsr()
 
-        nnz = len(keys)
-        nzmax = max(nnz, nzmax)
-        data = zeros(nzmax, dtype=self.dtype)
-        colind = zeros(nzmax, dtype=intc)
-        # Empty rows will leave row_ptr dangling.  We assign row_ptr[i]
-        # for each empty row i to point off the end.  Is this sufficient??
-        row_ptr = empty(self.shape[0]+1, dtype=intc)
-        row_ptr[:] = nnz
-        current_row = -1
-        k = 0
-        for key in keys:
-            ikey0 = int(key[0])
-            ikey1 = int(key[1])
-            if ikey0 != current_row:
-                row_ptr[current_row+1:ikey0+1] = k
-                current_row = ikey0
-            data[k] = dict.__getitem__(self, key)
-            colind[k] = ikey1
-            k += 1
-        data = array(data)
-        colind = array(colind)
-        row_ptr = array(row_ptr)
-        return csr_matrix((data, colind, row_ptr), dims=self.shape, nzmax=nzmax)
-
-    def tocsc(self, nzmax=None):
-        """ Return Compressed Sparse Column format arrays for this matrix
-        """
+    def tocsc(self):
+        """ Return a copy of this matrix in Compressed Sparse Column format"""
         # Fast sort on columns using the Schwartzian transform
-        keys = [(k[1], k[0]) for k in self.keys()]
-        keys.sort()
-        keys = [(k[1], k[0]) for k in keys]
-
-        nnz = len(keys)
-        nzmax = max(nnz, nzmax)
-        data = zeros(nzmax, dtype=self.dtype)
-        rowind = zeros(nzmax, dtype=intc)
-        # Empty columns will leave col_ptr dangling.  We assign col_ptr[j]
-        # for each empty column j to point off the end.  Is this sufficient??
-        col_ptr = empty(self.shape[1]+1, dtype=intc)
-        col_ptr[:] = nnz
-        current_col = -1
-        k = 0
-        for key in keys:
-            ikey0 = int(key[0])
-            ikey1 = int(key[1])
-            if ikey1 != current_col:
-                col_ptr[current_col+1:ikey1+1] = k
-                current_col = ikey1
-            data[k] = self[key]
-            rowind[k] = ikey0
-            k += 1
-        return csc_matrix((data, rowind, col_ptr), dims=self.shape, nzmax=nzmax)
+        return self.tocoo().tocsc()
 
     def toarray(self):
         new = zeros(self.shape, dtype=self.dtype)
