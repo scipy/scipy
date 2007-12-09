@@ -1297,7 +1297,7 @@ class TestSparseTools(NumpyTestCase):
 
             print fmt % (A.format,name,shape,A.nnz,MFLOPs)
             
-    def bench_matvec(self,level=5):
+    def bench_construction(self,level=5):
         """build matrices by inserting single values"""
         matrices = []
         matrices.append( ('Empty',csr_matrix((10000,10000))) )
@@ -1333,19 +1333,18 @@ class TestSparseTools(NumpyTestCase):
 
 
     def bench_conversion(self,level=5):
-        A = poisson2d(30).todense()
+        A = poisson2d(80)
 
         formats = ['csr','csc','coo','lil','dok']
        
         print
-        print '                    Sparse Matrix Conversion'
-        print '===================================================================='
-        print ' format |  tocsr()  |  tocsc()  |  tocoo()  |  tolil()  |  todok()  '
-        print '--------------------------------------------------------------------'
+        print '                Sparse Matrix Conversion'
+        print '=========================================================='
+        print ' format | tocsr() | tocsc() | tocoo() | tolil() | todok() '
+        print '----------------------------------------------------------'
         
         for fromfmt in formats:
-            #base = getattr(A,'to' + fromfmt)()
-            base = eval(fromfmt + '_matrix')(A)
+            base = getattr(A,'to' + fromfmt)()
  
             times = []
 
@@ -1357,7 +1356,7 @@ class TestSparseTools(NumpyTestCase):
                 else:
                     start = time.clock()
                     iter = 0
-                    while time.clock() < start + 0.1:
+                    while time.clock() < start + 0.2:
                         x = fn()
                         iter += 1
                     end = time.clock()
@@ -1369,7 +1368,7 @@ class TestSparseTools(NumpyTestCase):
                 if t is None:
                     output += '|    n/a    '
                 else:
-                    output += '| %9.7f ' % t 
+                    output += '| %7.5f ' % t 
             print output
 
                 
