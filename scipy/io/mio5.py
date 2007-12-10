@@ -348,41 +348,32 @@ class Mat5NumericMatrixGetter(Mat5MatrixGetter):
 
 class Mat5SparseMatrixGetter(Mat5MatrixGetter):
     def get_raw_array(self):
-        rowind  = self.read_element()
-        colind = self.read_element()
+        rowind = self.read_element()
+        indptr = self.read_element()
         if self.header['is_complex']:
             # avoid array copy to save memory
-            res = self.read_element(copy=False)
-            res_j = self.read_element(copy=False)
-            res = res + (res_j * 1j)
+            data   = self.read_element(copy=False)
+            data_j = self.read_element(copy=False)
+            data = data + (data_j * 1j)
         else:
-            res = self.read_element()
+            data = self.read_element()
         ''' From the matlab (TM) API documentation, last found here:
         http://www.mathworks.com/access/helpdesk/help/techdoc/matlab_external/
         rowind are simply the row indices for all the (res) non-zero
         entries in the sparse array.  rowind has nzmax entries, so
         may well have more entries than len(res), the actual number
         of non-zero entries, but rowind[len(res):] can be discarded
-        and should be 0. colind has length (number of columns + 1),
+        and should be 0. indptr has length (number of columns + 1),
         and is such that, if D = diff(colind), D[j] gives the number
         of non-zero entries in column j. Because rowind values are
         stored in column order, this gives the column corresponding to
         each rowind
         '''
-        cols = N.empty((len(res)), dtype=rowind.dtype)
-        col_counts = N.diff(colind)
-        start_row = 0
-        for i in N.where(col_counts)[0]:
-            end_row = start_row + col_counts[i]
-            cols[start_row:end_row] = i
-            start_row = end_row
-        ij = N.vstack((rowind[:len(res)], cols))
         if have_sparse:
-            result = scipy.sparse.csc_matrix((res,ij),
-                                             self.header['dims'])
+            dims = self.header['dims']
+            return scipy.sparse.csc_matrix((data,rowind,indptr), dims)
         else:
-            result = (dims, ij, res)
-        return result
+            return (dims, data, rowind, indptr)
 
 
 class Mat5CharMatrixGetter(Mat5MatrixGetter):

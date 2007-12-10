@@ -166,13 +166,18 @@ class Mat4SparseGetter(Mat4MatrixGetter):
         res = self.read_array()
         tmp = res[:-1,:]
         dims = res[-1,0:2]
-        ij = N.transpose(tmp[:,0:2]).astype('i') - 1 # for 1-based indexing
-        vals = tmp[:,2]
-        if res.shape[1] == 4:
-            vals = vals + res[:-1,3] * 1j
+        I = N.ascontiguousarray(tmp[:,0],dtype='intc') #fixes byte order also
+        J = N.ascontiguousarray(tmp[:,1],dtype='intc')
+        I -= 1  # for 1-based indexing 
+        J -= 1
+        if res.shape[1] == 3:
+            V = N.ascontiguousarray(tmp[:,2],dtype='float')
+        else:
+            V = N.ascontiguousarray(tmp[:,2],dtype='complex')
+            V.imag = tmp[:,3] 
         if have_sparse:
-            return scipy.sparse.csc_matrix((vals,ij), dims)
-        return (dims, ij, vals)
+            return scipy.sparse.coo_matrix((V,(I,J)), dims)
+        return (dims, I, J, V)
 
 
 class MatFile4Reader(MatFileReader):

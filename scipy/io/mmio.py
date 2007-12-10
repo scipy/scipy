@@ -11,7 +11,7 @@
 
 import os
 from numpy import asarray, real, imag, conj, zeros, ndarray, \
-                  empty, concatenate, ones
+                  empty, concatenate, ones, ascontiguousarray
 from itertools import izip
 
 __all__ = ['mminfo','mmread','mmwrite']
@@ -195,21 +195,20 @@ def mmread(source):
         
         if is_pattern:
             flat_data = flat_data.reshape(-1,2)
-            I = flat_data[:,0].astype('i')
-            J = flat_data[:,1].astype('i')
+            I = ascontiguousarray(flat_data[:,0], dtype='intc')
+            J = ascontiguousarray(flat_data[:,1], dtype='intc')
             V = ones(len(I))
         elif is_complex:
             flat_data = flat_data.reshape(-1,4)
-            I = flat_data[:,0].astype('i')
-            J = flat_data[:,1].astype('i')
-            V = empty(len(I),dtype='complex')
-            V.real = flat_data[:,2]
+            I = ascontiguousarray(flat_data[:,0], dtype='intc')
+            J = ascontiguousarray(flat_data[:,1], dtype='intc')
+            V = ascontiguousarray(flat_data[:,2], dtype='complex')
             V.imag = flat_data[:,3]
         else:
             flat_data = flat_data.reshape(-1,3)
-            I = flat_data[:,0].astype('i')
-            J = flat_data[:,1].astype('i')
-            V = flat_data[:,2].copy()
+            I = ascontiguousarray(flat_data[:,0], dtype='intc')
+            J = ascontiguousarray(flat_data[:,1], dtype='intc')
+            V = ascontiguousarray(flat_data[:,2], dtype='float')
 
         I -= 1 #adjust indices (base 1 -> base 0)
         J -= 1
@@ -231,39 +230,6 @@ def mmread(source):
             V = concatenate((V,od_V))
 
         a = coo_matrix((V, (I, J)), dims=(rows, cols), dtype=dtype)
-            
-#        k = 0
-#        data,row,col = [],[],[]
-#        row_append = row.append
-#        col_append = col.append
-#        data_append = data.append
-#        line = '%'
-#        while line:
-#            if not line.startswith('%'):
-#                l = line.split()
-#                i = int(l[0])-1
-#                j = int(l[1])-1
-#                if is_pattern:
-#                    aij = 1.0 #use 1.0 for pattern matrices
-#                elif is_complex:
-#                    aij = complex(*map(float,l[2:]))
-#                else:
-#                    aij = float(l[2])
-#                row_append(i)
-#                col_append(j)
-#                data_append(aij)
-#                if has_symmetry and i!=j:
-#                    if is_skew:
-#                        aij = -aij
-#                    elif is_herm:
-#                        aij = conj(aij)
-#                    row_append(j)
-#                    col_append(i)
-#                    data_append(aij)
-#                k += 1
-#            line = source.readline()
-#        assert k==entries,`k,entries`
-#        a = coo_matrix((data, (row, col)), dims=(rows, cols), dtype=dtype)
     else:
         raise NotImplementedError,`rep`
 
