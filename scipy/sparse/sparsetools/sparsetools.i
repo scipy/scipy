@@ -90,6 +90,7 @@
 %define I_INPLACE_ARRAY1( ctype )
 %apply ctype * INPLACE_ARRAY {
   ctype Ap [ ],
+  ctype Ai [ ],
   ctype Aj [ ],
   ctype Bp [ ],
   ctype Bi [ ],

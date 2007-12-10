@@ -355,7 +355,7 @@ class UmfpackContext( Struct ):
 
         if not assumeSortedIndices:
             # row/column indices cannot be assumed to be sorted
-            mtx.ensure_sorted_indices( inplace = True )
+            mtx.sort_indices()
 
         indx = self._getIndx( mtx )
         if self.isReal:

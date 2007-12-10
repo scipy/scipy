@@ -2478,18 +2478,17 @@ SWIG_Python_MustGetPtr(PyObject *obj, swig_type_info *ty, int argnum, int flags)
 /* -------- TYPES TABLE (BEGIN) -------- */
 
 #define SWIGTYPE_p_char swig_types[0]
-#define SWIGTYPE_p_int swig_types[1]
-#define SWIGTYPE_p_std__vectorTdouble_t swig_types[2]
-#define SWIGTYPE_p_std__vectorTfloat_t swig_types[3]
-#define SWIGTYPE_p_std__vectorTint_t swig_types[4]
-#define SWIGTYPE_p_std__vectorTlong_long_t swig_types[5]
-#define SWIGTYPE_p_std__vectorTnpy_cdouble_wrapper_t swig_types[6]
-#define SWIGTYPE_p_std__vectorTnpy_cfloat_wrapper_t swig_types[7]
-#define SWIGTYPE_p_std__vectorTshort_t swig_types[8]
-#define SWIGTYPE_p_std__vectorTsigned_char_t swig_types[9]
-#define SWIGTYPE_p_std__vectorTunsigned_char_t swig_types[10]
-static swig_type_info *swig_types[12];
-static swig_module_info swig_module = {swig_types, 11, 0, 0, 0, 0};
+#define SWIGTYPE_p_std__vectorTdouble_t swig_types[1]
+#define SWIGTYPE_p_std__vectorTfloat_t swig_types[2]
+#define SWIGTYPE_p_std__vectorTint_t swig_types[3]
+#define SWIGTYPE_p_std__vectorTlong_long_t swig_types[4]
+#define SWIGTYPE_p_std__vectorTnpy_cdouble_wrapper_t swig_types[5]
+#define SWIGTYPE_p_std__vectorTnpy_cfloat_wrapper_t swig_types[6]
+#define SWIGTYPE_p_std__vectorTshort_t swig_types[7]
+#define SWIGTYPE_p_std__vectorTsigned_char_t swig_types[8]
+#define SWIGTYPE_p_std__vectorTunsigned_char_t swig_types[9]
+static swig_type_info *swig_types[11];
+static swig_module_info swig_module = {swig_types, 10, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -39374,8 +39373,7 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_1(PyObject *SWIGUNUSEDPARM(sel
   int ecode2 = 0 ;
   PyArrayObject *array3 = NULL ;
   int is_new_object3 ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -39404,11 +39402,11 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_1(PyObject *SWIGUNUSEDPARM(sel
     
     arg3 = (int*) array3->data;
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sort_csc_indices" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_BYTE);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -39441,8 +39439,7 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_2(PyObject *SWIGUNUSEDPARM(sel
   int ecode2 = 0 ;
   PyArrayObject *array3 = NULL ;
   int is_new_object3 ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -39471,11 +39468,11 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_2(PyObject *SWIGUNUSEDPARM(sel
     
     arg3 = (int*) array3->data;
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sort_csc_indices" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_UBYTE);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -39508,8 +39505,7 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_3(PyObject *SWIGUNUSEDPARM(sel
   int ecode2 = 0 ;
   PyArrayObject *array3 = NULL ;
   int is_new_object3 ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -39538,11 +39534,11 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_3(PyObject *SWIGUNUSEDPARM(sel
     
     arg3 = (int*) array3->data;
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sort_csc_indices" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_SHORT);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -39575,8 +39571,7 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_4(PyObject *SWIGUNUSEDPARM(sel
   int ecode2 = 0 ;
   PyArrayObject *array3 = NULL ;
   int is_new_object3 ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -39605,11 +39600,11 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_4(PyObject *SWIGUNUSEDPARM(sel
     
     arg3 = (int*) array3->data;
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sort_csc_indices" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_INT);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -39642,8 +39637,7 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_5(PyObject *SWIGUNUSEDPARM(sel
   int ecode2 = 0 ;
   PyArrayObject *array3 = NULL ;
   int is_new_object3 ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -39672,11 +39666,11 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_5(PyObject *SWIGUNUSEDPARM(sel
     
     arg3 = (int*) array3->data;
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sort_csc_indices" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_LONGLONG);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -39709,8 +39703,7 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_6(PyObject *SWIGUNUSEDPARM(sel
   int ecode2 = 0 ;
   PyArrayObject *array3 = NULL ;
   int is_new_object3 ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -39739,11 +39732,11 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_6(PyObject *SWIGUNUSEDPARM(sel
     
     arg3 = (int*) array3->data;
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sort_csc_indices" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_FLOAT);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -39776,8 +39769,7 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_7(PyObject *SWIGUNUSEDPARM(sel
   int ecode2 = 0 ;
   PyArrayObject *array3 = NULL ;
   int is_new_object3 ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -39806,11 +39798,11 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_7(PyObject *SWIGUNUSEDPARM(sel
     
     arg3 = (int*) array3->data;
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sort_csc_indices" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_DOUBLE);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -39843,8 +39835,7 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_8(PyObject *SWIGUNUSEDPARM(sel
   int ecode2 = 0 ;
   PyArrayObject *array3 = NULL ;
   int is_new_object3 ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -39873,11 +39864,11 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_8(PyObject *SWIGUNUSEDPARM(sel
     
     arg3 = (int*) array3->data;
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sort_csc_indices" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_CFLOAT);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -39910,8 +39901,7 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_9(PyObject *SWIGUNUSEDPARM(sel
   int ecode2 = 0 ;
   PyArrayObject *array3 = NULL ;
   int is_new_object3 ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -39940,11 +39930,11 @@ SWIGINTERN PyObject *_wrap_sort_csc_indices__SWIG_9(PyObject *SWIGUNUSEDPARM(sel
     
     arg3 = (int*) array3->data;
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sort_csc_indices" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_CDOUBLE);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -41054,8 +41044,7 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_1(PyObject *SWIGUNUSEDPARM(s
   int val2 ;
   int ecode2 = 0 ;
   PyArrayObject *temp3 = NULL ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -41079,11 +41068,11 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_1(PyObject *SWIGUNUSEDPARM(s
     if (!temp3  || !require_contiguous(temp3) || !require_native(temp3)) SWIG_fail;
     arg3 = (int*) array_data(temp3);
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sum_csc_duplicates" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_BYTE);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -41109,8 +41098,7 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_2(PyObject *SWIGUNUSEDPARM(s
   int val2 ;
   int ecode2 = 0 ;
   PyArrayObject *temp3 = NULL ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -41134,11 +41122,11 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_2(PyObject *SWIGUNUSEDPARM(s
     if (!temp3  || !require_contiguous(temp3) || !require_native(temp3)) SWIG_fail;
     arg3 = (int*) array_data(temp3);
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sum_csc_duplicates" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_UBYTE);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -41164,8 +41152,7 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_3(PyObject *SWIGUNUSEDPARM(s
   int val2 ;
   int ecode2 = 0 ;
   PyArrayObject *temp3 = NULL ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -41189,11 +41176,11 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_3(PyObject *SWIGUNUSEDPARM(s
     if (!temp3  || !require_contiguous(temp3) || !require_native(temp3)) SWIG_fail;
     arg3 = (int*) array_data(temp3);
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sum_csc_duplicates" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_SHORT);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -41219,8 +41206,7 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_4(PyObject *SWIGUNUSEDPARM(s
   int val2 ;
   int ecode2 = 0 ;
   PyArrayObject *temp3 = NULL ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -41244,11 +41230,11 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_4(PyObject *SWIGUNUSEDPARM(s
     if (!temp3  || !require_contiguous(temp3) || !require_native(temp3)) SWIG_fail;
     arg3 = (int*) array_data(temp3);
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sum_csc_duplicates" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_INT);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -41274,8 +41260,7 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_5(PyObject *SWIGUNUSEDPARM(s
   int val2 ;
   int ecode2 = 0 ;
   PyArrayObject *temp3 = NULL ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -41299,11 +41284,11 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_5(PyObject *SWIGUNUSEDPARM(s
     if (!temp3  || !require_contiguous(temp3) || !require_native(temp3)) SWIG_fail;
     arg3 = (int*) array_data(temp3);
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sum_csc_duplicates" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_LONGLONG);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -41329,8 +41314,7 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_6(PyObject *SWIGUNUSEDPARM(s
   int val2 ;
   int ecode2 = 0 ;
   PyArrayObject *temp3 = NULL ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -41354,11 +41338,11 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_6(PyObject *SWIGUNUSEDPARM(s
     if (!temp3  || !require_contiguous(temp3) || !require_native(temp3)) SWIG_fail;
     arg3 = (int*) array_data(temp3);
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sum_csc_duplicates" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_FLOAT);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -41384,8 +41368,7 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_7(PyObject *SWIGUNUSEDPARM(s
   int val2 ;
   int ecode2 = 0 ;
   PyArrayObject *temp3 = NULL ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -41409,11 +41392,11 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_7(PyObject *SWIGUNUSEDPARM(s
     if (!temp3  || !require_contiguous(temp3) || !require_native(temp3)) SWIG_fail;
     arg3 = (int*) array_data(temp3);
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sum_csc_duplicates" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_DOUBLE);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -41439,8 +41422,7 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_8(PyObject *SWIGUNUSEDPARM(s
   int val2 ;
   int ecode2 = 0 ;
   PyArrayObject *temp3 = NULL ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -41464,11 +41446,11 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_8(PyObject *SWIGUNUSEDPARM(s
     if (!temp3  || !require_contiguous(temp3) || !require_native(temp3)) SWIG_fail;
     arg3 = (int*) array_data(temp3);
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sum_csc_duplicates" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_CFLOAT);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -41494,8 +41476,7 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_9(PyObject *SWIGUNUSEDPARM(s
   int val2 ;
   int ecode2 = 0 ;
   PyArrayObject *temp3 = NULL ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
+  PyArrayObject *temp4 = NULL ;
   PyArrayObject *temp5 = NULL ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -41519,11 +41500,11 @@ SWIGINTERN PyObject *_wrap_sum_csc_duplicates__SWIG_9(PyObject *SWIGUNUSEDPARM(s
     if (!temp3  || !require_contiguous(temp3) || !require_native(temp3)) SWIG_fail;
     arg3 = (int*) array_data(temp3);
   }
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_int, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "sum_csc_duplicates" "', argument " "4"" of type '" "int []""'"); 
-  } 
-  arg4 = reinterpret_cast< int * >(argp4);
+  {
+    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
+    arg4 = (int*) array_data(temp4);
+  }
   {
     temp5 = obj_to_array_no_conversion(obj4,PyArray_CDOUBLE);
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
@@ -44421,7 +44402,6 @@ static PyMethodDef SwigMethods[] = {
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_int = {"_p_int", "int *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorTdouble_t = {"_p_std__vectorTdouble_t", "std::vector<double > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorTfloat_t = {"_p_std__vectorTfloat_t", "std::vector<float > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorTint_t = {"_p_std__vectorTint_t", "std::vector<int > *", 0, 0, (void*)0, 0};
@@ -44434,7 +44414,6 @@ static swig_type_info _swigt__p_std__vectorTunsigned_char_t = {"_p_std__vectorTu
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_char,
-  &_swigt__p_int,
   &_swigt__p_std__vectorTdouble_t,
   &_swigt__p_std__vectorTfloat_t,
   &_swigt__p_std__vectorTint_t,
@@ -44447,7 +44426,6 @@ static swig_type_info *swig_type_initial[] = {
 };
 
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_int[] = {  {&_swigt__p_int, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorTdouble_t[] = {  {&_swigt__p_std__vectorTdouble_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorTfloat_t[] = {  {&_swigt__p_std__vectorTfloat_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorTint_t[] = {  {&_swigt__p_std__vectorTint_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -44460,7 +44438,6 @@ static swig_cast_info _swigc__p_std__vectorTunsigned_char_t[] = {  {&_swigt__p_s
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_char,
-  _swigc__p_int,
   _swigc__p_std__vectorTdouble_t,
   _swigc__p_std__vectorTfloat_t,
   _swigc__p_std__vectorTint_t,

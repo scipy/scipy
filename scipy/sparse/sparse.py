@@ -934,15 +934,36 @@ class _cs_matrix(spmatrix):
     def conj(self, copy=False):
         return self._with_data(self.data.conj(),copy=copy)
 
-    def _ensure_sorted_indices(self, shape0, shape1, inplace=False):
-        """Return a copy of this matrix where the row indices are sorted
+    def sorted_indices(self):
+        """Return a copy of this matrix with sorted indices
         """
+        A = self.copy()
+        A.sort_indices()
+        return A
+
+        # an alternative that has linear complexity is the following
+        # typically the previous option is faster
+        #return self._toother()._toother()
+
+    def sort_indices(self):
+        """Sort the indices of this matrix *in place*
+        """
+        fn = getattr(sparsetools,'sort_' + self.format + '_indices')
+
+        M,N = self.shape
+        fn( M, N, self.indptr, self.indices, self.data)
+
+    def ensure_sorted_indices(self, inplace=False):
+        """Return a copy of this matrix where the column indices are sorted
+        """
+        warnings.warn('ensure_sorted_indices is deprecated, ' \
+                      'use sorted_indices() or sort_indices() instead', \
+                      DeprecationWarning)
+        
         if inplace:
-            sparsetools.sort_csr_indices(shape0, shape1,
-                                         self.indptr, self.indices,
-                                         self.data )
+            self.sort_indices()
         else:
-            return self._toother()._toother()
+            return self.sorted_indices()
 
     def _get_submatrix( self, shape0, shape1, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created)."""
@@ -1189,11 +1210,6 @@ class csc_matrix(_cs_matrix):
         self.indices = self.indices[:nnz]
         self.nzmax = nnz
 
-    def ensure_sorted_indices(self, inplace=False):
-        """Return a copy of this matrix where the row indices are sorted
-        """
-        return _cs_matrix._ensure_sorted_indices(self, self.shape[1], self.shape[0], inplace)
-
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created).
         Rows and columns can be selected using slice instances, tuples,
@@ -1342,8 +1358,7 @@ class csr_matrix(_cs_matrix):
     def tolil(self):
         lil = lil_matrix(self.shape,dtype=self.dtype)
      
-        #TODO make this more efficient
-        csr = self.ensure_sorted_indices()
+        csr = self.sorted_indices()
         
         rows,data = lil.rows,lil.data
         ptr,ind,dat = csr.indptr,csr.indices,csr.data
@@ -1418,11 +1433,6 @@ class csr_matrix(_cs_matrix):
         self.data = self.data[:nnz]
         self.indices = self.indices[:nnz]
         self.nzmax = nnz
-
-    def ensure_sorted_indices(self, inplace=False):
-        """Return a copy of this matrix where the column indices are sorted
-        """
-        return _cs_matrix._ensure_sorted_indices(self, self.shape[0], self.shape[1], inplace)
 
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created)..
