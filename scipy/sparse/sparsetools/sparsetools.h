@@ -72,6 +72,38 @@ void extract_csr_diagonal(const I n_row,
 
 
 /*
+ * Expand a compressed row pointer into a row array
+ *
+ * Input Arguments:
+ *   I  n_row         - number of rows in A
+ *   I  Ap[n_row+1]   - row pointer
+ *
+ * Output Arguments:
+ *   Bi  - row indices
+ *
+ * Note:
+ *   Output array Bi needs to be preallocated
+ *
+ * Note: 
+ *   Complexity: Linear.
+ * 
+ */
+template <class I>
+void expandptr(const I n_row,
+               const I Ap[], 
+                     I Bi[])
+{
+  for(I i = 0; i < n_row; i++){
+    I row_start = Ap[i];
+    I row_end   = Ap[i+1];
+    for(I jj = row_start; jj < row_end; jj++){
+      Bi[jj] = i;
+    }
+  }
+}
+
+
+/*
  * Compute B = A for CSR matrix A, CSC matrix B
  *
  * Also, with the appropriate arguments can also be used to:
@@ -87,12 +119,12 @@ void extract_csr_diagonal(const I n_row,
  *   T  Ax[nnz(A)]    - nonzeros
  *
  * Output Arguments:
- *   vec<I>  Bp  - row pointer
- *   vec<I>  Bj  - column indices
- *   vec<T>  Bx  - nonzeros
+ *   I  Bp[n_col+1] - column pointer
+ *   I  Bj[nnz(A)]  - row indices
+ *   T  Bx[nnz(A)]  - nonzeros
  *
  * Note:
- *   Output arrays Bp,Bj,Bx will be allocated within in the method
+ *   Output arrays Bp,Bj,Bx should be preallocated
  *
  * Note: 
  *   Input:  column indices *are not* assumed to be in sorted order
@@ -107,42 +139,39 @@ void csrtocsc(const I n_row,
 	          const I Ap[], 
 	          const I Aj[], 
 	          const T Ax[],
-	          std::vector<I>* Bp,
-	          std::vector<I>* Bi,
-	          std::vector<T>* Bx)
+	                I Bp[],
+	                I Bi[],
+	                T Bx[])
 {  
   I NNZ = Ap[n_row];
   
-  Bp->resize(n_col+1);
-  Bi->resize(NNZ);
-  Bx->resize(NNZ);
- 
-  std::vector<I> nnz_per_col(n_col,0); //temp array
+  std::vector<I> temp(n_col,0); //temp array
  
   //compute number of non-zero entries per column of A 
   for (I i = 0; i < NNZ; i++){            
-    nnz_per_col[Aj[i]]++;
+    temp[Aj[i]]++;
   }
         
-  //cumsum the nnz_per_col to get Bp[]
+  //cumsum the nnz per column to get Bp[]
   for(I i = 0, cumsum = 0; i < n_col; i++){     
-    (*Bp)[i]   = cumsum; 
-    cumsum += nnz_per_col[i];
-    nnz_per_col[i] = 0;              //reset count
+    Bp[i] = cumsum;
+    cumsum += temp[i];
   }
-  (*Bp)[n_col] = NNZ;
+  Bp[n_col] = NNZ; 
+  std::copy(Bp, Bp + n_col, temp.begin());
+
   
   for(I i = 0; i < n_row; i++){
     I row_start = Ap[i];
     I row_end   = Ap[i+1];
     for(I j = row_start; j < row_end; j++){
       I col = Aj[j];
-      I k   = (*Bp)[col] + nnz_per_col[col];
+      I k   = temp[col];
 
-      (*Bi)[k] = i;
-      (*Bx)[k] = Ax[j];
+      Bi[k] = i;
+      Bx[k] = Ax[j];
 
-      nnz_per_col[col]++;
+      temp[col]++;
     }
   }  
 }   
@@ -510,24 +539,25 @@ void sum_csr_duplicates(const I n_row,
  *
  *
  * Input Arguments:
- *   I  n_row         - number of rows in A
- *   I  n_col         - number of columns in A
- *   I  Ai[nnz(A)]    - row indices
- *   I  Aj[nnz(A)]    - column indices
- *   T  Ax[nnz(A)]    - nonzeros
+ *   I  n_row      - number of rows in A
+ *   I  n_col      - number of columns in A
+ *   I  Ai[nnz(A)] - row indices
+ *   I  Aj[nnz(A)] - column indices
+ *   T  Ax[nnz(A)] - nonzeros
  * Output Arguments:
- *   vec<I> Bp        - row pointer
- *   vec<I> Bj        - column indices
- *   vec<T> Bx        - nonzeros
+ *   I Bp  - row pointer
+ *   I Bj  - column indices
+ *   T Bx  - nonzeros
  *
  * Note:
- *   Output arrays Bp,Bj,Bx will be allocated within in the method
+ *   Output arrays Bp,Bj,Bx should be preallocated
  *
  * Note: 
  *   Input:  row and column indices *are not* assumed to be ordered
  *           duplicate (i,j) entries will be summed together
- *
+ *           
  *   Output: CSR column indices *will be* in sorted order
+ *           Bp[n_row] will store the number of nonzeros
  *
  *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
  * 
@@ -539,45 +569,37 @@ void cootocsr(const I n_row,
               const I Ai[],
               const I Aj[],
               const T Ax[],
-              std::vector<I>* Bp,
-              std::vector<I>* Bj,
-              std::vector<T>* Bx)
+                    I Bp[],
+                    I Bj[],
+                    T Bx[])
 {
-  Bp->resize(n_row+1,0);
-  Bj->resize(NNZ);
-  Bx->resize(NNZ);
-  
-  std::vector<I> nnz_per_row(n_row,0); //temp array
+  std::vector<I> temp(n_row,0);
 
   //compute nnz per row, then compute Bp
   for(I i = 0; i < NNZ; i++){
-    nnz_per_row[Ai[i]]++;
+    temp[Ai[i]]++;
   }
-  for(I i = 0, cumsum = 0; i < n_row; i++){
-    (*Bp)[i]          = cumsum;
-    cumsum        += nnz_per_row[i];
-    nnz_per_row[i] = 0; //reset count
+  //cumsum the nnz per row to get Bp[]
+  for(I i = 0, cumsum = 0; i < n_row; i++){     
+    Bp[i] = cumsum;
+    cumsum += temp[i];
   }
-  (*Bp)[n_row] = NNZ;
+  Bp[n_row] = NNZ; 
+  std::copy(Bp, Bp + n_row, temp.begin());
 
-
-  //write Aj,Ax Io tempBj,tempBx
+  //write Aj,Ax into Bj,Bx
   for(I i = 0; i < NNZ; i++){
     I row = Ai[i];
-    I n   = (*Bp)[row] + nnz_per_row[row];
+    I n   = temp[row];
 
-    (*Bj)[n] = Aj[i];
-    (*Bx)[n] = Ax[i];
+    Bj[n] = Aj[i];
+    Bx[n] = Ax[i];
 
-    nnz_per_row[row]++;
+    temp[row]++;
   }
-  //now tempBp,tempBj,tempBx form a CSR representation (with duplicates)
+  //now Bp,Bj,Bx form a CSR representation (with duplicates)
 
-  sum_csr_duplicates(n_row,n_col,&(*Bp)[0],&(*Bj)[0],&(*Bx)[0]);
-
-  //trim unused space at the end
-  Bj->resize(Bp->back());
-  Bx->resize(Bp->back());
+  sum_csr_duplicates(n_row,n_col,Bp,Bj,Bx);
 }
 	    
 
@@ -933,9 +955,9 @@ void csctocsr(const I n_row,
               const I Ap[], 
               const I Ai[], 
               const T Ax[],
-              std::vector<I>* Bp,
-              std::vector<I>* Bj,
-              std::vector<T>* Bx)
+                    I Bp[],
+                    I Bj[],
+                    T Bx[])
 { csrtocsc<I,T>(n_col,n_row,Ap,Ai,Ax,Bp,Bj,Bx); }
 
 template <class I, class T>
@@ -970,9 +992,9 @@ void cootocsc(const I n_row,
       	      const I Ai[],
       	      const I Aj[],
       	      const T Ax[],
-      	      std::vector<I>* Bp,
-      	      std::vector<I>* Bi,
-      	      std::vector<T>* Bx)
+      	            I Bp[],
+      	            I Bi[],
+      	            T Bx[])
 { cootocsr<I,T>(n_col,n_row,NNZ,Aj,Ai,Ax,Bp,Bi,Bx); }
 
 

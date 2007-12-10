@@ -1326,6 +1326,7 @@ class TestSparseTools(NumpyTestCase):
                     iter += 1
                 end = time.clock()
 
+                del T
                 name = name.center(12)
                 shape = ("%s" % (A.shape,)).center(20)
 
@@ -1333,7 +1334,7 @@ class TestSparseTools(NumpyTestCase):
 
 
     def bench_conversion(self,level=5):
-        A = poisson2d(80)
+        A = poisson2d(100)
 
         formats = ['csr','csc','coo','lil','dok']
        
@@ -1354,13 +1355,14 @@ class TestSparseTools(NumpyTestCase):
                 except:
                     times.append(None)
                 else:
+                    x = fn() #warmup
                     start = time.clock()
                     iter = 0
                     while time.clock() < start + 0.2:
                         x = fn()
                         iter += 1
                     end = time.clock()
-            
+                    del x 
                     times.append( (end - start)/float(iter))
 
             output = "  %3s   " % fromfmt
@@ -1368,7 +1370,7 @@ class TestSparseTools(NumpyTestCase):
                 if t is None:
                     output += '|    n/a    '
                 else:
-                    output += '| %7.5f ' % t 
+                    output += '| %5.1fms ' % (1000*t) 
             print output
 
                 

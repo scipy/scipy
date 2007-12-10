@@ -90,13 +90,17 @@
 %define I_INPLACE_ARRAY1( ctype )
 %apply ctype * INPLACE_ARRAY {
   ctype Ap [ ],
-  ctype Aj [ ]
+  ctype Aj [ ],
+  ctype Bp [ ],
+  ctype Bi [ ],
+  ctype Bj [ ]
 };
 %enddef
 
 %define T_INPLACE_ARRAY1( ctype )
 %apply ctype * INPLACE_ARRAY {
-  ctype Ax [ ]
+  ctype Ax [ ],
+  ctype Bx [ ]
 };
 %enddef
 
@@ -164,6 +168,8 @@ DECLARE_DATA_TYPE( npy_cdouble_wrapper )
 %enddef
 
 
+
+
 /*
  *  diag(CSR) and diag(CSC)
  */
@@ -180,8 +186,9 @@ INSTANTIATE_ALL(csctocsr)
 /*
  * CSR<->COO and CSC<->COO
  */
-INSTANTIATE_ALL(csrtocoo)
-INSTANTIATE_ALL(csctocoo)
+%template(expandptr)   expandptr<int>;
+/*INSTANTIATE_ALL(csrtocoo)*/
+/*INSTANTIATE_ALL(csctocoo)*/
 INSTANTIATE_ALL(cootocsr)
 INSTANTIATE_ALL(cootocsc)
 

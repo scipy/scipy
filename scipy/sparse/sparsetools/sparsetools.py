@@ -49,6 +49,10 @@ del types
 
 
 
+def expandptr(*args):
+  """expandptr(int n_row, int Ap, int Bi)"""
+  return _sparsetools.expandptr(*args)
+
 
 def extract_csr_diagonal(*args):
   """
@@ -91,176 +95,92 @@ def extract_csc_diagonal(*args):
 def csrtocsc(*args):
   """
     csrtocsc(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bi, 
-        std::vector<(signed char)> Bx)
+        int Bp, int Bi, signed char Bx)
     csrtocsc(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bi, 
-        std::vector<(unsigned char)> Bx)
-    csrtocsc(int n_row, int n_col, int Ap, int Aj, short Ax, std::vector<(int)> Bp, 
-        std::vector<(int)> Bi, std::vector<(short)> Bx)
-    csrtocsc(int n_row, int n_col, int Ap, int Aj, int Ax, std::vector<(int)> Bp, 
-        std::vector<(int)> Bi, std::vector<(int)> Bx)
+        int Bp, int Bi, unsigned char Bx)
+    csrtocsc(int n_row, int n_col, int Ap, int Aj, short Ax, int Bp, 
+        int Bi, short Bx)
+    csrtocsc(int n_row, int n_col, int Ap, int Aj, int Ax, int Bp, 
+        int Bi, int Bx)
     csrtocsc(int n_row, int n_col, int Ap, int Aj, long long Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bi, 
-        std::vector<(long long)> Bx)
-    csrtocsc(int n_row, int n_col, int Ap, int Aj, float Ax, std::vector<(int)> Bp, 
-        std::vector<(int)> Bi, std::vector<(float)> Bx)
-    csrtocsc(int n_row, int n_col, int Ap, int Aj, double Ax, std::vector<(int)> Bp, 
-        std::vector<(int)> Bi, std::vector<(double)> Bx)
+        int Bp, int Bi, long long Bx)
+    csrtocsc(int n_row, int n_col, int Ap, int Aj, float Ax, int Bp, 
+        int Bi, float Bx)
+    csrtocsc(int n_row, int n_col, int Ap, int Aj, double Ax, int Bp, 
+        int Bi, double Bx)
     csrtocsc(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bi, 
-        std::vector<(npy_cfloat_wrapper)> Bx)
+        int Bp, int Bi, npy_cfloat_wrapper Bx)
     csrtocsc(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bi, 
-        std::vector<(npy_cdouble_wrapper)> Bx)
+        int Bp, int Bi, npy_cdouble_wrapper Bx)
     """
   return _sparsetools.csrtocsc(*args)
 
 def csctocsr(*args):
   """
     csctocsr(int n_row, int n_col, int Ap, int Ai, signed char Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bj, 
-        std::vector<(signed char)> Bx)
+        int Bp, int Bj, signed char Bx)
     csctocsr(int n_row, int n_col, int Ap, int Ai, unsigned char Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bj, 
-        std::vector<(unsigned char)> Bx)
-    csctocsr(int n_row, int n_col, int Ap, int Ai, short Ax, std::vector<(int)> Bp, 
-        std::vector<(int)> Bj, std::vector<(short)> Bx)
-    csctocsr(int n_row, int n_col, int Ap, int Ai, int Ax, std::vector<(int)> Bp, 
-        std::vector<(int)> Bj, std::vector<(int)> Bx)
+        int Bp, int Bj, unsigned char Bx)
+    csctocsr(int n_row, int n_col, int Ap, int Ai, short Ax, int Bp, 
+        int Bj, short Bx)
+    csctocsr(int n_row, int n_col, int Ap, int Ai, int Ax, int Bp, 
+        int Bj, int Bx)
     csctocsr(int n_row, int n_col, int Ap, int Ai, long long Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bj, 
-        std::vector<(long long)> Bx)
-    csctocsr(int n_row, int n_col, int Ap, int Ai, float Ax, std::vector<(int)> Bp, 
-        std::vector<(int)> Bj, std::vector<(float)> Bx)
-    csctocsr(int n_row, int n_col, int Ap, int Ai, double Ax, std::vector<(int)> Bp, 
-        std::vector<(int)> Bj, std::vector<(double)> Bx)
+        int Bp, int Bj, long long Bx)
+    csctocsr(int n_row, int n_col, int Ap, int Ai, float Ax, int Bp, 
+        int Bj, float Bx)
+    csctocsr(int n_row, int n_col, int Ap, int Ai, double Ax, int Bp, 
+        int Bj, double Bx)
     csctocsr(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bj, 
-        std::vector<(npy_cfloat_wrapper)> Bx)
+        int Bp, int Bj, npy_cfloat_wrapper Bx)
     csctocsr(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bj, 
-        std::vector<(npy_cdouble_wrapper)> Bx)
+        int Bp, int Bj, npy_cdouble_wrapper Bx)
     """
   return _sparsetools.csctocsr(*args)
-
-def csrtocoo(*args):
-  """
-    csrtocoo(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
-        std::vector<(int)> Bi, std::vector<(int)> Bj, 
-        std::vector<(signed char)> Bx)
-    csrtocoo(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
-        std::vector<(int)> Bi, std::vector<(int)> Bj, 
-        std::vector<(unsigned char)> Bx)
-    csrtocoo(int n_row, int n_col, int Ap, int Aj, short Ax, std::vector<(int)> Bi, 
-        std::vector<(int)> Bj, std::vector<(short)> Bx)
-    csrtocoo(int n_row, int n_col, int Ap, int Aj, int Ax, std::vector<(int)> Bi, 
-        std::vector<(int)> Bj, std::vector<(int)> Bx)
-    csrtocoo(int n_row, int n_col, int Ap, int Aj, long long Ax, 
-        std::vector<(int)> Bi, std::vector<(int)> Bj, 
-        std::vector<(long long)> Bx)
-    csrtocoo(int n_row, int n_col, int Ap, int Aj, float Ax, std::vector<(int)> Bi, 
-        std::vector<(int)> Bj, std::vector<(float)> Bx)
-    csrtocoo(int n_row, int n_col, int Ap, int Aj, double Ax, std::vector<(int)> Bi, 
-        std::vector<(int)> Bj, std::vector<(double)> Bx)
-    csrtocoo(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
-        std::vector<(int)> Bi, std::vector<(int)> Bj, 
-        std::vector<(npy_cfloat_wrapper)> Bx)
-    csrtocoo(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
-        std::vector<(int)> Bi, std::vector<(int)> Bj, 
-        std::vector<(npy_cdouble_wrapper)> Bx)
-    """
-  return _sparsetools.csrtocoo(*args)
-
-def csctocoo(*args):
-  """
-    csctocoo(int n_row, int n_col, int Ap, int Ai, signed char Ax, 
-        std::vector<(int)> Bi, std::vector<(int)> Bj, 
-        std::vector<(signed char)> Bx)
-    csctocoo(int n_row, int n_col, int Ap, int Ai, unsigned char Ax, 
-        std::vector<(int)> Bi, std::vector<(int)> Bj, 
-        std::vector<(unsigned char)> Bx)
-    csctocoo(int n_row, int n_col, int Ap, int Ai, short Ax, std::vector<(int)> Bi, 
-        std::vector<(int)> Bj, std::vector<(short)> Bx)
-    csctocoo(int n_row, int n_col, int Ap, int Ai, int Ax, std::vector<(int)> Bi, 
-        std::vector<(int)> Bj, std::vector<(int)> Bx)
-    csctocoo(int n_row, int n_col, int Ap, int Ai, long long Ax, 
-        std::vector<(int)> Bi, std::vector<(int)> Bj, 
-        std::vector<(long long)> Bx)
-    csctocoo(int n_row, int n_col, int Ap, int Ai, float Ax, std::vector<(int)> Bi, 
-        std::vector<(int)> Bj, std::vector<(float)> Bx)
-    csctocoo(int n_row, int n_col, int Ap, int Ai, double Ax, std::vector<(int)> Bi, 
-        std::vector<(int)> Bj, std::vector<(double)> Bx)
-    csctocoo(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, 
-        std::vector<(int)> Bi, std::vector<(int)> Bj, 
-        std::vector<(npy_cfloat_wrapper)> Bx)
-    csctocoo(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, 
-        std::vector<(int)> Bi, std::vector<(int)> Bj, 
-        std::vector<(npy_cdouble_wrapper)> Bx)
-    """
-  return _sparsetools.csctocoo(*args)
 
 def cootocsr(*args):
   """
     cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, signed char Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bj, 
-        std::vector<(signed char)> Bx)
+        int Bp, int Bj, signed char Bx)
     cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, unsigned char Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bj, 
-        std::vector<(unsigned char)> Bx)
+        int Bp, int Bj, unsigned char Bx)
     cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, short Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bj, 
-        std::vector<(short)> Bx)
+        int Bp, int Bj, short Bx)
     cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, int Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bj, 
-        std::vector<(int)> Bx)
+        int Bp, int Bj, int Bx)
     cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, long long Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bj, 
-        std::vector<(long long)> Bx)
+        int Bp, int Bj, long long Bx)
     cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, float Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bj, 
-        std::vector<(float)> Bx)
+        int Bp, int Bj, float Bx)
     cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, double Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bj, 
-        std::vector<(double)> Bx)
+        int Bp, int Bj, double Bx)
     cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cfloat_wrapper Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bj, 
-        std::vector<(npy_cfloat_wrapper)> Bx)
+        int Bp, int Bj, npy_cfloat_wrapper Bx)
     cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cdouble_wrapper Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bj, 
-        std::vector<(npy_cdouble_wrapper)> Bx)
+        int Bp, int Bj, npy_cdouble_wrapper Bx)
     """
   return _sparsetools.cootocsr(*args)
 
 def cootocsc(*args):
   """
     cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, signed char Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bi, 
-        std::vector<(signed char)> Bx)
+        int Bp, int Bi, signed char Bx)
     cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, unsigned char Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bi, 
-        std::vector<(unsigned char)> Bx)
+        int Bp, int Bi, unsigned char Bx)
     cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, short Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bi, 
-        std::vector<(short)> Bx)
+        int Bp, int Bi, short Bx)
     cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, int Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bi, 
-        std::vector<(int)> Bx)
+        int Bp, int Bi, int Bx)
     cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, long long Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bi, 
-        std::vector<(long long)> Bx)
+        int Bp, int Bi, long long Bx)
     cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, float Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bi, 
-        std::vector<(float)> Bx)
+        int Bp, int Bi, float Bx)
     cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, double Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bi, 
-        std::vector<(double)> Bx)
+        int Bp, int Bi, double Bx)
     cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cfloat_wrapper Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bi, 
-        std::vector<(npy_cfloat_wrapper)> Bx)
+        int Bp, int Bi, npy_cfloat_wrapper Bx)
     cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cdouble_wrapper Ax, 
-        std::vector<(int)> Bp, std::vector<(int)> Bi, 
-        std::vector<(npy_cdouble_wrapper)> Bx)
+        int Bp, int Bi, npy_cdouble_wrapper Bx)
     """
   return _sparsetools.cootocsc(*args)
 

@@ -18,11 +18,11 @@ from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
                   ndarray, amax, amin, rank, conj, searchsorted, ndarray,   \
                   less, where, greater, array, transpose, empty, ones, \
                   arange, shape, intc, clip, prod, unravel_index, hstack, \
-                  array_split, concatenate, cumsum
+                  array_split, concatenate, cumsum, diff, empty_like
 
 import numpy
 from scipy.sparse.sparsetools import csrtodense, \
-     cootocsr, csrtocoo, cootocsc, csctocoo, csctocsr, csrtocsc 
+     cootocsr, cootocsc, csctocsr, csrtocsc 
 
 import sparsetools
 import itertools, operator, copy
@@ -888,15 +888,6 @@ class _cs_matrix(spmatrix):
 #        else:
 #            raise TypeError,'unrecognized type'
 
-    def tocoo(self):
-        #TODO implement with arange(N).repeat(diff(indptr))
-
-        fn = getattr(sparsetools, self.format + 'tocoo')
-        
-        rows, cols, data = fn(self.shape[0], self.shape[1], \
-                              self.indptr, self.indices, self.data)
-
-        return coo_matrix((data, (rows, cols)), self.shape)
 
 
     def sum(self, axis=None):
@@ -1150,12 +1141,38 @@ class csc_matrix(_cs_matrix):
 
     def _tothis(self, other):
         return other.tocsc()
-
+    
     def tocsr(self):
-        indptr, colind, data = csctocsr(self.shape[0], self.shape[1], \
-                                        self.indptr, self.indices, self.data)
-        return csr_matrix((data, colind, indptr), self.shape)
+        indptr  = empty(self.shape[0] + 1, dtype=intc)
+        indices = empty(self.nnz, dtype=intc)
+        data    = empty(self.nnz, dtype=self.dtype)
 
+        csctocsr(self.shape[0], self.shape[1], \
+                self.indptr, self.indices, self.data, \
+                indptr, indices, data)
+
+        return csr_matrix((data, indices, indptr), self.shape)
+
+
+    def tocoo(self,copy=True):
+        """Return a COOrdinate representation of this matrix
+
+        When copy=False the index and data arrays are not copied.
+        """
+        M,N = self.shape
+
+        data = self.data[:self.nnz].copy()
+        row  = self.indices[:self.nnz].copy()
+
+        if copy:
+            data = data.copy()
+            row  = row.copy()
+
+        col = empty_like(row)
+        sparsetools.expandptr(N,self.indptr,col)
+
+        return coo_matrix((data,(row,col)), self.shape)
+    
     def toarray(self):
         return self.tocsr().toarray()
 
@@ -1347,9 +1364,35 @@ class csr_matrix(_cs_matrix):
         return self.toself(copy)
 
     def tocsc(self):
-        indptr, rowind, data = csrtocsc(self.shape[0], self.shape[1], \
-                                        self.indptr, self.indices, self.data)
-        return csc_matrix((data, rowind, indptr), self.shape)
+        indptr  = empty(self.shape[1] + 1, dtype=intc)
+        indices = empty(self.nnz, dtype=intc)
+        data    = empty(self.nnz, self.dtype)
+
+        csrtocsc(self.shape[0], self.shape[1], \
+                 self.indptr, self.indices, self.data, \
+                 indptr, indices, data)
+
+        return csc_matrix((data, indices, indptr), self.shape)
+    
+    def tocoo(self,copy=True):
+        """Return a COOrdinate representation of this matrix
+
+        When copy=False the index and data arrays are not copied.
+        """
+        M,N = self.shape
+
+        data = self.data[:self.nnz].copy()
+        col  = self.indices[:self.nnz].copy()
+
+        if copy:
+            data = data.copy()
+            col  = col.copy()
+
+        row = empty_like(col)
+        sparsetools.expandptr(M,self.indptr,row)
+
+        return coo_matrix((data,(row,col)), self.shape)
+    
 
     def _toother(self):
         return self.tocsc()
@@ -2101,20 +2144,30 @@ class coo_matrix(spmatrix):
         if self.nnz == 0:
             return csc_matrix(self.shape, dtype=self.dtype)
         else:
-            indptr, rowind, data = cootocsc(self.shape[0], self.shape[1], \
-                                            self.nnz, self.row, self.col, \
-                                            self.data)
-            return csc_matrix((data, rowind, indptr), self.shape)
+            indptr  = empty(self.shape[1] + 1,dtype=intc)
+            indices = empty(self.nnz, dtype=intc)
+            data    = empty(self.nnz, dtype=self.dtype)
+
+            cootocsc(self.shape[0], self.shape[1], self.nnz, \
+                     self.row, self.col, self.data, \
+                     indptr, indices, data)
+
+            return csc_matrix((data, indices, indptr), self.shape)
 
 
     def tocsr(self):
         if self.nnz == 0:
             return csr_matrix(self.shape, dtype=self.dtype)
         else:
-            indptr, colind, data = cootocsr(self.shape[0], self.shape[1], \
-                                            self.nnz, self.row, self.col, \
-                                            self.data)
-            return csr_matrix((data, colind, indptr), self.shape)
+            indptr  = empty(self.shape[0] + 1,dtype=intc)
+            indices = empty(self.nnz, dtype=intc)
+            data    = empty(self.nnz, dtype=self.dtype)
+
+            cootocsr(self.shape[0], self.shape[1], self.nnz, \
+                     self.row, self.col, self.data, \
+                     indptr, indices, data)
+
+            return csr_matrix((data, indices, indptr), self.shape)
 
     def tocoo(self, copy=False):
         return self.toself(copy)
