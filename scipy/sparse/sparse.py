@@ -2057,7 +2057,6 @@ class coo_matrix(spmatrix):
             self.row = asarray(ij[0])
             self.col = asarray(ij[1])
             self.data = asarray(obj)
-            self.dtype = self.data.dtype
 
             if dims is None:
                 if len(self.row) == 0 or len(self.col) == 0:
@@ -2076,8 +2075,7 @@ class coo_matrix(spmatrix):
             if not isinstance(dims, tuple) or not isintlike(dims[0]):
                 raise TypeError, "dimensions not understood"
             self.shape = dims
-            self.dtype = getdtype(dtype, default=float)
-            self.data = array([])
+            self.data = array([],getdtype(dtype, default=float))
             self.row = array([],dtype=intc)
             self.col = array([],dtype=intc)
         else:
@@ -2090,12 +2088,16 @@ class coo_matrix(spmatrix):
             if len(M.shape) != 2:
                 raise TypeError, "expected rank 2 array or matrix"
             self.shape = M.shape
-            self.dtype = M.dtype
             self.row,self.col = (M != 0).nonzero()
             self.data  = M[self.row,self.col]
 
         self._check()
 
+    def _get_dtype(self):
+        return self.data.dtype
+    def _set_dtype(self,newtype):
+        self.data.dtype = newtype
+    dtype = property(fget=_get_dtype,fset=_set_dtype)
 
     def _check(self):
         """ Checks for consistency and stores the number of non-zeros as
@@ -2153,7 +2155,6 @@ class coo_matrix(spmatrix):
                      indptr, indices, data)
 
             return csc_matrix((data, indices, indptr), self.shape)
-
 
     def tocsr(self):
         if self.nnz == 0:
