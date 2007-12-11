@@ -1412,8 +1412,6 @@ class dok_matrix(spmatrix, dict):
                             " integers"
                 self.shape = A
             elif isspmatrix(A):
-                # For sparse matrices, this is too inefficient; we need
-                # something else.
                 if isspmatrix_dok(A) and copy:
                     A = A.copy()
                 else:
@@ -2120,7 +2118,15 @@ class coo_matrix(spmatrix):
 
     def todok(self):
         dok = dok_matrix((self.shape),dtype=self.dtype)
-        dok.update( zip(zip(self.row,self.col),self.data) )
+
+        try:
+            izip = itertools.izip
+            dok.update( izip(izip(self.row,self.col),self.data) ) 
+        except AttributeError:
+            # the dict() call is for Python 2.3 compatibility
+            # ideally dok_matrix would accept an iterator
+            dok.update( dict( zip(zip(self.row,self.col),self.data) ) )
+
         return dok
 
 
