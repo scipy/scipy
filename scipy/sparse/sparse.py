@@ -35,8 +35,6 @@ def resize1d(arr, newlen):
     return new
 
 MAXPRINT = 50
-ALLOCSIZE = 1000
-NZMAX = 100
 
 #TODO handle this in SWIG
 def to_native(A):
@@ -79,14 +77,13 @@ class spmatrix(object):
 
     __array_priority__ = 10.1
     ndim = 2
-    def __init__(self, maxprint=MAXPRINT, allocsize=ALLOCSIZE):
+    def __init__(self, maxprint=MAXPRINT):
         self.format = self.__class__.__name__[:3]
         self._shape = None
         if self.format == 'spm':
             raise ValueError, "This class is not intended" \
                   " to be instantiated directly."
         self.maxprint = maxprint
-        self.allocsize = allocsize
 
     def set_shape(self,shape):
         shape = tuple(shape)
@@ -1067,6 +1064,7 @@ class csc_matrix(_cs_matrix):
 
     def __getitem__(self, key):
         if isinstance(key, tuple):
+            #TODO use _swap() to unify this in _cs_matrix
             row = key[0]
             col = key[1]
             if isinstance(col, slice):
@@ -1119,6 +1117,7 @@ class csc_matrix(_cs_matrix):
             self.shape = (M, N)
 
             indxs = numpy.where(row == self.indices[self.indptr[col]:self.indptr[col+1]])
+    
             if len(indxs[0]) == 0:
                 #value not present
                 #TODO handle this with concatenation
@@ -1243,6 +1242,7 @@ class csr_matrix(_cs_matrix):
 
     def __getitem__(self, key):
         if isinstance(key, tuple):
+            #TODO use _swap() to unify this in _cs_matrix
             row = key[0]
             col = key[1]
             if isinstance(row, slice):
