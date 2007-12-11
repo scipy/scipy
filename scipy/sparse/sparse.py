@@ -160,16 +160,6 @@ class spmatrix(object):
         except AttributeError:
             raise AttributeError, "nnz not defined"
 
-    def getnzmax(self):
-        try:
-            nzmax = self.nzmax
-        except AttributeError:
-            try:
-                nzmax = self.nnz
-            except AttributeError:
-                nzmax = 0
-        return nzmax
-
     def getformat(self):
         try:
             format = self.format
@@ -498,7 +488,7 @@ class spmatrix(object):
 class _cs_matrix(spmatrix):
     """base matrix class for compressed row and column oriented matrices"""
     
-    def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False):
+    def __init__(self, arg1, dims=None, dtype=None, copy=False):
         spmatrix.__init__(self)
 
         if isdense(arg1):
@@ -523,12 +513,9 @@ class _cs_matrix(spmatrix):
                 # create empty matrix
                 self.shape = arg1   #spmatrix checks for errors here
                 M, N = self.shape
-                self.data    = zeros((nzmax,), getdtype(dtype, default=float))
-                self.indices = zeros((nzmax,), intc)
-                if self.format[-1] == 'r':
-                    self.indptr = zeros(M+1, dtype='intc')
-                else:
-                    self.indptr = zeros(N+1, dtype='intc')
+                self.data    = zeros(0, getdtype(dtype, default=float))
+                self.indices = zeros(0, intc)
+                self.indptr  = zeros(self._swap(self.shape)[0] + 1, dtype='intc')
             else:
                 try:
                     # Try interpreting it as (data, ij)
@@ -561,20 +548,25 @@ class _cs_matrix(spmatrix):
             if self.shape is None:
                 # shape not already set, try to infer dimensions
                 try:
-                    first_dim  = len(self.indptr) - 1
-                    second_dim = self.indices.max() + 1
+                    major_dim = len(self.indptr) - 1
+                    minor_dim = self.indices.max() + 1
                 except:
                     raise ValueError,'unable to infer matrix dimensions'
                 else:
-                    if self.format[-1] == 'r':
-                        # row oriented matrix
-                        self.shape = (first_dim,second_dim)
-                    else:
-                        # column oriented matrix
-                        self.shape = (second_dim,first_dim)
+                    self.shape = self._swap((major_dim,minor_dim))
 
         self.check_format(full_check=False)
 
+    def getnnz(self):
+        return self.indptr[-1]
+    nnz = property(fget=getnnz)
+    
+    def _get_dtype(self):
+        return self.data.dtype
+    def _set_dtype(self,newtype):
+        self.data.dtype = newtype
+    dtype = property(fget=_get_dtype,fset=_set_dtype)
+    
     def _set_self(self, other, copy=False):
         """take the member variables of other and assign them to self"""
 
@@ -585,26 +577,13 @@ class _cs_matrix(spmatrix):
         self.indices = other.indices
         self.indptr  = other.indptr
         self.shape   = other.shape
-
-
-    def _get_dtype(self):
-        return self.data.dtype
-    def _set_dtype(self,newtype):
-        self.data.dtype = newtype
-    dtype = property(fget=_get_dtype,fset=_set_dtype)
     
     def _check_format(self, full_check):
         self.shape = tuple([int(x) for x in self.shape])  # for floats etc.
 
-        assert(self.format in ['csr','csc'])
-        if self.format[-1] == 'r':
-            primary,secondary = 'row','column'
-            indptr_size = self.shape[0] + 1
-            indices_bound = self.shape[1]
-        else:
-            primary,secondary = 'column','row'
-            indptr_size = self.shape[1] + 1
-            indices_bound = self.shape[0]
+        #use _swap to determine proper bounds
+        major_name,minor_name = self._swap(('row','column'))
+        major_dim,minor_dim = self._swap(self.shape)
 
         # index arrays should have integer data types
         if self.indptr.dtype.kind != 'i':
@@ -625,10 +604,10 @@ class _cs_matrix(spmatrix):
             raise ValueError,"data, indices, and indptr should be rank 1"
 
         # check index pointer
-        if (len(self.indptr) != indptr_size ):
+        if (len(self.indptr) != major_dim + 1 ):
             raise ValueError, \
                 "index pointer size (%d) should be (%d)" % \
-                 (len(self.indptr), indptr_size)
+                 (len(self.indptr), major_dim + 1)
         if (self.indptr[0] != 0):
             raise ValueError,"index pointer should start with 0"
 
@@ -640,31 +619,23 @@ class _cs_matrix(spmatrix):
                   "Last value of index pointer should be less than "\
                   "the size of index and data arrays"
 
-        self.nnz   =  self.indptr[-1]
-        self.nzmax = len(self.indices)
+        self.prune()
 
         if full_check:
             #check format validity (more expensive)
             if self.nnz > 0:
-                if amax(self.indices[:self.nnz]) >= indices_bound:
+                if amax(self.indices) >= minor_dim:
                     raise ValueError, "%s index values must be < %d" % \
-                            (secondary,indices_bound)
-                if amin(self.indices[:self.nnz]) < 0:
+                            (minor_name,minor_dim)
+                if amin(self.indices) < 0:
                     raise ValueError, "%s index values must be >= 0" % \
-                            secondary
-            if numpy.diff(self.indptr).min() < 0:
-                raise ValueError,'index pointer values must form a " \
-                                    "non-decreasing sequence'
+                            minor_name
+                if numpy.diff(self.indptr).min() < 0:
+                    raise ValueError,'index pointer values must form a " \
+                                        "non-decreasing sequence'
 
     def astype(self, t):
         return self._with_data(self.data.astype(t))
-
-    def __repr__(self):
-        format = self.getformat()
-        return "<%dx%d sparse matrix of type '%s'\n\twith %d stored "\
-               "elements (space for %d)\n\tin %s format>" % \
-               (self.shape + (self.dtype.type, self.getnnz(), self.nzmax, \
-                   _formats[format][1]))
 
     def _with_data(self,data,copy=True):
         """Returns a matrix with the same sparsity structure as self,
@@ -1019,12 +990,11 @@ class csc_matrix(_cs_matrix):
           - csc_matrix(s)
             with another sparse matrix s (sugar for .tocsc())
 
-          - csc_matrix((M, N), [nzmax, dtype])
+          - csc_matrix((M, N), [dtype])
             to construct a container, where (M, N) are dimensions and
-            nzmax, dtype are optional, defaulting to nzmax=sparse.NZMAX
-            and dtype='d'.
+            dtype is optional, defaulting to dtype='d'.
 
-          - csc_matrix((data, ij), [(M, N), nzmax])
+          - csc_matrix((data, ij), [(M, N)])
             where data, ij satisfy:
                 a[ij[0, k], ij[1, k]] = data[k]
 
@@ -1115,14 +1085,12 @@ class csc_matrix(_cs_matrix):
             indxs = numpy.where(row == self.indices[self.indptr[col]:self.indptr[col+1]])
             if len(indxs[0]) == 0:
                 #value not present
-                nzmax = self.nzmax
-                if (nzmax < self.nnz+1):  # need more room
-                    alloc = max(1, self.allocsize)
-                    self.data = resize1d(self.data, nzmax + alloc)
-                    self.indices = resize1d(self.indices, nzmax + alloc)
+                #TODO handle this with concatenation
+                self.data    = resize1d(self.data,    self.nnz + 1)
+                self.indices = resize1d(self.indices, self.nnz + 1)
 
                 newindex = self.indptr[col]
-                self.data[newindex+1:]   = self.data[newindex:-1]
+                self.data[newindex+1:]    = self.data[newindex:-1]
                 self.indices[newindex+1:] = self.indices[newindex:-1]
 
                 self.data[newindex]   = val
@@ -1154,14 +1122,9 @@ class csc_matrix(_cs_matrix):
         col = searchsorted(self.indptr, ind+1)-1
         return (row, col)
 
+
     def tocsc(self, copy=False):
         return self.toself(copy)
-    
-    def _toother(self):
-        return self.tocsr()
-
-    def _tothis(self, other):
-        return other.tocsc()
     
     def tocsr(self):
         indptr  = empty(self.shape[0] + 1, dtype=intc)
@@ -1173,7 +1136,6 @@ class csc_matrix(_cs_matrix):
                 indptr, indices, data)
 
         return csr_matrix((data, indices, indptr), self.shape)
-
 
     def tocoo(self,copy=True):
         """Return a COOrdinate representation of this matrix
@@ -1200,15 +1162,15 @@ class csc_matrix(_cs_matrix):
     def prune(self):
         """ Remove empty space after all non-zero elements.
         """
-        nnz = self.indptr[-1]
-        if self.nzmax <= nnz:
-            if self.nzmax < nnz:
-                raise RuntimeError, "should never have nnz > nzmax"
-            return
-        self.nnz = nnz
-        self.data = self.data[:nnz]
-        self.indices = self.indices[:nnz]
-        self.nzmax = nnz
+        if len(self.indptr) != self.shape[1] + 1:
+            raise ValueError, "index pointer has invalid length"
+        if len(self.indices) < self.nnz: 
+            raise ValueError, "indices array has fewer than nnz elements"
+        if len(self.data) < self.nnz:
+            raise ValueError, "data array has fewer than nnz elements"
+        
+        self.data    = self.data[:self.nnz]
+        self.indices = self.indices[:self.nnz]
 
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created).
@@ -1218,6 +1180,19 @@ class csc_matrix(_cs_matrix):
                                          slice1, slice0 )
         nr, nc = aux[3:]
         return self.__class__( aux[:3], dims = (nc, nr) )
+    
+    # these functions are used by the parent class (_cs_matrix)
+    # to remove redudancy between csc_matrix and csr_matrix
+    def _swap(self,x):
+        """swap the members of x if this is a column-oriented matrix
+        """
+        return (x[1],x[0])
+
+    def _toother(self):
+        return self.tocsr()
+
+    def _tothis(self, other):
+        return other.tocsc()
 
 class csr_matrix(_cs_matrix):
     """ Compressed sparse row matrix
@@ -1228,12 +1203,11 @@ class csr_matrix(_cs_matrix):
           - csr_matrix(s)
             with another sparse matrix s (sugar for .tocsr())
 
-          - csr_matrix((M, N), [nzmax, dtype])
+          - csr_matrix((M, N), [dtype])
             to construct a container, where (M, N) are dimensions and
-            nzmax, dtype are optional, defaulting to nzmax=sparse.NZMAX
-            and dtype='d'.
+            dtype is optional, defaulting to dtype='d'.
 
-          - csr_matrix((data, ij), [dims=(M, N), nzmax=nzmax])
+          - csr_matrix((data, ij), [dims=(M, N)])
             where data, ij satisfy:
                 a[ij[0, k], ij[1, k]] = data[k]
 
@@ -1324,11 +1298,8 @@ class csr_matrix(_cs_matrix):
             indxs = numpy.where(col == self.indices[self.indptr[row]:self.indptr[row+1]])
             if len(indxs[0]) == 0:
                 #value not present
-                nzmax = self.nzmax
-                if (nzmax < self.nnz+1):  # need more room
-                    alloc = max(1, self.allocsize)
-                    self.data = resize1d(self.data, nzmax + alloc)
-                    self.indices = resize1d(self.indices, nzmax + alloc)
+                self.data    = resize1d(self.data, self.nnz + 1)
+                self.indices = resize1d(self.indices, self.nnz + 1)
 
                 newindex = self.indptr[row]
                 self.data[newindex+1:]   = self.data[newindex:-1]
@@ -1358,7 +1329,7 @@ class csr_matrix(_cs_matrix):
     def tolil(self):
         lil = lil_matrix(self.shape,dtype=self.dtype)
      
-        csr = self.sorted_indices()
+        csr = self.sorted_indices() #lil_matrix needs sorted rows
         
         rows,data = lil.rows,lil.data
         ptr,ind,dat = csr.indptr,csr.indices,csr.data
@@ -1368,10 +1339,6 @@ class csr_matrix(_cs_matrix):
             end   = ptr[n+1]
             rows[n] = ind[start:end].tolist()
             data[n] = dat[start:end].tolist()
-
-        lil.rows = rows
-        lil.data = data
-        #lil.shape = self.shape
 
         return lil
 
@@ -1408,31 +1375,24 @@ class csr_matrix(_cs_matrix):
 
         return coo_matrix((data,(row,col)), self.shape)
     
-
-    def _toother(self):
-        return self.tocsc()
-
-    def _tothis(self, other):
-        return other.tocsr()
-
     def toarray(self):
         data = numpy.zeros(self.shape, self.data.dtype)
         csrtodense(self.shape[0], self.shape[1], self.indptr, self.indices,
                    self.data, data)
         return data
-
+    
     def prune(self):
-        """ Eliminate non-zero entries, leaving space for at least
-        newnzmax elements.
+        """ Remove empty space after all non-zero elements.
         """
-        nnz = self.indptr[-1]
-        if self.nzmax <= nnz:
-            if self.nzmax < nnz:
-                raise RuntimeError, "should never have nnz > nzmax"
-            return
-        self.data = self.data[:nnz]
-        self.indices = self.indices[:nnz]
-        self.nzmax = nnz
+        if len(self.indptr) != self.shape[0] + 1:
+            raise ValueError, "index pointer has invalid length"
+        if len(self.indices) < self.nnz: 
+            raise ValueError, "indices array has fewer than nnz elements"
+        if len(self.data) < self.nnz:
+            raise ValueError, "data array has fewer than nnz elements"
+        
+        self.data    = self.data[:self.nnz]
+        self.indices = self.indices[:self.nnz]
 
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created)..
@@ -1443,16 +1403,19 @@ class csr_matrix(_cs_matrix):
         nr, nc = aux[3:]
         return self.__class__( aux[:3], dims = (nr, nc) )
 
-# This function was for sorting dictionary keys by the second tuple element.
-# (We now use the Schwartzian transform instead for efficiency.)
-# def csc_cmp(x, y):
-#     if (x == y): return 0
-#     elif (x[1] == y[1]):
-#         if (x[0] > y[0]): return 1
-#         elif (x[0] == y[0]): return 0
-#         else: return -1
-#     elif (x[1] > y[1]): return 1
-#     else: return -1
+    # these functions are used by the parent class (_cs_matrix)
+    # to remove redudancy between csc_matrix and csr_matrix
+    def _swap(self,x):
+        """swap the members of x if this is a column-oriented matrix
+        """
+        return (x[0],x[1])
+
+    def _toother(self):
+        return self.tocsc()
+
+    def _tothis(self, other):
+        return other.tocsr()
+
 
 # dictionary of keys based matrix
 class dok_matrix(spmatrix, dict):
