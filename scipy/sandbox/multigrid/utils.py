@@ -148,11 +148,11 @@ def symmetric_rescaling(A):
     D_sqrt_inv = 1.0/D_sqrt
     D_sqrt_inv[mask] = 0
 
-    #TODO time this against simple implementation
-    data = A.data * D_sqrt_inv[A.indices]
-    data *= D_sqrt_inv[arange(A.shape[0]).repeat(diff(A.indptr))]
+    Acoo = A.tocoo(copy=False) 
+    data = A.data[:A.nnz] * D_sqrt_inv[Acoo.row]
+    data *= D_sqrt_inv[Acoo.col]
 
-    DAD = A.__class__((data,A.indices,A.indptr),dims=A.shape)
+    DAD = A.__class__((data,A.indices[:A.nnz],A.indptr),dims=A.shape)
 
     return D_sqrt,D_sqrt_inv,DAD
 
