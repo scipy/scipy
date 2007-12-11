@@ -901,6 +901,27 @@ class _cs_matrix(spmatrix):
     def _transpose(self, cls, copy=False):
         M, N = self.shape
         return cls((self.data,self.indices,self.indptr),(N,M),copy=copy)
+    
+    def tocoo(self,copy=True):
+        """Return a COOrdinate representation of this matrix
+
+        When copy=False the index and data arrays are not copied.
+        """
+        major_dim,minor_dim = self._swap(self.shape)
+
+        data = self.data
+        minor_indices = self.indices
+
+        if copy:
+            data = data.copy()
+            minor_indices = minor_indices.copy()
+
+        major_indices = empty_like(minor_indices)
+
+        sparsetools.expandptr(major_dim,self.indptr,major_indices)
+
+        row,col = self._swap((major_indices,minor_indices))
+        return coo_matrix((data,(row,col)), self.shape)
 
     def conj(self, copy=False):
         return self._with_data(self.data.conj(),copy=copy)
@@ -935,6 +956,21 @@ class _cs_matrix(spmatrix):
             self.sort_indices()
         else:
             return self.sorted_indices()
+    
+    def prune(self):
+        """ Remove empty space after all non-zero elements.
+        """
+        major_dim = self._swap(self.shape)[0]
+
+        if len(self.indptr) != major_dim + 1:
+            raise ValueError, "index pointer has invalid length"
+        if len(self.indices) < self.nnz: 
+            raise ValueError, "indices array has fewer than nnz elements"
+        if len(self.data) < self.nnz:
+            raise ValueError, "data array has fewer than nnz elements"
+        
+        self.data    = self.data[:self.nnz]
+        self.indices = self.indices[:self.nnz]
 
     def _get_submatrix( self, shape0, shape1, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created)."""
@@ -1137,40 +1173,8 @@ class csc_matrix(_cs_matrix):
 
         return csr_matrix((data, indices, indptr), self.shape)
 
-    def tocoo(self,copy=True):
-        """Return a COOrdinate representation of this matrix
-
-        When copy=False the index and data arrays are not copied.
-        """
-        M,N = self.shape
-
-        data = self.data[:self.nnz].copy()
-        row  = self.indices[:self.nnz].copy()
-
-        if copy:
-            data = data.copy()
-            row  = row.copy()
-
-        col = empty_like(row)
-        sparsetools.expandptr(N,self.indptr,col)
-
-        return coo_matrix((data,(row,col)), self.shape)
-    
     def toarray(self):
         return self.tocsr().toarray()
-
-    def prune(self):
-        """ Remove empty space after all non-zero elements.
-        """
-        if len(self.indptr) != self.shape[1] + 1:
-            raise ValueError, "index pointer has invalid length"
-        if len(self.indices) < self.nnz: 
-            raise ValueError, "indices array has fewer than nnz elements"
-        if len(self.data) < self.nnz:
-            raise ValueError, "data array has fewer than nnz elements"
-        
-        self.data    = self.data[:self.nnz]
-        self.indices = self.indices[:self.nnz]
 
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created).
@@ -1356,44 +1360,12 @@ class csr_matrix(_cs_matrix):
 
         return csc_matrix((data, indices, indptr), self.shape)
     
-    def tocoo(self,copy=True):
-        """Return a COOrdinate representation of this matrix
-
-        When copy=False the index and data arrays are not copied.
-        """
-        M,N = self.shape
-
-        data = self.data[:self.nnz].copy()
-        col  = self.indices[:self.nnz].copy()
-
-        if copy:
-            data = data.copy()
-            col  = col.copy()
-
-        row = empty_like(col)
-        sparsetools.expandptr(M,self.indptr,row)
-
-        return coo_matrix((data,(row,col)), self.shape)
-    
     def toarray(self):
         data = numpy.zeros(self.shape, self.data.dtype)
         csrtodense(self.shape[0], self.shape[1], self.indptr, self.indices,
                    self.data, data)
         return data
     
-    def prune(self):
-        """ Remove empty space after all non-zero elements.
-        """
-        if len(self.indptr) != self.shape[0] + 1:
-            raise ValueError, "index pointer has invalid length"
-        if len(self.indices) < self.nnz: 
-            raise ValueError, "indices array has fewer than nnz elements"
-        if len(self.data) < self.nnz:
-            raise ValueError, "data array has fewer than nnz elements"
-        
-        self.data    = self.data[:self.nnz]
-        self.indices = self.indices[:self.nnz]
-
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created)..
         Rows and columns can be selected using slice instances, tuples,
