@@ -36,6 +36,45 @@ def resize1d(arr, newlen):
 
 MAXPRINT = 50
 
+
+# keep this list syncronized with sparsetools
+supported_dtypes = ['int8','uint8','int16','int32','int64', 
+                    'float32','float64','complex64','complex128']
+supported_dtypes = [ numpy.typeDict[x] for x in supported_dtypes]
+
+def upcast(*args):
+    """Returns the nearest supported sparse dtype for the 
+    combination of one or more types.
+
+    upcast(t0, t1, ..., tn) -> T  where T is a supported dtype
+
+    *Example*
+    -------
+
+    >>> upcast('int32')
+    <type 'numpy.int32'>
+    >>> upcast('bool')
+    <type 'numpy.int8'>
+    >>> upcast('int32','float32')
+    <type 'numpy.float64'>
+    >>> upcast('bool',complex,float)
+    <type 'numpy.complex128'>
+
+    """
+    sample = array([0],dtype=args[0])
+    for t in args[1:]:
+        sample = sample + array([0],dtype=t)
+
+    upcast = sample.dtype 
+
+    for t in supported_dtypes:
+        if upcast <= t:
+            return t
+    
+    raise TypeError,'no supported conversion for types: %s' % args
+
+
+
 #TODO handle this in SWIG
 def to_native(A):
     if not A.dtype.isnative:
@@ -812,9 +851,12 @@ class _cs_matrix(spmatrix):
 
             # csrmux, cscmux
             fn = getattr(sparsetools,self.format + 'mux')
+    
+            #output array
+            y = empty( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
 
-            y = fn(self.shape[0], self.shape[1], \
-                   self.indptr, self.indices, self.data, numpy.ravel(other))
+            fn(self.shape[0], self.shape[1], \
+                self.indptr, self.indices, self.data, numpy.ravel(other), y)
 
             if isinstance(other, matrix):
                 y = asmatrix(y)
@@ -913,7 +955,7 @@ class _cs_matrix(spmatrix):
             data = data.copy()
             minor_indices = minor_indices.copy()
 
-        major_indices = empty_like(minor_indices)
+        major_indices = empty(len(minor_indices),dtype=intc)
 
         sparsetools.expandptr(major_dim,self.indptr,major_indices)
 
@@ -1164,7 +1206,7 @@ class csc_matrix(_cs_matrix):
     def tocsr(self):
         indptr  = empty(self.shape[0] + 1, dtype=intc)
         indices = empty(self.nnz, dtype=intc)
-        data    = empty(self.nnz, dtype=self.dtype)
+        data    = empty(self.nnz, dtype=upcast(self.dtype))
 
         csctocsr(self.shape[0], self.shape[1], \
                 self.indptr, self.indices, self.data, \
@@ -1352,7 +1394,7 @@ class csr_matrix(_cs_matrix):
     def tocsc(self):
         indptr  = empty(self.shape[1] + 1, dtype=intc)
         indices = empty(self.nnz, dtype=intc)
-        data    = empty(self.nnz, self.dtype)
+        data    = empty(self.nnz, dtype=upcast(self.dtype))
 
         csrtocsc(self.shape[0], self.shape[1], \
                  self.indptr, self.indices, self.data, \
@@ -1361,7 +1403,7 @@ class csr_matrix(_cs_matrix):
         return csc_matrix((data, indices, indptr), self.shape)
     
     def toarray(self):
-        data = numpy.zeros(self.shape, self.data.dtype)
+        data = numpy.zeros(self.shape, dtype=upcast(self.data.dtype))
         csrtodense(self.shape[0], self.shape[1], self.indptr, self.indices,
                    self.data, data)
         return data
@@ -2091,7 +2133,7 @@ class coo_matrix(spmatrix):
         else:
             indptr  = empty(self.shape[1] + 1,dtype=intc)
             indices = empty(self.nnz, dtype=intc)
-            data    = empty(self.nnz, dtype=self.dtype)
+            data    = empty(self.nnz, dtype=upcast(self.dtype))
 
             cootocsc(self.shape[0], self.shape[1], self.nnz, \
                      self.row, self.col, self.data, \
@@ -2105,7 +2147,7 @@ class coo_matrix(spmatrix):
         else:
             indptr  = empty(self.shape[0] + 1,dtype=intc)
             indices = empty(self.nnz, dtype=intc)
-            data    = empty(self.nnz, dtype=self.dtype)
+            data    = empty(self.nnz, dtype=upcast(self.dtype))
 
             cootocsr(self.shape[0], self.shape[1], self.nnz, \
                      self.row, self.col, self.data, \
@@ -2662,12 +2704,12 @@ def extract_diagonal(A):
     """
     extract_diagonal(A) returns the main diagonal of A.
     """
-    if isspmatrix_csr(A):
-        return sparsetools.extract_csr_diagonal(A.shape[0],A.shape[1],
-                                                A.indptr,A.indices,A.data)
-    elif isspmatrix_csc(A):
-        return sparsetools.extract_csc_diagonal(A.shape[0],A.shape[1],
-                                                A.indptr,A.indices,A.data)
+    #TODO extract k-th diagonal
+    if isspmatrix_csr(A) or isspmatrix_csc(A):
+        fn = getattr(sparsetools, "extract_" + A.format + "_diagonal")
+        y = empty( min(A.shape), dtype=upcast(A.dtype) )
+        fn(A.shape[0],A.shape[1],A.indptr,A.indices,A.data,y)
+        return y
     elif isspmatrix(A):
         return extract_diagonal(A.tocsr())
     else:

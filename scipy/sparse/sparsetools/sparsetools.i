@@ -101,7 +101,8 @@
 %define T_INPLACE_ARRAY1( ctype )
 %apply ctype * INPLACE_ARRAY {
   ctype Ax [ ],
-  ctype Bx [ ]
+  ctype Bx [ ],
+  ctype Yx [ ]
 };
 %enddef
 

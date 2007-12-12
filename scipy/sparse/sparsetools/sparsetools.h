@@ -35,10 +35,10 @@
  *   T  Ax[n_col]     - nonzeros
  *
  * Output Arguments:
- *   vec<T> Yx - diagonal entries
+ *   T  Yx[min(n_row,n_col)] - diagonal entries
  *
  * Note:
- *   Output array Yx will be allocated within in the method
+ *   Output array Yx should be preallocated
  *   Duplicate entries will be summed.
  *
  *   Complexity: Linear.  Specifically O(nnz(A) + min(n_row,n_col))
@@ -50,12 +50,10 @@ void extract_csr_diagonal(const I n_row,
 	                      const I Ap[], 
 	                      const I Aj[], 
 	                      const T Ax[],
-	                      std::vector<T>*  Yx)
+	                            T Yx[])
 {
   const I N = std::min(n_row, n_col);
   
-  Yx->resize(N);
-
   for(I i = 0; i < N; i++){
     I row_start = Ap[i];
     I row_end   = Ap[i+1];
@@ -66,7 +64,7 @@ void extract_csr_diagonal(const I n_row,
             diag += Ax[jj];
     }
     
-    (*Yx)[i] = diag;
+    Yx[i] = diag;
   }
 }
 
@@ -634,10 +632,8 @@ void csrmux(const I n_row,
 	        const I Aj[], 
 	        const T Ax[],
 	        const T Xx[],
-	        std::vector<T>*  Yx)
+	              T Yx[])
 {
-  Yx->resize(n_row);
-
   for(I i = 0; i < n_row; i++){
     I row_start = Ap[i];
     I row_end   = Ap[i+1];
@@ -646,7 +642,7 @@ void csrmux(const I n_row,
     for(I jj = row_start; jj < row_end; jj++){
       sum += Ax[jj] * Xx[Aj[jj]];
     }
-    (*Yx)[i] = sum;
+    Yx[i] = sum;
   }
 }
 
@@ -662,14 +658,15 @@ void csrmux(const I n_row,
  *   I  Ap[n_row+1]   - column pointer
  *   I  Ai[nnz(A)]    - row indices
  *   T  Ax[n_col]     - nonzeros 
- *   T  Xx[n_col]     - nonzeros
+ *   T  Xx[n_col]     - input vector
  *
  * Output Arguments:
- *   vec<T> Yx - nonzeros 
+ *   T  Yx[n_row] - output vector 
  *
  * Note:
- *   Output arrays Xx will be allocated within in the method
+ *   Output arrays Xx should be be preallocated
  *
+ *   
  *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
  * 
  */
@@ -680,17 +677,19 @@ void cscmux(const I n_row,
 	        const I Ai[], 
 	        const T Ax[],
 	        const T Xx[],
-	        std::vector<T>*  Yx)
-{
-  Yx->resize(n_row,0);
-  
+	              T Yx[])
+{ 
+ for(I i = 0; i < n_row; i++){
+      Yx[i] = 0;
+  }
+
   for(I j = 0; j < n_col; j++){
     I col_start = Ap[j];
     I col_end   = Ap[j+1];
     
     for(I ii = col_start; ii < col_end; ii++){
       I row  = Ai[ii];
-      (*Yx)[row] += Ax[ii] * Xx[j];
+      Yx[row] += Ax[ii] * Xx[j];
     }
   }
 }
@@ -944,9 +943,8 @@ void extract_csc_diagonal(const I n_row,
 	                      const I Ap[], 
 	                      const I Aj[], 
 	                      const T Ax[],
-	                      std::vector<T>*  Yx){
-    extract_csr_diagonal(n_col, n_row, Ap, Aj, Ax, Yx);
-}
+	                            T Yx[])
+{  extract_csr_diagonal(n_col, n_row, Ap, Aj, Ax, Yx); }
 
 
 template <class I, class T>

@@ -57,38 +57,38 @@ def expandptr(*args):
 def extract_csr_diagonal(*args):
   """
     extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
-        std::vector<(signed char)> Yx)
+        signed char Yx)
     extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
-        std::vector<(unsigned char)> Yx)
-    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, short Ax, std::vector<(short)> Yx)
-    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, int Ax, std::vector<(int)> Yx)
+        unsigned char Yx)
+    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, short Ax, short Yx)
+    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, int Ax, int Yx)
     extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, long long Ax, 
-        std::vector<(long long)> Yx)
-    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, float Ax, std::vector<(float)> Yx)
-    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, double Ax, std::vector<(double)> Yx)
+        long long Yx)
+    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, float Ax, float Yx)
+    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, double Ax, double Yx)
     extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
-        std::vector<(npy_cfloat_wrapper)> Yx)
+        npy_cfloat_wrapper Yx)
     extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
-        std::vector<(npy_cdouble_wrapper)> Yx)
+        npy_cdouble_wrapper Yx)
     """
   return _sparsetools.extract_csr_diagonal(*args)
 
 def extract_csc_diagonal(*args):
   """
     extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
-        std::vector<(signed char)> Yx)
+        signed char Yx)
     extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
-        std::vector<(unsigned char)> Yx)
-    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, short Ax, std::vector<(short)> Yx)
-    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, int Ax, std::vector<(int)> Yx)
+        unsigned char Yx)
+    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, short Ax, short Yx)
+    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, int Ax, int Yx)
     extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, long long Ax, 
-        std::vector<(long long)> Yx)
-    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, float Ax, std::vector<(float)> Yx)
-    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, double Ax, std::vector<(double)> Yx)
+        long long Yx)
+    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, float Ax, float Yx)
+    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, double Ax, double Yx)
     extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
-        std::vector<(npy_cfloat_wrapper)> Yx)
+        npy_cfloat_wrapper Yx)
     extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
-        std::vector<(npy_cdouble_wrapper)> Yx)
+        npy_cdouble_wrapper Yx)
     """
   return _sparsetools.extract_csc_diagonal(*args)
 
@@ -255,46 +255,46 @@ def cscmucsc(*args):
 def csrmux(*args):
   """
     csrmux(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
-        signed char Xx, std::vector<(signed char)> Yx)
+        signed char Xx, signed char Yx)
     csrmux(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
-        unsigned char Xx, std::vector<(unsigned char)> Yx)
+        unsigned char Xx, unsigned char Yx)
     csrmux(int n_row, int n_col, int Ap, int Aj, short Ax, short Xx, 
-        std::vector<(short)> Yx)
+        short Yx)
     csrmux(int n_row, int n_col, int Ap, int Aj, int Ax, int Xx, 
-        std::vector<(int)> Yx)
+        int Yx)
     csrmux(int n_row, int n_col, int Ap, int Aj, long long Ax, 
-        long long Xx, std::vector<(long long)> Yx)
+        long long Xx, long long Yx)
     csrmux(int n_row, int n_col, int Ap, int Aj, float Ax, float Xx, 
-        std::vector<(float)> Yx)
+        float Yx)
     csrmux(int n_row, int n_col, int Ap, int Aj, double Ax, double Xx, 
-        std::vector<(double)> Yx)
+        double Yx)
     csrmux(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
-        npy_cfloat_wrapper Xx, std::vector<(npy_cfloat_wrapper)> Yx)
+        npy_cfloat_wrapper Xx, npy_cfloat_wrapper Yx)
     csrmux(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
-        npy_cdouble_wrapper Xx, std::vector<(npy_cdouble_wrapper)> Yx)
+        npy_cdouble_wrapper Xx, npy_cdouble_wrapper Yx)
     """
   return _sparsetools.csrmux(*args)
 
 def cscmux(*args):
   """
     cscmux(int n_row, int n_col, int Ap, int Ai, signed char Ax, 
-        signed char Xx, std::vector<(signed char)> Yx)
+        signed char Xx, signed char Yx)
     cscmux(int n_row, int n_col, int Ap, int Ai, unsigned char Ax, 
-        unsigned char Xx, std::vector<(unsigned char)> Yx)
+        unsigned char Xx, unsigned char Yx)
     cscmux(int n_row, int n_col, int Ap, int Ai, short Ax, short Xx, 
-        std::vector<(short)> Yx)
+        short Yx)
     cscmux(int n_row, int n_col, int Ap, int Ai, int Ax, int Xx, 
-        std::vector<(int)> Yx)
+        int Yx)
     cscmux(int n_row, int n_col, int Ap, int Ai, long long Ax, 
-        long long Xx, std::vector<(long long)> Yx)
+        long long Xx, long long Yx)
     cscmux(int n_row, int n_col, int Ap, int Ai, float Ax, float Xx, 
-        std::vector<(float)> Yx)
+        float Yx)
     cscmux(int n_row, int n_col, int Ap, int Ai, double Ax, double Xx, 
-        std::vector<(double)> Yx)
+        double Yx)
     cscmux(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, 
-        npy_cfloat_wrapper Xx, std::vector<(npy_cfloat_wrapper)> Yx)
+        npy_cfloat_wrapper Xx, npy_cfloat_wrapper Yx)
     cscmux(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, 
-        npy_cdouble_wrapper Xx, std::vector<(npy_cdouble_wrapper)> Yx)
+        npy_cdouble_wrapper Xx, npy_cdouble_wrapper Yx)
     """
   return _sparsetools.cscmux(*args)
 
