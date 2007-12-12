@@ -1951,9 +1951,12 @@ class dok_matrix(spmatrix, dict):
 
     def tocoo(self):
         """ Return a copy of this matrix in COOrdinate format"""
-        data = asarray(self.values(),dtype=self.dtype)
-        indices = asarray(self.keys(),dtype=intc).T
-        return coo_matrix((data,indices),dims=self.shape,dtype=self.dtype)
+        if self.getnnz() == 0:
+            return coo_matrix(self.shape,dtype=self.dtype)
+        else:
+            data    = asarray(self.values(), dtype=self.dtype)
+            indices = asarray(self.keys(), dtype=intc).T
+            return coo_matrix((data,indices),dims=self.shape,dtype=self.dtype)
 
     def todok(self,copy=False):
         if copy:
@@ -1967,18 +1970,10 @@ class dok_matrix(spmatrix, dict):
 
     def tocsc(self):
         """ Return a copy of this matrix in Compressed Sparse Column format"""
-        # Fast sort on columns using the Schwartzian transform
         return self.tocoo().tocsc()
 
     def toarray(self):
-        new = zeros(self.shape, dtype=self.dtype)
-        for key in self.keys():
-            ikey0 = int(key[0])
-            ikey1 = int(key[1])
-            new[ikey0, ikey1] = self[key]
-        if abs(new.imag).max() == 0:
-            new = new.real
-        return new
+        return self.tocsr().toarray()
 
     def resize(self, shape):
         """ Resize the matrix to dimensions given by 'shape', removing any
@@ -2002,7 +1997,7 @@ class coo_matrix(spmatrix):
     """ A sparse matrix in coordinate list format.
 
     COO matrices are created either as:
-        A = coo_matrix(None, dims=(m, n), [dtype])
+        A = coo_matrix( (m, n), [dtype])
     for a zero matrix, or as:
         A = coo_matrix(M)
     where M is a dense matrix or rank 2 ndarray, or as:
@@ -2028,37 +2023,46 @@ class coo_matrix(spmatrix):
     def __init__(self, arg1, dims=None, dtype=None):
         spmatrix.__init__(self)
         if isinstance(arg1, tuple):
-            try:
-                obj, ij = arg1
-            except:
-                raise TypeError, "invalid input format"
-
-            try:
-                if len(ij) != 2:
-                    raise TypeError
-            except TypeError:
-                raise TypeError, "invalid input format"
-
-            self.row = asarray(ij[0])
-            self.col = asarray(ij[1])
-            self.data = asarray(obj)
-
-            if dims is None:
-                if len(self.row) == 0 or len(self.col) == 0:
-                    raise ValueError, "cannot infer dimensions from zero sized index arrays"
-                M = self.row.max() + 1
-                N = self.col.max() + 1
-                self.shape = (M, N)
+            if isshape(arg1):
+                M, N = arg1
+                self.shape = (M,N)
+                self.row  = array([], dtype=intc)
+                self.col  = array([], dtype=intc)
+                self.data = array([],getdtype(dtype, default=float))
             else:
-                # Use 2 steps to ensure dims has length 2.
-                M, N = dims
-                self.shape = (M, N)
+                try:
+                    obj, ij = arg1
+                except:
+                    raise TypeError, "invalid input format"
 
-        elif arg1 is None:      # clumsy!  We should make ALL arguments
-                                # keyword arguments instead!
+                try:
+                    if len(ij) != 2:
+                        raise TypeError
+                except TypeError:
+                    raise TypeError, "invalid input format"
+
+                self.row = asarray(ij[0])
+                self.col = asarray(ij[1])
+                self.data = asarray(obj)
+
+                if dims is None:
+                    if len(self.row) == 0 or len(self.col) == 0:
+                        raise ValueError, "cannot infer dimensions from zero sized index arrays"
+                    M = self.row.max() + 1
+                    N = self.col.max() + 1
+                    self.shape = (M, N)
+                else:
+                    # Use 2 steps to ensure dims has length 2.
+                    M, N = dims
+                    self.shape = (M, N)
+
+        elif arg1 is None:
             # Initialize an empty matrix.
             if not isinstance(dims, tuple) or not isintlike(dims[0]):
                 raise TypeError, "dimensions not understood"
+            warnings.warn('coo_matrix(None, dims=(M,N)) is deprecated, ' \
+                            'use coo_matrix( (M,N) ) instead', \
+                            DeprecationWarning)
             self.shape = dims
             self.data = array([],getdtype(dtype, default=float))
             self.row = array([],dtype=intc)
@@ -2766,7 +2770,7 @@ def spkron(a,b):
 
     if a.nnz == 0 or b.nnz == 0:
         # kronecker product is the zero matrix
-        return coo_matrix(None, dims=output_shape)
+        return coo_matrix( output_shape )
 
 
     # expand entries of a into blocks
