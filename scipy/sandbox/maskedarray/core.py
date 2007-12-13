@@ -269,10 +269,11 @@ def get_data(a, subok=True):
     return data
 getdata = get_data
 
-def fix_invalid(a, copy=False, fill_value=None):
+def fix_invalid(a, copy=True, fill_value=None):
     """Returns (a copy of) a where invalid data (nan/inf) are masked and replaced
 by fill_value.
-
+Note that a copy is performed by default (just in case...).
+    
 *Parameters*:
     a : {ndarray}
         A (subclass of) ndarray.
