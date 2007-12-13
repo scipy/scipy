@@ -245,14 +245,26 @@ class spmatrix(object):
                          " or shape[0]"
 
     def asformat(self, format):
-        # default converter goes through the CSR format
-        csr = self.tocsr()
-        return eval('%s_matrix' % format)(csr)
+        """Return this matrix in a given sparse format
 
-    # default operations use the CSC format as a base
-    #   and operations return in csc format
+        *Parameters*:
+            format : desired sparse matrix format
+                If format is None then no conversion is performed
+                Other possible values include:
+                    "csr" for csr_matrix format
+                    "csc" for csc_matrix format
+                    "dok" for dok_matrix format and so on
+        """
+
+        if format is None or format == self.format:
+            return self
+        else:
+            return eval('%s_matrix' % format)(self)
+
+    # default operations use the CSR format as a base
+    #   and operations return in csr format
     #  thus, a new sparse matrix format just needs to define
-    #  a tocsc method
+    #  a tocsr method
 
     def __abs__(self):
         return abs(self.tocsr())

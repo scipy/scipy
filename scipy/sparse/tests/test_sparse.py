@@ -1041,7 +1041,7 @@ class TestLIL(_TestCS, _TestHorizSlicing, NumpyTestCase,
 
     def check_lil_sequence_assignement(self):
         A = lil_matrix((4,3))
-        B = lil_eye((3,4))
+        B = speye(3,4,format='lil')
 
         i0 = [0,1,2]
         i1 = (0,1,2)
@@ -1095,12 +1095,6 @@ class TestLIL(_TestCS, _TestHorizSlicing, NumpyTestCase,
                             [0,0,9],
                             [0,16,0]])
 
-    def check_lil_eye(self):
-        for dim in [(3,5),(5,3)]:
-            for k in range(-5,5):
-                r,c = dim
-                assert_array_equal(lil_eye(dim,k).todense(),
-                                   speye(r,c,k).todense())
 
     def check_lil_diags(self):
         assert_array_equal(lil_diags([[1,2,3],[4,5],[6]],

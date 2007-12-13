@@ -2,7 +2,7 @@ import scipy
 import numpy
 from numpy import array,arange,ones,zeros,sqrt,isinf,asarray,empty,diff,\
                   ascontiguousarray
-from scipy.sparse import csr_matrix,isspmatrix_csr,spidentity
+from scipy.sparse import csr_matrix,isspmatrix_csr
 
 from utils import diag_sparse, approximate_spectral_radius, \
                   symmetric_rescaling, expand_into_blocks

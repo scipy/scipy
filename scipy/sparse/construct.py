@@ -5,6 +5,7 @@
 __all__ = [ 'spdiags','speye','spidentity','spkron', 'lil_eye', 'lil_diags' ]
 
 import itertools
+import warnings
 
 import numpy
 from numpy import ones, clip, array, arange, intc
@@ -14,58 +15,78 @@ from sparse import csr_matrix, csc_matrix, coo_matrix, \
 from sparse import isspmatrix, isspmatrix_csr, isspmatrix_csc
 import sparsetools
 
-def _spdiags_tosub(diag_num, a, b):
-    part1 = where(less(diag_num, a), abs(diag_num-a), 0)
-    part2 = where(greater(diag_num, b), abs(diag_num-b), 0)
-    return part1+part2
 
-# Note: sparsetools only offers diagonal -> CSC matrix conversion functions,
-# not to CSR
-def spdiags(diags, offsets, M, N):
-    """Return a sparse matrix in CSC format given its diagonals.
+def spdiags(diags, offsets, m, n, format=None):
+    """Return a sparse matrix given its diagonals.
 
-    B = spdiags(diags, offsets, M, N)
-
-    Inputs:
-        diags  --  rows contain diagonal values
-        offsets -- diagonals to set (0 is main)
-        M, N    -- sparse matrix returned is M X N
-    """
-    #    diags = array(transpose(diags), copy=True)
-    diags = array(diags, copy = True)
-    if diags.dtype.char not in 'fdFD':
-        diags = diags.astype('d')
-    if not hasattr(offsets, '__len__' ):
-        offsets = (offsets,)
-    offsets = array(offsets, copy=False, dtype=intc)
-    assert(len(offsets) == diags.shape[0])
-    indptr, rowind, data = sparsetools.spdiags(M, N, len(offsets), offsets, diags)
-    return csc_matrix((data, rowind, indptr), (M, N))
-
-
-
-def spidentity(n, dtype='d'):
-    """
-    spidentity( n ) returns the identity matrix of shape (n, n) stored
-    in CSC sparse matrix format.
-    """
-    return csc_matrix((ones(n,dtype=dtype),arange(n),arange(n+1)),(n,n))
-
-
-def speye(n, m, k = 0, dtype = 'd'):
-    """
-    speye(n, m) returns a (n x m) matrix stored
-    in CSC sparse matrix format, where the  k-th diagonal is all ones,
-    and everything else is zeros.
-    """
-    diags = ones((1, n), dtype = dtype)
-    return spdiags(diags, k, n, m)
-
-def spkron(a,b):
-    """kronecker product of sparse matrices a and b
+    B = spdiags(diags, offsets, m, n)
 
     *Parameters*:
-        a,b : sparse matrices
+        diags   : matrix whose rows contain the diagonal values
+        offsets : diagonals to set 
+                    k = 0 - the main diagonal
+                    k > 0 - the k-th upper diagonal
+                    k < 0 - the k-th lower diagonal
+        m, n    : dimensions of the result
+        format  : format of the result (e.g. "csr")
+                    By default (format=None) an appropriate sparse matrix 
+                    format is returned.  This choice is subject to change.
+
+    *Example*
+    -------
+
+    >>> diags   = array([[1,2,3],[4,5,6],[7,8,9]])
+    >>> offsets = array([0,-1,2])
+    >>> spdiags( diags, offsets, 3, 5).todense()
+    matrix([[ 1.,  0.,  7.,  0.,  0.],
+            [ 4.,  2.,  0.,  8.,  0.],
+            [ 0.,  5.,  3.,  0.,  9.]])
+
+    """
+    #TODO update this example
+    
+    if format == 'csc':
+        diags = array(diags, copy = True)
+        if diags.dtype.char not in 'fdFD':
+            diags = diags.astype('d')
+        if not hasattr(offsets, '__len__' ):
+            offsets = (offsets,)
+        offsets = array(offsets, copy=False, dtype=intc)
+        assert(len(offsets) == diags.shape[0])
+        indptr, rowind, data = sparsetools.spdiags(m, n, len(offsets), offsets, diags)
+        return csc_matrix((data, rowind, indptr), (m, n))
+    else:
+        return spdiags( diags, offsets, m, n, format='csc').asformat(format)
+
+def spidentity(n, dtype='d', format=None):
+    """spidentity(n) returns an (n x n) identity matrix"""
+    if format in ['csr','csc']:
+        indptr  = arange(n+1, dtype=intc)
+        indices = arange(n, dtype=intc)
+        data    = ones(n, dtype=dtype)
+        cls = eval('%s_matrix' % format)
+        return cls((data,indices,indptr),(n,n))
+    elif format == 'coo':
+        row  = arange(n, dtype=intc)
+        col  = arange(n, dtype=intc)
+        data = ones(n, dtype=dtype)
+        cls = eval('%s_matrix' % format)
+        return coo_matrix((data,(row,col)),(n,n))
+    else:
+        return spidentity( n, dtype=dtype, format='csr').asformat(format)
+
+def speye(m, n, k=0, dtype='d', format=None):
+    """speye(m, n) returns an (m x n) matrix where the k-th diagonal 
+    is all ones and everything else is zeros.
+    """
+    diags = ones((1, m), dtype = dtype)
+    return spdiags(diags, k, m, n).asformat(format)
+
+def spkron(A, B, format=None):
+    """kronecker product of sparse matrices A and B
+
+    *Parameters*:
+        A,B : sparse matrices
             E.g. csr_matrix, csc_matrix, coo_matrix, etc.
 
     *Returns*:
@@ -75,50 +96,49 @@ def spkron(a,b):
     *Example*:
     -------
 
-    >>> a = csr_matrix(array([[0,2],[5,0]]))
-    >>> b = csr_matrix(array([[1,2],[3,4]]))
-    >>> spkron(a,b).todense()
+    >>> A = csr_matrix(array([[0,2],[5,0]]))
+    >>> B = csr_matrix(array([[1,2],[3,4]]))
+    >>> spkron(A,B).todense()
     matrix([[  0.,   0.,   2.,   4.],
             [  0.,   0.,   6.,   8.],
             [  5.,  10.,   0.,   0.],
             [ 15.,  20.,   0.,   0.]])
 
     """
-    if not isspmatrix(a) and isspmatrix(b):
+    if not isspmatrix(A) and isspmatrix(B):
         raise ValueError,'expected sparse matrix'
 
-    a,b = a.tocoo(),b.tocoo()
-    output_shape = (a.shape[0]*b.shape[0],a.shape[1]*b.shape[1])
+    A,B = A.tocoo(),B.tocoo()
+    output_shape = (A.shape[0]*B.shape[0],A.shape[1]*B.shape[1])
 
-    if a.nnz == 0 or b.nnz == 0:
+    if A.nnz == 0 or B.nnz == 0:
         # kronecker product is the zero matrix
         return coo_matrix( output_shape )
 
-
     # expand entries of a into blocks
-    row  = a.row.repeat(b.nnz)
-    col  = a.col.repeat(b.nnz)
-    data = a.data.repeat(b.nnz)
+    row  = A.row.repeat(B.nnz)
+    col  = A.col.repeat(B.nnz)
+    data = A.data.repeat(B.nnz)
 
-    row *= b.shape[0]
-    col *= b.shape[1]
+    row *= B.shape[0]
+    col *= B.shape[1]
 
     # increment block indices
-    row,col = row.reshape(-1,b.nnz),col.reshape(-1,b.nnz)
-    row += b.row
-    col += b.col
+    row,col = row.reshape(-1,B.nnz),col.reshape(-1,B.nnz)
+    row += B.row
+    col += B.col
     row,col = row.reshape(-1),col.reshape(-1)
 
     # compute block entries
-    data = data.reshape(-1,b.nnz) * b.data
+    data = data.reshape(-1,B.nnz) * B.data
     data = data.reshape(-1)
 
-    return coo_matrix((data,(row,col)), dims=output_shape)
+    return coo_matrix((data,(row,col)), dims=output_shape).asformat(format)
 
 
 
 
-def lil_eye((r,c), k=0, dtype=float):
+def lil_eye((r,c), k=0, dtype='d'):
     """Generate a lil_matrix of dimensions (r,c) with the k-th
     diagonal set to 1.
 
@@ -132,13 +152,14 @@ def lil_eye((r,c), k=0, dtype=float):
             Data-type of the output array.
 
     """
-    out = lil_matrix((r,c),dtype=dtype)
-    for c in xrange(clip(k,0,c),clip(r+k,0,c)):
-        out.rows[c-k].append(c)
-        out.data[c-k].append(1)
-    return out
+    warnings.warn("lil_eye is deprecated. use speye(... , format='lil') instead", \
+            DeprecationWarning)
+    return speye(r,c,k,dtype=dtype,format='lil')
 
-def lil_diags(diags,offsets,(m,n),dtype=float):
+
+
+#TODO remove this function
+def lil_diags(diags,offsets,(m,n),dtype='d'):
     """Generate a lil_matrix with the given diagonals.
 
     :Parameters:
