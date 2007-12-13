@@ -12,7 +12,7 @@ There are five available sparse matrix types:
     (2) csr_matrix: Compressed Sparse Row format
     (3) lil_matrix: List of Lists format
     (4) dok_matrix: Dictionary of Keys format
-    (5) coo_matrix: COOrdinate format (IJV triplets)
+    (5) coo_matrix: COOrdinate format (aka IJV, triplet format)
 
 To construct a matrix efficiently, use either lil_matrix (recommended) or
 dok_matrix. The lil_matrix class supports basic slicing and fancy
@@ -74,10 +74,11 @@ Example:
 
 Further Details:
     CSR column indices are not necessarily sorted.  Likewise for CSC row
-    indices.  Use the .ensure_sorted_indices() method when sorted indices
-    are necessary.  Note that there is no expectation for sorted indices
-    in the sparsetools module.  Furthermore some sparsetools functions
-    produce matrices with unsorted indices even when sorted input is given.
+    indices.  Use the .sorted_indices() and .sort_indices() methods when 
+    sorted indices are necessary.  Note that there is no expectation for 
+    sorted indices in the sparsetools module.  Furthermore some sparsetools 
+    functions produce matrices with unsorted indices even when sorted 
+    input is given.
 """
 
 postpone_import = 1
