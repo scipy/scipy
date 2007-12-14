@@ -1,0 +1,120 @@
+""" Utility functions for sparse matrix module
+"""
+
+__all__ = ['getdtype','isscalarlike','isintlike',
+            'isshape','issequence','isdense']
+
+import numpy
+
+# keep this list syncronized with sparsetools
+supported_dtypes = ['int8','uint8','int16','int32','int64', 
+                    'float32','float64','complex64','complex128']
+supported_dtypes = [ numpy.typeDict[x] for x in supported_dtypes]
+
+def upcast(*args):
+    """Returns the nearest supported sparse dtype for the 
+    combination of one or more types.
+
+    upcast(t0, t1, ..., tn) -> T  where T is a supported dtype
+
+    *Example*
+    -------
+
+    >>> upcast('int32')
+    <type 'numpy.int32'>
+    >>> upcast('bool')
+    <type 'numpy.int8'>
+    >>> upcast('int32','float32')
+    <type 'numpy.float64'>
+    >>> upcast('bool',complex,float)
+    <type 'numpy.complex128'>
+
+    """
+    sample = numpy.array([0],dtype=args[0])
+    for t in args[1:]:
+        sample = sample + numpy.array([0],dtype=t)
+
+    upcast = sample.dtype 
+
+    for t in supported_dtypes:
+        if upcast <= t:
+            return t
+    
+    raise TypeError,'no supported conversion for types: %s' % args
+
+
+#TODO handle this in SWIG
+def to_native(A):
+    if not A.dtype.isnative:
+        return A.astype(A.dtype.newbyteorder('native'))
+    else:
+        return A
+
+
+def getdtype(dtype, a=None, default=None):
+    """Function used to simplify argument processing.  If 'dtype' is not
+    specified (is None), returns a.dtype; otherwise returns a numpy.dtype
+    object created from the specified dtype argument.  If 'dtype' and 'a'
+    are both None, construct a data type out of the 'default' parameter.
+    Furthermore, 'dtype' must be in 'allowed' set.
+    """
+    canCast = True
+    if dtype is None:
+        try:
+            newdtype = a.dtype
+        except AttributeError:
+            if default is not None:
+                newdtype = numpy.dtype(default)
+                canCast = False
+            else:
+                raise TypeError, "could not interpret data type"
+    else:
+        newdtype = numpy.dtype(dtype)
+
+    return newdtype
+
+def isscalarlike(x):
+    """Is x either a scalar, an array scalar, or a 0-dim array?"""
+    return numpy.isscalar(x) or (isdense(x) and x.ndim == 0)
+
+def isintlike(x):
+    """Is x appropriate as an index into a sparse matrix? Returns True
+    if it can be cast safely to a machine int.
+    """
+    try:
+        if int(x) == x:
+            return True
+        else:
+            return False
+    except TypeError:
+        return False
+
+def isshape(x):
+    """Is x a valid 2-tuple of dimensions?
+    """
+    try:
+        # Assume it's a tuple of matrix dimensions (M, N)
+        (M, N) = x
+        assert isintlike(M) and isintlike(N)   # raises TypeError unless integers
+        assert M > 0 and N > 0
+    except (ValueError, TypeError, AssertionError):
+        return False
+    else:
+        return True
+
+def issequence(t):
+    return isinstance(t, (list, tuple))\
+           or (isinstance(t, numpy.ndarray) and (t.ndim == 1))
+
+
+def _isinstance(x, _class):
+    ##
+    # This makes scipy.sparse.sparse.csc_matrix == __main__.csc_matrix.
+    c1 = ('%s' % x.__class__).split( '.' )
+    c2 = ('%s' % _class).split( '.' )
+    aux = c1[-1] == c2[-1]
+    return isinstance(x, _class) or aux
+
+def isdense(x):
+    return _isinstance(x, numpy.ndarray)
+

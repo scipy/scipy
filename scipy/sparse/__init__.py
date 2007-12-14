@@ -2,7 +2,12 @@
 
 from info import __doc__
 
-from sparse import *
+from base import *
+from compressed import *
+from lil import *
+from dok import *
+from coo import *
+
 from construct import *
 from spfuncs import *
 

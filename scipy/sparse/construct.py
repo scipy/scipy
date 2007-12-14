@@ -10,11 +10,13 @@ import warnings
 import numpy
 from numpy import ones, clip, array, arange, intc
 
-from sparse import csr_matrix, csc_matrix, coo_matrix, \
-        dok_matrix, lil_matrix
-from sparse import isspmatrix, isspmatrix_csr, isspmatrix_csc
-import sparsetools
+from compressed import csr_matrix, csc_matrix, isspmatrix_csr, isspmatrix_csc
+from coo import coo_matrix
+from dok import dok_matrix
+from lil import lil_matrix
+from base import isspmatrix
 
+import sparsetools
 
 def spdiags(diags, offsets, m, n, format=None):
     """Return a sparse matrix given its diagonals.
