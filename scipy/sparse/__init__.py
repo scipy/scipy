@@ -3,7 +3,8 @@
 from info import __doc__
 
 from base import *
-from compressed import *
+from csr import *
+from csc import *
 from lil import *
 from dok import *
 from coo import *

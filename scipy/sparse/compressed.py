@@ -1,8 +1,7 @@
-"""Sparse matrix classes using compressed storage
+"""Base class for sparse matrix formats using compressed storage  
 """
 
-
-__all__ = ['csr_matrix', 'csc_matrix', 'isspmatrix_csr', 'isspmatrix_csc' ]
+__all__ = []
 
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
@@ -10,7 +9,6 @@ from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
 
 from base import spmatrix,isspmatrix
 import sparsetools
-from sparsetools import csrtodense, cootocsr, cootocsc, csctocsr, csrtocsc
 from sputils import upcast, to_native, isdense, isshape, getdtype, \
         isscalarlike
 
@@ -21,8 +19,6 @@ def resize1d(arr, newlen):
     new = zeros((newlen,), arr.dtype)
     new[:old] = arr
     return new
-
-
 
 
 class _cs_matrix(spmatrix):
@@ -68,7 +64,8 @@ class _cs_matrix(spmatrix):
                         # Try interpreting it as (data, indices, indptr)
                         (data, indices, indptr) = arg1
                     except:
-                        raise ValueError, "unrecognized form for csr_matrix constructor"
+                        raise ValueError, "unrecognized form for" \
+                                " %s_matrix constructor" % self.format
                     else:
                         self.data    = array(data, copy=copy, dtype=getdtype(dtype, data))
                         self.indices = array(indices, copy=copy)
@@ -81,7 +78,8 @@ class _cs_matrix(spmatrix):
                     self._set_self( other )
 
         else:
-            raise ValueError, "unrecognized form for csr_matrix constructor"
+            raise ValueError, "unrecognized form for" \
+                    " %s_matrix constructor" % self.format
 
         # Read matrix dimensions given, if any
         if dims is not None:
@@ -120,7 +118,15 @@ class _cs_matrix(spmatrix):
         self.indptr  = other.indptr
         self.shape   = other.shape
     
-    def _check_format(self, full_check):
+    def check_format(self, full_check=True):
+        """check whether the matrix format is valid
+
+            *Parameters*:
+                full_check:
+                    True  - rigorous check, O(N) operations : default
+                    False - basic check, O(1) operations
+
+        """
         self.shape = tuple([int(x) for x in self.shape])  # for floats etc.
 
         #use _swap to determine proper bounds
@@ -179,17 +185,6 @@ class _cs_matrix(spmatrix):
     def astype(self, t):
         return self._with_data(self.data.astype(t))
 
-    def _with_data(self,data,copy=True):
-        """Returns a matrix with the same sparsity structure as self,
-        but with different data.  By default the structure arrays
-        (i.e. .indptr and .indices) are copied.
-        """
-        if copy:
-            return self.__class__((data,self.indices.copy(),self.indptr.copy()), \
-                                   dims=self.shape,dtype=data.dtype)
-        else:
-            return self.__class__((data,self.indices,self.indptr), \
-                                   dims=self.shape,dtype=data.dtype)
 
     def __abs__(self):
         return self._with_data(abs(self.data))
@@ -199,23 +194,6 @@ class _cs_matrix(spmatrix):
 
     def _imag(self):
         return self._with_data(numpy.imag(self.data))
-
-    def _binopt(self, other, op, in_shape=None, out_shape=None):
-        """apply the binary operation fn to two sparse matrices"""
-        other = self._tothis(other)
-
-        if in_shape is None:
-            in_shape = self.shape
-        if out_shape is None:
-            out_shape = self.shape
-
-        # e.g. csr_plus_csr, cscmucsc, etc.
-        fn = getattr(sparsetools, self.format + op + self.format)
-
-        indptr, ind, data = fn(in_shape[0], in_shape[1], \
-                               self.indptr, self.indices, self.data,
-                               other.indptr, other.indices, other.data)
-        return self.__class__((data, ind, indptr), dims=out_shape)
 
 
     def __add__(self,other):
@@ -388,24 +366,6 @@ class _cs_matrix(spmatrix):
     def getdata(self, ind):
         return self.data[ind]
 
-#    def _other_format(self):
-#        if self.format == 'csr':
-#            return 'csc'
-#        elif self.format == 'csc':
-#            return 'csr'
-#        else:
-#            raise TypeError,'unrecognized type'
-#    
-#    def _other__class__(self):
-#        if self.format == 'csr':
-#            return csc_matrix
-#        elif self.format == 'csc':
-#            return csr_matrix
-#        else:
-#            raise TypeError,'unrecognized type'
-
-
-
     def sum(self, axis=None):
         """Sum the matrix over the given axis.  If the axis is None, sum
         over both rows and columns, returning a scalar.
@@ -417,7 +377,6 @@ class _cs_matrix(spmatrix):
         else:
             return spmatrix.sum(self,axis)
             raise ValueError, "axis out of bounds"
-
 
     def copy(self):
         return self._with_data(self.data.copy(),copy=True)
@@ -564,392 +523,34 @@ class _cs_matrix(spmatrix):
         return data, indices, indptr, i1 - i0, j1 - j0
 
 
-class csc_matrix(_cs_matrix):
-    """ Compressed sparse column matrix
-        This can be instantiated in several ways:
-          - csc_matrix(d)
-            with a dense matrix d
-
-          - csc_matrix(s)
-            with another sparse matrix s (sugar for .tocsc())
-
-          - csc_matrix((M, N), [dtype])
-            to construct a container, where (M, N) are dimensions and
-            dtype is optional, defaulting to dtype='d'.
-
-          - csc_matrix((data, ij), [(M, N)])
-            where data, ij satisfy:
-                a[ij[0, k], ij[1, k]] = data[k]
-
-          - csc_matrix((data, row, ptr), [(M, N)])
-            standard CSC representation
-    """
-    
-    def check_format(self,full_check=True):
-        """check whether matrix is in valid CSC format
-
-            *Parameters*:
-                full_check:
-                    True  - rigorous check, O(N) operations : default
-                    False - basic check, O(1) operations
-
+    # utility functions 
+    def _with_data(self,data,copy=True):
+        """Returns a matrix with the same sparsity structure as self,
+        but with different data.  By default the structure arrays
+        (i.e. .indptr and .indices) are copied.
         """
-        _cs_matrix._check_format(self,full_check)
-
-    def __getattr__(self, attr):
-        if attr == 'rowind':
-            warnings.warn("rowind attribute no longer in use. Use .indices instead",
-                          DeprecationWarning)
-            return self.indices
+        if copy:
+            return self.__class__((data,self.indices.copy(),self.indptr.copy()), \
+                                   dims=self.shape,dtype=data.dtype)
         else:
-            return _cs_matrix.__getattr__(self, attr)
+            return self.__class__((data,self.indices,self.indptr), \
+                                   dims=self.shape,dtype=data.dtype)
 
-    def __iter__(self):
-        csr = self.tocsr()
-        for r in xrange(self.shape[0]):
-            yield csr[r,:]
+    def _binopt(self, other, op, in_shape=None, out_shape=None):
+        """apply the binary operation fn to two sparse matrices"""
+        other = self._tothis(other)
 
-    def transpose(self, copy=False):
-        return _cs_matrix._transpose(self, csr_matrix, copy)
+        if in_shape is None:
+            in_shape = self.shape
+        if out_shape is None:
+            out_shape = self.shape
 
-    def __getitem__(self, key):
-        if isinstance(key, tuple):
-            #TODO use _swap() to unify this in _cs_matrix
-            row = key[0]
-            col = key[1]
-            if isinstance(col, slice):
-                # Returns a new matrix!
-                return self.get_submatrix( row, col )
-            elif isinstance(row, slice):
-                return self._getslice(row, col)
-            M, N = self.shape
-            if (row < 0):
-                row = M + row
-            if (col < 0):
-                col = N + col
-            if not (0<=row<M) or not (0<=col<N):
-                raise IndexError, "index out of bounds"
-            #this was implemented in fortran before - is there a noticable performance advantage?
-            indxs = numpy.where(row == self.indices[self.indptr[col]:self.indptr[col+1]])
-            if len(indxs[0]) == 0:
-                return 0
-            else:
-                return self.data[self.indptr[col]:self.indptr[col+1]][indxs[0]]
-        elif isintlike(key):
-            # Was: return self.data[key]
-            # If this is allowed, it should return the relevant row, as for
-            # dense matrices (and __len__ should be supported again).
-            raise IndexError, "integer index not supported for csc_matrix"
-        else:
-            raise IndexError, "invalid index"
+        # e.g. csr_plus_csr, cscmucsc, etc.
+        fn = getattr(sparsetools, self.format + op + self.format)
 
-
-    def __setitem__(self, key, val):
-        if isinstance(key, tuple):
-            row = key[0]
-            col = key[1]
-            if not (isscalarlike(row) and isscalarlike(col)):
-                raise NotImplementedError("Fancy indexing in assignments not"
-                                          "supported for csc matrices.")
-            M, N = self.shape
-            if (row < 0):
-                row = M + row
-            if (col < 0):
-                col = N + col
-            if (row < 0) or (col < 0):
-                raise IndexError, "index out of bounds"
-            if (col >= N):
-                self.indptr = resize1d(self.indptr, col+2)
-                self.indptr[N+1:] = self.indptr[N]
-                N = col+1
-            if (row >= M):
-                M = row+1
-            self.shape = (M, N)
-
-            indxs = numpy.where(row == self.indices[self.indptr[col]:self.indptr[col+1]])
-    
-            if len(indxs[0]) == 0:
-                #value not present
-                #TODO handle this with concatenation
-                self.data    = resize1d(self.data,    self.nnz + 1)
-                self.indices = resize1d(self.indices, self.nnz + 1)
-
-                newindex = self.indptr[col]
-                self.data[newindex+1:]    = self.data[newindex:-1]
-                self.indices[newindex+1:] = self.indices[newindex:-1]
-
-                self.data[newindex]   = val
-                self.indices[newindex] = row
-                self.indptr[col+1:] += 1
-
-            elif len(indxs[0]) == 1:
-                #value already present
-                self.data[self.indptr[col]:self.indptr[col+1]][indxs[0]] = val
-            else:
-                raise IndexError, "row index occurs more than once"
-
-            self.check_format(full_check=False)
-        else:
-            # We should allow slices here!
-            raise IndexError, "invalid index"
-
-    def _getslice(self, i, myslice):
-        return self._getcolslice(i, myslice)
-
-    def _getcolslice(self, myslice, j):
-        """Returns a view of the elements [myslice.start:myslice.stop, j].
-        """
-        start, stop, stride = myslice.indices(self.shape[0])
-        return _cs_matrix._get_slice(self, j, start, stop, stride, (stop - start, 1))
-
-    def rowcol(self, ind):
-        row = self.indices[ind]
-        col = searchsorted(self.indptr, ind+1)-1
-        return (row, col)
-
-
-    def tocsc(self, copy=False):
-        return self.toself(copy)
-    
-    def tocsr(self):
-        indptr  = empty(self.shape[0] + 1, dtype=intc)
-        indices = empty(self.nnz, dtype=intc)
-        data    = empty(self.nnz, dtype=upcast(self.dtype))
-
-        csctocsr(self.shape[0], self.shape[1], \
-                self.indptr, self.indices, self.data, \
-                indptr, indices, data)
-
-        return csr_matrix((data, indices, indptr), self.shape)
-
-    def toarray(self):
-        return self.tocsr().toarray()
-
-    def get_submatrix( self, slice0, slice1 ):
-        """Return a submatrix of this matrix (new matrix is created).
-        Contigous range of rows and columns can be selected using:
-        1. a slice object
-        2. a tuple (from, to)
-        3. a scalar for single row/column selection."""
-        aux = _cs_matrix._get_submatrix( self, self.shape[1], self.shape[0],
-                                         slice1, slice0 )
-        nr, nc = aux[3:]
-        return self.__class__( aux[:3], dims = (nc, nr) )
-    
-    # these functions are used by the parent class (_cs_matrix)
-    # to remove redudancy between csc_matrix and csr_matrix
-    def _swap(self,x):
-        """swap the members of x if this is a column-oriented matrix
-        """
-        return (x[1],x[0])
-
-    def _toother(self):
-        return self.tocsr()
-
-    def _tothis(self, other):
-        return other.tocsc()
-
-class csr_matrix(_cs_matrix):
-    """ Compressed sparse row matrix
-        This can be instantiated in several ways:
-          - csr_matrix(d)
-            with a dense matrix d
-
-          - csr_matrix(s)
-            with another sparse matrix s (sugar for .tocsr())
-
-          - csr_matrix((M, N), [dtype])
-            to construct a container, where (M, N) are dimensions and
-            dtype is optional, defaulting to dtype='d'.
-
-          - csr_matrix((data, ij), [dims=(M, N)])
-            where data, ij satisfy:
-                a[ij[0, k], ij[1, k]] = data[k]
-
-          - csr_matrix((data, col, ptr), [dims=(M, N)])
-            standard CSR representation
-    """
-
-    def check_format(self,full_check=True):
-        """check whether matrix is in valid CSR format
-
-            *Parameters*:
-                full_check:
-                    True  - perform rigorous checking - default
-                    False - perform basic format check
-
-        """
-        _cs_matrix._check_format(self,full_check)
-
-    def __getattr__(self, attr):
-        if attr == 'colind':
-            warnings.warn("colind attribute no longer in use. Use .indices instead",
-                          DeprecationWarning)
-            return self.indices
-        else:
-            return _cs_matrix.__getattr__(self, attr)
-
-    def transpose(self, copy=False):
-        return _cs_matrix._transpose(self, csc_matrix, copy)
-
-    def __getitem__(self, key):
-        if isinstance(key, tuple):
-            #TODO use _swap() to unify this in _cs_matrix
-            row = key[0]
-            col = key[1]
-            if isinstance(row, slice):
-                # Returns a new matrix!
-                return self.get_submatrix( row, col )
-            elif isinstance(col, slice):
-                return self._getslice(row, col)
-            M, N = self.shape
-            if (row < 0):
-                row = M + row
-            if (col < 0):
-                col = N + col
-            if not (0<=row<M) or not (0<=col<N):
-                raise IndexError, "index out of bounds"
-            #this was implemented in fortran before - is there a noticable performance advantage?
-            indxs = numpy.where(col == self.indices[self.indptr[row]:self.indptr[row+1]])
-            if len(indxs[0]) == 0:
-                return 0
-            else:
-                return self.data[self.indptr[row]:self.indptr[row+1]][indxs[0]]
-        elif isintlike(key):
-            return self[key, :]
-        else:
-            raise IndexError, "invalid index"
-
-    def _getslice(self, i, myslice):
-        return self._getrowslice(i, myslice)
-
-    def _getrowslice(self, i, myslice):
-        """Returns a view of the elements [i, myslice.start:myslice.stop].
-        """
-        start, stop, stride = myslice.indices(self.shape[1])
-        return _cs_matrix._get_slice(self, i, start, stop, stride, (1, stop-start))
-
-    def __setitem__(self, key, val):
-        if isinstance(key, tuple):
-            row = key[0]
-            col = key[1]
-            if not (isscalarlike(row) and isscalarlike(col)):
-                raise NotImplementedError("Fancy indexing in assignment not "
-                                          "supported for csr matrices.")
-            M, N = self.shape
-            if (row < 0):
-                row = M + row
-            if (col < 0):
-                col = N + col
-            if (row < 0) or (col < 0):
-                raise IndexError, "index out of bounds"
-            if (row >= M):
-                self.indptr = resize1d(self.indptr, row+2)
-                self.indptr[M+1:] = self.indptr[M]
-                M = row+1
-            if (col >= N):
-                N = col+1
-            self.shape = (M, N)
-
-            indxs = numpy.where(col == self.indices[self.indptr[row]:self.indptr[row+1]])
-            if len(indxs[0]) == 0:
-                #value not present
-                self.data    = resize1d(self.data, self.nnz + 1)
-                self.indices = resize1d(self.indices, self.nnz + 1)
-
-                newindex = self.indptr[row]
-                self.data[newindex+1:]   = self.data[newindex:-1]
-                self.indices[newindex+1:] = self.indices[newindex:-1]
-
-                self.data[newindex]   = val
-                self.indices[newindex] = col
-                self.indptr[row+1:] += 1
-
-            elif len(indxs[0]) == 1:
-                #value already present
-                self.data[self.indptr[row]:self.indptr[row+1]][indxs[0]] = val
-            else:
-                raise IndexError, "row index occurs more than once"
-
-            self.check_format(full_check=False)
-        else:
-            # We should allow slices here!
-            raise IndexError, "invalid index"
-
-    def rowcol(self, ind):
-        col = self.indices[ind]
-        row = searchsorted(self.indptr, ind+1)-1
-        return (row, col)
-
-
-    def tolil(self):
-        from lil import lil_matrix
-        lil = lil_matrix(self.shape,dtype=self.dtype)
-     
-        csr = self.sorted_indices() #lil_matrix needs sorted rows
-        
-        rows,data = lil.rows,lil.data
-        ptr,ind,dat = csr.indptr,csr.indices,csr.data
-
-        for n in xrange(self.shape[0]):
-            start = ptr[n]
-            end   = ptr[n+1]
-            rows[n] = ind[start:end].tolist()
-            data[n] = dat[start:end].tolist()
-
-        return lil
-
-    def tocsr(self, copy=False):
-        return self.toself(copy)
-
-    def tocsc(self):
-        indptr  = empty(self.shape[1] + 1, dtype=intc)
-        indices = empty(self.nnz, dtype=intc)
-        data    = empty(self.nnz, dtype=upcast(self.dtype))
-
-        csrtocsc(self.shape[0], self.shape[1], \
-                 self.indptr, self.indices, self.data, \
-                 indptr, indices, data)
-
-        return csc_matrix((data, indices, indptr), self.shape)
-    
-    def toarray(self):
-        data = numpy.zeros(self.shape, dtype=upcast(self.data.dtype))
-        csrtodense(self.shape[0], self.shape[1], self.indptr, self.indices,
-                   self.data, data)
-        return data
-    
-    def get_submatrix( self, slice0, slice1 ):
-        """Return a submatrix of this matrix (new matrix is created).
-        Contigous range of rows and columns can be selected using:
-        1. a slice object
-        2. a tuple (from, to)
-        3. a scalar for single row/column selection."""
-        aux = _cs_matrix._get_submatrix( self, self.shape[0], self.shape[1],
-                                         slice0, slice1 )
-        nr, nc = aux[3:]
-        return self.__class__( aux[:3], dims = (nr, nc) )
-
-    # these functions are used by the parent class (_cs_matrix)
-    # to remove redudancy between csc_matrix and csr_matrix
-    def _swap(self,x):
-        """swap the members of x if this is a column-oriented matrix
-        """
-        return (x[0],x[1])
-
-    def _toother(self):
-        return self.tocsc()
-
-    def _tothis(self, other):
-        return other.tocsr()
-
-
-from sputils import _isinstance
-
-def isspmatrix_csr(x):
-    return _isinstance(x, csr_matrix)
-
-def isspmatrix_csc(x):
-    return _isinstance(x, csc_matrix)
+        indptr, ind, data = fn(in_shape[0], in_shape[1], \
+                               self.indptr, self.indices, self.data,
+                               other.indptr, other.indices, other.data)
+        return self.__class__((data, ind, indptr), dims=out_shape)
 
 

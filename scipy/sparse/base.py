@@ -2,6 +2,8 @@
 
 __all__ = ['spmatrix','isspmatrix','issparse']
 
+from warnings import warn
+
 from numpy import asarray, asmatrix, ones
 
 from sputils import isdense, isscalarlike 
@@ -447,8 +449,10 @@ class spmatrix(object):
 
 
     def save(self, file_name, format = '%d %d %f\n'):
-        #TODO deprecate, use io.mmwrite or mio instead
-
+        #deprecated on Dec 14 2007
+        warn('save() is deprecated, consider using mmwrite() or savemat()' \
+                ' provided by scipy.io instead',
+                DeprecationWarning)
         try:
             fd = open(file_name, 'w')
         except Exception, e:

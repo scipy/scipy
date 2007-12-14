@@ -4,7 +4,8 @@
 from numpy import empty
 
 from base import isspmatrix
-from compressed import isspmatrix_csr, isspmatrix_csc
+from csr import isspmatrix_csr
+from csc import isspmatrix_csc
 from sputils import upcast
 
 import sparsetools

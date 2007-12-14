@@ -149,7 +149,7 @@ class coo_matrix(spmatrix):
         return self.data[num]
 
     def tocsc(self):
-        from compressed import csc_matrix
+        from csc import csc_matrix
         if self.nnz == 0:
             return csc_matrix(self.shape, dtype=self.dtype)
         else:
@@ -164,7 +164,7 @@ class coo_matrix(spmatrix):
             return csc_matrix((data, indices, indptr), self.shape)
 
     def tocsr(self):
-        from compressed import csr_matrix
+        from csr import csr_matrix
         if self.nnz == 0:
             return csr_matrix(self.shape, dtype=self.dtype)
         else:

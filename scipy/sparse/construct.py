@@ -10,7 +10,8 @@ import warnings
 import numpy
 from numpy import ones, clip, array, arange, intc
 
-from compressed import csr_matrix, csc_matrix, isspmatrix_csr, isspmatrix_csc
+from csr import csr_matrix, isspmatrix_csr
+from csc import csc_matrix, isspmatrix_csc
 from coo import coo_matrix
 from dok import dok_matrix
 from lil import lil_matrix

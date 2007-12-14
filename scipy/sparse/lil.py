@@ -25,9 +25,7 @@ class lil_matrix(spmatrix):
         """ Create a new list-of-lists sparse matrix.  An optional
         argument A is accepted, which initializes the lil_matrix with it.
         This can be a tuple of dimensions (M, N) or a dense array /
-        matrix to copy, or a sparse matrix of the following types:
-          - csr_matrix
-          - lil_matrix
+        matrix to copy, or a sparse matrix.
         """
         spmatrix.__init__(self)
         self.dtype = getdtype(dtype, A, default=float)
@@ -65,7 +63,7 @@ class lil_matrix(spmatrix):
                     except TypeError:
                         raise TypeError, "unsupported matrix type"
                     else:
-                        from compressed import csr_matrix
+                        from csr import csr_matrix
                         A = csr_matrix(A).tolil()
                 
                 #A is a lil matrix
@@ -409,7 +407,7 @@ class lil_matrix(spmatrix):
             data.extend(x)
         data = asarray(data,dtype=self.dtype)
 
-        from compressed import csr_matrix
+        from csr import csr_matrix
         return csr_matrix((data, indices, indptr), dims=self.shape)
 
     def tocsc(self):
