@@ -21,17 +21,17 @@ from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, \
 import random
 from numpy.testing import *
 set_package_path()
-from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, coo_matrix, \
-     spidentity, speye, spkron, extract_diagonal, lil_matrix, lil_eye, \
-     lil_diags, spdiags
+from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
+        coo_matrix, lil_matrix, extract_diagonal, speye
 from scipy.linsolve import splu
 restore_path()
 
-class _TestCS:
+class _TestCommon:
+    """test common functionality shared by all sparse formats"""
+
     def setUp(self):
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
-
     
     def check_empty(self):
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
@@ -680,7 +680,7 @@ class _test_arith:
 
 
 
-class TestCSR(_TestCS, _TestHorizSlicing, _TestVertSlicing,
+class TestCSR(_TestCommon, _TestHorizSlicing, _TestVertSlicing,
               _TestGetSet, _TestSolve,
               _test_slicing, _test_arith, NumpyTestCase):
     spmatrix = csr_matrix
@@ -778,7 +778,7 @@ class TestCSR(_TestCS, _TestHorizSlicing, _TestVertSlicing,
         assert b.shape == (2,2)
         assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
-class TestCSC(_TestCS, _TestHorizSlicing, _TestVertSlicing,
+class TestCSC(_TestCommon, _TestHorizSlicing, _TestVertSlicing,
               _TestGetSet, _TestSolve,
                _test_slicing, _test_arith, NumpyTestCase):
     spmatrix = csc_matrix
@@ -852,7 +852,7 @@ class TestCSC(_TestCS, _TestHorizSlicing, _TestVertSlicing,
         assert_equal(b.shape, (2,2))
         assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
-class TestDOK(_TestCS, _TestGetSet, _TestSolve, NumpyTestCase):
+class TestDOK(_TestCommon, _TestGetSet, _TestSolve, NumpyTestCase):
     spmatrix = dok_matrix
 
     def check_mult(self):
@@ -959,7 +959,7 @@ class TestDOK(_TestCS, _TestGetSet, _TestSolve, NumpyTestCase):
         assert_equal(caught,5)
 
 
-class TestLIL(_TestCS, _TestHorizSlicing, _TestGetSet, _TestSolve,
+class TestLIL(_TestCommon, _TestHorizSlicing, _TestGetSet, _TestSolve,
                 NumpyTestCase, ParametricTestCase):
     spmatrix = lil_matrix
 
@@ -1104,86 +1104,8 @@ class TestLIL(_TestCS, _TestHorizSlicing, _TestGetSet, _TestSolve,
                             [0,16,0]])
 
 
-    def check_lil_diags(self):
-        assert_array_equal(lil_diags([[1,2,3],[4,5],[6]],
-                                     [0,1,2],(3,3)).todense(),
-                           [[1,4,6],
-                            [0,2,5],
-                            [0,0,3]])
 
-        assert_array_equal(lil_diags([[6],[4,5],[1,2,3]],
-                                     [2,1,0],(3,3)).todense(),
-                           [[1,4,6],
-                            [0,2,5],
-                            [0,0,3]])
-
-        assert_array_equal(lil_diags([[6,7,8],[4,5],[1,2,3]],
-                                     [2,1,0],(3,3)).todense(),
-                           [[1,4,6],
-                            [0,2,5],
-                            [0,0,3]])
-
-        assert_array_equal(lil_diags([[1,2,3],[4,5],[6]],
-                                     [0,-1,-2],(3,3)).todense(),
-                           [[1,0,0],
-                            [4,2,0],
-                            [6,5,3]])
-
-        assert_array_equal(lil_diags([[6,7,8],[4,5]],
-                                     [-2,-1],(3,3)).todense(),
-                           [[0,0,0],
-                            [4,0,0],
-                            [6,5,0]])
-
-class TestConstructUtils(NumpyTestCase):
-    def check_identity(self):
-        a = spidentity(3)
-        b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
-        assert_array_equal(a.toarray(), b)
-
-    def check_eye(self):
-        a = speye(2, 3 )
-#        print a, a.__repr__
-        b = array([[1, 0, 0], [0, 1, 0]], dtype='d')
-        assert_array_equal(a.toarray(), b)
-
-        a = speye(3, 2)
-#        print a, a.__repr__
-        b = array([[1, 0], [0, 1], [0, 0]], dtype='d')
-        assert_array_equal( a.toarray(), b)
-
-        a = speye(3, 3)
-#        print a, a.__repr__
-        b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
-        assert_array_equal(a.toarray(), b)
-
-    def check_spkron(self):
-        from numpy import kron
-
-        cases = []
-
-        cases.append(array([[ 0]]))
-        cases.append(array([[-1]]))
-        cases.append(array([[ 4]]))
-        cases.append(array([[10]]))
-        cases.append(array([[0],[0]]))
-        cases.append(array([[0,0]]))
-        cases.append(array([[1,2],[3,4]]))
-        cases.append(array([[0,2],[5,0]]))
-        cases.append(array([[0,2,-6],[8,0,14]]))
-        cases.append(array([[5,4],[0,0],[6,0]]))
-        cases.append(array([[5,4,4],[1,0,0],[6,0,8]]))
-        cases.append(array([[0,1,0,2,0,5,8]]))
-        cases.append(array([[0.5,0.125,0,3.25],[0,2.5,0,0]]))
-        
-        for a in cases:
-            for b in cases:
-                result = spkron(csr_matrix(a),csr_matrix(b)).todense()
-                expected = kron(a,b)
-
-                assert_array_equal(result,expected)
-
-class TestCOO(_TestCS, NumpyTestCase):
+class TestCOO(_TestCommon, NumpyTestCase):
     spmatrix = coo_matrix
     def check_constructor1(self):
         """unsorted triplet format"""
@@ -1224,134 +1146,6 @@ class TestCOO(_TestCS, NumpyTestCase):
                            [0,4,0,0]])
         coo = coo_matrix(mat)
         assert_array_equal(mat,coo.todense())
-
-def poisson2d(N,epsilon=1.0):
-    """
-    Return a sparse CSR matrix for the 2d poisson problem
-    with standard 5-point finite difference stencil on a
-    square N-by-N grid.
-    """
-
-    D = (2 + 2*epsilon)*ones(N*N)
-    T =  -epsilon * ones(N*N)
-    O =  -ones(N*N)
-    T[N-1::N] = 0
-    return spdiags([D,O,T,T,O],[0,-N,-1,1,N],N*N,N*N).tocoo().tocsr() #eliminate explicit zeros
-
-
-import time
-class TestSparseTools(NumpyTestCase):
-    """Simple benchmarks for sparse matrix module"""
-
-    def bench_matvec(self,level=5):
-        matrices = []
-        matrices.append(('Identity',spidentity(10**5)))
-        matrices.append(('Poisson5pt', poisson2d(250)))
-        matrices.append(('Poisson5pt', poisson2d(500)))
-        matrices.append(('Poisson5pt', poisson2d(1000)))
-
-        print
-        print '                 Sparse Matrix Vector Product'
-        print '=================================================================='
-        print ' type |    name      |         shape        |    nnz   |  MFLOPs  '
-        print '------------------------------------------------------------------'
-        fmt = '  %3s | %12s | %20s | %8d |  %6.1f '
-
-        for name,A in matrices:
-            A = A.tocsr()
-            
-            x = ones(A.shape[1],dtype=A.dtype)
-
-            y = A*x  #warmup
-
-            start = time.clock()
-            iter = 0
-            while iter < 5 or time.clock() < start + 1:
-                y = A*x
-                iter += 1
-            end = time.clock()
-
-            name = name.center(12)
-            shape = ("%s" % (A.shape,)).center(20)
-            MFLOPs = (2*A.nnz*iter/(end-start))/float(1e6)
-
-            print fmt % (A.format,name,shape,A.nnz,MFLOPs)
-            
-    def bench_construction(self,level=5):
-        """build matrices by inserting single values"""
-        matrices = []
-        matrices.append( ('Empty',csr_matrix((10000,10000))) )
-        matrices.append( ('Identity',spidentity(10000)) )
-        matrices.append( ('Poisson5pt', poisson2d(100)) )
-        
-        print
-        print '                    Sparse Matrix Construction'
-        print '===================================================================='
-        print ' type |    name      |         shape        |    nnz   | time (sec) '
-        print '--------------------------------------------------------------------'
-        fmt = '  %3s | %12s | %20s | %8d |   %6.4f '
-
-        for name,A in matrices:
-            A = A.tocoo()
-             
-            for format in ['lil','dok']: 
-
-                start = time.clock()
-                
-                iter = 0
-                while time.clock() < start + 0.1:
-                    T = eval(format + '_matrix')(A.shape)
-                    for i,j,v in zip(A.row,A.col,A.data):
-                        T[i,j] = v
-                    iter += 1
-                end = time.clock()
-
-                del T
-                name = name.center(12)
-                shape = ("%s" % (A.shape,)).center(20)
-
-                print fmt % (format,name,shape,A.nnz,(end-start)/float(iter))
-
-
-    def bench_conversion(self,level=5):
-        A = poisson2d(100)
-
-        formats = ['csr','csc','coo','lil','dok']
-       
-        print
-        print '                Sparse Matrix Conversion'
-        print '=========================================================='
-        print ' format | tocsr() | tocsc() | tocoo() | tolil() | todok() '
-        print '----------------------------------------------------------'
-        
-        for fromfmt in formats:
-            base = getattr(A,'to' + fromfmt)()
- 
-            times = []
-
-            for tofmt in formats:
-                try:
-                    fn = getattr(base,'to' + tofmt)
-                except:
-                    times.append(None)
-                else:
-                    x = fn() #warmup
-                    start = time.clock()
-                    iter = 0
-                    while time.clock() < start + 0.2:
-                        x = fn()
-                        iter += 1
-                    end = time.clock()
-                    del x 
-                    times.append( (end - start)/float(iter))
-
-            output = "  %3s   " % fromfmt
-            for t in times:
-                if t is None:
-                    output += '|    n/a    '
-                else:
-                    output += '| %5.1fms ' % (1000*t) 
-            print output
 
                 
 if __name__ == "__main__":
