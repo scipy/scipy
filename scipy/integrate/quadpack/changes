@@ -1,5 +1,0 @@
-1 Aug 86  ehg
-  qwgt*.f were declared double precision, but should have been single
-
-21 May 87  ehg, reported by dongarra
-  dqc25c.f was missing data x(11).  copied from dqc25s.f
