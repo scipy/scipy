@@ -1,4 +1,4 @@
-"Rudimentary sparse matrix class"
+"Sparse Matrix Support"
 
 from info import __doc__
 
