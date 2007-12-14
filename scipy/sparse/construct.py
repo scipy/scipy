@@ -5,7 +5,7 @@
 __all__ = [ 'spdiags','speye','spidentity','spkron', 'lil_eye', 'lil_diags' ]
 
 import itertools
-import warnings
+from warnings import warn
 
 import numpy
 from numpy import ones, clip, array, arange, intc
@@ -136,7 +136,7 @@ def spkron(A, B, format=None):
     data = data.reshape(-1,B.nnz) * B.data
     data = data.reshape(-1)
 
-    return coo_matrix((data,(row,col)), dims=output_shape).asformat(format)
+    return coo_matrix((data,(row,col)), shape=output_shape).asformat(format)
 
 
 
@@ -155,7 +155,7 @@ def lil_eye((r,c), k=0, dtype='d'):
             Data-type of the output array.
 
     """
-    warnings.warn("lil_eye is deprecated. use speye(... , format='lil') instead", \
+    warn("lil_eye is deprecated. use speye(... , format='lil') instead", \
             DeprecationWarning)
     return speye(r,c,k,dtype=dtype,format='lil')
 

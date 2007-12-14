@@ -4,6 +4,8 @@
 __all__ = ['csr_matrix', 'isspmatrix_csr']
 
 
+from warnings import warn
+
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
         empty, hstack, isscalar, ndarray, shape, searchsorted
@@ -28,18 +30,18 @@ class csr_matrix(_cs_matrix):
             to construct a container, where (M, N) are dimensions and
             dtype is optional, defaulting to dtype='d'.
 
-          - csr_matrix((data, ij), [dims=(M, N)])
+          - csr_matrix((data, ij), [shape=(M, N)])
             where data, ij satisfy:
                 a[ij[0, k], ij[1, k]] = data[k]
 
-          - csr_matrix((data, col, ptr), [dims=(M, N)])
+          - csr_matrix((data, col, ptr), [shape=(M, N)])
             standard CSR representation
     """
 
     def __getattr__(self, attr):
         if attr == 'colind':
-            warnings.warn("colind attribute no longer in use. Use .indices instead",
-                          DeprecationWarning)
+            warn("colind attribute no longer in use. Use .indices instead",
+                    DeprecationWarning)
             return self.indices
         else:
             return _cs_matrix.__getattr__(self, attr)
@@ -186,7 +188,7 @@ class csr_matrix(_cs_matrix):
         aux = _cs_matrix._get_submatrix( self, self.shape[0], self.shape[1],
                                          slice0, slice1 )
         nr, nc = aux[3:]
-        return self.__class__( aux[:3], dims = (nr, nc) )
+        return self.__class__( aux[:3], shape = (nr, nc) )
 
     # these functions are used by the parent class (_cs_matrix)
     # to remove redudancy between csc_matrix and csr_matrix
@@ -194,6 +196,9 @@ class csr_matrix(_cs_matrix):
         """swap the members of x if this is a column-oriented matrix
         """
         return (x[0],x[1])
+
+    def _otherformat(self):
+        return "csc"
 
     def _toother(self):
         return self.tocsc()

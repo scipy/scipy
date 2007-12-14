@@ -376,11 +376,7 @@ class lil_matrix(spmatrix):
         return d
 
     def transpose(self):
-        """ Return the transpose as a csc_matrix.
-        """
-        # Overriding the spmatrix.transpose method here prevents an unnecessary
-        # csr -> csc conversion
-        return self.tocsr().transpose()
+        return self.tocsr().transpose().tolil()
 
     def tolil(self, copy=False):
         if copy:
@@ -408,7 +404,7 @@ class lil_matrix(spmatrix):
         data = asarray(data,dtype=self.dtype)
 
         from csr import csr_matrix
-        return csr_matrix((data, indices, indptr), dims=self.shape)
+        return csr_matrix((data, indices, indptr), shape=self.shape)
 
     def tocsc(self):
         """ Return Compressed Sparse Column format arrays for this matrix.

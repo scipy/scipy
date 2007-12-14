@@ -26,6 +26,9 @@ from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
 from scipy.linsolve import splu
 restore_path()
 
+
+#TODO test spmatrix(DENSE) and spmatrix(SPARSE) for all combos
+#TODO check that invalid shape in constructor raises exception
 class _TestCommon:
     """test common functionality shared by all sparse formats"""
 
@@ -732,7 +735,7 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve, _TestArithmetic,
 ##        col = array( [1, 2, 1, 0, 0, 2], dtype='int64' )
 ##        ptr = array( [0, 2, 4, 6], dtype='int64' )
 ##
-##        a = csr_matrix( (data, col, ptr), dims = (3,3) )
+##        a = csr_matrix( (data, col, ptr), shape = (3,3) )
 ##
 ##        b = matrix([[0,1,2],
 ##                    [4,3,0],
@@ -766,7 +769,7 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve, _TestArithmetic,
         data    = arange( 5 )
         indices = array( [7, 2, 1, 5, 4] )
         indptr  = array( [0, 3, 5] )
-        asp = csr_matrix( (data, indices, indptr), dims = (2,10) )
+        asp = csr_matrix( (data, indices, indptr), shape=(2,10) )
         bsp = asp.copy()
         asp.sort_indices( )
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
@@ -838,7 +841,7 @@ class TestCSC(_TestCommon, _TestGetSet, _TestSolve, _TestArithmetic,
         data = arange( 5 )
         row = array( [7, 2, 1, 5, 4] )
         ptr = [0, 3, 5]
-        asp = csc_matrix( (data, row, ptr), dims = (10,2) )
+        asp = csc_matrix( (data, row, ptr), shape=(10,2) )
         bsp = asp.copy()
         asp.sort_indices() 
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])

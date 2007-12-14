@@ -20,6 +20,8 @@ class dok_matrix(spmatrix, dict):
         This can be a tuple of dimensions (M, N) or a (dense) array
         to copy.
         """
+        #TODO deprecate argument A in favor of arg1 style
+
         dict.__init__(self)
         spmatrix.__init__(self,shape)
         self.dtype = getdtype(dtype, A, default=float)
@@ -536,7 +538,7 @@ class dok_matrix(spmatrix, dict):
         else:
             data    = asarray(self.values(), dtype=self.dtype)
             indices = asarray(self.keys(), dtype=intc).T
-            return coo_matrix((data,indices),dims=self.shape,dtype=self.dtype)
+            return coo_matrix((data,indices),shape=self.shape,dtype=self.dtype)
 
     def todok(self,copy=False):
         if copy:

@@ -3,11 +3,12 @@
 __all__ = ['coo_matrix', 'isspmatrix_coo']
 
 from itertools import izip
+from warnings import warn 
 
 from numpy import array, asarray, empty, intc
 
 from sparsetools import cootocsr, cootocsc
-from base import spmatrix
+from base import spmatrix, isspmatrix
 from sputils import upcast, to_native, isshape, getdtype
 
 class coo_matrix(spmatrix):
@@ -16,10 +17,12 @@ class coo_matrix(spmatrix):
     COO matrices are created either as:
         A = coo_matrix( (m, n), [dtype])
     for a zero matrix, or as:
+        A = coo_matrix(S)
+    where S is a sparse matrix, or as:
         A = coo_matrix(M)
     where M is a dense matrix or rank 2 ndarray, or as:
-        A = coo_matrix((obj, ij), [dims])
-    where the dimensions are optional.  If supplied, we set (M, N) = dims.
+        A = coo_matrix((obj, ij), [shape])
+    where the dimensions are optional.  If supplied, we set (M, N) = shape.
     If not supplied, we infer these from the index arrays:
         ij[0][:] and ij[1][:]
 
@@ -37,8 +40,13 @@ class coo_matrix(spmatrix):
         of finite element matrices and the like.
 
     """
-    def __init__(self, arg1, dims=None, dtype=None):
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, dims=None):
         spmatrix.__init__(self)
+
+        if dims is not None:
+            warn("dims is deprecated, use shape instead", DeprecationWarning)
+            shape=dims
+
         if isinstance(arg1, tuple):
             if isshape(arg1):
                 M, N = arg1
@@ -58,44 +66,54 @@ class coo_matrix(spmatrix):
                 except TypeError:
                     raise TypeError, "invalid input format"
 
-                self.row = asarray(ij[0])
-                self.col = asarray(ij[1])
-                self.data = asarray(obj)
+                self.row = array(ij[0],copy=copy)
+                self.col = array(ij[1],copy=copy)
+                self.data = array(obj,copy=copy)
 
-                if dims is None:
+                if shape is None:
                     if len(self.row) == 0 or len(self.col) == 0:
                         raise ValueError, "cannot infer dimensions from zero sized index arrays"
                     M = self.row.max() + 1
                     N = self.col.max() + 1
                     self.shape = (M, N)
                 else:
-                    # Use 2 steps to ensure dims has length 2.
-                    M, N = dims
+                    # Use 2 steps to ensure shape has length 2.
+                    M, N = shape
                     self.shape = (M, N)
 
         elif arg1 is None:
             # Initialize an empty matrix.
-            if not isinstance(dims, tuple) or not isintlike(dims[0]):
+            if not isinstance(shape, tuple) or not isintlike(shape[0]):
                 raise TypeError, "dimensions not understood"
-            warnings.warn('coo_matrix(None, dims=(M,N)) is deprecated, ' \
-                            'use coo_matrix( (M,N) ) instead', \
-                            DeprecationWarning)
-            self.shape = dims
+            warn('coo_matrix(None, shape=(M,N)) is deprecated, ' \
+                    'use coo_matrix( (M,N) ) instead', DeprecationWarning)
+            self.shape = shape
             self.data = array([],getdtype(dtype, default=float))
             self.row = array([],dtype=intc)
             self.col = array([],dtype=intc)
         else:
-            #dense argument
-            try:
-                M = asarray(arg1)
-            except:
-                raise TypeError, "invalid input format"
+            if isspmatrix(arg1):
+                if isspmatrix_coo and copy:
+                    A = arg1.copy()
+                else:
+                    A = arg1.tocoo()
 
-            if len(M.shape) != 2:
-                raise TypeError, "expected rank 2 array or matrix"
-            self.shape = M.shape
-            self.row,self.col = (M != 0).nonzero()
-            self.data  = M[self.row,self.col]
+                self.row  = A.row
+                self.col  = A.col
+                self.data = A.data
+                self.shape = A.shape
+            else:
+                #dense argument
+                try:
+                    M = asarray(arg1)
+                except:
+                    raise TypeError, "invalid input format"
+    
+                if len(M.shape) != 2:
+                    raise TypeError, "expected rank 2 array or matrix"
+                self.shape = M.shape
+                self.row,self.col = (M != 0).nonzero()
+                self.data  = M[self.row,self.col]
 
         self._check()
 
@@ -116,11 +134,11 @@ class coo_matrix(spmatrix):
 
         # index arrays should have integer data types
         if self.row.dtype.kind != 'i':
-            warnings.warn("row index array has non-integer dtype (%s)  " \
-                            % self.row.dtype.name )
+            warn("row index array has non-integer dtype (%s)  " \
+                    % self.row.dtype.name )
         if self.col.dtype.kind != 'i':
-            warnings.warn("col index array has non-integer dtype (%s) " \
-                            % self.col.dtype.name )
+            warn("col index array has non-integer dtype (%s) " \
+                    % self.col.dtype.name )
        
         # only support 32-bit ints for now
         self.row  = self.row.astype('intc')
@@ -147,6 +165,10 @@ class coo_matrix(spmatrix):
 
     def getdata(self, num):
         return self.data[num]
+    
+    def transpose(self,copy=False):
+        M,N = self.shape
+        return coo_matrix((self.data,(self.col,self.row)),(N,M),copy=copy)
 
     def tocsc(self):
         from csc import csc_matrix

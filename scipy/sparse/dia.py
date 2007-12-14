@@ -180,7 +180,7 @@ class dia_matrix(spmatrix):
         row,col,data = row.reshape(-1),col.reshape(-1),data.reshape(-1)
        
         from coo import coo_matrix
-        return coo_matrix((data,(row,col)),dims=self.shape)
+        return coo_matrix((data,(row,col)),shape=self.shape)
 
 
 

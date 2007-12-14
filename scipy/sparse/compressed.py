@@ -3,6 +3,8 @@
 
 __all__ = []
 
+from warnings import warn
+
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
         empty, hstack, isscalar, ndarray, shape, searchsorted
@@ -24,8 +26,12 @@ def resize1d(arr, newlen):
 class _cs_matrix(spmatrix):
     """base matrix class for compressed row and column oriented matrices"""
     
-    def __init__(self, arg1, dims=None, dtype=None, copy=False):
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, dims=None):
         spmatrix.__init__(self)
+
+        if dims is not None:
+            warn("dims is deprecated, use shape instead", DeprecationWarning)
+            shape=dims
 
         if isdense(arg1):
             # Convert the dense array or matrix arg1 to sparse format
@@ -58,7 +64,7 @@ class _cs_matrix(spmatrix):
                     # Try interpreting it as (data, ij)
                     (data, ij) = arg1
                     assert isinstance(ij, ndarray) and (rank(ij) == 2) \
-                           and (shape(ij) == (2, len(data)))
+                           and (ij.shape == (2, len(data)))
                 except (AssertionError, TypeError, ValueError, AttributeError):
                     try:
                         # Try interpreting it as (data, indices, indptr)
@@ -73,7 +79,7 @@ class _cs_matrix(spmatrix):
                 else:
                     # (data, ij) format
                     from coo import coo_matrix
-                    other = coo_matrix((data, ij), dims=dims )
+                    other = coo_matrix((data, ij), shape=shape )
                     other = self._tothis(other)
                     self._set_self( other )
 
@@ -82,8 +88,8 @@ class _cs_matrix(spmatrix):
                     " %s_matrix constructor" % self.format
 
         # Read matrix dimensions given, if any
-        if dims is not None:
-            self.shape = dims   # spmatrix will check for errors
+        if shape is not None:
+            self.shape = shape   # spmatrix will check for errors
         else:
             if self.shape is None:
                 # shape not already set, try to infer dimensions
@@ -135,11 +141,11 @@ class _cs_matrix(spmatrix):
 
         # index arrays should have integer data types
         if self.indptr.dtype.kind != 'i':
-            warnings.warn("indptr array has non-integer dtype (%s)"  \
-                                            % self.indptr.dtype.name )
+            warn("indptr array has non-integer dtype (%s)" \
+                    % self.indptr.dtype.name )
         if self.indices.dtype.kind != 'i':
-            warnings.warn("indices array has non-integer dtype (%s)" \
-                                            % self.indices.dtype.name )
+            warn("indices array has non-integer dtype (%s)" \
+                    % self.indices.dtype.name )
 
         # only support 32-bit ints for now
         self.indptr  = self.indptr.astype('intc')
@@ -381,7 +387,7 @@ class _cs_matrix(spmatrix):
     def copy(self):
         return self._with_data(self.data.copy(),copy=True)
 
-    def _get_slice(self, i, start, stop, stride, dims):
+    def _get_slice(self, i, start, stop, stride, shape):
         """Returns a view of the elements [i, myslice.start:myslice.stop].
         """
         if stride != 1:
@@ -398,7 +404,7 @@ class _cs_matrix(spmatrix):
         index = self.indices[indices] - start
         data   = self.data[indices]
         indptr = numpy.array([0, len(indices)])
-        return self.__class__((data, index, indptr), dims=dims, \
+        return self.__class__((data, index, indptr), shape=shape, \
                               dtype=self.dtype)
 
 
@@ -454,9 +460,9 @@ class _cs_matrix(spmatrix):
     def ensure_sorted_indices(self, inplace=False):
         """Return a copy of this matrix where the column indices are sorted
         """
-        warnings.warn('ensure_sorted_indices is deprecated, ' \
-                      'use sorted_indices() or sort_indices() instead', \
-                      DeprecationWarning)
+        warn('ensure_sorted_indices is deprecated, ' \
+                'use sorted_indices() or sort_indices() instead', \
+                DeprecationWarning)
         
         if inplace:
             self.sort_indices()
@@ -531,10 +537,10 @@ class _cs_matrix(spmatrix):
         """
         if copy:
             return self.__class__((data,self.indices.copy(),self.indptr.copy()), \
-                                   dims=self.shape,dtype=data.dtype)
+                                   shape=self.shape,dtype=data.dtype)
         else:
             return self.__class__((data,self.indices,self.indptr), \
-                                   dims=self.shape,dtype=data.dtype)
+                                   shape=self.shape,dtype=data.dtype)
 
     def _binopt(self, other, op, in_shape=None, out_shape=None):
         """apply the binary operation fn to two sparse matrices"""
@@ -551,6 +557,6 @@ class _cs_matrix(spmatrix):
         indptr, ind, data = fn(in_shape[0], in_shape[1], \
                                self.indptr, self.indices, self.data,
                                other.indptr, other.indices, other.data)
-        return self.__class__((data, ind, indptr), dims=out_shape)
+        return self.__class__((data, ind, indptr), shape=out_shape)
 
 

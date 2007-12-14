@@ -3,6 +3,7 @@
 
 __all__ = ['csc_matrix', 'isspmatrix_csc']
 
+from warnings import warn
 
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
@@ -39,8 +40,8 @@ class csc_matrix(_cs_matrix):
     
     def __getattr__(self, attr):
         if attr == 'rowind':
-            warnings.warn("rowind attribute no longer in use. Use .indices instead",
-                          DeprecationWarning)
+            warn("rowind attribute no longer in use. Use .indices instead",
+                    DeprecationWarning)
             return self.indices
         else:
             return _cs_matrix.__getattr__(self, attr)
@@ -177,7 +178,7 @@ class csc_matrix(_cs_matrix):
         aux = _cs_matrix._get_submatrix( self, self.shape[1], self.shape[0],
                                          slice1, slice0 )
         nr, nc = aux[3:]
-        return self.__class__( aux[:3], dims = (nc, nr) )
+        return self.__class__( aux[:3], shape = (nc, nr) )
     
     # these functions are used by the parent class (_cs_matrix)
     # to remove redudancy between csc_matrix and csr_matrix
@@ -185,6 +186,9 @@ class csc_matrix(_cs_matrix):
         """swap the members of x if this is a column-oriented matrix
         """
         return (x[1],x[0])
+
+    def _otherformat(self):
+        return "csr"
 
     def _toother(self):
         return self.tocsr()

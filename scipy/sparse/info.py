@@ -59,7 +59,7 @@ Example:
     >>> I = array([0,3,1,0])
     >>> J = array([0,3,1,2])
     >>> V = array([4,5,7,9])
-    >>> A = sparse.coo_matrix((V,(I,J)),dims=(4,4))
+    >>> A = sparse.coo_matrix((V,(I,J)),shape=(4,4))
 
     Notice that the indices do not need to be sorted.
 
@@ -67,7 +67,7 @@ Example:
     >>> I = array([0,0,1,3,1,0,0])
     >>> J = array([0,2,1,3,1,0,0])
     >>> V = array([1,1,1,1,1,1,1])
-    >>> B = sparse.coo_matrix((V,(I,J)),dims=(4,4)).tocsr()
+    >>> B = sparse.coo_matrix((V,(I,J)),shape=(4,4)).tocsr()
 
     This is useful for constructing finite-element stiffness and
     mass matrices.
