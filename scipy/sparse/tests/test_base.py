@@ -16,7 +16,7 @@ Run tests if sparse is not installed:
 
 import numpy
 from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, \
-        asarray, vstack
+        asarray, vstack, ndarray
 
 import random
 from numpy.testing import *
@@ -73,6 +73,10 @@ class _TestCommon:
         assert_array_equal(self.dat.mean(axis=None), self.datsp.mean(axis=None))
         assert_array_equal(self.dat.mean(axis=0), self.datsp.mean(axis=0))
         assert_array_equal(self.dat.mean(axis=1), self.datsp.mean(axis=1))
+
+    def check_fromdense(self):
+        A = matrix([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
+        assert_array_equal(self.spmatrix(A).todense(),A)
 
     def check_todense(self):
         chk = self.datsp.todense()
@@ -186,6 +190,11 @@ class _TestCommon:
         assert_equal((M * array([1,2,3])).shape,(4,))
         assert_equal((M * array([[1],[2],[3]])).shape,(4,1))
         assert_equal((M * matrix([[1],[2],[3]])).shape,(4,1))
+
+        #check result type
+        assert(isinstance( M * array([1,2,3]), ndarray))
+        assert(isinstance( M * matrix([1,2,3]).T, matrix))
+        
 
         #ensure exception is raised for improper dimensions
         bad_vecs = [array([1,2]), array([1,2,3,4]), array([[1],[2]]),
@@ -384,6 +393,8 @@ class _TestCommon:
 
         for A in L:
             assert_array_equal(numpy.diag(A),extract_diagonal(self.spmatrix(A)))
+
+
 class _TestGetSet:
     def check_setelement(self):
         a = self.datsp - self.datsp
@@ -406,7 +417,8 @@ class _TestSolve:
         Wagner for a 64-bit machine, 02 March 2005 (EJS)
         """
         n = 20
-        A = self.spmatrix((n,n), dtype=complex)
+        numpy.random.seed(0) #make tests repeatable
+        A = zeros((n,n), dtype=complex)
         x = numpy.random.rand(n)
         y = numpy.random.rand(n-1)+1j*numpy.random.rand(n-1)
         r = numpy.random.rand(n)
@@ -415,13 +427,13 @@ class _TestSolve:
         for i in range(len(y)):
             A[i,i+1] = y[i]
             A[i+1,i] = numpy.conjugate(y[i])
-        B = A.tocsc()
-        xx = splu(B).solve(r)
-        # Don't actually test the output until we know what it should be ...
+        A = self.spmatrix(A)
+        x = splu(A).solve(r)
+        assert_almost_equal(A*x,r)
 
 
 class _TestHorizSlicing:
-    """Tests horizontal slicing (e.g. [:, 0]).  Tests for individual sparse
+    """Tests horizontal slicing (e.g. [0, :]).  Tests for individual sparse
     matrix types that implement this should derive from this class.
     """
     def check_get_horiz_slice(self):
@@ -488,7 +500,7 @@ class _TestVertSlicing:
             caught += 1
         assert caught == 2
 
-class _test_slicing:
+class _TestBothSlicing:
     """Tests vertical and horizontal slicing (e.g. [:,0:2]). Tests for
     individual sparse matrix types that implement this should derive from this
     class.
@@ -506,7 +518,7 @@ class _test_slicing:
         assert_array_equal(E[1:2, 1:2], F[1:2, 1:2].todense())
         assert_array_equal(E[:, 1:], F[:, 1:].todense())
 
-class _test_fancy_indexing:
+class _TestFancyIndexing:
     """Tests fancy indexing features.  The tests for any matrix formats
     that implement these features should derive from this class.
     """
@@ -528,7 +540,7 @@ class _test_fancy_indexing:
         # assert_array_equal(B[(1,2,3),:], A[(1,2,3),:].todense())
 
 
-class _test_arith:
+class _TestArithmetic:
     """
     Test real/complex arithmetic
     """
@@ -638,10 +650,7 @@ class _test_arith:
                 assert_array_equal(D2,Asp - C)
                 assert_array_equal(D3,Bsp - C)
                 assert_array_equal(D1,A - Bsp)          #check dense - sparse
-                try:
-                    assert_array_equal(D2,A - Csp)
-                except:
-                    import pdb; pdb.set_trace()
+                assert_array_equal(D2,A - Csp)
                 assert_array_equal(D3,B - Csp)
 
 
@@ -679,10 +688,9 @@ class _test_arith:
 
 
 
-
-class TestCSR(_TestCommon, _TestHorizSlicing, _TestVertSlicing,
-              _TestGetSet, _TestSolve,
-              _test_slicing, _test_arith, NumpyTestCase):
+class TestCSR(_TestCommon, _TestGetSet, _TestSolve, _TestArithmetic,  
+        _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
+        NumpyTestCase):
     spmatrix = csr_matrix
 
     def check_constructor1(self):
@@ -761,9 +769,7 @@ class TestCSR(_TestCommon, _TestHorizSlicing, _TestVertSlicing,
         bsp = asp.copy()
         asp.sort_indices( )
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
-        for ir in range( asp.shape[0] ):
-            for ic in range( asp.shape[1] ):
-                assert_equal( asp[ir, ic], bsp[ir, ic] )
+        assert_array_equal(asp.todense(),bsp.todense())
 
     def check_get_submatrix(self):
         a = csr_matrix( array([[1,2,3,4],[1,2,3,5],[0,2,0,1]]) )
@@ -778,9 +784,9 @@ class TestCSR(_TestCommon, _TestHorizSlicing, _TestVertSlicing,
         assert b.shape == (2,2)
         assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
-class TestCSC(_TestCommon, _TestHorizSlicing, _TestVertSlicing,
-              _TestGetSet, _TestSolve,
-               _test_slicing, _test_arith, NumpyTestCase):
+class TestCSC(_TestCommon, _TestGetSet, _TestSolve, _TestArithmetic,  
+        _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
+        NumpyTestCase):
     spmatrix = csc_matrix
 
     def check_constructor1(self):
@@ -835,9 +841,7 @@ class TestCSC(_TestCommon, _TestHorizSlicing, _TestVertSlicing,
         bsp = asp.copy()
         asp.sort_indices() 
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
-        for ir in range( asp.shape[0] ):
-            for ic in range( asp.shape[1] ):
-                assert_equal( asp[ir, ic], bsp[ir, ic] )
+        assert_array_equal(asp.todense(),bsp.todense())
 
     def check_get_submatrix(self):
         a = csc_matrix( array([[1,2,3,4],[1,2,3,5],[0,2,0,1]]) )
@@ -959,8 +963,9 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, NumpyTestCase):
         assert_equal(caught,5)
 
 
-class TestLIL(_TestCommon, _TestHorizSlicing, _TestGetSet, _TestSolve,
-                NumpyTestCase, ParametricTestCase):
+class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing, 
+        _TestBothSlicing, _TestGetSet, _TestSolve, _TestArithmetic, 
+        NumpyTestCase):
     spmatrix = lil_matrix
 
     B = lil_matrix((4,3))
