@@ -7,7 +7,7 @@ import random
 from numpy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
-        coo_matrix, lil_matrix, spidentity, spdiags
+        coo_matrix, lil_matrix, dia_matrix, spidentity, spdiags
 from scipy.linsolve import splu
 restore_path()
 
@@ -32,10 +32,9 @@ class TestSparseTools(NumpyTestCase):
 
     def test_matvec(self,level=5):
         matrices = []
-        matrices.append(('Identity',spidentity(10**5)))
-        matrices.append(('Poisson5pt', poisson2d(250)))
-        matrices.append(('Poisson5pt', poisson2d(500)))
+        matrices.append(('Identity', spidentity(10**5,format='csr')))
         matrices.append(('Poisson5pt', poisson2d(1000)))
+        matrices.append(('Poisson5pt', dia_matrix(poisson2d(1000))))
 
         print
         print '                 Sparse Matrix Vector Product'
@@ -45,8 +44,6 @@ class TestSparseTools(NumpyTestCase):
         fmt = '  %3s | %12s | %20s | %8d |  %6.1f '
 
         for name,A in matrices:
-            A = A.tocsr()
-            
             x = ones(A.shape[1],dtype=A.dtype)
 
             y = A*x  #warmup

@@ -58,6 +58,7 @@ class dok_matrix(spmatrix, dict):
         nnz = self.getnnz()
         keys = self.keys()
         keys.sort()
+        #TODO why does dok_matrix wipe out .maxprint?
         if nnz > self.maxprint:
             for k in xrange(self.maxprint / 2):
                 key = keys[k]

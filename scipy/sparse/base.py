@@ -374,6 +374,9 @@ class spmatrix(object):
     def tolil(self):
         return self.tocsr().tolil()
 
+    def todia(self):
+        return self.tocoo().todia()
+
     def toself(self, copy=False):
         if copy:
             new = self.copy()

@@ -22,7 +22,7 @@ import random
 from numpy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
-        coo_matrix, lil_matrix, extract_diagonal, speye
+        coo_matrix, lil_matrix, dia_matrix, extract_diagonal, speye
 from scipy.linsolve import splu
 restore_path()
 
@@ -324,6 +324,7 @@ class _TestCommon:
     def check_large(self):
         # Create a 100x100 matrix with 100 non-zero elements
         # and play around with it
+        #TODO make this use self.spmatrix or move it elsewhere
         A = dok_matrix((100,100))
         for k in range(100):
             i = random.randrange(100)
@@ -1151,6 +1152,13 @@ class TestCOO(_TestCommon, NumpyTestCase):
                            [0,4,0,0]])
         coo = coo_matrix(mat)
         assert_array_equal(mat,coo.todense())
+
+class TestDIA(_TestCommon, _TestArithmetic, NumpyTestCase):
+    spmatrix = dia_matrix
+
+    def check_constructor1(self):
+        pass
+        #TODO add test
 
                 
 if __name__ == "__main__":

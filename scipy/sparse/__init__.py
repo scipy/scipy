@@ -7,6 +7,7 @@ from compressed import *
 from lil import *
 from dok import *
 from coo import *
+from dia import *
 
 from construct import *
 from spfuncs import *
