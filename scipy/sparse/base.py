@@ -379,15 +379,15 @@ class spmatrix(object):
     def todia(self):
         return self.tocoo().todia()
 
-    def toself(self, copy=False):
-        if copy:
-            new = self.copy()
-        else:
-            new = self
-        return new
+#    def toself(self, copy=False):
+#        if copy:
+#            new = self.copy()
+#        else:
+#            new = self
+#        return new
 
     def copy(self):
-        return self.tocsr().copy()
+        return self.__class__(self,copy=True)
 
     def sum(self, axis=None):
         """Sum the matrix over the given axis.  If the axis is None, sum

@@ -158,7 +158,10 @@ class csr_matrix(_cs_matrix):
         return lil
 
     def tocsr(self, copy=False):
-        return self.toself(copy)
+        if copy:
+            return self.copy()
+        else:
+            return self
 
     def tocsc(self):
         indptr  = empty(self.shape[1] + 1, dtype=intc)

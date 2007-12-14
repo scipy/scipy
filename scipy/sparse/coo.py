@@ -93,15 +93,17 @@ class coo_matrix(spmatrix):
             self.col = array([],dtype=intc)
         else:
             if isspmatrix(arg1):
-                if isspmatrix_coo and copy:
-                    A = arg1.copy()
+                if isspmatrix_coo(arg1) and copy:
+                    self.row   = arg1.row.copy()
+                    self.col   = arg1.col.copy()
+                    self.data  = arg1.data.copy()
+                    self.shape = arg1.shape
                 else:
-                    A = arg1.tocoo()
-
-                self.row  = A.row
-                self.col  = A.col
-                self.data = A.data
-                self.shape = A.shape
+                    coo = arg1.tocoo()
+                    self.row   = coo.row
+                    self.col   = coo.col
+                    self.data  = coo.data
+                    self.shape = coo.shape
             else:
                 #dense argument
                 try:
@@ -199,9 +201,13 @@ class coo_matrix(spmatrix):
                      indptr, indices, data)
 
             return csr_matrix((data, indices, indptr), self.shape)
+    
 
     def tocoo(self, copy=False):
-        return self.toself(copy)
+        if copy:
+            return self.copy()
+        else:
+            return self
 
     def todok(self):
         from dok import dok_matrix

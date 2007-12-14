@@ -56,19 +56,21 @@ class dia_matrix(spmatrix):
                     if shape is None:
                         raise ValueError,'expected a shape argument'
                     self.diags   = asarray(arg1[0],dtype=dtype)
-                    self.offsets = asarray(arg1[1],dtype='i').squeeze()
+                    self.offsets = asarray(arg1[1],dtype='i')
                     self.shape   = shape
 
         #check format
+        if self.offsets.ndim != 1:
+            raise ValueError,'offsets array must have rank 1'
+
         if self.diags.ndim != 2:
-            raise ValueError,'expected rank 2 array for argument diags'
+            raise ValueError,'diags array must have rank 2'
 
         if self.diags.shape[0] != len(self.offsets):
             raise ValueError,'number of diagonals (%d) ' \
                     'does not match the number of offsets (%d)' \
                     % (self.diags.shape[0], len(self.offsets))
         
-
         if len(Set(self.offsets)) != len(self.offsets):
             raise ValueError,'offset array contains duplicate values'
 
@@ -157,12 +159,18 @@ class dia_matrix(spmatrix):
 
         return y
 
+    def todia(self,copy=False):
+        if copy:
+            return self.copy()
+        else:
+            return self
+
     def tocsr(self):
-        #could be optimized
+        #TODO optimize COO->CSR
         return self.tocoo().tocsr()
 
     def tocsc(self):
-        #could be optimized
+        #TODO optimize COO->CSC
         return self.tocoo().tocsc()
 
     def tocoo(self):

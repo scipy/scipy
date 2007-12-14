@@ -150,9 +150,11 @@ class csc_matrix(_cs_matrix):
         col = searchsorted(self.indptr, ind+1)-1
         return (row, col)
 
-
     def tocsc(self, copy=False):
-        return self.toself(copy)
+        if copy:
+            return self.copy()
+        else:
+            return self
     
     def tocsr(self):
         indptr  = empty(self.shape[0] + 1, dtype=intc)

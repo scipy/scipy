@@ -1,7 +1,7 @@
 """general tests and simple benchmarks for the sparse module"""
 
 import numpy
-from numpy import ones
+from numpy import ones, array, asarray, empty
 
 import random
 from numpy.testing import *
@@ -11,20 +11,28 @@ from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
 from scipy.linsolve import splu
 restore_path()
 
-
-def poisson2d(N,epsilon=1.0):
+#TODO move this to a matrix gallery and add unittests
+def poisson2d(N,dtype='d',format=None):
     """
-    Return a sparse CSR matrix for the 2d poisson problem
+    Return a sparse matrix for the 2d poisson problem
     with standard 5-point finite difference stencil on a
     square N-by-N grid.
     """
+    if N == 1:
+        diags   = asarray( [[4]],dtype=dtype)
+        return dia_matrix((diags,[0]), shape=(1,1)).asformat(format)
 
-    D = (2 + 2*epsilon)*ones(N*N)
-    T =  -epsilon * ones(N*N)
-    O =  -ones(N*N)
-    T[N-1::N] = 0
-    return spdiags([D,O,T,T,O],[0,-N,-1,1,N],N*N,N*N).tocoo().tocsr() #eliminate explicit zeros
+    offsets = array([0,-N,N,-1,1])
 
+    diags = empty((5,N**2),dtype=dtype)
+
+    diags[0]  =  4 #main diagonal
+    diags[1:] = -1 #all offdiagonals
+
+    diags[3,N-1::N] = 0  #first lower diagonal
+    diags[4,N::N] = 0  #first upper diagonal
+
+    return dia_matrix((diags,offsets),shape=(N**2,N**2)).asformat(format)
 
 import time
 class TestSparseTools(NumpyTestCase):
@@ -33,8 +41,8 @@ class TestSparseTools(NumpyTestCase):
     def test_matvec(self,level=5):
         matrices = []
         matrices.append(('Identity', spidentity(10**5,format='csr')))
-        matrices.append(('Poisson5pt', poisson2d(1000)))
-        matrices.append(('Poisson5pt', dia_matrix(poisson2d(1000))))
+        matrices.append(('Poisson5pt', poisson2d(1000,format='csr')))
+        matrices.append(('Poisson5pt', poisson2d(1000,format='dia')))
 
         print
         print '                 Sparse Matrix Vector Product'

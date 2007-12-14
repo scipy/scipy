@@ -29,6 +29,7 @@ restore_path()
 
 #TODO test spmatrix(DENSE) and spmatrix(SPARSE) for all combos
 #TODO check that invalid shape in constructor raises exception
+#TODO check that spmatrix( ... , copy=X ) is respected
 class _TestCommon:
     """test common functionality shared by all sparse formats"""
 
@@ -110,41 +111,23 @@ class _TestCommon:
     def check_mul_scalar(self):
         assert_array_equal(self.dat*2,(self.datsp*2).todense())
         assert_array_equal(self.dat*17.3,(self.datsp*17.3).todense())
-
-    def check_imul_scalar(self):
-        a = self.datsp.copy()
-        a *= 2
-        assert_array_equal(self.dat*2,a.todense())
-
-        a = self.datsp.copy()
-        a *= 17.3
-        assert_array_equal(self.dat*17.3,a.todense())
-
-    def check_idiv_scalar(self):
-        a = self.datsp.copy()
-        a /= 2
-        assert_array_equal(self.dat/2,a.todense())
-
-        a = self.datsp.copy()
-        a /= 17.3
-        assert_array_equal(self.dat/17.3,a.todense())
-
+    
     def check_rmul_scalar(self):
         assert_array_equal(2*self.dat,(2*self.datsp).todense())
         assert_array_equal(17.3*self.dat,(17.3*self.datsp).todense())
 
     def check_add(self):
-        a = self.datsp
-        b = self.datsp.copy()
-        b[0,2] = 2.0
-        c = a + b
-        assert_array_equal(c.todense(),[[2,0,2,4],[6,0,2,0],[0,4,0,0]])
+        a = self.dat.copy()
+        a[0,2] = 2.0
+        b = self.datsp
+        c = b + a
+        assert_array_equal(c,[[2,0,2,4],[6,0,2,0],[0,4,0,0]])
 
     def check_radd(self):
-        a = self.datsp
-        b = self.datsp.copy()
-        b[0,2] = 2.0
-        c = a.todense() + b
+        a = self.dat.copy()
+        a[0,2] = 2.0
+        b = self.datsp
+        c = a + b
         assert_array_equal(c,[[2,0,2,4],[6,0,2,0],[0,4,0,0]])
 
     def check_sub(self):
@@ -165,10 +148,10 @@ class _TestCommon:
         assert_array_equal(self.datsp - A.todense(),self.dat - A.todense())
 
     def check_elmul(self):
-        a = self.datsp
-        b = self.datsp.copy()
-        b[0,2] = 2.0
-        c = a ** b
+        temp = self.dat.copy()
+        temp[0,2] = 2.0
+        temp = self.spmatrix(temp)
+        c = temp ** self.datsp 
         assert_array_equal(c.todense(),[[1,0,0,4],[9,0,1,0],[0,4,0,0]])
 
     def check_eldiv(self):
@@ -368,6 +351,29 @@ class _TestCommon:
     def check_copy(self):
         """ Check whether the copy=True and copy=False keywords work
         """
+        A = self.datsp
+
+        #check that copy preserves format
+        assert_equal(A.copy().format, A.format)
+        assert_equal(A.__class__(A,copy=True).format,  A.format)
+        assert_equal(A.__class__(A,copy=False).format, A.format)
+        
+        assert_equal(A.copy().todense(), A.todense())
+        assert_equal(A.__class__(A,copy=True).todense(),  A.todense())
+        assert_equal(A.__class__(A,copy=False).todense(), A.todense())
+
+        #check that XXX_matrix.toXXX() works
+        toself = getattr(A,'to' + A.format)
+        assert_equal(toself().format, A.format)
+        assert_equal(toself(copy=True).format, A.format)
+        assert_equal(toself(copy=False).format, A.format)
+        
+        assert_equal(toself().todense(), A.todense())
+        assert_equal(toself(copy=True).todense(), A.todense())
+        assert_equal(toself(copy=False).todense(), A.todense())
+        
+
+        #TODO how can we check whether the data is copied?
         pass
 
     # Eventually we'd like to allow matrix products between dense
@@ -397,6 +403,27 @@ class _TestCommon:
 
         for A in L:
             assert_array_equal(numpy.diag(A),extract_diagonal(self.spmatrix(A)))
+
+
+class _TestInplaceArithmetic:
+    def check_imul_scalar(self):
+        a = self.datsp.copy()
+        a *= 2
+        assert_array_equal(self.dat*2,a.todense())
+
+        a = self.datsp.copy()
+        a *= 17.3
+        assert_array_equal(self.dat*17.3,a.todense())
+
+    def check_idiv_scalar(self):
+        a = self.datsp.copy()
+        a /= 2
+        assert_array_equal(self.dat/2,a.todense())
+
+        a = self.datsp.copy()
+        a /= 17.3
+        assert_array_equal(self.dat/17.3,a.todense())
+
 
 
 class _TestGetSet:
@@ -692,7 +719,8 @@ class _TestArithmetic:
 
 
 
-class TestCSR(_TestCommon, _TestGetSet, _TestSolve, _TestArithmetic,  
+class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
+        _TestInplaceArithmetic, _TestArithmetic,  
         _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
         NumpyTestCase):
     spmatrix = csr_matrix
@@ -788,7 +816,8 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve, _TestArithmetic,
         assert b.shape == (2,2)
         assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
-class TestCSC(_TestCommon, _TestGetSet, _TestSolve, _TestArithmetic,  
+class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
+        _TestInplaceArithmetic, _TestArithmetic,  
         _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
         NumpyTestCase):
     spmatrix = csc_matrix
@@ -968,7 +997,8 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, NumpyTestCase):
 
 
 class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing, 
-        _TestBothSlicing, _TestGetSet, _TestSolve, _TestArithmetic, 
+        _TestBothSlicing, _TestGetSet, _TestSolve,
+        _TestArithmetic, _TestInplaceArithmetic,
         NumpyTestCase):
     spmatrix = lil_matrix
 
