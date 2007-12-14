@@ -44,17 +44,17 @@ def augment_candidates(AggOp, old_Q, old_R, new_candidate):
     c = new_candidate.reshape(-1)[diff(AggOp.indptr) == 1]  #eliminate DOFs that aggregation misses
     threshold = 1e-10 * abs(c).max()   # cutoff for small basis functions
 
-    X = csr_matrix((c,AggOp.indices,AggOp.indptr),dims=AggOp.shape)
+    X = csr_matrix((c,AggOp.indices,AggOp.indptr),shape=AggOp.shape)
 
     #orthogonalize X against previous
     for i in range(K):
         old_c = ascontiguousarray(Q_data[:,:,i].reshape(-1))
-        D_AtX = csr_matrix((old_c*X.data,X.indices,X.indptr),dims=X.shape).sum(axis=0).A.flatten() #same as diagonal of A.T * X
+        D_AtX = csr_matrix((old_c*X.data,X.indices,X.indptr),shape=X.shape).sum(axis=0).A.flatten() #same as diagonal of A.T * X
         R[:,i,K] = D_AtX
         X.data -= D_AtX[X.indices] * old_c
 
     #normalize X
-    D_XtX = csr_matrix((X.data**2,X.indices,X.indptr),dims=X.shape).sum(axis=0).A.flatten() #same as diagonal of X.T * X
+    D_XtX = csr_matrix((X.data**2,X.indices,X.indptr),shape=X.shape).sum(axis=0).A.flatten() #same as diagonal of X.T * X
     col_norms = sqrt(D_XtX)
     mask = col_norms < threshold  # find small basis functions
     col_norms[mask] = 0           # and set them to zero
@@ -69,7 +69,7 @@ def augment_candidates(AggOp, old_Q, old_R, new_candidate):
     Q_data = Q_data.reshape(-1)  #TODO BSR change
     R = R.reshape(-1,K+1)
 
-    Q = csr_matrix((Q_data,Q_indices,Q_indptr),dims=(AggOp.shape[0],(K+1)*AggOp.shape[1]))
+    Q = csr_matrix((Q_data,Q_indices,Q_indptr),shape=(AggOp.shape[0],(K+1)*AggOp.shape[1]))
 
     return Q,R
 
@@ -249,7 +249,7 @@ class adaptive_sa_solver:
             indptr = hstack((indptr,indptr[:,-1].reshape(-1,1)))
             indptr = indptr.reshape(-1)
             indptr = hstack((indptr,indptr[-1:])) #duplicate last element
-            return csr_matrix((P.data,P.indices,indptr),dims=(K*P.shape[0]/(K-1),P.shape[1]))
+            return csr_matrix((P.data,P.indices,indptr),shape=(K*P.shape[0]/(K-1),P.shape[1]))
 
         for i in range(len(As) - 2):
             T,R = augment_candidates(AggOps[i], Ts[i], Bs[i+1], x)

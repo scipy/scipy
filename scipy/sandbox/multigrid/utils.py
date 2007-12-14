@@ -112,7 +112,7 @@ def infinity_norm(A):
 
     if isspmatrix_csr(A) or isspmatrix_csc(A):
         #avoid copying index and ptr arrays
-        abs_A = A.__class__((abs(A.data),A.indices,A.indptr),dims=A.shape)
+        abs_A = A.__class__((abs(A.data),A.indices,A.indptr),shape=A.shape)
         return (abs_A * numpy.ones(A.shape[1],dtype=A.dtype)).max()
     else:
         return (abs(A) * numpy.ones(A.shape[1],dtype=A.dtype)).max()
@@ -152,7 +152,7 @@ def symmetric_rescaling(A):
     data = A.data[:A.nnz] * D_sqrt_inv[Acoo.row]
     data *= D_sqrt_inv[Acoo.col]
 
-    DAD = A.__class__((data,A.indices[:A.nnz],A.indptr),dims=A.shape)
+    DAD = A.__class__((data,A.indices[:A.nnz],A.indptr),shape=A.shape)
 
     return D_sqrt,D_sqrt_inv,DAD
 
@@ -169,7 +169,7 @@ def hstack_csr(A,B):
     I = concatenate((A.row,B.row))
     J = concatenate((A.col,B.col+A.shape[1]))
     V = concatenate((A.data,B.data))
-    return coo_matrix((V,(I,J)),dims=(A.shape[0],A.shape[1]+B.shape[1])).tocsr()
+    return coo_matrix((V,(I,J)),shape=(A.shape[0],A.shape[1]+B.shape[1])).tocsr()
 
 def vstack_csr(A,B):
     #TODO OPTIMIZE THIS
@@ -184,7 +184,7 @@ def vstack_csr(A,B):
     I = concatenate((A.row,B.row+A.shape[0]))
     J = concatenate((A.col,B.col))
     V = concatenate((A.data,B.data))
-    return coo_matrix((V,(I,J)),dims=(A.shape[0]+B.shape[0],A.shape[1])).tocsr()
+    return coo_matrix((V,(I,J)),shape=(A.shape[0]+B.shape[0],A.shape[1])).tocsr()
 
 
 def expand_into_blocks(A,m,n):
@@ -224,4 +224,4 @@ def expand_into_blocks(A,m,n):
 
     data = A.data.repeat(m*n)
 
-    return coo_matrix((data,(row,col)),dims=(m*A.shape[0],n*A.shape[1]))
+    return coo_matrix((data,(row,col)),shape=(m*A.shape[0],n*A.shape[1]))

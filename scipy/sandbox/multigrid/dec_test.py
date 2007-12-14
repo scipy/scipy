@@ -41,7 +41,7 @@ def curl_curl_prolongator(D_nodal,vertices):
     # replace with CSR + eliminate duplicates
     #indptr  = (2*num_basis) * arange(num_edges+1)
     ## same same
-    #csr_matrix((data,indices,indptr),dims=(num_edges,num_aggs))
+    #csr_matrix((data,indices,indptr),shape=(num_edges,num_aggs))
 
     row  = arange(num_edges).repeat(2*num_basis)
     col  = (num_basis*aggs[D_nodal.indices]).repeat(num_basis)
@@ -49,7 +49,7 @@ def curl_curl_prolongator(D_nodal,vertices):
     col = col.reshape(-1)
     data = tile(0.5 * (D_nodal*vertices),(1,2)).reshape(-1)
 
-    return coo_matrix((data,(row,col)),dims=(num_edges,num_basis*num_aggs)).tocsr()
+    return coo_matrix((data,(row,col)),shape=(num_edges,num_basis*num_aggs)).tocsr()
 
 
 

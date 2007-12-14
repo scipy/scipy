@@ -41,11 +41,11 @@ def sa_filtered_matrix(A,epsilon,blocks=None):
 ##            # for non-scalar problems, use pre-defined blocks in aggregation
 ##            # the strength of connection matrix is based on the 1-norms of the blocks
 ##
-##            B  = csr_matrix((ones(num_dofs),blocks,arange(num_dofs + 1)),dims=(num_dofs,num_blocks))
+##            B  = csr_matrix((ones(num_dofs),blocks,arange(num_dofs + 1)),shape=(num_dofs,num_blocks))
 ##            Bt = B.T.tocsr()
 ##
 ##            #1-norms of blocks entries of A
-##            Block_A = Bt * csr_matrix((abs(A.data),A.indices,A.indptr),dims=A.shape) * B
+##            Block_A = Bt * csr_matrix((abs(A.data),A.indices,A.indptr),shape=A.shape) * B
 ##
 ##            S = sa_strong_connections(Block_A,epsilon)
 ##            S.data[:] = 1
@@ -80,10 +80,10 @@ def sa_constant_interpolation(A,epsilon,blocks=None):
         # for non-scalar problems, use pre-defined blocks in aggregation
         # the strength of connection matrix is based on the Frobenius norms of the blocks
 
-        B  = csr_matrix((ones(num_dofs),blocks,arange(num_dofs + 1)),dims=(num_dofs,num_blocks))
+        B  = csr_matrix((ones(num_dofs),blocks,arange(num_dofs + 1)),shape=(num_dofs,num_blocks))
         #1-norms of blocks entries of A
         #TODO figure out what to do for blocks here
-        Block_A = B.T.tocsr() * csr_matrix((abs(A.data),A.indices,A.indptr),dims=A.shape) * B
+        Block_A = B.T.tocsr() * csr_matrix((abs(A.data),A.indices,A.indptr),shape=A.shape) * B
 
         S = sa_strong_connections(Block_A,epsilon)
 
@@ -125,16 +125,16 @@ def sa_fit_candidates(AggOp,candidates,tol=1e-10):
 
         threshold = tol * abs(c).max()   # cutoff for small basis functions
 
-        X = csr_matrix((c,AggOp.indices,AggOp.indptr),dims=AggOp.shape)
+        X = csr_matrix((c,AggOp.indices,AggOp.indptr),shape=AggOp.shape)
 
         #orthogonalize X against previous
         for j,A in enumerate(candidate_matrices):
-            D_AtX = csr_matrix((A.data*X.data,X.indices,X.indptr),dims=X.shape).sum(axis=0).A.flatten() #same as diagonal of A.T * X
+            D_AtX = csr_matrix((A.data*X.data,X.indices,X.indptr),shape=X.shape).sum(axis=0).A.flatten() #same as diagonal of A.T * X
             R[:,j,i] = D_AtX
             X.data -= D_AtX[X.indices] * A.data
 
         #normalize X
-        D_XtX = csr_matrix((X.data**2,X.indices,X.indptr),dims=X.shape).sum(axis=0).A.flatten() #same as diagonal of X.T * X
+        D_XtX = csr_matrix((X.data**2,X.indices,X.indptr),shape=X.shape).sum(axis=0).A.flatten() #same as diagonal of X.T * X
         col_norms = sqrt(D_XtX)
         mask = col_norms < threshold   # set small basis functions to 0
         col_norms[mask] = 0
@@ -153,7 +153,7 @@ def sa_fit_candidates(AggOp,candidates,tol=1e-10):
     Q_data = empty(AggOp.indptr[-1] * K) #if AggOp includes all nodes, then this is (N_fine * K)
     for i,X in enumerate(candidate_matrices):
         Q_data[i::K] = X.data
-    Q = csr_matrix((Q_data,Q_indices,Q_indptr),dims=(N_fine,K*N_coarse))
+    Q = csr_matrix((Q_data,Q_indices,Q_indptr),shape=(N_fine,K*N_coarse))
 
     R = R.reshape(-1,K)
 

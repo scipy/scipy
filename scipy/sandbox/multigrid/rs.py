@@ -14,7 +14,7 @@ def rs_strong_connections(A,theta):
     if not isspmatrix_csr(A): raise TypeError('expected csr_matrix')
 
     Sp,Sj,Sx = multigridtools.rs_strong_connections(A.shape[0],theta,A.indptr,A.indices,A.data)
-    return csr_matrix((Sx,Sj,Sp),dims=A.shape)
+    return csr_matrix((Sx,Sj,Sp),shape=A.shape)
 
 
 def rs_interpolation(A,theta=0.25):

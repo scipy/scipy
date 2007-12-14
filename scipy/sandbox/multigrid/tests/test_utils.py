@@ -116,8 +116,8 @@ class TestUtils(NumpyTestCase):
         cases.append( ( matrix([[0,1,0],[0,2,3]]), (3,2) ) )
         cases.append( ( matrix([[1,0,0],[2,0,3]]), (2,5) ) )
 
-        for A,dims in cases:
-            m,n = dims
+        for A,shape in cases:
+            m,n = shape
             result = expand_into_blocks(csr_matrix(A),m,n).todense()
 
             expected = zeros((m*A.shape[0],n*A.shape[1]))

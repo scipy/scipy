@@ -4,9 +4,10 @@ __all__ = ['poisson_problem1D','poisson_problem2D',
 
 import scipy
 import numpy
-from numpy import ones,zeros,zeros_like,array,asarray
+from numpy import ones,zeros,zeros_like,array,asarray,empty
 from numpy.linalg import norm
 from scipy.linsolve import spsolve
+from scipy.sparse import dia_matrix
 
 from sa import sa_interpolation
 from rs import rs_interpolation
@@ -24,17 +25,31 @@ def poisson_problem1D(N):
     O =  -ones(N)
     return scipy.sparse.spdiags([D,O,O],[0,-1,1],N,N).tocoo().tocsr() #eliminate explicit zeros
 
-def poisson_problem2D(N,epsilon=1.0):
+def poisson_problem2D(N, epsilon=1.0, dtype='d', format=None):
     """
-    Return a sparse CSR matrix for the 2d poisson problem
+    Return a sparse matrix for the 2d poisson problem
     with standard 5-point finite difference stencil on a
     square N-by-N grid.
     """
-    D = (2 + 2*epsilon)*ones(N*N)
-    T =  -epsilon * ones(N*N)
-    O =  -ones(N*N)
-    T[N-1::N] = 0
-    return scipy.sparse.spdiags([D,O,T,T,O],[0,-N,-1,1,N],N*N,N*N).tocoo().tocsr() #eliminate explicit zeros
+    if N == 1:
+        diags   = asarray( [[4]],dtype=dtype)
+        return dia_matrix((diags,[0]), shape=(1,1)).asformat(format)
+
+    offsets = array([0,-N,N,-1,1])
+
+    diags = empty((5,N**2),dtype=dtype)
+
+    diags[0]  =  (2 + 2*epsilon) #main diagonal
+    diags[1,:] = -1
+    diags[2,:] = -1
+    
+    diags[3,:] = -epsilon #first lower diagonal 
+    diags[4,:] = -epsilon #first upper diagonal 
+    diags[3,N-1::N] = 0  
+    diags[4,N::N]   = 0    
+    
+    return dia_matrix((diags,offsets),shape=(N**2,N**2)).tocoo().tocsr() #eliminate explicit zeros
+    #return dia_matrix((diags,offsets),shape=(N**2,N**2)).asformat(format)
 
 
 def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
