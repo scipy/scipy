@@ -4,7 +4,7 @@ __all__ = ['spmatrix','isspmatrix','issparse']
 
 from numpy import asarray, asmatrix, ones
 
-from sputils import isdense
+from sputils import isdense, isscalarlike 
 
 
 # The formats that we might potentially understand.

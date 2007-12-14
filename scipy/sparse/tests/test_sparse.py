@@ -32,11 +32,6 @@ class _TestCS:
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
 
-    def check_getelement(self):
-        assert_equal(self.datsp[0,0],1)
-        assert_equal(self.datsp[0,1],0)
-        assert_equal(self.datsp[1,0],3)
-        assert_equal(self.datsp[2,1],2)
     
     def check_empty(self):
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
@@ -104,14 +99,6 @@ class _TestCS:
         check2 = dot(self.datsp.toarray(), b)
         assert_array_equal(dense_dot_dense, check2)
 
-    def check_setelement(self):
-        a = self.datsp - self.datsp
-        a[1,2] = 4.0
-        a[0,1] = 3
-        a[2,0] = 2.0
-        a[0,-1] = 8
-        a[-1,-2] = 7
-        assert_array_equal(a.todense(),[[0,3,0,8],[0,0,4,0],[2,0,7,0]])
 
     def check_mul_scalar(self):
         assert_array_equal(self.dat*2,(self.datsp*2).todense())
@@ -270,12 +257,14 @@ class _TestCS:
         L = 30
         frac = .3
         random.seed(0) # make runs repeatable
-        A = self.spmatrix((L,2))
+        A = zeros((L,2))
         for i in xrange(L):
             for j in xrange(2):
                 r = random.random()
                 if r < frac:
                     A[i,j] = r/frac
+
+        A = self.spmatrix(A)
         B = A*A.T
         assert_array_almost_equal(B.todense(), A.todense() * A.T.todense())
         assert_array_almost_equal(B.todense(), A.todense() * A.todense().T)
@@ -382,6 +371,36 @@ class _TestCS:
     #    dense_dot_sparse = dot(self.datsp, b)
     #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
 
+
+    def check_extract_diagonal(self):
+        """
+        Test extraction of main diagonal from sparse matrices
+        """
+        L = []
+        L.append(array([[0,0,3],[1,6,4],[5,2,0]]))
+        L.append(array([[1,2,3]]))
+        L.append(array([[7],[6],[5]]))
+        L.append(array([[2]]))
+
+        for A in L:
+            assert_array_equal(numpy.diag(A),extract_diagonal(self.spmatrix(A)))
+class _TestGetSet:
+    def check_setelement(self):
+        a = self.datsp - self.datsp
+        a[1,2] = 4.0
+        a[0,1] = 3
+        a[2,0] = 2.0
+        a[0,-1] = 8
+        a[-1,-2] = 7
+        assert_array_equal(a.todense(),[[0,3,0,8],[0,0,4,0],[2,0,7,0]])
+
+    def check_getelement(self):
+        assert_equal(self.datsp[0,0],1)
+        assert_equal(self.datsp[0,1],0)
+        assert_equal(self.datsp[1,0],3)
+        assert_equal(self.datsp[2,1],2)
+
+class _TestSolve:
     def check_solve(self):
         """ Test whether the lu_solve command segfaults, as reported by Nils
         Wagner for a 64-bit machine, 02 March 2005 (EJS)
@@ -399,19 +418,6 @@ class _TestCS:
         B = A.tocsc()
         xx = splu(B).solve(r)
         # Don't actually test the output until we know what it should be ...
-
-    def check_extract_diagonal(self):
-        """
-        Test extraction of main diagonal from sparse matrices
-        """
-        L = []
-        L.append(array([[0,0,3],[1,6,4],[5,2,0]]))
-        L.append(array([[1,2,3]]))
-        L.append(array([[7],[6],[5]]))
-        L.append(array([[2]]))
-
-        for A in L:
-            assert_array_equal(numpy.diag(A),extract_diagonal(self.spmatrix(A)))
 
 
 class _TestHorizSlicing:
@@ -675,7 +681,8 @@ class _test_arith:
 
 
 class TestCSR(_TestCS, _TestHorizSlicing, _TestVertSlicing,
-               _test_slicing, _test_arith, NumpyTestCase):
+              _TestGetSet, _TestSolve,
+              _test_slicing, _test_arith, NumpyTestCase):
     spmatrix = csr_matrix
 
     def check_constructor1(self):
@@ -772,6 +779,7 @@ class TestCSR(_TestCS, _TestHorizSlicing, _TestVertSlicing,
         assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
 class TestCSC(_TestCS, _TestHorizSlicing, _TestVertSlicing,
+              _TestGetSet, _TestSolve,
                _test_slicing, _test_arith, NumpyTestCase):
     spmatrix = csc_matrix
 
@@ -844,7 +852,7 @@ class TestCSC(_TestCS, _TestHorizSlicing, _TestVertSlicing,
         assert_equal(b.shape, (2,2))
         assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
-class TestDOK(_TestCS, NumpyTestCase):
+class TestDOK(_TestCS, _TestGetSet, _TestSolve, NumpyTestCase):
     spmatrix = dok_matrix
 
     def check_mult(self):
@@ -951,8 +959,8 @@ class TestDOK(_TestCS, NumpyTestCase):
         assert_equal(caught,5)
 
 
-class TestLIL(_TestCS, _TestHorizSlicing, NumpyTestCase,
-               ParametricTestCase):
+class TestLIL(_TestCS, _TestHorizSlicing, _TestGetSet, _TestSolve,
+                NumpyTestCase, ParametricTestCase):
     spmatrix = lil_matrix
 
     B = lil_matrix((4,3))
@@ -1175,7 +1183,8 @@ class TestConstructUtils(NumpyTestCase):
 
                 assert_array_equal(result,expected)
 
-class TestCOO(NumpyTestCase):
+class TestCOO(_TestCS, NumpyTestCase):
+    spmatrix = coo_matrix
     def check_constructor1(self):
         """unsorted triplet format"""
         row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
