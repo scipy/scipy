@@ -727,8 +727,10 @@ class csc_matrix(_cs_matrix):
 
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created).
-        Rows and columns can be selected using slice instances, tuples,
-        or scalars."""
+        Contigous range of rows and columns can be selected using:
+        1. a slice object
+        2. a tuple (from, to)
+        3. a scalar for single row/column selection."""
         aux = _cs_matrix._get_submatrix( self, self.shape[1], self.shape[0],
                                          slice1, slice0 )
         nr, nc = aux[3:]
@@ -918,9 +920,11 @@ class csr_matrix(_cs_matrix):
         return data
     
     def get_submatrix( self, slice0, slice1 ):
-        """Return a submatrix of this matrix (new matrix is created)..
-        Rows and columns can be selected using slice instances, tuples,
-        or scalars."""
+        """Return a submatrix of this matrix (new matrix is created).
+        Contigous range of rows and columns can be selected using:
+        1. a slice object
+        2. a tuple (from, to)
+        3. a scalar for single row/column selection."""
         aux = _cs_matrix._get_submatrix( self, self.shape[0], self.shape[1],
                                          slice0, slice1 )
         nr, nc = aux[3:]
