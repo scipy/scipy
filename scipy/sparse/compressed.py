@@ -60,28 +60,21 @@ class _cs_matrix(spmatrix):
                 self.indices = zeros(0, intc)
                 self.indptr  = zeros(self._swap(self.shape)[0] + 1, dtype='intc')
             else:
-                try:
-                    # Try interpreting it as (data, ij)
-                    (data, ij) = arg1
-                    assert isinstance(ij, ndarray) and (rank(ij) == 2) \
-                           and (ij.shape == (2, len(data)))
-                except (AssertionError, TypeError, ValueError, AttributeError):
-                    try:
-                        # Try interpreting it as (data, indices, indptr)
-                        (data, indices, indptr) = arg1
-                    except:
-                        raise ValueError, "unrecognized form for" \
-                                " %s_matrix constructor" % self.format
-                    else:
-                        self.data    = array(data, copy=copy, dtype=getdtype(dtype, data))
-                        self.indices = array(indices, copy=copy)
-                        self.indptr  = array(indptr, copy=copy)
-                else:
+                if len(arg1) == 2:
                     # (data, ij) format
                     from coo import coo_matrix
-                    other = coo_matrix((data, ij), shape=shape )
-                    other = self._tothis(other)
+                    other = self._tothis(coo_matrix(arg1, shape=shape))
                     self._set_self( other )
+                elif len(arg1) == 3:
+                    # (data, indices, indptr) format
+                    (data, indices, indptr) = arg1
+                    self.indices = array(indices, copy=copy)
+                    self.indptr  = array(indptr,  copy=copy)
+                    self.data    = array(data,    copy=copy, \
+                            dtype=getdtype(dtype, data))
+                else:
+                    raise ValueError, "unrecognized form for" \
+                            " %s_matrix constructor" % self.format
 
         else:
             raise ValueError, "unrecognized form for" \
