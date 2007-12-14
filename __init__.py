@@ -8,7 +8,7 @@ from info import __doc__
 from numpyio import packbits, unpackbits, bswap, fread, fwrite, \
      convert_objectarray
 # matfile read and write
-from mio import *
+from matlab.mio import loadmat, savemat
 # netCDF file support
 from netcdf import *
 from npfile import npfile
