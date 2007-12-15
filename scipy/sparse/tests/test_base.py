@@ -580,26 +580,20 @@ class _TestArithmetic:
         self.A = matrix([[   -1.5,      0,       0,    2.25],
                          [  3.125,      0,  -0.125,       0],
                          [      0, -5.375,       0,       0]],'float64')
-        self.B = matrix([[      0,  3.375,       0,  -7.875],
-                         [  6.625,   4.75,       0,       0],
-                         [    3.5, 6.0625,       0,       1]],'float64')
-
-        self.C = matrix([[  0.375,       0,      -5,     2.5],
+        self.B = matrix([[  0.375,       0,      -5,     2.5],
                          [      0,    7.25,       0,  -4.875],
                          [      0, -0.0625,       0,       0]],'complex128')
-        self.C.imag = matrix([[    1.25,     0,  0, -3.875],
+        self.B.imag = matrix([[    1.25,     0,  0, -3.875],
                               [       0, 4.125,  0,   2.75],
                               [ -0.0625,     0,  0,      1]],'float64')
 
         #fractions are all x/16ths
         assert_array_equal((self.A*16).astype('int32'),16*self.A)
-        assert_array_equal((self.B*16).astype('int32'),16*self.B)
-        assert_array_equal((self.C.real*16).astype('int32'),16*self.C.real)
-        assert_array_equal((self.C.imag*16).astype('int32'),16*self.C.imag)
+        assert_array_equal((self.B.real*16).astype('int32'),16*self.B.real)
+        assert_array_equal((self.B.imag*16).astype('int32'),16*self.B.imag)
 
         self.Asp = self.spmatrix(self.A)
         self.Bsp = self.spmatrix(self.B)
-        self.Csp = self.spmatrix(self.C)
 
         #supported types
         self.dtypes =  ['int8','uint8','int16','int32','int64',
@@ -612,77 +606,46 @@ class _TestArithmetic:
         for x in self.dtypes:
             A = self.A.astype(x)
             B = self.B.astype(x)
-            C = self.C.astype(x)
 
             Asp = self.spmatrix(A)
             Bsp = self.spmatrix(B)
-            Csp = self.spmatrix(C)
             assert_equal(A.dtype,Asp.dtype)
             assert_equal(B.dtype,Bsp.dtype)
-            assert_equal(C.dtype,Csp.dtype)
             assert_array_equal(A,Asp.todense())
             assert_array_equal(B,Bsp.todense())
-            assert_array_equal(C,Csp.todense())
 
     def check_add_sub(self):
         self.arith_init()
 
         #basic tests
         assert_array_equal(self.A+self.B,(self.Asp+self.Bsp).todense())
-        assert_array_equal(self.A+self.C,(self.Asp+self.Csp).todense())
 
         #check conversions
         for x in self.dtypes:
             for y in self.dtypes:
                 A = self.A.astype(x)
                 B = self.B.astype(y)
-                C = self.C.astype(y)
 
                 Asp = self.spmatrix(A)
                 Bsp = self.spmatrix(B)
-                Csp = self.spmatrix(C)
 
                 #addition
                 D1 = A + B
-                D2 = A + C
-                D3 = B + C
                 S1 = Asp + Bsp
-                S2 = Asp + Csp
-                S3 = Bsp + Csp
 
                 assert_equal(D1.dtype,S1.dtype)
-                assert_equal(D2.dtype,S2.dtype)
-                assert_equal(D3.dtype,S3.dtype)
                 assert_array_equal(D1,S1.todense())
-                assert_array_equal(D2,S2.todense())
-                assert_array_equal(D3,S3.todense())
                 assert_array_equal(D1,Asp + B)          #check sparse + dense
-                assert_array_equal(D2,Asp + C)
-                assert_array_equal(D3,Bsp + C)
                 assert_array_equal(D1,A + Bsp)          #check dense + sparse
-                assert_array_equal(D2,A + Csp)
-                assert_array_equal(D3,B + Csp)
 
                 #subtraction
                 D1 = A - B
-                D2 = A - C
-                D3 = B - C
                 S1 = Asp - Bsp
-                S2 = Asp - Csp
-                S3 = Bsp - Csp
 
                 assert_equal(D1.dtype,S1.dtype)
-                assert_equal(D2.dtype,S2.dtype)
-                assert_equal(D3.dtype,S3.dtype)
                 assert_array_equal(D1,S1.todense())
-                assert_array_equal(D2,S2.todense())
-                assert_array_equal(D3,S3.todense())
                 assert_array_equal(D1,Asp - B)          #check sparse - dense
-                assert_array_equal(D2,Asp - C)
-                assert_array_equal(D3,Bsp - C)
                 assert_array_equal(D1,A - Bsp)          #check dense - sparse
-                assert_array_equal(D2,A - Csp)
-                assert_array_equal(D3,B - Csp)
 
 
     def check_mu(self):
@@ -690,32 +653,20 @@ class _TestArithmetic:
 
         #basic tests
         assert_array_equal(self.A*self.B.T,(self.Asp*self.Bsp.T).todense())
-        assert_array_equal(self.A*self.C.T,(self.Asp*self.Csp.T).todense())
 
         for x in self.dtypes:
             for y in self.dtypes:
                 A = self.A.astype(x)
                 B = self.B.astype(y)
-                C = self.C.astype(y)
 
                 Asp = self.spmatrix(A)
                 Bsp = self.spmatrix(B)
-                Csp = self.spmatrix(C)
 
                 D1 = A * B.T
-                D2 = A * C.T
-                D3 = B * C.T
-
                 S1 = Asp * Bsp.T
-                S2 = Asp * Csp.T
-                S3 = Bsp * Csp.T
 
                 assert_array_equal(D1,S1.todense())
-                assert_array_equal(D2,S2.todense())
-                assert_array_equal(D3,S3.todense())
                 assert_equal(D1.dtype,S1.dtype)
-                assert_equal(D2.dtype,S2.dtype)
-                assert_equal(D3.dtype,S3.dtype)
 
 
 

@@ -8,7 +8,7 @@ from warnings import warn
 
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
-        empty, hstack, isscalar, ndarray, shape, searchsorted
+        empty, hstack, isscalar, ndarray, shape, searchsorted, where
 
 from base import spmatrix,isspmatrix
 from sparsetools import csr_tocsc
@@ -52,14 +52,15 @@ class csr_matrix(_cs_matrix):
 
     def __getitem__(self, key):
         if isinstance(key, tuple):
-            #TODO use _swap() to unify this in _cs_matrix
             row = key[0]
             col = key[1]
+            
             if isinstance(row, slice):
                 # Returns a new matrix!
                 return self.get_submatrix( row, col )
             elif isinstance(col, slice):
                 return self._getslice(row, col)
+            
             M, N = self.shape
             if (row < 0):
                 row = M + row
@@ -67,12 +68,23 @@ class csr_matrix(_cs_matrix):
                 col = N + col
             if not (0<=row<M) or not (0<=col<N):
                 raise IndexError, "index out of bounds"
-            #this was implemented in fortran before - is there a noticable performance advantage?
-            indxs = numpy.where(col == self.indices[self.indptr[row]:self.indptr[row+1]])
-            if len(indxs[0]) == 0:
+            
+            major_index, minor_index = self._swap((row,col))
+
+            start = self.indptr[major_index]
+            end   = self.indptr[major_index+1]
+            indxs = where(minor_index == self.indices[start:end])[0]
+
+            num_matches = len(indxs)
+
+            if num_matches == 0:
+                # entry does not appear in the matrix
                 return 0
+            elif num_matches == 1:
+                return self.data[start:end][indxs[0]]
             else:
-                return self.data[self.indptr[row]:self.indptr[row+1]][indxs[0]]
+                raise ValueError,'nonzero entry (%d,%d) occurs more than once' % (row,col)
+
         elif isintlike(key):
             return self[key, :]
         else:

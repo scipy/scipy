@@ -7,7 +7,7 @@ from warnings import warn
 
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
-        empty, hstack, isscalar, ndarray, shape, searchsorted
+        empty, hstack, isscalar, ndarray, shape, searchsorted, where
 
 from base import spmatrix,isspmatrix
 from sparsetools import csc_tocsr
@@ -56,15 +56,17 @@ class csc_matrix(_cs_matrix):
         return _cs_matrix._transpose(self, csr_matrix, copy)
 
     def __getitem__(self, key):
+        #TODO unify these in _cs_matrix
         if isinstance(key, tuple):
-            #TODO use _swap() to unify this in _cs_matrix
             row = key[0]
             col = key[1]
+            
             if isinstance(col, slice):
                 # Returns a new matrix!
                 return self.get_submatrix( row, col )
             elif isinstance(row, slice):
                 return self._getslice(row, col)
+            
             M, N = self.shape
             if (row < 0):
                 row = M + row
@@ -72,12 +74,23 @@ class csc_matrix(_cs_matrix):
                 col = N + col
             if not (0<=row<M) or not (0<=col<N):
                 raise IndexError, "index out of bounds"
-            #this was implemented in fortran before - is there a noticable performance advantage?
-            indxs = numpy.where(row == self.indices[self.indptr[col]:self.indptr[col+1]])
-            if len(indxs[0]) == 0:
+            
+            major_index, minor_index = self._swap((row,col))
+
+            start = self.indptr[major_index]
+            end   = self.indptr[major_index+1]
+            indxs = where(minor_index == self.indices[start:end])[0]
+
+            num_matches = len(indxs)
+
+            if num_matches == 0:
+                # entry does not appear in the matrix
                 return 0
+            elif num_matches == 1:
+                return self.data[start:end][indxs[0]]
             else:
-                return self.data[self.indptr[col]:self.indptr[col+1]][indxs[0]]
+                raise ValueError,'nonzero entry (%d,%d) occurs more than once' % (row,col)
+        
         elif isintlike(key):
             # Was: return self.data[key]
             # If this is allowed, it should return the relevant row, as for
@@ -85,6 +98,16 @@ class csc_matrix(_cs_matrix):
             raise IndexError, "integer index not supported for csc_matrix"
         else:
             raise IndexError, "invalid index"
+    
+    def _getslice(self, i, myslice):
+        return self._getcolslice(i, myslice)
+
+    def _getcolslice(self, myslice, j):
+        """Returns a view of the elements [myslice.start:myslice.stop, j].
+        """
+        start, stop, stride = myslice.indices(self.shape[0])
+        return _cs_matrix._get_slice(self, j, start, stop, stride, (stop - start, 1))
+
 
 
     def __setitem__(self, key, val):
@@ -135,15 +158,6 @@ class csc_matrix(_cs_matrix):
         else:
             # We should allow slices here!
             raise IndexError, "invalid index"
-
-    def _getslice(self, i, myslice):
-        return self._getcolslice(i, myslice)
-
-    def _getcolslice(self, myslice, j):
-        """Returns a view of the elements [myslice.start:myslice.stop, j].
-        """
-        start, stop, stride = myslice.indices(self.shape[0])
-        return _cs_matrix._get_slice(self, j, start, stop, stride, (stop - start, 1))
 
     def rowcol(self, ind):
         row = self.indices[ind]
