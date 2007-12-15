@@ -18,7 +18,6 @@ from npfile import npfile
 from recaster import sctype_attributes, Recaster
 
 from array_import import read_array, write_array
-from data_store import read_array, write_array
 from pickler import objload, objsave
 
 from mmio import mminfo, mmread, mmwrite
