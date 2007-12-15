@@ -51,6 +51,7 @@ class csr_matrix(_cs_matrix):
         return _cs_matrix._transpose(self, csc_matrix, copy)
 
     def __getitem__(self, key):
+        #TODO unify these in _cs_matrix
         if isinstance(key, tuple):
             row = key[0]
             col = key[1]
