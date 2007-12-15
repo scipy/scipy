@@ -171,10 +171,10 @@ class _cs_matrix(spmatrix):
         if full_check:
             #check format validity (more expensive)
             if self.nnz > 0:
-                if amax(self.indices) >= minor_dim:
+                if self.indices.max() >= minor_dim:
                     raise ValueError, "%s index values must be < %d" % \
                             (minor_name,minor_dim)
-                if amin(self.indices) < 0:
+                if self.indices.min() < 0:
                     raise ValueError, "%s index values must be >= 0" % \
                             minor_name
                 if numpy.diff(self.indptr).min() < 0:
@@ -315,9 +315,34 @@ class _cs_matrix(spmatrix):
             K2, N = other.shape
             if (K1 != K2):
                 raise ValueError, "shape mismatch error"
-            other = self._tothis(other)
 
-            return self._binopt(other,'mu',in_shape=(M,N),out_shape=(M,N))
+            #return self._binopt(other,'mu',in_shape=(M,N),out_shape=(M,N))
+
+            major_axis = self._swap((M,N))[0]        
+            indptr = empty( major_axis + 1, dtype=intc )
+            
+            other = self._tothis(other)
+            fn = getattr(sparsetools, self.format + '_matmat_pass1')
+            fn( M, N, self.indptr, self.indices, \
+                      other.indptr, other.indices, \
+                      indptr)
+            
+            nnz = indptr[-1]
+            indices = empty( nnz, dtype=intc)
+            data    = empty( nnz, dtype=upcast(self.dtype,other.dtype))
+
+            fn = getattr(sparsetools, self.format + '_matmat_pass2')
+            fn( M, N, self.indptr, self.indices, self.data, \
+                      other.indptr, other.indices, other.data, \
+                      indptr, indices, data)
+
+            nnz = indptr[-1] #may have changed
+            #indices = indices[:nnz]
+            #data    = indices[:nnz]
+
+            return self.__class__((data,indices,indptr),shape=(M,N))
+
+
         elif isdense(other):
             # TODO make sparse * dense matrix multiplication more efficient
 
@@ -333,7 +358,7 @@ class _cs_matrix(spmatrix):
                 raise ValueError, "dimension mismatch"
 
             # csrmux, cscmux
-            fn = getattr(sparsetools,self.format + 'mux')
+            fn = getattr(sparsetools,self.format + '_matvec')
     
             #output array
             y = empty( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
@@ -445,7 +470,7 @@ class _cs_matrix(spmatrix):
     def sort_indices(self):
         """Sort the indices of this matrix *in place*
         """
-        fn = getattr(sparsetools,'sort_' + self.format + '_indices')
+        fn = getattr(sparsetools,self.format + '_sort_indices')
 
         M,N = self.shape
         fn( M, N, self.indptr, self.indices, self.data)

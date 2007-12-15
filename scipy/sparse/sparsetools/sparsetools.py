@@ -53,250 +53,252 @@ def expandptr(*args):
   """expandptr(int n_row, int Ap, int Bi)"""
   return _sparsetools.expandptr(*args)
 
-
-def extract_csr_diagonal(*args):
+def csr_matmat_pass1(*args):
   """
-    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
+    csr_matmat_pass1(int n_row, int n_col, int Ap, int Aj, int Bp, int Bj, 
+        int Cp)
+    """
+  return _sparsetools.csr_matmat_pass1(*args)
+
+def csc_matmat_pass1(*args):
+  """
+    csc_matmat_pass1(int n_row, int n_col, int Ap, int Ai, int Bp, int Bi, 
+        int Cp)
+    """
+  return _sparsetools.csc_matmat_pass1(*args)
+
+
+def csr_diagonal(*args):
+  """
+    csr_diagonal(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
         signed char Yx)
-    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
+    csr_diagonal(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
         unsigned char Yx)
-    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, short Ax, short Yx)
-    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, int Ax, int Yx)
-    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, long long Ax, 
+    csr_diagonal(int n_row, int n_col, int Ap, int Aj, short Ax, short Yx)
+    csr_diagonal(int n_row, int n_col, int Ap, int Aj, int Ax, int Yx)
+    csr_diagonal(int n_row, int n_col, int Ap, int Aj, long long Ax, 
         long long Yx)
-    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, float Ax, float Yx)
-    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, double Ax, double Yx)
-    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
+    csr_diagonal(int n_row, int n_col, int Ap, int Aj, float Ax, float Yx)
+    csr_diagonal(int n_row, int n_col, int Ap, int Aj, double Ax, double Yx)
+    csr_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
         npy_cfloat_wrapper Yx)
-    extract_csr_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
+    csr_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
         npy_cdouble_wrapper Yx)
     """
-  return _sparsetools.extract_csr_diagonal(*args)
+  return _sparsetools.csr_diagonal(*args)
 
-def extract_csc_diagonal(*args):
+def csc_diagonal(*args):
   """
-    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
+    csc_diagonal(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
         signed char Yx)
-    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
+    csc_diagonal(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
         unsigned char Yx)
-    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, short Ax, short Yx)
-    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, int Ax, int Yx)
-    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, long long Ax, 
+    csc_diagonal(int n_row, int n_col, int Ap, int Aj, short Ax, short Yx)
+    csc_diagonal(int n_row, int n_col, int Ap, int Aj, int Ax, int Yx)
+    csc_diagonal(int n_row, int n_col, int Ap, int Aj, long long Ax, 
         long long Yx)
-    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, float Ax, float Yx)
-    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, double Ax, double Yx)
-    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
+    csc_diagonal(int n_row, int n_col, int Ap, int Aj, float Ax, float Yx)
+    csc_diagonal(int n_row, int n_col, int Ap, int Aj, double Ax, double Yx)
+    csc_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
         npy_cfloat_wrapper Yx)
-    extract_csc_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
+    csc_diagonal(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
         npy_cdouble_wrapper Yx)
     """
-  return _sparsetools.extract_csc_diagonal(*args)
+  return _sparsetools.csc_diagonal(*args)
 
-def csrtocsc(*args):
+def csr_tocsc(*args):
   """
-    csrtocsc(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
+    csr_tocsc(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
         int Bp, int Bi, signed char Bx)
-    csrtocsc(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
+    csr_tocsc(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
         int Bp, int Bi, unsigned char Bx)
-    csrtocsc(int n_row, int n_col, int Ap, int Aj, short Ax, int Bp, 
+    csr_tocsc(int n_row, int n_col, int Ap, int Aj, short Ax, int Bp, 
         int Bi, short Bx)
-    csrtocsc(int n_row, int n_col, int Ap, int Aj, int Ax, int Bp, 
+    csr_tocsc(int n_row, int n_col, int Ap, int Aj, int Ax, int Bp, 
         int Bi, int Bx)
-    csrtocsc(int n_row, int n_col, int Ap, int Aj, long long Ax, 
+    csr_tocsc(int n_row, int n_col, int Ap, int Aj, long long Ax, 
         int Bp, int Bi, long long Bx)
-    csrtocsc(int n_row, int n_col, int Ap, int Aj, float Ax, int Bp, 
+    csr_tocsc(int n_row, int n_col, int Ap, int Aj, float Ax, int Bp, 
         int Bi, float Bx)
-    csrtocsc(int n_row, int n_col, int Ap, int Aj, double Ax, int Bp, 
+    csr_tocsc(int n_row, int n_col, int Ap, int Aj, double Ax, int Bp, 
         int Bi, double Bx)
-    csrtocsc(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
+    csr_tocsc(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
         int Bp, int Bi, npy_cfloat_wrapper Bx)
-    csrtocsc(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
+    csr_tocsc(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
         int Bp, int Bi, npy_cdouble_wrapper Bx)
     """
-  return _sparsetools.csrtocsc(*args)
+  return _sparsetools.csr_tocsc(*args)
 
-def csctocsr(*args):
+def csc_tocsr(*args):
   """
-    csctocsr(int n_row, int n_col, int Ap, int Ai, signed char Ax, 
+    csc_tocsr(int n_row, int n_col, int Ap, int Ai, signed char Ax, 
         int Bp, int Bj, signed char Bx)
-    csctocsr(int n_row, int n_col, int Ap, int Ai, unsigned char Ax, 
+    csc_tocsr(int n_row, int n_col, int Ap, int Ai, unsigned char Ax, 
         int Bp, int Bj, unsigned char Bx)
-    csctocsr(int n_row, int n_col, int Ap, int Ai, short Ax, int Bp, 
+    csc_tocsr(int n_row, int n_col, int Ap, int Ai, short Ax, int Bp, 
         int Bj, short Bx)
-    csctocsr(int n_row, int n_col, int Ap, int Ai, int Ax, int Bp, 
+    csc_tocsr(int n_row, int n_col, int Ap, int Ai, int Ax, int Bp, 
         int Bj, int Bx)
-    csctocsr(int n_row, int n_col, int Ap, int Ai, long long Ax, 
+    csc_tocsr(int n_row, int n_col, int Ap, int Ai, long long Ax, 
         int Bp, int Bj, long long Bx)
-    csctocsr(int n_row, int n_col, int Ap, int Ai, float Ax, int Bp, 
+    csc_tocsr(int n_row, int n_col, int Ap, int Ai, float Ax, int Bp, 
         int Bj, float Bx)
-    csctocsr(int n_row, int n_col, int Ap, int Ai, double Ax, int Bp, 
+    csc_tocsr(int n_row, int n_col, int Ap, int Ai, double Ax, int Bp, 
         int Bj, double Bx)
-    csctocsr(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, 
+    csc_tocsr(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, 
         int Bp, int Bj, npy_cfloat_wrapper Bx)
-    csctocsr(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, 
+    csc_tocsr(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, 
         int Bp, int Bj, npy_cdouble_wrapper Bx)
     """
-  return _sparsetools.csctocsr(*args)
+  return _sparsetools.csc_tocsr(*args)
 
-def cootocsr(*args):
+def coo_tocsr(*args):
   """
-    cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, signed char Ax, 
+    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, signed char Ax, 
         int Bp, int Bj, signed char Bx)
-    cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, unsigned char Ax, 
+    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned char Ax, 
         int Bp, int Bj, unsigned char Bx)
-    cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, short Ax, 
+    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, short Ax, 
         int Bp, int Bj, short Bx)
-    cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, int Ax, 
+    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, int Ax, 
         int Bp, int Bj, int Bx)
-    cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, long long Ax, 
+    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, long long Ax, 
         int Bp, int Bj, long long Bx)
-    cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, float Ax, 
+    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, float Ax, 
         int Bp, int Bj, float Bx)
-    cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, double Ax, 
+    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, double Ax, 
         int Bp, int Bj, double Bx)
-    cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cfloat_wrapper Ax, 
+    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cfloat_wrapper Ax, 
         int Bp, int Bj, npy_cfloat_wrapper Bx)
-    cootocsr(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cdouble_wrapper Ax, 
+    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cdouble_wrapper Ax, 
         int Bp, int Bj, npy_cdouble_wrapper Bx)
     """
-  return _sparsetools.cootocsr(*args)
+  return _sparsetools.coo_tocsr(*args)
 
-def cootocsc(*args):
+def coo_tocsc(*args):
   """
-    cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, signed char Ax, 
+    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, signed char Ax, 
         int Bp, int Bi, signed char Bx)
-    cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, unsigned char Ax, 
+    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned char Ax, 
         int Bp, int Bi, unsigned char Bx)
-    cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, short Ax, 
+    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, short Ax, 
         int Bp, int Bi, short Bx)
-    cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, int Ax, 
+    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, int Ax, 
         int Bp, int Bi, int Bx)
-    cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, long long Ax, 
+    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, long long Ax, 
         int Bp, int Bi, long long Bx)
-    cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, float Ax, 
+    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, float Ax, 
         int Bp, int Bi, float Bx)
-    cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, double Ax, 
+    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, double Ax, 
         int Bp, int Bi, double Bx)
-    cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cfloat_wrapper Ax, 
+    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cfloat_wrapper Ax, 
         int Bp, int Bi, npy_cfloat_wrapper Bx)
-    cootocsc(int n_row, int n_col, int NNZ, int Ai, int Aj, npy_cdouble_wrapper Ax, 
+    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cdouble_wrapper Ax, 
         int Bp, int Bi, npy_cdouble_wrapper Bx)
     """
-  return _sparsetools.cootocsc(*args)
+  return _sparsetools.coo_tocsc(*args)
 
-def csrmucsr(*args):
+def csr_matmat_pass2(*args):
   """
-    csrmucsr(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
-        int Bp, int Bj, signed char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(signed char)> Cx)
-    csrmucsr(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
-        int Bp, int Bj, unsigned char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(unsigned char)> Cx)
-    csrmucsr(int n_row, int n_col, int Ap, int Aj, short Ax, int Bp, 
-        int Bj, short Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(short)> Cx)
-    csrmucsr(int n_row, int n_col, int Ap, int Aj, int Ax, int Bp, 
-        int Bj, int Bx, std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(int)> Cx)
-    csrmucsr(int n_row, int n_col, int Ap, int Aj, long long Ax, 
-        int Bp, int Bj, long long Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(long long)> Cx)
-    csrmucsr(int n_row, int n_col, int Ap, int Aj, float Ax, int Bp, 
-        int Bj, float Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(float)> Cx)
-    csrmucsr(int n_row, int n_col, int Ap, int Aj, double Ax, int Bp, 
-        int Bj, double Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(double)> Cx)
-    csrmucsr(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
+    csr_matmat_pass2(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
+        int Bp, int Bj, signed char Bx, int Cp, int Cj, 
+        signed char Cx)
+    csr_matmat_pass2(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
+        int Bp, int Bj, unsigned char Bx, int Cp, 
+        int Cj, unsigned char Cx)
+    csr_matmat_pass2(int n_row, int n_col, int Ap, int Aj, short Ax, int Bp, 
+        int Bj, short Bx, int Cp, int Cj, short Cx)
+    csr_matmat_pass2(int n_row, int n_col, int Ap, int Aj, int Ax, int Bp, 
+        int Bj, int Bx, int Cp, int Cj, int Cx)
+    csr_matmat_pass2(int n_row, int n_col, int Ap, int Aj, long long Ax, 
+        int Bp, int Bj, long long Bx, int Cp, int Cj, 
+        long long Cx)
+    csr_matmat_pass2(int n_row, int n_col, int Ap, int Aj, float Ax, int Bp, 
+        int Bj, float Bx, int Cp, int Cj, float Cx)
+    csr_matmat_pass2(int n_row, int n_col, int Ap, int Aj, double Ax, int Bp, 
+        int Bj, double Bx, int Cp, int Cj, double Cx)
+    csr_matmat_pass2(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
         int Bp, int Bj, npy_cfloat_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cfloat_wrapper)> Cx)
-    csrmucsr(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
+        int Cp, int Cj, npy_cfloat_wrapper Cx)
+    csr_matmat_pass2(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
         int Bp, int Bj, npy_cdouble_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cdouble_wrapper)> Cx)
+        int Cp, int Cj, npy_cdouble_wrapper Cx)
     """
-  return _sparsetools.csrmucsr(*args)
+  return _sparsetools.csr_matmat_pass2(*args)
 
-def cscmucsc(*args):
+def csc_matmat_pass2(*args):
   """
-    cscmucsc(int n_row, int n_col, int Ap, int Ai, signed char Ax, 
-        int Bp, int Bi, signed char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(signed char)> Cx)
-    cscmucsc(int n_row, int n_col, int Ap, int Ai, unsigned char Ax, 
-        int Bp, int Bi, unsigned char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(unsigned char)> Cx)
-    cscmucsc(int n_row, int n_col, int Ap, int Ai, short Ax, int Bp, 
-        int Bi, short Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(short)> Cx)
-    cscmucsc(int n_row, int n_col, int Ap, int Ai, int Ax, int Bp, 
-        int Bi, int Bx, std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(int)> Cx)
-    cscmucsc(int n_row, int n_col, int Ap, int Ai, long long Ax, 
-        int Bp, int Bi, long long Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(long long)> Cx)
-    cscmucsc(int n_row, int n_col, int Ap, int Ai, float Ax, int Bp, 
-        int Bi, float Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(float)> Cx)
-    cscmucsc(int n_row, int n_col, int Ap, int Ai, double Ax, int Bp, 
-        int Bi, double Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(double)> Cx)
-    cscmucsc(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, 
+    csc_matmat_pass2(int n_row, int n_col, int Ap, int Ai, signed char Ax, 
+        int Bp, int Bi, signed char Bx, int Cp, int Ci, 
+        signed char Cx)
+    csc_matmat_pass2(int n_row, int n_col, int Ap, int Ai, unsigned char Ax, 
+        int Bp, int Bi, unsigned char Bx, int Cp, 
+        int Ci, unsigned char Cx)
+    csc_matmat_pass2(int n_row, int n_col, int Ap, int Ai, short Ax, int Bp, 
+        int Bi, short Bx, int Cp, int Ci, short Cx)
+    csc_matmat_pass2(int n_row, int n_col, int Ap, int Ai, int Ax, int Bp, 
+        int Bi, int Bx, int Cp, int Ci, int Cx)
+    csc_matmat_pass2(int n_row, int n_col, int Ap, int Ai, long long Ax, 
+        int Bp, int Bi, long long Bx, int Cp, int Ci, 
+        long long Cx)
+    csc_matmat_pass2(int n_row, int n_col, int Ap, int Ai, float Ax, int Bp, 
+        int Bi, float Bx, int Cp, int Ci, float Cx)
+    csc_matmat_pass2(int n_row, int n_col, int Ap, int Ai, double Ax, int Bp, 
+        int Bi, double Bx, int Cp, int Ci, double Cx)
+    csc_matmat_pass2(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, 
         int Bp, int Bi, npy_cfloat_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(npy_cfloat_wrapper)> Cx)
-    cscmucsc(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, 
+        int Cp, int Ci, npy_cfloat_wrapper Cx)
+    csc_matmat_pass2(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, 
         int Bp, int Bi, npy_cdouble_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(npy_cdouble_wrapper)> Cx)
+        int Cp, int Ci, npy_cdouble_wrapper Cx)
     """
-  return _sparsetools.cscmucsc(*args)
+  return _sparsetools.csc_matmat_pass2(*args)
 
-def csrmux(*args):
+def csr_matvec(*args):
   """
-    csrmux(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
+    csr_matvec(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
         signed char Xx, signed char Yx)
-    csrmux(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
+    csr_matvec(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
         unsigned char Xx, unsigned char Yx)
-    csrmux(int n_row, int n_col, int Ap, int Aj, short Ax, short Xx, 
+    csr_matvec(int n_row, int n_col, int Ap, int Aj, short Ax, short Xx, 
         short Yx)
-    csrmux(int n_row, int n_col, int Ap, int Aj, int Ax, int Xx, 
+    csr_matvec(int n_row, int n_col, int Ap, int Aj, int Ax, int Xx, 
         int Yx)
-    csrmux(int n_row, int n_col, int Ap, int Aj, long long Ax, 
+    csr_matvec(int n_row, int n_col, int Ap, int Aj, long long Ax, 
         long long Xx, long long Yx)
-    csrmux(int n_row, int n_col, int Ap, int Aj, float Ax, float Xx, 
+    csr_matvec(int n_row, int n_col, int Ap, int Aj, float Ax, float Xx, 
         float Yx)
-    csrmux(int n_row, int n_col, int Ap, int Aj, double Ax, double Xx, 
+    csr_matvec(int n_row, int n_col, int Ap, int Aj, double Ax, double Xx, 
         double Yx)
-    csrmux(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
+    csr_matvec(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
         npy_cfloat_wrapper Xx, npy_cfloat_wrapper Yx)
-    csrmux(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
+    csr_matvec(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
         npy_cdouble_wrapper Xx, npy_cdouble_wrapper Yx)
     """
-  return _sparsetools.csrmux(*args)
+  return _sparsetools.csr_matvec(*args)
 
-def cscmux(*args):
+def csc_matvec(*args):
   """
-    cscmux(int n_row, int n_col, int Ap, int Ai, signed char Ax, 
+    csc_matvec(int n_row, int n_col, int Ap, int Ai, signed char Ax, 
         signed char Xx, signed char Yx)
-    cscmux(int n_row, int n_col, int Ap, int Ai, unsigned char Ax, 
+    csc_matvec(int n_row, int n_col, int Ap, int Ai, unsigned char Ax, 
         unsigned char Xx, unsigned char Yx)
-    cscmux(int n_row, int n_col, int Ap, int Ai, short Ax, short Xx, 
+    csc_matvec(int n_row, int n_col, int Ap, int Ai, short Ax, short Xx, 
         short Yx)
-    cscmux(int n_row, int n_col, int Ap, int Ai, int Ax, int Xx, 
+    csc_matvec(int n_row, int n_col, int Ap, int Ai, int Ax, int Xx, 
         int Yx)
-    cscmux(int n_row, int n_col, int Ap, int Ai, long long Ax, 
+    csc_matvec(int n_row, int n_col, int Ap, int Ai, long long Ax, 
         long long Xx, long long Yx)
-    cscmux(int n_row, int n_col, int Ap, int Ai, float Ax, float Xx, 
+    csc_matvec(int n_row, int n_col, int Ap, int Ai, float Ax, float Xx, 
         float Yx)
-    cscmux(int n_row, int n_col, int Ap, int Ai, double Ax, double Xx, 
+    csc_matvec(int n_row, int n_col, int Ap, int Ai, double Ax, double Xx, 
         double Yx)
-    cscmux(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, 
+    csc_matvec(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, 
         npy_cfloat_wrapper Xx, npy_cfloat_wrapper Yx)
-    cscmux(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, 
+    csc_matvec(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, 
         npy_cdouble_wrapper Xx, npy_cdouble_wrapper Yx)
     """
-  return _sparsetools.cscmux(*args)
+  return _sparsetools.csc_matvec(*args)
 
 def csr_elmul_csr(*args):
   """
@@ -570,84 +572,33 @@ def csc_minus_csc(*args):
     """
   return _sparsetools.csc_minus_csc(*args)
 
-def spdiags(*args):
+def csr_sort_indices(*args):
   """
-    spdiags(int n_row, int n_col, int n_diag, int offsets, signed char diags, 
-        std::vector<(int)> Ap, std::vector<(int)> Ai, 
-        std::vector<(signed char)> Ax)
-    spdiags(int n_row, int n_col, int n_diag, int offsets, unsigned char diags, 
-        std::vector<(int)> Ap, std::vector<(int)> Ai, 
-        std::vector<(unsigned char)> Ax)
-    spdiags(int n_row, int n_col, int n_diag, int offsets, short diags, 
-        std::vector<(int)> Ap, std::vector<(int)> Ai, 
-        std::vector<(short)> Ax)
-    spdiags(int n_row, int n_col, int n_diag, int offsets, int diags, 
-        std::vector<(int)> Ap, std::vector<(int)> Ai, 
-        std::vector<(int)> Ax)
-    spdiags(int n_row, int n_col, int n_diag, int offsets, long long diags, 
-        std::vector<(int)> Ap, std::vector<(int)> Ai, 
-        std::vector<(long long)> Ax)
-    spdiags(int n_row, int n_col, int n_diag, int offsets, float diags, 
-        std::vector<(int)> Ap, std::vector<(int)> Ai, 
-        std::vector<(float)> Ax)
-    spdiags(int n_row, int n_col, int n_diag, int offsets, double diags, 
-        std::vector<(int)> Ap, std::vector<(int)> Ai, 
-        std::vector<(double)> Ax)
-    spdiags(int n_row, int n_col, int n_diag, int offsets, npy_cfloat_wrapper diags, 
-        std::vector<(int)> Ap, 
-        std::vector<(int)> Ai, std::vector<(npy_cfloat_wrapper)> Ax)
-    spdiags(int n_row, int n_col, int n_diag, int offsets, npy_cdouble_wrapper diags, 
-        std::vector<(int)> Ap, 
-        std::vector<(int)> Ai, std::vector<(npy_cdouble_wrapper)> Ax)
+    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, signed char Ax)
+    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, unsigned char Ax)
+    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, short Ax)
+    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, int Ax)
+    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, long long Ax)
+    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, float Ax)
+    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, double Ax)
+    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax)
+    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax)
     """
-  return _sparsetools.spdiags(*args)
+  return _sparsetools.csr_sort_indices(*args)
 
-def csrtodense(*args):
+def csc_sort_indices(*args):
   """
-    csrtodense(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
-        signed char Mx)
-    csrtodense(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
-        unsigned char Mx)
-    csrtodense(int n_row, int n_col, int Ap, int Aj, short Ax, short Mx)
-    csrtodense(int n_row, int n_col, int Ap, int Aj, int Ax, int Mx)
-    csrtodense(int n_row, int n_col, int Ap, int Aj, long long Ax, 
-        long long Mx)
-    csrtodense(int n_row, int n_col, int Ap, int Aj, float Ax, float Mx)
-    csrtodense(int n_row, int n_col, int Ap, int Aj, double Ax, double Mx)
-    csrtodense(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
-        npy_cfloat_wrapper Mx)
-    csrtodense(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
-        npy_cdouble_wrapper Mx)
+    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, signed char Ax)
+    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, unsigned char Ax)
+    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, short Ax)
+    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, int Ax)
+    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, long long Ax)
+    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, float Ax)
+    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, double Ax)
+    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax)
+    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax)
     """
-  return _sparsetools.csrtodense(*args)
-
-def sort_csr_indices(*args):
-  """
-    sort_csr_indices(int n_row, int n_col, int Ap, int Aj, signed char Ax)
-    sort_csr_indices(int n_row, int n_col, int Ap, int Aj, unsigned char Ax)
-    sort_csr_indices(int n_row, int n_col, int Ap, int Aj, short Ax)
-    sort_csr_indices(int n_row, int n_col, int Ap, int Aj, int Ax)
-    sort_csr_indices(int n_row, int n_col, int Ap, int Aj, long long Ax)
-    sort_csr_indices(int n_row, int n_col, int Ap, int Aj, float Ax)
-    sort_csr_indices(int n_row, int n_col, int Ap, int Aj, double Ax)
-    sort_csr_indices(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax)
-    sort_csr_indices(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax)
-    """
-  return _sparsetools.sort_csr_indices(*args)
-
-def sort_csc_indices(*args):
-  """
-    sort_csc_indices(int n_row, int n_col, int Ap, int Ai, signed char Ax)
-    sort_csc_indices(int n_row, int n_col, int Ap, int Ai, unsigned char Ax)
-    sort_csc_indices(int n_row, int n_col, int Ap, int Ai, short Ax)
-    sort_csc_indices(int n_row, int n_col, int Ap, int Ai, int Ax)
-    sort_csc_indices(int n_row, int n_col, int Ap, int Ai, long long Ax)
-    sort_csc_indices(int n_row, int n_col, int Ap, int Ai, float Ax)
-    sort_csc_indices(int n_row, int n_col, int Ap, int Ai, double Ax)
-    sort_csc_indices(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax)
-    sort_csc_indices(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax)
-    """
-  return _sparsetools.sort_csc_indices(*args)
+  return _sparsetools.csc_sort_indices(*args)
 
 def sum_csr_duplicates(*args):
   """

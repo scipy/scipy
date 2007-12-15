@@ -45,12 +45,12 @@
  * 
  */
 template <class I, class T>
-void extract_csr_diagonal(const I n_row,
-                          const I n_col, 
-	                      const I Ap[], 
-	                      const I Aj[], 
-	                      const T Ax[],
-	                            T Yx[])
+void csr_diagonal(const I n_row,
+                  const I n_col, 
+	              const I Ap[], 
+	              const I Aj[], 
+	              const T Ax[],
+	                    T Yx[])
 {
   const I N = std::min(n_row, n_col);
   
@@ -132,21 +132,21 @@ void expandptr(const I n_row,
  * 
  */
 template <class I, class T>
-void csrtocsc(const I n_row,
-	          const I n_col, 
-	          const I Ap[], 
-	          const I Aj[], 
-	          const T Ax[],
-	                I Bp[],
-	                I Bi[],
-	                T Bx[])
+void csr_tocsc(const I n_row,
+	           const I n_col, 
+	           const I Ap[], 
+	           const I Aj[], 
+	           const T Ax[],
+	                 I Bp[],
+	                 I Bi[],
+	                 T Bx[])
 {  
-  I NNZ = Ap[n_row];
+  I nnz = Ap[n_row];
   
   std::vector<I> temp(n_col,0); //temp array
  
   //compute number of non-zero entries per column of A 
-  for (I i = 0; i < NNZ; i++){            
+  for (I i = 0; i < nnz; i++){            
     temp[Aj[i]]++;
   }
         
@@ -155,7 +155,7 @@ void csrtocsc(const I n_row,
     Bp[i] = cumsum;
     cumsum += temp[i];
   }
-  Bp[n_col] = NNZ; 
+  Bp[n_col] = nnz; 
   std::copy(Bp, Bp + n_col, temp.begin());
 
   
@@ -203,19 +203,19 @@ void csrtocsc(const I n_row,
  * 
  */
 template <class I, class T>
-void csrtocoo(const I n_row,
-	          const I n_col, 
-              const I Ap[], 
-              const I Aj[], 
-              const T Ax[],
-              std::vector<I>* Bi,
-              std::vector<I>* Bj,
-              std::vector<T>* Bx)
+void csr_tocoo(const I n_row,
+	           const I n_col, 
+               const I Ap[], 
+               const I Aj[], 
+               const T Ax[],
+               std::vector<I>* Bi,
+               std::vector<I>* Bj,
+               std::vector<T>* Bx)
 {
-  I NNZ = Ap[n_row];
-  Bi->reserve(NNZ);
-  Bi->reserve(NNZ);
-  Bx->reserve(NNZ);
+  I nnz = Ap[n_row];
+  Bi->reserve(nnz);
+  Bi->reserve(nnz);
+  Bx->reserve(nnz);
   for(I i = 0; i < n_row; i++){
     I row_start = Ap[i];
     I row_end   = Ap[i+1];
@@ -226,6 +226,120 @@ void csrtocoo(const I n_row,
     }
   }
 }
+
+
+
+/*
+ * Compute CSR row pointer for the matrix product C = A * B
+ *
+ */
+template <class I>
+void csr_matmat_pass1(const I n_row,
+                      const I n_col, 
+                      const I Ap[], 
+                      const I Aj[], 
+                      const I Bp[],
+                      const I Bj[],
+                            I Cp[])
+{
+    std::vector<I> next(n_col,-1);
+
+    Cp[0] = 0;
+
+    for(I i = 0; i < n_row; i++){
+        I head   = -2;
+        I length =  0;
+
+        I jj_start = Ap[i];
+        I jj_end   = Ap[i+1];
+        for(I jj = jj_start; jj < jj_end; jj++){
+            I j = Aj[jj];
+            I kk_start = Bp[j];
+            I kk_end   = Bp[j+1];
+            for(I kk = kk_start; kk < kk_end; kk++){
+                I k = Bj[kk];
+                if(next[k] == -1){
+                    next[k] = head;                        
+                    head = k;
+                    length++;
+                }
+            }
+        }         
+
+        for(I jj = 0; jj < length; jj++){
+            I temp = head;                
+            head = next[head];      
+            next[temp] = -1;
+        }
+        
+        Cp[i+1] = Cp[i] + length;
+    }
+}
+
+template <class I, class T>
+void csr_matmat_pass2(const I n_row,
+      	              const I n_col, 
+      	              const I Ap[], 
+      	              const I Aj[], 
+      	              const T Ax[],
+      	              const I Bp[],
+      	              const I Bj[],
+      	              const T Bx[],
+      	                    I Cp[],
+      	                    I Cj[],
+      	                    T Cx[])
+{
+    std::vector<I> next(n_col,-1);
+    std::vector<T> sums(n_col, 0);
+
+    I nnz = 0;
+
+    Cp[0] = 0;
+
+    for(I i = 0; i < n_row; i++){
+        I head = -2;
+        I length =  0;
+
+        I jj_start = Ap[i];
+        I jj_end   = Ap[i+1];
+        for(I jj = jj_start; jj < jj_end; jj++){
+            I j = Aj[jj];
+            T v = Ax[jj];
+
+            I kk_start = Bp[j];
+            I kk_end   = Bp[j+1];
+            for(I kk = kk_start; kk < kk_end; kk++){
+                I k = Bj[kk];
+
+                sums[k] += v*Bx[kk];
+
+                if(next[k] == -1){
+                    next[k] = head;                        
+                    head = k;
+                    length++;
+                }
+            }
+        }         
+
+        for(I jj = 0; jj < length; jj++){
+
+            if(sums[head] != 0){
+                Cj[nnz] = head;
+                Cx[nnz] = sums[head];
+                nnz++;
+            }
+
+            I temp = head;                
+            head = next[head];
+
+            next[temp] = -1; //clear arrays
+            sums[temp] =  0;                              
+        }
+
+        Cp[i+1] = nnz;
+    }
+}
+
 
 
 
@@ -282,45 +396,50 @@ void csrmucsr(const I n_row,
       	      std::vector<I>* Cj,
       	      std::vector<T>* Cx)
 {
-  Cp->resize(n_row+1,0);
-  
-  std::vector<I> index(n_col,-1);
-  std::vector<T> sums(n_col,0);
+    Cp->resize(n_row+1,0);
 
-  for(I i = 0; i < n_row; i++){
-    I istart = -2;
-    I length =  0;
-    
-    for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-      I j = Aj[jj];
-      for(I kk = Bp[j]; kk < Bp[j+1]; kk++){
-    	I k = Bj[kk];
-        
-	    sums[k] += Ax[jj]*Bx[kk];
-        
-	    if(index[k] == -1){
-	        index[k] = istart;                        
-	        istart = k;
-	        length++;
-	    }
-      }
-    }         
+    std::vector<I> next(n_col,-1);
+    std::vector<T> sums(n_col, 0);
 
-    for(I jj = 0; jj < length; jj++){
-      if(sums[istart] != 0){
-	    Cj->push_back(istart);
-	    Cx->push_back(sums[istart]);
-      }
-	
-      I temp = istart;                
-      istart = index[istart];
-      
-      index[temp] = -1; //clear arrays
-      sums[temp]  =  0;                              
+    for(I i = 0; i < n_row; i++){
+        I head = -2;
+        I length =  0;
+
+        I jj_start = Ap[i];
+        I jj_end   = Ap[i+1];
+        for(I jj = jj_start; jj < jj_end; jj++){
+            I j = Aj[jj];
+
+            I kk_start = Bp[j];
+            I kk_end   = Bp[j+1];
+            for(I kk = kk_start; kk < kk_end; kk++){
+                I k = Bj[kk];
+
+                sums[k] += Ax[jj]*Bx[kk];
+
+                if(next[k] == -1){
+                    next[k] = head;                        
+                    head = k;
+                    length++;
+                }
+            }
+        }         
+
+        for(I jj = 0; jj < length; jj++){
+            if(sums[head] != 0){
+                Cj->push_back(head);
+                Cx->push_back(sums[head]);
+            }
+
+            I temp = head;                
+            head = next[head];
+
+            next[temp] = -1; //clear arrays
+            sums[temp]  =  0;                              
+        }
+
+        (*Cp)[i+1] = Cx->size();
     }
-    
-    (*Cp)[i+1] = Cx->size();
-  }
 }
 
 
@@ -371,53 +490,57 @@ void csr_binop_csr(const I n_row,
 {
   Cp->resize(n_row+1,0);
   
-  std::vector<I>   index(n_col,-1);
+  std::vector<I>   next(n_col,-1);
   std::vector<T> A_row(n_col,0);
   std::vector<T> B_row(n_col,0);
 
   for(I i = 0; i < n_row; i++){
-    I istart = -2;
+    I head = -2;
     I length =  0;
     
     //add a row of A to A_row
-    for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+    I i_start = Ap[i];
+    I i_end   = Ap[i+1];
+    for(I jj = i_start; jj < i_end; jj++){
       I j = Aj[jj];
 
       A_row[j] += Ax[jj];
       
-      if(index[j] == -1){
-	    index[j] = istart;                        
-	    istart = j;
+      if(next[j] == -1){
+	    next[j] = head;                        
+	    head = j;
 	    length++;
       }
     }
     
     //add a row of B to B_row
-    for(I jj = Bp[i]; jj < Bp[i+1]; jj++){
+    i_start = Bp[i];
+    i_end   = Bp[i+1];
+    for(I jj = i_start; jj < i_end; jj++){
       I j = Bj[jj];
 
       B_row[j] += Bx[jj];
 
-      if(index[j] == -1){
-          index[j] = istart;                        
-	      istart = j;
+      if(next[j] == -1){
+          next[j] = head;                        
+	      head = j;
 	      length++;
       }
     }
 
 
     for(I jj = 0; jj < length; jj++){
-      T result = op(A_row[istart],B_row[istart]);
+      T result = op(A_row[head],B_row[head]);
       
       if(result != 0){
-	    Cj->push_back(istart);
+	    Cj->push_back(head);
 	    Cx->push_back(result);
       }
       
-      I temp = istart;                
-      istart = index[istart];
+      I temp = head;                
+      head = next[head];
       
-      index[temp] = -1;
+      next[temp] = -1;
       A_row[temp] =  0;                              
       B_row[temp] =  0;
     }
@@ -491,7 +614,7 @@ void sum_csr_duplicates(const I n_row,
   std::vector<I>  next(n_col,-1);
   std::vector<T>  sums(n_col, 0);
 
-  I NNZ = 0;
+  I nnz = 0;
 
   I row_start = 0;
   I row_end   = 0;
@@ -518,15 +641,15 @@ void sum_csr_duplicates(const I n_row,
         head   = next[curr];
         
         if(sums[curr] != 0){
-            Aj[NNZ] = curr;
-            Ax[NNZ] = sums[curr];
-            NNZ++;
+            Aj[nnz] = curr;
+            Ax[nnz] = sums[curr];
+            nnz++;
         }
         
         next[curr] = -1;
         sums[curr] =  0;
     }
-    Ap[i+1] = NNZ;
+    Ap[i+1] = nnz;
   }
 }
 
@@ -539,6 +662,7 @@ void sum_csr_duplicates(const I n_row,
  * Input Arguments:
  *   I  n_row      - number of rows in A
  *   I  n_col      - number of columns in A
+ *   I  nnz        - number of nonzeros in A
  *   I  Ai[nnz(A)] - row indices
  *   I  Aj[nnz(A)] - column indices
  *   T  Ax[nnz(A)] - nonzeros
@@ -561,20 +685,20 @@ void sum_csr_duplicates(const I n_row,
  * 
  */
 template <class I, class T>
-void cootocsr(const I n_row,
-              const I n_col,
-              const I NNZ,
-              const I Ai[],
-              const I Aj[],
-              const T Ax[],
-                    I Bp[],
-                    I Bj[],
-                    T Bx[])
+void coo_tocsr(const I n_row,
+               const I n_col,
+               const I nnz,
+               const I Ai[],
+               const I Aj[],
+               const T Ax[],
+                     I Bp[],
+                     I Bj[],
+                     T Bx[])
 {
   std::vector<I> temp(n_row,0);
 
   //compute nnz per row, then compute Bp
-  for(I i = 0; i < NNZ; i++){
+  for(I i = 0; i < nnz; i++){
     temp[Ai[i]]++;
   }
   //cumsum the nnz per row to get Bp[]
@@ -582,11 +706,11 @@ void cootocsr(const I n_row,
     Bp[i] = cumsum;
     cumsum += temp[i];
   }
-  Bp[n_row] = NNZ; 
+  Bp[n_row] = nnz; 
   std::copy(Bp, Bp + n_row, temp.begin());
 
   //write Aj,Ax into Bj,Bx
-  for(I i = 0; i < NNZ; i++){
+  for(I i = 0; i < nnz; i++){
     I row = Ai[i];
     I n   = temp[row];
 
@@ -626,13 +750,13 @@ void cootocsr(const I n_row,
  * 
  */
 template <class I, class T>
-void csrmux(const I n_row,
-	        const I n_col, 
-	        const I Ap[], 
-	        const I Aj[], 
-	        const T Ax[],
-	        const T Xx[],
-	              T Yx[])
+void csr_matvec(const I n_row,
+	            const I n_col, 
+	            const I Ap[], 
+	            const I Aj[], 
+	            const T Ax[],
+	            const T Xx[],
+	                  T Yx[])
 {
   for(I i = 0; i < n_row; i++){
     I row_start = Ap[i];
@@ -671,13 +795,13 @@ void csrmux(const I n_row,
  * 
  */
 template <class I, class T>
-void cscmux(const I n_row,
-	        const I n_col, 
-	        const I Ap[], 
-	        const I Ai[], 
-	        const T Ax[],
-	        const T Xx[],
-	              T Yx[])
+void csc_matvec(const I n_row,
+	            const I n_col, 
+	            const I Ap[], 
+	            const I Ai[], 
+	            const T Ax[],
+	            const T Xx[],
+	                  T Yx[])
 { 
  for(I i = 0; i < n_row; i++){
       Yx[i] = 0;
@@ -772,12 +896,12 @@ void spdiags(const I n_row,
  *
  */
 template <class I, class T>
-void csrtodense(const I  n_row,
-                const I  n_col,
-                const I  Ap[],
-                const I  Aj[],
-                const T  Ax[],
-                      T  Mx[])
+void csr_todense(const I  n_row,
+                 const I  n_col,
+                 const I  Ap[],
+                 const I  Aj[],
+                 const T  Ax[],
+                       T  Mx[])
 {
   I row_base = 0;
   for(I i = 0; i < n_row; i++){
@@ -809,12 +933,12 @@ void csrtodense(const I  n_row,
  *
  */
 template <class I, class T>
-void densetocsr(const I n_row,
-                const I n_col,
-                const T Mx[],
-                std::vector<I>* Ap,
-                std::vector<I>* Aj,
-                std::vector<T>* Ax)
+void dense_tocsr(const I n_row,
+                 const I n_col,
+                 const T Mx[],
+                 std::vector<I>* Ap,
+                 std::vector<I>* Aj,
+                 std::vector<T>* Ax)
 {
   const T* x_ptr = Mx;
 
@@ -852,7 +976,7 @@ bool kv_pair_less(const std::pair<T1,T2>& x, const std::pair<T1,T2>& y){
 }
 
 template<class I, class T>
-void sort_csr_indices(const I n_row,
+void csr_sort_indices(const I n_row,
                       const I n_col,
                       const I Ap[], 
                       I       Aj[], 
@@ -933,33 +1057,35 @@ void get_csr_submatrix(const I n_row,
 }
 
 
+
+
+
 /*
  * Derived methods
  */
+template <class I, class T>
+void csc_diagonal(const I n_row,
+                  const I n_col, 
+	              const I Ap[], 
+	              const I Aj[], 
+	              const T Ax[],
+	                    T Yx[])
+{ csr_diagonal(n_col, n_row, Ap, Aj, Ax, Yx); }
+
 
 template <class I, class T>
-void extract_csc_diagonal(const I n_row,
-                          const I n_col, 
-	                      const I Ap[], 
-	                      const I Aj[], 
-	                      const T Ax[],
-	                            T Yx[])
-{  extract_csr_diagonal(n_col, n_row, Ap, Aj, Ax, Yx); }
-
-
-template <class I, class T>
-void csctocsr(const I n_row,
-              const I n_col, 
-              const I Ap[], 
-              const I Ai[], 
-              const T Ax[],
-                    I Bp[],
-                    I Bj[],
-                    T Bx[])
-{ csrtocsc<I,T>(n_col,n_row,Ap,Ai,Ax,Bp,Bj,Bx); }
+void csc_tocsr(const I n_row,
+               const I n_col, 
+               const I Ap[], 
+               const I Ai[], 
+               const T Ax[],
+                     I Bp[],
+                     I Bj[],
+                     T Bx[])
+{ csr_tocsc<I,T>(n_col, n_row, Ap, Ai, Ax, Bp, Bj, Bx); }
 
 template <class I, class T>
-void csctocoo(const I n_row,
+void csc_tocoo(const I n_row,
               const I n_col, 
               const I Ap[], 
               const I Ai[], 
@@ -967,7 +1093,31 @@ void csctocoo(const I n_row,
               std::vector<I>* Bi,
               std::vector<I>* Bj,
               std::vector<T>* Bx)
-{ csrtocoo<I,T>(n_col,n_row,Ap,Ai,Ax,Bj,Bi,Bx); }
+{ csr_tocoo<I,T>(n_col, n_row, Ap, Ai, Ax, Bj, Bi, Bx); }
+    
+template <class I>
+void csc_matmat_pass1(const I n_row,
+                      const I n_col, 
+                      const I Ap[], 
+                      const I Ai[], 
+                      const I Bp[],
+                      const I Bi[],
+                            I Cp[])
+{ csr_matmat_pass1(n_col, n_row, Bp, Bi, Ap, Ai, Cp); }
+    
+template <class I, class T>
+void csc_matmat_pass2(const I n_row,
+      	              const I n_col, 
+      	              const I Ap[], 
+      	              const I Ai[], 
+      	              const T Ax[],
+      	              const I Bp[],
+      	              const I Bi[],
+      	              const T Bx[],
+      	                    I Cp[],
+      	                    I Ci[],
+      	                    T Cx[])
+{ csr_matmat_pass2(n_col, n_row, Bp, Bi, Bx, Ap, Ai, Ax, Cp, Ci, Cx); }
 
 template <class I, class T>
 void cscmucsc(const I n_row,
@@ -981,19 +1131,19 @@ void cscmucsc(const I n_row,
               std::vector<I>* Cp,
               std::vector<I>* Ci,
               std::vector<T>* Cx)
-{ csrmucsr<I,T>(n_col,n_row,Bp,Bi,Bx,Ap,Ai,Ax,Cp,Ci,Cx); }
+{ csrmucsr<I,T>(n_col, n_row, Bp, Bi, Bx, Ap, Ai, Ax, Cp, Ci, Cx); }
 
 template<class I, class T>
-void cootocsc(const I n_row,
-      	      const I n_col,
-      	      const I NNZ,
-      	      const I Ai[],
-      	      const I Aj[],
-      	      const T Ax[],
-      	            I Bp[],
-      	            I Bi[],
-      	            T Bx[])
-{ cootocsr<I,T>(n_col,n_row,NNZ,Aj,Ai,Ax,Bp,Bi,Bx); }
+void coo_tocsc(const I n_row,
+      	       const I n_col,
+      	       const I nnz,
+      	       const I Ai[],
+      	       const I Aj[],
+      	       const T Ax[],
+      	             I Bp[],
+      	             I Bi[],
+      	             T Bx[])
+{ coo_tocsr<I,T>(n_col, n_row, nnz, Aj, Ai, Ax, Bp, Bi, Bx); }
 
 
 
@@ -1003,7 +1153,7 @@ void csc_elmul_csc(const I n_row, const I n_col,
                    const I Bp [], const I Bi [], const T Bx [],
                    std::vector<I>* Cp, std::vector<I>* Ci, std::vector<T>* Cx)
 {
-    csr_elmul_csr(n_col,n_row,Ap,Ai,Ax,Bp,Bi,Bx,Cp,Ci,Cx);
+    csr_elmul_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 template <class I, class T>
@@ -1012,7 +1162,7 @@ void csc_eldiv_csc(const I n_row, const I n_col,
                    const I Bp [], const I Bi [], const T Bx [],
                    std::vector<I>* Cp, std::vector<I>* Ci, std::vector<T>* Cx)
 {
-    csr_eldiv_csr(n_col,n_row,Ap,Ai,Ax,Bp,Bi,Bx,Cp,Ci,Cx);
+    csr_eldiv_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 
@@ -1022,7 +1172,7 @@ void csc_plus_csc(const I n_row, const I n_col,
                   const I Bp [], const I Bi [], const T Bx [],
                   std::vector<I>* Cp, std::vector<I>* Ci, std::vector<T>* Cx)
 {
-    csr_plus_csr(n_col,n_row,Ap,Ai,Ax,Bp,Bi,Bx,Cp,Ci,Cx);
+    csr_plus_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 template <class I, class T>
@@ -1031,7 +1181,7 @@ void csc_minus_csc(const I n_row, const I n_col,
                    const I Bp [], const I Bi [], const T Bx [],
                    std::vector<I>* Cp, std::vector<I>* Ci, std::vector<T>* Cx)
 {
-    csr_minus_csr(n_col,n_row,Ap,Ai,Ax,Bp,Bi,Bx,Cp,Ci,Cx);
+    csr_minus_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 
@@ -1042,15 +1192,15 @@ void sum_csc_duplicates(const I n_row,
                               I Ap[], 
                               I Ai[], 
                               T Ax[])
-{ sum_csr_duplicates(n_col,n_row,Ap,Ai,Ax); }
+{ sum_csr_duplicates(n_col, n_row, Ap, Ai, Ax); }
 
 
 template<class I, class T>
-void sort_csc_indices(const I n_row,
+void csc_sort_indices(const I n_row,
                       const I n_col,
                       const I Ap[], 
                       I       Ai[], 
                       T       Ax[])
-{ sort_csr_indices(n_col,n_row,Ap,Ai,Ax); }
+{ csr_sort_indices(n_col, n_row, Ap, Ai, Ax); }
 
 #endif

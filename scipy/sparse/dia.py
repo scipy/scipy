@@ -3,7 +3,7 @@
 __all__ = ['dia_matrix','isspmatrix_dia']
 
 from numpy import asarray, asmatrix, matrix, zeros, arange, unique, \
-        searchsorted, intc
+        searchsorted, intc, atleast_1d, atleast_2d
 
 from base import spmatrix, isspmatrix, isdense
 from sputils import isscalarlike, isshape, upcast, getdtype
@@ -55,8 +55,8 @@ class dia_matrix(spmatrix):
                 else:
                     if shape is None:
                         raise ValueError,'expected a shape argument'
-                    self.diags   = asarray(arg1[0],dtype=dtype)
-                    self.offsets = asarray(arg1[1],dtype='i')
+                    self.diags   = atleast_2d(asarray(arg1[0],dtype=dtype))
+                    self.offsets = atleast_1d(asarray(arg1[1],dtype='i'))
                     self.shape   = shape
 
         #check format

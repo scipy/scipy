@@ -10,7 +10,7 @@ from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
         empty, hstack, isscalar, ndarray, shape, searchsorted
 
 from base import spmatrix,isspmatrix
-from sparsetools import csctocsr
+from sparsetools import csc_tocsr
 from sputils import upcast, to_native, isdense, isshape, getdtype, \
         isscalarlike
 
@@ -161,15 +161,18 @@ class csc_matrix(_cs_matrix):
         indices = empty(self.nnz, dtype=intc)
         data    = empty(self.nnz, dtype=upcast(self.dtype))
 
-        csctocsr(self.shape[0], self.shape[1], \
-                self.indptr, self.indices, self.data, \
-                indptr, indices, data)
+        csc_tocsr(self.shape[0], self.shape[1], \
+                 self.indptr, self.indices, self.data, \
+                 indptr, indices, data)
 
         from csr import csr_matrix
         return csr_matrix((data, indices, indptr), self.shape)
-
+    
     def toarray(self):
-        return self.tocsr().toarray()
+        A = self.tocoo(copy=False)
+        M = zeros(self.shape, dtype=self.dtype)
+        M[A.row, A.col] = A.data
+        return M
 
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created).
@@ -197,6 +200,7 @@ class csc_matrix(_cs_matrix):
 
     def _tothis(self, other):
         return other.tocsc()
+
 from sputils import _isinstance
 
 def isspmatrix_csc(x):

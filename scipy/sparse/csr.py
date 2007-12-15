@@ -11,7 +11,7 @@ from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
         empty, hstack, isscalar, ndarray, shape, searchsorted
 
 from base import spmatrix,isspmatrix
-from sparsetools import csrtodense, csrtocsc
+from sparsetools import csr_tocsc
 from sputils import upcast, to_native, isdense, isshape, getdtype, \
         isscalarlike
 
@@ -168,19 +168,18 @@ class csr_matrix(_cs_matrix):
         indices = empty(self.nnz, dtype=intc)
         data    = empty(self.nnz, dtype=upcast(self.dtype))
 
-        csrtocsc(self.shape[0], self.shape[1], \
-                 self.indptr, self.indices, self.data, \
-                 indptr, indices, data)
+        csr_tocsc(self.shape[0], self.shape[1], \
+                  self.indptr, self.indices, self.data, \
+                  indptr, indices, data)
 
         from csc import csc_matrix
         return csc_matrix((data, indices, indptr), self.shape)
     
     def toarray(self):
-        #TODO use a cheap tocoo() and make coo->todense()
-        data = numpy.zeros(self.shape, dtype=upcast(self.data.dtype))
-        csrtodense(self.shape[0], self.shape[1], self.indptr, self.indices,
-                   self.data, data)
-        return data
+        A = self.tocoo(copy=False)
+        M = zeros(self.shape, dtype=self.dtype)
+        M[A.row, A.col] = A.data
+        return M
     
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created).

@@ -3,6 +3,8 @@
 Original code by Ed Schofield.
 """
 
+__all__ = ['lil_matrix','isspmatrix_lil']
+
 import copy
 from bisect import bisect_left
 

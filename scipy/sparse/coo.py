@@ -5,9 +5,9 @@ __all__ = ['coo_matrix', 'isspmatrix_coo']
 from itertools import izip
 from warnings import warn 
 
-from numpy import array, asarray, empty, intc
+from numpy import array, asarray, empty, intc, zeros, bincount
 
-from sparsetools import cootocsr, cootocsc
+from sparsetools import coo_tocsr, coo_tocsc
 from base import spmatrix, isspmatrix
 from sputils import upcast, to_native, isshape, getdtype
 
@@ -161,7 +161,6 @@ class coo_matrix(spmatrix):
         self.shape = tuple([int(x) for x in self.shape])
         self.nnz = nnz
 
-
     def rowcol(self, num):
         return (self.row[num], self.col[num])
 
@@ -172,6 +171,12 @@ class coo_matrix(spmatrix):
         M,N = self.shape
         return coo_matrix((self.data,(self.col,self.row)),(N,M),copy=copy)
 
+    def toarray(self):
+        A = self.tocsr().tocoo(copy=False) #eliminate (i,j) duplicates
+        M = zeros(self.shape, dtype=self.dtype)
+        M[A.row, A.col] = A.data
+        return M
+
     def tocsc(self):
         from csc import csc_matrix
         if self.nnz == 0:
@@ -181,9 +186,9 @@ class coo_matrix(spmatrix):
             indices = empty(self.nnz, dtype=intc)
             data    = empty(self.nnz, dtype=upcast(self.dtype))
 
-            cootocsc(self.shape[0], self.shape[1], self.nnz, \
-                     self.row, self.col, self.data, \
-                     indptr, indices, data)
+            coo_tocsc(self.shape[0], self.shape[1], self.nnz, \
+                      self.row, self.col, self.data, \
+                      indptr, indices, data)
 
             return csc_matrix((data, indices, indptr), self.shape)
 
@@ -196,9 +201,9 @@ class coo_matrix(spmatrix):
             indices = empty(self.nnz, dtype=intc)
             data    = empty(self.nnz, dtype=upcast(self.dtype))
 
-            cootocsr(self.shape[0], self.shape[1], self.nnz, \
-                     self.row, self.col, self.data, \
-                     indptr, indices, data)
+            coo_tocsr(self.shape[0], self.shape[1], self.nnz, \
+                      self.row, self.col, self.data, \
+                      indptr, indices, data)
 
             return csr_matrix((data, indices, indptr), self.shape)
     

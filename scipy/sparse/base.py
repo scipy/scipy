@@ -364,8 +364,7 @@ class spmatrix(object):
         return asmatrix(self.toarray())
 
     def toarray(self):
-        csr = self.tocsr()
-        return csr.toarray()
+        return self.tocsr().toarray()
 
     def todok(self):
         return self.tocoo().todok()
@@ -378,13 +377,6 @@ class spmatrix(object):
 
     def todia(self):
         return self.tocoo().todia()
-
-#    def toself(self, copy=False):
-#        if copy:
-#            new = self.copy()
-#        else:
-#            new = self
-#        return new
 
     def copy(self):
         return self.__class__(self,copy=True)

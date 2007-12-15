@@ -1,6 +1,8 @@
 """ Functions that operate on sparse matrices
 """
 
+__all__ = ['extract_diagonal']
+
 from numpy import empty
 
 from base import isspmatrix
@@ -16,7 +18,7 @@ def extract_diagonal(A):
     """
     #TODO extract k-th diagonal
     if isspmatrix_csr(A) or isspmatrix_csc(A):
-        fn = getattr(sparsetools, "extract_" + A.format + "_diagonal")
+        fn = getattr(sparsetools, A.format + "_diagonal")
         y = empty( min(A.shape), dtype=upcast(A.dtype) )
         fn(A.shape[0],A.shape[1],A.indptr,A.indices,A.data,y)
         return y

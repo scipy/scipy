@@ -4,7 +4,7 @@
 
 __all__ = [ 'spdiags','speye','spidentity','spkron', 'lil_eye', 'lil_diags' ]
 
-import itertools
+from itertools import izip
 from warnings import warn
 
 import numpy
@@ -15,9 +15,9 @@ from csc import csc_matrix, isspmatrix_csc
 from coo import coo_matrix
 from dok import dok_matrix
 from lil import lil_matrix
+from dia import dia_matrix
 from base import isspmatrix
 
-import sparsetools
 
 def spdiags(diags, offsets, m, n, format=None):
     """Return a sparse matrix given its diagonals.
@@ -47,19 +47,7 @@ def spdiags(diags, offsets, m, n, format=None):
 
     """
     #TODO update this example
-    
-    if format == 'csc':
-        diags = array(diags, copy = True)
-        if diags.dtype.char not in 'fdFD':
-            diags = diags.astype('d')
-        if not hasattr(offsets, '__len__' ):
-            offsets = (offsets,)
-        offsets = array(offsets, copy=False, dtype=intc)
-        assert(len(offsets) == diags.shape[0])
-        indptr, rowind, data = sparsetools.spdiags(m, n, len(offsets), offsets, diags)
-        return csc_matrix((data, rowind, indptr), (m, n))
-    else:
-        return spdiags( diags, offsets, m, n, format='csc').asformat(format)
+    return dia_matrix((diags, offsets), shape=(m,n)).asformat(format)
 
 def spidentity(n, dtype='d', format=None):
     """spidentity(n) returns an (n x n) identity matrix"""
@@ -201,7 +189,7 @@ def lil_diags(diags,offsets,(m,n),dtype='d'):
                              "diagonal %s." % k)
 
     out = lil_matrix((m,n),dtype=dtype)
-    for k,diag in itertools.izip(offsets,diags):
+    for k,diag in izip(offsets,diags):
         for ix,c in enumerate(xrange(clip(k,0,n),clip(m+k,0,n))):
             out.rows[c-k].append(c)
             out.data[c-k].append(diag[ix])

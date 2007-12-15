@@ -353,11 +353,12 @@ class UmfpackContext( Struct ):
         sparsity pattern."""
         self.free_symbolic()
 
+        indx = self._getIndx( mtx )
+
         if not assumeSortedIndices:
             # row/column indices cannot be assumed to be sorted
             mtx.sort_indices()
 
-        indx = self._getIndx( mtx )
         if self.isReal:
             status, self._symbolic\
                     = self.funs.symbolic( mtx.shape[0], mtx.shape[1],
