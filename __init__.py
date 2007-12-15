@@ -4,8 +4,18 @@
 
 from info import __doc__
 
+# snip on----- DELETE after numpy.deprecate_with_doc is available
+import numpy
+numpy.deprecate_with_doc = lambda doc: (lambda func: func)
+# snip off---- DELETE after numpy.deprecate_with_doc is available
+
+from numpy deprecate_with_doc
+
 from numpyio import packbits, unpackbits, bswap, fread, fwrite, \
      convert_objectarray
+fread = deprecate_with_doc('')(fread)
+fwrite = deprecate_with_doc('')(fwrite)
+bswap = deprecate_with_doc('')(bswap)
 
 # matfile read and write
 from matlab.mio import loadmat, savemat
