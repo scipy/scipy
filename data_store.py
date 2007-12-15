@@ -19,6 +19,15 @@ __all__ = ['load', 'save', 'create_module', 'create_shelf']
 import dumb_shelve
 import os
 
+# snip on----- DELETE after numpy.deprecate_with_doc is available
+import numpy
+numpy.deprecate_with_doc = lambda doc: (lambda func: func)
+# snip off---- DELETE after numpy.deprecate_with_doc is available
+
+from numpy deprecate_with_doc
+
+
+@deprecate_with_doc('')
 def load(module):
     """ Load data into module from a shelf with
         the same name as the module.
@@ -34,7 +43,7 @@ def load(module):
 #       print i, 'loaded...'
 #   print 'done'
 
-def save(file_name=None,data=None):
+def save_as_module(file_name=None,data=None):
     """ Save the dictionary "data" into
         a module and shelf named save
     """
@@ -42,6 +51,9 @@ def save(file_name=None,data=None):
     create_module(file_name)
     create_shelf(file_name,data)
 
+save = @deprecate_with_doc('')(save_as_module)
+
+@deprecate_with_doc('')
 def create_module(file_name):
     """ Create the module file.
     """
@@ -53,6 +65,7 @@ def create_module(file_name):
         f.write('data_store.load(%s)' % module_name)
         f.close()
 
+@deprecate_with_doc('')
 def create_shelf(file_name,data):
     """Use this to write the data to a new file
     """

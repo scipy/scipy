@@ -1,5 +1,13 @@
 import cPickle
 
+# snip on----- DELETE after numpy.deprecate_with_doc is available
+import numpy
+numpy.deprecate_with_doc = lambda doc: (lambda func: func)
+# snip off---- DELETE after numpy.deprecate_with_doc is available
+
+from numpy deprecate_with_doc
+
+@deprecate_with_doc('')
 def objsave(file, allglobals, *args):
     """Pickle the part of a dictionary containing the argument list
     into file string.
