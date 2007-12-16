@@ -18,25 +18,64 @@ from sputils import upcast, to_native, isdense, isshape, getdtype, \
 from compressed import _cs_matrix,resize1d
 
 class csr_matrix(_cs_matrix):
-    """ Compressed sparse row matrix
-        This can be instantiated in several ways:
-          - csr_matrix(d)
-            with a dense matrix d
+    """Compressed Sparse Row matrix
 
-          - csr_matrix(s)
-            with another sparse matrix s (sugar for .tocsr())
+    This can be instantiated in several ways:
+      - csr_matrix(D)
+        with a dense matrix or rank-2 ndarray D
 
-          - csr_matrix((M, N), [dtype])
-            to construct a container, where (M, N) are dimensions and
-            dtype is optional, defaulting to dtype='d'.
+      - csr_matrix(S)
+        with another sparse matrix S (equivalent to S.tocsr())
 
-          - csr_matrix((data, ij), [shape=(M, N)])
-            where data, ij satisfy:
-                a[ij[0, k], ij[1, k]] = data[k]
+      - csr_matrix((M, N), [dtype])
+        to construct an empty matrix with shape (M, N)
+        dtype is optional, defaulting to dtype='d'.
 
-          - csr_matrix((data, col, ptr), [shape=(M, N)])
-            standard CSR representation
+      - csr_matrix((data, ij), [shape=(M, N)])
+        where data, ij satisfy:
+            a[ij[0, k], ij[1, k]] = data[k]
+
+      - csr_matrix((data, indices, indptr), [shape=(M, N)])
+        is the native CSR representation where:
+            the column indices for row i are stored in
+                indices[ indptr[i]: indices[i+1] ] 
+            and their corresponding values are stored in
+                data[ indptr[i]: indptr[i+1] ]
+        If the shape parameter is not supplied, the matrix dimensions
+        are inferred from the index arrays.
+
+
+    *Examples*
+    ----------
+
+    >>> from scipy.sparse import *
+    >>> from scipy import *
+    >>> csr_matrix( (3,4), dtype='i' ).todense()
+    matrix([[0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0]])
+
+    >>> row = array([0,0,1,2,2,2])
+    >>> col = array([0,2,2,0,1,2])
+    >>> data = array([1,2,3,4,5,6])
+    >>> csr_matrix( (data,(row,col)), shape=(3,3) ).todense()
+    matrix([[1, 0, 2],
+            [0, 0, 3],
+            [4, 5, 6]])
+    
+    >>> indptr = array([0,2,3,6])
+    >>> indices = array([0,2,2,0,1,2])
+    >>> data = array([1,2,3,4,5,6])
+    >>> csr_matrix( (data,indices,indptr), shape=(3,3) ).todense()
+    matrix([[1, 0, 2],
+            [0, 0, 3],
+            [4, 5, 6]])
+
     """
+
+
+
+
 
     def __getattr__(self, attr):
         if attr == 'colind':

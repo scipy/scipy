@@ -12,34 +12,68 @@ from base import spmatrix, isspmatrix
 from sputils import upcast, to_native, isshape, getdtype
 
 class coo_matrix(spmatrix):
-    """ A sparse matrix in coordinate list format.
+    """A sparse matrix in COOrdinate format.
+    Also known as the 'ijv' or 'triplet' format.
 
-    COO matrices are created either as:
-        A = coo_matrix( (m, n), [dtype])
-    for a zero matrix, or as:
-        A = coo_matrix(S)
-    where S is a sparse matrix, or as:
-        A = coo_matrix(M)
-    where M is a dense matrix or rank 2 ndarray, or as:
-        A = coo_matrix((obj, ij), [shape])
-    where the dimensions are optional.  If supplied, we set (M, N) = shape.
-    If not supplied, we infer these from the index arrays:
-        ij[0][:] and ij[1][:]
+    This can be instantiated in several ways:
+      - coo_matrix(D)
+        with a dense matrix D
 
-    The arguments 'obj' and 'ij' represent three arrays:
-        1. obj[:]    the entries of the matrix, in any order
-        2. ij[0][:]  the row indices of the matrix entries
-        3. ij[1][:]  the column indices of the matrix entries
+      - coo_matrix(S)
+        with another sparse matrix S (equivalent to S.tocoo())
 
-    So the following holds:
-        A[ij[0][k], ij[1][k] = obj[k]
+      - coo_matrix((M, N), [dtype])
+        to construct an empty matrix with shape (M, N)
+        dtype is optional, defaulting to dtype='d'.
+
+      - coo_matrix((data, ij), [shape=(M, N)])
+        When shape is not specified, it is inferred from the index arrays:
+            ij[0][:] and ij[1][:]
+
+        The arguments 'data' and 'ij' represent three arrays:
+            1. data[:]   the entries of the matrix, in any order
+            2. ij[0][:]  the row indices of the matrix entries
+            3. ij[1][:]  the column indices of the matrix entries
+    
+        So the following holds:
+            A[ij[0][k], ij[1][k] = data[k]
 
     Note:
         When converting to CSR or CSC format, duplicate (i,j) entries
         will be summed together.  This facilitates efficient construction
         of finite element matrices and the like.
 
+    *Examples*
+    ----------
+
+    >>> from scipy.sparse import *
+    >>> from scipy import *
+    >>> coo_matrix( (3,4), dtype='i' ).todense()
+    matrix([[0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0]])
+
+    >>> row  = array([0,3,1,0])
+    >>> col  = array([0,3,1,2])
+    >>> data = array([4,5,7,9])
+    >>> coo_matrix( (data,(row,col)), shape=(4,4) ).todense()
+    matrix([[4, 0, 9, 0],
+            [0, 7, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 5]])
+
+    >>> print "example with duplicates"
+    >>> row  = array([0,0,1,3,1,0,0])
+    >>> col  = array([0,2,1,3,1,0,0])
+    >>> data = array([1,1,1,1,1,1,1])
+    >>> coo_matrix( (data,(row,col)), shape=(4,4)).todense()
+    matrix([[3, 0, 1, 0],
+            [0, 2, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 1]])
+    
     """
+
     def __init__(self, arg1, shape=None, dtype=None, copy=False, dims=None):
         spmatrix.__init__(self)
 
