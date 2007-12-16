@@ -5,7 +5,7 @@ import numpy
 numpy.deprecate_with_doc = lambda doc: (lambda func: func)
 # snip off---- DELETE after numpy.deprecate_with_doc is available
 
-from numpy deprecate_with_doc
+from numpy import deprecate_with_doc
 
 @deprecate_with_doc('')
 def objsave(file, allglobals, *args):

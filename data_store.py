@@ -24,7 +24,7 @@ import numpy
 numpy.deprecate_with_doc = lambda doc: (lambda func: func)
 # snip off---- DELETE after numpy.deprecate_with_doc is available
 
-from numpy deprecate_with_doc
+from numpy import deprecate_with_doc
 
 
 @deprecate_with_doc('')
@@ -51,7 +51,7 @@ def save_as_module(file_name=None,data=None):
     create_module(file_name)
     create_shelf(file_name,data)
 
-save = @deprecate_with_doc('')(save_as_module)
+save = deprecate_with_doc('')(save_as_module)
 
 @deprecate_with_doc('')
 def create_module(file_name):
