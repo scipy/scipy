@@ -1,5 +1,10 @@
-from numpy.testing import *
+try:
+    from sets import Set
+    set = Set
+except:
+    pass
 
+from numpy.testing import *
 from numpy import sqrt,empty,ones,arange,array_split,eye,array, \
                   zeros,diag,zeros_like,diff,matrix,hstack,vstack
 from numpy.linalg import norm
