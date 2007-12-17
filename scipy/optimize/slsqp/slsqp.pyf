@@ -1,0 +1,30 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module _slsqp ! in 
+    interface  ! in :slsqp
+        subroutine slsqp(m,meq,la,n,x,xl,xu,f,c,g,a,acc,iter,mode,w,l_w,jw,l_jw) ! in :slsqp:slsqp_optmz.f
+            integer :: m
+            integer :: meq
+            integer optional,check(len(c)>=la),depend(c) :: la=len(c)
+            integer optional,check(len(x)>=n),depend(x) :: n=len(x)
+            double precision dimension(n), intent(inout) :: x
+            double precision dimension(n),depend(n) :: xl
+            double precision dimension(n),depend(n) :: xu
+            double precision :: f
+            double precision dimension(la) :: c
+            double precision dimension(n + 1),depend(n) :: g
+            double precision dimension(la,n + 1),depend(la,n) :: a
+            double precision, intent(inout) :: acc
+            integer, intent(inout) :: iter
+            integer, intent(inout) :: mode
+            double precision dimension(l_w) :: w
+            integer optional,check(len(w)>=l_w),depend(w) :: l_w=len(w)
+            integer dimension(l_jw) :: jw
+            integer optional,check(len(jw)>=l_jw),depend(jw) :: l_jw=len(jw)
+        end subroutine slsqp
+    end interface 
+end python module slsqp
+
+! This file was auto-generated with f2py (version:2_3844).
+! See http://cens.ioc.ee/projects/f2py2e/
