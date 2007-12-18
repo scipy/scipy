@@ -59,7 +59,11 @@ class TestSparseTools(NumpyTestCase):
             start = time.clock()
             iter = 0
             while iter < 5 or time.clock() < start + 1:
-                y = A*x
+                try:
+                    #avoid creating y if possible
+                    A.matvec(x,y)
+                except:
+                    y = A*x
                 iter += 1
             end = time.clock()
 
@@ -91,7 +95,7 @@ class TestSparseTools(NumpyTestCase):
                 start = time.clock()
                 
                 iter = 0
-                while time.clock() < start + 0.1:
+                while time.clock() < start + 0.5:
                     T = eval(format + '_matrix')(A.shape)
                     for i,j,v in zip(A.row,A.col,A.data):
                         T[i,j] = v

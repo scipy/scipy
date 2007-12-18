@@ -4,7 +4,7 @@ __all__ = ['spmatrix','isspmatrix','issparse']
 
 from warnings import warn
 
-from numpy import asarray, asmatrix, ones
+from numpy import asarray, asmatrix, asanyarray, ones
 
 from sputils import isdense, isscalarlike 
 
@@ -321,7 +321,7 @@ class spmatrix(object):
             other.shape
         except AttributeError:
             # If it's a list or whatever, treat it like a matrix
-            other = asmatrix(other)
+            other = asanyarray(other)
 
         if isdense(other) and asarray(other).squeeze().ndim <= 1:
             # it's a dense row or column vector

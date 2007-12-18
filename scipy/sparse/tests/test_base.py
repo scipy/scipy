@@ -428,6 +428,38 @@ class _TestInplaceArithmetic:
         assert_array_equal(self.dat/17.3,a.todense())
 
 
+class _TestMatvecOutput:
+    """test using the matvec() output parameter"""
+    def check_matvec_output(self): 
+        #flat array
+        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
+        y = zeros(3,dtype='d')
+        
+        self.datsp.matvec(x,y)
+        assert_array_equal(self.datsp*x,y)
+    
+        #column vector
+        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
+        x = x.reshape(4,1)
+        y = zeros((3,1),dtype='d')
+
+        self.datsp.matvec(x,y)
+        assert_array_equal(self.datsp*x,y)
+   
+        # improper output type
+        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
+        y = zeros(3,dtype='i')
+        
+        self.assertRaises( ValueError, self.datsp.matvec, x, y )
+        
+        # proper upcast output type
+        x = array([1.25, -6.5, 0.125, -3.75],dtype='complex64')
+        x.imag = [1,2,3,4]
+        y = zeros(3,dtype='complex128')
+       
+        self.datsp.matvec(x,y)
+        assert_array_equal(self.datsp*x,y)
+        assert_equal((self.datsp*x).dtype,y.dtype)
 
 class _TestGetSet:
     def check_setelement(self):
@@ -674,7 +706,7 @@ class _TestArithmetic:
 
 
 class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
-        _TestInplaceArithmetic, _TestArithmetic,  
+        _TestInplaceArithmetic, _TestArithmetic, _TestMatvecOutput,
         _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
         NumpyTestCase):
     spmatrix = csr_matrix
@@ -771,7 +803,7 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
 class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
-        _TestInplaceArithmetic, _TestArithmetic,  
+        _TestInplaceArithmetic, _TestArithmetic, _TestMatvecOutput,
         _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
         NumpyTestCase):
     spmatrix = csc_matrix
