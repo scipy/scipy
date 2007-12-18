@@ -40,7 +40,7 @@ class TestSparseTools(NumpyTestCase):
 
     def test_matvec(self,level=5):
         matrices = []
-        matrices.append(('Identity', spidentity(10**5,format='csr')))
+        matrices.append(('Identity',   spidentity(10**5,format='csr')))
         matrices.append(('Poisson5pt', poisson2d(1000,format='csr')))
         matrices.append(('Poisson5pt', poisson2d(1000,format='dia')))
 

@@ -26,58 +26,58 @@ class dia_matrix(spmatrix):
                 A = arg1.tocoo()
             
             ks = A.col - A.row  #the offset for each nonzero          
-            offsets = unique(ks)
+            diags = unique(ks)
 
-            if len(offsets) > 10:
+            if len(diags) > 10:
                 pass #do something
 
-            #initialize and fill in diags array
-            diags_shape = (len(offsets), A.col.max()+1)
-            diags_dtype = getdtype(dtype, default=A.data.dtype)
-            diags = zeros(diags_shape, dtype=diags_dtype)
-            diags[ searchsorted(offsets,ks), A.col ] = A.data
+            #initialize and fill in data array
+            data_shape = (len(diags), A.col.max()+1)
+            data_dtype = getdtype(dtype, default=A.data.dtype)
+            data = zeros(data_shape, dtype=data_dtype)
+            data[ searchsorted(diags,ks), A.col ] = A.data
   
-            self.diags,self.offsets = diags,offsets
+            self.data,self.diags = data,diags
             self.shape = A.shape
         elif isinstance(arg1, tuple):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
                 # create empty matrix
                 self.shape = arg1   #spmatrix checks for errors here
-                self.diags   = zeros( (0,0), getdtype(dtype, default=float))
-                self.offsets = zeros( (0), dtype=intc)
+                self.data   = zeros( (0,0), getdtype(dtype, default=float))
+                self.diags = zeros( (0), dtype=intc)
             else:
                 try:
-                    # Try interpreting it as (diags, offsets)
-                    data, offsets = arg1
+                    # Try interpreting it as (data, diags)
+                    data, diags = arg1
                 except:
                     raise ValueError, "unrecognized form for dia_matrix constructor"
                 else:
                     if shape is None:
                         raise ValueError,'expected a shape argument'
-                    self.diags   = atleast_2d(asarray(arg1[0],dtype=dtype))
-                    self.offsets = atleast_1d(asarray(arg1[1],dtype='i'))
+                    self.data   = atleast_2d(asarray(arg1[0],dtype=dtype))
+                    self.diags = atleast_1d(asarray(arg1[1],dtype='i'))
                     self.shape   = shape
 
         #check format
-        if self.offsets.ndim != 1:
-            raise ValueError,'offsets array must have rank 1'
+        if self.diags.ndim != 1:
+            raise ValueError,'diags array must have rank 1'
 
-        if self.diags.ndim != 2:
-            raise ValueError,'diags array must have rank 2'
+        if self.data.ndim != 2:
+            raise ValueError,'data array must have rank 2'
 
-        if self.diags.shape[0] != len(self.offsets):
+        if self.data.shape[0] != len(self.diags):
             raise ValueError,'number of diagonals (%d) ' \
-                    'does not match the number of offsets (%d)' \
-                    % (self.diags.shape[0], len(self.offsets))
+                    'does not match the number of diags (%d)' \
+                    % (self.data.shape[0], len(self.diags))
         
-        if len(Set(self.offsets)) != len(self.offsets):
+        if len(Set(self.diags)) != len(self.diags):
             raise ValueError,'offset array contains duplicate values'
 
 
 
     def __getdtype(self):
-        return self.diags.dtype
+        return self.data.dtype
 
     def __setdtype(self,newtype):
         self.dtype = newtype
@@ -91,7 +91,7 @@ class dia_matrix(spmatrix):
         """
         M,N = self.shape
         nnz = 0
-        for k in self.offsets:
+        for k in self.diags:
             if k > 0:
                 nnz += min(M,N-k)
             else:
@@ -106,7 +106,7 @@ class dia_matrix(spmatrix):
         """ Scalar, vector, or matrix multiplication
         """
         if isscalarlike(other):
-            return dia_matrix((other * self.diags, self.offsets),self.shape)
+            return dia_matrix((other * self.data, self.diags),self.shape)
         else:
             return self.dot(other)
 
@@ -137,10 +137,10 @@ class dia_matrix(spmatrix):
 
         y = zeros((self.shape[0],x.shape[1]), dtype=upcast(self.dtype,x.dtype))
 
-        L = self.diags.shape[1]
+        L = self.data.shape[1]
         M,N = self.shape
 
-        for diag,k in zip(self.diags,self.offsets):
+        for diag,k in zip(self.data,self.diags):
             j_start = max(0,k)
             j_end   = min(M+k,N,L)
 
@@ -174,17 +174,17 @@ class dia_matrix(spmatrix):
         return self.tocoo().tocsc()
 
     def tocoo(self):
-        num_diags = len(self.diags)
-        len_diags = self.diags.shape[1]
+        num_data = len(self.data)
+        len_data = self.data.shape[1]
         
-        row = arange(len_diags).reshape(1,-1).repeat(num_diags,axis=0)
+        row = arange(len_data).reshape(1,-1).repeat(num_data,axis=0)
         col = row.copy()
 
-        for i,k in enumerate(self.offsets):
+        for i,k in enumerate(self.diags):
             row[i,:] -= k
         
         mask = (row >= 0) & (row < self.shape[0]) & (col < self.shape[1])
-        row,col,data = row[mask],col[mask],self.diags[mask]
+        row,col,data = row[mask],col[mask],self.data[mask]
         row,col,data = row.reshape(-1),col.reshape(-1),data.reshape(-1)
        
         from coo import coo_matrix
