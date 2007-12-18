@@ -159,6 +159,22 @@ class _TestCommon:
         denom = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
         res = matrix([[1,0,0,0.5],[-3,0,numpy.inf,0],[0,0.25,0,0]],'d')
         assert_array_equal((self.datsp / denom).todense(),res)
+    
+    def check_pow(self):
+        A = matrix([[1,0,2,0],[0,3,4,0],[0,5,0,0],[0,6,7,8]])
+        B = self.spmatrix( A )
+
+        for exponent in [0,1,2,3]:
+            assert_array_equal((B**exponent).todense(),A**exponent)
+
+        #invalid exponents
+        for exponent in [-1, 2.2, 1 + 3j]:
+            self.assertRaises( Exception, B.__pow__, exponent )
+
+        #nonsquare matrix
+        B = self.spmatrix(A[:3,:])
+        self.assertRaises( Exception, B.__pow__, 1 )
+
 
     def check_rmatvec(self):
         M = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))

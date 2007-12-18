@@ -45,14 +45,16 @@ class _cs_matrix(_data_matrix):
             if rank(arg1) == 2:
                 from coo import coo_matrix
                 self.shape = arg1.shape
-                self._set_self( self._tothis(coo_matrix(arg1)) )
+                self._set_self( self.__class__(coo_matrix(arg1)) )
             else:
                 raise ValueError, "dense array must have rank 1 or 2"
 
         elif isspmatrix(arg1):
-            if copy:
+            if arg1.format == self.format and copy:
                 arg1 = arg1.copy()
-            self._set_self( self._tothis(arg1) )
+            else:
+                arg1 = getattr(arg1,'to' + self.format)()
+            self._set_self( arg1 )
 
         elif isinstance(arg1, tuple):
             if isshape(arg1):
@@ -67,7 +69,7 @@ class _cs_matrix(_data_matrix):
                 if len(arg1) == 2:
                     # (data, ij) format
                     from coo import coo_matrix
-                    other = self._tothis(coo_matrix(arg1, shape=shape))
+                    other = self.__class__( coo_matrix(arg1, shape=shape) )
                     self._set_self( other )
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
@@ -181,13 +183,6 @@ class _cs_matrix(_data_matrix):
                                         "non-decreasing sequence'
 
 
-    
-    def __imul__(self, other): #self *= other
-        if isscalarlike(other):
-            self.data *= other
-            return self
-        else:
-            raise NotImplementedError
 
     def __add__(self,other):
         # First check if argument is a scalar
@@ -271,29 +266,6 @@ class _cs_matrix(_data_matrix):
         else:
             raise NotImplementedError
 
-    def __itruediv__(self, other): #self *= other
-        if isscalarlike(other):
-            recip = 1.0 / other
-            self.data *= recip
-            return self
-        else:
-            raise NotImplementedError
-
-    def __pow__(self, other):
-        """ Element-by-element power (unless other is a scalar, in which
-        case return the matrix power.)
-        """
-        if isscalarlike(other):
-            return self._with_data(self.data**other)
-        elif isspmatrix(other):
-            if (other.shape != self.shape):
-                raise ValueError, "inconsistent shapes"
-           
-            warn("use .multiply(other) for elementwise multiplication", \
-                    DeprecationWarning)
-            return self._binopt(other,'_elmul_')
-        else:
-            raise NotImplementedError
     
     def multiply(self, other):
         """Point-wise multiplication by another matrix
@@ -319,7 +291,7 @@ class _cs_matrix(_data_matrix):
             major_axis = self._swap((M,N))[0]        
             indptr = empty( major_axis + 1, dtype=intc )
             
-            other = self._tothis(other)
+            other = self.__class__(other) #convert to this format
             fn = getattr(sparsetools, self.format + '_matmat_pass1')
             fn( M, N, self.indptr, self.indices, \
                       other.indptr, other.indices, \
@@ -420,7 +392,9 @@ class _cs_matrix(_data_matrix):
 
 
     def _get_slice(self, i, start, stop, stride, shape):
-        """Returns a view of the elements [i, myslice.start:myslice.stop].
+        """Returns a copy of the elements 
+            [i, start:stop:string] for row-oriented matrices
+            [start:stop:string, i] for column-oriented matrices
         """
         if stride != 1:
             raise ValueError, "slicing with step != 1 not supported"
@@ -433,17 +407,14 @@ class _cs_matrix(_data_matrix):
             if self.indices[ind] >= start and self.indices[ind] < stop:
                 indices.append(ind)
 
-        index = self.indices[indices] - start
+        index  = self.indices[indices] - start
         data   = self.data[indices]
         indptr = numpy.array([0, len(indices)])
         return self.__class__((data, index, indptr), shape=shape, \
                               dtype=self.dtype)
 
 
-    def _transpose(self, cls, copy=False):
-        M, N = self.shape
-        return cls((self.data,self.indices,self.indptr),(N,M),copy=copy)
-    
+    # conversion methods
     def todia(self):
         return self.tocoo(copy=False).todia()
     
@@ -472,8 +443,15 @@ class _cs_matrix(_data_matrix):
 
         from coo import coo_matrix
         return coo_matrix((data,(row,col)), self.shape)
+    
+    def toarray(self):
+        A = self.tocoo(copy=False)
+        M = zeros(self.shape, dtype=self.dtype)
+        M[A.row, A.col] = A.data
+        return M
 
-
+    
+    # methods that modify the internal data structure
     def sorted_indices(self):
         """Return a copy of this matrix with sorted indices
         """
@@ -483,7 +461,7 @@ class _cs_matrix(_data_matrix):
 
         # an alternative that has linear complexity is the following
         # typically the previous option is faster
-        #return self._toother()._toother()
+        #return self.toother().toother()
 
     def sort_indices(self):
         """Sort the indices of this matrix *in place*
@@ -519,6 +497,38 @@ class _cs_matrix(_data_matrix):
         
         self.data    = self.data[:self.nnz]
         self.indices = self.indices[:self.nnz]
+
+
+    # needed by _data_matrix
+    def _with_data(self,data,copy=True):
+        """Returns a matrix with the same sparsity structure as self,
+        but with different data.  By default the structure arrays
+        (i.e. .indptr and .indices) are copied.
+        """
+        if copy:
+            return self.__class__((data,self.indices.copy(),self.indptr.copy()), \
+                                   shape=self.shape,dtype=data.dtype)
+        else:
+            return self.__class__((data,self.indices,self.indptr), \
+                                   shape=self.shape,dtype=data.dtype)
+
+    # utility functions
+    def _binopt(self, other, op, in_shape=None, out_shape=None):
+        """apply the binary operation fn to two sparse matrices"""
+        other = self.__class__(other)
+
+        if in_shape is None:
+            in_shape = self.shape
+        if out_shape is None:
+            out_shape = self.shape
+
+        # e.g. csr_plus_csr, cscmucsc, etc.
+        fn = getattr(sparsetools, self.format + op + self.format)
+
+        indptr, ind, data = fn(in_shape[0], in_shape[1], \
+                               self.indptr, self.indices, self.data,
+                               other.indptr, other.indices, other.data)
+        return self.__class__((data, ind, indptr), shape=out_shape)
 
     def _get_submatrix( self, shape0, shape1, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created)."""
@@ -563,36 +573,4 @@ class _cs_matrix(_data_matrix):
                                              i0, i1, j0, j1 )
         data, indices, indptr = aux[2], aux[1], aux[0]
         return data, indices, indptr, i1 - i0, j1 - j0
-
-    # needed by _data_matrix
-    def _with_data(self,data,copy=True):
-        """Returns a matrix with the same sparsity structure as self,
-        but with different data.  By default the structure arrays
-        (i.e. .indptr and .indices) are copied.
-        """
-        if copy:
-            return self.__class__((data,self.indices.copy(),self.indptr.copy()), \
-                                   shape=self.shape,dtype=data.dtype)
-        else:
-            return self.__class__((data,self.indices,self.indptr), \
-                                   shape=self.shape,dtype=data.dtype)
-
-    # utility functions
-    def _binopt(self, other, op, in_shape=None, out_shape=None):
-        """apply the binary operation fn to two sparse matrices"""
-        other = self._tothis(other)
-
-        if in_shape is None:
-            in_shape = self.shape
-        if out_shape is None:
-            out_shape = self.shape
-
-        # e.g. csr_plus_csr, cscmucsc, etc.
-        fn = getattr(sparsetools, self.format + op + self.format)
-
-        indptr, ind, data = fn(in_shape[0], in_shape[1], \
-                               self.indptr, self.indices, self.data,
-                               other.indptr, other.indices, other.data)
-        return self.__class__((data, ind, indptr), shape=out_shape)
-
 

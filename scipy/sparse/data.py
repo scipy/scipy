@@ -9,6 +9,7 @@
 __all__ = []
 
 from base import spmatrix
+from sputils import isscalarlike
 
 class _data_matrix(spmatrix):
     def __init__(self):
@@ -31,6 +32,21 @@ class _data_matrix(spmatrix):
     
     def __neg__(self):
         return self._with_data(-self.data)
+
+    def __imul__(self, other): #self *= other
+        if isscalarlike(other):
+            self.data *= other
+            return self
+        else:
+            raise NotImplementedError
+    
+    def __itruediv__(self, other): #self /= other
+        if isscalarlike(other):
+            recip = 1.0 / other
+            self.data *= recip
+            return self
+        else:
+            raise NotImplementedError
 
     def astype(self, t):
         return self._with_data(self.data.astype(t))

@@ -81,14 +81,15 @@ class csc_matrix(_cs_matrix):
         else:
             return _cs_matrix.__getattr__(self, attr)
 
+    def transpose(self, copy=False):
+        from csr import csr_matrix
+        M,N = self.shape
+        return csr_matrix((self.data,self.indices,self.indptr),(N,M),copy=copy)
+
     def __iter__(self):
         csr = self.tocsr()
         for r in xrange(self.shape[0]):
             yield csr[r,:]
-
-    def transpose(self, copy=False):
-        from csr import csr_matrix
-        return _cs_matrix._transpose(self, csr_matrix, copy)
 
     def __getitem__(self, key):
         #TODO unify these in _cs_matrix
@@ -217,12 +218,6 @@ class csc_matrix(_cs_matrix):
         from csr import csr_matrix
         return csr_matrix((data, indices, indptr), self.shape)
     
-    def toarray(self):
-        A = self.tocoo(copy=False)
-        M = zeros(self.shape, dtype=self.dtype)
-        M[A.row, A.col] = A.data
-        return M
-
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created).
         Contigous range of rows and columns can be selected using:
@@ -241,14 +236,6 @@ class csc_matrix(_cs_matrix):
         """
         return (x[1],x[0])
 
-    def _otherformat(self):
-        return "csr"
-
-    def _toother(self):
-        return self.tocsr()
-
-    def _tothis(self, other):
-        return other.tocsc()
 
 from sputils import _isinstance
 

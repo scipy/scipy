@@ -73,10 +73,6 @@ class csr_matrix(_cs_matrix):
 
     """
 
-
-
-
-
     def __getattr__(self, attr):
         if attr == 'colind':
             warn("colind attribute no longer in use. Use .indices instead",
@@ -87,7 +83,8 @@ class csr_matrix(_cs_matrix):
 
     def transpose(self, copy=False):
         from csc import csc_matrix
-        return _cs_matrix._transpose(self, csc_matrix, copy)
+        M,N = self.shape
+        return csc_matrix((self.data,self.indices,self.indptr),(N,M),copy=copy)
 
     def __getitem__(self, key):
         #TODO unify these in _cs_matrix
@@ -227,12 +224,6 @@ class csr_matrix(_cs_matrix):
         from csc import csc_matrix
         return csc_matrix((data, indices, indptr), self.shape)
     
-    def toarray(self):
-        A = self.tocoo(copy=False)
-        M = zeros(self.shape, dtype=self.dtype)
-        M[A.row, A.col] = A.data
-        return M
-    
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created).
         Contigous range of rows and columns can be selected using:
@@ -250,15 +241,6 @@ class csr_matrix(_cs_matrix):
         """swap the members of x if this is a column-oriented matrix
         """
         return (x[0],x[1])
-
-    def _otherformat(self):
-        return "csc"
-
-    def _toother(self):
-        return self.tocsc()
-
-    def _tothis(self, other):
-        return other.tocsr()
 
 
 from sputils import _isinstance

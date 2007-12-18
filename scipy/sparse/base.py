@@ -6,7 +6,7 @@ from warnings import warn
 
 from numpy import asarray, asmatrix, asanyarray, ones
 
-from sputils import isdense, isscalarlike 
+from sputils import isdense, isscalarlike, isintlike
 
 
 # The formats that we might potentially understand.
@@ -229,14 +229,9 @@ class spmatrix(object):
     def __div__(self, other):
         # Always do true division
         return self.__truediv__(other)
-
-    def __pow__(self, other):
-        csc = self.tocsc()
-        return csc ** other
-
+    
     def __neg__(self):
-        csc = self.tocsc()
-        return -csc
+        return -self.tocsr()
 
     def __iadd__(self, other):
         raise NotImplementedError
@@ -252,6 +247,31 @@ class spmatrix(object):
 
     def __itruediv__(self, other):
         raise NotImplementedError
+
+    def __pow__(self, other):
+        if self.shape[0] != self.shape[1]:
+            raise TypeError,'matrix is not square'
+
+        if isintlike(other):
+            other = int(other)
+            if other < 0:
+                raise ValueError,'exponent must be >= 0'
+            
+            if other == 0:
+                from construct import spidentity
+                return spidentity( self.shape[0], dtype=self.dtype )
+            elif other == 1:
+                return self.copy()
+            else:
+                result = self
+                for i in range(1,other):
+                    result = result*self
+                return result
+        elif isscalarlike(other):
+            raise ValueError,'exponent must be an integer'
+        else:
+            raise NotImplementedError
+
 
     def __getattr__(self, attr):
         if attr == 'A':
