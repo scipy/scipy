@@ -27,12 +27,15 @@ def resize1d(arr, newlen):
 class _cs_matrix(_data_matrix):
     """base matrix class for compressed row and column oriented matrices"""
     
-    def __init__(self, arg1, shape=None, dtype=None, copy=False, dims=None):
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, dims=None, nzmax=None):
         _data_matrix.__init__(self)
 
         if dims is not None:
-            warn("dims is deprecated, use shape instead", DeprecationWarning)
+            warn("dims= is deprecated, use shape= instead", DeprecationWarning)
             shape=dims
+        
+        if dims is not None:
+            warn("nzmax= is deprecated", DeprecationWarning)
 
         if isdense(arg1):
             # Convert the dense array or matrix arg1 to sparse format
