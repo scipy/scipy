@@ -285,11 +285,24 @@ class _cs_matrix(_data_matrix):
         elif isspmatrix(other):
             if (other.shape != self.shape):
                 raise ValueError, "inconsistent shapes"
-            
+           
+            warn("use .multiply(other) for elementwise multiplication", \
+                    DeprecationWarning)
             return self._binopt(other,'_elmul_')
         else:
             raise NotImplementedError
+    
+    def multiply(self, other):
+        """Point-wise multiplication by another matrix
+        """
+        if (other.shape != self.shape):
+            raise ValueError, "inconsistent shapes"
 
+        if isdense(other):
+            return multiply(self.todense(),other)
+        else:
+            other = self.__class__(other)
+            return self._binopt(other,'_elmul_')
 
     def matmat(self, other):
         if isspmatrix(other):

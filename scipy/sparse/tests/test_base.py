@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Authors: Travis Oliphant, Ed Schofield, Robert Cimrman, Nathan Bell, and others
 
@@ -151,7 +150,7 @@ class _TestCommon:
         temp = self.dat.copy()
         temp[0,2] = 2.0
         temp = self.spmatrix(temp)
-        c = temp ** self.datsp 
+        c = temp.multiply(self.datsp)
         assert_array_equal(c.todense(),[[1,0,0,4],[9,0,1,0],[0,4,0,0]])
 
     def check_eldiv(self):

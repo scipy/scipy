@@ -208,6 +208,11 @@ class spmatrix(object):
 
     def __rsub__(self, other):  # other - self
         return self.tocsr().__rsub__(other)
+    
+    def multiply(self, other):
+        """Point-wise multiplication by another matrix
+        """
+        return self.tocsr().multiply(other)
 
     def __mul__(self, other):
         return self.tocsr().__mul__(other)
