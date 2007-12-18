@@ -370,7 +370,6 @@ class _cs_matrix(_data_matrix):
                 y = empty( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
             else:
                 if output.shape != (M,) and output.shape != (M,1):
-                    print "self ",self.shape,"other",other.shape
                     raise ValueError, "output array has improper dimensions"
                 if not output.flags.c_contiguous:
                     raise ValueError, "output array must be contiguous"

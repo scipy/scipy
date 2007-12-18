@@ -452,6 +452,12 @@ class _TestMatvecOutput:
         
         self.assertRaises( ValueError, self.datsp.matvec, x, y )
         
+        # improper output shape
+        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
+        y = zeros(2,dtype='d')
+        
+        self.assertRaises( ValueError, self.datsp.matvec, x, y )
+
         # proper upcast output type
         x = array([1.25, -6.5, 0.125, -3.75],dtype='complex64')
         x.imag = [1,2,3,4]
