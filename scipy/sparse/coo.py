@@ -5,7 +5,8 @@ __all__ = ['coo_matrix', 'isspmatrix_coo']
 from itertools import izip
 from warnings import warn 
 
-from numpy import array, asarray, empty, intc, zeros, bincount
+from numpy import array, asarray, empty, intc, zeros, bincount, \
+        unique, searchsorted
 
 from sparsetools import coo_tocsr, coo_tocsc
 from base import spmatrix, isspmatrix
@@ -247,6 +248,21 @@ class coo_matrix(spmatrix):
             return self.copy()
         else:
             return self
+
+    def todia(self):
+        from dia import dia_matrix
+
+        ks = self.col - self.row  #the diagonal for each nonzero          
+        diags = unique(ks)
+
+        if len(diags) > 100:
+            pass #do something?
+
+        #initialize and fill in data array
+        data = zeros( (len(diags), self.col.max()+1), dtype=self.dtype)
+        data[ searchsorted(diags,ks), self.col ] = self.data
+
+        return dia_matrix((data,diags),shape=self.shape)
 
     def todok(self):
         from dok import dok_matrix

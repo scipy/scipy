@@ -277,6 +277,10 @@ class _TestCommon:
             assert_equal( result.shape, (4,2) )
             assert_equal( result, dot(a,b) )
 
+    def check_todia(self):
+        a = self.datsp.todia()
+        assert_array_almost_equal(a.todense(), self.dat)
+
     def check_tocoo(self):
         a = self.datsp.tocoo()
         assert_array_almost_equal(a.todense(), self.dat)

@@ -19,35 +19,34 @@ from dia import dia_matrix
 from base import isspmatrix
 
 
-def spdiags(diags, offsets, m, n, format=None):
+def spdiags(data, diags, m, n, format=None):
     """Return a sparse matrix given its diagonals.
 
     B = spdiags(diags, offsets, m, n)
 
     *Parameters*:
-        diags   : matrix whose rows contain the diagonal values
-        offsets : diagonals to set 
+        data   : matrix whose rows contain the diagonal values
+        diags  : diagonals to set 
                     k = 0 - the main diagonal
                     k > 0 - the k-th upper diagonal
                     k < 0 - the k-th lower diagonal
-        m, n    : dimensions of the result
-        format  : format of the result (e.g. "csr")
+        m, n   : dimensions of the result
+        format : format of the result (e.g. "csr")
                     By default (format=None) an appropriate sparse matrix 
                     format is returned.  This choice is subject to change.
 
     *Example*
     -------
-    >>> diags = array([[1,2,3,4]]).repeat(3,axis=0)
-    >>> offsets = array([0,-1,2])
-    >>> spdiags(diags,offsets,4,4).todense()
+    >>> data = array([[1,2,3,4]]).repeat(3,axis=0)
+    >>> diags = array([0,-1,2])
+    >>> spdiags(data,diags,4,4).todense()
     matrix([[1, 0, 3, 0],
             [1, 2, 0, 4],
             [0, 2, 3, 0],
             [0, 0, 3, 4]])
 
     """
-    #TODO update this example
-    return dia_matrix((diags, offsets), shape=(m,n)).asformat(format)
+    return dia_matrix((data, diags), shape=(m,n)).asformat(format)
 
 def spidentity(n, dtype='d', format=None):
     """spidentity(n) returns an (n x n) identity matrix"""

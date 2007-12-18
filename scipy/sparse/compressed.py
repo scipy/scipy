@@ -9,7 +9,8 @@ import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
         empty, hstack, isscalar, ndarray, shape, searchsorted
 
-from base import spmatrix,isspmatrix
+from base import spmatrix, isspmatrix
+from data import _data_matrix
 import sparsetools
 from sputils import upcast, to_native, isdense, isshape, getdtype, \
         isscalarlike
@@ -23,11 +24,11 @@ def resize1d(arr, newlen):
     return new
 
 
-class _cs_matrix(spmatrix):
+class _cs_matrix(_data_matrix):
     """base matrix class for compressed row and column oriented matrices"""
     
     def __init__(self, arg1, shape=None, dtype=None, copy=False, dims=None):
-        spmatrix.__init__(self)
+        _data_matrix.__init__(self)
 
         if dims is not None:
             warn("dims is deprecated, use shape instead", DeprecationWarning)
@@ -100,11 +101,6 @@ class _cs_matrix(spmatrix):
         return self.indptr[-1]
     nnz = property(fget=getnnz)
     
-    def _get_dtype(self):
-        return self.data.dtype
-    def _set_dtype(self,newtype):
-        self.data.dtype = newtype
-    dtype = property(fget=_get_dtype,fset=_set_dtype)
     
     def _set_self(self, other, copy=False):
         """take the member variables of other and assign them to self"""
@@ -181,19 +177,14 @@ class _cs_matrix(spmatrix):
                     raise ValueError,'index pointer values must form a " \
                                         "non-decreasing sequence'
 
-    def astype(self, t):
-        return self._with_data(self.data.astype(t))
 
-
-    def __abs__(self):
-        return self._with_data(abs(self.data))
-
-    def _real(self):
-        return self._with_data(numpy.real(self.data))
-
-    def _imag(self):
-        return self._with_data(numpy.imag(self.data))
-
+    
+    def __imul__(self, other): #self *= other
+        if isscalarlike(other):
+            self.data *= other
+            return self
+        else:
+            raise NotImplementedError
 
     def __add__(self,other):
         # First check if argument is a scalar
@@ -265,15 +256,6 @@ class _cs_matrix(spmatrix):
                 tr = asarray(other).transpose()
             return self.transpose().dot(tr).transpose()
 
-    def __imul__(self, other): #self *= other
-        if isscalarlike(other):
-            self.data *= other
-            return self
-        else:
-            raise NotImplementedError
-
-    def __neg__(self):
-        return self._with_data(-self.data)
 
     def __truediv__(self,other):
         if isscalarlike(other):
@@ -402,8 +384,6 @@ class _cs_matrix(spmatrix):
             return spmatrix.sum(self,axis)
             raise ValueError, "axis out of bounds"
 
-    def copy(self):
-        return self._with_data(self.data.copy(),copy=True)
 
     def _get_slice(self, i, start, stop, stride, shape):
         """Returns a view of the elements [i, myslice.start:myslice.stop].
@@ -430,6 +410,12 @@ class _cs_matrix(spmatrix):
         M, N = self.shape
         return cls((self.data,self.indices,self.indptr),(N,M),copy=copy)
     
+    def todia(self):
+        return self.tocoo(copy=False).todia()
+    
+    def todok(self):
+        return self.tocoo(copy=False).todok()
+
     def tocoo(self,copy=True):
         """Return a COOrdinate representation of this matrix
 
@@ -453,8 +439,6 @@ class _cs_matrix(spmatrix):
         from coo import coo_matrix
         return coo_matrix((data,(row,col)), self.shape)
 
-    def conj(self, copy=False):
-        return self._with_data(self.data.conj(),copy=copy)
 
     def sorted_indices(self):
         """Return a copy of this matrix with sorted indices
@@ -546,8 +530,7 @@ class _cs_matrix(spmatrix):
         data, indices, indptr = aux[2], aux[1], aux[0]
         return data, indices, indptr, i1 - i0, j1 - j0
 
-
-    # utility functions 
+    # needed by _data_matrix
     def _with_data(self,data,copy=True):
         """Returns a matrix with the same sparsity structure as self,
         but with different data.  By default the structure arrays
@@ -560,6 +543,7 @@ class _cs_matrix(spmatrix):
             return self.__class__((data,self.indices,self.indptr), \
                                    shape=self.shape,dtype=data.dtype)
 
+    # utility functions
     def _binopt(self, other, op, in_shape=None, out_shape=None):
         """apply the binary operation fn to two sparse matrices"""
         other = self._tothis(other)
