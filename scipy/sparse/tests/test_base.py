@@ -27,6 +27,7 @@ restore_path()
 
 
 #TODO test spmatrix(DENSE) and spmatrix(SPARSE) for all combos
+#TODO test spmatrix( [[1,2],[3,4]] ) format
 #TODO check that invalid shape in constructor raises exception
 #TODO check that spmatrix( ... , copy=X ) is respected
 class _TestCommon:
@@ -80,6 +81,8 @@ class _TestCommon:
     def check_fromdense(self):
         A = matrix([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
         assert_array_equal(self.spmatrix(A).todense(),A)
+        assert_array_equal(self.spmatrix(A.A).todense(),A)
+        assert_array_equal(self.spmatrix(A.tolist()).todense(),A)
 
     def check_todense(self):
         chk = self.datsp.todense()
@@ -1184,7 +1187,7 @@ class TestCOO(_TestCommon, NumpyTestCase):
         assert_array_equal(coo.row,[])
         assert_array_equal(coo.col,[])
         assert_array_equal(coo.data,[])
-        assert_array_equal(zeros((4,3)),coo.todense())
+        assert_array_equal(coo.todense(),zeros((4,3)))
 
     def check_constructor4(self):
         """from dense matrix"""
@@ -1192,7 +1195,13 @@ class TestCOO(_TestCommon, NumpyTestCase):
                            [7,0,3,0],
                            [0,4,0,0]])
         coo = coo_matrix(mat)
-        assert_array_equal(mat,coo.todense())
+        assert_array_equal(coo.todense(),mat)
+
+        #upgrade rank 1 arrays to row matrix
+        mat = numpy.array([0,1,0,0])
+        coo = coo_matrix(mat)
+        assert_array_equal(coo.todense(),mat.reshape(1,-1))
+
 
 class TestDIA(_TestCommon, _TestArithmetic, NumpyTestCase):
     spmatrix = dia_matrix

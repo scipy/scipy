@@ -15,7 +15,7 @@ class dia_matrix(_data_matrix):
 
     This can be instantiated in several ways:
       - dia_matrix(D)
-        with a dense matrix or rank-2 ndarray D
+        with a dense matrix
 
       - dia_matrix(S)
         with another sparse matrix S (equivalent to S.todia())
@@ -58,14 +58,11 @@ class dia_matrix(_data_matrix):
             self.data  = arg1.data
             self.diags = arg1.diags
             self.shape = arg1.shape
-        elif isdense(arg1) or isspmatrix(arg1):
-            if isdense(arg1):
-                #convert to COO first, then to DIA
-                from coo import coo_matrix
-                A = coo_matrix(arg1).todia()
+        elif isspmatrix(arg1):
+            if isspmatrix_dia(arg1) and copy:
+                A = arg1.copy()
             else:
-                A = arg1.todia()
-  
+                A = arg1.todia() 
             self.data  = A.data
             self.diags = A.diags
             self.shape = A.shape
@@ -88,6 +85,19 @@ class dia_matrix(_data_matrix):
                     self.data  = atleast_2d(array(arg1[0],dtype=dtype,copy=copy))
                     self.diags = atleast_1d(array(arg1[1],dtype='i',copy=copy))
                     self.shape = shape
+        else:
+            #must be dense, convert to COO first, then to DIA
+            try:
+                arg1 = asarray(arg1)
+            except:
+                raise ValueError, "unrecognized form for" \
+                        " %s_matrix constructor" % self.format
+            from coo import coo_matrix
+            A = coo_matrix(arg1).todia()
+            self.data  = A.data
+            self.diags = A.diags
+            self.shape = A.shape
+
 
         #check format
         if self.diags.ndim != 1:

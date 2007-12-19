@@ -6,7 +6,7 @@ from itertools import izip
 from warnings import warn 
 
 from numpy import array, asarray, empty, intc, zeros, bincount, \
-        unique, searchsorted
+        unique, searchsorted, atleast_2d
 
 from sparsetools import coo_tocsr, coo_tocsc
 from base import spmatrix, isspmatrix
@@ -142,12 +142,12 @@ class coo_matrix(spmatrix):
             else:
                 #dense argument
                 try:
-                    M = asarray(arg1)
+                    M = atleast_2d(asarray(arg1))
                 except:
                     raise TypeError, "invalid input format"
     
                 if len(M.shape) != 2:
-                    raise TypeError, "expected rank 2 array or matrix"
+                    raise TypeError, "expected rank <= 2 array or matrix"
                 self.shape = M.shape
                 self.row,self.col = (M != 0).nonzero()
                 self.data  = M[self.row,self.col]
@@ -278,6 +278,74 @@ class coo_matrix(spmatrix):
 
         return dok
 
+#    def tobsr(self,blocksize=None):
+#        if blocksize in [None, (1,1)]:
+#            return self.tocsr().tobsr()
+#        else:
+#            from bsr import bsr_matrix
+#            data,indices,indptr = self._toblock(blocksize,'bsr')
+#            return bsr_matrix((data,indices,indptr),shape=self.shape)
+#
+#    def tobsc(self,blocksize=None):
+#        if blocksize in [None, (1,1)]:
+#            return self.tocsc().tobsc()
+#        else:
+#            from bsc import bsc_matrix
+#            data,indices,indptr = self._toblock(blocksize,'bsc')
+#            return bsc_matrix((data,indices,indptr),shape=self.shape)
+#
+#    def _toblock(self,blocksize,format):
+#        """generic function to convert to BSR/BSC/BOO formats"""
+#        M,N = self.shape
+#        X,Y = blocksize
+#    
+#        if (M % X) != 0 or (N % Y) != 0:
+#            raise ValueError, 'shape must be multiple of blocksize'
+#    
+#        i_block,i_sub = divmod(self.row, X)
+#        j_block,j_sub = divmod(self.col, Y)
+#    
+#        if format in ['bsr','boo']:
+#            perm = lexsort( keys=[j_block,i_block] )
+#        else:
+#            perm = lexsort( keys=[i_block,j_block] )
+#    
+#        i_block = i_block[perm]
+#        j_block = j_block[perm]
+#    
+#        mask = (i_block[1:] != i_block[:-1]) + (j_block[1:] != j_block[:-1])
+#        mask = concatenate((array([True]),mask))
+#    
+#        #map self.data[n] -> data[map[n],i_sub[n],j_sub[n]]
+#        map = cumsum(mask)
+#        num_blocks = map[-1]
+#        map -= 1
+#        
+#        iperm = empty_like(perm) #inverse permutation
+#        iperm[perm] = arange(len(perm))
+#        
+#        data = zeros( (num_blocks,X,Y), dtype=self.dtype )
+#        data[map[iperm],i_sub,j_sub] = self.data
+#    
+#        row = i_block[mask]
+#        col = j_block[mask]
+#    
+#        #row,col,data form BOO format 
+#    
+#        if format == 'boo':
+#            return data,(row,col)
+#        elif format == 'bsr':
+#            temp = cumsum(bincount(row))
+#            indptr = zeros( M/X + 1, dtype=intc )
+#            indptr[1:len(temp)+1] = temp
+#            indptr[len(temp)+1:] = temp[-1]
+#            return data,col,indptr
+#        else:
+#            temp = cumsum(bincount(col))
+#            indptr = zeros( N/Y + 1, dtype=intc )
+#            indptr[1:len(temp)+1] = temp
+#            indptr[len(temp)+1:] = temp[-1]
+#            return data,row,indptr
 
 
 from sputils import _isinstance

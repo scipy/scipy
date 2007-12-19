@@ -37,19 +37,8 @@ class _cs_matrix(_data_matrix):
         if dims is not None:
             warn("nzmax= is deprecated", DeprecationWarning)
 
-        if isdense(arg1):
-            # Convert the dense array or matrix arg1 to sparse format
-            if rank(arg1) == 1:
-                # Convert to a row vector
-                arg1 = arg1.reshape(1, arg1.shape[0])
-            if rank(arg1) == 2:
-                from coo import coo_matrix
-                self.shape = arg1.shape
-                self._set_self( self.__class__(coo_matrix(arg1)) )
-            else:
-                raise ValueError, "dense array must have rank 1 or 2"
 
-        elif isspmatrix(arg1):
+        if isspmatrix(arg1):
             if arg1.format == self.format and copy:
                 arg1 = arg1.copy()
             else:
@@ -75,16 +64,21 @@ class _cs_matrix(_data_matrix):
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
                     self.indices = array(indices, copy=copy)
-                    self.indptr  = array(indptr,  copy=copy)
-                    self.data    = array(data,    copy=copy, \
-                            dtype=getdtype(dtype, data))
+                    self.indptr  = array(indptr, copy=copy)
+                    self.data    = array(data, copy=copy, dtype=getdtype(dtype, data))
                 else:
                     raise ValueError, "unrecognized form for" \
                             " %s_matrix constructor" % self.format
 
         else:
-            raise ValueError, "unrecognized form for" \
-                    " %s_matrix constructor" % self.format
+            #must be dense
+            try:
+                arg1 = asarray(arg1)
+            except:
+                raise ValueError, "unrecognized form for" \
+                        " %s_matrix constructor" % self.format
+            from coo import coo_matrix
+            self._set_self( self.__class__(coo_matrix(arg1)) )
 
         # Read matrix dimensions given, if any
         if shape is not None:
