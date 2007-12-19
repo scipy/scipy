@@ -178,8 +178,8 @@ class coo_matrix(spmatrix):
                     % self.col.dtype.name )
        
         # only support 32-bit ints for now
-        self.row  = self.row.astype('intc')
-        self.col  = self.col.astype('intc')
+        self.row  = self.row.astype(intc)
+        self.col  = self.col.astype(intc)
         self.data = to_native(self.data)
 
         if nnz > 0:

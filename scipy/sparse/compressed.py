@@ -64,7 +64,7 @@ class _cs_matrix(_data_matrix):
                 M, N = self.shape
                 self.data    = zeros(0, getdtype(dtype, default=float))
                 self.indices = zeros(0, intc)
-                self.indptr  = zeros(self._swap(self.shape)[0] + 1, dtype='intc')
+                self.indptr  = zeros(self._swap((M,N))[0] + 1, dtype=intc)
             else:
                 if len(arg1) == 2:
                     # (data, ij) format
@@ -142,8 +142,8 @@ class _cs_matrix(_data_matrix):
                     % self.indices.dtype.name )
 
         # only support 32-bit ints for now
-        self.indptr  = self.indptr.astype('intc')
-        self.indices = self.indices.astype('intc')
+        self.indptr  = self.indptr.astype(intc)
+        self.indices = self.indices.astype(intc)
         self.data    = to_native(self.data)
 
         # check array shapes
