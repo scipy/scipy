@@ -197,8 +197,6 @@ INSTANTIATE_ALL(csc_tocsr)
  * CSR<->COO and CSC<->COO
  */
 %template(expandptr)   expandptr<int>;
-/*INSTANTIATE_ALL(csrtocoo)*/
-/*INSTANTIATE_ALL(csctocoo)*/
 INSTANTIATE_ALL(coo_tocsr)
 INSTANTIATE_ALL(coo_tocsc)
 
@@ -210,14 +208,13 @@ INSTANTIATE_ALL(coo_tocsc)
 %template(csc_matmat_pass1)   csc_matmat_pass1<int>;
 INSTANTIATE_ALL(csr_matmat_pass2)
 INSTANTIATE_ALL(csc_matmat_pass2)
-/*INSTANTIATE_ALL(csrmucsr)*/
-/*INSTANTIATE_ALL(cscmucsc)*/
 
 /*
  * CSR*x and CSC*x
  */
 INSTANTIATE_ALL(csr_matvec)
 INSTANTIATE_ALL(csc_matvec)
+INSTANTIATE_ALL(bsr_matvec)
 
 /*
  * CSR (binary op) CSR and CSC (binary op) CSC
@@ -233,18 +230,6 @@ INSTANTIATE_ALL(csc_plus_csc)
 INSTANTIATE_ALL(csc_minus_csc)
 
 
-
-/*
- * spdiags->CSC
- */
-/*INSTANTIATE_ALL(spdiags)*/
-
-/*
- * CSR<->Dense
- */
-/*INSTANTIATE_ALL(csr_todense)*/
-/*INSTANTIATE_ALL(densetocsr)*/ 
-
 /*
  * Sort CSR/CSC indices.
  */
@@ -255,8 +240,8 @@ INSTANTIATE_ALL(csc_sort_indices)
 /*
  * Sum duplicate CSR/CSC entries.
  */
-INSTANTIATE_ALL(sum_csr_duplicates)
-INSTANTIATE_ALL(sum_csc_duplicates)
+INSTANTIATE_ALL(csr_sum_duplicates)
+INSTANTIATE_ALL(csc_sum_duplicates)
 
 /*
  * Extract submatrices

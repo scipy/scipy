@@ -11,6 +11,8 @@ __all__ = []
 from base import spmatrix
 from sputils import isscalarlike
 
+#TODO implement all relevant operations
+#use .data.__methods__() instead of /=, *=, etc.
 class _data_matrix(spmatrix):
     def __init__(self):
         spmatrix.__init__(self)

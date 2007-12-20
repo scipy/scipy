@@ -300,6 +300,31 @@ def csc_matvec(*args):
     """
   return _sparsetools.csc_matvec(*args)
 
+def bsr_matvec(*args):
+  """
+    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        signed char Ax, signed char Xx, signed char Yx)
+    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        unsigned char Ax, unsigned char Xx, unsigned char Yx)
+    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        short Ax, short Xx, short Yx)
+    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        int Ax, int Xx, int Yx)
+    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        long long Ax, long long Xx, long long Yx)
+    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        float Ax, float Xx, float Yx)
+    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        double Ax, double Xx, double Yx)
+    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        npy_cfloat_wrapper Ax, npy_cfloat_wrapper Xx, 
+        npy_cfloat_wrapper Yx)
+    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        npy_cdouble_wrapper Ax, npy_cdouble_wrapper Xx, 
+        npy_cdouble_wrapper Yx)
+    """
+  return _sparsetools.bsr_matvec(*args)
+
 def csr_elmul_csr(*args):
   """
     csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
@@ -600,33 +625,33 @@ def csc_sort_indices(*args):
     """
   return _sparsetools.csc_sort_indices(*args)
 
-def sum_csr_duplicates(*args):
+def csr_sum_duplicates(*args):
   """
-    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, signed char Ax)
-    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, unsigned char Ax)
-    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, short Ax)
-    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, int Ax)
-    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, long long Ax)
-    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, float Ax)
-    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, double Ax)
-    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax)
-    sum_csr_duplicates(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax)
+    csr_sum_duplicates(int n_row, int n_col, int Ap, int Aj, signed char Ax)
+    csr_sum_duplicates(int n_row, int n_col, int Ap, int Aj, unsigned char Ax)
+    csr_sum_duplicates(int n_row, int n_col, int Ap, int Aj, short Ax)
+    csr_sum_duplicates(int n_row, int n_col, int Ap, int Aj, int Ax)
+    csr_sum_duplicates(int n_row, int n_col, int Ap, int Aj, long long Ax)
+    csr_sum_duplicates(int n_row, int n_col, int Ap, int Aj, float Ax)
+    csr_sum_duplicates(int n_row, int n_col, int Ap, int Aj, double Ax)
+    csr_sum_duplicates(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax)
+    csr_sum_duplicates(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax)
     """
-  return _sparsetools.sum_csr_duplicates(*args)
+  return _sparsetools.csr_sum_duplicates(*args)
 
-def sum_csc_duplicates(*args):
+def csc_sum_duplicates(*args):
   """
-    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, signed char Ax)
-    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, unsigned char Ax)
-    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, short Ax)
-    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, int Ax)
-    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, long long Ax)
-    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, float Ax)
-    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, double Ax)
-    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax)
-    sum_csc_duplicates(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax)
+    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, signed char Ax)
+    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, unsigned char Ax)
+    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, short Ax)
+    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, int Ax)
+    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, long long Ax)
+    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, float Ax)
+    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, double Ax)
+    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax)
+    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax)
     """
-  return _sparsetools.sum_csc_duplicates(*args)
+  return _sparsetools.csc_sum_duplicates(*args)
 
 def get_csr_submatrix(*args):
   """

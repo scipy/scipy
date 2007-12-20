@@ -42,7 +42,7 @@ class _cs_matrix(_data_matrix):
             if arg1.format == self.format and copy:
                 arg1 = arg1.copy()
             else:
-                arg1 = getattr(arg1,'to' + self.format)()
+                arg1 = arg1.asformat(self.format)
             self._set_self( arg1 )
 
         elif isinstance(arg1, tuple):
@@ -121,6 +121,7 @@ class _cs_matrix(_data_matrix):
                     False - basic check, O(1) operations
 
         """
+        #TODO does spmatrix take care of this?
         self.shape = tuple([int(x) for x in self.shape])  # for floats etc.
 
         #use _swap to determine proper bounds
@@ -446,6 +447,18 @@ class _cs_matrix(_data_matrix):
 
     
     # methods that modify the internal data structure
+    def sum_duplicates(self):
+        """Eliminate duplicate matrix entries by adding them together
+
+        The is an *in place* operation
+        """
+        fn = getattr(sparsetools,self.format + '_sum_duplicates')
+
+        M,N = self.shape
+        fn( M, N, self.indptr, self.indices, self.data)
+
+        self.prune() #nnz may have changed
+
     def sorted_indices(self):
         """Return a copy of this matrix with sorted indices
         """

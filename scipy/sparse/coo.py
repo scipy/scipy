@@ -6,13 +6,15 @@ from itertools import izip
 from warnings import warn 
 
 from numpy import array, asarray, empty, intc, zeros, bincount, \
-        unique, searchsorted, atleast_2d
+        unique, searchsorted, atleast_2d, lexsort, cumsum, concatenate, \
+        empty_like, arange
 
 from sparsetools import coo_tocsr, coo_tocsc
-from base import spmatrix, isspmatrix
+from base import isspmatrix
+from data import _data_matrix
 from sputils import upcast, to_native, isshape, getdtype
 
-class coo_matrix(spmatrix):
+class coo_matrix(_data_matrix):
     """A sparse matrix in COOrdinate format.
     Also known as the 'ijv' or 'triplet' format.
 
@@ -76,7 +78,7 @@ class coo_matrix(spmatrix):
     """
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, dims=None):
-        spmatrix.__init__(self)
+        _data_matrix.__init__(self)
 
         if dims is not None:
             warn("dims is deprecated, use shape instead", DeprecationWarning)
@@ -154,11 +156,6 @@ class coo_matrix(spmatrix):
 
         self._check()
 
-    def _get_dtype(self):
-        return self.data.dtype
-    def _set_dtype(self,newtype):
-        self.data.dtype = newtype
-    dtype = property(fget=_get_dtype,fset=_set_dtype)
 
     def _check(self):
         """ Checks for consistency and stores the number of non-zeros as
@@ -212,7 +209,13 @@ class coo_matrix(spmatrix):
         M[A.row, A.col] = A.data
         return M
 
-    def tocsc(self):
+    def tocsc(self,sum_duplicates=True):
+        """Return a copy of this matrix in Compressed Sparse Column format
+
+            By default sum_duplicates=True and any duplicate 
+            matrix entries are added together.
+
+        """
         from csc import csc_matrix
         if self.nnz == 0:
             return csc_matrix(self.shape, dtype=self.dtype)
@@ -225,9 +228,17 @@ class coo_matrix(spmatrix):
                       self.row, self.col, self.data, \
                       indptr, indices, data)
 
-            return csc_matrix((data, indices, indptr), self.shape)
+            A = csc_matrix((data, indices, indptr), self.shape)
+            A.sum_duplicates()
+            return A
 
-    def tocsr(self):
+    def tocsr(self,sum_duplicates=True):
+        """Return a copy of this matrix in Compressed Sparse Row format
+
+            By default sum_duplicates=True and any duplicate 
+            matrix entries are added together.
+
+        """
         from csr import csr_matrix
         if self.nnz == 0:
             return csr_matrix(self.shape, dtype=self.dtype)
@@ -240,7 +251,9 @@ class coo_matrix(spmatrix):
                       self.row, self.col, self.data, \
                       indptr, indices, data)
 
-            return csr_matrix((data, indices, indptr), self.shape)
+            A = csr_matrix((data, indices, indptr), self.shape)
+            A.sum_duplicates()
+            return A
     
 
     def tocoo(self, copy=False):
@@ -256,7 +269,9 @@ class coo_matrix(spmatrix):
         diags = unique(ks)
 
         if len(diags) > 100:
-            pass #do something?
+            #probably undesired, should we do something?
+            #should todia() have a maxdiags parameter?
+            pass
 
         #initialize and fill in data array
         data = zeros( (len(diags), self.col.max()+1), dtype=self.dtype)
@@ -278,24 +293,17 @@ class coo_matrix(spmatrix):
 
         return dok
 
-#    def tobsr(self,blocksize=None):
-#        if blocksize in [None, (1,1)]:
-#            return self.tocsr().tobsr()
-#        else:
-#            from bsr import bsr_matrix
-#            data,indices,indptr = self._toblock(blocksize,'bsr')
-#            return bsr_matrix((data,indices,indptr),shape=self.shape)
-#
+
 #    def tobsc(self,blocksize=None):
 #        if blocksize in [None, (1,1)]:
-#            return self.tocsc().tobsc()
+#            return self.tocsc().tobsc(blocksize)
 #        else:
-#            from bsc import bsc_matrix
-#            data,indices,indptr = self._toblock(blocksize,'bsc')
-#            return bsc_matrix((data,indices,indptr),shape=self.shape)
+#            return self.transpose().tobsr().transpose()
 #
-#    def _toblock(self,blocksize,format):
-#        """generic function to convert to BSR/BSC/BOO formats"""
+#    def tobsr(self,blocksize=None):
+#        if blocksize in [None, (1,1)]:
+#            return self.tocsr().tobsr(blocksize)
+#
 #        M,N = self.shape
 #        X,Y = blocksize
 #    
@@ -305,10 +313,7 @@ class coo_matrix(spmatrix):
 #        i_block,i_sub = divmod(self.row, X)
 #        j_block,j_sub = divmod(self.col, Y)
 #    
-#        if format in ['bsr','boo']:
-#            perm = lexsort( keys=[j_block,i_block] )
-#        else:
-#            perm = lexsort( keys=[i_block,j_block] )
+#        perm = lexsort( keys=[j_block,i_block] )
 #    
 #        i_block = i_block[perm]
 #        j_block = j_block[perm]
@@ -330,22 +335,28 @@ class coo_matrix(spmatrix):
 #        row = i_block[mask]
 #        col = j_block[mask]
 #    
-#        #row,col,data form BOO format 
+#        # now row,col,data form BOO format 
 #    
-#        if format == 'boo':
-#            return data,(row,col)
-#        elif format == 'bsr':
-#            temp = cumsum(bincount(row))
-#            indptr = zeros( M/X + 1, dtype=intc )
-#            indptr[1:len(temp)+1] = temp
-#            indptr[len(temp)+1:] = temp[-1]
-#            return data,col,indptr
-#        else:
-#            temp = cumsum(bincount(col))
-#            indptr = zeros( N/Y + 1, dtype=intc )
-#            indptr[1:len(temp)+1] = temp
-#            indptr[len(temp)+1:] = temp[-1]
-#            return data,row,indptr
+#        temp = cumsum(bincount(row))
+#        indptr = zeros( M/X + 1, dtype=intc )
+#        indptr[1:len(temp)+1] = temp
+#        indptr[len(temp)+1:] = temp[-1]
+#       
+#        from bsr import bsr_matrix
+#        return bsr_matrix((data,col,indptr),shape=self.shape)
+
+    # needed by _data_matrix
+    def _with_data(self,data,copy=True):
+        """Returns a matrix with the same sparsity structure as self,
+        but with different data.  By default the index arrays
+        (i.e. .row and .col) are copied.
+        """
+        if copy:
+            return coo_matrix( (data, (self.row.copy(), self.col.copy()) ), \
+                                   shape=self.shape, dtype=data.dtype)
+        else:
+            return coo_matrix( (data, (self.row, self.col) ), \
+                                   shape=self.shape, dtype=data.dtype)
 
 
 from sputils import _isinstance

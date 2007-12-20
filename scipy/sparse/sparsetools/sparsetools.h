@@ -10,7 +10,7 @@
  *    Nathan Bell
  *
  * Revisions:
- *    07/14/2007 - added sum_csr_duplicates
+ *    07/14/2007 - added csr_sum_duplicates
  *    07/12/2007 - added templated function for binary arithmetic ops
  *    01/09/2007 - index type is now templated
  *    01/06/2007 - initial inclusion into SciPy
@@ -23,6 +23,10 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+
+
+#include "fixed_size.h"
+
 
 /*
  * Extract main diagonal of CSR matrix A
@@ -38,7 +42,8 @@
  *   T  Yx[min(n_row,n_col)] - diagonal entries
  *
  * Note:
- *   Output array Yx should be preallocated
+ *   Output array Yx must be preallocated
+ *
  *   Duplicate entries will be summed.
  *
  *   Complexity: Linear.  Specifically O(nnz(A) + min(n_row,n_col))
@@ -52,20 +57,20 @@ void csr_diagonal(const I n_row,
 	              const T Ax[],
 	                    T Yx[])
 {
-  const I N = std::min(n_row, n_col);
-  
-  for(I i = 0; i < N; i++){
-    I row_start = Ap[i];
-    I row_end   = Ap[i+1];
-    
-    T diag = 0;
-    for(I jj = row_start; jj < row_end; jj++){
-        if (Aj[jj] == i)
-            diag += Ax[jj];
+    const I N = std::min(n_row, n_col);
+
+    for(I i = 0; i < N; i++){
+        I row_start = Ap[i];
+        I row_end   = Ap[i+1];
+
+        T diag = 0;
+        for(I jj = row_start; jj < row_end; jj++){
+            if (Aj[jj] == i)
+                diag += Ax[jj];
+        }
+
+        Yx[i] = diag;
     }
-    
-    Yx[i] = diag;
-  }
 }
 
 
@@ -80,7 +85,7 @@ void csr_diagonal(const I n_row,
  *   Bi  - row indices
  *
  * Note:
- *   Output array Bi needs to be preallocated
+ *   Output array Bi must be preallocated
  *
  * Note: 
  *   Complexity: Linear.
@@ -92,9 +97,7 @@ void expandptr(const I n_row,
                      I Bi[])
 {
   for(I i = 0; i < n_row; i++){
-    I row_start = Ap[i];
-    I row_end   = Ap[i+1];
-    for(I jj = row_start; jj < row_end; jj++){
+    for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
       Bi[jj] = i;
     }
   }
@@ -122,7 +125,7 @@ void expandptr(const I n_row,
  *   T  Bx[nnz(A)]  - nonzeros
  *
  * Note:
- *   Output arrays Bp,Bj,Bx should be preallocated
+ *   Output arrays Bp, Bj, Bx must be preallocated
  *
  * Note: 
  *   Input:  column indices *are not* assumed to be in sorted order
@@ -141,96 +144,91 @@ void csr_tocsc(const I n_row,
 	                 I Bi[],
 	                 T Bx[])
 {  
-  I nnz = Ap[n_row];
-  
-  std::vector<I> temp(n_col,0); //temp array
+  const I nnz = Ap[n_row];
  
   //compute number of non-zero entries per column of A 
-  for (I i = 0; i < nnz; i++){            
-    temp[Aj[i]]++;
+  std::fill(Bp, Bp + n_col, 0);
+
+  for (I n = 0; n < nnz; n++){            
+    Bp[Aj[n]]++;
   }
         
   //cumsum the nnz per column to get Bp[]
-  for(I i = 0, cumsum = 0; i < n_col; i++){     
-    Bp[i] = cumsum;
-    cumsum += temp[i];
+  for(I col = 0, cumsum = 0; col < n_col; col++){     
+    I temp  = Bp[col];
+    Bp[col] = cumsum;
+    cumsum += temp;
   }
   Bp[n_col] = nnz; 
-  std::copy(Bp, Bp + n_col, temp.begin());
-
   
-  for(I i = 0; i < n_row; i++){
-    I row_start = Ap[i];
-    I row_end   = Ap[i+1];
-    for(I j = row_start; j < row_end; j++){
-      I col = Aj[j];
-      I k   = temp[col];
+  for(I row = 0; row < n_row; row++){
+    for(I jj = Ap[row]; jj < Ap[row+1]; jj++){
+      I col  = Aj[jj];
+      I dest = Bp[col];
 
-      Bi[k] = i;
-      Bx[k] = Ax[j];
+      Bi[dest] = row;
+      Bx[dest] = Ax[jj];
 
-      temp[col]++;
+      Bp[col]++;
     }
   }  
+
+  for(I col = 0, last = 0; col <= n_col; col++){
+      I temp  = Bp[col];
+      Bp[col] = last;
+      last    = temp;
+  }
 }   
 
 
 
 
+
+
+
 /*
- * Compute B = A for CSR matrix A, COO matrix B
+ * Compute C = A*B for CSR matrices A,B
  *
- * Also, with the appropriate arguments can also be used to:
- *   - convert CSC->COO
  *
  * Input Arguments:
- *   I  n_row         - number of rows in A
- *   I  n_col         - number of columns in A
- *   I  Ap[n_row+1]   - row pointer
- *   I  Aj[nnz(A)]    - column indices
- *   T  Ax[nnz(A)]    - nonzeros
- *
+ *   I  n_row       - number of rows in A
+ *   I  n_col       - number of columns in B (hence C is n_row by n_col)
+ *   I  Ap[n_row+1] - row pointer
+ *   I  Aj[nnz(A)]  - column indices
+ *   T  Ax[nnz(A)]  - nonzeros
+ *   I  Bp[?]       - row pointer
+ *   I  Bj[nnz(B)]  - column indices
+ *   T  Bx[nnz(B)]  - nonzeros
  * Output Arguments:
- *   vec<I> Bi  - row indices
- *   vec<I> Bj  - column indices
- *   vec<T> Bx  - nonzeros
- *
+ *   vec<I> Cp - row pointer
+ *   vec<I> Cj - column indices
+ *   vec<T> Cx - nonzeros
+ *   
  * Note:
- *   Output arrays Bi,Bj,Bx will be allocated within in the method
+ *   Output arrays Cp, Cj, and Cx must be preallocated
  *
  * Note: 
- *   Complexity: Linear.
- * 
+ *   Input:  A and B column indices *are not* assumed to be in sorted order 
+ *   Output: C column indices *are not* assumed to be in sorted order
+ *           Cx will not contain any zero entries
+ *
+ *   Complexity: O(n_row*K^2 + max(n_row,n_col)) 
+ *                 where K is the maximum nnz in a row of A
+ *                 and column of B.
+ *
+ *
+ *  This is an implementation of the SMMP algorithm:
+ *
+ *    "Sparse Matrix Multiplication Package (SMMP)"
+ *      Randolph E. Bank and Craig C. Douglas
+ *
+ *    http://citeseer.ist.psu.edu/445062.html
+ *    http://www.mgnet.org/~douglas/ccd-codes.html
+ *
  */
-template <class I, class T>
-void csr_tocoo(const I n_row,
-	           const I n_col, 
-               const I Ap[], 
-               const I Aj[], 
-               const T Ax[],
-               std::vector<I>* Bi,
-               std::vector<I>* Bj,
-               std::vector<T>* Bx)
-{
-  I nnz = Ap[n_row];
-  Bi->reserve(nnz);
-  Bi->reserve(nnz);
-  Bx->reserve(nnz);
-  for(I i = 0; i < n_row; i++){
-    I row_start = Ap[i];
-    I row_end   = Ap[i+1];
-    for(I jj = row_start; jj < row_end; jj++){
-      Bi->push_back(i);
-      Bj->push_back(Aj[jj]);
-      Bx->push_back(Ax[jj]);
-    }
-  }
-}
-
-
 
 /*
- * Compute CSR row pointer for the matrix product C = A * B
+ * Pass 1 computes CSR row pointer for the matrix product C = A * B
  *
  */
 template <class I>
@@ -276,6 +274,10 @@ void csr_matmat_pass1(const I n_row,
     }
 }
 
+/*
+ * Pass 2 computes CSR entries for C using the row pointer computed in Pass 1
+ *
+ */
 template <class I, class T>
 void csr_matmat_pass2(const I n_row,
       	              const I n_col, 
@@ -343,104 +345,6 @@ void csr_matmat_pass2(const I n_row,
 
 
 
-/*
- * Compute C = A*B for CSR matrices A,B
- *
- *
- * Input Arguments:
- *   I  n_row       - number of rows in A
- *   I  n_col       - number of columns in B (hence C is n_row by n_col)
- *   I  Ap[n_row+1] - row pointer
- *   I  Aj[nnz(A)]  - column indices
- *   T  Ax[nnz(A)]  - nonzeros
- *   I  Bp[?]       - row pointer
- *   I  Bj[nnz(B)]  - column indices
- *   T  Bx[nnz(B)]  - nonzeros
- * Output Arguments:
- *   vec<I> Cp - row pointer
- *   vec<I> Cj - column indices
- *   vec<T> Cx - nonzeros
- *   
- * Note:
- *   Output arrays Cp,Cj, and Cx will be allocated within in the method
- *
- * Note: 
- *   Input:  A and B column indices *are not* assumed to be in sorted order 
- *   Output: C column indices *are not* assumed to be in sorted order
- *           Cx will not contain any zero entries
- *
- *   Complexity: O(n_row*K^2 + max(n_row,n_col)) 
- *                 where K is the maximum nnz in a row of A
- *                 and column of B.
- *
- *
- *  This implementation closely follows the SMMP algorithm:
- *
- *    "Sparse Matrix Multiplication Package (SMMP)"
- *      Randolph E. Bank and Craig C. Douglas
- *
- *    http://citeseer.ist.psu.edu/445062.html
- *    http://www.mgnet.org/~douglas/ccd-codes.html
- *
- */
-template <class I, class T>
-void csrmucsr(const I n_row,
-      	      const I n_col, 
-      	      const I Ap[], 
-      	      const I Aj[], 
-      	      const T Ax[],
-      	      const I Bp[],
-      	      const I Bj[],
-      	      const T Bx[],
-      	      std::vector<I>* Cp,
-      	      std::vector<I>* Cj,
-      	      std::vector<T>* Cx)
-{
-    Cp->resize(n_row+1,0);
-
-    std::vector<I> next(n_col,-1);
-    std::vector<T> sums(n_col, 0);
-
-    for(I i = 0; i < n_row; i++){
-        I head = -2;
-        I length =  0;
-
-        I jj_start = Ap[i];
-        I jj_end   = Ap[i+1];
-        for(I jj = jj_start; jj < jj_end; jj++){
-            I j = Aj[jj];
-
-            I kk_start = Bp[j];
-            I kk_end   = Bp[j+1];
-            for(I kk = kk_start; kk < kk_end; kk++){
-                I k = Bj[kk];
-
-                sums[k] += Ax[jj]*Bx[kk];
-
-                if(next[k] == -1){
-                    next[k] = head;                        
-                    head = k;
-                    length++;
-                }
-            }
-        }         
-
-        for(I jj = 0; jj < length; jj++){
-            if(sums[head] != 0){
-                Cj->push_back(head);
-                Cx->push_back(sums[head]);
-            }
-
-            I temp = head;                
-            head = next[head];
-
-            next[temp] = -1; //clear arrays
-            sums[temp]  =  0;                              
-        }
-
-        (*Cp)[i+1] = Cx->size();
-    }
-}
 
 
 
@@ -466,7 +370,7 @@ void csrmucsr(const I n_row,
  *   vec<T> Cx  - nonzeros
  *   
  * Note:
- *   Output arrays Cp,Cj, and Cx will be allocated within in the method
+ *   Output arrays Cp, Cj, and Cx will be allocated within in the method
  *
  * Note: 
  *   Input:  A and B column indices *are not* assumed to be in sorted order 
@@ -488,14 +392,14 @@ void csr_binop_csr(const I n_row,
                    std::vector<T>* Cx,
                    const bin_op& op)
 {
-  Cp->resize(n_row+1,0);
+  Cp->resize(n_row + 1, 0);
   
-  std::vector<I>   next(n_col,-1);
-  std::vector<T> A_row(n_col,0);
-  std::vector<T> B_row(n_col,0);
+  std::vector<I>  next(n_col,-1);
+  std::vector<T> A_row(n_col, 0);
+  std::vector<T> B_row(n_col, 0);
 
   for(I i = 0; i < n_row; i++){
-    I head = -2;
+    I head   = -2;
     I length =  0;
     
     //add a row of A to A_row
@@ -605,7 +509,7 @@ void csr_minus_csr(const I n_row, const I n_col,
  *
  */
 template <class I, class T>
-void sum_csr_duplicates(const I n_row,
+void csr_sum_duplicates(const I n_row,
                         const I n_col, 
                               I Ap[], 
                               I Aj[], 
@@ -672,14 +576,14 @@ void sum_csr_duplicates(const I n_row,
  *   T Bx  - nonzeros
  *
  * Note:
- *   Output arrays Bp,Bj,Bx should be preallocated
+ *   Output arrays Bp, Bj, and Bx must be preallocated
  *
  * Note: 
  *   Input:  row and column indices *are not* assumed to be ordered
- *           duplicate (i,j) entries will be summed together
  *           
  *   Output: CSR column indices *will be* in sorted order
- *           Bp[n_row] will store the number of nonzeros
+ *
+ *   Note: duplicate entries are carried over to the CSR represention
  *
  *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
  * 
@@ -695,35 +599,42 @@ void coo_tocsr(const I n_row,
                      I Bj[],
                      T Bx[])
 {
-  std::vector<I> temp(n_row,0);
+    //compute number of non-zero entries per row of A 
+    std::fill(Bp, Bp + n_row, 0);
 
-  //compute nnz per row, then compute Bp
-  for(I i = 0; i < nnz; i++){
-    temp[Ai[i]]++;
-  }
-  //cumsum the nnz per row to get Bp[]
-  for(I i = 0, cumsum = 0; i < n_row; i++){     
-    Bp[i] = cumsum;
-    cumsum += temp[i];
-  }
-  Bp[n_row] = nnz; 
-  std::copy(Bp, Bp + n_row, temp.begin());
+    for (I n = 0; n < nnz; n++){            
+        Bp[Ai[n]]++;
+    }
 
-  //write Aj,Ax into Bj,Bx
-  for(I i = 0; i < nnz; i++){
-    I row = Ai[i];
-    I n   = temp[row];
+    //cumsum the nnz per row to get Bp[]
+    for(I i = 0, cumsum = 0; i < n_row; i++){     
+        I temp = Bp[i];
+        Bp[i] = cumsum;
+        cumsum += temp;
+    }
+    Bp[n_row] = nnz; 
 
-    Bj[n] = Aj[i];
-    Bx[n] = Ax[i];
+    //write Aj,Ax into Bj,Bx
+    for(I n = 0; n < nnz; n++){
+        I row  = Ai[n];
+        I dest = Bp[row];
 
-    temp[row]++;
-  }
-  //now Bp,Bj,Bx form a CSR representation (with duplicates)
+        Bj[dest] = Aj[n];
+        Bx[dest] = Ax[n];
 
-  sum_csr_duplicates(n_row,n_col,Bp,Bj,Bx);
+        Bp[row]++;
+    }
+
+    for(I i = 0, last = 0; i <= n_row; i++){
+        I temp = Bp[i];
+        Bp[i]  = last;
+        last   = temp;
+    }
+
+    //now Bp,Bj,Bx form a CSR representation (with possible duplicates)
 }
-	    
+
+
 
 
 
@@ -737,16 +648,16 @@ void coo_tocsr(const I n_row,
  *   I  n_col         - number of columns in A
  *   I  Ap[n_row+1]   - row pointer
  *   I  Aj[nnz(A)]    - column indices
- *   T  Ax[n_col]     - nonzeros
- *   T  Xx[n_col]     - nonzeros
+ *   T  Ax[nnz(A)]    - nonzeros
+ *   T  Xx[n_col]     - input vector
  *
  * Output Arguments:
- *   vec<T> Yx - nonzeros 
+ *   T  Yx[n_row]     - output vector
  *
  * Note:
- *   Output array Xx will be allocated within in the method
+ *   Output array Yx must be preallocated
  *
- *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
+ *   Complexity: Linear.  Specifically O(nnz(A) + n_row)
  * 
  */
 template <class I, class T>
@@ -758,16 +669,13 @@ void csr_matvec(const I n_row,
 	            const T Xx[],
 	                  T Yx[])
 {
-  for(I i = 0; i < n_row; i++){
-    I row_start = Ap[i];
-    I row_end   = Ap[i+1];
-    
-    T sum = 0;
-    for(I jj = row_start; jj < row_end; jj++){
-      sum += Ax[jj] * Xx[Aj[jj]];
+    for(I i = 0; i < n_row; i++){
+        T sum = 0;
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            sum += Ax[jj] * Xx[Aj[jj]];
+        }
+        Yx[i] = sum;
     }
-    Yx[i] = sum;
-  }
 }
 
 
@@ -785,13 +693,12 @@ void csr_matvec(const I n_row,
  *   T  Xx[n_col]     - input vector
  *
  * Output Arguments:
- *   T  Yx[n_row] - output vector 
+ *   T  Yx[n_row]     - output vector 
  *
  * Note:
- *   Output arrays Xx should be be preallocated
- *
+ *   Output array Yx must be preallocated
  *   
- *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
+ *   Complexity: Linear.  Specifically O(nnz(A) + n_col)
  * 
  */
 template <class I, class T>
@@ -803,157 +710,130 @@ void csc_matvec(const I n_row,
 	            const T Xx[],
 	                  T Yx[])
 { 
- for(I i = 0; i < n_row; i++){
-      Yx[i] = 0;
-  }
-
-  for(I j = 0; j < n_col; j++){
-    I col_start = Ap[j];
-    I col_end   = Ap[j+1];
-    
-    for(I ii = col_start; ii < col_end; ii++){
-      I row  = Ai[ii];
-      Yx[row] += Ax[ii] * Xx[j];
+    for(I i = 0; i < n_row; i++){
+        Yx[i] = 0;
     }
-  }
-}
 
-
-
-
-/*
- * Construct CSC matrix A from diagonals
- *
- * Input Arguments:
- *   I  n_row                            - number of rows in A
- *   I  n_col                            - number of columns in A
- *   I  n_diags                          - number of diagonals
- *   I  diags_indx[n_diags]              - where to place each diagonal 
- *   T  diags[n_diags][min(n_row,n_col)] - diagonals
- *
- * Output Arguments:
- *   vec<I> Ap  - row pointer
- *   vec<I> Aj  - column indices
- *   vec<T> Ax  - nonzeros
- *
- * Note:
- *   Output arrays Ap,Aj,Ax will be allocated within in the method
- *
- * Note: 
- *   Output: row indices are not in sorted order
- *
- *   Complexity: Linear
- * 
- */
-template <class I, class T>
-void spdiags(const I n_row,
-             const I n_col,
-             const I n_diag,
-             const I offsets[],
-             const T diags[],
-             std::vector<I> * Ap,
-             std::vector<I> * Ai,
-             std::vector<T> * Ax)
-{
-  const I diags_length = std::min(n_row,n_col);
-  Ap->push_back(0);
-
-  for(I i = 0; i < n_col; i++){
-    for(I j = 0; j < n_diag; j++){
-      if(offsets[j] <= 0){              //sub-diagonal
-    	I row = i - offsets[j];
-	    if (row >= n_row){ continue; }
-        
-	    Ai->push_back(row);
-        Ax->push_back(diags[j*diags_length + i]);
-      } else {                          //super-diagonal
-	    I row = i - offsets[j];
-	    if (row < 0 || row >= n_row){ continue; }
-        Ai->push_back(row);
-        Ax->push_back(diags[j*diags_length + row]);
-      }
-    }
-    Ap->push_back(Ai->size());
-  }
-}
-
-
-
-/*
- * Compute M = A for CSR matrix A, dense matrix M
- *
- * Input Arguments:
- *   I  n_row           - number of rows in A
- *   I  n_col           - number of columns in A
- *   I  Ap[n_row+1]     - row pointer
- *   I  Aj[nnz(A)]      - column indices
- *   T    Ax[nnz(A)]      - nonzeros 
- *   T    Mx[n_row*n_col] - dense matrix
- *
- * Note:
- *   Output array Mx is assumed to be allocated and
- *   initialized to 0 by the caller.
- *
- */
-template <class I, class T>
-void csr_todense(const I  n_row,
-                 const I  n_col,
-                 const I  Ap[],
-                 const I  Aj[],
-                 const T  Ax[],
-                       T  Mx[])
-{
-  I row_base = 0;
-  for(I i = 0; i < n_row; i++){
-    I row_start = Ap[i];
-    I row_end   = Ap[i+1];
-    for(I jj = row_start; jj < row_end; jj++){
-      I j = Aj[jj];
-      Mx[row_base + j] = Ax[jj];
-    }	
-    row_base += n_col;
-  }
-}
-
-
-
-/*
- * Compute A = M for CSR matrix A, dense matrix M
- *
- * Input Arguments:
- *   I  n_row           - number of rows in A
- *   I  n_col           - number of columns in A
- *   T  Mx[n_row*n_col] - dense matrix
- *   I  Ap[n_row+1]     - row pointer
- *   I  Aj[nnz(A)]      - column indices
- *   T  Ax[nnz(A)]      - nonzeros 
- *
- * Note:
- *    Output arrays Ap,Aj,Ax will be allocated within the method
- *
- */
-template <class I, class T>
-void dense_tocsr(const I n_row,
-                 const I n_col,
-                 const T Mx[],
-                 std::vector<I>* Ap,
-                 std::vector<I>* Aj,
-                 std::vector<T>* Ax)
-{
-  const T* x_ptr = Mx;
-
-  Ap->push_back(0);
-  for(I i = 0; i < n_row; i++){
     for(I j = 0; j < n_col; j++){
-      if(*x_ptr != 0){
-	    Aj->push_back(j);
-	    Ax->push_back(*x_ptr);
-      }
-      x_ptr++;
+        I col_start = Ap[j];
+        I col_end   = Ap[j+1];
+
+        for(I ii = col_start; ii < col_end; ii++){
+            I row  = Ai[ii];
+            Yx[row] += Ax[ii] * Xx[j];
+        }
     }
-    Ap->push_back(Aj->size());
-  }
 }
+
+
+
+
+template <class I, class T, int R, int C>
+void bsr_matvec_fixed(const I n_row,
+	                  const I n_col, 
+	                  const I Ap[], 
+	                  const I Aj[], 
+	                  const T Ax[],
+	                  const T Xx[],
+	                        T Yx[])
+{
+    for(I i = 0; i < n_row; i++) {
+        T r0 = 0;
+        T r1 = 0;
+        T r2 = 0;
+        T r3 = 0;
+        T r4 = 0;
+        T r5 = 0;
+
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++) {
+            I j = Aj[jj];
+            const T * base = Ax + jj*(R*C);
+            if (R >= 1) r0 += dot<C,T>(base + 0*C, Xx + j*C);
+            if (R >= 2) r1 += dot<C,T>(base + 1*C, Xx + j*C);
+            if (R >= 3) r2 += dot<C,T>(base + 2*C, Xx + j*C);
+            if (R >= 4) r3 += dot<C,T>(base + 3*C, Xx + j*C);
+            if (R >= 5) r4 += dot<C,T>(base + 4*C, Xx + j*C);
+            if (R >= 6) r5 += dot<C,T>(base + 5*C, Xx + j*C);
+        }
+
+        if (R >= 1) Yx[R*i+0] = r0; 
+        if (R >= 2) Yx[R*i+1] = r1;
+        if (R >= 3) Yx[R*i+2] = r2;
+        if (R >= 4) Yx[R*i+3] = r3;
+        if (R >= 5) Yx[R*i+4] = r4;
+        if (R >= 6) Yx[R*i+5] = r5;
+    }
+}
+
+
+
+template <class I, class T>
+void bsr_matvec(const I n_row,
+	            const I n_col, 
+	            const I R, 
+	            const I C, 
+	            const I Ap[], 
+	            const I Aj[], 
+	            const T Ax[],
+	            const T Xx[],
+	                  T Yx[])
+{
+    /*
+    //use fixed version for R,C <= 4,4
+    if (R == 1){
+        if (C == 1) { bsr_matvec_fixed<I,T,1,1>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
+        if (C == 2) { bsr_matvec_fixed<I,T,1,2>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; } 
+        if (C == 3) { bsr_matvec_fixed<I,T,1,3>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
+        if (C == 4) { bsr_matvec_fixed<I,T,1,4>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
+    }
+    if (R == 2){
+        if (C == 1) { bsr_matvec_fixed<I,T,2,1>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
+        if (C == 2) { bsr_matvec_fixed<I,T,2,2>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; } 
+        if (C == 3) { bsr_matvec_fixed<I,T,2,3>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
+        if (C == 4) { bsr_matvec_fixed<I,T,2,4>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
+    }
+    if (R == 3){
+        if (C == 1) { bsr_matvec_fixed<I,T,3,1>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
+        if (C == 2) { bsr_matvec_fixed<I,T,3,2>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; } 
+        if (C == 3) { bsr_matvec_fixed<I,T,3,3>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
+        if (C == 4) { bsr_matvec_fixed<I,T,3,4>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
+    }
+    if (R == 4){
+        if (C == 1) { bsr_matvec_fixed<I,T,4,1>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
+        if (C == 2) { bsr_matvec_fixed<I,T,4,2>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; } 
+        if (C == 3) { bsr_matvec_fixed<I,T,4,3>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
+        if (C == 4) { bsr_matvec_fixed<I,T,4,4>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
+    } */
+
+
+    //otherwise use general method
+    for(I i = 0; i < n_row; i++){
+        Yx[i] = 0;
+    }
+
+    for(I i = 0; i < n_row; i++){
+        const T * A = Ax + R * C * Ap[i];
+              T * y = Yx + R * i;
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            const T * x = Xx + C*Aj[jj];
+
+            for( I r = 0; r < R; r++ ){
+                T sum = 0;
+                for( I c = 0; c < C; c++ ){
+                    sum += (*A) * x[c];
+                    A++;
+                }
+                y[r] += sum;
+            }
+
+        }
+    }
+}
+
+
+
+
+
 
 
 
@@ -979,8 +859,8 @@ template<class I, class T>
 void csr_sort_indices(const I n_row,
                       const I n_col,
                       const I Ap[], 
-                      I       Aj[], 
-                      T       Ax[])
+                            I Aj[], 
+                            T Ax[])
 {
   std::vector< std::pair<I,T> > temp;
 
@@ -1003,57 +883,58 @@ void csr_sort_indices(const I n_row,
     }    
 }
 
+
 template<class I, class T>
 void get_csr_submatrix(const I n_row,
-		       const I n_col,
-		       const I Ap[], 
-		       const I Aj[], 
-		       const T Ax[],
-		       const I ir0,
-		       const I ir1,
-		       const I ic0,
-		       const I ic1,
-		       std::vector<I>* Bp,
-		       std::vector<I>* Bj,
-		       std::vector<T>* Bx)
+		               const I n_col,
+		               const I Ap[], 
+		               const I Aj[], 
+		               const T Ax[],
+		               const I ir0,
+		               const I ir1,
+		               const I ic0,
+		               const I ic1,
+		               std::vector<I>* Bp,
+		               std::vector<I>* Bj,
+		               std::vector<T>* Bx)
 {
-  I new_n_row = ir1 - ir0;
-  //I new_n_col = ic1 - ic0;  //currently unused
-  I new_nnz = 0;
-  I kk = 0;
+    I new_n_row = ir1 - ir0;
+    //I new_n_col = ic1 - ic0;  //currently unused
+    I new_nnz = 0;
+    I kk = 0;
 
-  // Count nonzeros total/per row.
-  for(I i = 0; i < new_n_row; i++){
-    I row_start = Ap[ir0+i];
-    I row_end   = Ap[ir0+i+1];
+    // Count nonzeros total/per row.
+    for(I i = 0; i < new_n_row; i++){
+        I row_start = Ap[ir0+i];
+        I row_end   = Ap[ir0+i+1];
 
-    for(I jj = row_start; jj < row_end; jj++){
-      if ((Aj[jj] >= ic0) && (Aj[jj] < ic1)) {
-	    new_nnz++;
-      }
+        for(I jj = row_start; jj < row_end; jj++){
+            if ((Aj[jj] >= ic0) && (Aj[jj] < ic1)) {
+                new_nnz++;
+            }
+        }
     }
-  }
 
-  // Allocate.
-  Bp->resize(new_n_row+1);
-  Bj->resize(new_nnz);
-  Bx->resize(new_nnz);
+    // Allocate.
+    Bp->resize(new_n_row+1);
+    Bj->resize(new_nnz);
+    Bx->resize(new_nnz);
 
-  // Assign.
-  (*Bp)[0] = 0;
-  for(I i = 0; i < new_n_row; i++){
-    I row_start = Ap[ir0+i];
-    I row_end   = Ap[ir0+i+1];
+    // Assign.
+    (*Bp)[0] = 0;
+    for(I i = 0; i < new_n_row; i++){
+        I row_start = Ap[ir0+i];
+        I row_end   = Ap[ir0+i+1];
 
-    for(I jj = row_start; jj < row_end; jj++){
-      if ((Aj[jj] >= ic0) && (Aj[jj] < ic1)) {
-	(*Bj)[kk] = Aj[jj] - ic0;
-	(*Bx)[kk] = Ax[jj];
-	kk++;
-      }
+        for(I jj = row_start; jj < row_end; jj++){
+            if ((Aj[jj] >= ic0) && (Aj[jj] < ic1)) {
+                (*Bj)[kk] = Aj[jj] - ic0;
+                (*Bx)[kk] = Ax[jj];
+                kk++;
+            }
+        }
+        (*Bp)[i+1] = kk;
     }
-    (*Bp)[i+1] = kk;
-  }
 }
 
 
@@ -1084,16 +965,6 @@ void csc_tocsr(const I n_row,
                      T Bx[])
 { csr_tocsc<I,T>(n_col, n_row, Ap, Ai, Ax, Bp, Bj, Bx); }
 
-template <class I, class T>
-void csc_tocoo(const I n_row,
-              const I n_col, 
-              const I Ap[], 
-              const I Ai[], 
-              const T Ax[],
-              std::vector<I>* Bi,
-              std::vector<I>* Bj,
-              std::vector<T>* Bx)
-{ csr_tocoo<I,T>(n_col, n_row, Ap, Ai, Ax, Bj, Bi, Bx); }
     
 template <class I>
 void csc_matmat_pass1(const I n_row,
@@ -1119,19 +990,6 @@ void csc_matmat_pass2(const I n_row,
       	                    T Cx[])
 { csr_matmat_pass2(n_col, n_row, Bp, Bi, Bx, Ap, Ai, Ax, Cp, Ci, Cx); }
 
-template <class I, class T>
-void cscmucsc(const I n_row,
-              const I n_col, 
-              const I Ap[], 
-              const I Ai[], 
-              const T Ax[],
-              const I Bp[],
-              const I Bi[],
-              const T Bx[],
-              std::vector<I>* Cp,
-              std::vector<I>* Ci,
-              std::vector<T>* Cx)
-{ csrmucsr<I,T>(n_col, n_row, Bp, Bi, Bx, Ap, Ai, Ax, Cp, Ci, Cx); }
 
 template<class I, class T>
 void coo_tocsc(const I n_row,
@@ -1187,12 +1045,12 @@ void csc_minus_csc(const I n_row, const I n_col,
 
 
 template <class I, class T>
-void sum_csc_duplicates(const I n_row,
+void csc_sum_duplicates(const I n_row,
                         const I n_col, 
                               I Ap[], 
                               I Ai[], 
                               T Ax[])
-{ sum_csr_duplicates(n_col, n_row, Ap, Ai, Ax); }
+{ csr_sum_duplicates(n_col, n_row, Ap, Ai, Ax); }
 
 
 template<class I, class T>
@@ -1202,5 +1060,307 @@ void csc_sort_indices(const I n_row,
                       I       Ai[], 
                       T       Ax[])
 { csr_sort_indices(n_col, n_row, Ap, Ai, Ax); }
+
+
+
+
+
+
+/* 
+ * These are sparsetools functions that are not currently used
+ * 
+ */
+
+///*
+// * Compute C = A*B for CSR matrices A,B
+// *
+// *
+// * Input Arguments:
+// *   I  n_row       - number of rows in A
+// *   I  n_col       - number of columns in B (hence C is n_row by n_col)
+// *   I  Ap[n_row+1] - row pointer
+// *   I  Aj[nnz(A)]  - column indices
+// *   T  Ax[nnz(A)]  - nonzeros
+// *   I  Bp[?]       - row pointer
+// *   I  Bj[nnz(B)]  - column indices
+// *   T  Bx[nnz(B)]  - nonzeros
+// * Output Arguments:
+// *   vec<I> Cp - row pointer
+// *   vec<I> Cj - column indices
+// *   vec<T> Cx - nonzeros
+// *   
+// * Note:
+// *   Output arrays Cp, Cj, and Cx will be allocated within in the method
+// *
+// * Note: 
+// *   Input:  A and B column indices *are not* assumed to be in sorted order 
+// *   Output: C column indices *are not* assumed to be in sorted order
+// *           Cx will not contain any zero entries
+// *
+// *   Complexity: O(n_row*K^2 + max(n_row,n_col)) 
+// *                 where K is the maximum nnz in a row of A
+// *                 and column of B.
+// *
+// *
+// *  This implementation closely follows the SMMP algorithm:
+// *
+// *    "Sparse Matrix Multiplication Package (SMMP)"
+// *      Randolph E. Bank and Craig C. Douglas
+// *
+// *    http://citeseer.ist.psu.edu/445062.html
+// *    http://www.mgnet.org/~douglas/ccd-codes.html
+// *
+// */
+//template <class I, class T>
+//void csrmucsr(const I n_row,
+//      	      const I n_col, 
+//      	      const I Ap[], 
+//      	      const I Aj[], 
+//      	      const T Ax[],
+//      	      const I Bp[],
+//      	      const I Bj[],
+//      	      const T Bx[],
+//      	      std::vector<I>* Cp,
+//      	      std::vector<I>* Cj,
+//      	      std::vector<T>* Cx)
+//{
+//    Cp->resize(n_row+1,0);
+//
+//    std::vector<I> next(n_col,-1);
+//    std::vector<T> sums(n_col, 0);
+//
+//    for(I i = 0; i < n_row; i++){
+//        I head = -2;
+//        I length =  0;
+//
+//        I jj_start = Ap[i];
+//        I jj_end   = Ap[i+1];
+//        for(I jj = jj_start; jj < jj_end; jj++){
+//            I j = Aj[jj];
+//
+//            I kk_start = Bp[j];
+//            I kk_end   = Bp[j+1];
+//            for(I kk = kk_start; kk < kk_end; kk++){
+//                I k = Bj[kk];
+//
+//                sums[k] += Ax[jj]*Bx[kk];
+//
+//                if(next[k] == -1){
+//                    next[k] = head;                        
+//                    head = k;
+//                    length++;
+//                }
+//            }
+//        }         
+//
+//        for(I jj = 0; jj < length; jj++){
+//            if(sums[head] != 0){
+//                Cj->push_back(head);
+//                Cx->push_back(sums[head]);
+//            }
+//
+//            I temp = head;                
+//            head = next[head];
+//
+//            next[temp] = -1; //clear arrays
+//            sums[temp]  =  0;                              
+//        }
+//
+//        (*Cp)[i+1] = Cx->size();
+//    }
+//}
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+///*
+// * Compute A = M for CSR matrix A, dense matrix M
+// *
+// * Input Arguments:
+// *   I  n_row           - number of rows in A
+// *   I  n_col           - number of columns in A
+// *   T  Mx[n_row*n_col] - dense matrix
+// *   I  Ap[n_row+1]     - row pointer
+// *   I  Aj[nnz(A)]      - column indices
+// *   T  Ax[nnz(A)]      - nonzeros 
+// *
+// * Note:
+// *    Output arrays Ap, Aj, and Ax will be allocated within the method
+// *
+// */
+//template <class I, class T>
+//void dense_tocsr(const I n_row,
+//                 const I n_col,
+//                 const T Mx[],
+//                 std::vector<I>* Ap,
+//                 std::vector<I>* Aj,
+//                 std::vector<T>* Ax)
+//{
+//  const T* x_ptr = Mx;
+//
+//  Ap->push_back(0);
+//  for(I i = 0; i < n_row; i++){
+//    for(I j = 0; j < n_col; j++){
+//      if(*x_ptr != 0){
+//	    Aj->push_back(j);
+//	    Ax->push_back(*x_ptr);
+//      }
+//      x_ptr++;
+//    }
+//    Ap->push_back(Aj->size());
+//  }
+//}
+//
+//
+///*
+// * Compute M = A for CSR matrix A, dense matrix M
+// *
+// * Input Arguments:
+// *   I  n_row           - number of rows in A
+// *   I  n_col           - number of columns in A
+// *   I  Ap[n_row+1]     - row pointer
+// *   I  Aj[nnz(A)]      - column indices
+// *   T  Ax[nnz(A)]      - nonzeros 
+// *   T  Mx[n_row*n_col] - dense matrix
+// *
+// * Note:
+// *   Output array Mx is assumed to be allocated and
+// *   initialized to 0 by the caller.
+// *
+// */
+//template <class I, class T>
+//void csr_todense(const I  n_row,
+//                 const I  n_col,
+//                 const I  Ap[],
+//                 const I  Aj[],
+//                 const T  Ax[],
+//                       T  Mx[])
+//{
+//    I row_base = 0;
+//    for(I i = 0; i < n_row; i++){
+//        I row_start = Ap[i];
+//        I row_end   = Ap[i+1];
+//        for(I jj = row_start; jj < row_end; jj++){
+//            I j = Aj[jj];
+//            Mx[row_base + j] = Ax[jj];
+//        }	
+//        row_base += n_col;
+//    }
+//}
+///*
+// * Compute B = A for CSR matrix A, COO matrix B
+// *
+// * Also, with the appropriate arguments can also be used to:
+// *   - convert CSC->COO
+// *
+// * Input Arguments:
+// *   I  n_row         - number of rows in A
+// *   I  n_col         - number of columns in A
+// *   I  Ap[n_row+1]   - row pointer
+// *   I  Aj[nnz(A)]    - column indices
+// *   T  Ax[nnz(A)]    - nonzeros
+// *
+// * Output Arguments:
+// *   vec<I> Bi  - row indices
+// *   vec<I> Bj  - column indices
+// *   vec<T> Bx  - nonzeros
+// *
+// * Note:
+// *   Output arrays Bi, Bj, Bx will be allocated within in the method
+// *
+// * Note: 
+// *   Complexity: Linear.
+// * 
+// */
+//template <class I, class T>
+//void csr_tocoo(const I n_row,
+//	           const I n_col, 
+//               const I Ap[], 
+//               const I Aj[], 
+//               const T Ax[],
+//               std::vector<I>* Bi,
+//               std::vector<I>* Bj,
+//               std::vector<T>* Bx)
+//{
+//  I nnz = Ap[n_row];
+//  Bi->reserve(nnz);
+//  Bi->reserve(nnz);
+//  Bx->reserve(nnz);
+//  for(I i = 0; i < n_row; i++){
+//    I row_start = Ap[i];
+//    I row_end   = Ap[i+1];
+//    for(I jj = row_start; jj < row_end; jj++){
+//      Bi->push_back(i);
+//      Bj->push_back(Aj[jj]);
+//      Bx->push_back(Ax[jj]);
+//    }
+//  }
+//}
+//
+//
+///*
+// * Construct CSC matrix A from diagonals
+// *
+// * Input Arguments:
+// *   I  n_row                            - number of rows in A
+// *   I  n_col                            - number of columns in A
+// *   I  n_diags                          - number of diagonals
+// *   I  diags_indx[n_diags]              - where to place each diagonal 
+// *   T  diags[n_diags][min(n_row,n_col)] - diagonals
+// *
+// * Output Arguments:
+// *   vec<I> Ap  - row pointer
+// *   vec<I> Aj  - column indices
+// *   vec<T> Ax  - nonzeros
+// *
+// * Note:
+// *   Output arrays Ap, Aj, Ax will be allocated within in the method
+// *
+// * Note: 
+// *   Output: row indices are not in sorted order
+// *
+// *   Complexity: Linear
+// * 
+// */
+//template <class I, class T>
+//void spdiags(const I n_row,
+//             const I n_col,
+//             const I n_diag,
+//             const I offsets[],
+//             const T diags[],
+//             std::vector<I> * Ap,
+//             std::vector<I> * Ai,
+//             std::vector<T> * Ax)
+//{
+//    const I diags_length = std::min(n_row,n_col);
+//    Ap->push_back(0);
+//
+//    for(I i = 0; i < n_col; i++){
+//        for(I j = 0; j < n_diag; j++){
+//            if(offsets[j] <= 0){              //sub-diagonal
+//                I row = i - offsets[j];
+//                if (row >= n_row){ continue; }
+//
+//                Ai->push_back(row);
+//                Ax->push_back(diags[j*diags_length + i]);
+//            } else {                          //super-diagonal
+//                I row = i - offsets[j];
+//                if (row < 0 || row >= n_row){ continue; }
+//                Ai->push_back(row);
+//                Ax->push_back(diags[j*diags_length + row]);
+//            }
+//        }
+//        Ap->push_back(Ai->size());
+//    }
+//}
+//
 
 #endif

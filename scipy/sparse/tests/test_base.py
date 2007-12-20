@@ -15,7 +15,7 @@ Run tests if sparse is not installed:
 
 import numpy
 from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, \
-        asarray, vstack, ndarray
+        asarray, vstack, ndarray, kron
 
 import random
 from numpy.testing import *
@@ -30,13 +30,18 @@ restore_path()
 #TODO test spmatrix( [[1,2],[3,4]] ) format
 #TODO check that invalid shape in constructor raises exception
 #TODO check that spmatrix( ... , copy=X ) is respected
+#TODO test repr(spmatrix)
 class _TestCommon:
     """test common functionality shared by all sparse formats"""
 
     def setUp(self):
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
-    
+   
+    def check_repr(self):
+        """make sure __repr__ works"""
+        repr(self.spmatrix)
+
     def check_empty(self):
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
         """
@@ -295,32 +300,37 @@ class _TestCommon:
             assert_equal( result.shape, (4,2) )
             assert_equal( result, dot(a,b) )
 
+    def check_conversions(self):
+
+        #TODO add bsr/bsc
+        #for format in ['bsc','bsr','coo','csc','csr','dia','dok','lil']:
+        for format in ['coo','csc','csr','dia','dok','lil']:
+            a = self.datsp.asformat(format)
+            assert_equal(a.format,format)
+            assert_array_almost_equal(a.todense(), self.dat)
+            
+            b = self.spmatrix(self.dat+3j).asformat(format)
+            assert_equal(b.format,format)
+            assert_array_almost_equal(b.todense(), self.dat+3j)
+
+            
     def check_todia(self):
-        a = self.datsp.todia()
-        assert_array_almost_equal(a.todense(), self.dat)
-
-    def check_tocoo(self):
-        a = self.datsp.tocoo()
-        assert_array_almost_equal(a.todense(), self.dat)
-
-    def check_tolil(self):
-        a = self.datsp.tolil()
-        assert_array_almost_equal(a.todense(), self.dat)
-
-    def check_todok(self):
-        a = self.datsp.todok()
-        assert_array_almost_equal(a.todense(), self.dat)
+        #TODO, add and test .todia(maxdiags)
+        pass
     
-    def check_tocsc(self):
-        a = self.datsp.tocsc()
-        assert_array_almost_equal(a.todense(), self.dat)
-        b = complexsp = self.spmatrix(self.dat+3j)
-        c = b.tocsc()
-        assert_array_almost_equal(c.todense(), self.dat+3j)
+#    def check_tocompressedblock(self):
+#        #TODO more extensively test .tobsc() and .tobsr() w/ blocksizes
+#        x = array([[1,0,2,0],[0,0,0,0],[0,0,4,5]])
+#        y = array([[0,1,2],[3,0,5]])
+#        A = kron(x,y)
+#        Asp = self.spmatrix(A)
+#        for format in ['bsc','bsr']:
+#            fn = getattr(Asp, 'to' + format )
+#            
+#            for X in [ 1, 2, 3, 6 ]:
+#                for Y in [ 1, 2, 3, 4, 6, 12]:
+#                    assert_equal( fn(blocksize=(X,Y)).todense(), A)
 
-    def check_tocsr(self):
-        a = self.datsp.tocsr()
-        assert_array_almost_equal(a.todense(), self.dat)
 
     def check_transpose(self):
         a = self.datsp.transpose()
@@ -590,6 +600,8 @@ class _TestVertSlicing:
         except IndexError:
             caught += 1
         assert caught == 2
+
+
 
 class _TestBothSlicing:
     """Tests vertical and horizontal slicing (e.g. [:,0:2]). Tests for
@@ -1210,6 +1222,39 @@ class TestDIA(_TestCommon, _TestArithmetic, NumpyTestCase):
         pass
         #TODO add test
 
+#class TestBSR(_TestCommon, _TestArithmetic, NumpyTestCase):
+#    spmatrix = bsr_matrix
+#
+#    def check_constructor1(self):
+#        indptr  = array([0,2,2,4]) 
+#        indices = array([0,2,2,3])
+#        data    = zeros((4,2,3))
+#
+#        data[0] = array([[ 0,  1,  2],
+#                         [ 3,  0,  5]])
+#        data[1] = array([[ 0,  2,  4],
+#                         [ 6,  0, 10]])
+#        data[2] = array([[ 0,  4,  8],
+#                         [12,  0, 20]])
+#        data[3] = array([[ 0,  5, 10],
+#                         [15,  0, 25]])
+#
+#        A = kron( [[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]] )
+#        
+#        Asp = bsr_matrix((data,indices,indptr),shape=(6,12))
+#
+#        assert_equal(Asp.todense(),A)
+#        #TODO add infer from shape example
+#        
+#
+#
+#
+#class TestBSC(_TestCommon, _TestArithmetic, NumpyTestCase):
+#    spmatrix = bsc_matrix
+#
+#    def check_constructor1(self):
+#        pass
+#        #TODO add test
                 
 if __name__ == "__main__":
     NumpyTest().run()

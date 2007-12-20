@@ -6,7 +6,7 @@ from numpy import asarray, asmatrix, matrix, zeros, arange, array, \
         empty_like, intc, atleast_1d, atleast_2d, add, multiply, \
         unique
 
-from base import isspmatrix
+from base import isspmatrix, _formats
 from data import _data_matrix
 from sputils import isscalarlike, isshape, upcast, getdtype, isdense
 
@@ -114,6 +114,13 @@ class dia_matrix(_data_matrix):
         if len(unique(self.diags)) != len(self.diags):
             raise ValueError,'offset array contains duplicate values'
 
+    def __repr__(self):
+        nnz = self.getnnz()
+        format = self.getformat()
+        return "<%dx%d sparse matrix of type '%s'\n" \
+               "\twith %d stored elements (%d diagonals) in %s format>" % \
+               ( self.shape +  (self.dtype.type, nnz, self.data.shape[0], \
+                 _formats[format][1],) )
 
     def getnnz(self):
         """number of nonzero values
