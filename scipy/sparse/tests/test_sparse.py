@@ -38,6 +38,59 @@ import time
 class TestSparseTools(NumpyTestCase):
     """Simple benchmarks for sparse matrix module"""
 
+    def test_arithmetic(self,level=5):
+        matrices = []
+        matrices.append( ('A','Identity', spidentity(500**2,format='csr')) )
+        matrices.append( ('B','Poisson5pt', poisson2d(500,format='csr'))  )
+   
+        #matrices = [ (a,b,c.astype('int8')) for (a,b,c) in matrices ]
+        print
+        print '                 Sparse Matrix Arithmetic'
+        print '==================================================================='
+        print ' var |     name       |         shape        |   dtype   |    nnz  '
+        print '-------------------------------------------------------------------'
+        fmt = '  %1s  | %14s | %20s | %9s | %8d '
+
+        for var,name,mat in matrices:
+            name  = name.center(14)
+            shape = ("%s" % (mat.shape,)).center(20)
+            dtype = mat.dtype.name.center(9)
+            print fmt % (var,name,shape,dtype,mat.nnz)
+
+        space = ' ' * 10 
+        print
+        print space+'              Timings'
+        print space+'=========================================='
+        print space+' format |     operation     | time (msec) '
+        print space+'------------------------------------------'
+        fmt = space+'   %3s  | %17s |  %7.1f  '
+
+        for format in ['csr']:
+            vars = dict( [(var,mat.asformat(format)) for (var,name,mat) in matrices ] )
+            for X,Y in [ ('A','A'),('A','B'),('B','A'),('B','B') ]:
+                x,y = vars[X],vars[Y]
+                for op in ['__add__','__sub__','multiply','__div__','__mul__']:
+                    fn = getattr(x,op)
+                    fn(y) #warmup
+
+                    start = time.clock()
+                    iter = 0
+                    while iter < 5 or time.clock() < start + 1:
+                        fn(y)
+                        iter += 1
+                    end = time.clock()
+
+                    msec_per_it = 1000*(end - start)/float(iter)
+                    operation = (X + '.' + op + '(' + Y + ')').center(17)
+                    print fmt % (format,operation,msec_per_it)
+
+
+#            name = name.center(12)
+#            shape = ("%s" % (A.shape,)).center(20)
+#            MFLOPs = (2*A.nnz*iter/(end-start))/float(1e6)
+#
+#            print fmt % (A.format,name,shape,A.nnz,MFLOPs)
+
     def test_matvec(self,level=5):
         matrices = []
         matrices.append(('Identity',   spidentity(10**5,format='csr')))
