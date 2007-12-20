@@ -269,6 +269,10 @@ class spmatrix(object):
                 return result
         elif isscalarlike(other):
             raise ValueError,'exponent must be an integer'
+        elif isspmatrix(other):
+            warn('Using ** for elementwise multiplication is deprecated.'\
+                    'Use .multiply() instead',DeprecationWarning)
+            return self.multiply(other)
         else:
             raise NotImplementedError
 
@@ -402,7 +406,7 @@ class spmatrix(object):
 
     def todia(self):
         return self.tocoo().todia()
-
+    
     def copy(self):
         return self.__class__(self,copy=True)
 
