@@ -38,17 +38,18 @@ import time
 class TestSparseTools(NumpyTestCase):
     """Simple benchmarks for sparse matrix module"""
 
-    def test_arithmetic(self,level=5):
+    def test_arithmetic(self,level=4):
         matrices = []
         matrices.append( ('A','Identity', spidentity(500**2,format='csr')) )
         matrices.append( ('B','Poisson5pt', poisson2d(500,format='csr'))  )
    
         #matrices = [ (a,b,c.astype('int8')) for (a,b,c) in matrices ]
+
         print
         print '                 Sparse Matrix Arithmetic'
-        print '==================================================================='
-        print ' var |     name       |         shape        |   dtype   |    nnz  '
-        print '-------------------------------------------------------------------'
+        print '===================================================================='
+        print ' var |     name       |         shape        |   dtype   |    nnz   '
+        print '--------------------------------------------------------------------'
         fmt = '  %1s  | %14s | %20s | %9s | %8d '
 
         for var,name,mat in matrices:
@@ -84,12 +85,6 @@ class TestSparseTools(NumpyTestCase):
                     operation = (X + '.' + op + '(' + Y + ')').center(17)
                     print fmt % (format,operation,msec_per_it)
 
-
-#            name = name.center(12)
-#            shape = ("%s" % (A.shape,)).center(20)
-#            MFLOPs = (2*A.nnz*iter/(end-start))/float(1e6)
-#
-#            print fmt % (A.format,name,shape,A.nnz,MFLOPs)
 
     def test_matvec(self,level=5):
         matrices = []
