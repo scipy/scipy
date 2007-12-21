@@ -727,49 +727,88 @@ void csc_matvec(const I n_row,
 
 
 
+//template <class I, class T>
+//void bsr_tocsr(const I n_brow,
+//	           const I n_bcol, 
+//	           const I R, 
+//	           const I C, 
+//	           const I Ap[], 
+//	           const I Aj[], 
+//	           const T Ax[],
+//	                 I Bp[],
+//                     I Bj[]
+//	                 T Bx[])
+//{
+//    const I RC = R*C;
+//
+//    for(I brow = 0; brow < n_brow; brow++){
+//        I row_size = C * (Ap[brow + 1] - Ap[brow]);
+//        for(I r = 0; r < R; r++){
+//            Bp[R*brow + r] = RC * Ap[brow] + r * row_size
+//        }
+//    }
+//}
 
 template <class I, class T, int R, int C>
-void bsr_matvec_fixed(const I n_row,
-	                  const I n_col, 
+void bsr_matvec_fixed(const I n_brow,
+	                  const I n_bcol, 
 	                  const I Ap[], 
 	                  const I Aj[], 
 	                  const T Ax[],
 	                  const T Xx[],
 	                        T Yx[])
 {
-    for(I i = 0; i < n_row; i++) {
+    for(I i = 0; i < n_brow; i++) {
         T r0 = 0;
         T r1 = 0;
         T r2 = 0;
         T r3 = 0;
         T r4 = 0;
         T r5 = 0;
+        T r6 = 0;
+        T r7 = 0;
 
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++) {
             I j = Aj[jj];
             const T * base = Ax + jj*(R*C);
-            if (R >= 1) r0 += dot<C,T>(base + 0*C, Xx + j*C);
-            if (R >= 2) r1 += dot<C,T>(base + 1*C, Xx + j*C);
-            if (R >= 3) r2 += dot<C,T>(base + 2*C, Xx + j*C);
-            if (R >= 4) r3 += dot<C,T>(base + 3*C, Xx + j*C);
-            if (R >= 5) r4 += dot<C,T>(base + 4*C, Xx + j*C);
-            if (R >= 6) r5 += dot<C,T>(base + 5*C, Xx + j*C);
+            if (R > 0) r0 += dot<C>(base + 0*C, Xx + j*C);
+            if (R > 1) r1 += dot<C>(base + 1*C, Xx + j*C);
+            if (R > 2) r2 += dot<C>(base + 2*C, Xx + j*C);
+            if (R > 3) r3 += dot<C>(base + 3*C, Xx + j*C);
+            if (R > 4) r4 += dot<C>(base + 4*C, Xx + j*C);
+            if (R > 5) r5 += dot<C>(base + 5*C, Xx + j*C);
+            if (R > 6) r6 += dot<C>(base + 6*C, Xx + j*C);
+            if (R > 7) r7 += dot<C>(base + 7*C, Xx + j*C);
         }
 
-        if (R >= 1) Yx[R*i+0] = r0; 
-        if (R >= 2) Yx[R*i+1] = r1;
-        if (R >= 3) Yx[R*i+2] = r2;
-        if (R >= 4) Yx[R*i+3] = r3;
-        if (R >= 5) Yx[R*i+4] = r4;
-        if (R >= 6) Yx[R*i+5] = r5;
+        if (R > 0) Yx[R*i+0] = r0; 
+        if (R > 1) Yx[R*i+1] = r1;
+        if (R > 2) Yx[R*i+2] = r2;
+        if (R > 3) Yx[R*i+3] = r3;
+        if (R > 4) Yx[R*i+4] = r4;
+        if (R > 5) Yx[R*i+5] = r5;
+        if (R > 6) Yx[R*i+6] = r6;
+        if (R > 7) Yx[R*i+7] = r7;
     }
 }
+#define F(X,Y) bsr_matvec_fixed<I,T,X,Y>
 
-
+/*
+ * Generate the table below with:
+ *   out = ''
+ *   N = 8
+ *   for i in range(N):
+ *       out += '{'
+ *       for j in range(N-1):
+ *           out += ' F(%d,%d),' % (i+1,j+1)
+ *       out += ' F(%d,%d) },\n' % (i+1,j+2)
+ *   out = out[:-2]
+ *
+ */
 
 template <class I, class T>
-void bsr_matvec(const I n_row,
-	            const I n_col, 
+void bsr_matvec(const I n_brow,
+	            const I n_bcol, 
 	            const I R, 
 	            const I C, 
 	            const I Ap[], 
@@ -778,45 +817,38 @@ void bsr_matvec(const I n_row,
 	            const T Xx[],
 	                  T Yx[])
 {
-    /*
-    //use fixed version for R,C <= 4,4
-    if (R == 1){
-        if (C == 1) { bsr_matvec_fixed<I,T,1,1>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
-        if (C == 2) { bsr_matvec_fixed<I,T,1,2>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; } 
-        if (C == 3) { bsr_matvec_fixed<I,T,1,3>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
-        if (C == 4) { bsr_matvec_fixed<I,T,1,4>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
+    assert(R > 0 && C > 0);
+
+    void (*dispatch[8][8])(I,I,const I*,const I*,const T*,const T*,T*) = \
+        {
+          { F(1,1), F(1,2), F(1,3), F(1,4), F(1,5), F(1,6), F(1,7), F(1,8) },
+          { F(2,1), F(2,2), F(2,3), F(2,4), F(2,5), F(2,6), F(2,7), F(2,8) },
+          { F(3,1), F(3,2), F(3,3), F(3,4), F(3,5), F(3,6), F(3,7), F(3,8) },
+          { F(4,1), F(4,2), F(4,3), F(4,4), F(4,5), F(4,6), F(4,7), F(4,8) },
+          { F(5,1), F(5,2), F(5,3), F(5,4), F(5,5), F(5,6), F(5,7), F(5,8) },
+          { F(6,1), F(6,2), F(6,3), F(6,4), F(6,5), F(6,6), F(6,7), F(6,8) },
+          { F(7,1), F(7,2), F(7,3), F(7,4), F(7,5), F(7,6), F(7,7), F(7,8) },
+          { F(8,1), F(8,2), F(8,3), F(8,4), F(8,5), F(8,6), F(8,7), F(8,8) }
+        };
+
+    if (R <= 8 && C <= 8){
+        dispatch[R-1][C-1](n_brow,n_bcol,Ap,Aj,Ax,Xx,Yx);
+        return;
     }
-    if (R == 2){
-        if (C == 1) { bsr_matvec_fixed<I,T,2,1>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
-        if (C == 2) { bsr_matvec_fixed<I,T,2,2>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; } 
-        if (C == 3) { bsr_matvec_fixed<I,T,2,3>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
-        if (C == 4) { bsr_matvec_fixed<I,T,2,4>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
-    }
-    if (R == 3){
-        if (C == 1) { bsr_matvec_fixed<I,T,3,1>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
-        if (C == 2) { bsr_matvec_fixed<I,T,3,2>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; } 
-        if (C == 3) { bsr_matvec_fixed<I,T,3,3>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
-        if (C == 4) { bsr_matvec_fixed<I,T,3,4>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
-    }
-    if (R == 4){
-        if (C == 1) { bsr_matvec_fixed<I,T,4,1>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
-        if (C == 2) { bsr_matvec_fixed<I,T,4,2>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; } 
-        if (C == 3) { bsr_matvec_fixed<I,T,4,3>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
-        if (C == 4) { bsr_matvec_fixed<I,T,4,4>(n_row,n_col,Ap,Aj,Ax,Xx,Yx); return; }
-    } */
 
 
     //otherwise use general method
-    for(I i = 0; i < n_row; i++){
+    for(I i = 0; i < n_brow; i++){
         Yx[i] = 0;
     }
 
-    for(I i = 0; i < n_row; i++){
+    for(I i = 0; i < n_brow; i++){
         const T * A = Ax + R * C * Ap[i];
               T * y = Yx + R * i;
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             const T * x = Xx + C*Aj[jj];
 
+            //TODO replace this with a proper matvec
             for( I r = 0; r < R; r++ ){
                 T sum = 0;
                 for( I c = 0; c < C; c++ ){
@@ -829,6 +861,7 @@ void bsr_matvec(const I n_row,
         }
     }
 }
+#undef F
 
 
 

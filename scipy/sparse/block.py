@@ -61,6 +61,21 @@ class _block_matrix(_data_matrix):
             arg1 = self.__class__( coo_matrix(arg1), blocksize=blocksize )
             self._set_self( arg1 )
 
+        if shape is not None:
+            self.shape = shape   # spmatrix will check for errors
+        else:
+            if self.shape is None:
+                # shape not already set, try to infer dimensions
+                try:
+                    major_dim = len(self.indptr) - 1
+                    minor_dim = self.indices.max() + 1
+                except:
+                    raise ValueError,'unable to infer matrix dimensions'
+                else:
+                    M,N = self._swap((major_dim,minor_dim))
+                    R,C = self.blocksize
+                    self.shape = (M*R,N*C)
+
         if self.shape is None:
             if shape is None:
                 #infer shape here
@@ -141,8 +156,8 @@ class _block_matrix(_data_matrix):
     blocksize = property(fget=_get_blocksize)
     
     def getnnz(self):
-        X,Y = self.blocksize
-        return self.indptr[-1] * X * Y
+        R,C = self.blocksize
+        return self.indptr[-1] * R * C
     nnz = property(fget=getnnz)
     
     def __repr__(self):

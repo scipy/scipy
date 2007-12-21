@@ -224,15 +224,15 @@ class csr_matrix(_cs_matrix):
         from csc import csc_matrix
         return csc_matrix((data, indices, indptr), self.shape)
 
-#    def tobsr(self,blocksize=None,copy=True):
-#        if blocksize in [None, (1,1)]:
-#            from bsr import bsr_matrix
-#            arg1 = (self.data.reshape(-1,1,1),self.indices,self.indptr)  
-#            return bsr_matrix( arg1, shape=self.shape, copy=copy )
-#        else:
-#            #TODO make this more efficient
-#            return self.tocoo(copy=False).tobsr(blocksize=blocksize)
-#    
+    def tobsr(self,blocksize=None,copy=True):
+        if blocksize in [None, (1,1)]:
+            from bsr import bsr_matrix
+            arg1 = (self.data.reshape(-1,1,1),self.indices,self.indptr)  
+            return bsr_matrix( arg1, shape=self.shape, copy=copy )
+        else:
+            #TODO make this more efficient
+            return self.tocoo(copy=False).tobsr(blocksize=blocksize)
+    
 #    def tobsc(self,blocksize=None):
 #        if blocksize in [None, (1,1)]:
 #            from bsc import bsc_matrix

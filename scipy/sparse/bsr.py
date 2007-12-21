@@ -39,7 +39,6 @@ class bsr_matrix(_block_matrix):
 
             if other.shape != (N,) and other.shape != (N,1):
                 raise ValueError, "dimension mismatch"
-
     
             #output array
             if output is None:
@@ -76,19 +75,15 @@ class bsr_matrix(_block_matrix):
 
 
 
-
-
-
-
-    def transpose(self,copy=False):
-        M,N = self.shape
-            
-        data    = self.data.swapaxes(1,2)
-        indices = self.indices
-        indptr  = self.indptr
-
-        from bsc import bsc_matrix
-        return bsc_matrix( (data,indices,indptr), shape=(N,M), copy=copy)
+#    def transpose(self,copy=False):
+#        M,N = self.shape
+#            
+#        data    = self.data.swapaxes(1,2)
+#        indices = self.indices
+#        indptr  = self.indptr
+#
+#        from bsc import bsc_matrix
+#        return bsc_matrix( (data,indices,indptr), shape=(N,M), copy=copy)
    
     def tocoo(self,copy=True):
         """Convert this matrix to COOrdinate format.
@@ -118,17 +113,11 @@ class bsr_matrix(_block_matrix):
         return coo_matrix( (data,(row,col)), shape=self.shape )
 
 
-    def tobsc(self,blocksize=None):
-        if blocksize is None:
-            blocksize = self.blocksize
-        elif blocksize != self.blocksize:
-            return self.tocoo(copy=False).tobsc(blocksize=blocksize)
-
-        #maintian blocksize
+    def transpose(self):
         X,Y = self.blocksize
         M,N = self.shape
 
-        #use CSR->CSC to determine a permutation for BSR<->BSC
+        #use CSR.T to determine a permutation for BSR.T
         from csr import csr_matrix
         data = arange(len(self.indices), dtype=self.indices.dtype)
         proxy = csr_matrix((data,self.indices,self.indptr),shape=(M/X,N/Y))
@@ -138,8 +127,7 @@ class bsr_matrix(_block_matrix):
         indices = proxy.indices
         indptr  = proxy.indptr
        
-        from bsc import bsc_matrix
-        return bsc_matrix( (data,indices,indptr), shape=self.shape )
+        return bsr_matrix( (data,indices,indptr), shape=(N,M) )
     
     def tobsr(self,blocksize=None,copy=False):
 

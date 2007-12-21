@@ -21,7 +21,8 @@ import random
 from numpy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
-        coo_matrix, lil_matrix, dia_matrix, extract_diagonal, speye
+        coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
+        extract_diagonal, speye
 from scipy.linsolve import splu
 restore_path()
 
@@ -302,9 +303,7 @@ class _TestCommon:
 
     def check_conversions(self):
 
-        #TODO add bsr/bsc
-        #for format in ['bsc','bsr','coo','csc','csr','dia','dok','lil']:
-        for format in ['coo','csc','csr','dia','dok','lil']:
+        for format in ['bsr','coo','csc','csr','dia','dok','lil']:
             a = self.datsp.asformat(format)
             assert_equal(a.format,format)
             assert_array_almost_equal(a.todense(), self.dat)
@@ -318,18 +317,17 @@ class _TestCommon:
         #TODO, add and test .todia(maxdiags)
         pass
     
-#    def check_tocompressedblock(self):
-#        #TODO more extensively test .tobsc() and .tobsr() w/ blocksizes
-#        x = array([[1,0,2,0],[0,0,0,0],[0,0,4,5]])
-#        y = array([[0,1,2],[3,0,5]])
-#        A = kron(x,y)
-#        Asp = self.spmatrix(A)
-#        for format in ['bsc','bsr']:
-#            fn = getattr(Asp, 'to' + format )
-#            
-#            for X in [ 1, 2, 3, 6 ]:
-#                for Y in [ 1, 2, 3, 4, 6, 12]:
-#                    assert_equal( fn(blocksize=(X,Y)).todense(), A)
+    def check_tocompressedblock(self):
+        x = array([[1,0,2,0],[0,0,0,0],[0,0,4,5]])
+        y = array([[0,1,2],[3,0,5]])
+        A = kron(x,y)
+        Asp = self.spmatrix(A)
+        for format in ['bsr']:
+            fn = getattr(Asp, 'to' + format )
+            
+            for X in [ 1, 2, 3, 6 ]:
+                for Y in [ 1, 2, 3, 4, 6, 12]:
+                    assert_equal( fn(blocksize=(X,Y)).todense(), A)
 
 
     def check_transpose(self):
@@ -1222,33 +1220,60 @@ class TestDIA(_TestCommon, _TestArithmetic, NumpyTestCase):
         pass
         #TODO add test
 
-#class TestBSR(_TestCommon, _TestArithmetic, NumpyTestCase):
-#    spmatrix = bsr_matrix
-#
-#    def check_constructor1(self):
-#        indptr  = array([0,2,2,4]) 
-#        indices = array([0,2,2,3])
-#        data    = zeros((4,2,3))
-#
-#        data[0] = array([[ 0,  1,  2],
-#                         [ 3,  0,  5]])
-#        data[1] = array([[ 0,  2,  4],
-#                         [ 6,  0, 10]])
-#        data[2] = array([[ 0,  4,  8],
-#                         [12,  0, 20]])
-#        data[3] = array([[ 0,  5, 10],
-#                         [15,  0, 25]])
-#
-#        A = kron( [[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]] )
-#        
-#        Asp = bsr_matrix((data,indices,indptr),shape=(6,12))
-#
-#        assert_equal(Asp.todense(),A)
-#        #TODO add infer from shape example
-#        
-#
-#
-#
+class TestBSR(_TestCommon, _TestArithmetic, NumpyTestCase):
+    spmatrix = bsr_matrix
+
+    def check_constructor1(self):
+        """check native BSR format constructor"""
+        indptr  = array([0,2,2,4]) 
+        indices = array([0,2,2,3])
+        data    = zeros((4,2,3))
+
+        data[0] = array([[ 0,  1,  2],
+                         [ 3,  0,  5]])
+        data[1] = array([[ 0,  2,  4],
+                         [ 6,  0, 10]])
+        data[2] = array([[ 0,  4,  8],
+                         [12,  0, 20]])
+        data[3] = array([[ 0,  5, 10],
+                         [15,  0, 25]])
+
+        A = kron( [[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]] )
+        Asp = bsr_matrix((data,indices,indptr),shape=(6,12))
+        assert_equal(Asp.todense(),A)
+        
+        #infer shape from arrays
+        Asp = bsr_matrix((data,indices,indptr))
+        assert_equal(Asp.todense(),A)
+
+    def check_constructor2(self):
+        """construct from dense"""
+   
+        #test zero mats
+        for shape in [ (1,1), (5,1), (1,10), (10,4), (3,7), (2,1)]:
+            A = zeros(shape)
+            assert_equal(bsr_matrix(A).todense(),A)
+        A = zeros((4,6))
+        assert_equal(bsr_matrix(A,blocksize=(2,2)).todense(),A)
+        assert_equal(bsr_matrix(A,blocksize=(2,3)).todense(),A)
+
+        A = kron( [[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]] )
+        assert_equal(bsr_matrix(A).todense(),A)
+        assert_equal(bsr_matrix(A,shape=(6,12)).todense(),A)
+        assert_equal(bsr_matrix(A,blocksize=(1,1)).todense(),A)
+        assert_equal(bsr_matrix(A,blocksize=(2,3)).todense(),A)
+        assert_equal(bsr_matrix(A,blocksize=(2,6)).todense(),A)
+        assert_equal(bsr_matrix(A,blocksize=(2,12)).todense(),A)
+        assert_equal(bsr_matrix(A,blocksize=(3,12)).todense(),A)
+        assert_equal(bsr_matrix(A,blocksize=(6,12)).todense(),A)
+        
+        A = kron( [[1,0,2,0],[0,1,0,0],[0,0,0,0]], [[0,1,2],[3,0,5]] )
+        assert_equal(bsr_matrix(A,blocksize=(2,3)).todense(),A)
+        
+        
+
+
+
 #class TestBSC(_TestCommon, _TestArithmetic, NumpyTestCase):
 #    spmatrix = bsc_matrix
 #

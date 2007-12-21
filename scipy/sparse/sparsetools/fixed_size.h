@@ -18,22 +18,21 @@ class Dot
 };
 
 template<class T>
-class Dot<0,T>
+class Dot<1,T>
 {
     public:
         inline T operator()(const T * lhs, const T * rhs)
         {
-            return 0;
+            return *lhs * *rhs;
         }
 };
 
-    template<int N, class T>
+template<int N, class T>
 inline T dot(const T * lhs, const T * rhs)
 {
     Dot<N,T> d;
     return d(lhs, rhs);
 }
-
 
 
 #endif

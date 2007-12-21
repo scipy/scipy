@@ -293,57 +293,60 @@ class coo_matrix(_data_matrix):
 
         return dok
 
-
 #    def tobsc(self,blocksize=None):
 #        if blocksize in [None, (1,1)]:
 #            return self.tocsc().tobsc(blocksize)
 #        else:
 #            return self.transpose().tobsr().transpose()
-#
-#    def tobsr(self,blocksize=None):
-#        if blocksize in [None, (1,1)]:
-#            return self.tocsr().tobsr(blocksize)
-#
-#        M,N = self.shape
-#        X,Y = blocksize
-#    
-#        if (M % X) != 0 or (N % Y) != 0:
-#            raise ValueError, 'shape must be multiple of blocksize'
-#    
-#        i_block,i_sub = divmod(self.row, X)
-#        j_block,j_sub = divmod(self.col, Y)
-#    
-#        perm = lexsort( keys=[j_block,i_block] )
-#    
-#        i_block = i_block[perm]
-#        j_block = j_block[perm]
-#    
-#        mask = (i_block[1:] != i_block[:-1]) + (j_block[1:] != j_block[:-1])
-#        mask = concatenate((array([True]),mask))
-#    
-#        #map self.data[n] -> data[map[n],i_sub[n],j_sub[n]]
-#        map = cumsum(mask)
-#        num_blocks = map[-1]
-#        map -= 1
-#        
-#        iperm = empty_like(perm) #inverse permutation
-#        iperm[perm] = arange(len(perm))
-#        
-#        data = zeros( (num_blocks,X,Y), dtype=self.dtype )
-#        data[map[iperm],i_sub,j_sub] = self.data
-#    
-#        row = i_block[mask]
-#        col = j_block[mask]
-#    
-#        # now row,col,data form BOO format 
-#    
-#        temp = cumsum(bincount(row))
-#        indptr = zeros( M/X + 1, dtype=intc )
-#        indptr[1:len(temp)+1] = temp
-#        indptr[len(temp)+1:] = temp[-1]
-#       
-#        from bsr import bsr_matrix
-#        return bsr_matrix((data,col,indptr),shape=self.shape)
+
+    def tobsr(self,blocksize=None):
+        from bsr import bsr_matrix
+
+        if self.nnz == 0:
+            return bsr_matrix(self.shape,blocksize=blocksize,dtype=self.dtype)
+
+        if blocksize in [None, (1,1)]:
+            return self.tocsr().tobsr(blocksize)
+
+        M,N = self.shape
+        X,Y = blocksize
+    
+        if (M % X) != 0 or (N % Y) != 0:
+            raise ValueError, 'shape must be multiple of blocksize'
+    
+        i_block,i_sub = divmod(self.row, X)
+        j_block,j_sub = divmod(self.col, Y)
+    
+        perm = lexsort( keys=[j_block,i_block] )
+    
+        i_block = i_block[perm]
+        j_block = j_block[perm]
+    
+        mask = (i_block[1:] != i_block[:-1]) + (j_block[1:] != j_block[:-1])
+        mask = concatenate((array([True]),mask))
+    
+        #map self.data[n] -> data[map[n],i_sub[n],j_sub[n]]
+        map = cumsum(mask)
+        num_blocks = map[-1]
+        map -= 1
+        
+        iperm = empty_like(perm) #inverse permutation
+        iperm[perm] = arange(len(perm))
+        
+        data = zeros( (num_blocks,X,Y), dtype=self.dtype )
+        data[map[iperm],i_sub,j_sub] = self.data
+    
+        row = i_block[mask]
+        col = j_block[mask]
+    
+        # now row,col,data form BOO format 
+    
+        temp = cumsum(bincount(row))
+        indptr = zeros( M/X + 1, dtype=intc )
+        indptr[1:len(temp)+1] = temp
+        indptr[len(temp)+1:] = temp[-1]
+       
+        return bsr_matrix((data,col,indptr),shape=self.shape)
 
     # needed by _data_matrix
     def _with_data(self,data,copy=True):

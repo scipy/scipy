@@ -407,12 +407,9 @@ class spmatrix(object):
     def todia(self):
         return self.tocoo().todia()
     
-#    def tobsr(self,blocksize=None):
-#        return self.tocoo().tobsr(blocksize=blocksize)
-#    
-#    def tobsc(self,blocksize=None):
-#        return self.tocoo().tobsc(blocksize=blocksize)
-
+    def tobsr(self,blocksize=None):
+        return self.tocsr().tobsr(blocksize=blocksize)
+    
     def copy(self):
         return self.__class__(self,copy=True)
 

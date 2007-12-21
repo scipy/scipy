@@ -302,24 +302,24 @@ def csc_matvec(*args):
 
 def bsr_matvec(*args):
   """
-    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
         signed char Ax, signed char Xx, signed char Yx)
-    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
         unsigned char Ax, unsigned char Xx, unsigned char Yx)
-    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
         short Ax, short Xx, short Yx)
-    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
         int Ax, int Xx, int Yx)
-    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
         long long Ax, long long Xx, long long Yx)
-    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
         float Ax, float Xx, float Yx)
-    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
         double Ax, double Xx, double Yx)
-    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
         npy_cfloat_wrapper Ax, npy_cfloat_wrapper Xx, 
         npy_cfloat_wrapper Yx)
-    bsr_matvec(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+    bsr_matvec(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
         npy_cdouble_wrapper Ax, npy_cdouble_wrapper Xx, 
         npy_cdouble_wrapper Yx)
     """
