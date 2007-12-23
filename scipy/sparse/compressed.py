@@ -94,7 +94,8 @@ class _cs_matrix(_data_matrix):
                 else:
                     self.shape = self._swap((major_dim,minor_dim))
 
-        self.check_format(full_check=False)
+        #self.check_format(full_check=False)
+        self.check_format(full_check=True)
 
     def getnnz(self):
         return self.indptr[-1]
@@ -137,9 +138,11 @@ class _cs_matrix(_data_matrix):
                     % self.indices.dtype.name )
 
         # only support 32-bit ints for now
-        self.indptr  = self.indptr.astype(intc)
-        self.indices = self.indices.astype(intc)
-        self.data    = to_native(self.data)
+        if self.indptr.dtype != intc:
+            self.indptr  = self.indptr.astype(intc)
+        if self.indices.dtype != intc:
+            self.indices = self.indices.astype(intc)
+        self.data = to_native(self.data)
 
         # check array shapes
         if (rank(self.data) != 1) or (rank(self.indices) != 1) or \
@@ -203,7 +206,7 @@ class _cs_matrix(_data_matrix):
         # First check if argument is a scalar
         if isscalarlike(other):
             # Now we would add this scalar to every element.
-            raise NotImplementedError, 'adding a scalar to a CSC or CSR ' \
+            raise NotImplementedError, 'adding a scalar to a sparse ' \
                   'matrix is not supported'
         elif isspmatrix(other):
             if (other.shape != self.shape):
@@ -220,7 +223,7 @@ class _cs_matrix(_data_matrix):
         #note: this can't be replaced by other + (-self) for unsigned types
         if isscalarlike(other):
             # Now we would add this scalar to every element.
-            raise NotImplementedError, 'adding a scalar to a CSC or CSR ' \
+            raise NotImplementedError, 'adding a scalar to a sparse ' \
                   'matrix is not supported'
         elif isdense(other):
             # Convert this matrix to a dense matrix and subtract them
@@ -446,7 +449,7 @@ class _cs_matrix(_data_matrix):
         return M
 
     
-    # methods that modify the internal data structure
+    # methods that examine or modify the internal data structure
     def sum_duplicates(self):
         """Eliminate duplicate matrix entries by adding them together
 
@@ -458,6 +461,13 @@ class _cs_matrix(_data_matrix):
         fn( M, N, self.indptr, self.indices, self.data)
 
         self.prune() #nnz may have changed
+
+    def has_sorted_indices(self):
+        """Determine whether the matrix has sorted indices
+        """
+        fn = sparsetools.has_sorted_indices
+        M,N = self._swap(self.shape)
+        return fn( M, N, self.indptr, self.indices)
 
     def sorted_indices(self):
         """Return a copy of this matrix with sorted indices
@@ -473,6 +483,10 @@ class _cs_matrix(_data_matrix):
     def sort_indices(self):
         """Sort the indices of this matrix *in place*
         """
+        if self.has_sorted_indices(): 
+            #see if sorting can be avoided
+            return
+
         fn = getattr(sparsetools,self.format + '_sort_indices')
 
         M,N = self.shape
@@ -528,6 +542,10 @@ class _cs_matrix(_data_matrix):
             in_shape = self.shape
         if out_shape is None:
             out_shape = self.shape
+
+        #only necessary for sorted binopt method
+        #self.sort_indices()
+        #other.sort_indices()
 
         # e.g. csr_plus_csr, cscmucsc, etc.
         fn = getattr(sparsetools, self.format + op + self.format)

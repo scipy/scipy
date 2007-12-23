@@ -95,10 +95,8 @@ def spkron(A, B, format=None):
             [ 15.,  20.,   0.,   0.]])
 
     """
-    if not isspmatrix(A) and isspmatrix(B):
-        raise ValueError,'expected sparse matrix'
-
-    A,B = A.tocoo(),B.tocoo()
+    #TODO optimize for small dense B and CSR A
+    A,B = coo_matrix(A),coo_matrix(B)
     output_shape = (A.shape[0]*B.shape[0],A.shape[1]*B.shape[1])
 
     if A.nnz == 0 or B.nnz == 0:

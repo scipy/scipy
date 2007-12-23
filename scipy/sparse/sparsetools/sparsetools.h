@@ -4,16 +4,9 @@
 
 /*
  * sparsetools.h 
- *   A collection of CSR/CSC/COO matrix conversion and arithmetic functions.
+ *   A collection of CSR/CSC/COO/BSR matrix conversion and arithmetic functions.
  *  
- * Authors:  
- *    Nathan Bell
- *
- * Revisions:
- *    07/14/2007 - added csr_sum_duplicates
- *    07/12/2007 - added templated function for binary arithmetic ops
- *    01/09/2007 - index type is now templated
- *    01/06/2007 - initial inclusion into SciPy
+ * Original code by Nathan Bell
  *
  */
 
@@ -23,10 +16,7 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
-
-
 #include "fixed_size.h"
-
 
 /*
  * Extract main diagonal of CSR matrix A
@@ -96,13 +86,113 @@ void expandptr(const I n_row,
                const I Ap[], 
                      I Bi[])
 {
-  for(I i = 0; i < n_row; i++){
-    for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-      Bi[jj] = i;
+    for(I i = 0; i < n_row; i++){
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            Bi[jj] = i;
+        }
     }
-  }
 }
 
+/*
+ * Compute the number of occupied RxC blocks in a matrix
+ *
+ * Input Arguments:
+ *   I  n_row         - number of rows in A
+ *   I  R             - row blocksize
+ *   I  C             - column blocksize
+ *   I  Ap[n_row+1]   - row pointer
+ *   I  Aj[nnz(A)]    - column indices
+ *
+ * Output Arguments:
+ *   I  num_blocks    - number of blocks
+ *
+ * Note: 
+ *   Complexity: Linear.
+ * 
+ */
+template <class I>
+I csr_count_blocks(const I n_row,
+                   const I n_col,
+                   const I R,
+                   const I C,
+                   const I Ap[], 
+                   const I Aj[])
+{
+    std::vector<I> mask(n_col/C + 1,-1);
+    I n_blks = 0;
+    for(I i = 0; i < n_row; i++){
+        I bi = i/R;
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            I bj = Aj[jj]/C;
+            if(mask[bj] != bi){
+                mask[bj] = bi;
+                n_blks++;
+            }
+        }
+    }
+    return n_blks;
+}
+
+
+
+/*
+ * Sort CSR column indices inplace
+ *
+ * Input Arguments:
+ *   I  n_row           - number of rows in A
+ *   I  n_col           - number of columns in A
+ *   I  Ap[n_row+1]     - row pointer
+ *   I  Aj[nnz(A)]      - column indices
+ *   T  Ax[nnz(A)]      - nonzeros 
+ *
+ */
+template <class I>
+bool has_sorted_indices(const I n_row, 
+                        const I n_col,
+                        const I Ap[],
+                        const I Aj[])
+{
+  for(I i = 0; i < n_row; i++){
+      for(I jj = Ap[i]; jj < Ap[i+1] - 1; jj++){
+          if(Aj[jj] > Aj[jj+1]){
+              return false;
+          }
+      }
+  }
+  return true;
+}
+template< class T1, class T2 >
+bool kv_pair_less(const std::pair<T1,T2>& x, const std::pair<T1,T2>& y){
+    return x.first < y.first;
+}
+
+template<class I, class T>
+void csr_sort_indices(const I n_row,
+                      const I n_col,
+                      const I Ap[], 
+                            I Aj[], 
+                            T Ax[])
+{
+    std::vector< std::pair<I,T> > temp;
+
+    for(I i = 0; i < n_row; i++){
+        I row_start = Ap[i];
+        I row_end   = Ap[i+1];
+
+        temp.clear();
+
+        for(I jj = row_start; jj < row_end; jj++){
+            temp.push_back(std::make_pair(Aj[jj],Ax[jj]));
+        }
+
+        std::sort(temp.begin(),temp.end(),kv_pair_less<I,T>);
+
+        for(I jj = row_start, n = 0; jj < row_end; jj++, n++){
+            Aj[jj] = temp[n].first;
+            Ax[jj] = temp[n].second;
+        }
+    }    
+}
 
 /*
  * Compute B = A for CSR matrix A, CSC matrix B
@@ -144,40 +234,40 @@ void csr_tocsc(const I n_row,
 	                 I Bi[],
 	                 T Bx[])
 {  
-  const I nnz = Ap[n_row];
- 
-  //compute number of non-zero entries per column of A 
-  std::fill(Bp, Bp + n_col, 0);
+    const I nnz = Ap[n_row];
 
-  for (I n = 0; n < nnz; n++){            
-    Bp[Aj[n]]++;
-  }
-        
-  //cumsum the nnz per column to get Bp[]
-  for(I col = 0, cumsum = 0; col < n_col; col++){     
-    I temp  = Bp[col];
-    Bp[col] = cumsum;
-    cumsum += temp;
-  }
-  Bp[n_col] = nnz; 
-  
-  for(I row = 0; row < n_row; row++){
-    for(I jj = Ap[row]; jj < Ap[row+1]; jj++){
-      I col  = Aj[jj];
-      I dest = Bp[col];
+    //compute number of non-zero entries per column of A 
+    std::fill(Bp, Bp + n_col, 0);
 
-      Bi[dest] = row;
-      Bx[dest] = Ax[jj];
-
-      Bp[col]++;
+    for (I n = 0; n < nnz; n++){            
+        Bp[Aj[n]]++;
     }
-  }  
 
-  for(I col = 0, last = 0; col <= n_col; col++){
-      I temp  = Bp[col];
-      Bp[col] = last;
-      last    = temp;
-  }
+    //cumsum the nnz per column to get Bp[]
+    for(I col = 0, cumsum = 0; col < n_col; col++){     
+        I temp  = Bp[col];
+        Bp[col] = cumsum;
+        cumsum += temp;
+    }
+    Bp[n_col] = nnz; 
+
+    for(I row = 0; row < n_row; row++){
+        for(I jj = Ap[row]; jj < Ap[row+1]; jj++){
+            I col  = Aj[jj];
+            I dest = Bp[col];
+
+            Bi[dest] = row;
+            Bx[dest] = Ax[jj];
+
+            Bp[col]++;
+        }
+    }  
+
+    for(I col = 0, last = 0; col <= n_col; col++){
+        I temp  = Bp[col];
+        Bp[col] = last;
+        last    = temp;
+    }
 }   
 
 
@@ -240,37 +330,22 @@ void csr_matmat_pass1(const I n_row,
                       const I Bj[],
                             I Cp[])
 {
-    std::vector<I> next(n_col,-1);
-
+    std::vector<I> mask(n_col,-1);
     Cp[0] = 0;
 
+    I nnz = 0;
     for(I i = 0; i < n_row; i++){
-        I head   = -2;
-        I length =  0;
-
-        I jj_start = Ap[i];
-        I jj_end   = Ap[i+1];
-        for(I jj = jj_start; jj < jj_end; jj++){
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             I j = Aj[jj];
-            I kk_start = Bp[j];
-            I kk_end   = Bp[j+1];
-            for(I kk = kk_start; kk < kk_end; kk++){
+            for(I kk = Bp[j]; kk < Bp[j+1]; kk++){
                 I k = Bj[kk];
-                if(next[k] == -1){
-                    next[k] = head;                        
-                    head = k;
-                    length++;
+                if(mask[k] != i){
+                    mask[k] = i;                        
+                    nnz++;
                 }
             }
         }         
-
-        for(I jj = 0; jj < length; jj++){
-            I temp = head;                
-            head = next[head];      
-            next[temp] = -1;
-        }
-        
-        Cp[i+1] = Cp[i] + length;
+        Cp[i+1] = nnz;
     }
 }
 
@@ -299,7 +374,7 @@ void csr_matmat_pass2(const I n_row,
     Cp[0] = 0;
 
     for(I i = 0; i < n_row; i++){
-        I head = -2;
+        I head   = -2;
         I length =  0;
 
         I jj_start = Ap[i];
@@ -349,6 +424,129 @@ void csr_matmat_pass2(const I n_row,
 
 
 
+template <class I, class T, class bin_op>
+void bsr_binop_bsr(const I n_brow, const I n_bcol, 
+                   const I R,      const I C, 
+                   const I Ap[],   const I Aj[],    const T Ax[],
+                   const I Bp[],   const I Bj[],    const T Bx[],
+                   std::vector<I>* Cp,
+                   std::vector<I>* Cj,
+                   std::vector<T>* Cx,
+                   const bin_op& op)
+{
+    Cp->resize(n_brow + 1, 0);
+
+    const I RC = R*C;
+
+    std::vector<I>  next(n_bcol,-1);
+    std::vector<T> A_row(n_bcol*RC, 0);
+    std::vector<T> B_row(n_bcol*RC, 0);
+
+    for(I i = 0; i < n_brow; i++){
+        I head   = -2;
+        I length =  0;
+
+        //add a row of A to A_row
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            I j = Aj[jj];
+
+            for(I n = 0; n < RC; n++)
+                A_row[RC*j + n] += Ax[RC*jj + n];
+
+            if(next[j] == -1){
+                next[j] = head;                        
+                head = j;
+                length++;
+            }
+        }
+
+        //add a row of B to B_row
+        for(I jj = Bp[i]; jj < Bp[i+1]; jj++){
+            I j = Bj[jj];
+
+            for(I n = 0; n < RC; n++)
+                B_row[RC*j + n] += Bx[RC*jj + n];
+
+            if(next[j] == -1){
+                next[j] = head;                        
+                head = j;
+                length++;
+            }
+        }
+
+
+        for(I jj = 0; jj < length; jj++){
+            bool nonzero_block = false;
+            for(I n = 0; n < RC; n++){
+                T result = op(A_row[RC*head + n],B_row[RC*head + n]);
+                A_row[RC*head + n] = result;
+                if(result != 0)
+                    nonzero_block = true;
+            }
+
+
+            if(nonzero_block){
+                Cj->push_back(head);
+                for(I n = 0; n < RC; n++){
+                    Cx->push_back(A_row[RC*head + n]);
+                }
+            }
+
+            for(I n = 0; n < RC; n++){
+                A_row[RC*head + n] = 0;
+                B_row[RC*head + n] = 0;
+            }
+
+            I temp = head;                
+            head = next[head];
+            next[temp] = -1;
+        }
+
+        (*Cp)[i+1] = Cj->size();
+    }
+}
+
+/* element-wise binary operations*/
+template <class I, class T>
+void bsr_elmul_bsr(const I n_row, const I n_col, const I R, const I C, 
+                   const I Ap [], const I Aj [], const T Ax [],
+                   const I Bp [], const I Bj [], const T Bx [],
+                   std::vector<I>* Cp, std::vector<I>* Cj, std::vector<T>* Cx)
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
+}
+
+template <class I, class T>
+void bsr_eldiv_bsr(const I n_row, const I n_col, const I R, const I C,
+                   const I Ap [], const I Aj [], const T Ax [],
+                   const I Bp [], const I Bj [], const T Bx [],
+                   std::vector<I>* Cp, std::vector<I>* Cj, std::vector<T>* Cx)
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::divides<T>());
+}
+
+
+template <class I, class T>
+void bsr_plus_bsr(const I n_row, const I n_col, const I R, const I C, 
+                  const I Ap [], const I Aj [], const T Ax [],
+                  const I Bp [], const I Bj [], const T Bx [],
+                  std::vector<I>* Cp, std::vector<I>* Cj, std::vector<T>* Cx)
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
+}
+
+template <class I, class T>
+void bsr_minus_bsr(const I n_row, const I n_col, const I R, const I C, 
+                   const I Ap [], const I Aj [], const T Ax [],
+                   const I Bp [], const I Bj [], const T Bx [],
+                   std::vector<I>* Cp, std::vector<I>* Cj, std::vector<T>* Cx)
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
+}
+
+
+
+
 /*
  * Compute C = A (bin_op) B for CSR matrices A,B
  *
@@ -392,65 +590,129 @@ void csr_binop_csr(const I n_row,
                    std::vector<T>* Cx,
                    const bin_op& op)
 {
-  Cp->resize(n_row + 1, 0);
-  
-  std::vector<I>  next(n_col,-1);
-  std::vector<T> A_row(n_col, 0);
-  std::vector<T> B_row(n_col, 0);
+//   //Method that works for unsorted indices
+//    Cp->resize(n_row + 1, 0);
+//    (*Cp)[0] = 0;
+//
+//    for(I i = 0; i < n_row; i++){
+//        I A_pos = Ap[i];
+//        I B_pos = Bp[i];
+//        I A_end = Ap[i+1];
+//        I B_end = Bp[i+1];
+//
+//        I A_j = Aj[A_pos];
+//        I B_j = Bj[B_pos];
+//            
+//        //while not finished with either row
+//        while(A_pos < A_end && B_pos < B_end){
+//            if(A_j == B_j){
+//                T result = op(Ax[A_pos],Bx[B_pos]);
+//                if(result != 0){
+//                    Cj->push_back(A_j);
+//                    Cx->push_back(result);
+//                }
+//                A_j = Aj[++A_pos]; 
+//                B_j = Bj[++B_pos];
+//            } else if (A_j < B_j) {
+//                T result = op(Ax[A_pos],0);
+//                if (result != 0){
+//                    Cj->push_back(A_j);
+//                    Cx->push_back(result);
+//                }
+//                A_j = Aj[++A_pos]; 
+//            } else {
+//                //B_j < A_j
+//                T result = op(0,Bx[B_pos]);
+//                if (result != 0){
+//                    Cj->push_back(B_j);
+//                    Cx->push_back(result);
+//                }
+//                B_j = Bj[++B_pos];
+//            }
+//        }
+//
+//        //tail
+//        while(A_pos < A_end){
+//            T result = op(Ax[A_pos],0);
+//            if (result != 0){
+//                Cj->push_back(A_j);
+//                Cx->push_back(result);
+//            }
+//            A_j = Aj[++A_pos]; 
+//        }
+//        while(B_pos < B_end){
+//            T result = op(0,Bx[B_pos]);
+//            if (result != 0){
+//                Cj->push_back(B_j);
+//                Cx->push_back(result);
+//            }
+//            B_j = Bj[++B_pos];
+//        }
+//        (*Cp)[i+1] = Cx->size();
+//    }
 
-  for(I i = 0; i < n_row; i++){
-    I head   = -2;
-    I length =  0;
-    
-    //add a row of A to A_row
-    I i_start = Ap[i];
-    I i_end   = Ap[i+1];
-    for(I jj = i_start; jj < i_end; jj++){
-      I j = Aj[jj];
 
-      A_row[j] += Ax[jj];
-      
-      if(next[j] == -1){
-	    next[j] = head;                        
-	    head = j;
-	    length++;
-      }
+   //Method that works for unsorted indices
+
+    Cp->resize(n_row + 1, 0);
+
+    std::vector<I>  next(n_col,-1);
+    std::vector<T> A_row(n_col, 0);
+    std::vector<T> B_row(n_col, 0);
+
+    for(I i = 0; i < n_row; i++){
+        I head   = -2;
+        I length =  0;
+
+        //add a row of A to A_row
+        I i_start = Ap[i];
+        I i_end   = Ap[i+1];
+        for(I jj = i_start; jj < i_end; jj++){
+            I j = Aj[jj];
+
+            A_row[j] += Ax[jj];
+
+            if(next[j] == -1){
+                next[j] = head;                        
+                head = j;
+                length++;
+            }
+        }
+
+        //add a row of B to B_row
+        i_start = Bp[i];
+        i_end   = Bp[i+1];
+        for(I jj = i_start; jj < i_end; jj++){
+            I j = Bj[jj];
+
+            B_row[j] += Bx[jj];
+
+            if(next[j] == -1){
+                next[j] = head;                        
+                head = j;
+                length++;
+            }
+        }
+
+
+        for(I jj = 0; jj < length; jj++){
+            T result = op(A_row[head],B_row[head]);
+
+            if(result != 0){
+                Cj->push_back(head);
+                Cx->push_back(result);
+            }
+
+            I temp = head;                
+            head = next[head];
+
+            next[temp] = -1;
+            A_row[temp] =  0;                              
+            B_row[temp] =  0;
+        }
+
+        (*Cp)[i+1] = Cj->size();
     }
-    
-    //add a row of B to B_row
-    i_start = Bp[i];
-    i_end   = Bp[i+1];
-    for(I jj = i_start; jj < i_end; jj++){
-      I j = Bj[jj];
-
-      B_row[j] += Bx[jj];
-
-      if(next[j] == -1){
-          next[j] = head;                        
-	      head = j;
-	      length++;
-      }
-    }
-
-
-    for(I jj = 0; jj < length; jj++){
-      T result = op(A_row[head],B_row[head]);
-      
-      if(result != 0){
-	    Cj->push_back(head);
-	    Cx->push_back(result);
-      }
-      
-      I temp = head;                
-      head = next[head];
-      
-      next[temp] = -1;
-      A_row[temp] =  0;                              
-      B_row[temp] =  0;
-    }
-    
-    (*Cp)[i+1] = Cx->size();
-  }
 }
 
 /* element-wise binary operations*/
@@ -870,51 +1132,6 @@ void bsr_matvec(const I n_brow,
 
 
 
-
-
-/*
- * Sort CSR column indices inplace
- *
- * Input Arguments:
- *   I  n_row           - number of rows in A
- *   I  n_col           - number of columns in A
- *   I  Ap[n_row+1]     - row pointer
- *   I  Aj[nnz(A)]      - column indices
- *   T  Ax[nnz(A)]      - nonzeros 
- *
- */
-template< class T1, class T2 >
-bool kv_pair_less(const std::pair<T1,T2>& x, const std::pair<T1,T2>& y){
-    return x.first < y.first;
-}
-
-template<class I, class T>
-void csr_sort_indices(const I n_row,
-                      const I n_col,
-                      const I Ap[], 
-                            I Aj[], 
-                            T Ax[])
-{
-  std::vector< std::pair<I,T> > temp;
-
-  for(I i = 0; i < n_row; i++){
-      I row_start = Ap[i];
-      I row_end   = Ap[i+1];
-
-      temp.clear();
-
-      for(I jj = row_start; jj < row_end; jj++){
-          temp.push_back(std::make_pair(Aj[jj],Ax[jj]));
-      }
-
-      std::sort(temp.begin(),temp.end(),kv_pair_less<I,T>);
-
-      for(I jj = row_start, n = 0; jj < row_end; jj++, n++){
-          Aj[jj] = temp[n].first;
-          Ax[jj] = temp[n].second;
-      }
-    }    
-}
 
 
 template<class I, class T>

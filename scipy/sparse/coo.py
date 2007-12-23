@@ -13,6 +13,7 @@ from sparsetools import coo_tocsr, coo_tocsc
 from base import isspmatrix
 from data import _data_matrix
 from sputils import upcast, to_native, isshape, getdtype
+from spfuncs import estimate_blocksize
 
 class coo_matrix(_data_matrix):
     """A sparse matrix in COOrdinate format.
@@ -175,8 +176,10 @@ class coo_matrix(_data_matrix):
                     % self.col.dtype.name )
        
         # only support 32-bit ints for now
-        self.row  = self.row.astype(intc)
-        self.col  = self.col.astype(intc)
+        if self.row.dtype != intc:
+            self.row  = self.row.astype(intc)
+        if self.col.dtype != intc:
+            self.col  = self.col.astype(intc)
         self.data = to_native(self.data)
 
         if nnz > 0:
@@ -305,7 +308,9 @@ class coo_matrix(_data_matrix):
         if self.nnz == 0:
             return bsr_matrix(self.shape,blocksize=blocksize,dtype=self.dtype)
 
-        if blocksize in [None, (1,1)]:
+        if blocksize is None:
+            blocksize = estimate_blocksize(self)
+        elif blocksize in (1,1):
             return self.tocsr().tobsr(blocksize)
 
         M,N = self.shape

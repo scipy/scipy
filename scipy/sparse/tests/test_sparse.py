@@ -7,7 +7,8 @@ import random
 from numpy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
-        coo_matrix, lil_matrix, dia_matrix, spidentity, spdiags
+        coo_matrix, lil_matrix, dia_matrix, spidentity, spdiags, \
+        spkron
 from scipy.linsolve import splu
 restore_path()
 
@@ -40,8 +41,9 @@ class TestSparseTools(NumpyTestCase):
 
     def test_arithmetic(self,level=4):
         matrices = []
-        matrices.append( ('A','Identity', spidentity(500**2,format='csr')) )
-        matrices.append( ('B','Poisson5pt', poisson2d(500,format='csr'))  )
+        #matrices.append( ('A','Identity', spidentity(500**2,format='csr')) )
+        matrices.append( ('A','Poisson5pt', poisson2d(500,format='csr'))  )
+        matrices.append( ('B','Poisson5pt^2', poisson2d(500,format='csr')**2)  )
    
         #matrices = [ (a,b,c.astype('int8')) for (a,b,c) in matrices ]
 
@@ -88,9 +90,19 @@ class TestSparseTools(NumpyTestCase):
 
     def test_matvec(self,level=5):
         matrices = []
-        matrices.append(('Identity',   spidentity(10**5,format='csr')))
-        matrices.append(('Poisson5pt', poisson2d(1000,format='csr')))
-        matrices.append(('Poisson5pt', poisson2d(1000,format='dia')))
+        matrices.append(('Identity',   spidentity(10**4,format='dia')))
+        matrices.append(('Identity',   spidentity(10**4,format='csr')))
+        matrices.append(('Poisson5pt', poisson2d(300,format='dia')))
+        matrices.append(('Poisson5pt', poisson2d(300,format='csr')))
+        matrices.append(('Poisson5pt', poisson2d(300,format='bsr')))
+
+        A = spkron(poisson2d(150),ones((2,2))).tobsr(blocksize=(2,2))
+        matrices.append( ('Block2x2', A.tocsr()) )
+        matrices.append( ('Block2x2', A) )
+        
+        A = spkron(poisson2d(100),ones((3,3))).tobsr(blocksize=(3,3))
+        matrices.append( ('Block3x3', A.tocsr()) )
+        matrices.append( ('Block3x3', A) )
 
         print
         print '                 Sparse Matrix Vector Product'
@@ -114,6 +126,8 @@ class TestSparseTools(NumpyTestCase):
                     y = A*x
                 iter += 1
             end = time.clock()
+
+            del y
 
             name = name.center(12)
             shape = ("%s" % (A.shape,)).center(20)

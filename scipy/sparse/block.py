@@ -1,11 +1,14 @@
 """base class for block sparse formats"""
 
 from numpy import zeros, intc, array, asarray, arange, diff, tile, rank, \
-        prod
+        prod, ravel
 
 from data import _data_matrix
 from base import isspmatrix, _formats
-from sputils import isshape, getdtype, to_native
+from sputils import isshape, getdtype, to_native, isscalarlike, isdense
+import sparsetools
+
+#TODO refactor w/ compressed.py
 
 class _block_matrix(_data_matrix):
     def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
@@ -109,9 +112,11 @@ class _block_matrix(_data_matrix):
                     % self.indices.dtype.name )
 
         # only support 32-bit ints for now
-        self.indptr  = self.indptr.astype(intc)
-        self.indices = self.indices.astype(intc)
-        self.data    = to_native(self.data)
+        if self.indptr.dtype != intc:
+            self.indptr  = self.indptr.astype(intc)
+        if self.indices.dtype != intc:
+            self.indices = self.indices.astype(intc)
+        self.data = to_native(self.data)
 
         # check array shapes
         if (rank(self.indices) != 1) or (rank(self.indptr) != 1):
@@ -168,6 +173,109 @@ class _block_matrix(_data_matrix):
                ( self.shape + (self.dtype.type, nnz) + self.blocksize + \
                  (_formats[format][1],) )
 
+
+    def __add__(self,other):
+        # First check if argument is a scalar
+        if isscalarlike(other):
+            # Now we would add this scalar to every element.
+            raise NotImplementedError, 'adding a scalar to a CSC or CSR ' \
+                  'matrix is not supported'
+        elif isspmatrix(other):
+            if (other.shape != self.shape):
+                raise ValueError, "inconsistent shapes"
+            
+            return self._binopt(other,'_plus_')
+        elif isdense(other):
+            # Convert this matrix to a dense matrix and add them
+            return self.todense() + other
+        else:
+            raise NotImplementedError
+
+    def __radd__(self,other):
+        return self.__add__(other)
+
+    def __sub__(self,other):
+        # First check if argument is a scalar
+        if isscalarlike(other):
+            # Now we would add this scalar to every element.
+            raise NotImplementedError, 'adding a scalar to a sparse ' \
+                  'matrix is not supported'
+        elif isspmatrix(other):
+            if (other.shape != self.shape):
+                raise ValueError, "inconsistent shapes"
+
+            return self._binopt(other,'_minus_')
+        elif isdense(other):
+            # Convert this matrix to a dense matrix and subtract them
+            return self.todense() - other
+        else:
+            raise NotImplementedError
+
+    def __rsub__(self,other):  # other - self
+        #note: this can't be replaced by other + (-self) for unsigned types
+        if isscalarlike(other):
+            # Now we would add this scalar to every element.
+            raise NotImplementedError, 'adding a scalar to a sparse ' \
+                  'matrix is not supported'
+        elif isdense(other):
+            # Convert this matrix to a dense matrix and subtract them
+            return other - self.todense()
+        else:
+            raise NotImplementedError
+
+
+    def __mul__(self, other): # self * other
+        """ Scalar, vector, or matrix multiplication
+        """
+        if isscalarlike(other):
+            return self._with_data(self.data * other)
+        else:
+            return self.dot(other)
+
+
+    def __rmul__(self, other): # other * self
+        if isscalarlike(other):
+            return self.__mul__(other)
+        else:
+            # Don't use asarray unless we have to
+            try:
+                tr = other.transpose()
+            except AttributeError:
+                tr = asarray(other).transpose()
+            return self.transpose().dot(tr).transpose()
+
+
+    def __truediv__(self,other):
+        if isscalarlike(other):
+            return self * (1./other)
+        elif isspmatrix(other):
+            if (other.shape != self.shape):
+                raise ValueError, "inconsistent shapes"
+            
+            return self._binopt(other,'_eldiv_')
+        else:
+            raise NotImplementedError
+
+    
+    def multiply(self, other):
+        """Point-wise multiplication by another matrix
+        """
+        if (other.shape != self.shape):
+            raise ValueError, "inconsistent shapes"
+
+        if isdense(other):
+            return multiply(self.todense(),other)
+        else:
+            other = self.__class__(other)
+            return self._binopt(other,'_elmul_')
+
+
+
+
+
+
+
+
     def _set_self(self, other, copy=False):
         """take the member variables of other and assign them to self"""
 
@@ -219,6 +327,8 @@ class _block_matrix(_data_matrix):
     def sort_indices(self):
         """Sort the indices of this matrix *in place*
         """
+        from csr import csr_matrix
+
         X,Y = self.blocksize
         M,N = self.shape
 
@@ -248,6 +358,25 @@ class _block_matrix(_data_matrix):
         self.data    = self.data[:self.nnz]
         self.indices = self.indices[:self.nnz]
 
+    # utility functions
+    def _binopt(self, other, op, in_shape=None, out_shape=None):
+        """apply the binary operation fn to two sparse matrices"""
+        other = self.__class__(other,blocksize=self.blocksize)
+
+        if in_shape is None:
+            in_shape = self.shape
+        if out_shape is None:
+            out_shape = self.shape
+
+        # e.g. csr_plus_csr, cscmucsc, etc.
+        fn = getattr(sparsetools, self.format + op + self.format)
+
+        R,C = self.blocksize 
+        indptr, ind, data = fn(in_shape[0]/R, in_shape[1]/C, R, C, \
+                               self.indptr, self.indices, ravel(self.data),
+                               other.indptr, other.indices, ravel(other.data))
+        data = data.reshape(-1,R,C)
+        return self.__class__((data, ind, indptr), shape=out_shape)
 
     # needed by _data_matrix
     def _with_data(self,data,copy=True):

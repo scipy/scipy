@@ -200,6 +200,11 @@ INSTANTIATE_ALL(csc_tocsr)
 INSTANTIATE_ALL(coo_tocsr)
 INSTANTIATE_ALL(coo_tocsc)
 
+/*
+ * CSR<->BSR
+ */
+%template(csr_count_blocks)   csr_count_blocks<int>;
+
 
 /*
  * CSR*CSR and CSC*CSC
@@ -229,10 +234,15 @@ INSTANTIATE_ALL(csc_eldiv_csc)
 INSTANTIATE_ALL(csc_plus_csc)
 INSTANTIATE_ALL(csc_minus_csc)
 
+INSTANTIATE_ALL(bsr_elmul_bsr)
+INSTANTIATE_ALL(bsr_eldiv_bsr)
+INSTANTIATE_ALL(bsr_plus_bsr)
+INSTANTIATE_ALL(bsr_minus_bsr)
 
 /*
  * Sort CSR/CSC indices.
  */
+%template(has_sorted_indices)   has_sorted_indices<int>;
 INSTANTIATE_ALL(csr_sort_indices)
 INSTANTIATE_ALL(csc_sort_indices)
 
