@@ -140,6 +140,13 @@ class TestMovFuncs(NumpyTestCase):
                 assert_equal(result._mask, result_mask)
                 assert_equal(result._dates, data._dates)
 
+    def test_covar(self):
+        # test that covariance of series with itself is equal to variance
+        data = self.maskeddata
+        for bias in [True, False]:
+            covar = MF.mov_covar(data, data, 3, bias=bias)
+            var = MF.mov_var(data, 3, bias=bias)
+            assert_equal(covar, var)
 
 #------------------------------------------------------------------------------
 if __name__ == "__main__":

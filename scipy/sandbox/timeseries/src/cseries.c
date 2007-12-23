@@ -12,10 +12,6 @@ static PyMethodDef cseries_methods[] = {
      METH_VARARGS | METH_KEYWORDS, ""},
     {"MA_mov_max", (PyCFunction)MaskedArray_mov_max,
      METH_VARARGS | METH_KEYWORDS, ""},
-    {"MA_mov_average", (PyCFunction)MaskedArray_mov_average,
-     METH_VARARGS | METH_KEYWORDS, ""},
-    {"MA_mov_stddev", (PyCFunction)MaskedArray_mov_stddev,
-     METH_VARARGS | METH_KEYWORDS, ""},
 
     {"TS_convert", (PyCFunction)TimeSeries_convert,
      METH_VARARGS, ""},
