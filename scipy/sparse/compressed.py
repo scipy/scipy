@@ -7,7 +7,7 @@ from warnings import warn
 
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
-        empty, hstack, isscalar, ndarray, shape, searchsorted
+        empty, hstack, isscalar, ndarray, shape, searchsorted, empty_like
 
 from base import spmatrix, isspmatrix
 from data import _data_matrix
@@ -547,10 +547,22 @@ class _cs_matrix(_data_matrix):
         # e.g. csr_plus_csr, cscmucsc, etc.
         fn = getattr(sparsetools, self.format + op + self.format)
 
-        indptr, ind, data = fn(in_shape[0], in_shape[1], \
-                               self.indptr, self.indices, self.data,
-                               other.indptr, other.indices, other.data)
-        return self.__class__((data, ind, indptr), shape=out_shape)
+        maxnnz = self.nnz + other.nnz
+        indptr  = empty_like(self.indptr)
+        indices = empty( maxnnz, dtype=intc )
+        data    = empty( maxnnz, dtype=upcast(self.dtype,other.dtype) )
+
+        fn(in_shape[0], in_shape[1], \
+                self.indptr, self.indices, self.data,
+                other.indptr, other.indices, other.data,
+                indptr, indices, data)
+
+        actual_nnz = indptr[-1]
+        if actual_nnz < maxnnz / 2:
+            #too much waste, trim arrays
+            indices = indices[:actual_nnz].copy()
+            data    = data[:actual_nnz].copy()
+        return self.__class__((data, indices, indptr), shape=out_shape)
 
     def _get_submatrix( self, shape0, shape1, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created)."""

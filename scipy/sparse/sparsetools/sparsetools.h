@@ -694,17 +694,19 @@ void csr_binop_csr(const I n_row,
                    const I Bp[],
                    const I Bj[],
                    const T Bx[],
-                   std::vector<I>* Cp,
-                   std::vector<I>* Cj,
-                   std::vector<T>* Cx,
+                         I Cp[],
+                         I Cj[],
+                         T Cx[],
                    const bin_op& op)
 {
    //Method that works for sorted indices
     assert( csr_has_sorted_indices(n_row,Ap,Aj) );
     assert( csr_has_sorted_indices(n_row,Bp,Bj) );
 
-    Cp->resize(n_row + 1, 0);
-    (*Cp)[0] = 0;
+    //Cp->resize(n_row + 1, 0);
+    //(*Cp)[0] = 0;
+    Cp[0] = 0;
+    I nnz = 0;
 
     for(I i = 0; i < n_row; i++){
         I A_pos = Ap[i];
@@ -720,24 +722,27 @@ void csr_binop_csr(const I n_row,
             if(A_j == B_j){
                 T result = op(Ax[A_pos],Bx[B_pos]);
                 if(result != 0){
-                    Cj->push_back(A_j);
-                    Cx->push_back(result);
+                    Cj[nnz] = A_j;
+                    Cx[nnz] = result;
+                    nnz++;
                 }
                 A_j = Aj[++A_pos]; 
                 B_j = Bj[++B_pos];
             } else if (A_j < B_j) {
                 T result = op(Ax[A_pos],0);
                 if (result != 0){
-                    Cj->push_back(A_j);
-                    Cx->push_back(result);
+                    Cj[nnz] = A_j;
+                    Cx[nnz] = result;
+                    nnz++;
                 }
                 A_j = Aj[++A_pos]; 
             } else {
                 //B_j < A_j
                 T result = op(0,Bx[B_pos]);
                 if (result != 0){
-                    Cj->push_back(B_j);
-                    Cx->push_back(result);
+                    Cj[nnz] = B_j;
+                    Cx[nnz] = result;
+                    nnz++;
                 }
                 B_j = Bj[++B_pos];
             }
@@ -747,20 +752,22 @@ void csr_binop_csr(const I n_row,
         while(A_pos < A_end){
             T result = op(Ax[A_pos],0);
             if (result != 0){
-                Cj->push_back(A_j);
-                Cx->push_back(result);
+                Cj[nnz] = Aj[A_pos];
+                Cx[nnz] = result;
+                nnz++;
             }
-            A_j = Aj[++A_pos]; 
+            A_pos++;
         }
         while(B_pos < B_end){
             T result = op(0,Bx[B_pos]);
             if (result != 0){
-                Cj->push_back(B_j);
-                Cx->push_back(result);
+                Cj[nnz] = Bj[B_pos];
+                Cx[nnz] = result;
+                nnz++;
             }
-            B_j = Bj[++B_pos];
+            B_pos++;
         }
-        (*Cp)[i+1] = Cx->size();
+        Cp[i+1] = nnz;
     }
 
 
@@ -831,7 +838,7 @@ template <class I, class T>
 void csr_elmul_csr(const I n_row, const I n_col, 
                    const I Ap [], const I Aj [], const T Ax [],
                    const I Bp [], const I Bj [], const T Bx [],
-                   std::vector<I>* Cp, std::vector<I>* Cj, std::vector<T>* Cx)
+                   I Cp[], I Cj[], T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
 }
@@ -840,7 +847,7 @@ template <class I, class T>
 void csr_eldiv_csr(const I n_row, const I n_col, 
                    const I Ap [], const I Aj [], const T Ax [],
                    const I Bp [], const I Bj [], const T Bx [],
-                   std::vector<I>* Cp, std::vector<I>* Cj, std::vector<T>* Cx)
+                   I Cp[], I Cj[], T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::divides<T>());
 }
@@ -850,16 +857,16 @@ template <class I, class T>
 void csr_plus_csr(const I n_row, const I n_col, 
                  const I Ap [], const I Aj [], const T Ax [],
                  const I Bp [], const I Bj [], const T Bx [],
-                 std::vector<I>* Cp, std::vector<I>* Cj, std::vector<T>* Cx)
+                   I Cp[], I Cj[], T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
 }
 
 template <class I, class T>
 void csr_minus_csr(const I n_row, const I n_col, 
-                   const I Ap [], const I Aj [], const T Ax [],
-                   const I Bp [], const I Bj [], const T Bx [],
-                   std::vector<I>* Cp, std::vector<I>* Cj, std::vector<T>* Cx)
+                   const I Ap[], const I Aj [], const T Ax [],
+                   const I Bp[], const I Bj [], const T Bx [],
+                         I Cp[], I Cj[], T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
 }
@@ -1390,18 +1397,18 @@ void coo_tocsc(const I n_row,
 
 template <class I, class T>
 void csc_elmul_csc(const I n_row, const I n_col, 
-                   const I Ap [], const I Ai [], const T Ax [],
-                   const I Bp [], const I Bi [], const T Bx [],
-                   std::vector<I>* Cp, std::vector<I>* Ci, std::vector<T>* Cx)
+                   const I Ap[], const I Ai[], const T Ax[],
+                   const I Bp[], const I Bi[], const T Bx[],
+                         I Cp[],       I Ci[],       T Cx[])
 {
     csr_elmul_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 template <class I, class T>
 void csc_eldiv_csc(const I n_row, const I n_col, 
-                   const I Ap [], const I Ai [], const T Ax [],
-                   const I Bp [], const I Bi [], const T Bx [],
-                   std::vector<I>* Cp, std::vector<I>* Ci, std::vector<T>* Cx)
+                   const I Ap[], const I Ai[], const T Ax[],
+                   const I Bp[], const I Bi[], const T Bx[],
+                         I Cp[],       I Ci[],       T Cx[])
 {
     csr_eldiv_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
@@ -1409,18 +1416,18 @@ void csc_eldiv_csc(const I n_row, const I n_col,
 
 template <class I, class T>
 void csc_plus_csc(const I n_row, const I n_col, 
-                  const I Ap [], const I Ai [], const T Ax [],
-                  const I Bp [], const I Bi [], const T Bx [],
-                  std::vector<I>* Cp, std::vector<I>* Ci, std::vector<T>* Cx)
+                  const I Ap[], const I Ai[], const T Ax[],
+                  const I Bp[], const I Bi[], const T Bx[],
+                        I Cp[],       I Ci[],       T Cx[])
 {
     csr_plus_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 template <class I, class T>
 void csc_minus_csc(const I n_row, const I n_col, 
-                   const I Ap [], const I Ai [], const T Ax [],
-                   const I Bp [], const I Bi [], const T Bx [],
-                   std::vector<I>* Cp, std::vector<I>* Ci, std::vector<T>* Cx)
+                   const I Ap[], const I Ai[], const T Ax[],
+                   const I Bp[], const I Bi[], const T Bx[],
+                         I Cp[],       I Ci[],       T Cx[])
 {
     csr_minus_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }

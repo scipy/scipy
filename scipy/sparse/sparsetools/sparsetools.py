@@ -336,272 +336,224 @@ def bsr_matvec(*args):
 def csr_elmul_csr(*args):
   """
     csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
-        int Bp, int Bj, signed char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(signed char)> Cx)
+        int Bp, int Bj, signed char Bx, int Cp, int Cj, 
+        signed char Cx)
     csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
-        int Bp, int Bj, unsigned char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(unsigned char)> Cx)
+        int Bp, int Bj, unsigned char Bx, int Cp, 
+        int Cj, unsigned char Cx)
     csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, short Ax, int Bp, 
-        int Bj, short Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(short)> Cx)
+        int Bj, short Bx, int Cp, int Cj, short Cx)
     csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, int Ax, int Bp, 
-        int Bj, int Bx, std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(int)> Cx)
+        int Bj, int Bx, int Cp, int Cj, int Cx)
     csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, long long Ax, 
-        int Bp, int Bj, long long Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(long long)> Cx)
+        int Bp, int Bj, long long Bx, int Cp, int Cj, 
+        long long Cx)
     csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, float Ax, int Bp, 
-        int Bj, float Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(float)> Cx)
+        int Bj, float Bx, int Cp, int Cj, float Cx)
     csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, double Ax, int Bp, 
-        int Bj, double Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(double)> Cx)
+        int Bj, double Bx, int Cp, int Cj, double Cx)
     csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
         int Bp, int Bj, npy_cfloat_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cfloat_wrapper)> Cx)
+        int Cp, int Cj, npy_cfloat_wrapper Cx)
     csr_elmul_csr(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
         int Bp, int Bj, npy_cdouble_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cdouble_wrapper)> Cx)
+        int Cp, int Cj, npy_cdouble_wrapper Cx)
     """
   return _sparsetools.csr_elmul_csr(*args)
 
 def csr_eldiv_csr(*args):
   """
     csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
-        int Bp, int Bj, signed char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(signed char)> Cx)
+        int Bp, int Bj, signed char Bx, int Cp, int Cj, 
+        signed char Cx)
     csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
-        int Bp, int Bj, unsigned char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(unsigned char)> Cx)
+        int Bp, int Bj, unsigned char Bx, int Cp, 
+        int Cj, unsigned char Cx)
     csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, short Ax, int Bp, 
-        int Bj, short Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(short)> Cx)
+        int Bj, short Bx, int Cp, int Cj, short Cx)
     csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, int Ax, int Bp, 
-        int Bj, int Bx, std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(int)> Cx)
+        int Bj, int Bx, int Cp, int Cj, int Cx)
     csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, long long Ax, 
-        int Bp, int Bj, long long Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(long long)> Cx)
+        int Bp, int Bj, long long Bx, int Cp, int Cj, 
+        long long Cx)
     csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, float Ax, int Bp, 
-        int Bj, float Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(float)> Cx)
+        int Bj, float Bx, int Cp, int Cj, float Cx)
     csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, double Ax, int Bp, 
-        int Bj, double Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(double)> Cx)
+        int Bj, double Bx, int Cp, int Cj, double Cx)
     csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
         int Bp, int Bj, npy_cfloat_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cfloat_wrapper)> Cx)
+        int Cp, int Cj, npy_cfloat_wrapper Cx)
     csr_eldiv_csr(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
         int Bp, int Bj, npy_cdouble_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cdouble_wrapper)> Cx)
+        int Cp, int Cj, npy_cdouble_wrapper Cx)
     """
   return _sparsetools.csr_eldiv_csr(*args)
 
 def csr_plus_csr(*args):
   """
     csr_plus_csr(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
-        int Bp, int Bj, signed char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(signed char)> Cx)
+        int Bp, int Bj, signed char Bx, int Cp, int Cj, 
+        signed char Cx)
     csr_plus_csr(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
-        int Bp, int Bj, unsigned char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(unsigned char)> Cx)
+        int Bp, int Bj, unsigned char Bx, int Cp, 
+        int Cj, unsigned char Cx)
     csr_plus_csr(int n_row, int n_col, int Ap, int Aj, short Ax, int Bp, 
-        int Bj, short Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(short)> Cx)
+        int Bj, short Bx, int Cp, int Cj, short Cx)
     csr_plus_csr(int n_row, int n_col, int Ap, int Aj, int Ax, int Bp, 
-        int Bj, int Bx, std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(int)> Cx)
+        int Bj, int Bx, int Cp, int Cj, int Cx)
     csr_plus_csr(int n_row, int n_col, int Ap, int Aj, long long Ax, 
-        int Bp, int Bj, long long Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(long long)> Cx)
+        int Bp, int Bj, long long Bx, int Cp, int Cj, 
+        long long Cx)
     csr_plus_csr(int n_row, int n_col, int Ap, int Aj, float Ax, int Bp, 
-        int Bj, float Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(float)> Cx)
+        int Bj, float Bx, int Cp, int Cj, float Cx)
     csr_plus_csr(int n_row, int n_col, int Ap, int Aj, double Ax, int Bp, 
-        int Bj, double Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(double)> Cx)
+        int Bj, double Bx, int Cp, int Cj, double Cx)
     csr_plus_csr(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
         int Bp, int Bj, npy_cfloat_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cfloat_wrapper)> Cx)
+        int Cp, int Cj, npy_cfloat_wrapper Cx)
     csr_plus_csr(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
         int Bp, int Bj, npy_cdouble_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cdouble_wrapper)> Cx)
+        int Cp, int Cj, npy_cdouble_wrapper Cx)
     """
   return _sparsetools.csr_plus_csr(*args)
 
 def csr_minus_csr(*args):
   """
     csr_minus_csr(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
-        int Bp, int Bj, signed char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(signed char)> Cx)
+        int Bp, int Bj, signed char Bx, int Cp, int Cj, 
+        signed char Cx)
     csr_minus_csr(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
-        int Bp, int Bj, unsigned char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(unsigned char)> Cx)
+        int Bp, int Bj, unsigned char Bx, int Cp, 
+        int Cj, unsigned char Cx)
     csr_minus_csr(int n_row, int n_col, int Ap, int Aj, short Ax, int Bp, 
-        int Bj, short Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(short)> Cx)
+        int Bj, short Bx, int Cp, int Cj, short Cx)
     csr_minus_csr(int n_row, int n_col, int Ap, int Aj, int Ax, int Bp, 
-        int Bj, int Bx, std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(int)> Cx)
+        int Bj, int Bx, int Cp, int Cj, int Cx)
     csr_minus_csr(int n_row, int n_col, int Ap, int Aj, long long Ax, 
-        int Bp, int Bj, long long Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(long long)> Cx)
+        int Bp, int Bj, long long Bx, int Cp, int Cj, 
+        long long Cx)
     csr_minus_csr(int n_row, int n_col, int Ap, int Aj, float Ax, int Bp, 
-        int Bj, float Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(float)> Cx)
+        int Bj, float Bx, int Cp, int Cj, float Cx)
     csr_minus_csr(int n_row, int n_col, int Ap, int Aj, double Ax, int Bp, 
-        int Bj, double Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(double)> Cx)
+        int Bj, double Bx, int Cp, int Cj, double Cx)
     csr_minus_csr(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
         int Bp, int Bj, npy_cfloat_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cfloat_wrapper)> Cx)
+        int Cp, int Cj, npy_cfloat_wrapper Cx)
     csr_minus_csr(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
         int Bp, int Bj, npy_cdouble_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cdouble_wrapper)> Cx)
+        int Cp, int Cj, npy_cdouble_wrapper Cx)
     """
   return _sparsetools.csr_minus_csr(*args)
 
 def csc_elmul_csc(*args):
   """
     csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, signed char Ax, 
-        int Bp, int Bi, signed char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(signed char)> Cx)
+        int Bp, int Bi, signed char Bx, int Cp, int Ci, 
+        signed char Cx)
     csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, unsigned char Ax, 
-        int Bp, int Bi, unsigned char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(unsigned char)> Cx)
+        int Bp, int Bi, unsigned char Bx, int Cp, 
+        int Ci, unsigned char Cx)
     csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, short Ax, int Bp, 
-        int Bi, short Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(short)> Cx)
+        int Bi, short Bx, int Cp, int Ci, short Cx)
     csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, int Ax, int Bp, 
-        int Bi, int Bx, std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(int)> Cx)
+        int Bi, int Bx, int Cp, int Ci, int Cx)
     csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, long long Ax, 
-        int Bp, int Bi, long long Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(long long)> Cx)
+        int Bp, int Bi, long long Bx, int Cp, int Ci, 
+        long long Cx)
     csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, float Ax, int Bp, 
-        int Bi, float Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(float)> Cx)
+        int Bi, float Bx, int Cp, int Ci, float Cx)
     csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, double Ax, int Bp, 
-        int Bi, double Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(double)> Cx)
+        int Bi, double Bx, int Cp, int Ci, double Cx)
     csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, 
         int Bp, int Bi, npy_cfloat_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(npy_cfloat_wrapper)> Cx)
+        int Cp, int Ci, npy_cfloat_wrapper Cx)
     csc_elmul_csc(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, 
         int Bp, int Bi, npy_cdouble_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(npy_cdouble_wrapper)> Cx)
+        int Cp, int Ci, npy_cdouble_wrapper Cx)
     """
   return _sparsetools.csc_elmul_csc(*args)
 
 def csc_eldiv_csc(*args):
   """
     csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, signed char Ax, 
-        int Bp, int Bi, signed char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(signed char)> Cx)
+        int Bp, int Bi, signed char Bx, int Cp, int Ci, 
+        signed char Cx)
     csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, unsigned char Ax, 
-        int Bp, int Bi, unsigned char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(unsigned char)> Cx)
+        int Bp, int Bi, unsigned char Bx, int Cp, 
+        int Ci, unsigned char Cx)
     csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, short Ax, int Bp, 
-        int Bi, short Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(short)> Cx)
+        int Bi, short Bx, int Cp, int Ci, short Cx)
     csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, int Ax, int Bp, 
-        int Bi, int Bx, std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(int)> Cx)
+        int Bi, int Bx, int Cp, int Ci, int Cx)
     csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, long long Ax, 
-        int Bp, int Bi, long long Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(long long)> Cx)
+        int Bp, int Bi, long long Bx, int Cp, int Ci, 
+        long long Cx)
     csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, float Ax, int Bp, 
-        int Bi, float Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(float)> Cx)
+        int Bi, float Bx, int Cp, int Ci, float Cx)
     csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, double Ax, int Bp, 
-        int Bi, double Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(double)> Cx)
+        int Bi, double Bx, int Cp, int Ci, double Cx)
     csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, 
         int Bp, int Bi, npy_cfloat_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(npy_cfloat_wrapper)> Cx)
+        int Cp, int Ci, npy_cfloat_wrapper Cx)
     csc_eldiv_csc(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, 
         int Bp, int Bi, npy_cdouble_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(npy_cdouble_wrapper)> Cx)
+        int Cp, int Ci, npy_cdouble_wrapper Cx)
     """
   return _sparsetools.csc_eldiv_csc(*args)
 
 def csc_plus_csc(*args):
   """
     csc_plus_csc(int n_row, int n_col, int Ap, int Ai, signed char Ax, 
-        int Bp, int Bi, signed char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(signed char)> Cx)
+        int Bp, int Bi, signed char Bx, int Cp, int Ci, 
+        signed char Cx)
     csc_plus_csc(int n_row, int n_col, int Ap, int Ai, unsigned char Ax, 
-        int Bp, int Bi, unsigned char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(unsigned char)> Cx)
+        int Bp, int Bi, unsigned char Bx, int Cp, 
+        int Ci, unsigned char Cx)
     csc_plus_csc(int n_row, int n_col, int Ap, int Ai, short Ax, int Bp, 
-        int Bi, short Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(short)> Cx)
+        int Bi, short Bx, int Cp, int Ci, short Cx)
     csc_plus_csc(int n_row, int n_col, int Ap, int Ai, int Ax, int Bp, 
-        int Bi, int Bx, std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(int)> Cx)
+        int Bi, int Bx, int Cp, int Ci, int Cx)
     csc_plus_csc(int n_row, int n_col, int Ap, int Ai, long long Ax, 
-        int Bp, int Bi, long long Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(long long)> Cx)
+        int Bp, int Bi, long long Bx, int Cp, int Ci, 
+        long long Cx)
     csc_plus_csc(int n_row, int n_col, int Ap, int Ai, float Ax, int Bp, 
-        int Bi, float Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(float)> Cx)
+        int Bi, float Bx, int Cp, int Ci, float Cx)
     csc_plus_csc(int n_row, int n_col, int Ap, int Ai, double Ax, int Bp, 
-        int Bi, double Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(double)> Cx)
+        int Bi, double Bx, int Cp, int Ci, double Cx)
     csc_plus_csc(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, 
         int Bp, int Bi, npy_cfloat_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(npy_cfloat_wrapper)> Cx)
+        int Cp, int Ci, npy_cfloat_wrapper Cx)
     csc_plus_csc(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, 
         int Bp, int Bi, npy_cdouble_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(npy_cdouble_wrapper)> Cx)
+        int Cp, int Ci, npy_cdouble_wrapper Cx)
     """
   return _sparsetools.csc_plus_csc(*args)
 
 def csc_minus_csc(*args):
   """
     csc_minus_csc(int n_row, int n_col, int Ap, int Ai, signed char Ax, 
-        int Bp, int Bi, signed char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(signed char)> Cx)
+        int Bp, int Bi, signed char Bx, int Cp, int Ci, 
+        signed char Cx)
     csc_minus_csc(int n_row, int n_col, int Ap, int Ai, unsigned char Ax, 
-        int Bp, int Bi, unsigned char Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(unsigned char)> Cx)
+        int Bp, int Bi, unsigned char Bx, int Cp, 
+        int Ci, unsigned char Cx)
     csc_minus_csc(int n_row, int n_col, int Ap, int Ai, short Ax, int Bp, 
-        int Bi, short Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(short)> Cx)
+        int Bi, short Bx, int Cp, int Ci, short Cx)
     csc_minus_csc(int n_row, int n_col, int Ap, int Ai, int Ax, int Bp, 
-        int Bi, int Bx, std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(int)> Cx)
+        int Bi, int Bx, int Cp, int Ci, int Cx)
     csc_minus_csc(int n_row, int n_col, int Ap, int Ai, long long Ax, 
-        int Bp, int Bi, long long Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(long long)> Cx)
+        int Bp, int Bi, long long Bx, int Cp, int Ci, 
+        long long Cx)
     csc_minus_csc(int n_row, int n_col, int Ap, int Ai, float Ax, int Bp, 
-        int Bi, float Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(float)> Cx)
+        int Bi, float Bx, int Cp, int Ci, float Cx)
     csc_minus_csc(int n_row, int n_col, int Ap, int Ai, double Ax, int Bp, 
-        int Bi, double Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Ci, std::vector<(double)> Cx)
+        int Bi, double Bx, int Cp, int Ci, double Cx)
     csc_minus_csc(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax, 
         int Bp, int Bi, npy_cfloat_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(npy_cfloat_wrapper)> Cx)
+        int Cp, int Ci, npy_cfloat_wrapper Cx)
     csc_minus_csc(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax, 
         int Bp, int Bi, npy_cdouble_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Ci, 
-        std::vector<(npy_cdouble_wrapper)> Cx)
+        int Cp, int Ci, npy_cdouble_wrapper Cx)
     """
   return _sparsetools.csc_minus_csc(*args)
 
