@@ -192,7 +192,7 @@ class _cs_matrix(_data_matrix):
         elif isspmatrix(other):
             if (other.shape != self.shape):
                 raise ValueError, "inconsistent shapes"
-            
+           
             return self._binopt(other,'_plus_')
         elif isdense(other):
             # Convert this matrix to a dense matrix and add them

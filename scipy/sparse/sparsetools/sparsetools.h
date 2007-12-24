@@ -78,7 +78,7 @@ void csr_diagonal(const I n_row,
  *   Output array Bi must be preallocated
  *
  * Note: 
- *   Complexity: Linear.
+ *   Complexity: Linear
  * 
  */
 template <class I>
@@ -107,7 +107,7 @@ void expandptr(const I n_row,
  *   I  num_blocks    - number of blocks
  *
  * Note: 
- *   Complexity: Linear.
+ *   Complexity: Linear
  * 
  */
 template <class I>
@@ -287,12 +287,13 @@ void csr_tocsc(const I n_row,
  *   I  Bj[nnz(B)]  - column indices
  *   T  Bx[nnz(B)]  - nonzeros
  * Output Arguments:
- *   vec<I> Cp - row pointer
- *   vec<I> Cj - column indices
- *   vec<T> Cx - nonzeros
+ *   I  Cp[n_row+1] - row pointer
+ *   I  Cj[nnz(C)]  - column indices
+ *   T  Cx[nnz(C)]  - nonzeros
  *   
  * Note:
  *   Output arrays Cp, Cj, and Cx must be preallocated
+ *   The value of nnz(C) will be stored in Ap[n_row] after the first pass.
  *
  * Note: 
  *   Input:  A and B column indices *are not* assumed to be in sorted order 
@@ -347,7 +348,8 @@ void csr_matmat_pass1(const I n_row,
 }
 
 /*
- * Pass 2 computes CSR entries for C using the row pointer computed in Pass 1
+ * Pass 2 computes CSR entries for matrix C = A*B using the 
+ * row pointer Cp[] computed in Pass 1.
  *
  */
 template <class I, class T>
@@ -539,80 +541,6 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
         }
         (*Cp)[i+1] = Cx->size();
     }
-
-
-//   //Method that works for unsorted indices
-//
-//    Cp->resize(n_brow + 1, 0);
-//
-//    const I RC = R*C;
-//
-//    std::vector<I>  next(n_bcol,-1);
-//    std::vector<T> A_row(n_bcol*RC, 0);
-//    std::vector<T> B_row(n_bcol*RC, 0);
-//
-//    for(I i = 0; i < n_brow; i++){
-//        I head   = -2;
-//        I length =  0;
-//
-//        //add a row of A to A_row
-//        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-//            I j = Aj[jj];
-//
-//            for(I n = 0; n < RC; n++)
-//                A_row[RC*j + n] += Ax[RC*jj + n];
-//
-//            if(next[j] == -1){
-//                next[j] = head;                        
-//                head = j;
-//                length++;
-//            }
-//        }
-//
-//        //add a row of B to B_row
-//        for(I jj = Bp[i]; jj < Bp[i+1]; jj++){
-//            I j = Bj[jj];
-//
-//            for(I n = 0; n < RC; n++)
-//                B_row[RC*j + n] += Bx[RC*jj + n];
-//
-//            if(next[j] == -1){
-//                next[j] = head;                        
-//                head = j;
-//                length++;
-//            }
-//        }
-//
-//
-//        for(I jj = 0; jj < length; jj++){
-//            bool nonzero_block = false;
-//            for(I n = 0; n < RC; n++){
-//                T result = op(A_row[RC*head + n],B_row[RC*head + n]);
-//                A_row[RC*head + n] = result;
-//                if(result != 0)
-//                    nonzero_block = true;
-//            }
-//
-//
-//            if(nonzero_block){
-//                Cj->push_back(head);
-//                for(I n = 0; n < RC; n++){
-//                    Cx->push_back(A_row[RC*head + n]);
-//                }
-//            }
-//
-//            for(I n = 0; n < RC; n++){
-//                A_row[RC*head + n] = 0;
-//                B_row[RC*head + n] = 0;
-//            }
-//
-//            I temp = head;                
-//            head = next[head];
-//            next[temp] = -1;
-//        }
-//
-//        (*Cp)[i+1] = Cj->size();
-//    }
 }
 
 /* element-wise binary operations*/
@@ -659,7 +587,7 @@ void bsr_minus_bsr(const I n_row, const I n_col, const I R, const I C,
 /*
  * Compute C = A (bin_op) B for CSR matrices A,B
  *
- *   (bin_op) - binary operator to apply elementwise
+ *   bin_op(x,y) - binary operator to apply elementwise
  *
  *   
  * Input Arguments:
@@ -672,16 +600,18 @@ void bsr_minus_bsr(const I n_row, const I n_col, const I R, const I C,
  *   I    Bj[nnz(B)]  - column indices
  *   T    Bx[nnz(B)]  - nonzeros
  * Output Arguments:
- *   vec<I> Cp  - row pointer
- *   vec<I> Cj  - column indices
- *   vec<T> Cx  - nonzeros
+ *   I    Cp[n_row+1] - row pointer
+ *   I    Cj[nnz(C)]  - column indices
+ *   T    Cx[nnz(C)]  - nonzeros
  *   
  * Note:
- *   Output arrays Cp, Cj, and Cx will be allocated within in the method
+ *   Output arrays Cp, Cj, and Cx must be preallocated
+ *   If nnz(C) is not known a priori, a conservative bound is:
+ *          nnz(C) <= nnz(A) + nnz(B)
  *
  * Note: 
- *   Input:  A and B column indices *are not* assumed to be in sorted order 
- *   Output: C column indices *are not* assumed to be in sorted order
+ *   Input:  A and B column indices are assumed to be in sorted order 
+ *   Output: C column indices are assumed to be in sorted order
  *           Cx will not contain any zero entries
  *
  */
@@ -699,12 +629,10 @@ void csr_binop_csr(const I n_row,
                          T Cx[],
                    const bin_op& op)
 {
-   //Method that works for sorted indices
-    assert( csr_has_sorted_indices(n_row,Ap,Aj) );
-    assert( csr_has_sorted_indices(n_row,Bp,Bj) );
+    //Method that works for sorted indices
+    // assert( csr_has_sorted_indices(n_row,Ap,Aj) );
+    // assert( csr_has_sorted_indices(n_row,Bp,Bj) );
 
-    //Cp->resize(n_row + 1, 0);
-    //(*Cp)[0] = 0;
     Cp[0] = 0;
     I nnz = 0;
 
@@ -716,7 +644,7 @@ void csr_binop_csr(const I n_row,
 
         I A_j = Aj[A_pos];
         I B_j = Bj[B_pos];
-            
+
         //while not finished with either row
         while(A_pos < A_end && B_pos < B_end){
             if(A_j == B_j){
@@ -769,68 +697,6 @@ void csr_binop_csr(const I n_row,
         }
         Cp[i+1] = nnz;
     }
-
-
-//   //Method that works for unsorted indices
-//    Cp->resize(n_row + 1, 0);
-//
-//    std::vector<I>  next(n_col,-1);
-//    std::vector<T> A_row(n_col, 0);
-//    std::vector<T> B_row(n_col, 0);
-//
-//    for(I i = 0; i < n_row; i++){
-//        I head   = -2;
-//        I length =  0;
-//
-//        //add a row of A to A_row
-//        I i_start = Ap[i];
-//        I i_end   = Ap[i+1];
-//        for(I jj = i_start; jj < i_end; jj++){
-//            I j = Aj[jj];
-//
-//            A_row[j] += Ax[jj];
-//
-//            if(next[j] == -1){
-//                next[j] = head;                        
-//                head = j;
-//                length++;
-//            }
-//        }
-//
-//        //add a row of B to B_row
-//        i_start = Bp[i];
-//        i_end   = Bp[i+1];
-//        for(I jj = i_start; jj < i_end; jj++){
-//            I j = Bj[jj];
-//
-//            B_row[j] += Bx[jj];
-//
-//            if(next[j] == -1){
-//                next[j] = head;                        
-//                head = j;
-//                length++;
-//            }
-//        }
-//
-//
-//        for(I jj = 0; jj < length; jj++){
-//            T result = op(A_row[head],B_row[head]);
-//
-//            if(result != 0){
-//                Cj->push_back(head);
-//                Cx->push_back(result);
-//            }
-//
-//            I temp = head;                
-//            head = next[head];
-//
-//            next[temp] = -1;
-//            A_row[temp] =  0;                              
-//            B_row[temp] =  0;
-//        }
-//
-//        (*Cp)[i+1] = Cj->size();
-//    }
 }
 
 /* element-wise binary operations*/

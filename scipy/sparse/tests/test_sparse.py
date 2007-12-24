@@ -12,6 +12,13 @@ from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
 from scipy.linsolve import splu
 restore_path()
 
+def random_sparse(m,n,nnz_per_row):
+    rows = numpy.arange(m).repeat(nnz_per_row)
+    cols = numpy.random.random_integers(low=0,high=n-1,size=nnz_per_row*m)
+    vals = numpy.random.random_sample(m*nnz_per_row)
+    return coo_matrix((vals,(rows,cols)),(m,n)).tocsr()
+
+
 #TODO move this to a matrix gallery and add unittests
 def poisson2d(N,dtype='d',format=None):
     """
@@ -39,14 +46,12 @@ import time
 class TestSparseTools(NumpyTestCase):
     """Simple benchmarks for sparse matrix module"""
 
-    def test_arithmetic(self,level=4):
+    def test_arithmetic(self,level=5):
         matrices = []
         #matrices.append( ('A','Identity', spidentity(500**2,format='csr')) )
         matrices.append( ('A','Poisson5pt', poisson2d(500,format='csr'))  )
         matrices.append( ('B','Poisson5pt^2', poisson2d(500,format='csr')**2)  )
    
-        #matrices = [ (a,b,c.astype('int8')) for (a,b,c) in matrices ]
-
         print
         print '                 Sparse Matrix Arithmetic'
         print '===================================================================='
@@ -87,8 +92,42 @@ class TestSparseTools(NumpyTestCase):
                     operation = (X + '.' + op + '(' + Y + ')').center(17)
                     print fmt % (format,operation,msec_per_it)
 
+  
 
-    def test_matvec(self,level=5):
+    def bench_sort(self,level=4):
+        """sort CSR column indices"""
+        matrices = []
+        matrices.append( ('Rand10',  1e4,  10) )
+        matrices.append( ('Rand25',  1e4,  25) )
+        matrices.append( ('Rand50',  1e4,  50) )
+        matrices.append( ('Rand100', 1e4, 100) )
+        matrices.append( ('Rand200', 1e4, 200) )
+
+        print
+        print '                    Sparse Matrix Index Sorting'
+        print '====================================================================='
+        print ' type |    name      |         shape        |    nnz   | time (msec) '
+        print '---------------------------------------------------------------------'
+        fmt = '  %3s | %12s | %20s | %8d |   %6.2f  '
+
+        for name,N,K in matrices:
+            N = int(N) 
+            A = random_sparse(N,N,K)
+            
+            start = time.clock()
+            iter = 0
+            while iter < 5 and time.clock() - start < 1:
+                A.sort_indices(check_first =False) 
+                iter += 1
+            end = time.clock()
+
+            name = name.center(12)
+            shape = ("%s" % (A.shape,)).center(20)
+
+            print fmt % (A.format,name,shape,A.nnz,1e3*(end-start)/float(iter) )
+
+
+    def bench_matvec(self,level=5):
         matrices = []
         matrices.append(('Identity',   spidentity(10**4,format='dia')))
         matrices.append(('Identity',   spidentity(10**4,format='csr')))
