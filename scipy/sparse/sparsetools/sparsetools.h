@@ -140,17 +140,15 @@ I csr_count_blocks(const I n_row,
  *
  * Input Arguments:
  *   I  n_row           - number of rows in A
- *   I  n_col           - number of columns in A
  *   I  Ap[n_row+1]     - row pointer
  *   I  Aj[nnz(A)]      - column indices
  *   T  Ax[nnz(A)]      - nonzeros 
  *
  */
 template <class I>
-bool has_sorted_indices(const I n_row, 
-                        const I n_col,
-                        const I Ap[],
-                        const I Aj[])
+bool csr_has_sorted_indices(const I n_row, 
+                            const I Ap[],
+                            const I Aj[])
 {
   for(I i = 0; i < n_row; i++){
       for(I jj = Ap[i]; jj < Ap[i+1] - 1; jj++){
@@ -168,7 +166,6 @@ bool kv_pair_less(const std::pair<T1,T2>& x, const std::pair<T1,T2>& y){
 
 template<class I, class T>
 void csr_sort_indices(const I n_row,
-                      const I n_col,
                       const I Ap[], 
                             I Aj[], 
                             T Ax[])
@@ -420,7 +417,15 @@ void csr_matmat_pass2(const I n_row,
 
 
 
-
+template <class I, class T>
+bool is_nonzero_block(const T block[], const I blocksize){
+    for(I i = 0; i < blocksize; i++){
+        if(block[i] != 0){
+            return true;
+        }
+    }
+    return false;
+}
 
 
 
@@ -434,76 +439,180 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                    std::vector<T>* Cx,
                    const bin_op& op)
 {
-    Cp->resize(n_brow + 1, 0);
+   //Method that works for unsorted indices
+    assert( csr_has_sorted_indices(n_brow,Ap,Aj) );
+    assert( csr_has_sorted_indices(n_brow,Bp,Bj) );
 
     const I RC = R*C;
-
-    std::vector<I>  next(n_bcol,-1);
-    std::vector<T> A_row(n_bcol*RC, 0);
-    std::vector<T> B_row(n_bcol*RC, 0);
+    T result[8*8];
+    //T zeros[8*8];
+    Cp->resize(n_brow + 1, 0);
+    (*Cp)[0] = 0;
 
     for(I i = 0; i < n_brow; i++){
-        I head   = -2;
-        I length =  0;
+        I A_pos = RC*Ap[i];
+        I B_pos = RC*Bp[i];
+        I A_end = RC*Ap[i+1];
+        I B_end = RC*Bp[i+1];
 
-        //add a row of A to A_row
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-            I j = Aj[jj];
-
-            for(I n = 0; n < RC; n++)
-                A_row[RC*j + n] += Ax[RC*jj + n];
-
-            if(next[j] == -1){
-                next[j] = head;                        
-                head = j;
-                length++;
-            }
-        }
-
-        //add a row of B to B_row
-        for(I jj = Bp[i]; jj < Bp[i+1]; jj++){
-            I j = Bj[jj];
-
-            for(I n = 0; n < RC; n++)
-                B_row[RC*j + n] += Bx[RC*jj + n];
-
-            if(next[j] == -1){
-                next[j] = head;                        
-                head = j;
-                length++;
-            }
-        }
-
-
-        for(I jj = 0; jj < length; jj++){
-            bool nonzero_block = false;
-            for(I n = 0; n < RC; n++){
-                T result = op(A_row[RC*head + n],B_row[RC*head + n]);
-                A_row[RC*head + n] = result;
-                if(result != 0)
-                    nonzero_block = true;
-            }
-
-
-            if(nonzero_block){
-                Cj->push_back(head);
+        I A_j = Aj[A_pos];
+        I B_j = Bj[B_pos];
+            
+        //while not finished with either row
+        while(A_pos < A_end && B_pos < B_end){
+            if(A_j == B_j){
                 for(I n = 0; n < RC; n++){
-                    Cx->push_back(A_row[RC*head + n]);
+                    result[n] = op(Ax[A_pos + n],Bx[B_pos + n]);
+                }
+                //vec_binop(Ax[RC*A_pos],Bx[RC*B_pos],result,op);
+
+                if( is_nonzero_block(result,RC) ){
+                    Cj->push_back(A_j);
+                    for(I n = 0; n < RC; n++){
+                        Cx->push_back(result[n]);
+                    }
+                }
+
+                A_j = Aj[++A_pos]; 
+                B_j = Bj[++B_pos];
+
+            } else if (A_j < B_j) {
+                for(I n = 0; n < RC; n++){
+                    result[n] = op(Ax[A_pos + n],0);
+                }
+
+                if(is_nonzero_block(result,RC)){
+                    Cj->push_back(A_j);
+                    for(I n = 0; n < RC; n++){
+                        Cx->push_back(result[n]);
+                    }
+                }
+
+                A_j = Aj[++A_pos]; 
+
+            } else {
+                //B_j < A_j
+                for(I n = 0; n < RC; n++){
+                    result[n] = op(0,Bx[B_pos + n]);
+                }
+
+                if(is_nonzero_block(result,RC)){
+                    Cj->push_back(B_j);
+                    for(I n = 0; n < RC; n++){
+                        Cx->push_back(result[n]);
+                    }
+                }
+
+                B_j = Bj[++B_pos];
+
+            }
+        }
+
+        //tail
+        while(A_pos < A_end){
+            for(I n = 0; n < RC; n++){
+                result[n] = op(Ax[A_pos + n],0);
+            }
+
+            if(is_nonzero_block(result,RC)){
+                Cj->push_back(A_j);
+                for(I n = 0; n < RC; n++){
+                    Cx->push_back(result[n]);
                 }
             }
 
+            A_j = Aj[++A_pos]; 
+        }
+        while(B_pos < B_end){
             for(I n = 0; n < RC; n++){
-                A_row[RC*head + n] = 0;
-                B_row[RC*head + n] = 0;
+                result[n] = op(0,Bx[B_pos + n]);
             }
 
-            I temp = head;                
-            head = next[head];
-            next[temp] = -1;
-        }
+            if(is_nonzero_block(result,RC)){
+                Cj->push_back(B_j);
+                for(I n = 0; n < RC; n++){
+                    Cx->push_back(result[n]);
+                }
+            }
 
-        (*Cp)[i+1] = Cj->size();
+            B_j = Bj[++B_pos];
+        }
+        (*Cp)[i+1] = Cx->size();
     }
+
+
+//   //Method that works for unsorted indices
+//
+//    Cp->resize(n_brow + 1, 0);
+//
+//    const I RC = R*C;
+//
+//    std::vector<I>  next(n_bcol,-1);
+//    std::vector<T> A_row(n_bcol*RC, 0);
+//    std::vector<T> B_row(n_bcol*RC, 0);
+//
+//    for(I i = 0; i < n_brow; i++){
+//        I head   = -2;
+//        I length =  0;
+//
+//        //add a row of A to A_row
+//        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+//            I j = Aj[jj];
+//
+//            for(I n = 0; n < RC; n++)
+//                A_row[RC*j + n] += Ax[RC*jj + n];
+//
+//            if(next[j] == -1){
+//                next[j] = head;                        
+//                head = j;
+//                length++;
+//            }
+//        }
+//
+//        //add a row of B to B_row
+//        for(I jj = Bp[i]; jj < Bp[i+1]; jj++){
+//            I j = Bj[jj];
+//
+//            for(I n = 0; n < RC; n++)
+//                B_row[RC*j + n] += Bx[RC*jj + n];
+//
+//            if(next[j] == -1){
+//                next[j] = head;                        
+//                head = j;
+//                length++;
+//            }
+//        }
+//
+//
+//        for(I jj = 0; jj < length; jj++){
+//            bool nonzero_block = false;
+//            for(I n = 0; n < RC; n++){
+//                T result = op(A_row[RC*head + n],B_row[RC*head + n]);
+//                A_row[RC*head + n] = result;
+//                if(result != 0)
+//                    nonzero_block = true;
+//            }
+//
+//
+//            if(nonzero_block){
+//                Cj->push_back(head);
+//                for(I n = 0; n < RC; n++){
+//                    Cx->push_back(A_row[RC*head + n]);
+//                }
+//            }
+//
+//            for(I n = 0; n < RC; n++){
+//                A_row[RC*head + n] = 0;
+//                B_row[RC*head + n] = 0;
+//            }
+//
+//            I temp = head;                
+//            head = next[head];
+//            next[temp] = -1;
+//        }
+//
+//        (*Cp)[i+1] = Cj->size();
+//    }
 }
 
 /* element-wise binary operations*/
@@ -590,129 +699,131 @@ void csr_binop_csr(const I n_row,
                    std::vector<T>* Cx,
                    const bin_op& op)
 {
-//   //Method that works for unsorted indices
-//    Cp->resize(n_row + 1, 0);
-//    (*Cp)[0] = 0;
-//
-//    for(I i = 0; i < n_row; i++){
-//        I A_pos = Ap[i];
-//        I B_pos = Bp[i];
-//        I A_end = Ap[i+1];
-//        I B_end = Bp[i+1];
-//
-//        I A_j = Aj[A_pos];
-//        I B_j = Bj[B_pos];
-//            
-//        //while not finished with either row
-//        while(A_pos < A_end && B_pos < B_end){
-//            if(A_j == B_j){
-//                T result = op(Ax[A_pos],Bx[B_pos]);
-//                if(result != 0){
-//                    Cj->push_back(A_j);
-//                    Cx->push_back(result);
-//                }
-//                A_j = Aj[++A_pos]; 
-//                B_j = Bj[++B_pos];
-//            } else if (A_j < B_j) {
-//                T result = op(Ax[A_pos],0);
-//                if (result != 0){
-//                    Cj->push_back(A_j);
-//                    Cx->push_back(result);
-//                }
-//                A_j = Aj[++A_pos]; 
-//            } else {
-//                //B_j < A_j
-//                T result = op(0,Bx[B_pos]);
-//                if (result != 0){
-//                    Cj->push_back(B_j);
-//                    Cx->push_back(result);
-//                }
-//                B_j = Bj[++B_pos];
-//            }
-//        }
-//
-//        //tail
-//        while(A_pos < A_end){
-//            T result = op(Ax[A_pos],0);
-//            if (result != 0){
-//                Cj->push_back(A_j);
-//                Cx->push_back(result);
-//            }
-//            A_j = Aj[++A_pos]; 
-//        }
-//        while(B_pos < B_end){
-//            T result = op(0,Bx[B_pos]);
-//            if (result != 0){
-//                Cj->push_back(B_j);
-//                Cx->push_back(result);
-//            }
-//            B_j = Bj[++B_pos];
-//        }
-//        (*Cp)[i+1] = Cx->size();
-//    }
-
-
-   //Method that works for unsorted indices
+   //Method that works for sorted indices
+    assert( csr_has_sorted_indices(n_row,Ap,Aj) );
+    assert( csr_has_sorted_indices(n_row,Bp,Bj) );
 
     Cp->resize(n_row + 1, 0);
-
-    std::vector<I>  next(n_col,-1);
-    std::vector<T> A_row(n_col, 0);
-    std::vector<T> B_row(n_col, 0);
+    (*Cp)[0] = 0;
 
     for(I i = 0; i < n_row; i++){
-        I head   = -2;
-        I length =  0;
+        I A_pos = Ap[i];
+        I B_pos = Bp[i];
+        I A_end = Ap[i+1];
+        I B_end = Bp[i+1];
 
-        //add a row of A to A_row
-        I i_start = Ap[i];
-        I i_end   = Ap[i+1];
-        for(I jj = i_start; jj < i_end; jj++){
-            I j = Aj[jj];
-
-            A_row[j] += Ax[jj];
-
-            if(next[j] == -1){
-                next[j] = head;                        
-                head = j;
-                length++;
+        I A_j = Aj[A_pos];
+        I B_j = Bj[B_pos];
+            
+        //while not finished with either row
+        while(A_pos < A_end && B_pos < B_end){
+            if(A_j == B_j){
+                T result = op(Ax[A_pos],Bx[B_pos]);
+                if(result != 0){
+                    Cj->push_back(A_j);
+                    Cx->push_back(result);
+                }
+                A_j = Aj[++A_pos]; 
+                B_j = Bj[++B_pos];
+            } else if (A_j < B_j) {
+                T result = op(Ax[A_pos],0);
+                if (result != 0){
+                    Cj->push_back(A_j);
+                    Cx->push_back(result);
+                }
+                A_j = Aj[++A_pos]; 
+            } else {
+                //B_j < A_j
+                T result = op(0,Bx[B_pos]);
+                if (result != 0){
+                    Cj->push_back(B_j);
+                    Cx->push_back(result);
+                }
+                B_j = Bj[++B_pos];
             }
         }
 
-        //add a row of B to B_row
-        i_start = Bp[i];
-        i_end   = Bp[i+1];
-        for(I jj = i_start; jj < i_end; jj++){
-            I j = Bj[jj];
-
-            B_row[j] += Bx[jj];
-
-            if(next[j] == -1){
-                next[j] = head;                        
-                head = j;
-                length++;
-            }
-        }
-
-
-        for(I jj = 0; jj < length; jj++){
-            T result = op(A_row[head],B_row[head]);
-
-            if(result != 0){
-                Cj->push_back(head);
+        //tail
+        while(A_pos < A_end){
+            T result = op(Ax[A_pos],0);
+            if (result != 0){
+                Cj->push_back(A_j);
                 Cx->push_back(result);
             }
-
-            I temp = head;                
-            head = next[head];
-
-            next[temp] = -1;
-            A_row[temp] =  0;                              
-            B_row[temp] =  0;
+            A_j = Aj[++A_pos]; 
         }
-
-        (*Cp)[i+1] = Cj->size();
+        while(B_pos < B_end){
+            T result = op(0,Bx[B_pos]);
+            if (result != 0){
+                Cj->push_back(B_j);
+                Cx->push_back(result);
+            }
+            B_j = Bj[++B_pos];
+        }
+        (*Cp)[i+1] = Cx->size();
     }
+
+
+//   //Method that works for unsorted indices
+//    Cp->resize(n_row + 1, 0);
+//
+//    std::vector<I>  next(n_col,-1);
+//    std::vector<T> A_row(n_col, 0);
+//    std::vector<T> B_row(n_col, 0);
+//
+//    for(I i = 0; i < n_row; i++){
+//        I head   = -2;
+//        I length =  0;
+//
+//        //add a row of A to A_row
+//        I i_start = Ap[i];
+//        I i_end   = Ap[i+1];
+//        for(I jj = i_start; jj < i_end; jj++){
+//            I j = Aj[jj];
+//
+//            A_row[j] += Ax[jj];
+//
+//            if(next[j] == -1){
+//                next[j] = head;                        
+//                head = j;
+//                length++;
+//            }
+//        }
+//
+//        //add a row of B to B_row
+//        i_start = Bp[i];
+//        i_end   = Bp[i+1];
+//        for(I jj = i_start; jj < i_end; jj++){
+//            I j = Bj[jj];
+//
+//            B_row[j] += Bx[jj];
+//
+//            if(next[j] == -1){
+//                next[j] = head;                        
+//                head = j;
+//                length++;
+//            }
+//        }
+//
+//
+//        for(I jj = 0; jj < length; jj++){
+//            T result = op(A_row[head],B_row[head]);
+//
+//            if(result != 0){
+//                Cj->push_back(head);
+//                Cx->push_back(result);
+//            }
+//
+//            I temp = head;                
+//            head = next[head];
+//
+//            next[temp] = -1;
+//            A_row[temp] =  0;                              
+//            B_row[temp] =  0;
+//        }
+//
+//        (*Cp)[i+1] = Cj->size();
+//    }
 }
 
 /* element-wise binary operations*/
@@ -777,46 +888,68 @@ void csr_sum_duplicates(const I n_row,
                               I Aj[], 
                               T Ax[])
 {
-  std::vector<I>  next(n_col,-1);
-  std::vector<T>  sums(n_col, 0);
-
-  I nnz = 0;
-
-  I row_start = 0;
-  I row_end   = 0;
-  
-  for(I i = 0; i < n_row; i++){
-    I head = -2;
-    
-    row_start = row_end; //Ap[i] may have been changed
-    row_end   = Ap[i+1]; //Ap[i+1] is safe
-    
-    for(I jj = row_start; jj < row_end; jj++){
-      I j = Aj[jj];
-
-      sums[j] += Ax[jj];
-      
-      if(next[j] == -1){
-	    next[j] = head;                        
-	    head    = j;
-      }
-    }
-
-    while(head != -2){
-        I curr = head; //current column
-        head   = next[curr];
-        
-        if(sums[curr] != 0){
-            Aj[nnz] = curr;
-            Ax[nnz] = sums[curr];
+    I nnz = 0;
+    I row_end = 0;
+    for(I i = 0; i < n_row; i++){
+        I jj = row_end;
+        row_end = Ap[i+1];
+        while( jj < row_end ){
+            I j = Aj[jj];
+            T x = Ax[jj];
+            jj++;
+            while( Aj[jj] == j && jj < row_end ){
+                x += Ax[jj];
+                jj++;
+            }
+            Aj[nnz] = j;
+            Ax[nnz] = x;
             nnz++;
         }
-        
-        next[curr] = -1;
-        sums[curr] =  0;
+        Ap[i+1] = nnz;
     }
-    Ap[i+1] = nnz;
-  }
+
+
+  //method that works on unsorted indices
+//  std::vector<I>  next(n_col,-1);
+//  std::vector<T>  sums(n_col, 0);
+//
+//  I nnz = 0;
+//
+//  I row_start = 0;
+//  I row_end   = 0;
+//  
+//  for(I i = 0; i < n_row; i++){
+//    I head = -2;
+//    
+//    row_start = row_end; //Ap[i] may have been changed
+//    row_end   = Ap[i+1]; //Ap[i+1] is safe
+//    
+//    for(I jj = row_start; jj < row_end; jj++){
+//      I j = Aj[jj];
+//
+//      sums[j] += Ax[jj];
+//      
+//      if(next[j] == -1){
+//	    next[j] = head;                        
+//	    head    = j;
+//      }
+//    }
+//
+//    while(head != -2){
+//        I curr = head; //current column
+//        head   = next[curr];
+//        
+//        if(sums[curr] != 0){
+//            Aj[nnz] = curr;
+//            Ax[nnz] = sums[curr];
+//            nnz++;
+//        }
+//        
+//        next[curr] = -1;
+//        sums[curr] =  0;
+//    }
+//    Ap[i+1] = nnz;
+//  }
 }
 
 
@@ -1291,27 +1424,6 @@ void csc_minus_csc(const I n_row, const I n_col,
 {
     csr_minus_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
-
-
-
-template <class I, class T>
-void csc_sum_duplicates(const I n_row,
-                        const I n_col, 
-                              I Ap[], 
-                              I Ai[], 
-                              T Ax[])
-{ csr_sum_duplicates(n_col, n_row, Ap, Ai, Ax); }
-
-
-template<class I, class T>
-void csc_sort_indices(const I n_row,
-                      const I n_col,
-                      const I Ap[], 
-                      I       Ai[], 
-                      T       Ax[])
-{ csr_sort_indices(n_col, n_row, Ap, Ai, Ax); }
-
-
 
 
 

@@ -240,18 +240,16 @@ INSTANTIATE_ALL(bsr_plus_bsr)
 INSTANTIATE_ALL(bsr_minus_bsr)
 
 /*
- * Sort CSR/CSC indices.
+ * Sort indices.
  */
-%template(has_sorted_indices)   has_sorted_indices<int>;
+%template(csr_has_sorted_indices)   csr_has_sorted_indices<int>;
 INSTANTIATE_ALL(csr_sort_indices)
-INSTANTIATE_ALL(csc_sort_indices)
 
 
 /*
- * Sum duplicate CSR/CSC entries.
+ * Sum duplicate entries.
  */
 INSTANTIATE_ALL(csr_sum_duplicates)
-INSTANTIATE_ALL(csc_sum_duplicates)
 
 /*
  * Extract submatrices

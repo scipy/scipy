@@ -71,9 +71,9 @@ def csc_matmat_pass1(*args):
     """
   return _sparsetools.csc_matmat_pass1(*args)
 
-def has_sorted_indices(*args):
-  """has_sorted_indices(int n_row, int n_col, int Ap, int Aj) -> bool"""
-  return _sparsetools.has_sorted_indices(*args)
+def csr_has_sorted_indices(*args):
+  """csr_has_sorted_indices(int n_row, int Ap, int Aj) -> bool"""
+  return _sparsetools.csr_has_sorted_indices(*args)
 
 
 def csr_diagonal(*args):
@@ -755,31 +755,17 @@ def bsr_minus_bsr(*args):
 
 def csr_sort_indices(*args):
   """
-    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, signed char Ax)
-    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, unsigned char Ax)
-    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, short Ax)
-    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, int Ax)
-    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, long long Ax)
-    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, float Ax)
-    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, double Ax)
-    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax)
-    csr_sort_indices(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax)
+    csr_sort_indices(int n_row, int Ap, int Aj, signed char Ax)
+    csr_sort_indices(int n_row, int Ap, int Aj, unsigned char Ax)
+    csr_sort_indices(int n_row, int Ap, int Aj, short Ax)
+    csr_sort_indices(int n_row, int Ap, int Aj, int Ax)
+    csr_sort_indices(int n_row, int Ap, int Aj, long long Ax)
+    csr_sort_indices(int n_row, int Ap, int Aj, float Ax)
+    csr_sort_indices(int n_row, int Ap, int Aj, double Ax)
+    csr_sort_indices(int n_row, int Ap, int Aj, npy_cfloat_wrapper Ax)
+    csr_sort_indices(int n_row, int Ap, int Aj, npy_cdouble_wrapper Ax)
     """
   return _sparsetools.csr_sort_indices(*args)
-
-def csc_sort_indices(*args):
-  """
-    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, signed char Ax)
-    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, unsigned char Ax)
-    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, short Ax)
-    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, int Ax)
-    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, long long Ax)
-    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, float Ax)
-    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, double Ax)
-    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax)
-    csc_sort_indices(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax)
-    """
-  return _sparsetools.csc_sort_indices(*args)
 
 def csr_sum_duplicates(*args):
   """
@@ -794,20 +780,6 @@ def csr_sum_duplicates(*args):
     csr_sum_duplicates(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax)
     """
   return _sparsetools.csr_sum_duplicates(*args)
-
-def csc_sum_duplicates(*args):
-  """
-    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, signed char Ax)
-    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, unsigned char Ax)
-    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, short Ax)
-    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, int Ax)
-    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, long long Ax)
-    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, float Ax)
-    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, double Ax)
-    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, npy_cfloat_wrapper Ax)
-    csc_sum_duplicates(int n_row, int n_col, int Ap, int Ai, npy_cdouble_wrapper Ax)
-    """
-  return _sparsetools.csc_sum_duplicates(*args)
 
 def get_csr_submatrix(*args):
   """

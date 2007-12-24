@@ -8,7 +8,8 @@ from warnings import warn
 
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
-        empty, hstack, isscalar, ndarray, shape, searchsorted, where
+        empty, hstack, isscalar, ndarray, shape, searchsorted, where, \
+        concatenate
 
 from base import spmatrix,isspmatrix
 from sparsetools import csr_tocsc
@@ -161,15 +162,14 @@ class csr_matrix(_cs_matrix):
             indxs = numpy.where(col == self.indices[self.indptr[row]:self.indptr[row+1]])
             if len(indxs[0]) == 0:
                 #value not present
-                self.data    = resize1d(self.data, self.nnz + 1)
-                self.indices = resize1d(self.indices, self.nnz + 1)
+                newindx = self.indices[self.indptr[row]:self.indptr[row+1]].searchsorted(col)
+                newindx += self.indptr[row]
 
-                newindex = self.indptr[row]
-                self.data[newindex+1:]   = self.data[newindex:-1]
-                self.indices[newindex+1:] = self.indices[newindex:-1]
+                val = array([val],dtype=self.data.dtype)
+                col = array([col],dtype=self.indices.dtype)
+                self.data    = concatenate((self.data[:newindx],val,self.data[newindx:]))
+                self.indices = concatenate((self.indices[:newindx],col,self.indices[newindx:]))
 
-                self.data[newindex]   = val
-                self.indices[newindex] = col
                 self.indptr[row+1:] += 1
 
             elif len(indxs[0]) == 1:
@@ -178,7 +178,7 @@ class csr_matrix(_cs_matrix):
             else:
                 raise IndexError, "row index occurs more than once"
 
-            self.check_format(full_check=False)
+            self.check_format(full_check=True)
         else:
             # We should allow slices here!
             raise IndexError, "invalid index"

@@ -227,11 +227,12 @@ class coo_matrix(_data_matrix):
             indices = empty(self.nnz, dtype=intc)
             data    = empty(self.nnz, dtype=upcast(self.dtype))
 
-            coo_tocsc(self.shape[0], self.shape[1], self.nnz, \
-                      self.row, self.col, self.data, \
+            coo_tocsr(self.shape[1], self.shape[0], self.nnz, \
+                      self.col, self.row, self.data, \
                       indptr, indices, data)
 
             A = csc_matrix((data, indices, indptr), self.shape)
+            A.sort_indices()
             A.sum_duplicates()
             return A
 
@@ -255,7 +256,9 @@ class coo_matrix(_data_matrix):
                       indptr, indices, data)
 
             A = csr_matrix((data, indices, indptr), self.shape)
-            A.sum_duplicates()
+            if sum_duplicates:
+                A.sort_indices()
+                A.sum_duplicates()
             return A
     
 

@@ -7,7 +7,8 @@ from warnings import warn
 
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
-        empty, hstack, isscalar, ndarray, shape, searchsorted, where
+        empty, hstack, isscalar, ndarray, shape, searchsorted, where, \
+        concatenate
 
 from base import spmatrix,isspmatrix
 from sparsetools import csc_tocsr
@@ -172,18 +173,15 @@ class csc_matrix(_cs_matrix):
     
             if len(indxs[0]) == 0:
                 #value not present
-                #TODO handle this with concatenation
-                self.data    = resize1d(self.data,    self.nnz + 1)
-                self.indices = resize1d(self.indices, self.nnz + 1)
+                newindx = self.indices[self.indptr[col]:self.indptr[col+1]].searchsorted(row)
+                newindx += self.indptr[col]
 
-                newindex = self.indptr[col]
-                self.data[newindex+1:]    = self.data[newindex:-1]
-                self.indices[newindex+1:] = self.indices[newindex:-1]
+                val = array([val],dtype=self.data.dtype)
+                row = array([row],dtype=self.indices.dtype)
+                self.data    = concatenate((self.data[:newindx],val,self.data[newindx:]))
+                self.indices = concatenate((self.indices[:newindx],row,self.indices[newindx:]))
 
-                self.data[newindex]   = val
-                self.indices[newindex] = row
                 self.indptr[col+1:] += 1
-
             elif len(indxs[0]) == 1:
                 #value already present
                 self.data[self.indptr[col]:self.indptr[col+1]][indxs[0]] = val

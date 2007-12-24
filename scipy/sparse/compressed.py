@@ -94,8 +94,7 @@ class _cs_matrix(_data_matrix):
                 else:
                     self.shape = self._swap((major_dim,minor_dim))
 
-        #self.check_format(full_check=False)
-        self.check_format(full_check=True)
+        self.check_format(full_check=False)
 
     def getnnz(self):
         return self.indptr[-1]
@@ -122,9 +121,6 @@ class _cs_matrix(_data_matrix):
                     False - basic check, O(1) operations
 
         """
-        #TODO does spmatrix take care of this?
-        self.shape = tuple([int(x) for x in self.shape])  # for floats etc.
-
         #use _swap to determine proper bounds
         major_name,minor_name = self._swap(('row','column'))
         major_dim,minor_dim = self._swap(self.shape)
@@ -179,7 +175,12 @@ class _cs_matrix(_data_matrix):
                 if numpy.diff(self.indptr).min() < 0:
                     raise ValueError,'index pointer values must form a " \
                                         "non-decreasing sequence'
-
+        
+        #if not self.has_sorted_indices():
+        #    warn('Indices were not in sorted order.  Sorting indices.')
+        #    self.sort_indices()
+        #    assert(self.has_sorted_indices())
+        #TODO check for duplicates?
 
 
     def __add__(self,other):
@@ -455,9 +456,8 @@ class _cs_matrix(_data_matrix):
 
         The is an *in place* operation
         """
-        fn = getattr(sparsetools,self.format + '_sum_duplicates')
-
-        M,N = self.shape
+        fn = sparsetools.csr_sum_duplicates
+        M,N = self._swap(self.shape)
         fn( M, N, self.indptr, self.indices, self.data)
 
         self.prune() #nnz may have changed
@@ -465,9 +465,8 @@ class _cs_matrix(_data_matrix):
     def has_sorted_indices(self):
         """Determine whether the matrix has sorted indices
         """
-        fn = sparsetools.has_sorted_indices
-        M,N = self._swap(self.shape)
-        return fn( M, N, self.indptr, self.indices)
+        fn = sparsetools.csr_has_sorted_indices
+        return fn( len(self.indptr) - 1, self.indptr, self.indices)
 
     def sorted_indices(self):
         """Return a copy of this matrix with sorted indices
@@ -480,17 +479,15 @@ class _cs_matrix(_data_matrix):
         # typically the previous option is faster
         #return self.toother().toother()
 
-    def sort_indices(self):
+    def sort_indices(self,check_first=True):
         """Sort the indices of this matrix *in place*
         """
-        if self.has_sorted_indices(): 
-            #see if sorting can be avoided
+        #see if sorting can be avoided
+        if check_first and self.has_sorted_indices(): 
             return
 
-        fn = getattr(sparsetools,self.format + '_sort_indices')
-
-        M,N = self.shape
-        fn( M, N, self.indptr, self.indices, self.data)
+        fn = sparsetools.csr_sort_indices
+        fn( len(self.indptr) - 1, self.indptr, self.indices, self.data)
 
     def ensure_sorted_indices(self, inplace=False):
         """Return a copy of this matrix where the column indices are sorted
@@ -544,8 +541,8 @@ class _cs_matrix(_data_matrix):
             out_shape = self.shape
 
         #only necessary for sorted binopt method
-        #self.sort_indices()
-        #other.sort_indices()
+        self.sort_indices()
+        other.sort_indices()
 
         # e.g. csr_plus_csr, cscmucsc, etc.
         fn = getattr(sparsetools, self.format + op + self.format)

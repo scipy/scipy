@@ -163,7 +163,8 @@ class _TestCommon:
         assert_array_equal(c.todense(),[[1,0,0,4],[9,0,1,0],[0,4,0,0]])
 
     def check_eldiv(self):
-        assert_array_equal((self.datsp / self.datsp).todense(),[[1,0,0,1],[1,0,1,0],[0,1,0,0]])
+        expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]] 
+        assert_array_equal((self.datsp / self.datsp).todense(),expected)
 
         denom = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
         res = matrix([[1,0,0,0.5],[-3,0,numpy.inf,0],[0,0.25,0,0]],'d')
@@ -340,7 +341,8 @@ class _TestCommon:
     def check_large(self):
         # Create a 100x100 matrix with 100 non-zero elements
         # and play around with it
-        #TODO make this use self.spmatrix or move it elsewhere
+        #TODO move this out of Common since it doesn't use spmatrix
+        random.seed(0)
         A = dok_matrix((100,100))
         for k in range(100):
             i = random.randrange(100)
@@ -496,7 +498,7 @@ class _TestMatvecOutput:
 
 class _TestGetSet:
     def check_setelement(self):
-        a = self.datsp - self.datsp
+        a = self.spmatrix((3,4))
         a[1,2] = 4.0
         a[0,1] = 3
         a[2,0] = 2.0

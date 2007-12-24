@@ -224,7 +224,10 @@ class dia_matrix(_data_matrix):
         for i,k in enumerate(self.diags):
             row[i,:] -= k
         
-        mask = (row >= 0) & (row < self.shape[0]) & (col < self.shape[1])
+        mask  = (row >= 0) 
+        mask &= (row < self.shape[0]) 
+        mask &= (col < self.shape[1])
+        mask &= self.data != 0
         row,col,data = row[mask],col[mask],self.data[mask]
         row,col,data = row.reshape(-1),col.reshape(-1),data.reshape(-1)
        

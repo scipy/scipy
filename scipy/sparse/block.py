@@ -1,5 +1,7 @@
 """base class for block sparse formats"""
 
+from warnings import warn
+
 from numpy import zeros, intc, array, asarray, arange, diff, tile, rank, \
         prod, ravel
 
@@ -155,6 +157,9 @@ class _block_matrix(_data_matrix):
                     raise ValueError,'index pointer values must form a " \
                                         "non-decreasing sequence'
 
+        if not self.has_sorted_indices():
+            warn('Indices were not in sorted order. Sorting indices.')
+            self.sort_indices(check_first=False)
 
     def _get_blocksize(self):
         return self.data.shape[1:]
@@ -313,6 +318,12 @@ class _block_matrix(_data_matrix):
 
 
     # methods that modify the internal data structure
+    def has_sorted_indices(self):
+        """Determine whether the matrix has sorted indices
+        """
+        fn = sparsetools.csr_has_sorted_indices
+        return fn( len(self.indptr) - 1, self.indptr, self.indices)
+
     def sorted_indices(self):
         """Return a copy of this matrix with sorted indices
         """
@@ -324,7 +335,7 @@ class _block_matrix(_data_matrix):
         # typically the previous option is faster
         #return self.toother().toother()
 
-    def sort_indices(self):
+    def sort_indices(self, check_first=True):
         """Sort the indices of this matrix *in place*
         """
         from csr import csr_matrix
@@ -340,7 +351,7 @@ class _block_matrix(_data_matrix):
         proxy.sort_indices()
 
         self.data[:] = self.data[proxy.data]
-        self.indices = proxy.indices
+        self.indices[:] = proxy.indices
 
     def prune(self):
         """ Remove empty space after all non-zero elements.
