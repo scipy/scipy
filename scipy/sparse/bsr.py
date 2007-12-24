@@ -123,7 +123,8 @@ class bsr_matrix(_block_matrix):
         proxy = csr_matrix((data,self.indices,self.indptr),shape=(M/X,N/Y))
         proxy = proxy.tocsc()
 
-        data    = self.data[proxy.data] #permute data
+        data    = self.data.swapaxes(1,2)[proxy.data] #permute data
+
         indices = proxy.indices
         indptr  = proxy.indptr
        

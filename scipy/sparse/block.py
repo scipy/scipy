@@ -16,13 +16,6 @@ class _block_matrix(_data_matrix):
     def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
         _data_matrix.__init__(self)
 
-        #process blocksize
-        if blocksize is None:
-            blocksize = (1,1)
-        else:
-            if not isshape(blocksize):
-                raise ValueError,'invalid blocksize=%s',blocksize
-            blocksize = tuple(blocksize)
         
         if isspmatrix(arg1):
             if arg1.format == self.format and copy:
@@ -36,6 +29,13 @@ class _block_matrix(_data_matrix):
                 #it's a tuple of matrix dimensions (M,N)
                 self.shape  = arg1
                 M,N = self.shape
+                #process blocksize
+                if blocksize is None:
+                    blocksize = (1,1)
+                else:
+                    if not isshape(blocksize):
+                        raise ValueError,'invalid blocksize=%s',blocksize
+                    blocksize = tuple(blocksize)
                 self.data   = zeros( (0,) + blocksize, getdtype(dtype, default=float) )
                 self.indices = zeros( 0, dtype=intc )
                 

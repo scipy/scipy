@@ -22,7 +22,7 @@ from numpy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
-        extract_diagonal, speye
+        extract_diagonal, speye, spkron
 from scipy.linsolve import splu
 restore_path()
 
@@ -303,15 +303,18 @@ class _TestCommon:
             assert_equal( result, dot(a,b) )
 
     def check_conversions(self):
+        A = spkron([[1,0,1],[0,1,1],[1,0,0]], [[1,1],[0,1]] )
+        D = A.todense()
+        A = self.spmatrix(A)
 
         for format in ['bsr','coo','csc','csr','dia','dok','lil']:
-            a = self.datsp.asformat(format)
+            a = A.asformat(format)
             assert_equal(a.format,format)
-            assert_array_almost_equal(a.todense(), self.dat)
+            assert_array_almost_equal(a.todense(), D)
             
-            b = self.spmatrix(self.dat+3j).asformat(format)
+            b = self.spmatrix(D+3j).asformat(format)
             assert_equal(b.format,format)
-            assert_array_almost_equal(b.todense(), self.dat+3j)
+            assert_array_almost_equal(b.todense(), D+3j)
 
             
     def check_todia(self):
@@ -336,7 +339,6 @@ class _TestCommon:
         b = self.dat.transpose()
         assert_array_equal(a.todense(), b)
         assert_array_equal(a.transpose().todense(), self.dat)
-        assert_array_equal(a.transpose().todense(), self.datsp.todense())
 
     def check_large(self):
         # Create a 100x100 matrix with 100 non-zero elements
@@ -649,15 +651,18 @@ class _TestArithmetic:
     """
     def arith_init(self):
         #these can be represented exactly in FP (so arithmetic should be exact)
-        self.A = matrix([[   -1.5,      0,       0,    2.25],
-                         [  3.125,      0,  -0.125,       0],
-                         [      0, -5.375,       0,       0]],'float64')
-        self.B = matrix([[  0.375,       0,      -5,     2.5],
-                         [      0,    7.25,       0,  -4.875],
-                         [      0, -0.0625,       0,       0]],'complex128')
-        self.B.imag = matrix([[    1.25,     0,  0, -3.875],
-                              [       0, 4.125,  0,   2.75],
-                              [ -0.0625,     0,  0,      1]],'float64')
+        self.A = matrix([[   -1.5,    6.5,       0,    2.25,  0,  0],
+                         [  3.125, -7.875,   0.625,       0,  0,  0],
+                         [      0,      0,  -0.125,     1.0,  0,  0],
+                         [      0,      0,   8.375,       0,  0,  0]],'float64')
+        self.B = matrix([[  0.375,       0,    0,   0,      -5,     2.5],
+                         [  14.25,   -3.75,    0,   0,  -0.125,       0],
+                         [      0,    7.25,    0,   0,       0,       0],
+                         [   18.5, -0.0625,    0,   0,       0,       0]],'complex128')
+        self.B.imag = matrix([[    1.25,     0,   0,   0,  6, -3.875],
+                              [    2.25, 4.125,   0,   0,  0,   2.75],
+                              [       0, 4.125,   0,   0,  0,      0],
+                              [ -0.0625,     0,   0,   0,  0,      0]],'float64')
 
         #fractions are all x/16ths
         assert_array_equal((self.A*16).astype('int32'),16*self.A)
@@ -724,7 +729,7 @@ class _TestArithmetic:
         self.arith_init()
 
         #basic tests
-        assert_array_equal(self.A*self.B.T,(self.Asp*self.Bsp.T).todense())
+        assert_array_equal((self.Asp*self.Bsp.T).todense(),self.A*self.B.T)
 
         for x in self.dtypes:
             for y in self.dtypes:

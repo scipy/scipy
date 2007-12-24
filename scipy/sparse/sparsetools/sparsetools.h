@@ -450,12 +450,13 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
     //T zeros[8*8];
     Cp->resize(n_brow + 1, 0);
     (*Cp)[0] = 0;
+    I nnz = 0;
 
     for(I i = 0; i < n_brow; i++){
-        I A_pos = RC*Ap[i];
-        I B_pos = RC*Bp[i];
-        I A_end = RC*Ap[i+1];
-        I B_end = RC*Bp[i+1];
+        I A_pos = Ap[i];
+        I B_pos = Bp[i];
+        I A_end = Ap[i+1];
+        I B_end = Bp[i+1];
 
         I A_j = Aj[A_pos];
         I B_j = Bj[B_pos];
@@ -464,7 +465,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
         while(A_pos < A_end && B_pos < B_end){
             if(A_j == B_j){
                 for(I n = 0; n < RC; n++){
-                    result[n] = op(Ax[A_pos + n],Bx[B_pos + n]);
+                    result[n] = op(Ax[RC*A_pos + n],Bx[RC*B_pos + n]);
                 }
                 //vec_binop(Ax[RC*A_pos],Bx[RC*B_pos],result,op);
 
@@ -473,6 +474,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                     for(I n = 0; n < RC; n++){
                         Cx->push_back(result[n]);
                     }
+                    nnz++;
                 }
 
                 A_j = Aj[++A_pos]; 
@@ -480,7 +482,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
 
             } else if (A_j < B_j) {
                 for(I n = 0; n < RC; n++){
-                    result[n] = op(Ax[A_pos + n],0);
+                    result[n] = op(Ax[RC*A_pos + n],0);
                 }
 
                 if(is_nonzero_block(result,RC)){
@@ -488,32 +490,29 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                     for(I n = 0; n < RC; n++){
                         Cx->push_back(result[n]);
                     }
+                    nnz++;
                 }
-
                 A_j = Aj[++A_pos]; 
-
             } else {
                 //B_j < A_j
                 for(I n = 0; n < RC; n++){
-                    result[n] = op(0,Bx[B_pos + n]);
+                    result[n] = op(0,Bx[RC*B_pos + n]);
                 }
-
                 if(is_nonzero_block(result,RC)){
                     Cj->push_back(B_j);
                     for(I n = 0; n < RC; n++){
                         Cx->push_back(result[n]);
                     }
+                    nnz++;
                 }
-
                 B_j = Bj[++B_pos];
-
             }
         }
 
         //tail
         while(A_pos < A_end){
             for(I n = 0; n < RC; n++){
-                result[n] = op(Ax[A_pos + n],0);
+                result[n] = op(Ax[RC*A_pos + n],0);
             }
 
             if(is_nonzero_block(result,RC)){
@@ -521,25 +520,24 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                 for(I n = 0; n < RC; n++){
                     Cx->push_back(result[n]);
                 }
+                nnz++;
             }
-
             A_j = Aj[++A_pos]; 
         }
         while(B_pos < B_end){
             for(I n = 0; n < RC; n++){
-                result[n] = op(0,Bx[B_pos + n]);
+                result[n] = op(0,Bx[RC*B_pos + n]);
             }
-
             if(is_nonzero_block(result,RC)){
                 Cj->push_back(B_j);
                 for(I n = 0; n < RC; n++){
                     Cx->push_back(result[n]);
                 }
+                nnz++;
             }
-
             B_j = Bj[++B_pos];
         }
-        (*Cp)[i+1] = Cx->size();
+        (*Cp)[i+1] = nnz;
     }
 }
 
