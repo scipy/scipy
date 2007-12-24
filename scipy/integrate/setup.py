@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import nested_scopes
 from os.path import join
 
 def configuration(parent_package='',top_path=None):

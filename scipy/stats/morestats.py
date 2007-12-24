@@ -1,8 +1,6 @@
 # Author:  Travis Oliphant, 2002
 #
 
-from __future__ import nested_scopes
-
 import math
 import statlib
 import stats

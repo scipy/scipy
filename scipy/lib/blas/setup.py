@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import nested_scopes
 import os
 import sys
 import re

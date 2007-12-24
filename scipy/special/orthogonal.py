@@ -57,8 +57,6 @@ Functions:
   l_roots                -- Laguerre
 """
 
-from __future__ import nested_scopes
-
 # Scipy imports.
 import numpy as np
 from numpy import all, any, exp, inf, pi, sqrt
