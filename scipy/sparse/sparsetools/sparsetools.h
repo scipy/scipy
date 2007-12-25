@@ -436,9 +436,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                    const I R,      const I C, 
                    const I Ap[],   const I Aj[],    const T Ax[],
                    const I Bp[],   const I Bj[],    const T Bx[],
-                   std::vector<I>* Cp,
-                   std::vector<I>* Cj,
-                   std::vector<T>* Cx,
+                         I Cp[],         I Cj[],          T Cx[],
                    const bin_op& op)
 {
    //Method that works for unsorted indices
@@ -448,8 +446,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
     const I RC = R*C;
     T result[8*8];
     //T zeros[8*8];
-    Cp->resize(n_brow + 1, 0);
-    (*Cp)[0] = 0;
+    Cp[0] = 0;
     I nnz = 0;
 
     for(I i = 0; i < n_brow; i++){
@@ -467,12 +464,11 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                 for(I n = 0; n < RC; n++){
                     result[n] = op(Ax[RC*A_pos + n],Bx[RC*B_pos + n]);
                 }
-                //vec_binop(Ax[RC*A_pos],Bx[RC*B_pos],result,op);
 
                 if( is_nonzero_block(result,RC) ){
-                    Cj->push_back(A_j);
+                    Cj[nnz] = A_j;
                     for(I n = 0; n < RC; n++){
-                        Cx->push_back(result[n]);
+                        Cx[RC*nnz + n] = result[n];
                     }
                     nnz++;
                 }
@@ -486,26 +482,30 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                 }
 
                 if(is_nonzero_block(result,RC)){
-                    Cj->push_back(A_j);
+                    Cj[nnz] = A_j;
                     for(I n = 0; n < RC; n++){
-                        Cx->push_back(result[n]);
+                        Cx[RC*nnz + n] = result[n];
                     }
                     nnz++;
                 }
+
                 A_j = Aj[++A_pos]; 
+
             } else {
                 //B_j < A_j
                 for(I n = 0; n < RC; n++){
                     result[n] = op(0,Bx[RC*B_pos + n]);
                 }
                 if(is_nonzero_block(result,RC)){
-                    Cj->push_back(B_j);
+                    Cj[nnz] = B_j;
                     for(I n = 0; n < RC; n++){
-                        Cx->push_back(result[n]);
+                        Cx[RC*nnz + n] = result[n];
                     }
                     nnz++;
                 }
+
                 B_j = Bj[++B_pos];
+
             }
         }
 
@@ -516,46 +516,51 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
             }
 
             if(is_nonzero_block(result,RC)){
-                Cj->push_back(A_j);
+                Cj[nnz] = A_j;
                 for(I n = 0; n < RC; n++){
-                    Cx->push_back(result[n]);
+                    Cx[RC*nnz + n] = result[n];
                 }
                 nnz++;
             }
+
             A_j = Aj[++A_pos]; 
+
         }
         while(B_pos < B_end){
             for(I n = 0; n < RC; n++){
                 result[n] = op(0,Bx[RC*B_pos + n]);
             }
             if(is_nonzero_block(result,RC)){
-                Cj->push_back(B_j);
+                Cj[nnz] = B_j;
                 for(I n = 0; n < RC; n++){
-                    Cx->push_back(result[n]);
+                    Cx[RC*nnz + n] = result[n];
                 }
                 nnz++;
             }
+
             B_j = Bj[++B_pos];
+
         }
-        (*Cp)[i+1] = nnz;
+
+        Cp[i+1] = nnz;
     }
 }
 
 /* element-wise binary operations*/
 template <class I, class T>
 void bsr_elmul_bsr(const I n_row, const I n_col, const I R, const I C, 
-                   const I Ap [], const I Aj [], const T Ax [],
-                   const I Bp [], const I Bj [], const T Bx [],
-                   std::vector<I>* Cp, std::vector<I>* Cj, std::vector<T>* Cx)
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],       T Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
 }
 
 template <class I, class T>
 void bsr_eldiv_bsr(const I n_row, const I n_col, const I R, const I C,
-                   const I Ap [], const I Aj [], const T Ax [],
-                   const I Bp [], const I Bj [], const T Bx [],
-                   std::vector<I>* Cp, std::vector<I>* Cj, std::vector<T>* Cx)
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],       T Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::divides<T>());
 }
@@ -563,18 +568,18 @@ void bsr_eldiv_bsr(const I n_row, const I n_col, const I R, const I C,
 
 template <class I, class T>
 void bsr_plus_bsr(const I n_row, const I n_col, const I R, const I C, 
-                  const I Ap [], const I Aj [], const T Ax [],
-                  const I Bp [], const I Bj [], const T Bx [],
-                  std::vector<I>* Cp, std::vector<I>* Cj, std::vector<T>* Cx)
+                  const I Ap[], const I Aj[], const T Ax[],
+                  const I Bp[], const I Bj[], const T Bx[],
+                        I Cp[],       I Cj[],       T Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
 }
 
 template <class I, class T>
 void bsr_minus_bsr(const I n_row, const I n_col, const I R, const I C, 
-                   const I Ap [], const I Aj [], const T Ax [],
-                   const I Bp [], const I Bj [], const T Bx [],
-                   std::vector<I>* Cp, std::vector<I>* Cj, std::vector<T>* Cx)
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],       T Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
 }

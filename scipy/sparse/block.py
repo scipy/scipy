@@ -3,11 +3,12 @@
 from warnings import warn
 
 from numpy import zeros, intc, array, asarray, arange, diff, tile, rank, \
-        prod, ravel
+        prod, ravel, empty, empty_like
 
 from data import _data_matrix
 from base import isspmatrix, _formats
-from sputils import isshape, getdtype, to_native, isscalarlike, isdense
+from sputils import isshape, getdtype, to_native, isscalarlike, isdense, \
+        upcast
 import sparsetools
 
 #TODO refactor w/ compressed.py
@@ -148,6 +149,7 @@ class _block_matrix(_data_matrix):
             #check format validity (more expensive)
             if self.nnz > 0:
                 if self.indices.max() >= minor_dim/minor_blk:
+                    print "max index",self.indices.max()
                     raise ValueError, "%s index values must be < %d" % \
                             (minor_name,minor_dim)
                 if self.indices.min() < 0:
@@ -343,6 +345,9 @@ class _block_matrix(_data_matrix):
         X,Y = self.blocksize
         M,N = self.shape
 
+        if self.nnz == 0:
+            return
+
         #use CSR.sort_indices to determine a permutation for BSR<->BSC
         major,minor = self._swap((M/X,N/Y))
 
@@ -366,8 +371,10 @@ class _block_matrix(_data_matrix):
         if self.data.size < self.nnz:
             raise ValueError, "data array has too few elements"
         
-        self.data    = self.data[:self.nnz]
-        self.indices = self.indices[:self.nnz]
+        nnz = self.indptr[-1]
+
+        self.data    = self.data[:nnz]
+        self.indices = self.indices[:nnz]
 
     # utility functions
     def _binopt(self, other, op, in_shape=None, out_shape=None):
@@ -378,16 +385,36 @@ class _block_matrix(_data_matrix):
             in_shape = self.shape
         if out_shape is None:
             out_shape = self.shape
+        
+        self.sort_indices()
+        other.sort_indices()
 
-        # e.g. csr_plus_csr, cscmucsc, etc.
+        # e.g. bsr_plus_bsr, etc.
         fn = getattr(sparsetools, self.format + op + self.format)
-
+        
         R,C = self.blocksize 
-        indptr, ind, data = fn(in_shape[0]/R, in_shape[1]/C, R, C, \
-                               self.indptr, self.indices, ravel(self.data),
-                               other.indptr, other.indices, ravel(other.data))
+
+        max_bnnz = len(self.data) + len(other.data)
+        indptr  = empty_like(self.indptr)
+        indices = empty( max_bnnz, dtype=intc )
+        data    = empty( R*C*max_bnnz, dtype=upcast(self.dtype,other.dtype) )
+
+        fn(in_shape[0]/R, in_shape[1]/C, R, C, \
+                self.indptr,  self.indices,  ravel(self.data),
+                other.indptr, other.indices, ravel(other.data),
+                indptr,       indices,       data)
+        
+        actual_bnnz = indptr[-1]
+        indices = indices[:actual_bnnz]
+        data    = data[:R*C*actual_bnnz]
+
+        if actual_bnnz < max_bnnz/2:
+            indices = indices.copy()
+            data    = data.copy()
+
         data = data.reshape(-1,R,C)
-        return self.__class__((data, ind, indptr), shape=out_shape)
+
+        return self.__class__((data, indices, indptr), shape=out_shape)
 
     # needed by _data_matrix
     def _with_data(self,data,copy=True):

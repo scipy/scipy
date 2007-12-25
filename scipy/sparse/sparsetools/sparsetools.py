@@ -561,36 +561,31 @@ def bsr_elmul_bsr(*args):
   """
     bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         signed char Ax, int Bp, int Bj, signed char Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(signed char)> Cx)
+        int Cp, int Cj, signed char Cx)
     bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         unsigned char Ax, int Bp, int Bj, unsigned char Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(unsigned char)> Cx)
+        int Cp, int Cj, unsigned char Cx)
     bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        short Ax, int Bp, int Bj, short Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(short)> Cx)
+        short Ax, int Bp, int Bj, short Bx, int Cp, 
+        int Cj, short Cx)
     bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        int Ax, int Bp, int Bj, int Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(int)> Cx)
+        int Ax, int Bp, int Bj, int Bx, int Cp, int Cj, 
+        int Cx)
     bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         long long Ax, int Bp, int Bj, long long Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(long long)> Cx)
+        int Cp, int Cj, long long Cx)
     bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        float Ax, int Bp, int Bj, float Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(float)> Cx)
+        float Ax, int Bp, int Bj, float Bx, int Cp, 
+        int Cj, float Cx)
     bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        double Ax, int Bp, int Bj, double Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(double)> Cx)
+        double Ax, int Bp, int Bj, double Bx, int Cp, 
+        int Cj, double Cx)
     bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cfloat_wrapper)> Cx)
+        int Cp, int Cj, npy_cfloat_wrapper Cx)
     bsr_elmul_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cdouble_wrapper)> Cx)
+        int Cp, int Cj, npy_cdouble_wrapper Cx)
     """
   return _sparsetools.bsr_elmul_bsr(*args)
 
@@ -598,36 +593,31 @@ def bsr_eldiv_bsr(*args):
   """
     bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         signed char Ax, int Bp, int Bj, signed char Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(signed char)> Cx)
+        int Cp, int Cj, signed char Cx)
     bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         unsigned char Ax, int Bp, int Bj, unsigned char Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(unsigned char)> Cx)
+        int Cp, int Cj, unsigned char Cx)
     bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        short Ax, int Bp, int Bj, short Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(short)> Cx)
+        short Ax, int Bp, int Bj, short Bx, int Cp, 
+        int Cj, short Cx)
     bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        int Ax, int Bp, int Bj, int Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(int)> Cx)
+        int Ax, int Bp, int Bj, int Bx, int Cp, int Cj, 
+        int Cx)
     bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         long long Ax, int Bp, int Bj, long long Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(long long)> Cx)
+        int Cp, int Cj, long long Cx)
     bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        float Ax, int Bp, int Bj, float Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(float)> Cx)
+        float Ax, int Bp, int Bj, float Bx, int Cp, 
+        int Cj, float Cx)
     bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        double Ax, int Bp, int Bj, double Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(double)> Cx)
+        double Ax, int Bp, int Bj, double Bx, int Cp, 
+        int Cj, double Cx)
     bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cfloat_wrapper)> Cx)
+        int Cp, int Cj, npy_cfloat_wrapper Cx)
     bsr_eldiv_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cdouble_wrapper)> Cx)
+        int Cp, int Cj, npy_cdouble_wrapper Cx)
     """
   return _sparsetools.bsr_eldiv_bsr(*args)
 
@@ -635,36 +625,31 @@ def bsr_plus_bsr(*args):
   """
     bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         signed char Ax, int Bp, int Bj, signed char Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(signed char)> Cx)
+        int Cp, int Cj, signed char Cx)
     bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         unsigned char Ax, int Bp, int Bj, unsigned char Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(unsigned char)> Cx)
+        int Cp, int Cj, unsigned char Cx)
     bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        short Ax, int Bp, int Bj, short Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(short)> Cx)
+        short Ax, int Bp, int Bj, short Bx, int Cp, 
+        int Cj, short Cx)
     bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        int Ax, int Bp, int Bj, int Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(int)> Cx)
+        int Ax, int Bp, int Bj, int Bx, int Cp, int Cj, 
+        int Cx)
     bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         long long Ax, int Bp, int Bj, long long Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(long long)> Cx)
+        int Cp, int Cj, long long Cx)
     bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        float Ax, int Bp, int Bj, float Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(float)> Cx)
+        float Ax, int Bp, int Bj, float Bx, int Cp, 
+        int Cj, float Cx)
     bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        double Ax, int Bp, int Bj, double Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(double)> Cx)
+        double Ax, int Bp, int Bj, double Bx, int Cp, 
+        int Cj, double Cx)
     bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cfloat_wrapper)> Cx)
+        int Cp, int Cj, npy_cfloat_wrapper Cx)
     bsr_plus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cdouble_wrapper)> Cx)
+        int Cp, int Cj, npy_cdouble_wrapper Cx)
     """
   return _sparsetools.bsr_plus_bsr(*args)
 
@@ -672,36 +657,31 @@ def bsr_minus_bsr(*args):
   """
     bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         signed char Ax, int Bp, int Bj, signed char Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(signed char)> Cx)
+        int Cp, int Cj, signed char Cx)
     bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         unsigned char Ax, int Bp, int Bj, unsigned char Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(unsigned char)> Cx)
+        int Cp, int Cj, unsigned char Cx)
     bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        short Ax, int Bp, int Bj, short Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(short)> Cx)
+        short Ax, int Bp, int Bj, short Bx, int Cp, 
+        int Cj, short Cx)
     bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        int Ax, int Bp, int Bj, int Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(int)> Cx)
+        int Ax, int Bp, int Bj, int Bx, int Cp, int Cj, 
+        int Cx)
     bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         long long Ax, int Bp, int Bj, long long Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(long long)> Cx)
+        int Cp, int Cj, long long Cx)
     bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        float Ax, int Bp, int Bj, float Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(float)> Cx)
+        float Ax, int Bp, int Bj, float Bx, int Cp, 
+        int Cj, float Cx)
     bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
-        double Ax, int Bp, int Bj, double Bx, std::vector<(int)> Cp, 
-        std::vector<(int)> Cj, std::vector<(double)> Cx)
+        double Ax, int Bp, int Bj, double Bx, int Cp, 
+        int Cj, double Cx)
     bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cfloat_wrapper)> Cx)
+        int Cp, int Cj, npy_cfloat_wrapper Cx)
     bsr_minus_bsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
         npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx, 
-        std::vector<(int)> Cp, std::vector<(int)> Cj, 
-        std::vector<(npy_cdouble_wrapper)> Cx)
+        int Cp, int Cj, npy_cdouble_wrapper Cx)
     """
   return _sparsetools.bsr_minus_bsr(*args)
 

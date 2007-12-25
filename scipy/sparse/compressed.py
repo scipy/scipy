@@ -540,11 +540,10 @@ class _cs_matrix(_data_matrix):
         if out_shape is None:
             out_shape = self.shape
 
-        #only necessary for sorted binopt method
         self.sort_indices()
         other.sort_indices()
 
-        # e.g. csr_plus_csr, cscmucsc, etc.
+        # e.g. csr_plus_csr, csr_mat_mat, etc.
         fn = getattr(sparsetools, self.format + op + self.format)
 
         maxnnz = self.nnz + other.nnz
@@ -553,15 +552,18 @@ class _cs_matrix(_data_matrix):
         data    = empty( maxnnz, dtype=upcast(self.dtype,other.dtype) )
 
         fn(in_shape[0], in_shape[1], \
-                self.indptr, self.indices, self.data,
+                self.indptr,  self.indices,  self.data,
                 other.indptr, other.indices, other.data,
                 indptr, indices, data)
 
         actual_nnz = indptr[-1]
+        indices = indices[:actual_nnz]
+        data    = data[:actual_nnz]
         if actual_nnz < maxnnz / 2:
             #too much waste, trim arrays
-            indices = indices[:actual_nnz].copy()
-            data    = data[:actual_nnz].copy()
+            indices = indices.copy()
+            data    = data.copy()
+
         return self.__class__((data, indices, indptr), shape=out_shape)
 
     def _get_submatrix( self, shape0, shape1, slice0, slice1 ):
