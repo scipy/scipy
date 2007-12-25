@@ -262,6 +262,39 @@ def csc_matmat_pass2(*args):
     """
   return _sparsetools.csc_matmat_pass2(*args)
 
+def bsr_matmat_pass2(*args):
+  """
+    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
+        int Aj, signed char Ax, int Bp, int Bj, signed char Bx, 
+        int Cp, int Cj, signed char Cx)
+    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
+        int Aj, unsigned char Ax, int Bp, int Bj, unsigned char Bx, 
+        int Cp, int Cj, unsigned char Cx)
+    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
+        int Aj, short Ax, int Bp, int Bj, short Bx, 
+        int Cp, int Cj, short Cx)
+    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
+        int Aj, int Ax, int Bp, int Bj, int Bx, int Cp, 
+        int Cj, int Cx)
+    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
+        int Aj, long long Ax, int Bp, int Bj, long long Bx, 
+        int Cp, int Cj, long long Cx)
+    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
+        int Aj, float Ax, int Bp, int Bj, float Bx, 
+        int Cp, int Cj, float Cx)
+    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
+        int Aj, double Ax, int Bp, int Bj, double Bx, 
+        int Cp, int Cj, double Cx)
+    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
+        int Aj, npy_cfloat_wrapper Ax, int Bp, int Bj, 
+        npy_cfloat_wrapper Bx, int Cp, int Cj, npy_cfloat_wrapper Cx)
+    bsr_matmat_pass2(int n_brow, int n_bcol, int R, int C, int N, int Ap, 
+        int Aj, npy_cdouble_wrapper Ax, int Bp, int Bj, 
+        npy_cdouble_wrapper Bx, int Cp, int Cj, 
+        npy_cdouble_wrapper Cx)
+    """
+  return _sparsetools.bsr_matmat_pass2(*args)
+
 def csr_matvec(*args):
   """
     csr_matvec(int n_row, int n_col, int Ap, int Aj, signed char Ax, 

@@ -12,6 +12,7 @@
 
 
 
+#include <set>
 
 #include <vector>
 #include <algorithm>
@@ -315,6 +316,7 @@ void csr_tocsc(const I n_row,
  *
  */
 
+
 /*
  * Pass 1 computes CSR row pointer for the matrix product C = A * B
  *
@@ -328,6 +330,51 @@ void csr_matmat_pass1(const I n_row,
                       const I Bj[],
                             I Cp[])
 {
+//    // method that uses O(n) temp storage
+//    const I hash_size = 1 << 5;
+//    I vals[hash_size];
+//    I mask[hash_size];
+//
+//    std::set<I> spill;    
+//    
+//    for(I i = 0; i < hash_size; i++){
+//        vals[i] = -1;
+//        mask[i] = -1;
+//    }
+//
+//    Cp[0] = 0;
+//
+//    I slow_inserts = 0;
+//    I total_inserts = 0;
+//    I nnz = 0;
+//    for(I i = 0; i < n_row; i++){
+//        spill.clear();
+//        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+//            I j = Aj[jj];
+//            for(I kk = Bp[j]; kk < Bp[j+1]; kk++){
+//                I k = Bj[kk];
+//                // I hash = k & (hash_size - 1);
+//                I hash = ((I)2654435761 * k) & (hash_size -1 );
+//                total_inserts++;
+//                if(mask[hash] != i){
+//                    mask[hash] = i;                        
+//                    vals[hash] = k;
+//                    nnz++;
+//                } else {
+//                    if (vals[hash] != k){
+//                        slow_inserts++;
+//                        spill.insert(k);
+//                    }
+//                }
+//            }
+//        }       
+//        nnz += spill.size();
+//        Cp[i+1] = nnz;
+//    }
+//
+//    std::cout << "slow fraction " << ((float) slow_inserts)/ ((float) total_inserts) << std::endl;
+
+    // method that uses O(n) temp storage
     std::vector<I> mask(n_col,-1);
     Cp[0] = 0;
 
@@ -415,6 +462,87 @@ void csr_matmat_pass2(const I n_row,
         Cp[i+1] = nnz;
     }
 }
+template <class I, class T>
+void bsr_matmat_pass2(const I n_brow,  const I n_bcol, 
+                      const I R,       const I C,       const I N,
+      	              const I Ap[],    const I Aj[],    const T Ax[],
+      	              const I Bp[],    const I Bj[],    const T Bx[],
+      	                    I Cp[],          I Cj[],          T Cx[])
+{
+    const I RC = R*C;
+    const I RN = R*N;
+    const I NC = N*C;
+    const I SIZE = RC*Cp[n_brow];
+
+    for(I i = 0; i < SIZE; i++){
+        Cx[i] = 0;
+    }
+    //std::cout << "n_brow " << n_brow << " Cp[-1] " << Cp[n_brow] << " R " << R << " C " << C << " N " << N << std::endl;
+ 
+    std::vector<I>  next(n_bcol,-1);
+    std::vector<T*> mats(n_bcol);
+
+    
+    I nnz = 0;
+
+    Cp[0] = 0;
+
+    for(I i = 0; i < n_brow; i++){
+        I head   = -2;
+        I length =  0;
+
+        I jj_start = Ap[i];
+        I jj_end   = Ap[i+1];
+        for(I jj = jj_start; jj < jj_end; jj++){
+            I j = Aj[jj];
+
+            I kk_start = Bp[j];
+            I kk_end   = Bp[j+1];
+            for(I kk = kk_start; kk < kk_end; kk++){
+                I k = Bj[kk];
+
+                if(next[k] == -1){
+                    next[k] = head;                        
+                    head = k;
+                    Cj[nnz] = k;
+                    mats[k] = Cx + RC*nnz;
+                    nnz++;
+                    length++;
+                }
+
+                const T * A = Ax + jj*RN;
+                const T * B = Bx + kk*NC;
+                T * result = mats[k];
+                for(I r = 0; r < R; r++){
+                    for(I c = 0; c < C; c++){
+                        for(I n = 0; n < N; n++){
+                            result[C*r + c] += A[N*r + n] * B[C*n + c];
+
+                        }
+                        //std::cout << "result[" << r << "," << c << "] = " << result[C*r + c] << std::endl;
+                    }
+                }
+            }
+        }         
+
+        for(I jj = 0; jj < length; jj++){
+
+            //if(is_nonzero_block(result,RC)){
+            //    Cj[nnz] = head;
+            //    Cx[nnz] = sums[head];
+            //    nnz++;
+            //}
+
+            I temp = head;                
+            head = next[head];
+
+            next[temp] = -1; //clear arrays
+        }
+
+        //Cp[i+1] = nnz;
+    }
+}
+
 
 
 
@@ -440,8 +568,13 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                    const bin_op& op)
 {
    //Method that works for unsorted indices
-    assert( csr_has_sorted_indices(n_brow,Ap,Aj) );
-    assert( csr_has_sorted_indices(n_brow,Bp,Bj) );
+   // assert( csr_has_sorted_indices(n_brow,Ap,Aj) );
+   // assert( csr_has_sorted_indices(n_brow,Bp,Bj) );
+
+    //if (R == 3 && C == 3){
+    //    bsr_binop_bsr_fixed<I,T,3,3>(n_brow,n_bcol,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,op);
+    //    return;
+    //}
 
     const I RC = R*C;
     T result[8*8];
@@ -1029,6 +1162,7 @@ void bsr_matvec_fixed(const I n_brow,
 	                  const T Xx[],
 	                        T Yx[])
 {
+    //TODO make a matvec template
     for(I i = 0; i < n_brow; i++) {
         T r0 = 0;
         T r1 = 0;
@@ -1062,7 +1196,6 @@ void bsr_matvec_fixed(const I n_brow,
         if (R > 7) Yx[R*i+7] = r7;
     }
 }
-#define F(X,Y) bsr_matvec_fixed<I,T,X,Y>
 
 /*
  * Generate the table below with:
@@ -1076,6 +1209,8 @@ void bsr_matvec_fixed(const I n_brow,
  *   out = out[:-2]
  *
  */
+
+#define F(X,Y) bsr_matvec_fixed<I,T,X,Y>
 
 template <class I, class T>
 void bsr_matvec(const I n_brow,
@@ -1600,5 +1735,77 @@ void csc_minus_csc(const I n_row, const I n_col,
 //    }
 //}
 //
+//template <class I, class T, int R, int C, class bin_op>
+//void bsr_binop_bsr_fixed(const I n_brow, const I n_bcol, 
+//                         const I Ap[],   const I Aj[],    const T Ax[],
+//                         const I Bp[],   const I Bj[],    const T Bx[],
+//                               I Cp[],         I Cj[],          T Cx[],
+//                         const bin_op& op)
+//{
+//   //Method that works for unsorted indices
+//    const I RC = R*C;
+//    T zeros[RC] = {0};
+//    Cp[0] = 0;
+//    I nnz = 0;
+//
+//    std::cout << "using bsr_ fixed" << std::endl;
+//    for(I i = 0; i < n_brow; i++){
+//        I A_pos = Ap[i];
+//        I B_pos = Bp[i];
+//        I A_end = Ap[i+1];
+//        I B_end = Bp[i+1];
+//
+//        I A_j = Aj[A_pos];
+//        I B_j = Bj[B_pos];
+//            
+//        //while not finished with either row
+//        while(A_pos < A_end && B_pos < B_end){
+//            if(A_j == B_j){
+//                Cj[nnz] = A_j;
+//                vec_binop_vec<RC> (Ax + RC*A_pos, Bx + RC*B_pos, Cx + RC*nnz, op);
+//                if( is_nonzero_block(Cx + RC*nnz,RC) ){
+//                    nnz++;
+//                }
+//                A_j = Aj[++A_pos]; 
+//                B_j = Bj[++B_pos];
+//            } else if (A_j < B_j) {
+//                Cj[nnz] = A_j;
+//                vec_binop_vec<RC> (Ax + RC*A_pos, zeros, Cx + RC*nnz, op);
+//                if( is_nonzero_block(Cx + RC*nnz,RC) ){
+//                    nnz++;
+//                }
+//                A_j = Aj[++A_pos]; 
+//            } else {
+//                //B_j < A_j
+//                Cj[nnz] = B_j;
+//                vec_binop_vec<RC> (zeros, Bx + RC*A_pos, Cx + RC*nnz, op);
+//                if( is_nonzero_block(Cx + RC*nnz,RC) ){
+//                    nnz++;
+//                }
+//                B_j = Bj[++B_pos];
+//            }
+//        }
+//
+//        //tail
+//        while(A_pos < A_end){
+//            Cj[nnz] = A_j;
+//            vec_binop_vec<RC> (Ax + RC*A_pos, zeros, Cx + RC*nnz, op);
+//            if( is_nonzero_block(Cx + RC*nnz,RC) ){
+//                nnz++;
+//            }
+//            A_j = Aj[++A_pos]; 
+//        }
+//        while(B_pos < B_end){
+//            Cj[nnz] = B_j;
+//            vec_binop_vec<RC> (zeros, Bx + RC*A_pos, Cx + RC*nnz, op);
+//            if( is_nonzero_block(Cx + RC*nnz,RC) ){
+//                nnz++;
+//            }
+//            B_j = Bj[++B_pos];
+//        }
+//
+//        Cp[i+1] = nnz;
+//    }
+//}
 
 #endif

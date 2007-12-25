@@ -46,7 +46,7 @@ import time
 class TestSparseTools(NumpyTestCase):
     """Simple benchmarks for sparse matrix module"""
 
-    def test_arithmetic(self,level=5):
+    def test_arithmetic(self,level=4):
         matrices = []
         #matrices.append( ('A','Identity', spidentity(500**2,format='csr')) )
         matrices.append( ('A','Poisson5pt', poisson2d(500,format='csr'))  )
@@ -77,7 +77,8 @@ class TestSparseTools(NumpyTestCase):
             vars = dict( [(var,mat.asformat(format)) for (var,name,mat) in matrices ] )
             for X,Y in [ ('A','A'),('A','B'),('B','A'),('B','B') ]:
                 x,y = vars[X],vars[Y]
-                for op in ['__add__','__sub__','multiply','__div__','__mul__']:
+                #for op in ['__add__','__sub__','multiply','__div__','__mul__']:
+                for op in ['__mul__']:
                     fn = getattr(x,op)
                     fn(y) #warmup
 
@@ -94,7 +95,7 @@ class TestSparseTools(NumpyTestCase):
 
   
 
-    def bench_sort(self,level=4):
+    def bench_sort(self,level=5):
         """sort CSR column indices"""
         matrices = []
         matrices.append( ('Rand10',  1e4,  10) )

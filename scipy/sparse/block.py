@@ -159,9 +159,9 @@ class _block_matrix(_data_matrix):
                     raise ValueError,'index pointer values must form a " \
                                         "non-decreasing sequence'
 
-        if not self.has_sorted_indices():
-            warn('Indices were not in sorted order. Sorting indices.')
-            self.sort_indices(check_first=False)
+        #if not self.has_sorted_indices():
+        #    warn('Indices were not in sorted order. Sorting indices.')
+        #    self.sort_indices(check_first=False)
 
     def _get_blocksize(self):
         return self.data.shape[1:]
@@ -340,6 +340,9 @@ class _block_matrix(_data_matrix):
     def sort_indices(self, check_first=True):
         """Sort the indices of this matrix *in place*
         """
+        if check_first and self.has_sorted_indices():
+            return
+
         from csr import csr_matrix
 
         X,Y = self.blocksize

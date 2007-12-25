@@ -4,9 +4,9 @@
 __all__ = ['bsr_matrix', 'isspmatrix_bsr']
 
 from numpy import zeros, intc, array, asarray, arange, diff, tile, rank, \
-        prod, ravel, empty, matrix, asmatrix
+        prod, ravel, empty, matrix, asmatrix, empty_like, hstack
 
-from sparsetools import bsr_matvec
+from sparsetools import bsr_matvec, csr_matmat_pass1, bsr_matmat_pass2
 from block import _block_matrix 
 from base import isspmatrix
 from sputils import isdense, upcast, isscalarlike
@@ -74,6 +74,48 @@ class bsr_matrix(_block_matrix):
             raise TypeError, "need a dense vector"
 
 
+    def matmat(self, other):
+        if isspmatrix(other):
+            M, K1 = self.shape
+            K2, N = other.shape
+            if (K1 != K2):
+                raise ValueError, "shape mismatch error"
+
+            indptr = empty_like( self.indptr )
+            
+            R,n = self.blocksize
+
+            if isspmatrix_bsr(other):
+                C = other.blocksize[1]
+            else:
+                C = 1
+            other = other.tobsr(blocksize=(n,C)) #convert to this format
+
+            csr_matmat_pass1( M/R, N/C, \
+                    self.indptr,  self.indices, \
+                    other.indptr, other.indices, \
+                    indptr)
+
+            bnnz = indptr[-1]
+            indices = empty( bnnz, dtype=intc)
+            data    = empty( R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
+
+            bsr_matmat_pass2( M/R, N/C, R, C, n, \
+                    self.indptr,  self.indices,  ravel(self.data), \
+                    other.indptr, other.indices, ravel(other.data), \
+                    indptr,       indices,       data)
+            
+            data = data.reshape(-1,R,C)
+            #TODO eliminate zeros
+
+            return bsr_matrix((data,indices,indptr),shape=(M,N),blocksize=(R,C))
+        elif isdense(other):
+            # TODO make sparse * dense matrix multiplication more efficient
+
+            # matvec each column of other
+            return hstack( [ self * col.reshape(-1,1) for col in other.T ] )
+        else:
+            raise TypeError, "need a dense or sparse matrix"
 
 #    def transpose(self,copy=False):
 #        M,N = self.shape
@@ -114,8 +156,12 @@ class bsr_matrix(_block_matrix):
 
 
     def transpose(self):
+        
         X,Y = self.blocksize
         M,N = self.shape
+        
+        if self.nnz == 0:
+            return bsr_matrix((N,M),blocksize=(Y,X))
 
         #use CSR.T to determine a permutation for BSR.T
         from csr import csr_matrix

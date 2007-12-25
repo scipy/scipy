@@ -213,6 +213,8 @@ INSTANTIATE_ALL(coo_tocsc)
 %template(csc_matmat_pass1)   csc_matmat_pass1<int>;
 INSTANTIATE_ALL(csr_matmat_pass2)
 INSTANTIATE_ALL(csc_matmat_pass2)
+INSTANTIATE_ALL(bsr_matmat_pass2)
+
 
 /*
  * CSR*x and CSC*x
