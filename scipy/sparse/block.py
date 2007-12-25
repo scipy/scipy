@@ -45,9 +45,13 @@ class _block_matrix(_data_matrix):
                     raise ValueError, 'shape must be multiple of blocksize'
 
                 self.indptr  = zeros(self._swap((M/X,N/Y))[0] + 1, dtype=intc )
+            
+            elif len(arg1) == 2:
+                # (data,(row,col)) format
+                self._set_self( coo_matrix(arg1).tobsr(blocksize=blocksize) )
 
             elif len(arg1) == 3:
-                # data,indices,indptr format
+                # (data,indices,indptr) format
                 (data, indices, indptr) = arg1
                 self.indices = array(indices, copy=copy)
                 self.indptr  = array(indptr,  copy=copy)

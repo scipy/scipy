@@ -27,7 +27,6 @@ from scipy.linsolve import splu
 restore_path()
 
 
-#TODO test spmatrix(DENSE) and spmatrix(SPARSE) for all combos
 #TODO test spmatrix( [[1,2],[3,4]] ) format
 #TODO check that invalid shape in constructor raises exception
 #TODO check that spmatrix( ... , copy=X ) is respected
@@ -310,11 +309,16 @@ class _TestCommon:
         for format in ['bsr','coo','csc','csr','dia','dok','lil']:
             a = A.asformat(format)
             assert_equal(a.format,format)
-            assert_array_almost_equal(a.todense(), D)
+            assert_array_equal(a.todense(), D)
             
             b = self.spmatrix(D+3j).asformat(format)
             assert_equal(b.format,format)
-            assert_array_almost_equal(b.todense(), D+3j)
+            assert_array_equal(b.todense(), D+3j)
+
+            c = eval(format + '_matrix')(A)
+            assert_equal(c.format,format)
+            assert_array_equal(c.todense(), D)
+
 
             
     def check_todia(self):
@@ -339,31 +343,9 @@ class _TestCommon:
         b = self.dat.transpose()
         assert_array_equal(a.todense(), b)
         assert_array_equal(a.transpose().todense(), self.dat)
+        
+        assert_array_equal( self.spmatrix((3,4)).T.todense(), zeros((4,3)) )
 
-    def check_large(self):
-        # Create a 100x100 matrix with 100 non-zero elements
-        # and play around with it
-        #TODO move this out of Common since it doesn't use spmatrix
-        random.seed(0)
-        A = dok_matrix((100,100))
-        for k in range(100):
-            i = random.randrange(100)
-            j = random.randrange(100)
-            A[i,j] = 1.
-        csr = A.tocsr()
-        csc = A.tocsc()
-        csc2 = csr.tocsc()
-        coo = A.tocoo()
-        csr2 = coo.tocsr()
-        assert_array_equal(A.transpose().todense(), csr.transpose().todense())
-        assert_array_equal(csc.todense(), csr.todense())
-        assert_array_equal(csr.todense(), csr2.todense())
-        assert_array_equal(csr2.todense().transpose(), coo.transpose().todense())
-        assert_array_equal(csr2.todense(), csc2.todense())
-        csr_plus_csc = csr + csc
-        csc_plus_csr = csc + csr
-        assert_array_equal(csr_plus_csc.todense(), (2*A).todense())
-        assert_array_equal(csr_plus_csc.todense(), csc_plus_csr.todense())
 
     def check_add_dense(self):
         """ Check whether adding a dense matrix to a sparse matrix works
@@ -1226,8 +1208,10 @@ class TestDIA(_TestCommon, _TestArithmetic, NumpyTestCase):
     def check_constructor1(self):
         pass
         #TODO add test
+    
 
-class TestBSR(_TestCommon, _TestArithmetic, NumpyTestCase):
+class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
+        _TestMatvecOutput, NumpyTestCase):
     spmatrix = bsr_matrix
 
     def check_constructor1(self):
@@ -1277,16 +1261,7 @@ class TestBSR(_TestCommon, _TestArithmetic, NumpyTestCase):
         A = kron( [[1,0,2,0],[0,1,0,0],[0,0,0,0]], [[0,1,2],[3,0,5]] )
         assert_equal(bsr_matrix(A,blocksize=(2,3)).todense(),A)
         
-        
 
-
-
-#class TestBSC(_TestCommon, _TestArithmetic, NumpyTestCase):
-#    spmatrix = bsc_matrix
-#
-#    def check_constructor1(self):
-#        pass
-#        #TODO add test
                 
 if __name__ == "__main__":
     NumpyTest().run()

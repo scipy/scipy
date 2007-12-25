@@ -232,7 +232,6 @@ class coo_matrix(_data_matrix):
                       indptr, indices, data)
 
             A = csc_matrix((data, indices, indptr), self.shape)
-            A.sort_indices()
             A.sum_duplicates()
             return A
 

@@ -456,6 +456,8 @@ class _cs_matrix(_data_matrix):
 
         The is an *in place* operation
         """
+        self.sort_indices()
+
         fn = sparsetools.csr_sum_duplicates
         M,N = self._swap(self.shape)
         fn( M, N, self.indptr, self.indices, self.data)

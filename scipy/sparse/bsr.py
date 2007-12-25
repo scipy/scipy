@@ -12,7 +12,77 @@ from base import isspmatrix
 from sputils import isdense, upcast, isscalarlike
 
 class bsr_matrix(_block_matrix):
-    #TODO add docstring
+    """Block Sparse Row matrix
+
+    This can be instantiated in several ways:
+      - bsr_matrix(D, [blocksize=(R,C)])
+        with a dense matrix or rank-2 ndarray D
+
+      - bsr_matrix(S, [blocksize=(R,C)])
+        with another sparse matrix S (equivalent to S.tocsr())
+
+      - bsr_matrix((M, N), [blocksize=(R,C), dtype])
+        to construct an empty matrix with shape (M, N)
+        dtype is optional, defaulting to dtype='d'.
+
+      - bsr_matrix((data, ij), [blocksize=(R,C), shape=(M, N)])
+        where data, ij satisfy:
+            a[ij[0, k], ij[1, k]] = data[k]
+
+      - bsr_matrix((data, indices, indptr), [shape=(M, N)])
+        is the standard BSR representation where:
+            the block column indices for row i are stored in
+                indices[ indptr[i]: indices[i+1] ] 
+            and their corresponding block values are stored in
+                data[ indptr[i]: indptr[i+1] ]
+        If the shape parameter is not supplied, the matrix dimensions
+        are inferred from the index arrays.
+
+
+    *Notes*
+    -------
+        The blocksize (R,C) must evenly divide the shape of 
+        the matrix (M,N).  That is, R and C must satisfy the
+        relationship M % R = 0 and N % C = 0.
+    
+        The Block Compressed Row (BSR) format is very similar to the
+        Compressed Sparse Row (CSR) format.  BSR is appropriate for
+        sparse matrices with dense sub matrices like the last example
+        below.  Such matrices often arise, for instance, in finite
+        element discretizations.
+
+
+    *Examples*
+    ----------
+
+    >>> from scipy.sparse import *
+    >>> from scipy import *
+    >>> bsr_matrix( (3,4), dtype='i' ).todense()
+    matrix([[0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0]])
+
+    >>> row = array([0,0,1,2,2,2])
+    >>> col = array([0,2,2,0,1,2])
+    >>> data = kron([1,2,3,4,5,6])
+    >>> bsr_matrix( (data,(row,col)), shape=(3,3) ).todense()
+    matrix([[1, 0, 2],
+            [0, 0, 3],
+            [4, 5, 6]])
+    
+    >>> indptr = array([0,2,3,6])
+    >>> indices = array([0,2,2,0,1,2])
+    >>> data = array([1,2,3,4,5,6]).repeat(4).reshape(6,2,2)
+    >>> bsr_matrix( (data,indices,indptr), shape=(6,6) ).todense()
+    matrix([[1, 1, 0, 0, 2, 2],
+            [1, 1, 0, 0, 2, 2],
+            [0, 0, 0, 0, 3, 3],
+            [0, 0, 0, 0, 3, 3],
+            [4, 4, 5, 5, 6, 6],
+            [4, 4, 5, 5, 6, 6]])
+    
+    """
+
 
     def __mul__(self, other): # self * other
         """ Scalar, vector, or matrix multiplication

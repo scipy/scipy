@@ -252,7 +252,33 @@ class TestSparseTools(NumpyTestCase):
             print output
 
 
-                
+class TestLarge(NumpyTestCase):
+    def check_large(self):
+        # Create a 100x100 matrix with 100 non-zero elements
+        # and play around with it
+        #TODO move this out of Common since it doesn't use spmatrix
+        random.seed(0)
+        A = dok_matrix((100,100))
+        for k in range(100):
+            i = random.randrange(100)
+            j = random.randrange(100)
+            A[i,j] = 1.
+        csr = A.tocsr()
+        csc = A.tocsc()
+        csc2 = csr.tocsc()
+        coo = A.tocoo()
+        csr2 = coo.tocsr()
+        assert_array_equal(A.transpose().todense(), csr.transpose().todense())
+        assert_array_equal(csc.todense(), csr.todense())
+        assert_array_equal(csr.todense(), csr2.todense())
+        assert_array_equal(csr2.todense().transpose(), coo.transpose().todense())
+        assert_array_equal(csr2.todense(), csc2.todense())
+        csr_plus_csc = csr + csc
+        csc_plus_csr = csc + csr
+        assert_array_equal(csr_plus_csc.todense(), (2*A).todense())
+        assert_array_equal(csr_plus_csc.todense(), csc_plus_csr.todense())
+
+
 if __name__ == "__main__":
     NumpyTest().run()
 
