@@ -29,6 +29,8 @@ import maskedarray
 from maskedarray import MaskedArray, MAError, masked, nomask, \
     filled, getmask, getmaskarray, hsplit, make_mask_none, mask_or, make_mask, \
     masked_array
+    
+import scipy.io    
 
 import const as _c
 
@@ -399,14 +401,23 @@ A time series is here defined as the combination of two arrays:
         return _data
     #.........................................................................
     def __array_finalize__(self,obj):
-        MaskedArray.__array_finalize__(self, obj)
         self._dates = getattr(obj, '_dates', DateArray([]))
+        MaskedArray.__array_finalize__(self, obj)
         return
     #.........................................................................
-    def __array_wrap__(self, obj, context=None):
-        result = super(TimeSeries, self).__array_wrap__(obj, context)
-        result._dates = self._dates
-        return result
+#    def __array_wrap__(self, obj, context=None):
+#        result = super(TimeSeries, self).__array_wrap__(obj, context)
+#        result._dates = self._dates
+#        return result
+    #.........................................................................
+    def _update_from(self, obj):
+        super(TimeSeries, self)._update_from(obj)
+        newdates = getattr(obj, '_dates', DateArray([]))
+        if self._dates.size == 0:
+            self._dates = newdates
+        elif newdates.size > 0:
+            _timeseriescompat(self,obj)
+        return    
     #.........................................................................
     def _get_series(self):
         "Returns the series as a regular masked array."
@@ -895,25 +906,54 @@ split = _frommethod('split')
 ##### ---------------------------------------------------------------------------
 #---- ... Additional methods ...
 ##### ---------------------------------------------------------------------------
-def tofile(self, output, sep='\t', format_dates=None):
-    """Writes the TimeSeries to a file.
+def tofile(self, fileobject, format=None,
+           separator=" ", linesep='\n', precision=5,
+           suppress_small=False, keep_open=False): 
+    """Writes the TimeSeries to a file. The series should be 2D at most
 
-:Parameters:
-    - `output` (String) : Name or handle of the output file.
-    - `sep` (String) : Column separator *['\t']*.
-    - `format` (String) : Data format *['%s']*.
-    """
-    if not hasattr(output, 'writeline'):
-        ofile = open(output,'w')
+*Parameters*:
+    series : {TimeSeries}
+        The array to write.
+    fileobject:
+        An open file object or a string to a valid filename.
+    format : {string}
+        Format string for the date. If None, uses the default date format.
+    separator : {string}
+        Separator to write between elements of the array.
+    linesep : {string}
+        Separator to write between rows of array.
+    precision : {integer}
+        Number of digits after the decimal place to write.
+    suppress_small : {boolean}
+        Whether on-zero to round small numbers down to 0.0
+    keep_open : {boolean} 
+        Whether to close the file or to return the open file.
+    
+*Returns*:
+    file : {file object}
+        The open file (if keep_open is non-zero)
+    """   
+    (_dates, _data) = (self._dates, self._series)
+    optpars = dict(separator=separator,linesep=linesep,precision=precision,
+                   suppress_small=suppress_small,keep_open=keep_open)
+    if _dates.size == _data.size:
+        # 1D version
+        tmpfiller = maskedarray.empty((_dates.size,2), dtype=numpy.object_)
+        _data = _data.reshape(-1)
+        tmpfiller[:,1:] = maskedarray.atleast_2d(_data).T
     else:
-        ofile = output
-    if format_dates is None:
-        format_dates = self.dates[0].default_fmtstr()
-    oformat = "%%s%s%s" % (sep,format_dates)
-    for (_dates,_data) in numpy.broadcast(self._dates.ravel().asstrings(),
-                                          filled(self)):
-        ofile.write('%s\n' % sep.join([oformat % (_dates, _data) ]))
-    ofile.close()
+        sshape = list(_data.shape)
+        sshape[-1] += 1
+        tmpfiller = maskedarray.empty(sshape, dtype=numpy.object_)
+        tmpfiller[:,1:] = _data
+    #
+    if format is None:
+        tmpfiller[:,0] = _dates.ravel().tostring()
+    else:
+        tmpfiller[:,0] = [_.strftime(format) for _ in _dates.ravel()]
+    return scipy.io.write_array(fileobject, tmpfiller, **optpars)
+    
+
 TimeSeries.tofile = tofile
 
 #............................................

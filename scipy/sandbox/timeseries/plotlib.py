@@ -39,6 +39,7 @@ from timeseries import const as _c
 
 import warnings
 
+
 #####---------------------------------------------------------------------------
 #---- --- Matplotlib extensions ---
 #####---------------------------------------------------------------------------
@@ -197,6 +198,7 @@ def _daily_finder(vmin, vmax, freq, asformatter):
                        dtype=[('val',int_),('maj',bool_),('min',bool_),('fmt','|S10')])
     info['val'] = numpy.arange(vmin, vmax+1)
     info['fmt'] = ''
+    info['maj'][[0,-1]] = True
 
     def first_label(label_flags):
         if label_flags[0] == 0: return label_flags[1]
@@ -240,18 +242,14 @@ def _daily_finder(vmin, vmax, freq, asformatter):
                     info['fmt'][first_label(month_start)] = '\n\n%b\n%Y'
     # Case 3. Less than 14 months ...............
     elif span <= 1.15 * periodsperyear:
-        d_minus_1 = dates_-1
-
-        month_diff = numpy.abs(dates_.month - d_minus_1.month)
-        week_diff = numpy.abs(dates_.week - d_minus_1.week)
-        minor_idx = (month_diff + week_diff).nonzero()[0]
-
-        info['maj'][month_diff != 0] = True
-        info['min'][minor_idx] = True
+        year_start = period_break(dates_,'year')
+        month_start = period_break(dates_,'month')
+        week_start = period_break(dates_,'week')
+        info['maj'][month_start] = True
+        info['min'][week_start] = True     
+        info['min'][year_start] = False  
+        info['min'][month_start] = False  
         if asformatter:
-            year_start = period_break(dates_,'year')
-            month_start = period_break(dates_,'month')
-
             info['fmt'][month_start] = '%b'
             info['fmt'][year_start] = '%b\n%Y'
             if not has_level_label(year_start):
@@ -259,11 +257,11 @@ def _daily_finder(vmin, vmax, freq, asformatter):
     # Case 4. Less than 2.5 years ...............
     elif span <= 2.5 * periodsperyear:
         year_start = period_break(dates_,'year')
-        month_start = period_break(dates_, 'quarter')
-        info['maj'][year_start] = True
+        quarter_start = period_break(dates_, 'quarter')
+        month_start = period_break(dates_, 'month')
+        info['maj'][quarter_start] = True
         info['min'][month_start] = True
         if asformatter:
-            quarter_start = period_break(dates_, 'quarter')
             info['fmt'][quarter_start] = '%b'
             info['fmt'][year_start] = '%b\n%Y'
     # Case 4. Less than 4 years .................
@@ -272,6 +270,7 @@ def _daily_finder(vmin, vmax, freq, asformatter):
         month_start = period_break(dates_, 'month')
         info['maj'][year_start] = True
         info['min'][month_start] = True
+        info['min'][year_start] = False
         if asformatter:
             month_break = dates_[month_start].month
             jan_or_jul = month_start[(month_break == 1) | (month_break == 7)]
@@ -283,6 +282,7 @@ def _daily_finder(vmin, vmax, freq, asformatter):
         quarter_start = period_break(dates_, 'quarter')
         info['maj'][year_start] = True
         info['min'][quarter_start] = True
+        info['min'][year_start] = False
         if asformatter:
             info['fmt'][year_start] = '%Y'
     # Case 6. More than 12 years ................
@@ -332,6 +332,7 @@ def _monthly_finder(vmin, vmax, freq, asformatter):
     #........................
     elif span <= 2.5 * periodsperyear:
         info['maj'][year_start] = True
+        info['fmt'][quarter_start] = True
         info['min'] = True
         if asformatter:
             quarter_start = (dates_ % 3 == 1).nonzero()
@@ -509,7 +510,7 @@ class TimeSeries_DateFormatter(Formatter):
         self.format = None
         self.freq = freq
         self.locs = []
-        self.formatdict = {}
+        self.formatdict = None
         self.isminor = minor_locator
         self.isdynamic = dynamic_mode
         self.offset = 0
@@ -536,9 +537,10 @@ class TimeSeries_DateFormatter(Formatter):
 
     def _set_default_format(self, vmin, vmax):
         "Returns the default ticks spacing."
+        print "CALLING FINDER",vmin,vmax
         info = self.finder(vmin, vmax, self.freq, True)
         if self.isminor:
-            format = numpy.compress(info['min'] & numpy.logical_not(info['maj']),
+            format = numpy.compress(info['min'] & numpy.logical_not(info['maj']), 
                                     info)
         else:
             format = numpy.compress(info['maj'], info)
@@ -576,7 +578,8 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
 
         """
         # Retrieve the series ...................
-        _series = kwargs.pop('series',None)
+        _series = kwargs.pop('series',
+                             getattr(fig,'series',None))
         Subplot.__init__(self,fig,*args,**kwargs)
 #        # Force fig to be defined .....
 #        if fig is None:
