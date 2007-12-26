@@ -537,7 +537,6 @@ class TimeSeries_DateFormatter(Formatter):
 
     def _set_default_format(self, vmin, vmax):
         "Returns the default ticks spacing."
-        print "CALLING FINDER",vmin,vmax
         info = self.finder(vmin, vmax, self.freq, True)
         if self.isminor:
             format = numpy.compress(info['min'] & numpy.logical_not(info['maj']), 
@@ -603,8 +602,8 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
     #......................................................
     def set_ydata(self, series=None):
         """Sets the base time series."""
-        if self._series is not None:
-            print "WARNING ! Base series is being changed."""
+        #if self._series is not None:
+        #    print "WARNING ! Base series is being changed."""
         self._series = series.ravel()
         if isinstance(series, TimeSeries):
             self.xdata = self.series.dates
@@ -696,9 +695,6 @@ Accepts the same keywords as a standard subplot, plus a specific `series` keywor
     def tsplot(self,*parms,**kwargs):
         """Plots the data parsed in argument.
 This command accepts the same keywords as matplotlib.plot."""
-#        parms = tuple(list(parms) + kwargs.pop('series',None))
-#        print "Parameters: %s - %i" % (parms, len(parms))
-#        print "OPtions: %s - %i" % (kwargs, len(kwargs))
         parms = self._check_plot_params(*parms)
         self.legendlabels.append(kwargs.get('label',None))
         plotted = Subplot.plot(self, *parms,**kwargs)
