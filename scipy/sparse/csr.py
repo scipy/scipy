@@ -160,8 +160,10 @@ class csr_matrix(_cs_matrix):
             self.shape = (M, N)
 
             indxs = numpy.where(col == self.indices[self.indptr[row]:self.indptr[row+1]])
+
             if len(indxs[0]) == 0:
                 #value not present
+                self.sort_indices()
                 newindx = self.indices[self.indptr[row]:self.indptr[row+1]].searchsorted(col)
                 newindx += self.indptr[row]
 

@@ -175,7 +175,7 @@ class _cs_matrix(_data_matrix):
                 if numpy.diff(self.indptr).min() < 0:
                     raise ValueError,'index pointer values must form a " \
                                         "non-decreasing sequence'
-        
+
         #if not self.has_sorted_indices():
         #    warn('Indices were not in sorted order.  Sorting indices.')
         #    self.sort_indices()
