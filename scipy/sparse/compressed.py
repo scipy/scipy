@@ -7,13 +7,14 @@ from warnings import warn
 
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
-        empty, hstack, isscalar, ndarray, shape, searchsorted, empty_like
+        empty, hstack, isscalar, ndarray, shape, searchsorted, empty_like, \
+        where
 
 from base import spmatrix, isspmatrix
 from data import _data_matrix
 import sparsetools
 from sputils import upcast, to_native, isdense, isshape, getdtype, \
-        isscalarlike
+        isscalarlike, isintlike
 
 
 
@@ -389,6 +390,56 @@ class _cs_matrix(_data_matrix):
             return spmatrix.sum(self,axis)
             raise ValueError, "axis out of bounds"
 
+    def _get_single_element(self,row,col):
+        M, N = self.shape
+        if (row < 0):
+            row = M + row
+        if (col < 0):
+            col = N + col
+        if not (0<=row<M) or not (0<=col<N):
+            raise IndexError, "index out of bounds"
+        
+        major_index, minor_index = self._swap((row,col))
+
+        start = self.indptr[major_index]
+        end   = self.indptr[major_index+1]
+        indxs = where(minor_index == self.indices[start:end])[0]
+
+        num_matches = len(indxs)
+
+        if num_matches == 0:
+            # entry does not appear in the matrix
+            return 0
+        elif num_matches == 1:
+            return self.data[start:end][indxs[0]]
+        else:
+            raise ValueError,'nonzero entry (%d,%d) occurs more than once' % (row,col)
+    
+    def __getitem__(self, key):
+        if isinstance(key, tuple):
+            row = key[0]
+            col = key[1]
+           
+            #TODO implement CSR[ [1,2,3], X ] with sparse matmat
+
+            if isintlike(row) and isintlike(col):
+                return self._get_single_element(row,col)
+            else:
+                major,minor = self._swap((row,col))
+                if isintlike(major) and isinstance(minor,slice):
+                    minor_shape = self._swap(self.shape)[1]
+                    start, stop, stride = minor.indices(minor_shape)
+                    out_shape   = self._swap( (1, stop-start) )
+                    return self._get_slice( major, start, stop, stride, out_shape)
+                elif isinstance( row, slice) or isinstance(col, slice):
+                    return self.get_submatrix( row, col )
+                else:
+                    raise NotImplementedError
+
+        elif isintlike(key):
+            return self[key, :]
+        else:
+            raise IndexError, "invalid index"
 
     def _get_slice(self, i, start, stop, stride, shape):
         """Returns a copy of the elements 
@@ -399,6 +450,9 @@ class _cs_matrix(_data_matrix):
             raise ValueError, "slicing with step != 1 not supported"
         if stop <= start:
             raise ValueError, "slice width must be >= 1"
+
+        #TODO make [i,:] faster
+        #TODO implement [i,x:y:z]
 
         indices = []
 

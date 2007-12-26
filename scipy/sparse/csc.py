@@ -92,61 +92,6 @@ class csc_matrix(_cs_matrix):
         for r in xrange(self.shape[0]):
             yield csr[r,:]
 
-    def __getitem__(self, key):
-        #TODO unify these in _cs_matrix
-        if isinstance(key, tuple):
-            row = key[0]
-            col = key[1]
-            
-            if isinstance(col, slice):
-                # Returns a new matrix!
-                return self.get_submatrix( row, col )
-            elif isinstance(row, slice):
-                return self._getslice(row, col)
-            
-            M, N = self.shape
-            if (row < 0):
-                row = M + row
-            if (col < 0):
-                col = N + col
-            if not (0<=row<M) or not (0<=col<N):
-                raise IndexError, "index out of bounds"
-            
-            major_index, minor_index = self._swap((row,col))
-
-            start = self.indptr[major_index]
-            end   = self.indptr[major_index+1]
-            indxs = where(minor_index == self.indices[start:end])[0]
-
-            num_matches = len(indxs)
-
-            if num_matches == 0:
-                # entry does not appear in the matrix
-                return 0
-            elif num_matches == 1:
-                return self.data[start:end][indxs[0]]
-            else:
-                raise ValueError,'nonzero entry (%d,%d) occurs more than once' % (row,col)
-        
-        elif isintlike(key):
-            # Was: return self.data[key]
-            # If this is allowed, it should return the relevant row, as for
-            # dense matrices (and __len__ should be supported again).
-            raise IndexError, "integer index not supported for csc_matrix"
-        else:
-            raise IndexError, "invalid index"
-    
-    def _getslice(self, i, myslice):
-        return self._getcolslice(i, myslice)
-
-    def _getcolslice(self, myslice, j):
-        """Returns a view of the elements [myslice.start:myslice.stop, j].
-        """
-        start, stop, stride = myslice.indices(self.shape[0])
-        return _cs_matrix._get_slice(self, j, start, stop, stride, (stop - start, 1))
-
-
-
     def __setitem__(self, key, val):
         if isinstance(key, tuple):
             row = key[0]

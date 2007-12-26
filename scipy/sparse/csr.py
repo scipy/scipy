@@ -14,7 +14,7 @@ from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
 from base import spmatrix,isspmatrix
 from sparsetools import csr_tocsc
 from sputils import upcast, to_native, isdense, isshape, getdtype, \
-        isscalarlike
+        isscalarlike, isintlike
 
 from compressed import _cs_matrix,resize1d
 
@@ -87,55 +87,6 @@ class csr_matrix(_cs_matrix):
         M,N = self.shape
         return csc_matrix((self.data,self.indices,self.indptr),(N,M),copy=copy)
 
-    def __getitem__(self, key):
-        #TODO unify these in _cs_matrix
-        if isinstance(key, tuple):
-            row = key[0]
-            col = key[1]
-            
-            if isinstance(row, slice):
-                # Returns a new matrix!
-                return self.get_submatrix( row, col )
-            elif isinstance(col, slice):
-                return self._getslice(row, col)
-            
-            M, N = self.shape
-            if (row < 0):
-                row = M + row
-            if (col < 0):
-                col = N + col
-            if not (0<=row<M) or not (0<=col<N):
-                raise IndexError, "index out of bounds"
-            
-            major_index, minor_index = self._swap((row,col))
-
-            start = self.indptr[major_index]
-            end   = self.indptr[major_index+1]
-            indxs = where(minor_index == self.indices[start:end])[0]
-
-            num_matches = len(indxs)
-
-            if num_matches == 0:
-                # entry does not appear in the matrix
-                return 0
-            elif num_matches == 1:
-                return self.data[start:end][indxs[0]]
-            else:
-                raise ValueError,'nonzero entry (%d,%d) occurs more than once' % (row,col)
-
-        elif isintlike(key):
-            return self[key, :]
-        else:
-            raise IndexError, "invalid index"
-
-    def _getslice(self, i, myslice):
-        return self._getrowslice(i, myslice)
-
-    def _getrowslice(self, i, myslice):
-        """Returns a view of the elements [i, myslice.start:myslice.stop].
-        """
-        start, stop, stride = myslice.indices(self.shape[1])
-        return _cs_matrix._get_slice(self, i, start, stop, stride, (1, stop-start))
 
     def __setitem__(self, key, val):
         if isinstance(key, tuple):
@@ -235,15 +186,6 @@ class csr_matrix(_cs_matrix):
             #TODO make this more efficient
             return self.tocoo(copy=False).tobsr(blocksize=blocksize)
     
-#    def tobsc(self,blocksize=None):
-#        if blocksize in [None, (1,1)]:
-#            from bsc import bsc_matrix
-#            csc = self.tocsc()
-#            arg1 = (csc.data.reshape(-1,1,1),csc.indices,csc.indptr)  
-#            return bsc_matrix( arg1, shape=self.shape )
-#        else:
-#            #TODO make this more efficient
-#            return self.tocoo(copy=False).tobsc(blocksize=blocksize)
     
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created).
@@ -251,6 +193,7 @@ class csr_matrix(_cs_matrix):
         1. a slice object
         2. a tuple (from, to)
         3. a scalar for single row/column selection."""
+
         aux = _cs_matrix._get_submatrix( self, self.shape[0], self.shape[1],
                                          slice0, slice1 )
         nr, nc = aux[3:]
