@@ -94,3 +94,8 @@ def test_time():
     x = 1
     time = measure("x+1",times=100,label='test_time')
     info('Time taken: %s' % time)
+
+def test_warn():
+    "A simple test that prints a warning."
+    warn('Bad things are happening...')
+    
