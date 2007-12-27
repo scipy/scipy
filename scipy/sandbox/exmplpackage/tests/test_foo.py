@@ -23,13 +23,9 @@ will only run tests labeled 'slow' (for which there's a decorator) and this::
 will *exclude* all slow tests from a run.
 """
 
-from numpy.testing import NumpyTestCase
-
-import nose
-
-# These two modules will need to be later put in the right places...
-from ntest import NumpyTestCase2
-import decorators as dec
+# This single import statement should provide all the common functionality for
+# scipy tests in a single location.
+from tstsupport import *
 
 def setup():
     """Module-level setup"""
@@ -40,7 +36,7 @@ def teardown():
     print 'doing teardown'
 
 
-class ClassicTest(NumpyTestCase2):
+class ClassicTest(TestCase):
     """A regular unittest, with the extra Numpy features."""
     def test_1(self):
         print 'First test'
