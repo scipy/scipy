@@ -14,7 +14,7 @@ def measure(code_str,times=1,label=None):
     locs,globs = frame.f_locals,frame.f_globals
 
     code = compile(code_str,
-                   'Test name: %s ' % test_name,
+                   'Test name: %s ' % label,
                    'exec')
     i = 0
     elapsed = jiffies()
