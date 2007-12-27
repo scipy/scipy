@@ -88,3 +88,9 @@ def test_nasty():
     "A difficult test that takes a long time..."
     print '*** nasty slow test ***'
 
+
+
+def test_time():
+    "A simple test that times things"
+    x = 1
+    measure("x+1",'test_time')
