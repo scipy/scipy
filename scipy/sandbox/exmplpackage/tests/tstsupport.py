@@ -5,6 +5,8 @@ in a single location, so that test script can just import it and work right
 away.
 """
 
+from unittest import TestCase
+
 import nose
 
 # These two modules will need to be later put in the right places...
