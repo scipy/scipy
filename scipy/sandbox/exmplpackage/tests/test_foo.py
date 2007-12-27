@@ -89,8 +89,8 @@ def test_nasty():
     print '*** nasty slow test ***'
 
 
-
 def test_time():
     "A simple test that times things"
     x = 1
-    measure("x+1",'test_time')
+    time=measure("x+1",test_name='test_time')
+    info('Time taken: %s' % time)
