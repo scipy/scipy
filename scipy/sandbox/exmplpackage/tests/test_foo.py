@@ -99,3 +99,7 @@ def test_warn():
     "A simple test that prints a warning."
     warn('Bad things are happening...')
     
+def test_error():
+    "A simple test that prints an error message."
+    error('Really bad things are happening...')
+    

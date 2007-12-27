@@ -3,7 +3,7 @@
 
 import sys
 
-from numpy.distutils.misc_util import yellow_text
+from numpy.distutils.misc_util import yellow_text, red_text
 from numpy.testing.utils import jiffies
 
 def measure(code_str,times=1,label=None):
@@ -24,10 +24,14 @@ def measure(code_str,times=1,label=None):
     elapsed = jiffies() - elapsed
     return 0.01*elapsed
 
+def info(message):
+    print >> sys.stdout, message
+    sys.stdout.flush()
+
 def warn(message):
     print >> sys.stderr,yellow_text('Warning: %s' % (message))
     sys.stderr.flush()
 
-def info(message):
-    print >> sys.stdout, message
-    sys.stdout.flush()
+def error(message):
+    print >> sys.stderr,red_text('Error: %s' % (message))
+    sys.stderr.flush()
