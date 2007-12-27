@@ -6,7 +6,7 @@ import sys
 from numpy.distutils.misc_util import yellow_text
 from numpy.testing.utils import jiffies
 
-def measure(code_str,times=1,test_name=None):
+def measure(code_str,times=1,label=None):
     """ Return elapsed time for executing code_str in the
     namespace of the caller for given times.
     """

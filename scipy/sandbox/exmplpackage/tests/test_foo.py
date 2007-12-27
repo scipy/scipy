@@ -92,5 +92,5 @@ def test_nasty():
 def test_time():
     "A simple test that times things"
     x = 1
-    time=measure("x+1",test_name='test_time')
+    time = measure("x+1",times=100,label='test_time')
     info('Time taken: %s' % time)
