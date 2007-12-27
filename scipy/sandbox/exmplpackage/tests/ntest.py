@@ -10,11 +10,11 @@ def measure(code_str,times=1,test_name=None):
     """ Return elapsed time for executing code_str in the
     namespace of the caller for given times.
     """
-    frame = sys._get_frame(1)
+    frame = sys._getframe(1)
     locs,globs = frame.f_locals,frame.f_globals
 
     code = compile(code_str,
-                   'Test name: %s '+test_name,
+                   'Test name: %s ' % test_name,
                    'exec')
     i = 0
     elapsed = jiffies()
