@@ -52,7 +52,7 @@ def print_assert_equal(test_string,actual,desired):
 #   int, float, complex
 #----------------------------------------------------------------------------
 
-class TestNumpyComplexScalarConverter(NumpyTestCase):
+class NumpyComplexScalarConverter(NumpyTestCase):
     compiler = ''
 
     def setUp(self):
@@ -112,15 +112,23 @@ class TestNumpyComplexScalarConverter(NumpyTestCase):
         result = inline_tools.inline("return_val=1.0/a;",['a'])
         assert( result==.5-.5j)
 
-class TestMsvcNumpyComplexScalarConverter(
-                  TestNumpyComplexScalarConverter):
-    compiler = 'msvc'
-class TestUnixNumpyComplexScalarConverter(
-                  TestNumpyComplexScalarConverter):
-    compiler = ''
-class TestGccNumpyComplexScalarConverter(
-                  TestNumpyComplexScalarConverter):
-    compiler = 'gcc'
+# class TestMsvcNumpyComplexScalarConverter(
+#                   TestNumpyComplexScalarConverter):
+#     compiler = 'msvc'
+# class TestUnixNumpyComplexScalarConverter(
+#                   TestNumpyComplexScalarConverter):
+#     compiler = ''
+# class TestGccNumpyComplexScalarConverter(
+#                   TestNumpyComplexScalarConverter):
+#     compiler = 'gcc'
+for _n in dir():
+    if _n[-9:]=='Converter':
+        if msvc_exists():
+            exec "class Test%sMsvc(%s):\n    compiler = 'msvc'"%(_n,_n)
+        else:
+            exec "class Test%sUnix(%s):\n    compiler = ''"%(_n,_n)
+        if gcc_exists():
+            exec "class Test%sGcc(%s):\n    compiler = 'gcc'"%(_n,_n)
 
 
 def setup_test_location():
@@ -146,14 +154,14 @@ def remove_file(name):
 
 if not msvc_exists():
     for _n in dir():
-        if _n[:10]=='test_msvc_': exec 'del '+_n
+        if _n[:8]=='TestMsvc': exec 'del '+_n
 else:
     for _n in dir():
-        if _n[:10]=='test_unix_': exec 'del '+_n
+        if _n[:8]=='TestUnix': exec 'del '+_n
 
 if not (gcc_exists() and msvc_exists() and sys.platform == 'win32'):
     for _n in dir():
-        if _n[:9]=='test_gcc_': exec 'del '+_n
+        if _n[:7]=='TestGcc': exec 'del '+_n
 
 if __name__ == "__main__":
     NumpyTest('weave.numpy_scalar_spec').run()

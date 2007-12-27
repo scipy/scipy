@@ -34,7 +34,7 @@ class TestDictHasKey(NumpyTestCase):
         a = {}
         a[key] = 12345
         code = """
-               return_val =  key in a;
+               return_val =  a.has_key(key);
                """
         res = inline_tools.inline(code,['a','key'])
         assert res
@@ -42,7 +42,7 @@ class TestDictHasKey(NumpyTestCase):
         a = {}
         a[1234] = 12345
         code = """
-               return_val = 1234 in a;
+               return_val = a.has_key(1234);
                """
         res = inline_tools.inline(code,['a'])
         assert res
@@ -50,7 +50,7 @@ class TestDictHasKey(NumpyTestCase):
         a = {}
         a[1234.] = 12345
         code = """
-               return_val = 1234. in a;
+               return_val = a.has_key(1234.);
                """
         res = inline_tools.inline(code,['a'])
         assert res
@@ -59,7 +59,7 @@ class TestDictHasKey(NumpyTestCase):
         a[1+1j] = 12345
         key = 1+1j
         code = """
-               return_val = key in a;
+               return_val = a.has_key(key);
                """
         res = inline_tools.inline(code,['a','key'])
         assert res
@@ -68,7 +68,7 @@ class TestDictHasKey(NumpyTestCase):
         a = {}
         a["b"] = 12345
         code = """
-               return_val = "b" in a;
+               return_val = a.has_key("b");
                """
         res = inline_tools.inline(code,['a'])
         assert res
@@ -77,7 +77,7 @@ class TestDictHasKey(NumpyTestCase):
         a["b"] = 12345
         key_name = "b"
         code = """
-               return_val = key_name in a;
+               return_val = a.has_key(key_name);
                """
         res = inline_tools.inline(code,['a','key_name'])
         assert res
@@ -85,7 +85,7 @@ class TestDictHasKey(NumpyTestCase):
         a = {}
         a["b"] = 12345
         code = """
-               return_val = "c" in a;
+               return_val = a.has_key("c");
                """
         res = inline_tools.inline(code,['a'])
         assert not res

@@ -866,6 +866,10 @@ public:
     object _other = object(other);
     return operator=(_other);
   }
+  keyed_ref& operator=(const keyed_ref& other) {
+    object _other = object(other);
+    return operator=(_other);
+  }
 };
 } // namespace
 

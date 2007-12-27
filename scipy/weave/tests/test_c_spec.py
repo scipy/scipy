@@ -17,6 +17,7 @@ from weave.catalog import unique_file
 restore_path()
 
 
+
 def unique_mod(d,file_name):
     f = os.path.basename(unique_file(d,file_name))
     m = os.path.splitext(f)[0]
@@ -48,7 +49,24 @@ def print_assert_equal(test_string,actual,desired):
 # Scalar conversion test classes
 #   int, float, complex
 #----------------------------------------------------------------------------
-class TestIntConverter(NumpyTestCase):
+# compilers = []
+# for c in ('gcc','msvc'):
+#     mod_name = 'empty' + c
+#     mod_name = unique_mod(test_dir,mod_name)
+#     mod = ext_tools.ext_module(mod_name)
+#     # a = 1
+#     # code = "a=2;"
+#     # test = ext_tools.ext_function('test',code,['a'])
+#     # mod.add_function(test)
+#     try:
+#         mod.compile(location = test_dir, compiler = c)
+#     except CompileError:
+#         print "Probably don't have Compiler: %s"%c
+#     else:
+#         compilers.append(c)
+    
+
+class IntConverter(NumpyTestCase):
     compiler = ''
     def check_type_match_string(self,level=5):
         s = c_spec.int_converter()
@@ -103,11 +121,11 @@ class TestIntConverter(NumpyTestCase):
 
         assert( c == 3)
 
-class TestFloatConverter(NumpyTestCase):
+class FloatConverter(NumpyTestCase):
     compiler = ''
     def check_type_match_string(self,level=5):
         s = c_spec.float_converter()
-        assert( not s.type_match('string') )
+        assert( not s.type_match('string'))
     def check_type_match_int(self,level=5):
         s = c_spec.float_converter()
         assert(not s.type_match(5))
@@ -158,7 +176,7 @@ class TestFloatConverter(NumpyTestCase):
         c = test(b)
         assert( c == 3.)
 
-class TestComplexConverter(NumpyTestCase):
+class ComplexConverter(NumpyTestCase):
     compiler = ''
     def check_type_match_string(self,level=5):
         s = c_spec.complex_converter()
@@ -216,7 +234,7 @@ class TestComplexConverter(NumpyTestCase):
 # File conversion tests
 #----------------------------------------------------------------------------
 
-class TestFileConverter(NumpyTestCase):
+class FileConverter(NumpyTestCase):
     compiler = ''
     def check_py_to_file(self,level=5):
         import tempfile
@@ -250,14 +268,14 @@ class TestFileConverter(NumpyTestCase):
 # Instance conversion tests
 #----------------------------------------------------------------------------
 
-class TestInstanceConverter(NumpyTestCase):
+class InstanceConverter(NumpyTestCase):
     pass
 
 #----------------------------------------------------------------------------
 # Callable object conversion tests
 #----------------------------------------------------------------------------
 
-class TestCallableConverter(NumpyTestCase):
+class CallableConverter(NumpyTestCase):
     compiler=''
     def check_call_function(self,level=5):
         import string
@@ -277,7 +295,7 @@ class TestCallableConverter(NumpyTestCase):
         desired = func(search_str,sub_str)
         assert(desired == actual)
 
-class TestSequenceConverter(NumpyTestCase):
+class SequenceConverter(NumpyTestCase):
     compiler = ''
     def check_convert_to_dict(self,level=5):
         d = {}
@@ -292,7 +310,7 @@ class TestSequenceConverter(NumpyTestCase):
         t = ()
         inline_tools.inline("",['t'],compiler=self.compiler,force=1)
 
-class TestStringConverter(NumpyTestCase):
+class StringConverter(NumpyTestCase):
     compiler = ''
     def check_type_match_string(self,level=5):
         s = c_spec.string_converter()
@@ -347,7 +365,7 @@ class TestStringConverter(NumpyTestCase):
         c = test(b)
         assert( c == 'hello')
 
-class TestListConverter(NumpyTestCase):
+class ListConverter(NumpyTestCase):
     compiler = ''
     def check_type_match_bad(self,level=5):
         s = c_spec.list_converter()
@@ -458,7 +476,7 @@ class TestListConverter(NumpyTestCase):
         print 'python:', t2 - t1
         assert( sum1 == sum2 and sum1 == sum3)
 
-class TestTupleConverter(NumpyTestCase):
+class TupleConverter(NumpyTestCase):
     compiler = ''
     def check_type_match_bad(self,level=5):
         s = c_spec.tuple_converter()
@@ -511,7 +529,7 @@ class TestTupleConverter(NumpyTestCase):
         assert( c == ('hello',None))
 
 
-class TestDictConverter(NumpyTestCase):
+class DictConverter(NumpyTestCase):
     """ Base Class for dictionary conversion tests.
     """
 
@@ -570,85 +588,99 @@ class TestDictConverter(NumpyTestCase):
         c = test(b)
         assert( c['hello'] == 5)
 
-class TestMsvcIntConverter(TestIntConverter):
-    compiler = 'msvc'
-class TestUnixIntConverter(TestIntConverter):
-    compiler = ''
-class TestGccIntConverter(TestIntConverter):
-    compiler = 'gcc'
+# for compiler in compilers:
+    # for name,klass in globals().iteritems():
+    #     if name[:4]=="Test" and name[-9:] == "Converter":
+    #         exec("class %s%s(%s):\n    compiler = '%s'"%(name,compiler,name,compiler))
+# for converter in
+for _n in dir():
+    if _n[-9:]=='Converter':
+        if msvc_exists():
+            exec "class Test%sMsvc(%s):\n    compiler = 'msvc'"%(_n,_n)
+        else:
+            exec "class Test%sUnix(%s):\n    compiler = ''"%(_n,_n)
+        if gcc_exists():
+            exec "class Test%sGcc(%s):\n    compiler = 'gcc'"%(_n,_n)
 
-class TestMsvcFloatConverter(TestFloatConverter):
-    compiler = 'msvc'
-
-class TestMsvcFloatConverter(TestFloatConverter):
-    compiler = 'msvc'
-class TestUnixFloatConverter(TestFloatConverter):
-    compiler = ''
-class TestGccFloatConverter(TestFloatConverter):
-    compiler = 'gcc'
-
-class TestMsvcComplexConverter(TestComplexConverter):
-    compiler = 'msvc'
-class TestUnixComplexConverter(TestComplexConverter):
-    compiler = ''
-class TestGccComplexConverter(TestComplexConverter):
-    compiler = 'gcc'
-
-class TestMsvcFileConverter(TestFileConverter):
-    compiler = 'msvc'
-class TestUnixFileConverter(TestFileConverter):
-    compiler = ''
-class TestGccFileConverter(TestFileConverter):
-    compiler = 'gcc'
-
-class TestMsvcCallableConverter(TestCallableConverter):
-    compiler = 'msvc'
-class TestUnixCallableConverter(TestCallableConverter):
-    compiler = ''
-class TestGccCallableConverter(TestCallableConverter):
-    compiler = 'gcc'
-
-class TestMsvcSequenceConverter(TestSequenceConverter):
-    compiler = 'msvc'
-class TestUnixSequenceConverter(TestSequenceConverter):
-    compiler = ''
-class TestGccSequenceConverter(TestSequenceConverter):
-    compiler = 'gcc'
-
-class TestMsvcStringConverter(TestStringConverter):
-    compiler = 'msvc'
-class TestUnixStringConverter(TestStringConverter):
-    compiler = ''
-class TestGccStringConverter(TestStringConverter):
-    compiler = 'gcc'
-
-class TestMsvcListConverter(TestListConverter):
-    compiler = 'msvc'
-class TestUnixListConverter(TestListConverter):
-    compiler = ''
-class TestGccListConverter(TestListConverter):
-    compiler = 'gcc'
-
-class TestMsvcTupleConverter(TestTupleConverter):
-    compiler = 'msvc'
-class TestUnixTupleConverter(TestTupleConverter):
-    compiler = ''
-class TestGccTupleConverter(TestTupleConverter):
-    compiler = 'gcc'
-
-class TestMsvcDictConverter(TestDictConverter):
-    compiler = 'msvc'
-class TestUnixDictConverter(TestDictConverter):
-    compiler = ''
-class TestGccDictConverter(TestDictConverter):
-    compiler = 'gcc'
-
-class TestMsvcInstanceConverter(TestInstanceConverter):
-    compiler = 'msvc'
-class TestUnixInstanceConverter(TestInstanceConverter):
-    compiler = ''
-class TestGccInstanceConverter(TestInstanceConverter):
-    compiler = 'gcc'
+# class TestMsvcIntConverter(TestIntConverter):
+#     compiler = 'msvc'
+# class TestUnixIntConverter(TestIntConverter):
+#     compiler = ''
+# class TestGccIntConverter(TestIntConverter):
+#     compiler = 'gcc'
+# 
+# class TestMsvcFloatConverter(TestFloatConverter):
+#     compiler = 'msvc'
+# 
+# class TestMsvcFloatConverter(TestFloatConverter):
+#     compiler = 'msvc'
+# class TestUnixFloatConverter(TestFloatConverter):
+#     compiler = ''
+# class TestGccFloatConverter(TestFloatConverter):
+#     compiler = 'gcc'
+# 
+# class TestMsvcComplexConverter(TestComplexConverter):
+#     compiler = 'msvc'
+# class TestUnixComplexConverter(TestComplexConverter):
+#     compiler = ''
+# class TestGccComplexConverter(TestComplexConverter):
+#     compiler = 'gcc'
+# 
+# class TestMsvcFileConverter(TestFileConverter):
+#     compiler = 'msvc'
+# class TestUnixFileConverter(TestFileConverter):
+#     compiler = ''
+# class TestGccFileConverter(TestFileConverter):
+#     compiler = 'gcc'
+# 
+# class TestMsvcCallableConverter(TestCallableConverter):
+#     compiler = 'msvc'
+# class TestUnixCallableConverter(TestCallableConverter):
+#     compiler = ''
+# class TestGccCallableConverter(TestCallableConverter):
+#     compiler = 'gcc'
+# 
+# class TestMsvcSequenceConverter(TestSequenceConverter):
+#     compiler = 'msvc'
+# class TestUnixSequenceConverter(TestSequenceConverter):
+#     compiler = ''
+# class TestGccSequenceConverter(TestSequenceConverter):
+#     compiler = 'gcc'
+# 
+# class TestMsvcStringConverter(TestStringConverter):
+#     compiler = 'msvc'
+# class TestUnixStringConverter(TestStringConverter):
+#     compiler = ''
+# class TestGccStringConverter(TestStringConverter):
+#     compiler = 'gcc'
+# 
+# class TestMsvcListConverter(TestListConverter):
+#     compiler = 'msvc'
+# class TestUnixListConverter(TestListConverter):
+#     compiler = ''
+# class TestGccListConverter(TestListConverter):
+#     compiler = 'gcc'
+# 
+# class TestMsvcTupleConverter(TestTupleConverter):
+#     compiler = 'msvc'
+# class TestUnixTupleConverter(TestTupleConverter):
+#     compiler = ''
+# class TestGccTupleConverter(TestTupleConverter):
+#     compiler = 'gcc'
+# 
+# class TestMsvcDictConverter(TestDictConverter):
+#     compiler = 'msvc'
+# class TestUnixDictConverter(TestDictConverter):
+#     compiler = ''
+# class TestGccDictConverter(TestDictConverter):
+#     compiler = 'gcc'
+# 
+# class TestMsvcInstanceConverter(TestInstanceConverter):
+#     compiler = 'msvc'
+# class TestUnixInstanceConverter(TestInstanceConverter):
+#     compiler = ''
+# class TestGccInstanceConverter(TestInstanceConverter):
+#     compiler = 'gcc'
 
 def setup_test_location():
     import tempfile
@@ -671,16 +703,16 @@ def teardown_test_location():
 def remove_file(name):
     test_dir = os.path.abspath(name)
 
-if not msvc_exists():
-    for _n in dir():
-        if _n[:10]=='test_msvc_': exec 'del '+_n
-else:
-    for _n in dir():
-        if _n[:10]=='test_unix_': exec 'del '+_n
-
-if not (gcc_exists() and msvc_exists() and sys.platform == 'win32'):
-    for _n in dir():
-        if _n[:9]=='test_gcc_': exec 'del '+_n
-
+# if not msvc_exists():
+#     for _n in dir():
+#         if _n[:8]=='TestMsvc': exec 'del '+_n
+# else:
+#     for _n in dir():
+#         if _n[:8]=='TestUnix': exec 'del '+_n
+# 
+# if not (gcc_exists() and msvc_exists() and sys.platform == 'win32'):
+#     for _n in dir():
+#         if _n[:7]=='TestGcc': exec 'del '+_n
+# 
 if __name__ == "__main__":
     NumpyTest('weave.c_spec').run()

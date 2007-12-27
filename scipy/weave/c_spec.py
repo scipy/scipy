@@ -310,7 +310,7 @@ num_to_c_types['h'] = 'short'
 num_to_c_types['H'] = 'npy_ushort'
 num_to_c_types['i'] = 'int'
 num_to_c_types['I'] = 'npy_uint'
-
+num_to_c_types['?'] = 'bool'
 num_to_c_types['l'] = 'long'
 num_to_c_types['L'] = 'npy_ulong'
 
