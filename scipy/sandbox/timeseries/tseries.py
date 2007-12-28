@@ -1234,12 +1234,12 @@ def adjust_endpoints(a, start_date=None, end_date=None):
 
     newseries = numeric.empty(newshape, dtype=a.dtype).view(type(a))
     newseries.__setmask__(numeric.ones(newseries.shape, dtype=bool_))
+    newseries._update_from(a)
     newseries._dates = newdates
     if dstart is not None:
         start_date = max(start_date, dstart)
         end_date = min(end_date, dend) + 1
         newseries[start_date:end_date] = a[start_date:end_date]
-    newseries._update_from(a)
     return newseries
 #.....................................................
 def align_series(*series, **kwargs):
@@ -1339,9 +1339,9 @@ def _convert1d(series, freq, func, position, *args, **kwargs):
         tempData = maskedarray.apply_along_axis(func, -1, tempData, *args, **kwargs)
 
     newseries = tempData.view(type(series))
+    newseries._update_from(series)
     newseries._dates = date_array(start_date=start_date, length=len(newseries),
                                   freq=toFreq)
-    newseries._update_from(series)
     return newseries
 
 def convert(series, freq, func=None, position='END', *args, **kwargs):
@@ -1751,3 +1751,7 @@ if __name__ == '__main__':
         import dates
         tt = time_series([.2,.2,.3],start_date=dates.Date('T',string='2007-10-10 01:10'))
         tt._dates += [0, 9, 18]
+        
+    if 1:
+        series = time_series(maskedarray.arange(48), start_date=now('M'))
+        aseries = series.convert('A')
