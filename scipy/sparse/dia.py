@@ -15,22 +15,23 @@ class dia_matrix(_data_matrix):
 
     This can be instantiated in several ways:
       - dia_matrix(D)
-        with a dense matrix
+        - with a dense matrix
 
       - dia_matrix(S)
-        with another sparse matrix S (equivalent to S.todia())
+        - with another sparse matrix S (equivalent to S.todia())
 
       - dia_matrix((M, N), [dtype])
-        to construct an empty matrix with shape (M, N)
-        dtype is optional, defaulting to dtype='d'.
+        - to construct an empty matrix with shape (M, N)
+          dtype is optional, defaulting to dtype='d'.
 
       - dia_matrix((data, diags), shape=(M, N))
-        where the data[k,:] stores the diagonal entries for
-        diagonal diag[k] (See example below)
+        - where the data[k,:] stores the diagonal entries for
+          diagonal diag[k] (See example below)
 
 
-    *Examples*
-    ----------
+    Examples
+    ========
+
 
     >>> from scipy.sparse import *
     >>> from scipy import *

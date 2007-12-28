@@ -14,9 +14,7 @@ import sparsetools
 from sparsetools import csr_count_blocks
 
 def extract_diagonal(A):
-    """
-    extract_diagonal(A) returns the main diagonal of A.
-    """
+    """extract_diagonal(A) returns the main diagonal of A."""
     #TODO extract k-th diagonal
     if isspmatrix_csr(A) or isspmatrix_csc(A):
         fn = getattr(sparsetools, A.format + "_diagonal")
@@ -33,7 +31,7 @@ def estimate_blocksize(A,efficiency=0.7):
     """Attempt to determine the blocksize of a sparse matrix
 
     Returns a blocksize=(r,c) such that
-        A.nnz / A.tobsr( (r,c) ).nnz > efficiency
+        - A.nnz / A.tobsr( (r,c) ).nnz > efficiency
     """
     if not (isspmatrix_csr(A) or isspmatrix_csc(A)):
         A = csr_matrix(A)

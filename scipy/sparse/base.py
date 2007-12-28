@@ -174,13 +174,15 @@ class spmatrix(object):
     def asformat(self, format):
         """Return this matrix in a given sparse format
 
-        *Parameters*:
-            format : desired sparse matrix format
-                If format is None then no conversion is performed
-                Other possible values include:
-                    "csr" for csr_matrix format
-                    "csc" for csc_matrix format
-                    "dok" for dok_matrix format and so on
+        Parameters
+        ==========
+            - format : desired sparse matrix format
+              - If format is None then no conversion is performed
+              - Other possible values include:
+                -  "csr" for csr_matrix format
+                -  "csc" for csc_matrix format
+                -  "dok" for dok_matrix format and so on
+
         """
 
         if format is None or format == self.format:
@@ -369,11 +371,12 @@ class spmatrix(object):
     def rmatvec(self, other, conjugate=True):
         """Multiplies the vector 'other' by the sparse matrix, returning a
         dense vector as a result.
-
+        
         If 'conjugate' is True:
-            returns A.transpose().conj() * other
+            - returns A.transpose().conj() * other
         Otherwise:
-            returns A.transpose() * other.
+            - returns A.transpose() * other.
+        
         """
         return self.tocsr().rmatvec(other, conjugate=conjugate)
 

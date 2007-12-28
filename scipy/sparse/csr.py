@@ -1,5 +1,4 @@
-"""Compressed Sparse Row matrix format
-"""
+"""Compressed Sparse Row matrix format"""
 
 __all__ = ['csr_matrix', 'isspmatrix_csr']
 
@@ -23,31 +22,46 @@ class csr_matrix(_cs_matrix):
 
     This can be instantiated in several ways:
       - csr_matrix(D)
-        with a dense matrix or rank-2 ndarray D
+        - with a dense matrix or rank-2 ndarray D
 
       - csr_matrix(S)
-        with another sparse matrix S (equivalent to S.tocsr())
+        - with another sparse matrix S (equivalent to S.tocsr())
 
       - csr_matrix((M, N), [dtype])
-        to construct an empty matrix with shape (M, N)
-        dtype is optional, defaulting to dtype='d'.
+        - to construct an empty matrix with shape (M, N)
+        - dtype is optional, defaulting to dtype='d'.
 
       - csr_matrix((data, ij), [shape=(M, N)])
-        where data, ij satisfy:
-            a[ij[0, k], ij[1, k]] = data[k]
+        - where data, ij satisfy:
+          - a[ij[0, k], ij[1, k]] = data[k]
 
       - csr_matrix((data, indices, indptr), [shape=(M, N)])
-        is the native CSR representation where:
-            the column indices for row i are stored in
-                indices[ indptr[i]: indices[i+1] ] 
-            and their corresponding values are stored in
-                data[ indptr[i]: indptr[i+1] ]
-        If the shape parameter is not supplied, the matrix dimensions
-        are inferred from the index arrays.
+        - is the standard CSR representation where
+          the column indices for row i are stored in
+           - indices[ indptr[i]: indices[i+1] ] 
+          and their corresponding values are stored in
+           - data[ indptr[i]: indptr[i+1] ]
+        - If the shape parameter is not supplied, the matrix dimensions
+          are inferred from the index arrays.
 
 
-    *Examples*
-    ----------
+    Notes
+    =====
+        Advantages of the CSR format
+        ----------------------------
+          - efficient arithmetic operations CSR + CSR, CSR * CSR, etc.
+          - efficient row slicing
+          - fast matrix vector products
+        
+        Disadvantages of the CSR format
+        -------------------------------
+          - slow column slicing operations (prefer CSC)
+          - changes to the sparsity structure are expensive (prefer LIL, DOK)
+
+
+
+    Examples
+    ========    
 
     >>> from scipy.sparse import *
     >>> from scipy import *
@@ -190,9 +204,11 @@ class csr_matrix(_cs_matrix):
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created).
         Contigous range of rows and columns can be selected using:
-        1. a slice object
-        2. a tuple (from, to)
-        3. a scalar for single row/column selection."""
+          1. a slice object
+          2. a tuple (from, to)
+          3. a scalar for single row/column selection.
+
+        """
 
         aux = _cs_matrix._get_submatrix( self, self.shape[0], self.shape[1],
                                          slice0, slice1 )

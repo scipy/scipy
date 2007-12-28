@@ -24,19 +24,24 @@ def spdiags(data, diags, m, n, format=None):
 
     B = spdiags(diags, offsets, m, n)
 
-    *Parameters*:
-        data   : matrix whose rows contain the diagonal values
-        diags  : diagonals to set 
-                    k = 0 - the main diagonal
-                    k > 0 - the k-th upper diagonal
-                    k < 0 - the k-th lower diagonal
-        m, n   : dimensions of the result
-        format : format of the result (e.g. "csr")
-                    By default (format=None) an appropriate sparse matrix 
-                    format is returned.  This choice is subject to change.
+    Parameters
+    ==========
+        - data   : matrix whose rows contain the diagonal values
+        - diags  : diagonals to set 
+            - k = 0 - the main diagonal
+            - k > 0 - the k-th upper diagonal
+            - k < 0 - the k-th lower diagonal
+        - m, n   : dimensions of the result
+        - format : format of the result (e.g. "csr")
+            -  By default (format=None) an appropriate sparse matrix 
+               format is returned.  This choice is subject to change.
 
-    *Example*
-    -------
+    See Also
+    ========
+        The dia_matrix class which implements the DIAgonal format.
+
+    Example
+    =======
     >>> data = array([[1,2,3,4]]).repeat(3,axis=0)
     >>> diags = array([0,-1,2])
     >>> spdiags(data,diags,4,4).todense()
@@ -75,16 +80,19 @@ def speye(m, n, k=0, dtype='d', format=None):
 def spkron(A, B, format=None):
     """kronecker product of sparse matrices A and B
 
-    *Parameters*:
-        A,B : sparse matrices
-            E.g. csr_matrix, csc_matrix, coo_matrix, etc.
+    Parameters
+    ==========
+        A,B    : dense or sparse matrices
+        format : format of the result (e.g. "csr")
+            -  By default (format=None) an appropriate sparse matrix 
+               format is returned.  This choice is subject to change.
 
-    *Returns*:
-        coo_matrix
-            kronecker product in COOrdinate format
+    Returns
+    =======
+        kronecker product in a sparse matrix format
 
-    *Example*:
-    -------
+    Examples
+    ========
 
     >>> A = csr_matrix(array([[0,2],[5,0]]))
     >>> B = csr_matrix(array([[1,2],[3,4]]))
@@ -94,8 +102,14 @@ def spkron(A, B, format=None):
             [  5.,  10.,   0.,   0.],
             [ 15.,  20.,   0.,   0.]])
 
+    >>> spkron(A,[[1,2],[3,4]]).todense()
+    matrix([[  0.,   0.,   2.,   4.],
+            [  0.,   0.,   6.,   8.],
+            [  5.,  10.,   0.,   0.],
+            [ 15.,  20.,   0.,   0.]])
+
     """
-    #TODO optimize for small dense B and CSR A
+    #TODO optimize for small dense B and CSR A -> BSR
     A,B = coo_matrix(A),coo_matrix(B)
     output_shape = (A.shape[0]*B.shape[0],A.shape[1]*B.shape[1])
 
@@ -130,14 +144,15 @@ def lil_eye((r,c), k=0, dtype='d'):
     """Generate a lil_matrix of dimensions (r,c) with the k-th
     diagonal set to 1.
 
-    :Parameters:
-        r,c : int
-            Row and column-dimensions of the output.
-        k : int
-            Diagonal offset.  In the output matrix,
-            out[m,m+k] == 1 for all m.
-        dtype : dtype
-            Data-type of the output array.
+    Parameters
+    ==========
+        - r,c : int
+            - row and column-dimensions of the output.
+        - k : int
+            - diagonal offset.  In the output matrix,
+            - out[m,m+k] == 1 for all m.
+        - dtype : dtype
+            - data-type of the output array.
 
     """
     warn("lil_eye is deprecated. use speye(... , format='lil') instead", \
@@ -150,19 +165,20 @@ def lil_eye((r,c), k=0, dtype='d'):
 def lil_diags(diags,offsets,(m,n),dtype='d'):
     """Generate a lil_matrix with the given diagonals.
 
-    :Parameters:
-        diags : list of list of values e.g. [[1,2,3],[4,5]]
-            Values to be placed on each indicated diagonal.
-        offsets : list of ints
-            Diagonal offsets.  This indicates the diagonal on which
-            the given values should be placed.
-        (r,c) : tuple of ints
-            Row and column dimensions of the output.
-        dtype : dtype
-           Output data-type.
+    Parameters
+    ==========
+        - diags : list of list of values e.g. [[1,2,3],[4,5]]
+            - values to be placed on each indicated diagonal.
+        - offsets : list of ints
+            - diagonal offsets.  This indicates the diagonal on which
+              the given values should be placed.
+        - (r,c) : tuple of ints
+            - row and column dimensions of the output.
+        - dtype : dtype
+            - output data-type.
 
-    Example:
-    -------
+    Example
+    =======
 
     >>> lil_diags([[1,2,3],[4,5],[6]],[0,1,2],(3,3)).todense()
     matrix([[ 1.,  4.,  6.],

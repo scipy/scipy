@@ -21,6 +21,27 @@ class lil_matrix(spmatrix):
     This contains a list (self.rows) of rows, each of which is a sorted
     list of column indices of non-zero elements. It also contains a list
     (self.data) of lists of these elements.
+
+    Notes
+    =====
+        Advantages of the LIL format
+        ----------------------------
+          - supports flexible slicing
+          - changes to the matrix sparsity structure are efficient
+        
+        Disadvantages of the LIL format
+        -------------------------------
+          - arithmetic operations LIL + LIL are slower than CSR/CSC
+          - slow column slicing
+          - matrix vector products are slower than CSR/CSC
+        
+        Usage
+        -----
+          - LIL is a convenient format for constructing sparse matrices 
+          - once a matrix has been constructed, convert to CSR or 
+            CSC format for fast arithmetic and matrix vector operations
+          - consider using the COO format when constructing large matrices
+        
     """
 
     def __init__(self, A=None, shape=None, dtype=None, copy=False):

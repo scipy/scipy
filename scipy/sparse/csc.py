@@ -1,5 +1,4 @@
-"""Compressed Sparse Column matrix format
-"""
+"""Compressed Sparse Column matrix format"""
 
 __all__ = ['csc_matrix', 'isspmatrix_csc']
 
@@ -23,31 +22,44 @@ class csc_matrix(_cs_matrix):
 
     This can be instantiated in several ways:
       - csc_matrix(D)
-        with a dense matrix or rank-2 ndarray D
+        - with a dense matrix or rank-2 ndarray D
 
       - csc_matrix(S)
-        with another sparse matrix S (equivalent to S.tocsc())
+        - with another sparse matrix S (equivalent to S.tocsc())
 
       - csc_matrix((M, N), [dtype])
-        to construct an empty matrix with shape (M, N)
-        dtype is optional, defaulting to dtype='d'.
+        - to construct an empty matrix with shape (M, N)
+        - dtype is optional, defaulting to dtype='d'.
 
       - csc_matrix((data, ij), [shape=(M, N)])
-        where data, ij satisfy:
-            a[ij[0, k], ij[1, k]] = data[k]
+        - where data, ij satisfy:
+          - a[ij[0, k], ij[1, k]] = data[k]
 
       - csc_matrix((data, indices, indptr), [shape=(M, N)])
-        is the native CSC representation where:
-            the row indices for column i are stored in
-                indices[ indptr[i]: indices[i+1] ] 
-            and their corresponding values are stored in
-                data[ indptr[i]: indptr[i+1] ]
-        If the shape parameter is not supplied, the matrix dimensions
-        are inferred from the index arrays.
+         - is the standard CSC representation where
+           the row indices for column i are stored in
+            - indices[ indptr[i]: indices[i+1] ] 
+           and their corresponding values are stored in
+            - data[ indptr[i]: indptr[i+1] ]
+         - If the shape parameter is not supplied, the matrix dimensions
+           are inferred from the index arrays.
+
+    Notes
+    =====
+        Advantages of the CSC format
+        ----------------------------
+          - efficient arithmetic operations CSC + CSC, CSC * CSC, etc.
+          - efficient column slicing
+          - fast matrix vector products (CSR,BSR may be faster)
+        
+        Disadvantages of the CSC format
+        -------------------------------
+          - slow row slicing operations (prefer CSR)
+          - changes to the sparsity structure are expensive (prefer LIL, DOK)
 
 
-    *Examples*
-    ----------
+    Examples
+    ========
 
     >>> from scipy.sparse import *
     >>> from scipy import *
@@ -183,9 +195,9 @@ class csc_matrix(_cs_matrix):
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created).
         Contigous range of rows and columns can be selected using:
-        1. a slice object
-        2. a tuple (from, to)
-        3. a scalar for single row/column selection."""
+          1. a slice object
+          2. a tuple (from, to)
+          3. a scalar for single row/column selection."""
         aux = _cs_matrix._get_submatrix( self, self.shape[1], self.shape[0],
                                          slice1, slice0 )
         nr, nc = aux[3:]

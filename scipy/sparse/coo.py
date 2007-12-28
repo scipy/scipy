@@ -1,4 +1,4 @@
-""" A sparse matrix in COOrdinate format """
+""" A sparse matrix in COOrdinate or 'triplet' format"""
 
 __all__ = ['coo_matrix', 'isspmatrix_coo']
 
@@ -21,34 +21,52 @@ class coo_matrix(_data_matrix):
 
     This can be instantiated in several ways:
       - coo_matrix(D)
-        with a dense matrix D
+        - with a dense matrix D
 
       - coo_matrix(S)
-        with another sparse matrix S (equivalent to S.tocoo())
+        - with another sparse matrix S (equivalent to S.tocoo())
 
       - coo_matrix((M, N), [dtype])
-        to construct an empty matrix with shape (M, N)
-        dtype is optional, defaulting to dtype='d'.
+        - to construct an empty matrix with shape (M, N)
+          dtype is optional, defaulting to dtype='d'.
 
       - coo_matrix((data, ij), [shape=(M, N)])
-        When shape is not specified, it is inferred from the index arrays:
-            ij[0][:] and ij[1][:]
+        - When shape is not specified, it is inferred from the index arrays:
+          - ij[0][:] and ij[1][:]
 
-        The arguments 'data' and 'ij' represent three arrays:
-            1. data[:]   the entries of the matrix, in any order
-            2. ij[0][:]  the row indices of the matrix entries
-            3. ij[1][:]  the column indices of the matrix entries
-    
-        So the following holds:
-            A[ij[0][k], ij[1][k] = data[k]
+        - The arguments 'data' and 'ij' represent three arrays:
+             1. data[:]   the entries of the matrix, in any order
+             2. ij[0][:]  the row indices of the matrix entries
+             3. ij[1][:]  the column indices of the matrix entries
+          So the following holds:
+           - A[ij[0][k], ij[1][k] = data[k]
 
-    Note:
-        When converting to CSR or CSC format, duplicate (i,j) entries
-        will be summed together.  This facilitates efficient construction
-        of finite element matrices and the like.
+    Notes
+    =====
+        Advantages of the COO format
+        ----------------------------
+          - facilitates fast conversion among sparse formats
+          - permits duplicate entries (see example)
+          - faster conversion to CSR/CSC than LIL
+        
+        Disadvantages of the COO format
+        -------------------------------
+          - does not currently support (forces COO->CSR conversion) 
+            - arithmetic operations
+            - slicing
+            - matrix vector products
+        
+        Usage
+        -----
+          - COO is a fast format for constructing sparse matrices
+          - once a matrix has been constructed, convert to CSR or 
+            CSC format for fast arithmetic and matrix vector operations
+          - By default when converting to CSR or CSC format, duplicate (i,j) 
+            entries will be summed together.  This facilitates efficient 
+            construction of finite element matrices and the like. (see example)
 
-    *Examples*
-    ----------
+    Examples
+    ========
 
     >>> from scipy.sparse import *
     >>> from scipy import *

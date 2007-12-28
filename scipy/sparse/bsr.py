@@ -1,5 +1,4 @@
-"""Compressed Block Sparse Row matrix format
-"""
+"""Compressed Block Sparse Row matrix format"""
 
 __all__ = ['bsr_matrix', 'isspmatrix_bsr']
 
@@ -16,44 +15,45 @@ class bsr_matrix(_block_matrix):
 
     This can be instantiated in several ways:
       - bsr_matrix(D, [blocksize=(R,C)])
-        with a dense matrix or rank-2 ndarray D
+        - with a dense matrix or rank-2 ndarray D
 
       - bsr_matrix(S, [blocksize=(R,C)])
-        with another sparse matrix S (equivalent to S.tocsr())
+        - with another sparse matrix S (equivalent to S.tobsr())
 
       - bsr_matrix((M, N), [blocksize=(R,C), dtype])
-        to construct an empty matrix with shape (M, N)
-        dtype is optional, defaulting to dtype='d'.
+        - to construct an empty matrix with shape (M, N)
+        - dtype is optional, defaulting to dtype='d'.
 
       - bsr_matrix((data, ij), [blocksize=(R,C), shape=(M, N)])
-        where data, ij satisfy:
-            a[ij[0, k], ij[1, k]] = data[k]
+        - where data, ij satisfy:
+          - a[ij[0, k], ij[1, k]] = data[k]
 
       - bsr_matrix((data, indices, indptr), [shape=(M, N)])
-        is the standard BSR representation where:
-            the block column indices for row i are stored in
-                indices[ indptr[i]: indices[i+1] ] 
-            and their corresponding block values are stored in
-                data[ indptr[i]: indptr[i+1] ]
-        If the shape parameter is not supplied, the matrix dimensions
-        are inferred from the index arrays.
+        - is the standard BSR representation where:
+          the block column indices for row i are stored in
+           - indices[ indptr[i]: indices[i+1] ] 
+          and their corresponding block values are stored in
+           - data[ indptr[i]: indptr[i+1] ]
+        - if the shape parameter is not supplied, the matrix dimensions
+          are inferred from the index arrays.
 
 
-    *Notes*
-    -------
-        The blocksize (R,C) must evenly divide the shape of 
-        the matrix (M,N).  That is, R and C must satisfy the
-        relationship M % R = 0 and N % C = 0.
+    Notes
+    =====
+        
+        - The blocksize (R,C) must evenly divide the shape of 
+          the matrix (M,N).  That is, R and C must satisfy the
+          relationship M % R = 0 and N % C = 0.
     
-        The Block Compressed Row (BSR) format is very similar to the
-        Compressed Sparse Row (CSR) format.  BSR is appropriate for
-        sparse matrices with dense sub matrices like the last example
-        below.  Such matrices often arise, for instance, in finite
-        element discretizations.
+        - The Block Compressed Row (BSR) format is very similar to the
+          Compressed Sparse Row (CSR) format.  BSR is appropriate for
+          sparse matrices with dense sub matrices like the last example
+          below.  Such matrices often arise, for instance, in finite
+          element discretizations.
 
 
-    *Examples*
-    ----------
+    Examples
+    ========
 
     >>> from scipy.sparse import *
     >>> from scipy import *

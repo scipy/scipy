@@ -116,10 +116,12 @@ class _cs_matrix(_data_matrix):
     def check_format(self, full_check=True):
         """check whether the matrix format is valid
 
-            *Parameters*:
-                full_check:
-                    True  - rigorous check, O(N) operations : default
-                    False - basic check, O(1) operations
+        Parameters
+        ==========
+
+            - full_check : {bool}
+                - True  - rigorous check, O(N) operations : default
+                - False - basic check, O(1) operations
 
         """
         #use _swap to determine proper bounds
