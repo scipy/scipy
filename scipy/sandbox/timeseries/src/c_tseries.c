@@ -478,19 +478,26 @@ MaskedArray_mov_sum(PyObject *self, PyObject *args, PyObject *kwds)
              *result_dict=NULL;
     PyArray_Descr *dtype=NULL;
 
-    int rtype, span;
+    int rtype, span, type_num_double;
 
-    static char *kwlist[] = {"array", "span", "dtype", NULL};
+    static char *kwlist[] = {"array", "span", "type_num_double", "dtype", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                "Oi|O&:mov_sum(array, span, dtype)", kwlist,
-                &orig_arrayobj, &span,
+                "Oii|O&:mov_sum(array, span, type_num_double , dtype)", kwlist,
+                &orig_arrayobj, &span, &type_num_double,
                 PyArray_DescrConverter2, &dtype)) return NULL;
 
     check_mov_args(orig_arrayobj, span, 1,
                    &orig_ndarray, &result_mask);
 
-    rtype = _get_type_num(((PyArrayObject*)orig_ndarray)->descr, dtype);
+	if (type_num_double) {
+		/* if the moving sum is being used as an intermediate step in something
+		like a standard deviation calculation, etc... then _get_type_num_double
+		should be used to determine the appropriate return type. */
+		rtype = _get_type_num_double(((PyArrayObject*)orig_ndarray)->descr, dtype);
+	} else {
+    	rtype = _get_type_num(((PyArrayObject*)orig_ndarray)->descr, dtype);
+	}
 
     result_ndarray = calc_mov_sum((PyArrayObject*)orig_ndarray,
                                   span, rtype);
@@ -506,54 +513,6 @@ MaskedArray_mov_sum(PyObject *self, PyObject *args, PyObject *kwds)
     return result_dict;
 }
 
-PyObject *
-MaskedArray_mov_average(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    PyObject *orig_arrayobj=NULL, *orig_ndarray=NULL,
-             *result_ndarray=NULL, *result_mask=NULL,
-             *result_dict=NULL,
-             *mov_sum=NULL, *denom=NULL;
-    PyArray_Descr *dtype=NULL;
-
-    int rtype, span;
-
-    static char *kwlist[] = {"array", "span", "dtype", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                "Oi|O&:mov_average(array, span, dtype)", kwlist,
-                &orig_arrayobj, &span,
-                PyArray_DescrConverter2, &dtype)) return NULL;
-
-
-    check_mov_args(orig_arrayobj, span, 2,
-                   &orig_ndarray, &result_mask);
-
-    rtype = _get_type_num_double(((PyArrayObject*)orig_ndarray)->descr, dtype);
-
-    mov_sum = calc_mov_sum((PyArrayObject*)orig_ndarray, span, rtype);
-    ERR_CHECK(mov_sum)
-
-    denom = PyFloat_FromDouble(1.0/(double)(span));
-
-    result_ndarray = np_multiply(mov_sum, denom);
-    ERR_CHECK(result_ndarray)
-
-    Py_DECREF(mov_sum);
-    Py_DECREF(denom);
-
-    result_dict = PyDict_New();
-    MEM_CHECK(result_dict)
-    PyDict_SetItemString(result_dict, "array", result_ndarray);
-    PyDict_SetItemString(result_dict, "mask", result_mask);
-
-    Py_DECREF(result_ndarray);
-    Py_DECREF(result_mask);
-    return result_dict;
-}
-
-
-
-//calc_mov_median(PyArrayObject *orig_ndarray, int span, int rtype)
 PyObject*
 calc_mov_ranked(PyArrayObject *orig_ndarray, int span, int rtype, char rank_type)
 {
@@ -842,96 +801,6 @@ MaskedArray_mov_max(PyObject *self, PyObject *args, PyObject *kwds)
     Py_DECREF(result_ndarray);
     Py_DECREF(result_mask);
     return result_dict;
-}
-
-PyObject *
-MaskedArray_mov_stddev(PyObject *self, PyObject *args, PyObject *kwds)
-{
-
-    PyObject *orig_ndarray=NULL, *orig_arrayobj=NULL,
-             *result_ndarray=NULL, *result_mask=NULL,
-             *result_dict=NULL,
-             *result_temp1=NULL, *result_temp2=NULL, *result_temp3=NULL,
-             *mov_sum=NULL, *mov_sum_sq=NULL,
-             *denom1=NULL, *denom2=NULL;
-
-    PyArray_Descr *dtype=NULL;
-
-    int rtype, span, is_variance, bias;
-
-    static char *kwlist[] = {"array", "span", "is_variance", "bias", "dtype", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                "Oiii|O&:mov_stddev(array, span, is_variance, bias, dtype)",
-                kwlist, &orig_arrayobj, &span, &is_variance, &bias,
-                PyArray_DescrConverter2, &dtype)) return NULL;
-
-
-    check_mov_args(orig_arrayobj, span, 2,
-                   &orig_ndarray, &result_mask);
-
-    rtype = _get_type_num_double(((PyArrayObject*)orig_ndarray)->descr, dtype);
-
-    mov_sum = calc_mov_sum((PyArrayObject*)orig_ndarray, span, rtype);
-    ERR_CHECK(mov_sum)
-
-    result_temp1 = np_multiply(orig_ndarray, orig_ndarray);
-    ERR_CHECK(result_temp1)
-
-    mov_sum_sq = calc_mov_sum((PyArrayObject*)result_temp1, span, rtype);
-    Py_DECREF(result_temp1);
-    ERR_CHECK(mov_sum_sq)
-
-
-    /*
-      formulas from:
-      http://en.wikipedia.org/wiki/Standard_deviation#Rapid_calculation_methods
-     */
-    if (bias == 0) {
-        denom1 = PyFloat_FromDouble(1.0/(double)(span-1));
-        denom2 = PyFloat_FromDouble(1.0/(double)(span*(span-1)));
-    } else {
-        denom1 = PyFloat_FromDouble(1.0/(double)span);
-        denom2 = PyFloat_FromDouble(1.0/(double)(span*span));
-    }
-
-    result_temp1 = np_multiply(mov_sum_sq, denom1);
-    ERR_CHECK(result_temp1)
-    Py_DECREF(mov_sum_sq);
-    Py_DECREF(denom1);
-
-    result_temp3 = np_multiply(mov_sum, mov_sum);
-    ERR_CHECK(result_temp3)
-    Py_DECREF(mov_sum);
-
-    result_temp2 = np_multiply(result_temp3, denom2);
-    ERR_CHECK(result_temp2)
-    Py_DECREF(result_temp3);
-    Py_DECREF(denom2);
-
-    result_temp3 = np_subtract(result_temp1, result_temp2);
-    ERR_CHECK(result_temp3)
-    Py_DECREF(result_temp1);
-    Py_DECREF(result_temp2);
-
-    if (is_variance) {
-        result_ndarray = result_temp3;
-    } else {
-        result_temp1 = np_sqrt(result_temp3);
-        ERR_CHECK(result_temp1)
-        Py_DECREF(result_temp3);
-        result_ndarray = result_temp1;
-    }
-
-    result_dict = PyDict_New();
-    MEM_CHECK(result_dict)
-    PyDict_SetItemString(result_dict, "array", result_ndarray);
-    PyDict_SetItemString(result_dict, "mask", result_mask);
-
-    Py_DECREF(result_ndarray);
-    Py_DECREF(result_mask);
-    return result_dict;
-
 }
 
 void import_c_tseries(PyObject *m) { import_array(); }

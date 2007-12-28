@@ -13,13 +13,12 @@ __date__     = '$Date: 2007-03-03 18:00:20 -0500 (Sat, 03 Mar 2007) $'
 
 __all__ = ['mov_sum', 'mov_median', 'mov_min', 'mov_max',
            'mov_average', 'mov_mean', 'mov_average_expw',
-           'mov_stddev', 'mov_var', 
-#           'mov_covar', 'mov_corr',
+           'mov_stddev', 'mov_var', 'mov_covar', 'mov_corr',
            'cmov_average', 'cmov_mean', 'cmov_window'
            ]
 
 import numpy as N
-from numpy import bool_, float_
+from numpy import bool_, float_, sqrt
 narray = N.array
 
 from scipy.signal import convolve, get_window
@@ -28,8 +27,8 @@ import maskedarray as MA
 from maskedarray import MaskedArray, nomask, getmask, getmaskarray, masked
 marray = MA.array
 
-from timeseries.cseries import MA_mov_stddev, MA_mov_sum, MA_mov_average, \
-                               MA_mov_median, MA_mov_min, MA_mov_max
+from timeseries.cseries import MA_mov_sum, MA_mov_median, MA_mov_min, \
+                               MA_mov_max
 
 def _process_result_dict(orig_data, result_dict):
     "process the results from the c function"
@@ -49,7 +48,6 @@ def _moving_func(data, cfunc, kwargs):
 
     if data.ndim == 1:
         kwargs['array'] = data
-
         result_dict = cfunc(**kwargs)
         return _process_result_dict(data, result_dict)
 
@@ -74,6 +72,14 @@ def _moving_func(data, cfunc, kwargs):
         raise ValueError, "Data should be at most 2D"
 
 #...............................................................................
+def _mov_sum(data, span, dtype=None, type_num_double=False):
+    """ helper function for calculating moving sum. Resulting dtype can be
+determined in one of two ways. See C-code for more details."""
+    kwargs = {'span':span, 'type_num_double':type_num_double}
+    if dtype is not None:
+        kwargs['dtype'] = dtype
+    return _moving_func(data, MA_mov_sum, kwargs)
+#...............................................................................
 def mov_sum(data, span, dtype=None):
     """Calculates the moving sum of a series.
 
@@ -82,11 +88,7 @@ def mov_sum(data, span, dtype=None):
     $$span$$
     $$dtype$$"""
 
-    kwargs = {'span':span}
-    if dtype is not None:
-        kwargs['dtype'] = dtype
- 
-    return _moving_func(data, MA_mov_sum, kwargs)
+    return _mov_sum(data, span, dtype=dtype)
 #...............................................................................
 def mov_median(data, span, dtype=None):
     """Calculates the moving median of a series.
@@ -137,24 +139,8 @@ def mov_average(data, span, dtype=None):
     $$data$$
     $$span$$
     $$dtype$$"""
-    
-    kwargs = {'span':span}
-    if dtype is not None:
-        kwargs['dtype'] = dtype
-
-    return _moving_func(data, MA_mov_average, kwargs)
+    return _mov_sum(data, span, dtype=dtype, type_num_double=True)/span
 mov_mean = mov_average
-#...............................................................................
-def _mov_var_stddev(data, span, is_variance, bias, dtype):
-    "helper function for mov_var and mov_stddev functions"
-
-    kwargs = {'span':span,
-              'is_variance':is_variance,
-              'bias':bias}
-    if dtype is not None:
-        kwargs['dtype'] = dtype
-
-    return _moving_func(data, MA_mov_stddev, kwargs)
 #...............................................................................
 def mov_var(data, span, bias=False, dtype=None):
     """Calculates the moving variance of a 1-D array.
@@ -164,9 +150,7 @@ def mov_var(data, span, bias=False, dtype=None):
     $$span$$
     $$bias$$
     $$dtype$$"""
-    
-    return _mov_var_stddev(data=data, span=span,
-                           is_variance=1, bias=int(bias), dtype=dtype)
+    return mov_covar(data, data, span, bias=bias, dtype=dtype)
 #...............................................................................
 def mov_stddev(data, span, bias=False, dtype=None):
     """Calculates the moving standard deviation of a 1-D array.
@@ -176,42 +160,49 @@ def mov_stddev(data, span, bias=False, dtype=None):
     $$span$$
     $$bias$$
     $$dtype$$"""
-    
-    return _mov_var_stddev(data=data, span=span,
-                           is_variance=0, bias=int(bias), dtype=dtype)
+    return sqrt(mov_var(data, span, bias=bias, dtype=dtype))
 #...............................................................................
-#def mov_covar(x, y, span, bias=False, dtype=None):
-#    """Calculates the moving covariance of two 1-D arrays.
-#
-#*Parameters*:
-#    $$x$$
-#    $$y$$
-#    $$span$$
-#    $$bias$$
-#    $$dtype$$"""
-#    
-#    result = x - mov_average(x, span, dtype=dtype)
-#    result = result * (y - mov_average(y, span, dtype=dtype))
-#    
-#    if bias: denom = span
-#    else: denom = span - 1
-#    
-#    return result/denom
-##...............................................................................
-#def mov_corr(x, y, span, dtype=None):
-#    """Calculates the moving correlation of two 1-D arrays.
-#
-#*Parameters*:
-#    $$x$$
-#    $$y$$
-#    $$span$$
-#    $$dtype$$"""
-#
-#    result = mov_covar(x, y, span, bias=True, dtype=dtype)
-#    result = result / mov_stddev(x, span, bias=True, dtype=dtype)
-#    result = result / mov_stddev(y, span, bias=True, dtype=dtype)
-#   
-#    return result
+def mov_covar(x, y, span, bias=False, dtype=None):
+    """Calculates the moving covariance of two 1-D arrays.
+
+*Parameters*:
+    $$x$$
+    $$y$$
+    $$span$$
+    $$bias$$
+    $$dtype$$"""
+    
+    if bias: denom = span
+    else: denom = span - 1
+    
+    sum_prod = _mov_sum(x*y, span, dtype=dtype, type_num_double=True)
+    sum_x = _mov_sum(x, span, dtype=dtype, type_num_double=True)
+    sum_y = _mov_sum(y, span, dtype=dtype, type_num_double=True)
+    
+    return sum_prod/denom - (sum_x * sum_y) / (span*denom)
+#...............................................................................
+def mov_corr(x, y, span, dtype=None):
+    """Calculates the moving correlation of two 1-D arrays.
+
+*Parameters*:
+    $$x$$
+    $$y$$
+    $$span$$
+    $$dtype$$"""
+
+    sum_x = _mov_sum(x, span, dtype=dtype, type_num_double=True)
+    sum_y = _mov_sum(y, span, dtype=dtype, type_num_double=True)
+    
+    sum_prod = _mov_sum(x*y, span, dtype=dtype, type_num_double=True)
+    _covar = sum_prod/span - (sum_x * sum_y) / (span ** 2)
+    
+    sum_prod = _mov_sum(x**2, span, dtype=dtype, type_num_double=True)
+    _stddev_x = sqrt(sum_prod/span - (sum_x ** 2) / (span ** 2))
+
+    sum_prod = _mov_sum(y**2, span, dtype=dtype, type_num_double=True)
+    _stddev_y = sqrt(sum_prod/span - (sum_y ** 2) / (span ** 2))
+
+    return _covar / (_stddev_x * _stddev_y)
 #...............................................................................
 def mov_average_expw(data, span, tol=1e-6):
     """Calculates the exponentially weighted moving average of a series.

@@ -38,6 +38,9 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('minpack2',
                          sources=[join('minpack2',x) for x in sources])
 
+    sources = ['slsqp.pyf', 'slsqp_optmz.f']
+    config.add_extension('_slsqp', sources=[join('slsqp', x) for x in sources])
+
     config.add_data_dir('tests')
     return config
 

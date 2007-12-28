@@ -150,15 +150,17 @@ class TestFactorization(NumpyTestCase):
         random.seed(0) #make tests repeatable
         self.real_matrices = []
         self.real_matrices.append(spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]],
-                                          [0, 1], 5, 5))
+                                          [0, 1], 5, 5) )
         self.real_matrices.append(spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]],
-                                          [0, 1], 4, 5))
+                                          [0, 1], 4, 5) )
         self.real_matrices.append(spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]],
-                                          [0, 2], 5, 5))
-        self.real_matrices.append(csc_matrix(rand(3,3)))
-        self.real_matrices.append(csc_matrix(rand(5,4)))
-        self.real_matrices.append(csc_matrix(rand(4,5)))
+                                          [0, 2], 5, 5) )
+        self.real_matrices.append(rand(3,3))
+        self.real_matrices.append(rand(5,4))
+        self.real_matrices.append(rand(4,5))
 
+        self.real_matrices = [csc_matrix(x).astype('d') for x \
+                in self.real_matrices]
         self.complex_matrices = [x.astype(nm.complex128)
                                  for x in self.real_matrices]
 

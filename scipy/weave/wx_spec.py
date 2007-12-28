@@ -141,7 +141,7 @@ class wx_converter(common_base_converter):
     def type_match(self,value):
         is_match = 0
         try:
-            wx_class = value.this.split('_')[-2]
+            wx_class = str(value.this).split('_')[-1]
             if wx_class[:2] == 'wx':
                 is_match = 1
         except AttributeError:
@@ -166,7 +166,7 @@ class wx_converter(common_base_converter):
 
     def type_spec(self,name,value):
         # factory
-        class_name = value.this.split('_')[-2]
+        class_name = str(value.this).split('_')[-1]
         new_spec = self.__class__(class_name)
         new_spec.name = name
         return new_spec

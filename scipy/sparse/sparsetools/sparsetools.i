@@ -33,6 +33,9 @@
     const ctype Bp [ ],
     const ctype Bi [ ],	
     const ctype Bj [ ],
+    const ctype Cp [ ],
+    const ctype Ci [ ],	
+    const ctype Cj [ ],
     const ctype offsets [ ]
 };
 %enddef
@@ -41,6 +44,7 @@
 %apply ctype * IN_ARRAY1 {
     const ctype Ax [ ],
     const ctype Bx [ ],
+    const ctype Cx [ ],
     const ctype Xx [ ],
     const ctype Yx [ ]
 };
@@ -94,7 +98,10 @@
   ctype Aj [ ],
   ctype Bp [ ],
   ctype Bi [ ],
-  ctype Bj [ ]
+  ctype Bj [ ],
+  ctype Cp [ ],
+  ctype Ci [ ],
+  ctype Cj [ ]
 };
 %enddef
 
@@ -102,6 +109,7 @@
 %apply ctype * INPLACE_ARRAY {
   ctype Ax [ ],
   ctype Bx [ ],
+  ctype Cx [ ],
   ctype Yx [ ]
 };
 %enddef
@@ -175,37 +183,45 @@ DECLARE_DATA_TYPE( npy_cdouble_wrapper )
 /*
  *  diag(CSR) and diag(CSC)
  */
-INSTANTIATE_ALL(extract_csr_diagonal)
-INSTANTIATE_ALL(extract_csc_diagonal)
+INSTANTIATE_ALL(csr_diagonal)
+INSTANTIATE_ALL(csc_diagonal)
 
 
 /*
  *  CSR->CSC or CSC->CSR or CSR = CSR^T or CSC = CSC^T
  */
-INSTANTIATE_ALL(csrtocsc)
-INSTANTIATE_ALL(csctocsr)
+INSTANTIATE_ALL(csr_tocsc)
+INSTANTIATE_ALL(csc_tocsr)
 
 /*
  * CSR<->COO and CSC<->COO
  */
 %template(expandptr)   expandptr<int>;
-/*INSTANTIATE_ALL(csrtocoo)*/
-/*INSTANTIATE_ALL(csctocoo)*/
-INSTANTIATE_ALL(cootocsr)
-INSTANTIATE_ALL(cootocsc)
+INSTANTIATE_ALL(coo_tocsr)
+INSTANTIATE_ALL(coo_tocsc)
+
+/*
+ * CSR<->BSR
+ */
+%template(csr_count_blocks)   csr_count_blocks<int>;
 
 
 /*
  * CSR*CSR and CSC*CSC
  */
-INSTANTIATE_ALL(csrmucsr)
-INSTANTIATE_ALL(cscmucsc)
+%template(csr_matmat_pass1)   csr_matmat_pass1<int>;
+%template(csc_matmat_pass1)   csc_matmat_pass1<int>;
+INSTANTIATE_ALL(csr_matmat_pass2)
+INSTANTIATE_ALL(csc_matmat_pass2)
+INSTANTIATE_ALL(bsr_matmat_pass2)
+
 
 /*
  * CSR*x and CSC*x
  */
-INSTANTIATE_ALL(csrmux)
-INSTANTIATE_ALL(cscmux)
+INSTANTIATE_ALL(csr_matvec)
+INSTANTIATE_ALL(csc_matvec)
+INSTANTIATE_ALL(bsr_matvec)
 
 /*
  * CSR (binary op) CSR and CSC (binary op) CSC
@@ -220,31 +236,22 @@ INSTANTIATE_ALL(csc_eldiv_csc)
 INSTANTIATE_ALL(csc_plus_csc)
 INSTANTIATE_ALL(csc_minus_csc)
 
+INSTANTIATE_ALL(bsr_elmul_bsr)
+INSTANTIATE_ALL(bsr_eldiv_bsr)
+INSTANTIATE_ALL(bsr_plus_bsr)
+INSTANTIATE_ALL(bsr_minus_bsr)
+
+/*
+ * Sort indices.
+ */
+%template(csr_has_sorted_indices)   csr_has_sorted_indices<int>;
+INSTANTIATE_ALL(csr_sort_indices)
 
 
 /*
- * spdiags->CSC
+ * Sum duplicate entries.
  */
-INSTANTIATE_ALL(spdiags)
-
-/*
- * CSR<->Dense
- */
-INSTANTIATE_ALL(csrtodense)
-/*INSTANTIATE_ALL(densetocsr)*/ 
-
-/*
- * Sort CSR/CSC indices.
- */
-INSTANTIATE_ALL(sort_csr_indices)
-INSTANTIATE_ALL(sort_csc_indices)
-
-
-/*
- * Sum duplicate CSR/CSC entries.
- */
-INSTANTIATE_ALL(sum_csr_duplicates)
-INSTANTIATE_ALL(sum_csc_duplicates)
+INSTANTIATE_ALL(csr_sum_duplicates)
 
 /*
  * Extract submatrices

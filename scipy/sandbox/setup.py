@@ -48,14 +48,8 @@ def configuration(parent_package='',top_path=None):
     # Delaunay triangulation and Natural Neighbor interpolation
     #config.add_subpackage('delaunay')
 
-    # Gist-based plotting library for X11
-    #config.add_subpackage('xplt')
-
     # elementwise numerical expressions
     #config.add_subpackage('numexpr')
-
-    # Statistical models
-    #config.add_subpackage('models')
 
     # Adaptation of Scientific.IO (2.4.9) to use NumPy
     #config.add_subpackage('netcdf')
@@ -68,12 +62,6 @@ def configuration(parent_package='',top_path=None):
 
     # Interpolating between sparse samples
     #config.add_subpackage('buildgrid')
-
-    # Package for Support Vector Machine
-    #config.add_subpackage('svm')
-
-    # Package for Gaussian Mixture Models
-    #config.add_subpackage('pyem')
 
     # David Cournapeau's corner: autocorrelation, lpc, lpc residual
     #config.add_subpackage('cdavid')

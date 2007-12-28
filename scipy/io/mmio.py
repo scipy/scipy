@@ -229,7 +229,7 @@ def mmread(source):
 
             V = concatenate((V,od_V))
 
-        a = coo_matrix((V, (I, J)), dims=(rows, cols), dtype=dtype)
+        a = coo_matrix((V, (I, J)), shape=(rows, cols), dtype=dtype)
     else:
         raise NotImplementedError,`rep`
 

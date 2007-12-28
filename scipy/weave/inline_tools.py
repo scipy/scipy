@@ -340,7 +340,25 @@ def attempt_function_call(code,local_dict,global_dict):
     # we try 3 levels here -- a local cache first, then the
     # catalog cache, and then persistent catalog.
     #
-    global function_cache
+    global function_catalog
+    # 1. try local cache
+    try:
+        results = apply(function_cache[code],(local_dict,global_dict))
+        return results
+    except TypeError, msg:
+        msg = str(msg).strip()
+        if msg[:16] == "Conversion Error":
+            pass
+        else:
+            raise TypeError, msg
+    except NameError, msg:
+        msg = str(msg).strip()
+        if msg[:16] == "Conversion Error":
+            pass
+        else:
+            raise NameError, msg
+    except KeyError:
+        pass
     # 2. try catalog cache.
     function_list = function_catalog.get_functions_fast(code)
     for func in function_list:

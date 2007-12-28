@@ -98,8 +98,6 @@ def approximate_spectral_radius(A,tol=0.1,maxiter=10,symmetric=None):
                     H[1,0] = H[0,1]
                     beta = H[2,1]
        
-        #estimates.append( max( [norm(x) for x in eigvals(H[:j+1,:j+1])] ) )
-
     return norm(H[:j+1,:j+1],2)
 
 

@@ -40,14 +40,17 @@ class dok_matrix(spmatrix, dict):
                 self.update( A )
                 self.shape = A.shape
                 self.dtype = A.dtype
-            elif isdense(A):
+            else:
+                #must be dense, convert to COO first, then to DOK
+                try:
+                    A = asarray(A)
+                except:
+                    raise ValueError, "unrecognized form for" \
+                            " %s_matrix constructor" % self.format
                 from coo import coo_matrix
                 self.update( coo_matrix(A).todok() )
                 self.shape = A.shape
                 self.dtype = A.dtype
-            else:
-                raise TypeError, "argument should be a tuple of dimensions " \
-                        "or a sparse or dense matrix"
 
     def getnnz(self):
         return dict.__len__(self)
@@ -214,7 +217,7 @@ class dok_matrix(spmatrix, dict):
                 # Ensure value is a single element, not a sequence
                 if isinstance(value, float) or isintlike(value) or \
                         isinstance(value, complex):
-                    dict.__setitem__(self, key, self.dtype.type(value))
+                    dict.__setitem__(self, (i,j), self.dtype.type(value))
                     newrows = max(self.shape[0], int(key[0])+1)
                     newcols = max(self.shape[1], int(key[1])+1)
                     self.shape = (newrows, newcols)
@@ -555,7 +558,7 @@ class dok_matrix(spmatrix, dict):
         return self.tocoo().tocsc()
 
     def toarray(self):
-        return self.tocsr().toarray()
+        return self.tocoo().toarray()
 
     def resize(self, shape):
         """ Resize the matrix to dimensions given by 'shape', removing any

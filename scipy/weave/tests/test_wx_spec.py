@@ -40,7 +40,7 @@ class TestWxConverter(NumpyTestCase):
         assert(self.s.type_match(f))
 
     def check_var_in(self,level=5):
-        mod = ext_tools.ext_module('wx_var_in',compiler='msvc')
+        mod = ext_tools.ext_module('wx_var_in',compiler='')
         mod.customize.add_header('<wx/string.h>')
         mod.customize.add_extra_compile_arg(' '.join(self.s.extra_compile_args))
         mod.customize.add_extra_link_arg(' '.join(self.s.extra_link_args))
@@ -61,12 +61,12 @@ class TestWxConverter(NumpyTestCase):
         try:
             b = 1.
             wx_var_in.test(b)
-        except TypeError:
+        except AttributeError:
             pass
         try:
             b = 1
             wx_var_in.test(b)
-        except TypeError:
+        except AttributeError:
             pass
 
     def no_check_var_local(self,level=5):
@@ -102,4 +102,4 @@ if __name__ == "__main__":
     import sys
     if len(sys.argv) == 1:
         sys.argv.extend(["--level=5"])
-    NumpyTest().run()
+    NumpyTest().test(10,10)

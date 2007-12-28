@@ -1,7 +1,7 @@
 """ Utility functions for sparse matrix module
 """
 
-__all__ = ['getdtype','isscalarlike','isintlike',
+__all__ = ['upcast','getdtype','isscalarlike','isintlike',
             'isshape','issequence','isdense']
 
 import numpy
@@ -58,6 +58,7 @@ def getdtype(dtype, a=None, default=None):
     are both None, construct a data type out of the 'default' parameter.
     Furthermore, 'dtype' must be in 'allowed' set.
     """
+    #TODO is this really what we want?
     canCast = True
     if dtype is None:
         try:

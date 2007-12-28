@@ -8,7 +8,6 @@ fmin_coblya(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
 
 """
 
-from __future__ import nested_scopes
 import _cobyla
 from numpy import copy
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,

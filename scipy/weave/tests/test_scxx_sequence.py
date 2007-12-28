@@ -24,14 +24,13 @@ class _TestSequenceBase(NumpyTestCase):
     seq_type = None
 
     def check_conversion(self,level=5):
-        a = self.seq_type([])
+        a = self.seq_type([1])
         before = sys.getrefcount(a)
-        import weave
-        weave.inline("",['a'])
+        inline_tools.inline(" ",['a'])
         #print 'first:',before
         # first call is goofing up refcount.
         before = sys.getrefcount(a)
-        weave.inline("",['a'])
+        inline_tools.inline(" ",['a'])
         after = sys.getrefcount(a)
         #print '2nd,3rd:', before, after
         assert(after == before)
@@ -399,7 +398,7 @@ class TestList(_TestSequenceBase):
                const int N = a.length();
                std::string blah = std::string("blah");
                for(int i=0; i < N; i++)
-                   b[i] = (std::string)a[i] + blah;
+                   b[i] = convert_to_string(a[i],"a") + blah;
                """
         # compile not included in timing
         inline_tools.inline(code,['a','b'])
@@ -435,4 +434,4 @@ class TestList(_TestSequenceBase):
         assert b == desired
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    NumpyTest().test(10,10)

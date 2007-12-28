@@ -4,7 +4,7 @@
 
 __all__ = [ 'spdiags','speye','spidentity','spkron', 'lil_eye', 'lil_diags' ]
 
-import itertools
+from itertools import izip
 from warnings import warn
 
 import numpy
@@ -15,51 +15,38 @@ from csc import csc_matrix, isspmatrix_csc
 from coo import coo_matrix
 from dok import dok_matrix
 from lil import lil_matrix
+from dia import dia_matrix
 from base import isspmatrix
 
-import sparsetools
 
-def spdiags(diags, offsets, m, n, format=None):
+def spdiags(data, diags, m, n, format=None):
     """Return a sparse matrix given its diagonals.
 
     B = spdiags(diags, offsets, m, n)
 
     *Parameters*:
-        diags   : matrix whose rows contain the diagonal values
-        offsets : diagonals to set 
+        data   : matrix whose rows contain the diagonal values
+        diags  : diagonals to set 
                     k = 0 - the main diagonal
                     k > 0 - the k-th upper diagonal
                     k < 0 - the k-th lower diagonal
-        m, n    : dimensions of the result
-        format  : format of the result (e.g. "csr")
+        m, n   : dimensions of the result
+        format : format of the result (e.g. "csr")
                     By default (format=None) an appropriate sparse matrix 
                     format is returned.  This choice is subject to change.
 
     *Example*
     -------
-
-    >>> diags   = array([[1,2,3],[4,5,6],[7,8,9]])
-    >>> offsets = array([0,-1,2])
-    >>> spdiags( diags, offsets, 3, 5).todense()
-    matrix([[ 1.,  0.,  7.,  0.,  0.],
-            [ 4.,  2.,  0.,  8.,  0.],
-            [ 0.,  5.,  3.,  0.,  9.]])
+    >>> data = array([[1,2,3,4]]).repeat(3,axis=0)
+    >>> diags = array([0,-1,2])
+    >>> spdiags(data,diags,4,4).todense()
+    matrix([[1, 0, 3, 0],
+            [1, 2, 0, 4],
+            [0, 2, 3, 0],
+            [0, 0, 3, 4]])
 
     """
-    #TODO update this example
-    
-    if format == 'csc':
-        diags = array(diags, copy = True)
-        if diags.dtype.char not in 'fdFD':
-            diags = diags.astype('d')
-        if not hasattr(offsets, '__len__' ):
-            offsets = (offsets,)
-        offsets = array(offsets, copy=False, dtype=intc)
-        assert(len(offsets) == diags.shape[0])
-        indptr, rowind, data = sparsetools.spdiags(m, n, len(offsets), offsets, diags)
-        return csc_matrix((data, rowind, indptr), (m, n))
-    else:
-        return spdiags( diags, offsets, m, n, format='csc').asformat(format)
+    return dia_matrix((data, diags), shape=(m,n)).asformat(format)
 
 def spidentity(n, dtype='d', format=None):
     """spidentity(n) returns an (n x n) identity matrix"""
@@ -108,10 +95,8 @@ def spkron(A, B, format=None):
             [ 15.,  20.,   0.,   0.]])
 
     """
-    if not isspmatrix(A) and isspmatrix(B):
-        raise ValueError,'expected sparse matrix'
-
-    A,B = A.tocoo(),B.tocoo()
+    #TODO optimize for small dense B and CSR A
+    A,B = coo_matrix(A),coo_matrix(B)
     output_shape = (A.shape[0]*B.shape[0],A.shape[1]*B.shape[1])
 
     if A.nnz == 0 or B.nnz == 0:
@@ -201,7 +186,7 @@ def lil_diags(diags,offsets,(m,n),dtype='d'):
                              "diagonal %s." % k)
 
     out = lil_matrix((m,n),dtype=dtype)
-    for k,diag in itertools.izip(offsets,diags):
+    for k,diag in izip(offsets,diags):
         for ix,c in enumerate(xrange(clip(k,0,n),clip(m+k,0,n))):
             out.rows[c-k].append(c)
             out.data[c-k].append(diag[ix])

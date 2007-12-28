@@ -4,7 +4,6 @@
 # Author:  Travis Oliphant  2002-2003
 #
 
-from __future__ import nested_scopes
 import scipy
 from scipy.misc import comb, derivative
 from scipy import special
