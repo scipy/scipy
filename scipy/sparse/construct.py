@@ -114,7 +114,7 @@ def spkron(A, B, format=None):
     B = coo_matrix(B)
 
     
-    if 2*B.nnz >= B.shape[0] * B.shape[1]:
+    if (format is None or format == "bsr") and 2*B.nnz >= B.shape[0] * B.shape[1]:
         #B is fairly dense, use BSR
         A = csr_matrix(A,copy=True)
         
