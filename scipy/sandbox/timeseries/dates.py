@@ -617,9 +617,26 @@ def _listparser(dlist, freq=None):
 
 def date_array(dlist=None, start_date=None, end_date=None, length=None,
                freq=None):
-    """Constructs a DateArray from:
-    - a starting date and either an ending date or a given length.
-    - a list of dates.
+    """Factory function for constructing a DateArray
+
+*Parameters*:
+    dlist : {list of dates or DateArray} (optional)
+        may be a list of dates, integer representations of dates for a given
+        frequency, datetime objects, or an existing DateArray. If specifying
+        a list of dates, you must also specify the `freq` parameter.
+
+    start_date : {Date} (optional)
+        if you want a continuous DateArray, specify a start_date and either an
+        `end_date` or a `length`. Frequency of the resulting DateArray will be
+        automatically determined based on the frequency of this parameter.
+
+    end_date : {Date} (optional)
+        last date in resulting DateArray. Specify this parameter or `length`
+        in combination with `start_date` for a continuous DateArray.
+
+    length : {int} (optional)
+        the length of the resulting DateArray. Specify this parameter or
+        `end_date` in combination with `start_date` for a continuous DateArray.
     """
     freq = check_freq(freq)
     # Case #1: we have a list ...................
