@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 
 from tempfile import mktemp
-from numpy.testing import *
 from numpy import array,transpose
+from scipy.testing import *
 
-set_package_path()
-from io.mmio import mminfo,mmread,mmwrite
 import scipy
-restore_path()
+import scipy.sparse
+from scipy.io.mmio import mminfo,mmread,mmwrite
 
-class TestMMIOArray(NumpyTestCase):
+class TestMMIOArray(TestCase):
 
-    def check_simple(self):
+    def test_simple(self):
         a = [[1,2],[3,4]]
         fn = mktemp()
         mmwrite(fn,a)
@@ -19,7 +18,7 @@ class TestMMIOArray(NumpyTestCase):
         b = mmread(fn)
         assert_array_almost_equal(a,b)
 
-    def check_simple_rectangular(self):
+    def test_simple_rectangular(self):
         a = [[1,2,3],[4,5,6]]
         fn = mktemp()
         mmwrite(fn,a)
@@ -27,7 +26,7 @@ class TestMMIOArray(NumpyTestCase):
         b = mmread(fn)
         assert_array_almost_equal(a,b)
 
-    def check_simple_rectangular_real(self):
+    def test_simple_rectangular_real(self):
         a = [[1,2],[3.5,4],[5,6]]
         fn = mktemp()
         mmwrite(fn,a)
@@ -35,7 +34,7 @@ class TestMMIOArray(NumpyTestCase):
         b = mmread(fn)
         assert_array_almost_equal(a,b)
 
-    def check_simple_real(self):
+    def test_simple_real(self):
         a = [[1,2],[3,4.0]]
         fn = mktemp()
         mmwrite(fn,a)
@@ -43,7 +42,7 @@ class TestMMIOArray(NumpyTestCase):
         b = mmread(fn)
         assert_array_almost_equal(a,b)
 
-    def check_simple_complex(self):
+    def test_simple_complex(self):
         a = [[1,2],[3,4j]]
         fn = mktemp()
         mmwrite(fn,a)
@@ -51,7 +50,7 @@ class TestMMIOArray(NumpyTestCase):
         b = mmread(fn)
         assert_array_almost_equal(a,b)
 
-    def check_simple_symmetric(self):
+    def test_simple_symmetric(self):
         a = [[1,2],[2,4]]
         fn = mktemp()
         mmwrite(fn,a)
@@ -59,7 +58,7 @@ class TestMMIOArray(NumpyTestCase):
         b = mmread(fn)
         assert_array_almost_equal(a,b)
 
-    def check_simple_skew_symmetric(self):
+    def test_simple_skew_symmetric(self):
         a = [[1,2],[-2,4]]
         fn = mktemp()
         mmwrite(fn,a)
@@ -67,7 +66,7 @@ class TestMMIOArray(NumpyTestCase):
         b = mmread(fn)
         assert_array_almost_equal(a,b)
 
-    def check_simple_skew_symmetric_float(self):
+    def test_simple_skew_symmetric_float(self):
         a = array([[1,2],[-2.0,4]],'f')
         fn = mktemp()
         mmwrite(fn,a)
@@ -75,7 +74,7 @@ class TestMMIOArray(NumpyTestCase):
         b = mmread(fn)
         assert_array_almost_equal(a,b)
 
-    def check_simple_hermitian(self):
+    def test_simple_hermitian(self):
         a = [[1,2+3j],[2-3j,4]]
         fn = mktemp()
         mmwrite(fn,a)
@@ -83,7 +82,7 @@ class TestMMIOArray(NumpyTestCase):
         b = mmread(fn)
         assert_array_almost_equal(a,b)
 
-    def check_random_symmetric_real(self):
+    def test_random_symmetric_real(self):
         sz = (20,20)
         a = rand(*sz)
         a = a + transpose(a)
@@ -93,7 +92,7 @@ class TestMMIOArray(NumpyTestCase):
         b = mmread(fn)
         assert_array_almost_equal(a,b)
 
-    def check_random_rect_real(self):
+    def test_random_rect_real(self):
         sz = (20,15)
         a = rand(*sz)
         fn = mktemp()
@@ -184,8 +183,8 @@ _symmetric_pattern_example = '''\
     5     4  
 '''
 
-class TestMMIOCoordinate(NumpyTestCase):
-    def check_read_geneal(self):
+class TestMMIOCoordinate(TestCase):
+    def test_read_geneal(self):
         """read a general matrix"""
         fn = mktemp()
         f = open(fn,'w')
@@ -200,7 +199,7 @@ class TestMMIOCoordinate(NumpyTestCase):
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
 
-    def check_read_hermitian(self):
+    def test_read_hermitian(self):
         """read a hermitian matrix"""
         fn = mktemp()
         f = open(fn,'w')
@@ -215,7 +214,7 @@ class TestMMIOCoordinate(NumpyTestCase):
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
     
-    def check_read_skew(self):
+    def test_read_skew(self):
         """read a skew-symmetric matrix"""
         fn = mktemp()
         f = open(fn,'w')
@@ -230,7 +229,7 @@ class TestMMIOCoordinate(NumpyTestCase):
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
     
-    def check_read_symmetric(self):
+    def test_read_symmetric(self):
         """read a symmetric matrix"""
         fn = mktemp()
         f = open(fn,'w')
@@ -245,7 +244,7 @@ class TestMMIOCoordinate(NumpyTestCase):
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
 
-    def check_read_symmetric(self):
+    def test_read_symmetric(self):
         """read a symmetric pattern matrix"""
         fn = mktemp()
         f = open(fn,'w')
@@ -261,7 +260,7 @@ class TestMMIOCoordinate(NumpyTestCase):
         assert_array_almost_equal(a,b)
 
 
-    def check_real_write_read(self):
+    def test_real_write_read(self):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
         V = array([  1.0,   6.0,   10.5, 0.015,   250.5,  -280.0, 33.32, 12.0 ])
@@ -276,7 +275,7 @@ class TestMMIOCoordinate(NumpyTestCase):
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
 
-    def check_complex_write_read(self):
+    def test_complex_write_read(self):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
         V = array([  1.0 + 3j,    6.0 + 2j,  10.50 + 0.9j, 0.015 + -4.4j,
@@ -293,4 +292,4 @@ class TestMMIOCoordinate(NumpyTestCase):
         assert_array_almost_equal(a,b)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

@@ -6,18 +6,15 @@
 # also check out numpyio.fread.__doc__ and other method docstrings.
 
 import os
-from numpy.testing import *
-set_package_path()
-import io
-from io import numpyio
-restore_path()
-
+from scipy.testing import *
+import scipy.io as io
+from scipy.io import numpyio
 
 import numpy.oldnumeric as N
 import tempfile
 
-class TestNumpyio(NumpyTestCase):
-    def check_basic(self):
+class TestNumpyio(TestCase):
+    def test_basic(self):
         # Generate some data
         a = 255*rand(20)
         # Open a file
@@ -34,8 +31,8 @@ class TestNumpyio(NumpyTestCase):
         assert(N.product(a.astype(N.Int16) == b,axis=0))
         os.remove(fname)
 
-class TestReadArray(NumpyTestCase):
-    def check_complex(self):
+class TestReadArray(TestCase):
+    def test_complex(self):
         a = rand(13,4) + 1j*rand(13,4)
         fname = tempfile.mktemp('.dat')
         io.write_array(fname,a)
@@ -43,7 +40,7 @@ class TestReadArray(NumpyTestCase):
         assert_array_almost_equal(a,b,decimal=4)
         os.remove(fname)
 
-    def check_float(self):
+    def test_float(self):
         a = rand(3,4)*30
         fname = tempfile.mktemp('.dat')
         io.write_array(fname,a)
@@ -51,7 +48,7 @@ class TestReadArray(NumpyTestCase):
         assert_array_almost_equal(a,b,decimal=4)
         os.remove(fname)
 
-    def check_integer(self):
+    def test_integer(self):
         from scipy import stats
         a = stats.randint.rvs(1,20,size=(3,4))
         fname = tempfile.mktemp('.dat')
@@ -61,4 +58,4 @@ class TestReadArray(NumpyTestCase):
         os.remove(fname)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

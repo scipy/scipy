@@ -1,16 +1,14 @@
-from numpy.testing import *
 import numpy as N
+from scipy.testing import *
 
-set_package_path()
-from io.recaster import sctype_attributes, Recaster, RecastError
-restore_path()
+from scipy.io.recaster import sctype_attributes, Recaster, RecastError
 
 try:  # Python 2.3 support
     from sets import Set as set
 except:
     pass
 
-class TestRecaster(NumpyTestCase):
+class TestRecaster(TestCase):
 
     def test_init(self):
         # Setting sctype_list
@@ -173,3 +171,7 @@ class TestRecaster(NumpyTestCase):
             dtt = arr.dtype.type
             assert dtt is outp, \
                    'Expected %s from %s, got %s' % (outp, inp, dtt)
+            
+if __name__ == "__main__":
+    unittest.main()
+

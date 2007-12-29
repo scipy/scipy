@@ -1,24 +1,19 @@
-
-import bz2
-import gzip
 import os
 import sys
 import struct
+import bz2
+import gzip
 from tempfile import mkdtemp, mkstemp, NamedTemporaryFile
 from shutil import rmtree
 from urlparse import urlparse
 
-from numpy.testing import *
+from scipy.testing import *
 
 # HACK: import the src datasource
 #       Until datasource is robust enough to include in scipy.io package
 sys.path.insert(0, os.path.abspath('..'))
-import datasource
+import scipy.io.datasource as datasource
 del sys.path[0]
-
-#set_package_path()
-#from scipy.io import datasource
-#restore_path()
 
 def urlopen_stub(url, data=None):
     '''Stub to replace urlopen for testing.'''
@@ -74,7 +69,7 @@ def valid_httpfile():
 def invalid_httpfile():
     return http_fakefile
 
-class TestDataSourceOpen(NumpyTestCase):
+class TestDataSourceOpen(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
         self.ds = datasource.DataSource(self.tmpdir)
@@ -120,7 +115,7 @@ class TestDataSourceOpen(NumpyTestCase):
         self.assertEqual(magic_line, result)
 
 
-class TestDataSourceExists(NumpyTestCase):
+class TestDataSourceExists(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
         self.ds = datasource.DataSource(self.tmpdir)
@@ -150,7 +145,7 @@ class TestDataSourceExists(NumpyTestCase):
         self.assertEqual(self.ds.exists(tmpfile), False)
 
 
-class TestDataSourceAbspath(NumpyTestCase):
+class TestDataSourceAbspath(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
         self.ds = datasource.DataSource(self.tmpdir)
@@ -187,7 +182,7 @@ class TestDataSourceAbspath(NumpyTestCase):
         self.assertNotEqual(invalidfile, self.ds.abspath(tmpfile))
 
 
-class TestRespositoryAbspath(NumpyTestCase):
+class TestRespositoryAbspath(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
         self.repos = datasource.Repository(valid_baseurl(), self.tmpdir)
@@ -204,7 +199,7 @@ class TestRespositoryAbspath(NumpyTestCase):
         self.assertEqual(local_path, filepath)
 
 
-class TestRepositoryExists(NumpyTestCase):
+class TestRepositoryExists(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
         self.repos = datasource.Repository(valid_baseurl(), self.tmpdir)
@@ -237,7 +232,7 @@ class TestRepositoryExists(NumpyTestCase):
         assert self.repos.exists(tmpfile)
 
 
-class TestOpenFunc(NumpyTestCase):
+class TestOpenFunc(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
 
@@ -253,4 +248,4 @@ class TestOpenFunc(NumpyTestCase):
 
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

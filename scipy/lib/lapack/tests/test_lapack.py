@@ -12,26 +12,23 @@ Run tests if lapack is not installed:
   python tests/test_lapack.py [<level>]
 """
 
+import os
 import sys
-from numpy.testing import *
-from numpy import *
+from scipy.testing import *
+from numpy import array, ones
 
-set_package_path()
-from lapack import flapack,clapack
-restore_path()
+from scipy.lib.lapack import flapack,clapack
 
-set_local_path()
+sys.path.insert(0, os.path.split(__file__))
 from gesv_tests import _test_gev
 from esv_tests import _test_ev
-restore_path()
 
 #class _test_ev: pass
 
-class _TestLapack(NumpyTestCase,
-                   _test_ev,
-                   _test_gev):
-
-    def check_gebal(self):
+class _TestLapack(_test_ev,
+                  _test_gev):
+    # Mixin class for lapack tests
+    def test_gebal(self):
         a = [[1,2,3],[4,5,6],[7,8,9]]
         a1 = [[1,0,0,3e-4],
               [4,0,0,2e-3],
@@ -48,7 +45,7 @@ class _TestLapack(NumpyTestCase,
         ba,lo,hi,pivscale,info = f(a1,permute=1,scale=1)
         assert not info,`info`
 
-    def check_gehrd(self):
+    def test_gehrd(self):
         a = [[-149, -50,-154],
              [ 537, 180, 546],
              [ -27,  -9, -25]]
@@ -84,16 +81,16 @@ See scipy/INSTALL.txt for troubleshooting.
 ****************************************************************
 """
 else:
-    class TestFlapackDouble(_TestLapack):
+    class TestFlapackDouble(TestCase, _TestLapack):
         lapack = PrefixWrapper(flapack,'d')
         decimal = 12
-    class TestFlapackFloat(_TestLapack):
+    class TestFlapackFloat(TestCase, _TestLapack):
         lapack = PrefixWrapper(flapack,'s')
         decimal = 5
-    class TestFlapackComplex(_TestLapack):
+    class TestFlapackComplex(TestCase, _TestLapack):
         lapack = PrefixWrapper(flapack,'c')
         decimal = 5
-    class TestFlapackDoubleComplex(_TestLapack):
+    class TestFlapackDoubleComplex(TestCase, _TestLapack):
         lapack = PrefixWrapper(flapack,'z')
         decimal = 12
 
@@ -109,18 +106,18 @@ Notes:
 ****************************************************************
 """
 else:
-    class TestClapackDouble(_TestLapack):
+    class TestClapackDouble(TestCase, _TestLapack):
         lapack = PrefixWrapper(clapack,'d')
         decimal = 12
-    class TestClapackFloat(_TestLapack):
+    class TestClapackFloat(TestCase, _TestLapack):
         lapack = PrefixWrapper(clapack,'s')
         decimal = 5
-    class TestClapackComplex(_TestLapack):
+    class TestClapackComplex(TestCase, _TestLapack):
         lapack = PrefixWrapper(clapack,'c')
         decimal = 5
-    class TestClapackDoubleComplex(_TestLapack):
+    class TestClapackDoubleComplex(TestCase, _TestLapack):
         lapack = PrefixWrapper(clapack,'z')
         decimal = 12
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

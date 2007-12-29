@@ -1,14 +1,12 @@
-from StringIO import StringIO
 import os
+from StringIO import StringIO
 from tempfile import mkstemp
-from numpy.testing import *
+from scipy.testing import *
 import numpy as N
 
-set_package_path()
-from io.npfile import npfile, sys_endian_code
-restore_path()
+from scipy.io.npfile import npfile, sys_endian_code
 
-class TestNpFile(NumpyTestCase):
+class TestNpFile(TestCase):
 
     def test_init(self):
         fd, fname = mkstemp()
@@ -102,3 +100,6 @@ class TestNpFile(NumpyTestCase):
         assert_array_equal(npf.read_array(adt, shp, endian='dtype'), bs_arr)
         npf.rewind()
         assert_array_equal(npf.read_array(adt, shp, order='C'), cf_arr)
+
+if __name__ == "__main__":
+    unittest.main()

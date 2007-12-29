@@ -7,26 +7,22 @@
 # kmeans works OK for trivial examples.
 
 import sys
-from numpy.testing import *
+import os.path
+from scipy.testing import *
 
 import numpy as N
 
-set_package_path()
-from cluster.vq import kmeans, kmeans2, py_vq, py_vq2, _py_vq_1d, vq, ClusterError
+from scipy.cluster.vq import kmeans, kmeans2, py_vq, py_vq2, _py_vq_1d, vq, ClusterError
 try:
-    from cluster import _vq
+    from scipy.cluster import _vq
     TESTC=True
 except ImportError:
     print "== Error while importing _vq, not testing C imp of vq =="
     TESTC=False
-restore_path()
 
-import os.path
 #Optional:
-set_local_path()
 # import modules that are located in the same directory as this file.
-DATAFILE1 = os.path.join(sys.path[0], "data.txt")
-restore_path()
+DATAFILE1 = os.path.join(os.path.dirname(__file__), "data.txt")
 
 # Global data
 X   = N.array([[3.0, 3], [4, 3], [4, 2],
@@ -43,20 +39,20 @@ CODET2  = N.array([[11.0/3, 8.0/3],
 
 LABEL1  = N.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
-class TestVq(NumpyTestCase):
-    def check_py_vq(self, level=1):
+class TestVq(TestCase):
+    def test_py_vq(self, level=1):
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
         label1 = py_vq(X, initc)[0]
         assert_array_equal(label1, LABEL1)
 
-    def check_py_vq2(self, level=1):
+    def test_py_vq2(self, level=1):
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
         label1 = py_vq2(X, initc)[0]
         assert_array_equal(label1, LABEL1)
 
-    def check_vq(self, level=1):
+    def test_vq(self, level=1):
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
         if TESTC:
@@ -66,7 +62,7 @@ class TestVq(NumpyTestCase):
         else:
             print "== not testing C imp of vq =="
 
-    #def check_py_vq_1d(self, level=1):
+    #def test_py_vq_1d(self, level=1):
     #    """Test special rank 1 vq algo, python implementation."""
     #    data = X[:, 0]
     #    initc = data[:3]
@@ -76,7 +72,7 @@ class TestVq(NumpyTestCase):
     #    assert_array_equal(a, ta)
     #    assert_array_equal(b, tb)
 
-    def check_vq_1d(self, level=1):
+    def test_vq_1d(self, level=1):
         """Test special rank 1 vq algo, python implementation."""
         data = X[:, 0]
         initc = data[:3]
@@ -89,15 +85,15 @@ class TestVq(NumpyTestCase):
         else:
             print "== not testing C imp of vq (rank 1) =="
 
-class TestKMean(NumpyTestCase):
-    def check_kmeans_simple(self, level=1):
+class TestKMean(TestCase):
+    def test_kmeans_simple(self, level=1):
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
         code1 = kmeans(X, code, iter = 1)[0]
 
         assert_array_almost_equal(code1, CODET2)
 
-    def check_kmeans_lost_cluster(self, level=1):
+    def test_kmeans_lost_cluster(self, level=1):
         """This will cause kmean to have a cluster with no points."""
         data = N.fromfile(open(DATAFILE1), sep = ", ")
         data = data.reshape((200, 2))
@@ -113,7 +109,7 @@ class TestKMean(NumpyTestCase):
         except ClusterError, e:
             print "exception raised as expected: " + str(e)
 
-    def check_kmeans2_simple(self, level=1):
+    def test_kmeans2_simple(self, level=1):
         """Testing simple call to kmeans2 and its results."""
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
@@ -123,7 +119,7 @@ class TestKMean(NumpyTestCase):
         assert_array_almost_equal(code1, CODET1)
         assert_array_almost_equal(code2, CODET2)
 
-    def check_kmeans2_rank1(self, level=1):
+    def test_kmeans2_rank1(self, level=1):
         """Testing simple call to kmeans2 with rank 1 data."""
         data = N.fromfile(open(DATAFILE1), sep = ", ")
         data = data.reshape((200, 2))
@@ -135,7 +131,7 @@ class TestKMean(NumpyTestCase):
         code1 = kmeans2(data1, code, iter = 1)[0]
         code2 = kmeans2(data1, code, iter = 2)[0]
 
-    def check_kmeans2_init(self, level = 1):
+    def test_kmeans2_init(self, level = 1):
         """Testing that kmeans2 init methods work."""
         data = N.fromfile(open(DATAFILE1), sep = ", ")
         data = data.reshape((200, 2))
@@ -149,4 +145,4 @@ class TestKMean(NumpyTestCase):
         kmeans2(data, 3, minit = 'points')
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()
