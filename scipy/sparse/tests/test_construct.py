@@ -9,6 +9,8 @@ from scipy.sparse import csr_matrix, \
      lil_eye, lil_diags
 restore_path()
 
+#TODO check whether format=XXX is respected
+
 class TestConstructUtils(NumpyTestCase):
     def check_spdiags(self):
         diags1 = array( [[ 1, 2, 3, 4, 5]] )

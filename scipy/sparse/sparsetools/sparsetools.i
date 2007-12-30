@@ -144,15 +144,20 @@ T_INPLACE_ARRAY2( ctype )
  */
 DECLARE_INDEX_TYPE( int       )
 
-DECLARE_DATA_TYPE( signed char         )
-DECLARE_DATA_TYPE( unsigned char       )
-DECLARE_DATA_TYPE( short               )
-DECLARE_DATA_TYPE( int                 )
-DECLARE_DATA_TYPE( long long           )
-DECLARE_DATA_TYPE( float               )
-DECLARE_DATA_TYPE( double              )
-DECLARE_DATA_TYPE( npy_cfloat_wrapper  )
-DECLARE_DATA_TYPE( npy_cdouble_wrapper )
+DECLARE_DATA_TYPE( signed char             )
+DECLARE_DATA_TYPE( unsigned char           )
+DECLARE_DATA_TYPE( short                   )
+DECLARE_DATA_TYPE( unsigned short          )
+DECLARE_DATA_TYPE( int                     )
+DECLARE_DATA_TYPE( unsigned int            )
+DECLARE_DATA_TYPE( long long               )
+DECLARE_DATA_TYPE( unsigned long long      )
+DECLARE_DATA_TYPE( float                   )
+DECLARE_DATA_TYPE( double                  )
+DECLARE_DATA_TYPE( long double             )
+DECLARE_DATA_TYPE( npy_cfloat_wrapper      )
+DECLARE_DATA_TYPE( npy_cdouble_wrapper     )
+DECLARE_DATA_TYPE( npy_clongdouble_wrapper )
 
 
 
@@ -168,12 +173,17 @@ DECLARE_DATA_TYPE( npy_cdouble_wrapper )
 %template(f_name)   f_name<int,signed char>;
 %template(f_name)   f_name<int,unsigned char>;
 %template(f_name)   f_name<int,short>;
+%template(f_name)   f_name<int,unsigned short>;
 %template(f_name)   f_name<int,int>;
+%template(f_name)   f_name<int,unsigned int>;
 %template(f_name)   f_name<int,long long>;
+%template(f_name)   f_name<int,unsigned long long>;
 %template(f_name)   f_name<int,float>;
 %template(f_name)   f_name<int,double>;
+%template(f_name)   f_name<int,long double>;
 %template(f_name)   f_name<int,npy_cfloat_wrapper>;
 %template(f_name)   f_name<int,npy_cdouble_wrapper>;
+%template(f_name)   f_name<int,npy_clongdouble_wrapper>;
 /* 64-bit indices would go here */
 %enddef
 

@@ -119,11 +119,9 @@ class _block_matrix(_data_matrix):
                     % self.indices.dtype.name )
 
         # only support 32-bit ints for now
-        if self.indptr.dtype != intc:
-            self.indptr  = self.indptr.astype(intc)
-        if self.indices.dtype != intc:
-            self.indices = self.indices.astype(intc)
-        self.data = to_native(self.data)
+        self.indptr  = asarray(self.indptr,intc)
+        self.indices = asarray(self.indices,intc)
+        self.data    = to_native(self.data)
 
         # check array shapes
         if (rank(self.indices) != 1) or (rank(self.indptr) != 1):

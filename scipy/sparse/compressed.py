@@ -137,11 +137,9 @@ class _cs_matrix(_data_matrix):
                     % self.indices.dtype.name )
 
         # only support 32-bit ints for now
-        if self.indptr.dtype != intc:
-            self.indptr  = self.indptr.astype(intc)
-        if self.indices.dtype != intc:
-            self.indices = self.indices.astype(intc)
-        self.data = to_native(self.data)
+        self.indptr  = asarray(self.indptr,dtype=intc)
+        self.indices = asarray(self.indices,dtype=intc)
+        self.data    = to_native(self.data)
 
         # check array shapes
         if (rank(self.data) != 1) or (rank(self.indices) != 1) or \
@@ -534,7 +532,7 @@ class _cs_matrix(_data_matrix):
         return A
 
         # an alternative that has linear complexity is the following
-        # typically the previous option is faster
+        # although the previous option is typically faster
         #return self.toother().toother()
 
     def sort_indices(self,check_first=True):
@@ -546,6 +544,8 @@ class _cs_matrix(_data_matrix):
 
         fn = sparsetools.csr_sort_indices
         fn( len(self.indptr) - 1, self.indptr, self.indices, self.data)
+
+        #TODO store is_sorted flag somewhere
 
     def ensure_sorted_indices(self, inplace=False):
         """Return a copy of this matrix where the column indices are sorted

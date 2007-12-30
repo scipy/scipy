@@ -7,8 +7,9 @@ __all__ = ['upcast','getdtype','isscalarlike','isintlike',
 import numpy
 
 # keep this list syncronized with sparsetools
-supported_dtypes = ['int8','uint8','int16','int32','int64', 
-                    'float32','float64','complex64','complex128']
+supported_dtypes = ['int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32',
+        'int64', 'uint64', 'float32', 'float64', 'float96',
+        'complex64', 'complex128', 'complex192']
 supported_dtypes = [ numpy.typeDict[x] for x in supported_dtypes]
 
 def upcast(*args):
@@ -43,12 +44,8 @@ def upcast(*args):
     raise TypeError,'no supported conversion for types: %s' % args
 
 
-#TODO handle this in SWIG
 def to_native(A):
-    if not A.dtype.isnative:
-        return A.astype(A.dtype.newbyteorder('native'))
-    else:
-        return A
+    return numpy.asarray(A,dtype=A.dtype.newbyteorder('native'))
 
 
 def getdtype(dtype, a=None, default=None):
