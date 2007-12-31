@@ -208,12 +208,12 @@ class dia_matrix(_data_matrix):
             return self
 
     def tocsr(self):
-        #TODO optimize COO->CSR
-        return self.tocoo().tocsr()
+        #this could be faster
+        return self.tocoo().tocsr(sum_duplicates=False)
 
     def tocsc(self):
-        #TODO optimize COO->CSC
-        return self.tocoo().tocsc()
+        #this could be faster
+        return self.tocoo().tocsc(sum_duplicates=False)
 
     def tocoo(self):
         num_data = len(self.data)

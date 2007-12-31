@@ -1,12 +1,18 @@
 """Base class for sparse matrices"""
 
-__all__ = ['spmatrix','isspmatrix','issparse']
+__all__ = ['spmatrix', 'isspmatrix', 'issparse',
+        'SparseWarning','SparseEfficiencyWarning']
 
 from warnings import warn
 
 from numpy import asarray, asmatrix, asanyarray, ones
 
 from sputils import isdense, isscalarlike, isintlike
+
+
+class SparseWarning(Warning): pass
+class SparseFormatWarning(SparseWarning): pass
+class SparseEfficiencyWarning(SparseWarning): pass
 
 
 # The formats that we might potentially understand.
@@ -273,7 +279,7 @@ class spmatrix(object):
             raise ValueError,'exponent must be an integer'
         elif isspmatrix(other):
             warn('Using ** for elementwise multiplication is deprecated.'\
-                    'Use .multiply() instead',DeprecationWarning)
+                    'Use .multiply() instead', DeprecationWarning)
             return self.multiply(other)
         else:
             raise NotImplementedError
@@ -477,6 +483,7 @@ class spmatrix(object):
 
     def save(self, file_name, format = '%d %d %f\n'):
         #deprecated on Dec 14 2007
+        #remove after 0.7 release
         warn('save() is deprecated, consider using mmwrite() or savemat()' \
                 ' provided by scipy.io instead',
                 DeprecationWarning)

@@ -248,7 +248,8 @@ class coo_matrix(_data_matrix):
                       indptr, indices, data)
 
             A = csc_matrix((data, indices, indptr), self.shape)
-            A.sum_duplicates()
+            if sum_duplicates:
+                A.sum_duplicates()
             return A
 
     def tocsr(self,sum_duplicates=True):
@@ -272,7 +273,6 @@ class coo_matrix(_data_matrix):
 
             A = csr_matrix((data, indices, indptr), self.shape)
             if sum_duplicates:
-                A.sort_indices()
                 A.sum_duplicates()
             return A
     

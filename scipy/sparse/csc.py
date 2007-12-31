@@ -9,7 +9,7 @@ from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
         empty, hstack, isscalar, ndarray, shape, searchsorted, where, \
         concatenate
 
-from base import spmatrix,isspmatrix
+from base import spmatrix, isspmatrix
 from sparsetools import csc_tocsr
 from sputils import upcast, to_native, isdense, isshape, getdtype, \
         isscalarlike
@@ -104,52 +104,6 @@ class csc_matrix(_cs_matrix):
         for r in xrange(self.shape[0]):
             yield csr[r,:]
 
-    def __setitem__(self, key, val):
-        if isinstance(key, tuple):
-            row = key[0]
-            col = key[1]
-            if not (isscalarlike(row) and isscalarlike(col)):
-                raise NotImplementedError("Fancy indexing in assignments not"
-                                          "supported for csc matrices.")
-            M, N = self.shape
-            if (row < 0):
-                row = M + row
-            if (col < 0):
-                col = N + col
-            if (row < 0) or (col < 0):
-                raise IndexError, "index out of bounds"
-            if (col >= N):
-                self.indptr = resize1d(self.indptr, col+2)
-                self.indptr[N+1:] = self.indptr[N]
-                N = col+1
-            if (row >= M):
-                M = row+1
-            self.shape = (M, N)
-
-            indxs = numpy.where(row == self.indices[self.indptr[col]:self.indptr[col+1]])
-    
-            if len(indxs[0]) == 0:
-                #value not present
-                newindx = self.indices[self.indptr[col]:self.indptr[col+1]].searchsorted(row)
-                newindx += self.indptr[col]
-
-                val = array([val],dtype=self.data.dtype)
-                row = array([row],dtype=self.indices.dtype)
-                self.data    = concatenate((self.data[:newindx],val,self.data[newindx:]))
-                self.indices = concatenate((self.indices[:newindx],row,self.indices[newindx:]))
-
-                self.indptr[col+1:] += 1
-            elif len(indxs[0]) == 1:
-                #value already present
-                self.data[self.indptr[col]:self.indptr[col+1]][indxs[0]] = val
-            else:
-                raise IndexError, "row index occurs more than once"
-
-            self.check_format(full_check=False)
-        else:
-            # We should allow slices here!
-            raise IndexError, "invalid index"
-
     def rowcol(self, ind):
         row = self.indices[ind]
         col = searchsorted(self.indptr, ind+1)-1
@@ -173,17 +127,8 @@ class csc_matrix(_cs_matrix):
         from csr import csr_matrix
         return csr_matrix((data, indices, indptr), self.shape)
 
-#    def tobsc(self,blocksize=None, copy=True):
-#        if blocksize in [None, (1,1)]:
-#            from bsc import bsc_matrix
-#            arg1 = (self.data.reshape(-1,1,1),self.indices,self.indptr)  
-#            return bsc_matrix( arg1, shape=self.shape, copy=copy )
-#        else:
-#            #TODO make this more efficient
-#            return self.tocoo(copy=False).tobsc(blocksize=blocksize)
-#    
     def tobsr(self, blocksize=None):
-        if blocksize in [None, (1,1)]:
+        if blocksize == (1,1):
             from bsr import bsr_matrix
             csr = self.tocsr()
             arg1 = (csr.data.reshape(-1,1,1),csr.indices,csr.indptr)  

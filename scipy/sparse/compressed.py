@@ -8,9 +8,9 @@ from warnings import warn
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
         empty, hstack, isscalar, ndarray, shape, searchsorted, empty_like, \
-        where
+        where, concatenate
 
-from base import spmatrix, isspmatrix
+from base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from data import _data_matrix
 import sparsetools
 from sputils import upcast, to_native, isdense, isshape, getdtype, \
@@ -35,7 +35,7 @@ class _cs_matrix(_data_matrix):
             warn("dims= is deprecated, use shape= instead", DeprecationWarning)
             shape=dims
         
-        if dims is not None:
+        if nzmax is not None:
             warn("nzmax= is deprecated", DeprecationWarning)
 
 
@@ -393,9 +393,9 @@ class _cs_matrix(_data_matrix):
     def _get_single_element(self,row,col):
         M, N = self.shape
         if (row < 0):
-            row = M + row
+            row += M
         if (col < 0):
-            col = N + col
+            col += N
         if not (0<=row<M) or not (0<=col<N):
             raise IndexError, "index out of bounds"
         
@@ -465,6 +465,58 @@ class _cs_matrix(_data_matrix):
         indptr = numpy.array([0, len(indices)])
         return self.__class__((data, index, indptr), shape=shape, \
                               dtype=self.dtype)
+
+    def __setitem__(self, key, val):
+        if isinstance(key, tuple):
+            row,col = key
+            if not (isscalarlike(row) and isscalarlike(col)):
+                raise NotImplementedError("Fancy indexing in assignment not "
+                                          "supported for csr matrices.")
+            M, N = self.shape
+            if (row < 0):
+                row += M
+            if (col < 0):
+                col += N
+            if not (0<=row<M) or not (0<=col<N):
+                raise IndexError, "index out of bounds"
+        
+            major_index, minor_index = self._swap((row,col))
+        
+            start = self.indptr[major_index]
+            end   = self.indptr[major_index+1]
+            indxs = where(minor_index == self.indices[start:end])[0]
+
+            num_matches = len(indxs)
+
+            if num_matches == 0:
+                #entry not already present
+                warn('changing the sparsity structure of a %s_matrix is expensive. ' \
+                        'lil_matrix is more efficient.' % self.format, \
+                        SparseEfficiencyWarning)
+                self.sort_indices()
+   
+                #no harm if not sorted
+                newindx = self.indices[start:end].searchsorted(minor_index)
+                newindx += start
+
+                val = array([val],dtype=self.data.dtype)
+                minor_index = array([minor_index],dtype=self.indices.dtype)
+                self.data    = concatenate((self.data[:newindx],val,self.data[newindx:]))
+                self.indices = concatenate((self.indices[:newindx],minor_index,self.indices[newindx:]))
+
+                self.indptr[major_index+1:] += 1
+
+            elif num_matches == 1:
+                #entry appears exactly once
+                self.data[start:end][indxs[0]] = val
+            else:
+                #entry appears more than once
+                raise ValueError,'nonzero entry (%d,%d) occurs more than once' % (row,col)
+
+            self.check_format(full_check=True)
+        else:
+            # We should allow slices here!
+            raise IndexError, "invalid index"
 
 
     # conversion methods

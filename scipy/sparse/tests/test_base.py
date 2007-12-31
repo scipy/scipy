@@ -22,7 +22,7 @@ from numpy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
-        extract_diagonal, speye, spkron
+        extract_diagonal, speye, spkron, SparseEfficiencyWarning
 from scipy.linsolve import splu
 restore_path()
 
@@ -482,6 +482,8 @@ class _TestMatvecOutput:
 
 class _TestGetSet:
     def check_setelement(self):
+        import warnings
+        warnings.simplefilter('ignore',SparseEfficiencyWarning)
         a = self.spmatrix((3,4))
         a[1,2] = 4.0
         a[0,1] = 3
