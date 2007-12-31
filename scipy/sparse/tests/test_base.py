@@ -23,6 +23,7 @@ set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
         extract_diagonal, speye, spkron, SparseEfficiencyWarning
+from scipy.sparse.sputils import supported_dtypes
 from scipy.linsolve import splu
 restore_path()
 
@@ -302,7 +303,7 @@ class _TestCommon:
             assert_equal( result.shape, (4,2) )
             assert_equal( result, dot(a,b) )
 
-    def check_conversions(self):
+    def check_formatconversions(self):
         A = spkron([[1,0,1],[0,1,1],[1,0,0]], [[1,1],[0,1]] )
         D = A.todense()
         A = self.spmatrix(A)
@@ -657,16 +658,11 @@ class _TestArithmetic:
         self.Asp = self.spmatrix(self.A)
         self.Bsp = self.spmatrix(self.B)
 
-        #supported types
-        self.dtypes =  ['int8','uint8','int16','uint16','int32','uint32',
-                        'int64','uint64','float32','float64','float96',
-                        'complex64','complex128','complex192']
-
-    def check_conversion(self):
+    def check_astype(self):
         self.arith_init()
 
         #check whether dtype and value is preserved in conversion
-        for x in self.dtypes:
+        for x in supported_dtypes:
             A = self.A.astype(x)
             B = self.B.astype(x)
 
@@ -684,10 +680,10 @@ class _TestArithmetic:
         assert_array_equal((self.Asp+self.Bsp).todense(),self.A+self.B)
 
         #check conversions
-        for x in self.dtypes:
+        for x in supported_dtypes:
             A   = self.A.astype(x)
             Asp = self.spmatrix(A)
-            for y in self.dtypes:
+            for y in supported_dtypes:
                 B   = self.B.astype(y)
                 Bsp = self.spmatrix(B)
 
@@ -716,10 +712,10 @@ class _TestArithmetic:
         #basic tests
         assert_array_equal((self.Asp*self.Bsp.T).todense(),self.A*self.B.T)
 
-        for x in self.dtypes:
+        for x in supported_dtypes:
             A   = self.A.astype(x)
             Asp = self.spmatrix(A)
-            for y in self.dtypes:
+            for y in supported_dtypes:
                 B   = self.B.astype(y)
                 Bsp = self.spmatrix(B)
 

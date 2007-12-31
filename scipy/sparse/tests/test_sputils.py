@@ -12,7 +12,7 @@ restore_path()
 class TestSparseUtils(NumpyTestCase):
 
     def check_upcast(self):
-        assert_equal(upcast('int32'),numpy.int32)
+        assert_equal(upcast('intc'),numpy.intc)
         assert_equal(upcast('int32','float32'),numpy.float64)
         assert_equal(upcast('bool',complex,float),numpy.complex128)
         assert_equal(upcast('i','d'),numpy.float64)
