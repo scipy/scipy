@@ -64,7 +64,16 @@ class lil_matrix(spmatrix):
             for i in range(M):
                 self.rows[i] = []
                 self.data[i] = []
-        else:
+        elif isspmatrix(A):                    
+            if isspmatrix_lil(A) and copy:
+                A = A.copy()
+            else:
+                A = A.tolil()
+            self.shape = A.shape
+            self.dtype = A.dtype
+            self.rows  = A.rows
+            self.data  = A.data
+        elif isinstance(A,tuple):
             if isshape(A):
                 M, N = A
                 self.shape = (M,N)
@@ -74,22 +83,17 @@ class lil_matrix(spmatrix):
                     self.rows[i] = []
                     self.data[i] = []
             else:
-                if isspmatrix(A):                    
-                    if isspmatrix_lil(A) and copy:
-                        A = A.copy()
-                    else:
-                        A = A.tolil()
-                else:
-                    #assume A is dense
-                    try:
-                        A = asmatrix(A)
-                    except TypeError:
-                        raise TypeError, "unsupported matrix type"
-                    else:
-                        from csr import csr_matrix
-                        A = csr_matrix(A).tolil()
+                raise TypeError,'unrecognized lil_matrix constructor usage'
+        else:
+            #assume A is dense
+            try:
+                A = asmatrix(A)
+            except TypeError:
+                raise TypeError, "unsupported matrix type"
+            else:
+                from csr import csr_matrix
+                A = csr_matrix(A).tolil()
                 
-                #A is a lil matrix
                 self.shape = A.shape
                 self.dtype = A.dtype
                 self.rows  = A.rows

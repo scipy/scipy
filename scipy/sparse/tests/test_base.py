@@ -31,6 +31,7 @@ restore_path()
 #TODO check that invalid shape in constructor raises exception
 #TODO check that spmatrix( ... , copy=X ) is respected
 #TODO test repr(spmatrix)
+#TODO test prune
 class _TestCommon:
     """test common functionality shared by all sparse formats"""
 

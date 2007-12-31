@@ -68,16 +68,16 @@ class _cs_matrix(_data_matrix):
                     self.indptr  = array(indptr, copy=copy)
                     self.data    = array(data, copy=copy, dtype=getdtype(dtype, data))
                 else:
-                    raise ValueError, "unrecognized form for" \
-                            " %s_matrix constructor" % self.format
+                    raise ValueError, "unrecognized %s_matrix constructor usage" %\
+                            self.format
 
         else:
             #must be dense
             try:
                 arg1 = asarray(arg1)
             except:
-                raise ValueError, "unrecognized form for" \
-                        " %s_matrix constructor" % self.format
+                raise ValueError, "unrecognized %s_matrix constructor usage" % \
+                        self.format
             from coo import coo_matrix
             self._set_self( self.__class__(coo_matrix(arg1)) )
 
@@ -385,7 +385,7 @@ class _cs_matrix(_data_matrix):
         # The spmatrix base class already does axis=0 and axis=1 efficiently
         # so we only do the case axis=None here
         if axis is None:
-            return self.data[:self.indptr[-1]].sum()
+            return self.data.sum()
         else:
             return spmatrix.sum(self,axis)
             raise ValueError, "axis out of bounds"
@@ -518,8 +518,10 @@ class _cs_matrix(_data_matrix):
             # We should allow slices here!
             raise IndexError, "invalid index"
 
+    ######################
+    # Conversion methods #
+    ######################
 
-    # conversion methods
     def todia(self):
         return self.tocoo(copy=False).todia()
     
@@ -555,8 +557,10 @@ class _cs_matrix(_data_matrix):
         M[A.row, A.col] = A.data
         return M
 
-    
-    # methods that examine or modify the internal data structure
+    ############################################################## 
+    # methods that examine or modify the internal data structure #
+    ##############################################################
+
     def sum_duplicates(self):
         """Eliminate duplicate matrix entries by adding them together
 
