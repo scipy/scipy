@@ -1,5 +1,10 @@
 import cPickle
 
+from numpy import deprecate_with_doc
+
+@deprecate_with_doc("""
+Just use cPickle.dump directly or numpy.savez
+""")
 def objsave(file, allglobals, *args):
     """Pickle the part of a dictionary containing the argument list
     into file string.
@@ -19,6 +24,9 @@ def objsave(file, allglobals, *args):
     cPickle.dump(savedict,fid,1)
     fid.close()
 
+@deprecate_with_doc("""
+Just use cPickle.load or numpy.load. 
+""")
 def objload(file, allglobals):
     """Load a previously pickled dictionary and insert into given dictionary.
 

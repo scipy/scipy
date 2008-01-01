@@ -31,7 +31,7 @@ from copy import copy as pycopy
 from cStringIO import StringIO
 import numpy as N
 
-from scipy.io.miobase import *
+from miobase import *
 
 try:  # Python 2.3 support
     from sets import Set as set

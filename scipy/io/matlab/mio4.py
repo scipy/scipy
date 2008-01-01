@@ -3,7 +3,7 @@
 
 import numpy as N
 
-from scipy.io.miobase import *
+from miobase import *
 
 miDOUBLE = 0
 miSINGLE = 1
