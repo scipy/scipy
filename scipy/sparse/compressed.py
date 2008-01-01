@@ -570,8 +570,14 @@ class _cs_matrix(_data_matrix):
     def has_sorted_indices(self):
         """Determine whether the matrix has sorted indices
         """
-        fn = sparsetools.csr_has_sorted_indices
-        return fn( len(self.indptr) - 1, self.indptr, self.indices)
+
+        #first check to see if result was cached
+        if not hasattr(self,'_has_sorted_indices'):
+            fn = sparsetools.csr_has_sorted_indices
+            self._has_sorted_indices = \
+                    fn( len(self.indptr) - 1, self.indptr, self.indices)
+
+        return self._has_sorted_indices
 
     def sorted_indices(self):
         """Return a copy of this matrix with sorted indices
@@ -584,17 +590,14 @@ class _cs_matrix(_data_matrix):
         # although the previous option is typically faster
         #return self.toother().toother()
 
-    def sort_indices(self,check_first=True):
+    def sort_indices(self):
         """Sort the indices of this matrix *in place*
         """
-        #see if sorting can be avoided
-        if check_first and self.has_sorted_indices(): 
-            return
-
-        fn = sparsetools.csr_sort_indices
-        fn( len(self.indptr) - 1, self.indptr, self.indices, self.data)
-
-        #TODO store is_sorted flag somewhere
+       
+        if not self.has_sorted_indices():
+            fn = sparsetools.csr_sort_indices
+            fn( len(self.indptr) - 1, self.indptr, self.indices, self.data)
+            self._has_sorted_indices = True
 
     def ensure_sorted_indices(self, inplace=False):
         """Return a copy of this matrix where the column indices are sorted
@@ -624,6 +627,10 @@ class _cs_matrix(_data_matrix):
         self.indices = self.indices[:self.nnz]
 
 
+    ###################
+    # utility methods #
+    ###################
+
     # needed by _data_matrix
     def _with_data(self,data,copy=True):
         """Returns a matrix with the same sparsity structure as self,
@@ -637,7 +644,6 @@ class _cs_matrix(_data_matrix):
             return self.__class__((data,self.indices,self.indptr), \
                                    shape=self.shape,dtype=data.dtype)
 
-    # utility functions
     def _binopt(self, other, op, in_shape=None, out_shape=None):
         """apply the binary operation fn to two sparse matrices"""
         other = self.__class__(other)

@@ -1,8 +1,8 @@
 """unit tests for sparse utility functions"""
 
 import numpy as np
+from numpy.testing import *
 
-from np.testing import *
 set_package_path()
 from scipy.sparse.sputils import *
 restore_path()
@@ -12,7 +12,7 @@ restore_path()
 class TestSparseUtils(NumpyTestCase):
 
     def check_upcast(self):
-        assert_equal(upcast('int32'),np.int32)
+        assert_equal(upcast('intc'),np.intc)
         assert_equal(upcast('int32','float32'),np.float64)
         assert_equal(upcast('bool',complex,float),np.complex128)
         assert_equal(upcast('i','d'),np.float64)

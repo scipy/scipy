@@ -41,7 +41,7 @@ def upcast(*args):
     upcast = sample.dtype 
 
     for t in supported_dtypes:
-        if can_cast(sample.dtype,t):
+        if np.can_cast(sample.dtype,t):
             return t
     
     raise TypeError,'no supported conversion for types: %s' % args

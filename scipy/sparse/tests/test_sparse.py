@@ -117,7 +117,8 @@ class TestSparseTools(NumpyTestCase):
             start = time.clock()
             iter = 0
             while iter < 5 and time.clock() - start < 1:
-                A.sort_indices(check_first =False) 
+                A._has_sorted_indices = False
+                A.sort_indices() 
                 iter += 1
             end = time.clock()
 
