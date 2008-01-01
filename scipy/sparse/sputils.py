@@ -4,7 +4,7 @@
 __all__ = ['upcast','getdtype','isscalarlike','isintlike',
             'isshape','issequence','isdense']
 
-import numpy
+import numpy as np
 
 # keep this list syncronized with sparsetools
 #supported_dtypes = ['int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32',
@@ -13,7 +13,7 @@ import numpy
 supported_dtypes = ['int8','uint8','short','ushort','intc','uintc',
         'longlong','ulonglong','single','double','longdouble',
         'csingle','cdouble','clongdouble']
-supported_dtypes = [ numpy.typeDict[x] for x in supported_dtypes]
+supported_dtypes = [ np.typeDict[x] for x in supported_dtypes]
 
 def upcast(*args):
     """Returns the nearest supported sparse dtype for the 
@@ -23,7 +23,7 @@ def upcast(*args):
 
     Example
     =======
-
+    
     >>> upcast('int32')
     <type 'numpy.int32'>
     >>> upcast('bool')
@@ -34,26 +34,26 @@ def upcast(*args):
     <type 'numpy.complex128'>
 
     """
-    sample = numpy.array([0],dtype=args[0])
+    sample = np.array([0],dtype=args[0])
     for t in args[1:]:
-        sample = sample + numpy.array([0],dtype=t)
+        sample = sample + np.array([0],dtype=t)
 
     upcast = sample.dtype 
 
     for t in supported_dtypes:
-        if upcast <= t:
+        if can_cast(sample.dtype,t):
             return t
     
     raise TypeError,'no supported conversion for types: %s' % args
 
 
 def to_native(A):
-    return numpy.asarray(A,dtype=A.dtype.newbyteorder('native'))
+    return np.asarray(A,dtype=A.dtype.newbyteorder('native'))
 
 
 def getdtype(dtype, a=None, default=None):
     """Function used to simplify argument processing.  If 'dtype' is not
-    specified (is None), returns a.dtype; otherwise returns a numpy.dtype
+    specified (is None), returns a.dtype; otherwise returns a np.dtype
     object created from the specified dtype argument.  If 'dtype' and 'a'
     are both None, construct a data type out of the 'default' parameter.
     Furthermore, 'dtype' must be in 'allowed' set.
@@ -65,18 +65,18 @@ def getdtype(dtype, a=None, default=None):
             newdtype = a.dtype
         except AttributeError:
             if default is not None:
-                newdtype = numpy.dtype(default)
+                newdtype = np.dtype(default)
                 canCast = False
             else:
                 raise TypeError, "could not interpret data type"
     else:
-        newdtype = numpy.dtype(dtype)
+        newdtype = np.dtype(dtype)
 
     return newdtype
 
 def isscalarlike(x):
     """Is x either a scalar, an array scalar, or a 0-dim array?"""
-    return numpy.isscalar(x) or (isdense(x) and x.ndim == 0)
+    return np.isscalar(x) or (isdense(x) and x.ndim == 0)
 
 def isintlike(x):
     """Is x appropriate as an index into a sparse matrix? Returns True
@@ -105,7 +105,7 @@ def isshape(x):
 
 def issequence(t):
     return isinstance(t, (list, tuple))\
-           or (isinstance(t, numpy.ndarray) and (t.ndim == 1))
+           or (isinstance(t, np.ndarray) and (t.ndim == 1))
 
 
 def _isinstance(x, _class):
@@ -117,5 +117,5 @@ def _isinstance(x, _class):
     return isinstance(x, _class) or aux
 
 def isdense(x):
-    return _isinstance(x, numpy.ndarray)
+    return _isinstance(x, np.ndarray)
 

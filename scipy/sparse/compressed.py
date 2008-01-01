@@ -18,13 +18,6 @@ from sputils import upcast, to_native, isdense, isshape, getdtype, \
 
 
 
-def resize1d(arr, newlen):
-    old = len(arr)
-    new = zeros((newlen,), arr.dtype)
-    new[:old] = arr
-    return new
-
-
 class _cs_matrix(_data_matrix):
     """base matrix class for compressed row and column oriented matrices"""
     

@@ -15,7 +15,7 @@ from sparsetools import csr_tocsc
 from sputils import upcast, to_native, isdense, isshape, getdtype, \
         isscalarlike, isintlike
 
-from compressed import _cs_matrix,resize1d
+from compressed import _cs_matrix
 
 class csr_matrix(_cs_matrix):
     """Compressed Sparse Row matrix
@@ -103,6 +103,8 @@ class csr_matrix(_cs_matrix):
 
 
     def rowcol(self, ind):
+        #TODO remove after 0.7
+        warn('rowcol() is deprecated',DeprecationWarning)
         col = self.indices[ind]
         row = searchsorted(self.indptr, ind+1)-1
         return (row, col)
