@@ -283,10 +283,6 @@ class MMFile (object):
             if close_it: stream.close()
             else: stream.flush()
 
-        a = coo_matrix((V, (I, J)), shape=(rows, cols), dtype=dtype)
-    else:
-        raise NotImplementedError,`rep`
-
     #---------------------------------------------------------------------------
     def _init_attrs(self, **kwargs):
         """
