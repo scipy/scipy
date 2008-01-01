@@ -438,10 +438,10 @@ class bsr_matrix(_cs_matrix):
     def sum_duplicates(self):
         raise NotImplementedError
 
-    def sort_indices(self, check_first=True):
+    def sort_indices(self):
         """Sort the indices of this matrix *in place*
         """
-        if check_first and self.has_sorted_indices():
+        if self.has_sorted_indices():
             return
 
         from csr import csr_matrix
@@ -459,6 +459,8 @@ class bsr_matrix(_cs_matrix):
 
         self.data[:] = self.data[proxy.data]
         self.indices[:] = proxy.indices
+
+        self._has_sorted_indices = True
 
     def prune(self):
         """ Remove empty space after all non-zero elements.

@@ -127,7 +127,9 @@ class csc_matrix(_cs_matrix):
                  indptr, indices, data)
 
         from csr import csr_matrix
-        return csr_matrix((data, indices, indptr), self.shape)
+        A = csr_matrix((data, indices, indptr), self.shape)
+        A._has_sorted_indices = True
+        return A
 
     def tobsr(self, blocksize=None):
         if blocksize == (1,1):
