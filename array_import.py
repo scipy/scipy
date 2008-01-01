@@ -18,10 +18,6 @@ import types
 # Numpy imports.
 import numpy
 
-# snip on----- DELETE after numpy.deprecate_with_doc is available
-numpy.deprecate_with_doc = lambda doc: (lambda func: func)
-# snip off---- DELETE after numpy.deprecate_with_doc is available
-
 from numpy import array, take, concatenate, asarray, real, imag, \
   deprecate_with_doc
 # Sadly, this module is still written with typecodes in mind.
@@ -316,7 +312,10 @@ def convert_to_equal_lists(cols, atype):
     return cols, atype
 
 
-@deprecate_with_doc('')
+@deprecate_with_doc("""
+The functionality of read_array is in numpy.loadtxt which allows the same
+functionality using different syntax.
+""")
 def read_array(fileobject, separator=default, columns=default, comment="#",
                lines=default, atype=Float, linesep='\n',
                rowsize=10000, missing=0):
@@ -444,7 +443,11 @@ def str_array(arr, precision=5,col_sep=' ',row_sep="\n",ss=0):
     return row_sep.join(thestr)
 
 
-@deprecate_with_doc('')
+@deprecate_with_doc("""
+
+This function is replaced by numpy.savetxt which allows the same functionality
+through a different syntax.
+""")
 def write_array(fileobject, arr, separator=" ", linesep='\n',
                 precision=5, suppress_small=0, keep_open=0):
     """Write a rank-2 or less array to file represented by fileobject.

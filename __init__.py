@@ -6,36 +6,35 @@ from info import __doc__
 
 from numpy import deprecate_with_doc
 
+# These are all deprecated (until the end deprecated tag)
+from npfile import npfile
+from data_store import save, load, create_module, create_shelf
+from array_import import read_array, write_array
+from pickler import objload, objsave
+
 from numpyio import packbits, unpackbits, bswap, fread, fwrite, \
      convert_objectarray
-fread = deprecate_with_doc(\
-"""
 
-scipy.io.fread is easily replaced with raw reading capabilities of NumPy 
+fread = deprecate_with_doc("""
+scipy.io.fread is can be replaced with raw reading capabilities of NumPy 
 including fromfile as well as memory-mapping capabilities.  
 """)(fread)
 
-fwrite = deprecate_with_doc(\
-"""
-
-scipy.io.fwrite is easily replaced with raw writing capabilities of
-NumPy.  Also, remmber that files can be directly memory-mapped into NumPy
-arrays which is often a better way of "reading" especially large files. 
+fwrite = deprecate_with_doc("""
+scipy.io.fwrite can be replaced with raw writing capabilities of
+NumPy.  Also, remember that files can be directly memory-mapped into NumPy
+arrays which is often a better way of reading especially large files. 
 
 Look at the tofile methods as well as save and savez for writing arrays into
 easily transported files of data.  
 """)(fwrite)
 
-bswap = deprecate_with_doc(\
-"""
-
+bswap = deprecate_with_doc("""
 scipy.io.bswap is easily replaced with the byteswap method on an array.
 out = scipy.io.bswap(arr) --> out = arr.byteswap(True)
 """)(bswap)
 
-packbits = deprecate_with_doc(\
-"""
-
+packbits = deprecate_with_doc("""
 The functionality of scipy.io.packbits is now available as numpy.packbits
 The calling convention is a bit different as the 2-d case is not specialized.
 
@@ -52,9 +51,7 @@ def scipy_packbits(inp):
     return np.packbits(a, axis=-1).ravel()
 """)(packbits)
 
-unpackbits = deprecate_with_doc(\
-"""
-
+unpackbits = deprecate_with_doc("""
 The functionality of scipy.io.unpackbits is now available in numpy.unpackbits
 The calling convention is different however as the 2-d case is no longer
 specialized. 
@@ -68,7 +65,13 @@ def scipy_unpackbits(inp, els_per_slice, out_type=None):
     res = np.unpackbits(inp, axis=-1)[:,:els_per_slice]
     return res.ravel()
 """)(unpackbits)
-convert_objectarray = deprecate_with_doc(convert_objectarray)
+
+convert_objectarray = deprecate_with_doc("""
+The same functionality can be obtained using NumPy string arrays and the
+.astype method (except for the optional missing value feature).
+""")(convert_objectarray)
+
+# end deprecated
 
 # matfile read and write
 from matlab.mio import loadmat, savemat
@@ -76,16 +79,11 @@ from matlab.mio import loadmat, savemat
 # netCDF file support
 from netcdf import netcdf_file, netcdf_variable
 
-from npfile import npfile
-
 from recaster import sctype_attributes, Recaster
-
-from array_import import read_array, write_array
-from data_store import save, save_as_module
-from data_store import load, create_module, create_shelf
-from pickler import objload, objsave
-
+from data_store import save_as_module
 from mmio import mminfo, mmread, mmwrite
+
+
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 from numpy.testing import NumpyTest
