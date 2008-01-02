@@ -359,19 +359,24 @@ class Mat5SparseMatrixGetter(Mat5MatrixGetter):
             data = self.read_element()
         ''' From the matlab (TM) API documentation, last found here:
         http://www.mathworks.com/access/helpdesk/help/techdoc/matlab_external/
-        rowind are simply the row indices for all the (res) non-zero
+        rowind are simply the row indices for all the (nnz) non-zero
         entries in the sparse array.  rowind has nzmax entries, so
-        may well have more entries than len(res), the actual number
-        of non-zero entries, but rowind[len(res):] can be discarded
+        may well have more entries than nnz, the actual number
+        of non-zero entries, but rowind[nnz:] can be discarded
         and should be 0. indptr has length (number of columns + 1),
         and is such that, if D = diff(colind), D[j] gives the number
         of non-zero entries in column j. Because rowind values are
         stored in column order, this gives the column corresponding to
         each rowind
         '''
+        M,N = self.header['dims']
+        indptr = indptr[:N+1]
+        nnz = indptr[-1]
+        rowind = rowind[:nnz]
+        data   = data[:nnz]
         if have_sparse:
-            dims = self.header['dims']
-            return scipy.sparse.csc_matrix((data,rowind,indptr), dims)
+            from scipy.sparse import csc_matrix
+            return csc_matrix((data,rowind,indptr), shape=(M,N))
         else:
             return (dims, data, rowind, indptr)
 
