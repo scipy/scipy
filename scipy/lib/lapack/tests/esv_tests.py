@@ -1,8 +1,8 @@
 
-from numpy.testing import *
-from numpy import *
+from scipy.testing import *
+from numpy import dot
 
-class _test_ev:
+class _test_ev(object):
 
     def check_syev(self,level=1,sym='sy',suffix=''):
         a = [[1,2,3],[2,2,3],[3,3,6]]

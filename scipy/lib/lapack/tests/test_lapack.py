@@ -2,33 +2,36 @@
 #
 # Created by: Pearu Peterson, September 2002
 #
+'''
+This file adapted for nose tests 1/1/08
 
-__usage__ = """
-Build lapack:
-  python setup_lapack.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.lib.lapack.test(<level>)'
-Run tests if lapack is not installed:
-  python tests/test_lapack.py [<level>]
-"""
+Note that the conversion is not very complete.
+
+This and the included files deliberately use "check_" as the test
+method names.  There are no subclasses of TestCase.  Thus nose will
+pick up nothing but the final test_all_lapack generator function.
+This does the work of collecting the test methods and checking if they
+can be run (see the isrunnable method).  
+'''
 
 import os
 import sys
 from scipy.testing import *
-from numpy import array, ones
+from numpy import dot, ones, zeros
 
-from scipy.lib.lapack import flapack,clapack
+from scipy.lib.lapack import flapack, clapack
 
 sys.path.insert(0, os.path.split(__file__))
 from gesv_tests import _test_gev
 from esv_tests import _test_ev
+del sys.path[0]
 
 #class _test_ev: pass
 
-class _TestLapack(_test_ev,
-                  _test_gev):
-    # Mixin class for lapack tests
-    def test_gebal(self):
+class _TestLapack( _test_ev,
+                   _test_gev):
+
+    def check_gebal(self):
         a = [[1,2,3],[4,5,6],[7,8,9]]
         a1 = [[1,0,0,3e-4],
               [4,0,0,2e-3],
@@ -45,7 +48,7 @@ class _TestLapack(_test_ev,
         ba,lo,hi,pivscale,info = f(a1,permute=1,scale=1)
         assert not info,`info`
 
-    def test_gehrd(self):
+    def check_gehrd(self):
         a = [[-149, -50,-154],
              [ 537, 180, 546],
              [ -27,  -9, -25]]
@@ -54,12 +57,13 @@ class _TestLapack(_test_ev,
         assert not info,`info`
 
     def isrunnable(self,mthname):
+        ''' Return True if required routines for check method present in module '''
         l = mthname.split('_')
         if len(l)>1 and l[0]=='check':
             return hasattr(self.lapack,l[1])
         return 2
 
-class PrefixWrapper:
+class PrefixWrapper(object):
     def __init__(self,module,prefix):
         self.module = module
         self.prefix = prefix
@@ -81,16 +85,16 @@ See scipy/INSTALL.txt for troubleshooting.
 ****************************************************************
 """
 else:
-    class TestFlapackDouble(TestCase, _TestLapack):
+    class TestFlapackDouble(_TestLapack):
         lapack = PrefixWrapper(flapack,'d')
         decimal = 12
-    class TestFlapackFloat(TestCase, _TestLapack):
+    class TestFlapackFloat(_TestLapack):
         lapack = PrefixWrapper(flapack,'s')
         decimal = 5
-    class TestFlapackComplex(TestCase, _TestLapack):
+    class TestFlapackComplex(_TestLapack):
         lapack = PrefixWrapper(flapack,'c')
         decimal = 5
-    class TestFlapackDoubleComplex(TestCase, _TestLapack):
+    class TestFlapackDoubleComplex(_TestLapack):
         lapack = PrefixWrapper(flapack,'z')
         decimal = 12
 
@@ -106,18 +110,31 @@ Notes:
 ****************************************************************
 """
 else:
-    class TestClapackDouble(TestCase, _TestLapack):
+    class TestClapackDouble(_TestLapack):
         lapack = PrefixWrapper(clapack,'d')
         decimal = 12
-    class TestClapackFloat(TestCase, _TestLapack):
+    class TestClapackFloat(_TestLapack):
         lapack = PrefixWrapper(clapack,'s')
         decimal = 5
-    class TestClapackComplex(TestCase, _TestLapack):
+    class TestClapackComplex(_TestLapack):
         lapack = PrefixWrapper(clapack,'c')
         decimal = 5
-    class TestClapackDoubleComplex(TestCase, _TestLapack):
+    class TestClapackDoubleComplex(_TestLapack):
         lapack = PrefixWrapper(clapack,'z')
         decimal = 12
 
-if __name__ == "__main__":
-    unittest.main()
+# Collect test classes and methods with generator
+# This is a moderate hack replicating some obscure numpy testing
+# functionality for use with nose
+
+def test_all_lapack():
+    methods = []
+    for name, value in globals().items():
+        if not (name.startswith('Test')
+                and issubclass(value, _TestLapack)):
+            continue
+        o = value()
+        methods += [getattr(o, n) for n in dir(o) if o.isrunnable(n) is True]
+    for method in methods:
+        yield (method, )
+        

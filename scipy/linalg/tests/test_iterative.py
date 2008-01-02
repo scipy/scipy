@@ -13,15 +13,14 @@ Run tests if linalg is not installed:
   python tests/test_iterative.py [<level>]
 """
 
+import sys
+
 from numpy import zeros, dot, diag, ones
-from numpy.testing import *
+from scipy.testing import *
 from numpy.random import rand
 #from numpy import arange, add, array, dot, zeros, identity, conjugate, transpose
 
-import sys
-set_package_path()
-from linalg import iterative, norm, cg, cgs, bicg, bicgstab, gmres, qmr
-restore_path()
+from scipy.linalg import iterative, norm, cg, cgs, bicg, bicgstab, gmres, qmr
 
 
 def callback(x):
@@ -29,9 +28,9 @@ def callback(x):
     res = b-dot(A,x)
     #print "||A.x - b|| = " + str(norm(dot(A,x)-b))
 
-class TestIterativeSolvers(NumpyTestCase):
+class TestIterativeSolvers(TestCase):
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         self.setUp()
     def setUp (self):
         global A, b
@@ -44,41 +43,41 @@ class TestIterativeSolvers(NumpyTestCase):
         self.b = rand(n)
         b = self.b
 
-    def check_cg(self):
+    def test_cg(self):
         bx0 = self.x0.copy()
         x, info = cg(self.A, self.b, self.x0, callback=callback)
         assert_array_equal(bx0, self.x0)
         assert norm(dot(self.A, x) - self.b) < 5*self.tol
 
-    def check_bicg(self):
+    def test_bicg(self):
         bx0 = self.x0.copy()
         x, info = bicg(self.A, self.b, self.x0, callback=callback)
         assert_array_equal(bx0, self.x0)
         assert norm(dot(self.A, x) - self.b) < 5*self.tol
 
-    def check_cgs(self):
+    def test_cgs(self):
         bx0 = self.x0.copy()
         x, info = cgs(self.A, self.b, self.x0, callback=callback)
         assert_array_equal(bx0, self.x0)
         assert norm(dot(self.A, x) - self.b) < 5*self.tol
 
-    def check_bicgstab(self):
+    def test_bicgstab(self):
         bx0 = self.x0.copy()
         x, info = bicgstab(self.A, self.b, self.x0, callback=callback)
         assert_array_equal(bx0, self.x0)
         assert norm(dot(self.A, x) - self.b) < 5*self.tol
 
-    def check_gmres(self):
+    def test_gmres(self):
         bx0 = self.x0.copy()
         x, info = gmres(self.A, self.b, self.x0, callback=callback)
         assert_array_equal(bx0, self.x0)
         assert norm(dot(self.A, x) - self.b) < 5*self.tol
 
-    def check_qmr(self):
+    def test_qmr(self):
         bx0 = self.x0.copy()
         x, info = qmr(self.A, self.b, self.x0, callback=callback)
         assert_array_equal(bx0, self.x0)
         assert norm(dot(self.A, x) - self.b) < 5*self.tol
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

@@ -49,6 +49,7 @@ class ClassicTest(TestCase):
     def test_big(self,level=5):
         print 'Big, slow test'
 
+
 def test_simplefunction():
     """A simple test function."""
     assert True

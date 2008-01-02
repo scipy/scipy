@@ -5,29 +5,21 @@
 """ Test functions for linalg.matfuncs module
 
 """
-__usage__ = """
-Build linalg:
-  python setup_linalg.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test(<level>)'
-Run tests if linalg is not installed:
-  python tests/test_matfuncs.py [<level>]
-"""
-
-from numpy import array, identity
 
 import sys
-from numpy.testing import *
-set_package_path()
+
 import numpy
-from numpy import dot,sqrt
-import linalg
-from linalg import signm,logm,funm, sqrtm, expm, expm2, expm3
-restore_path()
+from numpy import array, identity, dot, sqrt
 
-class TestSignM(NumpyTestCase):
+from scipy.testing import *
 
-    def check_nils(self):
+import scipy.linalg
+from scipy.linalg import signm,logm,funm, sqrtm, expm, expm2, expm3
+
+
+class TestSignM(TestCase):
+
+    def test_nils(self):
         a = array([[ 29.2, -24.2,  69.5,  49.8,   7. ],
                    [ -9.2,   5.2, -18. , -16.8,  -2. ],
                    [-10. ,   6. , -20. , -18. ,  -2. ],
@@ -41,12 +33,12 @@ class TestSignM(NumpyTestCase):
         r = signm(a)
         assert_array_almost_equal(r,cr)
 
-    def check_defective1(self):
+    def test_defective1(self):
         a = array([[0.0,1,0,0],[1,0,1,0],[0,0,0,1],[0,0,1,0]])
         r = signm(a)
         #XXX: what would be the correct result?
 
-    def check_defective2(self):
+    def test_defective2(self):
         a = array((
             [29.2,-24.2,69.5,49.8,7.0],
             [-9.2,5.2,-18.0,-16.8,-2.0],
@@ -56,7 +48,7 @@ class TestSignM(NumpyTestCase):
         r = signm(a)
         #XXX: what would be the correct result?
 
-    def check_defective3(self):
+    def test_defective3(self):
         a = array([[ -2.,  25.,   0.,   0.,   0.,   0.,   0.],
                    [  0.,  -3.,  10.,   3.,   3.,   3.,   0.],
                    [  0.,   0.,   2.,  15.,   3.,   3.,   0.],
@@ -67,9 +59,9 @@ class TestSignM(NumpyTestCase):
         r = signm(a)
         #XXX: what would be the correct result?
 
-class TestLogM(NumpyTestCase):
+class TestLogM(TestCase):
 
-    def check_nils(self):
+    def test_nils(self):
         a = array([[ -2.,  25.,   0.,   0.,   0.,   0.,   0.],
                    [  0.,  -3.,  10.,   3.,   3.,   3.,   0.],
                    [  0.,   0.,   2.,  15.,   3.,   3.,   0.],
@@ -81,8 +73,8 @@ class TestLogM(NumpyTestCase):
         logm(m)
 
 
-class TestSqrtM(NumpyTestCase):
-    def check_bad(self):
+class TestSqrtM(TestCase):
+    def test_bad(self):
         # See http://www.maths.man.ac.uk/~nareports/narep336.ps.gz
         e = 2**-5
         se = sqrt(e)
@@ -98,12 +90,12 @@ class TestSqrtM(NumpyTestCase):
         esa = sqrtm(a)
         assert_array_almost_equal(dot(esa,esa),a)
 
-class TestExpM(NumpyTestCase):
-    def check_zero(self):
+class TestExpM(TestCase):
+    def test_zero(self):
         a = array([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
         assert_array_almost_equal(expm2(a),[[1,0],[0,1]])
         assert_array_almost_equal(expm3(a),[[1,0],[0,1]])
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

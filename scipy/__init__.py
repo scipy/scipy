@@ -14,12 +14,6 @@ Documentation is also available in the docstrings.
 
 """
 
-try:
-    import pkg_resources as _pr # activate namespace packages (manipulates __path__)
-    del _pr
-except ImportError:
-    pass
-
 __all__ = ['pkgload','test']
 
 from numpy import show_config as show_numpy_config
