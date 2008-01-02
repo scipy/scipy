@@ -3,13 +3,13 @@ Test functions for models.rlm
 """
 
 import numpy.random as R
-from numpy.testing import NumpyTest, NumpyTestCase
+from scipy.testing import *
 
 import scipy.stats.models.rlm as models
 
 W = R.standard_normal
 
-class TestRegression(NumpyTestCase):
+class TestRegression(TestCase):
 
     def test_Robust(self):
         X = W((40,10))
@@ -27,4 +27,4 @@ class TestRegression(NumpyTestCase):
         self.assertEquals(results.df_resid, 31)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

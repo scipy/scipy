@@ -7,20 +7,15 @@ Copyright: Ed Schofield, 2003-2005
 """
 
 import sys
-from numpy.testing import *
+from scipy.testing import *
 from numpy import arange, add, array, dot, zeros, identity, log, exp, ones
-set_package_path()
 from scipy.maxentropy.maxentropy import *
-restore_path()
 
-import unittest
-
-
-class TestMaxentropy(NumpyTestCase):
+class TestMaxentropy(TestCase):
     """Test whether logsumexp() function correctly handles large
     inputs.
     """
-    def check_logsumexp(self, level=1):
+    def test_logsumexp(self):
         a = arange(200)
         desired = log(sum(exp(a)))
         assert_almost_equal(logsumexp(a), desired)
@@ -35,10 +30,10 @@ class TestMaxentropy(NumpyTestCase):
         desired = 10000.0 + log(n)
         assert_almost_equal(logsumexp(b), desired)
 
-    def check_simple(self, level=1):
+    def test_simple(self):
         # Write me!
         pass
 
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

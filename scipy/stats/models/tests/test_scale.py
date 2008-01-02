@@ -3,13 +3,13 @@ Test functions for models.robust.scale
 """
 
 import numpy.random as R
-from numpy.testing import NumpyTest, NumpyTestCase
+from scipy.testing import *
 
 import scipy.stats.models.robust.scale as scale
 
 W = R.standard_normal
 
-class TestScale(NumpyTestCase):
+class TestScale(TestCase):
 
     def test_MAD(self):
         X = W((40,10))
@@ -50,4 +50,4 @@ class TestScale(NumpyTestCase):
         self.assertEquals(m.shape, (40,10))
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

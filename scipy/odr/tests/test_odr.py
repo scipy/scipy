@@ -4,11 +4,11 @@ import cPickle
 # Scipy imports.
 import numpy as np
 from numpy import pi
-from numpy.testing import NumpyTest, NumpyTestCase, assert_array_almost_equal
+from scipy.testing import *
 from scipy.odr import Data, Model, ODR, RealData, odr_stop
 
 
-class TestODR(NumpyTestCase):
+class TestODR(TestCase):
 
     # Explicit Example
 
@@ -311,6 +311,5 @@ class TestODR(NumpyTestCase):
 
 
 if __name__ == "__main__":
-    NumpyTest().run()
-
+    unittest.main()
 #### EOF #######################################################################

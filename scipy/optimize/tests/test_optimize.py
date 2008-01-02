@@ -3,17 +3,16 @@ Author: Ed Schofield
 Nov 2005
 """
 
-from numpy.testing import *
+from scipy.testing import *
 
-set_package_path()
 from scipy import optimize
 from numpy import array, zeros, float64, dot, log, exp, inf
 from scipy.optimize.tnc import RCSTRINGS, MSG_NONE
-restore_path()
+
 
 from math import sin, cos, pow
 
-class TestOptimize(NumpyTestCase):
+class TestOptimize(TestCase):
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
@@ -44,7 +43,7 @@ class TestOptimize(NumpyTestCase):
         return dot(self.F.transpose(), p) - self.K
 
 
-    def check_cg(self):
+    def test_cg(self):
         """ conjugate gradient optimization routine
         """
         retval = optimize.fmin_cg(self.func, self.startparams, self.grad, (), \
@@ -58,7 +57,7 @@ class TestOptimize(NumpyTestCase):
         assert err < 1e-6
 
 
-    def check_bfgs(self):
+    def test_bfgs(self):
         """ Broyden-Fletcher-Goldfarb-Shanno optimization routine
         """
         retval = optimize.fmin_bfgs(self.func, self.startparams, self.grad, \
@@ -72,7 +71,7 @@ class TestOptimize(NumpyTestCase):
         assert err < 1e-6
 
 
-    def check_powell(self):
+    def test_powell(self):
         """ Powell (direction set) optimization routine
         """
         retval = optimize.fmin_powell(self.func, self.startparams, \
@@ -85,7 +84,7 @@ class TestOptimize(NumpyTestCase):
         #print "Powell: Difference is: " + str(err)
         assert err < 1e-6
 
-    def check_neldermead(self):
+    def test_neldermead(self):
         """ Nelder-Mead simplex algorithm
         """
         retval = optimize.fmin(self.func, self.startparams, \
@@ -98,7 +97,7 @@ class TestOptimize(NumpyTestCase):
         #print "Nelder-Mead: Difference is: " + str(err)
         assert err < 1e-6
 
-    def check_ncg(self):
+    def test_ncg(self):
         """ line-search Newton conjugate gradient optimization routine
         """
         retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,
@@ -113,7 +112,7 @@ class TestOptimize(NumpyTestCase):
         assert err < 1e-6
 
 
-    def check_l_bfgs_b(self):
+    def test_l_bfgs_b(self):
         """ limited-memory bound-constrained BFGS algorithm
         """
         retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
@@ -143,7 +142,7 @@ class TestOptimize(NumpyTestCase):
 
 
 
-class TestTnc(NumpyTestCase):
+class TestTnc(TestCase):
     """TNC non-linear optimization.
 
     These tests are taken from Prof. K. Schittkowski's test examples
@@ -244,4 +243,4 @@ class TestTnc(NumpyTestCase):
 
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()
