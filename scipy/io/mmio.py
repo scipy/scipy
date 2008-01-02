@@ -546,13 +546,14 @@ class MMFile (object):
             if symm != self.SYMMETRY_GENERAL:
                 raise ValueError, 'symmetric matrices incompatible with sparse format'
 
+            coo = a.tocoo() # convert to COOrdinate format
+
             # write shape spec
-            stream.write('%i %i %i\n' % (rows,cols,entries))
+            stream.write('%i %i %i\n' % (rows,cols,coo.nnz))
 
             # line template
             template = '%i %i ' + template
 
-            coo = a.tocoo() # convert to COOrdinate format
             I,J,V = coo.row + 1, coo.col + 1, coo.data # change base 0 -> base 1
 
             if field in (self.FIELD_REAL, self.FIELD_INTEGER):
