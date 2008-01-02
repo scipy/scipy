@@ -299,22 +299,22 @@ class Mat4SparseWriter(Mat4MatrixWriter):
         ''' Sparse matrices are 2D
         See docstring for Mat4SparseGetter
         '''
-        imagf = self.arr.dtype.kind == 'c'
-        nnz = self.arr.nnz
-        ijd = N.zeros((nnz+1, 3+imagf), dtype='f8')
-        for i in range(nnz):
-            ijd[i,0], ijd[i,1] = self.arr.rowcol(i)
-        ijd[:-1,0:2] += 1 # 1 based indexing
+        A = self.arr.tocoo() #convert to sparse COO format (ijv)
+        imagf = A.dtype.kind == 'c'
+        ijv = N.zeros((A.nnz + 1, 3+imagf), dtype='f8')
+        ijv[:-1,0] = A.row
+        ijv[:-1,1] = A.col
+        ijv[:-1,0:2] += 1 # 1 based indexing
         if imagf:
-            ijd[:-1,2] = self.arr.data.real
-            ijd[:-1,3] = self.arr.data.imag
+            ijv[:-1,2] = A.data.real
+            ijv[:-1,3] = A.data.imag
         else:
-            ijd[:-1,2] = self.arr.data
-        ijd[-1,0:2] = self.arr.shape
+            ijv[:-1,2] = A.data
+        ijv[-1,0:2] = A.shape
         self.write_header(P=miDOUBLE,
                           T=mxSPARSE_CLASS,
-                          dims=ijd.shape)
-        self.write_bytes(ijd)
+                          dims=ijv.shape)
+        self.write_bytes(ijv)
 
 
 def matrix_writer_factory(stream, arr, name):
