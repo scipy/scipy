@@ -667,6 +667,7 @@ class Mat5SparseWriter(Mat5MatrixWriter):
 
         '''
         A = self.arr.tocsc() # convert to sparse CSC format
+        A.sort_indices()
         is_complex = (A.dtype.kind == 'c')
         nz = A.nnz
 
