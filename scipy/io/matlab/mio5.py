@@ -666,7 +666,7 @@ class Mat5SparseWriter(Mat5MatrixWriter):
         ''' Sparse matrices are 2D
 
         '''
-        A = self.arr.tocsc() # convert to sparse COO format (ijv)
+        A = self.arr.tocsc() # convert to sparse CSC format
         is_complex = (A.dtype.kind == 'c')
         nz = A.nnz
 
