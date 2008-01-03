@@ -1,11 +1,11 @@
-from numpy.testing import *
-from histogram import _histogram_fixed_binsize, _histogram_digitize,\
+from scipy.testing import *
+from scipy.sandbox.dhuard.histogram import _histogram_fixed_binsize, _histogram_digitize,\
     _histogram_searchsort, histogram,_optimize_binning
 import numpy as np
 from numpy.random import rand
 
-class TestHistogram1DFunctions(NumpyTestCase):
-    def check_consistency(self):
+class TestHistogram1DFunctions(TestCase):
+    def test_consistency(self):
         n = 100
         r = rand(n)*12-1
         bins = range(11)
@@ -15,8 +15,8 @@ class TestHistogram1DFunctions(NumpyTestCase):
         assert_array_equal(a,b)
         assert_array_equal(c,b)
 
-class TestHistogram(NumpyTestCase):
-    def check_simple(self):
+class TestHistogram(TestCase):
+    def test_simple(self):
         n=100
         v=rand(n)
         (a,b)=histogram(v)
@@ -36,7 +36,7 @@ class TestHistogram(NumpyTestCase):
         a,b = histogram(v, bins, normed=True)
         assert_almost_equal((a*np.diff(bins)).sum(), 1)
 
-    def check_axis(self):
+    def test_axis(self):
         n,m = 100,20
         v = rand(n,m)
         a,b = histogram(v, bins=5)
@@ -58,7 +58,7 @@ class TestHistogram(NumpyTestCase):
         a1, b1 = histogram(v[0,:], bins=b['edges'], normed=True)
         assert_array_almost_equal(a1, a[0,:],7)
 
-    def check_weights(self):
+    def test_weights(self):
         # Check weights = constant gives the same answer as no weights.
         v = rand(100)
         w = np.ones(100)*5
@@ -74,7 +74,7 @@ class TestHistogram(NumpyTestCase):
         wa,wb = histogram(v, bins=np.linspace(0,10.01, 11),weights=w)
         assert_array_almost_equal(wa, w)
 
-    def check_strategies(self):
+    def test_strategies(self):
         v = rand(100)
         ae,be = histogram(v, strategy='binsize')
         ab,bb = histogram(v, strategy='digitize')
@@ -89,11 +89,11 @@ class TestHistogram(NumpyTestCase):
         assert_array_almost_equal(ae, ab,8)
         assert_array_almost_equal(ae, as,8)
 
-    def check_automatic_binning(self):
+    def test_automatic_binning(self):
         v = rand(100)
         h,b = histogram(v, 'Scott')
         h,b = histogram(v, 'Freedman')
 
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()
