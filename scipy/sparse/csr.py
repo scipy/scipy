@@ -114,10 +114,10 @@ class csr_matrix(_cs_matrix):
         from lil import lil_matrix
         lil = lil_matrix(self.shape,dtype=self.dtype)
      
-        csr = self.sorted_indices() #lil_matrix needs sorted rows
+        self.sort_indices() #lil_matrix needs sorted rows
         
         rows,data = lil.rows,lil.data
-        ptr,ind,dat = csr.indptr,csr.indices,csr.data
+        ptr,ind,dat = self.indptr,self.indices,self.data
 
         for n in xrange(self.shape[0]):
             start = ptr[n]
