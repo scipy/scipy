@@ -11,8 +11,8 @@ from numpy import arange, array, eye, pi, cos, exp, sin, sqrt, ndarray,  \
 import scipy.sparse as SP
 
 set_package_path()
-from matlab.mio import loadmat, savemat
-from matlab.mio5 import mat_obj, mat_struct
+from io.matlab.mio import loadmat, savemat
+from io.matlab.mio5 import mat_obj, mat_struct
 restore_path()
 
 try:  # Python 2.3 support
@@ -165,7 +165,14 @@ class TestMIOArray(NumpyTestCase):
     case_table5_rt = [
         {'name': '3dmatrix',
          'expected': {'test3dmatrix': transpose(reshape(range(1,25), (4,3,2)))}
-         }]
+         },
+        {'name': 'sparsefloat',
+         'expected': {'testsparsefloat': SP.csc_matrix(array([[1,0,2],[0,-3.5,0]]))},
+         },
+        {'name': 'sparsecomplex',
+         'expected': {'testsparsefloat': SP.csc_matrix(array([[-1+2j,0,2],[0,-3j,0]]))},
+         },
+        ]
     st = mat_struct()
     st.stringfield = u'Rats live on no evil star.'
     st.doublefield = array([sqrt(2),exp(1),pi])
