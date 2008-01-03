@@ -1,20 +1,20 @@
 
 from numpy import *
 
-from numpy.testing import *
-set_package_path()
+from scipy.testing import *
+
 from weave import inline_tools
-restore_path()
+
 set_local_path()
 from test_scxx import *
-restore_path()
 
-class TestInline(NumpyTestCase):
+
+class TestInline(TestCase):
     """ These are long running tests...
 
          I'd like to benchmark these things somehow.
     """
-    def check_exceptions(self,level=5):
+    def test_exceptions(self,level=5):
         a = 3
         code = """
                if (a < 2)
@@ -43,4 +43,4 @@ class TestInline(NumpyTestCase):
             pass
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

@@ -8,38 +8,38 @@ check_return -- test whether a variable is passed in, modified, and
                 then returned as a function return value correctly
 """
 
-from numpy.testing import *
-set_package_path()
+from scipy.testing import *
+
 from weave import ext_tools, wx_spec
-restore_path()
+
 
 import wx
 
-class TestWxConverter(NumpyTestCase):
+class TestWxConverter(TestCase):
     def setUp(self):
         self.app = wx.App()
         self.s = wx_spec.wx_converter()
 
-    def check_type_match_string(self,level=5):
+    def test_type_match_string(self,level=5):
         assert(not self.s.type_match('string') )
 
-    def check_type_match_int(self,level=5):
+    def test_type_match_int(self,level=5):
         assert(not self.s.type_match(5))
 
-    def check_type_match_float(self,level=5):
+    def test_type_match_float(self,level=5):
         assert(not self.s.type_match(5.))
 
-    def check_type_match_complex(self,level=5):
+    def test_type_match_complex(self,level=5):
         assert(not self.s.type_match(5.+1j))
 
-    def check_type_match_complex(self,level=5):
+    def test_type_match_complex(self,level=5):
         assert(not self.s.type_match(5.+1j))
 
-    def check_type_match_wxframe(self,level=5):
+    def test_type_match_wxframe(self,level=5):
         f=wx.Frame(None,-1,'bob')
         assert(self.s.type_match(f))
 
-    def check_var_in(self,level=5):
+    def test_var_in(self,level=5):
         mod = ext_tools.ext_module('wx_var_in',compiler='')
         mod.customize.add_header('<wx/string.h>')
         mod.customize.add_extra_compile_arg(' '.join(self.s.extra_compile_args))

@@ -176,10 +176,8 @@ class coo_matrix(_data_matrix):
                     % self.col.dtype.name )
        
         # only support 32-bit ints for now
-        if self.row.dtype != intc:
-            self.row  = self.row.astype(intc)
-        if self.col.dtype != intc:
-            self.col  = self.col.astype(intc)
+        self.row  = asarray(self.row,dtype=intc)
+        self.col  = asarray(self.col,dtype=intc)
         self.data = to_native(self.data)
 
         if nnz > 0:
@@ -232,7 +230,8 @@ class coo_matrix(_data_matrix):
                       indptr, indices, data)
 
             A = csc_matrix((data, indices, indptr), self.shape)
-            A.sum_duplicates()
+            if sum_duplicates:
+                A.sum_duplicates()
             return A
 
     def tocsr(self,sum_duplicates=True):
@@ -256,7 +255,6 @@ class coo_matrix(_data_matrix):
 
             A = csr_matrix((data, indices, indptr), self.shape)
             if sum_duplicates:
-                A.sort_indices()
                 A.sum_duplicates()
             return A
     

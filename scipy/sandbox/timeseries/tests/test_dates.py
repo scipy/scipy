@@ -16,8 +16,8 @@ import datetime
 import numpy
 import numpy.core.fromnumeric  as fromnumeric
 import numpy.core.numeric as numeric
-from numpy.testing import NumpyTest, NumpyTestCase
-from numpy.testing.utils import build_err_msg
+from scipy.testing import NumpyTest, TestCase
+from scipy.testing.utils import build_err_msg
 
 import maskedarray
 from maskedarray import masked_array
@@ -33,11 +33,11 @@ from timeseries import Date, DateArray,\
 from timeseries.cseries import freq_dict
 
 
-class TestCreation(NumpyTestCase):
+class TestCreation(TestCase):
     "Base test class for MaskedArrays."
 
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
 
     def test_fromstrings(self):
         "Tests creation from list of strings"
@@ -140,11 +140,11 @@ class TestCreation(NumpyTestCase):
         assert_equal(date_array(n, n+2), d)
         print "finished test_shortcuts"
 
-class TestDateProperties(NumpyTestCase):
+class TestDateProperties(TestCase):
     "Test properties such as year, month, weekday, etc...."
 
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
 
     def test_properties(self):
 
@@ -245,11 +245,11 @@ def dArrayWrap(date):
 
 def noWrap(item): return item
 
-class TestFreqConversion(NumpyTestCase):
+class TestFreqConversion(TestCase):
     "Test frequency conversion of date objects"
 
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         self.dateWrap = [(dArrayWrap, assert_array_equal),
                          (noWrap, assert_equal)]
 
@@ -833,11 +833,11 @@ class TestFreqConversion(NumpyTestCase):
             assert_func(date_S_end_of_minute.asfreq('T'), date_S_to_T)
 
 
-class TestMethods(NumpyTestCase):
+class TestMethods(TestCase):
     "Base test class for MaskedArrays."
 
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
 
     def test_getitem(self):
         "Tests getitem"
@@ -886,4 +886,4 @@ class TestMethods(NumpyTestCase):
 ###############################################################################
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

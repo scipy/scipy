@@ -10,14 +10,14 @@ global test_dir
 test_dir = ''
 
 import numpy
-from numpy.testing import *
-set_package_path()
+from scipy.testing import *
+
 from weave import inline_tools,ext_tools
 from weave.build_tools import msvc_exists, gcc_exists
 from weave.catalog import unique_file
 from weave.numpy_scalar_spec import numpy_complex_scalar_converter
 
-restore_path()
+
 
 
 def unique_mod(d,file_name):
@@ -52,22 +52,22 @@ def print_assert_equal(test_string,actual,desired):
 #   int, float, complex
 #----------------------------------------------------------------------------
 
-class NumpyComplexScalarConverter(NumpyTestCase):
+class NumpyComplexScalarConverter(TestCase):
     compiler = ''
 
     def setUp(self):
         self.converter = numpy_complex_scalar_converter()
 
-    def check_type_match_string(self,level=5):
+    def test_type_match_string(self,level=5):
         assert( not self.converter.type_match('string') )
-    def check_type_match_int(self,level=5):
+    def test_type_match_int(self,level=5):
         assert( not self.converter.type_match(5))
-    def check_type_match_float(self,level=5):
+    def test_type_match_float(self,level=5):
         assert( not self.converter.type_match(5.))
-    def check_type_match_complex128(self,level=5):
+    def test_type_match_complex128(self,level=5):
         assert(self.converter.type_match(numpy.complex128(5.+1j)))
 
-    def check_complex_var_in(self,level=5):
+    def test_complex_var_in(self,level=5):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -90,7 +90,7 @@ class NumpyComplexScalarConverter(NumpyTestCase):
         except TypeError:
             pass
 
-    def check_complex_return(self,level=5):
+    def test_complex_return(self,level=5):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -107,7 +107,7 @@ class NumpyComplexScalarConverter(NumpyTestCase):
         c = test(b)
         assert( c == 3.+3j)
 
-    def check_inline(self, level=5):
+    def test_inline(self, level=5):
         a = numpy.complex128(1+1j)
         result = inline_tools.inline("return_val=1.0/a;",['a'])
         assert( result==.5-.5j)

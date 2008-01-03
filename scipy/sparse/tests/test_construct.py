@@ -8,9 +8,10 @@ from scipy.sparse import csr_matrix, \
      spidentity, speye, spkron, spdiags, \
      lil_eye, lil_diags
 
+#TODO check whether format=XXX is respected
 
 class TestConstructUtils(TestCase):
-    def test_spdiags(self):
+    def check_spdiags(self):
         diags1 = array( [[ 1, 2, 3, 4, 5]] )
         diags2 = array( [[ 1, 2, 3, 4, 5],
                          [ 6, 7, 8, 9,10]] )

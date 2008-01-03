@@ -1,4 +1,4 @@
-from numpy.testing import *
+from scipy.testing import *
 
 import numpy
 import scipy
@@ -6,14 +6,14 @@ from scipy import arange,ones,zeros,array,allclose
 from scipy.sparse import spdiags
 
 
-set_package_path()
+
 import scipy.sandbox.multigrid
 from scipy.sandbox.multigrid.relaxation import polynomial_smoother,gauss_seidel,jacobi
-restore_path()
 
 
-class TestRelaxation(NumpyTestCase):
-    def check_polynomial(self):
+
+class TestRelaxation(TestCase):
+    def test_polynomial(self):
         N  = 3
         A  = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
         x0 = arange(N).astype(numpy.float64)
@@ -37,7 +37,7 @@ class TestRelaxation(NumpyTestCase):
         polynomial_smoother(A,x,b,[-0.14285714,  1., -2.])
         assert_almost_equal(x,x0 - 0.14285714*A*A*r + A*r - 2*r)
 
-    def check_jacobi(self):
+    def test_jacobi(self):
         N = 1
         A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
         x = arange(N).astype(numpy.float64)
@@ -82,7 +82,7 @@ class TestRelaxation(NumpyTestCase):
         assert_almost_equal(x,2.0/3.0*x_copy + 1.0/3.0*array([5.5,11.0,15.5]))
 
 
-    def check_gauss_seidel(self):
+    def test_gauss_seidel(self):
         N = 1
         A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
         x = arange(N).astype(numpy.float64)
@@ -140,4 +140,4 @@ class TestRelaxation(NumpyTestCase):
         self.assert_(allclose(resid1,resid2))
 
 if __name__ == '__main__':
-    NumpyTest().run()
+    unittest.main()

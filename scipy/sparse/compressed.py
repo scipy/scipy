@@ -8,21 +8,14 @@ from warnings import warn
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
         empty, hstack, isscalar, ndarray, shape, searchsorted, empty_like, \
-        where
+        where, concatenate
 
-from base import spmatrix, isspmatrix
+from base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from data import _data_matrix
 import sparsetools
 from sputils import upcast, to_native, isdense, isshape, getdtype, \
         isscalarlike, isintlike
 
-
-
-def resize1d(arr, newlen):
-    old = len(arr)
-    new = zeros((newlen,), arr.dtype)
-    new[:old] = arr
-    return new
 
 
 class _cs_matrix(_data_matrix):
@@ -35,7 +28,7 @@ class _cs_matrix(_data_matrix):
             warn("dims= is deprecated, use shape= instead", DeprecationWarning)
             shape=dims
         
-        if dims is not None:
+        if nzmax is not None:
             warn("nzmax= is deprecated", DeprecationWarning)
 
 
@@ -68,16 +61,16 @@ class _cs_matrix(_data_matrix):
                     self.indptr  = array(indptr, copy=copy)
                     self.data    = array(data, copy=copy, dtype=getdtype(dtype, data))
                 else:
-                    raise ValueError, "unrecognized form for" \
-                            " %s_matrix constructor" % self.format
+                    raise ValueError, "unrecognized %s_matrix constructor usage" %\
+                            self.format
 
         else:
             #must be dense
             try:
                 arg1 = asarray(arg1)
             except:
-                raise ValueError, "unrecognized form for" \
-                        " %s_matrix constructor" % self.format
+                raise ValueError, "unrecognized %s_matrix constructor usage" % \
+                        self.format
             from coo import coo_matrix
             self._set_self( self.__class__(coo_matrix(arg1)) )
 
@@ -135,11 +128,9 @@ class _cs_matrix(_data_matrix):
                     % self.indices.dtype.name )
 
         # only support 32-bit ints for now
-        if self.indptr.dtype != intc:
-            self.indptr  = self.indptr.astype(intc)
-        if self.indices.dtype != intc:
-            self.indices = self.indices.astype(intc)
-        self.data = to_native(self.data)
+        self.indptr  = asarray(self.indptr,dtype=intc)
+        self.indices = asarray(self.indices,dtype=intc)
+        self.data    = to_native(self.data)
 
         # check array shapes
         if (rank(self.data) != 1) or (rank(self.indices) != 1) or \
@@ -385,7 +376,7 @@ class _cs_matrix(_data_matrix):
         # The spmatrix base class already does axis=0 and axis=1 efficiently
         # so we only do the case axis=None here
         if axis is None:
-            return self.data[:self.indptr[-1]].sum()
+            return self.data.sum()
         else:
             return spmatrix.sum(self,axis)
             raise ValueError, "axis out of bounds"
@@ -393,9 +384,9 @@ class _cs_matrix(_data_matrix):
     def _get_single_element(self,row,col):
         M, N = self.shape
         if (row < 0):
-            row = M + row
+            row += M
         if (col < 0):
-            col = N + col
+            col += N
         if not (0<=row<M) or not (0<=col<N):
             raise IndexError, "index out of bounds"
         
@@ -421,6 +412,7 @@ class _cs_matrix(_data_matrix):
             col = key[1]
            
             #TODO implement CSR[ [1,2,3], X ] with sparse matmat
+            #TODO make use of sorted indices
 
             if isintlike(row) and isintlike(col):
                 return self._get_single_element(row,col)
@@ -466,8 +458,62 @@ class _cs_matrix(_data_matrix):
         return self.__class__((data, index, indptr), shape=shape, \
                               dtype=self.dtype)
 
+    def __setitem__(self, key, val):
+        if isinstance(key, tuple):
+            row,col = key
+            if not (isscalarlike(row) and isscalarlike(col)):
+                raise NotImplementedError("Fancy indexing in assignment not "
+                                          "supported for csr matrices.")
+            M, N = self.shape
+            if (row < 0):
+                row += M
+            if (col < 0):
+                col += N
+            if not (0<=row<M) or not (0<=col<N):
+                raise IndexError, "index out of bounds"
+        
+            major_index, minor_index = self._swap((row,col))
+        
+            start = self.indptr[major_index]
+            end   = self.indptr[major_index+1]
+            indxs = where(minor_index == self.indices[start:end])[0]
 
-    # conversion methods
+            num_matches = len(indxs)
+
+            if num_matches == 0:
+                #entry not already present
+                warn('changing the sparsity structure of a %s_matrix is expensive. ' \
+                        'lil_matrix is more efficient.' % self.format, \
+                        SparseEfficiencyWarning)
+
+                self.sort_indices()
+   
+                newindx = self.indices[start:end].searchsorted(minor_index)
+                newindx += start
+
+                val = array([val],dtype=self.data.dtype)
+                minor_index = array([minor_index],dtype=self.indices.dtype)
+                self.data    = concatenate((self.data[:newindx],val,self.data[newindx:]))
+                self.indices = concatenate((self.indices[:newindx],minor_index,self.indices[newindx:]))
+
+                self.indptr[major_index+1:] += 1
+
+            elif num_matches == 1:
+                #entry appears exactly once
+                self.data[start:end][indxs[0]] = val
+            else:
+                #entry appears more than once
+                raise ValueError,'nonzero entry (%d,%d) occurs more than once' % (row,col)
+
+            self.check_format(full_check=True)
+        else:
+            # We should allow slices here!
+            raise IndexError, "invalid index"
+
+    ######################
+    # Conversion methods #
+    ######################
+
     def todia(self):
         return self.tocoo(copy=False).todia()
     
@@ -503,8 +549,10 @@ class _cs_matrix(_data_matrix):
         M[A.row, A.col] = A.data
         return M
 
-    
-    # methods that examine or modify the internal data structure
+    ############################################################## 
+    # methods that examine or modify the internal data structure #
+    ##############################################################
+
     def sum_duplicates(self):
         """Eliminate duplicate matrix entries by adding them together
 
@@ -518,11 +566,25 @@ class _cs_matrix(_data_matrix):
 
         self.prune() #nnz may have changed
 
-    def has_sorted_indices(self):
+
+    def __get_sorted(self):
         """Determine whether the matrix has sorted indices
+
+            True if the indices of the matrix are in
+            sorted order, False otherwise.
         """
-        fn = sparsetools.csr_has_sorted_indices
-        return fn( len(self.indptr) - 1, self.indptr, self.indices)
+
+        #first check to see if result was cached
+        if not hasattr(self,'_has_sorted_indices'):
+            fn = sparsetools.csr_has_sorted_indices
+            self.__has_sorted_indices = \
+                    fn( len(self.indptr) - 1, self.indptr, self.indices)
+        return self.__has_sorted_indices
+
+    def __set_sorted(self,val):
+        self.__has_sorted_indices = bool(val)
+
+    has_sorted_indices = property(fget=__get_sorted, fset=__set_sorted)
 
     def sorted_indices(self):
         """Return a copy of this matrix with sorted indices
@@ -532,18 +594,17 @@ class _cs_matrix(_data_matrix):
         return A
 
         # an alternative that has linear complexity is the following
-        # typically the previous option is faster
+        # although the previous option is typically faster
         #return self.toother().toother()
 
-    def sort_indices(self,check_first=True):
+    def sort_indices(self):
         """Sort the indices of this matrix *in place*
         """
-        #see if sorting can be avoided
-        if check_first and self.has_sorted_indices(): 
-            return
-
-        fn = sparsetools.csr_sort_indices
-        fn( len(self.indptr) - 1, self.indptr, self.indices, self.data)
+       
+        if not self.has_sorted_indices:
+            fn = sparsetools.csr_sort_indices
+            fn( len(self.indptr) - 1, self.indptr, self.indices, self.data)
+            self.has_sorted_indices = True
 
     def ensure_sorted_indices(self, inplace=False):
         """Return a copy of this matrix where the column indices are sorted
@@ -573,6 +634,10 @@ class _cs_matrix(_data_matrix):
         self.indices = self.indices[:self.nnz]
 
 
+    ###################
+    # utility methods #
+    ###################
+
     # needed by _data_matrix
     def _with_data(self,data,copy=True):
         """Returns a matrix with the same sparsity structure as self,
@@ -586,7 +651,6 @@ class _cs_matrix(_data_matrix):
             return self.__class__((data,self.indices,self.indptr), \
                                    shape=self.shape,dtype=data.dtype)
 
-    # utility functions
     def _binopt(self, other, op, in_shape=None, out_shape=None):
         """apply the binary operation fn to two sparse matrices"""
         other = self.__class__(other)
@@ -620,7 +684,9 @@ class _cs_matrix(_data_matrix):
             indices = indices.copy()
             data    = data.copy()
 
-        return self.__class__((data, indices, indptr), shape=out_shape)
+        A = self.__class__((data, indices, indptr), shape=out_shape)
+        A.has_sorted_indices = True
+        return A
 
     def _get_submatrix( self, shape0, shape1, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created)."""

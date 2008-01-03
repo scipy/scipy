@@ -14,8 +14,8 @@ import types
 
 import numpy as N
 import numpy.core.fromnumeric  as fromnumeric
-from numpy.testing import NumpyTest, NumpyTestCase
-from numpy.testing.utils import build_err_msg
+from scipy.testing import NumpyTest, TestCase
+from scipy.testing.utils import build_err_msg
 
 import maskedarray.testutils
 from maskedarray.testutils import *
@@ -30,10 +30,10 @@ from maskedarray.mrecords import MaskedRecords, \
     fromarrays, fromtextfile, fromrecords, addfield
 
 #..............................................................................
-class TestMRecords(NumpyTestCase):
+class TestMRecords(TestCase):
     "Base test class for MaskedArrays."
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         self.setup()
 
     def setup(self):
@@ -177,4 +177,4 @@ class TestMRecords(NumpyTestCase):
 ###############################################################################
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

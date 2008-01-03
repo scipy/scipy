@@ -90,8 +90,9 @@ std::ostream& operator<<(std::ostream& out, const complex_wrapper<x,y>& cw){
     return out << cw.real << " " << cw.imag;
 }
 
-typedef complex_wrapper<float, npy_cfloat>  npy_cfloat_wrapper;
+typedef complex_wrapper<float, npy_cfloat> npy_cfloat_wrapper;
 typedef complex_wrapper<double,npy_cdouble> npy_cdouble_wrapper;
+typedef complex_wrapper<long double,npy_clongdouble> npy_clongdouble_wrapper;
 
 
 #endif

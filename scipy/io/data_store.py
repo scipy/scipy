@@ -5,21 +5,27 @@
     you to store data to a file and then load it back into the workspace.
     When the data is stored, a python module is also created as the
     "namespace for the data"
-    >>> import data_store
+    >>> import scipy.io
     >>> import os
     >>> a = 1
-    >>> data_store.save('c:/temp/junker',{'a':a})
+    >>> scipy.io.save_as_module('c:/temp/junker',{'a':a})
     >>> os.chdir('c:/temp')
     >>> import junker
     >>> junker.a
     1
 """
 
-__all__ = ['load', 'save', 'create_module', 'create_shelf']
+__all__ = ['save_as_module', 
+           # The rest of these are all deprecated
+           'save', 'create_module',
+           'create_shelf', 'load']
+
 import dumb_shelve
 import os
 
-def load(module):
+from numpy import deprecate_with_doc, deprecate
+
+def _load(module):
     """ Load data into module from a shelf with
         the same name as the module.
     """
@@ -34,15 +40,15 @@ def load(module):
 #       print i, 'loaded...'
 #   print 'done'
 
-def save(file_name=None,data=None):
-    """ Save the dictionary "data" into
-        a module and shelf named save
-    """
-    import dumb_shelve
-    create_module(file_name)
-    create_shelf(file_name,data)
+load = deprecate_with_doc("""
+This is an internal function used with scipy.io.save_as_module
 
-def create_module(file_name):
+If you are saving arrays into a module, you should think about using
+HDF5 or .npz files instead.
+""")(_load)
+
+
+def _create_module(file_name):
     """ Create the module file.
     """
     if not os.path.exists(file_name+'.py'): # don't clobber existing files
@@ -50,10 +56,17 @@ def create_module(file_name):
         f = open(file_name+'.py','w')
         f.write('import scipy.io.data_store as data_store\n')
         f.write('import %s\n' % module_name)
-        f.write('data_store.load(%s)' % module_name)
+        f.write('data_store._load(%s)' % module_name)
         f.close()
 
-def create_shelf(file_name,data):
+create_module = deprecate_with_doc("""
+This is an internal function used with scipy.io.save_as_module
+
+If you are saving arrays into a module, you should think about
+using HDF5 or .npz files instead.
+""")(_create_module)
+
+def _create_shelf(file_name,data):
     """Use this to write the data to a new file
     """
     shelf_name = file_name.split('.')[0]
@@ -63,3 +76,20 @@ def create_shelf(file_name,data):
         f[i] = data[i]
 #   print 'done'
     f.close()
+
+create_shelf = deprecate_with_doc("""
+This is an internal function used with scipy.io.save_as_module
+
+If you are saving arrays into a module, you should think about using
+HDF5 or .npz files instead.
+""")(_create_shelf)
+
+
+def save_as_module(file_name=None,data=None):
+    """ Save the dictionary "data" into
+        a module and shelf named save
+    """
+    _create_module(file_name)
+    _create_shelf(file_name,data)
+
+save = deprecate(save_as_module, 'save', 'save_as_module')

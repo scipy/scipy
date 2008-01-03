@@ -1,20 +1,20 @@
-from numpy.testing import *
+from scipy.testing import *
 
 from scipy.sparse import csr_matrix
 from numpy import arange,ones,zeros,array,eye,vstack,diff
 
-set_package_path()
+
 from scipy.sandbox.multigrid.sa import sa_fit_candidates
 from scipy.sandbox.multigrid.adaptive import augment_candidates
-restore_path()
+
 
 #import pdb; pdb.set_trace()
 
-class TestAdaptiveSA(NumpyTestCase):
+class TestAdaptiveSA(TestCase):
     def setUp(self):
         pass
 
-class TestAugmentCandidates(NumpyTestCase):
+class TestAugmentCandidates(TestCase):
     def setUp(self):
         self.cases = []
 
@@ -25,7 +25,7 @@ class TestAugmentCandidates(NumpyTestCase):
 
 
 
-    def check_first_level(self):
+    def test_first_level(self):
         cases = []
 
         ## tests where AggOp includes all DOFs
@@ -66,4 +66,4 @@ class TestAugmentCandidates(NumpyTestCase):
 
 
 if __name__ == '__main__':
-    NumpyTest().run()
+    unittest.main()

@@ -13,7 +13,7 @@ __date__     = '$Date$'
 
 
 import numpy
-from numpy.testing import NumpyTest, NumpyTestCase
+from scipy.testing import NumpyTest, TestCase
 import maskedarray
 from maskedarray import masked
 from maskedarray.testutils import assert_equal, assert_almost_equal
@@ -23,20 +23,20 @@ from timeseries import extras
 from timeseries.extras import *
 
 #..............................................................................
-class TestMisc(NumpyTestCase):
+class TestMisc(TestCase):
     "Base test class for MaskedArrays."
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
     #
     def test_leapyear(self):
         leap = isleapyear([1900,1901,1902,1903,1904,2000,2001,2002,2003,2004])
         assert_equal(leap, [0,0,0,0,1,1,0,0,0,1])
 
 #..............................................................................
-class TestCountmissing(NumpyTestCase):
+class TestCountmissing(TestCase):
     #
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         data = time_series(numpy.arange(731),
                            start_date=Date(string='2003-01-01', freq='D'),
                            freq='D')
@@ -81,4 +81,4 @@ class TestCountmissing(NumpyTestCase):
 ###############################################################################
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

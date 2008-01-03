@@ -3,19 +3,17 @@ import os
 import sys
 
 # Note: test_dir is global to this file.
-#       It is made by setup_test_location()
+#       It is made by setup_location()
 
 #globals
 global test_dir
 test_dir = ''
 
-from numpy.testing import *
-set_package_path()
-from weave import inline_tools,ext_tools,c_spec
-from weave.build_tools import msvc_exists, gcc_exists
-from weave.catalog import unique_file
-restore_path()
+from scipy.testing import *
 
+from scipy.weave import inline_tools,ext_tools,c_spec
+from scipy.weave.build_tools import msvc_exists, gcc_exists
+from scipy.weave.catalog import unique_file
 
 
 def unique_mod(d,file_name):
@@ -66,21 +64,21 @@ def print_assert_equal(test_string,actual,desired):
 #         compilers.append(c)
     
 
-class IntConverter(NumpyTestCase):
+class IntConverter(TestCase):
     compiler = ''
-    def check_type_match_string(self,level=5):
+    def test_type_match_string(self,level=5):
         s = c_spec.int_converter()
         assert( not s.type_match('string') )
-    def check_type_match_int(self,level=5):
+    def test_type_match_int(self,level=5):
         s = c_spec.int_converter()
         assert(s.type_match(5))
-    def check_type_match_float(self,level=5):
+    def test_type_match_float(self,level=5):
         s = c_spec.int_converter()
         assert(not s.type_match(5.))
-    def check_type_match_complex(self,level=5):
+    def test_type_match_complex(self,level=5):
         s = c_spec.int_converter()
         assert(not s.type_match(5.+1j))
-    def check_var_in(self,level=5):
+    def test_var_in(self,level=5):
         mod_name = 'int_var_in' + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -103,7 +101,7 @@ class IntConverter(NumpyTestCase):
         except TypeError:
             pass
 
-    def check_int_return(self,level=5):
+    def test_int_return(self,level=5):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -121,21 +119,21 @@ class IntConverter(NumpyTestCase):
 
         assert( c == 3)
 
-class FloatConverter(NumpyTestCase):
+class FloatConverter(TestCase):
     compiler = ''
-    def check_type_match_string(self,level=5):
+    def test_type_match_string(self,level=5):
         s = c_spec.float_converter()
         assert( not s.type_match('string'))
-    def check_type_match_int(self,level=5):
+    def test_type_match_int(self,level=5):
         s = c_spec.float_converter()
         assert(not s.type_match(5))
-    def check_type_match_float(self,level=5):
+    def test_type_match_float(self,level=5):
         s = c_spec.float_converter()
         assert(s.type_match(5.))
-    def check_type_match_complex(self,level=5):
+    def test_type_match_complex(self,level=5):
         s = c_spec.float_converter()
         assert(not s.type_match(5.+1j))
-    def check_float_var_in(self,level=5):
+    def test_float_var_in(self,level=5):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -159,7 +157,7 @@ class FloatConverter(NumpyTestCase):
             pass
 
 
-    def check_float_return(self,level=5):
+    def test_float_return(self,level=5):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -176,21 +174,21 @@ class FloatConverter(NumpyTestCase):
         c = test(b)
         assert( c == 3.)
 
-class ComplexConverter(NumpyTestCase):
+class ComplexConverter(TestCase):
     compiler = ''
-    def check_type_match_string(self,level=5):
+    def test_type_match_string(self,level=5):
         s = c_spec.complex_converter()
         assert( not s.type_match('string') )
-    def check_type_match_int(self,level=5):
+    def test_type_match_int(self,level=5):
         s = c_spec.complex_converter()
         assert(not s.type_match(5))
-    def check_type_match_float(self,level=5):
+    def test_type_match_float(self,level=5):
         s = c_spec.complex_converter()
         assert(not s.type_match(5.))
-    def check_type_match_complex(self,level=5):
+    def test_type_match_complex(self,level=5):
         s = c_spec.complex_converter()
         assert(s.type_match(5.+1j))
-    def check_complex_var_in(self,level=5):
+    def test_complex_var_in(self,level=5):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -213,7 +211,7 @@ class ComplexConverter(NumpyTestCase):
         except TypeError:
             pass
 
-    def check_complex_return(self,level=5):
+    def test_complex_return(self,level=5):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -234,9 +232,9 @@ class ComplexConverter(NumpyTestCase):
 # File conversion tests
 #----------------------------------------------------------------------------
 
-class FileConverter(NumpyTestCase):
+class FileConverter(TestCase):
     compiler = ''
-    def check_py_to_file(self,level=5):
+    def test_py_to_file(self,level=5):
         import tempfile
         file_name = tempfile.mktemp()
         file = open(file_name,'w')
@@ -247,7 +245,7 @@ class FileConverter(NumpyTestCase):
         file.close()
         file = open(file_name,'r')
         assert(file.read() == "hello bob")
-    def check_file_to_py(self,level=5):
+    def test_file_to_py(self,level=5):
         import tempfile
         file_name = tempfile.mktemp()
         # not sure I like Py::String as default -- might move to std::sting
@@ -268,16 +266,16 @@ class FileConverter(NumpyTestCase):
 # Instance conversion tests
 #----------------------------------------------------------------------------
 
-class InstanceConverter(NumpyTestCase):
+class InstanceConverter(TestCase):
     pass
 
 #----------------------------------------------------------------------------
 # Callable object conversion tests
 #----------------------------------------------------------------------------
 
-class CallableConverter(NumpyTestCase):
+class CallableConverter(TestCase):
     compiler=''
-    def check_call_function(self,level=5):
+    def test_call_function(self,level=5):
         import string
         func = string.find
         search_str = "hello world hello"
@@ -295,36 +293,36 @@ class CallableConverter(NumpyTestCase):
         desired = func(search_str,sub_str)
         assert(desired == actual)
 
-class SequenceConverter(NumpyTestCase):
+class SequenceConverter(TestCase):
     compiler = ''
-    def check_convert_to_dict(self,level=5):
+    def test_convert_to_dict(self,level=5):
         d = {}
         inline_tools.inline("",['d'],compiler=self.compiler,force=1)
-    def check_convert_to_list(self,level=5):
+    def test_convert_to_list(self,level=5):
         l = []
         inline_tools.inline("",['l'],compiler=self.compiler,force=1)
-    def check_convert_to_string(self,level=5):
+    def test_convert_to_string(self,level=5):
         s = 'hello'
         inline_tools.inline("",['s'],compiler=self.compiler,force=1)
-    def check_convert_to_tuple(self,level=5):
+    def test_convert_to_tuple(self,level=5):
         t = ()
         inline_tools.inline("",['t'],compiler=self.compiler,force=1)
 
-class StringConverter(NumpyTestCase):
+class StringConverter(TestCase):
     compiler = ''
-    def check_type_match_string(self,level=5):
+    def test_type_match_string(self,level=5):
         s = c_spec.string_converter()
         assert( s.type_match('string') )
-    def check_type_match_int(self,level=5):
+    def test_type_match_int(self,level=5):
         s = c_spec.string_converter()
         assert(not s.type_match(5))
-    def check_type_match_float(self,level=5):
+    def test_type_match_float(self,level=5):
         s = c_spec.string_converter()
         assert(not s.type_match(5.))
-    def check_type_match_complex(self,level=5):
+    def test_type_match_complex(self,level=5):
         s = c_spec.string_converter()
         assert(not s.type_match(5.+1j))
-    def check_var_in(self,level=5):
+    def test_var_in(self,level=5):
         mod_name = 'string_var_in'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -348,7 +346,7 @@ class StringConverter(NumpyTestCase):
         except TypeError:
             pass
 
-    def check_return(self,level=5):
+    def test_return(self,level=5):
         mod_name = 'string_return'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -365,17 +363,17 @@ class StringConverter(NumpyTestCase):
         c = test(b)
         assert( c == 'hello')
 
-class ListConverter(NumpyTestCase):
+class ListConverter(TestCase):
     compiler = ''
-    def check_type_match_bad(self,level=5):
+    def test_type_match_bad(self,level=5):
         s = c_spec.list_converter()
         objs = [{},(),'',1,1.,1+1j]
         for i in objs:
             assert( not s.type_match(i) )
-    def check_type_match_good(self,level=5):
+    def test_type_match_good(self,level=5):
         s = c_spec.list_converter()
         assert(s.type_match([]))
-    def check_var_in(self,level=5):
+    def test_var_in(self,level=5):
         mod_name = 'list_var_in'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -398,7 +396,7 @@ class ListConverter(NumpyTestCase):
         except TypeError:
             pass
 
-    def check_return(self,level=5):
+    def test_return(self,level=5):
         mod_name = 'list_return'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -416,7 +414,7 @@ class ListConverter(NumpyTestCase):
         c = test(b)
         assert( c == ['hello'])
 
-    def check_speed(self,level=5):
+    def test_speed(self,level=5):
         mod_name = 'list_speed'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -476,17 +474,17 @@ class ListConverter(NumpyTestCase):
         print 'python:', t2 - t1
         assert( sum1 == sum2 and sum1 == sum3)
 
-class TupleConverter(NumpyTestCase):
+class TupleConverter(TestCase):
     compiler = ''
-    def check_type_match_bad(self,level=5):
+    def test_type_match_bad(self,level=5):
         s = c_spec.tuple_converter()
         objs = [{},[],'',1,1.,1+1j]
         for i in objs:
             assert( not s.type_match(i) )
-    def check_type_match_good(self,level=5):
+    def test_type_match_good(self,level=5):
         s = c_spec.tuple_converter()
         assert(s.type_match((1,)))
-    def check_var_in(self,level=5):
+    def test_var_in(self,level=5):
         mod_name = 'tuple_var_in'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -509,7 +507,7 @@ class TupleConverter(NumpyTestCase):
         except TypeError:
             pass
 
-    def check_return(self,level=5):
+    def test_return(self,level=5):
         mod_name = 'tuple_return'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -529,7 +527,7 @@ class TupleConverter(NumpyTestCase):
         assert( c == ('hello',None))
 
 
-class DictConverter(NumpyTestCase):
+class DictConverter(TestCase):
     """ Base Class for dictionary conversion tests.
     """
 
@@ -539,15 +537,15 @@ class DictConverter(NumpyTestCase):
     # so that it can run on its own.
     compiler=''
 
-    def check_type_match_bad(self,level=5):
+    def test_type_match_bad(self,level=5):
         s = c_spec.dict_converter()
         objs = [[],(),'',1,1.,1+1j]
         for i in objs:
             assert( not s.type_match(i) )
-    def check_type_match_good(self,level=5):
+    def test_type_match_good(self,level=5):
         s = c_spec.dict_converter()
         assert(s.type_match({}))
-    def check_var_in(self,level=5):
+    def test_var_in(self,level=5):
         mod_name = 'dict_var_in'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -570,7 +568,7 @@ class DictConverter(NumpyTestCase):
         except TypeError:
             pass
 
-    def check_return(self,level=5):
+    def test_return(self,level=5):
         mod_name = 'dict_return'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -682,7 +680,7 @@ for _n in dir():
 # class TestGccInstanceConverter(TestInstanceConverter):
 #     compiler = 'gcc'
 
-def setup_test_location():
+def setup_location():
     import tempfile
     #test_dir = os.path.join(tempfile.gettempdir(),'test_files')
     test_dir = tempfile.mktemp()
@@ -691,9 +689,9 @@ def setup_test_location():
     sys.path.insert(0,test_dir)
     return test_dir
 
-test_dir = setup_test_location()
+test_dir = setup_location()
 
-def teardown_test_location():
+def teardown_location():
     import tempfile
     test_dir = os.path.join(tempfile.gettempdir(),'test_files')
     if sys.path[0] == test_dir:
@@ -715,4 +713,4 @@ def remove_file(name):
 #         if _n[:7]=='TestGcc': exec 'del '+_n
 # 
 if __name__ == "__main__":
-    NumpyTest('weave.c_spec').run()
+    unittest.main()

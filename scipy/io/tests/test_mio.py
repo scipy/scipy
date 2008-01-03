@@ -10,8 +10,8 @@ import scipy.sparse as SP
 
 from scipy.testing import *
 
-from scipy.io.mio import loadmat, savemat
-from scipy.io.mio5 import mat_obj, mat_struct
+from matlab.mio import loadmat, savemat
+from matlab.mio5 import mat_obj, mat_struct
 
 try:  # Python 2.3 support
     from sets import Set as set

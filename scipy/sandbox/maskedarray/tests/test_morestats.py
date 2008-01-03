@@ -24,10 +24,10 @@ import maskedarray.testutils
 from maskedarray.testutils import *
 
 
-class TestMisc(NumpyTestCase):
+class TestMisc(TestCase):
     #
     def __init__(self, *args, **kwargs):
-        NumpyTestCase.__init__(self, *args, **kwargs)
+        TestCase.__init__(self, *args, **kwargs)
     #
     def test_mjci(self):
         "Tests the Marits-Jarrett estimator"
@@ -43,10 +43,10 @@ class TestMisc(NumpyTestCase):
         assert_equal(numpy.round(trimmed_mean_ci(data,0.2),1), [561.8, 630.6])
 
 #..............................................................................
-class TestRanking(NumpyTestCase):
+class TestRanking(TestCase):
     #
     def __init__(self, *args, **kwargs):
-        NumpyTestCase.__init__(self, *args, **kwargs)
+        TestCase.__init__(self, *args, **kwargs)
     #
     def test_ranking(self):
         x = masked_array([0,1,1,1,2,3,4,5,5,6,])
@@ -63,10 +63,10 @@ class TestRanking(NumpyTestCase):
         assert_almost_equal(rank_data(x,axis=0),[[1,1,1,1,1],[2,2,2,2,2,]])
 
 #..............................................................................
-class TestQuantiles(NumpyTestCase):
+class TestQuantiles(TestCase):
     #
     def __init__(self, *args, **kwargs):
-        NumpyTestCase.__init__(self, *args, **kwargs)
+        TestCase.__init__(self, *args, **kwargs)
     #
     def test_hdquantiles(self):
         data = [0.706560797,0.727229578,0.990399276,0.927065621,0.158953014,
@@ -111,4 +111,4 @@ class TestQuantiles(NumpyTestCase):
 ###############################################################################
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

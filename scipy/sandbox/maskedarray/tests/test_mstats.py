@@ -21,10 +21,10 @@ from maskedarray.testutils import *
 from maskedarray.mstats import *
 
 #..............................................................................
-class TestQuantiles(NumpyTestCase):
+class TestQuantiles(TestCase):
     "Base test class for MaskedArrays."
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         self.a = maskedarray.arange(1,101)
     #
     def test_1d_nomask(self):
@@ -81,9 +81,9 @@ class TestQuantiles(NumpyTestCase):
         assert_almost_equal(mquantiles(b, axis=1),
                             maskedarray.resize([24.9, 50., 75.1], (100,3)))
 
-class TestMedian(NumpyTestCase):
+class TestMedian(TestCase):
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
 
     def test_2d(self):
         "Tests median w/ 2D"
@@ -111,10 +111,10 @@ class TestMedian(NumpyTestCase):
         assert_equal(mmedian(x,0), [[12,10],[8,9],[16,17]])
 
 #..............................................................................
-class TestTrimming(NumpyTestCase):
+class TestTrimming(TestCase):
     #
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
     #
     def test_trim(self):
         "Tests trimming."
@@ -153,11 +153,11 @@ class TestTrimming(NumpyTestCase):
         assert_equal(winsorized.mask, data.mask)
 #..............................................................................
 
-class TestMisc(NumpyTestCase):
+class TestMisc(TestCase):
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
 
-    def check_cov(self):
+    def test_cov(self):
         "Tests the cov function."
         x = masked_array([[1,2,3],[4,5,6]], mask=[[1,0,0],[0,0,0]])
         c = cov(x[0])
@@ -171,4 +171,4 @@ class TestMisc(NumpyTestCase):
 ###############################################################################
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

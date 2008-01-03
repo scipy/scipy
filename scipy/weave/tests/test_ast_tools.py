@@ -1,31 +1,29 @@
+from scipy.testing import *
 
-from numpy.testing import *
-set_package_path()
-from weave import ast_tools
-restore_path()
+from scipy.weave import ast_tools
 
 set_local_path()
 from weave_test_utils import *
 restore_path()
 
-class TestHarvestVariables(NumpyTestCase):
+class TestHarvestVariables(TestCase):
     """ Not much testing going on here, but
         at least it is a flame test.
     """
-    def generic_test(self,expr,desired):
+    def generic_check(self,expr,desired):
         import parser
         ast_list = parser.suite(expr).tolist()
         actual = ast_tools.harvest_variables(ast_list)
         print_assert_equal(expr,actual,desired)
 
-    def check_simple_expr(self):
+    def test_simple_expr(self):
         """convert simple expr to blitz
 
            a[:1:2] = b[:1+i+2:]
         """
         expr = "a[:1:2] = b[:1+i+2:]"
         desired = ['a','b','i']
-        self.generic_test(expr,desired)
+        self.generic_check(expr,desired)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

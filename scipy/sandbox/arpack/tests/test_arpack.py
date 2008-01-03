@@ -9,17 +9,14 @@ Run tests locally:
 
 """
 
-import sys
-from numpy.testing import *
+from scipy.testing import *
 
-set_package_path()
-from arpack import *
-del sys.path[0]
+from scipy.sandbox.arpack import *
 
 import numpy
 from scipy.linalg import eig,eigh,norm
 
-class TestEigenNonsymmetric(NumpyTestCase):
+class TestEigenNonsymmetric(TestCase):
 
     def get_a1(self,typ):
         mat=numpy.array([[-2., -8.,  1.,  2., -5.],
@@ -106,7 +103,7 @@ class TestEigenNonsymmetric(NumpyTestCase):
         assert_array_almost_equal(num[:k],exact[:k],decimal=5)
 
 
-    def check_type(self):
+    def test_type(self):
         k=2
         for typ in 'fd':
             self.large_magnitude(typ,k)
@@ -121,7 +118,7 @@ class TestEigenNonsymmetric(NumpyTestCase):
 
 
 
-class TestEigenComplexNonsymmetric(NumpyTestCase):
+class TestEigenComplexNonsymmetric(TestCase):
 
     def get_a1(self,typ):
         mat=numpy.array([[-2., -8.,  1.,  2., -5.],
@@ -205,7 +202,7 @@ class TestEigenComplexNonsymmetric(NumpyTestCase):
         assert_array_almost_equal(num,exact[:k],decimal=5)
 
 
-    def check_type(self):
+    def test_type(self):
         k=2
         for typ in 'FD':
             self.large_magnitude(typ,k)
@@ -218,7 +215,7 @@ class TestEigenComplexNonsymmetric(NumpyTestCase):
 
 
 
-class TestEigenSymmetric(NumpyTestCase):
+class TestEigenSymmetric(TestCase):
 
     def get_a1(self,typ):
         mat_a1=numpy.array([[ 2.,  0.,  0., -1.,  0., -1.],
@@ -275,14 +272,14 @@ class TestEigenSymmetric(NumpyTestCase):
         for i in range(k):
             assert_array_almost_equal(sb.dot(a,v[:,i]),w[i]*v[:,i])
 
-    def check_eigenvectors(self):
+    def test_eigenvectors(self):
         k=2
         for typ in 'fd':
             self.large_eigenvectors(typ,k)
             self.small_eigenvectors(typ,k)
             self.end_eigenvectors(typ,k)
 
-    def check_type(self):
+    def test_type(self):
         k=2
         for typ in 'fd':
             self.large_eigenvalues(typ,k)
@@ -290,7 +287,7 @@ class TestEigenSymmetric(NumpyTestCase):
             self.end_eigenvalues(typ,k)
 
 
-class TestEigenComplexSymmetric(NumpyTestCase):
+class TestEigenComplexSymmetric(TestCase):
 
     def get_a1(self,typ):
         mat_a1=numpy.array([[ 2.,  0.,  0., -1.,  0., -1.],
@@ -341,7 +338,7 @@ class TestEigenComplexSymmetric(NumpyTestCase):
         w.real.sort()
         assert_array_almost_equal(w,aw[:k])
 
-    def check_complex_symmetric(self):
+    def test_complex_symmetric(self):
         k=2
         for typ in 'FD':
             self.large_magnitude(typ,k)
@@ -352,4 +349,4 @@ class TestEigenComplexSymmetric(NumpyTestCase):
 
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()
