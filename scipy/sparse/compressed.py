@@ -414,6 +414,7 @@ class _cs_matrix(_data_matrix):
             col = key[1]
            
             #TODO implement CSR[ [1,2,3], X ] with sparse matmat
+            #TODO make use of sorted indices
 
             if isintlike(row) and isintlike(col):
                 return self._get_single_element(row,col)
@@ -486,9 +487,9 @@ class _cs_matrix(_data_matrix):
                 warn('changing the sparsity structure of a %s_matrix is expensive. ' \
                         'lil_matrix is more efficient.' % self.format, \
                         SparseEfficiencyWarning)
+
                 self.sort_indices()
    
-                #no harm if not sorted
                 newindx = self.indices[start:end].searchsorted(minor_index)
                 newindx += start
 
@@ -567,17 +568,25 @@ class _cs_matrix(_data_matrix):
 
         self.prune() #nnz may have changed
 
-    def has_sorted_indices(self):
+
+    def __get_sorted(self):
         """Determine whether the matrix has sorted indices
+
+            True if the indices of the matrix are in
+            sorted order, False otherwise.
         """
 
         #first check to see if result was cached
         if not hasattr(self,'_has_sorted_indices'):
             fn = sparsetools.csr_has_sorted_indices
-            self._has_sorted_indices = \
+            self.__has_sorted_indices = \
                     fn( len(self.indptr) - 1, self.indptr, self.indices)
+        return self.__has_sorted_indices
 
-        return self._has_sorted_indices
+    def __set_sorted(self,val):
+        self.__has_sorted_indices = bool(val)
+
+    has_sorted_indices = property(fget=__get_sorted, fset=__set_sorted)
 
     def sorted_indices(self):
         """Return a copy of this matrix with sorted indices
@@ -594,10 +603,10 @@ class _cs_matrix(_data_matrix):
         """Sort the indices of this matrix *in place*
         """
        
-        if not self.has_sorted_indices():
+        if not self.has_sorted_indices:
             fn = sparsetools.csr_sort_indices
             fn( len(self.indptr) - 1, self.indptr, self.indices, self.data)
-            self._has_sorted_indices = True
+            self.has_sorted_indices = True
 
     def ensure_sorted_indices(self, inplace=False):
         """Return a copy of this matrix where the column indices are sorted
@@ -677,7 +686,9 @@ class _cs_matrix(_data_matrix):
             indices = indices.copy()
             data    = data.copy()
 
-        return self.__class__((data, indices, indptr), shape=out_shape)
+        A = self.__class__((data, indices, indptr), shape=out_shape)
+        A.has_sorted_indices = True
+        return A
 
     def _get_submatrix( self, shape0, shape1, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created)."""

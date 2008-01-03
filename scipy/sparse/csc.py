@@ -128,7 +128,7 @@ class csc_matrix(_cs_matrix):
 
         from csr import csr_matrix
         A = csr_matrix((data, indices, indptr), self.shape)
-        A._has_sorted_indices = True
+        A.has_sorted_indices = True
         return A
 
     def tobsr(self, blocksize=None):

@@ -33,6 +33,7 @@ restore_path()
 #TODO check that spmatrix( ... , copy=X ) is respected
 #TODO test repr(spmatrix)
 #TODO test prune
+#TODO test has_sorted_indices
 class _TestCommon:
     """test common functionality shared by all sparse formats"""
 
