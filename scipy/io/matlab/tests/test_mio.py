@@ -11,8 +11,8 @@ from numpy import arange, array, eye, pi, cos, exp, sin, sqrt, ndarray,  \
 import scipy.sparse as SP
 
 set_package_path()
-from io.matlab.mio import loadmat, savemat
-from io.matlab.mio5 import mat_obj, mat_struct
+from matlab.mio import loadmat, savemat
+from matlab.mio5 import mat_obj, mat_struct
 restore_path()
 
 try:  # Python 2.3 support
