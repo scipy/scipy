@@ -667,7 +667,7 @@ class Mat5SparseWriter(Mat5MatrixWriter):
 
         '''
         A = self.arr.tocsc() # convert to sparse CSC format
-        A.sort_indices()
+        A.sort_indices()     # MATLAB expects sorted row indices
         is_complex = (A.dtype.kind == 'c')
         nz = A.nnz
 
