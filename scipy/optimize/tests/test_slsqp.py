@@ -84,7 +84,7 @@ class TestSLSQP(NumpyTestCase):
                          ieqcons = [lambda x, y: x[0]-x[1]-1.0],
                          iprint=0, full_output=1)
         x,fx,its,imode,smode = res
-        assert_array_almost_equal(x,[2,1])
+        assert_array_almost_equal(x,[2,1],decimal=3)
 
 if __name__ == "__main__":
     NumpyTest().run()
