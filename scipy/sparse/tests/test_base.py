@@ -304,7 +304,7 @@ class _TestCommon:
             assert_equal( result.shape, (4,2) )
             assert_equal( result, dot(a,b) )
 
-    def check_formatconversions(self):
+    def test_formatconversions(self):
         A = spkron([[1,0,1],[0,1,1],[1,0,0]], [[1,1],[0,1]] )
         D = A.todense()
         A = self.spmatrix(A)

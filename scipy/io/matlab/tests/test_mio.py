@@ -1,24 +1,23 @@
 #!/usr/bin/env python
-
+''' Nose test generators '''
 import os
 from glob import glob
 from cStringIO import StringIO
 from tempfile import mkstemp
+from scipy.testing import *
 from numpy import arange, array, eye, pi, cos, exp, sin, sqrt, ndarray,  \
      zeros, reshape, transpose, empty
 import scipy.sparse as SP
 
-from scipy.testing import *
-
-from matlab.mio import loadmat, savemat
-from matlab.mio5 import mat_obj, mat_struct
+from scipy.io.matlab.mio import loadmat, savemat
+from scipy.io.matlab.mio5 import mat_obj, mat_struct
 
 try:  # Python 2.3 support
     from sets import Set as set
 except:
     pass
 
-test_data_path = os.path.join(os.path.dirname(__file__), './data')
+test_data_path = os.path.join(os.path.dirname(__file__), 'data')
 
 def _check_level(self, label, expected, actual):
     """ Check one level of a potentially nested object / list """
@@ -159,7 +158,14 @@ case_table5.append(
 case_table5_rt = [
     {'name': '3dmatrix',
      'expected': {'test3dmatrix': transpose(reshape(range(1,25), (4,3,2)))}
-     }]
+     },
+    {'name': 'sparsefloat',
+     'expected': {'testsparsefloat': SP.csc_matrix(array([[1,0,2],[0,-3.5,0]]))},
+     },
+    {'name': 'sparsecomplex',
+     'expected': {'testsparsefloat': SP.csc_matrix(array([[-1+2j,0,2],[0,-3j,0]]))},
+     },
+    ]
 st = mat_struct()
 st.stringfield = u'Rats live on no evil star.'
 st.doublefield = array([sqrt(2),exp(1),pi])
@@ -214,21 +220,23 @@ case_table5.append(
     {'name': 'unicode',
     'expected': {'testunicode': u_str}
     })
-# add load tests
 
-def test_loads():
+# generator for load tests
+def test_load():
     for case in case_table4 + case_table5:
         name = case['name']
         expected = case['expected']
         filt = os.path.join(test_data_path, 'test%s_*.mat' % name)
         files = glob(filt)
         assert files, "No files for test %s using filter %s" % (name, filt)
-        yield  _make_check_case, name, files, expected
-        
-def test_round_trips():
+        yield _make_check_case, name, files, expected
+
+# round trip tests
+def test_round_trip():
     for case in case_table4 + case_table5_rt:
         name = case['name'] + '_round_trip'
         expected = case['expected']
         format = case in case_table4 and '4' or '5'
         yield _make_rt_check_case, name, expected, format
+
 

@@ -603,10 +603,14 @@ class Mat5MatrixWriter(MatStreamWriter):
         af['nzmax'] = nzmax
         self.write_dtype(af)
         # write array shape
-        self.arr=N.atleast_2d(self.arr)
+        if self.arr.ndim < 2:
+            new_arr = N.atleast_2d(self.arr)
+            if type(new_arr) != type(self.arr):
+                raise ValueError("Array should be 2-dimensional.")
+            self.arr = new_arr
         self.write_element(N.array(self.arr.shape, dtype='i4'))
         # write name
-        self.write_element(N.ndarray(shape=len(self.name), dtype='S1', buffer=self.name))
+        self.write_element(N.array([ord(c) for c in self.name], 'i1'))
 
     def update_matrix_tag(self):
         curr_pos = self.file_stream.tell()
@@ -663,24 +667,22 @@ class Mat5SparseWriter(Mat5MatrixWriter):
 
     def write(self):
         ''' Sparse matrices are 2D
-        See docstring for Mat5SparseGetter
+
         '''
-        imagf = self.arr.dtype.kind == 'c'
-        N = self.arr.nnz
-        ijd = N.zeros((N+1, 3+imagf), dtype='f8')
-        for i in range(N):
-            ijd[i,0], ijd[i,1] = self.arr.rowcol(i)
-        ijd[:-1,0:2] += 1 # 1 based indexing
-        if imagf:
-            ijd[:-1,2] = self.arr.data.real
-            ijd[:-1,3] = self.arr.data.imag
-        else:
-            ijd[:-1,2] = self.arr.data
-        ijd[-1,0:2] = self.arr.shape
-        self.write_header(P=miDOUBLE,
-                          T=mxSPARSE_CLASS,
-                          dims=ijd.shape)
-        self.write_bytes(ijd)
+        A = self.arr.tocsc() # convert to sparse CSC format
+        A.sort_indices()     # MATLAB expects sorted row indices
+        is_complex = (A.dtype.kind == 'c')
+        nz = A.nnz
+
+        self.write_header(mclass=mxSPARSE_CLASS,
+                          is_complex=is_complex,
+                          nzmax=nz)
+        self.write_element(A.indices.astype('i4'))
+        self.write_element(A.indptr.astype('i4'))
+        self.write_element(A.data.real)
+        if is_complex:
+            self.write_element(A.data.imag)
+        self.update_matrix_tag()
 
 
 class Mat5WriterGetter(object):
