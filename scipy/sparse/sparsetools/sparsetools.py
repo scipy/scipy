@@ -1055,6 +1055,25 @@ def csr_sort_indices(*args):
     """
   return _sparsetools.csr_sort_indices(*args)
 
+def csr_eliminate_zeros(*args):
+  """
+    csr_eliminate_zeros(int n_row, int n_col, int Ap, int Aj, signed char Ax)
+    csr_eliminate_zeros(int n_row, int n_col, int Ap, int Aj, unsigned char Ax)
+    csr_eliminate_zeros(int n_row, int n_col, int Ap, int Aj, short Ax)
+    csr_eliminate_zeros(int n_row, int n_col, int Ap, int Aj, unsigned short Ax)
+    csr_eliminate_zeros(int n_row, int n_col, int Ap, int Aj, int Ax)
+    csr_eliminate_zeros(int n_row, int n_col, int Ap, int Aj, unsigned int Ax)
+    csr_eliminate_zeros(int n_row, int n_col, int Ap, int Aj, long long Ax)
+    csr_eliminate_zeros(int n_row, int n_col, int Ap, int Aj, unsigned long long Ax)
+    csr_eliminate_zeros(int n_row, int n_col, int Ap, int Aj, float Ax)
+    csr_eliminate_zeros(int n_row, int n_col, int Ap, int Aj, double Ax)
+    csr_eliminate_zeros(int n_row, int n_col, int Ap, int Aj, long double Ax)
+    csr_eliminate_zeros(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax)
+    csr_eliminate_zeros(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax)
+    csr_eliminate_zeros(int n_row, int n_col, int Ap, int Aj, npy_clongdouble_wrapper Ax)
+    """
+  return _sparsetools.csr_eliminate_zeros(*args)
+
 def csr_sum_duplicates(*args):
   """
     csr_sum_duplicates(int n_row, int n_col, int Ap, int Aj, signed char Ax)

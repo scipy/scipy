@@ -887,7 +887,8 @@ void csr_minus_csr(const I n_row, const I n_col,
  *   T    Ax[nnz(A)]  - nonzeros
  *   
  * Note:
- *   Ap,Aj, and Ax will be modified *inplace*
+ *   The column indicies within each row must be in sorted order.
+ *   Ap, Aj, and Ax will be modified *inplace*
  *
  */
 template <class I, class T>
@@ -916,49 +917,47 @@ void csr_sum_duplicates(const I n_row,
         }
         Ap[i+1] = nnz;
     }
+}
 
-
-  //method that works on unsorted indices
-//  std::vector<I>  next(n_col,-1);
-//  std::vector<T>  sums(n_col, 0);
-//
-//  I nnz = 0;
-//
-//  I row_start = 0;
-//  I row_end   = 0;
-//  
-//  for(I i = 0; i < n_row; i++){
-//    I head = -2;
-//    
-//    row_start = row_end; //Ap[i] may have been changed
-//    row_end   = Ap[i+1]; //Ap[i+1] is safe
-//    
-//    for(I jj = row_start; jj < row_end; jj++){
-//      I j = Aj[jj];
-//
-//      sums[j] += Ax[jj];
-//      
-//      if(next[j] == -1){
-//	    next[j] = head;                        
-//	    head    = j;
-//      }
-//    }
-//
-//    while(head != -2){
-//        I curr = head; //current column
-//        head   = next[curr];
-//        
-//        if(sums[curr] != 0){
-//            Aj[nnz] = curr;
-//            Ax[nnz] = sums[curr];
-//            nnz++;
-//        }
-//        
-//        next[curr] = -1;
-//        sums[curr] =  0;
-//    }
-//    Ap[i+1] = nnz;
-//  }
+/*
+ * Eliminate zero entries from CSR matrix A
+ *
+ *   
+ * Input Arguments:
+ *   I    n_row       - number of rows in A (and B)
+ *   I    n_col       - number of columns in A (and B)
+ *   I    Ap[n_row+1] - row pointer
+ *   I    Aj[nnz(A)]  - column indices
+ *   T    Ax[nnz(A)]  - nonzeros
+ *   
+ * Note:
+ *   Ap, Aj, and Ax will be modified *inplace*
+ *
+ */
+template <class I, class T>
+void csr_eliminate_zeros(const I n_row,
+                         const I n_col, 
+                               I Ap[], 
+                               I Aj[], 
+                               T Ax[])
+{
+    I nnz = 0;
+    I row_end = 0;
+    for(I i = 0; i < n_row; i++){
+        I jj = row_end;
+        row_end = Ap[i+1];
+        while( jj < row_end ){
+            I j = Aj[jj];
+            T x = Ax[jj];
+            if(x != 0){
+                Aj[nnz] = j;
+                Ax[nnz] = x;
+                nnz++;
+            }
+            jj++;
+        }
+        Ap[i+1] = nnz;
+    }
 }
 
 
@@ -985,8 +984,6 @@ void csr_sum_duplicates(const I n_row,
  * Note: 
  *   Input:  row and column indices *are not* assumed to be ordered
  *           
- *   Output: CSR column indices *will be* in sorted order
- *
  *   Note: duplicate entries are carried over to the CSR represention
  *
  *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))

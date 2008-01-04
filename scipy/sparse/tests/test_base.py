@@ -15,7 +15,7 @@ Run tests if sparse is not installed:
 
 import numpy
 from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, \
-        asarray, vstack, ndarray, kron
+        asarray, vstack, ndarray, kron, transpose
 
 import random
 from numpy.testing import *
@@ -812,6 +812,17 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
         assert_array_equal(asp.todense(),bsp.todense())
 
+    def check_eliminate_zeros(self):
+        data    = array( [1, 0, 0, 0, 2, 0, 3, 0] )
+        indices = array( [1, 2, 3, 4, 5, 6, 7, 8] )
+        indptr  = array( [0, 3, 8] )
+        asp = csr_matrix( (data, indices, indptr), shape=(2,10) )
+        bsp = asp.copy()
+        asp.eliminate_zeros( )
+        assert_array_equal(asp.nnz, 3)
+        assert_array_equal(asp.data,[1, 2, 3])
+        assert_array_equal(asp.todense(),bsp.todense())
+
     def check_get_submatrix(self):
         a = csr_matrix( array([[1,2,3,4],[1,2,3,5],[0,2,0,1]]) )
         i0 = slice( 0, 2 )
@@ -874,6 +885,17 @@ class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         data    = array([1,2,3,4])
         csc = csc_matrix((data, indices, indptr))
         assert_array_equal(csc.shape,(6,3))
+    
+    def check_eliminate_zeros(self):
+        data    = array( [1, 0, 0, 0, 2, 0, 3, 0] )
+        indices = array( [1, 2, 3, 4, 5, 6, 7, 8] )
+        indptr  = array( [0, 3, 8] )
+        asp = csc_matrix( (data, indices, indptr), shape=(10,2) )
+        bsp = asp.copy()
+        asp.eliminate_zeros( )
+        assert_array_equal(asp.nnz, 3)
+        assert_array_equal(asp.data,[1, 2, 3])
+        assert_array_equal(asp.todense(),bsp.todense())
     
     def check_sort_indices(self):
         data = arange( 5 )
@@ -1260,6 +1282,16 @@ class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
         A = kron( [[1,0,2,0],[0,1,0,0],[0,0,0,0]], [[0,1,2],[3,0,5]] )
         assert_equal(bsr_matrix(A,blocksize=(2,3)).todense(),A)
         
+    def check_eliminate_zeros(self):
+        data = kron([1, 0, 0, 0, 2, 0, 3, 0], [[1,1],[1,1]]).T
+        data = data.reshape(-1,2,2)
+        indices = array( [1, 2, 3, 4, 5, 6, 7, 8] )
+        indptr  = array( [0, 3, 8] )
+        asp = bsr_matrix( (data, indices, indptr), shape=(4,20) )
+        bsp = asp.copy()
+        asp.eliminate_zeros()
+        assert_array_equal(asp.nnz, 3*4)
+        assert_array_equal(asp.todense(),bsp.todense())
 
                 
 if __name__ == "__main__":

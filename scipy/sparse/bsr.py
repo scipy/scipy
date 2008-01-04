@@ -434,7 +434,29 @@ class bsr_matrix(_cs_matrix):
     ############################################################## 
     # methods that examine or modify the internal data structure #
     ##############################################################
-   
+    
+    def eliminate_zeros(self):
+        R,C = self.blocksize
+        M,N = self.shape
+
+        mask = (self.data != 0).reshape(-1,R*C).sum(axis=1) #nonzero blocks
+       
+        nonzero_blocks = mask.nonzero()[0]
+
+        if len(nonzero_blocks) == 0:
+            return #nothing to do
+
+        self.data[:len(nonzero_blocks)] = self.data[nonzero_blocks]
+
+        from csr import csr_matrix
+
+        # modifies self.indptr and self.indices *in place*
+        proxy = csr_matrix((mask,self.indices,self.indptr),shape=(M/R,N/C))
+        proxy.eliminate_zeros()
+       
+        self.prune()
+
+
     def sum_duplicates(self):
         raise NotImplementedError
 

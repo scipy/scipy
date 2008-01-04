@@ -555,6 +555,17 @@ class _cs_matrix(_data_matrix):
     # methods that examine or modify the internal data structure #
     ##############################################################
 
+    def eliminate_zeros(self):
+        """Remove zero entries from the matrix
+
+        The is an *in place* operation
+        """
+        fn = sparsetools.csr_eliminate_zeros
+        M,N = self._swap(self.shape)
+        fn( M, N, self.indptr, self.indices, self.data)
+
+        self.prune() #nnz may have changed
+
     def sum_duplicates(self):
         """Eliminate duplicate matrix entries by adding them together
 
@@ -572,8 +583,10 @@ class _cs_matrix(_data_matrix):
     def __get_sorted(self):
         """Determine whether the matrix has sorted indices
 
-            True if the indices of the matrix are in
-            sorted order, False otherwise.
+        Returns
+            - True: if the indices of the matrix are in sorted order
+            - False: otherwise
+        
         """
 
         #first check to see if result was cached
