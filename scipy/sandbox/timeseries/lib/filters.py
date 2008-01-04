@@ -17,8 +17,8 @@ narray = N.array
 
 from scipy.signal import convolve, get_window
 
-import maskedarray as MA
-from maskedarray import MaskedArray, nomask, getmask, getmaskarray, masked
+import scipy.sandbox.maskedarray as MA
+from scipy.sandbox.maskedarray import MaskedArray, nomask, getmask, getmaskarray, masked
 marray = MA.array
 
 from moving_funcs import mov_average_expw, cmov_average, cmov_mean, \

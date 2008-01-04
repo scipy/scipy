@@ -6,7 +6,7 @@ from scipy.testing import *
 from numpy import linspace, sin, random, exp
 
 
-from rbf.rbf import Rbf
+from scipy.sandbox.rbf.rbf import Rbf
 
 
 class TestRbf1d(TestCase):

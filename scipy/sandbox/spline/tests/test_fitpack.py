@@ -16,13 +16,13 @@ from scipy.testing import *
 from numpy import array, arange, around, pi, sin, ravel, zeros, asarray
 
 
-from spline.fitpack import splprep, splrep, splev, sproot, splint, spalde
-from spline.fitpack import bisplev, bisplrep, splprep
+from scipy.sandbox.spline.fitpack import splprep, splrep, splev, sproot, \
+     splint, spalde, bisplev, bisplrep, splprep
 
 
 set_local_path()
 from dierckx_test_data import *
-
+restore_path()
 
 class TestSplrepSplev(TestCase):
     def test_curfit_against_dierckx_smth(self):

@@ -13,13 +13,12 @@ __date__     = '$Date$'
 import numpy as N
 import numpy.core.numeric as numeric
 
-from scipy.testing import NumpyTest, TestCase
+from scipy.testing import *
 
-import maskedarray.testutils
-from maskedarray.testutils import *
+from scipy.sandbox.maskedarray.testutils import *
 
-import maskedarray.core as coremodule
-from maskedarray.core import *
+import scipy.sandbox.maskedarray.core as coremodule
+from scipy.sandbox.maskedarray.core import *
 
 
 class SubArray(N.ndarray):

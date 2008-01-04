@@ -7,12 +7,8 @@ from numpy import correlate, array, concatenate, require
 
 from numpy.ctypeslib import ndpointer, load_library
 from ctypes import c_uint
-
-
-from cdavid.lpc import _lpc2_py as lpc_py
-from cdavid.lpc import lpc_ref, lpc2
-from cdavid.autocorr import autocorr_oneside_nofft
-
+from scipy.sandbox.cdavid.lpc import _lpc2_py as lpc_py, \
+     lpc_ref, lpc2, autocorr_oneside_nofft
 
 import numpy
 

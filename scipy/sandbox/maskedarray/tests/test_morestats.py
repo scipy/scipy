@@ -11,17 +11,12 @@ __revision__ = "$Revision: 317 $"
 __date__     = '$Date: 2007-10-04 15:31:14 -0400 (Thu, 04 Oct 2007) $'
 
 import numpy
-
-import maskedarray
-from maskedarray import masked, masked_array
-
-import maskedarray.mstats
-from maskedarray.mstats import *
-import maskedarray.morestats
-from maskedarray.morestats import *
-
-import maskedarray.testutils
-from maskedarray.testutils import *
+from scipy.testing import *
+from scipy.sandbox.maskedarray import masked, masked_array
+import scipy.sandbox.maskedarray.mstats
+from scipy.sandbox.maskedarray.mstats import *
+from scipy.sandbox.maskedarray.morestats import *
+from scipy.sandbox.maskedarray.testutils import *
 
 
 class TestMisc(TestCase):

@@ -59,8 +59,8 @@ __date__     = '$Date$'
 
 import sys
 import operator, types, copy
-import timeseries as ts
-import maskedarray as ma
+import tseries as ts
+import scipy.sandbox.maskedarray as ma
 
 __all__ = [
     'Report', 'wrap_onspace', 'wrap_onspace_strict',

@@ -9,12 +9,11 @@ from numpy.fft import fft, ifft
 from numpy.ctypeslib import ndpointer, load_library
 from ctypes import c_uint
 
-
-from cdavid.autocorr import _raw_autocorr_1d, _raw_autocorr_1d_noncontiguous
-from cdavid.autocorr import autocorr_oneside_nofft as autocorr
-from cdavid.autocorr import autocorr_fft , nextpow2
-from cdavid.autocorr import _autocorr_oneside_nofft_py as autocorr_py
-
+from scipy.sandbox.cdavid.autocorr import _raw_autocorr_1d, \
+     _raw_autocorr_1d_noncontiguous, \
+     autocorr_oneside_nofft as autocorr,\
+     autocorr_fft , nextpow2, \
+     _autocorr_oneside_nofft_py as autocorr_py
 
 import numpy
 

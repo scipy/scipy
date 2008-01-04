@@ -21,10 +21,10 @@ from numpy import array as narray
 import numpy.core.numeric as numeric
 from numpy.core.numeric import concatenate
 
-import maskedarray as MA
-from maskedarray.core import masked, nomask, MaskedArray, masked_array
-from maskedarray.extras import apply_along_axis, dot
-from maskedarray.mstats import trim_both, trimmed_stde, mquantiles, mmedian, stde_median
+import scipy.sandbox.maskedarray as MA
+from scipy.sandbox.maskedarray.core import masked, nomask, MaskedArray, masked_array
+from scipy.sandbox.maskedarray.extras import apply_along_axis, dot
+from scipy.sandbox.maskedarray.mstats import trim_both, trimmed_stde, mquantiles, mmedian, stde_median
 
 from scipy.stats.distributions import norm, beta, t, binom
 from scipy.stats.morestats import find_repeats

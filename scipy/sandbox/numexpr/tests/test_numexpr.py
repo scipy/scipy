@@ -1,9 +1,10 @@
 import new
-from numpy import *
+from numpy import array, arange, sin, zeros, sum, int32, empty, \
+     prod, uint16, complex_, float64, rec
 from scipy.testing import *
 
 
-from numexpr import E, numexpr, evaluate, disassemble
+from scipy.sandbox.numexpr import E, numexpr, evaluate, disassemble
 
 
 class test_numexpr(TestCase):

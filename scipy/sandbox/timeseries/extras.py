@@ -12,8 +12,8 @@ __date__     = '$Date$'
 
 
 import numpy
-import maskedarray
-from maskedarray import masked
+import scipy.sandbox.maskedarray
+from scipy.sandbox.maskedarray import masked
 
 import const as _c
 from tseries import TimeSeries

@@ -1,8 +1,7 @@
 
-
 from scipy.testing import *
 
-from fdfpack import periodic_finite_difference as diff
+from scipy.sandbox.fdfpack import periodic_finite_difference as diff
 
 
 from numpy import arange, add, array,sin,cos,pi

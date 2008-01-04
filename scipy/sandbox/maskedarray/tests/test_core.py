@@ -14,15 +14,13 @@ import types
 
 import numpy
 import numpy.core.fromnumeric  as fromnumeric
-from scipy.testing import NumpyTest, TestCase
-from scipy.testing.utils import build_err_msg
+from scipy.testing import *
 from numpy import array as narray
 
-import maskedarray.testutils
-from maskedarray.testutils import *
+from scipy.sandbox.maskedarray.testutils import *
 
-import maskedarray.core as coremodule
-from maskedarray.core import *
+import scipy.sandbox.maskedarray.core as coremodule
+from scipy.sandbox.maskedarray.core import *
 
 pi = numpy.pi
 

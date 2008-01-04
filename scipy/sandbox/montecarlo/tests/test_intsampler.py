@@ -20,10 +20,8 @@ from numpy import arange, add, array, dot, zeros, identity
 import sys
 from scipy.testing import *
 
-from numpy import *
 from scipy.sandbox.montecarlo import *
 from scipy import stats
-
 
 
 class test_int_sampler(TestCase):

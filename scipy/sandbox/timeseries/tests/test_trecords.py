@@ -14,22 +14,20 @@ import types
 
 import numpy
 import numpy.core.fromnumeric  as fromnumeric
-from scipy.testing import NumpyTest, TestCase
-from scipy.testing.utils import build_err_msg
+from scipy.testing import *
 
-import maskedarray.testutils
-from maskedarray.testutils import assert_equal, assert_array_equal, assert_equal_records
+from scipy.sandbox.maskedarray.testutils import assert_equal, assert_array_equal, assert_equal_records
 
-import maskedarray.core as MA
-import maskedarray.mrecords as MR
-from maskedarray.mrecords import addfield
+import scipy.sandbox.maskedarray.core as MA
+import scipy.sandbox.maskedarray.mrecords as MR
+from scipy.sandbox.maskedarray.mrecords import addfield
 
-from maskedarray.core import getmaskarray, nomask, masked_array
+from scipy.sandbox.maskedarray.core import getmaskarray, nomask, masked_array
 
-from timeseries import trecords
-from timeseries.trecords import TimeSeriesRecords, TimeSeries,\
-    fromarrays, fromtextfile, fromrecords, \
-    date_array, time_series
+from scipy.sandbox.timeseries.trecords import \
+     TimeSeriesRecords, TimeSeries,\
+     fromarrays, fromtextfile, fromrecords, \
+     date_array, time_series
 
 
 #..............................................................................

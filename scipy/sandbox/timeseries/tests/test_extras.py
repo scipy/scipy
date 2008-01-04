@@ -13,14 +13,13 @@ __date__     = '$Date$'
 
 
 import numpy
-from scipy.testing import NumpyTest, TestCase
-import maskedarray
-from maskedarray import masked
-from maskedarray.testutils import assert_equal, assert_almost_equal
+from scipy.testing import *
+import scipy.sandbox.maskedarray
+from scipy.sandbox.maskedarray import masked
+from scipy.sandbox.maskedarray.testutils import assert_equal, assert_almost_equal
 
-from timeseries import time_series, Date
-from timeseries import extras
-from timeseries.extras import *
+from scipy.sandbox.timeseries import time_series, Date, extras
+from scipy.sandbox.timeseries.extras import *
 
 #..............................................................................
 class TestMisc(TestCase):

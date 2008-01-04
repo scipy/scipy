@@ -14,19 +14,15 @@ import types
 
 import numpy as N
 import numpy.core.fromnumeric  as fromnumeric
-from scipy.testing import NumpyTest, TestCase
-from scipy.testing.utils import build_err_msg
+from scipy.testing import *
 
-import maskedarray.testutils
-from maskedarray.testutils import *
-
-import maskedarray
-from maskedarray import masked_array, masked, nomask
+from scipy.sandbox.maskedarray.testutils import *
+from scipy.sandbox import maskedarray
+from scipy.sandbox.maskedarray import masked_array, masked, nomask
 
 #import maskedarray.mrecords
 #from maskedarray.mrecords import mrecarray, fromarrays, fromtextfile, fromrecords
-import maskedarray.mrecords
-from maskedarray.mrecords import MaskedRecords, \
+from scipy.sandbox.maskedarray.mrecords import MaskedRecords, \
     fromarrays, fromtextfile, fromrecords, addfield
 
 #..............................................................................

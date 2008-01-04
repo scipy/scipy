@@ -25,7 +25,7 @@ import numpy.core.fromnumeric as fromnumeric
 import numpy.core.numerictypes as ntypes
 from numpy.core.numerictypes import generic
 
-import maskedarray as MA
+import scipy.sandbox.maskedarray as MA
 
 from parser import DateFromString, DateTimeFromString
 

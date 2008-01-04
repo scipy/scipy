@@ -28,10 +28,10 @@ ndarray = numeric.ndarray
 _byteorderconv = numpy.core.records._byteorderconv
 _typestr = ntypes._typestr
 
-import maskedarray
-from maskedarray import MaskedArray, masked, nomask, masked_array,\
+import scipy.sandbox.maskedarray
+from scipy.sandbox.maskedarray import MaskedArray, masked, nomask, masked_array,\
     make_mask, mask_or, getmask, getmaskarray, filled
-from maskedarray.core import default_fill_value, masked_print_option
+from scipy.sandbox.maskedarray.core import default_fill_value, masked_print_option
 
 import warnings
 

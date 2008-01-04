@@ -18,18 +18,15 @@ from numpy import bool_, complex_, float_, int_, str_, object_
 import numpy.core.numeric as numeric
 fromiter = numpy.fromiter
 
-import maskedarray
+from scipy.sandbox import maskedarray
 marray = maskedarray.masked_array
 masked_values = maskedarray.masked_values
 
-from scipy.testing import NumpyTest, TestCase
-from maskedarray.testutils import build_err_msg, \
+from scipy.testing import *
+from scipy.sandbox.maskedarray.testutils import build_err_msg, \
         assert_equal, assert_almost_equal
 
-
-import mpyloess
-reload(mpyloess)
-from mpyloess import lowess, stl, loess, loess_anova
+from scipy.sandbox.pyloess.mpyloess import lowess, stl, loess, loess_anova
 
 #####---------------------------------------------------------------------------
 #---- --- LOWESS ---

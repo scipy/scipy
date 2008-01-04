@@ -12,7 +12,7 @@ BasSw 2006
 physical constants: imported from CODATA
 unit conversion: see e.g. NIST special publication 811
 Use at own risk: double-check values before calculating your Mars orbit-insertion burn.
-Some constants exist in a few variants, which are marked with sufixes.
+Some constants exist in a few variants, which are marked with suffixes.
 The ones without any suffix should be the most common one.
 """
 

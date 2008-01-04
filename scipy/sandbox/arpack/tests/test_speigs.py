@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
-import sys
 from scipy.testing import *
 
-from arpack.speigs import *
-
+from scipy.sandbox.arpack.speigs import *
 
 import numpy as N
 
@@ -30,7 +28,7 @@ class TestEigs(TestCase):
         nev=4
         eigvs = ARPACK_eigs(matvec, A.shape[0], nev=nev)
         calc_vals = eigvs[0]
-        # Ensure the calculate eigenvectors have the same sign as the refence values
+        # Ensure the calculated eigenvectors have the same sign as the reference values
         calc_vecs = eigvs[1] / [N.sign(x[0]) for x in eigvs[1].T]
         assert_array_almost_equal(calc_vals, vals[0:nev], decimal=7)
         assert_array_almost_equal(calc_vecs,  N.array(vecs)[:,0:nev], decimal=7)

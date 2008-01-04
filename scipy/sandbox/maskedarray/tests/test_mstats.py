@@ -12,13 +12,12 @@ __date__     = '$Date$'
 
 import numpy
 
-import maskedarray
-from maskedarray import masked, masked_array
+from scipy.testing import *
+from scipy.sandbox import maskedarray
+from scipy.sandbox.maskedarray import masked, masked_array
 
-import maskedarray.testutils
-from maskedarray.testutils import *
-
-from maskedarray.mstats import *
+from scipy.sandbox.maskedarray.testutils import *
+from scipy.sandbox.maskedarray.mstats import *
 
 #..............................................................................
 class TestQuantiles(TestCase):

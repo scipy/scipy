@@ -14,9 +14,9 @@ import numpy.core.numeric as numeric
 
 from scipy.interpolate import fitpack
 
-import maskedarray as MA
-from maskedarray.core import masked, nomask, getmask
-from maskedarray.extras import flatnotmasked_edges
+import scipy.sandbox.maskedarray as MA
+from scipy.sandbox.maskedarray.core import masked, nomask, getmask
+from scipy.sandbox.maskedarray.extras import flatnotmasked_edges
 marray = MA.array
 
 __all__ = [

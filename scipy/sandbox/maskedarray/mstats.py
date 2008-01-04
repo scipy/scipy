@@ -19,9 +19,9 @@ from numpy import array as narray
 import numpy.core.numeric as numeric
 from numpy.core.numeric import concatenate
 
-import maskedarray
-from maskedarray.core import masked, nomask, MaskedArray, masked_array
-from maskedarray.extras import apply_along_axis, dot
+import scipy.sandbox.maskedarray
+from scipy.sandbox.maskedarray.core import masked, nomask, MaskedArray, masked_array
+from scipy.sandbox.maskedarray.extras import apply_along_axis, dot
 
 __all__ = ['cov','meppf','plotting_positions','meppf','mmedian','mquantiles',
            'stde_median','trim_tail','trim_both','trimmed_mean','trimmed_stde',

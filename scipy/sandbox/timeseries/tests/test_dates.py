@@ -16,21 +16,17 @@ import datetime
 import numpy
 import numpy.core.fromnumeric  as fromnumeric
 import numpy.core.numeric as numeric
-from scipy.testing import NumpyTest, TestCase
-from scipy.testing.utils import build_err_msg
+from scipy.testing import *
 
-import maskedarray
-from maskedarray import masked_array
+from scipy.sandbox.maskedarray import masked_array
 
-import maskedarray.testutils
-from maskedarray.testutils import assert_equal, assert_array_equal
+from scipy.sandbox.maskedarray.testutils import assert_equal, assert_array_equal
 
-import timeseries as ts
-from timeseries import const as C
-from timeseries.parser import DateFromString, DateTimeFromString
-from timeseries import Date, DateArray,\
-    now, date_array, date_array_fromlist
-from timeseries.cseries import freq_dict
+import scipy.sandbox.timeseries as ts
+from scipy.sandbox.timeseries import const as C, Date, DateArray,\
+     now, date_array, date_array_fromlist
+from scipy.sandbox.timeseries.parser import DateFromString, DateTimeFromString
+from scipy.sandbox.timeseries.cseries import freq_dict
 
 
 class TestCreation(TestCase):

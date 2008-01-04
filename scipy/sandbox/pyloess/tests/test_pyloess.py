@@ -21,13 +21,9 @@ fromiter = numpy.fromiter
 narray = numpy.array
 
 
-from scipy.testing import NumpyTest, TestCase
-from scipy.testing.utils import build_err_msg, \
-        assert_equal, assert_almost_equal
+from scipy.testing import *
 
-import pyloess
-reload(pyloess)
-from pyloess import lowess, stl, loess, loess_anova
+from scipy.sandbox.pyloess import lowess, stl, loess, loess_anova
 
 #####---------------------------------------------------------------------------
 #---- --- LOWESS ---

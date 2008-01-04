@@ -6,7 +6,7 @@ from scipy.testing import *
 import numpy as N
 
 
-from cdavid.segmentaxis import segment_axis
+from scipy.sandbox.cdavid.segmentaxis import segment_axis
 
 
 # #Optional:

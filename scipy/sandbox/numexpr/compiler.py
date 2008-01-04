@@ -1,7 +1,7 @@
 import sys
 import numpy
 
-from numexpr import interpreter, expressions
+from scipy.sandbox.numexpr import interpreter, expressions
 
 typecode_to_kind = {'b': 'bool', 'i': 'int', 'l': 'long', 'f': 'float',
                     'c': 'complex', 's': 'str', 'n' : 'none'}

@@ -1,4 +1,5 @@
-from scipy import *
+from scipy import array, arange, ones, sort, cos, pi, rand, \
+     set_printoptions, r_, diag, linalg
 from scipy.sandbox import lobpcg
 from symeig import symeig
 from pylab import plot, show, legend, xlabel, ylabel

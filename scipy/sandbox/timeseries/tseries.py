@@ -25,8 +25,8 @@ import numpy.core.umath as umath
 from numpy.core.records import recarray
 from numpy.core.records import fromarrays as recfromarrays
 
-import maskedarray
-from maskedarray import MaskedArray, MAError, masked, nomask, \
+import scipy.sandbox.maskedarray as maskedarray
+from scipy.sandbox.maskedarray import MaskedArray, MAError, masked, nomask, \
     filled, getmask, getmaskarray, hsplit, make_mask_none, mask_or, make_mask, \
     masked_array
     

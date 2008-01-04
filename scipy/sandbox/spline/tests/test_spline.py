@@ -17,15 +17,13 @@ from scipy.testing import *
 from numpy import array, arange, around, pi, sin, cos
 
 
-from spline.spline import UnivariateSpline,LSQUnivariateSpline,\
-     InterpolatedUnivariateSpline
-from spline.spline import LSQBivariateSpline, SmoothBivariateSpline,\
+from scipy.sandbox.spline.spline import UnivariateSpline,LSQUnivariateSpline,\
+     InterpolatedUnivariateSpline, LSQBivariateSpline, SmoothBivariateSpline,\
      RectBivariateSpline
-
 
 set_local_path()
 from dierckx_test_data import *
-
+restore_path()
 
 class TestUnivariateSpline(TestCase):
     def test_linear_constant(self):

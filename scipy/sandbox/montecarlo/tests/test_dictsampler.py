@@ -12,13 +12,10 @@ from numpy import arange, add, array, dot, zeros, identity
 import sys
 from scipy.testing import *
 
-from numpy import *
+from numpy import sum, array, average, sqrt
 #from scipy.montecarlo import *
 from scipy.sandbox.montecarlo import *
 from scipy import stats
-
-
-import unittest
 
 
 class test_dict_sampler(TestCase):

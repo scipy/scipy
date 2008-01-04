@@ -12,16 +12,13 @@ __revision__ = "$Revision$"
 __date__     = '$Date$'
 
 import numpy as N
-from scipy.testing import NumpyTest, TestCase
-from scipy.testing.utils import build_err_msg
+from scipy.testing import *
 
-import maskedarray.testutils
-from maskedarray.testutils import *
+import scipy.sandbox.maskedarray.testutils
+from scipy.sandbox.maskedarray.testutils import *
 
-import maskedarray.core
-from maskedarray.core import *
-import maskedarray.extras
-from maskedarray.extras import *
+from scipy.sandbox.maskedarray.core import *
+from scipy.sandbox.maskedarray.extras import *
 
 class TestAverage(TestCase):
     "Several tests of average. Why so many ? Good point..."
