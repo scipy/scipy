@@ -604,10 +604,13 @@ class Mat5MatrixWriter(MatStreamWriter):
         self.write_dtype(af)
         # write array shape
         if self.arr.ndim < 2:
-            self.arr=N.atleast_2d(self.arr)
+            new_arr = N.atleast_2d(self.arr)
+            if type(new_arr) != type(self.arr):
+                raise ValueError("Array should be 2-dimensional.")
+            self.arr = new_arr
         self.write_element(N.array(self.arr.shape, dtype='i4'))
         # write name
-        self.write_element(N.ndarray(shape=len(self.name), dtype='S1', buffer=self.name))
+        self.write_element(N.array([ord(c) for c in self.name], 'i1'))
 
     def update_matrix_tag(self):
         curr_pos = self.file_stream.tell()
