@@ -19,7 +19,7 @@ class _dot
         inline T operator()(const T * V1, const T * V2)
         {
             _dot<N-1,T> d;
-            return (*V1) * (*V2) + d(++V1, ++V2);
+            return (*V1) * (*V2) + d(V1 + 1, V2 + 1);
         }
 };
 template<class T>
@@ -40,6 +40,38 @@ inline T dot(const T * V1, const T * V2)
 }
 
 
+
+/*
+ *  Matrix Vector Product
+ * 
+ */
+template<int M, int N, class T>
+class _matvec
+{
+    public:
+        inline void operator()(const T * A, const T * X, T * Y)
+        {
+            *Y += dot<N,T>(A,X);
+            _matvec<M-1,N,T> d;
+            d(A + N, X, Y + 1);
+        }
+};
+template<int N, class T>
+class _matvec<1,N,T>
+{
+    public:
+        inline void operator()(const T * A, const T * X, T * Y)
+        {
+            *Y += dot<N,T>(A,X);
+        }
+};
+
+template<int M, int N, class T>
+inline void matvec(const T * A, const T * X, T * Y)
+{
+    _matvec<M,N,T> d;
+    d(A,X,Y);
+}
 
 
 

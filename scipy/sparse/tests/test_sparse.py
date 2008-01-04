@@ -46,7 +46,7 @@ import time
 class TestSparseTools(NumpyTestCase):
     """Simple benchmarks for sparse matrix module"""
 
-    def test_arithmetic(self,level=4):
+    def test_arithmetic(self,level=5):
         matrices = []
         #matrices.append( ('A','Identity', spidentity(500**2,format='csr')) )
         matrices.append( ('A','Poisson5pt', poisson2d(500,format='csr'))  )
@@ -128,7 +128,7 @@ class TestSparseTools(NumpyTestCase):
             print fmt % (A.format,name,shape,A.nnz,1e3*(end-start)/float(iter) )
 
 
-    def bench_matvec(self,level=5):
+    def bench_matvec(self,level=4):
         matrices = []
         matrices.append(('Identity',   spidentity(10**4,format='dia')))
         matrices.append(('Identity',   spidentity(10**4,format='csr')))

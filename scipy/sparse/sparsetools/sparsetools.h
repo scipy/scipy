@@ -330,7 +330,7 @@ void csr_matmat_pass1(const I n_row,
                       const I Bj[],
                             I Cp[])
 {
-//    // method that uses O(n) temp storage
+//    // method that uses O(1) temp storage
 //    const I hash_size = 1 << 5;
 //    I vals[hash_size];
 //    I mask[hash_size];
@@ -477,7 +477,6 @@ void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
     for(I i = 0; i < SIZE; i++){
         Cx[i] = 0;
     }
-    //std::cout << "n_brow " << n_brow << " Cp[-1] " << Cp[n_brow] << " R " << R << " C " << C << " N " << N << std::endl;
  
     std::vector<I>  next(n_bcol,-1);
     std::vector<T*> mats(n_bcol);
@@ -567,18 +566,9 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                          I Cp[],         I Cj[],          T Cx[],
                    const bin_op& op)
 {
-   //Method that works for unsorted indices
-   // assert( csr_has_sorted_indices(n_brow,Ap,Aj) );
-   // assert( csr_has_sorted_indices(n_brow,Bp,Bj) );
-
-    //if (R == 3 && C == 3){
-    //    bsr_binop_bsr_fixed<I,T,3,3>(n_brow,n_bcol,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,op);
-    //    return;
-    //}
-
     const I RC = R*C;
-    T result[8*8];
-    //T zeros[8*8];
+    T * result = Cx;
+
     Cp[0] = 0;
     I nnz = 0;
 
@@ -600,9 +590,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
 
                 if( is_nonzero_block(result,RC) ){
                     Cj[nnz] = A_j;
-                    for(I n = 0; n < RC; n++){
-                        Cx[RC*nnz + n] = result[n];
-                    }
+                    result += RC;
                     nnz++;
                 }
 
@@ -616,9 +604,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
 
                 if(is_nonzero_block(result,RC)){
                     Cj[nnz] = A_j;
-                    for(I n = 0; n < RC; n++){
-                        Cx[RC*nnz + n] = result[n];
-                    }
+                    result += RC;
                     nnz++;
                 }
 
@@ -631,9 +617,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                 }
                 if(is_nonzero_block(result,RC)){
                     Cj[nnz] = B_j;
-                    for(I n = 0; n < RC; n++){
-                        Cx[RC*nnz + n] = result[n];
-                    }
+                    result += RC;
                     nnz++;
                 }
 
@@ -644,15 +628,14 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
 
         //tail
         while(A_pos < A_end){
+
             for(I n = 0; n < RC; n++){
                 result[n] = op(Ax[RC*A_pos + n],0);
             }
 
             if(is_nonzero_block(result,RC)){
                 Cj[nnz] = A_j;
-                for(I n = 0; n < RC; n++){
-                    Cx[RC*nnz + n] = result[n];
-                }
+                result += RC;
                 nnz++;
             }
 
@@ -663,11 +646,10 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
             for(I n = 0; n < RC; n++){
                 result[n] = op(0,Bx[RC*B_pos + n]);
             }
+
             if(is_nonzero_block(result,RC)){
                 Cj[nnz] = B_j;
-                for(I n = 0; n < RC; n++){
-                    Cx[RC*nnz + n] = result[n];
-                }
+                result += RC;
                 nnz++;
             }
 
@@ -1159,38 +1141,15 @@ void bsr_matvec_fixed(const I n_brow,
 	                  const T Xx[],
 	                        T Yx[])
 {
-    //TODO make a matvec template
-    for(I i = 0; i < n_brow; i++) {
-        T r0 = 0;
-        T r1 = 0;
-        T r2 = 0;
-        T r3 = 0;
-        T r4 = 0;
-        T r5 = 0;
-        T r6 = 0;
-        T r7 = 0;
+    for(I i = 0; i < R*n_brow; i++){
+        Yx[i] = 0;
+    }
 
+    for(I i = 0; i < n_brow; i++) {
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++) {
             I j = Aj[jj];
-            const T * base = Ax + jj*(R*C);
-            if (R > 0) r0 += dot<C>(base + 0*C, Xx + j*C);
-            if (R > 1) r1 += dot<C>(base + 1*C, Xx + j*C);
-            if (R > 2) r2 += dot<C>(base + 2*C, Xx + j*C);
-            if (R > 3) r3 += dot<C>(base + 3*C, Xx + j*C);
-            if (R > 4) r4 += dot<C>(base + 4*C, Xx + j*C);
-            if (R > 5) r5 += dot<C>(base + 5*C, Xx + j*C);
-            if (R > 6) r6 += dot<C>(base + 6*C, Xx + j*C);
-            if (R > 7) r7 += dot<C>(base + 7*C, Xx + j*C);
+            matvec<R,C>(Ax + jj*R*C, Xx + j*C, Yx + i*R);
         }
-
-        if (R > 0) Yx[R*i+0] = r0; 
-        if (R > 1) Yx[R*i+1] = r1;
-        if (R > 2) Yx[R*i+2] = r2;
-        if (R > 3) Yx[R*i+3] = r3;
-        if (R > 4) Yx[R*i+4] = r4;
-        if (R > 5) Yx[R*i+5] = r5;
-        if (R > 6) Yx[R*i+6] = r6;
-        if (R > 7) Yx[R*i+7] = r7;
     }
 }
 
@@ -1241,7 +1200,7 @@ void bsr_matvec(const I n_brow,
 
 
     //otherwise use general method
-    for(I i = 0; i < n_brow; i++){
+    for(I i = 0; i < R*n_brow; i++){
         Yx[i] = 0;
     }
 
