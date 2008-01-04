@@ -190,23 +190,25 @@ class Mat5ArrayReader(MatArrayReader):
     def read_element(self, copy=True):
         raw_tag = self.mat_stream.read(8)
         tag = N.ndarray(shape=(),
-                      dtype=self.dtypes['tag_full'],
-                      buffer = raw_tag)
+                        dtype=self.dtypes['tag_full'],
+                        buffer=raw_tag)
         mdtype = tag['mdtype'].item()
+
         byte_count = mdtype >> 16
         if byte_count: # small data element format
             if byte_count > 4:
                 raise ValueError, 'Too many bytes for sde format'
             mdtype = mdtype & 0xFFFF
             dt = self.dtypes[mdtype]
-            el_count = byte_count / dt.itemsize
+            el_count = byte_count // dt.itemsize
             return N.ndarray(shape=(el_count,),
-                           dtype=dt,
-                           buffer=raw_tag[4:])
+                             dtype=dt,
+                             buffer=raw_tag[4:])
+
         byte_count = tag['byte_count'].item()
         if mdtype == miMATRIX:
             return self.current_getter(byte_count).get_array()
-        if mdtype in self.codecs: # encoded char data
+        elif mdtype in self.codecs: # encoded char data
             raw_str = self.mat_stream.read(byte_count)
             codec = self.codecs[mdtype]
             if not codec:
@@ -214,15 +216,18 @@ class Mat5ArrayReader(MatArrayReader):
             el = raw_str.decode(codec)
         else: # numeric data
             dt = self.dtypes[mdtype]
-            el_count = byte_count / dt.itemsize
+            el_count = byte_count // dt.itemsize
             el = N.ndarray(shape=(el_count,),
                          dtype=dt,
                          buffer=self.mat_stream.read(byte_count))
             if copy:
                 el = el.copy()
+
+        # Seek to next 64-bit boundary
         mod8 = byte_count % 8
         if mod8:
             self.mat_stream.seek(8 - mod8, 1)
+
         return el
 
     def matrix_getter_factory(self):
@@ -572,13 +577,15 @@ class Mat5MatrixWriter(MatStreamWriter):
             tag['mdtype'] = np_to_mtypes[arr.dtype.str[1:]]
         else:
             tag['mdtype'] = mdtype
-        tag['byte_count'] =  arr.size*arr.itemsize
+
+        tag['byte_count'] = arr.size*arr.itemsize
+        padding = (8 - tag['byte_count']) % 8
+
         self.write_dtype(tag)
         self.write_bytes(arr)
-        # do 8 byte padding if needed
-        if tag['byte_count']%8 != 0:
-            pad = (1+tag['byte_count']//8)*8 - tag['byte_count']
-            self.write_bytes(N.zeros((pad,),dtype='u1'))
+
+        # pad to next 64-bit boundary
+        self.write_bytes(N.zeros((padding,),'u1'))
 
     def write_header(self, mclass,
                      is_global=False,
@@ -673,7 +680,6 @@ class Mat5SparseWriter(Mat5MatrixWriter):
         A.sort_indices()     # MATLAB expects sorted row indices
         is_complex = (A.dtype.kind == 'c')
         nz = A.nnz
-
         self.write_header(mclass=mxSPARSE_CLASS,
                           is_complex=is_complex,
                           nzmax=nz)

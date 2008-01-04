@@ -90,11 +90,9 @@ class MatFileReader(MatStreamAgent):
                           or in ('little', '<')
                           or in ('BIG', '>')
     mat_dtype          - return arrays in same dtype as loaded into matlab
-                          (instead of the dtype with which they are saved)
+                         (instead of the dtype with which they were saved)
     squeeze_me         - whether to squeeze unit dimensions or not
     chars_as_strings   - whether to convert char arrays to string arrays
-    mat_dtype          - return matrices with datatype that matlab would load as
-                          (rather than in the datatype matlab saves as)
     matlab_compatible  - returns matrices as would be loaded by matlab
                          (implies squeeze_me=False, chars_as_strings=False
                          mat_dtype=True)
