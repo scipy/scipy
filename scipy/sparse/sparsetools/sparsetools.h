@@ -462,12 +462,14 @@ void csr_matmat_pass2(const I n_row,
         Cp[i+1] = nnz;
     }
 }
-template <class I, class T>
-void bsr_matmat_pass2(const I n_brow,  const I n_bcol, 
-                      const I R,       const I C,       const I N,
-      	              const I Ap[],    const I Aj[],    const T Ax[],
-      	              const I Bp[],    const I Bj[],    const T Bx[],
-      	                    I Cp[],          I Cj[],          T Cx[])
+
+
+
+template <class I, class T, int R, int C, int N>
+void bsr_matmat_pass2_fixed(const I n_brow,  const I n_bcol, 
+      	                    const I Ap[],    const I Aj[],    const T Ax[],
+      	                    const I Bp[],    const I Bj[],    const T Bx[],
+      	                          I Cp[],          I Cj[],          T Cx[])
 {
     const I RC = R*C;
     const I RN = R*N;
@@ -512,36 +514,126 @@ void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
                 const T * A = Ax + jj*RN;
                 const T * B = Bx + kk*NC;
                 T * result = mats[k];
+                matmat<R,C,N>(A,B,result);
+            }
+        }         
+
+        for(I jj = 0; jj < length; jj++){
+            I temp = head;                
+            head = next[head];
+            next[temp] = -1; //clear arrays
+        }
+
+    }
+    
+}
+
+#define F(X,Y,Z) bsr_matmat_pass2_fixed<I,T,X,Y,Z>
+
+template <class I, class T>
+void bsr_matmat_pass2(const I n_brow,  const I n_bcol, 
+                      const I R,       const I C,       const I N,
+      	              const I Ap[],    const I Aj[],    const T Ax[],
+      	              const I Bp[],    const I Bj[],    const T Bx[],
+      	                    I Cp[],          I Cj[],          T Cx[])
+{
+    assert(R > 0 && C > 0 && N > 0);
+
+#ifdef TESTING
+    void (*dispatch[4][4][4])(I,I,const I*,const I*,const T*,
+                                  const I*,const I*,const T*,
+                                        I*,      I*,      T*) = \
+    {
+        { { F(1,1,1), F(1,1,2), F(1,1,3), F(1,1,4) },
+          { F(1,2,1), F(1,2,2), F(1,2,3), F(1,2,4) },
+          { F(1,3,1), F(1,3,2), F(1,3,3), F(1,3,4) },
+          { F(1,4,1), F(1,4,2), F(1,4,3), F(1,4,4) },
+        },
+        { { F(2,1,1), F(2,1,2), F(2,1,3), F(2,1,4) },
+          { F(2,2,1), F(2,2,2), F(2,2,3), F(2,2,4) },
+          { F(2,3,1), F(2,3,2), F(2,3,3), F(2,3,4) },
+          { F(2,4,1), F(2,4,2), F(2,4,3), F(2,4,4) },
+        },
+        { { F(3,1,1), F(3,1,2), F(3,1,3), F(3,1,4) },
+          { F(3,2,1), F(3,2,2), F(3,2,3), F(3,2,4) },
+          { F(3,3,1), F(3,3,2), F(3,3,3), F(3,3,4) },
+          { F(3,4,1), F(3,4,2), F(3,4,3), F(3,4,4) },
+        },
+        { { F(4,1,1), F(4,1,2), F(4,1,3), F(4,1,4) },
+          { F(4,2,1), F(4,2,2), F(4,2,3), F(4,2,4) },
+          { F(4,3,1), F(4,3,2), F(4,3,3), F(4,3,4) },
+          { F(4,4,1), F(4,4,2), F(4,4,3), F(4,4,4) },
+        }
+    };
+    
+    if (R <= 4 && C <= 4 && N <= 4){
+        dispatch[R-1][N-1][C-1](n_brow,n_bcol,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx);
+        return;
+    }
+#endif
+
+    const I RC = R*C;
+    const I RN = R*N;
+    const I NC = N*C;
+    const I SIZE = RC*Cp[n_brow];
+
+
+    for(I i = 0; i < SIZE; i++){
+        Cx[i] = 0;
+    }
+ 
+    std::vector<I>  next(n_bcol,-1);
+    std::vector<T*> mats(n_bcol);
+    
+    I nnz = 0;
+    Cp[0] = 0;
+
+    for(I i = 0; i < n_brow; i++){
+        I head   = -2;
+        I length =  0;
+
+        I jj_start = Ap[i];
+        I jj_end   = Ap[i+1];
+        for(I jj = jj_start; jj < jj_end; jj++){
+            I j = Aj[jj];
+
+            I kk_start = Bp[j];
+            I kk_end   = Bp[j+1];
+            for(I kk = kk_start; kk < kk_end; kk++){
+                I k = Bj[kk];
+
+                if(next[k] == -1){
+                    next[k] = head;                        
+                    head = k;
+                    Cj[nnz] = k;
+                    mats[k] = Cx + RC*nnz;
+                    nnz++;
+                    length++;
+                }
+
+                const T * A = Ax + jj*RN;
+                const T * B = Bx + kk*NC;
+                T * result = mats[k];
                 for(I r = 0; r < R; r++){
                     for(I c = 0; c < C; c++){
                         for(I n = 0; n < N; n++){
                             result[C*r + c] += A[N*r + n] * B[C*n + c];
 
                         }
-                        //std::cout << "result[" << r << "," << c << "] = " << result[C*r + c] << std::endl;
                     }
                 }
             }
         }         
 
         for(I jj = 0; jj < length; jj++){
-
-            //if(is_nonzero_block(result,RC)){
-            //    Cj[nnz] = head;
-            //    Cx[nnz] = sums[head];
-            //    nnz++;
-            //}
-
             I temp = head;                
             head = next[head];
-
             next[temp] = -1; //clear arrays
         }
 
-        //Cp[i+1] = nnz;
     }
 }
-
+#undef F
 
 
 
@@ -1148,7 +1240,7 @@ void bsr_matvec_fixed(const I n_brow,
     for(I i = 0; i < n_brow; i++) {
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++) {
             I j = Aj[jj];
-            matvec<R,C>(Ax + jj*R*C, Xx + j*C, Yx + i*R);
+            matvec<R,C,1,1>(Ax + jj*R*C, Xx + j*C, Yx + i*R);
         }
     }
 }
