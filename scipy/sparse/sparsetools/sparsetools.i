@@ -259,6 +259,11 @@ INSTANTIATE_ALL(csr_sort_indices)
 
 
 /*
+ * Remove zeros
+ */
+INSTANTIATE_ALL(csr_eliminate_zeros)
+
+/*
  * Sum duplicate entries.
  */
 INSTANTIATE_ALL(csr_sum_duplicates)

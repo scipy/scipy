@@ -1,5 +1,4 @@
-"""Compressed Block Sparse Row matrix format
-"""
+"""Compressed Block Sparse Row matrix format"""
 
 __all__ = ['bsr_matrix', 'isspmatrix_bsr']
 
@@ -12,7 +11,7 @@ import sparsetools
 from sparsetools import bsr_matvec, csr_matmat_pass1, bsr_matmat_pass2
 from data import _data_matrix
 from compressed import _cs_matrix
-from base import isspmatrix
+from base import isspmatrix, _formats
 from sputils import isshape, getdtype, to_native, isscalarlike, isdense, \
         upcast
 
@@ -21,44 +20,45 @@ class bsr_matrix(_cs_matrix):
 
     This can be instantiated in several ways:
       - bsr_matrix(D, [blocksize=(R,C)])
-        with a dense matrix or rank-2 ndarray D
+        - with a dense matrix or rank-2 ndarray D
 
       - bsr_matrix(S, [blocksize=(R,C)])
-        with another sparse matrix S (equivalent to S.tocsr())
+        - with another sparse matrix S (equivalent to S.tobsr())
 
       - bsr_matrix((M, N), [blocksize=(R,C), dtype])
-        to construct an empty matrix with shape (M, N)
-        dtype is optional, defaulting to dtype='d'.
+        - to construct an empty matrix with shape (M, N)
+        - dtype is optional, defaulting to dtype='d'.
 
       - bsr_matrix((data, ij), [blocksize=(R,C), shape=(M, N)])
-        where data, ij satisfy:
-            a[ij[0, k], ij[1, k]] = data[k]
+        - where data, ij satisfy:
+          - a[ij[0, k], ij[1, k]] = data[k]
 
       - bsr_matrix((data, indices, indptr), [shape=(M, N)])
-        is the standard BSR representation where:
-            the block column indices for row i are stored in
-                indices[ indptr[i]: indices[i+1] ] 
-            and their corresponding block values are stored in
-                data[ indptr[i]: indptr[i+1] ]
-        If the shape parameter is not supplied, the matrix dimensions
-        are inferred from the index arrays.
+        - is the standard BSR representation where:
+          the block column indices for row i are stored in
+           - indices[ indptr[i]: indices[i+1] ] 
+          and their corresponding block values are stored in
+           - data[ indptr[i]: indptr[i+1] ]
+        - if the shape parameter is not supplied, the matrix dimensions
+          are inferred from the index arrays.
 
 
-    *Notes*
-    -------
-        The blocksize (R,C) must evenly divide the shape of 
-        the matrix (M,N).  That is, R and C must satisfy the
-        relationship M % R = 0 and N % C = 0.
+    Notes
+    =====
+        
+        - The blocksize (R,C) must evenly divide the shape of 
+          the matrix (M,N).  That is, R and C must satisfy the
+          relationship M % R = 0 and N % C = 0.
     
-        The Block Compressed Row (BSR) format is very similar to the
-        Compressed Sparse Row (CSR) format.  BSR is appropriate for
-        sparse matrices with dense sub matrices like the last example
-        below.  Such matrices often arise, for instance, in finite
-        element discretizations.
+        - The Block Compressed Row (BSR) format is very similar to the
+          Compressed Sparse Row (CSR) format.  BSR is appropriate for
+          sparse matrices with dense sub matrices like the last example
+          below.  Such matrices often arise, for instance, in vector-valued
+          finite element discretizations.
 
 
-    *Examples*
-    ----------
+    Examples
+    ========
 
     >>> from scipy.sparse import *
     >>> from scipy import *
@@ -113,11 +113,11 @@ class bsr_matrix(_cs_matrix):
                 self.data   = zeros( (0,) + blocksize, getdtype(dtype, default=float) )
                 self.indices = zeros( 0, dtype=intc )
                 
-                X,Y = blocksize
-                if (M % X) != 0 or (N % Y) != 0:
+                R,C = blocksize
+                if (M % R) != 0 or (N % C) != 0:
                     raise ValueError, 'shape must be multiple of blocksize'
 
-                self.indptr  = zeros(M/X + 1, dtype=intc )
+                self.indptr  = zeros(M/R + 1, dtype=intc )
             
             elif len(arg1) == 2:
                 # (data,(row,col)) format
@@ -279,7 +279,7 @@ class bsr_matrix(_cs_matrix):
         """
         if isdense(other):
             M,N = self.shape
-            X,Y = self.blocksize
+            R,C = self.blocksize
 
             if other.shape != (N,) and other.shape != (N,1):
                 raise ValueError, "dimension mismatch"
@@ -299,7 +299,7 @@ class bsr_matrix(_cs_matrix):
                 y = output
             
             
-            bsr_matvec(M/X, N/Y, X, Y, \
+            bsr_matvec(M/R, N/C, R, C, \
                 self.indptr, self.indices, ravel(self.data), ravel(other), y)
 
             if isinstance(other, matrix):
@@ -389,15 +389,15 @@ class bsr_matrix(_cs_matrix):
         """
         
         M,N = self.shape
-        X,Y = self.blocksize
+        R,C = self.blocksize
 
-        row  = (X * arange(M/X)).repeat(diff(self.indptr))
-        row  = row.repeat(X*Y).reshape(-1,X,Y)
-        row += tile( arange(X).reshape(-1,1), (1,Y) )
+        row  = (R * arange(M/R)).repeat(diff(self.indptr))
+        row  = row.repeat(R*C).reshape(-1,R,C)
+        row += tile( arange(R).reshape(-1,1), (1,C) )
         row  = row.reshape(-1) 
 
-        col  = (Y * self.indices).repeat(X*Y).reshape(-1,X,Y)
-        col += tile( arange(Y), (X,1) )
+        col  = (C * self.indices).repeat(R*C).reshape(-1,R,C)
+        col += tile( arange(C), (R,1) )
         col  = col.reshape(-1)
 
         data = self.data.reshape(-1)
@@ -411,16 +411,16 @@ class bsr_matrix(_cs_matrix):
 
     def transpose(self):
         
-        X,Y = self.blocksize
+        R,C = self.blocksize
         M,N = self.shape
         
         if self.nnz == 0:
-            return bsr_matrix((N,M),blocksize=(Y,X))
+            return bsr_matrix((N,M),blocksize=(C,R))
 
         #use CSR.T to determine a permutation for BSR.T
         from csr import csr_matrix
         data = arange(len(self.indices), dtype=self.indices.dtype)
-        proxy = csr_matrix((data,self.indices,self.indptr),shape=(M/X,N/Y))
+        proxy = csr_matrix((data,self.indices,self.indptr),shape=(M/R,N/C))
         proxy = proxy.tocsc()
 
         data    = self.data.swapaxes(1,2)[proxy.data] #permute data
@@ -434,7 +434,29 @@ class bsr_matrix(_cs_matrix):
     ############################################################## 
     # methods that examine or modify the internal data structure #
     ##############################################################
-   
+    
+    def eliminate_zeros(self):
+        R,C = self.blocksize
+        M,N = self.shape
+
+        mask = (self.data != 0).reshape(-1,R*C).sum(axis=1) #nonzero blocks
+       
+        nonzero_blocks = mask.nonzero()[0]
+
+        if len(nonzero_blocks) == 0:
+            return #nothing to do
+
+        self.data[:len(nonzero_blocks)] = self.data[nonzero_blocks]
+
+        from csr import csr_matrix
+
+        # modifies self.indptr and self.indices *in place*
+        proxy = csr_matrix((mask,self.indices,self.indptr),shape=(M/R,N/C))
+        proxy.eliminate_zeros()
+       
+        self.prune()
+
+
     def sum_duplicates(self):
         raise NotImplementedError
 
