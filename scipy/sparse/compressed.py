@@ -590,7 +590,7 @@ class _cs_matrix(_data_matrix):
         """
 
         #first check to see if result was cached
-        if not hasattr(self,'_has_sorted_indices'):
+        if not hasattr(self,'__has_sorted_indices'):
             fn = sparsetools.csr_has_sorted_indices
             self.__has_sorted_indices = \
                     fn( len(self.indptr) - 1, self.indptr, self.indices)
