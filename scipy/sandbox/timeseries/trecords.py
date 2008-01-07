@@ -427,7 +427,7 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
       Alphanumeric character used to mark the start of a comment.
     - `missingchar` : String *['']*
       String indicating missing data, and used to create the masks.
-    - `datescol` : Integer *[None]*
+    - `dates_column` : Integer *[None]*
       Position of the columns storing dates. If None, a position will be
       estimated from the variable names.
     - `varnames` : Sequence *[None]*
