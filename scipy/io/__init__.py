@@ -84,5 +84,6 @@ from data_store import save_as_module
 from mmio import mminfo, mmread, mmwrite
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
-from scipy.testing.moduletest import test_func
-test = test_func
+from scipy.testing.pkgtester import Tester
+t = Tester()
+test = Tester().test

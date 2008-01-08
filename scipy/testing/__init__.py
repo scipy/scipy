@@ -8,7 +8,11 @@ away.
 import unittest
 from unittest import TestCase
 
-import nose
+try:
+    import nose
+except ImportError:
+    print 'Need nose testing framework installed for scipy tests'
+    raise
 
 import decorators as dec
 from numpy.testing.utils import *
