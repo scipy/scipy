@@ -170,6 +170,7 @@ INSTANTIATE_INDEX(sa_get_aggregates)
 INSTANTIATE_BOTH(rs_strong_connections)
 INSTANTIATE_BOTH(rs_interpolation)
 INSTANTIATE_BOTH(sa_strong_connections)
+INSTANTIATE_BOTH(block_gauss_seidel)
 INSTANTIATE_BOTH(gauss_seidel)
 INSTANTIATE_BOTH(jacobi)
 

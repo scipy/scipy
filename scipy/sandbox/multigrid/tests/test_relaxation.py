@@ -2,7 +2,7 @@ from numpy.testing import *
 
 import numpy
 import scipy
-from scipy import arange,ones,zeros,array,allclose
+from scipy import arange,ones,zeros,array,allclose,zeros_like
 from scipy.sparse import spdiags
 
 
@@ -15,7 +15,7 @@ restore_path()
 class TestRelaxation(NumpyTestCase):
     def check_polynomial(self):
         N  = 3
-        A  = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        A  = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N,format='csr')
         x0 = arange(N).astype(numpy.float64)
         x  = x0.copy()
         b  = zeros(N)
@@ -39,87 +39,105 @@ class TestRelaxation(NumpyTestCase):
 
     def check_jacobi(self):
         N = 1
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N,format='csr')
         x = arange(N).astype(numpy.float64)
         b = zeros(N)
         jacobi(A,x,b)
         assert_almost_equal(x,array([0]))
 
         N = 3
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N,format='csr')
         x = zeros(N)
         b = arange(N).astype(numpy.float64)
         jacobi(A,x,b)
         assert_almost_equal(x,array([0.0,0.5,1.0]))
 
         N = 3
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N,format='csr')
         x = arange(N).astype(numpy.float64)
         b = zeros(N)
         jacobi(A,x,b)
         assert_almost_equal(x,array([0.5,1.0,0.5]))
 
         N = 1
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N,format='csr')
         x = arange(N).astype(numpy.float64)
         b = array([10])
         jacobi(A,x,b)
         assert_almost_equal(x,array([5]))
 
         N = 3
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N,format='csr')
         x = arange(N).astype(numpy.float64)
         b = array([10,20,30])
         jacobi(A,x,b)
         assert_almost_equal(x,array([5.5,11.0,15.5]))
 
         N = 3
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N,format='csr')
         x = arange(N).astype(numpy.float64)
         x_copy = x.copy()
         b = array([10,20,30])
         jacobi(A,x,b,omega=1.0/3.0)
         assert_almost_equal(x,2.0/3.0*x_copy + 1.0/3.0*array([5.5,11.0,15.5]))
 
+    def check_gauss_seidel_bsr(self):
+        cases = []
 
-    def check_gauss_seidel(self):
+        for N in [1,2,3,4,5,6,10]:
+            A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).tocsr()
+            
+            divisors = [ n for n in range(1,N+1) if N % n == 0 ]
+
+            x_csr = arange(N).astype(numpy.float64)
+            b = x_csr**2
+            gauss_seidel(A,x_csr,b)
+
+            for D in divisors:
+                B = A.tobsr(blocksize=(D,D))
+                x_bsr = arange(N).astype(numpy.float64)
+                gauss_seidel(B,x_bsr,b)
+                assert_almost_equal(x_bsr,x_csr)
+               
+
+    def check_gauss_seidel_csr(self):
         N = 1
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N,format='csr')
         x = arange(N).astype(numpy.float64)
         b = zeros(N)
         gauss_seidel(A,x,b)
         assert_almost_equal(x,array([0]))
 
         N = 3
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N,format='csr')
         x = arange(N).astype(numpy.float64)
         b = zeros(N)
         gauss_seidel(A,x,b)
         assert_almost_equal(x,array([1.0/2.0,5.0/4.0,5.0/8.0]))
 
         N = 1
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N,format='csr')
         x = arange(N).astype(numpy.float64)
         b = zeros(N)
         gauss_seidel(A,x,b,sweep='backward')
         assert_almost_equal(x,array([0]))
 
         N = 3
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N,format='csr')
         x = arange(N).astype(numpy.float64)
         b = zeros(N)
         gauss_seidel(A,x,b,sweep='backward')
         assert_almost_equal(x,array([1.0/8.0,1.0/4.0,1.0/2.0]))
 
         N = 1
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N,format='csr')
         x = arange(N).astype(numpy.float64)
         b = array([10])
         gauss_seidel(A,x,b)
         assert_almost_equal(x,array([5]))
 
         N = 3
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N,format='csr')
         x = arange(N).astype(numpy.float64)
         b = array([10,20,30])
         gauss_seidel(A,x,b)
@@ -128,7 +146,7 @@ class TestRelaxation(NumpyTestCase):
 
         #forward and backward passes should give same result with x=ones(N),b=zeros(N)
         N = 100
-        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N).T
+        A = spdiags([2*ones(N),-ones(N),-ones(N)],[0,-1,1],N,N,format='csr')
         x = ones(N)
         b = zeros(N)
         gauss_seidel(A,x,b,iterations=200,sweep='forward')
