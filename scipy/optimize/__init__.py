@@ -16,5 +16,5 @@ from nonlin import broyden1, broyden2, broyden3, broyden_generalized, \
 from slsqp import fmin_slsqp
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
-from numpy.testing import NumpyTest
-test = NumpyTest().test
+from scipy.testing.pkgtester import Tester
+test = Tester().test

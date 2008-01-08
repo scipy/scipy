@@ -4,6 +4,8 @@ import sys
 
 import nose
 
+from scipy.testing.decorators import undecorated_def
+
 class NoseTester(object):
     """ Scipy nose tests site manager.
 
@@ -14,7 +16,8 @@ class NoseTester(object):
     def __init__(self, package=None):
         if package is None:
             f = sys._getframe(1)
-            package = f.f_locals.get('__file__',f.f_globals.get('__file__',None))
+            package = f.f_locals.get('__file__',
+                                     f.f_globals.get('__file__',None))
             assert package is not None
             self.package_path = os.path.dirname(package)
         else:
@@ -47,9 +50,14 @@ class NoseTester(object):
         self.package_path = os.path.abspath(package)
         return
 
-    def test(self, labels=None, *args, **kwargs):
+    def test(self, labels=None, verbose=0, extra_argv=None):
         if labels is None:
-            labels = []
-        argv = ['', self.package_path]
+            labels = undecorated_def
+        argv = ['', self.package_path, '-s']
+        if labels not in ('', 'all'):
+            argv += ['-A', labels]
+        argv += ['--verbosity', str(verbose)]
+        if extra_argv is not None:
+            argv+= extra_argv
         nose.run(argv=argv)
         

@@ -7,5 +7,5 @@ del lobpcg
 
 from lobpcg import *
 
-from numpy.testing import NumpyTest
-test = NumpyTest().test
+from scipy.testing.pkgtester import Tester
+test = Tester().test

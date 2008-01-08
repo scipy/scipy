@@ -21,6 +21,6 @@ from odrpack import odr         ,\
 __all__ = ['odr', 'odr_error', 'odr_stop', 'Data', 'RealData', 'Model',
            'Output', 'ODR', 'odrpack']
 
-from numpy.testing import NumpyTest
-test = NumpyTest().test
+from scipy.testing.pkgtester import Tester
+test = Tester().test
 #### EOF #######################################################################

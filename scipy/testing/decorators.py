@@ -1,5 +1,8 @@
 """Decorators for labeling test objects."""
 
+''' String expression which is true for all undecorated tests '''
+undecorated_def = 'not slow'
+
 def slow(t):
     """Labels a test as 'slow'.
 

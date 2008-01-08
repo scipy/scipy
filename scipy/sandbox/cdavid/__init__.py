@@ -5,5 +5,5 @@ from lpc import lpc2 as lpc
 from autocorr import autocorr_oneside_nofft, autocorr_fft
 from segmentaxis import segment_axis
 
-from numpy.testing import NumpyTest
-test = NumpyTest().test
+from scipy.testing.pkgtester import Tester
+test = Tester().test

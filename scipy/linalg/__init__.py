@@ -28,5 +28,5 @@ except ValueError:
 
 del k, register_func
 
-from numpy.testing import NumpyTest
-test = NumpyTest().test
+from scipy.testing.pkgtester import Tester
+test = Tester().test
