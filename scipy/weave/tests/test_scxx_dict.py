@@ -15,7 +15,8 @@ class TestDictConstruct(TestCase):
     # Check that construction from basic types is allowed and have correct
     # reference counts
     #------------------------------------------------------------------------
-    def test_empty(self,level=5):
+    @dec.slow
+    def test_empty(self):
         # strange int value used to try and make sure refcount is 2.
         code = """
                py::dict val;
@@ -27,7 +28,8 @@ class TestDictConstruct(TestCase):
 
 
 class TestDictHasKey(TestCase):
-    def test_obj(self,level=5):
+    @dec.slow
+    def test_obj(self):
         class Foo:
             pass
         key = Foo()
@@ -38,7 +40,8 @@ class TestDictHasKey(TestCase):
                """
         res = inline_tools.inline(code,['a','key'])
         assert res
-    def test_int(self,level=5):
+    @dec.slow
+    def test_int(self):
         a = {}
         a[1234] = 12345
         code = """
@@ -46,7 +49,8 @@ class TestDictHasKey(TestCase):
                """
         res = inline_tools.inline(code,['a'])
         assert res
-    def test_double(self,level=5):
+    @dec.slow
+    def test_double(self):
         a = {}
         a[1234.] = 12345
         code = """
@@ -54,7 +58,8 @@ class TestDictHasKey(TestCase):
                """
         res = inline_tools.inline(code,['a'])
         assert res
-    def test_complex(self,level=5):
+    @dec.slow
+    def test_complex(self):
         a = {}
         a[1+1j] = 12345
         key = 1+1j
@@ -64,7 +69,8 @@ class TestDictHasKey(TestCase):
         res = inline_tools.inline(code,['a','key'])
         assert res
 
-    def test_string(self,level=5):
+    @dec.slow
+    def test_string(self):
         a = {}
         a["b"] = 12345
         code = """
@@ -72,7 +78,8 @@ class TestDictHasKey(TestCase):
                """
         res = inline_tools.inline(code,['a'])
         assert res
-    def test_std_string(self,level=5):
+    @dec.slow
+    def test_std_string(self):
         a = {}
         a["b"] = 12345
         key_name = "b"
@@ -81,7 +88,8 @@ class TestDictHasKey(TestCase):
                """
         res = inline_tools.inline(code,['a','key_name'])
         assert res
-    def test_string_fail(self,level=5):
+    @dec.slow
+    def test_string_fail(self):
         a = {}
         a["b"] = 12345
         code = """
@@ -99,10 +107,12 @@ class TestDictGetItemOp(TestCase):
         res = inline_tools.inline(code,args)
         assert res == a['b']
 
-    def test_char(self,level=5):
+    @dec.slow
+    def test_char(self):
         self.generic_get('return_val = a["b"];')
 
-    def DOESNT_WORK_check_char_fail(self,level=5):
+    @dec.slow
+    def DOESNT_WORK_check_char_fail(self):
         # We can't through a KeyError for dicts on RHS of
         # = but not on LHS.  Not sure how to deal with this.
         try:
@@ -110,18 +120,21 @@ class TestDictGetItemOp(TestCase):
         except KeyError:
             pass
 
-    def test_string(self,level=5):
+    @dec.slow
+    def test_string(self):
         self.generic_get('return_val = a[std::string("b")];')
 
 
-    def test_obj(self,level=5):
+    @dec.slow
+    def test_obj(self):
         code = """
                py::object name = "b";
                return_val = a[name];
                """
         self.generic_get(code,['a'])
 
-    def DOESNT_WORK_check_obj_fail(self,level=5):
+    @dec.slow
+    def DOESNT_WORK_check_obj_fail(self):
         # We can't through a KeyError for dicts on RHS of
         # = but not on LHS.  Not sure how to deal with this.
         try:
@@ -164,37 +177,47 @@ class TestDictSetOperator(TestCase):
         assert before == after
         assert before_overwritten == after_overwritten
 
-    def test_new_int_int(self,level=5):
+    @dec.slow
+    def test_new_int_int(self):
         key,val = 1234,12345
         self.generic_new(key,val)
-    def test_new_double_int(self,level=5):
+    @dec.slow
+    def test_new_double_int(self):
         key,val = 1234.,12345
         self.generic_new(key,val)
-    def test_new_std_string_int(self,level=5):
+    @dec.slow
+    def test_new_std_string_int(self):
         key,val = "hello",12345
         self.generic_new(key,val)
-    def test_new_complex_int(self,level=5):
+    @dec.slow
+    def test_new_complex_int(self):
         key,val = 1+1j,12345
         self.generic_new(key,val)
-    def test_new_obj_int(self,level=5):
+    @dec.slow
+    def test_new_obj_int(self):
         class Foo:
             pass
         key,val = Foo(),12345
         self.generic_new(key,val)
 
-    def test_overwrite_int_int(self,level=5):
+    @dec.slow
+    def test_overwrite_int_int(self):
         key,val = 1234,12345
         self.generic_overwrite(key,val)
-    def test_overwrite_double_int(self,level=5):
+    @dec.slow
+    def test_overwrite_double_int(self):
         key,val = 1234.,12345
         self.generic_overwrite(key,val)
-    def test_overwrite_std_string_int(self,level=5):
+    @dec.slow
+    def test_overwrite_std_string_int(self):
         key,val = "hello",12345
         self.generic_overwrite(key,val)
-    def test_overwrite_complex_int(self,level=5):
+    @dec.slow
+    def test_overwrite_complex_int(self):
         key,val = 1+1j,12345
         self.generic_overwrite(key,val)
-    def test_overwrite_obj_int(self,level=5):
+    @dec.slow
+    def test_overwrite_obj_int(self):
         class Foo:
             pass
         key,val = Foo(),12345
@@ -216,46 +239,56 @@ class TestDictDel(TestCase):
         after = sys.getrefcount(a), sys.getrefcount(key)
         assert before[0] == after[0]
         assert before[1] == after[1] + 1
-    def test_int(self,level=5):
+    @dec.slow
+    def test_int(self):
         key = 1234
         self.generic(key)
-    def test_double(self,level=5):
+    @dec.slow
+    def test_double(self):
         key = 1234.
         self.generic(key)
-    def test_std_string(self,level=5):
+    @dec.slow
+    def test_std_string(self):
         key = "hello"
         self.generic(key)
-    def test_complex(self,level=5):
+    @dec.slow
+    def test_complex(self):
         key = 1+1j
         self.generic(key)
-    def test_obj(self,level=5):
+    @dec.slow
+    def test_obj(self):
         class Foo:
             pass
         key = Foo()
         self.generic(key)
 
 class TestDictOthers(TestCase):
-    def test_clear(self,level=5):
+    @dec.slow
+    def test_clear(self):
         a = {}
         a["hello"] = 1
         inline_tools.inline("a.clear();",['a'])
         assert not a
-    def test_items(self,level=5):
+    @dec.slow
+    def test_items(self):
         a = {}
         a["hello"] = 1
         items = inline_tools.inline("return_val = a.items();",['a'])
         assert items == a.items()
-    def test_values(self,level=5):
+    @dec.slow
+    def test_values(self):
         a = {}
         a["hello"] = 1
         values = inline_tools.inline("return_val = a.values();",['a'])
         assert values == a.values()
-    def test_keys(self,level=5):
+    @dec.slow
+    def test_keys(self):
         a = {}
         a["hello"] = 1
         keys = inline_tools.inline("return_val = a.keys();",['a'])
         assert keys == a.keys()
-    def test_update(self,level=5):
+    @dec.slow
+    def test_update(self):
         a,b = {},{}
         a["hello"] = 1
         b["hello"] = 2

@@ -131,7 +131,7 @@ class TestKMean(TestCase):
         code1 = kmeans2(data1, code, iter = 1)[0]
         code2 = kmeans2(data1, code, iter = 2)[0]
 
-    def test_kmeans2_init(self, level = 1):
+    def test_kmeans2_init(self):
         """Testing that kmeans2 init methods work."""
         data = N.fromfile(open(DATAFILE1), sep = ", ")
         data = data.reshape((200, 2))

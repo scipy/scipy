@@ -66,19 +66,24 @@ def print_assert_equal(test_string,actual,desired):
 
 class IntConverter(TestCase):
     compiler = ''
-    def test_type_match_string(self,level=5):
+    @dec.slow
+    def test_type_match_string(self):
         s = c_spec.int_converter()
         assert( not s.type_match('string') )
-    def test_type_match_int(self,level=5):
+    @dec.slow
+    def test_type_match_int(self):
         s = c_spec.int_converter()
         assert(s.type_match(5))
-    def test_type_match_float(self,level=5):
+    @dec.slow
+    def test_type_match_float(self):
         s = c_spec.int_converter()
         assert(not s.type_match(5.))
-    def test_type_match_complex(self,level=5):
+    @dec.slow
+    def test_type_match_complex(self):
         s = c_spec.int_converter()
         assert(not s.type_match(5.+1j))
-    def test_var_in(self,level=5):
+    @dec.slow
+    def test_var_in(self):
         mod_name = 'int_var_in' + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -101,7 +106,8 @@ class IntConverter(TestCase):
         except TypeError:
             pass
 
-    def test_int_return(self,level=5):
+    @dec.slow
+    def test_int_return(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -121,19 +127,24 @@ class IntConverter(TestCase):
 
 class FloatConverter(TestCase):
     compiler = ''
-    def test_type_match_string(self,level=5):
+    @dec.slow
+    def test_type_match_string(self):
         s = c_spec.float_converter()
         assert( not s.type_match('string'))
-    def test_type_match_int(self,level=5):
+    @dec.slow
+    def test_type_match_int(self):
         s = c_spec.float_converter()
         assert(not s.type_match(5))
-    def test_type_match_float(self,level=5):
+    @dec.slow
+    def test_type_match_float(self):
         s = c_spec.float_converter()
         assert(s.type_match(5.))
-    def test_type_match_complex(self,level=5):
+    @dec.slow
+    def test_type_match_complex(self):
         s = c_spec.float_converter()
         assert(not s.type_match(5.+1j))
-    def test_float_var_in(self,level=5):
+    @dec.slow
+    def test_float_var_in(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -157,7 +168,8 @@ class FloatConverter(TestCase):
             pass
 
 
-    def test_float_return(self,level=5):
+    @dec.slow
+    def test_float_return(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -176,19 +188,24 @@ class FloatConverter(TestCase):
 
 class ComplexConverter(TestCase):
     compiler = ''
-    def test_type_match_string(self,level=5):
+    @dec.slow
+    def test_type_match_string(self):
         s = c_spec.complex_converter()
         assert( not s.type_match('string') )
-    def test_type_match_int(self,level=5):
+    @dec.slow
+    def test_type_match_int(self):
         s = c_spec.complex_converter()
         assert(not s.type_match(5))
-    def test_type_match_float(self,level=5):
+    @dec.slow
+    def test_type_match_float(self):
         s = c_spec.complex_converter()
         assert(not s.type_match(5.))
-    def test_type_match_complex(self,level=5):
+    @dec.slow
+    def test_type_match_complex(self):
         s = c_spec.complex_converter()
         assert(s.type_match(5.+1j))
-    def test_complex_var_in(self,level=5):
+    @dec.slow
+    def test_complex_var_in(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -211,7 +228,8 @@ class ComplexConverter(TestCase):
         except TypeError:
             pass
 
-    def test_complex_return(self,level=5):
+    @dec.slow
+    def test_complex_return(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -234,7 +252,8 @@ class ComplexConverter(TestCase):
 
 class FileConverter(TestCase):
     compiler = ''
-    def test_py_to_file(self,level=5):
+    @dec.slow
+    def test_py_to_file(self):
         import tempfile
         file_name = tempfile.mktemp()
         file = open(file_name,'w')
@@ -245,7 +264,8 @@ class FileConverter(TestCase):
         file.close()
         file = open(file_name,'r')
         assert(file.read() == "hello bob")
-    def test_file_to_py(self,level=5):
+    @dec.slow
+    def test_file_to_py(self):
         import tempfile
         file_name = tempfile.mktemp()
         # not sure I like Py::String as default -- might move to std::sting
@@ -275,7 +295,8 @@ class InstanceConverter(TestCase):
 
 class CallableConverter(TestCase):
     compiler=''
-    def test_call_function(self,level=5):
+    @dec.slow
+    def test_call_function(self):
         import string
         func = string.find
         search_str = "hello world hello"
@@ -295,34 +316,43 @@ class CallableConverter(TestCase):
 
 class SequenceConverter(TestCase):
     compiler = ''
-    def test_convert_to_dict(self,level=5):
+    @dec.slow
+    def test_convert_to_dict(self):
         d = {}
         inline_tools.inline("",['d'],compiler=self.compiler,force=1)
-    def test_convert_to_list(self,level=5):
+    @dec.slow
+    def test_convert_to_list(self):
         l = []
         inline_tools.inline("",['l'],compiler=self.compiler,force=1)
-    def test_convert_to_string(self,level=5):
+    @dec.slow
+    def test_convert_to_string(self):
         s = 'hello'
         inline_tools.inline("",['s'],compiler=self.compiler,force=1)
-    def test_convert_to_tuple(self,level=5):
+    @dec.slow
+    def test_convert_to_tuple(self):
         t = ()
         inline_tools.inline("",['t'],compiler=self.compiler,force=1)
 
 class StringConverter(TestCase):
     compiler = ''
-    def test_type_match_string(self,level=5):
+    @dec.slow
+    def test_type_match_string(self):
         s = c_spec.string_converter()
         assert( s.type_match('string') )
-    def test_type_match_int(self,level=5):
+    @dec.slow
+    def test_type_match_int(self):
         s = c_spec.string_converter()
         assert(not s.type_match(5))
-    def test_type_match_float(self,level=5):
+    @dec.slow
+    def test_type_match_float(self):
         s = c_spec.string_converter()
         assert(not s.type_match(5.))
-    def test_type_match_complex(self,level=5):
+    @dec.slow
+    def test_type_match_complex(self):
         s = c_spec.string_converter()
         assert(not s.type_match(5.+1j))
-    def test_var_in(self,level=5):
+    @dec.slow
+    def test_var_in(self):
         mod_name = 'string_var_in'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -346,7 +376,8 @@ class StringConverter(TestCase):
         except TypeError:
             pass
 
-    def test_return(self,level=5):
+    @dec.slow
+    def test_return(self):
         mod_name = 'string_return'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -365,15 +396,18 @@ class StringConverter(TestCase):
 
 class ListConverter(TestCase):
     compiler = ''
-    def test_type_match_bad(self,level=5):
+    @dec.slow
+    def test_type_match_bad(self):
         s = c_spec.list_converter()
         objs = [{},(),'',1,1.,1+1j]
         for i in objs:
             assert( not s.type_match(i) )
-    def test_type_match_good(self,level=5):
+    @dec.slow
+    def test_type_match_good(self):
         s = c_spec.list_converter()
         assert(s.type_match([]))
-    def test_var_in(self,level=5):
+    @dec.slow
+    def test_var_in(self):
         mod_name = 'list_var_in'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -396,7 +430,8 @@ class ListConverter(TestCase):
         except TypeError:
             pass
 
-    def test_return(self,level=5):
+    @dec.slow
+    def test_return(self):
         mod_name = 'list_return'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -414,7 +449,8 @@ class ListConverter(TestCase):
         c = test(b)
         assert( c == ['hello'])
 
-    def test_speed(self,level=5):
+    @dec.slow
+    def test_speed(self):
         mod_name = 'list_speed'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -476,15 +512,18 @@ class ListConverter(TestCase):
 
 class TupleConverter(TestCase):
     compiler = ''
-    def test_type_match_bad(self,level=5):
+    @dec.slow
+    def test_type_match_bad(self):
         s = c_spec.tuple_converter()
         objs = [{},[],'',1,1.,1+1j]
         for i in objs:
             assert( not s.type_match(i) )
-    def test_type_match_good(self,level=5):
+    @dec.slow
+    def test_type_match_good(self):
         s = c_spec.tuple_converter()
         assert(s.type_match((1,)))
-    def test_var_in(self,level=5):
+    @dec.slow
+    def test_var_in(self):
         mod_name = 'tuple_var_in'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -507,7 +546,8 @@ class TupleConverter(TestCase):
         except TypeError:
             pass
 
-    def test_return(self,level=5):
+    @dec.slow
+    def test_return(self):
         mod_name = 'tuple_return'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -537,15 +577,18 @@ class DictConverter(TestCase):
     # so that it can run on its own.
     compiler=''
 
-    def test_type_match_bad(self,level=5):
+    @dec.slow
+    def test_type_match_bad(self):
         s = c_spec.dict_converter()
         objs = [[],(),'',1,1.,1+1j]
         for i in objs:
             assert( not s.type_match(i) )
-    def test_type_match_good(self,level=5):
+    @dec.slow
+    def test_type_match_good(self):
         s = c_spec.dict_converter()
         assert(s.type_match({}))
-    def test_var_in(self,level=5):
+    @dec.slow
+    def test_var_in(self):
         mod_name = 'dict_var_in'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -568,7 +611,8 @@ class DictConverter(TestCase):
         except TypeError:
             pass
 
-    def test_return(self,level=5):
+    @dec.slow
+    def test_return(self):
         mod_name = 'dict_return'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)

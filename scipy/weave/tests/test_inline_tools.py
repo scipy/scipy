@@ -14,7 +14,8 @@ class TestInline(TestCase):
 
          I'd like to benchmark these things somehow.
     """
-    def test_exceptions(self,level=5):
+    @dec.slow
+    def test_exceptions(self):
         a = 3
         code = """
                if (a < 2)

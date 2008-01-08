@@ -23,7 +23,7 @@ def print_assert_equal(test_string,actual,desired):
         raise AssertionError, msg.getvalue()
 
 class TestBuildSliceAtom(TestCase):
-    def generic_test(self,slice_vars,desired):
+    def generic_check(self,slice_vars,desired):
         pos = slice_vars['pos']
         ast_list = slice_handler.build_slice_atom(slice_vars,pos)
         actual = ast_to_string(ast_list)
@@ -32,11 +32,11 @@ class TestBuildSliceAtom(TestCase):
         slice_vars = {'begin':'1', 'end':'2', 'step':'_stp',
                       'single_index':'_index','pos':0}
         desired = 'slice(1,2-1)'
-        self.generic_test(slice_vars,desired)
+        self.generic_check(slice_vars,desired)
 
 class TestSlice(TestCase):
 
-    def generic_test(self,suite_string,desired):
+    def generic_check(self,suite_string,desired):
         import parser
         ast_tuple = parser.suite(suite_string).totuple()
         found, data = find_first_pattern(ast_tuple,indexed_array_pattern)
@@ -49,84 +49,84 @@ class TestSlice(TestCase):
         test ="a[:]"
         desired = {'begin':'_beg', 'end':'_end', 'step':'_stp',
                    'single_index':'_index'}
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
     def test_begin_2_slice(self):
         """match slice from a[1:]"""
         test ="a[1:]"
         desired = {'begin':'1', 'end':'_end', 'step':'_stp',
                    'single_index':'_index'}
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
     def test_end_2_slice(self):
         """match slice from a[:2]"""
         test ="a[:2]"
         desired = {'begin':'_beg', 'end':'2', 'step':'_stp',
                    'single_index':'_index'}
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
     def test_begin_end_2_slice(self):
         """match slice from a[1:2]"""
         test ="a[1:2]"
         desired = {'begin':'1', 'end':'2', 'step':'_stp',
                    'single_index':'_index'}
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
     def test_empty_3_slice(self):
         """match slice from a[::]"""
         test ="a[::]"
         desired = {'begin':'_beg', 'end':'_end', 'step':'_stp',
                    'single_index':'_index'}
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
     def test_begin_3_slice(self):
         """match slice from a[1::]"""
         test ="a[1::]"
         desired = {'begin':'1', 'end':'_end', 'step':'_stp',
                    'single_index':'_index'}
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
     def test_end_3_slice(self):
         """match slice from a[:2:]"""
         test ="a[:2:]"
         desired = {'begin':'_beg', 'end':'2', 'step':'_stp',
                    'single_index':'_index'}
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
     def test_stp3_slice(self):
         """match slice from a[::3]"""
         test ="a[::3]"
         desired = {'begin':'_beg', 'end':'_end', 'step':'3',
                    'single_index':'_index'}
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
     def test_begin_end_3_slice(self):
         """match slice from a[1:2:]"""
         test ="a[1:2:]"
         desired = {'begin':'1', 'end':'2','step':'_stp',
                    'single_index':'_index'}
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
     def test_begin_step_3_slice(self):
         """match slice from a[1::3]"""
         test ="a[1::3]"
         desired = {'begin':'1', 'end':'_end','step':'3',
                    'single_index':'_index'}
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
     def test_end_step_3_slice(self):
         """match slice from a[:2:3]"""
         test ="a[:2:3]"
         desired = {'begin':'_beg', 'end':'2', 'step':'3',
                    'single_index':'_index'}
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
     def test_begin_end_stp3_slice(self):
         """match slice from a[1:2:3]"""
         test ="a[1:2:3]"
         desired = {'begin':'1', 'end':'2', 'step':'3','single_index':'_index'}
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
     def test_expr_3_slice(self):
         """match slice from a[:1+i+2:]"""
         test ="a[:1+i+2:]"
         desired = {'begin':'_beg', 'end':"1+i+2",'step':'_stp',
                    'single_index':'_index'}
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
     def test_single_index(self):
         """match slice from a[0]"""
         test ="a[0]"
         desired = {'begin':'_beg', 'end':"_end",'step':'_stp',
                    'single_index':'0'}
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
 
 def replace_whitespace(in_str):
     out = in_str.replace(" ","")
@@ -135,7 +135,7 @@ def replace_whitespace(in_str):
     return out
 
 class TestTransformSlices(TestCase):
-    def generic_test(self,suite_string,desired):
+    def generic_check(self,suite_string,desired):
         import parser
         ast_list = parser.suite(suite_string).tolist()
         slice_handler.transform_slices(ast_list)
@@ -150,7 +150,7 @@ class TestTransformSlices(TestCase):
         """transform a[:] to slice notation"""
         test ="a[:]"
         desired = 'a[slice(_beg,_end,_stp)]'
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
     def test_simple_expr(self):
         """transform a[:,:] = b[:,1:1+2:3] *(c[1-2+i:,:] - c[:,:])"""
         test ="a[:,:] = b[:,1:1+2:3] *(c[1-2+i:,:] - c[:,:])"
@@ -158,7 +158,7 @@ class TestTransformSlices(TestCase):
                                     " b[slice(_beg,_end), slice(1,1+2-1,3)] *"\
                                     " (c[slice(1-2+i,_end), slice(_beg,_end)] -"\
                                     "  c[slice(_beg,_end), slice(_beg,_end)])"
-        self.generic_test(test,desired)
+        self.generic_check(test,desired)
 
 
 if __name__ == "__main__":

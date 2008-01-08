@@ -58,16 +58,21 @@ class NumpyComplexScalarConverter(TestCase):
     def setUp(self):
         self.converter = numpy_complex_scalar_converter()
 
-    def test_type_match_string(self,level=5):
+    @dec.slow
+    def test_type_match_string(self):
         assert( not self.converter.type_match('string') )
-    def test_type_match_int(self,level=5):
+    @dec.slow
+    def test_type_match_int(self):
         assert( not self.converter.type_match(5))
-    def test_type_match_float(self,level=5):
+    @dec.slow
+    def test_type_match_float(self):
         assert( not self.converter.type_match(5.))
-    def test_type_match_complex128(self,level=5):
+    @dec.slow
+    def test_type_match_complex128(self):
         assert(self.converter.type_match(numpy.complex128(5.+1j)))
 
-    def test_complex_var_in(self,level=5):
+    @dec.slow
+    def test_complex_var_in(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -90,7 +95,8 @@ class NumpyComplexScalarConverter(TestCase):
         except TypeError:
             pass
 
-    def test_complex_return(self,level=5):
+    @dec.slow
+    def test_complex_return(self):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -107,7 +113,8 @@ class NumpyComplexScalarConverter(TestCase):
         c = test(b)
         assert( c == 3.+3j)
 
-    def test_inline(self, level=5):
+    @dec.slow
+    def test_inline(self):
         a = numpy.complex128(1+1j)
         result = inline_tools.inline("return_val=1.0/a;",['a'])
         assert( result==.5-.5j)

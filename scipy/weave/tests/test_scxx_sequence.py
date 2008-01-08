@@ -23,7 +23,8 @@ from UserList import UserList
 class _TestSequenceBase(TestCase):
     seq_type = None
 
-    def test_conversion(self,level=5):
+    @dec.slow
+    def test_conversion(self):
         a = self.seq_type([1])
         before = sys.getrefcount(a)
         inline_tools.inline(" ",['a'])
@@ -35,7 +36,8 @@ class _TestSequenceBase(TestCase):
         #print '2nd,3rd:', before, after
         assert(after == before)
 
-    def test_in(self,level=5):
+    @dec.slow
+    def test_in(self):
         """ Test the "in" method for lists.  We'll assume
             it works for sequences if it works here.
         """
@@ -87,7 +89,8 @@ class _TestSequenceBase(TestCase):
         res = inline_tools.inline(code,['a'])
         assert res == 0
 
-    def test_count(self,level=5):
+    @dec.slow
+    def test_count(self):
         """ Test the "count" method for lists.  We'll assume
             it works for sequences if it works hre.
         """
@@ -121,7 +124,8 @@ class _TestSequenceBase(TestCase):
         res = inline_tools.inline(code,['a'])
         assert res == 1
 
-    def test_access_speed(self,level=5):
+    @dec.slow
+    def test_access_speed(self):
         N = 1000000
         print '%s access -- val = a[i] for N =', (self.seq_type, N)
         a = self.seq_type([0]) * N
@@ -151,7 +155,8 @@ class _TestSequenceBase(TestCase):
         print 'weave:', t2 - t1
 
 # Fails
-    def test_access_set_speed(self,level=5):
+    @dec.slow
+    def test_access_set_speed(self):
         N = 1000000
         print '%s access/set -- b[i] = a[i] for N =', (self.seq_type,N)
         a = self.seq_type([0]) * N
@@ -181,7 +186,8 @@ class _TestSequenceBase(TestCase):
 class TestTuple(_TestSequenceBase):
     seq_type = tuple
 
-    def test_set_item_operator_equal_fail(self,level=5):
+    @dec.slow
+    def test_set_item_operator_equal_fail(self):
         # Tuples should only allow setting of variables
         # immediately after creation.
         a = (1,2,3)
@@ -189,7 +195,8 @@ class TestTuple(_TestSequenceBase):
             inline_tools.inline("a[1] = 1234;",['a'])
         except TypeError:
             pass
-    def test_set_item_operator_equal(self,level=5):
+    @dec.slow
+    def test_set_item_operator_equal(self):
         code = """
                py::tuple a(3);
                a[0] = 1;
@@ -202,7 +209,8 @@ class TestTuple(_TestSequenceBase):
         # returned value should only have a single refcount
         assert sys.getrefcount(a) == 2
 
-    def test_set_item_index_error(self,level=5):
+    @dec.slow
+    def test_set_item_index_error(self):
         code = """
                py::tuple a(3);
                a[4] = 1;
@@ -213,7 +221,8 @@ class TestTuple(_TestSequenceBase):
             assert 0
         except IndexError:
             pass
-    def test_get_item_operator_index_error(self,level=5):
+    @dec.slow
+    def test_get_item_operator_index_error(self):
         code = """
                py::tuple a(3);
                py::object b = a[4]; // should fail.
@@ -226,7 +235,8 @@ class TestTuple(_TestSequenceBase):
 
 class TestList(_TestSequenceBase):
     seq_type = list
-    def test_append_passed_item(self,level=5):
+    @dec.slow
+    def test_append_passed_item(self):
         a = []
         item = 1
 
@@ -243,7 +253,8 @@ class TestList(_TestSequenceBase):
         after2 = sys.getrefcount(item)
         assert after1 == before1
         assert after2 == before2
-    def test_append(self,level=5):
+    @dec.slow
+    def test_append(self):
         a = []
         # temporary refcount fix until I understand why it incs by one.
         inline_tools.inline("a.append(1);",['a'])
@@ -277,7 +288,8 @@ class TestList(_TestSequenceBase):
 
         after1 = sys.getrefcount(a)
         assert after1 == before1
-    def test_insert(self,level=5):
+    @dec.slow
+    def test_insert(self):
         a = [1,2,3]
 
         a.insert(1,234)
@@ -316,7 +328,8 @@ class TestList(_TestSequenceBase):
         after1 = sys.getrefcount(a)
         assert after1 == before1
 
-    def test_set_item_operator_equal(self,level=5):
+    @dec.slow
+    def test_set_item_operator_equal(self):
         a = self.seq_type([1,2,3])
         # temporary refcount fix until I understand why it incs by one.
         inline_tools.inline("a[1] = 1234;",['a'])
@@ -348,7 +361,8 @@ class TestList(_TestSequenceBase):
 
         after1 = sys.getrefcount(a)
         assert after1 == before1
-    def test_set_item_operator_equal_created(self,level=5):
+    @dec.slow
+    def test_set_item_operator_equal_created(self):
         code = """
                py::list a(3);
                a[0] = 1;
@@ -360,7 +374,8 @@ class TestList(_TestSequenceBase):
         assert a == [1,2,3]
         # returned value should only have a single refcount
         assert sys.getrefcount(a) == 2
-    def test_set_item_index_error(self,level=5):
+    @dec.slow
+    def test_set_item_index_error(self):
         code = """
                py::list a(3);
                a[4] = 1;
@@ -370,7 +385,8 @@ class TestList(_TestSequenceBase):
             assert 0
         except IndexError:
             pass
-    def test_get_item_index_error(self,level=5):
+    @dec.slow
+    def test_get_item_index_error(self):
         code = """
                py::list a(3);
                py::object o = a[4];
@@ -381,7 +397,8 @@ class TestList(_TestSequenceBase):
         except IndexError:
             pass
 
-    def test_string_add_speed(self,level=5):
+    @dec.slow
+    def test_string_add_speed(self):
         N = 1000000
         print 'string add -- b[i] = a[i] + "blah" for N =', N
         a = ["blah"] * N
@@ -407,7 +424,8 @@ class TestList(_TestSequenceBase):
         t2 = time.time()
         print 'weave:', t2 - t1
         assert b == desired
-    def test_int_add_speed(self,level=5):
+    @dec.slow
+    def test_int_add_speed(self):
         N = 1000000
         print 'int add -- b[i] = a[i] + 1 for N =', N
         a = [0] * N

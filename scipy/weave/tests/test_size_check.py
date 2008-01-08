@@ -13,7 +13,7 @@ empty = array(())
 
 class TestMakeSameLength(TestCase):
 
-    def generic_test(self,x,y,desired):
+    def generic_check(self,x,y,desired):
         actual = size_check.make_same_length(x,y)
         desired = desired
         assert_array_equal(actual,desired)
@@ -21,30 +21,30 @@ class TestMakeSameLength(TestCase):
     def test_scalar(self):
         x,y = (),()
         desired = empty,empty
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
     def test_x_scalar(self):
         x,y = (),(1,2)
         desired = array((1,1)),array((1,2))
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
     def test_y_scalar(self):
         x,y = (1,2),()
         desired = array((1,2)),array((1,1))
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
     def test_x_short(self):
         x,y = (1,2),(1,2,3)
         desired = array((1,1,2)),array((1,2,3))
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
     def test_y_short(self):
         x,y = (1,2,3),(1,2)
         desired = array((1,2,3)),array((1,1,2))
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
 
 class TestBinaryOpSize(TestCase):
-    def generic_test(self,x,y,desired):
+    def generic_check(self,x,y,desired):
         actual = size_check.binary_op_size(x,y)
         desired = desired
         assert_array_equal(actual,desired)
-    def generic_error_test(self,x,y):
+    def generic_error_check(self,x,y):
         self.failUnlessRaises(ValueError, size_check.binary_op_size, x, y)
 
     def desired_type(self,val):
@@ -52,54 +52,54 @@ class TestBinaryOpSize(TestCase):
     def test_scalar(self):
         x,y = (),()
         desired = self.desired_type(())
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
     def test_x1(self):
         x,y = (1,),()
         desired = self.desired_type((1,))
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
     def test_y1(self):
         x,y = (),(1,)
         desired = self.desired_type((1,))
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
     def test_x_y(self):
         x,y = (5,),(5,)
         desired = self.desired_type((5,))
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
     def test_x_y2(self):
         x,y = (5,10),(5,10)
         desired = self.desired_type((5,10))
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
     def test_x_y3(self):
         x,y = (5,10),(1,10)
         desired = self.desired_type((5,10))
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
     def test_x_y4(self):
         x,y = (1,10),(5,10)
         desired = self.desired_type((5,10))
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
     def test_x_y5(self):
         x,y = (5,1),(1,10)
         desired = self.desired_type((5,10))
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
     def test_x_y6(self):
         x,y = (1,10),(5,1)
         desired = self.desired_type((5,10))
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
     def test_x_y7(self):
         x,y = (5,4,3,2,1),(3,2,1)
         desired = self.desired_type((5,4,3,2,1))
-        self.generic_test(x,y,desired)
+        self.generic_check(x,y,desired)
 
     def test_error1(self):
         x,y = (5,),(4,)
-        self.generic_error_test(x,y)
+        self.generic_error_check(x,y)
 
     def test_error2(self):
         x,y = (5,5),(4,5)
-        self.generic_error_test(x,y)
+        self.generic_error_check(x,y)
 
 class TestDummyArray(TestBinaryOpSize):
-    def generic_test(self,x,y,desired):
+    def generic_check(self,x,y,desired):
         if type(x) is type(()):
             x = ones(x)
         if type(y) is type(()):
@@ -116,7 +116,7 @@ class TestDummyArray(TestBinaryOpSize):
         return size_check.dummy_array(array(val),1)
 
 class TestDummyArrayIndexing(TestCase):
-    def generic_test(self,ary,expr,desired):
+    def generic_check(self,ary,expr,desired):
         a = size_check.dummy_array(ary)
         actual = eval(expr).shape
         #print desired, actual
@@ -124,7 +124,7 @@ class TestDummyArrayIndexing(TestCase):
     def generic_wrap(self,a,expr):
         desired = array(eval(expr).shape)
         try:
-            self.generic_test(a,expr,desired)
+            self.generic_check(a,expr,desired)
         except IndexError:
             if 0 not in desired:
                 msg = '%s raised IndexError in dummy_array, but forms\n' \
@@ -144,7 +144,7 @@ class TestDummyArrayIndexing(TestCase):
         a = arange(10)
         #print expr ,eval(expr)
         desired = array(())
-        self.generic_test(a,expr,desired)
+        self.generic_check(a,expr,desired)
     def test_1d_index_0(self):
         self.generic_1d_index('a[0]')
     def test_1d_index_1(self):
@@ -302,7 +302,7 @@ class TestReduction(TestCase):
             pass
 
 class TestExpressions(TestCase):
-    def generic_test(self,expr,desired,**kw):
+    def generic_check(self,expr,desired,**kw):
         import parser
         ast_list = parser.expr(expr).tolist()
         args = harvest_variables(ast_list)
@@ -331,7 +331,7 @@ class TestExpressions(TestCase):
                 desired = zeros(())
         except:
             desired = 'failed'
-        self.generic_test(expr,desired,**kw)
+        self.generic_check(expr,desired,**kw)
     def test_generic_1d(self):
         a = arange(10)
         expr = 'a[:]'
