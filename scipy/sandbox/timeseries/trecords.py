@@ -28,13 +28,15 @@ from numpy.core.records import fromarrays as recfromarrays
 
 import scipy.sandbox.maskedarray as MA
 #MaskedArray = MA.MaskedArray
-from scipy.sandbox.maskedarray.core import MaskedArray, MAError, default_fill_value, \
-    masked_print_option, masked, nomask, getmask, getmaskarray, make_mask,\
-    make_mask_none, mask_or, masked_array, filled
+from scipy.sandbox.maskedarray.core import MaskedArray, MAError, \
+     default_fill_value, masked_print_option, masked, nomask, \
+     getmask, getmaskarray, make_mask,\
+     make_mask_none, mask_or, masked_array, filled
 
 import scipy.sandbox.maskedarray.mrecords as MR
-from scipy.sandbox.maskedarray.mrecords import _checknames, _guessvartypes, openfile,\
-    MaskedRecords, fromrecords as mrecfromrecords
+from scipy.sandbox.maskedarray.mrecords import _checknames, \
+     _guessvartypes, openfile, MaskedRecords, \
+     fromrecords as mrecfromrecords
 
 from tseries import TimeSeries, time_series, _getdatalength
 from dates import Date, DateArray, date_array
@@ -425,7 +427,7 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
       Alphanumeric character used to mark the start of a comment.
     - `missingchar` : String *['']*
       String indicating missing data, and used to create the masks.
-    - `datescol` : Integer *[None]*
+    - `dates_column` : Integer *[None]*
       Position of the columns storing dates. If None, a position will be
       estimated from the variable names.
     - `varnames` : Sequence *[None]*
