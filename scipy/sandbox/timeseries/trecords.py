@@ -494,7 +494,11 @@ def fromtextfile(fname, delimitor=None, commentchar='#', missingchar='',
     #
     newdates = __getdates(dates=dates, newdates=newdates, length=nvars,
                           freq=None, start_date=None)
-    return TimeSeriesRecords(_datalist, dates=newdates, dtype=mdescr)
+
+    # Sort the datalist according to newdates._unsorted
+    idx = newdates._unsorted
+    _sorted_datalist = [a[idx] for a in _datalist]
+    return TimeSeriesRecords(_sorted_datalist, dates=newdates, dtype=mdescr)
 
 
 
