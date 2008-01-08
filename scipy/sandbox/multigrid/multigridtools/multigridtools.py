@@ -90,23 +90,32 @@ def sa_strong_connections(*args):
     """
   return _multigridtools.sa_strong_connections(*args)
 
+def block_gauss_seidel(*args):
+  """
+    block_gauss_seidel(int Ap, int Aj, float Ax, float x, float b, int row_start, 
+        int row_stop, int row_step, int blocksize)
+    block_gauss_seidel(int Ap, int Aj, double Ax, double x, double b, int row_start, 
+        int row_stop, int row_step, int blocksize)
+    """
+  return _multigridtools.block_gauss_seidel(*args)
+
 def gauss_seidel(*args):
   """
-    gauss_seidel(int n_row, int Ap, int Aj, float Ax, float x, float b, 
-        int row_start, int row_stop, int row_step)
-    gauss_seidel(int n_row, int Ap, int Aj, double Ax, double x, double b, 
-        int row_start, int row_stop, int row_step)
+    gauss_seidel(int Ap, int Aj, float Ax, float x, float b, int row_start, 
+        int row_stop, int row_step)
+    gauss_seidel(int Ap, int Aj, double Ax, double x, double b, int row_start, 
+        int row_stop, int row_step)
     """
   return _multigridtools.gauss_seidel(*args)
 
 def jacobi(*args):
   """
-    jacobi(int n_row, int Ap, int Aj, float Ax, float x, float b, 
-        float temp, int row_start, int row_stop, 
-        int row_step, float omega)
-    jacobi(int n_row, int Ap, int Aj, double Ax, double x, double b, 
-        double temp, int row_start, int row_stop, 
-        int row_step, double omega)
+    jacobi(int Ap, int Aj, float Ax, float x, float b, float temp, 
+        int row_start, int row_stop, int row_step, 
+        float omega)
+    jacobi(int Ap, int Aj, double Ax, double x, double b, double temp, 
+        int row_start, int row_stop, int row_step, 
+        double omega)
     """
   return _multigridtools.jacobi(*args)
 
