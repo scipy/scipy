@@ -13,7 +13,7 @@ __date__     = '$Date: 2007-03-03 18:00:20 -0500 (Sat, 03 Mar 2007) $'
 import numpy as N
 import numpy.core.numeric as numeric
 
-from numpy.testing import NumpyTest, NumpyTestCase
+from scipy.testing import NumpyTest, TestCase
 
 import maskedarray.testutils
 from maskedarray.testutils import *
@@ -28,10 +28,10 @@ from timeseries import time_series, thisday
 
 from timeseries.lib import moving_funcs as MF
 
-class TestCMovAverage(NumpyTestCase):
+class TestCMovAverage(TestCase):
 
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         self.data = numeric.arange(25)
         self.maskeddata = MaskedArray(self.data)
         self.maskeddata[10] = masked
@@ -84,10 +84,10 @@ class TestCMovAverage(NumpyTestCase):
 
 
 
-class TestMovFuncs(NumpyTestCase):
+class TestMovFuncs(TestCase):
 
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         self.data = numeric.arange(25)
         self.maskeddata = MaskedArray(self.data)
         self.maskeddata[10] = masked
@@ -150,4 +150,4 @@ class TestMovFuncs(NumpyTestCase):
 
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

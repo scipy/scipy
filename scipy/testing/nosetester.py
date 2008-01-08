@@ -49,11 +49,13 @@ class NoseTester(object):
         ''' Module testing function
 
         labels - identifies tests to run.  This can be a string to
-          pass to the nostests executable with the '-a'
+          pass to the nostests executable with the '-A'
           option, or one of several special values.
           Special values are:
           'fast' - the default - which corresponds to
-             nosetests -a option of 'not slow and not bench'.
+             nosetests -A option of 'not slow and not bench'.
+          'full' - fast (as above) and slow tests as in
+             nosetests -A option of 'not bench'.             
           None or '' - run all tests and benchmarks
 
         verbose - verbosity value 1-10
@@ -64,6 +66,8 @@ class NoseTester(object):
         if labels:
             if labels == 'fast':
                 labels = 'not slow and not bench'
+            elif labels == 'full':
+                labels = 'not bench'
             argv += ['-A', labels]
         argv += ['--verbosity', str(verbose)]
         if doctests:
