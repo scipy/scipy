@@ -46,7 +46,8 @@ import time
 class TestSparseTools(TestCase):
     """Simple benchmarks for sparse matrix module"""
 
-    def bench_arithmetic(self):
+    @dec.bench
+    def test_arithmetic(self):
         matrices = []
         #matrices.append( ('A','Identity', spidentity(500**2,format='csr')) )
         matrices.append( ('A','Poisson5pt', poisson2d(500,format='csr'))  )
@@ -93,8 +94,8 @@ class TestSparseTools(TestCase):
                     print fmt % (format,operation,msec_per_it)
 
   
-
-    def bench_sort(self):
+    @dec.bench
+    def test_sort(self):
         """sort CSR column indices"""
         matrices = []
         matrices.append( ('Rand10',  1e4,  10) )
@@ -127,8 +128,8 @@ class TestSparseTools(TestCase):
 
             print fmt % (A.format,name,shape,A.nnz,1e3*(end-start)/float(iter) )
 
-
-    def bench_matvec(self):
+    @dec.bench
+    def test_matvec(self):
         matrices = []
         matrices.append(('Identity',   spidentity(10**4,format='dia')))
         matrices.append(('Identity',   spidentity(10**4,format='csr')))
@@ -174,8 +175,9 @@ class TestSparseTools(TestCase):
             MFLOPs = (2*A.nnz*iter/(end-start))/float(1e6)
 
             print fmt % (A.format,name,shape,A.nnz,MFLOPs)
-            
-    def bench_construction(self):
+
+    @dec.bench
+    def test_construction(self):
         """build matrices by inserting single values"""
         matrices = []
         matrices.append( ('Empty',csr_matrix((10000,10000))) )
@@ -210,8 +212,8 @@ class TestSparseTools(TestCase):
 
                 print fmt % (format,name,shape,A.nnz,(end-start)/float(iter))
 
-
-    def bench_conversion(self):
+    @dec.bench
+    def test_conversion(self):
         A = poisson2d(100)
 
         formats = ['csr','csc','coo','lil','dok']

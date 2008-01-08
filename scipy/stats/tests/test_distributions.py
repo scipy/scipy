@@ -2,16 +2,12 @@
 
 """
 
-
 from scipy.testing import *
 
 
 import numpy
 from numpy import typecodes, array
 import scipy.stats as stats
-
-
-import types
 
 def kolmogorov_check(diststr,args=(),N=20,significance=0.01):
     qtest = stats.ksoneisf(significance,N)
@@ -41,9 +37,9 @@ dists = ['uniform','norm','lognorm','expon','beta',
 
 # check function for test generator
 def check_distribution(dist, args, alpha):
-    D,pval = stats.kstest(dist,'',args=args, N=30)
+    D,pval = stats.kstest(dist,'', args=args, N=30)
     if (pval < alpha):
-        D,pval = stats.kstest(dit,'',args=args, N=30)
+        D,pval = stats.kstest(dist,'',args=args, N=30)
         #if (pval < alpha):
         #    D,pval = stats.kstest(dist,'',args=args, N=30)
         assert (pval > alpha), "D = " + str(D) + "; pval = " + str(pval) + \
@@ -69,7 +65,7 @@ def test_all_distributions():
             args = tuple(vals)
         else:
             args = tuple(1.0+rand(nargs))
-        yield check_distribution, dist, args, alpha\
+        yield check_distribution, dist, args, alpha
 
 class TestRandInt(TestCase):
     def test_rvs(self):

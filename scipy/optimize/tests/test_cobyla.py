@@ -5,7 +5,7 @@ from scipy.testing import *
 from scipy.optimize import cobyla as co
 
 class TestCobyla(TestCase):
-    def test_simple(self, level=1):
+    def test_simple(self):
 
         function = lambda x: x[0]**2 + abs(x[1])**3
         con1 = lambda x: x[0]**2 + x[1]**2 - 25

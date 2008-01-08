@@ -69,7 +69,8 @@ class TestBasic(TestCase) :
     def test_brenth(self):
         self.run_check(cc.brenth, 'brenth')
 
-    def bench_run(self,level=5):
+    @dec.bench
+    def test_run(self):
         a = .5
         b = sqrt(3)
         repeat = 2000
@@ -84,7 +85,7 @@ class TestBasic(TestCase) :
             for j in range(len(methods)) :
                 meth = methods[j]
                 try:
-                    t = self.measure("meth(func,a,b)",repeat)
+                    t = measure("meth(func,a,b)",repeat)
                 except:
                     print '%s : failed'%mstrings[j]
                 else:

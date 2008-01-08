@@ -37,3 +37,6 @@ from morphology import *
 
 from info import __doc__
 __version__ = '2.0'
+
+from scipy.testing.pkgtester import Tester
+test = Tester().test

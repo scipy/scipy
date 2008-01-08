@@ -11,7 +11,7 @@ from scipy.sparse import csr_matrix, \
 #TODO check whether format=XXX is respected
 
 class TestConstructUtils(TestCase):
-    def check_spdiags(self):
+    def test_spdiags(self):
         diags1 = array( [[ 1, 2, 3, 4, 5]] )
         diags2 = array( [[ 1, 2, 3, 4, 5],
                          [ 6, 7, 8, 9,10]] )

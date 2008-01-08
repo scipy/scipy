@@ -1,8 +1,5 @@
 """Decorators for labeling test objects."""
 
-''' String expression which is true for all undecorated tests '''
-undecorated_def = 'not slow'
-
 def slow(t):
     """Labels a test as 'slow'.
 
@@ -14,3 +11,11 @@ def slow(t):
     t.slow = True
     return t
 
+def bench(t):
+    ''' Labels a test as a benchmark.
+
+    Benchmark tests are often slow, and intended to test timings
+    between different algorithms rather than validity of the result. '''
+    
+    t.bench = True
+    return t

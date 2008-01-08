@@ -94,13 +94,13 @@ class TestLevene(TestCase):
         assert_almost_equal(W,1.7059176930008939,7)
         assert_almost_equal(pval,0.0990829755522,7)
 
-class TestBinomTest(TestCase):
+class TestBinomP(TestCase):
     def test_data(self):
-        pval = stats.binom_test(100,250)
+        pval = stats.binom_p(100,250)
         assert_almost_equal(pval,0.0018833009350757682,11)
-        pval = stats.binom_test(201,405)
+        pval = stats.binom_p(201,405)
         assert_almost_equal(pval,0.92085205962670713,11)
-        pval = stats.binom_test([682,243],p=3.0/4)
+        pval = stats.binom_p([682,243],p=3.0/4)
         assert_almost_equal(pval,0.38249155957481695,11)
 
 class TestFindRepeats(TestCase):

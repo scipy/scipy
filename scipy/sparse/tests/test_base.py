@@ -8,9 +8,9 @@ __usage__ = """
 Build sparse:
   python setup.py build
 Run tests if scipy is installed:
-  python -c 'import scipy;scipy.sparse.test(<level>)'
+  python -c 'import scipy;scipy.sparse.test()'
 Run tests if sparse is not installed:
-  python tests/test_sparse.py [<level>]
+  python tests/test_sparse.py
 """
 
 import numpy
@@ -1282,7 +1282,7 @@ class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
         A = kron( [[1,0,2,0],[0,1,0,0],[0,0,0,0]], [[0,1,2],[3,0,5]] )
         assert_equal(bsr_matrix(A,blocksize=(2,3)).todense(),A)
         
-    def check_eliminate_zeros(self):
+    def test_eliminate_zeros(self):
         data = kron([1, 0, 0, 0, 2, 0, 3, 0], [[1,1],[1,1]]).T
         data = data.reshape(-1,2,2)
         indices = array( [1, 2, 3, 4, 5, 6, 7, 8] )

@@ -40,19 +40,19 @@ CODET2  = N.array([[11.0/3, 8.0/3],
 LABEL1  = N.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
 class TestVq(TestCase):
-    def test_py_vq(self, level=1):
+    def test_py_vq(self):
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
         label1 = py_vq(X, initc)[0]
         assert_array_equal(label1, LABEL1)
 
-    def test_py_vq2(self, level=1):
+    def test_py_vq2(self):
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
         label1 = py_vq2(X, initc)[0]
         assert_array_equal(label1, LABEL1)
 
-    def test_vq(self, level=1):
+    def test_vq(self):
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
         if TESTC:
@@ -62,7 +62,7 @@ class TestVq(TestCase):
         else:
             print "== not testing C imp of vq =="
 
-    #def test_py_vq_1d(self, level=1):
+    #def test_py_vq_1d(self):
     #    """Test special rank 1 vq algo, python implementation."""
     #    data = X[:, 0]
     #    initc = data[:3]
@@ -72,7 +72,7 @@ class TestVq(TestCase):
     #    assert_array_equal(a, ta)
     #    assert_array_equal(b, tb)
 
-    def test_vq_1d(self, level=1):
+    def test_vq_1d(self):
         """Test special rank 1 vq algo, python implementation."""
         data = X[:, 0]
         initc = data[:3]
@@ -86,14 +86,14 @@ class TestVq(TestCase):
             print "== not testing C imp of vq (rank 1) =="
 
 class TestKMean(TestCase):
-    def test_kmeans_simple(self, level=1):
+    def test_kmeans_simple(self):
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
         code1 = kmeans(X, code, iter = 1)[0]
 
         assert_array_almost_equal(code1, CODET2)
 
-    def test_kmeans_lost_cluster(self, level=1):
+    def test_kmeans_lost_cluster(self):
         """This will cause kmean to have a cluster with no points."""
         data = N.fromfile(open(DATAFILE1), sep = ", ")
         data = data.reshape((200, 2))
@@ -109,7 +109,7 @@ class TestKMean(TestCase):
         except ClusterError, e:
             print "exception raised as expected: " + str(e)
 
-    def test_kmeans2_simple(self, level=1):
+    def test_kmeans2_simple(self):
         """Testing simple call to kmeans2 and its results."""
         initc = N.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
@@ -119,7 +119,7 @@ class TestKMean(TestCase):
         assert_array_almost_equal(code1, CODET1)
         assert_array_almost_equal(code2, CODET2)
 
-    def test_kmeans2_rank1(self, level=1):
+    def test_kmeans2_rank1(self):
         """Testing simple call to kmeans2 with rank 1 data."""
         data = N.fromfile(open(DATAFILE1), sep = ", ")
         data = data.reshape((200, 2))

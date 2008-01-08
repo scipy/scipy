@@ -14,9 +14,9 @@ __usage__ = """
 Build linalg:
   python setup_linalg.py build
 Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test(<level>)'
+  python -c 'import scipy;scipy.linalg.test()'
 Run tests if linalg is not installed:
-  python tests/test_basic.py [<level>]
+  python tests/test_basic.py
 """
 
 import numpy
@@ -153,7 +153,8 @@ class TestSolve(TestCase):
             x = solve(a,b,sym_pos=1)
             assert_array_almost_equal(numpy.dot(a,x),b)
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_bench_random(self):
         import numpy.linalg as linalg
         basic_solve = linalg.solve
         print
@@ -174,19 +175,19 @@ class TestSolve(TestCase):
             for i in range(size): a[i,i] = 10*(.1+a[i,i])
             b = random([size])
 
-            print '| %6.2f ' % self.measure('solve(a,b)',repeat),
+            print '| %6.2f ' % measure('solve(a,b)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('basic_solve(a,b)',repeat),
+            print '| %6.2f ' % measure('basic_solve(a,b)',repeat),
             sys.stdout.flush()
 
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
             assert not a.flags['CONTIGUOUS']
 
-            print '| %6.2f ' % self.measure('solve(a,b)',repeat),
+            print '| %6.2f ' % measure('solve(a,b)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('basic_solve(a,b)',repeat),
+            print '| %6.2f ' % measure('basic_solve(a,b)',repeat),
             sys.stdout.flush()
 
             print '   (secs for %s calls)' % (repeat)
@@ -226,7 +227,8 @@ class TestInv(TestCase):
             assert_array_almost_equal(numpy.dot(a,a_inv),
                                       numpy.identity(n))
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_bench_random(self):
         import numpy.linalg as linalg
         basic_inv = linalg.inv
         print
@@ -245,19 +247,19 @@ class TestInv(TestCase):
             # large diagonal ensures non-singularity:
             for i in range(size): a[i,i] = 10*(.1+a[i,i])
 
-            print '| %6.2f ' % self.measure('inv(a)',repeat),
+            print '| %6.2f ' % measure('inv(a)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('basic_inv(a)',repeat),
+            print '| %6.2f ' % measure('basic_inv(a)',repeat),
             sys.stdout.flush()
 
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
             assert not a.flags['CONTIGUOUS']
 
-            print '| %6.2f ' % self.measure('inv(a)',repeat),
+            print '| %6.2f ' % measure('inv(a)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('basic_inv(a)',repeat),
+            print '| %6.2f ' % measure('basic_inv(a)',repeat),
             sys.stdout.flush()
 
             print '   (secs for %s calls)' % (repeat)
@@ -295,7 +297,8 @@ class TestDet(TestCase):
             d2 = basic_det(a)
             assert_almost_equal(d1,d2)
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_bench_random(self):
         import numpy.linalg as linalg
         basic_det = linalg.det
         print
@@ -312,19 +315,19 @@ class TestDet(TestCase):
 
             a = random([size,size])
 
-            print '| %6.2f ' % self.measure('det(a)',repeat),
+            print '| %6.2f ' % measure('det(a)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('basic_det(a)',repeat),
+            print '| %6.2f ' % measure('basic_det(a)',repeat),
             sys.stdout.flush()
 
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
             assert not a.flags['CONTIGUOUS']
 
-            print '| %6.2f ' % self.measure('det(a)',repeat),
+            print '| %6.2f ' % measure('det(a)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('basic_det(a)',repeat),
+            print '| %6.2f ' % measure('basic_det(a)',repeat),
             sys.stdout.flush()
 
             print '   (secs for %s calls)' % (repeat)

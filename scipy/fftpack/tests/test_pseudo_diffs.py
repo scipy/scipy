@@ -184,7 +184,8 @@ class TestDiff(TestCase):
                 assert_array_almost_equal(diff(diff(f,k),-k),f)
                 assert_array_almost_equal(diff(diff(f,-k),k),f)
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_random(self):
         print
         print 'Differentiation of periodic functions'
         print '====================================='
@@ -207,9 +208,9 @@ class TestDiff(TestCase):
                 f = sin(x)*cos(4*x)
             assert_array_almost_equal(diff(f,1),direct_diff(f,1))
             assert_array_almost_equal(diff(f,2),direct_diff(f,2))
-            print '| %9.2f' % self.measure('diff(f,3)',repeat),
+            print '| %9.2f' % measure('diff(f,3)',repeat),
             sys.stdout.flush()
-            print '| %9.2f' % self.measure('direct_diff(f,3)',repeat),
+            print '| %9.2f' % measure('direct_diff(f,3)',repeat),
             sys.stdout.flush()
             print ' (secs for %s calls)' % (repeat)
 
@@ -247,7 +248,8 @@ class TestTilbert(TestCase):
                 assert_array_almost_equal(itilbert(tilbert(f,h),h),f)
                 assert_array_almost_equal(tilbert(itilbert(f,h),h),f)
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_random(self):
         print
         print ' Tilbert transform of periodic functions'
         print '========================================='
@@ -269,9 +271,9 @@ class TestTilbert(TestCase):
             else:
                 f = sin(x)*cos(4*x)
             assert_array_almost_equal(tilbert(f,1),direct_tilbert(f,1))
-            print '| %9.2f' % self.measure('tilbert(f,1)',repeat),
+            print '| %9.2f' % measure('tilbert(f,1)',repeat),
             sys.stdout.flush()
-            print '| %9.2f' % self.measure('direct_tilbert(f,1)',repeat),
+            print '| %9.2f' % measure('direct_tilbert(f,1)',repeat),
             sys.stdout.flush()
             print ' (secs for %s calls)' % (repeat)
 
@@ -330,7 +332,8 @@ class TestHilbert(TestCase):
             assert_array_almost_equal(direct_hilbert(direct_ihilbert(f)),f)
             assert_array_almost_equal(hilbert(ihilbert(f)),f)
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_random(self):
         print
         print ' Hilbert transform of periodic functions'
         print '========================================='
@@ -352,9 +355,9 @@ class TestHilbert(TestCase):
             else:
                 f = sin(x)*cos(4*x)
             assert_array_almost_equal(hilbert(f),direct_hilbert(f))
-            print '| %9.2f' % self.measure('hilbert(f)',repeat),
+            print '| %9.2f' % measure('hilbert(f)',repeat),
             sys.stdout.flush()
-            print '| %9.2f' % self.measure('direct_hilbert(f)',repeat),
+            print '| %9.2f' % measure('direct_hilbert(f)',repeat),
             sys.stdout.flush()
             print ' (secs for %s calls)' % (repeat)
 
@@ -395,7 +398,8 @@ class TestShift(TestCase):
             assert_array_almost_equal(shift(sin(x),pi),-sin(x))
             assert_array_almost_equal(shift(sin(x),pi/2),cos(x))
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_random(self):
         print
         print ' Shifting periodic functions'
         print '=============================='
@@ -421,9 +425,9 @@ class TestShift(TestCase):
                 sf = sin(x+a)*cos(4*(x+a))
             assert_array_almost_equal(direct_shift(f,1),sf)
             assert_array_almost_equal(shift(f,1),sf)
-            print '| %9.2f' % self.measure('shift(f,a)',repeat),
+            print '| %9.2f' % measure('shift(f,a)',repeat),
             sys.stdout.flush()
-            print '| %9.2f' % self.measure('direct_shift(f,a)',repeat),
+            print '| %9.2f' % measure('direct_shift(f,a)',repeat),
             sys.stdout.flush()
             print ' (secs for %s calls)' % (repeat)
 

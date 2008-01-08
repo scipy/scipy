@@ -9,9 +9,9 @@ __usage__ = """
 Build linalg:
   python setup_linalg.py build
 Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test(<level>)'
+  python -c 'import scipy;scipy.linalg.test()'
 Run tests if linalg is not installed:
-  python tests/test_decomp.py [<level>]
+  python tests/test_decomp.py 
 """
 
 import sys
@@ -59,7 +59,8 @@ class TestEigVals(TestCase):
                    (9+1j-sqrt(92+6j))/2]
         assert_array_almost_equal(w,exact_w)
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_bench_random(self):
         import numpy.linalg as linalg
         Numeric_eigvals = linalg.eigvals
         print
@@ -76,7 +77,7 @@ class TestEigVals(TestCase):
 
             a = random([size,size])
 
-            print '| %6.2f ' % self.measure('eigvals(a)',repeat),
+            print '| %6.2f ' % measure('eigvals(a)',repeat),
             sys.stdout.flush()
 
             print '   (secs for %s calls)' % (repeat)
