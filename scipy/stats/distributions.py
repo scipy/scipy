@@ -303,15 +303,17 @@ class rv_continuous(object):
         self.vecentropy = sgf(self._entropy,otypes='d')
         self.veccdf = sgf(self._cdf_single_call,otypes='d')
         self.expandarr = 1
-        if momtype == 0:
-            self.generic_moment = sgf(self._mom0_sc,otypes='d')
-        else:
-            self.generic_moment = sgf(self._mom1_sc,otypes='d')
         cdf_signature = inspect.getargspec(self._cdf.im_func)
         numargs1 = len(cdf_signature[0]) - 2
         pdf_signature = inspect.getargspec(self._pdf.im_func)
         numargs2 = len(pdf_signature[0]) - 2
         self.numargs = max(numargs1, numargs2)
+        if momtype == 0:
+            self.generic_moment = sgf(self._mom0_sc,otypes='d')
+        else:
+            self.generic_moment = sgf(self._mom1_sc,otypes='d')
+        self.generic_moment.nin = self.numargs+1 # Because of the *args argument
+        # of _mom0_sc, vectorize cannot count the number of arguments correctly.
 
         if longname is None:
             if name[0] in ['aeiouAEIOU']: hstr = "An "
