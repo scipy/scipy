@@ -103,8 +103,8 @@ def sa_constant_interpolation(A,epsilon,blocks=None):
 
 
 def sa_fit_candidates(AggOp,candidates,tol=1e-10):
-    #TODO handle non-floating point candidates better
-    candidates = candidates.astype('float64')
+    if candidates.dtype != 'float32':
+        candidates = asarray(candidates,dtype='float64')
 
     K = candidates.shape[1] # num candidates
 
