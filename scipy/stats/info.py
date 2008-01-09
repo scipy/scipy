@@ -198,7 +198,7 @@ bartlett    -- _
 levene    -- _
 shapiro    -- _
 anderson    -- _
-binom_p    -- _
+binom_test    -- _
 fligner    -- _
 mood    -- _
 oneway    -- _

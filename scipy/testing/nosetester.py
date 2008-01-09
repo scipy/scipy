@@ -9,7 +9,7 @@ class NoseTester(object):
 
     Usage: NoseTester(<package path>).test()
 
-    <package> is package path - None finds calling module path
+    <package path> is package path - None finds calling module path
     """
     def __init__(self, package_path=None):
         if package_path is None:
@@ -50,4 +50,5 @@ class NoseTester(object):
         if extra_argv:
             argv+= extra_argv
         nose.run(argv=argv)
+
         

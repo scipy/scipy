@@ -17,11 +17,12 @@ import scipy.optimize as optimize
 import scipy.special as special
 import futil
 import numpy as sb
+from scipy.testing.decorators import not_a_test
 
 __all__ = ['find_repeats',
            'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
-           'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_p',
+           'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'oneway', 'wilcoxon',
            'pdf_moments', 'pdf_fromgamma', 'pdfapprox',
            'circmean', 'circvar', 'circstd',
@@ -769,7 +770,8 @@ def levene(*args,**kwds):
     pval = distributions.f.sf(W,k-1,Ntot-k) # 1 - cdf
     return W, pval
 
-def binom_p(x,n=None,p=0.5):
+@not_a_test
+def binom_test(x,n=None,p=0.5):
     """An exact (two-sided) test of the null hypothesis that the
     probability of success in a Bernoulli experiment is p.
 

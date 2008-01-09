@@ -25,5 +25,10 @@ def willfail(t):
 
     This label allows the tester to deselect the test in standard cases '''
     t.willfail = True
-    t.__doc__ += '\n\nThis test will likely fail'
+    return t
+
+def not_a_test(t):
+    ''' Signals to nose that this function is not a test
+    '''
+    t.__test__ = False
     return t
