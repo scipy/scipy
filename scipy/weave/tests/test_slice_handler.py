@@ -1,9 +1,9 @@
 
 from scipy.testing import *
 
-from weave import slice_handler
-from weave.slice_handler import indexed_array_pattern
-from weave.ast_tools import *
+from scipy.weave import slice_handler
+from scipy.weave.slice_handler import indexed_array_pattern
+from scipy.weave.ast_tools import *
 
 
 def print_assert_equal(test_string,actual,desired):

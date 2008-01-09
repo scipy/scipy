@@ -2,8 +2,8 @@ import os
 from numpy import *
 from scipy.testing import *
 
-from weave import size_check
-from weave.ast_tools import *
+from scipy.weave import size_check
+from scipy.weave.ast_tools import *
 
 
 import numpy as nx

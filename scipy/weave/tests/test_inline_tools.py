@@ -3,11 +3,11 @@ from numpy import *
 
 from scipy.testing import *
 
-from weave import inline_tools
+from scipy.weave import inline_tools
 
 set_local_path()
 from test_scxx import *
-
+restore_path()
 
 class TestInline(TestCase):
     """ These are long running tests...

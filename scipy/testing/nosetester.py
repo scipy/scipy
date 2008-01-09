@@ -5,57 +5,32 @@ import sys
 import nose
 
 class NoseTester(object):
-    """ Scipy nose tests suite manager.
+    """ Scipy nose test runner.
 
-    Usage: NoseTester(<package>).test()
+    Usage: NoseTester(<package path>).test()
 
-    <package> is package path, package name or its module object.
+    <package> is package path - None finds calling module path
     """
-    def __init__(self, package=None):
-        if package is None:
+    def __init__(self, package_path=None):
+        if package_path is None:
             f = sys._getframe(1)
-            package = f.f_locals.get('__file__', None)
-            assert package is not None
-            self.package_path = os.path.dirname(package)
-        else:
-            self.package_path = self._process_package(package)
-
-    def _process_package(self, package):
-        ''' Package can be module, path, or package name '''
-        try:
-            pfile = package.__file__
-        except AttributeError:
-            pass
-        else:
-            return os.path.dirname(pfile)
-        if os.path.isabs(package):
-            return package
-        if package.find(os.path.sep) == -1:
-            # Try scipy package name
-            import scipy
-            scipy.pkgload(package)
-            try:
-                module = getattr(scipy, package)
-            except AttributeError:
-                pass
-            else:
-                self.package_path = os.path.dirname(module.__file__)
-                return
-        # Default to relative path
-        self.package_path = os.path.abspath(package)
-        return
-
+            package_path = f.f_locals.get('__file__', None)
+            assert package_path is not None
+            package_path = os.path.dirname(package_path)
+        self.package_path = package_path
+        
     def test(self, labels='fast', verbose=1, doctests=False, extra_argv=None):
         ''' Module testing function
 
         labels - identifies tests to run.  This can be a string to
-          pass to the nostests executable with the '-A'
+          pass to the nosetests executable with the '-A'
           option, or one of several special values.
           Special values are:
           'fast' - the default - which corresponds to
-             nosetests -A option of 'not slow and not bench'.
+             nosetests -A option of
+             'not slow and not bench and not willfail'.
           'full' - fast (as above) and slow tests as in
-             nosetests -A option of 'not bench'.             
+             nosetests -A option of 'not bench and not willfail'.             
           None or '' - run all tests and benchmarks
 
         verbose - verbosity value 1-10
@@ -65,9 +40,9 @@ class NoseTester(object):
         argv = ['scipy module test', self.package_path, '-s']
         if labels:
             if labels == 'fast':
-                labels = 'not slow and not bench'
+                labels = 'not slow and not bench and not willfail'
             elif labels == 'full':
-                labels = 'not bench'
+                labels = 'not bench and not willfail'
             argv += ['-A', labels]
         argv += ['--verbosity', str(verbose)]
         if doctests:

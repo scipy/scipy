@@ -6,7 +6,7 @@ import sys
 
 from scipy.testing import *
 
-from weave import inline_tools
+from scipy.weave import inline_tools
 
 
 
@@ -112,7 +112,8 @@ class TestDictGetItemOp(TestCase):
         self.generic_get('return_val = a["b"];')
 
     @dec.slow
-    def DOESNT_WORK_check_char_fail(self):
+    @dec.willfail
+    def test_char_fail(self):
         # We can't through a KeyError for dicts on RHS of
         # = but not on LHS.  Not sure how to deal with this.
         try:
@@ -134,7 +135,8 @@ class TestDictGetItemOp(TestCase):
         self.generic_get(code,['a'])
 
     @dec.slow
-    def DOESNT_WORK_check_obj_fail(self):
+    @dec.willfail
+    def test_obj_fail(self):
         # We can't through a KeyError for dicts on RHS of
         # = but not on LHS.  Not sure how to deal with this.
         try:

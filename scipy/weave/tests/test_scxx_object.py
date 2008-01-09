@@ -6,7 +6,7 @@ import sys
 
 from scipy.testing import *
 
-from weave import inline_tools
+from scipy.weave import inline_tools
 
 
 class TestObjectConstruct(TestCase):

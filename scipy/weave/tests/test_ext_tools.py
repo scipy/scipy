@@ -3,16 +3,16 @@ import time
 
 from scipy.testing import *
 
-from weave import ext_tools, c_spec
+from scipy.weave import ext_tools, c_spec
 try:
-    from weave.standard_array_spec import array_converter
+    from scipy.weave.standard_array_spec import array_converter
 except ImportError:
     pass # requires numpy.numerix
 
 
 set_local_path()
 from weave_test_utils import *
-
+restore_path()
 
 build_dir = empty_temp_dir()
 print 'building extensions here:', build_dir

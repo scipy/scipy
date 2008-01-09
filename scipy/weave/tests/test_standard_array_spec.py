@@ -2,8 +2,7 @@
 from numpy import *
 from scipy.testing import *
 
-from weave import standard_array_spec
-
+from scipy.weave import standard_array_spec
 
 def remove_whitespace(in_str):
     out = in_str.replace(" ","")

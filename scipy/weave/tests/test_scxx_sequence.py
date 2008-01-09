@@ -6,7 +6,7 @@ import os,sys
 
 from scipy.testing import *
 
-from weave import inline_tools
+from scipy.weave import inline_tools
 
 
 # Test:

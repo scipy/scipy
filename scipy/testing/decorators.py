@@ -19,3 +19,11 @@ def bench(t):
     
     t.bench = True
     return t
+
+def willfail(t):
+    ''' Labels test as known failure
+
+    This label allows the tester to deselect the test in standard cases '''
+    t.willfail = True
+    t.__doc__ += '\n\nThis test will likely fail'
+    return t

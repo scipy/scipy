@@ -28,10 +28,7 @@ def print_assert_equal(test_string,actual,desired):
 # mainly used by catalog tests
 ###################################################
 
-from numpy.testing import set_package_path, restore_path
-set_package_path()
-from weave import catalog
-restore_path()
+from scipy.weave import catalog
 
 import glob
 
