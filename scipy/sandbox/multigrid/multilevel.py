@@ -88,7 +88,7 @@ def smoothed_aggregation_solver(A, B=None, blocks=None, \
     *Parameters*:
 
         A : {csr_matrix}
-            NxN matrix in CSR format
+            NxN matrix in CSR or BSR format
         B : {None, array_like} : optional
             Near-nullspace candidates stored in the columns of an NxK array.
             The default value B=None is equivalent to B=ones((N,1))
@@ -129,10 +129,12 @@ def smoothed_aggregation_solver(A, B=None, blocks=None, \
 
     """
 
+    A = A.asfptype()
+
     if B is None:
         B = ones((A.shape[0],1),dtype=A.dtype) # use constant vector
     else:
-        B = asarray(B)
+        B = asarray(B,dtype=A.dtype)
 
     pre,post = None,None   #preprocess/postprocess
 

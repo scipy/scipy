@@ -563,39 +563,39 @@ def guess_freq(dates):
     return fcode
 
 def guess_freq_date(dates):
-	"""Tries to estimate the frequency of a sequence of datetime objects."""
-	if not type(dates[0]) is dt.datetime:
-		raise AttributeError, "dates not a sequence of datetime objects."
+    """Tries to estimate the frequency of a sequence of datetime objects."""
+    if not type(dates[0]) is dt.datetime:
+        raise AttributeError, "dates not a sequence of datetime objects."
 
-	sorted_dates = numpy.sort(dates)
-	ddif = numpy.diff(sorted_dates)
-	dset = set(ddif)
-	try:
-		dset.remove(dt.timedelta(0))
-	except:
-		pass
-	res = min(dset)
-	if getattr(res, 'seconds', 0) >= 1:
-		fcode = _c.FR_SEC
-	elif getattr(res, 'seconds', 0) >= 60:
-		fcode = _c.FR_MIN
-	elif getattr(res, 'seconds', 0) >= 60*60:
-		fcode = _c.FR_HR
-	elif getattr(res, 'day', 0) >= 1:
-		fcode = _c.FR_DAY			
-	elif getattr(res, 'day', 0) >= 7:
-		fcode = _c.FR_WK
-	elif getattr(res, 'month', 0) >= 1:
-		fcode = _c.FR_MTH
-	elif getattr(res, 'month', 0) >= 3:
-		fcode = _c.FR_QTR
-	elif getattr(res, 'year', 0) >= 1:
-		fcode = _c.FR_ANN
-	else:
-		warnings.warn("Unable to estimate the frequency! %s" % res.__str__())
-		fcode = _c.FR_UND
-	return fcode
-	
+    sorted_dates = numpy.sort(dates)
+    ddif = numpy.diff(sorted_dates)
+    dset = set(ddif)
+    try:
+        dset.remove(dt.timedelta(0))
+    except:
+        pass
+    res = min(dset)
+    if getattr(res, 'seconds', 0) >= 1:
+        fcode = _c.FR_SEC
+    elif getattr(res, 'seconds', 0) >= 60:
+        fcode = _c.FR_MIN
+    elif getattr(res, 'seconds', 0) >= 60*60:
+        fcode = _c.FR_HR
+    elif getattr(res, 'day', 0) >= 1:
+        fcode = _c.FR_DAY           
+    elif getattr(res, 'day', 0) >= 7:
+        fcode = _c.FR_WK
+    elif getattr(res, 'month', 0) >= 1:
+        fcode = _c.FR_MTH
+    elif getattr(res, 'month', 0) >= 3:
+        fcode = _c.FR_QTR
+    elif getattr(res, 'year', 0) >= 1:
+        fcode = _c.FR_ANN
+    else:
+        warnings.warn("Unable to estimate the frequency! %s" % res.__str__())
+        fcode = _c.FR_UND
+    return fcode
+    
 
 def _listparser(dlist, freq=None):
     "Constructs a DateArray from a list."
@@ -614,8 +614,8 @@ def _listparser(dlist, freq=None):
         if freq is None or freq == _c.FR_UND:
             freq = guess_freq(ords)
         if freq == _c.FR_UND:
-        	dtobj = [DateTimeFromString(s) for s in dlist]
-        	freq = guess_freq_date(dtobj)
+            dtobj = [DateTimeFromString(s) for s in dlist]
+            freq = guess_freq_date(dtobj)
         #...construct a list of dates
         for s in dlist:
             x = Date(freq, string=s)
