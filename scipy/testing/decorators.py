@@ -27,8 +27,16 @@ def willfail(t):
     t.willfail = True
     return t
 
-def not_a_test(t):
-    ''' Signals to nose that this function is not a test
+def is_nosetest(tf):
+    ''' Signals to nose that this function is or is not a test
+
+    e.g
+    >>> @is_nosetest(False)
+    >>> def func_with_test_in_name(arg1, arg2): pass
+    ...
+    >>> 
     '''
-    t.__test__ = False
-    return t
+    def set_test(t):
+        t.__test__ = tf
+        return t
+    return set_test
