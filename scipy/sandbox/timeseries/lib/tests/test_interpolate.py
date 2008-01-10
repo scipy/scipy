@@ -13,13 +13,13 @@ import numpy.core.numeric as numeric
 
 from scipy.testing import *
 
-import scipy.sandbox.maskedarray.testutils
-from import scipy.sandbox.maskedarray.testutils import *
+from scipy.sandbox.maskedarray.testutils import *
 
-import maskedarray.core as coremodule
-from maskedarray.core import MaskedArray, masked
+import scipy.sandbox.maskedarray.core as coremodule
+from scipy.sandbox.maskedarray.core import MaskedArray, masked
 
-from timeseries.lib.interpolate import backward_fill, forward_fill, interp_masked1d
+from scipy.sandbox.timeseries.lib.interpolate import \
+     backward_fill, forward_fill, interp_masked1d
 
 class TestFuncs(TestCase):
 

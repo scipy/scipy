@@ -25,7 +25,7 @@ will *exclude* all slow tests from a run.
 
 # This single import statement should provide all the common functionality for
 # scipy tests in a single location.
-from tstsupport import *
+from scipy.testing import *
 
 def setup():
     """Module-level setup"""

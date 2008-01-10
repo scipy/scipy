@@ -13,20 +13,19 @@ __date__     = '$Date: 2007-03-03 18:00:20 -0500 (Sat, 03 Mar 2007) $'
 import numpy as N
 import numpy.core.numeric as numeric
 
-from scipy.testing import NumpyTest, TestCase
+from scipy.testing import *
 
-import maskedarray.testutils
-from maskedarray.testutils import *
+from scipy.sandbox.maskedarray.testutils import *
 
-import maskedarray as MA
-import maskedarray.core as coremodule
-from maskedarray.core import MaskedArray, masked
-from maskedarray import mstats
+import scipy.sandbox.maskedarray as MA
+import scipy.sandbox.maskedarray.core as coremodule
+from scipy.sandbox.maskedarray.core import MaskedArray, masked
+from scipy.sandbox.maskedarray import mstats
 
-import timeseries as TS
-from timeseries import time_series, thisday
+import scipy.sandbox.timeseries as TS
+from scipy.sandbox.timeseries import time_series, thisday
 
-from timeseries.lib import moving_funcs as MF
+from scipy.sandbox.timeseries.lib import moving_funcs as MF
 
 class TestCMovAverage(TestCase):
 

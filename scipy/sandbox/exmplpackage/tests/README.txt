@@ -47,11 +47,13 @@ For each package, there will be a function that takes level arguments,
 and performs tests per level
 
 import scipy.mypackage
-scipy.mypackage.test() # all unlabeled tests 
-scipy.mypackage.test('all') # unlabeled, labeled and doctests
-scipy.mypackage.test(10) # as above, for compatibility, deprecated
-scipy.mypackage.test(['slow']) # just slow tests
-scipy.mypackage.test(['', 'slow']) # unlabeled and slow tests
+scipy.mypackage.test() # fast, unlabeled tests 
+scipy.mypackage.test('full') # unlabeled, not slow, not villfail
+scipy.mypackage.test('slow') # just slow tests
+scipy.mypackage.test('bench') # just benchmarks
+scipy.mypackage.test(None) # all possible tests, including benchmarks
+scipy.mypackage.test(doctests=True) # fast tests, with doctests
+
 At the base level, scipy.test(*args) collects the test suite from each
 package, and runs it, with *args as above.
 
