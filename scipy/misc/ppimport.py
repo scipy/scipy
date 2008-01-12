@@ -284,7 +284,7 @@ class _ModuleLoader(object):
 
         # XXX: Should we check the existence of module.test? Warn?
         from scipy.testing.pkgtester import Tester
-        test = Tester(os.path.dirname(module).test
+        test = Tester(os.path.dirname(module).test)
         return module
 
     def __setattr__(self, name, value):
