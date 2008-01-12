@@ -23,11 +23,11 @@ narray = N.array
 
 from scipy.signal import convolve, get_window
 
-import maskedarray as MA
-from maskedarray import MaskedArray, nomask, getmask, getmaskarray, masked
+import scipy.sandbox.maskedarray as MA
+from scipy.sandbox.maskedarray import MaskedArray, nomask, getmask, getmaskarray, masked
 marray = MA.array
 
-from timeseries.cseries import MA_mov_sum, MA_mov_median, MA_mov_min, \
+from scipy.sandbox.timeseries.cseries import MA_mov_sum, MA_mov_median, MA_mov_min, \
                                MA_mov_max
 
 def _process_result_dict(orig_data, result_dict):

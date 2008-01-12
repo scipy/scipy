@@ -3,13 +3,13 @@ Test functions for models.bspline
 """
 
 import numpy as N
-from numpy.testing import NumpyTest, NumpyTestCase
+from scipy.testing import *
 
 import scipy.stats.models as S
 import scipy.stats.models.bspline as B
 
 
-class TestBSpline(NumpyTestCase):
+class TestBSpline(TestCase):
 
     def test1(self):
         b = B.BSpline(N.linspace(0,10,11), x=N.linspace(0,10,101))
@@ -20,4 +20,4 @@ class TestBSpline(NumpyTestCase):
 
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

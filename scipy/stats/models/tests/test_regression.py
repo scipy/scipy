@@ -3,13 +3,13 @@ Test functions for models.regression
 """
 
 from numpy.random import standard_normal
-from numpy.testing import NumpyTest, NumpyTestCase
+from scipy.testing import *
 
 from scipy.stats.models.regression import OLSModel, ARModel
 
 W = standard_normal
 
-class TestRegression(NumpyTestCase):
+class TestRegression(TestCase):
 
     def testOLS(self):
         X = W((40,10))
@@ -42,4 +42,4 @@ class TestRegression(NumpyTestCase):
         self.assertEquals(results.df_resid, 31)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

@@ -12,21 +12,18 @@ Run tests if blas is not installed:
   python tests/test_blas.py [<level>]
 """
 
-
-from numpy import arange, add, array
+import sys
 import math
 
-import sys
-from numpy.testing import *
-set_package_path()
-from blas import fblas
-from blas import cblas
-from blas import get_blas_funcs
-restore_path()
+from numpy import arange, add, array
+from scipy.testing import *
+from scipy.lib.blas import fblas
+from scipy.lib.blas import cblas
+from scipy.lib.blas import get_blas_funcs
 
-class TestCBLAS1Simple(NumpyTestCase):
+class TestCBLAS1Simple(TestCase):
 
-    def check_axpy(self):
+    def test_axpy(self):
         for p in 'sd':
             f = getattr(cblas,p+'axpy',None)
             if f is None: continue
@@ -36,9 +33,9 @@ class TestCBLAS1Simple(NumpyTestCase):
             if f is None: continue
             assert_array_almost_equal(f([1,2j,3],[2,-1,3],a=5),[7,10j-1,18])
 
-class TestFBLAS1Simple(NumpyTestCase):
+class TestFBLAS1Simple(TestCase):
 
-    def check_axpy(self):
+    def test_axpy(self):
         for p in 'sd':
             f = getattr(fblas,p+'axpy',None)
             if f is None: continue
@@ -47,7 +44,7 @@ class TestFBLAS1Simple(NumpyTestCase):
             f = getattr(fblas,p+'axpy',None)
             if f is None: continue
             assert_array_almost_equal(f([1,2j,3],[2,-1,3],a=5),[7,10j-1,18])
-    def check_copy(self):
+    def test_copy(self):
         for p in 'sd':
             f = getattr(fblas,p+'copy',None)
             if f is None: continue
@@ -56,7 +53,7 @@ class TestFBLAS1Simple(NumpyTestCase):
             f = getattr(fblas,p+'copy',None)
             if f is None: continue
             assert_array_almost_equal(f([3,4j,5+3j],[8]*3),[3,4j,5+3j])
-    def check_asum(self):
+    def test_asum(self):
         for p in 'sd':
             f = getattr(fblas,p+'asum',None)
             if f is None: continue
@@ -65,7 +62,7 @@ class TestFBLAS1Simple(NumpyTestCase):
             f = getattr(fblas,p+'asum',None)
             if f is None: continue
             assert_almost_equal(f([3j,-4,3-4j]),14)
-    def check_dot(self):
+    def test_dot(self):
         for p in 'sd':
             f = getattr(fblas,p+'dot',None)
             if f is None: continue
@@ -76,7 +73,7 @@ class TestFBLAS1Simple(NumpyTestCase):
             assert_almost_equal(f([3j,-4,3-4j],[2,3,1]),-9+2j)
             f = getattr(fblas,p+'dotc')
             assert_almost_equal(f([3j,-4,3-4j],[2,3j,1]),3-14j)
-    def check_nrm2(self):
+    def test_nrm2(self):
         for p in 'sd':
             f = getattr(fblas,p+'nrm2',None)
             if f is None: continue
@@ -85,7 +82,7 @@ class TestFBLAS1Simple(NumpyTestCase):
             f = getattr(fblas,p+'nrm2',None)
             if f is None: continue
             assert_almost_equal(f([3j,-4,3-4j]),math.sqrt(50))
-    def check_scal(self):
+    def test_scal(self):
         for p in 'sd':
             f = getattr(fblas,p+'scal',None)
             if f is None: continue
@@ -98,7 +95,7 @@ class TestFBLAS1Simple(NumpyTestCase):
             f = getattr(fblas,p+'scal',None)
             if f is None: continue
             assert_array_almost_equal(f(3,[3j,-4,3-4j]),[9j,-12,9-12j])
-    def check_swap(self):
+    def test_swap(self):
         for p in 'sd':
             f = getattr(fblas,p+'swap',None)
             if f is None: continue
@@ -113,7 +110,7 @@ class TestFBLAS1Simple(NumpyTestCase):
             x1,y1 = f(x,y)
             assert_array_almost_equal(x1,y)
             assert_array_almost_equal(y1,x)
-    def check_amax(self):
+    def test_amax(self):
         for p in 'sd':
             f = getattr(fblas,'i'+p+'amax')
             assert_equal(f([-2,4,3]),1)
@@ -122,9 +119,9 @@ class TestFBLAS1Simple(NumpyTestCase):
             assert_equal(f([-5,4+3j,6]),1)
     #XXX: need tests for rot,rotm,rotg,rotmg
 
-class TestFBLAS2Simple(NumpyTestCase):
+class TestFBLAS2Simple(TestCase):
 
-    def check_gemv(self):
+    def test_gemv(self):
         for p in 'sd':
             f = getattr(fblas,p+'gemv',None)
             if f is None: continue
@@ -136,7 +133,7 @@ class TestFBLAS2Simple(NumpyTestCase):
             assert_array_almost_equal(f(3j,[[3-4j]],[-4]),[-48-36j])
             assert_array_almost_equal(f(3j,[[3-4j]],[-4],3,[5j]),[-48-21j])
 
-    def check_ger(self):
+    def test_ger(self):
 
         for p in 'sd':
             f = getattr(fblas,p+'ger',None)
@@ -170,9 +167,9 @@ class TestFBLAS2Simple(NumpyTestCase):
                                            2j,
                                            3j],[3j,4j]),[[6,8],[12,16],[18,24]])
 
-class TestFBLAS3Simple(NumpyTestCase):
+class TestFBLAS3Simple(TestCase):
 
-    def check_gemm(self):
+    def test_gemm(self):
         for p in 'sd':
             f = getattr(fblas,p+'gemm',None)
             if f is None: continue
@@ -188,22 +185,22 @@ class TestFBLAS3Simple(NumpyTestCase):
             assert_array_almost_equal(f(1,[[1,2],[1,2]],[[3],[4]]),[[11],[11]])
             assert_array_almost_equal(f(1,[[1,2]],[[3,3],[4,4]]),[[11,11]])
 
-    def check_gemm2(self):
+    def test_gemm2(self):
         for p in 'sdcz':
             f = getattr(fblas,p+'gemm',None)
             if f is None: continue
             assert_array_almost_equal(f(1,[[1,2]],[[3],[4]]),[[11]])
             assert_array_almost_equal(f(1,[[1,2],[1,2]],[[3],[4]]),[[11],[11]])
 
-class TestBLAS(NumpyTestCase):
+class TestBLAS(TestCase):
 
-    def check_blas(self):
+    def test_blas(self):
         a = array([[1,1,1]])
         b = array([[1],[1],[1]])
         gemm, = get_blas_funcs(('gemm',),(a,b))
         assert_array_almost_equal(gemm(1,a,b),[[3]],15)
 
-    def check_fblas(self):
+    def test_fblas(self):
         if hasattr(fblas,'empty_module'):
             print """
 ****************************************************************
@@ -212,7 +209,7 @@ WARNING: fblas module is empty.
 See scipy/INSTALL.txt for troubleshooting.
 ****************************************************************
 """
-    def check_cblas(self):
+    def test_cblas(self):
         if hasattr(cblas,'empty_module'):
             print """
 ****************************************************************
@@ -226,4 +223,4 @@ Notes:
 """
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

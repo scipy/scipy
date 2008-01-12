@@ -18,27 +18,24 @@ from numpy import bool_, complex_, float_, int_, str_, object_
 import numpy.core.numeric as numeric
 fromiter = numpy.fromiter
 
-import maskedarray
+from scipy.sandbox import maskedarray
 marray = maskedarray.masked_array
 masked_values = maskedarray.masked_values
 
-from numpy.testing import NumpyTest, NumpyTestCase
-from maskedarray.testutils import build_err_msg, \
+from scipy.testing import *
+from scipy.sandbox.maskedarray.testutils import build_err_msg, \
         assert_equal, assert_almost_equal
 
-
-import mpyloess
-reload(mpyloess)
-from mpyloess import lowess, stl, loess, loess_anova
+from scipy.sandbox.pyloess.mpyloess import lowess, stl, loess, loess_anova
 
 #####---------------------------------------------------------------------------
 #---- --- LOWESS ---
 #####---------------------------------------------------------------------------
-class TestLowess(NumpyTestCase):
+class TestLowess(TestCase):
     "Test class for lowess."
     #
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         X = marray([ 1, 2, 3, 4, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 8,10,12,14,50])
         Y = marray([18, 2,15, 6,10, 4,16,11, 7, 3,14,17,20,12, 9,13, 1, 8, 5,19])
         idx = X.argsort()
@@ -95,11 +92,11 @@ class TestLowess(NumpyTestCase):
 #####---------------------------------------------------------------------------
 #---- --- STL ---
 #####---------------------------------------------------------------------------
-class TestStl(NumpyTestCase):
+class TestStl(TestCase):
     "Tests STL."
     #
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         # Get CO2 data ................
         filename = os.path.join('tests','co2_data')
         F = open(filename, 'r')
@@ -141,11 +138,11 @@ class TestStl(NumpyTestCase):
 #---- --- LOESS ---
 #####---------------------------------------------------------------------------
 
-class TestLoess2D(NumpyTestCase):
+class TestLoess2D(TestCase):
     "Test class for lowess."
     #
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         dfile = open(os.path.join('tests','madeup_data'), 'r')
         dfile.readline()
         x = fromiter((float(v) for v in dfile.readline().rstrip().split()),
@@ -292,11 +289,11 @@ class TestLoess2D(NumpyTestCase):
 #####---------------------------------------------------------------------------
 #---- --- test 1D ---
 #####---------------------------------------------------------------------------
-class TestLoessGas(NumpyTestCase):
+class TestLoessGas(TestCase):
     "Test class for lowess."
     #
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         NOx = marray([4.818, 2.849, 3.275, 4.691, 4.255, 5.064, 2.118, 4.602,
                       2.286, 0.970, 3.965, 5.344, 3.834, 1.990, 5.199, 5.283,
                       3.752, 0.537, 1.640, 5.055, 4.937, 1.561])
@@ -433,4 +430,4 @@ class TestLoessGas(NumpyTestCase):
 
 ########################################################################
 if __name__ == '__main__':
-    NumpyTest().run()
+    unittest.main()

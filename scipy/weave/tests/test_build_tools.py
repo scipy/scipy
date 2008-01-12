@@ -4,34 +4,33 @@
 
 import os, sys, tempfile
 
-from numpy.testing import *
-set_package_path()
-from weave import build_tools
-restore_path()
+from scipy.testing import *
+
+from scipy.weave import build_tools
 
 def is_writable(val):
     return os.access(val,os.W_OK)
 
-class TestConfigureBuildDir(NumpyTestCase):
-    def check_default(self):
+class TestConfigureBuildDir(TestCase):
+    def test_default(self):
         " default behavior is to return current directory "
         d = build_tools.configure_build_dir()
         if is_writable('.'):
             assert(d == os.path.abspath('.'))
         assert(is_writable(d))
-    def check_curdir(self):
+    def test_curdir(self):
         " make sure it handles relative values. "
         d = build_tools.configure_build_dir('.')
         if is_writable('.'):
             assert(d == os.path.abspath('.'))
         assert(is_writable(d))
-    def check_pardir(self):
+    def test_pardir(self):
         " make sure it handles relative values "
         d = build_tools.configure_build_dir('..')
         if is_writable('..'):
             assert(d == os.path.abspath('..'))
         assert(is_writable(d))
-    def check_bad_path(self):
+    def test_bad_path(self):
         " bad path should return same as default (and warn) "
         d = build_tools.configure_build_dir('_bad_path_')
         d2 = build_tools.configure_build_dir()
@@ -39,15 +38,15 @@ class TestConfigureBuildDir(NumpyTestCase):
         assert(is_writable(d))
 
 class TestConfigureTempDir(TestConfigureBuildDir):
-    def check_default(self):
+    def test_default(self):
         " default behavior returns tempdir"
         # this'll fail if the temp directory isn't writable.
         d = build_tools.configure_temp_dir()
         assert(d == tempfile.gettempdir())
         assert(is_writable(d))
 
-class TestConfigureSysArgv(NumpyTestCase):
-    def check_simple(self):
+class TestConfigureSysArgv(TestCase):
+    def test_simple(self):
         build_dir = 'build_dir'
         temp_dir = 'temp_dir'
         compiler = 'compiler'
@@ -63,4 +62,4 @@ class TestConfigureSysArgv(NumpyTestCase):
         assert(pre_argv == sys.argv[:])
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

@@ -1,11 +1,11 @@
 import numpy as N
-from numpy.testing import *
+from scipy.testing import *
 
-set_package_path()
+
 from scipy.special import gammaln, multigammaln
-restore_path()
 
-class TestMultiGammaLn(NumpyTestCase):
+
+class TestMultiGammaLn(TestCase):
     def test1(self):
         a = N.abs(N.random.randn())
         assert_array_equal(multigammaln(a, 1), gammaln(a))
@@ -35,4 +35,4 @@ class TestMultiGammaLn(NumpyTestCase):
             pass
 
 if __name__ == '__main__':
-    NumpyTest().run()
+    unittest.main()

@@ -4,7 +4,7 @@ try:
 except:
     pass
 
-from numpy.testing import *
+from scipy.testing import *
 from numpy import sqrt,empty,ones,arange,array_split,eye,array, \
                   zeros,diag,zeros_like,diff,matrix,hstack,vstack
 from numpy.linalg import norm
@@ -14,7 +14,7 @@ from scipy.sparse import spdiags,csr_matrix,lil_matrix, \
                          isspmatrix_lil
 import numpy
 
-set_package_path()
+
 import scipy.sandbox.multigrid
 from scipy.sandbox.multigrid.sa import sa_strong_connections, sa_constant_interpolation, \
                                         sa_interpolation, sa_fit_candidates, \
@@ -22,7 +22,7 @@ from scipy.sandbox.multigrid.sa import sa_strong_connections, sa_constant_interp
 from scipy.sandbox.multigrid.multilevel import poisson_problem1D,poisson_problem2D, \
                                         smoothed_aggregation_solver
 from scipy.sandbox.multigrid.utils import diag_sparse
-restore_path()
+
 
 
 #def sparsity(A):
@@ -38,7 +38,7 @@ restore_path()
 #
 #    return A
 
-class TestSA(NumpyTestCase):
+class TestSA(TestCase):
     def setUp(self):
         self.cases = []
 
@@ -54,7 +54,7 @@ class TestSA(NumpyTestCase):
             self.cases.append( poisson_problem2D(N) )
 
 
-    def check_sa_strong_connections(self):
+    def test_sa_strong_connections(self):
         for A in self.cases:
             for epsilon in [0.0,0.1,0.5,1.0,10.0]:
                 S_expected = reference_sa_strong_connections(A,epsilon)
@@ -62,7 +62,7 @@ class TestSA(NumpyTestCase):
                 assert_almost_equal(S_result.todense(),S_expected.todense())
                 #assert_array_equal(sparsity(S_result).todense(),sparsity(S_expected).todense())
 
-    def check_sa_constant_interpolation(self):
+    def test_sa_constant_interpolation(self):
         for A in self.cases:
             for epsilon in [0.0,0.1,0.5,1.0]:
                 S_expected = reference_sa_constant_interpolation(A,epsilon)
@@ -101,7 +101,7 @@ class TestSA(NumpyTestCase):
         assert_array_equal(S_result.todense(),S_expected)
 
 
-    def check_user_aggregation(self):
+    def test_user_aggregation(self):
         """check that the sa_interpolation accepts user-defined aggregates"""
 
         user_cases = []
@@ -128,7 +128,7 @@ class TestSA(NumpyTestCase):
 
 
 
-class TestFitCandidates(NumpyTestCase):
+class TestFitCandidates(TestCase):
     def setUp(self):
         self.cases = []
 
@@ -163,7 +163,7 @@ class TestFitCandidates(NumpyTestCase):
         self.cases.append((csr_matrix((ones(6),array([1,3,0,2,1,0]),array([0,0,1,2,2,3,4,5,5,6])),shape=(9,4)), vstack((ones(9),arange(9),arange(9)**2)).T ))
         self.cases.append((csr_matrix((ones(6),array([1,3,0,2,1,0]),array([0,0,1,2,2,3,4,5,5,6])),shape=(9,4)), vstack((ones(9),arange(9))).T ))
 
-    def check_all_cases(self):
+    def test_all_cases(self):
         """Test case where aggregation includes all fine nodes"""
 
         def mask_candidate(AggOp,candidates):
@@ -194,7 +194,7 @@ class TestFitCandidates(NumpyTestCase):
 ##            assert_almost_equal(Q*(Q.T*fine_candidates),fine_candidates)
 
 
-class TestSASolverPerformance(NumpyTestCase):
+class TestSASolverPerformance(TestCase):
     def setUp(self):
         self.cases = []
 
@@ -203,7 +203,7 @@ class TestSASolverPerformance(NumpyTestCase):
         # TODO add unstructured tests
 
 
-    def check_basic(self):
+    def test_basic(self):
         """check that method converges at a reasonable rate"""
 
         for A,candidates in self.cases:
@@ -220,7 +220,7 @@ class TestSASolverPerformance(NumpyTestCase):
 
             assert(avg_convergence_ratio < 0.5)
 
-    def check_DAD(self):
+    def test_DAD(self):
         for A,candidates in self.cases:
 
             x = rand(A.shape[0])
@@ -326,4 +326,4 @@ def reference_sa_constant_interpolation(A,epsilon):
 
 
 if __name__ == '__main__':
-    NumpyTest().run()
+    unittest.main()

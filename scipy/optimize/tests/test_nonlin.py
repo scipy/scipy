@@ -3,12 +3,11 @@ Author: Ondrej Certik
 May 2007
 """
 
-from numpy.testing import *
+from scipy.testing import *
 
-set_package_path()
 from scipy.optimize import nonlin
 from numpy import matrix, diag
-restore_path()
+
 
 def F(x):
     def p3(y):
@@ -25,7 +24,7 @@ def F(x):
 
     return tuple(f.flat)
 
-class TestNonlin(NumpyTestCase):
+class TestNonlin(TestCase):
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
@@ -92,4 +91,4 @@ class TestNonlin(NumpyTestCase):
 
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

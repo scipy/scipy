@@ -14,20 +14,20 @@ __usage__ = """
 Build linalg:
   python setup_linalg.py build
 Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test(<level>)'
+  python -c 'import scipy;scipy.linalg.test()'
 Run tests if linalg is not installed:
-  python tests/test_basic.py [<level>]
+  python tests/test_basic.py
 """
 
 import numpy
 from numpy import arange, add, array, dot, zeros, identity, conjugate, transpose
 
 import sys
-from numpy.testing import *
-set_package_path()
-from linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, tril
-from linalg import pinv, pinv2, solve_banded
-restore_path()
+from scipy.testing import *
+
+from scipy.linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, \
+     tril, pinv, pinv2, solve_banded
+
 
 def random(size):
     return rand(*size)
@@ -37,9 +37,9 @@ def get_mat(n):
     data = add.outer(data,data)
     return data
 
-class TestSolveBanded(NumpyTestCase):
+class TestSolveBanded(TestCase):
 
-    def check_simple(self):
+    def test_simple(self):
 
         a = [[1,20,0,0],[-30,4,6,0],[2,1,20,2],[0,-1,7,14]]
         ab = [[0,20,6,2],
@@ -52,9 +52,9 @@ class TestSolveBanded(NumpyTestCase):
             x = solve_banded((l,u),ab,b)
             assert_array_almost_equal(numpy.dot(a,x),b)
 
-class TestSolve(NumpyTestCase):
+class TestSolve(TestCase):
 
-    def check_20Feb04_bug(self):
+    def test_20Feb04_bug(self):
         a = [[1,1],[1.0,0]] # ok
         x0 = solve(a,[1,0j])
         assert_array_almost_equal(numpy.dot(a,x0),[1,0])
@@ -64,21 +64,21 @@ class TestSolve(NumpyTestCase):
         x0 = solve(a,b)
         assert_array_almost_equal(numpy.dot(a,x0),[1,0])
 
-    def check_simple(self):
+    def test_simple(self):
         a = [[1,20],[-30,4]]
         for b in ([[1,0],[0,1]],[1,0],
                   [[2,1],[-30,4]]):
             x = solve(a,b)
             assert_array_almost_equal(numpy.dot(a,x),b)
 
-    def check_simple_sym(self):
+    def test_simple_sym(self):
         a = [[2,3],[3,5]]
         for lower in [0,1]:
             for b in ([[1,0],[0,1]],[1,0]):
                 x = solve(a,b,sym_pos=1,lower=lower)
                 assert_array_almost_equal(numpy.dot(a,x),b)
 
-    def check_simple_sym_complex(self):
+    def test_simple_sym_complex(self):
         a = [[5,2],[2,4]]
         for b in [[1j,0],
                   [[1j,1j],
@@ -87,7 +87,7 @@ class TestSolve(NumpyTestCase):
             x = solve(a,b,sym_pos=1)
             assert_array_almost_equal(numpy.dot(a,x),b)
 
-    def check_simple_complex(self):
+    def test_simple_complex(self):
         a = array([[5,2],[2j,4]],'D')
         for b in [[1j,0],
                   [[1j,1j],
@@ -98,7 +98,7 @@ class TestSolve(NumpyTestCase):
             x = solve(a,b)
             assert_array_almost_equal(numpy.dot(a,x),b)
 
-    def check_nils_20Feb04(self):
+    def test_nils_20Feb04(self):
         n = 2
         A = random([n,n])+random([n,n])*1j
         X = zeros((n,n),'D')
@@ -109,7 +109,7 @@ class TestSolve(NumpyTestCase):
             X[:,i] = solve(A,r)
         assert_array_almost_equal(X,Ainv)
 
-    def check_random(self):
+    def test_random(self):
 
         n = 20
         a = random([n,n])
@@ -119,7 +119,7 @@ class TestSolve(NumpyTestCase):
             x = solve(a,b)
             assert_array_almost_equal(numpy.dot(a,x),b)
 
-    def check_random_complex(self):
+    def test_random_complex(self):
         n = 20
         a = random([n,n]) + 1j * random([n,n])
         for i in range(n): a[i,i] = 20*(.1+a[i,i])
@@ -128,7 +128,7 @@ class TestSolve(NumpyTestCase):
             x = solve(a,b)
             assert_array_almost_equal(numpy.dot(a,x),b)
 
-    def check_random_sym(self):
+    def test_random_sym(self):
         n = 20
         a = random([n,n])
         for i in range(n):
@@ -140,7 +140,7 @@ class TestSolve(NumpyTestCase):
             x = solve(a,b,sym_pos=1)
             assert_array_almost_equal(numpy.dot(a,x),b)
 
-    def check_random_sym_complex(self):
+    def test_random_sym_complex(self):
         n = 20
         a = random([n,n])
         #a  = a + 1j*random([n,n]) # XXX: with this the accuracy will be very low
@@ -153,7 +153,8 @@ class TestSolve(NumpyTestCase):
             x = solve(a,b,sym_pos=1)
             assert_array_almost_equal(numpy.dot(a,x),b)
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_bench_random(self):
         import numpy.linalg as linalg
         basic_solve = linalg.solve
         print
@@ -174,26 +175,26 @@ class TestSolve(NumpyTestCase):
             for i in range(size): a[i,i] = 10*(.1+a[i,i])
             b = random([size])
 
-            print '| %6.2f ' % self.measure('solve(a,b)',repeat),
+            print '| %6.2f ' % measure('solve(a,b)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('basic_solve(a,b)',repeat),
+            print '| %6.2f ' % measure('basic_solve(a,b)',repeat),
             sys.stdout.flush()
 
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
             assert not a.flags['CONTIGUOUS']
 
-            print '| %6.2f ' % self.measure('solve(a,b)',repeat),
+            print '| %6.2f ' % measure('solve(a,b)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('basic_solve(a,b)',repeat),
+            print '| %6.2f ' % measure('basic_solve(a,b)',repeat),
             sys.stdout.flush()
 
             print '   (secs for %s calls)' % (repeat)
 
-class TestInv(NumpyTestCase):
+class TestInv(TestCase):
 
-    def check_simple(self):
+    def test_simple(self):
         a = [[1,2],[3,4]]
         a_inv = inv(a)
         assert_array_almost_equal(numpy.dot(a,a_inv),
@@ -203,7 +204,7 @@ class TestInv(NumpyTestCase):
         assert_array_almost_equal(numpy.dot(a,a_inv),
                                   [[1,0,0],[0,1,0],[0,0,1]])
 
-    def check_random(self):
+    def test_random(self):
         n = 20
         for i in range(4):
             a = random([n,n])
@@ -211,13 +212,13 @@ class TestInv(NumpyTestCase):
             a_inv = inv(a)
             assert_array_almost_equal(numpy.dot(a,a_inv),
                                       numpy.identity(n))
-    def check_simple_complex(self):
+    def test_simple_complex(self):
         a = [[1,2],[3,4j]]
         a_inv = inv(a)
         assert_array_almost_equal(numpy.dot(a,a_inv),
                                   [[1,0],[0,1]])
 
-    def check_random_complex(self):
+    def test_random_complex(self):
         n = 20
         for i in range(4):
             a = random([n,n])+2j*random([n,n])
@@ -226,7 +227,8 @@ class TestInv(NumpyTestCase):
             assert_array_almost_equal(numpy.dot(a,a_inv),
                                       numpy.identity(n))
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_bench_random(self):
         import numpy.linalg as linalg
         basic_inv = linalg.inv
         print
@@ -245,37 +247,37 @@ class TestInv(NumpyTestCase):
             # large diagonal ensures non-singularity:
             for i in range(size): a[i,i] = 10*(.1+a[i,i])
 
-            print '| %6.2f ' % self.measure('inv(a)',repeat),
+            print '| %6.2f ' % measure('inv(a)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('basic_inv(a)',repeat),
+            print '| %6.2f ' % measure('basic_inv(a)',repeat),
             sys.stdout.flush()
 
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
             assert not a.flags['CONTIGUOUS']
 
-            print '| %6.2f ' % self.measure('inv(a)',repeat),
+            print '| %6.2f ' % measure('inv(a)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('basic_inv(a)',repeat),
+            print '| %6.2f ' % measure('basic_inv(a)',repeat),
             sys.stdout.flush()
 
             print '   (secs for %s calls)' % (repeat)
 
 
-class TestDet(NumpyTestCase):
+class TestDet(TestCase):
 
-    def check_simple(self):
+    def test_simple(self):
         a = [[1,2],[3,4]]
         a_det = det(a)
         assert_almost_equal(a_det,-2.0)
 
-    def check_simple_complex(self):
+    def test_simple_complex(self):
         a = [[1,2],[3,4j]]
         a_det = det(a)
         assert_almost_equal(a_det,-6+4j)
 
-    def check_random(self):
+    def test_random(self):
         import numpy.linalg as linalg
         basic_det = linalg.det
         n = 20
@@ -285,7 +287,7 @@ class TestDet(NumpyTestCase):
             d2 = basic_det(a)
             assert_almost_equal(d1,d2)
 
-    def check_random_complex(self):
+    def test_random_complex(self):
         import numpy.linalg as linalg
         basic_det = linalg.det
         n = 20
@@ -295,7 +297,8 @@ class TestDet(NumpyTestCase):
             d2 = basic_det(a)
             assert_almost_equal(d1,d2)
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_bench_random(self):
         import numpy.linalg as linalg
         basic_det = linalg.det
         print
@@ -312,19 +315,19 @@ class TestDet(NumpyTestCase):
 
             a = random([size,size])
 
-            print '| %6.2f ' % self.measure('det(a)',repeat),
+            print '| %6.2f ' % measure('det(a)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('basic_det(a)',repeat),
+            print '| %6.2f ' % measure('basic_det(a)',repeat),
             sys.stdout.flush()
 
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
             assert not a.flags['CONTIGUOUS']
 
-            print '| %6.2f ' % self.measure('det(a)',repeat),
+            print '| %6.2f ' % measure('det(a)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('basic_det(a)',repeat),
+            print '| %6.2f ' % measure('basic_det(a)',repeat),
             sys.stdout.flush()
 
             print '   (secs for %s calls)' % (repeat)
@@ -338,8 +341,8 @@ def direct_lstsq(a,b,cmplx=0):
     b1 = dot(at, b)
     return solve(a1, b1)
 
-class TestLstsq(NumpyTestCase):
-    def check_random_overdet_large(self):
+class TestLstsq(TestCase):
+    def test_random_overdet_large(self):
         #bug report: Nils Wagner
         n = 200
         a = random([n,2])
@@ -348,21 +351,21 @@ class TestLstsq(NumpyTestCase):
         x = lstsq(a,b)[0]
         assert_array_almost_equal(x,direct_lstsq(a,b))
 
-    def check_simple_exact(self):
+    def test_simple_exact(self):
         a = [[1,20],[-30,4]]
         for b in ([[1,0],[0,1]],[1,0],
                   [[2,1],[-30,4]]):
             x = lstsq(a,b)[0]
             assert_array_almost_equal(numpy.dot(a,x),b)
 
-    def check_simple_overdet(self):
+    def test_simple_overdet(self):
         a = [[1,2],[4,5],[3,4]]
         b = [1,2,3]
         x,res,r,s = lstsq(a,b)
         #XXX: check defintion of res
         assert_array_almost_equal(x,direct_lstsq(a,b))
 
-    def check_simple_underdet(self):
+    def test_simple_underdet(self):
         a = [[1,2,3],[4,5,6]]
         b = [1,2]
         x,res,r,s = lstsq(a,b)
@@ -370,7 +373,7 @@ class TestLstsq(NumpyTestCase):
         assert_array_almost_equal(x,[[-0.05555556],
                                      [0.11111111],[0.27777778]])
 
-    def check_random_exact(self):
+    def test_random_exact(self):
 
         n = 20
         a = random([n,n])
@@ -380,7 +383,7 @@ class TestLstsq(NumpyTestCase):
             x = lstsq(a,b)[0]
             assert_array_almost_equal(numpy.dot(a,x),b)
 
-    def check_random_complex_exact(self):
+    def test_random_complex_exact(self):
         n = 20
         a = random([n,n]) + 1j * random([n,n])
         for i in range(n): a[i,i] = 20*(.1+a[i,i])
@@ -389,7 +392,7 @@ class TestLstsq(NumpyTestCase):
             x = lstsq(a,b)[0]
             assert_array_almost_equal(numpy.dot(a,x),b)
 
-    def check_random_overdet(self):
+    def test_random_overdet(self):
         n = 20
         m = 15
         a = random([n,m])
@@ -401,7 +404,7 @@ class TestLstsq(NumpyTestCase):
             #XXX: check definition of res
             assert_array_almost_equal(x,direct_lstsq(a,b))
 
-    def check_random_complex_overdet(self):
+    def test_random_complex_overdet(self):
         n = 20
         m = 15
         a = random([n,m]) + 1j * random([n,m])
@@ -414,8 +417,8 @@ class TestLstsq(NumpyTestCase):
             #XXX: check definition of res
             assert_array_almost_equal(x,direct_lstsq(a,b,1))
 
-class TestTri(NumpyTestCase):
-    def check_basic(self):
+class TestTri(TestCase):
+    def test_basic(self):
         assert_equal(tri(4),array([[1,0,0,0],
                                    [1,1,0,0],
                                    [1,1,1,0],
@@ -424,7 +427,7 @@ class TestTri(NumpyTestCase):
                                                 [1,1,0,0],
                                                 [1,1,1,0],
                                                 [1,1,1,1]],'f'))
-    def check_diag(self):
+    def test_diag(self):
         assert_equal(tri(4,k=1),array([[1,1,0,0],
                                        [1,1,1,0],
                                        [1,1,1,1],
@@ -433,7 +436,7 @@ class TestTri(NumpyTestCase):
                                         [1,0,0,0],
                                         [1,1,0,0],
                                         [1,1,1,0]]))
-    def check_2d(self):
+    def test_2d(self):
         assert_equal(tri(4,3),array([[1,0,0],
                                      [1,1,0],
                                      [1,1,1],
@@ -441,7 +444,7 @@ class TestTri(NumpyTestCase):
         assert_equal(tri(3,4),array([[1,0,0,0],
                                      [1,1,0,0],
                                      [1,1,1,0]]))
-    def check_diag2d(self):
+    def test_diag2d(self):
         assert_equal(tri(3,4,k=2),array([[1,1,1,0],
                                          [1,1,1,1],
                                          [1,1,1,1]]))
@@ -450,8 +453,8 @@ class TestTri(NumpyTestCase):
                                           [1,0,0],
                                           [1,1,0]]))
 
-class TestTril(NumpyTestCase):
-    def check_basic(self):
+class TestTril(TestCase):
+    def test_basic(self):
         a = (100*get_mat(5)).astype('l')
         b = a.copy()
         for k in range(5):
@@ -459,7 +462,7 @@ class TestTril(NumpyTestCase):
                 b[k,l] = 0
         assert_equal(tril(a),b)
 
-    def check_diag(self):
+    def test_diag(self):
         a = (100*get_mat(5)).astype('f')
         b = a.copy()
         for k in range(5):
@@ -472,8 +475,8 @@ class TestTril(NumpyTestCase):
                 b[k,l] = 0
         assert_equal(tril(a,k=-2),b)
 
-class TestTriu(NumpyTestCase):
-    def check_basic(self):
+class TestTriu(TestCase):
+    def test_basic(self):
         a = (100*get_mat(5)).astype('l')
         b = a.copy()
         for k in range(5):
@@ -481,7 +484,7 @@ class TestTriu(NumpyTestCase):
                 b[l,k] = 0
         assert_equal(triu(a),b)
 
-    def check_diag(self):
+    def test_diag(self):
         a = (100*get_mat(5)).astype('f')
         b = a.copy()
         for k in range(5):
@@ -494,46 +497,46 @@ class TestTriu(NumpyTestCase):
                 b[l,k] = 0
         assert_equal(triu(a,k=-2),b)
 
-class TestToeplitz(NumpyTestCase):
-    def check_basic(self):
+class TestToeplitz(TestCase):
+    def test_basic(self):
         y = toeplitz([1,2,3])
         assert_array_equal(y,[[1,2,3],[2,1,2],[3,2,1]])
         y = toeplitz([1,2,3],[1,4,5])
         assert_array_equal(y,[[1,4,5],[2,1,4],[3,2,1]])
 
-class TestHankel(NumpyTestCase):
-    def check_basic(self):
+class TestHankel(TestCase):
+    def test_basic(self):
         y = hankel([1,2,3])
         assert_array_equal(y,[[1,2,3],[2,3,0],[3,0,0]])
         y = hankel([1,2,3],[3,4,5])
         assert_array_equal(y,[[1,2,3],[2,3,4],[3,4,5]])
 
-class TestPinv(NumpyTestCase):
+class TestPinv(TestCase):
 
-    def check_simple(self):
+    def test_simple(self):
         a=array([[1,2,3],[4,5,6.],[7,8,10]])
         a_pinv = pinv(a)
         assert_array_almost_equal(dot(a,a_pinv),[[1,0,0],[0,1,0],[0,0,1]])
         a_pinv = pinv2(a)
         assert_array_almost_equal(dot(a,a_pinv),[[1,0,0],[0,1,0],[0,0,1]])
 
-    def check_simple_0det(self):
+    def test_simple_0det(self):
         a=array([[1,2,3],[4,5,6.],[7,8,9]])
         a_pinv = pinv(a)
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv,a_pinv2)
 
-    def check_simple_cols(self):
+    def test_simple_cols(self):
         a=array([[1,2,3],[4,5,6.]])
         a_pinv = pinv(a)
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv,a_pinv2)
 
-    def check_simple_rows(self):
+    def test_simple_rows(self):
         a=array([[1,2],[3,4],[5,6]])
         a_pinv = pinv(a)
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv,a_pinv2)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

@@ -1,4 +1,4 @@
-from scipy import *
+from scipy import rand
 from scipy.sandbox.multigrid.sa import *
 from scipy.sandbox.multigrid import *
 from scipy.sandbox.multigrid.utils import *

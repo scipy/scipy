@@ -1,16 +1,15 @@
-from numpy.testing import *
-set_package_path()
+import os.path
+import glob
+import numpy as N
+
+from scipy.testing import *
+
 import PIL.Image
 import scipy.misc.pilutil as pilutil
-restore_path()
-
-import glob
-import os.path
-import numpy as N
 
 datapath = os.path.dirname(__file__)
 
-class TestPILUtil(ParametricTestCase):
+class TestPILUtil(TestCase):
     def test_imresize(self):
         im = N.random.random((10,20))
         for T in N.sctypes['float'] + [float]:
@@ -23,19 +22,20 @@ class TestPILUtil(ParametricTestCase):
         assert_equal(pilutil.bytescale(x),x)
         assert_equal(pilutil.bytescale(y),[0,127,255])
 
-    def tst_fromimage(self,filename,irange):
-        img = pilutil.fromimage(PIL.Image.open(filename))
-        imin,imax = irange
-        assert img.min() >= imin
-        assert img.max() <= imax
 
-    def testip_fromimage(self):
-        data = {'icon.png':(0,255),
-                'icon_mono.png':(0,2),
-                'icon_mono_flat.png':(0,1)}
+def tst_fromimage(filename, irange):
+    img = pilutil.fromimage(PIL.Image.open(filename))
+    imin,imax = irange
+    assert img.min() >= imin
+    assert img.max() <= imax
 
-        return ((self.tst_fromimage,os.path.join(datapath,'data',fn),irange)
-                for fn,irange in data.iteritems())
+def test_fromimage():
+    ''' Test generator for parametric tests '''
+    data = {'icon.png':(0,255),
+            'icon_mono.png':(0,2),
+            'icon_mono_flat.png':(0,1)}
+    for fn, irange in data.iteritems():
+        yield tst_fromimage, os.path.join(datapath,'data',fn), irange
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

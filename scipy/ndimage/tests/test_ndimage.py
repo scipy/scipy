@@ -28,20 +28,11 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import sys
-import unittest
 import math
 import numpy
 from numpy import fft
-from numpy.testing import *
-set_package_path()
-try:
-    import scipy.ndimage as ndimage
-except:
-    import ndimage
-
-restore_path()
-#import numarray.numinclude as numinclude
+from scipy.testing import *
+import scipy.ndimage as ndimage
 
 eps = 1e-12
 
@@ -66,7 +57,7 @@ def diff(a, b):
     return math.sqrt(t)
 
 
-class TestNdimage(NumpyTestCase):
+class TestNdimage(TestCase):
 
     def setUp(self):
         # list of numarray data types
@@ -5522,5 +5513,4 @@ class TestNdimage(NumpyTestCase):
 #    return len(result.failures), result.testsRun
 
 if __name__ == "__main__":
-    #unittest.main()
-    NumpyTest().run()
+    unittest.main()

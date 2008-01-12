@@ -12,19 +12,17 @@ Run tests if fftpack is not installed:
 """
 
 import sys
-from numpy.testing import *
-set_package_path()
-from fftpack import fftshift,ifftshift,fftfreq,rfftfreq
-restore_path()
+from scipy.testing import *
+from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
 
 from numpy import pi
 
 def random(size):
     return rand(*size)
 
-class TestFFTShift(NumpyTestCase):
+class TestFFTShift(TestCase):
 
-    def check_definition(self):
+    def test_definition(self):
         x = [0,1,2,3,4,-4,-3,-2,-1]
         y = [-4,-3,-2,-1,0,1,2,3,4]
         assert_array_almost_equal(fftshift(x),y)
@@ -34,14 +32,14 @@ class TestFFTShift(NumpyTestCase):
         assert_array_almost_equal(fftshift(x),y)
         assert_array_almost_equal(ifftshift(y),x)
 
-    def check_inverse(self):
+    def test_inverse(self):
         for n in [1,4,9,100,211]:
             x = random((n,))
             assert_array_almost_equal(ifftshift(fftshift(x)),x)
 
-class TestFFTFreq(NumpyTestCase):
+class TestFFTFreq(TestCase):
 
-    def check_definition(self):
+    def test_definition(self):
         x = [0,1,2,3,4,-4,-3,-2,-1]
         assert_array_almost_equal(9*fftfreq(9),x)
         assert_array_almost_equal(9*pi*fftfreq(9,pi),x)
@@ -49,9 +47,9 @@ class TestFFTFreq(NumpyTestCase):
         assert_array_almost_equal(10*fftfreq(10),x)
         assert_array_almost_equal(10*pi*fftfreq(10,pi),x)
 
-class TestRFFTFreq(NumpyTestCase):
+class TestRFFTFreq(TestCase):
 
-    def check_definition(self):
+    def test_definition(self):
         x = [0,1,1,2,2,3,3,4,4]
         assert_array_almost_equal(9*rfftfreq(9),x)
         assert_array_almost_equal(9*pi*rfftfreq(9,pi),x)
@@ -60,4 +58,4 @@ class TestRFFTFreq(NumpyTestCase):
         assert_array_almost_equal(10*pi*rfftfreq(10,pi),x)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

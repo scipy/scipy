@@ -18,16 +18,14 @@ Run tests if intsampler is not installed:
 from numpy import arange, add, array, dot, zeros, identity
 
 import sys
-from numpy.testing import *
-set_package_path()
-from numpy import *
+from scipy.testing import *
+
 from scipy.sandbox.montecarlo import *
 from scipy import stats
-restore_path()
 
 
-class test_int_sampler(NumpyTestCase):
-    def check_simple(self):
+class test_int_sampler(TestCase):
+    def test_simple(self):
         # Sample from a Poisson distribution, P(lambda = 10.0)
         lam = 10.0
         n = 35
@@ -41,7 +39,7 @@ class test_int_sampler(NumpyTestCase):
         z = 2.5758   # = norminv(0.995), for a 1% confidence interval
         assert abs(m - lam) < z * lam/sqrt(numsamples)
 
-    def check_sanity(self):
+    def test_sanity(self):
         # Sample from this pmf:
         #      x        0       1       2       3       4
         #      p(x)     0.5     0.1     0.15    0       0.25
@@ -67,4 +65,4 @@ class test_int_sampler(NumpyTestCase):
 
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

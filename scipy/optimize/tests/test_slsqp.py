@@ -1,12 +1,11 @@
-from numpy.testing import *
+from scipy.testing import *
 import numpy as np
 
-set_package_path()
 from scipy.optimize import  fmin_slsqp
 from numpy import matrix, diag
-restore_path()
 
-class TestSLSQP(NumpyTestCase):
+
+class TestSLSQP(TestCase):
     """Test fmin_slsqp using Example 14.4 from Numerical Methods for
     Engineers by Steven Chapra and Raymond Canale.  This example
     maximizes the function f(x) = 2*x*y + 2*x - x**2 - 2*y**2, which
@@ -87,4 +86,4 @@ class TestSLSQP(NumpyTestCase):
         assert_array_almost_equal(x,[2,1],decimal=3)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

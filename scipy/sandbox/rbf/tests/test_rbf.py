@@ -2,23 +2,23 @@
 # Created by John Travers, Robert Hetland, 2007
 """ Test functions for rbf module """
 
-from numpy.testing import *
+from scipy.testing import *
 from numpy import linspace, sin, random, exp
 
-set_package_path()
-from rbf.rbf import Rbf
-restore_path()
 
-class TestRbf1d(NumpyTestCase):
-    def check_multiquadrics(self):
+from scipy.sandbox.rbf.rbf import Rbf
+
+
+class TestRbf1d(TestCase):
+    def test_multiquadrics(self):
         x = linspace(0,10,9)
         y = sin(x)
         rbf = Rbf(x, y)
         yi = rbf(x)
         assert_array_almost_equal(y, yi)
 
-class TestRbf2d(NumpyTestCase):
-    def check_multiquadrics(self):
+class TestRbf2d(TestCase):
+    def test_multiquadrics(self):
         x = random.rand(50,1)*4-2
         y = random.rand(50,1)*4-2
         z = x*exp(-x**2-y**2)
@@ -27,8 +27,8 @@ class TestRbf2d(NumpyTestCase):
         zi.shape = x.shape
         assert_array_almost_equal(z, zi)
 
-class TestRbf3d(NumpyTestCase):
-    def check_multiquadrics(self):
+class TestRbf3d(TestCase):
+    def test_multiquadrics(self):
         x = random.rand(50,1)*4-2
         y = random.rand(50,1)*4-2
         z = random.rand(50,1)*4-2
@@ -39,4 +39,4 @@ class TestRbf3d(NumpyTestCase):
         assert_array_almost_equal(di, d)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

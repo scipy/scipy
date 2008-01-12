@@ -15,26 +15,23 @@ import numpy
 from numpy import bool_, complex_, float_, int_, object_
 import numpy.core.fromnumeric  as fromnumeric
 import numpy.core.numeric as numeric
-from numpy.testing import NumpyTest, NumpyTestCase
-from numpy.testing.utils import build_err_msg
+from scipy.testing import *
 
-import maskedarray
-import maskedarray as MA
-from maskedarray import masked_array, masked, nomask
+import scipy.sandbox.maskedarray
+import scipy.sandbox.maskedarray as MA
+from scipy.sandbox.maskedarray import masked_array, masked, nomask
 
-import maskedarray.testutils
-from maskedarray.testutils import assert_equal, assert_array_equal
+from scipy.sandbox.maskedarray.testutils import assert_equal, assert_array_equal
 
-from timeseries import tseries
-from timeseries import Date, date_array_fromlist, date_array_fromrange, date_array, thisday
-from timeseries import time_series, TimeSeries, adjust_endpoints, \
-    mask_period, align_series, align_with, fill_missing_dates, tsmasked, \
-    concatenate, stack, split
+from scipy.sandbox.timeseries import tseries, Date, date_array_fromlist, \
+     date_array_fromrange, date_array, thisday, time_series, TimeSeries, \
+     adjust_endpoints, mask_period, align_series, align_with, \
+     fill_missing_dates, tsmasked, concatenate, stack, split
 
-class TestCreation(NumpyTestCase):
+class TestCreation(TestCase):
     "Base test class for MaskedArrays."
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         dlist = ['2007-01-%02i' % i for i in range(1,16)]
         dates = date_array_fromlist(dlist)
         data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3)
@@ -117,10 +114,10 @@ class TestCreation(NumpyTestCase):
         assert_equal(series._mask,[0,0,1])
 #...............................................................................
 
-class TestArithmetics(NumpyTestCase):
+class TestArithmetics(TestCase):
     "Some basic arithmetic tests"
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         dlist = ['2007-01-%02i' % i for i in range(1,16)]
         dates = date_array_fromlist(dlist)
         data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3)
@@ -215,10 +212,10 @@ class TestArithmetics(NumpyTestCase):
 
 #...............................................................................
 
-class TestGetitem(NumpyTestCase):
+class TestGetitem(TestCase):
     "Some getitem tests"
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         dlist = ['2007-01-%02i' % i for i in range(1,16)]
         dates = date_array_fromlist(dlist)
         data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3, dtype=float_)
@@ -320,10 +317,10 @@ class TestGetitem(NumpyTestCase):
         assert_equal(series[:,:,0], series._data[:,:,0])
         assert_equal(series[:,:,0]._dates, series._dates)
 
-class TestFunctions(NumpyTestCase):
+class TestFunctions(TestCase):
     "Some getitem tests"
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         dlist = ['2007-01-%02i' % i for i in range(1,16)]
         dates = date_array_fromlist(dlist)
         data = masked_array(numeric.arange(15), mask=[1,0,0,0,0]*3)
@@ -635,4 +632,4 @@ test_dates test suite.
 ###############################################################################
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

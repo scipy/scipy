@@ -1,15 +1,13 @@
 from numpy import array, kron, diag, matrix
-from numpy.testing import *
+from scipy.testing import *
 
-set_package_path()
 from scipy.sparse.spfuncs import *
 from scipy.sparse import csr_matrix, csc_matrix, bsr_matrix
 from scipy.sparse.sparsetools import csr_scale_rows, csr_scale_columns, \
         bsr_scale_rows, bsr_scale_columns
-restore_path()
 
-class TestSparseFunctions(NumpyTestCase):
-    def check_scale_rows_and_cols(self):
+class TestSparseFunctions(TestCase):
+    def test_scale_rows_and_cols(self):
         D = matrix([[1,0,0,2,3],
                     [0,4,0,5,0],
                     [0,0,6,7,0]])
@@ -51,7 +49,7 @@ class TestSparseFunctions(NumpyTestCase):
 
 
 
-    def check_extract_diagonal(self):
+    def test_extract_diagonal(self):
         mats = []
         mats.append( [[1,0,2]] )
         mats.append( [[1],[0],[2]] )
@@ -81,8 +79,7 @@ class TestSparseFunctions(NumpyTestCase):
                         assert_equal(result,expected)
             
 
-    def check_estimate_blocksize(self):
-
+    def test_estimate_blocksize(self):
         mats = []
         mats.append( [[0,1],[1,0]] )
         mats.append( [[1,1,0],[0,0,1],[1,0,1]] )
@@ -103,7 +100,7 @@ class TestSparseFunctions(NumpyTestCase):
                 assert(r >= B.shape[0])
                 assert(c >= B.shape[1])
 
-    def check_count_blocks(self):
+    def test_count_blocks(self):
         def gold(A,bs):
             R,C = bs
             I,J = A.nonzero()
@@ -132,7 +129,6 @@ class TestSparseFunctions(NumpyTestCase):
         assert_equal(count_blocks(Y,(1,2)),gold(X,(1,2)))
 
 
-
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittests.main()
 

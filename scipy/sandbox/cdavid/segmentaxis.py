@@ -1,6 +1,6 @@
 import numpy as N
-import unittest
-from numpy.testing import NumpyTestCase, assert_array_almost_equal,             assert_almost_equal, assert_equal
+from numpy.testing import assert_array_almost_equal, \
+     assert_almost_equal, assert_equal
 import warnings
 
 def segment_axis(a, length, overlap=0, axis=None, end='cut', endvalue=0):

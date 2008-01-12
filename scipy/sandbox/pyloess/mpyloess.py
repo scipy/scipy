@@ -42,9 +42,8 @@ narray = numeric.array
 nempty = numeric.empty
 nlogical_not = numpy.logical_not
 
-import maskedarray.core
-from maskedarray.core import masked, nomask, mask_or
-from maskedarray.core import masked_array as marray
+from scipy.sandbox.maskedarray.core import masked, nomask, mask_or, \
+     masked_array as marray
 
 import _lowess, _stl, _mloess
 

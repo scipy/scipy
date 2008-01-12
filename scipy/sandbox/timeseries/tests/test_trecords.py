@@ -14,29 +14,27 @@ import types
 
 import numpy
 import numpy.core.fromnumeric  as fromnumeric
-from numpy.testing import NumpyTest, NumpyTestCase
-from numpy.testing.utils import build_err_msg
+from scipy.testing import *
 
-import maskedarray.testutils
-from maskedarray.testutils import assert_equal, assert_array_equal, assert_equal_records
+from scipy.sandbox.maskedarray.testutils import assert_equal, assert_array_equal, assert_equal_records
 
-import maskedarray.core as MA
-import maskedarray.mrecords as MR
-from maskedarray.mrecords import addfield
+import scipy.sandbox.maskedarray.core as MA
+import scipy.sandbox.maskedarray.mrecords as MR
+from scipy.sandbox.maskedarray.mrecords import addfield
 
-from maskedarray.core import getmaskarray, nomask, masked_array
+from scipy.sandbox.maskedarray.core import getmaskarray, nomask, masked_array
 
-from timeseries import trecords
-from timeseries.trecords import TimeSeriesRecords, TimeSeries,\
+from scipy.sandbox.timeseries.trecords import \
+     TimeSeriesRecords, TimeSeries,\
     fromarrays, fromtextfile, fromrecords, \
     date_array, time_series
 
 
 #..............................................................................
-class TestMRecords(NumpyTestCase):
+class TestMRecords(TestCase):
     "Base test class for MaskedArrays."
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         self.setup()
 
     def setup(self):
@@ -186,4 +184,4 @@ class TestMRecords(NumpyTestCase):
 ###############################################################################
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

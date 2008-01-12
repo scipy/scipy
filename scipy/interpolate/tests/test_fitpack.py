@@ -13,17 +13,15 @@ Run tests if interpolate is not installed:
 #import libwadpy
 
 import sys
-from numpy.testing import *
+from scipy.testing import *
 from numpy import array
-set_package_path()
-from interpolate.fitpack2 import UnivariateSpline,LSQUnivariateSpline,\
+from scipy.interpolate.fitpack2 import UnivariateSpline,LSQUnivariateSpline,\
      InterpolatedUnivariateSpline
-from interpolate.fitpack2 import LSQBivariateSpline, SmoothBivariateSpline,\
-     RectBivariateSpline
-restore_path()
+from scipy.interpolate.fitpack2 import LSQBivariateSpline, \
+     SmoothBivariateSpline, RectBivariateSpline
 
-class TestUnivariateSpline(NumpyTestCase):
-    def check_linear_constant(self):
+class TestUnivariateSpline(TestCase):
+    def test_linear_constant(self):
         x = [1,2,3]
         y = [3,3,3]
         lut = UnivariateSpline(x,y,k=1)
@@ -32,7 +30,7 @@ class TestUnivariateSpline(NumpyTestCase):
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2]),[3,3,3])
 
-    def check_linear_1d(self):
+    def test_linear_1d(self):
         x = [1,2,3]
         y = [0,2,4]
         lut = UnivariateSpline(x,y,k=1)
@@ -41,8 +39,8 @@ class TestUnivariateSpline(NumpyTestCase):
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2]),[0,1,2])
 
-class TestLSQBivariateSpline(NumpyTestCase):
-    def check_linear_constant(self):
+class TestLSQBivariateSpline(TestCase):
+    def test_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
         z = [3,3,3,3,3,3,3,3,3]
@@ -54,8 +52,8 @@ class TestLSQBivariateSpline(NumpyTestCase):
         #print lut.get_coeffs()
         #print lut.get_residual()
 
-class TestSmoothBivariateSpline(NumpyTestCase):
-    def check_linear_constant(self):
+class TestSmoothBivariateSpline(TestCase):
+    def test_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
         z = [3,3,3,3,3,3,3,3,3]
@@ -65,7 +63,7 @@ class TestSmoothBivariateSpline(NumpyTestCase):
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[3,3],[3,3],[3,3]])
 
-    def check_linear_1d(self):
+    def test_linear_1d(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
         z = [0,0,0,2,2,2,4,4,4]
@@ -75,8 +73,8 @@ class TestSmoothBivariateSpline(NumpyTestCase):
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[0,0],[1,1],[2,2]])
 
-class TestRectBivariateSpline(NumpyTestCase):
-    def check_defaults(self):
+class TestRectBivariateSpline(TestCase):
+    def test_defaults(self):
         x = array([1,2,3,4,5])
         y = array([1,2,3,4,5])
         z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
@@ -84,4 +82,4 @@ class TestRectBivariateSpline(NumpyTestCase):
         assert_array_almost_equal(lut(x,y),z)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

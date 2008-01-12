@@ -279,5 +279,3 @@ def reduction(ary,axis=0):
 def take(ary,axis=0): raise NotImplemented
 # and all the rest
 
-#from numpy.testing import NumpyTest
-#test = NumpyTest().test

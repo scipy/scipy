@@ -9,12 +9,10 @@
 import numpy
 from numpy import arange, zeros, array, dot, sqrt, cos, sin
 from scipy.linalg import norm
-from numpy.testing import *
-set_package_path()
+from scipy.testing import *
 from scipy.integrate import odeint
-restore_path()
 
-class TestODEInt(NumpyTestCase):
+class TestODEInt(TestCase):
     """ Test odeint: free vibration of a simple oscillator
         m \ddot{u} + k u = 0, u(0) = u_0 \dot{u}(0) \dot{u}_0
 
@@ -32,7 +30,7 @@ class TestODEInt(NumpyTestCase):
         tmp[1,0] = -self.k / self.m
         return dot(tmp,z)
 
-    def check_odeint1(self):
+    def test_odeint1(self):
         omega = sqrt(self.k / self.m)
         z0 = zeros(2, float)
         z0[0] = 1.0     # initial displacement
@@ -51,4 +49,4 @@ class TestODEInt(NumpyTestCase):
         assert res < 1.0e-6
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

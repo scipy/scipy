@@ -62,13 +62,8 @@ Available subpackages
 """
 __doc__ += pkgload.get_pkgdocs()
 
-
-def test(level=1, verbosity=1):
-    """ Run Scipy tests suite with level and verbosity."""
-    from numpy.testing import NumpyTest
-    import scipy
-    scipy.pkgload()
-    return NumpyTest(scipy).test(level, verbosity)
+from testing.pkgtester import Tester
+test = Tester().test
 
 __doc__ += """
 

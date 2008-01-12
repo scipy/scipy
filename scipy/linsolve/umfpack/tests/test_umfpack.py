@@ -8,20 +8,23 @@
 from numpy import transpose, array, arange
 
 import random
-from numpy.testing import *
-set_package_path()
+from scipy.testing import *
+
 from scipy import linsolve, rand, matrix, diag, eye
 from scipy.sparse import csc_matrix, dok_matrix, spdiags
 
 import numpy as nm
 import scipy.linsolve.umfpack as um
 
-restore_path()
+# Allow disabling of nose tests if umfpack not present
+have_umfpack = um.umfpack._um is not None
 
-class TestSolvers(NumpyTestCase):
+class TestSolvers(TestCase):
     """Tests inverting a sparse linear system"""
 
-    def check_solve_complex_without_umfpack(self):
+    __test__ = have_umfpack
+    
+    def test_solve_complex_without_umfpack(self):
         """Solve: single precision complex"""
         linsolve.use_solver( useUmfpack = False )
         a = self.a.astype('F')
@@ -32,7 +35,7 @@ class TestSolvers(NumpyTestCase):
         assert_array_almost_equal(a*x, b)
 
 
-    def check_solve_without_umfpack(self):
+    def test_solve_without_umfpack(self):
         """Solve: single precision"""
         linsolve.use_solver( useUmfpack = False )
         a = self.a.astype('f')
@@ -43,7 +46,7 @@ class TestSolvers(NumpyTestCase):
         assert_array_almost_equal(a*x, b)
 
 
-    def check_solve_complex_umfpack(self):
+    def test_solve_complex_umfpack(self):
         """Solve with UMFPACK: double precision complex"""
         linsolve.use_solver( useUmfpack = True )
         a = self.a.astype('D')
@@ -53,7 +56,7 @@ class TestSolvers(NumpyTestCase):
         #print "Error: ", a*x-b
         assert_array_almost_equal(a*x, b)
 
-    def check_solve_umfpack(self):
+    def test_solve_umfpack(self):
         """Solve with UMFPACK: double precision"""
         linsolve.use_solver( useUmfpack = True )
         a = self.a.astype('d')
@@ -63,7 +66,7 @@ class TestSolvers(NumpyTestCase):
         #print "Error: ", a*x-b
         assert_array_almost_equal(a*x, b)
 
-    def check_solve_sparse_rhs(self):
+    def test_solve_sparse_rhs(self):
         """Solve with UMFPACK: double precision, sparse rhs"""
         linsolve.use_solver( useUmfpack = True )
         a = self.a.astype('d')
@@ -73,7 +76,7 @@ class TestSolvers(NumpyTestCase):
         #print "Error: ", a*x-b
         assert_array_almost_equal(a*x, self.b)
 
-    def check_factorized_umfpack(self):
+    def test_factorized_umfpack(self):
         """Prefactorize (with UMFPACK) matrix for solving with multiple rhs"""
         linsolve.use_solver( useUmfpack = True )
         a = self.a.astype('d')
@@ -84,7 +87,7 @@ class TestSolvers(NumpyTestCase):
         x2 = solve( self.b2 )
         assert_array_almost_equal(a*x2, self.b2)
 
-    def check_factorized_without_umfpack(self):
+    def test_factorized_without_umfpack(self):
         """Prefactorize matrix for solving with multiple rhs"""
         linsolve.use_solver( useUmfpack = False )
         a = self.a.astype('d')
@@ -104,10 +107,12 @@ class TestSolvers(NumpyTestCase):
 
 
 
-class TestFactorization(NumpyTestCase):
+class TestFactorization(TestCase):
     """Tests factorizing a sparse linear system"""
 
-    def check_complex_lu(self):
+    __test__ = have_umfpack
+
+    def test_complex_lu(self):
         """Getting factors of complex matrix"""
         umfpack = um.UmfpackContext("zi")
 
@@ -126,7 +131,7 @@ class TestFactorization(NumpyTestCase):
 
             assert_array_almost_equal(P*R*A*Q,L*U)
 
-    def check_real_lu(self):
+    def test_real_lu(self):
         """Getting factors of real matrix"""
         umfpack = um.UmfpackContext("di")
 
@@ -166,4 +171,4 @@ class TestFactorization(NumpyTestCase):
 
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

@@ -83,8 +83,6 @@ from recaster import sctype_attributes, Recaster
 from data_store import save_as_module
 from mmio import mminfo, mmread, mmwrite
 
-
-
 __all__ = filter(lambda s:not s.startswith('_'),dir())
-from numpy.testing import NumpyTest
-test = NumpyTest().test
+from scipy.testing.pkgtester import Tester
+test = Tester().test

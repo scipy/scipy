@@ -1,6 +1,6 @@
 
 import numpy as N
-from numpy.testing import *
+from scipy.testing import *
 import scipy.ndimage.segment as S
 
 inputname = 'slice112.raw'
@@ -291,7 +291,7 @@ def save_slice(mySlice, filename='junk.raw', bytes=4):
     slice.tofile(filename)
 
 
-class TestSegment(NumpyTestCase):
+class TestSegment(TestCase):
     def test1(self):
         image = get_slice(filename)
         sourceImage = image.copy()
@@ -310,4 +310,4 @@ class TestSegment(NumpyTestCase):
 
     
 if __name__ == "__main__":
-    NumpyTest().run()
+    inittest.main()

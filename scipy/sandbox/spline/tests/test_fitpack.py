@@ -12,20 +12,20 @@ Run tests if spline is not installed:
 """
 
 import sys
-from numpy.testing import *
+from scipy.testing import *
 from numpy import array, arange, around, pi, sin, ravel, zeros, asarray
 
-set_package_path()
-from spline.fitpack import splprep, splrep, splev, sproot, splint, spalde
-from spline.fitpack import bisplev, bisplrep, splprep
-restore_path()
+
+from scipy.sandbox.spline.fitpack import splprep, splrep, splev, sproot, \
+     splint, spalde, bisplev, bisplrep, splprep
+
 
 set_local_path()
 from dierckx_test_data import *
 restore_path()
 
-class TestSplrepSplev(NumpyTestCase):
-    def check_curfit_against_dierckx_smth(self):
+class TestSplrepSplev(TestCase):
+    def test_curfit_against_dierckx_smth(self):
         x,y = curfit_test['x'],curfit_test['y']
         k,s = curfit_test_smth['k'],curfit_test_smth['s']
         iopt = curfit_test_smth['iopt']
@@ -42,7 +42,7 @@ class TestSplrepSplev(NumpyTestCase):
             assert_array_almost_equal(around(sp,1),
                                       curfit_test_smth['sp'][i])
 
-    def check_curfit_against_dierckx_lsq(self):
+    def test_curfit_against_dierckx_lsq(self):
         """ Test against results obtined from the pure fortran routines.
 
             Here we check simple spline creation and evaluation.
@@ -60,7 +60,7 @@ class TestSplrepSplev(NumpyTestCase):
             assert_array_almost_equal(around(sp,1),
                                       curfit_test_lsq['sp'][i])
 
-    def check_percur_against_dierckx(self):
+    def test_percur_against_dierckx(self):
         x,y = percur_test['x'], percur_test['y']
         k,s = percur_test['k'], percur_test['s']
         iopt, res = percur_test['iopt'], percur_test['res']
@@ -83,8 +83,8 @@ class TestSplrepSplev(NumpyTestCase):
             yy = asarray(splev(x,tck))
             assert_array_almost_equal(yy,sp[i], decimal=3)
 
-class TestSplprepSplev(NumpyTestCase):
-    def check_parcur_against_dierckx(self):
+class TestSplprepSplev(TestCase):
+    def test_parcur_against_dierckx(self):
         xa,xo = parcur_test['xa'], parcur_test['xo']
         k,s = parcur_test['k'], parcur_test['s']
         u = parcur_test['u']
@@ -120,7 +120,7 @@ class TestSplprepSplev(NumpyTestCase):
             yy[1::2] = y[1]
             assert_array_almost_equal(yy,sp[i], decimal=3)
 
-    def check_clocur_against_dierckx(self):
+    def test_clocur_against_dierckx(self):
         xa,xo = clocur_test['xa'], clocur_test['xo']
         k,s = clocur_test['k'], clocur_test['s']
         u = clocur_test['u']
@@ -155,8 +155,8 @@ class TestSplprepSplev(NumpyTestCase):
             yy[1::2] = y[1,:-1]
             assert_array_almost_equal(yy,sp[i], decimal=3)
 
-class TestSplintSpalde(NumpyTestCase):
-    def check_splint_spalde(self):
+class TestSplintSpalde(TestCase):
+    def test_splint_spalde(self):
         per = [0, 1, 0]
         N = [20, 20, 50]
         ia = [0, 0, 0.2*pi]
@@ -178,8 +178,8 @@ class TestSplintSpalde(NumpyTestCase):
                         assert_almost_equal(1, ddr/f1(dx,d), decimal=2)
                     d=d+1
 
-class TestSplder(NumpyTestCase):
-    def check_splder(self):
+class TestSplder(TestCase):
+    def test_splder(self):
         N = 50
         a,b = 0,2*pi
         dx = 0.2*pi
@@ -192,8 +192,8 @@ class TestSplder(NumpyTestCase):
             d2 = splev(dx,tck,der=1)
             assert_almost_equal(1, dr[1]/f1(dx,1.0), decimal=2)
 
-class TestSproot(NumpyTestCase):
-    def check_sproot(self):
+class TestSproot(TestCase):
+    def test_sproot(self):
         a=0
         b=15
         N=20
@@ -204,7 +204,7 @@ class TestSproot(NumpyTestCase):
         ex = array([0.0, pi, 2.0*pi, 3.0*pi, 4.0*pi])
         assert_array_almost_equal(sproot(tck),ex, decimal=3)
 
-class TestBisplevBisplrep(NumpyTestCase):
+class TestBisplevBisplrep(TestCase):
     def test_bisplev_bisplrep(self):
         f=f2; kx=3; ky=3; xb=0; xe=2*pi
         yb=0; ye=2*pi; Nx=20; Ny=20; s=0
@@ -219,8 +219,8 @@ class TestBisplevBisplrep(NumpyTestCase):
         v2.shape=len(tt[0]),len(tt[1])
         assert_almost_equal(0.0, norm2(ravel(v1-v2)), decimal=5)
 
-class TestParcur(NumpyTestCase):
-    def check_parcur(self):
+class TestParcur(TestCase):
+    def test_parcur(self):
         f=f1; per=0; s=0; a=0; b=2*pi;
         N=[20,50]
         ia=0; ib=2*pi; dx=0.2*pi
@@ -239,4 +239,4 @@ class TestParcur(NumpyTestCase):
                         around(abs(splev(uv[0],tck)-f(uv[0])),2),decimal=1)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

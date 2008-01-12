@@ -1,18 +1,17 @@
 """test sparse matrix construction functions"""
 
 from numpy import array, kron
-from numpy.testing import *
+from scipy.testing import *
 
-set_package_path()
+
 from scipy.sparse import csr_matrix, \
      spidentity, speye, spkron, spdiags, \
      lil_eye, lil_diags
-restore_path()
 
 #TODO check whether format=XXX is respected
 
-class TestConstructUtils(NumpyTestCase):
-    def check_spdiags(self):
+class TestConstructUtils(TestCase):
+    def test_spdiags(self):
         diags1 = array( [[ 1, 2, 3, 4, 5]] )
         diags2 = array( [[ 1, 2, 3, 4, 5],
                          [ 6, 7, 8, 9,10]] )
@@ -60,12 +59,12 @@ class TestConstructUtils(NumpyTestCase):
             assert_equal( spdiags(d,o,m,n).todense(), result )
         
            
-    def check_identity(self):
+    def test_identity(self):
         a = spidentity(3)
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
         assert_array_equal(a.toarray(), b)
 
-    def check_eye(self):
+    def test_eye(self):
         a = speye(2, 3 )
         b = array([[1, 0, 0], [0, 1, 0]], dtype='d')
         assert_array_equal(a.toarray(), b)
@@ -78,7 +77,7 @@ class TestConstructUtils(NumpyTestCase):
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
         assert_array_equal(a.toarray(), b)
 
-    def check_spkron(self):
+    def test_spkron(self):
         cases = []
 
         cases.append(array([[ 0]]))
@@ -102,7 +101,7 @@ class TestConstructUtils(NumpyTestCase):
 
                 assert_array_equal(result,expected)
 
-    def check_lil_diags(self):
+    def test_lil_diags(self):
         assert_array_equal(lil_diags([[1,2,3],[4,5],[6]],
                                      [0,1,2],(3,3)).todense(),
                            [[1,4,6],
@@ -134,5 +133,5 @@ class TestConstructUtils(NumpyTestCase):
                             [6,5,0]])
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()
 

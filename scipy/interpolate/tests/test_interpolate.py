@@ -1,13 +1,11 @@
-from numpy.testing import *
+from scipy.testing import *
 from numpy import mgrid, pi, sin, ogrid
 import numpy as np
 
-set_package_path()
-from interpolate import interp1d, interp2d
-restore_path()
+from scipy.interpolate import interp1d, interp2d
 
 
-class TestInterp2D(NumpyTestCase):
+class TestInterp2D(TestCase):
     def test_interp2d(self):
         y, x = mgrid[0:pi:20j, 0:pi:21j]
         z = sin(x+y)
@@ -18,7 +16,7 @@ class TestInterp2D(NumpyTestCase):
         assert_almost_equal(I(u.ravel(), v.ravel()), sin(v+u), decimal=2)
 
 
-class TestInterp1D(NumpyTestCase):
+class TestInterp1D(TestCase):
 
     def setUp(self):
         self.x10 = np.arange(10.)
@@ -202,4 +200,4 @@ class TestInterp1D(NumpyTestCase):
 
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

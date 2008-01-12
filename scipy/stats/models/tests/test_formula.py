@@ -7,11 +7,11 @@ import string
 import numpy as N
 import numpy.random as R
 import numpy.linalg as L
-from numpy.testing import assert_almost_equal, NumpyTest, NumpyTestCase
+from scipy.testing import *
 
 from scipy.stats.models import utils, formula, contrast
 
-class TestTerm(NumpyTestCase):
+class TestTerm(TestCase):
 
     def test_init(self):
         t1 = formula.Term("trivial")
@@ -47,7 +47,7 @@ class TestTerm(NumpyTestCase):
         f = intercept * t1
         self.assertEqual(str(f), str(formula.Formula(t1)))
 
-class TestFormula(NumpyTestCase):
+class TestFormula(TestCase):
 
     def setUp(self):
         self.X = R.standard_normal((40,10))
@@ -227,4 +227,4 @@ class TestFormula(NumpyTestCase):
         self.assertEquals(estimable, False)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

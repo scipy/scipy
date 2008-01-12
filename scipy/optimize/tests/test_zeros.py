@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
 
-from numpy.testing import *
-set_package_path()
-from optimize import zeros as cc
-restore_path()
+from scipy.testing import *
+
+from scipy.optimize import zeros as cc
 
 from math import sin,sqrt,log
 from random import random
@@ -51,8 +50,8 @@ mstrings = ['cc.bisect','cc.ridder','cc.brenth','cc.brentq']
 functions = [f2,f3,f4,f5,f6]
 fstrings = ['f2','f3','f4','f5','f6']
 
-class TestBasic(NumpyTestCase) :
-    def run_test(self, method, name):
+class TestBasic(TestCase) :
+    def run_check(self, method, name):
         a = .5
         b = sqrt(3)
         for function, fname in zip(functions, fstrings):
@@ -61,16 +60,17 @@ class TestBasic(NumpyTestCase) :
             assert_almost_equal(zero, 1.0, decimal=12,
                 err_msg='method %s, function %s' % (name, fname))
 
-    def check_bisect(self):
-        self.run_test(cc.bisect, 'bisect')
-    def check_ridder(self):
-        self.run_test(cc.ridder, 'ridder')
-    def check_brentq(self):
-        self.run_test(cc.brentq, 'brentq')
-    def check_brenth(self):
-        self.run_test(cc.brenth, 'brenth')
+    def test_bisect(self):
+        self.run_check(cc.bisect, 'bisect')
+    def test_ridder(self):
+        self.run_check(cc.ridder, 'ridder')
+    def test_brentq(self):
+        self.run_check(cc.brentq, 'brentq')
+    def test_brenth(self):
+        self.run_check(cc.brenth, 'brenth')
 
-    def bench_run(self,level=5):
+    @dec.bench
+    def test_run(self):
         a = .5
         b = sqrt(3)
         repeat = 2000
@@ -85,7 +85,7 @@ class TestBasic(NumpyTestCase) :
             for j in range(len(methods)) :
                 meth = methods[j]
                 try:
-                    t = self.measure("meth(func,a,b)",repeat)
+                    t = measure("meth(func,a,b)",repeat)
                 except:
                     print '%s : failed'%mstrings[j]
                 else:
@@ -93,4 +93,4 @@ class TestBasic(NumpyTestCase) :
             print '\n\n'
 
 if __name__ == '__main__' :
-    NumpyTest().run()
+    unittest.main()

@@ -1,10 +1,10 @@
 
-from numpy.testing import *
-from numpy import *
+from scipy.testing import *
+from numpy import dot
 
-class _test_gev:
+class _test_gev(object):
 
-    def check_sygv(self,level=1,sym='sy',suffix='',itype=1):
+    def check_sygv(self,sym='sy',suffix='',itype=1):
         a = [[1,2,3],[2,2,3],[3,3,6]]
         b = [[10,-1,1],[-1,8,-2],[1,-2,6]]
         f = getattr(self.lapack,sym+'gv'+suffix)

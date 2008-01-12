@@ -36,6 +36,7 @@ from measurements import *
 from morphology import *
 
 from info import __doc__
-from numpy.testing import NumpyTest
-test = NumpyTest().test
 __version__ = '2.0'
+
+from scipy.testing.pkgtester import Tester
+test = Tester().test

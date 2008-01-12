@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 
-import sys
-from numpy.testing import *
-set_package_path()
-from arpack.speigs import *
-restore_path()
+from scipy.testing import *
+
+from scipy.sandbox.arpack.speigs import *
 
 import numpy as N
 
-class TestEigs(NumpyTestCase):
+class TestEigs(TestCase):
     def test(self):
         maxn=15                # Dimension of square matrix to be solved
         # Use a PDP^-1 factorisation to construct matrix with known
@@ -30,13 +28,13 @@ class TestEigs(NumpyTestCase):
         nev=4
         eigvs = ARPACK_eigs(matvec, A.shape[0], nev=nev)
         calc_vals = eigvs[0]
-        # Ensure the calculate eigenvectors have the same sign as the refence values
+        # Ensure the calculated eigenvectors have the same sign as the reference values
         calc_vecs = eigvs[1] / [N.sign(x[0]) for x in eigvs[1].T]
         assert_array_almost_equal(calc_vals, vals[0:nev], decimal=7)
         assert_array_almost_equal(calc_vecs,  N.array(vecs)[:,0:nev], decimal=7)
 
 
-# class TestGeneigs(NumpyTestCase):
+# class TestGeneigs(TestCase):
 #     def test(self):
 #         import pickle
 #         import scipy.linsolve
@@ -50,4 +48,4 @@ class TestEigs(NumpyTestCase):
 #          94.646308846854879, 95.30841709116271], decimal=11)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

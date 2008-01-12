@@ -13,22 +13,20 @@ Run tests if spline is not installed:
 """
 
 import sys
-from numpy.testing import *
+from scipy.testing import *
 from numpy import array, arange, around, pi, sin, cos
 
-set_package_path()
-from spline.spline import UnivariateSpline,LSQUnivariateSpline,\
-     InterpolatedUnivariateSpline
-from spline.spline import LSQBivariateSpline, SmoothBivariateSpline,\
+
+from scipy.sandbox.spline.spline import UnivariateSpline,LSQUnivariateSpline,\
+     InterpolatedUnivariateSpline, LSQBivariateSpline, SmoothBivariateSpline,\
      RectBivariateSpline
-restore_path()
 
 set_local_path()
 from dierckx_test_data import *
 restore_path()
 
-class TestUnivariateSpline(NumpyTestCase):
-    def check_linear_constant(self):
+class TestUnivariateSpline(TestCase):
+    def test_linear_constant(self):
         x = [1,2,3]
         y = [3,3,3]
         lut = UnivariateSpline(x,y,k=1)
@@ -37,7 +35,7 @@ class TestUnivariateSpline(NumpyTestCase):
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2]),[3,3,3])
 
-    def check_linear_1d(self):
+    def test_linear_1d(self):
         x = [1,2,3]
         y = [0,2,4]
         lut = UnivariateSpline(x,y,k=1)
@@ -46,7 +44,7 @@ class TestUnivariateSpline(NumpyTestCase):
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2]),[0,1,2])
 
-    def check_curfit_against_dierckx(self):
+    def test_curfit_against_dierckx(self):
         """ Test against results obtined from the pure fortran routines.
 
             Here we check simple spline creation and evaluation.
@@ -70,7 +68,7 @@ class TestUnivariateSpline(NumpyTestCase):
             assert_array_almost_equal(around(uspl(x),1),
                                       curfit_test_smth['sp'][i])
 
-    def check_spint_spalde(self):
+    def test_spint_spalde(self):
         per = [0, 0, 0]
         N = [20, 20, 50]
         ia = [0, 0, 0.2*pi]
@@ -92,7 +90,7 @@ class TestUnivariateSpline(NumpyTestCase):
                         assert_almost_equal(1, ddr/f1(dx,d), decimal=2)
                     d=d+1
 
-    def check_sproot(self):
+    def test_sproot(self):
         a=0
         b=15
         N=20
@@ -103,8 +101,8 @@ class TestUnivariateSpline(NumpyTestCase):
         ex = array([0.0, pi, 2.0*pi, 3.0*pi, 4.0*pi])
         assert_array_almost_equal(uspl.roots(),ex, decimal=3)
 
-class TestLSQUnivariateSpline(NumpyTestCase):
-    def check_curfit_against_dierckx(self):
+class TestLSQUnivariateSpline(TestCase):
+    def test_curfit_against_dierckx(self):
         """ Test against results obtined from the pure fortran routines.
 
             Here we check simple spline creation and evaluation.
@@ -121,8 +119,8 @@ class TestLSQUnivariateSpline(NumpyTestCase):
             assert_array_almost_equal(around(lsquspl(x),1),
                                       curfit_test_lsq['sp'][i])
 
-class TestLSQBivariateSpline(NumpyTestCase):
-    def check_linear_constant(self):
+class TestLSQBivariateSpline(TestCase):
+    def test_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
         z = [3,3,3,3,3,3,3,3,3]
@@ -134,8 +132,8 @@ class TestLSQBivariateSpline(NumpyTestCase):
         #print lut.get_coeffs()
         #print lut.get_residual()
 
-class TestSmoothBivariateSpline(NumpyTestCase):
-    def check_linear_constant(self):
+class TestSmoothBivariateSpline(TestCase):
+    def test_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
         z = [3,3,3,3,3,3,3,3,3]
@@ -145,7 +143,7 @@ class TestSmoothBivariateSpline(NumpyTestCase):
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[3,3],[3,3],[3,3]])
 
-    def check_linear_1d(self):
+    def test_linear_1d(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
         z = [0,0,0,2,2,2,4,4,4]
@@ -155,8 +153,8 @@ class TestSmoothBivariateSpline(NumpyTestCase):
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[0,0],[1,1],[2,2]])
 
-class TestRectBivariateSpline(NumpyTestCase):
-    def check_defaults(self):
+class TestRectBivariateSpline(TestCase):
+    def test_defaults(self):
         x = array([1,2,3,4,5])
         y = array([1,2,3,4,5])
         z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
@@ -164,4 +162,4 @@ class TestRectBivariateSpline(NumpyTestCase):
         assert_array_almost_equal(lut(x,y),z)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

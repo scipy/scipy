@@ -5,6 +5,8 @@ http://www.PerspectiveEdge.com
 """
 
 import sys,math,random,time
+from scipy.sandbox import buildgrid
+
 random.seed(7)
 
 global ncol,nrow,step,xmin,ymin,simple
@@ -84,11 +86,10 @@ xyzfile = "inpdata.xyz" # input for fromfile()
 xp,yp,zp = makeInputXYZ(xyzfile, datapoints)
 
 
-import BuildGrid
 
 # get file statistics
 nvals,xmin,xmax,ymin,ymax,zmin,zmax,zavrg,zstnd = \
-    BuildGrid.filestatistics(xyzfile)
+    buildgrid.filestatistics(xyzfile)
 print xyzfile,'statistics.  Number of values',nvals
 print 'X min %9.1f   max %9.1f' % (xmin,xmax)
 print 'Y min %9.1f   max %9.1f' % (ymin,ymax)
@@ -97,7 +98,7 @@ print 'S avrg %7.2f   stnd %7.3f' % (zavrg,zstnd)
 
 # build grid 'fromfile'
 t0 = time.clock()
-grid = BuildGrid.fromfile(xyzfile=xyzfile,
+grid = buildgrid.fromfile(xyzfile=xyzfile,
     nx=ncol, ny=nrow, step=step, xmin=xmin, ymin=ymin, 
     method='Good',      # or 'Best' - not implemented
     trimming=trimdist,  # if no trimming - full grid
@@ -112,14 +113,14 @@ print 'fromfile():',xyzfile,len(grid)-ncol*nrow,"(%.2f sec, %.0f nodes/sec)" %\
 if not build_only:
     outfile = "outdata1.xyz"
     t0 = time.clock()
-    rv = BuildGrid.tofile(filename=outfile, griddata=grid, gridtype='xyz',
+    rv = buildgrid.tofile(filename=outfile, griddata=grid, gridtype='xyz',
         nx=ncol, ny=nrow, step=step, xmin=xmin, ymin=ymin, unvalue=1234.4321)
     print 'tofile():',outfile,rv,"(%.2f sec)" % (time.clock()-t0)
 
 
 # build grid from xyz lists
 t0 = time.clock()
-grid2 = BuildGrid.fromxyz(xdata=xp,ydata=yp,zdata=zp,
+grid2 = buildgrid.fromxyz(xdata=xp,ydata=yp,zdata=zp,
     nx=ncol, ny=nrow, step=step, xmin=xmin, ymin=ymin, 
     method='Good',      # or 'Best' (not implemented)
     trimming=trimdist,  # if no trimming - full grid
@@ -133,7 +134,7 @@ print 'fromxyz():',len(grid)-ncol*nrow,"(%.2f sec, %.0f nodes/sec)" %\
 if not build_only:
     outfile = "outdata2.xyz"
     t0 = time.clock()
-    rv = BuildGrid.tofile(filename=outfile, griddata=grid2, gridtype='xyz',
+    rv = buildgrid.tofile(filename=outfile, griddata=grid2, gridtype='xyz',
         nx=ncol, ny=nrow, step=step, xmin=xmin, ymin=ymin, unvalue=1234.4321)
     print 'tofile():',outfile,rv,"(%.2f sec)" % (time.clock()-t0)
 

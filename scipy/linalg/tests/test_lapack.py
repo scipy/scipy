@@ -3,26 +3,17 @@
 # Created by: Pearu Peterson, September 2002
 #
 
-__usage__ = """
-Build linalg:
-  python setup_linalg.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test(<level>)'
-Run tests if linalg is not installed:
-  python tests/test_lapack.py [<level>]
-"""
 
 import sys
-from numpy.testing import *
+from scipy.testing import *
 from numpy import ones
-set_package_path()
-from linalg import flapack
-from linalg import clapack
-restore_path()
 
-class TestFlapackSimple(NumpyTestCase):
+from scipy.linalg import flapack, clapack
 
-    def check_gebal(self):
+
+class TestFlapackSimple(TestCase):
+
+    def test_gebal(self):
         a = [[1,2,3],[4,5,6],[7,8,9]]
         a1 = [[1,0,0,3e-4],
               [4,0,0,2e-3],
@@ -42,7 +33,7 @@ class TestFlapackSimple(NumpyTestCase):
             #print a1
             #print ba,lo,hi,pivscale
 
-    def check_gehrd(self):
+    def test_gehrd(self):
         a = [[-149, -50,-154],
              [ 537, 180, 546],
              [ -27,  -9, -25]]
@@ -52,9 +43,9 @@ class TestFlapackSimple(NumpyTestCase):
             ht,tau,info = f(a)
             assert not info,`info`
 
-class TestLapack(NumpyTestCase):
+class TestLapack(TestCase):
 
-    def check_flapack(self):
+    def test_flapack(self):
         if hasattr(flapack,'empty_module'):
             print """
 ****************************************************************
@@ -63,7 +54,7 @@ WARNING: flapack module is empty
 See scipy/INSTALL.txt for troubleshooting.
 ****************************************************************
 """
-    def check_clapack(self):
+    def test_clapack(self):
         if hasattr(clapack,'empty_module'):
             print """
 ****************************************************************
@@ -77,4 +68,4 @@ Notes:
 """
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

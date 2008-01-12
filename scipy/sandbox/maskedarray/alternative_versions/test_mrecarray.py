@@ -14,22 +14,18 @@ import types
 
 import numpy as N
 import numpy.core.fromnumeric  as fromnumeric
-from numpy.testing import NumpyTest, NumpyTestCase
-from numpy.testing.utils import build_err_msg
+from scipy.testing import *
+from scipy.sandbox.maskedarray.testutils import *
 
-import maskedarray.testutils
-from maskedarray.testutils import *
-
-import maskedarray.core as MA
-import maskedarray.mrecords
-from maskedarray.mrecords import mrecarray, fromarrays, fromtextfile, fromrecords
+import scipy.sandbox.maskedarray.core as MA
+from scipy.sandbox.maskedarray.mrecords import mrecarray, fromarrays, fromtextfile, fromrecords
 
 
 #..............................................................................
-class TestMrecarray(NumpyTestCase):
+class TestMrecarray(TestCase):
     "Base test class for MaskedArrays."
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         self.setup()
 
     def setup(self):
@@ -125,4 +121,4 @@ class TestMrecarray(NumpyTestCase):
 ###############################################################################
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

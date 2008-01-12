@@ -4,16 +4,16 @@ Test functions for models.GLM
 
 import numpy as N
 import numpy.random as R
-from numpy.testing import NumpyTest, NumpyTestCase
+from scipy.testing import *
 
 import scipy.stats.models as S
 import scipy.stats.models.glm as models
 
 W = R.standard_normal
 
-class TestRegression(NumpyTestCase):
+class TestRegression(TestCase):
 
-    def check_Logistic(self):
+    def test_Logistic(self):
         X = W((40,10))
         Y = N.greater(W((40,)), 0)
         family = S.family.Binomial()
@@ -21,7 +21,7 @@ class TestRegression(NumpyTestCase):
         results = cmodel.fit(Y)
         self.assertEquals(results.df_resid, 30)
 
-    def check_Logisticdegenerate(self):
+    def test_Logisticdegenerate(self):
         X = W((40,10))
         X[:,0] = X[:,1] + X[:,2]
         Y = N.greater(W((40,)), 0)
@@ -31,4 +31,4 @@ class TestRegression(NumpyTestCase):
         self.assertEquals(results.df_resid, 31)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

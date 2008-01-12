@@ -1,4 +1,5 @@
-from scipy import *
+from scipy import array, arange, ones, sort, cos, pi, rand, \
+     set_printoptions, r_
 from scipy.sandbox import lobpcg
 from scipy.sparse import spdiags, speye
 from pylab import loglog, show, xlabel, ylabel, title

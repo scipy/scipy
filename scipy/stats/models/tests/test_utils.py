@@ -4,11 +4,11 @@ Test functions for models.utils
 
 import numpy as N
 import numpy.random as R
-from numpy.testing import assert_almost_equal, NumpyTest, NumpyTestCase
+from scipy.testing import *
 
 from scipy.stats.models import utils
 
-class TestUtils(NumpyTestCase):
+class TestUtils(TestCase):
 
     def test_recipr(self):
         X = N.array([[2,1],[-1,0]])
@@ -55,4 +55,4 @@ class TestUtils(NumpyTestCase):
         self.assertRaises(ValueError, utils.StepFunction, x, y)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

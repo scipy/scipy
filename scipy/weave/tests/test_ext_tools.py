@@ -1,14 +1,14 @@
 
 import time
 
-from numpy.testing import *
-set_package_path()
-from weave import ext_tools, c_spec
+from scipy.testing import *
+
+from scipy.weave import ext_tools, c_spec
 try:
-    from weave.standard_array_spec import array_converter
+    from scipy.weave.standard_array_spec import array_converter
 except ImportError:
     pass # requires numpy.numerix
-restore_path()
+
 
 set_local_path()
 from weave_test_utils import *
@@ -17,14 +17,16 @@ restore_path()
 build_dir = empty_temp_dir()
 print 'building extensions here:', build_dir
 
-class TestExtModule(NumpyTestCase):
+class TestExtModule(TestCase):
     #should really do some testing of where modules end up
-    def check_simple(self,level=5):
+    @dec.slow
+    def test_simple(self):
         """ Simplest possible module """
         mod = ext_tools.ext_module('simple_ext_module')
         mod.compile(location = build_dir)
         import simple_ext_module
-    def check_multi_functions(self,level=5):
+    @dec.slow
+    def test_multi_functions(self):
         mod = ext_tools.ext_module('module_multi_function')
         var_specs = []
         code = ""
@@ -36,7 +38,8 @@ class TestExtModule(NumpyTestCase):
         import module_multi_function
         module_multi_function.test()
         module_multi_function.test2()
-    def check_with_include(self,level=5):
+    @dec.slow
+    def test_with_include(self):
         # decalaring variables
         a = 2.;
 
@@ -57,7 +60,8 @@ class TestExtModule(NumpyTestCase):
         import ext_module_with_include
         ext_module_with_include.test(a)
 
-    def check_string_and_int(self,level=5):
+    @dec.slow
+    def test_string_and_int(self):
         # decalaring variables
         a = 2;b = 'string'
         # declare module
@@ -73,7 +77,8 @@ class TestExtModule(NumpyTestCase):
         c = ext_string_and_int.test(a,b)
         assert(c == len(b))
 
-    def check_return_tuple(self,level=5):
+    @dec.slow
+    def test_return_tuple(self):
         # decalaring variables
         a = 2
         # declare module
@@ -94,9 +99,10 @@ class TestExtModule(NumpyTestCase):
         c,d = ext_return_tuple.test(a)
         assert(c==a and d == a+1)
 
-class TestExtFunction(NumpyTestCase):
+class TestExtFunction(TestCase):
     #should really do some testing of where modules end up
-    def check_simple(self,level=5):
+    @dec.slow
+    def test_simple(self):
         """ Simplest possible function """
         mod = ext_tools.ext_module('simple_ext_function')
         var_specs = []
@@ -107,8 +113,8 @@ class TestExtFunction(NumpyTestCase):
         import simple_ext_function
         simple_ext_function.test()
 
-class TestAssignVariableTypes(NumpyTestCase):
-    def check_assign_variable_types(self):
+class TestAssignVariableTypes(TestCase):
+    def test_assign_variable_types(self):
         try:
             from numpy.numerix import arange, Float32, Float64
         except:
@@ -135,4 +141,4 @@ class TestAssignVariableTypes(NumpyTestCase):
         print_assert_equal(expr,actual,desired)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

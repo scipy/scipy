@@ -2,33 +2,33 @@
 #
 # Created by: Pearu Peterson, September 2002
 #
+'''
+This file adapted for nose tests 1/1/08
 
-__usage__ = """
-Build lapack:
-  python setup_lapack.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.lib.lapack.test(<level>)'
-Run tests if lapack is not installed:
-  python tests/test_lapack.py [<level>]
-"""
+Note that the conversion is not very complete.
 
+This and the included files deliberately use "check_" as the test
+method names.  There are no subclasses of TestCase.  Thus nose will
+pick up nothing but the final test_all_lapack generator function.
+This does the work of collecting the test methods and checking if they
+can be run (see the isrunnable method).  
+'''
+
+import os
 import sys
-from numpy.testing import *
-from numpy import *
+from scipy.testing import *
+from numpy import dot, ones, zeros
 
-set_package_path()
-from lapack import flapack,clapack
-restore_path()
+from scipy.lib.lapack import flapack, clapack
 
-set_local_path()
+sys.path.insert(0, os.path.split(__file__))
 from gesv_tests import _test_gev
 from esv_tests import _test_ev
-restore_path()
+del sys.path[0]
 
 #class _test_ev: pass
 
-class _TestLapack(NumpyTestCase,
-                   _test_ev,
+class _TestLapack( _test_ev,
                    _test_gev):
 
     def check_gebal(self):
@@ -57,12 +57,13 @@ class _TestLapack(NumpyTestCase,
         assert not info,`info`
 
     def isrunnable(self,mthname):
+        ''' Return True if required routines for check method present in module '''
         l = mthname.split('_')
         if len(l)>1 and l[0]=='check':
             return hasattr(self.lapack,l[1])
         return 2
 
-class PrefixWrapper:
+class PrefixWrapper(object):
     def __init__(self,module,prefix):
         self.module = module
         self.prefix = prefix
@@ -122,5 +123,18 @@ else:
         lapack = PrefixWrapper(clapack,'z')
         decimal = 12
 
-if __name__ == "__main__":
-    NumpyTest().run()
+# Collect test classes and methods with generator
+# This is a moderate hack replicating some obscure numpy testing
+# functionality for use with nose
+
+def test_all_lapack():
+    methods = []
+    for name, value in globals().items():
+        if not (name.startswith('Test')
+                and issubclass(value, _TestLapack)):
+            continue
+        o = value()
+        methods += [getattr(o, n) for n in dir(o) if o.isrunnable(n) is True]
+    for method in methods:
+        yield (method, )
+        

@@ -8,38 +8,45 @@ check_return -- test whether a variable is passed in, modified, and
                 then returned as a function return value correctly
 """
 
-from numpy.testing import *
-set_package_path()
-from weave import ext_tools, wx_spec
-restore_path()
+from scipy.testing import *
+
+from scipy.weave import ext_tools, wx_spec
+
 
 import wx
 
-class TestWxConverter(NumpyTestCase):
+class TestWxConverter(TestCase):
     def setUp(self):
         self.app = wx.App()
         self.s = wx_spec.wx_converter()
 
-    def check_type_match_string(self,level=5):
+    @dec.slow
+    def test_type_match_string(self):
         assert(not self.s.type_match('string') )
 
-    def check_type_match_int(self,level=5):
+    @dec.slow
+    def test_type_match_int(self):
         assert(not self.s.type_match(5))
 
-    def check_type_match_float(self,level=5):
+    @dec.slow
+    def test_type_match_float(self):
         assert(not self.s.type_match(5.))
 
-    def check_type_match_complex(self,level=5):
+    @dec.slow
+    def test_type_match_complex(self):
         assert(not self.s.type_match(5.+1j))
 
-    def check_type_match_complex(self,level=5):
+    @dec.slow
+    def test_type_match_complex(self):
         assert(not self.s.type_match(5.+1j))
 
-    def check_type_match_wxframe(self,level=5):
+    @dec.slow
+    def test_type_match_wxframe(self):
         f=wx.Frame(None,-1,'bob')
         assert(self.s.type_match(f))
 
-    def check_var_in(self,level=5):
+    @dec.slow
+    def test_var_in(self):
         mod = ext_tools.ext_module('wx_var_in',compiler='')
         mod.customize.add_header('<wx/string.h>')
         mod.customize.add_extra_compile_arg(' '.join(self.s.extra_compile_args))
@@ -69,7 +76,8 @@ class TestWxConverter(NumpyTestCase):
         except AttributeError:
             pass
 
-    def no_check_var_local(self,level=5):
+    @dec.slow
+    def no_check_var_local(self):
         mod = ext_tools.ext_module('wx_var_local')
         a = 'string'
         code = 'a="hello";'
@@ -83,7 +91,8 @@ class TestWxConverter(NumpyTestCase):
         wx_var_local.test(b,q)
         assert('a' == 'string')
 
-    def no_test_no_check_return(self,level=5):
+    @dec.slow
+    def no_test_no_check_return(self):
         mod = ext_tools.ext_module('wx_return')
         a = 'string'
         code = """
@@ -99,7 +108,4 @@ class TestWxConverter(NumpyTestCase):
         assert(c == 'hello')
 
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) == 1:
-        sys.argv.extend(["--level=5"])
-    NumpyTest().test(10,10)
+    unittest.main()

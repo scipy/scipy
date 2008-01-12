@@ -1,4 +1,4 @@
-from numpy.testing import *
+from scipy.testing import *
 
 import numpy
 import scipy
@@ -7,16 +7,16 @@ from scipy import rand
 from scipy.sparse import csr_matrix
 from scipy.linalg import norm
 
-set_package_path()
+
 from scipy.sandbox.multigrid.utils import approximate_spectral_radius, \
                                           infinity_norm, diag_sparse, \
                                           symmetric_rescaling, \
                                           expand_into_blocks
-restore_path()
 
 
-class TestUtils(NumpyTestCase):
-    def check_approximate_spectral_radius(self):
+
+class TestUtils(TestCase):
+    def test_approximate_spectral_radius(self):
         cases = []
 
         cases.append( matrix([[-4]]) )
@@ -38,7 +38,7 @@ class TestUtils(NumpyTestCase):
       
         #TODO test larger matrices
     
-    def check_infinity_norm(self):
+    def test_infinity_norm(self):
         A = matrix([[-4]])
         assert_equal(infinity_norm(csr_matrix(A)),4)
 
@@ -51,7 +51,7 @@ class TestUtils(NumpyTestCase):
         A = matrix([[1.3,-4.7,0],[-2.23,5.5,0],[9,0,-2]])
         assert_equal(infinity_norm(csr_matrix(A)),11)
 
-    def check_diag_sparse(self):
+    def test_diag_sparse(self):
         #check sparse -> array
         A = matrix([[-4]])
         assert_equal(diag_sparse(csr_matrix(A)),[-4])
@@ -79,7 +79,7 @@ class TestUtils(NumpyTestCase):
         assert_equal(diag_sparse(array([1.3,5.5,-2])).todense(),csr_matrix(A).todense())
 
 
-    def check_symmetric_rescaling(self):
+    def test_symmetric_rescaling(self):
         cases = []
         cases.append( diag_sparse(array([1,2,3,4])) )
         cases.append( diag_sparse(array([1,0,3,4])) )
@@ -105,7 +105,7 @@ class TestUtils(NumpyTestCase):
             D_sqrt,D_sqrt_inv = diag_sparse(D_sqrt),diag_sparse(D_sqrt_inv)
             assert_almost_equal((D_sqrt_inv*A*D_sqrt_inv).todense(), DAD.todense())
 
-    def check_expand_into_blocks(self):
+    def test_expand_into_blocks(self):
         cases = []
         cases.append( ( matrix([[1]]), (1,2) ) )
         cases.append( ( matrix([[1]]), (2,1) ) )
@@ -129,4 +129,4 @@ class TestUtils(NumpyTestCase):
 
 
 if __name__ == '__main__':
-    NumpyTest().run()
+    unittest.main()

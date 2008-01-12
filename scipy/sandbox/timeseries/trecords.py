@@ -26,17 +26,17 @@ from numpy.core.records import find_duplicate
 from numpy.core.records import format_parser, recarray, record
 from numpy.core.records import fromarrays as recfromarrays
 
-import maskedarray as MA
+import scipy.sandbox.maskedarray as MA
 #MaskedArray = MA.MaskedArray
-from maskedarray.core import MaskedArray, MAError, default_fill_value, \
-    masked_print_option
-from maskedarray.core import masked, nomask, getmask, getmaskarray, make_mask,\
+from scipy.sandbox.maskedarray.core import MaskedArray, MAError, \
+     default_fill_value, masked_print_option, masked, nomask, \
+     getmask, getmaskarray, make_mask,\
     make_mask_none, mask_or, masked_array, filled
 
-import maskedarray.mrecords as MR
-from maskedarray.mrecords import _checknames, _guessvartypes, openfile,\
-    MaskedRecords
-from maskedarray.mrecords import fromrecords as mrecfromrecords
+import scipy.sandbox.maskedarray.mrecords as MR
+from scipy.sandbox.maskedarray.mrecords import _checknames, \
+     _guessvartypes, openfile, MaskedRecords, \
+     fromrecords as mrecfromrecords
 
 from tseries import TimeSeries, time_series, _getdatalength
 from dates import Date, DateArray, date_array

@@ -1,22 +1,22 @@
 import os
 import time
 
-from numpy import *
+from numpy import dot, float32, float64, complex64, complex128, \
+     zeros, random, array, sum, abs, allclose
 
-from numpy.testing import *
-set_package_path()
-from weave import blitz_tools
-from weave.ast_tools import harvest_variables
-restore_path()
+from scipy.testing import *
+
+from scipy.weave import blitz_tools
+from scipy.weave.ast_tools import harvest_variables
 
 set_local_path()
 from weave_test_utils import *
 restore_path()
 
 
-class TestAstToBlitzExpr(NumpyTestCase):
+class TestAstToBlitzExpr(TestCase):
 
-    def generic_test(self,expr,desired):
+    def generic_check(self,expr,desired):
         import parser
         ast = parser.suite(expr)
         ast_list = ast.tolist()
@@ -25,7 +25,7 @@ class TestAstToBlitzExpr(NumpyTestCase):
         desired = remove_whitespace(desired)
         print_assert_equal(expr,actual,desired)
 
-    def check_simple_expr(self):
+    def test_simple_expr(self):
         """convert simple expr to blitz
 
            a[:1:2] = b[:1+i+2:]
@@ -33,9 +33,9 @@ class TestAstToBlitzExpr(NumpyTestCase):
         expr = "a[:1:2] = b[:1+i+2:]"
         desired = "a(blitz::Range(_beg,1-1,2))="\
                   "b(blitz::Range(_beg,1+i+2-1));"
-        self.generic_test(expr,desired)
+        self.generic_check(expr,desired)
 
-    def check_fdtd_expr(self):
+    def test_fdtd_expr(self):
         """ convert fdtd equation to blitz.
              ex[:,1:,1:] =   ca_x[:,1:,1:] * ex[:,1:,1:]
                            + cb_y_x[:,1:,1:] * (hz[:,1:,1:] - hz[:,:-1,:])
@@ -55,14 +55,14 @@ class TestAstToBlitzExpr(NumpyTestCase):
                   ' -cb_z_x(_all,blitz::Range(1,_end),blitz::Range(1,_end))'\
                   '*(hy(_all,blitz::Range(1,_end),blitz::Range(1,_end))'\
                   '-hy(_all,blitz::Range(1,_end),blitz::Range(_beg,Nhy(2)-1-1)));'
-        self.generic_test(expr,desired)
+        self.generic_check(expr,desired)
 
-class TestBlitz(NumpyTestCase):
+class TestBlitz(TestCase):
     """* These are long running tests...
 
          I'd like to benchmark these things somehow.
     *"""
-    def generic_test(self,expr,arg_dict,type,size,mod_location):
+    def generic_check(self,expr,arg_dict,type,size,mod_location):
         clean_result = array(arg_dict['result'],copy=1)
         t1 = time.time()
         exec expr in globals(),arg_dict
@@ -113,7 +113,7 @@ class TestBlitz(NumpyTestCase):
                 try:     arg_dict[arg].imag = arg_dict[arg].real
                 except:  pass
             print 'Run:', size,typ
-            standard,compiled = self.generic_test(expr,arg_dict,type,size,
+            standard,compiled = self.generic_check(expr,arg_dict,type,size,
                                                   mod_location)
             try:
                 speed_up = standard/compiled
@@ -121,7 +121,7 @@ class TestBlitz(NumpyTestCase):
                 speed_up = -1.
             print "1st run(numpy.numerix,compiled,speed up):  %3.4f, %3.4f, " \
                   "%3.4f" % (standard,compiled,speed_up)
-            standard,compiled = self.generic_test(expr,arg_dict,type,size,
+            standard,compiled = self.generic_check(expr,arg_dict,type,size,
                                                   mod_location)
             try:
                 speed_up = standard/compiled
@@ -130,25 +130,30 @@ class TestBlitz(NumpyTestCase):
             print "2nd run(numpy.numerix,compiled,speed up):  %3.4f, %3.4f, " \
                   "%3.4f" % (standard,compiled,speed_up)
         cleanup_temp_dir(mod_location)
-    #def check_simple_2d(self):
+    #def test_simple_2d(self):
     #    """ result = a + b"""
     #    expr = "result = a + b"
     #    self.generic_2d(expr)
-    def check_5point_avg_2d_float(self,level=10):
+    @dec.slow
+    def test_5point_avg_2d_float(self):
         """ result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
                                + b[1:-1,2:] + b[1:-1,:-2]) / 5.
         """
         expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
         self.generic_2d(expr,float32)
-    def check_5point_avg_2d_double(self,level=10):
+        
+    @dec.slow
+    def test_5point_avg_2d_double(self):
         """ result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
                                + b[1:-1,2:] + b[1:-1,:-2]) / 5.
         """
         expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
         self.generic_2d(expr,float64)
-    def _check_5point_avg_2d_complex_float(self,level=10):
+
+    @dec.slow
+    def _check_5point_avg_2d_complex_float(self):
         """ Note: THIS TEST is KNOWN TO FAIL ON GCC 3.x.  It will not adversely affect 99.99 percent of weave
 
             result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
@@ -165,7 +170,9 @@ class TestBlitz(NumpyTestCase):
         expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
         self.generic_2d(expr,complex64)
-    def check_5point_avg_2d_complex_double(self,level=10):
+
+    @dec.slow
+    def test_5point_avg_2d_complex_double(self):
         """ result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
                                + b[1:-1,2:] + b[1:-1,:-2]) / 5.
         """
@@ -174,4 +181,4 @@ class TestBlitz(NumpyTestCase):
         self.generic_2d(expr,complex128)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

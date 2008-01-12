@@ -6,7 +6,7 @@ import threading
 
 import numpy
 
-from numexpr import interpreter
+from scipy.sandbox.numexpr import interpreter
 
 class Expression(object):
     def __init__(self):

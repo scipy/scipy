@@ -17,7 +17,7 @@ class NoseTester(object):
             package = f.f_locals.get('__file__', None)
             assert package is not None
             package = os.path.dirname(package)
-        else isinstance(package, type(os)):
+        elif isinstance(package, type(os)):
             package = os.path.dirname(package.__file__)
         self.package_path = package
         

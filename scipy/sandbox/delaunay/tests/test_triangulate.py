@@ -1,6 +1,7 @@
 from scipy.sandbox import delaunay as dlny
 from numpy import random
 import scipy as sp
+from scipy.testing import *
 
 def onright(x0, y0, x1, y1, x, y):
     """Return True if (x,y) is to the right of the vector from (x0,y0) to
@@ -16,12 +17,11 @@ def incircle(cx, cy, r, x, y):
     assert r2 < r
 
 
-class TestSanity(object):
-    def setup_method(self, method):
+class TestSanity(TestCase):
+    def setUp(self):
         self.rs = random.RandomState(1234567890)
 
     def test_counts(self):
-        assert False
         for n in (10, 30, 100, 300, 1000, 3000):
             x, y = self.rs.uniform(0, 100, size=(2, n))
             tri = dlny.Triangulation(x, y)
@@ -35,7 +35,6 @@ class TestSanity(object):
             assert sp.sum((tri.triangle_neighbors == -1).astype(sp.int32).flat) == k
 
     def test_ccw_triangles(self):
-        assert False
         for n in (10, 30, 100, 300, 1000, 3000):
             x, y = self.rs.uniform(0, 100, size=(2, n))
             tri = dlny.Triangulation(x, y)
@@ -44,7 +43,6 @@ class TestSanity(object):
                 assert not onright(x[i], y[i], x[j], y[j], x[k], y[k])
 
     def test_ccw_hull(self):
-        assert False
         for n in (10, 30, 100, 300, 1000, 3000):
             x, y = self.rs.uniform(0, 100, size=(2, n))
             tri = dlny.Triangulation(x, y)
@@ -57,7 +55,6 @@ class TestSanity(object):
                 assert not onright(x[i], y[i], x[j], y[j], x[k], y[k])
 
     def test_circle_condition(self):
-        assert False
         for n in (10, 30, 100, 300, 1000, 3000):
             x, y = self.rs.uniform(0, 100, size=(2, n))
             tri = dlny.Triangulation(x, y)
@@ -68,3 +65,8 @@ class TestSanity(object):
             alldist2 = (sp.subtract.outer(x, tri.circumcenters[:,0])**2
                       + sp.subtract.outer(y, tri.circumcenters[:,1])**2)
             assert sp.alltrue(r2 <= alldist2)
+
+
+if __name__ == '__main__':
+    unittest.main()
+    

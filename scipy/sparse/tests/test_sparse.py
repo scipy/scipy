@@ -4,13 +4,13 @@ import numpy
 from numpy import ones, array, asarray, empty
 
 import random
-from numpy.testing import *
-set_package_path()
+from scipy.testing import *
+
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, spidentity, spdiags, \
         spkron
 from scipy.linsolve import splu
-restore_path()
+
 
 def random_sparse(m,n,nnz_per_row):
     rows = numpy.arange(m).repeat(nnz_per_row)
@@ -43,10 +43,11 @@ def poisson2d(N,dtype='d',format=None):
     return dia_matrix((diags,offsets),shape=(N**2,N**2)).asformat(format)
 
 import time
-class TestSparseTools(NumpyTestCase):
+class TestSparseTools(TestCase):
     """Simple benchmarks for sparse matrix module"""
 
-    def test_arithmetic(self,level=5):
+    @dec.bench
+    def test_arithmetic(self):
         matrices = []
         #matrices.append( ('A','Identity', spidentity(500**2,format='csr')) )
         matrices.append( ('A','Poisson5pt', poisson2d(500,format='csr'))  )
@@ -93,8 +94,8 @@ class TestSparseTools(NumpyTestCase):
                     print fmt % (format,operation,msec_per_it)
 
   
-
-    def bench_sort(self,level=5):
+    @dec.bench
+    def test_sort(self):
         """sort CSR column indices"""
         matrices = []
         matrices.append( ('Rand10',  1e4,  10) )
@@ -127,8 +128,8 @@ class TestSparseTools(NumpyTestCase):
 
             print fmt % (A.format,name,shape,A.nnz,1e3*(end-start)/float(iter) )
 
-
-    def bench_matvec(self,level=4):
+    @dec.bench
+    def test_matvec(self):
         matrices = []
         matrices.append(('Identity',   spidentity(10**4,format='dia')))
         matrices.append(('Identity',   spidentity(10**4,format='csr')))
@@ -175,7 +176,8 @@ class TestSparseTools(NumpyTestCase):
 
             print fmt % (A.format,name,shape,A.nnz,MFLOPs)
             
-    def bench_construction(self,level=5):
+    @dec.bench
+    def test_construction(self):
         """build matrices by inserting single values"""
         matrices = []
         matrices.append( ('Empty',csr_matrix((10000,10000))) )
@@ -210,8 +212,8 @@ class TestSparseTools(NumpyTestCase):
 
                 print fmt % (format,name,shape,A.nnz,(end-start)/float(iter))
 
-
-    def bench_conversion(self,level=5):
+    @dec.bench
+    def test_conversion(self):
         A = poisson2d(100)
 
         formats = ['csr','csc','coo','lil','dok']
@@ -252,8 +254,8 @@ class TestSparseTools(NumpyTestCase):
             print output
 
 
-class TestLarge(NumpyTestCase):
-    def check_large(self):
+class TestLarge(TestCase):
+    def test_large(self):
         # Create a 100x100 matrix with 100 non-zero elements
         # and play around with it
         #TODO move this out of Common since it doesn't use spmatrix
@@ -280,5 +282,5 @@ class TestLarge(NumpyTestCase):
 
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()
 

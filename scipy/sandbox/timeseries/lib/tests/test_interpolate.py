@@ -11,20 +11,20 @@ __date__     = '$Date$'
 import numpy as N
 import numpy.core.numeric as numeric
 
-from numpy.testing import NumpyTest, NumpyTestCase
+from scipy.testing import *
 
-import maskedarray.testutils
-from maskedarray.testutils import *
+from scipy.sandbox.maskedarray.testutils import *
 
-import maskedarray.core as coremodule
-from maskedarray.core import MaskedArray, masked
+import scipy.sandbox.maskedarray.core as coremodule
+from scipy.sandbox.maskedarray.core import MaskedArray, masked
 
-from timeseries.lib.interpolate import backward_fill, forward_fill, interp_masked1d
+from scipy.sandbox.timeseries.lib.interpolate import \
+     backward_fill, forward_fill, interp_masked1d
 
-class TestFuncs(NumpyTestCase):
+class TestFuncs(TestCase):
 
     def __init__(self, *args, **kwds):
-        NumpyTestCase.__init__(self, *args, **kwds)
+        TestCase.__init__(self, *args, **kwds)
         self.mask = [1,0,1,0,0,1,1,0,0,0]
         self.data = numeric.arange(10)
         self.test_array = masked_array(self.data, mask=self.mask)
@@ -61,4 +61,4 @@ class TestFuncs(NumpyTestCase):
 ###############################################################################
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()

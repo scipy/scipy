@@ -11,12 +11,10 @@ Run tests if fftpack is not installed:
   python tests/test_pseudo_diffs.py [<level>]
 """
 import sys
-from numpy.testing import *
-set_package_path()
-from fftpack import diff,fft,ifft,tilbert,itilbert,hilbert,ihilbert,rfft
-from fftpack import shift
-from fftpack import fftfreq
-restore_path()
+from scipy.testing import *
+from scipy.fftpack import diff,fft,ifft,tilbert,itilbert,hilbert,ihilbert,rfft
+from scipy.fftpack import shift
+from scipy.fftpack import fftfreq
 
 from numpy import arange, add, array, sin, cos, pi,exp,tanh,sum,sign
 
@@ -77,9 +75,9 @@ def direct_shift(x,a,period=None):
     return ifft(fft(x)*exp(k*a)).real
 
 
-class TestDiff(NumpyTestCase):
+class TestDiff(TestCase):
 
-    def check_definition(self):
+    def test_definition(self):
         for n in [16,17,64,127,32]:
             x = arange(n)*2*pi/n
             assert_array_almost_equal(diff(sin(x)),direct_diff(sin(x)))
@@ -100,7 +98,7 @@ class TestDiff(NumpyTestCase):
                 assert_array_almost_equal(diff(sin(4*x),k),direct_diff(sin(4*x),k))
                 assert_array_almost_equal(diff(cos(4*x),k),direct_diff(cos(4*x),k))
 
-    def check_period(self):
+    def test_period(self):
         for n in [17,64]:
             x = arange(n)/float(n)
             assert_array_almost_equal(diff(sin(2*pi*x),period=1),
@@ -108,7 +106,7 @@ class TestDiff(NumpyTestCase):
             assert_array_almost_equal(diff(sin(2*pi*x),3,period=1),
                                       -(2*pi)**3*cos(2*pi*x))
 
-    def check_sin(self):
+    def test_sin(self):
         for n in [32,64,77]:
             x = arange(n)*2*pi/n
             assert_array_almost_equal(diff(sin(x)),cos(x))
@@ -118,7 +116,7 @@ class TestDiff(NumpyTestCase):
             assert_array_almost_equal(diff(sin(4*x)),4*cos(4*x))
             assert_array_almost_equal(diff(sin(sin(x))),cos(x)*cos(sin(x)))
 
-    def check_expr(self):
+    def test_expr(self):
         for n in [64,77,100,128,256,512,1024,2048,4096,8192][:5]:
             x = arange(n)*2*pi/n
             f=sin(x)*cos(4*x)+exp(sin(3*x))
@@ -132,7 +130,7 @@ class TestDiff(NumpyTestCase):
             assert_array_almost_equal(diff(ddf,-1),df)
             #print max(abs(d1-df))
 
-    def check_expr_large(self):
+    def test_expr_large(self):
         for n in [2048,4096]:
             x = arange(n)*2*pi/n
             f=sin(x)*cos(4*x)+exp(sin(3*x))
@@ -144,7 +142,7 @@ class TestDiff(NumpyTestCase):
             assert_array_almost_equal(diff(ddf,-1),df)
             assert_array_almost_equal(diff(f,2),ddf)
 
-    def check_int(self):
+    def test_int(self):
         n = 64
         x = arange(n)*2*pi/n
         assert_array_almost_equal(diff(sin(x),-1),-cos(x))
@@ -152,7 +150,7 @@ class TestDiff(NumpyTestCase):
         assert_array_almost_equal(diff(sin(x),-4),sin(x))
         assert_array_almost_equal(diff(2*cos(2*x),-1),sin(2*x))
 
-    def check_random_even(self):
+    def test_random_even(self):
         for k in [0,2,4,6]:
             for n in [60,32,64,56,55]:
                 f=random ((n,))
@@ -164,7 +162,7 @@ class TestDiff(NumpyTestCase):
                 assert_array_almost_equal(diff(diff(f,k),-k),f)
                 assert_array_almost_equal(diff(diff(f,-k),k),f)
 
-    def check_random_odd(self):
+    def test_random_odd(self):
         for k in [0,1,2,3,4,5,6]:
             for n in [33,65,55]:
                 f=random ((n,))
@@ -174,7 +172,7 @@ class TestDiff(NumpyTestCase):
                 assert_array_almost_equal(diff(diff(f,k),-k),f)
                 assert_array_almost_equal(diff(diff(f,-k),k),f)
 
-    def check_zero_nyquist (self):
+    def test_zero_nyquist (self):
         for k in [0,1,2,3,4,5,6]:
             for n in [32,33,64,56,55]:
                 f=random ((n,))
@@ -186,7 +184,8 @@ class TestDiff(NumpyTestCase):
                 assert_array_almost_equal(diff(diff(f,k),-k),f)
                 assert_array_almost_equal(diff(diff(f,-k),k),f)
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_random(self):
         print
         print 'Differentiation of periodic functions'
         print '====================================='
@@ -209,16 +208,16 @@ class TestDiff(NumpyTestCase):
                 f = sin(x)*cos(4*x)
             assert_array_almost_equal(diff(f,1),direct_diff(f,1))
             assert_array_almost_equal(diff(f,2),direct_diff(f,2))
-            print '| %9.2f' % self.measure('diff(f,3)',repeat),
+            print '| %9.2f' % measure('diff(f,3)',repeat),
             sys.stdout.flush()
-            print '| %9.2f' % self.measure('direct_diff(f,3)',repeat),
+            print '| %9.2f' % measure('direct_diff(f,3)',repeat),
             sys.stdout.flush()
             print ' (secs for %s calls)' % (repeat)
 
 
-class TestTilbert(NumpyTestCase):
+class TestTilbert(TestCase):
 
-    def check_definition(self):
+    def test_definition(self):
         for h in [0.1,0.5,1,5.5,10]:
             for n in [16,17,64,127]:
                 x = arange(n)*2*pi/n
@@ -230,7 +229,7 @@ class TestTilbert(NumpyTestCase):
                 assert_array_almost_equal(tilbert(sin(2*x),h),
                                           direct_tilbert(sin(2*x),h))
 
-    def check_random_even(self):
+    def test_random_even(self):
         for h in [0.1,0.5,1,5.5,10]:
             for n in [32,64,56]:
                 f=random ((n,))
@@ -239,7 +238,7 @@ class TestTilbert(NumpyTestCase):
                 assert_almost_equal(sum(f,axis=0),0.0)
                 assert_array_almost_equal(direct_tilbert(direct_itilbert(f,h),h),f)
 
-    def check_random_odd(self):
+    def test_random_odd(self):
         for h in [0.1,0.5,1,5.5,10]:
             for n in [33,65,55]:
                 f=random ((n,))
@@ -249,7 +248,8 @@ class TestTilbert(NumpyTestCase):
                 assert_array_almost_equal(itilbert(tilbert(f,h),h),f)
                 assert_array_almost_equal(tilbert(itilbert(f,h),h),f)
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_random(self):
         print
         print ' Tilbert transform of periodic functions'
         print '========================================='
@@ -271,15 +271,15 @@ class TestTilbert(NumpyTestCase):
             else:
                 f = sin(x)*cos(4*x)
             assert_array_almost_equal(tilbert(f,1),direct_tilbert(f,1))
-            print '| %9.2f' % self.measure('tilbert(f,1)',repeat),
+            print '| %9.2f' % measure('tilbert(f,1)',repeat),
             sys.stdout.flush()
-            print '| %9.2f' % self.measure('direct_tilbert(f,1)',repeat),
+            print '| %9.2f' % measure('direct_tilbert(f,1)',repeat),
             sys.stdout.flush()
             print ' (secs for %s calls)' % (repeat)
 
-class TestITilbert(NumpyTestCase):
+class TestITilbert(TestCase):
 
-    def check_definition(self):
+    def test_definition(self):
         for h in [0.1,0.5,1,5.5,10]:
             for n in [16,17,64,127]:
                 x = arange(n)*2*pi/n
@@ -291,9 +291,9 @@ class TestITilbert(NumpyTestCase):
                 assert_array_almost_equal(itilbert(sin(2*x),h),
                                           direct_itilbert(sin(2*x),h))
 
-class TestHilbert(NumpyTestCase):
+class TestHilbert(TestCase):
 
-    def check_definition(self):
+    def test_definition(self):
         for n in [16,17,64,127]:
             x = arange(n)*2*pi/n
             y = hilbert(sin(x))
@@ -302,7 +302,7 @@ class TestHilbert(NumpyTestCase):
             assert_array_almost_equal(hilbert(sin(2*x)),
                                       direct_hilbert(sin(2*x)))
 
-    def check_tilbert_relation(self):
+    def test_tilbert_relation(self):
         for n in [16,17,64,127]:
             x = arange(n)*2*pi/n
             f = sin (x)+cos (2*x)*sin(x)
@@ -312,7 +312,7 @@ class TestHilbert(NumpyTestCase):
             y2 = tilbert(f,h=10)
             assert_array_almost_equal (y,y2)
 
-    def check_random_odd(self):
+    def test_random_odd(self):
         for n in [33,65,55]:
             f=random ((n,))
             af=sum(f,axis=0)/n
@@ -321,7 +321,7 @@ class TestHilbert(NumpyTestCase):
             assert_array_almost_equal(ihilbert(hilbert(f)),f)
             assert_array_almost_equal(hilbert(ihilbert(f)),f)
 
-    def check_random_even(self):
+    def test_random_even(self):
         for n in [32,64,56]:
             f=random ((n,))
             af=sum(f,axis=0)/n
@@ -332,7 +332,8 @@ class TestHilbert(NumpyTestCase):
             assert_array_almost_equal(direct_hilbert(direct_ihilbert(f)),f)
             assert_array_almost_equal(hilbert(ihilbert(f)),f)
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_random(self):
         print
         print ' Hilbert transform of periodic functions'
         print '========================================='
@@ -354,15 +355,15 @@ class TestHilbert(NumpyTestCase):
             else:
                 f = sin(x)*cos(4*x)
             assert_array_almost_equal(hilbert(f),direct_hilbert(f))
-            print '| %9.2f' % self.measure('hilbert(f)',repeat),
+            print '| %9.2f' % measure('hilbert(f)',repeat),
             sys.stdout.flush()
-            print '| %9.2f' % self.measure('direct_hilbert(f)',repeat),
+            print '| %9.2f' % measure('direct_hilbert(f)',repeat),
             sys.stdout.flush()
             print ' (secs for %s calls)' % (repeat)
 
-class TestIHilbert(NumpyTestCase):
+class TestIHilbert(TestCase):
 
-    def check_definition(self):
+    def test_definition(self):
         for n in [16,17,64,127]:
             x = arange(n)*2*pi/n
             y = ihilbert(sin(x))
@@ -371,7 +372,7 @@ class TestIHilbert(NumpyTestCase):
             assert_array_almost_equal(ihilbert(sin(2*x)),
                                       direct_ihilbert(sin(2*x)))
 
-    def check_itilbert_relation(self):
+    def test_itilbert_relation(self):
         for n in [16,17,64,127]:
             x = arange(n)*2*pi/n
             f = sin (x)+cos (2*x)*sin(x)
@@ -381,9 +382,9 @@ class TestIHilbert(NumpyTestCase):
             y2 = itilbert(f,h=10)
             assert_array_almost_equal (y,y2)
 
-class TestShift(NumpyTestCase):
+class TestShift(TestCase):
 
-    def check_definition(self):
+    def test_definition(self):
         for n in [18,17,64,127,32,2048,256]:
             x = arange(n)*2*pi/n
             for a in [0.1,3]:
@@ -397,7 +398,8 @@ class TestShift(NumpyTestCase):
             assert_array_almost_equal(shift(sin(x),pi),-sin(x))
             assert_array_almost_equal(shift(sin(x),pi/2),cos(x))
 
-    def bench_random(self,level=5):
+    @dec.bench
+    def test_random(self):
         print
         print ' Shifting periodic functions'
         print '=============================='
@@ -423,11 +425,11 @@ class TestShift(NumpyTestCase):
                 sf = sin(x+a)*cos(4*(x+a))
             assert_array_almost_equal(direct_shift(f,1),sf)
             assert_array_almost_equal(shift(f,1),sf)
-            print '| %9.2f' % self.measure('shift(f,a)',repeat),
+            print '| %9.2f' % measure('shift(f,a)',repeat),
             sys.stdout.flush()
-            print '| %9.2f' % self.measure('direct_shift(f,a)',repeat),
+            print '| %9.2f' % measure('direct_shift(f,a)',repeat),
             sys.stdout.flush()
             print ' (secs for %s calls)' % (repeat)
 
 if __name__ == "__main__":
-    NumpyTest('fftpack.pseudo_diffs').run()
+    unittest.main()
