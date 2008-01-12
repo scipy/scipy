@@ -155,7 +155,7 @@ def smoothed_aggregation_solver(A, B=None,  \
         while len(As) < max_levels and A.shape[0] > max_coarse:
             P,B = sa_interpolation(A,B,epsilon*0.5**(len(As)-1),omega=omega)
 
-            A = (P.T.tocsr() * A) * P     #galerkin operator
+            A = (P.T.asformat(P.format) * A) * P     #galerkin operator
 
             As.append(A)
             Ps.append(P)
@@ -276,45 +276,3 @@ class multilevel_solver:
         gauss_seidel(A,x,b,iterations=1,sweep="symmetric")
 
 
-
-if __name__ == '__main__':
-    from scipy import *
-    from scipy.sandbox.multigrid import *
-    candidates = None
-    A = poisson_problem2D(40,1e-2)
-    #A = io.mmread("rocker_arm_surface.mtx").tocsr()
-    #A = io.mmread("9pt-100x100.mtx").tocsr()
-    #A = io.mmread("/home/nathan/Desktop/9pt/9pt-100x100.mtx").tocsr()
-    #A = io.mmread("/home/nathan/Desktop/BasisShift_W_EnergyMin_Luke/9pt-5x5.mtx").tocsr()
-
-    #A = io.mmread('tests/sample_data/elas30_A.mtx').tocsr()
-    #candidates = io.mmread('tests/sample_data/elas30_nullspace.mtx')
-    #blocks = arange(A.shape[0]/2).repeat(2)
-
-    mats = io.loadmat('/home/nathan/Work/ogroup/matrices/elasticity/simple_grid_2d/elasticity_50x50.mat')
-    A = mats['A']
-    candidates = mats['B']
-
-    ml = smoothed_aggregation_solver(A,candidates,epsilon=0.08,max_coarse=100,max_levels=10)
-    #ml = ruge_stuben_solver(A)
-
-    x = rand(A.shape[0])
-    b = zeros_like(x)
-    #b = A*rand(A.shape[0])
-
-    if True:
-        x_sol,residuals = ml.solve(b,x0=x,maxiter=30,tol=1e-8,return_residuals=True)
-    else:
-        residuals = []
-        def add_resid(x):
-            residuals.append(linalg.norm(b - A*x))
-        A.psolve = ml.psolve
-        x_sol = linalg.cg(A,b,x0=x,maxiter=25,tol=1e-12,callback=add_resid)[0]
-
-
-    residuals = array(residuals)/residuals[0]
-    avg_convergence_ratio = residuals[-1]**(1.0/len(residuals))
-    print "average convergence ratio",avg_convergence_ratio
-    print "last convergence ratio",residuals[-1]/residuals[-2]
-
-    print residuals

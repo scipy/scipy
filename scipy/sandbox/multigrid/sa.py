@@ -170,6 +170,7 @@ def sa_smoothed_prolongator(A,T,epsilon,omega):
 
     A_filtered = sa_filtered_matrix(A,epsilon) #use filtered matrix for anisotropic problems
 
+    # TODO use scale_rows()
     D_inv    = diag_sparse(1.0/diag_sparse(A_filtered))
     D_inv_A  = D_inv * A_filtered
     D_inv_A *= omega/approximate_spectral_radius(D_inv_A)
