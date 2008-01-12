@@ -1,8 +1,16 @@
-''' Null tester (when nose not importable '''
+''' Null tester (when nose not importable)
+
+Merely returns error reporting lack of nose package
+
+See pkgtester, nosetester modules
+
+'''
+
+nose_url = 'http://somethingaboutorange.com/mrl/projects/nose'
 
 class NullTester(object):
     def __init__(self, *args, **kwargs):
         pass
     def test(self, labels=None, *args, **kwargs):
-        raise ImportError, 'Need nose testing on path for tests'
+        raise ImportError, 'Need nose for tests - see %s' % nose_url
     

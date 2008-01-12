@@ -11,8 +11,7 @@ from unittest import TestCase
 try:
     import nose
 except ImportError:
-    print 'Need nose testing framework installed for scipy tests'
-    raise
+    pass
 
 import decorators as dec
 from numpy.testing.utils import *
