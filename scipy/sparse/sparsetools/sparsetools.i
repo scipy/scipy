@@ -191,10 +191,20 @@ DECLARE_DATA_TYPE( npy_clongdouble_wrapper )
 
 
 /*
- *  diag(CSR) and diag(CSC)
+ *  diag(A)
  */
 INSTANTIATE_ALL(csr_diagonal)
 INSTANTIATE_ALL(csc_diagonal)
+INSTANTIATE_ALL(bsr_diagonal)
+
+
+/*
+ *  scale columns
+ */
+INSTANTIATE_ALL(csr_scale_rows)
+INSTANTIATE_ALL(csr_scale_columns)
+INSTANTIATE_ALL(bsr_scale_rows)
+INSTANTIATE_ALL(bsr_scale_columns)
 
 
 /*

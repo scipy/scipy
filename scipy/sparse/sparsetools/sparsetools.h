@@ -64,6 +64,64 @@ void csr_diagonal(const I n_row,
     }
 }
 
+template <class I, class T>
+void bsr_diagonal(const I n_brow,
+                  const I n_bcol, 
+                  const I R,
+                  const I C,
+	              const I Ap[], 
+	              const I Aj[], 
+	              const T Ax[],
+	                    T Yx[])
+{
+    const I N  = std::min(R*n_brow, C*n_bcol);
+    const I RC = R*C;
+
+    for(I i = 0; i < N; i++){
+        Yx[i] = 0;
+    }
+
+    if ( R == C ){
+        //main diagonal with square blocks
+        const I end = std::min(n_brow,n_bcol);
+        for(I i = 0; i < end; i++){
+            for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+                if (i == Aj[jj]){
+                    I row = R*i;
+                    const T * val = Ax + RC*jj;
+                    for(I bi = 0; bi < R; bi++){
+                        Yx[row + bi] = *val;
+                        val += C + 1;
+                    }
+                }
+            }
+        }
+    } 
+    else 
+    {
+        //This could be made faster
+        const I end = (N/R) + (N % R == 0 ? 0 : 1);
+        for(I i = 0; i < end; i++){
+            for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+                const I base_row = R*i;
+                const I base_col = C*Aj[jj];
+                const T * base_val = Ax + RC*jj;
+
+                for(I bi = 0; bi < R; bi++){
+                    const I row = base_row + bi;
+                    if (row >= N) break;
+
+                    for(I bj = 0; bj < C; bj++){
+                        const I col = base_col + bj;
+                        if (row == col){
+                            Yx[row] = base_val[bi*C + bj];
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 /*
  * Expand a compressed row pointer into a row array
@@ -91,6 +149,110 @@ void expandptr(const I n_row,
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             Bi[jj] = i;
         }
+    }
+}
+
+/*
+ * Scale the rows of a CSR matrix *in place*
+ *
+ *   A[i,:] *= X[i]
+ *
+ */
+template <class I, class T>
+void csr_scale_rows(const I n_row,
+                    const I n_col, 
+	                const I Ap[], 
+	                const I Aj[], 
+	                      T Ax[],
+	                const T Xx[])
+{
+    for(I i = 0; i < n_row; i++){
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            Ax[jj] *= Xx[i];
+        }
+    }
+}
+
+/*
+ * Scale the columns of a CSR matrix *in place*
+ *
+ *   A[:,i] *= X[i]
+ *
+ */
+template <class I, class T>
+void csr_scale_columns(const I n_row,
+                       const I n_col, 
+	                   const I Ap[], 
+	                   const I Aj[], 
+	                         T Ax[],
+	                   const T Xx[])
+{
+    const I nnz = Ap[n_row];
+    for(I i = 0; i < nnz; i++){
+        Ax[i] *= Xx[Aj[i]];
+    }
+}
+
+/*
+ * Scale the rows of a BSR matrix *in place*
+ *
+ *   A[i,:] *= X[i]
+ *
+ */
+template <class I, class T>
+void bsr_scale_rows(const I n_brow,
+                    const I n_bcol, 
+                    const I R,
+                    const I C,
+	                const I Ap[], 
+	                const I Aj[], 
+	                      T Ax[],
+	                const T Xx[])
+{
+    const I RC = R*C;
+    for(I i = 0; i < n_brow; i++){
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            for(I bi = 0; bi < R; bi++){
+                const T s = Xx[R*i + bi];
+                T * block_row = Ax + RC*jj + C*bi;
+                
+                for(I bj = 0; bj < C; bj++){
+                    block_row[bj] *= s;
+                }
+
+            }
+        }
+    }
+}
+
+/*
+ * Scale the columns of a BSR matrix *in place*
+ *
+ *   A[:,i] *= X[i]
+ *
+ */
+template <class I, class T>
+void bsr_scale_columns(const I n_brow,
+                       const I n_bcol, 
+                       const I R,
+                       const I C,
+	                   const I Ap[], 
+	                   const I Aj[], 
+	                         T Ax[],
+	                   const T Xx[])
+{
+    const I bnnz = Ap[n_brow];
+    const I RC  = R*C;
+    for(I i = 0; i < bnnz; i++){
+        const T * scales = Xx + C*Aj[i] ;
+        T * block = Ax + RC*i;
+        
+        for(I bi = 0; bi < R; bi++){
+            for(I bj = 0; bj < C; bj++){
+                block[C*bi + bj] *= scales[bj];
+            }
+        }
+
     }
 }
 

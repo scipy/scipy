@@ -3,11 +3,12 @@
 
 __all__ = ['extract_diagonal','count_blocks','estimate_blocksize']
 
-from numpy import empty
+from numpy import empty, ravel
 
 from base import isspmatrix
 from csr import isspmatrix_csr, csr_matrix
 from csc import isspmatrix_csc
+from bsr import isspmatrix_bsr
 from sputils import upcast
 
 import sparsetools
@@ -21,11 +22,15 @@ def extract_diagonal(A):
         y = empty( min(A.shape), dtype=upcast(A.dtype) )
         fn(A.shape[0],A.shape[1],A.indptr,A.indices,A.data,y)
         return y
-    elif isspmatrix(A):
-        return extract_diagonal(A.tocsr())
+    elif isspmatrix_bsr(A):
+        M,N = A.shape
+        R,C = A.blocksize
+        y = empty( min(M,N), dtype=upcast(A.dtype) )
+        fn = sparsetools.bsr_diagonal(M/R, N/C, R, C, \
+                A.indptr, A.indices, ravel(A.data), y)
+        return y
     else:
-        raise ValueError,'expected sparse matrix'
-
+        return extract_diagonal(csr_matrix(A))
 
 def estimate_blocksize(A,efficiency=0.7):
     """Attempt to determine the blocksize of a sparse matrix

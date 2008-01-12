@@ -67,12 +67,12 @@ class TestSA(NumpyTestCase):
             for epsilon in [0.0,0.1,0.5,1.0]:
                 S_expected = reference_sa_constant_interpolation(A,epsilon)
 
-                S_result   = sa_constant_interpolation(A,epsilon,blocks=None)
+                S_result   = sa_constant_interpolation(A,epsilon)
                 assert_array_equal(S_result.todense(),S_expected.todense())
 
-                #blocks=1...N should be the same as blocks=None
-                S_result   = sa_constant_interpolation(A,epsilon,blocks=arange(A.shape[0]))
-                assert_array_equal(S_result.todense(),S_expected.todense())
+                #A = A.tobsr( blocksize=(1,1) )
+                #S_result   = sa_constant_interpolation(A,epsilon)
+                #assert_array_equal(S_result.todense(),S_expected.todense())
 
         # two aggregates in 1D
         A = poisson_problem1D(6)
@@ -86,18 +86,18 @@ class TestSA(NumpyTestCase):
         #check simple block examples
         A = csr_matrix(arange(16).reshape(4,4))
         A = A + A.T
-        blocks = array([0,0,1,1])
+        A = A.tobsr(blocksize=(2,2))
 
-        S_result   = sa_constant_interpolation(A,epsilon=0.0,blocks=blocks)
-        S_expected = matrix([1,1,1,1]).T
+        S_result   = sa_constant_interpolation(A,epsilon=0.0)
+        S_expected = matrix([1,1]).T
         assert_array_equal(S_result.todense(),S_expected)
 
-        S_result   = sa_constant_interpolation(A,epsilon=0.5,blocks=blocks)
-        S_expected = matrix([1,1,1,1]).T
+        S_result   = sa_constant_interpolation(A,epsilon=0.5)
+        S_expected = matrix([1,1]).T
         assert_array_equal(S_result.todense(),S_expected)
 
-        S_result   = sa_constant_interpolation(A,epsilon=2.0,blocks=blocks)
-        S_expected = matrix([[1,0],[1,0],[0,1],[0,1]])
+        S_result   = sa_constant_interpolation(A,epsilon=2.0)
+        S_expected = matrix([[1,0],[0,1]])
         assert_array_equal(S_result.todense(),S_expected)
 
 
@@ -132,27 +132,36 @@ class TestFitCandidates(NumpyTestCase):
     def setUp(self):
         self.cases = []
 
-        ## tests where AggOp includes all DOFs
-        #one candidate
-        #self.cases.append((csr_matrix((ones(5),array([0,0,0,1,1]),arange(6)),shape=(5,2)), ones((5,1)) ))
-        #self.cases.append((csr_matrix((ones(5),array([1,1,0,0,0]),arange(6)),shape=(5,2)), ones((5,1)) ))
-        #self.cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),shape=(9,3)), ones((9,1)) ))
+        ### tests where AggOp includes all DOFs
+        # one candidate
+        self.cases.append((csr_matrix((ones(5),array([0,0,0,1,1]),arange(6)),shape=(5,2)), ones((5,1)) ))
+        self.cases.append((csr_matrix((ones(5),array([1,1,0,0,0]),arange(6)),shape=(5,2)), ones((5,1)) ))
+        self.cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),shape=(9,3)), ones((9,1)) ))
         self.cases.append((csr_matrix((ones(9),array([2,1,0,0,1,2,1,0,2]),arange(10)),shape=(9,3)), arange(9).reshape(9,1) ))
-        #two candidates
-        #self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),arange(5)),shape=(4,2)), vstack((ones(4),arange(4))).T ))
-        #self.cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),shape=(9,3)), vstack((ones(9),arange(9))).T ))
-        #self.cases.append((csr_matrix((ones(9),array([0,0,1,1,2,2,3,3,3]),arange(10)),shape=(9,4)), vstack((ones(9),arange(9))).T ))
-        ##block candidates
-        #self.cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),shape=(9,3)), vstack((array([1]*9 + [0]*9),arange(2*9))).T ))
-        #
-        ### tests where AggOp excludes some DOFs
-        #self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),shape=(5,2)), ones((5,1)) ))
-        #self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),shape=(5,2)), vstack((ones(5),arange(5))).T ))
+        # two candidates
+        self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),arange(5)),shape=(4,2)), vstack((ones(4),arange(4))).T ))
+        self.cases.append((csr_matrix((ones(9),array([0,0,0,1,1,1,2,2,2]),arange(10)),shape=(9,3)), vstack((ones(9),arange(9))).T ))
+        self.cases.append((csr_matrix((ones(9),array([0,0,1,1,2,2,3,3,3]),arange(10)),shape=(9,4)), vstack((ones(9),arange(9))).T ))
+       
+        # block aggregates, one candidate
+        self.cases.append((csr_matrix((ones(3),array([0,1,1]),arange(4)),shape=(3,2)), ones((6,1)) ))
+        self.cases.append((csr_matrix((ones(3),array([0,1,1]),arange(4)),shape=(3,2)), ones((9,1)) ))
+        self.cases.append((csr_matrix((ones(5),array([2,0,2,1,1]),arange(6)),shape=(5,3)), ones((10,1)) ))
+        
+        # block aggregates, two candidates
+        self.cases.append((csr_matrix((ones(3),array([0,1,1]),arange(4)),shape=(3,2)), vstack((ones(6),arange(6))).T ))
+        self.cases.append((csr_matrix((ones(3),array([0,1,1]),arange(4)),shape=(3,2)), vstack((ones(9),arange(9))).T ))
+        self.cases.append((csr_matrix((ones(5),array([2,0,2,1,1]),arange(6)),shape=(5,3)), vstack((ones(10),arange(10))).T ))
 
-        ## overdetermined blocks
-        #self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),shape=(5,2)), vstack((ones(5),arange(5),arange(5)**2)).T  ))
-        #self.cases.append((csr_matrix((ones(6),array([1,3,0,2,1,0]),array([0,0,1,2,2,3,4,5,5,6])),shape=(9,4)), vstack((ones(9),arange(9),arange(9)**2)).T ))
-        #self.cases.append((csr_matrix((ones(6),array([1,3,0,2,1,0]),array([0,0,1,2,2,3,4,5,5,6])),shape=(9,4)), vstack((ones(9),arange(9))).T ))
+        ### tests where AggOp excludes some DOFs
+        # one candidate
+        self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),shape=(5,2)), ones((5,1)) ))
+        self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),shape=(5,2)), vstack((ones(5),arange(5))).T ))
+
+        # overdetermined blocks
+        self.cases.append((csr_matrix((ones(4),array([0,0,1,1]),array([0,1,2,2,3,4])),shape=(5,2)), vstack((ones(5),arange(5),arange(5)**2)).T  ))
+        self.cases.append((csr_matrix((ones(6),array([1,3,0,2,1,0]),array([0,0,1,2,2,3,4,5,5,6])),shape=(9,4)), vstack((ones(9),arange(9),arange(9)**2)).T ))
+        self.cases.append((csr_matrix((ones(6),array([1,3,0,2,1,0]),array([0,0,1,2,2,3,4,5,5,6])),shape=(9,4)), vstack((ones(9),arange(9))).T ))
 
     def check_all_cases(self):
         """Test case where aggregation includes all fine nodes"""

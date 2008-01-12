@@ -6,9 +6,10 @@ import scipy
 from scipy import ravel,arange,concatenate,tile,asarray,sqrt,diff, \
                   rand,zeros,empty,asmatrix,dot
 from scipy.linalg import norm,eigvals
-from scipy.sparse import isspmatrix,isspmatrix_csr,isspmatrix_csc, \
-                        csr_matrix,csc_matrix,extract_diagonal, \
-                        coo_matrix
+from scipy.sparse import isspmatrix, isspmatrix_csr, isspmatrix_csc, \
+        isspmatrix_bsr, csr_matrix, csc_matrix, bsr_matrix, coo_matrix, \
+        extract_diagonal
+from scipy.sparse.sputils import upcast
 
 
 def approximate_spectral_radius(A,tol=0.1,maxiter=10,symmetric=None):
@@ -130,29 +131,81 @@ def diag_sparse(A):
     else:
         return csr_matrix((asarray(A),arange(len(A)),arange(len(A)+1)),(len(A),len(A)))
 
+def scale_rows(A,v,copy=True):
+    from scipy.sparse.sparsetools import csr_scale_rows, bsr_scale_rows
 
-def symmetric_rescaling(A):
-    if not (isspmatrix_csr(A) or isspmatrix_csc(A)):
-        raise TypeError,'expected csr_matrix or csc_matrix'
+    v = ravel(v)
 
-    if A.shape[0] != A.shape[1]:
-        raise ValueError,'expected square matrix'
+    if isspmatrix_csr(A) or isspmatrix_bsr(A):
+        M,N = A.shape
+        if M != len(v):
+            raise ValueError,'scale vector has incompatible shape'
 
-    D = diag_sparse(A)
-    mask = D == 0
+        if copy:
+            A = A.copy()
+            A.data = asarray(A.data,dtype=upcast(A.dtype,v.dtype))
+        else:
+            v = asarray(v,dtype=A.dtype)
 
-    #D[mask] = 0
-    D_sqrt = sqrt(abs(D))
-    D_sqrt_inv = 1.0/D_sqrt
-    D_sqrt_inv[mask] = 0
+        if isspmatrix_csr(A):
+            csr_scale_rows(M, N, A.indptr, A.indices, A.data, v)
+        else:
+            R,C = A.blocksize
+            bsr_scale_rows(M/R, N/C, R, C, A.indptr, A.indices, ravel(A.data), v)
 
-    Acoo = A.tocoo(copy=False) 
-    data = A.data[:A.nnz] * D_sqrt_inv[Acoo.row]
-    data *= D_sqrt_inv[Acoo.col]
+        return A
+    elif isspmatrix_csc(A):
+        return scale_columns(A.T,v)
+    else:
+        return scale_rows(csr_matrix(A),v)
+        
+def scale_columns(A,v,copy=True):
+    from scipy.sparse.sparsetools import csr_scale_columns, bsr_scale_columns
 
-    DAD = A.__class__((data,A.indices[:A.nnz],A.indptr),shape=A.shape)
+    v = ravel(v)
 
-    return D_sqrt,D_sqrt_inv,DAD
+    if isspmatrix_csr(A) or isspmatrix_bsr(A):
+        M,N = A.shape
+        if N != len(v):
+            raise ValueError,'scale vector has incompatible shape'
+
+        if copy:
+            A = A.copy()
+            A.data = asarray(A.data,dtype=upcast(A.dtype,v.dtype))
+        else:
+            v = asarray(v,dtype=A.dtype)
+
+        if isspmatrix_csr(A):
+            csr_scale_columns(M, N, A.indptr, A.indices, A.data, v)
+        else:
+            R,C = A.blocksize
+            bsr_scale_columns(M/R, N/C, R, C, A.indptr, A.indices, ravel(A.data), v)
+
+        return A
+    elif isspmatrix_csc(A):
+        return scale_rows(A.T,v)
+    else:
+        return scale_rows(csr_matrix(A),v)
+
+def symmetric_rescaling(A,copy=True):
+    if isspmatrix_csr(A) or isspmatrix_csc(A) or isspmatrix_bsr(A):
+        if A.shape[0] != A.shape[1]:
+            raise ValueError,'expected square matrix'
+
+        D = diag_sparse(A)
+        mask = D == 0
+
+        D_sqrt = sqrt(abs(D))
+        D_sqrt_inv = 1.0/D_sqrt
+        D_sqrt_inv[mask] = 0
+
+        DAD = scale_rows(A,D_sqrt_inv,copy=copy)
+        DAD = scale_columns(DAD,D_sqrt_inv,copy=False)
+
+        return D_sqrt,D_sqrt_inv,DAD
+
+    else:
+        return symmetric_rescaling(csr_matrix(A))
 
 
 def hstack_csr(A,B):

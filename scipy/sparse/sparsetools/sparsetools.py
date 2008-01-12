@@ -134,6 +134,163 @@ def csc_diagonal(*args):
     """
   return _sparsetools.csc_diagonal(*args)
 
+def bsr_diagonal(*args):
+  """
+    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        signed char Ax, signed char Yx)
+    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned char Ax, unsigned char Yx)
+    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        short Ax, short Yx)
+    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned short Ax, unsigned short Yx)
+    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        int Ax, int Yx)
+    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned int Ax, unsigned int Yx)
+    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        long long Ax, long long Yx)
+    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned long long Ax, unsigned long long Yx)
+    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        float Ax, float Yx)
+    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        double Ax, double Yx)
+    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        long double Ax, long double Yx)
+    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_cfloat_wrapper Ax, npy_cfloat_wrapper Yx)
+    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_cdouble_wrapper Ax, npy_cdouble_wrapper Yx)
+    bsr_diagonal(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_clongdouble_wrapper Ax, npy_clongdouble_wrapper Yx)
+    """
+  return _sparsetools.bsr_diagonal(*args)
+
+def csr_scale_rows(*args):
+  """
+    csr_scale_rows(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
+        signed char Xx)
+    csr_scale_rows(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
+        unsigned char Xx)
+    csr_scale_rows(int n_row, int n_col, int Ap, int Aj, short Ax, short Xx)
+    csr_scale_rows(int n_row, int n_col, int Ap, int Aj, unsigned short Ax, 
+        unsigned short Xx)
+    csr_scale_rows(int n_row, int n_col, int Ap, int Aj, int Ax, int Xx)
+    csr_scale_rows(int n_row, int n_col, int Ap, int Aj, unsigned int Ax, 
+        unsigned int Xx)
+    csr_scale_rows(int n_row, int n_col, int Ap, int Aj, long long Ax, 
+        long long Xx)
+    csr_scale_rows(int n_row, int n_col, int Ap, int Aj, unsigned long long Ax, 
+        unsigned long long Xx)
+    csr_scale_rows(int n_row, int n_col, int Ap, int Aj, float Ax, float Xx)
+    csr_scale_rows(int n_row, int n_col, int Ap, int Aj, double Ax, double Xx)
+    csr_scale_rows(int n_row, int n_col, int Ap, int Aj, long double Ax, 
+        long double Xx)
+    csr_scale_rows(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
+        npy_cfloat_wrapper Xx)
+    csr_scale_rows(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
+        npy_cdouble_wrapper Xx)
+    csr_scale_rows(int n_row, int n_col, int Ap, int Aj, npy_clongdouble_wrapper Ax, 
+        npy_clongdouble_wrapper Xx)
+    """
+  return _sparsetools.csr_scale_rows(*args)
+
+def csr_scale_columns(*args):
+  """
+    csr_scale_columns(int n_row, int n_col, int Ap, int Aj, signed char Ax, 
+        signed char Xx)
+    csr_scale_columns(int n_row, int n_col, int Ap, int Aj, unsigned char Ax, 
+        unsigned char Xx)
+    csr_scale_columns(int n_row, int n_col, int Ap, int Aj, short Ax, short Xx)
+    csr_scale_columns(int n_row, int n_col, int Ap, int Aj, unsigned short Ax, 
+        unsigned short Xx)
+    csr_scale_columns(int n_row, int n_col, int Ap, int Aj, int Ax, int Xx)
+    csr_scale_columns(int n_row, int n_col, int Ap, int Aj, unsigned int Ax, 
+        unsigned int Xx)
+    csr_scale_columns(int n_row, int n_col, int Ap, int Aj, long long Ax, 
+        long long Xx)
+    csr_scale_columns(int n_row, int n_col, int Ap, int Aj, unsigned long long Ax, 
+        unsigned long long Xx)
+    csr_scale_columns(int n_row, int n_col, int Ap, int Aj, float Ax, float Xx)
+    csr_scale_columns(int n_row, int n_col, int Ap, int Aj, double Ax, double Xx)
+    csr_scale_columns(int n_row, int n_col, int Ap, int Aj, long double Ax, 
+        long double Xx)
+    csr_scale_columns(int n_row, int n_col, int Ap, int Aj, npy_cfloat_wrapper Ax, 
+        npy_cfloat_wrapper Xx)
+    csr_scale_columns(int n_row, int n_col, int Ap, int Aj, npy_cdouble_wrapper Ax, 
+        npy_cdouble_wrapper Xx)
+    csr_scale_columns(int n_row, int n_col, int Ap, int Aj, npy_clongdouble_wrapper Ax, 
+        npy_clongdouble_wrapper Xx)
+    """
+  return _sparsetools.csr_scale_columns(*args)
+
+def bsr_scale_rows(*args):
+  """
+    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        signed char Ax, signed char Xx)
+    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned char Ax, unsigned char Xx)
+    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        short Ax, short Xx)
+    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned short Ax, unsigned short Xx)
+    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        int Ax, int Xx)
+    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned int Ax, unsigned int Xx)
+    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        long long Ax, long long Xx)
+    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned long long Ax, unsigned long long Xx)
+    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        float Ax, float Xx)
+    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        double Ax, double Xx)
+    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        long double Ax, long double Xx)
+    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_cfloat_wrapper Ax, npy_cfloat_wrapper Xx)
+    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_cdouble_wrapper Ax, npy_cdouble_wrapper Xx)
+    bsr_scale_rows(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_clongdouble_wrapper Ax, npy_clongdouble_wrapper Xx)
+    """
+  return _sparsetools.bsr_scale_rows(*args)
+
+def bsr_scale_columns(*args):
+  """
+    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        signed char Ax, signed char Xx)
+    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned char Ax, unsigned char Xx)
+    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        short Ax, short Xx)
+    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned short Ax, unsigned short Xx)
+    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        int Ax, int Xx)
+    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned int Ax, unsigned int Xx)
+    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        long long Ax, long long Xx)
+    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned long long Ax, unsigned long long Xx)
+    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        float Ax, float Xx)
+    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        double Ax, double Xx)
+    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        long double Ax, long double Xx)
+    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_cfloat_wrapper Ax, npy_cfloat_wrapper Xx)
+    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_cdouble_wrapper Ax, npy_cdouble_wrapper Xx)
+    bsr_scale_columns(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_clongdouble_wrapper Ax, npy_clongdouble_wrapper Xx)
+    """
+  return _sparsetools.bsr_scale_columns(*args)
+
 def csr_tocsc(*args):
   """
     csr_tocsc(int n_row, int n_col, int Ap, int Aj, signed char Ax, 

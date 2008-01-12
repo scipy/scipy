@@ -78,7 +78,7 @@ def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
 
 
 
-def smoothed_aggregation_solver(A, B=None, blocks=None, \
+def smoothed_aggregation_solver(A, B=None,  \
                                 aggregation=None, max_levels=10, \
                                 max_coarse=500, epsilon=0.0, \
                                 omega=4.0/3.0, symmetric=True, \
@@ -153,7 +153,7 @@ def smoothed_aggregation_solver(A, B=None, blocks=None, \
 
     if aggregation is None:
         while len(As) < max_levels and A.shape[0] > max_coarse:
-            P,B,blocks = sa_interpolation(A,B,epsilon*0.5**(len(As)-1),omega=omega,blocks=blocks)
+            P,B = sa_interpolation(A,B,epsilon*0.5**(len(As)-1),omega=omega)
 
             A = (P.T.tocsr() * A) * P     #galerkin operator
 
@@ -162,7 +162,7 @@ def smoothed_aggregation_solver(A, B=None, blocks=None, \
     else:
         #use user-defined aggregation
         for AggOp in aggregation:
-            P,B,blocks = sa_interpolation(A,B,omega=omega,AggOp=AggOp)
+            P,B = sa_interpolation(A,B,omega=omega,AggOp=AggOp)
 
             A = (P.T.tocsr() * A) * P     #galerkin operator
 
@@ -279,8 +279,8 @@ class multilevel_solver:
 
 if __name__ == '__main__':
     from scipy import *
+    from scipy.sandbox.multigrid import *
     candidates = None
-    blocks = None
     A = poisson_problem2D(40,1e-2)
     #A = io.mmread("rocker_arm_surface.mtx").tocsr()
     #A = io.mmread("9pt-100x100.mtx").tocsr()
@@ -291,7 +291,11 @@ if __name__ == '__main__':
     #candidates = io.mmread('tests/sample_data/elas30_nullspace.mtx')
     #blocks = arange(A.shape[0]/2).repeat(2)
 
-    ml = smoothed_aggregation_solver(A,candidates,blocks=blocks,epsilon=0.08,max_coarse=100,max_levels=10)
+    mats = io.loadmat('/home/nathan/Work/ogroup/matrices/elasticity/simple_grid_2d/elasticity_50x50.mat')
+    A = mats['A']
+    candidates = mats['B']
+
+    ml = smoothed_aggregation_solver(A,candidates,epsilon=0.08,max_coarse=100,max_levels=10)
     #ml = ruge_stuben_solver(A)
 
     x = rand(A.shape[0])

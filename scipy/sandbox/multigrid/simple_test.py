@@ -4,10 +4,15 @@ from scipy.sandbox.multigrid import *
 from scipy.sandbox.multigrid.utils import *
 from time import clock
 
-A = poisson_problem2D(500)
+mats = io.loadmat('/home/nathan/Work/ogroup/matrices/elasticity/simple_grid_2d/elasticity_50x50.mat')
+A = mats['A'].tobsr(blocksize=(2,2))
+B = mats['B']
+
+#A = poisson_problem2D(500)
+#B = None
 
 start = clock()
-sa = smoothed_aggregation_solver(A)
+sa = smoothed_aggregation_solver(A,B=B)
 print "constructed solver in %s seconds" % (clock() - start)
 
 b = rand(A.shape[0])
