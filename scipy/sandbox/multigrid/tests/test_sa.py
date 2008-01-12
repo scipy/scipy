@@ -179,20 +179,6 @@ class TestFitCandidates(TestCase):
             assert_almost_equal(fine_candidates,Q*coarse_candidates)
             assert_almost_equal(Q*(Q.T*fine_candidates),fine_candidates)
 
-##            #aggregate one more level (to a single aggregate)
-##            K = coarse_candidates.shape[1]
-##            N = K*AggOp.shape[1]
-##            AggOp = csr_matrix((ones(N),zeros(N),arange(N + 1)),shape=(N,1)) #aggregate to a single point
-##            fine_candidates = coarse_candidates
-##
-##            #mask_candidate(AggOp,fine_candidates)  #not needed
-##
-##            #now check the coarser problem
-##            Q,coarse_candidates = sa_fit_candidates(AggOp,fine_candidates)
-##
-##            assert_almost_equal(fine_candidates,Q*coarse_candidates)
-##            assert_almost_equal(Q*(Q.T*fine_candidates),fine_candidates)
-
 
 class TestSASolverPerformance(TestCase):
     def setUp(self):
