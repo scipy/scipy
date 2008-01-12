@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # Last Change: Fri Dec 15 10:00 PM 2006 J
 
-from numpy.testing import *
+from scipy.testing import *
 from numpy.random import randn, seed
 from numpy import correlate, array, concatenate, require, corrcoef
 from numpy.fft import fft, ifft
@@ -9,12 +9,11 @@ from numpy.fft import fft, ifft
 from numpy.ctypeslib import ndpointer, load_library
 from ctypes import c_uint
 
-set_package_path()
-from cdavid.autocorr import _raw_autocorr_1d, _raw_autocorr_1d_noncontiguous
-from cdavid.autocorr import autocorr_oneside_nofft as autocorr
-from cdavid.autocorr import autocorr_fft , nextpow2
-from cdavid.autocorr import _autocorr_oneside_nofft_py as autocorr_py
-restore_path()
+from scipy.sandbox.cdavid.autocorr import _raw_autocorr_1d, \
+     _raw_autocorr_1d_noncontiguous, \
+     autocorr_oneside_nofft as autocorr,\
+     autocorr_fft , nextpow2, \
+     _autocorr_oneside_nofft_py as autocorr_py
 
 import numpy
 
@@ -42,8 +41,8 @@ xff1    = xff[0]
 
 # This class tests the C functions directly. This is more a debugging tool
 # that a test case, as the tested functions are not part of the public API
-class TestCType1D(NumpyTestCase):
-    def check_contiguous_double(self):
+class TestCType1D(TestCase):
+    def test_contiguous_double(self):
         # double test
         xt      = xc1
         yt      = _raw_autocorr_1d(xt, xt.size - 1)
@@ -53,7 +52,7 @@ class TestCType1D(NumpyTestCase):
 
         assert_array_equal(yt, yr)
 
-    def check_contiguous_float(self):
+    def test_contiguous_float(self):
         # float test
         xt      = xcf1
 
@@ -64,7 +63,7 @@ class TestCType1D(NumpyTestCase):
 
         assert_array_equal(yt, yr)
 
-    def check_non_contiguous_double(self):
+    def test_non_contiguous_double(self):
         # double test
         xt      = xf1
         yt      = _raw_autocorr_1d_noncontiguous(xt, xt.size - 1)
@@ -74,7 +73,7 @@ class TestCType1D(NumpyTestCase):
 
         assert_array_equal(yt, yr)
 
-    def check_non_contiguous_float(self):
+    def test_non_contiguous_float(self):
         # float test
         xt      = xff1
         yt      = _raw_autocorr_1d_noncontiguous(xt, xt.size - 1)
@@ -85,8 +84,8 @@ class TestCType1D(NumpyTestCase):
         assert_array_equal(yt, yr)
 
 # Test autocorrelation for rank 1 arrays
-class TestAutoCorr1D(NumpyTestCase):
-    def check_contiguous_double(self):
+class TestAutoCorr1D(TestCase):
+    def test_contiguous_double(self):
         # double test
         xt      = xc1
         yt      = autocorr(xt, xt.size - 1)
@@ -96,7 +95,7 @@ class TestAutoCorr1D(NumpyTestCase):
 
         assert_array_equal(yt, yr)
 
-    def check_contiguous_float(self):
+    def test_contiguous_float(self):
         # float test
         xt      = xcf1
 
@@ -107,7 +106,7 @@ class TestAutoCorr1D(NumpyTestCase):
 
         assert_array_equal(yt, yr)
 
-    def check_non_contiguous_double(self):
+    def test_non_contiguous_double(self):
         # double test
         xt      = xf1
         yt      = autocorr(xt, xt.size - 1)
@@ -117,7 +116,7 @@ class TestAutoCorr1D(NumpyTestCase):
 
         assert_array_equal(yt, yr)
 
-    def check_non_contiguous_float(self):
+    def test_non_contiguous_float(self):
         # float test
         xt      = xff1
         yt      = autocorr(xt, xt.size - 1)
@@ -131,8 +130,8 @@ class TestAutoCorr1D(NumpyTestCase):
 # with rank 2 arrays. This will be used in the above test cases;
 # this function implements the expected behaviour of the public
 # autocorr function.
-class TestAutoCorrPy(NumpyTestCase):
-    def check_full(self):
+class TestAutoCorrPy(TestCase):
+    def test_full(self):
         xt      = xc
         axis    = -1
         lag     = xt.shape[axis] - 1
@@ -155,7 +154,7 @@ class TestAutoCorrPy(NumpyTestCase):
             center  = xt[:,i].size - 1
             assert_array_equal(tmp[center:center+1+lag], yt[:, i])
 
-    def check_partial(self):
+    def test_partial(self):
         xt      = xc
         axis    = -1
         lag     = 1
@@ -179,8 +178,8 @@ class TestAutoCorrPy(NumpyTestCase):
             assert_array_equal(tmp[center:center+1+lag], yt[:, i])
 
 # Test autocorrelation for rank 2 arrays
-class TestAutoCorr2D(NumpyTestCase):
-    def check_double_full(self):
+class TestAutoCorr2D(TestCase):
+    def test_double_full(self):
         # C, axis 1 test
         xt      = xc
         axis    = -1
@@ -217,7 +216,7 @@ class TestAutoCorr2D(NumpyTestCase):
         yr      = autocorr_py(xt, lag, axis = axis)
         assert_array_equal(yt, yr)
 
-    def check_float(self):
+    def test_float(self):
         # C, axis 1 test
         xt      = xcf
         axis    = -1
@@ -254,7 +253,7 @@ class TestAutoCorr2D(NumpyTestCase):
         yr      = autocorr_py(xt, lag, axis = axis)
         assert_array_equal(yt, yr)
 
-    def check_double_partial(self):
+    def test_double_partial(self):
         # C, axis 1 test
         xt      = xc
         axis    = -1
@@ -291,15 +290,15 @@ class TestAutoCorr2D(NumpyTestCase):
         yr      = autocorr_py(xt, lag, axis = axis)
         assert_array_equal(yt, yr)
 
-class TestAutoCorrFFT(NumpyTestCase):
+class TestAutoCorrFFT(TestCase):
     n   = 5
     d   = 3
-    def check_nextpow2(self):
+    def test_nextpow2(self):
         assert(nextpow2(255) == 8)
         assert(nextpow2(256) == 8)
         assert(nextpow2(257) == 9)
 
-    def check_r1r(self):
+    def test_r1r(self):
         """real case, rank 1"""
         a   = randn(self.n)
 
@@ -308,7 +307,7 @@ class TestAutoCorrFFT(NumpyTestCase):
         assert_array_almost_equal(atest, aref, decimal = md)
         assert atest.dtype == a.dtype
 
-    def check_r1c(self):
+    def test_r1c(self):
         """complex case, rank 1"""
         a   = randn(self.n) + 1.0j * randn(self.n)
 
@@ -317,11 +316,11 @@ class TestAutoCorrFFT(NumpyTestCase):
         assert_array_almost_equal(atest[self.n - 1], aref, decimal = md)
         assert atest.dtype == a.dtype
 
-    def check_r2c(self):
+    def test_r2c(self):
         """complex case, rank 2"""
         pass
 
-    def check_r2r(self):
+    def test_r2r(self):
         """real case, rank 2"""
 
         # axis 0
@@ -345,10 +344,10 @@ class TestAutoCorrFFT(NumpyTestCase):
         assert_array_almost_equal(atest, aref, decimal = md)
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    unittest.main()
 
-#class TestAutocorr2d(NumpyTestCase):
-#    def check_double(self):
+#class TestAutocorr2d(TestCase):
+#    def test_double(self):
 #        # C, axis 1 test
 #        xt      = xc
 #        axis    = -1
@@ -393,7 +392,7 @@ if __name__ == "__main__":
 #            tmp = correlate(xt[i], xt[i], 'full')
 #            assert_array_equal(tmp[lag:], yt[i])
 #
-#    def check_float(self):
+#    def test_float(self):
 #        # C, axis 1 test
 #        xt      = xcf
 #        axis    = -1
