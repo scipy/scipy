@@ -15,5 +15,5 @@ from construct import *
 from spfuncs import *
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
-from scipy.testing.pkgtester import Tester
-test = Tester().test
+from numpy.testing import NumpyTest
+test = NumpyTest().test
