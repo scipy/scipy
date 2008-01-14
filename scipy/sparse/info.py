@@ -41,22 +41,22 @@ Example
     >>> A[1, 100:200] = A[0, :100]
     >>> A.setdiag(rand(1000))
 
-    Now convert it to CSR format and solve (A A^T) x = b for x:
+    Now convert it to CSR format and solve A x = b for x:
 
     >>> A = A.tocsr()
     >>> b = rand(1000)
-    >>> x = linsolve.spsolve(A * A.T, b)
+    >>> x = linsolve.spsolve(A, b)
 
     Convert it to a dense matrix and solve, and check that the result
     is the same:
 
-    >>> A_ = A.todense()
-    >>> x_ = linalg.solve(A_ * A_.T, b)
+    >>> x_ = linalg.solve(A.todense(), b)
+
+    Now we can compute norm of the error with:
+
     >>> err = linalg.norm(x-x_)
-
-    Now we can print the error norm with:
-
-    >>> print "Norm error =", err
+    >>> err < 1e-10
+    True
 
     It should be small :)
 

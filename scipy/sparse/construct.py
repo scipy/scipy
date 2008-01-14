@@ -98,21 +98,19 @@ def spkron(A, B, format=None):
     >>> A = csr_matrix(array([[0,2],[5,0]]))
     >>> B = csr_matrix(array([[1,2],[3,4]]))
     >>> spkron(A,B).todense()
-    matrix([[  0.,   0.,   2.,   4.],
-            [  0.,   0.,   6.,   8.],
-            [  5.,  10.,   0.,   0.],
-            [ 15.,  20.,   0.,   0.]])
+    matrix([[ 0,  0,  2,  4],
+            [ 0,  0,  6,  8],
+            [ 5, 10,  0,  0],
+            [15, 20,  0,  0]])
 
     >>> spkron(A,[[1,2],[3,4]]).todense()
-    matrix([[  0.,   0.,   2.,   4.],
-            [  0.,   0.,   6.,   8.],
-            [  5.,  10.,   0.,   0.],
-            [ 15.,  20.,   0.,   0.]])
+    matrix([[ 0,  0,  2,  4],
+            [ 0,  0,  6,  8],
+            [ 5, 10,  0,  0],
+            [15, 20,  0,  0]])
 
     """
-    #TODO optimize for small dense B and CSR A -> BSR
     B = coo_matrix(B)
-
     
     if (format is None or format == "bsr") and 2*B.nnz >= B.shape[0] * B.shape[1]:
         #B is fairly dense, use BSR

@@ -32,13 +32,12 @@ class dia_matrix(_data_matrix):
     Examples
     ========
 
-
     >>> from scipy.sparse import *
     >>> from scipy import *
-    >>> dia_matrix( (3,4), dtype='i').todense()
+    >>> dia_matrix( (3,4), dtype='int32').todense()
     matrix([[0, 0, 0, 0],
             [0, 0, 0, 0],
-            [0, 0, 0, 0]])
+            [0, 0, 0, 0]], dtype=int32)
     
     >>> data = array([[1,2,3,4]]).repeat(3,axis=0)
     >>> diags = array([0,-1,2])
