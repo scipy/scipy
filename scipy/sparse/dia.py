@@ -34,10 +34,10 @@ class dia_matrix(_data_matrix):
 
     >>> from scipy.sparse import *
     >>> from scipy import *
-    >>> dia_matrix( (3,4), dtype='int32').todense()
+    >>> dia_matrix( (3,4), dtype=int8).todense()
     matrix([[0, 0, 0, 0],
             [0, 0, 0, 0],
-            [0, 0, 0, 0]], dtype=int32)
+            [0, 0, 0, 0]], dtype=int8)
     
     >>> data = array([[1,2,3,4]]).repeat(3,axis=0)
     >>> diags = array([0,-1,2])

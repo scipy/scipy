@@ -63,10 +63,10 @@ class csc_matrix(_cs_matrix):
 
     >>> from scipy.sparse import *
     >>> from scipy import *
-    >>> csc_matrix( (3,4), dtype='int32' ).todense()
+    >>> csc_matrix( (3,4), dtype=int8 ).todense()
     matrix([[0, 0, 0, 0],
             [0, 0, 0, 0],
-            [0, 0, 0, 0]], dtype=int32)
+            [0, 0, 0, 0]], dtype=int8)
 
     >>> row = array([0,2,2,0,1,2])
     >>> col = array([0,0,1,2,2,2])

@@ -70,10 +70,10 @@ class coo_matrix(_data_matrix):
 
     >>> from scipy.sparse import *
     >>> from scipy import *
-    >>> coo_matrix( (3,4), dtype='int32' ).todense()
+    >>> coo_matrix( (3,4), dtype=int8 ).todense()
     matrix([[0, 0, 0, 0],
             [0, 0, 0, 0],
-            [0, 0, 0, 0]], dtype=int32)
+            [0, 0, 0, 0]], dtype=int8)
 
     >>> row  = array([0,3,1,0])
     >>> col  = array([0,3,1,2])
