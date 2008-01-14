@@ -5,7 +5,7 @@ from numpy import array,arange,ones,zeros,sqrt,isinf,asarray,empty,diff,\
 from scipy.sparse import csr_matrix, isspmatrix_csr, bsr_matrix, isspmatrix_bsr
 
 from utils import diag_sparse, approximate_spectral_radius, \
-                  symmetric_rescaling, expand_into_blocks, scale_columns
+                  symmetric_rescaling, scale_columns
 import multigridtools
 
 __all__ = ['sa_filtered_matrix','sa_strong_connections','sa_constant_interpolation',
@@ -105,10 +105,6 @@ def sa_fit_candidates(AggOp,candidates,tol=1e-10):
 
     N_fine,N_coarse = AggOp.shape
 
-    #if blocksize > 1:
-    #    #see if fine space has been expanded (all levels except for first)
-    #    AggOp = expand_into_blocks(AggOp,blocksize,1).tocsr()
-
     R = zeros((N_coarse,K,K),dtype=candidates.dtype) #storage for coarse candidates
 
     candidate_matrices = []
@@ -124,7 +120,6 @@ def sa_fit_candidates(AggOp,candidates,tol=1e-10):
 
         #orthogonalize X against previous
         for j,A in enumerate(candidate_matrices):
-            #import pdb; pdb.set_trace()
             D_AtX = bsr_matrix((A.data*X.data,X.indices,X.indptr),shape=X.shape).sum(axis=0).A.flatten() #same as diagonal of A.T * X
             R[:,j,i] = D_AtX
             X.data -= scale_columns(A,D_AtX).data
@@ -141,7 +136,6 @@ def sa_fit_candidates(AggOp,candidates,tol=1e-10):
 
         candidate_matrices.append(X)
 
-    # expand AggOp blocks horizontally
     Q_indptr  = AggOp.indptr
     Q_indices = AggOp.indices
     Q_data = empty((AggOp.nnz,blocksize,K)) #if AggOp includes all nodes, then this is (N_fine * K)

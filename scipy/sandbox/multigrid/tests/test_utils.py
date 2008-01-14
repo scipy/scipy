@@ -8,12 +8,8 @@ from scipy.sparse import csr_matrix
 from scipy.linalg import norm
 
 
-from scipy.sandbox.multigrid.utils import approximate_spectral_radius, \
-                                          infinity_norm, diag_sparse, \
-                                          symmetric_rescaling, \
-                                          expand_into_blocks
-
-
+from scipy.sandbox.multigrid.utils import *
+from scipy.sandbox.multigrid.utils import symmetric_rescaling
 
 class TestUtils(TestCase):
     def test_approximate_spectral_radius(self):
@@ -105,27 +101,6 @@ class TestUtils(TestCase):
             D_sqrt,D_sqrt_inv = diag_sparse(D_sqrt),diag_sparse(D_sqrt_inv)
             assert_almost_equal((D_sqrt_inv*A*D_sqrt_inv).todense(), DAD.todense())
 
-    def test_expand_into_blocks(self):
-        cases = []
-        cases.append( ( matrix([[1]]), (1,2) ) )
-        cases.append( ( matrix([[1]]), (2,1) ) )
-        cases.append( ( matrix([[1]]), (2,2) ) )
-        cases.append( ( matrix([[1,2]]), (1,2) ) )
-        cases.append( ( matrix([[1,2],[3,4]]), (2,2) ) )
-        cases.append( ( matrix([[0,0],[0,0]]), (3,1) ) )
-        cases.append( ( matrix([[0,1,0],[0,2,3]]), (3,2) ) )
-        cases.append( ( matrix([[1,0,0],[2,0,3]]), (2,5) ) )
-
-        for A,shape in cases:
-            m,n = shape
-            result = expand_into_blocks(csr_matrix(A),m,n).todense()
-
-            expected = zeros((m*A.shape[0],n*A.shape[1]))
-            for i in range(m):
-                for j in range(n):
-                    expected[i::m,j::n] = A
-
-            assert_equal(expected,result)
 
 
 if __name__ == '__main__':

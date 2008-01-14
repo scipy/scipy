@@ -7,7 +7,7 @@ from scipy.sparse import csr_matrix,coo_matrix
 from relaxation import gauss_seidel
 from multilevel import multilevel_solver
 from sa import sa_constant_interpolation,sa_fit_candidates
-from utils import approximate_spectral_radius,hstack_csr,vstack_csr,expand_into_blocks,diag_sparse
+from utils import approximate_spectral_radius,hstack_csr,vstack_csr,diag_sparse
 
 
 
