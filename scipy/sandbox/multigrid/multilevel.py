@@ -1,5 +1,4 @@
-__all__ = ['poisson_problem1D','poisson_problem2D',
-           'ruge_stuben_solver','smoothed_aggregation_solver',
+__all__ = ['ruge_stuben_solver','smoothed_aggregation_solver',
            'multilevel_solver']
 
 import scipy
@@ -14,42 +13,6 @@ from rs import rs_interpolation
 from relaxation import gauss_seidel,jacobi,sor
 from utils import symmetric_rescaling, diag_sparse
 
-
-def poisson_problem1D(N):
-    """
-    Return a sparse CSR matrix for the 1d poisson problem
-    with standard 3-point finite difference stencil on a
-    grid with N points.
-    """
-    D = 2*ones(N)
-    O =  -ones(N)
-    return scipy.sparse.spdiags([D,O,O],[0,-1,1],N,N).tocoo().tocsr() #eliminate explicit zeros
-
-def poisson_problem2D(N, epsilon=1.0, dtype='d', format=None):
-    """
-    Return a sparse matrix for the 2d poisson problem
-    with standard 5-point finite difference stencil on a
-    square N-by-N grid.
-    """
-    if N == 1:
-        diags   = asarray( [[4]],dtype=dtype)
-        return dia_matrix((diags,[0]), shape=(1,1)).asformat(format)
-
-    offsets = array([0,-N,N,-1,1])
-
-    diags = empty((5,N**2),dtype=dtype)
-
-    diags[0]  =  (2 + 2*epsilon) #main diagonal
-    diags[1,:] = -1
-    diags[2,:] = -1
-    
-    diags[3,:] = -epsilon #first lower diagonal 
-    diags[4,:] = -epsilon #first upper diagonal 
-    diags[3,N-1::N] = 0  
-    diags[4,N::N]   = 0    
-    
-    return dia_matrix((diags,offsets),shape=(N**2,N**2)).tocoo().tocsr() #eliminate explicit zeros
-    #return dia_matrix((diags,offsets),shape=(N**2,N**2)).asformat(format)
 
 
 def ruge_stuben_solver(A,max_levels=10,max_coarse=500):

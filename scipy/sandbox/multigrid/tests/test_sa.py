@@ -19,11 +19,10 @@ import scipy.sandbox.multigrid
 from scipy.sandbox.multigrid.sa import sa_strong_connections, sa_constant_interpolation, \
                                         sa_interpolation, sa_fit_candidates, \
                                         sa_smoothed_prolongator
-from scipy.sandbox.multigrid.multilevel import poisson_problem1D,poisson_problem2D, \
-                                        smoothed_aggregation_solver
+from scipy.sandbox.multigrid.multilevel import smoothed_aggregation_solver
 from scipy.sandbox.multigrid.utils import diag_sparse
 
-
+from scipy.sandbox.multigrid.gallery import poisson
 
 #def sparsity(A):
 #    A = A.copy()
@@ -49,9 +48,9 @@ class TestSA(TestCase):
 
         # poisson problems in 1D and 2D
         for N in [2,3,5,7,10,11,19]:
-            self.cases.append( poisson_problem1D(N) )
+            self.cases.append( poisson(N,stencil='3pt',format='csr') )
         for N in [2,3,5,7,10,11]:
-            self.cases.append( poisson_problem2D(N) )
+            self.cases.append( poisson(N,stencil='5pt',format='csr') )
 
 
     def test_sa_strong_connections(self):
@@ -75,7 +74,7 @@ class TestSA(TestCase):
                 #assert_array_equal(S_result.todense(),S_expected.todense())
 
         # two aggregates in 1D
-        A = poisson_problem1D(6)
+        A = poisson(6,stencil='3pt')
         AggOp = csr_matrix((ones(6),array([0,0,0,1,1,1]),arange(7)),shape=(6,2))
         candidates = ones((6,1))
 
@@ -107,13 +106,13 @@ class TestSA(TestCase):
         user_cases = []
 
         #simple 1d example w/ two aggregates
-        A = poisson_problem1D(6)
+        A = poisson(6, stencil='3pt', format='csr')
         AggOp = csr_matrix((ones(6),array([0,0,0,1,1,1]),arange(7)),shape=(6,2))
         candidates = ones((6,1))
         user_cases.append((A,AggOp,candidates))
 
         #simple 1d example w/ two aggregates (not all nodes are aggregated)
-        A = poisson_problem1D(6)
+        A = poisson(6, stencil='3pt', format='csr')
         AggOp = csr_matrix((ones(4),array([0,0,1,1]),array([0,1,1,2,3,3,4])),shape=(6,2))
         candidates = ones((6,1))
         user_cases.append((A,AggOp,candidates))
@@ -184,8 +183,8 @@ class TestSASolverPerformance(TestCase):
     def setUp(self):
         self.cases = []
 
-        self.cases.append((poisson_problem1D(100),None))
-        self.cases.append((poisson_problem2D(50),None))
+        self.cases.append(( poisson(100, stencil='3pt', format='csr'), None))
+        self.cases.append(( poisson(100, stencil='5pt', format='csr'), None))
         # TODO add unstructured tests
 
 

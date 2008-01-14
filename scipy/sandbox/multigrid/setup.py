@@ -9,6 +9,8 @@ def configuration(parent_package='',top_path=None):
 
     config = Configuration('multigrid',parent_package,top_path)
 
+    config.add_subpackage('gallery')
+
     config.add_data_dir('tests')
     config.add_data_dir(join('tests','sample_data'))
 
