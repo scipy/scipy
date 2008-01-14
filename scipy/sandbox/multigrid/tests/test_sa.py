@@ -22,7 +22,7 @@ from scipy.sandbox.multigrid.sa import sa_strong_connections, sa_constant_interp
 from scipy.sandbox.multigrid.multilevel import smoothed_aggregation_solver
 from scipy.sandbox.multigrid.utils import diag_sparse
 
-from scipy.sandbox.multigrid.gallery.poisson import poisson
+from scipy.sandbox.multigrid.gallery import poisson
 
 #def sparsity(A):
 #    A = A.copy()

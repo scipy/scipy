@@ -2,7 +2,7 @@ from scipy.testing import *
 
 from scipy import matrix
 
-from scipy.sandbox.multigrid.gallery.poisson import *
+from scipy.sandbox.multigrid.gallery.laplacian import *
 
 class TestPoisson(TestCase):
     def test_poisson(self):
