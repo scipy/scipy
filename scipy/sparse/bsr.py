@@ -220,7 +220,7 @@ class bsr_matrix(_cs_matrix):
             if self.nnz > 0:
                 if self.indices.max() >= N/C:
                     print "max index",self.indices.max()
-                    raise ValueError, "column index values must be < %d" % N/C
+                    raise ValueError, "column index values must be < %d" % (N/C)
                 if self.indices.min() < 0:
                     raise ValueError, "column index values must be >= 0"
                 if diff(self.indptr).min() < 0:
