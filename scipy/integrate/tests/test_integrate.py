@@ -49,4 +49,4 @@ class TestODEInt(TestCase):
         assert res < 1.0e-6
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

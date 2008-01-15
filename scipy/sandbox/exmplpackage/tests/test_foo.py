@@ -16,21 +16,19 @@ Run tests if scipy is installed:
 """
 
 import sys
-from numpy.test.testing import *
+from scipy.testing import *
 
-set_package_path()
-from exmplpackage.foo import *
-del sys.path[0]
+from scipy.sandbox.exmplpackage.foo import *
 
-class TestFooBar(NumpyTestCase):
+class TestFooBar(TestCase):
 
     def check_simple(self, level=1):
         assert exmplpackage_foo_bar()=='Hello from exmplpackage_foo_bar'
 
-class TestFooGun(NumpyTestCase):
+class TestFooGun(TestCase):
 
     def check_simple(self, level=1):
         assert foo_gun()=='Hello from foo_gun'
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    nose.run(argv=['', __file__])

@@ -432,4 +432,4 @@ class TestShift(TestCase):
             print ' (secs for %s calls)' % (repeat)
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

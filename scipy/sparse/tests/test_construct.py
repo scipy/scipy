@@ -133,5 +133,5 @@ class TestConstructUtils(TestCase):
                             [6,5,0]])
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])
 

@@ -39,4 +39,4 @@ class TestRbf3d(TestCase):
         assert_array_almost_equal(di, d)
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

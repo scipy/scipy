@@ -80,4 +80,4 @@ class TestIterativeSolvers(TestCase):
         assert norm(dot(self.A, x) - self.b) < 5*self.tol
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

@@ -145,4 +145,4 @@ class TestKMean(TestCase):
         kmeans2(data, 3, minit = 'points')
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

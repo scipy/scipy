@@ -539,4 +539,4 @@ class TestPinv(TestCase):
         assert_array_almost_equal(a_pinv,a_pinv2)
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

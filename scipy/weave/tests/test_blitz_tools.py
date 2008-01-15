@@ -181,4 +181,4 @@ class TestBlitz(TestCase):
         self.generic_2d(expr,complex128)
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

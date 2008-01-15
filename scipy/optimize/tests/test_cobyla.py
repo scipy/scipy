@@ -18,4 +18,4 @@ class TestCobyla(TestCase):
         assert_almost_equal(x, [x0, x1], decimal=5)
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

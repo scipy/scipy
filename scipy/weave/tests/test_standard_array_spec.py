@@ -38,4 +38,4 @@ class TestArrayConverter(TestCase):
         assert(s.type_match(arange(4)))
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

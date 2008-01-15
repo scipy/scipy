@@ -430,4 +430,4 @@ class TestLoessGas(TestCase):
 
 ########################################################################
 if __name__ == '__main__':
-    unittest.main()
+    nose.run(argv=['', __file__])

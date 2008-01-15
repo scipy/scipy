@@ -5513,4 +5513,4 @@ class TestNdimage(TestCase):
 #    return len(result.failures), result.testsRun
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

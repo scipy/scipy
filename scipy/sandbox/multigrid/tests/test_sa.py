@@ -311,4 +311,4 @@ def reference_sa_constant_interpolation(A,epsilon):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    nose.run(argv=['', __file__])

@@ -38,4 +38,4 @@ def test_fromimage():
         yield tst_fromimage, os.path.join(datapath,'data',fn), irange
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

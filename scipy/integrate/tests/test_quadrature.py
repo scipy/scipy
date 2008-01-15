@@ -29,4 +29,4 @@ class TestQuadrature(TestCase):
         assert_equal(romb(numpy.arange(17)),128)
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

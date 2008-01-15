@@ -108,4 +108,4 @@ class TestWxConverter(TestCase):
         assert(c == 'hello')
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

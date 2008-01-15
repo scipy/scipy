@@ -173,5 +173,5 @@ class TestRecaster(TestCase):
                    'Expected %s from %s, got %s' % (outp, inp, dtt)
             
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])
 

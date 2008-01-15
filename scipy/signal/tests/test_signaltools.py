@@ -46,4 +46,4 @@ class TestOrderFilt(TestCase):
                            [2,3,2])
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

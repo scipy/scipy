@@ -239,4 +239,4 @@ class TestParcur(TestCase):
                         around(abs(splev(uv[0],tck)-f(uv[0])),2),decimal=1)
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

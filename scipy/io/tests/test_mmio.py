@@ -292,4 +292,4 @@ class TestMMIOCoordinate(TestCase):
         assert_array_almost_equal(a,b)
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

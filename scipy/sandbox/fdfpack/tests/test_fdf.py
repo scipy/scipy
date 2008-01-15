@@ -29,4 +29,4 @@ class TestDiff(TestCase):
                 assert_array_almost_equal(diff(sin(x),k=4,m=m)/n,sin(x)/n)
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

@@ -168,4 +168,4 @@ if not (gcc_exists() and msvc_exists() and sys.platform == 'win32'):
         if _n[:7]=='TestGcc': exec 'del '+_n
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

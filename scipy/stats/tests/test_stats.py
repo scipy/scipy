@@ -845,4 +845,4 @@ class TestThreshold(TestCase):
                            [0,2,3,4,0,0,0])
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

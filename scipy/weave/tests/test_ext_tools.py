@@ -141,4 +141,4 @@ class TestAssignVariableTypes(TestCase):
         print_assert_equal(expr,actual,desired)
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

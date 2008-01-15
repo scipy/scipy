@@ -900,4 +900,4 @@ class TestObjectSetItemOpKey(TestCase):
         assert_equal(a['first'],a['second'])
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

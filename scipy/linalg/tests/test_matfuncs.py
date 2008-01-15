@@ -98,4 +98,4 @@ class TestExpM(TestCase):
         assert_array_almost_equal(expm3(a),[[1,0],[0,1]])
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])

@@ -67,6 +67,6 @@ class TestSparseUtils(TestCase):
         assert_equal(isdense( np.matrix([1]) ),True)
                 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])
 
 

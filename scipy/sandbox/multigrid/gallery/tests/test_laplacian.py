@@ -48,4 +48,4 @@ class TestPoisson(TestCase):
             assert_equal( poisson(grid).todense(), expected )
 
 if __name__ == '__main__':
-    unittest.main()
+    nose.run(argv=['', __file__])

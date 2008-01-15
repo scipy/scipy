@@ -102,4 +102,4 @@ class TestNpFile(TestCase):
         assert_array_equal(npf.read_array(adt, shp, order='C'), cf_arr)
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])
