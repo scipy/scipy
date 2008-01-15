@@ -183,7 +183,7 @@ class TestSASolverPerformance(TestCase):
     def setUp(self):
         self.cases = []
 
-        self.cases.append(( poisson( (100,),    format='csr'), None))
+        self.cases.append(( poisson( (10000,),  format='csr'), None))
         self.cases.append(( poisson( (100,100), format='csr'), None))
         # TODO add unstructured tests
 
@@ -206,35 +206,32 @@ class TestSASolverPerformance(TestCase):
             assert(avg_convergence_ratio < 0.5)
 
     def test_DAD(self):
-        for A,candidates in self.cases:
+        A = poisson( (100,100), format='csr' )        
 
-            x = rand(A.shape[0])
-            b = A*rand(A.shape[0])
-
-            D     = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
-            D_inv = diag_sparse(1.0/D.data)
-
-            DAD   = D*A*D
-
-            if candidates is None:
-                candidates = ones((A.shape[0],1))
-
-            DAD_candidates = D_inv * candidates
-
-            #TODO force 2 level method and check that result is the same
-
-            #ml = smoothed_aggregation_solver(A,candidates,max_coarse=1,max_levels=2)
-
-            ml = smoothed_aggregation_solver(DAD,DAD_candidates,max_coarse=100,max_levels=2,rescale=False)
-
-            #print (D_inv*ml.Ps[0]).todense()
-
-            x_sol,residuals = ml.solve(b,x0=x,maxiter=10,tol=1e-12,return_residuals=True)
-
-            avg_convergence_ratio = (residuals[-1]/residuals[0])**(1.0/len(residuals))
-            #print avg_convergence_ratio
-
-            assert(avg_convergence_ratio < 0.5)
+        x = rand(A.shape[0])
+        b = rand(A.shape[0])
+ 
+        D     = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
+        D_inv = diag_sparse(1.0/D.data)
+ 
+        DAD   = D*A*D
+ 
+        B = ones((A.shape[0],1))
+ 
+        Dinv_B = D_inv * B
+ 
+        #TODO force 2 level method and check that result is the same
+ 
+        sa1 = smoothed_aggregation_solver(A, B, max_levels=2, rescale=False)
+        sa2 = smoothed_aggregation_solver(D*A*D, D_inv * B, max_levels=2, rescale=False)
+ 
+        #assert_almost_equal( sa2.Ps[0], sa1.Ps[0] 
+        x_sol,residuals = sa2.solve(b,x0=x,maxiter=10,tol=1e-12,return_residuals=True)
+ 
+        avg_convergence_ratio = (residuals[-1]/residuals[0])**(1.0/len(residuals))
+        print avg_convergence_ratio
+ 
+        assert(avg_convergence_ratio < 0.2)
 
 
 

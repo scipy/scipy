@@ -12,7 +12,7 @@ from scipy.sparse import isspmatrix, isspmatrix_csr, isspmatrix_csc, \
 from scipy.sparse.sputils import upcast
 
 
-def approximate_spectral_radius(A,tol=0.1,maxiter=10,symmetric=None):
+def approximate_spectral_radius(A,tol=0.1,maxiter=20,symmetric=None):
     """approximate the spectral radius of a matrix
 
     *Parameters*:
@@ -36,8 +36,8 @@ def approximate_spectral_radius(A,tol=0.1,maxiter=10,symmetric=None):
         An approximation to the spectral radius of A (scalar value)
 
     """
-    #from scipy.sandbox.arpack import eigen
-    #return norm(eigen(A, k=1, ncv=10, which='LM', maxiter=maxiter, tol=tol, return_eigenvectors=False))
+    from scipy.sandbox.arpack import eigen
+    return norm(eigen(A, k=1, ncv=min(10,A.shape[0]), which='LM', tol=tol, return_eigenvectors=False))
    
     if not isspmatrix(A):
         A = asmatrix(A) #convert dense arrays to matrix type

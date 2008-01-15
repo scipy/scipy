@@ -2,13 +2,17 @@ from scipy.testing import *
 
 import numpy
 import scipy
-from scipy import arange,ones,zeros,array,allclose,zeros_like
-from scipy.sparse import spdiags
+from scipy.sparse import spdiags, csr_matrix
+from scipy import arange, ones, zeros, array, allclose, zeros_like, \
+        tril, diag, triu, rand, asmatrix
+from scipy.linalg import solve
 
 
 
 import scipy.sandbox.multigrid
+from scipy.sandbox.multigrid.gallery    import poisson
 from scipy.sandbox.multigrid.relaxation import polynomial_smoother,gauss_seidel,jacobi
+
 
 
 
@@ -99,6 +103,53 @@ class TestRelaxation(TestCase):
                 gauss_seidel(B,x_bsr,b)
                 assert_almost_equal(x_bsr,x_csr)
                
+    def test_gauss_seidel_new(self):
+        scipy.random.seed(0)
+
+        cases = []
+        cases.append( poisson( (4,), format='csr' ) )
+        cases.append( poisson( (4,4), format='csr' ) )
+
+        temp = asmatrix( rand(4,4) )
+        cases.append( csr_matrix( temp.T * temp) )
+
+        # reference implementation
+        def gold(A,x,b,iterations,sweep):
+            A = A.todense()
+
+            L = tril(A,k=-1)
+            D = diag(diag(A))
+            U = triu(A,k=1)
+
+            for i in range(iterations):
+                if sweep == 'forward':
+                    x = solve(L + D, (b - U*x) )
+                elif sweep == 'backward':
+                    x = solve(U + D, (b - L*x) )
+                else:
+                    x = solve(L + D, (b - U*x) )
+                    x = solve(U + D, (b - L*x) )
+            return x            
+
+
+        for A in cases:
+
+            b = asmatrix(rand(A.shape[0],1))
+            x = asmatrix(rand(A.shape[0],1))
+
+            x_copy = x.copy()
+            gauss_seidel(A, x, b, iterations=1, sweep='forward')
+            assert_almost_equal( x, gold(A,x_copy,b,iterations=1,sweep='forward') )
+            
+            x_copy = x.copy()
+            gauss_seidel(A, x, b, iterations=1, sweep='backward')
+            assert_almost_equal( x, gold(A,x_copy,b,iterations=1,sweep='backward') )
+            
+            x_copy = x.copy()
+            gauss_seidel(A, x, b, iterations=1, sweep='symmetric')
+            assert_almost_equal( x, gold(A,x_copy,b,iterations=1,sweep='symmetric') )
+
+
 
     def test_gauss_seidel_csr(self):
         N = 1

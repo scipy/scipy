@@ -55,7 +55,7 @@ def gauss_seidel(A,x,b,iterations=1,sweep='forward'):
     """
     #TODO replace pointwise BSR with block BSR
 
-    x = x.reshape(-1) #TODO warn if not inplace
+    x = ravel(x) #TODO warn if not inplace
     b = ravel(b)
 
     if isspmatrix_csr(A):
