@@ -5,7 +5,7 @@ from numpy import arange,ones,zeros,array,eye,vstack,diff
 
 
 from scipy.sandbox.multigrid.sa import sa_fit_candidates
-from scipy.sandbox.multigrid.adaptive import augment_candidates
+#from scipy.sandbox.multigrid.adaptive import augment_candidates
 
 
 

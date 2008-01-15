@@ -1,14 +1,18 @@
+__all__ = ['adaptive_sa_solver']
+
+
 import numpy,scipy,scipy.sparse
 
 from numpy import sqrt, ravel, diff, zeros, zeros_like, inner, concatenate, \
                   asarray, hstack, ascontiguousarray, isinf, dot
-from numpy.random import randn
+from numpy.random import randn, rand
 from scipy.sparse import csr_matrix,coo_matrix
 
 from relaxation import gauss_seidel
 from multilevel import multilevel_solver
-from sa import sa_constant_interpolation,sa_fit_candidates
 from utils import approximate_spectral_radius,hstack_csr,vstack_csr,diag_sparse
+from sa import sa_constant_interpolation, sa_smoothed_prolongator, \
+        sa_fit_candidates
 
 
 
@@ -19,13 +23,14 @@ def sa_hierarchy(A,B,AggOps):
     Construct multilevel hierarchy using Smoothed Aggregation
         Inputs:
           A  - matrix
-          Ps - list of constant prolongators
-          B  - "candidate" basis function to be approximated
+          B  - fine-level near nullspace candidates be approximated
+
         Ouputs:
-          (As,Ps,Ts) - tuple of lists
-                  - As - [A, Ts[0].T*A*Ts[0], Ts[1].T*A*Ts[1], ... ]
+          (As,Ps,Ts,Bs) - tuple of lists
+                  - As -  
                   - Ps - smoothed prolongators
                   - Ts - tentative prolongators
+                  - Bs - near nullspace candidates
     """
     As = [A]
     Ps = []
@@ -34,7 +39,7 @@ def sa_hierarchy(A,B,AggOps):
 
     for AggOp in AggOps:
         P,B = sa_fit_candidates(AggOp,B)
-        I   = sa_smoothed_prolongator(P,A)
+        I   = sa_smoothed_prolongator(A,P)
         A   = I.T.tocsr() * A * I
         As.append(A)
         Ts.append(P)
@@ -44,19 +49,17 @@ def sa_hierarchy(A,B,AggOps):
 
 
 class adaptive_sa_solver:
-    def __init__(self, A, blocks=None, aggregation=None, max_levels=10, max_coarse=100,\
+    def __init__(self, A, aggregation=None, max_levels=10, max_coarse=100,\
                  max_candidates=1, mu=5, epsilon=0.1):
-
-        self.A = A
-
+        
+        self.A  = A
         self.Rs = []
 
         if self.A.shape[0] <= max_coarse:
             raise ValueError,'small matrices not handled yet'
 
         #first candidate
-        x,AggOps = self.__initialization_stage(A, blocks = blocks, \
-                                               max_levels = max_levels, \
+        x,AggOps = self.__initialization_stage(A, max_levels = max_levels, \
                                                max_coarse = max_coarse, \
                                                mu = mu, epsilon = epsilon, \
                                                aggregation = aggregation )
@@ -66,9 +69,6 @@ class adaptive_sa_solver:
 
         for i in range(max_candidates - 1):
             x = self.__develop_new_candidate(As,Ps,Ts,Bs,AggOps,mu=mu)
-
-            #TODO which is faster?
-            #As,Ps,Ts,Bs = self.__augment_cycle(As,Ps,Ts,Bs,AggOps,x)
 
             B = hstack((Bs[0],x))
             As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
@@ -89,7 +89,7 @@ class adaptive_sa_solver:
         self.AggOps = AggOps
         self.Bs = Bs
 
-    def __initialization_stage(self,A,blocks,max_levels,max_coarse,mu,epsilon,aggregation):
+    def __initialization_stage(self,A,max_levels,max_coarse,mu,epsilon,aggregation):
         if aggregation is not None:
             max_coarse = 0
             max_levels = len(aggregation) + 1
@@ -100,31 +100,28 @@ class adaptive_sa_solver:
 
         #step 1
         A_l = A
-        x   = randn(A_l.shape[0],1)
+        x   = rand(A_l.shape[0],1) # TODO see why randn() fails here
         skip_f_to_i = False
 
         #step 2
-        gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')
+        gauss_seidel(A_l, x, zeros_like(x), iterations=mu, sweep='symmetric')
 
         #step 3
         #TODO test convergence rate here
 
-        As = [A]
+        As     = [A]
+        Ps     = []
         AggOps = []
-        Ps = []
 
         while len(AggOps) + 1 < max_levels and A_l.shape[0] > max_coarse:
             if aggregation is None:
-                W_l   = sa_constant_interpolation(A_l,epsilon=0,blocks=blocks) #step 4b
+                W_l = sa_constant_interpolation(A_l,epsilon=0) #step 4b
             else:
-                W_l   = aggregation[len(AggOps)]
-            P_l,x = sa_fit_candidates(W_l,x)                             #step 4c
-            I_l   = sa_smoothed_prolongator(P_l,A_l)                          #step 4d
-            A_l   = I_l.T.tocsr() * A_l * I_l                              #step 4e
+                W_l = aggregation[len(AggOps)]
+            P_l,x = sa_fit_candidates(W_l,x)                   #step 4c
+            I_l   = sa_smoothed_prolongator(A_l,P_l)           #step 4d
+            A_l   = I_l.T.tocsr() * A_l * I_l                  #step 4e
 
-            blocks = None #not needed on subsequent levels
-
-            print 'A_l.shape',A_l.shape
             AggOps.append(W_l)
             Ps.append(I_l)
             As.append(A_l)
@@ -132,7 +129,6 @@ class adaptive_sa_solver:
             if A_l.shape <= max_coarse:  break
 
             if not skip_f_to_i:
-                print "."
                 x_hat = x.copy()                                                   #step 4g
                 gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')  #step 4h
                 x_A_x = dot(x.T,A_l*x)
@@ -176,7 +172,7 @@ class adaptive_sa_solver:
             B = zeros( (x.shape[0], Bs[i+1].shape[1] + 1), dtype=x.dtype)
             T,R = sa_fit_candidates(AggOp,B)
 
-            P = sa_smoothed_prolongator(T,A)
+            P = sa_smoothed_prolongator(A,T)
             A = P.T.tocsr() * A * P
 
             temp_Ps.append(P)
@@ -206,7 +202,7 @@ class adaptive_sa_solver:
 #        for i in range(len(As) - 1):
 #            T,R = augment_candidates(AggOps[i], Ts[i], Bs[i+1], x)
 #
-#            P = sa_smoothed_prolongator(T,A)
+#            P = sa_smoothed_prolongator(A,T)
 #            A = P.T.tocsr() * A * P
 #
 #            new_As.append(A)
@@ -217,9 +213,6 @@ class adaptive_sa_solver:
 #            x = R[:,-1].reshape(-1,1)
 #
 #        return new_As,new_Ps,new_Ts,new_Bs
-
-
-
 
 
 #def augment_candidates(AggOp, old_Q, old_R, new_candidate):

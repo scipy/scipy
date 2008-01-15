@@ -97,6 +97,9 @@ def sa_constant_interpolation(A,epsilon):
         sa_constant_interpolation(csr_matrix(A),epsilon)
 
 def sa_fit_candidates(AggOp,candidates,tol=1e-10):
+    if not isspmatrix_csr(AggOp):
+        raise TypeError,'expected csr_matrix for argument AggOp'
+
     if candidates.dtype != 'float32':
         candidates = asarray(candidates,dtype='float64')
 
@@ -147,7 +150,7 @@ def sa_fit_candidates(AggOp,candidates,tol=1e-10):
 
     return Q,R
 
-def sa_smoothed_prolongator(A,T,epsilon,omega):
+def sa_smoothed_prolongator(A,T,epsilon=0.0,omega=4.0/3.0):
     """For a given matrix A and tentative prolongator T return the
     smoothed prolongator P
 
@@ -160,7 +163,6 @@ def sa_smoothed_prolongator(A,T,epsilon,omega):
         S          - inv(diag(A_filtered)) * A_filtered   (Jacobi smoother)
         A_filtered - sa_filtered_matrix(A,epsilon)
     """
-
 
     A_filtered = sa_filtered_matrix(A,epsilon) #use filtered matrix for anisotropic problems
 
