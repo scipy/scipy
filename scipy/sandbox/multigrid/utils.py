@@ -3,16 +3,16 @@ __all__ =['approximate_spectral_radius','infinity_norm','diag_sparse',
 
 import numpy
 import scipy
-from scipy import ravel,arange,concatenate,tile,asarray,sqrt,diff, \
-                  rand,zeros,empty,asmatrix,dot
-from scipy.linalg import norm,eigvals
+from scipy import ravel, arange, concatenate, tile, asarray, sqrt, diff, \
+                  rand, zeros, ones, empty, asmatrix, dot
+from scipy.linalg import norm, eigvals
 from scipy.sparse import isspmatrix, isspmatrix_csr, isspmatrix_csc, \
         isspmatrix_bsr, csr_matrix, csc_matrix, bsr_matrix, coo_matrix, \
         extract_diagonal
 from scipy.sparse.sputils import upcast
 
 
-def approximate_spectral_radius(A,tol=0.1,maxiter=20,symmetric=None):
+def approximate_spectral_radius(A,tol=0.1,maxiter=10,symmetric=None):
     """approximate the spectral radius of a matrix
 
     *Parameters*:
@@ -36,8 +36,8 @@ def approximate_spectral_radius(A,tol=0.1,maxiter=20,symmetric=None):
         An approximation to the spectral radius of A (scalar value)
 
     """
-    from scipy.sandbox.arpack import eigen
-    return norm(eigen(A, k=1, ncv=min(10,A.shape[0]), which='LM', tol=tol, return_eigenvectors=False))
+    #from scipy.sandbox.arpack import eigen
+    #return norm(eigen(A, k=1, ncv=min(10,A.shape[0]), which='LM', tol=tol, return_eigenvectors=False))
    
     if not isspmatrix(A):
         A = asmatrix(A) #convert dense arrays to matrix type
@@ -98,8 +98,8 @@ def approximate_spectral_radius(A,tol=0.1,maxiter=20,symmetric=None):
                     V = V[1:]
                     H[1,0] = H[0,1]
                     beta = H[2,1]
-       
-    return norm(H[:j+1,:j+1],2)
+    
+    return max([norm(x) for x in eigvals(H[:j+1,:j+1])])      
 
 
 
@@ -112,9 +112,9 @@ def infinity_norm(A):
     if isspmatrix_csr(A) or isspmatrix_csc(A):
         #avoid copying index and ptr arrays
         abs_A = A.__class__((abs(A.data),A.indices,A.indptr),shape=A.shape)
-        return (abs_A * numpy.ones(A.shape[1],dtype=A.dtype)).max()
+        return (abs_A * ones(A.shape[1],dtype=A.dtype)).max()
     else:
-        return (abs(A) * numpy.ones(A.shape[1],dtype=A.dtype)).max()
+        return (abs(A) * ones(A.shape[1],dtype=A.dtype)).max()
 
 def diag_sparse(A):
     """

@@ -202,8 +202,8 @@ class TestSASolverPerformance(TestCase):
             x_sol,residuals = ml.solve(b,x0=x,maxiter=20,tol=1e-12,return_residuals=True)
 
             avg_convergence_ratio = (residuals[-1]/residuals[0])**(1.0/len(residuals))
-
-            assert(avg_convergence_ratio < 0.5)
+            
+            assert(avg_convergence_ratio < 0.25)
 
     def test_DAD(self):
         A = poisson( (100,100), format='csr' )        
@@ -218,20 +218,17 @@ class TestSASolverPerformance(TestCase):
  
         B = ones((A.shape[0],1))
  
-        Dinv_B = D_inv * B
- 
         #TODO force 2 level method and check that result is the same
  
-        sa1 = smoothed_aggregation_solver(A, B, max_levels=2, rescale=False)
-        sa2 = smoothed_aggregation_solver(D*A*D, D_inv * B, max_levels=2, rescale=False)
+        #sa1 = smoothed_aggregation_solver(A, B, max_levels=2, rescale=False)
+        sa2 = smoothed_aggregation_solver(D*A*D, D_inv * B, max_levels=2, rescale=True)
  
         #assert_almost_equal( sa2.Ps[0], sa1.Ps[0] 
         x_sol,residuals = sa2.solve(b,x0=x,maxiter=10,tol=1e-12,return_residuals=True)
  
         avg_convergence_ratio = (residuals[-1]/residuals[0])**(1.0/len(residuals))
-        print avg_convergence_ratio
- 
-        assert(avg_convergence_ratio < 0.2)
+        
+        assert(avg_convergence_ratio < 0.25)
 
 
 

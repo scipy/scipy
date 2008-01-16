@@ -10,7 +10,7 @@ A = poisson( (200,200), format='csr' )
 
 #A = poisson( (200,200), spacing=(1,1e-2) )  #anisotropic 
 D = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
-A = D * A * D
+#A = D * A * D
 
 
 
