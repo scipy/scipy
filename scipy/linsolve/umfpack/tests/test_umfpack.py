@@ -17,13 +17,11 @@ import numpy as nm
 import scipy.linsolve.umfpack as um
 
 # Allow disabling of nose tests if umfpack not present
-have_umfpack = um.umfpack._um is not None
+TestCase.__test__ = um.umfpack._um is not None
 
 class TestSolvers(TestCase):
     """Tests inverting a sparse linear system"""
 
-    __test__ = have_umfpack
-    
     def test_solve_complex_without_umfpack(self):
         """Solve: single precision complex"""
         linsolve.use_solver( useUmfpack = False )
@@ -109,8 +107,6 @@ class TestSolvers(TestCase):
 
 class TestFactorization(TestCase):
     """Tests factorizing a sparse linear system"""
-
-    __test__ = have_umfpack
 
     def test_complex_lu(self):
         """Getting factors of complex matrix"""

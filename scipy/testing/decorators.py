@@ -27,11 +27,11 @@ def willfail(t):
     t.willfail = True
     return t
 
-def is_nosetest(tf):
+def setastest(tf=True):
     ''' Signals to nose that this function is or is not a test
-
+    
     e.g
-    >>> @is_nosetest(False)
+    >>> @setastest(False)
     >>> def func_with_test_in_name(arg1, arg2): pass
     ...
     >>> 

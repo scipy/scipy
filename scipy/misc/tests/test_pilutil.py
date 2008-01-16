@@ -36,7 +36,7 @@ def tst_fromimage(filename, irange):
     assert img.min() >= imin
     assert img.max() <= imax
 
-@dec.is_nosetest(_have_PIL)
+@dec.setastest(_have_PIL)
 def test_fromimage():
     ''' Test generator for parametric tests '''
     data = {'icon.png':(0,255),
