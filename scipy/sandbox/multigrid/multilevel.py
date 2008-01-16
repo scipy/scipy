@@ -41,11 +41,9 @@ def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
 
 
 
-def smoothed_aggregation_solver(A, B=None,  \
-                                aggregation=None, max_levels=10, \
-                                max_coarse=500, epsilon=0.0, \
-                                omega=4.0/3.0, symmetric=True, \
-                                rescale = True):
+def smoothed_aggregation_solver(A, B=None, max_levels=10, max_coarse=500, \
+        epsilon=0.0, omega=4.0/3.0, symmetric=True, rescale=True, \
+        aggregation=None):
     """Create a multilevel solver using Smoothed Aggregation (SA)
 
     *Parameters*:
@@ -55,19 +53,6 @@ def smoothed_aggregation_solver(A, B=None,  \
         B : {None, array_like} : optional
             Near-nullspace candidates stored in the columns of an NxK array.
             The default value B=None is equivalent to B=ones((N,1))
-        blocks : {None, array_like} : optional
-            Array of length N that groups the variables into 'superblocks'.
-            For example, in a 2d vector-valued problem where the even
-            variables [0,2,4,...N-2] correspond to the x-components and the
-            odd variables [1,3,5,...,N-1] correspond to the y-components then
-            blocks=[0,0,1,1,2,2,...,N/2,N/2] is expected.  The default
-            value blocks=None is equivalent to blocks=[0,1,2,..,N] which
-            implies that each variable should be aggregated seperately.
-            The default is appropriate for scalar valued problems.
-        aggregation: {None, list of csr_matrix} : optional
-            List of csr_matrix objects that describe a user-defined
-            multilevel aggregation of the variables.
-            TODO ELABORATE
         max_levels: {integer} : default 10
             Maximum number of levels to be used in the multilevel solver.
         max_coarse: {integer} : default 500
@@ -81,6 +66,10 @@ def smoothed_aggregation_solver(A, B=None,  \
         rescale: {boolean} : default True
             If True, symmetrically rescale A by the diagonal
             i.e. A -> D * A * D,  where D is diag(A)^-0.5
+        aggregation: {None, list of csr_matrix} : optional
+            List of csr_matrix objects that describe a user-defined
+            multilevel aggregation of the variables.
+            TODO ELABORATE
 
     *Example*:
         TODO

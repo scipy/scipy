@@ -10,7 +10,7 @@ A = poisson( (200,200), format='csr' )
 
 #A = poisson( (200,200), spacing=(1,1e-2) )  #anisotropic 
 D = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
-#A = D * A * D
+A = D * A * D
 
 
 
@@ -28,12 +28,12 @@ b = zeros(A.shape[0])
 
 print "solving"
 if True:
-    x_sol,residuals = asa.solver.solve(b,x0=x,maxiter=20,tol=1e-12,return_residuals=True)
+    x_sol,residuals = asa.solve(b,x0=x,maxiter=20,tol=1e-12,return_residuals=True)
 else:
     residuals = []
     def add_resid(x):
         residuals.append(linalg.norm(b - A*x))
-    A.psolve = asa.solver.psolve
+    A.psolve = asa.psolve
     x_sol = linalg.cg(A,b,x0=x,maxiter=30,tol=1e-12,callback=add_resid)[0]
 
 residuals = array(residuals)/residuals[0]
@@ -43,7 +43,7 @@ print "mean convergence factor",(residuals[-1]/residuals[0])**(1.0/len(residuals
 print "last convergence factor",residuals[-1]/residuals[-2]
 
 print
-print asa.solver
+print asa
 
 print "constant Rayleigh quotient",dot(ones(A.shape[0]),A*ones(A.shape[0]))/float(A.shape[0])
 
@@ -69,10 +69,10 @@ def plot2d(x):
     show()
 
 
-for c in asa.Bs[0].T:
-    plot2d(c)
-    #plot2d_arrows(c)
-    print "candidate Rayleigh quotient",dot(c,A*c)/dot(c,c)
+#for c in asa.Bs[0].T:
+#    plot2d(c)
+#    #plot2d_arrows(c)
+#    print "candidate Rayleigh quotient",dot(c,A*c)/dot(c,c)
 
 #plot2d(x_sol)
 

@@ -21,6 +21,7 @@ def approximate_spectral_radius(A,tol=0.1,maxiter=10,symmetric=None):
 
         tol : {scalar}
             Tolerance of approximation
+            Currently unused
 
         maxiter : {integer}
             Maximum number of iterations to perform

@@ -48,148 +48,187 @@ def sa_hierarchy(A,B,AggOps):
     return As,Ps,Ts,Bs
 
 
-class adaptive_sa_solver:
-    def __init__(self, A, aggregation=None, max_levels=10, max_coarse=100,\
-                 max_candidates=1, mu=5, epsilon=0.1):
+def adaptive_sa_solver(A, max_candidates=1, mu=5, max_levels=10, max_coarse=100, \
+        epsilon=0.0, omega=4.0/3.0, symmetric=True, rescale=True,
+        aggregation=None):
+    """Create a multilevel solver using Smoothed Aggregation (SA)
+
+    *Parameters*:
+
+        A : {csr_matrix}
+            NxN matrix in CSR or BSR format
+        max_candidates : {integer} : default 1
+            Maximum number of near-nullspace candidates to generate.
+        mu : {integer} : default 5
+            Number of cycles used at each level of the adaptive setup phase.
+        max_levels: {integer} : default 10
+            Maximum number of levels to be used in the multilevel solver.
+        max_coarse: {integer} : default 500
+            Maximum number of variables permitted on the coarse grid.
+        epsilon: {float} : default 0.0
+            Strength of connection parameter used in aggregation.
+        omega: {float} : default 4.0/3.0
+            Damping parameter used in prolongator smoothing (0 < omega < 2)
+        symmetric: {boolean} : default True
+            True if A is symmetric, False otherwise
+        rescale: {boolean} : default True
+            If True, symmetrically rescale A by the diagonal
+            i.e. A -> D * A * D,  where D is diag(A)^-0.5
+        aggregation: {None, list of csr_matrix} : optional
+            List of csr_matrix objects that describe a user-defined
+            multilevel aggregation of the variables.
+            TODO ELABORATE
+
+    *Notes*:
+        Unlike the standard Smoothed Aggregation (SA) method, adaptive SA
+        does not require knowledge of near-nullspace candidate vectors.
+        Instead, an adaptive procedure computes one or more candidates 
+        'from scratch'.  This approach is useful when no candidates are known
+        or the candidates have been invalidated due to changes to matrix A.
         
-        self.A  = A
-        self.Rs = []
 
-        if self.A.shape[0] <= max_coarse:
-            raise ValueError,'small matrices not handled yet'
+    *Example*:
+        TODO
 
-        #first candidate
-        x,AggOps = self.__initialization_stage(A, max_levels = max_levels, \
-                                               max_coarse = max_coarse, \
-                                               mu = mu, epsilon = epsilon, \
-                                               aggregation = aggregation )
+    *References*:
+        "Adaptive Smoothed Aggregation ($\alpha$SA) Multigrid"
+            Brezina, Falgout, MacLachlan, Manteuffel, McCormick, and Ruge
+            SIAM Review Volume 47 ,  Issue 2  (2005)
+            http://www.cs.umn.edu/~maclach/research/aSA2.pdf
 
-        #create SA using x here
-        As,Ps,Ts,Bs = sa_hierarchy(A,x,AggOps)
+    """
+    
+    if A.shape[0] <= max_coarse:
+        raise ValueError,'small matrices not handled yet'
 
-        for i in range(max_candidates - 1):
-            x = self.__develop_new_candidate(As,Ps,Ts,Bs,AggOps,mu=mu)
+    #first candidate
+    x,AggOps = asa_initial_setup_stage(A, max_levels = max_levels, \
+            max_coarse = max_coarse, mu = mu, epsilon = epsilon, \
+            aggregation = aggregation )
 
-            B = hstack((Bs[0],x))
+    #create SA using x here
+    As,Ps,Ts,Bs = sa_hierarchy(A,x,AggOps)
+
+    for i in range(max_candidates - 1):
+        x = asa_general_setup_stage(As,Ps,Ts,Bs,AggOps,mu=mu)
+
+        B = hstack((Bs[0],x))
+        As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
+
+    #improve candidates?
+    if False:
+        print "improving candidates"
+        B = Bs[0]
+        for i in range(max_candidates):
+            B = B[:,1:]
             As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
+            x = asa_general_setup_stage(As,Ps,Ts,Bs,AggOps,mu=mu)
+            B = hstack((B,x))
+        As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
 
-        #improve candidates?
-        if False:
-            print "improving candidates"
-            B = Bs[0]
-            for i in range(max_candidates):
-                B = B[:,1:]
-                As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
-                x = self.__develop_new_candidate(As,Ps,Ts,Bs,AggOps,mu=mu)
-                B = hstack((B,x))
-            As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
+    return multilevel_solver(As,Ps)
 
-        self.Ts = Ts
-        self.solver = multilevel_solver(As,Ps)
-        self.AggOps = AggOps
-        self.Bs = Bs
+def asa_initial_setup_stage(A, max_levels, max_coarse, mu, epsilon, aggregation):
+    if aggregation is not None:
+        max_coarse = 0
+        max_levels = len(aggregation) + 1
 
-    def __initialization_stage(self,A,max_levels,max_coarse,mu,epsilon,aggregation):
-        if aggregation is not None:
-            max_coarse = 0
-            max_levels = len(aggregation) + 1
+    # aSA parameters
+    # mu      - number of test relaxation iterations
+    # epsilon - minimum acceptable relaxation convergence factor
 
-        # aSA parameters
-        # mu      - number of test relaxation iterations
-        # epsilon - minimum acceptable relaxation convergence factor
+    #step 1
+    A_l = A
+    x   = rand(A_l.shape[0],1) # TODO see why randn() fails here
+    skip_f_to_i = False
 
-        #step 1
-        A_l = A
-        x   = rand(A_l.shape[0],1) # TODO see why randn() fails here
-        skip_f_to_i = False
+    #step 2
+    gauss_seidel(A_l, x, zeros_like(x), iterations=mu, sweep='symmetric')
 
-        #step 2
-        gauss_seidel(A_l, x, zeros_like(x), iterations=mu, sweep='symmetric')
+    #step 3
+    #TODO test convergence rate here
 
-        #step 3
-        #TODO test convergence rate here
+    As     = [A]
+    Ps     = []
+    AggOps = []
 
-        As     = [A]
-        Ps     = []
-        AggOps = []
+    while len(AggOps) + 1 < max_levels and A_l.shape[0] > max_coarse:
+        if aggregation is None:
+            W_l = sa_constant_interpolation(A_l,epsilon=0) #step 4b
+        else:
+            W_l = aggregation[len(AggOps)]
+        P_l,x = sa_fit_candidates(W_l,x)                   #step 4c
+        I_l   = sa_smoothed_prolongator(A_l,P_l)           #step 4d
+        A_l   = I_l.T.tocsr() * A_l * I_l                  #step 4e
 
-        while len(AggOps) + 1 < max_levels and A_l.shape[0] > max_coarse:
-            if aggregation is None:
-                W_l = sa_constant_interpolation(A_l,epsilon=0) #step 4b
-            else:
-                W_l = aggregation[len(AggOps)]
-            P_l,x = sa_fit_candidates(W_l,x)                   #step 4c
-            I_l   = sa_smoothed_prolongator(A_l,P_l)           #step 4d
-            A_l   = I_l.T.tocsr() * A_l * I_l                  #step 4e
+        AggOps.append(W_l)
+        Ps.append(I_l)
+        As.append(A_l)
 
-            AggOps.append(W_l)
-            Ps.append(I_l)
-            As.append(A_l)
+        if A_l.shape <= max_coarse:  break
 
-            if A_l.shape <= max_coarse:  break
+        if not skip_f_to_i:
+            x_hat = x.copy()                                                   #step 4g
+            gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')  #step 4h
+            x_A_x = dot(x.T,A_l*x)
+            if (x_A_x/dot(x_hat.T,A_l*x_hat))**(1.0/mu) < epsilon:             #step 4i
+                print "sufficient convergence, skipping"
+                skip_f_to_i = True
+                if x_A_x == 0:
+                    x = x_hat  #need to restore x
 
-            if not skip_f_to_i:
-                x_hat = x.copy()                                                   #step 4g
-                gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')  #step 4h
-                x_A_x = dot(x.T,A_l*x)
-                if (x_A_x/dot(x_hat.T,A_l*x_hat))**(1.0/mu) < epsilon:             #step 4i
-                    print "sufficient convergence, skipping"
-                    skip_f_to_i = True
-                    if x_A_x == 0:
-                        x = x_hat  #need to restore x
+    #update fine-level candidate
+    for A_l,I in reversed(zip(As[1:],Ps)):
+        gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')         #TEST
+        x = I * x
+    gauss_seidel(A,x,zeros_like(x),iterations=mu,sweep='symmetric')         #TEST
 
-        #update fine-level candidate
-        for A_l,I in reversed(zip(As[1:],Ps)):
-            gauss_seidel(A_l,x,zeros_like(x),iterations=mu,sweep='symmetric')         #TEST
-            x = I * x
-        gauss_seidel(A,x,zeros_like(x),iterations=mu,sweep='symmetric')         #TEST
-
-        return x,AggOps  #first candidate,aggregation
+    return x,AggOps  #first candidate,aggregation
 
 
-    def __develop_new_candidate(self,As,Ps,Ts,Bs,AggOps,mu):
-        A = As[0]
+def asa_general_setup_stage(As, Ps, Ts, Bs, AggOps, mu):
+    A = As[0]
 
-        x = randn(A.shape[0],1)
-        b = zeros_like(x)
+    x = randn(A.shape[0],1)
+    b = zeros_like(x)
 
-        x = multilevel_solver(As,Ps).solve(b, x0=x, tol=1e-10, maxiter=mu)
+    x = multilevel_solver(As,Ps).solve(b, x0=x, tol=1e-10, maxiter=mu)
 
-        #TEST FOR CONVERGENCE HERE
+    #TEST FOR CONVERGENCE HERE
 
-        temp_Ps = []
-        temp_As = [A]
+    temp_Ps = []
+    temp_As = [A]
 
-        def make_bridge(P):
-            M,N  = P.shape
-            K    = P.blocksize[0]
-            bnnz = P.indptr[-1]
-            data = zeros( (bnnz, K+1, K), dtype=P.dtype )
-            data[:,:-1,:-1] = P.data
-            return bsr_matrix( (data, P.indices, P.indptr), shape=( (K+1)*(M/K), N) )
+    def make_bridge(P):
+        M,N  = P.shape
+        K    = P.blocksize[0]
+        bnnz = P.indptr[-1]
+        data = zeros( (bnnz, K+1, K), dtype=P.dtype )
+        data[:,:-1,:-1] = P.data
+        return bsr_matrix( (data, P.indices, P.indptr), shape=( (K+1)*(M/K), N) )
 
-        for i in range(len(As) - 2):
-            B = zeros( (x.shape[0], Bs[i+1].shape[1] + 1), dtype=x.dtype)
-            T,R = sa_fit_candidates(AggOp,B)
+    for i in range(len(As) - 2):
+        B = zeros( (x.shape[0], Bs[i+1].shape[1] + 1), dtype=x.dtype)
+        T,R = sa_fit_candidates(AggOp,B)
 
-            P = sa_smoothed_prolongator(A,T)
-            A = P.T.tocsr() * A * P
+        P = sa_smoothed_prolongator(A,T)
+        A = P.T.tocsr() * A * P
 
-            temp_Ps.append(P)
-            temp_As.append(A)
+        temp_Ps.append(P)
+        temp_As.append(A)
 
-            bridge = make_bridge(Ps[i+1])
+        bridge = make_bridge(Ps[i+1])
 
-            solver = multilevel_solver( [A] + As[i+2:], [bridge] + Ps[i+2:] )
+        solver = multilevel_solver( [A] + As[i+2:], [bridge] + Ps[i+2:] )
 
-            x = R[:,-1].reshape(-1,1)
-            x = solver.solve(zeros_like(x), x0=x, tol=1e-8, maxiter=mu)
+        x = R[:,-1].reshape(-1,1)
+        x = solver.solve(zeros_like(x), x0=x, tol=1e-8, maxiter=mu)
 
-        for A,P in reversed(zip(temp_As,temp_Ps)):
-            x = P * x
-            gauss_seidel(A,x,zeros_like(x),iterations=mu,sweep='symmetric')
+    for A,P in reversed(zip(temp_As,temp_Ps)):
+        x = P * x
+        gauss_seidel(A,x,zeros_like(x),iterations=mu,sweep='symmetric')
 
-        return x
+    return x
 
 #    def __augment_cycle(self,As,Ps,Ts,Bs,AggOps,x):
 #        A = As[0]
