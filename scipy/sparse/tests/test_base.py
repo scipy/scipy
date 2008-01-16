@@ -13,6 +13,8 @@ Run tests if sparse is not installed:
   python tests/test_sparse.py
 """
 
+import warnings
+
 import numpy
 from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, \
         asarray, vstack, ndarray, kron, transpose
@@ -25,6 +27,9 @@ from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         extract_diagonal, speye, spkron, SparseEfficiencyWarning
 from scipy.sparse.sputils import supported_dtypes
 from scipy.linsolve import splu
+
+
+warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
 
 
@@ -485,8 +490,6 @@ class _TestMatvecOutput:
 
 class _TestGetSet:
     def test_setelement(self):
-        import warnings
-        warnings.simplefilter('ignore',SparseEfficiencyWarning)
         a = self.spmatrix((3,4))
         a[1,2] = 4.0
         a[0,1] = 3

@@ -206,7 +206,7 @@ class multilevel_solver:
 
         if len(self.As) == 1:
             #TODO make spsolve preserve dimensions
-            x[:] = spsolve(A,b).reshape(x.shape)
+            x[:] = spsolve(A.tocsc(),b).reshape(x.shape)
             return
 
         self.presmoother(A,x,b)
@@ -219,7 +219,7 @@ class multilevel_solver:
         if lvl == len(self.As) - 2:
             #use direct solver on coarsest level
             #TODO reuse factors for efficiency?
-            coarse_x[:] = spsolve(self.As[-1],coarse_b).reshape(coarse_x.shape)
+            coarse_x[:] = spsolve(self.As[-1].tocsc(),coarse_b).reshape(coarse_x.shape)
             #coarse_x[:] = scipy.linalg.cg(self.As[-1],coarse_b,tol=1e-12)[0].reshape(coarse_x.shape)
             #A_inv = asarray(scipy.linalg.pinv2(self.As[-1].todense()))
             #coarse_x[:] = scipy.dot(A_inv,coarse_b)

@@ -1,6 +1,10 @@
-from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, spdiags
-import _superlu
+from warnings import warn
+
 from numpy import asarray
+from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, \
+        SparseEfficiencyWarning, csc_matrix
+
+import _superlu
 
 import umfpack
 if hasattr( umfpack, 'UMFPACK_OK' ):
@@ -9,6 +13,7 @@ else:
     del umfpack
     isUmfpack = False
 useUmfpack = True
+
 
 #convert numpy char to superLU char
 superLU_transtabl = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
@@ -34,30 +39,10 @@ def use_solver( **kwargs ):
     if isUmfpack:
         umfpack.configure( **kwargs )
 
-def _toCS_superLU( A ):
-    if hasattr(A, 'tocsc') and not isspmatrix_csr( A ):
-        mat = A.tocsc()
-        csc = 1
-    elif hasattr(A, 'tocsr'):
-        mat = A.tocsr()
-        csc = 0
-    else:
-        raise ValueError, "matrix cannot be converted to CSC/CSR"
-    return mat, csc
-
-def _toCS_umfpack( A ):
-    if isspmatrix_csr( A ) or isspmatrix_csc( A ):
-        mat = A
-    else:
-        if hasattr(A, 'tocsc'):
-            mat = A.tocsc()
-        elif hasattr(A, 'tocsr'):
-            mat = A.tocsr()
-        else:
-            raise ValueError, "matrix cannot be converted to CSC/CSR"
-    return mat
 
 def spsolve(A, b, permc_spec=2):
+    """Solve the sparse linear system Ax=b
+    """
     if isspmatrix( b ):
         b = b.toarray()
 
@@ -67,46 +52,43 @@ def spsolve(A, b, permc_spec=2):
         else:
             raise ValueError, "rhs must be a vector (has shape %s)" % (b.shape,)
 
-    if not isspmatrix(A):
-        raise TypeError,'expected sparse matrix'
+    if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
+        A = csc_matrix(A)
+        warn('spsolve requires CSC or CSR matrix format', SparseEfficiencyWarning)
 
+    A.sort_indices()
     A = A.asfptype()  #upcast to a floating point format
 
-    if not hasattr(A, 'tocsr') and not hasattr(A, 'tocsc'):
-        raise ValueError, "sparse matrix must be able to return CSC format--"\
-              "A.tocsc()--or CSR format--A.tocsr()"
-    if not hasattr(A, 'shape'):
-        raise ValueError, "sparse matrix must be able to return shape" \
-                " (rows, cols) = A.shape"
     M, N = A.shape
     if (M != N):
-        raise ValueError, "matrix must be square (has shape %s)" % (A.shape,)
+        raise ValueError, "matrix must be square (has shape %s)" % (M,N)
     if M != b.size:
         raise ValueError, "matrix - rhs size mismatch (%s - %s)"\
-              % (A.shape, b.shape)
-
+              % (A.shape, b.size)
 
 
     if isUmfpack and useUmfpack:
-        mat = _toCS_umfpack( A )
-
-        if mat.dtype.char not in 'dD':
+        if A.dtype.char not in 'dD':
             raise ValueError, "convert matrix data to double, please, using"\
                   " .astype(), or set linsolve.useUmfpack = False"
 
         family = {'d' : 'di', 'D' : 'zi'}
-        umf = umfpack.UmfpackContext( family[mat.dtype.char] )
-        return umf.linsolve( umfpack.UMFPACK_A, mat, b,
+        umf = umfpack.UmfpackContext( family[A.dtype.char] )
+        return umf.linsolve( umfpack.UMFPACK_A, A, b,
                              autoTranspose = True )
 
     else:
-        mat, csc = _toCS_superLU( A )
-        ftype = superLU_transtabl[mat.dtype.char]
-        index0 = mat.indices
-        lastel, data, index1 = mat.nnz, mat.data, mat.indptr
+        if isspmatrix_csc(A):
+            flag = 1 # CSC format
+        else:
+            flag = 0 # CSR format
+
+        ftype = superLU_transtabl[A.dtype.char]
+
         gssv = eval('_superlu.' + ftype + 'gssv')
-        b = asarray(b, dtype=data.dtype)
-        return gssv(N, lastel, data, index0, index1, b, csc, permc_spec)[0]
+        b = asarray(b, dtype=A.dtype)
+
+        return gssv(N, A.nnz, A.data, A.indices, A.indptr, b, flag, permc_spec)[0]
 
 def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
          drop_tol=0.0, relax=1, panel_size=10):
@@ -118,19 +100,22 @@ def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
 
     See scipy.linsolve._superlu.dgstrf for more info.
     """
+
+    if not isspmatrix_csc(A):
+        A = csc_matrix(A)
+        warn('splu requires CSC matrix format', SparseEfficiencyWarning)
+
+    A.sort_indices()
+    A = A.asfptype()  #upcast to a floating point format
+    
     M, N = A.shape
     if (M != N):
-        raise ValueError, "can only factor square matrices"
+        raise ValueError, "can only factor square matrices" #is this true?
 
-##     if isUmfpack:
-##         print "UMFPACK is present - try umfpack.numeric and umfpack.solve instead!"
-
-    csc = A.tocsc()
-    csc = csc.asfptype()  #upcast to a floating point format
-    ftype = superLU_transtabl[csc.dtype.char]
+    ftype = superLU_transtabl[A.dtype.char]
 
     gstrf = eval('_superlu.' + ftype + 'gstrf')
-    return gstrf(N, csc.nnz, csc.data, csc.indices, csc.indptr, permc_spec,
+    return gstrf(N, A.nnz, A.data, A.indices, A.indptr, permc_spec,
                  diag_pivot_thresh, drop_tol, relax, panel_size)
 
 def factorized( A ):
@@ -143,29 +128,34 @@ def factorized( A ):
       x2 = solve( rhs2 ) # Uses again the LU factors.
     """
     if isUmfpack and useUmfpack:
-        mat = _toCS_umfpack( A )
+        if not isspmatrix_csc(A):
+            A = csc_matrix(A)
+            warn('splu requires CSC matrix format', SparseEfficiencyWarning)
 
-        if mat.dtype.char not in 'dD':
+        A.sort_indices()
+        A = A.asfptype()  #upcast to a floating point format
+
+        if A.dtype.char not in 'dD':
             raise ValueError, "convert matrix data to double, please, using"\
                   " .astype(), or set linsolve.useUmfpack = False"
 
         family = {'d' : 'di', 'D' : 'zi'}
-        umf = umfpack.UmfpackContext( family[mat.dtype.char] )
+        umf = umfpack.UmfpackContext( family[A.dtype.char] )
 
         # Make LU decomposition.
-        umf.numeric( mat )
+        umf.numeric( A )
 
         def solve( b ):
-            return umf.solve( umfpack.UMFPACK_A, mat, b, autoTranspose = True )
+            return umf.solve( umfpack.UMFPACK_A, A, b, autoTranspose = True )
 
         return solve
     else:
         return splu( A ).solve
 
 def _testme():
-    from scipy.sparse import csc_matrix
+    from scipy.sparse import csc_matrix, spdiags
     from numpy import array
-    from scipy.linsolve import spdiags, spsolve, use_solver
+    from scipy.linsolve import spsolve, use_solver
 
     print "Inverting a sparse linear system:"
     print "The sparse matrix (constructed from diagonals):"
