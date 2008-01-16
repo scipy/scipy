@@ -4,7 +4,14 @@ import numpy as N
 
 from scipy.testing import *
 
-import PIL.Image
+try:
+    import PIL.Image
+except ImportError:
+    _have_PIL = False
+else:
+    _have_PIL = True
+TestCase.__test__ = _have_PIL
+
 import scipy.misc.pilutil as pilutil
 
 datapath = os.path.dirname(__file__)
@@ -29,6 +36,7 @@ def tst_fromimage(filename, irange):
     assert img.min() >= imin
     assert img.max() <= imax
 
+@dec.is_nosetest(_have_PIL)
 def test_fromimage():
     ''' Test generator for parametric tests '''
     data = {'icon.png':(0,255),
