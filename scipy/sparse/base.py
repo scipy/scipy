@@ -5,6 +5,7 @@ __all__ = ['spmatrix', 'isspmatrix', 'issparse',
 
 from warnings import warn
 
+import numpy
 from numpy import asarray, asmatrix, asanyarray, ones
 
 from sputils import isdense, isscalarlike, isintlike
