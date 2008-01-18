@@ -64,7 +64,7 @@ __doc__ += pkgload.get_pkgdocs()
 
 from testing.pkgtester import Tester
 test = Tester().test
-
+bench = Tester().bench
 __doc__ += """
 
 Utility tools

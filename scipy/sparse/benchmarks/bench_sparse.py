@@ -46,8 +46,7 @@ import time
 class TestSparseTools(TestCase):
     """Simple benchmarks for sparse matrix module"""
 
-    @dec.bench
-    def test_arithmetic(self):
+    def bench_arithmetic(self):
         matrices = []
         #matrices.append( ('A','Identity', spidentity(500**2,format='csr')) )
         matrices.append( ('A','Poisson5pt', poisson2d(500,format='csr'))  )
@@ -94,8 +93,7 @@ class TestSparseTools(TestCase):
                     print fmt % (format,operation,msec_per_it)
 
   
-    @dec.bench
-    def test_sort(self):
+    def bench_sort(self):
         """sort CSR column indices"""
         matrices = []
         matrices.append( ('Rand10',  1e4,  10) )
@@ -128,8 +126,7 @@ class TestSparseTools(TestCase):
 
             print fmt % (A.format,name,shape,A.nnz,1e3*(end-start)/float(iter) )
 
-    @dec.bench
-    def test_matvec(self):
+    def bench_matvec(self):
         matrices = []
         matrices.append(('Identity',   spidentity(10**4,format='dia')))
         matrices.append(('Identity',   spidentity(10**4,format='csr')))
@@ -176,8 +173,7 @@ class TestSparseTools(TestCase):
 
             print fmt % (A.format,name,shape,A.nnz,MFLOPs)
             
-    @dec.bench
-    def test_construction(self):
+    def bench_construction(self):
         """build matrices by inserting single values"""
         matrices = []
         matrices.append( ('Empty',csr_matrix((10000,10000))) )
@@ -212,8 +208,7 @@ class TestSparseTools(TestCase):
 
                 print fmt % (format,name,shape,A.nnz,(end-start)/float(iter))
 
-    @dec.bench
-    def test_conversion(self):
+    def bench_conversion(self):
         A = poisson2d(100)
 
         formats = ['csr','csc','coo','lil','dok']
@@ -255,7 +250,7 @@ class TestSparseTools(TestCase):
 
 
 class TestLarge(TestCase):
-    def test_large(self):
+    def bench_large(self):
         # Create a 100x100 matrix with 100 non-zero elements
         # and play around with it
         #TODO move this out of Common since it doesn't use spmatrix
@@ -282,5 +277,5 @@ class TestLarge(TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    nose.run(argv=['', __file__])
 

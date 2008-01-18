@@ -17,7 +17,6 @@ Run tests if linalg is not installed:
 import sys
 from scipy.testing import *
 
-
 from scipy.linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr, \
      schur,rsf2csf, lu_solve,lu_factor,solve,diagsvd,hessenberg,rq, \
      eig_banded, eigvals_banded
@@ -27,7 +26,7 @@ from scipy.linalg.flapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
 from numpy import array, transpose, sometrue, diag, ones, linalg, \
      argsort, zeros, arange, float32, complex64, dot, conj, identity, \
      ravel, sqrt, iscomplex, shape, sort, sign, conjugate, sign, bmat, \
-     asarray, matrix, isfinite
+     asarray, matrix, isfinite, all
 
 
 from numpy.random import rand
@@ -59,28 +58,6 @@ class TestEigVals(TestCase):
                    (9+1j-sqrt(92+6j))/2]
         assert_array_almost_equal(w,exact_w)
 
-    @dec.bench
-    def test_bench_random(self):
-        import numpy.linalg as linalg
-        Numeric_eigvals = linalg.eigvals
-        print
-        print '           Finding matrix eigenvalues'
-        print '      =================================='
-        print '      |    contiguous     '#'|   non-contiguous '
-        print '----------------------------------------------'
-        print ' size |  scipy  '#'| core |  scipy  | core '
-
-        for size,repeat in [(20,150),(100,7),(200,2)]:
-            repeat *= 1
-            print '%5s' % size,
-            sys.stdout.flush()
-
-            a = random([size,size])
-
-            print '| %6.2f ' % measure('eigvals(a)',repeat),
-            sys.stdout.flush()
-
-            print '   (secs for %s calls)' % (repeat)
 
 class TestEig(TestCase):
 

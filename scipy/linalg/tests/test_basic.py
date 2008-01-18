@@ -153,44 +153,6 @@ class TestSolve(TestCase):
             x = solve(a,b,sym_pos=1)
             assert_array_almost_equal(numpy.dot(a,x),b)
 
-    @dec.bench
-    def test_bench_random(self):
-        import numpy.linalg as linalg
-        basic_solve = linalg.solve
-        print
-        print '      Solving system of linear equations'
-        print '      =================================='
-
-        print '      |    contiguous     |   non-contiguous '
-        print '----------------------------------------------'
-        print ' size |  scipy  | basic   |  scipy  | basic '
-
-        for size,repeat in [(20,1000),(100,150),(500,2),(1000,1)][:-1]:
-            repeat *= 2
-            print '%5s' % size,
-            sys.stdout.flush()
-
-            a = random([size,size])
-            # larger diagonal ensures non-singularity:
-            for i in range(size): a[i,i] = 10*(.1+a[i,i])
-            b = random([size])
-
-            print '| %6.2f ' % measure('solve(a,b)',repeat),
-            sys.stdout.flush()
-
-            print '| %6.2f ' % measure('basic_solve(a,b)',repeat),
-            sys.stdout.flush()
-
-            a = a[-1::-1,-1::-1] # turn into a non-contiguous array
-            assert not a.flags['CONTIGUOUS']
-
-            print '| %6.2f ' % measure('solve(a,b)',repeat),
-            sys.stdout.flush()
-
-            print '| %6.2f ' % measure('basic_solve(a,b)',repeat),
-            sys.stdout.flush()
-
-            print '   (secs for %s calls)' % (repeat)
 
 class TestInv(TestCase):
 
@@ -227,43 +189,6 @@ class TestInv(TestCase):
             assert_array_almost_equal(numpy.dot(a,a_inv),
                                       numpy.identity(n))
 
-    @dec.bench
-    def test_bench_random(self):
-        import numpy.linalg as linalg
-        basic_inv = linalg.inv
-        print
-        print '           Finding matrix inverse'
-        print '      =================================='
-        print '      |    contiguous     |   non-contiguous '
-        print '----------------------------------------------'
-        print ' size |  scipy  | basic   |  scipy  | basic'
-
-        for size,repeat in [(20,1000),(100,150),(500,2),(1000,1)][:-1]:
-            repeat *= 2
-            print '%5s' % size,
-            sys.stdout.flush()
-
-            a = random([size,size])
-            # large diagonal ensures non-singularity:
-            for i in range(size): a[i,i] = 10*(.1+a[i,i])
-
-            print '| %6.2f ' % measure('inv(a)',repeat),
-            sys.stdout.flush()
-
-            print '| %6.2f ' % measure('basic_inv(a)',repeat),
-            sys.stdout.flush()
-
-            a = a[-1::-1,-1::-1] # turn into a non-contiguous array
-            assert not a.flags['CONTIGUOUS']
-
-            print '| %6.2f ' % measure('inv(a)',repeat),
-            sys.stdout.flush()
-
-            print '| %6.2f ' % measure('basic_inv(a)',repeat),
-            sys.stdout.flush()
-
-            print '   (secs for %s calls)' % (repeat)
-
 
 class TestDet(TestCase):
 
@@ -296,41 +221,6 @@ class TestDet(TestCase):
             d1 = det(a)
             d2 = basic_det(a)
             assert_almost_equal(d1,d2)
-
-    @dec.bench
-    def test_bench_random(self):
-        import numpy.linalg as linalg
-        basic_det = linalg.det
-        print
-        print '           Finding matrix determinant'
-        print '      =================================='
-        print '      |    contiguous     |   non-contiguous '
-        print '----------------------------------------------'
-        print ' size |  scipy  | basic   |  scipy  | basic '
-
-        for size,repeat in [(20,1000),(100,150),(500,2),(1000,1)][:-1]:
-            repeat *= 2
-            print '%5s' % size,
-            sys.stdout.flush()
-
-            a = random([size,size])
-
-            print '| %6.2f ' % measure('det(a)',repeat),
-            sys.stdout.flush()
-
-            print '| %6.2f ' % measure('basic_det(a)',repeat),
-            sys.stdout.flush()
-
-            a = a[-1::-1,-1::-1] # turn into a non-contiguous array
-            assert not a.flags['CONTIGUOUS']
-
-            print '| %6.2f ' % measure('det(a)',repeat),
-            sys.stdout.flush()
-
-            print '| %6.2f ' % measure('basic_det(a)',repeat),
-            sys.stdout.flush()
-
-            print '   (secs for %s calls)' % (repeat)
 
 
 def direct_lstsq(a,b,cmplx=0):

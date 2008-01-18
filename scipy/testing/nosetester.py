@@ -1,10 +1,11 @@
 ''' Nose test running
 
-Implements .test functions for modules.
+Implements test and bench functions for modules.
 
 '''
 import os
 import sys
+import re
 
 import nose
 
@@ -30,6 +31,7 @@ class NoseTester(object):
     returning this class if nose is present, and a null class
     otherwise.
     """
+
     def __init__(self, package=None):
         ''' Test class init
 
@@ -39,7 +41,6 @@ class NoseTester(object):
             If string, gives full path to package
             If None, extract calling module path
             Default is None
-            
         '''
         if package is None:
             f = sys._getframe(1)
@@ -50,45 +51,80 @@ class NoseTester(object):
             package = os.path.dirname(package.__file__)
         self.package_path = package
         
-    def test(self, label='fast', verbose=1, doctests=False, extra_argv=None):
-        ''' Module testing function
+    def _add_doc(testtype):
+        ''' Decorator to add docstring to functions using test labels
 
         Parameters
         ----------
+        testtype : string
+            Type of test for function docstring
+        '''
+        def docit(func):
+            test_header = \
+        '''Parameters
+        ----------
         label : {'fast', 'full', '', attribute identifer}
-            Identifies tests to run.  This can be a string to pass to
+            Identifies %(testtype)s to run.  This can be a string to pass to
             the nosetests executable with the'-A' option, or one of
             several special values.
             Special values are:
             'fast' - the default - which corresponds to
                 nosetests -A option of
-                'not slow and not bench and not willfail'.
-            'full' - fast (as above) and slow tests as in
-                nosetests -A option of 'not bench and not willfail'. 
-            None or '' - run all tests and benchmarks
+                'not slow and not willfail'.
+            'full' - fast (as above) and slow %(testtype)s as in
+                nosetests -A option of 'not willfail'. 
+            None or '' - run all %(testtype)ss 
             attribute_identifier - string passed directly to
                 nosetests as '-A' 
         verbose : integer
             verbosity value for test outputs, 1-10
-        doctests : boolean
-            If True, run doctests in module, default False
         extra_argv : list
-            List with any extra args to pass to nosetests
+            List with any extra args to pass to nosetests''' \
+            % {'testtype': testtype}
+            func.__doc__ = func.__doc__ % {
+                'test_header': test_header}
+            return func
+        return docit
+
+    @_add_doc('(testtype)')
+    def _test_argv(self, label, verbose, extra_argv):
+        ''' Generate argv for nosetest command
+
+        %(test_header)s
         '''
-        argv = ['scipy module test', self.package_path, '-s']
+        argv = [__file__, self.package_path, '-s']
         if label:
             if not isinstance(label, basestring):
-                raise TypeError, 'Test selection label should be a string'
+                raise TypeError, 'Selection label should be a string'
             if label == 'fast':
-                label = 'not slow and not bench and not willfail'
+                label = 'not slow and not willfail'
             elif label == 'full':
-                label = 'not bench and not willfail'
+                label = 'not willfail'
             argv += ['-A', label]
         argv += ['--verbosity', str(verbose)]
+        if extra_argv:
+            argv += extra_argv
+        return argv
+        
+    @_add_doc('test')        
+    def test(self, label='fast', verbose=1, extra_argv=None, doctests=False):
+        ''' Run tests for module using nose
+        
+        %(test_header)s
+        doctests : boolean
+            If True, run doctests in module, default False
+        '''
+        argv = self._test_argv(label, verbose, extra_argv)
         if doctests:
             argv+=['--with-doctest']
-        if extra_argv:
-            argv+= extra_argv
         nose.run(argv=argv)
+        
+    @_add_doc('benchmark')
+    def bench(self, label='fast', verbose=1, extra_argv=None):
+        ''' Run benchmarks for module using nose
 
+        %(test_header)s'''
+        argv = self._test_argv(label, verbose, extra_argv)
+        argv += ['--match', r'(?:^|[\\b_\\.%s-])[Bb]ench' % os.sep]
+        nose.run(argv=argv)
         
