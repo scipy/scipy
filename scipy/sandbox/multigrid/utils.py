@@ -46,6 +46,8 @@ def approximate_spectral_radius(A,tol=0.1,maxiter=10,symmetric=None):
     if A.shape[0] != A.shape[1]:
         raise ValueError,'expected square matrix'
 
+    maxiter = min(A.shape[0],maxiter)
+
     #TODO make method adaptive
 
     numpy.random.seed(0)  #make results deterministic

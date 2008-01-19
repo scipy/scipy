@@ -1,18 +1,56 @@
 from scipy.testing import *
 
+from numpy import arange, ones, zeros, array, eye, vstack, diff
+from scipy import rand
 from scipy.sparse import csr_matrix
-from numpy import arange,ones,zeros,array,eye,vstack,diff
 
 
 from scipy.sandbox.multigrid.sa import sa_fit_candidates
+from scipy.sandbox.multigrid import smoothed_aggregation_solver
 #from scipy.sandbox.multigrid.adaptive import augment_candidates
 
+from scipy.sandbox.multigrid.gallery import *
+from scipy.sandbox.multigrid.adaptive import *
 
 
 class TestAdaptiveSA(TestCase):
     def setUp(self):
-        pass
+        from numpy.random import seed
+        seed(0)
 
+    def test_poisson(self):
+        A = poisson( (100,100), format='csr' )
+
+        asa = adaptive_sa_solver(A, max_candidates = 1)
+        sa  = smoothed_aggregation_solver(A, B = ones((A.shape[0],1)) )
+
+        b = rand(A.shape[0])
+
+        sol0,residuals0 = asa.solve(b, maxiter=20, tol=1e-10, return_residuals=True)
+        sol1,residuals1 =  sa.solve(b, maxiter=20, tol=1e-10, return_residuals=True)
+       
+        conv_asa = (residuals0[-1]/residuals0[0])**(1.0/len(residuals0))
+        conv_sa  = (residuals1[-1]/residuals1[0])**(1.0/len(residuals1))
+        
+        assert( conv_asa < 1.1 * conv_sa ) #aSA shouldn't be any worse than SA
+
+#    def test_elasticity(self):
+#        A,B = linear_elasticity( (100,100), format='bsr' )
+#
+#        asa = adaptive_sa_solver(A, max_candidates = 3)
+#        sa  = smoothed_aggregation_solver(A, B=B )
+#
+#        b = rand(A.shape[0])
+#
+#        sol0,residuals0 = asa.solve(b, maxiter=20, tol=1e-10, return_residuals=True)
+#        sol1,residuals1 =  sa.solve(b, maxiter=20, tol=1e-10, return_residuals=True)
+#       
+#        conv_asa = (residuals0[-1]/residuals0[0])**(1.0/len(residuals0))
+#        conv_sa  = (residuals1[-1]/residuals1[0])**(1.0/len(residuals1))
+#       
+#        print "ASA convergence",conv_asa
+#        assert( conv_asa < 1.1 * conv_sa ) #aSA shouldn't be any worse than SA
+        
 #class TestAugmentCandidates(TestCase):
 #    def setUp(self):
 #        self.cases = []

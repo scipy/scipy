@@ -3,20 +3,24 @@ from scipy import *
 from scipy.sandbox.multigrid.utils import diag_sparse
 from scipy.sandbox.multigrid.gallery import poisson, linear_elasticity
 from scipy.sandbox.multigrid.adaptive import adaptive_sa_solver
+from scipy.sandbox.multigrid import smoothed_aggregation_solver
 
-#A,B = linear_elasticity( (100,100) )
+A,B = linear_elasticity( (20,20) )
 
-A = poisson( (200,200), format='csr' )
+#A = poisson( (200,200), format='csr' )
 
 #A = poisson( (200,200), spacing=(1,1e-2) )  #anisotropic 
-D = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
-A = D * A * D
+#D = diag_sparse(1.0/sqrt(10**(12*rand(A.shape[0])-6))).tocsr()
+#A = D * A * D
 
 
 
 from time import clock; start = clock()
 
-asa = adaptive_sa_solver(A, max_levels=2, max_candidates=1, mu=10)
+#asa = smoothed_aggregation_solver(A,B,max_levels=2)
+#Bs = [B]
+
+asa,Bs = adaptive_sa_solver(A, max_levels=2, max_coarse=10, max_candidates=3, mu=15)
 
 print "Adaptive Solver Construction: %s seconds" % (clock() - start); del start
 
@@ -27,14 +31,14 @@ b = zeros(A.shape[0])
 
 
 print "solving"
-if True:
-    x_sol,residuals = asa.solve(b,x0=x,maxiter=20,tol=1e-12,return_residuals=True)
+if False:
+    x_sol,residuals = asa.solve(b,x0=x,maxiter=20,tol=1e-10,return_residuals=True)
 else:
     residuals = []
     def add_resid(x):
         residuals.append(linalg.norm(b - A*x))
     A.psolve = asa.psolve
-    x_sol = linalg.cg(A,b,x0=x,maxiter=30,tol=1e-12,callback=add_resid)[0]
+    x_sol = linalg.cg(A,b,x0=x,maxiter=30,tol=1e-10,callback=add_resid)[0]
 
 residuals = array(residuals)/residuals[0]
 
@@ -69,10 +73,10 @@ def plot2d(x):
     show()
 
 
-#for c in asa.Bs[0].T:
-#    plot2d(c)
-#    #plot2d_arrows(c)
-#    print "candidate Rayleigh quotient",dot(c,A*c)/dot(c,c)
+for c in Bs[0].T:
+    #plot2d(c)
+    plot2d_arrows(c)
+    print "candidate Rayleigh quotient",dot(c,A*c)/dot(c,c)
 
 #plot2d(x_sol)
 

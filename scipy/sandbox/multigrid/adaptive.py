@@ -6,7 +6,8 @@ import numpy,scipy,scipy.sparse
 from numpy import sqrt, ravel, diff, zeros, zeros_like, inner, concatenate, \
                   asarray, hstack, ascontiguousarray, isinf, dot
 from numpy.random import randn, rand
-from scipy.sparse import csr_matrix,coo_matrix
+from scipy.linalg import norm
+from scipy.sparse import csr_matrix, coo_matrix, bsr_matrix
 
 from relaxation import gauss_seidel
 from multilevel import multilevel_solver
@@ -40,7 +41,7 @@ def sa_hierarchy(A,B,AggOps):
     for AggOp in AggOps:
         P,B = sa_fit_candidates(AggOp,B)
         I   = sa_smoothed_prolongator(A,P)
-        A   = I.T.tocsr() * A * I
+        A   = I.T.asformat(I.format) * A * I
         As.append(A)
         Ts.append(P)
         Ps.append(I)
@@ -99,18 +100,22 @@ def adaptive_sa_solver(A, max_candidates=1, mu=5, max_levels=10, max_coarse=100,
     """
     
     if A.shape[0] <= max_coarse:
-        raise ValueError,'small matrices not handled yet'
+        return multilevel_solver( [A], [] )
 
     #first candidate
     x,AggOps = asa_initial_setup_stage(A, max_levels = max_levels, \
             max_coarse = max_coarse, mu = mu, epsilon = epsilon, \
             aggregation = aggregation )
 
+    #TODO make sa_fit_candidates work for small Bs
+    x /= norm(x)
+    
     #create SA using x here
     As,Ps,Ts,Bs = sa_hierarchy(A,x,AggOps)
 
     for i in range(max_candidates - 1):
         x = asa_general_setup_stage(As,Ps,Ts,Bs,AggOps,mu=mu)
+        x /= norm(x)
 
         B = hstack((Bs[0],x))
         As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
@@ -122,7 +127,7 @@ def adaptive_sa_solver(A, max_candidates=1, mu=5, max_levels=10, max_coarse=100,
         for i in range(max_candidates):
             B = B[:,1:]
             As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
-            x = asa_general_setup_stage(As,Ps,Ts,Bs,AggOps,mu=mu)
+            x = asa_general_setup_stage(As,Ps,Ts,Bs,AggOps,mu)
             B = hstack((B,x))
         As,Ps,Ts,Bs = sa_hierarchy(A,B,AggOps)
 
@@ -159,7 +164,7 @@ def asa_initial_setup_stage(A, max_levels, max_coarse, mu, epsilon, aggregation)
             W_l = aggregation[len(AggOps)]
         P_l,x = sa_fit_candidates(W_l,x)                   #step 4c
         I_l   = sa_smoothed_prolongator(A_l,P_l)           #step 4d
-        A_l   = I_l.T.tocsr() * A_l * I_l                  #step 4e
+        A_l   = I_l.T.asformat(I_l.format) * A_l * I_l                  #step 4e
 
         AggOps.append(W_l)
         Ps.append(I_l)
@@ -189,7 +194,7 @@ def asa_initial_setup_stage(A, max_levels, max_coarse, mu, epsilon, aggregation)
 def asa_general_setup_stage(As, Ps, Ts, Bs, AggOps, mu):
     A = As[0]
 
-    x = randn(A.shape[0],1)
+    x = rand(A.shape[0],1)
     b = zeros_like(x)
 
     x = multilevel_solver(As,Ps).solve(b, x0=x, tol=1e-10, maxiter=mu)
@@ -204,15 +209,20 @@ def asa_general_setup_stage(As, Ps, Ts, Bs, AggOps, mu):
         K    = P.blocksize[0]
         bnnz = P.indptr[-1]
         data = zeros( (bnnz, K+1, K), dtype=P.dtype )
-        data[:,:-1,:-1] = P.data
+        data[:,:-1,:] = P.data
         return bsr_matrix( (data, P.indices, P.indptr), shape=( (K+1)*(M/K), N) )
 
     for i in range(len(As) - 2):
-        B = zeros( (x.shape[0], Bs[i+1].shape[1] + 1), dtype=x.dtype)
-        T,R = sa_fit_candidates(AggOp,B)
+        B_old = Bs[i]
+        B = zeros( (x.shape[0], B_old.shape[1] + 1), dtype=x.dtype)
+
+        B[:B_old.shape[0],:B_old.shape[1]] = B_old
+        B[:,-1] = x.reshape(-1)
+
+        T,R = sa_fit_candidates(AggOps[i],B)
 
         P = sa_smoothed_prolongator(A,T)
-        A = P.T.tocsr() * A * P
+        A = P.T.asformat(P.format) * A * P
 
         temp_Ps.append(P)
         temp_As.append(A)
@@ -242,7 +252,7 @@ def asa_general_setup_stage(As, Ps, Ts, Bs, AggOps, mu):
 #            T,R = augment_candidates(AggOps[i], Ts[i], Bs[i+1], x)
 #
 #            P = sa_smoothed_prolongator(A,T)
-#            A = P.T.tocsr() * A * P
+#            A = P.T.asformat(P.format) * A * P
 #
 #            new_As.append(A)
 #            new_Ps.append(P)

@@ -103,6 +103,13 @@ def sa_fit_candidates(AggOp,candidates,tol=1e-10):
     if candidates.dtype != 'float32':
         candidates = asarray(candidates,dtype='float64')
 
+    if len(candidates.shape) != 2:
+        raise ValueError,'expected rank 2 array for argument B'
+
+    if candidates.shape[0] % AggOp.shape[0] != 0:
+        raise ValueError,'dimensions of AggOp %s and B %s are incompatible' % (AggOp.shape, B.shape)
+    
+
     K = candidates.shape[1] # number of near-nullspace candidates
     blocksize = candidates.shape[0] / AggOp.shape[0]
 
@@ -167,8 +174,11 @@ def sa_smoothed_prolongator(A,T,epsilon=0.0,omega=4.0/3.0):
     A_filtered = sa_filtered_matrix(A,epsilon) #use filtered matrix for anisotropic problems
 
     # TODO use scale_rows()
-    D_inv    = diag_sparse(1.0/diag_sparse(A_filtered))
-    D_inv_A  = D_inv * A_filtered
+    D = diag_sparse(A_filtered)
+    D_inv = 1.0 / D
+    D_inv[D == 0] = 0
+
+    D_inv_A  = diag_sparse(D_inv) * A_filtered
     D_inv_A *= omega/approximate_spectral_radius(D_inv_A)
 
     # smooth tentative prolongator T
