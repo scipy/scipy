@@ -10,9 +10,8 @@ except ImportError:
     _have_PIL = False
 else:
     _have_PIL = True
+    import scipy.misc.pilutil as pilutil
 TestCase.__test__ = _have_PIL
-
-import scipy.misc.pilutil as pilutil
 
 datapath = os.path.dirname(__file__)
 
