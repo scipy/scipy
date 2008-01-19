@@ -13,4 +13,6 @@ class NullTester(object):
         pass
     def test(self, labels=None, *args, **kwargs):
         raise ImportError, 'Need nose for tests - see %s' % nose_url
+    def bench(self, labels=None, *args, **kwargs):
+        raise ImportError, 'Need nose for benchmarks - see %s' % nose_url
     
