@@ -1,10 +1,13 @@
 """Simple testing utilities
 """
 
-__all__ = ['set_local_path', 'restore_path', 'measure', 'info', 'warn', 'error']
+__all__ = ['set_local_path', 'restore_path', 'measure', 'info', 'warn',\
+           'error', 'decorate_methods']
 
 import os
 import sys
+import re
+from inspect import isfunction
 
 from numpy.distutils.misc_util import yellow_text, red_text
 from numpy.testing.utils import jiffies
@@ -58,3 +61,38 @@ def warn(message):
 def error(message):
     print >> sys.stderr,red_text('Error: %s' % (message))
     sys.stderr.flush()
+
+def decorate_methods(cls, decorator, testmatch=None):
+    ''' Apply decorator to all methods in class matching testmatch
+
+    Parameters
+    ----------
+    cls : class
+        Class to decorate methods for
+    decorator : function
+        Decorator to apply to methods
+    testmatch : compiled regexp or string to compile to regexp
+        Decorators are applied if testmatch.search(methodname)
+        is not None.  Default value is
+        re.compile(r'(?:^|[\\b_\\.%s-])[Tt]est' % os.sep)
+        (the default for nose)
+    '''
+    if testmatch is None:
+        testmatch = re.compile(r'(?:^|[\\b_\\.%s-])[Tt]est' % os.sep)
+    else:
+        testmatch = re.compile(testmatch)
+    cls_attr = cls.__dict__
+    methods = filter(isfunction, cls_attr.values())
+    for function in methods:
+        try:
+            if hasattr(function, 'compat_func_name'):
+                funcname = function.compat_func_name
+            else:
+                funcname = function.__name__
+        except AttributeError:
+            # not a function
+            continue
+        if testmatch.search(funcname) and not funcname.startswith('_'):
+            setattr(cls, funcname, decorator(function))
+    return
+

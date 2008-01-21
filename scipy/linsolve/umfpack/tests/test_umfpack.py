@@ -14,10 +14,17 @@ from scipy import linsolve, rand, matrix, diag, eye
 from scipy.sparse import csc_matrix, dok_matrix, spdiags
 
 import numpy as nm
-import scipy.linsolve.umfpack as um
-
+try:
+    import scipy.linsolve.umfpack as um
+except (ImportError, AttributeError):
+    _have_umfpack = False
+else:
+    _have_umfpack = um.umfpack._um is not None
+    
 # Allow disabling of nose tests if umfpack not present
-TestCase.__test__ = um.umfpack._um is not None
+# See end of file for application
+_umfpack_skip = dec.skipif(not _have_umfpack,
+                           'UMFPACK appears not to be compiled')
 
 class TestSolvers(TestCase):
     """Tests inverting a sparse linear system"""
@@ -165,6 +172,9 @@ class TestFactorization(TestCase):
         self.complex_matrices = [x.astype(nm.complex128)
                                  for x in self.real_matrices]
 
+# Skip methods if umfpack not present
+for cls in [TestSolvers, TestFactorization]:
+    decorate_methods(cls, _umfpack_skip)
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])

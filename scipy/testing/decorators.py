@@ -1,5 +1,10 @@
 """Decorators for labeling test objects."""
 
+try:
+    import nose
+except ImportError:
+    pass
+
 def slow(t):
     """Labels a test as 'slow'.
 
@@ -25,9 +30,33 @@ def setastest(tf=True):
     >>> @setastest(False)
     >>> def func_with_test_in_name(arg1, arg2): pass
     ...
-    >>> 
+    >>>
+    
+    Note that this decorator cannot use the nose namespace, because it
+    can be called from a non-test.
     '''
     def set_test(t):
         t.__test__ = tf
         return t
     return set_test
+
+def skipif(skip_condition, msg=None):
+    ''' Make function raise SkipTest exception if skip_condition is true
+
+    Parameters
+    ---------
+    skip_condition : bool
+        Flag to determine whether to skip test (True) or not (False)
+    msg : string
+        Message to give on raising a SkipTest exception
+    '''
+    if msg is None:
+        msg = 'Test skipped due to test condition (see code)'
+    def skip_decorator(f):
+        def skipper(*args, **kwargs):
+            if skip_condition:
+                raise nose.SkipTest, msg
+            else:
+                return f(*args, **kwargs)
+        return nose.tools.make_decorator(f)(skipper)
+    return skip_decorator

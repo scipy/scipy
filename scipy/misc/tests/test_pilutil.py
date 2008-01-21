@@ -11,7 +11,9 @@ except ImportError:
 else:
     _have_PIL = True
     import scipy.misc.pilutil as pilutil
-TestCase.__test__ = _have_PIL
+
+# Function / method decorator for skipping PIL tests on import failure
+_pilskip = dec.skipif(not _have_PIL, 'Need to import PIL for this test')
 
 datapath = os.path.dirname(__file__)
 
@@ -28,14 +30,13 @@ class TestPILUtil(TestCase):
         assert_equal(pilutil.bytescale(x),x)
         assert_equal(pilutil.bytescale(y),[0,127,255])
 
-
 def tst_fromimage(filename, irange):
     img = pilutil.fromimage(PIL.Image.open(filename))
     imin,imax = irange
     assert img.min() >= imin
     assert img.max() <= imax
 
-@dec.setastest(_have_PIL)
+@_pilskip
 def test_fromimage():
     ''' Test generator for parametric tests '''
     data = {'icon.png':(0,255),
@@ -43,6 +44,8 @@ def test_fromimage():
             'icon_mono_flat.png':(0,1)}
     for fn, irange in data.iteritems():
         yield tst_fromimage, os.path.join(datapath,'data',fn), irange
+
+decorate_methods(TestPILUtil, _pilskip)
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])
