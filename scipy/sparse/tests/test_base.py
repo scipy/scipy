@@ -33,7 +33,6 @@ warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
 
 
-#TODO test spmatrix( [[1,2],[3,4]] ) format
 #TODO check that invalid shape in constructor raises exception
 #TODO check that spmatrix( ... , copy=X ) is respected
 #TODO test repr(spmatrix)
@@ -97,6 +96,10 @@ class _TestCommon:
         assert_array_equal(self.spmatrix(A.A).todense(),A)
         assert_array_equal(self.spmatrix(A.tolist()).todense(),A)
 
+    def test_fromlist(self):
+        A = matrix([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
+        assert_array_equal(self.spmatrix(A.tolist()).todense(),A)
+
     def test_todense(self):
         chk = self.datsp.todense()
         assert_array_equal(chk,self.dat)
@@ -121,6 +124,18 @@ class _TestCommon:
         dense_dot_dense = dot(dat, b)
         check2 = dot(self.datsp.toarray(), b)
         assert_array_equal(dense_dot_dense, check2)
+
+    def test_asfptype(self):
+        A = self.spmatrix( arange(6,dtype='int32').reshape(2,3) ) 
+
+        assert_equal( A.dtype , 'int32' )
+        assert_equal( A.asfptype().dtype, 'float64' )
+        assert_equal( A.astype('int16').asfptype().dtype , 'float32' )
+        assert_equal( A.astype('complex128').asfptype().dtype , 'complex128' )
+        
+        B = A.asfptype()
+        C = B.asfptype()
+        assert( B is C )
 
 
     def test_mul_scalar(self):
@@ -414,19 +429,6 @@ class _TestCommon:
     #    dense_dot_sparse = dot(self.datsp, b)
     #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
 
-
-    def test_extract_diagonal(self):
-        """
-        Test extraction of main diagonal from sparse matrices
-        """
-        L = []
-        L.append(array([[0,0,3],[1,6,4],[5,2,0]]))
-        L.append(array([[1,2,3]]))
-        L.append(array([[7],[6],[5]]))
-        L.append(array([[2]]))
-
-        for A in L:
-            assert_array_equal(numpy.diag(A),extract_diagonal(self.spmatrix(A)))
 
 
 class _TestInplaceArithmetic:
