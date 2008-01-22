@@ -96,37 +96,37 @@ def sa_constant_interpolation(A,epsilon):
     else:
         sa_constant_interpolation(csr_matrix(A),epsilon)
 
-def sa_fit_candidates(AggOp,candidates,tol=1e-10):
+def sa_fit_candidates(AggOp,B,tol=1e-10):
     if not isspmatrix_csr(AggOp):
         raise TypeError,'expected csr_matrix for argument AggOp'
 
-    if candidates.dtype != 'float32':
-        candidates = asarray(candidates,dtype='float64')
+    if B.dtype != 'float32':
+        B = asarray(B,dtype='float64')
 
-    if len(candidates.shape) != 2:
+    if len(B.shape) != 2:
         raise ValueError,'expected rank 2 array for argument B'
 
-    if candidates.shape[0] % AggOp.shape[0] != 0:
+    if B.shape[0] % AggOp.shape[0] != 0:
         raise ValueError,'dimensions of AggOp %s and B %s are incompatible' % (AggOp.shape, B.shape)
     
 
-    K = candidates.shape[1] # number of near-nullspace candidates
-    blocksize = candidates.shape[0] / AggOp.shape[0]
+    K = B.shape[1] # number of near-nullspace candidates
+    blocksize = B.shape[0] / AggOp.shape[0]
 
     N_fine,N_coarse = AggOp.shape
 
-    R = zeros((N_coarse,K,K),dtype=candidates.dtype) #storage for coarse candidates
+    R = zeros((N_coarse,K,K), dtype=B.dtype) #storage for coarse candidates
 
     candidate_matrices = []
 
-    threshold = tol * abs(candidates).max()   # cutoff for small basis functions
-
     for i in range(K):
-        c = candidates[:,i]
+        c = B[:,i]
         c = c.reshape(-1,blocksize,1)[diff(AggOp.indptr) == 1]     # eliminate DOFs that aggregation misses
 
         X = bsr_matrix( (c, AggOp.indices, AggOp.indptr), \
                 shape=(blocksize*N_fine, N_coarse) )
+
+        col_thresholds = tol * bsr_matrix((X.data**2,X.indices,X.indptr),shape=X.shape).sum(axis=0).A.flatten() 
 
         #orthogonalize X against previous
         for j,A in enumerate(candidate_matrices):
@@ -135,9 +135,10 @@ def sa_fit_candidates(AggOp,candidates,tol=1e-10):
             X.data -= scale_columns(A,D_AtX).data
 
         #normalize X
-        D_XtX = bsr_matrix((X.data**2,X.indices,X.indptr),shape=X.shape).sum(axis=0).A.flatten() #same as diagonal of X.T * X
-        col_norms = sqrt(D_XtX)
-        mask = col_norms < threshold   # set small basis functions to 0
+        col_norms = bsr_matrix((X.data**2,X.indices,X.indptr),shape=X.shape).sum(axis=0).A.flatten() #same as diagonal of X.T * X
+        mask = col_norms < col_thresholds   # set small basis functions to 0
+
+        col_norms = sqrt(col_norms)
         col_norms[mask] = 0
         R[:,i,i] = col_norms
         col_norms = 1.0/col_norms
@@ -186,7 +187,7 @@ def sa_smoothed_prolongator(A,T,epsilon=0.0,omega=4.0/3.0):
 
     return P
 
-def sa_interpolation(A,candidates,epsilon=0.0,omega=4.0/3.0,AggOp=None):
+def sa_interpolation(A,B,epsilon=0.0,omega=4.0/3.0,AggOp=None):
 
     if not (isspmatrix_csr(A) or isspmatrix_bsr(A)):
         A = csr_matrix(A)
@@ -200,7 +201,7 @@ def sa_interpolation(A,candidates,epsilon=0.0,omega=4.0/3.0,AggOp=None):
             raise ValueError,'incompatible aggregation operator'
 
 
-    T,coarse_candidates = sa_fit_candidates(AggOp,candidates)
+    T,coarse_candidates = sa_fit_candidates(AggOp,B)
     P = sa_smoothed_prolongator(A,T,epsilon,omega)
     return P,coarse_candidates
 

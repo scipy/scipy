@@ -102,34 +102,44 @@ def smoothed_aggregation_solver(A, B=None, max_levels=10, max_coarse=500, \
 
     As = [A]
     Ps = []
+    Rs = []
 
     if aggregation is None:
         while len(As) < max_levels and A.shape[0] > max_coarse:
             P,B = sa_interpolation(A,B,epsilon*0.5**(len(As)-1),omega=omega)
+            R = P.T.asformat(P.format)
 
-            A = (P.T.asformat(P.format) * A) * P     #galerkin operator
+            A = R * A * P     #galerkin operator
 
             As.append(A)
+            Rs.append(R)
             Ps.append(P)
     else:
         #use user-defined aggregation
         for AggOp in aggregation:
             P,B = sa_interpolation(A,B,omega=omega,AggOp=AggOp)
+            R = P.T.asformat(P.format)
 
-            A = (P.T.tocsr() * A) * P     #galerkin operator
+            A = R * A * P     #galerkin operator
 
             As.append(A)
+            Rs.append(R)
             Ps.append(P)
 
-    return multilevel_solver(As,Ps,preprocess=pre,postprocess=post)
+    return multilevel_solver(As,Ps,Rs=Rs,preprocess=pre,postprocess=post)
 
 
 class multilevel_solver:
-    def __init__(self,As,Ps,preprocess=None,postprocess=None):
+    def __init__(self,As,Ps,Rs=None,preprocess=None,postprocess=None):
         self.As = As
         self.Ps = Ps
         self.preprocess = preprocess
         self.postprocess = postprocess
+
+        if Rs is None:
+            self.Rs = [P.T for P in self.Ps]
+        else:
+            self.Rs = Rs
 
     def __repr__(self):
         output = 'multilevel_solver\n'
@@ -202,7 +212,7 @@ class multilevel_solver:
 
         residual = b - A*x
 
-        coarse_b = self.Ps[lvl].T * residual
+        coarse_b = self.Rs[lvl] * residual
         coarse_x = zeros_like(coarse_b)
 
         if lvl == len(self.As) - 2:
@@ -212,7 +222,7 @@ class multilevel_solver:
             #coarse_x[:] = scipy.linalg.cg(self.As[-1],coarse_b,tol=1e-12)[0].reshape(coarse_x.shape)
             #A_inv = asarray(scipy.linalg.pinv2(self.As[-1].todense()))
             #coarse_x[:] = scipy.dot(A_inv,coarse_b)
-            #print "coarse residual norm",scipy.linalg.norm(coarse_b - self.As[-1]*coarse_x)
+            print "coarse residual norm",scipy.linalg.norm(coarse_b - self.As[-1]*coarse_x)
         else:
             self.__solve(lvl+1,coarse_x,coarse_b)
 

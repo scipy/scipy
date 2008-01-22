@@ -166,7 +166,7 @@ class bsr_matrix(_cs_matrix):
             else:
                 self.shape = shape
 
-        self.check_format()
+        self.check_format(full_check=False)
 
     def check_format(self, full_check=True):
         """check whether the matrix format is valid
