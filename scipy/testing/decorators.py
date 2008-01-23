@@ -1,4 +1,14 @@
-"""Decorators for labeling test objects."""
+"""Decorators for labeling test objects
+
+Decorators that merely return a modified version of the original
+function object are straightforward.  Decorators that return a new
+function object need to use
+nose.tools.make_decorator(original_function)(decorator) in returning
+the decorator, in order to preserve metadata such as function name,
+setup and teardown functions and so on - see nose.tools for more
+information.
+
+"""
 
 try:
     import nose
@@ -16,24 +26,24 @@ def slow(t):
     t.slow = True
     return t
 
-def willfail(t):
-    ''' Labels test as known failure
-
-    This label allows the tester to deselect the test in standard cases '''
-    t.willfail = True
-    return t
-
 def setastest(tf=True):
     ''' Signals to nose that this function is or is not a test
-    
+
+    Parameters
+    ----------
+    tf : bool
+        If True specifies this is a test, not a test otherwise
+
     e.g
     >>> @setastest(False)
     >>> def func_with_test_in_name(arg1, arg2): pass
     ...
     >>>
     
-    Note that this decorator cannot use the nose namespace, because it
-    can be called from a non-test.
+    This decorator cannot use the nose namespace, because it can be
+    called from a non-test module. See also istest and nottest in
+    nose.tools
+
     '''
     def set_test(t):
         t.__test__ = tf
@@ -49,9 +59,22 @@ def skipif(skip_condition, msg=None):
         Flag to determine whether to skip test (True) or not (False)
     msg : string
         Message to give on raising a SkipTest exception
+
+   Returns
+   -------
+   decorator : function
+       Decorator, which, when applied to a function, causes SkipTest
+       to be raised when the skip_condition was True, and the function
+       to be called normally otherwise.
+
+    Notes
+    -----
+    You will see from the code that we had to further decorate the
+    decorator with the nose.tools.make_decorator function in order to
+    transmit function name, and various other metadata.
     '''
     if msg is None:
-        msg = 'Test skipped due to test condition (see code)'
+        msg = 'Test skipped due to test condition'
     def skip_decorator(f):
         def skipper(*args, **kwargs):
             if skip_condition:
@@ -60,3 +83,10 @@ def skipif(skip_condition, msg=None):
                 return f(*args, **kwargs)
         return nose.tools.make_decorator(f)(skipper)
     return skip_decorator
+
+def skipknownfailure(f):
+    ''' Decorator to raise SkipTest for test known to fail
+    '''
+    def skipper(*args, **kwargs):
+        raise nose.SkipTest, 'This test is known to fail'
+    return nose.tools.make_decorator(f)(skipper)

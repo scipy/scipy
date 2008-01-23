@@ -111,8 +111,8 @@ class TestDictGetItemOp(TestCase):
     def test_char(self):
         self.generic_get('return_val = a["b"];')
 
+    @dec.skipknownfailure
     @dec.slow
-    @dec.willfail
     def test_char_fail(self):
         # We can't through a KeyError for dicts on RHS of
         # = but not on LHS.  Not sure how to deal with this.
@@ -134,8 +134,8 @@ class TestDictGetItemOp(TestCase):
                """
         self.generic_get(code,['a'])
 
+    @dec.skipknownfailure
     @dec.slow
-    @dec.willfail
     def test_obj_fail(self):
         # We can't through a KeyError for dicts on RHS of
         # = but not on LHS.  Not sure how to deal with this.

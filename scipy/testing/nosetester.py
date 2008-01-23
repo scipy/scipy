@@ -70,9 +70,9 @@ class NoseTester(object):
             Special values are:
             'fast' - the default - which corresponds to
                 nosetests -A option of
-                'not slow and not willfail'.
+                'not slow'.
             'full' - fast (as above) and slow %(testtype)s as in
-                nosetests -A option of 'not willfail'. 
+                no -A option to nosetests - same as ''
             None or '' - run all %(testtype)ss 
             attribute_identifier - string passed directly to
                 nosetests as '-A' 
@@ -93,13 +93,11 @@ class NoseTester(object):
         %(test_header)s
         '''
         argv = [__file__, self.package_path, '-s']
-        if label:
+        if label and label != 'full':
             if not isinstance(label, basestring):
                 raise TypeError, 'Selection label should be a string'
             if label == 'fast':
-                label = 'not slow and not willfail'
-            elif label == 'full':
-                label = 'not willfail'
+                label = 'not slow'
             argv += ['-A', label]
         argv += ['--verbosity', str(verbose)]
         if extra_argv:
