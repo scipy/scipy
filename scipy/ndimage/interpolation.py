@@ -110,16 +110,17 @@ def geometric_transform(input, mapping, output_shape = None,
     extra_keywords arguments can be used to provide extra arguments
     and keywords that are passed to the mapping function at each call.
 
-    Example usage:
-      >>> a = arange(12.).reshape((4,3))
-      >>> def shift_func(output_coordinates):
-      ...     return (output_coordinates[0]-0.5, output_coordinates[1]-0.5)
-      ...
-      >>> print geometric_transform(a,shift_func)
-      array([[ 0.    ,  0.    ,  0.    ],
-             [ 0.    ,  1.3625,  2.7375],
-             [ 0.    ,  4.8125,  6.1875],
-             [ 0.    ,  8.2625,  9.6375]])
+    Example
+    -------
+    >>> a = arange(12.).reshape((4,3))
+    >>> def shift_func(output_coordinates):
+    ...     return (output_coordinates[0]-0.5, output_coordinates[1]-0.5)
+    ...
+    >>> print geometric_transform(a,shift_func)
+    array([[ 0.    ,  0.    ,  0.    ],
+           [ 0.    ,  1.3625,  2.7375],
+           [ 0.    ,  4.8125,  6.1875],
+           [ 0.    ,  8.2625,  9.6375]])
     """
     if order < 0 or order > 5:
         raise RuntimeError, 'spline order not supported'
@@ -165,19 +166,21 @@ def map_coordinates(input, coordinates, output_type = None, output = None,
     interpolation (necessary for spline interpolation of order >
     1). If False it is assumed that the input is already filtered.
 
-    Example usage:
-      >>> a = arange(12.).reshape((4,3))
-      >>> print a
-      [[  0.   1.   2.]
-       [  3.   4.   5.]
-       [  6.   7.   8.]
-       [  9.  10.  11.]]
-      >>> output = map_coordinates(a,[[0.5, 2], [0.5, 1]],order=1)
-      >>> print output
-      [ 2. 7.]
+    Example
+    -------
+    >>> a = arange(12.).reshape((4,3))
+    >>> print a
+    [[  0.   1.   2.]
+     [  3.   4.   5.]
+     [  6.   7.   8.]
+     [  9.  10.  11.]]
+    >>> output = map_coordinates(a,[[0.5, 2], [0.5, 1]],order=1)
+    >>> print output
+    [ 2. 7.]
 
-      Here, the interpolated value of a[0.5,0.5] gives output[0], while
-      a[2,1] is output[1].
+    Here, the interpolated value of a[0.5,0.5] gives output[0], while
+    a[2,1] is output[1].
+
     """
     if order < 0 or order > 5:
         raise RuntimeError, 'spline order not supported'

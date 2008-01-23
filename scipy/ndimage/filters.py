@@ -33,13 +33,32 @@ import numpy
 import _ni_support
 import _nd_image
 
+_mode_doc = \
+"""The mode parameter determines how the array borders are handled,
+    where cval is the value when mode is equal to 'constant'.  Other
+    modes are 'nearest', 'mirror', 'reflect' and 'wrap'."""
+
+_origin_doc = """
+
+    The origin parameter controls the placement of the filter."""
+
+def moredoc(*args):
+    def decorate(f):
+        if not f.__doc__: f.__doc__ = ""
+        for a in args: f.__doc__ += a
+        return f
+    return decorate
+
+@moredoc(_mode_doc, _origin_doc)
 def correlate1d(input, weights, axis = -1, output = None, mode = "reflect",
                 cval = 0.0, origin = 0):
     """Calculate a one-dimensional correlation along the given axis.
 
     The lines of the array along the given axis are correlated with the
     given weights. The weights parameter must be a one-dimensional sequence
-    of numbers."""
+    of numbers.
+
+    """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
@@ -58,19 +77,23 @@ def correlate1d(input, weights, axis = -1, output = None, mode = "reflect",
                           origin)
     return return_value
 
+@moredoc(_mode_doc, _origin_doc)
 def convolve1d(input, weights, axis = -1, output = None, mode = "reflect",
                cval = 0.0, origin = 0):
     """Calculate a one-dimensional convolution along the given axis.
 
     The lines of the array along the given axis are convolved with the
     given weights. The weights parameter must be a one-dimensional sequence
-    of numbers."""
+    of numbers.
+
+    """
     weights = weights[::-1]
     origin = -origin
     if not len(weights) & 1:
         origin -= 1
     return correlate1d(input, weights, axis, output, mode, cval, origin)
 
+@moredoc(_mode_doc, _origin_doc)
 def gaussian_filter1d(input, sigma, axis = -1, order = 0, output = None,
                       mode = "reflect", cval = 0.0):
     """One-dimensional Gaussian filter.
@@ -80,6 +103,7 @@ def gaussian_filter1d(input, sigma, axis = -1, order = 0, output = None,
     kernel. An order of 1, 2, or 3 corresponds to convolution with the
     first, second or third derivatives of a Gaussian. Higher order
     derivatives are not implemented.
+
     """
     sd = float(sigma)
     # make the length of the filter equal to 4 times the standard
@@ -122,6 +146,7 @@ def gaussian_filter1d(input, sigma, axis = -1, order = 0, output = None,
             weights[lw - ii] = tmp
     return correlate1d(input, weights, axis, output, mode, cval, 0)
 
+@moredoc(_mode_doc, _origin_doc)
 def gaussian_filter(input, sigma, order = 0, output = None,
                   mode = "reflect", cval = 0.0):
     """Multi-dimensional Gaussian filter.
@@ -141,6 +166,7 @@ def gaussian_filter(input, sigma, order = 0, output = None,
     types with a limited precision, the results may be imprecise
     because intermediate results may be stored with insufficient
     precision.
+
     """
     input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
@@ -158,8 +184,10 @@ def gaussian_filter(input, sigma, order = 0, output = None,
         output[...] = input[...]
     return return_value
 
+@moredoc(_mode_doc, _origin_doc)
 def prewitt(input, axis = -1, output = None, mode = "reflect", cval = 0.0):
     """Calculate a Prewitt filter.
+
     """
     input = numpy.asarray(input)
     axis = _ni_support._check_axis(axis, input.ndim)
@@ -170,8 +198,10 @@ def prewitt(input, axis = -1, output = None, mode = "reflect", cval = 0.0):
         correlate1d(output, [1, 1, 1], ii, output, mode, cval, 0,)
     return return_value
 
+@moredoc(_mode_doc, _origin_doc)
 def sobel(input, axis = -1, output = None, mode = "reflect", cval = 0.0):
     """Calculate a Sobel filter.
+
     """
     input = numpy.asarray(input)
     axis = _ni_support._check_axis(axis, input.ndim)
@@ -182,6 +212,7 @@ def sobel(input, axis = -1, output = None, mode = "reflect", cval = 0.0):
         correlate1d(output, [1, 2, 1], ii, output, mode, cval, 0)
     return return_value
 
+@moredoc(_mode_doc, _origin_doc)
 def generic_laplace(input, derivative2, output = None, mode = "reflect",
                     cval = 0.0, extra_arguments = (), extra_keywords = {}):
     """Calculate a multidimensional laplace filter using the provided
@@ -196,6 +227,7 @@ def generic_laplace(input, derivative2, output = None, mode = "reflect",
     The extra_arguments and extra_keywords arguments can be used to pass
     extra arguments and keywords that are passed to derivative2 at each
     call.
+
     """
     input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
@@ -211,14 +243,17 @@ def generic_laplace(input, derivative2, output = None, mode = "reflect",
         output[...] = input[...]
     return return_value
 
+@moredoc(_mode_doc, _origin_doc)
 def laplace(input, output = None, mode = "reflect", cval = 0.0):
     """Calculate a multidimensional laplace filter using an estimation
     for the second derivative based on differences.
+
     """
     def derivative2(input, axis, output, mode, cval):
         return correlate1d(input, [1, -2, 1], axis, output, mode, cval, 0)
     return generic_laplace(input, derivative2, output, mode, cval)
 
+@moredoc(_mode_doc, _origin_doc)
 def gaussian_laplace(input, sigma, output = None, mode = "reflect",
                      cval = 0.0):
     """Calculate a multidimensional laplace filter using gaussian
@@ -227,6 +262,7 @@ def gaussian_laplace(input, sigma, output = None, mode = "reflect",
     The standard-deviations of the Gaussian filter are given for each
     axis as a sequence, or as a single number, in which case it is
     equal for all axes..
+
     """
     input = numpy.asarray(input)
     def derivative2(input, axis, output, mode, cval, sigma):
@@ -236,6 +272,7 @@ def gaussian_laplace(input, sigma, output = None, mode = "reflect",
     return generic_laplace(input, derivative2, output, mode, cval,
                            extra_arguments = (sigma,))
 
+@moredoc(_mode_doc, _origin_doc)
 def generic_gradient_magnitude(input, derivative, output = None,
                 mode = "reflect", cval = 0.0,
                 extra_arguments = (), extra_keywords = {}):
@@ -251,6 +288,7 @@ def generic_gradient_magnitude(input, derivative, output = None,
     The extra_arguments and extra_keywords arguments can be used to pass
     extra arguments and keywords that are passed to derivative2 at each
     call.
+
     """
     input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
@@ -269,6 +307,7 @@ def generic_gradient_magnitude(input, derivative, output = None,
         output[...] = input[...]
     return return_value
 
+@moredoc(_mode_doc, _origin_doc)
 def gaussian_gradient_magnitude(input, sigma, output = None,
                 mode = "reflect", cval = 0.0):
     """Calculate a multidimensional gradient magnitude using gaussian
@@ -277,6 +316,7 @@ def gaussian_gradient_magnitude(input, sigma, output = None,
     The standard-deviations of the Gaussian filter are given for each
     axis as a sequence, or as a single number, in which case it is
     equal for all axes..
+
     """
     input = numpy.asarray(input)
     def derivative(input, axis, output, mode, cval, sigma):
@@ -312,30 +352,37 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
     _nd_image.correlate(input, weights, output, mode, cval, origins)
     return return_value
 
+@moredoc(_mode_doc, _origin_doc)
 def correlate(input, weights, output = None, mode = 'reflect', cval = 0.0,
               origin = 0):
     """Multi-dimensional correlation.
 
     The array is correlated with the given kernel.
+
     """
     return _correlate_or_convolve(input, weights, output, mode, cval,
                                   origin, False)
 
+@moredoc(_mode_doc, _origin_doc)
 def convolve(input, weights, output = None, mode = 'reflect', cval = 0.0,
              origin = 0):
     """Multi-dimensional convolution.
 
     The array is convolved with the given kernel.
+
     """
     return _correlate_or_convolve(input, weights, output, mode, cval,
                                   origin, True)
 
+@moredoc(_mode_doc, _origin_doc)
 def uniform_filter1d(input, size, axis = -1, output = None,
                      mode = "reflect", cval = 0.0, origin = 0):
     """Calculate a one-dimensional uniform filter along the given axis.
 
     The lines of the array along the given axis are filtered with a
-    uniform filter of given size."""
+    uniform filter of given size.
+
+    """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
@@ -350,6 +397,7 @@ def uniform_filter1d(input, size, axis = -1, output = None,
                                origin)
     return return_value
 
+@moredoc(_mode_doc, _origin_doc)
 def uniform_filter(input, size = 3, output = None, mode = "reflect",
                    cval = 0.0, origin = 0):
     """Multi-dimensional uniform filter.
@@ -363,6 +411,7 @@ def uniform_filter(input, size = 3, output = None, mode = "reflect",
     in the same data type as the output. Therefore, for output types
     with a limited precision, the results may be imprecise because
     intermediate results may be stored with insufficient precision.
+
     """
     input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
@@ -380,12 +429,15 @@ def uniform_filter(input, size = 3, output = None, mode = "reflect",
         output[...] = input[...]
     return return_value
 
+@moredoc(_mode_doc, _origin_doc)
 def minimum_filter1d(input, size, axis = -1, output = None,
                      mode = "reflect", cval = 0.0, origin = 0):
     """Calculate a one-dimensional minimum filter along the given axis.
 
     The lines of the array along the given axis are filtered with a
-    minimum filter of given size."""
+    minimum filter of given size.
+
+    """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
@@ -400,12 +452,15 @@ def minimum_filter1d(input, size, axis = -1, output = None,
                                   origin, 1)
     return return_value
 
+@moredoc(_mode_doc, _origin_doc)
 def maximum_filter1d(input, size, axis = -1, output = None,
                      mode = "reflect", cval = 0.0, origin = 0):
     """Calculate a one-dimensional maximum filter along the given axis.
 
     The lines of the array along the given axis are filtered with a
-    maximum filter of given size."""
+    maximum filter of given size.
+
+    """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
@@ -483,28 +538,26 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
                                     mode, cval, origins, minimum)
     return return_value
 
+@moredoc(_mode_doc, _origin_doc)
 def minimum_filter(input, size = None, footprint = None, output = None,
       mode = "reflect", cval = 0.0, origin = 0):
     """Calculates a multi-dimensional minimum filter.
 
     Either a size or a footprint with the filter must be
-    provided. An output array can optionally be provided. The origin
-    parameter controls the placement of the filter. The mode parameter
-    determines how the array borders are handled, where cval is the
-    value when mode is equal to 'constant'.
+    provided. An output array can optionally be provided.
+
     """
     return _min_or_max_filter(input, size, footprint, None, output, mode,
                               cval, origin, 1)
 
+@moredoc(_mode_doc, _origin_doc)
 def maximum_filter(input, size = None, footprint = None, output = None,
       mode = "reflect", cval = 0.0, origin = 0):
     """Calculates a multi-dimensional maximum filter.
 
     Either a size or a footprint with the filter must be
-    provided. An output array can optionally be provided. The origin
-    parameter controls the placement of the filter. The mode parameter
-    determines how the array borders are handled, where cval is the
-    value when mode is equal to 'constant'.
+    provided. An output array can optionally be provided.
+
     """
     return _min_or_max_filter(input, size, footprint, None, output, mode,
                               cval, origin, 0)
@@ -561,6 +614,7 @@ def _rank_filter(input, rank, size = None, footprint = None, output = None,
                               origins)
         return return_value
 
+@moredoc(_mode_doc, _origin_doc)
 def rank_filter(input, rank, size = None, footprint = None, output = None,
       mode = "reflect", cval = 0.0, origin = 0):
     """Calculates a multi-dimensional rank filter.
@@ -568,26 +622,25 @@ def rank_filter(input, rank, size = None, footprint = None, output = None,
     The rank parameter may be less then zero, i.e., rank = -1
     indicates the larges element. Either a size or a footprint with
     the filter must be provided. An output array can optionally be
-    provided. The origin parameter controls the placement of the
-    filter. The mode parameter determines how the array borders are
-    handled, where cval is the value when mode is equal to 'constant'.
+    provided.
+
     """
     return _rank_filter(input, rank, size, footprint, output, mode, cval,
                         origin, 'rank')
 
+@moredoc(_mode_doc, _origin_doc)
 def median_filter(input, size = None, footprint = None, output = None,
       mode = "reflect", cval = 0.0, origin = 0):
     """Calculates a multi-dimensional median filter.
 
     Either a size or a footprint with the filter must be provided. An
-    output array can optionally be provided. The origin parameter
-    controls the placement of the filter. The mode parameter
-    determines how the array borders are handled, where cval is the
-    value when mode is equal to 'constant'.
+    output array can optionally be provided.
+
     """
     return _rank_filter(input, 0, size, footprint, output, mode, cval,
                         origin, 'median')
 
+@moredoc(_mode_doc, _origin_doc)
 def percentile_filter(input, percentile, size = None, footprint = None,
                  output = None, mode = "reflect", cval = 0.0, origin = 0):
     """Calculates a multi-dimensional percentile filter.
@@ -595,28 +648,28 @@ def percentile_filter(input, percentile, size = None, footprint = None,
     The percentile parameter may be less then zero, i.e., percentile =
     -20 equals percentile = 80. Either a size or a footprint with the
     filter must be provided. An output array can optionally be
-    provided. The origin parameter controls the placement of the
-    filter. The mode parameter determines how the array borders are
-    handled, where cval is the value when mode is equal to 'constant'.
+    provided.
+
     """
     return _rank_filter(input, percentile, size, footprint, output, mode,
                                    cval, origin, 'percentile')
 
+@moredoc(_mode_doc, _origin_doc)
 def generic_filter1d(input, function, filter_size, axis = -1,
                  output = None, mode = "reflect", cval = 0.0, origin = 0,
                  extra_arguments = (), extra_keywords = {}):
     """Calculate a one-dimensional filter along the given axis.
 
-    The function iterates over the lines of the array, calling the given
-    function at each line. The arguments of the line are the input line,
-    and the output line. The input and output lines are 1D double arrays.
-    The input line is extended appropiately according to the filter size
-    and  origin. The output line must be modified in-place with the result.
-    The origin parameter controls  the placement of the filter. The mode
-    parameter determines how the array borders are handled, where cval is
-    the value when mode is equal to 'constant'. The extra_arguments and
-    extra_keywords arguments can be used to pass extra arguments and
-    keywords that are passed to the function at each call."""
+    The function iterates over the lines of the array, calling the
+    given function at each line. The arguments of the line are the
+    input line, and the output line. The input and output lines are 1D
+    double arrays.  The input line is extended appropiately according
+    to the filter size and origin. The output line must be modified
+    in-place with the result.  The extra_arguments and extra_keywords
+    arguments can be used to pass extra arguments and keywords that
+    are passed to the function at each call.
+
+    """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
@@ -632,6 +685,7 @@ def generic_filter1d(input, function, filter_size, axis = -1,
                       mode, cval, origin, extra_arguments, extra_keywords)
     return return_value
 
+@moredoc(_mode_doc, _origin_doc)
 def generic_filter(input, function, size = None, footprint = None,
                    output = None, mode = "reflect", cval = 0.0, origin = 0,
                    extra_arguments = (), extra_keywords = {}):
@@ -642,12 +696,11 @@ def generic_filter(input, function, size = None, footprint = None,
     as a 1D array of double values.
 
     Either a size or a footprint with the filter must be provided. An
-    output array can optionally be provided. The origin parameter
-    controls the placement of the filter. The mode parameter
-    determines how the array borders are handled, where cval is the
-    value when mode is equal to 'constant'. The extra_arguments and
+    output array can optionally be provided. The extra_arguments and
     extra_keywords arguments can be used to pass extra arguments and
-    keywords that are passed to the function at each call."""
+    keywords that are passed to the function at each call.
+
+    """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
