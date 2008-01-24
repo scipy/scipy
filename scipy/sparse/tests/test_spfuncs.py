@@ -1,4 +1,4 @@
-from numpy import array, kron, diag, matrix
+from numpy import array, kron, matrix, diag
 from scipy.testing import *
 
 from scipy.sparse.spfuncs import *
@@ -49,34 +49,6 @@ class TestSparseFunctions(TestCase):
 
 
 
-    def test_extract_diagonal(self):
-        mats = []
-        mats.append( [[1,0,2]] )
-        mats.append( [[1],[0],[2]] )
-        mats.append( [[0,1],[0,2],[0,3]] )
-        mats.append( [[0,0,1],[0,0,2],[0,3,0]] )
-
-        mats.append( kron(mats[0],[[1,2]]) )
-        mats.append( kron(mats[0],[[1],[2]]) )
-        mats.append( kron(mats[1],[[1,2],[3,4]]) )
-        mats.append( kron(mats[2],[[1,2],[3,4]]) )
-        mats.append( kron(mats[3],[[1,2],[3,4]]) )
-
-        for m in mats:
-            expected = diag(m)
-            assert_equal(extract_diagonal(m),expected)
-            assert_equal(extract_diagonal(csr_matrix(m)),expected)
-            assert_equal(extract_diagonal(csc_matrix(m)),expected)
-        
-        for m in mats:
-            m = array(m)
-            M,N = m.shape
-            expected = diag(m)
-            for R in range(1,M+1):
-                for C in range(1,N+1):
-                    if M % R == 0 and N % C == 0:
-                        result = extract_diagonal( bsr_matrix(m,blocksize=(R,C)) )
-                        assert_equal(result,expected)
             
 
     def test_estimate_blocksize(self):

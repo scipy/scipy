@@ -17,14 +17,14 @@ import warnings
 
 import numpy
 from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, \
-        asarray, vstack, ndarray, kron, transpose
+        asarray, vstack, ndarray, kron, transpose, diag
 
 import random
 from scipy.testing import *
 
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
-        extract_diagonal, speye, spkron, SparseEfficiencyWarning
+        speye, spkron, SparseEfficiencyWarning
 from scipy.sparse.sputils import supported_dtypes
 from scipy.linsolve import splu
 
@@ -74,8 +74,28 @@ class _TestCommon:
         A = matrix([[-1, 0, 17],[0, -5, 0],[1, -4, 0],[0,0,0]],'d')
         assert_equal(-A,(-self.spmatrix(A)).todense())
 
+
+    def test_diagonal(self):
+        """Does the matrix's .diagonal() method work?
+        """
+        mats = []
+        mats.append( [[1,0,2]] )
+        mats.append( [[1],[0],[2]] )
+        mats.append( [[0,1],[0,2],[0,3]] )
+        mats.append( [[0,0,1],[0,0,2],[0,3,0]] )
+
+        mats.append( kron(mats[0],[[1,2]]) )
+        mats.append( kron(mats[0],[[1],[2]]) )
+        mats.append( kron(mats[1],[[1,2],[3,4]]) )
+        mats.append( kron(mats[2],[[1,2],[3,4]]) )
+        mats.append( kron(mats[3],[[1,2],[3,4]]) )
+        mats.append( kron(mats[3],[[1,2,3,4]]) )
+
+        for m in mats:
+            assert_equal(self.spmatrix(m).diagonal(),diag(m))
+        
     def test_sum(self):
-        """Does the matrix's sum(,axis=0) method work?
+        """Does the matrix's .sum(axis=...) method work?
         """
         assert_array_equal(self.dat.sum(), self.datsp.sum())
         assert_array_equal(self.dat.sum(axis=None), self.datsp.sum(axis=None))
@@ -83,7 +103,7 @@ class _TestCommon:
         assert_array_equal(self.dat.sum(axis=1), self.datsp.sum(axis=1))
 
     def test_mean(self):
-        """Does the matrix's mean(,axis=0) method work?
+        """Does the matrix's .mean(axis=...) method work?
         """
         assert_array_equal(self.dat.mean(), self.datsp.mean())
         assert_array_equal(self.dat.mean(axis=None), self.datsp.mean(axis=None))

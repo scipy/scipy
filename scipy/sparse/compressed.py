@@ -370,6 +370,14 @@ class _cs_matrix(_data_matrix):
 
     def getdata(self, ind):
         return self.data[ind]
+    
+    def diagonal(self):
+        """Returns the main diagonal of the matrix
+        """
+        fn = getattr(sparsetools, self.format + "_diagonal")
+        y = empty( min(self.shape), dtype=upcast(self.dtype) )
+        fn(self.shape[0], self.shape[1], self.indptr, self.indices, self.data, y)
+        return y
 
     def sum(self, axis=None):
         """Sum the matrix over the given axis.  If the axis is None, sum

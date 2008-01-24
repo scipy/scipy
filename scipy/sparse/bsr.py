@@ -251,6 +251,16 @@ class bsr_matrix(_cs_matrix):
                  (_formats[format][1],) )
 
 
+    def diagonal(self):
+        """Returns the main diagonal of the matrix
+        """
+        M,N = self.shape
+        R,C = self.blocksize
+        y = empty( min(M,N), dtype=upcast(self.dtype) )
+        sparsetools.bsr_diagonal(M/R, N/C, R, C, \
+                self.indptr, self.indices, ravel(self.data), y)
+        return y
+
     ##########################
     # NotImplemented methods #
     ##########################

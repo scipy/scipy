@@ -1,7 +1,7 @@
 """ Functions that operate on sparse matrices
 """
 
-__all__ = ['extract_diagonal','count_blocks','estimate_blocksize']
+__all__ = ['count_blocks','estimate_blocksize']
 
 from numpy import empty, ravel
 
@@ -15,22 +15,25 @@ import sparsetools
 from sparsetools import csr_count_blocks
 
 def extract_diagonal(A):
-    """extract_diagonal(A) returns the main diagonal of A."""
-    #TODO extract k-th diagonal
-    if isspmatrix_csr(A) or isspmatrix_csc(A):
-        fn = getattr(sparsetools, A.format + "_diagonal")
-        y = empty( min(A.shape), dtype=upcast(A.dtype) )
-        fn(A.shape[0],A.shape[1],A.indptr,A.indices,A.data,y)
-        return y
-    elif isspmatrix_bsr(A):
-        M,N = A.shape
-        R,C = A.blocksize
-        y = empty( min(M,N), dtype=upcast(A.dtype) )
-        fn = sparsetools.bsr_diagonal(M/R, N/C, R, C, \
-                A.indptr, A.indices, ravel(A.data), y)
-        return y
-    else:
-        return extract_diagonal(csr_matrix(A))
+    raise NotImplementedError('use .diagonal() instead')
+
+#def extract_diagonal(A):
+#    """extract_diagonal(A) returns the main diagonal of A."""
+#    #TODO extract k-th diagonal
+#    if isspmatrix_csr(A) or isspmatrix_csc(A):
+#        fn = getattr(sparsetools, A.format + "_diagonal")
+#        y = empty( min(A.shape), dtype=upcast(A.dtype) )
+#        fn(A.shape[0],A.shape[1],A.indptr,A.indices,A.data,y)
+#        return y
+#    elif isspmatrix_bsr(A):
+#        M,N = A.shape
+#        R,C = A.blocksize
+#        y = empty( min(M,N), dtype=upcast(A.dtype) )
+#        fn = sparsetools.bsr_diagonal(M/R, N/C, R, C, \
+#                A.indptr, A.indices, ravel(A.data), y)
+#        return y
+#    else:
+#        return extract_diagonal(csr_matrix(A))
 
 def estimate_blocksize(A,efficiency=0.7):
     """Attempt to determine the blocksize of a sparse matrix

@@ -459,6 +459,12 @@ class spmatrix(object):
             return self.sum(None) * 1.0 / (self.shape[0]*self.shape[1])
         else:
             raise ValueError, "axis out of bounds"
+    
+    def diagonal(self):
+        """Returns the main diagonal of the matrix
+        """
+        #TODO support k != 0
+        return self.tocsr().diagonal()
 
     def setdiag(self, values, k=0):
         """Fills the diagonal elements {a_ii} with the values from the

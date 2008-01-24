@@ -7,8 +7,7 @@ from scipy import ravel, arange, concatenate, tile, asarray, sqrt, diff, \
                   rand, zeros, ones, empty, asmatrix, dot
 from scipy.linalg import norm, eigvals
 from scipy.sparse import isspmatrix, isspmatrix_csr, isspmatrix_csc, \
-        isspmatrix_bsr, csr_matrix, csc_matrix, bsr_matrix, coo_matrix, \
-        extract_diagonal
+        isspmatrix_bsr, csr_matrix, csc_matrix, bsr_matrix, coo_matrix
 from scipy.sparse.sputils import upcast
 
 
@@ -130,7 +129,7 @@ def diag_sparse(A):
 
     #TODO integrate into SciPy?
     if isspmatrix(A):
-        return extract_diagonal(A)
+        return A.diagonal()
     else:
         return csr_matrix((asarray(A),arange(len(A)),arange(len(A)+1)),(len(A),len(A)))
 
