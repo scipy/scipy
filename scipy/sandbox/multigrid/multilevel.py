@@ -1,5 +1,4 @@
-__all__ = ['ruge_stuben_solver','smoothed_aggregation_solver',
-           'multilevel_solver']
+__all__ = ['ruge_stuben_solver','multilevel_solver']
 
 import scipy
 import numpy
@@ -8,7 +7,6 @@ from numpy.linalg import norm
 from scipy.linsolve import spsolve
 from scipy.sparse import dia_matrix
 
-from sa import sa_interpolation
 from rs import rs_interpolation
 from relaxation import gauss_seidel,jacobi,sor
 from utils import symmetric_rescaling, diag_sparse
@@ -41,92 +39,6 @@ def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
 
 
 
-def smoothed_aggregation_solver(A, B=None, max_levels=10, max_coarse=500, \
-        epsilon=0.0, omega=4.0/3.0, symmetric=True, rescale=True, \
-        aggregation=None):
-    """Create a multilevel solver using Smoothed Aggregation (SA)
-
-    *Parameters*:
-
-        A : {csr_matrix}
-            NxN matrix in CSR or BSR format
-        B : {None, array_like} : optional
-            Near-nullspace candidates stored in the columns of an NxK array.
-            The default value B=None is equivalent to B=ones((N,1))
-        max_levels: {integer} : default 10
-            Maximum number of levels to be used in the multilevel solver.
-        max_coarse: {integer} : default 500
-            Maximum number of variables permitted on the coarse grid.
-        epsilon: {float} : default 0.0
-            Strength of connection parameter used in aggregation.
-        omega: {float} : default 4.0/3.0
-            Damping parameter used in prolongator smoothing (0 < omega < 2)
-        symmetric: {boolean} : default True
-            True if A is symmetric, False otherwise
-        rescale: {boolean} : default True
-            If True, symmetrically rescale A by the diagonal
-            i.e. A -> D * A * D,  where D is diag(A)^-0.5
-        aggregation: {None, list of csr_matrix} : optional
-            List of csr_matrix objects that describe a user-defined
-            multilevel aggregation of the variables.
-            TODO ELABORATE
-
-    *Example*:
-        TODO
-
-    *References*:
-        "Algebraic Multigrid by Smoothed Aggregation for Second and Fourth Order Elliptic Problems",
-            Petr Vanek and Jan Mandel and Marian Brezina
-            http://citeseer.ist.psu.edu/vanek96algebraic.html
-
-    """
-
-    A = A.asfptype()
-
-    if B is None:
-        B = ones((A.shape[0],1),dtype=A.dtype) # use constant vector
-    else:
-        B = asarray(B,dtype=A.dtype)
-
-    pre,post = None,None   #preprocess/postprocess
-
-    if rescale:
-        D_sqrt,D_sqrt_inv,A = symmetric_rescaling(A)
-        D_sqrt,D_sqrt_inv = diag_sparse(D_sqrt),diag_sparse(D_sqrt_inv)
-
-        B = D_sqrt * B  #scale candidates
-        def pre(x,b):
-            return D_sqrt*x,D_sqrt_inv*b
-        def post(x):
-            return D_sqrt_inv*x
-
-    As = [A]
-    Ps = []
-    Rs = []
-
-    if aggregation is None:
-        while len(As) < max_levels and A.shape[0] > max_coarse:
-            P,B = sa_interpolation(A,B,epsilon*0.5**(len(As)-1),omega=omega)
-            R = P.T.asformat(P.format)
-
-            A = R * A * P     #galerkin operator
-
-            As.append(A)
-            Rs.append(R)
-            Ps.append(P)
-    else:
-        #use user-defined aggregation
-        for AggOp in aggregation:
-            P,B = sa_interpolation(A,B,omega=omega,AggOp=AggOp)
-            R = P.T.asformat(P.format)
-
-            A = R * A * P     #galerkin operator
-
-            As.append(A)
-            Rs.append(R)
-            Ps.append(P)
-
-    return multilevel_solver(As,Ps,Rs=Rs,preprocess=pre,postprocess=post)
 
 
 class multilevel_solver:
@@ -222,7 +134,7 @@ class multilevel_solver:
             #coarse_x[:] = scipy.linalg.cg(self.As[-1],coarse_b,tol=1e-12)[0].reshape(coarse_x.shape)
             #A_inv = asarray(scipy.linalg.pinv2(self.As[-1].todense()))
             #coarse_x[:] = scipy.dot(A_inv,coarse_b)
-            print "coarse residual norm",scipy.linalg.norm(coarse_b - self.As[-1]*coarse_x)
+            #print "coarse residual norm",scipy.linalg.norm(coarse_b - self.As[-1]*coarse_x)
         else:
             self.__solve(lvl+1,coarse_x,coarse_b)
 

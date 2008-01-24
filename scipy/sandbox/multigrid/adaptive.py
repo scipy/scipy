@@ -12,8 +12,8 @@ from scipy.sparse import csr_matrix, coo_matrix, bsr_matrix
 from relaxation import gauss_seidel
 from multilevel import multilevel_solver
 from utils import approximate_spectral_radius,hstack_csr,vstack_csr,diag_sparse
-from sa import sa_constant_interpolation, sa_smoothed_prolongator, \
-        sa_fit_candidates
+from sa import sa_standard_aggregation, sa_smoothed_prolongator, \
+        sa_fit_candidates, sa_strong_connections
 
 
 
@@ -40,7 +40,7 @@ def sa_hierarchy(A,B,AggOps):
 
     for AggOp in AggOps:
         P,B = sa_fit_candidates(AggOp,B)
-        I   = sa_smoothed_prolongator(A,P)
+        I   = sa_smoothed_prolongator(A,A,P)
         A   = I.T.asformat(I.format) * A * I
         As.append(A)
         Ts.append(P)
@@ -159,12 +159,14 @@ def asa_initial_setup_stage(A, max_levels, max_coarse, mu, epsilon, aggregation)
 
     while len(AggOps) + 1 < max_levels and A_l.shape[0] > max_coarse:
         if aggregation is None:
-            W_l = sa_constant_interpolation(A_l,epsilon=0) #step 4b
+            C_l = sa_strong_connections(A_l,epsilon)
+            W_l = sa_standard_aggregation(C_l) #step 4b
         else:
             W_l = aggregation[len(AggOps)]
         P_l,x = sa_fit_candidates(W_l,x)                   #step 4c
-        I_l   = sa_smoothed_prolongator(A_l,P_l)           #step 4d
-        A_l   = I_l.T.asformat(I_l.format) * A_l * I_l                  #step 4e
+        I_l   = sa_smoothed_prolongator(A_l,A_l,P_l)       #step 4d
+        A_l   = I_l.T.asformat(I_l.format) * A_l * I_l     #step 4e
+        #TODO change variable names I_l -> P, P_l -> T
 
         AggOps.append(W_l)
         Ps.append(I_l)

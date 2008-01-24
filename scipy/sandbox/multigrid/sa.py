@@ -1,15 +1,14 @@
-import scipy
-import numpy
-from numpy import array,arange,ones,zeros,sqrt,isinf,asarray,empty,diff,\
-                  ascontiguousarray
+from numpy import array, arange, ones, zeros, sqrt, asarray, empty, diff
 from scipy.sparse import csr_matrix, isspmatrix_csr, bsr_matrix, isspmatrix_bsr
 
+import multigridtools
+from multilevel import multilevel_solver
 from utils import diag_sparse, approximate_spectral_radius, \
                   symmetric_rescaling, scale_columns
-import multigridtools
 
-__all__ = ['sa_filtered_matrix','sa_strong_connections','sa_constant_interpolation',
-           'sa_interpolation','sa_smoothed_prolongator','sa_fit_candidates']
+__all__ = ['smoothed_aggregation_solver',
+        'sa_filtered_matrix','sa_strong_connections','sa_standard_aggregation',
+        'sa_smoothed_prolongator','sa_fit_candidates']
 
 
 
@@ -58,43 +57,54 @@ def sa_filtered_matrix(A,epsilon):
 
     return A_filtered
 
-def sa_strong_connections(A,epsilon):
-    if not isspmatrix_csr(A): raise TypeError('expected csr_matrix')
+def sa_strong_connections(A,epsilon=0):
+    """Compute a strength of connection matrix C
 
-    Sp,Sj,Sx = multigridtools.sa_strong_connections(A.shape[0],epsilon,A.indptr,A.indices,A.data)
+        C[i,j] = 1 if abs(A[i,j]) >= epsilon * abs(A[i,i] * A[j,j])
+        C[i,j] = 0 otherwise
 
-    return csr_matrix((Sx,Sj,Sp),A.shape)
-
-
-def sa_constant_interpolation(A,epsilon):
-    """Compute the sparsity pattern of the tentative prolongator
     """
-    if isspmatrix_csr(A): 
-        S = sa_strong_connections(A,epsilon)
 
-        Pj = multigridtools.sa_get_aggregates(S.shape[0],S.indptr,S.indices)
-        Pp = numpy.arange(len(Pj)+1)
-        Px = numpy.ones(len(Pj)) #TODO replace this with something else?
-        
-        return csr_matrix((Px,Pj,Pp))
+    if isspmatrix_csr(A):
+        if epsilon == 0:
+            return A
+        else:
+            fn = multigridtools.sa_strong_connections
+            Sp,Sj,Sx = fn(A.shape[0],epsilon,A.indptr,A.indices,A.data)
+            return csr_matrix((Sx,Sj,Sp),A.shape)
 
     elif isspmatrix_bsr(A):
-
-        # the strength of connection matrix is based on the Frobenius norms of the blocks
         M,N = A.shape
         R,C = A.blocksize
 
         if R != C:
             raise ValueError,'matrix must have square blocks'
 
-        f_norms = (A.data*A.data).reshape(-1,R*C).sum(axis=1) #Frobenius norm of each block
-        
-        A = csr_matrix((f_norms,A.indices,A.indptr),shape=(M/R,N/C))
-
-        return sa_constant_interpolation(A,epsilon)
-
+        if epsilon == 0:
+            data = ones( len(A.indices), dtype=A.dtype )
+            return csr_matrix((data,A.indices,A.indptr),shape=(M/R,N/C))
+        else:
+            # the strength of connection matrix is based on the 
+            # Frobenius norms of the blocks
+            data = (A.data*A.data).reshape(-1,R*C).sum(axis=1) 
+            A = csr_matrix((data,A.indices,A.indptr),shape=(M/R,N/C))
+            return sa_strong_connections(A,epsilon)
     else:
-        sa_constant_interpolation(csr_matrix(A),epsilon)
+        raise TypeError('expected csr_matrix or bsr_matrix') 
+
+def sa_standard_aggregation(C):
+    """Compute the sparsity pattern of the tentative prolongator 
+    from a strength of connection matrix C
+    """
+    if isspmatrix_csr(C): 
+        
+        Pj = multigridtools.sa_get_aggregates(C.shape[0],C.indptr,C.indices)
+        Pp = arange(len(Pj)+1)
+        Px = ones(len(Pj)) #TODO replace this with something else?
+        
+        return csr_matrix((Px,Pj,Pp))
+    else:
+        raise TypeError('expected csr_matrix') 
 
 def sa_fit_candidates(AggOp,B,tol=1e-10):
     if not isspmatrix_csr(AggOp):
@@ -158,7 +168,7 @@ def sa_fit_candidates(AggOp,B,tol=1e-10):
 
     return Q,R
 
-def sa_smoothed_prolongator(A,T,epsilon=0.0,omega=4.0/3.0):
+def sa_smoothed_prolongator(A,C,T,epsilon=0.0,omega=4.0/3.0):
     """For a given matrix A and tentative prolongator T return the
     smoothed prolongator P
 
@@ -187,21 +197,110 @@ def sa_smoothed_prolongator(A,T,epsilon=0.0,omega=4.0/3.0):
 
     return P
 
-def sa_interpolation(A,B,epsilon=0.0,omega=4.0/3.0,AggOp=None):
+
+
+def smoothed_aggregation_solver(A, B=None, 
+        max_levels = 10, 
+        max_coarse = 500,
+        strength   = sa_strong_connections, 
+        aggregate  = sa_standard_aggregation,
+        tentative  = sa_fit_candidates,
+        smooth     = sa_smoothed_prolongator):
+    """Create a multilevel solver using Smoothed Aggregation (SA)
+
+    *Parameters*:
+
+        A : {csr_matrix, bsr_matrix}
+            Square matrix in CSR or BSR format
+        B : {None, array_like}
+            Near-nullspace candidates stored in the columns of an NxK array.
+            The default value B=None is equivalent to B=ones((N,1))
+        max_levels: {integer} : default 10
+            Maximum number of levels to be used in the multilevel solver.
+        max_coarse: {integer} : default 500
+            Maximum number of variables permitted on the coarse grid.
+        strength :
+            Function that computes the strength of connection matrix C
+                strength(A) -> C
+        aggregate : 
+            Function that computes an aggregation operator
+                aggregate(C) -> AggOp
+        tentative:
+            Function that computes a tentative prolongator
+                tentative(AggOp,B) -> T,B_coarse
+        smooth :
+            Function that smooths the tentative prolongator
+                smooth(A,C,T) -> P
+
+    Unused Parameters
+        epsilon: {float} : default 0.0
+            Strength of connection parameter used in aggregation.
+        omega: {float} : default 4.0/3.0
+            Damping parameter used in prolongator smoothing (0 < omega < 2)
+        symmetric: {boolean} : default True
+            True if A is symmetric, False otherwise
+        rescale: {boolean} : default True
+            If True, symmetrically rescale A by the diagonal
+            i.e. A -> D * A * D,  where D is diag(A)^-0.5
+        aggregation: {None, list of csr_matrix} : optional
+            List of csr_matrix objects that describe a user-defined
+            multilevel aggregation of the variables.
+            TODO ELABORATE
+
+    *Example*:
+        TODO
+
+    *References*:
+        "Algebraic Multigrid by Smoothed Aggregation for Second and Fourth Order Elliptic Problems",
+            Petr Vanek and Jan Mandel and Marian Brezina
+            http://citeseer.ist.psu.edu/vanek96algebraic.html
+
+    """
+
+    A = A.asfptype()
 
     if not (isspmatrix_csr(A) or isspmatrix_bsr(A)):
-        A = csr_matrix(A)
+        raise TypeError('argument A must have type csr_matrix or bsr_matrix')
 
-    if AggOp is None:
-        AggOp = sa_constant_interpolation(A,epsilon=epsilon)
+    if A.shape[0] != A.shape[1]:
+        raise ValueError('expected square matrix')
+
+    if B is None:
+        B = ones((A.shape[0],1),dtype=A.dtype) # use constant vector
     else:
-        if not isspmatrix_csr(AggOp):
-            AggOp = csr_matrix(AggOp)
-        if A.shape[1] != AggOp.shape[0]:
-            raise ValueError,'incompatible aggregation operator'
+        B = asarray(B,dtype=A.dtype)
+
+    pre,post = None,None   #preprocess/postprocess
+
+    #if rescale:
+    #    D_sqrt,D_sqrt_inv,A = symmetric_rescaling(A)
+    #    D_sqrt,D_sqrt_inv = diag_sparse(D_sqrt),diag_sparse(D_sqrt_inv)
+
+    #    B = D_sqrt * B  #scale candidates
+    #    def pre(x,b):
+    #        return D_sqrt*x,D_sqrt_inv*b
+    #    def post(x):
+    #        return D_sqrt_inv*x
+
+    As = [A]
+    Ps = []
+    Rs = []
+
+    while len(As) < max_levels and A.shape[0] > max_coarse:
+        C     = strength(A)
+        AggOp = aggregate(C)
+        T,B   = tentative(AggOp,B)
+        P     = smooth(A,C,T)
+
+        R = P.T.asformat(P.format)
+
+        A = R * A * P     #galerkin operator
+
+        As.append(A)
+        Rs.append(R)
+        Ps.append(P)
 
 
-    T,coarse_candidates = sa_fit_candidates(AggOp,B)
-    P = sa_smoothed_prolongator(A,T,epsilon,omega)
-    return P,coarse_candidates
+    return multilevel_solver(As,Ps,Rs=Rs,preprocess=pre,postprocess=post)
+
 

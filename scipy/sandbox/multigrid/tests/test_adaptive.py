@@ -5,8 +5,7 @@ from scipy import rand
 from scipy.sparse import csr_matrix
 
 
-from scipy.sandbox.multigrid.sa import sa_fit_candidates
-from scipy.sandbox.multigrid import smoothed_aggregation_solver
+from scipy.sandbox.multigrid.sa import sa_fit_candidates, smoothed_aggregation_solver
 #from scipy.sandbox.multigrid.adaptive import augment_candidates
 
 from scipy.sandbox.multigrid.gallery import *
