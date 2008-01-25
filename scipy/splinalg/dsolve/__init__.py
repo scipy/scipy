@@ -1,9 +1,9 @@
-"Linear Solvers"
+"Direct Solvers for Sparse Linear Systems"
 
 from info import __doc__
 
 import umfpack
-__doc__ = '\n\n'.join( (__doc__,  umfpack.__doc__) )
+#__doc__ = '\n\n'.join( (__doc__,  umfpack.__doc__) )
 del umfpack
 
 from linsolve import *

@@ -11,9 +11,9 @@ to solve in the single precision. See also use_solver documentation.
 
 Example session:
 
->>> from scipy.sparse import csc_matrix
+>>> from scipy.sparse import csc_matrix, spdiags
 >>> from numpy import array
->>> from scipy.linsolve import spdiags, spsolve, use_solver
+>>> from scipy.splinalg import spsolve, use_solver
 >>>
 >>> print "Inverting a sparse linear system:"
 >>> print "The sparse matrix (constructed from diagonals):"

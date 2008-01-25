@@ -6,7 +6,7 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from numpy.distutils.system_info import get_info
 
-    config = Configuration('linsolve',parent_package,top_path)
+    config = Configuration('dsolve',parent_package,top_path)
     config.add_data_dir('tests')
 
     lapack_opt = get_info('lapack_opt',notfound_action=2)

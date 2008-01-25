@@ -4,7 +4,7 @@ import scipy
 import numpy
 from numpy import ones,zeros,zeros_like,array,asarray,empty
 from numpy.linalg import norm
-from scipy.linsolve import spsolve
+from scipy.splinalg import spsolve
 from scipy.sparse import dia_matrix
 
 from rs import rs_interpolation

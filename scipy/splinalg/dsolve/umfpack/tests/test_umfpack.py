@@ -10,12 +10,13 @@ from numpy import transpose, array, arange
 import random
 from scipy.testing import *
 
-from scipy import linsolve, rand, matrix, diag, eye
+from scipy import rand, matrix, diag, eye
 from scipy.sparse import csc_matrix, dok_matrix, spdiags
+from scipy.splinalg import linsolve
 
 import numpy as nm
 try:
-    import scipy.linsolve.umfpack as um
+    import scipy.splinalg.dsolve.umfpack as um
 except (ImportError, AttributeError):
     _have_umfpack = False
 else:

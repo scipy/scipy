@@ -1,5 +1,6 @@
 
 from scipy import *
+from scipy.splinalg import *
 from scipy.sandbox.multigrid.utils import diag_sparse
 from scipy.sandbox.multigrid.gallery import poisson, linear_elasticity
 from scipy.sandbox.multigrid.adaptive import adaptive_sa_solver
@@ -38,7 +39,7 @@ else:
     def add_resid(x):
         residuals.append(linalg.norm(b - A*x))
     A.psolve = asa.psolve
-    x_sol = linalg.cg(A,b,x0=x,maxiter=30,tol=1e-10,callback=add_resid)[0]
+    x_sol = splinalg.cg(A,b,x0=x,maxiter=30,tol=1e-10,callback=add_resid)[0]
 
 residuals = array(residuals)/residuals[0]
 

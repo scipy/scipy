@@ -26,7 +26,7 @@ from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
         speye, spkron, SparseEfficiencyWarning
 from scipy.sparse.sputils import supported_dtypes
-from scipy.linsolve import splu
+from scipy.splinalg import splu
 
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
