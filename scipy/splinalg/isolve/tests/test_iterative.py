@@ -1,16 +1,5 @@
 #!/usr/bin/env python
-#
-# Created by: Ed Schofield, Jan 2007
-#
-""" Test functions for the linalg.iterative module
-"""
-__usage__ = """
-Build linalg:
-  python setup_linalg.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test(<level>)'
-Run tests if linalg is not installed:
-  python tests/test_iterative.py [<level>]
+""" Test functions for the splinalg.isolve.iterative module
 """
 
 import sys
@@ -20,7 +9,8 @@ from scipy.testing import *
 from numpy.random import rand
 #from numpy import arange, add, array, dot, zeros, identity, conjugate, transpose
 
-from scipy.linalg import iterative, norm, cg, cgs, bicg, bicgstab, gmres, qmr
+from scipy.linalg import norm
+from scipy.splinalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr
 
 
 def callback(x):

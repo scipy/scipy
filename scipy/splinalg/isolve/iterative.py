@@ -10,7 +10,8 @@
 
 
 __all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
-from scipy.linalg import _iterative
+
+import _iterative
 import numpy as sb
 import copy
 

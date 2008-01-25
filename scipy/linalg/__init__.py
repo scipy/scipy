@@ -1,5 +1,5 @@
 #
-# linalg - Linear algebra routines
+# linalg - Dense Linear Algebra routines
 #
 
 from info import __doc__
@@ -9,7 +9,10 @@ from basic import *
 from decomp import *
 from matfuncs import *
 from blas import *
-from iterative import *
+
+#from iterative import *
+# TODO remove this
+from scipy.splinalg.isolve import *
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 

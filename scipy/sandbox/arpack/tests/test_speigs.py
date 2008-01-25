@@ -22,7 +22,7 @@ class TestEigs(TestCase):
         vals = vals[uv_sortind]
         vecs = vecs[:,uv_sortind]
 
-        from scipy.linalg.iterative import get_matvec
+        from scipy.splinalg.isolve.iterative import get_matvec
         matvec = get_matvec(A)
         #= lambda x: N.asarray(A*x)[0]
         nev=4
