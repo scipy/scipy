@@ -10,9 +10,8 @@ from decomp import *
 from matfuncs import *
 from blas import *
 
-#from iterative import *
-# TODO remove this
-from scipy.splinalg.isolve import *
+from iterative import *
+
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 

@@ -5,14 +5,18 @@
 
 """
 
+import warnings
+
 from numpy import transpose, array, arange
 
 import random
 from scipy.testing import *
 
 from scipy import rand, matrix, diag, eye
-from scipy.sparse import csc_matrix, dok_matrix, spdiags
+from scipy.sparse import csc_matrix, dok_matrix, spdiags, SparseEfficiencyWarning
 from scipy.splinalg import linsolve
+
+warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
 import numpy as nm
 try:
