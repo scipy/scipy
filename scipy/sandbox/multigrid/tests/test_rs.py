@@ -30,9 +30,7 @@ class TestRugeStubenSolver(TestCase):
 
             avg_convergence_ratio = (residuals[-1]/residuals[0])**(1.0/len(residuals))
             
-            print "avg",avg_convergence_ratio
-
-            assert(avg_convergence_ratio < 0.15)
+            assert(avg_convergence_ratio < 0.10)
 
 if __name__ == '__main__':
     nose.run(argv=['', __file__])

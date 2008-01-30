@@ -168,7 +168,7 @@ def sa_fit_candidates(AggOp,B,tol=1e-10):
 
     return Q,R
 
-def sa_smoothed_prolongator(A,C,T,epsilon=0.0,omega=4.0/3.0):
+def sa_smoothed_prolongator(A,T,epsilon=0.0,omega=4.0/3.0):
     """For a given matrix A and tentative prolongator T return the
     smoothed prolongator P
 
@@ -185,7 +185,7 @@ def sa_smoothed_prolongator(A,C,T,epsilon=0.0,omega=4.0/3.0):
     A_filtered = sa_filtered_matrix(A,epsilon) #use filtered matrix for anisotropic problems
 
     # TODO use scale_rows()
-    D = diag_sparse(A_filtered)
+    D = A_filtered.diagonal()
     D_inv = 1.0 / D
     D_inv[D == 0] = 0
 
@@ -290,7 +290,7 @@ def smoothed_aggregation_solver(A, B=None,
         C     = strength(A)
         AggOp = aggregate(C)
         T,B   = tentative(AggOp,B)
-        P     = smooth(A,C,T)
+        P     = smooth(A,T)
 
         R = P.T.asformat(P.format)
 

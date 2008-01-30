@@ -18,7 +18,7 @@ import numpy
 import scipy.sandbox.multigrid
 from scipy.sandbox.multigrid.sa import *
 from scipy.sandbox.multigrid.utils import diag_sparse
-from scipy.sandbox.multigrid.gallery import poisson
+from scipy.sandbox.multigrid.gallery import poisson, linear_elasticity
 
 #def sparsity(A):
 #    A = A.copy()
@@ -57,15 +57,6 @@ class TestSA(TestCase):
                 assert_almost_equal(S_result.todense(),S_expected.todense())
                 #assert_array_equal(sparsity(S_result).todense(),sparsity(S_expected).todense())
 
-        ## two aggregates in 1D
-        #A = poisson( (6,), format='csr')
-        #AggOp = csr_matrix((ones(6),array([0,0,0,1,1,1]),arange(7)),shape=(6,2))
-        #candidates = ones((6,1))
-
-        #T_result,coarse_candidates_result = sa_fit_candidates(AggOp,candidates)
-        #T_expected = csr_matrix((sqrt(1.0/3.0)*ones(6),array([0,0,0,1,1,1]),arange(7)),shape=(6,2))
-        #assert_almost_equal(T_result.todense(),T_expected.todense())
-
         ##check simple block examples
         #A = csr_matrix(arange(16).reshape(4,4))
         #A = A + A.T
@@ -90,9 +81,6 @@ class TestSA(TestCase):
             S_result   = sa_standard_aggregation(C)
             assert_array_equal(S_result.todense(),S_expected.todense())
 
-            #A = A.tobsr( blocksize=(1,1) )
-            #S_result   = sa_constant_interpolation(A,epsilon)
-            #assert_array_equal(S_result.todense(),S_expected.todense())
 
 
 #    def test_user_aggregation(self):
@@ -180,6 +168,7 @@ class TestSASolverPerformance(TestCase):
 
         self.cases.append(( poisson( (10000,),  format='csr'), None))
         self.cases.append(( poisson( (100,100), format='csr'), None))
+        self.cases.append( linear_elasticity( (100,100), format='bsr') )
         # TODO add unstructured tests
 
 
@@ -194,14 +183,14 @@ class TestSASolverPerformance(TestCase):
             x = rand(A.shape[0])
             b = A*rand(A.shape[0]) #zeros_like(x)
 
-            x_sol,residuals = ml.solve(b,x0=x,maxiter=20,tol=1e-12,return_residuals=True)
+            x_sol,residuals = ml.solve(b,x0=x,maxiter=20,tol=1e-10,return_residuals=True)
 
             avg_convergence_ratio = (residuals[-1]/residuals[0])**(1.0/len(residuals))
             
-            assert(avg_convergence_ratio < 0.25)
+            assert(avg_convergence_ratio < 0.3)
 
     def test_DAD(self):
-        A = poisson( (100,100), format='csr' )        
+        A = poisson( (200,200), format='csr' )        
 
         x = rand(A.shape[0])
         b = rand(A.shape[0])
@@ -215,11 +204,9 @@ class TestSASolverPerformance(TestCase):
  
         #TODO force 2 level method and check that result is the same
  
-        #sa1 = smoothed_aggregation_solver(A, B, max_levels=2, rescale=False)
-        sa2 = smoothed_aggregation_solver(D*A*D, D_inv * B, max_levels=2)
+        sa = smoothed_aggregation_solver(D*A*D, D_inv * B, max_levels=2)
  
-        #assert_almost_equal( sa2.Ps[0], sa1.Ps[0] 
-        x_sol,residuals = sa2.solve(b,x0=x,maxiter=10,tol=1e-12,return_residuals=True)
+        x_sol,residuals = sa.solve(b,x0=x,maxiter=10,tol=1e-12,return_residuals=True)
  
         avg_convergence_ratio = (residuals[-1]/residuals[0])**(1.0/len(residuals))
         

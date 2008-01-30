@@ -40,7 +40,7 @@ def sa_hierarchy(A,B,AggOps):
 
     for AggOp in AggOps:
         P,B = sa_fit_candidates(AggOp,B)
-        I   = sa_smoothed_prolongator(A,A,P)
+        I   = sa_smoothed_prolongator(A,P)
         A   = I.T.asformat(I.format) * A * I
         As.append(A)
         Ts.append(P)
@@ -164,7 +164,7 @@ def asa_initial_setup_stage(A, max_levels, max_coarse, mu, epsilon, aggregation)
         else:
             W_l = aggregation[len(AggOps)]
         P_l,x = sa_fit_candidates(W_l,x)                   #step 4c
-        I_l   = sa_smoothed_prolongator(A_l,A_l,P_l)       #step 4d
+        I_l   = sa_smoothed_prolongator(A_l,P_l)       #step 4d
         A_l   = I_l.T.asformat(I_l.format) * A_l * I_l     #step 4e
         #TODO change variable names I_l -> P, P_l -> T
 
