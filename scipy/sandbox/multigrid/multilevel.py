@@ -1,51 +1,20 @@
-__all__ = ['ruge_stuben_solver','multilevel_solver']
+__all__ = ['multilevel_solver']
 
 import scipy
 import numpy
-from numpy import ones,zeros,zeros_like,array,asarray,empty
+from numpy import ones, zeros, zeros_like, array, asarray, empty
 from numpy.linalg import norm
 from scipy.splinalg import spsolve
-from scipy.sparse import dia_matrix
 
-from rs import rs_interpolation
 from relaxation import gauss_seidel,jacobi,sor
 from utils import symmetric_rescaling, diag_sparse
 
 
-
-def ruge_stuben_solver(A,max_levels=10,max_coarse=500):
-    """
-    Create a multilevel solver using Ruge-Stuben coarsening (Classical AMG)
-
-        References:
-            "Multigrid"
-                Trottenberg, U., C. W. Oosterlee, and Anton Schuller.
-                San Diego: Academic Press, 2001.
-                Appendix A
-
-    """
-    As = [A]
-    Ps = []
-
-    while len(As) < max_levels  and A.shape[0] > max_coarse:
-        P = rs_interpolation(A)
-
-        A = (P.T.tocsr() * A) * P     #galerkin operator
-
-        As.append(A)
-        Ps.append(P)
-
-    return multilevel_solver(As,Ps)
-
-
-
-
-
 class multilevel_solver:
-    def __init__(self,As,Ps,Rs=None,preprocess=None,postprocess=None):
+    def __init__(self, As, Ps, Rs=None, preprocess=None, postprocess=None):
         self.As = As
         self.Ps = Ps
-        self.preprocess = preprocess
+        self.preprocess  = preprocess
         self.postprocess = postprocess
 
         if Rs is None:
