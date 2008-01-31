@@ -8,7 +8,7 @@ from warnings import warn
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
         empty, hstack, isscalar, ndarray, shape, searchsorted, empty_like, \
-        where, concatenate
+        where, concatenate, transpose
 
 from base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from data import _data_matrix
@@ -364,9 +364,9 @@ class _cs_matrix(_data_matrix):
 
     def rmatvec(self, other, conjugate=True):
         if conjugate:
-            return self.transpose().conj() * other
+            return transpose( self.transpose().conj().matvec(transpose(other)) )
         else:
-            return self.transpose() * other
+            return transpose( self.transpose().matvec(transpose(other)) )
 
     def getdata(self, ind):
         return self.data[ind]
