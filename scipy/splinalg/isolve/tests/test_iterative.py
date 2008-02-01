@@ -9,7 +9,7 @@ from numpy.random import rand
 from scipy.linalg import norm
 from scipy.sparse import spdiags
 
-from scipy.splinalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr
+from scipy.splinalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres
 
 #def callback(x):
 #    global A, b
@@ -36,7 +36,7 @@ class TestIterative(TestCase):
         self.solvers.append( (bicgstab, False, False) )
         self.solvers.append( (gmres,    False, False) )
         self.solvers.append( (qmr,      False, False) )
-        #self.solvers.append( (minres,   True,  False) )
+        self.solvers.append( (minres,   True,  False) )
         
         # list of tuples (A, symmetric, positive_definite )
         self.cases = []
@@ -91,7 +91,7 @@ class TestIterative(TestCase):
                 if req_pos and not pos: continue
 
                 M,N = A.shape
-                D = spdiags( [1.0/A.diagonal()], [0], M, N)
+                D = spdiags( [abs(1.0/A.diagonal())], [0], M, N)
                 def precond(b,which=None):
                     return D*b
 

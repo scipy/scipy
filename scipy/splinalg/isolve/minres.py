@@ -1,11 +1,10 @@
-from numpy import sqrt, inner, finfo, asarray, zeros
+from numpy import ndarray, matrix, sqrt, inner, finfo, asarray, zeros
 from numpy.linalg import norm
 
-def psolve(x): return x
-def check_sizes(A,x,b): pass
+from utils import make_system
 
 def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
-        precond=None, callback=None, show=False, check=False):
+           M=None, callback=None, show=False, check=True):
     """Use the Minimum Residual Method (MINRES) to solve Ax=b 
     
     MINRES minimizes norm(A*x - b) for the symmetric matrix A.  Unlike
@@ -30,23 +29,19 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
             http://www.stanford.edu/group/SOL/software/minres/matlab/
 
     """ 
+    A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
-    show  = True  #TODO remove
-    check = True  #TODO remove
+    matvec = A.matvec
+    psolve = M.matvec
 
     first = 'Enter minres.   '
     last  = 'Exit  minres.   '
 
-    assert(A.shape[0] == A.shape[1])
-    assert(A.shape[1] == len(b))
-
-    b = asarray(b).ravel()
     n = A.shape[0]
 
     if maxiter is None:
         maxiter = 5 * n
 
-    matvec = A.matvec
 
     msg   =[' beta2 = 0.  If M = I, b and x are eigenvectors    ',   # -1
             ' beta1 = 0.  The exact solution is  x = 0          ',   #  0
@@ -56,9 +51,9 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
             ' x has converged to an eigenvector                 ',   #  4
             ' acond has exceeded 0.1/eps                        ',   #  5
             ' The iteration limit was reached                   ',   #  6
-            ' Aname  does not define a symmetric matrix         ',   #  7
-            ' Mname  does not define a symmetric matrix         ',   #  8
-            ' Mname  does not define a pos-def preconditioner   ']   #  9
+            ' A  does not define a symmetric matrix             ',   #  7
+            ' M  does not define a symmetric matrix             ',   #  8
+            ' M  does not define a pos-def preconditioner       ']   #  9
 
      
     if show:
@@ -90,7 +85,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
     if beta1 < 0:
         raise ValueError('indefinite preconditioner')
     elif beta1 == 0:
-        return x
+        return (postprocess(x), 0)
     
     beta1 = sqrt( beta1 )
 
@@ -262,7 +257,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         if callback is not None:
             callback(x)
 
-        if istop > 0: break
+        if istop != 0: break #TODO check this
         
 
     if show:
@@ -273,7 +268,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         print last + ' Arnorm  =  %12.4e'                       %  (Arnorm,)
         print last + msg[istop+1]
 
-    return x
+    return (postprocess(x),0)
 
 
 if __name__ == '__main__':
@@ -283,7 +278,7 @@ if __name__ == '__main__':
     from scipy.splinalg import cg
     #from scipy.sandbox.multigrid import *
 
-    n = 100
+    n = 10
 
     residuals = []
 
@@ -292,7 +287,9 @@ if __name__ == '__main__':
 
     #A = poisson((10,),format='csr')
     A = spdiags( [arange(1,n+1,dtype=float)], [0], n, n, format='csr')
-    b = ones( A.shape[0] )
+    M = spdiags( [1.0/arange(1,n+1,dtype=float)], [0], n, n, format='csr')
+    A.psolve = M.matvec
+    b = 0*ones( A.shape[0] )
     x = minres(A,b,tol=1e-12,maxiter=None,callback=cb)
     #x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]
 
