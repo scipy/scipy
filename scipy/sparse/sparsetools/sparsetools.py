@@ -357,6 +357,40 @@ def csc_tocsr(*args):
     """
   return _sparsetools.csc_tocsr(*args)
 
+def csr_tobsr(*args):
+  """
+    csr_tobsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        signed char Ax, int Bp, int Bj, signed char Bx)
+    csr_tobsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        unsigned char Ax, int Bp, int Bj, unsigned char Bx)
+    csr_tobsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        short Ax, int Bp, int Bj, short Bx)
+    csr_tobsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        unsigned short Ax, int Bp, int Bj, unsigned short Bx)
+    csr_tobsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        int Ax, int Bp, int Bj, int Bx)
+    csr_tobsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        unsigned int Ax, int Bp, int Bj, unsigned int Bx)
+    csr_tobsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        long long Ax, int Bp, int Bj, long long Bx)
+    csr_tobsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        unsigned long long Ax, int Bp, int Bj, unsigned long long Bx)
+    csr_tobsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        float Ax, int Bp, int Bj, float Bx)
+    csr_tobsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        double Ax, int Bp, int Bj, double Bx)
+    csr_tobsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        long double Ax, int Bp, int Bj, long double Bx)
+    csr_tobsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx)
+    csr_tobsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx)
+    csr_tobsr(int n_row, int n_col, int R, int C, int Ap, int Aj, 
+        npy_clongdouble_wrapper Ax, int Bp, int Bj, 
+        npy_clongdouble_wrapper Bx)
+    """
+  return _sparsetools.csr_tobsr(*args)
+
 def coo_tocsr(*args):
   """
     coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, signed char Ax, 

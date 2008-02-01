@@ -11,9 +11,10 @@ from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
         concatenate
 
 from base import spmatrix, isspmatrix
-from sparsetools import csr_tocsc
+from sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks
 from sputils import upcast, to_native, isdense, isshape, getdtype, \
         isscalarlike, isintlike
+
 
 from compressed import _cs_matrix
 
@@ -148,14 +149,31 @@ class csr_matrix(_cs_matrix):
         return A
 
     def tobsr(self,blocksize=None,copy=True):
-        if blocksize == (1,1):
-            from bsr import bsr_matrix
+        from bsr import bsr_matrix
+
+        if blocksize is None:
+            from spfuncs import estimate_blocksize
+            return self.tobsr(blocksize=estimate_blocksize(self))
+        elif blocksize == (1,1):
             arg1 = (self.data.reshape(-1,1,1),self.indices,self.indptr)  
             return bsr_matrix( arg1, shape=self.shape, copy=copy )
         else:
-            #TODO make this more efficient
-            return self.tocoo(copy=False).tobsr(blocksize=blocksize)
-    
+            R,C = blocksize
+            M,N = self.shape
+
+            if R < 1 or C < 1 or M % R != 0 or N % C != 0:
+                raise ValueError('invalid blocksize %s' % blocksize)
+
+            blks = csr_count_blocks(M,N,R,C,self.indptr,self.indices)
+
+            indptr  = empty( M/R + 1,    dtype=intc )
+            indices = empty( blks,       dtype=intc )
+            data    = zeros( (blks,R,C), dtype=self.dtype)
+
+            csr_tobsr(M, N, R, C, self.indptr, self.indices, self.data, \
+                    indptr, indices, data.ravel() )
+
+            return bsr_matrix( (data,indices,indptr), shape=self.shape )
     
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created).

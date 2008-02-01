@@ -208,10 +208,11 @@ INSTANTIATE_ALL(bsr_scale_columns)
 
 
 /*
- *  CSR->CSC or CSC->CSR or CSR = CSR^T or CSC = CSC^T
+ *  CSR->CSC or CSC->CSR or CSR = CSR^T or CSC = CSC^T or CSR->BSR
  */
 INSTANTIATE_ALL(csr_tocsc)
 INSTANTIATE_ALL(csc_tocsr)
+INSTANTIATE_ALL(csr_tobsr)
 
 /*
  * CSR<->COO and CSC<->COO

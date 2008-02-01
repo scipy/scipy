@@ -297,6 +297,83 @@ I csr_count_blocks(const I n_row,
 }
 
 
+/*
+ * Convert a CSR matrix to BSR format
+ *
+ * Input Arguments:
+ *   I  n_row           - number of rows in A
+ *   I  n_col           - number of columns in A
+ *   I  R               - row blocksize
+ *   I  C               - column blocksize
+ *   I  Ap[n_row+1]     - row pointer
+ *   I  Aj[nnz(A)]      - column indices
+ *   T  Ax[nnz(A)]      - nonzero values
+ *
+ * Output Arguments:
+ *   I  Bp[n_row/R + 1] - block row pointer
+ *   I  Bj[nnz(B)]      - column indices
+ *   T  Bx[nnz(B)]      - nonzero blocks
+ *
+ * Note:
+ *   Complexity: Linear
+ *   Output arrays must be preallocated (with Bx initialized to zero)
+ *
+ * 
+ */
+
+template <class I, class T>
+void csr_tobsr(const I n_row,
+	           const I n_col, 
+	           const I R, 
+	           const I C, 
+	           const I Ap[], 
+	           const I Aj[], 
+	           const T Ax[],
+	                 I Bp[],
+                     I Bj[],
+	                 T Bx[])
+{
+    std::vector<T*> blocks(n_col/C + 1, (T*)0 );
+
+    assert( n_row % R == 0 );
+    assert( n_col % C == 0 );
+
+    I n_brow = n_row / R;
+    //I n_bcol = n_col / C;
+
+    I RC = R*C;
+    I n_blks = 0;
+
+    Bp[0] = 0;
+
+    for(I bi = 0; bi < n_brow; bi++){
+        for(I r = 0; r < R; r++){
+            I i = R*bi + r;  //row index
+            for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+                I j = Aj[jj]; //column index
+
+                I bj = j / C;
+                I c  = j % C;
+                
+                if( blocks[bj] == 0 ){
+                    blocks[bj] = Bx + RC*n_blks;
+                    Bj[n_blks] = bj;
+                    n_blks++;
+                }
+
+                *(blocks[bj] + C*r + c) += Ax[jj];
+            }
+        }
+
+        for(I jj = Ap[R*bi]; jj < Ap[R*(bi+1)]; jj++){
+            blocks[Aj[jj] / C] = 0;
+        }
+
+        Bp[bi+1] = n_blks;
+    }
+}
+
+
 
 /*
  * Sort CSR column indices inplace
@@ -1357,7 +1434,6 @@ void csc_matvec(const I n_row,
         }
     }
 }
-
 
 
 //template <class I, class T>
