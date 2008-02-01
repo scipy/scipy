@@ -88,7 +88,7 @@ def estimate_blocksize(A,efficiency=0.7):
 
 def count_blocks(A,blocksize):
     """For a given blocksize=(r,c) count the number of occupied 
-    blocks in a sparse matrix A using 
+    blocks in a sparse matrix A
     """
     r,c = blocksize
     if r < 1 or c < 1:

@@ -1,3 +1,5 @@
+"""Functions for Smoothed Aggregation AMG"""
+
 from numpy import array, arange, ones, zeros, sqrt, asarray, empty, diff
 from scipy.sparse import csr_matrix, isspmatrix_csr, bsr_matrix, isspmatrix_bsr
 
@@ -24,6 +26,7 @@ def sa_filtered_matrix(A,epsilon):
         return A
 
     if isspmatrix_csr(A): 
+        #TODO rework this
         Sp,Sj,Sx = multigridtools.sa_strong_connections(A.shape[0],epsilon,A.indptr,A.indices,A.data)
         return csr_matrix((Sx,Sj,Sp),shape=A.shape)
     elif ispmatrix_bsr(A):
@@ -198,14 +201,51 @@ def sa_smoothed_prolongator(A,T,epsilon=0.0,omega=4.0/3.0):
     return P
 
 
+def sa_prolongator(A, B, strength='standard', aggregate='standard', smooth='standard'):
 
-def smoothed_aggregation_solver(A, B=None, 
-        max_levels = 10, 
-        max_coarse = 500,
-        strength   = sa_strong_connections, 
-        aggregate  = sa_standard_aggregation,
-        tentative  = sa_fit_candidates,
-        smooth     = sa_smoothed_prolongator):
+    def unpack_arg(v):
+        if isinstance(v,tuple):
+            return v[0],v[1]
+        else:
+            return v,{}
+
+    # strength of connection
+    fn, kwargs = unpack_arg(strength)
+    if fn == 'standard':
+        C = sa_strong_connections(A,**kwargs)
+    elif fn == 'ode':
+        C = sa_ode_strong_connections(A,B,**kwargs)
+    else:
+        raise ValueError('unrecognized strength of connection method: %s' % fn)
+
+    # aggregation
+    fn, kwargs = unpack_arg(aggregate)
+    if fn == 'standard':
+        AggOp = sa_standard_aggregation(C,**kwargs)
+    else:
+        raise ValueError('unrecognized aggregation method' % fn )
+
+    # tentative prolongator
+    T,B = sa_fit_candidates(AggOp,B)
+
+    # tentative prolongator smoother
+    fn, kwargs = unpack_arg(smooth)
+    if fn == 'standard':
+        P = sa_smoothed_prolongator(A,T,**kwargs)
+    elif fn == 'energy_min':
+        P = sa_energy_min(A,T,C,B,**kwargs)
+    else:
+        raise ValueError('unrecognized prolongation smoother method % ' % fn)
+    
+    return P,B
+
+
+
+
+
+
+def smoothed_aggregation_solver(A, B=None, max_levels = 10, max_coarse = 500,
+                                solver = multilevel_solver, **kwargs):
     """Create a multilevel solver using Smoothed Aggregation (SA)
 
     *Parameters*:
@@ -219,18 +259,22 @@ def smoothed_aggregation_solver(A, B=None,
             Maximum number of levels to be used in the multilevel solver.
         max_coarse: {integer} : default 500
             Maximum number of variables permitted on the coarse grid.
-        strength :
-            Function that computes the strength of connection matrix C
-                strength(A) -> C
-        aggregate : 
-            Function that computes an aggregation operator
-                aggregate(C) -> AggOp
-        tentative:
-            Function that computes a tentative prolongator
-                tentative(AggOp,B) -> T,B_coarse
-        smooth :
-            Function that smooths the tentative prolongator
-                smooth(A,C,T) -> P
+    
+    *Optional Parameters*:
+        strength : strength of connection method
+            Possible values are:
+                'standard' 
+                'ode'
+        
+        aggregate : aggregation method
+            Possible values are:
+                'standard'
+        
+        smooth : prolongation smoother
+            Possible values are:
+                'standard'
+                'energy_min'
+
 
     Unused Parameters
         epsilon: {float} : default 0.0
@@ -287,10 +331,7 @@ def smoothed_aggregation_solver(A, B=None,
     Rs = []
 
     while len(As) < max_levels and A.shape[0] > max_coarse:
-        C     = strength(A)
-        AggOp = aggregate(C)
-        T,B   = tentative(AggOp,B)
-        P     = smooth(A,T)
+        P,B = sa_prolongator(A,B,**kwargs)
 
         R = P.T.asformat(P.format)
 
@@ -301,6 +342,6 @@ def smoothed_aggregation_solver(A, B=None,
         Ps.append(P)
 
 
-    return multilevel_solver(As,Ps,Rs=Rs,preprocess=pre,postprocess=post)
+    return solver(As,Ps,Rs=Rs,preprocess=pre,postprocess=post)
 
 
