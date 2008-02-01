@@ -16,6 +16,7 @@ def configuration(parent_package='', top_path=None):
 
     config.add_subpackage('segment')
     config.add_data_dir('tests')
+    config.add_subpackage('register')
 
     return config
 
