@@ -93237,6 +93237,2109 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_coo_todense__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  signed char *arg6 ;
+  signed char *arg7 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *temp7 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:coo_todense",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "coo_todense" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "coo_todense" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "coo_todense" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_BYTE, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (signed char*) array6->data;
+  }
+  {
+    temp7 = obj_to_array_no_conversion(obj6,PyArray_BYTE);
+    if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
+    arg7 = (signed char*) array_data(temp7);
+  }
+  coo_todense<int,signed char >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(signed char const (*))arg6,arg7);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_coo_todense__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  unsigned char *arg6 ;
+  unsigned char *arg7 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *temp7 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:coo_todense",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "coo_todense" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "coo_todense" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "coo_todense" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_UBYTE, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (unsigned char*) array6->data;
+  }
+  {
+    temp7 = obj_to_array_no_conversion(obj6,PyArray_UBYTE);
+    if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
+    arg7 = (unsigned char*) array_data(temp7);
+  }
+  coo_todense<int,unsigned char >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned char const (*))arg6,arg7);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_coo_todense__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  short *arg6 ;
+  short *arg7 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *temp7 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:coo_todense",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "coo_todense" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "coo_todense" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "coo_todense" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_SHORT, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (short*) array6->data;
+  }
+  {
+    temp7 = obj_to_array_no_conversion(obj6,PyArray_SHORT);
+    if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
+    arg7 = (short*) array_data(temp7);
+  }
+  coo_todense<int,short >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(short const (*))arg6,arg7);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_coo_todense__SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  unsigned short *arg6 ;
+  unsigned short *arg7 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *temp7 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:coo_todense",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "coo_todense" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "coo_todense" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "coo_todense" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_USHORT, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (unsigned short*) array6->data;
+  }
+  {
+    temp7 = obj_to_array_no_conversion(obj6,PyArray_USHORT);
+    if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
+    arg7 = (unsigned short*) array_data(temp7);
+  }
+  coo_todense<int,unsigned short >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned short const (*))arg6,arg7);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_coo_todense__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  int *arg6 ;
+  int *arg7 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *temp7 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:coo_todense",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "coo_todense" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "coo_todense" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "coo_todense" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_INT, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (int*) array6->data;
+  }
+  {
+    temp7 = obj_to_array_no_conversion(obj6,PyArray_INT);
+    if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
+    arg7 = (int*) array_data(temp7);
+  }
+  coo_todense<int,int >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_coo_todense__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  unsigned int *arg6 ;
+  unsigned int *arg7 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *temp7 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:coo_todense",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "coo_todense" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "coo_todense" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "coo_todense" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_UINT, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (unsigned int*) array6->data;
+  }
+  {
+    temp7 = obj_to_array_no_conversion(obj6,PyArray_UINT);
+    if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
+    arg7 = (unsigned int*) array_data(temp7);
+  }
+  coo_todense<int,unsigned int >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned int const (*))arg6,arg7);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_coo_todense__SWIG_7(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  long long *arg6 ;
+  long long *arg7 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *temp7 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:coo_todense",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "coo_todense" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "coo_todense" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "coo_todense" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_LONGLONG, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (long long*) array6->data;
+  }
+  {
+    temp7 = obj_to_array_no_conversion(obj6,PyArray_LONGLONG);
+    if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
+    arg7 = (long long*) array_data(temp7);
+  }
+  coo_todense<int,long long >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(long long const (*))arg6,arg7);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_coo_todense__SWIG_8(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  unsigned long long *arg6 ;
+  unsigned long long *arg7 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *temp7 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:coo_todense",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "coo_todense" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "coo_todense" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "coo_todense" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_ULONGLONG, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (unsigned long long*) array6->data;
+  }
+  {
+    temp7 = obj_to_array_no_conversion(obj6,PyArray_ULONGLONG);
+    if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
+    arg7 = (unsigned long long*) array_data(temp7);
+  }
+  coo_todense<int,unsigned long long >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned long long const (*))arg6,arg7);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_coo_todense__SWIG_9(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  float *arg6 ;
+  float *arg7 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *temp7 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:coo_todense",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "coo_todense" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "coo_todense" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "coo_todense" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_FLOAT, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (float*) array6->data;
+  }
+  {
+    temp7 = obj_to_array_no_conversion(obj6,PyArray_FLOAT);
+    if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
+    arg7 = (float*) array_data(temp7);
+  }
+  coo_todense<int,float >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(float const (*))arg6,arg7);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_coo_todense__SWIG_10(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  double *arg6 ;
+  double *arg7 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *temp7 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:coo_todense",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "coo_todense" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "coo_todense" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "coo_todense" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_DOUBLE, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (double*) array6->data;
+  }
+  {
+    temp7 = obj_to_array_no_conversion(obj6,PyArray_DOUBLE);
+    if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
+    arg7 = (double*) array_data(temp7);
+  }
+  coo_todense<int,double >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(double const (*))arg6,arg7);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_coo_todense__SWIG_11(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  long double *arg6 ;
+  long double *arg7 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *temp7 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:coo_todense",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "coo_todense" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "coo_todense" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "coo_todense" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_LONGDOUBLE, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (long double*) array6->data;
+  }
+  {
+    temp7 = obj_to_array_no_conversion(obj6,PyArray_LONGDOUBLE);
+    if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
+    arg7 = (long double*) array_data(temp7);
+  }
+  coo_todense<int,long double >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(long double const (*))arg6,arg7);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_coo_todense__SWIG_12(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  npy_cfloat_wrapper *arg6 ;
+  npy_cfloat_wrapper *arg7 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *temp7 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:coo_todense",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "coo_todense" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "coo_todense" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "coo_todense" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_CFLOAT, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_cfloat_wrapper*) array6->data;
+  }
+  {
+    temp7 = obj_to_array_no_conversion(obj6,PyArray_CFLOAT);
+    if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
+    arg7 = (npy_cfloat_wrapper*) array_data(temp7);
+  }
+  coo_todense<int,npy_cfloat_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_coo_todense__SWIG_13(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  npy_cdouble_wrapper *arg6 ;
+  npy_cdouble_wrapper *arg7 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *temp7 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:coo_todense",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "coo_todense" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "coo_todense" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "coo_todense" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_CDOUBLE, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_cdouble_wrapper*) array6->data;
+  }
+  {
+    temp7 = obj_to_array_no_conversion(obj6,PyArray_CDOUBLE);
+    if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
+    arg7 = (npy_cdouble_wrapper*) array_data(temp7);
+  }
+  coo_todense<int,npy_cdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_coo_todense__SWIG_14(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int arg2 ;
+  int arg3 ;
+  int *arg4 ;
+  int *arg5 ;
+  npy_clongdouble_wrapper *arg6 ;
+  npy_clongdouble_wrapper *arg7 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *temp7 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:coo_todense",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "coo_todense" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "coo_todense" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "coo_todense" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, PyArray_INT, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (int*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, PyArray_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, PyArray_CLONGDOUBLE, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_clongdouble_wrapper*) array6->data;
+  }
+  {
+    temp7 = obj_to_array_no_conversion(obj6,PyArray_CLONGDOUBLE);
+    if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
+    arg7 = (npy_clongdouble_wrapper*) array_data(temp7);
+  }
+  coo_todense<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_clongdouble_wrapper const (*))arg6,arg7);
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object4 && array4) Py_DECREF(array4);
+  }
+  {
+    if (is_new_object5 && array5) Py_DECREF(array5);
+  }
+  {
+    if (is_new_object6 && array6) Py_DECREF(array6);
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_coo_todense(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[8];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 7); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 7) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_BYTE)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_BYTE)) ? 1 : 0;
+                }
+                if (_v) {
+                  return _wrap_coo_todense__SWIG_1(self, args);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 7) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_UBYTE)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_UBYTE)) ? 1 : 0;
+                }
+                if (_v) {
+                  return _wrap_coo_todense__SWIG_2(self, args);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 7) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_SHORT)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_SHORT)) ? 1 : 0;
+                }
+                if (_v) {
+                  return _wrap_coo_todense__SWIG_3(self, args);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 7) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_USHORT)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_USHORT)) ? 1 : 0;
+                }
+                if (_v) {
+                  return _wrap_coo_todense__SWIG_4(self, args);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 7) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_INT)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_INT)) ? 1 : 0;
+                }
+                if (_v) {
+                  return _wrap_coo_todense__SWIG_5(self, args);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 7) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_UINT)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_UINT)) ? 1 : 0;
+                }
+                if (_v) {
+                  return _wrap_coo_todense__SWIG_6(self, args);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 7) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_LONGLONG)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_LONGLONG)) ? 1 : 0;
+                }
+                if (_v) {
+                  return _wrap_coo_todense__SWIG_7(self, args);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 7) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_ULONGLONG)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_ULONGLONG)) ? 1 : 0;
+                }
+                if (_v) {
+                  return _wrap_coo_todense__SWIG_8(self, args);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 7) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_FLOAT)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_FLOAT)) ? 1 : 0;
+                }
+                if (_v) {
+                  return _wrap_coo_todense__SWIG_9(self, args);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 7) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_DOUBLE)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_DOUBLE)) ? 1 : 0;
+                }
+                if (_v) {
+                  return _wrap_coo_todense__SWIG_10(self, args);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 7) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_LONGDOUBLE)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_LONGDOUBLE)) ? 1 : 0;
+                }
+                if (_v) {
+                  return _wrap_coo_todense__SWIG_11(self, args);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 7) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_CFLOAT)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_CFLOAT)) ? 1 : 0;
+                }
+                if (_v) {
+                  return _wrap_coo_todense__SWIG_12(self, args);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 7) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_CDOUBLE)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_CDOUBLE)) ? 1 : 0;
+                }
+                if (_v) {
+                  return _wrap_coo_todense__SWIG_13(self, args);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 7) {
+    int _v;
+    {
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),PyArray_INT)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),PyArray_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),PyArray_CLONGDOUBLE)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),PyArray_CLONGDOUBLE)) ? 1 : 0;
+                }
+                if (_v) {
+                  return _wrap_coo_todense__SWIG_14(self, args);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'coo_todense'.\n  Possible C/C++ prototypes are:\n""    coo_todense<(int,signed char)>(int const,int const,int const,int const [],int const [],signed char const [],signed char [])\n""    coo_todense<(int,unsigned char)>(int const,int const,int const,int const [],int const [],unsigned char const [],unsigned char [])\n""    coo_todense<(int,short)>(int const,int const,int const,int const [],int const [],short const [],short [])\n""    coo_todense<(int,unsigned short)>(int const,int const,int const,int const [],int const [],unsigned short const [],unsigned short [])\n""    coo_todense<(int,int)>(int const,int const,int const,int const [],int const [],int const [],int [])\n""    coo_todense<(int,unsigned int)>(int const,int const,int const,int const [],int const [],unsigned int const [],unsigned int [])\n""    coo_todense<(int,long long)>(int const,int const,int const,int const [],int const [],long long const [],long long [])\n""    coo_todense<(int,unsigned long long)>(int const,int const,int const,int const [],int const [],unsigned long long const [],unsigned long long [])\n""    coo_todense<(int,float)>(int const,int const,int const,int const [],int const [],float const [],float [])\n""    coo_todense<(int,double)>(int const,int const,int const,int const [],int const [],double const [],double [])\n""    coo_todense<(int,long double)>(int const,int const,int const,int const [],int const [],long double const [],long double [])\n""    coo_todense<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n""    coo_todense<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n""    coo_todense<(int,npy_clongdouble_wrapper)>(int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
+  return NULL;
+}
+
+
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"csr_diagonal", _wrap_csr_diagonal, METH_VARARGS, (char *)"\n"
 		"csr_diagonal(int n_row, int n_col, int Ap, int Aj, signed char Ax, \n"
@@ -94374,6 +96477,36 @@ static PyMethodDef SwigMethods[] = {
 		"    int ir0, int ir1, int ic0, int ic1, \n"
 		"    std::vector<(int)> Bp, std::vector<(int)> Bj, \n"
 		"    std::vector<(npy_clongdouble_wrapper)> Bx)\n"
+		""},
+	 { (char *)"coo_todense", _wrap_coo_todense, METH_VARARGS, (char *)"\n"
+		"coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, signed char Ax, \n"
+		"    signed char Bx)\n"
+		"coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned char Ax, \n"
+		"    unsigned char Bx)\n"
+		"coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, short Ax, \n"
+		"    short Bx)\n"
+		"coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned short Ax, \n"
+		"    unsigned short Bx)\n"
+		"coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, int Ax, \n"
+		"    int Bx)\n"
+		"coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned int Ax, \n"
+		"    unsigned int Bx)\n"
+		"coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, long long Ax, \n"
+		"    long long Bx)\n"
+		"coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned long long Ax, \n"
+		"    unsigned long long Bx)\n"
+		"coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, float Ax, \n"
+		"    float Bx)\n"
+		"coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, double Ax, \n"
+		"    double Bx)\n"
+		"coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, long double Ax, \n"
+		"    long double Bx)\n"
+		"coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cfloat_wrapper Ax, \n"
+		"    npy_cfloat_wrapper Bx)\n"
+		"coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cdouble_wrapper Ax, \n"
+		"    npy_cdouble_wrapper Bx)\n"
+		"coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, npy_clongdouble_wrapper Ax, \n"
+		"    npy_clongdouble_wrapper Bx)\n"
 		""},
 	 { NULL, NULL, 0, NULL }
 };

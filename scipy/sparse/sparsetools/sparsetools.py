@@ -1301,3 +1301,36 @@ def get_csr_submatrix(*args):
     """
   return _sparsetools.get_csr_submatrix(*args)
 
+def coo_todense(*args):
+  """
+    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, signed char Ax, 
+        signed char Bx)
+    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned char Ax, 
+        unsigned char Bx)
+    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, short Ax, 
+        short Bx)
+    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned short Ax, 
+        unsigned short Bx)
+    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, int Ax, 
+        int Bx)
+    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned int Ax, 
+        unsigned int Bx)
+    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, long long Ax, 
+        long long Bx)
+    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned long long Ax, 
+        unsigned long long Bx)
+    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, float Ax, 
+        float Bx)
+    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, double Ax, 
+        double Bx)
+    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, long double Ax, 
+        long double Bx)
+    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cfloat_wrapper Ax, 
+        npy_cfloat_wrapper Bx)
+    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cdouble_wrapper Ax, 
+        npy_cdouble_wrapper Bx)
+    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, npy_clongdouble_wrapper Ax, 
+        npy_clongdouble_wrapper Bx)
+    """
+  return _sparsetools.coo_todense(*args)
+

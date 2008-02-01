@@ -157,11 +157,12 @@ class TestSparseTools(TestCase):
             start = time.clock()
             iter = 0
             while iter < 5 or time.clock() < start + 1:
-                try:
-                    #avoid creating y if possible
-                    A.matvec(x,y)
-                except:
-                    y = A*x
+                y = A*x
+                #try:
+                #    #avoid creating y if possible
+                #    A.matvec(x,y)
+                #except:
+                #    y = A*x
                 iter += 1
             end = time.clock()
 

@@ -474,41 +474,43 @@ class _TestInplaceArithmetic:
 class _TestMatvecOutput:
     """test using the matvec() output parameter"""
     def test_matvec_output(self): 
-        #flat array
-        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
-        y = zeros(3,dtype='d')
-        
-        self.datsp.matvec(x,y)
-        assert_array_equal(self.datsp*x,y)
-    
-        #column vector
-        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
-        x = x.reshape(4,1)
-        y = zeros((3,1),dtype='d')
+        pass  #Currently disabled
 
-        self.datsp.matvec(x,y)
-        assert_array_equal(self.datsp*x,y)
-   
-        # improper output type
-        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
-        y = zeros(3,dtype='i')
-        
-        self.assertRaises( ValueError, self.datsp.matvec, x, y )
-        
-        # improper output shape
-        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
-        y = zeros(2,dtype='d')
-        
-        self.assertRaises( ValueError, self.datsp.matvec, x, y )
-
-        # proper upcast output type
-        x = array([1.25, -6.5, 0.125, -3.75],dtype='complex64')
-        x.imag = [1,2,3,4]
-        y = zeros(3,dtype='complex128')
-       
-        self.datsp.matvec(x,y)
-        assert_array_equal(self.datsp*x,y)
-        assert_equal((self.datsp*x).dtype,y.dtype)
+#        #flat array
+#        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
+#        y = zeros(3,dtype='d')
+#        
+#        self.datsp.matvec(x,y)
+#        assert_array_equal(self.datsp*x,y)
+#    
+#        #column vector
+#        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
+#        x = x.reshape(4,1)
+#        y = zeros((3,1),dtype='d')
+#
+#        self.datsp.matvec(x,y)
+#        assert_array_equal(self.datsp*x,y)
+#   
+#        # improper output type
+#        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
+#        y = zeros(3,dtype='i')
+#        
+#        self.assertRaises( ValueError, self.datsp.matvec, x, y )
+#        
+#        # improper output shape
+#        x = array([1.25, -6.5, 0.125, -3.75],dtype='d')
+#        y = zeros(2,dtype='d')
+#        
+#        self.assertRaises( ValueError, self.datsp.matvec, x, y )
+#
+#        # proper upcast output type
+#        x = array([1.25, -6.5, 0.125, -3.75],dtype='complex64')
+#        x.imag = [1,2,3,4]
+#        y = zeros(3,dtype='complex128')
+#       
+#        self.datsp.matvec(x,y)
+#        assert_array_equal(self.datsp*x,y)
+#        assert_equal((self.datsp*x).dtype,y.dtype)
 
 class _TestGetSet:
     def test_setelement(self):

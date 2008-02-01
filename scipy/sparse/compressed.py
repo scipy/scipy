@@ -316,11 +316,11 @@ class _cs_matrix(_data_matrix):
         'other' may be a rank 1 array of length N or a rank 2 array 
         or matrix with shape (N,1).  
         
-        If the optional 'output' parameter is defined, it will
-        be used to store the result.  Otherwise, a new vector
-        will be allocated.
-             
         """
+        #If the optional 'output' parameter is defined, it will
+        #be used to store the result.  Otherwise, a new vector
+        #will be allocated.
+
         if isdense(other):
             M,N = self.shape
 
@@ -331,18 +331,20 @@ class _cs_matrix(_data_matrix):
             fn = getattr(sparsetools,self.format + '_matvec')
     
             #output array
-            if output is None:
-                y = empty( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
-            else:
-                if output.shape != (M,) and output.shape != (M,1):
-                    raise ValueError, "output array has improper dimensions"
-                if not output.flags.c_contiguous:
-                    raise ValueError, "output array must be contiguous"
-                if output.dtype != upcast(self.dtype,other.dtype):
-                    raise ValueError, "output array has dtype=%s "\
-                            "dtype=%s is required" % \
-                            (output.dtype,upcast(self.dtype,other.dtype))
-                y = output
+            y = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
+
+            #if output is None:
+            #    y = empty( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
+            #else:
+            #    if output.shape != (M,) and output.shape != (M,1):
+            #        raise ValueError, "output array has improper dimensions"
+            #    if not output.flags.c_contiguous:
+            #        raise ValueError, "output array must be contiguous"
+            #    if output.dtype != upcast(self.dtype,other.dtype):
+            #        raise ValueError, "output array has dtype=%s "\
+            #                "dtype=%s is required" % \
+            #                (output.dtype,upcast(self.dtype,other.dtype))
+            #    y = output
 
             fn(self.shape[0], self.shape[1], \
                 self.indptr, self.indices, self.data, numpy.ravel(other), y)

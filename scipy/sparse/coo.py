@@ -9,7 +9,7 @@ from numpy import array, asarray, empty, intc, zeros, bincount, \
         unique, searchsorted, atleast_2d, lexsort, cumsum, concatenate, \
         empty_like, arange
 
-from sparsetools import coo_tocsr, coo_tocsc
+from sparsetools import coo_tocsr, coo_tocsc, coo_todense
 from base import isspmatrix
 from data import _data_matrix
 from sputils import upcast, to_native, isshape, getdtype
@@ -223,10 +223,10 @@ class coo_matrix(_data_matrix):
         return coo_matrix((self.data,(self.col,self.row)),(N,M),copy=copy)
 
     def toarray(self):
-        A = self.tocsr().tocoo(copy=False) #eliminate (i,j) duplicates
-        M = zeros(self.shape, dtype=self.dtype)
-        M[A.row, A.col] = A.data
-        return M
+        B = zeros(self.shape, dtype=self.dtype)
+        M,N = self.shape
+        coo_todense(M, N, self.nnz, self.row, self.col, self.data, B.ravel() )
+        return B
 
     def tocsc(self,sum_duplicates=True):
         """Return a copy of this matrix in Compressed Sparse Column format

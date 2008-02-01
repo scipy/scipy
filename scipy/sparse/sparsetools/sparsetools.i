@@ -262,7 +262,7 @@ INSTANTIATE_ALL(bsr_plus_bsr)
 INSTANTIATE_ALL(bsr_minus_bsr)
 
 /*
- * Sort indices.
+ * Sort indices
  */
 %template(csr_has_sorted_indices)   csr_has_sorted_indices<int>;
 INSTANTIATE_ALL(csr_sort_indices)
@@ -274,7 +274,7 @@ INSTANTIATE_ALL(csr_sort_indices)
 INSTANTIATE_ALL(csr_eliminate_zeros)
 
 /*
- * Sum duplicate entries.
+ * Sum duplicate entries
  */
 INSTANTIATE_ALL(csr_sum_duplicates)
 
@@ -282,3 +282,9 @@ INSTANTIATE_ALL(csr_sum_duplicates)
  * Extract submatrices
  */
 INSTANTIATE_ALL(get_csr_submatrix)
+
+/*
+ * To dense matrix
+ */
+INSTANTIATE_ALL(coo_todense)
+

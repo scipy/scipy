@@ -1277,7 +1277,7 @@ void coo_tocsr(const I n_row,
 
 
 /*
- * Compute Y = A*X for CSR matrix A and dense vectors X,Y
+ * Compute Y += A*X for CSR matrix A and dense vectors X,Y
  *
  *
  * Input Arguments:
@@ -1307,7 +1307,7 @@ void csr_matvec(const I n_row,
 	                  T Yx[])
 {
     for(I i = 0; i < n_row; i++){
-        T sum = 0;
+        T sum = Yx[i];
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             sum += Ax[jj] * Xx[Aj[jj]];
         }
@@ -1318,7 +1318,7 @@ void csr_matvec(const I n_row,
 
 
 /*
- * Compute Y = A*X for CSC matrix A and dense vectors X,Y
+ * Compute Y += A*X for CSC matrix A and dense vectors X,Y
  *
  *
  * Input Arguments:
@@ -1347,16 +1347,12 @@ void csc_matvec(const I n_row,
 	            const T Xx[],
 	                  T Yx[])
 { 
-    for(I i = 0; i < n_row; i++){
-        Yx[i] = 0;
-    }
-
     for(I j = 0; j < n_col; j++){
         I col_start = Ap[j];
         I col_end   = Ap[j+1];
 
         for(I ii = col_start; ii < col_end; ii++){
-            I row  = Ai[ii];
+            I row    = Ai[ii];
             Yx[row] += Ax[ii] * Xx[j];
         }
     }
@@ -1483,6 +1479,33 @@ void bsr_matvec(const I n_brow,
 
 
 
+
+/*
+ * Compute B += A for COO matrix A, dense matrix B
+ *
+ * Input Arguments:
+ *   I  n_row           - number of rows in A
+ *   I  n_col           - number of columns in A
+ *   I  nnz             - number of nonzeros in A
+ *   I  Ai[nnz(A)]      - row indices
+ *   I  Aj[nnz(A)]      - column indices
+ *   T  Ax[nnz(A)]      - nonzeros 
+ *   T  Bx[n_row*n_col] - dense matrix
+ *
+ */
+template <class I, class T>
+void coo_todense(const I n_row,
+                 const I n_col,
+                 const I nnz,
+                 const I Ai[],
+                 const I Aj[],
+                 const T Ax[],
+                       T Bx[])
+{
+    for(I n = 0; n < nnz; n++){
+        Bx[ n_col * Ai[n] + Aj[n] ] += Ax[n];
+    }
+}
 
 
 
@@ -1763,44 +1786,6 @@ void csc_minus_csc(const I n_row, const I n_col,
 //
 //
 //
-//
-///*
-// * Compute A = M for CSR matrix A, dense matrix M
-// *
-// * Input Arguments:
-// *   I  n_row           - number of rows in A
-// *   I  n_col           - number of columns in A
-// *   T  Mx[n_row*n_col] - dense matrix
-// *   I  Ap[n_row+1]     - row pointer
-// *   I  Aj[nnz(A)]      - column indices
-// *   T  Ax[nnz(A)]      - nonzeros 
-// *
-// * Note:
-// *    Output arrays Ap, Aj, and Ax will be allocated within the method
-// *
-// */
-//template <class I, class T>
-//void dense_tocsr(const I n_row,
-//                 const I n_col,
-//                 const T Mx[],
-//                 std::vector<I>* Ap,
-//                 std::vector<I>* Aj,
-//                 std::vector<T>* Ax)
-//{
-//  const T* x_ptr = Mx;
-//
-//  Ap->push_back(0);
-//  for(I i = 0; i < n_row; i++){
-//    for(I j = 0; j < n_col; j++){
-//      if(*x_ptr != 0){
-//	    Aj->push_back(j);
-//	    Ax->push_back(*x_ptr);
-//      }
-//      x_ptr++;
-//    }
-//    Ap->push_back(Aj->size());
-//  }
-//}
 //
 //
 ///*
