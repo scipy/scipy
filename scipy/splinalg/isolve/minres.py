@@ -1,4 +1,4 @@
-from numpy import sqrt, inner, finfo
+from numpy import sqrt, inner, finfo, asarray, zeros
 from numpy.linalg import norm
 
 def psolve(x): return x
@@ -277,10 +277,11 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
 
 
 if __name__ == '__main__':
-    from scipy import *
-    from scipy.sparse import *
-    from scipy.splinalg import *
-    from scipy.sandbox.multigrid import *
+    from scipy import ones, arange
+    from scipy.linalg import norm
+    from scipy.sparse import spdiags
+    from scipy.splinalg import cg
+    #from scipy.sandbox.multigrid import *
 
     n = 100
 
@@ -292,6 +293,6 @@ if __name__ == '__main__':
     #A = poisson((10,),format='csr')
     A = spdiags( [arange(1,n+1,dtype=float)], [0], n, n, format='csr')
     b = ones( A.shape[0] )
-    #x = minres(A,b,tol=1e-12,maxiter=None,callback=cb)
-    x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]
+    x = minres(A,b,tol=1e-12,maxiter=None,callback=cb)
+    #x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]
 
