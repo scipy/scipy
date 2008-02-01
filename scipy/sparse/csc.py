@@ -131,16 +131,6 @@ class csc_matrix(_cs_matrix):
         A.has_sorted_indices = True
         return A
 
-    def tobsr(self, blocksize=None):
-        if blocksize == (1,1):
-            from bsr import bsr_matrix
-            csr = self.tocsr()
-            arg1 = (csr.data.reshape(-1,1,1),csr.indices,csr.indptr)  
-            return bsr_matrix( arg1, shape=self.shape )
-        else:
-            #TODO make this more efficient
-            return self.tocoo(copy=False).tobsr(blocksize=blocksize)
-
     def get_submatrix( self, slice0, slice1 ):
         """Return a submatrix of this matrix (new matrix is created).
         Contigous range of rows and columns can be selected using:
