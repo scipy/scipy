@@ -4,7 +4,7 @@ from numpy.linalg import norm
 from utils import make_system
 
 def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
-           M=None, callback=None, show=False, check=True):
+           M=None, callback=None, show=False, check=False):
     """Use the Minimum Residual Method (MINRES) to solve Ax=b 
     
     MINRES minimizes norm(A*x - b) for the symmetric matrix A.  Unlike
@@ -90,6 +90,18 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
     beta1 = sqrt( beta1 )
 
     if check:
+        # are these too strict?
+
+        # see if A is symmetric
+        w    = matvec(y)
+        r2   = matvec(w)
+        s    = inner(w,w)
+        t    = inner(y,r2)
+        z    = abs( s - t )
+        epsa = (s + eps) * eps**(1.0/3.0)
+        if z > epsa:
+            raise ValueError('non-symmetric matrix')
+
         # see if M is symmetric
         r2   = psolve(y)
         s    = inner(y,y)
@@ -99,15 +111,6 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         if z > epsa:
             raise ValueError('non-symmetric preconditioner')
         
-        # see if A is symmetric
-        w    = matvec(y)
-        r2   = matvec(w)
-        s    = inner(w,w)
-        t    = inner(y,r2)
-        epsa = (s + eps) * eps**(1.0/3.0)
-        if z > epsa:
-            raise ValueError('non-symmetric matrix')
-
 
     # Initialize other quantities
     oldb   = 0;          beta   = beta1;   dbar   = 0;       epsln  = 0;
