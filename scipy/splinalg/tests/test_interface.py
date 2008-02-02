@@ -31,18 +31,9 @@ class TestInterface(TestCase):
                 return y
 
             def rmatvec(self,x):
-                if len(x.shape) == 1:
-                    y = array([ 1*x[0] + 4*x[1],
-                                2*x[0] + 5*x[1],
-                                3*x[0] + 6*x[1]])
-                    return y
-                else:
-                    y = array([ 1*x[0,0] + 4*x[0,1],
-                                2*x[0,0] + 5*x[0,1],
-                                3*x[0,0] + 6*x[0,1]])
-                    return y.reshape(1,-1)
-
-                return y
+                return array([ 1*x[0] + 4*x[1],
+                               2*x[0] + 5*x[1],
+                               3*x[0] + 6*x[1]])
                
         cases.append( matlike() )
 
@@ -55,7 +46,7 @@ class TestInterface(TestCase):
             assert_equal(A.matvec(array([[1],[2],[3]])),[[14],[32]])
 
             assert_equal(A.rmatvec(array([1,2])),  [9,12,15])
-            assert_equal(A.rmatvec(array([[1,2]])),[[9,12,15]])
+            assert_equal(A.rmatvec(array([[1],[2]])),[[9],[12],[15]])
 
             if hasattr(M,'dtype'):
                 assert_equal(A.dtype, M.dtype)

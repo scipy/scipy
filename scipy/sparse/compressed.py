@@ -365,10 +365,19 @@ class _cs_matrix(_data_matrix):
             raise TypeError, "need a dense vector"
 
     def rmatvec(self, other, conjugate=True):
+        """Multiplies the vector 'other' by the sparse matrix, returning a
+        dense vector as a result.
+        
+        If 'conjugate' is True:
+            - returns A.transpose().conj() * other
+        Otherwise:
+            - returns A.transpose() * other.
+        
+        """
         if conjugate:
-            return transpose( self.transpose().conj().matvec(transpose(other)) )
+            return self.transpose().conj().matvec( other )
         else:
-            return transpose( self.transpose().matvec(transpose(other)) )
+            return self.transpose().matvec( other )
 
     def getdata(self, ind):
         return self.data[ind]
@@ -376,6 +385,7 @@ class _cs_matrix(_data_matrix):
     def diagonal(self):
         """Returns the main diagonal of the matrix
         """
+        #TODO support k-th diagonal
         fn = getattr(sparsetools, self.format + "_diagonal")
         y = empty( min(self.shape), dtype=upcast(self.dtype) )
         fn(self.shape[0], self.shape[1], self.indptr, self.indices, self.data, y)

@@ -1,4 +1,5 @@
-import numpy as np
+import numpy
+from numpy import matrix, ndarray, asarray, dot, atleast_2d
 from scipy.sparse.sputils import isshape
 from scipy.sparse import isspmatrix
 
@@ -7,7 +8,42 @@ __all__ = ['LinearOperator', 'aslinearoperator']
 class LinearOperator:
     def __init__( self, shape, matvec, rmatvec=None, dtype=None ):
         """Common interface for performing matrix vector products
+
+        Many iterative methods (e.g. cg, gmres) do not need to know the
+        individual entries of a matrix to solve a linear system A*x=b. 
+        Such solvers only require the computation of matrix vector 
+        products, A*v where v is a dense vector.  This class serves as
+        an abstract interface between iterative solvers and matrix-like
+        objects.
+
+        Required Parameters:
+            shape     : tuple of matrix dimensions (M,N)
+            matvec(x) : function that returns A * x
+
+        Optional Parameters:
+            rmatvec(x) : function that returns A^H * x where A^H represents 
+                         the Hermitian (conjugate) transpose of A
+            dtype      : data type of the matrix
+                        
+
+        See Also:
+            aslinearoperator() : Construct LinearOperators for SciPy classes
+
+        Example:
+
+        >>> from scipy.splinalg import LinearOperator
+        >>> from scipy import *
+        >>> def mv(x):
+        ...     return array([ 2*x[0], 3*x[1]])
+        ... 
+        >>> A = LinearOperator( (2,2), matvec=mv )
+        >>> A
+        <2x2 LinearOperator with unspecified dtype>
+        >>> A.matvec( ones(2) )
+        array([ 2.,  3.])
+        
         """
+
         shape = tuple(shape)
 
         if not isshape(shape):
@@ -24,7 +60,7 @@ class LinearOperator:
             self.rmatvec = rmatvec
 
         if dtype is not None:
-            self.dtype = np.dtype(dtype)
+            self.dtype = numpy.dtype(dtype)
 
     def __repr__(self):
         M,N = self.shape
@@ -60,11 +96,16 @@ def aslinearoperator(A):
     if isinstance(A, LinearOperator):
         return A
 
-    elif isinstance(A, np.ndarray) or isinstance(A,np.matrix):
+    elif isinstance(A, ndarray) or isinstance(A, matrix):
+        if len(A.shape) > 2:
+            raise ValueError('array must have rank <= 2')
+
+        A = atleast_2d(asarray(A))
+
         def matvec(x):
-            return np.dot(np.asarray(A),x)
+            return dot(A,x)
         def rmatvec(x):
-            return np.dot(x,np.asarray(A))
+            return dot(A.conj().transpose(),x)
         return LinearOperator( A.shape, matvec, rmatvec=rmatvec, dtype=A.dtype )
 
     elif isspmatrix(A):

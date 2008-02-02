@@ -22,8 +22,8 @@ class TestEigs(TestCase):
         vals = vals[uv_sortind]
         vecs = vecs[:,uv_sortind]
 
-        from scipy.splinalg.isolve.iterative import get_matvec
-        matvec = get_matvec(A)
+        from scipy.splinalg.interface import aslinearoperator
+        matvec = aslinearoperator(A).matvec
         #= lambda x: N.asarray(A*x)[0]
         nev=4
         eigvs = ARPACK_eigs(matvec, A.shape[0], nev=nev)

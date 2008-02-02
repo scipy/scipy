@@ -1,4 +1,6 @@
-from numpy import asanyarray, asmatrix, array, matrix, zeros
+from warnings import warn
+
+from numpy import asanyarray, asarray, asmatrix, array, matrix, zeros
 
 from scipy.splinalg.interface import aslinearoperator, LinearOperator
 
@@ -20,6 +22,31 @@ def id(x):
     return x
 
 def make_system(A, M, x0, b, xtype=None):
+    """Make a linear system Ax=b
+    
+    Parameters:
+        A - LinearOperator
+            - sparse or dense matrix (or any valid input to aslinearoperator)
+        M - LinearOperator or None
+            - preconditioner
+            - sparse or dense matrix (or any valid input to aslinearoperator)
+        x0 - array_like or None
+            - initial guess to iterative method
+        b  - array_like
+            - right hand side
+        xtype - None or one of 'fdFD'
+            - dtype of the x vector
+
+    Returns:
+        (A, M, x, b, postprocess) where:
+            - A is a LinearOperator 
+            - M is a LinearOperator
+            - x is the initial guess (rank 1 array)
+            - b is the rhs (rank 1 array)
+            - postprocess is a function that converts the solution vector
+              to the appropriate type and dimensions (e.g. (N,1) matrix)
+
+    """
     A_ = A
     A = aslinearoperator(A)
 
@@ -33,11 +60,13 @@ def make_system(A, M, x0, b, xtype=None):
     if not (b.shape == (N,1) or b.shape == (N,)):
         raise ValueError('A and b have incompatible dimensions')
 
+    if b.dtype.char not in 'fdFD':
+        b = b.astype('d') # upcast non-FP types to double
+
     def postprocess(x):
         if isinstance(b,matrix):
             x = asmatrix(x)
         return x.reshape(b.shape)
-
 
     if xtype is None:
         if hasattr(A,'dtype'):
@@ -45,11 +74,17 @@ def make_system(A, M, x0, b, xtype=None):
         else:
             xtype = A.matvec(b).dtype.char
         xtype = coerce(xtype, b.dtype.char)
-    elif xtype == 0:
-        xtype = b.dtype.char
     else:
-        if xtype not in 'fdFD':
-            raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
+        warn('Use of xtype argument is deprecated. '\
+                'Use LinearOperator( ... , dtype=xtype) instead.',\
+                DeprecationWarning)
+        if xtype == 0:
+            xtype = b.dtype.char
+        else:
+            if xtype not in 'fdFD':
+                raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
+
+    b = asarray(b,dtype=xtype) #make b the same type as x
 
     if x0 is None:
         x = zeros(N, dtype=xtype)
@@ -71,6 +106,7 @@ def make_system(A, M, x0, b, xtype=None):
             rpsolve = id
         M = LinearOperator(A.shape, matvec=psolve, rmatvec=rpsolve, dtype=A.dtype)
     else:
+        M = aslinearoperator(M)
         if A.shape != M.shape:
             raise ValueError('matrix and preconditioner have different shapes')
 

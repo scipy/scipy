@@ -15,102 +15,12 @@ import _iterative
 import numpy as sb
 import copy
 
-try:
-    False, True
-except NameError:
-    False, True = 0, 1
+from scipy.splinalg.interface import LinearOperator
+from utils import make_system
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 
-_coerce_rules = {('f','f'):'f', ('f','d'):'d', ('f','F'):'F',
-                 ('f','D'):'D', ('d','f'):'d', ('d','d'):'d',
-                 ('d','F'):'D', ('d','D'):'D', ('F','f'):'F',
-                 ('F','d'):'D', ('F','F'):'F', ('F','D'):'D',
-                 ('D','f'):'D', ('D','d'):'D', ('D','F'):'D',
-                 ('D','D'):'D'}
-
-class get_matvec:
-    methname = 'matvec'
-    def __init__(self, obj, *args):
-        self.obj = obj
-        self.args = args
-        if isinstance(obj, sb.matrix):
-            self.callfunc = self.type1m
-            return
-        if isinstance(obj, sb.ndarray):
-            self.callfunc = self.type1
-            return
-        meth = getattr(obj,self.methname,None)
-        if not callable(meth):
-            raise ValueError, "Object must be an array "\
-                  "or have a callable %s attribute." % (self.methname,)
-
-        self.obj = meth
-        self.callfunc = self.type2
-
-    def __call__(self, x):
-        return self.callfunc(x)
-
-    def type1(self, x):
-        return sb.dot(self.obj, x)
-
-    def type1m(self, x):
-        return sb.dot(self.obj.A, x)
-
-    def type2(self, x):
-        return self.obj(x,*self.args)
-
-class get_rmatvec(get_matvec):
-    methname = 'rmatvec'
-    def type1(self, x):
-        return sb.dot(x, self.obj)
-    def type1m(self, x):
-        return sb.dot(x, self.obj.A)
-
-class get_psolve:
-    methname = 'psolve'
-    def __init__(self, obj, *args):
-        self.obj = obj
-        self.args = args
-        meth = getattr(obj,self.methname,None)
-        if meth is None:  # no preconditiong available
-            self.callfunc = self.type1
-            return
-
-        if not callable(meth):
-            raise ValueError, "Preconditioning method %s "\
-                  "must be callable." % (self.methname,)
-
-        self.obj = meth
-        self.callfunc = self.type2
-
-    def __call__(self, x):
-        return self.callfunc(x)
-
-    def type1(self, x):
-        return x
-
-    def type2(self, x):
-        return self.obj(x,*self.args)
-
-class get_rpsolve(get_psolve):
-    methname = 'rpsolve'
-
-class get_psolveq(get_psolve):
-
-    def __call__(self, x, which):
-        return self.callfunc(x, which)
-
-    def type1(self, x, which):
-        return x
-
-    def type2(self, x, which):
-        return self.obj(x,which,*self.args)
-
-class get_rpsolveq(get_psolveq):
-    methname = 'rpsolve'
-
-def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
+def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     """Use BIConjugate Gradient iteration to solve A x = b
 
     Inputs:
@@ -145,43 +55,22 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
                 iteration.  It is called as callback(xk), where xk is the
                 current parameter vector.
     """
-    b = sb.asarray(b)+0.0
+    A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
+
     n = len(b)
     if maxiter is None:
         maxiter = n*10
 
-    if x0 is None:
-        x = sb.zeros(n)
-    else:
-        x = copy.copy(x0)
-
-    if xtype is None:
-        try:
-            atyp = A.dtype.char
-        except AttributeError:
-            atyp = None
-        if atyp is None:
-            atyp = A.matvec(x).dtype.char
-        typ = _coerce_rules[b.dtype.char,atyp]
-    elif xtype == 0:
-        typ = b.dtype.char
-    else:
-        typ = xtype
-        if typ not in 'fdFD':
-            raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
-
-    x = sb.asarray(x,typ)
-    b = sb.asarray(b,typ)
-
-    matvec, psolve, rmatvec, rpsolve = (None,)*4
-    ltr = _type_conv[typ]
-    revcom = _iterative.__dict__[ltr+'bicgrevcom']
-    stoptest = _iterative.__dict__[ltr+'stoptest2']
+    matvec, rmatvec = A.matvec, A.rmatvec
+    psolve, rpsolve = M.matvec, M.rmatvec
+    ltr = _type_conv[x.dtype.char]
+    revcom   = getattr(_iterative, ltr + 'bicgrevcom')
+    stoptest = getattr(_iterative, ltr + 'stoptest2')
 
     resid = tol
     ndx1 = 1
     ndx2 = -1
-    work = sb.zeros(6*n,typ)
+    work = sb.zeros(6*n,dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
@@ -198,26 +87,16 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
         if (ijob == -1):
             break
         elif (ijob == 1):
-            if matvec is None:
-                matvec = get_matvec(A)
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(work[slice1])
         elif (ijob == 2):
-            if rmatvec is None:
-                rmatvec = get_rmatvec(A)
             work[slice2] *= sclr2
             work[slice2] += sclr1*rmatvec(work[slice1])
         elif (ijob == 3):
-            if psolve is None:
-                psolve = get_psolve(A)
             work[slice1] = psolve(work[slice2])
         elif (ijob == 4):
-            if rpsolve is None:
-                rpsolve = get_rpsolve(A)
             work[slice1] = rpsolve(work[slice2])
         elif (ijob == 5):
-            if matvec is None:
-                matvec = get_matvec(A)
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(x)
         elif (ijob == 6):
@@ -227,10 +106,10 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
 
-    return x, info
+    return postprocess(x), info
 
 
-def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
+def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     """Use BIConjugate Gradient STABilized iteration to solve A x = b
 
     Inputs:
@@ -264,44 +143,22 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
                 iteration.  It is called as callback(xk), where xk is the
                 current parameter vector.
     """
-    b = sb.asarray(b)+0.0
+    A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
+
     n = len(b)
     if maxiter is None:
         maxiter = n*10
 
-    if x0 is None:
-        x = sb.zeros(n)
-    else:
-        x = copy.copy(x0)
-
-
-    if xtype is None:
-        try:
-            atyp = A.dtype.char
-        except AttributeError:
-            atyp = None
-        if atyp is None:
-            atyp = A.matvec(x).dtype.char
-        typ = _coerce_rules[b.dtype.char,atyp]
-    elif xtype == 0:
-        typ = b.dtype.char
-    else:
-        typ = xtype
-        if typ not in 'fdFD':
-            raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
-
-    x = sb.asarray(x,typ)
-    b = sb.asarray(b,typ)
-
-    matvec, psolve = (None,)*2
-    ltr = _type_conv[typ]
-    revcom = _iterative.__dict__[ltr+'bicgstabrevcom']
-    stoptest = _iterative.__dict__[ltr+'stoptest2']
+    matvec = A.matvec
+    psolve = M.matvec
+    ltr = _type_conv[x.dtype.char]
+    revcom   = getattr(_iterative, ltr + 'bicgstabrevcom')
+    stoptest = getattr(_iterative, ltr + 'stoptest2')
 
     resid = tol
     ndx1 = 1
     ndx2 = -1
-    work = sb.zeros(7*n,typ)
+    work = sb.zeros(7*n,dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
@@ -338,10 +195,10 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
 
-    return x, info
+    return postprocess(x), info
 
 
-def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
+def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     """Use Conjugate Gradient iteration to solve A x = b (A^H = A)
 
     Inputs:
@@ -376,44 +233,22 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
                 iteration.  It is called as callback(xk), where xk is the
                 current parameter vector.
     """
-    b = sb.asarray(b)+0.0
+    A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
+
     n = len(b)
     if maxiter is None:
         maxiter = n*10
 
-    if x0 is None:
-        x = sb.zeros(n)
-    else:
-        x = copy.copy(x0)
-
-
-    if xtype is None:
-        try:
-            atyp = A.dtype.char
-        except AttributeError:
-            atyp = None
-        if atyp is None:
-            atyp = A.matvec(x).dtype.char
-        typ = _coerce_rules[b.dtype.char,atyp]
-    elif xtype == 0:
-        typ = b.dtype.char
-    else:
-        typ = xtype
-        if typ not in 'fdFD':
-            raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
-
-    x = sb.asarray(x,typ)
-    b = sb.asarray(b,typ)
-
-    matvec, psolve = (None,)*2
-    ltr = _type_conv[typ]
-    revcom = _iterative.__dict__[ltr+'cgrevcom']
-    stoptest = _iterative.__dict__[ltr+'stoptest2']
+    matvec = A.matvec
+    psolve = M.matvec
+    ltr = _type_conv[x.dtype.char]
+    revcom   = getattr(_iterative, ltr + 'cgrevcom')
+    stoptest = getattr(_iterative, ltr + 'stoptest2')
 
     resid = tol
     ndx1 = 1
     ndx2 = -1
-    work = sb.zeros(4*n,typ)
+    work = sb.zeros(4*n,dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
@@ -430,17 +265,11 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
         if (ijob == -1):
             break
         elif (ijob == 1):
-            if matvec is None:
-                matvec = get_matvec(A)
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(work[slice1])
         elif (ijob == 2):
-            if psolve is None:
-                psolve = get_psolve(A)
             work[slice1] = psolve(work[slice2])
         elif (ijob == 3):
-            if matvec is None:
-                matvec = get_matvec(A)
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(x)
         elif (ijob == 4):
@@ -450,10 +279,10 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
 
-    return x, info
+    return postprocess(x), info
 
 
-def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
+def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     """Use Conjugate Gradient Squared iteration to solve A x = b
 
     Inputs:
@@ -488,43 +317,22 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
                 iteration.  It is called as callback(xk), where xk is the
                 current parameter vector.
     """
-    b = sb.asarray(b) + 0.0
+    A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
+
     n = len(b)
     if maxiter is None:
         maxiter = n*10
-
-    if x0 is None:
-        x = sb.zeros(n)
-    else:
-        x = copy.copy(x0)
-
-    if xtype is None:
-        try:
-            atyp = A.dtype.char
-        except AttributeError:
-            atyp = None
-        if atyp is None:
-            atyp = A.matvec(x).dtype.char
-        typ = _coerce_rules[b.dtype.char,atyp]
-    elif xtype == 0:
-        typ = b.dtype.char
-    else:
-        typ = xtype
-        if typ not in 'fdFD':
-            raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
-
-    x = sb.asarray(x,typ)
-    b = sb.asarray(b,typ)
-
-    matvec, psolve = (None,)*2
-    ltr = _type_conv[typ]
-    revcom = _iterative.__dict__[ltr+'cgsrevcom']
-    stoptest = _iterative.__dict__[ltr+'stoptest2']
+    
+    matvec = A.matvec
+    psolve = M.matvec
+    ltr = _type_conv[x.dtype.char]
+    revcom   = getattr(_iterative, ltr + 'cgsrevcom')
+    stoptest = getattr(_iterative, ltr + 'stoptest2')
 
     resid = tol
     ndx1 = 1
     ndx2 = -1
-    work = sb.zeros(7*n,typ)
+    work = sb.zeros(7*n,dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
@@ -541,17 +349,11 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
         if (ijob == -1):
             break
         elif (ijob == 1):
-            if matvec is None:
-                matvec = get_matvec(A)
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(work[slice1])
         elif (ijob == 2):
-            if psolve is None:
-                psolve = get_psolve(A)
             work[slice1] = psolve(work[slice2])
         elif (ijob == 3):
-            if matvec is None:
-                matvec = get_matvec(A)
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(x)
         elif (ijob == 4):
@@ -561,10 +363,10 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
 
-    return x, info
+    return postprocess(x), info
 
 
-def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, callback=None):
+def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, M=None, callback=None):
     """Use Generalized Minimal RESidual iteration to solve A x = b
 
     Inputs:
@@ -601,44 +403,25 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, callba
                 iteration.  It is called as callback(xk), where xk is the
                 current parameter vector.
     """
-    b = sb.asarray(b)+0.0
+    A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
+
     n = len(b)
     if maxiter is None:
         maxiter = n*10
 
-    if x0 is None:
-        x = sb.zeros(n)
-    else:
-        x = copy.copy(x0)
-
-    if xtype is None:
-        try:
-            atyp = A.dtype.char
-        except AttributeError:
-            atyp = A.matvec(x).dtype.char
-        typ = _coerce_rules[b.dtype.char,atyp]
-    elif xtype == 0:
-        typ = b.dtype.char
-    else:
-        typ = xtype
-        if typ not in 'fdFD':
-            raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
-
-    x = sb.asarray(x,typ)
-    b = sb.asarray(b,typ)
-
-    matvec, psolve = (None,)*2
-    ltr = _type_conv[typ]
-    revcom = _iterative.__dict__[ltr+'gmresrevcom']
-    stoptest = _iterative.__dict__[ltr+'stoptest2']
+    matvec = A.matvec
+    psolve = M.matvec
+    ltr = _type_conv[x.dtype.char]
+    revcom   = getattr(_iterative, ltr + 'gmresrevcom')
+    stoptest = getattr(_iterative, ltr + 'stoptest2')
 
     if restrt is None:
         restrt = n
     resid = tol
     ndx1 = 1
     ndx2 = -1
-    work = sb.zeros((6+restrt)*n,typ)
-    work2 = sb.zeros((restrt+1)*(2*restrt+2),typ)
+    work  = sb.zeros((6+restrt)*n,dtype=x.dtype)
+    work2 = sb.zeros((restrt+1)*(2*restrt+2),dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
@@ -655,17 +438,11 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, callba
         if (ijob == -1):
             break
         elif (ijob == 1):
-            if matvec is None:
-                matvec = get_matvec(A)
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(x)
         elif (ijob == 2):
-            if psolve is None:
-                psolve = get_psolve(A)
             work[slice1] = psolve(work[slice2])
         elif (ijob == 3):
-            if matvec is None:
-                matvec = get_matvec(A)
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(work[slice1])
         elif (ijob == 4):
@@ -675,10 +452,10 @@ def gmres(A, b, x0=None, tol=1e-5, restrt=None, maxiter=None, xtype=None, callba
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
 
-    return x, info
+    return postprocess(x), info
 
 
-def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
+def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, callback=None):
     """Use Quasi-Minimal Residual iteration to solve A x = b
 
     Inputs:
@@ -714,44 +491,39 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
                 iteration.  It is called as callback(xk), where xk is the
                 current parameter vector.
     """
-    b = sb.asarray(b)+0.0
+    A_ = A
+    A,M,x,b,postprocess = make_system(A,None,x0,b,xtype)
+
+    if M1 is None and M2 is None:
+        if hasattr(A_,'psolve'):
+            def left_psolve(b):
+                return A_.psolve(b,'left')
+            def right_psolve(b):
+                return A_.psolve(b,'right')
+            def left_rpsolve(b):
+                return A_.rpsolve(b,'left')
+            def right_rpsolve(b):
+                return A_.rpsolve(b,'right')
+            M1 = LinearOperator(A.shape, matvec=left_psolve, rmatvec=left_rpsolve)
+            M2 = LinearOperator(A.shape, matvec=right_psolve, rmatvec=right_rpsolve)
+        else:
+            def id(b):
+                return b
+            M1 = LinearOperator(A.shape, matvec=id, rmatvec=id)
+            M2 = LinearOperator(A.shape, matvec=id, rmatvec=id)
+
     n = len(b)
     if maxiter is None:
         maxiter = n*10
 
-    if x0 is None:
-        x = sb.zeros(n)
-    else:
-        x = copy.copy(x0)
-
-    if xtype is None:
-        try:
-            atyp = A.dtype.char
-        except AttributeError:
-            atyp = None
-        if atyp is None:
-            atyp = A.matvec(x).dtype.char
-        typ = _coerce_rules[b.dtype.char,atyp]
-    elif xtype == 0:
-        typ = b.dtype.char
-    else:
-        typ = xtype
-        if typ not in 'fdFD':
-            raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
-
-    x = sb.asarray(x,typ)
-    b = sb.asarray(b,typ)
-
-
-    matvec, psolve, rmatvec, rpsolve = (None,)*4
-    ltr = _type_conv[typ]
-    revcom = _iterative.__dict__[ltr+'qmrrevcom']
-    stoptest = _iterative.__dict__[ltr+'stoptest2']
+    ltr = _type_conv[x.dtype.char]
+    revcom   = getattr(_iterative, ltr + 'qmrrevcom')
+    stoptest = getattr(_iterative, ltr + 'stoptest2')
 
     resid = tol
     ndx1 = 1
     ndx2 = -1
-    work = sb.zeros(11*n,typ)
+    work = sb.zeros(11*n,x.dtype)
     ijob = 1
     info = 0
     ftflag = True
@@ -768,36 +540,22 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
         if (ijob == -1):
             break
         elif (ijob == 1):
-            if matvec is None:
-                matvec = get_matvec(A)
             work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
+            work[slice2] += sclr1*A.matvec(work[slice1])
         elif (ijob == 2):
-            if rmatvec is None:
-                rmatvec = get_rmatvec(A)
             work[slice2] *= sclr2
-            work[slice2] += sclr1*rmatvec(work[slice1])
+            work[slice2] += sclr1*A.rmatvec(work[slice1])
         elif (ijob == 3):
-            if psolve is None:
-                psolve = get_psolveq(A)
-            work[slice1] = psolve(work[slice2],'left')
+            work[slice1] = M1.matvec(work[slice2])
         elif (ijob == 4):
-            if psolve is None:
-                psolve = get_psolveq(A)
-            work[slice1] = psolve(work[slice2],'right')
+            work[slice1] = M2.matvec(work[slice2])
         elif (ijob == 5):
-            if rpsolve is None:
-                rpsolve = get_rpsolveq(A)
-            work[slice1] = rpsolve(work[slice2],'left')
+            work[slice1] = M1.rmatvec(work[slice2])
         elif (ijob == 6):
-            if rpsolve is None:
-                rpsolve = get_rpsolveq(A)
-            work[slice1] = rpsolve(work[slice2],'right')
+            work[slice1] = M2.rmatvec(work[slice2])
         elif (ijob == 7):
-            if matvec is None:
-                matvec = get_matvec(A)
             work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
+            work[slice2] += sclr1*A.matvec(x)
         elif (ijob == 8):
             if ftflag:
                 info = -1
@@ -805,4 +563,4 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, callback=None):
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
 
-    return x, info
+    return postprocess(x), info

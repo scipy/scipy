@@ -17,6 +17,10 @@ from scipy.splinalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres
 #    #print "||A.x - b|| = " + str(norm(dot(A,x)-b))
 
 
+#TODO check that method preserve shape and type
+#TODO test complex matrices
+#TODO test both preconditioner methods
+
 data = ones((3,10))
 data[0,:] =  2
 data[1,:] = -1

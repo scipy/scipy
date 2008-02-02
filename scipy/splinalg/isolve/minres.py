@@ -3,6 +3,8 @@ from numpy.linalg import norm
 
 from utils import make_system
 
+__all__ = ['minres']
+
 def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
            M=None, callback=None, show=False, check=False):
     """Use the Minimum Residual Method (MINRES) to solve Ax=b 
