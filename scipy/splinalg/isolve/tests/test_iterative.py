@@ -112,5 +112,42 @@ class TestIterative(TestCase):
                 assert( norm(b - A*x) < tol*norm(b) )
 
 
+class TestQMR(TestCase):
+    def test_leftright_precond(self):
+        """Check that QMR works with left and right preconditioners"""
+
+        from scipy.splinalg.dsolve import splu
+        from scipy.splinalg.interface import LinearOperator
+
+        n = 100
+
+        dat = ones(n)
+        A = spdiags([-2*dat, 4*dat, -dat], [-1,0,1] ,n,n)
+        b = arange(n,dtype='d')
+
+        L = spdiags([-dat/2, dat], [-1,0], n, n)
+        U = spdiags([4*dat, -dat], [ 0,1], n, n)
+        
+        L_solver = splu(L)
+        U_solver = splu(U)
+
+        def L_solve(b):
+            return L_solver.solve(b)
+        def U_solve(b):
+            return U_solver.solve(b)
+        def LT_solve(b):
+            return L_solver.solve(b,'T')
+        def UT_solve(b):
+            return U_solver.solve(b,'T')
+
+        M1 = LinearOperator( (n,n), matvec=L_solve, rmatvec=LT_solve )
+        M2 = LinearOperator( (n,n), matvec=U_solve, rmatvec=UT_solve )
+
+        x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
+       
+        assert_equal(info,0)
+        assert( norm(b - A*x) < 1e-8*norm(b) )
+
+
 if __name__ == "__main__":
     nose.run(argv=['', __file__])
