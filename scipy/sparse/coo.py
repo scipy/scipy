@@ -5,9 +5,8 @@ __all__ = ['coo_matrix', 'isspmatrix_coo']
 from itertools import izip
 from warnings import warn 
 
-from numpy import array, asarray, empty, intc, zeros, bincount, \
-        unique, searchsorted, atleast_2d, lexsort, cumsum, concatenate, \
-        empty_like, arange
+from numpy import array, asarray, empty, intc, zeros,  \
+        unique, searchsorted, atleast_2d, empty_like, rank
 
 from sparsetools import coo_tocsr, coo_tocsc, coo_todense
 from base import isspmatrix
@@ -175,15 +174,21 @@ class coo_matrix(_data_matrix):
 
         self._check()
 
-
-    def _check(self):
-        """ Checks for consistency and stores the number of non-zeros as
-        self.nnz.
-        """
+    def getnnz(self):
         nnz = len(self.data)
         if (nnz != len(self.row)) or (nnz != len(self.col)):
             raise ValueError, "row, column, and data array must all be "\
                   "the same length"
+
+        if rank(self.data) != 1 or rank(self.row) != 1 or rank(self.col) != 1:
+            raise ValueError, "row, column, and data arrays must have rank 1"
+
+        return nnz
+    nnz = property(fget=getnnz)
+
+    def _check(self):
+        """ Checks data structure for consistency """
+        nnz = self.nnz
 
         # index arrays should have integer data types
         if self.row.dtype.kind != 'i':
@@ -210,7 +215,6 @@ class coo_matrix(_data_matrix):
 
         # some functions pass floats
         self.shape = tuple([int(x) for x in self.shape])
-        self.nnz = nnz
 
     def rowcol(self, num):
         return (self.row[num], self.col[num])
@@ -305,12 +309,7 @@ class coo_matrix(_data_matrix):
 
         dok = dok_matrix((self.shape),dtype=self.dtype)
 
-        try:
-            dok.update( izip(izip(self.row,self.col),self.data) ) 
-        except AttributeError:
-            # the dict() call is for Python 2.3 compatibility
-            # ideally dok_matrix would accept an iterator
-            dok.update( dict( izip(izip(self.row,self.col),self.data) ) )
+        dok.update( izip(izip(self.row,self.col),self.data) ) 
 
         return dok
 
