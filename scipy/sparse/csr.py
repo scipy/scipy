@@ -117,8 +117,8 @@ class csr_matrix(_cs_matrix):
      
         self.sort_indices() #lil_matrix needs sorted rows
         
-        rows,data = lil.rows,lil.data
         ptr,ind,dat = self.indptr,self.indices,self.data
+        rows, data  = lil.rows, lil.data
 
         for n in xrange(self.shape[0]):
             start = ptr[n]

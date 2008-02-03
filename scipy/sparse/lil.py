@@ -126,6 +126,7 @@ class lil_matrix(spmatrix):
 
     def getnnz(self):
         return sum([len(rowvals) for rowvals in self.data])
+    nnz = property(fget=getnnz)
 
     def __str__(self):
         val = ''
@@ -133,12 +134,6 @@ class lil_matrix(spmatrix):
             for pos, j in enumerate(row):
                 val += "  %s\t%s\n" % (str((i, j)), str(self.data[i][pos]))
         return val[:-1]
-
-    #def __repr__(self):
-    #    format = self.getformat()
-    #    return "<%dx%d sparse matrix with %d stored "\
-    #           "elements in %s format>" % \
-    #           (self.shape + (self.getnnz(), _formats[format][1]))
 
     def getrowview(self, i):
         """Returns a view of the 'i'th row (without copying).

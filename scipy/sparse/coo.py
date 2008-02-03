@@ -121,8 +121,8 @@ class coo_matrix(_data_matrix):
                 except TypeError:
                     raise TypeError, "invalid input format"
 
-                self.row = array(ij[0],copy=copy)
-                self.col = array(ij[1],copy=copy)
+                self.row = array(ij[0],copy=copy,dtype=intc)
+                self.col = array(ij[1],copy=copy,dtype=intc)
                 self.data = array(obj,copy=copy)
 
                 if shape is None:
