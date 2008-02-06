@@ -1,4 +1,4 @@
-import numpy as N
+import numpy as np
 import _arpack
 import warnings
 
@@ -40,14 +40,14 @@ def check_init(n, nev, ncv):
     return ncv, maxitr
 
 def init_workspaces(n,nev,ncv):
-    ipntr = N.zeros(14, N.int32) # Pointers into memory structure used by F77 calls
-    d = N.zeros((ncv, 3), N.float64, order='FORTRAN') # Temp workspace
+    ipntr = np.zeros(14, np.int32) # Pointers into memory structure used by F77 calls
+    d = np.zeros((ncv, 3), np.float64, order='FORTRAN') # Temp workspace
     # Temp workspace/error residuals upon iteration completion
-    resid = N.zeros(n, N.float64)
-    workd = N.zeros(3*n, N.float64) # workspace
-    workl = N.zeros(3*ncv*ncv+6*ncv, N.float64) # more workspace
+    resid = np.zeros(n, np.float64)
+    workd = np.zeros(3*n, np.float64) # workspace
+    workl = np.zeros(3*ncv*ncv+6*ncv, np.float64) # more workspace
     # Storage for the Arnoldi basis vectors
-    v = N.zeros((n, ncv), dtype=N.float64, order='FORTRAN')
+    v = np.zeros((n, ncv), dtype=np.float64, order='FORTRAN')
     return (ipntr, d, resid, workd, workl, v)
 
 def init_debug():
@@ -64,8 +64,8 @@ def init_debug():
 def init_postproc_workspace(n, nev, ncv):
     # Used as workspace and to return eigenvectors if requested. Not touched if
     # eigenvectors are not requested
-    workev = N.zeros(3*ncv, N.float64) # More workspace
-    select = N.zeros(ncv, N.int32) # Used as internal workspace since dneupd
+    workev = np.zeros(3*ncv, np.float64) # More workspace
+    select = np.zeros(ncv, np.int32) # Used as internal workspace since dneupd
                                    # parameter HOWMNY == 'A'
     return (workev, select)
 
@@ -80,7 +80,7 @@ def postproc(n, nev, ncv, sigmar, sigmai, bmat, which,
         True, 'A', select, sigmar, sigmai, workev, bmat, which, nev, tol, resid, v,
         iparam, ipntr, workd, workl, info)
 
-    if N.abs(di[:-1]).max() == 0: dr = dr[:-1]
+    if np.abs(di[:-1]).max() == 0: dr = dr[:-1]
     else: dr =  dr[:-1] + 1j*di[:-1]
     return (dr, z[:,:-1])
 
@@ -195,7 +195,7 @@ def ARPACK_iteration(matvec, sigma_solve, n, bmat, which, nev, tol, ncv, mode):
     ishfts = 1         # Some random arpack parameter
     # Some random arpack parameter (I think it tells ARPACK to solve the
     # general eigenproblem using shift-invert
-    iparam = N.zeros(11, N.int32) # Array with assorted extra paramters for F77 call
+    iparam = np.zeros(11, np.int32) # Array with assorted extra paramters for F77 call
     iparam[[0,2,6]] = ishfts, maxitr, mode
     ido = 0                # Communication variable used by ARPACK to tell the user what to do
     info = 0               # Used for error reporting

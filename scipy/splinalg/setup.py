@@ -7,6 +7,7 @@ def configuration(parent_package='',top_path=None):
     
     config.add_subpackage(('isolve'))
     config.add_subpackage(('dsolve'))
+    config.add_subpackage(('eigen'))
     
     config.add_data_dir('tests')
     
