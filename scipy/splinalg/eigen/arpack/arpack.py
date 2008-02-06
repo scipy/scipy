@@ -51,7 +51,7 @@ _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 _ndigits = {'f':5, 'd':12, 'F':5, 'D':12}
 
 
-def eigen(A, k=6, M=None, sigma=None, which='LM',
+def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
           ncv=None, maxiter=None, tol=0, 
           return_eigenvectors=True):
     """Find k eigenvalues and eigenvectors of the square matrix A.
@@ -91,6 +91,8 @@ def eigen(A, k=6, M=None, sigma=None, which='LM',
         (Not implemented)
         Find eigenvalues near sigma.  Shift spectrum by sigma.
 
+    v0 : array
+        Starting vector for iteration.  
 
     ncv : integer
         The number of Lanczos vectors generated 
@@ -126,18 +128,17 @@ def eigen(A, k=6, M=None, sigma=None, which='LM',
 
     """
     A = aslinearoperator(A)
-
-    if M is not None:
-        raise NotImplementedError("generalized eigenproblem not supported yet")
-
     if A.shape[0] != A.shape[1]:
         raise ValueError('expected square matrix (shape=%s)' % shape)
-
     n = A.shape[0]
+
+    # guess type
+    typ = A.dtype.char
+    if typ not in 'fdFD':
+        raise ValueError("matrix type must be 'f', 'd', 'F', or 'D'")
 
     if M is not None:
         raise NotImplementedError("generalized eigenproblem not supported yet")
-
     if sigma is not None:
         raise NotImplementedError("shifted eigenproblem not supported yet")
 
@@ -148,15 +149,14 @@ def eigen(A, k=6, M=None, sigma=None, which='LM',
     ncv=min(ncv,n)
     if maxiter==None:
         maxiter=n*10
+    # assign starting vector        
+    if v0 is not None:
+        resid=v0
+        info=1
+    else:
+        resid = np.zeros(n,typ)
+        info=0
 
-    # guess type
-    resid = np.zeros(n,'f')
-    try:
-        typ = A.dtype.char
-    except AttributeError:
-        typ = A.matvec(resid).dtype.char
-    if typ not in 'fdFD':
-        raise ValueError("matrix type must be 'f', 'd', 'F', or 'D'")
 
     # some sanity checks
     if k <= 0:
@@ -175,20 +175,18 @@ def eigen(A, k=6, M=None, sigma=None, which='LM',
     ltr = _type_conv[typ]
     eigsolver = _arpack.__dict__[ltr+'naupd']
     eigextract = _arpack.__dict__[ltr+'neupd']
-    matvec = A.matvec
 
     v = np.zeros((n,ncv),typ) # holds Ritz vectors
-    resid = np.zeros(n,typ) # residual
     workd = np.zeros(3*n,typ) # workspace
     workl = np.zeros(3*ncv*ncv+6*ncv,typ) # workspace
     iparam = np.zeros(11,'int') # problem parameters
     ipntr = np.zeros(14,'int') # pointers into workspaces
-    info = 0
     ido = 0
 
     if typ in 'FD':
         rwork = np.zeros(ncv,typ.lower())
 
+    # set solver mode and parameters
     # only supported mode is 1: Ax=lx
     ishfts = 1
     mode1 = 1
@@ -207,12 +205,15 @@ def eigen(A, k=6, M=None, sigma=None, which='LM',
                 eigsolver(ido,bmat,which,k,tol,resid,v,iparam,ipntr,
                           workd,workl,rwork,info)
 
-        if (ido == -1 or ido == 1):
-            # compute y = A * x
-            xslice = slice(ipntr[0]-1, ipntr[0]-1+n)
-            yslice = slice(ipntr[1]-1, ipntr[1]-1+n)
-            workd[yslice]=matvec(workd[xslice])
-        else: # done
+        xslice = slice(ipntr[0]-1, ipntr[0]-1+n)
+        yslice = slice(ipntr[1]-1, ipntr[1]-1+n)
+        if ido == -1:
+            # initialization
+            workd[yslice]=A.matvec(workd[xslice])
+        elif ido == 1:
+            # compute y=Ax
+            workd[yslice]=A.matvec(workd[xslice])
+        else:
             break
 
     if  info < -1 :
@@ -300,8 +301,8 @@ def eigen(A, k=6, M=None, sigma=None, which='LM',
     return d
 
 
-def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM',
-                    ncv=None, maxiter=None, tol=0, v0=None,
+def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
+                    ncv=None, maxiter=None, tol=0, 
                     return_eigenvectors=True):
     """Find k eigenvalues and eigenvectors of the real symmetric 
     square matrix A.
@@ -341,6 +342,8 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM',
         (Not implemented)
         Find eigenvalues near sigma.  Shift spectrum by sigma.
     
+    v0 : array
+        Starting vector for iteration.  
 
     ncv : integer
         The number of Lanczos vectors generated 
@@ -375,31 +378,32 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM',
     --------
     """
     A = aslinearoperator(A)
-
     if A.shape[0] != A.shape[1]:
         raise ValueError('expected square matrix (shape=%s)' % shape)
-
     n = A.shape[0]
+
+    # guess type
+    typ = A.dtype.char
+    if typ not in 'fd':
+        raise ValueError("matrix must be real valued (type must be 'f' or 'd')")
 
     if M is not None:
         raise NotImplementedError("generalized eigenproblem not supported yet")
     if sigma is not None:
         raise NotImplementedError("shifted eigenproblem not supported yet")
+
     if ncv is None:
         ncv=2*k+1
     ncv=min(ncv,n)
     if maxiter==None:
         maxiter=n*10
-
-
-    # guess type
-    resid = np.zeros(n,'f')
-    try:
-        typ = A.dtype.char
-    except AttributeError:
-        typ = A.matvec(resid).dtype.char
-    if typ not in 'fd':
-        raise ValueError("matrix must be real valued (type must be 'f' or 'd')")
+    # assign starting vector        
+    if v0 is not None:
+        resid=v0
+        info=1
+    else:
+        resid = np.zeros(n,typ)
+        info=0
 
     # some sanity checks
     if k <= 0:
@@ -418,17 +422,16 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM',
     ltr = _type_conv[typ]
     eigsolver = _arpack.__dict__[ltr+'saupd']
     eigextract = _arpack.__dict__[ltr+'seupd']
-    matvec = A.matvec
 
+    # set output arrays, parameters, and workspace
     v = np.zeros((n,ncv),typ)
-    resid = np.zeros(n,typ)
     workd = np.zeros(3*n,typ)
     workl = np.zeros(ncv*(ncv+8),typ)
     iparam = np.zeros(11,'int')
     ipntr = np.zeros(11,'int')
-    info = 0
     ido = 0
 
+    # set solver mode and parameters
     # only supported mode is 1: Ax=lx
     ishfts = 1
     mode1 = 1
@@ -439,12 +442,17 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM',
 
     while True:
         ido,resid,v,iparam,ipntr,info =\
-            eigsolver(ido,bmat,which,k,tol,resid,v,iparam,ipntr,
-               workd,workl,info)
-        if (ido == -1 or ido == 1):
-            xslice = slice(ipntr[0]-1, ipntr[0]-1+n)
-            yslice = slice(ipntr[1]-1, ipntr[1]-1+n)
-            workd[yslice]=matvec(workd[xslice])
+            eigsolver(ido,bmat,which,k,tol,resid,v,
+                      iparam,ipntr,workd,workl,info)
+
+        xslice = slice(ipntr[0]-1, ipntr[0]-1+n)
+        yslice = slice(ipntr[1]-1, ipntr[1]-1+n)
+        if ido == -1:
+            # initialization
+            workd[yslice]=A.matvec(workd[xslice])
+        elif ido == 1:
+            # compute y=Ax
+            workd[yslice]=A.matvec(workd[xslice])
         else:
             break
 

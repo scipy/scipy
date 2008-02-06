@@ -8,7 +8,7 @@ To run tests locally:
 from scipy.testing import *
 
 from numpy import array,real,imag,finfo,concatenate,\
-    column_stack,argsort,dot,round,conj,sort
+    column_stack,argsort,dot,round,conj,sort,random
 from scipy.splinalg.eigen.arpack import eigen_symmetric,eigen
 
 
@@ -89,10 +89,10 @@ class TestEigenSymmetric(TestArpack):
             high=range(len(eval))[-h:]
             return eval[low+high]
 
-    def eval_evec(self,d,typ,k,which):
+    def eval_evec(self,d,typ,k,which,**kwds):
         a=d['mat'].astype(typ)
         exact_eval=self.get_exact_eval(d,typ,k,which)
-        eval,evec=eigen_symmetric(a,k,which=which)
+        eval,evec=eigen_symmetric(a,k,which=which,**kwds)
         # check eigenvalues
         assert_array_almost_equal(eval,exact_eval,decimal=_ndigits[typ])
         # check eigenvectors A*evec=eval*evec
@@ -101,12 +101,20 @@ class TestEigenSymmetric(TestArpack):
                                       eval[i]*evec[:,i],
                                       decimal=_ndigits[typ])
 
-    def test_symmetric(self):
+    def test_symmetric_modes(self):
         k=2
         for typ in 'fd':
             for which in ['LM','SM','BE']:
                 self.eval_evec(self.symmetric[0],typ,k,which)
 
+    def test_starting_vector(self):
+        k=2
+        for typ in 'fd':
+            A=self.symmetric[0]['mat']
+            n=A.shape[0]
+            v0 = random.rand(n).astype(typ)
+            self.eval_evec(self.symmetric[0],typ,k,which='LM',v0=v0)
+            
     
 class TestEigenComplexSymmetric(TestArpack):
 
@@ -141,7 +149,7 @@ class TestEigenComplexSymmetric(TestArpack):
                                       decimal=_ndigits[typ])
 
 
-#     def test_complex_symmetric(self):
+#     def test_complex_symmetric_modes(self):
 #         k=2
 #         for typ in 'FD':
 #             for which in ['LM','SM','LR','SR']:
@@ -168,14 +176,14 @@ class TestEigenNonSymmetric(TestArpack):
             return ind[:k]
 
 
-    def eval_evec(self,d,typ,k,which):
+    def eval_evec(self,d,typ,k,which,**kwds):
         a=d['mat'].astype(typ)
         # get exact eigenvalues
         exact_eval=d['eval'].astype(typ.upper())
         ind=self.sort_choose(exact_eval,typ,k,which)
         exact_eval=exact_eval[ind]
         # compute eigenvalues
-        eval,evec=eigen(a,k,which=which)
+        eval,evec=eigen(a,k,which=which,**kwds)
         ind=self.sort_choose(eval,typ,k,which)
         eval=eval[ind]
         evec=evec[:,ind]
@@ -188,13 +196,22 @@ class TestEigenNonSymmetric(TestArpack):
                                       decimal=_ndigits[typ])
 
 
-    def test_nonsymmetric(self):
+    def test_nonsymmetric_modes(self):
         k=2
         for typ in 'fd':
             for which in ['LI','LR','LM','SM','SR','SI']:
                 for m in self.nonsymmetric:
                     self.eval_evec(m,typ,k,which)
 
+
+
+    def test_starting_vector(self):
+        k=2
+        for typ in 'fd':
+            A=self.symmetric[0]['mat']
+            n=A.shape[0]
+            v0 = random.rand(n).astype(typ)
+            self.eval_evec(self.symmetric[0],typ,k,which='LM',v0=v0)
 
 
 
@@ -241,7 +258,7 @@ class TestEigenComplexNonSymmetric(TestArpack):
                                       decimal=_ndigits[typ])
 
 
-#     def test_complex_nonsymmetric(self):
+#     def test_complex_nonsymmetric_modes(self):
 #         k=2
 #         for typ in 'FD':
 #             for which in ['LI','LR','LM','SI','SR','SM']:
