@@ -2,7 +2,9 @@
 
 from scipy.testing import *
 
-from scipy.sandbox.arpack.speigs import *
+from scipy.splinalg.interface import aslinearoperator
+from scipy.splinalg.eigen.arpack.speigs import *
+
 
 import numpy as N
 
@@ -22,8 +24,8 @@ class TestEigs(TestCase):
         vals = vals[uv_sortind]
         vecs = vecs[:,uv_sortind]
 
-        from scipy.splinalg.interface import aslinearoperator
-        matvec = aslinearoperator(A).matvec
+        A=aslinearoperator(A)
+        matvec = A.matvec
         #= lambda x: N.asarray(A*x)[0]
         nev=4
         eigvs = ARPACK_eigs(matvec, A.shape[0], nev=nev)
