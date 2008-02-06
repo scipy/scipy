@@ -1,343 +1,253 @@
 #!/usr/bin/env python
+__usage__ = """
+To run tests locally:
+  python tests/test_arpack.py [-l<int>] [-v<int>]
+
+"""
 
 from scipy.testing import *
 
-
+from numpy import array,real,imag,finfo,concatenate,\
+    column_stack,argsort,dot,round,conj,sort
 from scipy.splinalg.eigen.arpack import eigen_symmetric,eigen
-from scipy.linalg import eig,eigh,norm
-from numpy import array,abs,take,concatenate,dot
+
+
+def assert_almost_equal_cc(actual,desired,decimal=7,err_msg='',verbose=True):
+    # almost equal or complex conjugates almost equal
+    try:
+        assert_almost_equal(actual,desired,decimal,err_msg,verbose)
+    except:
+        assert_almost_equal(actual,conj(desired),decimal,err_msg,verbose)
+
+
+def assert_array_almost_equal_cc(actual,desired,decimal=7,
+                                 err_msg='',verbose=True):
+    # almost equal or complex conjugates almost equal
+    try:
+        assert_array_almost_equal(actual,desired,decimal,err_msg,verbose)
+    except:
+        assert_array_almost_equal(actual,conj(desired),decimal,err_msg,verbose)
 
 
 
-class TestEigenNonsymmetric(TestCase):
+# precision for tests 
+_ndigits = {'f':5, 'd':12, 'F':5, 'D':12}
 
-    def get_a1(self,typ):
-        mat=array([[-2., -8.,  1.,  2., -5.],
+class TestArpack(TestCase):
+
+    def setUp(self):
+        self.symmetric=[]
+        self.nonsymmetric=[]
+
+        S1={}
+        S1['mat']=\
+        array([[ 2.,  0.,  0., -1.,  0., -1.],
+               [ 0.,  2.,  0., -1.,  0., -1.],
+               [ 0.,  0.,  2., -1.,  0., -1.],
+               [-1., -1., -1.,  4.,  0., -1.],
+               [ 0.,  0.,  0.,  0.,  1., -1.],
+               [-1., -1., -1., -1., -1.,  5.]])
+
+        S1['eval']=array([0,1,2,2,5,6])
+        self.symmetric.append(S1)
+
+        N1={}
+        N1['mat']=\
+            array([[-2., -8.,  1.,  2., -5.],
                    [ 6.,  6.,  0.,  2.,  1.],
                    [ 0.,  4., -2., 11.,  0.],
                    [ 1.,  6.,  1.,  0., -4.],
-                   [ 2., -6.,  4.,  9., -3]],typ)
+                   [ 2., -6.,  4.,  9., -3]])
 
-        w=array([-2.21691+8.59661*1j,-2.21691-8.59661*1j,\
-                      4.45961+3.80078*1j, 4.45961-3.80078*1j,\
-                      -5.48541+0j],typ.upper())
-        return mat,w
+        N1['eval']=\
+            array([ -5.4854094033782888+0.0j,
+                     -2.2169058544873783+8.5966096591588261j,
+                     -2.2169058544873783-8.5966096591588261j,
+                     4.4596105561765107+3.8007839204319454j,
+                     4.4596105561765107-3.8007839204319454j],'D')
 
 
-    def large_magnitude(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='LM')
+
+        self.nonsymmetric.append(N1)
+
+    
+class TestEigenSymmetric(TestArpack):
+
+    def get_exact_eval(self,d,typ,k,which):
+        eval=d['eval'].astype(typ)
+        ind=argsort(eval)
+        eval=eval[ind]
+        if which=='LM':
+            return eval[-k:]
+        if which=='SM':
+            return eval[:k]
+        if which=='BE':
+            # one ev from each end - if k is odd, extra ev on high end 
+            l=k/2
+            h=k/2+k%2
+            low=range(len(eval))[:l]
+            high=range(len(eval))[-h:]
+            return eval[low+high]
+
+    def eval_evec(self,d,typ,k,which):
+        a=d['mat'].astype(typ)
+        exact_eval=self.get_exact_eval(d,typ,k,which)
+        eval,evec=eigen_symmetric(a,k,which=which)
+        # check eigenvalues
+        assert_array_almost_equal(eval,exact_eval,decimal=_ndigits[typ])
+        # check eigenvectors A*evec=eval*evec
         for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
-        exact=abs(aw)
-        num=abs(w)
-        exact.sort()
-        num.sort()
-        assert_array_almost_equal(num[-k:],exact[-k:],decimal=5)
+            assert_array_almost_equal(dot(a,evec[:,i]),
+                                      eval[i]*evec[:,i],
+                                      decimal=_ndigits[typ])
 
-    def small_magnitude(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='SM')
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
-        exact=abs(aw)
-        num=abs(w)
-        exact.sort()
-        num.sort()
-        assert_array_almost_equal(num[:k],exact[:k],decimal=5)
-
-
-    def large_real(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='LR')
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
-        exact=aw.real
-        num=w.real
-        exact.sort()
-        num.sort()
-        assert_array_almost_equal(num[-k:],exact[-k:],decimal=5)
-
-    def small_real(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='SR')
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
-        exact=aw.real
-        num=w.real
-        exact.sort()
-        num.sort()
-        assert_array_almost_equal(num[:k],exact[:k],decimal=5)
-
-
-    def large_imag(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='LI')
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
-        print w
-        print aw
-        exact=aw.imag
-        num=w.imag
-        exact.sort()
-        num.sort()
-        assert_array_almost_equal(num[-k:],exact[-k:],decimal=5)
-
-    def small_imag(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='SI')
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
-        exact=aw.imag
-        num=w.imag
-        exact.sort()
-        num.sort()
-        print num
-        assert_array_almost_equal(num[:k],exact[:k],decimal=5)
-
-
-    def test_type(self):
+    def test_symmetric(self):
         k=2
         for typ in 'fd':
-            self.large_magnitude(typ,k)
-            self.small_magnitude(typ,k)
-            self.large_real(typ,k)
-            self.small_real(typ,k)
-# Maybe my understanding of small imaginary and large imaginary
-# isn't too keen.  I don't understand why these return
-# different answers than in the complex case (the latter seems correct)
-#            self.large_imag(typ,k)
-#            self.small_imag(typ,k)
+            for which in ['LM','SM','BE']:
+                self.eval_evec(self.symmetric[0],typ,k,which)
 
+    
+class TestEigenComplexSymmetric(TestArpack):
 
+    def sort_choose(self,eval,typ,k,which):
+        # sort and choose the eigenvalues and eigenvectors
+        # both for the exact answer and that returned from ARPACK
+        reval=round(eval,decimals=_ndigits[typ])
+        ind=argsort(reval)
+        if which=='LM' or which=='LR':
+            return ind[-k:]
+        if which=='SM' or which=='SR':
+            return ind[:k]
 
-class TestEigenComplexNonsymmetric(TestCase):
+    def eval_evec(self,d,typ,k,which):
+        a=d['mat'].astype(typ)
+        # get exact eigenvalues
+        exact_eval=d['eval'].astype(typ)
+        ind=self.sort_choose(exact_eval,typ,k,which)
+        exact_eval=exact_eval[ind]
+        # compute eigenvalues
+        eval,evec=eigen(a,k,which=which)
+        ind=self.sort_choose(eval,typ,k,which)
+        eval=eval[ind]
+        evec=evec[:,ind]
 
-    def get_a1(self,typ):
-        mat=array([[-2., -8.,  1.,  2., -5.],
-                   [ 6.,  6.,  0.,  2.,  1.],
-                   [ 0.,  4., -2., 11.,  0.],
-                   [ 1.,  6.,  1.,  0., -4.],
-                   [ 2., -6.,  4.,  9., -3]],typ)
-
-        w=array([-2.21691+8.59661*1j,-2.21691-8.59661*1j,\
-                      4.45961+3.80078*1j, 4.45961-3.80078*1j,\
-                      -5.48541+0j],typ.upper())
-        return mat,w
-
-
-    def large_magnitude(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='LM')
+        # check eigenvalues
+        assert_array_almost_equal(eval,exact_eval,decimal=_ndigits[typ])
+        # check eigenvectors A*evec=eval*evec
         for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
-        exact=abs(aw)
-        num=abs(w)
-        exact.sort()
-        num.sort()
-        assert_array_almost_equal(num,exact[-k:],decimal=5)
+            assert_array_almost_equal(dot(a,evec[:,i]),
+                                      eval[i]*evec[:,i],
+                                      decimal=_ndigits[typ])
 
-    def small_magnitude(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='SM')
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
-        exact=abs(aw)
-        num=abs(w)
-        exact.sort()
-        num.sort()
-        assert_array_almost_equal(num,exact[:k],decimal=5)
-
-
-    def large_real(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='LR')
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
-        exact=aw.real
-        num=w.real
-        exact.sort()
-        num.sort()
-        assert_array_almost_equal(num,exact[-k:],decimal=5)
-
-    def small_real(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='SR')
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
-        exact=aw.real
-        num=w.real
-        exact.sort()
-        num.sort()
-        assert_array_almost_equal(num,exact[:k],decimal=5)
-
-
-    def large_imag(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='LI')
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
-        exact=aw.imag
-        num=w.imag
-        exact.sort()
-        num.sort()
-        assert_array_almost_equal(num,exact[-k:],decimal=5)
-
-    def small_imag(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='SI')
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
-        exact=aw.imag
-        num=w.imag
-        exact.sort()
-        num.sort()
-        assert_array_almost_equal(num,exact[:k],decimal=5)
-
-
-#     def test_type(self):
-#         k=2
-#         for typ in 'FD':
-#             self.large_magnitude(typ,k)
-#             self.small_magnitude(typ,k)
-#             self.large_real(typ,k)
-#             self.small_real(typ,k)
-#             self.large_imag(typ,k)
-#             self.small_imag(typ,k)
-
-
-
-
-class TestEigenSymmetric(TestCase):
-
-    def get_a1(self,typ):
-        mat_a1=array([[ 2.,  0.,  0., -1.,  0., -1.],
-                      [ 0.,  2.,  0., -1.,  0., -1.],
-                      [ 0.,  0.,  2., -1.,  0., -1.],
-                      [-1., -1., -1.,  4.,  0., -1.],
-                      [ 0.,  0.,  0.,  0.,  1., -1.],
-                      [-1., -1., -1., -1., -1.,  5.]],
-                     typ)
-        w = [0,1,2,2,5,6] # eigenvalues of a1
-        return mat_a1,w
-
-    def large_eigenvalues(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen_symmetric(a,k,which='LM',tol=1e-7)
-        assert_array_almost_equal(w,aw[-k:])
-
-    def small_eigenvalues(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen_symmetric(a,k,which='SM')
-        assert_array_almost_equal(w,aw[:k])
-
-    def end_eigenvalues(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen_symmetric(a,k,which='BE')
-        exact=[aw[0],aw[-1]]
-        assert_array_almost_equal(w,exact)
-
-    def large_eigenvectors(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen_symmetric(a,k,which='LM')
-        ew,ev = eigh(a)
-        ind=ew.argsort()
-        assert_array_almost_equal(w,take(ew,ind[-k:]))
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
-
-    def small_eigenvectors(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen_symmetric(a,k,which='SM',tol=1e-7)
-        ew,ev = eigh(a)
-        ind=ew.argsort()
-        assert_array_almost_equal(w,take(ew,ind[:k]))
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
-
-    def end_eigenvectors(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen_symmetric(a,k,which='BE')
-        ew,ev = eigh(a)
-        ind=ew.argsort()
-        exact=concatenate(([ind[:k/2],ind[-k/2:]]))
-        assert_array_almost_equal(w,take(ew,exact))
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
-
-    def test_eigenvectors(self):
-        k=2
-        for typ in 'fd':
-            self.large_eigenvectors(typ,k)
-            self.small_eigenvectors(typ,k)
-            self.end_eigenvectors(typ,k)
-
-    def test_type(self):
-        k=2
-        for typ in 'fd':
-            self.large_eigenvalues(typ,k)
-            self.small_eigenvalues(typ,k)
-            self.end_eigenvalues(typ,k)
-
-
-class TestEigenComplexSymmetric(TestCase):
-
-    def get_a1(self,typ):
-        mat_a1=array([[ 2.,  0.,  0., -1.,  0., -1.],
-                      [ 0.,  2.,  0., -1.,  0., -1.],
-                      [ 0.,  0.,  2., -1.,  0., -1.],
-                      [-1., -1., -1.,  4.,  0., -1.],
-                      [ 0.,  0.,  0.,  0.,  1., -1.],
-                      [-1., -1., -1., -1., -1.,  5.]],
-                     typ)
-        w = array([0+0j,1+0j,2+0j,2+0j,5+0j,6+0j]) # eigenvalues of a1
-        return mat_a1,w
-
-    def large_magnitude(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='LM')
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
-        aw.real.sort()
-        w.real.sort()
-        assert_array_almost_equal(w,aw[-k:])
-
-
-    def small_magnitude(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='SM')
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
-        aw.real.sort()
-        w.real.sort()
-        assert_array_almost_equal(w,aw[:k])
-
-    def large_real(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='LR')
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],decimal=5)
-        aw.real.sort()
-        w.real.sort()
-        assert_array_almost_equal(w,aw[-k:],decimal=5)
-
-
-    def small_real(self,typ,k):
-        a,aw = self.get_a1(typ)
-        w,v = eigen(a,k,which='SR')
-        for i in range(k):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
-        aw.real.sort()
-        w.real.sort()
-        assert_array_almost_equal(w,aw[:k])
 
 #     def test_complex_symmetric(self):
 #         k=2
 #         for typ in 'FD':
-#             self.large_magnitude(typ,k)
-#             self.small_magnitude(typ,k)
-#             self.large_real(typ,k)
-#             self.small_real(typ,k)
+#             for which in ['LM','SM','LR','SR']:
+#                 self.eval_evec(self.symmetric[0],typ,k,which)
+
+
+    
+class TestEigenNonSymmetric(TestArpack):
+
+
+    def sort_choose(self,eval,typ,k,which):
+        reval=round(eval,decimals=_ndigits[typ])
+        if which in ['LR','SR']:
+            ind=argsort(reval.real) 
+        elif which in ['LI','SI']:
+            # for LI,SI ARPACK returns largest,smallest abs(imaginary) why?
+            ind=argsort(abs(reval.imag)) 
+        else:
+            ind=argsort(abs(reval))
+
+        if which in ['LR','LM','LI']:
+            return ind[-k:]
+        if which in ['SR','SM','SI']:
+            return ind[:k]
+
+
+    def eval_evec(self,d,typ,k,which):
+        a=d['mat'].astype(typ)
+        # get exact eigenvalues
+        exact_eval=d['eval'].astype(typ.upper())
+        ind=self.sort_choose(exact_eval,typ,k,which)
+        exact_eval=exact_eval[ind]
+        # compute eigenvalues
+        eval,evec=eigen(a,k,which=which)
+        ind=self.sort_choose(eval,typ,k,which)
+        eval=eval[ind]
+        evec=evec[:,ind]
+        # check eigenvalues
+        # check eigenvectors A*evec=eval*evec
+        for i in range(k):
+            assert_almost_equal_cc(eval[i],exact_eval[i],decimal=_ndigits[typ])
+            assert_array_almost_equal_cc(dot(a,evec[:,i]),
+                                      eval[i]*evec[:,i],
+                                      decimal=_ndigits[typ])
+
+
+    def test_nonsymmetric(self):
+        k=2
+        for typ in 'fd':
+            for which in ['LI','LR','LM','SM','SR','SI']:
+                for m in self.nonsymmetric:
+                    self.eval_evec(m,typ,k,which)
+
+
+
+
+
+class TestEigenComplexNonSymmetric(TestArpack):
+
+    def sort_choose(self,eval,typ,k,which):
+        eps=finfo(typ).eps
+        reval=round(eval,decimals=_ndigits[typ])
+        if which in ['LR','SR']:
+            ind=argsort(reval) 
+        elif which in ['LI','SI']:
+            ind=argsort(reval.imag)
+        else:
+            ind=argsort(abs(reval))
+
+        if which in ['LR','LI','LM']:
+            return ind[-k:]
+        if which in ['SR','SI','SM']:
+            return ind[:k]
+
+    def eval_evec(self,d,typ,k,which):
+        a=d['mat'].astype(typ)
+        # get exact eigenvalues
+        exact_eval=d['eval'].astype(typ.upper())
+        ind=self.sort_choose(exact_eval,typ,k,which)
+        exact_eval=exact_eval[ind]
+        print "exact"
+        print exact_eval
+
+
+        # compute eigenvalues
+        eval,evec=eigen(a,k,which=which)
+        ind=self.sort_choose(eval,typ,k,which)
+        eval=eval[ind]
+        evec=evec[:,ind]
+        print eval
+        # check eigenvalues
+        # check eigenvectors A*evec=eval*evec
+        for i in range(k):
+            assert_almost_equal_cc(eval[i],exact_eval[i],decimal=_ndigits[typ])
+            assert_array_almost_equal_cc(dot(a,evec[:,i]),
+                                      eval[i]*evec[:,i],
+                                      decimal=_ndigits[typ])
+
+
+#     def test_complex_nonsymmetric(self):
+#         k=2
+#         for typ in 'FD':
+#             for which in ['LI','LR','LM','SI','SR','SM']:
+#                 for m in self.nonsymmetric:
+#                     self.eval_evec(m,typ,k,which)
+
 
 
 
