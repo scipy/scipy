@@ -165,7 +165,8 @@ int NI_Histogram2D(int layersF, int rowsF, int colsF, int layersG, int rowsG, in
 			rx = xp - (int)xp; 
 			ry = yp - (int)yp; 
 			rz = zp - (int)zp; 
-			vf = trilinear_A(imageF, (int)dx, (int)dy, (int)dz, rx, ry, rz, dims_F);
+			//vf = trilinear_A(imageF, (int)dx, (int)dy, (int)dz, rx, ry, rz, dims_F);
+			vf = trilinear_A(imageF, (int)xp, (int)yp, (int)zp, rx, ry, rz, dims_F);
 			/* floor */
 			ivf = (int)vf;
 			delta = vf - ivf;
@@ -173,7 +174,8 @@ int NI_Histogram2D(int layersF, int rowsF, int colsF, int layersG, int rowsG, in
 			rx = dx - (int)dx; 
 			ry = dy - (int)dy; 
 			rz = dz - (int)dz; 
-			ivg = (int)trilinear_A(imageG, (int)xp, (int)yp, (int)zp, rx, ry, rz, dims_G);
+			ivg = (int)trilinear_A(imageG, (int)dx, (int)dy, (int)dz, rx, ry, rz, dims_G);
+			//ivg = (int)trilinear_A(imageG, (int)xp, (int)yp, (int)zp, rx, ry, rz, dims_G);
 			/* ivf will be < 255 as 8 bit data and trilinear doesn't ring */
 			H[ivf+256*ivg] += 1.0 - delta;
 			if(ivf < 255){
@@ -189,7 +191,6 @@ int NI_Histogram2D(int layersF, int rowsF, int colsF, int layersG, int rowsG, in
 	return status;
 
 }
-
 
 
 int NI_Histogram2DLite(int layersF, int rowsF, int colsF, int layersG, int rowsG, int colsG,
@@ -291,6 +292,116 @@ int NI_Histogram2DLite(int layersF, int rowsF, int colsF, int layersG, int rowsG
 
 			ivf = (int)(vf);
 			H[ivf+256*ivg] += 1.0;
+		    }
+	        }
+	    }
+	}
+
+	status = 1;
+
+	return status;
+
+}
+
+
+int NI_LinearResample(int layersF, int rowsF, int colsF, int layersG, int rowsG, int colsG,
+		       int *dimSteps, double *M, unsigned char *imageG, unsigned char *imageF)
+{
+
+	int i;
+	int status;
+	int sliceG;
+	int rowG;
+	int sliceSizeG;
+	int dimsF[3];
+	int dimsG[3];
+	int dims[2];
+	int ivf, ivg;
+	float vf, delta;
+	float x, y, z;
+	float xp, yp, zp;
+	float dx, dy, dz;
+
+	int ptr_x0;
+	int ptr_y0;
+	int ptr_z0;
+	int ptr_x1;
+	int ptr_y1;
+	int ptr_z1;
+	//
+	// Vxyz for [0,1] values of x, y, z
+	//
+	int V000;
+	int V100;
+	int V010;
+	int V001;
+	int V011;
+	int V101;
+	int V110;
+	int V111;
+	float valueXYZ;
+
+	//
+	// G is fixed; F is rotated
+	//
+	sliceSizeG = rowsG * colsG;
+	dimsF[0] = colsF;
+	dimsF[1] = rowsF;
+	dimsF[2] = layersF;
+	dimsG[0] = colsG;
+	dimsG[1] = rowsG;
+	dimsG[2] = layersG;
+
+	dims[0] = dimsF[0];
+	dims[1] = dimsF[0]*dimsF[1];
+
+	for(z = 0.0; z < layersG-dimSteps[2]-1; z += dimSteps[2]){
+	    sliceG = (int)z * sliceSizeG;
+	    for(y = 0.0; y < rowsG-dimSteps[1]-1; y += dimSteps[1]){
+		rowG = (int)y * colsG;
+	        for(x = 0.0; x < colsG-dimSteps[0]-1; x += dimSteps[0]){
+		    // get the 'from' coordinates 
+		    xp = M[0]*x + M[1]*y + M[2]*z  + M[3];
+		    yp = M[4]*x + M[5]*y + M[6]*z  + M[7];
+		    zp = M[8]*x + M[9]*y + M[10]*z + M[11];
+		    // clip the resample window 
+		    if((zp >= 0.0 && zp < layersF-dimSteps[2]) && 
+		       (yp >= 0.0 && yp < rowsF-dimSteps[1]) && 
+		       (xp >= 0.0 && xp < colsF-dimSteps[0])){
+
+			// corners of the 3D unit volume cube
+	    		ptr_z0 = (int)zp * dims[1];
+	    		ptr_z1 = ptr_z0 + dims[1];
+			ptr_y0 = (int)yp * dims[0];
+			ptr_y1 = ptr_y0 + dims[0];
+		    	ptr_x0 = (int)xp;
+		    	ptr_x1 = ptr_x0 + 1;
+			dx = xp - (int)xp; 
+			dy = yp - (int)yp; 
+			dz = zp - (int)zp; 
+
+			// imageF IS rotated. sample the rotated xp,yp,zp
+			// and stored in imageG
+			V000 = imageF[ptr_x0+ptr_y0+ptr_z0];
+			V100 = imageF[ptr_x1+ptr_y0+ptr_z0];
+			V010 = imageF[ptr_x0+ptr_y1+ptr_z0];
+			V001 = imageF[ptr_x0+ptr_y0+ptr_z1];
+			V011 = imageF[ptr_x0+ptr_y1+ptr_z1];
+			V101 = imageF[ptr_x1+ptr_y0+ptr_z1];
+			V110 = imageF[ptr_x1+ptr_y1+ptr_z0];
+			V111 = imageF[ptr_x1+ptr_y1+ptr_z1];
+			
+		        vf = V000 * (1.0-dx) * (1.0 - dy) * (1.0 - dz) +
+			     V100 * (dx)     * (1.0 - dy) * (1.0 - dz) +
+			     V010 * (1.0-dx) * (dy)       * (1.0 - dz) +
+			     V001 * (1.0-dx) * (1.0 - dy) * (dz)       +
+			     V101 * (dx)     * (1.0 - dy) * (dz)       +
+			     V011 * (1.0-dx) * (dy)       * (dz)       +
+			     V110 * (dx)     * (dy)       * (1.0 - dz) +
+			     V111 * (dx)     * (dy)       * (dz);
+
+			imageG[sliceG+rowG+(int)x] = (int)vf;
+
 		    }
 	        }
 	    }
