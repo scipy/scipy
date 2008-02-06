@@ -11,11 +11,27 @@ import time
 inputname = 'ANAT1_V0001.img'
 filename = os.path.join(os.path.split(__file__)[0], inputname)
 
-def get_mappings(parm_vector):
+def remap_image(image, parm_vector):
+	M_inverse = get_inverse_mappings(parm_vector)
+	# allocate the zero image
+	remaped_image = load_blank_image()
+	imdata = build_structs(step=1)
+	# trilinear interpolation mapping. to be replaced with splines
+	R.register_linear_resample(image['data'], remaped_image['data'], M_inverse, imdata['step'])
+	return remaped_image
+
+def get_inverse_mappings(parm_vector):
 	# get the inverse mapping to rotate the G matrix to F space following registration
-	M_foreward = build_rotate_matrix(parm_vector)
-	M_inverse  = N.linalg.inv(M_foreward)
-	return M_foreward, M_inverse
+	imdata = build_structs(step=1)
+	# inverse angles and translations
+	imdata['parms'][0] = -parm_vector[0]
+	imdata['parms'][1] = -parm_vector[1]
+	imdata['parms'][2] = -parm_vector[2]
+	imdata['parms'][3] = -parm_vector[3]
+	imdata['parms'][4] = -parm_vector[4]
+	imdata['parms'][5] = -parm_vector[5]
+	M_inverse = build_rotate_matrix(imdata['parms'])
+	return M_inverse
 
 def python_coreg(image1, image2, imdata, ftype=1, smimage=0, lite=0, smhist=0,
 		 method='nmi', opt_method='powell'):
