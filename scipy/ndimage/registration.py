@@ -8,36 +8,50 @@ import scipy.optimize as OPT
 import time
 
 # anatomical MRI to test with
-# test registration on same image (optimal vector is (0,0,0,0,0,0)
 inputname = 'ANAT1_V0001.img'
 filename = os.path.join(os.path.split(__file__)[0], inputname)
 
-def python_coreg(ftype=2, smimage=0, lite=1, smhist=0, method='mi', opt_method='powell'):
-	# get_images is testing with 2 copies of anatomical MRI
-	image1, image2, imdata = get_images(ftype, smimage)
+def get_mappings(parm_vector):
+	# get the inverse mapping to rotate the G matrix to F space following registration
+	M_foreward = build_rotate_matrix(parm_vector)
+	M_inverse  = N.linalg.inv(M_foreward)
+	return M_foreward, M_inverse
+
+def python_coreg(image1, image2, imdata, ftype=1, smimage=0, lite=0, smhist=0,
+		 method='nmi', opt_method='powell'):
+	# image1 is imageF and image2 is imageG in SPM lingo 
+	# get these from get_test_images for the debug work
     	start = time.time()
-	parm_vector = multires_registration(image1, image2, imdata, lite, smhist, method, opt_method)
-    	stop = time.time()
-	print 'Total Optimizer Time is ', (stop-start)
-
-	return parm_vector
-
-def get_images(ftype, smimage):
-	image1 = load_image()
-	image2 = load_image()
-	imdata = build_structs()
-	image1['fwhm'] = build_fwhm(image1['mat'], imdata['step'])
-	image2['fwhm'] = build_fwhm(image2['mat'], imdata['step'])
+	# smooth of the images
 	if smimage: 
 	    image_F_xyz1 = filter_image_3D(image1['data'], image1['fwhm'], ftype)
 	    image1['data'] = image_F_xyz1
 	    image_F_xyz2 = filter_image_3D(image2['data'], image2['fwhm'], ftype)
 	    image2['data'] = image_F_xyz2
+	parm_vector = multires_registration(image1, image2, imdata, lite, smhist, method, opt_method)
+    	stop = time.time()
+	print 'Total Optimizer Time is ', (stop-start)
+	return parm_vector
 
+def get_test_images(alpha=0.0, beta=0.0, gamma=0.0):
+	image1 = load_image()
+	image2 = load_blank_image()
+	imdata = build_structs(step=1)
+	# allow the G image to be rotated for testing
+	imdata['parms'][0] = alpha
+	imdata['parms'][1] = beta
+	imdata['parms'][2] = gamma
+	image1['fwhm'] = build_fwhm(image1['mat'], imdata['step'])
+	image2['fwhm'] = build_fwhm(image2['mat'], imdata['step'])
+	M = build_rotate_matrix(imdata['parms'])
+	R.register_linear_resample(image1['data'], image2['data'], M, imdata['step'])
 	return image1, image2, imdata
 
 def multires_registration(image1, image2, imdata, lite, smhist, method, opt_method):
 	ret_histo=0
+	# zero out the start parameter; but this may be set to large values 
+	# if the head is out of range and well off the optimal alignment skirt
+	imdata['parms'][0:5] = 0.0
 	# make the step a scalar to can put in a multi-res loop
 	loop = range(imdata['sample'].size)
     	x = imdata['parms']
@@ -54,34 +68,30 @@ def multires_registration(image1, image2, imdata, lite, smhist, method, opt_meth
 		print 'CG multi-res registration step size ', step
 		print 'vector ', x
     	        x = OPT.fmin_cg(optimize_function, x, args=p_args, callback=callback_cg) 
+	    elif opt_method=='hybrid':
+		if i==0:
+		    print 'Hybrid POWELL multi-res registration step size ', step
+		    print 'vector ', x
+		    lite = 0
+	    	    optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist, method, ret_histo)
+	    	    p_args = (optfunc_args,)
+    	            x = OPT.fmin_powell(optimize_function, x, args=p_args, callback=callback_powell) 
+	        elif i==1:
+		    print 'Hybrid CG multi-res registration step size ', step
+		    print 'vector ', x
+		    lite = 1
+	    	    optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist, method, ret_histo)
+	    	    p_args = (optfunc_args,)
+    	            x = OPT.fmin_cg(optimize_function, x, args=p_args, callback=callback_cg) 
 
 	return x
 
 
 def test_image_filter(image, imdata, ftype=2):
+	# test the 3D image filter on an image. ftype 1 is SPM, ftype 2 is simple Gaussian
 	image['fwhm'] = build_fwhm(image['mat'], imdata['step'])
 	filt_image = filter_image_3D(image['data'], image['fwhm'], ftype)
 	return filt_image
-
-def test_optimizers(step=2, smooth=0, shist=0):
-	opt_stats = {}
-	print 'powell with stochastic resampling'
-	x_0, p_time_0 = optimizer_powell(lite=0, smimage=smooth, smhist=shist, stepsize=step)
-	opt_stats[0] = {'parms' : x_0, 'time' : p_time_0, 
-			'label' : 'powell with stochastic resampling'}
-	print 'powell without stochastic resampling'
-	x_1, p_time_1 = optimizer_powell(lite=1, smimage=smooth, smhist=shist, stepsize=step)
-	opt_stats[1] = {'parms' : x_1, 'time' : p_time_1, 
-			'label' : 'powell without stochastic resampling'}
-	print 'conjugate gradient with stochastic resampling'
-	xcg_0, cg_time_0 = optimizer_cg(lite=0, smimage=smooth, smhist=shist, stepsize=step)
-	opt_stats[2] = {'parms' : xcg_0, 'time' : cg_time_0, 
-			'label' : 'conjugate gradient with stochastic resampling'}
-	print 'conjugate gradient without stochastic resampling'
-	xcg_1, cg_time_1 = optimizer_cg(lite=1, smimage=smooth, smhist=shist, stepsize=step)
-	opt_stats[3] = {'parms' : xcg_1, 'time' : cg_time_1, 
-			'label' : 'conjugate gradient without stochastic resampling'}
-	return opt_stats
 
 def callback_powell(x):
 	print 'Parameter Vector from Powell: - '
@@ -93,74 +103,15 @@ def callback_cg(x):
 	print x
 	return
 
-def optimizer_powell(lite=0, smhist=0, smimage=1, method='mi', ftype=2, stepsize=2):
-	# test the Powell registration on the anatomical MRI volume
-	image1 = load_image()
-	image2 = load_image()
-	imdata = build_structs(step=stepsize)
-	image1['fwhm'] = build_fwhm(image1['mat'], imdata['step'])
-	image2['fwhm'] = build_fwhm(image2['mat'], imdata['step'])
-	M = build_rotate_matrix(imdata['parms'])
-	if smimage: 
-	    image_F_xyz1 = filter_image_3D(image1['data'], image1['fwhm'], ftype)
-	    image1['data'] = image_F_xyz1
-	    image_F_xyz2 = filter_image_3D(image2['data'], image2['fwhm'], ftype)
-	    image2['data'] = image_F_xyz2
-
-	ret_histo=0
-	optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist, method, ret_histo)
-	p_args = (optfunc_args,)
-    	start = time.time()
-    	x = OPT.fmin_powell(optimize_function, imdata['parms'], args=p_args, callback=callback_powell) 
-    	stop = time.time()
-	return x, (stop-start)
-
-
-def optimizer_cg(lite=0, smhist=0, smimage=1, method='mi', ftype=2, stepsize=2):
-	# test the CG registration on the anatomical MRI volume
-	image1 = load_image()
-	image2 = load_image()
-	imdata = build_structs(step=stepsize)
-	image1['fwhm'] = build_fwhm(image1['mat'], imdata['step'])
-	image2['fwhm'] = build_fwhm(image2['mat'], imdata['step'])
-	M = build_rotate_matrix(imdata['parms'])
-	if smimage: 
-	    image_F_xyz1 = filter_image_3D(image1['data'], image1['fwhm'], ftype)
-	    image1['data'] = image_F_xyz1
-	    image_F_xyz2 = filter_image_3D(image2['data'], image2['fwhm'], ftype)
-	    image2['data'] = image_F_xyz2
-
-	ret_histo=0
-	optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist, method, ret_histo)
-	p_args = (optfunc_args,)
-    	start = time.time()
-    	x = OPT.fmin_cg(optimize_function, imdata['parms'], args=p_args, callback=callback_cg) 
-    	stop = time.time()
-	return x, (stop-start)
-
-
-def reg_single_pass(lite=0, smhist=0, smimage=0, method='mi', ftype=2, alpha=0.0, 
-	            beta=0.0, gamma=0.0, Tx=0.0, Ty=0.0, Tz=0.0, ret_histo=0, stepsize=2):
-	image1 = load_image()
-	image2 = load_image()
-	imdata = build_structs(step=stepsize)
+def test_alignment(image1, image2, imdata, method='ncc', lite=0, smhist=0, 
+		        alpha=0.0, beta=0.0, gamma=0.0, ret_histo=0):
+	            
+	# to test the cost function and view the joint histogram
+	# for 2 images. used for debug
 	imdata['parms'][0] = alpha
 	imdata['parms'][1] = beta
 	imdata['parms'][2] = gamma
-	imdata['parms'][3] = Tx
-	imdata['parms'][4] = Ty
-	imdata['parms'][5] = Tz
-	image1['fwhm'] = build_fwhm(image1['mat'], imdata['step'])
-	image2['fwhm'] = build_fwhm(image2['mat'], imdata['step'])
-	print 'image1[fwhm] ', image1['fwhm'] 
-	print 'image2[fwhm] ', image2['fwhm'] 
 	M = build_rotate_matrix(imdata['parms'])
-	if smimage: 
-	    image_F_xyz1 = filter_image_3D(image1['data'], image1['fwhm'], ftype)
-	    image1['data'] = image_F_xyz1
-	    image_F_xyz2 = filter_image_3D(image2['data'], image2['fwhm'], ftype)
-	    image2['data'] = image_F_xyz2
-
 	optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist, method, ret_histo)
 
 	if ret_histo:
@@ -210,6 +161,34 @@ def filter_image_3D(imageRaw, fwhm, ftype=2):
 	image_F_xyz = NDI.correlate1d(image_F_xy, kernel_z, axis, output)
 	return image_F_xyz  
 
+
+def resample_image(smimage=0, ftype=2, alpha=0.0, beta=0.0, gamma=0.0,
+		   Tx=0.0, Ty=0.0, Tz=0.0, stepsize=1): 
+	            
+	# takes an image and 3D rotate using trilinear interpolation
+	image1 = load_image()
+	image2 = load_blank_image()
+	imdata = build_structs(step=stepsize)
+	imdata['parms'][0] = alpha
+	imdata['parms'][1] = beta
+	imdata['parms'][2] = gamma
+	imdata['parms'][3] = Tx
+	imdata['parms'][4] = Ty
+	imdata['parms'][5] = Tz
+	image1['fwhm'] = build_fwhm(image1['mat'], imdata['step'])
+	image2['fwhm'] = build_fwhm(image2['mat'], imdata['step'])
+	M = build_rotate_matrix(imdata['parms'])
+	if smimage: 
+	    image_F_xyz1 = filter_image_3D(image1['data'], image1['fwhm'], ftype)
+	    image1['data'] = image_F_xyz1
+	    image_F_xyz2 = filter_image_3D(image2['data'], image2['fwhm'], ftype)
+	    image2['data'] = image_F_xyz2
+
+	R.register_linear_resample(image1['data'], image2['data'], M, imdata['step'])
+
+	return image2
+
+
 def build_fwhm(M, S):
 	view_3x3 = N.square(M[0:3, 0:3])
 	vxg = N.sqrt(view_3x3.sum(axis=0))
@@ -243,6 +222,22 @@ def load_image(imagename=filename, rows=256, cols=256, layers=90):
 	image = {'data' : ImageVolume, 'mat' : M, 'dim' : D, 'fwhm' : F}
     	return image
 
+def load_blank_image(rows=256, cols=256, layers=90):
+    	ImageVolume = N.zeros(layers*rows*cols, dtype=N.uint16).reshape(layers, rows, cols);
+	# voxel to pixel is identity for this simulation using anatomical MRI volume
+	# 4x4 matrix
+	M = N.eye(4, dtype=N.float64);
+	# dimensions 
+	D = N.zeros(3, dtype=N.int32);
+	# Gaussian kernel - fill in with build_fwhm() 
+	F = N.zeros(3, dtype=N.float64);
+	D[0] = rows
+	D[1] = cols
+	D[2] = layers
+	# make sure the data type is uchar
+    	ImageVolume = ImageVolume.astype(N.uint8)
+	image = {'data' : ImageVolume, 'mat' : M, 'dim' : D, 'fwhm' : F}
+    	return image
 
 def optimize_function(x, optfunc_args):
 	image_F       = optfunc_args[0]
@@ -257,8 +252,8 @@ def optimize_function(x, optfunc_args):
 	rot_matrix = build_rotate_matrix(x)
 	cost = 0.0
 	epsilon = 2.2e-16 
-	# image_F is base image
-	# image_G is the rotated image
+	# image_G is base image
+	# image_F is the to-be-rotated image
 	# rot_matrix is the 4x4 constructed (current angles and translates) transform matrix
 	# sample_vector is the subsample vector for x-y-z
 
@@ -274,6 +269,7 @@ def optimize_function(x, optfunc_args):
 	else:
 	    R.register_histogram(image_F['data'], image_G['data'], composite, sample_vector, joint_histogram)
 
+	# smooth the histogram
 	if smooth: 
 	    p = N.ceil(2*fwhm[0]).astype(int)
 	    x = N.array(range(-p, p+1))
@@ -366,9 +362,9 @@ def build_structs(step=2):
 	T[3] = 0.001 
 	T[4] = 0.001 
 	T[5] = 0.001 
-	# P[0] = alpha <=> pitch
-	# P[1] = beta  <=> roll
-	# P[2] = gamma <=> yaw
+	# P[0] = alpha <=> pitch. + alpha is moving back in the sagittal plane
+	# P[1] = beta  <=> roll.  + beta  is moving right in the coronal plane
+	# P[2] = gamma <=> yaw.   + gamma is right turn in the transverse plane
 	# P[3] = Tx
 	# P[4] = Ty
 	# P[5] = Tz
