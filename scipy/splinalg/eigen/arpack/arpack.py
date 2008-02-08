@@ -264,24 +264,28 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
                 i+=1
             i+=1
                       
-        # Now we have k+1 eigenvalues and eigenvectors
+        # Now we have k+1 possible eigenvalues and eigenvectors
         # Return the ones specified by the keyword "which"
-
-        # cut at approx precision for sorting
-        rd=np.round(d,decimals=_ndigits[typ])
-        if which in ['LR','SR']:
-            ind=np.argsort(rd.real) 
-        elif which in ['LI','SI']:
-            # for LI,SI ARPACK returns largest,smallest abs(imaginary) why?
-            ind=np.argsort(abs(rd.imag)) 
-        else:
-            ind=np.argsort(abs(rd))
-        if which in ['LR','LM','LI']:
-            d=d[ind[-k:]]
-            z=z[:,ind[-k:]]
-        if which in ['SR','SM','SI']:
-            d=d[ind[:k]]
-            z=z[:,ind[:k]]
+        nreturned=iparam[4] # number of good eigenvalues returned
+        if nreturned==k:    # we got exactly how many eigenvalues we wanted
+            d=d[:k]
+            z=z[:,:k]
+        else:   # we got one extra eigenvalue (likely a cc pair, but which?)
+            # cut at approx precision for sorting
+            rd=np.round(d,decimals=_ndigits[typ])
+            if which in ['LR','SR']:
+                ind=np.argsort(rd.real) 
+            elif which in ['LI','SI']:
+                # for LI,SI ARPACK returns largest,smallest abs(imaginary) why?
+                ind=np.argsort(abs(rd.imag)) 
+            else:
+                ind=np.argsort(abs(rd))
+            if which in ['LR','LM','LI']:
+                d=d[ind[-k:]]
+                z=z[:,ind[-k:]]
+            if which in ['SR','SM','SI']:
+                d=d[ind[:k]]
+                z=z[:,ind[:k]]
 
 
     else:
