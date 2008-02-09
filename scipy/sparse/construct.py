@@ -329,6 +329,6 @@ def bmat( blocks, format=None, dtype=None ):
                 nnz += A.nnz
 
     shape = (sum(brow_lengths),sum(bcol_lengths)) 
-    return coo_matrix( (data, (row, col)), shape=shape )
+    return coo_matrix( (data, (row, col)), shape=shape ).asformat(format)
 
 
