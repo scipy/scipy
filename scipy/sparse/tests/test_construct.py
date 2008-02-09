@@ -1,12 +1,12 @@
 """test sparse matrix construction functions"""
 
-from numpy import array, kron
+from numpy import array, matrix, kron
 from scipy.testing import *
 
 
-from scipy.sparse import csr_matrix, \
-     spidentity, speye, spkron, spdiags, \
-     lil_eye, lil_diags
+from scipy.sparse import csr_matrix, coo_matrix
+
+from scipy.sparse.construct import *
 
 #TODO check whether format=XXX is respected
 
@@ -100,6 +100,30 @@ class TestConstructUtils(TestCase):
                 expected = kron(a,b)
 
                 assert_array_equal(result,expected)
+
+    def test_bmat(self):
+
+        A = coo_matrix([[1,2],[3,4]])
+        B = coo_matrix([[5],[6]])
+        C = coo_matrix([[7]])
+
+        expected = matrix([[1, 2, 5],
+                           [3, 4, 6],
+                           [0, 0, 7]])
+        assert_equal( bmat( [[A,B],[None,C]] ).todense(), expected )
+
+ 
+        expected = matrix([[1, 2, 0],
+                           [3, 4, 0],
+                           [0, 0, 7]])
+        assert_equal( bmat( [[A,None],[None,C]] ).todense(), expected )
+    
+        expected = matrix([[0, 5],
+                           [0, 6],
+                           [7, 0]])
+        assert_equal( bmat( [[None,B],[C,None]] ).todense(), expected )
+    
+        #TODO test failure cases
 
     def test_lil_diags(self):
         assert_array_equal(lil_diags([[1,2,3],[4,5],[6]],

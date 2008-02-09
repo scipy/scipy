@@ -2,13 +2,16 @@
 """
 
 
-__all__ = [ 'spdiags','speye','spidentity','spkron', 'lil_eye', 'lil_diags' ]
+__all__ = [ 'spdiags','speye','spidentity','spkron', 'bmat', 'lil_eye', 'lil_diags' ]
 
 from itertools import izip
 from warnings import warn
 
 import numpy
-from numpy import ones, clip, array, arange, intc
+from numpy import ones, clip, array, arange, intc, asarray, rank, zeros, \
+        cumsum, concatenate, empty
+
+from sputils import upcast
 
 from csr import csr_matrix, isspmatrix_csr
 from csc import csc_matrix, isspmatrix_csc
@@ -226,5 +229,106 @@ def lil_diags(diags,offsets,(m,n),dtype='d'):
             out.rows[c-k].append(c)
             out.data[c-k].append(diag[ix])
     return out
+
+
+def bmat( blocks, format=None, dtype=None ):
+    """
+    Build a sparse matrix from sparse sub-blocks
+
+    Parameters
+    ==========
+
+    blocks -- grid of sparse matrices with compatible shapes
+            - an entry of None implies an all-zero matrix
+    format -- sparse format of the result (e.g. "csr")
+            -  by default an appropriate sparse matrix format is returned.
+               This choice is subject to change.
+
+   
+    Example
+    =======
+
+    >>> from scipy.sparse import coo_matrix, bmat
+    >>> A = coo_matrix([[1,2],[3,4]])
+    >>> B = coo_matrix([[5],[6]])
+    >>> C = coo_matrix([[7]])
+    >>> bmat( [[A,B],[None,C]] ).todense()
+    matrix([[1, 2, 5],
+            [3, 4, 6],
+            [0, 0, 7]])
+ 
+    >>> bmat( [[A,None],[None,C]] ).todense()
+    matrix([[1, 2, 0],
+            [3, 4, 0],
+            [0, 0, 7]])
+
+
+    """
+    
+    blocks = asarray(blocks, dtype='object')
+
+    if rank(blocks) != 2:
+        raise ValueError('blocks must have rank 2')
+
+    M,N = blocks.shape
+
+    block_mask   = zeros( blocks.shape, dtype='bool' )
+    brow_lengths = zeros( blocks.shape[0], dtype=int )
+    bcol_lengths = zeros( blocks.shape[1], dtype=int )
+
+    # convert everything to COO format
+    for i in range(M):
+        for j in range(N):
+            if blocks[i,j] is not None:
+                A = coo_matrix(blocks[i,j])
+                blocks[i,j] = A
+                block_mask[i,j] = True
+
+                if brow_lengths[i] == 0:
+                    brow_lengths[i] = A.shape[0]
+                else:
+                    if brow_lengths[i] != A.shape[0]:
+                        raise ValueError('blocks[%d,:] has incompatible row dimensions' % i)
+
+                if bcol_lengths[j] == 0:
+                    bcol_lengths[j] = A.shape[1]
+                else:
+                    if bcol_lengths[j] != A.shape[0]:
+                        raise ValueError('blocks[:,%d] has incompatible column dimensions' % j)
+
+
+    # ensure that at least one value in each row and col is not None
+    if brow_lengths.min() == 0:
+        raise ValueError('blocks[%d,:] is all None' % brow_lengths.argmin() )
+    if bcol_lengths.min() == 0:
+        raise ValueError('blocks[:,%d] is all None' % bcol_lengths.argmin() )
+    
+    nnz = sum([ A.nnz for A in blocks[block_mask] ]) 
+    if dtype is None:
+        dtype = upcast( *tuple([A.dtype for A in blocks[block_mask]]) )
+
+    row_offsets = concatenate(([0],cumsum(brow_lengths)))
+    col_offsets = concatenate(([0],cumsum(bcol_lengths)))
+
+    data = empty(nnz, dtype=dtype)
+    row  = empty(nnz, dtype=intc)
+    col  = empty(nnz, dtype=intc)
+
+    nnz = 0
+    for i in range(M):
+        for j in range(N):
+            if blocks[i,j] is not None:
+                A = blocks[i,j]
+                data[nnz:nnz + A.nnz] = A.data
+                row[nnz:nnz + A.nnz]  = A.row
+                col[nnz:nnz + A.nnz]  = A.col
+
+                row[nnz:nnz + A.nnz] += row_offsets[i]
+                col[nnz:nnz + A.nnz] += col_offsets[j]
+                
+                nnz += A.nnz
+
+    shape = (sum(brow_lengths),sum(bcol_lengths)) 
+    return coo_matrix( (data, (row, col)), shape=shape )
 
 
