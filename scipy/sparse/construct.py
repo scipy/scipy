@@ -2,7 +2,7 @@
 """
 
 
-__all__ = [ 'spdiags','speye','spidentity','spkron', 'bmat', 'lil_eye', 'lil_diags' ]
+__all__ = [ 'spdiags','speye','spidentity', 'spkron', 'kron', 'kronsum', 'bmat', 'lil_eye', 'lil_diags' ]
 
 from itertools import izip
 from warnings import warn
@@ -81,7 +81,7 @@ def speye(m, n, k=0, dtype='d', format=None):
     diags = ones((1, m), dtype = dtype)
     return spdiags(diags, k, m, n).asformat(format)
 
-def spkron(A, B, format=None):
+def kron(A, B, format=None):
     """kronecker product of sparse matrices A and B
 
     Parameters
@@ -100,13 +100,13 @@ def spkron(A, B, format=None):
 
     >>> A = csr_matrix(array([[0,2],[5,0]]))
     >>> B = csr_matrix(array([[1,2],[3,4]]))
-    >>> spkron(A,B).todense()
+    >>> kron(A,B).todense()
     matrix([[ 0,  0,  2,  4],
             [ 0,  0,  6,  8],
             [ 5, 10,  0,  0],
             [15, 20,  0,  0]])
 
-    >>> spkron(A,[[1,2],[3,4]]).todense()
+    >>> kron(A,[[1,2],[3,4]]).todense()
     matrix([[ 0,  0,  2,  4],
             [ 0,  0,  6,  8],
             [ 5, 10,  0,  0],
@@ -159,76 +159,47 @@ def spkron(A, B, format=None):
 
         return coo_matrix((data,(row,col)), shape=output_shape).asformat(format)
 
+def kronsum(A, B, format=None):
+    """kronecker sum of sparse matrices A and B
 
-
-
-def lil_eye((r,c), k=0, dtype='d'):
-    """Generate a lil_matrix of dimensions (r,c) with the k-th
-    diagonal set to 1.
-
-    Parameters
-    ==========
-        - r,c : int
-            - row and column-dimensions of the output.
-        - k : int
-            - diagonal offset.  In the output matrix,
-            - out[m,m+k] == 1 for all m.
-        - dtype : dtype
-            - data-type of the output array.
-
-    """
-    warn("lil_eye is deprecated. use speye(... , format='lil') instead", \
-            DeprecationWarning)
-    return speye(r,c,k,dtype=dtype,format='lil')
-
-
-
-#TODO remove this function
-def lil_diags(diags,offsets,(m,n),dtype='d'):
-    """Generate a lil_matrix with the given diagonals.
+    Kronecker sum of two sparse matrices is a sum of two Kronecker 
+    products kron(I_n,A) + kron(B,I_m) where A has shape (m,m)
+    and B has shape (n,n) and I_m and I_n are identity matrices 
+    of shape (m,m) and (n,n) respectively.
 
     Parameters
     ==========
-        - diags : list of list of values e.g. [[1,2,3],[4,5]]
-            - values to be placed on each indicated diagonal.
-        - offsets : list of ints
-            - diagonal offsets.  This indicates the diagonal on which
-              the given values should be placed.
-        - (r,c) : tuple of ints
-            - row and column dimensions of the output.
-        - dtype : dtype
-            - output data-type.
+        A,B    : squared dense or sparse matrices
+        format : format of the result (e.g. "csr")
+            -  By default (format=None) an appropriate sparse matrix 
+               format is returned.  This choice is subject to change.
 
-    Example
+    Returns
     =======
+        kronecker sum in a sparse matrix format
 
-    >>> lil_diags([[1,2,3],[4,5],[6]],[0,1,2],(3,3)).todense()
-    matrix([[ 1.,  4.,  6.],
-            [ 0.,  2.,  5.],
-            [ 0.,  0.,  3.]])
+    Examples
+    ========
 
+    
     """
-    offsets_unsorted = list(offsets)
-    diags_unsorted = list(diags)
-    if len(diags) != len(offsets):
-        raise ValueError("Number of diagonals provided should "
-                         "agree with offsets.")
+    A = coo_matrix(A)
+    B = coo_matrix(B)
 
-    sort_indices = numpy.argsort(offsets_unsorted)
-    diags = [diags_unsorted[k] for k in sort_indices]
-    offsets = [offsets_unsorted[k] for k in sort_indices]
+    if A.shape[0] != A.shape[1]:
+        raise ValueError('A is not square')
+    
+    if B.shape[0] != B.shape[1]:
+        raise ValueError('B is not square')
 
-    for i,k in enumerate(offsets):
-        if len(diags[i]) < m-abs(k):
-            raise ValueError("Not enough values specified to fill "
-                             "diagonal %s." % k)
+    dtype = upcast(A.dtype,B.dtype)
 
-    out = lil_matrix((m,n),dtype=dtype)
-    for k,diag in izip(offsets,diags):
-        for ix,c in enumerate(xrange(clip(k,0,n),clip(m+k,0,n))):
-            out.rows[c-k].append(c)
-            out.data[c-k].append(diag[ix])
-    return out
+    L = kron(spidentity(B.shape[0],dtype=dtype), A, format=format) 
+    R = kron(B, spidentity(A.shape[0],dtype=dtype), format=format)
+
+    return (L+R).asformat(format) #since L + R is not always same format
+
+
 
 
 def bmat( blocks, format=None, dtype=None ):
@@ -331,4 +302,80 @@ def bmat( blocks, format=None, dtype=None ):
     shape = (sum(brow_lengths),sum(bcol_lengths)) 
     return coo_matrix( (data, (row, col)), shape=shape ).asformat(format)
 
+
+
+#################################
+# Deprecated functions
+################################
+from numpy import deprecate
+
+spkron = deprecate(kron, oldname='spkron', newname='kron')
+
+def lil_eye((r,c), k=0, dtype='d'):
+    """Generate a lil_matrix of dimensions (r,c) with the k-th
+    diagonal set to 1.
+
+    Parameters
+    ==========
+        - r,c : int
+            - row and column-dimensions of the output.
+        - k : int
+            - diagonal offset.  In the output matrix,
+            - out[m,m+k] == 1 for all m.
+        - dtype : dtype
+            - data-type of the output array.
+
+    """
+    warn("lil_eye is deprecated. use speye(... , format='lil') instead", \
+            DeprecationWarning)
+    return speye(r,c,k,dtype=dtype,format='lil')
+
+
+
+#TODO remove this function
+def lil_diags(diags,offsets,(m,n),dtype='d'):
+    """Generate a lil_matrix with the given diagonals.
+
+    Parameters
+    ==========
+        - diags : list of list of values e.g. [[1,2,3],[4,5]]
+            - values to be placed on each indicated diagonal.
+        - offsets : list of ints
+            - diagonal offsets.  This indicates the diagonal on which
+              the given values should be placed.
+        - (r,c) : tuple of ints
+            - row and column dimensions of the output.
+        - dtype : dtype
+            - output data-type.
+
+    Example
+    =======
+
+    >>> lil_diags([[1,2,3],[4,5],[6]],[0,1,2],(3,3)).todense()
+    matrix([[ 1.,  4.,  6.],
+            [ 0.,  2.,  5.],
+            [ 0.,  0.,  3.]])
+
+    """
+    offsets_unsorted = list(offsets)
+    diags_unsorted = list(diags)
+    if len(diags) != len(offsets):
+        raise ValueError("Number of diagonals provided should "
+                         "agree with offsets.")
+
+    sort_indices = numpy.argsort(offsets_unsorted)
+    diags = [diags_unsorted[k] for k in sort_indices]
+    offsets = [offsets_unsorted[k] for k in sort_indices]
+
+    for i,k in enumerate(offsets):
+        if len(diags[i]) < m-abs(k):
+            raise ValueError("Not enough values specified to fill "
+                             "diagonal %s." % k)
+
+    out = lil_matrix((m,n),dtype=dtype)
+    for k,diag in izip(offsets,diags):
+        for ix,c in enumerate(xrange(clip(k,0,n),clip(m+k,0,n))):
+            out.rows[c-k].append(c)
+            out.data[c-k].append(diag[ix])
+    return out
 

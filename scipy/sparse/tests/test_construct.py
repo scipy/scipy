@@ -1,6 +1,7 @@
 """test sparse matrix construction functions"""
 
-from numpy import array, matrix, kron
+import numpy
+from numpy import array, matrix
 from scipy.testing import *
 
 
@@ -77,7 +78,7 @@ class TestConstructUtils(TestCase):
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
         assert_array_equal(a.toarray(), b)
 
-    def test_spkron(self):
+    def test_kron(self):
         cases = []
 
         cases.append(array([[ 0]]))
@@ -96,10 +97,29 @@ class TestConstructUtils(TestCase):
         
         for a in cases:
             for b in cases:
-                result = spkron(csr_matrix(a),csr_matrix(b)).todense()
-                expected = kron(a,b)
-
+                result   = kron(csr_matrix(a),csr_matrix(b)).todense()
+                expected = numpy.kron(a,b)
                 assert_array_equal(result,expected)
+
+    def test_kronsum(self):
+        cases = []
+
+        cases.append(array([[ 0]]))
+        cases.append(array([[-1]]))
+        cases.append(array([[ 4]]))
+        cases.append(array([[10]]))
+        cases.append(array([[1,2],[3,4]]))
+        cases.append(array([[0,2],[5,0]]))
+        cases.append(array([[0,2,-6],[8,0,14],[0,3,0]]))
+        cases.append(array([[1,0,0],[0,5,-1],[4,-2,8]]))
+        
+        for a in cases:
+            for b in cases:
+                result   = kronsum(csr_matrix(a),csr_matrix(b)).todense()
+                expected = numpy.kron(numpy.eye(len(b)), a) + \
+                        numpy.kron(b, numpy.eye(len(a)))
+                assert_array_equal(result,expected)
+
 
     def test_bmat(self):
 

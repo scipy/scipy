@@ -17,14 +17,15 @@ import warnings
 
 import numpy
 from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, \
-        asarray, vstack, ndarray, kron, transpose, diag
+        asarray, vstack, ndarray, transpose, diag
 
 import random
 from scipy.testing import *
 
+import scipy.sparse as sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
-        speye, spkron, SparseEfficiencyWarning
+        speye, SparseEfficiencyWarning
 from scipy.sparse.sputils import supported_dtypes
 from scipy.splinalg import splu
 
@@ -84,12 +85,12 @@ class _TestCommon:
         mats.append( [[0,1],[0,2],[0,3]] )
         mats.append( [[0,0,1],[0,0,2],[0,3,0]] )
 
-        mats.append( kron(mats[0],[[1,2]]) )
-        mats.append( kron(mats[0],[[1],[2]]) )
-        mats.append( kron(mats[1],[[1,2],[3,4]]) )
-        mats.append( kron(mats[2],[[1,2],[3,4]]) )
-        mats.append( kron(mats[3],[[1,2],[3,4]]) )
-        mats.append( kron(mats[3],[[1,2,3,4]]) )
+        mats.append( numpy.kron(mats[0],[[1,2]]) )
+        mats.append( numpy.kron(mats[0],[[1],[2]]) )
+        mats.append( numpy.kron(mats[1],[[1,2],[3,4]]) )
+        mats.append( numpy.kron(mats[2],[[1,2],[3,4]]) )
+        mats.append( numpy.kron(mats[3],[[1,2],[3,4]]) )
+        mats.append( numpy.kron(mats[3],[[1,2,3,4]]) )
 
         for m in mats:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
@@ -345,7 +346,7 @@ class _TestCommon:
             assert_equal( result, dot(a,b) )
 
     def test_formatconversions(self):
-        A = spkron([[1,0,1],[0,1,1],[1,0,0]], [[1,1],[0,1]] )
+        A = sparse.kron([[1,0,1],[0,1,1],[1,0,0]], [[1,1],[0,1]] )
         D = A.todense()
         A = self.spmatrix(A)
 
@@ -371,7 +372,7 @@ class _TestCommon:
     def test_tocompressedblock(self):
         x = array([[1,0,2,0],[0,0,0,0],[0,0,4,5]])
         y = array([[0,1,2],[3,0,5]])
-        A = kron(x,y)
+        A = numpy.kron(x,y)
         Asp = self.spmatrix(A)
         for format in ['bsr']:
             fn = getattr(Asp, 'to' + format )
@@ -1277,7 +1278,7 @@ class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
         data[3] = array([[ 0,  5, 10],
                          [15,  0, 25]])
 
-        A = kron( [[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]] )
+        A = numpy.kron( [[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]] )
         Asp = bsr_matrix((data,indices,indptr),shape=(6,12))
         assert_equal(Asp.todense(),A)
         
@@ -1296,7 +1297,7 @@ class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
         assert_equal(bsr_matrix(A,blocksize=(2,2)).todense(),A)
         assert_equal(bsr_matrix(A,blocksize=(2,3)).todense(),A)
 
-        A = kron( [[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]] )
+        A = numpy.kron( [[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]] )
         assert_equal(bsr_matrix(A).todense(),A)
         assert_equal(bsr_matrix(A,shape=(6,12)).todense(),A)
         assert_equal(bsr_matrix(A,blocksize=(1,1)).todense(),A)
@@ -1306,11 +1307,11 @@ class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
         assert_equal(bsr_matrix(A,blocksize=(3,12)).todense(),A)
         assert_equal(bsr_matrix(A,blocksize=(6,12)).todense(),A)
         
-        A = kron( [[1,0,2,0],[0,1,0,0],[0,0,0,0]], [[0,1,2],[3,0,5]] )
+        A = numpy.kron( [[1,0,2,0],[0,1,0,0],[0,0,0,0]], [[0,1,2],[3,0,5]] )
         assert_equal(bsr_matrix(A,blocksize=(2,3)).todense(),A)
         
     def test_eliminate_zeros(self):
-        data = kron([1, 0, 0, 0, 2, 0, 3, 0], [[1,1],[1,1]]).T
+        data = numpy.kron([1, 0, 0, 0, 2, 0, 3, 0], [[1,1],[1,1]]).T
         data = data.reshape(-1,2,2)
         indices = array( [1, 2, 3, 4, 5, 6, 7, 8] )
         indptr  = array( [0, 3, 8] )
