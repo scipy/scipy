@@ -267,8 +267,8 @@ class spmatrix(object):
                 raise ValueError,'exponent must be >= 0'
             
             if other == 0:
-                from construct import spidentity
-                return spidentity( self.shape[0], dtype=self.dtype )
+                from construct import identity
+                return identity( self.shape[0], dtype=self.dtype )
             elif other == 1:
                 return self.copy()
             else:

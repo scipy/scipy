@@ -25,7 +25,7 @@ from scipy.testing import *
 import scipy.sparse as sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
-        speye, SparseEfficiencyWarning
+        eye, SparseEfficiencyWarning
 from scipy.sparse.sputils import supported_dtypes
 from scipy.splinalg import splu
 
@@ -1147,7 +1147,7 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
 
     def test_lil_sequence_assignement(self):
         A = lil_matrix((4,3))
-        B = speye(3,4,format='lil')
+        B = eye(3,4,format='lil')
 
         i0 = [0,1,2]
         i1 = (0,1,2)

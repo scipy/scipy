@@ -1,8 +1,8 @@
 """ Functions to construct sparse matrices
 """
 
+__all__ = [ 'spdiags', 'eye', 'identity', 'kron', 'kronsum', 'bmat' ]
 
-__all__ = [ 'spdiags','speye','spidentity', 'spkron', 'kron', 'kronsum', 'bmat', 'lil_eye', 'lil_diags' ]
 
 from itertools import izip
 from warnings import warn
@@ -57,8 +57,8 @@ def spdiags(data, diags, m, n, format=None):
     """
     return dia_matrix((data, diags), shape=(m,n)).asformat(format)
 
-def spidentity(n, dtype='d', format=None):
-    """spidentity(n) returns an (n x n) identity matrix"""
+def identity(n, dtype='d', format=None):
+    """identity(n) returns a sparse (n x n) identity matrix"""
     if format in ['csr','csc']:
         indptr  = arange(n+1, dtype=intc)
         indices = arange(n, dtype=intc)
@@ -69,16 +69,15 @@ def spidentity(n, dtype='d', format=None):
         row  = arange(n, dtype=intc)
         col  = arange(n, dtype=intc)
         data = ones(n, dtype=dtype)
-        cls = eval('%s_matrix' % format)
         return coo_matrix((data,(row,col)),(n,n))
     else:
-        return spidentity( n, dtype=dtype, format='csr').asformat(format)
+        return identity( n, dtype=dtype, format='csr').asformat(format)
 
-def speye(m, n, k=0, dtype='d', format=None):
-    """speye(m, n) returns an (m x n) matrix where the k-th diagonal 
+def eye(m, n, k=0, dtype='d', format=None):
+    """eye(m, n) returns a sparse (m x n) matrix where the k-th diagonal 
     is all ones and everything else is zeros.
     """
-    diags = ones((1, m), dtype = dtype)
+    diags = ones((1, m), dtype=dtype)
     return spdiags(diags, k, m, n).asformat(format)
 
 def kron(A, B, format=None):
@@ -194,8 +193,8 @@ def kronsum(A, B, format=None):
 
     dtype = upcast(A.dtype,B.dtype)
 
-    L = kron(spidentity(B.shape[0],dtype=dtype), A, format=format) 
-    R = kron(B, spidentity(A.shape[0],dtype=dtype), format=format)
+    L = kron(identity(B.shape[0],dtype=dtype), A, format=format) 
+    R = kron(B, identity(A.shape[0],dtype=dtype), format=format)
 
     return (L+R).asformat(format) #since L + R is not always same format
 
@@ -307,9 +306,15 @@ def bmat( blocks, format=None, dtype=None ):
 #################################
 # Deprecated functions
 ################################
+
+__all__ += [ 'speye','spidentity', 'spkron', 'lil_eye', 'lil_diags' ]
+
 from numpy import deprecate
 
-spkron = deprecate(kron, oldname='spkron', newname='kron')
+spkron      = deprecate(kron,     oldname='spkron',     newname='kron')
+speye       = deprecate(eye,      oldname='speye',      newname='eye')
+spidentity  = deprecate(identity, oldname='spidenitiy', newname='identity')
+
 
 def lil_eye((r,c), k=0, dtype='d'):
     """Generate a lil_matrix of dimensions (r,c) with the k-th
@@ -326,9 +331,10 @@ def lil_eye((r,c), k=0, dtype='d'):
             - data-type of the output array.
 
     """
-    warn("lil_eye is deprecated. use speye(... , format='lil') instead", \
+    warn("lil_eye is deprecated." \
+            "use scipy.sparse.eye(r, c, k, format='lil') instead", \
             DeprecationWarning)
-    return speye(r,c,k,dtype=dtype,format='lil')
+    return eye(r,c,k,dtype=dtype,format='lil')
 
 
 

@@ -61,20 +61,24 @@ class TestConstructUtils(TestCase):
         
            
     def test_identity(self):
-        a = spidentity(3)
+        a = identity(3)
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
         assert_array_equal(a.toarray(), b)
 
+        a = identity(1)
+        b = array([[1]], dtype='d')
+        assert_array_equal(a.toarray(), b)
+
     def test_eye(self):
-        a = speye(2, 3 )
+        a = eye(2, 3 )
         b = array([[1, 0, 0], [0, 1, 0]], dtype='d')
         assert_array_equal(a.toarray(), b)
 
-        a = speye(3, 2)
+        a = eye(3, 2)
         b = array([[1, 0], [0, 1], [0, 0]], dtype='d')
         assert_array_equal( a.toarray(), b)
 
-        a = speye(3, 3)
+        a = eye(3, 3)
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
         assert_array_equal(a.toarray(), b)
 
