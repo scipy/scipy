@@ -6,7 +6,8 @@ from itertools import izip
 from warnings import warn 
 
 from numpy import array, asarray, empty, intc, zeros,  \
-        unique, searchsorted, atleast_2d, empty_like, rank
+        unique, searchsorted, atleast_2d, empty_like, rank, \
+        deprecate
 
 from sparsetools import coo_tocsr, coo_tocsc, coo_todense
 from base import isspmatrix
@@ -216,9 +217,11 @@ class coo_matrix(_data_matrix):
         # some functions pass floats
         self.shape = tuple([int(x) for x in self.shape])
 
+    @deprecate
     def rowcol(self, num):
         return (self.row[num], self.col[num])
 
+    @deprecate
     def getdata(self, num):
         return self.data[num]
     

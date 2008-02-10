@@ -8,7 +8,7 @@ from warnings import warn
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
         empty, hstack, isscalar, ndarray, shape, searchsorted, where, \
-        concatenate
+        concatenate, deprecate
 
 from base import spmatrix, isspmatrix
 from sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks
@@ -102,10 +102,9 @@ class csr_matrix(_cs_matrix):
         M,N = self.shape
         return csc_matrix((self.data,self.indices,self.indptr),(N,M),copy=copy)
 
-
+    @deprecate
     def rowcol(self, ind):
         #TODO remove after 0.7
-        warn('rowcol() is deprecated',DeprecationWarning)
         col = self.indices[ind]
         row = searchsorted(self.indptr, ind+1)-1
         return (row, col)

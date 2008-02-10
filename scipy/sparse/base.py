@@ -6,7 +6,7 @@ __all__ = ['spmatrix', 'isspmatrix', 'issparse',
 from warnings import warn
 
 import numpy
-from numpy import asarray, asmatrix, asanyarray, ones
+from numpy import asarray, asmatrix, asanyarray, ones, deprecate
 
 from sputils import isdense, isscalarlike, isintlike
 
@@ -136,9 +136,11 @@ class spmatrix(object):
             format = 'und'
         return format
 
+    @deprecate
     def rowcol(self, num):
         return (None, None)
 
+    @deprecate
     def getdata(self, num):
         return None
 
@@ -156,16 +158,25 @@ class spmatrix(object):
                (self.shape + (self.dtype.type, nnz, _formats[format][1]))
 
     def __str__(self):
-        nnz = self.getnnz()
         maxprint = self.getmaxprint()
-        val = ''
+
+        A   = self.tocoo()
+        nnz = self.getnnz()
+
+        # helper function, outputs "(i,j)  v"
+        def tostr(row,col,data):
+            triples = zip(zip(row,col),data)
+            return '\n'.join( [ ('  %s\t%s' % t) for t in triples] )
+
         if nnz > maxprint:
-            val = val + self.listprint(0, maxprint/2)
-            val = val + "  :\t:\n"
-            val = val + self.listprint(nnz-maxprint//2, nnz)
+            half = maxprint // 2 
+            out  = tostr(A.row[:half], A.col[:half], A.data[:half])
+            out +=  + "  :\t:\n"
+            out += tostr(A.row[:-half], A.col[:-half], A.data[:-half])
         else:
-            val = val + self.listprint(0, nnz)
-        return val[:-1]
+            out  = tostr(A.row, A.col, A.data)
+
+        return out[:-1]
 
     def __nonzero__(self):  # Simple -- other ideas?
         return self.getnnz() > 0
@@ -486,7 +497,6 @@ class spmatrix(object):
             max_index = min(M, N-k, len(values))
             for i,v in enumerate(values[:max_index]):
                 self[i, i + k] = v
-
 
     def save(self, file_name, format = '%d %d %f\n'):
         #deprecated on Dec 14 2007

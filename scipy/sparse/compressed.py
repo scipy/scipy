@@ -8,7 +8,7 @@ from warnings import warn
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
         empty, hstack, isscalar, ndarray, shape, searchsorted, empty_like, \
-        where, concatenate, transpose
+        where, concatenate, transpose, deprecate
 
 from base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from data import _data_matrix
@@ -379,6 +379,7 @@ class _cs_matrix(_data_matrix):
         else:
             return self.transpose().matvec( other )
 
+    @deprecate
     def getdata(self, ind):
         return self.data[ind]
     

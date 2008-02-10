@@ -23,7 +23,7 @@ class dok_matrix(spmatrix, dict):
         #TODO deprecate argument A in favor of arg1 style
 
         dict.__init__(self)
-        spmatrix.__init__(self,shape)
+        spmatrix.__init__(self)
         self.dtype = getdtype(dtype, A, default=float)
         if A is not None:
             if isinstance(A, tuple):
@@ -58,25 +58,6 @@ class dok_matrix(spmatrix, dict):
 
     def __len__(self):
         return dict.__len__(self)
-
-    def __str__(self):
-        val = ''
-        keys = self.keys()
-        keys.sort()
-        #TODO why does dok_matrix wipe out .maxprint?
-        if self.nnz > self.maxprint:
-            for k in xrange(self.maxprint / 2):
-                key = keys[k]
-                val += "  %s\t%s\n" % (str(key), str(self[key]))
-            val = val + "   :    \t  :\n"
-            for k in xrange(self.nnz - self.maxprint/2, self.nnz):
-                key = keys[k]
-                val += "  %s\t%s\n" % (str(key), str(self[key]))
-        else:
-            for k in xrange(self.nnz):
-                key = keys[k]
-                val += "  %s\t%s\n" % (str(key), str(self[key]))
-        return val[:-1]
 
     def get(self, key, default=0.):
         """This overrides the dict.get method, providing type checking

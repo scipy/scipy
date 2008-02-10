@@ -33,10 +33,8 @@ from scipy.splinalg import splu
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
 
-
 #TODO check that invalid shape in constructor raises exception
 #TODO check that spmatrix( ... , copy=X ) is respected
-#TODO test repr(spmatrix)
 #TODO test prune
 #TODO test has_sorted_indices
 class _TestCommon:
@@ -47,8 +45,10 @@ class _TestCommon:
         self.datsp = self.spmatrix(self.dat)
    
     def test_repr(self):
-        """make sure __repr__ works"""
-        repr(self.spmatrix)
+        repr(self.datsp)
+
+    def test_str(self):
+        str(self.datsp)
 
     def test_empty(self):
         """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
