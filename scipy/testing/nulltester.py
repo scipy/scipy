@@ -1,18 +1,19 @@
-''' Null tester (when nose not importable)
+''' Null tester to signal nose tests disabled
 
-Merely returns error reporting lack of nose package
+Merely returns error reporting lack of nose package or version number
+below requirements.
 
 See pkgtester, nosetester modules
 
 '''
 
-nose_url = 'http://somethingaboutorange.com/mrl/projects/nose'
-
 class NullTester(object):
+    _msg = 'Need nose >=0.10 for tests - see %s' % \
+           'http://somethingaboutorange.com/mrl/projects/nose'
     def __init__(self, *args, **kwargs):
         pass
     def test(self, labels=None, *args, **kwargs):
-        raise ImportError, 'Need nose for tests - see %s' % nose_url
+        raise ImportError, self._msg
     def bench(self, labels=None, *args, **kwargs):
-        raise ImportError, 'Need nose for benchmarks - see %s' % nose_url
+        raise ImportError, self._msg
     
