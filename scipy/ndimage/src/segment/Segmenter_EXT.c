@@ -452,9 +452,9 @@ static PyMethodDef SegmenterMethods[] =
     {  NULL, NULL, 0, NULL},
 };
 
-void init_segmenter(void)
+void init_segment(void)
 {
-    Py_InitModule("_segmenter", SegmenterMethods);
+    Py_InitModule("_segment", SegmenterMethods);
     import_array();
 }
 

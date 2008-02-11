@@ -1,6 +1,6 @@
 import math
 import numpy as N
-import scipy.ndimage.segment as S
+import scipy.ndimage._segment as S
 
 # make sure this is local to use as default
 inputname = 'slice112.raw'
