@@ -144,6 +144,7 @@ class spmatrix(object):
     def getdata(self, num):
         return None
 
+    @deprecate
     def listprint(self, start, stop):
         """Provides a way to print over a single index.
         """
@@ -171,12 +172,13 @@ class spmatrix(object):
         if nnz > maxprint:
             half = maxprint // 2 
             out  = tostr(A.row[:half], A.col[:half], A.data[:half])
-            out +=  + "  :\t:\n"
-            out += tostr(A.row[:-half], A.col[:-half], A.data[:-half])
+            out += "\n  :\t:\n"
+            half = maxprint - maxprint//2 
+            out += tostr(A.row[-half:], A.col[-half:], A.data[-half:])
         else:
             out  = tostr(A.row, A.col, A.data)
 
-        return out[:-1]
+        return out
 
     def __nonzero__(self):  # Simple -- other ideas?
         return self.getnnz() > 0
