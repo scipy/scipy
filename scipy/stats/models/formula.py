@@ -631,7 +631,7 @@ def _intercept_fn(nrow=1, **extra):
 I = Term('intercept', func=_intercept_fn)
 I.__doc__ = """
 Intercept term in a formula. If intercept is the
-only term in the formula, then a keywords argument
+only term in the formula, then a keyword argument
 \'nrow\' is needed.
 
 >>> from scipy.stats.models.formula import Formula, I
@@ -644,3 +644,45 @@ array([ 1.,  1.,  1.,  1.,  1.])
 array([1, 1, 1, 1, 1])
 
 """
+
+def interactions(terms, order=2):
+    """
+    Output all pairwise interactions up to a given order of a
+    sequence of terms.
+
+    If order is greater than len(terms), it is treated as len(terms).
+
+    >>> print interactions([Term(l) for l in ['a', 'b', 'c']])
+    <formula: a*b + a*c + b*c + a + b + c>
+    >>>
+    >>> print interactions([Term(l) for l in ['a', 'b', 'c']], order=5)
+    <formula: a*b + a*b*c + a*c + b*c + a + b + c>
+    >>>
+
+    """
+    l = len(terms)
+
+    values = {}
+
+    # First order
+
+    for o in range(order):
+        I = N.indices((l,)*(o+1))
+        I.shape = (I.shape[0], N.product(I.shape[1:]))
+        for m in range(I.shape[1]):
+
+            # only keep combinations that have unique entries
+            
+            if (N.unique(I[:,m]).shape == I[:,m].shape and
+                N.alltrue(N.equal(N.sort(I[:,m]), I[:,m]))):
+                ll = [terms[j] for j in I[:,m]]
+                v = ll[0]
+                for ii in range(len(ll)-1):
+                    v *= ll[ii+1]
+                values[tuple(I[:,m])] = v
+
+    value = values[(0,)]; del(values[(0,)])
+    
+    for v in values.values():
+        value += v
+    return value
