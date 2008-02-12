@@ -215,6 +215,39 @@ class TestFormula(TestCase):
         _m = N.array([r[0]-r[2],r[1]-r[2]])
         assert_almost_equal(_m, m())
 
+    def test_factor5(self):
+        f = ['a','b','c']*3
+        fac = formula.Factor('ff', f)
+        fac.namespace = {'ff':f}
+
+        assert_equal(fac(), [[1,0,0]*3,
+                             [0,1,0]*3,
+                             [0,0,1]*3])
+        assert_equal(fac['a'], [1,0,0]*3)
+        assert_equal(fac['b'], [0,1,0]*3)
+        assert_equal(fac['c'], [0,0,1]*3)
+
+
+    def test_ordinal_factor(self):
+        f = ['a','b','c']*3
+        fac = formula.Factor('ff', f, ordinal=True)
+        fac.namespace = {'ff':f}
+
+        assert_equal(fac(), [0,1,2]*3)
+        assert_equal(fac['a'], [1,0,0]*3)
+        assert_equal(fac['b'], [0,1,0]*3)
+        assert_equal(fac['c'], [0,0,1]*3)
+
+    def test_ordinal_factor2(self):
+        f = ['b','c', 'a']*3
+        fac = formula.Factor('ff', ['a','b','c'], ordinal=True)
+        fac.namespace = {'ff':f}
+
+        assert_equal(fac(), [1,2,0]*3)
+        assert_equal(fac['a'], [0,0,1]*3)
+        assert_equal(fac['b'], [1,0,0]*3)
+        assert_equal(fac['c'], [0,1,0]*3)
+
     def test_contrast4(self):
 
         f = self.formula + self.terms[5] + self.terms[5]

@@ -136,18 +136,23 @@ class Factor(Term):
 
     def __init__(self, termname, keys, ordinal=False):
         """
-        factor is initialized with keys, representing all valid
+        Factor is initialized with keys, representing all valid
         levels of the factor.
+
+        If ordinal is True, the order is taken from the keys.
         """
 
-        self.keys = list(set(keys))
-        self.keys.sort()
+        if not ordinal:
+            self.keys = list(set(keys))
+            self.keys.sort()
+        else:
+            self.keys = keys
         self._name = termname
         self.termname = termname
         self.ordinal = ordinal
 
         if self.ordinal:
-            name = self.name
+            name = self.termname
         else:
             name = ['(%s==%s)' % (self.termname, str(key)) for key in self.keys]
 
@@ -166,12 +171,13 @@ class Factor(Term):
                 v = v(*args, **kw)
             else: break
 
+        n = len(v)
+
         if self.ordinal:
-            col = [float(self.keys.index(v[i])) for i in range(len(self.keys))]
+            col = [float(self.keys.index(v[i])) for i in range(n)]
             return N.array(col)
 
         else:
-            n = len(v)
             value = []
             for key in self.keys:
                 col = [float((v[i] == key)) for i in range(n)]
@@ -240,6 +246,24 @@ class Factor(Term):
                      transform=maineffect_func)
         value.namespace = self.namespace
         return value
+
+    def __getitem__(self, key):
+        """
+        Retrieve the column corresponding to key in a Formula.
+        
+        :Parameters:
+            key : one of the Factor's keys
+        
+        :Returns: ndarray corresponding to key, when evaluated in
+                  current namespace
+        """
+        if not self.ordinal:
+            i = self.names().index('(%s==%s)' % (self.termname, str(key)))
+            return self()[i]
+        else:
+            v = self.namespace[self._name]
+            return N.array([(vv == key) for vv in v]).astype(N.float)
+
 
 class Quantitative(Term):
     """
