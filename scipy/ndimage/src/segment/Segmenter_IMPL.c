@@ -2880,7 +2880,7 @@ void computeLaws(LawsFilter7 lawsFilter, tTEM LawsFeatures[], RECT roi, int labe
 
 	if(count == 0){
 	    // debug statement
-	    printf("no samples for texture\n");
+	    // printf("no samples for texture\n");
 	    return;
 	}
 
