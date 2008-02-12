@@ -1,6 +1,6 @@
 
 from scipy.testing import *
-from scipy.ndimage.segmenter import *
+from scipy.ndimage._segmenter import *
 
 inputname = 'slice112.raw'
 

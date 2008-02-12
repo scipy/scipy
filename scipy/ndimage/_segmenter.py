@@ -2,6 +2,14 @@ import math
 import numpy as N
 import scipy.ndimage._segment as S
 
+# Issue warning regarding heavy development status of this module
+import warnings
+_msg = "The segmenter code is under heavy development and therefore public \
+API will change in the future.  The NIPY group is actively working on this \
+code, and has every intention of generalizing this for the Scipy community.\
+Use this module minimally, if at all, until it this warning is removed."
+warnings.warn(_msg, UserWarning)
+
 # WARNING: _objstruct data structure mirrors a corresponding data structure
 # in ndImage_Segmenter_structs.h that is built into the _segment.so library.
 # These structs must match!  
