@@ -139,7 +139,11 @@ class Factor(Term):
         Factor is initialized with keys, representing all valid
         levels of the factor.
 
-        If ordinal is True, the order is taken from the keys.
+        If ordinal is False, keys can have repeats: set(keys) is what is
+        used.
+
+        If ordinal is True, the order is taken from the keys, and
+        there should be no repeats.
         """
 
         if not ordinal:
@@ -147,6 +151,8 @@ class Factor(Term):
             self.keys.sort()
         else:
             self.keys = keys
+            if len(set(keys)) != len(list(keys)):
+                raise ValueError, 'keys for ordinal Factor should be unique, in increasing order'
         self._name = termname
         self.termname = termname
         self.ordinal = ordinal
