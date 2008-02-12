@@ -56,4 +56,3 @@ Enthought -- for providing resources and finances for development of SciPy.
 Brigham Young University -- for providing resources for students to work on SciPy.
 Agilent -- which gave a genereous donation for support of SciPy.
 
-Test
