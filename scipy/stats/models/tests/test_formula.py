@@ -230,7 +230,7 @@ class TestFormula(TestCase):
 
     def test_ordinal_factor(self):
         f = ['a','b','c']*3
-        fac = formula.Factor('ff', f, ordinal=True)
+        fac = formula.Factor('ff', ['a','b','c'], ordinal=True)
         fac.namespace = {'ff':f}
 
         assert_equal(fac(), [0,1,2]*3)
@@ -258,6 +258,25 @@ class TestFormula(TestCase):
         c.getmatrix()
 
         self.assertEquals(estimable, False)
+
+    def test_interactions(self):
+
+        f = formula.interactions([formula.Term(l) for l in ['a', 'b', 'c']])
+        assert_equal(set(f.termnames()), set(['a', 'b', 'c', 'a*b', 'a*c', 'b*c']))
+
+        f = formula.interactions([formula.Term(l) for l in ['a', 'b', 'c', 'd']], order=3)
+        assert_equal(set(f.termnames()), set(['a', 'b', 'c', 'd', 'a*b', 'a*c', 'a*d', 'b*c', 'b*d', 'c*d', 'a*b*c', 'a*c*d', 'a*b*d', 'b*c*d']))
+
+    def test_subtract(self):
+        f = formula.interactions([formula.Term(l) for l in ['a', 'b', 'c']])
+        ff = f - f['a*b']
+        assert_equal(set(ff.termnames()), set(['a', 'b', 'c', 'a*c', 'b*c']))
+        
+        ff = f - f['a*b'] - f['a*c']
+        assert_equal(set(ff.termnames()), set(['a', 'b', 'c', 'b*c']))
+
+        ff = f - (f['a*b'] + f['a*c'])
+        assert_equal(set(ff.termnames()), set(['a', 'b', 'c', 'b*c']))
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])
