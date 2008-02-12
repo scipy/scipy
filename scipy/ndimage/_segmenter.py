@@ -10,6 +10,14 @@ code, and has every intention of generalizing this for the Scipy community.\
 Use this module minimally, if at all, until it this warning is removed."
 warnings.warn(_msg, UserWarning)
 
+# TODO:  Add docstrings for public functions in extension code.
+# Add docstrings to extension code.
+#from numpy.lib import add_newdoc
+#add_newdoc('scipy.ndimage._segment', 'canny_edges',
+#    """Canney edge detector.
+#    """)
+
+
 # WARNING: _objstruct data structure mirrors a corresponding data structure
 # in ndImage_Segmenter_structs.h that is built into the _segment.so library.
 # These structs must match!  
