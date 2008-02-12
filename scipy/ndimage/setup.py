@@ -20,7 +20,6 @@ def configuration(parent_package='', top_path=None):
                          depends = ['src/segment/ndImage_Segmenter_structs.h']
     )
 
-    #config.add_subpackage('segment')
     config.add_data_dir('tests')
     config.add_subpackage('register')
 

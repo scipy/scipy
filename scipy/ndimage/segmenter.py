@@ -2,11 +2,30 @@ import math
 import numpy as N
 import scipy.ndimage._segment as S
 
-# make sure this is local to use as default
-inputname = 'slice112.raw'
-
-import os
-filename = os.path.join(os.path.split(__file__)[0],inputname)
+# WARNING: _objstruct data structure mirrors a corresponding data structure
+# in ndImage_Segmenter_structs.h that is built into the _segment.so library.
+# These structs must match!  
+_objstruct = N.dtype([('L', 'i'),
+                    ('R', 'i'),
+                    ('T', 'i'),
+                    ('B', 'i'),
+                    ('Label', 'i'),
+                    ('Area', 'i'),
+                    ('cX', 'f'),
+                    ('cY', 'f'),
+                    ('curveClose', 'i'),
+                    ('cXB', 'f'),
+                    ('cYB', 'f'),
+                    ('bLength', 'f'),
+                    ('minRadius', 'f'),
+                    ('maxRadius', 'f'),
+                    ('aveRadius', 'f'),
+                    ('ratio', 'f'),
+                    ('compactness', 'f'),
+                    ('voxelMean', 'f'),
+                    ('voxelVar', 'f'),
+                    ('TEM', 'f', 20)]
+                   )
 
 
 def shen_castan(image, IIRFilter=0.8, scLow=0.3, window=7, lowThreshold=220+2048,
@@ -35,7 +54,7 @@ def shen_castan(image, IIRFilter=0.8, scLow=0.3, window=7, lowThreshold=220+2048
     labeledEdges, numberObjects = S.shen_castan_edges(scLow, IIRFilter, window, 
                                                       lowThreshold, highThreshold, image)
     # allocated struct array for edge object measures. for now just the rect bounding box
-    ROIList = N.zeros(numberObjects, dtype=S.objstruct)
+    ROIList = N.zeros(numberObjects, dtype=_objstruct)
     # return the bounding box for each connected edge
     S.get_object_stats(labeledEdges, ROIList)
     return labeledEdges, ROIList[ROIList['Area']>dust]
@@ -69,7 +88,7 @@ def sobel(image, sLow=0.3, tMode=1, lowThreshold=220+2048, highThreshold=600+204
     labeledEdges, numberObjects = S.sobel_edges(sLow, tMode, lowThreshold, 
                                                 highThreshold, BPHigh, apearture, image)
     # allocated struct array for edge object measures. for now just the rect bounding box
-    ROIList = N.zeros(numberObjects, dtype=S.objstruct)
+    ROIList = N.zeros(numberObjects, dtype=_objstruct)
     # return the bounding box for each connected edge
     S.get_object_stats(labeledEdges, ROIList)
     # thin (medial axis transform) of the sobel edges as the sobel produces a 'band edge'
@@ -108,7 +127,7 @@ def canny(image, cSigma=1.0, cLow=0.5, cHigh=0.8, tMode=1, lowThreshold=220+2048
     labeledEdges, numberObjects = S.canny_edges(cSigma, cLow, cHigh, tMode, lowThreshold, highThreshold, 
                                                BPHigh, apearture, image)
     # allocated struct array for edge object measures. for now just the rect bounding box
-    ROIList = N.zeros(numberObjects, dtype=S.objstruct)
+    ROIList = N.zeros(numberObjects, dtype=_objstruct)
     # return the bounding box for each connected edge
     S.get_object_stats(labeledEdges, ROIList)
     return labeledEdges, ROIList[ROIList['Area']>dust]
@@ -185,7 +204,7 @@ def get_texture_measures(rawImage, labeledEdges, ROIList):
     S.texture_measures(rawImage, labeledEdges, ROIList)
     return 
 
-def segment_regions():
+def segment_regions(filename):
     """
         sourceImage, labeledMask, ROIList = segment_regions()
 
@@ -223,7 +242,7 @@ def segment_regions():
     get_texture_measures(sourceImage, labeledMask, ROIList)
     return sourceImage, labeledMask, ROIList
 
-def grow_regions():
+def grow_regions(filename):
     """
         regionMask, numberRegions = region_grow()
         Inputs - No Input
