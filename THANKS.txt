@@ -15,9 +15,11 @@ improvements to the feature set, build process, and robustness of SciPy.
 
 Please add names as needed so that we can keep up with all the contributors. 
 
-Nathan Bell         -- sparsetools reimplementation (CSR/CSC matrix operations)
+Kumar Appaiah       -- Dolph Chebyshev window
+Nathan Bell         -- sparsetools, help with scipy.sparse and scipy.splinalg
 Robert Cimrman      -- UMFpack wrapper for sparse matrix module
 David M. Cooke      -- improvements to system_info, and LBFGSB wrapper
+Aric Hagberg        -- ARPACK wrappers, help with splinalg.eigen
 Chuck Harris        -- Zeros package in optimize (1d root-finding algorithms)
 Prabhu Ramachandran -- improvements to gui_thread
 Robert Kern         -- improvements to stats and bug-fixes
@@ -27,7 +29,6 @@ Ed Schofield        -- Maximum entropy and Monte Carlo modules, help with
                        sparse matrix module
 Travis Vaught       -- initial work on stats module clean up
 Jeff Whitaker       -- Mac OS X support
-Kumar Appaiah       -- Dolph Chebyshev window
 
 
 Testing:
