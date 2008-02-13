@@ -6,12 +6,19 @@ from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, \
 
 import _superlu
 
-import umfpack
-if hasattr( umfpack, 'UMFPACK_OK' ):
-    isUmfpack = True
+noScikit = False
+try:
+    import scikits.umfpack as umfpack
+except ImportError:
+    import umfpack
+    noScikit = True
 else:
-    del umfpack
-    isUmfpack = False
+    isUmfpack = hasattr( umfpack, 'UMFPACK_OK' )
+
+if isUmfpack and noScikit:
+    warn( 'scipy.splinalg.dsolve.umfpack will be removed,'
+          ' install scikits.umfpack instead', DeprecationWarning )
+
 useUmfpack = True
 
 
