@@ -7,6 +7,23 @@ import scipy.ndimage  as NDI
 import scipy.optimize as OPT
 import time
 
+# Issue warning regarding heavy development status of this module
+import warnings
+_msg = "The registration code is under heavy development and therefore the \
+public API will change in the future.  The NIPY group is actively working on \
+this code, and has every intention of generalizing this for the Scipy \
+community.  Use this module minimally, if at all, until it this warning is \
+removed."
+warnings.warn(_msg, UserWarning)
+
+# TODO:  Add docstrings for public functions in extension code.
+# Add docstrings to extension code.
+#from numpy.lib import add_newdoc
+#add_newdoc('scipy.ndimage._register', 'register_histogram',
+#    """A joint histogram used for registration module.
+#    """)
+
+
 # anatomical MRI to test with
 inputname = 'ANAT1_V0001.img'
 filename = os.path.join(os.path.split(__file__)[0], inputname)
