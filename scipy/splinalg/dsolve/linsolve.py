@@ -12,8 +12,8 @@ try:
 except ImportError:
     import umfpack
     noScikit = True
-else:
-    isUmfpack = hasattr( umfpack, 'UMFPACK_OK' )
+
+isUmfpack = hasattr( umfpack, 'UMFPACK_OK' )
 
 if isUmfpack and noScikit:
     warn( 'scipy.splinalg.dsolve.umfpack will be removed,'
