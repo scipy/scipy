@@ -1,7 +1,7 @@
 import math
 import os
 import numpy as N
-import scipy.ndimage.register as R
+import scipy.ndimage._register as R
 import scipy.special  as SP
 import scipy.ndimage  as NDI
 import scipy.optimize as OPT
