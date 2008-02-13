@@ -22,6 +22,31 @@ class Term(object):
     defaults to formula.default_namespace.
     When called in an instance of formula,
     the namespace used is that formula's namespace.
+
+    Inheritance of the namespace under +,*,- operations:
+    ----------------------------------------------------
+
+    By default, the namespace is empty, which means it must be
+    specified before evaluating the design matrix. 
+
+    When it is unambiguous, the namespaces of objects are derived from the
+    context. 
+
+    Rules:
+    ------
+
+    i) "X * I", "X + I", "X**i": these inherit X's namespace
+    ii) "F.main_effect()": this inherits the Factor F's namespace
+    iii) "A-B": this inherits A's namespace
+    iv) if A.namespace == B.namespace, then A+B inherits this namespace
+    v) if A.namespace == B.namespace, then A*B inherits this namespace
+
+    Equality of namespaces:
+    -----------------------
+
+    This is done by comparing the namespaces directly, if
+    an exception is raised in the check of equality, they are
+    assumed not to be equal.
     """
 
     def __pow__(self, power):
@@ -80,9 +105,10 @@ class Term(object):
         """
         Formula(self) + Formula(other)
         """
-        other = Formula(other, namespace=self.namespace)
+        other = Formula(other)
         f = other + self
-        f.namespace = self.namespace
+        if _namespace_equal(other.namespace, self.namespace):
+            f.namespace = self.namespace
         return f
 
     def __mul__(self, other):
@@ -95,9 +121,10 @@ class Term(object):
         elif self.name is 'intercept':
             f = Formula(other, namespace=other.namespace)
         else:
-            other = Formula(other, namespace=self.namespace)
+            other = Formula(other, namespace=other.namespace)
             f = other * self
-        f.namespace = self.namespace
+        if _namespace_equal(other.namespace, self.namespace):
+            f.namespace = self.namespace
         return f
 
     def names(self):
@@ -124,7 +151,8 @@ class Term(object):
         else:
             val = self.func
         if callable(val):
-            if hasattr(val, "namespace"):
+            if isinstance(val, (Term, Formula)):
+                val = copy.copy(val)
                 val.namespace = self.namespace
             val = val(*args, **kw)
 
@@ -172,7 +200,8 @@ class Factor(Term):
         v = self.namespace[self._name]
         while True:
             if callable(v):
-                if hasattr(v, "namespace"):
+                if isinstance(v, (Term, Formula)):
+                    v = copy.copy(v)
                     v.namespace = self.namespace
                 v = v(*args, **kw)
             else: break
@@ -376,7 +405,7 @@ class Formula(object):
         intercept = False
         iindex = 0
         for t in self.terms:
-
+            t = copy.copy(t)
             t.namespace = namespace
             val = t(*args, **kw)
 
@@ -414,7 +443,7 @@ class Formula(object):
             else:
                 allvals = I(nrow=nrow)
                 allvals.shape = (1,) + allvals.shape
-        return allvals
+        return N.squeeze(allvals)
 
     def hasterm(self, query_term):
         """
@@ -495,7 +524,7 @@ class Formula(object):
         TO DO: check for nesting relationship. Should not be too difficult.
         """
 
-        other = Formula(other, namespace=self.namespace)
+        other = Formula(other)
 
         selftermnames = self.termnames()
         othertermnames = other.termnames()
@@ -520,7 +549,6 @@ class Formula(object):
                 if self.terms[i].name is 'intercept':
                     _term = other.terms[j]
                     _term.namespace = other.namespace
-
                 elif other.terms[j].name is 'intercept':
                     _term = self.terms[i]
                     _term.namespace = self.namespace
@@ -548,16 +576,17 @@ class Formula(object):
 
                     sumterms = self + other
                     sumterms.terms = [self, other] # enforce the order we want
-                    sumterms.namespace = self.namespace
 
-                    _term = Quantitative(names, func=sumterms, termname=termname,
+                    _term = Quantitative(names, func=sumterms,
+                                         termname=termname,
                                          transform=product_func)
-                    _term.namespace = self.namespace
 
+                    if _namespace_equal(self.namespace, other.namespace):
+                        _term.namespace = self.namespace
 
                 terms.append(_term)
 
-        return Formula(terms, namespace=self.namespace)
+        return Formula(terms)
 
     def __add__(self, other):
 
@@ -568,12 +597,15 @@ class Formula(object):
         terms in the formula are sorted alphabetically.
         """
 
-        other = Formula(other, namespace=self.namespace)
+        other = Formula(other)
         terms = self.terms + other.terms
         pieces = [(term.name, term) for term in terms]
         pieces.sort()
         terms = [piece[1] for piece in pieces]
-        return Formula(terms, namespace=self.namespace)
+        f = Formula(terms)
+        if _namespace_equal(self.namespace, other.namespace):
+            f.namespace = self.namespace
+        return f
 
     def __sub__(self, other):
 
@@ -583,7 +615,7 @@ class Formula(object):
         function does not raise an exception.
         """
 
-        other = Formula(other, namespace=self.namespace)
+        other = Formula(other)
         terms = copy.copy(self.terms)
 
         for term in other.terms:
@@ -591,9 +623,11 @@ class Formula(object):
                 if terms[i].termname == term.termname:
                     terms.pop(i)
                     break
-        return Formula(terms, namespace=self.namespace)
+        f = Formula(terms)
+        f.namespace = self.namespace
+        return f
 
-def isnested(A, B, namespace=globals()):
+def isnested(A, B, namespace=None):
     """
     Is factor B nested within factor A or vice versa: a very crude test
     which depends on the namespace.
@@ -603,8 +637,12 @@ def isnested(A, B, namespace=globals()):
 
     """
 
-    a = A(namespace, values=True)[0]
-    b = B(namespace, values=True)[0]
+    if namespace is not None:
+        A = copy.copy(A); A.namespace = namespace
+        B = copy.copy(B); B.namespace = namespace
+
+    a = A(values=True)[0]
+    b = B(values=True)[0]
 
     if len(a) != len(b):
         raise ValueError, 'A() and B() should be sequences of the same length'
@@ -645,17 +683,25 @@ array([1, 1, 1, 1, 1])
 
 """
 
-def interactions(terms, order=2):
+def interactions(terms, order=[1,2]):
     """
-    Output all pairwise interactions up to a given order of a
+    Output all pairwise interactions of given order of a
     sequence of terms.
 
-    If order is greater than len(terms), it is treated as len(terms).
+    The argument order is a sequence specifying which order
+    of interactions should be generated -- the default
+    creates main effects and two-way interactions. If order
+    is an integer, it is changed to range(1,order+1), so
+    order=3 is equivalent to order=[1,2,3], generating
+    all one, two and three-way interactions.
+    
+    If any entry of order is greater than len(terms), it is
+    effectively treated as len(terms).
 
     >>> print interactions([Term(l) for l in ['a', 'b', 'c']])
     <formula: a*b + a*c + b*c + a + b + c>
     >>>
-    >>> print interactions([Term(l) for l in ['a', 'b', 'c']], order=5)
+    >>> print interactions([Term(l) for l in ['a', 'b', 'c']], order=range(5))
     <formula: a*b + a*b*c + a*c + b*c + a + b + c>
     >>>
 
@@ -664,10 +710,13 @@ def interactions(terms, order=2):
 
     values = {}
 
+    if N.asarray(order).shape == ():
+        order = range(1, int(order)+1)
+
     # First order
 
-    for o in range(order):
-        I = N.indices((l,)*(o+1))
+    for o in order:
+        I = N.indices((l,)*(o))
         I.shape = (I.shape[0], N.product(I.shape[1:]))
         for m in range(I.shape[1]):
 
@@ -681,8 +730,15 @@ def interactions(terms, order=2):
                     v *= ll[ii+1]
                 values[tuple(I[:,m])] = v
 
-    value = values[(0,)]; del(values[(0,)])
+    key = values.keys()[0]
+    value = values[key]; del(values[key])
     
     for v in values.values():
         value += v
     return value
+
+def _namespace_equal(space1, space2):
+    try:
+        return space1 == space2
+    except:
+        return False

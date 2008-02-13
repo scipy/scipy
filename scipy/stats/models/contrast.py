@@ -1,3 +1,5 @@
+import copy
+
 import numpy as N
 from numpy.linalg import pinv
 from scipy.stats.models import utils
@@ -78,8 +80,9 @@ class Contrast:
         then evaldesign can be set to False.
         """
 
-        self.term.namespace = self.formula.namespace
-        T = N.transpose(N.array(self.term(*args, **kw)))
+        t = copy.copy(self.term)
+        t.namespace = self.formula.namespace
+        T = N.transpose(N.array(t(*args, **kw)))
 
         if T.ndim == 1:
             T.shape = (T.shape[0], 1)
