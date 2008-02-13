@@ -313,7 +313,7 @@ from numpy import deprecate
 
 spkron      = deprecate(kron,     oldname='spkron',     newname='kron')
 speye       = deprecate(eye,      oldname='speye',      newname='eye')
-spidentity  = deprecate(identity, oldname='spidenitiy', newname='identity')
+spidentity  = deprecate(identity, oldname='spidentity', newname='identity')
 
 
 def lil_eye((r,c), k=0, dtype='d'):
