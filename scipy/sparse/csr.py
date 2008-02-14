@@ -200,7 +200,7 @@ class csr_matrix(_cs_matrix):
             
             max_indx = indices.max()
 
-            if max_indx >  N:
+            if max_indx >= N:
                 raise ValueError('index (%d) out of range' % max_indx)
 
             min_indx = indices.min()
@@ -222,8 +222,6 @@ class csr_matrix(_cs_matrix):
             row = key[0]
             col = key[1]
            
-            #TODO implement CSR[ [1,2,3], X ] with sparse matmat
-            #TODO make use of sorted indices
 
             if isintlike(row):
                 #[1,??]
@@ -265,6 +263,8 @@ class csr_matrix(_cs_matrix):
     
 
     def _get_single_element(self,row,col):
+        """Returns the single element self[row, col] 
+        """
         M, N = self.shape
         if (row < 0):
             row += M
@@ -272,6 +272,8 @@ class csr_matrix(_cs_matrix):
             col += N
         if not (0<=row<M) or not (0<=col<N):
             raise IndexError, "index out of bounds"
+            
+        #TODO make use of sorted indices (if present)
         
         start = self.indptr[row]
         end   = self.indptr[row+1]
@@ -288,12 +290,12 @@ class csr_matrix(_cs_matrix):
             raise ValueError('nonzero entry (%d,%d) occurs more than once' % (row,col) )
 
     def _get_row_slice(self, i, cslice ):
-        """Returns a copy of self[i, cslice] 
+        """Returns a copy of row self[i, cslice] 
         """
         if i < 0:
             i += self.shape[0]
 
-        if i < 0:
+        if i < 0 or i >= self.shape[0]:
             raise ValueError('index (%d) out of range' % i ) 
 
         start, stop, stride = cslice.indices(self.shape[1])
