@@ -404,6 +404,38 @@ class _cs_matrix(_data_matrix):
             return spmatrix.sum(self,axis)
             raise ValueError, "axis out of bounds"
 
+    #######################
+    # Getting and Setting #
+    #######################
+    
+    def __getitem__(self, key):
+        if isinstance(key, tuple):
+            row = key[0]
+            col = key[1]
+           
+            #TODO implement CSR[ [1,2,3], X ] with sparse matmat
+            #TODO make use of sorted indices
+
+            if isintlike(row) and isintlike(col):
+                return self._get_single_element(row,col)
+            else:
+                major,minor = self._swap((row,col))
+                if isintlike(major) and isinstance(minor,slice):
+                    minor_shape = self._swap(self.shape)[1]
+                    start, stop, stride = minor.indices(minor_shape)
+                    out_shape   = self._swap( (1, stop-start) )
+                    return self._get_slice( major, start, stop, stride, out_shape)
+                elif isinstance( row, slice) or isinstance(col, slice):
+                    return self._get_submatrix( row, col )
+                else:
+                    raise NotImplementedError
+
+        elif isintlike(key):
+            return self[key, :]
+        else:
+            raise IndexError, "invalid index"
+    
+
     def _get_single_element(self,row,col):
         M, N = self.shape
         if (row < 0):
@@ -428,33 +460,6 @@ class _cs_matrix(_data_matrix):
             return self.data[start:end][indxs[0]]
         else:
             raise ValueError,'nonzero entry (%d,%d) occurs more than once' % (row,col)
-    
-    def __getitem__(self, key):
-        if isinstance(key, tuple):
-            row = key[0]
-            col = key[1]
-           
-            #TODO implement CSR[ [1,2,3], X ] with sparse matmat
-            #TODO make use of sorted indices
-
-            if isintlike(row) and isintlike(col):
-                return self._get_single_element(row,col)
-            else:
-                major,minor = self._swap((row,col))
-                if isintlike(major) and isinstance(minor,slice):
-                    minor_shape = self._swap(self.shape)[1]
-                    start, stop, stride = minor.indices(minor_shape)
-                    out_shape   = self._swap( (1, stop-start) )
-                    return self._get_slice( major, start, stop, stride, out_shape)
-                elif isinstance( row, slice) or isinstance(col, slice):
-                    return self.get_submatrix( row, col )
-                else:
-                    raise NotImplementedError
-
-        elif isintlike(key):
-            return self[key, :]
-        else:
-            raise IndexError, "invalid index"
 
     def _get_slice(self, i, start, stop, stride, shape):
         """Returns a copy of the elements 
@@ -480,6 +485,57 @@ class _cs_matrix(_data_matrix):
         indptr = numpy.array([0, len(indices)])
         return self.__class__((data, index, indptr), shape=shape, \
                               dtype=self.dtype)
+
+    def _get_submatrix( self, slice0, slice1 ):
+        """Return a submatrix of this matrix (new matrix is created)."""
+
+        slice0, slice1 = self._swap((slice0,slice1))
+        shape0, shape1 = self._swap(self.shape)
+        def _process_slice( sl, num ):
+            if isinstance( sl, slice ):
+                i0, i1 = sl.start, sl.stop
+                if i0 is None:
+                    i0 = 0
+                elif i0 < 0:
+                    i0 = num + i0
+
+                if i1 is None:
+                    i1 = num
+                elif i1 < 0:
+                    i1 = num + i1
+
+                return i0, i1
+
+            elif isscalar( sl ):
+                if sl < 0:
+                    sl += num
+
+                return sl, sl + 1
+
+            else:
+                return sl[0], sl[1]
+
+        def _in_bounds( i0, i1, num ):
+            if not (0<=i0<num) or not (0<i1<=num) or not (i0<i1):
+                raise IndexError,\
+                      "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %\
+                      (i0, num, i1, num, i0, i1)
+
+        i0, i1 = _process_slice( slice0, shape0 )
+        j0, j1 = _process_slice( slice1, shape1 )
+        _in_bounds( i0, i1, shape0 )
+        _in_bounds( j0, j1, shape1 )
+
+        aux = sparsetools.get_csr_submatrix( shape0, shape1,
+                                             self.indptr, self.indices,
+                                             self.data,
+                                             i0, i1, j0, j1 )
+
+        data, indices, indptr = aux[2], aux[1], aux[0]
+        shape = self._swap( (i1 - i0, j1 - j0) )
+
+        return self.__class__( (data,indices,indptr), shape=shape )
+
 
     def __setitem__(self, key, val):
         if isinstance(key, tuple):
@@ -724,47 +780,4 @@ class _cs_matrix(_data_matrix):
         A.has_sorted_indices = True
         return A
 
-    def _get_submatrix( self, shape0, shape1, slice0, slice1 ):
-        """Return a submatrix of this matrix (new matrix is created)."""
-        def _process_slice( sl, num ):
-            if isinstance( sl, slice ):
-                i0, i1 = sl.start, sl.stop
-                if i0 is None:
-                    i0 = 0
-                elif i0 < 0:
-                    i0 = num + i0
-
-                if i1 is None:
-                    i1 = num
-                elif i1 < 0:
-                    i1 = num + i1
-
-                return i0, i1
-
-            elif isscalar( sl ):
-                if sl < 0:
-                    sl += num
-
-                return sl, sl + 1
-
-            else:
-                return sl[0], sl[1]
-
-        def _in_bounds( i0, i1, num ):
-            if not (0<=i0<num) or not (0<i1<=num) or not (i0<i1):
-                raise IndexError,\
-                      "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %\
-                      (i0, num, i1, num, i0, i1)
-
-        i0, i1 = _process_slice( slice0, shape0 )
-        j0, j1 = _process_slice( slice1, shape1 )
-        _in_bounds( i0, i1, shape0 )
-        _in_bounds( j0, j1, shape1 )
-
-        aux = sparsetools.get_csr_submatrix( shape0, shape1,
-                                             self.indptr, self.indices,
-                                             self.data,
-                                             i0, i1, j0, j1 )
-        data, indices, indptr = aux[2], aux[1], aux[0]
-        return data, indices, indptr, i1 - i0, j1 - j0
 

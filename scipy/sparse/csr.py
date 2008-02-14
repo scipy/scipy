@@ -174,20 +174,6 @@ class csr_matrix(_cs_matrix):
 
             return bsr_matrix( (data,indices,indptr), shape=self.shape )
     
-    def get_submatrix( self, slice0, slice1 ):
-        """Return a submatrix of this matrix (new matrix is created).
-        Contigous range of rows and columns can be selected using:
-          1. a slice object
-          2. a tuple (from, to)
-          3. a scalar for single row/column selection.
-
-        """
-
-        aux = _cs_matrix._get_submatrix( self, self.shape[0], self.shape[1],
-                                         slice0, slice1 )
-        nr, nc = aux[3:]
-        return self.__class__( aux[:3], shape = (nr, nc) )
-
     # these functions are used by the parent class (_cs_matrix)
     # to remove redudancy between csc_matrix and csr_matrix
     def _swap(self,x):

@@ -851,18 +851,6 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         assert_array_equal(asp.data,[1, 2, 3])
         assert_array_equal(asp.todense(),bsp.todense())
 
-    def test_get_submatrix(self):
-        a = csr_matrix( array([[1,2,3,4],[1,2,3,5],[0,2,0,1]]) )
-        i0 = slice( 0, 2 )
-        i1 = ( 1, 3 )
-        b = a.get_submatrix( i0, i1 )
-
-        aa = a.toarray()
-        ab = b.toarray()
-
-        assert b.dtype == a.dtype
-        assert b.shape == (2,2)
-        assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
 class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         _TestInplaceArithmetic, _TestArithmetic, _TestMatvecOutput,
@@ -935,18 +923,6 @@ class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
         assert_array_equal(asp.todense(),bsp.todense())
 
-    def test_get_submatrix(self):
-        a = csc_matrix( array([[1,2,3,4],[1,2,3,5],[0,2,0,1]]) )
-        i0 = slice( 0, 2 )
-        i1 = ( 1, 3 )
-        b = a.get_submatrix( i0, i1 )
-
-        aa = a.toarray()
-        ab = b.toarray()
-
-        assert_equal(b.dtype, a.dtype)
-        assert_equal(b.shape, (2,2))
-        assert_equal( ab, aa[i0,i1[0]:i1[1]] )
 
 class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
     spmatrix = dok_matrix
