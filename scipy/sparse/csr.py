@@ -201,11 +201,11 @@ class csr_matrix(_cs_matrix):
             max_indx = indices.max()
 
             if max_indx >= N:
-                raise ValueError('index (%d) out of range' % max_indx)
+                raise IndexError('index (%d) out of range' % max_indx)
 
             min_indx = indices.min()
             if min_indx < -N:
-                raise ValueError('index (%d) out of range' % (N + min_indx))
+                raise IndexError('index (%d) out of range' % (N + min_indx))
             
             if min_indx < 0:
                 indices = indices.copy()
@@ -249,7 +249,7 @@ class csr_matrix(_cs_matrix):
                     row = asindices(row)                     #[[1,2],[1,2]]
                     col = asindices(col)
                     if len(row) != len(col):
-                        raise ValueError('number of row and column indices differ')
+                        raise IndexError('number of row and column indices differ')
                     val = []
                     for i,j in zip(row,col):
                         val.append(self._get_single_element(i,j))
@@ -271,7 +271,7 @@ class csr_matrix(_cs_matrix):
         if (col < 0):
             col += N
         if not (0<=row<M) or not (0<=col<N):
-            raise IndexError, "index out of bounds"
+            raise IndexError("index out of bounds")
             
         #TODO make use of sorted indices (if present)
         
@@ -296,7 +296,7 @@ class csr_matrix(_cs_matrix):
             i += self.shape[0]
 
         if i < 0 or i >= self.shape[0]:
-            raise ValueError('index (%d) out of range' % i ) 
+            raise IndexError('index (%d) out of range' % i ) 
 
         start, stop, stride = cslice.indices(self.shape[1])
 
@@ -350,9 +350,9 @@ class csr_matrix(_cs_matrix):
 
         def check_bounds( i0, i1, num ):
             if not (0<=i0<num) or not (0<i1<=num) or not (i0<i1):
-                raise IndexError,\
+                raise IndexError( \
                       "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %\
-                      (i0, num, i1, num, i0, i1)
+                      (i0, num, i1, num, i0, i1) )
 
         i0, i1 = process_slice( row_slice, M )
         j0, j1 = process_slice( col_slice, N )
