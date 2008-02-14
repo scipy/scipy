@@ -628,9 +628,9 @@ class _TestBothSlicing:
     def test_get_slices(self):
         B = asmatrix(arange(50.).reshape(5,10))
         A = self.spmatrix(B)
-        assert_array_equal(B[2:5,0:3], A[2:5,0:3].todense())
-        assert_array_equal(B[1:,:-1], A[1:,:-1].todense())
-        assert_array_equal(B[:-1,1:], A[:-1,1:].todense())
+        assert_array_equal(A[2:5,0:3].todense(), B[2:5,0:3])
+        assert_array_equal(A[1:,:-1].todense(),  B[1:,:-1]) 
+        assert_array_equal(A[:-1,1:].todense(),  B[:-1,1:])
 
         # Now test slicing when a column contains only zeros
         E = matrix([[1, 0, 1], [4, 0, 0], [0, 0, 0], [0, 0, 1]])
@@ -851,6 +851,66 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         assert_array_equal(asp.data,[1, 2, 3])
         assert_array_equal(asp.todense(),bsp.todense())
 
+
+    def test_fancy_slicing(self):
+        #TODO add this to csc_matrix
+        B = asmatrix(arange(50).reshape(5,10))
+        A = csr_matrix( B )
+
+        # [i,j]
+        assert_equal(A[2,3],B[2,3])
+        assert_equal(A[-1,8],B[-1,8])
+        assert_equal(A[-1,-2],B[-1,-2])
+
+        # [i,1:2]
+        assert_equal(A[2,:].todense(),B[2,:])
+        assert_equal(A[2,5:-2].todense(),B[2,5:-2])
+       
+        # [i,[1,2]]
+        assert_equal(A[3,[1,3]].todense(),B[3,[1,3]])
+        assert_equal(A[-1,[2,-5]].todense(),B[-1,[2,-5]])
+
+        # [1:2,j]
+        assert_equal(A[:,2].todense(),B[:,2])
+        assert_equal(A[3:4,9].todense(),B[3:4,9])
+        assert_equal(A[1:4,-5].todense(),B[1:4,-5])
+
+        # [1:2,[1,2]]
+        assert_equal(A[:,[2,8,3,-1]].todense(),B[:,[2,8,3,-1]])
+        assert_equal(A[3:4,[9]].todense(),B[3:4,[9]])
+        assert_equal(A[1:4,[-1,-5]].todense(),B[1:4,[-1,-5]])
+
+        # [[1,2],j]
+        assert_equal(A[[1,3],3].todense(),B[[1,3],3])
+        assert_equal(A[[2,-5],-4].todense(),B[[2,-5],-4])
+        
+        # [[1,2],1:2]
+        assert_equal(A[[1,3],:].todense(),B[[1,3],:])
+        assert_equal(A[[2,-5],8:-1].todense(),B[[2,-5],8:-1])
+    
+        # [[1,2],[1,2]]
+        assert_equal(A[[1,3],[2,4]],B[[1,3],[2,4]])
+        assert_equal(A[[-1,-3],[2,-4]],B[[-1,-3],[2,-4]])
+
+        # [i]
+        assert_equal(A[1].todense(),B[1])
+        assert_equal(A[-2].todense(),B[-2])
+
+        # [1:2]
+        assert_equal(A[1:4].todense(),B[1:4])
+        assert_equal(A[1:-2].todense(),B[1:-2])
+
+        # [[1,2]]
+        assert_equal(A[[1,3]].todense(),B[[1,3]])
+        assert_equal(A[[-1,-3]].todense(),B[[-1,-3]])
+
+        # [[1,2],:][:,[1,2]]
+        assert_equal(A[[1,3],:][:,[2,4]].todense(),    B[[1,3],:][:,[2,4]]    )
+        assert_equal(A[[-1,-3],:][:,[2,-4]].todense(), B[[-1,-3],:][:,[2,-4]] )
+
+        # [:,[1,2]][[1,2],:]
+        assert_equal(A[:,[1,3]][[2,4],:].todense(),    B[:,[1,3]][[2,4],:]    )
+        assert_equal(A[:,[-1,-3]][[2,-4],:].todense(), B[:,[-1,-3]][[2,-4],:] )
 
 class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         _TestInplaceArithmetic, _TestArithmetic, _TestMatvecOutput,
