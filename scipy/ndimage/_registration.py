@@ -28,13 +28,19 @@ warnings.warn(_msg, UserWarning)
 inputname = 'ANAT1_V0001.img'
 filename = os.path.join(os.path.split(__file__)[0], inputname)
 
-def remap_image(image, parm_vector):
+def remap_image(image, parm_vector, resample='linear'):
 	M_inverse = get_inverse_mappings(parm_vector)
 	# allocate the zero image
 	remaped_image = load_blank_image()
 	imdata = build_structs(step=1)
-	# trilinear interpolation mapping. to be replaced with splines
-	R.register_linear_resample(image['data'], remaped_image['data'], M_inverse, imdata['step'])
+
+	if resample == 'linear':
+	    # trilinear interpolation mapping.
+	    R.register_linear_resample(image['data'], remaped_image['data'], M_inverse, imdata['step'])
+	elif resample == 'cubic':
+	    # tricubic convolve interpolation mapping. 
+	    R.register_cubic_resample(image['data'], remaped_image['data'], M_inverse, imdata['step'])
+
 	return remaped_image
 
 def get_inverse_mappings(parm_vector):
@@ -91,12 +97,14 @@ def multires_registration(image1, image2, imdata, lite, smhist, method, opt_meth
 	for i in loop:
 	    step = imdata['sample'][i]
 	    imdata['step'][:] = step
-	    optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist, method, ret_histo)
+	    optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist,
+			    method, ret_histo)
 	    p_args = (optfunc_args,)
 	    if opt_method=='powell':
 		print 'POWELL multi-res registration step size ', step
 		print 'vector ', x
-    	        x = OPT.fmin_powell(optimize_function, x, args=p_args, callback=callback_powell) 
+    	        x = OPT.fmin_powell(optimize_function, x, args=p_args,
+				    callback=callback_powell) 
 	    elif opt_method=='cg':
 		print 'CG multi-res registration step size ', step
 		print 'vector ', x
@@ -106,14 +114,16 @@ def multires_registration(image1, image2, imdata, lite, smhist, method, opt_meth
 		    print 'Hybrid POWELL multi-res registration step size ', step
 		    print 'vector ', x
 		    lite = 0
-	    	    optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist, method, ret_histo)
+	    	    optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist,
+				    method, ret_histo)
 	    	    p_args = (optfunc_args,)
     	            x = OPT.fmin_powell(optimize_function, x, args=p_args, callback=callback_powell) 
 	        elif i==1:
 		    print 'Hybrid CG multi-res registration step size ', step
 		    print 'vector ', x
 		    lite = 1
-	    	    optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist, method, ret_histo)
+	    	    optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, 
+				    smhist, method, ret_histo)
 	    	    p_args = (optfunc_args,)
     	            x = OPT.fmin_cg(optimize_function, x, args=p_args, callback=callback_cg) 
 
