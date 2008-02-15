@@ -1,6 +1,100 @@
 #include<stdio.h>
 #include<stdlib.h>
 
+float tri_cubic_convolve(unsigned char *pVolume, int x, int y, int z, float xp, float yp,
+	                 float zp, int colsG, int rowsG, int layersG, int sliceSizeG){
+
+	int i, j, k;
+	int layerOffsets[4];
+	int rowOffsets[4];
+	float ps1, ps2, ps3;
+	float Y[4], NewRow[4], NewLayer[4];
+	float R, C, L, D, T;
+	float valueXYZ = 0.0;
+	float dataCube[4][4][4];
+	/*            [cols][rows][layers] */
+
+	rowOffsets[0]   = (y-1)*colsG;
+	rowOffsets[1]   = (y  )*colsG;
+	rowOffsets[2]   = (y+1)*colsG;
+	rowOffsets[3]   = (y+2)*colsG;
+
+	layerOffsets[0] = (z-1)*sliceSizeG;
+	layerOffsets[1] = (z  )*sliceSizeG;
+	layerOffsets[2] = (z+1)*sliceSizeG;
+	layerOffsets[3] = (z+2)*sliceSizeG;
+
+	/* get numerator for interpolation */
+	C = xp - (float)x;
+	R = yp - (float)y;
+	L = zp - (float)z;
+	D = (float)0.002;
+
+	/* get 4x4 window over all 4 layers */
+	for(i = 0; i < 4; ++i){
+	    for(j = 0; j < 4; ++j){
+		dataCube[0][j][i] = (float)pVolume[layerOffsets[i]+rowOffsets[j]+x-1];
+		dataCube[1][j][i] = (float)pVolume[layerOffsets[i]+rowOffsets[j]+x];
+		dataCube[2][j][i] = (float)pVolume[layerOffsets[i]+rowOffsets[j]+x+1];
+		dataCube[3][j][i] = (float)pVolume[layerOffsets[i]+rowOffsets[j]+x+2];
+	    }
+	}
+
+	for(i = 0; i < 4; ++i){
+	    /* interpolate 4 rows in all 4 layers */
+	    for(j = 0; j < 4; ++j){
+		if(C > D){
+		    Y[0] = dataCube[0][j][i];
+		    Y[1] = dataCube[1][j][i];
+		    Y[2] = dataCube[2][j][i];
+		    Y[3] = dataCube[3][j][i];
+		    ps1       = Y[2] - Y[0];
+		    ps2       = (float)2.0*(Y[0] - Y[1]) + Y[2] - Y[3];
+		    ps3       = -Y[0] + Y[1] - Y[2] + Y[3];
+		    NewRow[j] = Y[1]+C*(ps1+C*(ps2+C*ps3));
+		}
+		else{
+		    NewRow[j] = dataCube[1][j][i];
+		}
+	    }
+	    /* interpolate across 4 columns */
+	    if(R > D){
+		Y[0] = NewRow[0];
+		Y[1] = NewRow[1];
+		Y[2] = NewRow[2];
+		Y[3] = NewRow[3];
+		ps1  = Y[2] - Y[0];
+		ps2  = (float)2.0*(Y[0] - Y[1]) + Y[2] - Y[3];
+		ps3  = -Y[0] + Y[1] - Y[2] + Y[3];
+		T    = (Y[1]+R*(ps1+R*(ps2+R*ps3)));
+		NewLayer[i] = T;
+	    }
+	    else{
+		T = NewRow[1];
+		NewLayer[i] = T;
+	    } 
+	}
+	/* interpolate across 4 layers */
+	if(R > D){
+	    Y[0] = NewLayer[0];
+	    Y[1] = NewLayer[1];
+	    Y[2] = NewLayer[2];
+	    Y[3] = NewLayer[3];
+	    ps1  = Y[2] - Y[0];
+	    ps2  = (float)2.0*(Y[0] - Y[1]) + Y[2] - Y[3];
+	    ps3  = -Y[0] + Y[1] - Y[2] + Y[3];
+	    T    = (Y[1]+R*(ps1+R*(ps2+R*ps3)));
+	    valueXYZ = T;
+	}
+	else{
+	    T = NewLayer[1];
+	    valueXYZ = T;
+	} 
+
+	return(valueXYZ);
+
+}
+
 float trilinear_A(unsigned char *pVolume, int x, int y, int z, float dx, float dy, float dz, int dims[]){
 
 	// Vxyz for [0,1] values of x, y, z
@@ -402,6 +496,52 @@ int NI_LinearResample(int layersF, int rowsF, int colsF, int layersG, int rowsG,
 
 			imageG[sliceG+rowG+(int)x] = (int)vf;
 
+		    }
+	        }
+	    }
+	}
+
+	status = 1;
+
+	return status;
+
+}
+
+
+
+int NI_CubicResample(int layersF, int rowsF, int colsF, int layersG, int rowsG, int colsG,
+	             int *dimSteps, double *M, unsigned char *imageG, unsigned char *imageF)
+{
+
+	int i;
+	int status;
+	int sliceG;
+	int rowG;
+	int sliceSizeG;
+	int ivf;
+	float vf;
+	float x, y, z;
+	float xp, yp, zp;
+
+	sliceSizeG = rowsG * colsG;
+	for(z = 1.0; z < layersG-dimSteps[2]-2; z += dimSteps[2]){
+	    sliceG = (int)z * sliceSizeG;
+	    for(y = 1.0; y < rowsG-dimSteps[1]-2; y += dimSteps[1]){
+		rowG = (int)y * colsG;
+	        for(x = 1.0; x < colsG-dimSteps[0]-2; x += dimSteps[0]){
+		    // get the 'from' coordinates 
+		    xp = M[0]*x + M[1]*y + M[2]*z  + M[3];
+		    yp = M[4]*x + M[5]*y + M[6]*z  + M[7];
+		    zp = M[8]*x + M[9]*y + M[10]*z + M[11];
+		    // clip the resample window 
+		    if((zp >= 1.0 && zp < layersF-dimSteps[2]-2) && 
+		       (yp >= 1.0 && yp < rowsF-dimSteps[1]-2) && 
+		       (xp >= 1.0 && xp < colsF-dimSteps[0]-2)){
+			vf = tri_cubic_convolve(imageF, (int)xp, (int)yp, (int)zp, xp, yp,
+				          	zp, colsG, rowsG, layersG, sliceSizeG);
+			/* clip at hard edges */
+			if(vf < 0.0) vf = 0.0;
+			imageG[sliceG+rowG+(int)x] = (int)vf;
 		    }
 	        }
 	    }
