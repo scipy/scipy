@@ -56,7 +56,7 @@ class lil_matrix(spmatrix):
         # First get the shape
         if A is None:
             if not isshape(shape):
-                raise TypeError, "need a valid shape"
+                raise TypeError("need a valid shape")
             M, N = shape
             self.shape = (M,N)
             self.rows = numpy.empty((M,), dtype=object)
@@ -75,6 +75,8 @@ class lil_matrix(spmatrix):
             self.data  = A.data
         elif isinstance(A,tuple):
             if isshape(A):
+                if shape is not None:
+                    raise ValueError('invalid use of shape parameter')
                 M, N = A
                 self.shape = (M,N)
                 self.rows = numpy.empty((M,), dtype=object)
