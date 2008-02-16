@@ -75,6 +75,15 @@ class _TestCommon:
         A = matrix([[-1, 0, 17],[0, -5, 0],[1, -4, 0],[0,0,0]],'d')
         assert_equal(-A,(-self.spmatrix(A)).todense())
 
+    def test_real(self):
+        D = matrix([[1 + 3j, 2 - 4j]])
+        A = self.spmatrix(D)
+        assert_equal(A.real.todense(),D.real)
+    
+    def test_imag(self):
+        D = matrix([[1 + 3j, 2 - 4j]])
+        A = self.spmatrix(D)
+        assert_equal(A.imag.todense(),D.imag)
 
     def test_diagonal(self):
         """Does the matrix's .diagonal() method work?
