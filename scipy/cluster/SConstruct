@@ -3,7 +3,7 @@
 from os.path import join
 
 from numpy.distutils.misc_util import get_numpy_include_dirs
-from numpy.distutils.scons import GetNumpyEnvironment
+from numscons import GetNumpyEnvironment
 
 env = GetNumpyEnvironment(ARGUMENTS)
 
