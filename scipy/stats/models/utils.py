@@ -50,8 +50,12 @@ def rank(X, cond=1.0e-12):
     Return the rank of a matrix X based on its generalized inverse,
     not the SVD.
     """
-    D = scipy.linalg.svdvals(X)
-    return int(N.add.reduce(N.greater(D / D.max(), cond).astype(N.int32)))
+    X = N.asarray(X)
+    if len(X.shape) == 2:
+        D = scipy.linalg.svdvals(X)
+        return int(N.add.reduce(N.greater(D / D.max(), cond).astype(N.int32)))
+    else:
+        return int(not N.alltrue(N.equal(X, 0.)))
 
 def fullrank(X, r=None):
     """

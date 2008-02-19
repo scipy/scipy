@@ -118,6 +118,9 @@ def contrastfromcols(T, D, pseudo=None):
 
     """
 
+    T = N.asarray(T)
+    D = N.asarray(D)
+    
     n, p = D.shape
 
     if T.shape[0] != n and T.shape[1] != p:
@@ -127,14 +130,18 @@ def contrastfromcols(T, D, pseudo=None):
         pseudo = pinv(D)
 
     if T.shape[0] == n:
-        C = N.transpose(N.dot(pseudo, T))
+        C = N.dot(pseudo, T).T
     else:
         C = T
+        C = N.dot(pseudo, N.dot(D, C.T)).T
+        
+    Tp = N.dot(D, C.T)
 
-    Tp = N.dot(D, N.transpose(C))
-
+    if len(Tp.shape) == 1:
+        Tp.shape = (n, 1)
+        
     if utils.rank(Tp) != Tp.shape[1]:
         Tp = utils.fullrank(Tp)
-        C = N.transpose(N.dot(pseudo, Tp))
+        C = N.dot(pseudo, Tp).T
 
     return N.squeeze(C)
