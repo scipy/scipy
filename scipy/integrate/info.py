@@ -27,7 +27,7 @@ Integration routines
  Interface to numerical integrators of ODE systems.
 
    odeint        -- General integration of ordinary differential equations.
-   ode           -- Integrate ODE using vode routine.
+   ode           -- Integrate ODE using VODE and ZVODE routines.
 
 """
 
