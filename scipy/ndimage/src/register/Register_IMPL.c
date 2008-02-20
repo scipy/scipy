@@ -75,7 +75,7 @@ float tri_cubic_convolve(unsigned char *pVolume, int x, int y, int z, float xp, 
 	    } 
 	}
 	/* interpolate across 4 layers */
-	if(R > D){
+	if(L > D){
 	    Y[0] = NewLayer[0];
 	    Y[1] = NewLayer[1];
 	    Y[2] = NewLayer[2];
@@ -83,7 +83,7 @@ float tri_cubic_convolve(unsigned char *pVolume, int x, int y, int z, float xp, 
 	    ps1  = Y[2] - Y[0];
 	    ps2  = (float)2.0*(Y[0] - Y[1]) + Y[2] - Y[3];
 	    ps3  = -Y[0] + Y[1] - Y[2] + Y[3];
-	    T    = (Y[1]+R*(ps1+R*(ps2+R*ps3)));
+	    T    = (Y[1]+L*(ps1+L*(ps2+L*ps3)));
 	    valueXYZ = T;
 	}
 	else{
