@@ -22,12 +22,15 @@ _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} # 'd' will be default for 'i',
 _inv_type_conv = {'s':'f','d':'d','c':'F','z':'D'}
 
 def has_column_major_storage(arr):
+    """Is array stored in column-major format"""
     return arr.flags['FORTRAN']
 
 def get_blas_funcs(names,arrays=(),debug=0):
     """Return available BLAS function objects with names.
     arrays are used to determine the optimal prefix of
-    BLAS routines."""
+    BLAS routines.
+    
+    """
     ordering = []
     for i in range(len(arrays)):
         t = arrays[i].dtype.char
