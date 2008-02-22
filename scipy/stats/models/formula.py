@@ -256,13 +256,23 @@ class Factor(Term):
     def main_effect(self, reference=None):
         """
         Return the 'main effect' columns of a factor, choosing
-        a reference column number to remove.
+        an optional reference key. 
+
+	The reference key can be one of the keys of the Factor,
+        or an integer, representing which column to remove.
+        It defaults to 0.
+        
         """
+
+        names = self.names()
 
         if reference is None:
             reference = 0
-
-        names = self.names()
+        else:
+            try:
+                reference = names.index(reference)
+            except IndexError:
+                reference = int(reference)
 
         def maineffect_func(value, reference=reference):
             rvalue = []
