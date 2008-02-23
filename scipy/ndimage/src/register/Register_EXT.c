@@ -250,12 +250,58 @@ exit:
 
 }
 
+
+static PyObject *Register_ImageThreshold(PyObject *self, PyObject *args)
+{
+
+    /* set threshold from the volume integrated histogram */
+    int num;
+    int nd;
+    int type;
+    int itype;
+    int histogram_elements;
+    int	tindex;
+    npy_intp *dimsImage;
+    npy_intp *dimsHistogram;
+    unsigned short *image;
+    double *H;
+    double *IH;
+    double threshold;
+    PyObject *imgArray   = NULL;
+    PyObject *histogram  = NULL;
+    PyObject *ihistogram = NULL;
+	
+    if(!PyArg_ParseTuple(args, "OOOd", &imgArray, &histogram, &ihistogram, &threshold))
+	goto exit;
+
+    image = (unsigned short *)PyArray_DATA(imgArray);
+    /* reads dims as 0 = layers, 1 = rows, 2 = cols */
+    nd        = PyArray_NDIM(imgArray);
+    dimsImage = PyArray_DIMS(imgArray);
+    type      = PyArray_TYPE(imgArray);
+    num       = PyArray_SIZE(imgArray);
+
+    H  = (double *)PyArray_DATA(histogram);
+    IH = (double *)PyArray_DATA(ihistogram);
+    histogram_elements = PyArray_SIZE(histogram);
+
+    if(!NI_ImageThreshold((int)dimsImage[0], (int)dimsImage[1], (int)dimsImage[2], 
+		               image, H, IH, histogram_elements, threshold, &tindex))
+	    goto exit;
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("i", tindex); 
+
+}
+
 static PyMethodDef RegisterMethods[] =
 {
     { "register_histogram",       Register_Histogram,      METH_VARARGS, NULL },
     { "register_histogram_lite",  Register_HistogramLite,  METH_VARARGS, NULL },
     { "register_linear_resample", Register_LinearResample, METH_VARARGS, NULL },
     { "register_cubic_resample",  Register_CubicResample,  METH_VARARGS, NULL },
+    { "register_image_threshold", Register_ImageThreshold, METH_VARARGS, NULL },
     {  NULL, NULL, 0, NULL},
 };
 
