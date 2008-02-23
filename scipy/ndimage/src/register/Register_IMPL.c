@@ -554,3 +554,59 @@ int NI_CubicResample(int layersF, int rowsF, int colsF, int layersG, int rowsG, 
 }
 
 
+
+int NI_ImageThreshold(int layers, int rows, int cols, unsigned short *image, double *H,
+	               double *IH, int histogram_elements, double threshold, int *index)
+{
+
+	int i, j, k;
+	int status;
+	int ptr;
+	int value;
+	float sum;
+
+	for(i = 0; i < histogram_elements; ++i){
+	    H[i]  = 0;
+	    IH[i] = 0;
+	}
+	ptr = 0;
+	for(i = 0; i < layers; ++i){
+	    for(j = 0; j < rows; ++j){
+	        for(k = 0; k < cols; ++k){
+		    value = image[ptr++];
+		    ++H[value];
+	        }
+	    }
+	}
+
+	sum = 0.0;
+	for(i = 0; i < histogram_elements; ++i){
+	    sum += H[i];
+	}
+	/* normalize the volume histogram */
+	for(i = 0; i < histogram_elements; ++i){
+	    H[i] = H[i] / sum;
+	}
+
+	/* build the integrated histogram */
+	IH[0] = H[0];
+	for(i = 1; i < histogram_elements; ++i){
+	    IH[i] = IH[i-1] + H[i];
+	}
+
+	/* get the threshold crossing. this deals with the high amplitude outliers in the volume */
+	*index = histogram_elements-1;
+	for(i = 0; i < histogram_elements; ++i){
+	    if(IH[i] > threshold){
+	        *index = i;
+	        break;
+	    }
+	}
+
+	status = 1;
+
+	return status;
+
+}
+
+
