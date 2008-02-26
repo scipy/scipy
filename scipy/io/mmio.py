@@ -11,8 +11,8 @@
 
 import os
 from numpy import asarray, real, imag, conj, zeros, ndarray, \
-                  empty, concatenate, ones, ascontiguousarray
-from itertools import izip
+                  empty, concatenate, ones, ascontiguousarray, \
+                  vstack, savetxt, fromfile, fromstring
 
 __all__ = ['mminfo','mmread','mmwrite', 'MMFile']
 
@@ -108,7 +108,7 @@ class MMFile (object):
 
     # field values
     FIELD_INTEGER = 'integer'
-    FIELD_REAL = 'real'
+    FIELD_REAL    = 'real'
     FIELD_COMPLEX = 'complex'
     FIELD_PATTERN = 'pattern'
     FIELD_VALUES = (FIELD_INTEGER, FIELD_REAL, FIELD_COMPLEX, FIELD_PATTERN)
@@ -120,13 +120,12 @@ class MMFile (object):
               (`field`, `self.FIELD_VALUES`)
 
     # symmetry values
-    SYMMETRY_GENERAL = 'general'
-    SYMMETRY_SYMMETRIC = 'symmetric'
+    SYMMETRY_GENERAL        = 'general'
+    SYMMETRY_SYMMETRIC      = 'symmetric'
     SYMMETRY_SKEW_SYMMETRIC = 'skew-symmetric'
-    SYMMETRY_HERMITIAN = 'hermitian'
-    SYMMETRY_VALUES = (
-      SYMMETRY_GENERAL, SYMMETRY_SYMMETRIC, SYMMETRY_SKEW_SYMMETRIC,
-      SYMMETRY_HERMITIAN)
+    SYMMETRY_HERMITIAN      = 'hermitian'
+    SYMMETRY_VALUES = ( SYMMETRY_GENERAL,        SYMMETRY_SYMMETRIC, 
+                        SYMMETRY_SKEW_SYMMETRIC, SYMMETRY_HERMITIAN)
 
     @classmethod
     def _validate_symmetry(self, symmetry):
@@ -136,9 +135,9 @@ class MMFile (object):
 
     DTYPES_BY_FIELD = {
       FIELD_INTEGER: 'i',
-      FIELD_REAL: 'd',
-      FIELD_COMPLEX:'D',
-      FIELD_PATTERN:'d'}
+      FIELD_REAL:    'd',
+      FIELD_COMPLEX: 'D',
+      FIELD_PATTERN: 'd'}
 
     #---------------------------------------------------------------------------
     @staticmethod
@@ -383,13 +382,14 @@ class MMFile (object):
             assert k==entries,`k,entries`
 
         elif format == self.FORMAT_COORDINATE:
-            from numpy import fromfile,fromstring
+            # Read sparse COOrdinate format
+
             try:
                 # fromfile works for normal files
-                flat_data = fromfile(stream,sep=' ')
+                flat_data = fromfile(stream, sep=' ')
             except:
                 # fallback - fromfile fails for some file-like objects
-                flat_data = fromstring(stream.read(),sep=' ')
+                flat_data = fromstring(stream.read(), sep=' ')
                 
                 # TODO use iterator (e.g. xreadlines) to avoid reading
                 # the whole file into memory
@@ -398,7 +398,7 @@ class MMFile (object):
                 flat_data = flat_data.reshape(-1,2)
                 I = ascontiguousarray(flat_data[:,0], dtype='intc')
                 J = ascontiguousarray(flat_data[:,1], dtype='intc')
-                V = ones(len(I))
+                V = ones(len(I), dtype='int8')  # filler
             elif is_complex:
                 flat_data = flat_data.reshape(-1,4)
                 I = ascontiguousarray(flat_data[:,0], dtype='intc')
@@ -544,28 +544,43 @@ class MMFile (object):
         else:
 
             if symm != self.SYMMETRY_GENERAL:
-                raise ValueError, 'symmetric matrices incompatible with sparse format'
+                raise NotImplementedError('symmetric matrices not yet supported')
 
             coo = a.tocoo() # convert to COOrdinate format
 
             # write shape spec
             stream.write('%i %i %i\n' % (rows,cols,coo.nnz))
 
-            # line template
-            template = '%i %i ' + template
+            fmt = '%%.%dg' % precision
 
-            I,J,V = coo.row + 1, coo.col + 1, coo.data # change base 0 -> base 1
-
-            if field in (self.FIELD_REAL, self.FIELD_INTEGER):
-                for ijv_tuple in izip(I,J,V):
-                    stream.writelines(template % ijv_tuple)
+            if field == self.FIELD_PATTERN:
+                IJV = vstack((a.row, a.col)).T
+            elif field in [ self.FIELD_INTEGER, self.FIELD_REAL ]:
+                IJV = vstack((a.row, a.col, a.data)).T
             elif field == self.FIELD_COMPLEX:
-                for ijv_tuple in izip(I,J,V.real,V.imag):
-                    stream.writelines(template % ijv_tuple)
-            elif field == self.FIELD_PATTERN:
-                raise NotImplementedError,`field`
+                IJV = vstack((a.row, a.col, a.data.real, a.data.imag)).T
             else:
-                raise TypeError,'Unknown field type %s'% `field`
+                raise TypeError('Unknown field type %s' % `field`)
+
+            IJV[:,:2] += 1 # change base 0 -> base 1
+
+            savetxt(stream, IJV, fmt=fmt)
+
+
+            ### Old method
+            ## line template
+            #template = '%i %i ' + template
+            #I,J,V = coo.row + 1, coo.col + 1, coo.data # change base 0 -> base 1
+            #if field in (self.FIELD_REAL, self.FIELD_INTEGER):
+            #    for ijv_tuple in izip(I,J,V):
+            #        stream.writelines(template % ijv_tuple)
+            #elif field == self.FIELD_COMPLEX:
+            #    for ijv_tuple in izip(I,J,V.real,V.imag):
+            #        stream.writelines(template % ijv_tuple)
+            #elif field == self.FIELD_PATTERN:
+            #    raise NotImplementedError,`field`
+            #else:
+            #    raise TypeError,'Unknown field type %s'% `field`
 
 
 #-------------------------------------------------------------------------------
