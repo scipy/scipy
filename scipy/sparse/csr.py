@@ -8,7 +8,7 @@ from warnings import warn
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
         empty, hstack, isscalar, ndarray, shape, searchsorted, where, \
-        concatenate, deprecate, arange, ones
+        concatenate, deprecate, arange, ones, ravel
 
 from base import spmatrix, isspmatrix
 from sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
@@ -240,20 +240,32 @@ class csr_matrix(_cs_matrix):
                 else:
                     P = extractor(col,self.shape[1]).T        #[1:2,[1,2]]
                     return self[row,:]*P
+                
             else:    
-                #[[1,2],??]
+                #[[1,2],??] or [[[1],[2]],??]
                 if isintlike(col) or isinstance(col,slice):
-                    P = extractor(row, self.shape[0])         
-                    return (P*self)[:,col]                   #[[1,2],j] or [[1,2],1:2] 
+                    P = extractor(row, self.shape[0])        #[[1,2],j] or [[1,2],1:2]   
+                    return (P*self)[:,col]                   
+
                 else:
-                    row = asindices(row)                     #[[1,2],[1,2]]
-                    col = asindices(col)
-                    if len(row) != len(col):
-                        raise IndexError('number of row and column indices differ')
-                    val = []
-                    for i,j in zip(row,col):
-                        val.append(self._get_single_element(i,j))
-                    return asmatrix(val)
+                    row = asindices(row)                     
+                    col = asindices(col) 
+                    if len(row.shape) == 1:
+                        if len(row) != len(col):             #[[1,2],[1,2]]
+                            raise IndexError('number of row and column indices differ')
+                        val = []
+                        for i,j in zip(row,col):
+                            val.append(self._get_single_element(i,j))
+                        return asmatrix(val)
+                    
+                    elif len(row.shape) == 2:
+                        row = ravel(row)                    #[[[1],[2]],[1,2]]
+                        P = extractor(row, self.shape[0])   
+                        return (P*self)[:,col]               
+
+                    else:
+                        raise NotImplementedError('unsupported indexing')
+                        
 
 
         elif isintlike(key) or isinstance(key,slice):
