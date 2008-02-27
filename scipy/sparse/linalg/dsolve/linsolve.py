@@ -16,7 +16,7 @@ except ImportError:
 isUmfpack = hasattr( umfpack, 'UMFPACK_OK' )
 
 if isUmfpack and noScikit:
-    warn( 'scipy.splinalg.dsolve.umfpack will be removed,'
+    warn( 'scipy.sparse.linalg.dsolve.umfpack will be removed,'
           ' install scikits.umfpack instead', DeprecationWarning )
 
 useUmfpack = True

@@ -2,7 +2,7 @@
 Sparse Eigenvalue Solvers
 =========================
 
-There are submodules of splinalg:
+The submodules of sparse.linalg:
     1. arpack: spare eigenvalue solver using iterative methods
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" Test functions for the splinalg.interface module
+""" Test functions for the sparse.linalg.interface module
 """
 
 from scipy.testing import *
@@ -8,7 +8,7 @@ import numpy
 from numpy import array, matrix, ones, ravel
 from scipy.sparse import csr_matrix
 
-from scipy.splinalg.interface import *
+from scipy.sparse.linalg.interface import *
 
 
 class TestInterface(TestCase):

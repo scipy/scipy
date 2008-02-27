@@ -27,7 +27,7 @@ from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
         eye, SparseEfficiencyWarning
 from scipy.sparse.sputils import supported_dtypes
-from scipy.splinalg import splu
+from scipy.sparse.linalg import splu
 
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)

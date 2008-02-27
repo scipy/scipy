@@ -2,8 +2,8 @@
 
 from scipy.testing import *
 
-from scipy.splinalg.interface import aslinearoperator
-from scipy.splinalg.eigen.arpack.speigs import *
+from scipy.sparse.linalg.interface import aslinearoperator
+from scipy.sparse.linalg.eigen.arpack.speigs import *
 
 
 import numpy as N

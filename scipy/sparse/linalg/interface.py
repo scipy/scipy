@@ -31,7 +31,7 @@ class LinearOperator:
 
         Example:
 
-        >>> from scipy.splinalg import LinearOperator
+        >>> from scipy.sparse.linalg import LinearOperator
         >>> from scipy import *
         >>> def mv(x):
         ...     return array([ 2*x[0], 3*x[1]])

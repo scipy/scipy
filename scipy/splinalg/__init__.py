@@ -1,14 +1,6 @@
-"Sparse Linear Algebra routines"
+from warnings import warn
 
-from info import __doc__
+warn('scipy.splinalg has moved to scipy.sparse.linalg', DeprecationWarning)
 
-from isolve import *
-from dsolve import *
-from interface import *
-from eigen import *
+from scipy.sparse.linalg import *
 
-
-__all__ = filter(lambda s:not s.startswith('_'),dir())
-from scipy.testing.pkgtester import Tester
-test = Tester().test
-bench = Tester().bench

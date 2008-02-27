@@ -5,7 +5,7 @@ from scipy.testing import *
 
 from scipy.linalg import norm, inv
 from scipy.sparse import spdiags, csc_matrix, SparseEfficiencyWarning
-from scipy.splinalg.dsolve import spsolve, use_solver
+from scipy.sparse.linalg.dsolve import spsolve, use_solver
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 

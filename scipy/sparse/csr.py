@@ -221,7 +221,6 @@ class csr_matrix(_cs_matrix):
         if isinstance(key, tuple):
             row = key[0]
             col = key[1]
-           
 
             if isintlike(row):
                 #[1,??]
@@ -266,8 +265,6 @@ class csr_matrix(_cs_matrix):
                     else:
                         raise NotImplementedError('unsupported indexing')
                         
-
-
         elif isintlike(key) or isinstance(key,slice):
             return self[key,:]                                #[i] or [1:2]
         else:

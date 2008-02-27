@@ -45,7 +45,7 @@ import warnings
 
 import _arpack
 import numpy as np
-from scipy.splinalg.interface import aslinearoperator
+from scipy.sparse.linalg.interface import aslinearoperator
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 _ndigits = {'f':5, 'd':12, 'F':5, 'D':12}

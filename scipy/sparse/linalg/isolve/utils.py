@@ -2,7 +2,7 @@ from warnings import warn
 
 from numpy import asanyarray, asarray, asmatrix, array, matrix, zeros
 
-from scipy.splinalg.interface import aslinearoperator, LinearOperator
+from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
 
 _coerce_rules = {('f','f'):'f', ('f','d'):'d', ('f','F'):'F',
                  ('f','D'):'D', ('d','f'):'d', ('d','d'):'d',

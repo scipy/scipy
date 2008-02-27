@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" Test functions for the splinalg.isolve module
+""" Test functions for the sparse.linalg.isolve module
 """
 
 from scipy.testing import *
@@ -9,7 +9,7 @@ from numpy.random import rand
 from scipy.linalg import norm
 from scipy.sparse import spdiags
 
-from scipy.splinalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres
+from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres
 
 #def callback(x):
 #    global A, b
@@ -116,8 +116,8 @@ class TestQMR(TestCase):
     def test_leftright_precond(self):
         """Check that QMR works with left and right preconditioners"""
 
-        from scipy.splinalg.dsolve import splu
-        from scipy.splinalg.interface import LinearOperator
+        from scipy.sparse.linalg.dsolve import splu
+        from scipy.sparse.linalg.interface import LinearOperator
 
         n = 100
 

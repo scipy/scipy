@@ -15,7 +15,7 @@ import _iterative
 import numpy as sb
 import copy
 
-from scipy.splinalg.interface import LinearOperator
+from scipy.sparse.linalg.interface import LinearOperator
 from utils import make_system
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}

@@ -2,7 +2,7 @@
 Sparse Linear Algebra
 =====================
 
-There are submodules of splinalg:
+The submodules of sparse.linalg:
     1. eigen: sparse eigenvalue problem solvers
     2. isolve: iterative methods for solving linear systems
     3. dsolve: direct factorization methods for solving linear systems

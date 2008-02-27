@@ -13,7 +13,7 @@ Example session:
 
 >>> from scipy.sparse import csc_matrix, spdiags
 >>> from numpy import array
->>> from scipy.splinalg import spsolve, use_solver
+>>> from scipy.sparse.linalg import spsolve, use_solver
 >>>
 >>> print "Inverting a sparse linear system:"
 >>> print "The sparse matrix (constructed from diagonals):"
