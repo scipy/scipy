@@ -311,9 +311,9 @@ __all__ += [ 'speye','spidentity', 'spkron', 'lil_eye', 'lil_diags' ]
 
 from numpy import deprecate
 
-spkron      = deprecate(kron,     oldname='spkron',     newname='kron')
-speye       = deprecate(eye,      oldname='speye',      newname='eye')
-spidentity  = deprecate(identity, oldname='spidentity', newname='identity')
+spkron      = deprecate(kron,     oldname='spkron',     newname='scipy.sparse.kron')
+speye       = deprecate(eye,      oldname='speye',      newname='scipy.sparse.eye')
+spidentity  = deprecate(identity, oldname='spidentity', newname='scipy.sparse.identity')
 
 
 def lil_eye((r,c), k=0, dtype='d'):
