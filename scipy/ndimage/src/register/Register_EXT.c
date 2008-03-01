@@ -80,6 +80,7 @@ static PyObject *Register_HistogramLite(PyObject *self, PyObject *args)
      */
 
     int num;
+    int numG;
     int nd;
     int type;
     int itype;
@@ -114,6 +115,7 @@ static PyObject *Register_HistogramLite(PyObject *self, PyObject *args)
     dimsG  = PyArray_DIMS(imgArray2);
     type   = PyArray_TYPE(imgArray1);
     num    = PyArray_SIZE(imgArray1);
+    numG   = PyArray_SIZE(imgArray2);
 
     M = (double *)PyArray_DATA(rotArray);
     nd_rotmatrix   = PyArray_NDIM(rotArray);
@@ -139,6 +141,50 @@ exit:
     return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue(""); 
 
 }
+
+static PyObject *Register_VolumeResample(PyObject *self, PyObject *args)
+{
+
+    int num;
+    int nd;
+    int type;
+    int itype;
+    int mode;
+    int scale;
+    npy_intp *dimsF;
+    npy_intp *dimsG;
+    unsigned char *imageG;
+    unsigned char *imageF;
+    double        *Z;
+    PyObject *imgArray1 = NULL;
+    PyObject *imgArray2 = NULL;
+    PyObject *coordZoom = NULL;
+	
+    if(!PyArg_ParseTuple(args, "OOOii", &imgArray1, &imgArray2, &coordZoom, &scale, &mode))
+	goto exit;
+
+    /* check in the Python code that F and G are the same dims, type */
+    imageF = (unsigned char *)PyArray_DATA(imgArray1);
+    imageG = (unsigned char *)PyArray_DATA(imgArray2);
+    Z = (double *)PyArray_DATA(coordZoom);
+    /* reads dims as 0 = layers, 1 = rows, 2 = cols */
+    nd     = PyArray_NDIM(imgArray1);
+    dimsF  = PyArray_DIMS(imgArray1);
+    dimsG  = PyArray_DIMS(imgArray2);
+    type   = PyArray_TYPE(imgArray1);
+    num    = PyArray_SIZE(imgArray1);
+
+    if(!NI_VolumeResample((int)dimsF[0], (int)dimsF[1], (int)dimsF[2], 
+                         (int)dimsG[0], (int)dimsG[1], (int)dimsG[2], 
+		          scale, mode, imageG, imageF, Z))
+	    goto exit;
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue(""); 
+
+}
+
 
 
 static PyObject *Register_CubicResample(PyObject *self, PyObject *args)
@@ -301,6 +347,7 @@ static PyMethodDef RegisterMethods[] =
     { "register_histogram_lite",  Register_HistogramLite,  METH_VARARGS, NULL },
     { "register_linear_resample", Register_LinearResample, METH_VARARGS, NULL },
     { "register_cubic_resample",  Register_CubicResample,  METH_VARARGS, NULL },
+    { "register_volume_resample", Register_VolumeResample, METH_VARARGS, NULL },
     { "register_image_threshold", Register_ImageThreshold, METH_VARARGS, NULL },
     {  NULL, NULL, 0, NULL},
 };
