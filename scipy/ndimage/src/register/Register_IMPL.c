@@ -322,6 +322,7 @@ int NI_Histogram2DLite(int layersF, int rowsF, int colsF, int layersG, int rowsG
 	int V101;
 	int V110;
 	int V111;
+	int g[64], f[64];
 	float valueXYZ;
 
 	//
@@ -509,6 +510,180 @@ int NI_LinearResample(int layersF, int rowsF, int colsF, int layersG, int rowsG,
 
 
 
+int NI_VolumeResample(int layersS, int rowsS, int colsS, int layersD, int rowsD, int colsD,
+	              int scale, int mode, unsigned char *imageD, unsigned char *imageS, double *Z)
+{
+
+	int i;
+	int x, y, z;
+	int sliceSizeSrc;
+	int sliceSizeDst;
+	int status;
+	int ivf;
+	int xf, xg, yg, zg;
+	int g_slice, f_slice;
+	int g_row, f_row;
+	int g_slicesize, f_slicesize;
+	int itemp, sOffset, dOffset;
+	int XInt, YInt, ZInt;
+	float ps1, ps2, ps3;
+	float Y[4], tpoint, reSampler;
+	float XPrime, YPrime, ZPrime;
+	float C, R, L;
+	float *RLUT;
+	float *samples;
+
+	if(mode ==1){
+	    /* 
+	     * integer subsample
+	     */
+	    g_slicesize = rowsD * colsD;
+	    f_slicesize = rowsS * colsS;
+	    for(zg = 0; zg < layersD; ++zg){
+	        g_slice = zg * g_slicesize;
+	        f_slice = zg * scale * f_slicesize;
+	        for(yg = 0; yg < rowsD; ++yg){
+		    g_row = yg * colsD;
+		    f_row = yg * scale * colsS;
+	            for(xg = 0; xg < colsD; ++xg){
+		        xf = xg * scale;
+		        ivf = imageS[f_slice+f_row+xf];
+		        imageD[g_slice+g_row+xg] = ivf;
+	            }
+	        }
+	    }
+	}
+	else if(mode ==2){
+	    /*
+	     * fractional cubic convolution resample
+	     */
+
+	    /* first resample each column in all rows and all layers */
+
+	    sliceSizeSrc = colsS * rowsS;
+	    sliceSizeDst = colsD * rowsD;
+
+	    RLUT    = calloc(colsD, sizeof(float));
+	    samples = calloc(colsS+4, sizeof(float));
+	    reSampler = (float)1.0/Z[0];
+	    tpoint = (float)0.0;
+	    for(i = 0; i < colsD; ++i){
+	        RLUT[i] = tpoint;
+	        tpoint += reSampler;
+	    }
+
+	    for(z = 0; z < layersS; ++z){
+                sOffset = z * sliceSizeSrc;
+                dOffset = z * sliceSizeDst;
+	        for(y = 0; y < rowsS; ++y){
+	            for(x = 0; x < colsS; ++x){
+                        samples[x] = (float)imageS[sOffset+x];
+	            }
+	            for(x = 1; x < colsD; ++x){
+	                XPrime = RLUT[x];
+		        XInt   = (int)XPrime;
+		        C      = XPrime - (float)XInt;
+                        Y[0]   = samples[XInt-1];
+                        Y[1]   = samples[XInt];
+                        Y[2]   = samples[XInt+1];
+                        Y[3]   = samples[XInt+2];
+		        ps1    = Y[2] - Y[0];
+		        ps2    = (float)2.0*(Y[0] - Y[1]) + Y[2] - Y[3];
+		        ps3    = -Y[0] + Y[1] - Y[2] + Y[3];
+		        itemp  = (int)(Y[1]+C*(ps1+C*(ps2+C*ps3)));
+		        if(itemp < 0)   itemp = 0;
+		        if(itemp > 255) itemp = 255;
+                        imageD[dOffset+x] = itemp;
+	            }
+                    sOffset += colsS;
+                    dOffset += colsD;
+	        }
+	    }
+	    free(RLUT);
+	    free(samples);
+
+	    /* second resample each row in all columns and all layers */
+	    RLUT    = calloc(rowsD, sizeof(float));
+	    samples = calloc(rowsS+4, sizeof(float));
+	    reSampler = (float)1.0/Z[1];
+	    tpoint = (float)0.0;
+	    for(i = 0; i < rowsD; ++i){
+	        RLUT[i] = tpoint;
+	        tpoint += reSampler;
+	    }
+
+	    for(z = 0; z < layersS; ++z){
+                dOffset = z * sliceSizeDst;
+	        for(x = 0; x < colsD; ++x){
+	            for(y = 0; y < rowsS; ++y){
+                        samples[y] = (float)imageD[dOffset+x+y*colsD];
+	            }
+	            for(y = 1; y < rowsD; ++y){
+	                YPrime = RLUT[y];
+		        YInt   = (int)YPrime;
+		        R      = YPrime - (float)YInt;
+                        Y[0]   = samples[YInt-1];
+                        Y[1]   = samples[YInt];
+                        Y[2]   = samples[YInt+1];
+                        Y[3]   = samples[YInt+2];
+		        ps1    = Y[2] - Y[0];
+		        ps2    = (float)2.0*(Y[0] - Y[1]) + Y[2] - Y[3];
+		        ps3    = -Y[0] + Y[1] - Y[2] + Y[3];
+		        itemp  = (int)(Y[1]+R*(ps1+R*(ps2+R*ps3)));
+		        if(itemp < 0)   itemp = 0;
+		        if(itemp > 255) itemp = 255;
+                        imageD[dOffset+x+y*colsD] = itemp;
+	            }
+	        }
+	    }
+	    free(RLUT);
+	    free(samples);
+
+	    /* third resample each layers in all columns and all rows */
+	    RLUT    = calloc(layersD, sizeof(float));
+	    samples = calloc(layersS+4, sizeof(float));
+	    reSampler = (float)1.0/Z[2];
+	    tpoint = (float)0.0;
+	    for(i = 0; i < layersD; ++i){
+	        RLUT[i] = tpoint;
+	        tpoint += reSampler;
+	    }
+
+	    for(y = 0; y < rowsD; ++y){
+                dOffset = y * colsD;
+	        for(x = 0; x < colsD; ++x){
+	    	    for(z = 0; z < layersS; ++z){
+                        samples[z] = (float)imageD[dOffset+x+z*sliceSizeDst];
+		    }
+	    	    for(z = 1; z < layersD; ++z){
+	                ZPrime = RLUT[z];
+		        ZInt   = (int)ZPrime;
+		        L      = ZPrime - (float)ZInt;
+                        Y[0]   = samples[ZInt-1];
+                        Y[1]   = samples[ZInt];
+                        Y[2]   = samples[ZInt+1];
+                        Y[3]   = samples[ZInt+2];
+		        ps1    = Y[2] - Y[0];
+		        ps2    = (float)2.0*(Y[0] - Y[1]) + Y[2] - Y[3];
+		        ps3    = -Y[0] + Y[1] - Y[2] + Y[3];
+		        itemp  = (int)(Y[1]+R*(ps1+R*(ps2+R*ps3)));
+		        if(itemp < 0)   itemp = 0;
+		        if(itemp > 255) itemp = 255;
+                        imageD[dOffset+x+z*sliceSizeDst] = itemp;
+		    }
+		}
+	    }
+	    free(RLUT);
+	    free(samples);
+     	}
+
+	status = 1;
+
+	return status;
+
+}
+
+
 int NI_CubicResample(int layersF, int rowsF, int colsF, int layersG, int rowsG, int colsG,
 	             int *dimSteps, double *M, unsigned char *imageG, unsigned char *imageF)
 {
@@ -541,6 +716,7 @@ int NI_CubicResample(int layersF, int rowsF, int colsF, int layersG, int rowsG, 
 				          	zp, colsG, rowsG, layersG, sliceSizeG);
 			/* clip at hard edges */
 			if(vf < 0.0) vf = 0.0;
+			if(vf > 255.0) vf = 255.0;
 			imageG[sliceG+rowG+(int)x] = (int)vf;
 		    }
 	        }
@@ -552,8 +728,6 @@ int NI_CubicResample(int layersF, int rowsF, int colsF, int layersG, int rowsG, 
 	return status;
 
 }
-
-
 
 int NI_ImageThreshold(int layers, int rows, int cols, unsigned short *image, double *H,
 	               double *IH, int histogram_elements, double threshold, int *index)
