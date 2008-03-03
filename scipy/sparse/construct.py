@@ -1,7 +1,8 @@
-""" Functions to construct sparse matrices
+"""Functions to construct sparse matrices
 """
 
-__all__ = [ 'spdiags', 'eye', 'identity', 'kron', 'kronsum', 'bmat' ]
+__all__ = [ 'spdiags', 'eye', 'identity', 'kron', 'kronsum', 
+            'hstack', 'vstack', 'bmat' ]
 
 
 from itertools import izip
@@ -199,11 +200,59 @@ def kronsum(A, B, format=None):
     return (L+R).asformat(format) #since L + R is not always same format
 
 
+def hstack( blocks, format=None, dtype=None ):
+    """Stack sparse matrices horizontally (column wise)
 
+    Parameters
+    ==========
+
+    blocks -- sequence of sparse matrices with compatible shapes
+    format -- sparse format of the result (e.g. "csr")
+            -  by default an appropriate sparse matrix format is returned.
+               This choice is subject to change.
+   
+    Example
+    =======
+
+    >>> from scipy.sparse import coo_matrix, vstack
+    >>> A = coo_matrix([[1,2],[3,4]])
+    >>> B = coo_matrix([[5],[6]])
+    >>> hstack( [A,B] ).todense()
+    matrix([[1, 2, 5],
+            [3, 4, 6]])
+
+
+    """
+    return bmat([blocks], format=format, dtype=dtype)
+
+def vstack( blocks, format=None, dtype=None ):
+    """Stack sparse matrices vertically (row wise)
+
+    Parameters
+    ==========
+
+    blocks -- sequence of sparse matrices with compatible shapes
+    format -- sparse format of the result (e.g. "csr")
+            -  by default an appropriate sparse matrix format is returned.
+               This choice is subject to change.
+   
+    Example
+    =======
+
+    >>> from scipy.sparse import coo_matrix, vstack
+    >>> A = coo_matrix([[1,2],[3,4]])
+    >>> B = coo_matrix([[5,6]])
+    >>> vstack( [A,B] ).todense()
+    matrix([[1, 2],
+            [3, 4],
+            [5, 6]])
+
+
+    """
+    return bmat([ [b] for b in blocks ], format=format, dtype=dtype)
 
 def bmat( blocks, format=None, dtype=None ):
-    """
-    Build a sparse matrix from sparse sub-blocks
+    """Build a sparse matrix from sparse sub-blocks
 
     Parameters
     ==========
@@ -263,7 +312,7 @@ def bmat( blocks, format=None, dtype=None ):
                 if bcol_lengths[j] == 0:
                     bcol_lengths[j] = A.shape[1]
                 else:
-                    if bcol_lengths[j] != A.shape[0]:
+                    if bcol_lengths[j] != A.shape[1]:
                         raise ValueError('blocks[:,%d] has incompatible column dimensions' % j)
 
 

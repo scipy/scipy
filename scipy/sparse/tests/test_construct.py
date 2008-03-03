@@ -124,6 +124,24 @@ class TestConstructUtils(TestCase):
                         numpy.kron(b, numpy.eye(len(a)))
                 assert_array_equal(result,expected)
 
+    def test_vstack(self):
+
+        A = coo_matrix([[1,2],[3,4]])
+        B = coo_matrix([[5,6]])
+
+        expected = matrix([[1, 2],
+                           [3, 4],
+                           [5, 6]])
+        assert_equal( vstack( [A,B] ).todense(), expected )
+    
+    def test_hstack(self):
+
+        A = coo_matrix([[1,2],[3,4]])
+        B = coo_matrix([[5],[6]])
+
+        expected = matrix([[1, 2, 5],
+                           [3, 4, 6]])
+        assert_equal( hstack( [A,B] ).todense(), expected )
 
     def test_bmat(self):
 
