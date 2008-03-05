@@ -75,7 +75,7 @@ def remap_image(image, parm_vector, resample='linear'):
 	remaped_image = N.zeros(layers*rows*cols, dtype=N.uint8).reshape(layers, rows, cols)
 	remaped_image = {'data' : remaped_image, 'mat' : image['mat'], 
 			 'dim' : image['dim'], 'fwhm' : image['fwhm']}
-	imdata = build_structs(step=1)
+	imdata = build_structs()
 
 	if resample == 'linear':
 	    # trilinear interpolation mapping.
@@ -88,7 +88,7 @@ def remap_image(image, parm_vector, resample='linear'):
 
 def get_inverse_mappings(parm_vector):
 	# get the inverse mapping to rotate the G matrix to F space following registration
-	imdata = build_structs(step=1)
+	imdata = build_structs()
 	# inverse angles and translations
 	imdata['parms'][0] = -parm_vector[0]
 	imdata['parms'][1] = -parm_vector[1]
@@ -106,8 +106,6 @@ def python_coreg(image1, image2, imdata, ftype=1, smimage=0, lite=0, smhist=0,
     	start = time.time()
 	# smooth of the images
 	if smimage: 
-	    image_F_xyz1 = filter_image_3D(image1['data'], image1['fwhm'], ftype)
-	    image1['data'] = image_F_xyz1
 	    image_F_xyz2 = filter_image_3D(image2['data'], image2['fwhm'], ftype)
 	    image2['data'] = image_F_xyz2
 	parm_vector = multires_registration(image1, image2, imdata, lite, smhist, method, opt_method)
@@ -210,13 +208,13 @@ def filter_image_3D(imageRaw, fwhm, ftype=2):
 
 
 def resample_image(smimage=0, ftype=2, alpha=0.0, beta=0.0, gamma=0.0,
-		   Tx=0.0, Ty=0.0, Tz=0.0, stepsize=1): 
+		   Tx=0.0, Ty=0.0, Tz=0.0): 
 	            
 	# takes an image and 3D rotate using trilinear interpolation
 	anat_desc = load_anatMRI_desc()
 	image1 = load_volume(anat_desc, imagename='ANAT1_V0001.img')
 	image2 = load_volume(anat_desc, imagename=None)
-	imdata = build_structs(step=stepsize)
+	imdata = build_structs()
 	imdata['parms'][0] = alpha
 	imdata['parms'][1] = beta
 	imdata['parms'][2] = gamma
@@ -270,13 +268,9 @@ def optimize_function(x, optfunc_args):
 	# rot_matrix is the 4x4 constructed (current angles and translates) transform matrix
 	# sample_vector is the subsample vector for x-y-z
 
-	# F_inv = N.linalg.inv(image_F['mat'])
-	# composite = N.dot(F_inv, rot_matrix)
-	# composite = N.dot(composite, image_G['mat'])
 	F_inv = N.linalg.inv(image_F['mat'])
 	composite = N.dot(F_inv, image_G['mat'])
 	composite = N.dot(composite, rot_matrix)
-	#print ' composite ', composite 
 
 	# allocate memory from Python as memory leaks when created in C-ext
 	joint_histogram = N.zeros([256, 256], dtype=N.float64);
@@ -436,8 +430,10 @@ def build_rotate_matrix(img_data_parms):
 
 
 def load_volume(imagedesc, imagename=None, threshold=0.999, debug=0):
-	# imagename of none means to create a blank image
+	# load MRI or fMRI volume and return an autoscaled 8 bit image.
+	# autoscale is using integrated histogram to deal with outlier high amplitude voxels
 	if imagename == None:
+	    # imagename of none means to create a blank image
     	    ImageVolume = N.zeros(imagedesc['layers']*imagedesc['rows']*imagedesc['cols'],
 			   dtype=N.uint16).reshape(imagedesc['layers'], imagedesc['rows'], imagedesc['cols'])
 	else:
@@ -514,97 +510,9 @@ def read_fMRI_directory(path):
 	files_fMRI = glob.glob(path)
 	return files_fMRI
 
-def build_aligned_fMRI_mean_volume(path):
-	desc = load_fMRI_desc()
-	ave_fMRI_volume = N.zeros(desc['layers']*desc['rows']*desc['cols'],
-			  dtype=N.float64).reshape(desc['layers'], desc['rows'], desc['cols'])
-	data = read_fMRI_directory(path)
-	count = 0
-	for i in data:
-	    print 'add volume ', i
-	    # this uses integrated histogram normalization
-	    image = load_volume(desc, i)
-	    # co-reg successive pairs, then remap and ave
-	    ave_fMRI_volume = ave_fMRI_volume + image['data'].astype(N.float64)
-	    count = count + 1
 
-	ave_fMRI_volume = ave_fMRI_volume / float(count)
-
-	return ave_fMRI_volume 
-
-#
-#  ---- testing/debug routines  ---- 
-#
-
-def build_scale_image(image, scale):
-	(layers, rows, cols) = image['data'].shape
-	#
-	# rescale the 'mat' (voxel to physical mapping matrix) 
-	#
-	M = image['mat'] * scale
-	# dimensions 
-	D = N.zeros(3, dtype=N.int32);
-	# Gaussian kernel - fill in with build_fwhm() 
-	F = N.zeros(3, dtype=N.float64);
-	Z = N.zeros(3, dtype=N.float64);
-	D[0] = rows/scale
-	D[1] = cols/scale
-	D[2] = layers/scale
-    	image2 = N.zeros(D[2]*D[1]*D[0], dtype=N.uint8).reshape(D[2], D[0], D[1]);
-	mode = 1;
-	R.register_volume_resample(image['data'], image2, Z, scale, mode)
-	scaled_image = {'data' : image2, 'mat' : M, 'dim' : D, 'fwhm' : F}
-	return scaled_image
-
-
-def get_test_MRI_volumes(scale=2, alpha=3.0, beta=4.0, gamma=5.0):
-	#
-	# this is for coreg MRI / fMRI scale test. The volume is anatomical MRI.
-	# the image is rotated in 3D. after rotation the image is scaled.  
-	#
-
-	anat_desc = load_anatMRI_desc()
-	image1 = load_volume(anat_desc, imagename='ANAT1_V0001.img')
-	image2 = load_volume(anat_desc, imagename=None)
-	imdata = build_structs(step=1)
-	image1['fwhm'] = build_fwhm(image1['mat'], imdata['step'])
-	image2['fwhm'] = build_fwhm(image2['mat'], imdata['step'])
-	imdata['parms'][0] = alpha
-	imdata['parms'][1] = beta
-	imdata['parms'][2] = gamma
-	M = build_rotate_matrix(imdata['parms'])
-	R.register_linear_resample(image1['data'], image2['data'], M, imdata['step'])
-	image3 = build_scale_image(image2, scale)
-	return image1, image3, imdata
-
-def get_test_fMRI_rotated(fMRIVol, alpha=3.0, beta=4.0, gamma=5.0):
-	#
-	# return rotated fMRIVol
-	#
-
-	desc = load_fMRI_desc()
-	image = load_volume(desc, imagename=None)
-	imdata = build_structs(step=1)
-	image['fwhm'] = build_fwhm(image['mat'], imdata['step'])
-	imdata['parms'][0] = alpha
-	imdata['parms'][1] = beta
-	imdata['parms'][2] = gamma
-	M = build_rotate_matrix(imdata['parms'])
-	R.register_cubic_resample(fMRIVol['data'], image['data'], M, imdata['step'])
-	return image
-
-
-def test_image_filter(image, imdata, ftype=2):
-	#
-	# test the 3D image filter on an image. ftype 1 is SPM, ftype 2 is simple Gaussian
-	#
-	image['fwhm'] = build_fwhm(image['mat'], imdata['step'])
-	filt_image = filter_image_3D(image['data'], image['fwhm'], ftype)
-	return filt_image
-
-
-def test_alignment(image1, image2, imdata, method='ncc', lite=0, smhist=0, 
-		        alpha=0.0, beta=0.0, gamma=0.0, Tx=0, Ty=0, Tz=0, ret_histo=0):
+def check_alignment(image1, image2, imdata, method='ncc', lite=0, smhist=0, 
+		    alpha=0.0, beta=0.0, gamma=0.0, Tx=0, Ty=0, Tz=0, ret_histo=0):
 	            
 	#
 	# to test the cost function and view the joint histogram
@@ -625,5 +533,178 @@ def test_alignment(image1, image2, imdata, method='ncc', lite=0, smhist=0,
     	else:
 	    cost = optimize_function(imdata['parms'], optfunc_args)
 	    return cost
+
+
+#
+#  ---- demo/debug routines  ---- 
+#
+
+def build_scale_image(image, scale):
+	#
+	# rescale the 'mat' (voxel to physical mapping matrix) 
+	#
+	(layers, rows, cols) = image['data'].shape
+	M = image['mat'] * scale
+	# dimensions 
+	D = N.zeros(3, dtype=N.int32);
+	# Gaussian kernel - fill in with build_fwhm() 
+	F = N.zeros(3, dtype=N.float64);
+	Z = N.zeros(3, dtype=N.float64);
+	D[0] = rows/scale
+	D[1] = cols/scale
+	D[2] = layers/scale
+    	image2 = N.zeros(D[2]*D[1]*D[0], dtype=N.uint8).reshape(D[2], D[0], D[1]);
+	mode = 1;
+	R.register_volume_resample(image['data'], image2, Z, scale, mode)
+	scaled_image = {'data' : image2, 'mat' : M, 'dim' : D, 'fwhm' : F}
+	return scaled_image
+
+
+def demo_MRI_volume_align(scale=2, alpha=3.0, beta=4.0, gamma=5.0, Tx = 0.0, Ty = 0.0, Tz = 0.0):
+	#
+	# this is for coreg MRI / fMRI scale test. The volume is anatomical MRI.
+	# the image is rotated in 3D. after rotation the image is scaled.  
+	#
+
+	anat_desc = load_anatMRI_desc()
+	image1 = load_volume(anat_desc, imagename='ANAT1_V0001.img')
+	image2 = load_volume(anat_desc, imagename=None)
+	imdata = build_structs()
+	image1['fwhm'] = build_fwhm(image1['mat'], imdata['step'])
+	image2['fwhm'] = build_fwhm(image2['mat'], imdata['step'])
+	imdata['parms'][0] = alpha
+	imdata['parms'][1] = beta
+	imdata['parms'][2] = gamma
+	imdata['parms'][3] = Tx
+	imdata['parms'][4] = Ty
+	imdata['parms'][5] = Tz
+	M = build_rotate_matrix(imdata['parms'])
+	# rotate volume. linear interpolation means the volume is low pass filtered
+	R.register_linear_resample(image1['data'], image2['data'], M, imdata['step'])
+	# subsample volume
+	image3 = build_scale_image(image2, scale)
+	return image1, image3, imdata
+
+def demo_rotate_fMRI_volume(fMRIVol, x): 
+	#
+	# return rotated fMRIVol. the fMRIVol is already loaded, and gets rotated
+	#
+
+	desc = load_fMRI_desc()
+	image = load_volume(desc, imagename=None)
+	imdata = build_structs()
+	image['fwhm'] = build_fwhm(image['mat'], imdata['step'])
+	imdata['parms'][0] = x[0]  # alpha
+	imdata['parms'][1] = x[1]  # beta
+	imdata['parms'][2] = x[2]  # gamma
+	imdata['parms'][3] = x[3]  # Tx
+	imdata['parms'][4] = x[4]  # Ty
+	imdata['parms'][5] = x[5]  # Tz
+	M = build_rotate_matrix(imdata['parms'])
+	# rotate volume. cubic spline interpolation means the volume is NOT low pass filtered
+	R.register_cubic_resample(fMRIVol['data'], image['data'], M, imdata['step'])
+	return image
+
+def demo_MRI_coregistration(optimizer_method='powell', histo_method=1, smooth_histo=0, smooth_image=0, ftype=1):
+	# demo of alignment of fMRI series with anatomical MRI
+	# in this demo, each fMRI volume is first perturbed (rotated, translated) 
+	# by a random value. The initial registration is measured, then the optimal
+	# alignment is computed and the registration measure made following the volume remap.
+	# The fMRI registration is done with the first fMRI volume using normalized cross-correlation.
+	# Each fMRI volume is rotated to the fMRI-0 volume and the series is ensemble averaged.
+	# The ensemble averaged is then registered with the anatomical MRI volume using normalized mutual information.
+	# The fMRI series is then rotated with this parameter. The alignments are done with 3D cubic splines.
+
+	# read the anatomical MRI volume
+	anat_desc = load_anatMRI_desc()
+	imageF_anat = load_volume(anat_desc, imagename='ANAT1_V0001.img')
+	# the sampling structure
+	imdata = build_structs()
+	# the volume filter
+	imageF_anat['fwhm'] = build_fwhm(imageF_anat['mat'], imdata['step'])
+
+	# read in the file list of the fMRI data
+	metric_test = N.dtype([('cost', 'f'),
+                    	       ('align_cost', 'f'),
+                    	       ('rotate', 'f', 6),
+                    	       ('align_rotate', 'f', 6)])
+
+	fMRIdata = read_fMRI_directory('fMRIData\*.img')
+	fmri_desc = load_fMRI_desc()
+	fmri_series = {}
+	ave_fMRI_volume = N.zeros(fmri_desc['layers']*fmri_desc['rows']*fmri_desc['cols'],
+			  dtype=N.float64).reshape(fmri_desc['layers'], fmri_desc['rows'], fmri_desc['cols'])
+	count = 0
+	number_volumes = len(fMRIdata)
+	measures = N.zeros(number_volumes, dtype=metric_test)
+	# load and perturb (rotation, translation) the fMRI volumes
+	for i in fMRIdata:
+	    image = load_volume(fmri_desc, i)
+	    # random perturbation of angle, translation for each volume beyond the first
+	    if count == 0:
+		image['fwhm'] = build_fwhm(image['mat'], imdata['step'])
+	        fmri_series[count] = image
+	        count = count + 1
+	    else:
+	        x = N.random.random(6) - 0.5
+	        x = 10.0 * x
+	        fmri_series[count] = demo_rotate_fMRI_volume(image, x)
+		measures[count]['rotate'][0:6] = x[0:6]
+	        count = count + 1
+
+
+	# load and register the fMRI volumes with volume_0 using normalized cross correlation metric
+	imageF = fmri_series[0]
+	if smooth_image:
+	    image_F_xyz = filter_image_3D(imageF['data'], imageF['fwhm'], ftype)
+	    imageF['data'] = image_F_xyz
+	for i in range(1, number_volumes):
+	    imageG = fmri_series[i]
+	    # the measure prior to alignment 
+	    measures[i]['cost'] = check_alignment(imageF, imageG, imdata, method='ncc',
+			                          lite=histo_method, smhist=smooth_histo)
+	    x = python_coreg(imageF, imageG, imdata, lite=histo_method, method='ncc',
+			     opt_method=optimizer_method, smhist=smooth_histo, smimage=smooth_image)
+	    measures[i]['align_rotate'][0:6] = x[0:6]
+	    measures[i]['align_cost'] = check_alignment(imageF, imageG, imdata, method='ncc', 
+		                             lite=histo_method, smhist=smooth_histo,
+					     alpha=x[0], beta=x[1], gamma=x[2], Tx=x[3], Ty=x[4], Tz=x[5])
+
+
+	# align the volumes and average them for co-registration with the anatomical MRI 
+	ave_fMRI_volume = fmri_series[0]['data'].astype(N.float64)
+	for i in range(1, number_volumes):
+	    image = fmri_series[i]
+	    x[0:6] = measures[i]['align_rotate'][0:6]
+	    # overwrite the fMRI volume with the aligned volume
+	    fmri_series[i] = remap_image(image, x, resample='cubic')
+	    ave_fMRI_volume = ave_fMRI_volume + fmri_series[i]['data'].astype(N.float64)
+
+	ave_fMRI_volume = (ave_fMRI_volume / float(number_volumes)).astype(N.uint8)
+	ave_fMRI_volume = {'data' : ave_fMRI_volume, 'mat' : imageF['mat'], 
+			   'dim' : imageF['dim'], 'fwhm' : imageF['fwhm']}
+	# register (using normalized mutual information) with the anatomical MRI
+	if smooth_image:
+	    image_F_anat_xyz = filter_image_3D(imageF_anat['data'], imageF_anat['fwhm'], ftype)
+	    imageF_anat['data'] = image_F_anat_xyz
+	x = python_coreg(imageF_anat, ave_fMRI_volume, imdata, lite=histo_method,
+			 method='nmi', opt_method=optimizer_method, smhist=smooth_histo, smimage=smooth_image)
+	print 'functional-anatomical align parameters '
+	print x
+	for i in range(number_volumes):
+	    image = fmri_series[i]
+	    # overwrite the fMRI volume with the anatomical-aligned volume
+	    fmri_series[i] = remap_image(image, x, resample='cubic')
+
+	return measures, imageF_anat, fmri_series
+
+
+def demo_fMRI_resample(imageF_anat, fmri_series):
+	resampled_fmri_series = {}
+	number_volumes = len(fmri_series)
+	for i in range(number_volumes):
+	    resampled_fmri_series[i] = resize_image(fmri_series[i], imageF_anat['mat'])
+
+	return resampled_fmri_series
 
 
