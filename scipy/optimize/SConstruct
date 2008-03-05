@@ -1,4 +1,4 @@
-# Last Change: Wed Mar 05 05:00 PM 2008 J
+# Last Change: Wed Mar 05 11:00 PM 2008 J
 # vim:syntax=python
 
 import os
@@ -89,3 +89,11 @@ env.NumpyPythonExtension('minpack2', source = src + wrap_src,
 env.NumpyPythonExtension('moduleTNC', 
                          source = [pjoin('tnc', i) for i in \
                                                    ['moduleTNC.c', 'tnc.c']])
+
+# _slsqp pyextension
+src = pjoin('slsqp', 'slsqp_optmz.f')
+slsqp_src = env.F2py(pjoin(env['build_dir'], '_slsqpmodule.c'), 
+                      pjoin(env['build_dir'], 'slsqp', 'slsqp.pyf'))
+env.NumpyPythonExtension('_slsqp', source = [src] + slsqp_src,
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
+
