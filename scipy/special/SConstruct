@@ -1,0 +1,61 @@
+# Last Change: Wed Mar 05 09:00 PM 2008 J
+# vim:syntax=python
+from os.path import join as pjoin, basename as pbasename
+import sys
+
+from distutils.sysconfig import get_python_inc
+
+from numpy.distutils.misc_util import get_numpy_include_dirs
+from numscons import GetNumpyEnvironment
+from numscons import CheckF77Clib
+
+env = GetNumpyEnvironment(ARGUMENTS)
+
+env.AppendUnique(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
+env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
+
+if sys.platform=='win32':
+#        define_macros.append(('NOINFINITIES',None))
+#        define_macros.append(('NONANS',None))
+    env.AppendUnique(CPPDEFINES = '_USE_MATH_DEFINES')
+
+config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib})
+if not config.CheckF77Clib():
+    raise RuntimeError("Could not get C/F77 runtime information")
+config.Finish()
+
+def build_lib(name, ext, libname = None):
+    """ext should be .f or .c"""
+    if not libname:
+        libname = name
+    src = env.NumpyGlob(pjoin(name, '*%s' % ext))
+    env.NumpyStaticExtLibrary(libname, source = src)
+
+# C libraries
+build_lib('c_misc', '.c')
+build_lib('cephes', '.c')
+
+# F libraries
+# XXX: handle no opt flags for mach
+build_lib('mach', '.f')
+build_lib('toms', '.f')
+build_lib('amos', '.f')
+build_lib('cdflib', '.f', 'cdf')
+build_lib('specfun', '.f')
+
+env.AppendUnique(LIBPATH = env['build_dir'])
+
+# Cephes extension
+src = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
+       'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c']
+
+env.NumpyPythonExtension('_cephes', 
+                         source = src, 
+                         LIBS = ['amos', 'toms', 'c_misc', 'cephes', 'mach',\
+                                 'cdf', 'specfun'], 
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
+
+# Specfun extension
+env.NumpyPythonExtension('specfun', source = 'specfun.pyf', LIBS = 'specfun', \
+                         F2PYOPTIONS = ["--no-wrap-functions"],
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
