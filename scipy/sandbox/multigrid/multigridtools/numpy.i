@@ -1,1 +1,0 @@
-../../../sparse/sparsetools/numpy.i

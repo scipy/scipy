@@ -395,7 +395,7 @@ class bsr_matrix(_cs_matrix):
     
     def tobsr(self,blocksize=None,copy=False):
         if blocksize not in [None, self.blocksize]:
-            return self.tocoo(copy=False).tobsr(blocksize=blocksize)
+            return self.tocsr().tobsr(blocksize=blocksize)
         if copy:
             return self.copy()
         else:

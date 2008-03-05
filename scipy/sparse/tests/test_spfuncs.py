@@ -102,5 +102,5 @@ class TestSparseFunctions(TestCase):
 
 
 if __name__ == "__main__":
-    unittests.main()
+    nose.run(argv=['', __file__])
 

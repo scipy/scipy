@@ -89,8 +89,6 @@ extern void zfftnd_fftpack(complex_double * inout, int rank,
     for (i = 0; i < rank; ++i) {
         sz *= dims[i];
     }
-    //zfft_fftpack(ptr, dims[rank - 1], direction, howmany * sz / dims[rank - 1],
-    //     normalize);
     zfft(ptr, dims[rank - 1], direction, howmany * sz / dims[rank - 1],
 	 normalize);
 
@@ -112,7 +110,6 @@ extern void zfftnd_fftpack(complex_double * inout, int rank,
                 }
             }
             flatten(tmp, ptr, rank, itmp[axis], dims[axis], 0, itmp);
-            //zfft_fftpack(tmp, dims[axis], direction, sz / dims[axis], normalize);
             zfft(tmp, dims[axis], direction, sz / dims[axis], normalize);
             flatten(ptr, tmp, rank, itmp[axis], dims[axis], 1, itmp);
         }

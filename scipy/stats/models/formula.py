@@ -22,6 +22,31 @@ class Term(object):
     defaults to formula.default_namespace.
     When called in an instance of formula,
     the namespace used is that formula's namespace.
+
+    Inheritance of the namespace under +,*,- operations:
+    ----------------------------------------------------
+
+    By default, the namespace is empty, which means it must be
+    specified before evaluating the design matrix. 
+
+    When it is unambiguous, the namespaces of objects are derived from the
+    context. 
+
+    Rules:
+    ------
+
+    i) "X * I", "X + I", "X**i": these inherit X's namespace
+    ii) "F.main_effect()": this inherits the Factor F's namespace
+    iii) "A-B": this inherits A's namespace
+    iv) if A.namespace == B.namespace, then A+B inherits this namespace
+    v) if A.namespace == B.namespace, then A*B inherits this namespace
+
+    Equality of namespaces:
+    -----------------------
+
+    This is done by comparing the namespaces directly, if
+    an exception is raised in the check of equality, they are
+    assumed not to be equal.
     """
 
     def __pow__(self, power):
@@ -80,9 +105,10 @@ class Term(object):
         """
         Formula(self) + Formula(other)
         """
-        other = Formula(other, namespace=self.namespace)
+        other = Formula(other)
         f = other + self
-        f.namespace = self.namespace
+        if _namespace_equal(other.namespace, self.namespace):
+            f.namespace = self.namespace
         return f
 
     def __mul__(self, other):
@@ -95,9 +121,10 @@ class Term(object):
         elif self.name is 'intercept':
             f = Formula(other, namespace=other.namespace)
         else:
-            other = Formula(other, namespace=self.namespace)
+            other = Formula(other, namespace=other.namespace)
             f = other * self
-        f.namespace = self.namespace
+        if _namespace_equal(other.namespace, self.namespace):
+            f.namespace = self.namespace
         return f
 
     def names(self):
@@ -124,7 +151,8 @@ class Term(object):
         else:
             val = self.func
         if callable(val):
-            if hasattr(val, "namespace"):
+            if isinstance(val, (Term, Formula)):
+                val = copy.copy(val)
                 val.namespace = self.namespace
             val = val(*args, **kw)
 
@@ -136,18 +164,29 @@ class Factor(Term):
 
     def __init__(self, termname, keys, ordinal=False):
         """
-        factor is initialized with keys, representing all valid
+        Factor is initialized with keys, representing all valid
         levels of the factor.
+
+        If ordinal is False, keys can have repeats: set(keys) is what is
+        used.
+
+        If ordinal is True, the order is taken from the keys, and
+        there should be no repeats.
         """
 
-        self.keys = list(set(keys))
-        self.keys.sort()
+        if not ordinal:
+            self.keys = list(set(keys))
+            self.keys.sort()
+        else:
+            self.keys = keys
+            if len(set(keys)) != len(list(keys)):
+                raise ValueError, 'keys for ordinal Factor should be unique, in increasing order'
         self._name = termname
         self.termname = termname
         self.ordinal = ordinal
 
         if self.ordinal:
-            name = self.name
+            name = self.termname
         else:
             name = ['(%s==%s)' % (self.termname, str(key)) for key in self.keys]
 
@@ -161,17 +200,19 @@ class Factor(Term):
         v = self.namespace[self._name]
         while True:
             if callable(v):
-                if hasattr(v, "namespace"):
+                if isinstance(v, (Term, Formula)):
+                    v = copy.copy(v)
                     v.namespace = self.namespace
                 v = v(*args, **kw)
             else: break
 
+        n = len(v)
+
         if self.ordinal:
-            col = [float(self.keys.index(v[i])) for i in range(len(self.keys))]
+            col = [float(self.keys.index(v[i])) for i in range(n)]
             return N.array(col)
 
         else:
-            n = len(v)
             value = []
             for key in self.keys:
                 col = [float((v[i] == key)) for i in range(n)]
@@ -215,13 +256,23 @@ class Factor(Term):
     def main_effect(self, reference=None):
         """
         Return the 'main effect' columns of a factor, choosing
-        a reference column number to remove.
+        an optional reference key. 
+
+	The reference key can be one of the keys of the Factor,
+        or an integer, representing which column to remove.
+        It defaults to 0.
+        
         """
+
+        names = self.names()
 
         if reference is None:
             reference = 0
-
-        names = self.names()
+        else:
+            try:
+                reference = names.index(reference)
+            except IndexError:
+                reference = int(reference)
 
         def maineffect_func(value, reference=reference):
             rvalue = []
@@ -240,6 +291,24 @@ class Factor(Term):
                      transform=maineffect_func)
         value.namespace = self.namespace
         return value
+
+    def __getitem__(self, key):
+        """
+        Retrieve the column corresponding to key in a Formula.
+        
+        :Parameters:
+            key : one of the Factor's keys
+        
+        :Returns: ndarray corresponding to key, when evaluated in
+                  current namespace
+        """
+        if not self.ordinal:
+            i = self.names().index('(%s==%s)' % (self.termname, str(key)))
+            return self()[i]
+        else:
+            v = self.namespace[self._name]
+            return N.array([(vv == key) for vv in v]).astype(N.float)
+
 
 class Quantitative(Term):
     """
@@ -346,7 +415,7 @@ class Formula(object):
         intercept = False
         iindex = 0
         for t in self.terms:
-
+            t = copy.copy(t)
             t.namespace = namespace
             val = t(*args, **kw)
 
@@ -384,7 +453,7 @@ class Formula(object):
             else:
                 allvals = I(nrow=nrow)
                 allvals.shape = (1,) + allvals.shape
-        return allvals
+        return N.squeeze(allvals)
 
     def hasterm(self, query_term):
         """
@@ -465,7 +534,7 @@ class Formula(object):
         TO DO: check for nesting relationship. Should not be too difficult.
         """
 
-        other = Formula(other, namespace=self.namespace)
+        other = Formula(other)
 
         selftermnames = self.termnames()
         othertermnames = other.termnames()
@@ -490,7 +559,6 @@ class Formula(object):
                 if self.terms[i].name is 'intercept':
                     _term = other.terms[j]
                     _term.namespace = other.namespace
-
                 elif other.terms[j].name is 'intercept':
                     _term = self.terms[i]
                     _term.namespace = self.namespace
@@ -518,16 +586,17 @@ class Formula(object):
 
                     sumterms = self + other
                     sumterms.terms = [self, other] # enforce the order we want
-                    sumterms.namespace = self.namespace
 
-                    _term = Quantitative(names, func=sumterms, termname=termname,
+                    _term = Quantitative(names, func=sumterms,
+                                         termname=termname,
                                          transform=product_func)
-                    _term.namespace = self.namespace
 
+                    if _namespace_equal(self.namespace, other.namespace):
+                        _term.namespace = self.namespace
 
                 terms.append(_term)
 
-        return Formula(terms, namespace=self.namespace)
+        return Formula(terms)
 
     def __add__(self, other):
 
@@ -538,12 +607,15 @@ class Formula(object):
         terms in the formula are sorted alphabetically.
         """
 
-        other = Formula(other, namespace=self.namespace)
+        other = Formula(other)
         terms = self.terms + other.terms
         pieces = [(term.name, term) for term in terms]
         pieces.sort()
         terms = [piece[1] for piece in pieces]
-        return Formula(terms, namespace=self.namespace)
+        f = Formula(terms)
+        if _namespace_equal(self.namespace, other.namespace):
+            f.namespace = self.namespace
+        return f
 
     def __sub__(self, other):
 
@@ -553,7 +625,7 @@ class Formula(object):
         function does not raise an exception.
         """
 
-        other = Formula(other, namespace=self.namespace)
+        other = Formula(other)
         terms = copy.copy(self.terms)
 
         for term in other.terms:
@@ -561,9 +633,11 @@ class Formula(object):
                 if terms[i].termname == term.termname:
                     terms.pop(i)
                     break
-        return Formula(terms, namespace=self.namespace)
+        f = Formula(terms)
+        f.namespace = self.namespace
+        return f
 
-def isnested(A, B, namespace=globals()):
+def isnested(A, B, namespace=None):
     """
     Is factor B nested within factor A or vice versa: a very crude test
     which depends on the namespace.
@@ -573,8 +647,12 @@ def isnested(A, B, namespace=globals()):
 
     """
 
-    a = A(namespace, values=True)[0]
-    b = B(namespace, values=True)[0]
+    if namespace is not None:
+        A = copy.copy(A); A.namespace = namespace
+        B = copy.copy(B); B.namespace = namespace
+
+    a = A(values=True)[0]
+    b = B(values=True)[0]
 
     if len(a) != len(b):
         raise ValueError, 'A() and B() should be sequences of the same length'
@@ -601,7 +679,7 @@ def _intercept_fn(nrow=1, **extra):
 I = Term('intercept', func=_intercept_fn)
 I.__doc__ = """
 Intercept term in a formula. If intercept is the
-only term in the formula, then a keywords argument
+only term in the formula, then a keyword argument
 \'nrow\' is needed.
 
 >>> from scipy.stats.models.formula import Formula, I
@@ -614,3 +692,63 @@ array([ 1.,  1.,  1.,  1.,  1.])
 array([1, 1, 1, 1, 1])
 
 """
+
+def interactions(terms, order=[1,2]):
+    """
+    Output all pairwise interactions of given order of a
+    sequence of terms.
+
+    The argument order is a sequence specifying which order
+    of interactions should be generated -- the default
+    creates main effects and two-way interactions. If order
+    is an integer, it is changed to range(1,order+1), so
+    order=3 is equivalent to order=[1,2,3], generating
+    all one, two and three-way interactions.
+    
+    If any entry of order is greater than len(terms), it is
+    effectively treated as len(terms).
+
+    >>> print interactions([Term(l) for l in ['a', 'b', 'c']])
+    <formula: a*b + a*c + b*c + a + b + c>
+    >>>
+    >>> print interactions([Term(l) for l in ['a', 'b', 'c']], order=range(5))
+    <formula: a*b + a*b*c + a*c + b*c + a + b + c>
+    >>>
+
+    """
+    l = len(terms)
+
+    values = {}
+
+    if N.asarray(order).shape == ():
+        order = range(1, int(order)+1)
+
+    # First order
+
+    for o in order:
+        I = N.indices((l,)*(o))
+        I.shape = (I.shape[0], N.product(I.shape[1:]))
+        for m in range(I.shape[1]):
+
+            # only keep combinations that have unique entries
+            
+            if (N.unique(I[:,m]).shape == I[:,m].shape and
+                N.alltrue(N.equal(N.sort(I[:,m]), I[:,m]))):
+                ll = [terms[j] for j in I[:,m]]
+                v = ll[0]
+                for ii in range(len(ll)-1):
+                    v *= ll[ii+1]
+                values[tuple(I[:,m])] = v
+
+    key = values.keys()[0]
+    value = values[key]; del(values[key])
+    
+    for v in values.values():
+        value += v
+    return value
+
+def _namespace_equal(space1, space2):
+    try:
+        return space1 == space2
+    except:
+        return False

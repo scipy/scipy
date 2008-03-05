@@ -149,7 +149,7 @@ def map_coordinates(input, coordinates, output_type = None, output = None,
 
     The array of coordinates is used to find, for each point in the output,
     the corresponding coordinates in the input. The value of the input at
-    that coordinates is determined by spline interpolation of the
+    those coordinates is determined by spline interpolation of the
     requested order.
 
     The shape of the output is derived from that of the coordinate

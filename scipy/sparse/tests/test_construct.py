@@ -1,12 +1,13 @@
 """test sparse matrix construction functions"""
 
-from numpy import array, kron
+import numpy
+from numpy import array, matrix
 from scipy.testing import *
 
 
-from scipy.sparse import csr_matrix, \
-     spidentity, speye, spkron, spdiags, \
-     lil_eye, lil_diags
+from scipy.sparse import csr_matrix, coo_matrix
+
+from scipy.sparse.construct import *
 
 #TODO check whether format=XXX is respected
 
@@ -60,24 +61,28 @@ class TestConstructUtils(TestCase):
         
            
     def test_identity(self):
-        a = spidentity(3)
+        a = identity(3)
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
+        assert_array_equal(a.toarray(), b)
+
+        a = identity(1)
+        b = array([[1]], dtype='d')
         assert_array_equal(a.toarray(), b)
 
     def test_eye(self):
-        a = speye(2, 3 )
+        a = eye(2, 3 )
         b = array([[1, 0, 0], [0, 1, 0]], dtype='d')
         assert_array_equal(a.toarray(), b)
 
-        a = speye(3, 2)
+        a = eye(3, 2)
         b = array([[1, 0], [0, 1], [0, 0]], dtype='d')
         assert_array_equal( a.toarray(), b)
 
-        a = speye(3, 3)
+        a = eye(3, 3)
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
         assert_array_equal(a.toarray(), b)
 
-    def test_spkron(self):
+    def test_kron(self):
         cases = []
 
         cases.append(array([[ 0]]))
@@ -96,10 +101,71 @@ class TestConstructUtils(TestCase):
         
         for a in cases:
             for b in cases:
-                result = spkron(csr_matrix(a),csr_matrix(b)).todense()
-                expected = kron(a,b)
-
+                result   = kron(csr_matrix(a),csr_matrix(b)).todense()
+                expected = numpy.kron(a,b)
                 assert_array_equal(result,expected)
+
+    def test_kronsum(self):
+        cases = []
+
+        cases.append(array([[ 0]]))
+        cases.append(array([[-1]]))
+        cases.append(array([[ 4]]))
+        cases.append(array([[10]]))
+        cases.append(array([[1,2],[3,4]]))
+        cases.append(array([[0,2],[5,0]]))
+        cases.append(array([[0,2,-6],[8,0,14],[0,3,0]]))
+        cases.append(array([[1,0,0],[0,5,-1],[4,-2,8]]))
+        
+        for a in cases:
+            for b in cases:
+                result   = kronsum(csr_matrix(a),csr_matrix(b)).todense()
+                expected = numpy.kron(numpy.eye(len(b)), a) + \
+                        numpy.kron(b, numpy.eye(len(a)))
+                assert_array_equal(result,expected)
+
+    def test_vstack(self):
+
+        A = coo_matrix([[1,2],[3,4]])
+        B = coo_matrix([[5,6]])
+
+        expected = matrix([[1, 2],
+                           [3, 4],
+                           [5, 6]])
+        assert_equal( vstack( [A,B] ).todense(), expected )
+    
+    def test_hstack(self):
+
+        A = coo_matrix([[1,2],[3,4]])
+        B = coo_matrix([[5],[6]])
+
+        expected = matrix([[1, 2, 5],
+                           [3, 4, 6]])
+        assert_equal( hstack( [A,B] ).todense(), expected )
+
+    def test_bmat(self):
+
+        A = coo_matrix([[1,2],[3,4]])
+        B = coo_matrix([[5],[6]])
+        C = coo_matrix([[7]])
+
+        expected = matrix([[1, 2, 5],
+                           [3, 4, 6],
+                           [0, 0, 7]])
+        assert_equal( bmat( [[A,B],[None,C]] ).todense(), expected )
+
+ 
+        expected = matrix([[1, 2, 0],
+                           [3, 4, 0],
+                           [0, 0, 7]])
+        assert_equal( bmat( [[A,None],[None,C]] ).todense(), expected )
+    
+        expected = matrix([[0, 5],
+                           [0, 6],
+                           [7, 0]])
+        assert_equal( bmat( [[None,B],[C,None]] ).todense(), expected )
+    
+        #TODO test failure cases
 
     def test_lil_diags(self):
         assert_array_equal(lil_diags([[1,2,3],[4,5],[6]],

@@ -1,0 +1,710 @@
+import math
+import os
+import numpy as N
+import scipy.ndimage._register as R
+import scipy.special  as SP
+import scipy.ndimage  as NDI
+import scipy.optimize as OPT
+import time
+import glob
+
+# Issue warning regarding heavy development status of this module
+import warnings
+_msg = "The registration code is under heavy development and therefore the \
+public API will change in the future.  The NIPY group is actively working on \
+this code, and has every intention of generalizing this for the Scipy \
+community.  Use this module minimally, if at all, until it this warning is \
+removed."
+warnings.warn(_msg, UserWarning)
+
+# TODO:  Add docstrings for public functions in extension code.
+# Add docstrings to extension code.
+#from numpy.lib import add_newdoc
+#add_newdoc('scipy.ndimage._register', 'register_histogram',
+#    """A joint histogram used for registration module.
+#    """)
+
+
+# anatomical MRI to test with
+inputname = 'ANAT1_V0001.img'
+filename = os.path.join(os.path.split(__file__)[0], inputname)
+
+#
+#  ---- co-registration and IO  ---- 
+#
+
+def resize_image(imageG, imageF_mat):
+	#
+	# Fractional resample imageG to imageF size. 
+	#
+	Z = N.zeros(3, dtype=N.float64);
+	# get the zoom
+	Z[0] = imageG['mat'][0][0] / imageF_mat[0][0]
+	Z[1] = imageG['mat'][1][1] / imageF_mat[1][1]
+	Z[2] = imageG['mat'][2][2] / imageF_mat[2][2]
+
+	# new volume dimensions (rounded)
+	D = N.zeros(3, dtype=N.int32);
+	D[0] = int(float(imageG['dim'][0])*Z[0]+0.5)
+	D[1] = int(float(imageG['dim'][1])*Z[1]+0.5)
+	D[2] = int(float(imageG['dim'][2])*Z[2]+0.5)
+
+	M = N.eye(4, dtype=N.float64);
+	# for the test data, set the xyz voxel sizes for fMRI volume
+	M[0][0] = imageG['mat'][0][0]/Z[0]
+	M[1][1] = imageG['mat'][1][1]/Z[1]
+	M[2][2] = imageG['mat'][2][2]/Z[2]
+
+    	image = N.zeros(D[2]*D[1]*D[0], dtype=N.uint8).reshape(D[2], D[0], D[1])
+	mode  = 2
+	scale = 0
+	R.register_volume_resample(imageG['data'], image, Z, scale, mode)
+	F = N.zeros(3, dtype=N.float64);
+	zoom_image = {'data' : image, 'mat' : M, 'dim' : D, 'fwhm' : F}
+
+	return zoom_image
+
+def remap_image(image, parm_vector, resample='linear'):
+	#
+	# remap imageG to coordinates of imageF (creates imageG')
+	# use the 6 dim parm_vector (3 angles, 3 translations) to remap
+	#
+	M_inverse = get_inverse_mappings(parm_vector)
+	(layers, rows, cols) = image['data'].shape
+	# allocate the zero image
+	remaped_image = N.zeros(layers*rows*cols, dtype=N.uint8).reshape(layers, rows, cols)
+	remaped_image = {'data' : remaped_image, 'mat' : image['mat'], 
+			 'dim' : image['dim'], 'fwhm' : image['fwhm']}
+	imdata = build_structs()
+
+	if resample == 'linear':
+	    # trilinear interpolation mapping.
+	    R.register_linear_resample(image['data'], remaped_image['data'], M_inverse, imdata['step'])
+	elif resample == 'cubic':
+	    # tricubic convolve interpolation mapping. 
+	    R.register_cubic_resample(image['data'], remaped_image['data'], M_inverse, imdata['step'])
+
+	return remaped_image
+
+def get_inverse_mappings(parm_vector):
+	# get the inverse mapping to rotate the G matrix to F space following registration
+	imdata = build_structs()
+	# inverse angles and translations
+	imdata['parms'][0] = -parm_vector[0]
+	imdata['parms'][1] = -parm_vector[1]
+	imdata['parms'][2] = -parm_vector[2]
+	imdata['parms'][3] = -parm_vector[3]
+	imdata['parms'][4] = -parm_vector[4]
+	imdata['parms'][5] = -parm_vector[5]
+	M_inverse = build_rotate_matrix(imdata['parms'])
+	return M_inverse
+
+def python_coreg(image1, image2, imdata, ftype=1, smimage=0, lite=0, smhist=0,
+		 method='nmi', opt_method='powell'):
+	# image1 is imageF and image2 is imageG in SPM lingo 
+	# get these from get_test_images for the debug work
+    	start = time.time()
+	# smooth of the images
+	if smimage: 
+	    image_F_xyz2 = filter_image_3D(image2['data'], image2['fwhm'], ftype)
+	    image2['data'] = image_F_xyz2
+	parm_vector = multires_registration(image1, image2, imdata, lite, smhist, method, opt_method)
+    	stop = time.time()
+	print 'Total Optimizer Time is ', (stop-start)
+	return parm_vector
+
+def multires_registration(image1, image2, imdata, lite, smhist, method, opt_method):
+	ret_histo=0
+	# zero out the start parameter; but this may be set to large values 
+	# if the head is out of range and well off the optimal alignment skirt
+	imdata['parms'][0:5] = 0.0
+	# make the step a scalar to can put in a multi-res loop
+	loop = range(imdata['sample'].size)
+    	x = imdata['parms']
+	for i in loop:
+	    step = imdata['sample'][i]
+	    imdata['step'][:] = step
+	    optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist,
+			    method, ret_histo)
+	    p_args = (optfunc_args,)
+	    if opt_method=='powell':
+		print 'POWELL multi-res registration step size ', step
+		print 'vector ', x
+    	        x = OPT.fmin_powell(optimize_function, x, args=p_args,
+				    callback=callback_powell) 
+	    elif opt_method=='cg':
+		print 'CG multi-res registration step size ', step
+		print 'vector ', x
+    	        x = OPT.fmin_cg(optimize_function, x, args=p_args, callback=callback_cg) 
+	    elif opt_method=='hybrid':
+		if i==0:
+		    print 'Hybrid POWELL multi-res registration step size ', step
+		    print 'vector ', x
+		    lite = 0
+	    	    optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist,
+				    method, ret_histo)
+	    	    p_args = (optfunc_args,)
+    	            x = OPT.fmin_powell(optimize_function, x, args=p_args, callback=callback_powell) 
+	        elif i==1:
+		    print 'Hybrid CG multi-res registration step size ', step
+		    print 'vector ', x
+		    lite = 1
+	    	    optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, 
+				    smhist, method, ret_histo)
+	    	    p_args = (optfunc_args,)
+    	            x = OPT.fmin_cg(optimize_function, x, args=p_args, callback=callback_cg) 
+
+	return x
+
+
+def callback_powell(x):
+	print 'Parameter Vector from Powell: - '
+	print x
+	return
+
+def callback_cg(x):
+	print 'Parameter Vector from Conjugate Gradient: - '
+	print x
+	return
+
+def smooth_kernel(fwhm, x, ktype=1):
+	eps = 0.00001
+	s   = N.square((fwhm/math.sqrt(8.0*math.log(2.0)))) + eps
+	if ktype==1:
+	    # from SPM: Gauss kernel convolved with 1st degree B spline
+	    w1 = 0.5 * math.sqrt(2.0/s)
+	    w2 = -0.5 / s
+	    w3 = math.sqrt((s*math.pi) /2.0)
+	    kernel = 0.5*(SP.erf(w1*(x+1))*(x+1)       + SP.erf(w1*(x-1))*(x-1)    - 2.0*SP.erf(w1*(x))*(x) + 
+	 	          w3*(N.exp(w2*N.square(x+1))) + N.exp(w2*(N.square(x-1))) - 2.0*N.exp(w2*N.square(x)))
+	    kernel[kernel<0] = 0
+	    kernel = kernel / kernel.sum()  
+	else:
+	    # Gauss kernel 
+	    kernel = (1.0/math.sqrt(2.0*math.pi*s)) * N.exp(-N.square(x)/(2.0*s)) 
+	    kernel = kernel / kernel.sum()  
+
+	return kernel
+
+def filter_image_3D(imageRaw, fwhm, ftype=2):
+	p = N.ceil(2*fwhm[0]).astype(int)
+	x = N.array(range(-p, p+1))
+	kernel_x = smooth_kernel(fwhm[0], x, ktype=ftype)
+	p = N.ceil(2*fwhm[1]).astype(int)
+	x = N.array(range(-p, p+1))
+	kernel_y = smooth_kernel(fwhm[1], x, ktype=ftype)
+	p = N.ceil(2*fwhm[2]).astype(int)
+	x = N.array(range(-p, p+1))
+	kernel_z = smooth_kernel(fwhm[2], x, ktype=ftype)
+	output=None
+	# 3D filter in 3 1D separable stages
+	axis = 0
+	image_F_x   = NDI.correlate1d(imageRaw,   kernel_x, axis, output)
+	axis = 1
+	image_F_xy  = NDI.correlate1d(image_F_x,  kernel_y, axis, output)
+	axis = 2
+	image_F_xyz = NDI.correlate1d(image_F_xy, kernel_z, axis, output)
+	return image_F_xyz  
+
+
+def resample_image(smimage=0, ftype=2, alpha=0.0, beta=0.0, gamma=0.0,
+		   Tx=0.0, Ty=0.0, Tz=0.0): 
+	            
+	# takes an image and 3D rotate using trilinear interpolation
+	anat_desc = load_anatMRI_desc()
+	image1 = load_volume(anat_desc, imagename='ANAT1_V0001.img')
+	image2 = load_volume(anat_desc, imagename=None)
+	imdata = build_structs()
+	imdata['parms'][0] = alpha
+	imdata['parms'][1] = beta
+	imdata['parms'][2] = gamma
+	imdata['parms'][3] = Tx
+	imdata['parms'][4] = Ty
+	imdata['parms'][5] = Tz
+	image1['fwhm'] = build_fwhm(image1['mat'], imdata['step'])
+	image2['fwhm'] = build_fwhm(image2['mat'], imdata['step'])
+	M = build_rotate_matrix(imdata['parms'])
+	if smimage: 
+	    image_F_xyz1 = filter_image_3D(image1['data'], image1['fwhm'], ftype)
+	    image1['data'] = image_F_xyz1
+	    image_F_xyz2 = filter_image_3D(image2['data'], image2['fwhm'], ftype)
+	    image2['data'] = image_F_xyz2
+
+	# this is now a rotated and low pass filtered version of the volume
+	R.register_linear_resample(image1['data'], image2['data'], M, imdata['step'])
+
+	return image2
+
+
+def build_fwhm(M, S):
+	view_3x3 = N.square(M[0:3, 0:3])
+	vxg = N.sqrt(view_3x3.sum(axis=0))
+	# assumes that sampling is the same for xyz
+ 	size = N.array([1,1,1])*S[0]
+	x = N.square(size) - N.square(vxg)
+	# clip
+	x[x<0] = 0
+	fwhm = N.sqrt(x) / vxg
+	# pathology when stepsize = 1 for MAT equal to the identity matrix
+	fwhm[fwhm==0] = 1
+	# return the 3D Gaussian kernel width (xyz)
+	return fwhm 
+
+def optimize_function(x, optfunc_args):
+	image_F       = optfunc_args[0]
+	image_G       = optfunc_args[1]
+	sample_vector = optfunc_args[2]
+	fwhm          = optfunc_args[3]
+	do_lite       = optfunc_args[4]
+	smooth        = optfunc_args[5]
+	method        = optfunc_args[6]
+	ret_histo     = optfunc_args[7]
+
+	rot_matrix = build_rotate_matrix(x)
+	cost = 0.0
+	epsilon = 2.2e-16 
+	# image_G is base image
+	# image_F is the to-be-rotated image
+	# rot_matrix is the 4x4 constructed (current angles and translates) transform matrix
+	# sample_vector is the subsample vector for x-y-z
+
+	F_inv = N.linalg.inv(image_F['mat'])
+	composite = N.dot(F_inv, image_G['mat'])
+	composite = N.dot(composite, rot_matrix)
+
+	# allocate memory from Python as memory leaks when created in C-ext
+	joint_histogram = N.zeros([256, 256], dtype=N.float64);
+
+	if do_lite: 
+	    R.register_histogram_lite(image_F['data'], image_G['data'], composite, sample_vector, joint_histogram)
+	else:
+	    R.register_histogram(image_F['data'], image_G['data'], composite, sample_vector, joint_histogram)
+
+	# smooth the histogram
+	if smooth: 
+	    p = N.ceil(2*fwhm[0]).astype(int)
+	    x = N.array(range(-p, p+1))
+	    kernel1 = smooth_kernel(fwhm[0], x)
+	    p = N.ceil(2*fwhm[1]).astype(int)
+	    x = N.array(range(-p, p+1))
+	    kernel2 = smooth_kernel(fwhm[1], x)
+	    output=None
+	    # 2D filter in 1D separable stages
+	    axis = 0
+	    result = NDI.correlate1d(joint_histogram, kernel1, axis, output)
+	    axis = 1
+	    joint_histogram = NDI.correlate1d(result, kernel1, axis, output)
+
+	joint_histogram += epsilon # prevent log(0) 
+	# normalize the joint histogram
+	joint_histogram /= joint_histogram.sum() 
+	# get the marginals
+	marginal_col = joint_histogram.sum(axis=0)
+	marginal_row = joint_histogram.sum(axis=1)
+
+	if method == 'mi':
+	    # mutual information
+	    marginal_outer = N.outer(marginal_col, marginal_row)
+	    H = joint_histogram * N.log(joint_histogram / marginal_outer)  
+	    mutual_information = H.sum()
+	    cost = -mutual_information
+
+	elif method == 'ecc':
+	    # entropy correlation coefficient 
+	    marginal_outer = N.outer(marginal_col, marginal_row)
+	    H = joint_histogram * N.log(joint_histogram / marginal_outer)  
+	    mutual_information = H.sum()
+	    row_entropy = marginal_row * N.log(marginal_row)
+	    col_entropy = marginal_col * N.log(marginal_col)
+	    ecc  = -2.0*mutual_information/(row_entropy.sum() + col_entropy.sum())
+	    cost = -ecc
+
+	elif method == 'nmi':
+	    # normalized mutual information
+	    row_entropy = marginal_row * N.log(marginal_row)
+	    col_entropy = marginal_col * N.log(marginal_col)
+	    H = joint_histogram * N.log(joint_histogram)  
+	    nmi = (row_entropy.sum() + col_entropy.sum()) / (H.sum())
+	    cost = -nmi
+
+	elif method == 'ncc':
+	    # cross correlation from the joint histogram 
+	    r, c = joint_histogram.shape
+	    i = N.array(range(1,c+1))
+	    j = N.array(range(1,r+1))
+	    m1 = (marginal_row * i).sum()
+	    m2 = (marginal_col * j).sum()
+	    sig1 = N.sqrt((marginal_row*(N.square(i-m1))).sum())
+	    sig2 = N.sqrt((marginal_col*(N.square(j-m2))).sum())
+	    [a, b] = N.mgrid[1:c+1, 1:r+1]
+	    a = a - m1
+	    b = b - m2
+	    # element multiplies in the joint histogram and grids
+	    H = ((joint_histogram * a) * b).sum()
+	    ncc = H / (N.dot(sig1, sig2)) 
+	    cost = -ncc
+
+	if ret_histo:
+	    return cost, joint_histogram 
+    	else:
+	    return cost
+
+
+def build_structs(step=1):
+	# build image data structures here
+	P = N.zeros(6, dtype=N.float64);
+	T = N.zeros(6, dtype=N.float64);
+	F = N.zeros(2, dtype=N.int32);
+	S = N.ones(3,  dtype=N.int32);
+	sample = N.zeros(2, dtype=N.int32);
+	S[0] = step
+	S[1] = step
+	S[2] = step
+	# histogram smoothing
+	F[0] = 3
+	F[1] = 3
+	# subsample for multiresolution registration
+	sample[0] = 4
+	sample[1] = 2
+	# tolerances for angle (0-2) and translation (3-5)
+	T[0] = 0.02 
+	T[1] = 0.02 
+	T[2] = 0.02 
+	T[3] = 0.001 
+	T[4] = 0.001 
+	T[5] = 0.001 
+	# P[0] = alpha <=> pitch. + alpha is moving back in the sagittal plane
+	# P[1] = beta  <=> roll.  + beta  is moving right in the coronal plane
+	# P[2] = gamma <=> yaw.   + gamma is right turn in the transverse plane
+	# P[3] = Tx
+	# P[4] = Ty
+	# P[5] = Tz
+	img_data = {'parms' : P, 'step' : S, 'fwhm' : F, 'tol' : T, 'sample' : sample}
+	return img_data
+
+
+def build_rotate_matrix(img_data_parms):
+	R1 = N.zeros([4,4], dtype=N.float64);
+	R2 = N.zeros([4,4], dtype=N.float64);
+	R3 = N.zeros([4,4], dtype=N.float64);
+	T  = N.eye(4, dtype=N.float64);
+
+	alpha = math.radians(img_data_parms[0])
+	beta  = math.radians(img_data_parms[1])
+	gamma = math.radians(img_data_parms[2])
+
+	R1[0][0] = 1.0
+	R1[1][1] = math.cos(alpha)
+	R1[1][2] = math.sin(alpha)
+	R1[2][1] = -math.sin(alpha)
+	R1[2][2] = math.cos(alpha)
+	R1[3][3] = 1.0
+
+	R2[0][0] = math.cos(beta)
+	R2[0][2] = math.sin(beta)
+	R2[1][1] = 1.0
+	R2[2][0] = -math.sin(beta)
+	R2[2][2] = math.cos(beta)
+	R2[3][3] = 1.0
+
+	R3[0][0] = math.cos(gamma)
+	R3[0][1] = math.sin(gamma)
+	R3[1][0] = -math.sin(gamma)
+	R3[1][1] = math.cos(gamma)
+	R3[2][2] = 1.0
+	R3[3][3] = 1.0
+
+	T[0][0] = 1.0
+	T[1][1] = 1.0
+	T[2][2] = 1.0
+	T[3][3] = 1.0
+	T[0][3] = img_data_parms[3]
+	T[1][3] = img_data_parms[4]
+	T[2][3] = img_data_parms[5]
+
+	rot_matrix = N.dot(T, R1);
+	rot_matrix = N.dot(rot_matrix, R2);
+	rot_matrix = N.dot(rot_matrix, R3);
+
+	return rot_matrix
+
+
+def load_volume(imagedesc, imagename=None, threshold=0.999, debug=0):
+	# load MRI or fMRI volume and return an autoscaled 8 bit image.
+	# autoscale is using integrated histogram to deal with outlier high amplitude voxels
+	if imagename == None:
+	    # imagename of none means to create a blank image
+    	    ImageVolume = N.zeros(imagedesc['layers']*imagedesc['rows']*imagedesc['cols'],
+			   dtype=N.uint16).reshape(imagedesc['layers'], imagedesc['rows'], imagedesc['cols'])
+	else:
+    	    ImageVolume = N.fromfile(imagename,
+			   dtype=N.uint16).reshape(imagedesc['layers'], imagedesc['rows'], imagedesc['cols']);
+
+	# the mat (voxel to physical) matrix
+	M = N.eye(4, dtype=N.float64);
+	# for now just the sample size (mm units) in x, y and z
+	M[0][0] = imagedesc['sample_x']
+	M[1][1] = imagedesc['sample_y']
+	M[2][2] = imagedesc['sample_z']
+	# dimensions 
+	D = N.zeros(3, dtype=N.int32);
+	# Gaussian kernel - fill in with build_fwhm() 
+	F = N.zeros(3, dtype=N.float64);
+	D[0] = imagedesc['rows']
+	D[1] = imagedesc['cols']
+	D[2] = imagedesc['layers']
+
+	if imagename == None:
+	    # no voxels to scale to 8 bits
+    	    ImageVolume = ImageVolume.astype(N.uint8)
+	    image = {'data' : ImageVolume, 'mat' : M, 'dim' : D, 'fwhm' : F}
+    	    return image
+
+	# 8 bit scale with threshold clip of the volume integrated histogram
+	max = ImageVolume.max()
+	min = ImageVolume.min()
+	ih  = N.zeros(max-min+1, dtype=N.float64);
+	h   = N.zeros(max-min+1, dtype=N.float64);
+	if threshold <= 0:
+	    threshold = 0.999
+	elif threshold > 1.0:
+	    threshold = 1.0
+	# get the integrated histogram of the volume and get max from 
+	# the threshold crossing in the integrated histogram 
+	index  = R.register_image_threshold(ImageVolume, h, ih, threshold)
+	scale  = 255.0 / (index-min)
+	# generate the scaled 8 bit image
+	images = (scale*(ImageVolume.astype(N.float)-min))
+	images[images>255] = 255 
+	image = {'data' : images.astype(N.uint8), 'mat' : M, 'dim' : D, 'fwhm' : F}
+	if debug == 1:
+    	    return image, h, ih, index
+        else:
+    	    return image
+
+def load_anatMRI_desc():
+	# this is for demo on the test MRI and fMRI volumes
+	rows   = 256
+	cols   = 256
+	layers = 90
+	xsamp  = 0.9375
+	ysamp  = 0.9375
+	zsamp  = 1.5
+	desc = {'rows' : rows, 'cols' : cols, 'layers' : layers, 
+		'sample_x' : xsamp, 'sample_y' : ysamp, 'sample_z' : zsamp}
+	return desc
+
+def load_fMRI_desc():
+	# this is for demo on the test MRI and fMRI volumes
+	rows   = 64
+	cols   = 64
+	layers = 28
+	xsamp  = 3.75
+	ysamp  = 3.75
+	zsamp  = 5.0
+	desc = {'rows' : rows, 'cols' : cols, 'layers' : layers, 
+		'sample_x' : xsamp, 'sample_y' : ysamp, 'sample_z' : zsamp}
+	return desc
+
+def read_fMRI_directory(path):
+	files_fMRI = glob.glob(path)
+	return files_fMRI
+
+
+def check_alignment(image1, image2, imdata, method='ncc', lite=0, smhist=0, 
+		    alpha=0.0, beta=0.0, gamma=0.0, Tx=0, Ty=0, Tz=0, ret_histo=0):
+	            
+	#
+	# to test the cost function and view the joint histogram
+	# for 2 images. used for debug
+	#
+	imdata['parms'][0] = alpha
+	imdata['parms'][1] = beta
+	imdata['parms'][2] = gamma
+	imdata['parms'][3] = Tx
+	imdata['parms'][4] = Ty
+	imdata['parms'][5] = Tz
+	M = build_rotate_matrix(imdata['parms'])
+	optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist, method, ret_histo)
+
+	if ret_histo:
+	    cost, joint_histogram = optimize_function(imdata['parms'], optfunc_args)
+	    return cost, joint_histogram 
+    	else:
+	    cost = optimize_function(imdata['parms'], optfunc_args)
+	    return cost
+
+
+#
+#  ---- demo/debug routines  ---- 
+#
+
+def build_scale_image(image, scale):
+	#
+	# rescale the 'mat' (voxel to physical mapping matrix) 
+	#
+	(layers, rows, cols) = image['data'].shape
+	M = image['mat'] * scale
+	# dimensions 
+	D = N.zeros(3, dtype=N.int32);
+	# Gaussian kernel - fill in with build_fwhm() 
+	F = N.zeros(3, dtype=N.float64);
+	Z = N.zeros(3, dtype=N.float64);
+	D[0] = rows/scale
+	D[1] = cols/scale
+	D[2] = layers/scale
+    	image2 = N.zeros(D[2]*D[1]*D[0], dtype=N.uint8).reshape(D[2], D[0], D[1]);
+	mode = 1;
+	R.register_volume_resample(image['data'], image2, Z, scale, mode)
+	scaled_image = {'data' : image2, 'mat' : M, 'dim' : D, 'fwhm' : F}
+	return scaled_image
+
+
+def demo_MRI_volume_align(scale=2, alpha=3.0, beta=4.0, gamma=5.0, Tx = 0.0, Ty = 0.0, Tz = 0.0):
+	#
+	# this is for coreg MRI / fMRI scale test. The volume is anatomical MRI.
+	# the image is rotated in 3D. after rotation the image is scaled.  
+	#
+
+	anat_desc = load_anatMRI_desc()
+	image1 = load_volume(anat_desc, imagename='ANAT1_V0001.img')
+	image2 = load_volume(anat_desc, imagename=None)
+	imdata = build_structs()
+	image1['fwhm'] = build_fwhm(image1['mat'], imdata['step'])
+	image2['fwhm'] = build_fwhm(image2['mat'], imdata['step'])
+	imdata['parms'][0] = alpha
+	imdata['parms'][1] = beta
+	imdata['parms'][2] = gamma
+	imdata['parms'][3] = Tx
+	imdata['parms'][4] = Ty
+	imdata['parms'][5] = Tz
+	M = build_rotate_matrix(imdata['parms'])
+	# rotate volume. linear interpolation means the volume is low pass filtered
+	R.register_linear_resample(image1['data'], image2['data'], M, imdata['step'])
+	# subsample volume
+	image3 = build_scale_image(image2, scale)
+	return image1, image3, imdata
+
+def demo_rotate_fMRI_volume(fMRIVol, x): 
+	#
+	# return rotated fMRIVol. the fMRIVol is already loaded, and gets rotated
+	#
+
+	desc = load_fMRI_desc()
+	image = load_volume(desc, imagename=None)
+	imdata = build_structs()
+	image['fwhm'] = build_fwhm(image['mat'], imdata['step'])
+	imdata['parms'][0] = x[0]  # alpha
+	imdata['parms'][1] = x[1]  # beta
+	imdata['parms'][2] = x[2]  # gamma
+	imdata['parms'][3] = x[3]  # Tx
+	imdata['parms'][4] = x[4]  # Ty
+	imdata['parms'][5] = x[5]  # Tz
+	M = build_rotate_matrix(imdata['parms'])
+	# rotate volume. cubic spline interpolation means the volume is NOT low pass filtered
+	R.register_cubic_resample(fMRIVol['data'], image['data'], M, imdata['step'])
+	return image
+
+def demo_MRI_coregistration(optimizer_method='powell', histo_method=1, smooth_histo=0, smooth_image=0, ftype=1):
+	# demo of alignment of fMRI series with anatomical MRI
+	# in this demo, each fMRI volume is first perturbed (rotated, translated) 
+	# by a random value. The initial registration is measured, then the optimal
+	# alignment is computed and the registration measure made following the volume remap.
+	# The fMRI registration is done with the first fMRI volume using normalized cross-correlation.
+	# Each fMRI volume is rotated to the fMRI-0 volume and the series is ensemble averaged.
+	# The ensemble averaged is then registered with the anatomical MRI volume using normalized mutual information.
+	# The fMRI series is then rotated with this parameter. The alignments are done with 3D cubic splines.
+
+	# read the anatomical MRI volume
+	anat_desc = load_anatMRI_desc()
+	imageF_anat = load_volume(anat_desc, imagename='ANAT1_V0001.img')
+	# the sampling structure
+	imdata = build_structs()
+	# the volume filter
+	imageF_anat['fwhm'] = build_fwhm(imageF_anat['mat'], imdata['step'])
+
+	# read in the file list of the fMRI data
+	metric_test = N.dtype([('cost', 'f'),
+                    	       ('align_cost', 'f'),
+                    	       ('rotate', 'f', 6),
+                    	       ('align_rotate', 'f', 6)])
+
+	fMRIdata = read_fMRI_directory('fMRIData\*.img')
+	fmri_desc = load_fMRI_desc()
+	fmri_series = {}
+	ave_fMRI_volume = N.zeros(fmri_desc['layers']*fmri_desc['rows']*fmri_desc['cols'],
+			  dtype=N.float64).reshape(fmri_desc['layers'], fmri_desc['rows'], fmri_desc['cols'])
+	count = 0
+	number_volumes = len(fMRIdata)
+	measures = N.zeros(number_volumes, dtype=metric_test)
+	# load and perturb (rotation, translation) the fMRI volumes
+	for i in fMRIdata:
+	    image = load_volume(fmri_desc, i)
+	    # random perturbation of angle, translation for each volume beyond the first
+	    if count == 0:
+		image['fwhm'] = build_fwhm(image['mat'], imdata['step'])
+	        fmri_series[count] = image
+	        count = count + 1
+	    else:
+	        x = N.random.random(6) - 0.5
+	        x = 10.0 * x
+	        fmri_series[count] = demo_rotate_fMRI_volume(image, x)
+		measures[count]['rotate'][0:6] = x[0:6]
+	        count = count + 1
+
+
+	# load and register the fMRI volumes with volume_0 using normalized cross correlation metric
+	imageF = fmri_series[0]
+	if smooth_image:
+	    image_F_xyz = filter_image_3D(imageF['data'], imageF['fwhm'], ftype)
+	    imageF['data'] = image_F_xyz
+	for i in range(1, number_volumes):
+	    imageG = fmri_series[i]
+	    # the measure prior to alignment 
+	    measures[i]['cost'] = check_alignment(imageF, imageG, imdata, method='ncc',
+			                          lite=histo_method, smhist=smooth_histo)
+	    x = python_coreg(imageF, imageG, imdata, lite=histo_method, method='ncc',
+			     opt_method=optimizer_method, smhist=smooth_histo, smimage=smooth_image)
+	    measures[i]['align_rotate'][0:6] = x[0:6]
+	    measures[i]['align_cost'] = check_alignment(imageF, imageG, imdata, method='ncc', 
+		                             lite=histo_method, smhist=smooth_histo,
+					     alpha=x[0], beta=x[1], gamma=x[2], Tx=x[3], Ty=x[4], Tz=x[5])
+
+
+	# align the volumes and average them for co-registration with the anatomical MRI 
+	ave_fMRI_volume = fmri_series[0]['data'].astype(N.float64)
+	for i in range(1, number_volumes):
+	    image = fmri_series[i]
+	    x[0:6] = measures[i]['align_rotate'][0:6]
+	    # overwrite the fMRI volume with the aligned volume
+	    fmri_series[i] = remap_image(image, x, resample='cubic')
+	    ave_fMRI_volume = ave_fMRI_volume + fmri_series[i]['data'].astype(N.float64)
+
+	ave_fMRI_volume = (ave_fMRI_volume / float(number_volumes)).astype(N.uint8)
+	ave_fMRI_volume = {'data' : ave_fMRI_volume, 'mat' : imageF['mat'], 
+			   'dim' : imageF['dim'], 'fwhm' : imageF['fwhm']}
+	# register (using normalized mutual information) with the anatomical MRI
+	if smooth_image:
+	    image_F_anat_xyz = filter_image_3D(imageF_anat['data'], imageF_anat['fwhm'], ftype)
+	    imageF_anat['data'] = image_F_anat_xyz
+	x = python_coreg(imageF_anat, ave_fMRI_volume, imdata, lite=histo_method,
+			 method='nmi', opt_method=optimizer_method, smhist=smooth_histo, smimage=smooth_image)
+	print 'functional-anatomical align parameters '
+	print x
+	for i in range(number_volumes):
+	    image = fmri_series[i]
+	    # overwrite the fMRI volume with the anatomical-aligned volume
+	    fmri_series[i] = remap_image(image, x, resample='cubic')
+
+	return measures, imageF_anat, fmri_series
+
+
+def demo_fMRI_resample(imageF_anat, fmri_series):
+	resampled_fmri_series = {}
+	number_volumes = len(fmri_series)
+	for i in range(number_volumes):
+	    resampled_fmri_series[i] = resize_image(fmri_series[i], imageF_anat['mat'])
+
+	return resampled_fmri_series
+
+

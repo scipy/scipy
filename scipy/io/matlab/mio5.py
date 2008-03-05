@@ -465,7 +465,7 @@ class MatFile5Reader(MatFileReader):
                  mat_stream,
                  byte_order=None,
                  mat_dtype=False,
-                 squeeze_me=True,
+                 squeeze_me=False,
                  chars_as_strings=True,
                  matlab_compatible=False,
                  uint16_codec=None

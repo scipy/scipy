@@ -1,3 +1,5 @@
+import copy
+
 import numpy as N
 from numpy.linalg import pinv
 from scipy.stats.models import utils
@@ -78,8 +80,9 @@ class Contrast:
         then evaldesign can be set to False.
         """
 
-        self.term.namespace = self.formula.namespace
-        T = N.transpose(N.array(self.term(*args, **kw)))
+        t = copy.copy(self.term)
+        t.namespace = self.formula.namespace
+        T = N.transpose(N.array(t(*args, **kw)))
 
         if T.ndim == 1:
             T.shape = (T.shape[0], 1)
@@ -95,9 +98,9 @@ class Contrast:
             self.rank = 1
 
 
-def contrastfromcols(T, D, pseudo=None):
+def contrastfromcols(L, D, pseudo=None):
     """
-    From an n x p design matrix D and a matrix T, tries
+    From an n x p design matrix D and a matrix L, tries
     to determine a p x q contrast matrix C which
     determines a contrast of full rank, i.e. the
     n x q matrix
@@ -106,32 +109,46 @@ def contrastfromcols(T, D, pseudo=None):
 
     is full rank.
 
-    T must satisfy either T.shape[0] == n or T.shape[1] == p.
+    L must satisfy either L.shape[0] == n or L.shape[1] == p.
+
+    If L.shape[0] == n, then L is thought of as representing
+    columns in the column space of D.
+
+    If L.shape[1] == p, then L is thought of as what is known
+    as a contrast matrix. In this case, this function returns an estimable
+    contrast corresponding to the dot(D, L.T)
 
     Note that this always produces a meaningful contrast, not always
     with the intended properties because q is always non-zero unless
-    T is identically 0. That is, it produces a contrast that spans
-    the column space of T (after projection onto the column space of D).
+    L is identically 0. That is, it produces a contrast that spans
+    the column space of L (after projection onto the column space of D).
 
     """
 
+    L = N.asarray(L)
+    D = N.asarray(D)
+    
     n, p = D.shape
 
-    if T.shape[0] != n and T.shape[1] != p:
-        raise ValueError, 'shape of T and D mismatched'
+    if L.shape[0] != n and L.shape[1] != p:
+        raise ValueError, 'shape of L and D mismatched'
 
     if pseudo is None:
         pseudo = pinv(D)
 
-    if T.shape[0] == n:
-        C = N.transpose(N.dot(pseudo, T))
+    if L.shape[0] == n:
+        C = N.dot(pseudo, L).T
     else:
-        C = T
+        C = L
+        C = N.dot(pseudo, N.dot(D, C.T)).T
+        
+    Lp = N.dot(D, C.T)
 
-    Tp = N.dot(D, N.transpose(C))
-
-    if utils.rank(Tp) != Tp.shape[1]:
-        Tp = utils.fullrank(Tp)
-        C = N.transpose(N.dot(pseudo, Tp))
+    if len(Lp.shape) == 1:
+        Lp.shape = (n, 1)
+        
+    if utils.rank(Lp) != Lp.shape[1]:
+        Lp = utils.fullrank(Lp)
+        C = N.dot(pseudo, Lp).T
 
     return N.squeeze(C)

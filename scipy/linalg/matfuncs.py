@@ -20,7 +20,20 @@ eps = sb.finfo(float).eps
 feps = sb.finfo(single).eps
 
 def expm(A,q=7):
-    """Compute the matrix exponential using Pade approximation of order q.
+    """Compute the matrix exponential using Pade approximation.
+
+    Parameters
+    ----------
+    A : array, shape(M,M)
+        Matrix to be exponentiated
+    q : integer
+        Order of the Pade approximation
+
+    Returns
+    -------
+    expA : array, shape(M,M)
+        Matrix exponential of A
+
     """
     A = asarray(A)
     ss = True
@@ -61,6 +74,17 @@ def expm(A,q=7):
 
 def expm2(A):
     """Compute the matrix exponential using eigenvalue decomposition.
+
+    Parameters
+    ----------
+    A : array, shape(M,M)
+        Matrix to be exponentiated
+
+    Returns
+    -------
+    expA : array, shape(M,M)
+        Matrix exponential of A
+
     """
     A = asarray(A)
     t = A.dtype.char
@@ -72,7 +96,20 @@ def expm2(A):
     return dot(dot(vr,diag(exp(s))),vri).astype(t)
 
 def expm3(A,q=20):
-    """Compute the matrix exponential using a Taylor series.of order q.
+    """Compute the matrix exponential using Taylor series.
+
+    Parameters
+    ----------
+    A : array, shape(M,M)
+        Matrix to be exponentiated
+    q : integer
+        Order of the Taylor series
+    
+    Returns
+    -------
+    expA : array, shape(M,M)
+        Matrix exponential of A
+
     """
     A = asarray(A)
     t = A.dtype.char
@@ -91,6 +128,16 @@ def expm3(A,q=20):
 _array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
 def toreal(arr,tol=None):
     """Return as real array if imaginary part is small.
+
+    Parameters
+    ----------
+    arr : array
+    tol : float
+        Absolute tolerance
+
+    Returns
+    -------
+    arr : double or complex array
     """
     if tol is None:
         tol = {0:feps*1e3, 1:eps*1e6}[_array_precision[arr.dtype.char]]
@@ -100,7 +147,19 @@ def toreal(arr,tol=None):
     return arr
 
 def cosm(A):
-    """matrix cosine.
+    """Compute the matrix cosine.
+
+    This routine uses expm to compute the matrix exponentials.
+
+    Parameters
+    ----------
+    A : array, shape(M,M)
+    
+    Returns
+    -------
+    cosA : array, shape(M,M)
+        Matrix cosine of A
+
     """
     A = asarray(A)
     if A.dtype.char not in ['F','D','G']:
@@ -110,7 +169,19 @@ def cosm(A):
 
 
 def sinm(A):
-    """matrix sine.
+    """Compute the matrix sine.
+
+    This routine uses expm to compute the matrix exponentials.
+
+    Parameters
+    ----------
+    A : array, shape(M,M)
+
+    Returns
+    -------
+    sinA : array, shape(M,M)
+        Matrix cosine of A
+
     """
     A = asarray(A)
     if A.dtype.char not in ['F','D','G']:
@@ -119,7 +190,19 @@ def sinm(A):
         return -0.5j*(expm(1j*A) - expm(-1j*A))
 
 def tanm(A):
-    """matrix tangent.
+    """Compute the matrix tangent.
+
+    This routine uses expm to compute the matrix exponentials.
+
+    Parameters
+    ----------
+    A : array, shape(M,M)
+
+    Returns
+    -------
+    tanA : array, shape(M,M)
+        Matrix tangent of A
+
     """
     A = asarray(A)
     if A.dtype.char not in ['F','D','G']:
@@ -128,7 +211,19 @@ def tanm(A):
         return solve(cosm(A), sinm(A))
 
 def coshm(A):
-    """matrix hyperbolic cosine.
+    """Compute the hyperbolic matrix cosine.
+
+    This routine uses expm to compute the matrix exponentials.
+
+    Parameters
+    ----------
+    A : array, shape(M,M)
+
+    Returns
+    -------
+    coshA : array, shape(M,M)
+        Hyperbolic matrix cosine of A
+
     """
     A = asarray(A)
     if A.dtype.char not in ['F','D','G']:
@@ -137,7 +232,19 @@ def coshm(A):
         return 0.5*(expm(A) + expm(-A))
 
 def sinhm(A):
-    """matrix hyperbolic sine.
+    """Compute the hyperbolic matrix sine.
+
+    This routine uses expm to compute the matrix exponentials.
+
+    Parameters
+    ----------
+    A : array, shape(M,M)
+
+    Returns
+    -------
+    sinhA : array, shape(M,M)
+        Hyperbolic matrix sine of A
+
     """
     A = asarray(A)
     if A.dtype.char not in ['F','D']:
@@ -146,7 +253,19 @@ def sinhm(A):
         return 0.5*(expm(A) - expm(-A))
 
 def tanhm(A):
-    """matrix hyperbolic tangent.
+    """Compute the hyperbolic matrix tangent.
+
+    This routine uses expm to compute the matrix exponentials.
+
+    Parameters
+    ----------
+    A : array, shape(M,M)
+
+    Returns
+    -------
+    tanhA : array, shape(M,M)
+        Hyperbolic matrix tangent of A
+
     """
     A = asarray(A)
     if A.dtype.char not in ['F','D']:
@@ -155,11 +274,32 @@ def tanhm(A):
         return solve(coshm(A), sinhm(A))
 
 def funm(A,func,disp=1):
-    """matrix function for arbitrary callable object func.
-    """
-    # func should take a vector of arguments (see vectorize if
-    #  it needs wrapping.
+    """Evaluate a matrix function specified by a callable.
+    
+    Returns the value of matrix-valued function f at A. The function f
+    is an extension of the scalar-valued function func to matrices.
+    
+    Parameters
+    ----------
+    A : array, shape(M,M)
+        Matrix at which to evaluate the function
+    func : callable
+        Callable object that evaluates a scalar function f.
+        Must be vectorized (eg. using vectorize).
+    disp : boolean
+        Print warning if error in the result is estimated large
+        instead of returning estimated error. (Default: True)
 
+    Returns
+    -------
+    fA : array, shape(M,M)
+        Value of the matrix function specified by func evaluated at A
+
+    (if disp == False)
+    errest : float
+        1-norm of the estimated error, ||err||_1 / ||A||_1
+
+    """
     # Perform Shur decomposition (lapack ?gees)
     A = asarray(A)
     if len(A.shape)!=2:
@@ -209,7 +349,28 @@ def funm(A,func,disp=1):
         return F, err
 
 def logm(A,disp=1):
-    """Matrix logarithm, inverse of expm."""
+    """Compute matrix logarithm.
+    
+    The matrix logarithm is the inverse of expm: expm(logm(A)) == A
+    
+    Parameters
+    ----------
+    A : array, shape(M,M)
+        Matrix whose logarithm to evaluate
+    disp : boolean
+        Print warning if error in the result is estimated large
+        instead of returning estimated error. (Default: True)
+
+    Returns
+    -------
+    logA : array, shape(M,M)
+        Matrix logarithm of A
+
+    (if disp == False)
+    errest : float
+        1-norm of the estimated error, ||err||_1 / ||A||_1
+
+    """
     # Compute using general funm but then use better error estimator and
     #   make one step in improving estimate using a rotation matrix.
     A = mat(asarray(A))
@@ -239,7 +400,37 @@ def logm(A,disp=1):
         return F, errest
 
 def signm(a,disp=1):
-    """matrix sign"""
+    """Matrix sign function.
+    
+    Extension of the scalar sign(x) to matrices.
+    
+    Parameters
+    ----------
+    A : array, shape(M,M)
+        Matrix at which to evaluate the sign function
+    disp : boolean
+        Print warning if error in the result is estimated large
+        instead of returning estimated error. (Default: True)
+    
+    Returns
+    -------
+    sgnA : array, shape(M,M)
+        Value of the sign function at A
+
+    (if disp == False)
+    errest : float
+        1-norm of the estimated error, ||err||_1 / ||A||_1
+    
+    Examples
+    --------
+    >>> from scipy.linalg import signm, eigvals
+    >>> a = [[1,2,3], [1,2,1], [1,1,1]]
+    >>> eigvals(a)
+    array([ 4.12488542+0.j, -0.76155718+0.j,  0.63667176+0.j])
+    >>> eigvals(signm(a))
+    array([-1.+0.j,  1.+0.j,  1.+0.j])
+        
+    """
     def rounded_sign(x):
         rx = real(x)
         if rx.dtype.char=='f':
@@ -286,12 +477,29 @@ def signm(a,disp=1):
         return S0, errest
 
 def sqrtm(A,disp=1):
-    """Matrix square root
+    """Matrix square root.
+    
+    Parameters
+    ----------
+    A : array, shape(M,M)
+        Matrix whose square root to evaluate
+    disp : boolean
+        Print warning if error in the result is estimated large
+        instead of returning estimated error. (Default: True)
+    
+    Returns
+    -------
+    sgnA : array, shape(M,M)
+        Value of the sign function at A
 
-    If disp is non-zero display warning if singular matrix.
-    If disp is zero then return residual ||A-X*X||_F / ||A||_F
+    (if disp == False)
+    errest : float
+        Frobenius norm of the estimated error, ||err||_F / ||A||_F
 
+    Notes
+    -----
     Uses algorithm by Nicholas J. Higham
+    
     """
     A = asarray(A)
     if len(A.shape)!=2:

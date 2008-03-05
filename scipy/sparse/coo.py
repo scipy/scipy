@@ -5,11 +5,11 @@ __all__ = ['coo_matrix', 'isspmatrix_coo']
 from itertools import izip
 from warnings import warn 
 
-from numpy import array, asarray, empty, intc, zeros, bincount, \
-        unique, searchsorted, atleast_2d, lexsort, cumsum, concatenate, \
-        empty_like, arange
+from numpy import array, asarray, empty, intc, zeros,  \
+        unique, searchsorted, atleast_2d, empty_like, rank, \
+        deprecate
 
-from sparsetools import coo_tocsr, coo_tocsc
+from sparsetools import coo_tocsr, coo_tocsc, coo_todense
 from base import isspmatrix
 from data import _data_matrix
 from sputils import upcast, to_native, isshape, getdtype
@@ -122,8 +122,8 @@ class coo_matrix(_data_matrix):
                 except TypeError:
                     raise TypeError, "invalid input format"
 
-                self.row = array(ij[0],copy=copy)
-                self.col = array(ij[1],copy=copy)
+                self.row = array(ij[0],copy=copy,dtype=intc)
+                self.col = array(ij[1],copy=copy,dtype=intc)
                 self.data = array(obj,copy=copy)
 
                 if shape is None:
@@ -175,15 +175,21 @@ class coo_matrix(_data_matrix):
 
         self._check()
 
-
-    def _check(self):
-        """ Checks for consistency and stores the number of non-zeros as
-        self.nnz.
-        """
+    def getnnz(self):
         nnz = len(self.data)
         if (nnz != len(self.row)) or (nnz != len(self.col)):
             raise ValueError, "row, column, and data array must all be "\
                   "the same length"
+
+        if rank(self.data) != 1 or rank(self.row) != 1 or rank(self.col) != 1:
+            raise ValueError, "row, column, and data arrays must have rank 1"
+
+        return nnz
+    nnz = property(fget=getnnz)
+
+    def _check(self):
+        """ Checks data structure for consistency """
+        nnz = self.nnz
 
         # index arrays should have integer data types
         if self.row.dtype.kind != 'i':
@@ -210,11 +216,12 @@ class coo_matrix(_data_matrix):
 
         # some functions pass floats
         self.shape = tuple([int(x) for x in self.shape])
-        self.nnz = nnz
 
+    @deprecate
     def rowcol(self, num):
         return (self.row[num], self.col[num])
 
+    @deprecate
     def getdata(self, num):
         return self.data[num]
     
@@ -223,10 +230,10 @@ class coo_matrix(_data_matrix):
         return coo_matrix((self.data,(self.col,self.row)),(N,M),copy=copy)
 
     def toarray(self):
-        A = self.tocsr().tocoo(copy=False) #eliminate (i,j) duplicates
-        M = zeros(self.shape, dtype=self.dtype)
-        M[A.row, A.col] = A.data
-        return M
+        B = zeros(self.shape, dtype=self.dtype)
+        M,N = self.shape
+        coo_todense(M, N, self.nnz, self.row, self.col, self.data, B.ravel() )
+        return B
 
     def tocsc(self,sum_duplicates=True):
         """Return a copy of this matrix in Compressed Sparse Column format
@@ -305,71 +312,10 @@ class coo_matrix(_data_matrix):
 
         dok = dok_matrix((self.shape),dtype=self.dtype)
 
-        try:
-            dok.update( izip(izip(self.row,self.col),self.data) ) 
-        except AttributeError:
-            # the dict() call is for Python 2.3 compatibility
-            # ideally dok_matrix would accept an iterator
-            dok.update( dict( izip(izip(self.row,self.col),self.data) ) )
+        dok.update( izip(izip(self.row,self.col),self.data) ) 
 
         return dok
 
-#    def tobsc(self,blocksize=None):
-#        if blocksize in [None, (1,1)]:
-#            return self.tocsc().tobsc(blocksize)
-#        else:
-#            return self.transpose().tobsr().transpose()
-
-    def tobsr(self,blocksize=None):
-        from bsr import bsr_matrix
-
-        if self.nnz == 0:
-            return bsr_matrix(self.shape,blocksize=blocksize,dtype=self.dtype)
-
-        if blocksize is None:
-            blocksize = estimate_blocksize(self)
-        elif blocksize in (1,1):
-            return self.tocsr().tobsr(blocksize)
-
-        M,N = self.shape
-        X,Y = blocksize
-    
-        if (M % X) != 0 or (N % Y) != 0:
-            raise ValueError, 'shape must be multiple of blocksize'
-    
-        i_block,i_sub = divmod(self.row, X)
-        j_block,j_sub = divmod(self.col, Y)
-    
-        perm = lexsort( keys=[j_block,i_block] )
-    
-        i_block = i_block[perm]
-        j_block = j_block[perm]
-    
-        mask = (i_block[1:] != i_block[:-1]) + (j_block[1:] != j_block[:-1])
-        mask = concatenate((array([True]),mask))
-    
-        #map self.data[n] -> data[map[n],i_sub[n],j_sub[n]]
-        map = cumsum(mask)
-        num_blocks = map[-1]
-        map -= 1
-        
-        iperm = empty_like(perm) #inverse permutation
-        iperm[perm] = arange(len(perm))
-        
-        data = zeros( (num_blocks,X,Y), dtype=self.dtype )
-        data[map[iperm],i_sub,j_sub] = self.data
-    
-        row = i_block[mask]
-        col = j_block[mask]
-    
-        # now row,col,data form BOO format 
-    
-        temp = cumsum(bincount(row))
-        indptr = zeros( M/X + 1, dtype=intc )
-        indptr[1:len(temp)+1] = temp
-        indptr[len(temp)+1:] = temp[-1]
-       
-        return bsr_matrix((data,col,indptr),shape=self.shape)
 
     # needed by _data_matrix
     def _with_data(self,data,copy=True):

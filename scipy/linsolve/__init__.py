@@ -1,6 +1,6 @@
 
 from warnings import warn
 
-warn('scipy.linsolve has moved to scipy.splinalg.dsolve', DeprecationWarning)
+warn('scipy.linsolve has moved to scipy.sparse.linalg.dsolve', DeprecationWarning)
 
-from scipy.splinalg.dsolve import *
+from scipy.sparse.linalg.dsolve import *

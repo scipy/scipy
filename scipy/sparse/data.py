@@ -27,10 +27,10 @@ class _data_matrix(spmatrix):
         return self._with_data(abs(self.data))
 
     def _real(self):
-        return self._with_data(numpy.real(self.data),copy=False)
+        return self._with_data(self.data.real)
 
     def _imag(self):
-        return self._with_data(numpy.imag(self.data),copy=False)
+        return self._with_data(self.data.imag)
     
     def __neg__(self):
         return self._with_data(-self.data)

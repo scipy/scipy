@@ -44,6 +44,9 @@ def estimate_blocksize(A,efficiency=0.7):
     if not (isspmatrix_csr(A) or isspmatrix_csc(A)):
         A = csr_matrix(A)
 
+    if A.nnz == 0:
+        return (1,1)
+
     if not 0 < efficiency < 1.0:
         raise ValueError,'efficiency must satisfy 0.0 < efficiency < 1.0'
 
@@ -85,7 +88,7 @@ def estimate_blocksize(A,efficiency=0.7):
 
 def count_blocks(A,blocksize):
     """For a given blocksize=(r,c) count the number of occupied 
-    blocks in a sparse matrix A using 
+    blocks in a sparse matrix A
     """
     r,c = blocksize
     if r < 1 or c < 1:

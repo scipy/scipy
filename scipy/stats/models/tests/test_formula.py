@@ -66,6 +66,7 @@ class TestFormula(TestCase):
     def test_namespace(self):
         space1 = {'X':N.arange(50), 'Y':N.arange(50)*2}
         space2 = {'X':N.arange(20), 'Y':N.arange(20)*2}
+        space3 = {'X':N.arange(30), 'Y':N.arange(30)*2}
         X = formula.Term('X')
         Y = formula.Term('Y')
 
@@ -79,14 +80,43 @@ class TestFormula(TestCase):
 
         f.namespace = space1
         self.assertEqual(f().shape, (2,50))
-        assert_almost_equal(Y(), N.arange(50)*2)
+        assert_almost_equal(Y(), N.arange(20)*2)
         assert_almost_equal(X(), N.arange(50))
 
         f.namespace = space2
         self.assertEqual(f().shape, (2,20))
         assert_almost_equal(Y(), N.arange(20)*2)
-        assert_almost_equal(X(), N.arange(20))
+        assert_almost_equal(X(), N.arange(50))
 
+        f.namespace = space3
+        self.assertEqual(f().shape, (2,30))
+        assert_almost_equal(Y(), N.arange(20)*2)
+        assert_almost_equal(X(), N.arange(50))
+
+        xx = X**2
+        self.assertEqual(xx().shape, (50,))
+
+        xx.namespace = space3
+        self.assertEqual(xx().shape, (30,))
+
+        xx = X * formula.I
+        self.assertEqual(xx().shape, (50,))
+        xx.namespace = space3
+        self.assertEqual(xx().shape, (30,))
+
+        xx = X * X
+        self.assertEqual(xx.namespace, X.namespace)
+
+        xx = X + Y
+        self.assertEqual(xx.namespace, {})
+
+        Y.namespace = {'X':N.arange(50), 'Y':N.arange(50)*2}
+        xx = X + Y
+        self.assertEqual(xx.namespace, {})
+
+        Y.namespace = X.namespace
+        xx = X+Y
+        self.assertEqual(xx.namespace, Y.namespace)
 
     def test_termcolumns(self):
         t1 = formula.Term("A")
@@ -112,32 +142,29 @@ class TestFormula(TestCase):
         self.assertEquals(x.shape, (40, 10))
 
     def test_product(self):
-        prod = self.terms[0] * self.terms[2]
-        self.formula += prod
-        x = self.formula.design()
-        p = self.formula['A*C']
-        col = self.formula.termcolumns(prod, dict=False)
+        prod = self.formula['A'] * self.formula['C']
+        f = self.formula + prod
+        f.namespace = self.namespace
+        x = f.design()
+        p = f['A*C']
+        p.namespace = self.namespace
+        col = f.termcolumns(prod, dict=False)
         assert_almost_equal(N.squeeze(x[:,col]), self.X[:,0] * self.X[:,2])
         assert_almost_equal(N.squeeze(p()), self.X[:,0] * self.X[:,2])
 
     def test_intercept1(self):
         prod = self.terms[0] * self.terms[2]
-        self.formula += formula.I
-        icol = self.formula.names().index('intercept')
-        assert_almost_equal(self.formula()[icol], N.ones((40,)))
-
-    def test_intercept2(self):
-        prod = self.terms[0] * self.terms[2]
-        self.formula += formula.I
-        icol = self.formula.names().index('intercept')
-        assert_almost_equal(self.formula()[icol], N.ones((40,)))
+        f = self.formula + formula.I
+        icol = f.names().index('intercept')
+        f.namespace = self.namespace
+        assert_almost_equal(f()[icol], N.ones((40,)))
 
     def test_intercept3(self):
-        prod = self.terms[0] * formula.I
+        t = self.formula['A']
+        t.namespace = self.namespace
+        prod = t * formula.I
         prod.namespace = self.formula.namespace
-        assert_almost_equal(N.squeeze(prod()), self.terms[0]())
-
-
+        assert_almost_equal(N.squeeze(prod()), t())
 
     def test_contrast1(self):
         term = self.terms[0] + self.terms[2]
@@ -202,6 +229,7 @@ class TestFormula(TestCase):
         fac = formula.Factor('ff', f)
         fac.namespace = {'ff':f}
         m = fac.main_effect(reference=1)
+        m.namespace = fac.namespace
         self.assertEquals(m().shape, (2,30))
 
     def test_factor4(self):
@@ -209,22 +237,81 @@ class TestFormula(TestCase):
         fac = formula.Factor('ff', f)
         fac.namespace = {'ff':f}
         m = fac.main_effect(reference=2)
+        m.namespace = fac.namespace
         r = N.array([N.identity(3)]*10)
         r.shape = (30,3)
         r = r.T
         _m = N.array([r[0]-r[2],r[1]-r[2]])
         assert_almost_equal(_m, m())
 
+    def test_factor5(self):
+        f = ['a','b','c']*3
+        fac = formula.Factor('ff', f)
+        fac.namespace = {'ff':f}
+
+        assert_equal(fac(), [[1,0,0]*3,
+                             [0,1,0]*3,
+                             [0,0,1]*3])
+        assert_equal(fac['a'], [1,0,0]*3)
+        assert_equal(fac['b'], [0,1,0]*3)
+        assert_equal(fac['c'], [0,0,1]*3)
+
+
+    def test_ordinal_factor(self):
+        f = ['a','b','c']*3
+        fac = formula.Factor('ff', ['a','b','c'], ordinal=True)
+        fac.namespace = {'ff':f}
+
+        assert_equal(fac(), [0,1,2]*3)
+        assert_equal(fac['a'], [1,0,0]*3)
+        assert_equal(fac['b'], [0,1,0]*3)
+        assert_equal(fac['c'], [0,0,1]*3)
+
+    def test_ordinal_factor2(self):
+        f = ['b','c', 'a']*3
+        fac = formula.Factor('ff', ['a','b','c'], ordinal=True)
+        fac.namespace = {'ff':f}
+
+        assert_equal(fac(), [1,2,0]*3)
+        assert_equal(fac['a'], [0,0,1]*3)
+        assert_equal(fac['b'], [1,0,0]*3)
+        assert_equal(fac['c'], [0,1,0]*3)
+
     def test_contrast4(self):
 
         f = self.formula + self.terms[5] + self.terms[5]
-
+        f.namespace = self.namespace
         estimable = False
 
         c = contrast.Contrast(self.terms[5], f)
         c.getmatrix()
 
         self.assertEquals(estimable, False)
+
+    def test_interactions(self):
+
+        f = formula.interactions([formula.Term(l) for l in ['a', 'b', 'c']])
+        assert_equal(set(f.termnames()), set(['a', 'b', 'c', 'a*b', 'a*c', 'b*c']))
+
+        f = formula.interactions([formula.Term(l) for l in ['a', 'b', 'c', 'd']], order=3)
+        assert_equal(set(f.termnames()), set(['a', 'b', 'c', 'd', 'a*b', 'a*c', 'a*d', 'b*c', 'b*d', 'c*d', 'a*b*c', 'a*c*d', 'a*b*d', 'b*c*d']))
+
+        f = formula.interactions([formula.Term(l) for l in ['a', 'b', 'c', 'd']], order=[1,2,3])
+        assert_equal(set(f.termnames()), set(['a', 'b', 'c', 'd', 'a*b', 'a*c', 'a*d', 'b*c', 'b*d', 'c*d', 'a*b*c', 'a*c*d', 'a*b*d', 'b*c*d']))
+
+        f = formula.interactions([formula.Term(l) for l in ['a', 'b', 'c', 'd']], order=[3])
+        assert_equal(set(f.termnames()), set(['a*b*c', 'a*c*d', 'a*b*d', 'b*c*d']))
+
+    def test_subtract(self):
+        f = formula.interactions([formula.Term(l) for l in ['a', 'b', 'c']])
+        ff = f - f['a*b']
+        assert_equal(set(ff.termnames()), set(['a', 'b', 'c', 'a*c', 'b*c']))
+        
+        ff = f - f['a*b'] - f['a*c']
+        assert_equal(set(ff.termnames()), set(['a', 'b', 'c', 'b*c']))
+
+        ff = f - (f['a*b'] + f['a*c'])
+        assert_equal(set(ff.termnames()), set(['a', 'b', 'c', 'b*c']))
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])

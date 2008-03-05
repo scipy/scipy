@@ -7,12 +7,12 @@ from warnings import warn
 import numpy
 from numpy import array, matrix, asarray, asmatrix, zeros, rank, intc, \
         empty, hstack, isscalar, ndarray, shape, searchsorted, where, \
-        concatenate
+        concatenate, deprecate, transpose, ravel
 
 from base import spmatrix, isspmatrix
 from sparsetools import csc_tocsr
 from sputils import upcast, to_native, isdense, isshape, getdtype, \
-        isscalarlike
+        isscalarlike, isintlike
 
 from compressed import _cs_matrix
 
@@ -104,9 +104,9 @@ class csc_matrix(_cs_matrix):
         for r in xrange(self.shape[0]):
             yield csr[r,:]
 
+    @deprecate
     def rowcol(self, ind):
         #TODO remove after 0.7
-        warn('rowcol() is deprecated',DeprecationWarning)
         row = self.indices[ind]
         col = searchsorted(self.indptr, ind+1)-1
         return (row, col)
@@ -131,27 +131,38 @@ class csc_matrix(_cs_matrix):
         A.has_sorted_indices = True
         return A
 
-    def tobsr(self, blocksize=None):
-        if blocksize == (1,1):
-            from bsr import bsr_matrix
-            csr = self.tocsr()
-            arg1 = (csr.data.reshape(-1,1,1),csr.indices,csr.indptr)  
-            return bsr_matrix( arg1, shape=self.shape )
-        else:
-            #TODO make this more efficient
-            return self.tocoo(copy=False).tobsr(blocksize=blocksize)
 
-    def get_submatrix( self, slice0, slice1 ):
-        """Return a submatrix of this matrix (new matrix is created).
-        Contigous range of rows and columns can be selected using:
-          1. a slice object
-          2. a tuple (from, to)
-          3. a scalar for single row/column selection."""
-        aux = _cs_matrix._get_submatrix( self, self.shape[1], self.shape[0],
-                                         slice1, slice0 )
-        nr, nc = aux[3:]
-        return self.__class__( aux[:3], shape = (nc, nr) )
-    
+    def __getitem__(self, key):
+        # use CSR to implement fancy indexing
+        if isinstance(key, tuple):
+            row = key[0]
+            col = key[1]
+
+            if isintlike(row) or isinstance(row, slice):
+                return self.T[col,row].T                
+            else:    
+                #[[1,2],??] or [[[1],[2]],??]
+                if isintlike(col) or isinstance(col,slice):
+                    return self.T[col,row].T                
+                else:
+                    row = asarray(row, dtype='intc')
+                    col = asarray(col, dtype='intc')
+                    if len(row.shape) == 1:
+                        return self.T[col,row]
+                    elif len(row.shape) == 2:
+                        row = row.reshape(-1)
+                        col = col.reshape(-1,1)
+                        return self.T[col,row].T                
+                    else:
+                        raise NotImplementedError('unsupported indexing')
+                        
+            return self.T[col,row].T
+        elif isintlike(key) or isinstance(key,slice):
+            return self.T[:,key].T                              #[i] or [1:2]
+        else:
+            return self.T[:,key].T                              #[[1,2]]
+
+
     # these functions are used by the parent class (_cs_matrix)
     # to remove redudancy between csc_matrix and csr_matrix
     def _swap(self,x):
