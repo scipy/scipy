@@ -32,12 +32,12 @@ if sys.platform == 'win32':
 superlu_def['USE_VENDOR_BLAS'] = 2
 superlu_env.Append(CPPDEFINES = superlu_def)
 
-superlu_src = [str(s) for s in superlu_env.Glob(pjoin('SuperLU', 'SRC', '*.c'))]
+superlu_src = superlu_env.Glob(pjoin('SuperLU', 'SRC', '*.c'))
 superlu = superlu_env.NumpyStaticExtLibrary('superlu_src', source = superlu_src)
 
 # Build python extensions
 pyenv = env.Copy()
-pyenv.Append(CPPPATH = get_numpy_include_dirs())
+pyenv.Append(CPPPATH = [get_numpy_include_dirs(), env['src_dir']])
 common_src = ['_superlu_utils.c', '_superluobject.c']
 
 for prec in ['z', 'd', 'c', 's']:
