@@ -1,4 +1,4 @@
-# Last Change: Wed Mar 05 02:00 PM 2008 J
+# Last Change: Fri Mar 07 09:00 PM 2008 J
 # vim:syntax=python
 from os.path import join as pjoin
 
@@ -31,8 +31,8 @@ if has_fft:
 # Build dfftpack
 src = env.NumpyGlob(pjoin('dfftpack', '*.f'))
 dfftpack = env.NumpyStaticExtLibrary('dfftpack', source = [str(s) for s in src])
-env.AppendUnique(LIBS = ['dfftpack'])
-env.AppendUnique(LIBPATH = env['build_dir'])
+env.PrependUnique(LIBS = ['dfftpack'])
+env.PrependUnique(LIBPATH = env['build_dir'])
 
 # Build _fftpack
 src = ['src/zfft.c','src/drfft.c','src/zrfft.c', 'src/zfftnd.c']
