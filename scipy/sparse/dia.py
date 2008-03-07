@@ -1,5 +1,7 @@
 """Sparse DIAgonal format"""
 
+__docformat__ = "restructuredtext en"
+
 __all__ = ['dia_matrix','isspmatrix_dia']
 
 from numpy import asarray, asmatrix, matrix, zeros, arange, array, \
@@ -14,23 +16,23 @@ class dia_matrix(_data_matrix):
     """Sparse matrix with DIAgonal storage
 
     This can be instantiated in several ways:
-      - dia_matrix(D)
-        - with a dense matrix
+        dia_matrix(D)
+            with a dense matrix
 
-      - dia_matrix(S)
-        - with another sparse matrix S (equivalent to S.todia())
+        dia_matrix(S)
+            with another sparse matrix S (equivalent to S.todia())
 
-      - dia_matrix((M, N), [dtype])
-        - to construct an empty matrix with shape (M, N)
-          dtype is optional, defaulting to dtype='d'.
+        dia_matrix((M, N), [dtype])
+            to construct an empty matrix with shape (M, N),
+            dtype is optional, defaulting to dtype='d'.
 
-      - dia_matrix((data, diags), shape=(M, N))
-        - where the data[k,:] stores the diagonal entries for
-          diagonal diag[k] (See example below)
+        dia_matrix((data, diags), shape=(M, N))
+            where the ``data[k,:]`` stores the diagonal entries for
+            diagonal ``diag[k]`` (See example below)
 
 
     Examples
-    ========
+    --------
 
     >>> from scipy.sparse import *
     >>> from scipy import *

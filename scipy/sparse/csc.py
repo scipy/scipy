@@ -1,5 +1,7 @@
 """Compressed Sparse Column matrix format"""
 
+__docformat__ = "restructuredtext en"
+
 __all__ = ['csc_matrix', 'isspmatrix_csc']
 
 from warnings import warn
@@ -21,41 +23,37 @@ class csc_matrix(_cs_matrix):
     """Compressed Sparse Column matrix
 
     This can be instantiated in several ways:
-      - csc_matrix(D)
-        - with a dense matrix or rank-2 ndarray D
+        csc_matrix(D)
+            with a dense matrix or rank-2 ndarray D
 
-      - csc_matrix(S)
-        - with another sparse matrix S (equivalent to S.tocsc())
+        csc_matrix(S)
+            with another sparse matrix S (equivalent to S.tocsc())
 
-      - csc_matrix((M, N), [dtype])
-        - to construct an empty matrix with shape (M, N)
-        - dtype is optional, defaulting to dtype='d'.
+        csc_matrix((M, N), [dtype])
+            to construct an empty matrix with shape (M, N)
+            dtype is optional, defaulting to dtype='d'.
 
-      - csc_matrix((data, ij), [shape=(M, N)])
-        - where data, ij satisfy:
-          - a[ij[0, k], ij[1, k]] = data[k]
+        csc_matrix((data, ij), [shape=(M, N)])
+            where ``data`` and ``ij`` satisfy ``a[ij[0, k], ij[1, k]] = data[k]``
 
-      - csc_matrix((data, indices, indptr), [shape=(M, N)])
-         - is the standard CSC representation where
-           the row indices for column i are stored in
-            - indices[ indptr[i]: indices[i+1] ] 
-           and their corresponding values are stored in
-            - data[ indptr[i]: indptr[i+1] ]
-         - If the shape parameter is not supplied, the matrix dimensions
-           are inferred from the index arrays.
+        csc_matrix((data, indices, indptr), [shape=(M, N)])
+            is the standard CSC representation where the row indices for 
+            column i are stored in ``indices[indptr[i]:indices[i+1]]`` and their 
+            corresponding values are stored in ``data[indptr[i]:indptr[i+1]]``.
+            If the shape parameter is not supplied, the matrix dimensions
+            are inferred from the index arrays.
 
     Notes
-    =====
-        Advantages of the CSC format
-        ----------------------------
-          - efficient arithmetic operations CSC + CSC, CSC * CSC, etc.
-          - efficient column slicing
-          - fast matrix vector products (CSR,BSR may be faster)
-        
-        Disadvantages of the CSC format
-        -------------------------------
-          - slow row slicing operations (prefer CSR)
-          - changes to the sparsity structure are expensive (prefer LIL, DOK)
+    -----
+    Advantages of the CSC format
+        - efficient arithmetic operations CSC + CSC, CSC * CSC, etc.
+        - efficient column slicing
+        - fast matrix vector products (CSR, BSR may be faster)
+    
+    Disadvantages of the CSC format
+    -------------------------------
+      - slow row slicing operations (consider CSR)
+      - changes to the sparsity structure are expensive (consider LIL or DOK)
 
 
     Examples

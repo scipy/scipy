@@ -1,5 +1,7 @@
 """Compressed Sparse Row matrix format"""
 
+__docformat__ = "restructuredtext en"
+
 __all__ = ['csr_matrix', 'isspmatrix_csr']
 
 
@@ -23,47 +25,39 @@ class csr_matrix(_cs_matrix):
     """Compressed Sparse Row matrix
 
     This can be instantiated in several ways:
-      - csr_matrix(D)
-        - with a dense matrix or rank-2 ndarray D
+        csr_matrix(D)
+            with a dense matrix or rank-2 ndarray D
 
-      - csr_matrix(S)
-        - with another sparse matrix S (equivalent to S.tocsr())
+        csr_matrix(S)
+            with another sparse matrix S (equivalent to S.tocsr())
 
-      - csr_matrix((M, N), [dtype])
-        - to construct an empty matrix with shape (M, N)
-        - dtype is optional, defaulting to dtype='d'.
+        csr_matrix((M, N), [dtype])
+            to construct an empty matrix with shape (M, N)
+            dtype is optional, defaulting to dtype='d'.
 
-      - csr_matrix((data, ij), [shape=(M, N)])
-        - where data, ij satisfy:
-          - a[ij[0, k], ij[1, k]] = data[k]
+        csr_matrix((data, ij), [shape=(M, N)])
+            where ``data`` and ``ij`` satisfy ``a[ij[0, k], ij[1, k]] = data[k]``
 
-      - csr_matrix((data, indices, indptr), [shape=(M, N)])
-        - is the standard CSR representation where
-          the column indices for row i are stored in
-           - indices[ indptr[i]: indices[i+1] ] 
-          and their corresponding values are stored in
-           - data[ indptr[i]: indptr[i+1] ]
-        - If the shape parameter is not supplied, the matrix dimensions
-          are inferred from the index arrays.
-
+        csr_matrix((data, indices, indptr), [shape=(M, N)])
+            is the standard CSR representation where the column indices for 
+            row i are stored in ``indices[indptr[i]:indices[i+1]]`` and their 
+            corresponding values are stored in ``data[indptr[i]:indptr[i+1]]``.
+            If the shape parameter is not supplied, the matrix dimensions
+            are inferred from the index arrays.
 
     Notes
-    =====
-        Advantages of the CSR format
-        ----------------------------
-          - efficient arithmetic operations CSR + CSR, CSR * CSR, etc.
-          - efficient row slicing
-          - fast matrix vector products
-        
-        Disadvantages of the CSR format
-        -------------------------------
-          - slow column slicing operations (prefer CSC)
-          - changes to the sparsity structure are expensive (prefer LIL, DOK)
-
-
+    -----
+    Advantages of the CSR format
+      - efficient arithmetic operations CSR + CSR, CSR * CSR, etc.
+      - efficient row slicing
+      - fast matrix vector products
+    
+    Disadvantages of the CSR format
+      - slow column slicing operations (consider CSC)
+      - changes to the sparsity structure are expensive (consider LIL or DOK)
 
     Examples
-    ========    
+    --------
 
     >>> from scipy.sparse import *
     >>> from scipy import *

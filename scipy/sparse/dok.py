@@ -1,5 +1,7 @@
 """Dictionary Of Keys based matrix"""
 
+__docformat__ = "restructuredtext en"
+
 __all__ = ['dok_matrix', 'isspmatrix_dok']
 
 import operator

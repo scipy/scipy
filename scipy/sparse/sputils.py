@@ -21,8 +21,8 @@ def upcast(*args):
 
     upcast(t0, t1, ..., tn) -> T  where T is a supported dtype
 
-    Example
-    =======
+    Examples
+    --------
     
     >>> upcast('int32')
     <type 'numpy.int32'>

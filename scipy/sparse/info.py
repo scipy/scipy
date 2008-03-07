@@ -1,6 +1,6 @@
 """
-Sparse matrix
-=============
+Sparse Matrices
+---------------
 
 Scipy 2D sparse matrix module.
 
@@ -14,7 +14,7 @@ There are seven available sparse matrix types:
     4. lil_matrix: List of Lists format
     5. dok_matrix: Dictionary of Keys format
     6. coo_matrix: COOrdinate format (aka IJV, triplet format)
-    7. dig_matrix: DIAgonal format
+    7. dia_matrix: DIAgonal format
 
 To construct a matrix efficiently, use either lil_matrix (recommended) or
 dok_matrix. The lil_matrix class supports basic slicing and fancy
@@ -29,67 +29,70 @@ is less so.
 All conversions among the CSR, CSC, and COO formats are efficient,
 linear-time operations.
 
-Example
-=======
-    Construct a 1000x1000 lil_matrix and add some values to it:
+Example 1
+---------
+Construct a 1000x1000 lil_matrix and add some values to it:
 
-    >>> from scipy import sparse, linsolve
-    >>> from numpy import linalg
-    >>> from numpy.random import rand
-    >>> A = sparse.lil_matrix((1000, 1000))
-    >>> A[0, :100] = rand(100)
-    >>> A[1, 100:200] = A[0, :100]
-    >>> A.setdiag(rand(1000))
+>>> from scipy import sparse, linsolve
+>>> from numpy import linalg
+>>> from numpy.random import rand
+>>> A = sparse.lil_matrix((1000, 1000))
+>>> A[0, :100] = rand(100)
+>>> A[1, 100:200] = A[0, :100]
+>>> A.setdiag(rand(1000))
 
-    Now convert it to CSR format and solve A x = b for x:
+Now convert it to CSR format and solve A x = b for x:
 
-    >>> A = A.tocsr()
-    >>> b = rand(1000)
-    >>> x = linsolve.spsolve(A, b)
+>>> A = A.tocsr()
+>>> b = rand(1000)
+>>> x = linsolve.spsolve(A, b)
 
-    Convert it to a dense matrix and solve, and check that the result
-    is the same:
+Convert it to a dense matrix and solve, and check that the result
+is the same:
 
-    >>> x_ = linalg.solve(A.todense(), b)
+>>> x_ = linalg.solve(A.todense(), b)
 
-    Now we can compute norm of the error with:
+Now we can compute norm of the error with:
 
-    >>> err = linalg.norm(x-x_)
-    >>> err < 1e-10
-    True
+>>> err = linalg.norm(x-x_)
+>>> err < 1e-10
+True
 
-    It should be small :)
+It should be small :)
 
-Example
-=======
-    Construct a matrix in COO format:
 
-    >>> from scipy import sparse
-    >>> from numpy import array
-    >>> I = array([0,3,1,0])
-    >>> J = array([0,3,1,2])
-    >>> V = array([4,5,7,9])
-    >>> A = sparse.coo_matrix((V,(I,J)),shape=(4,4))
+Example 2
+---------
 
-    Notice that the indices do not need to be sorted.
+Construct a matrix in COO format:
 
-    Duplicate (i,j) entries are summed when converting to CSR or CSC.
+>>> from scipy import sparse
+>>> from numpy import array
+>>> I = array([0,3,1,0])
+>>> J = array([0,3,1,2])
+>>> V = array([4,5,7,9])
+>>> A = sparse.coo_matrix((V,(I,J)),shape=(4,4))
 
-    >>> I = array([0,0,1,3,1,0,0])
-    >>> J = array([0,2,1,3,1,0,0])
-    >>> V = array([1,1,1,1,1,1,1])
-    >>> B = sparse.coo_matrix((V,(I,J)),shape=(4,4)).tocsr()
+Notice that the indices do not need to be sorted.
 
-    This is useful for constructing finite-element stiffness and
-    mass matrices.
+Duplicate (i,j) entries are summed when converting to CSR or CSC.
+
+>>> I = array([0,0,1,3,1,0,0])
+>>> J = array([0,2,1,3,1,0,0])
+>>> V = array([1,1,1,1,1,1,1])
+>>> B = sparse.coo_matrix((V,(I,J)),shape=(4,4)).tocsr()
+
+This is useful for constructing finite-element stiffness and mass matrices.
 
 Further Details
-===============
+---------------
 
-    CSR column indices are not necessarily sorted.  Likewise for CSC row
-    indices.  Use the .sorted_indices() and .sort_indices() methods when 
-    sorted indices are required (e.g. when passing data to other libraries). 
+CSR column indices are not necessarily sorted.  Likewise for CSC row
+indices.  Use the .sorted_indices() and .sort_indices() methods when 
+sorted indices are required (e.g. when passing data to other libraries). 
 
 """
+
+__docformat__ = "restructuredtext en"
 
 postpone_import = 1

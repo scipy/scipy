@@ -1,6 +1,8 @@
 """Functions to construct sparse matrices
 """
 
+__docformat__ = "restructuredtext en"
+
 __all__ = [ 'spdiags', 'eye', 'identity', 'kron', 'kronsum', 
             'hstack', 'vstack', 'bmat' ]
 
@@ -27,10 +29,8 @@ from base import isspmatrix
 def spdiags(data, diags, m, n, format=None):
     """Return a sparse matrix given its diagonals.
 
-    B = spdiags(diags, offsets, m, n)
-
     Parameters
-    ==========
+    ----------
         - data   : matrix whose rows contain the diagonal values
         - diags  : diagonals to set 
             - k = 0 - the main diagonal
@@ -42,11 +42,12 @@ def spdiags(data, diags, m, n, format=None):
                format is returned.  This choice is subject to change.
 
     See Also
-    ========
+    --------
         The dia_matrix class which implements the DIAgonal format.
 
     Example
-    =======
+    -------
+
     >>> data = array([[1,2,3,4]]).repeat(3,axis=0)
     >>> diags = array([0,-1,2])
     >>> spdiags(data,diags,4,4).todense()
@@ -85,18 +86,17 @@ def kron(A, B, format=None):
     """kronecker product of sparse matrices A and B
 
     Parameters
-    ==========
-        A,B    : dense or sparse matrices
-        format : format of the result (e.g. "csr")
-            -  By default (format=None) an appropriate sparse matrix 
-               format is returned.  This choice is subject to change.
+    ----------
+    A,B    : dense or sparse matrices
+    format : format of the result (e.g. "csr")
 
     Returns
-    =======
-        kronecker product in a sparse matrix format
+    -------
+    kronecker product in a sparse matrix format
+
 
     Examples
-    ========
+    --------
 
     >>> A = csr_matrix(array([[0,2],[5,0]]))
     >>> B = csr_matrix(array([[1,2],[3,4]]))
@@ -168,11 +168,9 @@ def kronsum(A, B, format=None):
     of shape (m,m) and (n,n) respectively.
 
     Parameters
-    ==========
-        A,B    : squared dense or sparse matrices
-        format : format of the result (e.g. "csr")
-            -  By default (format=None) an appropriate sparse matrix 
-               format is returned.  This choice is subject to change.
+    ----------
+    A,B    : square dense or sparse matrices
+    format : format of the result (e.g. "csr")
 
     Returns
     =======
@@ -204,15 +202,16 @@ def hstack( blocks, format=None, dtype=None ):
     """Stack sparse matrices horizontally (column wise)
 
     Parameters
-    ==========
+    ----------
 
-    blocks -- sequence of sparse matrices with compatible shapes
-    format -- sparse format of the result (e.g. "csr")
-            -  by default an appropriate sparse matrix format is returned.
-               This choice is subject to change.
+    blocks 
+        sequence of sparse matrices with compatible shapes
+    format : sparse format of the result (e.g. "csr")
+        by default an appropriate sparse matrix format is returned.
+        This choice is subject to change.
    
     Example
-    =======
+    -------
 
     >>> from scipy.sparse import coo_matrix, vstack
     >>> A = coo_matrix([[1,2],[3,4]])
@@ -229,15 +228,16 @@ def vstack( blocks, format=None, dtype=None ):
     """Stack sparse matrices vertically (row wise)
 
     Parameters
-    ==========
+    ----------
 
-    blocks -- sequence of sparse matrices with compatible shapes
-    format -- sparse format of the result (e.g. "csr")
-            -  by default an appropriate sparse matrix format is returned.
-               This choice is subject to change.
+    blocks
+        sequence of sparse matrices with compatible shapes
+    format : sparse format of the result (e.g. "csr")
+        by default an appropriate sparse matrix format is returned.
+        This choice is subject to change.
    
     Example
-    =======
+    -------
 
     >>> from scipy.sparse import coo_matrix, vstack
     >>> A = coo_matrix([[1,2],[3,4]])
@@ -255,17 +255,17 @@ def bmat( blocks, format=None, dtype=None ):
     """Build a sparse matrix from sparse sub-blocks
 
     Parameters
-    ==========
+    ----------
 
-    blocks -- grid of sparse matrices with compatible shapes
-            - an entry of None implies an all-zero matrix
-    format -- sparse format of the result (e.g. "csr")
-            -  by default an appropriate sparse matrix format is returned.
-               This choice is subject to change.
-
+    blocks
+        grid of sparse matrices with compatible shapes
+        an entry of None implies an all-zero matrix
+    format : sparse format of the result (e.g. "csr")
+        by default an appropriate sparse matrix format is returned.
+        This choice is subject to change.
    
     Example
-    =======
+    -------
 
     >>> from scipy.sparse import coo_matrix, bmat
     >>> A = coo_matrix([[1,2],[3,4]])
@@ -370,14 +370,15 @@ def lil_eye((r,c), k=0, dtype='d'):
     diagonal set to 1.
 
     Parameters
-    ==========
-        - r,c : int
-            - row and column-dimensions of the output.
-        - k : int
-            - diagonal offset.  In the output matrix,
-            - out[m,m+k] == 1 for all m.
-        - dtype : dtype
-            - data-type of the output array.
+    ----------
+    
+    r,c : int
+        row and column-dimensions of the output.
+    k : int
+        - diagonal offset.  In the output matrix,
+        - out[m,m+k] == 1 for all m.
+    dtype : dtype
+        data-type of the output array.
 
     """
     warn("lil_eye is deprecated." \
@@ -392,19 +393,19 @@ def lil_diags(diags,offsets,(m,n),dtype='d'):
     """Generate a lil_matrix with the given diagonals.
 
     Parameters
-    ==========
-        - diags : list of list of values e.g. [[1,2,3],[4,5]]
-            - values to be placed on each indicated diagonal.
-        - offsets : list of ints
-            - diagonal offsets.  This indicates the diagonal on which
-              the given values should be placed.
-        - (r,c) : tuple of ints
-            - row and column dimensions of the output.
-        - dtype : dtype
-            - output data-type.
+    ----------
+    diags : list of list of values e.g. [[1,2,3],[4,5]]
+        values to be placed on each indicated diagonal.
+    offsets : list of ints
+        diagonal offsets.  This indicates the diagonal on which
+        the given values should be placed.
+    (r,c) : tuple of ints
+        row and column dimensions of the output.
+    dtype : dtype
+        output data-type.
 
     Example
-    =======
+    -------
 
     >>> lil_diags([[1,2,3],[4,5],[6]],[0,1,2],(3,3)).todense()
     matrix([[ 1.,  4.,  6.],
