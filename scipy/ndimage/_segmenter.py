@@ -2,25 +2,6 @@ import math
 import numpy as N
 import scipy.ndimage._segment as S
 
-# Issue warning regarding heavy development status of this module
-import warnings
-_msg = "The segmenter code is under heavy development and therefore public \
-API will change in the future.  The NIPY group is actively working on this \
-code, and has every intention of generalizing this for the Scipy community.\
-Use this module minimally, if at all, until it this warning is removed."
-warnings.warn(_msg, UserWarning)
-
-# TODO:  Add docstrings for public functions in extension code.
-# Add docstrings to extension code.
-#from numpy.lib import add_newdoc
-#add_newdoc('scipy.ndimage._segment', 'canny_edges',
-#    """Canney edge detector.
-#    """)
-
-
-# WARNING: _objstruct data structure mirrors a corresponding data structure
-# in ndImage_Segmenter_structs.h that is built into the _segment.so library.
-# These structs must match!  
 _objstruct = N.dtype([('L', 'i'),
                     ('R', 'i'),
                     ('T', 'i'),
@@ -44,317 +25,367 @@ _objstruct = N.dtype([('L', 'i'),
                    )
 
 
-def shen_castan(image, IIRFilter=0.8, scLow=0.3, window=7, lowThreshold=220+2048,
-                highThreshold=600+2048, dust=16):
+def canny_hysteresis(magnitude, canny_stats):
     """
-        labeledEdges, ROIList = shen_castan(image, [default])
+    edge_image = canny_hysteresis(magnitude, canny_stats)
 
-        implements Shen-Castan edge finding
+    hystereis stage of Canny filter
 
-        Inputs - image, IIR filter, shen_castan_low, window, low_threshold, high_threshold, dust 
-        - image is the numarray 2D image
-        - IIR filter is filter parameter for exponential filter
-        - shen_castan_low is edge threshold is range (0.0, 1.0]
-        - window is search window for edge detection
-        - low_ and high_ threshold are density values 
-        - dust is blob filter. blob area (length x width of bounding box) under this
-          size threshold are filtered (referred to as dust and blown away)
+    Parameters 
+    ..........
 
-        Outputs - labeledEdges, ROIList[>dust] 
-        - labeledEdges is boundary (edges) of segmented 'blobs', 
-          numerically labeled by blob number
-        - ROIList[>dust] is a blob feature list. Only values
-          with bounding box area greater than dust threshold are returned
+    magnitude : {nd_array}
+        the output from the canny_nonmax_supress() method
+
+    canny_stats : {dictionary}
+        contains the low and high thesholds determined from canny_nonmax_supress()
+
+    Returns 
+    ..........
+    edge_image : {nd_array}
+        the labeled edge image that can be displayed and used for later processing
 
     """
-    labeledEdges, numberObjects = S.shen_castan_edges(scLow, IIRFilter, window, 
-                                                      lowThreshold, highThreshold, image)
-    # allocated struct array for edge object measures. for now just the rect bounding box
-    ROIList = N.zeros(numberObjects, dtype=_objstruct)
+    [rows, cols] = magnitude.shape
+    edge_image = N.zeros(rows*cols, dtype=N.int16).reshape(rows, cols)
+    S.canny_hysteresis(magnitude, edge_image, canny_stats['low'], canny_stats['high'])
+
+    return edge_image
+
+def canny_nonmax_supress(horz_DGFilter, vert_DGFilter, img_means, thres=0.5, 
+		         mode=1, canny_l=0.5, canny_h=0.8):
+    """
+    magnitude, canny_stats = canny_nonmax_supress(horz_DGFilter, vert_DGFilter, img_means,
+		                          thres=0.5, mode=1, canny_l=0.5, canny_h=0.8)
+
+    non-max supression stage of Canny filter
+
+    Parameters 
+    ..........
+
+    horz_DGFilter : {nd_array}
+        the horizonal filtered image using the derivative of Gaussian kernel filter.
+	this is the output of the canny_filter method
+
+    vert_DGFilter : {nd_array}
+        the vertical filtered image using the derivative of Gaussian kernel filter.
+	this is the output of the canny_filter method
+
+    img_means : {dictionary}
+        mean X and Y values of edge signals determined from canny_filter
+
+    thres : {float}, optional
+        edge threshold applied to x and y filtered means
+
+    mode : {0, 1}, optional
+        threshold based on histogram mean(0) or mode(1)
+
+    canny_low : {float}, optional
+        low threshold applied to magnitude filtered 
+    
+    canny_high : {float}, optional
+        high threshold applied to magnitude filtered 
+
+    Returns 
+    ..........
+
+    magnitude : {nd_array}
+        magnitude of X and Y filtered for critical samples
+
+    canny_stats : {dictionary}
+        mean, low and high to be used for hysteresis
+
+    """
+    [rows, cols] = horz_DGFilter.shape
+    magnitude = N.zeros(rows*cols, dtype=N.float64).reshape(rows, cols)
+    aveMag, canny_low, canny_high = S.canny_nonmax_supress(horz_DGFilter, vert_DGFilter,
+		                        magnitude, mode, img_means['x-dg']*thres,
+				        img_means['y-dg']*thres, canny_l, canny_h)
+
+    canny_stats = {'mean' : aveMag, 'low' : canny_low, 'high' : canny_high} 
+
+    return magnitude, canny_stats
+
+def canny_filter(slice, dg_kernel):
+    """
+    horz_DGFilter, vert_DGFilter, img_means = canny_filter(slice, dg_kernel)
+
+    Canny derivative of Gaussian filter 
+    returns the X and Y filterd image
+
+    Parameters 
+    ..........
+
+    slice : {nd_array}
+        2D image array
+
+    dg_kernel : {dictionary}
+        derivative of Gaussian kernel from build_d_gauss_kernel()
+
+    Returns 
+    ..........
+
+    horz_DGFilter : {nd_array}
+        X filtered image 
+
+    vert_DGFilter : {nd_array}
+        Y filtered image 
+
+    img_means : {dictionary}
+
+
+    """
+    [rows, cols] = slice.shape
+    horz_DGFilter = N.zeros(rows*cols, dtype=N.float64).reshape(rows, cols)
+    vert_DGFilter = N.zeros(rows*cols, dtype=N.float64).reshape(rows, cols)
+    aveX, aveY = S.canny_filter(slice, horz_DGFilter, vert_DGFilter,
+		   dg_kernel['coefficients'], dg_kernel['kernelSize'])
+
+    img_means = {'x-dg' : aveX, 'y-dg' : aveY} 
+
+    return horz_DGFilter, vert_DGFilter, img_means
+
+
+def mat_filter(label_image, thin_kernel, ROI=None):
+    """
+    mat_image = mat_filter(label_image, thin_kernel, ROI=None)
+
+    takes the ROI dictionary with the blob bounding boxes and thins each blob
+    giving the medial axis. if ROI is null will create a single ROI with the
+    bounding box set equal to the full image
+
+    Parameters 
+    ..........
+
+    label_image : {nd_array}
+        an image with labeled regions from get_blobs() method
+
+    thin_kernel : {dictionary}
+        set of 8 'J' and 'K' 3x3 masks from build_morpho_thin_masks() method
+
+    ROI : {dictionary}
+        Region of Interest structure that has blob bounding boxes
+
+    Returns 
+    ..........
+
+    mat_image : {nd_array}
+        thinned edge image
+
+    """
+    if ROI==None:
+        ROIList = N.zeros(1, dtype=_objstruct)
+	[rows, cols] = label_image.shape
+        ROIList['L'] = 2
+        ROIList['R'] = cols-3
+        ROIList['B'] = 2
+        ROIList['T'] = rows-3
+
+    [rows, cols] = label_image.shape
+    # destination image
+    thin_edge_image = N.zeros(rows*cols, dtype=N.uint16).reshape(rows, cols)
+    mat_image       = N.zeros(rows*cols, dtype=N.uint16).reshape(rows, cols)
+    # scratch memory for thin 
+    input           = N.zeros(rows*cols, dtype=N.uint8).reshape(rows, cols)
+    cinput          = N.zeros(rows*cols, dtype=N.uint8).reshape(rows, cols)
+    erosion         = N.zeros(rows*cols, dtype=N.uint8).reshape(rows, cols)
+    dialation       = N.zeros(rows*cols, dtype=N.uint8).reshape(rows, cols)
+    hmt             = N.zeros(rows*cols, dtype=N.uint8).reshape(rows, cols)
+    copy            = N.zeros(rows*cols, dtype=N.uint8).reshape(rows, cols)
+
+    number_regions = ROI.size
+    indices = range(0, number_regions)
+    inflate = 1
+    for i in indices:
+	left     = ROI[i]['L']-1
+	right    = ROI[i]['R']+1
+	bottom   = ROI[i]['B']-1
+	top      = ROI[i]['T']+1
+	Label    = ROI[i]['Label']
+	if left < 0: 
+	    left = 0
+	if bottom < 0: 
+	    bottom = 0
+	if right > cols-1: 
+	    right = cols-1
+	if top > rows-1: 
+	    top = rows-1
+
+	roi_rows = top-bottom+2*inflate
+	roi_cols = right-left+2*inflate
+	rgrows   = top-bottom
+	rgcols   = right-left
+	# clear the memory
+	input[0:roi_rows, 0:roi_cols] = 0
+	# load the labeled region 
+	input[inflate:inflate+rgrows, inflate:inflate+rgcols] \
+	     [label_image[bottom:top, left:right]==Label] = 1 
+	# thin this region
+        S.thin_filter(thin_kernel['jmask'], thin_kernel['kmask'], thin_kernel['number3x3Masks'],
+		      roi_rows, roi_cols, cols, input, cinput, erosion, dialation, hmt, copy);
+
+	# accumulate the images (do not over-write). for overlapping regions
+	input[inflate:rgrows+inflate,inflate:rgcols+inflate] \
+	     [input[inflate:rgrows+inflate,inflate:rgcols+inflate]==1] = Label 
+	thin_edge_image[bottom:top,left:right] = thin_edge_image[bottom:top,left:right] + \
+	                                         input[inflate:rgrows+inflate,inflate:rgcols+inflate] 
+	    
+
+    mat_image[:, :] = thin_edge_image[:, :]
+    # accumulate overlaps set back to 1 
+
+    return mat_image
+
+
+def get_blob_regions(labeled_image, groups, dust=16):
+    """
+    ROIList = get_blob_regions(labeled_image, groups, dust=16)
+
+    get the bounding box for each labelled blob in the image
+    allocate the dictionary structure that gets filled in with later
+    stage processing to add blob features.
+
+    Parameters 
+    ..........
+
+    label_image : {nd_array}
+        an image with labeled regions from get_blobs() method
+
+    groups : {int}
+        number of blobs in image determined by get_blobs() method
+
+    Returns 
+    ..........
+
+    ROIList : {dictionary}
+        structure that has the bounding box and area of each blob
+
+
+
+    """
+    ROIList = N.zeros(groups, dtype=_objstruct)
     # return the bounding box for each connected edge
-    S.get_object_stats(labeledEdges, ROIList)
-    return labeledEdges, ROIList[ROIList['Area']>dust]
+    S.get_blob_regions(labeled_image, ROIList)
 
-def sobel(image, sLow=0.3, tMode=1, lowThreshold=220+2048, highThreshold=600+2048, BPHigh=10.0, 
-          apearture=21, dust=16):
-    """
-        labeledEdges, ROIList = sobel(image, [default])
+    return ROIList[ROIList['Area']>dust]
 
-        implements sobel magnitude edge finding
 
-        Inputs - image, sobel_low, tMode, low_threshold, high_threshold, 
-                        high_filter_cutoff, filter_aperature, dust
-        - image is the numarray 2D image
-        - sobel_low is edge threshold is range (0.0, 1.0]
-        - tMode is threshold mode: 1 for ave, 2 for mode (histogram peak)
-        - low_ and high_ threshold are density values 
-        - high_filter_cutoff is digital high frequency cutoff in range (0.0, 180.0]
-        - aperature is odd filter kernel length
-        - dust is blob filter. blob area (length x width of bounding box) under this
-          size threshold are filtered (referred to as dust and blown away)
-
-        Outputs - labeledEdges, ROIList[>dust] 
-        - labeledEdges is boundary (edges) of segmented 'blobs', 
-          numerically labeled by blob number
-        - ROIList[>dust] is a blob feature list. Only values
-          with bounding box area greater than dust threshold are returned
-
-    """
-    # get sobel edge points. return edges that are labeled (1..numberObjects)
-    labeledEdges, numberObjects = S.sobel_edges(sLow, tMode, lowThreshold, 
-                                                highThreshold, BPHigh, apearture, image)
-    # allocated struct array for edge object measures. for now just the rect bounding box
-    ROIList = N.zeros(numberObjects, dtype=_objstruct)
-    # return the bounding box for each connected edge
-    S.get_object_stats(labeledEdges, ROIList)
-    # thin (medial axis transform) of the sobel edges as the sobel produces a 'band edge'
-    S.morpho_thin_filt(labeledEdges, ROIList)
-    return labeledEdges, ROIList[ROIList['Area']>dust]
-
-def canny(image, cSigma=1.0, cLow=0.5, cHigh=0.8, tMode=1, lowThreshold=220+2048, 
-          highThreshold=600+2048, BPHigh=10.0, apearture=21, dust=16):
-    """
-        labeledEdges, ROIList = canny(image, [default])
-
-        implements canny edge finding
-
-        Inputs - image, DG_sigma, canny_low, canny_high, tMode, low_threshold,
-                 high_threshold, high_filter_cutoff, filter_aperature, dust
-        - image is the numarray 2D image
-        - DG_sigma is Gaussain sigma for the derivative-of-gaussian filter
-        - clow is low edge threshold is range (0.0, 1.0]
-        - chigh is high edge threshold is range (0.0, 1.0]
-        - tMode is threshold mode: 1 for ave, 2 for mode (histogram peak)
-        - low_ and high_ threshold are density values 
-        - high_filter_cutoff is digital high frequency cutoff in range (0.0, 180.0]
-        - high_filter_cutoff is digital high frequency cutoff in range (0.0, 180.0]
-        - aperature is odd filter kernel length
-        - dust is blob filter. blob area (length x width of bounding box) under this
-          size threshold are filtered (referred to as dust and blown away)
-
-        Outputs - labeledEdges, ROIList[>dust] 
-        - labeledEdges is boundary (edges) of segmented 'blobs', 
-          numerically labeled by blob number
-        - ROIList[>dust] is a blob feature list. Only values
-          with bounding box area greater than dust threshold are returned
-
-    """
-    # get canny edge points. return edges that are labeled (1..numberObjects)
-    labeledEdges, numberObjects = S.canny_edges(cSigma, cLow, cHigh, tMode, lowThreshold, highThreshold, 
-                                               BPHigh, apearture, image)
-    # allocated struct array for edge object measures. for now just the rect bounding box
-    ROIList = N.zeros(numberObjects, dtype=_objstruct)
-    # return the bounding box for each connected edge
-    S.get_object_stats(labeledEdges, ROIList)
-    return labeledEdges, ROIList[ROIList['Area']>dust]
-
-def get_shape_mask(labeledEdges, ROIList):
-    """
-        get_shape_mask(labeledEdges, ROIList)
-
-        takes labeled edge image plus ROIList (blob descriptors) and generates
-        boundary shape features and builds labeled blob masks. 'labeledEdges' 
-        is over-written by 'labeledMask'. Adds features to ROIList structure
-
-        Inputs - labeledEdges, ROIList
-        - labeledEdges is boundary (edges) of segmented 'blobs', 
-          numerically labeled by blob number
-        - ROIList is a blob feature list. 
-
-        Output - no return. edge image input is over-written with mask image.
-                            ROIList added to.
-
+def get_blobs(binary_edge_image):
     """
 
-    # pass in Sobel morph-thinned labeled edge image (LEI) and ROIList
-    # GetShapeMask will augment the ROI list
-    # labeledEdges is the original edge image and overwritten as mask image
-    # maskImage is the mask that is used for blob texture / pixel features
-    S.build_boundary(labeledEdges, ROIList)
-    return 
+    labeled_edge_image, groups = get_blobs(binary_edge_image)
 
-def get_voxel_measures(rawImage, labeledEdges, ROIList):
-    """
-        get_voxel_measures(rawImage, labeledEdges, ROIList)
+    get the total number of blobs in a 2D image and convert the binary
+    image to labelled regions
 
-        takes raw 2D image, labeled blob mask and ROIList. computes voxel features
-        (moments, histogram) for each blob. Adds features to ROIList structure.
+    Parameters 
+    ..........
 
-        Inputs - rawImage, labeledEdges, ROIList
-        - rawImage is the original source 2D image
-        - labeledEdges is boundary (edges) of segmented 'blobs', 
-          numerically labeled by blob number
-        - ROIList is a blob feature list. 
+    binary_edge_image : {nd_array}
+        an binary image
 
-        Output - no return. ROIList added to.
+    Returns 
+    ..........
+
+    label_image : {nd_array}
+        an image with labeled regions from get_blobs() method
+
+    groups : {int}
+        number of blobs in image determined by get_blobs() method
 
     """
-    #
-    # pass raw image, labeled mask and the partially filled ROIList
-    # VoxelMeasures will fill the voxel features in the list
-    #
-    S.voxel_measures(rawImage, labeledEdges, ROIList)
-    return 
+    [rows, cols] = binary_edge_image.shape
+    labeled_edge_image = N.zeros(rows*cols, dtype=N.uint16).reshape(rows, cols)
+    groups = S.get_blobs(binary_edge_image, labeled_edge_image)
 
-def get_texture_measures(rawImage, labeledEdges, ROIList):
+    return labeled_edge_image, groups
+
+
+def sobel_edges(sobel_edge_image, sobel_stats, mode=1, sobel_threshold=0.3):
     """
-        get_texture_measures(rawImage, labeledEdges, ROIList)
+    sobel_edge = sobel_edges(sobel_edge_image, sobel_stats, mode=1, sobel_threshold=0.3)
+    take sobel-filtered image and return binary edges
 
-        takes raw 2D image, labeled blob mask and ROIList. computes 2D 
-        texture features using 7x7 Law's texture filters applied 
-        to segmented blobs. TEM (texture energy metric) is computed 
-        for each Law's filter image and stored in TEM part of ROIList.
+    Parameters 
+    ..........
 
-        Inputs - rawImage, labeledEdges, ROIList
-        - rawImage is the original source 2D image
-        - labeledEdges is boundary (edges) of segmented 'blobs', 
-          numerically labeled by blob number
-        - ROIList is a blob feature list. 
+    sobel_edge_image : {nd_array}
+        edge-filtered image from sobel_image() method
 
-        Output - no return. ROIList added to.
+    sobel_stats : {dictionary}
+        mean and nonzero min, max of sobel filtering
+
+    mode : {0, 1}, optional
+        threshold based on histogram mean(0) or mode(1)
+
+    sobel_threshold : {float}, optional
+        low threshold applied to edge filtered image for edge generation
+
+    Returns 
+    ..........
+
+    sobel_edge : {nd_array}
+        binary edge-image
+
     """
-    #
-    # pass raw image, labeled mask and the partially filled ROIList
-    # VoxelMeasures will fill the texture (Law's, sub-edges, co-occurence, Gabor) features in the list
-    #
-    S.texture_measures(rawImage, labeledEdges, ROIList)
-    return 
+    [rows, cols] = sobel_edge_image.shape
+    sobel_edge = N.zeros(rows*cols, dtype=N.uint16).reshape(rows, cols)
+    S.sobel_edges(sobel_edge_image, sobel_edge, sobel_stats['ave_gt0'], sobel_stats['min_gt0'],
+                  sobel_stats['max_gt0'], mode, sobel_threshold)
 
-def segment_regions(filename):
+    return sobel_edge
+
+
+def sobel_image(filtered_slice):
     """
-        sourceImage, labeledMask, ROIList = segment_regions()
+    sobel_edge_image, sobel_stats = sobel_image(filtered_slice)
 
-        Inputs - No Input
+    take 2D raw or filtered image slice and get sobel-filtered image 
 
-        Outputs - sourceImage, labeledMask, ROIList
-        - sourceImage is raw 2D image (default cardiac CT slice for demo
-        - labeledMask is mask of segmented 'blobs', 
-          numerically labeled by blob number
-        - ROIList is numerical Python structure of intensity, shape and 
-          texture features for each blob
+    Parameters 
+    ..........
 
-        High level script calls Python functions:
-            get_slice()            - a cardiac CT slice demo file
-            sobel()                - sobel magnitude edge finder,
-                                     returns connected edges
-            get_shape_mask()       - gets segmented blob boundary and mask 
-                                     and shape features
-            get_voxel_measures()   - uses masks get object voxel moment 
-                                     and histogram features 
-            get_texture_measures() - uses masks get object 2D texture features 
+    filtered_slice : {nd_array}
+        raw or pre-processed (filtered and thresholded) 2D image 
+
+    Returns 
+    ..........
+
+    sobel_edge_image : {nd_array}
+        edge-filtered image from sobel_image() method
+
+    sobel_stats : {dictionary}
+        mean and nonzero min, max of sobel filtering
+
     """
-    # get slice from the CT volume
-    image = get_slice(filename)
-    # need a copy of original image as filtering will occur on the extracted slice
-    sourceImage = image.copy()
-    # Sobel is the first level segmenter. Sobel magnitude and MAT (medial axis transform)
-    # followed by connected component analysis. What is returned is labeled edges and the object list
-    labeledMask, ROIList = sobel(image)
-    # From the labeled edges and the object list get the labeled mask for each blob object
-    get_shape_mask(labeledMask, ROIList)
-    # Use the labeled mask and source image (raw) to get voxel features 
-    get_voxel_measures(sourceImage, labeledMask, ROIList)
-    # Use the labeled mask and source image (raw) to get texture features 
-    get_texture_measures(sourceImage, labeledMask, ROIList)
-    return sourceImage, labeledMask, ROIList
+    [rows, cols] = filtered_slice.shape
+    sobel_edge_image = N.zeros(rows*cols, dtype=N.float64).reshape(rows, cols)
+    pAve, min_value, max_value = S.sobel_image(filtered_slice, sobel_edge_image)
+    sobel_stats= {'ave_gt0' : pAve, 'min_gt0': min_value, 'max_gt0': max_value} 
 
-def grow_regions(filename):
+    return sobel_edge_image, sobel_stats
+
+def pre_filter(slice, filter, low_threshold=2048+220, high_threshold=600+2048):
     """
-        regionMask, numberRegions = region_grow()
-        Inputs - No Input
-        Outputs - regionMask, numberRegions 
-        - regionMask is the labeled segment masks from 2D image
-        - numberRegions is the number of segmented blobs
+    take 2D image slice and filter and pre-filter and threshold prior to segmentation
 
-        High level script calls Python functions:
-            get_slice()      - a cardiac CT slice demo file
-            region_grow()    - "grows" connected blobs. default threshold 
-                                and morphological filter structuring element
     """
-    # get slice from the CT volume
-    image = get_slice(filename)
-    regionMask, numberRegions = region_grow(image)
-    return regionMask, numberRegions 
 
+    [rows, cols] = slice.shape
+    edge_image = N.zeros(rows*cols, dtype=N.float64).reshape(rows, cols)
+    S.edge_prefilter(low_threshold, high_threshold, filter['kernelSize'], filter['kernel'],
+		     slice, edge_image)
 
-def region_grow(image, lowThreshold=220+2048, highThreshold=600+2048, open=7, close=7):
-    """
-        regionMask, numberRegions = region_grow(image, [defaults])
+    return edge_image
 
-        Inputs - image, low_threshold, high_threshold, open, close
-        - image is the numarray 2D image
-        - low_ and high_ threshold are density values 
-        - open is open morphology structuring element
-          odd size. 0 to turn off. max is 11
-        - close is close morphology structuring element
-          odd size. 0 to turn off. max is 11
-
-        Outputs - regionMask, numberRegions 
-        - regionMask is the labeled segment masks from 2D image
-        - numberRegions is the number of segmented blobs
-    """
-    # morphology filters need to be clipped to 11 max and be odd
-    regionMask, numberRegions = S.region_grow(lowThreshold, highThreshold, close, open, image)
-    return regionMask, numberRegions
-      
 
 def get_slice(imageName='slice112.raw', bytes=2, rows=512, columns=512):
-    # get a slice alrady extracted from the CT volume
-    #image = open(imageName, 'rb')
-    #slice = image.read(rows*columns*bytes)
-    #values = struct.unpack('h'*rows*columns, slice)
-    #ImageSlice = N.array(values, dtype=float).reshape(rows, columns)
-
-    ImageSlice = N.fromfile(imageName, dtype=N.uint16).reshape(rows, columns);
-
     # clip the ends for this test CT image file as the spine runs off the end of the image
+    ImageSlice = N.fromfile(imageName, dtype=N.uint16).reshape(rows, columns)
     ImageSlice[505:512, :] = 0
-    return (ImageSlice).astype(float)
-
-def get_slice2(image_name='slice112.raw', bytes=2, shape=(512,512)):
-    import mmap
-    file = open(image_name, 'rb')
-    mm = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
-    slice = N.frombuffer(mm, dtype='u%d' % bytes).reshape(shape) 
-    slice = slice.astype(float)
-    # this is for the test CT as spine runs off back of image
-    slice[505:512,:] = 0
-    return slice
-
-def save_slice(mySlice, filename='junk.raw', bytes=4):
-    # just save the slice to a fixed file
-    slice = mySlice.astype('u%d' % bytes)
-    slice.tofile(filename)
-
-def build_d_gauss_kernel(gWidth=21, sigma=1.0):
-
-    """
-    build the derivative of Gaussian kernel for Canny edge filter
-    DGFilter = build_d_gauss_kernel(gWidth, sigma)
-    Inputs:
-        gWdith is width of derivative of Gaussian kernel
-        sigma is sigma term of derivative of Gaussian kernel
-    Output:
-        DGFilter (a struct). Use in Canny filter call
-
-    """
-    kernel  = N.zeros((1+2*(gWidth-1)), dtype=float)
-    indices = range(1, gWidth)  
-
-    i = 0
-    kernel[gWidth-1]  = math.exp(((-i*i)/(2.0 * sigma * sigma)))
-    kernel[gWidth-1] *= -(i / (sigma * sigma))
-    for i in indices:
-        kernel[gWidth-1+i]  = math.exp(((-i*i)/(2.0 * sigma * sigma)))
-        kernel[gWidth-1+i] *= -(i / (sigma * sigma))
-        kernel[gWidth-1-i]  = -kernel[gWidth-1+i]
-
-    DGFilter= {'kernelSize' : gWidth, 'coefficients': kernel} 
-
-    return DGFilter
+    return ImageSlice
 
 def build_2d_kernel(aperature=21, hiFilterCutoff=10.0):
-
     """
     build flat FIR filter with sinc kernel
     this is bandpass, but low cutoff is 0.0
@@ -371,7 +402,7 @@ def build_2d_kernel(aperature=21, hiFilterCutoff=10.0):
 
     rad = math.pi / 180.0
     HalfFilterTaps = (aperature-1) / 2
-    kernel = N.zeros((aperature), dtype=N.float32)
+    kernel = N.zeros((aperature), dtype=N.float64)
     LC = 0.0
     HC = hiFilterCutoff * rad 
     t2 = 2.0 * math.pi
@@ -395,40 +426,33 @@ def build_2d_kernel(aperature=21, hiFilterCutoff=10.0):
     sum = kernel.sum()
     kernel /= sum
 
-    FIRFilter= {'kernelSize' : aperature, 'coefficients': kernel} 
+    FIRFilter= {'kernelSize' : HalfFilterTaps, 'kernel': kernel} 
 
     return FIRFilter
 
-
-def build_laws_kernel():
+def build_d_gauss_kernel(gWidth=20, sigma=1.0):
 
     """
-    build 6 length-7 Law's texture filter masks
-    mask names are: 'L', 'S', 'E', 'W', 'R', 'O'
-
-    LAWSFilter = build_laws_kernel()
-
+    build the derivative of Gaussian kernel for Canny edge filter
+    DGFilter = build_d_gauss_kernel(gWidth, sigma)
     Inputs:
-        None
-
+        gWdith is width of derivative of Gaussian kernel
+        sigma is sigma term of derivative of Gaussian kernel
     Output:
-        LAWSFilter (a struct)
+        DGFilter (a dictionary). Use in Canny filter call
 
     """
-    aperature = (6, 7)
-    coefficients = N.zeros((aperature), dtype=N.float32)
-    names = ('L', 'E', 'S', 'W', 'R', 'O' )
 
-    coefficients[0, :] =  ( 1.0,  6.0,  15.0, 20.0,  15.0,  6.0,  1.0 )
-    coefficients[1, :] =  (-1.0, -4.0,  -5.0,  0.0,   5.0,  4.0,  1.0 )
-    coefficients[2, :] =  (-1.0, -2.0,   1.0,  4.0,   1.0, -2.0, -1.0 )
-    coefficients[3, :] =  (-1.0,  0.0,   3.0,  0.0,  -3.0,  0.0,  1.0 )
-    coefficients[4, :] =  ( 1.0, -2.0,  -1.0,  4.0,  -1.0, -2.0,  1.0 )
-    coefficients[5, :] =  (-1.0,  6.0, -15.0, 20.0, -15.0,  6.0, -1.0 )
+    kernel  = N.zeros((1+gWidth), dtype=N.float64)
+    indices = range(0, gWidth)  
 
-    LAWSFilter= {'numKernels' : 6, 'kernelSize' : 7, 'coefficients': coefficients, 'names': names} 
+    for i in indices:
+        kernel[i]  = math.exp(((-i*i)/(2.0 * sigma * sigma)))
+        kernel[i] *= -(i / (sigma * sigma))
 
-    return LAWSFilter
+    DGFilter= {'kernelSize' : gWidth, 'coefficients': kernel} 
+
+    return DGFilter
 
 def build_morpho_thin_masks():
 
@@ -447,80 +471,96 @@ def build_morpho_thin_masks():
     """
 
     # (layers, rows, cols)
-    shape  = (8, 3, 3)
-    J_mask = N.zeros((shape), dtype=N.ushort)
-    K_mask = N.zeros((shape), dtype=N.ushort)
+    size = (8*3*3)
+    J_mask = N.zeros(size, dtype=N.int16)
+    K_mask = N.zeros(size, dtype=N.int16)
 
+    maskCols = 3
     # load the 8 J masks for medial axis transformation
-    J_mask[0][0][0] = 1;
-    J_mask[0][0][1] = 1;
-    J_mask[0][0][2] = 1;
-    J_mask[0][1][1] = 1;
+    Column = 0
+    J_mask[0+maskCols*(Column+0)] = 1
+    J_mask[0+maskCols*(Column+1)] = 1
+    J_mask[0+maskCols*(Column+2)] = 1
+    J_mask[1+maskCols*(Column+1)] = 1
 
-    J_mask[1][0][1] = 1;
-    J_mask[1][1][1] = 1;
-    J_mask[1][1][2] = 1;
+    Column += 3
+    J_mask[0+maskCols*(Column+1)] = 1
+    J_mask[1+maskCols*(Column+1)] = 1
+    J_mask[1+maskCols*(Column+2)] = 1
 
-    J_mask[2][0][0] = 1;
-    J_mask[2][1][0] = 1;
-    J_mask[2][2][0] = 1;
-    J_mask[2][1][1] = 1;
+    Column += 3
+    J_mask[0+maskCols*(Column+0)] = 1
+    J_mask[1+maskCols*(Column+0)] = 1
+    J_mask[2+maskCols*(Column+0)] = 1
+    J_mask[1+maskCols*(Column+1)] = 1
 
-    J_mask[3][0][1] = 1;
-    J_mask[3][1][0] = 1;
-    J_mask[3][1][1] = 1;
+    Column += 3
+    J_mask[0+maskCols*(Column+1)] = 1
+    J_mask[1+maskCols*(Column+0)] = 1
+    J_mask[1+maskCols*(Column+1)] = 1
 
-    J_mask[4][0][2] = 1;
-    J_mask[4][1][1] = 1;
-    J_mask[4][1][2] = 1;
-    J_mask[4][2][2] = 1;
+    Column += 3
+    J_mask[0+maskCols*(Column+2)] = 1
+    J_mask[1+maskCols*(Column+1)] = 1
+    J_mask[1+maskCols*(Column+2)] = 1
+    J_mask[2+maskCols*(Column+2)] = 1
 
-    J_mask[5][1][0] = 1;
-    J_mask[5][1][1] = 1;
-    J_mask[5][2][1] = 1;
+    Column += 3
+    J_mask[1+maskCols*(Column+0)] = 1
+    J_mask[1+maskCols*(Column+1)] = 1
+    J_mask[2+maskCols*(Column+1)] = 1
 
-    J_mask[6][1][1] = 1;
-    J_mask[6][2][0] = 1;
-    J_mask[6][2][1] = 1;
-    J_mask[6][2][2] = 1;
+    Column += 3
+    J_mask[1+maskCols*(Column+1)] = 1
+    J_mask[2+maskCols*(Column+0)] = 1
+    J_mask[2+maskCols*(Column+1)] = 1
+    J_mask[2+maskCols*(Column+2)] = 1
 
-    J_mask[7][1][1] = 1;
-    J_mask[7][1][2] = 1;
-    J_mask[7][2][1] = 1;
-
+    Column += 3
+    J_mask[1+maskCols*(Column+1)] = 1
+    J_mask[1+maskCols*(Column+2)] = 1
+    J_mask[2+maskCols*(Column+1)] = 1
 
     # load the 8 K masks for medial axis transformation
-    K_mask[0][2][0] = 1;
-    K_mask[0][2][1] = 1;
-    K_mask[0][2][2] = 1;
+    Column = 0
+    K_mask[2+maskCols*(Column+0)] = 1
+    K_mask[2+maskCols*(Column+1)] = 1
+    K_mask[2+maskCols*(Column+2)] = 1
+    
+    Column += 3
+    K_mask[1+maskCols*(Column+0)] = 1
+    K_mask[2+maskCols*(Column+0)] = 1
+    K_mask[2+maskCols*(Column+1)] = 1
+    
+    Column += 3
+    K_mask[0+maskCols*(Column+2)] = 1
+    K_mask[1+maskCols*(Column+2)] = 1
+    K_mask[2+maskCols*(Column+2)] = 1
 
-    K_mask[1][1][0] = 1;
-    K_mask[1][2][0] = 1;
-    K_mask[1][2][1] = 1;
+    Column += 3
+    K_mask[1+maskCols*(Column+2)] = 1
+    K_mask[2+maskCols*(Column+1)] = 1
+    K_mask[2+maskCols*(Column+2)] = 1
 
-    K_mask[2][0][2] = 1;
-    K_mask[2][1][2] = 1;
-    K_mask[2][2][2] = 1;
+    Column += 3
+    K_mask[0+maskCols*(Column+0)] = 1
+    K_mask[1+maskCols*(Column+0)] = 1
+    K_mask[2+maskCols*(Column+0)] = 1
 
-    K_mask[3][1][2] = 1;
-    K_mask[3][2][1] = 1;
-    K_mask[3][2][2] = 1;
+    Column += 3
+    K_mask[0+maskCols*(Column+1)] = 1
+    K_mask[0+maskCols*(Column+2)] = 1
+    K_mask[1+maskCols*(Column+2)] = 1
 
-    K_mask[4][0][0] = 1;
-    K_mask[4][1][0] = 1;
-    K_mask[4][2][0] = 1;
+    Column += 3
+    K_mask[0+maskCols*(Column+0)] = 1
+    K_mask[0+maskCols*(Column+1)] = 1
+    K_mask[0+maskCols*(Column+2)] = 1
 
-    K_mask[5][0][1] = 1;
-    K_mask[5][0][2] = 1;
-    K_mask[5][1][2] = 1;
-
-    K_mask[6][0][0] = 1;
-    K_mask[6][0][1] = 1;
-    K_mask[6][0][2] = 1;
-
-    K_mask[7][0][0] = 1;
-    K_mask[7][0][1] = 1;
-    K_mask[7][1][0] = 1;
+    Column += 3
+    K_mask[0+maskCols*(Column+0)] = 1
+    K_mask[0+maskCols*(Column+1)] = 1
+    K_mask[1+maskCols*(Column+0)] = 1
 
     MATFilter = {'number3x3Masks' : 8, 'jmask' : J_mask, 'kmask' : K_mask} 
 
