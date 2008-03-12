@@ -301,7 +301,7 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
         raise RuntimeError("Error info=%d in arpack"%info)
         return None
     if return_eigenvectors:
-        return d,np.asmatrix(z)
+        return d,z
     return d
 
 
@@ -482,5 +482,5 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
         raise RuntimeError("Error info=%d in arpack"%info)
         return None
     if return_eigenvectors:
-        return d,np.asmatrix(z)
+        return d,z
     return d
