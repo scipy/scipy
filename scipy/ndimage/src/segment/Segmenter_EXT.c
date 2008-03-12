@@ -2,136 +2,71 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 
-static PyObject *Segmenter_CannyEdges(PyObject *self, PyObject *args)
+static PyObject *Segmenter_EdgePreFilter(PyObject *self, PyObject *args)
 {
 
-    double sigma;
-    double cannyLow;
-    double cannyHigh;
-    double BPHigh;
     int lowThreshold;
     int highThreshold;
-    int apearture;
     int num;
     int nd;
     int type;
-    int itype;
-    int mode;
-    int groups;
+    int aperature;
+    int half_taps;
     npy_intp *dims;
-    double *fP1;
-    unsigned short *fP2;
+    unsigned short *fP1;
+    double *fP2;
+    double *pKernel;
     PyObject *iArray = NULL;
     PyObject *eArray = NULL;
-
-    /* pass in 2D LPF coefficients */
-    if(!PyArg_ParseTuple(args, "dddiiidiO", &sigma, &cannyLow, &cannyHigh, 
-			 &mode, &lowThreshold, &highThreshold,
-			 &BPHigh, &apearture, &iArray))
-	    goto exit;
-
-    fP1  = (double *)PyArray_DATA(iArray);
-    nd   = PyArray_NDIM(iArray);
-    dims = PyArray_DIMS(iArray);
-    type = PyArray_TYPE(iArray);
-    num  = PyArray_SIZE(iArray);
-
-    //itype  = 4;
-    itype  = NPY_USHORT;
-    eArray = (PyObject*)PyArray_SimpleNew(nd, dims, itype);
-    fP2    = (unsigned short *)PyArray_DATA(eArray);
-
-    if(!PyArray_ISCONTIGUOUS(iArray) || !PyArray_ISCONTIGUOUS(eArray))
-	    goto exit;
-
-    if(!NI_CannyEdges(num, (int)dims[0], (int)dims[1], sigma, cannyLow, 
-		      cannyHigh, mode, lowThreshold,
-		      highThreshold, BPHigh, apearture, fP1, fP2, &groups))
-	    goto exit;
-
-exit:
-
-    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("Oi", eArray, 
-							      groups);
-
-}
-
-static PyObject *Segmenter_SobelEdges(PyObject *self, PyObject *args)
-{
-
-    double sobelLow;
-    double BPHigh;
-    int lowThreshold;
-    int highThreshold;
-    int apearture;
-    int num;
-    int nd;
-    int type;
-    int itype;
-    int groups;
-    int mode;
-    npy_intp *dims;
-    double *fP1;
-    unsigned short *fP2;
-    PyObject *iArray = NULL;
-    PyObject *eArray = NULL;
+    PyObject *kernel = NULL;
 
     //
     // pass in 2D LPF coefficients
-    if(!PyArg_ParseTuple(args, "diiidiO", &sobelLow, &mode, &lowThreshold, 
-			 &highThreshold, &BPHigh, &apearture, &iArray))
+    if(!PyArg_ParseTuple(args, "iiiOOO", &lowThreshold, &highThreshold, 
+			 &half_taps, &kernel, &iArray, &eArray))
 	    goto exit;
 
-    fP1  = (double *)PyArray_DATA(iArray);
+    fP1  = (unsigned short *)PyArray_DATA(iArray);
     nd   = PyArray_NDIM(iArray);
     dims = PyArray_DIMS(iArray);
     type = PyArray_TYPE(iArray);
     num  = PyArray_SIZE(iArray);
-
-    // this is int type and hard-wirred. pass this in from Python code
-    //itype  = 4; // unsigned short
-    itype  = NPY_USHORT;
-    eArray = (PyObject*)PyArray_SimpleNew(nd, dims, itype);
-    fP2    = (unsigned short *)PyArray_DATA(eArray);
+    fP2     = (double *)PyArray_DATA(eArray);
+    pKernel = (double *)PyArray_DATA(kernel);
+    aperature = PyArray_SIZE(kernel);
 
     if(!PyArray_ISCONTIGUOUS(iArray) || !PyArray_ISCONTIGUOUS(eArray))
 	    goto exit;
 
     
-    if(!NI_SobelEdges(num, (int)dims[0], (int)dims[1], sobelLow, mode, 
-		      lowThreshold, highThreshold, BPHigh, apearture,
-		      fP1, fP2, &groups))
+    if(!NI_EdgePreFilter(num, (int)dims[0], (int)dims[1], lowThreshold, 
+		         highThreshold, aperature, half_taps, fP1, fP2, pKernel))
+		      
 	    goto exit;
 
 exit:
 
-    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("Oi", eArray, 
-							      groups-1);
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("");
 
 }
 
 
-
-static PyObject *Segmenter_ShenCastanEdges(PyObject *self, PyObject *args)
+static PyObject *Segmenter_SobelImage(PyObject *self, PyObject *args)
 {
-    int window;
-    int lowThreshold;
-    int highThreshold;
-    double ShenCastanLow;
-    double b;
+
     int num;
     int nd;
     int type;
-    int itype;
     npy_intp *dims;
     double *fP1;
-    unsigned short *fP2;
-    int groups;
+    double *fP2;
+    double pAve;
+    int minValue;
+    int maxValue;
     PyObject *iArray = NULL;
     PyObject *eArray = NULL;
 
-    if(!PyArg_ParseTuple(args, "ddiiiO", &ShenCastanLow, &b, &window, 
-			 &lowThreshold, &highThreshold, &iArray))
+    if(!PyArg_ParseTuple(args, "OO", &iArray, &eArray))
 	    goto exit;
 
     fP1  = (double *)PyArray_DATA(iArray);
@@ -139,29 +74,103 @@ static PyObject *Segmenter_ShenCastanEdges(PyObject *self, PyObject *args)
     dims = PyArray_DIMS(iArray);
     type = PyArray_TYPE(iArray);
     num  = PyArray_SIZE(iArray);
-
-    // this is int type and hard-wirred. pass this in from Python code
-    //itype  = 4; // unsigned short
-    itype  = NPY_USHORT;
-    eArray = (PyObject*)PyArray_SimpleNew(nd, dims, itype);
-    fP2    = (unsigned short *)PyArray_DATA(eArray);
+    fP2  = (double *)PyArray_DATA(eArray);
 
     if(!PyArray_ISCONTIGUOUS(iArray) || !PyArray_ISCONTIGUOUS(eArray))
 	    goto exit;
 
-    if(!NI_ShenCastanEdges(num, (int)dims[0], (int)dims[1], b, ShenCastanLow, 
-			   window, lowThreshold, highThreshold, 
-			   fP1, fP2, &groups))
+    
+    if(!NI_SobelImage(num, (int)dims[0], (int)dims[1], fP1, fP2, &pAve, &minValue, &maxValue))
+		      
 	    goto exit;
 
 exit:
 
-    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("Oi", eArray, 
-							      groups-1);
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("dii", pAve, minValue, maxValue);
 
 }
 
-static PyObject *Segmenter_GetObjectStats(PyObject *self, PyObject *args)
+
+static PyObject *Segmenter_SobelEdges(PyObject *self, PyObject *args)
+{
+
+    int num;
+    int nd;
+    int type;
+    npy_intp *dims;
+    double *fP1;
+    unsigned short *fP2;
+    double pAve;
+    int minValue;
+    int maxValue;
+    int mode;
+    double sobelLow;
+    PyObject *iArray = NULL;
+    PyObject *eArray = NULL;
+
+    if(!PyArg_ParseTuple(args, "OOdiiid", &iArray, &eArray, &pAve, &minValue, &maxValue, &mode,
+			                  &sobelLow))
+	    goto exit;
+
+    fP1  = (double *)PyArray_DATA(iArray);
+    nd   = PyArray_NDIM(iArray);
+    dims = PyArray_DIMS(iArray);
+    type = PyArray_TYPE(iArray);
+    num  = PyArray_SIZE(iArray);
+    fP2  = (unsigned short *)PyArray_DATA(eArray);
+
+    if(!PyArray_ISCONTIGUOUS(iArray) || !PyArray_ISCONTIGUOUS(eArray))
+	    goto exit;
+
+    
+    if(!NI_SobelEdge(num, (int)dims[0], (int)dims[1], fP1, fP2, mode, pAve, minValue, maxValue, sobelLow))
+	    goto exit;
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("");
+
+}
+
+
+
+static PyObject *Segmenter_GetBlobs(PyObject *self, PyObject *args)
+{
+
+    int num;
+    int nd;
+    int type;
+    npy_intp *dims;
+    unsigned short *fP1;
+    unsigned short *fP2;
+    int groups;
+    PyObject *iArray = NULL;
+    PyObject *eArray = NULL;
+
+    if(!PyArg_ParseTuple(args, "OO", &iArray, &eArray))
+	    goto exit;
+
+    fP1  = (unsigned short *)PyArray_DATA(iArray);
+    nd   = PyArray_NDIM(iArray);
+    dims = PyArray_DIMS(iArray);
+    type = PyArray_TYPE(iArray);
+    num  = PyArray_SIZE(iArray);
+    fP2  = (unsigned short *)PyArray_DATA(eArray);
+
+    if(!PyArray_ISCONTIGUOUS(iArray) || !PyArray_ISCONTIGUOUS(eArray))
+	    goto exit;
+
+    
+    if(!NI_GetBlobs(num, (int)dims[0], (int)dims[1], fP1, fP2, &groups))
+	    goto exit;
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("i", groups);
+
+}
+
+static PyObject *Segmenter_GetBlobRegions(PyObject *self, PyObject *args)
 {
 
 
@@ -198,88 +207,7 @@ static PyObject *Segmenter_GetObjectStats(PyObject *self, PyObject *args)
     objNumber = PyArray_DIMS(nArray); // this is the number of labels in the edge image
     myData = (objStruct*)PyArray_DATA(nArray);
 
-    if(!NI_GetObjectStats((int)dims[0], (int)dims[1], (int)objNumber[0], fP1, myData))
-	    goto exit;
-
-exit:
-
-    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("");
-
-}
-
-static PyObject *Segmenter_MorphoThinFilt(PyObject *self, PyObject *args)
-{
-
-    int num;
-    int nd;
-    int type;
-    npy_intp *dims;
-    npy_intp *objNumber;
-    unsigned short *fP1;
-    PyObject  *iArray = NULL;
-    PyObject  *nArray = NULL;
-    objStruct *ROIList;
-
-    if(!PyArg_ParseTuple(args, "OO", &iArray, &nArray))
-	    goto exit;
-
-    fP1  = (unsigned short *)PyArray_DATA(iArray);
-    nd   = PyArray_NDIM(iArray);
-    dims = PyArray_DIMS(iArray);
-    type = PyArray_TYPE(iArray);
-    num  = PyArray_SIZE(iArray);
-
-    objNumber = PyArray_DIMS(nArray); // this is the number of labels in the edge image
-    ROIList = (objStruct*)PyArray_DATA(nArray);
-
-    if(!PyArray_ISCONTIGUOUS(iArray))
-	    goto exit;
-
-    if(!NI_ThinFilter(num, (int)dims[0], (int)dims[1], (int)objNumber[0], fP1, ROIList))
-	    goto exit;
-
-exit:
-
-    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("");
-
-}
-
-static PyObject *Segmenter_BuildBoundary(PyObject *self, PyObject *args)
-{
-
-    int num;
-    int nd;
-    int type;
-    npy_intp *dims;
-    npy_intp *objNumber;
-    unsigned short *fP1;
-    PyObject  *iArray = NULL;
-    PyObject  *nArray = NULL;
-    objStruct *ROIList;
-
-    if(!PyArg_ParseTuple(args, "OO", &iArray, &nArray))
-	    goto exit;
-
-    fP1  = (unsigned short *)PyArray_DATA(iArray);
-    nd   = PyArray_NDIM(iArray);
-    dims = PyArray_DIMS(iArray);
-    type = PyArray_TYPE(iArray);
-    num  = PyArray_SIZE(iArray);
-    //
-    // this is int type and hard-wirred. pass this in from Python code
-
-    objNumber = PyArray_DIMS(nArray); // this is the number of labels in the edge image
-    ROIList = (objStruct*)PyArray_DATA(nArray);
-
-    if(!PyArray_ISCONTIGUOUS(iArray))
-	    goto exit;
-
-    //
-    // pass in ROI list and labeled edges
-    // return an augmented ROI list
-    // replace the edgeImage with maskImage
-    //
-    if(!NI_BuildBoundary(num, (int)dims[0], (int)dims[1], (int)objNumber[0], fP1, ROIList))
+    if(!NI_GetBlobRegions((int)dims[0], (int)dims[1], (int)objNumber[0], fP1, myData))
 	    goto exit;
 
 exit:
@@ -289,47 +217,50 @@ exit:
 }
 
 
-static PyObject *Segmenter_VoxelMeasures(PyObject *self, PyObject *args)
+static PyObject *Segmenter_ThinFilter(PyObject *self, PyObject *args)
 {
 
-    int num;
-    int nd;
-    int type;
-    npy_intp *dims;
-    npy_intp *objNumber;
-    double *fP1;
-    unsigned short *fP2;
+    int number_masks;
+    int roi_rows;
+    int roi_cols;
+    int cols;
+    unsigned char *input;
+    unsigned char *cinput;
+    unsigned char *erosion;
+    unsigned char *dialation;
+    unsigned char *hmt;
+    unsigned char *copy;
+    unsigned short *j_mask;
+    unsigned short *k_mask;
+    PyObject  *jArray = NULL;
+    PyObject  *kArray = NULL;
     PyObject  *iArray = NULL;
-    PyObject  *nArray = NULL;
+    PyObject  *cArray = NULL;
     PyObject  *eArray = NULL;
-    objStruct *ROIList;
+    PyObject  *dArray = NULL;
+    PyObject  *hArray = NULL;
+    PyObject  *pArray = NULL;
 
-    if(!PyArg_ParseTuple(args, "OOO", &iArray, &eArray, &nArray))
+    if(!PyArg_ParseTuple(args, "OOiiiiOOOOOO", &jArray, &kArray, &number_masks, &roi_rows,
+			 &roi_cols, &cols, &iArray, &cArray, &eArray, &dArray, &hArray, &pArray))
 	    goto exit;
 
-    fP1  = (double *)PyArray_DATA(iArray);
-    nd   = PyArray_NDIM(iArray);
-    dims = PyArray_DIMS(iArray);
-    type = PyArray_TYPE(iArray);
-    num  = PyArray_SIZE(iArray);
 
-    // eArray and iArray are same dims
-    fP2  = (unsigned short *)PyArray_DATA(eArray);
+    j_mask = (unsigned short *)PyArray_DATA(jArray);
+    k_mask = (unsigned short *)PyArray_DATA(kArray);
 
-    objNumber = PyArray_DIMS(nArray); // this is the number of labels in the edge image
-    ROIList = (objStruct*)PyArray_DATA(nArray);
+    input     = (unsigned char *)PyArray_DATA(iArray);
+    cinput    = (unsigned char *)PyArray_DATA(cArray);
+    erosion   = (unsigned char *)PyArray_DATA(eArray);
+    dialation = (unsigned char *)PyArray_DATA(dArray);
+    hmt       = (unsigned char *)PyArray_DATA(hArray);
+    copy      = (unsigned char *)PyArray_DATA(pArray);
 
     if(!PyArray_ISCONTIGUOUS(iArray))
 	    goto exit;
 
-    //
-    // pass in ROI list and labeled edges
-    // return an augmented ROI list
-    // replace the edgeImage with maskImage
-    //
-
-    if(!NI_VoxelMeasures(num, (int)dims[0], (int)dims[1], (int)objNumber[0], fP1,
-			 fP2, ROIList))
+    if(!NI_ThinMorphoFilter(roi_rows, roi_cols, cols, number_masks, j_mask, k_mask,
+		       input, cinput, erosion, dialation, hmt, copy))
 	    goto exit;
 
 exit:
@@ -338,22 +269,27 @@ exit:
 
 }
 
-static PyObject *Segmenter_TextureMeasures(PyObject *self, PyObject *args)
+
+static PyObject *Segmenter_CannyFilter(PyObject *self, PyObject *args)
 {
 
     int num;
     int nd;
     int type;
+    int aperature;
     npy_intp *dims;
-    npy_intp *objNumber;
     double *fP1;
-    unsigned short *fP2;
+    double *h_DG_image;
+    double *v_DG_image;
+    double *pKernel;
+    float aveXValue;
+    float aveYValue;
     PyObject  *iArray = NULL;
-    PyObject  *nArray = NULL;
-    PyObject  *eArray = NULL;
-    objStruct *ROIList;
+    PyObject  *hArray = NULL;
+    PyObject  *vArray = NULL;
+    PyObject  *kernel = NULL;
 
-    if(!PyArg_ParseTuple(args, "OOO", &iArray, &eArray, &nArray))
+    if(!PyArg_ParseTuple(args, "OOOOi", &iArray, &hArray, &vArray, &kernel, &aperature))
 	    goto exit;
 
     fP1  = (double *)PyArray_DATA(iArray);
@@ -362,23 +298,110 @@ static PyObject *Segmenter_TextureMeasures(PyObject *self, PyObject *args)
     type = PyArray_TYPE(iArray);
     num  = PyArray_SIZE(iArray);
 
-    // eArray and iArray are same dims
-    fP2  = (unsigned short *)PyArray_DATA(eArray);
-
-    objNumber = PyArray_DIMS(nArray); // this is the number of labels in the edge image
-    ROIList = (objStruct*)PyArray_DATA(nArray);
+    h_DG_image = (double *)PyArray_DATA(hArray);
+    v_DG_image = (double *)PyArray_DATA(vArray);
+    pKernel    = (double *)PyArray_DATA(kernel);
 
     if(!PyArray_ISCONTIGUOUS(iArray))
 	    goto exit;
 
-    //
-    // pass in ROI list and labeled edges
-    // return an augmented ROI list
-    // replace the edgeImage with maskImage
-    //
+    if(!NI_CannyFilter(num, (int)dims[0], (int)dims[1], fP1, h_DG_image,  
+	               v_DG_image, pKernel, aperature, &aveXValue, &aveYValue))
+	    goto exit;
 
-    if(!NI_TextureMeasures(num, (int)dims[0], (int)dims[1], (int)objNumber[0], fP1,
-			   fP2, ROIList))
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("dd", aveXValue, aveYValue);
+
+}
+
+
+
+
+static PyObject *Segmenter_CannyNonMaxSupress(PyObject *self, PyObject *args)
+{
+
+    int num;
+    int nd;
+    int type;
+    int aperature;
+    int mode;
+    npy_intp *dims;
+    double *h_DG_image;
+    double *v_DG_image;
+    double *magnitude;
+    double aveXValue;
+    double aveYValue;
+    double aveMagnitude;
+    double canny_low;
+    double canny_high;
+    double canny_l;
+    double canny_h;
+    PyObject  *mArray = NULL;
+    PyObject  *hArray = NULL;
+    PyObject  *vArray = NULL;
+
+    if(!PyArg_ParseTuple(args, "OOOidddd", &hArray, &vArray, &mArray, &mode, &aveXValue,
+			                   &aveYValue, &canny_l, &canny_h))
+	    goto exit;
+
+    magnitude = (double *)PyArray_DATA(mArray);
+    nd   = PyArray_NDIM(mArray);
+    dims = PyArray_DIMS(mArray);
+    type = PyArray_TYPE(mArray);
+    num  = PyArray_SIZE(mArray);
+
+    h_DG_image = (double *)PyArray_DATA(hArray);
+    v_DG_image = (double *)PyArray_DATA(vArray);
+
+    if(!PyArray_ISCONTIGUOUS(mArray))
+	    goto exit;
+
+    if(!NI_CannyNonMaxSupress(num, (int)dims[0], (int)dims[1], magnitude, h_DG_image,  
+	                      v_DG_image, mode, aveXValue, aveYValue, &aveMagnitude,
+		              &canny_low, &canny_high, canny_l, canny_h))
+	    goto exit;
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("ddd", aveMagnitude, canny_low, canny_high);
+
+}
+
+
+
+static PyObject *Segmenter_CannyHysteresis(PyObject *self, PyObject *args)
+{
+
+    int num;
+    int nd;
+    int type;
+    int aperature;
+    int mode;
+    npy_intp *dims;
+    double *magnitude;
+    unsigned short *hys_image;
+    double canny_low;
+    double canny_high;
+    PyObject  *mArray = NULL;
+    PyObject  *hArray = NULL;
+
+    if(!PyArg_ParseTuple(args, "OOdd", &mArray, &hArray, &canny_low, &canny_high)) 
+	    goto exit;
+
+    magnitude = (double *)PyArray_DATA(mArray);
+    nd   = PyArray_NDIM(mArray);
+    dims = PyArray_DIMS(mArray);
+    type = PyArray_TYPE(mArray);
+    num  = PyArray_SIZE(mArray);
+
+    hys_image = (unsigned short *)PyArray_DATA(hArray);
+
+    if(!PyArray_ISCONTIGUOUS(mArray))
+	    goto exit;
+
+    if(!NI_CannyHysteresis(num, (int)dims[0], (int)dims[1], magnitude, hys_image,  
+		           canny_low, canny_high))
 	    goto exit;
 
 exit:
@@ -387,68 +410,18 @@ exit:
 
 }
 
-static PyObject *Segmenter_RegionGrow(PyObject *self, PyObject *args)
-{
-
-    int lowThreshold;
-    int highThreshold;
-    int closeWindow;
-    int openWindow;
-    int num;
-    int nd;
-    int type;
-    int itype;
-    int groups;
-    npy_intp *dims;
-    double *fP1;
-    unsigned short *fP2;
-    PyObject *iArray = NULL;
-    PyObject *eArray = NULL;
-
-    //
-    // pass in 2D LPF coefficients
-    if(!PyArg_ParseTuple(args, "iiiiO", &lowThreshold, &highThreshold, &closeWindow,
-		         &openWindow, &iArray))
-	    goto exit;
-
-    fP1  = (double *)PyArray_DATA(iArray);
-    nd   = PyArray_NDIM(iArray);
-    dims = PyArray_DIMS(iArray);
-    type = PyArray_TYPE(iArray);
-    num  = PyArray_SIZE(iArray);
-
-    // this is int type and hard-wirred. pass this in from Python code
-    //itype  = 4; // unsigned short
-    itype  = NPY_USHORT;
-    eArray = (PyObject*)PyArray_SimpleNew(nd, dims, itype);
-    fP2    = (unsigned short *)PyArray_DATA(eArray);
-
-    if(!PyArray_ISCONTIGUOUS(iArray) || !PyArray_ISCONTIGUOUS(eArray))
-	    goto exit;
-
-    
-    if(!NI_RegionGrow(num, (int)dims[0], (int)dims[1], lowThreshold, highThreshold,
-		      closeWindow, openWindow, fP1, fP2, &groups))
-		      
-	    goto exit;
-
-exit:
-
-    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("Oi", eArray, groups-1);
-
-}
 
 static PyMethodDef SegmenterMethods[] =
 {
-    { "canny_edges",       Segmenter_CannyEdges,      METH_VARARGS, NULL },
-    { "shen_castan_edges", Segmenter_ShenCastanEdges, METH_VARARGS, NULL },
-    { "sobel_edges",       Segmenter_SobelEdges,      METH_VARARGS, NULL },
-    { "get_object_stats",  Segmenter_GetObjectStats,  METH_VARARGS, NULL },
-    { "morpho_thin_filt",  Segmenter_MorphoThinFilt,  METH_VARARGS, NULL },
-    { "build_boundary",    Segmenter_BuildBoundary,   METH_VARARGS, NULL },
-    { "voxel_measures",    Segmenter_VoxelMeasures,   METH_VARARGS, NULL },
-    { "texture_measures",  Segmenter_TextureMeasures, METH_VARARGS, NULL },
-    { "region_grow",       Segmenter_RegionGrow,      METH_VARARGS, NULL },
+    { "canny_hysteresis",     Segmenter_CannyHysteresis,    METH_VARARGS, NULL },
+    { "canny_nonmax_supress", Segmenter_CannyNonMaxSupress, METH_VARARGS, NULL },
+    { "canny_filter",         Segmenter_CannyFilter,        METH_VARARGS, NULL },
+    { "sobel_edges",          Segmenter_SobelEdges,         METH_VARARGS, NULL },
+    { "sobel_image",          Segmenter_SobelImage,         METH_VARARGS, NULL },
+    { "edge_prefilter",       Segmenter_EdgePreFilter,      METH_VARARGS, NULL },
+    { "get_blobs",            Segmenter_GetBlobs,           METH_VARARGS, NULL },
+    { "get_blob_regions",     Segmenter_GetBlobRegions,     METH_VARARGS, NULL },
+    { "thin_filter",          Segmenter_ThinFilter,         METH_VARARGS, NULL },
     {  NULL, NULL, 0, NULL},
 };
 
@@ -457,4 +430,8 @@ void init_segment(void)
     Py_InitModule("_segment", SegmenterMethods);
     import_array();
 }
+
+
+
+
 
