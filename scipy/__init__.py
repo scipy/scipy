@@ -45,7 +45,13 @@ del _num
 # imported.
 del linalg
 
-from __config__ import show as show_config
+try:
+    from __config__ import show as show_config
+except ImportError, e:
+    msg = """Error importing scipy: you cannot import scipy while
+    being in scipy source directory; please exit the scipy source
+    tree first, and relaunch your python intepreter."""
+    raise ImportError(msg)
 from version import version as __version__
 
 # Load scipy packages, their global_symbols, set up __doc__ string.
