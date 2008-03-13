@@ -767,7 +767,6 @@ void bsr_matmat_pass2_fixed(const I n_brow,  const I n_bcol,
     
 }
 
-#define F(X,Y,Z) bsr_matmat_pass2_fixed<I,T,X,Y,Z>
 
 template <class I, class T>
 void bsr_matmat_pass2(const I n_brow,  const I n_bcol, 
@@ -778,7 +777,9 @@ void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
 {
     assert(R > 0 && C > 0 && N > 0);
 
-#ifdef TESTING
+#ifdef SPARSETOOLS_TESTING
+#define F(X,Y,Z) bsr_matmat_pass2_fixed<I,T,X,Y,Z>
+
     void (*dispatch[4][4][4])(I,I,const I*,const I*,const T*,
                                   const I*,const I*,const T*,
                                         I*,      I*,      T*) = \
@@ -809,6 +810,8 @@ void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
         dispatch[R-1][N-1][C-1](n_brow,n_bcol,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx);
         return;
     }
+
+#undef F
 #endif
 
     const I RC = R*C;
@@ -872,7 +875,6 @@ void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
 
     }
 }
-#undef F
 
 
 
@@ -1492,7 +1494,6 @@ void bsr_matvec_fixed(const I n_brow,
  *
  */
 
-#define F(X,Y) bsr_matvec_fixed<I,T,X,Y>
 
 template <class I, class T>
 void bsr_matvec(const I n_brow,
@@ -1506,6 +1507,9 @@ void bsr_matvec(const I n_brow,
 	                  T Yx[])
 {
     assert(R > 0 && C > 0);
+
+#ifdef SPARSETOOLS_TESTING
+#define F(X,Y) bsr_matvec_fixed<I,T,X,Y>
 
     void (*dispatch[8][8])(I,I,const I*,const I*,const T*,const T*,T*) = \
         {
@@ -1524,6 +1528,8 @@ void bsr_matvec(const I n_brow,
         return;
     }
 
+#undef F
+#endif
 
     //otherwise use general method
     for(I i = 0; i < R*n_brow; i++){
@@ -1549,7 +1555,6 @@ void bsr_matvec(const I n_brow,
         }
     }
 }
-#undef F
 
 
 

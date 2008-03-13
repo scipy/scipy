@@ -147,7 +147,7 @@ template <typename T> T SwigValueInit() {
 
 /* This should only be incremented when either the layout of swig_type_info changes,
    or for whatever reason, the runtime changes incompatibly */
-#define SWIG_RUNTIME_VERSION "3"
+#define SWIG_RUNTIME_VERSION "4"
 
 /* define SWIG_TYPE_TABLE_NAME as "SWIG_TYPE_TABLE" */
 #ifdef SWIG_TYPE_TABLE
@@ -182,6 +182,7 @@ template <typename T> T SwigValueInit() {
 
 /* Flags for pointer conversions */
 #define SWIG_POINTER_DISOWN        0x1
+#define SWIG_CAST_NEW_MEMORY       0x2
 
 /* Flags for new pointer objects */
 #define SWIG_POINTER_OWN           0x1
@@ -322,10 +323,10 @@ SWIGINTERNINLINE int SWIG_CheckState(int r) {
 extern "C" {
 #endif
 
-typedef void *(*swig_converter_func)(void *);
+typedef void *(*swig_converter_func)(void *, int *);
 typedef struct swig_type_info *(*swig_dycast_func)(void **);
 
-/* Structure to store inforomation on one type */
+/* Structure to store information on one type */
 typedef struct swig_type_info {
   const char             *name;			/* mangled name of this type */
   const char             *str;			/* human readable name of this type */
@@ -452,8 +453,8 @@ SWIG_TypeCheckStruct(swig_type_info *from, swig_type_info *into) {
   Cast a pointer up an inheritance hierarchy
 */
 SWIGRUNTIMEINLINE void *
-SWIG_TypeCast(swig_cast_info *ty, void *ptr) {
-  return ((!ty) || (!ty->converter)) ? ptr : (*ty->converter)(ptr);
+SWIG_TypeCast(swig_cast_info *ty, void *ptr, int *newmemory) {
+  return ((!ty) || (!ty->converter)) ? ptr : (*ty->converter)(ptr, newmemory);
 }
 
 /* 
@@ -877,7 +878,7 @@ SWIG_Python_AddErrorMsg(const char* mesg)
     Py_DECREF(old_str);
     Py_DECREF(value);
   } else {
-    PyErr_Format(PyExc_RuntimeError, mesg);
+    PyErr_SetString(PyExc_RuntimeError, mesg);
   }
 }
 
@@ -1437,7 +1438,7 @@ PySwigObject_dealloc(PyObject *v)
 {
   PySwigObject *sobj = (PySwigObject *) v;
   PyObject *next = sobj->next;
-  if (sobj->own) {
+  if (sobj->own == SWIG_POINTER_OWN) {
     swig_type_info *ty = sobj->ty;
     PySwigClientData *data = ty ? (PySwigClientData *) ty->clientdata : 0;
     PyObject *destroy = data ? data->destroy : 0;
@@ -1455,12 +1456,13 @@ PySwigObject_dealloc(PyObject *v)
 	res = ((*meth)(mself, v));
       }
       Py_XDECREF(res);
-    } else {
-      const char *name = SWIG_TypePrettyName(ty);
+    } 
 #if !defined(SWIG_PYTHON_SILENT_MEMLEAK)
-      printf("swig/python detected a memory leak of type '%s', no destructor found.\n", name);
-#endif
+    else {
+      const char *name = SWIG_TypePrettyName(ty);
+      printf("swig/python detected a memory leak of type '%s', no destructor found.\n", (name ? name : "unknown"));
     }
+#endif
   } 
   Py_XDECREF(next);
   PyObject_DEL(v);
@@ -1965,7 +1967,7 @@ SWIG_Python_GetSwigThis(PyObject *pyobj)
 
 SWIGRUNTIME int
 SWIG_Python_AcquirePtr(PyObject *obj, int own) {
-  if (own) {
+  if (own == SWIG_POINTER_OWN) {
     PySwigObject *sobj = SWIG_Python_GetSwigThis(obj);
     if (sobj) {
       int oldown = sobj->own;
@@ -1986,6 +1988,8 @@ SWIG_Python_ConvertPtrAndOwn(PyObject *obj, void **ptr, swig_type_info *ty, int 
     return SWIG_OK;
   } else {
     PySwigObject *sobj = SWIG_Python_GetSwigThis(obj);
+    if (own)
+      *own = 0;
     while (sobj) {
       void *vptr = sobj->ptr;
       if (ty) {
@@ -1999,7 +2003,15 @@ SWIG_Python_ConvertPtrAndOwn(PyObject *obj, void **ptr, swig_type_info *ty, int 
 	  if (!tc) {
 	    sobj = (PySwigObject *)sobj->next;
 	  } else {
-	    if (ptr) *ptr = SWIG_TypeCast(tc,vptr);
+	    if (ptr) {
+              int newmemory = 0;
+              *ptr = SWIG_TypeCast(tc,vptr,&newmemory);
+              if (newmemory == SWIG_CAST_NEW_MEMORY) {
+                assert(own);
+                if (own)
+                  *own = *own | SWIG_CAST_NEW_MEMORY;
+              }
+            }
 	    break;
 	  }
 	}
@@ -2009,7 +2021,8 @@ SWIG_Python_ConvertPtrAndOwn(PyObject *obj, void **ptr, swig_type_info *ty, int 
       }
     }
     if (sobj) {
-      if (own) *own = sobj->own;
+      if (own)
+        *own = *own | sobj->own;
       if (flags & SWIG_POINTER_DISOWN) {
 	sobj->own = 0;
       }
@@ -2074,8 +2087,13 @@ SWIG_Python_ConvertFunctionPtr(PyObject *obj, void **ptr, swig_type_info *ty) {
     }
     if (ty) {
       swig_cast_info *tc = SWIG_TypeCheck(desc,ty);
-      if (!tc) return SWIG_ERROR;
-      *ptr = SWIG_TypeCast(tc,vptr);
+      if (tc) {
+        int newmemory = 0;
+        *ptr = SWIG_TypeCast(tc,vptr,&newmemory);
+        assert(!newmemory); /* newmemory handling not yet implemented */
+      } else {
+        return SWIG_ERROR;
+      }
     } else {
       *ptr = vptr;
     }
@@ -2478,20 +2496,20 @@ SWIG_Python_MustGetPtr(PyObject *obj, swig_type_info *ty, int argnum, int flags)
 /* -------- TYPES TABLE (BEGIN) -------- */
 
 #define SWIGTYPE_p_char swig_types[0]
-#define SWIGTYPE_p_std__vectorTdouble_t swig_types[1]
-#define SWIGTYPE_p_std__vectorTfloat_t swig_types[2]
-#define SWIGTYPE_p_std__vectorTint_t swig_types[3]
-#define SWIGTYPE_p_std__vectorTlong_double_t swig_types[4]
-#define SWIGTYPE_p_std__vectorTlong_long_t swig_types[5]
-#define SWIGTYPE_p_std__vectorTnpy_cdouble_wrapper_t swig_types[6]
-#define SWIGTYPE_p_std__vectorTnpy_cfloat_wrapper_t swig_types[7]
-#define SWIGTYPE_p_std__vectorTnpy_clongdouble_wrapper_t swig_types[8]
-#define SWIGTYPE_p_std__vectorTshort_t swig_types[9]
-#define SWIGTYPE_p_std__vectorTsigned_char_t swig_types[10]
-#define SWIGTYPE_p_std__vectorTunsigned_char_t swig_types[11]
-#define SWIGTYPE_p_std__vectorTunsigned_int_t swig_types[12]
-#define SWIGTYPE_p_std__vectorTunsigned_long_long_t swig_types[13]
-#define SWIGTYPE_p_std__vectorTunsigned_short_t swig_types[14]
+#define SWIGTYPE_p_std__vectorT_double_t swig_types[1]
+#define SWIGTYPE_p_std__vectorT_float_t swig_types[2]
+#define SWIGTYPE_p_std__vectorT_int_t swig_types[3]
+#define SWIGTYPE_p_std__vectorT_long_double_t swig_types[4]
+#define SWIGTYPE_p_std__vectorT_long_long_t swig_types[5]
+#define SWIGTYPE_p_std__vectorT_npy_cdouble_wrapper_t swig_types[6]
+#define SWIGTYPE_p_std__vectorT_npy_cfloat_wrapper_t swig_types[7]
+#define SWIGTYPE_p_std__vectorT_npy_clongdouble_wrapper_t swig_types[8]
+#define SWIGTYPE_p_std__vectorT_short_t swig_types[9]
+#define SWIGTYPE_p_std__vectorT_signed_char_t swig_types[10]
+#define SWIGTYPE_p_std__vectorT_unsigned_char_t swig_types[11]
+#define SWIGTYPE_p_std__vectorT_unsigned_int_t swig_types[12]
+#define SWIGTYPE_p_std__vectorT_unsigned_long_long_t swig_types[13]
+#define SWIGTYPE_p_std__vectorT_unsigned_short_t swig_types[14]
 static swig_type_info *swig_types[16];
 static swig_module_info swig_module = {swig_types, 15, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
@@ -3174,7 +3192,7 @@ SWIGINTERN PyObject *_wrap_csr_diagonal__SWIG_1(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (signed char*) array_data(temp6);
   }
-  csr_diagonal<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,arg6);
+  csr_diagonal< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -3272,7 +3290,7 @@ SWIGINTERN PyObject *_wrap_csr_diagonal__SWIG_2(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (unsigned char*) array_data(temp6);
   }
-  csr_diagonal<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,arg6);
+  csr_diagonal< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -3370,7 +3388,7 @@ SWIGINTERN PyObject *_wrap_csr_diagonal__SWIG_3(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (short*) array_data(temp6);
   }
-  csr_diagonal<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,arg6);
+  csr_diagonal< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -3468,7 +3486,7 @@ SWIGINTERN PyObject *_wrap_csr_diagonal__SWIG_4(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (unsigned short*) array_data(temp6);
   }
-  csr_diagonal<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,arg6);
+  csr_diagonal< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -3566,7 +3584,7 @@ SWIGINTERN PyObject *_wrap_csr_diagonal__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (int*) array_data(temp6);
   }
-  csr_diagonal<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,arg6);
+  csr_diagonal< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -3664,7 +3682,7 @@ SWIGINTERN PyObject *_wrap_csr_diagonal__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (unsigned int*) array_data(temp6);
   }
-  csr_diagonal<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,arg6);
+  csr_diagonal< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -3762,7 +3780,7 @@ SWIGINTERN PyObject *_wrap_csr_diagonal__SWIG_7(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (long long*) array_data(temp6);
   }
-  csr_diagonal<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,arg6);
+  csr_diagonal< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -3860,7 +3878,7 @@ SWIGINTERN PyObject *_wrap_csr_diagonal__SWIG_8(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (unsigned long long*) array_data(temp6);
   }
-  csr_diagonal<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,arg6);
+  csr_diagonal< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -3958,7 +3976,7 @@ SWIGINTERN PyObject *_wrap_csr_diagonal__SWIG_9(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (float*) array_data(temp6);
   }
-  csr_diagonal<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,arg6);
+  csr_diagonal< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -4056,7 +4074,7 @@ SWIGINTERN PyObject *_wrap_csr_diagonal__SWIG_10(PyObject *SWIGUNUSEDPARM(self),
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (double*) array_data(temp6);
   }
-  csr_diagonal<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,arg6);
+  csr_diagonal< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -4154,7 +4172,7 @@ SWIGINTERN PyObject *_wrap_csr_diagonal__SWIG_11(PyObject *SWIGUNUSEDPARM(self),
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (long double*) array_data(temp6);
   }
-  csr_diagonal<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,arg6);
+  csr_diagonal< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -4252,7 +4270,7 @@ SWIGINTERN PyObject *_wrap_csr_diagonal__SWIG_12(PyObject *SWIGUNUSEDPARM(self),
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (npy_cfloat_wrapper*) array_data(temp6);
   }
-  csr_diagonal<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6);
+  csr_diagonal< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -4350,7 +4368,7 @@ SWIGINTERN PyObject *_wrap_csr_diagonal__SWIG_13(PyObject *SWIGUNUSEDPARM(self),
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (npy_cdouble_wrapper*) array_data(temp6);
   }
-  csr_diagonal<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6);
+  csr_diagonal< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -4448,7 +4466,7 @@ SWIGINTERN PyObject *_wrap_csr_diagonal__SWIG_14(PyObject *SWIGUNUSEDPARM(self),
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (npy_clongdouble_wrapper*) array_data(temp6);
   }
-  csr_diagonal<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,arg6);
+  csr_diagonal< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -4990,7 +5008,22 @@ SWIGINTERN PyObject *_wrap_csr_diagonal(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_diagonal'.\n  Possible C/C++ prototypes are:\n""    csr_diagonal<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],signed char [])\n""    csr_diagonal<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],unsigned char [])\n""    csr_diagonal<(int,short)>(int const,int const,int const [],int const [],short const [],short [])\n""    csr_diagonal<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],unsigned short [])\n""    csr_diagonal<(int,int)>(int const,int const,int const [],int const [],int const [],int [])\n""    csr_diagonal<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],unsigned int [])\n""    csr_diagonal<(int,long long)>(int const,int const,int const [],int const [],long long const [],long long [])\n""    csr_diagonal<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],unsigned long long [])\n""    csr_diagonal<(int,float)>(int const,int const,int const [],int const [],float const [],float [])\n""    csr_diagonal<(int,double)>(int const,int const,int const [],int const [],double const [],double [])\n""    csr_diagonal<(int,long double)>(int const,int const,int const [],int const [],long double const [],long double [])\n""    csr_diagonal<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n""    csr_diagonal<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n""    csr_diagonal<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_diagonal'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csr_diagonal< int,signed char >(int const,int const,int const [],int const [],signed char const [],signed char [])\n"
+    "    csr_diagonal< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],unsigned char [])\n"
+    "    csr_diagonal< int,short >(int const,int const,int const [],int const [],short const [],short [])\n"
+    "    csr_diagonal< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],unsigned short [])\n"
+    "    csr_diagonal< int,int >(int const,int const,int const [],int const [],int const [],int [])\n"
+    "    csr_diagonal< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],unsigned int [])\n"
+    "    csr_diagonal< int,long long >(int const,int const,int const [],int const [],long long const [],long long [])\n"
+    "    csr_diagonal< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],unsigned long long [])\n"
+    "    csr_diagonal< int,float >(int const,int const,int const [],int const [],float const [],float [])\n"
+    "    csr_diagonal< int,double >(int const,int const,int const [],int const [],double const [],double [])\n"
+    "    csr_diagonal< int,long double >(int const,int const,int const [],int const [],long double const [],long double [])\n"
+    "    csr_diagonal< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n"
+    "    csr_diagonal< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n"
+    "    csr_diagonal< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -5067,7 +5100,7 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_1(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (signed char*) array_data(temp6);
   }
-  csc_diagonal<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,arg6);
+  csc_diagonal< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -5165,7 +5198,7 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_2(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (unsigned char*) array_data(temp6);
   }
-  csc_diagonal<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,arg6);
+  csc_diagonal< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -5263,7 +5296,7 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_3(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (short*) array_data(temp6);
   }
-  csc_diagonal<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,arg6);
+  csc_diagonal< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -5361,7 +5394,7 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_4(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (unsigned short*) array_data(temp6);
   }
-  csc_diagonal<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,arg6);
+  csc_diagonal< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -5459,7 +5492,7 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (int*) array_data(temp6);
   }
-  csc_diagonal<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,arg6);
+  csc_diagonal< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -5557,7 +5590,7 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (unsigned int*) array_data(temp6);
   }
-  csc_diagonal<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,arg6);
+  csc_diagonal< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -5655,7 +5688,7 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_7(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (long long*) array_data(temp6);
   }
-  csc_diagonal<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,arg6);
+  csc_diagonal< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -5753,7 +5786,7 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_8(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (unsigned long long*) array_data(temp6);
   }
-  csc_diagonal<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,arg6);
+  csc_diagonal< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -5851,7 +5884,7 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_9(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (float*) array_data(temp6);
   }
-  csc_diagonal<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,arg6);
+  csc_diagonal< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -5949,7 +5982,7 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_10(PyObject *SWIGUNUSEDPARM(self),
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (double*) array_data(temp6);
   }
-  csc_diagonal<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,arg6);
+  csc_diagonal< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -6047,7 +6080,7 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_11(PyObject *SWIGUNUSEDPARM(self),
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (long double*) array_data(temp6);
   }
-  csc_diagonal<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,arg6);
+  csc_diagonal< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -6145,7 +6178,7 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_12(PyObject *SWIGUNUSEDPARM(self),
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (npy_cfloat_wrapper*) array_data(temp6);
   }
-  csc_diagonal<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6);
+  csc_diagonal< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -6243,7 +6276,7 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_13(PyObject *SWIGUNUSEDPARM(self),
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (npy_cdouble_wrapper*) array_data(temp6);
   }
-  csc_diagonal<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6);
+  csc_diagonal< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -6341,7 +6374,7 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_14(PyObject *SWIGUNUSEDPARM(self),
     if (!temp6  || !require_contiguous(temp6) || !require_native(temp6)) SWIG_fail;
     arg6 = (npy_clongdouble_wrapper*) array_data(temp6);
   }
-  csc_diagonal<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,arg6);
+  csc_diagonal< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -6883,7 +6916,22 @@ SWIGINTERN PyObject *_wrap_csc_diagonal(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_diagonal'.\n  Possible C/C++ prototypes are:\n""    csc_diagonal<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],signed char [])\n""    csc_diagonal<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],unsigned char [])\n""    csc_diagonal<(int,short)>(int const,int const,int const [],int const [],short const [],short [])\n""    csc_diagonal<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],unsigned short [])\n""    csc_diagonal<(int,int)>(int const,int const,int const [],int const [],int const [],int [])\n""    csc_diagonal<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],unsigned int [])\n""    csc_diagonal<(int,long long)>(int const,int const,int const [],int const [],long long const [],long long [])\n""    csc_diagonal<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],unsigned long long [])\n""    csc_diagonal<(int,float)>(int const,int const,int const [],int const [],float const [],float [])\n""    csc_diagonal<(int,double)>(int const,int const,int const [],int const [],double const [],double [])\n""    csc_diagonal<(int,long double)>(int const,int const,int const [],int const [],long double const [],long double [])\n""    csc_diagonal<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n""    csc_diagonal<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n""    csc_diagonal<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_diagonal'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csc_diagonal< int,signed char >(int const,int const,int const [],int const [],signed char const [],signed char [])\n"
+    "    csc_diagonal< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],unsigned char [])\n"
+    "    csc_diagonal< int,short >(int const,int const,int const [],int const [],short const [],short [])\n"
+    "    csc_diagonal< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],unsigned short [])\n"
+    "    csc_diagonal< int,int >(int const,int const,int const [],int const [],int const [],int [])\n"
+    "    csc_diagonal< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],unsigned int [])\n"
+    "    csc_diagonal< int,long long >(int const,int const,int const [],int const [],long long const [],long long [])\n"
+    "    csc_diagonal< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],unsigned long long [])\n"
+    "    csc_diagonal< int,float >(int const,int const,int const [],int const [],float const [],float [])\n"
+    "    csc_diagonal< int,double >(int const,int const,int const [],int const [],double const [],double [])\n"
+    "    csc_diagonal< int,long double >(int const,int const,int const [],int const [],long double const [],long double [])\n"
+    "    csc_diagonal< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n"
+    "    csc_diagonal< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n"
+    "    csc_diagonal< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -6978,7 +7026,7 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal__SWIG_1(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (signed char*) array_data(temp8);
   }
-  bsr_diagonal<int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(signed char const (*))arg7,arg8);
+  bsr_diagonal< int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(signed char const (*))arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -7094,7 +7142,7 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal__SWIG_2(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned char*) array_data(temp8);
   }
-  bsr_diagonal<int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned char const (*))arg7,arg8);
+  bsr_diagonal< int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned char const (*))arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -7210,7 +7258,7 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal__SWIG_3(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (short*) array_data(temp8);
   }
-  bsr_diagonal<int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(short const (*))arg7,arg8);
+  bsr_diagonal< int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(short const (*))arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -7326,7 +7374,7 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal__SWIG_4(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned short*) array_data(temp8);
   }
-  bsr_diagonal<int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned short const (*))arg7,arg8);
+  bsr_diagonal< int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned short const (*))arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -7442,7 +7490,7 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (int*) array_data(temp8);
   }
-  bsr_diagonal<int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,arg8);
+  bsr_diagonal< int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -7558,7 +7606,7 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned int*) array_data(temp8);
   }
-  bsr_diagonal<int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned int const (*))arg7,arg8);
+  bsr_diagonal< int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned int const (*))arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -7674,7 +7722,7 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal__SWIG_7(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (long long*) array_data(temp8);
   }
-  bsr_diagonal<int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long long const (*))arg7,arg8);
+  bsr_diagonal< int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long long const (*))arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -7790,7 +7838,7 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal__SWIG_8(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned long long*) array_data(temp8);
   }
-  bsr_diagonal<int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned long long const (*))arg7,arg8);
+  bsr_diagonal< int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned long long const (*))arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -7906,7 +7954,7 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal__SWIG_9(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (float*) array_data(temp8);
   }
-  bsr_diagonal<int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(float const (*))arg7,arg8);
+  bsr_diagonal< int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(float const (*))arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -8022,7 +8070,7 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal__SWIG_10(PyObject *SWIGUNUSEDPARM(self),
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (double*) array_data(temp8);
   }
-  bsr_diagonal<int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(double const (*))arg7,arg8);
+  bsr_diagonal< int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(double const (*))arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -8138,7 +8186,7 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal__SWIG_11(PyObject *SWIGUNUSEDPARM(self),
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (long double*) array_data(temp8);
   }
-  bsr_diagonal<int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long double const (*))arg7,arg8);
+  bsr_diagonal< int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long double const (*))arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -8254,7 +8302,7 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal__SWIG_12(PyObject *SWIGUNUSEDPARM(self),
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (npy_cfloat_wrapper*) array_data(temp8);
   }
-  bsr_diagonal<int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cfloat_wrapper const (*))arg7,arg8);
+  bsr_diagonal< int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cfloat_wrapper const (*))arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -8370,7 +8418,7 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal__SWIG_13(PyObject *SWIGUNUSEDPARM(self),
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (npy_cdouble_wrapper*) array_data(temp8);
   }
-  bsr_diagonal<int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cdouble_wrapper const (*))arg7,arg8);
+  bsr_diagonal< int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cdouble_wrapper const (*))arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -8486,7 +8534,7 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal__SWIG_14(PyObject *SWIGUNUSEDPARM(self),
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (npy_clongdouble_wrapper*) array_data(temp8);
   }
-  bsr_diagonal<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_clongdouble_wrapper const (*))arg7,arg8);
+  bsr_diagonal< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_clongdouble_wrapper const (*))arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -9196,7 +9244,22 @@ SWIGINTERN PyObject *_wrap_bsr_diagonal(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_diagonal'.\n  Possible C/C++ prototypes are:\n""    bsr_diagonal<(int,signed char)>(int const,int const,int const,int const,int const [],int const [],signed char const [],signed char [])\n""    bsr_diagonal<(int,unsigned char)>(int const,int const,int const,int const,int const [],int const [],unsigned char const [],unsigned char [])\n""    bsr_diagonal<(int,short)>(int const,int const,int const,int const,int const [],int const [],short const [],short [])\n""    bsr_diagonal<(int,unsigned short)>(int const,int const,int const,int const,int const [],int const [],unsigned short const [],unsigned short [])\n""    bsr_diagonal<(int,int)>(int const,int const,int const,int const,int const [],int const [],int const [],int [])\n""    bsr_diagonal<(int,unsigned int)>(int const,int const,int const,int const,int const [],int const [],unsigned int const [],unsigned int [])\n""    bsr_diagonal<(int,long long)>(int const,int const,int const,int const,int const [],int const [],long long const [],long long [])\n""    bsr_diagonal<(int,unsigned long long)>(int const,int const,int const,int const,int const [],int const [],unsigned long long const [],unsigned long long [])\n""    bsr_diagonal<(int,float)>(int const,int const,int const,int const,int const [],int const [],float const [],float [])\n""    bsr_diagonal<(int,double)>(int const,int const,int const,int const,int const [],int const [],double const [],double [])\n""    bsr_diagonal<(int,long double)>(int const,int const,int const,int const,int const [],int const [],long double const [],long double [])\n""    bsr_diagonal<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n""    bsr_diagonal<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n""    bsr_diagonal<(int,npy_clongdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_diagonal'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    bsr_diagonal< int,signed char >(int const,int const,int const,int const,int const [],int const [],signed char const [],signed char [])\n"
+    "    bsr_diagonal< int,unsigned char >(int const,int const,int const,int const,int const [],int const [],unsigned char const [],unsigned char [])\n"
+    "    bsr_diagonal< int,short >(int const,int const,int const,int const,int const [],int const [],short const [],short [])\n"
+    "    bsr_diagonal< int,unsigned short >(int const,int const,int const,int const,int const [],int const [],unsigned short const [],unsigned short [])\n"
+    "    bsr_diagonal< int,int >(int const,int const,int const,int const,int const [],int const [],int const [],int [])\n"
+    "    bsr_diagonal< int,unsigned int >(int const,int const,int const,int const,int const [],int const [],unsigned int const [],unsigned int [])\n"
+    "    bsr_diagonal< int,long long >(int const,int const,int const,int const,int const [],int const [],long long const [],long long [])\n"
+    "    bsr_diagonal< int,unsigned long long >(int const,int const,int const,int const,int const [],int const [],unsigned long long const [],unsigned long long [])\n"
+    "    bsr_diagonal< int,float >(int const,int const,int const,int const,int const [],int const [],float const [],float [])\n"
+    "    bsr_diagonal< int,double >(int const,int const,int const,int const,int const [],int const [],double const [],double [])\n"
+    "    bsr_diagonal< int,long double >(int const,int const,int const,int const,int const [],int const [],long double const [],long double [])\n"
+    "    bsr_diagonal< int,npy_cfloat_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n"
+    "    bsr_diagonal< int,npy_cdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n"
+    "    bsr_diagonal< int,npy_clongdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -9273,7 +9336,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows__SWIG_1(PyObject *SWIGUNUSEDPARM(self)
     
     arg6 = (signed char*) array6->data;
   }
-  csr_scale_rows<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(signed char const (*))arg6);
+  csr_scale_rows< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(signed char const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -9371,7 +9434,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows__SWIG_2(PyObject *SWIGUNUSEDPARM(self)
     
     arg6 = (unsigned char*) array6->data;
   }
-  csr_scale_rows<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned char const (*))arg6);
+  csr_scale_rows< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned char const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -9469,7 +9532,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows__SWIG_3(PyObject *SWIGUNUSEDPARM(self)
     
     arg6 = (short*) array6->data;
   }
-  csr_scale_rows<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(short const (*))arg6);
+  csr_scale_rows< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(short const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -9567,7 +9630,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows__SWIG_4(PyObject *SWIGUNUSEDPARM(self)
     
     arg6 = (unsigned short*) array6->data;
   }
-  csr_scale_rows<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned short const (*))arg6);
+  csr_scale_rows< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned short const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -9665,7 +9728,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows__SWIG_5(PyObject *SWIGUNUSEDPARM(self)
     
     arg6 = (int*) array6->data;
   }
-  csr_scale_rows<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(int const (*))arg6);
+  csr_scale_rows< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(int const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -9763,7 +9826,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows__SWIG_6(PyObject *SWIGUNUSEDPARM(self)
     
     arg6 = (unsigned int*) array6->data;
   }
-  csr_scale_rows<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned int const (*))arg6);
+  csr_scale_rows< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned int const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -9861,7 +9924,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows__SWIG_7(PyObject *SWIGUNUSEDPARM(self)
     
     arg6 = (long long*) array6->data;
   }
-  csr_scale_rows<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(long long const (*))arg6);
+  csr_scale_rows< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(long long const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -9959,7 +10022,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows__SWIG_8(PyObject *SWIGUNUSEDPARM(self)
     
     arg6 = (unsigned long long*) array6->data;
   }
-  csr_scale_rows<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned long long const (*))arg6);
+  csr_scale_rows< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned long long const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -10057,7 +10120,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows__SWIG_9(PyObject *SWIGUNUSEDPARM(self)
     
     arg6 = (float*) array6->data;
   }
-  csr_scale_rows<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(float const (*))arg6);
+  csr_scale_rows< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(float const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -10155,7 +10218,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows__SWIG_10(PyObject *SWIGUNUSEDPARM(self
     
     arg6 = (double*) array6->data;
   }
-  csr_scale_rows<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(double const (*))arg6);
+  csr_scale_rows< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(double const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -10253,7 +10316,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows__SWIG_11(PyObject *SWIGUNUSEDPARM(self
     
     arg6 = (long double*) array6->data;
   }
-  csr_scale_rows<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(long double const (*))arg6);
+  csr_scale_rows< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(long double const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -10351,7 +10414,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows__SWIG_12(PyObject *SWIGUNUSEDPARM(self
     
     arg6 = (npy_cfloat_wrapper*) array6->data;
   }
-  csr_scale_rows<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(npy_cfloat_wrapper const (*))arg6);
+  csr_scale_rows< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(npy_cfloat_wrapper const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -10449,7 +10512,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows__SWIG_13(PyObject *SWIGUNUSEDPARM(self
     
     arg6 = (npy_cdouble_wrapper*) array6->data;
   }
-  csr_scale_rows<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(npy_cdouble_wrapper const (*))arg6);
+  csr_scale_rows< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(npy_cdouble_wrapper const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -10547,7 +10610,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows__SWIG_14(PyObject *SWIGUNUSEDPARM(self
     
     arg6 = (npy_clongdouble_wrapper*) array6->data;
   }
-  csr_scale_rows<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(npy_clongdouble_wrapper const (*))arg6);
+  csr_scale_rows< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(npy_clongdouble_wrapper const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -11089,7 +11152,22 @@ SWIGINTERN PyObject *_wrap_csr_scale_rows(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_scale_rows'.\n  Possible C/C++ prototypes are:\n""    csr_scale_rows<(int,signed char)>(int const,int const,int const [],int const [],signed char [],signed char const [])\n""    csr_scale_rows<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char [],unsigned char const [])\n""    csr_scale_rows<(int,short)>(int const,int const,int const [],int const [],short [],short const [])\n""    csr_scale_rows<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short [],unsigned short const [])\n""    csr_scale_rows<(int,int)>(int const,int const,int const [],int const [],int [],int const [])\n""    csr_scale_rows<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int [],unsigned int const [])\n""    csr_scale_rows<(int,long long)>(int const,int const,int const [],int const [],long long [],long long const [])\n""    csr_scale_rows<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long [],unsigned long long const [])\n""    csr_scale_rows<(int,float)>(int const,int const,int const [],int const [],float [],float const [])\n""    csr_scale_rows<(int,double)>(int const,int const,int const [],int const [],double [],double const [])\n""    csr_scale_rows<(int,long double)>(int const,int const,int const [],int const [],long double [],long double const [])\n""    csr_scale_rows<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper [],npy_cfloat_wrapper const [])\n""    csr_scale_rows<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper [],npy_cdouble_wrapper const [])\n""    csr_scale_rows<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper [],npy_clongdouble_wrapper const [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_scale_rows'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csr_scale_rows< int,signed char >(int const,int const,int const [],int const [],signed char [],signed char const [])\n"
+    "    csr_scale_rows< int,unsigned char >(int const,int const,int const [],int const [],unsigned char [],unsigned char const [])\n"
+    "    csr_scale_rows< int,short >(int const,int const,int const [],int const [],short [],short const [])\n"
+    "    csr_scale_rows< int,unsigned short >(int const,int const,int const [],int const [],unsigned short [],unsigned short const [])\n"
+    "    csr_scale_rows< int,int >(int const,int const,int const [],int const [],int [],int const [])\n"
+    "    csr_scale_rows< int,unsigned int >(int const,int const,int const [],int const [],unsigned int [],unsigned int const [])\n"
+    "    csr_scale_rows< int,long long >(int const,int const,int const [],int const [],long long [],long long const [])\n"
+    "    csr_scale_rows< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long [],unsigned long long const [])\n"
+    "    csr_scale_rows< int,float >(int const,int const,int const [],int const [],float [],float const [])\n"
+    "    csr_scale_rows< int,double >(int const,int const,int const [],int const [],double [],double const [])\n"
+    "    csr_scale_rows< int,long double >(int const,int const,int const [],int const [],long double [],long double const [])\n"
+    "    csr_scale_rows< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper [],npy_cfloat_wrapper const [])\n"
+    "    csr_scale_rows< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper [],npy_cdouble_wrapper const [])\n"
+    "    csr_scale_rows< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper [],npy_clongdouble_wrapper const [])\n");
   return NULL;
 }
 
@@ -11166,7 +11244,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns__SWIG_1(PyObject *SWIGUNUSEDPARM(se
     
     arg6 = (signed char*) array6->data;
   }
-  csr_scale_columns<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(signed char const (*))arg6);
+  csr_scale_columns< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(signed char const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -11264,7 +11342,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns__SWIG_2(PyObject *SWIGUNUSEDPARM(se
     
     arg6 = (unsigned char*) array6->data;
   }
-  csr_scale_columns<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned char const (*))arg6);
+  csr_scale_columns< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned char const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -11362,7 +11440,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns__SWIG_3(PyObject *SWIGUNUSEDPARM(se
     
     arg6 = (short*) array6->data;
   }
-  csr_scale_columns<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(short const (*))arg6);
+  csr_scale_columns< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(short const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -11460,7 +11538,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns__SWIG_4(PyObject *SWIGUNUSEDPARM(se
     
     arg6 = (unsigned short*) array6->data;
   }
-  csr_scale_columns<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned short const (*))arg6);
+  csr_scale_columns< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned short const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -11558,7 +11636,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns__SWIG_5(PyObject *SWIGUNUSEDPARM(se
     
     arg6 = (int*) array6->data;
   }
-  csr_scale_columns<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(int const (*))arg6);
+  csr_scale_columns< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(int const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -11656,7 +11734,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns__SWIG_6(PyObject *SWIGUNUSEDPARM(se
     
     arg6 = (unsigned int*) array6->data;
   }
-  csr_scale_columns<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned int const (*))arg6);
+  csr_scale_columns< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned int const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -11754,7 +11832,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns__SWIG_7(PyObject *SWIGUNUSEDPARM(se
     
     arg6 = (long long*) array6->data;
   }
-  csr_scale_columns<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(long long const (*))arg6);
+  csr_scale_columns< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(long long const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -11852,7 +11930,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns__SWIG_8(PyObject *SWIGUNUSEDPARM(se
     
     arg6 = (unsigned long long*) array6->data;
   }
-  csr_scale_columns<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned long long const (*))arg6);
+  csr_scale_columns< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(unsigned long long const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -11950,7 +12028,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns__SWIG_9(PyObject *SWIGUNUSEDPARM(se
     
     arg6 = (float*) array6->data;
   }
-  csr_scale_columns<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(float const (*))arg6);
+  csr_scale_columns< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(float const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -12048,7 +12126,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns__SWIG_10(PyObject *SWIGUNUSEDPARM(s
     
     arg6 = (double*) array6->data;
   }
-  csr_scale_columns<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(double const (*))arg6);
+  csr_scale_columns< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(double const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -12146,7 +12224,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns__SWIG_11(PyObject *SWIGUNUSEDPARM(s
     
     arg6 = (long double*) array6->data;
   }
-  csr_scale_columns<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(long double const (*))arg6);
+  csr_scale_columns< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(long double const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -12244,7 +12322,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns__SWIG_12(PyObject *SWIGUNUSEDPARM(s
     
     arg6 = (npy_cfloat_wrapper*) array6->data;
   }
-  csr_scale_columns<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(npy_cfloat_wrapper const (*))arg6);
+  csr_scale_columns< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(npy_cfloat_wrapper const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -12342,7 +12420,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns__SWIG_13(PyObject *SWIGUNUSEDPARM(s
     
     arg6 = (npy_cdouble_wrapper*) array6->data;
   }
-  csr_scale_columns<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(npy_cdouble_wrapper const (*))arg6);
+  csr_scale_columns< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(npy_cdouble_wrapper const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -12440,7 +12518,7 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns__SWIG_14(PyObject *SWIGUNUSEDPARM(s
     
     arg6 = (npy_clongdouble_wrapper*) array6->data;
   }
-  csr_scale_columns<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(npy_clongdouble_wrapper const (*))arg6);
+  csr_scale_columns< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(npy_clongdouble_wrapper const (*))arg6);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -12982,7 +13060,22 @@ SWIGINTERN PyObject *_wrap_csr_scale_columns(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_scale_columns'.\n  Possible C/C++ prototypes are:\n""    csr_scale_columns<(int,signed char)>(int const,int const,int const [],int const [],signed char [],signed char const [])\n""    csr_scale_columns<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char [],unsigned char const [])\n""    csr_scale_columns<(int,short)>(int const,int const,int const [],int const [],short [],short const [])\n""    csr_scale_columns<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short [],unsigned short const [])\n""    csr_scale_columns<(int,int)>(int const,int const,int const [],int const [],int [],int const [])\n""    csr_scale_columns<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int [],unsigned int const [])\n""    csr_scale_columns<(int,long long)>(int const,int const,int const [],int const [],long long [],long long const [])\n""    csr_scale_columns<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long [],unsigned long long const [])\n""    csr_scale_columns<(int,float)>(int const,int const,int const [],int const [],float [],float const [])\n""    csr_scale_columns<(int,double)>(int const,int const,int const [],int const [],double [],double const [])\n""    csr_scale_columns<(int,long double)>(int const,int const,int const [],int const [],long double [],long double const [])\n""    csr_scale_columns<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper [],npy_cfloat_wrapper const [])\n""    csr_scale_columns<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper [],npy_cdouble_wrapper const [])\n""    csr_scale_columns<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper [],npy_clongdouble_wrapper const [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_scale_columns'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csr_scale_columns< int,signed char >(int const,int const,int const [],int const [],signed char [],signed char const [])\n"
+    "    csr_scale_columns< int,unsigned char >(int const,int const,int const [],int const [],unsigned char [],unsigned char const [])\n"
+    "    csr_scale_columns< int,short >(int const,int const,int const [],int const [],short [],short const [])\n"
+    "    csr_scale_columns< int,unsigned short >(int const,int const,int const [],int const [],unsigned short [],unsigned short const [])\n"
+    "    csr_scale_columns< int,int >(int const,int const,int const [],int const [],int [],int const [])\n"
+    "    csr_scale_columns< int,unsigned int >(int const,int const,int const [],int const [],unsigned int [],unsigned int const [])\n"
+    "    csr_scale_columns< int,long long >(int const,int const,int const [],int const [],long long [],long long const [])\n"
+    "    csr_scale_columns< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long [],unsigned long long const [])\n"
+    "    csr_scale_columns< int,float >(int const,int const,int const [],int const [],float [],float const [])\n"
+    "    csr_scale_columns< int,double >(int const,int const,int const [],int const [],double [],double const [])\n"
+    "    csr_scale_columns< int,long double >(int const,int const,int const [],int const [],long double [],long double const [])\n"
+    "    csr_scale_columns< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper [],npy_cfloat_wrapper const [])\n"
+    "    csr_scale_columns< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper [],npy_cdouble_wrapper const [])\n"
+    "    csr_scale_columns< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper [],npy_clongdouble_wrapper const [])\n");
   return NULL;
 }
 
@@ -13077,7 +13170,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows__SWIG_1(PyObject *SWIGUNUSEDPARM(self)
     
     arg8 = (signed char*) array8->data;
   }
-  bsr_scale_rows<int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(signed char const (*))arg8);
+  bsr_scale_rows< int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(signed char const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -13193,7 +13286,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows__SWIG_2(PyObject *SWIGUNUSEDPARM(self)
     
     arg8 = (unsigned char*) array8->data;
   }
-  bsr_scale_rows<int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned char const (*))arg8);
+  bsr_scale_rows< int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned char const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -13309,7 +13402,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows__SWIG_3(PyObject *SWIGUNUSEDPARM(self)
     
     arg8 = (short*) array8->data;
   }
-  bsr_scale_rows<int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(short const (*))arg8);
+  bsr_scale_rows< int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(short const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -13425,7 +13518,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows__SWIG_4(PyObject *SWIGUNUSEDPARM(self)
     
     arg8 = (unsigned short*) array8->data;
   }
-  bsr_scale_rows<int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned short const (*))arg8);
+  bsr_scale_rows< int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned short const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -13541,7 +13634,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows__SWIG_5(PyObject *SWIGUNUSEDPARM(self)
     
     arg8 = (int*) array8->data;
   }
-  bsr_scale_rows<int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(int const (*))arg8);
+  bsr_scale_rows< int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(int const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -13657,7 +13750,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows__SWIG_6(PyObject *SWIGUNUSEDPARM(self)
     
     arg8 = (unsigned int*) array8->data;
   }
-  bsr_scale_rows<int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned int const (*))arg8);
+  bsr_scale_rows< int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned int const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -13773,7 +13866,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows__SWIG_7(PyObject *SWIGUNUSEDPARM(self)
     
     arg8 = (long long*) array8->data;
   }
-  bsr_scale_rows<int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(long long const (*))arg8);
+  bsr_scale_rows< int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(long long const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -13889,7 +13982,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows__SWIG_8(PyObject *SWIGUNUSEDPARM(self)
     
     arg8 = (unsigned long long*) array8->data;
   }
-  bsr_scale_rows<int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned long long const (*))arg8);
+  bsr_scale_rows< int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned long long const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -14005,7 +14098,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows__SWIG_9(PyObject *SWIGUNUSEDPARM(self)
     
     arg8 = (float*) array8->data;
   }
-  bsr_scale_rows<int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(float const (*))arg8);
+  bsr_scale_rows< int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(float const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -14121,7 +14214,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows__SWIG_10(PyObject *SWIGUNUSEDPARM(self
     
     arg8 = (double*) array8->data;
   }
-  bsr_scale_rows<int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(double const (*))arg8);
+  bsr_scale_rows< int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(double const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -14237,7 +14330,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows__SWIG_11(PyObject *SWIGUNUSEDPARM(self
     
     arg8 = (long double*) array8->data;
   }
-  bsr_scale_rows<int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(long double const (*))arg8);
+  bsr_scale_rows< int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(long double const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -14353,7 +14446,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows__SWIG_12(PyObject *SWIGUNUSEDPARM(self
     
     arg8 = (npy_cfloat_wrapper*) array8->data;
   }
-  bsr_scale_rows<int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(npy_cfloat_wrapper const (*))arg8);
+  bsr_scale_rows< int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(npy_cfloat_wrapper const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -14469,7 +14562,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows__SWIG_13(PyObject *SWIGUNUSEDPARM(self
     
     arg8 = (npy_cdouble_wrapper*) array8->data;
   }
-  bsr_scale_rows<int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(npy_cdouble_wrapper const (*))arg8);
+  bsr_scale_rows< int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(npy_cdouble_wrapper const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -14585,7 +14678,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows__SWIG_14(PyObject *SWIGUNUSEDPARM(self
     
     arg8 = (npy_clongdouble_wrapper*) array8->data;
   }
-  bsr_scale_rows<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(npy_clongdouble_wrapper const (*))arg8);
+  bsr_scale_rows< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(npy_clongdouble_wrapper const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -15295,7 +15388,22 @@ SWIGINTERN PyObject *_wrap_bsr_scale_rows(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_scale_rows'.\n  Possible C/C++ prototypes are:\n""    bsr_scale_rows<(int,signed char)>(int const,int const,int const,int const,int const [],int const [],signed char [],signed char const [])\n""    bsr_scale_rows<(int,unsigned char)>(int const,int const,int const,int const,int const [],int const [],unsigned char [],unsigned char const [])\n""    bsr_scale_rows<(int,short)>(int const,int const,int const,int const,int const [],int const [],short [],short const [])\n""    bsr_scale_rows<(int,unsigned short)>(int const,int const,int const,int const,int const [],int const [],unsigned short [],unsigned short const [])\n""    bsr_scale_rows<(int,int)>(int const,int const,int const,int const,int const [],int const [],int [],int const [])\n""    bsr_scale_rows<(int,unsigned int)>(int const,int const,int const,int const,int const [],int const [],unsigned int [],unsigned int const [])\n""    bsr_scale_rows<(int,long long)>(int const,int const,int const,int const,int const [],int const [],long long [],long long const [])\n""    bsr_scale_rows<(int,unsigned long long)>(int const,int const,int const,int const,int const [],int const [],unsigned long long [],unsigned long long const [])\n""    bsr_scale_rows<(int,float)>(int const,int const,int const,int const,int const [],int const [],float [],float const [])\n""    bsr_scale_rows<(int,double)>(int const,int const,int const,int const,int const [],int const [],double [],double const [])\n""    bsr_scale_rows<(int,long double)>(int const,int const,int const,int const,int const [],int const [],long double [],long double const [])\n""    bsr_scale_rows<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper [],npy_cfloat_wrapper const [])\n""    bsr_scale_rows<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper [],npy_cdouble_wrapper const [])\n""    bsr_scale_rows<(int,npy_clongdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper [],npy_clongdouble_wrapper const [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_scale_rows'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    bsr_scale_rows< int,signed char >(int const,int const,int const,int const,int const [],int const [],signed char [],signed char const [])\n"
+    "    bsr_scale_rows< int,unsigned char >(int const,int const,int const,int const,int const [],int const [],unsigned char [],unsigned char const [])\n"
+    "    bsr_scale_rows< int,short >(int const,int const,int const,int const,int const [],int const [],short [],short const [])\n"
+    "    bsr_scale_rows< int,unsigned short >(int const,int const,int const,int const,int const [],int const [],unsigned short [],unsigned short const [])\n"
+    "    bsr_scale_rows< int,int >(int const,int const,int const,int const,int const [],int const [],int [],int const [])\n"
+    "    bsr_scale_rows< int,unsigned int >(int const,int const,int const,int const,int const [],int const [],unsigned int [],unsigned int const [])\n"
+    "    bsr_scale_rows< int,long long >(int const,int const,int const,int const,int const [],int const [],long long [],long long const [])\n"
+    "    bsr_scale_rows< int,unsigned long long >(int const,int const,int const,int const,int const [],int const [],unsigned long long [],unsigned long long const [])\n"
+    "    bsr_scale_rows< int,float >(int const,int const,int const,int const,int const [],int const [],float [],float const [])\n"
+    "    bsr_scale_rows< int,double >(int const,int const,int const,int const,int const [],int const [],double [],double const [])\n"
+    "    bsr_scale_rows< int,long double >(int const,int const,int const,int const,int const [],int const [],long double [],long double const [])\n"
+    "    bsr_scale_rows< int,npy_cfloat_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper [],npy_cfloat_wrapper const [])\n"
+    "    bsr_scale_rows< int,npy_cdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper [],npy_cdouble_wrapper const [])\n"
+    "    bsr_scale_rows< int,npy_clongdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper [],npy_clongdouble_wrapper const [])\n");
   return NULL;
 }
 
@@ -15390,7 +15498,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns__SWIG_1(PyObject *SWIGUNUSEDPARM(se
     
     arg8 = (signed char*) array8->data;
   }
-  bsr_scale_columns<int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(signed char const (*))arg8);
+  bsr_scale_columns< int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(signed char const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -15506,7 +15614,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns__SWIG_2(PyObject *SWIGUNUSEDPARM(se
     
     arg8 = (unsigned char*) array8->data;
   }
-  bsr_scale_columns<int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned char const (*))arg8);
+  bsr_scale_columns< int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned char const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -15622,7 +15730,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns__SWIG_3(PyObject *SWIGUNUSEDPARM(se
     
     arg8 = (short*) array8->data;
   }
-  bsr_scale_columns<int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(short const (*))arg8);
+  bsr_scale_columns< int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(short const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -15738,7 +15846,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns__SWIG_4(PyObject *SWIGUNUSEDPARM(se
     
     arg8 = (unsigned short*) array8->data;
   }
-  bsr_scale_columns<int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned short const (*))arg8);
+  bsr_scale_columns< int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned short const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -15854,7 +15962,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns__SWIG_5(PyObject *SWIGUNUSEDPARM(se
     
     arg8 = (int*) array8->data;
   }
-  bsr_scale_columns<int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(int const (*))arg8);
+  bsr_scale_columns< int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(int const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -15970,7 +16078,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns__SWIG_6(PyObject *SWIGUNUSEDPARM(se
     
     arg8 = (unsigned int*) array8->data;
   }
-  bsr_scale_columns<int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned int const (*))arg8);
+  bsr_scale_columns< int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned int const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -16086,7 +16194,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns__SWIG_7(PyObject *SWIGUNUSEDPARM(se
     
     arg8 = (long long*) array8->data;
   }
-  bsr_scale_columns<int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(long long const (*))arg8);
+  bsr_scale_columns< int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(long long const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -16202,7 +16310,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns__SWIG_8(PyObject *SWIGUNUSEDPARM(se
     
     arg8 = (unsigned long long*) array8->data;
   }
-  bsr_scale_columns<int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned long long const (*))arg8);
+  bsr_scale_columns< int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(unsigned long long const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -16318,7 +16426,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns__SWIG_9(PyObject *SWIGUNUSEDPARM(se
     
     arg8 = (float*) array8->data;
   }
-  bsr_scale_columns<int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(float const (*))arg8);
+  bsr_scale_columns< int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(float const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -16434,7 +16542,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns__SWIG_10(PyObject *SWIGUNUSEDPARM(s
     
     arg8 = (double*) array8->data;
   }
-  bsr_scale_columns<int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(double const (*))arg8);
+  bsr_scale_columns< int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(double const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -16550,7 +16658,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns__SWIG_11(PyObject *SWIGUNUSEDPARM(s
     
     arg8 = (long double*) array8->data;
   }
-  bsr_scale_columns<int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(long double const (*))arg8);
+  bsr_scale_columns< int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(long double const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -16666,7 +16774,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns__SWIG_12(PyObject *SWIGUNUSEDPARM(s
     
     arg8 = (npy_cfloat_wrapper*) array8->data;
   }
-  bsr_scale_columns<int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(npy_cfloat_wrapper const (*))arg8);
+  bsr_scale_columns< int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(npy_cfloat_wrapper const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -16782,7 +16890,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns__SWIG_13(PyObject *SWIGUNUSEDPARM(s
     
     arg8 = (npy_cdouble_wrapper*) array8->data;
   }
-  bsr_scale_columns<int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(npy_cdouble_wrapper const (*))arg8);
+  bsr_scale_columns< int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(npy_cdouble_wrapper const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -16898,7 +17006,7 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns__SWIG_14(PyObject *SWIGUNUSEDPARM(s
     
     arg8 = (npy_clongdouble_wrapper*) array8->data;
   }
-  bsr_scale_columns<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(npy_clongdouble_wrapper const (*))arg8);
+  bsr_scale_columns< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,arg7,(npy_clongdouble_wrapper const (*))arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -17608,7 +17716,22 @@ SWIGINTERN PyObject *_wrap_bsr_scale_columns(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_scale_columns'.\n  Possible C/C++ prototypes are:\n""    bsr_scale_columns<(int,signed char)>(int const,int const,int const,int const,int const [],int const [],signed char [],signed char const [])\n""    bsr_scale_columns<(int,unsigned char)>(int const,int const,int const,int const,int const [],int const [],unsigned char [],unsigned char const [])\n""    bsr_scale_columns<(int,short)>(int const,int const,int const,int const,int const [],int const [],short [],short const [])\n""    bsr_scale_columns<(int,unsigned short)>(int const,int const,int const,int const,int const [],int const [],unsigned short [],unsigned short const [])\n""    bsr_scale_columns<(int,int)>(int const,int const,int const,int const,int const [],int const [],int [],int const [])\n""    bsr_scale_columns<(int,unsigned int)>(int const,int const,int const,int const,int const [],int const [],unsigned int [],unsigned int const [])\n""    bsr_scale_columns<(int,long long)>(int const,int const,int const,int const,int const [],int const [],long long [],long long const [])\n""    bsr_scale_columns<(int,unsigned long long)>(int const,int const,int const,int const,int const [],int const [],unsigned long long [],unsigned long long const [])\n""    bsr_scale_columns<(int,float)>(int const,int const,int const,int const,int const [],int const [],float [],float const [])\n""    bsr_scale_columns<(int,double)>(int const,int const,int const,int const,int const [],int const [],double [],double const [])\n""    bsr_scale_columns<(int,long double)>(int const,int const,int const,int const,int const [],int const [],long double [],long double const [])\n""    bsr_scale_columns<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper [],npy_cfloat_wrapper const [])\n""    bsr_scale_columns<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper [],npy_cdouble_wrapper const [])\n""    bsr_scale_columns<(int,npy_clongdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper [],npy_clongdouble_wrapper const [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_scale_columns'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    bsr_scale_columns< int,signed char >(int const,int const,int const,int const,int const [],int const [],signed char [],signed char const [])\n"
+    "    bsr_scale_columns< int,unsigned char >(int const,int const,int const,int const,int const [],int const [],unsigned char [],unsigned char const [])\n"
+    "    bsr_scale_columns< int,short >(int const,int const,int const,int const,int const [],int const [],short [],short const [])\n"
+    "    bsr_scale_columns< int,unsigned short >(int const,int const,int const,int const,int const [],int const [],unsigned short [],unsigned short const [])\n"
+    "    bsr_scale_columns< int,int >(int const,int const,int const,int const,int const [],int const [],int [],int const [])\n"
+    "    bsr_scale_columns< int,unsigned int >(int const,int const,int const,int const,int const [],int const [],unsigned int [],unsigned int const [])\n"
+    "    bsr_scale_columns< int,long long >(int const,int const,int const,int const,int const [],int const [],long long [],long long const [])\n"
+    "    bsr_scale_columns< int,unsigned long long >(int const,int const,int const,int const,int const [],int const [],unsigned long long [],unsigned long long const [])\n"
+    "    bsr_scale_columns< int,float >(int const,int const,int const,int const,int const [],int const [],float [],float const [])\n"
+    "    bsr_scale_columns< int,double >(int const,int const,int const,int const,int const [],int const [],double [],double const [])\n"
+    "    bsr_scale_columns< int,long double >(int const,int const,int const,int const,int const [],int const [],long double [],long double const [])\n"
+    "    bsr_scale_columns< int,npy_cfloat_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper [],npy_cfloat_wrapper const [])\n"
+    "    bsr_scale_columns< int,npy_cdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper [],npy_cdouble_wrapper const [])\n"
+    "    bsr_scale_columns< int,npy_clongdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper [],npy_clongdouble_wrapper const [])\n");
   return NULL;
 }
 
@@ -17701,7 +17824,7 @@ SWIGINTERN PyObject *_wrap_csr_tocsc__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (signed char*) array_data(temp8);
   }
-  csr_tocsc<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,arg6,arg7,arg8);
+  csr_tocsc< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -17815,7 +17938,7 @@ SWIGINTERN PyObject *_wrap_csr_tocsc__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned char*) array_data(temp8);
   }
-  csr_tocsc<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,arg6,arg7,arg8);
+  csr_tocsc< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -17929,7 +18052,7 @@ SWIGINTERN PyObject *_wrap_csr_tocsc__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (short*) array_data(temp8);
   }
-  csr_tocsc<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,arg6,arg7,arg8);
+  csr_tocsc< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -18043,7 +18166,7 @@ SWIGINTERN PyObject *_wrap_csr_tocsc__SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned short*) array_data(temp8);
   }
-  csr_tocsc<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,arg6,arg7,arg8);
+  csr_tocsc< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -18157,7 +18280,7 @@ SWIGINTERN PyObject *_wrap_csr_tocsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (int*) array_data(temp8);
   }
-  csr_tocsc<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,arg6,arg7,arg8);
+  csr_tocsc< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -18271,7 +18394,7 @@ SWIGINTERN PyObject *_wrap_csr_tocsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned int*) array_data(temp8);
   }
-  csr_tocsc<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,arg6,arg7,arg8);
+  csr_tocsc< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -18385,7 +18508,7 @@ SWIGINTERN PyObject *_wrap_csr_tocsc__SWIG_7(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (long long*) array_data(temp8);
   }
-  csr_tocsc<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,arg6,arg7,arg8);
+  csr_tocsc< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -18499,7 +18622,7 @@ SWIGINTERN PyObject *_wrap_csr_tocsc__SWIG_8(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned long long*) array_data(temp8);
   }
-  csr_tocsc<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,arg6,arg7,arg8);
+  csr_tocsc< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -18613,7 +18736,7 @@ SWIGINTERN PyObject *_wrap_csr_tocsc__SWIG_9(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (float*) array_data(temp8);
   }
-  csr_tocsc<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,arg6,arg7,arg8);
+  csr_tocsc< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -18727,7 +18850,7 @@ SWIGINTERN PyObject *_wrap_csr_tocsc__SWIG_10(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (double*) array_data(temp8);
   }
-  csr_tocsc<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,arg6,arg7,arg8);
+  csr_tocsc< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -18841,7 +18964,7 @@ SWIGINTERN PyObject *_wrap_csr_tocsc__SWIG_11(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (long double*) array_data(temp8);
   }
-  csr_tocsc<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,arg6,arg7,arg8);
+  csr_tocsc< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -18955,7 +19078,7 @@ SWIGINTERN PyObject *_wrap_csr_tocsc__SWIG_12(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (npy_cfloat_wrapper*) array_data(temp8);
   }
-  csr_tocsc<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6,arg7,arg8);
+  csr_tocsc< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -19069,7 +19192,7 @@ SWIGINTERN PyObject *_wrap_csr_tocsc__SWIG_13(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (npy_cdouble_wrapper*) array_data(temp8);
   }
-  csr_tocsc<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6,arg7,arg8);
+  csr_tocsc< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -19183,7 +19306,7 @@ SWIGINTERN PyObject *_wrap_csr_tocsc__SWIG_14(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (npy_clongdouble_wrapper*) array_data(temp8);
   }
-  csr_tocsc<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,arg6,arg7,arg8);
+  csr_tocsc< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -19865,7 +19988,22 @@ SWIGINTERN PyObject *_wrap_csr_tocsc(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_tocsc'.\n  Possible C/C++ prototypes are:\n""    csr_tocsc<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],int [],int [],signed char [])\n""    csr_tocsc<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    csr_tocsc<(int,short)>(int const,int const,int const [],int const [],short const [],int [],int [],short [])\n""    csr_tocsc<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    csr_tocsc<(int,int)>(int const,int const,int const [],int const [],int const [],int [],int [],int [])\n""    csr_tocsc<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    csr_tocsc<(int,long long)>(int const,int const,int const [],int const [],long long const [],int [],int [],long long [])\n""    csr_tocsc<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    csr_tocsc<(int,float)>(int const,int const,int const [],int const [],float const [],int [],int [],float [])\n""    csr_tocsc<(int,double)>(int const,int const,int const [],int const [],double const [],int [],int [],double [])\n""    csr_tocsc<(int,long double)>(int const,int const,int const [],int const [],long double const [],int [],int [],long double [])\n""    csr_tocsc<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    csr_tocsc<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    csr_tocsc<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_tocsc'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csr_tocsc< int,signed char >(int const,int const,int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    csr_tocsc< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    csr_tocsc< int,short >(int const,int const,int const [],int const [],short const [],int [],int [],short [])\n"
+    "    csr_tocsc< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    csr_tocsc< int,int >(int const,int const,int const [],int const [],int const [],int [],int [],int [])\n"
+    "    csr_tocsc< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    csr_tocsc< int,long long >(int const,int const,int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    csr_tocsc< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    csr_tocsc< int,float >(int const,int const,int const [],int const [],float const [],int [],int [],float [])\n"
+    "    csr_tocsc< int,double >(int const,int const,int const [],int const [],double const [],int [],int [],double [])\n"
+    "    csr_tocsc< int,long double >(int const,int const,int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    csr_tocsc< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    csr_tocsc< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    csr_tocsc< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -19958,7 +20096,7 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (signed char*) array_data(temp8);
   }
-  csc_tocsr<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,arg6,arg7,arg8);
+  csc_tocsr< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -20072,7 +20210,7 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned char*) array_data(temp8);
   }
-  csc_tocsr<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,arg6,arg7,arg8);
+  csc_tocsr< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -20186,7 +20324,7 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (short*) array_data(temp8);
   }
-  csc_tocsr<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,arg6,arg7,arg8);
+  csc_tocsr< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -20300,7 +20438,7 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned short*) array_data(temp8);
   }
-  csc_tocsr<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,arg6,arg7,arg8);
+  csc_tocsr< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -20414,7 +20552,7 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (int*) array_data(temp8);
   }
-  csc_tocsr<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,arg6,arg7,arg8);
+  csc_tocsr< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -20528,7 +20666,7 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned int*) array_data(temp8);
   }
-  csc_tocsr<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,arg6,arg7,arg8);
+  csc_tocsr< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -20642,7 +20780,7 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_7(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (long long*) array_data(temp8);
   }
-  csc_tocsr<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,arg6,arg7,arg8);
+  csc_tocsr< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -20756,7 +20894,7 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_8(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (unsigned long long*) array_data(temp8);
   }
-  csc_tocsr<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,arg6,arg7,arg8);
+  csc_tocsr< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -20870,7 +21008,7 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_9(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (float*) array_data(temp8);
   }
-  csc_tocsr<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,arg6,arg7,arg8);
+  csc_tocsr< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -20984,7 +21122,7 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_10(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (double*) array_data(temp8);
   }
-  csc_tocsr<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,arg6,arg7,arg8);
+  csc_tocsr< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -21098,7 +21236,7 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_11(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (long double*) array_data(temp8);
   }
-  csc_tocsr<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,arg6,arg7,arg8);
+  csc_tocsr< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -21212,7 +21350,7 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_12(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (npy_cfloat_wrapper*) array_data(temp8);
   }
-  csc_tocsr<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6,arg7,arg8);
+  csc_tocsr< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -21326,7 +21464,7 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_13(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (npy_cdouble_wrapper*) array_data(temp8);
   }
-  csc_tocsr<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6,arg7,arg8);
+  csc_tocsr< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -21440,7 +21578,7 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_14(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp8  || !require_contiguous(temp8) || !require_native(temp8)) SWIG_fail;
     arg8 = (npy_clongdouble_wrapper*) array_data(temp8);
   }
-  csc_tocsr<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,arg6,arg7,arg8);
+  csc_tocsr< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -22122,7 +22260,22 @@ SWIGINTERN PyObject *_wrap_csc_tocsr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_tocsr'.\n  Possible C/C++ prototypes are:\n""    csc_tocsr<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],int [],int [],signed char [])\n""    csc_tocsr<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    csc_tocsr<(int,short)>(int const,int const,int const [],int const [],short const [],int [],int [],short [])\n""    csc_tocsr<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    csc_tocsr<(int,int)>(int const,int const,int const [],int const [],int const [],int [],int [],int [])\n""    csc_tocsr<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    csc_tocsr<(int,long long)>(int const,int const,int const [],int const [],long long const [],int [],int [],long long [])\n""    csc_tocsr<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    csc_tocsr<(int,float)>(int const,int const,int const [],int const [],float const [],int [],int [],float [])\n""    csc_tocsr<(int,double)>(int const,int const,int const [],int const [],double const [],int [],int [],double [])\n""    csc_tocsr<(int,long double)>(int const,int const,int const [],int const [],long double const [],int [],int [],long double [])\n""    csc_tocsr<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    csc_tocsr<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    csc_tocsr<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_tocsr'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csc_tocsr< int,signed char >(int const,int const,int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    csc_tocsr< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    csc_tocsr< int,short >(int const,int const,int const [],int const [],short const [],int [],int [],short [])\n"
+    "    csc_tocsr< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    csc_tocsr< int,int >(int const,int const,int const [],int const [],int const [],int [],int [],int [])\n"
+    "    csc_tocsr< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    csc_tocsr< int,long long >(int const,int const,int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    csc_tocsr< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    csc_tocsr< int,float >(int const,int const,int const [],int const [],float const [],int [],int [],float [])\n"
+    "    csc_tocsr< int,double >(int const,int const,int const [],int const [],double const [],int [],int [],double [])\n"
+    "    csc_tocsr< int,long double >(int const,int const,int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    csc_tocsr< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    csc_tocsr< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    csc_tocsr< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -22233,7 +22386,7 @@ SWIGINTERN PyObject *_wrap_csr_tobsr__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
     arg10 = (signed char*) array_data(temp10);
   }
-  csr_tobsr<int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(signed char const (*))arg7,arg8,arg9,arg10);
+  csr_tobsr< int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(signed char const (*))arg7,arg8,arg9,arg10);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -22365,7 +22518,7 @@ SWIGINTERN PyObject *_wrap_csr_tobsr__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
     arg10 = (unsigned char*) array_data(temp10);
   }
-  csr_tobsr<int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned char const (*))arg7,arg8,arg9,arg10);
+  csr_tobsr< int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned char const (*))arg7,arg8,arg9,arg10);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -22497,7 +22650,7 @@ SWIGINTERN PyObject *_wrap_csr_tobsr__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
     arg10 = (short*) array_data(temp10);
   }
-  csr_tobsr<int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(short const (*))arg7,arg8,arg9,arg10);
+  csr_tobsr< int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(short const (*))arg7,arg8,arg9,arg10);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -22629,7 +22782,7 @@ SWIGINTERN PyObject *_wrap_csr_tobsr__SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
     arg10 = (unsigned short*) array_data(temp10);
   }
-  csr_tobsr<int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned short const (*))arg7,arg8,arg9,arg10);
+  csr_tobsr< int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned short const (*))arg7,arg8,arg9,arg10);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -22761,7 +22914,7 @@ SWIGINTERN PyObject *_wrap_csr_tobsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
     arg10 = (int*) array_data(temp10);
   }
-  csr_tobsr<int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,arg8,arg9,arg10);
+  csr_tobsr< int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,arg8,arg9,arg10);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -22893,7 +23046,7 @@ SWIGINTERN PyObject *_wrap_csr_tobsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
     arg10 = (unsigned int*) array_data(temp10);
   }
-  csr_tobsr<int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned int const (*))arg7,arg8,arg9,arg10);
+  csr_tobsr< int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned int const (*))arg7,arg8,arg9,arg10);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -23025,7 +23178,7 @@ SWIGINTERN PyObject *_wrap_csr_tobsr__SWIG_7(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
     arg10 = (long long*) array_data(temp10);
   }
-  csr_tobsr<int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long long const (*))arg7,arg8,arg9,arg10);
+  csr_tobsr< int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long long const (*))arg7,arg8,arg9,arg10);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -23157,7 +23310,7 @@ SWIGINTERN PyObject *_wrap_csr_tobsr__SWIG_8(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
     arg10 = (unsigned long long*) array_data(temp10);
   }
-  csr_tobsr<int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned long long const (*))arg7,arg8,arg9,arg10);
+  csr_tobsr< int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned long long const (*))arg7,arg8,arg9,arg10);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -23289,7 +23442,7 @@ SWIGINTERN PyObject *_wrap_csr_tobsr__SWIG_9(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
     arg10 = (float*) array_data(temp10);
   }
-  csr_tobsr<int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(float const (*))arg7,arg8,arg9,arg10);
+  csr_tobsr< int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(float const (*))arg7,arg8,arg9,arg10);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -23421,7 +23574,7 @@ SWIGINTERN PyObject *_wrap_csr_tobsr__SWIG_10(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
     arg10 = (double*) array_data(temp10);
   }
-  csr_tobsr<int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(double const (*))arg7,arg8,arg9,arg10);
+  csr_tobsr< int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(double const (*))arg7,arg8,arg9,arg10);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -23553,7 +23706,7 @@ SWIGINTERN PyObject *_wrap_csr_tobsr__SWIG_11(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
     arg10 = (long double*) array_data(temp10);
   }
-  csr_tobsr<int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long double const (*))arg7,arg8,arg9,arg10);
+  csr_tobsr< int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long double const (*))arg7,arg8,arg9,arg10);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -23685,7 +23838,7 @@ SWIGINTERN PyObject *_wrap_csr_tobsr__SWIG_12(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
     arg10 = (npy_cfloat_wrapper*) array_data(temp10);
   }
-  csr_tobsr<int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cfloat_wrapper const (*))arg7,arg8,arg9,arg10);
+  csr_tobsr< int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cfloat_wrapper const (*))arg7,arg8,arg9,arg10);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -23817,7 +23970,7 @@ SWIGINTERN PyObject *_wrap_csr_tobsr__SWIG_13(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
     arg10 = (npy_cdouble_wrapper*) array_data(temp10);
   }
-  csr_tobsr<int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cdouble_wrapper const (*))arg7,arg8,arg9,arg10);
+  csr_tobsr< int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cdouble_wrapper const (*))arg7,arg8,arg9,arg10);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -23949,7 +24102,7 @@ SWIGINTERN PyObject *_wrap_csr_tobsr__SWIG_14(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
     arg10 = (npy_clongdouble_wrapper*) array_data(temp10);
   }
-  csr_tobsr<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_clongdouble_wrapper const (*))arg7,arg8,arg9,arg10);
+  csr_tobsr< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_clongdouble_wrapper const (*))arg7,arg8,arg9,arg10);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -24799,7 +24952,22 @@ SWIGINTERN PyObject *_wrap_csr_tobsr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_tobsr'.\n  Possible C/C++ prototypes are:\n""    csr_tobsr<(int,signed char)>(int const,int const,int const,int const,int const [],int const [],signed char const [],int [],int [],signed char [])\n""    csr_tobsr<(int,unsigned char)>(int const,int const,int const,int const,int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    csr_tobsr<(int,short)>(int const,int const,int const,int const,int const [],int const [],short const [],int [],int [],short [])\n""    csr_tobsr<(int,unsigned short)>(int const,int const,int const,int const,int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    csr_tobsr<(int,int)>(int const,int const,int const,int const,int const [],int const [],int const [],int [],int [],int [])\n""    csr_tobsr<(int,unsigned int)>(int const,int const,int const,int const,int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    csr_tobsr<(int,long long)>(int const,int const,int const,int const,int const [],int const [],long long const [],int [],int [],long long [])\n""    csr_tobsr<(int,unsigned long long)>(int const,int const,int const,int const,int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    csr_tobsr<(int,float)>(int const,int const,int const,int const,int const [],int const [],float const [],int [],int [],float [])\n""    csr_tobsr<(int,double)>(int const,int const,int const,int const,int const [],int const [],double const [],int [],int [],double [])\n""    csr_tobsr<(int,long double)>(int const,int const,int const,int const,int const [],int const [],long double const [],int [],int [],long double [])\n""    csr_tobsr<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    csr_tobsr<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    csr_tobsr<(int,npy_clongdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_tobsr'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csr_tobsr< int,signed char >(int const,int const,int const,int const,int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    csr_tobsr< int,unsigned char >(int const,int const,int const,int const,int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    csr_tobsr< int,short >(int const,int const,int const,int const,int const [],int const [],short const [],int [],int [],short [])\n"
+    "    csr_tobsr< int,unsigned short >(int const,int const,int const,int const,int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    csr_tobsr< int,int >(int const,int const,int const,int const,int const [],int const [],int const [],int [],int [],int [])\n"
+    "    csr_tobsr< int,unsigned int >(int const,int const,int const,int const,int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    csr_tobsr< int,long long >(int const,int const,int const,int const,int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    csr_tobsr< int,unsigned long long >(int const,int const,int const,int const,int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    csr_tobsr< int,float >(int const,int const,int const,int const,int const [],int const [],float const [],int [],int [],float [])\n"
+    "    csr_tobsr< int,double >(int const,int const,int const,int const,int const [],int const [],double const [],int [],int [],double [])\n"
+    "    csr_tobsr< int,long double >(int const,int const,int const,int const,int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    csr_tobsr< int,npy_cfloat_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    csr_tobsr< int,npy_cdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    csr_tobsr< int,npy_clongdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -24839,7 +25007,7 @@ SWIGINTERN PyObject *_wrap_expandptr(PyObject *SWIGUNUSEDPARM(self), PyObject *a
     if (!temp3  || !require_contiguous(temp3) || !require_native(temp3)) SWIG_fail;
     arg3 = (int*) array_data(temp3);
   }
-  expandptr<int >(arg1,(int const (*))arg2,arg3);
+  expandptr< int >(arg1,(int const (*))arg2,arg3);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -24950,7 +25118,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsr__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (signed char*) array_data(temp9);
   }
-  coo_tocsr<int,signed char >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(signed char const (*))arg6,arg7,arg8,arg9);
+  coo_tocsr< int,signed char >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(signed char const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -25073,7 +25241,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsr__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (unsigned char*) array_data(temp9);
   }
-  coo_tocsr<int,unsigned char >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned char const (*))arg6,arg7,arg8,arg9);
+  coo_tocsr< int,unsigned char >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned char const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -25196,7 +25364,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsr__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (short*) array_data(temp9);
   }
-  coo_tocsr<int,short >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(short const (*))arg6,arg7,arg8,arg9);
+  coo_tocsr< int,short >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(short const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -25319,7 +25487,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsr__SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (unsigned short*) array_data(temp9);
   }
-  coo_tocsr<int,unsigned short >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned short const (*))arg6,arg7,arg8,arg9);
+  coo_tocsr< int,unsigned short >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned short const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -25442,7 +25610,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (int*) array_data(temp9);
   }
-  coo_tocsr<int,int >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7,arg8,arg9);
+  coo_tocsr< int,int >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -25565,7 +25733,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (unsigned int*) array_data(temp9);
   }
-  coo_tocsr<int,unsigned int >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned int const (*))arg6,arg7,arg8,arg9);
+  coo_tocsr< int,unsigned int >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned int const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -25688,7 +25856,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsr__SWIG_7(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (long long*) array_data(temp9);
   }
-  coo_tocsr<int,long long >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(long long const (*))arg6,arg7,arg8,arg9);
+  coo_tocsr< int,long long >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(long long const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -25811,7 +25979,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsr__SWIG_8(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (unsigned long long*) array_data(temp9);
   }
-  coo_tocsr<int,unsigned long long >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned long long const (*))arg6,arg7,arg8,arg9);
+  coo_tocsr< int,unsigned long long >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned long long const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -25934,7 +26102,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsr__SWIG_9(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (float*) array_data(temp9);
   }
-  coo_tocsr<int,float >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(float const (*))arg6,arg7,arg8,arg9);
+  coo_tocsr< int,float >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(float const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -26057,7 +26225,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsr__SWIG_10(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (double*) array_data(temp9);
   }
-  coo_tocsr<int,double >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(double const (*))arg6,arg7,arg8,arg9);
+  coo_tocsr< int,double >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(double const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -26180,7 +26348,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsr__SWIG_11(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (long double*) array_data(temp9);
   }
-  coo_tocsr<int,long double >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(long double const (*))arg6,arg7,arg8,arg9);
+  coo_tocsr< int,long double >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(long double const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -26303,7 +26471,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsr__SWIG_12(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (npy_cfloat_wrapper*) array_data(temp9);
   }
-  coo_tocsr<int,npy_cfloat_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7,arg8,arg9);
+  coo_tocsr< int,npy_cfloat_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -26426,7 +26594,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsr__SWIG_13(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (npy_cdouble_wrapper*) array_data(temp9);
   }
-  coo_tocsr<int,npy_cdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7,arg8,arg9);
+  coo_tocsr< int,npy_cdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -26549,7 +26717,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsr__SWIG_14(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (npy_clongdouble_wrapper*) array_data(temp9);
   }
-  coo_tocsr<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_clongdouble_wrapper const (*))arg6,arg7,arg8,arg9);
+  coo_tocsr< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_clongdouble_wrapper const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -27315,7 +27483,22 @@ SWIGINTERN PyObject *_wrap_coo_tocsr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'coo_tocsr'.\n  Possible C/C++ prototypes are:\n""    coo_tocsr<(int,signed char)>(int const,int const,int const,int const [],int const [],signed char const [],int [],int [],signed char [])\n""    coo_tocsr<(int,unsigned char)>(int const,int const,int const,int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    coo_tocsr<(int,short)>(int const,int const,int const,int const [],int const [],short const [],int [],int [],short [])\n""    coo_tocsr<(int,unsigned short)>(int const,int const,int const,int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    coo_tocsr<(int,int)>(int const,int const,int const,int const [],int const [],int const [],int [],int [],int [])\n""    coo_tocsr<(int,unsigned int)>(int const,int const,int const,int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    coo_tocsr<(int,long long)>(int const,int const,int const,int const [],int const [],long long const [],int [],int [],long long [])\n""    coo_tocsr<(int,unsigned long long)>(int const,int const,int const,int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    coo_tocsr<(int,float)>(int const,int const,int const,int const [],int const [],float const [],int [],int [],float [])\n""    coo_tocsr<(int,double)>(int const,int const,int const,int const [],int const [],double const [],int [],int [],double [])\n""    coo_tocsr<(int,long double)>(int const,int const,int const,int const [],int const [],long double const [],int [],int [],long double [])\n""    coo_tocsr<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    coo_tocsr<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    coo_tocsr<(int,npy_clongdouble_wrapper)>(int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'coo_tocsr'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    coo_tocsr< int,signed char >(int const,int const,int const,int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    coo_tocsr< int,unsigned char >(int const,int const,int const,int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    coo_tocsr< int,short >(int const,int const,int const,int const [],int const [],short const [],int [],int [],short [])\n"
+    "    coo_tocsr< int,unsigned short >(int const,int const,int const,int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    coo_tocsr< int,int >(int const,int const,int const,int const [],int const [],int const [],int [],int [],int [])\n"
+    "    coo_tocsr< int,unsigned int >(int const,int const,int const,int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    coo_tocsr< int,long long >(int const,int const,int const,int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    coo_tocsr< int,unsigned long long >(int const,int const,int const,int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    coo_tocsr< int,float >(int const,int const,int const,int const [],int const [],float const [],int [],int [],float [])\n"
+    "    coo_tocsr< int,double >(int const,int const,int const,int const [],int const [],double const [],int [],int [],double [])\n"
+    "    coo_tocsr< int,long double >(int const,int const,int const,int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    coo_tocsr< int,npy_cfloat_wrapper >(int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    coo_tocsr< int,npy_cdouble_wrapper >(int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    coo_tocsr< int,npy_clongdouble_wrapper >(int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -27417,7 +27600,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsc__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (signed char*) array_data(temp9);
   }
-  coo_tocsc<int,signed char >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(signed char const (*))arg6,arg7,arg8,arg9);
+  coo_tocsc< int,signed char >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(signed char const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -27540,7 +27723,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsc__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (unsigned char*) array_data(temp9);
   }
-  coo_tocsc<int,unsigned char >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned char const (*))arg6,arg7,arg8,arg9);
+  coo_tocsc< int,unsigned char >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned char const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -27663,7 +27846,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsc__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (short*) array_data(temp9);
   }
-  coo_tocsc<int,short >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(short const (*))arg6,arg7,arg8,arg9);
+  coo_tocsc< int,short >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(short const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -27786,7 +27969,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsc__SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (unsigned short*) array_data(temp9);
   }
-  coo_tocsc<int,unsigned short >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned short const (*))arg6,arg7,arg8,arg9);
+  coo_tocsc< int,unsigned short >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned short const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -27909,7 +28092,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (int*) array_data(temp9);
   }
-  coo_tocsc<int,int >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7,arg8,arg9);
+  coo_tocsc< int,int >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -28032,7 +28215,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (unsigned int*) array_data(temp9);
   }
-  coo_tocsc<int,unsigned int >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned int const (*))arg6,arg7,arg8,arg9);
+  coo_tocsc< int,unsigned int >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned int const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -28155,7 +28338,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsc__SWIG_7(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (long long*) array_data(temp9);
   }
-  coo_tocsc<int,long long >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(long long const (*))arg6,arg7,arg8,arg9);
+  coo_tocsc< int,long long >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(long long const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -28278,7 +28461,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsc__SWIG_8(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (unsigned long long*) array_data(temp9);
   }
-  coo_tocsc<int,unsigned long long >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned long long const (*))arg6,arg7,arg8,arg9);
+  coo_tocsc< int,unsigned long long >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned long long const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -28401,7 +28584,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsc__SWIG_9(PyObject *SWIGUNUSEDPARM(self), PyO
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (float*) array_data(temp9);
   }
-  coo_tocsc<int,float >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(float const (*))arg6,arg7,arg8,arg9);
+  coo_tocsc< int,float >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(float const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -28524,7 +28707,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsc__SWIG_10(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (double*) array_data(temp9);
   }
-  coo_tocsc<int,double >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(double const (*))arg6,arg7,arg8,arg9);
+  coo_tocsc< int,double >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(double const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -28647,7 +28830,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsc__SWIG_11(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (long double*) array_data(temp9);
   }
-  coo_tocsc<int,long double >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(long double const (*))arg6,arg7,arg8,arg9);
+  coo_tocsc< int,long double >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(long double const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -28770,7 +28953,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsc__SWIG_12(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (npy_cfloat_wrapper*) array_data(temp9);
   }
-  coo_tocsc<int,npy_cfloat_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7,arg8,arg9);
+  coo_tocsc< int,npy_cfloat_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -28893,7 +29076,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsc__SWIG_13(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (npy_cdouble_wrapper*) array_data(temp9);
   }
-  coo_tocsc<int,npy_cdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7,arg8,arg9);
+  coo_tocsc< int,npy_cdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -29016,7 +29199,7 @@ SWIGINTERN PyObject *_wrap_coo_tocsc__SWIG_14(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (npy_clongdouble_wrapper*) array_data(temp9);
   }
-  coo_tocsc<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_clongdouble_wrapper const (*))arg6,arg7,arg8,arg9);
+  coo_tocsc< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_clongdouble_wrapper const (*))arg6,arg7,arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -29782,7 +29965,22 @@ SWIGINTERN PyObject *_wrap_coo_tocsc(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'coo_tocsc'.\n  Possible C/C++ prototypes are:\n""    coo_tocsc<(int,signed char)>(int const,int const,int const,int const [],int const [],signed char const [],int [],int [],signed char [])\n""    coo_tocsc<(int,unsigned char)>(int const,int const,int const,int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    coo_tocsc<(int,short)>(int const,int const,int const,int const [],int const [],short const [],int [],int [],short [])\n""    coo_tocsc<(int,unsigned short)>(int const,int const,int const,int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    coo_tocsc<(int,int)>(int const,int const,int const,int const [],int const [],int const [],int [],int [],int [])\n""    coo_tocsc<(int,unsigned int)>(int const,int const,int const,int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    coo_tocsc<(int,long long)>(int const,int const,int const,int const [],int const [],long long const [],int [],int [],long long [])\n""    coo_tocsc<(int,unsigned long long)>(int const,int const,int const,int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    coo_tocsc<(int,float)>(int const,int const,int const,int const [],int const [],float const [],int [],int [],float [])\n""    coo_tocsc<(int,double)>(int const,int const,int const,int const [],int const [],double const [],int [],int [],double [])\n""    coo_tocsc<(int,long double)>(int const,int const,int const,int const [],int const [],long double const [],int [],int [],long double [])\n""    coo_tocsc<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    coo_tocsc<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    coo_tocsc<(int,npy_clongdouble_wrapper)>(int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'coo_tocsc'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    coo_tocsc< int,signed char >(int const,int const,int const,int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    coo_tocsc< int,unsigned char >(int const,int const,int const,int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    coo_tocsc< int,short >(int const,int const,int const,int const [],int const [],short const [],int [],int [],short [])\n"
+    "    coo_tocsc< int,unsigned short >(int const,int const,int const,int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    coo_tocsc< int,int >(int const,int const,int const,int const [],int const [],int const [],int [],int [],int [])\n"
+    "    coo_tocsc< int,unsigned int >(int const,int const,int const,int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    coo_tocsc< int,long long >(int const,int const,int const,int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    coo_tocsc< int,unsigned long long >(int const,int const,int const,int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    coo_tocsc< int,float >(int const,int const,int const,int const [],int const [],float const [],int [],int [],float [])\n"
+    "    coo_tocsc< int,double >(int const,int const,int const,int const [],int const [],double const [],int [],int [],double [])\n"
+    "    coo_tocsc< int,long double >(int const,int const,int const,int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    coo_tocsc< int,npy_cfloat_wrapper >(int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    coo_tocsc< int,npy_cdouble_wrapper >(int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    coo_tocsc< int,npy_clongdouble_wrapper >(int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -29856,7 +30054,7 @@ SWIGINTERN PyObject *_wrap_csr_count_blocks(PyObject *SWIGUNUSEDPARM(self), PyOb
     
     arg6 = (int*) array6->data;
   }
-  result = (int)csr_count_blocks<int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6);
+  result = (int)csr_count_blocks< int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6);
   resultobj = SWIG_From_int(static_cast< int >(result));
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -29962,7 +30160,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass1(PyObject *SWIGUNUSEDPARM(self), PyOb
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (int*) array_data(temp7);
   }
-  csr_matmat_pass1<int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7);
+  csr_matmat_pass1< int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -30080,7 +30278,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass1(PyObject *SWIGUNUSEDPARM(self), PyOb
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (int*) array_data(temp7);
   }
-  csc_matmat_pass1<int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7);
+  csc_matmat_pass1< int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -30242,7 +30440,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2__SWIG_1(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (signed char*) array_data(temp11);
   }
-  csr_matmat_pass2<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
+  csr_matmat_pass2< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -30416,7 +30614,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2__SWIG_2(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned char*) array_data(temp11);
   }
-  csr_matmat_pass2<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
+  csr_matmat_pass2< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -30590,7 +30788,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2__SWIG_3(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (short*) array_data(temp11);
   }
-  csr_matmat_pass2<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
+  csr_matmat_pass2< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -30764,7 +30962,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2__SWIG_4(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned short*) array_data(temp11);
   }
-  csr_matmat_pass2<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
+  csr_matmat_pass2< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -30938,7 +31136,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2__SWIG_5(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (int*) array_data(temp11);
   }
-  csr_matmat_pass2<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
+  csr_matmat_pass2< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -31112,7 +31310,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2__SWIG_6(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned int*) array_data(temp11);
   }
-  csr_matmat_pass2<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
+  csr_matmat_pass2< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -31286,7 +31484,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2__SWIG_7(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long long*) array_data(temp11);
   }
-  csr_matmat_pass2<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
+  csr_matmat_pass2< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -31460,7 +31658,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2__SWIG_8(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned long long*) array_data(temp11);
   }
-  csr_matmat_pass2<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
+  csr_matmat_pass2< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -31634,7 +31832,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2__SWIG_9(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (float*) array_data(temp11);
   }
-  csr_matmat_pass2<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
+  csr_matmat_pass2< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -31808,7 +32006,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2__SWIG_10(PyObject *SWIGUNUSEDPARM(se
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (double*) array_data(temp11);
   }
-  csr_matmat_pass2<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
+  csr_matmat_pass2< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -31982,7 +32180,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2__SWIG_11(PyObject *SWIGUNUSEDPARM(se
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long double*) array_data(temp11);
   }
-  csr_matmat_pass2<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
+  csr_matmat_pass2< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -32156,7 +32354,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2__SWIG_12(PyObject *SWIGUNUSEDPARM(se
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cfloat_wrapper*) array_data(temp11);
   }
-  csr_matmat_pass2<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_matmat_pass2< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -32330,7 +32528,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2__SWIG_13(PyObject *SWIGUNUSEDPARM(se
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cdouble_wrapper*) array_data(temp11);
   }
-  csr_matmat_pass2<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_matmat_pass2< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -32504,7 +32702,7 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2__SWIG_14(PyObject *SWIGUNUSEDPARM(se
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_clongdouble_wrapper*) array_data(temp11);
   }
-  csr_matmat_pass2<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_matmat_pass2< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -33414,7 +33612,22 @@ SWIGINTERN PyObject *_wrap_csr_matmat_pass2(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_matmat_pass2'.\n  Possible C/C++ prototypes are:\n""    csr_matmat_pass2<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    csr_matmat_pass2<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    csr_matmat_pass2<(int,short)>(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    csr_matmat_pass2<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    csr_matmat_pass2<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    csr_matmat_pass2<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    csr_matmat_pass2<(int,long long)>(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    csr_matmat_pass2<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    csr_matmat_pass2<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    csr_matmat_pass2<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    csr_matmat_pass2<(int,long double)>(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    csr_matmat_pass2<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    csr_matmat_pass2<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    csr_matmat_pass2<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_matmat_pass2'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csr_matmat_pass2< int,signed char >(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    csr_matmat_pass2< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    csr_matmat_pass2< int,short >(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    csr_matmat_pass2< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    csr_matmat_pass2< int,int >(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    csr_matmat_pass2< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    csr_matmat_pass2< int,long long >(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    csr_matmat_pass2< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    csr_matmat_pass2< int,float >(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    csr_matmat_pass2< int,double >(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    csr_matmat_pass2< int,long double >(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    csr_matmat_pass2< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    csr_matmat_pass2< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    csr_matmat_pass2< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -33549,7 +33762,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_1(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (signed char*) array_data(temp11);
   }
-  csc_matmat_pass2<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
+  csc_matmat_pass2< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -33723,7 +33936,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_2(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned char*) array_data(temp11);
   }
-  csc_matmat_pass2<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
+  csc_matmat_pass2< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -33897,7 +34110,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_3(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (short*) array_data(temp11);
   }
-  csc_matmat_pass2<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
+  csc_matmat_pass2< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -34071,7 +34284,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_4(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned short*) array_data(temp11);
   }
-  csc_matmat_pass2<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
+  csc_matmat_pass2< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -34245,7 +34458,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_5(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (int*) array_data(temp11);
   }
-  csc_matmat_pass2<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
+  csc_matmat_pass2< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -34419,7 +34632,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_6(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned int*) array_data(temp11);
   }
-  csc_matmat_pass2<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
+  csc_matmat_pass2< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -34593,7 +34806,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_7(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long long*) array_data(temp11);
   }
-  csc_matmat_pass2<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
+  csc_matmat_pass2< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -34767,7 +34980,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_8(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned long long*) array_data(temp11);
   }
-  csc_matmat_pass2<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
+  csc_matmat_pass2< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -34941,7 +35154,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_9(PyObject *SWIGUNUSEDPARM(sel
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (float*) array_data(temp11);
   }
-  csc_matmat_pass2<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
+  csc_matmat_pass2< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -35115,7 +35328,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_10(PyObject *SWIGUNUSEDPARM(se
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (double*) array_data(temp11);
   }
-  csc_matmat_pass2<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
+  csc_matmat_pass2< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -35289,7 +35502,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_11(PyObject *SWIGUNUSEDPARM(se
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long double*) array_data(temp11);
   }
-  csc_matmat_pass2<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
+  csc_matmat_pass2< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -35463,7 +35676,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_12(PyObject *SWIGUNUSEDPARM(se
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cfloat_wrapper*) array_data(temp11);
   }
-  csc_matmat_pass2<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_matmat_pass2< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -35637,7 +35850,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_13(PyObject *SWIGUNUSEDPARM(se
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cdouble_wrapper*) array_data(temp11);
   }
-  csc_matmat_pass2<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_matmat_pass2< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -35811,7 +36024,7 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_14(PyObject *SWIGUNUSEDPARM(se
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_clongdouble_wrapper*) array_data(temp11);
   }
-  csc_matmat_pass2<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_matmat_pass2< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -36721,7 +36934,22 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_matmat_pass2'.\n  Possible C/C++ prototypes are:\n""    csc_matmat_pass2<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    csc_matmat_pass2<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    csc_matmat_pass2<(int,short)>(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    csc_matmat_pass2<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    csc_matmat_pass2<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    csc_matmat_pass2<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    csc_matmat_pass2<(int,long long)>(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    csc_matmat_pass2<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    csc_matmat_pass2<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    csc_matmat_pass2<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    csc_matmat_pass2<(int,long double)>(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    csc_matmat_pass2<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    csc_matmat_pass2<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    csc_matmat_pass2<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_matmat_pass2'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csc_matmat_pass2< int,signed char >(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    csc_matmat_pass2< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    csc_matmat_pass2< int,short >(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    csc_matmat_pass2< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    csc_matmat_pass2< int,int >(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    csc_matmat_pass2< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    csc_matmat_pass2< int,long long >(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    csc_matmat_pass2< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    csc_matmat_pass2< int,float >(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    csc_matmat_pass2< int,double >(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    csc_matmat_pass2< int,long double >(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    csc_matmat_pass2< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    csc_matmat_pass2< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    csc_matmat_pass2< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -36883,7 +37111,7 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2__SWIG_1(PyObject *SWIGUNUSEDPARM(sel
     if (!temp14  || !require_contiguous(temp14) || !require_native(temp14)) SWIG_fail;
     arg14 = (signed char*) array_data(temp14);
   }
-  bsr_matmat_pass2<int,signed char >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,(int const (*))arg9,(int const (*))arg10,(signed char const (*))arg11,arg12,arg13,arg14);
+  bsr_matmat_pass2< int,signed char >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,(int const (*))arg9,(int const (*))arg10,(signed char const (*))arg11,arg12,arg13,arg14);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object6 && array6) Py_DECREF(array6);
@@ -37084,7 +37312,7 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2__SWIG_2(PyObject *SWIGUNUSEDPARM(sel
     if (!temp14  || !require_contiguous(temp14) || !require_native(temp14)) SWIG_fail;
     arg14 = (unsigned char*) array_data(temp14);
   }
-  bsr_matmat_pass2<int,unsigned char >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,(int const (*))arg9,(int const (*))arg10,(unsigned char const (*))arg11,arg12,arg13,arg14);
+  bsr_matmat_pass2< int,unsigned char >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,(int const (*))arg9,(int const (*))arg10,(unsigned char const (*))arg11,arg12,arg13,arg14);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object6 && array6) Py_DECREF(array6);
@@ -37285,7 +37513,7 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2__SWIG_3(PyObject *SWIGUNUSEDPARM(sel
     if (!temp14  || !require_contiguous(temp14) || !require_native(temp14)) SWIG_fail;
     arg14 = (short*) array_data(temp14);
   }
-  bsr_matmat_pass2<int,short >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,(int const (*))arg9,(int const (*))arg10,(short const (*))arg11,arg12,arg13,arg14);
+  bsr_matmat_pass2< int,short >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,(int const (*))arg9,(int const (*))arg10,(short const (*))arg11,arg12,arg13,arg14);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object6 && array6) Py_DECREF(array6);
@@ -37486,7 +37714,7 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2__SWIG_4(PyObject *SWIGUNUSEDPARM(sel
     if (!temp14  || !require_contiguous(temp14) || !require_native(temp14)) SWIG_fail;
     arg14 = (unsigned short*) array_data(temp14);
   }
-  bsr_matmat_pass2<int,unsigned short >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,(int const (*))arg9,(int const (*))arg10,(unsigned short const (*))arg11,arg12,arg13,arg14);
+  bsr_matmat_pass2< int,unsigned short >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,(int const (*))arg9,(int const (*))arg10,(unsigned short const (*))arg11,arg12,arg13,arg14);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object6 && array6) Py_DECREF(array6);
@@ -37687,7 +37915,7 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2__SWIG_5(PyObject *SWIGUNUSEDPARM(sel
     if (!temp14  || !require_contiguous(temp14) || !require_native(temp14)) SWIG_fail;
     arg14 = (int*) array_data(temp14);
   }
-  bsr_matmat_pass2<int,int >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(int const (*))arg10,(int const (*))arg11,arg12,arg13,arg14);
+  bsr_matmat_pass2< int,int >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(int const (*))arg10,(int const (*))arg11,arg12,arg13,arg14);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object6 && array6) Py_DECREF(array6);
@@ -37888,7 +38116,7 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2__SWIG_6(PyObject *SWIGUNUSEDPARM(sel
     if (!temp14  || !require_contiguous(temp14) || !require_native(temp14)) SWIG_fail;
     arg14 = (unsigned int*) array_data(temp14);
   }
-  bsr_matmat_pass2<int,unsigned int >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,(int const (*))arg9,(int const (*))arg10,(unsigned int const (*))arg11,arg12,arg13,arg14);
+  bsr_matmat_pass2< int,unsigned int >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,(int const (*))arg9,(int const (*))arg10,(unsigned int const (*))arg11,arg12,arg13,arg14);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object6 && array6) Py_DECREF(array6);
@@ -38089,7 +38317,7 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2__SWIG_7(PyObject *SWIGUNUSEDPARM(sel
     if (!temp14  || !require_contiguous(temp14) || !require_native(temp14)) SWIG_fail;
     arg14 = (long long*) array_data(temp14);
   }
-  bsr_matmat_pass2<int,long long >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,(int const (*))arg9,(int const (*))arg10,(long long const (*))arg11,arg12,arg13,arg14);
+  bsr_matmat_pass2< int,long long >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,(int const (*))arg9,(int const (*))arg10,(long long const (*))arg11,arg12,arg13,arg14);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object6 && array6) Py_DECREF(array6);
@@ -38290,7 +38518,7 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2__SWIG_8(PyObject *SWIGUNUSEDPARM(sel
     if (!temp14  || !require_contiguous(temp14) || !require_native(temp14)) SWIG_fail;
     arg14 = (unsigned long long*) array_data(temp14);
   }
-  bsr_matmat_pass2<int,unsigned long long >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,(int const (*))arg9,(int const (*))arg10,(unsigned long long const (*))arg11,arg12,arg13,arg14);
+  bsr_matmat_pass2< int,unsigned long long >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,(int const (*))arg9,(int const (*))arg10,(unsigned long long const (*))arg11,arg12,arg13,arg14);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object6 && array6) Py_DECREF(array6);
@@ -38491,7 +38719,7 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2__SWIG_9(PyObject *SWIGUNUSEDPARM(sel
     if (!temp14  || !require_contiguous(temp14) || !require_native(temp14)) SWIG_fail;
     arg14 = (float*) array_data(temp14);
   }
-  bsr_matmat_pass2<int,float >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,(int const (*))arg9,(int const (*))arg10,(float const (*))arg11,arg12,arg13,arg14);
+  bsr_matmat_pass2< int,float >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,(int const (*))arg9,(int const (*))arg10,(float const (*))arg11,arg12,arg13,arg14);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object6 && array6) Py_DECREF(array6);
@@ -38692,7 +38920,7 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2__SWIG_10(PyObject *SWIGUNUSEDPARM(se
     if (!temp14  || !require_contiguous(temp14) || !require_native(temp14)) SWIG_fail;
     arg14 = (double*) array_data(temp14);
   }
-  bsr_matmat_pass2<int,double >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,(int const (*))arg9,(int const (*))arg10,(double const (*))arg11,arg12,arg13,arg14);
+  bsr_matmat_pass2< int,double >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,(int const (*))arg9,(int const (*))arg10,(double const (*))arg11,arg12,arg13,arg14);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object6 && array6) Py_DECREF(array6);
@@ -38893,7 +39121,7 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2__SWIG_11(PyObject *SWIGUNUSEDPARM(se
     if (!temp14  || !require_contiguous(temp14) || !require_native(temp14)) SWIG_fail;
     arg14 = (long double*) array_data(temp14);
   }
-  bsr_matmat_pass2<int,long double >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,(int const (*))arg9,(int const (*))arg10,(long double const (*))arg11,arg12,arg13,arg14);
+  bsr_matmat_pass2< int,long double >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,(int const (*))arg9,(int const (*))arg10,(long double const (*))arg11,arg12,arg13,arg14);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object6 && array6) Py_DECREF(array6);
@@ -39094,7 +39322,7 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2__SWIG_12(PyObject *SWIGUNUSEDPARM(se
     if (!temp14  || !require_contiguous(temp14) || !require_native(temp14)) SWIG_fail;
     arg14 = (npy_cfloat_wrapper*) array_data(temp14);
   }
-  bsr_matmat_pass2<int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,(int const (*))arg9,(int const (*))arg10,(npy_cfloat_wrapper const (*))arg11,arg12,arg13,arg14);
+  bsr_matmat_pass2< int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,(int const (*))arg9,(int const (*))arg10,(npy_cfloat_wrapper const (*))arg11,arg12,arg13,arg14);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object6 && array6) Py_DECREF(array6);
@@ -39295,7 +39523,7 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2__SWIG_13(PyObject *SWIGUNUSEDPARM(se
     if (!temp14  || !require_contiguous(temp14) || !require_native(temp14)) SWIG_fail;
     arg14 = (npy_cdouble_wrapper*) array_data(temp14);
   }
-  bsr_matmat_pass2<int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,(int const (*))arg9,(int const (*))arg10,(npy_cdouble_wrapper const (*))arg11,arg12,arg13,arg14);
+  bsr_matmat_pass2< int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,(int const (*))arg9,(int const (*))arg10,(npy_cdouble_wrapper const (*))arg11,arg12,arg13,arg14);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object6 && array6) Py_DECREF(array6);
@@ -39496,7 +39724,7 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2__SWIG_14(PyObject *SWIGUNUSEDPARM(se
     if (!temp14  || !require_contiguous(temp14) || !require_native(temp14)) SWIG_fail;
     arg14 = (npy_clongdouble_wrapper*) array_data(temp14);
   }
-  bsr_matmat_pass2<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,(int const (*))arg9,(int const (*))arg10,(npy_clongdouble_wrapper const (*))arg11,arg12,arg13,arg14);
+  bsr_matmat_pass2< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,(int const (*))arg9,(int const (*))arg10,(npy_clongdouble_wrapper const (*))arg11,arg12,arg13,arg14);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object6 && array6) Py_DECREF(array6);
@@ -40658,7 +40886,22 @@ SWIGINTERN PyObject *_wrap_bsr_matmat_pass2(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_matmat_pass2'.\n  Possible C/C++ prototypes are:\n""    bsr_matmat_pass2<(int,signed char)>(int const,int const,int const,int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    bsr_matmat_pass2<(int,unsigned char)>(int const,int const,int const,int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    bsr_matmat_pass2<(int,short)>(int const,int const,int const,int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    bsr_matmat_pass2<(int,unsigned short)>(int const,int const,int const,int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    bsr_matmat_pass2<(int,int)>(int const,int const,int const,int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    bsr_matmat_pass2<(int,unsigned int)>(int const,int const,int const,int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    bsr_matmat_pass2<(int,long long)>(int const,int const,int const,int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    bsr_matmat_pass2<(int,unsigned long long)>(int const,int const,int const,int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    bsr_matmat_pass2<(int,float)>(int const,int const,int const,int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    bsr_matmat_pass2<(int,double)>(int const,int const,int const,int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    bsr_matmat_pass2<(int,long double)>(int const,int const,int const,int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    bsr_matmat_pass2<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    bsr_matmat_pass2<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    bsr_matmat_pass2<(int,npy_clongdouble_wrapper)>(int const,int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_matmat_pass2'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    bsr_matmat_pass2< int,signed char >(int const,int const,int const,int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    bsr_matmat_pass2< int,unsigned char >(int const,int const,int const,int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    bsr_matmat_pass2< int,short >(int const,int const,int const,int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    bsr_matmat_pass2< int,unsigned short >(int const,int const,int const,int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    bsr_matmat_pass2< int,int >(int const,int const,int const,int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    bsr_matmat_pass2< int,unsigned int >(int const,int const,int const,int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    bsr_matmat_pass2< int,long long >(int const,int const,int const,int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    bsr_matmat_pass2< int,unsigned long long >(int const,int const,int const,int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    bsr_matmat_pass2< int,float >(int const,int const,int const,int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    bsr_matmat_pass2< int,double >(int const,int const,int const,int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    bsr_matmat_pass2< int,long double >(int const,int const,int const,int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    bsr_matmat_pass2< int,npy_cfloat_wrapper >(int const,int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    bsr_matmat_pass2< int,npy_cdouble_wrapper >(int const,int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    bsr_matmat_pass2< int,npy_clongdouble_wrapper >(int const,int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -40749,7 +40992,7 @@ SWIGINTERN PyObject *_wrap_csr_matvec__SWIG_1(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (signed char*) array_data(temp7);
   }
-  csr_matvec<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(signed char const (*))arg6,arg7);
+  csr_matvec< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(signed char const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -40867,7 +41110,7 @@ SWIGINTERN PyObject *_wrap_csr_matvec__SWIG_2(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (unsigned char*) array_data(temp7);
   }
-  csr_matvec<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(unsigned char const (*))arg6,arg7);
+  csr_matvec< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(unsigned char const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -40985,7 +41228,7 @@ SWIGINTERN PyObject *_wrap_csr_matvec__SWIG_3(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (short*) array_data(temp7);
   }
-  csr_matvec<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(short const (*))arg6,arg7);
+  csr_matvec< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(short const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -41103,7 +41346,7 @@ SWIGINTERN PyObject *_wrap_csr_matvec__SWIG_4(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (unsigned short*) array_data(temp7);
   }
-  csr_matvec<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(unsigned short const (*))arg6,arg7);
+  csr_matvec< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(unsigned short const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -41221,7 +41464,7 @@ SWIGINTERN PyObject *_wrap_csr_matvec__SWIG_5(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (int*) array_data(temp7);
   }
-  csr_matvec<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7);
+  csr_matvec< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -41339,7 +41582,7 @@ SWIGINTERN PyObject *_wrap_csr_matvec__SWIG_6(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (unsigned int*) array_data(temp7);
   }
-  csr_matvec<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(unsigned int const (*))arg6,arg7);
+  csr_matvec< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(unsigned int const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -41457,7 +41700,7 @@ SWIGINTERN PyObject *_wrap_csr_matvec__SWIG_7(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (long long*) array_data(temp7);
   }
-  csr_matvec<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(long long const (*))arg6,arg7);
+  csr_matvec< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(long long const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -41575,7 +41818,7 @@ SWIGINTERN PyObject *_wrap_csr_matvec__SWIG_8(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (unsigned long long*) array_data(temp7);
   }
-  csr_matvec<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(unsigned long long const (*))arg6,arg7);
+  csr_matvec< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(unsigned long long const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -41693,7 +41936,7 @@ SWIGINTERN PyObject *_wrap_csr_matvec__SWIG_9(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (float*) array_data(temp7);
   }
-  csr_matvec<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(float const (*))arg6,arg7);
+  csr_matvec< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(float const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -41811,7 +42054,7 @@ SWIGINTERN PyObject *_wrap_csr_matvec__SWIG_10(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (double*) array_data(temp7);
   }
-  csr_matvec<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(double const (*))arg6,arg7);
+  csr_matvec< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(double const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -41929,7 +42172,7 @@ SWIGINTERN PyObject *_wrap_csr_matvec__SWIG_11(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (long double*) array_data(temp7);
   }
-  csr_matvec<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(long double const (*))arg6,arg7);
+  csr_matvec< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(long double const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -42047,7 +42290,7 @@ SWIGINTERN PyObject *_wrap_csr_matvec__SWIG_12(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (npy_cfloat_wrapper*) array_data(temp7);
   }
-  csr_matvec<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7);
+  csr_matvec< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -42165,7 +42408,7 @@ SWIGINTERN PyObject *_wrap_csr_matvec__SWIG_13(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (npy_cdouble_wrapper*) array_data(temp7);
   }
-  csr_matvec<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7);
+  csr_matvec< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -42283,7 +42526,7 @@ SWIGINTERN PyObject *_wrap_csr_matvec__SWIG_14(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (npy_clongdouble_wrapper*) array_data(temp7);
   }
-  csr_matvec<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(npy_clongdouble_wrapper const (*))arg6,arg7);
+  csr_matvec< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(npy_clongdouble_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -42901,7 +43144,22 @@ SWIGINTERN PyObject *_wrap_csr_matvec(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_matvec'.\n  Possible C/C++ prototypes are:\n""    csr_matvec<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],signed char const [],signed char [])\n""    csr_matvec<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],unsigned char const [],unsigned char [])\n""    csr_matvec<(int,short)>(int const,int const,int const [],int const [],short const [],short const [],short [])\n""    csr_matvec<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],unsigned short const [],unsigned short [])\n""    csr_matvec<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int [])\n""    csr_matvec<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],unsigned int const [],unsigned int [])\n""    csr_matvec<(int,long long)>(int const,int const,int const [],int const [],long long const [],long long const [],long long [])\n""    csr_matvec<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],unsigned long long const [],unsigned long long [])\n""    csr_matvec<(int,float)>(int const,int const,int const [],int const [],float const [],float const [],float [])\n""    csr_matvec<(int,double)>(int const,int const,int const [],int const [],double const [],double const [],double [])\n""    csr_matvec<(int,long double)>(int const,int const,int const [],int const [],long double const [],long double const [],long double [])\n""    csr_matvec<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n""    csr_matvec<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n""    csr_matvec<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_matvec'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csr_matvec< int,signed char >(int const,int const,int const [],int const [],signed char const [],signed char const [],signed char [])\n"
+    "    csr_matvec< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],unsigned char const [],unsigned char [])\n"
+    "    csr_matvec< int,short >(int const,int const,int const [],int const [],short const [],short const [],short [])\n"
+    "    csr_matvec< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],unsigned short const [],unsigned short [])\n"
+    "    csr_matvec< int,int >(int const,int const,int const [],int const [],int const [],int const [],int [])\n"
+    "    csr_matvec< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],unsigned int const [],unsigned int [])\n"
+    "    csr_matvec< int,long long >(int const,int const,int const [],int const [],long long const [],long long const [],long long [])\n"
+    "    csr_matvec< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],unsigned long long const [],unsigned long long [])\n"
+    "    csr_matvec< int,float >(int const,int const,int const [],int const [],float const [],float const [],float [])\n"
+    "    csr_matvec< int,double >(int const,int const,int const [],int const [],double const [],double const [],double [])\n"
+    "    csr_matvec< int,long double >(int const,int const,int const [],int const [],long double const [],long double const [],long double [])\n"
+    "    csr_matvec< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n"
+    "    csr_matvec< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n"
+    "    csr_matvec< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -42992,7 +43250,7 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_1(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (signed char*) array_data(temp7);
   }
-  csc_matvec<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(signed char const (*))arg6,arg7);
+  csc_matvec< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(signed char const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -43110,7 +43368,7 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_2(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (unsigned char*) array_data(temp7);
   }
-  csc_matvec<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(unsigned char const (*))arg6,arg7);
+  csc_matvec< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(unsigned char const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -43228,7 +43486,7 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_3(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (short*) array_data(temp7);
   }
-  csc_matvec<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(short const (*))arg6,arg7);
+  csc_matvec< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(short const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -43346,7 +43604,7 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_4(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (unsigned short*) array_data(temp7);
   }
-  csc_matvec<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(unsigned short const (*))arg6,arg7);
+  csc_matvec< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(unsigned short const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -43464,7 +43722,7 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_5(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (int*) array_data(temp7);
   }
-  csc_matvec<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7);
+  csc_matvec< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -43582,7 +43840,7 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_6(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (unsigned int*) array_data(temp7);
   }
-  csc_matvec<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(unsigned int const (*))arg6,arg7);
+  csc_matvec< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(unsigned int const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -43700,7 +43958,7 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_7(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (long long*) array_data(temp7);
   }
-  csc_matvec<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(long long const (*))arg6,arg7);
+  csc_matvec< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(long long const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -43818,7 +44076,7 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_8(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (unsigned long long*) array_data(temp7);
   }
-  csc_matvec<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(unsigned long long const (*))arg6,arg7);
+  csc_matvec< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(unsigned long long const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -43936,7 +44194,7 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_9(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (float*) array_data(temp7);
   }
-  csc_matvec<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(float const (*))arg6,arg7);
+  csc_matvec< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(float const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -44054,7 +44312,7 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_10(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (double*) array_data(temp7);
   }
-  csc_matvec<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(double const (*))arg6,arg7);
+  csc_matvec< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(double const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -44172,7 +44430,7 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_11(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (long double*) array_data(temp7);
   }
-  csc_matvec<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(long double const (*))arg6,arg7);
+  csc_matvec< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(long double const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -44290,7 +44548,7 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_12(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (npy_cfloat_wrapper*) array_data(temp7);
   }
-  csc_matvec<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7);
+  csc_matvec< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -44408,7 +44666,7 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_13(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (npy_cdouble_wrapper*) array_data(temp7);
   }
-  csc_matvec<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7);
+  csc_matvec< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -44526,7 +44784,7 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_14(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (npy_clongdouble_wrapper*) array_data(temp7);
   }
-  csc_matvec<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(npy_clongdouble_wrapper const (*))arg6,arg7);
+  csc_matvec< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(npy_clongdouble_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -45144,7 +45402,22 @@ SWIGINTERN PyObject *_wrap_csc_matvec(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_matvec'.\n  Possible C/C++ prototypes are:\n""    csc_matvec<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],signed char const [],signed char [])\n""    csc_matvec<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],unsigned char const [],unsigned char [])\n""    csc_matvec<(int,short)>(int const,int const,int const [],int const [],short const [],short const [],short [])\n""    csc_matvec<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],unsigned short const [],unsigned short [])\n""    csc_matvec<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int [])\n""    csc_matvec<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],unsigned int const [],unsigned int [])\n""    csc_matvec<(int,long long)>(int const,int const,int const [],int const [],long long const [],long long const [],long long [])\n""    csc_matvec<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],unsigned long long const [],unsigned long long [])\n""    csc_matvec<(int,float)>(int const,int const,int const [],int const [],float const [],float const [],float [])\n""    csc_matvec<(int,double)>(int const,int const,int const [],int const [],double const [],double const [],double [])\n""    csc_matvec<(int,long double)>(int const,int const,int const [],int const [],long double const [],long double const [],long double [])\n""    csc_matvec<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n""    csc_matvec<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n""    csc_matvec<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_matvec'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csc_matvec< int,signed char >(int const,int const,int const [],int const [],signed char const [],signed char const [],signed char [])\n"
+    "    csc_matvec< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],unsigned char const [],unsigned char [])\n"
+    "    csc_matvec< int,short >(int const,int const,int const [],int const [],short const [],short const [],short [])\n"
+    "    csc_matvec< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],unsigned short const [],unsigned short [])\n"
+    "    csc_matvec< int,int >(int const,int const,int const [],int const [],int const [],int const [],int [])\n"
+    "    csc_matvec< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],unsigned int const [],unsigned int [])\n"
+    "    csc_matvec< int,long long >(int const,int const,int const [],int const [],long long const [],long long const [],long long [])\n"
+    "    csc_matvec< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],unsigned long long const [],unsigned long long [])\n"
+    "    csc_matvec< int,float >(int const,int const,int const [],int const [],float const [],float const [],float [])\n"
+    "    csc_matvec< int,double >(int const,int const,int const [],int const [],double const [],double const [],double [])\n"
+    "    csc_matvec< int,long double >(int const,int const,int const [],int const [],long double const [],long double const [],long double [])\n"
+    "    csc_matvec< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n"
+    "    csc_matvec< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n"
+    "    csc_matvec< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -45253,7 +45526,7 @@ SWIGINTERN PyObject *_wrap_bsr_matvec__SWIG_1(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (signed char*) array_data(temp9);
   }
-  bsr_matvec<int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(signed char const (*))arg7,(signed char const (*))arg8,arg9);
+  bsr_matvec< int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(signed char const (*))arg7,(signed char const (*))arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -45389,7 +45662,7 @@ SWIGINTERN PyObject *_wrap_bsr_matvec__SWIG_2(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (unsigned char*) array_data(temp9);
   }
-  bsr_matvec<int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned char const (*))arg7,(unsigned char const (*))arg8,arg9);
+  bsr_matvec< int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned char const (*))arg7,(unsigned char const (*))arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -45525,7 +45798,7 @@ SWIGINTERN PyObject *_wrap_bsr_matvec__SWIG_3(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (short*) array_data(temp9);
   }
-  bsr_matvec<int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(short const (*))arg7,(short const (*))arg8,arg9);
+  bsr_matvec< int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(short const (*))arg7,(short const (*))arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -45661,7 +45934,7 @@ SWIGINTERN PyObject *_wrap_bsr_matvec__SWIG_4(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (unsigned short*) array_data(temp9);
   }
-  bsr_matvec<int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned short const (*))arg7,(unsigned short const (*))arg8,arg9);
+  bsr_matvec< int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned short const (*))arg7,(unsigned short const (*))arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -45797,7 +46070,7 @@ SWIGINTERN PyObject *_wrap_bsr_matvec__SWIG_5(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (int*) array_data(temp9);
   }
-  bsr_matvec<int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9);
+  bsr_matvec< int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -45933,7 +46206,7 @@ SWIGINTERN PyObject *_wrap_bsr_matvec__SWIG_6(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (unsigned int*) array_data(temp9);
   }
-  bsr_matvec<int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned int const (*))arg7,(unsigned int const (*))arg8,arg9);
+  bsr_matvec< int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned int const (*))arg7,(unsigned int const (*))arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -46069,7 +46342,7 @@ SWIGINTERN PyObject *_wrap_bsr_matvec__SWIG_7(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (long long*) array_data(temp9);
   }
-  bsr_matvec<int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long long const (*))arg7,(long long const (*))arg8,arg9);
+  bsr_matvec< int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long long const (*))arg7,(long long const (*))arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -46205,7 +46478,7 @@ SWIGINTERN PyObject *_wrap_bsr_matvec__SWIG_8(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (unsigned long long*) array_data(temp9);
   }
-  bsr_matvec<int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned long long const (*))arg7,(unsigned long long const (*))arg8,arg9);
+  bsr_matvec< int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned long long const (*))arg7,(unsigned long long const (*))arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -46341,7 +46614,7 @@ SWIGINTERN PyObject *_wrap_bsr_matvec__SWIG_9(PyObject *SWIGUNUSEDPARM(self), Py
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (float*) array_data(temp9);
   }
-  bsr_matvec<int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(float const (*))arg7,(float const (*))arg8,arg9);
+  bsr_matvec< int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(float const (*))arg7,(float const (*))arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -46477,7 +46750,7 @@ SWIGINTERN PyObject *_wrap_bsr_matvec__SWIG_10(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (double*) array_data(temp9);
   }
-  bsr_matvec<int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(double const (*))arg7,(double const (*))arg8,arg9);
+  bsr_matvec< int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(double const (*))arg7,(double const (*))arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -46613,7 +46886,7 @@ SWIGINTERN PyObject *_wrap_bsr_matvec__SWIG_11(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (long double*) array_data(temp9);
   }
-  bsr_matvec<int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long double const (*))arg7,(long double const (*))arg8,arg9);
+  bsr_matvec< int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long double const (*))arg7,(long double const (*))arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -46749,7 +47022,7 @@ SWIGINTERN PyObject *_wrap_bsr_matvec__SWIG_12(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (npy_cfloat_wrapper*) array_data(temp9);
   }
-  bsr_matvec<int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cfloat_wrapper const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9);
+  bsr_matvec< int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cfloat_wrapper const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -46885,7 +47158,7 @@ SWIGINTERN PyObject *_wrap_bsr_matvec__SWIG_13(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (npy_cdouble_wrapper*) array_data(temp9);
   }
-  bsr_matvec<int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cdouble_wrapper const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9);
+  bsr_matvec< int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cdouble_wrapper const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -47021,7 +47294,7 @@ SWIGINTERN PyObject *_wrap_bsr_matvec__SWIG_14(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
     arg9 = (npy_clongdouble_wrapper*) array_data(temp9);
   }
-  bsr_matvec<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_clongdouble_wrapper const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9);
+  bsr_matvec< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_clongdouble_wrapper const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -47807,7 +48080,22 @@ SWIGINTERN PyObject *_wrap_bsr_matvec(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_matvec'.\n  Possible C/C++ prototypes are:\n""    bsr_matvec<(int,signed char)>(int const,int const,int const,int const,int const [],int const [],signed char const [],signed char const [],signed char [])\n""    bsr_matvec<(int,unsigned char)>(int const,int const,int const,int const,int const [],int const [],unsigned char const [],unsigned char const [],unsigned char [])\n""    bsr_matvec<(int,short)>(int const,int const,int const,int const,int const [],int const [],short const [],short const [],short [])\n""    bsr_matvec<(int,unsigned short)>(int const,int const,int const,int const,int const [],int const [],unsigned short const [],unsigned short const [],unsigned short [])\n""    bsr_matvec<(int,int)>(int const,int const,int const,int const,int const [],int const [],int const [],int const [],int [])\n""    bsr_matvec<(int,unsigned int)>(int const,int const,int const,int const,int const [],int const [],unsigned int const [],unsigned int const [],unsigned int [])\n""    bsr_matvec<(int,long long)>(int const,int const,int const,int const,int const [],int const [],long long const [],long long const [],long long [])\n""    bsr_matvec<(int,unsigned long long)>(int const,int const,int const,int const,int const [],int const [],unsigned long long const [],unsigned long long const [],unsigned long long [])\n""    bsr_matvec<(int,float)>(int const,int const,int const,int const,int const [],int const [],float const [],float const [],float [])\n""    bsr_matvec<(int,double)>(int const,int const,int const,int const,int const [],int const [],double const [],double const [],double [])\n""    bsr_matvec<(int,long double)>(int const,int const,int const,int const,int const [],int const [],long double const [],long double const [],long double [])\n""    bsr_matvec<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n""    bsr_matvec<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n""    bsr_matvec<(int,npy_clongdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_matvec'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    bsr_matvec< int,signed char >(int const,int const,int const,int const,int const [],int const [],signed char const [],signed char const [],signed char [])\n"
+    "    bsr_matvec< int,unsigned char >(int const,int const,int const,int const,int const [],int const [],unsigned char const [],unsigned char const [],unsigned char [])\n"
+    "    bsr_matvec< int,short >(int const,int const,int const,int const,int const [],int const [],short const [],short const [],short [])\n"
+    "    bsr_matvec< int,unsigned short >(int const,int const,int const,int const,int const [],int const [],unsigned short const [],unsigned short const [],unsigned short [])\n"
+    "    bsr_matvec< int,int >(int const,int const,int const,int const,int const [],int const [],int const [],int const [],int [])\n"
+    "    bsr_matvec< int,unsigned int >(int const,int const,int const,int const,int const [],int const [],unsigned int const [],unsigned int const [],unsigned int [])\n"
+    "    bsr_matvec< int,long long >(int const,int const,int const,int const,int const [],int const [],long long const [],long long const [],long long [])\n"
+    "    bsr_matvec< int,unsigned long long >(int const,int const,int const,int const,int const [],int const [],unsigned long long const [],unsigned long long const [],unsigned long long [])\n"
+    "    bsr_matvec< int,float >(int const,int const,int const,int const,int const [],int const [],float const [],float const [],float [])\n"
+    "    bsr_matvec< int,double >(int const,int const,int const,int const,int const [],int const [],double const [],double const [],double [])\n"
+    "    bsr_matvec< int,long double >(int const,int const,int const,int const,int const [],int const [],long double const [],long double const [],long double [])\n"
+    "    bsr_matvec< int,npy_cfloat_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n"
+    "    bsr_matvec< int,npy_cdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n"
+    "    bsr_matvec< int,npy_clongdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -47942,7 +48230,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_1(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (signed char*) array_data(temp11);
   }
-  csr_elmul_csr<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -48116,7 +48404,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_2(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned char*) array_data(temp11);
   }
-  csr_elmul_csr<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -48290,7 +48578,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_3(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (short*) array_data(temp11);
   }
-  csr_elmul_csr<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -48464,7 +48752,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_4(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned short*) array_data(temp11);
   }
-  csr_elmul_csr<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -48638,7 +48926,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (int*) array_data(temp11);
   }
-  csr_elmul_csr<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -48812,7 +49100,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned int*) array_data(temp11);
   }
-  csr_elmul_csr<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -48986,7 +49274,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_7(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long long*) array_data(temp11);
   }
-  csr_elmul_csr<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -49160,7 +49448,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_8(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned long long*) array_data(temp11);
   }
-  csr_elmul_csr<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -49334,7 +49622,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_9(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (float*) array_data(temp11);
   }
-  csr_elmul_csr<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -49508,7 +49796,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_10(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (double*) array_data(temp11);
   }
-  csr_elmul_csr<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -49682,7 +49970,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_11(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long double*) array_data(temp11);
   }
-  csr_elmul_csr<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -49856,7 +50144,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_12(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cfloat_wrapper*) array_data(temp11);
   }
-  csr_elmul_csr<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -50030,7 +50318,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_13(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cdouble_wrapper*) array_data(temp11);
   }
-  csr_elmul_csr<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -50204,7 +50492,7 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr__SWIG_14(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_clongdouble_wrapper*) array_data(temp11);
   }
-  csr_elmul_csr<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_elmul_csr< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -51114,7 +51402,22 @@ SWIGINTERN PyObject *_wrap_csr_elmul_csr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_elmul_csr'.\n  Possible C/C++ prototypes are:\n""    csr_elmul_csr<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    csr_elmul_csr<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    csr_elmul_csr<(int,short)>(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    csr_elmul_csr<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    csr_elmul_csr<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    csr_elmul_csr<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    csr_elmul_csr<(int,long long)>(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    csr_elmul_csr<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    csr_elmul_csr<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    csr_elmul_csr<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    csr_elmul_csr<(int,long double)>(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    csr_elmul_csr<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    csr_elmul_csr<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    csr_elmul_csr<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_elmul_csr'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csr_elmul_csr< int,signed char >(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    csr_elmul_csr< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    csr_elmul_csr< int,short >(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    csr_elmul_csr< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    csr_elmul_csr< int,int >(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    csr_elmul_csr< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    csr_elmul_csr< int,long long >(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    csr_elmul_csr< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    csr_elmul_csr< int,float >(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    csr_elmul_csr< int,double >(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    csr_elmul_csr< int,long double >(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    csr_elmul_csr< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    csr_elmul_csr< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    csr_elmul_csr< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -51249,7 +51552,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_1(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (signed char*) array_data(temp11);
   }
-  csr_eldiv_csr<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -51423,7 +51726,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_2(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned char*) array_data(temp11);
   }
-  csr_eldiv_csr<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -51597,7 +51900,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_3(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (short*) array_data(temp11);
   }
-  csr_eldiv_csr<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -51771,7 +52074,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_4(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned short*) array_data(temp11);
   }
-  csr_eldiv_csr<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -51945,7 +52248,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (int*) array_data(temp11);
   }
-  csr_eldiv_csr<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -52119,7 +52422,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned int*) array_data(temp11);
   }
-  csr_eldiv_csr<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -52293,7 +52596,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_7(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long long*) array_data(temp11);
   }
-  csr_eldiv_csr<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -52467,7 +52770,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_8(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned long long*) array_data(temp11);
   }
-  csr_eldiv_csr<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -52641,7 +52944,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_9(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (float*) array_data(temp11);
   }
-  csr_eldiv_csr<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -52815,7 +53118,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_10(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (double*) array_data(temp11);
   }
-  csr_eldiv_csr<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -52989,7 +53292,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_11(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long double*) array_data(temp11);
   }
-  csr_eldiv_csr<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -53163,7 +53466,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_12(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cfloat_wrapper*) array_data(temp11);
   }
-  csr_eldiv_csr<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -53337,7 +53640,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_13(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cdouble_wrapper*) array_data(temp11);
   }
-  csr_eldiv_csr<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -53511,7 +53814,7 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr__SWIG_14(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_clongdouble_wrapper*) array_data(temp11);
   }
-  csr_eldiv_csr<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_eldiv_csr< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -54421,7 +54724,22 @@ SWIGINTERN PyObject *_wrap_csr_eldiv_csr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_eldiv_csr'.\n  Possible C/C++ prototypes are:\n""    csr_eldiv_csr<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    csr_eldiv_csr<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    csr_eldiv_csr<(int,short)>(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    csr_eldiv_csr<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    csr_eldiv_csr<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    csr_eldiv_csr<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    csr_eldiv_csr<(int,long long)>(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    csr_eldiv_csr<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    csr_eldiv_csr<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    csr_eldiv_csr<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    csr_eldiv_csr<(int,long double)>(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    csr_eldiv_csr<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    csr_eldiv_csr<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    csr_eldiv_csr<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_eldiv_csr'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csr_eldiv_csr< int,signed char >(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    csr_eldiv_csr< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    csr_eldiv_csr< int,short >(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    csr_eldiv_csr< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    csr_eldiv_csr< int,int >(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    csr_eldiv_csr< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    csr_eldiv_csr< int,long long >(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    csr_eldiv_csr< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    csr_eldiv_csr< int,float >(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    csr_eldiv_csr< int,double >(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    csr_eldiv_csr< int,long double >(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    csr_eldiv_csr< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    csr_eldiv_csr< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    csr_eldiv_csr< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -54556,7 +54874,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_1(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (signed char*) array_data(temp11);
   }
-  csr_plus_csr<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -54730,7 +55048,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_2(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned char*) array_data(temp11);
   }
-  csr_plus_csr<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -54904,7 +55222,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_3(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (short*) array_data(temp11);
   }
-  csr_plus_csr<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -55078,7 +55396,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_4(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned short*) array_data(temp11);
   }
-  csr_plus_csr<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -55252,7 +55570,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (int*) array_data(temp11);
   }
-  csr_plus_csr<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -55426,7 +55744,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned int*) array_data(temp11);
   }
-  csr_plus_csr<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -55600,7 +55918,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_7(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long long*) array_data(temp11);
   }
-  csr_plus_csr<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -55774,7 +56092,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_8(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned long long*) array_data(temp11);
   }
-  csr_plus_csr<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -55948,7 +56266,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_9(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (float*) array_data(temp11);
   }
-  csr_plus_csr<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -56122,7 +56440,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_10(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (double*) array_data(temp11);
   }
-  csr_plus_csr<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -56296,7 +56614,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_11(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long double*) array_data(temp11);
   }
-  csr_plus_csr<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -56470,7 +56788,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_12(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cfloat_wrapper*) array_data(temp11);
   }
-  csr_plus_csr<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -56644,7 +56962,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_13(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cdouble_wrapper*) array_data(temp11);
   }
-  csr_plus_csr<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -56818,7 +57136,7 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr__SWIG_14(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_clongdouble_wrapper*) array_data(temp11);
   }
-  csr_plus_csr<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_plus_csr< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -57728,7 +58046,22 @@ SWIGINTERN PyObject *_wrap_csr_plus_csr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_plus_csr'.\n  Possible C/C++ prototypes are:\n""    csr_plus_csr<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    csr_plus_csr<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    csr_plus_csr<(int,short)>(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    csr_plus_csr<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    csr_plus_csr<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    csr_plus_csr<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    csr_plus_csr<(int,long long)>(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    csr_plus_csr<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    csr_plus_csr<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    csr_plus_csr<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    csr_plus_csr<(int,long double)>(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    csr_plus_csr<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    csr_plus_csr<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    csr_plus_csr<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_plus_csr'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csr_plus_csr< int,signed char >(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    csr_plus_csr< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    csr_plus_csr< int,short >(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    csr_plus_csr< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    csr_plus_csr< int,int >(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    csr_plus_csr< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    csr_plus_csr< int,long long >(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    csr_plus_csr< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    csr_plus_csr< int,float >(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    csr_plus_csr< int,double >(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    csr_plus_csr< int,long double >(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    csr_plus_csr< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    csr_plus_csr< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    csr_plus_csr< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -57863,7 +58196,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_1(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (signed char*) array_data(temp11);
   }
-  csr_minus_csr<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -58037,7 +58370,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_2(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned char*) array_data(temp11);
   }
-  csr_minus_csr<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -58211,7 +58544,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_3(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (short*) array_data(temp11);
   }
-  csr_minus_csr<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -58385,7 +58718,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_4(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned short*) array_data(temp11);
   }
-  csr_minus_csr<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -58559,7 +58892,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (int*) array_data(temp11);
   }
-  csr_minus_csr<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -58733,7 +59066,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned int*) array_data(temp11);
   }
-  csr_minus_csr<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -58907,7 +59240,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_7(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long long*) array_data(temp11);
   }
-  csr_minus_csr<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -59081,7 +59414,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_8(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned long long*) array_data(temp11);
   }
-  csr_minus_csr<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -59255,7 +59588,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_9(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (float*) array_data(temp11);
   }
-  csr_minus_csr<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -59429,7 +59762,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_10(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (double*) array_data(temp11);
   }
-  csr_minus_csr<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -59603,7 +59936,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_11(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long double*) array_data(temp11);
   }
-  csr_minus_csr<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -59777,7 +60110,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_12(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cfloat_wrapper*) array_data(temp11);
   }
-  csr_minus_csr<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -59951,7 +60284,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_13(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cdouble_wrapper*) array_data(temp11);
   }
-  csr_minus_csr<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -60125,7 +60458,7 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr__SWIG_14(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_clongdouble_wrapper*) array_data(temp11);
   }
-  csr_minus_csr<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csr_minus_csr< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -61035,7 +61368,22 @@ SWIGINTERN PyObject *_wrap_csr_minus_csr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_minus_csr'.\n  Possible C/C++ prototypes are:\n""    csr_minus_csr<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    csr_minus_csr<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    csr_minus_csr<(int,short)>(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    csr_minus_csr<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    csr_minus_csr<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    csr_minus_csr<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    csr_minus_csr<(int,long long)>(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    csr_minus_csr<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    csr_minus_csr<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    csr_minus_csr<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    csr_minus_csr<(int,long double)>(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    csr_minus_csr<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    csr_minus_csr<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    csr_minus_csr<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_minus_csr'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csr_minus_csr< int,signed char >(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    csr_minus_csr< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    csr_minus_csr< int,short >(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    csr_minus_csr< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    csr_minus_csr< int,int >(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    csr_minus_csr< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    csr_minus_csr< int,long long >(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    csr_minus_csr< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    csr_minus_csr< int,float >(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    csr_minus_csr< int,double >(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    csr_minus_csr< int,long double >(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    csr_minus_csr< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    csr_minus_csr< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    csr_minus_csr< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -61170,7 +61518,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_1(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (signed char*) array_data(temp11);
   }
-  csc_elmul_csc<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -61344,7 +61692,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_2(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned char*) array_data(temp11);
   }
-  csc_elmul_csc<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -61518,7 +61866,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_3(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (short*) array_data(temp11);
   }
-  csc_elmul_csc<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -61692,7 +62040,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_4(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned short*) array_data(temp11);
   }
-  csc_elmul_csc<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -61866,7 +62214,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (int*) array_data(temp11);
   }
-  csc_elmul_csc<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -62040,7 +62388,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned int*) array_data(temp11);
   }
-  csc_elmul_csc<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -62214,7 +62562,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_7(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long long*) array_data(temp11);
   }
-  csc_elmul_csc<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -62388,7 +62736,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_8(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned long long*) array_data(temp11);
   }
-  csc_elmul_csc<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -62562,7 +62910,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_9(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (float*) array_data(temp11);
   }
-  csc_elmul_csc<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -62736,7 +63084,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_10(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (double*) array_data(temp11);
   }
-  csc_elmul_csc<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -62910,7 +63258,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_11(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long double*) array_data(temp11);
   }
-  csc_elmul_csc<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -63084,7 +63432,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_12(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cfloat_wrapper*) array_data(temp11);
   }
-  csc_elmul_csc<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -63258,7 +63606,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_13(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cdouble_wrapper*) array_data(temp11);
   }
-  csc_elmul_csc<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -63432,7 +63780,7 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_14(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_clongdouble_wrapper*) array_data(temp11);
   }
-  csc_elmul_csc<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_elmul_csc< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -64342,7 +64690,22 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_elmul_csc'.\n  Possible C/C++ prototypes are:\n""    csc_elmul_csc<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    csc_elmul_csc<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    csc_elmul_csc<(int,short)>(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    csc_elmul_csc<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    csc_elmul_csc<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    csc_elmul_csc<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    csc_elmul_csc<(int,long long)>(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    csc_elmul_csc<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    csc_elmul_csc<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    csc_elmul_csc<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    csc_elmul_csc<(int,long double)>(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    csc_elmul_csc<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    csc_elmul_csc<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    csc_elmul_csc<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_elmul_csc'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csc_elmul_csc< int,signed char >(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    csc_elmul_csc< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    csc_elmul_csc< int,short >(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    csc_elmul_csc< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    csc_elmul_csc< int,int >(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    csc_elmul_csc< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    csc_elmul_csc< int,long long >(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    csc_elmul_csc< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    csc_elmul_csc< int,float >(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    csc_elmul_csc< int,double >(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    csc_elmul_csc< int,long double >(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    csc_elmul_csc< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    csc_elmul_csc< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    csc_elmul_csc< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -64477,7 +64840,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_1(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (signed char*) array_data(temp11);
   }
-  csc_eldiv_csc<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -64651,7 +65014,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_2(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned char*) array_data(temp11);
   }
-  csc_eldiv_csc<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -64825,7 +65188,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_3(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (short*) array_data(temp11);
   }
-  csc_eldiv_csc<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -64999,7 +65362,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_4(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned short*) array_data(temp11);
   }
-  csc_eldiv_csc<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -65173,7 +65536,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (int*) array_data(temp11);
   }
-  csc_eldiv_csc<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -65347,7 +65710,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned int*) array_data(temp11);
   }
-  csc_eldiv_csc<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -65521,7 +65884,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_7(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long long*) array_data(temp11);
   }
-  csc_eldiv_csc<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -65695,7 +66058,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_8(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned long long*) array_data(temp11);
   }
-  csc_eldiv_csc<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -65869,7 +66232,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_9(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (float*) array_data(temp11);
   }
-  csc_eldiv_csc<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -66043,7 +66406,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_10(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (double*) array_data(temp11);
   }
-  csc_eldiv_csc<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -66217,7 +66580,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_11(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long double*) array_data(temp11);
   }
-  csc_eldiv_csc<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -66391,7 +66754,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_12(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cfloat_wrapper*) array_data(temp11);
   }
-  csc_eldiv_csc<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -66565,7 +66928,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_13(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cdouble_wrapper*) array_data(temp11);
   }
-  csc_eldiv_csc<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -66739,7 +67102,7 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_14(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_clongdouble_wrapper*) array_data(temp11);
   }
-  csc_eldiv_csc<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_eldiv_csc< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -67649,7 +68012,22 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_eldiv_csc'.\n  Possible C/C++ prototypes are:\n""    csc_eldiv_csc<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    csc_eldiv_csc<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    csc_eldiv_csc<(int,short)>(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    csc_eldiv_csc<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    csc_eldiv_csc<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    csc_eldiv_csc<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    csc_eldiv_csc<(int,long long)>(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    csc_eldiv_csc<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    csc_eldiv_csc<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    csc_eldiv_csc<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    csc_eldiv_csc<(int,long double)>(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    csc_eldiv_csc<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    csc_eldiv_csc<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    csc_eldiv_csc<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_eldiv_csc'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csc_eldiv_csc< int,signed char >(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    csc_eldiv_csc< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    csc_eldiv_csc< int,short >(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    csc_eldiv_csc< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    csc_eldiv_csc< int,int >(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    csc_eldiv_csc< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    csc_eldiv_csc< int,long long >(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    csc_eldiv_csc< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    csc_eldiv_csc< int,float >(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    csc_eldiv_csc< int,double >(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    csc_eldiv_csc< int,long double >(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    csc_eldiv_csc< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    csc_eldiv_csc< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    csc_eldiv_csc< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -67784,7 +68162,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_1(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (signed char*) array_data(temp11);
   }
-  csc_plus_csc<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -67958,7 +68336,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_2(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned char*) array_data(temp11);
   }
-  csc_plus_csc<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -68132,7 +68510,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_3(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (short*) array_data(temp11);
   }
-  csc_plus_csc<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -68306,7 +68684,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_4(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned short*) array_data(temp11);
   }
-  csc_plus_csc<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -68480,7 +68858,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (int*) array_data(temp11);
   }
-  csc_plus_csc<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -68654,7 +69032,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned int*) array_data(temp11);
   }
-  csc_plus_csc<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -68828,7 +69206,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_7(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long long*) array_data(temp11);
   }
-  csc_plus_csc<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -69002,7 +69380,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_8(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned long long*) array_data(temp11);
   }
-  csc_plus_csc<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -69176,7 +69554,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_9(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (float*) array_data(temp11);
   }
-  csc_plus_csc<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -69350,7 +69728,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_10(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (double*) array_data(temp11);
   }
-  csc_plus_csc<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -69524,7 +69902,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_11(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long double*) array_data(temp11);
   }
-  csc_plus_csc<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -69698,7 +70076,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_12(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cfloat_wrapper*) array_data(temp11);
   }
-  csc_plus_csc<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -69872,7 +70250,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_13(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cdouble_wrapper*) array_data(temp11);
   }
-  csc_plus_csc<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -70046,7 +70424,7 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_14(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_clongdouble_wrapper*) array_data(temp11);
   }
-  csc_plus_csc<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_plus_csc< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -70956,7 +71334,22 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_plus_csc'.\n  Possible C/C++ prototypes are:\n""    csc_plus_csc<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    csc_plus_csc<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    csc_plus_csc<(int,short)>(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    csc_plus_csc<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    csc_plus_csc<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    csc_plus_csc<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    csc_plus_csc<(int,long long)>(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    csc_plus_csc<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    csc_plus_csc<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    csc_plus_csc<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    csc_plus_csc<(int,long double)>(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    csc_plus_csc<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    csc_plus_csc<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    csc_plus_csc<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_plus_csc'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csc_plus_csc< int,signed char >(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    csc_plus_csc< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    csc_plus_csc< int,short >(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    csc_plus_csc< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    csc_plus_csc< int,int >(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    csc_plus_csc< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    csc_plus_csc< int,long long >(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    csc_plus_csc< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    csc_plus_csc< int,float >(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    csc_plus_csc< int,double >(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    csc_plus_csc< int,long double >(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    csc_plus_csc< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    csc_plus_csc< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    csc_plus_csc< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -71091,7 +71484,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_1(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (signed char*) array_data(temp11);
   }
-  csc_minus_csc<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -71265,7 +71658,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_2(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned char*) array_data(temp11);
   }
-  csc_minus_csc<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -71439,7 +71832,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_3(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (short*) array_data(temp11);
   }
-  csc_minus_csc<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -71613,7 +72006,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_4(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned short*) array_data(temp11);
   }
-  csc_minus_csc<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -71787,7 +72180,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (int*) array_data(temp11);
   }
-  csc_minus_csc<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -71961,7 +72354,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned int*) array_data(temp11);
   }
-  csc_minus_csc<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -72135,7 +72528,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_7(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long long*) array_data(temp11);
   }
-  csc_minus_csc<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -72309,7 +72702,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_8(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (unsigned long long*) array_data(temp11);
   }
-  csc_minus_csc<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -72483,7 +72876,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_9(PyObject *SWIGUNUSEDPARM(self),
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (float*) array_data(temp11);
   }
-  csc_minus_csc<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -72657,7 +73050,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_10(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (double*) array_data(temp11);
   }
-  csc_minus_csc<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -72831,7 +73224,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_11(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (long double*) array_data(temp11);
   }
-  csc_minus_csc<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -73005,7 +73398,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_12(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cfloat_wrapper*) array_data(temp11);
   }
-  csc_minus_csc<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -73179,7 +73572,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_13(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_cdouble_wrapper*) array_data(temp11);
   }
-  csc_minus_csc<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -73353,7 +73746,7 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_14(PyObject *SWIGUNUSEDPARM(self)
     if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
     arg11 = (npy_clongdouble_wrapper*) array_data(temp11);
   }
-  csc_minus_csc<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+  csc_minus_csc< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object3 && array3) Py_DECREF(array3);
@@ -74263,7 +74656,22 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_minus_csc'.\n  Possible C/C++ prototypes are:\n""    csc_minus_csc<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    csc_minus_csc<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    csc_minus_csc<(int,short)>(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    csc_minus_csc<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    csc_minus_csc<(int,int)>(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    csc_minus_csc<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    csc_minus_csc<(int,long long)>(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    csc_minus_csc<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    csc_minus_csc<(int,float)>(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    csc_minus_csc<(int,double)>(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    csc_minus_csc<(int,long double)>(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    csc_minus_csc<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    csc_minus_csc<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    csc_minus_csc<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csc_minus_csc'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csc_minus_csc< int,signed char >(int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    csc_minus_csc< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    csc_minus_csc< int,short >(int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    csc_minus_csc< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    csc_minus_csc< int,int >(int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    csc_minus_csc< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    csc_minus_csc< int,long long >(int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    csc_minus_csc< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    csc_minus_csc< int,float >(int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    csc_minus_csc< int,double >(int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    csc_minus_csc< int,long double >(int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    csc_minus_csc< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    csc_minus_csc< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    csc_minus_csc< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -74416,7 +74824,7 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr__SWIG_1(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (signed char*) array_data(temp13);
   }
-  bsr_elmul_bsr<int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(signed char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(signed char const (*))arg10,arg11,arg12,arg13);
+  bsr_elmul_bsr< int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(signed char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(signed char const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -74608,7 +75016,7 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr__SWIG_2(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned char*) array_data(temp13);
   }
-  bsr_elmul_bsr<int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned char const (*))arg10,arg11,arg12,arg13);
+  bsr_elmul_bsr< int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned char const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -74800,7 +75208,7 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr__SWIG_3(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (short*) array_data(temp13);
   }
-  bsr_elmul_bsr<int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(short const (*))arg10,arg11,arg12,arg13);
+  bsr_elmul_bsr< int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(short const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -74992,7 +75400,7 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr__SWIG_4(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned short*) array_data(temp13);
   }
-  bsr_elmul_bsr<int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned short const (*))arg10,arg11,arg12,arg13);
+  bsr_elmul_bsr< int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned short const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -75184,7 +75592,7 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (int*) array_data(temp13);
   }
-  bsr_elmul_bsr<int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(int const (*))arg10,arg11,arg12,arg13);
+  bsr_elmul_bsr< int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(int const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -75376,7 +75784,7 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned int*) array_data(temp13);
   }
-  bsr_elmul_bsr<int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned int const (*))arg10,arg11,arg12,arg13);
+  bsr_elmul_bsr< int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned int const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -75568,7 +75976,7 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr__SWIG_7(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (long long*) array_data(temp13);
   }
-  bsr_elmul_bsr<int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long long const (*))arg10,arg11,arg12,arg13);
+  bsr_elmul_bsr< int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long long const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -75760,7 +76168,7 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr__SWIG_8(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned long long*) array_data(temp13);
   }
-  bsr_elmul_bsr<int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned long long const (*))arg10,arg11,arg12,arg13);
+  bsr_elmul_bsr< int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned long long const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -75952,7 +76360,7 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr__SWIG_9(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (float*) array_data(temp13);
   }
-  bsr_elmul_bsr<int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(float const (*))arg7,(int const (*))arg8,(int const (*))arg9,(float const (*))arg10,arg11,arg12,arg13);
+  bsr_elmul_bsr< int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(float const (*))arg7,(int const (*))arg8,(int const (*))arg9,(float const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -76144,7 +76552,7 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr__SWIG_10(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (double*) array_data(temp13);
   }
-  bsr_elmul_bsr<int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(double const (*))arg10,arg11,arg12,arg13);
+  bsr_elmul_bsr< int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(double const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -76336,7 +76744,7 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr__SWIG_11(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (long double*) array_data(temp13);
   }
-  bsr_elmul_bsr<int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long double const (*))arg10,arg11,arg12,arg13);
+  bsr_elmul_bsr< int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long double const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -76528,7 +76936,7 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr__SWIG_12(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (npy_cfloat_wrapper*) array_data(temp13);
   }
-  bsr_elmul_bsr<int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cfloat_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cfloat_wrapper const (*))arg10,arg11,arg12,arg13);
+  bsr_elmul_bsr< int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cfloat_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cfloat_wrapper const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -76720,7 +77128,7 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr__SWIG_13(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (npy_cdouble_wrapper*) array_data(temp13);
   }
-  bsr_elmul_bsr<int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cdouble_wrapper const (*))arg10,arg11,arg12,arg13);
+  bsr_elmul_bsr< int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cdouble_wrapper const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -76912,7 +77320,7 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr__SWIG_14(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (npy_clongdouble_wrapper*) array_data(temp13);
   }
-  bsr_elmul_bsr<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_clongdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_clongdouble_wrapper const (*))arg10,arg11,arg12,arg13);
+  bsr_elmul_bsr< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_clongdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_clongdouble_wrapper const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -77990,7 +78398,22 @@ SWIGINTERN PyObject *_wrap_bsr_elmul_bsr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_elmul_bsr'.\n  Possible C/C++ prototypes are:\n""    bsr_elmul_bsr<(int,signed char)>(int const,int const,int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    bsr_elmul_bsr<(int,unsigned char)>(int const,int const,int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    bsr_elmul_bsr<(int,short)>(int const,int const,int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    bsr_elmul_bsr<(int,unsigned short)>(int const,int const,int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    bsr_elmul_bsr<(int,int)>(int const,int const,int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    bsr_elmul_bsr<(int,unsigned int)>(int const,int const,int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    bsr_elmul_bsr<(int,long long)>(int const,int const,int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    bsr_elmul_bsr<(int,unsigned long long)>(int const,int const,int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    bsr_elmul_bsr<(int,float)>(int const,int const,int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    bsr_elmul_bsr<(int,double)>(int const,int const,int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    bsr_elmul_bsr<(int,long double)>(int const,int const,int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    bsr_elmul_bsr<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    bsr_elmul_bsr<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    bsr_elmul_bsr<(int,npy_clongdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_elmul_bsr'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    bsr_elmul_bsr< int,signed char >(int const,int const,int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    bsr_elmul_bsr< int,unsigned char >(int const,int const,int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    bsr_elmul_bsr< int,short >(int const,int const,int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    bsr_elmul_bsr< int,unsigned short >(int const,int const,int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    bsr_elmul_bsr< int,int >(int const,int const,int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    bsr_elmul_bsr< int,unsigned int >(int const,int const,int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    bsr_elmul_bsr< int,long long >(int const,int const,int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    bsr_elmul_bsr< int,unsigned long long >(int const,int const,int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    bsr_elmul_bsr< int,float >(int const,int const,int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    bsr_elmul_bsr< int,double >(int const,int const,int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    bsr_elmul_bsr< int,long double >(int const,int const,int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    bsr_elmul_bsr< int,npy_cfloat_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    bsr_elmul_bsr< int,npy_cdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    bsr_elmul_bsr< int,npy_clongdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -78143,7 +78566,7 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr__SWIG_1(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (signed char*) array_data(temp13);
   }
-  bsr_eldiv_bsr<int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(signed char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(signed char const (*))arg10,arg11,arg12,arg13);
+  bsr_eldiv_bsr< int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(signed char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(signed char const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -78335,7 +78758,7 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr__SWIG_2(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned char*) array_data(temp13);
   }
-  bsr_eldiv_bsr<int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned char const (*))arg10,arg11,arg12,arg13);
+  bsr_eldiv_bsr< int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned char const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -78527,7 +78950,7 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr__SWIG_3(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (short*) array_data(temp13);
   }
-  bsr_eldiv_bsr<int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(short const (*))arg10,arg11,arg12,arg13);
+  bsr_eldiv_bsr< int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(short const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -78719,7 +79142,7 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr__SWIG_4(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned short*) array_data(temp13);
   }
-  bsr_eldiv_bsr<int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned short const (*))arg10,arg11,arg12,arg13);
+  bsr_eldiv_bsr< int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned short const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -78911,7 +79334,7 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (int*) array_data(temp13);
   }
-  bsr_eldiv_bsr<int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(int const (*))arg10,arg11,arg12,arg13);
+  bsr_eldiv_bsr< int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(int const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -79103,7 +79526,7 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned int*) array_data(temp13);
   }
-  bsr_eldiv_bsr<int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned int const (*))arg10,arg11,arg12,arg13);
+  bsr_eldiv_bsr< int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned int const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -79295,7 +79718,7 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr__SWIG_7(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (long long*) array_data(temp13);
   }
-  bsr_eldiv_bsr<int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long long const (*))arg10,arg11,arg12,arg13);
+  bsr_eldiv_bsr< int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long long const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -79487,7 +79910,7 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr__SWIG_8(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned long long*) array_data(temp13);
   }
-  bsr_eldiv_bsr<int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned long long const (*))arg10,arg11,arg12,arg13);
+  bsr_eldiv_bsr< int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned long long const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -79679,7 +80102,7 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr__SWIG_9(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (float*) array_data(temp13);
   }
-  bsr_eldiv_bsr<int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(float const (*))arg7,(int const (*))arg8,(int const (*))arg9,(float const (*))arg10,arg11,arg12,arg13);
+  bsr_eldiv_bsr< int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(float const (*))arg7,(int const (*))arg8,(int const (*))arg9,(float const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -79871,7 +80294,7 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr__SWIG_10(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (double*) array_data(temp13);
   }
-  bsr_eldiv_bsr<int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(double const (*))arg10,arg11,arg12,arg13);
+  bsr_eldiv_bsr< int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(double const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -80063,7 +80486,7 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr__SWIG_11(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (long double*) array_data(temp13);
   }
-  bsr_eldiv_bsr<int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long double const (*))arg10,arg11,arg12,arg13);
+  bsr_eldiv_bsr< int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long double const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -80255,7 +80678,7 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr__SWIG_12(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (npy_cfloat_wrapper*) array_data(temp13);
   }
-  bsr_eldiv_bsr<int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cfloat_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cfloat_wrapper const (*))arg10,arg11,arg12,arg13);
+  bsr_eldiv_bsr< int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cfloat_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cfloat_wrapper const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -80447,7 +80870,7 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr__SWIG_13(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (npy_cdouble_wrapper*) array_data(temp13);
   }
-  bsr_eldiv_bsr<int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cdouble_wrapper const (*))arg10,arg11,arg12,arg13);
+  bsr_eldiv_bsr< int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cdouble_wrapper const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -80639,7 +81062,7 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr__SWIG_14(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (npy_clongdouble_wrapper*) array_data(temp13);
   }
-  bsr_eldiv_bsr<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_clongdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_clongdouble_wrapper const (*))arg10,arg11,arg12,arg13);
+  bsr_eldiv_bsr< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_clongdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_clongdouble_wrapper const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -81717,7 +82140,22 @@ SWIGINTERN PyObject *_wrap_bsr_eldiv_bsr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_eldiv_bsr'.\n  Possible C/C++ prototypes are:\n""    bsr_eldiv_bsr<(int,signed char)>(int const,int const,int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    bsr_eldiv_bsr<(int,unsigned char)>(int const,int const,int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    bsr_eldiv_bsr<(int,short)>(int const,int const,int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    bsr_eldiv_bsr<(int,unsigned short)>(int const,int const,int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    bsr_eldiv_bsr<(int,int)>(int const,int const,int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    bsr_eldiv_bsr<(int,unsigned int)>(int const,int const,int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    bsr_eldiv_bsr<(int,long long)>(int const,int const,int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    bsr_eldiv_bsr<(int,unsigned long long)>(int const,int const,int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    bsr_eldiv_bsr<(int,float)>(int const,int const,int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    bsr_eldiv_bsr<(int,double)>(int const,int const,int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    bsr_eldiv_bsr<(int,long double)>(int const,int const,int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    bsr_eldiv_bsr<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    bsr_eldiv_bsr<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    bsr_eldiv_bsr<(int,npy_clongdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_eldiv_bsr'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    bsr_eldiv_bsr< int,signed char >(int const,int const,int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    bsr_eldiv_bsr< int,unsigned char >(int const,int const,int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    bsr_eldiv_bsr< int,short >(int const,int const,int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    bsr_eldiv_bsr< int,unsigned short >(int const,int const,int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    bsr_eldiv_bsr< int,int >(int const,int const,int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    bsr_eldiv_bsr< int,unsigned int >(int const,int const,int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    bsr_eldiv_bsr< int,long long >(int const,int const,int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    bsr_eldiv_bsr< int,unsigned long long >(int const,int const,int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    bsr_eldiv_bsr< int,float >(int const,int const,int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    bsr_eldiv_bsr< int,double >(int const,int const,int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    bsr_eldiv_bsr< int,long double >(int const,int const,int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    bsr_eldiv_bsr< int,npy_cfloat_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    bsr_eldiv_bsr< int,npy_cdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    bsr_eldiv_bsr< int,npy_clongdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -81870,7 +82308,7 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr__SWIG_1(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (signed char*) array_data(temp13);
   }
-  bsr_plus_bsr<int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(signed char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(signed char const (*))arg10,arg11,arg12,arg13);
+  bsr_plus_bsr< int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(signed char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(signed char const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -82062,7 +82500,7 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr__SWIG_2(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned char*) array_data(temp13);
   }
-  bsr_plus_bsr<int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned char const (*))arg10,arg11,arg12,arg13);
+  bsr_plus_bsr< int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned char const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -82254,7 +82692,7 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr__SWIG_3(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (short*) array_data(temp13);
   }
-  bsr_plus_bsr<int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(short const (*))arg10,arg11,arg12,arg13);
+  bsr_plus_bsr< int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(short const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -82446,7 +82884,7 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr__SWIG_4(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned short*) array_data(temp13);
   }
-  bsr_plus_bsr<int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned short const (*))arg10,arg11,arg12,arg13);
+  bsr_plus_bsr< int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned short const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -82638,7 +83076,7 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (int*) array_data(temp13);
   }
-  bsr_plus_bsr<int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(int const (*))arg10,arg11,arg12,arg13);
+  bsr_plus_bsr< int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(int const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -82830,7 +83268,7 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned int*) array_data(temp13);
   }
-  bsr_plus_bsr<int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned int const (*))arg10,arg11,arg12,arg13);
+  bsr_plus_bsr< int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned int const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -83022,7 +83460,7 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr__SWIG_7(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (long long*) array_data(temp13);
   }
-  bsr_plus_bsr<int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long long const (*))arg10,arg11,arg12,arg13);
+  bsr_plus_bsr< int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long long const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -83214,7 +83652,7 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr__SWIG_8(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned long long*) array_data(temp13);
   }
-  bsr_plus_bsr<int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned long long const (*))arg10,arg11,arg12,arg13);
+  bsr_plus_bsr< int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned long long const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -83406,7 +83844,7 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr__SWIG_9(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (float*) array_data(temp13);
   }
-  bsr_plus_bsr<int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(float const (*))arg7,(int const (*))arg8,(int const (*))arg9,(float const (*))arg10,arg11,arg12,arg13);
+  bsr_plus_bsr< int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(float const (*))arg7,(int const (*))arg8,(int const (*))arg9,(float const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -83598,7 +84036,7 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr__SWIG_10(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (double*) array_data(temp13);
   }
-  bsr_plus_bsr<int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(double const (*))arg10,arg11,arg12,arg13);
+  bsr_plus_bsr< int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(double const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -83790,7 +84228,7 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr__SWIG_11(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (long double*) array_data(temp13);
   }
-  bsr_plus_bsr<int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long double const (*))arg10,arg11,arg12,arg13);
+  bsr_plus_bsr< int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long double const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -83982,7 +84420,7 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr__SWIG_12(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (npy_cfloat_wrapper*) array_data(temp13);
   }
-  bsr_plus_bsr<int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cfloat_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cfloat_wrapper const (*))arg10,arg11,arg12,arg13);
+  bsr_plus_bsr< int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cfloat_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cfloat_wrapper const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -84174,7 +84612,7 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr__SWIG_13(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (npy_cdouble_wrapper*) array_data(temp13);
   }
-  bsr_plus_bsr<int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cdouble_wrapper const (*))arg10,arg11,arg12,arg13);
+  bsr_plus_bsr< int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cdouble_wrapper const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -84366,7 +84804,7 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr__SWIG_14(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (npy_clongdouble_wrapper*) array_data(temp13);
   }
-  bsr_plus_bsr<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_clongdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_clongdouble_wrapper const (*))arg10,arg11,arg12,arg13);
+  bsr_plus_bsr< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_clongdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_clongdouble_wrapper const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -85444,7 +85882,22 @@ SWIGINTERN PyObject *_wrap_bsr_plus_bsr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_plus_bsr'.\n  Possible C/C++ prototypes are:\n""    bsr_plus_bsr<(int,signed char)>(int const,int const,int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    bsr_plus_bsr<(int,unsigned char)>(int const,int const,int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    bsr_plus_bsr<(int,short)>(int const,int const,int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    bsr_plus_bsr<(int,unsigned short)>(int const,int const,int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    bsr_plus_bsr<(int,int)>(int const,int const,int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    bsr_plus_bsr<(int,unsigned int)>(int const,int const,int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    bsr_plus_bsr<(int,long long)>(int const,int const,int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    bsr_plus_bsr<(int,unsigned long long)>(int const,int const,int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    bsr_plus_bsr<(int,float)>(int const,int const,int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    bsr_plus_bsr<(int,double)>(int const,int const,int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    bsr_plus_bsr<(int,long double)>(int const,int const,int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    bsr_plus_bsr<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    bsr_plus_bsr<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    bsr_plus_bsr<(int,npy_clongdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_plus_bsr'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    bsr_plus_bsr< int,signed char >(int const,int const,int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    bsr_plus_bsr< int,unsigned char >(int const,int const,int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    bsr_plus_bsr< int,short >(int const,int const,int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    bsr_plus_bsr< int,unsigned short >(int const,int const,int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    bsr_plus_bsr< int,int >(int const,int const,int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    bsr_plus_bsr< int,unsigned int >(int const,int const,int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    bsr_plus_bsr< int,long long >(int const,int const,int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    bsr_plus_bsr< int,unsigned long long >(int const,int const,int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    bsr_plus_bsr< int,float >(int const,int const,int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    bsr_plus_bsr< int,double >(int const,int const,int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    bsr_plus_bsr< int,long double >(int const,int const,int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    bsr_plus_bsr< int,npy_cfloat_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    bsr_plus_bsr< int,npy_cdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    bsr_plus_bsr< int,npy_clongdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -85597,7 +86050,7 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr__SWIG_1(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (signed char*) array_data(temp13);
   }
-  bsr_minus_bsr<int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(signed char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(signed char const (*))arg10,arg11,arg12,arg13);
+  bsr_minus_bsr< int,signed char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(signed char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(signed char const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -85789,7 +86242,7 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr__SWIG_2(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned char*) array_data(temp13);
   }
-  bsr_minus_bsr<int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned char const (*))arg10,arg11,arg12,arg13);
+  bsr_minus_bsr< int,unsigned char >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned char const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned char const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -85981,7 +86434,7 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr__SWIG_3(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (short*) array_data(temp13);
   }
-  bsr_minus_bsr<int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(short const (*))arg10,arg11,arg12,arg13);
+  bsr_minus_bsr< int,short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(short const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -86173,7 +86626,7 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr__SWIG_4(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned short*) array_data(temp13);
   }
-  bsr_minus_bsr<int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned short const (*))arg10,arg11,arg12,arg13);
+  bsr_minus_bsr< int,unsigned short >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned short const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned short const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -86365,7 +86818,7 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (int*) array_data(temp13);
   }
-  bsr_minus_bsr<int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(int const (*))arg10,arg11,arg12,arg13);
+  bsr_minus_bsr< int,int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(int const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -86557,7 +87010,7 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned int*) array_data(temp13);
   }
-  bsr_minus_bsr<int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned int const (*))arg10,arg11,arg12,arg13);
+  bsr_minus_bsr< int,unsigned int >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned int const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned int const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -86749,7 +87202,7 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr__SWIG_7(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (long long*) array_data(temp13);
   }
-  bsr_minus_bsr<int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long long const (*))arg10,arg11,arg12,arg13);
+  bsr_minus_bsr< int,long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long long const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -86941,7 +87394,7 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr__SWIG_8(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (unsigned long long*) array_data(temp13);
   }
-  bsr_minus_bsr<int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned long long const (*))arg10,arg11,arg12,arg13);
+  bsr_minus_bsr< int,unsigned long long >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(unsigned long long const (*))arg7,(int const (*))arg8,(int const (*))arg9,(unsigned long long const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -87133,7 +87586,7 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr__SWIG_9(PyObject *SWIGUNUSEDPARM(self),
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (float*) array_data(temp13);
   }
-  bsr_minus_bsr<int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(float const (*))arg7,(int const (*))arg8,(int const (*))arg9,(float const (*))arg10,arg11,arg12,arg13);
+  bsr_minus_bsr< int,float >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(float const (*))arg7,(int const (*))arg8,(int const (*))arg9,(float const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -87325,7 +87778,7 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr__SWIG_10(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (double*) array_data(temp13);
   }
-  bsr_minus_bsr<int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(double const (*))arg10,arg11,arg12,arg13);
+  bsr_minus_bsr< int,double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(double const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -87517,7 +87970,7 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr__SWIG_11(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (long double*) array_data(temp13);
   }
-  bsr_minus_bsr<int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long double const (*))arg10,arg11,arg12,arg13);
+  bsr_minus_bsr< int,long double >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(long double const (*))arg7,(int const (*))arg8,(int const (*))arg9,(long double const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -87709,7 +88162,7 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr__SWIG_12(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (npy_cfloat_wrapper*) array_data(temp13);
   }
-  bsr_minus_bsr<int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cfloat_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cfloat_wrapper const (*))arg10,arg11,arg12,arg13);
+  bsr_minus_bsr< int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cfloat_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cfloat_wrapper const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -87901,7 +88354,7 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr__SWIG_13(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (npy_cdouble_wrapper*) array_data(temp13);
   }
-  bsr_minus_bsr<int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cdouble_wrapper const (*))arg10,arg11,arg12,arg13);
+  bsr_minus_bsr< int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_cdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_cdouble_wrapper const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -88093,7 +88546,7 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr__SWIG_14(PyObject *SWIGUNUSEDPARM(self)
     if (!temp13  || !require_contiguous(temp13) || !require_native(temp13)) SWIG_fail;
     arg13 = (npy_clongdouble_wrapper*) array_data(temp13);
   }
-  bsr_minus_bsr<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_clongdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_clongdouble_wrapper const (*))arg10,arg11,arg12,arg13);
+  bsr_minus_bsr< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,(int const (*))arg5,(int const (*))arg6,(npy_clongdouble_wrapper const (*))arg7,(int const (*))arg8,(int const (*))arg9,(npy_clongdouble_wrapper const (*))arg10,arg11,arg12,arg13);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object5 && array5) Py_DECREF(array5);
@@ -89171,7 +89624,22 @@ SWIGINTERN PyObject *_wrap_bsr_minus_bsr(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_minus_bsr'.\n  Possible C/C++ prototypes are:\n""    bsr_minus_bsr<(int,signed char)>(int const,int const,int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n""    bsr_minus_bsr<(int,unsigned char)>(int const,int const,int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n""    bsr_minus_bsr<(int,short)>(int const,int const,int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n""    bsr_minus_bsr<(int,unsigned short)>(int const,int const,int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n""    bsr_minus_bsr<(int,int)>(int const,int const,int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n""    bsr_minus_bsr<(int,unsigned int)>(int const,int const,int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n""    bsr_minus_bsr<(int,long long)>(int const,int const,int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n""    bsr_minus_bsr<(int,unsigned long long)>(int const,int const,int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n""    bsr_minus_bsr<(int,float)>(int const,int const,int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n""    bsr_minus_bsr<(int,double)>(int const,int const,int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n""    bsr_minus_bsr<(int,long double)>(int const,int const,int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n""    bsr_minus_bsr<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n""    bsr_minus_bsr<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n""    bsr_minus_bsr<(int,npy_clongdouble_wrapper)>(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'bsr_minus_bsr'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    bsr_minus_bsr< int,signed char >(int const,int const,int const,int const,int const [],int const [],signed char const [],int const [],int const [],signed char const [],int [],int [],signed char [])\n"
+    "    bsr_minus_bsr< int,unsigned char >(int const,int const,int const,int const,int const [],int const [],unsigned char const [],int const [],int const [],unsigned char const [],int [],int [],unsigned char [])\n"
+    "    bsr_minus_bsr< int,short >(int const,int const,int const,int const,int const [],int const [],short const [],int const [],int const [],short const [],int [],int [],short [])\n"
+    "    bsr_minus_bsr< int,unsigned short >(int const,int const,int const,int const,int const [],int const [],unsigned short const [],int const [],int const [],unsigned short const [],int [],int [],unsigned short [])\n"
+    "    bsr_minus_bsr< int,int >(int const,int const,int const,int const,int const [],int const [],int const [],int const [],int const [],int const [],int [],int [],int [])\n"
+    "    bsr_minus_bsr< int,unsigned int >(int const,int const,int const,int const,int const [],int const [],unsigned int const [],int const [],int const [],unsigned int const [],int [],int [],unsigned int [])\n"
+    "    bsr_minus_bsr< int,long long >(int const,int const,int const,int const,int const [],int const [],long long const [],int const [],int const [],long long const [],int [],int [],long long [])\n"
+    "    bsr_minus_bsr< int,unsigned long long >(int const,int const,int const,int const,int const [],int const [],unsigned long long const [],int const [],int const [],unsigned long long const [],int [],int [],unsigned long long [])\n"
+    "    bsr_minus_bsr< int,float >(int const,int const,int const,int const,int const [],int const [],float const [],int const [],int const [],float const [],int [],int [],float [])\n"
+    "    bsr_minus_bsr< int,double >(int const,int const,int const,int const,int const [],int const [],double const [],int const [],int const [],double const [],int [],int [],double [])\n"
+    "    bsr_minus_bsr< int,long double >(int const,int const,int const,int const,int const [],int const [],long double const [],int const [],int const [],long double const [],int [],int [],long double [])\n"
+    "    bsr_minus_bsr< int,npy_cfloat_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const [],int const [],npy_cfloat_wrapper const [],int [],int [],npy_cfloat_wrapper [])\n"
+    "    bsr_minus_bsr< int,npy_cdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const [],int const [],npy_cdouble_wrapper const [],int [],int [],npy_cdouble_wrapper [])\n"
+    "    bsr_minus_bsr< int,npy_clongdouble_wrapper >(int const,int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const [],int const [],npy_clongdouble_wrapper const [],int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -89218,7 +89686,7 @@ SWIGINTERN PyObject *_wrap_csr_has_sorted_indices(PyObject *SWIGUNUSEDPARM(self)
     
     arg3 = (int*) array3->data;
   }
-  result = (bool)csr_has_sorted_indices<int >(arg1,(int const (*))arg2,(int const (*))arg3);
+  result = (bool)csr_has_sorted_indices< int >(arg1,(int const (*))arg2,(int const (*))arg3);
   resultobj = SWIG_From_bool(static_cast< bool >(result));
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -89281,7 +89749,7 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices__SWIG_1(PyObject *SWIGUNUSEDPARM(sel
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (signed char*) array_data(temp4);
   }
-  csr_sort_indices<int,signed char >(arg1,(int const (*))arg2,arg3,arg4);
+  csr_sort_indices< int,signed char >(arg1,(int const (*))arg2,arg3,arg4);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -89338,7 +89806,7 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices__SWIG_2(PyObject *SWIGUNUSEDPARM(sel
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (unsigned char*) array_data(temp4);
   }
-  csr_sort_indices<int,unsigned char >(arg1,(int const (*))arg2,arg3,arg4);
+  csr_sort_indices< int,unsigned char >(arg1,(int const (*))arg2,arg3,arg4);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -89395,7 +89863,7 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices__SWIG_3(PyObject *SWIGUNUSEDPARM(sel
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (short*) array_data(temp4);
   }
-  csr_sort_indices<int,short >(arg1,(int const (*))arg2,arg3,arg4);
+  csr_sort_indices< int,short >(arg1,(int const (*))arg2,arg3,arg4);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -89452,7 +89920,7 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices__SWIG_4(PyObject *SWIGUNUSEDPARM(sel
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (unsigned short*) array_data(temp4);
   }
-  csr_sort_indices<int,unsigned short >(arg1,(int const (*))arg2,arg3,arg4);
+  csr_sort_indices< int,unsigned short >(arg1,(int const (*))arg2,arg3,arg4);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -89509,7 +89977,7 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices__SWIG_5(PyObject *SWIGUNUSEDPARM(sel
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (int*) array_data(temp4);
   }
-  csr_sort_indices<int,int >(arg1,(int const (*))arg2,arg3,arg4);
+  csr_sort_indices< int,int >(arg1,(int const (*))arg2,arg3,arg4);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -89566,7 +90034,7 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices__SWIG_6(PyObject *SWIGUNUSEDPARM(sel
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (unsigned int*) array_data(temp4);
   }
-  csr_sort_indices<int,unsigned int >(arg1,(int const (*))arg2,arg3,arg4);
+  csr_sort_indices< int,unsigned int >(arg1,(int const (*))arg2,arg3,arg4);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -89623,7 +90091,7 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices__SWIG_7(PyObject *SWIGUNUSEDPARM(sel
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (long long*) array_data(temp4);
   }
-  csr_sort_indices<int,long long >(arg1,(int const (*))arg2,arg3,arg4);
+  csr_sort_indices< int,long long >(arg1,(int const (*))arg2,arg3,arg4);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -89680,7 +90148,7 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices__SWIG_8(PyObject *SWIGUNUSEDPARM(sel
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (unsigned long long*) array_data(temp4);
   }
-  csr_sort_indices<int,unsigned long long >(arg1,(int const (*))arg2,arg3,arg4);
+  csr_sort_indices< int,unsigned long long >(arg1,(int const (*))arg2,arg3,arg4);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -89737,7 +90205,7 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices__SWIG_9(PyObject *SWIGUNUSEDPARM(sel
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (float*) array_data(temp4);
   }
-  csr_sort_indices<int,float >(arg1,(int const (*))arg2,arg3,arg4);
+  csr_sort_indices< int,float >(arg1,(int const (*))arg2,arg3,arg4);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -89794,7 +90262,7 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices__SWIG_10(PyObject *SWIGUNUSEDPARM(se
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (double*) array_data(temp4);
   }
-  csr_sort_indices<int,double >(arg1,(int const (*))arg2,arg3,arg4);
+  csr_sort_indices< int,double >(arg1,(int const (*))arg2,arg3,arg4);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -89851,7 +90319,7 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices__SWIG_11(PyObject *SWIGUNUSEDPARM(se
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (long double*) array_data(temp4);
   }
-  csr_sort_indices<int,long double >(arg1,(int const (*))arg2,arg3,arg4);
+  csr_sort_indices< int,long double >(arg1,(int const (*))arg2,arg3,arg4);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -89908,7 +90376,7 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices__SWIG_12(PyObject *SWIGUNUSEDPARM(se
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (npy_cfloat_wrapper*) array_data(temp4);
   }
-  csr_sort_indices<int,npy_cfloat_wrapper >(arg1,(int const (*))arg2,arg3,arg4);
+  csr_sort_indices< int,npy_cfloat_wrapper >(arg1,(int const (*))arg2,arg3,arg4);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -89965,7 +90433,7 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices__SWIG_13(PyObject *SWIGUNUSEDPARM(se
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (npy_cdouble_wrapper*) array_data(temp4);
   }
-  csr_sort_indices<int,npy_cdouble_wrapper >(arg1,(int const (*))arg2,arg3,arg4);
+  csr_sort_indices< int,npy_cdouble_wrapper >(arg1,(int const (*))arg2,arg3,arg4);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -90022,7 +90490,7 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices__SWIG_14(PyObject *SWIGUNUSEDPARM(se
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (npy_clongdouble_wrapper*) array_data(temp4);
   }
-  csr_sort_indices<int,npy_clongdouble_wrapper >(arg1,(int const (*))arg2,arg3,arg4);
+  csr_sort_indices< int,npy_clongdouble_wrapper >(arg1,(int const (*))arg2,arg3,arg4);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object2 && array2) Py_DECREF(array2);
@@ -90398,7 +90866,22 @@ SWIGINTERN PyObject *_wrap_csr_sort_indices(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_sort_indices'.\n  Possible C/C++ prototypes are:\n""    csr_sort_indices<(int,signed char)>(int const,int const [],int [],signed char [])\n""    csr_sort_indices<(int,unsigned char)>(int const,int const [],int [],unsigned char [])\n""    csr_sort_indices<(int,short)>(int const,int const [],int [],short [])\n""    csr_sort_indices<(int,unsigned short)>(int const,int const [],int [],unsigned short [])\n""    csr_sort_indices<(int,int)>(int const,int const [],int [],int [])\n""    csr_sort_indices<(int,unsigned int)>(int const,int const [],int [],unsigned int [])\n""    csr_sort_indices<(int,long long)>(int const,int const [],int [],long long [])\n""    csr_sort_indices<(int,unsigned long long)>(int const,int const [],int [],unsigned long long [])\n""    csr_sort_indices<(int,float)>(int const,int const [],int [],float [])\n""    csr_sort_indices<(int,double)>(int const,int const [],int [],double [])\n""    csr_sort_indices<(int,long double)>(int const,int const [],int [],long double [])\n""    csr_sort_indices<(int,npy_cfloat_wrapper)>(int const,int const [],int [],npy_cfloat_wrapper [])\n""    csr_sort_indices<(int,npy_cdouble_wrapper)>(int const,int const [],int [],npy_cdouble_wrapper [])\n""    csr_sort_indices<(int,npy_clongdouble_wrapper)>(int const,int const [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_sort_indices'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csr_sort_indices< int,signed char >(int const,int const [],int [],signed char [])\n"
+    "    csr_sort_indices< int,unsigned char >(int const,int const [],int [],unsigned char [])\n"
+    "    csr_sort_indices< int,short >(int const,int const [],int [],short [])\n"
+    "    csr_sort_indices< int,unsigned short >(int const,int const [],int [],unsigned short [])\n"
+    "    csr_sort_indices< int,int >(int const,int const [],int [],int [])\n"
+    "    csr_sort_indices< int,unsigned int >(int const,int const [],int [],unsigned int [])\n"
+    "    csr_sort_indices< int,long long >(int const,int const [],int [],long long [])\n"
+    "    csr_sort_indices< int,unsigned long long >(int const,int const [],int [],unsigned long long [])\n"
+    "    csr_sort_indices< int,float >(int const,int const [],int [],float [])\n"
+    "    csr_sort_indices< int,double >(int const,int const [],int [],double [])\n"
+    "    csr_sort_indices< int,long double >(int const,int const [],int [],long double [])\n"
+    "    csr_sort_indices< int,npy_cfloat_wrapper >(int const,int const [],int [],npy_cfloat_wrapper [])\n"
+    "    csr_sort_indices< int,npy_cdouble_wrapper >(int const,int const [],int [],npy_cdouble_wrapper [])\n"
+    "    csr_sort_indices< int,npy_clongdouble_wrapper >(int const,int const [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -90449,7 +90932,7 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros__SWIG_1(PyObject *SWIGUNUSEDPARM(
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (signed char*) array_data(temp5);
   }
-  csr_eliminate_zeros<int,signed char >(arg1,arg2,arg3,arg4,arg5);
+  csr_eliminate_zeros< int,signed char >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -90503,7 +90986,7 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros__SWIG_2(PyObject *SWIGUNUSEDPARM(
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (unsigned char*) array_data(temp5);
   }
-  csr_eliminate_zeros<int,unsigned char >(arg1,arg2,arg3,arg4,arg5);
+  csr_eliminate_zeros< int,unsigned char >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -90557,7 +91040,7 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros__SWIG_3(PyObject *SWIGUNUSEDPARM(
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (short*) array_data(temp5);
   }
-  csr_eliminate_zeros<int,short >(arg1,arg2,arg3,arg4,arg5);
+  csr_eliminate_zeros< int,short >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -90611,7 +91094,7 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros__SWIG_4(PyObject *SWIGUNUSEDPARM(
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (unsigned short*) array_data(temp5);
   }
-  csr_eliminate_zeros<int,unsigned short >(arg1,arg2,arg3,arg4,arg5);
+  csr_eliminate_zeros< int,unsigned short >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -90665,7 +91148,7 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros__SWIG_5(PyObject *SWIGUNUSEDPARM(
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (int*) array_data(temp5);
   }
-  csr_eliminate_zeros<int,int >(arg1,arg2,arg3,arg4,arg5);
+  csr_eliminate_zeros< int,int >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -90719,7 +91202,7 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros__SWIG_6(PyObject *SWIGUNUSEDPARM(
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (unsigned int*) array_data(temp5);
   }
-  csr_eliminate_zeros<int,unsigned int >(arg1,arg2,arg3,arg4,arg5);
+  csr_eliminate_zeros< int,unsigned int >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -90773,7 +91256,7 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros__SWIG_7(PyObject *SWIGUNUSEDPARM(
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (long long*) array_data(temp5);
   }
-  csr_eliminate_zeros<int,long long >(arg1,arg2,arg3,arg4,arg5);
+  csr_eliminate_zeros< int,long long >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -90827,7 +91310,7 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros__SWIG_8(PyObject *SWIGUNUSEDPARM(
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (unsigned long long*) array_data(temp5);
   }
-  csr_eliminate_zeros<int,unsigned long long >(arg1,arg2,arg3,arg4,arg5);
+  csr_eliminate_zeros< int,unsigned long long >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -90881,7 +91364,7 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros__SWIG_9(PyObject *SWIGUNUSEDPARM(
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (float*) array_data(temp5);
   }
-  csr_eliminate_zeros<int,float >(arg1,arg2,arg3,arg4,arg5);
+  csr_eliminate_zeros< int,float >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -90935,7 +91418,7 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros__SWIG_10(PyObject *SWIGUNUSEDPARM
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (double*) array_data(temp5);
   }
-  csr_eliminate_zeros<int,double >(arg1,arg2,arg3,arg4,arg5);
+  csr_eliminate_zeros< int,double >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -90989,7 +91472,7 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros__SWIG_11(PyObject *SWIGUNUSEDPARM
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (long double*) array_data(temp5);
   }
-  csr_eliminate_zeros<int,long double >(arg1,arg2,arg3,arg4,arg5);
+  csr_eliminate_zeros< int,long double >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -91043,7 +91526,7 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros__SWIG_12(PyObject *SWIGUNUSEDPARM
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (npy_cfloat_wrapper*) array_data(temp5);
   }
-  csr_eliminate_zeros<int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,arg5);
+  csr_eliminate_zeros< int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -91097,7 +91580,7 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros__SWIG_13(PyObject *SWIGUNUSEDPARM
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (npy_cdouble_wrapper*) array_data(temp5);
   }
-  csr_eliminate_zeros<int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,arg5);
+  csr_eliminate_zeros< int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -91151,7 +91634,7 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros__SWIG_14(PyObject *SWIGUNUSEDPARM
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (npy_clongdouble_wrapper*) array_data(temp5);
   }
-  csr_eliminate_zeros<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,arg5);
+  csr_eliminate_zeros< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -91605,7 +92088,22 @@ SWIGINTERN PyObject *_wrap_csr_eliminate_zeros(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_eliminate_zeros'.\n  Possible C/C++ prototypes are:\n""    csr_eliminate_zeros<(int,signed char)>(int const,int const,int [],int [],signed char [])\n""    csr_eliminate_zeros<(int,unsigned char)>(int const,int const,int [],int [],unsigned char [])\n""    csr_eliminate_zeros<(int,short)>(int const,int const,int [],int [],short [])\n""    csr_eliminate_zeros<(int,unsigned short)>(int const,int const,int [],int [],unsigned short [])\n""    csr_eliminate_zeros<(int,int)>(int const,int const,int [],int [],int [])\n""    csr_eliminate_zeros<(int,unsigned int)>(int const,int const,int [],int [],unsigned int [])\n""    csr_eliminate_zeros<(int,long long)>(int const,int const,int [],int [],long long [])\n""    csr_eliminate_zeros<(int,unsigned long long)>(int const,int const,int [],int [],unsigned long long [])\n""    csr_eliminate_zeros<(int,float)>(int const,int const,int [],int [],float [])\n""    csr_eliminate_zeros<(int,double)>(int const,int const,int [],int [],double [])\n""    csr_eliminate_zeros<(int,long double)>(int const,int const,int [],int [],long double [])\n""    csr_eliminate_zeros<(int,npy_cfloat_wrapper)>(int const,int const,int [],int [],npy_cfloat_wrapper [])\n""    csr_eliminate_zeros<(int,npy_cdouble_wrapper)>(int const,int const,int [],int [],npy_cdouble_wrapper [])\n""    csr_eliminate_zeros<(int,npy_clongdouble_wrapper)>(int const,int const,int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_eliminate_zeros'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csr_eliminate_zeros< int,signed char >(int const,int const,int [],int [],signed char [])\n"
+    "    csr_eliminate_zeros< int,unsigned char >(int const,int const,int [],int [],unsigned char [])\n"
+    "    csr_eliminate_zeros< int,short >(int const,int const,int [],int [],short [])\n"
+    "    csr_eliminate_zeros< int,unsigned short >(int const,int const,int [],int [],unsigned short [])\n"
+    "    csr_eliminate_zeros< int,int >(int const,int const,int [],int [],int [])\n"
+    "    csr_eliminate_zeros< int,unsigned int >(int const,int const,int [],int [],unsigned int [])\n"
+    "    csr_eliminate_zeros< int,long long >(int const,int const,int [],int [],long long [])\n"
+    "    csr_eliminate_zeros< int,unsigned long long >(int const,int const,int [],int [],unsigned long long [])\n"
+    "    csr_eliminate_zeros< int,float >(int const,int const,int [],int [],float [])\n"
+    "    csr_eliminate_zeros< int,double >(int const,int const,int [],int [],double [])\n"
+    "    csr_eliminate_zeros< int,long double >(int const,int const,int [],int [],long double [])\n"
+    "    csr_eliminate_zeros< int,npy_cfloat_wrapper >(int const,int const,int [],int [],npy_cfloat_wrapper [])\n"
+    "    csr_eliminate_zeros< int,npy_cdouble_wrapper >(int const,int const,int [],int [],npy_cdouble_wrapper [])\n"
+    "    csr_eliminate_zeros< int,npy_clongdouble_wrapper >(int const,int const,int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -91656,7 +92154,7 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates__SWIG_1(PyObject *SWIGUNUSEDPARM(s
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (signed char*) array_data(temp5);
   }
-  csr_sum_duplicates<int,signed char >(arg1,arg2,arg3,arg4,arg5);
+  csr_sum_duplicates< int,signed char >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -91710,7 +92208,7 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates__SWIG_2(PyObject *SWIGUNUSEDPARM(s
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (unsigned char*) array_data(temp5);
   }
-  csr_sum_duplicates<int,unsigned char >(arg1,arg2,arg3,arg4,arg5);
+  csr_sum_duplicates< int,unsigned char >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -91764,7 +92262,7 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates__SWIG_3(PyObject *SWIGUNUSEDPARM(s
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (short*) array_data(temp5);
   }
-  csr_sum_duplicates<int,short >(arg1,arg2,arg3,arg4,arg5);
+  csr_sum_duplicates< int,short >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -91818,7 +92316,7 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates__SWIG_4(PyObject *SWIGUNUSEDPARM(s
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (unsigned short*) array_data(temp5);
   }
-  csr_sum_duplicates<int,unsigned short >(arg1,arg2,arg3,arg4,arg5);
+  csr_sum_duplicates< int,unsigned short >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -91872,7 +92370,7 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates__SWIG_5(PyObject *SWIGUNUSEDPARM(s
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (int*) array_data(temp5);
   }
-  csr_sum_duplicates<int,int >(arg1,arg2,arg3,arg4,arg5);
+  csr_sum_duplicates< int,int >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -91926,7 +92424,7 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates__SWIG_6(PyObject *SWIGUNUSEDPARM(s
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (unsigned int*) array_data(temp5);
   }
-  csr_sum_duplicates<int,unsigned int >(arg1,arg2,arg3,arg4,arg5);
+  csr_sum_duplicates< int,unsigned int >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -91980,7 +92478,7 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates__SWIG_7(PyObject *SWIGUNUSEDPARM(s
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (long long*) array_data(temp5);
   }
-  csr_sum_duplicates<int,long long >(arg1,arg2,arg3,arg4,arg5);
+  csr_sum_duplicates< int,long long >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -92034,7 +92532,7 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates__SWIG_8(PyObject *SWIGUNUSEDPARM(s
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (unsigned long long*) array_data(temp5);
   }
-  csr_sum_duplicates<int,unsigned long long >(arg1,arg2,arg3,arg4,arg5);
+  csr_sum_duplicates< int,unsigned long long >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -92088,7 +92586,7 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates__SWIG_9(PyObject *SWIGUNUSEDPARM(s
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (float*) array_data(temp5);
   }
-  csr_sum_duplicates<int,float >(arg1,arg2,arg3,arg4,arg5);
+  csr_sum_duplicates< int,float >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -92142,7 +92640,7 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates__SWIG_10(PyObject *SWIGUNUSEDPARM(
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (double*) array_data(temp5);
   }
-  csr_sum_duplicates<int,double >(arg1,arg2,arg3,arg4,arg5);
+  csr_sum_duplicates< int,double >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -92196,7 +92694,7 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates__SWIG_11(PyObject *SWIGUNUSEDPARM(
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (long double*) array_data(temp5);
   }
-  csr_sum_duplicates<int,long double >(arg1,arg2,arg3,arg4,arg5);
+  csr_sum_duplicates< int,long double >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -92250,7 +92748,7 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates__SWIG_12(PyObject *SWIGUNUSEDPARM(
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (npy_cfloat_wrapper*) array_data(temp5);
   }
-  csr_sum_duplicates<int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,arg5);
+  csr_sum_duplicates< int,npy_cfloat_wrapper >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -92304,7 +92802,7 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates__SWIG_13(PyObject *SWIGUNUSEDPARM(
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (npy_cdouble_wrapper*) array_data(temp5);
   }
-  csr_sum_duplicates<int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,arg5);
+  csr_sum_duplicates< int,npy_cdouble_wrapper >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -92358,7 +92856,7 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates__SWIG_14(PyObject *SWIGUNUSEDPARM(
     if (!temp5  || !require_contiguous(temp5) || !require_native(temp5)) SWIG_fail;
     arg5 = (npy_clongdouble_wrapper*) array_data(temp5);
   }
-  csr_sum_duplicates<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,arg5);
+  csr_sum_duplicates< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -92812,7 +93310,22 @@ SWIGINTERN PyObject *_wrap_csr_sum_duplicates(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_sum_duplicates'.\n  Possible C/C++ prototypes are:\n""    csr_sum_duplicates<(int,signed char)>(int const,int const,int [],int [],signed char [])\n""    csr_sum_duplicates<(int,unsigned char)>(int const,int const,int [],int [],unsigned char [])\n""    csr_sum_duplicates<(int,short)>(int const,int const,int [],int [],short [])\n""    csr_sum_duplicates<(int,unsigned short)>(int const,int const,int [],int [],unsigned short [])\n""    csr_sum_duplicates<(int,int)>(int const,int const,int [],int [],int [])\n""    csr_sum_duplicates<(int,unsigned int)>(int const,int const,int [],int [],unsigned int [])\n""    csr_sum_duplicates<(int,long long)>(int const,int const,int [],int [],long long [])\n""    csr_sum_duplicates<(int,unsigned long long)>(int const,int const,int [],int [],unsigned long long [])\n""    csr_sum_duplicates<(int,float)>(int const,int const,int [],int [],float [])\n""    csr_sum_duplicates<(int,double)>(int const,int const,int [],int [],double [])\n""    csr_sum_duplicates<(int,long double)>(int const,int const,int [],int [],long double [])\n""    csr_sum_duplicates<(int,npy_cfloat_wrapper)>(int const,int const,int [],int [],npy_cfloat_wrapper [])\n""    csr_sum_duplicates<(int,npy_cdouble_wrapper)>(int const,int const,int [],int [],npy_cdouble_wrapper [])\n""    csr_sum_duplicates<(int,npy_clongdouble_wrapper)>(int const,int const,int [],int [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'csr_sum_duplicates'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csr_sum_duplicates< int,signed char >(int const,int const,int [],int [],signed char [])\n"
+    "    csr_sum_duplicates< int,unsigned char >(int const,int const,int [],int [],unsigned char [])\n"
+    "    csr_sum_duplicates< int,short >(int const,int const,int [],int [],short [])\n"
+    "    csr_sum_duplicates< int,unsigned short >(int const,int const,int [],int [],unsigned short [])\n"
+    "    csr_sum_duplicates< int,int >(int const,int const,int [],int [],int [])\n"
+    "    csr_sum_duplicates< int,unsigned int >(int const,int const,int [],int [],unsigned int [])\n"
+    "    csr_sum_duplicates< int,long long >(int const,int const,int [],int [],long long [])\n"
+    "    csr_sum_duplicates< int,unsigned long long >(int const,int const,int [],int [],unsigned long long [])\n"
+    "    csr_sum_duplicates< int,float >(int const,int const,int [],int [],float [])\n"
+    "    csr_sum_duplicates< int,double >(int const,int const,int [],int [],double [])\n"
+    "    csr_sum_duplicates< int,long double >(int const,int const,int [],int [],long double [])\n"
+    "    csr_sum_duplicates< int,npy_cfloat_wrapper >(int const,int const,int [],int [],npy_cfloat_wrapper [])\n"
+    "    csr_sum_duplicates< int,npy_cdouble_wrapper >(int const,int const,int [],int [],npy_cdouble_wrapper [])\n"
+    "    csr_sum_duplicates< int,npy_clongdouble_wrapper >(int const,int const,int [],int [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -92828,9 +93341,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_1(PyObject *SWIGUNUSEDPARM(se
   int arg7 ;
   int arg8 ;
   int arg9 ;
-  std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg11 = (std::vector<int > *) 0 ;
-  std::vector<signed char > *arg12 = (std::vector<signed char > *) 0 ;
+  std::vector< int > *arg10 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg11 = (std::vector< int > *) 0 ;
+  std::vector< signed char > *arg12 = (std::vector< signed char > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -92849,9 +93362,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_1(PyObject *SWIGUNUSEDPARM(se
   int ecode8 = 0 ;
   int val9 ;
   int ecode9 = 0 ;
-  std::vector<int > *tmp10 ;
-  std::vector<int > *tmp11 ;
-  std::vector<signed char > *tmp12 ;
+  std::vector< int > *tmp10 ;
+  std::vector< int > *tmp11 ;
+  std::vector< signed char > *tmp12 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -92935,7 +93448,7 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_1(PyObject *SWIGUNUSEDPARM(se
     SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "get_csr_submatrix" "', argument " "9"" of type '" "int""'");
   } 
   arg9 = static_cast< int >(val9);
-  get_csr_submatrix<int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  get_csr_submatrix< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg10)->size(); 
@@ -92993,9 +93506,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_2(PyObject *SWIGUNUSEDPARM(se
   int arg7 ;
   int arg8 ;
   int arg9 ;
-  std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg11 = (std::vector<int > *) 0 ;
-  std::vector<unsigned char > *arg12 = (std::vector<unsigned char > *) 0 ;
+  std::vector< int > *arg10 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg11 = (std::vector< int > *) 0 ;
+  std::vector< unsigned char > *arg12 = (std::vector< unsigned char > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -93014,9 +93527,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_2(PyObject *SWIGUNUSEDPARM(se
   int ecode8 = 0 ;
   int val9 ;
   int ecode9 = 0 ;
-  std::vector<int > *tmp10 ;
-  std::vector<int > *tmp11 ;
-  std::vector<unsigned char > *tmp12 ;
+  std::vector< int > *tmp10 ;
+  std::vector< int > *tmp11 ;
+  std::vector< unsigned char > *tmp12 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -93100,7 +93613,7 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_2(PyObject *SWIGUNUSEDPARM(se
     SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "get_csr_submatrix" "', argument " "9"" of type '" "int""'");
   } 
   arg9 = static_cast< int >(val9);
-  get_csr_submatrix<int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  get_csr_submatrix< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg10)->size(); 
@@ -93158,9 +93671,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_3(PyObject *SWIGUNUSEDPARM(se
   int arg7 ;
   int arg8 ;
   int arg9 ;
-  std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg11 = (std::vector<int > *) 0 ;
-  std::vector<short > *arg12 = (std::vector<short > *) 0 ;
+  std::vector< int > *arg10 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg11 = (std::vector< int > *) 0 ;
+  std::vector< short > *arg12 = (std::vector< short > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -93179,9 +93692,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_3(PyObject *SWIGUNUSEDPARM(se
   int ecode8 = 0 ;
   int val9 ;
   int ecode9 = 0 ;
-  std::vector<int > *tmp10 ;
-  std::vector<int > *tmp11 ;
-  std::vector<short > *tmp12 ;
+  std::vector< int > *tmp10 ;
+  std::vector< int > *tmp11 ;
+  std::vector< short > *tmp12 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -93265,7 +93778,7 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_3(PyObject *SWIGUNUSEDPARM(se
     SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "get_csr_submatrix" "', argument " "9"" of type '" "int""'");
   } 
   arg9 = static_cast< int >(val9);
-  get_csr_submatrix<int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  get_csr_submatrix< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg10)->size(); 
@@ -93323,9 +93836,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_4(PyObject *SWIGUNUSEDPARM(se
   int arg7 ;
   int arg8 ;
   int arg9 ;
-  std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg11 = (std::vector<int > *) 0 ;
-  std::vector<unsigned short > *arg12 = (std::vector<unsigned short > *) 0 ;
+  std::vector< int > *arg10 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg11 = (std::vector< int > *) 0 ;
+  std::vector< unsigned short > *arg12 = (std::vector< unsigned short > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -93344,9 +93857,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_4(PyObject *SWIGUNUSEDPARM(se
   int ecode8 = 0 ;
   int val9 ;
   int ecode9 = 0 ;
-  std::vector<int > *tmp10 ;
-  std::vector<int > *tmp11 ;
-  std::vector<unsigned short > *tmp12 ;
+  std::vector< int > *tmp10 ;
+  std::vector< int > *tmp11 ;
+  std::vector< unsigned short > *tmp12 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -93430,7 +93943,7 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_4(PyObject *SWIGUNUSEDPARM(se
     SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "get_csr_submatrix" "', argument " "9"" of type '" "int""'");
   } 
   arg9 = static_cast< int >(val9);
-  get_csr_submatrix<int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  get_csr_submatrix< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg10)->size(); 
@@ -93488,9 +94001,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_5(PyObject *SWIGUNUSEDPARM(se
   int arg7 ;
   int arg8 ;
   int arg9 ;
-  std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg11 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg12 = (std::vector<int > *) 0 ;
+  std::vector< int > *arg10 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg11 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg12 = (std::vector< int > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -93509,9 +94022,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_5(PyObject *SWIGUNUSEDPARM(se
   int ecode8 = 0 ;
   int val9 ;
   int ecode9 = 0 ;
-  std::vector<int > *tmp10 ;
-  std::vector<int > *tmp11 ;
-  std::vector<int > *tmp12 ;
+  std::vector< int > *tmp10 ;
+  std::vector< int > *tmp11 ;
+  std::vector< int > *tmp12 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -93595,7 +94108,7 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_5(PyObject *SWIGUNUSEDPARM(se
     SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "get_csr_submatrix" "', argument " "9"" of type '" "int""'");
   } 
   arg9 = static_cast< int >(val9);
-  get_csr_submatrix<int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  get_csr_submatrix< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg10)->size(); 
@@ -93653,9 +94166,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_6(PyObject *SWIGUNUSEDPARM(se
   int arg7 ;
   int arg8 ;
   int arg9 ;
-  std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg11 = (std::vector<int > *) 0 ;
-  std::vector<unsigned int > *arg12 = (std::vector<unsigned int > *) 0 ;
+  std::vector< int > *arg10 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg11 = (std::vector< int > *) 0 ;
+  std::vector< unsigned int > *arg12 = (std::vector< unsigned int > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -93674,9 +94187,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_6(PyObject *SWIGUNUSEDPARM(se
   int ecode8 = 0 ;
   int val9 ;
   int ecode9 = 0 ;
-  std::vector<int > *tmp10 ;
-  std::vector<int > *tmp11 ;
-  std::vector<unsigned int > *tmp12 ;
+  std::vector< int > *tmp10 ;
+  std::vector< int > *tmp11 ;
+  std::vector< unsigned int > *tmp12 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -93760,7 +94273,7 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_6(PyObject *SWIGUNUSEDPARM(se
     SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "get_csr_submatrix" "', argument " "9"" of type '" "int""'");
   } 
   arg9 = static_cast< int >(val9);
-  get_csr_submatrix<int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  get_csr_submatrix< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg10)->size(); 
@@ -93818,9 +94331,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_7(PyObject *SWIGUNUSEDPARM(se
   int arg7 ;
   int arg8 ;
   int arg9 ;
-  std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg11 = (std::vector<int > *) 0 ;
-  std::vector<long long > *arg12 = (std::vector<long long > *) 0 ;
+  std::vector< int > *arg10 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg11 = (std::vector< int > *) 0 ;
+  std::vector< long long > *arg12 = (std::vector< long long > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -93839,9 +94352,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_7(PyObject *SWIGUNUSEDPARM(se
   int ecode8 = 0 ;
   int val9 ;
   int ecode9 = 0 ;
-  std::vector<int > *tmp10 ;
-  std::vector<int > *tmp11 ;
-  std::vector<long long > *tmp12 ;
+  std::vector< int > *tmp10 ;
+  std::vector< int > *tmp11 ;
+  std::vector< long long > *tmp12 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -93925,7 +94438,7 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_7(PyObject *SWIGUNUSEDPARM(se
     SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "get_csr_submatrix" "', argument " "9"" of type '" "int""'");
   } 
   arg9 = static_cast< int >(val9);
-  get_csr_submatrix<int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  get_csr_submatrix< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg10)->size(); 
@@ -93983,9 +94496,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_8(PyObject *SWIGUNUSEDPARM(se
   int arg7 ;
   int arg8 ;
   int arg9 ;
-  std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg11 = (std::vector<int > *) 0 ;
-  std::vector<unsigned long long > *arg12 = (std::vector<unsigned long long > *) 0 ;
+  std::vector< int > *arg10 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg11 = (std::vector< int > *) 0 ;
+  std::vector< unsigned long long > *arg12 = (std::vector< unsigned long long > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -94004,9 +94517,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_8(PyObject *SWIGUNUSEDPARM(se
   int ecode8 = 0 ;
   int val9 ;
   int ecode9 = 0 ;
-  std::vector<int > *tmp10 ;
-  std::vector<int > *tmp11 ;
-  std::vector<unsigned long long > *tmp12 ;
+  std::vector< int > *tmp10 ;
+  std::vector< int > *tmp11 ;
+  std::vector< unsigned long long > *tmp12 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -94090,7 +94603,7 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_8(PyObject *SWIGUNUSEDPARM(se
     SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "get_csr_submatrix" "', argument " "9"" of type '" "int""'");
   } 
   arg9 = static_cast< int >(val9);
-  get_csr_submatrix<int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  get_csr_submatrix< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg10)->size(); 
@@ -94148,9 +94661,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_9(PyObject *SWIGUNUSEDPARM(se
   int arg7 ;
   int arg8 ;
   int arg9 ;
-  std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg11 = (std::vector<int > *) 0 ;
-  std::vector<float > *arg12 = (std::vector<float > *) 0 ;
+  std::vector< int > *arg10 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg11 = (std::vector< int > *) 0 ;
+  std::vector< float > *arg12 = (std::vector< float > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -94169,9 +94682,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_9(PyObject *SWIGUNUSEDPARM(se
   int ecode8 = 0 ;
   int val9 ;
   int ecode9 = 0 ;
-  std::vector<int > *tmp10 ;
-  std::vector<int > *tmp11 ;
-  std::vector<float > *tmp12 ;
+  std::vector< int > *tmp10 ;
+  std::vector< int > *tmp11 ;
+  std::vector< float > *tmp12 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -94255,7 +94768,7 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_9(PyObject *SWIGUNUSEDPARM(se
     SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "get_csr_submatrix" "', argument " "9"" of type '" "int""'");
   } 
   arg9 = static_cast< int >(val9);
-  get_csr_submatrix<int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  get_csr_submatrix< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg10)->size(); 
@@ -94313,9 +94826,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_10(PyObject *SWIGUNUSEDPARM(s
   int arg7 ;
   int arg8 ;
   int arg9 ;
-  std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg11 = (std::vector<int > *) 0 ;
-  std::vector<double > *arg12 = (std::vector<double > *) 0 ;
+  std::vector< int > *arg10 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg11 = (std::vector< int > *) 0 ;
+  std::vector< double > *arg12 = (std::vector< double > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -94334,9 +94847,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_10(PyObject *SWIGUNUSEDPARM(s
   int ecode8 = 0 ;
   int val9 ;
   int ecode9 = 0 ;
-  std::vector<int > *tmp10 ;
-  std::vector<int > *tmp11 ;
-  std::vector<double > *tmp12 ;
+  std::vector< int > *tmp10 ;
+  std::vector< int > *tmp11 ;
+  std::vector< double > *tmp12 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -94420,7 +94933,7 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_10(PyObject *SWIGUNUSEDPARM(s
     SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "get_csr_submatrix" "', argument " "9"" of type '" "int""'");
   } 
   arg9 = static_cast< int >(val9);
-  get_csr_submatrix<int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  get_csr_submatrix< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg10)->size(); 
@@ -94478,9 +94991,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_11(PyObject *SWIGUNUSEDPARM(s
   int arg7 ;
   int arg8 ;
   int arg9 ;
-  std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg11 = (std::vector<int > *) 0 ;
-  std::vector<long double > *arg12 = (std::vector<long double > *) 0 ;
+  std::vector< int > *arg10 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg11 = (std::vector< int > *) 0 ;
+  std::vector< long double > *arg12 = (std::vector< long double > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -94499,9 +95012,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_11(PyObject *SWIGUNUSEDPARM(s
   int ecode8 = 0 ;
   int val9 ;
   int ecode9 = 0 ;
-  std::vector<int > *tmp10 ;
-  std::vector<int > *tmp11 ;
-  std::vector<long double > *tmp12 ;
+  std::vector< int > *tmp10 ;
+  std::vector< int > *tmp11 ;
+  std::vector< long double > *tmp12 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -94585,7 +95098,7 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_11(PyObject *SWIGUNUSEDPARM(s
     SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "get_csr_submatrix" "', argument " "9"" of type '" "int""'");
   } 
   arg9 = static_cast< int >(val9);
-  get_csr_submatrix<int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  get_csr_submatrix< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg10)->size(); 
@@ -94643,9 +95156,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_12(PyObject *SWIGUNUSEDPARM(s
   int arg7 ;
   int arg8 ;
   int arg9 ;
-  std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg11 = (std::vector<int > *) 0 ;
-  std::vector<npy_cfloat_wrapper > *arg12 = (std::vector<npy_cfloat_wrapper > *) 0 ;
+  std::vector< int > *arg10 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg11 = (std::vector< int > *) 0 ;
+  std::vector< npy_cfloat_wrapper > *arg12 = (std::vector< npy_cfloat_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -94664,9 +95177,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_12(PyObject *SWIGUNUSEDPARM(s
   int ecode8 = 0 ;
   int val9 ;
   int ecode9 = 0 ;
-  std::vector<int > *tmp10 ;
-  std::vector<int > *tmp11 ;
-  std::vector<npy_cfloat_wrapper > *tmp12 ;
+  std::vector< int > *tmp10 ;
+  std::vector< int > *tmp11 ;
+  std::vector< npy_cfloat_wrapper > *tmp12 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -94750,7 +95263,7 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_12(PyObject *SWIGUNUSEDPARM(s
     SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "get_csr_submatrix" "', argument " "9"" of type '" "int""'");
   } 
   arg9 = static_cast< int >(val9);
-  get_csr_submatrix<int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  get_csr_submatrix< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg10)->size(); 
@@ -94808,9 +95321,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_13(PyObject *SWIGUNUSEDPARM(s
   int arg7 ;
   int arg8 ;
   int arg9 ;
-  std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg11 = (std::vector<int > *) 0 ;
-  std::vector<npy_cdouble_wrapper > *arg12 = (std::vector<npy_cdouble_wrapper > *) 0 ;
+  std::vector< int > *arg10 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg11 = (std::vector< int > *) 0 ;
+  std::vector< npy_cdouble_wrapper > *arg12 = (std::vector< npy_cdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -94829,9 +95342,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_13(PyObject *SWIGUNUSEDPARM(s
   int ecode8 = 0 ;
   int val9 ;
   int ecode9 = 0 ;
-  std::vector<int > *tmp10 ;
-  std::vector<int > *tmp11 ;
-  std::vector<npy_cdouble_wrapper > *tmp12 ;
+  std::vector< int > *tmp10 ;
+  std::vector< int > *tmp11 ;
+  std::vector< npy_cdouble_wrapper > *tmp12 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -94915,7 +95428,7 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_13(PyObject *SWIGUNUSEDPARM(s
     SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "get_csr_submatrix" "', argument " "9"" of type '" "int""'");
   } 
   arg9 = static_cast< int >(val9);
-  get_csr_submatrix<int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  get_csr_submatrix< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg10)->size(); 
@@ -94973,9 +95486,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_14(PyObject *SWIGUNUSEDPARM(s
   int arg7 ;
   int arg8 ;
   int arg9 ;
-  std::vector<int > *arg10 = (std::vector<int > *) 0 ;
-  std::vector<int > *arg11 = (std::vector<int > *) 0 ;
-  std::vector<npy_clongdouble_wrapper > *arg12 = (std::vector<npy_clongdouble_wrapper > *) 0 ;
+  std::vector< int > *arg10 = (std::vector< int > *) 0 ;
+  std::vector< int > *arg11 = (std::vector< int > *) 0 ;
+  std::vector< npy_clongdouble_wrapper > *arg12 = (std::vector< npy_clongdouble_wrapper > *) 0 ;
   int val1 ;
   int ecode1 = 0 ;
   int val2 ;
@@ -94994,9 +95507,9 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_14(PyObject *SWIGUNUSEDPARM(s
   int ecode8 = 0 ;
   int val9 ;
   int ecode9 = 0 ;
-  std::vector<int > *tmp10 ;
-  std::vector<int > *tmp11 ;
-  std::vector<npy_clongdouble_wrapper > *tmp12 ;
+  std::vector< int > *tmp10 ;
+  std::vector< int > *tmp11 ;
+  std::vector< npy_clongdouble_wrapper > *tmp12 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -95080,7 +95593,7 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix__SWIG_14(PyObject *SWIGUNUSEDPARM(s
     SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "get_csr_submatrix" "', argument " "9"" of type '" "int""'");
   } 
   arg9 = static_cast< int >(val9);
-  get_csr_submatrix<int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+  get_csr_submatrix< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
   resultobj = SWIG_Py_Void();
   {
     int length = (arg10)->size(); 
@@ -95909,7 +96422,22 @@ SWIGINTERN PyObject *_wrap_get_csr_submatrix(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'get_csr_submatrix'.\n  Possible C/C++ prototypes are:\n""    get_csr_submatrix<(int,signed char)>(int const,int const,int const [],int const [],signed char const [],int const,int const,int const,int const,std::vector<int > *,std::vector<int > *,std::vector<signed char > *)\n""    get_csr_submatrix<(int,unsigned char)>(int const,int const,int const [],int const [],unsigned char const [],int const,int const,int const,int const,std::vector<int > *,std::vector<int > *,std::vector<unsigned char > *)\n""    get_csr_submatrix<(int,short)>(int const,int const,int const [],int const [],short const [],int const,int const,int const,int const,std::vector<int > *,std::vector<int > *,std::vector<short > *)\n""    get_csr_submatrix<(int,unsigned short)>(int const,int const,int const [],int const [],unsigned short const [],int const,int const,int const,int const,std::vector<int > *,std::vector<int > *,std::vector<unsigned short > *)\n""    get_csr_submatrix<(int,int)>(int const,int const,int const [],int const [],int const [],int const,int const,int const,int const,std::vector<int > *,std::vector<int > *,std::vector<int > *)\n""    get_csr_submatrix<(int,unsigned int)>(int const,int const,int const [],int const [],unsigned int const [],int const,int const,int const,int const,std::vector<int > *,std::vector<int > *,std::vector<unsigned int > *)\n""    get_csr_submatrix<(int,long long)>(int const,int const,int const [],int const [],long long const [],int const,int const,int const,int const,std::vector<int > *,std::vector<int > *,std::vector<long long > *)\n""    get_csr_submatrix<(int,unsigned long long)>(int const,int const,int const [],int const [],unsigned long long const [],int const,int const,int const,int const,std::vector<int > *,std::vector<int > *,std::vector<unsigned long long > *)\n""    get_csr_submatrix<(int,float)>(int const,int const,int const [],int const [],float const [],int const,int const,int const,int const,std::vector<int > *,std::vector<int > *,std::vector<float > *)\n""    get_csr_submatrix<(int,double)>(int const,int const,int const [],int const [],double const [],int const,int const,int const,int const,std::vector<int > *,std::vector<int > *,std::vector<double > *)\n""    get_csr_submatrix<(int,long double)>(int const,int const,int const [],int const [],long double const [],int const,int const,int const,int const,std::vector<int > *,std::vector<int > *,std::vector<long double > *)\n""    get_csr_submatrix<(int,npy_cfloat_wrapper)>(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const,int const,int const,int const,std::vector<int > *,std::vector<int > *,std::vector<npy_cfloat_wrapper > *)\n""    get_csr_submatrix<(int,npy_cdouble_wrapper)>(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const,int const,int const,int const,std::vector<int > *,std::vector<int > *,std::vector<npy_cdouble_wrapper > *)\n""    get_csr_submatrix<(int,npy_clongdouble_wrapper)>(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const,int const,int const,int const,std::vector<int > *,std::vector<int > *,std::vector<npy_clongdouble_wrapper > *)\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'get_csr_submatrix'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    get_csr_submatrix< int,signed char >(int const,int const,int const [],int const [],signed char const [],int const,int const,int const,int const,std::vector< int > *,std::vector< int > *,std::vector< signed char > *)\n"
+    "    get_csr_submatrix< int,unsigned char >(int const,int const,int const [],int const [],unsigned char const [],int const,int const,int const,int const,std::vector< int > *,std::vector< int > *,std::vector< unsigned char > *)\n"
+    "    get_csr_submatrix< int,short >(int const,int const,int const [],int const [],short const [],int const,int const,int const,int const,std::vector< int > *,std::vector< int > *,std::vector< short > *)\n"
+    "    get_csr_submatrix< int,unsigned short >(int const,int const,int const [],int const [],unsigned short const [],int const,int const,int const,int const,std::vector< int > *,std::vector< int > *,std::vector< unsigned short > *)\n"
+    "    get_csr_submatrix< int,int >(int const,int const,int const [],int const [],int const [],int const,int const,int const,int const,std::vector< int > *,std::vector< int > *,std::vector< int > *)\n"
+    "    get_csr_submatrix< int,unsigned int >(int const,int const,int const [],int const [],unsigned int const [],int const,int const,int const,int const,std::vector< int > *,std::vector< int > *,std::vector< unsigned int > *)\n"
+    "    get_csr_submatrix< int,long long >(int const,int const,int const [],int const [],long long const [],int const,int const,int const,int const,std::vector< int > *,std::vector< int > *,std::vector< long long > *)\n"
+    "    get_csr_submatrix< int,unsigned long long >(int const,int const,int const [],int const [],unsigned long long const [],int const,int const,int const,int const,std::vector< int > *,std::vector< int > *,std::vector< unsigned long long > *)\n"
+    "    get_csr_submatrix< int,float >(int const,int const,int const [],int const [],float const [],int const,int const,int const,int const,std::vector< int > *,std::vector< int > *,std::vector< float > *)\n"
+    "    get_csr_submatrix< int,double >(int const,int const,int const [],int const [],double const [],int const,int const,int const,int const,std::vector< int > *,std::vector< int > *,std::vector< double > *)\n"
+    "    get_csr_submatrix< int,long double >(int const,int const,int const [],int const [],long double const [],int const,int const,int const,int const,std::vector< int > *,std::vector< int > *,std::vector< long double > *)\n"
+    "    get_csr_submatrix< int,npy_cfloat_wrapper >(int const,int const,int const [],int const [],npy_cfloat_wrapper const [],int const,int const,int const,int const,std::vector< int > *,std::vector< int > *,std::vector< npy_cfloat_wrapper > *)\n"
+    "    get_csr_submatrix< int,npy_cdouble_wrapper >(int const,int const,int const [],int const [],npy_cdouble_wrapper const [],int const,int const,int const,int const,std::vector< int > *,std::vector< int > *,std::vector< npy_cdouble_wrapper > *)\n"
+    "    get_csr_submatrix< int,npy_clongdouble_wrapper >(int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],int const,int const,int const,int const,std::vector< int > *,std::vector< int > *,std::vector< npy_clongdouble_wrapper > *)\n");
   return NULL;
 }
 
@@ -95995,7 +96523,7 @@ SWIGINTERN PyObject *_wrap_coo_todense__SWIG_1(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (signed char*) array_data(temp7);
   }
-  coo_todense<int,signed char >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(signed char const (*))arg6,arg7);
+  coo_todense< int,signed char >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(signed char const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -96102,7 +96630,7 @@ SWIGINTERN PyObject *_wrap_coo_todense__SWIG_2(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (unsigned char*) array_data(temp7);
   }
-  coo_todense<int,unsigned char >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned char const (*))arg6,arg7);
+  coo_todense< int,unsigned char >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned char const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -96209,7 +96737,7 @@ SWIGINTERN PyObject *_wrap_coo_todense__SWIG_3(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (short*) array_data(temp7);
   }
-  coo_todense<int,short >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(short const (*))arg6,arg7);
+  coo_todense< int,short >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(short const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -96316,7 +96844,7 @@ SWIGINTERN PyObject *_wrap_coo_todense__SWIG_4(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (unsigned short*) array_data(temp7);
   }
-  coo_todense<int,unsigned short >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned short const (*))arg6,arg7);
+  coo_todense< int,unsigned short >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned short const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -96423,7 +96951,7 @@ SWIGINTERN PyObject *_wrap_coo_todense__SWIG_5(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (int*) array_data(temp7);
   }
-  coo_todense<int,int >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7);
+  coo_todense< int,int >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -96530,7 +97058,7 @@ SWIGINTERN PyObject *_wrap_coo_todense__SWIG_6(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (unsigned int*) array_data(temp7);
   }
-  coo_todense<int,unsigned int >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned int const (*))arg6,arg7);
+  coo_todense< int,unsigned int >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned int const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -96637,7 +97165,7 @@ SWIGINTERN PyObject *_wrap_coo_todense__SWIG_7(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (long long*) array_data(temp7);
   }
-  coo_todense<int,long long >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(long long const (*))arg6,arg7);
+  coo_todense< int,long long >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(long long const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -96744,7 +97272,7 @@ SWIGINTERN PyObject *_wrap_coo_todense__SWIG_8(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (unsigned long long*) array_data(temp7);
   }
-  coo_todense<int,unsigned long long >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned long long const (*))arg6,arg7);
+  coo_todense< int,unsigned long long >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(unsigned long long const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -96851,7 +97379,7 @@ SWIGINTERN PyObject *_wrap_coo_todense__SWIG_9(PyObject *SWIGUNUSEDPARM(self), P
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (float*) array_data(temp7);
   }
-  coo_todense<int,float >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(float const (*))arg6,arg7);
+  coo_todense< int,float >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(float const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -96958,7 +97486,7 @@ SWIGINTERN PyObject *_wrap_coo_todense__SWIG_10(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (double*) array_data(temp7);
   }
-  coo_todense<int,double >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(double const (*))arg6,arg7);
+  coo_todense< int,double >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(double const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -97065,7 +97593,7 @@ SWIGINTERN PyObject *_wrap_coo_todense__SWIG_11(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (long double*) array_data(temp7);
   }
-  coo_todense<int,long double >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(long double const (*))arg6,arg7);
+  coo_todense< int,long double >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(long double const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -97172,7 +97700,7 @@ SWIGINTERN PyObject *_wrap_coo_todense__SWIG_12(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (npy_cfloat_wrapper*) array_data(temp7);
   }
-  coo_todense<int,npy_cfloat_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7);
+  coo_todense< int,npy_cfloat_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -97279,7 +97807,7 @@ SWIGINTERN PyObject *_wrap_coo_todense__SWIG_13(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (npy_cdouble_wrapper*) array_data(temp7);
   }
-  coo_todense<int,npy_cdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7);
+  coo_todense< int,npy_cdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -97386,7 +97914,7 @@ SWIGINTERN PyObject *_wrap_coo_todense__SWIG_14(PyObject *SWIGUNUSEDPARM(self), 
     if (!temp7  || !require_contiguous(temp7) || !require_native(temp7)) SWIG_fail;
     arg7 = (npy_clongdouble_wrapper*) array_data(temp7);
   }
-  coo_todense<int,npy_clongdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_clongdouble_wrapper const (*))arg6,arg7);
+  coo_todense< int,npy_clongdouble_wrapper >(arg1,arg2,arg3,(int const (*))arg4,(int const (*))arg5,(npy_clongdouble_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
     if (is_new_object4 && array4) Py_DECREF(array4);
@@ -98012,7 +98540,22 @@ SWIGINTERN PyObject *_wrap_coo_todense(PyObject *self, PyObject *args) {
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'coo_todense'.\n  Possible C/C++ prototypes are:\n""    coo_todense<(int,signed char)>(int const,int const,int const,int const [],int const [],signed char const [],signed char [])\n""    coo_todense<(int,unsigned char)>(int const,int const,int const,int const [],int const [],unsigned char const [],unsigned char [])\n""    coo_todense<(int,short)>(int const,int const,int const,int const [],int const [],short const [],short [])\n""    coo_todense<(int,unsigned short)>(int const,int const,int const,int const [],int const [],unsigned short const [],unsigned short [])\n""    coo_todense<(int,int)>(int const,int const,int const,int const [],int const [],int const [],int [])\n""    coo_todense<(int,unsigned int)>(int const,int const,int const,int const [],int const [],unsigned int const [],unsigned int [])\n""    coo_todense<(int,long long)>(int const,int const,int const,int const [],int const [],long long const [],long long [])\n""    coo_todense<(int,unsigned long long)>(int const,int const,int const,int const [],int const [],unsigned long long const [],unsigned long long [])\n""    coo_todense<(int,float)>(int const,int const,int const,int const [],int const [],float const [],float [])\n""    coo_todense<(int,double)>(int const,int const,int const,int const [],int const [],double const [],double [])\n""    coo_todense<(int,long double)>(int const,int const,int const,int const [],int const [],long double const [],long double [])\n""    coo_todense<(int,npy_cfloat_wrapper)>(int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n""    coo_todense<(int,npy_cdouble_wrapper)>(int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n""    coo_todense<(int,npy_clongdouble_wrapper)>(int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'coo_todense'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    coo_todense< int,signed char >(int const,int const,int const,int const [],int const [],signed char const [],signed char [])\n"
+    "    coo_todense< int,unsigned char >(int const,int const,int const,int const [],int const [],unsigned char const [],unsigned char [])\n"
+    "    coo_todense< int,short >(int const,int const,int const,int const [],int const [],short const [],short [])\n"
+    "    coo_todense< int,unsigned short >(int const,int const,int const,int const [],int const [],unsigned short const [],unsigned short [])\n"
+    "    coo_todense< int,int >(int const,int const,int const,int const [],int const [],int const [],int [])\n"
+    "    coo_todense< int,unsigned int >(int const,int const,int const,int const [],int const [],unsigned int const [],unsigned int [])\n"
+    "    coo_todense< int,long long >(int const,int const,int const,int const [],int const [],long long const [],long long [])\n"
+    "    coo_todense< int,unsigned long long >(int const,int const,int const,int const [],int const [],unsigned long long const [],unsigned long long [])\n"
+    "    coo_todense< int,float >(int const,int const,int const,int const [],int const [],float const [],float [])\n"
+    "    coo_todense< int,double >(int const,int const,int const,int const [],int const [],double const [],double [])\n"
+    "    coo_todense< int,long double >(int const,int const,int const,int const [],int const [],long double const [],long double [])\n"
+    "    coo_todense< int,npy_cfloat_wrapper >(int const,int const,int const,int const [],int const [],npy_cfloat_wrapper const [],npy_cfloat_wrapper [])\n"
+    "    coo_todense< int,npy_cdouble_wrapper >(int const,int const,int const,int const [],int const [],npy_cdouble_wrapper const [],npy_cdouble_wrapper [])\n"
+    "    coo_todense< int,npy_clongdouble_wrapper >(int const,int const,int const,int const [],int const [],npy_clongdouble_wrapper const [],npy_clongdouble_wrapper [])\n");
   return NULL;
 }
 
@@ -99223,71 +99766,71 @@ static PyMethodDef SwigMethods[] = {
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTdouble_t = {"_p_std__vectorTdouble_t", "std::vector<double > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTfloat_t = {"_p_std__vectorTfloat_t", "std::vector<float > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTint_t = {"_p_std__vectorTint_t", "std::vector<int > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTlong_double_t = {"_p_std__vectorTlong_double_t", "std::vector<long double > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTlong_long_t = {"_p_std__vectorTlong_long_t", "std::vector<long long > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTnpy_cdouble_wrapper_t = {"_p_std__vectorTnpy_cdouble_wrapper_t", "std::vector<npy_cdouble_wrapper > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTnpy_cfloat_wrapper_t = {"_p_std__vectorTnpy_cfloat_wrapper_t", "std::vector<npy_cfloat_wrapper > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTnpy_clongdouble_wrapper_t = {"_p_std__vectorTnpy_clongdouble_wrapper_t", "std::vector<npy_clongdouble_wrapper > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTshort_t = {"_p_std__vectorTshort_t", "std::vector<short > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTsigned_char_t = {"_p_std__vectorTsigned_char_t", "std::vector<signed char > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTunsigned_char_t = {"_p_std__vectorTunsigned_char_t", "std::vector<unsigned char > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTunsigned_int_t = {"_p_std__vectorTunsigned_int_t", "std::vector<unsigned int > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTunsigned_long_long_t = {"_p_std__vectorTunsigned_long_long_t", "std::vector<unsigned long long > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorTunsigned_short_t = {"_p_std__vectorTunsigned_short_t", "std::vector<unsigned short > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_double_t = {"_p_std__vectorT_double_t", "std::vector< double > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_float_t = {"_p_std__vectorT_float_t", "std::vector< float > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_int_t = {"_p_std__vectorT_int_t", "std::vector< int > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_long_double_t = {"_p_std__vectorT_long_double_t", "std::vector< long double > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_long_long_t = {"_p_std__vectorT_long_long_t", "std::vector< long long > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_npy_cdouble_wrapper_t = {"_p_std__vectorT_npy_cdouble_wrapper_t", "std::vector< npy_cdouble_wrapper > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_npy_cfloat_wrapper_t = {"_p_std__vectorT_npy_cfloat_wrapper_t", "std::vector< npy_cfloat_wrapper > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_npy_clongdouble_wrapper_t = {"_p_std__vectorT_npy_clongdouble_wrapper_t", "std::vector< npy_clongdouble_wrapper > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_short_t = {"_p_std__vectorT_short_t", "std::vector< short > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_signed_char_t = {"_p_std__vectorT_signed_char_t", "std::vector< signed char > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_unsigned_char_t = {"_p_std__vectorT_unsigned_char_t", "std::vector< unsigned char > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_unsigned_int_t = {"_p_std__vectorT_unsigned_int_t", "std::vector< unsigned int > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_unsigned_long_long_t = {"_p_std__vectorT_unsigned_long_long_t", "std::vector< unsigned long long > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_unsigned_short_t = {"_p_std__vectorT_unsigned_short_t", "std::vector< unsigned short > *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_char,
-  &_swigt__p_std__vectorTdouble_t,
-  &_swigt__p_std__vectorTfloat_t,
-  &_swigt__p_std__vectorTint_t,
-  &_swigt__p_std__vectorTlong_double_t,
-  &_swigt__p_std__vectorTlong_long_t,
-  &_swigt__p_std__vectorTnpy_cdouble_wrapper_t,
-  &_swigt__p_std__vectorTnpy_cfloat_wrapper_t,
-  &_swigt__p_std__vectorTnpy_clongdouble_wrapper_t,
-  &_swigt__p_std__vectorTshort_t,
-  &_swigt__p_std__vectorTsigned_char_t,
-  &_swigt__p_std__vectorTunsigned_char_t,
-  &_swigt__p_std__vectorTunsigned_int_t,
-  &_swigt__p_std__vectorTunsigned_long_long_t,
-  &_swigt__p_std__vectorTunsigned_short_t,
+  &_swigt__p_std__vectorT_double_t,
+  &_swigt__p_std__vectorT_float_t,
+  &_swigt__p_std__vectorT_int_t,
+  &_swigt__p_std__vectorT_long_double_t,
+  &_swigt__p_std__vectorT_long_long_t,
+  &_swigt__p_std__vectorT_npy_cdouble_wrapper_t,
+  &_swigt__p_std__vectorT_npy_cfloat_wrapper_t,
+  &_swigt__p_std__vectorT_npy_clongdouble_wrapper_t,
+  &_swigt__p_std__vectorT_short_t,
+  &_swigt__p_std__vectorT_signed_char_t,
+  &_swigt__p_std__vectorT_unsigned_char_t,
+  &_swigt__p_std__vectorT_unsigned_int_t,
+  &_swigt__p_std__vectorT_unsigned_long_long_t,
+  &_swigt__p_std__vectorT_unsigned_short_t,
 };
 
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTdouble_t[] = {  {&_swigt__p_std__vectorTdouble_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTfloat_t[] = {  {&_swigt__p_std__vectorTfloat_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTint_t[] = {  {&_swigt__p_std__vectorTint_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTlong_double_t[] = {  {&_swigt__p_std__vectorTlong_double_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTlong_long_t[] = {  {&_swigt__p_std__vectorTlong_long_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTnpy_cdouble_wrapper_t[] = {  {&_swigt__p_std__vectorTnpy_cdouble_wrapper_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTnpy_cfloat_wrapper_t[] = {  {&_swigt__p_std__vectorTnpy_cfloat_wrapper_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTnpy_clongdouble_wrapper_t[] = {  {&_swigt__p_std__vectorTnpy_clongdouble_wrapper_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTshort_t[] = {  {&_swigt__p_std__vectorTshort_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTsigned_char_t[] = {  {&_swigt__p_std__vectorTsigned_char_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTunsigned_char_t[] = {  {&_swigt__p_std__vectorTunsigned_char_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTunsigned_int_t[] = {  {&_swigt__p_std__vectorTunsigned_int_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTunsigned_long_long_t[] = {  {&_swigt__p_std__vectorTunsigned_long_long_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorTunsigned_short_t[] = {  {&_swigt__p_std__vectorTunsigned_short_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_double_t[] = {  {&_swigt__p_std__vectorT_double_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_float_t[] = {  {&_swigt__p_std__vectorT_float_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_int_t[] = {  {&_swigt__p_std__vectorT_int_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_long_double_t[] = {  {&_swigt__p_std__vectorT_long_double_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_long_long_t[] = {  {&_swigt__p_std__vectorT_long_long_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_npy_cdouble_wrapper_t[] = {  {&_swigt__p_std__vectorT_npy_cdouble_wrapper_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_npy_cfloat_wrapper_t[] = {  {&_swigt__p_std__vectorT_npy_cfloat_wrapper_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_npy_clongdouble_wrapper_t[] = {  {&_swigt__p_std__vectorT_npy_clongdouble_wrapper_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_short_t[] = {  {&_swigt__p_std__vectorT_short_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_signed_char_t[] = {  {&_swigt__p_std__vectorT_signed_char_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_unsigned_char_t[] = {  {&_swigt__p_std__vectorT_unsigned_char_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_unsigned_int_t[] = {  {&_swigt__p_std__vectorT_unsigned_int_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_unsigned_long_long_t[] = {  {&_swigt__p_std__vectorT_unsigned_long_long_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_unsigned_short_t[] = {  {&_swigt__p_std__vectorT_unsigned_short_t, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_char,
-  _swigc__p_std__vectorTdouble_t,
-  _swigc__p_std__vectorTfloat_t,
-  _swigc__p_std__vectorTint_t,
-  _swigc__p_std__vectorTlong_double_t,
-  _swigc__p_std__vectorTlong_long_t,
-  _swigc__p_std__vectorTnpy_cdouble_wrapper_t,
-  _swigc__p_std__vectorTnpy_cfloat_wrapper_t,
-  _swigc__p_std__vectorTnpy_clongdouble_wrapper_t,
-  _swigc__p_std__vectorTshort_t,
-  _swigc__p_std__vectorTsigned_char_t,
-  _swigc__p_std__vectorTunsigned_char_t,
-  _swigc__p_std__vectorTunsigned_int_t,
-  _swigc__p_std__vectorTunsigned_long_long_t,
-  _swigc__p_std__vectorTunsigned_short_t,
+  _swigc__p_std__vectorT_double_t,
+  _swigc__p_std__vectorT_float_t,
+  _swigc__p_std__vectorT_int_t,
+  _swigc__p_std__vectorT_long_double_t,
+  _swigc__p_std__vectorT_long_long_t,
+  _swigc__p_std__vectorT_npy_cdouble_wrapper_t,
+  _swigc__p_std__vectorT_npy_cfloat_wrapper_t,
+  _swigc__p_std__vectorT_npy_clongdouble_wrapper_t,
+  _swigc__p_std__vectorT_short_t,
+  _swigc__p_std__vectorT_signed_char_t,
+  _swigc__p_std__vectorT_unsigned_char_t,
+  _swigc__p_std__vectorT_unsigned_int_t,
+  _swigc__p_std__vectorT_unsigned_long_long_t,
+  _swigc__p_std__vectorT_unsigned_short_t,
 };
 
 
@@ -99356,7 +99899,7 @@ SWIGRUNTIME void
 SWIG_InitializeModule(void *clientdata) {
   size_t i;
   swig_module_info *module_head, *iter;
-  int found;
+  int found, init;
   
   clientdata = clientdata;
   
@@ -99366,6 +99909,9 @@ SWIG_InitializeModule(void *clientdata) {
     swig_module.type_initial = swig_type_initial;
     swig_module.cast_initial = swig_cast_initial;
     swig_module.next = &swig_module;
+    init = 1;
+  } else {
+    init = 0;
   }
   
   /* Try and load any already created modules */
@@ -99393,6 +99939,12 @@ SWIG_InitializeModule(void *clientdata) {
     swig_module.next = module_head->next;
     module_head->next = &swig_module;
   }
+  
+  /* When multiple interpeters are used, a module could have already been initialized in
+       a different interpreter, but not yet have a pointer in this interpreter.
+       In this case, we do not want to continue adding types... everything should be
+       set up already */
+  if (init == 0) return;
   
   /* Now work on filling in swig_module.types */
 #ifdef SWIGRUNTIME_DEBUG
