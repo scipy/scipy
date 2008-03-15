@@ -1,0 +1,46 @@
+# Last Change: Wed Mar 05 02:00 PM 2008 J
+# vim:syntax=python
+from os.path import join as pjoin
+
+from numpy.distutils.misc_util import get_numpy_include_dirs
+from numscons import GetNumpyEnvironment, write_info
+from numscons import CheckFFT, IsMKL, IsFFTW2, IsFFTW3
+
+env = GetNumpyEnvironment(ARGUMENTS)
+
+env.AppendUnique(CPPPATH = get_numpy_include_dirs())
+env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
+
+# Check fft implementation
+config = env.NumpyConfigure(custom_tests = {'CheckFFT': CheckFFT})
+has_fft = config.CheckFFT()
+config.Finish()
+write_info(env)
+
+# Tweak defineds depending on the fft used
+if has_fft:
+    if IsMKL(env, 'fft'):
+        env.Append(CPPDEFINES = "SCIPY_MKL_H")
+    elif IsFFTW3(env, 'fft'):
+        env.Append(CPPDEFINES = "SCIPY_FFTW3_H")
+    elif IsFFTW2(env, 'fft'):
+        env.Append(CPPDEFINES = "SCIPY_FFTW2_H")
+    else:
+        pass
+
+# Build dfftpack
+src = env.Glob(pjoin('dfftpack', '*.f'))
+dfftpack = env.NumpyStaticExtLibrary('dfftpack', source = [str(s) for s in src])
+env.AppendUnique(LIBS = ['dfftpack'])
+env.AppendUnique(LIBPATH = env['build_dir'])
+
+# Build _fftpack
+src = ['src/zfft.c','src/drfft.c','src/zrfft.c', 'src/zfftnd.c']
+wsrc = env.F2py(pjoin(env['build_dir'], '_fftpackmodule.c'),
+                pjoin(env['build_dir'], 'fftpack.pyf'))
+env.NumpyPythonExtension('_fftpack', source = src + wsrc)
+
+# Build convolve
+src = ['src/convolve.c']
+wsrc = env.F2py(pjoin(env['build_dir'], 'convolve.pyf'))
+env.NumpyPythonExtension('convolve', source = src + wsrc)
