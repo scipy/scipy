@@ -1,4 +1,4 @@
-# Last Change: Wed Mar 05 03:00 PM 2008 J
+# Last Change: Fri Mar 07 07:00 PM 2008 J
 # vim:syntax=python
 
 import os
@@ -20,57 +20,6 @@ from scons_support import do_generate_interface, do_generate_fake_interface, \
 
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
-#if os.name == 'nt':
-#    # NT needs the pythonlib to run any code importing Python.h, including
-#    # simple code using only typedef and so on, so we need it for configuration
-#    # checks
-#    env.AppendUnique(LIBPATH = [get_pythonlib_dir()])
-
-#=======================
-# Starting Configuration
-#=======================
-config = env.NumpyConfigure(custom_tests = {'CheckCBLAS' : CheckCBLAS,
-                                            'CheckBLAS' : CheckF77BLAS,
-                                            'CheckCLAPACK' : CheckCLAPACK,
-                                            'CheckLAPACK' : CheckF77LAPACK,
-                                            'CheckF77Clib' : CheckF77Clib})
-
-#--------------
-# Checking Blas
-#--------------
-if not config.CheckF77Clib():
-    raise RuntimeError("Could not check F/C runtime library for %s/%s, " \
-                       "contact the maintainer" % (env['CC'], env['F77']))
-
-st = config.CheckBLAS(check_version = 1)
-if not st:
-    raise RuntimeError("no blas found, necessary for linalg module")
-if IsATLAS(env, 'blas'):
-    version = GetATLASVersion(env)
-    env.Append(CPPDEFINES = [('ATLAS_INFO', '"\\"%s"\\"' % version)])
-else:
-    env.Append(CPPDEFINES = [('NO_ATLAS_INFO', 1)])
-
-st = config.CheckLAPACK()
-if not st:
-    raise RuntimeError("no lapack found, necessary for linalg module")
-
-if config.CheckCBLAS():
-    has_cblas = 1
-else:
-    has_cblas = 0
-
-if config.CheckCLAPACK():
-    has_clapack = 1
-else:
-    has_clapack = 0
-
-config.Finish()
-write_info(env)
-
-#==========
-#  Build
-#==========
 
 # XXX: handle cblas wrapper for complex (check in numpy.scons or here ?)
 env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
@@ -82,16 +31,82 @@ env['BUILDERS']['haha'] = Builder(action = do_generate_interface,
 env['BUILDERS']['hihi'] = Builder(action = do_generate_fake_interface,
                                   emitter = generate_interface_emitter)
 
+#if os.name == 'nt':
+#    # NT needs the pythonlib to run any code importing Python.h, including
+#    # simple code using only typedef and so on, so we need it for configuration
+#    # checks
+#    env.AppendUnique(LIBPATH = [get_pythonlib_dir()])
+
+fenv = env.Copy()
+
+#=======================
+# Starting Configuration
+#=======================
+config = env.Configure(custom_tests = {'CheckCBLAS' : CheckCBLAS,
+                                       'CheckCLAPACK' : CheckCLAPACK})
+
+#-------------------------
+# Checking cblas/clapack
+#-------------------------
+if config.CheckCBLAS():
+    has_cblas = 1
+else:
+    has_cblas = 0
+if has_cblas:
+    if IsATLAS(env, 'cblas'):
+        version = GetATLASVersion(env)
+        env.Append(CPPDEFINES = [('ATLAS_INFO', '"\\"%s"\\"' % version)])
+    else:
+        env.Append(CPPDEFINES = [('NO_ATLAS_INFO', 1)])
+
+if config.CheckCLAPACK():
+    has_clapack = 1
+else:
+    has_clapack = 0
+
+config.Finish()
+write_info(env)
+
+#---------------------------
+# Checking F77 blas/lapack
+#---------------------------
+fconfig = fenv.Configure(custom_tests = {'CheckBLAS' : CheckF77BLAS,
+                         'CheckLAPACK' : CheckF77LAPACK,
+                         'CheckF77Clib' : CheckF77Clib})
+
+if not fconfig.CheckF77Clib():
+    raise RuntimeError("Could not check F/C runtime library for %s/%s, " \
+                       "contact the maintainer" % (fenv['CC'], fenv['F77']))
+
+st = fconfig.CheckBLAS(check_version = 1)
+if not st:
+    raise RuntimeError("no blas found, necessary for linalg module")
+if IsATLAS(fenv, 'blas'):
+    version = GetATLASVersion(fenv)
+    env.Append(CPPDEFINES = [('ATLAS_INFO', '"\\"%s"\\"' % version)])
+else:
+    env.Append(CPPDEFINES = [('NO_ATLAS_INFO', 1)])
+
+st = fconfig.CheckLAPACK()
+if not st:
+    raise RuntimeError("no lapack found, necessary for linalg module")
+fconfig.Finish()
+write_info(fenv)
+
+
+#==========
+#  Build
+#==========
 #------------
 #   fblas
 #------------
-env.haha('fblas', 'generic_fblas.pyf')
+fenv.haha('fblas', 'generic_fblas.pyf')
 source = ['fblas.pyf']
-if IsVeclib(env, 'blas') or IsAccelerate(env, 'blas'):
+if IsVeclib(fenv, 'blas') or IsAccelerate(fenv, 'blas'):
     source.append(pjoin('src', 'fblaswrap_veclib_c.c'))
 else:
     source.append(pjoin('src', 'fblaswrap.f'))
-env.NumpyPythonExtension('fblas', source)
+fenv.NumpyPythonExtension('fblas', source)
 
 #------------
 #   cblas
@@ -105,10 +120,10 @@ env.NumpyPythonExtension('cblas', source = 'cblas.pyf')
 #------------
 #   flapack
 #------------
-yop = env.haha('flapack', 'generic_flapack.pyf')
+yop = fenv.haha('flapack', 'generic_flapack.pyf')
 # XXX: automatically scan dependency on flapack_user_routines.pyf ?
-env.Depends(yop, pjoin(env['build_dir'], 'flapack_user_routines.pyf'))
-env.NumpyPythonExtension('flapack', source = ['flapack.pyf'])
+fenv.Depends(yop, pjoin(env['build_dir'], 'flapack_user_routines.pyf'))
+fenv.NumpyPythonExtension('flapack', source = ['flapack.pyf'])
 
 #------------
 #   clapack
@@ -123,11 +138,11 @@ env.NumpyPythonExtension('clapack', source = 'clapack.pyf')
 #   _flinalg
 #----------------
 _flinalg_fsrc = ['det.f', 'lu.f']
-_flinalg_src = env.F2py(
-    pjoin(env['build_dir'], 'src', '_flinalgmodule.c'), 
-    source = [pjoin(env['build_dir'], 'src', i) for i in _flinalg_fsrc])
+_flinalg_src = fenv.F2py(
+    pjoin(fenv['build_dir'], 'src', '_flinalgmodule.c'), 
+    source = [pjoin(fenv['build_dir'], 'src', i) for i in _flinalg_fsrc])
 
-env.NumpyPythonExtension(
+fenv.NumpyPythonExtension(
     '_flinalg', source = _flinalg_src + [pjoin('src', i) for i in _flinalg_fsrc])
 
 #----------------
@@ -135,14 +150,13 @@ env.NumpyPythonExtension(
 #----------------
 calc_src = env.F2py(pjoin(env['build_dir'], 'src', 'calc_lworkmodule.c'), 
                     source = pjoin(env['build_dir'], 'src', 'calc_lwork.f'))
-env.NumpyPythonExtension('calc_lwork', 
-                         source = calc_src + [pjoin('src', 'calc_lwork.f')],
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+fenv.NumpyPythonExtension('calc_lwork', 
+                         source = calc_src + [pjoin('src', 'calc_lwork.f')])
 
 #--------------
 # Atlas version
 #--------------
 atlas_env = env.Copy()
-if not IsATLAS(env, 'blas'):
+if not IsATLAS(env, 'cblas'):
     atlas_env.AppendUnique(CPPDEFINES = "NO_ATLAS_INFO")
 atlas_env.NumpyPythonExtension('atlas_version', 'atlas_version.c')
