@@ -1,0 +1,57 @@
+# Last Change: Wed Mar 05 06:00 PM 2008 J
+# vim:syntax=python
+
+from os.path import join as pjoin, splitext
+
+from numpy.distutils.misc_util import get_numpy_include_dirs
+from numscons import GetNumpyEnvironment
+from numscons import CheckF77LAPACK
+
+from numscons import write_info
+
+env = GetNumpyEnvironment(ARGUMENTS)
+env.Append(CPPPATH = [get_numpy_include_dirs(), env['F2PYINCLUDEDIR']])
+#if os.name == 'nt':
+#    # NT needs the pythonlib to run any code importing Python.h, including
+#    # simple code using only typedef and so on, so we need it for configuration
+#    # checks
+#    env.AppendUnique(LIBPATH = [get_pythonlib_dir()])
+
+#=======================
+# Starting Configuration
+#=======================
+config = env.NumpyConfigure(custom_tests = {'CheckLAPACK' : CheckF77LAPACK})
+
+#-----------------
+# Checking Lapack
+#-----------------
+st = config.CheckLAPACK()
+if not st:
+    raise RuntimeError("no lapack found, necessary for isolve module")
+
+config.Finish()
+write_info(env)
+
+#--------------------
+# iterative methods
+#--------------------
+methods = ['BiCGREVCOM.f.src',
+           'BiCGSTABREVCOM.f.src',
+           'CGREVCOM.f.src',
+           'CGSREVCOM.f.src',
+#               'ChebyREVCOM.f.src',
+           'GMRESREVCOM.f.src',
+#               'JacobiREVCOM.f.src',
+           'QMRREVCOM.f.src',
+#               'SORREVCOM.f.src'
+           ]
+Util = ['STOPTEST2.f.src','getbreak.f.src']
+raw_sources = methods + Util + ['_iterative.pyf.src']
+
+sources = []
+for method in raw_sources:
+    target = splitext(method)[0]
+    res = env.NumpyFromFTemplate(target, pjoin('iterative', method))
+    sources.append(res[0])
+
+env.NumpyPythonExtension('_iterative', source = sources)

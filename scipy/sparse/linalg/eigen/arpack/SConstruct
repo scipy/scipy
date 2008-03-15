@@ -1,0 +1,44 @@
+from os.path import join as pjoin
+
+from numpy.distutils.misc_util import get_numpy_include_dirs
+
+from numscons import GetNumpyEnvironment
+from numscons import CheckF77LAPACK, CheckF77Clib
+from numscons import write_info
+
+env = GetNumpyEnvironment(ARGUMENTS)
+
+#=======================
+# Starting Configuration
+#=======================
+config = env.NumpyConfigure(custom_tests = {'CheckLAPACK' : CheckF77LAPACK,
+                                            'CheckF77Clib' : CheckF77Clib})
+
+#-----------------
+# Checking Lapack
+#-----------------
+st = config.CheckLAPACK()
+if not st:
+    raise RuntimeError("no lapack found, necessary for arpack module")
+
+config.Finish()
+write_info(env)
+
+# Build arpack
+arpack_src = env.NumpyGlob(pjoin('ARPACK', 'SRC', '*.f'))
+arpack_src += env.NumpyGlob(pjoin('ARPACK', 'UTIL', '*.f'))
+arpack_src += env.NumpyGlob(pjoin('ARPACK', 'LAPACK', '*.f'))
+
+src = [str(s) for s in arpack_src]
+
+env.AppendUnique(CPPPATH = pjoin('ARPACK', 'SRC'))
+arpack_lib = env.NumpyStaticExtLibrary('arpack', source = src)
+
+# Build _arpack extension
+env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
+env.AppendUnique(CPPPATH = get_numpy_include_dirs())
+
+env.NumpyFromFTemplate('arpack.pyf', 'arpack.pyf.src')
+wsrc = env.F2py(pjoin(env['build_dir'], '_arpackmodule.c'), 
+                pjoin(env['build_dir'], 'arpack.pyf'))
+env.NumpyPythonExtension('_arpack', source = wsrc, LIBS = arpack_lib)

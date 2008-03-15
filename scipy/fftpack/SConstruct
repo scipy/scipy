@@ -29,7 +29,7 @@ if has_fft:
         pass
 
 # Build dfftpack
-src = env.Glob(pjoin('dfftpack', '*.f'))
+src = env.NumpyGlob(pjoin('dfftpack', '*.f'))
 dfftpack = env.NumpyStaticExtLibrary('dfftpack', source = [str(s) for s in src])
 env.AppendUnique(LIBS = ['dfftpack'])
 env.AppendUnique(LIBPATH = env['build_dir'])

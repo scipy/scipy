@@ -1,0 +1,47 @@
+from os.path import join as pjoin
+import sys
+
+from numpy.distutils.misc_util import get_numpy_include_dirs
+
+from numscons import GetNumpyEnvironment
+from numscons import CheckF77LAPACK
+from numscons import write_info
+
+env = GetNumpyEnvironment(ARGUMENTS)
+
+#=======================
+# Starting Configuration
+#=======================
+config = env.NumpyConfigure(custom_tests = {'CheckLapack' : CheckF77LAPACK})
+
+#-----------------
+# Checking Lapack
+#-----------------
+st = config.CheckLapack()
+if not st:
+    raise RuntimeError("no lapack found, necessary for dsolve module")
+
+config.Finish()
+write_info(env)
+
+# Build superlu lib
+superlu_env = env.Copy()
+superlu_def = {}
+if sys.platform == 'win32':
+    superlu_def['NO_TIMER'] = 1
+superlu_def['USE_VENDOR_BLAS'] = 2
+superlu_env.Append(CPPDEFINES = superlu_def)
+
+superlu_src = superlu_env.NumpyGlob(pjoin('SuperLU', 'SRC', '*.c'))
+superlu = superlu_env.NumpyStaticExtLibrary('superlu_src', source = superlu_src)
+
+# Build python extensions
+pyenv = env.Copy()
+pyenv.Append(CPPPATH = [get_numpy_include_dirs(), env['src_dir']])
+common_src = ['_superlu_utils.c', '_superluobject.c']
+
+for prec in ['z', 'd', 'c', 's']:
+    pyenv.NumpyPythonExtension('_%ssuperlu' % prec, 
+                               source = common_src + \
+                                        ['_%ssuperlumodule.c' % prec], 
+                               LIBS = superlu)

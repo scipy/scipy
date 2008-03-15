@@ -17,7 +17,7 @@ env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 env.AppendUnique(LINKFLAGS = env['F77_LDFLAGS'])
 
 # Build fitpack
-src = [str(s) for s in env.Glob(pjoin('fitpack', '*.f'))]
+src = [str(s) for s in env.NumpyGlob(pjoin('fitpack', '*.f'))]
 fitpack = env.NumpyStaticExtLibrary('fitpack', source = src)
 
 env.AppendUnique(LIBS = ['fitpack'])
