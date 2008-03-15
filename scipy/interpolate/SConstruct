@@ -12,16 +12,16 @@ if not config.CheckF77Clib():
     raise Exception("Could not check F77 runtime, needed for interpolate")
 config.Finish()
 
-env.AppendUnique(CPPPATH = get_numpy_include_dirs())
-env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
-env.AppendUnique(LINKFLAGS = env['F77_LDFLAGS'])
+env.PrependUnique(CPPPATH = get_numpy_include_dirs())
+env.PrependUnique(CPPPATH = env['F2PYINCLUDEDIR'])
+env.AppendUnique(LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # Build fitpack
 src = [str(s) for s in env.NumpyGlob(pjoin('fitpack', '*.f'))]
 fitpack = env.NumpyStaticExtLibrary('fitpack', source = src)
 
-env.AppendUnique(LIBS = ['fitpack'])
-env.AppendUnique(LIBPATH = env['build_dir'])
+env.PrependUnique(LIBS = ['fitpack'])
+env.PrependUnique(LIBPATH = [env['build_dir']])
 
 # Build _fitpack
 env.NumpyPythonExtension('_fitpack', source = '_fitpackmodule.c')

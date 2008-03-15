@@ -1,4 +1,4 @@
-# Last Change: Wed Mar 05 03:00 PM 2008 J
+# Last Change: Tue Mar 11 04:00 PM 2008 J
 # vim:syntax=python
 from os.path import join as pjoin
 import warnings
@@ -41,20 +41,20 @@ quadpack = env.NumpyStaticExtLibrary('quadpack', source = src)
 src = [str(s) for s in env.NumpyGlob(pjoin('odepack', '*.f'))]
 odepack = env.NumpyStaticExtLibrary('odepack', source = src)
 
-#env.AppendUnique(LIBS = ['linpack_lite', 'quadpack', 'odepack', 'mach'])
 env.AppendUnique(LIBPATH = env['build_dir'])
+env.AppendUnique(LINKFLAGSEND = env['F77_LDFLAGS'])
+
+quadenv = env.Copy()
+quadenv.Prepend(LIBS = ['quadpack', 'linpack_lite', 'mach'])
+
+odenv = env.Copy()
+odenv.Prepend(LIBS = ['odepack', 'linpack_lite', 'mach'])
 
 # Build _quadpack
-env.NumpyPythonExtension('_quadpack', source = '_quadpackmodule.c', 
-                         LIBS = ['quadpack', 'linpack_lite', 'mach'],
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+quadenv.NumpyPythonExtension('_quadpack', source = '_quadpackmodule.c')
 
 # Build _odepack
-env.NumpyPythonExtension('_odepack', source = '_odepackmodule.c',
-                         LIBS = ['odepack', 'linpack_lite', 'mach'],
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+odenv.NumpyPythonExtension('_odepack', source = '_odepackmodule.c')
 
 # Build vode
-env.NumpyPythonExtension('vode', source = 'vode.pyf',
-                         LIBS = ['odepack', 'linpack_lite', 'mach'],
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+odenv.NumpyPythonExtension('vode', source = 'vode.pyf')

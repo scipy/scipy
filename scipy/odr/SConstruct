@@ -53,8 +53,9 @@ else:
     libodr_src.append(pjoin('odrpack', 'd_lpkbls.f'))
 
 env.NumpyStaticExtLibrary('odrpack', source = libodr_src)
-env.AppendUnique(LIBS = 'odrpack')
-env.AppendUnique(LIBPATH = env['build_dir'])
+
+env.PrependUnique(LIBS = 'odrpack')
+env.PrependUnique(LIBPATH = env['build_dir'])
 
 # odr pyextension
 env.NumpyPythonExtension('__odrpack', '__odrpack.c',
