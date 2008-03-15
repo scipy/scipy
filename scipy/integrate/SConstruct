@@ -1,0 +1,60 @@
+# Last Change: Wed Mar 05 03:00 PM 2008 J
+# vim:syntax=python
+from os.path import join as pjoin
+import warnings
+
+from numpy.distutils.misc_util import get_numpy_include_dirs
+from numscons import GetNumpyEnvironment, CheckF77Clib, CheckF77BLAS
+
+env = GetNumpyEnvironment(ARGUMENTS)
+
+# Configuration
+config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib,
+                                            'CheckF77BLAS' : CheckF77BLAS})
+
+if not config.CheckF77Clib():
+    raise Exception("Could not check F77 runtime, needed for interpolate")
+if not config.CheckF77BLAS():
+    warnings.warn("Could not find F77 BLAS")
+
+config.Finish()
+
+env.AppendUnique(CPPPATH = get_numpy_include_dirs())
+env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
+
+# XXX: lapack integration
+
+# Build linpack_lite
+src = [str(s) for s in env.Glob(pjoin('linpack_lite', '*.f'))]
+linpack_lite = env.NumpyStaticExtLibrary('linpack_lite', source = src)
+
+# Build mach
+# XXX: do not use optimization flags for mach
+src = [str(s) for s in env.Glob(pjoin('mach', '*.f'))]
+mach = env.NumpyStaticExtLibrary('mach', source = src)
+
+# Build quadpack
+src = [str(s) for s in env.Glob(pjoin('quadpack', '*.f'))]
+quadpack = env.NumpyStaticExtLibrary('quadpack', source = src)
+
+# Build odepack
+src = [str(s) for s in env.Glob(pjoin('odepack', '*.f'))]
+odepack = env.NumpyStaticExtLibrary('odepack', source = src)
+
+#env.AppendUnique(LIBS = ['linpack_lite', 'quadpack', 'odepack', 'mach'])
+env.AppendUnique(LIBPATH = env['build_dir'])
+
+# Build _quadpack
+env.NumpyPythonExtension('_quadpack', source = '_quadpackmodule.c', 
+                         LIBS = ['quadpack', 'linpack_lite', 'mach'],
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
+
+# Build _odepack
+env.NumpyPythonExtension('_odepack', source = '_odepackmodule.c',
+                         LIBS = ['odepack', 'linpack_lite', 'mach'],
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
+
+# Build vode
+env.NumpyPythonExtension('vode', source = 'vode.pyf',
+                         LIBS = ['odepack', 'linpack_lite', 'mach'],
+                         LINKFLAGSEND = env['F77_LDFLAGS'])
