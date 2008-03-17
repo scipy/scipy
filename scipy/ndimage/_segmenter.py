@@ -1,5 +1,6 @@
 import math
 import numpy as N
+import pylab as P
 import scipy.ndimage._segment as S
 
 _objstruct = N.dtype([('L', 'i'),
@@ -24,6 +25,15 @@ _objstruct = N.dtype([('L', 'i'),
                     ('TEM', 'f', 20)]
                    )
 
+
+# Issue warning regarding heavy development status of this module
+import warnings
+_msg = "The segmentation code is under heavy development and therefore the \
+public API will change in the future.  The NIPY group is actively working on \
+this code, and has every intention of generalizing this for the Scipy \
+community.  Use this module minimally, if at all, until it this warning is \
+removed."
+warnings.warn(_msg, UserWarning)
 
 def canny_hysteresis(magnitude, canny_stats):
     """
@@ -231,8 +241,8 @@ def mat_filter(label_image, thin_kernel, ROI=None):
 	                                         input[inflate:rgrows+inflate,inflate:rgcols+inflate] 
 	    
 
+    # accumulate overlaps set back to binary at later date
     mat_image[:, :] = thin_edge_image[:, :]
-    # accumulate overlaps set back to 1 
 
     return mat_image
 
@@ -361,23 +371,110 @@ def sobel_image(filtered_slice):
     [rows, cols] = filtered_slice.shape
     sobel_edge_image = N.zeros(rows*cols, dtype=N.float64).reshape(rows, cols)
     pAve, min_value, max_value = S.sobel_image(filtered_slice, sobel_edge_image)
+
+    # replace this with numpy calls for the image stats. but C ext is faster
+    #   S.sobel_image(filtered_slice, sobel_edge_image)
+    #   pAve = sobel_edge_image[sobel_edge_image>0].mean()
+    #   min_value = sobel_edge_image[sobel_edge_image>0].min()
+    #   max_value = sobel_edge_image[sobel_edge_image>0].max()
+
     sobel_stats= {'ave_gt0' : pAve, 'min_gt0': min_value, 'max_gt0': max_value} 
 
     return sobel_edge_image, sobel_stats
 
-def pre_filter(slice, filter, low_threshold=2048+220, high_threshold=600+2048):
+def pre_filter(slice, filter, low_threshold=2048+220, high_threshold=600+2048, conv_binary=0):
     """
     take 2D image slice and filter and pre-filter and threshold prior to segmentation
 
     """
 
+    # make sure the input is 16 bits. this is input to edge machine
+    # so can handle raw and 8 bit scaled inputs
+    slice = slice.astype(N.int16)
     [rows, cols] = slice.shape
     edge_image = N.zeros(rows*cols, dtype=N.float64).reshape(rows, cols)
     S.edge_prefilter(low_threshold, high_threshold, filter['kernelSize'], filter['kernel'],
 		     slice, edge_image)
 
+    if conv_binary == 1:
+        edge_image[edge_image>0] = 1
+        edge_image = edge_image.astype(N.uint16)
+
     return edge_image
 
+def get_max_bounding_box(ROI):
+    max_area = ROI[:]['Area'].max()
+    indices = range(0, ROI.size)
+    for i in indices:
+        if ROI[i]['Area'] == max_area:
+	    left   = ROI[i]['L']
+	    right  = ROI[i]['R']
+	    top    = ROI[i]['T']
+	    bottom = ROI[i]['B']
+
+    bounding_box = {'left' : left, 'right' : right, 'top' : top, 'bottom' : bottom} 
+
+    return bounding_box 
+
+def set_draw_bounding_box(bounding_box):
+    x = N.zeros(5, dtype=N.uint16)
+    y = N.zeros(5, dtype=N.uint16)
+
+    x[0] = bounding_box['left']
+    x[1] = bounding_box['right']
+    x[2] = bounding_box['right']
+    x[3] = bounding_box['left']
+    x[4] = bounding_box['left']
+
+    y[0] = bounding_box['bottom']
+    y[1] = bounding_box['bottom']
+    y[2] = bounding_box['top']
+    y[3] = bounding_box['top']
+    y[4] = bounding_box['bottom']
+
+    return x, y
+
+def get_all_bounding_boxes(ROI):
+    number = ROI.size
+    indices = range(0, ROI.size)
+    _shortstruct = N.dtype([('left', 'i'),
+                            ('right', 'i'),
+                            ('top', 'i'),
+                            ('bottom', 'i')])
+    measures = N.zeros(number, dtype=_shortstruct)
+    for i in indices:
+	measures[i]['left']   = ROI[i]['L']
+	measures[i]['right']  = ROI[i]['R']
+	measures[i]['top']    = ROI[i]['T']
+	measures[i]['bottom'] = ROI[i]['B']
+
+    return measures
+
+def draw_all_bounding_boxes(measures):
+    number = measures.size
+    indices = range(0, measures.size)
+    for i in indices:
+        x, y = set_draw_bounding_box(measures[i])
+	P.plot(x, y)
+
+def build_test_discs():
+
+    radius = 50
+    rows   = 512
+    cols   = 512
+    test_image = N.zeros(rows*cols, dtype=N.int16).reshape(rows, cols)
+    y_indices = N.array(range(-radius, radius+1))
+    center_x = rows / 4
+    center_y = cols / 4
+
+    for i in y_indices:
+	x = math.sqrt(float(radius)**2 - float(i)**2)
+	test_image[1*center_y+i, 1*center_x-x:1*center_x+x] = 100
+	test_image[1*center_y+i, 3*center_x-x:3*center_x+x] = 100
+	test_image[3*center_y+i, 1*center_x-x:1*center_x+x] = 100
+	test_image[3*center_y+i, 3*center_x-x:3*center_x+x] = 100
+
+    return test_image
 
 def get_slice(imageName='slice112.raw', bytes=2, rows=512, columns=512):
     # clip the ends for this test CT image file as the spine runs off the end of the image
