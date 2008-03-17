@@ -1032,6 +1032,33 @@ def build_scale_image(image, scale):
 
 
 def demo_MRI_volume_align(scale=2, alpha=3.0, beta=4.0, gamma=5.0, Tx = 0.0, Ty = 0.0, Tz = 0.0):
+	"""
+	demo with (must have file ANAT1_V0001.img)
+
+	image1, image2, imdata = reg.demo_MRI_volume_align()
+	x = reg.python_coreg(image1, image2, imdata, method='ncc', lite=1) 
+	image2r = reg.remap_image(image2, x, resample='cubic')
+	image2rz = reg.resize_image(image2r, image1['mat'])
+
+
+	slice1 = image1['data'][45, :, :]
+	slice2 = image2['data'][45/2, :, :]
+	slice2r = image2r['data'][45/2, :, :]
+	slice2rz = image2rz['data'][45, :, :]
+
+	pylab.figure(1)
+	pylab.bone()
+	pylab.imshow(slice1)
+	pylab.imshow(slice1)
+	pylab.figure(2)
+	pylab.imshow(slice2)
+	pylab.figure(3)
+	pylab.imshow(slice2r)
+	pylab.figure(4)
+	pylab.imshow(slice2rz)
+	pylab.show()
+
+	"""
 	#
 	# this is for coreg MRI / fMRI scale test. The volume is anatomical MRI.
 	# the image is rotated in 3D. after rotation the image is scaled.  
@@ -1077,6 +1104,30 @@ def demo_rotate_fMRI_volume(fMRIVol, x):
 	return image
 
 def demo_MRI_coregistration(optimizer_method='powell', histo_method=1, smooth_histo=0, smooth_image=0, ftype=1):
+	"""
+	demo with (must have file ANAT1_V0001.img and fMRI directory fMRIData)
+
+	measures, imageF_anat, fmri_series = reg.demo_MRI_coregistration()
+
+	show results with
+
+	In [59]: measures[25]['cost']
+	Out[59]: -0.48607185
+
+	In [60]: measures[25]['align_cost']
+	Out[60]: -0.99514639
+
+	In [61]: measures[25]['align_rotate']
+	Out[61]:
+	array([ 1.94480181,  5.64703989,  5.35002136, -5.00544405, -2.2712214, -1.42249691], dtype=float32)
+
+	In [62]: measures[25]['rotate']
+	Out[62]:
+	array([ 1.36566341,  4.70644331,  4.68198586, -4.32256889, -2.47607017, -2.39173937], dtype=float32)
+
+
+	"""
+
 	# demo of alignment of fMRI series with anatomical MRI
 	# in this demo, each fMRI volume is first perturbed (rotated, translated) 
 	# by a random value. The initial registration is measured, then the optimal
