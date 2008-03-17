@@ -42,7 +42,7 @@ class TestSolvers(TestCase):
         x = linsolve.spsolve(a, b)
         #print x
         #print "Error: ", a*x-b
-        assert_array_almost_equal(a*x, b)
+        assert_array_almost_equal(a*x, b, decimal=4)
 
 
     def test_solve_without_umfpack(self):
@@ -53,7 +53,7 @@ class TestSolvers(TestCase):
         x = linsolve.spsolve(a, b.astype('f'))
         #print x
         #print "Error: ", a*x-b
-        assert_array_almost_equal(a*x, b)
+        assert_array_almost_equal(a*x, b, decimal=4)
 
 
     def test_solve_complex_umfpack(self):

@@ -238,14 +238,15 @@ INSTANTIATE_ALL(bsr_matmat_pass2)
 
 
 /*
- * CSR*x and CSC*x
+ * A*x
  */
 INSTANTIATE_ALL(csr_matvec)
 INSTANTIATE_ALL(csc_matvec)
 INSTANTIATE_ALL(bsr_matvec)
+INSTANTIATE_ALL(dia_matvec)
 
 /*
- * CSR (binary op) CSR and CSC (binary op) CSC
+ * A (binary op) B 
  */
 INSTANTIATE_ALL(csr_elmul_csr)
 INSTANTIATE_ALL(csr_eldiv_csr)

@@ -1,15 +1,15 @@
 """general tests and simple benchmarks for the sparse module"""
 
+import time
+
 import numpy
 from numpy import ones, array, asarray, empty
 
-import random
 from scipy.testing import *
 
+from scipy import sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
-        coo_matrix, lil_matrix, dia_matrix, spidentity, spdiags, \
-        spkron
-from scipy.linsolve import splu
+        coo_matrix, lil_matrix, dia_matrix, spdiags
 
 
 def random_sparse(m,n,nnz_per_row):
@@ -38,17 +38,16 @@ def poisson2d(N,dtype='d',format=None):
     diags[1:] = -1 #all offdiagonals
 
     diags[3,N-1::N] = 0  #first lower diagonal
-    diags[4,N::N] = 0  #first upper diagonal
+    diags[4,N::N]   = 0  #first upper diagonal
 
     return dia_matrix((diags,offsets),shape=(N**2,N**2)).asformat(format)
 
-import time
-class TestSparseTools(TestCase):
+class BenchmarkSparse(TestCase):
     """Simple benchmarks for sparse matrix module"""
 
     def bench_arithmetic(self):
         matrices = []
-        #matrices.append( ('A','Identity', spidentity(500**2,format='csr')) )
+        #matrices.append( ('A','Identity', sparse.identity(500**2,format='csr')) )
         matrices.append( ('A','Poisson5pt', poisson2d(500,format='csr'))  )
         matrices.append( ('B','Poisson5pt^2', poisson2d(500,format='csr')**2)  )
    
@@ -116,7 +115,7 @@ class TestSparseTools(TestCase):
             start = time.clock()
             iter = 0
             while iter < 5 and time.clock() - start < 1:
-                A._has_sorted_indices = False
+                A.has_sorted_indices = False
                 A.sort_indices() 
                 iter += 1
             end = time.clock()
@@ -128,17 +127,17 @@ class TestSparseTools(TestCase):
 
     def bench_matvec(self):
         matrices = []
-        matrices.append(('Identity',   spidentity(10**4,format='dia')))
-        matrices.append(('Identity',   spidentity(10**4,format='csr')))
+        matrices.append(('Identity',   sparse.identity(10**4,format='dia')))
+        matrices.append(('Identity',   sparse.identity(10**4,format='csr')))
         matrices.append(('Poisson5pt', poisson2d(300,format='dia')))
         matrices.append(('Poisson5pt', poisson2d(300,format='csr')))
         matrices.append(('Poisson5pt', poisson2d(300,format='bsr')))
 
-        A = spkron(poisson2d(150),ones((2,2))).tobsr(blocksize=(2,2))
+        A = sparse.kron(poisson2d(150),ones((2,2))).tobsr(blocksize=(2,2))
         matrices.append( ('Block2x2', A.tocsr()) )
         matrices.append( ('Block2x2', A) )
         
-        A = spkron(poisson2d(100),ones((3,3))).tobsr(blocksize=(3,3))
+        A = sparse.kron(poisson2d(100),ones((3,3))).tobsr(blocksize=(3,3))
         matrices.append( ('Block3x3', A.tocsr()) )
         matrices.append( ('Block3x3', A) )
 
@@ -178,7 +177,7 @@ class TestSparseTools(TestCase):
         """build matrices by inserting single values"""
         matrices = []
         matrices.append( ('Empty',csr_matrix((10000,10000))) )
-        matrices.append( ('Identity',spidentity(10000)) )
+        matrices.append( ('Identity',sparse.identity(10000)) )
         matrices.append( ('Poisson5pt', poisson2d(100)) )
         
         print
@@ -250,31 +249,31 @@ class TestSparseTools(TestCase):
             print output
 
 
-class TestLarge(TestCase):
-    def bench_large(self):
-        # Create a 100x100 matrix with 100 non-zero elements
-        # and play around with it
-        #TODO move this out of Common since it doesn't use spmatrix
-        random.seed(0)
-        A = dok_matrix((100,100))
-        for k in range(100):
-            i = random.randrange(100)
-            j = random.randrange(100)
-            A[i,j] = 1.
-        csr = A.tocsr()
-        csc = A.tocsc()
-        csc2 = csr.tocsc()
-        coo = A.tocoo()
-        csr2 = coo.tocsr()
-        assert_array_equal(A.transpose().todense(), csr.transpose().todense())
-        assert_array_equal(csc.todense(), csr.todense())
-        assert_array_equal(csr.todense(), csr2.todense())
-        assert_array_equal(csr2.todense().transpose(), coo.transpose().todense())
-        assert_array_equal(csr2.todense(), csc2.todense())
-        csr_plus_csc = csr + csc
-        csc_plus_csr = csc + csr
-        assert_array_equal(csr_plus_csc.todense(), (2*A).todense())
-        assert_array_equal(csr_plus_csc.todense(), csc_plus_csr.todense())
+#class TestLarge(TestCase):
+#    def bench_large(self):
+#        # Create a 100x100 matrix with 100 non-zero elements
+#        # and play around with it
+#        #TODO move this out of Common since it doesn't use spmatrix
+#        random.seed(0)
+#        A = dok_matrix((100,100))
+#        for k in range(100):
+#            i = random.randrange(100)
+#            j = random.randrange(100)
+#            A[i,j] = 1.
+#        csr = A.tocsr()
+#        csc = A.tocsc()
+#        csc2 = csr.tocsc()
+#        coo = A.tocoo()
+#        csr2 = coo.tocsr()
+#        assert_array_equal(A.transpose().todense(), csr.transpose().todense())
+#        assert_array_equal(csc.todense(), csr.todense())
+#        assert_array_equal(csr.todense(), csr2.todense())
+#        assert_array_equal(csr2.todense().transpose(), coo.transpose().todense())
+#        assert_array_equal(csr2.todense(), csc2.todense())
+#        csr_plus_csc = csr + csc
+#        csc_plus_csr = csc + csr
+#        assert_array_equal(csr_plus_csc.todense(), (2*A).todense())
+#        assert_array_equal(csr_plus_csc.todense(), csc_plus_csr.todense())
 
 
 if __name__ == "__main__":

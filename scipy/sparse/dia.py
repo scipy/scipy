@@ -12,6 +12,8 @@ from base import isspmatrix, _formats
 from data import _data_matrix
 from sputils import isscalarlike, isshape, upcast, getdtype, isdense
 
+from sparsetools import dia_matvec
+
 class dia_matrix(_data_matrix):
     """Sparse matrix with DIAgonal storage
 
@@ -157,14 +159,13 @@ class dia_matrix(_data_matrix):
                 raise ValueError, "shape mismatch error"
 
             return self.tocsr() * other
-            #TODO handle sparse matmat here
+            #TODO handle sparse/sparse matmat here
         else:
-            # matvec handles multiple columns
-            return self.matvec(other)
+            return self.tocsr() * other
+            #TODO handle sparse/dense matmat here
 
 
     def matvec(self,other):
-        # can we do the multiply add faster?
         x = asarray(other)
 
         if x.ndim == 1:
@@ -177,21 +178,8 @@ class dia_matrix(_data_matrix):
 
         L = self.data.shape[1]
         M,N = self.shape
-
-        for diag,k in zip(self.data,self.diags):
-            j_start = max(0,k)
-            j_end   = min(M+k,N,L)
-
-            i_start = max(0,-k)
-            i_end   = i_start + (j_end - j_start)
-
-            #we'd prefer a fused multiply add here
-            multiply(diag[j_start:j_end].reshape(-1,1), x[j_start:j_end], temp[i_start:i_end])
-            add(y[i_start:i_end],temp[i_start:i_end],y[i_start:i_end])
-           
-            #slower version of two steps above
-            #y[i_start:i_end] += diag[j_start:j_end].reshape(-1,1) * x[j_start:j_end]
-
+       
+        dia_matvec(M,N, len(self.diags), L, self.diags, self.data, x.ravel(), y.ravel())
         
         if isinstance(other, matrix):
             y = asmatrix(y)
