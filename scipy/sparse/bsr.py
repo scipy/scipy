@@ -451,17 +451,6 @@ class bsr_matrix(_cs_matrix):
                       self.indptr, self.indices, self.data.ravel(), \
                       indptr,      indices,      data.ravel())
 
-        ##use CSR.T to determine a permutation for BSR.T
-        #from csr import csr_matrix
-        #data = arange(len(self.indices), dtype=self.indices.dtype)
-        #proxy = csr_matrix((data,self.indices,self.indptr),shape=(M/R,N/C))
-        #proxy = proxy.tocsc()
-
-        #data    = self.data.swapaxes(1,2)[proxy.data] #permute data
-
-        #indices = proxy.indices
-        #indptr  = proxy.indptr
-       
         return bsr_matrix( (data,indices,indptr), shape=(N,M) )
     
     
@@ -500,24 +489,10 @@ class bsr_matrix(_cs_matrix):
         if self.has_sorted_indices:
             return
 
-        from csr import csr_matrix
-
         R,C = self.blocksize
         M,N = self.shape
 
-        if self.nnz == 0:
-            return
-
         bsr_sort_indices(M/R, N/C, R, C, self.indptr, self.indices, self.data.ravel())
-
-
-        ##use CSR.sort_indices to determine a permutation for BSR blocks
-        #data = arange(len(self.indices), dtype=self.indices.dtype)
-        #proxy = csr_matrix((data,self.indices,self.indptr),shape=(M/R,N/C))
-        #proxy.sort_indices()
-
-        #self.data[:] = self.data[proxy.data]
-        #self.indices[:] = proxy.indices
 
         self.has_sorted_indices = True
 
