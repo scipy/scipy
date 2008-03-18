@@ -162,7 +162,13 @@ DECLARE_DATA_TYPE( npy_clongdouble_wrapper )
 
 
 
-%include "sparsetools.h"
+/*%include "sparsetools.h"*/
+%include "csr.h" 
+%include "csc.h"
+%include "coo.h"
+%include "bsr.h"
+%include "dia.h"
+
  /*
   * Order is important here, list int before float, float before 
   * double, scalar before complex, etc.

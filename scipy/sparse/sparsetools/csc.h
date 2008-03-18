@@ -1,0 +1,153 @@
+#ifndef __CSC_H__
+#define __CSC_H__
+
+
+#include "csr.h"
+
+
+/*
+ * Compute Y += A*X for CSC matrix A and dense vectors X,Y
+ *
+ *
+ * Input Arguments:
+ *   I  n_row         - number of rows in A
+ *   I  n_col         - number of columns in A
+ *   I  Ap[n_row+1]   - column pointer
+ *   I  Ai[nnz(A)]    - row indices
+ *   T  Ax[n_col]     - nonzeros 
+ *   T  Xx[n_col]     - input vector
+ *
+ * Output Arguments:
+ *   T  Yx[n_row]     - output vector 
+ *
+ * Note:
+ *   Output array Yx must be preallocated
+ *   
+ *   Complexity: Linear.  Specifically O(nnz(A) + n_col)
+ * 
+ */
+template <class I, class T>
+void csc_matvec(const I n_row,
+	            const I n_col, 
+	            const I Ap[], 
+	            const I Ai[], 
+	            const T Ax[],
+	            const T Xx[],
+	                  T Yx[])
+{ 
+    for(I j = 0; j < n_col; j++){
+        I col_start = Ap[j];
+        I col_end   = Ap[j+1];
+
+        for(I ii = col_start; ii < col_end; ii++){
+            I row    = Ai[ii];
+            Yx[row] += Ax[ii] * Xx[j];
+        }
+    }
+}
+
+
+/*
+ * Derived methods
+ */
+template <class I, class T>
+void csc_diagonal(const I n_row,
+                  const I n_col, 
+	              const I Ap[], 
+	              const I Aj[], 
+	              const T Ax[],
+	                    T Yx[])
+{ csr_diagonal(n_col, n_row, Ap, Aj, Ax, Yx); }
+
+
+template <class I, class T>
+void csc_tocsr(const I n_row,
+               const I n_col, 
+               const I Ap[], 
+               const I Ai[], 
+               const T Ax[],
+                     I Bp[],
+                     I Bj[],
+                     T Bx[])
+{ csr_tocsc<I,T>(n_col, n_row, Ap, Ai, Ax, Bp, Bj, Bx); }
+
+    
+template <class I>
+void csc_matmat_pass1(const I n_row,
+                      const I n_col, 
+                      const I Ap[], 
+                      const I Ai[], 
+                      const I Bp[],
+                      const I Bi[],
+                            I Cp[])
+{ csr_matmat_pass1(n_col, n_row, Bp, Bi, Ap, Ai, Cp); }
+    
+template <class I, class T>
+void csc_matmat_pass2(const I n_row,
+      	              const I n_col, 
+      	              const I Ap[], 
+      	              const I Ai[], 
+      	              const T Ax[],
+      	              const I Bp[],
+      	              const I Bi[],
+      	              const T Bx[],
+      	                    I Cp[],
+      	                    I Ci[],
+      	                    T Cx[])
+{ csr_matmat_pass2(n_col, n_row, Bp, Bi, Bx, Ap, Ai, Ax, Cp, Ci, Cx); }
+
+
+template<class I, class T>
+void coo_tocsc(const I n_row,
+      	       const I n_col,
+      	       const I nnz,
+      	       const I Ai[],
+      	       const I Aj[],
+      	       const T Ax[],
+      	             I Bp[],
+      	             I Bi[],
+      	             T Bx[])
+{ coo_tocsr<I,T>(n_col, n_row, nnz, Aj, Ai, Ax, Bp, Bi, Bx); }
+
+
+
+template <class I, class T>
+void csc_elmul_csc(const I n_row, const I n_col, 
+                   const I Ap[], const I Ai[], const T Ax[],
+                   const I Bp[], const I Bi[], const T Bx[],
+                         I Cp[],       I Ci[],       T Cx[])
+{
+    csr_elmul_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+}
+
+template <class I, class T>
+void csc_eldiv_csc(const I n_row, const I n_col, 
+                   const I Ap[], const I Ai[], const T Ax[],
+                   const I Bp[], const I Bi[], const T Bx[],
+                         I Cp[],       I Ci[],       T Cx[])
+{
+    csr_eldiv_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+}
+
+
+template <class I, class T>
+void csc_plus_csc(const I n_row, const I n_col, 
+                  const I Ap[], const I Ai[], const T Ax[],
+                  const I Bp[], const I Bi[], const T Bx[],
+                        I Cp[],       I Ci[],       T Cx[])
+{
+    csr_plus_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+}
+
+template <class I, class T>
+void csc_minus_csc(const I n_row, const I n_col, 
+                   const I Ap[], const I Ai[], const T Ax[],
+                   const I Bp[], const I Bi[], const T Bx[],
+                         I Cp[],       I Ci[],       T Cx[])
+{
+    csr_minus_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+}
+
+
+
+#endif
