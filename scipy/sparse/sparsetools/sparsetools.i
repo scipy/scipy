@@ -1,5 +1,5 @@
 /* -*- C -*-  (not really, but good for syntax highlighting) */
-%module sparsetools
+/*%module sparsetools*/
 
  /* why does SWIG complain about int arrays? a typecheck is provided */
 #pragma SWIG nowarn=467
@@ -9,7 +9,7 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "complex_ops.h"
-#include "sparsetools.h"
+/*#include "sparsetools.h"*/
 %}
 
 %feature("autodoc", "1");
@@ -163,11 +163,6 @@ DECLARE_DATA_TYPE( npy_clongdouble_wrapper )
 
 
 /*%include "sparsetools.h"*/
-%include "csr.h" 
-%include "csc.h"
-%include "coo.h"
-%include "bsr.h"
-%include "dia.h"
 
  /*
   * Order is important here, list int before float, float before 
@@ -193,108 +188,4 @@ DECLARE_DATA_TYPE( npy_clongdouble_wrapper )
 /* 64-bit indices would go here */
 %enddef
 
-
-
-
-/*
- *  diag(A)
- */
-INSTANTIATE_ALL(csr_diagonal)
-INSTANTIATE_ALL(csc_diagonal)
-INSTANTIATE_ALL(bsr_diagonal)
-
-
-/*
- *  scale columns
- */
-INSTANTIATE_ALL(csr_scale_rows)
-INSTANTIATE_ALL(csr_scale_columns)
-INSTANTIATE_ALL(bsr_scale_rows)
-INSTANTIATE_ALL(bsr_scale_columns)
-
-
-/*
- *  CSR->CSC or CSC->CSR or CSR = CSR^T or CSC = CSC^T or CSR->BSR
- */
-INSTANTIATE_ALL(csr_tocsc)
-INSTANTIATE_ALL(csc_tocsr)
-INSTANTIATE_ALL(csr_tobsr)
-INSTANTIATE_ALL(bsr_transpose)
-
-/*
- * CSR<->COO and CSC<->COO
- */
-%template(expandptr)   expandptr<int>;
-INSTANTIATE_ALL(coo_tocsr)
-INSTANTIATE_ALL(coo_tocsc)
-
-/*
- * CSR<->BSR
- */
-%template(csr_count_blocks)   csr_count_blocks<int>;
-
-
-/*
- * CSR*CSR and CSC*CSC
- */
-%template(csr_matmat_pass1)   csr_matmat_pass1<int>;
-%template(csc_matmat_pass1)   csc_matmat_pass1<int>;
-INSTANTIATE_ALL(csr_matmat_pass2)
-INSTANTIATE_ALL(csc_matmat_pass2)
-INSTANTIATE_ALL(bsr_matmat_pass2)
-
-
-/*
- * A*x
- */
-INSTANTIATE_ALL(csr_matvec)
-INSTANTIATE_ALL(csc_matvec)
-INSTANTIATE_ALL(bsr_matvec)
-INSTANTIATE_ALL(dia_matvec)
-
-/*
- * A (binary op) B 
- */
-INSTANTIATE_ALL(csr_elmul_csr)
-INSTANTIATE_ALL(csr_eldiv_csr)
-INSTANTIATE_ALL(csr_plus_csr)
-INSTANTIATE_ALL(csr_minus_csr)
-
-INSTANTIATE_ALL(csc_elmul_csc)
-INSTANTIATE_ALL(csc_eldiv_csc)
-INSTANTIATE_ALL(csc_plus_csc)
-INSTANTIATE_ALL(csc_minus_csc)
-
-INSTANTIATE_ALL(bsr_elmul_bsr)
-INSTANTIATE_ALL(bsr_eldiv_bsr)
-INSTANTIATE_ALL(bsr_plus_bsr)
-INSTANTIATE_ALL(bsr_minus_bsr)
-
-/*
- * Sort indices
- */
-%template(csr_has_sorted_indices)   csr_has_sorted_indices<int>;
-INSTANTIATE_ALL(csr_sort_indices)
-INSTANTIATE_ALL(bsr_sort_indices)
-
-
-/*
- * Remove zeros
- */
-INSTANTIATE_ALL(csr_eliminate_zeros)
-
-/*
- * Sum duplicate entries
- */
-INSTANTIATE_ALL(csr_sum_duplicates)
-
-/*
- * Extract submatrices
- */
-INSTANTIATE_ALL(get_csr_submatrix)
-
-/*
- * To dense matrix
- */
-INSTANTIATE_ALL(coo_todense)
 

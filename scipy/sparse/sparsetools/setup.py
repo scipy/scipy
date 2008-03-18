@@ -4,12 +4,11 @@ def configuration(parent_package='',top_path=None):
     import numpy
     from numpy.distutils.misc_util import Configuration
 
-    config = Configuration('sparse',parent_package,top_path)
+    config = Configuration('sparsetools',parent_package,top_path)
 
-    config.add_data_dir('tests')
-    config.add_subpackage('linalg')
-
-    config.add_subpackage('sparsetools')
+    for fmt in ['csr','csc','coo','bsr','dia']:
+        sources = [ fmt + '_wrap.cxx' ]
+        config.add_extension('_' + fmt, sources=sources)
 
     return config
 
