@@ -31,7 +31,7 @@ def assert_array_almost_equal_cc(actual,desired,decimal=7,
 
 
 # precision for tests 
-_ndigits = {'f':5, 'd':12, 'F':5, 'D':12}
+_ndigits = {'f':4, 'd':12, 'F':4, 'D':12}
 
 class TestArpack(TestCase):
 
