@@ -97,17 +97,6 @@ void csc_matmat_pass2(const I n_row,
 { csr_matmat_pass2(n_col, n_row, Bp, Bi, Bx, Ap, Ai, Ax, Cp, Ci, Cx); }
 
 
-template<class I, class T>
-void coo_tocsc(const I n_row,
-      	       const I n_col,
-      	       const I nnz,
-      	       const I Ai[],
-      	       const I Aj[],
-      	       const T Ax[],
-      	             I Bp[],
-      	             I Bi[],
-      	             T Bx[])
-{ coo_tocsr<I,T>(n_col, n_row, nnz, Aj, Ai, Ax, Bp, Bi, Bx); }
 
 
 

@@ -76,6 +76,17 @@ void coo_tocsr(const I n_row,
     //now Bp,Bj,Bx form a CSR representation (with possible duplicates)
 }
 
+template<class I, class T>
+void coo_tocsc(const I n_row,
+      	       const I n_col,
+      	       const I nnz,
+      	       const I Ai[],
+      	       const I Aj[],
+      	       const T Ax[],
+      	             I Bp[],
+      	             I Bi[],
+      	             T Bx[])
+{ coo_tocsr<I,T>(n_col, n_row, nnz, Aj, Ai, Ax, Bp, Bi, Bx); }
 
 /*
  * Compute B += A for COO matrix A, dense matrix B
