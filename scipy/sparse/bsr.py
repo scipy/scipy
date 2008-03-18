@@ -16,7 +16,7 @@ from sputils import isshape, getdtype, to_native, isscalarlike, isdense, \
         upcast
 import sparsetools
 from sparsetools import bsr_matvec, csr_matmat_pass1, csr_matmat_pass2, \
-        bsr_matmat_pass2
+        bsr_matmat_pass2, bsr_transpose, bsr_sort_indices
 
 class bsr_matrix(_cs_matrix):
     """Block Sparse Row matrix
@@ -303,7 +303,7 @@ class bsr_matrix(_cs_matrix):
     
             #output array
             if output is None:
-                y = empty( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
+                y = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
             else:
                 if output.shape != (M,) and output.shape != (M,1):
                     raise ValueError, "output array has improper dimensions"
@@ -369,17 +369,10 @@ class bsr_matrix(_cs_matrix):
             indices = empty( bnnz, dtype=intc)
             data    = empty( R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
 
-            if (R,C,n) == (1,1,1):
-                #use CSR * CSR when possible
-                csr_matmat_pass2( M, N, \
-                        self.indptr,  self.indices,  ravel(self.data), \
-                        other.indptr, other.indices, ravel(other.data), \
-                        indptr,       indices,       data)
-            else:
-                bsr_matmat_pass2( M/R, N/C, R, C, n, \
-                        self.indptr,  self.indices,  ravel(self.data), \
-                        other.indptr, other.indices, ravel(other.data), \
-                        indptr,       indices,       data)
+            bsr_matmat_pass2( M/R, N/C, R, C, n, \
+                    self.indptr,  self.indices,  ravel(self.data), \
+                    other.indptr, other.indices, ravel(other.data), \
+                    indptr,       indices,       data)
             
             data = data.reshape(-1,R,C)
             #TODO eliminate zeros
@@ -445,20 +438,29 @@ class bsr_matrix(_cs_matrix):
         
         R,C = self.blocksize
         M,N = self.shape
+        NBLK = self.nnz/(R*C)
         
         if self.nnz == 0:
             return bsr_matrix((N,M),blocksize=(C,R))
 
-        #use CSR.T to determine a permutation for BSR.T
-        from csr import csr_matrix
-        data = arange(len(self.indices), dtype=self.indices.dtype)
-        proxy = csr_matrix((data,self.indices,self.indptr),shape=(M/R,N/C))
-        proxy = proxy.tocsc()
+        indptr  = empty( N/C + 1,    dtype=self.indptr.dtype)
+        indices = empty( NBLK,       dtype=self.indices.dtype)
+        data    = empty( (NBLK,C,R), dtype=self.data.dtype)
 
-        data    = self.data.swapaxes(1,2)[proxy.data] #permute data
+        bsr_transpose(M/R, N/C, R, C, \
+                      self.indptr, self.indices, self.data.ravel(), \
+                      indptr,      indices,      data.ravel())
 
-        indices = proxy.indices
-        indptr  = proxy.indptr
+        ##use CSR.T to determine a permutation for BSR.T
+        #from csr import csr_matrix
+        #data = arange(len(self.indices), dtype=self.indices.dtype)
+        #proxy = csr_matrix((data,self.indices,self.indptr),shape=(M/R,N/C))
+        #proxy = proxy.tocsc()
+
+        #data    = self.data.swapaxes(1,2)[proxy.data] #permute data
+
+        #indices = proxy.indices
+        #indptr  = proxy.indptr
        
         return bsr_matrix( (data,indices,indptr), shape=(N,M) )
     
@@ -506,13 +508,16 @@ class bsr_matrix(_cs_matrix):
         if self.nnz == 0:
             return
 
-        #use CSR.sort_indices to determine a permutation for BSR blocks
-        data = arange(len(self.indices), dtype=self.indices.dtype)
-        proxy = csr_matrix((data,self.indices,self.indptr),shape=(M/R,N/C))
-        proxy.sort_indices()
+        bsr_sort_indices(M/R, N/C, R, C, self.indptr, self.indices, self.data.ravel())
 
-        self.data[:] = self.data[proxy.data]
-        self.indices[:] = proxy.indices
+
+        ##use CSR.sort_indices to determine a permutation for BSR blocks
+        #data = arange(len(self.indices), dtype=self.indices.dtype)
+        #proxy = csr_matrix((data,self.indices,self.indptr),shape=(M/R,N/C))
+        #proxy.sort_indices()
+
+        #self.data[:] = self.data[proxy.data]
+        #self.indices[:] = proxy.indices
 
         self.has_sorted_indices = True
 

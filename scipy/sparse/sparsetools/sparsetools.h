@@ -431,6 +431,58 @@ void csr_sort_indices(const I n_row,
     }    
 }
 
+
+/*
+ * Sort the column block indices of a BSR matrix inplace
+ *
+ * Input Arguments:
+ *   I  n_brow        - number of row blocks in A
+ *   I  n_bcol        - number of column blocks in A
+ *   I  R             - rows per block
+ *   I  C             - columns per block
+ *   I  Ap[n_brow+1]  - row pointer
+ *   I  Aj[nblk(A)]   - column indices
+ *   T  Ax[nnz(A)]    - nonzeros
+ *
+ */
+template <class I, class T>
+void bsr_sort_indices(const I n_brow,
+	                  const I n_bcol, 
+                      const I R,
+                      const I C,
+	                        I Ap[], 
+	                        I Aj[], 
+	                        T Ax[])
+{  
+    if( R == 1 && C == 1 ){
+        csr_sort_indices(n_brow, Ap, Aj, Ax);
+        return;
+    }
+    
+    
+    const I nblks = Ap[n_brow];
+    const I RC    = R*C;
+    const I nnz   = RC*nblks;
+
+    //compute permutation of blocks using tranpose(CSR)
+    std::vector<I> perm(nblks);
+
+    for(I i = 0; i < nblks; i++)
+        perm[i] = i;
+
+    csr_sort_indices(n_brow, Ap, Aj, &perm[0]);
+
+    std::vector<T> Ax_copy(nnz);
+    std::copy(Ax, Ax + nnz, Ax_copy.begin());
+
+    for(I i = 0; i < nblks; i++){
+        const T * input = &Ax_copy[RC * perm[i]];
+              T * output = Ax + RC*i;
+        std::copy(input, input + RC, output);
+    }
+}
+
+
 /*
  * Compute B = A for CSR matrix A, CSC matrix B
  *
@@ -509,8 +561,67 @@ void csr_tocsc(const I n_row,
 
 
 
+/*
+ * Compute transpose(A) BSR matrix A
+ *
+ * Input Arguments:
+ *   I  n_brow        - number of row blocks in A
+ *   I  n_bcol        - number of column blocks in A
+ *   I  R             - rows per block
+ *   I  C             - columns per block
+ *   I  Ap[n_brow+1]  - row pointer
+ *   I  Aj[nblk(A)]   - column indices
+ *   T  Ax[nnz(A)]    - nonzeros
+ *
+ * Output Arguments:
+ *   I  Bp[n_col+1]   - row pointer
+ *   I  Bj[nblk(A)]   - column indices
+ *   T  Bx[nnz(A)]    - nonzeros
+ *
+ * Note:
+ *   Output arrays Bp, Bj, Bx must be preallocated
+ *
+ * Note: 
+ *   Input:  column indices *are not* assumed to be in sorted order
+ *   Output: row indices *will be* in sorted order
+ *
+ *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
+ * 
+ */
+template <class I, class T>
+void bsr_transpose(const I n_brow,
+	               const I n_bcol, 
+                   const I R,
+                   const I C,
+	               const I Ap[], 
+	               const I Aj[], 
+	               const T Ax[],
+	                     I Bp[],
+	                     I Bj[],
+	                     T Bx[])
+{  
+    const I nblks = Ap[n_brow];
+    const I RC    = R*C;
 
+    //compute permutation of blocks using tranpose(CSR)
+    std::vector<I> perm_in (nblks);
+    std::vector<I> perm_out(nblks);
 
+    for(I i = 0; i < nblks; i++)
+        perm_in[i] = i;
+
+    csr_tocsc(n_brow, n_bcol, Ap, Aj, &perm_in[0], Bp, Bj, &perm_out[0]);
+
+    for(I i = 0; i < nblks; i++){
+        const T * Ax_blk = Ax + RC * perm_out[i];
+              T * Bx_blk = Bx + RC * i;
+        for(I r = 0; r < R; r++){
+            for(I c = 0; c < C; c++){
+                Bx_blk[c * R + r] = Ax_blk[r * C + c];
+            }
+        }
+    }
+}
 
 
 /*
@@ -814,6 +925,11 @@ void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
 #undef F
 #endif
 
+    if( R == 1 && N == 1 && C == 1 ){
+        csr_matmat_pass2(n_brow, n_bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx);
+        return;
+    }
+
     const I RC = R*C;
     const I RN = R*N;
     const I NC = N*C;
@@ -899,6 +1015,13 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                          I Cp[],         I Cj[],          T Cx[],
                    const bin_op& op)
 {
+    assert( R > 0 && C > 0);
+    
+    if( R == 1 && C == 1 ){
+        csr_binop_csr(n_brow, n_bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op); //use CSR for 1x1 blocksize 
+        return;
+    }
+
     const I RC = R*C;
     T * result = Cx;
 
@@ -1560,6 +1683,11 @@ void bsr_matvec(const I n_brow,
 {
     assert(R > 0 && C > 0);
 
+    if( R == 1 && C == 1 ){
+        csr_matvec(n_brow, n_bcol, Ap, Aj, Ax, Xx, Yx); //use CSR for 1x1 blocksize 
+        return;
+    }
+
 #ifdef SPARSETOOLS_TESTING
 #define F(X,Y) bsr_matvec_fixed<I,T,X,Y>
 
@@ -1584,6 +1712,7 @@ void bsr_matvec(const I n_brow,
 #endif
 
     //otherwise use general method
+
     for(I i = 0; i < R*n_brow; i++){
         Yx[i] = 0;
     }

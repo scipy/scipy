@@ -391,6 +391,40 @@ def csr_tobsr(*args):
     """
   return _sparsetools.csr_tobsr(*args)
 
+def bsr_transpose(*args):
+  """
+    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        signed char Ax, int Bp, int Bj, signed char Bx)
+    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned char Ax, int Bp, int Bj, unsigned char Bx)
+    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        short Ax, int Bp, int Bj, short Bx)
+    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned short Ax, int Bp, int Bj, unsigned short Bx)
+    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        int Ax, int Bp, int Bj, int Bx)
+    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned int Ax, int Bp, int Bj, unsigned int Bx)
+    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        long long Ax, int Bp, int Bj, long long Bx)
+    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned long long Ax, int Bp, int Bj, unsigned long long Bx)
+    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        float Ax, int Bp, int Bj, float Bx)
+    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        double Ax, int Bp, int Bj, double Bx)
+    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        long double Ax, int Bp, int Bj, long double Bx)
+    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_cfloat_wrapper Ax, int Bp, int Bj, npy_cfloat_wrapper Bx)
+    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_cdouble_wrapper Ax, int Bp, int Bj, npy_cdouble_wrapper Bx)
+    bsr_transpose(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_clongdouble_wrapper Ax, int Bp, int Bj, 
+        npy_clongdouble_wrapper Bx)
+    """
+  return _sparsetools.bsr_transpose(*args)
+
 def coo_tocsr(*args):
   """
     coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, signed char Ax, 
@@ -1283,6 +1317,39 @@ def csr_sort_indices(*args):
     csr_sort_indices(int n_row, int Ap, int Aj, npy_clongdouble_wrapper Ax)
     """
   return _sparsetools.csr_sort_indices(*args)
+
+def bsr_sort_indices(*args):
+  """
+    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        signed char Ax)
+    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned char Ax)
+    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        short Ax)
+    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned short Ax)
+    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        int Ax)
+    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned int Ax)
+    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        long long Ax)
+    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        unsigned long long Ax)
+    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        float Ax)
+    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        double Ax)
+    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        long double Ax)
+    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_cfloat_wrapper Ax)
+    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_cdouble_wrapper Ax)
+    bsr_sort_indices(int n_brow, int n_bcol, int R, int C, int Ap, int Aj, 
+        npy_clongdouble_wrapper Ax)
+    """
+  return _sparsetools.bsr_sort_indices(*args)
 
 def csr_eliminate_zeros(*args):
   """

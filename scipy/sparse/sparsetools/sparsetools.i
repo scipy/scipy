@@ -213,6 +213,7 @@ INSTANTIATE_ALL(bsr_scale_columns)
 INSTANTIATE_ALL(csr_tocsc)
 INSTANTIATE_ALL(csc_tocsr)
 INSTANTIATE_ALL(csr_tobsr)
+INSTANTIATE_ALL(bsr_transpose)
 
 /*
  * CSR<->COO and CSC<->COO
@@ -268,6 +269,7 @@ INSTANTIATE_ALL(bsr_minus_bsr)
  */
 %template(csr_has_sorted_indices)   csr_has_sorted_indices<int>;
 INSTANTIATE_ALL(csr_sort_indices)
+INSTANTIATE_ALL(bsr_sort_indices)
 
 
 /*
