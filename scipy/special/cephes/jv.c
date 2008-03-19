@@ -48,7 +48,7 @@ Copyright 1984, 1987, 1989, 1992, 2000 by Stephen L. Moshier
 
 
 #include "mconf.h"
-#define DEBUG 0
+#define CEPHES_DEBUG 0
 
 #ifdef DEC
 #define MAXGAM 34.84425627277176174
@@ -211,7 +211,7 @@ rlarger:
 	    y = hankel(k, x);
 	else
 	    y = jvs(k, x);
-#if DEBUG
+#if CEPHES_DEBUG
 	printf("y = %.16e, recur q = %.16e\n", y, q);
 #endif
 	if (n > 0.0)
@@ -261,7 +261,7 @@ static double recur(double *n, double x, double *newn, int cancel)
 
   fstart:
 
-#if DEBUG
+#if CEPHES_DEBUG
     printf("recur: n = %.6e, newn = %.6e, cfrac = ", *n, *newn);
 #endif
 
@@ -309,7 +309,7 @@ static double recur(double *n, double x, double *newn, int cancel)
 
   done:
 
-#if DEBUG
+#if CEPHES_DEBUG
     printf("%.6e\n", ans);
 #endif
 
@@ -369,7 +369,7 @@ static double recur(double *n, double x, double *newn, int cancel)
 	}
     }
     *newn = k;
-#if DEBUG
+#if CEPHES_DEBUG
     printf("newn %.6e rans %.6e\n", k, pkm2);
 #endif
     return (pkm2);
@@ -402,7 +402,7 @@ static double jvs(double n, double x)
 	if (y != 0)
 	    t = fabs(u / y);
     }
-#if DEBUG
+#if CEPHES_DEBUG
     printf("power series=%.5e ", y);
 #endif
     t = frexp(0.5 * x, &ex);
@@ -412,12 +412,12 @@ static double jvs(double n, double x)
 	&& (n > 0.0)
 	&& (n < (MAXGAM - 1.0))) {
 	t = pow(0.5 * x, n) / gamma(n + 1.0);
-#if DEBUG
+#if CEPHES_DEBUG
 	printf("pow(.5*x, %.4e)/gamma(n+1)=%.5e\n", n, t);
 #endif
 	y *= t;
     } else {
-#if DEBUG
+#if CEPHES_DEBUG
 	z = n * log(0.5 * x);
 	k = lgam(n + 1.0);
 	t = z - k;
@@ -430,7 +430,7 @@ static double jvs(double n, double x)
 	    y = -y;
 	}
 	t += log(y);
-#if DEBUG
+#if CEPHES_DEBUG
 	printf("log y=%.5e\n", log(y));
 #endif
 	if (t < -MAXLOG) {
@@ -489,7 +489,7 @@ static double hankel(double n, double x)
 	}
 /* stop if the terms start getting larger */
 	if ((flag != 0) && (t > conv)) {
-#if DEBUG
+#if CEPHES_DEBUG
 	    printf("Hankel: convergence to %.4E\n", conv);
 #endif
 	    goto hank1;
@@ -499,7 +499,7 @@ static double hankel(double n, double x)
   hank1:
     u = x - (0.5 * n + 0.25) * PI;
     t = sqrt(2.0 / (PI * x)) * (pp * cos(u) - qq * sin(u));
-#if DEBUG
+#if CEPHES_DEBUG
     printf("hank: %.6e\n", t);
 #endif
     return (t);
@@ -626,7 +626,7 @@ static double jnx(double n, double x)
     n23 = cbrt(n * n);
     t = n23 * zeta;
 
-#if DEBUG
+#if CEPHES_DEBUG
     printf("zeta %.5E, Airy(%.5E)\n", zeta, t);
 #endif
     airy(t, &ai, &aip, &bi, &bip);
@@ -644,7 +644,7 @@ static double jnx(double n, double x)
     u[6] = polevl(zzi, P6, 6) / pp;
     u[7] = polevl(zzi, P7, 7) / (pp * sz);
 
-#if DEBUG
+#if CEPHES_DEBUG
     for (k = 0; k <= 7; k++)
 	printf("u[%d] = %.5E\n", k, u[k]);
 #endif
@@ -704,7 +704,7 @@ static double jnx(double n, double x)
 	    } else
 		dob = 0;
 	}
-#if DEBUG
+#if CEPHES_DEBUG
 	printf("a[%d] %.5E, b[%d] %.5E\n", k, ak, k, bk);
 #endif
 	if (np < MACHEP)
@@ -785,7 +785,7 @@ static double jnt(double n, double x)
     G[1] = polevl(z3, PG1, 1);
     G[2] = polevl(z3, PG2, 2) * z;
     G[3] = polevl(z3, PG3, 2) * zz;
-#if DEBUG
+#if CEPHES_DEBUG
     for (k = 0; k <= 4; k++)
 	printf("F[%d] = %.5E\n", k, F[k]);
     for (k = 0; k <= 3; k++)
@@ -803,7 +803,7 @@ static double jnt(double n, double x)
 	    gk = G[k] * nk;
 	    qq += gk;
 	}
-#if DEBUG
+#if CEPHES_DEBUG
 	printf("fk[%d] %.5E, gk[%d] %.5E\n", k, fk, k, gk);
 #endif
 	nk /= n23;
