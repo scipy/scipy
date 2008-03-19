@@ -14,6 +14,16 @@ class TestConvolve(TestCase):
         c = signal.convolve(a,b)
         assert_array_equal(c,array([3,10,22,28,32,32,23,12]))
 
+class TestFFTConvolve(TestCase):
+    def test_real(self):
+        x = array([1,2,3])
+        assert_array_almost_equal(signal.fftconvolve(x,x), [1,4,10,12,9.])
+
+    def test_complex(self):
+        x = array([1+1j,2+2j,3+3j])
+        assert_array_almost_equal(signal.fftconvolve(x,x),
+                                  [0+2.0j, 0+8j, 0+20j, 0+24j, 0+18j])
+
 class TestMedFilt(TestCase):
     def test_basic(self):
         f = [[3,4,5],[2,3,4],[1,2,5]]

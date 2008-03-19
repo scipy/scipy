@@ -94,16 +94,15 @@ def fftconvolve(in1, in2, mode="full"):
     """
     s1 = array(in1.shape)
     s2 = array(in2.shape)
-    if (s1.dtype.char in ['D','F']) or (s2.dtype.char in ['D', 'F']):
-        cmplx=1
-    else: cmplx=0
+    complex_result = (numpy.issubdtype(in1.dtype, numpy.complex) or
+                      numpy.issubdtype(in2.dtype, numpy.complex))
     size = s1+s2-1
     IN1 = fftn(in1,size)
     IN1 *= fftn(in2,size)
     ret = ifftn(IN1)
     del IN1
-    if not cmplx:
-        ret = real(ret)
+    if not complex_result:
+        ret = ret.real
     if mode == "full":
         return ret
     elif mode == "same":
