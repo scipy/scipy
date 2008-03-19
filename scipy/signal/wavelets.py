@@ -172,19 +172,19 @@ def cascade(hk,J=7):
 def morlet(M, w=5.0, s=1.0, complete=True):
     """Complex Morlet wavelet.
 
-    :Parameters:
-        M : int
-            Length of the wavelet.
-        w : float
-            Omega0
-        s : float
-            Scaling factor, windowed from -s*2*pi to +s*2*pi.
-        complete : bool
-            Whether to use the complete or the standard version.
+    Parameters
+    ----------
+    M : int
+        Length of the wavelet.
+    w : float
+        Omega0
+    s : float
+        Scaling factor, windowed from -s*2*pi to +s*2*pi.
+    complete : bool
+        Whether to use the complete or the standard version.
 
     Notes:
     ------
-
     The standard version:
         pi**-0.25 * exp(1j*w*x) * exp(-0.5*(x**2))
 
@@ -210,7 +210,7 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     output = exp(1j*w*x)
 
     if complete:
-        x -= exp(-0.5*(w**2))
+        output -= exp(-0.5*(w**2))
 
     output *= exp(-0.5*(x**2)) * pi**(-0.25)
 
