@@ -411,8 +411,91 @@ exit:
 }
 
 
+
+static PyObject *Segmenter_LawsTextureMetric(PyObject *self, PyObject *args)
+{
+
+    int i;
+    int num;
+    int nd;
+    int type;
+    int mode;
+    npy_intp *dims;
+    npy_intp *laws_dims;
+    float  *lawsImage;
+    double *src_image;
+    unsigned short *mask;
+    double *L7;
+    double *E7;
+    double *S7;
+    double *W7;
+    double *R7;
+    double *O7;
+    int number_kernels;
+    int kernel_size;
+    int filters;
+    LawsFilter7 lawsFilter;
+    PyObject *lArray = NULL;
+    PyObject *mArray = NULL;
+    PyObject *sArray = NULL;
+    PyObject *LArray = NULL;
+    PyObject *EArray = NULL;
+    PyObject *SArray = NULL;
+    PyObject *WArray = NULL;
+    PyObject *RArray = NULL;
+    PyObject *OArray = NULL;
+
+    if(!PyArg_ParseTuple(args, "OOOiiiOOOOOO", &mArray, &sArray, &lArray, &number_kernels, 
+			                       &kernel_size, &filters, &LArray, &EArray,
+					       &SArray, &WArray, &RArray, &OArray))
+	    goto exit;
+
+    src_image = (double*)PyArray_DATA(sArray);
+    nd   = PyArray_NDIM(sArray);
+    dims = PyArray_DIMS(sArray);
+    type = PyArray_TYPE(sArray);
+    num  = PyArray_SIZE(sArray);
+
+    laws_dims = PyArray_DIMS(lArray);
+    mask      = (unsigned short *)PyArray_DATA(mArray);
+    lawsImage = (float*)PyArray_DATA(lArray);
+    L7        = (double *)PyArray_DATA(LArray);
+    E7        = (double *)PyArray_DATA(EArray);
+    S7        = (double *)PyArray_DATA(SArray);
+    W7        = (double *)PyArray_DATA(WArray);
+    R7        = (double *)PyArray_DATA(RArray);
+    O7        = (double *)PyArray_DATA(OArray);
+
+    lawsFilter.numberKernels      = number_kernels;
+    lawsFilter.kernelLength       = kernel_size;
+    lawsFilter.numberFilterLayers = filters;
+    for(i = 0; i < kernel_size; ++i){
+        lawsFilter.lawsKernel[0][i] = L7[i];
+        lawsFilter.lawsKernel[1][i] = E7[i];
+        lawsFilter.lawsKernel[2][i] = S7[i];
+        lawsFilter.lawsKernel[3][i] = W7[i];
+        lawsFilter.lawsKernel[4][i] = R7[i];
+        lawsFilter.lawsKernel[5][i] = O7[i];
+    }
+
+    if(!PyArray_ISCONTIGUOUS(mArray))
+	    goto exit;
+
+    if(!NI_LawsTexture(num, (int)dims[0], (int)dims[1], src_image, mask, lawsImage,   
+		             lawsFilter)){
+	    goto exit;
+    }
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("");
+
+}
+
+
 static PyMethodDef SegmenterMethods[] =
 {
+    { "laws_texture_metric",  Segmenter_LawsTextureMetric,  METH_VARARGS, NULL },
     { "canny_hysteresis",     Segmenter_CannyHysteresis,    METH_VARARGS, NULL },
     { "canny_nonmax_supress", Segmenter_CannyNonMaxSupress, METH_VARARGS, NULL },
     { "canny_filter",         Segmenter_CannyFilter,        METH_VARARGS, NULL },
