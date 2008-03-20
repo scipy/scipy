@@ -12,7 +12,8 @@
 
 
 int NI_EdgePreFilter(int num, int rows, int cols, int lowThreshold, int highThreshold,
-                     int aperature, int HalfFilterTaps, unsigned short *sImage, double *dImage, double *kernel){
+                     int aperature, int HalfFilterTaps, unsigned short *sImage, double *dImage,
+		     double *kernel){
 
 	int i, j, k, n, num1;
     	int offset;
@@ -805,6 +806,7 @@ int trace_Edge(int i, int j, int rows, int cols, double cannyLow, double *magIma
 	return(0);
 
 }
+
 int NI_CannyHysteresis(int num, int rows, int cols, double *magImage, unsigned short *hys_image,
 		       double cannyLow, double cannyHigh){ 
 
@@ -822,13 +824,151 @@ int NI_CannyHysteresis(int num, int rows, int cols, double *magImage, unsigned s
 	    }
 	}
 
-
 	status = 1;
 
 	return status;
 
 }
 
+float lawsConvolution(float *image, float *rowFilter, float *colFilter, int kernelSize){
 
+	int i, j;
+	int offset;
+	float result[7];
+	float sum;
+
+	/* filter rows */
+	for(i = 0; i < kernelSize; ++i){
+	    sum = (float)0.0;
+	    offset = i * kernelSize;
+	    for(j = 0; j < kernelSize; ++j){
+		sum += (rowFilter[j]*image[offset+j]);
+	    }
+	    result[i] = sum;
+	}
+
+	/* filter columns */
+	sum = (float)0.0;
+	for(j = 0; j < kernelSize; ++j){
+	    sum += (rowFilter[j]*result[j]);
+	}
+
+	return(sum);
+
+}
+
+void computeLaws(LawsFilter7 lawsFilter, int aperature, int srcRows, int srcCols, 
+                 unsigned short *MaskImage, float *lawsImage, double *sourceImage){
+
+	/*
+	// hard-wirred to Law's 7 kernels
+	*/
+	int i, j;
+	int lawsLayer;
+	int column, row;
+	int offset;
+	int maskOffset[7];
+	int dataOffset[7];
+	float myImage[49];
+	int count;
+	int outerKernelNumber;
+	int innerKernelNumber;
+	int rowNumber;
+	int kernelSize = lawsFilter.kernelLength;
+	int fullMask   = kernelSize*kernelSize;
+	int layerStep  = srcRows*srcCols;
+	float *rowFilter;
+	float *colFilter;
+	float filterResult1;
+	float filterResult2;
+	float lawsLL=1.0;
+
+	for(i = aperature; i < srcRows-aperature; ++i){
+	    // get the row array offset for mask and data source. 
+	    for(row = -aperature; row <= aperature; ++row){
+		maskOffset[row+aperature] = (i+row)*srcCols;
+		dataOffset[row+aperature] = maskOffset[row+aperature];
+	    }
+	    for(j = aperature; j < srcCols-aperature; ++j){
+		/*
+		// get 7x7 segment and make sure have 100% mask coverage
+		*/
+		count = 0;
+		for(row = -aperature; row <= aperature; ++row){
+		    rowNumber = (row+aperature)*kernelSize;
+		    for(column = -aperature; column <= aperature; ++column){
+			if(MaskImage[maskOffset[row+aperature]+j+column]){
+			    myImage[rowNumber+column+aperature] = sourceImage[dataOffset[row+aperature]+j+column];
+			    ++count;
+			}
+		    }
+		}
+		if(count == fullMask){
+		    /*
+		    // 100% mask coverage. now do the Law's texture filters
+		    */
+		    lawsLayer = 0;
+		    for(outerKernelNumber = 0; outerKernelNumber < lawsFilter.numberKernels; ++outerKernelNumber){
+			/*
+			// outer loop pulls the i'th kernel. kernel 0 is the LP kernel
+			// the outer loop is the iso-kernel
+			*/
+			rowFilter = &lawsFilter.lawsKernel[outerKernelNumber][0];
+			colFilter = &lawsFilter.lawsKernel[outerKernelNumber][0];
+			filterResult1 = lawsConvolution(myImage, rowFilter, colFilter, kernelSize);
+			/* lawsLayer 0 is the LP and needs to be used to scale. */
+			if(outerKernelNumber){
+			    // to normalize based on Laws LL kernel. not implemented now.
+			    //lawsImage[lawsLayer*layerStep + i*srcCols + j] = (float)2.0 * filterResult1 / lawsLL;
+			    lawsImage[lawsLayer*layerStep + i*srcCols + j] = (float)2.0 * filterResult1;
+			}
+			else{
+			    lawsLL = (float)2.0 * filterResult1;
+			    lawsImage[lawsLayer*layerStep + i*srcCols + j] = (float)2.0 * filterResult1;
+			}
+			++lawsLayer;
+			/*
+			// now do the inner loop and get the column filters for the other laws kernels
+			*/
+			for(innerKernelNumber = outerKernelNumber+1;
+			                        innerKernelNumber < lawsFilter.numberKernels;
+			                        ++innerKernelNumber){
+			    colFilter = &lawsFilter.lawsKernel[innerKernelNumber][0];
+			    filterResult1 = lawsConvolution(myImage, rowFilter, colFilter, kernelSize);
+			    filterResult2 = lawsConvolution(myImage, colFilter, rowFilter, kernelSize);
+			    lawsImage[lawsLayer*layerStep + i*srcCols + j] = filterResult1 + filterResult2;
+			                      //  (filterResult1 / lawsLL) + (filterResult2 / lawsLL);
+			    // to normalize based on Laws LL kernel. not implemented now.
+			    ++lawsLayer;
+			}
+		    }
+		}
+	    }
+	}
+
+	return;
+
+}
+
+
+int NI_LawsTexture(int num, int rows, int cols, double *src_image, unsigned short *mask, 
+		   float *lawsImage, LawsFilter7 lawsFilter){
+
+	int status;
+	int number_kernels;
+	int kernel_size;
+	int filters;
+        number_kernels = lawsFilter.numberKernels;
+        kernel_size = lawsFilter.kernelLength;
+        filters = lawsFilter.numberFilterLayers;
+	int aperature = (kernel_size-1)/2;
+
+	computeLaws(lawsFilter, aperature, rows, cols, mask, lawsImage, src_image);
+
+	status = 1;
+
+	return status;
+
+}
 
 
