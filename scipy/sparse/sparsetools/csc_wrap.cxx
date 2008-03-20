@@ -2653,7 +2653,7 @@ namespace swig {
 
 /* Given a PyObject, return a string describing its type.
  */
-char* pytype_string(PyObject* py_obj) {
+const char* pytype_string(PyObject* py_obj) {
   if (py_obj == NULL          ) return "C NULL value";
   if (py_obj == Py_None       ) return "Python None" ;
   if (PyCallable_Check(py_obj)) return "callable"    ;
@@ -2672,8 +2672,8 @@ char* pytype_string(PyObject* py_obj) {
 
 /* Given a NumPy typecode, return a string describing the type.
  */
-char* typecode_string(int typecode) {
-  static char* type_names[25] = {"bool", "byte", "unsigned byte",
+const char* typecode_string(int typecode) {
+  static const char* type_names[25] = {"bool", "byte", "unsigned byte",
 				 "short", "unsigned short", "int",
 				 "unsigned int", "long", "unsigned long",
 				 "long long", "unsigned long long",
@@ -2704,16 +2704,16 @@ PyArrayObject* obj_to_array_no_conversion(PyObject* input, int typecode) {
     ary = (PyArrayObject*) input;
   }
   else if is_array(input) {
-    char* desired_type = typecode_string(typecode);
-    char* actual_type  = typecode_string(array_type(input));
+    const char* desired_type = typecode_string(typecode);
+    const char* actual_type  = typecode_string(array_type(input));
     PyErr_Format(PyExc_TypeError, 
 		 "Array of type '%s' required.  Array of type '%s' given", 
 		 desired_type, actual_type);
     ary = NULL;
   }
   else {
-    char * desired_type = typecode_string(typecode);
-    char * actual_type  = pytype_string(input);
+    const char * desired_type = typecode_string(typecode);
+    const char * actual_type  = pytype_string(input);
     PyErr_Format(PyExc_TypeError, 
 		 "Array of type '%s' required.  A '%s' was given", 
 		 desired_type, actual_type);
