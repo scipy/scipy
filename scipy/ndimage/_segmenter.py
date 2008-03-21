@@ -884,3 +884,115 @@ def build_laws_kernel():
     return LAWSFilter
 
 
+
+#
+#    test pattern generators for demo and test
+#
+
+def build_test_texture_discs():
+    """
+    discs = build_test_texture_discs()
+    
+    builds 4 discs with plane wave texture. used for test and demo
+
+    Parameters 
+    ..........
+
+    None
+
+    Returns 
+    ..........
+
+    discs : {nd_array}
+        a 512x512 image with 4 test discs (one per quadrant)
+
+    """
+    rows = 512
+    cols = 512
+    rad  = NP.pi / 180.0
+    test_image = NP.zeros(rows*cols, dtype=NP.float32).reshape(rows, cols)
+    [a, b] = NP.mgrid[0:rows, 0:cols]
+    test_image[0:255,0:255]     = NP.sin(5.0*rad*a[0:255,0:255])      \
+                                + NP.sin(10.0*rad*b[0:255,0:255])
+    test_image[255:512,0:255]   = NP.sin(10.0*rad*a[255:512,0:255])   \
+                                + NP.sin(15.0*rad*b[255:512,0:255])
+    test_image[0:255,255:512]   = NP.sin(15.0*rad*a[0:255,255:512])   \
+                                + NP.sin(20.0*rad*b[0:255,255:512])
+    test_image[255:512,255:512] = NP.sin(20.0*rad*a[255:512,255:512]) \
+                                + NP.sin(25.0*rad*b[255:512,255:512])
+
+    test_image = test_image + test_image.min()
+    discs = build_test_discs()
+    discs = discs * test_image 
+    discs = discs - discs.min() 
+
+    return discs
+
+
+def build_test_discs():
+    """
+    test_image = build_test_discs()
+    build 4 discs of equal radius and different mean values for edge/blob testing
+    
+    Parameters 
+    ..........
+
+    None
+
+    Returns 
+    ..........
+
+    test_image : {nd_array}
+        a 512x512 image with 4 test discs (one per quadrant)
+
+    """
+    radius = 50
+    rows   = 512
+    cols   = 512
+    test_image = NP.zeros(rows*cols, dtype=NP.int16).reshape(rows, cols)
+    y_indices = NP.array(range(-radius, radius+1))
+    center_x = rows / 4
+    center_y = cols / 4
+
+    for i in y_indices:
+	x = math.sqrt(float(radius)**2 - float(i)**2)
+	# different raw mean levels
+	test_image[1*center_y+i, 1*center_x-x:1*center_x+x] = 80
+	test_image[1*center_y+i, 3*center_x-x:3*center_x+x] = 90
+	test_image[3*center_y+i, 1*center_x-x:1*center_x+x] = 100
+	test_image[3*center_y+i, 3*center_x-x:3*center_x+x] = 110
+
+    return test_image
+
+def build_test_impulses():
+    """
+    test_image = build_test_impulses()
+
+    build 4 test impulses discs centered in the 4 discs. used
+    for testing filter kernels, esp. Laws' filter kernel. Filtering
+    with these test patterns will return Law's kernel outer product matrices.
+
+    Parameters 
+    ..........
+
+    None
+
+    Returns 
+    ..........
+
+    test_image : {nd_array}
+        a 512x512 image with 4 test discs (one per quadrant)
+
+    """
+    rows = 512
+    cols = 512
+    test_image = NP.zeros(rows*cols, dtype=NP.int16).reshape(rows, cols)
+    test_image[128,128] = 1 
+    test_image[378,128] = 1 
+    test_image[128,378] = 1 
+    test_image[378,378] = 1 
+
+    return test_image
+
+
+
