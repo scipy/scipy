@@ -918,11 +918,10 @@ void computeLaws(LawsFilter7 lawsFilter, int aperature, int srcRows, int srcCols
 			filterResult1 = lawsConvolution(myImage, rowFilter, colFilter, kernelSize);
 			/* lawsLayer 0 is the LP and needs to be used to scale. */
 			if(outerKernelNumber){
-			    // to normalize based on Laws LL kernel. not implemented now.
-			    //lawsImage[lawsLayer*layerStep + i*srcCols + j] = (float)2.0 * filterResult1 / lawsLL;
 			    lawsImage[lawsLayer*layerStep + i*srcCols + j] = (float)2.0 * filterResult1;
 			}
 			else{
+			    lawsLL = filterResult1;
 			    lawsLL = (float)2.0 * filterResult1;
 			    lawsImage[lawsLayer*layerStep + i*srcCols + j] = (float)2.0 * filterResult1;
 			}
@@ -937,8 +936,6 @@ void computeLaws(LawsFilter7 lawsFilter, int aperature, int srcRows, int srcCols
 			    filterResult1 = lawsConvolution(myImage, rowFilter, colFilter, kernelSize);
 			    filterResult2 = lawsConvolution(myImage, colFilter, rowFilter, kernelSize);
 			    lawsImage[lawsLayer*layerStep + i*srcCols + j] = filterResult1 + filterResult2;
-			                      //  (filterResult1 / lawsLL) + (filterResult2 / lawsLL);
-			    // to normalize based on Laws LL kernel. not implemented now.
 			    ++lawsLayer;
 			}
 		    }
