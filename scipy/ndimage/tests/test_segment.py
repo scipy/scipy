@@ -33,7 +33,7 @@ def run_canny():
     means = ROI[:]['voxelMean']
     return measures, means
 
-def run_texture():
+def run_texture1():
     filter      = seg.build_2d_kernel(hiFilterCutoff=60.0)
     img         = seg.build_test_discs()
     disc_mask   = seg.pre_filter(img, filter, low_threshold=50, high_threshold=255,
@@ -50,6 +50,22 @@ def run_texture():
     m = m * 2
     laws_LL = kernels[0, 50-4:50+3, 50-3:50+4]
     return m, laws_LL 
+
+
+def run_texture2():
+    filter = seg.build_2d_kernel(hiFilterCutoff=60.0)
+    img = seg.build_test_unit_discs()
+    disc = seg.pre_filter(img, filter, low_threshold=50, high_threshold=255)
+    disc_mask = seg.pre_filter(img, filter, low_threshold=50, high_threshold=255,
+		               conv_binary=1)
+    label_disc_mask, disc_mask_groups = seg.get_blobs(disc_mask)
+    disc_ROI = seg.get_blob_regions(label_disc_mask, disc_mask_groups)
+    laws_kernel = seg.build_laws_kernel() 
+    texture_img = seg.build_test_texture_discs()
+    seg.texture_filter(texture_img, label_disc_mask, laws_kernel, ROI=disc_ROI,
+		       mean_feature=1, verbose=0)
+    tem = disc_ROI['TEM']
+    return tem 
 
 class TestSegment(TestCase):
     def test_sobel(self):
@@ -106,15 +122,36 @@ class TestSegment(TestCase):
 
     	return
 
-    def test_texture(self):
-        # generate 4 discs; two tests (two test images) 
-	# [1] image 1 is delta functions and confirm the
+    def test_texture1(self):
+	# [1] texture1 is delta functions and confirm the
 	#     filter result is outer product of the L kernel
-	# [2] image 2 is 4 plane waves and assert the 20-element feature
-	#     vector for each disc is correct
-    	M, Laws_LL = run_texture()
+    	M, Laws_LL = run_texture1()
     	match = (Laws_LL==M).all()
     	assert_equal(match, True)
+    	return
+
+    def test_texture2(self):
+	# [2] texture2 is 2 plane waves and assert the 20-element feature
+	#     vector for each disc is correct
+    	tem = run_texture2()
+	tem0 = tem[0]
+	tem1 = tem[1]
+	truth_tem0 = NP.array(
+			[ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+                          0.        ,  0.13306101,  0.08511007,  0.05084148,  0.07550675,
+                          0.4334695 ,  0.03715914,  0.00289055,  0.02755581,  0.48142046,
+                          0.03137803,  0.00671277,  0.51568902,  0.01795249,  0.49102375,  1.
+                        ], dtype=NP.float32)
+	truth_tem1 = NP.array(
+                        [ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+                          0.        ,  0.02970393,  0.00164266,  0.00922416,  0.01221788,
+                          0.51485199,  0.03298925,  0.02212243,  0.01912871,  0.48350537,
+                          0.01125561,  0.00826189,  0.49437219,  0.00526817,  0.49736592,  1.
+                        ], dtype=NP.float32)
+
+    	assert_array_almost_equal(tem0, truth_tem0, decimal=6)
+    	assert_array_almost_equal(tem1, truth_tem1, decimal=6)
+
     	return
 
 if __name__ == "__main__":
