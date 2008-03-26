@@ -21,7 +21,7 @@ _objstruct = NP.dtype([('L', 'i'),
                        ('compactness', 'f'),
                        ('voxelMean', 'f'),
                        ('voxelVar', 'f'),
-                       ('TEM', 'f', 20)]
+                       ('TEM', 'f', 21)]
                       )
 
 
@@ -247,7 +247,8 @@ def mat_filter(label_image, thin_kernel, ROI=None):
     return mat_image
 
 
-def texture_filter(raw_image, label_image, laws_kernel, ROI=None, verbose=0):
+def texture_filter(raw_image, label_image, laws_kernel, ROI=None, dc_thres=1.0,
+		   mean_feature=1, verbose=0):
     """
     texture_images = texture_filter(raw_image, label_image, laws_kernel, ROI=None, verbose=1)
     .
@@ -270,6 +271,16 @@ def texture_filter(raw_image, label_image, laws_kernel, ROI=None, verbose=0):
     ROI : {dictionary}
         Region of Interest structure that has blob bounding boxes
 
+    dc_thres : {float}
+        used as a filter. Sets texture feature to 0.0 when the 
+	mean level is above this. Removes the low frequency, high amplitude
+	image regions from the feature list
+
+    mean_feature : {0, 1}, optional
+        when set to 1, the feature is the mean value of the
+	selected Law's texture filter. When 0 the feature is
+	the standard deviation.
+
     verbose : {0, 1}, optional
         determines if return is to include Law's filter images
 
@@ -291,10 +302,10 @@ def texture_filter(raw_image, label_image, laws_kernel, ROI=None, verbose=0):
         ROI['T'] = rows-3
 
     laws_image_list = {}
-    number_regions = ROI.size
-    layers  = laws_kernel['filters']
-    indices = range(0, number_regions)
-    filters = range(1, layers)
+    number_regions  = ROI.size
+    layers          = laws_kernel['filters']
+    indices         = range(0, number_regions)
+    filters         = range(0, layers)
     for i in indices:
 	left   = ROI[i]['L']
 	right  = ROI[i]['R']
@@ -309,6 +320,7 @@ def texture_filter(raw_image, label_image, laws_kernel, ROI=None, verbose=0):
 	# load the labeled region 
 	label_region[0:rows,  0:cols][label_image[bottom:top, left:right]==Label] = 1 
 	source_region[0:rows, 0:cols] = raw_image[bottom:top, left:right] 
+
 	S.laws_texture_metric(label_region, source_region, laws_block, laws_kernel['numKernels'],
 		              laws_kernel['kernelSize'], laws_kernel['filters'],
 		              laws_kernel['coefficients'][0], laws_kernel['coefficients'][1],
@@ -318,10 +330,17 @@ def texture_filter(raw_image, label_image, laws_kernel, ROI=None, verbose=0):
         for j in filters:
 	    # compute the energy measure for each filter in the ROI
 	    mask_image = laws_block[j, :, :][label_region[:, :]>0]
-	    mean = mask_image.mean()
-	    # TBD: scale by mean, or autoscale the TEM vector
-	    ROI[i]['TEM'][j-1] = mask_image.std()
+	    mean = abs(mask_image.mean())
+	    std  = mask_image.std()
+	    if mean > dc_thres:
+	        mean = 0.0
+	        std = 0.0
+	    if mean_feature == 1:
+	        ROI[i]['TEM'][j] = mean 
+            else:
+	        ROI[i]['TEM'][j] = std 
 
+	ROI[i]['TEM'][:] = ROI[i]['TEM'][:] / ROI[i]['TEM'][:].max() 
         # accumulate the 21 Law's filtered ROI's and optional
 	# return as image (3D)
         laws_image_list[i] = laws_block
@@ -414,9 +433,32 @@ def get_blob_regions(labeled_image, groups, dust=16):
 
 
     """
+
+    _c_ext_struct = NP.dtype([('L', 'i'),
+                              ('R', 'i'),
+                              ('T', 'i'),
+                              ('B', 'i'),
+                              ('Label', 'i'),
+                              ('Area', 'i'),
+                              ('cX', 'f'),
+                              ('cY', 'f')]
+                             )
+
+    c_ext_ROI = NP.zeros(groups, dtype=_c_ext_struct)
     ROIList = NP.zeros(groups, dtype=_objstruct)
     # return the bounding box for each connected edge
-    S.get_blob_regions(labeled_image, ROIList)
+    S.get_blob_regions(labeled_image, c_ext_ROI)
+
+    indices = range(0, groups)
+    for i in indices:
+	ROIList[i]['L']     = c_ext_ROI[i]['L']
+	ROIList[i]['R']     = c_ext_ROI[i]['R']
+	ROIList[i]['B']     = c_ext_ROI[i]['B']
+	ROIList[i]['T']     = c_ext_ROI[i]['T']
+	ROIList[i]['Label'] = c_ext_ROI[i]['Label']
+	ROIList[i]['Area']  = c_ext_ROI[i]['Area']
+	ROIList[i]['cX']    = c_ext_ROI[i]['cX']
+	ROIList[i]['cY']    = c_ext_ROI[i]['cY']
 
     return ROIList[ROIList['Area']>dust]
 
@@ -624,9 +666,9 @@ def get_all_bounding_boxes(ROI):
     number = ROI.size
     indices = range(0, ROI.size)
     _shortstruct = NP.dtype([('left', 'i'),
-                            ('right', 'i'),
-                            ('top', 'i'),
-                            ('bottom', 'i')])
+                             ('right', 'i'),
+                             ('top', 'i'),
+                             ('bottom', 'i')])
     measures = NP.zeros(number, dtype=_shortstruct)
     for i in indices:
 	measures[i]['left']   = ROI[i]['L']
@@ -871,18 +913,73 @@ def build_laws_kernel():
     coefficients = NP.zeros((aperature), dtype=NP.float64)
     names = ('L', 'E', 'S', 'W', 'R', 'O' )
 
-    coefficients[0, :] =  ( 1.0,  6.0,  15.0, 20.0,  15.0,  6.0,  1.0 )
-    coefficients[1, :] =  (-1.0, -4.0,  -5.0,  0.0,   5.0,  4.0,  1.0 )
-    coefficients[2, :] =  (-1.0, -2.0,   1.0,  4.0,   1.0, -2.0, -1.0 )
-    coefficients[3, :] =  (-1.0,  0.0,   3.0,  0.0,  -3.0,  0.0,  1.0 )
-    coefficients[4, :] =  ( 1.0, -2.0,  -1.0,  4.0,  -1.0, -2.0,  1.0 )
-    coefficients[5, :] =  (-1.0,  6.0, -15.0, 20.0, -15.0,  6.0, -1.0 )
+    coefficients[0, :] =  ( 1.0,  6.0,  15.0, 20.0,  15.0,  6.0,  1.0)
+    coefficients[1, :] =  (-1.0, -4.0,  -5.0,  0.0,   5.0,  4.0,  1.0)
+    coefficients[2, :] =  (-1.0, -2.0,   1.0,  4.0,   1.0, -2.0, -1.0)
+    coefficients[3, :] =  (-1.0,  0.0,   3.0,  0.0,  -3.0,  0.0,  1.0)
+    coefficients[4, :] =  ( 1.0, -2.0,  -1.0,  4.0,  -1.0, -2.0,  1.0)
+    coefficients[5, :] =  (-1.0,  6.0, -15.0, 20.0, -15.0,  6.0, -1.0)
 
     LAWSFilter= {'numKernels' : 6, 'kernelSize' : 7, 'filters' : 21,
 		 'coefficients': coefficients, 'names': names} 
 
     return LAWSFilter
 
+def build_laws_masks(LAWSFilter):
+
+    """
+    masks = build_laws_masks(LAWSFilter)
+
+    takes the Laws Filter dictionary and builds the 21 7x7 kernel masks that are
+    used in Laws texture feature extraction. 
+
+    Parameters 
+    ..........
+
+    LAWSFilter : {dictionary}
+        a set of 6 length-7 Laws texture kernels
+
+    Returns 
+    ..........
+
+    masks : {list}
+        a list of 21 7x7 kernels (2D nd_array)
+
+    Examples:
+    use this along with FFT Pack to view the spatial frequency response. Create a 256x256 zero 
+    array and pad the first 7x7 with the Laws kernel and then get the 2D power spectrum and display
+    with pylab
+
+
+    LAWSFilter = build_laws_kernel()
+    mask = build_laws_masks(LAWSFilter)
+
+    mask_2 = masks[2]
+
+    z = NP.zeros(256*256, dtype=NP.float32).reshape(256, 256)
+    z[0:7, 0:7] = mask_0
+    x = abs(fftshift(fft2(z)))
+    pylab.imshow(x)
+
+    """
+
+    outer_indices = range(0, LAWSFilter['numKernels'])
+    mask_array = {}
+    count = 0
+    for i in outer_indices:
+	rowFilter = LAWSFilter['coefficients'][i]
+	colFilter = LAWSFilter['coefficients'][i]
+	matrix = NP.outer(rowFilter, colFilter)
+	mask_array[count] = 2.0*matrix
+	count = count + 1 
+        inner_indices = range(i+1, LAWSFilter['numKernels'])
+        for j in inner_indices:
+	    colFilter = LAWSFilter['coefficients'][j]
+	    matrix = NP.outer(rowFilter, colFilter) + NP.outer(colFilter, rowFilter)
+	    mask_array[count] = matrix
+	    count = count + 1 
+
+    return mask_array
 
 
 #
@@ -912,19 +1009,13 @@ def build_test_texture_discs():
     rad  = NP.pi / 180.0
     test_image = NP.zeros(rows*cols, dtype=NP.float32).reshape(rows, cols)
     [a, b] = NP.mgrid[0:rows, 0:cols]
-    test_image[0:255,0:255]     = NP.sin(5.0*rad*a[0:255,0:255])      \
-                                + NP.sin(10.0*rad*b[0:255,0:255])
-    test_image[255:512,0:255]   = NP.sin(10.0*rad*a[255:512,0:255])   \
-                                + NP.sin(15.0*rad*b[255:512,0:255])
-    test_image[0:255,255:512]   = NP.sin(15.0*rad*a[0:255,255:512])   \
-                                + NP.sin(20.0*rad*b[0:255,255:512])
-    test_image[255:512,255:512] = NP.sin(20.0*rad*a[255:512,255:512]) \
-                                + NP.sin(25.0*rad*b[255:512,255:512])
+
+    test_image[0:255,0:255]     = NP.sin(4.0*rad*a[0:255,0:255])  + NP.sin(-4.0*rad*b[0:255,0:255]) 
+    test_image[256:511,256:511] = NP.sin(24.0*rad*a[0:255,0:255]) + NP.sin(20.0*rad*b[0:255,0:255])
 
     test_image = test_image + test_image.min()
-    discs = build_test_discs()
+    discs = build_test_unit_discs()
     discs = discs * test_image 
-    discs = discs - discs.min() 
 
     return discs
 
@@ -963,6 +1054,41 @@ def build_test_discs():
 	test_image[3*center_y+i, 3*center_x-x:3*center_x+x] = 110
 
     return test_image
+
+
+def build_test_unit_discs():
+    """
+    test_image = build_test_unit_discs()
+    build 2 discs of equal radius and same mean values for texture testing
+    
+    Parameters 
+    ..........
+
+    None
+
+    Returns 
+    ..........
+
+    test_image : {nd_array}
+        a 512x512 image with 4 test discs (one per quadrant)
+
+    """
+    radius = 50
+    rows   = 512
+    cols   = 512
+    test_image = NP.zeros(rows*cols, dtype=NP.int16).reshape(rows, cols)
+    y_indices = NP.array(range(-radius, radius+1))
+    center_x = rows / 4
+    center_y = cols / 4
+
+    for i in y_indices:
+	x = math.sqrt(float(radius)**2 - float(i)**2)
+	# different raw mean levels
+	test_image[1*center_y+i, 1*center_x-x:1*center_x+x] = 100
+	test_image[3*center_y+i, 3*center_x-x:3*center_x+x] = 100
+
+    return test_image
+
 
 def build_test_impulses():
     """
