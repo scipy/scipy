@@ -41,7 +41,7 @@ def canny_hysteresis(magnitude, canny_stats):
     hystereis stage of Canny filter
 
     Parameters 
-    ..........
+    ----------
 
     magnitude : {nd_array}
         the output from the canny_nonmax_supress() method
@@ -50,7 +50,7 @@ def canny_hysteresis(magnitude, canny_stats):
         contains the low and high thesholds determined from canny_nonmax_supress()
 
     Returns 
-    ..........
+    ----------
     edge_image : {nd_array}
         the labeled edge image that can be displayed and used for later processing
 
@@ -70,7 +70,7 @@ def canny_nonmax_supress(horz_DGFilter, vert_DGFilter, img_means, thres=0.5,
     non-max supression stage of Canny filter
 
     Parameters 
-    ..........
+    ----------
 
     horz_DGFilter : {nd_array}
         the horizonal filtered image using the derivative of Gaussian kernel filter.
@@ -96,7 +96,7 @@ def canny_nonmax_supress(horz_DGFilter, vert_DGFilter, img_means, thres=0.5,
         high threshold applied to magnitude filtered 
 
     Returns 
-    ..........
+    ----------
 
     magnitude : {nd_array}
         magnitude of X and Y filtered for critical samples
@@ -123,7 +123,7 @@ def canny_filter(slice, dg_kernel):
     returns the X and Y filterd image
 
     Parameters 
-    ..........
+    ----------
 
     slice : {nd_array}
         2D image array
@@ -132,7 +132,7 @@ def canny_filter(slice, dg_kernel):
         derivative of Gaussian kernel from build_d_gauss_kernel()
 
     Returns 
-    ..........
+    ----------
 
     horz_DGFilter : {nd_array}
         X filtered image 
@@ -165,7 +165,7 @@ def mat_filter(label_image, thin_kernel, ROI=None):
     bounding box set equal to the full image
 
     Parameters 
-    ..........
+    ----------
 
     label_image : {nd_array}
         an image with labeled regions from get_blobs() method
@@ -177,7 +177,7 @@ def mat_filter(label_image, thin_kernel, ROI=None):
         Region of Interest structure that has blob bounding boxes
 
     Returns 
-    ..........
+    ----------
 
     mat_image : {nd_array}
         thinned edge image
@@ -257,7 +257,7 @@ def texture_filter(raw_image, label_image, laws_kernel, ROI=None, dc_thres=1.0,
     texture_filter(raw_image, label_image, laws_kernel, ROI=None, verbose=0)
 
     Parameters 
-    ..........
+    ----------
 
     raw_image : {nd_array}
         raw double image 
@@ -285,7 +285,7 @@ def texture_filter(raw_image, label_image, laws_kernel, ROI=None, dc_thres=1.0,
         determines if return is to include Law's filter images
 
     Returns 
-    ..........
+    ----------
 
     laws_image : {dictionary}
         contains 21 Laws filtered  regions for each ROI 
@@ -360,7 +360,7 @@ def get_voxel_measures(label_image, raw_image, ROI=None):
     from each ROI in the raw data.
 
     Parameters 
-    ..........
+    ----------
 
     label_image : {nd_array}
         an image with labeled regions from get_blobs() method
@@ -373,7 +373,7 @@ def get_voxel_measures(label_image, raw_image, ROI=None):
 
 
     Returns 
-    ..........
+    ----------
 
     none
 
@@ -416,7 +416,7 @@ def get_blob_regions(labeled_image, groups, dust=16):
     stage processing to add blob features.
 
     Parameters 
-    ..........
+    ----------
 
     label_image : {nd_array}
         an image with labeled regions from get_blobs() method
@@ -425,7 +425,7 @@ def get_blob_regions(labeled_image, groups, dust=16):
         number of blobs in image determined by get_blobs() method
 
     Returns 
-    ..........
+    ----------
 
     ROIList : {dictionary}
         structure that has the bounding box and area of each blob
@@ -472,13 +472,13 @@ def get_blobs(binary_edge_image):
     image to labelled regions
 
     Parameters 
-    ..........
+    ----------
 
     binary_edge_image : {nd_array}
         an binary image
 
     Returns 
-    ..........
+    ----------
 
     label_image : {nd_array}
         an image with labeled regions from get_blobs() method
@@ -500,7 +500,7 @@ def sobel_edges(sobel_edge_image, sobel_stats, mode=1, sobel_threshold=0.3):
     take sobel-filtered image and return binary edges
 
     Parameters 
-    ..........
+    ----------
 
     sobel_edge_image : {nd_array}
         edge-filtered image from sobel_image() method
@@ -515,7 +515,7 @@ def sobel_edges(sobel_edge_image, sobel_stats, mode=1, sobel_threshold=0.3):
         low threshold applied to edge filtered image for edge generation
 
     Returns 
-    ..........
+    ----------
 
     sobel_edge : {nd_array}
         binary edge-image
@@ -536,13 +536,13 @@ def sobel_image(filtered_slice):
     take 2D raw or filtered image slice and get sobel-filtered image 
 
     Parameters 
-    ..........
+    ----------
 
     filtered_slice : {nd_array}
         raw or pre-processed (filtered and thresholded) 2D image 
 
     Returns 
-    ..........
+    ----------
 
     sobel_edge_image : {nd_array}
         edge-filtered image from sobel_image() method
@@ -574,7 +574,7 @@ def pre_filter(slice, filter, low_threshold=0, high_threshold=0, conv_binary=0):
     take 2D image slice and filter and pre-filter and threshold prior to segmentation
 
     Parameters 
-    ..........
+    ----------
     slice : {nd_array}
         input 2D image. gets cast to int16
 
@@ -592,7 +592,7 @@ def pre_filter(slice, filter, low_threshold=0, high_threshold=0, conv_binary=0):
 	is binary conversion off
 
     Returns 
-    ..........
+    ----------
     edge_filter : {nd_array}
         filtered and thresholded image that can be (optional) binary.
 
@@ -623,14 +623,14 @@ def get_max_bounding_box(ROI):
     take an ROI structure and find the maximum area bounding box
 
     Parameters 
-    ..........
+    ----------
 
     ROI : {dictionary}
         the ROI is the automatically extracted blob regions of interest
 	and contains the rectangular bounding box of each blob.
 
     Returns 
-    ..........
+    ----------
 
     bounding_box : {dictionary}
         the Left, Right, Top and Bottom of the LARGEST bounding box in the ROI
@@ -649,14 +649,14 @@ def get_all_bounding_boxes(ROI):
     get all bounding boxes in the ROI (feature) dictionary
 
     Parameters 
-    ..........
+    ----------
 
     ROI : {dictionary}
         the ROI is the automatically extracted blob regions of interest
 	and contains the rectangular bounding box of each blob.
 
     Returns 
-    ..........
+    ----------
 
     measures : {dictionary}
         the Left, Right, Top and Bottom of all bounding boxes in the ROI
@@ -687,7 +687,7 @@ def build_2d_kernel(aperature=21, hiFilterCutoff=10.0):
     build hamming-windowed FIR filter with sinc kernel
 
     Parameters 
-    ..........
+    ----------
 
     aperature : {int}, optional
         the number of coefficients in the filter. default is 21. needs to be ODD
@@ -696,7 +696,7 @@ def build_2d_kernel(aperature=21, hiFilterCutoff=10.0):
         the upper cutoff in digital frequency units
 
     Returns 
-    ..........
+    ----------
 
     FIRFilter : {dictionary}
         filter kernel
@@ -741,7 +741,7 @@ def build_d_gauss_kernel(gWidth=20, sigma=1.0):
     build the derivative of Gaussian kernel for Canny edge filter
 
     Parameters 
-    ..........
+    ----------
     gWdith : {int}, optional
          width of derivative of Gaussian kernel.
 	 default value is 20
@@ -751,7 +751,7 @@ def build_d_gauss_kernel(gWidth=20, sigma=1.0):
 	 default value is 1.0
 
     Returns 
-    ..........
+    ----------
 
     DGFilter : {dictionary}
         filter kernel
@@ -779,12 +779,12 @@ def build_morpho_thin_masks():
 
 
     Parameters 
-    ..........
+    ----------
 
     None
 
     Returns 
-    ..........
+    ----------
 
     MATFilter : {dictionary}
         morphology filter kernels. there are 2 sets of 8 3x3 masks
@@ -898,12 +898,12 @@ def build_laws_kernel():
 
 
     Parameters 
-    ..........
+    ----------
 
     None
 
     Returns 
-    ..........
+    ----------
 
     LAWSFilter : {dictionary}
         a set of 6 length-7 Laws texture kernels
@@ -934,13 +934,13 @@ def build_laws_masks(LAWSFilter):
     used in Laws texture feature extraction. 
 
     Parameters 
-    ..........
+    ----------
 
     LAWSFilter : {dictionary}
         a set of 6 length-7 Laws texture kernels
 
     Returns 
-    ..........
+    ----------
 
     masks : {list}
         a list of 21 7x7 kernels (2D nd_array)
@@ -993,12 +993,12 @@ def build_test_texture_discs():
     builds 4 discs with plane wave texture. used for test and demo
 
     Parameters 
-    ..........
+    ----------
 
     None
 
     Returns 
-    ..........
+    ----------
 
     discs : {nd_array}
         a 512x512 image with 4 test discs (one per quadrant)
@@ -1026,12 +1026,12 @@ def build_test_discs():
     build 4 discs of equal radius and different mean values for edge/blob testing
     
     Parameters 
-    ..........
+    ----------
 
     None
 
     Returns 
-    ..........
+    ----------
 
     test_image : {nd_array}
         a 512x512 image with 4 test discs (one per quadrant)
@@ -1062,12 +1062,12 @@ def build_test_unit_discs():
     build 2 discs of equal radius and same mean values for texture testing
     
     Parameters 
-    ..........
+    ----------
 
     None
 
     Returns 
-    ..........
+    ----------
 
     test_image : {nd_array}
         a 512x512 image with 4 test discs (one per quadrant)
@@ -1099,12 +1099,12 @@ def build_test_impulses():
     with these test patterns will return Law's kernel outer product matrices.
 
     Parameters 
-    ..........
+    ----------
 
     None
 
     Returns 
-    ..........
+    ----------
 
     test_image : {nd_array}
         a 512x512 image with 4 test discs (one per quadrant)
