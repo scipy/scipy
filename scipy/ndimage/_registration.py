@@ -1,6 +1,6 @@
 import math
 import os
-import numpy as N
+import numpy as NP
 import scipy.ndimage._register as R
 import scipy.special  as SP
 import scipy.ndimage  as NDI
@@ -38,7 +38,7 @@ def resize_image(imageG, imageF_mat):
 	image [mat] is the 4x4 voxel-to-physical conversion matrix.
 	
 	Parameters 
-	..........
+	----------
 
 	imageG : {dictionary} 
 	    imageG is the source image to be resized. it is a dictionary with
@@ -51,11 +51,11 @@ def resize_image(imageG, imageF_mat):
 	    sampling dimensions.
 
 	Returns 
-	.......
+	-------
 	zoom_image : {dictionary}
 
 	Examples
-	........
+	--------
 
 	>>> import _registration as reg
 	>>> measures, imageF_anat, fmri_series = reg.demo_MRI_coregistration()
@@ -66,29 +66,29 @@ def resize_image(imageG, imageF_mat):
 
 	"""
 
-	Z = N.zeros(3, dtype=N.float64);
+	Z = NP.zeros(3, dtype=NP.float64);
 	# get the zoom
 	Z[0] = imageG['mat'][0][0] / imageF_mat[0][0]
 	Z[1] = imageG['mat'][1][1] / imageF_mat[1][1]
 	Z[2] = imageG['mat'][2][2] / imageF_mat[2][2]
 
 	# new volume dimensions (rounded)
-	D = N.zeros(3, dtype=N.int32);
+	D = NP.zeros(3, dtype=NP.int32);
 	D[0] = int(float(imageG['dim'][0])*Z[0]+0.5)
 	D[1] = int(float(imageG['dim'][1])*Z[1]+0.5)
 	D[2] = int(float(imageG['dim'][2])*Z[2]+0.5)
 
-	M = N.eye(4, dtype=N.float64);
+	M = NP.eye(4, dtype=NP.float64);
 	# for the test data, set the xyz voxel sizes for fMRI volume
 	M[0][0] = imageG['mat'][0][0]/Z[0]
 	M[1][1] = imageG['mat'][1][1]/Z[1]
 	M[2][2] = imageG['mat'][2][2]/Z[2]
 
-    	image = N.zeros(D[2]*D[1]*D[0], dtype=N.uint8).reshape(D[2], D[0], D[1])
+    	image = NP.zeros(D[2]*D[1]*D[0], dtype=NP.uint8).reshape(D[2], D[0], D[1])
 	mode  = 2
 	scale = 0
 	R.register_volume_resample(imageG['data'], image, Z, scale, mode)
-	F = N.zeros(3, dtype=N.float64);
+	F = NP.zeros(3, dtype=NP.float64);
 	zoom_image = {'data' : image, 'mat' : M, 'dim' : D, 'fwhm' : F}
 
 	return zoom_image
@@ -102,7 +102,7 @@ def remap_image(image, parm_vector, resample='linear'):
 	method.
 
 	Parameters 
-	..........
+	----------
 	image : {dictionary} 
 	    image is the source image to be remapped. it is a dictionary with
 	    the data as an ndarray in the ['data'] component.
@@ -115,11 +115,11 @@ def remap_image(image, parm_vector, resample='linear'):
 
 
 	Returns 
-	.......
+	-------
 	remaped_image : {dictionary}
 
 	Examples
-	........
+	--------
 	    image = fmri_series[i]
 	    x[0:6] = measures[i]['align_rotate'][0:6]
 	    # overwrite the fMRI volume with the aligned volume
@@ -134,7 +134,7 @@ def remap_image(image, parm_vector, resample='linear'):
 	M_inverse = get_inverse_mappings(parm_vector)
 	(layers, rows, cols) = image['data'].shape
 	# allocate the zero image
-	remaped_image = N.zeros(layers*rows*cols, dtype=N.uint8).reshape(layers, rows, cols)
+	remaped_image = NP.zeros(layers*rows*cols, dtype=NP.uint8).reshape(layers, rows, cols)
 	remaped_image = {'data' : remaped_image, 'mat' : image['mat'], 
 			 'dim' : image['dim'], 'fwhm' : image['fwhm']}
 	imdata = build_structs()
@@ -156,19 +156,19 @@ def get_inverse_mappings(parm_vector):
 	4x4 mapping matrix M_inverse that will map imageG to imageF orientation
 
 	Parameters 
-	..........
+	----------
 	parm_vector : {nd_array} 
 
 	Returns 
-	.......
+	-------
 	M_inverse : {nd_array}
 
 	Examples
-	........
+	--------
 
-	>>> import numpy as N
+	>>> import numpy as NP
 	>>> import _registration as reg
-	>>> array = N.zeros(6, dtype=float)
+	>>> array = NP.zeros(6, dtype=float)
 	>>> M = reg.get_inverse_mappings(array)
 	>>> M 
 
@@ -204,7 +204,7 @@ def python_coreg(image1, image2, imdata, ftype=1, smimage=0, lite=0, smhist=0,
 	package. The optimal parameter is returned.
 
 	Parameters 
-	..........
+	----------
 	image1 : {dictionary} 
 	    image1 is the source image to be remapped during the registration. 
 	    it is a dictionary with the data as an ndarray in the ['data'] component.
@@ -235,15 +235,15 @@ def python_coreg(image1, image2, imdata, ftype=1, smimage=0, lite=0, smhist=0,
 
 
 	Returns 
-	.......
+	-------
 	parm_vector : {nd_array}
 	    this is the optimal alignment (6-dim) array with 3 angles and
 	    3 translations.
 
 	Examples
-	........
+	--------
 
-	>>> import numpy as N
+	>>> import numpy as NP
 	>>> import _registration as reg
 
 	>>> image1, image2, imdata = reg.demo_MRI_volume_align()
@@ -268,7 +268,7 @@ def multires_registration(image1, image2, imdata, lite, smhist, method, opt_meth
 	provies timing for registration.
 
 	Parameters 
-	..........
+	----------
 
 	image1 : {dictionary} 
 	    image1 is the source image to be remapped during the registration. 
@@ -293,16 +293,16 @@ def multires_registration(image1, image2, imdata, lite, smhist, method, opt_meth
 	    2 are powell, in hybrid pass 2 is conjugate gradient.
 
 	Returns 
-	.......
+	-------
 	x : {nd_array}
 	    this is the optimal alignment (6-dim) array with 3 angles and
 	    3 translations.
 
 	Examples
-	........
+	--------
 
 	(calling this from python_coreg which optionally filters image2)
-	>>> import numpy as N
+	>>> import numpy as NP
 	>>> import _registration as reg
 	>>> image1, image2, imdata = reg.demo_MRI_volume_align()
 	>>> parm_vector = python_coreg(image1, image2, imdata)
@@ -375,7 +375,7 @@ def smooth_kernel(fwhm, x, ktype=1):
 	provide domain of kernel and sampling parameters. 
 
 	Parameters 
-	..........
+	----------
 	fwhm : {int}
 	    used for kernel width
 	x : {nd_array}
@@ -385,18 +385,18 @@ def smooth_kernel(fwhm, x, ktype=1):
 
 
 	Returns 
-	.......
+	-------
 	kernel : {nd_array}
 
 	Examples
-	........
+	--------
 
-	>>> import numpy as N
+	>>> import numpy as NP
 	>>> import _registration as reg
 	>>> fwhm = 3
 	>>> ftype = 2
-	>>> p = N.ceil(2*fwhm).astype(int)
-	>>> x = N.array(range(-p, p+1))
+	>>> p = NP.ceil(2*fwhm).astype(int)
+	>>> x = NP.array(range(-p, p+1))
 	>>> kernel = reg.smooth_kernel(fwhm, x, ktype=ftype)
 	>>> kernel
 
@@ -409,19 +409,19 @@ def smooth_kernel(fwhm, x, ktype=1):
 
 	"""
 	eps = 0.00001
-	s   = N.square((fwhm/math.sqrt(8.0*math.log(2.0)))) + eps
+	s   = NP.square((fwhm/math.sqrt(8.0*math.log(2.0)))) + eps
 	if ktype==1:
 	    # from SPM: Gauss kernel convolved with 1st degree B spline
 	    w1 = 0.5 * math.sqrt(2.0/s)
 	    w2 = -0.5 / s
 	    w3 = math.sqrt((s*math.pi) /2.0)
 	    kernel = 0.5*(SP.erf(w1*(x+1))*(x+1)       + SP.erf(w1*(x-1))*(x-1)    - 2.0*SP.erf(w1*(x))*(x) + 
-	 	          w3*(N.exp(w2*N.square(x+1))) + N.exp(w2*(N.square(x-1))) - 2.0*N.exp(w2*N.square(x)))
+	 	          w3*(NP.exp(w2*NP.square(x+1))) + NP.exp(w2*(NP.square(x-1))) - 2.0*NP.exp(w2*NP.square(x)))
 	    kernel[kernel<0] = 0
 	    kernel = kernel / kernel.sum()  
 	else:
 	    # Gauss kernel 
-	    kernel = (1.0/math.sqrt(2.0*math.pi*s)) * N.exp(-N.square(x)/(2.0*s)) 
+	    kernel = (1.0/math.sqrt(2.0*math.pi*s)) * NP.exp(-NP.square(x)/(2.0*s)) 
 	    kernel = kernel / kernel.sum()  
 
 	return kernel
@@ -432,7 +432,7 @@ def filter_image_3D(imageRaw, fwhm, ftype=2):
 	does 3D separable digital filtering using scipy.ndimage.correlate1d
 
 	Parameters 
-	..........
+	----------
 	imageRaw : {nd_array}
 	    the unfiltered 3D volume image
 	fwhm : {int}
@@ -441,12 +441,12 @@ def filter_image_3D(imageRaw, fwhm, ftype=2):
 	    kernel type. 1 is Gauss convoled with spline, 2 is Gauss
 
 	Returns 
-	.......
+	-------
 	image_F_xyz : {nd_array}
 	    3D filtered volume image
 
 	Examples
-	........
+	--------
 
 	>>> import _registration as reg
 	>>> image1, image2, imdata = reg.demo_MRI_volume_align()
@@ -455,14 +455,14 @@ def filter_image_3D(imageRaw, fwhm, ftype=2):
 	>>> image1['data'] = image_Filter_xyz
 	"""
 
-	p = N.ceil(2*fwhm[0]).astype(int)
-	x = N.array(range(-p, p+1))
+	p = NP.ceil(2*fwhm[0]).astype(int)
+	x = NP.array(range(-p, p+1))
 	kernel_x = smooth_kernel(fwhm[0], x, ktype=ftype)
-	p = N.ceil(2*fwhm[1]).astype(int)
-	x = N.array(range(-p, p+1))
+	p = NP.ceil(2*fwhm[1]).astype(int)
+	x = NP.array(range(-p, p+1))
 	kernel_y = smooth_kernel(fwhm[1], x, ktype=ftype)
-	p = N.ceil(2*fwhm[2]).astype(int)
-	x = N.array(range(-p, p+1))
+	p = NP.ceil(2*fwhm[2]).astype(int)
+	x = NP.array(range(-p, p+1))
 	kernel_z = smooth_kernel(fwhm[2], x, ktype=ftype)
 	output=None
 	# 3D filter in 3 1D separable stages
@@ -481,7 +481,7 @@ def build_fwhm(M, S):
 	builds the low pass filter kernel sigma value from the image pixel sampling
 
 	Parameters 
-	..........
+	----------
 	M : {nd_array}
 	    input 4x4 voxel to physical map matrix (called 'MAT')
 
@@ -489,14 +489,14 @@ def build_fwhm(M, S):
 	    1x3 sample increment array. should be = (1, 1, 1)
 
 	Returns 
-	.......
+	-------
 	fwhm : {nd_array}
 	    the 3D Gaussian kernel width
 
 	Examples
-	........
+	--------
 
-	>>> import numpy as N
+	>>> import numpy as NP
 	>>> import _registration as reg
 	>>> anat_desc = reg.load_anatMRI_desc()
 	>>> image1 = reg.load_volume(anat_desc, imagename='ANAT1_V0001.img')
@@ -504,15 +504,15 @@ def build_fwhm(M, S):
 	>>> image1['fwhm'] = reg.build_fwhm(image1['mat'], imdata['step'])
 
 	"""
-	view_3x3 = N.square(M[0:3, 0:3])
+	view_3x3 = NP.square(M[0:3, 0:3])
 	# sum the elements inn the first row
-	vxg = N.sqrt(view_3x3.sum(axis=0))
+	vxg = NP.sqrt(view_3x3.sum(axis=0))
 	# assumes that sampling is the same for xyz
- 	size = N.array([1,1,1])*S[0]
-	x = N.square(size) - N.square(vxg)
+ 	size = NP.array([1,1,1])*S[0]
+	x = NP.square(size) - NP.square(vxg)
 	# clip
 	x[x<0] = 0
-	fwhm = N.sqrt(x) / vxg
+	fwhm = NP.sqrt(x) / vxg
 	# pathology when stepsize = 1 for MAT equal to the identity matrix
 	fwhm[fwhm==0] = 1
 	# return the 3D Gaussian kernel width (xyz)
@@ -529,7 +529,7 @@ def optimize_function(x, optfunc_args):
 	is called prior to this.
 
 	Parameters 
-	.......
+	----------
 	x : {nd_array}
 	    this is the current (6-dim) array with 3 angles and 3 translations.
 
@@ -553,16 +553,17 @@ def optimize_function(x, optfunc_args):
 	    smooth        : {0, 1} 
 	        flag for joint histogram low pass filtering. 0 for no filter,
 	        1 for do filter.
-	    method        : {'nmi', 'mi', 'ncc', 'ecc'}
+	    method        : {'nmi', 'mi', 'ncc', 'ecc', 'mse'}
 	        flag for type of registration metric. nmi is normalized mutual
 	        information; mi is mutual information; ecc is entropy cross
-	        correlation; ncc is normalized cross correlation.
+	        correlation; ncc is normalized cross correlation. mse is mean
+		square error. with mse there is no joint histogram.
 	    ret_histo     : {0, 1} 
 	        if 0 return is: cost 
 	        if 0 return is: cost, joint_histogram  
 
 	Returns 
-	.......
+	-------
 	    cost : {float}
 	        the negative of one of the mutual information metrics
 		or negative cross correlation. use negative as the optimization
@@ -580,9 +581,9 @@ def optimize_function(x, optfunc_args):
 
 
 	Examples
-	........
+	--------
 
-	>>> import numpy as N
+	>>> import numpy as NP
 	>>> import _registration as reg
 	>>> anat_desc = reg.load_anatMRI_desc()
 	>>> image1 = reg.load_volume(anat_desc, imagename='ANAT1_V0001.img')
@@ -595,7 +596,7 @@ def optimize_function(x, optfunc_args):
 	>>> smhist = 0
 	>>> ret_histo = 1
 	>>> optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist, method, ret_histo)
-	>>> x = N.zeros(6, dtype=N.float64)
+	>>> x = NP.zeros(6, dtype=NP.float64)
 	>>> return cost, joint_histogram = reg.optimize_function(x, optfunc_args)
 
 
@@ -618,86 +619,109 @@ def optimize_function(x, optfunc_args):
 	# rot_matrix is the 4x4 constructed (current angles and translates) transform matrix
 	# sample_vector is the subsample vector for x-y-z
 
-	F_inv = N.linalg.inv(image_F['mat'])
-	composite = N.dot(F_inv, image_G['mat'])
-	composite = N.dot(composite, rot_matrix)
+	F_inv = NP.linalg.inv(image_F['mat'])
+	composite = NP.dot(F_inv, image_G['mat'])
+	composite = NP.dot(composite, rot_matrix)
 
-	# allocate memory for 2D histogram
-	joint_histogram = N.zeros([256, 256], dtype=N.float64);
+	if method == 'mse':
+	    #
+	    # mean squard error method
+	    #
 
-	if do_lite: 
-	    R.register_histogram_lite(image_F['data'], image_G['data'], composite, sample_vector, joint_histogram)
-	else:
-	    R.register_histogram(image_F['data'], image_G['data'], composite, sample_vector, joint_histogram)
+	    (layers, rows, cols) = image_F['data'].shape
+	    # allocate the zero image
+	    remap_image_F = NP.zeros(layers*rows*cols, dtype=NP.uint8).reshape(layers, rows, cols)
+	    imdata = build_structs()
+	    # trilinear interpolation mapping.
+	    R.register_linear_resample(image_F['data'], remap_image_F, composite,
+			               imdata['step'])
+	    cost = (NP.square(image_G['data']-remap_image_F)).mean()
 
-	# smooth the histogram
-	if smooth: 
-	    p = N.ceil(2*fwhm[0]).astype(int)
-	    x = N.array(range(-p, p+1))
-	    kernel1 = smooth_kernel(fwhm[0], x)
-	    p = N.ceil(2*fwhm[1]).astype(int)
-	    x = N.array(range(-p, p+1))
-	    kernel2 = smooth_kernel(fwhm[1], x)
-	    output=None
-	    # 2D filter in 1D separable stages
-	    axis = 0
-	    result = NDI.correlate1d(joint_histogram, kernel1, axis, output)
-	    axis = 1
-	    joint_histogram = NDI.correlate1d(result, kernel1, axis, output)
-
-	joint_histogram += epsilon # prevent log(0) 
-	# normalize the joint histogram
-	joint_histogram /= joint_histogram.sum() 
-	# get the marginals
-	marginal_col = joint_histogram.sum(axis=0)
-	marginal_row = joint_histogram.sum(axis=1)
-
-	if method == 'mi':
-	    # mutual information
-	    marginal_outer = N.outer(marginal_col, marginal_row)
-	    H = joint_histogram * N.log(joint_histogram / marginal_outer)  
-	    mutual_information = H.sum()
-	    cost = -mutual_information
-
-	elif method == 'ecc':
-	    # entropy correlation coefficient 
-	    marginal_outer = N.outer(marginal_col, marginal_row)
-	    H = joint_histogram * N.log(joint_histogram / marginal_outer)  
-	    mutual_information = H.sum()
-	    row_entropy = marginal_row * N.log(marginal_row)
-	    col_entropy = marginal_col * N.log(marginal_col)
-	    ecc  = -2.0*mutual_information/(row_entropy.sum() + col_entropy.sum())
-	    cost = -ecc
-
-	elif method == 'nmi':
-	    # normalized mutual information
-	    row_entropy = marginal_row * N.log(marginal_row)
-	    col_entropy = marginal_col * N.log(marginal_col)
-	    H = joint_histogram * N.log(joint_histogram)  
-	    nmi = (row_entropy.sum() + col_entropy.sum()) / (H.sum())
-	    cost = -nmi
-
-	elif method == 'ncc':
-	    # cross correlation from the joint histogram 
-	    r, c = joint_histogram.shape
-	    i = N.array(range(1,c+1))
-	    j = N.array(range(1,r+1))
-	    m1 = (marginal_row * i).sum()
-	    m2 = (marginal_col * j).sum()
-	    sig1 = N.sqrt((marginal_row*(N.square(i-m1))).sum())
-	    sig2 = N.sqrt((marginal_col*(N.square(j-m2))).sum())
-	    [a, b] = N.mgrid[1:c+1, 1:r+1]
-	    a = a - m1
-	    b = b - m2
-	    # element multiplies in the joint histogram and grids
-	    H = ((joint_histogram * a) * b).sum()
-	    ncc = H / (N.dot(sig1, sig2)) 
-	    cost = -ncc
-
-	if ret_histo:
-	    return cost, joint_histogram 
-    	else:
 	    return cost
+
+	else:
+	    #
+	    # histogram-based methods (nmi, ncc, mi, ecc)
+	    #
+
+	    # allocate memory for 2D histogram
+	    joint_histogram = NP.zeros([256, 256], dtype=NP.float64);
+
+	    if do_lite: 
+	        R.register_histogram_lite(image_F['data'], image_G['data'], composite,
+			                  sample_vector, joint_histogram)
+	    else:
+	        R.register_histogram(image_F['data'], image_G['data'], composite,
+			             sample_vector, joint_histogram)
+
+	    # smooth the histogram
+	    if smooth: 
+	        p = NP.ceil(2*fwhm[0]).astype(int)
+	        x = NP.array(range(-p, p+1))
+	        kernel1 = smooth_kernel(fwhm[0], x)
+	        p = NP.ceil(2*fwhm[1]).astype(int)
+	        x = NP.array(range(-p, p+1))
+	        kernel2 = smooth_kernel(fwhm[1], x)
+	        output=None
+	        # 2D filter in 1D separable stages
+	        axis = 0
+	        result = NDI.correlate1d(joint_histogram, kernel1, axis, output)
+	        axis = 1
+	        joint_histogram = NDI.correlate1d(result, kernel1, axis, output)
+
+	    joint_histogram += epsilon # prevent log(0) 
+	    # normalize the joint histogram
+	    joint_histogram /= joint_histogram.sum() 
+	    # get the marginals
+	    marginal_col = joint_histogram.sum(axis=0)
+	    marginal_row = joint_histogram.sum(axis=1)
+
+	    if method == 'mi':
+	        # mutual information
+	        marginal_outer = NP.outer(marginal_col, marginal_row)
+	        H = joint_histogram * NP.log(joint_histogram / marginal_outer)  
+	        mutual_information = H.sum()
+	        cost = -mutual_information
+
+	    elif method == 'ecc':
+	        # entropy correlation coefficient 
+	        marginal_outer = NP.outer(marginal_col, marginal_row)
+	        H = joint_histogram * NP.log(joint_histogram / marginal_outer)  
+	        mutual_information = H.sum()
+	        row_entropy = marginal_row * NP.log(marginal_row)
+	        col_entropy = marginal_col * NP.log(marginal_col)
+	        ecc  = -2.0*mutual_information/(row_entropy.sum() + col_entropy.sum())
+	        cost = -ecc
+
+	    elif method == 'nmi':
+	        # normalized mutual information
+	        row_entropy = marginal_row * NP.log(marginal_row)
+	        col_entropy = marginal_col * NP.log(marginal_col)
+	        H = joint_histogram * NP.log(joint_histogram)  
+	        nmi = (row_entropy.sum() + col_entropy.sum()) / (H.sum())
+	        cost = -nmi
+
+	    elif method == 'ncc':
+	        # cross correlation from the joint histogram 
+	        r, c = joint_histogram.shape
+	        i = NP.array(range(1,c+1))
+	        j = NP.array(range(1,r+1))
+	        m1 = (marginal_row * i).sum()
+	        m2 = (marginal_col * j).sum()
+	        sig1 = NP.sqrt((marginal_row*(NP.square(i-m1))).sum())
+	        sig2 = NP.sqrt((marginal_col*(NP.square(j-m2))).sum())
+	        [a, b] = NP.mgrid[1:c+1, 1:r+1]
+	        a = a - m1
+	        b = b - m2
+	        # element multiplies in the joint histogram and grids
+	        H = ((joint_histogram * a) * b).sum()
+	        ncc = H / (NP.dot(sig1, sig2)) 
+	        cost = -ncc
+
+	    if ret_histo:
+	        return cost, joint_histogram 
+    	    else:
+	        return cost
 
 
 def build_structs(step=1):
@@ -708,30 +732,30 @@ def build_structs(step=1):
 	storage in the co-registration.
 
 	Parameters 
-	.......
+	----------
 	step : {int} : optional
 	default is 1 and is the sample increment in voxels. This sets the sample
 	for x,y,z and is the same value in all 3 axes. only change the default for debug.
 
 	Returns 
-	.......
+	-------
 	img_data : {dictionary}
 
 	Examples
-	........
+	--------
 
-	>>> import numpy as N
+	>>> import numpy as NP
 	>>> import _registration as reg
 	>>> imdata = reg.build_structs()
 
 	"""
 
 	# build image data structures here
-	P = N.zeros(6, dtype=N.float64);
-	T = N.zeros(6, dtype=N.float64);
-	F = N.zeros(2, dtype=N.int32);
-	S = N.ones(3,  dtype=N.int32);
-	sample = N.zeros(2, dtype=N.int32);
+	P = NP.zeros(6, dtype=NP.float64);
+	T = NP.zeros(6, dtype=NP.float64);
+	F = NP.zeros(2, dtype=NP.int32);
+	S = NP.ones(3,  dtype=NP.int32);
+	sample = NP.zeros(2, dtype=NP.int32);
 	S[0] = step
 	S[1] = step
 	S[2] = step
@@ -765,22 +789,22 @@ def build_rotate_matrix(img_data_parms):
 	takes the 6 element vector (3 angles, 3 translations) and build the 4x4 mapping matrix
 
 	Parameters 
-	.......
+	----------
 	img_data_parms : {nd_array}
 	    this is the current (6-dim) array with 3 angles and 3 translations.
 
 	Returns 
-	.......
+	-------
 	rot_matrix: {nd_array}
 	    the 4x4 mapping matrix
 
 	Examples
-	........
+	--------
 
-	>>> import numpy as N
+	>>> import numpy as NP
 	>>> import _registration as reg
 	>>> imdata = reg.build_structs()
-	>>> x = N.zeros(6, dtype=N.float64)
+	>>> x = NP.zeros(6, dtype=NP.float64)
 	>>> M = reg.build_rotate_matrix(x)
 	>>> M 
 	array([[ 1.,  0.,  0.,  0.],
@@ -791,10 +815,10 @@ def build_rotate_matrix(img_data_parms):
 
 	"""
 
-	R1 = N.zeros([4,4], dtype=N.float64);
-	R2 = N.zeros([4,4], dtype=N.float64);
-	R3 = N.zeros([4,4], dtype=N.float64);
-	T  = N.eye(4, dtype=N.float64);
+	R1 = NP.zeros([4,4], dtype=NP.float64);
+	R2 = NP.zeros([4,4], dtype=NP.float64);
+	R3 = NP.zeros([4,4], dtype=NP.float64);
+	T  = NP.eye(4, dtype=NP.float64);
 
 	alpha = math.radians(img_data_parms[0])
 	beta  = math.radians(img_data_parms[1])
@@ -829,9 +853,9 @@ def build_rotate_matrix(img_data_parms):
 	T[1][3] = img_data_parms[4]
 	T[2][3] = img_data_parms[5]
 
-	rot_matrix = N.dot(T, R1);
-	rot_matrix = N.dot(rot_matrix, R2);
-	rot_matrix = N.dot(rot_matrix, R3);
+	rot_matrix = NP.dot(T, R1);
+	rot_matrix = NP.dot(rot_matrix, R2);
+	rot_matrix = NP.dot(rot_matrix, R3);
 
 	return rot_matrix
 
@@ -847,7 +871,7 @@ def load_volume(imagedesc, imagename=None, threshold=0.999, debug=0):
 	The current method uses numpy fromfile and will be replaced by neuroimage nifti load.
 
 	Parameters 
-	.......
+	----------
 	imagedesc : {dictionary} 
 	    imagedesc is the descriptor of the image to be read. 
 
@@ -866,7 +890,7 @@ def load_volume(imagedesc, imagename=None, threshold=0.999, debug=0):
 	    amplitude index where the provided threshold occured.
 
 	Returns 
-	.......
+	-------
 	image : {dictionary}
 	    the volume data assoicated with the filename or a blank volume of the same
 	    dimensions as specified in imagedesc.
@@ -888,9 +912,9 @@ def load_volume(imagedesc, imagename=None, threshold=0.999, debug=0):
 	    crosses the 'threshold' provided.
 
 	Examples
-	........
+	--------
 
-	>>> import numpy as N
+	>>> import numpy as NP
 	>>> import _registration as reg
 	>>> anat_desc = reg.load_anatMRI_desc()
 	>>> image_anat, h, ih, index = reg.load_volume(anat_desc, imagename='ANAT1_V0001.img', debug=1)
@@ -904,37 +928,37 @@ def load_volume(imagedesc, imagename=None, threshold=0.999, debug=0):
 	# autoscale is using integrated histogram to deal with outlier high amplitude voxels
 	if imagename == None:
 	    # imagename of none means to create a blank image
-    	    ImageVolume = N.zeros(imagedesc['layers']*imagedesc['rows']*imagedesc['cols'],
-			    dtype=N.uint16).reshape(imagedesc['layers'], imagedesc['rows'], imagedesc['cols'])
+    	    ImageVolume = NP.zeros(imagedesc['layers']*imagedesc['rows']*imagedesc['cols'],
+			    dtype=NP.uint16).reshape(imagedesc['layers'], imagedesc['rows'], imagedesc['cols'])
 	else:
-    	    ImageVolume = N.fromfile(imagename,
-			    dtype=N.uint16).reshape(imagedesc['layers'], imagedesc['rows'], imagedesc['cols']);
+    	    ImageVolume = NP.fromfile(imagename,
+			    dtype=NP.uint16).reshape(imagedesc['layers'], imagedesc['rows'], imagedesc['cols']);
 
 	# the mat (voxel to physical) matrix
-	M = N.eye(4, dtype=N.float64);
+	M = NP.eye(4, dtype=NP.float64);
 	# for now just the sample size (mm units) in x, y and z
 	M[0][0] = imagedesc['sample_x']
 	M[1][1] = imagedesc['sample_y']
 	M[2][2] = imagedesc['sample_z']
 	# dimensions 
-	D = N.zeros(3, dtype=N.int32);
+	D = NP.zeros(3, dtype=NP.int32);
 	# Gaussian kernel - fill in with build_fwhm() 
-	F = N.zeros(3, dtype=N.float64);
+	F = NP.zeros(3, dtype=NP.float64);
 	D[0] = imagedesc['rows']
 	D[1] = imagedesc['cols']
 	D[2] = imagedesc['layers']
 
 	if imagename == None:
 	    # no voxels to scale to 8 bits
-    	    ImageVolume = ImageVolume.astype(N.uint8)
+    	    ImageVolume = ImageVolume.astype(NP.uint8)
 	    image = {'data' : ImageVolume, 'mat' : M, 'dim' : D, 'fwhm' : F}
     	    return image
 
 	# 8 bit scale with threshold clip of the volume integrated histogram
 	max = ImageVolume.max()
 	min = ImageVolume.min()
-	ih  = N.zeros(max-min+1, dtype=N.float64);
-	h   = N.zeros(max-min+1, dtype=N.float64);
+	ih  = NP.zeros(max-min+1, dtype=NP.float64);
+	h   = NP.zeros(max-min+1, dtype=NP.float64);
 	if threshold <= 0:
 	    threshold = 0.999
 	elif threshold > 1.0:
@@ -944,9 +968,9 @@ def load_volume(imagedesc, imagename=None, threshold=0.999, debug=0):
 	index  = R.register_image_threshold(ImageVolume, h, ih, threshold)
 	scale  = 255.0 / (index-min)
 	# generate the scaled 8 bit image
-	images = (scale*(ImageVolume.astype(N.float)-min))
+	images = (scale*(ImageVolume.astype(NP.float)-min))
 	images[images>255] = 255 
-	image = {'data' : images.astype(N.uint8), 'mat' : M, 'dim' : D, 'fwhm' : F}
+	image = {'data' : images.astype(NP.uint8), 'mat' : M, 'dim' : D, 'fwhm' : F}
 	if debug == 1:
     	    return image, h, ih, index
         else:
@@ -1017,14 +1041,14 @@ def build_scale_image(image, scale):
 	(layers, rows, cols) = image['data'].shape
 	M = image['mat'] * scale
 	# dimensions 
-	D = N.zeros(3, dtype=N.int32);
+	D = NP.zeros(3, dtype=NP.int32);
 	# Gaussian kernel - fill in with build_fwhm() 
-	F = N.zeros(3, dtype=N.float64);
-	Z = N.zeros(3, dtype=N.float64);
+	F = NP.zeros(3, dtype=NP.float64);
+	Z = NP.zeros(3, dtype=NP.float64);
 	D[0] = rows/scale
 	D[1] = cols/scale
 	D[2] = layers/scale
-    	image2 = N.zeros(D[2]*D[1]*D[0], dtype=N.uint8).reshape(D[2], D[0], D[1]);
+    	image2 = NP.zeros(D[2]*D[1]*D[0], dtype=NP.uint8).reshape(D[2], D[0], D[1]);
 	mode = 1;
 	R.register_volume_resample(image['data'], image2, Z, scale, mode)
 	scaled_image = {'data' : image2, 'mat' : M, 'dim' : D, 'fwhm' : F}
@@ -1146,7 +1170,7 @@ def demo_MRI_coregistration(optimizer_method='powell', histo_method=1, smooth_hi
 	imageF_anat['fwhm'] = build_fwhm(imageF_anat['mat'], imdata['step'])
 
 	# read in the file list of the fMRI data
-	metric_test = N.dtype([('cost', 'f'),
+	metric_test = NP.dtype([('cost', 'f'),
                     	       ('align_cost', 'f'),
                     	       ('rotate', 'f', 6),
                     	       ('align_rotate', 'f', 6)])
@@ -1154,11 +1178,11 @@ def demo_MRI_coregistration(optimizer_method='powell', histo_method=1, smooth_hi
 	fMRIdata = read_fMRI_directory('fMRIData\*.img')
 	fmri_desc = load_fMRI_desc()
 	fmri_series = {}
-	ave_fMRI_volume = N.zeros(fmri_desc['layers']*fmri_desc['rows']*fmri_desc['cols'],
-			  dtype=N.float64).reshape(fmri_desc['layers'], fmri_desc['rows'], fmri_desc['cols'])
+	ave_fMRI_volume = NP.zeros(fmri_desc['layers']*fmri_desc['rows']*fmri_desc['cols'],
+			  dtype=NP.float64).reshape(fmri_desc['layers'], fmri_desc['rows'], fmri_desc['cols'])
 	count = 0
 	number_volumes = len(fMRIdata)
-	measures = N.zeros(number_volumes, dtype=metric_test)
+	measures = NP.zeros(number_volumes, dtype=metric_test)
 	# load and perturb (rotation, translation) the fMRI volumes
 	for i in fMRIdata:
 	    image = load_volume(fmri_desc, i)
@@ -1168,7 +1192,7 @@ def demo_MRI_coregistration(optimizer_method='powell', histo_method=1, smooth_hi
 	        fmri_series[count] = image
 	        count = count + 1
 	    else:
-	        x = N.random.random(6) - 0.5
+	        x = NP.random.random(6) - 0.5
 	        x = 10.0 * x
 	        fmri_series[count] = demo_rotate_fMRI_volume(image, x)
 		measures[count]['rotate'][0:6] = x[0:6]
@@ -1194,15 +1218,15 @@ def demo_MRI_coregistration(optimizer_method='powell', histo_method=1, smooth_hi
 
 
 	# align the volumes and average them for co-registration with the anatomical MRI 
-	ave_fMRI_volume = fmri_series[0]['data'].astype(N.float64)
+	ave_fMRI_volume = fmri_series[0]['data'].astype(NP.float64)
 	for i in range(1, number_volumes):
 	    image = fmri_series[i]
 	    x[0:6] = measures[i]['align_rotate'][0:6]
 	    # overwrite the fMRI volume with the aligned volume
 	    fmri_series[i] = remap_image(image, x, resample='cubic')
-	    ave_fMRI_volume = ave_fMRI_volume + fmri_series[i]['data'].astype(N.float64)
+	    ave_fMRI_volume = ave_fMRI_volume + fmri_series[i]['data'].astype(NP.float64)
 
-	ave_fMRI_volume = (ave_fMRI_volume / float(number_volumes)).astype(N.uint8)
+	ave_fMRI_volume = (ave_fMRI_volume / float(number_volumes)).astype(NP.uint8)
 	ave_fMRI_volume = {'data' : ave_fMRI_volume, 'mat' : imageF['mat'], 
 			   'dim' : imageF['dim'], 'fwhm' : imageF['fwhm']}
 	# register (using normalized mutual information) with the anatomical MRI
