@@ -1,11 +1,25 @@
+#!/usr/bin/env python
+""" Test functions for the sparse.linalg.eigen.lobpcg module
+"""
+
+import numpy
+from scipy.testing import *
+
 from scipy import array, arange, ones, sort, cos, pi, rand, \
      set_printoptions, r_, diag, linalg
-from scipy.sandbox import lobpcg
-from symeig import symeig
-from pylab import plot, show, legend, xlabel, ylabel
+from scipy.sparse.linalg.eigen import lobpcg
+
+try:
+    from symeig import symeig
+except:
+    raise ImportError('lobpcg requires symeig')
+
 set_printoptions(precision=3,linewidth=90)
 
-def check1(n):
+
+
+def ElasticRod(n):
+    # Fixed-free elastic rod
     L = 1.0
     le=L/n
     rho = 7.85e3
@@ -17,7 +31,9 @@ def check1(n):
     B = mass*(diag(r_[4.*ones(n-1),2])+diag(ones(n-1),1)+diag(ones(n-1),-1))
     return A,B
 
-def check2(n):
+def MikotaPair(n):
+    # Mikota pair acts as a nice test since the eigenvalues 
+    # are the squares of the integers n, n=1,2,...
     x = arange(1,n+1)
     B = diag(1./x)
     y = arange(n-1,0,-1)
@@ -25,24 +41,39 @@ def check2(n):
     A = diag(z)-diag(y,-1)-diag(y,1)
     return A,B
 
-n = 100 # Dimension
 
-def test_1and2():
-    A,B = check1(n) # Fixed-free elastic rod
-    A,B = check2(n) # Mikota pair acts as a nice test since the eigenvalues are the squares of the integers n, n=1,2,...
-    
-    m = 20
+def compare_solutions(A,B,m):
+    n = A.shape[0]
+
+    numpy.random.seed(0)
+
     V = rand(n,m)
     X = linalg.orth(V)
     
-    eigs,vecs = lobpcg.lobpcg(X,A,B)
-    eigs = sort(eigs)
+    eigs,vecs = lobpcg.lobpcg(X,A,B,residualTolerance=1e-5, maxIterations=30)
+    eigs.sort()
     
-    w,v=symeig(A,B)
+    w,v = symeig(A,B)
 
-    plot(arange(0,len(w[:m])),w[:m],'bx',label='Results by symeig')
-    plot(arange(0,len(eigs)),eigs,'r+',label='Results by lobpcg')
-    legend()
-    xlabel(r'Eigenvalue $i$')
-    ylabel(r'$\lambda_i$')
-    show()
+    assert_almost_equal(w[:m/2],eigs[:m/2],decimal=2)
+
+    #from pylab import plot, show, legend, xlabel, ylabel
+    #plot(arange(0,len(w[:m])),w[:m],'bx',label='Results by symeig')
+    #plot(arange(0,len(eigs)),eigs,'r+',label='Results by lobpcg')
+    #legend()
+    #xlabel(r'Eigenvalue $i$')
+    #ylabel(r'$\lambda_i$')
+    #show()
+
+
+def test_ElasticRod():
+    A,B = ElasticRod(100) 
+    compare_solutions(A,B,20)
+
+def test_MikotaPair():
+    A,B = MikotaPair(100) 
+    compare_solutions(A,B,20)
+        
+
+if __name__ == "__main__":
+    nose.run(argv=['', __file__])
