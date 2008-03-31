@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-from os.path import join
-import sys
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration

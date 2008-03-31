@@ -138,59 +138,61 @@ def lobpcg( blockVectorX, operatorA,
             residualTolerance = None, maxIterations = 20,
             largest = True, verbosityLevel = 0,
             retLambdaHistory = False, retResidualNormsHistory = False ):
-    """
-    LOBPCG solves symmetric partial eigenproblems using preconditioning.
+    """LOBPCG solves symmetric partial eigenproblems using preconditioning.
 
-    Required input:
+    TODO write in terms of Ax=lambda B x
 
-    blockVectorX - initial approximation to eigenvectors, full or sparse matrix
-    n-by-blockSize
+    Parameters
+    ----------
+    blockVectorX : array_like 
+        initial approximation to eigenvectors shape=(n,blockSize)
+    operatorA : {dense matrix, sparse matrix, LinearOperator}
+        the linear operator of the problem, usually a sparse matrix
+        often called the "stiffness matrix"
 
-    operatorA - the operator of the problem, can be given as a matrix or as an
-    M-file
+    Returns
+    -------
+    (lambda,blockVectorV) : tuple of arrays
+        blockVectorX and lambda are computed blockSize eigenpairs, where
+        blockSize=size(blockVectorX,2) for the initial guess blockVectorX 
+        if it is full rank.
+
+    Other Parameters
+    ----------------
+    operatorB : {dense matrix, sparse matrix, LinearOperator}
+        the right hand side operator in a generalized eigenproblem.
+        by default, operatorB = Identity
+        often called the "mass matrix"
+    operatorT : {dense matrix, sparse matrix, LinearOperator}
+        preconditioner to operatorA; by default operatorT = Identity
+        operatorT should approximate the inverse of operatorA
+    blockVectorY : array_like
+        n-by-sizeY matrix of constraints, sizeY < n
+        The iterations will be performed in the (operatorB-) orthogonal 
+        complement of the column-space of blockVectorY. 
+        blockVectorY must be full rank.
+
+    residualTolerance : scalar
+        solver tolerance. default: residualTolerance=n*sqrt(eps)
+    maxIterations: integer
+        maximum number of iterations
+        by default: maxIterations=min(n,20)
+    largest : boolean
+        when True, solve for the largest eigenvalues, otherwise the smallest
+    verbosityLevel : integer
+        controls solver output.  default: verbosityLevel = 0.
+    retLambdaHistory : boolean
+        whether to return eigenvalue history
+    retResidualNormsHistory : boolean
+        whether to return history of residual norms
 
 
-    Optional input:
-
-    operatorB - the second operator, if solving a generalized eigenproblem; by
-    default, or if empty, operatorB = I.
-
-    operatorT - preconditioner; by default, operatorT = I.
-
-
-    Optional constraints input:
-
-    blockVectorY - n-by-sizeY matrix of constraints, sizeY < n.  The iterations
-    will be performed in the (operatorB-) orthogonal complement of the
-    column-space of blockVectorY. blockVectorY must be full rank.
-
-
-    Optional scalar input parameters:
-
-    residualTolerance - tolerance, by default, residualTolerance=n*sqrt(eps)
-
-    maxIterations - max number of iterations, by default, maxIterations =
-    min(n,20)
-
-    largest - when true, solve for the largest eigenvalues, otherwise for the
-    smallest
-
-    verbosityLevel - by default, verbosityLevel = 0.
-
-    retLambdaHistory - return eigenvalue history
-
-    retResidualNormsHistory - return history of residual norms
-
-    Output:
-
-    blockVectorX and lambda are computed blockSize eigenpairs, where
-    blockSize=size(blockVectorX,2) for the initial guess blockVectorX if it is
-    full rank.
-
+    Notes
+    -----
     If both retLambdaHistory and retResidualNormsHistory are True, the
-    return tuple has the flollowing order:
+    return tuple has the following format:
+        (lambda, blockVectorV, lambda history, residual norms history)
 
-    lambda, blockVectorX, lambda history, residual norms history
     """
     failureFlag = True
 
