@@ -140,6 +140,7 @@ static PyObject *Segmenter_GetBlobs(PyObject *self, PyObject *args)
     int num;
     int nd;
     int type;
+    int mask;
     npy_intp *dims;
     unsigned short *fP1;
     unsigned short *fP2;
@@ -147,7 +148,7 @@ static PyObject *Segmenter_GetBlobs(PyObject *self, PyObject *args)
     PyObject *iArray = NULL;
     PyObject *eArray = NULL;
 
-    if(!PyArg_ParseTuple(args, "OO", &iArray, &eArray))
+    if(!PyArg_ParseTuple(args, "OOi", &iArray, &eArray, &mask))
 	    goto exit;
 
     fP1  = (unsigned short *)PyArray_DATA(iArray);
@@ -161,8 +162,15 @@ static PyObject *Segmenter_GetBlobs(PyObject *self, PyObject *args)
 	    goto exit;
 
     
-    if(!NI_GetBlobs(num, (int)dims[0], (int)dims[1], fP1, fP2, &groups))
+    if(nd == 2){ 
+        if(!NI_GetBlobs2D(num, (int)dims[0], (int)dims[1], fP1, fP2, &groups, mask))
 	    goto exit;
+    }
+    else if(nd == 3){ 
+        if(!NI_GetBlobs3D(num, (int)dims[0], (int)dims[1], (int)dims[2], fP1, fP2, 
+			  &groups, mask))
+	    goto exit;
+    }
 
 exit:
 
@@ -206,6 +214,9 @@ static PyObject *Segmenter_GetBlobRegions(PyObject *self, PyObject *args)
     // the object descriptor array that was allocated from numpy
     objNumber = PyArray_DIMS(nArray); // this is the number of labels in the edge image
     myData = (objStruct*)PyArray_DATA(nArray);
+
+    /* need to pass in 2D/3D flag and mask. NI_GetBlobRegions will call
+     * 2D or 3D blob_extraction  */
 
     if(!NI_GetBlobRegions((int)dims[0], (int)dims[1], (int)objNumber[0], fP1, myData))
 	    goto exit;
