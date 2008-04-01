@@ -463,35 +463,56 @@ def get_blob_regions(labeled_image, groups, dust=16):
     return ROIList[ROIList['Area']>dust]
 
 
-def get_blobs(binary_edge_image):
+def get_blobs(binary_edge_image, mask=1):
     """
 
     labeled_edge_image, groups = get_blobs(binary_edge_image)
 
-    get the total number of blobs in a 2D image and convert the binary
-    image to labelled regions
+    get the total number of blobs in a 2D or 3D image and convert the 
+    binary image (or volume) to labelled regions
 
     Parameters 
     ----------
 
     binary_edge_image : {nd_array}
-        an binary image
+        an binary image/volume
+
+    mask : {int}
+        the size of the 2D or 3D connectivity mask. For 2D this is 1, 4 or 8.
+	For 3D this is 1, 6, 14 or 28. Mask = 1 is ANY connection in 3x3
+	or 3x3x3 mask for 2D or 3D, respectively.
 
     Returns 
     ----------
 
     label_image : {nd_array}
-        an image with labeled regions from get_blobs() method
+        an image/volume with labeled regions from get_blobs() method
 
     groups : {int}
         number of blobs in image determined by get_blobs() method
 
     """
-    [rows, cols] = binary_edge_image.shape
-    labeled_edge_image = NP.zeros(rows*cols, dtype=NP.uint16).reshape(rows, cols)
-    groups = S.get_blobs(binary_edge_image, labeled_edge_image)
 
-    return labeled_edge_image, groups
+    dimensions = binary_edge_image.ndim
+    if dimensions == 2:  
+        if mask != 1 and mask != 4 and mask != 8:
+	    mask = 1 
+        [rows, cols] = binary_edge_image.shape
+        labeled_edge_image_or_vol = NP.zeros(rows*cols, dtype=NP.uint16).reshape(rows, cols)
+    elif dimensions == 3:
+        if mask != 1 and mask != 6 and mask != 14 and mask != 28:
+	    mask = 1 
+        [layers, rows, cols] = binary_edge_image.shape
+        labeled_edge_image_or_vol = NP.zeros(layers*rows*cols, dtype=NP.uint16).reshape(layers, rows, cols)
+    else:
+        labeled_edge_image_or_vol = None
+	groups = 0
+        return labeled_edge_image_or_vol, groups
+
+
+    groups = S.get_blobs(binary_edge_image, labeled_edge_image_or_vol, mask)
+
+    return labeled_edge_image_or_vol, groups
 
 
 def sobel_edges(sobel_edge_image, sobel_stats, mode=1, sobel_threshold=0.3):
