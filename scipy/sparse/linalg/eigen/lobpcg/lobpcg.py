@@ -251,7 +251,7 @@ def lobpcg( blockVectorX, A,
             # gramYBY is a Cholesky factor from now on...
             gramYBY = la.cho_factor( gramYBY )
         except:
-            raise ValueError('cannot handle linear dependent constraints')
+            raise ValueError('cannot handle linearly dependent constraints')
 
         applyConstraints( blockVectorX, gramYBY, blockVectorBY, blockVectorY )
 
@@ -265,14 +265,15 @@ def lobpcg( blockVectorX, A,
     gramXAX = sc.dot( blockVectorX.T, blockVectorAX )
     # gramXBX is X^T * X.
     gramXBX = sc.dot( blockVectorX.T, blockVectorX )
+
     _lambda, eigBlockVector = symeig( gramXAX )
     ii = nm.argsort( _lambda )[:sizeX]
     if largest:
         ii = ii[::-1]
     _lambda = _lambda[ii]
+
     eigBlockVector = nm.asarray( eigBlockVector[:,ii] )
-#    pause()
-    blockVectorX = sc.dot( blockVectorX, eigBlockVector )
+    blockVectorX  = sc.dot( blockVectorX,  eigBlockVector )
     blockVectorAX = sc.dot( blockVectorAX, eigBlockVector )
     if B is not None:
         blockVectorBX = sc.dot( blockVectorBX, eigBlockVector )
@@ -285,7 +286,7 @@ def lobpcg( blockVectorX, A,
     residualNormsHistory = []
 
     previousBlockSize = sizeX
-    ident = nm.eye( sizeX, dtype = A.dtype )
+    ident  = nm.eye( sizeX, dtype = A.dtype )
     ident0 = nm.eye( sizeX, dtype = A.dtype )
 
     ##
@@ -369,22 +370,19 @@ def lobpcg( blockVectorX, A,
             xbp = sc.dot( blockVectorX.T,       activeBlockVectorBP )
             wbp = sc.dot( activeBlockVectorR.T, activeBlockVectorBP )
 
-            gramA = nm.bmat( [[nm.diag( _lambda ), xaw, xap],
-                              [xaw.T, waw, wap],
-                              [xap.T, wap.T, pap]] )
-            try:
-                gramB = nm.bmat( [[ident0,   xbw,   xbp],
-                                  [ xbw.T, ident,   wbp],
-                                  [ xbp.T, wbp.T, ident]] )
-            except:
-                print ident
-                print xbw
-                raise
+            gramA = nm.bmat( [[nm.diag( _lambda ),   xaw,  xap],
+                              [             xaw.T,   waw,  wap],
+                              [             xap.T, wap.T,  pap]] )
+
+            gramB = nm.bmat( [[ident0,    xbw,    xbp],
+                              [ xbw.T,  ident,    wbp],
+                              [ xbp.T,  wbp.T,  ident]] )
         else:
-            gramA = nm.bmat( [[nm.diag( _lambda ), xaw],
-                              [xaw.T, waw]] )
-            gramB = nm.bmat( [[ident0, xbw],
-                              [xbw.T, ident0]] )
+            gramA = nm.bmat( [[nm.diag( _lambda ),  xaw],
+                              [             xaw.T,  waw]] )
+            gramB = nm.bmat( [[ident0,    xbw],
+                              [ xbw.T, ident0]] )
+
         try:
             assert nm.allclose( gramA.T, gramA )
         except:
@@ -427,6 +425,7 @@ def lobpcg( blockVectorX, A,
         if verbosityLevel > 10:
             print eigBlockVector
             pause()
+
         ##
         # Compute Ritz vectors.
         if iterationNumber > 0:
@@ -434,22 +433,20 @@ def lobpcg( blockVectorX, A,
             eigBlockVectorR = eigBlockVector[sizeX:sizeX+currentBlockSize]
             eigBlockVectorP = eigBlockVector[sizeX+currentBlockSize:]
 
-            pp = sc.dot( activeBlockVectorR, eigBlockVectorR )\
-                 + sc.dot( activeBlockVectorP, eigBlockVectorP )
+            pp  = sc.dot( activeBlockVectorR, eigBlockVectorR )
+            pp += sc.dot( activeBlockVectorP, eigBlockVectorP )
 
-            app = sc.dot( activeBlockVectorAR, eigBlockVectorR )\
-                  + sc.dot( activeBlockVectorAP, eigBlockVectorP )
+            app  = sc.dot( activeBlockVectorAR, eigBlockVectorR )
+            app += sc.dot( activeBlockVectorAP, eigBlockVectorP )
 
-            bpp = sc.dot( activeBlockVectorBR, eigBlockVectorR )\
-                  + sc.dot( activeBlockVectorBP, eigBlockVectorP )
+            bpp  = sc.dot( activeBlockVectorBR, eigBlockVectorR )
+            bpp += sc.dot( activeBlockVectorBP, eigBlockVectorP )
         else:
             eigBlockVectorX = eigBlockVector[:sizeX]
             eigBlockVectorR = eigBlockVector[sizeX:]
 
-            pp = sc.dot( activeBlockVectorR, eigBlockVectorR )
-
+            pp  = sc.dot( activeBlockVectorR,  eigBlockVectorR )
             app = sc.dot( activeBlockVectorAR, eigBlockVectorR )
-
             bpp = sc.dot( activeBlockVectorBR, eigBlockVectorR )
 
         if verbosityLevel > 10:
@@ -457,9 +454,8 @@ def lobpcg( blockVectorX, A,
             print app
             print bpp
             pause()
-#        print pp.shape, app.shape, bpp.shape
 
-        blockVectorX = sc.dot( blockVectorX, eigBlockVectorX ) + pp
+        blockVectorX  = sc.dot( blockVectorX, eigBlockVectorX )  + pp
         blockVectorAX = sc.dot( blockVectorAX, eigBlockVectorX ) + app
         blockVectorBX = sc.dot( blockVectorBX, eigBlockVectorX ) + bpp
 
