@@ -200,7 +200,288 @@ int NI_SobelEdge(int samples, int rows, int cols, double *edgeImage, unsigned sh
 
 }
 
-int NI_GetBlobs(int samples, int rows, int cols, unsigned short *edges, unsigned short *connectedEdges, int *groups){ 
+int NI_GetBlobs3D(int samples, int layers, int rows, int cols, unsigned short *edges,
+	       	   unsigned short *connectedEdges, int *groups, int mask){ 
+
+	int  i, j, k, l, m;
+	int  lOffset, rOffset, Label;
+	int  lOffsetP, lOffsetN;
+	int  rOffsetP, rOffsetN;
+	int  Classes[4096];
+	int  dwImageSize, ptr;
+	int  HighZ, HighY, HighX, LowZ, LowX, LowY;
+	bool NewLabel;
+	bool Change;
+	bool connected;
+	int  T[27];
+	int  *ccompImage;
+	int  layerSize;
+	int  TargetArea;
+	int  count;
+	int  status;
+
+	layerSize   = rows * cols;
+	dwImageSize = layers * rows * cols;
+	ccompImage  = calloc(dwImageSize, sizeof(int ));
+
+	Label = 1;
+	for(i = 1; i < layers-1; ++i){
+	    lOffset  = i * layerSize;
+	    lOffsetP = lOffset+layerSize;
+	    lOffsetN = lOffset-layerSize;
+	    for(j = 1; j < rows-1; ++j){
+		rOffset = j * cols;
+		rOffsetP = rOffset+cols;
+		rOffsetN = rOffset-cols;
+		for(k = 1; k < cols-1; ++k){
+		    if(edges[lOffset+rOffset+k]){
+			/*
+			 check 3x3x3 connectivity
+			*/
+
+			T[0]  = edges[lOffset+rOffset+k];
+			T[1]  = edges[lOffset+rOffset+k+1];
+			T[2]  = edges[lOffset+rOffsetN+k+1];
+			T[3]  = edges[lOffset+rOffsetN+k];
+			T[4]  = edges[lOffset+rOffsetN+k-1];
+			T[5]  = edges[lOffset+rOffset+k-1];
+			T[6]  = edges[lOffset+rOffsetP+k-1];
+			T[7]  = edges[lOffset+rOffsetP+k];
+			T[8]  = edges[lOffset+rOffsetP+k+1];
+
+			T[9]  = edges[lOffsetN+rOffset+k];
+			T[10] = edges[lOffsetN+rOffset+k+1];
+			T[11] = edges[lOffsetN+rOffsetN+k+1];
+			T[12] = edges[lOffsetN+rOffsetN+k];
+			T[13] = edges[lOffsetN+rOffsetN+k-1];
+			T[14] = edges[lOffsetN+rOffset+k-1];
+			T[15] = edges[lOffsetN+rOffsetP+k-1];
+			T[16] = edges[lOffsetN+rOffsetP+k];
+			T[17] = edges[lOffsetN+rOffsetP+k+1];
+
+			T[18] = edges[lOffsetP+rOffset+k];
+			T[19] = edges[lOffsetP+rOffset+k+1];
+			T[20] = edges[lOffsetP+rOffsetN+k+1];
+			T[21] = edges[lOffsetP+rOffsetN+k];
+			T[22] = edges[lOffsetP+rOffsetN+k-1];
+			T[23] = edges[lOffsetP+rOffset+k-1];
+			T[24] = edges[lOffsetP+rOffsetP+k-1];
+			T[25] = edges[lOffsetP+rOffsetP+k];
+			T[26] = edges[lOffsetP+rOffsetP+k+1];
+
+			connected = FALSE;
+			if(mask == 1){
+			    count = 0;
+			    for(l = 1; l < 27; ++l){
+				count += T[l];
+			    }
+			    if(count){
+				connected = TRUE;
+			    }
+			}
+			else if(mask == 6){
+			    count = (T[2] + T[4] + T[6] + T[8] + T[9] + T[18]);
+			    if(count == 6){
+				connected = TRUE;
+			    }
+			}
+			else if(mask == 14){
+			    count = (T[2] + T[4] + T[6] + T[8] + T[9] + T[18] + T[11] +
+				     T[13] + T[15] + T[17] + T[20] + T[22] + T[24] + T[26]);
+			    if(count == 14){
+				connected = TRUE;
+			    }
+			}
+			else if(mask == 26){
+			    count = 0;
+			    for(l = 1; l < 27; ++l){
+				count += T[l];
+			    }
+			    if(count == 26){
+				connected = TRUE;
+			    }
+			}
+			if(connected){
+			    ccompImage[lOffset+rOffset+k] = Label++;
+			}
+		    }
+		}
+	    }
+	}
+
+
+	while(1){
+	Change = FALSE;
+	    /*
+	    // TOP-DOWN Pass for labeling
+	    */
+	    for(i = 1; i < layers-1; ++i){
+		lOffset  = i * layerSize;
+		lOffsetP = lOffset+layerSize;
+		lOffsetN = lOffset-layerSize;
+		for(j = 1; j < rows-1; ++j){
+		    rOffset = j * cols;
+		    rOffsetP = rOffset+cols;
+		    rOffsetN = rOffset-cols;
+		    for(k = 1; k < cols-1; ++k){
+			if(ccompImage[lOffset+rOffset+k] != 0){
+
+			    T[0]  = ccompImage[lOffset+rOffset+k];
+			    T[1]  = ccompImage[lOffset+rOffset+k+1];
+			    T[2]  = ccompImage[lOffset+rOffsetN+k+1];
+			    T[3]  = ccompImage[lOffset+rOffsetN+k];
+			    T[4]  = ccompImage[lOffset+rOffsetN+k-1];
+			    T[5]  = ccompImage[lOffset+rOffset+k-1];
+			    T[6]  = ccompImage[lOffset+rOffsetP+k-1];
+			    T[7]  = ccompImage[lOffset+rOffsetP+k];
+			    T[8]  = ccompImage[lOffset+rOffsetP+k+1];
+
+			    T[9]  = ccompImage[lOffsetN+rOffset+k];
+			    T[10] = ccompImage[lOffsetN+rOffset+k+1];
+			    T[11] = ccompImage[lOffsetN+rOffsetN+k+1];
+			    T[12] = ccompImage[lOffsetN+rOffsetN+k];
+			    T[13] = ccompImage[lOffsetN+rOffsetN+k-1];
+			    T[14] = ccompImage[lOffsetN+rOffset+k-1];
+			    T[15] = ccompImage[lOffsetN+rOffsetP+k-1];
+			    T[16] = ccompImage[lOffsetN+rOffsetP+k];
+			    T[17] = ccompImage[lOffsetN+rOffsetP+k+1];
+
+			    T[18] = ccompImage[lOffsetP+rOffset+k];
+			    T[19] = ccompImage[lOffsetP+rOffset+k+1];
+			    T[20] = ccompImage[lOffsetP+rOffsetN+k+1];
+			    T[21] = ccompImage[lOffsetP+rOffsetN+k];
+			    T[22] = ccompImage[lOffsetP+rOffsetN+k-1];
+			    T[23] = ccompImage[lOffsetP+rOffset+k-1];
+			    T[24] = ccompImage[lOffsetP+rOffsetP+k-1];
+			    T[25] = ccompImage[lOffsetP+rOffsetP+k];
+			    T[26] = ccompImage[lOffsetP+rOffsetP+k+1];
+						
+			    m = T[0];
+			    for(l = 1; l < 27; ++l){
+				if(T[l] != 0){
+				    if(T[l] < m) m = T[l];
+			        }
+			    }
+			    if(m != ccompImage[lOffset+rOffset+k]){
+				Change = TRUE;
+				ccompImage[lOffset+rOffset+k] = m;
+			    }
+			}
+		    }
+		}
+	    }
+	    /*
+	    // BOTTOM-UP Pass for labeling
+	    */
+	    for(i = layers-1; i > 0; --i){
+		lOffset  = i * layerSize;
+		lOffsetP = lOffset+layerSize;
+		lOffsetN = lOffset-layerSize;
+		for(j = rows-1; j > 0; --j){
+		    rOffset = j * cols;
+		    rOffsetP = rOffset+cols;
+		    rOffsetN = rOffset-cols;
+		    for(k = cols-1; k > 0; --k){
+			if(ccompImage[lOffset+rOffset+k] != 0){
+
+			    T[0]  = ccompImage[lOffset+rOffset+k];
+			    T[1]  = ccompImage[lOffset+rOffset+k+1];
+			    T[2]  = ccompImage[lOffset+rOffsetN+k+1];
+			    T[3]  = ccompImage[lOffset+rOffsetN+k];
+			    T[4]  = ccompImage[lOffset+rOffsetN+k-1];
+			    T[5]  = ccompImage[lOffset+rOffset+k-1];
+			    T[6]  = ccompImage[lOffset+rOffsetP+k-1];
+			    T[7]  = ccompImage[lOffset+rOffsetP+k];
+			    T[8]  = ccompImage[lOffset+rOffsetP+k+1];
+
+			    T[9]  = ccompImage[lOffsetN+rOffset+k];
+			    T[10] = ccompImage[lOffsetN+rOffset+k+1];
+			    T[11] = ccompImage[lOffsetN+rOffsetN+k+1];
+			    T[12] = ccompImage[lOffsetN+rOffsetN+k];
+			    T[13] = ccompImage[lOffsetN+rOffsetN+k-1];
+			    T[14] = ccompImage[lOffsetN+rOffset+k-1];
+			    T[15] = ccompImage[lOffsetN+rOffsetP+k-1];
+			    T[16] = ccompImage[lOffsetN+rOffsetP+k];
+			    T[17] = ccompImage[lOffsetN+rOffsetP+k+1];
+
+			    T[18] = ccompImage[lOffsetP+rOffset+k];
+			    T[19] = ccompImage[lOffsetP+rOffset+k+1];
+			    T[20] = ccompImage[lOffsetP+rOffsetN+k+1];
+			    T[21] = ccompImage[lOffsetP+rOffsetN+k];
+			    T[22] = ccompImage[lOffsetP+rOffsetN+k-1];
+			    T[23] = ccompImage[lOffsetP+rOffset+k-1];
+			    T[24] = ccompImage[lOffsetP+rOffsetP+k-1];
+			    T[25] = ccompImage[lOffsetP+rOffsetP+k];
+			    T[26] = ccompImage[lOffsetP+rOffsetP+k+1];
+						
+			    m = T[0];
+			    for(l = 1; l < 27; ++l){
+				if(T[l] != 0){
+				    if(T[l] < m) m = T[l];
+			        }
+			    }
+			    if(m != ccompImage[lOffset+rOffset+k]){
+				Change = TRUE;
+				ccompImage[lOffset+rOffset+k] = m;
+			    }
+			}
+		    }
+		}
+	    }
+
+	    if(!Change) break;
+
+	}   /* end while loop  */
+
+	Label      = 1;
+	Classes[0] = 0;
+	ptr        = 0;
+	for(i = 0; i < layers; ++i){
+	    for(j = 0; j < rows; ++j){
+		for(k = 0; k < cols; ++k){
+		    m =	ccompImage[ptr];
+		    ++ptr;
+		    if(m > 0){
+			NewLabel = TRUE;
+			for(l = 1; l < Label; ++l){
+			    if(Classes[l] == m) NewLabel = FALSE;
+			}
+			if(NewLabel){
+			    Classes[Label++] = m;
+			    if(Label > 4000){
+				return 0;
+			    }
+			}
+		    }
+		}
+	    }
+	}
+
+	ptr = 0;
+	for(i = 0; i < layers; ++i){
+	    for(j = 0; j < rows; ++j){
+		for(k = 0; k < cols; ++k){
+		    m =	ccompImage[ptr];
+		    for(l = 1; l < Label; ++l){
+			if(Classes[l] == m){
+			    connectedEdges[ptr] = l;
+			    break;
+			}
+		    }
+		    ++ptr;
+		}
+	    }
+	}
+
+	free(ccompImage);
+
+	status = 1;
+	return(status);
+
+}
+
+int NI_GetBlobs2D(int samples, int rows, int cols, unsigned short *edges, unsigned short *connectedEdges,
+	       	  int *groups, int mask){ 
 
 	int            i, j, k, l, m;
 	int            offset;
@@ -209,10 +490,12 @@ int NI_GetBlobs(int samples, int rows, int cols, unsigned short *edges, unsigned
 	int            Classes[4096];
 	bool           NewLabel;
 	bool           Change;
+	bool           connected;
+	int            count;
 	unsigned short T[12];
 
 	/*
-	// connected components labeling. pixels touch within 3x3 mask for edge connectedness. 
+	// connected components labeling. pixels with 1, 4 or 8 connectedness. 
 	*/
 	Label  = 1;
 	offset = 0;
@@ -220,7 +503,34 @@ int NI_GetBlobs(int samples, int rows, int cols, unsigned short *edges, unsigned
 	    for(j = 0; j < cols; ++j){
 		connectedEdges[offset+j] = 0; 
 		if(edges[offset+j] == 1){
-		    connectedEdges[offset+j] = Label++; 
+		    connected = FALSE;
+		    if(mask == 1){
+			count = 0;
+			for(l = 1; l < 9; ++l){
+			    count += T[l];
+			}
+			if(count){
+			    connected = TRUE;
+			}
+		    }
+		    else if(mask == 4){
+			count = (T[2] + T[4] + T[6] + T[8]);
+			if(count == 4){
+			    connected = TRUE;
+			}
+		    }
+		    else if(mask == 8){
+			count = 0;
+			for(l = 1; l < 9; ++l){
+			    count += T[l];
+			}
+			if(count == 8){
+			    connected = TRUE;
+			}
+		    }
+		    if(connected){
+		        connectedEdges[offset+j] = Label++; 
+		    }
 		}
 	    }
 	    offset += cols;
