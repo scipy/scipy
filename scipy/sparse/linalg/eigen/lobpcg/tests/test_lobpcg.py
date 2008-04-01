@@ -7,12 +7,9 @@ from scipy.testing import *
 
 from scipy import array, arange, ones, sort, cos, pi, rand, \
      set_printoptions, r_, diag, linalg
+from scipy.linalg import eig     
 from scipy.sparse.linalg.eigen import lobpcg
 
-try:
-    from symeig import symeig
-except:
-    raise ImportError('lobpcg requires symeig')
 
 set_printoptions(precision=3,linewidth=90)
 
@@ -53,7 +50,9 @@ def compare_solutions(A,B,m):
     eigs,vecs = lobpcg.lobpcg(X,A,B,residualTolerance=1e-5, maxIterations=30)
     eigs.sort()
     
-    w,v = symeig(A,B)
+    #w,v = symeig(A,B)
+    w,v = eig(A,b=B)
+    w.sort()
 
     assert_almost_equal(w[:m/2],eigs[:m/2],decimal=2)
 
@@ -65,6 +64,11 @@ def compare_solutions(A,B,m):
     #ylabel(r'$\lambda_i$')
     #show()
 
+def test_Small():
+    A,B = ElasticRod(10) 
+    compare_solutions(A,B,10)
+    A,B = MikotaPair(10) 
+    compare_solutions(A,B,10)
 
 def test_ElasticRod():
     A,B = ElasticRod(100) 

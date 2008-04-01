@@ -13,13 +13,20 @@ moment, as the symmetric eigenvalue solvers were not available in scipy.
 Examples in tests directory contributed by Nils Wagner.
 """
 
+import types
+from warnings import warn
+
 import numpy as nm
 import scipy as sc
 import scipy.sparse as sp
 import scipy.linalg as la
 import scipy.io as io
-import types
-from symeig import symeig
+from scipy.sparse.linalg import aslinearoperator, LinearOperator
+
+try:
+    from symeig import symeig
+except:
+    raise ImportError('lobpcg requires symeig')
 
 def pause():
     raw_input()
@@ -41,77 +48,46 @@ def as2d( ar ):
         aux.shape = (ar.shape[0], 1)
         return aux
 
-##
-# 05.04.2007, c
-# 10.04.2007
-# 24.05.2007
 def makeOperator( operatorInput, expectedShape ):
+    """Internal. Takes a dense numpy array or a sparse matrix or 
+    a function and makes an operator performing matrix * blockvector 
+    products.
+
+    Example
+    -------
+
+    A = makeOperator( arrayA, (n, n) )
+    vectorB = A( vectorX )
     """
-    Internal. Takes a dense numpy array or a sparse matrix or a function and
-    makes an operator performing matrix * vector product.
+    if operatorInput is None:
+        def ident(x):
+            return x
+        operator = LinearOperator(expectedShape, ident, matmat=ident)
+    else:
+        operator = aslinearoperator(operatorInput)
 
-    :Example:
-
-    operatorA = makeOperator( arrayA, (n, n) )
-    vectorB = operatorA( vectorX )
-    """
-    class Operator( object ):
-        def __call__( self, vec ):
-            return self.call( vec )
-        def asMatrix( self ):
-            return self._asMatrix( self )
-
-    operator = Operator()
-    operator.obj = operatorInput
-
-    if hasattr( operatorInput, 'shape' ):
-        operator.shape = operatorInput.shape
-        operator.dtype = operatorInput.dtype
-        if operator.shape != expectedShape:
-            raise ValueError, 'bad operator shape %s != %s' \
-                  % (expectedShape, operator.shape)
-        if sp.issparse( operatorInput ):
-            def call( vec ):
-                out = operator.obj * vec
-                if sp.issparse( out ):
-                    out = out.toarray()
-                return as2d( out )
-            def asMatrix( op ):
-                return op.obj.toarray()
-        else:
-            def call( vec ):
-                return as2d( nm.asarray( sc.dot( operator.obj, vec ) ) )
-            def asMatrix( op ):
-                return op.obj
-        operator.call = call
-        operator._asMatrix = asMatrix
-        operator.kind = 'matrix'
-
-    elif isinstance( operatorInput, types.FunctionType ) or \
-         isinstance( operatorInput, types.BuiltinFunctionType ):
-        operator.shape = expectedShape
-        operator.dtype = nm.float64
-        operator.call = operatorInput
-        operator.kind = 'function'
+    if operator.shape != expectedShape:
+        raise ValueError('operator has invalid shape')
+    
+    operator.__call__ = operator.matmat
 
     return operator
 
-##
-# 05.04.2007, c
+
+
 def applyConstraints( blockVectorV, factYBY, blockVectorBY, blockVectorY ):
     """Internal. Changes blockVectorV in place."""
     gramYBV = sc.dot( blockVectorBY.T, blockVectorV )
     tmp = la.cho_solve( factYBY, gramYBV )
     blockVectorV -= sc.dot( blockVectorY, tmp )
 
-##
-# 05.04.2007, c
-def b_orthonormalize( operatorB, blockVectorV,
+
+def b_orthonormalize( B, blockVectorV,
                       blockVectorBV = None, retInvR = False ):
     """Internal."""
     if blockVectorBV is None:
-        if operatorB is not None:
-            blockVectorBV = operatorB( blockVectorV )
+        if B is not None:
+            blockVectorBV = B( blockVectorV )
         else:
             blockVectorBV = blockVectorV # Shared data!!!
     gramVBV = sc.dot( blockVectorV.T, blockVectorBV )
@@ -119,7 +95,7 @@ def b_orthonormalize( operatorB, blockVectorV,
     la.inv( gramVBV, overwrite_a = True )
     # gramVBV is now R^{-1}.
     blockVectorV = sc.dot( blockVectorV, gramVBV )
-    if operatorB is not None:
+    if B is not None:
         blockVectorBV = sc.dot( blockVectorBV, gramVBV )
 
     if retInvR:
@@ -127,18 +103,15 @@ def b_orthonormalize( operatorB, blockVectorV,
     else:
         return blockVectorV, blockVectorBV
 
-##
-# 04.04.2007, c
-# 05.04.2007
-# 06.04.2007
-# 10.04.2007
-# 24.05.2007
-def lobpcg( blockVectorX, operatorA,
-            operatorB = None, operatorT = None, blockVectorY = None,
+def lobpcg( blockVectorX, A,
+            B = None, M = None, blockVectorY = None,
             residualTolerance = None, maxIterations = 20,
             largest = True, verbosityLevel = 0,
             retLambdaHistory = False, retResidualNormsHistory = False ):
-    """LOBPCG solves symmetric partial eigenproblems using preconditioning.
+    """Solve symmetric partial eigenproblems with optional preconditioning
+
+    This function implements the Locally Optimal Block Preconditioned 
+    Conjugate Gradient Method (LOBPCG).
 
     TODO write in terms of Ax=lambda B x
 
@@ -146,7 +119,7 @@ def lobpcg( blockVectorX, operatorA,
     ----------
     blockVectorX : array_like 
         initial approximation to eigenvectors shape=(n,blockSize)
-    operatorA : {dense matrix, sparse matrix, LinearOperator}
+    A : {dense matrix, sparse matrix, LinearOperator}
         the linear operator of the problem, usually a sparse matrix
         often called the "stiffness matrix"
 
@@ -157,21 +130,22 @@ def lobpcg( blockVectorX, operatorA,
         blockSize=size(blockVectorX,2) for the initial guess blockVectorX 
         if it is full rank.
 
-    Other Parameters
-    ----------------
-    operatorB : {dense matrix, sparse matrix, LinearOperator}
+    Optional Parameters
+    -------------------
+    B : {dense matrix, sparse matrix, LinearOperator}
         the right hand side operator in a generalized eigenproblem.
-        by default, operatorB = Identity
+        by default, B = Identity
         often called the "mass matrix"
-    operatorT : {dense matrix, sparse matrix, LinearOperator}
-        preconditioner to operatorA; by default operatorT = Identity
-        operatorT should approximate the inverse of operatorA
+    M : {dense matrix, sparse matrix, LinearOperator}
+        preconditioner to A; by default M = Identity
+        M should approximate the inverse of A
     blockVectorY : array_like
         n-by-sizeY matrix of constraints, sizeY < n
-        The iterations will be performed in the (operatorB-) orthogonal 
-        complement of the column-space of blockVectorY. 
-        blockVectorY must be full rank.
+        The iterations will be performed in the B-orthogonal complement 
+        of the column-space of blockVectorY. blockVectorY must be full rank.
 
+    Other Parameters
+    ----------------
     residualTolerance : scalar
         solver tolerance. default: residualTolerance=n*sqrt(eps)
     maxIterations: integer
@@ -202,58 +176,39 @@ def lobpcg( blockVectorX, operatorA,
         sizeY = 0
 
     # Block size.
+    if len(blockVectorX.shape) != 2:
+        raise ValueError('expected rank-2 array for argument blockVectorX')
+
     n, sizeX = blockVectorX.shape
     if sizeX > n:
-        raise ValueError,\
-              'the first input argument blockVectorX must be tall, not fat' +\
-              ' (%d, %d)' % blockVectorX.shape
+        raise ValueError('blockVectorX column dimension exceeds the row dimension')
 
-    if n < 1:
-        raise ValueError,\
-              'the matrix size is wrong (%d)' % n
-
-    operatorA = makeOperator( operatorA, (n, n) )
-
-    if operatorB is not None:
-        operatorB = makeOperator( operatorB, (n, n) )
+    A = makeOperator(A, (n,n))
+    B = makeOperator(B, (n,n))
+    M = makeOperator(M, (n,n))
 
     if (n - sizeY) < (5 * sizeX):
-        print 'The problem size is too small, compared to the block size,  for LOBPCG to run.'
-        print 'Trying to use symeig instead, without preconditioning.'
+        #warn('The problem size is small compared to the block size.' \
+        #        ' Using dense eigensolver instead of LOBPCG.')
+
         if blockVectorY is not None:
-            print 'symeig does not support constraints'
-            raise ValueError
+            raise NotImplementedError('symeig does not support constraints')
 
         if largest:
             lohi = (n - sizeX, n)
         else:
             lohi = (1, sizeX)
 
-        if operatorA.kind == 'function':
-            print 'symeig does not support matrix A given by function'
+        A_dense = A(nm.eye(n))
 
-        if operatorB is not None:
-            if operatorB.kind == 'function':
-                print 'symeig does not support matrix B given by function'
-
-            _lambda, eigBlockVector = symeig( operatorA.asMatrix(),
-                                              operatorB.asMatrix(),
-                                              range = lohi )
+        if B is not None:
+            B_dense = B(nm.eye(n))
+            _lambda, eigBlockVector = symeig(A_dense, B_dense, range=lohi )
         else:
-            _lambda, eigBlockVector = symeig( operatorA.asMatrix(),
-                                              range = lohi )
+            _lambda, eigBlockVector = symeig(A_dense, range=lohi )
+
         return _lambda, eigBlockVector
 
-    if operatorT is not None:
-        operatorT = makeOperator( operatorT, (n, n) )
-##     if n != operatorA.shape[0]:
-##         aux = 'The size (%d, %d) of operatorA is not the same as\n'+\
-##               '%d - the number of rows of blockVectorX' % operatorA.shape + (n,)
-##         raise ValueError, aux
-
-##     if operatorA.shape[0] != operatorA.shape[1]:
-##         raise ValueError, 'operatorA must be a square matrix (%d, %d)' %\
-##               operatorA.shape
 
     if residualTolerance is None:
         residualTolerance = nm.sqrt( 1e-15 ) * n
@@ -262,12 +217,12 @@ def lobpcg( blockVectorX, operatorA,
 
     if verbosityLevel:
         aux = "Solving "
-        if operatorB is None:
+        if B is None:
             aux += "standard"
         else:
             aux += "generalized"
         aux += " eigenvalue problem with"
-        if operatorT is None:
+        if M is None:
             aux += "out"
         aux += " preconditioning\n\n"
         aux += "matrix size %d\n" % n
@@ -285,8 +240,8 @@ def lobpcg( blockVectorX, operatorA,
     # Apply constraints to X.
     if blockVectorY is not None:
 
-        if operatorB is not None:
-            blockVectorBY = operatorB( blockVectorY )
+        if B is not None:
+            blockVectorBY = B( blockVectorY )
         else:
             blockVectorBY = blockVectorY
 
@@ -302,11 +257,11 @@ def lobpcg( blockVectorX, operatorA,
 
     ##
     # B-orthonormalize X.
-    blockVectorX, blockVectorBX = b_orthonormalize( operatorB, blockVectorX )
+    blockVectorX, blockVectorBX = b_orthonormalize( B, blockVectorX )
 
     ##
     # Compute the initial Ritz vectors: solve the eigenproblem.
-    blockVectorAX = operatorA( blockVectorX )
+    blockVectorAX = A( blockVectorX )
     gramXAX = sc.dot( blockVectorX.T, blockVectorAX )
     # gramXBX is X^T * X.
     gramXBX = sc.dot( blockVectorX.T, blockVectorX )
@@ -319,7 +274,7 @@ def lobpcg( blockVectorX, operatorA,
 #    pause()
     blockVectorX = sc.dot( blockVectorX, eigBlockVector )
     blockVectorAX = sc.dot( blockVectorAX, eigBlockVector )
-    if operatorB is not None:
+    if B is not None:
         blockVectorBX = sc.dot( blockVectorBX, eigBlockVector )
 
     ##
@@ -330,8 +285,8 @@ def lobpcg( blockVectorX, operatorA,
     residualNormsHistory = []
 
     previousBlockSize = sizeX
-    ident = nm.eye( sizeX, dtype = operatorA.dtype )
-    ident0 = nm.eye( sizeX, dtype = operatorA.dtype )
+    ident = nm.eye( sizeX, dtype = A.dtype )
+    ident0 = nm.eye( sizeX, dtype = A.dtype )
 
     ##
     # Main iteration loop.
@@ -345,13 +300,6 @@ def lobpcg( blockVectorX, operatorA,
         aux = nm.sum( blockVectorR.conjugate() * blockVectorR, 0 )
         residualNorms = nm.sqrt( aux )
 
-
-##         if iterationNumber == 2:
-##             print blockVectorAX
-##             print blockVectorBX
-##             print blockVectorR
-##             pause()
-
         residualNormsHistory.append( residualNorms )
 
         ii = nm.where( residualNorms > residualTolerance, True, False )
@@ -362,7 +310,7 @@ def lobpcg( blockVectorX, operatorA,
         currentBlockSize = activeMask.sum()
         if currentBlockSize != previousBlockSize:
             previousBlockSize = currentBlockSize
-            ident = nm.eye( currentBlockSize, dtype = operatorA.dtype )
+            ident = nm.eye( currentBlockSize, dtype = A.dtype )
 
         if currentBlockSize == 0:
             failureFlag = False # All eigenpairs converged.
@@ -378,17 +326,13 @@ def lobpcg( blockVectorX, operatorA,
         activeBlockVectorR = as2d( blockVectorR[:,activeMask] )
 
         if iterationNumber > 0:
-            activeBlockVectorP = as2d( blockVectorP[:,activeMask] )
+            activeBlockVectorP  = as2d( blockVectorP [:,activeMask] )
             activeBlockVectorAP = as2d( blockVectorAP[:,activeMask] )
             activeBlockVectorBP = as2d( blockVectorBP[:,activeMask] )
 
-#        print activeBlockVectorR
-        if operatorT is not None:
-            ##
+        if M is not None:
             # Apply preconditioner T to the active residuals.
-            activeBlockVectorR = operatorT( activeBlockVectorR )
-
-#        assert nm.all( blockVectorR == activeBlockVectorR )
+            activeBlockVectorR = M( activeBlockVectorR )
 
         ##
         # Apply constraints to the preconditioned residuals.
@@ -396,20 +340,16 @@ def lobpcg( blockVectorX, operatorA,
             applyConstraints( activeBlockVectorR,
                               gramYBY, blockVectorBY, blockVectorY )
 
-#        assert nm.all( blockVectorR == activeBlockVectorR )
-
         ##
         # B-orthonormalize the preconditioned residuals.
-#        print activeBlockVectorR
 
-        aux = b_orthonormalize( operatorB, activeBlockVectorR )
+        aux = b_orthonormalize( B, activeBlockVectorR )
         activeBlockVectorR, activeBlockVectorBR = aux
-#        print activeBlockVectorR
 
-        activeBlockVectorAR = operatorA( activeBlockVectorR )
+        activeBlockVectorAR = A( activeBlockVectorR )
 
         if iterationNumber > 0:
-            aux = b_orthonormalize( operatorB, activeBlockVectorP,
+            aux = b_orthonormalize( B, activeBlockVectorP,
                                     activeBlockVectorBP, retInvR = True )
             activeBlockVectorP, activeBlockVectorBP, invR = aux
             activeBlockVectorAP = sc.dot( activeBlockVectorAP, invR )
@@ -418,24 +358,24 @@ def lobpcg( blockVectorX, operatorA,
         # Perform the Rayleigh Ritz Procedure:
         # Compute symmetric Gram matrices:
 
-        xaw = sc.dot( blockVectorX.T, activeBlockVectorAR )
+        xaw = sc.dot( blockVectorX.T,       activeBlockVectorAR )
         waw = sc.dot( activeBlockVectorR.T, activeBlockVectorAR )
-        xbw = sc.dot( blockVectorX.T, activeBlockVectorBR )
+        xbw = sc.dot( blockVectorX.T,       activeBlockVectorBR )
 
         if iterationNumber > 0:
-            xap = sc.dot( blockVectorX.T, activeBlockVectorAP )
+            xap = sc.dot( blockVectorX.T,       activeBlockVectorAP )
             wap = sc.dot( activeBlockVectorR.T, activeBlockVectorAP )
             pap = sc.dot( activeBlockVectorP.T, activeBlockVectorAP )
-            xbp = sc.dot( blockVectorX.T, activeBlockVectorBP )
+            xbp = sc.dot( blockVectorX.T,       activeBlockVectorBP )
             wbp = sc.dot( activeBlockVectorR.T, activeBlockVectorBP )
 
             gramA = nm.bmat( [[nm.diag( _lambda ), xaw, xap],
                               [xaw.T, waw, wap],
                               [xap.T, wap.T, pap]] )
             try:
-                gramB = nm.bmat( [[ident0, xbw, xbp],
-                                  [xbw.T, ident, wbp],
-                                  [xbp.T, wbp.T, ident]] )
+                gramB = nm.bmat( [[ident0,   xbw,   xbp],
+                                  [ xbw.T, ident,   wbp],
+                                  [ xbp.T, wbp.T, ident]] )
             except:
                 print ident
                 print xbw
@@ -457,23 +397,10 @@ def lobpcg( blockVectorX, operatorA,
             print gramB.T - gramB
             raise
 
-##         print nm.diag( _lambda )
-##         print xaw
-##         print waw
-##         print xbw
-##         try:
-##             print xap
-##             print wap
-##             print pap
-##             print xbp
-##             print wbp
-##         except:
-##             pass
-##         pause()
-
         if verbosityLevel > 10:
             save( gramA, 'gramA' )
             save( gramB, 'gramB' )
+
         ##
         # Solve the generalized eigenvalue problem.
 #        _lambda, eigBlockVector = la.eig( gramA, gramB )
@@ -495,7 +422,7 @@ def lobpcg( blockVectorX, operatorA,
 ##         aux = nm.sum( eigBlockVector.conjugate() * eigBlockVector, 0 )
 ##         eigVecNorms = nm.sqrt( aux )
 ##         eigBlockVector = eigBlockVector / eigVecNorms[nm.newaxis,:]
-#        eigBlockVector, aux = b_orthonormalize( operatorB, eigBlockVector )
+#        eigBlockVector, aux = b_orthonormalize( B, eigBlockVector )
 
         if verbosityLevel > 10:
             print eigBlockVector
@@ -565,15 +492,15 @@ if __name__ == '__main__':
     from scipy.sparse import spdiags, speye
     import time
 
-##     def operatorB( vec ):
+##     def B( vec ):
 ##         return vec
 
     n = 100
     vals = [nm.arange( n, dtype = nm.float64 ) + 1]
-    operatorA = spdiags( vals, 0, n, n )
-    operatorB = speye( n, n )
-#    operatorB[0,0] = 0
-    operatorB = nm.eye( n, n )
+    A = spdiags( vals, 0, n, n )
+    B = speye( n, n )
+#    B[0,0] = 0
+    B = nm.eye( n, n )
     Y = nm.eye( n, 3 )
 
 
@@ -594,8 +521,8 @@ if __name__ == '__main__':
 #    precond = spdiags( ivals, 0, n, n )
 
     tt = time.clock()
-    eigs, vecs = lobpcg( X, operatorA, operatorB, blockVectorY = Y,
-                         operatorT = precond,
+    eigs, vecs = lobpcg( X, A, B, blockVectorY = Y,
+                         M = precond,
                          residualTolerance = 1e-4, maxIterations = 40,
                          largest = False, verbosityLevel = 1 )
     print 'solution time:', time.clock() - tt
