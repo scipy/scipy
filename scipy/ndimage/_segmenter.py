@@ -2,23 +2,17 @@ import math
 import numpy as NP
 import scipy.ndimage._segment as S
 
-_objstruct = NP.dtype([('L', 'i'),
-                       ('R', 'i'),
-                       ('T', 'i'),
-                       ('B', 'i'),
+_objstruct = NP.dtype([('Left', 'i'),
+                       ('Right', 'i'),
+                       ('Top', 'i'),
+                       ('Bottom', 'i'),
+                       ('Front', 'i'),
+                       ('Back', 'i'),
                        ('Label', 'i'),
-                       ('Area', 'i'),
+                       ('Mass', 'i'),
                        ('cX', 'f'),
                        ('cY', 'f'),
-                       ('curveClose', 'i'),
-                       ('cXB', 'f'),
-                       ('cYB', 'f'),
-                       ('bLength', 'f'),
-                       ('minRadius', 'f'),
-                       ('maxRadius', 'f'),
-                       ('aveRadius', 'f'),
-                       ('ratio', 'f'),
-                       ('compactness', 'f'),
+                       ('cZ', 'f'),
                        ('voxelMean', 'f'),
                        ('voxelVar', 'f'),
                        ('TEM', 'f', 21)]
@@ -186,10 +180,10 @@ def mat_filter(label_image, thin_kernel, ROI=None):
     if ROI==None:
         ROIList = NP.zeros(1, dtype=_objstruct)
 	[rows, cols] = label_image.shape
-        ROIList['L'] = 2
-        ROIList['R'] = cols-3
-        ROIList['B'] = 2
-        ROIList['T'] = rows-3
+        ROIList['Left']   = 2
+        ROIList['Right']  = cols-3
+        ROIList['Bottom'] = 2
+        ROIList['Top']    = rows-3
 
     [rows, cols] = label_image.shape
     # destination image
@@ -207,10 +201,10 @@ def mat_filter(label_image, thin_kernel, ROI=None):
     indices = range(0, number_regions)
     inflate = 1
     for i in indices:
-	left     = ROI[i]['L']-1
-	right    = ROI[i]['R']+1
-	bottom   = ROI[i]['B']-1
-	top      = ROI[i]['T']+1
+	left     = ROI[i]['Left']-1
+	right    = ROI[i]['Right']+1
+	bottom   = ROI[i]['Bottom']-1
+	top      = ROI[i]['Top']+1
 	Label    = ROI[i]['Label']
 	if left < 0: 
 	    left = 0
@@ -296,10 +290,10 @@ def texture_filter(raw_image, label_image, laws_kernel, ROI=None, dc_thres=1.0,
     if ROI==None:
         ROI= NP.zeros(1, dtype=_objstruct)
 	[rows, cols] = label_image.shape
-        ROI['L'] = 2
-        ROI['R'] = cols-3
-        ROI['B'] = 2
-        ROI['T'] = rows-3
+        ROI['Left']   = 2
+        ROI['Right']  = cols-3
+        ROI['Bottom'] = 2
+        ROI['Top']    = rows-3
 
     laws_image_list = {}
     number_regions  = ROI.size
@@ -378,28 +372,56 @@ def get_voxel_measures(label_image, raw_image, ROI=None):
     none
 
     """
+
+    dimensions = label_image.ndim
+
     if ROI==None:
         ROIList = NP.zeros(1, dtype=_objstruct)
-	[rows, cols] = label_image.shape
-        ROIList['L'] = 2
-        ROIList['R'] = cols-3
-        ROIList['B'] = 2
-        ROIList['T'] = rows-3
+        if dimensions == 2:  
+	    [rows, cols] = label_image.shape
+            ROIList['Left']   = 1
+            ROIList['Right']  = cols-1
+            ROIList['Bottom'] = 1
+            ROIList['Top']    = rows-1
+        elif dimensions == 3:  
+	    [layers, rows, cols] = label_image.shape
+            ROIList['Left']   = 1
+            ROIList['Right']  = cols-1
+            ROIList['Bottom'] = 1
+            ROIList['Top']    = rows-1
+            ROIList['Front']  = 1
+            ROIList['Back']   = layers-1
 
     number_regions = ROI.size
     indices = range(0, number_regions)
     inflate = 1
     for i in indices:
-	left   = ROI[i]['L']
-	right  = ROI[i]['R']
-	bottom = ROI[i]['B']
-	top    = ROI[i]['T']
-	Label  = ROI[i]['Label']
-	rows   = top-bottom-1
-	cols   = right-left-1
-        section= NP.zeros(rows*cols, dtype=raw_image.dtype).reshape(rows, cols)
-	section = raw_image[bottom:top, left:right] \
-	                   [label_image[bottom:top, left:right]==Label]
+        if dimensions == 2:  
+	    left   = ROI[i]['Left']
+	    right  = ROI[i]['Right']
+	    bottom = ROI[i]['Bottom']
+	    top    = ROI[i]['Top']
+	    Label  = ROI[i]['Label']
+	    rows   = top-bottom-1
+	    cols   = right-left-1
+            section= NP.zeros(rows*cols, dtype=raw_image.dtype).reshape(rows, cols)
+	    section = raw_image[bottom:top, left:right] \
+	                       [label_image[bottom:top, left:right]==Label]
+        elif dimensions == 3:  
+	    left   = ROI[i]['Left']
+	    right  = ROI[i]['Right']
+	    bottom = ROI[i]['Bottom']
+	    top    = ROI[i]['Top']
+	    front  = ROI[i]['Front']
+	    back   = ROI[i]['Back']
+	    Label  = ROI[i]['Label']
+	    rows   = top-bottom-1
+	    cols   = right-left-1
+	    layers = back-front-1
+            section= NP.zeros(layers*rows*cols, dtype=raw_image.dtype).reshape(layers, rows, cols)
+	    section = raw_image[front:back, bottom:top, left:right] \
+			       [label_image[front:back, bottom:top, left:right]==Label]
+
 	mask = section[section>0]
 	ROI[i]['voxelMean'] = mask.mean()
 	ROI[i]['voxelVar']  = mask.std()
@@ -419,7 +441,7 @@ def get_blob_regions(labeled_image, groups, dust=16):
     ----------
 
     label_image : {nd_array}
-        an image with labeled regions from get_blobs() method
+        a 2D or 3D image with labeled regions from get_blobs() method
 
     groups : {int}
         number of blobs in image determined by get_blobs() method
@@ -434,14 +456,17 @@ def get_blob_regions(labeled_image, groups, dust=16):
 
     """
 
-    _c_ext_struct = NP.dtype([('L', 'i'),
-                              ('R', 'i'),
-                              ('T', 'i'),
-                              ('B', 'i'),
+    _c_ext_struct = NP.dtype([('Left', 'i'),
+                              ('Right', 'i'),
+                              ('Top', 'i'),
+                              ('Bottom', 'i'),
+                              ('Front', 'i'),
+                              ('Back', 'i'),
                               ('Label', 'i'),
-                              ('Area', 'i'),
+                              ('Mass', 'i'),
                               ('cX', 'f'),
-                              ('cY', 'f')]
+                              ('cY', 'f'),
+                              ('cZ', 'f')]
                              )
 
     c_ext_ROI = NP.zeros(groups, dtype=_c_ext_struct)
@@ -451,16 +476,19 @@ def get_blob_regions(labeled_image, groups, dust=16):
 
     indices = range(0, groups)
     for i in indices:
-	ROIList[i]['L']     = c_ext_ROI[i]['L']
-	ROIList[i]['R']     = c_ext_ROI[i]['R']
-	ROIList[i]['B']     = c_ext_ROI[i]['B']
-	ROIList[i]['T']     = c_ext_ROI[i]['T']
-	ROIList[i]['Label'] = c_ext_ROI[i]['Label']
-	ROIList[i]['Area']  = c_ext_ROI[i]['Area']
-	ROIList[i]['cX']    = c_ext_ROI[i]['cX']
-	ROIList[i]['cY']    = c_ext_ROI[i]['cY']
+	ROIList[i]['Left']   = c_ext_ROI[i]['Left']
+	ROIList[i]['Right']  = c_ext_ROI[i]['Right']
+	ROIList[i]['Bottom'] = c_ext_ROI[i]['Bottom']
+	ROIList[i]['Top']    = c_ext_ROI[i]['Top']
+	ROIList[i]['Front']  = c_ext_ROI[i]['Front']
+	ROIList[i]['Back']   = c_ext_ROI[i]['Back']
+	ROIList[i]['Label']  = c_ext_ROI[i]['Label']
+	ROIList[i]['Mass']   = c_ext_ROI[i]['Mass']
+	ROIList[i]['cX']     = c_ext_ROI[i]['cX']
+	ROIList[i]['cY']     = c_ext_ROI[i]['cY']
+	ROIList[i]['cZ']     = c_ext_ROI[i]['cZ']
 
-    return ROIList[ROIList['Area']>dust]
+    return ROIList[ROIList['Mass']>dust]
 
 
 def get_blobs(binary_edge_image, mask=1):
@@ -692,10 +720,10 @@ def get_all_bounding_boxes(ROI):
                              ('bottom', 'i')])
     measures = NP.zeros(number, dtype=_shortstruct)
     for i in indices:
-	measures[i]['left']   = ROI[i]['L']
-	measures[i]['right']  = ROI[i]['R']
-	measures[i]['top']    = ROI[i]['T']
-	measures[i]['bottom'] = ROI[i]['B']
+	measures[i]['left']   = ROI[i]['Left']
+	measures[i]['right']  = ROI[i]['Right']
+	measures[i]['top']    = ROI[i]['Top']
+	measures[i]['bottom'] = ROI[i]['Bottom']
 
     return measures
 
