@@ -13,14 +13,17 @@ typedef struct{
 
 typedef struct{
     // filled in GetObjectStats 
-    int L;
-    int R;
-    int T;
-    int B;
+    int Left;
+    int Right;
+    int Top;
+    int Bottom;
+    int Front;
+    int Back;
     int Label;
-    int Area;
+    int Mass;
     float cX;
     float cY;
+    float cZ;
 }objStruct;
 
 #endif
