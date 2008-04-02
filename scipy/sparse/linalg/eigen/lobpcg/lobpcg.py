@@ -19,7 +19,6 @@ from warnings import warn
 import numpy as nm
 import scipy as sc
 import scipy.sparse as sp
-import scipy.linalg as la
 import scipy.io as io
 from scipy.sparse.linalg import aslinearoperator, LinearOperator
 
@@ -78,7 +77,7 @@ def makeOperator( operatorInput, expectedShape ):
 def applyConstraints( blockVectorV, factYBY, blockVectorBY, blockVectorY ):
     """Internal. Changes blockVectorV in place."""
     gramYBV = sc.dot( blockVectorBY.T, blockVectorV )
-    tmp = la.cho_solve( factYBY, gramYBV )
+    tmp = sc.linalg.cho_solve( factYBY, gramYBV )
     blockVectorV -= sc.dot( blockVectorY, tmp )
 
 
@@ -91,8 +90,8 @@ def b_orthonormalize( B, blockVectorV,
         else:
             blockVectorBV = blockVectorV # Shared data!!!
     gramVBV = sc.dot( blockVectorV.T, blockVectorBV )
-    gramVBV = la.cholesky( gramVBV )
-    la.inv( gramVBV, overwrite_a = True )
+    gramVBV = sc.linalg.cholesky( gramVBV )
+    sc.linalg.inv( gramVBV, overwrite_a = True )
     # gramVBV is now R^{-1}.
     blockVectorV = sc.dot( blockVectorV, gramVBV )
     if B is not None:
@@ -249,7 +248,7 @@ def lobpcg( blockVectorX, A,
         gramYBY = sc.dot( blockVectorY.T, blockVectorBY )
         try:
             # gramYBY is a Cholesky factor from now on...
-            gramYBY = la.cho_factor( gramYBY )
+            gramYBY = sc.linalg.cho_factor( gramYBY )
         except:
             raise ValueError('cannot handle linearly dependent constraints')
 
@@ -381,7 +380,7 @@ def lobpcg( blockVectorX, A,
             gramA = nm.bmat( [[nm.diag( _lambda ),  xaw],
                               [             xaw.T,  waw]] )
             gramB = nm.bmat( [[ident0,    xbw],
-                              [ xbw.T, ident0]] )
+                              [ xbw.T,  ident]] )
 
         try:
             assert nm.allclose( gramA.T, gramA )
