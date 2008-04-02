@@ -662,22 +662,92 @@ int NI_GetBlobs2D(int samples, int rows, int cols, unsigned short *edges, unsign
 
 }
 
-int NI_GetBlobRegions(int rows, int cols, int numberObjects, unsigned short *labeledEdges,
-                      objStruct objectMetrics[]){
+int NI_GetBlobRegions3D(int layers, int rows, int cols, int numberObjects, 
+                        unsigned short *labeledEdges, objStruct objectMetrics[]){
+
+
+	int status;
+	int i, j, k, l, m;
+	int offset;
+	int count;
+	int LowX;
+	int LowY;
+	int LowZ;
+	int HighX;
+	int HighY;
+	int HighZ;
+	int ptr;
+	float centerX;
+	float centerY;
+	float centerZ;
+
+	for(k = l; l < numberObjects; ++l){
+	    offset     = cols;
+	    LowX       = 32767;
+	    LowY       = 32767;
+	    LowZ       = 32767;
+	    HighX      = 0;
+	    HighY      = 0;
+	    HighZ      = 0;
+	    count      = 0;
+	    centerX    = (float)0.0;
+	    centerY    = (float)0.0;
+	    centerZ    = (float)0.0;
+	    ptr        = 0;
+	    for(i = 0; i < layers; ++i){
+		for(j = 0; j < rows; ++j){
+		    for(k = 0; k < cols; ++k){
+		        m = labeledEdges[ptr++];
+			if(l == m){
+			    if(i < LowZ)   LowZ = i;
+			    if(j < LowY)   LowY = j;
+			    if(k < LowX)   LowX = k;
+			    if(i > HighZ) HighZ = i;
+			    if(j > HighY) HighY = j;
+			    if(k > HighX) HighX = k;
+	    		    centerX += (float)k;
+	    		    centerY += (float)j;
+	    		    centerZ += (float)i;
+	    		    ++count;
+			}
+		    }
+		}
+	    }
+	    /* the bounding box for the 2D blob */
+	    objectMetrics[l-1].Left   = LowX;
+	    objectMetrics[l-1].Right  = HighX;
+	    objectMetrics[l-1].Bottom = LowY;
+	    objectMetrics[l-1].Top    = HighY;
+	    objectMetrics[l-1].Front  = LowZ;
+	    objectMetrics[l-1].Back   = HighZ;
+	    objectMetrics[l-1].Mass   = count;
+	    objectMetrics[l-1].cX     = centerX/(float)count;
+	    objectMetrics[l-1].cY     = centerY/(float)count;
+	    objectMetrics[l-1].cZ     = centerZ/(float)count;
+	    objectMetrics[l-1].Label  = l;
+	}
+
+	status = numberObjects;
+
+	return(status);
+
+}
+
+int NI_GetBlobRegions2D(int rows, int cols, int numberObjects, unsigned short *labeledEdges,
+                        objStruct objectMetrics[]){
 
 	int i, j, k, m;
-	int offset;
 	int count;
 	int LowX;
 	int LowY;
 	int HighX;
 	int HighY;
 	int status;
+	int ptr;
 	float centerX;
 	float centerY;
 
 	for(k = 1; k < numberObjects; ++k){
-	    offset     = cols;
 	    LowX       = 32767;
 	    LowY       = 32767;
 	    HighX      = 0;
@@ -685,9 +755,10 @@ int NI_GetBlobRegions(int rows, int cols, int numberObjects, unsigned short *lab
 	    count      = 0;
 	    centerX    = (float)0.0;
 	    centerY    = (float)0.0;
-	    for(i = 1; i < (rows-1); ++i){
-		for(j = 1; j < (cols-1); ++j){
-		    m = labeledEdges[offset+j];
+	    ptr        = 0;
+	    for(i = 0; i < rows; ++i){
+		for(j = 0; j < cols; ++j){
+		    m = labeledEdges[ptr++];
 		    if(k == m){
 			if(i < LowY)   LowY = i;
 			if(j < LowX)   LowX = j;
@@ -698,17 +769,16 @@ int NI_GetBlobRegions(int rows, int cols, int numberObjects, unsigned short *lab
 	    		++count;
 		    }
 		}
-		offset += cols;
 	    }
 	    /* the bounding box for the 2D blob */
-	    objectMetrics[k-1].L     = LowX;
-	    objectMetrics[k-1].R     = HighX;
-	    objectMetrics[k-1].B     = LowY;
-	    objectMetrics[k-1].T     = HighY;
-	    objectMetrics[k-1].Area  = count;
-	    objectMetrics[k-1].cX    = centerX/(float)count;
-	    objectMetrics[k-1].cY    = centerY/(float)count;
-	    objectMetrics[k-1].Label = k;
+	    objectMetrics[k-1].Left   = LowX;
+	    objectMetrics[k-1].Right  = HighX;
+	    objectMetrics[k-1].Bottom = LowY;
+	    objectMetrics[k-1].Top    = HighY;
+	    objectMetrics[k-1].Mass   = count;
+	    objectMetrics[k-1].cX     = centerX/(float)count;
+	    objectMetrics[k-1].cY     = centerY/(float)count;
+	    objectMetrics[k-1].Label  = k;
 	}
 
 	status = numberObjects;
