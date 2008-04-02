@@ -218,8 +218,15 @@ static PyObject *Segmenter_GetBlobRegions(PyObject *self, PyObject *args)
     /* need to pass in 2D/3D flag and mask. NI_GetBlobRegions will call
      * 2D or 3D blob_extraction  */
 
-    if(!NI_GetBlobRegions((int)dims[0], (int)dims[1], (int)objNumber[0], fP1, myData))
-	    goto exit;
+    if(nd == 2){ 
+        if(!NI_GetBlobRegions2D((int)dims[0], (int)dims[1], (int)objNumber[0], fP1, myData))
+	        goto exit;
+    }
+    else if(nd == 3){ 
+        if(!NI_GetBlobRegions3D((int)dims[0], (int)dims[1], (int)dims[2],
+			       	(int)objNumber[0], fP1, myData))
+	        goto exit;
+    }
 
 exit:
 
