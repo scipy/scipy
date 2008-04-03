@@ -42,8 +42,8 @@ def run_texture1():
     disc_ROI    = seg.get_blob_regions(label_disc_mask, disc_mask_groups)
     laws_kernel = seg.build_laws_kernel() 
     impulse     = seg.build_test_impulses()
-    calib       = seg.texture_filter(impulse, label_disc_mask, laws_kernel,
-		                     ROI=disc_ROI, verbose=1)
+    calib       = seg.laws_texture_filter(impulse, label_disc_mask, laws_kernel,
+		                          ROI=disc_ROI, verbose=1)
     kernels = calib[0]
     x = laws_kernel['coefficients'][0]
     m = NP.outer(x, x)
@@ -62,8 +62,8 @@ def run_texture2():
     disc_ROI = seg.get_blob_regions(label_disc_mask, disc_mask_groups)
     laws_kernel = seg.build_laws_kernel() 
     texture_img = seg.build_test_texture_discs()
-    seg.texture_filter(texture_img, label_disc_mask, laws_kernel, ROI=disc_ROI,
-		       mean_feature=1, verbose=0)
+    seg.laws_texture_filter(texture_img, label_disc_mask, laws_kernel, ROI=disc_ROI,
+		            mean_feature=1, verbose=0)
     tem = disc_ROI['TEM']
     return tem 
 
