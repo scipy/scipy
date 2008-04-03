@@ -145,8 +145,47 @@ int NI_SobelImage(int samples, int rows, int cols, double *rawImage, double *edg
 }
 
 
+int NI_BinaryEdge(int samples, int rows, int cols, unsigned short *labelImage, unsigned short *edgeImage){ 
+
+	int i, j, k;
+	int maxValue;
+	int offset;
+	int offsetM1;
+	int offsetP1;
+	int values3x3[8];
+	int value;
+	int status;
+
+	offset = cols;
+	for(i = 1; i < rows-1; ++i){
+	    offsetM1 = offset - cols;
+	    offsetP1 = offset + cols;
+	    for(j = 1; j < cols-1; ++j){
+		values3x3[0] = labelImage[offset+j] - labelImage[offset+j+1];
+		values3x3[1] = labelImage[offset+j] - labelImage[offsetM1+j+1];
+		values3x3[2] = labelImage[offset+j] - labelImage[offsetM1+j];
+		values3x3[3] = labelImage[offset+j] - labelImage[offsetM1+j-1];
+		values3x3[4] = labelImage[offset+j] - labelImage[offset+j-1];
+		values3x3[5] = labelImage[offset+j] - labelImage[offsetP1+j-1];
+		values3x3[6] = labelImage[offset+j] - labelImage[offsetP1+j];
+		values3x3[7] = labelImage[offset+j] - labelImage[offsetP1+j+1];
+		maxValue = -1;
+		for(k = 0; k < 8; ++k){
+		    maxValue = MAX(maxValue, values3x3[k]);
+		}
+	        edgeImage[offset+j] = maxValue;
+	    }
+	    offset += cols;
+	}
+
+	status = 1;
+
+	return(status);
+
+}
+
 int NI_SobelEdge(int samples, int rows, int cols, double *edgeImage, unsigned short *edges, 
-	          int mode, double pAve, int minValue, int maxValue, double sobelLow){
+	         int mode, double pAve, int minValue, int maxValue, double sobelLow){
 
 	int i, j;
 	int offset;
