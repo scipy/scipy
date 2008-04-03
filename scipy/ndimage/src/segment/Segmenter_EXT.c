@@ -429,6 +429,39 @@ exit:
 }
 
 
+static PyObject *Segmenter_BinaryEdge(PyObject *self, PyObject *args)
+{
+
+    int num;
+    int nd;
+    int type;
+    npy_intp *dims;
+    unsigned short *mask_image;
+    unsigned short *edge_image;
+    PyObject  *mArray = NULL;
+    PyObject  *eArray = NULL;
+
+    if(!PyArg_ParseTuple(args, "OO", &mArray, &eArray)) 
+	    goto exit;
+
+    mask_image = (unsigned short *)PyArray_DATA(mArray);
+    nd   = PyArray_NDIM(mArray);
+    dims = PyArray_DIMS(mArray);
+    type = PyArray_TYPE(mArray);
+    num  = PyArray_SIZE(mArray);
+    edge_image = (unsigned short *)PyArray_DATA(eArray);
+
+    if(!PyArray_ISCONTIGUOUS(mArray))
+	    goto exit;
+
+    if(!NI_BinaryEdge(num, (int)dims[0], (int)dims[1], mask_image, edge_image))  
+	    goto exit;
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("");
+
+}
 
 static PyObject *Segmenter_LawsTextureMetric(PyObject *self, PyObject *args)
 {
@@ -513,6 +546,7 @@ exit:
 
 static PyMethodDef SegmenterMethods[] =
 {
+    { "binary_edge",          Segmenter_BinaryEdge,         METH_VARARGS, NULL },
     { "laws_texture_metric",  Segmenter_LawsTextureMetric,  METH_VARARGS, NULL },
     { "canny_hysteresis",     Segmenter_CannyHysteresis,    METH_VARARGS, NULL },
     { "canny_nonmax_supress", Segmenter_CannyNonMaxSupress, METH_VARARGS, NULL },
