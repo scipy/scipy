@@ -150,6 +150,64 @@ def canny_filter(slice, dg_kernel):
     return horz_DGFilter, vert_DGFilter, img_means
 
 
+def binary_edge(label_image, ROI):
+    """
+    binary_edge_image = binary_edge(label_image, ROI)
+
+    takes the ROI dictionary with the blob bounding boxes and generates 
+    the binary edge for each blob. The ROI mask is used to isolate
+    the binary edges for later use (e.g. contour tracing).
+
+    Parameters 
+    ----------
+
+    label_image : {nd_array}
+        an image with labeled regions from get_blobs() method
+
+    ROI : {dictionary}
+        Region of Interest structure that has blob bounding boxes
+
+    Returns 
+    ----------
+
+    binary_edge_image : {nd_array}
+        edge image for each ROI combined into a single image
+
+    """
+
+    [rows, cols]      = label_image.shape
+    binary_edge_image = NP.zeros(rows*cols, dtype=NP.uint16).reshape(rows, cols)
+    number_regions    = ROI.size
+    indices           = range(0, number_regions)
+    for i in indices:
+	left   = ROI[i]['Left']-2
+	right  = ROI[i]['Right']+2
+	bottom = ROI[i]['Bottom']-2
+	top    = ROI[i]['Top']+2
+	Label  = ROI[i]['Label']
+	if left < 0: 
+	    left = 0
+	if bottom < 0: 
+	    bottom = 0
+	if right > cols-1: 
+	    right = cols-1
+	if top > rows-1: 
+	    top = rows-1
+
+	roi_rows = top-bottom
+	roi_cols = right-left
+        label_region  = NP.zeros(roi_rows*roi_cols, dtype=NP.uint16).reshape(roi_rows, roi_cols)
+        input = NP.zeros(roi_rows*roi_cols, dtype=NP.uint16).reshape(roi_rows, roi_cols)
+	# load the labeled region 
+	label_region[0:roi_rows, 0:roi_cols][label_image[bottom:top, left:right]==Label] = 1 
+	S.binary_edge(label_region, input)
+	input[0:roi_rows,0:roi_cols][input[0:roi_rows,0:roi_cols]==1] = Label
+	binary_edge_image[bottom:top,left:right] = binary_edge_image[bottom:top,left:right] + \
+	                                                       input[0:roi_rows,0:roi_cols] 
+
+    return binary_edge_image
+
+
 def mat_filter(label_image, thin_kernel, ROI=None):
     """
     mat_image = mat_filter(label_image, thin_kernel, ROI=None)
@@ -241,14 +299,14 @@ def mat_filter(label_image, thin_kernel, ROI=None):
     return mat_image
 
 
-def texture_filter(raw_image, label_image, laws_kernel, ROI=None, dc_thres=1.0,
-		   mean_feature=1, verbose=0):
+def laws_texture_filter(raw_image, label_image, laws_kernel, ROI=None, dc_thres=1.0,
+		        mean_feature=1, verbose=0):
     """
-    texture_images = texture_filter(raw_image, label_image, laws_kernel, ROI=None, verbose=1)
+    texture_images = laws_texture_filter(raw_image, label_image, laws_kernel, ROI=None, verbose=1)
     .
         OR
     .
-    texture_filter(raw_image, label_image, laws_kernel, ROI=None, verbose=0)
+    laws_texture_filter(raw_image, label_image, laws_kernel, ROI=None, verbose=0)
 
     Parameters 
     ----------
@@ -301,10 +359,10 @@ def texture_filter(raw_image, label_image, laws_kernel, ROI=None, dc_thres=1.0,
     indices         = range(0, number_regions)
     filters         = range(0, layers)
     for i in indices:
-	left   = ROI[i]['L']
-	right  = ROI[i]['R']
-	bottom = ROI[i]['B']
-	top    = ROI[i]['T']
+	left   = ROI[i]['Left']
+	right  = ROI[i]['Right']
+	bottom = ROI[i]['Bottom']
+	top    = ROI[i]['Top']
 	Label  = ROI[i]['Label']
 	rows   = top-bottom
 	cols   = right-left
