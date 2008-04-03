@@ -460,15 +460,28 @@ def _krandinit(data, k):
             Number of samples to generate.
 
     """
-    mu  = N.mean(data, 0)
-    cov = N.atleast_2d(N.cov(data, rowvar = 0))
+    def init_rank1(data):
+        mu  = N.mean(data)
+        cov = N.cov(data)
+        x = N.random.randn(k)
+        x *= N.sqrt(cov)
+        x += mu
+        return x
+    def init_rankn(data):
+        mu  = N.mean(data, 0)
+        cov = N.atleast_2d(N.cov(data, rowvar = 0))
 
-    # k rows, d cols (one row = one obs)
-    # Generate k sample of a random variable ~ Gaussian(mu, cov)
-    x = N.random.randn(k, mu.size)
-    x = N.dot(x, N.linalg.cholesky(cov).T) + mu
+        # k rows, d cols (one row = one obs)
+        # Generate k sample of a random variable ~ Gaussian(mu, cov)
+        x = N.random.randn(k, mu.size)
+        x = N.dot(x, N.linalg.cholesky(cov).T) + mu
+        return x
 
-    return x
+    nd = N.ndim(data)
+    if nd == 1:
+        return init_rank1(data)
+    else:
+        return init_rankn(data)
 
 _valid_init_meth = {'random': _krandinit, 'points': _kpoints}
 
