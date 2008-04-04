@@ -208,6 +208,85 @@ def binary_edge(label_image, ROI):
     return binary_edge_image
 
 
+def roi_mat_filter(label_image, thin_kernel, ROI):
+    """
+    thin_edge_image = roi_mat_filter(label_image, thin_kernel, ROI)
+
+    gets the largest object in the ROI list and returns the medial axis for
+    that object. Idea is that the largest object is a reference, e.g. the skull
+    for anatomical MRI.
+
+    Parameters 
+    ----------
+
+    label_image : {nd_array}
+        an image with labeled regions from get_blobs() method
+
+    thin_kernel : {dictionary}
+        set of 8 'J' and 'K' 3x3 masks from build_morpho_thin_masks() method
+
+    ROI : {dictionary}
+        Region of Interest structure that has blob bounding boxes. The largest
+	2D target bounding box is extracted.
+
+    Returns 
+    ----------
+
+    thin_edge_image : {nd_array}
+        thinned edge image for the largest object.
+
+    """
+
+
+    [rows, cols] = label_image.shape
+    # destination image
+    thin_edge_image = NP.zeros(rows*cols, dtype=NP.uint16).reshape(rows, cols)
+    # scratch memory for thin 
+    input           = NP.zeros(rows*cols, dtype=NP.uint8).reshape(rows, cols)
+    cinput          = NP.zeros(rows*cols, dtype=NP.uint8).reshape(rows, cols)
+    erosion         = NP.zeros(rows*cols, dtype=NP.uint8).reshape(rows, cols)
+    dialation       = NP.zeros(rows*cols, dtype=NP.uint8).reshape(rows, cols)
+    hmt             = NP.zeros(rows*cols, dtype=NP.uint8).reshape(rows, cols)
+    copy            = NP.zeros(rows*cols, dtype=NP.uint8).reshape(rows, cols)
+
+    bbox = get_max_bounding_box(ROI)
+
+    left     = bbox['Left']-1
+    right    = bbox['Right']+1
+    bottom   = bbox['Bottom']-1
+    top      = bbox['Top']+1
+    Label    = bbox['Label']
+
+    if left < 0: 
+        left = 0
+    if bottom < 0: 
+        bottom = 0
+    if right > cols-1: 
+        right = cols-1
+    if top > rows-1: 
+        top = rows-1
+
+    inflate  = 1
+    roi_rows = top-bottom+2*inflate
+    roi_cols = right-left+2*inflate
+    rgrows   = top-bottom
+    rgcols   = right-left
+    # clear the memory
+    input[0:roi_rows, 0:roi_cols] = 0
+    # load the labeled region 
+    input[inflate:inflate+rgrows, inflate:inflate+rgcols] \
+         [label_image[bottom:top, left:right]==Label] = 1 
+    # thin this region
+    S.thin_filter(thin_kernel['jmask'], thin_kernel['kmask'], thin_kernel['number3x3Masks'],
+	          roi_rows, roi_cols, cols, input, cinput, erosion, dialation, hmt, copy)
+
+    # accumulate the images (do not over-write). for overlapping regions
+    input[inflate:rgrows+inflate,inflate:rgcols+inflate] \
+         [input[inflate:rgrows+inflate,inflate:rgcols+inflate]==1] = Label 
+    thin_edge_image[bottom:top,left:right] = input[inflate:rgrows+inflate,inflate:rgcols+inflate] 
+
+    return thin_edge_image
+
 def mat_filter(label_image, thin_kernel, ROI=None):
     """
     mat_image = mat_filter(label_image, thin_kernel, ROI=None)
@@ -284,7 +363,7 @@ def mat_filter(label_image, thin_kernel, ROI=None):
 	     [label_image[bottom:top, left:right]==Label] = 1 
 	# thin this region
         S.thin_filter(thin_kernel['jmask'], thin_kernel['kmask'], thin_kernel['number3x3Masks'],
-		      roi_rows, roi_cols, cols, input, cinput, erosion, dialation, hmt, copy);
+		      roi_rows, roi_cols, cols, input, cinput, erosion, dialation, hmt, copy)
 
 	# accumulate the images (do not over-write). for overlapping regions
 	input[inflate:rgrows+inflate,inflate:rgcols+inflate] \
@@ -595,7 +674,6 @@ def get_blobs(binary_edge_image, mask=1):
 	groups = 0
         return labeled_edge_image_or_vol, groups
 
-
     groups = S.get_blobs(binary_edge_image, labeled_edge_image_or_vol, mask)
 
     return labeled_edge_image_or_vol, groups
@@ -740,12 +818,13 @@ def get_max_bounding_box(ROI):
     ----------
 
     bounding_box : {dictionary}
-        the Left, Right, Top and Bottom of the LARGEST bounding box in the ROI
+        the Left, Right, Top Bottom and Label of the LARGEST bounding box in the ROI
 
     """
-    max_index = ROI[:]['Area'].argmax()
-    bounding_box = {'left' : ROI[max_index]['L'], 'right' : ROI[max_index]['R'],
-		    'top' : ROI[max_index]['T'], 'bottom' : ROI[max_index]['B']} 
+    max_index = ROI[:]['Mass'].argmax()
+    bounding_box = {'Left' : ROI[max_index]['Left'], 'Right' : ROI[max_index]['Right'],
+		    'Top' : ROI[max_index]['Top'], 'Bottom' : ROI[max_index]['Bottom'],
+		    'Label' : ROI[max_index]['Label']} 
 
     return bounding_box 
 
