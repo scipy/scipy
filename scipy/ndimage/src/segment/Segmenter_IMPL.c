@@ -496,6 +496,8 @@ int NI_GetBlobs3D(int samples, int layers, int rows, int cols, unsigned short *e
 	    }
 	}
 
+	*groups = Label;
+
 	ptr = 0;
 	for(i = 0; i < layers; ++i){
 	    for(j = 0; j < rows; ++j){
@@ -720,7 +722,7 @@ int NI_GetBlobRegions3D(int layers, int rows, int cols, int numberObjects,
 	float centerY;
 	float centerZ;
 
-	for(k = l; l < numberObjects; ++l){
+	for(l = 1; l < numberObjects; ++l){
 	    offset     = cols;
 	    LowX       = 32767;
 	    LowY       = 32767;
