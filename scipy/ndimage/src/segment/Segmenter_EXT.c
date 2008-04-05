@@ -543,9 +543,48 @@ exit:
 
 }
 
+static PyObject *Segmenter_RoiCoOccurence(PyObject *self, PyObject *args)
+{
+    int num;
+    int nd;
+    int type;
+    int distance;
+    npy_intp *dims;
+    npy_intp *dims_coc;
+    unsigned short *mask_image;
+    unsigned short *raw_image;
+    int *coc_matrix;
+    PyObject *mArray = NULL;
+    PyObject *rArray = NULL;
+    PyObject *cArray = NULL;
+
+    if(!PyArg_ParseTuple(args, "OOOi", &mArray, &rArray, &cArray, &distance)) 
+	    goto exit;
+
+    mask_image = (unsigned short *)PyArray_DATA(mArray);
+    nd   = PyArray_NDIM(mArray);
+    dims = PyArray_DIMS(mArray);
+    type = PyArray_TYPE(mArray);
+    num  = PyArray_SIZE(mArray);
+    raw_image  = (unsigned short *)PyArray_DATA(rArray);
+    coc_matrix = (int *)PyArray_DATA(cArray);
+    dims_coc = PyArray_DIMS(cArray);
+
+    if(!NI_RoiCoOccurence(num, (int)dims[0], (int)dims[1], mask_image, raw_image,
+			  coc_matrix, distance))  
+	    goto exit;
+
+
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("");
+
+}
 
 static PyMethodDef SegmenterMethods[] =
 {
+    { "roi_co_occurence",     Segmenter_RoiCoOccurence,     METH_VARARGS, NULL },
     { "binary_edge",          Segmenter_BinaryEdge,         METH_VARARGS, NULL },
     { "laws_texture_metric",  Segmenter_LawsTextureMetric,  METH_VARARGS, NULL },
     { "canny_hysteresis",     Segmenter_CannyHysteresis,    METH_VARARGS, NULL },
