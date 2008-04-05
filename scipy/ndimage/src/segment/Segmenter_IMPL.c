@@ -1390,3 +1390,62 @@ int NI_LawsTexture(int num, int rows, int cols, double *src_image, unsigned shor
 }
 
 
+int NI_RoiCoOccurence(int samples, int rows, int cols, unsigned short *labelImage,
+	              unsigned short *rawImage, int *cocMatrix, int distance){ 
+
+	int i, j, k;
+	int offset;
+	int sum;
+	int d_row;
+	int status;
+	int mask;
+	int pixel;
+	int moffsets[4];
+	int mask_values[4];
+	int pixel_values[4];
+
+	/* built around 8 bit histograms */
+	moffsets[0] = 0;
+	moffsets[1] = 256*256;
+	moffsets[2] = 2*256*256;
+	moffsets[3] = 3*256*256;
+
+	offset = 0;
+	for(i = 0; i < rows-distance; ++i){
+	    for(j = distance; j < cols-distance; ++j){
+		mask = labelImage[offset+j];
+		if(mask){
+		    /* d rows away from current row */
+		    d_row = cols*distance;
+		    pixel = rawImage[offset+j];
+		    mask_values[0] = labelImage[offset+j+distance];
+		    mask_values[1] = labelImage[offset+d_row+j-distance];
+		    mask_values[2] = labelImage[offset+d_row+j];
+		    mask_values[3] = labelImage[offset+d_row+j+distance];
+		    if((mask_values[0]+mask_values[1]+mask_values[2]+mask_values[3]) == 4){
+		        /* over the mask */
+		        pixel_values[0] = rawImage[offset+j+distance];
+		        pixel_values[1] = rawImage[offset+d_row+j-distance];
+		        pixel_values[2] = rawImage[offset+d_row+j];
+		        pixel_values[3] = rawImage[offset+d_row+j+distance];
+			/* update the 4 2D joint histograms */
+	                ++cocMatrix[moffsets[0]+pixel_values[0]*256+pixel];
+	                ++cocMatrix[moffsets[0]+pixel_values[0]+pixel*256];
+	                ++cocMatrix[moffsets[1]+pixel_values[1]*256+pixel];
+	                ++cocMatrix[moffsets[1]+pixel_values[1]+pixel*256];
+	                ++cocMatrix[moffsets[2]+pixel_values[2]*256+pixel];
+	                ++cocMatrix[moffsets[2]+pixel_values[2]+pixel*256];
+	                ++cocMatrix[moffsets[3]+pixel_values[3]*256+pixel];
+	                ++cocMatrix[moffsets[3]+pixel_values[3]+pixel*256];
+		    }
+		}
+	    }
+	    offset += cols;
+	}
+
+	status = 1;
+
+	return(status);
+
+}
+
