@@ -208,6 +208,78 @@ def binary_edge(label_image, ROI):
     return binary_edge_image
 
 
+def roi_co_occurence(label_image, raw_image, ROI, distance=2, verbose=0):
+    """
+    roi_co_occurence(label_image, raw_image, ROI, distance=2, verbose=0)
+
+    - OR -
+
+    texture_arrays = roi_co_occurence(label_image, raw_image, ROI, distance=2, verbose=1)
+
+    (N-S, E-W, NW-SE, NE-SW) computes the 4 directional co-occurence matrices and features.
+    In debug=1 will return the 4 joint histograms for each ROI.
+
+    Parameters 
+    ----------
+
+    label_image : {nd_array}
+        an image with labeled regions from get_blobs() method
+
+    raw_image : {nd_array}
+        raw image from which texture features get extracted 
+
+    ROI : {dictionary}
+        Region of Interest structure that has blob bounding boxes. The largest
+	2D target bounding box is extracted.
+
+
+    Returns 
+    ----------
+
+    co_occurence_images : {dictionary}
+        contains 4 joint histogram images for each ROI 
+	returned if verbose=1
+
+    """
+    num_dirs = 4
+    num_bits = 256
+
+    copy_image = raw_image.copy()
+
+    number_regions = ROI.size
+    indices = range(0, number_regions)
+    co_occurence_image_list = {}
+    for i in indices:
+        left   = ROI[i]['Left']
+        right  = ROI[i]['Right']
+        bottom = ROI[i]['Bottom']
+        top    = ROI[i]['Top']
+        Label  = ROI[i]['Label']
+        rows   = top-bottom
+        cols   = right-left
+	# copy the mask to section image
+        section = NP.zeros(rows*cols, dtype=label_image.dtype).reshape(rows, cols)
+        section[0:rows, 0:cols][label_image[bottom:top, left:right]==Label] = 1
+        source_region = NP.zeros(rows*cols, dtype=NP.float64).reshape(rows, cols)
+        coc_block = NP.zeros(num_dirs*num_bits*num_bits, dtype=NP.int32).reshape(num_dirs, num_bits, num_bits)
+	source_region[0:rows, 0:cols] = copy_image[bottom:top, left:right] 
+        # scale segment to 8 bits. this needs to be smarter (e.g. use integrated histogram method)
+        max_value = source_region.max()
+        min_value = source_region.min()
+        scale = 255.0 / (max_value-min_value)
+        image_roi = (scale*(source_region-min_value)).astype(NP.int16)
+        print 'section shape and max ', section.shape, section.max()
+        print 'image_roi shape and max ', image_roi.shape, image_roi.max()
+	# image_roi is short type
+	S.roi_co_occurence(section, image_roi, coc_block, distance)
+        co_occurence_image_list[i] = coc_block
+
+    if verbose == 1:
+        return co_occurence_image_list
+    else:
+	return
+
+
 def roi_mat_filter(label_image, thin_kernel, ROI):
     """
     thin_edge_image = roi_mat_filter(label_image, thin_kernel, ROI)
