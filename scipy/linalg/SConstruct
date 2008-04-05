@@ -37,7 +37,7 @@ env['BUILDERS']['hihi'] = Builder(action = do_generate_fake_interface,
 #    # checks
 #    env.AppendUnique(LIBPATH = [get_pythonlib_dir()])
 
-fenv = env.Copy()
+fenv = env.Clone()
 
 #=======================
 # Starting Configuration
@@ -156,7 +156,7 @@ fenv.NumpyPythonExtension('calc_lwork',
 #--------------
 # Atlas version
 #--------------
-atlas_env = env.Copy()
+atlas_env = env.Clone()
 if not IsATLAS(env, 'cblas'):
     atlas_env.AppendUnique(CPPDEFINES = "NO_ATLAS_INFO")
 atlas_env.NumpyPythonExtension('atlas_version', 'atlas_version.c')

@@ -25,7 +25,7 @@ config.Finish()
 write_info(env)
 
 # Build superlu lib
-superlu_env = env.Copy()
+superlu_env = env.Clone()
 superlu_def = {}
 if sys.platform == 'win32':
     superlu_def['NO_TIMER'] = 1
@@ -36,7 +36,7 @@ superlu_src = superlu_env.NumpyGlob(pjoin('SuperLU', 'SRC', '*.c'))
 superlu = superlu_env.NumpyStaticExtLibrary('superlu_src', source = superlu_src)
 
 # Build python extensions
-pyenv = env.Copy()
+pyenv = env.Clone()
 pyenv.Append(CPPPATH = [get_numpy_include_dirs(), env['src_dir']])
 common_src = ['_superlu_utils.c', '_superluobject.c']
 

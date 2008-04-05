@@ -44,10 +44,10 @@ odepack = env.NumpyStaticExtLibrary('odepack', source = src)
 env.AppendUnique(LIBPATH = env['build_dir'])
 env.AppendUnique(LINKFLAGSEND = env['F77_LDFLAGS'])
 
-quadenv = env.Copy()
+quadenv = env.Clone()
 quadenv.Prepend(LIBS = ['quadpack', 'linpack_lite', 'mach'])
 
-odenv = env.Copy()
+odenv = env.Clone()
 odenv.Prepend(LIBS = ['odepack', 'linpack_lite', 'mach'])
 
 # Build _quadpack
