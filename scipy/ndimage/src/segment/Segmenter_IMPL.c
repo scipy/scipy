@@ -1391,52 +1391,72 @@ int NI_LawsTexture(int num, int rows, int cols, double *src_image, unsigned shor
 
 
 int NI_RoiCoOccurence(int samples, int rows, int cols, unsigned short *labelImage,
-	              unsigned short *rawImage, int *cocMatrix, int distance){ 
+	              unsigned short *rawImage, int *cocMatrix, int distance, int orientation){ 
 
 	int i, j, k;
 	int offset;
 	int sum;
 	int d_row;
+	int d_col;
 	int status;
+	int start_row;
+	int stop_row;
+	int start_col;
+	int stop_col;
 	int mask;
 	int pixel;
-	int moffsets[4];
-	int mask_values[4];
-	int pixel_values[4];
+	int d_mask_value;
+	int d_pixel_value;
 
 	/* built around 8 bit histograms */
-	moffsets[0] = 0;
-	moffsets[1] = 256*256;
-	moffsets[2] = 2*256*256;
-	moffsets[3] = 3*256*256;
 
 	offset = 0;
-	for(i = 0; i < rows-distance; ++i){
-	    for(j = distance; j < cols-distance; ++j){
+	if(orientation == 90){
+	    start_row = 0;
+	    stop_row  = rows;
+	    start_col = 0;
+	    stop_col  = cols-distance;
+	    d_row     = 0;
+	    d_col     = distance;
+	}
+	else if(orientation == 180){
+	    start_row = 0;
+	    stop_row  = rows-distance;
+	    start_col = 0;
+	    stop_col  = cols;
+	    d_row     = cols*distance;
+	    d_col     = 0;
+	}
+	else if(orientation == 45){
+	    start_row = 0;
+	    stop_row  = rows-distance;
+	    start_col = distance;
+	    stop_col  = cols;
+	    d_row     = cols*distance;
+	    d_col     = -distance;
+	}
+	else if(orientation == 135){
+	    start_row = 0;
+	    stop_row  = rows-distance;
+	    start_col = 0;
+	    stop_col  = cols-distance;
+	    d_row     = cols*distance;
+	    d_col     = distance;
+	}
+
+	for(i = start_row; i < stop_row; ++i){
+	    for(j = start_col; j < stop_col; ++j){
 		mask = labelImage[offset+j];
 		if(mask){
 		    /* d rows away from current row */
-		    d_row = cols*distance;
 		    pixel = rawImage[offset+j];
-		    mask_values[0] = labelImage[offset+j+distance];
-		    mask_values[1] = labelImage[offset+d_row+j-distance];
-		    mask_values[2] = labelImage[offset+d_row+j];
-		    mask_values[3] = labelImage[offset+d_row+j+distance];
-		    if((mask_values[0]+mask_values[1]+mask_values[2]+mask_values[3]) == 4){
+		    d_mask_value = labelImage[offset+d_row+j+d_col];
+		    if(d_mask_value){
 		        /* over the mask */
-		        pixel_values[0] = rawImage[offset+j+distance];
-		        pixel_values[1] = rawImage[offset+d_row+j-distance];
-		        pixel_values[2] = rawImage[offset+d_row+j];
-		        pixel_values[3] = rawImage[offset+d_row+j+distance];
-			/* update the 4 2D joint histograms */
-	                ++cocMatrix[moffsets[0]+pixel_values[0]*256+pixel];
-	                ++cocMatrix[moffsets[0]+pixel_values[0]+pixel*256];
-	                ++cocMatrix[moffsets[1]+pixel_values[1]*256+pixel];
-	                ++cocMatrix[moffsets[1]+pixel_values[1]+pixel*256];
-	                ++cocMatrix[moffsets[2]+pixel_values[2]*256+pixel];
-	                ++cocMatrix[moffsets[2]+pixel_values[2]+pixel*256];
-	                ++cocMatrix[moffsets[3]+pixel_values[3]*256+pixel];
-	                ++cocMatrix[moffsets[3]+pixel_values[3]+pixel*256];
+		        d_pixel_value = rawImage[offset+d_row+j+d_col];
+			/* update the 2D joint histograms */
+	                ++cocMatrix[d_pixel_value*256+pixel];
+	                ++cocMatrix[d_pixel_value+pixel*256];
 		    }
 		}
 	    }
