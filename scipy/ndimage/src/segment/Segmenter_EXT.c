@@ -549,8 +549,9 @@ static PyObject *Segmenter_RoiCoOccurence(PyObject *self, PyObject *args)
     int nd;
     int type;
     int distance;
+    int orientation;
     npy_intp *dims;
-    npy_intp *dims_coc;
+    npy_intp *dims_cocm;
     unsigned short *mask_image;
     unsigned short *raw_image;
     int *coc_matrix;
@@ -558,7 +559,7 @@ static PyObject *Segmenter_RoiCoOccurence(PyObject *self, PyObject *args)
     PyObject *rArray = NULL;
     PyObject *cArray = NULL;
 
-    if(!PyArg_ParseTuple(args, "OOOi", &mArray, &rArray, &cArray, &distance)) 
+    if(!PyArg_ParseTuple(args, "OOOii", &mArray, &rArray, &cArray, &distance, &orientation)) 
 	    goto exit;
 
     mask_image = (unsigned short *)PyArray_DATA(mArray);
@@ -568,10 +569,10 @@ static PyObject *Segmenter_RoiCoOccurence(PyObject *self, PyObject *args)
     num  = PyArray_SIZE(mArray);
     raw_image  = (unsigned short *)PyArray_DATA(rArray);
     coc_matrix = (int *)PyArray_DATA(cArray);
-    dims_coc = PyArray_DIMS(cArray);
+    dims_cocm  = PyArray_DIMS(cArray);
 
     if(!NI_RoiCoOccurence(num, (int)dims[0], (int)dims[1], mask_image, raw_image,
-			  coc_matrix, distance))  
+			  coc_matrix, distance, orientation))  
 	    goto exit;
 
 
