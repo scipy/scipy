@@ -15,6 +15,7 @@ _objstruct = NP.dtype([('Left', 'i'),
                        ('cZ', 'f'),
                        ('voxelMean', 'f'),
                        ('voxelVar', 'f'),
+                       ('COM', 'f', 6),
                        ('TEM', 'f', 21)]
                       )
 
@@ -208,16 +209,18 @@ def binary_edge(label_image, ROI):
     return binary_edge_image
 
 
-def roi_co_occurence(label_image, raw_image, ROI, distance=2, verbose=0):
+def roi_co_occurence(label_image, raw_image, ROI, distance=2, orientation=90, verbose=0):
     """
-    roi_co_occurence(label_image, raw_image, ROI, distance=2, verbose=0)
+    roi_co_occurence(label_image, raw_image, ROI, distance=2, orientation=90, verbose=0)
 
     - OR -
 
     texture_arrays = roi_co_occurence(label_image, raw_image, ROI, distance=2, verbose=1)
 
-    (N-S, E-W, NW-SE, NE-SW) computes the 4 directional co-occurence matrices and features.
-    In debug=1 will return the 4 joint histograms for each ROI.
+    (N-S, E-W, NW-SE, NE-SW) computes one of 4 directional co-occurence matrices and features.
+    In debug=1 will return the 4 joint histograms for each ROI. This is used to compute texture
+    features for a pre-segmented region. The seg_co_occurence() method will be used for texture-
+    based segmentation.
 
     Parameters 
     ----------
@@ -227,6 +230,12 @@ def roi_co_occurence(label_image, raw_image, ROI, distance=2, verbose=0):
 
     raw_image : {nd_array}
         raw image from which texture features get extracted 
+
+    distance : {int}
+        integer value of pixel offset in forming joint histogram. default value 2
+
+    orientation : {45, 90, 135, 180}
+        direction for pixel offet.
 
     ROI : {dictionary}
         Region of Interest structure that has blob bounding boxes. The largest
@@ -241,11 +250,13 @@ def roi_co_occurence(label_image, raw_image, ROI, distance=2, verbose=0):
 	returned if verbose=1
 
     """
-    num_dirs = 4
+
+    if orientation != 45 and orientation != 90 and orientation != 135 and orientation != 180: 
+        orientation = 90
+
+    epsilon  = 2.2e-16 
     num_bits = 256
-
     copy_image = raw_image.copy()
-
     number_regions = ROI.size
     indices = range(0, number_regions)
     co_occurence_image_list = {}
@@ -261,18 +272,37 @@ def roi_co_occurence(label_image, raw_image, ROI, distance=2, verbose=0):
         section = NP.zeros(rows*cols, dtype=label_image.dtype).reshape(rows, cols)
         section[0:rows, 0:cols][label_image[bottom:top, left:right]==Label] = 1
         source_region = NP.zeros(rows*cols, dtype=NP.float64).reshape(rows, cols)
-        coc_block = NP.zeros(num_dirs*num_bits*num_bits, dtype=NP.int32).reshape(num_dirs, num_bits, num_bits)
+        cocm_block = NP.zeros(num_bits*num_bits, dtype=NP.int32).reshape(num_bits, num_bits)
 	source_region[0:rows, 0:cols] = copy_image[bottom:top, left:right] 
         # scale segment to 8 bits. this needs to be smarter (e.g. use integrated histogram method)
         max_value = source_region.max()
         min_value = source_region.min()
         scale = 255.0 / (max_value-min_value)
         image_roi = (scale*(source_region-min_value)).astype(NP.int16)
-        print 'section shape and max ', section.shape, section.max()
-        print 'image_roi shape and max ', image_roi.shape, image_roi.max()
 	# image_roi is short type
-	S.roi_co_occurence(section, image_roi, coc_block, distance)
-        co_occurence_image_list[i] = coc_block
+	S.roi_co_occurence(section, image_roi, cocm_block, distance, orientation)
+        co_occurence_image_list[i] = cocm_block
+	# normalize the joint histogram prior to feature extraction
+	joint_histogram  = NP.zeros([num_bits, num_bits], dtype=NP.float64);
+	joint_histogram  = cocm_block.astype(NP.float64) 
+	joint_histogram  = joint_histogram / joint_histogram.sum()
+	# to prevent log(0)
+	joint_histogram += epsilon
+	# compute the com features
+	energy = joint_histogram.std()
+	H = joint_histogram * NP.log(joint_histogram)
+	entropy = H.sum()
+	r, c = joint_histogram.shape
+	[a, b] = NP.mgrid[1:c+1, 1:r+1]
+	contrast = ((NP.square(a-b))*joint_histogram).sum()
+	d = 1.0 + NP.abs(a-b)
+	homogeneity = (joint_histogram / d).sum()
+	ROI[i]['COM'][0] = distance
+	ROI[i]['COM'][1] = orientation 
+	ROI[i]['COM'][2] = energy
+	ROI[i]['COM'][3] = entropy
+	ROI[i]['COM'][4] = contrast
+	ROI[i]['COM'][5] = homogeneity
 
     if verbose == 1:
         return co_occurence_image_list
