@@ -4,12 +4,14 @@ import os
 
 from scipy.testing import *
 
-from scipy.io.arff.arffread import read_header, MetaData, parse_type
+from scipy.io.arff.arffread import read_header, MetaData, parse_type, \
+                                   ParseArffError
 
 data_path = os.path.join(os.path.dirname(__file__), 'data')
 
 test1 = os.path.join(data_path, 'test1.arff')
 test2 = os.path.join(data_path, 'test2.arff')
+test3 = os.path.join(data_path, 'test3.arff')
 
 class HeaderTest(TestCase):
     def test_type_parsing(self):
@@ -22,6 +24,18 @@ class HeaderTest(TestCase):
 
         for i in range(len(attrs)):
             assert parse_type(attrs[i][1]) == expected[i]
+
+    def test_badtype_parsing(self):
+        """Test parsing wrong type of attribute from their value."""
+        ofile = open(test3)
+        rel, attrs = read_header(ofile)
+
+        for name, value in attrs:
+            try:
+                parse_type(value)
+                raise Error("Could parse type of crap, should not happen.")
+            except ParseArffError:
+                pass
 
     def test_fullheader1(self):
         """Parsing trivial header with nothing."""
