@@ -11,7 +11,7 @@ data_path = os.path.join(os.path.dirname(__file__), 'data')
 test1 = os.path.join(data_path, 'test1.arff')
 
 class HeaderTest(TestCase):
-    def test_trivial1(self):
+    def test_fullheader1(self):
         """Parsing trivial header with nothing."""
         ofile = open(test1)
         rel, attrs = read_header(ofile)
