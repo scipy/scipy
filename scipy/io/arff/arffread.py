@@ -75,7 +75,7 @@ def parse_type(attrtype):
     elif uattribute[:len('relational')] == 'relational':
         return 'relational'
     else:
-        raise ValueError("unknown attribute %s" % uattribute)
+        raise ParseArffError("unknown attribute %s" % uattribute)
 
 
 def get_nominal(attribute):
