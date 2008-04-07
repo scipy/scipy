@@ -4,13 +4,25 @@ import os
 
 from scipy.testing import *
 
-from scipy.io.arff.arffread import read_header, MetaData
+from scipy.io.arff.arffread import read_header, MetaData, parse_type
 
 data_path = os.path.join(os.path.dirname(__file__), 'data')
 
 test1 = os.path.join(data_path, 'test1.arff')
+test2 = os.path.join(data_path, 'test2.arff')
 
 class HeaderTest(TestCase):
+    def test_type_parsing(self):
+        """Test parsing type of attribute from their value."""
+        ofile = open(test2)
+        rel, attrs = read_header(ofile)
+
+        expected = ['numeric', 'numeric', 'numeric', 'numeric', 'numeric',
+                    'numeric', 'string', 'string', 'nominal', 'nominal']
+
+        for i in range(len(attrs)):
+            assert parse_type(attrs[i][1]) == expected[i]
+
     def test_fullheader1(self):
         """Parsing trivial header with nothing."""
         ofile = open(test1)
