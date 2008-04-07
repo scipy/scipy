@@ -10,6 +10,8 @@ from scipy.io.arff.utils import partial
 
 """A module to read arff files."""
 
+__all__ = ['MetaData', 'read_arff', 'ArffError', 'ParseArffError']
+
 # An Arff file is basically two parts: 
 #   - header
 #   - data
@@ -332,6 +334,18 @@ class MetaData:
         return self._attributes[key]
 
 def read_arff(filename):
+    """Read an arff file.
+
+    :Note:
+
+        This function should be able to read most arff files. Not implemented
+        functionalities include:
+            - date type attributes
+            - string type attributes
+
+        It can read files with numeric and nominal attributes.
+        It can read files with sparse data (? in the file).
+    """
     ofile = open(filename)
 
     # Parse the header file 
