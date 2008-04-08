@@ -190,7 +190,7 @@ def F2K(F):
     """Convert Fahrenheit to Kelvin"""
     return C2K(F2C(F))
 
-def K2F(k):
+def K2F(K):
     """Convert Kelvin to Fahrenheit"""
     return C2F(K2C(K))
 
