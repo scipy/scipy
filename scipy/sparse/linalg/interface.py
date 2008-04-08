@@ -9,44 +9,46 @@ class LinearOperator:
     """Common interface for performing matrix vector products
 
     Many iterative methods (e.g. cg, gmres) do not need to know the
-    individual entries of a matrix to solve a linear system A*x=b. 
-    Such solvers only require the computation of matrix vector 
+    individual entries of a matrix to solve a linear system A*x=b.
+    Such solvers only require the computation of matrix vector
     products, A*v where v is a dense vector.  This class serves as
     an abstract interface between iterative solvers and matrix-like
     objects.
 
-    Required Parameters
-    -------------------
-    shape     : tuple of matrix dimensions (M,N)
-    matvec(x) : function that returns A * v
+    Parameters
+    ----------
+    shape : tuple
+        Matrix dimensions (M,N)
+    matvec : callable f(v)
+        Returns returns A * v
 
     Optional Parameters
     -------------------
-    rmatvec(v) : function that returns A^H * v where A^H represents 
-                 the Hermitian (conjugate) transpose of A
-    matmat(V)  : function that returns A * V where V is a dense 
-                 matrix with dimensions (N,K)
-    dtype      : data type of the matrix
-                    
+    rmatvec : callable f(v)
+        Returns A^H * v, where A^H represents the Hermitian
+        (conjugate) transpose of A.
+    matmat : callable f(V)
+        Returns A * V, where V is a dense matrix with dimensions (N,K).
+    dtype : dtype
+        Data type of the matrix.
 
     See Also
     --------
-    aslinearoperator() : Construct LinearOperators for SciPy classes
+    aslinearoperator : Construct LinearOperators
 
     Examples
     --------
-
     >>> from scipy.sparse.linalg import LinearOperator
     >>> from scipy import *
     >>> def mv(v):
     ...     return array([ 2*v[0], 3*v[1]])
-    ... 
+    ...
     >>> A = LinearOperator( (2,2), matvec=mv )
     >>> A
     <2x2 LinearOperator with unspecified dtype>
     >>> A.matvec( ones(2) )
     array([ 2.,  3.])
-    
+
     """
     def __init__( self, shape, matvec, rmatvec=None, matmat=None, dtype=None ):
 
@@ -87,27 +89,25 @@ class LinearOperator:
         return '<%dx%d LinearOperator with %s>' % (M,N,dt)
 
 def aslinearoperator(A):
-    """Return A as a LinearOperator
+    """Return A as a LinearOperator.
 
-    'A' may be any of the following types
-        - ndarray
-        - matrix
-        - sparse matrix (e.g. csr_matrix, lil_matrix, etc.)
-        - LinearOperator
-        - An object with .shape and .matvec attributes
+    'A' may be any of the following types:
+     - ndarray
+     - matrix
+     - sparse matrix (e.g. csr_matrix, lil_matrix, etc.)
+     - LinearOperator
+     - An object with .shape and .matvec attributes
 
     See the LinearOperator documentation for additonal information.
 
     Examples
-    ========
-    
+    --------
     >>> from scipy import matrix
     >>> M = matrix( [[1,2,3],[4,5,6]], dtype='int32' )
     >>> aslinearoperator( M )
     <2x3 LinearOperator with dtype=int32>
 
     """
-
     if isinstance(A, LinearOperator):
         return A
 
@@ -123,12 +123,12 @@ def aslinearoperator(A):
             return dot(A.conj().transpose(), v)
         def matmat(V):
             return dot(A, V)
-        return LinearOperator( A.shape, matvec, rmatvec=rmatvec, \
-                matmat=matmat, dtype=A.dtype )
+        return LinearOperator(A.shape, matvec, rmatvec=rmatvec,
+                              matmat=matmat, dtype=A.dtype)
 
     elif isspmatrix(A):
-        return LinearOperator( A.shape, A.matvec, rmatvec=A.rmatvec, \
-                matmat=A.dot, dtype=A.dtype ) 
+        return LinearOperator(A.shape, A.matvec, rmatvec=A.rmatvec,
+                              matmat=A.dot, dtype=A.dtype)
 
     else:
         if hasattr(A,'shape') and hasattr(A,'matvec'):
@@ -139,9 +139,8 @@ def aslinearoperator(A):
                 rmatvec = A.rmatvec
             if hasattr(A,'dtype'):
                 dtype = A.dtype
-            return LinearOperator(A.shape, A.matvec, rmatvec=rmatvec, dtype=dtype)
+            return LinearOperator(A.shape, A.matvec,
+                                  rmatvec=rmatvec, dtype=dtype)
 
         else:
             raise TypeError('type not understood')
-
-
