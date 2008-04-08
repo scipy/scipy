@@ -5,9 +5,6 @@ http://www-math.cudenver.edu/~aknyazev/software/BLOPEX/
 
 License: BSD
 
-Depends upon symeig (http://mdp-toolkit.sourceforge.net/symeig.html) for the
-moment, as the symmetric eigenvalue solvers were not available in scipy.
-
 (c) Robert Cimrman, Andrew Knyazev
 
 Examples in tests directory contributed by Nils Wagner.
@@ -21,11 +18,47 @@ import scipy as sc
 import scipy.sparse as sp
 import scipy.io as io
 from scipy.sparse.linalg import aslinearoperator, LinearOperator
+import scipy.linalg as sla
 
-try:
-    from symeig import symeig
-except:
-    raise ImportError('lobpcg requires symeig')
+## try:
+##     from symeig import symeig
+## except:
+##     raise ImportError('lobpcg requires symeig')
+
+def symeig( mtxA, mtxB = None, eigenvectors = True, select = None ):
+    import scipy.lib.lapack as ll
+    if select is None:
+        if nm.iscomplexobj( mtxA ):
+            if mtxB is None:
+                fun = ll.get_lapack_funcs( ['heev'], arrays = (mtxA,) )[0]
+            else:
+                fun = ll.get_lapack_funcs( ['hegv'], arrays = (mtxA,) )[0]
+        else:
+            if mtxB is None:
+                fun = ll.get_lapack_funcs( ['syev'], arrays = (mtxA,) )[0]
+            else:
+                fun = ll.get_lapack_funcs( ['sygv'], arrays = (mtxA,) )[0]
+##         print fun
+        w, v, info = fun( mtxA, mtxB )
+##         print w
+##         print v
+##         print info
+##         from symeig import symeig
+##         print symeig( mtxA, mtxB )
+    else:
+        out = sla.eig( mtxA, mtxB, right = eigenvectors )
+        w = out[0]
+        ii = nm.argsort( w )
+        w = w[slice( *select )]
+        if eigenvectors:
+                v = out[1][:,ii]
+                v = v[:,slice( *select )]
+
+    if eigenvectors:
+        out = w, v
+    else:
+        out = w
+    return out
 
 def pause():
     raw_input()
@@ -77,7 +110,7 @@ def makeOperator( operatorInput, expectedShape ):
 def applyConstraints( blockVectorV, factYBY, blockVectorBY, blockVectorY ):
     """Internal. Changes blockVectorV in place."""
     gramYBV = sc.dot( blockVectorBY.T, blockVectorV )
-    tmp = sc.linalg.cho_solve( factYBY, gramYBV )
+    tmp = sla.cho_solve( factYBY, gramYBV )
     blockVectorV -= sc.dot( blockVectorY, tmp )
 
 
@@ -90,8 +123,8 @@ def b_orthonormalize( B, blockVectorV,
         else:
             blockVectorBV = blockVectorV # Shared data!!!
     gramVBV = sc.dot( blockVectorV.T, blockVectorBV )
-    gramVBV = sc.linalg.cholesky( gramVBV )
-    sc.linalg.inv( gramVBV, overwrite_a = True )
+    gramVBV = sla.cholesky( gramVBV )
+    sla.inv( gramVBV, overwrite_a = True )
     # gramVBV is now R^{-1}.
     blockVectorV = sc.dot( blockVectorV, gramVBV )
     if B is not None:
@@ -202,9 +235,9 @@ def lobpcg( blockVectorX, A,
 
         if B is not None:
             B_dense = B(nm.eye(n))
-            _lambda, eigBlockVector = symeig(A_dense, B_dense, range=lohi )
+            _lambda, eigBlockVector = symeig(A_dense, B_dense, select=lohi )
         else:
-            _lambda, eigBlockVector = symeig(A_dense, range=lohi )
+            _lambda, eigBlockVector = symeig(A_dense, select=lohi )
 
         return _lambda, eigBlockVector
 
@@ -248,7 +281,7 @@ def lobpcg( blockVectorX, A,
         gramYBY = sc.dot( blockVectorY.T, blockVectorBY )
         try:
             # gramYBY is a Cholesky factor from now on...
-            gramYBY = sc.linalg.cho_factor( gramYBY )
+            gramYBY = sla.cho_factor( gramYBY )
         except:
             raise ValueError('cannot handle linearly dependent constraints')
 
@@ -513,14 +546,14 @@ if __name__ == '__main__':
 
         return as2d( y )
 
-#    precond = spdiags( ivals, 0, n, n )
-
+    precond = spdiags( ivals, 0, n, n )
+#    precond = None
     tt = time.clock()
     eigs, vecs = lobpcg( X, A, B, blockVectorY = Y,
                          M = precond,
                          residualTolerance = 1e-4, maxIterations = 40,
                          largest = False, verbosityLevel = 1 )
     print 'solution time:', time.clock() - tt
-    print eigs
 
     print vecs
+    print eigs
