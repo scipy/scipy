@@ -39,7 +39,10 @@ def symeig( mtxA, mtxB = None, eigenvectors = True, select = None ):
             else:
                 fun = ll.get_lapack_funcs( ['sygv'], arrays = (mtxA,) )[0]
 ##         print fun
-        w, v, info = fun( mtxA, mtxB )
+        if mtxB is None:
+            out = fun( mtxA )
+        else:
+            out = fun( mtxA, mtxB )
 ##         print w
 ##         print v
 ##         print info
@@ -51,14 +54,13 @@ def symeig( mtxA, mtxB = None, eigenvectors = True, select = None ):
         ii = nm.argsort( w )
         w = w[slice( *select )]
         if eigenvectors:
-                v = out[1][:,ii]
-                v = v[:,slice( *select )]
+            v = out[1][:,ii]
+            v = v[:,slice( *select )]
+            out = w, v, 0
+        else:
+            out = w, 0
 
-    if eigenvectors:
-        out = w, v
-    else:
-        out = w
-    return out
+    return out[:-1]
 
 def pause():
     raw_input()
@@ -549,6 +551,7 @@ if __name__ == '__main__':
     precond = spdiags( ivals, 0, n, n )
 #    precond = None
     tt = time.clock()
+#    B = None
     eigs, vecs = lobpcg( X, A, B, blockVectorY = Y,
                          M = precond,
                          residualTolerance = 1e-4, maxIterations = 40,
