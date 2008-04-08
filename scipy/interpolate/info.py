@@ -30,6 +30,7 @@ Interpolation Class
                to compute unknown values of a univariate function.
   interp2d -- Create a class whose instances can interpolate
                to compute unknown values of a bivariate function.
+  Rbf -- Apply Radial Basis Functions to interpolate scattered N-D data.
 """
 
 postpone_import = 1
