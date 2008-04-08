@@ -41,9 +41,9 @@ build_lib('mach', '.f')
 build_lib('toms', '.f')
 build_lib('amos', '.f')
 build_lib('cdflib', '.f', 'cdf')
-build_lib('specfun', '.f')
+build_lib('specfunlib', '.f')
 
-env.AppendUnique(LIBPATH = env['build_dir'])
+env.AppendUnique(LIBPATH = [env['build_dir']])
 
 # Cephes extension
 src = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
@@ -52,10 +52,10 @@ src = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
 env.NumpyPythonExtension('_cephes', 
                          source = src, 
                          LIBS = ['amos', 'toms', 'c_misc', 'cephes', 'mach',\
-                                 'cdf', 'specfun'], 
+                                 'cdf', 'specfunlib'], 
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # Specfun extension
-env.NumpyPythonExtension('specfun', source = 'specfun.pyf', LIBS = 'specfun', \
+env.NumpyPythonExtension('specfun', source = 'specfun.pyf', LIBS = 'specfunlib', \
                          F2PYOPTIONS = ["--no-wrap-functions"],
                          LINKFLAGSEND = env['F77_LDFLAGS'])
