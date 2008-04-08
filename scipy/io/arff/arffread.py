@@ -446,10 +446,11 @@ def loadarff(filename):
         return raw
 
     try:
-        dtline = next_data_line(ofile)
-        delim = get_delim(dtline)
-    except ValueError, e:
-        raise ParseArffError("Error while parsing delimiter: " + str(e))
+        try:
+            dtline = next_data_line(ofile)
+            delim = get_delim(dtline)
+        except ValueError, e:
+            raise ParseArffError("Error while parsing delimiter: " + str(e))
     finally:
         ofile.seek(0, 0)
         ofile = go_data(ofile)
