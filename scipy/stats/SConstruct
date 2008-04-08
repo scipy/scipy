@@ -19,7 +19,7 @@ config.Finish()
 src = env.NumpyGlob(pjoin('statlib', '*.f' ))
 env.NumpyStaticExtLibrary('statlib', source = src)
 
-env.AppendUnique(LIBPATH = env['build_dir'])
+env.AppendUnique(LIBPATH = [env['build_dir']])
 
 # Statlib extension
 env.NumpyPythonExtension('statlib', source = 'statlib.pyf', 
