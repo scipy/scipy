@@ -18,7 +18,6 @@ import scipy as sc
 import scipy.sparse as sp
 import scipy.io as io
 from scipy.sparse.linalg import aslinearoperator, LinearOperator
-import scipy.linalg as sla
 
 ## try:
 ##     from symeig import symeig
@@ -26,6 +25,7 @@ import scipy.linalg as sla
 ##     raise ImportError('lobpcg requires symeig')
 
 def symeig( mtxA, mtxB = None, eigenvectors = True, select = None ):
+    import scipy.linalg as sla
     import scipy.lib.lapack as ll
     if select is None:
         if nm.iscomplexobj( mtxA ):
@@ -112,6 +112,7 @@ def makeOperator( operatorInput, expectedShape ):
 def applyConstraints( blockVectorV, factYBY, blockVectorBY, blockVectorY ):
     """Internal. Changes blockVectorV in place."""
     gramYBV = sc.dot( blockVectorBY.T, blockVectorV )
+    import scipy.linalg as sla
     tmp = sla.cho_solve( factYBY, gramYBV )
     blockVectorV -= sc.dot( blockVectorY, tmp )
 
@@ -119,6 +120,7 @@ def applyConstraints( blockVectorV, factYBY, blockVectorBY, blockVectorY ):
 def b_orthonormalize( B, blockVectorV,
                       blockVectorBV = None, retInvR = False ):
     """Internal."""
+    import scipy.linalg as sla
     if blockVectorBV is None:
         if B is not None:
             blockVectorBV = B( blockVectorV )
@@ -203,6 +205,7 @@ def lobpcg( blockVectorX, A,
 
     """
     failureFlag = True
+    import scipy.linalg as sla
 
     if blockVectorY is not None:
         sizeY = blockVectorY.shape[1]
