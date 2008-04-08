@@ -283,7 +283,6 @@ def roi_co_occurence(label_image, raw_image, ROI, distance=2, orientation=90, ve
 	S.roi_co_occurence(section, image_roi, cocm_block, distance, orientation)
         co_occurence_image_list[i] = cocm_block
 	# normalize the joint histogram prior to feature extraction
-	joint_histogram  = NP.zeros([num_bits, num_bits], dtype=NP.float64);
 	joint_histogram  = cocm_block.astype(NP.float64) 
 	joint_histogram  = joint_histogram / joint_histogram.sum()
 	# to prevent log(0)
@@ -308,6 +307,122 @@ def roi_co_occurence(label_image, raw_image, ROI, distance=2, orientation=90, ve
         return co_occurence_image_list
     else:
 	return
+
+
+
+def seg_co_occurence(raw_image, window=16, distance=2, orientation=90):
+    """
+    seg_co_occurence(raw_image, window=16, distance=2, orientation=90)
+
+    (N-S, E-W, NW-SE, NE-SW) computes one of 4 directional co-occurence matrices and features.
+    In debug=1 will return the 4 joint histograms for each ROI.
+
+    The seg_co_occurence() method is used for texture-based segmentation. Feature images are
+    returned from which segmentation can be later performed.
+
+    ****
+    NOTE: This is very slow and a fast method using Unsers histogram approximation will be 
+    added in the future.
+    ****
+
+
+    Parameters 
+    ----------
+
+    raw_image : {nd_array}
+        raw image from which texture features get extracted 
+
+    window : {int}
+        integer value of moving 2D window. Window slides in 2D over image and is the
+	region-of-interest from which co-occurence texture features are extracted. The
+	window is 2D square so only a single value is entered. Default window is 32x32. 
+
+    distance : {int}
+        integer value of pixel offset in forming joint histogram. default value 2
+
+    orientation : {45, 90, 135, 180}
+        direction for pixel offet.
+
+    Returns 
+    ----------
+
+    cocm_images : {dictionary}
+        
+	co_occurence_feature_images. contains 4 normalized feature
+	windows with keys: energy, entropy, contrast and homogeneity.
+
+    """
+
+    if orientation != 45 and orientation != 90 and orientation != 135 and orientation != 180: 
+        orientation = 90
+
+    epsilon      = 2.2e-16 
+    num_bits     = 256
+    copy_image   = raw_image.copy()
+    [rows, cols] = copy_image.shape
+    row_indices  = range(window, rows-window)
+    col_indices  = range(window, cols-window)
+
+    # create a fixed mask and scratch window for raw source
+    section       = NP.ones(2*window*2*window, dtype=NP.int16).reshape(2*window, 2*window)
+    source_region = NP.zeros(2*window*2*window, dtype=NP.float64).reshape(2*window, 2*window)
+
+    # output images
+    energy_image      = NP.zeros(rows*cols, dtype=NP.float64).reshape(rows, cols)
+    entropy_image     = NP.zeros(rows*cols, dtype=NP.float64).reshape(rows, cols)
+    homogeneity_image = NP.zeros(rows*cols, dtype=NP.float64).reshape(rows, cols)
+    contrast_image    = NP.zeros(rows*cols, dtype=NP.float64).reshape(rows, cols)
+    cocm_block        = NP.zeros(num_bits*num_bits, dtype=NP.int32).reshape(num_bits, num_bits)
+    
+    for i in row_indices:
+        bottom = i - window
+        top    = i + window
+        for j in col_indices:
+            left  = j - window
+            right = j + window 
+	    source_region[0:2*window, 0:2*window] = copy_image[bottom:top, left:right] 
+            # scale segment to 8 bits. this needs to be smarter (e.g. use integrated histogram method)
+            max_value = source_region.max()
+            min_value = source_region.min()
+            scale     = 255.0 / (max_value-min_value)
+            image_roi = (scale*(source_region-min_value)).astype(NP.int16)
+	    # image_roi is short type
+	    cocm_block[:] = 0.0
+	    S.roi_co_occurence(section, image_roi, cocm_block, distance, orientation)
+	    # normalize the joint histogram prior to feature extraction
+	    joint_histogram = cocm_block.astype(NP.float64) 
+	    joint_histogram = joint_histogram / joint_histogram.sum()
+	    # to prevent log(0)
+	    joint_histogram += epsilon
+	    # compute the com features
+	    energy      = joint_histogram.std()
+	    H           = joint_histogram * NP.log(joint_histogram)
+	    entropy     = H.sum()
+	    r, c        = joint_histogram.shape
+	    [a, b]      = NP.mgrid[1:c+1, 1:r+1]
+	    contrast    = ((NP.square(a-b))*joint_histogram).sum()
+	    d           = 1.0 + NP.abs(a-b)
+	    homogeneity = (joint_histogram / d).sum()
+	    # store the feature pixel for the 4 images
+	    energy_image[i, j]      = energy
+	    entropy_image[i, j]     = entropy
+	    contrast_image[i, j]    = contrast
+	    homogeneity_image[i, j] = homogeneity
+
+    scale_energy      = 1.0 / max(energy_image.max(), abs(energy_image.min()))
+    scale_entropy     = 1.0 / max(entropy_image.max(), abs(entropy_image.min()))
+    scale_contrast    = 1.0 / max(contrast_image.max(), abs(contrast_image.min()))
+    scale_homogeneity = 1.0 / max(homogeneity_image.max(), abs(homogeneity_image.min()))
+
+    energy_image      = scale_energy      * energy_image
+    entropy_image     = scale_entropy     * entropy_image
+    homogeneity_image = scale_homogeneity * homogeneity_image
+    contrast_image    = scale_contrast    * contrast_image
+
+    cocm_images = {'energy_image' : energy_image,  'entropy_image' : entropy_image, 
+                   'homogeneity_image' : homogeneity_image,  'contrast_image' : contrast_image} 
+
+    return cocm_images 
 
 
 def roi_mat_filter(label_image, thin_kernel, ROI):
