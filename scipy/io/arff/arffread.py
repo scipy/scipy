@@ -300,9 +300,26 @@ def get_delim(line):
 class MetaData:
     """Small container to keep useful informations on a ARFF dataset.
     
-    Also maintains the list of attributes in order, i.e. doing for i in meta,
-    where meta is an instance of MetaData, will return the different attribute
-    names in the order they were defined."""
+    Knows about attributes names and types.
+
+    :Example:
+
+        data, meta = loadarff('iris.arff')
+        # This will print the attributes names of the iris.arff dataset
+        for i in meta:
+            print i
+        # This works too
+        meta.names()
+        # Getting attribute type
+        types = meta.types()
+
+    :Note:
+
+        Also maintains the list of attributes in order, i.e. doing for i in
+        meta, where meta is an instance of MetaData, will return the different
+        attribute names in the order they were defined.
+    
+    """
     def __init__(self, rel, attr):
         self.name = rel
         # We need the dictionary to be ordered
@@ -333,8 +350,29 @@ class MetaData:
     def __getitem__(self, key):
         return self._attributes[key]
 
+    def names(self):
+        """Return the list of attribute names."""
+        return self._attrnames
+
+    def types(self):
+        """Return the list of attribute types."""
+        return [v[0] for v in self._attributes.values()]
+
 def loadarff(filename):
     """Read an arff file.
+
+    :Args:
+
+        filename: str
+            the name of the file
+
+    :Returns:
+
+        data: record array
+            the data of the arff file. Each record corresponds to one attribute.
+        meta: MetaData
+            this contains informations about the arff file, like type and names
+            of attributes, the relation (name of the dataset), etc...
 
     :Note:
 
