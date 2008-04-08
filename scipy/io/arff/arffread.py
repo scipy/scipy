@@ -10,7 +10,7 @@ from scipy.io.arff.utils import partial
 
 """A module to read arff files."""
 
-__all__ = ['MetaData', 'read_arff', 'ArffError', 'ParseArffError']
+__all__ = ['MetaData', 'loadarff', 'ArffError', 'ParseArffError']
 
 # An Arff file is basically two parts: 
 #   - header
@@ -333,7 +333,7 @@ class MetaData:
     def __getitem__(self, key):
         return self._attributes[key]
 
-def read_arff(filename):
+def loadarff(filename):
     """Read an arff file.
 
     :Note:
@@ -474,14 +474,14 @@ def print_attribute(name, tp, data):
         print msg
 
 def test_weka(filename):
-    data, meta = read_arff(filename)
+    data, meta = loadarff(filename)
     print len(data.dtype)
     print data.size
     for i in meta:
         print_attribute(i,meta[i],data[i])
 
 def floupi(filename):
-    data, meta = read_arff(filename)
+    data, meta = loadarff(filename)
     from attrselect import print_dataset_info
     print_dataset_info(data)
     print "relation %s, has %d instances" % (meta.name, data.size)

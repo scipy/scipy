@@ -5,7 +5,7 @@ import os
 import numpy as N
 from scipy.testing import *
 
-from scipy.io.arff.arffread import read_arff
+from scipy.io.arff.arffread import loadarff
 
 data_path = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -31,14 +31,14 @@ class DataTest(TestCase):
         self._test(test5)
 
     def _test(self, test_file):
-        data, meta = read_arff(test_file)
+        data, meta = loadarff(test_file)
         for i in range(len(data)):
             for j in range(4):
                 assert_array_almost_equal(expect4_data[i][j], data[i][j])
 
 class MissingDataTest(TestCase):
     def test_missing(self):
-        data, meta = read_arff(missing)
+        data, meta = loadarff(missing)
         for i in ['yop', 'yap']:
             assert_array_almost_equal(data[i], expect_missing[i])
 
