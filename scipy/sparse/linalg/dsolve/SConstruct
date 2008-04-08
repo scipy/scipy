@@ -38,10 +38,10 @@ superlu = superlu_env.NumpyStaticExtLibrary('superlu_src', source = superlu_src)
 # Build python extensions
 pyenv = env.Clone()
 pyenv.Append(CPPPATH = [get_numpy_include_dirs(), env['src_dir']])
+pyenv.Prepend(LIBS = superlu)
 common_src = ['_superlu_utils.c', '_superluobject.c']
 
 for prec in ['z', 'd', 'c', 's']:
     pyenv.NumpyPythonExtension('_%ssuperlu' % prec, 
                                source = common_src + \
-                                        ['_%ssuperlumodule.c' % prec], 
-                               LIBS = superlu)
+                                        ['_%ssuperlumodule.c' % prec]) 
