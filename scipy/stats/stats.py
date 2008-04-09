@@ -1678,7 +1678,7 @@ Returns: t-value, two-tailed prob
 """
     a = asarray(a)
     x = mean(a,None)
-    v = var(a)
+    v = var(a,None)
     n = len(a)
     df = n-1
     svar = ((n-1)*v) / float(df)
