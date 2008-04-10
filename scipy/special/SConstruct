@@ -29,6 +29,7 @@ def build_lib(name, ext, libname = None):
     if not libname:
         libname = name
     src = env.NumpyGlob(pjoin(name, '*%s' % ext))
+    assert len(src) > 0
     env.NumpyStaticExtLibrary(libname, source = src)
 
 # C libraries
@@ -41,7 +42,7 @@ build_lib('mach', '.f')
 build_lib('toms', '.f')
 build_lib('amos', '.f')
 build_lib('cdflib', '.f', 'cdf')
-build_lib('specfunlib', '.f')
+build_lib('specfun', '.f', 'specfunlib')
 
 env.AppendUnique(LIBPATH = [env['build_dir']])
 
@@ -56,6 +57,7 @@ env.NumpyPythonExtension('_cephes',
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # Specfun extension
-env.NumpyPythonExtension('specfun', source = 'specfun.pyf', LIBS = 'specfunlib', \
+env.Prepend(LIBS = ['specfunlib'])
+env.NumpyPythonExtension('specfun', source = 'specfun.pyf',
                          F2PYOPTIONS = ["--no-wrap-functions"],
                          LINKFLAGSEND = env['F77_LDFLAGS'])
