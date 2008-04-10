@@ -17,14 +17,14 @@ config.Finish()
 
 # Statlib library
 src = env.NumpyGlob(pjoin('statlib', '*.f' ))
-env.NumpyStaticExtLibrary('statlib', source = src)
+env.NumpyStaticExtLibrary('statlibimp', source = src)
 
 env.AppendUnique(LIBPATH = [env['build_dir']])
 
 # Statlib extension
 env.NumpyPythonExtension('statlib', source = 'statlib.pyf', 
                          F2PYOPTIONS = ["--no-wrap-functions"],
-                         LIBS = 'statlib',
+                         LIBS = 'statlibimp',
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # futil extension
