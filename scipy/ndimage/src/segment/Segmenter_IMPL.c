@@ -1469,3 +1469,189 @@ int NI_RoiCoOccurence(int samples, int rows, int cols, unsigned short *labelImag
 
 }
 
+int NI_GrowRegion2D(int rows, int cols, double *rawimage, unsigned short *label,
+                    objStruct expanded_ROI[], objStruct newgrow_ROI[], double cutoff, int Label,
+		    int N_connectivity){
+
+	int i, j, p, m;
+	int offset;
+	int offsetM, offsetP;
+	int status;
+	int T[8], count;
+	double value;
+	bool change;
+
+	while(1){
+	    change = FALSE;
+	    for(i = 1; i < rows-1; ++i){
+	        offset  = i * cols;
+	        offsetM = offset - cols;
+	        offsetP = offset + cols;
+	        for(j = 1; j < cols-1; ++j){
+	            m = label[offset+j];
+		    if(!m){
+			/* un-labeled pixel */
+	                value = rawimage[offset+j];
+	                if(value > cutoff){
+			    /* check for N-connectivity */
+			    T[0] = label[offset+j+1];
+			    T[1] = label[offsetM+j+1];
+			    T[2] = label[offsetM+j];
+			    T[3] = label[offsetM+j-1];
+			    T[4] = label[offset+j-1];
+			    T[5] = label[offsetP+j-1];
+			    T[6] = label[offsetP+j];
+			    T[7] = label[offsetP+j+1];
+			    count = 0;
+	        	    for(p = 0; p < 8; ++p){
+			        count += T[p];
+			    }	
+			    if(count > N_connectivity){
+	            		label[offset+j] = Label;
+	    			change = TRUE;
+			    } 
+			}	
+		    }
+	        }
+	    }
+	    if(!change) break;
+	}
+
+	/* get new bounding box */
+
+	status = 1;
+
+	return(status);
+
+}
+
+int NI_GrowRegion3D(int layers, int rows, int cols, double *rawimage, unsigned short *label,
+                    objStruct expanded_ROI[], objStruct newgrow_ROI[], double cutoff, int Label,
+		    int N_connectivity){
+
+	int i, j, k, m, p;
+	int offset;
+	int ptr;
+	int lOffset,  rOffset;
+	int lOffsetP, lOffsetN;
+	int rOffsetP, rOffsetN;
+	int layerSize;
+	int status;
+	int T[26], count;
+	int LowX;
+	int LowY;
+	int LowZ;
+	int HighX;
+	int HighY;
+	int HighZ;
+	float centerX;
+	float centerY;
+	float centerZ;
+	double value;
+	bool change;
+
+	layerSize = rows * cols;
+	while(1){
+	    change = FALSE;
+	    for(i = 1; i < layers-1; ++i){
+	        lOffset  = i * layerSize;
+	        lOffsetP = lOffset+layerSize;
+	        lOffsetN = lOffset-layerSize;
+	        for(j = 1; j < rows-1; ++j){
+		    rOffset = j * cols;
+		    rOffsetP = rOffset+cols;
+		    rOffsetN = rOffset-cols;
+		    for(k = 1; k < cols-1; ++k){
+		        m = label[lOffset+rOffset+k];
+		        if(!m){
+			    /* un-labeled voxel */
+	                    value = rawimage[lOffset+rOffset+k];
+	                    if(value > cutoff){
+			        /* check for N-connectivity */
+			        T[0]  = label[lOffset+rOffset+k+1];
+			        T[1]  = label[lOffset+rOffsetN+k+1];
+			        T[2]  = label[lOffset+rOffsetN+k];
+			        T[3]  = label[lOffset+rOffsetN+k-1];
+			        T[4]  = label[lOffset+rOffset+k-1];
+			        T[5]  = label[lOffset+rOffsetP+k-1];
+			        T[6]  = label[lOffset+rOffsetP+k];
+			        T[7]  = label[lOffset+rOffsetP+k+1];
+
+			        T[8]  = label[lOffsetN+rOffset+k];
+			        T[9]  = label[lOffsetN+rOffset+k+1];
+			        T[10] = label[lOffsetN+rOffsetN+k+1];
+			        T[11] = label[lOffsetN+rOffsetN+k];
+			        T[12] = label[lOffsetN+rOffsetN+k-1];
+			        T[13] = label[lOffsetN+rOffset+k-1];
+			        T[14] = label[lOffsetN+rOffsetP+k-1];
+			        T[15] = label[lOffsetN+rOffsetP+k];
+			        T[16] = label[lOffsetN+rOffsetP+k+1];
+
+			        T[17] = label[lOffsetP+rOffset+k];
+			        T[18] = label[lOffsetP+rOffset+k+1];
+			        T[19] = label[lOffsetP+rOffsetN+k+1];
+			        T[20] = label[lOffsetP+rOffsetN+k];
+			        T[21] = label[lOffsetP+rOffsetN+k-1];
+			        T[22] = label[lOffsetP+rOffset+k-1];
+			        T[23] = label[lOffsetP+rOffsetP+k-1];
+			        T[24] = label[lOffsetP+rOffsetP+k];
+			        T[25] = label[lOffsetP+rOffsetP+k+1];
+
+			        count = 0;
+	        	        for(p = 0; p < 26; ++p){
+			            count += T[p];
+			        }	
+			        if(count > N_connectivity){
+		        	    label[lOffset+rOffset+k]= Label;
+	    			    change = TRUE;
+			        } 
+			    } 
+		        }
+		    }
+	        }
+	    }
+	    if(!change) break;
+	}
+
+
+        LowX       = 32767;
+	LowY       = 32767;
+	LowZ       = 32767;
+	HighX      = 0;
+	HighY      = 0;
+	HighZ      = 0;
+	count      = 0;
+	centerX    = (float)0.0;
+	centerY    = (float)0.0;
+	centerZ    = (float)0.0;
+	ptr        = 0;
+	count      = 0;
+	for(i = 0; i < layers; ++i){
+	    for(j = 0; j < rows; ++j){
+	        for(k = 0; k < cols; ++k){
+		    m = label[ptr++];
+		    if(m == Label){
+		        if(i < LowZ)   LowZ = i;
+		        if(j < LowY)   LowY = j;
+		        if(k < LowX)   LowX = k;
+		        if(i > HighZ) HighZ = i;
+		        if(j > HighY) HighY = j;
+		        if(k > HighX) HighX = k;
+	    	        centerX += (float)k;
+	    	        centerY += (float)j;
+	    	        centerZ += (float)i;
+	    	        ++count;
+		    }
+		}
+	    }
+	}
+
+
+
+	status = 1;
+
+	return(status);
+
+}
+
+
