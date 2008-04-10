@@ -206,10 +206,15 @@ class MMFile (object):
                         filespec = filespec + '.mtx'
                     elif os.path.isfile(filespec+'.mtx.gz'):
                         filespec = filespec + '.mtx.gz'
+                    elif os.path.isfile(filespec+'.mtx.bz2'):
+                        filespec = filespec + '.mtx.bz2'
                 # open filename
                 if filespec[-3:] == '.gz':
                     import gzip
                     stream = gzip.open(filespec, mode)
+                elif filespec[-4:] == '.bz2':
+                    import bz2
+                    stream = bz2.BZ2File(filespec, 'r')
                 else:
                     stream = open(filespec, mode)
      
