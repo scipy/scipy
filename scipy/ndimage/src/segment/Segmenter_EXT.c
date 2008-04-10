@@ -583,8 +583,70 @@ exit:
 
 }
 
+static PyObject *Segmenter_GrowRegion(PyObject *self, PyObject *args)
+{
+
+
+    int num;
+    int nd;
+    int type;
+    int Label;
+    int N_connectivity; 
+    double cutoff;
+    npy_intp *dims;
+    npy_intp *objNumber;
+    unsigned short *label;
+    double *section;
+    PyObject  *sArray = NULL;
+    PyObject  *lArray = NULL;
+    PyObject  *eArray = NULL;
+    PyObject  *nArray = NULL;
+    objStruct *expanded_ROI;
+    objStruct *newgrow_ROI;
+
+    if(!PyArg_ParseTuple(args, "OOOOdii", &sArray, &lArray, &eArray, &nArray, &cutoff,
+			 &Label, &N_connectivity))
+	    goto exit;
+
+    if(!PyArray_ISCONTIGUOUS(sArray) || !PyArray_ISCONTIGUOUS(lArray))
+	    goto exit;
+
+    	//
+	//   PyArray_ContiguousFromObject or PyArray_ContiguousFromAny to be explored 
+	//   for non-contiguous
+	//
+
+    section = (double *)PyArray_DATA(sArray);
+    nd      = PyArray_NDIM(sArray);
+    dims    = PyArray_DIMS(sArray);
+    type    = PyArray_TYPE(sArray);
+    num     = PyArray_SIZE(sArray);
+
+    label        = (unsigned short *)PyArray_DATA(lArray);
+    expanded_ROI = (objStruct*)PyArray_DATA(eArray);
+    newgrow_ROI  = (objStruct*)PyArray_DATA(nArray);
+	
+    if(nd == 2){ 
+        if(!NI_GrowRegion2D((int)dims[0], (int)dims[1], section, label, expanded_ROI,
+			    newgrow_ROI, cutoff, Label, N_connectivity))
+	    goto exit;
+    }
+    else if(nd == 3){ 
+        if(!NI_GrowRegion3D((int)dims[0], (int)dims[1], (int)dims[2], section, label,
+			    expanded_ROI, newgrow_ROI, cutoff, Label, N_connectivity))
+	    goto exit;
+    }
+
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("");
+
+}
+
 static PyMethodDef SegmenterMethods[] =
 {
+    { "grow_region",          Segmenter_GrowRegion,         METH_VARARGS, NULL },
     { "roi_co_occurence",     Segmenter_RoiCoOccurence,     METH_VARARGS, NULL },
     { "binary_edge",          Segmenter_BinaryEdge,         METH_VARARGS, NULL },
     { "laws_texture_metric",  Segmenter_LawsTextureMetric,  METH_VARARGS, NULL },
