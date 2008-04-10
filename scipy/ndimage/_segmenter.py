@@ -310,9 +310,192 @@ def roi_co_occurence(label_image, raw_image, ROI, distance=2, orientation=90, ve
 
 
 
+def region_grow(label_image, raw_image, ROI, roi_index, roi_inflate=[12, 32, 32],
+		stop_thresh=0.1, N_connectivity=1):
+    """
+    region_grow(label_image, raw_image, ROI, roi_index, roi_inflate, stop_thresh)
+
+    starting from a seed (masks or regions in the label_image) grow the regions based
+    on (1) connectivity (2D or 3D) and (2) raw voxel values > stop threshold criterion.
+
+    Parameters 
+    ----------
+
+    label_image : {nd_array}
+        an image with labeled regions from get_blobs() method
+
+    raw_image : {nd_array}
+        raw image from which texture features get extracted 
+
+    ROI : {dictionary}
+        Region of Interest structure that has blob bounding boxes. The largest
+	2D target bounding box is extracted.
+
+    roi_index : {int}
+        the single ROI element to apply region growing to.
+
+    roi_inflate : {tuple}
+        the maximum increase in the ROI bounding box. For 3D the tuple is [layers, rows, cols]
+	and for 2D it is [rows, cols].
+
+    stop_thresh : {float}
+        this is the percent of the voxel mean that the growing region must be greater than.
+	region growing terminates when the raw_image is below this value.
+
+    N_connectivity : {int}
+        for growing this indicates how connected in a 3x3 or 3x3x3 window the un-labeled
+	sample is. Make less than full connected for growing boundaries
+
+    Returns 
+    ----------
+
+    updated_label : {nd_array}
+        the label image with the selected ROi after region growing 
+
+    """
+
+    _c_ext_struct = NP.dtype([('Left', 'i'),
+                              ('Right', 'i'),
+                              ('Top', 'i'),
+                              ('Bottom', 'i'),
+                              ('Front', 'i'),
+                              ('Back', 'i'),
+                              ('Label', 'i'),
+                              ('Mass', 'i'),
+                              ('cX', 'f'),
+                              ('cY', 'f'),
+                              ('cZ', 'f')]
+                             )
+
+    expanded_ROI = NP.zeros(1, dtype=_c_ext_struct)
+
+    dimensions  = label_image.ndim
+    dim_inflate = size(roi_inflate)
+    if dimensions != dim_inflate:
+	return
+
+    if dimensions == 3:
+        z_ext = roi_inflate[0]
+        y_ext = roi_inflate[1]
+        x_ext = roi_inflate[2]
+        [layers, rows, cols]  = label_image.shape
+        updated_label = NP.zeros(layers*rows*cols, dtype=label_image.dtype).reshape(layers, rows, cols)
+    else:
+        y_ext = roi_inflate[0]
+        x_ext = roi_inflate[1]
+        [rows, cols]  = label_image.shape
+        updated_label = NP.zeros(rows*cols, dtype=label_image.dtype).reshape(rows, cols)
+
+    if dimensions == 2:  
+        left   = ROI[roi_index]['Left']-x_ext
+        right  = ROI[roi_index]['Right']+x_ext
+        bottom = ROI[roi_index]['Bottom']-y_ext
+        top    = ROI[roi_index]['Top']+y_ext
+        Label  = ROI[roi_index]['Label']
+        cutoff = stop_thresh * ROI[roi_index]['voxelMean']
+   	if left < 0: 
+           left = 0
+    	if bottom < 0: 
+            bottom = 0
+    	if right > cols-1: 
+            right = cols-1
+    	if top > rows-1: 
+            top = rows-1
+        expanded_ROI['Left']   = left 
+        expanded_ROI['Right']  = right 
+        expanded_ROI['Top']    = top 
+        expanded_ROI['Bottom'] = bottom 
+        expanded_ROI['Label']  = Label 
+	rows    = top-bottom-1
+	cols    = right-left-1
+        label   = NP.zeros(rows*cols, dtype=raw_image.dtype).reshape(rows, cols)
+	label   = label_image[bottom:top, left:right] \
+	                     [label_image[bottom:top, left:right]==Label]
+        section = NP.zeros(rows*cols, dtype=raw_image.dtype).reshape(rows, cols)
+	section = raw_image[bottom:top, left:right] \
+	                   [label_image[bottom:top, left:right]==Label]
+    elif dimensions == 3:  
+        left   = ROI[roi_index]['Left']-x_ext
+        right  = ROI[roi_index]['Right']+x_ext
+        bottom = ROI[roi_index]['Bottom']-y_ext
+        top    = ROI[roi_index]['Top']+y_ext
+        front  = ROI[roi_index]['Front']-z_ext
+        back   = ROI[roi_index]['Back']+z_ext
+        Label  = ROI[roi_index]['Label']
+        cutoff = stop_thresh * ROI[roi_index]['voxelMean']
+    	if left < 0: 
+            left = 0
+    	if bottom < 0: 
+            bottom = 0
+    	if right > cols-1: 
+            right = cols-1
+    	if top > rows-1: 
+            top = rows-1
+    	if front < 0: 
+            front = 0
+    	if back > layers-1: 
+            back = layers-1
+        expanded_ROI['Left']   = left 
+        expanded_ROI['Right']  = right 
+        expanded_ROI['Top']    = top 
+        expanded_ROI['Bottom'] = bottom 
+        expanded_ROI['Back']   = back 
+        expanded_ROI['Front']  = front 
+        expanded_ROI['Label']  = Label 
+	rows    = top-bottom-1
+	cols    = right-left-1
+	layers  = back-front-1
+        label   = NP.zeros(layers*rows*cols, dtype=raw_image.dtype).reshape(layers, rows, cols)
+	label   = label_image[front:back, bottom:top, left:right] \
+	                     [label_image[front:back, bottom:top, left:right]==Label]
+        section = NP.zeros(layers*rows*cols, dtype=raw_image.dtype).reshape(layers, rows, cols)
+	section = raw_image[front:back, bottom:top, left:right] \
+	                   [label_image[front:back, bottom:top, left:right]==Label]
+
+    #
+    # this newgrow_ROI gets filled in and the label image is grown
+    #
+
+    newgrow_ROI = NP.zeros(1, dtype=_c_ext_struct)
+    S.region_grow(section, label, expanded_ROI, newgrow_ROI, cutoff, Label, N_connectivity)
+    if dimensions == 2:  
+	# adjust for delta window
+	ROI[roi_index]['Left']   = newgrow_ROI[roi_index]['Left']
+	ROI[roi_index]['Right']  = newgrow_ROI[roi_index]['Right']
+	ROI[roi_index]['Top']    = newgrow_ROI[roi_index]['Top']
+	ROI[roi_index]['Bottom'] = newgrow_ROI[roi_index]['Bottom']
+	left   = ROI[roi_index]['Left']
+	right  = ROI[roi_index]['Right']
+	top    = ROI[roi_index]['Top']
+	bottom = ROI[roi_index]['Bottom']
+	rows   = top-bottom-1
+	cols   = right-left-1
+	updated_label[bottom:top,left:right] = label[0:rows,0:cols]
+    elif dimensions == 3:  
+        ROI[i]['Left']   = newgrow_ROI[roi_index]['Left']
+        ROI[i]['Right']  = newgrow_ROI[roi_index]['Right']
+        ROI[i]['Top']    = newgrow_ROI[roi_index]['Top']
+        ROI[i]['Bottom'] = newgrow_ROI[roi_index]['Bottom']
+        ROI[i]['Front']  = newgrow_ROI[roi_index]['Front']
+        ROI[i]['Back']   = newgrow_ROI[roi_index]['Back']
+	left   = ROI[roi_index]['Left']
+	right  = ROI[roi_index]['Right']
+	top    = ROI[roi_index]['Top']
+	bottom = ROI[roi_index]['Bottom']
+	front  = ROI[roi_index]['Front']
+	back   = ROI[roi_index]['Back']
+	rows   = top-bottom-1
+	cols   = right-left-1
+	layers = back-front-1
+	updated_label[front:back, bottom:top,left:right] = label[0:layers,0:rows,0:cols]
+			 
+    return updated_label
+
+
+
 def seg_co_occurence(raw_image, window=16, distance=2, orientation=90):
     """
-    seg_co_occurence(raw_image, window=16, distance=2, orientation=90)
+    cocm_images = seg_co_occurence(raw_image, window=16, distance=2, orientation=90)
 
     (N-S, E-W, NW-SE, NE-SW) computes one of 4 directional co-occurence matrices and features.
     In debug=1 will return the 4 joint histograms for each ROI.
