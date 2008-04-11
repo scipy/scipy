@@ -153,7 +153,6 @@ int NI_BinaryEdge(int samples, int rows, int cols, unsigned short *labelImage, u
 	int offsetM1;
 	int offsetP1;
 	int values3x3[8];
-	int value;
 	int status;
 
 	offset = cols;
@@ -248,14 +247,12 @@ int NI_GetBlobs3D(int samples, int layers, int rows, int cols, unsigned short *e
 	int  rOffsetP, rOffsetN;
 	int  Classes[4096];
 	int  dwImageSize, ptr;
-	int  HighZ, HighY, HighX, LowZ, LowX, LowY;
 	bool NewLabel;
 	bool Change;
 	bool connected;
 	int  T[27];
 	int  *ccompImage;
 	int  layerSize;
-	int  TargetArea;
 	int  count;
 	int  status;
 
@@ -828,7 +825,7 @@ int NI_GetBlobRegions2D(int rows, int cols, int numberObjects, unsigned short *l
 }
 
 
-void NI_ThinMorphoFilter(int regRows, int regColumns, int spadSize, int masks, unsigned short *J_mask, 
+int NI_ThinMorphoFilter(int regRows, int regColumns, int spadSize, int masks, unsigned short *J_mask, 
 	                 unsigned short *K_mask, unsigned char *Input, unsigned char *CInput, 
 	                 unsigned char *ErosionStage, unsigned char *DialationStage, 
 		         unsigned char *HMT, unsigned char *Copy){
@@ -1287,7 +1284,6 @@ void computeLaws(LawsFilter7 lawsFilter, int aperature, int srcRows, int srcCols
 	int i, j;
 	int lawsLayer;
 	int column, row;
-	int offset;
 	int maskOffset[7];
 	int dataOffset[7];
 	float myImage[49];
@@ -1393,9 +1389,8 @@ int NI_LawsTexture(int num, int rows, int cols, double *src_image, unsigned shor
 int NI_RoiCoOccurence(int samples, int rows, int cols, unsigned short *labelImage,
 	              unsigned short *rawImage, int *cocMatrix, int distance, int orientation){ 
 
-	int i, j, k;
+	int i, j;
 	int offset;
-	int sum;
 	int d_row;
 	int d_col;
 	int status;
@@ -1470,7 +1465,7 @@ int NI_RoiCoOccurence(int samples, int rows, int cols, unsigned short *labelImag
 }
 
 int NI_GrowRegion2D(int rows, int cols, double *rawimage, unsigned short *label,
-                    objStruct expanded_ROI[], objStruct newgrow_ROI[], double cutoff, int Label,
+                    objStruct *expanded_ROI, objStruct *newgrow_ROI, double cutoff, int Label,
 		    int N_connectivity){
 
 	int i, j, p, m;
@@ -1478,6 +1473,10 @@ int NI_GrowRegion2D(int rows, int cols, double *rawimage, unsigned short *label,
 	int offsetM, offsetP;
 	int status;
 	int T[8], count;
+	int LowX;
+	int LowY;
+	int HighX;
+	int HighY;
 	double value;
 	bool change;
 
@@ -1504,7 +1503,9 @@ int NI_GrowRegion2D(int rows, int cols, double *rawimage, unsigned short *label,
 			    T[7] = label[offsetP+j+1];
 			    count = 0;
 	        	    for(p = 0; p < 8; ++p){
-			        count += T[p];
+			        if(T[p] == Label){
+			            count += T[p];
+			        }
 			    }	
 			    if(count > N_connectivity){
 	            		label[offset+j] = Label;
@@ -1518,6 +1519,11 @@ int NI_GrowRegion2D(int rows, int cols, double *rawimage, unsigned short *label,
 	}
 
 	/* get new bounding box */
+	newgrow_ROI->Left   = expanded_ROI->Left + LowX;
+	newgrow_ROI->Right  = newgrow_ROI->Left + (HighX-LowX);
+	newgrow_ROI->Bottom = expanded_ROI->Bottom + LowY;
+	newgrow_ROI->Top    = expanded_ROI->Bottom + (HighY-LowY);
+	newgrow_ROI->Mass   = count;
 
 	status = 1;
 
@@ -1526,7 +1532,7 @@ int NI_GrowRegion2D(int rows, int cols, double *rawimage, unsigned short *label,
 }
 
 int NI_GrowRegion3D(int layers, int rows, int cols, double *rawimage, unsigned short *label,
-                    objStruct expanded_ROI[], objStruct newgrow_ROI[], double cutoff, int Label,
+                    objStruct *expanded_ROI, objStruct *newgrow_ROI, double cutoff, int Label,
 		    int N_connectivity){
 
 	int i, j, k, m, p;
@@ -1599,7 +1605,9 @@ int NI_GrowRegion3D(int layers, int rows, int cols, double *rawimage, unsigned s
 
 			        count = 0;
 	        	        for(p = 0; p < 26; ++p){
-			            count += T[p];
+			            if(T[p] == Label){
+			                count += T[p];
+				    }
 			        }	
 			        if(count > N_connectivity){
 		        	    label[lOffset+rOffset+k]= Label;
@@ -1612,7 +1620,6 @@ int NI_GrowRegion3D(int layers, int rows, int cols, double *rawimage, unsigned s
 	    }
 	    if(!change) break;
 	}
-
 
         LowX       = 32767;
 	LowY       = 32767;
@@ -1646,7 +1653,13 @@ int NI_GrowRegion3D(int layers, int rows, int cols, double *rawimage, unsigned s
 	    }
 	}
 
-
+	newgrow_ROI->Left   = expanded_ROI->Left + LowX;
+	newgrow_ROI->Right  = newgrow_ROI->Left + (HighX-LowX);
+	newgrow_ROI->Bottom = expanded_ROI->Bottom + LowY;
+	newgrow_ROI->Top    = newgrow_ROI->Bottom + (HighY-LowY);
+	newgrow_ROI->Front  = expanded_ROI->Front + LowZ;
+	newgrow_ROI->Back   = expanded_ROI->Front + (HighZ-LowZ);
+	newgrow_ROI->Mass   = count;
 
 	status = 1;
 
