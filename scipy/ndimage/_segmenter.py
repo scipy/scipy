@@ -392,7 +392,6 @@ def region_grow(label_image, raw_image, ROI, roi_index, roi_inflate,
         top    = ROI[roi_index]['Top']+y_ext
         Label  = ROI[roi_index]['Label']
         cutoff = stop_thresh * ROI[roi_index]['voxelMean']
-        print 'cutoff = ', cutoff 
    	if left < 0: 
            left = 0
     	if bottom < 0: 
@@ -452,8 +451,6 @@ def region_grow(label_image, raw_image, ROI, roi_index, roi_inflate,
     # this newgrow_ROI gets filled in and the label image is grown
     #
 
-    #return label, section
-
     newgrow_ROI = NP.zeros(1, dtype=_c_ext_struct)
     S.region_grow(section, label, expanded_ROI, newgrow_ROI, cutoff, Label, N_connectivity)
 
@@ -471,26 +468,24 @@ def region_grow(label_image, raw_image, ROI, roi_index, roi_inflate,
 	cols   = right-left
 	updated_label_image[bottom:top,left:right] = label[0:rows,0:cols]
     elif dimensions == 3:  
-
         ROI[roi_index]['Left']   = newgrow_ROI['Left']
         ROI[roi_index]['Right']  = newgrow_ROI['Right']
         ROI[roi_index]['Top']    = newgrow_ROI['Top']
         ROI[roi_index]['Bottom'] = newgrow_ROI['Bottom']
         ROI[roi_index]['Front']  = newgrow_ROI['Front']
         ROI[roi_index]['Back']   = newgrow_ROI['Back']
-	left   = ROI[roi_index]['Left']
-	right  = ROI[roi_index]['Right']
-	top    = ROI[roi_index]['Top']
-	bottom = ROI[roi_index]['Bottom']
-	front  = ROI[roi_index]['Front']
-	back   = ROI[roi_index]['Back']
+	left   = expanded_ROI['Left']
+	right  = expanded_ROI['Right']
+	top    = expanded_ROI['Top']
+	bottom = expanded_ROI['Bottom']
+	front  = expanded_ROI['Front']
+	back   = expanded_ROI['Back']
 	rows   = top-bottom
 	cols   = right-left
 	layers = back-front
 	updated_label_image[front:back,bottom:top,left:right] = label[0:layers,0:rows,0:cols]
 			 
-    #return updated_label_image
-    return label
+    return updated_label_image
 
 
 
