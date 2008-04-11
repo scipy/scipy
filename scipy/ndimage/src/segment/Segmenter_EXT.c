@@ -529,8 +529,10 @@ static PyObject *Segmenter_LawsTextureMetric(PyObject *self, PyObject *args)
         lawsFilter.lawsKernel[5][i] = O7[i];
     }
 
-    if(!PyArray_ISCONTIGUOUS(mArray))
+    if(!PyArray_ISCONTIGUOUS(sArray)){
+            printf("PyArray_ISCONTIGUOUS error\n");
 	    goto exit;
+    }
 
     if(!NI_LawsTexture(num, (int)dims[0], (int)dims[1], src_image, mask, lawsImage,   
 		             lawsFilter)){
@@ -571,6 +573,11 @@ static PyObject *Segmenter_RoiCoOccurence(PyObject *self, PyObject *args)
     coc_matrix = (int *)PyArray_DATA(cArray);
     dims_cocm  = PyArray_DIMS(cArray);
 
+    if(!PyArray_ISCONTIGUOUS(mArray) || !PyArray_ISCONTIGUOUS(rArray)){
+            printf("PyArray_ISCONTIGUOUS error\n");
+	    goto exit;
+    }
+
     if(!NI_RoiCoOccurence(num, (int)dims[0], (int)dims[1], mask_image, raw_image,
 			  coc_matrix, distance, orientation))  
 	    goto exit;
@@ -592,7 +599,8 @@ static PyObject *Segmenter_GrowRegion(PyObject *self, PyObject *args)
     int type;
     int Label;
     int N_connectivity; 
-    double cutoff;
+    double low_threshold;
+    double high_threshold;
     npy_intp *dims;
     npy_intp *objNumber;
     unsigned short *label;
@@ -604,13 +612,13 @@ static PyObject *Segmenter_GrowRegion(PyObject *self, PyObject *args)
     objStruct *expanded_ROI;
     objStruct *newgrow_ROI;
 
-    if(!PyArg_ParseTuple(args, "OOOOdii", &sArray, &lArray, &eArray, &nArray, &cutoff,
-			 &Label, &N_connectivity)){
+    if(!PyArg_ParseTuple(args, "OOOOddii", &sArray, &lArray, &eArray, &nArray, &low_threshold,
+			 &high_threshold, &Label, &N_connectivity)){
             printf("PyArg_ParseTuple error\n");
 	    goto exit;
     }
 
-    if(!PyArray_ISCONTIGUOUS(sArray) || !PyArray_ISCONTIGUOUS(sArray)){
+    if(!PyArray_ISCONTIGUOUS(sArray) || !PyArray_ISCONTIGUOUS(lArray)){
             printf("PyArray_ISCONTIGUOUS error\n");
 	    goto exit;
     }
@@ -627,12 +635,13 @@ static PyObject *Segmenter_GrowRegion(PyObject *self, PyObject *args)
 	
     if(nd == 2){ 
         if(!NI_GrowRegion2D((int)dims[0], (int)dims[1], section, label, expanded_ROI,
-			    newgrow_ROI, cutoff, Label, N_connectivity))
+			    newgrow_ROI, low_threshold, high_threshold, Label, N_connectivity))
 	    goto exit;
     }
     else if(nd == 3){ 
         if(!NI_GrowRegion3D((int)dims[0], (int)dims[1], (int)dims[2], section, label,
-			    expanded_ROI, newgrow_ROI, cutoff, Label, N_connectivity))
+			    expanded_ROI, newgrow_ROI, low_threshold, high_threshold,
+			    Label, N_connectivity))
 	    goto exit;
     }
 
