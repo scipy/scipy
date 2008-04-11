@@ -1465,8 +1465,8 @@ int NI_RoiCoOccurence(int samples, int rows, int cols, unsigned short *labelImag
 }
 
 int NI_GrowRegion2D(int rows, int cols, double *rawimage, unsigned short *label,
-                    objStruct *expanded_ROI, objStruct *newgrow_ROI, double cutoff, int Label,
-		    int N_connectivity){
+                    objStruct *expanded_ROI, objStruct *newgrow_ROI, double low_threshold,
+                    double high_threshold, int Label, int N_connectivity){
 
 	int i, j, p, m;
 	int offset;
@@ -1491,7 +1491,7 @@ int NI_GrowRegion2D(int rows, int cols, double *rawimage, unsigned short *label,
 		    if(!m){
 			/* un-labeled pixel */
 	                value = rawimage[offset+j];
-	                if(value > cutoff){
+	                if((value > low_threshold) && (value < high_threshold)){
 			    /* check for N-connectivity */
 			    T[0] = label[offset+j+1];
 			    T[1] = label[offsetM+j+1];
@@ -1504,7 +1504,7 @@ int NI_GrowRegion2D(int rows, int cols, double *rawimage, unsigned short *label,
 			    count = 0;
 	        	    for(p = 0; p < 8; ++p){
 			        if(T[p] == Label){
-			            count += T[p];
+			            ++count;
 			        }
 			    }	
 			    if(count > N_connectivity){
@@ -1532,8 +1532,8 @@ int NI_GrowRegion2D(int rows, int cols, double *rawimage, unsigned short *label,
 }
 
 int NI_GrowRegion3D(int layers, int rows, int cols, double *rawimage, unsigned short *label,
-                    objStruct *expanded_ROI, objStruct *newgrow_ROI, double cutoff, int Label,
-		    int N_connectivity){
+                    objStruct *expanded_ROI, objStruct *newgrow_ROI, double low_threshold,
+		    double high_threshold, int Label, int N_connectivity){
 
 	int i, j, k, m, p;
 	int offset;
@@ -1572,7 +1572,7 @@ int NI_GrowRegion3D(int layers, int rows, int cols, double *rawimage, unsigned s
 		        if(!m){
 			    /* un-labeled voxel */
 	                    value = rawimage[lOffset+rOffset+k];
-	                    if(value > cutoff){
+	                    if((value > low_threshold) && (value < high_threshold)){
 			        /* check for N-connectivity */
 			        T[0]  = label[lOffset+rOffset+k+1];
 			        T[1]  = label[lOffset+rOffsetN+k+1];
@@ -1606,7 +1606,7 @@ int NI_GrowRegion3D(int layers, int rows, int cols, double *rawimage, unsigned s
 			        count = 0;
 	        	        for(p = 0; p < 26; ++p){
 			            if(T[p] == Label){
-			                count += T[p];
+			                ++count;
 				    }
 			        }	
 			        if(count > N_connectivity){
