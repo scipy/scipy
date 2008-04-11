@@ -605,16 +605,15 @@ static PyObject *Segmenter_GrowRegion(PyObject *self, PyObject *args)
     objStruct *newgrow_ROI;
 
     if(!PyArg_ParseTuple(args, "OOOOdii", &sArray, &lArray, &eArray, &nArray, &cutoff,
-			 &Label, &N_connectivity))
+			 &Label, &N_connectivity)){
+            printf("PyArg_ParseTuple error\n");
 	    goto exit;
+    }
 
-    if(!PyArray_ISCONTIGUOUS(sArray) || !PyArray_ISCONTIGUOUS(lArray))
+    if(!PyArray_ISCONTIGUOUS(sArray) || !PyArray_ISCONTIGUOUS(sArray)){
+            printf("PyArray_ISCONTIGUOUS error\n");
 	    goto exit;
-
-    	//
-	//   PyArray_ContiguousFromObject or PyArray_ContiguousFromAny to be explored 
-	//   for non-contiguous
-	//
+    }
 
     section = (double *)PyArray_DATA(sArray);
     nd      = PyArray_NDIM(sArray);
@@ -646,7 +645,7 @@ exit:
 
 static PyMethodDef SegmenterMethods[] =
 {
-    { "grow_region",          Segmenter_GrowRegion,         METH_VARARGS, NULL },
+    { "region_grow",          Segmenter_GrowRegion,         METH_VARARGS, NULL },
     { "roi_co_occurence",     Segmenter_RoiCoOccurence,     METH_VARARGS, NULL },
     { "binary_edge",          Segmenter_BinaryEdge,         METH_VARARGS, NULL },
     { "laws_texture_metric",  Segmenter_LawsTextureMetric,  METH_VARARGS, NULL },
