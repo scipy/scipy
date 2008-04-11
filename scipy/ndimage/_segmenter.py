@@ -310,8 +310,8 @@ def roi_co_occurence(label_image, raw_image, ROI, distance=2, orientation=90, ve
 
 
 
-def region_grow(label_image, raw_image, ROI, roi_index, roi_inflate=[12, 32, 32],
-		stop_thresh=0.1, N_connectivity=1):
+def region_grow(label_image, raw_image, ROI, roi_index, roi_inflate,
+		stop_thresh=0.5, N_connectivity=3):
     """
     region_grow(label_image, raw_image, ROI, roi_index, roi_inflate, stop_thresh)
 
@@ -334,7 +334,7 @@ def region_grow(label_image, raw_image, ROI, roi_index, roi_inflate=[12, 32, 32]
     roi_index : {int}
         the single ROI element to apply region growing to.
 
-    roi_inflate : {tuple}
+    roi_inflate : {list}
         the maximum increase in the ROI bounding box. For 3D the tuple is [layers, rows, cols]
 	and for 2D it is [rows, cols].
 
@@ -349,7 +349,7 @@ def region_grow(label_image, raw_image, ROI, roi_index, roi_inflate=[12, 32, 32]
     Returns 
     ----------
 
-    updated_label : {nd_array}
+    updated_label_image : {nd_array}
         the label image with the selected ROi after region growing 
 
     """
@@ -370,21 +370,20 @@ def region_grow(label_image, raw_image, ROI, roi_index, roi_inflate=[12, 32, 32]
     expanded_ROI = NP.zeros(1, dtype=_c_ext_struct)
 
     dimensions  = label_image.ndim
-    dim_inflate = size(roi_inflate)
-    if dimensions != dim_inflate:
-	return
 
     if dimensions == 3:
         z_ext = roi_inflate[0]
         y_ext = roi_inflate[1]
         x_ext = roi_inflate[2]
         [layers, rows, cols]  = label_image.shape
-        updated_label = NP.zeros(layers*rows*cols, dtype=label_image.dtype).reshape(layers, rows, cols)
+        updated_label_image = NP.zeros(layers*rows*cols, dtype=NP.int16).reshape(layers, rows, cols)
+        updated_label_image = label_image.copy()
     else:
         y_ext = roi_inflate[0]
         x_ext = roi_inflate[1]
         [rows, cols]  = label_image.shape
-        updated_label = NP.zeros(rows*cols, dtype=label_image.dtype).reshape(rows, cols)
+        updated_label_image = NP.zeros(rows*cols, dtype=NP.int16).reshape(rows, cols)
+        updated_label_image = label_image.copy()
 
     if dimensions == 2:  
         left   = ROI[roi_index]['Left']-x_ext
@@ -393,6 +392,7 @@ def region_grow(label_image, raw_image, ROI, roi_index, roi_inflate=[12, 32, 32]
         top    = ROI[roi_index]['Top']+y_ext
         Label  = ROI[roi_index]['Label']
         cutoff = stop_thresh * ROI[roi_index]['voxelMean']
+        print 'cutoff = ', cutoff 
    	if left < 0: 
            left = 0
     	if bottom < 0: 
@@ -406,14 +406,12 @@ def region_grow(label_image, raw_image, ROI, roi_index, roi_inflate=[12, 32, 32]
         expanded_ROI['Top']    = top 
         expanded_ROI['Bottom'] = bottom 
         expanded_ROI['Label']  = Label 
-	rows    = top-bottom-1
-	cols    = right-left-1
-        label   = NP.zeros(rows*cols, dtype=raw_image.dtype).reshape(rows, cols)
-	label   = label_image[bottom:top, left:right] \
-	                     [label_image[bottom:top, left:right]==Label]
-        section = NP.zeros(rows*cols, dtype=raw_image.dtype).reshape(rows, cols)
-	section = raw_image[bottom:top, left:right] \
-	                   [label_image[bottom:top, left:right]==Label]
+	rows    = top-bottom
+	cols    = right-left
+        label   = NP.zeros(rows*cols, dtype=NP.int16).reshape(rows, cols)
+        section = NP.zeros(rows*cols, dtype=NP.float64).reshape(rows, cols)
+	label   = label_image[bottom:top, left:right].copy()
+	section = (raw_image[bottom:top, left:right].astype(NP.float64)).copy()
     elif dimensions == 3:  
         left   = ROI[roi_index]['Left']-x_ext
         right  = ROI[roi_index]['Right']+x_ext
@@ -442,54 +440,57 @@ def region_grow(label_image, raw_image, ROI, roi_index, roi_inflate=[12, 32, 32]
         expanded_ROI['Back']   = back 
         expanded_ROI['Front']  = front 
         expanded_ROI['Label']  = Label 
-	rows    = top-bottom-1
-	cols    = right-left-1
-	layers  = back-front-1
-        label   = NP.zeros(layers*rows*cols, dtype=raw_image.dtype).reshape(layers, rows, cols)
-	label   = label_image[front:back, bottom:top, left:right] \
-	                     [label_image[front:back, bottom:top, left:right]==Label]
-        section = NP.zeros(layers*rows*cols, dtype=raw_image.dtype).reshape(layers, rows, cols)
-	section = raw_image[front:back, bottom:top, left:right] \
-	                   [label_image[front:back, bottom:top, left:right]==Label]
+	rows    = top-bottom
+	cols    = right-left
+	layers  = back-front
+        label   = NP.zeros(layers*rows*cols, dtype=NP.int16).reshape(layers, rows, cols)
+	label   = label_image[front:back, bottom:top, left:right].copy()
+        section = NP.zeros(layers*rows*cols, dtype=NP.float64).reshape(layers, rows, cols)
+	section = (raw_image[front:back, bottom:top, left:right].astype(NP.float64)).copy()
 
     #
     # this newgrow_ROI gets filled in and the label image is grown
     #
 
+    #return label, section
+
     newgrow_ROI = NP.zeros(1, dtype=_c_ext_struct)
     S.region_grow(section, label, expanded_ROI, newgrow_ROI, cutoff, Label, N_connectivity)
+
     if dimensions == 2:  
 	# adjust for delta window
-	ROI[roi_index]['Left']   = newgrow_ROI[roi_index]['Left']
-	ROI[roi_index]['Right']  = newgrow_ROI[roi_index]['Right']
-	ROI[roi_index]['Top']    = newgrow_ROI[roi_index]['Top']
-	ROI[roi_index]['Bottom'] = newgrow_ROI[roi_index]['Bottom']
+	ROI[roi_index]['Left']   = newgrow_ROI['Left']
+	ROI[roi_index]['Right']  = newgrow_ROI['Right']
+	ROI[roi_index]['Top']    = newgrow_ROI['Top']
+	ROI[roi_index]['Bottom'] = newgrow_ROI['Bottom']
 	left   = ROI[roi_index]['Left']
 	right  = ROI[roi_index]['Right']
 	top    = ROI[roi_index]['Top']
 	bottom = ROI[roi_index]['Bottom']
-	rows   = top-bottom-1
-	cols   = right-left-1
-	updated_label[bottom:top,left:right] = label[0:rows,0:cols]
+	rows   = top-bottom
+	cols   = right-left
+	updated_label_image[bottom:top,left:right] = label[0:rows,0:cols]
     elif dimensions == 3:  
-        ROI[i]['Left']   = newgrow_ROI[roi_index]['Left']
-        ROI[i]['Right']  = newgrow_ROI[roi_index]['Right']
-        ROI[i]['Top']    = newgrow_ROI[roi_index]['Top']
-        ROI[i]['Bottom'] = newgrow_ROI[roi_index]['Bottom']
-        ROI[i]['Front']  = newgrow_ROI[roi_index]['Front']
-        ROI[i]['Back']   = newgrow_ROI[roi_index]['Back']
+
+        ROI[roi_index]['Left']   = newgrow_ROI['Left']
+        ROI[roi_index]['Right']  = newgrow_ROI['Right']
+        ROI[roi_index]['Top']    = newgrow_ROI['Top']
+        ROI[roi_index]['Bottom'] = newgrow_ROI['Bottom']
+        ROI[roi_index]['Front']  = newgrow_ROI['Front']
+        ROI[roi_index]['Back']   = newgrow_ROI['Back']
 	left   = ROI[roi_index]['Left']
 	right  = ROI[roi_index]['Right']
 	top    = ROI[roi_index]['Top']
 	bottom = ROI[roi_index]['Bottom']
 	front  = ROI[roi_index]['Front']
 	back   = ROI[roi_index]['Back']
-	rows   = top-bottom-1
-	cols   = right-left-1
-	layers = back-front-1
-	updated_label[front:back, bottom:top,left:right] = label[0:layers,0:rows,0:cols]
+	rows   = top-bottom
+	cols   = right-left
+	layers = back-front
+	updated_label_image[front:back,bottom:top,left:right] = label[0:layers,0:rows,0:cols]
 			 
-    return updated_label
+    #return updated_label_image
+    return label
 
 
 
