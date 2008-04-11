@@ -109,7 +109,7 @@ def get_open_file(fileobject, mode='rb'):
                 if type(details) == type(()):
                     details = details + (fileobject,)
                 raise IOError, details
-    except AttributeError:
+    except (AttributeError, TypeError):
         # it is assumed that the fileobject is a python
         # file object if it can not be used in os.path.expanduser
         file = fileobject

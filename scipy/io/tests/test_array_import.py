@@ -1,5 +1,3 @@
-## Automatically adapted for scipy Oct 19, 2005 by convertcode.py
-
 #!/usr/bin/env python
 
 # This python script tests the numpyio module.
@@ -9,6 +7,7 @@ import os
 from scipy.testing import *
 import scipy.io as io
 from scipy.io import numpyio
+from scipy.io import array_import
 
 import numpy.oldnumeric as N
 import tempfile
@@ -56,6 +55,13 @@ class TestReadArray(TestCase):
         b = io.read_array(fname,atype=a.dtype.char)
         assert_array_equal(a,b)
         os.remove(fname)
+
+class TestRegression(TestCase):
+    def test_get_open_file_works_with_filelike_objects(self):
+        f = tempfile.TemporaryFile()
+        f2 = array_import.get_open_file(f)
+        assert f2 is f
+        f.close()
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])
