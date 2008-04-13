@@ -10,7 +10,7 @@
 ! Usage:
 !   f2py -c flapack.pyf -L/usr/local/lib/atlas -llapack -lf77blas -lcblas -latlas -lg2c
 
-python module generic_flapack
+python module flapack
 interface
 
    subroutine <tchar=s,d>pbtrf(lower,n,kd,ab,ldab,info)
@@ -1381,7 +1381,7 @@ end subroutine <tchar=s,d,c,z>gbtrs
 
 end interface
 
-end python module generic_flapack
+end python module flapack
 
 ! This file was auto-generated with f2py (version:2.10.173).
 ! See http://cens.ioc.ee/projects/f2py2e/

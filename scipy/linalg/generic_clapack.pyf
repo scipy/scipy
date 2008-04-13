@@ -8,7 +8,7 @@
 ! Usage:
 !   f2py -c clapack.pyf -L/usr/local/lib/atlas -llapack -lf77blas -lcblas -latlas -lg2c
 
-python module generic_clapack
+python module clapack
 
 interface
 
@@ -285,7 +285,7 @@ interface
 
 end interface
 
-end python module generic_clapack
+end python module clapack
 
 ! This file was auto-generated with f2py (version:2.10.173).
 ! See http://cens.ioc.ee/projects/f2py2e/

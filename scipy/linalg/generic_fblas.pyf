@@ -8,7 +8,7 @@
 ! Usage:
 !   f2py -c fblas.pyf -L/usr/local/lib/atlas -lf77blas -lcblas  -latlas -lg2c
 
-python module generic_fblas
+python module fblas
     interface
 
        <include_file=generic_fblas1.pyf>
@@ -16,4 +16,4 @@ python module generic_fblas
        <include_file=generic_fblas3.pyf>
 
     end interface
-end python module generic_fblas
+end python module fblas
