@@ -101,8 +101,6 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
 
       fminbound, brent, golden, bracket -- local scalar minimizers
 
-      fsolve -- n-dimenstional root-finding
-
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 
       fixed_point -- scalar fixed-point finder
@@ -197,7 +195,6 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
              infinite covariance in some direction).
     infodict -- a dictionary of optional outputs with the keys:
                 'nfev' : the number of function calls
-                'njev' : the number of jacobian calls
                 'fvec' : the function evaluated at the output
                 'fjac' : A permutation of the R matrix of a QR
                          factorization of the final approximate
@@ -212,9 +209,10 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
                          of the identity matrix.
                 'qtf'  : the vector (transpose(q) * fvec).
     mesg -- a string message giving information about the cause of failure.
-    ier -- an integer flag.  If it is equal to 1 the solution was
-           found.  If it is not equal to 1, the solution was not
-           found and the following message gives more information.
+    ier -- an integer flag.  If it is equal to 1, 2, 3 or 4, the
+           solution was found.  Otherwise, the solution was not
+           found. In either case, the optional output variable 'mesg'
+           gives more information.
 
 
   Extended Inputs:
@@ -246,7 +244,6 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
 
       fmin, fmin_powell, fmin_cg,
              fmin_bfgs, fmin_ncg -- multivariate local optimizers
-      leastsq -- nonlinear least squares minimizer
 
       fmin_l_bfgs_b, fmin_tnc,
              fmin_cobyla -- constrained multivariate optimizers
