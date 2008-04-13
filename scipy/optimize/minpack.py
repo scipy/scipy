@@ -1,7 +1,7 @@
 import _minpack
 
 from numpy import atleast_1d, dot, take, triu, shape, eye, \
-                  transpose, zeros, product, greater
+                  transpose, zeros, product, greater, array
 
 error = _minpack.error
 
@@ -108,7 +108,7 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
       fixed_point -- scalar fixed-point finder
 
     """
-    x0 = atleast_1d(x0)
+    x0 = array(x0,ndmin=1)
     n = len(x0)
     if type(args) != type(()): args = (args,)
     check_func(func,x0,args,n,(n,))
@@ -262,7 +262,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
       fixed_point -- scalar fixed-point finder
 
     """
-    x0 = atleast_1d(x0)
+    x0 = array(x0,ndmin=1)
     n = len(x0)
     if type(args) != type(()): args = (args,)
     m = check_func(func,x0,args,n)[0]
