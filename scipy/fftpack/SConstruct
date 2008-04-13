@@ -36,8 +36,7 @@ env.PrependUnique(LIBPATH = env['build_dir'])
 
 # Build _fftpack
 src = ['src/zfft.c','src/drfft.c','src/zrfft.c', 'src/zfftnd.c']
-wsrc = env.F2py(pjoin(env['build_dir'], '_fftpackmodule.c'),
-                pjoin(env['build_dir'], 'fftpack.pyf'))
+wsrc = env.F2py(pjoin(env['build_dir'], 'fftpack.pyf'))
 env.NumpyPythonExtension('_fftpack', source = src + wsrc)
 
 # Build convolve
