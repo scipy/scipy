@@ -12,6 +12,10 @@ def configuration(parent_package = '', top_path = None):
         sources=[join('src', 'vq_module.c'), join('src', 'vq.c')],
         include_dirs = [get_numpy_include_dirs()])
 
+    config.add_extension('_hierarchy_wrap',
+        sources=[join('src', 'hierarchy_wrap.c'), join('src', 'hierarchy.c')],
+        include_dirs = [get_numpy_include_dirs()])
+
     return config
 
 if __name__ == '__main__':
