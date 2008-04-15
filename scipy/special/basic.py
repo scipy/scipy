@@ -232,7 +232,6 @@ def sph_yn(n,z):
         raise ValueError, "n must be a non-negative integer."
     if (n < 1): n1 = 1
     else: n1 = n
-    print z
     if iscomplex(z) or less(z,0):
         nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
