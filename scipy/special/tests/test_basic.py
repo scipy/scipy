@@ -1051,6 +1051,12 @@ class TestGamma(TestCase):
         y = gammaincinv(.4,.4)
         x = gammainc(.4,y)
         assert_almost_equal(x,0.4,1)
+        y = gammainc(10, 0.05)
+        x = gammaincinv(10, 2.5715803516000736e-20)
+        assert_almost_equal(0.05, x, decimal=10)
+        assert_almost_equal(y, 2.5715803516000736e-20, decimal=10)
+        x = gammaincinv(50, 8.20754777388471303050299243573393e-18)
+        assert_almost_equal(11.0, x, decimal=10)
 
     def test_rgamma(self):
         rgam = rgamma(8)
