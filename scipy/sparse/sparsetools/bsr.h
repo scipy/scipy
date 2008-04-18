@@ -468,11 +468,11 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
         I A_end = Ap[i+1];
         I B_end = Bp[i+1];
 
-        I A_j = Aj[A_pos];
-        I B_j = Bj[B_pos];
-            
         //while not finished with either row
         while(A_pos < A_end && B_pos < B_end){
+            I A_j = Aj[A_pos];
+            I B_j = Bj[B_pos];
+
             if(A_j == B_j){
                 for(I n = 0; n < RC; n++){
                     result[n] = op(Ax[RC*A_pos + n],Bx[RC*B_pos + n]);
@@ -484,9 +484,8 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                     nnz++;
                 }
 
-                A_j = Aj[++A_pos]; 
-                B_j = Bj[++B_pos];
-
+                A_pos++; 
+                B_pos++;
             } else if (A_j < B_j) {
                 for(I n = 0; n < RC; n++){
                     result[n] = op(Ax[RC*A_pos + n],0);
@@ -498,8 +497,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                     nnz++;
                 }
 
-                A_j = Aj[++A_pos]; 
-
+                A_pos++; 
             } else {
                 //B_j < A_j
                 for(I n = 0; n < RC; n++){
@@ -511,26 +509,23 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                     nnz++;
                 }
 
-                B_j = Bj[++B_pos];
-
+                B_pos++;
             }
         }
 
         //tail
         while(A_pos < A_end){
-
             for(I n = 0; n < RC; n++){
                 result[n] = op(Ax[RC*A_pos + n],0);
             }
 
             if(is_nonzero_block(result,RC)){
-                Cj[nnz] = A_j;
+                Cj[nnz] = Aj[A_pos];
                 result += RC;
                 nnz++;
             }
 
-            A_j = Aj[++A_pos]; 
-
+            A_pos++; 
         }
         while(B_pos < B_end){
             for(I n = 0; n < RC; n++){
@@ -538,13 +533,12 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
             }
 
             if(is_nonzero_block(result,RC)){
-                Cj[nnz] = B_j;
+                Cj[nnz] = Bj[B_pos];
                 result += RC;
                 nnz++;
             }
 
-            B_j = Bj[++B_pos];
-
+            B_pos++;
         }
 
         Cp[i+1] = nnz;

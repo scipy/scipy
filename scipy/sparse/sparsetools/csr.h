@@ -630,11 +630,11 @@ void csr_binop_csr(const I n_row,
         I A_end = Ap[i+1];
         I B_end = Bp[i+1];
 
-        I A_j = Aj[A_pos];
-        I B_j = Bj[B_pos];
-
         //while not finished with either row
         while(A_pos < A_end && B_pos < B_end){
+            I A_j = Aj[A_pos];
+            I B_j = Bj[B_pos];
+
             if(A_j == B_j){
                 T result = op(Ax[A_pos],Bx[B_pos]);
                 if(result != 0){
@@ -642,8 +642,8 @@ void csr_binop_csr(const I n_row,
                     Cx[nnz] = result;
                     nnz++;
                 }
-                A_j = Aj[++A_pos]; 
-                B_j = Bj[++B_pos];
+                A_pos++;
+                B_pos++;
             } else if (A_j < B_j) {
                 T result = op(Ax[A_pos],0);
                 if (result != 0){
@@ -651,7 +651,7 @@ void csr_binop_csr(const I n_row,
                     Cx[nnz] = result;
                     nnz++;
                 }
-                A_j = Aj[++A_pos]; 
+                A_pos++; 
             } else {
                 //B_j < A_j
                 T result = op(0,Bx[B_pos]);
@@ -660,7 +660,7 @@ void csr_binop_csr(const I n_row,
                     Cx[nnz] = result;
                     nnz++;
                 }
-                B_j = Bj[++B_pos];
+                B_pos++;
             }
         }
 
@@ -759,7 +759,7 @@ void csr_sum_duplicates(const I n_row,
             I j = Aj[jj];
             T x = Ax[jj];
             jj++;
-            while( Aj[jj] == j && jj < row_end ){
+            while( jj < row_end && Aj[jj] == j ){
                 x += Ax[jj];
                 jj++;
             }
