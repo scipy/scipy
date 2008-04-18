@@ -149,7 +149,7 @@ class TestPdist(TestCase):
         VI = numpy.zeros((10, 10), dtype='float96')
 
         try:
-            pdist(X, 'mahalanobis', VI)
+            pdist(X, 'mahalanobis', VI=VI)
         except TypeError:
             pass
         except:

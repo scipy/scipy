@@ -1366,15 +1366,15 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
                 _hierarchy_wrap.pdist_jaccard_bool_wrap(X, dm)
             else:
                 raise TypeError('Invalid input array value type %s for jaccard.' % str(X.dtype))
-        elif mstr in set(['chebyshev', 'cheby', 'cheb', 'ch']):
+        elif mstr in set(['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch']):
             _hierarchy_wrap.pdist_chebyshev_wrap(X, dm)            
         elif mstr in set(['minkowski', 'mi', 'm']):
             _hierarchy_wrap.pdist_minkowski_wrap(X, dm, p)
         elif mstr in set(['seuclidean', 'se', 's']):
-            if V:
+            if V is not None:
                 if type(V) is not _array_type:
                     raise TypeError('Variance vector V must be a numpy array')
-                if V.dtype != 'double':
+                if V.dtype != 'float64':
                     raise TypeError('Variance vector V must contain doubles.')
                 if len(V.shape) != 1:
                     raise ValueError('Variance vector V must be one-dimensional.')
@@ -1408,11 +1408,11 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             norms = numpy.sqrt(numpy.sum(X2 * X2, axis=1))
             _hierarchy_wrap.pdist_cosine_wrap(X2, dm, norms)
         elif mstr in set(['mahalanobis', 'mahal', 'mah']):
-            if VI:
+            if VI is not None:
                 if type(VI) != _array_type:
                     raise TypeError('VI must be a numpy array.')
-                if VI.dtype != 'double':
-                    raise TypeError('The array must contain doubles.')
+                if VI.dtype != 'float64':
+                    raise TypeError('The array must contain 64-bit floats.')
                 [VI] = _copy_arrays_if_base_present([VI])
             else:
                 V = numpy.cov(X.T)
@@ -1466,7 +1466,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             dm = pdist(X, hamming)
         elif metric == 'test_jaccard':
             dm = pdist(X, jaccard)
-        elif metric == 'test_chebyshev':
+        elif metric == 'test_chebyshev' or metric == 'test_chebychev':
             dm = pdist(X, chebyshev)
         elif metric == 'test_yule':
             dm = pdist(X, yule)
