@@ -1,8 +1,8 @@
 #! /usr/bin/env python
-
+#
 # Author: Damian Eads
 # Date: April 17, 2008
-
+#
 # Copyright (C) 2008 Damian Eads
 #
 # Redistribution and use in source and binary forms, with or without
@@ -86,6 +86,49 @@ load_testing_files()
 #print numpy.abs(Y_test1 - Y_right).max()
 
 class TestPdist(TestCase):
+
+    def test_pdist_raises_type_error_float32(self):
+        "Testing whether passing a float32 observation array generates an exception."
+        X = numpy.zeros((10, 10), dtype='float32')
+        try:
+            pdist(X, 'euclidean')
+        except TypeError:
+            pass
+        except:
+            fail("float32 matrices should generate an error in pdist.")
+
+    def test_pdist_raises_type_error_float96(self):
+        "Testing whether passing a float96 observation array generates an exception."
+        X = numpy.zeros((10, 10), dtype='float96')
+        try:
+            pdist(X, 'euclidean')
+        except TypeError:
+            pass
+        except:
+            fail("float96 matrices should generate an error in pdist.")
+
+    def test_pdist_var_raises_type_error_float32(self):
+        "Testing whether passing a float32 variance matrix generates an exception."
+        X = numpy.zeros((10, 10))
+        V = numpy.zeros((10, 10), dtype='float32')
+        try:
+            pdist(X, 'seuclidean', V)
+        except TypeError:
+            pass
+        except:
+            fail("float32 matrices should generate an error in pdist.")
+
+    def test_pdist_var_raises_type_error_float96(self):
+        "Testing whether passing a float96 variance matrix generates an exception."
+        X = numpy.zeros((10, 10))
+        V = numpy.zeros((10, 10), dtype='float96')
+
+        try:
+            pdist(X, 'seuclidean', V)
+        except TypeError:
+            pass
+        except:
+            fail("float96 matrices should generate an error in pdist.")
 
     ################### pdist: euclidean
     def test_pdist_euclidean_random(self):

@@ -1301,7 +1301,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     if type(X) is not _array_type:
         raise TypeError('The parameter passed must be an array.')
 
-    if X.dtype == 'float32':
+    if X.dtype == 'float32' or X.dtype == 'float96':
         raise TypeError('Floating point arrays must be 64-bit.')
 
     # The C code doesn't do striding.
