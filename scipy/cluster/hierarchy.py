@@ -175,7 +175,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import _hierarchy_wrap, scipy, scipy.stats, numpy, types, math, sys
+import _hierarchy_wrap, scipy, numpy, types, math, sys, scipy.stats
 
 _cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2, 'weighted': 6}
 _cpy_euclid_methods = {'centroid': 3, 'median': 4, 'ward': 5}
@@ -189,6 +189,15 @@ try:
 except:
     def _warning(s):
         print ('[WARNING] scipy-cluster: %s' % s)
+
+def _unbiased_variance(X):
+    """
+    Computes the unbiased variance of each dimension of a collection of
+    observation vectors, represented by a matrix where the rows are the
+    observations.
+    """
+    #n = numpy.double(X.shape[1])
+    return scipy.stats.var(X, axis=0) # * n / (n - 1.0)
 
 def _copy_array_if_base_present(a):
     """
@@ -235,7 +244,7 @@ def single(y):
     matrix Z. See linkage for more information on the return structure
     and algorithm.
 
-          (a condensed alias for linkage)
+      (a condensed alias for single)
     """
     return linkage(y, method='single', metric='euclidean')
 
@@ -869,7 +878,7 @@ def jaccard(u, v):
 
       for k < n.
     """
-    return ((scipy.bitwise_and((u != v), scipy.bitwise_or(u != 0, v != 0))).sum()) / scipy.bitwise_or(u != 0, v != 0).sum()
+    return numpy.double(scipy.bitwise_and((u != v), scipy.bitwise_or(u != 0, v != 0)).sum()) / numpy.double(scipy.bitwise_or(u != 0, v != 0).sum())
 
 def kulsinski(u, v):
     """
@@ -1292,8 +1301,8 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     if type(X) is not _array_type:
         raise TypeError('The parameter passed must be an array.')
 
-    if X.dtype != 'double':
-        raise TypeError('X must be a float64 array')
+    if X.dtype == 'float32':
+        raise TypeError('Floating point arrays must be 64-bit.')
 
     # The C code doesn't do striding.
     [X] = _copy_arrays_if_base_present([X])
@@ -1301,7 +1310,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     s = X.shape
 
     if len(s) != 2:
-        raise ValueError('A matrix must be passed.');
+        raise ValueError('A 2-dimensional array must be passed.');
 
     m = s[0]
     n = s[1]
@@ -1310,10 +1319,27 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     mtype = type(metric)
     if mtype is types.FunctionType:
         k = 0
-        for i in xrange(0, m - 1):
-            for j in xrange(i+1, m):
-                dm[k] = metric(X[i, :], X[j, :])
-                k = k + 1
+        if metric == minkowski:
+            for i in xrange(0, m - 1):
+                for j in xrange(i+1, m):
+                    dm[k] = minkowski(X[i, :], X[j, :], p)
+                    k = k + 1
+        elif metric == seuclidean:
+            for i in xrange(0, m - 1):
+                for j in xrange(i+1, m):
+                    dm[k] = seuclidean(X[i, :], X[j, :], V)
+                    k = k + 1
+        elif metric == mahalanobis:
+            for i in xrange(0, m - 1):
+                for j in xrange(i+1, m):
+                    dm[k] = mahalanobis(X[i, :], X[j, :], V)
+                    k = k + 1
+        else:
+            for i in xrange(0, m - 1):
+                for j in xrange(i+1, m):
+                    dm[k] = metric(X[i, :], X[j, :])
+                    k = k + 1
+
     elif mtype is types.StringType:
         mstr = metric.lower()
 
@@ -1332,14 +1358,14 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             elif X.dtype == 'bool':
                 _hierarchy_wrap.pdist_hamming_bool_wrap(X, dm)
             else:
-                raise TypeError('Invalid input matrix type %s for hamming.' % str(X.dtype))
+                raise TypeError('Invalid input array value type %s for hamming.' % str(X.dtype))
         elif mstr in set(['jaccard', 'jacc', 'ja', 'j']):
             if X.dtype == 'double':
-                _hierarchy_wrap.pdist_hamming_wrap(X, dm)
+                _hierarchy_wrap.pdist_jaccard_wrap(X, dm)
             elif X.dtype == 'bool':
-                _hierarchy_wrap.pdist_hamming_bool_wrap(X, dm)
+                _hierarchy_wrap.pdist_jaccard_bool_wrap(X, dm)
             else:
-                raise TypeError('Invalid input matrix type %s for jaccard.' % str(X.dtype))
+                raise TypeError('Invalid input array value type %s for jaccard.' % str(X.dtype))
         elif mstr in set(['chebyshev', 'cheby', 'cheb', 'ch']):
             _hierarchy_wrap.pdist_chebyshev_wrap(X, dm)            
         elif mstr in set(['minkowski', 'mi', 'm']):
@@ -1357,7 +1383,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
                 # The C code doesn't do striding.
                 [VV] = _copy_arrays_if_base_present([V])
             else:
-                VV = scipy.stats.var(X, axis=0)
+                VV = _unbiased_variance(X)
             _hierarchy_wrap.pdist_seuclidean_wrap(X, VV, dm)
         # Need to test whether vectorized cosine works better.
         # Find out: Is there a dot subtraction operator so I can
@@ -1417,7 +1443,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             dm = pdist(X, euclidean)
         elif metric == 'test_sqeuclidean':
             if V is None:
-                V = scipy.stats.var(X, axis=0)
+                V = _unbiased_variance(X)
             dm = pdist(X, lambda u, v: seuclidean(u, v, V))
         elif metric == 'test_braycurtis':
             dm = pdist(X, braycurtis)
@@ -1431,7 +1457,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
         elif metric == 'test_cityblock':
             dm = pdist(X, cityblock)
         elif metric == 'test_minkowski':
-            dm = pdist(X, minkowski)
+            dm = pdist(X, minkowski, p)
         elif metric == 'test_cosine':
             dm = pdist(X, cosine)
         elif metric == 'test_correlation':

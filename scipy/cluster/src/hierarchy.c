@@ -285,19 +285,20 @@ double jaccard_distance(const double *u, const double *v, int n) {
   int i = 0;
   double denom = 0.0, num = 0.0;
   for (i = 0; i < n; i++) {
-    num += (u[i] != v[i]) && ((u[i] != 0) || (v[i] != 0));
-    denom += (u[i] != 0) || (v[i] != 0);
+    num += (u[i] != v[i]) && ((u[i] != 0.0) || (v[i] != 0.0));
+    denom += (u[i] != 0.0) || (v[i] != 0.0);
   }
   return num / denom;
 }
 
 double jaccard_distance_bool(const char *u, const char *v, int n) {
   int i = 0;
-  double s = 0.0;
+  double s = 0.0, num = 0.0, denom = 0.0;
   for (i = 0; i < n; i++) {
-    s = s + (u[i] != v[i]);
+    num += (u[i] != v[i]) && ((u[i] != 0) || (v[i] != 0));
+    denom += (u[i] != 0) || (v[i] != 0);
   }
-  return s / (double)n;
+  return num / denom;
 }
 
 double dot_product(const double *u, const double *v, int n) {
