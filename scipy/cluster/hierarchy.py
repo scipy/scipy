@@ -175,12 +175,15 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import _hierarchy_wrap, scipy, numpy, types, math, sys, scipy.stats
+import numpy as np
+import _hierarchy_wrap, scipy, types, math, sys, scipy.stats
 
-_cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2, 'weighted': 6}
+_cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2,
+                           'weighted': 6}
 _cpy_euclid_methods = {'centroid': 3, 'median': 4, 'ward': 5}
-_cpy_linkage_methods = set(_cpy_non_euclid_methods.keys()).union(set(_cpy_euclid_methods.keys()))
-_array_type = type(numpy.array([]))
+_cpy_linkage_methods = set(_cpy_non_euclid_methods.keys()).union(
+    set(_cpy_euclid_methods.keys()))
+_array_type = np.ndarray
 
 try:
     import warnings
@@ -196,7 +199,7 @@ def _unbiased_variance(X):
     observation vectors, represented by a matrix where the rows are the
     observations.
     """
-    #n = numpy.double(X.shape[1])
+    #n = np.double(X.shape[1])
     return scipy.stats.var(X, axis=0) # * n / (n - 1.0)
 
 def _copy_array_if_base_present(a):
@@ -205,8 +208,8 @@ def _copy_array_if_base_present(a):
     """
     if a.base is not None:
         return a.copy()
-    elif (a.dtype == 'float32'):
-        return numpy.float64(a)
+    elif (a.dtype == np.float32):
+        return np.float64(a)
     else:
         return a
 
@@ -231,7 +234,7 @@ def _randdm(pnts):
         pnts * (pnts - 1) / 2 sized vector is returned.
     """
     if pnts >= 2:
-        D = numpy.random.rand(pnts * (pnts - 1) / 2)
+        D = np.random.rand(pnts * (pnts - 1) / 2)
     else:
         raise ValueError("The number of points in the distance matrix must be at least 2.")
     return D
@@ -456,13 +459,13 @@ def linkage(y, method='single', metric='euclidean'):
     s = y.shape
     if len(s) == 1:
         is_valid_y(y, throw=True, name='y')
-        d = numpy.ceil(numpy.sqrt(s[0] * 2))
+        d = np.ceil(np.sqrt(s[0] * 2))
         if method not in _cpy_non_euclid_methods.keys():
             raise ValueError("Valid methods when the raw observations are omitted are 'single', 'complete', 'weighted', and 'average'.")
         # Since the C code does not support striding using strides.
         [y] = _copy_arrays_if_base_present([y])
 
-        Z = numpy.zeros((d - 1, 4))
+        Z = np.zeros((d - 1, 4))
         _hierarchy_wrap.linkage_wrap(y, Z, int(d), \
                                    int(_cpy_non_euclid_methods[method]))
     elif len(s) == 2:
@@ -473,14 +476,14 @@ def linkage(y, method='single', metric='euclidean'):
             raise ValueError('Invalid method: %s' % method)
         if method in _cpy_non_euclid_methods.keys():
             dm = pdist(X, metric)
-            Z = numpy.zeros((n - 1, 4))
+            Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_wrap(dm, Z, n, \
                                        int(_cpy_non_euclid_methods[method]))
         elif method in _cpy_euclid_methods.keys():
             if metric != 'euclidean':
                 raise ValueError('Method %s requires the distance metric to be euclidean' % s)
             dm = pdist(X, metric)
-            Z = numpy.zeros((n - 1, 4))
+            Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_euclid_wrap(dm, Z, X, m, n,
                                               int(_cpy_euclid_methods[method]))
     return Z
@@ -579,8 +582,8 @@ class cnode:
         n = self.count
 
         curNode = [None] * (2 * n)
-        lvisited = numpy.zeros((2 * n,), dtype='bool')
-        rvisited = numpy.zeros((2 * n,), dtype='bool')
+        lvisited = np.zeros((2 * n,), dtype=bool)
+        rvisited = np.zeros((2 * n,), dtype=bool)
         curNode[0] = self
         k = 0
         preorder = []
@@ -648,7 +651,7 @@ def totree(Z, rd=False):
 
     # If we encounter a cluster being combined more than once, the matrix
     # must be corrupt.
-    if len(numpy.unique(Z[:, 0:2].reshape((2 * (n - 1),)))) != 2 * (n - 1):
+    if len(np.unique(Z[:, 0:2].reshape((2 * (n - 1),)))) != 2 * (n - 1):
         raise ValueError('Corrupt matrix Z. Some clusters are more than once.')
     # If a cluster index is out of bounds, report an error.
     if (Z[:, 0:2] >= 2 * n - 1).any():
@@ -723,7 +726,7 @@ def squareform(X, force="no", checks=True):
     if type(X) is not _array_type:
         raise TypeError('The parameter passed must be an array.')
 
-    if X.dtype != 'double':
+    if X.dtype != np.double:
         raise TypeError('A double array must be passed.')
 
     s = X.shape
@@ -733,7 +736,7 @@ def squareform(X, force="no", checks=True):
         # Grab the closest value to the square root of the number
         # of elements times 2 to see if the number of elements
         # is indeed a binomial coefficient.
-        d = int(numpy.ceil(numpy.sqrt(X.shape[0] * 2)))
+        d = int(np.ceil(np.sqrt(X.shape[0] * 2)))
 
         print d, s[0]
         # Check that v is of valid dimensions.
@@ -741,7 +744,7 @@ def squareform(X, force="no", checks=True):
             raise ValueError('Incompatible vector size. It must be a binomial coefficient n choose 2 for some integer n >= 2.')
 
         # Allocate memory for the distance matrix.
-        M = numpy.zeros((d, d), 'double')
+        M = np.zeros((d, d), 'double')
 
         # Since the C code does not support striding using strides.
         # The dimensions are used instead.
@@ -759,7 +762,7 @@ def squareform(X, force="no", checks=True):
         if s[0] != s[1]:
             raise ValueError('The matrix argument must be square.')
         if checks:
-            if numpy.sum(numpy.sum(X == X.transpose())) != numpy.product(X.shape):
+            if np.sum(np.sum(X == X.transpose())) != np.product(X.shape):
                 raise ValueError('The distance matrix must be symmetrical.')
             if (X.diagonal() != 0).any():
                 raise ValueError('The distance matrix must have zeros along the diagonal.')
@@ -768,7 +771,7 @@ def squareform(X, force="no", checks=True):
         d = s[0]
 
         # Create a vector.
-        v = numpy.zeros(((d * (d - 1) / 2),), 'double')
+        v = np.zeros(((d * (d - 1) / 2),), 'double')
 
         # Since the C code does not support striding using strides.
         # The dimensions are used instead.
@@ -800,8 +803,8 @@ def euclidean(u, v):
 
       Computes the Euclidean distance between two n-vectors u and v, ||u-v||_2
     """
-    q=numpy.matrix(u-v)
-    return numpy.sqrt((q*q.T).sum())
+    q=np.matrix(u-v)
+    return np.sqrt((q*q.T).sum())
 
 def sqeuclidean(u, v):
     """
@@ -820,7 +823,7 @@ def cosine(u, v):
         (1-uv^T)/(||u||_2 * ||v||_2).
     """
     return (1.0 - (scipy.dot(u, v.T) / \
-                   (numpy.sqrt(scipy.dot(u, u.T)) * numpy.sqrt(scipy.dot(v, v.T)))))
+                   (np.sqrt(scipy.dot(u, u.T)) * np.sqrt(scipy.dot(v, v.T)))))
 
 def correlation(u, v):
     """
@@ -840,8 +843,8 @@ def correlation(u, v):
     um = u - umu
     vm = v - vmu
     return 1.0 - (scipy.dot(um, vm) /
-                  (numpy.sqrt(scipy.dot(um, um)) \
-                   * numpy.sqrt(scipy.dot(vm, vm))))
+                  (np.sqrt(scipy.dot(um, um)) \
+                   * np.sqrt(scipy.dot(vm, vm))))
 
 def hamming(u, v):
     """
@@ -878,7 +881,7 @@ def jaccard(u, v):
 
       for k < n.
     """
-    return numpy.double(scipy.bitwise_and((u != v), scipy.bitwise_or(u != 0, v != 0)).sum()) / numpy.double(scipy.bitwise_or(u != 0, v != 0).sum())
+    return np.double(scipy.bitwise_and((u != v), scipy.bitwise_or(u != 0, v != 0)).sum()) / np.double(scipy.bitwise_or(u != 0, v != 0).sum())
 
 def kulsinski(u, v):
     """
@@ -911,7 +914,7 @@ def seuclidean(u, v, V):
     """
     if type(V) is not _array_type or len(V.shape) != 1 or V.shape[0] != u.shape[0] or u.shape[0] != v.shape[0]:
         raise TypeError('V must be a 1-D numpy array of doubles of the same dimension as u and v.')
-    return numpy.sqrt(((u-v)**2 / V).sum())
+    return np.sqrt(((u-v)**2 / V).sum())
 
 def cityblock(u, v):
     """
@@ -932,7 +935,7 @@ def mahalanobis(u, v, VI):
     """
     if type(V) is not _array_type:
         raise TypeError('V must be a 1-D numpy array of doubles of the same dimension as u and v.')
-    return numpy.sqrt(scipy.dot(scipy.dot((u-v),VI),(u-v).T).sum())
+    return np.sqrt(scipy.dot(scipy.dot((u-v),VI),(u-v).T).sum())
 
 def chebyshev(u, v):
     """
@@ -1276,7 +1279,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
           Euclidean distance between the vectors could be computed
           as follows,
 
-            dm = pdist(X, (lambda u, v: numpy.sqrt(((u-v)*(u-v).T).sum())))
+            dm = pdist(X, (lambda u, v: np.sqrt(((u-v)*(u-v).T).sum())))
 
           Note that you should avoid passing a reference to one of
           the distance functions defined in this library. For example,
@@ -1301,7 +1304,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     if type(X) is not _array_type:
         raise TypeError('The parameter passed must be an array.')
 
-    if X.dtype == 'float32' or X.dtype == 'float96':
+    if X.dtype == np.float32 or X.dtype == np.float96:
         raise TypeError('Floating point arrays must be 64-bit.')
 
     # The C code doesn't do striding.
@@ -1314,7 +1317,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
 
     m = s[0]
     n = s[1]
-    dm = numpy.zeros((m * (m - 1) / 2,), dtype='double')
+    dm = np.zeros((m * (m - 1) / 2,), dtype=np.double)
 
     mtype = type(metric)
     if mtype is types.FunctionType:
@@ -1343,7 +1346,8 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     elif mtype is types.StringType:
         mstr = metric.lower()
 
-        if X.dtype != 'double' and (mstr != 'hamming' and mstr != 'jaccard'):
+        if X.dtype != np.double and \
+               (mstr != 'hamming' and mstr != 'jaccard'):
             TypeError('A double array must be passed.')
         if mstr in set(['euclidean', 'euclid', 'eu', 'e']):
             _hierarchy_wrap.pdist_euclidean_wrap(X, dm)
@@ -1353,19 +1357,21 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
         elif mstr in set(['cityblock', 'cblock', 'cb', 'c']):
             _hierarchy_wrap.pdist_city_block_wrap(X, dm)
         elif mstr in set(['hamming', 'hamm', 'ha', 'h']):
-            if X.dtype == 'double':
+            if X.dtype == np.double:
                 _hierarchy_wrap.pdist_hamming_wrap(X, dm)
-            elif X.dtype == 'bool':
+            elif X.dtype == bool:
                 _hierarchy_wrap.pdist_hamming_bool_wrap(X, dm)
             else:
-                raise TypeError('Invalid input array value type %s for hamming.' % str(X.dtype))
+                raise TypeError('Invalid input array value type %s '
+                                'for hamming.' % str(X.dtype))
         elif mstr in set(['jaccard', 'jacc', 'ja', 'j']):
-            if X.dtype == 'double':
+            if X.dtype == np.double:
                 _hierarchy_wrap.pdist_jaccard_wrap(X, dm)
-            elif X.dtype == 'bool':
+            elif X.dtype == np.bool:
                 _hierarchy_wrap.pdist_jaccard_bool_wrap(X, dm)
             else:
-                raise TypeError('Invalid input array value type %s for jaccard.' % str(X.dtype))
+                raise TypeError('Invalid input array value type %s for '
+                                'jaccard.' % str(X.dtype))
         elif mstr in set(['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch']):
             _hierarchy_wrap.pdist_chebyshev_wrap(X, dm)
         elif mstr in set(['minkowski', 'mi', 'm']):
@@ -1374,7 +1380,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             if V is not None:
                 if type(V) is not _array_type:
                     raise TypeError('Variance vector V must be a numpy array')
-                if V.dtype != 'float64':
+                if V.dtype != np.float64:
                     raise TypeError('Variance vector V must contain doubles.')
                 if len(V.shape) != 1:
                     raise ValueError('Variance vector V must be one-dimensional.')
@@ -1390,33 +1396,33 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
         # subtract matrices in a similar way to multiplying them?
         # Need to get rid of as much unnecessary C code as possible.
         elif mstr in set(['cosine_old', 'cos_old']):
-            norms = numpy.sqrt(numpy.sum(X * X, axis=1))
+            norms = np.sqrt(np.sum(X * X, axis=1))
             _hierarchy_wrap.pdist_cosine_wrap(X, dm, norms)
         elif mstr in set(['cosine', 'cos']):
-            norms = numpy.sqrt(numpy.sum(X * X, axis=1))
+            norms = np.sqrt(np.sum(X * X, axis=1))
             nV = norms.reshape(m, 1)
             # The numerator u * v
-            nm = numpy.dot(X, X.T)
+            nm = np.dot(X, X.T)
             # The denom. ||u||*||v||
-            de = numpy.dot(nV, nV.T);
+            de = np.dot(nV, nV.T);
             dm = 1 - (nm / de)
             dm[xrange(0,m),xrange(0,m)] = 0
             dm = squareform(dm)
         elif mstr in set(['correlation', 'co']):
-            X2 = X - X.mean(1)[:,numpy.newaxis]
-            #X2 = X - numpy.matlib.repmat(numpy.mean(X, axis=1).reshape(m, 1), 1, n)
-            norms = numpy.sqrt(numpy.sum(X2 * X2, axis=1))
+            X2 = X - X.mean(1)[:,np.newaxis]
+            #X2 = X - np.matlib.repmat(np.mean(X, axis=1).reshape(m, 1), 1, n)
+            norms = np.sqrt(np.sum(X2 * X2, axis=1))
             _hierarchy_wrap.pdist_cosine_wrap(X2, dm, norms)
         elif mstr in set(['mahalanobis', 'mahal', 'mah']):
             if VI is not None:
                 if type(VI) != _array_type:
                     raise TypeError('VI must be a numpy array.')
-                if VI.dtype != 'float64':
+                if VI.dtype != np.float64:
                     raise TypeError('The array must contain 64-bit floats.')
                 [VI] = _copy_arrays_if_base_present([VI])
             else:
-                V = numpy.cov(X.T)
-                VI = numpy.linalg.inv(V).T.copy()
+                V = np.cov(X.T)
+                VI = np.linalg.inv(V).T.copy()
             # (u-v)V^(-1)(u-v)^T
             _hierarchy_wrap.pdist_mahalanobis_wrap(X, VI, dm)
         elif mstr == 'canberra':
@@ -1449,8 +1455,8 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             dm = pdist(X, braycurtis)
         elif metric == 'test_mahalanobis':
             if VI is None:
-                V = numpy.cov(X.T)
-                VI = numpy.linalg.inv(V)
+                V = np.cov(X.T)
+                VI = np.linalg.inv(V)
             [VI] = _copy_arrays_if_base_present([VI])
             # (u-v)V^(-1)(u-v)^T
             dm = pdist(X, (lambda u, v: mahalanobis(u, v, VI)))
@@ -1523,7 +1529,7 @@ def cophenet(*args, **kwargs):
     Zs = Z.shape
     n = Zs[0] + 1
 
-    zz = numpy.zeros((n*(n-1)/2,), dtype='double')
+    zz = np.zeros((n*(n-1)/2,), dtype=np.double)
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
     [Z] = _copy_arrays_if_base_present([Z])
@@ -1544,7 +1550,7 @@ def cophenet(*args, **kwargs):
     numerator = (Yy * Zz)
     denomA = Yy ** 2
     denomB = Zz ** 2
-    c = numerator.sum() / numpy.sqrt((denomA.sum() * denomB.sum()))
+    c = numerator.sum() / np.sqrt((denomA.sum() * denomB.sum()))
     #print c, numerator.sum()
     if nargs == 2:
         return c
@@ -1573,7 +1579,7 @@ def inconsistent(Z, d=2):
 
     Zs = Z.shape
     is_valid_linkage(Z, throw=True, name='Z')
-    if (not d == numpy.floor(d)) or d < 0:
+    if (not d == np.floor(d)) or d < 0:
         raise ValueError('The second argument d must be a nonnegative integer value.')
 #    if d == 0:
 #        d = 1
@@ -1583,7 +1589,7 @@ def inconsistent(Z, d=2):
     [Z] = _copy_arrays_if_base_present([Z])
 
     n = Zs[0] + 1
-    R = numpy.zeros((n - 1, 4), dtype='double')
+    R = np.zeros((n - 1, 4), dtype=np.double)
 
     _hierarchy_wrap.inconsistent_wrap(Z, R, int(n), int(d));
     return R
@@ -1608,12 +1614,12 @@ def from_mlab_linkage(Z):
     Zd = Z[:,2].reshape(Zs[0], 1)
     if Zpart.min() != 1.0 and Zpart.max() != 2 * Zs[0]:
         raise ValueError('The format of the indices is not 1..N');
-    CS = numpy.zeros((Zs[0], 1), dtype='double')
+    CS = np.zeros((Zs[0], 1), dtype=np.double)
     Zpart = Zpart - 1
-    _hierarchy_wrap.calculate_cluster_sizes_wrap(numpy.hstack([Zpart, \
+    _hierarchy_wrap.calculate_cluster_sizes_wrap(np.hstack([Zpart, \
                                                              Zd]).copy(), \
                                                CS, int(Zs[0]) + 1)
-    return numpy.hstack([Zpart, Zd, CS]).copy()
+    return np.hstack([Zpart, Zd, CS]).copy()
 
 def to_mlab_linkage(Z):
     """
@@ -1626,7 +1632,7 @@ def to_mlab_linkage(Z):
     """
     is_valid_linkage(Z, throw=True, name='Z')
 
-    return numpy.hstack([Z[:,0:2] + 1, Z[:,2]])
+    return np.hstack([Z[:,0:2] + 1, Z[:,2]])
 
 def is_monotonic(Z):
     """
@@ -1657,7 +1663,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
                 raise TypeError('Variable \'%s\' passed as inconsistency matrix is not a numpy array.' % name)
             else:
                 raise TypeError('Variable passed as inconsistency matrix is not a numpy array.')
-        if R.dtype != 'double':
+        if R.dtype != np.double:
             if name:
                 raise TypeError('Inconsistency matrix \'%s\' must contain doubles (float64).' % name)
             else:
@@ -1716,7 +1722,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
                 raise TypeError('\'%s\' passed as a linkage is not a valid array.' % name)
             else:
                 raise TypeError('Variable is not a valid array.')
-        if Z.dtype != 'double':
+        if Z.dtype != np.double:
             if name:
                 raise TypeError('Linkage matrix \'%s\' must contain doubles (float64).' % name)
             else:
@@ -1776,7 +1782,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
                 raise TypeError('\'%s\' passed as a condensed distance matrix is not a numpy array.' % name)
             else:
                 raise TypeError('Variable is not a numpy array.')
-        if y.dtype != 'double':
+        if y.dtype != np.double:
             if name:
                 raise TypeError('Condensed distance matrix \'%s\' must contain doubles (float64).' % name)
             else:
@@ -1787,7 +1793,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
             else:
                 raise ValueError('Condensed distance matrix must have shape=1 (i.e. be one-dimensional).')
         n = y.shape[0]
-        d = int(numpy.ceil(numpy.sqrt(n * 2)))
+        d = int(np.ceil(np.sqrt(n * 2)))
         if (d*(d-1)/2) != n:
             if name:
                 raise ValueError('Length n of condensed distance matrix \'%s\' must be a binomial coefficient, i.e. there must be a k such that (k \choose 2)=n)!' % name)
@@ -1838,7 +1844,7 @@ def is_valid_dm(D, t=0.0):
                 raise TypeError('\'%s\' passed as a distance matrix is not a numpy array.' % name)
             else:
                 raise TypeError('Variable is not a numpy array.')
-        if D.dtype != 'double':
+        if D.dtype != np.double:
             if name:
                 raise TypeError('Distance matrix \'%s\' must contain doubles (float64).' % name)
             else:
@@ -1904,7 +1910,7 @@ def numobs_y(Y):
       condensed distance matrix Y.
     """
     is_valid_y(y, throw=True, name='Y')
-    d = int(numpy.ceil(numpy.sqrt(y.shape[0] * 2)))
+    d = int(np.ceil(np.sqrt(y.shape[0] * 2)))
     return d
 
 def Z_y_correspond(Z, Y):
@@ -1979,7 +1985,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
-    T = numpy.zeros((n,), dtype='int32')
+    T = np.zeros((n,), dtype=np.int32)
 
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
@@ -2078,7 +2084,7 @@ def lvlist(Z):
     """
     is_valid_linkage(Z, throw=True, name='Z')
     n = Z.shape[0] + 1
-    ML = numpy.zeros((n,), dtype='int32')
+    ML = np.zeros((n,), dtype=np.int32)
     [Z] = _copy_arrays_if_base_present([Z])
     _hierarchy_wrap.prelist_wrap(Z, ML, int(n))
     return ML
@@ -2917,7 +2923,7 @@ def maxdists(Z):
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
-    MD = numpy.zeros((n-1,))
+    MD = np.zeros((n-1,))
     [Z] = _copy_arrays_if_base_present([Z])
     _hierarchy_wrap.get_max_dist_for_each_hierarchy_wrap(Z, MD, int(n))
     return MD
@@ -2935,7 +2941,7 @@ def maxinconsts(Z, R):
     is_valid_im(R, throw=True, name='R')
 
     n = Z.shape[0] + 1
-    MI = numpy.zeros((n-1,))
+    MI = np.zeros((n-1,))
     [Z, R] = _copy_arrays_if_base_present([Z, R])
     _hierarchy_wrap.get_max_Rfield_for_each_hierarchy_wrap(Z, R, MI, int(n), 3)
     return MI
@@ -2957,7 +2963,7 @@ def maxRstat(Z, R, i):
         return ValueError('i must be an integer between 0 and 3 inclusive.')
 
     n = Z.shape[0] + 1
-    MR = numpy.zeros((n-1,))
+    MR = np.zeros((n-1,))
     [Z, R] = _copy_arrays_if_base_present([Z, R])
     _hierarchy_wrap.get_max_Rfield_for_each_hierarchy_wrap(Z, R, MR, int(n), i)
     return MR
@@ -2984,16 +2990,16 @@ def leaders(Z, T):
     i < n, i corresponds to an original observation, otherwise it
     corresponds to a non-singleton cluster.
     """
-    if type(T) != _array_type or T.dtype != 'int':
+    if type(T) != _array_type or T.dtype != np.int:
         raise TypeError('T must be a one-dimensional numpy array of integers.')
     is_valid_linkage(Z, throw=True, name='Z')
     if len(T) != Z.shape[0] + 1:
         raise ValueError('Mismatch: len(T)!=Z.shape[0] + 1.')
 
-    Cl = numpy.unique(T)
+    Cl = np.unique(T)
     kk = len(Cl)
-    L = numpy.zeros((kk,), dtype='int32')
-    M = numpy.zeros((kk,), dtype='int32')
+    L = np.zeros((kk,), dtype=np.int32)
+    M = np.zeros((kk,), dtype=np.int32)
     n = Z.shape[0] + 1
     [Z, T] = _copy_arrays_if_base_present([Z, T])
     s = _hierarchy_wrap.leaders_wrap(Z, T, L, M, int(kk), int(n))
