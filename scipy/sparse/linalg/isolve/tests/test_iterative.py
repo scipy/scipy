@@ -41,7 +41,7 @@ class TestIterative(TestCase):
         self.solvers.append( (gmres,    False, False) )
         self.solvers.append( (qmr,      False, False) )
         self.solvers.append( (minres,   True,  False) )
-        
+
         # list of tuples (A, symmetric, positive_definite )
         self.cases = []
 
@@ -51,7 +51,7 @@ class TestIterative(TestCase):
         # Symmetric and Negative Definite
         self.cases.append( (-Poisson1D,True,False) )
 
-        # Symmetric and Indefinite 
+        # Symmetric and Indefinite
         self.cases.append( (RandDiag,True,False) )
 
         # Non-symmetric and Positive Definite
@@ -78,12 +78,12 @@ class TestIterative(TestCase):
                 x0 = 0*b
 
                 x, info = solver(A, b, x0=x0, tol=tol)
-                
+
                 assert_array_equal(x0, 0*b) #ensure that x0 is not overwritten
                 assert_equal(info,0)
 
                 assert( norm(b - A*x) < tol*norm(b) )
-    
+
     def test_precond(self):
         """test whether all methods accept a preconditioner"""
 
@@ -107,7 +107,7 @@ class TestIterative(TestCase):
                 x0 = 0*b
 
                 x, info = solver(A, b, x0=x0, tol=tol)
-                
+
                 assert_equal(info,0)
                 assert( norm(b - A*x) < tol*norm(b) )
 
@@ -127,7 +127,7 @@ class TestQMR(TestCase):
 
         L = spdiags([-dat/2, dat], [-1,0], n, n)
         U = spdiags([4*dat, -dat], [ 0,1], n, n)
-        
+
         L_solver = splu(L)
         U_solver = splu(U)
 
@@ -144,7 +144,7 @@ class TestQMR(TestCase):
         M2 = LinearOperator( (n,n), matvec=U_solve, rmatvec=UT_solve )
 
         x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
-       
+
         assert_equal(info,0)
         assert( norm(b - A*x) < 1e-8*norm(b) )
 

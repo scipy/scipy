@@ -36,14 +36,14 @@ Examples
         y = invA  * x
         if sp.issparse( y ):
             y = y.toarray()
-    
+
         return as2d( y )
 
 
 >>>
 >>> # Alternative way of providing the same preconditioner.
 >>> #precond = spdiags( ivals, 0, n, n )
->>> 
+>>>
 >>> tt = time.clock()
 >>> eigs, vecs = lobpcg( X, operatorA, operatorB, blockVectorY = Y,
 >>>                      operatorT = precond,
@@ -57,20 +57,20 @@ Examples
 Notes
 -----
 
-In the following ``n`` denotes the matrix size and ``m`` the number 
+In the following ``n`` denotes the matrix size and ``m`` the number
 of required eigenvalues (smallest or largest).
 
 The LOBPCG code internally solves eigenproblems of the size 3``m`` on every
-iteration by calling the "standard" dense eigensolver, so if ``m`` is not 
-small enough compared to ``n``, it does not make sense to call the LOBPCG 
-code, but rather one should use the "standard" eigensolver, e.g. scipy or symeig 
-function in this case. If one calls the LOBPCG algorithm for 5``m``>``n``, 
+iteration by calling the "standard" dense eigensolver, so if ``m`` is not
+small enough compared to ``n``, it does not make sense to call the LOBPCG
+code, but rather one should use the "standard" eigensolver, e.g. scipy or symeig
+function in this case. If one calls the LOBPCG algorithm for 5``m``>``n``,
 it will most likely break internally, so the code tries to call the standard
 function instead.
 
 It is not that n should be large for the LOBPCG to work, but rather the
 ratio ``n``/``m`` should be large. It you call the LOBPCG code with ``m``=1
-and ``n``=10, it should work, though ``n`` is small. The method is intended 
+and ``n``=10, it should work, though ``n`` is small. The method is intended
 for extremely large ``n``/``m``, see e.g., reference [28] in
 http://arxiv.org/abs/0705.2626
 
@@ -81,9 +81,9 @@ The convergence speed depends basically on two factors:
 
 2.  How well conditioned the problem is. This can be changed by using proper
     preconditioning. For example, a rod vibration test problem (under tests
-    directory) is ill-conditioned for large ``n``, so convergence will be 
+    directory) is ill-conditioned for large ``n``, so convergence will be
     slow, unless efficient preconditioning is used. For this specific problem,
-    a good simple preconditioner function would be a linear solve for A, which 
+    a good simple preconditioner function would be a linear solve for A, which
     is easy to code since A is tridiagonal.
 
 

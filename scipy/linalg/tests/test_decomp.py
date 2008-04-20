@@ -11,7 +11,7 @@ Build linalg:
 Run tests if scipy is installed:
   python -c 'import scipy;scipy.linalg.test()'
 Run tests if linalg is not installed:
-  python tests/test_decomp.py 
+  python tests/test_decomp.py
 """
 
 import sys

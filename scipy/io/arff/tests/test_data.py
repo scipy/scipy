@@ -11,8 +11,8 @@ data_path = os.path.join(os.path.dirname(__file__), 'data')
 
 test4 = os.path.join(data_path, 'test4.arff')
 test5 = os.path.join(data_path, 'test5.arff')
-expect4_data = [(0.1, 0.2, 0.3, 0.4, 'class1'), 
-        (-0.1, -0.2, -0.3, -0.4, 'class2'), 
+expect4_data = [(0.1, 0.2, 0.3, 0.4, 'class1'),
+        (-0.1, -0.2, -0.3, -0.4, 'class2'),
         (1, 2, 3, 4, 'class3')]
 
 missing = os.path.join(data_path, 'missing.arff')

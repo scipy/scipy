@@ -11,7 +11,7 @@ This and the included files deliberately use "check_" as the test
 method names.  There are no subclasses of TestCase.  Thus nose will
 pick up nothing but the final test_all_lapack generator function.
 This does the work of collecting the test methods and checking if they
-can be run (see the isrunnable method).  
+can be run (see the isrunnable method).
 '''
 
 import os
@@ -137,4 +137,3 @@ def test_all_lapack():
         methods += [getattr(o, n) for n in dir(o) if o.isrunnable(n) is True]
     for method in methods:
         yield (method, )
-        

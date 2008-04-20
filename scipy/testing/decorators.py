@@ -22,7 +22,7 @@ def slow(t):
     hardware-dependent, but in general any individual test that requires more
     than a second or two should be labeled as slow (the whole suite consits of
     thousands of tests, so even a second is significant)."""
-    
+
     t.slow = True
     return t
 
@@ -39,7 +39,7 @@ def setastest(tf=True):
     >>> def func_with_test_in_name(arg1, arg2): pass
     ...
     >>>
-    
+
     This decorator cannot use the nose namespace, because it can be
     called from a non-test module. See also istest and nottest in
     nose.tools

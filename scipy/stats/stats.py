@@ -767,8 +767,8 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 
     Returns
     -------
-    The kurtosis of values along an axis. If all values are equal, return -3 for Fisher's 
-    definition and 0 for Pearson's definition. 
+    The kurtosis of values along an axis. If all values are equal, return -3 for Fisher's
+    definition and 0 for Pearson's definition.
 
 
     References

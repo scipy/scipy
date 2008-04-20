@@ -322,7 +322,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
     n = len(b)
     if maxiter is None:
         maxiter = n*10
-    
+
     matvec = A.matvec
     psolve = M.matvec
     ltr = _type_conv[x.dtype.char]

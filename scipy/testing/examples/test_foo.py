@@ -40,7 +40,7 @@ class ClassicTest(TestCase):
     """A regular unittest, with the extra Numpy features."""
     def test_1(self):
         print 'First test'
-        
+
     def test_2(self):
         print 'Second test'
 
@@ -99,8 +99,7 @@ def test_time():
 def test_warn():
     "A simple test that prints a warning."
     warn('Bad things are happening...')
-    
+
 def test_error():
     "A simple test that prints an error message."
     error('Really bad things are happening...')
-    

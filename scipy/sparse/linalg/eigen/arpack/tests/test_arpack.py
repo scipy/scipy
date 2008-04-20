@@ -30,7 +30,7 @@ def assert_array_almost_equal_cc(actual,desired,decimal=7,
 
 
 
-# precision for tests 
+# precision for tests
 _ndigits = {'f':4, 'd':12, 'F':4, 'D':12}
 
 class TestArpack(TestCase):
@@ -70,7 +70,7 @@ class TestArpack(TestCase):
 
         self.nonsymmetric.append(N1)
 
-    
+
 class TestEigenSymmetric(TestArpack):
 
     def get_exact_eval(self,d,typ,k,which):
@@ -82,7 +82,7 @@ class TestEigenSymmetric(TestArpack):
         if which=='SM':
             return eval[:k]
         if which=='BE':
-            # one ev from each end - if k is odd, extra ev on high end 
+            # one ev from each end - if k is odd, extra ev on high end
             l=k/2
             h=k/2+k%2
             low=range(len(eval))[:l]
@@ -114,8 +114,8 @@ class TestEigenSymmetric(TestArpack):
             n=A.shape[0]
             v0 = random.rand(n).astype(typ)
             self.eval_evec(self.symmetric[0],typ,k,which='LM',v0=v0)
-            
-    
+
+
 class TestEigenComplexSymmetric(TestArpack):
 
     def sort_choose(self,eval,typ,k,which):
@@ -156,17 +156,17 @@ class TestEigenComplexSymmetric(TestArpack):
 #                 self.eval_evec(self.symmetric[0],typ,k,which)
 
 
-    
+
 class TestEigenNonSymmetric(TestArpack):
 
 
     def sort_choose(self,eval,typ,k,which):
         reval=round(eval,decimals=_ndigits[typ])
         if which in ['LR','SR']:
-            ind=argsort(reval.real) 
+            ind=argsort(reval.real)
         elif which in ['LI','SI']:
             # for LI,SI ARPACK returns largest,smallest abs(imaginary) why?
-            ind=argsort(abs(reval.imag)) 
+            ind=argsort(abs(reval.imag))
         else:
             ind=argsort(abs(reval))
 
@@ -222,7 +222,7 @@ class TestEigenComplexNonSymmetric(TestArpack):
         eps=finfo(typ).eps
         reval=round(eval,decimals=_ndigits[typ])
         if which in ['LR','SR']:
-            ind=argsort(reval) 
+            ind=argsort(reval)
         elif which in ['LI','SI']:
             ind=argsort(reval.imag)
         else:

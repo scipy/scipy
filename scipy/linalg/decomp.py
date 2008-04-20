@@ -101,12 +101,12 @@ def eig(a,b=None, left=False, right=True, overwrite_a=False, overwrite_b=False):
     """Solve an ordinary or generalized eigenvalue problem of a square matrix.
 
     Find eigenvalues w and right or left eigenvectors of a general matrix::
-    
+
         a   vr[:,i] = w[i]        b   vr[:,i]
         a.H vl[:,i] = w[i].conj() b.H vl[:,i]
-    
+
     where .H is the Hermitean conjugation.
-    
+
     Parameters
     ----------
     a : array, shape (M, M)
@@ -119,12 +119,12 @@ def eig(a,b=None, left=False, right=True, overwrite_a=False, overwrite_b=False):
         Whether to calculate and return left eigenvectors
     right : boolean
         Whether to calculate and return right eigenvectors
-    
+
     overwrite_a : boolean
         Whether to overwrite data in a (may improve performance)
     overwrite_b : boolean
         Whether to overwrite data in b (may improve performance)
-    
+
     Returns
     -------
     w : double or complex array, shape (M,)
@@ -134,18 +134,18 @@ def eig(a,b=None, left=False, right=True, overwrite_a=False, overwrite_b=False):
     vl : double or complex array, shape (M, M)
         The normalized left eigenvector corresponding to the eigenvalue w[i]
         is the column v[:,i].
-    
+
     (if right == True)
     vr : double or complex array, shape (M, M)
         The normalized right eigenvector corresponding to the eigenvalue w[i]
         is the column vr[:,i].
-    
+
     Raises LinAlgError if eigenvalue computation does not converge
 
     See Also
     --------
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
-    
+
     """
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -207,10 +207,10 @@ def eigh(a, lower=True, eigvals_only=False, overwrite_a=False):
     """Solve the eigenvalue problem for a Hermitian or real symmetric matrix.
 
     Find eigenvalues w and optionally right eigenvectors v of a::
-    
+
         a v[:,i] = w[i] v[:,i]
         v.H v    = identity
-    
+
     Parameters
     ----------
     a : array, shape (M, M)
@@ -224,24 +224,24 @@ def eigh(a, lower=True, eigvals_only=False, overwrite_a=False):
         (Default: both are calculated)
     overwrite_a : boolean
         Whether data in a is overwritten (may improve performance).
-    
+
     Returns
     -------
     w : double array, shape (M,)
         The eigenvalues, in ascending order, each repeated according to its
         multiplicity.
-    
+
     (if eigvals_only == False)
     v : double or complex double array, shape (M, M)
         The normalized eigenvector corresponding to the eigenvalue w[i] is
         the column v[:,i].
-    
+
     Raises LinAlgError if eigenvalue computation does not converge
 
     See Also
     --------
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
-    
+
     """
     if eigvals_only or overwrite_a:
         a1 = asarray_chkfinite(a)
@@ -299,10 +299,10 @@ def eig_banded(a_band, lower=0, eigvals_only=0, overwrite_a_band=0,
     """Solve real symmetric or complex hermetian band matrix eigenvalue problem.
 
     Find eigenvalues w and optionally right eigenvectors v of a::
-    
+
         a v[:,i] = w[i] v[:,i]
         v.H v    = identity
-    
+
     The matrix a is stored in ab either in lower diagonal or upper
     diagonal ordered form:
 
@@ -315,7 +315,7 @@ def eig_banded(a_band, lower=0, eigvals_only=0, overwrite_a_band=0,
         *   *   a02 a13 a24 a35
         *   a01 a12 a23 a34 a45
         a00 a11 a22 a33 a44 a55
-        
+
         lower form:
         a00 a11 a22 a33 a44 a55
         a10 a21 a32 a43 a54 *
@@ -349,7 +349,7 @@ def eig_banded(a_band, lower=0, eigvals_only=0, overwrite_a_band=0,
     max_ev : integer
         For select=='v', maximum number of eigenvalues expected.
         For other values of select, has no meaning.
-        
+
         In doubt, leave this parameter untouched.
 
     Returns
@@ -361,9 +361,9 @@ def eig_banded(a_band, lower=0, eigvals_only=0, overwrite_a_band=0,
     v : double or complex double array, shape (M, M)
         The normalized eigenvector corresponding to the eigenvalue w[i] is
         the column v[:,i].
-    
+
     Raises LinAlgError if eigenvalue computation does not converge
-    
+
     """
     if eigvals_only or overwrite_a_band:
         a1 = asarray_chkfinite(a_band)
@@ -446,7 +446,7 @@ def eigvals(a,b=None,overwrite_a=0):
     """Compute eigenvalues from an ordinary or generalized eigenvalue problem.
 
     Find eigenvalues of a general matrix::
-    
+
         a   vr[:,i] = w[i]        b   vr[:,i]
 
     Parameters
@@ -465,9 +465,9 @@ def eigvals(a,b=None,overwrite_a=0):
     w : double or complex array, shape (M,)
         The eigenvalues, each repeated according to its multiplicity,
         but not in any specific order.
-    
+
     Raises LinAlgError if eigenvalue computation does not converge
-    
+
     See Also
     --------
     eigvalsh : eigenvalues of symmetric or Hemitiean arrays
@@ -481,10 +481,10 @@ def eigvalsh(a,lower=1,overwrite_a=0):
     """Solve the eigenvalue problem for a Hermitian or real symmetric matrix.
 
     Find eigenvalues w of a::
-    
+
         a v[:,i] = w[i] v[:,i]
         v.H v    = identity
-    
+
     Parameters
     ----------
     a : array, shape (M, M)
@@ -495,13 +495,13 @@ def eigvalsh(a,lower=1,overwrite_a=0):
         triangle of a. (Default: lower)
     overwrite_a : boolean
         Whether data in a is overwritten (may improve performance).
-    
+
     Returns
     -------
     w : double array, shape (M,)
         The eigenvalues, in ascending order, each repeated according to its
         multiplicity.
-    
+
     Raises LinAlgError if eigenvalue computation does not converge
 
     See Also
@@ -509,7 +509,7 @@ def eigvalsh(a,lower=1,overwrite_a=0):
     eigvals : eigenvalues of general arrays
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
-    
+
     """
     return eigh(a,lower=lower,eigvals_only=1,overwrite_a=overwrite_a)
 
@@ -518,10 +518,10 @@ def eigvals_banded(a_band,lower=0,overwrite_a_band=0,
     """Solve real symmetric or complex hermetian band matrix eigenvalue problem.
 
     Find eigenvalues w of a::
-    
+
         a v[:,i] = w[i] v[:,i]
         v.H v    = identity
-    
+
     The matrix a is stored in ab either in lower diagonal or upper
     diagonal ordered form:
 
@@ -534,7 +534,7 @@ def eigvals_banded(a_band,lower=0,overwrite_a_band=0,
         *   *   a02 a13 a24 a35
         *   a01 a12 a23 a34 a45
         a00 a11 a22 a33 a44 a55
-        
+
         lower form:
         a00 a11 a22 a33 a44 a55
         a10 a21 a32 a43 a54 *
@@ -570,14 +570,14 @@ def eigvals_banded(a_band,lower=0,overwrite_a_band=0,
         multiplicity.
 
     Raises LinAlgError if eigenvalue computation does not converge
-    
+
     See Also
     --------
     eig_banded : eigenvalues and right eigenvectors for symmetric/Hermitian band matrices
     eigvals : eigenvalues of general arrays
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
-    
+
     """
     return eig_banded(a_band,lower=lower,eigvals_only=1,
                       overwrite_a_band=overwrite_a_band, select=select,
@@ -585,14 +585,14 @@ def eigvals_banded(a_band,lower=0,overwrite_a_band=0,
 
 def lu_factor(a, overwrite_a=0):
     """Compute pivoted LU decomposition of a matrix.
-    
+
     The decomposition is::
 
         A = P L U
 
     where P is a permutation matrix, L lower triangular with unit
     diagonal elements, and U upper triangular.
-    
+
     Parameters
     ----------
     a : array, shape (M, M)
@@ -612,11 +612,11 @@ def lu_factor(a, overwrite_a=0):
     See also
     --------
     lu_solve : solve an equation system using the LU factorization of a matrix
-    
+
     Notes
     -----
     This is a wrapper to the *GETRF routines from LAPACK.
-    
+
     """
     a1 = asarray(a)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
@@ -632,7 +632,7 @@ def lu_factor(a, overwrite_a=0):
 
 def lu_solve(a_lu_pivots,b):
     """Solve an equation system, a x = b, given the LU factorization of a
-    
+
     Parameters
     ----------
     (lu, piv)
@@ -676,7 +676,7 @@ def lu(a,permute_l=0,overwrite_a=0):
 
     where P is a permutation matrix, L lower triangular with unit
     diagonal elements, and U upper triangular.
-    
+
     Parameters
     ----------
     a : array, shape (M, N)
@@ -696,18 +696,18 @@ def lu(a,permute_l=0,overwrite_a=0):
         K = min(M, N)
     u : array, shape (K, N)
         Upper triangular or trapezoidal matrix
-    
+
     (If permute_l == True)
     pl : array, shape (M, K)
         Permuted L matrix.
         K = min(M, N)
     u : array, shape (K, N)
         Upper triangular or trapezoidal matrix
-    
+
     Notes
     -----
     This is a LU factorization routine written for Scipy.
-    
+
     """
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
@@ -728,7 +728,7 @@ def svd(a,full_matrices=1,compute_uv=1,overwrite_a=0):
     an 1d-array s of singular values (real, non-negative) such that
     a == U S Vh  if S is an suitably shaped matrix of zeros whose
     main diagonal is s.
-    
+
     Parameters
     ----------
     a : array, shape (M, N)
@@ -740,7 +740,7 @@ def svd(a,full_matrices=1,compute_uv=1,overwrite_a=0):
         Whether to compute also U, Vh in addition to s (Default: true)
     overwrite_a : boolean
         Whether data in a is overwritten (may improve performance)
-    
+
     Returns
     -------
     U:  array, shape (M,M) or (M,K) depending on full_matrices
@@ -759,14 +759,14 @@ def svd(a,full_matrices=1,compute_uv=1,overwrite_a=0):
     >>> U, s, Vh = linalg.svd(a)
     >>> U.shape, Vh.shape, s.shape
     ((9, 9), (6, 6), (6,))
-    
+
     >>> U, s, Vh = linalg.svd(a, full_matrices=False)
     >>> U.shape, Vh.shape, s.shape
     ((9, 6), (6, 6), (6,))
     >>> S = linalg.diagsvd(s, 6, 6)
     >>> allclose(a, dot(U, dot(S, Vh)))
     True
-    
+
     >>> s2 = linalg.svd(a, compute_uv=False)
     >>> allclose(s, s2)
     True
@@ -775,7 +775,7 @@ def svd(a,full_matrices=1,compute_uv=1,overwrite_a=0):
     --------
     svdvals : return singular values of a matrix
     diagsvd : return the Sigma matrix, given the vector s
-    
+
     """
     # A hack until full_matrices == 0 support is fixed here.
     if full_matrices == 0:
@@ -810,7 +810,7 @@ def svdvals(a,overwrite_a=0):
         Matrix to decompose
     overwrite_a : boolean
         Whether data in a is overwritten (may improve performance)
-    
+
     Returns
     -------
     s:  array, shape (K,)
@@ -822,7 +822,7 @@ def svdvals(a,overwrite_a=0):
     --------
     svd : return the full singular value decomposition of a matrix
     diagsvd : return the Sigma matrix, given the vector s
-    
+
     """
     return svd(a,compute_uv=0,overwrite_a=overwrite_a)
 
@@ -841,7 +841,7 @@ def diagsvd(s,M,N):
     -------
     S : array, shape (M, N)
         The S-matrix in the singular value decomposition
-    
+
     """
     part = diag(s)
     typ = part.dtype.char
@@ -855,10 +855,10 @@ def diagsvd(s,M,N):
 
 def cholesky(a,lower=0,overwrite_a=0):
     """Compute the Cholesky decomposition of a matrix.
-    
+
     Returns the Cholesky decomposition, :lm:`A = L L^*` or :lm:`A = U^* U`
     of a Hermitian positive-definite matrix :lm:`A`.
-    
+
     Parameters
     ----------
     a : array, shape (M, M)
@@ -868,14 +868,14 @@ def cholesky(a,lower=0,overwrite_a=0):
         (Default: upper-triangular)
     overwrite_a : boolean
         Whether to overwrite data in a (may improve performance)
-    
+
     Returns
     -------
     B : array, shape (M, M)
         Upper- or lower-triangular Cholesky factor of A
-    
+
     Raises LinAlgError if decomposition fails
-    
+
     Examples
     --------
     >>> from scipy import array, linalg, dot
@@ -887,7 +887,7 @@ def cholesky(a,lower=0,overwrite_a=0):
     >>> dot(L, L.T.conj())
     array([[ 1.+0.j,  0.-2.j],
            [ 0.+2.j,  5.+0.j]])
-    
+
     """
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -902,12 +902,12 @@ def cholesky(a,lower=0,overwrite_a=0):
 
 def cho_factor(a, lower=0, overwrite_a=0):
     """Compute the Cholesky decomposition of a matrix, to use in cho_solve
-    
+
     Returns the Cholesky decomposition, :lm:`A = L L^*` or :lm:`A = U^* U`
     of a Hermitian positive-definite matrix :lm:`A`.
 
     The return value can be directly used as the first parameter to cho_solve.
-    
+
     Parameters
     ----------
     a : array, shape (M, M)
@@ -917,16 +917,16 @@ def cho_factor(a, lower=0, overwrite_a=0):
         (Default: upper-triangular)
     overwrite_a : boolean
         Whether to overwrite data in a (may improve performance)
-    
+
     Returns
     -------
     c : array, shape (M, M)
         Upper- or lower-triangular Cholesky factor of A
     lower : array, shape (M, M)
         Flag indicating whether the factor is lower or upper triangular
-    
+
     Raises LinAlgError if decomposition fails
-    
+
     """
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -955,7 +955,7 @@ def cho_solve(clow, b):
         The return value from cho_factor can be used.
     b : array
         Right-hand side of the equation system
-    
+
     First input is a tuple (LorU, lower) which is the output to cho_factor.
     Second input is the right-hand side.
 
@@ -963,7 +963,7 @@ def cho_solve(clow, b):
     -------
     x : array
         Solution to the equation system
-    
+
     """
     c, lower = clow
     c = asarray_chkfinite(c)
@@ -1000,7 +1000,7 @@ def qr(a,overwrite_a=0,lwork=None,econ=False,mode='qr'):
     mode : {'qr', 'r'}
         Determines what information is to be returned: either both Q and R
         or only R.
-    
+
     Returns
     -------
     (if mode == 'qr')
@@ -1029,11 +1029,11 @@ def qr(a,overwrite_a=0,lwork=None,econ=False,mode='qr'):
 
     >>> r2 = linalg.qr(a, mode='r')
     >>> allclose(r, r2)
-    
+
     >>> q3, r3 = linalg.qr(a, econ=True)
     >>> q3.shape, r3.shape
     ((9, 6), (6, 6))
-    
+
     """
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
@@ -1108,7 +1108,7 @@ def qr_old(a,overwrite_a=0,lwork=None):
     lwork : integer
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
-    
+
     Returns
     -------
     Q : double or complex array, shape (M, M)
@@ -1116,7 +1116,7 @@ def qr_old(a,overwrite_a=0,lwork=None):
         Size K = min(M, N)
 
     Raises LinAlgError if decomposition fails
-    
+
     """
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
@@ -1163,15 +1163,15 @@ def rq(a,overwrite_a=0,lwork=None):
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
     econ : boolean
-    
+
     Returns
     -------
     R : double array, shape (M, N) or (K, N) for econ==True
         Size K = min(M, N)
     Q : double or complex array, shape (M, M) or (M, K) for econ==True
-    
+
     Raises LinAlgError if decomposition fails
-    
+
     """
     # TODO: implement support for non-square and complex arrays
     a1 = asarray_chkfinite(a)
@@ -1211,16 +1211,16 @@ _double_precision = ['i','l','d']
 
 def schur(a,output='real',lwork=None,overwrite_a=0):
     """Compute Schur decomposition of a matrix.
-    
+
     The Schur decomposition is
-    
+
         A = Z T Z^H
-    
+
     where Z is unitary and T is either upper-triangular, or for real
     Schur decomposition (output='real'), quasi-upper triangular.  In
     the quasi-triangular form, 2x2 blocks describing complex-valued
     eigenvalue pairs may extrude from the diagonal.
-    
+
     Parameters
     ----------
     a : array, shape (M, M)
@@ -1243,7 +1243,7 @@ def schur(a,output='real',lwork=None,overwrite_a=0):
     See also
     --------
     rsf2csf : Convert real Schur form to complex Schur form
-    
+
     """
     if not output in ['real','complex','r','c']:
         raise ValueError, "argument must be 'real', or 'complex'"
@@ -1305,28 +1305,28 @@ def _assert_squareness(*arrays):
 
 def rsf2csf(T, Z):
     """Convert real Schur form to complex Schur form.
-    
+
     Convert a quasi-diagonal real-valued Schur form to the upper triangular
     complex-valued Schur form.
-    
+
     Parameters
     ----------
     T : array, shape (M, M)
         Real Schur form of the original matrix
     Z : array, shape (M, M)
         Schur transformation matrix
-    
+
     Returns
     -------
     T : array, shape (M, M)
         Complex Schur form of the original matrix
     Z : array, shape (M, M)
         Schur transformation matrix corresponding to the complex form
-    
+
     See also
     --------
     schur : Schur decompose a matrix
-    
+
     """
     Z,T = map(asarray_chkfinite, (Z,T))
     if len(Z.shape) !=2 or Z.shape[0] != Z.shape[1]:
@@ -1366,21 +1366,21 @@ def rsf2csf(T, Z):
 
 def orth(A):
     """Construct an orthonormal basis for the range of A using SVD
-    
+
     Parameters
     ----------
     A : array, shape (M, N)
-    
+
     Returns
     -------
     Q : array, shape (M, K)
         Orthonormal basis for the range of A.
         K = effective rank of A, as determined by automatic cutoff
-    
+
     See also
     --------
     svd : Singular value decomposition of a matrix
-    
+
     """
     u,s,vh = svd(A)
     M,N = A.shape
@@ -1391,14 +1391,14 @@ def orth(A):
 
 def hessenberg(a,calc_q=0,overwrite_a=0):
     """Compute Hessenberg form of a matrix.
-    
+
     The Hessenberg decomposition is
-    
+
         A = Q H Q^H
-    
+
     where Q is unitary/orthogonal and H has only zero elements below the first
     subdiagonal.
-    
+
     Parameters
     ----------
     a : array, shape (M,M)

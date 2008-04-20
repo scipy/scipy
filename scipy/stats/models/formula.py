@@ -27,10 +27,10 @@ class Term(object):
     ----------------------------------------------------
 
     By default, the namespace is empty, which means it must be
-    specified before evaluating the design matrix. 
+    specified before evaluating the design matrix.
 
     When it is unambiguous, the namespaces of objects are derived from the
-    context. 
+    context.
 
     Rules:
     ------
@@ -256,12 +256,12 @@ class Factor(Term):
     def main_effect(self, reference=None):
         """
         Return the 'main effect' columns of a factor, choosing
-        an optional reference key. 
+        an optional reference key.
 
-	The reference key can be one of the keys of the Factor,
+        The reference key can be one of the keys of the Factor,
         or an integer, representing which column to remove.
         It defaults to 0.
-        
+
         """
 
         names = self.names()
@@ -295,10 +295,10 @@ class Factor(Term):
     def __getitem__(self, key):
         """
         Retrieve the column corresponding to key in a Formula.
-        
+
         :Parameters:
             key : one of the Factor's keys
-        
+
         :Returns: ndarray corresponding to key, when evaluated in
                   current namespace
         """
@@ -704,7 +704,7 @@ def interactions(terms, order=[1,2]):
     is an integer, it is changed to range(1,order+1), so
     order=3 is equivalent to order=[1,2,3], generating
     all one, two and three-way interactions.
-    
+
     If any entry of order is greater than len(terms), it is
     effectively treated as len(terms).
 
@@ -731,7 +731,7 @@ def interactions(terms, order=[1,2]):
         for m in range(I.shape[1]):
 
             # only keep combinations that have unique entries
-            
+
             if (N.unique(I[:,m]).shape == I[:,m].shape and
                 N.alltrue(N.equal(N.sort(I[:,m]), I[:,m]))):
                 ll = [terms[j] for j in I[:,m]]
@@ -742,7 +742,7 @@ def interactions(terms, order=[1,2]):
 
     key = values.keys()[0]
     value = values[key]; del(values[key])
-    
+
     for v in values.values():
         value += v
     return value

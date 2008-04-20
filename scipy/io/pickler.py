@@ -25,7 +25,7 @@ def objsave(file, allglobals, *args):
     fid.close()
 
 @deprecate_with_doc("""
-Just use cPickle.load or numpy.load. 
+Just use cPickle.load or numpy.load.
 """)
 def objload(file, allglobals):
     """Load a previously pickled dictionary and insert into given dictionary.

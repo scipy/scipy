@@ -170,10 +170,10 @@ class spmatrix(object):
             return '\n'.join( [ ('  %s\t%s' % t) for t in triples] )
 
         if nnz > maxprint:
-            half = maxprint // 2 
+            half = maxprint // 2
             out  = tostr(A.row[:half], A.col[:half], A.data[:half])
             out += "\n  :\t:\n"
-            half = maxprint - maxprint//2 
+            half = maxprint - maxprint//2
             out += tostr(A.row[-half:], A.col[-half:], A.data[-half:])
         else:
             out  = tostr(A.row, A.col, A.data)
@@ -230,7 +230,7 @@ class spmatrix(object):
 
     def __rsub__(self, other):  # other - self
         return self.tocsr().__rsub__(other)
-    
+
     def multiply(self, other):
         """Point-wise multiplication by another matrix
         """
@@ -251,7 +251,7 @@ class spmatrix(object):
     def __div__(self, other):
         # Always do true division
         return self.__truediv__(other)
-    
+
     def __neg__(self):
         return -self.tocsr()
 
@@ -278,7 +278,7 @@ class spmatrix(object):
             other = int(other)
             if other < 0:
                 raise ValueError,'exponent must be >= 0'
-            
+
             if other == 0:
                 from construct import identity
                 return identity( self.shape[0], dtype=self.dtype )
@@ -391,12 +391,12 @@ class spmatrix(object):
     def rmatvec(self, other, conjugate=True):
         """Multiplies the vector 'other' by the sparse matrix, returning a
         dense vector as a result.
-        
+
         If 'conjugate' is True:
             - returns A.transpose().conj() * other
         Otherwise:
             - returns A.transpose() * other.
-        
+
         """
         return self.tocsr().rmatvec(other, conjugate=conjugate)
 
@@ -420,7 +420,7 @@ class spmatrix(object):
 
     def todok(self):
         return self.tocoo().todok()
-    
+
     def tocoo(self):
         return self.tocsr().tocoo()
 
@@ -429,10 +429,10 @@ class spmatrix(object):
 
     def todia(self):
         return self.tocoo().todia()
-    
+
     def tobsr(self,blocksize=None):
         return self.tocsr().tobsr(blocksize=blocksize)
-    
+
     def copy(self):
         return self.__class__(self,copy=True)
 
@@ -472,7 +472,7 @@ class spmatrix(object):
             return self.sum(None) * 1.0 / (self.shape[0]*self.shape[1])
         else:
             raise ValueError, "axis out of bounds"
-    
+
     def diagonal(self):
         """Returns the main diagonal of the matrix
         """
@@ -526,4 +526,3 @@ def isspmatrix(x):
     return _isinstance(x, spmatrix)
 
 issparse = isspmatrix
-

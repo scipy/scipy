@@ -39,8 +39,8 @@ class csr_matrix(_cs_matrix):
             where ``data`` and ``ij`` satisfy ``a[ij[0, k], ij[1, k]] = data[k]``
 
         csr_matrix((data, indices, indptr), [shape=(M, N)])
-            is the standard CSR representation where the column indices for 
-            row i are stored in ``indices[indptr[i]:indices[i+1]]`` and their 
+            is the standard CSR representation where the column indices for
+            row i are stored in ``indices[indptr[i]:indices[i+1]]`` and their
             corresponding values are stored in ``data[indptr[i]:indptr[i+1]]``.
             If the shape parameter is not supplied, the matrix dimensions
             are inferred from the index arrays.
@@ -51,7 +51,7 @@ class csr_matrix(_cs_matrix):
       - efficient arithmetic operations CSR + CSR, CSR * CSR, etc.
       - efficient row slicing
       - fast matrix vector products
-    
+
     Disadvantages of the CSR format
       - slow column slicing operations (consider CSC)
       - changes to the sparsity structure are expensive (consider LIL or DOK)
@@ -73,7 +73,7 @@ class csr_matrix(_cs_matrix):
     matrix([[1, 0, 2],
             [0, 0, 3],
             [4, 5, 6]])
-    
+
     >>> indptr = array([0,2,3,6])
     >>> indices = array([0,2,2,0,1,2])
     >>> data = array([1,2,3,4,5,6])
@@ -108,9 +108,9 @@ class csr_matrix(_cs_matrix):
     def tolil(self):
         from lil import lil_matrix
         lil = lil_matrix(self.shape,dtype=self.dtype)
-     
+
         self.sort_indices() #lil_matrix needs sorted rows
-        
+
         ptr,ind,dat = self.indptr,self.indices,self.data
         rows, data  = lil.rows, lil.data
 
@@ -149,7 +149,7 @@ class csr_matrix(_cs_matrix):
             from spfuncs import estimate_blocksize
             return self.tobsr(blocksize=estimate_blocksize(self))
         elif blocksize == (1,1):
-            arg1 = (self.data.reshape(-1,1,1),self.indices,self.indptr)  
+            arg1 = (self.data.reshape(-1,1,1),self.indices,self.indptr)
             return bsr_matrix( arg1, shape=self.shape, copy=copy )
         else:
             R,C = blocksize
@@ -168,7 +168,7 @@ class csr_matrix(_cs_matrix):
                     indptr, indices, data.ravel() )
 
             return bsr_matrix( (data,indices,indptr), shape=self.shape )
-    
+
     # these functions are used by the parent class (_cs_matrix)
     # to remove redudancy between csc_matrix and csr_matrix
     def _swap(self,x):
@@ -191,7 +191,7 @@ class csr_matrix(_cs_matrix):
             slicing of the form self[[1,2,3],:]
             """
             indices = asindices(indices)
-            
+
             max_indx = indices.max()
 
             if max_indx >= N:
@@ -200,7 +200,7 @@ class csr_matrix(_cs_matrix):
             min_indx = indices.min()
             if min_indx < -N:
                 raise IndexError('index (%d) out of range' % (N + min_indx))
-            
+
             if min_indx < 0:
                 indices = indices.copy()
                 indices[indices < 0] += N
@@ -210,7 +210,7 @@ class csr_matrix(_cs_matrix):
             shape   = (len(indices),N)
 
             return csr_matrix( (data,indices,indptr), shape=shape)
-            
+
 
         if isinstance(key, tuple):
             row = key[0]
@@ -225,7 +225,7 @@ class csr_matrix(_cs_matrix):
                 else:
                     P = extractor(col,self.shape[1]).T        #[i,[1,2]]
                     return self[row,:]*P
-                    
+
             elif isinstance(row, slice):
                 #[1:2,??]
                 if isintlike(col) or isinstance(col, slice):
@@ -233,16 +233,16 @@ class csr_matrix(_cs_matrix):
                 else:
                     P = extractor(col,self.shape[1]).T        #[1:2,[1,2]]
                     return self[row,:]*P
-                
-            else:    
+
+            else:
                 #[[1,2],??] or [[[1],[2]],??]
                 if isintlike(col) or isinstance(col,slice):
-                    P = extractor(row, self.shape[0])        #[[1,2],j] or [[1,2],1:2]   
-                    return (P*self)[:,col]                   
+                    P = extractor(row, self.shape[0])        #[[1,2],j] or [[1,2],1:2]
+                    return (P*self)[:,col]
 
                 else:
-                    row = asindices(row)                     
-                    col = asindices(col) 
+                    row = asindices(row)
+                    col = asindices(col)
                     if len(row.shape) == 1:
                         if len(row) != len(col):             #[[1,2],[1,2]]
                             raise IndexError('number of row and column indices differ')
@@ -250,23 +250,23 @@ class csr_matrix(_cs_matrix):
                         for i,j in zip(row,col):
                             val.append(self._get_single_element(i,j))
                         return asmatrix(val)
-                    
+
                     elif len(row.shape) == 2:
                         row = ravel(row)                    #[[[1],[2]],[1,2]]
-                        P = extractor(row, self.shape[0])   
-                        return (P*self)[:,col]               
+                        P = extractor(row, self.shape[0])
+                        return (P*self)[:,col]
 
                     else:
                         raise NotImplementedError('unsupported indexing')
-                        
+
         elif isintlike(key) or isinstance(key,slice):
             return self[key,:]                                #[i] or [1:2]
         else:
             return self[asindices(key),:]                     #[[1,2]]
-    
+
 
     def _get_single_element(self,row,col):
-        """Returns the single element self[row, col] 
+        """Returns the single element self[row, col]
         """
         M, N = self.shape
         if (row < 0):
@@ -275,9 +275,9 @@ class csr_matrix(_cs_matrix):
             col += N
         if not (0<=row<M) or not (0<=col<N):
             raise IndexError("index out of bounds")
-            
+
         #TODO make use of sorted indices (if present)
-        
+
         start = self.indptr[row]
         end   = self.indptr[row+1]
         indxs = where(col == self.indices[start:end])[0]
@@ -293,13 +293,13 @@ class csr_matrix(_cs_matrix):
             raise ValueError('nonzero entry (%d,%d) occurs more than once' % (row,col) )
 
     def _get_row_slice(self, i, cslice ):
-        """Returns a copy of row self[i, cslice] 
+        """Returns a copy of row self[i, cslice]
         """
         if i < 0:
             i += self.shape[0]
 
         if i < 0 or i >= self.shape[0]:
-            raise IndexError('index (%d) out of range' % i ) 
+            raise IndexError('index (%d) out of range' % i )
 
         start, stop, stride = cslice.indices(self.shape[1])
 
@@ -375,4 +375,3 @@ from sputils import _isinstance
 
 def isspmatrix_csr(x):
     return _isinstance(x, csr_matrix)
-

@@ -34,7 +34,7 @@ class TestInterface(TestCase):
                 return array([ 1*x[0] + 4*x[1],
                                2*x[0] + 5*x[1],
                                3*x[0] + 6*x[1]])
-               
+
         cases.append( matlike() )
 
 

@@ -150,37 +150,37 @@ _hermitian_example = '''\
 _skew_example = '''\
 %%MatrixMarket matrix coordinate real skew-symmetric
   5  5  7
-    1     1     1.0     
-    2     2    10.5     
-    4     2   250.5     
-    3     3     1.5e-2  
-    4     4    -2.8e2   
-    5     5    12.      
-    5     4     0        
+    1     1     1.0
+    2     2    10.5
+    4     2   250.5
+    3     3     1.5e-2
+    4     4    -2.8e2
+    5     5    12.
+    5     4     0
 '''
 
 _symmetric_example = '''\
 %%MatrixMarket matrix coordinate real symmetric
   5  5  7
-    1     1     1.0    
-    2     2    10.5    
-    4     2   250.5    
-    3     3     1.5e-2 
-    4     4    -2.8e2  
-    5     5    12.     
-    5     4     8     
+    1     1     1.0
+    2     2    10.5
+    4     2   250.5
+    3     3     1.5e-2
+    4     4    -2.8e2
+    5     5    12.
+    5     4     8
 '''
 
 _symmetric_pattern_example = '''\
 %%MatrixMarket matrix coordinate pattern symmetric
   5  5  7
-    1     1  
-    2     2  
-    4     2  
-    3     3  
-    4     4  
-    5     5  
-    5     4  
+    1     1
+    2     2
+    4     2
+    3     3
+    4     4
+    5     5
+    5     4
 '''
 
 class TestMMIOCoordinate(TestCase):
@@ -213,7 +213,7 @@ class TestMMIOCoordinate(TestCase):
              [0,      0,               0,     33.32j,          12]]
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
-    
+
     def test_read_skew(self):
         """read a skew-symmetric matrix"""
         fn = mktemp()
@@ -228,7 +228,7 @@ class TestMMIOCoordinate(TestCase):
              [0,      0,               0,       0,    12]]
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
-    
+
     def test_read_symmetric(self):
         """read a symmetric matrix"""
         fn = mktemp()

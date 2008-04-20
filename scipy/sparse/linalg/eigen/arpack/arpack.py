@@ -9,26 +9,26 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 #
 # ARPACK Entry Points
 # -------------------
-# The entry points to ARPACK are 
+# The entry points to ARPACK are
 # - (s,d)seupd : single and double precision symmetric matrix
 # - (s,d,c,z)neupd: single,double,complex,double complex general matrix
-# This wrapper puts the *neupd (general matrix) interfaces in eigen() 
-# and the *seupd (symmetric matrix) in eigen_symmetric().  
+# This wrapper puts the *neupd (general matrix) interfaces in eigen()
+# and the *seupd (symmetric matrix) in eigen_symmetric().
 # There is no Hermetian complex/double complex interface.
 # To find eigenvalues of a Hermetian matrix you
 # must use eigen() and not eigen_symmetric()
 # It might be desirable to handle the Hermetian case differently
-# and, for example, return real eigenvalues. 
+# and, for example, return real eigenvalues.
 
 # Number of eigenvalues returned and complex eigenvalues
 # ------------------------------------------------------
 # The ARPACK nonsymmetric real and double interface (s,d)naupd return
-# eigenvalues and eigenvectors in real (float,double) arrays.  
+# eigenvalues and eigenvectors in real (float,double) arrays.
 # Since the eigenvalues and eigenvectors are, in general, complex
 # ARPACK puts the real and imaginary parts in consecutive entries
 # in real-valued arrays.   This wrapper puts the real entries
 # into complex data types and attempts to return the requested eigenvalues
-# and eigenvectors.  
+# and eigenvectors.
 
 
 # Solver modes
@@ -52,7 +52,7 @@ _ndigits = {'f':5, 'd':12, 'F':5, 'D':12}
 
 
 def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
-          ncv=None, maxiter=None, tol=0, 
+          ncv=None, maxiter=None, tol=0,
           return_eigenvectors=True):
     """Find k eigenvalues and eigenvectors of the square matrix A.
 
@@ -76,7 +76,7 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
         Array of k eigenvalues
 
     v : array
-       An array of k eigenvectors 
+       An array of k eigenvectors
        The v[i] is the eigenvector corresponding to the eigenvector w[i]
 
     Other Parameters
@@ -92,10 +92,10 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
         Find eigenvalues near sigma.  Shift spectrum by sigma.
 
     v0 : array
-        Starting vector for iteration.  
+        Starting vector for iteration.
 
     ncv : integer
-        The number of Lanczos vectors generated 
+        The number of Lanczos vectors generated
         ncv must be greater than k; it is recommended that ncv > 2*k
 
     which : string
@@ -107,7 +107,7 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
          - 'LI' : largest imaginary part
          - 'SI' : smallest imaginary part
 
-    maxiter : integer 
+    maxiter : integer
         Maximum number of Arnoldi update iterations allowed
 
     tol : float
@@ -117,7 +117,7 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
         Return eigenvectors (True) in addition to eigenvalues
 
     See Also
-    --------    
+    --------
     eigen_symmetric : eigenvalues and eigenvectors for symmetric matrix A
 
     Notes
@@ -149,7 +149,7 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
     ncv=min(ncv,n)
     if maxiter==None:
         maxiter=n*10
-    # assign starting vector        
+    # assign starting vector
     if v0 is not None:
         resid=v0
         info=1
@@ -244,12 +244,12 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
                    workd,workl,info)
 
         # The ARPACK nonsymmetric real and double interface (s,d)naupd return
-        # eigenvalues and eigenvectors in real (float,double) arrays.  
+        # eigenvalues and eigenvectors in real (float,double) arrays.
 
         # Build complex eigenvalues from real and imaginary parts
         d=dr+1.0j*di
 
-        # Arrange the eigenvectors: complex eigenvectors are stored as 
+        # Arrange the eigenvectors: complex eigenvectors are stored as
         # real,imaginary in consecutive columns
         z=zr.astype(typ.upper())
         eps=np.finfo(typ).eps
@@ -263,7 +263,7 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
                 z[:,i+1]=z[:,i].conjugate()
                 i+=1
             i+=1
-                      
+
         # Now we have k+1 possible eigenvalues and eigenvectors
         # Return the ones specified by the keyword "which"
         nreturned=iparam[4] # number of good eigenvalues returned
@@ -274,10 +274,10 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
             # cut at approx precision for sorting
             rd=np.round(d,decimals=_ndigits[typ])
             if which in ['LR','SR']:
-                ind=np.argsort(rd.real) 
+                ind=np.argsort(rd.real)
             elif which in ['LI','SI']:
                 # for LI,SI ARPACK returns largest,smallest abs(imaginary) why?
-                ind=np.argsort(abs(rd.imag)) 
+                ind=np.argsort(abs(rd.imag))
             else:
                 ind=np.argsort(abs(rd))
             if which in ['LR','LM','LI']:
@@ -306,9 +306,9 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
 
 def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
-                    ncv=None, maxiter=None, tol=0, 
+                    ncv=None, maxiter=None, tol=0,
                     return_eigenvectors=True):
-    """Find k eigenvalues and eigenvectors of the real symmetric 
+    """Find k eigenvalues and eigenvectors of the real symmetric
     square matrix A.
 
     Solves A * x[i] = w[i] * x[i], the standard eigenvalue problem for
@@ -331,7 +331,7 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
         Array of k eigenvalues
 
     v : array
-       An array of k eigenvectors 
+       An array of k eigenvectors
        The v[i] is the eigenvector corresponding to the eigenvector w[i]
 
     Other Parameters
@@ -345,12 +345,12 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
     sigma : real
         (Not implemented)
         Find eigenvalues near sigma.  Shift spectrum by sigma.
-    
+
     v0 : array
-        Starting vector for iteration.  
+        Starting vector for iteration.
 
     ncv : integer
-        The number of Lanczos vectors generated 
+        The number of Lanczos vectors generated
         ncv must be greater than k; it is recommended that ncv > 2*k
 
     which : string
@@ -359,10 +359,10 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
          - 'SA' : Smallest (algebraic) eigenvalues
          - 'LM' : Largest (in magnitude) eigenvalues
          - 'SM' : Smallest (in magnitude) eigenvalues
-         - 'BE' : Half (k/2) from each end of the spectrum  
+         - 'BE' : Half (k/2) from each end of the spectrum
                   When k is odd, return one more (k/2+1) from the high end
 
-    maxiter : integer 
+    maxiter : integer
         Maximum number of Arnoldi update iterations allowed
 
     tol : float
@@ -372,7 +372,7 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
         Return eigenvectors (True) in addition to eigenvalues
 
     See Also
-    --------    
+    --------
     eigen : eigenvalues and eigenvectors for a general (nonsymmetric) matrix A
 
     Notes
@@ -401,7 +401,7 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
     ncv=min(ncv,n)
     if maxiter==None:
         maxiter=n*10
-    # assign starting vector        
+    # assign starting vector
     if v0 is not None:
         resid=v0
         info=1

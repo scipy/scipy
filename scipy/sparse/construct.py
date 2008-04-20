@@ -3,7 +3,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = [ 'spdiags', 'eye', 'identity', 'kron', 'kronsum', 
+__all__ = [ 'spdiags', 'eye', 'identity', 'kron', 'kronsum',
             'hstack', 'vstack', 'bmat' ]
 
 
@@ -32,13 +32,13 @@ def spdiags(data, diags, m, n, format=None):
     Parameters
     ----------
         - data   : matrix whose rows contain the diagonal values
-        - diags  : diagonals to set 
+        - diags  : diagonals to set
             - k = 0 - the main diagonal
             - k > 0 - the k-th upper diagonal
             - k < 0 - the k-th lower diagonal
         - m, n   : dimensions of the result
         - format : format of the result (e.g. "csr")
-            -  By default (format=None) an appropriate sparse matrix 
+            -  By default (format=None) an appropriate sparse matrix
                format is returned.  This choice is subject to change.
 
     See Also
@@ -76,7 +76,7 @@ def identity(n, dtype='d', format=None):
         return identity( n, dtype=dtype, format='csr').asformat(format)
 
 def eye(m, n, k=0, dtype='d', format=None):
-    """eye(m, n) returns a sparse (m x n) matrix where the k-th diagonal 
+    """eye(m, n) returns a sparse (m x n) matrix where the k-th diagonal
     is all ones and everything else is zeros.
     """
     diags = ones((1, m), dtype=dtype)
@@ -114,21 +114,21 @@ def kron(A, B, format=None):
 
     """
     B = coo_matrix(B)
-    
+
     if (format is None or format == "bsr") and 2*B.nnz >= B.shape[0] * B.shape[1]:
         #B is fairly dense, use BSR
         A = csr_matrix(A,copy=True)
-        
+
         output_shape = (A.shape[0]*B.shape[0],A.shape[1]*B.shape[1])
 
         if A.nnz == 0 or B.nnz == 0:
             # kronecker product is the zero matrix
             return coo_matrix( output_shape )
-        
+
         B = B.toarray()
         data = A.data.repeat(B.size).reshape(-1,B.shape[0],B.shape[1])
         data = data * B
-        
+
         return bsr_matrix((data,A.indices,A.indptr),shape=output_shape)
     else:
         #use COO
@@ -162,9 +162,9 @@ def kron(A, B, format=None):
 def kronsum(A, B, format=None):
     """kronecker sum of sparse matrices A and B
 
-    Kronecker sum of two sparse matrices is a sum of two Kronecker 
+    Kronecker sum of two sparse matrices is a sum of two Kronecker
     products kron(I_n,A) + kron(B,I_m) where A has shape (m,m)
-    and B has shape (n,n) and I_m and I_n are identity matrices 
+    and B has shape (n,n) and I_m and I_n are identity matrices
     of shape (m,m) and (n,n) respectively.
 
     Parameters
@@ -179,20 +179,20 @@ def kronsum(A, B, format=None):
     Examples
     ========
 
-    
+
     """
     A = coo_matrix(A)
     B = coo_matrix(B)
 
     if A.shape[0] != A.shape[1]:
         raise ValueError('A is not square')
-    
+
     if B.shape[0] != B.shape[1]:
         raise ValueError('B is not square')
 
     dtype = upcast(A.dtype,B.dtype)
 
-    L = kron(identity(B.shape[0],dtype=dtype), A, format=format) 
+    L = kron(identity(B.shape[0],dtype=dtype), A, format=format)
     R = kron(B, identity(A.shape[0],dtype=dtype), format=format)
 
     return (L+R).asformat(format) #since L + R is not always same format
@@ -204,12 +204,12 @@ def hstack( blocks, format=None, dtype=None ):
     Parameters
     ----------
 
-    blocks 
+    blocks
         sequence of sparse matrices with compatible shapes
     format : sparse format of the result (e.g. "csr")
         by default an appropriate sparse matrix format is returned.
         This choice is subject to change.
-   
+
     Example
     -------
 
@@ -235,7 +235,7 @@ def vstack( blocks, format=None, dtype=None ):
     format : sparse format of the result (e.g. "csr")
         by default an appropriate sparse matrix format is returned.
         This choice is subject to change.
-   
+
     Example
     -------
 
@@ -263,7 +263,7 @@ def bmat( blocks, format=None, dtype=None ):
     format : sparse format of the result (e.g. "csr")
         by default an appropriate sparse matrix format is returned.
         This choice is subject to change.
-   
+
     Example
     -------
 
@@ -275,7 +275,7 @@ def bmat( blocks, format=None, dtype=None ):
     matrix([[1, 2, 5],
             [3, 4, 6],
             [0, 0, 7]])
- 
+
     >>> bmat( [[A,None],[None,C]] ).todense()
     matrix([[1, 2, 0],
             [3, 4, 0],
@@ -283,7 +283,7 @@ def bmat( blocks, format=None, dtype=None ):
 
 
     """
-    
+
     blocks = asarray(blocks, dtype='object')
 
     if rank(blocks) != 2:
@@ -321,8 +321,8 @@ def bmat( blocks, format=None, dtype=None ):
         raise ValueError('blocks[%d,:] is all None' % brow_lengths.argmin() )
     if bcol_lengths.min() == 0:
         raise ValueError('blocks[:,%d] is all None' % bcol_lengths.argmin() )
-    
-    nnz = sum([ A.nnz for A in blocks[block_mask] ]) 
+
+    nnz = sum([ A.nnz for A in blocks[block_mask] ])
     if dtype is None:
         dtype = upcast( *tuple([A.dtype for A in blocks[block_mask]]) )
 
@@ -344,10 +344,10 @@ def bmat( blocks, format=None, dtype=None ):
 
                 row[nnz:nnz + A.nnz] += row_offsets[i]
                 col[nnz:nnz + A.nnz] += col_offsets[j]
-                
+
                 nnz += A.nnz
 
-    shape = (sum(brow_lengths),sum(bcol_lengths)) 
+    shape = (sum(brow_lengths),sum(bcol_lengths))
     return coo_matrix( (data, (row, col)), shape=shape ).asformat(format)
 
 
@@ -371,7 +371,7 @@ def lil_eye((r,c), k=0, dtype='d'):
 
     Parameters
     ----------
-    
+
     r,c : int
         row and column-dimensions of the output.
     k : int
@@ -434,4 +434,3 @@ def lil_diags(diags,offsets,(m,n),dtype='d'):
             out.rows[c-k].append(c)
             out.data[c-k].append(diag[ix])
     return out
-

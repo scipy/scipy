@@ -10,7 +10,7 @@ def configuration(parent_package='',top_path=None):
 
     config.add_sconscript('SConstruct')
     config.add_data_dir('tests')
-    
+
     return config
 
 if __name__ == '__main__':

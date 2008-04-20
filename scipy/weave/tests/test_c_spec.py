@@ -62,7 +62,7 @@ def print_assert_equal(test_string,actual,desired):
 #         print "Probably don't have Compiler: %s"%c
 #     else:
 #         compilers.append(c)
-    
+
 
 class IntConverter(TestCase):
     compiler = ''
@@ -650,73 +650,73 @@ for _n in dir():
 #     compiler = ''
 # class TestGccIntConverter(TestIntConverter):
 #     compiler = 'gcc'
-# 
+#
 # class TestMsvcFloatConverter(TestFloatConverter):
 #     compiler = 'msvc'
-# 
+#
 # class TestMsvcFloatConverter(TestFloatConverter):
 #     compiler = 'msvc'
 # class TestUnixFloatConverter(TestFloatConverter):
 #     compiler = ''
 # class TestGccFloatConverter(TestFloatConverter):
 #     compiler = 'gcc'
-# 
+#
 # class TestMsvcComplexConverter(TestComplexConverter):
 #     compiler = 'msvc'
 # class TestUnixComplexConverter(TestComplexConverter):
 #     compiler = ''
 # class TestGccComplexConverter(TestComplexConverter):
 #     compiler = 'gcc'
-# 
+#
 # class TestMsvcFileConverter(TestFileConverter):
 #     compiler = 'msvc'
 # class TestUnixFileConverter(TestFileConverter):
 #     compiler = ''
 # class TestGccFileConverter(TestFileConverter):
 #     compiler = 'gcc'
-# 
+#
 # class TestMsvcCallableConverter(TestCallableConverter):
 #     compiler = 'msvc'
 # class TestUnixCallableConverter(TestCallableConverter):
 #     compiler = ''
 # class TestGccCallableConverter(TestCallableConverter):
 #     compiler = 'gcc'
-# 
+#
 # class TestMsvcSequenceConverter(TestSequenceConverter):
 #     compiler = 'msvc'
 # class TestUnixSequenceConverter(TestSequenceConverter):
 #     compiler = ''
 # class TestGccSequenceConverter(TestSequenceConverter):
 #     compiler = 'gcc'
-# 
+#
 # class TestMsvcStringConverter(TestStringConverter):
 #     compiler = 'msvc'
 # class TestUnixStringConverter(TestStringConverter):
 #     compiler = ''
 # class TestGccStringConverter(TestStringConverter):
 #     compiler = 'gcc'
-# 
+#
 # class TestMsvcListConverter(TestListConverter):
 #     compiler = 'msvc'
 # class TestUnixListConverter(TestListConverter):
 #     compiler = ''
 # class TestGccListConverter(TestListConverter):
 #     compiler = 'gcc'
-# 
+#
 # class TestMsvcTupleConverter(TestTupleConverter):
 #     compiler = 'msvc'
 # class TestUnixTupleConverter(TestTupleConverter):
 #     compiler = ''
 # class TestGccTupleConverter(TestTupleConverter):
 #     compiler = 'gcc'
-# 
+#
 # class TestMsvcDictConverter(TestDictConverter):
 #     compiler = 'msvc'
 # class TestUnixDictConverter(TestDictConverter):
 #     compiler = ''
 # class TestGccDictConverter(TestDictConverter):
 #     compiler = 'gcc'
-# 
+#
 # class TestMsvcInstanceConverter(TestInstanceConverter):
 #     compiler = 'msvc'
 # class TestUnixInstanceConverter(TestInstanceConverter):
@@ -751,10 +751,10 @@ def remove_file(name):
 # else:
 #     for _n in dir():
 #         if _n[:8]=='TestUnix': exec 'del '+_n
-# 
+#
 # if not (gcc_exists() and msvc_exists() and sys.platform == 'win32'):
 #     for _n in dir():
 #         if _n[:7]=='TestGcc': exec 'del '+_n
-# 
+#
 if __name__ == "__main__":
     nose.run(argv=['', __file__])

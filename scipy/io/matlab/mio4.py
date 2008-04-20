@@ -168,13 +168,13 @@ class Mat4SparseGetter(Mat4MatrixGetter):
         dims = res[-1,0:2]
         I = N.ascontiguousarray(tmp[:,0],dtype='intc') #fixes byte order also
         J = N.ascontiguousarray(tmp[:,1],dtype='intc')
-        I -= 1  # for 1-based indexing 
+        I -= 1  # for 1-based indexing
         J -= 1
         if res.shape[1] == 3:
             V = N.ascontiguousarray(tmp[:,2],dtype='float')
         else:
             V = N.ascontiguousarray(tmp[:,2],dtype='complex')
-            V.imag = tmp[:,3] 
+            V.imag = tmp[:,3]
         if have_sparse:
             return scipy.sparse.coo_matrix((V,(I,J)), dims)
         return (dims, I, J, V)

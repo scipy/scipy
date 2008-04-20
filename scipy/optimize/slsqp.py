@@ -1,5 +1,5 @@
 """This module implements the Sequential Least SQuares Programming optimization
-algorithm (SLSQP), orginally developed by Dieter Kraft. 
+algorithm (SLSQP), orginally developed by Dieter Kraft.
 
 See http://www.netlib.org/toms/733
 
@@ -18,37 +18,37 @@ _epsilon = sqrt(finfo(float).eps)
 
 def approx_jacobian(x,func,epsilon,*args):
     """Approximate the Jacobian matrix of callable function func
-    
+
        *Parameters*:
-         x       - The state vector at which the Jacobian matrix is desired        
+         x       - The state vector at which the Jacobian matrix is desired
          func    - A vector-valued function of the form f(x,*args)
          epsilon - The peturbation used to determine the partial derivatives
          *args   - Additional arguments passed to func
-       
+
        *Returns*:
-         An array of dimensions (lenf, lenx) where lenf is the length 
-         of the outputs of func, and lenx is the number of 
-              
+         An array of dimensions (lenf, lenx) where lenf is the length
+         of the outputs of func, and lenx is the number of
+
        *Notes*:
          The approximation is done using forward differences
-                
+
     """
     x0 = asfarray(x)
     f0 = func(*((x0,)+args))
     jac = zeros([len(x0),len(f0)])
     dx = zeros(len(x0))
     for i in range(len(x0)):
-       dx[i] = epsilon
-       jac[i] = (func(*((x0+dx,)+args)) - f0)/epsilon
-       dx[i] = 0.0
+        dx[i] = epsilon
+        jac[i] = (func(*((x0+dx,)+args)) - f0)/epsilon
+        dx[i] = 0.0
     return jac.transpose()
 
 
 
 
 def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
-                bounds = [], fprime = None, fprime_eqcons=None, 
-                fprime_ieqcons=None, args = (), iter = 100, acc = 1.0E-6, 
+                bounds = [], fprime = None, fprime_eqcons=None,
+                fprime_ieqcons=None, args = (), iter = 100, acc = 1.0E-6,
                 iprint = 1, full_output = 0, epsilon = _epsilon ):
     """
     Minimize a function using Sequential Least SQuares Programming
@@ -86,12 +86,12 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
             A function of the form f(x, *args) that returns the m by n
             array of equality constraint normals.  If not provided,
             the normals will be approximated. The array returned by
-            fprime_eqcons should be sized as ( len(eqcons), len(x0) ).  
+            fprime_eqcons should be sized as ( len(eqcons), len(x0) ).
         fprime_ieqcons : callable f(x,*args)
             A function of the form f(x, *args) that returns the m by n
             array of inequality constraint normals.  If not provided,
             the normals will be approximated. The array returned by
-            fprime_ieqcons should be sized as ( len(ieqcons), len(x0) ).  
+            fprime_ieqcons should be sized as ( len(ieqcons), len(x0) ).
         args : sequence
             Additional arguments passed to func and fprime.
         iter : int
@@ -150,8 +150,8 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
                     7 : "Rank-deficient equality constraint subproblem HFTI",
                     8 : "Positive directional derivative for linesearch",
                     9 : "Iteration limit exceeded" }
-                    
-    # Now do a lot of function wrapping                
+
+    # Now do a lot of function wrapping
 
     # Wrap func
     feval, func = wrap_function(func, args)
@@ -160,7 +160,7 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
         geval, fprime = wrap_function(fprime,args)
     else:
         geval, fprime = wrap_function(approx_fprime,(func,epsilon))
-        
+
     if f_eqcons:
         # Equality constraints provided via f_eqcons
         ceval, f_eqcons = wrap_function(f_eqcons,args)
@@ -179,8 +179,8 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
             if eqcons[i]:
                 # Wrap eqcons and eqcons_prime
                 ceval, eqcons[i] = wrap_function(eqcons[i],args)
-                geval, eqcons_prime[i] = wrap_function(approx_fprime, 
-                                                       (eqcons[i],epsilon))                                                           
+                geval, eqcons_prime[i] = wrap_function(approx_fprime,
+                                                       (eqcons[i],epsilon))
 
     if f_ieqcons:
         # Inequality constraints provided via f_ieqcons
@@ -200,9 +200,9 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
             if ieqcons[i]:
                 # Wrap ieqcons and ieqcons_prime
                 ceval, ieqcons[i] = wrap_function(ieqcons[i],args)
-                geval, ieqcons_prime[i] = wrap_function(approx_fprime, 
-                                                        (ieqcons[i],epsilon))  
-                                                                   
+                geval, ieqcons_prime[i] = wrap_function(approx_fprime,
+                                                        (ieqcons[i],epsilon))
+
 
     # Transform x0 into an array.
     x = asfarray(x0).flatten()
@@ -210,19 +210,19 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
     # Set the parameters that SLSQP will need
     # meq = The number of equality constraints
     if f_eqcons:
-       meq = len(f_eqcons(x))
+        meq = len(f_eqcons(x))
     else:
-       meq = len(eqcons)   
+        meq = len(eqcons)
     if f_ieqcons:
-       mieq = len(f_ieqcons(x))   
+        mieq = len(f_ieqcons(x))
     else:
-       mieq = len(ieqcons)
+        mieq = len(ieqcons)
     # m = The total number of constraints
-    m = meq + mieq 
+    m = meq + mieq
     # la = The number of constraints, or 1 if there are no constraints
-    la = array([1,m]).max()  
+    la = array([1,m]).max()
     # n = The number of independent variables
-    n = len(x)               
+    n = len(x)
 
     # Define the workspaces for SLSQP
     n1 = n+1
@@ -232,7 +232,7 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
     len_jw = mineq
     w = zeros(len_w)
     jw = zeros(len_jw)
- 
+
     # Decompose bounds into xl and xu
     if len(bounds) == 0:
         bounds = [(-1.0E12, 1.0E12) for i in range(n)]
@@ -241,14 +241,14 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
         'SLSQP Error:  If bounds is specified, len(bounds) == len(x0)'
     else:
         for i in range(len(bounds)):
-           if bounds[i][0] > bounds[i][1]:
-              raise ValueError, \
-              'SLSQP Error: lb > ub in bounds[' + str(i) +']  ' + str(bounds[4])
-                                 
+            if bounds[i][0] > bounds[i][1]:
+                raise ValueError, \
+                'SLSQP Error: lb > ub in bounds[' + str(i) +']  ' + str(bounds[4])
+
     xl = array( [ b[0] for b in bounds ] )
-    xu = array( [ b[1] for b in bounds ] )   
-    
-    
+    xu = array( [ b[1] for b in bounds ] )
+
+
 
     # Initialize the iteration counter and the mode value
     mode = array(0,int)
@@ -261,26 +261,26 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
         print "%5s %5s %16s %16s" % ("NIT","FC","OBJFUN","GNORM")
 
     while 1:
-    
+
         if mode == 0 or mode == 1: # objective and constraint evaluation requird
-        
+
             # Compute objective function
             fx = func(x)
             # Compute the constraints
             if f_eqcons:
-               c_eq = f_eqcons(x)
+                c_eq = f_eqcons(x)
             else:
-               c_eq = array([ eqcons[i](x) for i in range(meq) ])
+                c_eq = array([ eqcons[i](x) for i in range(meq) ])
             if f_ieqcons:
-               c_ieq = f_ieqcons(x)
+                c_ieq = f_ieqcons(x)
             else:
-               c_ieq = array([ ieqcons[i](x) for i in range(len(ieqcons)) ])
-               
+                c_ieq = array([ ieqcons[i](x) for i in range(len(ieqcons)) ])
+
             # Now combine c_eq and c_ieq into a single matrix
             if m == 0:
                 # no constraints
                 c = zeros([la])
-            else: 
+            else:
                 # constraints exist
                 if meq > 0 and mieq == 0:
                     # only equality constraints
@@ -290,29 +290,29 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
                     c = c_ieq
                 if meq > 0 and mieq > 0:
                     # both equality and inequality constraints exist
-                    c = append(c_eq, c_ieq)         
-            
+                    c = append(c_eq, c_ieq)
+
         if mode == 0 or mode == -1: # gradient evaluation required
-        
+
             # Compute the derivatives of the objective function
             # For some reason SLSQP wants g dimensioned to n+1
             g = append(fprime(x),0.0)
 
-            # Compute the normals of the constraints   
+            # Compute the normals of the constraints
             if fprime_eqcons:
                 a_eq = fprime_eqcons(x)
-            else:         
+            else:
                 a_eq = zeros([meq,n])
                 for i in range(meq):
-                    a_eq[i] = eqcons_prime[i](x)           
-              
+                    a_eq[i] = eqcons_prime[i](x)
+
             if fprime_ieqcons:
                 a_ieq = fprime_ieqcons(x)
             else:
                 a_ieq = zeros([mieq,n])
                 for i in range(mieq):
                     a_ieq[i] = ieqcons_prime[i](x)
-            
+
             # Now combine a_eq and a_ieq into a single a matrix
             if m == 0:
                 # no constraints
@@ -325,9 +325,9 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
                 a = a_ieq
             elif meq > 0 and mieq > 0:
                 # both equality and inequality constraints exist
-                a = vstack((a_eq,a_ieq))                    
-            a = concatenate((a,zeros([la,1])),1)     
-        
+                a = vstack((a_eq,a_ieq))
+            a = concatenate((a,zeros([la,1])),1)
+
         # Call SLSQP
         slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw)
 

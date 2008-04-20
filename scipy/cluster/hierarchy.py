@@ -106,7 +106,7 @@ References:
      The Wolfram Research, Inc. http://reference.wolfram.com/...
      ...mathematica/HierarchicalClustering/tutorial/...
      HierarchicalClustering.html. Accessed October 1, 2007.
-     
+
  [3] Gower, JC and Ross, GJS. "Minimum Spanning Trees and Single Linkage
      Cluster Analysis." Applied Statistics. 18(1): pp. 54--64. 1969.
 
@@ -209,7 +209,7 @@ def _copy_array_if_base_present(a):
         return numpy.float64(a)
     else:
         return a
-    
+
 def _copy_arrays_if_base_present(T):
     """
     Accepts a tuple of arrays T. Copies the array T[i] if its base array
@@ -219,7 +219,7 @@ def _copy_arrays_if_base_present(T):
     """
     l = [_copy_array_if_base_present(a) for a in T]
     return l
-            
+
 
 def copying():
     """ Displays the license for this package."""
@@ -286,7 +286,7 @@ def weighted(y):
 def centroid(y):
     """
     Z = centroid(y)
-    
+
     Performs centroid/UPGMC linkage on the condensed distance matrix Z.
     See linkage for more information on the return structure and
     algorithm.
@@ -297,7 +297,7 @@ def centroid(y):
 
     Performs centroid/UPGMC linkage on the observation matrix X using
     Euclidean distance as the distance metric. See linkage for more
-    information on the return structure and algorithm.    
+    information on the return structure and algorithm.
 
     """
     return linkage(y, method='centroid', metric='euclidean')
@@ -314,7 +314,7 @@ def median(y):
 
     Performs median/WPGMC linkage on the observation matrix X using
     Euclidean distance as the distance metric. See linkage for more
-    information on the return structure and algorithm.    
+    information on the return structure and algorithm.
 
       (a condensed alias for linkage)
     """
@@ -323,7 +323,7 @@ def median(y):
 def ward(y):
     """
     Z = ward(y)
-    
+
     Performs Ward's linkage on the condensed distance matrix Z. See
     linkage for more information on the return structure and algorithm.
 
@@ -331,13 +331,13 @@ def ward(y):
 
     Performs Ward's linkage on the observation matrix X using Euclidean
     distance as the distance metric. See linkage for more information
-    on the return structure and algorithm.    
+    on the return structure and algorithm.
 
       (a condensed alias for linkage)
     """
     return linkage(y, method='ward', metric='euclidean')
 
-      
+
 def linkage(y, method='single', metric='euclidean'):
     """ Z = linkage(y, method)
 
@@ -367,11 +367,11 @@ def linkage(y, method='single', metric='euclidean'):
           A distance matrix is maintained at each iteration. The
           d[i,j] entry corresponds to the distance between cluster
           i and j in the original forest.
-          
+
           At each iteration, the algorithm must update the distance
           matrix to reflect the distance of the newly formed cluster
           u with the remaining clusters in the forest.
-          
+
           Suppose there are |u| original observations u[0], ..., u[|u|-1]
           in cluster u and |v| original objects v[0], ..., v[|v|-1]
           in cluster v. Recall s and t are combined to form cluster
@@ -380,7 +380,7 @@ def linkage(y, method='single', metric='euclidean'):
 
           The following are methods for calculating the distance between
           the newly formed cluster u and each v.
-        
+
             * method='single' assigns dist(u,v) = MIN(dist(u[i],v[j])
               for all points i in cluster u and j in cluster v.
 
@@ -402,7 +402,7 @@ def linkage(y, method='single', metric='euclidean'):
            * method='weighted' assigns
 
                dist(u,v) = (dist(s,v) + dist(t,v))/2
-               
+
              where cluster u was formed with cluster s and t and v
              is a remaining cluster in the forest. (also called WPGMA)
 
@@ -422,11 +422,11 @@ def linkage(y, method='single', metric='euclidean'):
              the Euclidean distance between the centroid of u and the
              centroid of a remaining cluster v in the forest.
              (also called UPGMC)
- 
+
            * method='median' assigns dist(s,t) as above. When two clusters
              s and t are combined into a new cluster u, the average of
              centroids s and t give the new centroid u. (also called WPGMC)
-           
+
            * method='ward' uses the Ward variance minimization algorithm.
              The new entry dist(u, v) is computed as follows,
 
@@ -452,7 +452,7 @@ def linkage(y, method='single', metric='euclidean'):
 
     if type(y) != _array_type:
         raise TypeError("Argument 'y' must be a numpy array.")
-    
+
     s = y.shape
     if len(s) == 1:
         is_valid_y(y, throw=True, name='y')
@@ -517,7 +517,7 @@ class cnode:
     def getId(self):
         """
         i = nd.getId()
-        
+
         Returns the id number of the node nd. For 0 <= i < n, i
         corresponds to original observation i. For n <= i < 2n - 1,
         i corresponds to non-singleton cluster formed at iteration i-n.
@@ -560,24 +560,24 @@ class cnode:
     def preOrder(self, func=(lambda x: x.id)):
         """
         vlst = preOrder(func)
-    
+
           Performs preorder traversal without recursive function calls.
           When a leaf node is first encountered, func is called with the
           leaf node as its argument, and its result is appended to the
           list vlst.
-    
+
           For example, the statement
-        
+
             ids = root.preOrder(lambda x: x.id)
-    
+
           returns a list of the node ids corresponding to the leaf
           nodes of the tree as they appear from left to right.
         """
-    
+
         # Do a preorder traversal, caching the result. To avoid having to do
         # recursion, we'll store the previous index we've visited in a vector.
         n = self.count
-        
+
         curNode = [None] * (2 * n)
         lvisited = numpy.zeros((2 * n,), dtype='bool')
         rvisited = numpy.zeros((2 * n,), dtype='bool')
@@ -603,7 +603,7 @@ class cnode:
                 # node already, go up in the tree.
                 else:
                     k = k - 1
-            
+
         return preorder
 
 _cnode_bare = cnode(0)
@@ -612,11 +612,11 @@ _cnode_type = type(cnode)
 def totree(Z, rd=False):
     """
     r = totree(Z)
-    
+
       Converts a hierarchical clustering encoded in the matrix Z
       (by linkage) into an easy-to-use tree object. The reference r
       to the root cnode object is returned.
-    
+
       Each cnode object has a left, right, dist, id, and count
       attribute. The left and right attributes point to cnode
       objects that were combined to generate the cluster. If
@@ -638,7 +638,7 @@ def totree(Z, rd=False):
     """
 
     is_valid_linkage(Z, throw=True, name='Z')
-    
+
     # The number of original objects is equal to the number of rows minus
     # 1.
     n = Z.shape[0] + 1
@@ -690,7 +690,7 @@ def squareform(X, force="no", checks=True):
     ... = squareform(...)
 
     Converts a vector-form distance vector to a square-form distance
-    matrix, and vice-versa. 
+    matrix, and vice-versa.
 
     v = squareform(X)
 
@@ -719,7 +719,7 @@ def squareform(X, force="no", checks=True):
     ignored any way so they do not disrupt the squareform
     transformation.
     """
-    
+
     if type(X) is not _array_type:
         raise TypeError('The parameter passed must be an array.')
 
@@ -739,7 +739,7 @@ def squareform(X, force="no", checks=True):
         # Check that v is of valid dimensions.
         if d * (d - 1) / 2 != int(s[0]):
             raise ValueError('Incompatible vector size. It must be a binomial coefficient n choose 2 for some integer n >= 2.')
-        
+
         # Allocate memory for the distance matrix.
         M = numpy.zeros((d, d), 'double')
 
@@ -766,7 +766,7 @@ def squareform(X, force="no", checks=True):
 
         # One-side of the dimensions is set here.
         d = s[0]
-        
+
         # Create a vector.
         v = numpy.zeros(((d * (d - 1) / 2),), 'double')
 
@@ -785,7 +785,7 @@ def squareform(X, force="no", checks=True):
 def minkowski(u, v, p):
     """
     d = minkowski(u, v, p)
-    
+
       Returns the Minkowski distance between two vectors u and v,
 
         ||u-v||_p = (\sum {|u_i - v_i|^p})^(1/p).
@@ -797,7 +797,7 @@ def minkowski(u, v, p):
 def euclidean(u, v):
     """
     d = euclidean(u, v)
-    
+
       Computes the Euclidean distance between two n-vectors u and v, ||u-v||_2
     """
     q=numpy.matrix(u-v)
@@ -825,7 +825,7 @@ def cosine(u, v):
 def correlation(u, v):
     """
     d = correlation(u, v)
-    
+
       Computes the correlation distance between two n-vectors u and v,
 
             1 - (u - n|u|_1)(v - n|v|_1)^T
@@ -846,7 +846,7 @@ def correlation(u, v):
 def hamming(u, v):
     """
     d = hamming(u, v)
-    
+
       Computes the Hamming distance between two n-vectors u and v,
       which is simply the proportion of disagreeing components in u
       and v. If u and v are boolean vectors, the hamming distance is
@@ -904,7 +904,7 @@ def kulsinski(u, v):
 def seuclidean(u, v, V):
     """
     d = seuclidean(u, v, V)
-    
+
       Returns the standardized Euclidean distance between two
       n-vectors u and v. V is a m-dimensional vector of component
       variances. It is usually computed among a larger collection vectors.
@@ -925,7 +925,7 @@ def cityblock(u, v):
 def mahalanobis(u, v, VI):
     """
     d = mahalanobis(u, v, VI)
-    
+
       Computes the Mahalanobis distance between two n-vectors u and v,
         (u-v)VI(u-v)^T
       where VI is the inverse covariance matrix.
@@ -937,7 +937,7 @@ def mahalanobis(u, v, VI):
 def chebyshev(u, v):
     """
     d = chebyshev(u, v)
-    
+
       Computes the Chebyshev distance between two n-vectors u and v,
         \max {|u_i-v_i|}.
     """
@@ -946,7 +946,7 @@ def chebyshev(u, v):
 def braycurtis(u, v):
     """
     d = braycurtis(u, v)
-    
+
       Computes the Bray-Curtis distance between two n-vectors u and v,
         \sum{|u_i-v_i|} / \sum{|u_i+v_i|}.
     """
@@ -1018,7 +1018,7 @@ def matching(u, v):
 def dice(u, v):
     """
     d = dice(u, v)
-    
+
       Computes the Dice dissimilarity between two boolean n-vectors
       u and v, which is
 
@@ -1039,7 +1039,7 @@ def dice(u, v):
 def rogerstanimoto(u, v):
     """
     d = rogerstanimoto(u, v)
-    
+
       Computes the Rogers-Tanimoto dissimilarity between two boolean
       n-vectors u and v,
 
@@ -1062,7 +1062,7 @@ def rogerstanimoto(u, v):
 def russellrao(u, v):
     """
     d = russellrao(u, v)
-    
+
       Computes the Russell-Rao dissimilarity between two boolean n-vectors
       u and v, (n - c_{TT}) / n where c_{ij} is the number of occurrences
       of u[k] == i and v[k] == j for k < n.
@@ -1121,7 +1121,7 @@ _pdist_metric_info = {'euclidean': ['double'],
 
 def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     """ Y = pdist(X, method='euclidean', p=2)
-    
+
            Computes the distance between m original observations in
            n-dimensional space. Returns a condensed distance matrix Y.
            For each i and j (i<j), the metric dist(u=X[i], v=X[j]) is
@@ -1163,7 +1163,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
         6. Y = pdist(X, 'cosine')
 
           Computes the cosine distance between vectors u and v,
-        
+
                1 - uv^T
              -----------
              |u|_2 |v|_2
@@ -1270,7 +1270,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
           boolean vectors. (see sokalsneath function documentation)
 
         21. Y = pdist(X, f)
-        
+
           Computes the distance between all pairs of vectors in X
           using the user supplied 2-arity function f. For example,
           Euclidean distance between the vectors could be computed
@@ -1297,7 +1297,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
 #           using the distance metric Y but with a more succint,
 #           verifiable, but less efficient implementation.
 
-    
+
     if type(X) is not _array_type:
         raise TypeError('The parameter passed must be an array.')
 
@@ -1367,7 +1367,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             else:
                 raise TypeError('Invalid input array value type %s for jaccard.' % str(X.dtype))
         elif mstr in set(['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch']):
-            _hierarchy_wrap.pdist_chebyshev_wrap(X, dm)            
+            _hierarchy_wrap.pdist_chebyshev_wrap(X, dm)
         elif mstr in set(['minkowski', 'mi', 'm']):
             _hierarchy_wrap.pdist_minkowski_wrap(X, dm, p)
         elif mstr in set(['seuclidean', 'se', 's']):
@@ -1511,7 +1511,7 @@ def cophenet(*args, **kwargs):
     (c, d) = cophenet(Z, Y, [])
 
       Also returns the cophenetic distance matrix in condensed form.
-      
+
     """
     nargs = len(args)
 
@@ -1535,7 +1535,7 @@ def cophenet(*args, **kwargs):
     Y = args[1]
     Ys = Y.shape
     is_valid_y(Y, throw=True, name='Y')
-    
+
     z = zz.mean()
     y = Y.mean()
     Yy = Y - y
@@ -1555,7 +1555,7 @@ def cophenet(*args, **kwargs):
 def inconsistent(Z, d=2):
     """
     R = inconsistent(Z, d=2)
-    
+
       Calculates statistics on links up to d levels below each
       non-singleton cluster defined in the (n-1)x4 linkage matrix Z.
 
@@ -1587,17 +1587,17 @@ def inconsistent(Z, d=2):
 
     _hierarchy_wrap.inconsistent_wrap(Z, R, int(n), int(d));
     return R
-    
+
 def from_mlab_linkage(Z):
     """
     Z2 = from_mlab_linkage(Z)
-    
+
     Converts a linkage matrix Z generated by MATLAB(TM) to a new linkage
     matrix Z2 compatible with this module. The conversion does two
     things:
 
      * the indices are converted from 1..N to 0..(N-1) form, and
-    
+
      * a fourth column Z[:,3] is added where Z[i,3] is equal to
        the number of original observations (leaves) in the non-singleton
        cluster i.
@@ -1625,13 +1625,13 @@ def to_mlab_linkage(Z):
     1..N indexing.
     """
     is_valid_linkage(Z, throw=True, name='Z')
-    
+
     return numpy.hstack([Z[:,0:2] + 1, Z[:,2]])
 
 def is_monotonic(Z):
     """
     is_monotonic(Z)
-    
+
       Returns True if the linkage Z is monotonic. The linkage is monotonic
       if for every cluster s and t joined, the distance between them is
       no less than the distance between any previously joined clusters.
@@ -1644,7 +1644,7 @@ def is_monotonic(Z):
 def is_valid_im(R, warning=False, throw=False, name=None):
     """
     is_valid_im(R)
-    
+
       Returns True if the inconsistency matrix passed is valid. It must
       be a n by 4 numpy array of doubles. The standard deviations R[:,1]
       must be nonnegative. The link counts R[:,2] must be positive and
@@ -1805,7 +1805,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
 def is_valid_dm(D, t=0.0):
     """
     is_valid_dm(D)
-    
+
       Returns True if the variable D passed is a valid distance matrix.
       Distance matrices must be 2-dimensional numpy arrays containing
       doubles. They must have a zero-diagonal, and they must be symmetric.
@@ -1889,7 +1889,7 @@ def numobs_linkage(Z):
 def numobs_dm(D):
     """
     numobs_dm(D)
-    
+
       Returns the number of original observations that correspond to a
       square, non-condensed distance matrix D.
     """
@@ -1899,7 +1899,7 @@ def numobs_dm(D):
 def numobs_y(Y):
     """
     numobs_y(Y)
-    
+
       Returns the number of original observations that correspond to a
       condensed distance matrix Y.
     """
@@ -1910,7 +1910,7 @@ def numobs_y(Y):
 def Z_y_correspond(Z, Y):
     """
     yesno = Z_y_correspond(Z, Y)
-    
+
       Returns True if a linkage matrix Z and condensed distance matrix
       Y could possibly correspond to one another. They must have the same
       number of original observations. This function is useful as a sanity
@@ -1931,7 +1931,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
       original observation i belongs.
 
       The criterion parameter can be any of the following values,
-      
+
         * 'inconsistent': If a cluster node and all its decendents have an
         inconsistent value less than or equal to c then all its leaf
         descendents belong to the same flat cluster. When no non-singleton
@@ -1968,19 +1968,19 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         cluster node c when monocrit[i] <= r for all cluster indices i below
         and including c. r is minimized such that no more than t flat clusters
         are formed. monocrit must be monotonic.
-        
+
         For example, to minimize the threshold t on maximum inconsistency
         values so that no more than 3 flat clusters are formed, do:
 
           MI = maxinconsts(Z, R)
           cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
-        
+
     """
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
     T = numpy.zeros((n,), dtype='int32')
-    
+
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
     [Z] = _copy_arrays_if_base_present([Z])
@@ -2033,12 +2033,12 @@ def fclusterdata(X, t, criterion='inconsistent', \
       specified.
 
       Named parameters are described below.
-      
+
         criterion:  specifies the criterion for forming flat clusters.
                     Valid values are 'inconsistent', 'distance', or
                     'maxclust' cluster formation algorithms. See
                     cluster for descriptions.
-           
+
         method:     the linkage method to use. See linkage for
                     descriptions.
 
@@ -2046,7 +2046,7 @@ def fclusterdata(X, t, criterion='inconsistent', \
                     distances. See pdist for descriptions and
                     linkage to verify compatibility with the linkage
                     method.
-                     
+
         t:          the cut-off threshold for the cluster function or
                     the maximum number of clusters (criterion='maxclust').
 
@@ -2083,15 +2083,15 @@ def lvlist(Z):
     _hierarchy_wrap.prelist_wrap(Z, ML, int(n))
     return ML
 
-# Let's do a conditional import. If matplotlib is not available, 
+# Let's do a conditional import. If matplotlib is not available,
 try:
-    
+
     import matplotlib
     import matplotlib.pylab
     import matplotlib.patches
     #import matplotlib.collections
     _mpl = True
-    
+
     # Maps number of leaves to text size.
     #
     # p <= 20, size="12"
@@ -2182,7 +2182,7 @@ try:
             if leaf_font_size:
                 matplotlib.pylab.setp(lbls, 'size', leaf_font_size)
             else:
-                matplotlib.pylab.setp(lbls, 'size', float(_get_tick_text_size(p)))    
+                matplotlib.pylab.setp(lbls, 'size', float(_get_tick_text_size(p)))
             axis.xaxis.set_ticks_position('top')
             # Make the tick marks invisible because they cover up the links
             for line in axis.get_xticklines():
@@ -2272,7 +2272,7 @@ try:
                     e.set_clip_box(axis.bbox)
                     e.set_alpha(0.5)
                     e.set_facecolor('k')
-                    
+
                 #matplotlib.pylab.plot(xs, ys, 'go', markeredgecolor='k', markersize=3)
 
                 #matplotlib.pylab.plot(ys, xs, 'go', markeredgecolor='k', markersize=3)
@@ -2377,7 +2377,7 @@ def dendrogram(Z, p=30, truncate_mode=None, colorthreshold=None,
 
         * 'top': plots the root at the top, and plot descendent
           links going downwards. (default).
-           
+
         * 'bottom': plots the root at the bottom, and plot descendent
           links going upwards.
 
@@ -2396,7 +2396,7 @@ def dendrogram(Z, p=30, truncate_mode=None, colorthreshold=None,
 
         When labels=None, the index of the original observation is used
         used.
-        
+
     R = dendrogram(..., count_sort)
 
         When plotting a cluster node and its directly descendent links,
@@ -2405,7 +2405,7 @@ def dendrogram(Z, p=30, truncate_mode=None, colorthreshold=None,
         of count_sort are:
 
           * False: nothing is done.
-          
+
           * 'ascending'/True: the child with the minimum number of
           original objects in its cluster is plotted first.
 
@@ -2464,7 +2464,7 @@ def dendrogram(Z, p=30, truncate_mode=None, colorthreshold=None,
         When a callable function is passed, leaf_label_func is passed
         cluster index k, and returns a string with the label for the
         leaf.
-        
+
         Indices k < n correspond to original observations while indices
         k >= n correspond to non-singleton clusters.
 
@@ -2618,7 +2618,7 @@ def _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func, i,
             if show_leaf_counts:
                 ivl.append("(" + str(int(Z[i-n, 3])) + ")")
             else:
-                ivl.append("")   
+                ivl.append("")
 
 def _append_contraction_marks(Z, iv, i, n, contraction_marks):
     _append_contraction_marks_sub(Z, iv, Z[i-n, 0], n, contraction_marks)
@@ -2629,7 +2629,7 @@ def _append_contraction_marks_sub(Z, iv, i, n, contraction_marks):
         contraction_marks.append((iv, Z[i-n, 2]))
         _append_contraction_marks_sub(Z, iv, Z[i-n, 0], n, contraction_marks)
         _append_contraction_marks_sub(Z, iv, Z[i-n, 1], n, contraction_marks)
-        
+
 
 def _dendrogram_calculate_info(Z, p, truncate_mode, \
                                colorthreshold=scipy.inf, get_leaves=True, \
@@ -2649,7 +2649,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
     variable value to plot the left-most leaf node below the root node i
     (if orientation='top', this would be the left-most x value where the
     plotting of this root node i and its descendents should begin).
-    
+
     ivl is a list to store the labels of the leaf nodes. The leaf_label_func
     is called whenever ivl != None, labels == None, and
     leaf_label_func != None. When ivl != None and labels != None, the
@@ -2668,7 +2668,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
 
       * left is the independent variable coordinate of the center of the
         the U of the subtree
-        
+
       * w is the amount of space used for the subtree (in independent
         variable units)
 
@@ -2676,7 +2676,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
 
       * md is the max(Z[*,2]) for all nodes * below and including
         the target node.
-    
+
     """
     if n == 0:
         raise ValueError("Invalid singleton cluster count n.")
@@ -2712,7 +2712,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
     elif truncate_mode in ('mlab',):
         pass
 
-    
+
     # Otherwise, only truncate if we have a leaf node.
     #
     # If the truncate_mode is mlab, the linkage has been modified
@@ -2900,7 +2900,7 @@ def is_isomorphic(T1, T2):
         else:
             d[T1[i]] = T2[i]
     return True
-    
+
 def maxdists(Z):
     """
     MD = maxdists(Z)
@@ -2910,12 +2910,12 @@ def maxdists(Z):
       and including the node with index i. More specifically,
       MD[i] = Z[Q(i)-n, 2].max() where Q(i) is the set of all node indices
       below and including node i.
-      
+
       Note that when Z[:,2] is monotonic, Z[:,2] and MD should not differ.
       See linkage for more information on this issue.
     """
     is_valid_linkage(Z, throw=True, name='Z')
-    
+
     n = Z.shape[0] + 1
     MD = numpy.zeros((n-1,))
     [Z] = _copy_arrays_if_base_present([Z])
@@ -2933,7 +2933,7 @@ def maxinconsts(Z, R):
     """
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
-    
+
     n = Z.shape[0] + 1
     MI = numpy.zeros((n-1,))
     [Z, R] = _copy_arrays_if_base_present([Z, R])
@@ -2989,7 +2989,7 @@ def leaders(Z, T):
     is_valid_linkage(Z, throw=True, name='Z')
     if len(T) != Z.shape[0] + 1:
         raise ValueError('Mismatch: len(T)!=Z.shape[0] + 1.')
-    
+
     Cl = numpy.unique(T)
     kk = len(Cl)
     L = numpy.zeros((kk,), dtype='int32')

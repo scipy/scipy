@@ -29,7 +29,7 @@ def get_blas_funcs(names,arrays=(),debug=0):
     """Return available BLAS function objects with names.
     arrays are used to determine the optimal prefix of
     BLAS routines.
-    
+
     """
     ordering = []
     for i in range(len(arrays)):

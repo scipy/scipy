@@ -58,7 +58,7 @@ Returns
 Notes
 -----
     The function is restricted to 2D arrays.
-    
+
     """
     def _hd_1D(data,prob,var):
         "Computes the HD quantiles for a 1D array. Returns nan for invalid data."
@@ -113,7 +113,7 @@ Parameters
         Axis along which to compute the quantiles. If None, use a flattened array.
     var : boolean
         Whether to return the variance of the estimate.
-        
+
     """
     result = hdquantiles(data,[0.5], axis=axis, var=var)
     return result.squeeze()
@@ -136,7 +136,7 @@ Parameters
 Notes
 -----
     The function is restricted to 2D arrays.
-    
+
     """
     def _hdsd_1D(data,prob):
         "Computes the std error for 1D arrays."
@@ -176,7 +176,7 @@ Notes
 #---- --- Confidence intervals ---
 #####--------------------------------------------------------------------------
 
-def trimmed_mean_ci(data, limits=(0.2,0.2), inclusive=(True,True), 
+def trimmed_mean_ci(data, limits=(0.2,0.2), inclusive=(True,True),
                     alpha=0.05, axis=None):
     """Returns the selected confidence interval of the trimmed mean along the
 given axis.
@@ -191,13 +191,13 @@ Parameters
     alpha : float
         Confidence level of the intervals.
     inclusive : tuple of boolean
-        If relative==False, tuple indicating whether values exactly equal to the 
+        If relative==False, tuple indicating whether values exactly equal to the
         absolute limits are allowed.
         If relative==True, tuple indicating whether the number of data being masked
         on each side should be rounded (True) or truncated (False).
     axis : int
         Axis along which to cut. If None, uses a flattened version of the input.
-    
+
     """
     data = ma.array(data, copy=False)
     trimmed = mstats.trimr(data, limits=limits, inclusive=inclusive, axis=axis)
@@ -220,7 +220,7 @@ Parameters
         Sequence of quantiles to compute.
     axis : int
         Axis along which to compute the quantiles. If None, use a flattened array.
-    
+
     """
     def _mjci_1D(data, p):
         data = np.sort(data.compressed())
@@ -340,7 +340,7 @@ Returns
 
 
 def idealfourths(data, axis=None):
-    """Returns an estimate of the lower and upper quartiles of the data along 
+    """Returns an estimate of the lower and upper quartiles of the data along
     the given axis, as computed with the ideal fourths.
     """
     def _idf(data):
@@ -383,8 +383,7 @@ Parameters
     h = 1.2 * (r[-1]-r[0]) / n**(1./5)
     nhi = (data[:,None] <= points[None,:] + h).sum(0)
     nlo = (data[:,None] < points[None,:] - h).sum(0)
-    return (nhi-nlo) / (2.*n*h)   
+    return (nhi-nlo) / (2.*n*h)
 
 
 ###############################################################################
-

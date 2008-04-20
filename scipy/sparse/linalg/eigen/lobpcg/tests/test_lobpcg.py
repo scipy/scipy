@@ -7,7 +7,7 @@ from scipy.testing import *
 
 from scipy import array, arange, ones, sort, cos, pi, rand, \
      set_printoptions, r_, diag, linalg
-from scipy.linalg import eig     
+from scipy.linalg import eig
 from scipy.sparse.linalg.eigen import lobpcg
 
 
@@ -29,7 +29,7 @@ def ElasticRod(n):
     return A,B
 
 def MikotaPair(n):
-    # Mikota pair acts as a nice test since the eigenvalues 
+    # Mikota pair acts as a nice test since the eigenvalues
     # are the squares of the integers n, n=1,2,...
     x = arange(1,n+1)
     B = diag(1./x)
@@ -46,10 +46,10 @@ def compare_solutions(A,B,m):
 
     V = rand(n,m)
     X = linalg.orth(V)
-    
+
     eigs,vecs = lobpcg.lobpcg(X,A,B,residualTolerance=1e-5, maxIterations=30)
     eigs.sort()
-    
+
     #w,v = symeig(A,B)
     w,v = eig(A,b=B)
     w.sort()
@@ -65,19 +65,19 @@ def compare_solutions(A,B,m):
     #show()
 
 def test_Small():
-    A,B = ElasticRod(10) 
+    A,B = ElasticRod(10)
     compare_solutions(A,B,10)
-    A,B = MikotaPair(10) 
+    A,B = MikotaPair(10)
     compare_solutions(A,B,10)
 
 def test_ElasticRod():
-    A,B = ElasticRod(100) 
+    A,B = ElasticRod(100)
     compare_solutions(A,B,20)
 
 def test_MikotaPair():
-    A,B = MikotaPair(100) 
+    A,B = MikotaPair(100)
     compare_solutions(A,B,20)
-        
+
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])

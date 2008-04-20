@@ -28,7 +28,7 @@ def do_generate_fake_interface(target, source, env):
     # XXX handle skip names
     name = splitext(pbasename(target_name))[0]
     generate_interface(name, source_name, target_name)
-        
+
     f = open(target_name, 'w')
     f.write('python module '+name+'\n')
     f.write('usercode void empty_module(void) {}\n')
@@ -40,4 +40,3 @@ def do_generate_fake_interface(target, source, env):
     f.close()
 
     return 0
-

@@ -83,8 +83,8 @@ def as2d( ar ):
         return aux
 
 def makeOperator( operatorInput, expectedShape ):
-    """Internal. Takes a dense numpy array or a sparse matrix or 
-    a function and makes an operator performing matrix * blockvector 
+    """Internal. Takes a dense numpy array or a sparse matrix or
+    a function and makes an operator performing matrix * blockvector
     products.
 
     Example
@@ -102,7 +102,7 @@ def makeOperator( operatorInput, expectedShape ):
 
     if operator.shape != expectedShape:
         raise ValueError('operator has invalid shape')
-    
+
     operator.__call__ = operator.matmat
 
     return operator
@@ -146,14 +146,14 @@ def lobpcg( blockVectorX, A,
             retLambdaHistory = False, retResidualNormsHistory = False ):
     """Solve symmetric partial eigenproblems with optional preconditioning
 
-    This function implements the Locally Optimal Block Preconditioned 
+    This function implements the Locally Optimal Block Preconditioned
     Conjugate Gradient Method (LOBPCG).
 
     TODO write in terms of Ax=lambda B x
 
     Parameters
     ----------
-    blockVectorX : array_like 
+    blockVectorX : array_like
         initial approximation to eigenvectors shape=(n,blockSize)
     A : {dense matrix, sparse matrix, LinearOperator}
         the linear operator of the problem, usually a sparse matrix
@@ -163,7 +163,7 @@ def lobpcg( blockVectorX, A,
     -------
     (lambda,blockVectorV) : tuple of arrays
         blockVectorX and lambda are computed blockSize eigenpairs, where
-        blockSize=size(blockVectorX,2) for the initial guess blockVectorX 
+        blockSize=size(blockVectorX,2) for the initial guess blockVectorX
         if it is full rank.
 
     Optional Parameters
@@ -177,7 +177,7 @@ def lobpcg( blockVectorX, A,
         M should approximate the inverse of A
     blockVectorY : array_like
         n-by-sizeY matrix of constraints, sizeY < n
-        The iterations will be performed in the B-orthogonal complement 
+        The iterations will be performed in the B-orthogonal complement
         of the column-space of blockVectorY. blockVectorY must be full rank.
 
     Other Parameters

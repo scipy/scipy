@@ -58,15 +58,13 @@ class TestSparseUtils(TestCase):
         assert_equal(issequence( [1] ),True)
         assert_equal(issequence( [1,2,3] ),True)
         assert_equal(issequence( np.array([1,2,3]) ),True)
-        
+
         assert_equal(issequence( np.array([[1],[2],[3]]) ),False)
         assert_equal(issequence( 3 ),False)
 
     def test_isdense(self):
         assert_equal(isdense( np.array([1]) ),True)
         assert_equal(isdense( np.matrix([1]) ),True)
-                
+
 if __name__ == "__main__":
     nose.run(argv=['', __file__])
-
-

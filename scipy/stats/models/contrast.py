@@ -127,7 +127,7 @@ def contrastfromcols(L, D, pseudo=None):
 
     L = N.asarray(L)
     D = N.asarray(D)
-    
+
     n, p = D.shape
 
     if L.shape[0] != n and L.shape[1] != p:
@@ -141,12 +141,12 @@ def contrastfromcols(L, D, pseudo=None):
     else:
         C = L
         C = N.dot(pseudo, N.dot(D, C.T)).T
-        
+
     Lp = N.dot(D, C.T)
 
     if len(Lp.shape) == 1:
         Lp.shape = (n, 1)
-        
+
     if utils.rank(Lp) != Lp.shape[1]:
         Lp = utils.fullrank(Lp)
         C = N.dot(pseudo, Lp).T

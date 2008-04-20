@@ -7,8 +7,8 @@ __all__ = ['minres']
 
 def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
            M=None, callback=None, show=False, check=False):
-    """Use the Minimum Residual Method (MINRES) to solve Ax=b 
-    
+    """Use the Minimum Residual Method (MINRES) to solve Ax=b
+
     MINRES minimizes norm(A*x - b) for the symmetric matrix A.  Unlike
     the Conjugate Gradient method, A can be indefinite or singular.
 
@@ -21,7 +21,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
 
     References
     ==========
-        
+
         Solution of sparse indefinite systems of linear equations,
             C. C. Paige and M. A. Saunders (1975),
             SIAM J. Numer. Anal. 12(4), pp. 617-629.
@@ -30,7 +30,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         This file is a translation of the following MATLAB implementation:
             http://www.stanford.edu/group/SOL/software/minres/matlab/
 
-    """ 
+    """
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
     matvec = A.matvec
@@ -57,38 +57,38 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
             ' M  does not define a symmetric matrix             ',   #  8
             ' M  does not define a pos-def preconditioner       ']   #  9
 
-     
+
     if show:
         print first + 'Solution of symmetric Ax = b'
         print first + 'n      =  %3g     shift  =  %23.14e'  % (n,shift)
         print first + 'itnlim =  %3g     rtol   =  %11.2e'   % (maxiter,tol)
         print
-        
+
     istop = 0;   itn   = 0;   Anorm = 0;    Acond = 0;
-    rnorm = 0;   ynorm = 0; 
+    rnorm = 0;   ynorm = 0;
 
     xtype = A.dtype #TODO update
 
-    eps = finfo(xtype).eps 
+    eps = finfo(xtype).eps
 
     x = zeros( n, dtype=xtype )
 
     # Set up y and v for the first Lanczos vector v1.
     # y  =  beta1 P' v1,  where  P = C**(-1).
     # v is really P' v1.
-    
+
     y  = b
     r1 = b
 
     y = psolve(b)
-    
+
     beta1 = inner(b,y)
 
     if beta1 < 0:
         raise ValueError('indefinite preconditioner')
     elif beta1 == 0:
         return (postprocess(x), 0)
-    
+
     beta1 = sqrt( beta1 )
 
     if check:
@@ -112,7 +112,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         epsa = (s + eps) * eps**(1.0/3.0)
         if z > epsa:
             raise ValueError('non-symmetric preconditioner')
-        
+
 
     # Initialize other quantities
     oldb   = 0;          beta   = beta1;   dbar   = 0;       epsln  = 0;
@@ -124,22 +124,22 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
     r2     = r1
 
     if show:
-      print
-      print
-      print '   Itn     x(1)     Compatible    LS       norm(A)  cond(A) gbar/|A|'
+        print
+        print
+        print '   Itn     x(1)     Compatible    LS       norm(A)  cond(A) gbar/|A|'
 
     while itn < maxiter:
         itn += 1
 
-        s = 1.0/beta 
+        s = 1.0/beta
         v = s*y
-        
+
         y  = matvec(v)
         y  = y - shift * v
 
         if itn >= 2:
             y  = y - (beta/oldb)*r1
-        
+
         alfa   = inner(v,y)
         y      = y - (alfa/beta)*r2
         r1     = r2
@@ -149,11 +149,11 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         beta   = inner(r2,y)
         if beta < 0:
             raise ValueError('non-symmetric matrix')
-        beta    = sqrt(beta) 
+        beta    = sqrt(beta)
         tnorm2 += alfa**2 + oldb**2 + beta**2
 
         if itn == 1:
-            if beta/beta1 <= 10*eps: 
+            if beta/beta1 <= 10*eps:
                 istop = -1  # Terminate later
             #tnorm2 = alfa**2 ??
             gmax = abs(alfa)
@@ -172,33 +172,33 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         Arnorm = phibar * root
 
         # Compute the next plane rotation Qk
-        
+
         gamma  = norm([gbar, beta])       # gammak
-        gamma  = max(gamma, eps) 
+        gamma  = max(gamma, eps)
         cs     = gbar / gamma             # ck
         sn     = beta / gamma             # sk
         phi    = cs * phibar              # phik
         phibar = sn * phibar              # phibark+1
-        
+
         # Update  x.
-        
+
         denom = 1.0/gamma
         w1    = w2
         w2    = w
         w     = (v - oldeps*w1 - delta*w2) * denom
         x     = x + phi*w
-        
+
         # Go round again.
-        
+
         gmax   = max(gmax, gamma)
         gmin   = min(gmin, gamma)
         z      = rhs1 / gamma
         ynorm2 = z**2  +  ynorm2
         rhs1   = rhs2 -  delta*z
         rhs2   =      -  epsln*z
-        
+
         # Estimate various norms and test for convergence.
-        
+
         Anorm  = sqrt( tnorm2 )
         ynorm  = sqrt( ynorm2 )
         epsa   = Anorm * eps
@@ -207,7 +207,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         diag   = gbar
 
         if diag == 0: diag = epsa
-        
+
         qrnorm = phibar
         rnorm  = qrnorm
         test1  = rnorm / (Anorm*ynorm)    #  ||r|| / (||A|| ||x||)
@@ -218,18 +218,18 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         # factorization of the lower Hessenberg matrix,  Q * H = R,
         # where H is the tridiagonal matrix from Lanczos with one
         # extra row, beta(k+1) e_k^T.
-        
+
         Acond  = gmax/gmin
-        
+
         # See if any of the stopping criteria are satisfied.
         # In rare cases, istop is already -1 from above (Abar = const*I).
-        
+
         if istop == 0:
             t1 = 1 + test1      # These tests work if tol < eps
             t2 = 1 + test2
             if t2    <= 1       : istop = 2
             if t1    <= 1       : istop = 1
-            
+
             if itn   >= maxiter : istop = 6
             if Acond >= 0.1/eps : istop = 4
             if epsx  >= beta1   : istop = 3
@@ -237,9 +237,9 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
             #if rnorm <= epsr   : istop = 1
             if test2 <= tol     : istop = 2
             if test1 <= tol     : istop = 1
-    
+
         # See if it is time to print something.
-        
+
         prnt = False
         if n        <= 40         : prnt = True
         if itn      <= 10         : prnt = True
@@ -249,25 +249,25 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         if qrnorm   <= 10*epsr    : prnt = True
         if Acond    <= 1e-2/eps   : prnt = True
         if istop  !=  0           : prnt = True
-        
+
         if show and prnt:
             str1 = '%6g %12.5e %10.3e'  % (itn, x[0], test1)
             str2 = ' %10.3e'            % (test2,)
             str3 = ' %8.1e %8.1e %8.1e' % (Anorm, Acond, gbar/Anorm)
 
             print str1 + str2 + str3
-        
+
             if itn % 10 == 0: print
 
         if callback is not None:
             callback(x)
 
         if istop != 0: break #TODO check this
-        
+
 
     if show:
         print
-        print last + ' istop   =  %3g               itn   =%5g' % (istop,itn) 
+        print last + ' istop   =  %3g               itn   =%5g' % (istop,itn)
         print last + ' Anorm   =  %12.4e      Acond =  %12.4e'  % (Anorm,Acond)
         print last + ' rnorm   =  %12.4e      ynorm =  %12.4e'  % (rnorm,ynorm)
         print last + ' Arnorm  =  %12.4e'                       %  (Arnorm,)
@@ -297,4 +297,3 @@ if __name__ == '__main__':
     b = 0*ones( A.shape[0] )
     x = minres(A,b,tol=1e-12,maxiter=None,callback=cb)
     #x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]
-

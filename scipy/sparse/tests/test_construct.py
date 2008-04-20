@@ -19,7 +19,7 @@ class TestConstructUtils(TestCase):
         diags3 = array( [[ 1, 2, 3, 4, 5],
                          [ 6, 7, 8, 9,10],
                          [11,12,13,14,15]] )
-       
+
         cases = []
         cases.append( (diags1,  0,  1, 1, [[1]]) )
         cases.append( (diags1, [0], 1, 1, [[1]]) )
@@ -58,8 +58,8 @@ class TestConstructUtils(TestCase):
 
         for d,o,m,n,result in cases:
             assert_equal( spdiags(d,o,m,n).todense(), result )
-        
-           
+
+
     def test_identity(self):
         a = identity(3)
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
@@ -98,7 +98,7 @@ class TestConstructUtils(TestCase):
         cases.append(array([[5,4,4],[1,0,0],[6,0,8]]))
         cases.append(array([[0,1,0,2,0,5,8]]))
         cases.append(array([[0.5,0.125,0,3.25],[0,2.5,0,0]]))
-        
+
         for a in cases:
             for b in cases:
                 result   = kron(csr_matrix(a),csr_matrix(b)).todense()
@@ -116,7 +116,7 @@ class TestConstructUtils(TestCase):
         cases.append(array([[0,2],[5,0]]))
         cases.append(array([[0,2,-6],[8,0,14],[0,3,0]]))
         cases.append(array([[1,0,0],[0,5,-1],[4,-2,8]]))
-        
+
         for a in cases:
             for b in cases:
                 result   = kronsum(csr_matrix(a),csr_matrix(b)).todense()
@@ -133,7 +133,7 @@ class TestConstructUtils(TestCase):
                            [3, 4],
                            [5, 6]])
         assert_equal( vstack( [A,B] ).todense(), expected )
-    
+
     def test_hstack(self):
 
         A = coo_matrix([[1,2],[3,4]])
@@ -154,17 +154,17 @@ class TestConstructUtils(TestCase):
                            [0, 0, 7]])
         assert_equal( bmat( [[A,B],[None,C]] ).todense(), expected )
 
- 
+
         expected = matrix([[1, 2, 0],
                            [3, 4, 0],
                            [0, 0, 7]])
         assert_equal( bmat( [[A,None],[None,C]] ).todense(), expected )
-    
+
         expected = matrix([[0, 5],
                            [0, 6],
                            [7, 0]])
         assert_equal( bmat( [[None,B],[C,None]] ).todense(), expected )
-    
+
         #TODO test failure cases
 
     def test_lil_diags(self):
@@ -200,4 +200,3 @@ class TestConstructUtils(TestCase):
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])
-

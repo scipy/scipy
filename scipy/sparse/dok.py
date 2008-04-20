@@ -14,7 +14,7 @@ from sputils import isdense, getdtype, isshape, isintlike, isscalarlike
 
 class dok_matrix(spmatrix, dict):
     """Dictionary Of Keys based matrix.  This is an efficient
-    structure for constructing sparse matrices 
+    structure for constructing sparse matrices
     """
     def __init__(self, A=None, shape=None, dtype=None, copy=False):
         """ Create a new dictionary-of-keys sparse matrix.  An optional
@@ -565,4 +565,3 @@ from sputils import _isinstance
 
 def isspmatrix_dok(x):
     return _isinstance(x, dok_matrix)
-

@@ -15,7 +15,7 @@
     1
 """
 
-__all__ = ['save_as_module', 
+__all__ = ['save_as_module',
            # The rest of these are all deprecated
            'save', 'create_module',
            'create_shelf', 'load']

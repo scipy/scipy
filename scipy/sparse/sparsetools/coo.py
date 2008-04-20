@@ -51,101 +51,100 @@ del types
 
 
 def coo_tocsr(*args):
-  """
-    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, signed char Ax, 
-        int Bp, int Bj, signed char Bx)
-    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned char Ax, 
-        int Bp, int Bj, unsigned char Bx)
-    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, short Ax, 
-        int Bp, int Bj, short Bx)
-    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned short Ax, 
-        int Bp, int Bj, unsigned short Bx)
-    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, int Ax, 
-        int Bp, int Bj, int Bx)
-    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned int Ax, 
-        int Bp, int Bj, unsigned int Bx)
-    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, long long Ax, 
-        int Bp, int Bj, long long Bx)
-    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned long long Ax, 
-        int Bp, int Bj, unsigned long long Bx)
-    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, float Ax, 
-        int Bp, int Bj, float Bx)
-    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, double Ax, 
-        int Bp, int Bj, double Bx)
-    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, long double Ax, 
-        int Bp, int Bj, long double Bx)
-    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cfloat_wrapper Ax, 
-        int Bp, int Bj, npy_cfloat_wrapper Bx)
-    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cdouble_wrapper Ax, 
-        int Bp, int Bj, npy_cdouble_wrapper Bx)
-    coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, npy_clongdouble_wrapper Ax, 
-        int Bp, int Bj, npy_clongdouble_wrapper Bx)
     """
-  return _coo.coo_tocsr(*args)
+      coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, signed char Ax,
+          int Bp, int Bj, signed char Bx)
+      coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned char Ax,
+          int Bp, int Bj, unsigned char Bx)
+      coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, short Ax,
+          int Bp, int Bj, short Bx)
+      coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned short Ax,
+          int Bp, int Bj, unsigned short Bx)
+      coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, int Ax,
+          int Bp, int Bj, int Bx)
+      coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned int Ax,
+          int Bp, int Bj, unsigned int Bx)
+      coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, long long Ax,
+          int Bp, int Bj, long long Bx)
+      coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned long long Ax,
+          int Bp, int Bj, unsigned long long Bx)
+      coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, float Ax,
+          int Bp, int Bj, float Bx)
+      coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, double Ax,
+          int Bp, int Bj, double Bx)
+      coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, long double Ax,
+          int Bp, int Bj, long double Bx)
+      coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cfloat_wrapper Ax,
+          int Bp, int Bj, npy_cfloat_wrapper Bx)
+      coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cdouble_wrapper Ax,
+          int Bp, int Bj, npy_cdouble_wrapper Bx)
+      coo_tocsr(int n_row, int n_col, int nnz, int Ai, int Aj, npy_clongdouble_wrapper Ax,
+          int Bp, int Bj, npy_clongdouble_wrapper Bx)
+      """
+    return _coo.coo_tocsr(*args)
 
 def coo_tocsc(*args):
-  """
-    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, signed char Ax, 
-        int Bp, int Bi, signed char Bx)
-    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned char Ax, 
-        int Bp, int Bi, unsigned char Bx)
-    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, short Ax, 
-        int Bp, int Bi, short Bx)
-    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned short Ax, 
-        int Bp, int Bi, unsigned short Bx)
-    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, int Ax, 
-        int Bp, int Bi, int Bx)
-    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned int Ax, 
-        int Bp, int Bi, unsigned int Bx)
-    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, long long Ax, 
-        int Bp, int Bi, long long Bx)
-    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned long long Ax, 
-        int Bp, int Bi, unsigned long long Bx)
-    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, float Ax, 
-        int Bp, int Bi, float Bx)
-    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, double Ax, 
-        int Bp, int Bi, double Bx)
-    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, long double Ax, 
-        int Bp, int Bi, long double Bx)
-    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cfloat_wrapper Ax, 
-        int Bp, int Bi, npy_cfloat_wrapper Bx)
-    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cdouble_wrapper Ax, 
-        int Bp, int Bi, npy_cdouble_wrapper Bx)
-    coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, npy_clongdouble_wrapper Ax, 
-        int Bp, int Bi, npy_clongdouble_wrapper Bx)
     """
-  return _coo.coo_tocsc(*args)
+      coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, signed char Ax,
+          int Bp, int Bi, signed char Bx)
+      coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned char Ax,
+          int Bp, int Bi, unsigned char Bx)
+      coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, short Ax,
+          int Bp, int Bi, short Bx)
+      coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned short Ax,
+          int Bp, int Bi, unsigned short Bx)
+      coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, int Ax,
+          int Bp, int Bi, int Bx)
+      coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned int Ax,
+          int Bp, int Bi, unsigned int Bx)
+      coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, long long Ax,
+          int Bp, int Bi, long long Bx)
+      coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned long long Ax,
+          int Bp, int Bi, unsigned long long Bx)
+      coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, float Ax,
+          int Bp, int Bi, float Bx)
+      coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, double Ax,
+          int Bp, int Bi, double Bx)
+      coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, long double Ax,
+          int Bp, int Bi, long double Bx)
+      coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cfloat_wrapper Ax,
+          int Bp, int Bi, npy_cfloat_wrapper Bx)
+      coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cdouble_wrapper Ax,
+          int Bp, int Bi, npy_cdouble_wrapper Bx)
+      coo_tocsc(int n_row, int n_col, int nnz, int Ai, int Aj, npy_clongdouble_wrapper Ax,
+          int Bp, int Bi, npy_clongdouble_wrapper Bx)
+      """
+    return _coo.coo_tocsc(*args)
 
 def coo_todense(*args):
-  """
-    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, signed char Ax, 
-        signed char Bx)
-    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned char Ax, 
-        unsigned char Bx)
-    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, short Ax, 
-        short Bx)
-    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned short Ax, 
-        unsigned short Bx)
-    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, int Ax, 
-        int Bx)
-    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned int Ax, 
-        unsigned int Bx)
-    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, long long Ax, 
-        long long Bx)
-    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned long long Ax, 
-        unsigned long long Bx)
-    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, float Ax, 
-        float Bx)
-    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, double Ax, 
-        double Bx)
-    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, long double Ax, 
-        long double Bx)
-    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cfloat_wrapper Ax, 
-        npy_cfloat_wrapper Bx)
-    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cdouble_wrapper Ax, 
-        npy_cdouble_wrapper Bx)
-    coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, npy_clongdouble_wrapper Ax, 
-        npy_clongdouble_wrapper Bx)
     """
-  return _coo.coo_todense(*args)
-
+      coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, signed char Ax,
+          signed char Bx)
+      coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned char Ax,
+          unsigned char Bx)
+      coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, short Ax,
+          short Bx)
+      coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned short Ax,
+          unsigned short Bx)
+      coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, int Ax,
+          int Bx)
+      coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned int Ax,
+          unsigned int Bx)
+      coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, long long Ax,
+          long long Bx)
+      coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, unsigned long long Ax,
+          unsigned long long Bx)
+      coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, float Ax,
+          float Bx)
+      coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, double Ax,
+          double Bx)
+      coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, long double Ax,
+          long double Bx)
+      coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cfloat_wrapper Ax,
+          npy_cfloat_wrapper Bx)
+      coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, npy_cdouble_wrapper Ax,
+          npy_cdouble_wrapper Bx)
+      coo_todense(int n_row, int n_col, int nnz, int Ai, int Aj, npy_clongdouble_wrapper Ax,
+          npy_clongdouble_wrapper Bx)
+      """
+    return _coo.coo_todense(*args)

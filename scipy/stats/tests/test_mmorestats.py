@@ -12,7 +12,7 @@ import numpy.ma as ma
 from numpy.ma import masked
 
 import scipy.stats.mstats as ms
-import scipy.stats.mmorestats as mms 
+import scipy.stats.mmorestats as mms
 
 from scipy.testing import *
 
@@ -33,11 +33,11 @@ class TestMisc(TestCase):
         data = ma.array([545,555,558,572,575,576,578,580,
                          594,605,635,651,653,661,666])
         assert_almost_equal(ms.trimmed_mean(data,0.2), 596.2, 1)
-        assert_equal(np.round(mms.trimmed_mean_ci(data,(0.2,0.2)),1), 
+        assert_equal(np.round(mms.trimmed_mean_ci(data,(0.2,0.2)),1),
                      [561.8, 630.6])
     #
     def test_idealfourths(self):
-        "Tests ideal-fourths"      
+        "Tests ideal-fourths"
         test = np.arange(100)
         assert_almost_equal(np.asarray(mms.idealfourths(test)),
                             [24.416667,74.583333],6)

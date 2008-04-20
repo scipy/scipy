@@ -26,7 +26,7 @@ from scipy.linalg import calc_lwork
 
 def lu_solve((lu, piv), b, trans=0, overwrite_b=0):
     """Solve an equation system, a x = b, given the LU factorization of a
-    
+
     Parameters
     ----------
     (lu, piv)
@@ -52,7 +52,7 @@ def lu_solve((lu, piv), b, trans=0, overwrite_b=0):
     See also
     --------
     lu_factor : LU factorize a matrix
-    
+
     """
     b1 = asarray_chkfinite(b)
     overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
@@ -83,7 +83,7 @@ def cho_solve((c, lower), b, overwrite_b=0):
     See also
     --------
     cho_factor : Cholesky factorization of a matrix
-    
+
     """
     b1 = asarray_chkfinite(b)
     overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
@@ -114,14 +114,14 @@ def solve(a, b, sym_pos=0, lower=0, overwrite_a=0, overwrite_b=0,
         Allow overwriting data in a (may enhance performance)
     overwrite_b : boolean
         Allow overwriting data in b (may enhance performance)
-    
+
     Returns
     -------
     x : array, shape (M,) or (M, N) depending on b
         Solution to the system a x = b
 
     Raises LinAlgError if a is singular
-    
+
     """
     a1, b1 = map(asarray_chkfinite,(a,b))
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -164,8 +164,8 @@ def solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0,
 
         *    a01  a12  a23  a34  a45
         a00  a11  a22  a33  a44  a55
-        a10  a21  a32  a43  a54   * 
-        a20  a31  a42  a53   *    * 
+        a10  a21  a32  a43  a54   *
+        a20  a31  a42  a53   *    *
 
     Parameters
     ----------
@@ -184,7 +184,7 @@ def solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0,
     -------
     x : array, shape (M,) or (M, K)
         The solution to the system a x = b
-    
+
     """
     a1, b1 = map(asarray_chkfinite,(ab,b))
     overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
@@ -218,7 +218,7 @@ def solveh_banded(ab, b, overwrite_ab=0, overwrite_b=0,
         *   *   a02 a13 a24 a35
         *   a01 a12 a23 a34 a45
         a00 a11 a22 a33 a44 a55
-        
+
         lower form:
         a00 a11 a22 a33 a44 a55
         a10 a21 a32 a43 a54 *
@@ -245,7 +245,7 @@ def solveh_banded(ab, b, overwrite_ab=0, overwrite_b=0,
         Cholesky factorization of a, in the same banded format as ab
     x : array, shape (M,) or (M, K)
         The solution to the system a x = b
-    
+
     """
     ab, b = map(asarray_chkfinite,(ab,b))
 
@@ -263,25 +263,25 @@ def solveh_banded(ab, b, overwrite_ab=0, overwrite_b=0,
 
 def cholesky_banded(ab, overwrite_ab=0, lower=0):
     """Cholesky decompose a banded Hermitian positive-definite matrix
-    
+
     The matrix a is stored in ab either in lower diagonal or upper
     diagonal ordered form:
-    
+
         ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
         ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
-    
+
     Example of ab (shape of a is (6,6), u=2)::
-    
+
         upper form:
         *   *   a02 a13 a24 a35
         *   a01 a12 a23 a34 a45
         a00 a11 a22 a33 a44 a55
-        
+
         lower form:
         a00 a11 a22 a33 a44 a55
         a10 a21 a32 a43 a54 *
         a20 a31 a42 a53 *   *
-    
+
     Parameters
     ----------
     ab : array, shape (M, u + 1)
@@ -290,12 +290,12 @@ def cholesky_banded(ab, overwrite_ab=0, lower=0):
         Discard data in ab (may enhance performance)
     lower : boolean
         Is the matrix in the lower form. (Default is upper form)
-    
+
     Returns
     -------
     c : array, shape (M, u+1)
         Cholesky factorization of a, in the same banded format as ab
-    
+
     """
     ab = asarray_chkfinite(ab)
 
@@ -315,12 +315,12 @@ def cholesky_banded(ab, overwrite_ab=0, lower=0):
 # matrix inversion
 def inv(a, overwrite_a=0):
     """Compute the inverse of a matrix.
-    
+
     Parameters
     ----------
     a : array-like, shape (M, M)
         Matrix to be inverted
-    
+
     Returns
     -------
     ainv : array-like, shape (M, M)
@@ -409,7 +409,7 @@ def norm(x, ord=None):
         -2     smallest singular value       as below
         other  -                             sum(abs(x)**ord)**(1./ord)
         =====  ============================  ==========================
-    
+
     Returns
     -------
     n : float
@@ -420,7 +420,7 @@ def norm(x, ord=None):
     For values ord < 0, the result is, strictly speaking, not a
     mathematical 'norm', but it may still be useful for numerical
     purposes.
-    
+
     """
     x = asarray_chkfinite(x)
     if ord is None: # check the default case first and handle it immediately
@@ -472,7 +472,7 @@ def det(a, overwrite_a=0):
     -------
     det : float or complex
         Determinant of a
-    
+
     Notes
     -----
     The determinant is computed via LU factorization, LAPACK routine z/dgetrf.
@@ -491,9 +491,9 @@ def det(a, overwrite_a=0):
 
 def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
     """Compute least-squares solution to equation :m:`a x = b`
-    
+
     Compute a vector x such that the 2-norm :m:`|b - a x|` is minimised.
-    
+
     Parameters
     ----------
     a : array, shape (M, N)
@@ -506,7 +506,7 @@ def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
         Discard data in a (may enhance performance)
     overwrite_b : boolean
         Discard data in b (may enhance performance)
-    
+
     Returns
     -------
     x : array, shape (N,) or (N, K) depending on shape of b
@@ -519,9 +519,9 @@ def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
         Effective rank of matrix a
     s : array, shape (min(M,N),)
         Singular values of a. The condition number of a is abs(s[0]/s[-1]).
-    
+
     Raises LinAlgError if computation does not converge
-    
+
     """
     a1, b1 = map(asarray_chkfinite,(a,b))
     if len(a1.shape) != 2:
@@ -562,10 +562,10 @@ def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
 
 def pinv(a, cond=None, rcond=None):
     """Compute the (Moore-Penrose) pseudo-inverse of a matrix.
-    
+
     Calculate a generalized inverse of a matrix using a least-squares
     solver.
-    
+
     Parameters
     ----------
     a : array, shape (M, N)
@@ -574,11 +574,11 @@ def pinv(a, cond=None, rcond=None):
         Cutoff for 'small' singular values in the least-squares solver.
         Singular values smaller than rcond*largest_singular_value are
         considered zero.
-    
+
     Returns
     -------
     B : array, shape (N, M)
-    
+
     Raises LinAlgError if computation does not converge
 
     Examples
@@ -590,7 +590,7 @@ def pinv(a, cond=None, rcond=None):
     True
     >>> allclose(B, dot(B, dot(a, B)))
     True
-    
+
     """
     a = asarray_chkfinite(a)
     b = numpy.identity(a.shape[0], dtype=a.dtype)
@@ -605,11 +605,11 @@ feps = numpy.finfo(single).eps
 _array_precision = {'f': 0, 'd': 1, 'F': 0, 'D': 1}
 def pinv2(a, cond=None, rcond=None):
     """Compute the (Moore-Penrose) pseudo-inverse of a matrix.
-    
+
     Calculate a generalized inverse of a matrix using its
     singular-value decomposition and including all 'large' singular
     values.
-    
+
     Parameters
     ----------
     a : array, shape (M, N)
@@ -620,11 +620,11 @@ def pinv2(a, cond=None, rcond=None):
         considered zero.
 
         If None or -1, suitable machine precision is used.
-    
+
     Returns
     -------
     B : array, shape (N, M)
-    
+
     Raises LinAlgError if SVD computation does not converge
 
     Examples
@@ -636,7 +636,7 @@ def pinv2(a, cond=None, rcond=None):
     True
     >>> allclose(B, dot(B, dot(a, B)))
     True
-    
+
     """
     a = asarray_chkfinite(a)
     u, s, vh = decomp.svd(a)
@@ -689,7 +689,7 @@ def tri(N, M=None, k=0, dtype=None):
     array([[0, 0, 0, 0, 0],
            [1, 0, 0, 0, 0],
            [1, 1, 0, 0, 0]])
-    
+
     """
     if M is None: M = N
     if type(M) == type('d'):
@@ -705,7 +705,7 @@ def tri(N, M=None, k=0, dtype=None):
 
 def tril(m, k=0):
     """Construct a copy of a matrix with elements above the k-th diagonal zeroed.
-    
+
     Parameters
     ----------
     m : array
@@ -717,7 +717,7 @@ def tril(m, k=0):
     Returns
     -------
     A : array, shape m.shape, dtype m.dtype
-    
+
     Examples
     --------
     >>> from scipy.linalg import tril
@@ -726,7 +726,7 @@ def tril(m, k=0):
            [ 4,  0,  0],
            [ 7,  8,  0],
            [10, 11, 12]])
-    
+
     """
     svsp = getattr(m,'spacesaver',lambda:0)()
     m = asarray(m)
@@ -736,7 +736,7 @@ def tril(m, k=0):
 
 def triu(m, k=0):
     """Construct a copy of a matrix with elements below the k-th diagonal zeroed.
-    
+
     Parameters
     ----------
     m : array
@@ -748,7 +748,7 @@ def triu(m, k=0):
     Returns
     -------
     A : array, shape m.shape, dtype m.dtype
-    
+
     Examples
     --------
     >>> from scipy.linalg import tril
@@ -757,7 +757,7 @@ def triu(m, k=0):
            [ 4,  5,  6],
            [ 0,  8,  9],
            [ 0,  0, 12]])
-    
+
     """
     svsp = getattr(m,'spacesaver',lambda:0)()
     m = asarray(m)
@@ -767,23 +767,23 @@ def triu(m, k=0):
 
 def toeplitz(c,r=None):
     """Construct a Toeplitz matrix.
-    
+
     The Toepliz matrix has constant diagonals, c as its first column,
     and r as its first row (if not given, r == c is assumed).
-    
+
     Parameters
     ----------
     c : array
         First column of the matrix
     r : array
         First row of the matrix. If None, r == c is assumed.
-    
+
     Returns
     -------
     A : array, shape (len(c), len(r))
         Constructed Toeplitz matrix.
         dtype is the same as (c[0] + r[0]).dtype
-    
+
     Examples
     --------
     >>> from scipy.linalg import toeplitz
@@ -791,11 +791,11 @@ def toeplitz(c,r=None):
     array([[1, 4, 5, 6],
            [2, 1, 4, 5],
            [3, 2, 1, 4]])
-    
+
     See also
     --------
     hankel : Hankel matrix
-    
+
     """
     isscalar = numpy.isscalar
     if isscalar(c) or isscalar(r):
@@ -819,23 +819,23 @@ def toeplitz(c,r=None):
 
 def hankel(c,r=None):
     """Construct a Hankel matrix.
-    
+
     The Hankel matrix has constant anti-diagonals, c as its first column,
     and r as its last row (if not given, r == 0 os assumed).
-    
+
     Parameters
     ----------
     c : array
         First column of the matrix
     r : array
         Last row of the matrix. If None, r == 0 is assumed.
-    
+
     Returns
     -------
     A : array, shape (len(c), len(r))
         Constructed Hankel matrix.
         dtype is the same as (c[0] + r[0]).dtype
-    
+
     Examples
     --------
     >>> from scipy.linalg import hankel
@@ -844,11 +844,11 @@ def hankel(c,r=None):
            [2, 3, 4, 7, 7],
            [3, 4, 7, 7, 8],
            [4, 7, 7, 8, 9]])
-    
+
     See also
     --------
     toeplitz : Toeplitz matrix
-    
+
     """
     isscalar = numpy.isscalar
     if isscalar(c) or isscalar(r):
@@ -889,14 +889,14 @@ def kron(a,b):
     -------
     A : array, shape (M*P, N*Q)
         Kronecker product of a and b
-    
+
     Examples
     --------
     >>> from scipy import kron, array
     >>> kron(array([[1,2],[3,4]]), array([[1,1,1]]))
     array([[1, 1, 1, 2, 2, 2],
            [3, 3, 3, 4, 4, 4]])
-    
+
     """
     if not a.flags['CONTIGUOUS']:
         a = reshape(a, a.shape)

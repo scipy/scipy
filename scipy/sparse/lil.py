@@ -1,4 +1,4 @@
-"""LInked List sparse matrix class 
+"""LInked List sparse matrix class
 """
 
 __docformat__ = "restructuredtext en"
@@ -18,7 +18,7 @@ from sputils import getdtype,isshape,issequence,isscalarlike
 class lil_matrix(spmatrix):
     """Row-based linked list matrix
 
-    
+
     This can be instantiated in several ways:
         csc_matrix(D)
             with a dense matrix or rank-2 ndarray D
@@ -39,21 +39,21 @@ class lil_matrix(spmatrix):
     Advantages of the LIL format
         - supports flexible slicing
         - changes to the matrix sparsity structure are efficient
-        
+
     Disadvantages of the LIL format
         - arithmetic operations LIL + LIL are slow (consider CSR or CSC)
         - slow column slicing (consider CSC)
         - matrix vector products are slower than CSR/CSC
-        
+
     Intended Usage
-        - LIL is a convenient format for constructing sparse matrices 
-        - once a matrix has been constructed, convert to CSR or 
+        - LIL is a convenient format for constructing sparse matrices
+        - once a matrix has been constructed, convert to CSR or
           CSC format for fast arithmetic and matrix vector operations
         - consider using the COO format when constructing large matrices
-   
+
     Data Structure
         - An array (``self.rows``) of rows, each of which is a sorted
-          list of column indices of non-zero elements. 
+          list of column indices of non-zero elements.
         - The corresponding nonzero values are stored in similar
           fashion in ``self.data``.
 
@@ -80,7 +80,7 @@ class lil_matrix(spmatrix):
             for i in range(M):
                 self.rows[i] = []
                 self.data[i] = []
-        elif isspmatrix(A):                    
+        elif isspmatrix(A):
             if isspmatrix_lil(A) and copy:
                 A = A.copy()
             else:
@@ -111,7 +111,7 @@ class lil_matrix(spmatrix):
             else:
                 from csr import csr_matrix
                 A = csr_matrix(A).tolil()
-                
+
                 self.shape = A.shape
                 self.dtype = A.dtype
                 self.rows  = A.rows
@@ -427,12 +427,12 @@ class lil_matrix(spmatrix):
     def tocsr(self):
         """ Return Compressed Sparse Row format arrays for this matrix.
         """
-        
+
         indptr = asarray([len(x) for x in self.rows], dtype=intc)
         indptr = concatenate( ( array([0],dtype=intc), cumsum(indptr) ) )
-        
+
         nnz = indptr[-1]
-        
+
         indices = []
         for x in self.rows:
             indices.extend(x)
@@ -456,4 +456,3 @@ from sputils import _isinstance
 
 def isspmatrix_lil( x ):
     return _isinstance(x, lil_matrix)
-

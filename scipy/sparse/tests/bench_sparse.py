@@ -50,7 +50,7 @@ class BenchmarkSparse(TestCase):
         #matrices.append( ('A','Identity', sparse.identity(500**2,format='csr')) )
         matrices.append( ('A','Poisson5pt', poisson2d(500,format='csr'))  )
         matrices.append( ('B','Poisson5pt^2', poisson2d(500,format='csr')**2)  )
-   
+
         print
         print '                 Sparse Matrix Arithmetic'
         print '===================================================================='
@@ -64,7 +64,7 @@ class BenchmarkSparse(TestCase):
             dtype = mat.dtype.name.center(9)
             print fmt % (var,name,shape,dtype,mat.nnz)
 
-        space = ' ' * 10 
+        space = ' ' * 10
         print
         print space+'              Timings'
         print space+'=========================================='
@@ -91,7 +91,7 @@ class BenchmarkSparse(TestCase):
                     operation = (X + '.' + op + '(' + Y + ')').center(17)
                     print fmt % (format,operation,msec_per_it)
 
-  
+
     def bench_sort(self):
         """sort CSR column indices"""
         matrices = []
@@ -109,14 +109,14 @@ class BenchmarkSparse(TestCase):
         fmt = '  %3s | %12s | %20s | %8d |   %6.2f  '
 
         for name,N,K in matrices:
-            N = int(N) 
+            N = int(N)
             A = random_sparse(N,N,K)
-            
+
             start = time.clock()
             iter = 0
             while iter < 5 and time.clock() - start < 1:
                 A.has_sorted_indices = False
-                A.sort_indices() 
+                A.sort_indices()
                 iter += 1
             end = time.clock()
 
@@ -136,7 +136,7 @@ class BenchmarkSparse(TestCase):
         A = sparse.kron(poisson2d(150),ones((2,2))).tobsr(blocksize=(2,2))
         matrices.append( ('Block2x2', A.tocsr()) )
         matrices.append( ('Block2x2', A) )
-        
+
         A = sparse.kron(poisson2d(100),ones((3,3))).tobsr(blocksize=(3,3))
         matrices.append( ('Block3x3', A.tocsr()) )
         matrices.append( ('Block3x3', A) )
@@ -172,14 +172,14 @@ class BenchmarkSparse(TestCase):
             MFLOPs = (2*A.nnz*iter/(end-start))/float(1e6)
 
             print fmt % (A.format,name,shape,A.nnz,MFLOPs)
-            
+
     def bench_construction(self):
         """build matrices by inserting single values"""
         matrices = []
         matrices.append( ('Empty',csr_matrix((10000,10000))) )
         matrices.append( ('Identity',sparse.identity(10000)) )
         matrices.append( ('Poisson5pt', poisson2d(100)) )
-        
+
         print
         print '                    Sparse Matrix Construction'
         print '===================================================================='
@@ -189,11 +189,11 @@ class BenchmarkSparse(TestCase):
 
         for name,A in matrices:
             A = A.tocoo()
-             
-            for format in ['lil','dok']: 
+
+            for format in ['lil','dok']:
 
                 start = time.clock()
-                
+
                 iter = 0
                 while time.clock() < start + 0.5:
                     T = eval(format + '_matrix')(A.shape)
@@ -212,16 +212,16 @@ class BenchmarkSparse(TestCase):
         A = poisson2d(100)
 
         formats = ['csr','csc','coo','lil','dok']
-       
+
         print
         print '                Sparse Matrix Conversion'
         print '=========================================================='
         print ' format | tocsr() | tocsc() | tocoo() | tolil() | todok() '
         print '----------------------------------------------------------'
-        
+
         for fromfmt in formats:
             base = getattr(A,'to' + fromfmt)()
- 
+
             times = []
 
             for tofmt in formats:
@@ -237,7 +237,7 @@ class BenchmarkSparse(TestCase):
                         x = fn()
                         iter += 1
                     end = time.clock()
-                    del x 
+                    del x
                     times.append( (end - start)/float(iter))
 
             output = "  %3s   " % fromfmt
@@ -245,7 +245,7 @@ class BenchmarkSparse(TestCase):
                 if t is None:
                     output += '|    n/a    '
                 else:
-                    output += '| %5.1fms ' % (1000*t) 
+                    output += '| %5.1fms ' % (1000*t)
             print output
 
 
@@ -278,4 +278,3 @@ class BenchmarkSparse(TestCase):
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])
-

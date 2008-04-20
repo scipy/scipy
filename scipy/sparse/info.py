@@ -88,8 +88,8 @@ Further Details
 ---------------
 
 CSR column indices are not necessarily sorted.  Likewise for CSC row
-indices.  Use the .sorted_indices() and .sort_indices() methods when 
-sorted indices are required (e.g. when passing data to other libraries). 
+indices.  Use the .sorted_indices() and .sort_indices() methods when
+sorted indices are required (e.g. when passing data to other libraries).
 
 """
 

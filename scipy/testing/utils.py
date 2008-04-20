@@ -95,4 +95,3 @@ def decorate_methods(cls, decorator, testmatch=None):
         if testmatch.search(funcname) and not funcname.startswith('_'):
             setattr(cls, funcname, decorator(function))
     return
-

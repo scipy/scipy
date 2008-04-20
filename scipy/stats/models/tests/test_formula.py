@@ -306,7 +306,7 @@ class TestFormula(TestCase):
         f = formula.interactions([formula.Term(l) for l in ['a', 'b', 'c']])
         ff = f - f['a*b']
         assert_equal(set(ff.termnames()), set(['a', 'b', 'c', 'a*c', 'b*c']))
-        
+
         ff = f - f['a*b'] - f['a*c']
         assert_equal(set(ff.termnames()), set(['a', 'b', 'c', 'b*c']))
 

@@ -238,5 +238,3 @@ def test_round_trip():
         expected = case['expected']
         format = case in case_table4 and '4' or '5'
         yield _make_rt_check_case, name, expected, format
-
-

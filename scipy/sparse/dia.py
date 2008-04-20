@@ -42,7 +42,7 @@ class dia_matrix(_data_matrix):
     matrix([[0, 0, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 0]], dtype=int8)
-    
+
     >>> data = array([[1,2,3,4]]).repeat(3,axis=0)
     >>> diags = array([0,-1,2])
     >>> dia_matrix( (data,diags), shape=(4,4)).todense()
@@ -66,7 +66,7 @@ class dia_matrix(_data_matrix):
             if isspmatrix_dia(arg1) and copy:
                 A = arg1.copy()
             else:
-                A = arg1.todia() 
+                A = arg1.todia()
             self.data  = A.data
             self.diags = A.diags
             self.shape = A.shape
@@ -114,7 +114,7 @@ class dia_matrix(_data_matrix):
             raise ValueError,'number of diagonals (%d) ' \
                     'does not match the number of diags (%d)' \
                     % (self.data.shape[0], len(self.diags))
-        
+
         if len(unique(self.diags)) != len(self.diags):
             raise ValueError,'offset array contains duplicate values'
 
@@ -178,9 +178,9 @@ class dia_matrix(_data_matrix):
 
         L = self.data.shape[1]
         M,N = self.shape
-       
+
         dia_matvec(M,N, len(self.diags), L, self.diags, self.data, x.ravel(), y.ravel())
-        
+
         if isinstance(other, matrix):
             y = asmatrix(y)
 
@@ -207,20 +207,20 @@ class dia_matrix(_data_matrix):
     def tocoo(self):
         num_data = len(self.data)
         len_data = self.data.shape[1]
-        
+
         row = arange(len_data).reshape(1,-1).repeat(num_data,axis=0)
         col = row.copy()
 
         for i,k in enumerate(self.diags):
             row[i,:] -= k
-        
-        mask  = (row >= 0) 
-        mask &= (row < self.shape[0]) 
+
+        mask  = (row >= 0)
+        mask &= (row < self.shape[0])
         mask &= (col < self.shape[1])
         mask &= self.data != 0
         row,col,data = row[mask],col[mask],self.data[mask]
         row,col,data = row.reshape(-1),col.reshape(-1),data.reshape(-1)
-       
+
         from coo import coo_matrix
         return coo_matrix((data,(row,col)),shape=self.shape)
 
@@ -240,5 +240,3 @@ from sputils import _isinstance
 
 def isspmatrix_dia(x):
     return _isinstance(x, dia_matrix)
-
-

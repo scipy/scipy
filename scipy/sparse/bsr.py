@@ -36,9 +36,9 @@ class bsr_matrix(_cs_matrix):
             where ``data`` and ``ij`` satisfy ``a[ij[0, k], ij[1, k]] = data[k]``
 
         bsr_matrix((data, indices, indptr), [shape=(M, N)])
-            is the standard BSR representation where the block column 
-            indices for row i are stored in ``indices[indptr[i]:indices[i+1]]`` 
-            and their corresponding block values are stored in 
+            is the standard BSR representation where the block column
+            indices for row i are stored in ``indices[indptr[i]:indices[i+1]]``
+            and their corresponding block values are stored in
             ``data[ indptr[i]: indptr[i+1] ]``.  If the shape parameter is not
             supplied, the matrix dimensions are inferred from the index arrays.
 
@@ -49,18 +49,18 @@ class bsr_matrix(_cs_matrix):
         - The Block Compressed Row (BSR) format is very similar to the
           Compressed Sparse Row (CSR) format.  BSR is appropriate for
           sparse matrices with dense sub matrices like the last example
-          below.  Block matrices often arise in vector-valued finite 
+          below.  Block matrices often arise in vector-valued finite
           element discretizations.  In such cases, BSR is considerably
           more efficient than CSR and CSC for many sparse arithmetic
           operations.
 
     Blocksize
-        - The blocksize (R,C) must evenly divide the shape of 
+        - The blocksize (R,C) must evenly divide the shape of
           the matrix (M,N).  That is, R and C must satisfy the
           relationship M % R = 0 and N % C = 0.
         - If no blocksize is specified, a simple heuristic is applied
           to determine an appropriate blocksize.
-   
+
 
 
     Examples
@@ -80,7 +80,7 @@ class bsr_matrix(_cs_matrix):
     matrix([[1, 0, 2],
             [0, 0, 3],
             [4, 5, 6]])
-    
+
     >>> indptr  = array([0,2,3,6])
     >>> indices = array([0,2,2,0,1,2])
     >>> data    = array([1,2,3,4,5,6]).repeat(4).reshape(6,2,2)
@@ -91,19 +91,19 @@ class bsr_matrix(_cs_matrix):
             [0, 0, 0, 0, 3, 3],
             [4, 4, 5, 5, 6, 6],
             [4, 4, 5, 5, 6, 6]])
-    
+
     """
     def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
         _data_matrix.__init__(self)
 
-        
+
         if isspmatrix(arg1):
             if arg1.format == self.format and copy:
                 arg1 = arg1.copy()
             else:
                 arg1 = getattr(arg1,'to' + self.format)(blocksize=blocksize)
             self._set_self( arg1 )
-            
+
         elif isinstance(arg1,tuple):
             if isshape(arg1):
                 #it's a tuple of matrix dimensions (M,N)
@@ -118,13 +118,13 @@ class bsr_matrix(_cs_matrix):
                     blocksize = tuple(blocksize)
                 self.data   = zeros( (0,) + blocksize, getdtype(dtype, default=float) )
                 self.indices = zeros( 0, dtype=intc )
-                
+
                 R,C = blocksize
                 if (M % R) != 0 or (N % C) != 0:
                     raise ValueError, 'shape must be multiple of blocksize'
 
                 self.indptr  = zeros(M/R + 1, dtype=intc )
-            
+
             elif len(arg1) == 2:
                 # (data,(row,col)) format
                 from coo import coo_matrix
@@ -241,12 +241,12 @@ class bsr_matrix(_cs_matrix):
     def _get_blocksize(self):
         return self.data.shape[1:]
     blocksize = property(fget=_get_blocksize)
-    
+
     def getnnz(self):
         R,C = self.blocksize
         return self.indptr[-1] * R * C
     nnz = property(fget=getnnz)
-    
+
     def __repr__(self):
         nnz = self.getnnz()
         format = self.getformat()
@@ -275,7 +275,7 @@ class bsr_matrix(_cs_matrix):
 
     def __getitem__(self,key):
         raise NotImplementedError
-    
+
     def __setitem__(self,key,val):
         raise NotImplementedError
 
@@ -286,13 +286,13 @@ class bsr_matrix(_cs_matrix):
     def matvec(self, other, output=None):
         """Sparse matrix vector product (self * other)
 
-        'other' may be a rank 1 array of length N or a rank 2 array 
-        or matrix with shape (N,1).  
-        
+        'other' may be a rank 1 array of length N or a rank 2 array
+        or matrix with shape (N,1).
+
         If the optional 'output' parameter is defined, it will
         be used to store the result.  Otherwise, a new vector
         will be allocated.
-             
+
         """
         if isdense(other):
             M,N = self.shape
@@ -300,7 +300,7 @@ class bsr_matrix(_cs_matrix):
 
             if other.shape != (N,) and other.shape != (N,1):
                 raise ValueError, "dimension mismatch"
-    
+
             #output array
             if output is None:
                 y = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
@@ -314,8 +314,8 @@ class bsr_matrix(_cs_matrix):
                             "dtype=%s is required" % \
                             (output.dtype,upcast(self.dtype,other.dtype))
                 y = output
-            
-            
+
+
             bsr_matvec(M/R, N/C, R, C, \
                 self.indptr, self.indices, ravel(self.data), ravel(other), y)
 
@@ -343,9 +343,9 @@ class bsr_matrix(_cs_matrix):
                 raise ValueError, "shape mismatch error"
 
             indptr = empty_like( self.indptr )
-            
+
             R,n = self.blocksize
-            
+
             #convert to this format
             if isspmatrix_bsr(other):
                 C = other.blocksize[1]
@@ -373,7 +373,7 @@ class bsr_matrix(_cs_matrix):
                     self.indptr,  self.indices,  ravel(self.data), \
                     other.indptr, other.indices, ravel(other.data), \
                     indptr,       indices,       data)
-            
+
             data = data.reshape(-1,R,C)
             #TODO eliminate zeros
 
@@ -386,11 +386,11 @@ class bsr_matrix(_cs_matrix):
         else:
             raise TypeError, "need a dense or sparse matrix"
 
-  
+
     ######################
     # Conversion methods #
     ######################
-    
+
     def tobsr(self,blocksize=None,copy=False):
         if blocksize not in [None, self.blocksize]:
             return self.tocsr().tobsr(blocksize=blocksize)
@@ -412,14 +412,14 @@ class bsr_matrix(_cs_matrix):
         When copy=False the data array will be shared between
         this matrix and the resultant coo_matrix.
         """
-        
+
         M,N = self.shape
         R,C = self.blocksize
 
         row  = (R * arange(M/R)).repeat(diff(self.indptr))
         row  = row.repeat(R*C).reshape(-1,R,C)
         row += tile( arange(R).reshape(-1,1), (1,C) )
-        row  = row.reshape(-1) 
+        row  = row.reshape(-1)
 
         col  = (C * self.indices).repeat(R*C).reshape(-1,R,C)
         col += tile( arange(C), (R,1) )
@@ -435,11 +435,11 @@ class bsr_matrix(_cs_matrix):
 
 
     def transpose(self):
-        
+
         R,C = self.blocksize
         M,N = self.shape
         NBLK = self.nnz/(R*C)
-        
+
         if self.nnz == 0:
             return bsr_matrix((N,M),blocksize=(C,R))
 
@@ -452,18 +452,18 @@ class bsr_matrix(_cs_matrix):
                       indptr,      indices,      data.ravel())
 
         return bsr_matrix( (data,indices,indptr), shape=(N,M) )
-    
-    
-    ############################################################## 
+
+
+    ##############################################################
     # methods that examine or modify the internal data structure #
     ##############################################################
-    
+
     def eliminate_zeros(self):
         R,C = self.blocksize
         M,N = self.shape
 
         mask = (self.data != 0).reshape(-1,R*C).sum(axis=1) #nonzero blocks
-       
+
         nonzero_blocks = mask.nonzero()[0]
 
         if len(nonzero_blocks) == 0:
@@ -476,7 +476,7 @@ class bsr_matrix(_cs_matrix):
         # modifies self.indptr and self.indices *in place*
         proxy = csr_matrix((mask,self.indices,self.indptr),shape=(M/R,N/C))
         proxy.eliminate_zeros()
-       
+
         self.prune()
 
 
@@ -505,17 +505,17 @@ class bsr_matrix(_cs_matrix):
 
         if len(self.indptr) != M/R + 1:
             raise ValueError, "index pointer has invalid length"
-        
+
         bnnz = self.indptr[-1]
 
-        if len(self.indices) < bnnz: 
+        if len(self.indices) < bnnz:
             raise ValueError, "indices array has too few elements"
         if len(self.data) < bnnz:
             raise ValueError, "data array has too few elements"
 
         self.data    = self.data[:bnnz]
         self.indices = self.indices[:bnnz]
-    
+
     # utility functions
     def _binopt(self, other, op, in_shape=None, out_shape=None):
         """apply the binary operation fn to two sparse matrices"""
@@ -525,14 +525,14 @@ class bsr_matrix(_cs_matrix):
             in_shape = self.shape
         if out_shape is None:
             out_shape = self.shape
-        
+
         self.sort_indices()
         other.sort_indices()
 
         # e.g. bsr_plus_bsr, etc.
         fn = getattr(sparsetools, self.format + op + self.format)
-        
-        R,C = self.blocksize 
+
+        R,C = self.blocksize
 
         max_bnnz = len(self.data) + len(other.data)
         indptr  = empty_like(self.indptr)
@@ -543,7 +543,7 @@ class bsr_matrix(_cs_matrix):
                 self.indptr,  self.indices,  ravel(self.data),
                 other.indptr, other.indices, ravel(other.data),
                 indptr,       indices,       data)
-        
+
         actual_bnnz = indptr[-1]
         indices = indices[:actual_bnnz]
         data    = data[:R*C*actual_bnnz]
@@ -570,7 +570,7 @@ class bsr_matrix(_cs_matrix):
                                    shape=self.shape,dtype=data.dtype)
 
 
-    
+
 #    # these functions are used by the parent class
 #    # to remove redudancy between bsc_matrix and bsr_matrix
 #    def _swap(self,x):
@@ -583,4 +583,3 @@ from sputils import _isinstance
 
 def isspmatrix_bsr(x):
     return _isinstance(x, bsr_matrix)
-

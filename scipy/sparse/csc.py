@@ -37,8 +37,8 @@ class csc_matrix(_cs_matrix):
             where ``data`` and ``ij`` satisfy ``a[ij[0, k], ij[1, k]] = data[k]``
 
         csc_matrix((data, indices, indptr), [shape=(M, N)])
-            is the standard CSC representation where the row indices for 
-            column i are stored in ``indices[indptr[i]:indices[i+1]]`` and their 
+            is the standard CSC representation where the row indices for
+            column i are stored in ``indices[indptr[i]:indices[i+1]]`` and their
             corresponding values are stored in ``data[indptr[i]:indptr[i+1]]``.
             If the shape parameter is not supplied, the matrix dimensions
             are inferred from the index arrays.
@@ -49,7 +49,7 @@ class csc_matrix(_cs_matrix):
         - efficient arithmetic operations CSC + CSC, CSC * CSC, etc.
         - efficient column slicing
         - fast matrix vector products (CSR, BSR may be faster)
-    
+
     Disadvantages of the CSC format
     -------------------------------
       - slow row slicing operations (consider CSR)
@@ -114,7 +114,7 @@ class csc_matrix(_cs_matrix):
             return self.copy()
         else:
             return self
-    
+
     def tocsr(self):
         indptr  = empty(self.shape[0] + 1, dtype=intc)
         indices = empty(self.nnz, dtype=intc)
@@ -137,11 +137,11 @@ class csc_matrix(_cs_matrix):
             col = key[1]
 
             if isintlike(row) or isinstance(row, slice):
-                return self.T[col,row].T                
-            else:    
+                return self.T[col,row].T
+            else:
                 #[[1,2],??] or [[[1],[2]],??]
                 if isintlike(col) or isinstance(col,slice):
-                    return self.T[col,row].T                
+                    return self.T[col,row].T
                 else:
                     row = asarray(row, dtype='intc')
                     col = asarray(col, dtype='intc')
@@ -150,10 +150,10 @@ class csc_matrix(_cs_matrix):
                     elif len(row.shape) == 2:
                         row = row.reshape(-1)
                         col = col.reshape(-1,1)
-                        return self.T[col,row].T                
+                        return self.T[col,row].T
                     else:
                         raise NotImplementedError('unsupported indexing')
-                        
+
             return self.T[col,row].T
         elif isintlike(key) or isinstance(key,slice):
             return self.T[:,key].T                              #[i] or [1:2]
@@ -173,4 +173,3 @@ from sputils import _isinstance
 
 def isspmatrix_csc(x):
     return _isinstance(x, csc_matrix)
-

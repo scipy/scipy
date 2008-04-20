@@ -278,4 +278,3 @@ def reduction(ary,axis=0):
 # so this is gonna take some thought (probably some tree manipulation).
 def take(ary,axis=0): raise NotImplemented
 # and all the rest
-

@@ -368,7 +368,7 @@ class TestPdist(TestCase):
         Y_test1 = pdist(X, 'minkowski', 3.2)
         #print "minkowski", numpy.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
-        
+
     def test_pdist_minkowski_random_nonC(self):
         "Tests pdist(X, 'test_minkowski') [the non-C implementation] on random data."
         eps = 1e-05
@@ -388,7 +388,7 @@ class TestPdist(TestCase):
         Y_test1 = pdist(X, 'minkowski', 3.2)
         #print "minkowski-iris-3.2", numpy.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
-        
+
     def test_pdist_minkowski_iris_nonC(self):
         "Tests pdist(X, 'test_minkowski') [the non-C implementation] on iris data."
         eps = 1e-07
@@ -408,7 +408,7 @@ class TestPdist(TestCase):
         Y_test1 = pdist(X, 'minkowski', 5.8)
         #print "minkowski-iris-5.8", numpy.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
-        
+
     def test_pdist_minkowski_iris_nonC(self):
         "Tests pdist(X, 'test_minkowski') [the non-C implementation] on iris data."
         eps = 1e-07

@@ -1,4 +1,4 @@
-"""Base class for sparse matrix formats using compressed storage  
+"""Base class for sparse matrix formats using compressed storage
 """
 
 __all__ = []
@@ -20,14 +20,14 @@ from sputils import upcast, to_native, isdense, isshape, getdtype, \
 
 class _cs_matrix(_data_matrix):
     """base matrix class for compressed row and column oriented matrices"""
-    
+
     def __init__(self, arg1, shape=None, dtype=None, copy=False, dims=None, nzmax=None):
         _data_matrix.__init__(self)
 
         if dims is not None:
             warn("dims= is deprecated, use shape= instead", DeprecationWarning)
             shape=dims
-        
+
         if nzmax is not None:
             warn("nzmax= is deprecated", DeprecationWarning)
 
@@ -93,8 +93,8 @@ class _cs_matrix(_data_matrix):
     def getnnz(self):
         return self.indptr[-1]
     nnz = property(fget=getnnz)
-    
-    
+
+
     def _set_self(self, other, copy=False):
         """take the member variables of other and assign them to self"""
 
@@ -105,7 +105,7 @@ class _cs_matrix(_data_matrix):
         self.indices = other.indices
         self.indptr  = other.indptr
         self.shape   = other.shape
-    
+
     def check_format(self, full_check=True):
         """check whether the matrix format is valid
 
@@ -186,7 +186,7 @@ class _cs_matrix(_data_matrix):
         elif isspmatrix(other):
             if (other.shape != self.shape):
                 raise ValueError, "inconsistent shapes"
-           
+
             return self._binopt(other,'_plus_')
         elif isdense(other):
             # Convert this matrix to a dense matrix and add them
@@ -254,12 +254,12 @@ class _cs_matrix(_data_matrix):
         elif isspmatrix(other):
             if (other.shape != self.shape):
                 raise ValueError, "inconsistent shapes"
-            
+
             return self._binopt(other,'_eldiv_')
         else:
             raise NotImplementedError
 
-    
+
     def multiply(self, other):
         """Point-wise multiplication by another matrix
         """
@@ -281,15 +281,15 @@ class _cs_matrix(_data_matrix):
 
             #return self._binopt(other,'mu',in_shape=(M,N),out_shape=(M,N))
 
-            major_axis = self._swap((M,N))[0]        
+            major_axis = self._swap((M,N))[0]
             indptr = empty( major_axis + 1, dtype=intc )
-            
+
             other = self.__class__(other) #convert to this format
             fn = getattr(sparsetools, self.format + '_matmat_pass1')
             fn( M, N, self.indptr, self.indices, \
                       other.indptr, other.indices, \
                       indptr)
-            
+
             nnz = indptr[-1]
             indices = empty( nnz, dtype=intc)
             data    = empty( nnz, dtype=upcast(self.dtype,other.dtype))
@@ -298,7 +298,7 @@ class _cs_matrix(_data_matrix):
             fn( M, N, self.indptr, self.indices, self.data, \
                       other.indptr, other.indices, other.data, \
                       indptr, indices, data)
-            
+
             return self.__class__((data,indices,indptr),shape=(M,N))
 
 
@@ -313,9 +313,9 @@ class _cs_matrix(_data_matrix):
     def matvec(self, other, output=None):
         """Sparse matrix vector product (self * other)
 
-        'other' may be a rank 1 array of length N or a rank 2 array 
-        or matrix with shape (N,1).  
-        
+        'other' may be a rank 1 array of length N or a rank 2 array
+        or matrix with shape (N,1).
+
         """
         #If the optional 'output' parameter is defined, it will
         #be used to store the result.  Otherwise, a new vector
@@ -329,7 +329,7 @@ class _cs_matrix(_data_matrix):
 
             # csrmux, cscmux
             fn = getattr(sparsetools,self.format + '_matvec')
-    
+
             #output array
             y = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
 
@@ -367,12 +367,12 @@ class _cs_matrix(_data_matrix):
     def rmatvec(self, other, conjugate=True):
         """Multiplies the vector 'other' by the sparse matrix, returning a
         dense vector as a result.
-        
+
         If 'conjugate' is True:
             - returns A.transpose().conj() * other
         Otherwise:
             - returns A.transpose() * other.
-        
+
         """
         if conjugate:
             return self.transpose().conj().matvec( other )
@@ -382,7 +382,7 @@ class _cs_matrix(_data_matrix):
     @deprecate
     def getdata(self, ind):
         return self.data[ind]
-    
+
     def diagonal(self):
         """Returns the main diagonal of the matrix
         """
@@ -407,12 +407,12 @@ class _cs_matrix(_data_matrix):
     #######################
     # Getting and Setting #
     #######################
-    
+
     def __getitem__(self, key):
         if isinstance(key, tuple):
             row = key[0]
             col = key[1]
-           
+
             #TODO implement CSR[ [1,2,3], X ] with sparse matmat
             #TODO make use of sorted indices
 
@@ -434,7 +434,7 @@ class _cs_matrix(_data_matrix):
             return self[key, :]
         else:
             raise IndexError, "invalid index"
-    
+
 
     def _get_single_element(self,row,col):
         M, N = self.shape
@@ -444,7 +444,7 @@ class _cs_matrix(_data_matrix):
             col += N
         if not (0<=row<M) or not (0<=col<N):
             raise IndexError, "index out of bounds"
-        
+
         major_index, minor_index = self._swap((row,col))
 
         start = self.indptr[major_index]
@@ -462,7 +462,7 @@ class _cs_matrix(_data_matrix):
             raise ValueError,'nonzero entry (%d,%d) occurs more than once' % (row,col)
 
     def _get_slice(self, i, start, stop, stride, shape):
-        """Returns a copy of the elements 
+        """Returns a copy of the elements
             [i, start:stop:string] for row-oriented matrices
             [start:stop:string, i] for column-oriented matrices
         """
@@ -550,9 +550,9 @@ class _cs_matrix(_data_matrix):
                 col += N
             if not (0<=row<M) or not (0<=col<N):
                 raise IndexError, "index out of bounds"
-        
+
             major_index, minor_index = self._swap((row,col))
-        
+
             start = self.indptr[major_index]
             end   = self.indptr[major_index+1]
             indxs = where(minor_index == self.indices[start:end])[0]
@@ -566,7 +566,7 @@ class _cs_matrix(_data_matrix):
                         SparseEfficiencyWarning)
 
                 self.sort_indices()
-   
+
                 newindx = self.indices[start:end].searchsorted(minor_index)
                 newindx += start
 
@@ -595,7 +595,7 @@ class _cs_matrix(_data_matrix):
 
     def todia(self):
         return self.tocoo(copy=False).todia()
-    
+
     def todok(self):
         return self.tocoo(copy=False).todok()
 
@@ -621,14 +621,14 @@ class _cs_matrix(_data_matrix):
 
         from coo import coo_matrix
         return coo_matrix((data,(row,col)), self.shape)
-    
+
     def toarray(self):
         A = self.tocoo(copy=False)
         M = zeros(self.shape, dtype=self.dtype)
         M[A.row, A.col] = A.data
         return M
 
-    ############################################################## 
+    ##############################################################
     # methods that examine or modify the internal data structure #
     ##############################################################
 
@@ -663,7 +663,7 @@ class _cs_matrix(_data_matrix):
         Returns
             - True: if the indices of the matrix are in sorted order
             - False: otherwise
-        
+
         """
 
         #first check to see if result was cached
@@ -692,7 +692,7 @@ class _cs_matrix(_data_matrix):
     def sort_indices(self):
         """Sort the indices of this matrix *in place*
         """
-       
+
         if not self.has_sorted_indices:
             fn = sparsetools.csr_sort_indices
             fn( len(self.indptr) - 1, self.indptr, self.indices, self.data)
@@ -704,12 +704,12 @@ class _cs_matrix(_data_matrix):
         warn('ensure_sorted_indices is deprecated, ' \
                 'use sorted_indices() or sort_indices() instead', \
                 DeprecationWarning)
-        
+
         if inplace:
             self.sort_indices()
         else:
             return self.sorted_indices()
-    
+
     def prune(self):
         """ Remove empty space after all non-zero elements.
         """
@@ -717,11 +717,11 @@ class _cs_matrix(_data_matrix):
 
         if len(self.indptr) != major_dim + 1:
             raise ValueError, "index pointer has invalid length"
-        if len(self.indices) < self.nnz: 
+        if len(self.indices) < self.nnz:
             raise ValueError, "indices array has fewer than nnz elements"
         if len(self.data) < self.nnz:
             raise ValueError, "data array has fewer than nnz elements"
-        
+
         self.data    = self.data[:self.nnz]
         self.indices = self.indices[:self.nnz]
 
@@ -779,5 +779,3 @@ class _cs_matrix(_data_matrix):
         A = self.__class__((data, indices, indptr), shape=out_shape)
         A.has_sorted_indices = True
         return A
-
-

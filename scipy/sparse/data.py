@@ -1,5 +1,5 @@
 """Base class for sparse matrice with a .data attribute
-    
+
     subclasses must provide a _with_data() method that
     creates a new matrix with the same sparsity pattern
     as self but with a different data array
@@ -31,7 +31,7 @@ class _data_matrix(spmatrix):
 
     def _imag(self):
         return self._with_data(self.data.imag)
-    
+
     def __neg__(self):
         return self._with_data(-self.data)
 
@@ -41,7 +41,7 @@ class _data_matrix(spmatrix):
             return self
         else:
             raise NotImplementedError
-    
+
     def __itruediv__(self, other): #self /= other
         if isscalarlike(other):
             recip = 1.0 / other
@@ -55,7 +55,6 @@ class _data_matrix(spmatrix):
 
     def conj(self, copy=False):
         return self._with_data(self.data.conj(),copy=copy)
-    
+
     def copy(self):
         return self._with_data(self.data.copy(),copy=True)
-

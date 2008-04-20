@@ -16,14 +16,14 @@ supported_dtypes = ['int8','uint8','short','ushort','intc','uintc',
 supported_dtypes = [ np.typeDict[x] for x in supported_dtypes]
 
 def upcast(*args):
-    """Returns the nearest supported sparse dtype for the 
+    """Returns the nearest supported sparse dtype for the
     combination of one or more types.
 
     upcast(t0, t1, ..., tn) -> T  where T is a supported dtype
 
     Examples
     --------
-    
+
     >>> upcast('int32')
     <type 'numpy.int32'>
     >>> upcast('bool')
@@ -38,12 +38,12 @@ def upcast(*args):
     for t in args[1:]:
         sample = sample + np.array([0],dtype=t)
 
-    upcast = sample.dtype 
+    upcast = sample.dtype
 
     for t in supported_dtypes:
         if np.can_cast(sample.dtype,t):
             return t
-    
+
     raise TypeError,'no supported conversion for types: %s' % args
 
 
@@ -118,4 +118,3 @@ def _isinstance(x, _class):
 
 def isdense(x):
     return _isinstance(x, np.ndarray)
-

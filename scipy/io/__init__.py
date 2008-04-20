@@ -16,17 +16,17 @@ from numpyio import packbits, unpackbits, bswap, fread, fwrite, \
      convert_objectarray
 
 fread = deprecate_with_doc("""
-scipy.io.fread is can be replaced with raw reading capabilities of NumPy 
-including fromfile as well as memory-mapping capabilities.  
+scipy.io.fread is can be replaced with raw reading capabilities of NumPy
+including fromfile as well as memory-mapping capabilities.
 """)(fread)
 
 fwrite = deprecate_with_doc("""
 scipy.io.fwrite can be replaced with raw writing capabilities of
 NumPy.  Also, remember that files can be directly memory-mapped into NumPy
-arrays which is often a better way of reading especially large files. 
+arrays which is often a better way of reading especially large files.
 
 Look at the tofile methods as well as save and savez for writing arrays into
-easily transported files of data.  
+easily transported files of data.
 """)(fwrite)
 
 bswap = deprecate_with_doc("""
@@ -54,7 +54,7 @@ def scipy_packbits(inp):
 unpackbits = deprecate_with_doc("""
 The functionality of scipy.io.unpackbits is now available in numpy.unpackbits
 The calling convention is different however as the 2-d case is no longer
-specialized. 
+specialized.
 
 Thus, the scipy.unpackbits behavior must be simulated using numpy.unpackbits.
 

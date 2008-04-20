@@ -25,7 +25,7 @@ except (ImportError, AttributeError):
     _have_umfpack = False
 else:
     _have_umfpack = um.umfpack._um is not None
-    
+
 # Allow disabling of nose tests if umfpack not present
 # See end of file for application
 _umfpack_skip = dec.skipif(not _have_umfpack,

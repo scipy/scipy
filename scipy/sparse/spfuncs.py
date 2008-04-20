@@ -82,12 +82,12 @@ def estimate_blocksize(A,efficiency=0.7):
         elif e33 > efficiency:
             return (3,3)
         elif e22 > efficiency:
-            return (2,2) 
+            return (2,2)
         else:
             return (1,1)
 
 def count_blocks(A,blocksize):
-    """For a given blocksize=(r,c) count the number of occupied 
+    """For a given blocksize=(r,c) count the number of occupied
     blocks in a sparse matrix A
     """
     r,c = blocksize
@@ -101,4 +101,3 @@ def count_blocks(A,blocksize):
         return count_blocks(A.T,(c,r))
     else:
         return count_blocks(csr_matrix(A),blocksize)
-

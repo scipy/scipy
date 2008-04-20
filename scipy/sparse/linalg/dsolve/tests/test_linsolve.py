@@ -29,16 +29,15 @@ class TestLinsolve(TestCase):
 
         for t in ['f','d','F','D']:
             eps = finfo(t).eps #floating point epsilon
-            b = b.astype(t) 
+            b = b.astype(t)
 
             for format in ['csc','csr']:
                 Asp = A.astype(t).asformat(format)
 
                 x = spsolve(Asp,b)
-                
+
                 assert( norm(b - Asp*x) < 10 * cond_A * eps )
-                
+
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])
-

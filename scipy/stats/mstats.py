@@ -1,5 +1,5 @@
 """
-An extension of scipy.stats.stats to support masked arrays 
+An extension of scipy.stats.stats to support masked arrays
 
 :author: Pierre GF Gerard-Marchant
 :contact: pierregm_at_uga_edu
@@ -56,7 +56,7 @@ import scipy.stats.futil as futil
 genmissingvaldoc = """
 Notes
 -----
-    Missing values are considered pair-wise: if a value is missing in x, 
+    Missing values are considered pair-wise: if a value is missing in x,
     the corresponding value in y is masked.
 """
 #------------------------------------------------------------------------------
@@ -92,7 +92,7 @@ def _chk_size(a,b):
 def argstoarray(*args):
     """Constructs a 2D array from a sequence of sequences. Sequences are filled
     with missing values to match the length of the longest sequence.
-    
+
     Returns
     -------
         output : MaskedArray
@@ -120,19 +120,19 @@ def argstoarray(*args):
 def find_repeats(arr):
     """Find repeats in arr and return a tuple (repeats, repeat_count).
     Masked values are discarded.
-    
+
 Parameters
 ----------
     arr : sequence
         Input array. The array is flattened if it is not 1D.
-        
+
 Returns
 -------
     repeats : ndarray
         Array of repeated values.
     counts : ndarray
         Array of counts.
-    
+
     """
     marr = ma.compressed(arr)
     if not marr.size:
@@ -142,22 +142,22 @@ Returns
 
 
 def count_tied_groups(x, use_missing=False):
-    """Counts the number of tied values in x, and returns a dictionary 
+    """Counts the number of tied values in x, and returns a dictionary
     (nb of ties: nb of groups).
-    
+
 Parameters
 ----------
     x : sequence
         Sequence of data on which to counts the ties
     use_missing : boolean
         Whether to consider missing values as tied.
-    
+
 Example
 -------
     >>>z = [0, 0, 0, 2, 2, 2, 3, 3, 4, 5, 6]
     >>>count_tied_groups(z)
     >>>{2:1, 3:2}
-    >>># The ties were 0 (3x), 2 (3x) and 3 (2x) 
+    >>># The ties were 0 (3x), 2 (3x) and 3 (2x)
     >>>z = ma.array([0, 0, 1, 2, 2, 2, 3, 3, 4, 5, 6])
     >>>count_tied_groups(z)
     >>>{2:2, 3:1}
@@ -181,14 +181,14 @@ Example
         except KeyError:
             nties[nmasked] = 1
     return nties
-        
+
 
 def rankdata(data, axis=None, use_missing=False):
     """Returns the rank (also known as order statistics) of each data point
     along the given axis.
 
     If some values are tied, their rank is averaged.
-    If some values are masked, their rank is set to 0 if use_missing is False, 
+    If some values are masked, their rank is set to 0 if use_missing is False,
     or set to the average rank of the unmasked values if use_missing is True.
 
     Parameters
@@ -196,8 +196,8 @@ def rankdata(data, axis=None, use_missing=False):
         data : sequence
             Input data. The data is transformed to a masked array
         axis : {None,int} optional
-            Axis along which to perform the ranking. 
-            If None, the array is first flattened. An exception is raised if 
+            Axis along which to perform the ranking.
+            If None, the array is first flattened. An exception is raised if
             the axis is specified for arrays with a dimension larger than 2
         use_missing : {boolean} optional
             Whether the masked values have a rank of 0 (False) or equal to the
@@ -325,7 +325,7 @@ Parameters
     common_mask = ma.mask_or(ma.getmask(x), ma.getmask(y))
     if allow_masked:
         x.unshare_mask()
-        y.unshare_mask() 
+        y.unshare_mask()
         x._mask = y._mask = common_mask
     elif common_mask is not nomask:
         raise ValueError("Cannot process masked data...")
@@ -362,7 +362,7 @@ Parameters
         If True, then each row is a variable with obersvations in columns.
         If False, each column is a variable and the observations are in the rows.
     bias : {False, True} optional
-        Whether to use a biased (True) or unbiased (False) estimate of the 
+        Whether to use a biased (True) or unbiased (False) estimate of the
         covariance.
         If True, then the normalization is by N, the number of observations.
         Otherwise, the normalization is by (N-1).
@@ -420,7 +420,7 @@ def pearsonr(x,y):
         return (masked, masked)
     #
     (mx, my) = (x.mean(), y.mean())
-    (xm, ym) = (x-mx, y-my)   
+    (xm, ym) = (x-mx, y-my)
     #
     r_num = n*(ma.add.reduce(xm*ym))
     r_den = n*ma.sqrt(ma.dot(xm,xm)*ma.dot(ym,ym))
@@ -437,7 +437,7 @@ def pearsonr(x,y):
     else:
         prob = betai(0.5*df,0.5,df/(df+t*t))
     return (r,prob)
-    
+
 
 def spearmanr(x, y, use_ties=True):
     """Calculates a Spearman rank-order correlation coefficient and the p-value
@@ -451,8 +451,8 @@ def spearmanr(x, y, use_ties=True):
     +1 imply an exact linear relationship. Positive correlations imply that
     as x increases, so does y. Negative correlations imply that as x
     increases, y decreases.
-    
-    Missing values are discarded pair-wise: if a value is missing in x, the 
+
+    Missing values are discarded pair-wise: if a value is missing in x, the
     corresponding value in y is masked.
 
     The p-value roughly indicates the probability of an uncorrelated system
@@ -517,9 +517,9 @@ Returns
 
 def kendalltau(x, y, use_ties=True, use_missing=False):
     """Computes Kendall's rank correlation tau on two variables *x* and *y*.
-    
+
 Parameters
-----------    
+----------
     xdata: sequence
         First data list (for example, time).
     ydata: sequence
@@ -527,7 +527,7 @@ Parameters
     use_ties: {True, False} optional
         Whether ties correction should be performed.
     use_missing: {False, True} optional
-        Whether missing data should be allocated a rank of 0 (False) or the 
+        Whether missing data should be allocated a rank of 0 (False) or the
         average rank (True)
     """
     (x, y, n) = _chk_size(x, y)
@@ -542,9 +542,9 @@ Parameters
     ry = ma.masked_equal(rankdata(y, use_missing=use_missing),0)
     idx = rx.argsort()
     (rx, ry) = (rx[idx], ry[idx])
-    C = np.sum((((ry[i+1:]>ry[i])*(rx[i+1:]>rx[i])).filled(0).sum() 
+    C = np.sum((((ry[i+1:]>ry[i])*(rx[i+1:]>rx[i])).filled(0).sum()
                 for i in range(len(ry)-1)))
-    D = np.sum((((ry[i+1:]<ry[i])*(rx[i+1:]>rx[i])).filled(0).sum() 
+    D = np.sum((((ry[i+1:]<ry[i])*(rx[i+1:]>rx[i])).filled(0).sum()
                 for i in range(len(ry)-1)))
     if use_ties:
         xties = count_tied_groups(x)
@@ -575,12 +575,12 @@ Parameters
     return (tau,prob)
 
 
-def kendalltau_seasonal(x):    
+def kendalltau_seasonal(x):
     """Computes a multivariate extension Kendall's rank correlation tau, designed
     for seasonal data.
-    
+
 Parameters
-----------    
+----------
     x: 2D array
         Array of seasonal data, with seasons in columns.
     """
@@ -606,7 +606,7 @@ Parameters
         corr_j = np.sum(v*k*(k-1) for (k,v) in ties_j.iteritems())
         cmb = n_p[j]*(n_p[j]-1)
         for k in range(j,m,1):
-            K[j,k] = np.sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum() 
+            K[j,k] = np.sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
                                for i in range(n))
             covmat[j,k] = (K[j,k] +4*(R[:,j]*R[:,k]).sum() - \
                            n*(n_p[j]+1)*(n_p[k]+1))/3.
@@ -693,7 +693,7 @@ def linregress(*args):
         r = 0.0
     else:
         r = Sxy / r_den
-        if (r > 1.0): 
+        if (r > 1.0):
             r = 1.0 # from numerical error
     #z = 0.5*log((1.0+r+TINY)/(1.0-r+TINY))
     df = n-2
@@ -709,7 +709,7 @@ linregress.__doc__ = stats.linregress.__doc__ + genmissingvaldoc
 def theilslopes(y, x=None, alpha=0.05):
     """Computes the Theil slope over the dataset (x,y), as the median of all slopes
     between paired values.
-    
+
     Parameters
     ----------
         y : sequence
@@ -718,7 +718,7 @@ def theilslopes(y, x=None, alpha=0.05):
             Independent variable. If None, use arange(len(y)) instead.
         alpha : float
             Confidence degree.
-    
+
     """
     y = ma.asarray(y).flatten()
     y[-1] = masked
@@ -736,7 +736,7 @@ def theilslopes(y, x=None, alpha=0.05):
     slopes = ma.hstack([(y[i+1:]-y[i])/(x[i+1:]-x[i]) for i in range(n-1)])
     slopes.sort()
     medslope = ma.median(slopes)
-    medinter = ma.median(y) - medslope*ma.median(x) 
+    medinter = ma.median(y) - medslope*ma.median(x)
     #
     if alpha > 0.5:
         alpha = 1.-alpha
@@ -748,7 +748,7 @@ def theilslopes(y, x=None, alpha=0.05):
     sigsq -= np.sum(v*k*(k-1)*(2*k+5) for (k,v) in xties.iteritems())
     sigsq -= np.sum(v*k*(k-1)*(2*k+5) for (k,v) in yties.iteritems())
     sigma = np.sqrt(sigsq)
-    
+
     Ru = np.round((nt - z*sigma)/2. + 1)
     Rl = np.round((nt + z*sigma)/2.)
     delta = slopes[[Rl,Ru]]
@@ -759,7 +759,7 @@ def sen_seasonal_slopes(x):
     x = ma.array(x, subok=True, copy=False, ndmin=2)
     (n,_) = x.shape
     # Get list of slopes per season
-    szn_slopes = ma.vstack([(x[i+1:]-x[i])/np.arange(1,n-i)[:,None] 
+    szn_slopes = ma.vstack([(x[i+1:]-x[i])/np.arange(1,n-i)[:,None]
                             for i in range(n)])
     szn_medslopes = ma.median(szn_slopes, axis=0)
     medslope = ma.median(szn_slopes, axis=None)
@@ -830,21 +830,21 @@ chisquare.__doc__ = stats.chisquare.__doc__
 def mannwhitneyu(x,y, use_continuity=True):
     """Computes the Mann-Whitney on samples x and y.
     Missing values in x and/or y are discarded.
-    
+
     Parameters
     ----------
         x : sequence
         y : sequence
         use_continuity : {True, False} optional
             Whether a continuity correction (1/2.) should be taken into account.
-            
+
     Returns
     -------
         u : float
             The Mann-Whitney statistics
         prob : float
             Approximate p-value assuming a normal distribution.
-    
+
     """
     x = ma.asarray(x).compressed().view(ndarray)
     y = ma.asarray(y).compressed().view(ndarray)
@@ -860,7 +860,7 @@ def mannwhitneyu(x,y, use_continuity=True):
     ties = count_tied_groups(ranks)
     sigsq -= np.sum(v*(k**3-k) for (k,v) in ties.iteritems())/12.
     sigsq *= nx*ny/float(nt*(nt-1))
-    #    
+    #
     if use_continuity:
         z = (U - 1/2. - mu) / ma.sqrt(sigsq)
     else:
@@ -903,11 +903,11 @@ def _kolmog1(x,n):
                                        + (n-j) * np.log(1-x-j/float(n))
                                        + (j-1) * np.log(x+j/float(n))))
 
-    
+
 def ks_twosamp(data1, data2, alternative="two_sided"):
-    """Computes the Kolmogorov-Smirnov test on two samples. 
+    """Computes the Kolmogorov-Smirnov test on two samples.
     Missing values are discarded.
-    
+
     Parameters
     ----------
         data1 : sequence
@@ -915,15 +915,15 @@ def ks_twosamp(data1, data2, alternative="two_sided"):
         data2 : sequence
             Second data set
         alternative : {'two_sided', 'less', 'greater'} optional
-            Indicates the alternative hypothesis. 
-    
+            Indicates the alternative hypothesis.
+
     Returns
     -------
         d : float
             Value of the Kolmogorov Smirnov test
         p : float
             Corresponding p-value.
-    
+
     """
     (data1, data2) = (ma.asarray(data1), ma.asarray(data2))
     (n1, n2) = (data1.count(), data2.count())
@@ -997,23 +997,23 @@ Returns
     return a
 
 
-def trima(a, limits=None, inclusive=(True,True)):  
+def trima(a, limits=None, inclusive=(True,True)):
     """Trims an array by masking the data outside some given limits.
     Returns a masked version of the input array.
-    
+
     Parameters
     ----------
     a : sequence
         Input array.
     limits : {None, tuple} optional
-        Tuple of (lower limit, upper limit) in absolute values. 
-        Values of the input array lower (greater) than the lower (upper) limit 
+        Tuple of (lower limit, upper limit) in absolute values.
+        Values of the input array lower (greater) than the lower (upper) limit
         will be masked. A limit is None indicates an open interval.
     inclusive : {(True,True) tuple} optional
         Tuple of (lower flag, upper flag), indicating whether values exactly
         equal to the lower (upper) limit are allowed.
-        
-    """ 
+
+    """
     a = ma.asarray(a)
     a.unshare_mask()
     if limits is None:
@@ -1033,20 +1033,20 @@ def trima(a, limits=None, inclusive=(True,True)):
             condition |= (a >= upper_lim)
     a[condition.filled(True)] = masked
     return a
-    
+
 
 def trimr(a, limits=None, inclusive=(True, True), axis=None):
     """Trims an array by masking some proportion of the data on each end.
     Returns a masked version of the input array.
-    
+
     Parameters
     ----------
     a : sequence
         Input array.
     limits : {None, tuple} optional
-        Tuple of the percentages to cut on each side of the array, with respect 
+        Tuple of the percentages to cut on each side of the array, with respect
         to the number of unmasked data, as floats between 0. and 1.
-        Noting n the number of unmasked data before trimming, the (n*limits[0])th 
+        Noting n the number of unmasked data before trimming, the (n*limits[0])th
         smallest data and the (n*limits[1])th largest data are masked, and the
         total number of unmasked data after trimming is n*(1.-sum(limits))
         The value of one limit can be set to None to indicate an open interval.
@@ -1054,9 +1054,9 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
         Tuple of flags indicating whether the number of data being masked on the
         left (right) end should be truncated (True) or rounded (False) to integers.
     axis : {None,int} optional
-        Axis along which to trim. If None, the whole array is trimmed, but its 
+        Axis along which to trim. If None, the whole array is trimmed, but its
         shape is maintained.
-    
+
     """
     def _trimr1D(a, low_limit, up_limit, low_inclusive, up_inclusive):
         n = a.count()
@@ -1096,26 +1096,26 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
         return _trimr1D(a.ravel(),lolim,uplim,loinc,upinc).reshape(shp)
     else:
         return ma.apply_along_axis(_trimr1D, axis, a, lolim,uplim,loinc,upinc)
- 
+
 trimdoc = """
     Parameters
     ----------
     a : sequence
         Input array
     limits : {None, tuple} optional
-        If relative == False, tuple (lower limit, upper limit) in absolute values. 
-        Values of the input array lower (greater) than the lower (upper) limit are 
+        If relative == False, tuple (lower limit, upper limit) in absolute values.
+        Values of the input array lower (greater) than the lower (upper) limit are
         masked.
-        If relative == True, tuple (lower percentage, upper percentage) to cut 
-        on each side of the  array, with respect to the number of unmasked data. 
-        Noting n the number of unmasked data before trimming, the (n*limits[0])th 
+        If relative == True, tuple (lower percentage, upper percentage) to cut
+        on each side of the  array, with respect to the number of unmasked data.
+        Noting n the number of unmasked data before trimming, the (n*limits[0])th
         smallest data and the (n*limits[1])th largest data are masked, and the
         total number of unmasked data after trimming is n*(1.-sum(limits))
         In each case, the value of one limit can be set to None to indicate an
         open interval.
         If limits is None, no trimming is performed
     inclusive : {(True, True) tuple} optional
-        If relative==False, tuple indicating whether values exactly equal to the 
+        If relative==False, tuple indicating whether values exactly equal to the
         absolute limits are allowed.
         If relative==True, tuple indicating whether the number of data being masked
         on each side should be rounded (True) or truncated (False).
@@ -1124,14 +1124,14 @@ trimdoc = """
         to cut (True).
     axis : {None, integer}, optional
         Axis along which to trim.
-"""       
-        
-    
+"""
+
+
 def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
     """Trims an array by masking the data outside some given limits.
     Returns a masked version of the input array.
    %s
-        
+
     Examples
     --------
         >>>z = [ 1, 2, 3, 4, 5, 6, 7, 8, 9,10]
@@ -1139,19 +1139,19 @@ def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
         [--,--, 3, 4, 5, 6, 7, 8,--,--]
         >>>trim(z,(0.1,0.2),relative=True)
         [--, 2, 3, 4, 5, 6, 7, 8,--,--]
-        
-    
+
+
     """
     if relative:
-        return trimr(a, limits=limits, inclusive=inclusive, axis=axis) 
+        return trimr(a, limits=limits, inclusive=inclusive, axis=axis)
     else:
-        return trima(a, limits=limits, inclusive=inclusive) 
+        return trima(a, limits=limits, inclusive=inclusive)
 trim.__doc__ = trim.__doc__ % trimdoc
 
 
 def trimboth(data, proportiontocut=0.2, inclusive=(True,True), axis=None):
-    """Trims the data by masking the int(proportiontocut*n) smallest and 
-    int(proportiontocut*n) largest values of data along the given axis, where n 
+    """Trims the data by masking the int(proportiontocut*n) smallest and
+    int(proportiontocut*n) largest values of data along the given axis, where n
     is the number of unmasked values before trimming.
 
 Parameters
@@ -1159,25 +1159,25 @@ Parameters
     data : ndarray
         Data to trim.
     proportiontocut : {0.2, float} optional
-        Percentage of trimming (as a float between 0 and 1). 
-        If n is the number of unmasked values before trimming, the number of 
+        Percentage of trimming (as a float between 0 and 1).
+        If n is the number of unmasked values before trimming, the number of
         values after trimming is:
             (1-2*proportiontocut)*n.
     inclusive : {(True, True) tuple} optional
-        Tuple indicating whether the number of data being masked on each side 
+        Tuple indicating whether the number of data being masked on each side
         should be rounded (True) or truncated (False).
     axis : {None, integer}, optional
-        Axis along which to perform the trimming. 
+        Axis along which to perform the trimming.
         If None, the input array is first flattened.
 
     """
-    return trimr(data, limits=(proportiontocut,proportiontocut), 
+    return trimr(data, limits=(proportiontocut,proportiontocut),
                  inclusive=inclusive, axis=axis)
-    
+
 #..............................................................................
-def trimtail(data, proportiontocut=0.2, tail='left', inclusive=(True,True), 
+def trimtail(data, proportiontocut=0.2, tail='left', inclusive=(True,True),
              axis=None):
-    """Trims the data by masking int(trim*n) values from ONE tail of the 
+    """Trims the data by masking int(trim*n) values from ONE tail of the
     data along the given axis, where n is the number of unmasked values.
 
 Parameters
@@ -1185,17 +1185,17 @@ Parameters
     data : {ndarray}
         Data to trim.
     proportiontocut : {0.2, float} optional
-        Percentage of trimming. If n is the number of unmasked values 
-        before trimming, the number of values after trimming is 
+        Percentage of trimming. If n is the number of unmasked values
+        before trimming, the number of values after trimming is
         (1-proportiontocut)*n.
     tail : {'left','right'} optional
         If left (right), the ``proportiontocut`` lowest (greatest) values will
-        be masked. 
+        be masked.
     inclusive : {(True, True) tuple} optional
-        Tuple indicating whether the number of data being masked on each side 
+        Tuple indicating whether the number of data being masked on each side
         should be rounded (True) or truncated (False).
     axis : {None, integer}, optional
-        Axis along which to perform the trimming. 
+        Axis along which to perform the trimming.
         If None, the input array is first flattened.
 
     """
@@ -1205,14 +1205,14 @@ Parameters
     elif tail == 'r':
         limits = (None, proportiontocut)
     else:
-        raise TypeError("The tail argument should be in ('left','right')")   
+        raise TypeError("The tail argument should be in ('left','right')")
     return trimr(data, limits=limits, axis=axis, inclusive=inclusive)
 
 trim1 = trimtail
 
-def trimmed_mean(a, limits=(0.1,0.1), inclusive=(1,1), relative=True, 
+def trimmed_mean(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
                  axis=None):
-    """Returns the trimmed mean of the data along the given axis. 
+    """Returns the trimmed mean of the data along the given axis.
 
     %s
 
@@ -1225,9 +1225,9 @@ def trimmed_mean(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
         return trima(a,limits=limits,inclusive=inclusive).mean(axis=axis)
 
 
-def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True, 
+def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
                 axis=None, ddof=0):
-    """Returns the trimmed variance of the data along the given axis. 
+    """Returns the trimmed variance of the data along the given axis.
 
     %s
     ddof : {0,integer}, optional
@@ -1245,9 +1245,9 @@ def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
     return out.var(axis=axis, ddof=ddof)
 
 
-def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True, 
+def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
                 axis=None, ddof=0):
-    """Returns the trimmed standard deviation of the data along the given axis. 
+    """Returns the trimmed standard deviation of the data along the given axis.
 
     %s
     ddof : {0,integer}, optional
@@ -1273,16 +1273,16 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
     a : sequence
         Input array
     limits : {(0.1,0.1), tuple of float} optional
-        tuple (lower percentage, upper percentage) to cut  on each side of the  
-        array, with respect to the number of unmasked data. 
-        Noting n the number of unmasked data before trimming, the (n*limits[0])th 
+        tuple (lower percentage, upper percentage) to cut  on each side of the
+        array, with respect to the number of unmasked data.
+        Noting n the number of unmasked data before trimming, the (n*limits[0])th
         smallest data and the (n*limits[1])th largest data are masked, and the
         total number of unmasked data after trimming is n*(1.-sum(limits))
         In each case, the value of one limit can be set to None to indicate an
         open interval.
         If limits is None, no trimming is performed
     inclusive : {(True, True) tuple} optional
-        Tuple indicating whether the number of data being masked on each side 
+        Tuple indicating whether the number of data being masked on each side
         should be rounded (True) or truncated (False).
     axis : {None, integer}, optional
         Axis along which to trim.
@@ -1369,31 +1369,31 @@ tsem.__doc__ = stats.tsem.__doc__
 
 def winsorize(a, limits=None, inclusive=(True,True), inplace=False, axis=None):
     """Returns a Winsorized version of the input array.
-    
-    The (limits[0])th lowest values are set to the (limits[0])th percentile, 
-    and the (limits[1])th highest values are set to the (limits[1])th 
+
+    The (limits[0])th lowest values are set to the (limits[0])th percentile,
+    and the (limits[1])th highest values are set to the (limits[1])th
     percentile.
     Masked values are skipped.
-    
-    
+
+
     Parameters
     ----------
     a : sequence
         Input array.
     limits : {None, tuple of float} optional
-        Tuple of the percentages to cut on each side of the array, with respect 
+        Tuple of the percentages to cut on each side of the array, with respect
         to the number of unmasked data, as floats between 0. and 1.
-        Noting n the number of unmasked data before trimming, the (n*limits[0])th 
+        Noting n the number of unmasked data before trimming, the (n*limits[0])th
         smallest data and the (n*limits[1])th largest data are masked, and the
         total number of unmasked data after trimming is n*(1.-sum(limits))
         The value of one limit can be set to None to indicate an open interval.
     inclusive : {(True, True) tuple} optional
-        Tuple indicating whether the number of data being masked on each side 
+        Tuple indicating whether the number of data being masked on each side
         should be rounded (True) or truncated (False).
     inplace : {False, True} optional
         Whether to winsorize in place (True) or to use a copy (False)
     axis : {None, int} optional
-        Axis along which to trim. If None, the whole array is trimmed, but its 
+        Axis along which to trim. If None, the whole array is trimmed, but its
         shape is maintained.
 
     """
@@ -1437,7 +1437,7 @@ def winsorize(a, limits=None, inclusive=(True,True), inplace=False, axis=None):
         return _winsorize1D(a.ravel(),lolim,uplim,loinc,upinc).reshape(shp)
     else:
         return ma.apply_along_axis(_winsorize1D, axis,a,lolim,uplim,loinc,upinc)
- 
+
 
 #####--------------------------------------------------------------------------
 #---- --- Moments ---
@@ -1540,7 +1540,7 @@ median along the given axis. masked values are discarded.
         data : ndarray
             Data to trim.
         axis : {None,int} optional
-            Axis along which to perform the trimming. 
+            Axis along which to perform the trimming.
             If None, the input array is first flattened.
 
     """
@@ -1603,7 +1603,7 @@ def kurtosistest(a, axis=0):
     term2 = ma.power((1-2.0/A)/denom,1/3.0)
     Z = ( term1 - term2 ) / np.sqrt(2/(9.0*A))
     return Z, (1.0-stats.zprob(Z))*2
-kurtosistest.__doc__ = stats.kurtosistest.__doc__ 
+kurtosistest.__doc__ = stats.kurtosistest.__doc__
 
 
 def normaltest(a, axis=0):
@@ -1658,7 +1658,7 @@ Parameters
     beta : {0.4, float} optional
         Plotting positions parameter.
     axis : {None, int} optional
-        Axis along which to perform the trimming. 
+        Axis along which to perform the trimming.
         If None, the input array is first flattened.
     limit : tuple
         Tuple of (lower, upper) values. Values of a outside this closed interval
@@ -1679,8 +1679,8 @@ Parameters
     # Initialization & checks ---------
     data = ma.array(data, copy=False)
     if limit:
-        condition = (limit[0]<data) & (data<limit[1]) 
-        data[condition.filled(True)] = masked 
+        condition = (limit[0]<data) & (data<limit[1])
+        data[condition.filled(True)] = masked
     p = np.array(prob, copy=False, ndmin=1)
     m = alphap + p*(1.-alphap-betap)
     # Computes quantiles along axis (or globally)
@@ -1689,7 +1689,7 @@ Parameters
     else:
         assert data.ndim <= 2, "Array should be 2D at most !"
         return ma.apply_along_axis(_quantiles1D, axis, data, m, p)
-    
+
 
 def scoreatpercentile(data, per, limit=(), alphap=.4, betap=.4):
     """Calculate the score at the given 'per' percentile of the
@@ -1747,7 +1747,7 @@ Parameters
     plpos[data.argsort()[:n]] = (np.arange(1,n+1) - alpha)/(n+1-alpha-beta)
     return ma.array(plpos, mask=data._mask)
 
-meppf = plotting_positions    
+meppf = plotting_positions
 
 #####--------------------------------------------------------------------------
 #---- --- Variability ---
@@ -1776,11 +1776,11 @@ Returns: transformed data for use in an ANOVA
     if not ma.allclose(v,data.mean(0)):
         raise ValueError("Lack of convergence in obrientransform.")
     return data
-    
+
 
 def signaltonoise(data, axis=0):
-    """Calculates the signal-to-noise ratio, as the ratio of the mean over 
-    standard deviation along the given axis.  
+    """Calculates the signal-to-noise ratio, as the ratio of the mean over
+    standard deviation along the given axis.
 
     Parameters
     ----------
@@ -1808,11 +1808,11 @@ def samplevar(data, axis=0):
             Axis along which to compute. If None, the computation is performed
             on a flat version of the array.
     """
-    return ma.asarray(data).var(axis=axis,ddof=0)    
+    return ma.asarray(data).var(axis=axis,ddof=0)
 
 
 def samplestd(data, axis=0):
-    """Returns a biased estimate of the standard deviation of the data, as the 
+    """Returns a biased estimate of the standard deviation of the data, as the
     square root of the average squared deviations from the mean.
 
     Parameters
@@ -1822,13 +1822,13 @@ def samplestd(data, axis=0):
         axis : {0,int} optional
             Axis along which to compute. If None, the computation is performed
             on a flat version of the array.
-            
+
     Notes
     -----
-        samplestd(a) is equivalent to a.std(ddof=0)  
-            
+        samplestd(a) is equivalent to a.std(ddof=0)
+
     """
-    return ma.asarray(data).std(axis=axis,ddof=0)   
+    return ma.asarray(data).std(axis=axis,ddof=0)
 
 
 def var(a,axis=None):
@@ -1919,12 +1919,12 @@ def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     return n_um / d_en
 
 
-    
+
 def friedmanchisquare(*args):
     """Friedman Chi-Square is a non-parametric, one-way within-subjects ANOVA.
-    This function calculates the Friedman Chi-square test for repeated measures 
-    and returns the result, along with the associated probability value.  
-    
+    This function calculates the Friedman Chi-square test for repeated measures
+    and returns the result, along with the associated probability value.
+
     Each input is considered a given group. Ideally, the number of treatments
     among each group should be equal. If this is not the case, only the first
     n treatments are taken into account, where n is the number of treatments
@@ -1932,9 +1932,9 @@ def friedmanchisquare(*args):
     If a group has some missing values, the corresponding treatments are masked
     in the other groups.
     The test statistic is corrected for ties.
-    
+
     Masked values in one group are propagated to the other groups.
-    
+
     Returns: chi-square statistic, associated p-value
     """
     data = argstoarray(*args).astype(float)

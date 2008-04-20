@@ -78,7 +78,7 @@ def spsolve(A, b, permc_spec=2):
         if A.dtype.char not in 'dD':
             raise ValueError, "convert matrix data to double, please, using"\
                   " .astype(), or set linsolve.useUmfpack = False"
-        
+
         b = asarray(b, dtype=A.dtype).reshape(-1)
 
         family = {'d' : 'di', 'D' : 'zi'}
@@ -116,7 +116,7 @@ def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
 
     A.sort_indices()
     A = A.asfptype()  #upcast to a floating point format
-    
+
     M, N = A.shape
     if (M != N):
         raise ValueError, "can only factor square matrices" #is this true?
@@ -160,4 +160,3 @@ def factorized( A ):
         return solve
     else:
         return splu( A ).solve
-

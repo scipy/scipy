@@ -8,7 +8,7 @@ system of first order ODEs with prescribed initial conditions::
     d y(t)[i]
     ---------  = f(t,y(t))[i],
        d t
-    
+
     y(t=0)[i] = y0[i],
 
 where::
@@ -20,7 +20,7 @@ class ode
 
 A generic interface class to numeric integrators. It has the following
 methods::
-  
+
     integrator = ode(f,jac=None)
     integrator = integrator.set_integrator(name,**params)
     integrator = integrator.set_initial_value(y0,t0=0.0)
@@ -108,22 +108,22 @@ __doc__ += integrator_info
 #   To wrap cvode to Python, one must write extension module by
 #   hand. Its interface is too much 'advanced C' that using f2py
 #   would be too complicated (or impossible).
-# 
+#
 # How to define a new integrator:
 # ===============================
-# 
+#
 # class myodeint(IntegratorBase):
-# 
+#
 #     runner = <odeint function> or None
-# 
+#
 #     def __init__(self,...):                           # required
 #         <initialize>
-# 
+#
 #     def reset(self,n,has_jac):                        # optional
 #         # n - the size of the problem (number of equations)
 #         # has_jac - whether user has supplied its own routine for Jacobian
 #         <allocate memory,initialize further>
-# 
+#
 #     def run(self,f,jac,y0,t0,t1,f_params,jac_params): # required
 #         # this method is called to integrate from t=t0 to t=t1
 #         # with initial condition y0. f and jac are user-supplied functions
@@ -134,11 +134,11 @@ __doc__ += integrator_info
 #         if <calculation was unsuccesful>:
 #             self.success = 0
 #         return t1,y1
-# 
+#
 #     # In addition, one can define step() and run_relax() methods (they
 #     # take the same arguments as run()) if the integrator can support
 #     # these features (see IntegratorBase doc strings).
-# 
+#
 # if myodeint.runner:
 #     IntegratorBase.integrator_classes.append(myodeint)
 
@@ -158,7 +158,7 @@ class ode(object):
 A generic interface class to numeric integrators.
 
 See also
---------    
+--------
 odeint : an integrator with a simpler interface based on lsoda from ODEPACK
 quad : for finding the area under a curve
 
@@ -533,7 +533,7 @@ class zvode(vode):
         rwork[5] = self.max_step
         rwork[6] = self.min_step
         self.rwork = rwork
-        
+
         iwork = zeros((liw,), int32)
         if self.ml is not None:
             iwork[0] = self.ml
@@ -543,7 +543,7 @@ class zvode(vode):
         iwork[5] = self.nsteps
         iwork[6] = 2           # mxhnil
         self.iwork = iwork
-        
+
         self.call_args = [self.rtol,self.atol,1,1,
                           self.zwork,self.rwork,self.iwork,mf]
         self.success = 1

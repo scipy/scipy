@@ -7,7 +7,7 @@ def configuration(parent_package='',top_path=None):
     import numpy
     from numpy.distutils.misc_util import Configuration
 
-    config = Configuration('sparse',parent_package,top_path, 
+    config = Configuration('sparse',parent_package,top_path,
                            setup_name = 'setupscons.py')
 
     config.add_data_dir('tests')

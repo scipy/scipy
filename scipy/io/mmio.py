@@ -124,7 +124,7 @@ class MMFile (object):
     SYMMETRY_SYMMETRIC      = 'symmetric'
     SYMMETRY_SKEW_SYMMETRIC = 'skew-symmetric'
     SYMMETRY_HERMITIAN      = 'hermitian'
-    SYMMETRY_VALUES = ( SYMMETRY_GENERAL,        SYMMETRY_SYMMETRIC, 
+    SYMMETRY_VALUES = ( SYMMETRY_GENERAL,        SYMMETRY_SYMMETRIC,
                         SYMMETRY_SKEW_SYMMETRIC, SYMMETRY_HERMITIAN)
 
     @classmethod
@@ -217,7 +217,7 @@ class MMFile (object):
                     stream = bz2.BZ2File(filespec, 'r')
                 else:
                     stream = open(filespec, mode)
-     
+
             # open for writing
             else:
                 if filespec[-4:] != '.mtx':
@@ -257,7 +257,7 @@ class MMFile (object):
     @staticmethod
     def _field_template(field, precision):
         return {
-          MMFile.FIELD_REAL: '%%.%ie\n' % precision, 
+          MMFile.FIELD_REAL: '%%.%ie\n' % precision,
           MMFile.FIELD_INTEGER: '%i\n',
           MMFile.FIELD_COMPLEX: '%%.%ie %%.%ie\n' % (precision,precision)
         }.get(field, None)
@@ -296,7 +296,7 @@ class MMFile (object):
         attrs = self.__class__.__slots__
         public_attrs = [attr[1:] for attr in attrs]
         invalid_keys = set(kwargs.keys()) - set(public_attrs)
-       
+
         if invalid_keys:
             raise ValueError, \
               'found %s invalid keyword arguments, please only use %s' % \
@@ -395,10 +395,10 @@ class MMFile (object):
             except:
                 # fallback - fromfile fails for some file-like objects
                 flat_data = fromstring(stream.read(), sep=' ')
-                
+
                 # TODO use iterator (e.g. xreadlines) to avoid reading
                 # the whole file into memory
-            
+
             if is_pattern:
                 flat_data = flat_data.reshape(-1,2)
                 I = ascontiguousarray(flat_data[:,0], dtype='intc')

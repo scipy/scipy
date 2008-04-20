@@ -13,4 +13,3 @@ class NullTester(object):
               'Need nose >=0.10 for tests - see %s' % \
               'http://somethingaboutorange.com/mrl/projects/nose'
     bench = test
-    

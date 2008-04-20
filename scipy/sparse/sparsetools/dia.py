@@ -51,40 +51,39 @@ del types
 
 
 def dia_matvec(*args):
-  """
-    dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets, 
-        signed char diags, signed char Xx, signed char Yx)
-    dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets, 
-        unsigned char diags, unsigned char Xx, unsigned char Yx)
-    dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets, 
-        short diags, short Xx, short Yx)
-    dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets, 
-        unsigned short diags, unsigned short Xx, 
-        unsigned short Yx)
-    dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets, 
-        int diags, int Xx, int Yx)
-    dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets, 
-        unsigned int diags, unsigned int Xx, unsigned int Yx)
-    dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets, 
-        long long diags, long long Xx, long long Yx)
-    dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets, 
-        unsigned long long diags, unsigned long long Xx, 
-        unsigned long long Yx)
-    dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets, 
-        float diags, float Xx, float Yx)
-    dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets, 
-        double diags, double Xx, double Yx)
-    dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets, 
-        long double diags, long double Xx, long double Yx)
-    dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets, 
-        npy_cfloat_wrapper diags, npy_cfloat_wrapper Xx, 
-        npy_cfloat_wrapper Yx)
-    dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets, 
-        npy_cdouble_wrapper diags, npy_cdouble_wrapper Xx, 
-        npy_cdouble_wrapper Yx)
-    dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets, 
-        npy_clongdouble_wrapper diags, npy_clongdouble_wrapper Xx, 
-        npy_clongdouble_wrapper Yx)
     """
-  return _dia.dia_matvec(*args)
-
+      dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
+          signed char diags, signed char Xx, signed char Yx)
+      dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
+          unsigned char diags, unsigned char Xx, unsigned char Yx)
+      dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
+          short diags, short Xx, short Yx)
+      dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
+          unsigned short diags, unsigned short Xx,
+          unsigned short Yx)
+      dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
+          int diags, int Xx, int Yx)
+      dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
+          unsigned int diags, unsigned int Xx, unsigned int Yx)
+      dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
+          long long diags, long long Xx, long long Yx)
+      dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
+          unsigned long long diags, unsigned long long Xx,
+          unsigned long long Yx)
+      dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
+          float diags, float Xx, float Yx)
+      dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
+          double diags, double Xx, double Yx)
+      dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
+          long double diags, long double Xx, long double Yx)
+      dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
+          npy_cfloat_wrapper diags, npy_cfloat_wrapper Xx,
+          npy_cfloat_wrapper Yx)
+      dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
+          npy_cdouble_wrapper diags, npy_cdouble_wrapper Xx,
+          npy_cdouble_wrapper Yx)
+      dia_matvec(int n_row, int n_col, int n_diags, int L, int offsets,
+          npy_clongdouble_wrapper diags, npy_clongdouble_wrapper Xx,
+          npy_clongdouble_wrapper Yx)
+      """
+    return _dia.dia_matvec(*args)

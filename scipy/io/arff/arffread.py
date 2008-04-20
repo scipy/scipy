@@ -12,7 +12,7 @@ from scipy.io.arff.utils import partial
 
 __all__ = ['MetaData', 'loadarff', 'ArffError', 'ParseArffError']
 
-# An Arff file is basically two parts: 
+# An Arff file is basically two parts:
 #   - header
 #   - data
 #
@@ -42,7 +42,7 @@ r_attribute = re.compile(r'^@[Aa][Tt][Tt][Rr][Ii][Bb][Uu][Tt][Ee]\s*(..*$)')
 r_comattrval = re.compile(r"'(..+)'\s+(..+$)")
 # To get attributes name enclosed with '', possibly spread accross multilines
 r_mcomattrval = re.compile(r"'([..\n]+)'\s+(..+$)")
-# To get normal attributes 
+# To get normal attributes
 r_wcomattrval = re.compile(r"(\S+)\s+(..+$)")
 
 #-------------------------
@@ -61,7 +61,7 @@ class ParseArffError(ArffError):
 # An attribute  is defined as @attribute name value
 def parse_type(attrtype):
     """Given an arff attribute value (meta data), returns its type.
-    
+
     Expect the value to be a name."""
     uattribute = attrtype.lower().strip()
     if uattribute[0] == '{':
@@ -83,7 +83,7 @@ def parse_type(attrtype):
 def get_nominal(attribute):
     """If attribute is nominal, returns a list of the values"""
     return attribute.split(',')
-        
+
 def read_data_list(ofile):
     """Read each line of the iterable and put it in a list."""
     data = [ofile.next()]
@@ -105,9 +105,9 @@ def get_ndata(ofile):
 def maxnomlen(atrv):
     """Given a string contening a nominal type definition, returns the string
     len of the biggest component.
-    
+
     A nominal type is defined as seomthing framed between brace ({}).
-    
+
     Example: maxnomlen("{floup, bouga, fl, ratata}") returns 6 (the size of
     ratata, the longest nominal value)."""
     nomtp = get_nom_val(atrv)
@@ -115,10 +115,10 @@ def maxnomlen(atrv):
 
 def get_nom_val(atrv):
     """Given a string contening a nominal type, returns a tuple of the possible
-    values.    
-    
+    values.
+
     A nominal type is defined as something framed between brace ({}).
-    
+
     Example: get_nom_val("{floup, bouga, fl, ratata}") returns ("floup",
     "bouga", "fl", "ratata")."""
     r_nominal = re.compile('{(..+)}')
@@ -130,7 +130,7 @@ def get_nom_val(atrv):
 
 def go_data(ofile):
     """Skip header.
-    
+
     the first next() call of the returned iterator will be the @data line"""
     return itertools.dropwhile(lambda x : not r_datameta.match(x), ofile)
 
@@ -139,18 +139,18 @@ def go_data(ofile):
 #----------------
 def tokenize_attribute(iterable, attribute):
     """Parse a raw string in header (eg starts by @attribute).
-    
+
     Given a raw string attribute, try to get the name and type of the
     attribute. Constraints:
         - The first line must start with @attribute (case insensitive, and
           space like characters begore @attribute are allowed)
-        - Works also if the attribute is spread on multilines. 
+        - Works also if the attribute is spread on multilines.
         - Works if empty lines or comments are in between
-    
+
     :Parameters:
         attribute : str
-            the attribute string. 
-    
+            the attribute string.
+
     :Returns:
         name : str
             name of the attribute
@@ -205,7 +205,7 @@ def tokenize_multilines(iterable, val):
     else:
         raise ValueError("Cannot parse attribute names spread over multi "\
                         "lines yet")
-    
+
 def tokenize_single_comma(val):
     # XXX we match twice the same string (here and at the caller level). It is
     # stupid, but it is easier for now...
@@ -299,7 +299,7 @@ def get_delim(line):
 
 class MetaData:
     """Small container to keep useful informations on a ARFF dataset.
-    
+
     Knows about attributes names and types.
 
     :Example:
@@ -318,7 +318,7 @@ class MetaData:
         Also maintains the list of attributes in order, i.e. doing for i in
         meta, where meta is an instance of MetaData, will return the different
         attribute names in the order they were defined.
-    
+
     """
     def __init__(self, rel, attr):
         self.name = rel
@@ -343,7 +343,7 @@ class MetaData:
                 msg += ", range is %s" % str(self._attributes[i][1])
             msg += '\n'
         return msg
-    
+
     def __iter__(self):
         return iter(self._attrnames)
 
@@ -386,7 +386,7 @@ def loadarff(filename):
     """
     ofile = open(filename)
 
-    # Parse the header file 
+    # Parse the header file
     try:
         rel, attr = read_header(ofile)
     except ValueError, e:
@@ -459,9 +459,9 @@ def loadarff(filename):
 
     def generator(row_iter, delim = ','):
         # TODO: this is where we are spending times (~80%). I think things
-        # could be made more efficiently: 
+        # could be made more efficiently:
         #   - We could for example "compile" the function, because some values
-        #   do not change here. 
+        #   do not change here.
         #   - The function to convert a line to dtyped values could also be
         #   generated on the fly from a string and be executed instead of
         #   looping.

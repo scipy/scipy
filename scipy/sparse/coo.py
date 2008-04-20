@@ -5,7 +5,7 @@ __docformat__ = "restructuredtext en"
 __all__ = ['coo_matrix', 'isspmatrix_coo']
 
 from itertools import izip
-from warnings import warn 
+from warnings import warn
 
 from numpy import array, asarray, empty, intc, zeros,  \
         unique, searchsorted, atleast_2d, empty_like, rank, \
@@ -39,7 +39,7 @@ class coo_matrix(_data_matrix):
                 2. ij[0][:]  the row indices of the matrix entries
                 3. ij[1][:]  the column indices of the matrix entries
 
-            Where ``A[ij[0][k], ij[1][k] = data[k]``.  When shape is 
+            Where ``A[ij[0][k], ij[1][k] = data[k]``.  When shape is
             not specified, it is inferred from the index arrays
 
 
@@ -50,7 +50,7 @@ class coo_matrix(_data_matrix):
         - facilitates fast conversion among sparse formats
         - permits duplicate entries (see example)
         - very fast conversion to and from CSR/CSC formats
-    
+
     Disadvantages of the COO format
         - does not directly support:
             + arithmetic operations
@@ -62,10 +62,10 @@ class coo_matrix(_data_matrix):
     --------------
 
         - COO is a fast format for constructing sparse matrices
-        - Once a matrix has been constructed, convert to CSR or 
+        - Once a matrix has been constructed, convert to CSR or
           CSC format for fast arithmetic and matrix vector operations
-        - By default when converting to CSR or CSC format, duplicate (i,j) 
-          entries will be summed together.  This facilitates efficient 
+        - By default when converting to CSR or CSC format, duplicate (i,j)
+          entries will be summed together.  This facilitates efficient
           construction of finite element matrices and the like. (see example)
 
 
@@ -97,7 +97,7 @@ class coo_matrix(_data_matrix):
             [0, 2, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 1]])
-    
+
     """
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, dims=None):
@@ -170,7 +170,7 @@ class coo_matrix(_data_matrix):
                     M = atleast_2d(asarray(arg1))
                 except:
                     raise TypeError, "invalid input format"
-    
+
                 if len(M.shape) != 2:
                     raise TypeError, "expected rank <= 2 array or matrix"
                 self.shape = M.shape
@@ -202,7 +202,7 @@ class coo_matrix(_data_matrix):
         if self.col.dtype.kind != 'i':
             warn("col index array has non-integer dtype (%s) " \
                     % self.col.dtype.name )
-       
+
         # only support 32-bit ints for now
         self.row  = asarray(self.row,dtype=intc)
         self.col  = asarray(self.col,dtype=intc)
@@ -228,7 +228,7 @@ class coo_matrix(_data_matrix):
     @deprecate
     def getdata(self, num):
         return self.data[num]
-    
+
     def transpose(self,copy=False):
         M,N = self.shape
         return coo_matrix((self.data,(self.col,self.row)),(N,M),copy=copy)
@@ -242,7 +242,7 @@ class coo_matrix(_data_matrix):
     def tocsc(self,sum_duplicates=True):
         """Return a copy of this matrix in Compressed Sparse Column format
 
-            By default sum_duplicates=True and any duplicate 
+            By default sum_duplicates=True and any duplicate
             matrix entries are added together.
 
         """
@@ -266,7 +266,7 @@ class coo_matrix(_data_matrix):
     def tocsr(self,sum_duplicates=True):
         """Return a copy of this matrix in Compressed Sparse Row format
 
-            By default sum_duplicates=True and any duplicate 
+            By default sum_duplicates=True and any duplicate
             matrix entries are added together.
 
         """
@@ -286,7 +286,7 @@ class coo_matrix(_data_matrix):
             if sum_duplicates:
                 A.sum_duplicates()
             return A
-    
+
 
     def tocoo(self, copy=False):
         if copy:
@@ -297,7 +297,7 @@ class coo_matrix(_data_matrix):
     def todia(self):
         from dia import dia_matrix
 
-        ks = self.col - self.row  #the diagonal for each nonzero          
+        ks = self.col - self.row  #the diagonal for each nonzero
         diags = unique(ks)
 
         if len(diags) > 100:
@@ -316,7 +316,7 @@ class coo_matrix(_data_matrix):
 
         dok = dok_matrix((self.shape),dtype=self.dtype)
 
-        dok.update( izip(izip(self.row,self.col),self.data) ) 
+        dok.update( izip(izip(self.row,self.col),self.data) )
 
         return dok
 
@@ -339,4 +339,3 @@ from sputils import _isinstance
 
 def isspmatrix_coo( x ):
     return _isinstance(x, coo_matrix)
-

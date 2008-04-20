@@ -35,7 +35,7 @@ class TestOde(TestCase):
     Check integrate.ode
     """
     def _do_problem(self, problem, integrator, method='adams'):
-        
+
         # ode has callback arguments in different order than odeint
         f = lambda t, z: problem.f(z, t)
         jac = None

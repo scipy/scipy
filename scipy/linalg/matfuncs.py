@@ -104,7 +104,7 @@ def expm3(A,q=20):
         Matrix to be exponentiated
     q : integer
         Order of the Taylor series
-    
+
     Returns
     -------
     expA : array, shape(M,M)
@@ -154,7 +154,7 @@ def cosm(A):
     Parameters
     ----------
     A : array, shape(M,M)
-    
+
     Returns
     -------
     cosA : array, shape(M,M)
@@ -275,10 +275,10 @@ def tanhm(A):
 
 def funm(A,func,disp=1):
     """Evaluate a matrix function specified by a callable.
-    
+
     Returns the value of matrix-valued function f at A. The function f
     is an extension of the scalar-valued function func to matrices.
-    
+
     Parameters
     ----------
     A : array, shape(M,M)
@@ -350,9 +350,9 @@ def funm(A,func,disp=1):
 
 def logm(A,disp=1):
     """Compute matrix logarithm.
-    
+
     The matrix logarithm is the inverse of expm: expm(logm(A)) == A
-    
+
     Parameters
     ----------
     A : array, shape(M,M)
@@ -401,9 +401,9 @@ def logm(A,disp=1):
 
 def signm(a,disp=1):
     """Matrix sign function.
-    
+
     Extension of the scalar sign(x) to matrices.
-    
+
     Parameters
     ----------
     A : array, shape(M,M)
@@ -411,7 +411,7 @@ def signm(a,disp=1):
     disp : boolean
         Print warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
-    
+
     Returns
     -------
     sgnA : array, shape(M,M)
@@ -420,7 +420,7 @@ def signm(a,disp=1):
     (if disp == False)
     errest : float
         1-norm of the estimated error, ||err||_1 / ||A||_1
-    
+
     Examples
     --------
     >>> from scipy.linalg import signm, eigvals
@@ -429,7 +429,7 @@ def signm(a,disp=1):
     array([ 4.12488542+0.j, -0.76155718+0.j,  0.63667176+0.j])
     >>> eigvals(signm(a))
     array([-1.+0.j,  1.+0.j,  1.+0.j])
-        
+
     """
     def rounded_sign(x):
         rx = real(x)
@@ -478,7 +478,7 @@ def signm(a,disp=1):
 
 def sqrtm(A,disp=1):
     """Matrix square root.
-    
+
     Parameters
     ----------
     A : array, shape(M,M)
@@ -486,7 +486,7 @@ def sqrtm(A,disp=1):
     disp : boolean
         Print warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
-    
+
     Returns
     -------
     sgnA : array, shape(M,M)
@@ -499,7 +499,7 @@ def sqrtm(A,disp=1):
     Notes
     -----
     Uses algorithm by Nicholas J. Higham
-    
+
     """
     A = asarray(A)
     if len(A.shape)!=2:

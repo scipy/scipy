@@ -171,7 +171,6 @@ class TestRecaster(TestCase):
             dtt = arr.dtype.type
             assert dtt is outp, \
                    'Expected %s from %s, got %s' % (outp, inp, dtt)
-            
+
 if __name__ == "__main__":
     nose.run(argv=['', __file__])
-

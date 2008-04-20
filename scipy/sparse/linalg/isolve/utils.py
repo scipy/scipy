@@ -23,7 +23,7 @@ def id(x):
 
 def make_system(A, M, x0, b, xtype=None):
     """Make a linear system Ax=b
-    
+
     Parameters:
         A - LinearOperator
             - sparse or dense matrix (or any valid input to aslinearoperator)
@@ -39,7 +39,7 @@ def make_system(A, M, x0, b, xtype=None):
 
     Returns:
         (A, M, x, b, postprocess) where:
-            - A is a LinearOperator 
+            - A is a LinearOperator
             - M is a LinearOperator
             - x is the initial guess (rank 1 array)
             - b is the rhs (rank 1 array)
@@ -54,7 +54,7 @@ def make_system(A, M, x0, b, xtype=None):
         raise ValueError('expected square matrix (shape=%s)' % shape)
 
     N = A.shape[0]
-    
+
     b = asanyarray(b)
 
     if not (b.shape == (N,1) or b.shape == (N,)):
@@ -111,5 +111,3 @@ def make_system(A, M, x0, b, xtype=None):
             raise ValueError('matrix and preconditioner have different shapes')
 
     return A, M, x, b, postprocess
-
-
