@@ -63,7 +63,7 @@ def configuration(parent_package='',top_path=None):
     if skip_single_routines:
         target_dir = 'dbl'
         skip_names['clapack'].extend(\
-            'sgesv cgesv sgetrf cgetrf sgetrs cgetrs sgetri cgetri'\
+            'sgesv sgetrf cgetrf sgetrs cgetrs sgetri cgetri'\
             ' sposv cposv spotrf cpotrf spotrs cpotrs spotri cpotri'\
             ' slauum clauum strtri ctrtri'.split())
         skip_names['flapack'].extend(skip_names['clapack'])
