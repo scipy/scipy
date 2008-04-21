@@ -15,7 +15,7 @@ config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib,
 if not config.CheckF77Clib():
     raise Exception("Could not check F77 runtime, needed for interpolate")
 if not config.CheckF77BLAS():
-    warnings.warn("Could not find F77 BLAS")
+    raise Exception("Could not find F77 BLAS, needed for integrate package")
 
 config.Finish()
 
