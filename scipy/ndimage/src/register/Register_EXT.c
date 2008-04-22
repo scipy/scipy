@@ -352,7 +352,7 @@ static PyMethodDef RegisterMethods[] =
     {  NULL, NULL, 0, NULL},
 };
 
-void init_register(void)
+PyMODINIT_FUNC init_register(void)
 {
     Py_InitModule("_register", RegisterMethods);
     import_array();
