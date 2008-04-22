@@ -1,4 +1,4 @@
-# Last Change: Tue Apr 22 11:00 AM 2008 J
+# Last Change: Tue Apr 22 12:00 PM 2008 J
 # vim:syntax=python
 from os.path import join as pjoin
 
@@ -27,5 +27,5 @@ env.PrependUnique(LIBPATH = [env['build_dir']])
 env.NumpyPythonExtension('_fitpack', source = '_fitpackmodule.c')
 
 # Build dfitpack
-dfitpack_wrap = env.F2py(pjoin(env['build_dir'], 'fitpack.pyf'))
+dfitpack_wrap = env.NumpyF2py('fitpack.pyf')
 env.NumpyPythonExtension('dfitpack', source = dfitpack_wrap)
