@@ -1,4 +1,4 @@
-# Last Change: Fri Mar 07 07:00 PM 2008 J
+# Last Change: Tue Apr 22 01:00 PM 2008 J
 # vim:syntax=python
 
 import os
@@ -138,9 +138,8 @@ env.NumpyPythonExtension('clapack', source = 'clapack.pyf')
 #   _flinalg
 #----------------
 _flinalg_fsrc = ['det.f', 'lu.f']
-_flinalg_src = fenv.F2py(
-    pjoin(fenv['build_dir'], 'src', '_flinalgmodule.c'), 
-    source = [pjoin(fenv['build_dir'], 'src', i) for i in _flinalg_fsrc])
+_flinalg_src = fenv.NumpyF2py(pjoin('src', '_flinalgmodule.c'), 
+    source = [pjoin('src', i) for i in _flinalg_fsrc])
 
 fenv.NumpyPythonExtension(
     '_flinalg', source = _flinalg_src + [pjoin('src', i) for i in _flinalg_fsrc])
@@ -148,8 +147,8 @@ fenv.NumpyPythonExtension(
 #----------------
 # calc_lwork:
 #----------------
-calc_src = env.F2py(pjoin(env['build_dir'], 'src', 'calc_lworkmodule.c'), 
-                    source = pjoin(env['build_dir'], 'src', 'calc_lwork.f'))
+calc_src = env.NumpyF2py(pjoin('src', 'calc_lworkmodule.c'), 
+                    source = pjoin('src', 'calc_lwork.f'))
 fenv.NumpyPythonExtension('calc_lwork', 
                          source = calc_src + [pjoin('src', 'calc_lwork.f')])
 

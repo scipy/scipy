@@ -1,4 +1,4 @@
-# Last Change: Wed Mar 05 09:00 PM 2008 J
+# Last Change: Tue Apr 22 01:00 PM 2008 J
 # vim:syntax=python
 from os.path import join as pjoin
 
@@ -28,8 +28,7 @@ env.NumpyPythonExtension('statlib', source = 'statlib.pyf',
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # futil extension
-futil_src = env.F2py(pjoin(env['build_dir'], 'futilmodule.c'), 
-                     pjoin(env['build_dir'], 'futil.f'))
+futil_src = env.NumpyF2py(pjoin('futilmodule.c'), pjoin('futil.f'))
 env.NumpyPythonExtension('futil', source = futil_src + ['futil.f'],
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
