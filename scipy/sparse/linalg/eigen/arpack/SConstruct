@@ -42,6 +42,5 @@ env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 env.AppendUnique(CPPPATH = get_numpy_include_dirs())
 
 env.NumpyFromFTemplate('arpack.pyf', 'arpack.pyf.src')
-wsrc = env.NumpyF2py('arpack.pyf')
 env.Prepend(LIBS = 'arpack')
-env.NumpyPythonExtension('_arpack', source = wsrc)
+env.NumpyPythonExtension('_arpack', 'arpack.pyf')

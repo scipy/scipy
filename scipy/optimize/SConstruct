@@ -65,21 +65,18 @@ env.NumpyPythonExtension('_minpack', '_minpackmodule.c',
 env.NumpyPythonExtension('_zeros', 'zeros.c')
 
 # _lbfgsb pyextension
-src = pjoin('lbfgsb', 'routines.f')
-lbfgsb_src = env.NumpyF2py(pjoin('lbfgsb', 'lbfgsb.pyf'))
-env.NumpyPythonExtension('_lbfgsb', source = [src] + lbfgsb_src,
+src = [pjoin('lbfgsb', i) for i in ['lbfgsb.pyf', 'routines.f']]
+env.NumpyPythonExtension('_lbfgsb', source = src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # _cobyla pyextension
-src = [pjoin('cobyla', i) for i in ['cobyla2.f', 'trstlp.f']]
-wrap_src = env.NumpyF2py(pjoin('cobyla', 'cobyla.pyf'))
-env.NumpyPythonExtension('_cobyla', source = src + wrap_src,
+src = [pjoin('cobyla', i) for i in ['cobyla2.f', 'trstlp.f', 'cobyla.pyf']]
+env.NumpyPythonExtension('_cobyla', source = src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # _minpack2 pyextension
-src = [pjoin('minpack2', i) for i in ['dcsrch.f', 'dcstep.f']]
-wrap_src = env.NumpyF2py(pjoin('minpack2', 'minpack2.pyf'))
-env.NumpyPythonExtension('minpack2', source = src + wrap_src,
+src = [pjoin('minpack2', i) for i in ['dcsrch.f', 'dcstep.f', 'minpack2.pyf']]
+env.NumpyPythonExtension('minpack2', source = src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # moduleTNC pyextension
@@ -88,7 +85,6 @@ env.NumpyPythonExtension('moduleTNC',
                                                    ['moduleTNC.c', 'tnc.c']])
 
 # _slsqp pyextension
-src = pjoin('slsqp', 'slsqp_optmz.f')
-slsqp_src = env.NumpyF2py(pjoin('slsqp', 'slsqp.pyf'))
-env.NumpyPythonExtension('_slsqp', source = [src] + slsqp_src,
+src = [pjoin('slsqp', i) for i in ['slsqp_optmz.f', 'slsqp.pyf']]
+env.NumpyPythonExtension('_slsqp', source = src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])
