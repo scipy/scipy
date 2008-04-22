@@ -1372,10 +1372,11 @@ int NI_LawsTexture(int num, int rows, int cols, double *src_image, unsigned shor
 	int number_kernels;
 	int kernel_size;
 	int filters;
+        int aperature;
         number_kernels = lawsFilter.numberKernels;
         kernel_size = lawsFilter.kernelLength;
         filters = lawsFilter.numberFilterLayers;
-	int aperature = (kernel_size-1)/2;
+	aperature = (kernel_size-1)/2;
 
 	computeLaws(lawsFilter, aperature, rows, cols, mask, lawsImage, src_image);
 
