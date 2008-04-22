@@ -1,4 +1,4 @@
-# Last Change: Wed Mar 05 11:00 PM 2008 J
+# Last Change: Tue Apr 22 11:00 AM 2008 J
 # vim:syntax=python
 
 import os
@@ -66,22 +66,19 @@ env.NumpyPythonExtension('_zeros', 'zeros.c')
 
 # _lbfgsb pyextension
 src = pjoin('lbfgsb', 'routines.f')
-lbfgsb_src = env.F2py(pjoin(env['build_dir'], '_lbfgsbmodule.c'), 
-                      pjoin(env['build_dir'], 'lbfgsb', 'lbfgsb.pyf'))
+lbfgsb_src = env.F2py(pjoin(env['build_dir'], 'lbfgsb', 'lbfgsb.pyf'))
 env.NumpyPythonExtension('_lbfgsb', source = [src] + lbfgsb_src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # _cobyla pyextension
 src = [pjoin('cobyla', i) for i in ['cobyla2.f', 'trstlp.f']]
-wrap_src = env.F2py(pjoin(env['build_dir'], 'cobyla', '_cobylamodule.c'), 
-                    pjoin(env['build_dir'], 'cobyla', 'cobyla.pyf'))
+wrap_src = env.F2py(pjoin(env['build_dir'], 'cobyla', 'cobyla.pyf'))
 env.NumpyPythonExtension('_cobyla', source = src + wrap_src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # _minpack2 pyextension
 src = [pjoin('minpack2', i) for i in ['dcsrch.f', 'dcstep.f']]
-wrap_src = env.F2py(pjoin(env['build_dir'], 'minpack2', 'minpack2module.c'), 
-                    pjoin(env['build_dir'], 'minpack2', 'minpack2.pyf'))
+wrap_src = env.F2py(pjoin(env['build_dir'], 'minpack2', 'minpack2.pyf'))
 env.NumpyPythonExtension('minpack2', source = src + wrap_src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
@@ -92,8 +89,7 @@ env.NumpyPythonExtension('moduleTNC',
 
 # _slsqp pyextension
 src = pjoin('slsqp', 'slsqp_optmz.f')
-slsqp_src = env.F2py(pjoin(env['build_dir'], '_slsqpmodule.c'), 
-                      pjoin(env['build_dir'], 'slsqp', 'slsqp.pyf'))
+slsqp_src = env.F2py(pjoin(env['build_dir'], 'slsqp', 'slsqp.pyf'))
 env.NumpyPythonExtension('_slsqp', source = [src] + slsqp_src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
