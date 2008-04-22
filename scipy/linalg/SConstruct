@@ -123,7 +123,7 @@ env.NumpyPythonExtension('cblas', source = 'cblas.pyf')
 yop = fenv.haha('flapack', 'generic_flapack.pyf')
 # XXX: automatically scan dependency on flapack_user_routines.pyf ?
 fenv.Depends(yop, pjoin(env['build_dir'], 'flapack_user_routines.pyf'))
-fenv.NumpyPythonExtension('flapack', source = ['flapack.pyf'])
+fenv.NumpyPythonExtension('flapack', 'flapack.pyf')
 
 #------------
 #   clapack
@@ -137,20 +137,17 @@ env.NumpyPythonExtension('clapack', source = 'clapack.pyf')
 #----------------
 #   _flinalg
 #----------------
-_flinalg_fsrc = ['det.f', 'lu.f']
-_flinalg_src = fenv.NumpyF2py(pjoin('src', '_flinalgmodule.c'), 
-    source = [pjoin('src', i) for i in _flinalg_fsrc])
+flinalg_fsrc = [pjoin('src', i) for i in ['det.f', 'lu.f']]
+flinalg_src = fenv.NumpyF2py(pjoin('src', '_flinalgmodule.c'), flinalg_fsrc)
 
-fenv.NumpyPythonExtension(
-    '_flinalg', source = _flinalg_src + [pjoin('src', i) for i in _flinalg_fsrc])
+fenv.NumpyPythonExtension('_flinalg', source = flinalg_src + flinalg_fsrc)
 
 #----------------
 # calc_lwork:
 #----------------
-calc_src = env.NumpyF2py(pjoin('src', 'calc_lworkmodule.c'), 
-                    source = pjoin('src', 'calc_lwork.f'))
-fenv.NumpyPythonExtension('calc_lwork', 
-                         source = calc_src + [pjoin('src', 'calc_lwork.f')])
+calc_fsrc = [pjoin('src', 'calc_lwork.f')]
+calc_src = env.NumpyF2py(pjoin('src', 'calc_lworkmodule.c'), calc_fsrc)
+fenv.NumpyPythonExtension('calc_lwork', calc_src + calc_fsrc)
 
 #--------------
 # Atlas version
