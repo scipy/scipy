@@ -8,7 +8,7 @@ __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
 
 from numpy import shape, sometrue, rank, array, transpose, \
      swapaxes, searchsorted, clip, take, ones, putmask, less, greater, \
-     logical_or, atleast_1d, atleast_2d, meshgrid, ravel, dot
+     logical_or, atleast_1d, atleast_2d, meshgrid, ravel, dot, poly1d
 import numpy as np
 import scipy.linalg as slin
 import scipy.special as spec

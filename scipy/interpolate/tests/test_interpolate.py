@@ -1,8 +1,8 @@
 from scipy.testing import *
-from numpy import mgrid, pi, sin, ogrid
+from numpy import mgrid, pi, sin, ogrid, poly1d
 import numpy as np
 
-from scipy.interpolate import interp1d, interp2d
+from scipy.interpolate import interp1d, interp2d, lagrange
 
 
 class TestInterp2D(TestCase):
@@ -198,6 +198,14 @@ class TestInterp1D(TestCase):
                       [[4.8, 5.8], [15.6, 16.6]]]),
         )
 
+class TestLagrange(TestCase):
+
+    def test_lagrange(self):
+        p = poly1d([5,2,1,4,3])
+        xs = np.arange(len(p.coeffs))
+        ys = p(xs)
+        pl = lagrange(xs,ys)
+        assert_array_almost_equal(p.coeffs,pl.coeffs)
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])
