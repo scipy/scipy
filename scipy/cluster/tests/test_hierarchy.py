@@ -99,15 +99,15 @@ class TestPdist(TestCase):
         except:
             self.fail("float32 observation matrices should generate an error in pdist.")
 
-    def test_pdist_raises_type_error_float96(self):
-        "Testing whether passing a float96 observation array generates an exception."
-        X = numpy.zeros((10, 10), dtype=numpy.float96)
+    def test_pdist_raises_type_error_longdouble(self):
+        "Testing whether passing a longdouble observation array generates an exception."
+        X = numpy.zeros((10, 10), dtype=numpy.longdouble)
         try:
             pdist(X, 'euclidean')
         except TypeError:
             pass
         except:
-            self.fail("float96 observation matrices should generate an error in pdist.")
+            self.fail("longdouble observation matrices should generate an error in pdist.")
 
     def test_pdist_var_raises_type_error_float32(self):
         "Testing whether passing a float32 variance matrix generates an exception."
@@ -120,17 +120,17 @@ class TestPdist(TestCase):
         except:
             self.fail("float32 V matrices should generate an error in pdist('seuclidean').")
 
-    def test_pdist_var_raises_type_error_float96(self):
-        "Testing whether passing a float96 variance matrix generates an exception."
+    def test_pdist_var_raises_type_error_longdouble(self):
+        "Testing whether passing a longdouble variance matrix generates an exception."
         X = numpy.zeros((10, 10))
-        V = numpy.zeros((10, 10), dtype=numpy.float96)
+        V = numpy.zeros((10, 10), dtype=numpy.longdouble)
 
         try:
             pdist(X, 'seuclidean', V=V)
         except TypeError:
             pass
         except:
-            self.fail("float96 matrices should generate an error in pdist('seuclidean').")
+            self.fail("longdouble matrices should generate an error in pdist('seuclidean').")
 
     def test_pdist_ivar_raises_type_error_float32(self):
         "Testing whether passing a float32 variance matrix generates an exception."
@@ -143,17 +143,17 @@ class TestPdist(TestCase):
         except:
             self.fail("float32 matrices should generate an error in pdist('mahalanobis').")
 
-    def test_pdist_ivar_raises_type_error_float96(self):
-        "Testing whether passing a float96 variance matrix generates an exception."
+    def test_pdist_ivar_raises_type_error_longdouble(self):
+        "Testing whether passing a longdouble variance matrix generates an exception."
         X = numpy.zeros((10, 10))
-        VI = numpy.zeros((10, 10), dtype=numpy.float96)
+        VI = numpy.zeros((10, 10), dtype=numpy.longdouble)
 
         try:
             pdist(X, 'mahalanobis', VI=VI)
         except TypeError:
             pass
         except:
-            self.fail("float96 matrices should generate an error in pdist('mahalanobis').")
+            self.fail("longdouble matrices should generate an error in pdist('mahalanobis').")
 
     ################### pdist: euclidean
     def test_pdist_euclidean_random(self):

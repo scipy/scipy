@@ -208,8 +208,8 @@ def _copy_array_if_base_present(a):
     """
     if a.base is not None:
         return a.copy()
-    elif (a.dtype == np.float32):
-        return np.float64(a)
+    elif np.issubsctype(a, np.float32):
+        return array(a, dtype=np.double)
     else:
         return a
 
@@ -450,11 +450,10 @@ def linkage(y, method='single', metric='euclidean'):
            same minimum distance. This implementation may chose a
            different minimum than the MATLAB(TM) version.
         """
-    if type(method) != types.StringType:
+    if not isinstance(method, str):
         raise TypeError("Argument 'method' must be a string.")
 
-    if type(y) != _array_type:
-        raise TypeError("Argument 'y' must be a numpy array.")
+    y = np.asarray(y)
 
     s = y.shape
     if len(s) == 1:
@@ -723,10 +722,9 @@ def squareform(X, force="no", checks=True):
     transformation.
     """
 
-    if type(X) is not _array_type:
-        raise TypeError('The parameter passed must be an array.')
+    X = np.asarray(X)
 
-    if X.dtype != np.double:
+    if not np.issubsctype(X, np.double):
         raise TypeError('A double array must be passed.')
 
     s = X.shape
@@ -744,7 +742,7 @@ def squareform(X, force="no", checks=True):
             raise ValueError('Incompatible vector size. It must be a binomial coefficient n choose 2 for some integer n >= 2.')
 
         # Allocate memory for the distance matrix.
-        M = np.zeros((d, d), 'double')
+        M = np.zeros((d, d), dtype=np.double)
 
         # Since the C code does not support striding using strides.
         # The dimensions are used instead.
@@ -771,7 +769,7 @@ def squareform(X, force="no", checks=True):
         d = s[0]
 
         # Create a vector.
-        v = np.zeros(((d * (d - 1) / 2),), 'double')
+        v = np.zeros(((d * (d - 1) / 2),), dtype=np.double)
 
         # Since the C code does not support striding using strides.
         # The dimensions are used instead.
@@ -881,7 +879,9 @@ def jaccard(u, v):
 
       for k < n.
     """
-    return np.double(scipy.bitwise_and((u != v), scipy.bitwise_or(u != 0, v != 0)).sum()) / np.double(scipy.bitwise_or(u != 0, v != 0).sum())
+    return (np.double(np.bitwise_and((u != v),
+                     np.bitwise_or(u != 0, v != 0)).sum()) 
+            /  np.double(np.bitwise_or(u != 0, v != 0).sum()))
 
 def kulsinski(u, v):
     """
@@ -912,8 +912,9 @@ def seuclidean(u, v, V):
       n-vectors u and v. V is a m-dimensional vector of component
       variances. It is usually computed among a larger collection vectors.
     """
-    if type(V) is not _array_type or len(V.shape) != 1 or V.shape[0] != u.shape[0] or u.shape[0] != v.shape[0]:
-        raise TypeError('V must be a 1-D numpy array of doubles of the same dimension as u and v.')
+    V = np.asarray(V)
+    if len(V.shape) != 1 or V.shape[0] != u.shape[0] or u.shape[0] != v.shape[0]:
+        raise TypeError('V must be a 1-D array of the same dimension as u and v.')
     return np.sqrt(((u-v)**2 / V).sum())
 
 def cityblock(u, v):
@@ -933,9 +934,8 @@ def mahalanobis(u, v, VI):
         (u-v)VI(u-v)^T
       where VI is the inverse covariance matrix.
     """
-    if type(V) is not _array_type:
-        raise TypeError('V must be a 1-D numpy array of doubles of the same dimension as u and v.')
-    return np.sqrt(scipy.dot(scipy.dot((u-v),VI),(u-v).T).sum())
+    V = np.asarray(V)
+    return np.sqrt(np.dot(np.dot((u-v),VI),(u-v).T).sum())
 
 def chebyshev(u, v):
     """
@@ -1301,11 +1301,11 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
 #           verifiable, but less efficient implementation.
 
 
-    if type(X) is not _array_type:
-        raise TypeError('The parameter passed must be an array.')
+    X = np.asarray(X)
 
-    if X.dtype == np.float32 or X.dtype == np.float96:
-        raise TypeError('Floating point arrays must be 64-bit.')
+    if np.issubsctype(X, np.floating) and not np.issubsctype(X, np.double):
+        raise TypeError('Floating point arrays must be 64-bit (got %r).' %
+        (X.dtype.type,))
 
     # The C code doesn't do striding.
     [X] = _copy_arrays_if_base_present([X])
@@ -1380,7 +1380,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             if V is not None:
                 if type(V) is not _array_type:
                     raise TypeError('Variance vector V must be a numpy array')
-                if V.dtype != np.float64:
+                if V.dtype != np.double:
                     raise TypeError('Variance vector V must contain doubles.')
                 if len(V.shape) != 1:
                     raise ValueError('Variance vector V must be one-dimensional.')
@@ -1417,7 +1417,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             if VI is not None:
                 if type(VI) != _array_type:
                     raise TypeError('VI must be a numpy array.')
-                if VI.dtype != np.float64:
+                if VI.dtype != np.double:
                     raise TypeError('The array must contain 64-bit floats.')
                 [VI] = _copy_arrays_if_base_present([VI])
             else:
