@@ -341,14 +341,95 @@ exit:
 
 }
 
+
+static PyObject *Register_ResampleWithGradient(PyObject *self, PyObject *args)
+{
+
+    int num;
+    int nd;
+    int type;
+    int itype;
+    int nd_rotmatrix;
+    int nd_S;
+    npy_intp *dimsScale;
+    npy_intp *dimsOffset;
+    npy_intp *dimsS;
+    npy_intp *dimsD;
+    npy_intp *dims_rotmatrix;
+    npy_intp *dims_S;
+    unsigned char *imageS;
+    unsigned char *imageD;
+    double        *M;
+    int           *S;
+    double        *scale;
+    int           *offset;
+    double        *gradientX;
+    double        *gradientY;
+    double        *gradientZ;
+    PyObject *imgArrayS   = NULL;
+    PyObject *imgArrayD   = NULL;
+    PyObject *rotArray    = NULL;
+    PyObject *SArray      = NULL;
+    PyObject *scaleArray  = NULL;
+    PyObject *offsetArray = NULL;
+    PyObject *gradXArray  = NULL;
+    PyObject *gradYArray  = NULL;
+    PyObject *gradZArray  = NULL;
+	
+    if(!PyArg_ParseTuple(args, "OOOOOOOOO", &imgArrayS, &imgArrayD, &rotArray, &SArray, &scaleArray,
+			                    &offsetArray, &gradXArray, &gradYArray, &gradZArray))
+	goto exit;
+
+    /* check in the Python code that S and D are the same dims, type */
+    imageS = (unsigned char *)PyArray_DATA(imgArrayS);
+    imageD = (unsigned char *)PyArray_DATA(imgArrayD);
+    /* reads dims as 0 = layers, 1 = rows, 2 = cols */
+    nd     = PyArray_NDIM(imgArrayS);
+    dimsS  = PyArray_DIMS(imgArrayS);
+    dimsD  = PyArray_DIMS(imgArrayD);
+    type   = PyArray_TYPE(imgArrayS);
+    num    = PyArray_SIZE(imgArrayS);
+
+    M = (double *)PyArray_DATA(rotArray);
+    nd_rotmatrix   = PyArray_NDIM(rotArray);
+    dims_rotmatrix = PyArray_DIMS(rotArray);
+
+    S = (int *)PyArray_DATA(SArray);
+    nd_S   = PyArray_NDIM(SArray);
+    dims_S = PyArray_DIMS(SArray);
+
+    scale  = (double *)PyArray_DATA(scaleArray);
+    offset = (int *)PyArray_DATA(offsetArray);
+    dimsScale  = PyArray_DIMS(scaleArray);
+    dimsOffset = PyArray_DIMS(offsetArray);
+
+    gradientX = (double *)PyArray_DATA(gradXArray);
+    gradientY = (double *)PyArray_DATA(gradYArray);
+    gradientZ = (double *)PyArray_DATA(gradZArray);
+
+    if(!NI_ResampleWithGradient((int)dimsS[0], (int)dimsS[1], (int)dimsS[2], 
+                                (int)dimsD[0], (int)dimsD[1], (int)dimsD[2], 
+		                 S, M, imageD, imageS, scale, offset, gradientX,
+				 gradientY, gradientZ))
+	    goto exit;
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue(""); 
+
+}
+
+
+
 static PyMethodDef RegisterMethods[] =
 {
-    { "register_histogram",       Register_Histogram,      METH_VARARGS, NULL },
-    { "register_histogram_lite",  Register_HistogramLite,  METH_VARARGS, NULL },
-    { "register_linear_resample", Register_LinearResample, METH_VARARGS, NULL },
-    { "register_cubic_resample",  Register_CubicResample,  METH_VARARGS, NULL },
-    { "register_volume_resample", Register_VolumeResample, METH_VARARGS, NULL },
-    { "register_image_threshold", Register_ImageThreshold, METH_VARARGS, NULL },
+    { "register_resample_w_gradient", Register_ResampleWithGradient, METH_VARARGS, NULL },
+    { "register_histogram",           Register_Histogram,            METH_VARARGS, NULL },
+    { "register_histogram_lite",      Register_HistogramLite,        METH_VARARGS, NULL },
+    { "register_linear_resample",     Register_LinearResample,       METH_VARARGS, NULL },
+    { "register_cubic_resample",      Register_CubicResample,        METH_VARARGS, NULL },
+    { "register_volume_resample",     Register_VolumeResample,       METH_VARARGS, NULL },
+    { "register_image_threshold",     Register_ImageThreshold,       METH_VARARGS, NULL },
     {  NULL, NULL, 0, NULL},
 };
 
