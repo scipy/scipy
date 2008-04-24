@@ -394,12 +394,6 @@ def fresnel_zeros(nt):
         raise ValueError, "Argument must be positive scalar integer."
     return specfun.fcszo(2,nt), specfun.fcszo(1,nt)
 
-def gammaincinv(a,y):
-    """returns the inverse of the incomplete gamma integral in that it
-    finds x such that gammainc(a,x)=y
-    """
-    return gammainccinv(a,1-y)
-
 def hyp0f1(v,z):
     """Confluent hypergeometric limit function 0F1.
     Limit as q->infinity of 1F1(q;a;z/q)

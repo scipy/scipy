@@ -1,16 +1,15 @@
-
 /* Cephes module version 1.5
  *  This module defines the functions in the cephes and amos libraries as
- *   Numerical python ufunc objects so that they can operate on arbitrary 
+ *   Numerical python ufunc objects so that they can operate on arbitrary
  *   NumPy arrays with broadcasting and typecasting rules implemented.
- *  
+ *
  *  Copyright 1999  Travis E. Oliphant
  * Revisions 2002 (added functions from cdflib)
  */
 
 #include "Python.h"
 #include "numpy/arrayobject.h"
-#include "numpy/ufuncobject.h" 
+#include "numpy/ufuncobject.h"
 #include "ufunc_extras.h"
 #include "abstract.h"
 #include "cephes.h"
@@ -22,9 +21,8 @@
 
 /* Defined in mtherr in the cephes library */
 extern int scipy_special_print_error_messages;
- 
-#include "cephes_doc.h"
 
+#include "cephes_doc.h"
 
 static PyUFuncGenericFunction cephes1_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes1rc_functions[] = { NULL, NULL, NULL, NULL};
@@ -145,6 +143,8 @@ static void * i1e_data[] = { (void *)i1e, (void *)i1e, };
 static void * igamc_data[] = { (void *)igamc, (void *)igamc, };
 static void * igam_data[] = { (void *)igam, (void *)igam, };
 static void * igami_data[] = { (void *)igami, (void *)igami, };
+static void * gammaincinv_data[] = { (void *)gammaincinv,
+                                     (void *)gammaincinv, };
 
 static void * iv_data[] = { (void *)iv, (void *)iv, (void *)cbesi_wrap, (void *)cbesi_wrap,};
 static void * ive_data[] = { (void *)cbesi_wrap_e, (void *)cbesi_wrap_e, (void *)cbesi_wrap_e, (void *)cbesi_wrap_e, };
@@ -306,7 +306,7 @@ static char cephes_1rc_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_DOUBL
 static char cephes_1c_types[] = { PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CDOUBLE, PyArray_CDOUBLE, };
 
 
-/* Some functions needed from ufunc object, so that Py_complex's aren't being returned 
+/* Some functions needed from ufunc object, so that Py_complex's aren't being returned
 between code possibly compiled with different compilers.
 */
 
@@ -397,7 +397,7 @@ static void Cephes_InitOperators(PyObject *dictionary) {
         cephes4a_2_functions[1] = PyUFunc_dddd_dd_As_dddi_dd;
         cephes5_2_functions[0] = PyUFunc_fffff_ff_As_ddddd_dd;
         cephes5_2_functions[1] = PyUFunc_ddddd_dd;
-	
+
 	/* Create function objects for each function call and insert
 	   them in the dictionary */
 	f = PyUFunc_FromFuncAndData(cephes3a_functions, bdtrc_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "bdtrc", bdtrc_doc, 0);
@@ -424,7 +424,7 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes3_functions, fdtri_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtri", fdtri_doc, 0);
 	PyDict_SetItemString(dictionary, "fdtri", f);
- 	Py_DECREF(f);
+	Py_DECREF(f);
 
 	f = PyUFunc_FromFuncAndData(cephes3_functions, gdtrc_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "gdtrc", gdtrc_doc, 0);
 	PyDict_SetItemString(dictionary, "gdtrc", f);
@@ -545,7 +545,13 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes2_functions, igami_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "gammainccinv", gammainccinv_doc, 0);
 	PyDict_SetItemString(dictionary, "gammainccinv", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2c_functions, iv_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "iv", iv_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes2_functions, gammaincinv_data,
+                                    cephes_3_types, 2, 2, 1, PyUFunc_None,
+                                    "gammaincinv", gammaincinv_doc, 0);
+	PyDict_SetItemString(dictionary, "gammaincinv", f);
+	Py_DECREF(f);
+
+        f = PyUFunc_FromFuncAndData(cephes2c_functions, iv_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "iv", iv_doc, 0);
 	PyDict_SetItemString(dictionary, "iv", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes2cp_functions, ive_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "ive", ive_doc, 0);
@@ -580,7 +586,7 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	PyDict_SetItemString(dictionary, "pdtri", f);
 	Py_DECREF(f);
         /*  Use the student t library from cdflib (it supports doubles for
-              degrees of freedom 
+              degrees of freedom
 	f = PyUFunc_FromFuncAndData(cephes2a_functions, stdtr_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "stdtr", stdtr_doc, 0);
 	PyDict_SetItemString(dictionary, "stdtr", f);
 	Py_DECREF(f);
@@ -812,7 +818,7 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	PyDict_SetItemString(dictionary, "kolmogi", f);
 	Py_DECREF(f);
 
-	f = PyUFunc_FromFuncAndData(cephes1c_functions, wofz_data, cephes_1c_types, 2, 1, 1, PyUFunc_None, "wofz", wofz_doc, 0); 
+	f = PyUFunc_FromFuncAndData(cephes1c_functions, wofz_data, cephes_1c_types, 2, 1, 1, PyUFunc_None, "wofz", wofz_doc, 0);
 	PyDict_SetItemString(dictionary, "wofz", f);
 	Py_DECREF(f);
 
@@ -858,14 +864,14 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes3_functions, cdff2_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtrix", fdtri_doc, 0);
 	PyDict_SetItemString(dictionary, "fdtrix", f);
- 	Py_DECREF(f);
+	Py_DECREF(f);
         */
-        
+
         /*  The Fortran code for this one seems not to be working properly.
 	f = PyUFunc_FromFuncAndData(cephes3_functions, cdff3_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtridfn", "", 0);
 	PyDict_SetItemString(dictionary, "fdtridfn", f);
 	Py_DECREF(f);
-        */ 
+        */
 	f = PyUFunc_FromFuncAndData(cephes3_functions, cdff4_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtridfd", "", 0);
 	PyDict_SetItemString(dictionary, "fdtridfd", f);
 	Py_DECREF(f);
@@ -947,7 +953,7 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	PyDict_SetItemString(dictionary, "tklmbda", f);
 	Py_DECREF(f);
 
-        
+
 	f = PyUFunc_FromFuncAndData(cephes2_functions, mathieu_a_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "mathieu_a", mathieu_a_doc, 0);
 	PyDict_SetItemString(dictionary, "mathieu_a", f);
 	Py_DECREF(f);
@@ -1059,14 +1065,14 @@ static PyObject *errprint_func(PyObject *self, PyObject *args)
   int oldflag = 0;
   if (!PyArg_ParseTuple ( args, "|i;cephes.errprint", &inflag)) return NULL;
 
-  oldflag = scipy_special_print_error_messages;  
+  oldflag = scipy_special_print_error_messages;
   if (inflag != -37) {
     scipy_special_print_error_messages = (inflag != 0);
   }
   return PyInt_FromLong((long) oldflag);
 }
 
-  
+
 static struct PyMethodDef methods[] = {
   {"errprint", errprint_func, METH_VARARGS, errprint_doc},
   {NULL,		NULL, 0}		/* sentinel */
@@ -1075,9 +1081,9 @@ static struct PyMethodDef methods[] = {
 
 PyMODINIT_FUNC init_cephes(void) {
   PyObject *m, *d, *s;
-  
+
   /* Create the module and add the functions */
-  m = Py_InitModule("_cephes", methods); 
+  m = Py_InitModule("_cephes", methods);
 
   /* Import the ufunc objects */
   import_array();
@@ -1094,10 +1100,9 @@ PyMODINIT_FUNC init_cephes(void) {
   /*  No, instead acessible through errprint */
 
   /* Load the cephes operators into the array module's namespace */
-  Cephes_InitOperators(d); 
-  
+  Cephes_InitOperators(d);
+
   /* Check for errors */
   if (PyErr_Occurred())
     Py_FatalError("can't initialize module _cephes");
 }
-

@@ -42,8 +42,8 @@ def configuration(parent_package='',top_path=None):
                                   "cephes/mconf.h", "cephes/cephes_names.h"],
                          define_macros = define_macros
                          )
-    # Extension specfun
 
+    # Extension specfun
     config.add_extension('specfun',
                          sources=['specfun.pyf'],
                          f2py_options=['--no-wrap-functions'],
