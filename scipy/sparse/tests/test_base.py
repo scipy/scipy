@@ -104,6 +104,13 @@ class _TestCommon:
         for m in mats:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
 
+
+    def test_getrow(self):
+        assert_array_equal(self.datsp.getrow(1).todense(), self.dat[1,:])
+    
+    def test_getcol(self):
+        assert_array_equal(self.datsp.getcol(1).todense(), self.dat[:,1])
+
     def test_sum(self):
         """Does the matrix's .sum(axis=...) method work?
         """

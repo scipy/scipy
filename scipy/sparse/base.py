@@ -341,6 +341,7 @@ class spmatrix(object):
         # Spmatrix subclasses should override this method for efficiency.
         # Post-multiply by a (n x 1) column vector 'a' containing all zeros
         # except for a_j = 1
+        from csc import csc_matrix
         n = self.shape[1]
         a = csc_matrix((n, 1), dtype=self.dtype)
         a[j, 0] = 1
@@ -353,6 +354,7 @@ class spmatrix(object):
         # Spmatrix subclasses should override this method for efficiency.
         # Pre-multiply by a (1 x m) row vector 'a' containing all zeros
         # except for a_i = 1
+        from csr import csr_matrix
         m = self.shape[0]
         a = csr_matrix((1, m), dtype=self.dtype)
         a[0, i] = 1
