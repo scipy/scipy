@@ -488,7 +488,7 @@ class dok_matrix(spmatrix, dict):
                 raise ValueError, "dimensions do not match"
             new = [0] * self.shape[0]
             for key in self.keys():
-                new[int(key[0])] += self[key] * other[int(key[1]), ...]
+                new[int(key[0])] += self[key] * other[int(key[1])]
             new = array(new)
             if isinstance(other, matrix):
                 new = asmatrix(new)
@@ -505,7 +505,7 @@ class dok_matrix(spmatrix, dict):
                 raise ValueError, "dimensions do not match"
             new = [0] * self.shape[1]
             for key in self.keys():
-                new[int(key[1])] += other[..., int(key[0])] * conj(self[key])
+                new[int(key[1])] += other[int(key[0])] * conj(self[key])
             new = array(new)
             if isinstance(other, matrix):
                 new = asmatrix(new)
