@@ -24,18 +24,27 @@ Wrappers around FITPACK functions:
 
   SmoothBivariateSpline
 
-Interpolation Class
+Interpolation Classes (univariate)
 
   interp1d -- Create a class whose instances can linearly interpolate
                to compute unknown values of a univariate function.
+  BarycentricInterpolator -- Compute with a numerically-stable version 
+               of the Lagrange interpolating polynomial.
+  KroghInterpolator -- Compute with the Hermite interpolating polynomial
+               (allows the specification of derivatives at some points).
+  PiecewisePolynomial -- Spline that is specified by giving positions and
+               derivatives at every knot; allows high orders and 
+               efficient appending.
+
+Interpolation Classes (multivariate)
+
   interp2d -- Create a class whose instances can interpolate
                to compute unknown values of a bivariate function.
   Rbf -- Apply Radial Basis Functions to interpolate scattered N-D data.
 
 Additional tools
 
-  lagrange -- Compute the Lagrange interpolating polynomial
-
+  lagrange -- Compute the Lagrange interpolating polynomial.
 """
 
 postpone_import = 1

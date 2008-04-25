@@ -25,6 +25,9 @@ def reduce_sometrue(a):
 
 def lagrange(x, w):
     """Return the Lagrange interpolating polynomial of the data-points (x,w)
+
+    Warning: This implementation is numerically unstable; do not expect to
+    be able to use more than about 20 points even if they are chosen optimally.
     """
     M = len(x)
     p = poly1d(0.0)
