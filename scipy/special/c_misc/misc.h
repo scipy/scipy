@@ -9,6 +9,8 @@ typedef enum {
   FSOLVE_CONVERGED,
   /* Not a bracket */
   FSOLVE_NOT_BRACKET,
+  /* Root-finding didn't converge in a set number of iterations. */
+  FSOLVE_MAX_ITERATIONS
 } fsolve_result_t;
 
 typedef double (*objective_function)(double, void *);

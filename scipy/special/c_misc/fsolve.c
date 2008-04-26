@@ -1,6 +1,10 @@
 #include "misc.h"
 #include <math.h>
 
+#define MAX_ITERATIONS              100
+#define FP_CMP_WITH_BISECT_NITER    4
+#define FP_CMP_WITH_BISECT_WIDTH    4.0
+
 static inline double
 max(double a, double b)
 {
@@ -54,6 +58,7 @@ false_position(double *a, double *fa, double *b, double *fb,
     double x3, f3;
     double w, last_bisect_width;
     double tol;
+    int niter;
 
     if (f1*f2 >= 0.0) {
         return FSOLVE_NOT_BRACKET;
@@ -65,7 +70,7 @@ false_position(double *a, double *fa, double *b, double *fb,
     }
     w = fabs(x2 - x1);
     last_bisect_width = w;
-    while (1) {
+    for (niter=0; niter < MAX_ITERATIONS; niter++) {
         switch (state) {
         case bisect: {
             x3 = 0.5 * (x1 + x2);
@@ -130,8 +135,8 @@ false_position(double *a, double *fa, double *b, double *fb,
                sure that we always end up decreasing the interval width
                with a bisection.
              */
-            if (n_falsep > 4) {
-                if (w*4 > last_bisect_width) {
+            if (n_falsep > FP_CMP_WITH_BISECT_NITER) {
+                if (w*FP_CMP_WITH_BISECT_WIDTH > last_bisect_width) {
                     state = bisect;
                 }
                 n_falsep = 0;
@@ -150,6 +155,9 @@ false_position(double *a, double *fa, double *b, double *fb,
             goto finish;
         }
     }
+    r = FSOLVE_MAX_ITERATIONS;
+    *best_x = x3; *best_f = f3;
+    goto finish;
 exact_soln:
     *best_x = x3; *best_f = 0.0;
     r = FSOLVE_EXACT;
