@@ -248,7 +248,6 @@ extern PyObject *cluster_maxclust_dist_wrap(PyObject *self, PyObject *args) {
 
 extern PyObject *cluster_maxclust_monocrit_wrap(PyObject *self, PyObject *args) {
   int n, mc;
-  double cutoff;
   PyArrayObject *Z, *MC, *T;
   if (!PyArg_ParseTuple(args, "O!O!O!ii",
 			&PyArray_Type, &Z,
@@ -903,8 +902,7 @@ static PyMethodDef _hierarchyWrapMethods[] = {
   {NULL, NULL}     /* Sentinel - marks the end of this structure */
 };
 
-void init_hierarchy_wrap()  {
+void init_hierarchy_wrap(void)  {
   (void) Py_InitModule("_hierarchy_wrap", _hierarchyWrapMethods);
   import_array();  // Must be present for NumPy.  Called first after above line.
 }
-
