@@ -10,11 +10,12 @@
     clusters.  An observation vector is classified with the cluster
     number or centroid index of the centroid closest to it.
 
-    Most variants of k-means try to minimize distortion, which is
-    defined as the sum of the distances between each observation and
-    its dominating centroid. A vector belongs to a cluster i if it is
-    closer to centroid i than the other centroids. Each step of the
-    k-means algorithm refines the choices of centroids to reduce
+    A vector v belongs to cluster i if it is closer to centroid i than
+    the other centroids. If v belongs to i, we say centroid i is the
+    dominating centroid of v. Most variants of k-means try to minimize
+    distortion, which is defined as the sum of the distances between
+    each observation vector and its dominating centroid.  Each step of
+    the k-means algorithm refines the choices of centroids to reduce
     distortion. The change in distortion is often used as a stopping
     criterion: when the change is lower than a threshold, the k-means
     algorithm is not making progress and terminates.
