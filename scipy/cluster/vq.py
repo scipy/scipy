@@ -1,18 +1,60 @@
-""" Vector Quantization Module
+""" K-means Clustering and Vector Quantization Module
 
-    Provides several routines used in creating a code book from a set of
-    observations and comparing a set of observations to a code book.
+    Provides routines for performing k-means clustering and vector
+    quantization.
+
+    The k-means algorithm takes as input the number of clusters to
+    generate k and a set of observation vectors to cluster.  It
+    returns as its model a set of centroids, one for each of the k
+    clusters.  An observation vector is classified with the cluster
+    number or centroid index of the centroid closest to it. The
+    cluster is defined as the set of all points closest to the
+    centroid of the cluster.
+
+    Since vector quantization is a natural application for k-means,
+    and vector quantization is often a subject of information theory,
+    the terminology for the latter two are often used in describing
+    k-means.  The centroid or cluster index is often referred to as
+    a "code" and the mapping table from codes to centroids is often
+    referred to as a "code book".
+
+    The result of k-means, a set of centroids, is often used to
+    quantize vectors. Quantization aims to find an encoding that
+    reduces information loss or distortion. The centroids represent
+    the center of mass of the clusters they define. Each step of
+    the k-means algorithm refines the choices of centroids to
+    reduce distortion.  When change in distortion is lower than
+    a threshold, the k-means algorithm has converged.
+
+    For example, suppose we wish to compress a 24-bit per pixel color
+    image before sending it over the web. Each pixel value is
+    represented by three bytes, one each for red, green, and blue. By
+    using a smaller 8-bit encoding, we can reduce the data to send by
+    two thirds. Ideally, the colors for each of the 256 possible 8-bit
+    encoding values should be chosen to minimize distortion of the
+    color. By running k-means with k=256, we generate a code book of
+    256 codes, one for every 8-bit sequence.  Instead of sending a
+    3-byte value for each pixel, the centroid index (or code word) of
+    the centroid closest to it is is transmitted. The code book is
+    also sent over the wire so each received pixel value, represented
+    as a centroid index, can be translated back into its 24-bit
+    representation.
+
+    This module provides routines for k-means clustering, generating
+    code books from k-means, and quantizing vectors by comparing
+    them to centroids in a code book.
 
     All routines expect an "observation vector" to be stored in each
-    row of the obs matrix.  Similarly the codes are stored row wise
-    in the code book matrix.
+    row of the obs matrix.  Similarly the centroids corresponding to
+    the codes are stored as rows of the code_book matrix. The i'th
+    index is the code corresponding to the code_book[i] centroid.
 
     whiten(obs) --
-        Normalize a group of observations on a per feature basis
+        Normalize a group of observations so each feature has unit variance.
     vq(obs,code_book) --
-        Calculate code book membership of obs
+        Calculate code book membership of obs.
     kmeans(obs,k_or_guess,iter=20,thresh=1e-5) --
-        Train a codebook for mimimum distortion using the kmeans algorithm
+        Train a codebook for mimimum distortion using the k-means algorithm.
     kmeans2
         Similar to kmeans, but with several initialization methods.
 
@@ -22,7 +64,7 @@ __docformat__ = 'restructuredtext'
 __all__ = ['whiten', 'vq', 'kmeans', 'kmeans2']
 
 # TODO:
-#   - implements high level method for running several times kmeans with
+#   - implements high level method for running several times k-means with
 #   different initialialization
 #   - warning: what happens if different number of clusters ? For now, emit a
 #   warning, but it is not great, because I am not sure it really make sense to
@@ -41,15 +83,15 @@ class ClusterError(Exception):
 def whiten(obs):
     """ Normalize a group of observations on a per feature basis.
 
-    Before running kmeans algorithms, it is beneficial to "whiten", or
-    scale, the observation data on a per feature basis.  This is done
-    by dividing each feature by its standard deviation across all
-    observations.
+    Before running k-means, it is beneficial to rescale each feature
+    dimension of the observation set with whitening. Each feature is
+    divided by its standard deviation across all observations to give
+    it unit variance.
 
     :Parameters:
         obs : ndarray
             Each row of the array is an observation.  The
-            columns are the "features" seen during each observation
+            columns are the features seen during each observation.
             ::
 
                       #   f0    f1    f2
@@ -83,23 +125,25 @@ def whiten(obs):
     return obs / std_dev
 
 def vq(obs, code_book):
-    """ Vector Quantization: assign features sets to codes in a code book.
+    """ Vector Quantization: assign codes from a code book to observations.
 
-    Vector quantization determines which code in the code book best represents
-    an observation of a target.  The features of each observation are compared
-    to each code in the book, and assigned the one closest to it.  The
-    observations are contained in the obs array. These features should be
-    "whitened," or nomalized by the standard deviation of all the features
-    before being quantized.  The code book can be created using the kmeans
-    algorithm or something similar.
+    Assigns a code from a code book to each observation. Each
+    observation vector in the MxN obs array is compared with the
+    centroids in the code book and assigned the code of the closest
+    centroid.
+
+    The features in obs should have unit variance, which can be
+    acheived by passing them through the whiten function.  The code
+    book can be created with the k-means algorithm or a different
+    encoding algorithm.
 
     :Parameters:
         obs : ndarray
-            Each row of the array is an observation.  The columns are the
-            "features" seen during each observation The features must be
+            Each row of the NxM array is an observation.  The columns are the
+            "features" seen during each observation. The features must be
             whitened first using the whiten function or something equivalent.
         code_book : ndarray.
-            The code book is usually generated using the kmeans algorithm.
+            The code book is usually generated using the k-means algorithm.
             Each row of the array holds a different code, and the columns are
             the features of the code.
 
@@ -112,15 +156,14 @@ def vq(obs, code_book):
 
     :Returns:
         code : ndarray
-            If obs is a NxM array, then a length N array is returned that holds
-            the selected code book index for each observation.
+            A length N array holding the code book index for each observation.
         dist : ndarray
             The distortion (distance) between the observation and its nearest
-            code
+            code.
 
     Notes
     -----
-    This currently forces 32 bit math precision for speed.  Anyone know
+    This currently forces 32-bit math precision for speed.  Anyone know
     of a situation where this undermines the accuracy of the algorithm?
 
     Examples
@@ -154,7 +197,7 @@ def vq(obs, code_book):
 def py_vq(obs, code_book):
     """ Python version of vq algorithm.
 
-    The algorithm simply computes the euclidian distance between each
+    The algorithm computes the euclidian distance between each
     observation and every frame in the code_book.
 
     :Parameters:
@@ -165,11 +208,11 @@ def py_vq(obs, code_book):
             features (eg columns) than obs.
 
     :Note:
-        This function is slower than the C versions, but it works for
+        This function is slower than the C version but works for
         all input types.  If the inputs have the wrong types for the
         C versions of the function, this one is called as a last resort.
 
-        Its about 20 times slower than the C versions.
+        It is about 20 times slower than the C version.
 
     :Returns:
         code : ndarray
@@ -284,7 +327,7 @@ def py_vq2(obs, code_book):
     return code, min_dist
 
 def _kmeans(obs, guess, thresh=1e-5):
-    """ "raw" version of kmeans.
+    """ "raw" version of k-means.
 
     :Returns:
         code_book :
@@ -294,7 +337,7 @@ def _kmeans(obs, guess, thresh=1e-5):
             Lower means the code_book matches the data better.
 
     :SeeAlso:
-        - kmeans : wrapper around kmeans
+        - kmeans : wrapper around k-means
 
     XXX should have an axis variable here.
 
@@ -341,34 +384,55 @@ def _kmeans(obs, guess, thresh=1e-5):
     return code_book, avg_dist[-1]
 
 def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
-    """Generate a code book with minimum distortion.
+    """Performs k-means on a set of observations for a specified number of
+       iterations. This yields a code book mapping centroids to codes
+       and vice versa. The k-means algorithm adjusts the centroids
+       until the change in distortion caused by quantizing the
+       observation is less than some threshold.
 
     :Parameters:
         obs : ndarray
-            Each row of the array is an observation.  The columns are the
-            "features" seen during each observation The features must be
-            whitened first using the whiten function or something equivalent.
+            Each row of the M by N array is an observation.  The columns are the
+            "features" seen during each observation.  The features must be
+            whitened first with the whiten function.
         k_or_guess : int or ndarray
-            If integer, it is the number of code book elements.  If a 2D array,
-            the array is used as the intial guess for the code book.  The array
-            should have k rows, and the same number of columns (features) as
-            the obs array.
+            The number of centroids to generate. One code will be assigned
+            to each centroid, and it will be the row index in the code_book
+            matrix generated.
+
+            The initial k centroids will be chosen by randomly
+            selecting observations from the observation
+            matrix. Alternatively, passing a k by N array specifies
+            the initial values of the k means.
+
         iter : int
-            The number of times to restart the kmeans algorithm with a new
-            initial guess.  If k_or_guess is a 2D array (codebook), this
-            argument is ignored and only 1 iteration is run.
+            The number of times to run k-means, returning the codebook
+            with the lowest distortion. This argument is ignored if
+            initial mean values are specified with an array for the
+            k_or_guess paramter. This parameter does not represent the
+            number of iterations of the k-means algorithm.
+
         thresh : float
-            Terminate each kmeans run when the distortion change from one
-            iteration to the next is less than this value.
+            Terminates the k-means algorithm if the change in
+            distortion since the last k-means iteration is less than
+            thresh.
+
     :Returns:
-        codesbook : ndarray
-            The codes that best fit the observation
+        codebook : ndarray
+            A k by N array of k centroids. The i'th centroid
+            codebook[i] is represented with the code i. The centroids
+            and codes generated represent the lowest distortion seen,
+            not necessarily the global minimum distortion.
+
         distortion : float
-            The distortion between the observations and the codes.
+           The distortion between the observations passed and the
+           centroids generated.
 
     :SeeAlso:
         - kmeans2: similar function, but with more options for initialization,
           and returns label of each observation
+        - whiten: must be called prior to passing an observation matrix
+          to kmeans.
 
     Examples
     --------
@@ -499,46 +563,51 @@ _valid_miss_meth = {'warn': _missing_warn, 'raise': _missing_raise}
 
 def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
         missing = 'warn'):
-    """Classify a set of points into k clusters using kmean algorithm.
+    """Classify a set of observations into k clusters using the k-means
+       algorithm.
 
-    The algorithm works by minimizing the euclidian distance between data points
-    of cluster means. This version is more complete than kmean (has several
-    initialisation methods).
+    The algorithm attempts to minimize the Euclidian distance between
+    observations and centroids. Several initialization methods are
+    included.
 
     :Parameters:
         data : ndarray
-            Expect a rank 1 or 2 array. Rank 1 are assumed to describe one
-            dimensional data, rank 2 multidimensional data, in which case one
-            row is one observation.
+            A M by N array of M observations in N dimensions or a length
+            M array of M one-dimensional observations.
         k : int or ndarray
-            Number of clusters. If minit arg is 'matrix', or if a ndarray is
-            given instead, it is interpreted as initial cluster to use instead.
+            The number of clusters to form as well as the number of
+            centroids to generate. If minit initialization string is
+            'matrix', or if a ndarray is given instead, it is
+            interpreted as initial cluster to use instead.
         niter : int
-            Number of iterations to run.
+            Number of iterations of k-means to run. Note that this
+            differs in meaning from the iters parameter to the kmeans
+            function.
         thresh : float
             (not used yet).
         minit : string
-            Method for initialization. Available methods are random, points and
-            uniform:
+            Method for initialization. Available methods are 'random',
+            'points', 'uniform', and 'matrix':
 
-            random uses k points drawn from a Gaussian random generator which
-            mean and variances are estimated from the data.
+            'random': generate k centroids from a Gaussian with mean and
+            variance estimated from the data.
 
-            points choses k points at random from the points in data.
+            'points': choose k observations (rows) at random from data for
+            the initial centroids.
 
-            uniform choses k points from the data such are they form a uniform
-            grid od the dataset (not supported yet).
+            'uniform': generate k observations from the data from a uniform
+            distribution defined by the data set (unsupported).
 
-            matrix means that k has to be interpreted as initial clusters
-            (format is the same than data).
+            'matrix': interpret the k parameter as a k by M (or length k
+            array for one-dimensional data) array of initial centroids.
 
     :Returns:
-        clusters : ndarray
-            the found clusters (one cluster per row).
+        centroid : ndarray
+            A k by N array of centroids found at the last iteration of
+            k-means.
         label : ndarray
-            label[i] gives the label of the ith obversation, that its centroid is
-            cluster[label[i]].
-
+            label[i] is the code or index of the centroid the
+            i'th observation is closest to.
     """
     if missing not in _valid_miss_meth.keys():
         raise ValueError("Unkown missing method: %s" % str(missing))
@@ -581,7 +650,7 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
 def _kmeans2(data, code, niter, nc, missing):
     """ "raw" version of kmeans2. Do not use directly.
 
-    Run kmeans with a given initial codebook.  """
+    Run k-means with a given initial codebook.  """
     for i in range(niter):
         # Compute the nearest neighbour for each obs
         # using the current code book
