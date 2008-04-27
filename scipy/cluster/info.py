@@ -2,9 +2,18 @@
 Vector Quantization / Kmeans
 ============================
 
-    Clustering Algorithms are useful in Information Theory, target detection,
-    communications, compression, and other areas.  Currently only Vector
-    Quantization and the KMeans algorithm are supported by the vq module.
-    Self Organized Feature Maps (SOM) and other approaches are also scheduled
-    to appear at a theater near you.
+    Clustering algorithms are useful in information theory, target detection,
+    communications, compression, and other areas. The vq module only 
+    supports vector quantization and the k-means algorithms. Development 
+    of self-organizing maps (SOM) and other approaches is underway.
+
+Hierarchical Clustering
+=======================
+
+    The hierarchy module provides functions for hierarchical and agglomerative 
+    clustering. Its features include generating hierarchical clusters from 
+    distance matrices, computing distance matrices from observation vectors, 
+    calculating statistics on clusters, cutting linkages to generate flat 
+    clusters, and visualizing clusters with dendrograms. 
+
 """
