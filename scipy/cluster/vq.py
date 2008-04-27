@@ -46,13 +46,9 @@
     code book.
 
     All routines expect obs to be a M by N array where the rows are
-    the observation vectors. The codebook is an k by N array where
+    the observation vectors. The codebook is a k by N array where
     the i'th row is the centroid of code word i. The observation
     vectors and centroids have the same feature dimension.
-
- corresponding to
-    the codes are stored as rows of the code_book matrix. The i'th
-    index is the code corresponding to the code_book[i] centroid.
 
     whiten(obs) --
         Normalize a group of observations so each feature has unit
