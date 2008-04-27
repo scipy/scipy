@@ -1,53 +1,53 @@
 """ K-means Clustering and Vector Quantization Module
 
-    Provides routines for performing k-means clustering and vector
-    quantization.
+    Provides routines for k-means clustering, generating code books
+    from k-means models, and quantizing vectors by comparing them with
+    centroids in a code book.
 
     The k-means algorithm takes as input the number of clusters to
     generate k and a set of observation vectors to cluster.  It
     returns as its model a set of centroids, one for each of the k
     clusters.  An observation vector is classified with the cluster
-    number or centroid index of the centroid closest to it. The
-    cluster is defined as the set of all points closest to the
-    centroid of the cluster.
+    number or centroid index of the centroid closest to it.
+
+    Most variants of k-means try to minimize distortion, which is
+    defined as the sum of the distances between each observation and
+    its dominating centroid. A vector belongs to a cluster i if it is
+    closer to centroid i than the other centroids. Each step of the
+    k-means algorithm refines the choices of centroids to reduce
+    distortion. The change in distortion is often used as a stopping
+    criterion: when the change is lower than a threshold, the k-means
+    algorithm is not making progress and terminates.
 
     Since vector quantization is a natural application for k-means,
-    and vector quantization is often a subject of information theory,
-    the terminology for the latter two are often used in describing
-    k-means.  The centroid or cluster index is often referred to as
-    a "code" and the mapping table from codes to centroids is often
-    referred to as a "code book".
+    information theory terminology is often used.  The centroid index
+    or cluster index is also referred to as a "code" and the table
+    mapping codes to centroids and vice versa is often referred as a
+    "code book". The result of k-means, a set of centroids, can be
+    used to quantize vectors. Quantization aims to find an encoding of
+    vectors that reduces the expected distortion.
 
-    The result of k-means, a set of centroids, is often used to
-    quantize vectors. Quantization aims to find an encoding that
-    reduces information loss or distortion. The centroids represent
-    the center of mass of the clusters they define. Each step of
-    the k-means algorithm refines the choices of centroids to
-    reduce distortion.  When change in distortion is lower than
-    a threshold, the k-means algorithm has converged.
-
-    For example, suppose we wish to compress a 24-bit per pixel color
-    image before sending it over the web. Each pixel value is
-    represented by three bytes, one each for red, green, and blue. By
-    using a smaller 8-bit encoding, we can reduce the data to send by
-    two thirds. Ideally, the colors for each of the 256 possible 8-bit
+    For example, suppose we wish to compress a 24-bit color image
+    (each pixel is represented by one byte for red, one for blue, and
+    one for green) before sending it over the web.  By using a smaller
+    8-bit encoding, we can reduce the data to send by two
+    thirds. Ideally, the colors for each of the 256 possible 8-bit
     encoding values should be chosen to minimize distortion of the
-    color. By running k-means with k=256, we generate a code book of
-    256 codes, one for every 8-bit sequence.  Instead of sending a
-    3-byte value for each pixel, the centroid index (or code word) of
-    the centroid closest to it is is transmitted. The code book is
-    also sent over the wire so each received pixel value, represented
-    as a centroid index, can be translated back into its 24-bit
-    representation.
+    color. Running k-means with k=256 generates a code book of 256
+    codes, which fills up all possible 8-bit sequences.  Instead of
+    sending a 3-byte value for each pixel, the 8-bit centroid index
+    (or code word) of the dominating centroid is transmitted. The code
+    book is also sent over the wire so each 8-bit code can be
+    translated back to a 24-bit pixel value representation. If the
+    image of interest was of an ocean, we would expect many 24-bit
+    blues to be represented by 8-bit codes. If it was an image of a
+    human face, more flesh tone colors would be represented in the
+    code book.
 
-    This module provides routines for k-means clustering, generating
-    code books from k-means, and quantizing vectors by comparing
-    them to centroids in a code book.
-
-    All routines expect an "observation vector" to be stored in each
-    row of the obs matrix.  Similarly the centroids corresponding to
-    the codes are stored as rows of the code_book matrix. The i'th
-    index is the code corresponding to the code_book[i] centroid.
+    All routines expect the observation vectors to be stored as rows
+    in the obs matrix.  Similarly the centroids corresponding to the
+    codes are stored as rows of the code_book matrix.  The i'th index
+    is the code corresponding to the code_book[i] centroid.
 
     whiten(obs) --
         Normalize a group of observations so each feature has unit variance.
