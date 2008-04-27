@@ -12,13 +12,13 @@
 
     A vector v belongs to cluster i if it is closer to centroid i than
     the other centroids. If v belongs to i, we say centroid i is the
-    dominating centroid of v. Most variants of k-means try to minimize
-    distortion, which is defined as the sum of the distances between
-    each observation vector and its dominating centroid.  Each step of
-    the k-means algorithm refines the choices of centroids to reduce
-    distortion. The change in distortion is often used as a stopping
-    criterion: when the change is lower than a threshold, the k-means
-    algorithm is not making progress and terminates.
+    dominating centroid of v. Common variants of k-means try to
+    minimize distortion, which is defined as the sum of the distances
+    between each observation vector and its dominating centroid.  Each
+    step of the k-means algorithm refines the choices of centroids to
+    reduce distortion. The change in distortion is often used as a
+    stopping criterion: when the change is lower than a threshold, the
+    k-means algorithm is not making progress and terminates.
 
     Since vector quantization is a natural application for k-means,
     information theory terminology is often used.  The centroid index
