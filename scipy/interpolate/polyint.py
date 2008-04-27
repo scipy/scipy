@@ -468,10 +468,7 @@ class PiecewisePolynomial:
         assert n2<=len(y2)
 
         xi = np.zeros(n)
-        if self.r==1:
-            yi = np.zeros(n)
-        else:
-            yi = np.zeros((n,self.r))
+        yi = np.zeros((n,self.r))
         xi[:n1] = x1
         yi[:n1] = y1[:n1]
         xi[n1:] = x2
@@ -497,6 +494,13 @@ class PiecewisePolynomial:
             raise ValueError, "x coordinates must be in the %d direction: %s" % (self.direction, self.xi)
         self.xi.append(xi)
         self.yi.append(yi)
+
+        for y in yi:
+            if np.shape(y) != (self.r,):
+                if self.r>1:
+                    raise ValueError, "Each derivative must be a vector of length %d" % self.r
+                else:
+                    raise ValueError, "Each derivative must be a scalar"
 
         if order is None:
             n1 = len(self.yi[-2])
