@@ -56,7 +56,7 @@
         Calculate code book membership of obs.
     kmeans(obs,k_or_guess,iter=20,thresh=1e-5) --
         Train a codebook for mimimum distortion using the k-means algorithm.
-    kmeans2
+    kmeans2 --
         Similar to kmeans, but with several initialization methods.
 
 """
