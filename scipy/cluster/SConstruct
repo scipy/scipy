@@ -10,3 +10,6 @@ env = GetNumpyEnvironment(ARGUMENTS)
 env.AppendUnique(CPPPATH = get_numpy_include_dirs())
 env.NumpyPythonExtension('_vq', source = [join('src', 'vq_module.c'),
                                           join('src', 'vq.c')])
+
+env.NumpyPythonExtension('_hierarchy_wrap', source = [join('src', 'hierarchy_wrap.c'),
+                                          join('src', 'hierarchy.c')])
