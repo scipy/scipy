@@ -1,5 +1,5 @@
 #
-# cluster - Vector Quantization / Kmeans
+# cluster - Vector Quantization / K-means / Hierarchical Clustering
 #
 
 from info import __doc__
