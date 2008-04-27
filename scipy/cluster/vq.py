@@ -51,13 +51,19 @@
     is the code corresponding to the code_book[i] centroid.
 
     whiten(obs) --
-        Normalize a group of observations so each feature has unit variance.
+        Normalize a group of observations so each feature has unit
+        variance.
     vq(obs,code_book) --
-        Calculate code book membership of obs.
+        Calculate code book membership of a set of observation
+        vectors.
     kmeans(obs,k_or_guess,iter=20,thresh=1e-5) --
-        Train a codebook for mimimum distortion using the k-means algorithm.
+        Clusters a set of observation vectors. Learns centroids with
+        the k-means algorithm, trying to minimize distortion.  A code
+        book is generated that can be used to quantize vectors.
     kmeans2 --
-        Similar to kmeans, but with several initialization methods.
+        A different implementation of k-means with more methods for
+        initializing centroids.  Uses maximum number of iterations as
+        opposed to a distortion threshold as its stopping criterion.
 
 """
 __docformat__ = 'restructuredtext'
@@ -580,10 +586,10 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
             centroids to generate. If minit initialization string is
             'matrix', or if a ndarray is given instead, it is
             interpreted as initial cluster to use instead.
-        niter : int
-            Number of iterations of k-means to run. Note that this
-            differs in meaning from the iters parameter to the kmeans
-            function.
+        iter : int
+            Number of iterations of the k-means algrithm to run. Note
+            that this differs in meaning from the iters parameter to
+            the kmeans function.
         thresh : float
             (not used yet).
         minit : string
