@@ -2,7 +2,6 @@
 -----------------------------------------
 Hierarchical Clustering Library for Scipy
   Copyright (C) Damian Eads, 2007-2008.
-          All Rights Reserved.
              New BSD License
 -----------------------------------------
 
