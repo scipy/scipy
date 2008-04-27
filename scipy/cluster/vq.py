@@ -18,7 +18,7 @@
     step of the k-means algorithm refines the choices of centroids to
     reduce distortion. The change in distortion is often used as a
     stopping criterion: when the change is lower than a threshold, the
-    k-means algorithm is not making progress and terminates.
+    k-means algorithm is not making sufficient progress and terminates.
 
     Since vector quantization is a natural application for k-means,
     information theory terminology is often used.  The centroid index
@@ -391,31 +391,34 @@ def _kmeans(obs, guess, thresh=1e-5):
     return code_book, avg_dist[-1]
 
 def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
-    """Performs k-means on a set of observations for a specified number of
-       iterations. This yields a code book mapping centroids to codes
+    """Performs k-means on a set of observation vectors forming k
+       clusters. This yields a code book mapping centroids to codes
        and vice versa. The k-means algorithm adjusts the centroids
-       until the change in distortion caused by quantizing the
-       observation is less than some threshold.
+       until the sufficient progress cannot be made, i.e. the change
+       in distortion since the last iteration is less than some
+       threshold.
 
     :Parameters:
         obs : ndarray
-            Each row of the M by N array is an observation.  The columns are the
-            "features" seen during each observation.  The features must be
-            whitened first with the whiten function.
-        k_or_guess : int or ndarray
-            The number of centroids to generate. One code will be assigned
-            to each centroid, and it will be the row index in the code_book
-            matrix generated.
+            Each row of the M by N array is an observation vector. The
+            columns are the features seen during each observation.
+            The features must be whitened first with the whiten
+            function.
 
-            The initial k centroids will be chosen by randomly
-            selecting observations from the observation
-            matrix. Alternatively, passing a k by N array specifies
-            the initial values of the k means.
+        k_or_guess : int or ndarray
+            The number of centroids to generate. One code will be
+            assigned to each centroid, and it will be the row index in
+            the code_book matrix generated.
+
+            The initial k centroids are chosen by randomly selecting
+            observations from the observation matrix. Alternatively,
+            passing a k by N array specifies the initial values of the
+            k centroids.
 
         iter : int
             The number of times to run k-means, returning the codebook
             with the lowest distortion. This argument is ignored if
-            initial mean values are specified with an array for the
+            initial centroids are specified with an array for the
             k_or_guess paramter. This parameter does not represent the
             number of iterations of the k-means algorithm.
 
@@ -436,8 +439,9 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
            centroids generated.
 
     :SeeAlso:
-        - kmeans2: similar function, but with more options for initialization,
-          and returns label of each observation
+        - kmeans2: a different implementation of k-means clustering
+          with more methods for generating initial centroids but without
+          using the distortion change threshold as a stopping criterion.
         - whiten: must be called prior to passing an observation matrix
           to kmeans.
 
