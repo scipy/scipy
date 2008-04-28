@@ -114,14 +114,14 @@ extern PyObject *linkage_euclid_wrap(PyObject *self, PyObject *args) {
 
 extern PyObject *calculate_cluster_sizes_wrap(PyObject *self, PyObject *args) {
   int n;
-  PyArrayObject *Z, *CS;
+  PyArrayObject *Z, *CS_;
   if (!PyArg_ParseTuple(args, "O!O!i",
 			&PyArray_Type, &Z,
-			&PyArray_Type, &CS,
+			&PyArray_Type, &CS_,
 			&n)) {
     return 0;
   }
-  calculate_cluster_sizes((const double*)Z->data, (double*)CS->data, n);
+  calculate_cluster_sizes((const double*)Z->data, (double*)CS_->data, n);
   return Py_BuildValue("d", 0.0);
 }
 
@@ -333,113 +333,113 @@ extern PyObject *chopmins_wrap(PyObject *self, PyObject *args) {
 }
 
 extern PyObject *dot_product_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_d1, *_d2;
+  PyArrayObject *d1_, *d2_;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_d1,
-			&PyArray_Type, &_d2)) {
+			&PyArray_Type, &d1_,
+			&PyArray_Type, &d2_)) {
     return 0;
   }
-  return Py_BuildValue("d", dot_product((const double*)_d1->data,
-					(const double*)_d2->data,
-					_d1->dimensions[0]));
+  return Py_BuildValue("d", dot_product((const double*)d1_->data,
+					(const double*)d2_->data,
+					d1_->dimensions[0]));
 }
 
 extern PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_M, *_v;
+  PyArrayObject *M_, *v_;
   int n;
   const double *v;
   double *M;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_M,
-			&PyArray_Type, &_v)) {
+			&PyArray_Type, &M_,
+			&PyArray_Type, &v_)) {
     return 0;
   }
   else {
-    M = (double*)_M->data;
-    v = (const double*)_v->data;
-    n = _M->dimensions[0];
+    M = (double*)M_->data;
+    v = (const double*)v_->data;
+    n = M_->dimensions[0];
     dist_to_squareform_from_vector(M, v, n);
   }
   return Py_BuildValue("d", 0.0);
 }
 
 extern PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_M, *_v;
+  PyArrayObject *M_, *v_;
   int n;
   double *v;
   const double *M;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_M,
-			&PyArray_Type, &_v)) {
+			&PyArray_Type, &M_,
+			&PyArray_Type, &v_)) {
     return 0;
   }
   else {
-    M = (const double*)_M->data;
-    v = (double*)_v->data;
-    n = _M->dimensions[0];
+    M = (const double*)M_->data;
+    v = (double*)v_->data;
+    n = M_->dimensions[0];
     dist_to_vector_from_squareform(M, v, n);
   }
   return Py_BuildValue("d", 0.0);
 }
 
 extern PyObject *pdist_euclidean_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const double *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const double*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const double*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_euclidean(X, dm, m, n);
   }
   return Py_BuildValue("d", 0.0);
 }
 
 extern PyObject *pdist_canberra_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const double *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const double*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const double*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_canberra(X, dm, m, n);
   }
   return Py_BuildValue("d", 0.0);
 }
 
 extern PyObject *pdist_bray_curtis_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const double *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const double*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const double*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_bray_curtis(X, dm, m, n);
   }
   return Py_BuildValue("d", 0.0);
@@ -447,24 +447,24 @@ extern PyObject *pdist_bray_curtis_wrap(PyObject *self, PyObject *args) {
 
 
 extern PyObject *pdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_covinv, *_dm;
+  PyArrayObject *X_, *covinv_, *dm_;
   int m, n;
   double *dm;
   const double *X;
   const double *covinv;
   if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_covinv,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &covinv_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const double*)_X->data;
-    covinv = (const double*)_covinv->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const double*)X_->data;
+    covinv = (const double*)covinv_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_mahalanobis(X, covinv, dm, m, n);
   }
   return Py_BuildValue("d", 0.0);
@@ -472,21 +472,21 @@ extern PyObject *pdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
 
 
 extern PyObject *pdist_chebyshev_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const double *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const double*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const double*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_chebyshev(X, dm, m, n);
   }
   return Py_BuildValue("d", 0.0);
@@ -494,173 +494,173 @@ extern PyObject *pdist_chebyshev_wrap(PyObject *self, PyObject *args) {
 
 
 extern PyObject *pdist_cosine_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm, *_norms;
+  PyArrayObject *X_, *dm_, *norms_;
   int m, n;
   double *dm;
   const double *X, *norms;
   if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm,
-			&PyArray_Type, &_norms)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_,
+			&PyArray_Type, &norms_)) {
     return 0;
   }
   else {
-    X = (const double*)_X->data;
-    dm = (double*)_dm->data;
-    norms = (const double*)_norms->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const double*)X_->data;
+    dm = (double*)dm_->data;
+    norms = (const double*)norms_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_cosine(X, dm, m, n, norms);
   }
   return Py_BuildValue("d", 0.0);
 }
 
 extern PyObject *pdist_seuclidean_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm, *_var;
+  PyArrayObject *X_, *dm_, *var_;
   int m, n;
   double *dm;
   const double *X, *var;
   if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_var,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &var_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (double*)_X->data;
-    dm = (double*)_dm->data;
-    var = (double*)_var->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (double*)X_->data;
+    dm = (double*)dm_->data;
+    var = (double*)var_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_seuclidean(X, var, dm, m, n);
   }
   return Py_BuildValue("d", 0.0);
 }
 
 extern PyObject *pdist_city_block_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const double *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const double*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const double*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_city_block(X, dm, m, n);
   }
   return Py_BuildValue("d", 0.0);
 }
 
 extern PyObject *pdist_hamming_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const double *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const double*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const double*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_hamming(X, dm, m, n);
   }
   return Py_BuildValue("d", 0.0);
 }
 
 extern PyObject *pdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const char*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const char*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_hamming_bool(X, dm, m, n);
   }
   return Py_BuildValue("d", 0.0);
 }
 
 extern PyObject *pdist_jaccard_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const double *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const double*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const double*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_jaccard(X, dm, m, n);
   }
   return Py_BuildValue("d", 0.0);
 }
 
 extern PyObject *pdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const char*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const char*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_jaccard_bool(X, dm, m, n);
   }
   return Py_BuildValue("d", 0.0);
 }
 
 extern PyObject *pdist_minkowski_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm, *X;
   double p;
   if (!PyArg_ParseTuple(args, "O!O!d",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm,
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_,
 			&p)) {
     return 0;
   }
   else {
-    X = (double*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (double*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_minkowski(X, dm, m, n, p);
   }
   return Py_BuildValue("d", 0.0);
@@ -668,187 +668,187 @@ extern PyObject *pdist_minkowski_wrap(PyObject *self, PyObject *args) {
 
 
 extern PyObject *pdist_yule_bool_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const char*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const char*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_yule_bool(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
 
 extern PyObject *pdist_matching_bool_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const char*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const char*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_matching_bool(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
 
 extern PyObject *pdist_dice_bool_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const char*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const char*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_dice_bool(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
 
 extern PyObject *pdist_rogerstanimoto_bool_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const char*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const char*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_rogerstanimoto_bool(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
 
 extern PyObject *pdist_russellrao_bool_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const char*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const char*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_russellrao_bool(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
 
 extern PyObject *pdist_kulsinski_bool_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const char*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const char*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_kulsinski_bool(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
 
 extern PyObject *pdist_sokalmichener_bool_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const char*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const char*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_sokalmichener_bool(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
 
 extern PyObject *pdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_X, *_dm;
+  PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &_X,
-			&PyArray_Type, &_dm)) {
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
     return 0;
   }
   else {
-    X = (const char*)_X->data;
-    dm = (double*)_dm->data;
-    m = _X->dimensions[0];
-    n = _X->dimensions[1];
-    
+    X = (const char*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
     pdist_sokalsneath_bool(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
 
 extern PyObject *leaders_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *_Z, *_T, *_L, *_M;
+  PyArrayObject *Z_, *T_, *L_, *M_;
   int kk, n, res;
   if (!PyArg_ParseTuple(args, "O!O!O!O!ii",
-			&PyArray_Type, &_Z,
-			&PyArray_Type, &_T,
-			&PyArray_Type, &_L,
-			&PyArray_Type, &_M,
+			&PyArray_Type, &Z_,
+			&PyArray_Type, &T_,
+			&PyArray_Type, &L_,
+			&PyArray_Type, &M_,
 			&kk, &n)) {
     return 0;
   }
   else {
-    res = leaders((double*)_Z->data, (int*)_T->data,
-		  (int*)_L->data, (int*)_M->data, kk, n);
+    res = leaders((double*)Z_->data, (int*)T_->data,
+		  (int*)L_->data, (int*)M_->data, kk, n);
   }
   return Py_BuildValue("i", res);
 }
