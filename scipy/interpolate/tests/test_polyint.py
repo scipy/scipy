@@ -219,6 +219,13 @@ class CheckPiecewise(TestCase):
         assert_array_equal(np.shape(P([0])), (1,3))
         assert_array_equal(np.shape(P([0,1])), (2,3))
 
+    def test_shapes_vectorvalue_1d(self):
+        yi = np.multiply.outer(np.asarray(self.yi),np.arange(1))
+        P = PiecewisePolynomial(self.xi,yi,4)
+        assert_array_equal(np.shape(P(0)), (1,))
+        assert_array_equal(np.shape(P([0])), (1,1))
+        assert_array_equal(np.shape(P([0,1])), (2,1))
+
     def test_shapes_vectorvalue_derivative(self):
         P = PiecewisePolynomial(self.xi,np.multiply.outer(self.yi,np.arange(3)),4)
         n = 4
