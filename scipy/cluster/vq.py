@@ -5,20 +5,21 @@
     centroids in a code book.
 
     The k-means algorithm takes as input the number of clusters to
-    generate k and a set of observation vectors to cluster.  It
-    returns as its model a set of centroids, one for each of the k
-    clusters.  An observation vector is classified with the cluster
-    number or centroid index of the centroid closest to it.
+    generate, k, and a set of observation vectors to cluster.  It
+    returns a set of centroids, one for each of the k clusters.  An
+    observation vector is classified with the cluster number or
+    centroid index of the centroid closest to it.
 
     A vector v belongs to cluster i if it is closer to centroid i than
-    the other centroids. If v belongs to i, we say centroid i is the
+    any other centroids. If v belongs to i, we say centroid i is the
     dominating centroid of v. Common variants of k-means try to
     minimize distortion, which is defined as the sum of the distances
     between each observation vector and its dominating centroid.  Each
     step of the k-means algorithm refines the choices of centroids to
     reduce distortion. The change in distortion is often used as a
     stopping criterion: when the change is lower than a threshold, the
-    k-means algorithm is not making sufficient progress and terminates.
+    k-means algorithm is not making sufficient progress and
+    terminates.
 
     Since vector quantization is a natural application for k-means,
     information theory terminology is often used.  The centroid index
@@ -31,7 +32,7 @@
     For example, suppose we wish to compress a 24-bit color image
     (each pixel is represented by one byte for red, one for blue, and
     one for green) before sending it over the web.  By using a smaller
-    8-bit encoding, we can reduce the data to send by two
+    8-bit encoding, we can reduce the amount of data by two
     thirds. Ideally, the colors for each of the 256 possible 8-bit
     encoding values should be chosen to minimize distortion of the
     color. Running k-means with k=256 generates a code book of 256
@@ -46,9 +47,9 @@
     code book.
 
     All routines expect obs to be a M by N array where the rows are
-    the observation vectors. The codebook is a k by N array where
-    the i'th row is the centroid of code word i. The observation
-    vectors and centroids have the same feature dimension.
+    the observation vectors. The codebook is a k by N array where the
+    i'th row is the centroid of code word i. The observation vectors
+    and centroids have the same feature dimension.
 
     whiten(obs) --
         Normalize a group of observations so each feature has unit
@@ -135,7 +136,7 @@ def vq(obs, code_book):
     """ Vector Quantization: assign codes from a code book to observations.
 
     Assigns a code from a code book to each observation. Each
-    observation vector in the MxN obs array is compared with the
+    observation vector in the M by N obs array is compared with the
     centroids in the code book and assigned the code of the closest
     centroid.
 
@@ -303,9 +304,10 @@ def py_vq2(obs, code_book):
             features (eg columns) than obs.
 
     :Note:
-        This could be faster when number of codebooks is small, but it becomes
-        a real memory hog when codebook is large.  It requires NxMxO storage
-        where N=number of obs, M = number of features, and O = number of codes.
+        This could be faster when number of codebooks is small, but it
+        becomes a real memory hog when codebook is large. It requires
+        N by M by O storage where N=number of obs, M = number of
+        features, and O = number of codes.
 
     :Returns:
         code : ndarray
@@ -394,8 +396,8 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
     """Performs k-means on a set of observation vectors forming k
        clusters. This yields a code book mapping centroids to codes
        and vice versa. The k-means algorithm adjusts the centroids
-       until the sufficient progress cannot be made, i.e. the change
-       in distortion since the last iteration is less than some
+       until sufficient progress cannot be made, i.e. the change in
+       distortion since the last iteration is less than some
        threshold.
 
     :Parameters:
@@ -406,14 +408,13 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
             function.
 
         k_or_guess : int or ndarray
-            The number of centroids to generate. One code will be
-            assigned to each centroid, and it will be the row index in
-            the code_book matrix generated.
+            The number of centroids to generate. A code is assigned to
+            each centroid, which is also the row index of the centroid
+            in the code_book matrix generated.
 
             The initial k centroids are chosen by randomly selecting
             observations from the observation matrix. Alternatively,
-            passing a k by N array specifies the initial values of the
-            k centroids.
+            passing a k by N array specifies the initial k centroids.
 
         iter : int
             The number of times to run k-means, returning the codebook
@@ -432,7 +433,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
             A k by N array of k centroids. The i'th centroid
             codebook[i] is represented with the code i. The centroids
             and codes generated represent the lowest distortion seen,
-            not necessarily the global minimum distortion.
+            not necessarily the globally minimal distortion.
 
         distortion : float
            The distortion between the observations passed and the
@@ -441,7 +442,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
     :SeeAlso:
         - kmeans2: a different implementation of k-means clustering
           with more methods for generating initial centroids but without
-          using the distortion change threshold as a stopping criterion.
+          using a distortion change threshold as a stopping criterion.
         - whiten: must be called prior to passing an observation matrix
           to kmeans.
 
