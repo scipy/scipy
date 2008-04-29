@@ -21,7 +21,7 @@ C                for small argument
 C       Input:   z   --- complex argument of D(z)
 C                n   --- Order of D(z) (n = 0,-1,-2,...)
 C       Output:  CDN --- Dn(z)
-C       Routine called: GAIH for computing â(x), x=n/2 (n=1,2,...)
+C       Routine called: GAIH for computing Ð“(x), x=n/2 (n=1,2,...)
 C       ===========================================================
 C
         IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Y)
@@ -136,8 +136,8 @@ C       ==========================================================
 C       Purpose: Compute the associated Legendre functions of the
 C                second kind, Qmn(x) and Qmn'(x)
 C       Input :  x  --- Argument of Qmn(x) 
-C                m  --- Order of Qmn(x)  ( m = 0,1,2,úúú )
-C                n  --- Degree of Qmn(x) ( n = 0,1,2,úúú )
+C                m  --- Order of Qmn(x)  ( m = 0,1,2,â€¦ )
+C                n  --- Degree of Qmn(x) ( n = 0,1,2,â€¦ )
 C                mm --- Physical dimension of QM and QD
 C       Output:  QM(m,n) --- Qmn(x)
 C                QD(m,n) --- Qmn'(x)
@@ -294,7 +294,7 @@ C                for small argument
 C       Input:   x  --- Argument
 C                va --- Order
 C       Output:  PV --- Vv(x)
-C       Routine called : GAMMA2 for computing â(x)
+C       Routine called : GAMMA2 for computing Ð“(x)
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -345,7 +345,7 @@ C       ===========================================================
 C       Purpose: Compute the zeros of Bessel functions Jn(x) and
 C                Jn'(x), and arrange them in the order of their
 C                magnitudes
-C       Input :  NT    --- Number of total zeros ( NT ó 1200 )
+C       Input :  NT    --- Number of total zeros ( NT â‰¤ 1200 )
 C       Output:  ZO(L) --- Value of the L-th zero of Jn(x)
 C                          and Jn'(x)
 C                N(L)  --- n, order of Jn(x) or Jn'(x) associated
@@ -866,16 +866,16 @@ C       **********************************
 C
 C       =====================================================
 C       Purpose: Compute the initial characteristic value of
-C                Mathieu functions for m ó 12  or q ó 300 or
-C                q ò m*m
+C                Mathieu functions for m â‰¤ 12  or q â‰¤ 300 or
+C                q â‰¥ m*m
 C       Input :  m  --- Order of Mathieu functions
 C                q  --- Parameter of Mathieu functions
 C       Output:  A0 --- Characteristic value
 C       Routines called:
 C             (1) CVQM for computing initial characteristic
-C                 value for q ó 3*m
+C                 value for q â‰¤ 3*m
 C             (2) CVQL for computing initial characteristic
-C                 value for q ò m*m
+C                 value for q â‰¥ m*m
 C       ====================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -1033,7 +1033,7 @@ C       **********************************
 C
 C       =====================================================
 C       Purpose: Compute the characteristic value of Mathieu
-C                functions for q ó m*m
+C                functions for q â‰¤ m*m
 C       Input :  m  --- Order of Mathieu functions
 C                q  --- Parameter of Mathieu functions
 C       Output:  A0 --- Initial characteristic value
@@ -1054,7 +1054,7 @@ C       **********************************
 C
 C       ========================================================
 C       Purpose: Compute the characteristic value of Mathieu
-C                functions  for q ò 3m
+C                functions  for q â‰¥ 3m
 C       Input :  m  --- Order of Mathieu functions
 C                q  --- Parameter of Mathieu functions
 C       Output:  A0 --- Initial characteristic value
@@ -1246,10 +1246,10 @@ C       **********************************
 C
 C       ==========================================================
 C       Purpose: Integrate [1-J0(t)]/t with respect to t from 0
-C                to x, and Y0(t)/t with respect to t from x to ì
-C       Input :  x   --- Variable in the limits  ( x ò 0 )
+C                to x, and Y0(t)/t with respect to t from x to âˆž
+C       Input :  x   --- Variable in the limits  ( x â‰¥ 0 )
 C       Output:  TTJ --- Integration of [1-J0(t)]/t from 0 to x
-C                TTY --- Integration of Y0(t)/t from x to ì
+C                TTY --- Integration of Y0(t)/t from x to âˆž
 C       ==========================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -1302,10 +1302,10 @@ C       **********************************
 C
 C       =========================================================
 C       Purpose: Integrate [1-J0(t)]/t with respect to t from 0
-C                to x, and Y0(t)/t with respect to t from x to ì
-C       Input :  x   --- Variable in the limits  ( x ò 0 )
+C                to x, and Y0(t)/t with respect to t from x to âˆž
+C       Input :  x   --- Variable in the limits  ( x â‰¥ 0 )
 C       Output:  TTJ --- Integration of [1-J0(t)]/t from 0 to x
-C                TTY --- Integration of Y0(t)/t from x to ì
+C                TTY --- Integration of Y0(t)/t from x to âˆž
 C       =========================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -1601,9 +1601,9 @@ C                 value using an iteration method
 C             (2) CV0 for finding initial characteristic
 C                 values using polynomial approximation
 C             (3) CVQM for computing initial characteristic
-C                 values for q ó 3*m
+C                 values for q â‰¤ 3*m
 C             (3) CVQL for computing initial characteristic
-C                 values for q ò m*m
+C                 values for q â‰¥ m*m
 C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -1917,9 +1917,9 @@ C       **********************************
         SUBROUTINE GAM0 (X,GA)
 C
 C       ================================================
-C       Purpose: Compute gamma function â(x)
-C       Input :  x  --- Argument of â(x)  ( |x| ó 1 )
-C       Output:  GA --- â(x)
+C       Purpose: Compute gamma function Ð“(x)
+C       Input :  x  --- Argument of Ð“(x)  ( |x| â‰¤ 1 )
+C       Output:  GA --- Ð“(x)
 C       ================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -1950,7 +1950,7 @@ C       **********************************
 C
 C       =============================================
 C       Purpose: Compute cosine and sine integrals
-C                Si(x) and Ci(x) ( x ò 0 )
+C                Si(x) and Ci(x) ( x â‰¥ 0 )
 C       Input :  x  --- Argument of Ci(x) and Si(x)
 C       Output:  CI --- Ci(x)
 C                SI --- Si(x)
@@ -2050,7 +2050,7 @@ C       **********************************
 C
 C       =============================================
 C       Purpose: Compute cosine and sine integrals
-C                Si(x) and Ci(x)  ( x ò 0 )
+C                Si(x) and Ci(x)  ( x â‰¥ 0 )
 C       Input :  x  --- Argument of Ci(x) and Si(x)
 C       Output:  CI --- Ci(x)
 C                SI --- Si(x)
@@ -2134,7 +2134,7 @@ C
 C       ===========================================================
 C       Purpose: Evaluate the integral of modified Struve function
 C                L0(t) with respect to t from 0 to x
-C       Input :  x   --- Upper limit  ( x ò 0 )
+C       Input :  x   --- Upper limit  ( x â‰¥ 0 )
 C       Output:  TL0 --- Integration of L0(t) from 0 to x
 C       ===========================================================
 C
@@ -2186,7 +2186,7 @@ C       **********************************
 C
 C       ================================================
 C       Purpose: Compute modified Struve function L1(x)
-C       Input :  x   --- Argument of L1(x) ( x ò 0 )
+C       Input :  x   --- Argument of L1(x) ( x â‰¥ 0 )
 C       Output:  SL1 --- L1(x)
 C       ================================================
 C
@@ -2291,7 +2291,7 @@ C       **********************************
 C
 C       ================================================
 C       Purpose: Compute modified Struve function L0(x)
-C       Input :  x   --- Argument of L0(x) ( x ò 0 )
+C       Input :  x   --- Argument of L0(x) ( x â‰¥ 0 )
 C       Output:  SL0 --- L0(x)
 C       ================================================
 C
@@ -2551,10 +2551,10 @@ C                Mathieu functions
 C       Input :  M  --- Maximum order of Mathieu functions
 C                q  --- Parameter of Mathieu functions
 C                KD --- Case code
-C                       KD=1 for cem(x,q)  ( m = 0,2,4,úúú )
-C                       KD=2 for cem(x,q)  ( m = 1,3,5,úúú )
-C                       KD=3 for sem(x,q)  ( m = 1,3,5,úúú )
-C                       KD=4 for sem(x,q)  ( m = 2,4,6,úúú )
+C                       KD=1 for cem(x,q)  ( m = 0,2,4,â€¦ )
+C                       KD=2 for cem(x,q)  ( m = 1,3,5,â€¦ )
+C                       KD=3 for sem(x,q)  ( m = 1,3,5,â€¦ )
+C                       KD=4 for sem(x,q)  ( m = 2,4,6,â€¦ )
 C       Output:  CV(I) --- Characteristic values; I = 1,2,3,...
 C                For KD=1, CV(1), CV(2), CV(3),..., correspond to
 C                the characteristic values of cem for m = 0,2,4,...
@@ -2663,10 +2663,10 @@ C       **********************************
 C
 C       =========================================================
 C       Purpose: Integrate [I0(t)-1]/t with respect to t from 0
-C                to x, and K0(t)/t with respect to t from x to ì
-C       Input :  x   --- Variable in the limits  ( x ò 0 )
+C                to x, and K0(t)/t with respect to t from x to âˆž
+C       Input :  x   --- Variable in the limits  ( x â‰¥ 0 )
 C       Output:  TTI --- Integration of [I0(t)-1]/t from 0 to x
-C                TTK --- Integration of K0(t)/t from x to ì
+C                TTK --- Integration of K0(t)/t from x to âˆž
 C       =========================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -2719,7 +2719,7 @@ C
 C       ====================================================
 C       Purpose: Compute Legendre functions Qn(x) & Qn'(x)
 C       Input :  x  --- Argument of Qn(x)
-C                n  --- Degree of Qn(x)  ( n = 0,1,2,úúú)
+C                n  --- Degree of Qn(x)  ( n = 0,1,2,â€¦)
 C       Output:  QN(n) --- Qn(x)
 C                QD(n) --- Qn'(x)
 C       ====================================================
@@ -2828,10 +2828,10 @@ C       **********************************
 C
 C       =========================================================
 C       Purpose: Integrate [I0(t)-1]/t with respect to t from 0
-C                to x, and K0(t)/t with respect to t from x to ì
-C       Input :  x   --- Variable in the limits  ( x ò 0 )
+C                to x, and K0(t)/t with respect to t from x to âˆž
+C       Input :  x   --- Variable in the limits  ( x â‰¥ 0 )
 C       Output:  TTI --- Integration of [I0(t)-1]/t from 0 to x
-C                TTK --- Integration of K0(t)/t from x to ì
+C                TTK --- Integration of K0(t)/t from x to âˆž
 C       =========================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -2906,7 +2906,7 @@ C                VM --- Highest order computed
 C       Routines called:
 C            (1) MSTA1 and MSTA2 for computing the starting 
 C                point for backward recurrence
-C            (2) GAM0 for computing gamma function (|x| ó 1)
+C            (2) GAM0 for computing gamma function (|x| â‰¤ 1)
 C       =========================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -3039,7 +3039,7 @@ C                b  --- Parameter
 C                x  --- Argument ( x > 0 )
 C       Output:  HU --- U(a,b,z)
 C                ID --- Estimated number of significant digits
-C       Routine called: GAMMA2 for computing â(x)
+C       Routine called: GAMMA2 for computing Ð“(x)
 C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -3223,7 +3223,7 @@ C       **********************************
 C
 C       =========================================================
 C       Purpose : Compute the zeros of Laguerre polynomial Ln(x)
-C                 in the interval [0,ì], and the corresponding
+C                 in the interval [0,âˆž], and the corresponding
 C                 weighting coefficients for Gauss-Laguerre
 C                 integration
 C       Input :   n    --- Order of the Laguerre polynomial
@@ -3283,7 +3283,7 @@ C                va --- Order
 C       Output:  PV --- Vv(x)
 C       Routines called:
 C             (1) DVLA for computing Dv(x) for large |x|
-C             (2) GAMMA2 for computing â(x)
+C             (2) GAMMA2 for computing Ð“(x)
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -3320,7 +3320,7 @@ C       Purpose: Compute Bessel functions Jv(z), Yv(z) and their
 C                derivatives for a complex argument
 C       Input :  z --- Complex argument
 C                v --- Order of Jv(z) and Yv(z)
-C                      ( v = n+v0, n = 0,1,2,..., 0 ó v0 < 1 )
+C                      ( v = n+v0, n = 0,1,2,..., 0 â‰¤ v0 < 1 )
 C       Output:  CBJ(n) --- Jn+v0(z)
 C                CDJ(n) --- Jn+v0'(z)
 C                CBY(n) --- Yn+v0(z)
@@ -3576,7 +3576,7 @@ C       Purpose: Compute Bessel functions Jv(z), Yv(z) and their
 C                derivatives for a complex argument
 C       Input :  z --- Complex argument
 C                v --- Order of Jv(z) and Yv(z)
-C                      ( v = n+v0, n = 0,1,2,..., 0 ó v0 < 1 )
+C                      ( v = n+v0, n = 0,1,2,..., 0 â‰¤ v0 < 1 )
 C       Output:  CBJ(n) --- Jn+v0(z)
 C                CDJ(n) --- Jn+v0'(z)
 C                CBY(n) --- Yn+v0(z)
@@ -3736,7 +3736,7 @@ C
 C       =======================================================
 C       Purpose: Compute Bessel functions J0(x), J1(x), Y0(x),
 C                Y1(x), and their derivatives
-C       Input :  x   --- Argument of Jn(x) & Yn(x) ( x ò 0 )
+C       Input :  x   --- Argument of Jn(x) & Yn(x) ( x â‰¥ 0 )
 C       Output:  BJ0 --- J0(x)
 C                DJ0 --- J0'(x)
 C                BJ1 --- J1(x)
@@ -3862,13 +3862,13 @@ C       **********************************
 C
 C       ===================================================
 C       Purpose: Compute the incomplete gamma function
-C                r(a,x), â(a,x) and P(a,x)
-C       Input :  a   --- Parameter ( a ó 170 )
+C                r(a,x), Ð“(a,x) and P(a,x)
+C       Input :  a   --- Parameter ( a â‰¤ 170 )
 C                x   --- Argument 
 C       Output:  GIN --- r(a,x)
-C                GIM --- â(a,x)
+C                GIM --- Ð“(a,x)
 C                GIP --- P(a,x)
-C       Routine called: GAMMA2 for computing â(x)
+C       Routine called: GAMMA2 for computing Ð“(x)
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -3915,7 +3915,7 @@ C
 C       =======================================================
 C       Purpose: Integrate Bessel functions I0(t) and K0(t)
 C                with respect to t from 0 to x
-C       Input :  x  --- Upper limit of the integral ( x ò 0 )
+C       Input :  x  --- Upper limit of the integral ( x â‰¥ 0 )
 C       Output:  TI --- Integration of I0(t) from 0 to x
 C                TK --- Integration of K0(t) from 0 to x
 C       =======================================================
@@ -3980,7 +3980,7 @@ C
 C       =======================================================
 C       Purpose: Integrate modified Bessel functions I0(t) and
 C                K0(t) with respect to t from 0 to x
-C       Input :  x  --- Upper limit of the integral  ( x ò 0 )
+C       Input :  x  --- Upper limit of the integral  ( x â‰¥ 0 )
 C       Output:  TI --- Integration of I0(t) from 0 to x
 C                TK --- Integration of K0(t) from 0 to x
 C       =======================================================
@@ -4055,7 +4055,7 @@ C       Purpose: Compute Bessel functions Jv(x) and Yv(x)
 C                and their derivatives
 C       Input :  x --- Argument of Jv(x) and Yv(x)
 C                v --- Order of Jv(x) and Yv(x)
-C                      ( v = n+v0, 0 ó v0 < 1, n = 0,1,2,... )
+C                      ( v = n+v0, 0 â‰¤ v0 < 1, n = 0,1,2,... )
 C       Output:  BJ(n) --- Jn+v0(x)
 C                DJ(n) --- Jn+v0'(x)
 C                BY(n) --- Yn+v0(x)
@@ -4245,7 +4245,7 @@ C
 C       =====================================================
 C       Purpose: Compute Bessel functions Jn(x), Yn(x) and
 C                their derivatives
-C       Input :  x --- Argument of Jn(x) and Yn(x) ( x ò 0 )
+C       Input :  x --- Argument of Jn(x) and Yn(x) ( x â‰¥ 0 )
 C                n --- Order of Jn(x) and Yn(x)
 C       Output:  BJ(n) --- Jn(x)
 C                DJ(n) --- Jn'(x)
@@ -4363,7 +4363,7 @@ C       **********************************
 C
 C       =============================================
 C       Purpose: Compute Struve function H1(x)
-C       Input :  x   --- Argument of H1(x) ( x ò 0 )
+C       Input :  x   --- Argument of H1(x) ( x â‰¥ 0 )
 C       Output:  SH1 --- H1(x)
 C       =============================================
 C
@@ -4529,7 +4529,7 @@ C
 C       ==========================================================
 C       Purpose: Compute Bessel functions Jn(x) & Yn(x) and
 C                their derivatives
-C       Input :  x --- Argument of Jn(x) & Yn(x)  ( x ò 0 )
+C       Input :  x --- Argument of Jn(x) & Yn(x)  ( x â‰¥ 0 )
 C                n --- Order of Jn(x) & Yn(x)
 C       Output:  BJ(n) --- Jn(x)
 C                DJ(n) --- Jn'(x)
@@ -4622,7 +4622,7 @@ C                v --- Order of Dv(x)
 C       Output:  DV(na) --- Dn+v0(x)
 C                DP(na) --- Dn+v0'(x)
 C                ( na = |n|, v0 = v-n, |v0| < 1, 
-C                  n = 0,ñ1,ñ2,úúú )
+C                  n = 0,Â±1,Â±2,â€¦ )
 C                PDF --- Dv(x)
 C                PDD --- Dv'(x)
 C       Routines called:
@@ -4733,7 +4733,7 @@ C
 C       ===================================================
 C       Purpose: Evaluate the integral of Struve function
 C                H0(t) with respect to t from 0 and x
-C       Input :  x   --- Upper limit  ( x ò 0 )
+C       Input :  x   --- Upper limit  ( x â‰¥ 0 )
 C       Output:  TH0 --- Integration of H0(t) from 0 and x
 C       ===================================================
 C
@@ -4840,10 +4840,10 @@ C       **********************************
         SUBROUTINE GAMMA2(X,GA)
 C
 C       ==================================================
-C       Purpose: Compute gamma function â(x)
-C       Input :  x  --- Argument of â(x)
-C                       ( x is not equal to 0,-1,-2,úúú)
-C       Output:  GA --- â(x)
+C       Purpose: Compute gamma function Ð“(x)
+C       Input :  x  --- Argument of Ð“(x)
+C                       ( x is not equal to 0,-1,-2,â€¦)
+C       Output:  GA --- Ð“(x)
 C       ==================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -5058,7 +5058,7 @@ C
 C       ==================================================
 C       Purpose: Compute complete elliptic integrals K(k)
 C                and E(k)
-C       Input  : K  --- Modulus k ( 0 ó k ó 1 )
+C       Input  : K  --- Modulus k ( 0 â‰¤ k â‰¤ 1 )
 C       Output : CK --- K(k)
 C                CE --- E(k)
 C       ==================================================
@@ -5092,7 +5092,7 @@ C       ========================================================
 C       Purpose: Compute the incomplete beta function Ix(a,b)
 C       Input :  a --- Parameter
 C                b --- Parameter
-C                x --- Argument ( 0 ó x ó 1 )
+C                x --- Argument ( 0 â‰¤ x â‰¤ 1 )
 C       Output:  BIX --- Ix(a,b)
 C       Routine called: BETA for computing beta function B(p,q)
 C       ========================================================
@@ -5397,7 +5397,7 @@ C
 C       ==================================================
 C       Purpose: Compute complete and incomplete elliptic
 C                integrals F(k,phi) and E(k,phi)
-C       Input  : HK  --- Modulus k ( 0 ó k ó 1 )
+C       Input  : HK  --- Modulus k ( 0 â‰¤ k â‰¤ 1 )
 C                Phi --- Argument ( in degrees )
 C       Output : FE  --- F(k,phi)
 C                EE  --- E(k,phi)
@@ -5455,8 +5455,8 @@ C       =========================================================
 C       Purpose: Compute the elliptic integral of the third kind
 C                using Gauss-Legendre quadrature
 C       Input :  Phi --- Argument ( in degrees )
-C                 k  --- Modulus   ( 0 ó k ó 1.0 )
-C                 c  --- Parameter ( 0 ó c ó 1.0 )
+C                 k  --- Modulus   ( 0 â‰¤ k â‰¤ 1.0 )
+C                 c  --- Parameter ( 0 â‰¤ c â‰¤ 1.0 )
 C       Output:  EL3 --- Value of the elliptic integral of the
 C                        third kind
 C       =========================================================
@@ -5576,7 +5576,7 @@ C       Input  : a  --- Parameter
 C                b  --- Parameter ( b <> 0,-1,-2,... )
 C                x  --- Argument
 C       Output:  HG --- M(a,b,x)
-C       Routine called: GAMMA2 for computing â(x)
+C       Routine called: GAMMA2 for computing Ð“(x)
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -5672,7 +5672,7 @@ C       **********************************
 C
 C       =============================================
 C       Purpose: Compute Struve function H0(x)
-C       Input :  x   --- Argument of H0(x) ( x ò 0 )
+C       Input :  x   --- Argument of H0(x) ( x â‰¥ 0 )
 C       Output:  SH0 --- H0(x)
 C       =============================================
 C
@@ -6322,7 +6322,7 @@ C       **********************************
 C
 C       ======================================================
 C       Purpose: Compute the integrals of Airy fnctions with
-C                respect to t from 0 and x ( x ò 0 )
+C                respect to t from 0 and x ( x â‰¥ 0 )
 C       Input  : x   --- Upper limit of the integral
 C       Output : APT --- Integration of Ai(t) from 0 and x
 C                BPT --- Integration of Bi(t) from 0 and x
@@ -6427,7 +6427,7 @@ C
 C       ========================================================
 C       Purpose: Compute modified Bessel functions In(x) and
 C                Kn(x), and their derivatives
-C       Input:   x --- Argument of In(x) and Kn(x) ( x ò 0 )
+C       Input:   x --- Argument of In(x) and Kn(x) ( x â‰¥ 0 )
 C                n --- Order of In(x) and Kn(x)
 C       Output:  BI(n) --- In(x)
 C                DI(n) --- In'(x)
@@ -6796,7 +6796,7 @@ C
 C       ============================================================
 C       Purpose: Compute modified Bessel functions In(x) and Kn(x),
 C                and their derivatives
-C       Input:   x --- Argument of In(x) and Kn(x) ( 0 ó x ó 700 )
+C       Input:   x --- Argument of In(x) and Kn(x) ( 0 â‰¤ x â‰¤ 700 )
 C                n --- Order of In(x) and Kn(x)
 C       Output:  BI(n) --- In(x)
 C                DI(n) --- In'(x)
@@ -6949,7 +6949,7 @@ C       **********************************
 C
 C       ===============================================================
 C       Purpose: Compute Mathieu functions cem(x,q) and sem(x,q)
-C                and their derivatives ( q ò 0 )
+C                and their derivatives ( q â‰¥ 0 )
 C       Input :  KF  --- Function code
 C                        KF=1 for computing cem(x,q) and cem'(x,q)
 C                        KF=2 for computing sem(x,q) and sem'(x,q)
@@ -7162,20 +7162,20 @@ C       **********************************
         SUBROUTINE FFK(KS,X,FR,FI,FM,FA,GR,GI,GM,GA)
 C
 C       =======================================================
-C       Purpose: Compute modified Fresnel integrals Fñ(x) 
-C                and Kñ(x)
-C       Input :  x   --- Argument of Fñ(x) and Kñ(x)
+C       Purpose: Compute modified Fresnel integrals FÂ±(x) 
+C                and KÂ±(x)
+C       Input :  x   --- Argument of FÂ±(x) and KÂ±(x)
 C                KS  --- Sign code
 C                        KS=0 for calculating F+(x) and K+(x)
 C                        KS=1 for calculating F_(x) and K_(x)
-C       Output:  FR  --- Re[Fñ(x)]
-C                FI  --- Im[Fñ(x)]
-C                FM  --- |Fñ(x)|
-C                FA  --- Arg[Fñ(x)]  (Degs.)
-C                GR  --- Re[Kñ(x)]
-C                GI  --- Im[Kñ(x)]
-C                GM  --- |Kñ(x)|
-C                GA  --- Arg[Kñ(x)]  (Degs.)
+C       Output:  FR  --- Re[FÂ±(x)]
+C                FI  --- Im[FÂ±(x)]
+C                FM  --- |FÂ±(x)|
+C                FA  --- Arg[FÂ±(x)]  (Degs.)
+C                GR  --- Re[KÂ±(x)]
+C                GI  --- Im[KÂ±(x)]
+C                GM  --- |KÂ±(x)|
+C                GA  --- Arg[KÂ±(x)]  (Degs.)
 C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -7616,7 +7616,7 @@ C       ===========================================================
 C       Purpose: Compute complex parabolic cylinder function Dn(z)
 C                for large argument
 C       Input:   z   --- Complex argument of Dn(z)
-C                n   --- Order of Dn(z) (n = 0,ñ1,ñ2,úúú)
+C                n   --- Order of Dn(z) (n = 0,Â±1,Â±2,â€¦)
 C       Output:  CDN --- Dn(z)
 C       ===========================================================
 C
@@ -7730,7 +7730,7 @@ C       =======================================================
 C       Purpose: Compute the associated Legendre function
 C                Pmv(x) with an integer order and an arbitrary 
 C                nonnegative degree v
-C       Input :  x   --- Argument of Pm(x)  ( -1 ó x ó 1 )
+C       Input :  x   --- Argument of Pm(x)  ( -1 â‰¤ x â‰¤ 1 )
 C                m   --- Order of Pmv(x)
 C                v   --- Degree of Pmv(x)
 C       Output:  PMV --- Pmv(x)
@@ -7826,15 +7826,15 @@ C       **********************************
         SUBROUTINE CGAMA(X,Y,KF,GR,GI)
 C
 C       =========================================================
-C       Purpose: Compute the gamma function â(z) or ln[â(z)]
+C       Purpose: Compute the gamma function Ð“(z) or ln[Ð“(z)]
 C                for a complex argument
 C       Input :  x  --- Real part of z
 C                y  --- Imaginary part of z
 C                KF --- Function code
-C                       KF=0 for ln[â(z)]
-C                       KF=1 for â(z)
-C       Output:  GR --- Real part of ln[â(z)] or â(z)
-C                GI --- Imaginary part of ln[â(z)] or â(z)
+C                       KF=0 for ln[Ð“(z)]
+C                       KF=1 for Ð“(z)
+C       Output:  GR --- Real part of ln[Ð“(z)] or Ð“(z)
+C                GI --- Imaginary part of ln[Ð“(z)] or Ð“(z)
 C       ========================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -8010,7 +8010,7 @@ C
 C       ===========================================================
 C       Purpose: Evaluate the integral H0(t)/t with respect to t
 C                from x to infinity
-C       Input :  x   --- Lower limit  ( x ò 0 )
+C       Input :  x   --- Lower limit  ( x â‰¥ 0 )
 C       Output:  TTH --- Integration of H0(t)/t from x to infinity
 C       ===========================================================
 C
@@ -8049,11 +8049,11 @@ C       **********************************
         SUBROUTINE LGAMA(KF,X,GL)
 C
 C       ==================================================
-C       Purpose: Compute gamma function â(x) or ln[â(x)]
-C       Input:   x  --- Argument of â(x) ( x > 0 )
+C       Purpose: Compute gamma function Ð“(x) or ln[Ð“(x)]
+C       Input:   x  --- Argument of Ð“(x) ( x > 0 )
 C                KF --- Function code
-C                       KF=1 for â(x); KF=0 for ln[â(x)]
-C       Output:  GL --- â(x) or ln[â(x)]
+C                       KF=1 for Ð“(x); KF=0 for ln[Ð“(x)]
+C       Output:  GL --- Ð“(x) or ln[Ð“(x)]
 C       ==================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -8093,8 +8093,8 @@ C       **********************************
 C
 C       =====================================================
 C       Purpose: Compute Legendre functions Qn(x) and Qn'(x)
-C       Input :  x  --- Argument of Qn(x) ( -1 ó x ó 1 )
-C                n  --- Degree of Qn(x) ( n = 0,1,2,úúú )
+C       Input :  x  --- Argument of Qn(x) ( -1 â‰¤ x â‰¤ 1 )
+C                n  --- Degree of Qn(x) ( n = 0,1,2,â€¦ )
 C       Output:  QN(n) --- Qn(x)
 C                QD(n) --- Qn'(x)
 C                ( 1.0D+300 stands for infinity )
@@ -8136,7 +8136,7 @@ C                va --- Order
 C       Output:  PD --- Dv(x)
 C       Routines called:
 C             (1) VVLA for computing Vv(x) for large |x|
-C             (2) GAMMA2 for computing â(x)
+C             (2) GAMMA2 for computing Ð“(x)
 C       ====================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -8170,7 +8170,7 @@ C
 C       =========================================================
 C       Purpose: Compute modified Bessel functions I0(x), I1(1),
 C                K0(x) and K1(x), and their derivatives
-C       Input :  x   --- Argument ( x ò 0 )
+C       Input :  x   --- Argument ( x â‰¥ 0 )
 C       Output:  BI0 --- I0(x)
 C                DI0 --- I0'(x)
 C                BI1 --- I1(x)
@@ -8280,7 +8280,7 @@ C       ==================================================
 C       Purpose: Compute the parabolic cylinder functions 
 C                 Dn(z) and Dn'(z) for a complex argument
 C       Input:   z --- Complex argument of Dn(z)
-C                n --- Order of Dn(z)  ( n=0,ñ1,ñ2,úúú )
+C                n --- Order of Dn(z)  ( n=0,Â±1,Â±2,â€¦ )
 C       Output:  CPB(|n|) --- Dn(z)
 C                CPD(|n|) --- Dn'(z)
 C       Routines called:
@@ -8373,7 +8373,7 @@ C
 C       =========================================================
 C       Purpose: Compute modified Bessel functions I0(x), I1(1),
 C                K0(x) and K1(x), and their derivatives
-C       Input :  x   --- Argument ( x ò 0 )
+C       Input :  x   --- Argument ( x â‰¥ 0 )
 C       Output:  BI0 --- I0(x)
 C                DI0 --- I0'(x)
 C                BI1 --- I1(x)
@@ -8450,7 +8450,7 @@ C       Purpose: Compute the beta function B(p,q)
 C       Input :  p  --- Parameter  ( p > 0 )
 C                q  --- Parameter  ( q > 0 )
 C       Output:  BT --- B(p,q)
-C       Routine called: GAMMA2 for computing â(x)
+C       Routine called: GAMMA2 for computing Ð“(x)
 C       ==========================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -8755,10 +8755,10 @@ C       **********************************
         SUBROUTINE PBWA(A,X,W1F,W1D,W2F,W2D)
 C
 C       ======================================================
-C       Purpose: Compute parabolic cylinder functions W(a,ñx)
+C       Purpose: Compute parabolic cylinder functions W(a,Â±x)
 C                and their derivatives
-C       Input  : a --- Parameter  ( 0 ó |a| ó 5 )
-C                x --- Argument of W(a,ñx)  ( 0 ó |x| ó 5 )
+C       Input  : a --- Parameter  ( 0 â‰¤ |a| â‰¤ 5 )
+C                x --- Argument of W(a,Â±x)  ( 0 â‰¤ |x| â‰¤ 5 )
 C       Output : W1F --- W(a,x)
 C                W1D --- W'(a,x)
 C                W2F --- W(a,-x)
@@ -8963,7 +8963,7 @@ C                for small argument
 C       Input:   x  --- Argument
 C                va --- Order
 C       Output:  PD --- Dv(x)
-C       Routine called: GAMMA2 for computing â(x)
+C       Routine called: GAMMA2 for computing Ð“(x)
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -9050,7 +9050,7 @@ C       **********************************
 C
 C       =======================================================
 C       Purpose: Integrate Bessel functions J0(t) and Y0(t)
-C                with respect to t from 0 to x ( x ò 0 )
+C                with respect to t from 0 to x ( x â‰¥ 0 )
 C       Input :  x  --- Upper limit of the integral
 C       Output:  TJ --- Integration of J0(t) from 0 to x
 C                TY --- Integration of Y0(t) from 0 to x
@@ -9264,8 +9264,8 @@ C
 C       ======================================================
 C       Purpose:  Compute modified Struve function Lv(x) with
 C                 an arbitrary order v
-C       Input :   v   --- Order of Lv(x)  ( |v| ó 20 )
-C                 x   --- Argument of Lv(x) ( x ò 0 )
+C       Input :   v   --- Order of Lv(x)  ( |v| â‰¤ 20 )
+C                 x   --- Argument of Lv(x) ( x â‰¥ 0 )
 C       Output:   SLV --- Lv(x)
 C       Routine called: GAMMA2 to compute the gamma function
 C       ======================================================
@@ -9353,8 +9353,8 @@ C       Purpose: Compute Riccati-Bessel functions of the second
 C                kind and their derivatives
 C       Input:   x --- Argument of Riccati-Bessel function
 C                n --- Order of yn(x)
-C       Output:  RY(n) --- xúyn(x)
-C                DY(n) --- [xúyn(x)]'
+C       Output:  RY(n) --- xÂ·yn(x)
+C                DY(n) --- [xÂ·yn(x)]'
 C                NM --- Highest order computed
 C       ========================================================
 C
@@ -9598,14 +9598,14 @@ C       **********************************
 C
 C       ======================================================
 C       Purpose: Compute confluent hypergeometric function
-C                U(a,b,x) with integer b ( b = ñ1,ñ2,... )
+C                U(a,b,x) with integer b ( b = Â±1,Â±2,... )
 C       Input  : a  --- Parameter
 C                b  --- Parameter
 C                x  --- Argument
 C       Output:  HU --- U(a,b,x)
 C                ID --- Estimated number of significant digits
 C       Routines called:
-C            (1) GAMMA2 for computing gamma function â(x)
+C            (1) GAMMA2 for computing gamma function Ð“(x)
 C            (2) PSI_SPEC for computing psi function
 C       ======================================================
 C
@@ -10052,8 +10052,8 @@ C       **********************************
 C
 C       =====================================================
 C       Purpose: Compute Bessel functions Jn(x) and their
-C                first and second derivatives ( n= 0,1,úúú )
-C       Input:   x ---  Argument of Jn(x)  ( x ò 0 )
+C                first and second derivatives ( n= 0,1,â€¦ )
+C       Input:   x ---  Argument of Jn(x)  ( x â‰¥ 0 )
 C                n ---  Order of Jn(x)
 C       Output:  BJ(n+1) ---  Jn(x)
 C                DJ(n+1) ---  Jn'(x)
@@ -10097,7 +10097,7 @@ C       =======================================================
 C       Purpose: Compute spherical Bessel functions jn(x) and
 C                their derivatives
 C       Input :  x --- Argument of jn(x)
-C                n --- Order of jn(x)  ( n = 0,1,úúú )
+C                n --- Order of jn(x)  ( n = 0,1,â€¦ )
 C       Output:  SJ(n) --- jn(x)
 C                DJ(n) --- jn'(x)
 C                NM --- Highest order computed
@@ -10289,7 +10289,7 @@ C                and second kinds, and their derivatives
 C       Input :  m  --- Mode parameter,  m = 0,1,2,...
 C                n  --- Mode parameter,  n = m,m+1,m+2,...
 C                c  --- Spheroidal parameter
-C                x  --- Argument (x ò 0)
+C                x  --- Argument (x â‰¥ 0)
 C                cv --- Characteristic value
 C                KF --- Function code
 C                       KF=1 for the first kind
@@ -10404,7 +10404,7 @@ C
 C       ======================================================
 C       Purpose: Compute the zeros of Bessel functions Jn(x),
 C                Yn(x), and their derivatives
-C       Input :  n  --- Order of Bessel functions ( n ó 101 )
+C       Input :  n  --- Order of Bessel functions ( n â‰¤ 101 )
 C                NT --- Number of zeros (roots)
 C       Output:  RJ0(L) --- L-th zero of Jn(x),  L=1,2,...,NT
 C                RJ1(L) --- L-th zero of Jn'(x), L=1,2,...,NT
@@ -10485,9 +10485,9 @@ C
 C       =======================================================
 C       Purpose: Compute modified Bessel functions Iv(x) and
 C                Kv(x), and their derivatives
-C       Input :  x --- Argument ( x ò 0 )
+C       Input :  x --- Argument ( x â‰¥ 0 )
 C                v --- Order of Iv(x) and Kv(x)
-C                      ( v = n+v0, n = 0,1,2,..., 0 ó v0 < 1 )
+C                      ( v = n+v0, n = 0,1,2,..., 0 â‰¤ v0 < 1 )
 C       Output:  BI(n) --- In+v0(x)
 C                DI(n) --- In+v0'(x)
 C                BK(n) --- Kn+v0(x)
@@ -10759,7 +10759,7 @@ C       Purpose: Compute Bessel functions Jv(x) and Yv(x),
 C                and modified Bessel functions Iv(x) and
 C                Kv(x), and their derivatives with v=1/3,2/3
 C       Input :  x --- Argument of Jv(x),Yv(x),Iv(x) and
-C                      Kv(x) ( x ò 0 )
+C                      Kv(x) ( x â‰¥ 0 )
 C       Output:  VJ1 --- J1/3(x)
 C                VJ2 --- J2/3(x)
 C                VY1 --- Y1/3(x)
@@ -10930,7 +10930,7 @@ C                and their derivatives for an arbitrary order and
 C                complex argument
 C       Input :  z --- Complex argument z
 C                v --- Real order of Iv(z) and Kv(z)
-C                      ( v =n+v0, n = 0,1,2,..., 0 ó v0 < 1 )
+C                      ( v =n+v0, n = 0,1,2,..., 0 â‰¤ v0 < 1 )
 C       Output:  CBI(n) --- In+v0(z)
 C                CDI(n) --- In+v0'(z)
 C                CBK(n) --- Kn+v0(z)
@@ -11091,7 +11091,7 @@ C                and their derivatives for an arbitrary order and
 C                complex argument
 C       Input :  z --- Complex argument
 C                v --- Real order of Iv(z) and Kv(z)
-C                      ( v = n+v0, n = 0,1,2,úúú, 0 ó v0 < 1 )
+C                      ( v = n+v0, n = 0,1,2,â€¦, 0 â‰¤ v0 < 1 )
 C       Output:  CBI(n) --- In+v0(z)
 C                CDI(n) --- In+v0'(z)
 C                CBK(n) --- Kn+v0(z)
@@ -11401,8 +11401,8 @@ C       Purpose: Compute Riccati-Bessel functions of the first
 C                kind and their derivatives
 C       Input:   x --- Argument of Riccati-Bessel function
 C                n --- Order of jn(x)  ( n = 0,1,2,... )
-C       Output:  RJ(n) --- xújn(x)
-C                DJ(n) --- [xújn(x)]'
+C       Output:  RJ(n) --- xÂ·jn(x)
+C                DJ(n) --- [xÂ·jn(x)]'
 C                NM --- Highest order computed
 C       Routines called:
 C                MSTA1 and MSTA2 for computing the starting
@@ -11458,7 +11458,7 @@ C       **********************************
 C
 C       ========================================================
 C       Purpose : Compute the zeros of Hermite polynomial Ln(x)
-C                 in the interval [-ì,ì], and the corresponding
+C                 in the interval [-âˆž,âˆž], and the corresponding
 C                 weighting coefficients for Gauss-Hermite
 C                 integration
 C       Input :   n    --- Order of the Hermite polynomial
@@ -11528,7 +11528,7 @@ C
 C       =======================================================
 C       Purpose: Compute Bessel functions J0(x), J1(x), Y0(x),
 C                Y1(x), and their derivatives
-C       Input :  x   --- Argument of Jn(x) & Yn(x) ( x ò 0 )
+C       Input :  x   --- Argument of Jn(x) & Yn(x) ( x â‰¥ 0 )
 C       Output:  BJ0 --- J0(x)
 C                DJ0 --- J0'(x)
 C                BJ1 --- J1(x)
@@ -11661,7 +11661,7 @@ C
 C       =====================================================
 C       Purpose: Compute modified spherical Bessel functions
 C                of the second kind, kn(x) and kn'(x)
-C       Input :  x --- Argument of kn(x)  ( x ò 0 )
+C       Input :  x --- Argument of kn(x)  ( x â‰¥ 0 )
 C                n --- Order of kn(x) ( n = 0,1,2,... )
 C       Output:  SK(n) --- kn(x)
 C                DK(n) --- kn'(x)
@@ -11701,7 +11701,7 @@ C       **********************************
 C
 C       ============================================
 C       Purpose: Compute exponential integral En(x)
-C       Input :  x --- Argument of En(x) ( x ó 20 )
+C       Input :  x --- Argument of En(x) ( x â‰¤ 20 )
 C                n --- Order of En(x)
 C       Output:  EN(n) --- En(x)
 C       Routine called: E1XB for computing E1(x)
@@ -11726,9 +11726,9 @@ C       **********************************
         SUBROUTINE GAIH(X,GA)
 C
 C       =====================================================
-C       Purpose: Compute gamma function â(x)
-C       Input :  x  --- Argument of â(x), x = n/2, n=1,2,úúú
-C       Output:  GA --- â(x)
+C       Purpose: Compute gamma function Ð“(x)
+C       Input :  x  --- Argument of Ð“(x), x = n/2, n=1,2,â€¦
+C       Output:  GA --- Ð“(x)
 C       =====================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -11759,7 +11759,7 @@ C                v --- Order of Vv(x)
 C       Output:  VV(na) --- Vv(x)
 C                VP(na) --- Vv'(x)
 C                ( na = |n|, v = n+v0, |v0| < 1
-C                  n = 0,ñ1,ñ2,úúú )
+C                  n = 0,Â±1,Â±2,â€¦ )
 C                PVF --- Vv(x)
 C                PVD --- Vv'(x)
 C       Routines called:
@@ -11881,8 +11881,8 @@ C                the second kind, Qmn(z) and Qmn'(z), for a
 C                complex argument
 C       Input :  x  --- Real part of z
 C                y  --- Imaginary part of z
-C                m  --- Order of Qmn(z)  ( m = 0,1,2,úúú )
-C                n  --- Degree of Qmn(z) ( n = 0,1,2,úúú )
+C                m  --- Order of Qmn(z)  ( m = 0,1,2,â€¦ )
+C                n  --- Degree of Qmn(z) ( n = 0,1,2,â€¦ )
 C                mm --- Physical dimension of CQM and CQD
 C       Output:  CQM(m,n) --- Qmn(z)
 C                CQD(m,n) --- Qmn'(z)
@@ -12270,7 +12270,7 @@ C                            or Msm(2)(x,q) and Msm(2)'(x,q)
 C                       KC=3 for computing both the first
 C                            and second kinds
 C                m  --- Order of Mathieu functions
-C                q  --- Parameter of Mathieu functions ( q ò 0 )
+C                q  --- Parameter of Mathieu functions ( q â‰¥ 0 )
 C                x  --- Argument of Mathieu functions
 C       Output:  F1R --- Mcm(1)(x,q) or Msm(1)(x,q)
 C                D1R --- Derivative of Mcm(1)(x,q) or Msm(1)(x,q)
@@ -12575,8 +12575,8 @@ C
 C       ======================================================
 C       Purpose: Compute spherical Bessel functions yn(x) and
 C                their derivatives
-C       Input :  x --- Argument of yn(x) ( x ò 0 )
-C                n --- Order of yn(x) ( n = 0,1,úúú )
+C       Input :  x --- Argument of yn(x) ( x â‰¥ 0 )
+C                n --- Order of yn(x) ( n = 0,1,â€¦ )
 C       Output:  SY(n) --- yn(x)
 C                DY(n) --- yn'(x)
 C                NM --- Highest order computed
@@ -12621,7 +12621,7 @@ C       ========================================================
 C       Purpose: Compute Jacobian elliptic functions sn u, cn u
 C                and dn u
 C       Input  : u   --- Argument of Jacobian elliptic fuctions
-C                Hk  --- Modulus k ( 0 ó k ó 1 )
+C                Hk  --- Modulus k ( 0 â‰¤ k â‰¤ 1 )
 C       Output : ESN --- sn u
 C                ECN --- cn u
 C                EDN --- dn u
@@ -12662,8 +12662,8 @@ C
 C       =====================================================
 C       Purpose: Compute Struve function Hv(x) with an
 C                arbitrary order v
-C       Input :  v  --- Order of Hv(x)  ( -8.0 ó v ó 12.5 )
-C                x  --- Argument of Hv(x) ( x ò 0 )
+C       Input :  v  --- Order of Hv(x)  ( -8.0 â‰¤ v â‰¤ 12.5 )
+C                x  --- Argument of Hv(x) ( x â‰¥ 0 )
 C       Output:  HV --- Hv(x)
 C       Routine called: GAMMA2 to compute the gamma function
 C       =====================================================
