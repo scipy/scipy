@@ -952,22 +952,19 @@ int NI_ResampleWithGradient(int layersS, int rowsS, int colsS, int layersD, int 
 }
 
 
-int NI_ResampleWGradientWCoords(int size, int layersS, int rowsS, int colsS, int layersD, int rowsD,
-		                int colsD, int *dimSteps, double *X, double *Y, double *Z, double *M,
-			        unsigned char *imageD, unsigned char *imageS, double *scale, int *offset,
-			        double *gradientX, double *gradientY, double *gradientZ)
+int NI_Resample_Gradient_Coords(int size, int layersS, int rowsS, int colsS, int layersD, int rowsD,
+	                        int colsD, int *dimSteps, double *X, double *Y, double *Z,
+			        unsigned char *imageD, unsigned char *imageS, double *scale, 
+			        int *offset, double *gradientX, double *gradientY, double *gradientZ)
 {
 
 	int i;
 	int status;
-	int sliceD;
-	int rowD;
 	int sliceSizeD;
 	int dimsS[3];
 	int dimsD[3];
 	int dims[2];
 	float vs;
-	float x, y, z;
 	float xp, yp, zp;
 	float dx1, dy1, dz1;
 	float dx2, dy2, dz2;
@@ -1004,98 +1001,94 @@ int NI_ResampleWGradientWCoords(int size, int layersS, int rowsS, int colsS, int
 	dims[1] = dimsS[0]*dimsS[1];
 
 	for(i = 0; i < size; ++i){
-	    z = Z[i];
-	    y = Y[i];
-	    x = X[i];
+	    // get the 'from' unrolled coordinates 
+	    zp = Z[i];
+	    yp = Y[i];
+	    xp = X[i];
 
-	    sliceD = (int)z * sliceSizeD;
-	    rowD   = (int)y * colsD;
-
-	    // get the 'from' coordinates 
-	    xp = M[0]*x + M[1]*y + M[2]*z  + M[3];
-	    yp = M[4]*x + M[5]*y + M[6]*z  + M[7];
-	    zp = M[8]*x + M[9]*y + M[10]*z + M[11];
 	    // clip the resample window 
 	    if((zp >= 0.0 && zp < layersS-dimSteps[2]) && 
 	       (yp >= 0.0 && yp < rowsS-dimSteps[1]) && 
 	       (xp >= 0.0 && xp < colsS-dimSteps[0])){
 
-		// corners of the 3D unit volume cube
-	    	ptr_z0 = (int)zp * dims[1];
-	    	ptr_z1 = ptr_z0 + dims[1];
-		ptr_y0 = (int)yp * dims[0];
-		ptr_y1 = ptr_y0 + dims[0];
-	    	ptr_x0 = (int)xp;
-	    	ptr_x1 = ptr_x0 + 1;
+	        // corners of the 3D unit volume cube
+	        ptr_z0 = (int)zp * dims[1];
+	        ptr_z1 = ptr_z0 + dims[1];
+	        ptr_y0 = (int)yp * dims[0];
+	        ptr_y1 = ptr_y0 + dims[0];
+	        ptr_x0 = (int)xp;
+	        ptr_x1 = ptr_x0 + 1;
 
-		dx1 = xp - (int)xp; 
-		dy1 = yp - (int)yp; 
-		dz1 = zp - (int)zp; 
-		dx2 = 1.0 - dx1; 
-		dy2 = 1.0 - dy1; 
-		dz2 = 1.0 - dz1; 
+	        dx1 = xp - (int)xp; 
+	        dy1 = yp - (int)yp; 
+	        dz1 = zp - (int)zp; 
+	        dx2 = 1.0 - dx1; 
+	        dy2 = 1.0 - dy1; 
+	        dz2 = 1.0 - dz1; 
 
-		V000 = imageS[ptr_x0+ptr_y0+ptr_z0];
-		V100 = imageS[ptr_x1+ptr_y0+ptr_z0];
-		V010 = imageS[ptr_x0+ptr_y1+ptr_z0];
-		V001 = imageS[ptr_x0+ptr_y0+ptr_z1];
-		V011 = imageS[ptr_x0+ptr_y1+ptr_z1];
-		V101 = imageS[ptr_x1+ptr_y0+ptr_z1];
-		V110 = imageS[ptr_x1+ptr_y1+ptr_z0];
-		V111 = imageS[ptr_x1+ptr_y1+ptr_z1];
+	        V000 = imageS[ptr_x0+ptr_y0+ptr_z0];
+	        V100 = imageS[ptr_x1+ptr_y0+ptr_z0];
+	        V010 = imageS[ptr_x0+ptr_y1+ptr_z0];
+	        V001 = imageS[ptr_x0+ptr_y0+ptr_z1];
+	        V011 = imageS[ptr_x0+ptr_y1+ptr_z1];
+	        V101 = imageS[ptr_x1+ptr_y0+ptr_z1];
+	        V110 = imageS[ptr_x1+ptr_y1+ptr_z0];
+	        V111 = imageS[ptr_x1+ptr_y1+ptr_z1];
 			
 	        vs = V000 * (dx2) * (dy2) * (dz2) +
-		     V100 * (dx1) * (dy2) * (dz2) +
-		     V010 * (dx2) * (dy1) * (dz2) +
-		     V001 * (dx2) * (dy2) * (dz1) +
-		     V101 * (dx1) * (dy2) * (dz1) +
-		     V011 * (dx2) * (dy1) * (dz1) +
-		     V110 * (dx1) * (dy1) * (dz2) +
-		     V111 * (dx1) * (dy1) * (dz1);
+	             V100 * (dx1) * (dy2) * (dz2) +
+	             V010 * (dx2) * (dy1) * (dz2) +
+	             V001 * (dx2) * (dy2) * (dz1) +
+	             V101 * (dx1) * (dy2) * (dz1) +
+	             V011 * (dx2) * (dy1) * (dz1) +
+	             V110 * (dx1) * (dy1) * (dz2) +
+	             V111 * (dx1) * (dy1) * (dz1);
 
-		/* resampled voxel */
-		imageD[sliceD+rowD+(int)x] = (int)(vs*scale[(int)zp]) + offset[(int)zp];
+	        /* resampled voxel saved in the unrolled clipped volume */
+	        imageD[i] = (int)(vs*scale[(int)zp]) + offset[(int)zp];
 
-		/*
-		 * x gradient voxel. for no resample dz1, dy1 = 0.0 and
-		 * dy2, dz2 = 1.0 so gradX = V100 - V000
-		*/
+	        /*
+	         * x gradient voxel. for no resample dz1, dy1 = 0.0 and
+	         * dy2, dz2 = 1.0 so gradX = V100 - V000
+	        */
 
-		/* d/d(dx1) = 1.0, d/d(dx2) = -1.0 */
+	        /* d/d(dx1) = 1.0, d/d(dx2) = -1.0 */
 	        gradX = V000 * (-1.0) * (dy2) * (dz2) +
-		        V100 * (1.0)  * (dy2) * (dz2) +
-		        V010 * (-1.0) * (dy1) * (dz2) +
-		        V001 * (-1.0) * (dy2) * (dz1) +
-		        V101 * (1.0)  * (dy2) * (dz1) +
-		        V011 * (-1.0) * (dy1) * (dz1) +
-		        V110 * (1.0)  * (dy1) * (dz2) +
-		        V111 * (1.0)  * (dy1) * (dz1);
+	                V100 * (1.0)  * (dy2) * (dz2) +
+	                V010 * (-1.0) * (dy1) * (dz2) +
+	                V001 * (-1.0) * (dy2) * (dz1) +
+	                V101 * (1.0)  * (dy2) * (dz1) +
+	                V011 * (-1.0) * (dy1) * (dz1) +
+	                V110 * (1.0)  * (dy1) * (dz2) +
+	                V111 * (1.0)  * (dy1) * (dz1);
 
-		/* d/d(dy1) = 1.0, d/d(dy2) = -1.0 */
+	        /* d/d(dy1) = 1.0, d/d(dy2) = -1.0 */
 	        gradY = V000 * (dx2) * (-1.0) * (dz2) +
-		        V100 * (dx1) * (-1.0) * (dz2) +
-		        V010 * (dx2) * (1.0)  * (dz2) +
-		        V001 * (dx2) * (-1.0) * (dz1) +
-		        V101 * (dx1) * (-1.0) * (dz1) +
-		        V011 * (dx2) * (1.0)  * (dz1) +
-		        V110 * (dx1) * (1.0)  * (dz2) +
-		        V111 * (dx1) * (1.0)  * (dz1);
+	                V100 * (dx1) * (-1.0) * (dz2) +
+	                V010 * (dx2) * (1.0)  * (dz2) +
+	                V001 * (dx2) * (-1.0) * (dz1) +
+	                V101 * (dx1) * (-1.0) * (dz1) +
+	                V011 * (dx2) * (1.0)  * (dz1) +
+	                V110 * (dx1) * (1.0)  * (dz2) +
+	                V111 * (dx1) * (1.0)  * (dz1);
 
-		/* d/d(dz1) = 1.0, d/d(dz2) = -1.0 */
+	        /* d/d(dz1) = 1.0, d/d(dz2) = -1.0 */
 	        gradZ = V000 * (dx2) * (dy2) * (-1.0) +
-		        V100 * (dx1) * (dy2) * (-1.0) +
-		        V010 * (dx2) * (dy1) * (-1.0) +
-		        V001 * (dx2) * (dy2) * (1.0)  +
-		        V101 * (dx1) * (dy2) * (1.0)  +
-		        V011 * (dx2) * (dy1) * (1.0)  +
-		        V110 * (dx1) * (dy1) * (-1.0) +
-		        V111 * (dx1) * (dy1) * (1.0);
+	                V100 * (dx1) * (dy2) * (-1.0) +
+	                V010 * (dx2) * (dy1) * (-1.0) +
+	                V001 * (dx2) * (dy2) * (1.0)  +
+	                V101 * (dx1) * (dy2) * (1.0)  +
+	                V011 * (dx2) * (dy1) * (1.0)  +
+	                V110 * (dx1) * (dy1) * (-1.0) +
+	                V111 * (dx1) * (dy1) * (1.0);
 
-		gradientX[sliceD+rowD+(int)x] = (int)(gradX*scale[(int)zp]);
-		gradientY[sliceD+rowD+(int)x] = (int)(gradY*scale[(int)zp]);
-		gradientZ[sliceD+rowD+(int)x] = (int)(gradZ*scale[(int)zp]);
+	        /* gradients saved in the unrolled clipped gradient volume */
+	        gradientX[i] = (int)(gradX*scale[(int)zp]);
+	        gradientY[i] = (int)(gradY*scale[(int)zp]);
+	        gradientZ[i] = (int)(gradZ*scale[(int)zp]);
 
 	    }
+
 	}
 
 	status = 1;
@@ -1103,5 +1096,110 @@ int NI_ResampleWGradientWCoords(int size, int layersS, int rowsS, int colsS, int
 	return status;
 
 }
+
+
+
+int NI_Resample_Coords(int size, int layersS, int rowsS, int colsS, int layersD, int rowsD,
+	               int colsD, int *dimSteps, double *X, double *Y, double *Z,
+		       unsigned char *imageD, unsigned char *imageS, double *scale, int *offset) 
+{
+
+	int i;
+	int status;
+	int sliceSizeD;
+	int dimsS[3];
+	int dimsD[3];
+	int dims[2];
+	float vs;
+	float xp, yp, zp;
+	float dx1, dy1, dz1;
+	float dx2, dy2, dz2;
+
+	int ptr_x0;
+	int ptr_y0;
+	int ptr_z0;
+	int ptr_x1;
+	int ptr_y1;
+	int ptr_z1;
+	//
+	// Vxyz for [0,1] values of x, y, z
+	//
+	int V000;
+	int V100;
+	int V010;
+	int V001;
+	int V011;
+	int V101;
+	int V110;
+	int V111;
+	float valueXYZ;
+
+	sliceSizeD = rowsD * colsD;
+	dimsD[0] = colsD;
+	dimsD[1] = rowsD;
+	dimsD[2] = layersD;
+	dimsS[0] = colsS;
+	dimsS[1] = rowsS;
+	dimsS[2] = layersS;
+
+	dims[0] = dimsS[0];
+	dims[1] = dimsS[0]*dimsS[1];
+
+	for(i = 0; i < size; ++i){
+	    // get the 'from' unrolled coordinates 
+	    zp = Z[i];
+	    yp = Y[i];
+	    xp = X[i];
+
+	    // clip the resample window 
+	    if((zp >= 0.0 && zp < layersS-dimSteps[2]) && 
+	       (yp >= 0.0 && yp < rowsS-dimSteps[1]) && 
+	       (xp >= 0.0 && xp < colsS-dimSteps[0])){
+
+	        // corners of the 3D unit volume cube
+	        ptr_z0 = (int)zp * dims[1];
+	        ptr_z1 = ptr_z0 + dims[1];
+	        ptr_y0 = (int)yp * dims[0];
+	        ptr_y1 = ptr_y0 + dims[0];
+	        ptr_x0 = (int)xp;
+	        ptr_x1 = ptr_x0 + 1;
+
+	        dx1 = xp - (int)xp; 
+	        dy1 = yp - (int)yp; 
+	        dz1 = zp - (int)zp; 
+	        dx2 = 1.0 - dx1; 
+	        dy2 = 1.0 - dy1; 
+	        dz2 = 1.0 - dz1; 
+
+	        V000 = imageS[ptr_x0+ptr_y0+ptr_z0];
+	        V100 = imageS[ptr_x1+ptr_y0+ptr_z0];
+	        V010 = imageS[ptr_x0+ptr_y1+ptr_z0];
+	        V001 = imageS[ptr_x0+ptr_y0+ptr_z1];
+	        V011 = imageS[ptr_x0+ptr_y1+ptr_z1];
+	        V101 = imageS[ptr_x1+ptr_y0+ptr_z1];
+	        V110 = imageS[ptr_x1+ptr_y1+ptr_z0];
+	        V111 = imageS[ptr_x1+ptr_y1+ptr_z1];
+			
+	        vs = V000 * (dx2) * (dy2) * (dz2) +
+	             V100 * (dx1) * (dy2) * (dz2) +
+	             V010 * (dx2) * (dy1) * (dz2) +
+	             V001 * (dx2) * (dy2) * (dz1) +
+	             V101 * (dx1) * (dy2) * (dz1) +
+	             V011 * (dx2) * (dy1) * (dz1) +
+	             V110 * (dx1) * (dy1) * (dz2) +
+	             V111 * (dx1) * (dy1) * (dz1);
+
+	        /* resampled voxel saved in the unrolled clipped volume */
+	        imageD[i] = (int)(vs*scale[(int)zp]) + offset[(int)zp];
+	    }
+
+	}
+
+	status = 1;
+
+	return status;
+
+}
+
 
 
