@@ -420,8 +420,57 @@ exit:
 }
 
 
+static PyObject *Register_Find_Mask(PyObject *self, PyObject *args)
+{
 
-static PyObject *Register_ResampleWGradientWCoords(PyObject *self, PyObject *args)
+    int i;
+    int num;
+    int length;
+    double  *X;
+    double  *Y;
+    double  *Z;
+    int     *xLims;
+    int     *yLims;
+    int     *zLims;
+    int     *mask;
+    PyObject *MArray   = NULL;
+    PyObject *XArray   = NULL;
+    PyObject *YArray   = NULL;
+    PyObject *ZArray   = NULL;
+    PyObject *XLimits  = NULL;
+    PyObject *YLimits  = NULL;
+    PyObject *ZLimits  = NULL;
+	
+    if(!PyArg_ParseTuple(args, "OOOOOOO", &MArray, &XArray, &YArray, &ZArray, &XLimits, &YLimits, &ZLimits))
+	goto exit;
+
+    num   = PyArray_SIZE(XArray);
+    X     = (double *)PyArray_DATA(XArray);
+    Y     = (double *)PyArray_DATA(YArray);
+    Z     = (double *)PyArray_DATA(ZArray);
+    mask  = (int *)PyArray_DATA(MArray);
+    xLims = (int *)PyArray_DATA(XLimits);
+    yLims = (int *)PyArray_DATA(YLimits);
+    zLims = (int *)PyArray_DATA(ZLimits);
+
+    for(length = 0, i = 0; i < num; ++i){
+	if( ((X[i] >= xLims[0]) && (X[i] <= xLims[1])) &&
+	    ((Y[i] >= yLims[0]) && (Y[i] <= yLims[1])) &&
+	    ((Z[i] >= zLims[0]) && (Z[i] <= zLims[1])) ){
+	    mask[length++] = i;
+	}
+    } 
+
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue("i", length); 
+
+}
+
+
+
+static PyObject *Register_Resample_Gradient_Coords(PyObject *self, PyObject *args)
 {
 
     int num;
@@ -429,18 +478,15 @@ static PyObject *Register_ResampleWGradientWCoords(PyObject *self, PyObject *arg
     int nd;
     int type;
     int itype;
-    int nd_rotmatrix;
     int nd_S;
     npy_intp *dimsScale;
     npy_intp *dimsOffset;
     npy_intp *dimsS;
     npy_intp *dimsD;
-    npy_intp *dims_rotmatrix;
     npy_intp *dims_S;
     npy_intp *dims_Coords;
     unsigned char *imageS;
     unsigned char *imageD;
-    double        *M;
     double        *X;
     double        *Y;
     double        *Z;
@@ -452,7 +498,6 @@ static PyObject *Register_ResampleWGradientWCoords(PyObject *self, PyObject *arg
     double        *gradientZ;
     PyObject *imgArrayS    = NULL;
     PyObject *imgArrayD    = NULL;
-    PyObject *rotArray     = NULL;
     PyObject *SArray       = NULL;
     PyObject *scaleArray   = NULL;
     PyObject *offsetArray  = NULL;
@@ -463,9 +508,9 @@ static PyObject *Register_ResampleWGradientWCoords(PyObject *self, PyObject *arg
     PyObject *coordYArray  = NULL;
     PyObject *coordZArray  = NULL;
 	
-    if(!PyArg_ParseTuple(args, "OOOOOOOOOOOO", &coordZArray, &coordYArray, &coordXArray,
-                                &imgArrayS, &imgArrayD, &rotArray, &SArray, &scaleArray,
-			        &offsetArray, &gradXArray, &gradYArray, &gradZArray))
+    if(!PyArg_ParseTuple(args, "OOOOOOOOOOO", &coordZArray, &coordYArray, &coordXArray,
+                                &imgArrayS, &imgArrayD, &SArray, &scaleArray, &offsetArray,
+			        &gradXArray, &gradYArray, &gradZArray))
 	goto exit;
 
     /* check in the Python code that S and D are the same dims, type */
@@ -477,10 +522,6 @@ static PyObject *Register_ResampleWGradientWCoords(PyObject *self, PyObject *arg
     dimsD  = PyArray_DIMS(imgArrayD);
     type   = PyArray_TYPE(imgArrayS);
     num    = PyArray_SIZE(imgArrayS);
-
-    M = (double *)PyArray_DATA(rotArray);
-    nd_rotmatrix   = PyArray_NDIM(rotArray);
-    dims_rotmatrix = PyArray_DIMS(rotArray);
 
     S = (int *)PyArray_DATA(SArray);
     nd_S   = PyArray_NDIM(SArray);
@@ -502,9 +543,83 @@ static PyObject *Register_ResampleWGradientWCoords(PyObject *self, PyObject *arg
     dims_Coords = PyArray_DIMS(coordXArray);
     size = PyArray_SIZE(coordXArray);
 
-    if(!NI_ResampleWGradientWCoords(size, (int)dimsS[0], (int)dimsS[1], (int)dimsS[2], (int)dimsD[0], 
-			            (int)dimsD[1], (int)dimsD[2], S, X, Y, Z, M, imageD, imageS, scale, 
-				    offset, gradientX, gradientY, gradientZ))
+    if(!NI_Resample_Gradient_Coords(size, (int)dimsS[0], (int)dimsS[1], (int)dimsS[2], (int)dimsD[0], 
+			           (int)dimsD[1], (int)dimsD[2], S, X, Y, Z, imageD, imageS, scale, 
+				   offset, gradientX, gradientY, gradientZ))
+	    goto exit;
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue(""); 
+
+}
+
+
+
+static PyObject *Register_Resample_Coords(PyObject *self, PyObject *args)
+{
+
+    int num;
+    int size;
+    int nd;
+    int type;
+    int itype;
+    int nd_S;
+    npy_intp *dimsScale;
+    npy_intp *dimsOffset;
+    npy_intp *dimsS;
+    npy_intp *dimsD;
+    npy_intp *dims_S;
+    npy_intp *dims_Coords;
+    unsigned char *imageS;
+    unsigned char *imageD;
+    double        *X;
+    double        *Y;
+    double        *Z;
+    int           *S;
+    double        *scale;
+    int           *offset;
+    PyObject *imgArrayS    = NULL;
+    PyObject *imgArrayD    = NULL;
+    PyObject *SArray       = NULL;
+    PyObject *scaleArray   = NULL;
+    PyObject *offsetArray  = NULL;
+    PyObject *coordXArray  = NULL;
+    PyObject *coordYArray  = NULL;
+    PyObject *coordZArray  = NULL;
+	
+    if(!PyArg_ParseTuple(args, "OOOOOOOO", &coordZArray, &coordYArray, &coordXArray,
+                                &imgArrayS, &imgArrayD, &SArray, &scaleArray, &offsetArray))
+	goto exit;
+
+    /* check in the Python code that S and D are the same dims, type */
+    imageS = (unsigned char *)PyArray_DATA(imgArrayS);
+    imageD = (unsigned char *)PyArray_DATA(imgArrayD);
+    /* reads dims as 0 = layers, 1 = rows, 2 = cols */
+    nd     = PyArray_NDIM(imgArrayS);
+    dimsS  = PyArray_DIMS(imgArrayS);
+    dimsD  = PyArray_DIMS(imgArrayD);
+    type   = PyArray_TYPE(imgArrayS);
+    num    = PyArray_SIZE(imgArrayS);
+
+    S = (int *)PyArray_DATA(SArray);
+    nd_S   = PyArray_NDIM(SArray);
+    dims_S = PyArray_DIMS(SArray);
+
+    scale  = (double *)PyArray_DATA(scaleArray);
+    offset = (int *)PyArray_DATA(offsetArray);
+    dimsScale  = PyArray_DIMS(scaleArray);
+    dimsOffset = PyArray_DIMS(offsetArray);
+
+    X = (double *)PyArray_DATA(coordXArray);
+    Y = (double *)PyArray_DATA(coordYArray);
+    Z = (double *)PyArray_DATA(coordZArray);
+
+    dims_Coords = PyArray_DIMS(coordXArray);
+    size = PyArray_SIZE(coordXArray);
+
+    if(!NI_Resample_Coords(size, (int)dimsS[0], (int)dimsS[1], (int)dimsS[2], (int)dimsD[0], 
+		           (int)dimsD[1], (int)dimsD[2], S, X, Y, Z, imageD, imageS, scale, offset)) 
 	    goto exit;
 
 exit:
@@ -517,14 +632,16 @@ exit:
 
 static PyMethodDef RegisterMethods[] =
 {
-    { "register_resample_w_gradient_w_coords", Register_ResampleWGradientWCoords, METH_VARARGS, NULL },
-    { "register_resample_w_gradient",          Register_ResampleWithGradient,     METH_VARARGS, NULL },
-    { "register_histogram",                    Register_Histogram,                METH_VARARGS, NULL },
-    { "register_histogram_lite",               Register_HistogramLite,            METH_VARARGS, NULL },
-    { "register_linear_resample",              Register_LinearResample,           METH_VARARGS, NULL },
-    { "register_cubic_resample",               Register_CubicResample,            METH_VARARGS, NULL },
-    { "register_volume_resample",              Register_VolumeResample,           METH_VARARGS, NULL },
-    { "register_image_threshold",              Register_ImageThreshold,           METH_VARARGS, NULL },
+    { "register_find_mask",                     Register_Find_Mask,                METH_VARARGS, NULL },
+    { "register_resample_coords",               Register_Resample_Coords,          METH_VARARGS, NULL },
+    { "register_resample_gradient_coords",      Register_Resample_Gradient_Coords, METH_VARARGS, NULL },
+    { "register_resample_w_gradient",           Register_ResampleWithGradient,     METH_VARARGS, NULL },
+    { "register_histogram",                     Register_Histogram,                METH_VARARGS, NULL },
+    { "register_histogram_lite",                Register_HistogramLite,            METH_VARARGS, NULL },
+    { "register_linear_resample",               Register_LinearResample,           METH_VARARGS, NULL },
+    { "register_cubic_resample",                Register_CubicResample,            METH_VARARGS, NULL },
+    { "register_volume_resample",               Register_VolumeResample,           METH_VARARGS, NULL },
+    { "register_image_threshold",               Register_ImageThreshold,           METH_VARARGS, NULL },
     {  NULL, NULL, 0, NULL},
 };
 
