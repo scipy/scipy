@@ -2,7 +2,7 @@ import numpy as np
 from scipy import factorial
 from numpy import poly1d
 
-__all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator", "barycentric_interpolate", "PiecewisePolynomial", "piecewise_polynomial_interpolate"]
+__all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator", "barycentric_interpolate", "PiecewisePolynomial", "piecewise_polynomial_interpolate","approximate_taylor_polynomial"]
 
 class KroghInterpolator(object):
     """The interpolating polynomial for a set of points
@@ -289,6 +289,64 @@ def krogh_interpolate(xi,yi,x,der=0):
     else:
         return P.derivatives(x,der=np.amax(der)+1)[der]
 
+
+
+
+def approximate_taylor_polynomial(f,x,degree,scale,order=None):
+    """Estimate the Taylor polynomial of f at x by polynomial fitting
+
+    A polynomial 
+    Parameters
+    ----------
+    f : callable
+        The function whose Taylor polynomial is sought. Should accept
+        a vector of x values.
+    x : scalar
+        The point at which the polynomial is to be evaluated.
+    degree : integer
+        The degree of the Taylor polynomial
+    scale : scalar
+        The width of the interval to use to evaluate the Taylor polynomial.
+        Function values spread over a range this wide are used to fit the
+        polynomial. Must be chosen carefully.
+    order : integer or None
+        The order of the polynomial to be used in the fitting; f will be     
+        evaluated order+1 times. If None, use degree.
+
+    Returns
+    -------
+    p : poly1d
+        the Taylor polynomial (translated to the origin, so that 
+        for example p(0)=f(x)).
+
+    Notes
+    -----
+    The appropriate choice of "scale" is a tradeoff - too large and the 
+    function differs from its Taylor polynomial too much to get a good 
+    answer, too small and roundoff errors overwhelm the higher-order terms.
+    The algorithm used becomes numerically unstable around order 30 even 
+    under ideal circumstances.
+
+    Choosing order somewhat larger than degree may improve the higher-order 
+    terms.
+    """
+    if order is None:
+        order=degree
+
+    n = order+1
+    # Choose n points that cluster near the endpoints of the interval in
+    # a way that avoids the Runge phenomenon. Ensure, by including the
+    # endpoint or not as appropriate, that one point always falls at x
+    # exactly.
+    xs = scale*np.cos(np.linspace(0,np.pi,n,endpoint=n%1)) + x
+
+    P = KroghInterpolator(xs, f(xs))
+    d = P.derivatives(x,der=degree+1)
+
+    return np.poly1d((d/factorial(np.arange(degree+1)))[::-1])
+
+
+
 class BarycentricInterpolator(object):
     """The interpolating polynomial for a set of points
 
@@ -496,6 +554,7 @@ def barycentric_interpolate(xi, yi, x):
     """
     return BarycentricInterpolator(xi, yi)(x)
 
+
 class PiecewisePolynomial(object):
     """Piecewise polynomial curve specified by points and derivatives
 

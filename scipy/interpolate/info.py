@@ -48,6 +48,8 @@ Interpolation Classes (multivariate)
 Additional tools
 
   lagrange -- Compute the Lagrange interpolating polynomial.
+  approximate_taylor_polynomial -- compute an approximate Taylor polynomial for
+               a function using polynomial interpolation
 """
 
 postpone_import = 1

@@ -2,7 +2,8 @@
 from scipy.testing import *
 from scipy.interpolate import KroghInterpolator, krogh_interpolate, \
         BarycentricInterpolator, barycentric_interpolate, \
-        PiecewisePolynomial, piecewise_polynomial_interpolate
+        PiecewisePolynomial, piecewise_polynomial_interpolate, \
+        approximate_taylor_polynomial
 import scipy
 import numpy as np
 from scipy.interpolate import splrep, splev
@@ -109,6 +110,14 @@ class CheckKrogh(TestCase):
         assert_almost_equal(P.derivative(self.test_xs,2),krogh_interpolate(self.xs,self.ys,self.test_xs,der=2))
         assert_almost_equal(P.derivatives(self.test_xs,2),krogh_interpolate(self.xs,self.ys,self.test_xs,der=[0,1]))
 
+class CheckTaylor(TestCase):
+    def test_exponential(self):
+        degree = 5
+        p = approximate_taylor_polynomial(np.exp, 0, degree, 1, 15)
+        for i in xrange(degree+1):
+            assert_almost_equal(p(0),1)
+            p = p.deriv()
+        assert_almost_equal(p(0),0)
 
 class CheckBarycentric(TestCase):
     def setUp(self):
