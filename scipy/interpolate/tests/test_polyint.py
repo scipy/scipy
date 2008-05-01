@@ -1,7 +1,8 @@
 
 from scipy.testing import *
-from scipy.interpolate import KroghInterpolator, \
-        BarycentricInterpolator, PiecewisePolynomial
+from scipy.interpolate import KroghInterpolator, krogh_interpolate, \
+        BarycentricInterpolator, barycentric_interpolate, \
+        PiecewisePolynomial, piecewise_polynomial_interpolate
 import scipy
 import numpy as np
 from scipy.interpolate import splrep, splev
@@ -102,6 +103,11 @@ class CheckKrogh(TestCase):
         assert_array_equal(np.shape(P.derivatives([0])), (n,1,3))
         assert_array_equal(np.shape(P.derivatives([0,1])), (n,2,3))
 
+    def test_wrapper(self):
+        P = KroghInterpolator(self.xs,self.ys)
+        assert_almost_equal(P(self.test_xs),krogh_interpolate(self.xs,self.ys,self.test_xs))
+        assert_almost_equal(P.derivative(self.test_xs,2),krogh_interpolate(self.xs,self.ys,self.test_xs,der=2))
+        assert_almost_equal(P.derivatives(self.test_xs,2),krogh_interpolate(self.xs,self.ys,self.test_xs,der=[0,1]))
 
 
 class CheckBarycentric(TestCase):
@@ -154,6 +160,9 @@ class CheckBarycentric(TestCase):
         assert_array_equal(np.shape(P([0])), (1,1))
         assert_array_equal(np.shape(P([0,1])), (2,1))
 
+    def test_wrapper(self):
+        P = BarycentricInterpolator(self.xs,self.ys)
+        assert_almost_equal(P(self.test_xs),barycentric_interpolate(self.xs,self.ys,self.test_xs))
 
 class CheckPiecewise(TestCase):
     def setUp(self):
@@ -232,6 +241,12 @@ class CheckPiecewise(TestCase):
         assert_array_equal(np.shape(P.derivative(0,1)), (3,))
         assert_array_equal(np.shape(P.derivative([0],1)), (1,3))
         assert_array_equal(np.shape(P.derivative([0,1],1)), (2,3))
+
+    def test_wrapper(self):
+        P = PiecewisePolynomial(self.xi,self.yi)
+        assert_almost_equal(P(self.test_xs),piecewise_polynomial_interpolate(self.xi,self.yi,self.test_xs))
+        assert_almost_equal(P.derivative(self.test_xs,2),piecewise_polynomial_interpolate(self.xi,self.yi,self.test_xs,der=2))
+        assert_almost_equal(P.derivatives(self.test_xs,2),piecewise_polynomial_interpolate(self.xi,self.yi,self.test_xs,der=[0,1]))
 
 
 if __name__=='__main__':
