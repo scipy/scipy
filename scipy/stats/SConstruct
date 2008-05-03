@@ -1,4 +1,4 @@
-# Last Change: Tue Apr 22 01:00 PM 2008 J
+# Last Change: Sat May 03 02:00 PM 2008 J
 # vim:syntax=python
 from os.path import join as pjoin
 
@@ -6,6 +6,8 @@ from numpy.distutils.misc_util import get_numpy_include_dirs
 from numscons import GetNumpyEnvironment, CheckF77Clib
 
 env = GetNumpyEnvironment(ARGUMENTS)
+
+t = env.Tool('numpyf2py')
 
 env.AppendUnique(CPPPATH = [get_numpy_include_dirs()])
 env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])

@@ -1,4 +1,4 @@
-# Last Change: Tue Apr 22 01:00 PM 2008 J
+# Last Change: Sat May 03 02:00 PM 2008 J
 # vim:syntax=python
 
 import os
@@ -12,6 +12,7 @@ from numscons import CheckF77LAPACK, CheckF77Clib
 from numscons import write_info
 
 env = GetNumpyEnvironment(ARGUMENTS)
+env.Tool('numpyf2py')
 env.Append(CPPPATH = get_numpy_include_dirs())
 env.Append(CPPPATH = env['F2PYINCLUDEDIR'])
 #if os.name == 'nt':

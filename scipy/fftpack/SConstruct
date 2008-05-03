@@ -1,4 +1,4 @@
-# Last Change: Tue Apr 22 01:00 PM 2008 J
+# Last Change: Sat May 03 02:00 PM 2008 J
 # vim:syntax=python
 from os.path import join as pjoin
 
@@ -7,6 +7,7 @@ from numscons import GetNumpyEnvironment, write_info
 from numscons import CheckFFT, IsMKL, IsFFTW2, IsFFTW3
 
 env = GetNumpyEnvironment(ARGUMENTS)
+env.Tool('numpyf2py')
 
 env.AppendUnique(CPPPATH = get_numpy_include_dirs())
 env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])

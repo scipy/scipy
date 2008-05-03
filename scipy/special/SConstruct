@@ -1,4 +1,4 @@
-# Last Change: Wed Mar 05 09:00 PM 2008 J
+# Last Change: Sat May 03 02:00 PM 2008 J
 # vim:syntax=python
 from os.path import join as pjoin, basename as pbasename
 import sys
@@ -10,6 +10,8 @@ from numscons import GetNumpyEnvironment
 from numscons import CheckF77Clib
 
 env = GetNumpyEnvironment(ARGUMENTS)
+
+env.Tool('numpyf2py')
 
 env.AppendUnique(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
 env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])

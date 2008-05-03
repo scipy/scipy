@@ -1,4 +1,4 @@
-# Last Change: Tue Apr 22 01:00 PM 2008 J
+# Last Change: Sat May 03 02:00 PM 2008 J
 # vim:syntax=python
 
 import os
@@ -17,6 +17,7 @@ from scons_support import do_generate_fake_interface, \
                           generate_interface_emitter
 
 env = GetNumpyEnvironment(ARGUMENTS)
+env.Tool('numpyf2py')
 env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
 #if os.name == 'nt':
 #    # NT needs the pythonlib to run any code importing Python.h, including
