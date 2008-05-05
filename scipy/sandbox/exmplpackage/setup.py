@@ -9,8 +9,9 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('exmplpackage',parent_package,top_path)
 
-    # include test scripts from tests
+    # include test scripts from tests, and any benchmarks
     config.add_data_dir('tests')
+    config.add_data_dir('benchmarks')
 
     # exmplpackage contains Python sub-package yyy
     config.add_subpackage('yyy')

@@ -9,10 +9,10 @@ First ensure that scipy core modules are installed.
 Build exmplpackage:
   python setup.py build
 Run tests locally:
-  python tests/test_foo.py [-l<int>] [-v<int>]
+  python tests/test_foo.py
 
 Run tests if scipy is installed:
-  python -c 'import scipy;scipy.exmplpackage.test(level=<int>,verbosity=<int>)'
+  python -c 'import scipy;scipy.exmplpackage.test(label=<str>,verbose=<int>)'
 """
 
 import sys
@@ -22,12 +22,12 @@ from scipy.sandbox.exmplpackage.foo import *
 
 class TestFooBar(TestCase):
 
-    def check_simple(self, level=1):
+    def test_simple(self):
         assert exmplpackage_foo_bar()=='Hello from exmplpackage_foo_bar'
 
 class TestFooGun(TestCase):
 
-    def check_simple(self, level=1):
+    def test_simple(self):
         assert foo_gun()=='Hello from foo_gun'
 
 if __name__ == "__main__":

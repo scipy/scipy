@@ -5,6 +5,10 @@
 # Get documentation string:
 from info_exmplpackage import __doc__
 
+# Import testing rig, allowing scipy.examplpackage.test()
+from scipy.testing.pkgtester import Tester
+test = Tester().test
+
 # Import symbols from sub-module:
 from foo import *
 
