@@ -12,7 +12,10 @@ env.Tool('numpyf2py')
 
 env.AppendUnique(CPPPATH = get_numpy_include_dirs())
 env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
-env.AppendUnique(CPPPATH = ["src"])
+backends_paths = [pjoin(env['build_dir'], 'src', b)
+                  for b in ["mkl", "fftw", "djbfft", "fftpack"]]
+env.AppendUnique(CPPPATH = backends_paths)
+env.AppendUnique(CPPPATH = [pjoin(env['build_dir'], "src")])
 
 # Check fft implementation
 config = env.NumpyConfigure(custom_tests = {'CheckFFT': CheckFFT,
