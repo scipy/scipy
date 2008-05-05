@@ -1,10 +1,11 @@
-# Last Change: Sat May 03 02:00 PM 2008 J
+# Last Change: Mon May 05 03:00 PM 2008 J
 # vim:syntax=python
 from os.path import join as pjoin
 
 from numpy.distutils.misc_util import get_numpy_include_dirs
 from numscons import GetNumpyEnvironment, write_info
 from numscons import CheckFFT, IsMKL, IsFFTW2, IsFFTW3
+from numscons import CheckF77Clib
 
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Tool('numpyf2py')
@@ -13,8 +14,11 @@ env.AppendUnique(CPPPATH = get_numpy_include_dirs())
 env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 
 # Check fft implementation
-config = env.NumpyConfigure(custom_tests = {'CheckFFT': CheckFFT})
+config = env.NumpyConfigure(custom_tests = {'CheckFFT': CheckFFT,
+                            'CheckF77Clib' : CheckF77Clib})
 has_fft = config.CheckFFT()
+if not config.CheckF77Clib():
+    raise Exception("Could not get f77/c++ link information")
 config.Finish()
 write_info(env)
 
