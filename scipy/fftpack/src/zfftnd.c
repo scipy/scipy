@@ -40,6 +40,6 @@ int equal_dims(int rank,int *dims1,int *dims2) {
     #include "mkl/zfftnd.c"
     GEN_PUBLIC_API(mkl)
 #else /* Use fftpack by default */
-    #include "zfftnd_fftpack.c"
+    #include "fftpack/zfftnd.c"
     GEN_PUBLIC_API(fftpack)
 #endif
