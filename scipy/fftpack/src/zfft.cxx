@@ -36,7 +36,7 @@ extern "C" void zfft(complex_double *inout, int n, \
  */
 
 #ifdef WITH_FFTW3
-    #include "zfft_fftw3.cxx"
+    #include "fftw3/zfft.cxx"
     #ifndef WITH_DJBFFT
         GEN_PUBLIC_API(fftw3)
     #endif
