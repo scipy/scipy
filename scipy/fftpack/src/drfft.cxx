@@ -36,7 +36,7 @@ void drfft(double *inout, int n, \
  */
 
 #ifdef WITH_FFTW3
-    #include "fftw3/drfft.c"
+    #include "fftw3/drfft.cxx"
     #ifndef WITH_DJBFFT
         GEN_PUBLIC_API(fftw3)
     #endif
