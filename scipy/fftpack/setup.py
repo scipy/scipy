@@ -19,6 +19,7 @@ def configuration(parent_package='',top_path=None):
         djbfft_info = get_info('djbfft')
 
     config.add_data_dir('tests')
+    config.add_data_dir('benchmarks')
 
     config.add_library('dfftpack',
                        sources=[join('dfftpack','*.f')])
