@@ -40,7 +40,7 @@ env.PrependUnique(LIBS = ['dfftpack'])
 env.PrependUnique(LIBPATH = env['build_dir'])
 
 # Build _fftpack
-src = ['src/zfft.c','src/drfft.c','src/zrfft.c', 'src/zfftnd.c', 'fftpack.pyf']
+src = ['src/zfft.cxx','src/drfft.c','src/zrfft.c', 'src/zfftnd.c', 'fftpack.pyf']
 env.NumpyPythonExtension('_fftpack', src)
 
 # Build convolve

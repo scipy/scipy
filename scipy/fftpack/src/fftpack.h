@@ -31,12 +31,18 @@ extern int ispow2le2e13(int n);
 #endif
 
 #ifdef SCIPY_DJBFFT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 #define WITH_DJBFFT
 #define complex8 complex_double
 #define COMPLEX8_H
 #include <fftfreq.h>
 #include <fftc8.h>
 #include <fftr8.h>
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 #ifdef SCIPY_MKL_H

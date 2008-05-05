@@ -23,7 +23,7 @@ def configuration(parent_package='',top_path=None):
     config.add_library('dfftpack',
                        sources=[join('dfftpack','*.f')])
 
-    sources = ['fftpack.pyf','src/zfft.c','src/drfft.c','src/zrfft.c',
+    sources = ['fftpack.pyf','src/zfft.cxx','src/drfft.c','src/zrfft.c',
                'src/zfftnd.c']
 
     config.add_extension('_fftpack',
@@ -31,8 +31,8 @@ def configuration(parent_package='',top_path=None):
         libraries=['dfftpack'],
         extra_info=[fft_opt_info, djbfft_info],
         depends=['src/zfft_djbfft.c', 'src/zfft_fftpack.c', 'src/zfft_fftw.c',
-            'src/zfft_fftw3.c', 'src/zfft_mkl.c',
-            'src/drfft_djbfft.c', 'src/drfft_fftpack.c',
+            'src/zfft_fftw3.cxx', 'src/zfft_mkl.c',
+            'src/drfft_djbfft.cxx', 'src/drfft_fftpack.c',
             'src/drfft_fftw3.c', 'src/drfft_fftw.c',
             'src/zfftnd_fftpack.c', 'src/zfftnd_fftw.c',
             'src/zfftnd_fftw3.c', 'src/zfftnd_mkl.c',

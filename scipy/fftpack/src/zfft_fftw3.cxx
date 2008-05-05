@@ -1,4 +1,3 @@
-
 /* This cache uses FFTW_MEASURE for the plans, and do not copy the data. */
 GEN_CACHE(zfftw3,(int n,int d)
 	,int direction;
@@ -9,7 +8,7 @@ GEN_CACHE(zfftw3,(int n,int d)
 	,caches_zfftw3[id].direction = d;
         /* This working buffer is only used to compute the plan: we need it
            since FFTW_MEASURE destroys its input when computing a plan */
-	    caches_zfftw3[id].wrk = fftw_malloc(n * sizeof(double) * 2); 
+	    caches_zfftw3[id].wrk = (fftw_complex*)fftw_malloc(n * sizeof(double) * 2); 
 	    caches_zfftw3[id].plan = fftw_plan_dft_1d(n, 
 	        caches_zfftw3[id].wrk,
 	        caches_zfftw3[id].wrk,

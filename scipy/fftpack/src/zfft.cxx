@@ -9,12 +9,12 @@
 /* The following macro convert private backend specific function to the public
  * functions exported by the module  */
 #define GEN_PUBLIC_API(name) \
-void destroy_zfft_cache(void)\
+extern "C" void destroy_zfft_cache(void)\
 {\
         destroy_z##name##_caches();\
 }\
 \
-void zfft(complex_double *inout, int n, \
+extern "C" void zfft(complex_double *inout, int n, \
         int direction, int howmany, int normalize)\
 {\
         zfft_##name(inout, n, direction, howmany, normalize);\
@@ -36,7 +36,7 @@ void zfft(complex_double *inout, int n, \
  */
 
 #ifdef WITH_FFTW3
-    #include "zfft_fftw3.c"
+    #include "zfft_fftw3.cxx"
     #ifndef WITH_DJBFFT
         GEN_PUBLIC_API(fftw3)
     #endif
@@ -62,13 +62,13 @@ void zfft(complex_double *inout, int n, \
  * above) for non 2^n * size 
  */
 #ifdef WITH_DJBFFT
-    #include "zfft_djbfft.c"
-    void destroy_zfft_cache(void)
+    #include "zfft_djbfft.cxx"
+    extern "C" void destroy_zfft_cache(void)
     {
         destroy_zdjbfft_caches();
         zfft_def_destroy_cache();
     }
-    void zfft(complex_double *inout, int n, 
+    extern "C" void zfft(complex_double *inout, int n, 
             int direction, int howmany, int normalize)
     {
         zfft_djbfft(inout, n, direction, howmany, normalize);
