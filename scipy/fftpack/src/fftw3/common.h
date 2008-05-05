@@ -3,13 +3,21 @@
 
 #include "cycliccache.h"
 
+#include <stddef.h>
+
 namespace fft {
+
+inline bool is_simd_aligned(const void * p)
+{
+        return ((reinterpret_cast<ptrdiff_t> (p)) & 0xF == 0);
+}
 
 class FFTW3CacheId : public CacheId {
 	public:
-		FFTW3CacheId(int n, int dir) : 
+		FFTW3CacheId(int n, int dir, bool isalign) : 
                         CacheId(n), 
-                        m_dir(dir)
+                        m_dir(dir),
+                        m_isalign(isalign)
                 {
                 };
 
@@ -23,11 +31,13 @@ class FFTW3CacheId : public CacheId {
 			const CacheId *ot = &other;
 			const CacheId *th = this;
 
-			return m_dir == other.m_dir &&  th->is_equal(*ot);
+			return m_isalign == other.m_isalign && 
+                               m_dir == other.m_dir &&  th->is_equal(*ot);
 		}
 
 	public:
 		int m_dir;
+                bool m_isalign;
 };
 
 }; // namespace fft

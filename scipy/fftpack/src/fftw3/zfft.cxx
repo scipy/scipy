@@ -1,4 +1,5 @@
 #include <new>
+#include <cassert>
 
 #include "common.h"
 
@@ -9,8 +10,9 @@ class FFTW3Cache : public Cache<FFTW3CacheId> {
 		FFTW3Cache(const FFTW3CacheId& id);
 		virtual ~FFTW3Cache();
 
-		int compute(fftw_complex* inout) 
+		int compute(fftw_complex* inout) const
 		{
+                        assert (m_id.m_isalign ? is_simd_aligned(inout) : true);
 			fftw_execute_dft(m_plan, inout, inout);
 			return 0;
 		};
@@ -23,14 +25,20 @@ class FFTW3Cache : public Cache<FFTW3CacheId> {
 FFTW3Cache::FFTW3Cache(const FFTW3CacheId& id)
 :	Cache<FFTW3CacheId>(id)
 {
+        int flags = FFTW_ESTIMATE;
+
 	m_wrk = (fftw_complex*)fftw_malloc(id.m_n * sizeof(double) * 2);
 	if (m_wrk == NULL) {
 		goto fail_wrk;
 	}
 
+        if (!m_id.m_isalign) {
+                flags |= FFTW_UNALIGNED;
+        } 
+
 	m_plan = fftw_plan_dft_1d(id.m_n, m_wrk, m_wrk, 
 				  (id.m_dir > 0 ?  FFTW_FORWARD:FFTW_BACKWARD), 
-				  FFTW_ESTIMATE | FFTW_UNALIGNED);
+				  flags);
 
 	if (m_plan == NULL) {
 		goto clean_wrk;
@@ -63,10 +71,21 @@ static void zfft_fftw3(complex_double * inout, int n, int dir, int howmany,
 	fftw_complex    *ptr = (fftw_complex*)inout;
         double          factor = 1./n;
         FFTW3Cache      *cache;
+        bool            isaligned;
 
 	int i;
 
-	cache = fftw3_cmgr.get_cache(FFTW3CacheId(n, dir));
+        isaligned = is_simd_aligned(ptr); 
+
+        if (howmany > 1) {
+                /* 
+                 * If executing for several consecutive buffers, we have to
+                 * check that the shifting one buffer does not make it
+                 * unaligned 
+                 */
+                isaligned = isaligned && is_simd_aligned(ptr + n);
+        }
+	cache = fftw3_cmgr.get_cache(FFTW3CacheId(n, dir, isaligned));
 
 	switch (dir) {
 	case 1:
