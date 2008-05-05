@@ -46,7 +46,7 @@ extern "C" void zfft(complex_double *inout, int n, \
         GEN_PUBLIC_API(fftw)
     #endif
 #elif defined WITH_MKL
-    #include "zfft_mkl.c"
+    #include "zfft_mkl.cxx"
     #ifndef WITH_DJBFFT
         GEN_PUBLIC_API(mkl)
     #endif
