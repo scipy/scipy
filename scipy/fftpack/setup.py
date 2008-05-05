@@ -30,7 +30,7 @@ def configuration(parent_package='',top_path=None):
         sources=sources,
         libraries=['dfftpack'],
         extra_info=[fft_opt_info, djbfft_info],
-        depends=['src/zfft_djbfft.cxx', 'src/zfft_fftpack.c', 'src/zfft_fftw.c',
+        depends=['src/zfft_djbfft.cxx', 'src/zfft_fftpack.cxx', 'src/zfft_fftw.c',
             'src/zfft_fftw3.cxx', 'src/zfft_mkl.c',
             'src/drfft_djbfft.c', 'src/drfft_fftpack.c',
             'src/drfft_fftw3.c', 'src/drfft_fftw.c',

@@ -51,7 +51,7 @@ extern "C" void zfft(complex_double *inout, int n, \
         GEN_PUBLIC_API(mkl)
     #endif
 #else /* Use fftpack by default */
-    #include "zfft_fftpack.c"
+    #include "zfft_fftpack.cxx"
     #ifndef WITH_DJBFFT
         GEN_PUBLIC_API(fftpack)
     #endif 
