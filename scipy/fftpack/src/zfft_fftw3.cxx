@@ -1,45 +1,104 @@
-/* This cache uses FFTW_MEASURE for the plans, and do not copy the data. */
-GEN_CACHE(zfftw3,(int n,int d)
-	,int direction;
-	fftw_plan plan;
-    fftw_complex *wrk;
-	,((caches_zfftw3[i].n==n) &&
-	    (caches_zfftw3[i].direction==d))
-	,caches_zfftw3[id].direction = d;
-        /* This working buffer is only used to compute the plan: we need it
-           since FFTW_MEASURE destroys its input when computing a plan */
-	    caches_zfftw3[id].wrk = (fftw_complex*)fftw_malloc(n * sizeof(double) * 2); 
-	    caches_zfftw3[id].plan = fftw_plan_dft_1d(n, 
-	        caches_zfftw3[id].wrk,
-	        caches_zfftw3[id].wrk,
-		(d>0?FFTW_FORWARD:FFTW_BACKWARD),
-		FFTW_ESTIMATE | FFTW_UNALIGNED);
-	,
-    fftw_destroy_plan(caches_zfftw3[id].plan);
-	fftw_free(caches_zfftw3[id].wrk);
-	,10)
+#include <new>
 
-static void zfft_fftw3(complex_double * inout, int n, int dir, int
-howmany, int normalize)
+#include "cycliccache.h"
+
+using namespace fft;
+
+class FFTW3CacheId : public CacheId {
+	public:
+		FFTW3CacheId(int n, int dir) : CacheId(n), m_dir(dir) {};
+
+		virtual bool operator==(const FFTW3CacheId& other) const
+		{
+			return is_equal(other);
+		}
+
+		virtual bool is_equal(const FFTW3CacheId& other) const
+		{
+			const CacheId *ot = &other;
+			const CacheId *th = this;
+
+			return m_dir == other.m_dir &&  th->is_equal(*ot);
+		}
+
+	public:
+		int m_dir;
+};
+
+class FFTW3Cache : public Cache<FFTW3CacheId> {
+	public:	
+		FFTW3Cache(const FFTW3CacheId& id);
+		virtual ~FFTW3Cache();
+
+		int compute(fftw_complex* inout) 
+		{
+			fftw_execute_dft(m_plan, inout, inout);
+			return 0;
+		};
+
+	protected:
+		fftw_plan m_plan;	
+		fftw_complex *m_wrk;	
+};
+
+FFTW3Cache::FFTW3Cache(const FFTW3CacheId& id)
+:	Cache<FFTW3CacheId>(id)
+{
+	m_wrk = (fftw_complex*)fftw_malloc(id.m_n * sizeof(double) * 2);
+	if (m_wrk == NULL) {
+		goto fail_wrk;
+	}
+
+	m_plan = fftw_plan_dft_1d(id.m_n, m_wrk, m_wrk, 
+				  (id.m_dir > 0 ?  FFTW_FORWARD:FFTW_BACKWARD), 
+				  FFTW_ESTIMATE | FFTW_UNALIGNED);
+
+	if (m_plan == NULL) {
+		goto clean_wrk;
+	}
+
+	return ;
+
+clean_wrk:
+	fftw_free(m_wrk);
+fail_wrk:
+	throw std::bad_alloc();
+}
+
+FFTW3Cache::~FFTW3Cache()
+{
+	fftw_destroy_plan(m_plan);
+	fftw_free(m_wrk);
+}
+
+static CacheManager<FFTW3CacheId, FFTW3Cache> cmgr(10);
+
+/* stub to make GEN_PUBLIC_API happy */
+static void destroy_zfftw3_caches()
+{
+}
+
+static void zfft_fftw3(complex_double * inout, int n, int dir, int howmany, 
+                       int normalize)
 {
 	fftw_complex    *ptr = (fftw_complex*)inout;
-	fftw_plan       plan = NULL;
         double          factor = 1./n;
+        FFTW3Cache      *cache;
 
 	int i;
 
-	plan = caches_zfftw3[get_cache_id_zfftw3(n, dir)].plan;
+	cache = cmgr.get_cache(FFTW3CacheId(n, dir));
 
 	switch (dir) {
 	case 1:
 		for (i = 0; i < howmany; ++i, ptr += n) {
-			fftw_execute_dft(plan, ptr, ptr);
+			cache->compute(ptr);
 		}
 		break;
 
 	case -1:
 		for (i = 0; i < howmany; ++i, ptr += n) {
-			fftw_execute_dft(plan, ptr, ptr);
+			cache->compute(ptr);
 		}
 		break;
 
@@ -48,7 +107,7 @@ howmany, int normalize)
 	}
 
 	if (normalize) {
-        ptr =(fftw_complex*)inout;
+                ptr =(fftw_complex*)inout;
 		for (i = n * howmany - 1; i >= 0; --i) {
 			*((double *) (ptr)) *= factor;
 			*((double *) (ptr++) + 1) *= factor;
