@@ -62,7 +62,7 @@ extern "C" void zfft(complex_double *inout, int n, \
  * above) for non 2^n * size 
  */
 #ifdef WITH_DJBFFT
-    #include "zfft_djbfft.cxx"
+    #include "djbfft/zfft.cxx"
     extern "C" void destroy_zfft_cache(void)
     {
         destroy_zdjbfft_caches();

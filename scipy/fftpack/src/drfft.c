@@ -57,7 +57,7 @@ void drfft(double *inout, int n, \
  * above) for non 2^n * size 
  */
 #ifdef WITH_DJBFFT
-    #include "drfft_djbfft.c"
+    #include "djbfft/drfft.c"
     void destroy_drfft_cache(void)
     {
         destroy_drdjbfft_caches();
