@@ -42,6 +42,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_slsqp', sources=[join('slsqp', x) for x in sources])
 
     config.add_data_dir('tests')
+    config.add_data_dir('benchmarks')
     return config
 
 if __name__ == '__main__':
