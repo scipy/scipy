@@ -41,7 +41,7 @@ void drfft(double *inout, int n, \
         GEN_PUBLIC_API(fftw3)
     #endif
 #elif defined WITH_FFTW
-    #include "drfft_fftw.c"
+    #include "fftw/drfft.c"
     #ifndef WITH_DJBFFT
         GEN_PUBLIC_API(fftw)
     #endif
