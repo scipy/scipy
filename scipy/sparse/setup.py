@@ -7,8 +7,9 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('sparse',parent_package,top_path)
 
     config.add_data_dir('tests')
-    config.add_subpackage('linalg')
+    config.add_data_dir('benchmarks')
 
+    config.add_subpackage('linalg')
     config.add_subpackage('sparsetools')
 
     return config
