@@ -538,6 +538,9 @@ Parameters
         y = ma.array(y, mask=m, copy=True)
         n -= m.sum()
     #
+    if n < 2:
+        return (np.nan, np.nan)
+    #
     rx = ma.masked_equal(rankdata(x, use_missing=use_missing),0)
     ry = ma.masked_equal(rankdata(y, use_missing=use_missing),0)
     idx = rx.argsort()
@@ -563,9 +566,12 @@ Parameters
         v1 = np.sum(v*k*(k-1) for (k,v) in xties.iteritems()) * \
              np.sum(v*k*(k-1) for (k,v) in yties.iteritems())
         v1 /= 2.*n*(n-1)
-        v2 = np.sum(v*k*(k-1)*(k-2) for (k,v) in xties.iteritems()) * \
-             np.sum(v*k*(k-1)*(k-2) for (k,v) in yties.iteritems())
-        v2 /= 9.*n*(n-1)*(n-2)
+        if n > 2:
+            v2 = np.sum(v*k*(k-1)*(k-2) for (k,v) in xties.iteritems()) * \
+                 np.sum(v*k*(k-1)*(k-2) for (k,v) in yties.iteritems())
+            v2 /= 9.*n*(n-1)*(n-2)
+        else:
+            v2 = 0
     else:
         v1 = v2 = 0
     var_s /= 18.
@@ -752,7 +758,7 @@ def theilslopes(y, x=None, alpha=0.05):
     Ru = np.round((nt - z*sigma)/2. + 1)
     Rl = np.round((nt + z*sigma)/2.)
     delta = slopes[[Rl,Ru]]
-    return medslope, medinter, delta
+    return medslope, medinter, delta[0], delta[1]
 
 
 def sen_seasonal_slopes(x):
