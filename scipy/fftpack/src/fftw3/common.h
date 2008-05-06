@@ -7,9 +7,9 @@
 
 namespace fft {
 
-inline bool is_simd_aligned(const void * p)
+inline int is_simd_aligned(const void * p)
 {
-        return ((reinterpret_cast<ptrdiff_t> (p)) & 0xF == 0);
+        return (((reinterpret_cast<ptrdiff_t> (p)) & 0xF) == 0);
 }
 
 class FFTW3CacheId : public CacheId {
