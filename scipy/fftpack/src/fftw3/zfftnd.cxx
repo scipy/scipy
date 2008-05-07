@@ -3,7 +3,7 @@
  *
  * Original code by Pearu Peaterson
  *
- * Last Change: Wed Aug 08 02:00 PM 2007 J
+ * Last Change: Wed May 07 06:00 PM 2008 J
  */
 #include <new>
 #include <cassert>
@@ -16,6 +16,8 @@ class NDFFTW3CacheId {
 	public:
 		NDFFTW3CacheId(int rank, int* dims, int howmany, int dir, bool isalign);
                 virtual ~NDFFTW3CacheId();
+
+                NDFFTW3CacheId(const NDFFTW3CacheId&);
 
 		virtual bool operator==(const NDFFTW3CacheId& other) const
 		{
@@ -30,8 +32,22 @@ class NDFFTW3CacheId {
                 int m_howmany;
                 int m_dir;
                 bool m_isalign;
-		
+
+        private:
+                int init(int rank, int* dims);
 };
+
+int NDFFTW3CacheId::init(int rank, int* dims)
+{
+        m_dims = (int*)malloc(sizeof(int) * rank);
+        if (m_dims == NULL) {
+                return -1;
+        }
+        memcpy(m_dims, dims, rank * sizeof(*m_dims));
+
+        return 0;
+
+}
 
 NDFFTW3CacheId::NDFFTW3CacheId(int rank, int* dims, int howmany, int dir, bool isalign) :
         m_rank(rank),
@@ -39,13 +55,23 @@ NDFFTW3CacheId::NDFFTW3CacheId(int rank, int* dims, int howmany, int dir, bool i
         m_dir(dir),
         m_isalign(isalign)
 {
-        m_dims = (int*)fftw_malloc(m_rank * sizeof(*m_dims));
-        if (m_dims == NULL) {
+        if (init(rank, dims)) {
                 goto fail;
         }
-        memcpy(m_dims, dims, m_rank * sizeof(*m_dims));
 
-        return;
+fail:
+        std::bad_alloc();
+}
+
+NDFFTW3CacheId::NDFFTW3CacheId(const NDFFTW3CacheId& copy) :
+        m_rank(copy.m_rank),
+        m_howmany(copy.m_howmany),
+        m_dir(copy.m_dir),
+        m_isalign(copy.m_isalign)
+{
+        if (init(copy.m_rank, copy.m_dims)) {
+                goto fail;
+        }
 
 fail:
         std::bad_alloc();
@@ -53,7 +79,7 @@ fail:
 
 NDFFTW3CacheId::~NDFFTW3CacheId()
 {
-        fftw_free(m_dims);
+        free(m_dims);
 }
 
 bool NDFFTW3CacheId::is_equal(const NDFFTW3CacheId& other) const
@@ -66,7 +92,6 @@ bool NDFFTW3CacheId::is_equal(const NDFFTW3CacheId& other) const
         res = res && (m_howmany == other.m_howmany);
         
         if (m_rank == other.m_rank) {
-                fprintf(stderr, "rank is %d, %d\n", m_rank, other.m_rank);
                 for (i = 0; i < m_rank; ++i) {
                         res = res && (m_dims[i] == other.m_dims[i]);
                 }
@@ -157,7 +182,6 @@ extern void zfftnd_fftw3(complex_double * inout, int rank,
     for (i = 0; i < rank; ++i) {
         sz *= dims[i];
     }
-
 
     cache = fftw3_cmgr.get_cache(NDFFTW3CacheId(rank, dims, howmany, direction, is_simd_aligned(inout)));
 
