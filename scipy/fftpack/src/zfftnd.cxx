@@ -8,12 +8,12 @@
 /* The following macro convert private backend specific function to the public
  * functions exported by the module  */
 #define GEN_PUBLIC_API(name) \
-void destroy_zfftnd_cache(void)\
+extern "C" void destroy_zfftnd_cache(void)\
 {\
         destroy_zfftnd_##name##_caches();\
 }\
 \
-void zfftnd(complex_double * inout, int rank,\
+extern "C" void zfftnd(complex_double * inout, int rank,\
 		           int *dims, int direction, int howmany, int normalize)\
 {\
         zfftnd_##name(inout, rank, dims, direction, howmany, normalize);\
