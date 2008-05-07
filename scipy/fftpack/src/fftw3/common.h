@@ -7,7 +7,7 @@
 
 namespace fft {
 
-inline int is_simd_aligned(const void * p)
+inline bool is_simd_aligned(const void * p)
 {
         return (((reinterpret_cast<ptrdiff_t> (p)) & 0xF) == 0);
 }
