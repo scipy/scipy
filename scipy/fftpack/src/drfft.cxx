@@ -9,12 +9,12 @@
 /* The following macro convert private backend specific function to the public
  * functions exported by the module  */
 #define GEN_PUBLIC_API(name) \
-void destroy_drfft_cache(void)\
+extern "C" void destroy_drfft_cache(void)\
 {\
         destroy_dr##name##_caches();\
 }\
 \
-void drfft(double *inout, int n, \
+extern "C" void drfft(double *inout, int n, \
         int direction, int howmany, int normalize)\
 {\
         drfft_##name(inout, n, direction, howmany, normalize);\
@@ -58,12 +58,12 @@ void drfft(double *inout, int n, \
  */
 #ifdef WITH_DJBFFT
     #include "djbfft/drfft.c"
-    void destroy_drfft_cache(void)
+    extern "C" void destroy_drfft_cache(void)
     {
         destroy_drdjbfft_caches();
         drfft_def_destroy_cache();
     }
-    void drfft(double *inout, int n, 
+    extern "C" void drfft(double *inout, int n, 
             int direction, int howmany, int normalize)
     {
         drfft_djbfft(inout, n, direction, howmany, normalize);
