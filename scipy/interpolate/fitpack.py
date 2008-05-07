@@ -172,6 +172,16 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
       bisplrep, bisplev - bivariate splines
       UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
+
+    Notes:
+       Dierckx P. : Algorithms for smoothing data with periodic and
+                    parametric splines, Computer Graphics and Image
+                    Processing 20 (1982) 171-184.
+       Dierckx P. : Algorithms for smoothing data with periodic and param-
+                    etric splines, report tw55, Dept. Computer Science,
+                    K.U.Leuven, 1981.
+       Dierckx P. : Curve and surface fitting with splines, Monographs on
+                    Numerical Analysis, Oxford University Press, 1993.
     """
     if task<=0:
         _parcur_cache = {'t': array([],float), 'wrk': array([],float),
@@ -331,6 +341,21 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
       bisplrep, bisplev - bivariate splines
       UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
+
+    Notes:
+
+    Based on algorithms described in:
+       Dierckx P. : An algorithm for smoothing, differentiation and integ-
+                    ration of experimental data using spline functions,
+                    J.Comp.Appl.Maths 1 (1975) 165-184.
+       Dierckx P. : A fast algorithm for smoothing data on a rectangular
+                    grid while using spline functions, SIAM J.Numer.Anal.
+                    19 (1982) 1286-1304.
+       Dierckx P. : An improved algorithm for curve fitting with spline
+                    functions, report tw54, Dept. Computer Science,K.U.
+                    Leuven, 1981.
+       Dierckx P. : Curve and surface fitting with splines, Monographs on
+                    Numerical Analysis, Oxford University Press, 1993.
     """
     if task<=0:
         _curfit_cache = {}
@@ -436,6 +461,14 @@ def splev(x,tck,der=0):
       bisplrep, bisplev - bivariate splines
       UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
+
+    Notes:
+        de Boor C  : On calculating with b-splines, J. Approximation Theory
+                     6 (1972) 50-62.
+        Cox M.G.   : The numerical evaluation of b-splines, J. Inst. Maths
+                     Applics 10 (1972) 134-149.
+        Dierckx P. : Curve and surface fitting with splines, Monographs on
+                     Numerical Analysis, Oxford University Press, 1993.
     """
     t,c,k=tck
     try:
@@ -481,6 +514,12 @@ def splint(a,b,tck,full_output=0):
       bisplrep, bisplev - bivariate splines
       UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
+
+    Notes:
+        Gaffney P.W. : The calculation of indefinite integrals of b-splines
+                       J. Inst. Maths Applics 17 (1976) 37-41.
+        Dierckx P. : Curve and surface fitting with splines, Monographs on
+                     Numerical Analysis, Oxford University Press, 1993.
     """
     t,c,k=tck
     try:
@@ -519,6 +558,7 @@ def sproot(tck,mest=10):
       bisplrep, bisplev - bivariate splines
       UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
+
     """
     t,c,k=tck
     if k==4: t=t[1:-1]
@@ -566,6 +606,14 @@ def spalde(x,tck):
       bisplrep, bisplev - bivariate splines
       UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
+    Notes:
+    Based on algorithms from:
+        de Boor C : On calculating with b-splines, J. Approximation Theory
+                    6 (1972) 50-62.
+        Cox M.G.  : The numerical evaluation of b-splines, J. Inst. Maths
+                    applics 10 (1972) 134-149.
+       Dierckx P. : Curve and surface fitting with splines, Monographs on
+                    Numerical Analysis, Oxford University Press, 1993.
     """
     t,c,k=tck
     try:
@@ -601,7 +649,8 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
     Description:
 
       Given a set of data points (x[i], y[i], z[i]) representing a surface
-      z=f(x,y), compute a B-spline representation of the surface.
+      z=f(x,y), compute a B-spline representation of the surface. Based on
+      the routine SURFIT from FITPACK.
 
     Inputs:
 
@@ -653,6 +702,15 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
       splprep, splrep, splint, sproot, splev - evaluation, roots, integral
       UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
+    
+    Notes:
+    Based on algorithms from:
+       Dierckx P. : An algorithm for surface fitting with spline functions
+                    Ima J. Numer. Anal. 1 (1981) 267-283.
+       Dierckx P. : An algorithm for surface fitting with spline functions
+                    report tw50, Dept. Computer Science,K.U.Leuven, 1980.
+       Dierckx P. : Curve and surface fitting with splines, Monographs on
+                    Numerical Analysis, Oxford University Press, 1993.
     """
     x,y,z=map(myasarray,[x,y,z])
     x,y,z=map(ravel,[x,y,z])  # ensure 1-d arrays.
@@ -736,7 +794,7 @@ def bisplev(x,y,tck,dx=0,dy=0):
       Return a rank-2 array of spline function values (or spline derivative
       values) at points given by the cross-product of the rank-1 arrays x and y.
       In special cases, return an array or just a float if either x or y or
-      both are floats.
+      both are floats. Based on BISPEV from FITPACK.
 
     Inputs:
 
@@ -760,6 +818,15 @@ def bisplev(x,y,tck,dx=0,dy=0):
       splprep, splrep, splint, sproot, splev - evaluation, roots, integral
       UnivariateSpline, BivariateSpline - an alternative wrapping
               of the FITPACK functions
+
+    Notes:
+    Based on algorithms from:
+       Dierckx P. : An algorithm for surface fitting with spline functions
+                    Ima J. Numer. Anal. 1 (1981) 267-283.
+       Dierckx P. : An algorithm for surface fitting with spline functions
+                    report tw50, Dept. Computer Science,K.U.Leuven, 1980.
+       Dierckx P. : Curve and surface fitting with splines, Monographs on
+                    Numerical Analysis, Oxford University Press, 1993.
     """
     tx,ty,c,kx,ky=tck
     if not (0<=dx<kx): raise ValueError,"0<=dx=%d<kx=%d must hold"%(dx,kx)
@@ -803,6 +870,13 @@ def insert(x,tck,m=1,per=0):
         In case of a periodic spline (per != 0) there must be
            either at least k interior knots t(j) satisfying t(k+1)<t(j)<=x
            or at least k interior knots t(j) satisfying x<=t(j)<t(n-k).
+    
+    Notes:
+    Based on algorithms from:
+        Boehm W : Inserting new knots into b-spline curves. Computer Aided
+                  Design 12 (1980) 199-201.
+       Dierckx P. : Curve and surface fitting with splines, Monographs on
+                    Numerical Analysis, Oxford University Press, 1993.
     """
     t,c,k=tck
     try:
