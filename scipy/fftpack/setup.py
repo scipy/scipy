@@ -35,7 +35,7 @@ def configuration(parent_package='',top_path=None):
             'src/fftw3/zfft.cxx', 'src/mkl/zfft.cxx',
             'src/djbfft/drfft.c', 'src/fftpack/drfft.cxx',
             'src/fftw3/drfft.cxx', 'src/fftw/drfft.c',
-            'src/fftpack/zfftnd.c', 'src/fftw/zfftnd.c',
+            'src/fftpack/zfftnd.cxx', 'src/fftw/zfftnd.c',
             'src/fftw3/zfftnd.cxx', 'src/mkl/zfftnd.c',
             ],
         include_dirs = ['src'],
