@@ -46,7 +46,7 @@ extern "C" void drfft(double *inout, int n, \
         GEN_PUBLIC_API(fftw)
     #endif
 #else /* Use fftpack by default */
-    #include "fftpack/drfft.c"
+    #include "fftpack/drfft.cxx"
     #ifndef WITH_DJBFFT
         GEN_PUBLIC_API(fftpack)
     #endif 

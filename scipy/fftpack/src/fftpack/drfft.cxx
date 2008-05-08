@@ -6,9 +6,12 @@
  * Original code by Pearu Peterson.
  */
 
+extern "C" {
 extern void F_FUNC(dfftf, DFFTF) (int *, double *, double *);
 extern void F_FUNC(dfftb, DFFTB) (int *, double *, double *);
 extern void F_FUNC(dffti, DFFTI) (int *, double *);
+};
+
 GEN_CACHE(drfftpack, (int n)
 	  , double *wsave;
 	  , (caches_drfftpack[i].n == n)
