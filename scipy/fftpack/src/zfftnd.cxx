@@ -37,7 +37,7 @@ int equal_dims(int rank,int *dims1,int *dims2) {
     #include "fftw/zfftnd.cxx"
     GEN_PUBLIC_API(fftw)
 #elif defined WITH_MKL
-    #include "mkl/zfftnd.c"
+    #include "mkl/zfftnd.cxx"
     GEN_PUBLIC_API(mkl)
 #else /* Use fftpack by default */
     #include "fftpack/zfftnd.cxx"
