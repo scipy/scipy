@@ -71,8 +71,10 @@ void flatten(complex_double * dest, complex_double * src,
     }
 }
 
+extern "C" {
 extern void zfft(complex_double * inout,
 		 int n, int direction, int howmany, int normalize);
+};
 
 extern void zfftnd_fftpack(complex_double * inout, int rank,
 			   int *dims, int direction, int howmany,
