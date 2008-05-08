@@ -482,39 +482,39 @@ class dok_matrix(spmatrix, dict):
         return base, ext
 
 
-    def matvec(self, other):
-        if isdense(other):
-            if other.shape[0] != self.shape[1]:
-                raise ValueError, "dimensions do not match"
-            new = [0] * self.shape[0]
-            for key in self.keys():
-                new[int(key[0])] += self[key] * other[int(key[1])]
-            new = array(new)
-            if isinstance(other, matrix):
-                new = asmatrix(new)
-                # Do we need to return the transpose?
-                if other.shape[1] == 1:
-                    new = new.T
-            return new
-        else:
-            raise TypeError, "need a dense vector"
-
-    def rmatvec(self, other, conjugate=True):
-        if isdense(other):
-            if other.shape[-1] != self.shape[0]:
-                raise ValueError, "dimensions do not match"
-            new = [0] * self.shape[1]
-            for key in self.keys():
-                new[int(key[1])] += other[int(key[0])] * conj(self[key])
-            new = array(new)
-            if isinstance(other, matrix):
-                new = asmatrix(new)
-                # Do we need to return the transpose?
-                if other.shape[1] == 1:
-                    new = new.T
-            return new
-        else:
-            raise TypeError, "need a dense vector"
+#    def matvec(self, other):
+#        if isdense(other):
+#            if other.shape[0] != self.shape[1]:
+#                raise ValueError, "dimensions do not match"
+#            new = [0] * self.shape[0]
+#            for key in self.keys():
+#                new[int(key[0])] += self[key] * other[int(key[1])]
+#            new = array(new)
+#            if isinstance(other, matrix):
+#                new = asmatrix(new)
+#                # Do we need to return the transpose?
+#                if other.shape[1] == 1:
+#                    new = new.T
+#            return new
+#        else:
+#            raise TypeError, "need a dense vector"
+#
+#    def rmatvec(self, other, conjugate=True):
+#        if isdense(other):
+#            if other.shape[-1] != self.shape[0]:
+#                raise ValueError, "dimensions do not match"
+#            new = [0] * self.shape[1]
+#            for key in self.keys():
+#                new[int(key[1])] += other[int(key[0])] * conj(self[key])
+#            new = array(new)
+#            if isinstance(other, matrix):
+#                new = asmatrix(new)
+#                # Do we need to return the transpose?
+#                if other.shape[1] == 1:
+#                    new = new.T
+#            return new
+#        else:
+#            raise TypeError, "need a dense vector"
 
     def tocoo(self):
         """ Return a copy of this matrix in COOrdinate format"""

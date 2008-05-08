@@ -702,8 +702,8 @@ class _TestFancyIndexing:
         assert_equal(A[[[-1],[-3],[-2]],[2,-4]].todense(),B[[[-1],[-3],[-2]],[2,-4]])
 
         # [i]
-        assert_equal(A[1].todense(),B[1])
-        assert_equal(A[-2].todense(),B[-2])
+        assert_equal(A[1,:].todense(),B[1,:])
+        assert_equal(A[-2,:].todense(),B[-2,:])
 
         # [1:2]
         assert_equal(A[1:4].todense(),B[1:4])
