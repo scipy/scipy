@@ -25,19 +25,6 @@
 #define drfft_def_destroy_cache destroy_drfftpack_caches
 #endif
 
-#if 0
-GEN_CACHE(drdjbfft, (int n)
-	    , unsigned int *f;
-	    double *ptr;, 
-        caches_drdjbfft[i].n == n, 
-        caches_drdjbfft[id].f = (unsigned int *) malloc(sizeof(unsigned int) * (n));
-	    caches_drdjbfft[id].ptr = (double *) malloc(sizeof(double) * n);
-	    fftfreq_rtable(caches_drdjbfft[id].f, n);,
-	    free(caches_drdjbfft[id].f); 
-        free(caches_drdjbfft[id].ptr);, 
-        10)
-#endif
-
 using namespace fft;
 
 class RDJBFFTCache: public Cache<DJBFFTCacheId> {
