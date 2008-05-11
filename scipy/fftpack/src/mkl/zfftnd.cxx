@@ -3,18 +3,19 @@
  *
  * Original code by David M. Cooke
  *
- * Last Change: Wed Aug 08 03:00 PM 2007 J
+ * Last Change: Sun May 11 06:00 PM 2008 J
  */
 
 static long *convert_dims(int n, int *dims)
 {
-    long *ndim;
-    int i;
-    ndim = (long *) malloc(sizeof(long) * n);
-    for (i = 0; i < n; i++) {
-        ndim[i] = (long) dims[i];
-    }
-    return ndim;
+        long *ndim;
+        int i;
+
+        ndim = (long *) malloc(sizeof(*ndim) * n);
+        for (i = 0; i < n; i++) {
+                ndim[i] = (long) dims[i];
+        }
+        return ndim;
 }
 
 GEN_CACHE(zfftnd_mkl, (int n, int *dims)
@@ -38,29 +39,29 @@ extern void zfftnd_mkl(complex_double * inout, int rank,
 		       int *dims, int direction, int howmany,
 		       int normalize)
 {
-    int i, sz;
-    complex_double *ptr = inout;
+        int i, sz, id;
+        complex_double *ptr = inout;
 
-    DFTI_DESCRIPTOR_HANDLE desc_handle;
-    sz = 1;
-    for (i = 0; i < rank; ++i) {
-        sz *= dims[i];
-    }
+        DFTI_DESCRIPTOR_HANDLE desc_handle;
+        sz = 1;
+        for (i = 0; i < rank; ++i) {
+                sz *= dims[i];
+        }
 
-    desc_handle =
-	caches_zfftnd_mkl[get_cache_id_zfftnd_mkl(rank, dims)].desc_handle;
-    for (i = 0; i < howmany; ++i, ptr += sz) {
-        if (direction == 1) {
-            DftiComputeForward(desc_handle, (double *) ptr);
-        } else if (direction == -1) {
-            DftiComputeBackward(desc_handle, (double *) ptr);
+        id = get_cache_id_zfftnd_mkl(rank, dims);
+        desc_handle = caches_zfftnd_mkl[id].desc_handle;
+        for (i = 0; i < howmany; ++i, ptr += sz) {
+                if (direction == 1) {
+                        DftiComputeForward(desc_handle, (double *) ptr);
+                } else if (direction == -1) {
+                        DftiComputeBackward(desc_handle, (double *) ptr);
+                }
         }
-    }
-    if (normalize) {
-        ptr = inout;
-        for (i = sz * howmany - 1; i >= 0; --i) {
-            *((double *) (ptr)) /= sz;
-            *((double *) (ptr++) + 1) /= sz;
+        if (normalize) {
+                ptr = inout;
+                for (i = sz * howmany - 1; i >= 0; --i) {
+                        *((double *) (ptr)) /= sz;
+                        *((double *) (ptr++) + 1) /= sz;
+                }
         }
-    }
 }
