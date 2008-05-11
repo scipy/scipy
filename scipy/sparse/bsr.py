@@ -380,9 +380,13 @@ class bsr_matrix(_cs_matrix):
             return bsr_matrix((data,indices,indptr),shape=(M,N),blocksize=(R,C))
         elif isdense(other):
             # TODO make sparse * dense matrix multiplication more efficient
-
+            
             # matvec each column of other
-            return hstack( [ self * col.reshape(-1,1) for col in other.T ] )
+            result = hstack( [ self * col.reshape(-1,1) for col in asarray(other).T ] )
+            if isinstance(other, matrix):
+                result = asmatrix(result)
+            return result                
+
         else:
             raise TypeError, "need a dense or sparse matrix"
 

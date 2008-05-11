@@ -15,7 +15,7 @@ namespace py {
 object None = object(Py_None);
 }
 
-char* find_type(PyObject* py_obj)
+const char* find_type(PyObject* py_obj)
 {
     if(py_obj == NULL) return "C NULL value";
     if(PyCallable_Check(py_obj)) return "callable";
@@ -76,13 +76,13 @@ class basic_module_info(base_info.base_info):
 
 get_variable_support_code = \
 """
-void handle_variable_not_found(char*  var_name)
+void handle_variable_not_found(const char* var_name)
 {
     char msg[500];
     sprintf(msg,"Conversion Error: variable '%s' not found in local or global scope.",var_name);
     throw_error(PyExc_NameError,msg);
 }
-PyObject* get_variable(char* name,PyObject* locals, PyObject* globals)
+PyObject* get_variable(const char* name,PyObject* locals, PyObject* globals)
 {
     // no checking done for error -- locals and globals should
     // already be validated as dictionaries.  If var is NULL, the
@@ -101,7 +101,7 @@ PyObject* get_variable(char* name,PyObject* locals, PyObject* globals)
 
 py_to_raw_dict_support_code = \
 """
-PyObject* py_to_raw_dict(PyObject* py_obj, char* name)
+PyObject* py_to_raw_dict(PyObject* py_obj, const char* name)
 {
     // simply check that the value is a valid dictionary pointer.
     if(!py_obj || !PyDict_Check(py_obj))

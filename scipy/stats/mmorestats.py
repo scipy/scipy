@@ -164,7 +164,7 @@ Notes
     p = np.array(prob, copy=False, ndmin=1)
     # Computes quantiles along axis (or globally)
     if (axis is None):
-        result = _hdsd_1D(data.compressed(), p)
+        result = _hdsd_1D(data, p)
     else:
         assert data.ndim <= 2, "Array should be 2D at most !"
         result = ma.apply_along_axis(_hdsd_1D, axis, data, p)
