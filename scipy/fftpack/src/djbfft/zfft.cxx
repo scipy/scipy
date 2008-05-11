@@ -4,6 +4,9 @@
 * zfft_def and zfft_def_destroy_cache are the functions
 * used for size different than 2^N
 */
+
+#include "common.h"
+
 #ifdef WITH_FFTWORK
 #define zfft_def zfft_fftwork
 #define zfft_def_destroy_cache destroy_zfftwork_cache
@@ -17,11 +20,6 @@
 #define zfft_def zfft_fftpack
 #define zfft_def_destroy_cache destroy_zfftpack_caches
 #endif
-
-class DJBFFTCacheId : public CacheId {
-        public:
-                DJBFFTCacheId(int n) : CacheId(n) {};
-};
 
 class DJBFFTCache: public Cache<DJBFFTCacheId> {
         public:
