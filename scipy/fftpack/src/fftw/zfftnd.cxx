@@ -49,7 +49,7 @@ int NDFFTWCacheId::init(int rank, int *dims)
 
 NDFFTWCacheId::NDFFTWCacheId(int rank, int *dims, int dir, int flags) :
         m_dir(dir),
-        m_rank(rank), 
+        m_rank(rank),
         m_flags(flags)
 {
         if (init(rank, dims)) {
@@ -60,7 +60,7 @@ fail:
         std::bad_alloc();
 }
 
-NDFFTWCacheId::NDFFTWCacheId(const NDFFTWCacheId & copy) : 
+NDFFTWCacheId::NDFFTWCacheId(const NDFFTWCacheId & copy) :
         m_dir(copy.m_dir),
         m_rank(copy.m_rank),
         m_flags(copy.m_flags)
@@ -99,7 +99,7 @@ class NDFFTWCache : public Cache < NDFFTWCacheId > {
                 NDFFTWCache(const NDFFTWCacheId & id);
                 virtual ~ NDFFTWCache();
 
-                int compute(fftw_complex * inout) const 
+                int compute(fftw_complex * inout) const
                 {
                         fftwnd_one(m_plan, inout, NULL);
                         return 0;
@@ -125,7 +125,7 @@ NDFFTWCache::NDFFTWCache(const NDFFTWCacheId & id)
 
 	m_plan = fftwnd_create_plan(m_id.m_rank,
 				    m_id.m_dims,
-				    (id.m_dir > 0 ? 
+				    (id.m_dir > 0 ?
                                      FFTW_FORWARD : FFTW_BACKWARD),
 				    flags);
 
@@ -165,7 +165,7 @@ extern void zfftnd_fftw(complex_double * inout, int rank,
         }
 
         cache = fftwnd_cmgr.get_cache(
-                        NDFFTWCacheId(rank, dims, direction, 
+                        NDFFTWCacheId(rank, dims, direction,
                                       FFTW_IN_PLACE | FFTW_ESTIMATE));
 
         for (i = 0; i < howmany; ++i, ptr += sz) {
