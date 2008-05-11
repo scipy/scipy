@@ -33,7 +33,7 @@ def configuration(parent_package='',top_path=None):
         extra_info=[fft_opt_info, djbfft_info],
         depends=['src/djbfft/zfft.cxx', 'src/fftw/zfft.cxx', 'src/fftpack/zfft.cxx',
             'src/fftw3/zfft.cxx', 'src/mkl/zfft.cxx',
-            'src/djbfft/drfft.c', 'src/fftpack/drfft.cxx',
+            'src/djbfft/drfft.cxx', 'src/fftpack/drfft.cxx',
             'src/fftw3/drfft.cxx', 'src/fftw/drfft.cxx',
             'src/fftpack/zfftnd.cxx', 'src/fftw/zfftnd.cxx',
             'src/fftw3/zfftnd.cxx', 'src/mkl/zfftnd.cxx',
