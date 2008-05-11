@@ -38,6 +38,7 @@ GEN_CACHE(drfftw,(int n)
 	  ,20)
 #else
 /**************** FFTPACK ZFFT **********************/
+extern "C" {
 extern void F_FUNC(dfftf,DFFTF)(int*,double*,double*);
 extern void F_FUNC(dfftb,DFFTB)(int*,double*,double*);
 extern void F_FUNC(dffti,DFFTI)(int*,double*);
@@ -48,8 +49,10 @@ GEN_CACHE(dfftpack,(int n)
 	   F_FUNC(dffti,DFFTI)(&n,caches_dfftpack[id].wsave);
 	  ,free(caches_dfftpack[id].wsave);
 	  ,20)
+};
 #endif
-extern void destroy_convolve_cache(void) {
+
+extern "C" void destroy_convolve_cache(void) {
 #ifdef WITH_DJBFFT
   destroy_ddjbfft_caches();
 #endif
@@ -61,7 +64,7 @@ extern void destroy_convolve_cache(void) {
 }
 
 /**************** convolve **********************/
-extern
+extern "C"
 void convolve(int n,double* inout,double* omega,int swap_real_imag) {
   int i;
 #ifdef WITH_DJBFFT
@@ -159,7 +162,7 @@ void convolve(int n,double* inout,double* omega,int swap_real_imag) {
 }
 
 /**************** convolve **********************/
-extern
+extern "C"
 void convolve_z(int n,double* inout,double* omega_real,double* omega_imag) {
   int i;
 #ifdef WITH_DJBFFT
@@ -253,7 +256,7 @@ void convolve_z(int n,double* inout,double* omega_real,double* omega_imag) {
   }
 }
 
-extern
+extern "C"
 void init_convolution_kernel(int n,double* omega, int d,
 			     double (*kernel_func)(int),
 			     int zero_nyquist) {

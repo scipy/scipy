@@ -13,14 +13,13 @@
 typedef struct {double r,i;} complex_double;
 typedef struct {float r,i;} complex_float;
 
-extern
+extern "C" {
 void init_convolution_kernel(int n,double* omega, int d, 
 			     double (*kernel_func)(int),
 			     int zero_nyquist);
-extern
 void convolve(int n,double* inout,double* omega,int swap_real_imag);
-extern
 void convolve_z(int n,double* inout,double* omega_real,double* omega_imag);
+};
 
 extern int ispow2le2e30(int n);
 extern int ispow2le2e13(int n);
