@@ -1,29 +1,10 @@
 /*
- * Last Change: Wed Aug 01 07:00 PM 2007 J
+ * Last Change: Sun May 11 05:00 PM 2008 J
  *
  * RFFTW3 implementation
  *
  * Original code by Pearu Peterson.
  */
-
-#if 0
-GEN_CACHE(drfftw3, (int n, int d, int flags)
-	  , int direction;
-	  int flags;
-	  fftw_plan plan;
-	  double *ptr;, ((caches_drfftw3[i].n == n) &&
-			 (caches_drfftw3[i].direction == d) &&
-			 (caches_drfftw3[i].flags == flags))
-	  , caches_drfftw3[id].direction = d;
-	  caches_drfftw3[id].flags = flags;
-	  caches_drfftw3[id].ptr =
-	  (double *) fftw_malloc(sizeof(double) * (n));
-	  caches_drfftw3[id].plan =
-	  fftw_plan_r2r_1d(n, caches_drfftw3[id].ptr, caches_drfftw3[id].ptr,
-			   (d > 0 ? FFTW_R2HC : FFTW_HC2R), flags);,
-	  fftw_destroy_plan(caches_drfftw3[id].plan);
-	  fftw_free(caches_drfftw3[id].ptr);, 10)
-#endif
 
 #include <new>
 #include <cassert>
@@ -39,7 +20,8 @@ class RFFTW3Cache : public Cache<FFTW3CacheId> {
 
 		int compute_forward(double* inout) const
 		{
-                        assert (m_id.m_isalign ? is_simd_aligned(inout) : true);
+                        assert (m_id.m_isalign ? is_simd_aligned(inout) : 
+                                                 true);
 			fftw_execute_r2r(m_plan, inout, m_wrk);
 			COPYRFFTW2STD(m_wrk, inout, m_id.m_n);
 			return 0;
@@ -47,7 +29,8 @@ class RFFTW3Cache : public Cache<FFTW3CacheId> {
 
 		int compute_backward(double* inout) const
 		{
-                        assert (m_id.m_isalign ? is_simd_aligned(inout) : true);
+                        assert (m_id.m_isalign ? is_simd_aligned(inout) : 
+                                                 true);
 			COPYINVRFFTW2STD(inout, m_wrk, m_id.m_n);
 			fftw_execute_r2r(m_plan, m_wrk, inout);
 			return 0;
@@ -116,8 +99,8 @@ static void drfft_fftw3(double *inout, int n, int direction, int
 	int i;
 	double *ptr = inout;
 
-	RFFTW3Cache 	*cache;
-        bool            isaligned;
+	RFFTW3Cache *cache;
+        bool isaligned;
 
         isaligned = is_simd_aligned(ptr); 
 

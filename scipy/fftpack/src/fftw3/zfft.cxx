@@ -12,7 +12,8 @@ class FFTW3Cache : public Cache<FFTW3CacheId> {
 
 		int compute(fftw_complex* inout) const
 		{
-                        assert (m_id.m_isalign ? is_simd_aligned(inout) : true);
+                        assert (m_id.m_isalign ? is_simd_aligned(inout) :
+                                                 true);
 			fftw_execute_dft(m_plan, inout, inout);
 			return 0;
 		};
@@ -37,7 +38,8 @@ FFTW3Cache::FFTW3Cache(const FFTW3CacheId& id)
         } 
 
 	m_plan = fftw_plan_dft_1d(id.m_n, m_wrk, m_wrk, 
-				  (id.m_dir > 0 ?  FFTW_FORWARD:FFTW_BACKWARD), 
+				  (id.m_dir > 0 ?  FFTW_FORWARD :
+                                                   FFTW_BACKWARD),
 				  flags);
 
 	if (m_plan == NULL) {
@@ -68,10 +70,10 @@ static void destroy_zfftw3_caches()
 static void zfft_fftw3(complex_double * inout, int n, int dir, int howmany, 
                        int normalize)
 {
-	fftw_complex    *ptr = (fftw_complex*)inout;
-        double          factor = 1./n;
-        FFTW3Cache      *cache;
-        bool            isaligned;
+	fftw_complex *ptr = (fftw_complex*)inout;
+        double factor = 1./n;
+        FFTW3Cache *cache;
+        bool isaligned;
 
 	int i;
 
