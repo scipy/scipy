@@ -64,11 +64,6 @@ FFTWCache::~FFTWCache()
 
 CacheManager<FFTWCacheId, FFTWCache> fftw_cmgr(10);
 
-/* stub to make GEN_PUBLIC_API happy */
-static void destroy_zfftw_caches()
-{
-}
-
 extern void zfft_fftw(complex_double * inout, int n,
 		      int dir, int howmany, int normalize)
 {

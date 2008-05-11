@@ -9,11 +9,6 @@
 /* The following macro convert private backend specific function to the public
  * functions exported by the module  */
 #define GEN_PUBLIC_API(name) \
-extern "C" void destroy_zfft_cache(void)\
-{\
-        destroy_z##name##_caches();\
-}\
-\
 extern "C" void zfft(complex_double *inout, int n, \
         int direction, int howmany, int normalize)\
 {\
@@ -21,19 +16,6 @@ extern "C" void zfft(complex_double *inout, int n, \
 }
 
 /* ************** Definition of backend specific functions ********* */
-
-/*
- * To add a backend :
- *  - create a file zfft_name.c, where you define a function zfft_name where
- *  name is the name of your backend. If you do not use the GEN_CACHE macro,
- *  you will need to define a function void destroy_zname_caches(void), 
- *  which can do nothing
- *  - in zfft.c, include the zfft_name.c file, and add the 3 following lines
- *  just after it:
- *  #ifndef WITH_DJBFFT
- *      GEN_PUBLIC_API(name)
- *  #endif
- */
 
 #ifdef WITH_FFTW3
     #include "fftw3/zfft.cxx"
@@ -63,11 +45,6 @@ extern "C" void zfft(complex_double *inout, int n, \
  */
 #ifdef WITH_DJBFFT
     #include "djbfft/zfft.cxx"
-    extern "C" void destroy_zfft_cache(void)
-    {
-        destroy_zdjbfft_caches();
-        zfft_def_destroy_cache();
-    }
     extern "C" void zfft(complex_double *inout, int n, 
             int direction, int howmany, int normalize)
     {

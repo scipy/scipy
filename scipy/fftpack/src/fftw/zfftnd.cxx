@@ -3,7 +3,7 @@
  *
  * Original code by Pearu Peaterson
  *
- * Last Change: Sun May 11 07:00 PM 2008 J
+ * Last Change: Sun May 11 09:00 PM 2008 J
  */
 #include <new>
 #include <cassert>
@@ -145,11 +145,6 @@ NDFFTWCache::~NDFFTWCache()
 }
 
 static CacheManager < NDFFTWCacheId, NDFFTWCache > fftwnd_cmgr(10);
-
-/* stub to make GEN_PUBLIC_API happy */
-static void destroy_zfftnd_fftw_caches()
-{
-}
 
 extern void zfftnd_fftw(complex_double * inout, int rank,
 		       int *dims, int direction, int howmany,

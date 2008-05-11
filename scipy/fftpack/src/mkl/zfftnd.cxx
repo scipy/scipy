@@ -3,7 +3,7 @@
  *
  * Original code by David M. Cooke
  *
- * Last Change: Sun May 11 07:00 PM 2008 J
+ * Last Change: Sun May 11 09:00 PM 2008 J
  */
 #include <new>
 
@@ -156,11 +156,6 @@ long* NDMKLCache::convert_dims(int n, int *dims) const
 }
 
 static CacheManager < NDMKLCacheId, NDMKLCache > mkl_cmgr(10);
-
-/* stub to make GEN_PUBLIC_API happy */
-static void destroy_zfftnd_mkl_caches()
-{
-}
 
 extern void zfftnd_mkl(complex_double * inout, int rank,
 		       int *dims, int direction, int howmany,

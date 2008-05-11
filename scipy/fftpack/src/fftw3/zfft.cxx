@@ -62,11 +62,6 @@ FFTW3Cache::~FFTW3Cache()
 
 static CacheManager<FFTW3CacheId, FFTW3Cache> fftw3_cmgr(10);
 
-/* stub to make GEN_PUBLIC_API happy */
-static void destroy_zfftw3_caches()
-{
-}
-
 static void zfft_fftw3(complex_double * inout, int n, int dir, int howmany, 
                        int normalize)
 {

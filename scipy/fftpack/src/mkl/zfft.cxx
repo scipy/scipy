@@ -52,10 +52,6 @@ int MKLCache::compute_backward(complex_double *inout) const
 
 CacheManager<MKLCacheId, MKLCache> mkl_cmgr(10);
 
-void destroy_zmkl_caches()
-{
-}
-
 static void zfft_mkl(complex_double * inout,
 		 int n, int direction, int howmany, int normalize)
 {

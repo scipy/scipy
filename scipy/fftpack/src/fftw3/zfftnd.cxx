@@ -3,7 +3,7 @@
  *
  * Original code by Pearu Peaterson
  *
- * Last Change: Sun May 11 06:00 PM 2008 J
+ * Last Change: Sun May 11 09:00 PM 2008 J
  */
 #include <new>
 #include <cassert>
@@ -101,11 +101,6 @@ bool NDFFTW3CacheId::is_equal(const NDFFTW3CacheId & other) const
 	}
 
 	return res;
-}
-
-/* stub because fftw3 has no cache mechanism (yet) */
-static void destroy_zfftnd_fftw3_caches(void)
-{
 }
 
 class NDFFTW3Cache:public Cache < NDFFTW3CacheId > {

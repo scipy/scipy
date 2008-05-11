@@ -75,13 +75,6 @@ int RFFTPackCache::compute_backward(double *inout) const
 
 static CacheManager<RFFTPackCacheId, RFFTPackCache> rfftpack_cmgr(10);
 
-/*
- * Stub to make GEN_PUBLIC_API api
- */
-static void destroy_drfftpack_caches()
-{
-}
-
 static void drfft_fftpack(double *inout, int n, int direction, int howmany,
 			  int normalize)
 {

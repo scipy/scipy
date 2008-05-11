@@ -12,12 +12,6 @@ from numpy import asarray, zeros, swapaxes, integer, array
 import numpy
 import _fftpack as fftpack
 
-import atexit
-atexit.register(fftpack.destroy_zfft_cache)
-atexit.register(fftpack.destroy_zfftnd_cache)
-atexit.register(fftpack.destroy_drfft_cache)
-del atexit
-
 def istype(arr, typeclass):
     return issubclass(arr.dtype.type, typeclass)
 

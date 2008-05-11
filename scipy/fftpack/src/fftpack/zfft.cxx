@@ -68,10 +68,6 @@ int FFTPackCache::compute_backward(complex_double *inout) const
 
 static CacheManager<FFTPackCacheId, FFTPackCache> fftpack_cmgr(10);
 
-void destroy_zfftpack_caches()
-{
-}
-
 static void zfft_fftpack(complex_double * inout,
 			 int n, int direction, int howmany, int normalize)
 {

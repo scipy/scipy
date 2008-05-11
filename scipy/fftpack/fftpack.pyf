@@ -71,18 +71,6 @@ python module _fftpack
               }
        end subroutine zfftnd
 
-       subroutine destroy_zfft_cache()
-         intent(c) destroy_zfft_cache
-       end subroutine destroy_zfft_cache
-
-       subroutine destroy_zfftnd_cache()
-         intent(c) destroy_zfftnd_cache
-       end subroutine destroy_zfftnd_cache
-
-       subroutine destroy_drfft_cache()
-         intent(c) destroy_drfft_cache
-       end subroutine destroy_drfft_cache
-
     end interface 
 end python module _fftpack
 

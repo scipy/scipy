@@ -1,24 +1,19 @@
 /*
 * DJBFFT only implements size 2^N !
 *
-* zfft_def and zfft_def_destroy_cache are the functions
-* used for size different than 2^N
+* zfft_def is the function * used for size different than 2^N
 */
 
 #include "common.h"
 
 #ifdef WITH_FFTWORK
 #define zfft_def zfft_fftwork
-#define zfft_def_destroy_cache destroy_zfftwork_cache
 #elif defined WITH_FFTW3
 #define zfft_def zfft_fftw3
-#define zfft_def_destroy_cache destroy_zfftw3_caches
 #elif defined WITH_FFTW
 #define zfft_def zfft_fftw
-#define zfft_def_destroy_cache destroy_zfftw_caches
 #else
 #define zfft_def zfft_fftpack
-#define zfft_def_destroy_cache destroy_zfftpack_caches
 #endif
 
 class DJBFFTCache: public Cache<DJBFFTCacheId> {
@@ -165,11 +160,6 @@ int DJBFFTCache::normalize(complex_double *ptr) const
 }
 
 static CacheManager<DJBFFTCacheId, DJBFFTCache> djbfft_cmgr(10);
-
-/* stub to make GEN_PUBLIC_API happy */
-static void destroy_zdjbfft_caches()
-{
-}
 
 /**************** ZFFT function **********************/
 static void zfft_djbfft(complex_double * inout,

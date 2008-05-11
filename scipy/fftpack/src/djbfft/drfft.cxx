@@ -1,13 +1,13 @@
 /*
- * Last Change: Sun May 11 08:00 PM 2008 J
+ * Last Change: Sun May 11 09:00 PM 2008 J
  *
  * Original code by Pearu Peterson.
  */
+
 /*
  * RDJBFFT only implements size 2^N !
  *
- * drfft_def and drfft_def_destroy_cache are the functions used for size different
- * than 2^N
+ * drfft_def is the functions used for size different * than 2^N
  */
 #include <new>
 #include <cassert>
@@ -16,13 +16,10 @@
 
 #ifdef WITH_FFTW3
 #define drfft_def drfft_fftw3
-#define drfft_def_destroy_cache destroy_drfftw3_caches
 #elif defined WITH_FFTW
 #define drfft_def drfft_fftw
-#define drfft_def_destroy_cache destroy_drfftw_caches
 #else
 #define drfft_def drfft_fftpack
-#define drfft_def_destroy_cache destroy_drfftpack_caches
 #endif
 
 using namespace fft;
@@ -125,11 +122,6 @@ int RDJBFFTCache::compute_backward(double *inout, int normalize) const
 }
 
 static CacheManager<DJBFFTCacheId, RDJBFFTCache> rdjbfft_cmgr(10);
-
-/* Stub to make GEN_PUBLIC_API happy */
-static void destroy_drdjbfft_caches()
-{
-}
 
 /**************** ZFFT function **********************/
 static void drfft_djbfft(double * inout,

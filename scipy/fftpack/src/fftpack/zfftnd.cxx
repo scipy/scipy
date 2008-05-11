@@ -136,11 +136,6 @@ int NDFFTPackCache::prepare(int *dims) const
 
 static CacheManager<NDFFTPackCacheId, NDFFTPackCache> ndfftpack_cmgr(10);
 
-/* stub to make PUBLIC_GEN_API happy */
-static void destroy_zfftnd_fftpack_caches()
-{
-}
-
 static
 /*inline : disabled because MSVC6.0 fails to compile it. */
 int next_comb(int *ia, int *da, int m)

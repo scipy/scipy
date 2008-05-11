@@ -1,5 +1,5 @@
 /*
- * Last Change: Sun May 11 07:00 PM 2008 J
+ * Last Change: Sun May 11 09:00 PM 2008 J
  *
  * FFTW2 implementation
  *
@@ -100,11 +100,6 @@ int RFFTWCache::compute(double* inout) const
 };
 
 CacheManager<RFFTWCacheId, RFFTWCache> rfftw_cmgr(10);
-
-/* stub to make GEN_PUBLIC_API happy */
-static void destroy_drfftw_caches()
-{
-}
 
 static void drfft_fftw(double *inout, int n, int dir, 
                        int howmany, int normalize)

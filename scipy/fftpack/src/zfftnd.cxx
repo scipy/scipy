@@ -8,11 +8,6 @@
 /* The following macro convert private backend specific function to the public
  * functions exported by the module  */
 #define GEN_PUBLIC_API(name) \
-extern "C" void destroy_zfftnd_cache(void)\
-{\
-        destroy_zfftnd_##name##_caches();\
-}\
-\
 extern "C" void zfftnd(complex_double * inout, int rank,\
 		           int *dims, int direction, int howmany, int normalize)\
 {\
@@ -20,26 +15,28 @@ extern "C" void zfftnd(complex_double * inout, int rank,\
 }
 
 #if defined(WITH_FFTW) || defined(WITH_MKL)
-static
-int equal_dims(int rank,int *dims1,int *dims2) {
-  int i;
-  for (i=0;i<rank;++i)
-    if (dims1[i]!=dims2[i])
-      return 0;
-  return 1;
+static int equal_dims(int rank,int *dims1,int *dims2) 
+{
+        int i;
+        for (i = 0; i < rank; ++i) {
+                if (dims1[i] != dims2[i]) {
+                        return 0;
+                }
+        }
+        return 1;
 }
 #endif
 
 #ifdef WITH_FFTW3
-    #include "fftw3/zfftnd.cxx"
-    GEN_PUBLIC_API(fftw3)
+        #include "fftw3/zfftnd.cxx"
+        GEN_PUBLIC_API(fftw3)
 #elif defined WITH_FFTW
-    #include "fftw/zfftnd.cxx"
-    GEN_PUBLIC_API(fftw)
+        #include "fftw/zfftnd.cxx"
+        GEN_PUBLIC_API(fftw)
 #elif defined WITH_MKL
-    #include "mkl/zfftnd.cxx"
-    GEN_PUBLIC_API(mkl)
+        #include "mkl/zfftnd.cxx"
+        GEN_PUBLIC_API(mkl)
 #else /* Use fftpack by default */
-    #include "fftpack/zfftnd.cxx"
-    GEN_PUBLIC_API(fftpack)
+        #include "fftpack/zfftnd.cxx"
+        GEN_PUBLIC_API(fftpack)
 #endif

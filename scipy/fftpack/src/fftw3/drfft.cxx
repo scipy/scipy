@@ -1,5 +1,5 @@
 /*
- * Last Change: Sun May 11 05:00 PM 2008 J
+ * Last Change: Sun May 11 09:00 PM 2008 J
  *
  * RFFTW3 implementation
  *
@@ -87,11 +87,6 @@ RFFTW3Cache::~RFFTW3Cache()
 }
 
 static CacheManager<FFTW3CacheId, RFFTW3Cache> fftw3_cmgr(10);
-
-/* stub to make GEN_PUBLIC_API happy */
-static void destroy_drfftw3_caches()
-{
-}
 
 static void drfft_fftw3(double *inout, int n, int direction, int
 			howmany, int normalize)
