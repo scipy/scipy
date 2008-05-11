@@ -1,11 +1,22 @@
-#include "fftpack.h"
+extern "C" {
+extern void F_FUNC(dfftf,DFFTF)(int*,double*,double*);
+extern void F_FUNC(dfftb,DFFTB)(int*,double*,double*);
+extern void F_FUNC(dffti,DFFTI)(int*,double*);
+GEN_CACHE(dfftpack,(int n)
+	  ,double* wsave;
+	  ,(caches_dfftpack[i].n==n)
+	  ,caches_dfftpack[id].wsave = (double*)malloc(sizeof(double)*(2*n+15));
+	   F_FUNC(dffti,DFFTI)(&n,caches_dfftpack[id].wsave);
+	  ,free(caches_dfftpack[id].wsave);
+	  ,20)
+};
 
-void destroy_convolve_cache_fftpack(void) 
+static void destroy_convolve_cache_fftpack(void) 
 {
 	destroy_dfftpack_caches();
 }
 
-void convolve_fftpack(int n,double* inout,double* omega,int swap_real_imag) 
+static void convolve_fftpack(int n,double* inout,double* omega,int swap_real_imag) 
 {
 	int i;
 	double* wsave = NULL;
@@ -31,7 +42,7 @@ void convolve_fftpack(int n,double* inout,double* omega,int swap_real_imag)
 }
 
 /**************** convolve **********************/
-void convolve_z_fftpack(int n,double* inout,double* omega_real,double* omega_imag) 
+static void convolve_z_fftpack(int n,double* inout,double* omega_real,double* omega_imag) 
 {
 	int i;
 	double* wsave = NULL;

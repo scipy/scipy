@@ -38,38 +38,33 @@ GEN_CACHE(drfftw,(int n)
 	  ,20)
 #else
 /**************** FFTPACK ZFFT **********************/
-extern "C" {
-extern void F_FUNC(dfftf,DFFTF)(int*,double*,double*);
-extern void F_FUNC(dfftb,DFFTB)(int*,double*,double*);
-extern void F_FUNC(dffti,DFFTI)(int*,double*);
-GEN_CACHE(dfftpack,(int n)
-	  ,double* wsave;
-	  ,(caches_dfftpack[i].n==n)
-	  ,caches_dfftpack[id].wsave = (double*)malloc(sizeof(double)*(2*n+15));
-	   F_FUNC(dffti,DFFTI)(&n,caches_dfftpack[id].wsave);
-	  ,free(caches_dfftpack[id].wsave);
-	  ,20)
-};
+#include "fftpack/convolve.cxx"
+
+extern "C" void destroy_convolve_cache(void) 
+{
+	destroy_convolve_cache_fftpack();
+}
+
+extern "C" void convolve(int n,double* inout,double* omega,int swap_real_imag) 
+{
+	convolve_fftpack(n, inout, omega, swap_real_imag); 
+}
+
+extern "C" void convolve_z(int n,double* inout,double* omega_real,double* omega_imag) 
+{
+	convolve_z_fftpack(n, inout, omega_real, omega_imag);
+}
+
+extern "C" void init_convolution_kernel(int n,double* omega, int d,
+			     double (*kernel_func)(int),
+			     int zero_nyquist) 
+{
+	init_convolution_kernel_fftpack(n, omega, d, kernel_func, zero_nyquist);
+}
+
 #endif
 
-#ifdef WITH_FFTPACK
-void destroy_convolve_cache(void) 
-{
-	destroy_dfftpack_cache_fftpack();
-}
-
-void convolve(int n,double* inout,double* omega,int swap_real_imag) 
-{
-	convolve(n, inout, omega, swap_real_imag); 
-}
-
-void convolve_z(int n,double* inout,double* omega,int swap_real_imag) 
-{
-	convolve_z_fftpack(n, inout, omage_real, omega_imag);
-}
-
-#include "src/convolve.cxx"
-#endif
+#if (defined WITH_DJBFFT) | (defined WITH_FFTW)
 
 extern "C" void destroy_convolve_cache(void) {
 #ifdef WITH_DJBFFT
@@ -83,15 +78,12 @@ extern "C" void destroy_convolve_cache(void) {
 /**************** convolve **********************/
 extern "C"
 void convolve(int n,double* inout,double* omega,int swap_real_imag) {
-  int i;
 #ifdef WITH_DJBFFT
   double* ptr = NULL;
 #endif
 #ifdef WITH_FFTW
   rfftw_plan plan1 = NULL;
   rfftw_plan plan2 = NULL;
-#else
-  double* wsave = NULL;
 #endif
 #ifdef WITH_DJBFFT
   switch (n) {
@@ -154,22 +146,19 @@ void convolve(int n,double* inout,double* omega,int swap_real_imag) {
       for(i=0;i<n;++i)
 	inout[i] *= omega[i];
     rfftw_one(plan2, (fftw_real *)inout, NULL);
-  }
 #endif
+  }
 }
 
 /**************** convolve **********************/
 extern "C"
 void convolve_z(int n,double* inout,double* omega_real,double* omega_imag) {
-  int i;
 #ifdef WITH_DJBFFT
   double* ptr = NULL;
 #endif
 #ifdef WITH_FFTW
   rfftw_plan plan1 = NULL;
   rfftw_plan plan2 = NULL;
-#else
-  double* wsave = NULL;
 #endif
 #ifdef WITH_DJBFFT
   switch (n) {
@@ -321,3 +310,5 @@ void init_convolution_kernel(int n,double* omega, int d,
   }
 #endif
 }
+
+#endif
