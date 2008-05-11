@@ -101,29 +101,6 @@ int RFFTWCache::compute(double* inout) const
 
 CacheManager<RFFTWCacheId, RFFTWCache> rfftw_cmgr(10);
 
-#if 0
-GEN_CACHE(drfftw, (int n, int d, int flags)
-	  , int direction;
-	  int flags;
-	  rfftw_plan plan;
-	  double *ptr;, ((caches_drfftw[i].n == n) &&
-			 (caches_drfftw[i].direction == d) &&
-			 (caches_drfftw[i].flags == flags))
-	  , caches_drfftw[id].direction = d;
-	  caches_drfftw[id].flags = flags;
-	  caches_drfftw[id].plan = rfftw_create_plan(n,
-						     (d >
-						      0 ?
-						      FFTW_REAL_TO_COMPLEX
-						      :
-						      FFTW_COMPLEX_TO_REAL),
-						     flags);
-	  caches_drfftw[id].ptr =
-	  (double *) malloc(sizeof(double) * (n));,
-	  rfftw_destroy_plan(caches_drfftw[id].plan);
-	  free(caches_drfftw[id].ptr);, 10)
-#endif
-
 /* stub to make GEN_PUBLIC_API happy */
 static void destroy_drfftw_caches()
 {
