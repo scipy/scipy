@@ -136,26 +136,10 @@ int NDFFTPackCache::prepare(int *dims) const
 
 static CacheManager<NDFFTPackCacheId, NDFFTPackCache> ndfftpack_cmgr(10);
 
-#if 0
 /* stub to make PUBLIC_GEN_API happy */
 static void destroy_zfftnd_fftpack_caches()
 {
 }
-#endif
-
-GEN_CACHE(zfftnd_fftpack, (int n, int rank)
-	  , complex_double * ptr; int *iptr; int rank;
-	  , ((caches_zfftnd_fftpack[i].n == n)
-	     && (caches_zfftnd_fftpack[i].rank == rank))
-	  , caches_zfftnd_fftpack[id].n = n;
-	  caches_zfftnd_fftpack[id].ptr =
-	  (complex_double *) malloc(2 * sizeof(double) * n);
-	  caches_zfftnd_fftpack[id].iptr =
-	  (int *) malloc(4 * rank * sizeof(int));
-	  ,
-	  free(caches_zfftnd_fftpack[id].ptr);
-	  free(caches_zfftnd_fftpack[id].iptr);
-	  , 10)
 
 static
 /*inline : disabled because MSVC6.0 fails to compile it. */

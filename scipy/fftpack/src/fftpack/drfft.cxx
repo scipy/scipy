@@ -1,5 +1,5 @@
 /*
- * Last Change: Sun May 11 08:00 PM 2008 J
+ * Last Change: Sun May 11 09:00 PM 2008 J
  *
  * FFTPACK implementation
  *
@@ -74,17 +74,6 @@ int RFFTPackCache::compute_backward(double *inout) const
 }
 
 static CacheManager<RFFTPackCacheId, RFFTPackCache> rfftpack_cmgr(10);
-
-#if 0
-GEN_CACHE(drfftpack, (int n)
-	  , double *wsave;
-	  , (caches_drfftpack[i].n == n)
-	  , caches_drfftpack[id].wsave =
-	  (double *) malloc(sizeof(double) * (2 * n + 15));
-	  F_FUNC(dffti, DFFTI) (&n, caches_drfftpack[id].wsave);
-	  , free(caches_drfftpack[id].wsave);
-	  , 10)
-#endif
 
 /*
  * Stub to make GEN_PUBLIC_API api
