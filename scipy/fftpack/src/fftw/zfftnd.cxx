@@ -146,26 +146,6 @@ NDFFTWCache::~NDFFTWCache()
 
 static CacheManager < NDFFTWCacheId, NDFFTWCache > fftwnd_cmgr(10);
 
-#if 0
-GEN_CACHE(zfftnd_fftw, (int n, int *dims, int d, int flags)
-	  , int direction;
-	  int *dims;
-	  fftwnd_plan plan;, ((caches_zfftnd_fftw[i].n == n) &&
-			      (caches_zfftnd_fftw[i].direction == d) &&
-			      (equal_dims
-			       (n, caches_zfftnd_fftw[i].dims, dims)))
-	  , caches_zfftnd_fftw[id].direction = d;
-	  caches_zfftnd_fftw[id].n = n;
-	  caches_zfftnd_fftw[id].dims = (int *) malloc(sizeof(int) * n);
-	  memcpy(caches_zfftnd_fftw[id].dims, dims, sizeof(int) * n);
-	  caches_zfftnd_fftw[id].plan =
-	  fftwnd_create_plan(n, dims,
-			     (d > 0 ? FFTW_FORWARD : FFTW_BACKWARD),
-			     flags);,
-	  fftwnd_destroy_plan(caches_zfftnd_fftw[id].plan);
-	  free(caches_zfftnd_fftw[id].dims);, 10)
-#endif
-
 /* stub to make GEN_PUBLIC_API happy */
 static void destroy_zfftnd_fftw_caches()
 {
