@@ -4,23 +4,13 @@
 #include "common.h"
 
 #ifdef WITH_FFTW
-#define destroy_convolve_cache_def destroy_convolve_cache_fftw
 #define convolve_def convolve_fftw
 #define convolve_z_def convolve_z_fftw
 #define init_convolution_kernel_def init_convolution_kernel_fftw
 #else
-#define destroy_convolve_cache_def destroy_convolve_cache_fftpack
 #define convolve_def convolve_fftpack
 #define convolve_z_def convolve_z_fftpack
 #define init_convolution_kernel_def init_convolution_kernel_fftpack
-#endif
-
-#if 0
-GEN_CACHE(ddjbfft, (int n)
-	  , double *ptr;, (caches_ddjbfft[i].n == n)
-	  , caches_ddjbfft[id].ptr =
-	  (double *) malloc(sizeof(double) * n);,
-	  free(caches_ddjbfft[id].ptr);, 20)
 #endif
 
 using namespace fft;
