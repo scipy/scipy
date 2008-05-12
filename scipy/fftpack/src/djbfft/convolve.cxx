@@ -118,6 +118,8 @@ static void convolve_z_djbfft(int n, double *inout, double *omega_real,
 {
 	int i;
 	double *ptr = NULL;
+	int n1 = n - 1;
+	double c;
 
 	i = get_cache_id_ddjbfft(n);
 	ptr = caches_ddjbfft[i].ptr;
@@ -139,19 +141,17 @@ static void convolve_z_djbfft(int n, double *inout, double *omega_real,
 		TMPCASE(8192);
 #undef TMPCASE
 	}
-	{
-		int n1 = n - 1;
-		double c;
-		ptr[0] *= (omega_real[0] + omega_imag[0]);
-		ptr[1] *= (omega_real[1] + omega_imag[1]);
-		for (i = 2; i < n1; i += 2) {
-			c = ptr[i] * omega_imag[i];
-			ptr[i] *= omega_real[i];
-			ptr[i] += ptr[i + 1] * omega_imag[i + 1];
-			ptr[i + 1] *= omega_real[i + 1];
-			ptr[i + 1] += c;
-		}
+
+	ptr[0] *= (omega_real[0] + omega_imag[0]);
+	ptr[1] *= (omega_real[1] + omega_imag[1]);
+	for (i = 2; i < n1; i += 2) {
+		c = ptr[i] * omega_imag[i];
+		ptr[i] *= omega_real[i];
+		ptr[i] += ptr[i + 1] * omega_imag[i + 1];
+		ptr[i + 1] *= omega_real[i + 1];
+		ptr[i + 1] += c;
 	}
+
 	switch (n) {
 #define TMPCASE(N)case N:fftr8_un##N(ptr);break
 		TMPCASE(2);
