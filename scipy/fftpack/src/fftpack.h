@@ -84,49 +84,6 @@ extern "C" {
 #endif
 #endif
 
-/*
-  Simple cyclic cache.
- */
-#define GEN_CACHE(name,CACHEARG,CACHETYPE,CHECK,MALLOC,FREE,CACHESIZE) \
-typedef struct {\
-  int n;\
-  CACHETYPE \
-} cache_type_##name;\
-static cache_type_##name caches_##name[CACHESIZE];\
-static int nof_in_cache_##name = 0;\
-static int last_cache_id_##name = 0;\
-static int get_cache_id_##name CACHEARG { \
-  int i,id = -1; \
-  for (i=0;i<nof_in_cache_##name;i++) \
-    if (CHECK) { \
-      id=i; \
-      break; \
-    } \
-  if (id>=0) goto exit;\
-  if (nof_in_cache_##name<CACHESIZE) {\
-    id = nof_in_cache_##name++;\
-  } else {\
-    id = (last_cache_id_##name<CACHESIZE-1)?last_cache_id_##name+1:0;\
-    /*fprintf(stderr,"Removing cache item n=%d\n",caches_##name[id].n);*/\
-    FREE \
-    caches_##name[id].n = 0;\
-  }\
-  /*fprintf(stderr,"New cache item n=%d\n",n);*/\
-  caches_##name[id].n = n;\
-  MALLOC \
- exit:\
-  last_cache_id_##name = id;\
-  return id;\
-}\
-static void destroy_##name##_caches(void) {\
-  int id;\
-  for (id=0;id<nof_in_cache_##name;++id) {\
-    FREE \
-    caches_##name[id].n = 0;\
-  }\
-  nof_in_cache_##name = last_cache_id_##name = 0;\
-}
-
 #define	COPYSTD2DJB(SRC,DEST,N) { \
   int n2 = (N)/2,k,j; \
   *(DEST) = *(SRC); \
