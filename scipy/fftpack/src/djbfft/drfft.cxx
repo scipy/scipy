@@ -128,19 +128,6 @@ int RDJBFFTCache::compute_backward(double *inout, int normalize) const
 
 static CacheManager<DJBFFTCacheId, RDJBFFTCache> rdjbfft_cmgr(10);
 
-#if 0
-GEN_CACHE(drdjbfft, (int n)
-	    , unsigned int *f;
-	    double *ptr;, 
-        caches_drdjbfft[i].n == n, 
-        caches_drdjbfft[id].f = (unsigned int *) malloc(sizeof(unsigned int) * (n));
-	    caches_drdjbfft[id].ptr = (double *) malloc(sizeof(double) * n);
-	    fftfreq_rtable(caches_drdjbfft[id].f, n);,
-	    free(caches_drdjbfft[id].f); 
-        free(caches_drdjbfft[id].ptr);, 
-        10)
-#endif
-
 /**************** ZFFT function **********************/
 static void drfft_djbfft(double * inout,
 			 int n, int direction, int howmany, int normalize)
