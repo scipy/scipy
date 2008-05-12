@@ -1,3 +1,15 @@
+#ifdef WITH_FFTW
+#define destroy_convolve_cache_def destroy_convolve_cache_fftw
+#define convolve_def convolve_fftw
+#define convolve_z_def convolve_z_fftw
+#define init_convolution_kernel_def init_convolution_kernel_fftw
+#else
+#define destroy_convolve_cache_def destroy_convolve_cache_fftpack
+#define convolve_def convolve_fftpack
+#define convolve_z_def convolve_z_fftpack
+#define init_convolution_kernel_def init_convolution_kernel_fftpack
+#endif
+
 GEN_CACHE(ddjbfft,(int n)
 	  ,double* ptr;
 	  ,(caches_ddjbfft[i].n==n)
@@ -5,15 +17,10 @@ GEN_CACHE(ddjbfft,(int n)
 	  ,free(caches_ddjbfft[id].ptr);
 	  ,20)
 
-extern "C" void destroy_convolve_cache(void) {
-#ifdef WITH_DJBFFT
-  destroy_ddjbfft_caches();
-#endif
-#ifdef WITH_FFTW
-  destroy_drfftw_caches();
-#else
-  destroy_dfftpack_caches();
-#endif
+extern "C" void destroy_convolve_cache(void) 
+{
+	destroy_ddjbfft_caches();
+	destroy_convolve_cache_def();
 }
 
 /**************** convolve **********************/
@@ -22,12 +29,6 @@ void convolve(int n,double* inout,double* omega,int swap_real_imag) {
   int i;
 #ifdef WITH_DJBFFT
   double* ptr = NULL;
-#endif
-#ifdef WITH_FFTW
-  rfftw_plan plan1 = NULL;
-  rfftw_plan plan2 = NULL;
-#else
-  double* wsave = NULL;
 #endif
 #ifdef WITH_DJBFFT
   switch (n) {
@@ -70,26 +71,11 @@ void convolve(int n,double* inout,double* omega,int swap_real_imag) {
 #endif
   {
 #ifdef WITH_FFTW
-    int l = (n-1)/2+1;
-    i = get_cache_id_drfftw(n);
-    plan1 = caches_drfftw[i].plan1;
-    plan2 = caches_drfftw[i].plan2;
-    rfftw_one(plan1, (fftw_real *)inout, NULL);
-    if (swap_real_imag) {
-      double c;
-      inout[0] *= omega[0];
-      if (!(n%2))
-	inout[n/2] *= omega[n/2];
-      for(i=1;i<l;++i) {
-	c = inout[i] * omega[i];
-	inout[i] = omega[n-i] * inout[n-i];
-	inout[n-i] = c;
-      }
-    }
-    else
-      for(i=0;i<n;++i)
-	inout[i] *= omega[i];
-    rfftw_one(plan2, (fftw_real *)inout, NULL);
+#else
+  double* wsave = NULL;
+#endif
+#ifdef WITH_FFTW
+    convolve_def(n,inout,omega,swap_real_imag);
 #else
     i = get_cache_id_dfftpack(n);
     wsave = caches_dfftpack[i].wsave;
@@ -120,12 +106,6 @@ void convolve_z(int n,double* inout,double* omega_real,double* omega_imag) {
   int i;
 #ifdef WITH_DJBFFT
   double* ptr = NULL;
-#endif
-#ifdef WITH_FFTW
-  rfftw_plan plan1 = NULL;
-  rfftw_plan plan2 = NULL;
-#else
-  double* wsave = NULL;
 #endif
 #ifdef WITH_DJBFFT
   switch (n) {
@@ -167,25 +147,11 @@ void convolve_z(int n,double* inout,double* omega_real,double* omega_imag) {
 #endif
   {
 #ifdef WITH_FFTW
-    int l = (n-1)/2+1;
-    i = get_cache_id_drfftw(n);
-    plan1 = caches_drfftw[i].plan1;
-    plan2 = caches_drfftw[i].plan2;
-    rfftw_one(plan1, (fftw_real *)inout, NULL);
-    {
-      double c;
-      inout[0] *= (omega_real[0]+omega_imag[0]);
-      if (!(n%2))
-	inout[n/2] *= (omega_real[n/2]+omega_imag[n/2]);
-      for(i=1;i<l;++i) {
-	c = inout[i] * omega_imag[i];
-	inout[i] *= omega_real[i];
-	inout[i] += omega_imag[n-i] * inout[n-i];
-	inout[n-i] *= omega_real[n-i];
-	inout[n-i] += c;
-      }
-    }
-    rfftw_one(plan2, (fftw_real *)inout, NULL);
+#else
+  double* wsave = NULL;
+#endif
+#ifdef WITH_FFTW
+    convolve_z_def(n,inout,omega_real,omega_imag);
 #else
     i = get_cache_id_dfftpack(n);
     wsave = caches_dfftpack[i].wsave;
@@ -261,40 +227,7 @@ void init_convolution_kernel(int n,double* omega, int d,
   }
 #endif
 #ifdef WITH_FFTW
-  {
-    int k,l=(n-1)/2+1;
-    omega[0] = (*kernel_func)(0)/n;;
-    switch (d%4) {
-    case 0:
-      for (k=1;k<l;++k)
-	omega[k] = omega[n-k] = (*kernel_func)(k)/n;
-      if (!(n%2)) 
-	omega[n/2] = (zero_nyquist?0.0:(*kernel_func)(n/2)/n);
-      break;
-    case 1:;case -3:
-      for (k=1;k<l;++k) {
-	omega[k] = (*kernel_func)(k)/n;
-	omega[n-k] = -omega[k];
-      }
-      if (!(n%2))
-	omega[n/2] = (zero_nyquist?0.0:(*kernel_func)(n/2)/n);
-      break;
-    case 2:;case -2:
-      for (k=1;k<l;++k)
-	omega[k] = omega[n-k] = -(*kernel_func)(k)/n;
-      if (!(n%2))
-	omega[n/2] = (zero_nyquist?0.0:-(*kernel_func)(n/2)/n);
-      break;
-    case 3:;case -1:
-      for (k=1;k<l;++k) {
-	omega[k] = -(*kernel_func)(k)/n;
-	omega[n-k] = -omega[k];
-      }
-      if (!(n%2))
-        omega[n/2] = (zero_nyquist?0.0:-(*kernel_func)(n/2)/n);
-      break;
-    }
-  }
+  init_convolution_kernel_def(n,omega, d, kernel_func, zero_nyquist);
 #else
   {
     int j,k,l=(n%2?n:n-1);
