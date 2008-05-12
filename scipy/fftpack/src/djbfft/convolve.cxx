@@ -25,12 +25,10 @@ extern "C" void destroy_convolve_cache(void)
 
 /**************** convolve **********************/
 extern "C"
-void convolve(int n,double* inout,double* omega,int swap_real_imag) {
+void convolve(int n,double* inout,double* omega,int swap_real_imag) 
+{
   int i;
-#ifdef WITH_DJBFFT
   double* ptr = NULL;
-#endif
-#ifdef WITH_DJBFFT
   switch (n) {
   case 2:;case 4:;case 8:;case 16:;case 32:;case 64:;case 128:;case 256:;
   case 512:;case 1024:;case 2048:;case 4096:;case 8192:
@@ -68,7 +66,6 @@ void convolve(int n,double* inout,double* omega,int swap_real_imag) {
     COPYINVDJB2STD2(ptr,inout,n);
     return;
   }
-#endif
   {
     convolve_def(n,inout,omega,swap_real_imag);
   }
@@ -78,10 +75,7 @@ void convolve(int n,double* inout,double* omega,int swap_real_imag) {
 extern "C"
 void convolve_z(int n,double* inout,double* omega_real,double* omega_imag) {
   int i;
-#ifdef WITH_DJBFFT
   double* ptr = NULL;
-#endif
-#ifdef WITH_DJBFFT
   switch (n) {
   case 2:;case 4:;case 8:;case 16:;case 32:;case 64:;case 128:;case 256:;
   case 512:;case 1024:;case 2048:;case 4096:;case 8192:
@@ -118,7 +112,6 @@ void convolve_z(int n,double* inout,double* omega_real,double* omega_imag) {
     COPYINVDJB2STD2(ptr,inout,n);
     return;
   }
-#endif
   {
     convolve_z_def(n,inout,omega_real,omega_imag);
   }
@@ -133,7 +126,6 @@ void init_convolution_kernel(int n,double* omega, int d,
     omega[0] = kernel_func(0)
     conjugate(omega[-k]) == omega[k]
    */
-#ifdef WITH_DJBFFT
   switch (n) {
   case 2:;case 4:;case 8:;case 16:;case 32:;case 64:;case 128:;case 256:;
   case 512:;case 1024:;case 2048:;case 4096:;case 8192:
@@ -174,6 +166,5 @@ void init_convolution_kernel(int n,double* omega, int d,
     }
     return;
   }
-#endif
   init_convolution_kernel_def(n,omega, d, kernel_func, zero_nyquist);
 }
