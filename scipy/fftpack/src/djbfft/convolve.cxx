@@ -207,7 +207,8 @@ static void init_convolution_kernel_djbfft(int n, double *omega, int d,
 				 double (*kernel_func) (int),
 				 int zero_nyquist)
 {
-	int k, n2 = n / 2;
+	int k;
+	unsigned int n2 = n / 2;
 	unsigned int *f =
 	    (unsigned int *) malloc(sizeof(int) * (n));
 	fftfreq_rtable(f, n);
