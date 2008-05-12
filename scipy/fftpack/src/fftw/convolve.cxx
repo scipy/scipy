@@ -1,37 +1,74 @@
-GEN_CACHE(drfftw,(int n)
-	  ,rfftw_plan plan1;
-	   rfftw_plan plan2;
-	  ,(caches_drfftw[i].n==n)
-	  ,caches_drfftw[id].plan1 = rfftw_create_plan(n,
-		FFTW_REAL_TO_COMPLEX,
-		FFTW_IN_PLACE|FFTW_ESTIMATE);
-	   caches_drfftw[id].plan2 = rfftw_create_plan(n,
-		FFTW_COMPLEX_TO_REAL,
-		FFTW_IN_PLACE|FFTW_ESTIMATE);
-	  ,rfftw_destroy_plan(caches_drfftw[id].plan1);
-  	   rfftw_destroy_plan(caches_drfftw[id].plan2);
-	  ,20)
+#include <new>
 
-static void destroy_convolve_cache_fftw(void) 
+#include "cycliccache.h"
+
+using namespace fft;
+
+class DRFFTWCacheId : public CacheId {
+	public:
+		DRFFTWCacheId(int n);
+
+};
+
+DRFFTWCacheId::DRFFTWCacheId(int n):
+        CacheId(n)
 {
-  destroy_drfftw_caches();
 }
 
-/**************** convolve **********************/
-static
-void convolve_fftw(int n,double* inout,double* omega,int swap_real_imag) 
-{
-	int i;
-	rfftw_plan plan1 = NULL;
-	rfftw_plan plan2 = NULL;
-	int l = (n-1)/2+1;
+class DRFFTWCache : public Cache<DRFFTWCacheId> {
+	public:	
+		DRFFTWCache(const DRFFTWCacheId& id);
+		virtual ~DRFFTWCache();
 
-	i = get_cache_id_drfftw(n);
-	plan1 = caches_drfftw[i].plan1;
-	plan2 = caches_drfftw[i].plan2;
-	rfftw_one(plan1, (fftw_real *)inout, NULL);
+                int convolve(double* inout, double* omega, 
+                             int swap_real_imag) const;
+                int convolve_z(double* inout, double* omega_real, 
+                               double* omega_imag) const;
+
+	protected:
+		rfftw_plan m_plan1;
+		rfftw_plan m_plan2;
+};
+
+DRFFTWCache::DRFFTWCache(const DRFFTWCacheId& id)
+:	Cache<DRFFTWCacheId>(id)
+{
+        int flags = FFTW_ESTIMATE | FFTW_IN_PLACE;
+
+	m_plan1 = rfftw_create_plan(id.m_n, FFTW_REAL_TO_COMPLEX, flags);
+	if (m_plan1 == NULL) {
+		goto fail;
+	}
+
+	m_plan2 = rfftw_create_plan(id.m_n, FFTW_COMPLEX_TO_REAL, flags);
+	if (m_plan2 == NULL) {
+		goto clean_plan1;
+	}
+
+        return;
+
+clean_plan1:
+	rfftw_destroy_plan(m_plan1);
+fail:
+	throw std::bad_alloc();
+}
+
+DRFFTWCache::~DRFFTWCache()
+{
+	rfftw_destroy_plan(m_plan2);
+	rfftw_destroy_plan(m_plan1);
+}
+
+int DRFFTWCache::convolve(double* inout, double* omega, int swap_real_imag)
+    const
+{
+        int n = m_id.m_n;
+	int l = (n-1)/2+1;
+        int i;
+        double c;
+
+	rfftw_one(m_plan1, (fftw_real *)inout, NULL);
 	if (swap_real_imag) {
-		double c;
 		inout[0] *= omega[0];
 		if (!(n%2)) {
 			inout[n/2] *= omega[n/2];
@@ -46,22 +83,20 @@ void convolve_fftw(int n,double* inout,double* omega,int swap_real_imag)
 			inout[i] *= omega[i];
 		}
 	}
-	rfftw_one(plan2, (fftw_real *)inout, NULL);
+	rfftw_one(m_plan2, (fftw_real *)inout, NULL);
+
+        return 0;
 }
 
-/**************** convolve **********************/
-static
-void convolve_z_fftw(int n,double* inout,double* omega_real,double* omega_imag) {
+int DRFFTWCache::convolve_z(double* inout, double* omega_real, 
+                            double* omega_imag) const
+{
+        int n = m_id.m_n;
 	int i;
-	rfftw_plan plan1 = NULL;
-	rfftw_plan plan2 = NULL;
 	int l = (n-1)/2+1;
 	double c;
 
-	i = get_cache_id_drfftw(n);
-	plan1 = caches_drfftw[i].plan1;
-	plan2 = caches_drfftw[i].plan2;
-	rfftw_one(plan1, (fftw_real *)inout, NULL);
+	rfftw_one(m_plan1, (fftw_real *)inout, NULL);
 	inout[0] *= (omega_real[0]+omega_imag[0]);
 
 	if (!(n%2)) {
@@ -74,7 +109,31 @@ void convolve_z_fftw(int n,double* inout,double* omega_real,double* omega_imag) 
 		inout[n-i] *= omega_real[n-i];
 		inout[n-i] += c;
 	}
-	rfftw_one(plan2, (fftw_real *)inout, NULL);
+	rfftw_one(m_plan2, (fftw_real *)inout, NULL);
+
+        return 0;
+}
+
+CacheManager<DRFFTWCacheId, DRFFTWCache> drfftw_cmgr(20);
+
+/**************** convolve **********************/
+static
+void convolve_fftw(int n,double* inout,double* omega,int swap_real_imag) 
+{
+        DRFFTWCache *cache;
+
+        cache = drfftw_cmgr.get_cache(DRFFTWCacheId(n));
+        cache->convolve(inout, omega, swap_real_imag);
+}
+
+/**************** convolve **********************/
+static
+void convolve_z_fftw(int n,double* inout,double* omega_real,double* omega_imag) 
+{
+        DRFFTWCache *cache;
+
+        cache = drfftw_cmgr.get_cache(DRFFTWCacheId(n));
+        cache->convolve_z(inout, omega_real, omega_imag);
 }
 
 static

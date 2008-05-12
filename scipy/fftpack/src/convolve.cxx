@@ -18,7 +18,6 @@
 #ifndef WITH_DJBFFT
 extern "C" void destroy_convolve_cache(void) 
 {
-	destroy_convolve_cache_fftw();
 }
 
 extern "C" void convolve(int n,double* inout,double* omega,int swap_real_imag) 
