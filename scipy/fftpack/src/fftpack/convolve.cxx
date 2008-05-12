@@ -1,27 +1,24 @@
-extern "C" {
-extern void F_FUNC(dfftf,DFFTF)(int*,double*,double*);
-extern void F_FUNC(dfftb,DFFTB)(int*,double*,double*);
-extern void F_FUNC(dffti,DFFTI)(int*,double*);
-GEN_CACHE(dfftpack,(int n)
-	  ,double* wsave;
-	  ,(caches_dfftpack[i].n==n)
-	  ,caches_dfftpack[id].wsave = (double*)malloc(sizeof(double)*(2*n+15));
-	   F_FUNC(dffti,DFFTI)(&n,caches_dfftpack[id].wsave);
-	  ,free(caches_dfftpack[id].wsave);
-	  ,20)
+#include "common.h"
+
+using namespace fft;
+
+class DFFTPackCache : public RFFTPackCache {
+        public:
+                DFFTPackCache(const RFFTPackCacheId& id) : RFFTPackCache(id) {};
+                virtual ~DFFTPackCache() {};
+
+        public:
+                int convolve(double* inout, double* omega, int swap_real_imag) const;
+                int convolve_z(double* inout, double* omega_real, double* omega_imag) const;
 };
 
-static void destroy_convolve_cache_fftpack(void) 
-{
-	destroy_dfftpack_caches();
-}
-
-static void convolve_fftpack(int n,double* inout,double* omega,int swap_real_imag) 
+int DFFTPackCache::convolve(double* inout, double* omega, int swap_real_imag) 
+        const
 {
 	int i;
-	double* wsave = NULL;
-	i = get_cache_id_dfftpack(n);
-	wsave = caches_dfftpack[i].wsave;
+        int n = m_id.m_n;
+        double* wsave = m_wsave;
+
 	F_FUNC(dfftf,DFFTF)(&n,inout,wsave);
 	if (swap_real_imag) {
 		double c;
@@ -39,18 +36,19 @@ static void convolve_fftpack(int n,double* inout,double* omega,int swap_real_ima
 		for(i=0;i<n;++i)
 			inout[i] *= omega[i];
 	F_FUNC(dfftb,DFFTB)(&n,inout,wsave);
+
+        return 0;
 }
 
-/**************** convolve **********************/
-static void convolve_z_fftpack(int n,double* inout,double* omega_real,double* omega_imag) 
+int DFFTPackCache::convolve_z(double* inout, double* omega_real, 
+                              double* omega_imag) const
 {
 	int i;
-	double* wsave = NULL;
+	double* wsave = m_wsave;
 	double c;
+        int n = m_id.m_n;
 	int n1 = n-1;
 
-	i = get_cache_id_dfftpack(n);
-	wsave = caches_dfftpack[i].wsave;
 	F_FUNC(dfftf,DFFTF)(&n,inout,wsave);
 	inout[0] *= (omega_real[0]+omega_imag[0]);
 	if (!(n%2))
@@ -63,6 +61,26 @@ static void convolve_z_fftpack(int n,double* inout,double* omega_real,double* om
 		inout[i+1] += c;
 	}
 	F_FUNC(dfftb,DFFTB)(&n,inout,wsave);
+
+        return 0;
+}
+
+static CacheManager<RFFTPackCacheId, DFFTPackCache> dfftpack_cmgr(20);
+
+static void convolve_fftpack(int n,double* inout,double* omega,int swap_real_imag) 
+{
+        DFFTPackCache* cache;
+
+        cache = dfftpack_cmgr.get_cache(RFFTPackCacheId(n));
+        cache->convolve(inout, omega, swap_real_imag);
+}
+
+static void convolve_z_fftpack(int n,double* inout,double* omega_real,double* omega_imag) 
+{
+        DFFTPackCache* cache;
+
+        cache = dfftpack_cmgr.get_cache(RFFTPackCacheId(n));
+        cache->convolve_z(inout, omega_real, omega_imag);
 }
 
 void init_convolution_kernel_fftpack(int n,double* omega, int d,
