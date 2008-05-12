@@ -1,3 +1,8 @@
+#include <new>
+#include <cassert>
+
+#include "common.h"
+
 #ifdef WITH_FFTW
 #define destroy_convolve_cache_def destroy_convolve_cache_fftw
 #define convolve_def convolve_fftw
@@ -10,26 +15,57 @@
 #define init_convolution_kernel_def init_convolution_kernel_fftpack
 #endif
 
+#if 0
 GEN_CACHE(ddjbfft, (int n)
 	  , double *ptr;, (caches_ddjbfft[i].n == n)
 	  , caches_ddjbfft[id].ptr =
 	  (double *) malloc(sizeof(double) * n);,
 	  free(caches_ddjbfft[id].ptr);, 20)
+#endif
 
-extern "C" void destroy_convolve_cache(void)
+using namespace fft;
+
+class DDJBFFTCache: public Cache<DJBFFTCacheId> {
+        public:
+                DDJBFFTCache(const DJBFFTCacheId& id);
+                virtual ~DDJBFFTCache();
+
+                int convolve(double *inout, double *omega, 
+                             int swap_real_imag) const;
+                int convolve_z(double *inout, double *omega_real, 
+                               double* omega_imag) const;
+        protected:
+                double* m_ptr;
+};
+
+DDJBFFTCache::DDJBFFTCache(const DJBFFTCacheId& id)
+:	Cache<DJBFFTCacheId>(id)
 {
-	destroy_ddjbfft_caches();
-	destroy_convolve_cache_def();
+        int n = id.m_n;
+
+        m_ptr = (double *)malloc(sizeof(*m_ptr) * n);
+        if (m_ptr == NULL) {
+                goto fail;
+        }
+
+        return;
+
+fail:
+	throw std::bad_alloc();
 }
 
-/**************** convolve **********************/
-static void convolve_djbfft(int n, double *inout, double *omega, int swap_real_imag)
+DDJBFFTCache::~DDJBFFTCache()
+{
+        free(m_ptr);
+}
+
+int DDJBFFTCache::convolve(double *inout, double *omega, int swap_real_imag)
+        const
 {
 	int i;
-	double *ptr = NULL;
+	double *ptr = m_ptr;
+        int n = m_id.m_n;
 
-	i = get_cache_id_ddjbfft(n);
-	ptr = caches_ddjbfft[i].ptr;
 	COPYSTD2DJB(inout, ptr, n);
 	switch (n) {
 #define TMPCASE(N) case N: fftr8_##N(ptr); break
@@ -81,48 +117,19 @@ static void convolve_djbfft(int n, double *inout, double *omega, int swap_real_i
 #undef TMPCASE
 	}
 	COPYINVDJB2STD2(ptr, inout, n);
+
+        return 0;
 }
 
-extern "C"
-void convolve(int n, double *inout, double *omega, int swap_real_imag)
-{
-	bool use_def = true;
-
-	switch (n) {
-	case 2:;
-	case 4:;
-	case 8:;
-	case 16:;
-	case 32:;
-	case 64:;
-	case 128:;
-	case 256:;
-	case 512:;
-	case 1024:;
-	case 2048:;
-	case 4096:;
-	case 8192:
-		use_def = false;
-	}
-
-	if (!use_def) {
-		convolve_djbfft(n, inout, omega, swap_real_imag);
-	} else {
-		convolve_def(n, inout, omega, swap_real_imag);
-	}
-}
-
-/**************** convolve **********************/
-static void convolve_z_djbfft(int n, double *inout, double *omega_real,
-		    double *omega_imag)
+int DDJBFFTCache::convolve_z(double *inout, double *omega_real, double *omega_imag)
+        const
 {
 	int i;
-	double *ptr = NULL;
+        int n = m_id.m_n;
+	double *ptr = m_ptr;
 	int n1 = n - 1;
 	double c;
 
-	i = get_cache_id_ddjbfft(n);
-	ptr = caches_ddjbfft[i].ptr;
 	COPYSTD2DJB(inout, ptr, n);
 	switch (n) {
 #define TMPCASE(N) case N: fftr8_##N(ptr); break
@@ -170,7 +177,62 @@ static void convolve_z_djbfft(int n, double *inout, double *omega_real,
 #undef TMPCASE
 	}
 	COPYINVDJB2STD2(ptr, inout, n);
-	return;
+	return 0;
+}
+
+static CacheManager <DJBFFTCacheId, DDJBFFTCache> ddjbfft_cmgr(20);
+
+/* stub */
+extern "C" void destroy_convolve_cache()
+{
+}
+
+/**************** convolve **********************/
+static void convolve_djbfft(int n, double *inout, double *omega, int swap_real_imag)
+{
+        DDJBFFTCache *cache;
+
+        cache = ddjbfft_cmgr.get_cache(DJBFFTCacheId(n));
+        cache->convolve(inout, omega, swap_real_imag);
+}
+
+extern "C"
+void convolve(int n, double *inout, double *omega, int swap_real_imag)
+{
+	bool use_def = true;
+
+	switch (n) {
+	case 2:;
+	case 4:;
+	case 8:;
+	case 16:;
+	case 32:;
+	case 64:;
+	case 128:;
+	case 256:;
+	case 512:;
+	case 1024:;
+	case 2048:;
+	case 4096:;
+	case 8192:
+		use_def = false;
+	}
+
+	if (!use_def) {
+		convolve_djbfft(n, inout, omega, swap_real_imag);
+	} else {
+		convolve_def(n, inout, omega, swap_real_imag);
+	}
+}
+
+/**************** convolve **********************/
+static void convolve_z_djbfft(int n, double *inout, double *omega_real,
+		    double *omega_imag)
+{
+        DDJBFFTCache *cache;
+
+        cache = ddjbfft_cmgr.get_cache(DJBFFTCacheId(n));
+        cache->convolve_z(inout, omega_real, omega_imag);
 }
 
 extern "C"
