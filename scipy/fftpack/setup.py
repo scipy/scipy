@@ -45,7 +45,7 @@ def configuration(parent_package='',top_path=None):
         sources=['convolve.pyf','src/convolve.cxx'],
         libraries=['dfftpack'],
         extra_info=[fft_opt_info, djbfft_info],
-        depends=['src/fftpack/convolve.cxx', 'src/fftw/convolve.cxx']
+        depends=['src/fftpack/convolve.cxx', 'src/fftw/convolve.cxx', "src/djbfft/convolve.cxx"]
     )
     return config
 
