@@ -1,5 +1,5 @@
 /*
- * Last Change: Tue May 13 02:00 PM 2008 J
+ * Last Change: Tue May 13 06:00 PM 2008 J
  *
  * FFTW2 implementation
  *
@@ -12,6 +12,7 @@
 
 #include "cycliccache.h"
 #include "api.h"
+#include "common.h"
 
 using namespace fft;
 
