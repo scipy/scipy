@@ -14,6 +14,8 @@ def build_backends(config, opts, info, djbfft_info, fft_opt_info):
                              ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx', 'convolve.cxx']]
     backends_src['fftpack'] = [join('src/fftpack/', i) for i in 
                              ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx', 'convolve.cxx']]
+    backends_src['mkl'] = [join('src/mkl/', i) for i in 
+                             ['zfft.cxx', 'zfftnd.cxx']]
 
     libs = []
 
@@ -29,6 +31,9 @@ def build_backends(config, opts, info, djbfft_info, fft_opt_info):
     # scipy-dev ML. If libfoo1 depends on libfoo2, -lfoo1 -lfoo2 works, but
     # -lfoo2 -lfoo1 won't (and you don't know it at runtime, only at load
     # time).
+    if info['mkl']:
+        build_backend('mkl', [fft_opt_info])
+
     if info['djbfft']:
         build_backend('djbfft', [djbfft_info])
 
@@ -54,6 +59,8 @@ def get_available_backends():
         mkl_info.setdefault('define_macros', []).append(('SCIPY_MKL_H', None))
         fft_opt_info = mkl_info
         info['mkl'] = True
+        # We need fftpack for convolve and real transforms
+        info['fftpack'] = True
     else:
         fft_opt_info = get_info('fftw3')
         if fft_opt_info:

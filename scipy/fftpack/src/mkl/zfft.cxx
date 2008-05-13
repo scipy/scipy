@@ -1,5 +1,8 @@
 #include <new>
 
+#include <mkl_dfti.h>
+
+#include "api.h"
 #include "cycliccache.h"
 
 using namespace fft;
@@ -52,7 +55,7 @@ int MKLCache::compute_backward(complex_double *inout) const
 
 CacheManager<MKLCacheId, MKLCache> zmkl_cmgr(10);
 
-static void zfft_mkl(complex_double * inout,
+void zfft_mkl(complex_double * inout,
 		 int n, int direction, int howmany, int normalize)
 {
 	int i;

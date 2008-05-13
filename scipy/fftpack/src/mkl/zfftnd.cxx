@@ -3,13 +3,27 @@
  *
  * Original code by David M. Cooke
  *
- * Last Change: Tue May 13 12:00 PM 2008 J
+ * Last Change: Tue May 13 05:00 PM 2008 J
  */
 #include <new>
 
+#include <mkl_dfti.h>
+
+#include "api.h"
 #include "cycliccache.h"
 
 using namespace fft;
+
+static int equal_dims(int rank,int *dims1,int *dims2)
+{
+        int i;
+        for (i = 0; i < rank; ++i) {
+                if (dims1[i] != dims2[i]) {
+                        return 0;
+                }
+        }
+        return 1;
+}
 
 class NDMKLCacheId {
         public:
@@ -157,7 +171,7 @@ long* NDMKLCache::convert_dims(int n, int *dims) const
 
 static CacheManager < NDMKLCacheId, NDMKLCache > ndmkl_cmgr(10);
 
-extern void zfftnd_mkl(complex_double * inout, int rank,
+void zfftnd_mkl(complex_double * inout, int rank,
 		       int *dims, int direction, int howmany,
 		       int normalize)
 {

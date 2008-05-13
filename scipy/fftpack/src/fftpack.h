@@ -42,7 +42,6 @@ extern int ispow2le2e13(int n);
 
 #ifdef SCIPY_MKL_H
 #define WITH_MKL
-#include <mkl_dfti.h>
 #endif
 
 #ifdef SCIPY_FFTW3_H

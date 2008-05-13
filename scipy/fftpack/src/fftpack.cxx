@@ -54,9 +54,7 @@ extern "C" void zfftnd(complex_double * inout, int rank,\
         GEN_ZFFTND_API(fftw)
     #endif
 #elif defined WITH_MKL
-#error MKL backend not supported !
-    #include "mkl/zfft.cxx"
-    #include "mkl/zfftnd.cxx"
+    #include "mkl/api.h"
     #ifndef WITH_DJBFFT
         GEN_ZFFT_API(mkl)
         GEN_ZFFTND_API(mkl)
