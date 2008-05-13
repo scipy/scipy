@@ -3,7 +3,7 @@
  *
  * Original code by Pearu Peaterson
  *
- * Last Change: Sun May 11 09:00 PM 2008 J
+ * Last Change: Tue May 13 12:00 PM 2008 J
  */
 #include <new>
 #include <cassert>
@@ -166,7 +166,7 @@ NDFFTW3Cache::~NDFFTW3Cache()
 	fftw_free(m_wrk);
 }
 
-static CacheManager < NDFFTW3CacheId, NDFFTW3Cache > fftw3_cmgr(10);
+static CacheManager < NDFFTW3CacheId, NDFFTW3Cache > ndfftw3_cmgr(10);
 
 extern void zfftnd_fftw3(complex_double * inout, int rank,
 			 int *dims, int direction, int howmany,
@@ -182,7 +182,7 @@ extern void zfftnd_fftw3(complex_double * inout, int rank,
 	}
 
 	cache =
-	    fftw3_cmgr.
+	    ndfftw3_cmgr.
 	    get_cache(NDFFTW3CacheId
 		      (rank, dims, howmany, direction,
 		       is_simd_aligned(inout)));

@@ -1,5 +1,5 @@
 /*
- * Last Change: Sun May 11 09:00 PM 2008 J
+ * Last Change: Tue May 13 12:00 PM 2008 J
  *
  * RFFTW3 implementation
  *
@@ -86,7 +86,7 @@ RFFTW3Cache::~RFFTW3Cache()
 	fftw_free(m_wrk);
 }
 
-static CacheManager<FFTW3CacheId, RFFTW3Cache> fftw3_cmgr(10);
+static CacheManager<FFTW3CacheId, RFFTW3Cache> drfftw3_cmgr(10);
 
 static void drfft_fftw3(double *inout, int n, int direction, int
 			howmany, int normalize)
@@ -108,7 +108,7 @@ static void drfft_fftw3(double *inout, int n, int direction, int
                 isaligned = isaligned && is_simd_aligned(ptr + n);
         }
 
-	cache = fftw3_cmgr.get_cache(FFTW3CacheId(n, direction, isaligned));
+	cache = drfftw3_cmgr.get_cache(FFTW3CacheId(n, direction, isaligned));
 
 	switch (direction) {
 	case 1:

@@ -60,7 +60,7 @@ FFTW3Cache::~FFTW3Cache()
 	fftw_free(m_wrk);
 }
 
-static CacheManager<FFTW3CacheId, FFTW3Cache> fftw3_cmgr(10);
+static CacheManager<FFTW3CacheId, FFTW3Cache> zfftw3_cmgr(10);
 
 static void zfft_fftw3(complex_double * inout, int n, int dir, int howmany, 
                        int normalize)
@@ -82,7 +82,7 @@ static void zfft_fftw3(complex_double * inout, int n, int dir, int howmany,
                  */
                 isaligned = isaligned && is_simd_aligned(ptr + n);
         }
-	cache = fftw3_cmgr.get_cache(FFTW3CacheId(n, dir, isaligned));
+	cache = zfftw3_cmgr.get_cache(FFTW3CacheId(n, dir, isaligned));
 
 	switch (dir) {
 	case 1:
