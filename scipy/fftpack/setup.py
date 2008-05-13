@@ -10,7 +10,6 @@ def configuration(parent_package='',top_path=None):
 
     backends = ['mkl', 'djbfft', 'fftw3', 'fftw', 'fftpack']
     info = dict([(k, False) for k in backends])
-    info['fftpack'] = True
 
     djbfft_info = {}
     mkl_info = get_info('mkl')
@@ -19,15 +18,23 @@ def configuration(parent_package='',top_path=None):
         fft_opt_info = mkl_info
         info['mkl'] = True
     else:
-        # Take the first in the list
-        for b in ['fftw3', 'fftw']:
-            tmp = get_info(b)
-            if tmp:
-                fft_opt_info = tmp
-                info[b] = True
-                break
+        def has_optimized_backend():
+            # Take the first in the list
+            for b in ['fftw3', 'fftw']:
+                tmp = get_info(b)
+                if tmp:
+                    fft_opt_info = tmp
+                    info[b] = True
+                    return True
+            return False
+
+        if not has_optimized_backend():
+            info['fftpack'] = True
+            fft_opt_info = {}
+
         djbfft_info = get_info('djbfft')
-        info['djbfft'] = True
+        if djbfft_info:
+            info['djbfft'] = True
 
     config.add_data_dir('tests')
     config.add_data_dir('benchmarks')
@@ -35,6 +42,7 @@ def configuration(parent_package='',top_path=None):
     config.add_library('dfftpack',
                        sources=[join('dfftpack','*.f')])
 
+    # Build backends for fftpack and convolve
     backends_src = {}
     backends_src['djbfft'] = [join('src/djbfft/', i) for i in 
                               ['zfft.cxx', 'drfft.cxx']]
@@ -45,17 +53,28 @@ def configuration(parent_package='',top_path=None):
     backends_src['fftpack'] = [join('src/fftpack/', i) for i in 
                              ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx']]
 
-    libs = ['dfftpack']
-    for b in ['djbfft', 'fftw3', 'fftw', 'fftpack']:
+    libs = []
+
+    def build_backend(backend, opts):
+        libname = '%s_backend' % backend
+        config.add_library(libname, 
+                sources = backends_src[backend], 
+                include_dirs = ['src'] + [i['include_dirs'] for i in opts])
+        libs.append(libname)
+
+    for b in ['fftw3', 'fftw']:
         if info[b]:
-            config.add_library('%s_backend' % b, 
-                    sources = backends_src[b], 
-                    include_dirs = ['src', djbfft_info['include_dirs'],
-                                    fft_opt_info['include_dirs']])
-            libs.append(b)
+            build_backend(b, [djbfft_info, fft_opt_info])
+
+    if info['fftpack']:
+        build_backend('fftpack', [])
+
+    if info['djbfft']:
+        build_backend('djbfft', [djbfft_info])
 
     sources = ['fftpack.pyf', 'src/fftpack.cxx', 'src/zrfft.c']
 
+    libs.append('dfftpack')
     config.add_extension('_fftpack',
         sources=sources,
         libraries = libs,
