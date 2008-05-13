@@ -1,5 +1,10 @@
 #include <new>
 
+#include <rfftw.h>
+#include <fftw.h>
+
+#include "api.h"
+
 #include "cycliccache.h"
 
 using namespace fft;
@@ -117,7 +122,6 @@ int DRFFTWCache::convolve_z(double* inout, double* omega_real,
 CacheManager<DRFFTWCacheId, DRFFTWCache> drfftw_cmgr(20);
 
 /**************** convolve **********************/
-static
 void convolve_fftw(int n,double* inout,double* omega,int swap_real_imag) 
 {
         DRFFTWCache *cache;
@@ -127,7 +131,6 @@ void convolve_fftw(int n,double* inout,double* omega,int swap_real_imag)
 }
 
 /**************** convolve **********************/
-static
 void convolve_z_fftw(int n,double* inout,double* omega_real,double* omega_imag) 
 {
         DRFFTWCache *cache;
@@ -136,7 +139,6 @@ void convolve_z_fftw(int n,double* inout,double* omega_real,double* omega_imag)
         cache->convolve_z(inout, omega_real, omega_imag);
 }
 
-static
 void init_convolution_kernel_fftw(int n,double* omega, int d,
 			     double (*kernel_func)(int),
 			     int zero_nyquist) 

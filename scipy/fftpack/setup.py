@@ -8,7 +8,7 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info
     config = Configuration('fftpack',parent_package, top_path)
 
-    backends = ['mkl', 'djbfft', 'fftw3', 'fftw', 'fftpack']
+    backends = ['mkl', 'djbfft', 'fftw3', 'fftw2', 'fftpack']
     info = dict([(k, False) for k in backends])
 
     djbfft_info = {}
@@ -20,17 +20,17 @@ def configuration(parent_package='',top_path=None):
     else:
         def has_optimized_backend():
             # Take the first in the list
-            for b in ['fftw3', 'fftw']:
+            for b in ['fftw3', 'fftw2']:
                 tmp = get_info(b)
                 if tmp:
-                    fft_opt_info = tmp
+                    opt = tmp
                     info[b] = True
-                    return True
+                    return opt
             return False
 
-        if not has_optimized_backend():
+        fft_opt_info = has_optimized_backend()
+        if not fft_opt_info:
             info['fftpack'] = True
-            fft_opt_info = {}
 
         djbfft_info = get_info('djbfft')
         if djbfft_info:
@@ -48,7 +48,7 @@ def configuration(parent_package='',top_path=None):
                               ['zfft.cxx', 'drfft.cxx', 'convolve.cxx']]
     backends_src['fftw3'] = [join('src/fftw3/', i) for i in 
                              ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx']]
-    backends_src['fftw'] = [join('src/fftw/', i) for i in 
+    backends_src['fftw2'] = [join('src/fftw/', i) for i in 
                              ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx']]
     backends_src['fftpack'] = [join('src/fftpack/', i) for i in 
                              ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx']]
@@ -70,9 +70,9 @@ def configuration(parent_package='',top_path=None):
     if info['djbfft']:
         build_backend('djbfft', [djbfft_info])
 
-    for b in ['fftw3', 'fftw']:
+    for b in ['fftw3', 'fftw2']:
         if info[b]:
-            build_backend(b, [djbfft_info, fft_opt_info])
+            build_backend(b, [fft_opt_info])
 
     if info['fftpack']:
         build_backend('fftpack', [])
