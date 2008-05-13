@@ -3,6 +3,9 @@
 
 #include "fftpack.h"
 
+/*
+ * straight FFT api
+ */
 void drfft_fftw3(double * inout, int n, int direction, int howmany, 
                   int normalize);
 

@@ -32,56 +32,18 @@ extern "C" void destroy_convolve_cache(void)  \
 
 /**************** FFTW *****************************/
 #ifdef WITH_FFTW
-#include "fftw/convolve.cxx"
 
+#include "fftw/api.h"
 #ifndef WITH_DJBFFT
-extern "C" void destroy_convolve_cache(void) 
-{
-}
-
-extern "C" void convolve(int n,double* inout,double* omega,int swap_real_imag) 
-{
-	convolve_fftw(n, inout, omega, swap_real_imag); 
-}
-
-extern "C" void convolve_z(int n,double* inout,double* omega_real,double* omega_imag) 
-{
-	convolve_z_fftw(n, inout, omega_real, omega_imag);
-}
-
-extern "C" void init_convolution_kernel(int n,double* omega, int d,
-			     double (*kernel_func)(int),
-			     int zero_nyquist) 
-{
-	init_convolution_kernel_fftw(n, omega, d, kernel_func, zero_nyquist);
-}
+        GEN_CONVOLVE_API(fftw)
 #endif
 
 #else
 /**************** FFTPACK ZFFT **********************/
-#include "fftpack/convolve.cxx"
+#include "fftpack/api.h"
 
 #ifndef WITH_DJBFFT
-extern "C" void destroy_convolve_cache(void) 
-{
-}
-
-extern "C" void convolve(int n,double* inout,double* omega,int swap_real_imag) 
-{
-	convolve_fftpack(n, inout, omega, swap_real_imag); 
-}
-
-extern "C" void convolve_z(int n,double* inout,double* omega_real,double* omega_imag) 
-{
-	convolve_z_fftpack(n, inout, omega_real, omega_imag);
-}
-
-extern "C" void init_convolution_kernel(int n,double* omega, int d,
-			     double (*kernel_func)(int),
-			     int zero_nyquist) 
-{
-	init_convolution_kernel_fftpack(n, omega, d, kernel_func, zero_nyquist);
-}
+        GEN_CONVOLVE_API(fftpack)
 #endif
 
 #endif
