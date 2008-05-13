@@ -1,4 +1,4 @@
-# Last Change: Wed May 07 06:00 PM 2008 J
+# Last Change: Tue May 13 10:00 AM 2008 J
 # vim:syntax=python
 from os.path import join as pjoin
 
@@ -48,5 +48,5 @@ src = ['src/zfft.cxx','src/drfft.cxx','src/zrfft.c', 'src/zfftnd.cxx', 'fftpack.
 env.NumpyPythonExtension('_fftpack', src)
 
 # Build convolve
-src = ['src/convolve.c',  'convolve.pyf']
+src = ['src/convolve.cxx',  'convolve.pyf']
 env.NumpyPythonExtension('convolve', src)
