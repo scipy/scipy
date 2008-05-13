@@ -3,45 +3,7 @@
 
 from os.path import join
 
-def configuration(parent_package='',top_path=None):
-    from numpy.distutils.misc_util import Configuration
-    from numpy.distutils.system_info import get_info
-    config = Configuration('fftpack',parent_package, top_path)
-
-    backends = ['mkl', 'djbfft', 'fftw3', 'fftw2', 'fftpack']
-    info = dict([(k, False) for k in backends])
-
-    djbfft_info = {}
-    mkl_info = get_info('mkl')
-    if mkl_info:
-        mkl_info.setdefault('define_macros', []).append(('SCIPY_MKL_H', None))
-        fft_opt_info = mkl_info
-        info['mkl'] = True
-    else:
-        def has_optimized_backend():
-            # Take the first in the list
-            for b in ['fftw3', 'fftw2']:
-                tmp = get_info(b)
-                if tmp:
-                    opt = tmp
-                    info[b] = True
-                    return opt
-            return False
-
-        fft_opt_info = has_optimized_backend()
-        if not fft_opt_info:
-            info['fftpack'] = True
-
-        djbfft_info = get_info('djbfft')
-        if djbfft_info:
-            info['djbfft'] = True
-
-    config.add_data_dir('tests')
-    config.add_data_dir('benchmarks')
-
-    config.add_library('dfftpack',
-                       sources=[join('dfftpack','*.f')])
-
+def build_backends(config, opts, info, djbfft_info, fft_opt_info):
     # Build backends for fftpack and convolve
     backends_src = {}
     backends_src['djbfft'] = [join('src/djbfft/', i) for i in 
@@ -49,9 +11,9 @@ def configuration(parent_package='',top_path=None):
     backends_src['fftw3'] = [join('src/fftw3/', i) for i in 
                              ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx']]
     backends_src['fftw2'] = [join('src/fftw/', i) for i in 
-                             ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx']]
+                             ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx', 'convolve.cxx']]
     backends_src['fftpack'] = [join('src/fftpack/', i) for i in 
-                             ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx']]
+                             ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx', 'convolve.cxx']]
 
     libs = []
 
@@ -78,20 +40,71 @@ def configuration(parent_package='',top_path=None):
         build_backend('fftpack', [])
 
     libs.append('dfftpack')
+    return libs
+
+def get_available_backends():
+    from numpy.distutils.system_info import get_info
+    backends = ['mkl', 'djbfft', 'fftw3', 'fftw2', 'fftpack']
+    info = dict([(k, False) for k in backends])
+
+    djbfft_info = {}
+    mkl_info = get_info('mkl')
+    if mkl_info:
+        mkl_info.setdefault('define_macros', []).append(('SCIPY_MKL_H', None))
+        fft_opt_info = mkl_info
+        info['mkl'] = True
+    else:
+        def has_optimized_backend():
+            # Take the first in the list
+            for b in ['fftw3', 'fftw2']:
+                tmp = get_info(b)
+                if tmp:
+                    opt = tmp
+                    info[b] = True
+                    return opt
+            return {}
+
+        fft_opt_info = has_optimized_backend()
+        if not fft_opt_info:
+            info['fftpack'] = True
+
+        djbfft_info = get_info('djbfft')
+        if djbfft_info:
+            info['djbfft'] = True
+
+    return info, djbfft_info, fft_opt_info
+
+def configuration(parent_package='',top_path=None):
+    from numpy.distutils.misc_util import Configuration
+    config = Configuration('fftpack',parent_package, top_path)
+
+    info, djbfft_info, fft_opt_info = get_available_backends()
+    opts = [fft_opt_info]
+    if djbfft_info:
+        opts.append(djbfft_info)
+
+    libs = build_backends(config, opts, info, djbfft_info, fft_opt_info)
+
+    config.add_data_dir('tests')
+    config.add_data_dir('benchmarks')
+
+    config.add_library('dfftpack',
+                       sources=[join('dfftpack','*.f')])
 
     sources = ['fftpack.pyf', 'src/fftpack.cxx', 'src/zrfft.c']
 
+    # Build the python extensions
     config.add_extension('_fftpack',
         sources=sources,
         libraries = libs,
-        extra_info=[fft_opt_info, djbfft_info],
+        extra_info = opts,
         include_dirs = ['src'],
     )
 
     config.add_extension('convolve',
         sources = ['convolve.pyf', 'src/convolve.cxx'],
         libraries = libs,
-        extra_info = [fft_opt_info, djbfft_info],
+        extra_info = opts,
         include_dirs = ['src'],
     )
     return config
