@@ -1,5 +1,5 @@
 /*
- * Last Change: Sun May 11 09:00 PM 2008 J
+ * Last Change: Tue May 13 02:00 PM 2008 J
  *
  * FFTW2 implementation
  *
@@ -7,7 +7,11 @@
  */
 #include <new>
 
+#include <rfftw.h>
+#include <fftw.h>
+
 #include "cycliccache.h"
+#include "api.h"
 
 using namespace fft;
 
@@ -101,7 +105,7 @@ int RFFTWCache::compute(double* inout) const
 
 CacheManager<RFFTWCacheId, RFFTWCache> rfftw_cmgr(10);
 
-static void drfft_fftw(double *inout, int n, int dir, 
+void drfft_fftw(double *inout, int n, int dir, 
                        int howmany, int normalize)
 {
         int i;

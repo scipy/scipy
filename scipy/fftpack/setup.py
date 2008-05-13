@@ -8,7 +8,7 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info
     config = Configuration('fftpack',parent_package, top_path)
 
-    backends = ['mkl', 'djbfft', 'fftw3', 'fftw2']
+    backends = ['mkl', 'djbfft', 'fftw3', 'fftw']
     info = dict([(k, False) for k in backends])
 
     djbfft_info = {}
@@ -19,7 +19,7 @@ def configuration(parent_package='',top_path=None):
         info['mkl'] = True
     else:
         # Take the first in the list
-        for b in ['fftw3', 'fftw2']:
+        for b in ['fftw3', 'fftw']:
             tmp = get_info(b)
             if tmp:
                 fft_opt_info = tmp
@@ -39,8 +39,10 @@ def configuration(parent_package='',top_path=None):
                               ['zfft.cxx', 'drfft.cxx']]
     backends_src['fftw3'] = [join('src/fftw3/', i) for i in 
                              ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx']]
+    backends_src['fftw'] = [join('src/fftw/', i) for i in 
+                             ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx']]
 
-    for b in ['djbfft', 'fftw3']:
+    for b in ['djbfft', 'fftw3', 'fftw']:
         if info[b]:
             config.add_library('%s_backend' % b, 
                     sources = backends_src[b], 

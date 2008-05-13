@@ -3,14 +3,29 @@
  *
  * Original code by Pearu Peaterson
  *
- * Last Change: Sun May 11 09:00 PM 2008 J
+ * Last Change: Tue May 13 02:00 PM 2008 J
  */
 #include <new>
 #include <cassert>
 
+#include <fftw.h>
+#include <rfftw.h>
+
 #include <cycliccache.h>
+#include "api.h"
 
 using namespace fft;
+
+static int equal_dims(int rank,int *dims1,int *dims2)
+{
+        int i;
+        for (i = 0; i < rank; ++i) {
+                if (dims1[i] != dims2[i]) {
+                        return 0;
+                }
+        }
+        return 1;
+}
 
 class NDFFTWCacheId {
         public:
@@ -146,7 +161,7 @@ NDFFTWCache::~NDFFTWCache()
 
 static CacheManager < NDFFTWCacheId, NDFFTWCache > fftwnd_cmgr(10);
 
-extern void zfftnd_fftw(complex_double * inout, int rank,
+void zfftnd_fftw(complex_double * inout, int rank,
 		       int *dims, int direction, int howmany,
 		       int normalize)
 {

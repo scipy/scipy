@@ -1,6 +1,10 @@
 #include <new>
 
+#include <rfftw.h>
+#include <fftw.h>
+
 #include "cycliccache.h"
+#include "api.h"
 
 using namespace fft;
 
@@ -64,7 +68,7 @@ FFTWCache::~FFTWCache()
 
 CacheManager<FFTWCacheId, FFTWCache> fftw_cmgr(10);
 
-extern void zfft_fftw(complex_double * inout, int n,
+void zfft_fftw(complex_double * inout, int n,
 		      int dir, int howmany, int normalize)
 {
 	int i;

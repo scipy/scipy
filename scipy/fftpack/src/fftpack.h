@@ -57,8 +57,6 @@ extern int ispow2le2e13(int n);
 
 #ifdef SCIPY_FFTW_H
 #define WITH_FFTW
-#include <fftw.h>
-#include <rfftw.h>
 #endif
 
 #if defined(NO_APPEND_FORTRAN)
