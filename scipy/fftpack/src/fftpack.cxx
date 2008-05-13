@@ -24,19 +24,10 @@ extern "C" void zfftnd(complex_double * inout, int rank,\
 }
 
 
-/* ************** Definition of backend specific functions ********* */
-
 /*
- * To add a backend :
- *  - create a file drfft_name.c, where you define a function drfft_name where
- *  name is the name of your backend. If you do not use the GEN_CACHE macro,
- *  you will need to define a function void destroy_drname_caches(void), 
- *  which can do nothing
- *  - in drfft.c, include the drfft_name.c file, and add the 3 following lines
- *  just after it:
- *  #ifndef WITH_DJBFFT
- *      GEN_PUBLIC_API(name)
- *  #endif
+ * Each backend define public functions in the backend specific api.h file, and
+ * depending on the options, we set the function called by the python extension
+ * to a backend specific one.
  */
 
 #ifdef WITH_FFTW3
