@@ -40,14 +40,13 @@ def configuration(parent_package='',top_path=None):
     backends_src['fftw3'] = [join('src/fftw3/', i) for i in 
                              ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx']]
 
-    for b in ['djbfft']:
+    for b in ['djbfft', 'fftw3']:
         if info[b]:
             config.add_library('%s_backend' % b, 
                     sources = backends_src[b], 
                     include_dirs = ['src', djbfft_info['include_dirs'],
                                     fft_opt_info['include_dirs']])
 
-        
     sources = ['fftpack.pyf', 'src/fftpack.cxx', 'src/zrfft.c']
 
     config.add_extension('_fftpack',

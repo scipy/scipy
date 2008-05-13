@@ -1,5 +1,5 @@
 /*
- * Last Change: Tue May 13 12:00 PM 2008 J
+ * Last Change: Tue May 13 02:00 PM 2008 J
  *
  * RFFTW3 implementation
  *
@@ -9,7 +9,10 @@
 #include <new>
 #include <cassert>
 
+#include <fftw3.h>
+
 #include "common.h"
+#include "api.h"
 
 using namespace fft;
 
@@ -88,7 +91,7 @@ RFFTW3Cache::~RFFTW3Cache()
 
 static CacheManager<FFTW3CacheId, RFFTW3Cache> drfftw3_cmgr(10);
 
-static void drfft_fftw3(double *inout, int n, int direction, int
+void drfft_fftw3(double *inout, int n, int direction, int
 			howmany, int normalize)
 {
 	int i;

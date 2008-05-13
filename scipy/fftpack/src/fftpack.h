@@ -13,7 +13,9 @@
 typedef struct {double r,i;} complex_double;
 typedef struct {float r,i;} complex_float;
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 void init_convolution_kernel(int n,double* omega, int d, 
 			     double (*kernel_func)(int),
 			     int zero_nyquist);
@@ -27,7 +29,9 @@ void zfft_fftpack(complex_double * inout,
 void zfftnd_fftpack(complex_double * inout, int rank,
 			   int *dims, int direction, int howmany,
 			   int normalize);
+#ifdef __cplusplus
 };
+#endif
 
 extern int ispow2le2e30(int n);
 extern int ispow2le2e13(int n);
@@ -43,7 +47,6 @@ extern int ispow2le2e13(int n);
 
 #ifdef SCIPY_FFTW3_H
 #define WITH_FFTW3
-#include <fftw3.h>
 #endif
 
 #ifdef SCIPY_DFFTW_H

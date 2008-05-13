@@ -1,7 +1,10 @@
 #include <new>
 #include <cassert>
 
+#include <fftw3.h>
+
 #include "common.h"
+#include "api.h"
 
 using namespace fft;
 
@@ -62,7 +65,7 @@ FFTW3Cache::~FFTW3Cache()
 
 static CacheManager<FFTW3CacheId, FFTW3Cache> zfftw3_cmgr(10);
 
-static void zfft_fftw3(complex_double * inout, int n, int dir, int howmany, 
+void zfft_fftw3(complex_double * inout, int n, int dir, int howmany, 
                        int normalize)
 {
 	fftw_complex *ptr = (fftw_complex*)inout;

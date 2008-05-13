@@ -3,12 +3,15 @@
  *
  * Original code by Pearu Peaterson
  *
- * Last Change: Tue May 13 12:00 PM 2008 J
+ * Last Change: Tue May 13 02:00 PM 2008 J
  */
 #include <new>
 #include <cassert>
 
+#include <fftw3.h>
+
 #include "common.h"
+#include "api.h"
 
 using namespace fft;
 
