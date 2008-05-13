@@ -1,5 +1,5 @@
-#ifndef _SCIPYFFT_FFTW_COMMON_H_
-#define _SCIPYFFT_FFTW_COMMON_H_
+#ifndef _SCIPYFFT_FFTW3_COMMON_H_
+#define _SCIPYFFT_FFTW3_COMMON_H_
 
 #include "cycliccache.h"
 
