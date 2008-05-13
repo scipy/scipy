@@ -79,8 +79,7 @@ GEN_ZFFTND_API(fftpack)
  * above) for non 2^n * size 
  */
 #ifdef WITH_DJBFFT
-    #include "djbfft/drfft.cxx"
-    #include "djbfft/zfft.cxx"
+    #include "djbfft/api.h"
     GEN_DRFFT_API(djbfft)
     GEN_ZFFT_API(djbfft)
 #endif
