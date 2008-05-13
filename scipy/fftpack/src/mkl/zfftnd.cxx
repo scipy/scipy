@@ -3,7 +3,7 @@
  *
  * Original code by David M. Cooke
  *
- * Last Change: Sun May 11 09:00 PM 2008 J
+ * Last Change: Tue May 13 12:00 PM 2008 J
  */
 #include <new>
 
@@ -155,7 +155,7 @@ long* NDMKLCache::convert_dims(int n, int *dims) const
         return ndim;
 }
 
-static CacheManager < NDMKLCacheId, NDMKLCache > mkl_cmgr(10);
+static CacheManager < NDMKLCacheId, NDMKLCache > ndmkl_cmgr(10);
 
 extern void zfftnd_mkl(complex_double * inout, int rank,
 		       int *dims, int direction, int howmany,
@@ -170,7 +170,7 @@ extern void zfftnd_mkl(complex_double * inout, int rank,
                 sz *= dims[i];
         }
 
-        cache = mkl_cmgr.get_cache(NDMKLCacheId(rank, dims));
+        cache = ndmkl_cmgr.get_cache(NDMKLCacheId(rank, dims));
         switch(direction) {
                 case 1:
                         for (i = 0; i < howmany; ++i, ptr += sz) {

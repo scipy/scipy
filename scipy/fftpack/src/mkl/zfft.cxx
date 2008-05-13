@@ -50,7 +50,7 @@ int MKLCache::compute_backward(complex_double *inout) const
         return 0;
 }
 
-CacheManager<MKLCacheId, MKLCache> mkl_cmgr(10);
+CacheManager<MKLCacheId, MKLCache> zmkl_cmgr(10);
 
 static void zfft_mkl(complex_double * inout,
 		 int n, int direction, int howmany, int normalize)
@@ -59,7 +59,7 @@ static void zfft_mkl(complex_double * inout,
 	complex_double *ptr = inout;
         MKLCache *cache;
 
-        cache = mkl_cmgr.get_cache(MKLCacheId(n));
+        cache = zmkl_cmgr.get_cache(MKLCacheId(n));
 
 	switch (direction) {
 
