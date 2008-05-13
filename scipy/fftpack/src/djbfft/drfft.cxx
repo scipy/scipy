@@ -1,5 +1,5 @@
 /*
- * Last Change: Wed Aug 01 08:00 PM 2007 J
+ * Last Change: Tue May 13 12:00 PM 2008 J
  *
  * Original code by Pearu Peterson.
  */
@@ -129,7 +129,7 @@ int RDJBFFTCache::compute_backward(double *inout, int normalize) const
 static CacheManager<DJBFFTCacheId, RDJBFFTCache> rdjbfft_cmgr(10);
 
 /**************** ZFFT function **********************/
-static void drfft_djbfft(double * inout,
+void drfft_djbfft(double * inout,
 			 int n, int direction, int howmany, int normalize)
 {
 	int i;

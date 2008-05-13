@@ -162,7 +162,7 @@ int DJBFFTCache::normalize(complex_double *ptr) const
 static CacheManager<DJBFFTCacheId, DJBFFTCache> djbfft_cmgr(10);
 
 /**************** ZFFT function **********************/
-static void zfft_djbfft(complex_double * inout,
+void zfft_djbfft(complex_double * inout,
 		 int n, int direction, int howmany, int normalize)
 {
 	int i;
