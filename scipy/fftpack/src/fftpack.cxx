@@ -39,10 +39,6 @@ extern "C" void zfftnd(complex_double * inout, int rank,\
  *  #endif
  */
 
-#include "fftpack/drfft.cxx"
-#include "fftpack/zfftnd.cxx"
-#include "fftpack/zfft.cxx"
-
 #ifdef WITH_FFTW3
     #include "fftw3/drfft.cxx"
     #include "fftw3/zfft.cxx"

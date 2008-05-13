@@ -4,14 +4,15 @@
 #include <new>
 
 #include "cycliccache.h"
-
-namespace fft {
+#include "api.h"
 
 extern "C" {
 extern void F_FUNC(dfftf, DFFTF) (int *, double *, double *);
 extern void F_FUNC(dfftb, DFFTB) (int *, double *, double *);
 extern void F_FUNC(dffti, DFFTI) (int *, double *);
 };
+
+namespace fft {
 
 class RFFTPackCacheId : public CacheId {
         public:
