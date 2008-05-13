@@ -45,7 +45,7 @@ def configuration(parent_package='',top_path=None):
     # Build backends for fftpack and convolve
     backends_src = {}
     backends_src['djbfft'] = [join('src/djbfft/', i) for i in 
-                              ['zfft.cxx', 'drfft.cxx']]
+                              ['zfft.cxx', 'drfft.cxx', 'convolve.cxx']]
     backends_src['fftw3'] = [join('src/fftw3/', i) for i in 
                              ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx']]
     backends_src['fftw'] = [join('src/fftw/', i) for i in 
@@ -62,6 +62,14 @@ def configuration(parent_package='',top_path=None):
                 include_dirs = ['src'] + [i['include_dirs'] for i in opts])
         libs.append(libname)
 
+    # NOTE: ORDER MATTERS !!!!!! The order in the libs list matters: don't
+    # change anything here if you don't know what you are doing, better ask the
+    # scipy-dev ML. If libfoo1 depends on libfoo2, -lfoo1 -lfoo2 works, but
+    # -lfoo2 -lfoo1 won't (and you don't know it at runtime, only at load
+    # time).
+    if info['djbfft']:
+        build_backend('djbfft', [djbfft_info])
+
     for b in ['fftw3', 'fftw']:
         if info[b]:
             build_backend(b, [djbfft_info, fft_opt_info])
@@ -69,12 +77,10 @@ def configuration(parent_package='',top_path=None):
     if info['fftpack']:
         build_backend('fftpack', [])
 
-    if info['djbfft']:
-        build_backend('djbfft', [djbfft_info])
+    libs.append('dfftpack')
 
     sources = ['fftpack.pyf', 'src/fftpack.cxx', 'src/zrfft.c']
 
-    libs.append('dfftpack')
     config.add_extension('_fftpack',
         sources=sources,
         libraries = libs,
@@ -83,7 +89,7 @@ def configuration(parent_package='',top_path=None):
     )
 
     config.add_extension('convolve',
-        sources = ['convolve.pyf','src/convolve.cxx'],
+        sources = ['convolve.pyf', 'src/convolve.cxx'],
         libraries = libs,
         extra_info = [fft_opt_info, djbfft_info],
         include_dirs = ['src'],
