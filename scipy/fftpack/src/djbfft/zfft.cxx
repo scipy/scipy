@@ -3,8 +3,10 @@
 *
 * zfft_def is the function * used for size different than 2^N
 */
+#include <new>
 
 #include "common.h"
+#include "api.h"
 
 #ifdef WITH_FFTWORK
 #define zfft_def zfft_fftwork
@@ -15,6 +17,8 @@
 #else
 #define zfft_def zfft_fftpack
 #endif
+
+using namespace fft;
 
 class DJBFFTCache: public Cache<DJBFFTCacheId> {
         public:

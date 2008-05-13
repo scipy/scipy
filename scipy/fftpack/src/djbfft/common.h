@@ -3,8 +3,6 @@
 
 #include <cycliccache.h>
 
-#include "api.h"
-
 namespace fft {
 
 class DJBFFTCacheId : public CacheId {

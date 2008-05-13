@@ -8,15 +8,25 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info
     config = Configuration('fftpack',parent_package, top_path)
 
+    backends = ['mkl', 'djbfft', 'fftw3', 'fftw2']
+    info = dict([(k, False) for k in backends])
+
     djbfft_info = {}
     mkl_info = get_info('mkl')
     if mkl_info:
         mkl_info.setdefault('define_macros', []).append(('SCIPY_MKL_H', None))
         fft_opt_info = mkl_info
+        info['mkl'] = True
     else:
-        fft_opt_info = get_info('fftw3') or get_info('fftw2') \
-                        or get_info('dfftw')
+        # Take the first in the list
+        for b in ['fftw3', 'fftw2']:
+            tmp = get_info(b)
+            if tmp:
+                fft_opt_info = tmp
+                info[b] = True
+                break
         djbfft_info = get_info('djbfft')
+        info['djbfft'] = True
 
     config.add_data_dir('tests')
     config.add_data_dir('benchmarks')
@@ -24,6 +34,20 @@ def configuration(parent_package='',top_path=None):
     config.add_library('dfftpack',
                        sources=[join('dfftpack','*.f')])
 
+    backends_src = {}
+    backends_src['djbfft'] = [join('src/djbfft/', i) for i in 
+                              ['zfft.cxx', 'drfft.cxx']]
+    backends_src['fftw3'] = [join('src/fftw3/', i) for i in 
+                             ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx']]
+
+    for b in ['djbfft']:
+        if info[b]:
+            config.add_library('%s_backend' % b, 
+                    sources = backends_src[b], 
+                    include_dirs = ['src', djbfft_info['include_dirs'],
+                                    fft_opt_info['include_dirs']])
+
+        
     sources = ['fftpack.pyf', 'src/fftpack.cxx', 'src/zrfft.c']
 
     config.add_extension('_fftpack',

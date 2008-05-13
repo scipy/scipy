@@ -1,5 +1,5 @@
 /*
- * Last Change: Tue May 13 12:00 PM 2008 J
+ * Last Change: Tue May 13 02:00 PM 2008 J
  *
  * Original code by Pearu Peterson.
  */
@@ -14,6 +14,7 @@
 #include <cassert>
 
 #include "common.h"
+#include "api.h"
 
 #ifdef WITH_FFTW3
 #define drfft_def drfft_fftw3
