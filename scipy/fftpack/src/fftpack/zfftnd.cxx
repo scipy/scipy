@@ -3,9 +3,11 @@
  *
  * Original code by Pearu Peaterson
  *
- * Last Change: Sun May 11 09:00 PM 2008 J
+ * Last Change: Tue May 13 02:00 PM 2008 J
  */
 #include <new>
+
+#include "api.h"
 
 #include "cycliccache.h"
 

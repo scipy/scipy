@@ -1,5 +1,7 @@
 #include <new>
 
+#include "api.h"
+
 #include "cycliccache.h"
 
 extern "C" {
@@ -68,7 +70,7 @@ int FFTPackCache::compute_backward(complex_double *inout) const
 
 static CacheManager<FFTPackCacheId, FFTPackCache> fftpack_cmgr(10);
 
-static void zfft_fftpack(complex_double * inout,
+void zfft_fftpack(complex_double * inout,
 			 int n, int direction, int howmany, int normalize)
 {
 	int i;

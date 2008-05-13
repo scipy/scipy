@@ -1,17 +1,19 @@
 /*
- * Last Change: Mon May 12 10:00 PM 2008 J
+ * Last Change: Tue May 13 02:00 PM 2008 J
  *
  * FFTPACK implementation
  *
  * Original code by Pearu Peterson.
  */
+#include "api.h"
+
 #include "common.h"
 
 using namespace fft;
 
 static CacheManager<RFFTPackCacheId, RFFTPackCache> rfftpack_cmgr(10);
 
-static void drfft_fftpack(double *inout, int n, int direction, int howmany,
+void drfft_fftpack(double *inout, int n, int direction, int howmany,
 			  int normalize)
 {
         int i;
