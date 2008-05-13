@@ -67,7 +67,7 @@ int DFFTPackCache::convolve_z(double* inout, double* omega_real,
 
 static CacheManager<RFFTPackCacheId, DFFTPackCache> dfftpack_cmgr(20);
 
-static void convolve_fftpack(int n,double* inout,double* omega,int swap_real_imag) 
+void convolve_fftpack(int n,double* inout,double* omega,int swap_real_imag) 
 {
         DFFTPackCache* cache;
 
@@ -75,7 +75,7 @@ static void convolve_fftpack(int n,double* inout,double* omega,int swap_real_ima
         cache->convolve(inout, omega, swap_real_imag);
 }
 
-static void convolve_z_fftpack(int n,double* inout,double* omega_real,double* omega_imag) 
+void convolve_z_fftpack(int n,double* inout,double* omega_real,double* omega_imag) 
 {
         DFFTPackCache* cache;
 

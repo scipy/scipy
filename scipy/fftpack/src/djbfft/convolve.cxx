@@ -2,6 +2,7 @@
 #include <cassert>
 
 #include "common.h"
+#include "api.h"
 
 #ifdef WITH_FFTW
 #define convolve_def convolve_fftw
@@ -172,13 +173,8 @@ int DDJBFFTCache::convolve_z(double *inout, double *omega_real, double *omega_im
 
 static CacheManager <DJBFFTCacheId, DDJBFFTCache> ddjbfft_cmgr(20);
 
-/* stub */
-extern "C" void destroy_convolve_cache()
-{
-}
-
 /**************** convolve **********************/
-static void convolve_djbfft(int n, double *inout, double *omega, int swap_real_imag)
+static void do_convolve_djbfft(int n, double *inout, double *omega, int swap_real_imag)
 {
         DDJBFFTCache *cache;
 
@@ -186,8 +182,7 @@ static void convolve_djbfft(int n, double *inout, double *omega, int swap_real_i
         cache->convolve(inout, omega, swap_real_imag);
 }
 
-extern "C"
-void convolve(int n, double *inout, double *omega, int swap_real_imag)
+void convolve_djbfft(int n, double *inout, double *omega, int swap_real_imag)
 {
 	bool use_def = true;
 
@@ -209,14 +204,14 @@ void convolve(int n, double *inout, double *omega, int swap_real_imag)
 	}
 
 	if (!use_def) {
-		convolve_djbfft(n, inout, omega, swap_real_imag);
+		do_convolve_djbfft(n, inout, omega, swap_real_imag);
 	} else {
 		convolve_def(n, inout, omega, swap_real_imag);
 	}
 }
 
 /**************** convolve **********************/
-static void convolve_z_djbfft(int n, double *inout, double *omega_real,
+static void do_convolve_z_djbfft(int n, double *inout, double *omega_real,
 		    double *omega_imag)
 {
         DDJBFFTCache *cache;
@@ -225,8 +220,7 @@ static void convolve_z_djbfft(int n, double *inout, double *omega_real,
         cache->convolve_z(inout, omega_real, omega_imag);
 }
 
-extern "C"
-    void convolve_z(int n, double *inout, double *omega_real,
+void convolve_z_djbfft(int n, double *inout, double *omega_real,
 		    double *omega_imag)
 {
 	bool use_def = true;
@@ -251,11 +245,11 @@ extern "C"
 	if (use_def) {
 		convolve_z_def(n, inout, omega_real, omega_imag);
 	} else {
-		convolve_z_djbfft(n, inout, omega_real, omega_imag);
+		do_convolve_z_djbfft(n, inout, omega_real, omega_imag);
 	}
 }
 
-static void init_convolution_kernel_djbfft(int n, double *omega, int d,
+void do_init_convolution_kernel_djbfft(int n, double *omega, int d,
 				 double (*kernel_func) (int),
 				 int zero_nyquist)
 {
@@ -312,8 +306,7 @@ static void init_convolution_kernel_djbfft(int n, double *omega, int d,
 	free(f);
 }
 
-extern "C"
-    void init_convolution_kernel(int n, double *omega, int d,
+void init_convolution_kernel_djbfft(int n, double *omega, int d,
 				 double (*kernel_func) (int),
 				 int zero_nyquist)
 {
@@ -345,7 +338,7 @@ extern "C"
 		init_convolution_kernel_def(n, omega, d, kernel_func,
 				zero_nyquist);
 	} else {
-		init_convolution_kernel_djbfft(n, omega, d, kernel_func,
+		do_init_convolution_kernel_djbfft(n, omega, d, kernel_func,
 				zero_nyquist);
 	}
 }

@@ -16,11 +16,11 @@ typedef struct {float r,i;} complex_float;
 #ifdef __cplusplus
 extern "C" {
 #endif
-void init_convolution_kernel(int n,double* omega, int d, 
+void init_convolution_kernel_fftpack(int n,double* omega, int d, 
 			     double (*kernel_func)(int),
 			     int zero_nyquist);
-void convolve(int n,double* inout,double* omega,int swap_real_imag);
-void convolve_z(int n,double* inout,double* omega_real,double* omega_imag);
+void convolve_fftpack(int n,double* inout,double* omega,int swap_real_imag);
+void convolve_z_fftpack(int n,double* inout,double* omega_real,double* omega_imag);
 
 void drfft_fftpack(double *inout, int n, int direction, int howmany,
 			  int normalize);

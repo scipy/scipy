@@ -82,4 +82,5 @@ GEN_ZFFTND_API(fftpack)
     #include "djbfft/api.h"
     GEN_DRFFT_API(djbfft)
     GEN_ZFFT_API(djbfft)
+    GEN_ZFFTND_API(fftpack)
 #endif
