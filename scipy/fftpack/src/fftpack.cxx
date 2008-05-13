@@ -40,24 +40,21 @@ extern "C" void zfftnd(complex_double * inout, int rank,\
  */
 
 #ifdef WITH_FFTW3
-    #include "fftw3/drfft.cxx"
-    #include "fftw3/zfft.cxx"
-    #include "fftw3/zfftnd.cxx"
+    #include "fftw3/api.h"
     #ifndef WITH_DJBFFT
         GEN_ZFFT_API(fftw3)
         GEN_DRFFT_API(fftw3)
         GEN_ZFFTND_API(fftw3)
     #endif
 #elif defined WITH_FFTW
-    #include "fftw/drfft.cxx"
-    #include "fftw/zfft.cxx"
-    #include "fftw/zfftnd.cxx"
+    #include "fftw/api.h"
     #ifndef WITH_DJBFFT
         GEN_ZFFT_API(fftw)
         GEN_DRFFT_API(fftw)
         GEN_ZFFTND_API(fftw)
     #endif
 #elif defined WITH_MKL
+#error MKL backend not supported !
     #include "mkl/zfft.cxx"
     #include "mkl/zfftnd.cxx"
     #ifndef WITH_DJBFFT
