@@ -43,6 +43,7 @@ def build_backends(config, opts, info, djbfft_info, fft_opt_info):
     return libs
 
 def get_available_backends():
+    # XXX: This whole thing is just a big mess...
     from numpy.distutils.system_info import get_info
     backends = ['mkl', 'djbfft', 'fftw3', 'fftw2', 'fftpack']
     info = dict([(k, False) for k in backends])
@@ -54,19 +55,17 @@ def get_available_backends():
         fft_opt_info = mkl_info
         info['mkl'] = True
     else:
-        def has_optimized_backend():
-            # Take the first in the list
-            for b in ['fftw3', 'fftw2']:
-                tmp = get_info(b)
-                if tmp:
-                    opt = tmp
-                    info[b] = True
-                    return opt
-            return {}
-
-        fft_opt_info = has_optimized_backend()
-        if not fft_opt_info:
+        fft_opt_info = get_info('fftw3')
+        if fft_opt_info:
+            info['fftw3'] = True
+            # We need fftpack for convolve (no fftw3 backend)
             info['fftpack'] = True
+        else:
+            fft_opt_info = get_info('fftw2')
+            if not fft_opt_info:
+                info['fftpack'] = True
+            else:
+                info['fftw2'] = True
 
         djbfft_info = get_info('djbfft')
         if djbfft_info:
