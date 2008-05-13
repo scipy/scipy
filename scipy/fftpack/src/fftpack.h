@@ -33,9 +33,6 @@ void zfftnd_fftpack(complex_double * inout, int rank,
 };
 #endif
 
-extern int ispow2le2e30(int n);
-extern int ispow2le2e13(int n);
-
 #ifdef SCIPY_DJBFFT_H
 #define WITH_DJBFFT
 #endif
@@ -46,12 +43,6 @@ extern int ispow2le2e13(int n);
 
 #ifdef SCIPY_FFTW3_H
 #define WITH_FFTW3
-#endif
-
-#ifdef SCIPY_DFFTW_H
-#define WITH_FFTW
-#include <dfftw.h>
-#include <drfftw.h>
 #endif
 
 #ifdef SCIPY_FFTW_H
