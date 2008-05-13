@@ -43,6 +43,19 @@ extern "C" void zfftnd(complex_double * inout, int rank,\
 #include "fftpack/zfftnd.cxx"
 #include "fftpack/zfft.cxx"
 
+#if defined(WITH_FFTW) || defined(WITH_MKL)
+static int equal_dims(int rank,int *dims1,int *dims2)
+{
+        int i;
+        for (i = 0; i < rank; ++i) {
+                if (dims1[i] != dims2[i]) {
+                        return 0;
+                }
+        }
+        return 1;
+}
+#endif
+
 #ifdef WITH_FFTW3
     #include "fftw3/drfft.cxx"
     #include "fftw3/zfft.cxx"
