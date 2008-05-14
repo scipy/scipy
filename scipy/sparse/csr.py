@@ -363,7 +363,8 @@ class csr_matrix(_cs_matrix):
         check_bounds( j0, j1, N )
 
         indptr, indices, data = get_csr_submatrix( M, N, \
-                self.indptr, self.indices, self.data, i0, i1, j0, j1 )
+                self.indptr, self.indices, self.data, \
+                int(i0), int(i1), int(j0), int(j1) )
 
         shape =  (i1 - i0, j1 - j0)
 

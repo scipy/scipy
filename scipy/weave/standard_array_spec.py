@@ -41,7 +41,7 @@ public:
         if (!PyArray_EquivTypenums(arr_type, numeric_type))
         {
 
-        char* type_names[23] = {"bool", "byte", "ubyte","short", "ushort",
+        const char* type_names[23] = {"bool", "byte", "ubyte","short", "ushort",
                                 "int", "uint", "long", "ulong", "longlong", "ulonglong",
                                 "float", "double", "longdouble", "cfloat", "cdouble",
                                 "clongdouble", "object", "string", "unicode", "void", "ntype",
@@ -66,7 +66,7 @@ public:
         }
         if (!PyArray_EquivTypenums(arr_type, numeric_type))
         {
-            char* type_names[23] = {"bool", "byte", "ubyte","short", "ushort",
+            const char* type_names[23] = {"bool", "byte", "ubyte","short", "ushort",
                                     "int", "uint", "long", "ulong", "longlong", "ulonglong",
                                     "float", "double", "longdouble", "cfloat", "cdouble",
                                     "clongdouble", "object", "string", "unicode", "void", "ntype",

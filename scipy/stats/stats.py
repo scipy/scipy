@@ -1661,7 +1661,7 @@ def linregress(*args):
     prob = betai(0.5*df,0.5,df/(df+t*t))
     slope = r_num / ss(xm)
     intercept = ymean - slope*xmean
-    sterrest = np.sqrt(1-r*r)*samplestd(y)
+    sterrest = np.sqrt((1-r*r)*ss(y) / ss(x) / df)
     return slope, intercept, r, prob, sterrest
 
 
