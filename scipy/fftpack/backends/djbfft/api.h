@@ -1,7 +1,7 @@
 #ifndef _SCIPY_FFTPACK_DJBFFT_API_H_
 #define _SCIPY_FFTPACK_DJBFFT_API_H_
 
-#include "fftpack.h"
+#include "misc.h"
 
 /*
  * straight FFT api
