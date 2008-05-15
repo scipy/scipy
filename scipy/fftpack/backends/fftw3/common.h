@@ -2,6 +2,7 @@
 #define _SCIPYFFT_FFTW3_COMMON_H_
 
 #include "cycliccache.h"
+#include "misc.h"
 
 #include <stddef.h>
 

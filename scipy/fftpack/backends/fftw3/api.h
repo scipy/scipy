@@ -1,8 +1,6 @@
 #ifndef _SCIPY_FFTPACK_FFTW3_API_H_
 #define _SCIPY_FFTPACK_FFTW3_API_H_
 
-#include "fftpack.h"
-
 /*
  * straight FFT api
  */
