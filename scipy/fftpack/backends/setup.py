@@ -9,7 +9,7 @@ def build_backends(config):
     backends_src = {}
     backends_src['djbfft'] = [join('djbfft/', i) for i in 
                               ['zfft.cxx', 'drfft.cxx', 'convolve.cxx']]
-    backends_src['fftw3'] = [join('fftw3/', i) for i in 
+    backends_src['fftw3'] = [join('fftw3/src', i) for i in 
                              ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx']]
     backends_src['fftw2'] = [join('fftw/', i) for i in 
                              ['zfft.cxx', 'drfft.cxx', 'zfftnd.cxx', 'convolve.cxx']]
@@ -24,8 +24,9 @@ def build_backends(config):
         if info:
             config.add_library("%s_backend" % backend,
                                sources = backends_src[backend],
-                               include_dirs = ["include",
+                               include_dirs = ["common",
                                                info['include_dirs']])
+            config.add_extension("_%s" % backend, sources = [join(backend, "%s.pyf" % backend)], extra_info = info, libraries = ["%s_backend" % backend])
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
