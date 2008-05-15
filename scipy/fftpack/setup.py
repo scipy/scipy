@@ -92,7 +92,7 @@ def configuration(parent_package='',top_path=None):
 
     sources = ['fftpack.pyf', 'src/zrfft.c']
     for s in ["zfft.cxx", "zfftnd.cxx", "drfft.cxx"]:
-	sources.append(join('src/fftpack', s))
+        sources.append(join('src/fftpack', s))
 
     # Build the python extensions
     config.add_extension('_fftpack',
