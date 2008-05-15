@@ -10,25 +10,7 @@ def configuration(parent_package='',top_path=None):
     config.add_data_dir('tests')
     config.add_data_dir('benchmarks')
 
-    config.add_library('dfftpack',
-                       sources=[join('dfftpack','*.f')])
-
-    sources = ['fftpack.pyf', 'src/zrfft.c']
-    for s in ["zfft.cxx", "zfftnd.cxx", "drfft.cxx"]:
-        sources.append(join('src/fftpack', s))
-
-    # Build the python extensions
-    config.add_extension('_fftpack',
-        sources=sources,
-        libraries = ["dfftpack"],
-        include_dirs = ['src'],
-    )
-
-    config.add_extension('convolve',
-        sources = ['convolve.pyf', 'src/fftpack/convolve.cxx'],
-        libraries = ["dfftpack"],
-        include_dirs = ['src'],
-    )
+    config.add_subpackage('fftpack')
 
     # Build optional backends
     config.add_subpackage('backends')
