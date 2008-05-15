@@ -79,12 +79,12 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     if istype(tmp, numpy.complex128):
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
-        work_function = fftpack.zfft
+        work_function = fftpack.zfft_fftpack
     elif istype(tmp, numpy.complex64):
         raise NotImplementedError
     else:
         overwrite_x = 1
-        work_function = fftpack.zrfft
+        work_function = fftpack.zrfft_fftpack
 
     #return _raw_fft(tmp,n,axis,1,overwrite_x,work_function)
     if n is None:
@@ -117,12 +117,12 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
     if istype(tmp, numpy.complex128):
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
-        work_function = fftpack.zfft
+        work_function = fftpack.zfft_fftpack
     elif istype(tmp, numpy.complex64):
         raise NotImplementedError
     else:
         overwrite_x = 1
-        work_function = fftpack.zrfft
+        work_function = fftpack.zrfft_fftpack
 
     #return _raw_fft(tmp,n,axis,-1,overwrite_x,work_function)
     if n is None:
@@ -169,7 +169,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
     tmp = asarray(x)
     if not numpy.isrealobj(tmp):
         raise TypeError,"1st argument must be real sequence"
-    work_function = fftpack.drfft
+    work_function = fftpack.drfft_fftpack
     return _raw_fft(tmp,n,axis,1,overwrite_x,work_function)
 
 
@@ -213,7 +213,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
     tmp = asarray(x)
     if not numpy.isrealobj(tmp):
         raise TypeError,"1st argument must be real sequence"
-    work_function = fftpack.drfft
+    work_function = fftpack.drfft_fftpack
     return _raw_fft(tmp,n,axis,-1,overwrite_x,work_function)
 
 
@@ -285,12 +285,12 @@ def fftn(x, shape=None, axes=None, overwrite_x=0):
     if istype(tmp, numpy.complex128):
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
-        work_function = fftpack.zfftnd
+        work_function = fftpack.zfftnd_fftpack
     elif istype(tmp, numpy.complex64):
         raise NotImplementedError
     else:
         overwrite_x = 1
-        work_function = fftpack.zfftnd
+        work_function = fftpack.zfftnd_fftpack
     return _raw_fftnd(tmp,shape,axes,1,overwrite_x,work_function)
 
 
@@ -313,12 +313,12 @@ def ifftn(x, shape=None, axes=None, overwrite_x=0):
     if istype(tmp, numpy.complex128):
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
-        work_function = fftpack.zfftnd
+        work_function = fftpack.zfftnd_fftpack
     elif istype(tmp, numpy.complex64):
         raise NotImplementedError
     else:
         overwrite_x = 1
-        work_function = fftpack.zfftnd
+        work_function = fftpack.zfftnd_fftpack
     return _raw_fftnd(tmp,shape,axes,-1,overwrite_x,work_function)
 
 

@@ -13,7 +13,6 @@ Run tests if fftpack is not installed:
 import sys
 from scipy.testing import *
 from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft
-from scipy.fftpack import _fftpack as fftpack
 
 from numpy import arange, add, array, asarray, zeros, dot, exp, pi,\
      swapaxes, double, cdouble
@@ -118,10 +117,10 @@ class TestFft(TestCase):
         for i in range(2,14):
             n = 2**i
             x = range(n)
-            y = fftpack.zfft(x)
+            y = fft(x)
             y2 = numpy.fft.fft(x)
             assert_array_almost_equal(y,y2)
-            y = fftpack.zrfft(x)
+            y = fft(x)
             assert_array_almost_equal(y,y2)
 
 
@@ -145,10 +144,10 @@ class TestIfft(TestCase):
         for i in range(2,14):
             n = 2**i
             x = range(n)
-            y = fftpack.zfft(x,direction=-1)
+            y = ifft(x)
             y2 = numpy.fft.ifft(x)
             assert_array_almost_equal(y,y2)
-            y = fftpack.zrfft(x,direction=-1)
+            y = ifft(x)
             assert_array_almost_equal(y,y2)
 
     def test_random_complex(self):
@@ -189,7 +188,7 @@ class TestRfft(TestCase):
             for k in range(1,n/2):
                 y1[2*k-1] = y2[k].real
                 y1[2*k] = y2[k].imag
-            y = fftpack.drfft(x)
+            y = rfft(x)
             assert_array_almost_equal(y,y1)
 
 
@@ -221,7 +220,7 @@ class TestIrfft(TestCase):
                 x1[n-k] = x[2*k-1]-1j*x[2*k]
             x1[n/2] = x[-1]
             y1 = numpy_ifft(x1)
-            y = fftpack.drfft(x,direction=-1)
+            y = irfft(x)
             assert_array_almost_equal(y,y1)
 
     def test_random_real(self):
