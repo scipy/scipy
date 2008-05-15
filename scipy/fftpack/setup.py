@@ -84,33 +84,26 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('fftpack',parent_package, top_path)
 
-    info, djbfft_info, fft_opt_info = get_available_backends()
-    opts = [fft_opt_info]
-    if djbfft_info:
-        opts.append(djbfft_info)
-
-    libs = build_backends(config, opts, info, djbfft_info, fft_opt_info)
-
     config.add_data_dir('tests')
     config.add_data_dir('benchmarks')
 
     config.add_library('dfftpack',
                        sources=[join('dfftpack','*.f')])
 
-    sources = ['fftpack.pyf', 'src/fftpack.cxx', 'src/zrfft.c']
+    sources = ['fftpack.pyf', 'src/zrfft.c']
+    for s in ["zfft.cxx", "zfftnd.cxx", "drfft.cxx"]:
+	sources.append(join('src/fftpack', s))
 
     # Build the python extensions
     config.add_extension('_fftpack',
         sources=sources,
-        libraries = libs,
-        extra_info = opts,
+        libraries = ["dfftpack"],
         include_dirs = ['src'],
     )
 
     config.add_extension('convolve',
         sources = ['convolve.pyf', 'src/convolve.cxx'],
-        libraries = libs,
-        extra_info = opts,
+        libraries = ["dfftpack"],
         include_dirs = ['src'],
     )
     return config
