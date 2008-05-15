@@ -1191,7 +1191,7 @@ integer (the axis over which to operate).
     mn = np.expand_dims(mean(a,axis),axis)
     deviations = a - mn
     n = a.shape[axis]
-    vals = ss(deviations,axis)/(n-1.0)
+    vals = sum(abs(deviations)**2,axis)/(n-1.0)
     if bias:
         return vals * (n-1.0)/n
     else:
