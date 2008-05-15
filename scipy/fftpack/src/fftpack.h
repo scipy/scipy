@@ -6,9 +6,8 @@
 #ifndef FFTPACK_H
 #define FFTPACK_H
 
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
 
 typedef struct {double r,i;} complex_double;
 typedef struct {float r,i;} complex_float;
@@ -31,22 +30,6 @@ void zfftnd_fftpack(complex_double * inout, int rank,
 			   int normalize);
 #ifdef __cplusplus
 };
-#endif
-
-#ifdef SCIPY_DJBFFT_H
-#define WITH_DJBFFT
-#endif
-
-#ifdef SCIPY_MKL_H
-#define WITH_MKL
-#endif
-
-#ifdef SCIPY_FFTW3_H
-#define WITH_FFTW3
-#endif
-
-#ifdef SCIPY_FFTW_H
-#define WITH_FFTW
 #endif
 
 #if defined(NO_APPEND_FORTRAN)
