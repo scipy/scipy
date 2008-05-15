@@ -6,10 +6,7 @@ Author: Pearu Peterson, August 2002
 
 #include "fftpack.h"
 
-extern void drfft(double *inout, int n, int direction, int howmany,
-                  int normalize);
-
-extern void zrfft(complex_double * inout, int n, int direction,
+extern void zrfft_fftpack(complex_double * inout, int n, int direction,
                   int howmany, int normalize)
 {
     int i, j, k;
@@ -20,7 +17,7 @@ extern void zrfft(complex_double * inout, int n, int direction,
             *(ptr + 1) = *ptr;
             for (j = 2, k = 3; j < n; ++j, ++k)
                 *(ptr + k) = *(ptr + 2 * j);
-            drfft(ptr + 1, n, 1, 1, normalize);
+            drfft_fftpack(ptr + 1, n, 1, 1, normalize);
             *ptr = *(ptr + 1);
             *(ptr + 1) = 0.0;
             if (!(n % 2))
@@ -36,7 +33,7 @@ extern void zrfft(complex_double * inout, int n, int direction,
             *(ptr + 1) = (*ptr);
             for (j = 1, k = 2; j < n; ++j, ++k)
                 *(ptr + k) = (*(ptr + 2 * j));
-            drfft(ptr + 1, n, 1, 1, normalize);
+            drfft_fftpack(ptr + 1, n, 1, 1, normalize);
             *ptr = *(ptr + 1);
             *(ptr + 1) = 0.0;
             if (!(n % 2))

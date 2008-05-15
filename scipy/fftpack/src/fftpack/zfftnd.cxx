@@ -12,7 +12,7 @@
 #include "cycliccache.h"
 
 extern "C" {
-extern void zfft(complex_double * inout,
+extern void zfft_fftpack(complex_double * inout,
 		 int n, int direction, int howmany, int normalize);
 };
 
@@ -103,7 +103,7 @@ int NDFFTPackCache::compute(complex_double *inout, int sz, int *dims,
         complex_double *tmp = m_wsave;
         complex_double *ptr = inout;
 
-        zfft(inout, dims[rank - 1], direction, howmany * sz / dims[rank - 1],
+        zfft_fftpack(inout, dims[rank - 1], direction, howmany * sz / dims[rank - 1],
              normalize);
         prepare(dims);
 
@@ -116,7 +116,7 @@ int NDFFTPackCache::compute(complex_double *inout, int sz, int *dims,
                                 }
                         }
                         flatten(tmp, ptr, rank, m_iptr[axis], dims[axis], 0, m_iptr);
-                        zfft(tmp, dims[axis], direction, sz / dims[axis], normalize);
+                        zfft_fftpack(tmp, dims[axis], direction, sz / dims[axis], normalize);
                         flatten(ptr, tmp, rank, m_iptr[axis], dims[axis], 1, m_iptr);
                 }
         }

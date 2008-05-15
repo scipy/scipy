@@ -1,5 +1,9 @@
 #include "common.h"
 
+extern "C" void destroy_convolve_cache_fftpack(void)
+{
+}
+
 using namespace fft;
 
 class DFFTPackCache : public RFFTPackCache {

@@ -4,9 +4,9 @@
 python module _fftpack
     interface
 
-       subroutine zfft(x,n,direction,howmany,normalize)
+       subroutine zfft_fftpack(x,n,direction,howmany,normalize)
          ! y = fft(x[,n,direction,normalize,overwrite_x])
-         intent(c) zfft
+         intent(c) zfft_fftpack
          complex*16 intent(c,in,out,copy,out=y) :: x(*)
          integer optional,depend(x),intent(c,in) :: n=size(x)
          check(n>0) n
@@ -15,11 +15,11 @@ python module _fftpack
          integer optional,intent(c,in) :: direction = 1
          integer optional,intent(c,in),depend(direction) &
               :: normalize = (direction<0)
-       end subroutine zfft
+       end subroutine zfft_fftpack
 
-       subroutine drfft(x,n,direction,howmany,normalize)
+       subroutine drfft_fftpack(x,n,direction,howmany,normalize)
          ! y = drfft(x[,n,direction,normalize,overwrite_x])
-         intent(c) drfft
+         intent(c) drfft_fftpack
          real*8 intent(c,in,out,copy,out=y) :: x(*)
          integer optional,depend(x),intent(c,in) :: n=size(x)
          check(n>0&&n<=size(x)) n
@@ -28,11 +28,11 @@ python module _fftpack
          integer optional,intent(c,in) :: direction = 1
          integer optional,intent(c,in),depend(direction) &
               :: normalize = (direction<0)
-       end subroutine drfft
+       end subroutine drfft_fftpack
 
-       subroutine zrfft(x,n,direction,howmany,normalize)
+       subroutine zrfft_fftpack(x,n,direction,howmany,normalize)
          ! y = zrfft(x[,n,direction,normalize,overwrite_x])
-         intent(c) zrfft
+         intent(c) zrfft_fftpack
          complex*16 intent(c,in,out,overwrite,out=y) :: x(*)
          integer optional,depend(x),intent(c,in) :: n=size(x)
          check(n>0&&n<=size(x)) n
@@ -41,11 +41,11 @@ python module _fftpack
          integer optional,intent(c,in) :: direction = 1
          integer optional,intent(c,in),depend(direction) &
               :: normalize = (direction<0)
-       end subroutine zrfft
+       end subroutine zrfft_fftpack
 
-       subroutine zfftnd(x,r,s,direction,howmany,normalize,j)
+       subroutine zfftnd_fftpack(x,r,s,direction,howmany,normalize,j)
          ! y = zfftnd(x[,s,direction,normalize,overwrite_x])
-         intent(c) zfftnd
+         intent(c) zfftnd_fftpack
          complex*16 intent(c,in,out,copy,out=y) :: x(*)
          integer intent(c,hide),depend(x) :: r=old_rank(x)
          integer intent(c,hide) :: j=0
@@ -69,7 +69,7 @@ python module _fftpack
                   "inconsistency in x.shape and s argument"); &
                 } &
               }
-       end subroutine zfftnd
+       end subroutine zfftnd_fftpack
 
     end interface 
 end python module _fftpack

@@ -102,7 +102,7 @@ def configuration(parent_package='',top_path=None):
     )
 
     config.add_extension('convolve',
-        sources = ['convolve.pyf', 'src/convolve.cxx'],
+        sources = ['convolve.pyf', 'src/fftpack/convolve.cxx'],
         libraries = ["dfftpack"],
         include_dirs = ['src'],
     )
