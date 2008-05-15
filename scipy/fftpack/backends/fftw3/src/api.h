@@ -4,6 +4,7 @@
 /*
  * straight FFT api
  */
+extern "C" {
 void drfft_fftw3(double * inout, int n, int direction, int howmany, 
                   int normalize);
 
@@ -13,5 +14,6 @@ void zfft_fftw3(complex_double * inout,
 void zfftnd_fftw3(complex_double * inout, int rank,
 			 int *dims, int direction, int howmany,
 			 int normalize);
+};
 
 #endif
