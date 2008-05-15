@@ -106,6 +106,10 @@ def configuration(parent_package='',top_path=None):
         libraries = ["dfftpack"],
         include_dirs = ['src'],
     )
+
+    # Build optional backends
+    config.add_subpackage('backends')
+
     return config
 
 if __name__ == '__main__':
