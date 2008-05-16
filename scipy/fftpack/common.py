@@ -1,5 +1,7 @@
 import fftpack as _DEF_BACKEND
 
+# XXX: this will break for many configurations, e.g. loading
+# init_convolution_kernel of one backend, and convolve from another one...
 __all__ = ["zfft", "drfft", "zfftnd", "zrfft", "init_convolution_kernel",
            "convolve", "convolve_z", "destroy_convolve_cache"]
 
@@ -7,15 +9,16 @@ _FUNCS = dict([(name, None) for name in __all__])
 _FALLBACK = dict([(name, _DEF_BACKEND.__dict__[f]) for f in _FUNCS.keys()])
 
 def myimport(name):
-    mod = __import__(name)
-    comps = name.split('.')[1:]
-    for c in comps:
-        mod = getattr(mod, c)
-    return mod
+    """Load a fft backend from its name.
+    
+    Name should be fftw3, etc..."""
+    mod = __import__("scipy.fftpack.backends", fromlist = [name])
+    return mod.__dict__[name]
 
 def load_backend(name):
     try:
         mod = myimport(name)
+        print mod
         for f in _FUNCS.keys():
             try:
                 _FUNCS[f] = mod.__dict__[f]
@@ -28,7 +31,7 @@ def load_backend(name):
         for f in _FUNCS.keys():
             _FUNCS[f] = _DEF_BACKEND.__dict__[f]
 
-load_backend("fftpack.backends.fftw3")
+load_backend("fftw3")
 
 zfft = _FUNCS["zfft"]
 drfft = _FUNCS["drfft"]
