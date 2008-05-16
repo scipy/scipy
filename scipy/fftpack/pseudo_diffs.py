@@ -9,10 +9,10 @@ __all__ = ['diff',
            'shift']
 
 from numpy import pi, asarray, sin, cos, sinh, cosh, tanh, iscomplexobj
-import convolve
+import common as fftimpl
 
 import atexit
-atexit.register(convolve.destroy_convolve_cache_fftpack)
+atexit.register(fftimpl.destroy_convolve_cache)
 del atexit
 
 
@@ -60,11 +60,11 @@ def diff(x,order=1,period=None,
             if k:
                 return pow(c*k,order)
             return 0
-        omega = convolve.init_convolution_kernel_fftpack(n,kernel,d=order,
+        omega = fftimpl.init_convolution_kernel(n,kernel,d=order,
                                                  zero_nyquist=1)
         _cache[(n,order,c)] = omega
     overwrite_x = tmp is not x and not hasattr(x,'__array__')
-    return convolve.convolve_fftpack(tmp,omega,swap_real_imag=order%2,
+    return fftimpl.convolve(tmp,omega,swap_real_imag=order%2,
                              overwrite_x=overwrite_x)
 del _cache
 
@@ -110,10 +110,10 @@ def tilbert(x,h,period=None,
         def kernel(k,h=h):
             if k: return 1.0/tanh(h*k)
             return 0
-        omega = convolve.init_convolution_kernel_fftpack(n,kernel,d=1)
+        omega = fftimpl.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,h)] = omega
     overwrite_x = tmp is not x and not hasattr(x,'__array__')
-    return convolve.convolve_fftpack(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+    return fftimpl.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
 del _cache
 
 
@@ -146,10 +146,10 @@ def itilbert(x,h,period=None,
         def kernel(k,h=h):
             if k: return -tanh(h*k)
             return 0
-        omega = convolve.init_convolution_kernel_fftpack(n,kernel,d=1)
+        omega = fftimpl.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,h)] = omega
     overwrite_x = tmp is not x and not hasattr(x,'__array__')
-    return convolve.convolve_fftpack(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+    return fftimpl.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
 del _cache
 
 
@@ -183,10 +183,10 @@ def hilbert(x,
             if k>0: return 1.0
             elif k<0: return -1.0
             return 0.0
-        omega = convolve.init_convolution_kernel_fftpack(n,kernel,d=1)
+        omega = fftimpl.init_convolution_kernel(n,kernel,d=1)
         _cache[n] = omega
     overwrite_x = tmp is not x and not hasattr(x,'__array__')
-    return convolve.convolve_fftpack(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+    return fftimpl.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
 del _cache
 
 
@@ -242,10 +242,10 @@ def cs_diff(x, a, b, period=None,
         def kernel(k,a=a,b=b):
             if k: return -cosh(a*k)/sinh(b*k)
             return 0
-        omega = convolve.init_convolution_kernel_fftpack(n,kernel,d=1)
+        omega = fftimpl.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,a,b)] = omega
     overwrite_x = tmp is not x and not hasattr(x,'__array__')
-    return convolve.convolve_fftpack(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+    return fftimpl.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
 del _cache
 
 
@@ -288,10 +288,10 @@ def sc_diff(x, a, b, period=None,
         def kernel(k,a=a,b=b):
             if k: return sinh(a*k)/cosh(b*k)
             return 0
-        omega = convolve.init_convolution_kernel_fftpack(n,kernel,d=1)
+        omega = fftimpl.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,a,b)] = omega
     overwrite_x = tmp is not x and not hasattr(x,'__array__')
-    return convolve.convolve_fftpack(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+    return fftimpl.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
 del _cache
 
 
@@ -333,10 +333,10 @@ def ss_diff(x, a, b, period=None,
         def kernel(k,a=a,b=b):
             if k: return sinh(a*k)/sinh(b*k)
             return float(a)/b
-        omega = convolve.init_convolution_kernel_fftpack(n,kernel)
+        omega = fftimpl.init_convolution_kernel(n,kernel)
         _cache[(n,a,b)] = omega
     overwrite_x = tmp is not x and not hasattr(x,'__array__')
-    return convolve.convolve_fftpack(tmp,omega,overwrite_x=overwrite_x)
+    return fftimpl.convolve(tmp,omega,overwrite_x=overwrite_x)
 del _cache
 
 
@@ -378,10 +378,10 @@ def cc_diff(x, a, b, period=None,
             while _cache: _cache.popitem()
         def kernel(k,a=a,b=b):
             return cosh(a*k)/cosh(b*k)
-        omega = convolve.init_convolution_kernel_fftpack(n,kernel)
+        omega = fftimpl.init_convolution_kernel(n,kernel)
         _cache[(n,a,b)] = omega
     overwrite_x = tmp is not x and not hasattr(x,'__array__')
-    return convolve.convolve_fftpack(tmp,omega,overwrite_x=overwrite_x)
+    return fftimpl.convolve(tmp,omega,overwrite_x=overwrite_x)
 del _cache
 
 _cache = {}
@@ -412,15 +412,15 @@ def shift(x, a, period=None,
             while _cache: _cache.popitem()
         def kernel_real(k,a=a): return cos(a*k)
         def kernel_imag(k,a=a): return sin(a*k)
-        omega_real = convolve.init_convolution_kernel_fftpack(n,kernel_real,d=0,
+        omega_real = fftimpl.init_convolution_kernel(n,kernel_real,d=0,
                                                       zero_nyquist=0)
-        omega_imag = convolve.init_convolution_kernel_fftpack(n,kernel_imag,d=1,
+        omega_imag = fftimpl.init_convolution_kernel(n,kernel_imag,d=1,
                                                       zero_nyquist=0)
         _cache[(n,a)] = omega_real,omega_imag
     else:
         omega_real,omega_imag = omega
     overwrite_x = tmp is not x and not hasattr(x,'__array__')
-    return convolve.convolve_z_fftpack(tmp,omega_real,omega_imag,
+    return fftimpl.convolve_z(tmp,omega_real,omega_imag,
                                overwrite_x=overwrite_x)
 
 del _cache

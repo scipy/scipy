@@ -1,8 +1,9 @@
 import fftpack as _DEF_BACKEND
 
-_FUNCS_NAMES = ["zfft", "drfft", "zfftnd", "zrfft", "init_convolution_kernel",
-                "convolve", "convolve_z", "destroy_convolve_cache"]
-_FUNCS = dict([(name, None) for name in _FUNCS_NAMES])
+__all__ = ["zfft", "drfft", "zfftnd", "zrfft", "init_convolution_kernel",
+           "convolve", "convolve_z", "destroy_convolve_cache"]
+
+_FUNCS = dict([(name, None) for name in __all__])
 _FALLBACK = dict([(name, _DEF_BACKEND.__dict__[f]) for f in _FUNCS.keys()])
 
 def myimport(name):
@@ -17,7 +18,7 @@ def load_backend(name):
         mod = myimport(name)
         for f in _FUNCS.keys():
             try:
-                _FUNCS[f] = mod.__dict__[f] 
+                _FUNCS[f] = mod.__dict__[f]
                 print "loading %s from %s" % (f, name)
             except KeyError:
                 _FUNCS[f] = _DEF_BACKEND.__dict__[f]
@@ -29,3 +30,11 @@ def load_backend(name):
 
 load_backend("fftpack.backends.fftw3")
 
+zfft = _FUNCS["zfft"]
+drfft = _FUNCS["drfft"]
+zfftnd = _FUNCS["zfftnd"]
+zrfft = _FUNCS["zrfft"]
+init_convolution_kernel = _FUNCS["init_convolution_kernel"]
+convolve = _FUNCS["convolve"]
+convolve_z = _FUNCS["convolve_z"]
+destroy_convolve_cache = _FUNCS["destroy_convolve_cache"]
