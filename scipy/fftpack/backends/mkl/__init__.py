@@ -5,5 +5,6 @@
 try:
     from _mkl import zfft_mkl as zfft, \
                      zfftnd_mkl as zfftnd
+    IS_INIT = True
 except ImportError:
-    pass
+    IS_INIT = False

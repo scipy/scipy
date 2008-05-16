@@ -6,6 +6,7 @@ The exposed implementation consists solely in the __all__ items.
 The functions are set up in load_backend function, which initialize the
 dictionary _FUNCS with working functions. If a backend does not implement one
 of the function, a fallback is automatically used."""
+
 # Default backend: fftpack.
 import fftpack as _DEF_BACKEND
 
@@ -28,13 +29,44 @@ def myimport(name):
     mod = __import__("scipy.fftpack.backends", fromlist = [name])
     try:
         ret = mod.__dict__[name]
-        return ret
+        if ret.IS_INIT:
+            return ret
+        else:
+            raise ImportError("Could not import %s (was not initialized)"\
+                              % name)
     except KeyError, e:
         raise ImportError(e)
 
-def load_backend(name):
+def find_backend():
+    """Try to import one of the backend, and return the first found.
+
+    Returns the backend (module class), raise ImportError if nothing is
+    found."""
+    for backend in ["mkl", "fftw3", "fftw"]:
+        try:
+            print "Trying backend ", backend
+            mod = myimport(backend)
+            return mod, backend
+        except ImportError:
+            pass
+    raise ImportError("No backend found")
+
+def load_backend(name = None):
+    """Load backend and set functions accordingly.
+
+    If name is None, all backend are tried one after the other, as defined in
+    function find_backend.
+
+    If the backend does not implement one function, function in _DEF_BACKEND is
+    used instead.
+
+    If the backend is not found,  fallback is used for all the functions."""
     try:
-        mod = myimport(name)
+        if name:
+            mod = myimport(name)
+        else:
+            mod, name = find_backend()
+
         # Loading fft functions: each of them can be loaded independently
         for f in _FFT_FUNCNAME:
             try:
@@ -60,7 +92,7 @@ def load_backend(name):
         for f in _FUNCS.keys():
             _FUNCS[f] = _DEF_BACKEND.__dict__[f]
 
-load_backend("fftw3")
+load_backend()
 
 zfft = _FUNCS["zfft"]
 drfft = _FUNCS["drfft"]

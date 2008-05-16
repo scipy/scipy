@@ -7,5 +7,6 @@ try:
     from _fftw3 import zfft_fftw3 as zfft, \
                        drfft_fftw3 as drfft, \
                        zfftnd_fftw3 as zfftnd
+    IS_INIT = True
 except ImportError:
-    pass
+    IS_INIT = False
