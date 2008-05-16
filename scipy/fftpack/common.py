@@ -28,6 +28,7 @@ def myimport(name):
     mod = __import__("scipy.fftpack.backends", fromlist = [name])
     try:
         ret = mod.__dict__[name]
+        return ret
     except KeyError, e:
         raise ImportError(e)
 
