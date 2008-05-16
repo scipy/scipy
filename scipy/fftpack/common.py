@@ -26,7 +26,10 @@ def myimport(name):
     
     Name should be fftw3, etc..."""
     mod = __import__("scipy.fftpack.backends", fromlist = [name])
-    return mod.__dict__[name]
+    try:
+        ret = mod.__dict__[name]
+    except KeyError, e:
+        raise ImportError(e)
 
 def load_backend(name):
     try:
