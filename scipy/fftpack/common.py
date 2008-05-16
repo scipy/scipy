@@ -5,6 +5,10 @@ import fftpack as _DEF_BACKEND
 __all__ = ["zfft", "drfft", "zfftnd", "zrfft", "init_convolution_kernel",
            "convolve", "convolve_z", "destroy_convolve_cache"]
 
+_FFT_FUNCNAME = ["zfft", "drfft", "zfftnd", "zrfft"]
+_CONVOLVE_FUNCNAME = ["init_convolution_kernel", 
+                      "convolve", "convolve_z", "destroy_convolve_cache"]
+
 _FUNCS = dict([(name, None) for name in __all__])
 _FALLBACK = dict([(name, _DEF_BACKEND.__dict__[f]) for f in _FUNCS.keys()])
 
@@ -18,15 +22,27 @@ def myimport(name):
 def load_backend(name):
     try:
         mod = myimport(name)
-        print mod
-        for f in _FUNCS.keys():
+        # Loading fft functions: each of them can be loaded independently
+        for f in _FFT_FUNCNAME:
             try:
                 _FUNCS[f] = mod.__dict__[f]
                 print "loading %s from %s" % (f, name)
             except KeyError:
                 _FUNCS[f] = _DEF_BACKEND.__dict__[f]
                 print "loading %s from %s" % (f, "def backend")
+
+        # Loading convolve: we try to load all of them: if any failure, we use
+        # fallback for all of them
+        try:
+            for f in _CONVOLVE_FUNCNAME:
+                _FUNCS[f] = mod.__dict__[f]
+                print "loading %s from %s" % (f, name)
+        except KeyError:
+            for f in _CONVOLVE_FUNCNAME:
+                _FUNCS[f] = _DEF_BACKEND.__dict__[f]
+                print "loading %s from %s" % (f, "def backend")
     except ImportError, e:
+        # If cannot load backend, just use default backend (fftpack)
         print "%s: failed loading backend %s" % (e, name)
         for f in _FUNCS.keys():
             _FUNCS[f] = _DEF_BACKEND.__dict__[f]
