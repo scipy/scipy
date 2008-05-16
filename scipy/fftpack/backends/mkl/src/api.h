@@ -6,11 +6,13 @@
 /*
  * straight FFT api
  */
+extern "C" {
 void zfft_mkl(complex_double * inout,
 		 int n, int direction, int howmany, int normalize);
 
 void zfftnd_mkl(complex_double * inout, int rank,
 			 int *dims, int direction, int howmany,
 			 int normalize);
+};
 
 #endif
