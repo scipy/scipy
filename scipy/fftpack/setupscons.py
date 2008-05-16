@@ -6,10 +6,15 @@ from os.path import join
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from numpy.distutils.system_info import get_info
-    config = Configuration('fftpack',parent_package, top_path)
+    config = Configuration('fftpack',parent_package, top_path, setup_name = 'setupscons.py')
 
-    config.add_sconscript('SConstruct')
     config.add_data_dir('tests')
+    config.add_data_dir('benchmarks')
+
+    config.add_subpackage('fftpack')
+
+    # Build optional backends
+    config.add_subpackage('backends')
 
     return config
 

@@ -1,0 +1,33 @@
+# Last Change: Fri May 16 06:00 PM 2008 J
+# vim:syntax=python
+from os.path import join as pjoin
+
+from numpy.distutils.misc_util import get_numpy_include_dirs
+from numscons import GetNumpyEnvironment
+from numscons import CheckF77Clib
+
+env = GetNumpyEnvironment(ARGUMENTS)
+env.Tool('numpyf2py')
+
+env.AppendUnique(CPPPATH = get_numpy_include_dirs())
+env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
+env.AppendUnique(CPPPATH = [pjoin(env['build_dir'], "src")])
+
+config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib})
+if not config.CheckF77Clib():
+    raise Exception("Could not get f77/c++ link information")
+config.Finish()
+
+# Build dfftpack
+src = env.NumpyGlob(pjoin('DFFTPACK', '*.f'))
+dfftpack = env.NumpyStaticExtLibrary('dfftpack', source = [str(s) for s in src])
+env.PrependUnique(LIBS = ['dfftpack'])
+env.PrependUnique(LIBPATH = env['build_dir'])
+
+# Build the fftpack wrapper
+src = [pjoin("src/fftpack", i) for i in ['zfft.cxx','drfft.cxx', 'zfftnd.cxx']]
+env.NumpyPythonExtension('_fftpack', src + ['fftpack.pyf', 'src/zrfft.c'])
+
+# Build convolve
+src = ['src/fftpack/convolve.cxx',  'convolve.pyf']
+env.NumpyPythonExtension('convolve', src)
