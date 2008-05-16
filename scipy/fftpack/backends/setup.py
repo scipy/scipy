@@ -9,6 +9,7 @@ def configuration(parent_package='',top_path=None):
         
     config.add_subpackage("fftw3")
     config.add_subpackage("fftw")
+    config.add_subpackage("mkl")
 
     return config
 
