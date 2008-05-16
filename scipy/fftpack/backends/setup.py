@@ -8,6 +8,7 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('backends', parent_package, top_path)
         
     config.add_subpackage("fftw3")
+    config.add_subpackage("fftw")
 
     return config
 
