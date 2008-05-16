@@ -3,6 +3,7 @@
 
 #include "misc.h"
 
+extern "C" {
 /*
  * straight FFT api
  */
@@ -26,5 +27,6 @@ void convolve_z_fftw(int n, double *inout, double *omega_real,
 void init_convolution_kernel_fftw(int n, double *omega, int d,
 				 double (*kernel_func) (int),
 				 int zero_nyquist);
+};
 
 #endif
