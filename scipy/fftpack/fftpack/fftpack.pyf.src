@@ -1,0 +1,8 @@
+! -*- f90 -*-
+! <modulename=_fftpack>
+
+python module _fftpack
+        interface
+                include 'fft_template.pyf.src'
+        end interface
+end python module _fftpack

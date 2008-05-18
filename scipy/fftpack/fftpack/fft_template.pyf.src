@@ -1,12 +1,13 @@
 !%f90 -*- f90 -*-
 ! Author: Pearu Peterson, August 2002
+! This file is included by the files <backend>/<backend>.pyf.src
+! **********************************************************************
+! NOTE: IF YOU UPDATE THIS FILE, YOU SHOULD UPDATE IT FOR BACKENDS TOO !
+! **********************************************************************
 
-python module _fftpack
-    interface
-
-       subroutine zfft_fftpack(x,n,direction,howmany,normalize)
+       subroutine zfft<modulename>(x,n,direction,howmany,normalize)
          ! y = fft(x[,n,direction,normalize,overwrite_x])
-         intent(c) zfft_fftpack
+         intent(c) zfft<modulename>
          complex*16 intent(c,in,out,copy,out=y) :: x(*)
          integer optional,depend(x),intent(c,in) :: n=size(x)
          check(n>0) n
@@ -15,11 +16,11 @@ python module _fftpack
          integer optional,intent(c,in) :: direction = 1
          integer optional,intent(c,in),depend(direction) &
               :: normalize = (direction<0)
-       end subroutine zfft_fftpack
+       end subroutine zfft<modulename>
 
-       subroutine drfft_fftpack(x,n,direction,howmany,normalize)
+       subroutine drfft<modulename>(x,n,direction,howmany,normalize)
          ! y = drfft(x[,n,direction,normalize,overwrite_x])
-         intent(c) drfft_fftpack
+         intent(c) drfft<modulename>
          real*8 intent(c,in,out,copy,out=y) :: x(*)
          integer optional,depend(x),intent(c,in) :: n=size(x)
          check(n>0&&n<=size(x)) n
@@ -28,11 +29,11 @@ python module _fftpack
          integer optional,intent(c,in) :: direction = 1
          integer optional,intent(c,in),depend(direction) &
               :: normalize = (direction<0)
-       end subroutine drfft_fftpack
+       end subroutine drfft<modulename>
 
-       subroutine zrfft_fftpack(x,n,direction,howmany,normalize)
+       subroutine zrfft<modulename>(x,n,direction,howmany,normalize)
          ! y = zrfft(x[,n,direction,normalize,overwrite_x])
-         intent(c) zrfft_fftpack
+         intent(c) zrfft<modulename>
          complex*16 intent(c,in,out,overwrite,out=y) :: x(*)
          integer optional,depend(x),intent(c,in) :: n=size(x)
          check(n>0&&n<=size(x)) n
@@ -41,11 +42,11 @@ python module _fftpack
          integer optional,intent(c,in) :: direction = 1
          integer optional,intent(c,in),depend(direction) &
               :: normalize = (direction<0)
-       end subroutine zrfft_fftpack
+       end subroutine zrfft<modulename>
 
-       subroutine zfftnd_fftpack(x,r,s,direction,howmany,normalize,j)
+       subroutine zfftnd<modulename>(x,r,s,direction,howmany,normalize,j)
          ! y = zfftnd(x[,s,direction,normalize,overwrite_x])
-         intent(c) zfftnd_fftpack
+         intent(c) zfftnd<modulename>
          complex*16 intent(c,in,out,copy,out=y) :: x(*)
          integer intent(c,hide),depend(x) :: r=old_rank(x)
          integer intent(c,hide) :: j=0
@@ -65,13 +66,10 @@ python module _fftpack
                 (*f2py_func)(x,r,s,direction,howmany,normalize); &
               else {&
                 f2py_success = 0; &
-                PyErr_SetString(_fftpack_error, &
+                PyErr_SetString(<modulename>_error, &
                   "inconsistency in x.shape and s argument"); &
                 } &
               }
-       end subroutine zfftnd_fftpack
-
-    end interface 
-end python module _fftpack
+       end subroutine zfftnd<modulename>
 
 ! See http://cens.ioc.ee/projects/f2py2e/
