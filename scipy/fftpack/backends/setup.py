@@ -22,7 +22,7 @@ def build_backend(config, name, config_name = None):
                            include_dirs = ["common",
                                            info['include_dirs']])
         config.add_extension("%s._%s" % (name, name), 
-                sources = ["%s/%s.pyf" % (name, name)], 
+                sources = ["%s/%s.pyf.src" % (name, name)], 
                 extra_info = info, libraries = ["%s_backend" % name])
 
     config.add_subpackage(name)

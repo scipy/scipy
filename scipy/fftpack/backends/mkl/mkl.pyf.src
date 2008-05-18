@@ -1,0 +1,8 @@
+! -*- f90 -*-
+! <modulename=_mkl>
+
+python module _mkl
+        interface
+                include '../fft_template.pyf.src'
+        end interface
+end python module _mkl

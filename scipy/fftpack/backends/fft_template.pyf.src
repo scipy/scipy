@@ -1,12 +1,13 @@
 !%f90 -*- f90 -*-
 ! Author: Pearu Peterson, August 2002
+! This file is included by the files <backend>/<backend>.pyf.src
+! **********************************************************************
+! NOTE: IF YOU UPDATE THIS FILE, YOU SHOULD UPDATE IT FOR FFTPACK TOO !
+! **********************************************************************
 
-python module _fftw3
-    interface
-
-       subroutine zfft_fftw3(x,n,direction,howmany,normalize)
+       subroutine zfft<modulename>(x,n,direction,howmany,normalize)
          ! y = fft(x[,n,direction,normalize,overwrite_x])
-         intent(c) zfft_fftw3
+         intent(c) zfft<modulename>
          complex*16 intent(c,in,out,copy,out=y) :: x(*)
          integer optional,depend(x),intent(c,in) :: n=size(x)
          check(n>0) n
@@ -15,11 +16,11 @@ python module _fftw3
          integer optional,intent(c,in) :: direction = 1
          integer optional,intent(c,in),depend(direction) &
               :: normalize = (direction<0)
-       end subroutine zfft_fftw3
+       end subroutine zfft<modulename>
 
-       subroutine drfft_fftw3(x,n,direction,howmany,normalize)
+       subroutine drfft<modulename>(x,n,direction,howmany,normalize)
          ! y = drfft(x[,n,direction,normalize,overwrite_x])
-         intent(c) drfft_fftw3
+         intent(c) drfft<modulename>
          real*8 intent(c,in,out,copy,out=y) :: x(*)
          integer optional,depend(x),intent(c,in) :: n=size(x)
          check(n>0&&n<=size(x)) n
@@ -28,24 +29,24 @@ python module _fftw3
          integer optional,intent(c,in) :: direction = 1
          integer optional,intent(c,in),depend(direction) &
               :: normalize = (direction<0)
-       end subroutine drfft_fftw3
+       end subroutine drfft<modulename>
 
-!       subroutine zrfft_fftw3(x,n,direction,howmany,normalize)
-!         ! y = zrfft(x[,n,direction,normalize,overwrite_x])
-!         intent(c) zrfft_fftw3
-!         complex*16 intent(c,in,out,overwrite,out=y) :: x(*)
-!         integer optional,depend(x),intent(c,in) :: n=size(x)
-!         check(n>0&&n<=size(x)) n
-!         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
-!         check(n*howmany==size(x)) howmany
-!         integer optional,intent(c,in) :: direction = 1
-!         integer optional,intent(c,in),depend(direction) &
-!              :: normalize = (direction<0)
-!       end subroutine zrfft_fftw3
+       subroutine zrfft<modulename>(x,n,direction,howmany,normalize)
+         ! y = zrfft(x[,n,direction,normalize,overwrite_x])
+         intent(c) zrfft<modulename>
+         complex*16 intent(c,in,out,overwrite,out=y) :: x(*)
+         integer optional,depend(x),intent(c,in) :: n=size(x)
+         check(n>0&&n<=size(x)) n
+         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional,intent(c,in) :: direction = 1
+         integer optional,intent(c,in),depend(direction) &
+              :: normalize = (direction<0)
+       end subroutine zrfft<modulename>
 
-       subroutine zfftnd_fftw3(x,r,s,direction,howmany,normalize,j)
+       subroutine zfftnd<modulename>(x,r,s,direction,howmany,normalize,j)
          ! y = zfftnd(x[,s,direction,normalize,overwrite_x])
-         intent(c) zfftnd_fftw3
+         intent(c) zfftnd<modulename>
          complex*16 intent(c,in,out,copy,out=y) :: x(*)
          integer intent(c,hide),depend(x) :: r=old_rank(x)
          integer intent(c,hide) :: j=0
@@ -65,13 +66,10 @@ python module _fftw3
                 (*f2py_func)(x,r,s,direction,howmany,normalize); &
               else {&
                 f2py_success = 0; &
-                PyErr_SetString(_fftw3_error, &
+                PyErr_SetString(<modulename>_error, &
                   "inconsistency in x.shape and s argument"); &
                 } &
               }
-       end subroutine zfftnd_fftw3
-
-    end interface 
-end python module _fftw3
+       end subroutine zfftnd<modulename>
 
 ! See http://cens.ioc.ee/projects/f2py2e/
