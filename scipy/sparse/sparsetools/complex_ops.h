@@ -34,8 +34,8 @@ class complex_wrapper : public npy_type {
         complex_wrapper operator/(const complex_wrapper& B) const {
           complex_wrapper result;
           c_type denom = 1.0 / (B.real * B.real + B.imag * B.imag);
-          result.real = (npy_type::real * npy_type::real + npy_type::imag * B.imag) * denom;
-          result.imag = (npy_type::real * npy_type::imag - npy_type::imag * B.real) * denom;
+          result.real = (npy_type::real * B.real + npy_type::imag * B.imag) * denom;
+          result.imag = (npy_type::imag * B.real - npy_type::real * B.imag) * denom;
           return result;
         }
         complex_wrapper& operator+=(const complex_wrapper & B){
@@ -57,7 +57,7 @@ class complex_wrapper : public npy_type {
         complex_wrapper& operator/=(const complex_wrapper & B){
           c_type denom   = 1.0 / (B.real * B.real + B.imag * B.imag);
           c_type temp    = (npy_type::real * B.real + npy_type::imag * B.imag) * denom; 
-          npy_type::imag = (npy_type::real * B.imag - npy_type::imag * B.real) * denom;
+          npy_type::imag = (npy_type::imag * B.real - npy_type::real * B.imag) * denom;
           npy_type::real = temp;
           return (*this);
         }

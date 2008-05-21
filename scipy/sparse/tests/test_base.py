@@ -221,6 +221,13 @@ class _TestCommon:
         c = temp.multiply(self.datsp)
         assert_array_equal(c.todense(),[[1,0,0,4],[9,0,1,0],[0,4,0,0]])
 
+        # complex
+        A = array([[1-2j,0+5j,-1+0j],[4-3j,-3+6j,5]])
+        B = array([[5+2j,7-3j,-2+1j],[0-1j,-4+2j,9]])
+        Asp = self.spmatrix(A)
+        Bsp = self.spmatrix(B)
+        assert_almost_equal( Asp.multiply(Bsp).todense(), A*B)
+
     def test_eldiv(self):
         expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]]
         assert_array_equal((self.datsp / self.datsp).todense(),expected)
@@ -228,6 +235,13 @@ class _TestCommon:
         denom = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
         res = matrix([[1,0,0,0.5],[-3,0,numpy.inf,0],[0,0.25,0,0]],'d')
         assert_array_equal((self.datsp / denom).todense(),res)
+
+        # complex
+        A = array([[1-2j,0+5j,-1+0j],[4-3j,-3+6j,5]])
+        B = array([[5+2j,7-3j,-2+1j],[0-1j,-4+2j,9]])
+        Asp = self.spmatrix(A)
+        Bsp = self.spmatrix(B)
+        assert_almost_equal( (Asp / Bsp).todense(), A/B)
 
     def test_pow(self):
         A = matrix([[1,0,2,0],[0,3,4,0],[0,5,0,0],[0,6,7,8]])
