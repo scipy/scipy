@@ -383,7 +383,7 @@ PyObject *helper_appendToTuple( PyObject *where, PyObject *what ) {
   $1 = (type*) array->data;
 }
 %typemap(freearg) type*  IN_ARRAY1 {
-  if (is_new_object$argnum && array$argnum) Py_DECREF(array$argnum);
+  if (is_new_object$argnum && array$argnum) { Py_DECREF(array$argnum); }
 }
 %enddef
 
@@ -401,7 +401,7 @@ PyObject *helper_appendToTuple( PyObject *where, PyObject *what ) {
   $1 = (type*) array->data;
 }
 %typemap(freearg) (type* IN_ARRAY2) {
-  if (is_new_object$argnum && array$argnum) Py_DECREF(array$argnum);
+  if (is_new_object$argnum && array$argnum) { Py_DECREF(array$argnum); }
 }
 %enddef
 
