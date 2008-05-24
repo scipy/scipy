@@ -346,37 +346,38 @@ class lil_matrix(spmatrix):
         else:
             return self.tocsr() / other
 
-    def multiply(self, other):
-        """Point-wise multiplication by another lil_matrix.
-
-        """
-        if isscalar(other):
-            return self.__mul__(other)
-
-        if isspmatrix_lil(other):
-            reference,target = self,other
-
-            if reference.shape != target.shape:
-                raise ValueError("Dimensions do not match.")
-
-            if len(reference.data) > len(target.data):
-                reference,target = target,reference
-
-            new = lil_matrix(reference.shape)
-            for r,row in enumerate(reference.rows):
-                tr = target.rows[r]
-                td = target.data[r]
-                rd = reference.data[r]
-                L = len(tr)
-                for c,column in enumerate(row):
-                    ix = bisect_left(tr,column)
-                    if ix < L and tr[ix] == column:
-                        new.rows[r].append(column)
-                        new.data[r].append(rd[c] * td[ix])
-            return new
-        else:
-            raise ValueError("Point-wise multiplication only allowed "
-                             "with another lil_matrix.")
+## This code doesn't work with complex matrices
+#    def multiply(self, other):
+#        """Point-wise multiplication by another lil_matrix.
+#
+#        """
+#        if isscalar(other):
+#            return self.__mul__(other)
+#
+#        if isspmatrix_lil(other):
+#            reference,target = self,other
+#
+#            if reference.shape != target.shape:
+#                raise ValueError("Dimensions do not match.")
+#
+#            if len(reference.data) > len(target.data):
+#                reference,target = target,reference
+#
+#            new = lil_matrix(reference.shape)
+#            for r,row in enumerate(reference.rows):
+#                tr = target.rows[r]
+#                td = target.data[r]
+#                rd = reference.data[r]
+#                L = len(tr)
+#                for c,column in enumerate(row):
+#                    ix = bisect_left(tr,column)
+#                    if ix < L and tr[ix] == column:
+#                        new.rows[r].append(column)
+#                        new.data[r].append(rd[c] * td[ix])
+#            return new
+#        else:
+#            raise ValueError("Point-wise multiplication only allowed "
+#                             "with another lil_matrix.")
 
     def copy(self):
         new = lil_matrix(self.shape, dtype=self.dtype)
