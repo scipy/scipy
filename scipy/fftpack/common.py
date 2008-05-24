@@ -42,7 +42,8 @@ def myimport(name):
         raise ImportError(e)
 
 def find_backend():
-    """Try to import one of the backend, and return the first found.
+    """Try to import one of the backend from the list of possible backends, and
+    return the first found.
 
     Returns the backend (module class), raise ImportError if nothing is
     found."""
@@ -60,10 +61,11 @@ def load_backend(name = None):
     If name is None, all backend are tried one after the other, as defined in
     function find_backend.
 
-    If the backend does not implement one function, function in _DEF_BACKEND is
-    used instead.
+    If the backend does not implement one function, the implementation in
+    _DEF_BACKEND is used instead.
 
-    If the backend is not found,  fallback is used for all the functions."""
+    If no optimized backend is found,  fallback is used for all the
+    functions."""
     try:
         if name:
             mod = myimport(name)
@@ -84,16 +86,19 @@ def load_backend(name = None):
         try:
             for f in _CONVOLVE_FUNCNAME:
                 _FUNCS[f] = mod.__dict__[f]
-            _BACK_PER_FUNC[f] = name
+                _BACK_PER_FUNC[f] = name
         except KeyError:
             for f in _CONVOLVE_FUNCNAME:
                 _FUNCS[f] = _DEF_BACKEND.__dict__[f]
-            _BACK_PER_FUNC[f] = _DEF_BACKEND_NAME
+                _BACK_PER_FUNC[f] = _DEF_BACKEND_NAME
     except ImportError, e:
         # If cannot load backend, just use default backend (fftpack)
         for f in _FUNCS.keys():
             _FUNCS[f] = _DEF_BACKEND.__dict__[f]
             _BACK_PER_FUNC[f] = _DEF_BACKEND_NAME
+
+def show_backend():
+    return _BACK_PER_FUNC
 
 load_backend()
 
