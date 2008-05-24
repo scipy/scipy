@@ -48,11 +48,10 @@ def find_backend():
     found."""
     for backend in ["mkl", "fftw3", "fftw"]:
         try:
-            print "Trying backend ", backend
             mod = myimport(backend)
             return mod, backend
         except ImportError, e:
-            print " --> %s" % e
+            pass
     raise ImportError("No backend found")
 
 def load_backend(name = None):
@@ -75,11 +74,9 @@ def load_backend(name = None):
         for f in _FFT_FUNCNAME:
             try:
                 _FUNCS[f] = mod.__dict__[f]
-                print "loading %s from %s" % (f, name)
                 _BACK_PER_FUNC[f] = name
             except KeyError:
                 _FUNCS[f] = _DEF_BACKEND.__dict__[f]
-                print "loading %s from %s" % (f, "def backend")
                 _BACK_PER_FUNC[f] = _DEF_BACKEND_NAME
 
         # Loading convolve: we try to load all of them: if any failure, we use
@@ -87,16 +84,13 @@ def load_backend(name = None):
         try:
             for f in _CONVOLVE_FUNCNAME:
                 _FUNCS[f] = mod.__dict__[f]
-                print "loading %s from %s" % (f, name)
             _BACK_PER_FUNC[f] = name
         except KeyError:
             for f in _CONVOLVE_FUNCNAME:
                 _FUNCS[f] = _DEF_BACKEND.__dict__[f]
-                print "loading %s from %s" % (f, "def backend")
             _BACK_PER_FUNC[f] = _DEF_BACKEND_NAME
     except ImportError, e:
         # If cannot load backend, just use default backend (fftpack)
-        print "%s: failed loading backend %s" % (e, name)
         for f in _FUNCS.keys():
             _FUNCS[f] = _DEF_BACKEND.__dict__[f]
             _BACK_PER_FUNC[f] = _DEF_BACKEND_NAME
