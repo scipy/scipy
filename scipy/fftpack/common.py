@@ -12,14 +12,15 @@ import fftpack as _DEF_BACKEND
 _DEF_BACKEND_NAME = "fftpack"
 
 __all__ = ["zfft", "drfft", "zfftnd", "zrfft", "init_convolution_kernel",
-           "convolve", "convolve_z", "destroy_convolve_cache"]
+           "convolve", "convolve_z", "destroy_convolve_cache", "backend",
+           "detailed_backend"]
 
 _FFT_FUNCNAME = ["zfft", "drfft", "zfftnd", "zrfft"]
-_CONVOLVE_FUNCNAME = ["init_convolution_kernel", 
+_CONVOLVE_FUNCNAME = ["init_convolution_kernel",
                       "convolve", "convolve_z", "destroy_convolve_cache"]
 
 # Dictionary of (name, callable)
-_FUNCS = dict([(name, None) for name in __all__])
+_FUNCS = dict([(name, None) for name in _FFT_FUNCNAME + _CONVOLVE_FUNCNAME])
 
 _FALLBACK = dict([(name, _DEF_BACKEND.__dict__[f]) for f in _FUNCS.keys()])
 
@@ -28,7 +29,7 @@ _BACK_PER_FUNC = {}
 
 def myimport(name):
     """Load a fft backend from its name.
-    
+
     Name should be fftw3, etc..."""
     mod = __import__("scipy.fftpack.backends", fromlist = [name])
     try:
@@ -92,15 +93,21 @@ def load_backend(name = None):
                 _FUNCS[f] = _DEF_BACKEND.__dict__[f]
                 _BACK_PER_FUNC[f] = _DEF_BACKEND_NAME
     except ImportError, e:
+        name = _DEF_BACKEND_NAME
         # If cannot load backend, just use default backend (fftpack)
         for f in _FUNCS.keys():
             _FUNCS[f] = _DEF_BACKEND.__dict__[f]
             _BACK_PER_FUNC[f] = _DEF_BACKEND_NAME
 
-def show_backend():
+    return name
+
+def backend():
+    return _BACKEND_NAME
+
+def detailed_backend():
     return _BACK_PER_FUNC
 
-load_backend()
+_BACKEND_NAME = load_backend()
 
 zfft = _FUNCS["zfft"]
 drfft = _FUNCS["drfft"]
