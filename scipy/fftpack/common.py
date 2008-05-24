@@ -9,6 +9,7 @@ of the function, a fallback is automatically used."""
 
 # Default backend: fftpack.
 import fftpack as _DEF_BACKEND
+_DEF_BACKEND_NAME = "fftpack"
 
 __all__ = ["zfft", "drfft", "zfftnd", "zrfft", "init_convolution_kernel",
            "convolve", "convolve_z", "destroy_convolve_cache"]
@@ -21,6 +22,9 @@ _CONVOLVE_FUNCNAME = ["init_convolution_kernel",
 _FUNCS = dict([(name, None) for name in __all__])
 
 _FALLBACK = dict([(name, _DEF_BACKEND.__dict__[f]) for f in _FUNCS.keys()])
+
+# Dictionary to keep func -> used backend association
+_BACK_PER_FUNC = {}
 
 def myimport(name):
     """Load a fft backend from its name.
@@ -47,8 +51,8 @@ def find_backend():
             print "Trying backend ", backend
             mod = myimport(backend)
             return mod, backend
-        except ImportError:
-            pass
+        except ImportError, e:
+            print " --> %s" % e
     raise ImportError("No backend found")
 
 def load_backend(name = None):
@@ -72,9 +76,11 @@ def load_backend(name = None):
             try:
                 _FUNCS[f] = mod.__dict__[f]
                 print "loading %s from %s" % (f, name)
+                _BACK_PER_FUNC[f] = name
             except KeyError:
                 _FUNCS[f] = _DEF_BACKEND.__dict__[f]
                 print "loading %s from %s" % (f, "def backend")
+                _BACK_PER_FUNC[f] = _DEF_BACKEND_NAME
 
         # Loading convolve: we try to load all of them: if any failure, we use
         # fallback for all of them
@@ -82,15 +88,18 @@ def load_backend(name = None):
             for f in _CONVOLVE_FUNCNAME:
                 _FUNCS[f] = mod.__dict__[f]
                 print "loading %s from %s" % (f, name)
+            _BACK_PER_FUNC[f] = name
         except KeyError:
             for f in _CONVOLVE_FUNCNAME:
                 _FUNCS[f] = _DEF_BACKEND.__dict__[f]
                 print "loading %s from %s" % (f, "def backend")
+            _BACK_PER_FUNC[f] = _DEF_BACKEND_NAME
     except ImportError, e:
         # If cannot load backend, just use default backend (fftpack)
         print "%s: failed loading backend %s" % (e, name)
         for f in _FUNCS.keys():
             _FUNCS[f] = _DEF_BACKEND.__dict__[f]
+            _BACK_PER_FUNC[f] = _DEF_BACKEND_NAME
 
 load_backend()
 
