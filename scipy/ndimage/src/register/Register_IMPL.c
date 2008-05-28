@@ -1203,3 +1203,167 @@ int NI_Resample_Coords(int size, int layersS, int rowsS, int colsS, int layersD,
 
 
 
+int NI_LT_Mrqcof(double *alpha, double *beta, double *V, double wt, double value, int M1){
+
+	int i, j;
+	double v1;
+	int status;
+
+	for(i = 0; i < M1; ++i){
+	    v1 = V[i];
+	    beta[i] = v1 * value * wt;
+	    for(j = 0; j <= i; ++j){
+		alpha[M1*i+j] = v1 * V[j];
+	    }
+	}
+
+	status = 1;
+
+	return status;
+
+}
+
+
+int NI_LT_Tensor_Product(double *alpha_1, double *alpha_2, double *beta_1, double *beta_2, double *basis,
+	                 int M1, int M2, int rows, int row_number, int coeff_1, int coeff_2){
+
+
+	//
+	// lower triangular tensor product
+	//
+
+	int i, j, k, m;
+	int loop3_outer, loop3_inner;
+	int status;
+	double wt1;
+	double wt2;
+	double *ptr1;
+	double *ptr2;
+
+	for(i = 0; i < coeff_1; ++i){
+	    wt1 = basis[rows*i + row_number];
+	    for(loop3_outer = 0; loop3_outer < 3; ++loop3_outer){
+		//
+		// spatial-spatial covariances
+		//
+		for(loop3_inner = 0; loop3_inner <= loop3_outer; ++loop3_inner){
+		    for(j = 0; j <= i; ++j){
+			//
+		        // outer product of basis array
+			//
+	    		wt2  = wt1 * basis[rows*j + row_number];
+			ptr1 = &alpha_1[coeff_2*(M1*(coeff_1*loop3_outer+i)+(coeff_1*loop3_inner)+j)];
+			ptr2 = &alpha_2[coeff_2*(M2*loop3_outer+loop3_inner)];
+			for(k = 0; k < coeff_2; ++k){
+			    for(m = 0; m <= k; ++m){
+				ptr1[M1*k+m] += (wt2 * ptr2[M2*k+m]);
+			    }
+			}
+		    }
+		    //
+		    // spatial-intensity covariances (single G volume assumed)
+		    //
+		    ptr1 = &alpha_1[coeff_2*(M1*coeff_1*3+(coeff_1*loop3_inner)+i)];
+		    ptr2 = &alpha_2[coeff_2*(M2*3+loop3_outer)];
+		    for(k = 0; k < coeff_2; ++k){
+			ptr1[M1+k] += (wt1 * ptr2[M2+k]);
+		    }
+		    //
+		    // spatial component of beta
+		    //
+		    for(k = 0; k < coeff_2; ++k){
+			beta_1[k+coeff_2*(coeff_1*loop3_outer+i)] += (wt1 * beta_2[coeff_2*loop3_outer+k]);
+		    }
+		}
+	    }
+	}
+
+	//
+	// intensity-intensity covariances
+	//
+	ptr1 = &alpha_1[coeff_2*(M1*coeff_1*3+(coeff_1*3))];
+	ptr2 = &alpha_2[coeff_2*(M2*3+3)];
+	for(k = 0; k < coeff_2; ++k){
+	    ptr1[k] += ptr2[k];
+	}
+
+	//
+	// intensity component of beta
+	//
+
+	beta_1[coeff_2*coeff_1*3] += beta_2[coeff_2*3];
+
+	status = 1;
+
+	return status;
+
+}
+
+
+
+int NI_Complete_Symmetry(double *Alpha, int nx, int ny, int nz, int ni4){
+
+	//
+	// complete symmetry of Alpha matrix over the 3D brain volume
+	//
+
+	int z1, z2;
+	int y1, y2;
+	int x1, x2;
+	int loop3_outer, loop3_inner;
+	int M1;
+	int status;
+	double *ptrx;
+	double *ptry;
+	double *ptrz;
+
+	M1 = 3*nx*ny*nz + ni4;
+
+	for(loop3_outer = 0; loop3_outer < 3; ++loop3_outer){
+	    for(loop3_inner = 0; loop3_inner <= loop3_outer; ++loop3_inner){
+		ptrz = &Alpha[nx*ny*nz*(M1*loop3_outer+loop3_inner)];
+		for(z1 = 0; z1 < nz; ++z1){
+		    for(z2 = 0; z2 <= z1; ++z2){
+			ptry = ptrz + nx*ny*(M1*z1 + z2);
+			for(y1 = 0; y1 < ny; ++y1){
+		            for(y2 = 0; y2 <= y1; ++y2){
+			        ptrx = ptry + nx*(M1*y1 + y2);
+		                for(x1 = 0; x1 <= nx; ++x1){
+		                    for(y2 = 0; y2 <= y1; ++y2){
+					ptrx[M1*x2+x1] = ptrx[M1*x1+x2];
+			            }
+			        }
+			    }
+			}
+			for(x1 = 0; x1 < nx*ny; ++x1){
+			    for(x2 = 0; x2 < x1; ++x2){
+				ptry[M1*x2+x1] = ptry[M1*x1+x2];
+			    }
+			}
+		    }
+		    for(x1 = 0; x1 < nx*ny*nz; ++x1){
+		        for(x2 = 0; x2 < x1; ++x2){
+			    ptrz[M1*x2+x1] = ptrz[M1*x1+x2];
+		        }
+		    }
+
+		}
+	    }
+	}
+
+	for(x1 = 0; x1 < nx*ny*nz*3+ni4; ++x1){
+	    for(x2 = 0; x2 < x1; ++x2){
+		Alpha[M1*x2+x1] = Alpha[M1*x1+x2];
+	    }
+	}
+
+
+	status = 1;
+
+	return status;
+
+}
+
+
+
+
