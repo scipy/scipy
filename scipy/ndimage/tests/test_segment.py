@@ -155,5 +155,5 @@ class TestSegment(TestCase):
         return
 
 if __name__ == "__main__":
-    inittest.main()
+    nose.runmodule()
 
