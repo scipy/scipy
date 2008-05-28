@@ -1,7 +1,8 @@
 import _minpack
 
 from numpy import atleast_1d, dot, take, triu, shape, eye, \
-                  transpose, zeros, product, greater, array
+                  transpose, zeros, product, greater, array, \
+                  any, all, where, isscalar, asarray, ndarray
 
 error = _minpack.error
 
@@ -103,7 +104,7 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
 
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 
-      fixed_point -- scalar fixed-point finder
+      fixed_point -- scalar and vector fixed-point finder
 
     """
     x0 = array(x0,ndmin=1)
@@ -256,7 +257,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
 
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 
-      fixed_point -- scalar fixed-point finder
+      fixed_point -- scalar and vector fixed-point finder      
 
     """
     x0 = array(x0,ndmin=1)
@@ -372,8 +373,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
 
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 
-      fixed_point -- scalar fixed-point finder
-
+      fixed_point -- scalar and vector fixed-point finder
+            
     """
 
     if fprime is not None:
@@ -412,8 +413,13 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
 
 # Steffensen's Method using Aitken's Del^2 convergence acceleration.
 def fixed_point(func, x0, args=(), xtol=1e-10, maxiter=500):
-    """Given a function of one variable and a starting point, find a
+    """Find the point where func(x) == x
+    
+    Given a function of one or more variables and a starting point, find a
     fixed-point of the function: i.e. where func(x)=x.
+
+    Uses Steffensen's Method using Aitken's Del^2 convergence acceleration.
+    See Burden, Faires, "Numerical Analysis", 5th edition, pg. 80
 
     See also:
 
@@ -432,22 +438,25 @@ def fixed_point(func, x0, args=(), xtol=1e-10, maxiter=500):
 
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 
-      fixed_point -- scalar fixed-point finder
-
     """
-
+    if not isscalar(x0):
+        x0 = asarray(x0)
     p0 = x0
     for iter in range(maxiter):
-        p1 = func(*((p0,)+args))
-        p2 = func(*((p1,)+args))
+        p1 = func(p0, *args)
+        p2 = func(p1, *args)
         d = p2 - 2.0 * p1 + p0
-        if d == 0.0:
-            print "Warning: Difference in estimates is %g" % (abs(p2-p1))
-            return p2
+        if isinstance(x0, ndarray):
+            p = where(d == 0, p2, p0 - (p1 - p0)*(p1-p0) / d)
+            if all(abs(p-p0) < xtol):
+                return p
         else:
-            p = p0 - (p1 - p0)*(p1-p0) / d
-        if abs(p-p0) < xtol:
-            return p
+            if d == 0.0:            
+                return p2
+            else:
+                p = p0 - (p1 - p0)*(p1-p0) / d
+            if abs(p-p0) < xtol:
+                return p
         p0 = p
     raise RuntimeError, "Failed to converge after %d iterations, value is %f" % (maxiter,p)
 
@@ -473,7 +482,7 @@ def bisection(func, a, b, args=(), xtol=1e-10, maxiter=400):
 
       brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
 
-      fixed_point -- scalar fixed-point finder
+      fixed_point -- scalar and vector fixed-point finder
 
     """
     i = 1
