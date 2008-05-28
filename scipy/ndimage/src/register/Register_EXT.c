@@ -629,9 +629,108 @@ exit:
 }
 
 
+static PyObject *Register_Complete_Symmetry(PyObject *self, PyObject *args)
+{
+
+    int nx;
+    int ny;
+    int nz;
+    int ni;
+    double   *A;
+    PyObject *AlphaArray = NULL;
+
+    if(!PyArg_ParseTuple(args, "Oiiii", &AlphaArray, &nx, &ny, &nz, &ni))
+	goto exit;
+
+    A = (double *)PyArray_DATA(AlphaArray);
+
+    if(!NI_Complete_Symmetry(A, nx, ny, nz, ni)) 
+	    goto exit;
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue(""); 
+
+}
+
+
+
+static PyObject *Register_LT_Tensor_Product(PyObject *self, PyObject *args)
+{
+    int M1;
+    int M2;
+    int rows;
+    int cur_row;
+    int coeff_1;
+    int coeff_2;
+    double   *A1;
+    double   *A2;
+    double   *B1;
+    double   *B2;
+    double   *Basis;
+    PyObject *AlphaArray1 = NULL;
+    PyObject *AlphaArray2 = NULL;
+    PyObject *BetaArray1  = NULL;
+    PyObject *BetaArray2  = NULL;
+    PyObject *BasisArray  = NULL;
+
+    if(!PyArg_ParseTuple(args, "OOOOOiiiiii", &AlphaArray1, &AlphaArray2, &BetaArray1, &BetaArray2, 
+		         &BasisArray, &M1, &M2, &rows, &cur_row, &coeff_1, &coeff_2))
+	goto exit;
+
+    A1    = (double *)PyArray_DATA(AlphaArray1);
+    A2    = (double *)PyArray_DATA(AlphaArray2);
+    B1    = (double *)PyArray_DATA(BetaArray1);
+    B2    = (double *)PyArray_DATA(BetaArray2);
+    Basis = (double *)PyArray_DATA(BasisArray);
+
+    if(!NI_LT_Tensor_Product(A1, A2, B1, B2, Basis, M1, M2, rows, cur_row, coeff_1, coeff_2)) 
+	    goto exit;
+
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue(""); 
+
+}
+
+
+
+static PyObject *Register_LT_Mrqcof(PyObject *self, PyObject *args)
+{
+
+    int M1;
+    double   wt;
+    double   value;
+    double   *A;
+    double   *B;
+    double   *V;
+    PyObject *AlphaArray = NULL;
+    PyObject *BetaArray  = NULL;
+    PyObject *VArray     = NULL;
+
+    if(!PyArg_ParseTuple(args, "OOOddi", &AlphaArray, &BetaArray, &VArray, &wt, &value, &M1))
+	goto exit;
+
+    A = (double *)PyArray_DATA(AlphaArray);
+    B = (double *)PyArray_DATA(BetaArray);
+    V = (double *)PyArray_DATA(VArray);
+
+    if(!NI_LT_Mrqcof(A, B, V, wt, value, M1)) 
+	    goto exit;
+
+exit:
+
+    return PyErr_Occurred() ? NULL : (PyObject*)Py_BuildValue(""); 
+
+}
+
 
 static PyMethodDef RegisterMethods[] =
 {
+    { "register_complete_symmetry",             Register_Complete_Symmetry,        METH_VARARGS, NULL },
+    { "register_lt_mrqcof",                     Register_LT_Mrqcof,                METH_VARARGS, NULL },
+    { "register_lt_tensor_product",             Register_LT_Tensor_Product,        METH_VARARGS, NULL },
     { "register_find_mask",                     Register_Find_Mask,                METH_VARARGS, NULL },
     { "register_resample_coords",               Register_Resample_Coords,          METH_VARARGS, NULL },
     { "register_resample_gradient_coords",      Register_Resample_Gradient_Coords, METH_VARARGS, NULL },
