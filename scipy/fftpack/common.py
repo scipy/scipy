@@ -1,11 +1,12 @@
 """This module takes care of exposing the fft implementation from available
-backends.
+backends to scipy.fftpack.
 
-The exposed implementation consists solely in the __all__ items.
+For each backend, the exposed implementation consists solely of the items in
+__all__ .
 
 The functions are set up in load_backend function, which initialize the
 dictionary _FUNCS with working functions. If a backend does not implement one
-of the function, a fallback is automatically used."""
+of the function, a fallback from _DEF_BACKEND is automatically used."""
 
 # Default backend: fftpack.
 import fftpack as _DEF_BACKEND
@@ -16,6 +17,9 @@ __all__ = ["zfft", "drfft", "zfftnd", "zrfft", "init_convolution_kernel",
            "detailed_backend"]
 
 _FFT_FUNCNAME = ["zfft", "drfft", "zfftnd", "zrfft"]
+
+# Convolve needs to be treated as a whole, not per function, we keep the
+# convolve functions separately.
 _CONVOLVE_FUNCNAME = ["init_convolution_kernel",
                       "convolve", "convolve_z", "destroy_convolve_cache"]
 
@@ -102,9 +106,13 @@ def load_backend(name = None):
     return name
 
 def backend():
+    """Return backend name."""
     return _BACKEND_NAME
 
 def detailed_backend():
+    """Return backend name for each function.
+    
+    The return value is a dictionary of (func name, backend)"""
     return _BACK_PER_FUNC
 
 _BACKEND_NAME = load_backend()
