@@ -36,6 +36,9 @@ def myimport(name):
 
     Name should be fftw3, etc..."""
     mod = __import__("scipy.fftpack.backends", fromlist = [name])
+
+    # Because of nose trying to import backends, we do not generate ImporError
+    # in backends, but we only set IS_INIT to true if the backend is available
     try:
         ret = mod.__dict__[name]
         if ret.IS_INIT:
