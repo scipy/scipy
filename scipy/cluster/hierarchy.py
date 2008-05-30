@@ -969,12 +969,26 @@ def canberra(u, v):
     return abs(u-v).sum() / (abs(u).sum() + abs(v).sum())
 
 def _nbool_correspond_all(u, v):
-    not_u = scipy.bitwise_not(u)
-    not_v = scipy.bitwise_not(v)
-    nff = scipy.bitwise_and(not_u, not_v).sum()
-    nft = scipy.bitwise_and(not_u, v).sum()
-    ntf = scipy.bitwise_and(u, not_v).sum()
-    ntt = scipy.bitwise_and(u, v).sum()
+    if u.dtype != v.dtype:
+        raise TypeError("Arrays being compared must be of the same data type.")
+    
+    if u.dtype == np.int or u.dtype == np.float_ or u.dtype == np.double:
+        not_u = 1.0 - u
+        not_v = 1.0 - v
+        nff = (not_u * not_v).sum()
+        nft = (not_u * v).sum()
+        ntf = (u * not_v).sum()
+        ntt = (u * v).sum()
+    elif u.dtype == np.bool:
+        not_u = scipy.bitwise_not(u)
+        not_v = scipy.bitwise_not(v)
+        nff = scipy.bitwise_and(not_u, not_v).sum()
+        nft = scipy.bitwise_and(not_u, v).sum()
+        ntf = scipy.bitwise_and(u, not_v).sum()
+        ntt = scipy.bitwise_and(u, v).sum()
+    else:
+        raise TypeError("Arrays being compared have unknown type.")
+
     return (nff, nft, ntf, ntt)
 
 def _nbool_correspond_ft_tf(u, v):
@@ -1002,6 +1016,7 @@ def yule(u, v):
          R = 2.0 * (c_{TF} + c_{FT}).
     """
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
+    print nff, nft, ntf, ntt
     return float(2.0 * ntf * nft) / float(ntt * nff + ntf * nft)
 
 def matching(u, v):

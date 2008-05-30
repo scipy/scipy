@@ -37,7 +37,7 @@
 import sys
 import os.path
 from scipy.testing import *
-from scipy.cluster.hierarchy import pdist, squareform, linkage, from_mlab_linkage, numobs_dm, numobs_y, numobs_linkage
+from scipy.cluster.hierarchy import pdist, squareform, linkage, from_mlab_linkage, numobs_dm, numobs_y, numobs_linkage, matching, jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule
 
 import numpy
 #import math
@@ -572,10 +572,105 @@ class TestPdist(TestCase):
         #print "test-chebychev-iris", numpy.abs(Y_test2 - Y_right).max()
         self.failUnless(within_tol(Y_test2, Y_right, eps))
 
-    ################### squareform
+    def test_pdist_matching_mtica1(self):
+        "Tests matching(*,*) with mtica example #1."
+        m = matching(numpy.array([1, 0, 1, 1, 0]),
+                     numpy.array([1, 1, 0, 1, 1]))
+        m2 = matching(numpy.array([1, 0, 1, 1, 0], dtype=numpy.bool),
+                      numpy.array([1, 1, 0, 1, 1], dtype=numpy.bool))
+        self.failUnless(numpy.abs(m - 0.6) <= 1e-10)
+        self.failUnless(numpy.abs(m2 - 0.6) <= 1e-10)
+
+    def test_pdist_matching_mtica2(self):
+        "Tests matching(*,*) with mtica example #2."
+        m = matching(numpy.array([1, 0, 1]),
+                     numpy.array([1, 1, 0]))
+        m2 = matching(numpy.array([1, 0, 1], dtype=numpy.bool),
+                      numpy.array([1, 1, 0], dtype=numpy.bool))
+        self.failUnless(numpy.abs(m - (2.0/3.0)) <= 1e-10)
+        self.failUnless(numpy.abs(m2 - (2.0/3.0)) <= 1e-10)
+
+    def test_pdist_jaccard_mtica1(self):
+        "Tests jaccard(*,*) with mtica example #1."
+        m = jaccard(numpy.array([1, 0, 1, 1, 0]),
+                    numpy.array([1, 1, 0, 1, 1]))
+        m2 = jaccard(numpy.array([1, 0, 1, 1, 0], dtype=numpy.bool),
+                     numpy.array([1, 1, 0, 1, 1], dtype=numpy.bool))
+        self.failUnless(numpy.abs(m - 0.6) <= 1e-10)
+        self.failUnless(numpy.abs(m2 - 0.6) <= 1e-10)
+
+    def test_pdist_jaccard_mtica2(self):
+        "Tests jaccard(*,*) with mtica example #2."
+        m = jaccard(numpy.array([1, 0, 1]),
+                    numpy.array([1, 1, 0]))
+        m2 = jaccard(numpy.array([1, 0, 1], dtype=numpy.bool),
+                     numpy.array([1, 1, 0], dtype=numpy.bool))
+        self.failUnless(numpy.abs(m - (2.0/3.0)) <= 1e-10)
+        self.failUnless(numpy.abs(m2 - (2.0/3.0)) <= 1e-10)
+
+    def test_pdist_yule_mtica1(self):
+        "Tests yule(*,*) with mtica example #1."
+        m = yule(numpy.array([1, 0, 1, 1, 0]),
+                 numpy.array([1, 1, 0, 1, 1]))
+        m2 = yule(numpy.array([1, 0, 1, 1, 0], dtype=numpy.bool),
+                  numpy.array([1, 1, 0, 1, 1], dtype=numpy.bool))
+        print m
+        self.failUnless(numpy.abs(m - 2.0) <= 1e-10)
+        self.failUnless(numpy.abs(m2 - 2.0) <= 1e-10)
+
+    def test_pdist_yule_mtica2(self):
+        "Tests yule(*,*) with mtica example #2."
+        m = yule(numpy.array([1, 0, 1]),
+                 numpy.array([1, 1, 0]))
+        m2 = yule(numpy.array([1, 0, 1], dtype=numpy.bool),
+                  numpy.array([1, 1, 0], dtype=numpy.bool))
+        print m
+        self.failUnless(numpy.abs(m - 2.0) <= 1e-10)
+        self.failUnless(numpy.abs(m2 - 2.0) <= 1e-10)
+
+    def test_pdist_dice_mtica1(self):
+        "Tests dice(*,*) with mtica example #1."
+        m = dice(numpy.array([1, 0, 1, 1, 0]),
+                 numpy.array([1, 1, 0, 1, 1]))
+        m2 = dice(numpy.array([1, 0, 1, 1, 0], dtype=numpy.bool),
+                  numpy.array([1, 1, 0, 1, 1], dtype=numpy.bool))
+        print m
+        self.failUnless(numpy.abs(m - (3.0/7.0)) <= 1e-10)
+        self.failUnless(numpy.abs(m2 - (3.0/7.0)) <= 1e-10)
+
+    def test_pdist_dice_mtica2(self):
+        "Tests dice(*,*) with mtica example #2."
+        m = dice(numpy.array([1, 0, 1]),
+                 numpy.array([1, 1, 0]))
+        m2 = dice(numpy.array([1, 0, 1], dtype=numpy.bool),
+                  numpy.array([1, 1, 0], dtype=numpy.bool))
+        print m
+        self.failUnless(numpy.abs(m - 0.5) <= 1e-10)
+        self.failUnless(numpy.abs(m2 - 0.5) <= 1e-10)
+
+    def test_pdist_sokalsneath_mtica1(self):
+        "Tests sokalsneath(*,*) with mtica example #1."
+        m = sokalsneath(numpy.array([1, 0, 1, 1, 0]),
+                        numpy.array([1, 1, 0, 1, 1]))
+        m2 = sokalsneath(numpy.array([1, 0, 1, 1, 0], dtype=numpy.bool),
+                         numpy.array([1, 1, 0, 1, 1], dtype=numpy.bool))
+        print m
+        self.failUnless(numpy.abs(m - (3.0/4.0)) <= 1e-10)
+        self.failUnless(numpy.abs(m2 - (3.0/4.0)) <= 1e-10)
+
+    def test_pdist_sokalsneath_mtica2(self):
+        "Tests sokalsneath(*,*) with mtica example #2."
+        m = sokalsneath(numpy.array([1, 0, 1]),
+                        numpy.array([1, 1, 0]))
+        m2 = sokalsneath(numpy.array([1, 0, 1], dtype=numpy.bool),
+                         numpy.array([1, 1, 0], dtype=numpy.bool))
+        print m
+        self.failUnless(numpy.abs(m - (4.0/5.0)) <= 1e-10)
+        self.failUnless(numpy.abs(m2 - (4.0/5.0)) <= 1e-10)
 
 class TestSquareForm(TestCase):
 
+    ################### squareform
     def test_squareform_empty_matrix(self):
         "Tests squareform on an empty matrix."
         A = numpy.zeros((0,0))
@@ -700,7 +795,6 @@ class TestLinkage(TestCase):
         expectedZ = from_mlab_linkage(Zmlab)
         #print Z, expectedZ, numpy.abs(Z - expectedZ).max()
         self.failUnless(within_tol(Z, expectedZ, eps))
-        
 
 def within_tol(a, b, tol):
     return numpy.abs(a - b).max() < tol
