@@ -66,6 +66,13 @@ _filenames = ["iris.txt",
               "pdist-chebychev-ml.txt",
               "pdist-chebychev-ml-iris.txt"]
 
+_tdist = np.array([[0,    662,  877,  255,  412,  996],
+                   [662,  0,    295,  468,  268,  400],
+                   [877,  295,  0,    754,  564,  138],
+                   [255,  468,  754,  0,    219,  869],
+                   [412,  268,  564,  219,  0,    669],
+                   [996,  400,  138,  869,  669,  0  ]])
+
 # A hashmap of expected output arrays for the tests. These arrays
 # come from a list of text files, which are read prior to testing.
 
@@ -554,3 +561,4 @@ def within_tol(a, b, tol):
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])
+
