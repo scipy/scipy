@@ -37,7 +37,7 @@
 import sys
 import os.path
 from scipy.testing import *
-from scipy.cluster.hierarchy import pdist
+from scipy.cluster.hierarchy import pdist, squareform, linkage, from_mlab_linkage
 
 import numpy
 #import math
@@ -64,14 +64,20 @@ _filenames = ["iris.txt",
               "pdist-euclidean-ml.txt",
               "pdist-euclidean-ml-iris.txt",
               "pdist-chebychev-ml.txt",
-              "pdist-chebychev-ml-iris.txt"]
+              "pdist-chebychev-ml-iris.txt",
+              "linkage-single-tdist.txt",
+              "linkage-complete-tdist.txt",
+              "linkage-average-tdist.txt",
+              "linkage-weighted-tdist.txt"]
 
-_tdist = np.array([[0,    662,  877,  255,  412,  996],
-                   [662,  0,    295,  468,  268,  400],
-                   [877,  295,  0,    754,  564,  138],
-                   [255,  468,  754,  0,    219,  869],
-                   [412,  268,  564,  219,  0,    669],
-                   [996,  400,  138,  869,  669,  0  ]])
+_tdist = numpy.array([[0,    662,  877,  255,  412,  996],
+                      [662,  0,    295,  468,  268,  400],
+                      [877,  295,  0,    754,  564,  138],
+                      [255,  468,  754,  0,    219,  869],
+                      [412,  268,  564,  219,  0,    669],
+                      [996,  400,  138,  869,  669,  0  ]], dtype='double')
+
+_ytdist = squareform(_tdist)
 
 # A hashmap of expected output arrays for the tests. These arrays
 # come from a list of text files, which are read prior to testing.
@@ -555,6 +561,104 @@ class TestPdist(TestCase):
         Y_test2 = pdist(X, 'test_chebychev')
         #print "test-chebychev-iris", numpy.abs(Y_test2 - Y_right).max()
         self.failUnless(within_tol(Y_test2, Y_right, eps))
+
+    def test_pdist_chebychev_iris_nonC(self):
+        "Tests pdist(X, 'test_chebychev') [the non-C implementation] on the Iris data set."
+        eps = 1e-15
+        # Get the data: the input matrix and the right output.
+        X = eo['iris']
+        Y_right = eo['pdist-chebychev-iris']
+        Y_test2 = pdist(X, 'test_chebychev')
+        #print "test-chebychev-iris", numpy.abs(Y_test2 - Y_right).max()
+        self.failUnless(within_tol(Y_test2, Y_right, eps))
+
+    def test_squareform_empty_matrix(self):
+        "Tests squareform on an empty matrix."
+        A = numpy.zeros((0,0))
+        rA = squareform(numpy.array(A, dtype='double'))
+        self.failUnless(rA.shape == (0,))
+
+    def test_squareform_empty_vector(self):
+        v = numpy.zeros((0,))
+        rv = squareform(numpy.array(v, dtype='double'))
+        self.failUnless(rv.shape == (0,0))
+
+    def test_squareform_1by1_matrix(self):
+        "Tests squareform on a 1x1 matrix."
+        A = numpy.zeros((1,1))
+        rA = squareform(numpy.array(A, dtype='double'))
+        self.failUnless(rA.shape == (0,))
+
+    def test_squareform_one_vector(self):
+        "Tests squareform on a 1-D array, length=1."
+        v = numpy.ones((1,)) * 8.3
+        rv = squareform(numpy.array(v, dtype='double'))
+        self.failUnless(rv.shape == (2,2))
+        self.failUnless(rv[0,1] == 8.3)
+        self.failUnless(rv[1,0] == 8.3)
+
+    def test_squareform_2by2_matrix(self):
+        "Tests squareform on a 2x2 matrix."
+        A = numpy.zeros((2,2))
+        A[0,1]=0.8
+        A[1,0]=0.8
+        rA = squareform(numpy.array(A, dtype='double'))
+        self.failUnless(rA.shape == (1,))
+        self.failUnless(rA[0] == 0.8)
+
+    def test_squareform_multi_matrix(self):
+        "Tests squareform on a square matrices of multiple sizes."
+        for n in xrange(2, 5):
+            X = numpy.random.rand(n, 4)
+            Y = pdist(X)
+            A = squareform(Y)
+            Yr = squareform(A)
+            s = A.shape
+            k = 0
+            #print A.shape, Y.shape, Yr.shape
+            for i in xrange(0, s[0]):
+                for j in xrange(i+1, s[1]):
+                    if i != j:
+                        #print i, j, k, A[i, j], Y[k]
+                        self.failUnless(A[i, j] == Y[k])
+                        self.failUnless(Yr[k] == Y[k])
+                        k += 1
+                    else:
+                        self.failUnless(A[i, j] == 0)
+
+    def test_linkage_single_tdist(self):
+        "Tests linkage(Y, 'single') on the tdist data set."
+        Z = linkage(_ytdist, 'single')
+        Zmlab = eo['linkage-single-tdist']
+        eps = 1e-10
+        expectedZ = from_mlab_linkage(Zmlab)
+        self.failUnless(within_tol(Z, expectedZ, eps))
+
+    def test_linkage_complete_tdist(self):
+        "Tests linkage(Y, 'complete') on the tdist data set."
+        Z = linkage(_ytdist, 'complete')
+        Zmlab = eo['linkage-complete-tdist']
+        eps = 1e-10
+        expectedZ = from_mlab_linkage(Zmlab)
+        self.failUnless(within_tol(Z, expectedZ, eps))
+
+    def test_linkage_average_tdist(self):
+        "Tests linkage(Y, 'average') on the tdist data set."
+        Z = linkage(_ytdist, 'average')
+        Zmlab = eo['linkage-average-tdist']
+        eps = 1e-05
+        expectedZ = from_mlab_linkage(Zmlab)
+        #print Z, expectedZ, numpy.abs(Z - expectedZ).max()
+        self.failUnless(within_tol(Z, expectedZ, eps))
+
+    def test_linkage_weighted_tdist(self):
+        "Tests linkage(Y, 'weighted') on the tdist data set."
+        Z = linkage(_ytdist, 'weighted')
+        Zmlab = eo['linkage-weighted-tdist']
+        eps = 1e-10
+        expectedZ = from_mlab_linkage(Zmlab)
+        #print Z, expectedZ, numpy.abs(Z - expectedZ).max()
+        self.failUnless(within_tol(Z, expectedZ, eps))
 
 def within_tol(a, b, tol):
     return numpy.abs(a - b).max() < tol

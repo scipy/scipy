@@ -734,7 +734,7 @@ void dist_average(cinfo *info, int mini, int minj, int np, int n) {
     xi = inds[i];
     cnode *xnd = info->nodes + xi;
     xn = xnd->n;
-    mply = 1.0 / (((double)xn) * rscnt);
+    mply = (double)1.0 / (((double)xn) * rscnt);
     *bit = mply * ((drx * (rc * xn)) + (dsx * (sc * xn)));
   }
   for (i = mini + 1; i < minj; i++, bit++) {
@@ -743,7 +743,7 @@ void dist_average(cinfo *info, int mini, int minj, int np, int n) {
     xi = inds[i];
     cnode *xnd = info->nodes + xi;
     xn = xnd->n;
-    mply = 1.0 / (((double)xn) * rscnt);
+    mply = (double)1.0 / (((double)xn) * rscnt);
     *bit = mply * ((drx * (rc * xn)) + (dsx * (sc * xn)));
   }
   for (i = minj + 1; i < np; i++, bit++) {
@@ -752,7 +752,7 @@ void dist_average(cinfo *info, int mini, int minj, int np, int n) {
     xi = inds[i];
     cnode *xnd = info->nodes + xi;
     xn = xnd->n;
-    mply = 1.0 / (((double)xn) * rscnt);
+    mply = (double)1.0 / (((double)xn) * rscnt);
     *bit = mply * ((drx * (rc * xn)) + (dsx * (sc * xn)));
   }
 }

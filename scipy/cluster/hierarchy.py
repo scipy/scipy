@@ -735,7 +735,6 @@ def squareform(X, force="no", checks=True):
         # is indeed a binomial coefficient.
         d = int(np.ceil(np.sqrt(X.shape[0] * 2)))
 
-        print d, s[0]
         # Check that v is of valid dimensions.
         if d * (d - 1) / 2 != int(s[0]):
             raise ValueError('Incompatible vector size. It must be a binomial coefficient n choose 2 for some integer n >= 2.')
@@ -760,9 +759,9 @@ def squareform(X, force="no", checks=True):
             raise ValueError('The matrix argument must be square.')
         if checks:
             if np.sum(np.sum(X == X.transpose())) != np.product(X.shape):
-                raise ValueError('The distance matrix must be symmetrical.')
+                raise ValueError('The distance matrix array must be symmetrical.')
             if (X.diagonal() != 0).any():
-                raise ValueError('The distance matrix must have zeros along the diagonal.')
+                raise ValueError('The distance matrix array must have zeros along the diagonal.')
 
         # One-side of the dimensions is set here.
         d = s[0]
@@ -780,7 +779,7 @@ def squareform(X, force="no", checks=True):
     elif len(s) != 2 and force.lower() == 'tomatrix':
         raise ValueError("Forcing 'tomatrix' but input X is not a distance vector.")
     else:
-        raise ValueError('The first argument must be a vector or matrix. A %d-dimensional array is not permitted' % len(s))
+        raise ValueError('The first argument must be one or two dimensional array. A %d-dimensional array is not permitted' % len(s))
 
 def minkowski(u, v, p):
     """
@@ -1607,7 +1606,6 @@ def from_mlab_linkage(Z):
        the number of original observations (leaves) in the non-singleton
        cluster i.
     """
-    is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
     Zpart = Z[:,0:2]
     Zd = Z[:,2].reshape(Zs[0], 1)
