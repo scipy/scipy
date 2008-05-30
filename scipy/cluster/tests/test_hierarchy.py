@@ -574,6 +574,8 @@ class TestPdist(TestCase):
 
     ################### squareform
 
+class TestSquareForm(TestCase):
+
     def test_squareform_empty_matrix(self):
         "Tests squareform on an empty matrix."
         A = numpy.zeros((0,0))
@@ -583,7 +585,8 @@ class TestPdist(TestCase):
     def test_squareform_empty_vector(self):
         v = numpy.zeros((0,))
         rv = squareform(numpy.array(v, dtype='double'))
-        self.failUnless(rv.shape == (0,0))
+        self.failUnless(rv.shape == (1,1))
+        self.failUnless(rv[0, 0] == 0)
 
     def test_squareform_1by1_matrix(self):
         "Tests squareform on a 1x1 matrix."
@@ -618,29 +621,29 @@ class TestPdist(TestCase):
             Yr = squareform(A)
             s = A.shape
             k = 0
+            print A.shape, Y.shape, Yr.shape
             self.failUnless(len(s) == 2)
             self.failUnless(len(Yr.shape) == 1)
             self.failUnless(s[0] == s[1])
-            #print A.shape, Y.shape, Yr.shape
             for i in xrange(0, s[0]):
                 for j in xrange(i+1, s[1]):
                     if i != j:
                         #print i, j, k, A[i, j], Y[k]
                         self.failUnless(A[i, j] == Y[k])
-                        self.failUnless(Yr[k] == Y[k])
                         k += 1
                     else:
                         self.failUnless(A[i, j] == 0)
 
-    ############## numobs_dm
+class TestNumObs(TestCase):
 
+    ############## numobs_dm
     def test_numobs_dm_multi_matrix(self):
         "Tests numobs_dm with observation matrices of multiple sizes."
-        for n in xrange(2, 10):
+        for n in xrange(1, 10):
             X = numpy.random.rand(n, 4)
             Y = pdist(X)
             A = squareform(Y)
-            #print A.shape, Y.shape, Yr.shape
+            print A.shape, Y.shape
             self.failUnless(numobs_dm(A) == n)
 
     def test_numobs_y_multi_matrix(self):
@@ -661,8 +664,9 @@ class TestPdist(TestCase):
             #print A.shape, Y.shape, Yr.shape
             self.failUnless(numobs_linkage(Z) == n)
 
-    ################### linkage
+class TestLinkage(TestCase):
 
+    ################### linkage
     def test_linkage_single_tdist(self):
         "Tests linkage(Y, 'single') on the tdist data set."
         Z = linkage(_ytdist, 'single')

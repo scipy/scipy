@@ -730,6 +730,9 @@ def squareform(X, force="no", checks=True):
 
     # X = squareform(v)
     if len(s) == 1 and force != 'tomatrix':
+        if X.shape[0] == 0:
+            return np.zeros((1,1), dtype=np.double)
+
         # Grab the closest value to the square root of the number
         # of elements times 2 to see if the number of elements
         # is indeed a binomial coefficient.
@@ -765,6 +768,9 @@ def squareform(X, force="no", checks=True):
 
         # One-side of the dimensions is set here.
         d = s[0]
+
+        if d <= 1:
+            return np.array([], dtype=np.double)
 
         # Create a vector.
         v = np.zeros(((d * (d - 1) / 2),), dtype=np.double)
@@ -1662,9 +1668,9 @@ def is_valid_im(R, warning=False, throw=False, name=None):
                 raise TypeError('Variable passed as inconsistency matrix is not a numpy array.')
         if R.dtype != np.double:
             if name:
-                raise TypeError('Inconsistency matrix \'%s\' must contain doubles (float64).' % name)
+                raise TypeError('Inconsistency matrix \'%s\' must contain doubles (double).' % name)
             else:
-                raise TypeError('Inconsistency matrix must contain doubles (float64).')
+                raise TypeError('Inconsistency matrix must contain doubles (double).')
         if len(R.shape) != 2:
             if name:
                 raise ValueError('Inconsistency matrix \'%s\' must have shape=2 (i.e. be two-dimensional).' % name)
@@ -1721,9 +1727,9 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
                 raise TypeError('Variable is not a valid array.')
         if Z.dtype != np.double:
             if name:
-                raise TypeError('Linkage matrix \'%s\' must contain doubles (float64).' % name)
+                raise TypeError('Linkage matrix \'%s\' must contain doubles (double).' % name)
             else:
-                raise TypeError('Linkage matrix must contain doubles (float64).')
+                raise TypeError('Linkage matrix must contain doubles (double).')
         if len(Z.shape) != 2:
             if name:
                 raise ValueError('Linkage matrix \'%s\' must have shape=2 (i.e. be two-dimensional).' % name)
@@ -1782,9 +1788,9 @@ def is_valid_y(y, warning=False, throw=False, name=None):
                 raise TypeError('Variable is not a numpy array.')
         if y.dtype != np.double:
             if name:
-                raise TypeError('Condensed distance matrix \'%s\' must contain doubles (float64).' % name)
+                raise TypeError('Condensed distance matrix \'%s\' must contain doubles (double).' % name)
             else:
-                raise TypeError('Condensed distance matrix must contain doubles (float64).')
+                raise TypeError('Condensed distance matrix must contain doubles (double).')
         if len(y.shape) != 1:
             if name:
                 raise ValueError('Condensed distance matrix \'%s\' must have shape=1 (i.e. be one-dimensional).' % name)
@@ -1845,9 +1851,9 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D"):
         s = D.shape
         if D.dtype != np.double:
             if name:
-                raise TypeError('Distance matrix \'%s\' must contain doubles (float64).' % name)
+                raise TypeError('Distance matrix \'%s\' must contain doubles (double).' % name)
             else:
-                raise TypeError('Distance matrix must contain doubles (float64).')
+                raise TypeError('Distance matrix must contain doubles (double).')
         if len(D.shape) != 2:
             if name:
                 raise ValueError('Distance matrix \'%s\' must have shape=2 (i.e. be two-dimensional).' % name)
