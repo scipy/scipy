@@ -936,9 +936,9 @@ int NI_ResampleWithGradient(int layersS, int rowsS, int colsS, int layersD, int 
 			        V110 * (dx1) * (dy1) * (-1.0) +
 			        V111 * (dx1) * (dy1) * (1.0);
 
-			gradientX[sliceD+rowD+(int)x] = (int)(gradX*scale[(int)zp]);
-			gradientY[sliceD+rowD+(int)x] = (int)(gradY*scale[(int)zp]);
-			gradientZ[sliceD+rowD+(int)x] = (int)(gradZ*scale[(int)zp]);
+			gradientX[sliceD+rowD+(int)x] = (gradX*scale[(int)zp]);
+			gradientY[sliceD+rowD+(int)x] = (gradY*scale[(int)zp]);
+			gradientZ[sliceD+rowD+(int)x] = (gradZ*scale[(int)zp]);
 
 		    }
 	        }
@@ -1083,9 +1083,9 @@ int NI_Resample_Gradient_Coords(int size, int layersS, int rowsS, int colsS, int
 	                V111 * (dx1) * (dy1) * (1.0);
 
 	        /* gradients saved in the unrolled clipped gradient volume */
-	        gradientX[i] = (int)(gradX*scale[(int)zp]);
-	        gradientY[i] = (int)(gradY*scale[(int)zp]);
-	        gradientZ[i] = (int)(gradZ*scale[(int)zp]);
+	        gradientX[i] = (gradX*scale[(int)zp]);
+	        gradientY[i] = (gradY*scale[(int)zp]);
+	        gradientZ[i] = (gradZ*scale[(int)zp]);
 
 	    }
 
