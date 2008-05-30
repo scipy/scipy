@@ -1735,12 +1735,13 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
             else:
                 raise ValueError('Linkage matrix must have 4 columns.')
         n = Z.shape[0]
-        if not ((Z[:,0]-xrange(n-1, n*2-1) < 0).any()) or \
-           not (Z[:,1]-xrange(n-1, n*2-1) < 0).any():
-            if name:
-                raise ValueError('Linkage \'%s\' contains negative indices.' % name)
-            else:
-                raise ValueError('Linkage contains negative indices.')
+        if n > 1:
+            if ((Z[:,0] < 0).any() or
+                (Z[:,1] < 0).any()):
+                if name:
+                    raise ValueError('Linkage \'%s\' contains negative indices.' % name)
+                else:
+                    raise ValueError('Linkage contains negative indices.')
     except Exception, e:
         if throw:
             raise
@@ -1805,7 +1806,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     return valid
 
 
-def is_valid_dm(D, t=0.0):
+def is_valid_dm(D, tol=0.0, throw=False, name="D"):
     """
     is_valid_dm(D)
 
@@ -1813,12 +1814,12 @@ def is_valid_dm(D, t=0.0):
       Distance matrices must be 2-dimensional numpy arrays containing
       doubles. They must have a zero-diagonal, and they must be symmetric.
 
-    is_valid_dm(D, t)
+    is_valid_dm(D, tol)
 
       Returns True if the variable D passed is a valid distance matrix.
       Small numerical differences in D and D.T and non-zeroness of the
       diagonal are ignored if they are within the tolerance specified
-      by t.
+      by tol.
 
     is_valid_dm(..., warning=True, name='V')
 
@@ -1841,6 +1842,7 @@ def is_valid_dm(D, t=0.0):
                 raise TypeError('\'%s\' passed as a distance matrix is not a numpy array.' % name)
             else:
                 raise TypeError('Variable is not a numpy array.')
+        s = D.shape
         if D.dtype != np.double:
             if name:
                 raise TypeError('Distance matrix \'%s\' must contain doubles (float64).' % name)
@@ -1851,7 +1853,7 @@ def is_valid_dm(D, t=0.0):
                 raise ValueError('Distance matrix \'%s\' must have shape=2 (i.e. be two-dimensional).' % name)
             else:
                 raise ValueError('Distance matrix must have shape=2 (i.e. be two-dimensional).')
-        if t == 0.0:
+        if tol == 0.0:
             if not (D == D.T).all():
                 if name:
                     raise ValueError('Distance matrix \'%s\' must be symmetric.' % name)
@@ -1863,16 +1865,16 @@ def is_valid_dm(D, t=0.0):
                 else:
                     raise ValueError('Distance matrix diagonal must be zero.')
         else:
-            if not (D - D.T <= t).all():
+            if not (D - D.T <= tol).all():
                 if name:
-                    raise ValueError('Distance matrix \'%s\' must be symmetric within tolerance %d.' % (name, t))
+                    raise ValueError('Distance matrix \'%s\' must be symmetric within tolerance %d.' % (name, tol))
                 else:
-                    raise ValueError('Distance matrix must be symmetric within tolerance %d.' % t)
-            if not (D[xrange(0, s[0]), xrange(0, s[0])] <= t).all():
+                    raise ValueError('Distance matrix must be symmetric within tolerance %5.5f.' % tol)
+            if not (D[xrange(0, s[0]), xrange(0, s[0])] <= tol).all():
                 if name:
-                    raise ValueError('Distance matrix \'%s\' diagonal must be close to zero within tolerance %d.' % (name, t))
+                    raise ValueError('Distance matrix \'%s\' diagonal must be close to zero within tolerance %5.5f.' % (name, tol))
                 else:
-                    raise ValueError('Distance matrix \'%s\' diagonal must be close to zero within tolerance %d.' % t)
+                    raise ValueError('Distance matrix \'%s\' diagonal must be close to zero within tolerance %5.5f.' % tol)
     except Exception, e:
         if throw:
             raise
@@ -1887,7 +1889,7 @@ def numobs_linkage(Z):
     linkage matrix Z.
     """
     is_valid_linkage(Z, throw=True, name='Z')
-    return (Z.shape[0] - 1)
+    return (Z.shape[0] + 1)
 
 def numobs_dm(D):
     """
@@ -1896,7 +1898,7 @@ def numobs_dm(D):
       Returns the number of original observations that correspond to a
       square, non-condensed distance matrix D.
     """
-    is_valid_dm(D, tol=Inf, throw=True, name='D')
+    is_valid_dm(D, tol=scipy.inf, throw=True, name='D')
     return D.shape[0]
 
 def numobs_y(Y):
@@ -1906,8 +1908,8 @@ def numobs_y(Y):
       Returns the number of original observations that correspond to a
       condensed distance matrix Y.
     """
-    is_valid_y(y, throw=True, name='Y')
-    d = int(np.ceil(np.sqrt(y.shape[0] * 2)))
+    is_valid_y(Y, throw=True, name='Y')
+    d = int(np.ceil(np.sqrt(Y.shape[0] * 2)))
     return d
 
 def Z_y_correspond(Z, Y):

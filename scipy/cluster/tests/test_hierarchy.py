@@ -37,7 +37,7 @@
 import sys
 import os.path
 from scipy.testing import *
-from scipy.cluster.hierarchy import pdist, squareform, linkage, from_mlab_linkage
+from scipy.cluster.hierarchy import pdist, squareform, linkage, from_mlab_linkage, numobs_dm, numobs_y, numobs_linkage
 
 import numpy
 #import math
@@ -572,6 +572,8 @@ class TestPdist(TestCase):
         #print "test-chebychev-iris", numpy.abs(Y_test2 - Y_right).max()
         self.failUnless(within_tol(Y_test2, Y_right, eps))
 
+    ################### squareform
+
     def test_squareform_empty_matrix(self):
         "Tests squareform on an empty matrix."
         A = numpy.zeros((0,0))
@@ -611,10 +613,14 @@ class TestPdist(TestCase):
         for n in xrange(2, 5):
             X = numpy.random.rand(n, 4)
             Y = pdist(X)
+            self.failUnless(len(Y.shape) == 1)
             A = squareform(Y)
             Yr = squareform(A)
             s = A.shape
             k = 0
+            self.failUnless(len(s) == 2)
+            self.failUnless(len(Yr.shape) == 1)
+            self.failUnless(s[0] == s[1])
             #print A.shape, Y.shape, Yr.shape
             for i in xrange(0, s[0]):
                 for j in xrange(i+1, s[1]):
@@ -625,6 +631,37 @@ class TestPdist(TestCase):
                         k += 1
                     else:
                         self.failUnless(A[i, j] == 0)
+
+    ############## numobs_dm
+
+    def test_numobs_dm_multi_matrix(self):
+        "Tests numobs_dm with observation matrices of multiple sizes."
+        for n in xrange(2, 10):
+            X = numpy.random.rand(n, 4)
+            Y = pdist(X)
+            A = squareform(Y)
+            #print A.shape, Y.shape, Yr.shape
+            self.failUnless(numobs_dm(A) == n)
+
+    def test_numobs_y_multi_matrix(self):
+        "Tests numobs_y with observation matrices of multiple sizes."
+        for n in xrange(2, 10):
+            X = numpy.random.rand(n, 4)
+            Y = pdist(X)
+            #print A.shape, Y.shape, Yr.shape
+            self.failUnless(numobs_y(Y) == n)
+
+    def test_numobs_linkage_multi_matrix(self):
+        "Tests numobs_linkage with observation matrices of multiple sizes."
+        for n in xrange(2, 10):
+            X = numpy.random.rand(n, 4)
+            Y = pdist(X)
+            Z = linkage(Y)
+            #print Z
+            #print A.shape, Y.shape, Yr.shape
+            self.failUnless(numobs_linkage(Z) == n)
+
+    ################### linkage
 
     def test_linkage_single_tdist(self):
         "Tests linkage(Y, 'single') on the tdist data set."
@@ -659,6 +696,7 @@ class TestPdist(TestCase):
         expectedZ = from_mlab_linkage(Zmlab)
         #print Z, expectedZ, numpy.abs(Z - expectedZ).max()
         self.failUnless(within_tol(Z, expectedZ, eps))
+        
 
 def within_tol(a, b, tol):
     return numpy.abs(a - b).max() < tol
