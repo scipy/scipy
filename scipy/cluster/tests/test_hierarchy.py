@@ -573,7 +573,7 @@ class TestPdist(TestCase):
         self.failUnless(within_tol(Y_test2, Y_right, eps))
 
     def test_pdist_matching_mtica1(self):
-        "Tests matching(*,*) with mtica example #1."
+        "Tests matching(*,*) with mtica example #1 (nums)."
         m = matching(numpy.array([1, 0, 1, 1, 0]),
                      numpy.array([1, 1, 0, 1, 1]))
         m2 = matching(numpy.array([1, 0, 1, 1, 0], dtype=numpy.bool),
@@ -668,6 +668,47 @@ class TestPdist(TestCase):
         self.failUnless(numpy.abs(m - (4.0/5.0)) <= 1e-10)
         self.failUnless(numpy.abs(m2 - (4.0/5.0)) <= 1e-10)
 
+    def test_pdist_rogerstanimoto_mtica1(self):
+        "Tests rogerstanimoto(*,*) with mtica example #1."
+        m = rogerstanimoto(numpy.array([1, 0, 1, 1, 0]),
+                           numpy.array([1, 1, 0, 1, 1]))
+        m2 = rogerstanimoto(numpy.array([1, 0, 1, 1, 0], dtype=numpy.bool),
+                            numpy.array([1, 1, 0, 1, 1], dtype=numpy.bool))
+        print m
+        self.failUnless(numpy.abs(m - (3.0/4.0)) <= 1e-10)
+        self.failUnless(numpy.abs(m2 - (3.0/4.0)) <= 1e-10)
+
+    def test_pdist_rogerstanimoto_mtica2(self):
+        "Tests rogerstanimoto(*,*) with mtica example #2."
+        m = rogerstanimoto(numpy.array([1, 0, 1]),
+                           numpy.array([1, 1, 0]))
+        m2 = rogerstanimoto(numpy.array([1, 0, 1], dtype=numpy.bool),
+                            numpy.array([1, 1, 0], dtype=numpy.bool))
+        print m
+        self.failUnless(numpy.abs(m - (4.0/5.0)) <= 1e-10)
+        self.failUnless(numpy.abs(m2 - (4.0/5.0)) <= 1e-10)
+
+
+    def test_pdist_russellrao_mtica1(self):
+        "Tests russellrao(*,*) with mtica example #1."
+        m = russellrao(numpy.array([1, 0, 1, 1, 0]),
+                       numpy.array([1, 1, 0, 1, 1]))
+        m2 = russellrao(numpy.array([1, 0, 1, 1, 0], dtype=numpy.bool),
+                        numpy.array([1, 1, 0, 1, 1], dtype=numpy.bool))
+        print m
+        self.failUnless(numpy.abs(m - (3.0/5.0)) <= 1e-10)
+        self.failUnless(numpy.abs(m2 - (3.0/5.0)) <= 1e-10)
+
+    def test_pdist_russellrao_mtica2(self):
+        "Tests russellrao(*,*) with mtica example #2."
+        m = russellrao(numpy.array([1, 0, 1]),
+                       numpy.array([1, 1, 0]))
+        m2 = russellrao(numpy.array([1, 0, 1], dtype=numpy.bool),
+                        numpy.array([1, 1, 0], dtype=numpy.bool))
+        print m
+        self.failUnless(numpy.abs(m - (2.0/3.0)) <= 1e-10)
+        self.failUnless(numpy.abs(m2 - (2.0/3.0)) <= 1e-10)
+
 class TestSquareForm(TestCase):
 
     ################### squareform
@@ -709,25 +750,28 @@ class TestSquareForm(TestCase):
     def test_squareform_multi_matrix(self):
         "Tests squareform on a square matrices of multiple sizes."
         for n in xrange(2, 5):
-            X = numpy.random.rand(n, 4)
-            Y = pdist(X)
-            self.failUnless(len(Y.shape) == 1)
-            A = squareform(Y)
-            Yr = squareform(A)
-            s = A.shape
-            k = 0
-            print A.shape, Y.shape, Yr.shape
-            self.failUnless(len(s) == 2)
-            self.failUnless(len(Yr.shape) == 1)
-            self.failUnless(s[0] == s[1])
-            for i in xrange(0, s[0]):
-                for j in xrange(i+1, s[1]):
-                    if i != j:
-                        #print i, j, k, A[i, j], Y[k]
-                        self.failUnless(A[i, j] == Y[k])
-                        k += 1
-                    else:
-                        self.failUnless(A[i, j] == 0)
+            yield self.check_squareform_multi_matrix(n)
+
+    def check_squareform_multi_matrix(self, n):
+        X = numpy.random.rand(n, 4)
+        Y = pdist(X)
+        self.failUnless(len(Y.shape) == 1)
+        A = squareform(Y)
+        Yr = squareform(A)
+        s = A.shape
+        k = 0
+        print A.shape, Y.shape, Yr.shape
+        self.failUnless(len(s) == 2)
+        self.failUnless(len(Yr.shape) == 1)
+        self.failUnless(s[0] == s[1])
+        for i in xrange(0, s[0]):
+            for j in xrange(i+1, s[1]):
+                if i != j:
+                    #print i, j, k, A[i, j], Y[k]
+                    self.failUnless(A[i, j] == Y[k])
+                    k += 1
+                else:
+                    self.failUnless(A[i, j] == 0)
 
 class TestNumObs(TestCase):
 
