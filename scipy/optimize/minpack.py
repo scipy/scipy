@@ -412,7 +412,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
 
 
 # Steffensen's Method using Aitken's Del^2 convergence acceleration.
-def fixed_point(func, x0, args=(), xtol=1e-10, maxiter=500):
+def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
     """Find the point where func(x) == x
     
     Given a function of one or more variables and a starting point, find a
@@ -420,6 +420,17 @@ def fixed_point(func, x0, args=(), xtol=1e-10, maxiter=500):
 
     Uses Steffensen's Method using Aitken's Del^2 convergence acceleration.
     See Burden, Faires, "Numerical Analysis", 5th edition, pg. 80
+
+    Example
+    -------
+    >>> from numpy import sqrt, array
+    >>> from scipy.optimize import fixed_point
+    >>> def func(x, c1, c2):
+            return sqrt(c1/(x+c2))
+    >>> c1 = array([10,12.])
+    >>> c2 = array([3, 5.])
+    >>> fixed_point(func, [1.2, 1.3], args=(c1,c2))
+    array([ 1.4920333 ,  1.37228132])
 
     See also:
 
@@ -441,24 +452,34 @@ def fixed_point(func, x0, args=(), xtol=1e-10, maxiter=500):
     """
     if not isscalar(x0):
         x0 = asarray(x0)
-    p0 = x0
-    for iter in range(maxiter):
-        p1 = func(p0, *args)
-        p2 = func(p1, *args)
-        d = p2 - 2.0 * p1 + p0
-        if isinstance(x0, ndarray):
+        p0 = x0                  
+        for iter in range(maxiter):
+            p1 = func(p0, *args)
+            p2 = func(p1, *args)
+            d = p2 - 2.0 * p1 + p0
             p = where(d == 0, p2, p0 - (p1 - p0)*(p1-p0) / d)
-            if all(abs(p-p0) < xtol):
+            relerr = where(p0 == 0, p, (p-p0)/p0)
+            if all(relerr < xtol):
                 return p
-        else:
+            p0 = p
+    else:
+        p0 = x0
+        for iter in range(maxiter):
+            p1 = func(p0, *args)
+            p2 = func(p1, *args)
+            d = p2 - 2.0 * p1 + p0
             if d == 0.0:            
                 return p2
             else:
                 p = p0 - (p1 - p0)*(p1-p0) / d
-            if abs(p-p0) < xtol:
+            if p0 == 0:
+                relerr = p
+            else:
+                relerr = (p-p0)/p0
+            if relerr < xtol:
                 return p
-        p0 = p
-    raise RuntimeError, "Failed to converge after %d iterations, value is %f" % (maxiter,p)
+            p0 = p
+    raise RuntimeError, "Failed to converge after %d iterations, value is %s" % (maxiter,p)
 
 
 def bisection(func, a, b, args=(), xtol=1e-10, maxiter=400):
