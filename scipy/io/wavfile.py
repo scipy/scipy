@@ -15,7 +15,7 @@ def _read_fmt_chunk(fid):
 # assumes file pointer is immediately
 #   after the 'data' id
 def _read_data_chunk(fid, noc, bits):
-    size = struct.unpack('l',fid.read(4))[0]
+    size = struct.unpack('i',fid.read(4))[0]
     if bits == 8:
         data = numpy.fromfile(fid, dtype=numpy.ubyte, count=size)
         if noc > 1:
@@ -30,7 +30,7 @@ def _read_data_chunk(fid, noc, bits):
 
 def _read_riff_chunk(fid):
     str1 = fid.read(4)
-    fsize = struct.unpack('L', fid.read(4))[0] + 8
+    fsize = struct.unpack('I', fid.read(4))[0] + 8
     str2 = fid.read(4)
     if (str1 != 'RIFF' or str2 != 'WAVE'):
         raise ValueError, "Not a WAV file."
@@ -64,7 +64,7 @@ def read(file):
             data = _read_data_chunk(fid, noc, bits)
         else:
             print "Warning:  %s chunk not understood"
-            size = struct.unpack('L',fid.read(4))[0]
+            size = struct.unpack('I',fid.read(4))[0]
             bytes = fid.read(size)
     fid.close()
     return rate, data
@@ -99,11 +99,11 @@ def write(filename, rate, data):
     fid.write(struct.pack('lhHLLHH', 16, 1, noc, rate, sbytes, ba, bits))
     # data chunk
     fid.write('data')
-    fid.write(struct.pack('l', data.nbytes))
+    fid.write(struct.pack('i', data.nbytes))
     data.tofile(fid)
     # Determine file size and place it in correct
     #  position at start of the file.
     size = fid.tell()
     fid.seek(4)
-    fid.write(struct.pack('l', size-8))
+    fid.write(struct.pack('i', size-8))
     fid.close()
