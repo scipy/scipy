@@ -175,7 +175,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 import numpy as np
-import _hierarchy_wrap, scipy, types, math, sys, scipy.stats
+import _hierarchy_wrap, types, math, sys
 
 _cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2,
                            'weighted': 6}
@@ -199,7 +199,7 @@ def _unbiased_variance(X):
     observations.
     """
     #n = np.double(X.shape[1])
-    return scipy.stats.var(X, axis=0) # * n / (n - 1.0)
+    return np.var(X, axis=0, ddof=1) # * n / (n - 1.0)
 
 def _copy_array_if_base_present(a):
     """
@@ -638,6 +638,8 @@ def totree(Z, rd=False):
     functions in this library.
     """
 
+    Z = numpy.asarray(Z)
+
     is_valid_linkage(Z, throw=True, name='Z')
 
     # The number of original objects is equal to the number of rows minus
@@ -795,6 +797,8 @@ def minkowski(u, v, p):
 
         ||u-v||_p = (\sum {|u_i - v_i|^p})^(1/p).
     """
+    u = np.asarray(u)
+    v = np.asarray(v)
     if p < 1:
         raise ValueError("p must be at least 1")
     return math.pow((abs(u-v)**p).sum(), 1.0/p)
@@ -805,6 +809,8 @@ def euclidean(u, v):
 
       Computes the Euclidean distance between two n-vectors u and v, ||u-v||_2
     """
+    u = np.asarray(u)
+    v = np.asarray(v)
     q=np.matrix(u-v)
     return np.sqrt((q*q.T).sum())
 
@@ -815,6 +821,8 @@ def sqeuclidean(u, v):
       Computes the squared Euclidean distance between two n-vectors u and v,
         (||u-v||_2)^2.
     """
+    u = np.asarray(u)
+    v = np.asarray(v)
     return ((u-v)*(u-v).T).sum()
 
 def cosine(u, v):
@@ -824,8 +832,10 @@ def cosine(u, v):
       Computes the Cosine distance between two n-vectors u and v,
         (1-uv^T)/(||u||_2 * ||v||_2).
     """
-    return (1.0 - (scipy.dot(u, v.T) / \
-                   (np.sqrt(scipy.dot(u, u.T)) * np.sqrt(scipy.dot(v, v.T)))))
+    u = np.asarray(u)
+    v = np.asarray(v)
+    return (1.0 - (np.dot(u, v.T) / \
+                   (np.sqrt(np.dot(u, u.T)) * np.sqrt(np.dot(v, v.T)))))
 
 def correlation(u, v):
     """
@@ -844,9 +854,9 @@ def correlation(u, v):
     vmu = v.mean()
     um = u - umu
     vm = v - vmu
-    return 1.0 - (scipy.dot(um, vm) /
-                  (np.sqrt(scipy.dot(um, um)) \
-                   * np.sqrt(scipy.dot(vm, vm))))
+    return 1.0 - (np.dot(um, vm) /
+                  (np.sqrt(np.dot(um, um)) \
+                   * np.sqrt(np.dot(vm, vm))))
 
 def hamming(u, v):
     """
@@ -864,6 +874,8 @@ def hamming(u, v):
 
       for k < n.
     """
+    u = np.asarray(u)
+    v = np.asarray(v)
     return (u != v).mean()
 
 def jaccard(u, v):
@@ -883,6 +895,8 @@ def jaccard(u, v):
 
       for k < n.
     """
+    u = np.asarray(u)
+    v = np.asarray(v)
     return (np.double(np.bitwise_and((u != v),
                      np.bitwise_or(u != 0, v != 0)).sum()) 
             /  np.double(np.bitwise_or(u != 0, v != 0).sum()))
@@ -904,6 +918,9 @@ def kulsinski(u, v):
 
       for k < n.
     """
+    u = np.asarray(u)
+    v = np.asarray(v)
+    n = len(u)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
 
     return (ntf + nft - ntt + n) / (ntf + nft + n)
@@ -916,6 +933,8 @@ def seuclidean(u, v, V):
       n-vectors u and v. V is a m-dimensional vector of component
       variances. It is usually computed among a larger collection vectors.
     """
+    u = np.asarray(u)
+    v = np.asarray(v)
     V = np.asarray(V)
     if len(V.shape) != 1 or V.shape[0] != u.shape[0] or u.shape[0] != v.shape[0]:
         raise TypeError('V must be a 1-D array of the same dimension as u and v.')
@@ -928,6 +947,8 @@ def cityblock(u, v):
       Computes the Manhattan distance between two n-vectors u and v,
          \sum {u_i-v_i}.
     """
+    u = np.asarray(u)
+    v = np.asarray(v)
     return abs(u-v).sum()
 
 def mahalanobis(u, v, VI):
@@ -938,7 +959,9 @@ def mahalanobis(u, v, VI):
         (u-v)VI(u-v)^T
       where VI is the inverse covariance matrix.
     """
-    V = np.asarray(V)
+    u = np.asarray(u)
+    v = np.asarray(v)
+    VI = np.asarray(VI)
     return np.sqrt(np.dot(np.dot((u-v),VI),(u-v).T).sum())
 
 def chebyshev(u, v):
@@ -948,6 +971,8 @@ def chebyshev(u, v):
       Computes the Chebyshev distance between two n-vectors u and v,
         \max {|u_i-v_i|}.
     """
+    u = np.asarray(u)
+    v = np.asarray(v)
     return max(abs(u-v))
 
 def braycurtis(u, v):
@@ -957,6 +982,8 @@ def braycurtis(u, v):
       Computes the Bray-Curtis distance between two n-vectors u and v,
         \sum{|u_i-v_i|} / \sum{|u_i+v_i|}.
     """
+    u = np.asarray(u)
+    v = np.asarray(v)
     return abs(u-v).sum() / abs(u+v).sum()
 
 def canberra(u, v):
@@ -980,22 +1007,30 @@ def _nbool_correspond_all(u, v):
         ntf = (u * not_v).sum()
         ntt = (u * v).sum()
     elif u.dtype == np.bool:
-        not_u = scipy.bitwise_not(u)
-        not_v = scipy.bitwise_not(v)
-        nff = scipy.bitwise_and(not_u, not_v).sum()
-        nft = scipy.bitwise_and(not_u, v).sum()
-        ntf = scipy.bitwise_and(u, not_v).sum()
-        ntt = scipy.bitwise_and(u, v).sum()
+        not_u = ~u
+        not_v = ~v
+        nff = (not_u & not_v).sum()
+        nft = (not_u & v).sum()
+        ntf = (u & not_v).sum()
+        ntt = (u & v).sum()
     else:
         raise TypeError("Arrays being compared have unknown type.")
 
     return (nff, nft, ntf, ntt)
 
 def _nbool_correspond_ft_tf(u, v):
-    not_u = scipy.bitwise_not(u)
-    not_v = scipy.bitwise_not(v)
-    nft = scipy.bitwise_and(not_u, v).sum()
-    ntf = scipy.bitwise_and(u, not_v).sum()
+    if u.dtype == np.int or u.dtype == np.float_ or u.dtype == np.double:
+        not_u = 1.0 - u
+        not_v = 1.0 - v
+        nff = (not_u * not_v).sum()
+        nft = (not_u * v).sum()
+        ntf = (u * not_v).sum()
+        ntt = (u * v).sum()
+    else:
+        not_u = ~u
+        not_v = ~v
+        nft = (not_u & v).sum()
+        ntf = (u & not_v).sum()
     return (nft, ntf)
 
 def yule(u, v):
@@ -1015,6 +1050,8 @@ def yule(u, v):
 
          R = 2.0 * (c_{TF} + c_{FT}).
     """
+    u = np.asarray(u)
+    v = np.asarray(v)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
     print nff, nft, ntf, ntt
     return float(2.0 * ntf * nft) / float(ntt * nff + ntf * nft)
@@ -1034,6 +1071,8 @@ def matching(u, v):
 
       for k < n.
     """
+    u = np.asarray(u)
+    v = np.asarray(v)
     (nft, ntf) = _nbool_correspond_ft_tf(u, v)
     return float(nft + ntf) / float(len(u))
 
@@ -1054,9 +1093,14 @@ def dice(u, v):
 
       for k < n.
     """
-    ntt = scipy.bitwise_and(u, v).sum()
+    u = np.asarray(u)
+    v = np.asarray(v)
+    if u.dtype == np.bool:
+        ntt = (u & v).sum()
+    else:
+        ntt = (u * v).sum()
     (nft, ntf) = _nbool_correspond_ft_tf(u, v)
-    return float(ntf + nft)/float(2.0 * ntt + ntf + nft)
+    return float(ntf + nft) / float(2.0 * ntt + ntf + nft)
 
 def rogerstanimoto(u, v):
     """
@@ -1078,6 +1122,8 @@ def rogerstanimoto(u, v):
          R = 2.0 * (c_{TF} + c_{FT}).
 
     """
+    u = np.asarray(u)
+    v = np.asarray(v)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
     return float(2.0 * (ntf + nft)) / float(ntt + nff + (2.0 * (ntf + nft)))
 
@@ -1089,7 +1135,12 @@ def russellrao(u, v):
       u and v, (n - c_{TT}) / n where c_{ij} is the number of occurrences
       of u[k] == i and v[k] == j for k < n.
     """
-    ntt = scipy.bitwise_and(u, v).sum()
+    u = np.asarray(u)
+    v = np.asarray(v)
+    if u.dtype == np.bool:
+        ntt = (u & v).sum()
+    else:
+        ntt = (u * v).sum()
     return float(len(u) - ntt) / float(len(u))
 
 def sokalmichener(u, v):
@@ -1101,8 +1152,14 @@ def sokalmichener(u, v):
       u[k] == i and v[k] == j for k < n and R = 2 * (c_{TF} + c{FT}) and
       S = c_{FF} + c_{TT}.
     """
-    ntt = scipy.bitwise_and(u, v).sum()
-    nff = scipy.bitwise_and(scipy.bitwise_not(u), scipy.bitwise_not(v)).sum()
+    u = np.asarray(u)
+    v = np.asarray(v)
+    if u.dtype == np.bool:
+        ntt = (u & v).sum()
+        nff = (~u & ~v).sum()
+    else:
+        ntt = (u * v).sum()
+        nff = ((1.0 - u) * (1.0 - v)).sum()
     (nft, ntf) = _nbool_correspond_ft_tf(u, v)
     return float(2.0 * (ntf + nft))/float(ntt + nff + 2.0 * (ntf + nft))
 
@@ -1114,32 +1171,28 @@ def sokalsneath(u, v):
       u and v, 2R / (c_{TT} + 2R) where c_{ij} is the number of occurrences
       of u[k] == i and v[k] == j for k < n and R = 2 * (c_{TF} + c{FT}).
     """
-    ntt = scipy.bitwise_and(u, v).sum()
+    u = np.asarray(u)
+    v = np.asarray(v)
+    if u.dtype == np.bool:
+        ntt = (u & v).sum()
+    else:
+        ntt = (u * v).sum()
     (nft, ntf) = _nbool_correspond_ft_tf(u, v)
     return float(2.0 * (ntf + nft))/float(ntt + 2.0 * (ntf + nft))
 
-# V means pass covariance
-_pdist_metric_info = {'euclidean': ['double'],
-                      'seuclidean': ['double'],
-                      'sqeuclidean': ['double'],
-                      'minkowski': ['double'],
-                      'cityblock': ['double'],
-                      'cosine': ['double'],
-                      'correlation': ['double'],
-                      'hamming': ['double','bool'],
-                      'jaccard': ['double', 'bool'],
-                      'chebyshev': ['double'],
-                      'canberra': ['double'],
-                      'braycurtis': ['double'],
-                      'mahalanobis': ['bool'],
-                      'yule': ['bool'],
-                      'matching': ['bool'],
-                      'dice': ['bool'],
-                      'kulsinski': ['bool'],
-                      'rogerstanimoto': ['bool'],
-                      'russellrao': ['bool'],
-                      'sokalmichener': ['bool'],
-                      'sokalsneath': ['bool']}
+def _convert_to_bool(X):
+    if X.dtype != np.bool:
+        X = np.bool_(X)
+    if not X.flags.contiguous:
+        X = X.copy()
+    return X
+
+def _convert_to_double(X):
+    if X.dtype != np.double:
+        X = np.double(X)
+    if not X.flags.contiguous:
+        X = X.copy()
+    return X
 
 def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     """ Y = pdist(X, method='euclidean', p=2)
@@ -1322,12 +1375,12 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
 
     X = np.asarray(X)
 
-    if np.issubsctype(X, np.floating) and not np.issubsctype(X, np.double):
-        raise TypeError('Floating point arrays must be 64-bit (got %r).' %
-        (X.dtype.type,))
+    #if np.issubsctype(X, np.floating) and not np.issubsctype(X, np.double):
+    #    raise TypeError('Floating point arrays must be 64-bit (got %r).' %
+    #    (X.dtype.type,))
 
     # The C code doesn't do striding.
-    [X] = _copy_arrays_if_base_present([X])
+    [X] = _copy_arrays_if_base_present([_convert_to_double(X)])
 
     s = X.shape
 
@@ -1365,38 +1418,33 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
     elif mtype is types.StringType:
         mstr = metric.lower()
 
-        if X.dtype != np.double and \
-               (mstr != 'hamming' and mstr != 'jaccard'):
-            TypeError('A double array must be passed.')
+        #if X.dtype != np.double and \
+        #       (mstr != 'hamming' and mstr != 'jaccard'):
+        #    TypeError('A double array must be passed.')
         if mstr in set(['euclidean', 'euclid', 'eu', 'e']):
-            _hierarchy_wrap.pdist_euclidean_wrap(X, dm)
-        elif mstr in set(['sqeuclidean']):
-            _hierarchy_wrap.pdist_euclidean_wrap(X, dm)
+            _hierarchy_wrap.pdist_euclidean_wrap(_convert_to_double(X), dm)
+        elif mstr in set(['sqeuclidean', 'sqe', 'sqeuclid']):
+            _hierarchy_wrap.pdist_euclidean_wrap(_convert_to_double(X), dm)
             dm = dm ** 2.0
         elif mstr in set(['cityblock', 'cblock', 'cb', 'c']):
             _hierarchy_wrap.pdist_city_block_wrap(X, dm)
         elif mstr in set(['hamming', 'hamm', 'ha', 'h']):
-            if X.dtype == np.double:
-                _hierarchy_wrap.pdist_hamming_wrap(X, dm)
-            elif X.dtype == bool:
-                _hierarchy_wrap.pdist_hamming_bool_wrap(X, dm)
+            if X.dtype == np.bool:
+                _hierarchy_wrap.pdist_hamming_bool_wrap(_convert_to_bool(X), dm)
             else:
-                raise TypeError('Invalid input array value type %s '
-                                'for hamming.' % str(X.dtype))
+                _hierarchy_wrap.pdist_hamming_wrap(_convert_to_double(X), dm)
         elif mstr in set(['jaccard', 'jacc', 'ja', 'j']):
-            if X.dtype == np.double:
-                _hierarchy_wrap.pdist_jaccard_wrap(X, dm)
-            elif X.dtype == np.bool:
-                _hierarchy_wrap.pdist_jaccard_bool_wrap(X, dm)
+            if X.dtype == np.bool:
+                _hierarchy_wrap.pdist_jaccard_bool_wrap(_convert_to_bool(X), dm)
             else:
-                raise TypeError('Invalid input array value type %s for '
-                                'jaccard.' % str(X.dtype))
+                _hierarchy_wrap.pdist_jaccard_wrap(_convert_to_double(X), dm)
         elif mstr in set(['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch']):
-            _hierarchy_wrap.pdist_chebyshev_wrap(X, dm)
+            _hierarchy_wrap.pdist_chebyshev_wrap(_convert_to_double(X), dm)
         elif mstr in set(['minkowski', 'mi', 'm']):
-            _hierarchy_wrap.pdist_minkowski_wrap(X, dm, p)
+            _hierarchy_wrap.pdist_minkowski_wrap(_convert_to_double(X), dm, p)
         elif mstr in set(['seuclidean', 'se', 's']):
             if V is not None:
+                V = np.asarray(V)
                 if type(V) is not _array_type:
                     raise TypeError('Variance vector V must be a numpy array')
                 if V.dtype != np.double:
@@ -1406,17 +1454,17 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
                 if V.shape[0] != n:
                     raise ValueError('Variance vector V must be of the same dimension as the vectors on which the distances are computed.')
                 # The C code doesn't do striding.
-                [VV] = _copy_arrays_if_base_present([V])
+                [VV] = _copy_arrays_if_base_present([_convert_to_double(V)])
             else:
                 VV = _unbiased_variance(X)
-            _hierarchy_wrap.pdist_seuclidean_wrap(X, VV, dm)
+            _hierarchy_wrap.pdist_seuclidean_wrap(_convert_to_double(X), VV, dm)
         # Need to test whether vectorized cosine works better.
         # Find out: Is there a dot subtraction operator so I can
         # subtract matrices in a similar way to multiplying them?
         # Need to get rid of as much unnecessary C code as possible.
         elif mstr in set(['cosine_old', 'cos_old']):
             norms = np.sqrt(np.sum(X * X, axis=1))
-            _hierarchy_wrap.pdist_cosine_wrap(X, dm, norms)
+            _hierarchy_wrap.pdist_cosine_wrap(_convert_to_double(X), dm, norms)
         elif mstr in set(['cosine', 'cos']):
             norms = np.sqrt(np.sum(X * X, axis=1))
             nV = norms.reshape(m, 1)
@@ -1431,9 +1479,10 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             X2 = X - X.mean(1)[:,np.newaxis]
             #X2 = X - np.matlib.repmat(np.mean(X, axis=1).reshape(m, 1), 1, n)
             norms = np.sqrt(np.sum(X2 * X2, axis=1))
-            _hierarchy_wrap.pdist_cosine_wrap(X2, dm, norms)
+            _hierarchy_wrap.pdist_cosine_wrap(_convert_to_double(X2), _convert_to_double(dm), _convert_to_double(norms))
         elif mstr in set(['mahalanobis', 'mahal', 'mah']):
             if VI is not None:
+                VI = _convert_to_double(np.asarray(VI))
                 if type(VI) != _array_type:
                     raise TypeError('VI must be a numpy array.')
                 if VI.dtype != np.double:
@@ -1441,29 +1490,29 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
                 [VI] = _copy_arrays_if_base_present([VI])
             else:
                 V = np.cov(X.T)
-                VI = np.linalg.inv(V).T.copy()
+                VI = _convert_to_double(np.linalg.inv(V).T.copy())
             # (u-v)V^(-1)(u-v)^T
-            _hierarchy_wrap.pdist_mahalanobis_wrap(X, VI, dm)
+            _hierarchy_wrap.pdist_mahalanobis_wrap(_convert_to_double(X), VI, dm)
         elif mstr == 'canberra':
-            _hierarchy_wrap.pdist_canberra_wrap(X, dm)
+            _hierarchy_wrap.pdist_canberra_wrap(_convert_to_bool(X), dm)
         elif mstr == 'braycurtis':
-            _hierarchy_wrap.pdist_bray_curtis_wrap(X, dm)
+            _hierarchy_wrap.pdist_bray_curtis_wrap(_convert_to_bool(X), dm)
         elif mstr == 'yule':
-            _hierarchy_wrap.pdist_yule_bool_wrap(X, dm)
+            _hierarchy_wrap.pdist_yule_bool_wrap(_convert_to_bool(X), dm)
         elif mstr == 'matching':
-            _hierarchy_wrap.pdist_matching_bool_wrap(X, dm)
+            _hierarchy_wrap.pdist_matching_bool_wrap(_convert_to_bool(X), dm)
         elif mstr == 'kulsinski':
-            _hierarchy_wrap.pdist_kulsinski_bool_wrap(X, dm)
+            _hierarchy_wrap.pdist_kulsinski_bool_wrap(_convert_to_bool(X), dm)
         elif mstr == 'dice':
-            _hierarchy_wrap.pdist_dice_bool_wrap(X, dm)
+            _hierarchy_wrap.pdist_dice_bool_wrap(_convert_to_bool(X), dm)
         elif mstr == 'rogerstanimoto':
-            _hierarchy_wrap.pdist_rogerstanimoto_bool_wrap(X, dm)
+            _hierarchy_wrap.pdist_rogerstanimoto_bool_wrap(_convert_to_bool(X), dm)
         elif mstr == 'russellrao':
-            _hierarchy_wrap.pdist_russellrao_bool_wrap(X, dm)
+            _hierarchy_wrap.pdist_russellrao_bool_wrap(_convert_to_bool(X), dm)
         elif mstr == 'sokalmichener':
-            _hierarchy_wrap.pdist_sokalmichener_bool_wrap(X, dm)
+            _hierarchy_wrap.pdist_sokalmichener_bool_wrap(_convert_to_bool(X), dm)
         elif mstr == 'sokalsneath':
-            _hierarchy_wrap.pdist_sokalsneath_bool_wrap(X, dm)
+            _hierarchy_wrap.pdist_sokalsneath_bool_wrap(_convert_to_bool(X), dm)
         elif metric == 'test_euclidean':
             dm = pdist(X, euclidean)
         elif metric == 'test_sqeuclidean':
@@ -1499,12 +1548,16 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             dm = pdist(X, matching)
         elif metric == 'test_dice':
             dm = pdist(X, dice)
+        elif metric == 'test_kulsinski':
+            dm = pdist(X, kulsinski)
         elif metric == 'test_rogerstanimoto':
             dm = pdist(X, rogerstanimoto)
         elif metric == 'test_russellrao':
             dm = pdist(X, russellrao)
         elif metric == 'test_sokalsneath':
             dm = pdist(X, sokalsneath)
+        elif metric == 'test_sokalmichener':
+            dm = pdist(X, sokalmichener)
         else:
             raise ValueError('Unknown Distance Metric: %s' % mstr)
     else:
@@ -1919,7 +1972,7 @@ def numobs_dm(D):
       Returns the number of original observations that correspond to a
       square, non-condensed distance matrix D.
     """
-    is_valid_dm(D, tol=scipy.inf, throw=True, name='D')
+    is_valid_dm(D, tol=np.inf, throw=True, name='D')
     return D.shape[0]
 
 def numobs_y(Y):
@@ -2123,10 +2176,10 @@ try:
     # p <= 20, size="12"
     # 20 < p <= 30, size="10"
     # 30 < p <= 50, size="8"
-    # 50 < p <= scipy.inf, size="6"
+    # 50 < p <= np.inf, size="6"
 
-    _dtextsizes = {20: 12, 30: 10, 50: 8, 85: 6, scipy.inf: 5}
-    _drotation =  {20: 0,          40: 45,       scipy.inf: 90}
+    _dtextsizes = {20: 12, 30: 10, 50: 8, 85: 6, np.inf: 5}
+    _drotation =  {20: 0,          40: 45,       np.inf: 90}
     _dtextsortedkeys = list(_dtextsizes.keys())
     _dtextsortedkeys.sort()
     _drotationsortedkeys = list(_drotation.keys())
@@ -2162,7 +2215,7 @@ try:
         ivw = len(ivl) * 10
         # Depenendent variable plot height
         dvw = mh + mh * 0.05
-        ivticks = scipy.arange(5, len(ivl)*10+5, 10)
+        ivticks = np.arange(5, len(ivl)*10+5, 10)
         if orientation == 'top':
             axis.set_ylim([0, dvw])
             axis.set_xlim([0, ivw])
@@ -2558,7 +2611,7 @@ def dendrogram(Z, p=30, truncate_mode=None, colorthreshold=None,
 
     if truncate_mode == 'mtica' or truncate_mode == 'level':
         if p <= 0:
-            p = scipy.inf
+            p = np.inf
     if get_leaves:
         lvs = []
     else:
@@ -2658,7 +2711,7 @@ def _append_contraction_marks_sub(Z, iv, i, n, contraction_marks):
 
 
 def _dendrogram_calculate_info(Z, p, truncate_mode, \
-                               colorthreshold=scipy.inf, get_leaves=True, \
+                               colorthreshold=np.inf, get_leaves=True, \
                                orientation='top', labels=None, \
                                count_sort=False, distance_sort=False, \
                                show_leaf_counts=False, i=-1, iv=0.0, \
@@ -2940,6 +2993,7 @@ def maxdists(Z):
       Note that when Z[:,2] is monotonic, Z[:,2] and MD should not differ.
       See linkage for more information on this issue.
     """
+    Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
@@ -2957,6 +3011,8 @@ def maxinconsts(Z, R):
       inconsistency matrix. MI is a monotonic (n-1)-sized numpy array of
       doubles.
     """
+    Z = np.asarray(Z)
+    R = np.asarray(R)
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
 
@@ -2975,6 +3031,8 @@ def maxRstat(Z, R, i):
     is the maximum over R[Q(j)-n, i] where Q(j) the set of all node ids
     corresponding to nodes below and including j.
     """
+    Z = np.asarray(Z)
+    R = np.asarray(R)
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
     if type(i) is not types.IntType:

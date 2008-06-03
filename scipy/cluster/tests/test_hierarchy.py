@@ -68,7 +68,8 @@ _filenames = ["iris.txt",
               "linkage-single-tdist.txt",
               "linkage-complete-tdist.txt",
               "linkage-average-tdist.txt",
-              "linkage-weighted-tdist.txt"]
+              "linkage-weighted-tdist.txt",
+              "random-bool-data.txt"]
 
 _tdist = numpy.array([[0,    662,  877,  255,  412,  996],
                       [662,  0,    295,  468,  268,  400],
@@ -101,72 +102,9 @@ load_testing_files()
 #print numpy.abs(Y_test1 - Y_right).max()
 
 class TestPdist(TestCase):
-
-    def test_pdist_raises_type_error_float32(self):
-        "Testing whether passing a float32 observation array generates an exception."
-        X = numpy.zeros((10, 10), dtype=numpy.float32)
-        try:
-            pdist(X, 'euclidean')
-        except TypeError:
-            pass
-        except:
-            self.fail("float32 observation matrices should generate an error in pdist.")
-
-    def test_pdist_raises_type_error_longdouble(self):
-        "Testing whether passing a longdouble observation array generates an exception."
-        X = numpy.zeros((10, 10), dtype=numpy.longdouble)
-        try:
-            pdist(X, 'euclidean')
-        except TypeError:
-            pass
-        except:
-            self.fail("longdouble observation matrices should generate an error in pdist.")
-
-    def test_pdist_var_raises_type_error_float32(self):
-        "Testing whether passing a float32 variance matrix generates an exception."
-        X = numpy.zeros((10, 10))
-        V = numpy.zeros((10, 10), dtype=numpy.float32)
-        try:
-            pdist(X, 'seuclidean', V=V)
-        except TypeError:
-            pass
-        except:
-            self.fail("float32 V matrices should generate an error in pdist('seuclidean').")
-
-    def test_pdist_var_raises_type_error_longdouble(self):
-        "Testing whether passing a longdouble variance matrix generates an exception."
-        X = numpy.zeros((10, 10))
-        V = numpy.zeros((10, 10), dtype=numpy.longdouble)
-
-        try:
-            pdist(X, 'seuclidean', V=V)
-        except TypeError:
-            pass
-        except:
-            self.fail("longdouble matrices should generate an error in pdist('seuclidean').")
-
-    def test_pdist_ivar_raises_type_error_float32(self):
-        "Testing whether passing a float32 variance matrix generates an exception."
-        X = numpy.zeros((10, 10))
-        VI = numpy.zeros((10, 10), dtype=numpy.float32)
-        try:
-            pdist(X, 'mahalanobis', VI=VI)
-        except TypeError:
-            pass
-        except:
-            self.fail("float32 matrices should generate an error in pdist('mahalanobis').")
-
-    def test_pdist_ivar_raises_type_error_longdouble(self):
-        "Testing whether passing a longdouble variance matrix generates an exception."
-        X = numpy.zeros((10, 10))
-        VI = numpy.zeros((10, 10), dtype=numpy.longdouble)
-
-        try:
-            pdist(X, 'mahalanobis', VI=VI)
-        except TypeError:
-            pass
-        except:
-            self.fail("longdouble matrices should generate an error in pdist('mahalanobis').")
+    """
+    Test suite for the pdist function.
+    """
 
     ################### pdist: euclidean
     def test_pdist_euclidean_random(self):
@@ -174,6 +112,16 @@ class TestPdist(TestCase):
         eps = 1e-07
         # Get the data: the input matrix and the right output.
         X = eo['pdist-double-inp']
+        Y_right = eo['pdist-euclidean']
+
+        Y_test1 = pdist(X, 'euclidean')
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+
+    def test_pdist_euclidean_random_float32(self):
+        "Tests pdist(X, 'euclidean') on random data (float32)."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-euclidean']
 
         Y_test1 = pdist(X, 'euclidean')
@@ -188,7 +136,7 @@ class TestPdist(TestCase):
         Y_test2 = pdist(X, 'test_euclidean')
         self.failUnless(within_tol(Y_test2, Y_right, eps))
 
-    def test_pdist_euclidean_iris(self):
+    def test_pdist_euclidean_iris_double(self):
         "Tests pdist(X, 'euclidean') on the Iris data set."
         eps = 1e-07
         # Get the data: the input matrix and the right output.
@@ -196,6 +144,17 @@ class TestPdist(TestCase):
         Y_right = eo['pdist-euclidean-iris']
 
         Y_test1 = pdist(X, 'euclidean')
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+
+    def test_pdist_euclidean_iris_float32(self):
+        "Tests pdist(X, 'euclidean') on the Iris data set. (float32)"
+        eps = 1e-06
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['iris'])
+        Y_right = eo['pdist-euclidean-iris']
+
+        Y_test1 = pdist(X, 'euclidean')
+        print numpy.abs(Y_right - Y_test1).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
 
     def test_pdist_euclidean_iris_nonC(self):
@@ -213,6 +172,16 @@ class TestPdist(TestCase):
         eps = 1e-05
         # Get the data: the input matrix and the right output.
         X = eo['pdist-double-inp']
+        Y_right = eo['pdist-seuclidean']
+
+        Y_test1 = pdist(X, 'seuclidean')
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+
+    def test_pdist_seuclidean_random_float32(self):
+        "Tests pdist(X, 'seuclidean') on random data (float32)."
+        eps = 1e-05
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-seuclidean']
 
         Y_test1 = pdist(X, 'seuclidean')
@@ -237,6 +206,16 @@ class TestPdist(TestCase):
         Y_test1 = pdist(X, 'seuclidean')
         self.failUnless(within_tol(Y_test1, Y_right, eps))
 
+    def test_pdist_seuclidean_iris_float32(self):
+        "Tests pdist(X, 'seuclidean') on the Iris data set (float32)."
+        eps = 1e-05
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['iris'])
+        Y_right = eo['pdist-seuclidean-iris']
+
+        Y_test1 = pdist(X, 'seuclidean')
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+
     def test_pdist_seuclidean_iris_nonC(self):
         "Tests pdist(X, 'test_seuclidean') [the non-C implementation] on the Iris data set."
         eps = 1e-05
@@ -252,6 +231,15 @@ class TestPdist(TestCase):
         eps = 1e-08
         # Get the data: the input matrix and the right output.
         X = eo['pdist-double-inp']
+        Y_right = eo['pdist-cosine']
+        Y_test1 = pdist(X, 'cosine')
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+
+    def test_pdist_cosine_random_float32(self):
+        "Tests pdist(X, 'cosine') on random data. (float32)"
+        eps = 1e-08
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-cosine']
 
         Y_test1 = pdist(X, 'cosine')
@@ -277,6 +265,18 @@ class TestPdist(TestCase):
         self.failUnless(within_tol(Y_test1, Y_right, eps))
         #print "cosine-iris", numpy.abs(Y_test1 - Y_right).max()
 
+    def test_pdist_cosine_iris_float32(self):
+        "Tests pdist(X, 'cosine') on the Iris data set."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['iris'])
+        Y_right = eo['pdist-cosine-iris']
+
+        Y_test1 = pdist(X, 'cosine')
+        print numpy.abs(Y_test1 - Y_right).max()
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+        #print "cosine-iris", numpy.abs(Y_test1 - Y_right).max()
+
     def test_pdist_cosine_iris_nonC(self):
         "Tests pdist(X, 'test_cosine') [the non-C implementation] on the Iris data set."
         eps = 1e-08
@@ -293,7 +293,16 @@ class TestPdist(TestCase):
         # Get the data: the input matrix and the right output.
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-cityblock']
+        Y_test1 = pdist(X, 'cityblock')
+        #print "cityblock", numpy.abs(Y_test1 - Y_right).max()
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
 
+    def test_pdist_cityblock_random_float32(self):
+        "Tests pdist(X, 'cityblock') on random data. (float32)"
+        eps = 1e-06
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-cityblock']
         Y_test1 = pdist(X, 'cityblock')
         #print "cityblock", numpy.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
@@ -318,6 +327,17 @@ class TestPdist(TestCase):
         self.failUnless(within_tol(Y_test1, Y_right, eps))
         #print "cityblock-iris", numpy.abs(Y_test1 - Y_right).max()
 
+    def test_pdist_cityblock_iris_float32(self):
+        "Tests pdist(X, 'cityblock') on the Iris data set. (float32)"
+        eps = 1e-06
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['iris'])
+        Y_right = eo['pdist-cityblock-iris']
+
+        Y_test1 = pdist(X, 'cityblock')
+        print "cityblock-iris-float32", numpy.abs(Y_test1 - Y_right).max()
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+
     def test_pdist_cityblock_iris_nonC(self):
         "Tests pdist(X, 'test_cityblock') [the non-C implementation] on the Iris data set."
         eps = 1e-14
@@ -333,6 +353,17 @@ class TestPdist(TestCase):
         eps = 1e-07
         # Get the data: the input matrix and the right output.
         X = eo['pdist-double-inp']
+        Y_right = eo['pdist-correlation']
+
+        Y_test1 = pdist(X, 'correlation')
+        #print "correlation", numpy.abs(Y_test1 - Y_right).max()
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+
+    def test_pdist_correlation_random_float32(self):
+        "Tests pdist(X, 'correlation') on random data. (float32)"
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-correlation']
 
         Y_test1 = pdist(X, 'correlation')
@@ -359,6 +390,17 @@ class TestPdist(TestCase):
         #print "correlation-iris", numpy.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
 
+    def test_pdist_correlation_iris_float32(self):
+        "Tests pdist(X, 'correlation') on the Iris data set. (float32)"
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X = eo['iris']
+        Y_right = numpy.float32(eo['pdist-correlation-iris'])
+
+        Y_test1 = pdist(X, 'correlation')
+        print "correlation-iris", numpy.abs(Y_test1 - Y_right).max()
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+
     def test_pdist_correlation_iris_nonC(self):
         "Tests pdist(X, 'test_correlation') [the non-C implementation] on the Iris data set."
         eps = 1e-08
@@ -382,6 +424,17 @@ class TestPdist(TestCase):
         #print "minkowski", numpy.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
 
+    def test_pdist_minkowski_random_float32(self):
+        "Tests pdist(X, 'minkowski') on random data. (float32)"
+        eps = 1e-05
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-minkowski-3.2']
+
+        Y_test1 = pdist(X, 'minkowski', 3.2)
+        #print "minkowski", numpy.abs(Y_test1 - Y_right).max()
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+
     def test_pdist_minkowski_random_nonC(self):
         "Tests pdist(X, 'test_minkowski') [the non-C implementation] on random data."
         eps = 1e-05
@@ -397,7 +450,16 @@ class TestPdist(TestCase):
         # Get the data: the input matrix and the right output.
         X = eo['iris']
         Y_right = eo['pdist-minkowski-3.2-iris']
+        Y_test1 = pdist(X, 'minkowski', 3.2)
+        #print "minkowski-iris-3.2", numpy.abs(Y_test1 - Y_right).max()
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
 
+    def test_pdist_minkowski_iris_float32(self):
+        "Tests pdist(X, 'minkowski') on iris data. (float32)"
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['iris'])
+        Y_right = eo['pdist-minkowski-3.2-iris']
         Y_test1 = pdist(X, 'minkowski', 3.2)
         #print "minkowski-iris-3.2", numpy.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
@@ -417,9 +479,19 @@ class TestPdist(TestCase):
         # Get the data: the input matrix and the right output.
         X = eo['iris']
         Y_right = eo['pdist-minkowski-5.8-iris']
-
         Y_test1 = pdist(X, 'minkowski', 5.8)
         #print "minkowski-iris-5.8", numpy.abs(Y_test1 - Y_right).max()
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+
+    def test_pdist_minkowski_iris_float32(self):
+        "Tests pdist(X, 'minkowski') on iris data. (float32)"
+        eps = 1e-06
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['iris'])
+        Y_right = eo['pdist-minkowski-5.8-iris']
+
+        Y_test1 = pdist(X, 'minkowski', 5.8)
+        print "minkowski-iris-5.8", numpy.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
 
     def test_pdist_minkowski_iris_nonC(self):
@@ -443,6 +515,17 @@ class TestPdist(TestCase):
         #print "hamming", numpy.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
 
+    def test_pdist_hamming_random_float32(self):
+        "Tests pdist(X, 'hamming') on random data."
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-hamming']
+
+        Y_test1 = pdist(X, 'hamming')
+        #print "hamming", numpy.abs(Y_test1 - Y_right).max()
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+
     def test_pdist_hamming_random_nonC(self):
         "Tests pdist(X, 'test_hamming') [the non-C implementation] on random data."
         eps = 1e-07
@@ -460,7 +543,16 @@ class TestPdist(TestCase):
         # Get the data: the input matrix and the right output.
         X = numpy.float64(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-hamming']
+        Y_test1 = pdist(X, 'hamming')
+        #print "hamming", numpy.abs(Y_test1 - Y_right).max()
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
 
+    def test_pdist_dhamming_random_float32(self):
+        "Tests pdist(X, 'hamming') on random data. (float32)"
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-hamming']
         Y_test1 = pdist(X, 'hamming')
         #print "hamming", numpy.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
@@ -481,6 +573,17 @@ class TestPdist(TestCase):
         eps = 1e-08
         # Get the data: the input matrix and the right output.
         X = eo['pdist-boolean-inp']
+        Y_right = eo['pdist-jaccard']
+
+        Y_test1 = pdist(X, 'jaccard')
+        #print "jaccard", numpy.abs(Y_test1 - Y_right).max()
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+
+    def test_pdist_jaccard_random_float32(self):
+        "Tests pdist(X, 'jaccard') on random data. (float32)"
+        eps = 1e-08
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-jaccard']
 
         Y_test1 = pdist(X, 'jaccard')
@@ -509,6 +612,17 @@ class TestPdist(TestCase):
         #print "jaccard", numpy.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
 
+    def test_pdist_djaccard_random_float32(self):
+        "Tests pdist(X, 'jaccard') on random data. (float32)"
+        eps = 1e-08
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-jaccard']
+
+        Y_test1 = pdist(X, 'jaccard')
+        #print "jaccard", numpy.abs(Y_test1 - Y_right).max()
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+
     def test_pdist_djaccard_random_nonC(self):
         "Tests pdist(X, 'test_jaccard') [the non-C implementation] on random data."
         eps = 1e-08
@@ -531,6 +645,17 @@ class TestPdist(TestCase):
         #print "chebychev", numpy.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
 
+    def test_pdist_chebychev_random_float32(self):
+        "Tests pdist(X, 'chebychev') on random data. (float32)"
+        eps = 1e-07
+        # Get the data: the input matrix and the right output.
+        X = numpy.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-chebychev']
+
+        Y_test1 = pdist(X, 'chebychev')
+        print "chebychev", numpy.abs(Y_test1 - Y_right).max()
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
+
     def test_pdist_chebychev_random_nonC(self):
         "Tests pdist(X, 'test_chebychev') [the non-C implementation] on random data."
         eps = 1e-08
@@ -547,20 +672,19 @@ class TestPdist(TestCase):
         # Get the data: the input matrix and the right output.
         X = eo['iris']
         Y_right = eo['pdist-chebychev-iris']
-
         Y_test1 = pdist(X, 'chebychev')
         #print "chebychev-iris", numpy.abs(Y_test1 - Y_right).max()
         self.failUnless(within_tol(Y_test1, Y_right, eps))
 
-    def test_pdist_chebychev_iris_nonC(self):
-        "Tests pdist(X, 'test_chebychev') [the non-C implementation] on the Iris data set."
-        eps = 1e-15
+    def test_pdist_chebychev_iris_float32(self):
+        "Tests pdist(X, 'chebychev') on the Iris data set. (float32)"
+        eps = 1e-06
         # Get the data: the input matrix and the right output.
-        X = eo['iris']
+        X = numpy.float32(eo['iris'])
         Y_right = eo['pdist-chebychev-iris']
-        Y_test2 = pdist(X, 'test_chebychev')
-        #print "test-chebychev-iris", numpy.abs(Y_test2 - Y_right).max()
-        self.failUnless(within_tol(Y_test2, Y_right, eps))
+        Y_test1 = pdist(X, 'chebychev')
+        print "chebychev-iris", numpy.abs(Y_test1 - Y_right).max()
+        self.failUnless(within_tol(Y_test1, Y_right, eps))
 
     def test_pdist_chebychev_iris_nonC(self):
         "Tests pdist(X, 'test_chebychev') [the non-C implementation] on the Iris data set."
@@ -590,6 +714,20 @@ class TestPdist(TestCase):
         self.failUnless(numpy.abs(m - (2.0/3.0)) <= 1e-10)
         self.failUnless(numpy.abs(m2 - (2.0/3.0)) <= 1e-10)
 
+    def test_pdist_matching_match(self):
+        "Tests pdist('matching') to see if the two implementations match on random boolean input data."
+        D = eo['random-bool-data']
+        B = numpy.bool_(D)
+        print B.shape, B.dtype
+        eps = 1e-10
+        y1 = pdist(B, "matching")
+        y2 = pdist(B, "test_matching")
+        y3 = pdist(D, "test_matching")
+        print numpy.abs(y1-y2).max()
+        print numpy.abs(y1-y3).max()
+        self.failUnless(within_tol(y1, y2, eps))
+        self.failUnless(within_tol(y2, y3, eps))
+
     def test_pdist_jaccard_mtica1(self):
         "Tests jaccard(*,*) with mtica example #1."
         m = jaccard(numpy.array([1, 0, 1, 1, 0]),
@@ -607,6 +745,19 @@ class TestPdist(TestCase):
                      numpy.array([1, 1, 0], dtype=numpy.bool))
         self.failUnless(numpy.abs(m - (2.0/3.0)) <= 1e-10)
         self.failUnless(numpy.abs(m2 - (2.0/3.0)) <= 1e-10)
+
+    def test_pdist_jaccard_match(self):
+        "Tests pdist('jaccard') to see if the two implementations match on random double input data."
+        D = eo['random-bool-data']
+        print D.shape, D.dtype
+        eps = 1e-10
+        y1 = pdist(D, "jaccard")
+        y2 = pdist(D, "test_jaccard")
+        y3 = pdist(numpy.bool_(D), "test_jaccard")
+        print numpy.abs(y1-y2).max()
+        print numpy.abs(y2-y3).max()
+        self.failUnless(within_tol(y1, y2, eps))
+        self.failUnless(within_tol(y2, y3, eps))
 
     def test_pdist_yule_mtica1(self):
         "Tests yule(*,*) with mtica example #1."
@@ -628,6 +779,19 @@ class TestPdist(TestCase):
         self.failUnless(numpy.abs(m - 2.0) <= 1e-10)
         self.failUnless(numpy.abs(m2 - 2.0) <= 1e-10)
 
+    def test_pdist_yule_match(self):
+        "Tests pdist('yule') to see if the two implementations match on random double input data."
+        D = eo['random-bool-data']
+        print D.shape, D.dtype
+        eps = 1e-10
+        y1 = pdist(D, "yule")
+        y2 = pdist(D, "test_yule")
+        y3 = pdist(numpy.bool_(D), "test_yule")
+        print numpy.abs(y1-y2).max()
+        print numpy.abs(y2-y3).max()
+        self.failUnless(within_tol(y1, y2, eps))
+        self.failUnless(within_tol(y2, y3, eps))
+
     def test_pdist_dice_mtica1(self):
         "Tests dice(*,*) with mtica example #1."
         m = dice(numpy.array([1, 0, 1, 1, 0]),
@@ -647,6 +811,19 @@ class TestPdist(TestCase):
         print m
         self.failUnless(numpy.abs(m - 0.5) <= 1e-10)
         self.failUnless(numpy.abs(m2 - 0.5) <= 1e-10)
+
+    def test_pdist_dice_match(self):
+        "Tests pdist('dice') to see if the two implementations match on random double input data."
+        D = eo['random-bool-data']
+        print D.shape, D.dtype
+        eps = 1e-10
+        y1 = pdist(D, "dice")
+        y2 = pdist(D, "test_dice")
+        y3 = pdist(D, "test_dice")
+        print numpy.abs(y1-y2).max()
+        print numpy.abs(y2-y3).max()
+        self.failUnless(within_tol(y1, y2, eps))
+        self.failUnless(within_tol(y2, y3, eps))
 
     def test_pdist_sokalsneath_mtica1(self):
         "Tests sokalsneath(*,*) with mtica example #1."
@@ -668,6 +845,19 @@ class TestPdist(TestCase):
         self.failUnless(numpy.abs(m - (4.0/5.0)) <= 1e-10)
         self.failUnless(numpy.abs(m2 - (4.0/5.0)) <= 1e-10)
 
+    def test_pdist_sokalsneath_match(self):
+        "Tests pdist('sokalsneath') to see if the two implementations match on random double input data."
+        D = eo['random-bool-data']
+        print D.shape, D.dtype
+        eps = 1e-10
+        y1 = pdist(D, "sokalsneath")
+        y2 = pdist(D, "test_sokalsneath")
+        y3 = pdist(numpy.bool_(D), "test_sokalsneath")
+        print numpy.abs(y1-y2).max()
+        print numpy.abs(y2-y3).max()
+        self.failUnless(within_tol(y1, y2, eps))
+        self.failUnless(within_tol(y2, y3, eps))
+
     def test_pdist_rogerstanimoto_mtica1(self):
         "Tests rogerstanimoto(*,*) with mtica example #1."
         m = rogerstanimoto(numpy.array([1, 0, 1, 1, 0]),
@@ -688,6 +878,18 @@ class TestPdist(TestCase):
         self.failUnless(numpy.abs(m - (4.0/5.0)) <= 1e-10)
         self.failUnless(numpy.abs(m2 - (4.0/5.0)) <= 1e-10)
 
+    def test_pdist_rogerstanimoto_match(self):
+        "Tests pdist('rogerstanimoto') to see if the two implementations match on random double input data."
+        D = eo['random-bool-data']
+        print D.shape, D.dtype
+        eps = 1e-10
+        y1 = pdist(D, "rogerstanimoto")
+        y2 = pdist(D, "test_rogerstanimoto")
+        y3 = pdist(numpy.bool_(D), "test_rogerstanimoto")
+        print numpy.abs(y1-y2).max()
+        print numpy.abs(y2-y3).max()
+        self.failUnless(within_tol(y1, y2, eps))
+        self.failUnless(within_tol(y2, y3, eps))
 
     def test_pdist_russellrao_mtica1(self):
         "Tests russellrao(*,*) with mtica example #1."
@@ -708,6 +910,43 @@ class TestPdist(TestCase):
         print m
         self.failUnless(numpy.abs(m - (2.0/3.0)) <= 1e-10)
         self.failUnless(numpy.abs(m2 - (2.0/3.0)) <= 1e-10)
+
+    def test_pdist_russellrao_match(self):
+        "Tests pdist('russellrao') to see if the two implementations match on random double input data."
+        D = eo['random-bool-data']
+        print D.shape, D.dtype
+        eps = 1e-10
+        y1 = pdist(D, "russellrao")
+        y2 = pdist(D, "test_russellrao")
+        y3 = pdist(numpy.bool_(D), "test_russellrao")
+        print numpy.abs(y1-y2).max()
+        print numpy.abs(y2-y3).max()
+        self.failUnless(within_tol(y1, y2, eps))
+        self.failUnless(within_tol(y2, y3, eps))
+
+    def test_pdist_sokalmichener_match(self):
+        "Tests pdist('sokalmichener') to see if the two implementations match on random double input data."
+        D = eo['random-bool-data']
+        print D.shape, D.dtype
+        eps = 1e-10
+        y1 = pdist(D, "sokalmichener")
+        y2 = pdist(D, "test_sokalmichener")
+        y3 = pdist(numpy.bool_(D), "test_sokalmichener")
+        print numpy.abs(y1-y2).max()
+        print numpy.abs(y2-y3).max()
+        self.failUnless(within_tol(y1, y2, eps))
+        self.failUnless(within_tol(y2, y3, eps))
+
+    def test_pdist_kulsinski_match(self):
+        "Tests pdist('kulsinski') to see if the two implementations match on random double input data."
+        D = eo['random-bool-data']
+        print D.shape, D.dtype
+        eps = 1e-10
+        y1 = pdist(D, "kulsinski")
+        y2 = pdist(D, "test_kulsinski")
+        y3 = pdist(numpy.bool_(D), "test_kulsinski")
+        print numpy.abs(y1-y2).max()
+        self.failUnless(within_tol(y1, y2, eps))
 
 class TestSquareForm(TestCase):
 
