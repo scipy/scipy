@@ -638,7 +638,7 @@ def totree(Z, rd=False):
     functions in this library.
     """
 
-    Z = numpy.asarray(Z)
+    Z = np.asarray(Z)
 
     is_valid_linkage(Z, throw=True, name='Z')
 
@@ -993,6 +993,8 @@ def canberra(u, v):
       Computes the Canberra distance between two n-vectors u and v,
         \sum{|u_i-v_i|} / \sum{|u_i|+|v_i}.
     """
+    u = np.asarray(u)
+    v = np.asarray(v)
     return abs(u-v).sum() / (abs(u).sum() + abs(v).sum())
 
 def _nbool_correspond_all(u, v):
@@ -1518,6 +1520,8 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
         elif metric == 'test_sqeuclidean':
             if V is None:
                 V = _unbiased_variance(X)
+            else:
+                V = np.asarray(V)
             dm = pdist(X, lambda u, v: seuclidean(u, v, V))
         elif metric == 'test_braycurtis':
             dm = pdist(X, braycurtis)
@@ -1525,6 +1529,8 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             if VI is None:
                 V = np.cov(X.T)
                 VI = np.linalg.inv(V)
+            else:
+                VI = np.asarray(VI)
             [VI] = _copy_arrays_if_base_present([VI])
             # (u-v)V^(-1)(u-v)^T
             dm = pdist(X, (lambda u, v: mahalanobis(u, v, VI)))
@@ -1591,6 +1597,8 @@ def cophenet(*args, **kwargs):
       Also returns the cophenetic distance matrix in condensed form.
 
     """
+    Z = np.asarray(Z)
+
     nargs = len(args)
 
     if nargs < 1:
@@ -1648,6 +1656,7 @@ def inconsistent(Z, d=2):
       This function behaves similarly to the MATLAB(TM) inconsistent
       function.
     """
+    Z = np.asarray(Z)
 
     Zs = Z.shape
     is_valid_linkage(Z, throw=True, name='Z')
@@ -1680,6 +1689,7 @@ def from_mlab_linkage(Z):
        the number of original observations (leaves) in the non-singleton
        cluster i.
     """
+    Z = np.asarray(Z)
     Zs = Z.shape
     Zpart = Z[:,0:2]
     Zd = Z[:,2].reshape(Zs[0], 1)
@@ -1701,6 +1711,7 @@ def to_mlab_linkage(Z):
     last column removed and the cluster indices converted to use
     1..N indexing.
     """
+    Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
 
     return np.hstack([Z[:,0:2] + 1, Z[:,2]])
@@ -1713,6 +1724,7 @@ def is_monotonic(Z):
       if for every cluster s and t joined, the distance between them is
       no less than the distance between any previously joined clusters.
     """
+    Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
 
     # We expect the i'th value to be greater than its successor.
@@ -1727,6 +1739,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
       must be nonnegative. The link counts R[:,2] must be positive and
       no greater than n-1.
     """
+    R = np.asarray(R)
     valid = True
     try:
         if type(R) is not _array_type:
@@ -1786,6 +1799,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
       variable.
 
     """
+    Z = np.asarray(Z)
     valid = True
     try:
         if type(Z) is not _array_type:
@@ -1847,6 +1861,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
       referencing the offending variable.
 
     """
+    y = np.asarray(y)
     valid = True
     try:
         if type(y) is not _array_type:
@@ -1908,7 +1923,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D"):
       the offending variable.
 
     """
-
+    D = np.asarray(D)
     valid = True
     try:
         if type(D) is not _array_type:
@@ -1962,6 +1977,7 @@ def numobs_linkage(Z):
     Returns the number of original observations that correspond to a
     linkage matrix Z.
     """
+    Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
     return (Z.shape[0] + 1)
 
@@ -1972,6 +1988,7 @@ def numobs_dm(D):
       Returns the number of original observations that correspond to a
       square, non-condensed distance matrix D.
     """
+    D = np.asarray(D)
     is_valid_dm(D, tol=np.inf, throw=True, name='D')
     return D.shape[0]
 
@@ -1982,6 +1999,7 @@ def numobs_y(Y):
       Returns the number of original observations that correspond to a
       condensed distance matrix Y.
     """
+    Y = np.asarray(Y)
     is_valid_y(Y, throw=True, name='Y')
     d = int(np.ceil(np.sqrt(Y.shape[0] * 2)))
     return d
@@ -1996,6 +2014,8 @@ def Z_y_correspond(Z, Y):
       check in algorithms that make extensive use of linkage and distance
       matrices that must correspond to the same set of original observations.
     """
+    Z = np.asarray(Z)
+    Y = np.asarray(Y)
     return numobs_y(Y) == numobs_Z(Z)
 
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
@@ -2055,6 +2075,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
           cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
 
     """
+    Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
@@ -2068,6 +2089,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         if R is None:
             R = inconsistent(Z, depth)
         else:
+            R = np.asarray(R)
             is_valid_im(R, throw=True, name='R')
             # Since the C code does not support striding using strides.
             # The dimensions are used instead.
@@ -2137,14 +2159,17 @@ def fclusterdata(X, t, criterion='inconsistent', \
 
     This function is similar to MATLAB(TM) clusterdata function.
     """
+    X = np.asarray(X)
 
     if type(X) is not _array_type or len(X.shape) != 2:
-        raise TypeError('X must be an n by m numpy array.')
+        raise TypeError('The observation matrix X must be an n by m numpy array.')
 
     Y = pdist(X, metric=distance)
     Z = linkage(Y, method=method)
     if R is None:
         R = inconsistent(Z, d=depth)
+    else:
+        R = np.asarray(R)
     T = fcluster(Z, criterion=criterion, depth=depth, R=R, t=t)
     return T
 
@@ -2155,6 +2180,7 @@ def lvlist(Z):
       Returns a list of leaf node ids as they appear in the tree from
       left to right. Z is a linkage matrix.
     """
+    Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
     n = Z.shape[0] + 1
     ML = np.zeros((n,), dtype=np.int32)
@@ -2593,6 +2619,7 @@ def dendrogram(Z, p=30, truncate_mode=None, colorthreshold=None,
     #         or results in a crossing, an exception will be thrown. Passing
     #         None orders leaf nodes based on the order they appear in the
     #         pre-order traversal.
+    Z = np.asarray(Z)
 
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
@@ -2956,6 +2983,9 @@ def is_isomorphic(T1, T2):
       Returns True iff two different cluster assignments T1 and T2 are
       equivalent. T1 and T2 must be arrays of the same size.
     """
+    T1 = np.asarray(T1)
+    T2 = np.asarray(T2)
+
     if type(T1) is not _array_type:
         raise TypeError('T1 must be a numpy array.')
     if type(T2) is not _array_type:
@@ -3068,6 +3098,8 @@ def leaders(Z, T):
     i < n, i corresponds to an original observation, otherwise it
     corresponds to a non-singleton cluster.
     """
+    Z = np.asarray(Z)
+    T = np.asarray(T)
     if type(T) != _array_type or T.dtype != np.int:
         raise TypeError('T must be a one-dimensional numpy array of integers.')
     is_valid_linkage(Z, throw=True, name='Z')
