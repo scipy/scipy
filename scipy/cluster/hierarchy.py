@@ -452,7 +452,7 @@ def linkage(y, method='single', metric='euclidean'):
     if not isinstance(method, str):
         raise TypeError("Argument 'method' must be a string.")
 
-    y = np.asarray(_convert_to_double(y))
+    y = _convert_to_double(np.asarray(y))
 
     s = y.shape
     if len(s) == 1:
