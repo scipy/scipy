@@ -452,7 +452,7 @@ def linkage(y, method='single', metric='euclidean'):
     if not isinstance(method, str):
         raise TypeError("Argument 'method' must be a string.")
 
-    y = np.asarray(y)
+    y = np.asarray(_convert_to_double(y))
 
     s = y.shape
     if len(s) == 1:
@@ -723,7 +723,7 @@ def squareform(X, force="no", checks=True):
     transformation.
     """
 
-    X = np.asarray(X)
+    X = _convert_to_double(np.asarray(X))
 
     if not np.issubsctype(X, np.double):
         raise TypeError('A double array must be passed.')
@@ -1612,7 +1612,7 @@ def cophenet(*args, **kwargs):
     zz = np.zeros((n*(n-1)/2,), dtype=np.double)
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
-    [Z] = _copy_arrays_if_base_present([Z])
+    Z = _convert_to_double(Z)
 
     _hierarchy_wrap.cophenetic_distances_wrap(Z, zz, int(n))
     if nargs == 1:
