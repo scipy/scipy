@@ -2078,7 +2078,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
-    T = np.zeros((n,), dtype=np.int32)
+    T = np.zeros((n,), dtype=np.int)
 
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
@@ -2182,7 +2182,7 @@ def lvlist(Z):
     Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
     n = Z.shape[0] + 1
-    ML = np.zeros((n,), dtype=np.int32)
+    ML = np.zeros((n,), dtype=np.int)
     [Z] = _copy_arrays_if_base_present([Z])
     _hierarchy_wrap.prelist_wrap(Z, ML, int(n))
     return ML
@@ -3107,8 +3107,8 @@ def leaders(Z, T):
 
     Cl = np.unique(T)
     kk = len(Cl)
-    L = np.zeros((kk,), dtype=np.int32)
-    M = np.zeros((kk,), dtype=np.int32)
+    L = np.zeros((kk,), dtype=np.int)
+    M = np.zeros((kk,), dtype=np.int)
     n = Z.shape[0] + 1
     [Z, T] = _copy_arrays_if_base_present([Z, T])
     s = _hierarchy_wrap.leaders_wrap(Z, T, L, M, int(kk), int(n))
