@@ -175,22 +175,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 import numpy as np
-import _hierarchy_wrap, types, math, sys
+import _hierarchy_wrap, types
 
 _cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2,
                            'weighted': 6}
 _cpy_euclid_methods = {'centroid': 3, 'median': 4, 'ward': 5}
 _cpy_linkage_methods = set(_cpy_non_euclid_methods.keys()).union(
     set(_cpy_euclid_methods.keys()))
-_array_type = np.ndarray
 
 try:
     import warnings
     def _warning(s):
-        warnings.warn('scipy-cluster: %s' % s, stacklevel=3)
+        warnings.warn('scipy.cluster: %s' % s, stacklevel=3)
 except:
     def _warning(s):
-        print ('[WARNING] scipy-cluster: %s' % s)
+        print ('[WARNING] scipy.cluster: %s' % s)
 
 def _unbiased_variance(X):
     """
@@ -801,7 +800,7 @@ def minkowski(u, v, p):
     v = np.asarray(v)
     if p < 1:
         raise ValueError("p must be at least 1")
-    return math.pow((abs(u-v)**p).sum(), 1.0/p)
+    return (abs(u-v)**p).sum() ** (1.0 / p)
 
 def euclidean(u, v):
     """
@@ -1447,7 +1446,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
         elif mstr in set(['seuclidean', 'se', 's']):
             if V is not None:
                 V = np.asarray(V)
-                if type(V) is not _array_type:
+                if type(V) != np.ndarray:
                     raise TypeError('Variance vector V must be a numpy array')
                 if V.dtype != np.double:
                     raise TypeError('Variance vector V must contain doubles.')
@@ -1485,7 +1484,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
         elif mstr in set(['mahalanobis', 'mahal', 'mah']):
             if VI is not None:
                 VI = _convert_to_double(np.asarray(VI))
-                if type(VI) != _array_type:
+                if type(VI) != np.ndarray:
                     raise TypeError('VI must be a numpy array.')
                 if VI.dtype != np.double:
                     raise TypeError('The array must contain 64-bit floats.')
@@ -1742,7 +1741,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     R = np.asarray(R)
     valid = True
     try:
-        if type(R) is not _array_type:
+        if type(R) != np.ndarray:
             if name:
                 raise TypeError('Variable \'%s\' passed as inconsistency matrix is not a numpy array.' % name)
             else:
@@ -1802,7 +1801,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     Z = np.asarray(Z)
     valid = True
     try:
-        if type(Z) is not _array_type:
+        if type(Z) != np.ndarray:
             if name:
                 raise TypeError('\'%s\' passed as a linkage is not a valid array.' % name)
             else:
@@ -1864,7 +1863,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     y = np.asarray(y)
     valid = True
     try:
-        if type(y) is not _array_type:
+        if type(y) != np.ndarray:
             if name:
                 raise TypeError('\'%s\' passed as a condensed distance matrix is not a numpy array.' % name)
             else:
@@ -1926,7 +1925,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D"):
     D = np.asarray(D)
     valid = True
     try:
-        if type(D) is not _array_type:
+        if type(D) != np.ndarray:
             if name:
                 raise TypeError('\'%s\' passed as a distance matrix is not a numpy array.' % name)
             else:
@@ -2161,7 +2160,7 @@ def fclusterdata(X, t, criterion='inconsistent', \
     """
     X = np.asarray(X)
 
-    if type(X) is not _array_type or len(X.shape) != 2:
+    if type(X) != np.ndarray or len(X.shape) != 2:
         raise TypeError('The observation matrix X must be an n by m numpy array.')
 
     Y = pdist(X, metric=distance)
@@ -2986,9 +2985,9 @@ def is_isomorphic(T1, T2):
     T1 = np.asarray(T1)
     T2 = np.asarray(T2)
 
-    if type(T1) is not _array_type:
+    if type(T1) != np.ndarray:
         raise TypeError('T1 must be a numpy array.')
-    if type(T2) is not _array_type:
+    if type(T2) != np.ndarray:
         raise TypeError('T2 must be a numpy array.')
 
     T1S = T1.shape
@@ -3100,7 +3099,7 @@ def leaders(Z, T):
     """
     Z = np.asarray(Z)
     T = np.asarray(T)
-    if type(T) != _array_type or T.dtype != np.int:
+    if type(T) != np.ndarray or T.dtype != np.int:
         raise TypeError('T must be a one-dimensional numpy array of integers.')
     is_valid_linkage(Z, throw=True, name='Z')
     if len(T) != Z.shape[0] + 1:
