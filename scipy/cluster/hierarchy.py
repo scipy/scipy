@@ -1463,18 +1463,18 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
         # Find out: Is there a dot subtraction operator so I can
         # subtract matrices in a similar way to multiplying them?
         # Need to get rid of as much unnecessary C code as possible.
-        elif mstr in set(['cosine_old', 'cos_old']):
+        elif mstr in set(['cosine', 'cos']):
             norms = np.sqrt(np.sum(X * X, axis=1))
             _hierarchy_wrap.pdist_cosine_wrap(_convert_to_double(X), dm, norms)
-        elif mstr in set(['cosine', 'cos']):
+        elif mstr in set(['old_cosine', 'old_cos']):
             norms = np.sqrt(np.sum(X * X, axis=1))
             nV = norms.reshape(m, 1)
             # The numerator u * v
             nm = np.dot(X, X.T)
             # The denom. ||u||*||v||
             de = np.dot(nV, nV.T);
-            dm = 1 - (nm / de)
-            dm[xrange(0,m),xrange(0,m)] = 0
+            dm = 1.0 - (nm / de)
+            dm[xrange(0,m),xrange(0,m)] = 0.0
             dm = squareform(dm)
         elif mstr in set(['correlation', 'co']):
             X2 = X - X.mean(1)[:,np.newaxis]
