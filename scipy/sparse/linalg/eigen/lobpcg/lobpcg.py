@@ -17,6 +17,8 @@ import scipy as sp
 
 from scipy.sparse.linalg import aslinearoperator, LinearOperator
 
+__all__ = ['lobpcg']
+
 ## try:
 ##     from symeig import symeig
 ## except:
@@ -138,9 +140,9 @@ def b_orthonormalize( B, blockVectorV,
     else:
         return blockVectorV, blockVectorBV
 
-def lobpcg( blockVectorX, A,
-            B = None, M = None, blockVectorY = None,
-            residualTolerance = None, maxIterations = 20,
+def lobpcg( A, X,  
+            B=None, M=None, Y=None,
+            tol= None, maxiter=20,
             largest = True, verbosityLevel = 0,
             retLambdaHistory = False, retResidualNormsHistory = False ):
     """Solve symmetric partial eigenproblems with optional preconditioning
@@ -148,22 +150,23 @@ def lobpcg( blockVectorX, A,
     This function implements the Locally Optimal Block Preconditioned
     Conjugate Gradient Method (LOBPCG).
 
-    TODO write in terms of Ax=lambda B x
-
+    
     Parameters
     ----------
-    blockVectorX : array_like
-        initial approximation to eigenvectors shape=(n,blockSize)
-    A : {dense matrix, sparse matrix, LinearOperator}
-        the linear operator of the problem, usually a sparse matrix
-        often called the "stiffness matrix"
+    A : {sparse matrix, dense matrix, LinearOperator}
+        The symmetric linear operator of the problem, usually a 
+        sparse matrix.  Often called the "stiffness matrix".
+    X : array_like
+        Initial approximation to the k eigenvectors. If A has 
+        shape=(n,n) then X should have shape shape=(n,k).
 
     Returns
     -------
-    (lambda,blockVectorV) : tuple of arrays
-        blockVectorX and lambda are computed blockSize eigenpairs, where
-        blockSize=size(blockVectorX,2) for the initial guess blockVectorX
-        if it is full rank.
+    w : array
+        Array of k eigenvalues
+    v : array
+        An array of k eigenvectors.  V has the same shape as X.
+
 
     Optional Parameters
     -------------------
@@ -174,18 +177,19 @@ def lobpcg( blockVectorX, A,
     M : {dense matrix, sparse matrix, LinearOperator}
         preconditioner to A; by default M = Identity
         M should approximate the inverse of A
-    blockVectorY : array_like
+    Y : array_like
         n-by-sizeY matrix of constraints, sizeY < n
         The iterations will be performed in the B-orthogonal complement
-        of the column-space of blockVectorY. blockVectorY must be full rank.
+        of the column-space of Y. Y must be full rank.
 
     Other Parameters
     ----------------
-    residualTolerance : scalar
-        solver tolerance. default: residualTolerance=n*sqrt(eps)
-    maxIterations: integer
+    tol : scalar
+        Solver tolerance (stopping criterion)
+        by default: tol=n*sqrt(eps)
+    maxiter: integer
         maximum number of iterations
-        by default: maxIterations=min(n,20)
+        by default: maxiter=min(n,20)
     largest : boolean
         when True, solve for the largest eigenvalues, otherwise the smallest
     verbosityLevel : integer
@@ -200,11 +204,16 @@ def lobpcg( blockVectorX, A,
     -----
     If both retLambdaHistory and retResidualNormsHistory are True, the
     return tuple has the following format:
-        (lambda, blockVectorV, lambda history, residual norms history)
+        (lambda, V, lambda history, residual norms history)
 
     """
     failureFlag = True
     import scipy.linalg as sla
+
+    blockVectorX = X
+    blockVectorY = Y
+    residualTolerance = tol
+    maxIterations = maxiter
 
     if blockVectorY is not None:
         sizeY = blockVectorY.shape[1]
@@ -213,11 +222,11 @@ def lobpcg( blockVectorX, A,
 
     # Block size.
     if len(blockVectorX.shape) != 2:
-        raise ValueError('expected rank-2 array for argument blockVectorX')
+        raise ValueError('expected rank-2 array for argument X')
 
     n, sizeX = blockVectorX.shape
     if sizeX > n:
-        raise ValueError('blockVectorX column dimension exceeds the row dimension')
+        raise ValueError('X column dimension exceeds the row dimension')
 
     A = makeOperator(A, (n,n))
     B = makeOperator(B, (n,n))

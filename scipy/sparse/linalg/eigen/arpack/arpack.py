@@ -62,7 +62,7 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Parameters
     ----------
-    A : A : matrix, array, or object with matvec(x) method
+    A : matrix, array, or object with matvec(x) method
         An N x N matrix, array, or an object with matvec(x) method to perform
         the matrix vector product A * x.  The sparse matrix formats
         in scipy.sparse are appropriate for A.
@@ -76,8 +76,8 @@ def eigen(A, k=6, M=None, sigma=None, which='LM', v0=None,
         Array of k eigenvalues
 
     v : array
-       An array of k eigenvectors
-       The v[i] is the eigenvector corresponding to the eigenvector w[i]
+        An array of k eigenvectors
+        The v[i] is the eigenvector corresponding to the eigenvector w[i]
 
     Other Parameters
     ----------------
