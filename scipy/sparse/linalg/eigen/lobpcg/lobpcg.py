@@ -10,13 +10,11 @@ License: BSD
 Examples in tests directory contributed by Nils Wagner.
 """
 
-import types
 from warnings import warn
 
-import numpy as nm
-import scipy as sc
-import scipy.sparse as sp
-import scipy.io as io
+import numpy as np
+import scipy as sp
+
 from scipy.sparse.linalg import aslinearoperator, LinearOperator
 
 ## try:
@@ -28,7 +26,7 @@ def symeig( mtxA, mtxB = None, eigenvectors = True, select = None ):
     import scipy.linalg as sla
     import scipy.lib.lapack as ll
     if select is None:
-        if nm.iscomplexobj( mtxA ):
+        if np.iscomplexobj( mtxA ):
             if mtxB is None:
                 fun = ll.get_lapack_funcs( ['heev'], arrays = (mtxA,) )[0]
             else:
@@ -51,7 +49,7 @@ def symeig( mtxA, mtxB = None, eigenvectors = True, select = None ):
     else:
         out = sla.eig( mtxA, mtxB, right = eigenvectors )
         w = out[0]
-        ii = nm.argsort( w )
+        ii = np.argsort( w )
         w = w[slice( *select )]
         if eigenvectors:
             v = out[1][:,ii]
@@ -66,7 +64,8 @@ def pause():
     raw_input()
 
 def save( ar, fileName ):
-    io.write_array( fileName, ar, precision = 8 )
+    from scipy.io import write_array
+    write_array( fileName, ar, precision = 8 )
 
 ##
 # 21.05.2007, c
@@ -78,7 +77,7 @@ def as2d( ar ):
     if ar.ndim == 2:
         return ar
     else: # Assume 1!
-        aux = nm.array( ar, copy = False )
+        aux = np.array( ar, copy = False )
         aux.shape = (ar.shape[0], 1)
         return aux
 
@@ -111,10 +110,10 @@ def makeOperator( operatorInput, expectedShape ):
 
 def applyConstraints( blockVectorV, factYBY, blockVectorBY, blockVectorY ):
     """Internal. Changes blockVectorV in place."""
-    gramYBV = sc.dot( blockVectorBY.T, blockVectorV )
+    gramYBV = sp.dot( blockVectorBY.T, blockVectorV )
     import scipy.linalg as sla
     tmp = sla.cho_solve( factYBY, gramYBV )
-    blockVectorV -= sc.dot( blockVectorY, tmp )
+    blockVectorV -= sp.dot( blockVectorY, tmp )
 
 
 def b_orthonormalize( B, blockVectorV,
@@ -126,13 +125,13 @@ def b_orthonormalize( B, blockVectorV,
             blockVectorBV = B( blockVectorV )
         else:
             blockVectorBV = blockVectorV # Shared data!!!
-    gramVBV = sc.dot( blockVectorV.T, blockVectorBV )
+    gramVBV = sp.dot( blockVectorV.T, blockVectorBV )
     gramVBV = sla.cholesky( gramVBV )
     sla.inv( gramVBV, overwrite_a = True )
     # gramVBV is now R^{-1}.
-    blockVectorV = sc.dot( blockVectorV, gramVBV )
+    blockVectorV = sp.dot( blockVectorV, gramVBV )
     if B is not None:
-        blockVectorBV = sc.dot( blockVectorBV, gramVBV )
+        blockVectorBV = sp.dot( blockVectorBV, gramVBV )
 
     if retInvR:
         return blockVectorV, blockVectorBV, gramVBV
@@ -236,10 +235,10 @@ def lobpcg( blockVectorX, A,
         else:
             lohi = (1, sizeX)
 
-        A_dense = A(nm.eye(n))
+        A_dense = A(np.eye(n))
 
         if B is not None:
-            B_dense = B(nm.eye(n))
+            B_dense = B(np.eye(n))
             _lambda, eigBlockVector = symeig(A_dense, B_dense, select=lohi )
         else:
             _lambda, eigBlockVector = symeig(A_dense, select=lohi )
@@ -248,7 +247,7 @@ def lobpcg( blockVectorX, A,
 
 
     if residualTolerance is None:
-        residualTolerance = nm.sqrt( 1e-15 ) * n
+        residualTolerance = np.sqrt( 1e-15 ) * n
 
     maxIterations = min( n, maxIterations )
 
@@ -283,7 +282,7 @@ def lobpcg( blockVectorX, A,
             blockVectorBY = blockVectorY
 
         # gramYBY is a dense array.
-        gramYBY = sc.dot( blockVectorY.T, blockVectorBY )
+        gramYBY = sp.dot( blockVectorY.T, blockVectorBY )
         try:
             # gramYBY is a Cholesky factor from now on...
             gramYBY = sla.cho_factor( gramYBY )
@@ -299,32 +298,32 @@ def lobpcg( blockVectorX, A,
     ##
     # Compute the initial Ritz vectors: solve the eigenproblem.
     blockVectorAX = A( blockVectorX )
-    gramXAX = sc.dot( blockVectorX.T, blockVectorAX )
+    gramXAX = sp.dot( blockVectorX.T, blockVectorAX )
     # gramXBX is X^T * X.
-    gramXBX = sc.dot( blockVectorX.T, blockVectorX )
+    gramXBX = sp.dot( blockVectorX.T, blockVectorX )
 
     _lambda, eigBlockVector = symeig( gramXAX )
-    ii = nm.argsort( _lambda )[:sizeX]
+    ii = np.argsort( _lambda )[:sizeX]
     if largest:
         ii = ii[::-1]
     _lambda = _lambda[ii]
 
-    eigBlockVector = nm.asarray( eigBlockVector[:,ii] )
-    blockVectorX  = sc.dot( blockVectorX,  eigBlockVector )
-    blockVectorAX = sc.dot( blockVectorAX, eigBlockVector )
+    eigBlockVector = np.asarray( eigBlockVector[:,ii] )
+    blockVectorX  = sp.dot( blockVectorX,  eigBlockVector )
+    blockVectorAX = sp.dot( blockVectorAX, eigBlockVector )
     if B is not None:
-        blockVectorBX = sc.dot( blockVectorBX, eigBlockVector )
+        blockVectorBX = sp.dot( blockVectorBX, eigBlockVector )
 
     ##
     # Active index set.
-    activeMask = nm.ones( (sizeX,), dtype = nm.bool )
+    activeMask = np.ones( (sizeX,), dtype = np.bool )
 
     lambdaHistory = [_lambda]
     residualNormsHistory = []
 
     previousBlockSize = sizeX
-    ident  = nm.eye( sizeX, dtype = A.dtype )
-    ident0 = nm.eye( sizeX, dtype = A.dtype )
+    ident  = np.eye( sizeX, dtype = A.dtype )
+    ident0 = np.eye( sizeX, dtype = A.dtype )
 
     ##
     # Main iteration loop.
@@ -332,15 +331,15 @@ def lobpcg( blockVectorX, A,
         if verbosityLevel > 0:
             print 'iteration %d' %  iterationNumber
 
-        aux = blockVectorBX * _lambda[nm.newaxis,:]
+        aux = blockVectorBX * _lambda[np.newaxis,:]
         blockVectorR = blockVectorAX - aux
 
-        aux = nm.sum( blockVectorR.conjugate() * blockVectorR, 0 )
-        residualNorms = nm.sqrt( aux )
+        aux = np.sum( blockVectorR.conjugate() * blockVectorR, 0 )
+        residualNorms = np.sqrt( aux )
 
         residualNormsHistory.append( residualNorms )
 
-        ii = nm.where( residualNorms > residualTolerance, True, False )
+        ii = np.where( residualNorms > residualTolerance, True, False )
         activeMask = activeMask & ii
         if verbosityLevel > 2:
             print activeMask
@@ -348,7 +347,7 @@ def lobpcg( blockVectorX, A,
         currentBlockSize = activeMask.sum()
         if currentBlockSize != previousBlockSize:
             previousBlockSize = currentBlockSize
-            ident = nm.eye( currentBlockSize, dtype = A.dtype )
+            ident = np.eye( currentBlockSize, dtype = A.dtype )
 
         if currentBlockSize == 0:
             failureFlag = False # All eigenpairs converged.
@@ -390,44 +389,44 @@ def lobpcg( blockVectorX, A,
             aux = b_orthonormalize( B, activeBlockVectorP,
                                     activeBlockVectorBP, retInvR = True )
             activeBlockVectorP, activeBlockVectorBP, invR = aux
-            activeBlockVectorAP = sc.dot( activeBlockVectorAP, invR )
+            activeBlockVectorAP = sp.dot( activeBlockVectorAP, invR )
 
         ##
         # Perform the Rayleigh Ritz Procedure:
         # Compute symmetric Gram matrices:
 
-        xaw = sc.dot( blockVectorX.T,       activeBlockVectorAR )
-        waw = sc.dot( activeBlockVectorR.T, activeBlockVectorAR )
-        xbw = sc.dot( blockVectorX.T,       activeBlockVectorBR )
+        xaw = sp.dot( blockVectorX.T,       activeBlockVectorAR )
+        waw = sp.dot( activeBlockVectorR.T, activeBlockVectorAR )
+        xbw = sp.dot( blockVectorX.T,       activeBlockVectorBR )
 
         if iterationNumber > 0:
-            xap = sc.dot( blockVectorX.T,       activeBlockVectorAP )
-            wap = sc.dot( activeBlockVectorR.T, activeBlockVectorAP )
-            pap = sc.dot( activeBlockVectorP.T, activeBlockVectorAP )
-            xbp = sc.dot( blockVectorX.T,       activeBlockVectorBP )
-            wbp = sc.dot( activeBlockVectorR.T, activeBlockVectorBP )
+            xap = sp.dot( blockVectorX.T,       activeBlockVectorAP )
+            wap = sp.dot( activeBlockVectorR.T, activeBlockVectorAP )
+            pap = sp.dot( activeBlockVectorP.T, activeBlockVectorAP )
+            xbp = sp.dot( blockVectorX.T,       activeBlockVectorBP )
+            wbp = sp.dot( activeBlockVectorR.T, activeBlockVectorBP )
 
-            gramA = nm.bmat( [[nm.diag( _lambda ),   xaw,  xap],
+            gramA = np.bmat( [[np.diag( _lambda ),   xaw,  xap],
                               [             xaw.T,   waw,  wap],
                               [             xap.T, wap.T,  pap]] )
 
-            gramB = nm.bmat( [[ident0,    xbw,    xbp],
+            gramB = np.bmat( [[ident0,    xbw,    xbp],
                               [ xbw.T,  ident,    wbp],
                               [ xbp.T,  wbp.T,  ident]] )
         else:
-            gramA = nm.bmat( [[nm.diag( _lambda ),  xaw],
+            gramA = np.bmat( [[np.diag( _lambda ),  xaw],
                               [             xaw.T,  waw]] )
-            gramB = nm.bmat( [[ident0,    xbw],
+            gramB = np.bmat( [[ident0,    xbw],
                               [ xbw.T,  ident]] )
 
         try:
-            assert nm.allclose( gramA.T, gramA )
+            assert np.allclose( gramA.T, gramA )
         except:
             print gramA.T - gramA
             raise
 
         try:
-            assert nm.allclose( gramB.T, gramB )
+            assert np.allclose( gramB.T, gramB )
         except:
             print gramB.T - gramB
             raise
@@ -440,23 +439,23 @@ def lobpcg( blockVectorX, A,
         # Solve the generalized eigenvalue problem.
 #        _lambda, eigBlockVector = la.eig( gramA, gramB )
         _lambda, eigBlockVector = symeig( gramA, gramB )
-        ii = nm.argsort( _lambda )[:sizeX]
+        ii = np.argsort( _lambda )[:sizeX]
         if largest:
             ii = ii[::-1]
         if verbosityLevel > 10:
             print ii
 
-        _lambda = _lambda[ii].astype( nm.float64 )
-        eigBlockVector = nm.asarray( eigBlockVector[:,ii].astype( nm.float64 ) )
+        _lambda = _lambda[ii].astype( np.float64 )
+        eigBlockVector = np.asarray( eigBlockVector[:,ii].astype( np.float64 ) )
 
         lambdaHistory.append( _lambda )
 
         if verbosityLevel > 10:
             print 'lambda:', _lambda
 ##         # Normalize eigenvectors!
-##         aux = nm.sum( eigBlockVector.conjugate() * eigBlockVector, 0 )
-##         eigVecNorms = nm.sqrt( aux )
-##         eigBlockVector = eigBlockVector / eigVecNorms[nm.newaxis,:]
+##         aux = np.sum( eigBlockVector.conjugate() * eigBlockVector, 0 )
+##         eigVecNorms = np.sqrt( aux )
+##         eigBlockVector = eigBlockVector / eigVecNorms[np.newaxis,:]
 #        eigBlockVector, aux = b_orthonormalize( B, eigBlockVector )
 
         if verbosityLevel > 10:
@@ -470,21 +469,21 @@ def lobpcg( blockVectorX, A,
             eigBlockVectorR = eigBlockVector[sizeX:sizeX+currentBlockSize]
             eigBlockVectorP = eigBlockVector[sizeX+currentBlockSize:]
 
-            pp  = sc.dot( activeBlockVectorR, eigBlockVectorR )
-            pp += sc.dot( activeBlockVectorP, eigBlockVectorP )
+            pp  = sp.dot( activeBlockVectorR, eigBlockVectorR )
+            pp += sp.dot( activeBlockVectorP, eigBlockVectorP )
 
-            app  = sc.dot( activeBlockVectorAR, eigBlockVectorR )
-            app += sc.dot( activeBlockVectorAP, eigBlockVectorP )
+            app  = sp.dot( activeBlockVectorAR, eigBlockVectorR )
+            app += sp.dot( activeBlockVectorAP, eigBlockVectorP )
 
-            bpp  = sc.dot( activeBlockVectorBR, eigBlockVectorR )
-            bpp += sc.dot( activeBlockVectorBP, eigBlockVectorP )
+            bpp  = sp.dot( activeBlockVectorBR, eigBlockVectorR )
+            bpp += sp.dot( activeBlockVectorBP, eigBlockVectorP )
         else:
             eigBlockVectorX = eigBlockVector[:sizeX]
             eigBlockVectorR = eigBlockVector[sizeX:]
 
-            pp  = sc.dot( activeBlockVectorR,  eigBlockVectorR )
-            app = sc.dot( activeBlockVectorAR, eigBlockVectorR )
-            bpp = sc.dot( activeBlockVectorBR, eigBlockVectorR )
+            pp  = sp.dot( activeBlockVectorR,  eigBlockVectorR )
+            app = sp.dot( activeBlockVectorAR, eigBlockVectorR )
+            bpp = sp.dot( activeBlockVectorBR, eigBlockVectorR )
 
         if verbosityLevel > 10:
             print pp
@@ -492,17 +491,17 @@ def lobpcg( blockVectorX, A,
             print bpp
             pause()
 
-        blockVectorX  = sc.dot( blockVectorX, eigBlockVectorX )  + pp
-        blockVectorAX = sc.dot( blockVectorAX, eigBlockVectorX ) + app
-        blockVectorBX = sc.dot( blockVectorBX, eigBlockVectorX ) + bpp
+        blockVectorX  = sp.dot( blockVectorX, eigBlockVectorX )  + pp
+        blockVectorAX = sp.dot( blockVectorAX, eigBlockVectorX ) + app
+        blockVectorBX = sp.dot( blockVectorBX, eigBlockVectorX ) + bpp
 
         blockVectorP, blockVectorAP, blockVectorBP = pp, app, bpp
 
-    aux = blockVectorBX * _lambda[nm.newaxis,:]
+    aux = blockVectorBX * _lambda[np.newaxis,:]
     blockVectorR = blockVectorAX - aux
 
-    aux = nm.sum( blockVectorR.conjugate() * blockVectorR, 0 )
-    residualNorms = nm.sqrt( aux )
+    aux = np.sum( blockVectorR.conjugate() * blockVectorR, 0 )
+    residualNorms = np.sqrt( aux )
 
 
     if verbosityLevel > 0:
@@ -522,31 +521,31 @@ def lobpcg( blockVectorX, A,
 
 ###########################################################################
 if __name__ == '__main__':
-    from scipy.sparse import spdiags, speye
+    from scipy.sparse import spdiags, speye, issparse
     import time
 
 ##     def B( vec ):
 ##         return vec
 
     n = 100
-    vals = [nm.arange( n, dtype = nm.float64 ) + 1]
+    vals = [np.arange( n, dtype = np.float64 ) + 1]
     A = spdiags( vals, 0, n, n )
     B = speye( n, n )
 #    B[0,0] = 0
-    B = nm.eye( n, n )
-    Y = nm.eye( n, 3 )
+    B = np.eye( n, n )
+    Y = np.eye( n, 3 )
 
 
-#    X = sc.rand( n, 3 )
+#    X = sp.rand( n, 3 )
     xfile = {100 : 'X.txt', 1000 : 'X2.txt', 10000 : 'X3.txt'}
-    X = nm.fromfile( xfile[n], dtype = nm.float64, sep = ' ' )
+    X = np.fromfile( xfile[n], dtype = np.float64, sep = ' ' )
     X.shape = (n, 3)
 
     ivals = [1./vals[0]]
     def precond( x ):
         invA = spdiags( ivals, 0, n, n )
         y = invA  * x
-        if sp.issparse( y ):
+        if issparse( y ):
             y = y.toarray()
 
         return as2d( y )
