@@ -6,6 +6,6 @@ from info import __doc__
 
 __all__ = ['vq', 'hierarchy', 'distance']
 
-import vq, hierarchy
+import vq, hierarchy, distance
 from scipy.testing.pkgtester import Tester
 test = Tester().test

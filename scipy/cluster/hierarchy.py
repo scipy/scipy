@@ -149,7 +149,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as np
 import _hierarchy_wrap, types
-from distance import pdist
+import distance
 
 _cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2,
                            'weighted': 6}
@@ -437,14 +437,14 @@ def linkage(y, method='single', metric='euclidean'):
         if method not in _cpy_linkage_methods:
             raise ValueError('Invalid method: %s' % method)
         if method in _cpy_non_euclid_methods.keys():
-            dm = pdist(X, metric)
+            dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_wrap(dm, Z, n, \
                                        int(_cpy_non_euclid_methods[method]))
         elif method in _cpy_euclid_methods.keys():
             if metric != 'euclidean':
                 raise ValueError('Method %s requires the distance metric to be euclidean' % s)
-            dm = pdist(X, metric)
+            dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_euclid_wrap(dm, Z, X, m, n,
                                               int(_cpy_euclid_methods[method]))
@@ -1341,7 +1341,7 @@ def fclusterdata(X, t, criterion='inconsistent', \
                     descriptions.
 
         distance:   the distance metric for calculating pairwise
-                    distances. See pdist for descriptions and
+                    distances. See distance.pdist for descriptions and
                     linkage to verify compatibility with the linkage
                     method.
 
@@ -1361,7 +1361,7 @@ def fclusterdata(X, t, criterion='inconsistent', \
     if type(X) != np.ndarray or len(X.shape) != 2:
         raise TypeError('The observation matrix X must be an n by m numpy array.')
 
-    Y = pdist(X, metric=distance)
+    Y = distance.pdist(X, metric=distance)
     Z = linkage(Y, method=method)
     if R is None:
         R = inconsistent(Z, d=depth)
