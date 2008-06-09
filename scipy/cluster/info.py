@@ -14,6 +14,12 @@ Hierarchical Clustering
     clustering. Its features include generating hierarchical clusters from 
     distance matrices, computing distance matrices from observation vectors, 
     calculating statistics on clusters, cutting linkages to generate flat 
-    clusters, and visualizing clusters with dendrograms. 
+    clusters, and visualizing clusters with dendrograms.
+
+Distance Computation
+====================
+
+    The distance module provides functions for computing distances between
+    pairs of vectors from a set of observation vectors.
 
 """
