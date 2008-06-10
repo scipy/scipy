@@ -68,7 +68,7 @@ def resize_image(imageS, imageS_mat, imageR_mat):
     """
 
     # get the zoom
-    Z = imageS.diagonal() / imageR.diagonal()
+    Z = imageS_mat.diagonal() / imageR_mat.diagonal()
 
     # new volume dimensions (rounded). D, imageS and Z are 3D and this is a vector element product
     D = (imageS.shape * Z + 0.5).astype(np.int16)
@@ -300,7 +300,7 @@ def multires_registration(image1, image1_mat, image2, image2_mat, multires, hist
     step = np.array([1, 1, 1], dtype=np.int32)
     fwhm = np.zeros(2, dtype=np.int32)
     # make the step a scalar to can put in a multi-res loop
-    loop = range(size(multires))
+    loop = range(np.size(multires))
     # 6-D zero vector
     x = np.zeros(6, dtype=np.float64);
     # the kernel fwhm value for the x and y joint histogram filter
@@ -1120,7 +1120,7 @@ def demo_MRI_coregistration(anatfile, funclist, optimizer_method='powell',
     # the sampling structure
     step = np.array([1, 1, 1], dtype=np.int32)
     # the volume filter
-    imageF_anat_fwhm = build_fwhm(mat_anat, step)
+    imageF_anat_fwhm = build_fwhm(anat_mat, step)
 
 
     # allocate the structure for the processed fMRI array
@@ -1142,7 +1142,8 @@ def demo_MRI_coregistration(anatfile, funclist, optimizer_method='powell',
 
     # blank volume that will be used for ensemble average for fMRI volumes
     # prior to functional-anatomical coregistration
-    ave_fMRI_volume = np.zeros([fmri_desc['layers']*fmri_desc['rows']*fmri_desc['cols']].dtype=np.float64)
+    ave_fMRI_volume = np.zeros([fmri_desc['layers']*fmri_desc['rows']*fmri_desc['cols']],
+        dtype=np.float64)
 
     count = 0
     number_volumes = len(fMRIdata)
