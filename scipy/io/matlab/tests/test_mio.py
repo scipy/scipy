@@ -3,7 +3,7 @@
 import os
 from glob import glob
 from cStringIO import StringIO
-from tempfile import mkstemp
+from tempfile import mkstemp, mkdtemp
 from scipy.testing import *
 from numpy import arange, array, eye, pi, cos, exp, sin, sqrt, ndarray,  \
      zeros, reshape, transpose, empty
@@ -11,6 +11,9 @@ import scipy.sparse as SP
 
 from scipy.io.matlab.mio import loadmat, savemat
 from scipy.io.matlab.mio5 import mat_obj, mat_struct
+
+import shutil
+import gzip
 
 try:  # Python 2.3 support
     from sets import Set as set
@@ -238,3 +241,29 @@ def test_round_trip():
         expected = case['expected']
         format = case in case_table4 and '4' or '5'
         yield _make_rt_check_case, name, expected, format
+
+def test_gzip_simple():
+    xdense = zeros((20,20))
+    xdense[2,3]=2.3
+    xdense[4,5]=4.5
+    x = SP.csc_matrix(xdense)
+
+    name = 'gzip_test'
+    expected = {'x':x}
+    format='4'
+
+    tmpdir = mkdtemp()
+    try:
+        fname = os.path.join(tmpdir,name)
+        mat_stream = gzip.open( fname,mode='wb')
+        savemat(mat_stream, expected, format=format)
+        mat_stream.close()
+
+        mat_stream = gzip.open( fname,mode='rb')
+        actual = loadmat(mat_stream)
+        mat_stream.close()
+    finally:
+        shutil.rmtree(tmpdir)
+
+    assert_array_almost_equal(actual['x'].todense(),
+                              expected['x'].todense())
