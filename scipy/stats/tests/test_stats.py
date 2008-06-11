@@ -197,47 +197,47 @@ class TestNanFunc(TestCase):
 
     def test_nanmean_none(self):
         """Check nanmean when no values are nan."""
-        m = stats.stats.nanmean(X)
+        m = stats.nanmean(X)
         assert_approx_equal(m, X[4])
 
     def test_nanmean_some(self):
         """Check nanmean when some values only are nan."""
-        m = stats.stats.nanmean(self.Xsome)
+        m = stats.nanmean(self.Xsome)
         assert_approx_equal(m, 5.5)
 
     def test_nanmean_all(self):
         """Check nanmean when all values are nan."""
-        m = stats.stats.nanmean(self.Xall)
+        m = stats.nanmean(self.Xall)
         assert numpy.isnan(m)
 
     def test_nanstd_none(self):
         """Check nanstd when no values are nan."""
-        s = stats.stats.nanstd(self.X)
-        assert_approx_equal(s, stats.stats.std(self.X))
+        s = stats.nanstd(self.X)
+        assert_approx_equal(s, stats.std(self.X))
 
     def test_nanstd_some(self):
         """Check nanstd when some values only are nan."""
-        s = stats.stats.nanstd(self.Xsome)
-        assert_approx_equal(s, stats.stats.std(self.Xsomet))
+        s = stats.nanstd(self.Xsome)
+        assert_approx_equal(s, stats.std(self.Xsomet))
 
     def test_nanstd_all(self):
         """Check nanstd when all values are nan."""
-        s = stats.stats.nanstd(self.Xall)
+        s = stats.nanstd(self.Xall)
         assert numpy.isnan(s)
 
     def test_nanmedian_none(self):
         """Check nanmedian when no values are nan."""
-        m = stats.stats.nanmedian(self.X)
-        assert_approx_equal(m, stats.stats.median(self.X))
+        m = stats.nanmedian(self.X)
+        assert_approx_equal(m, stats.median(self.X))
 
     def test_nanmedian_some(self):
         """Check nanmedian when some values only are nan."""
-        m = stats.stats.nanmedian(self.Xsome)
-        assert_approx_equal(m, stats.stats.median(self.Xsomet))
+        m = stats.nanmedian(self.Xsome)
+        assert_approx_equal(m, stats.median(self.Xsomet))
 
     def test_nanmedian_all(self):
         """Check nanmedian when all values are nan."""
-        m = stats.stats.nanmedian(self.Xall)
+        m = stats.nanmedian(self.Xall)
         assert numpy.isnan(m)
 
 class TestCorr(TestCase):
