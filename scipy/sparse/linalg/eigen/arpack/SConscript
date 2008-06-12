@@ -36,7 +36,7 @@ src = [str(s) for s in arpack_src]
 env.AppendUnique(CPPPATH = pjoin('ARPACK', 'SRC'))
 env.AppendUnique(F77PATH = pjoin(env['src_dir'], 'ARPACK', 'SRC'))
 env.AppendUnique(LIBPATH = env['build_dir'])
-arpack_lib = env.NumpyStaticExtLibrary('arpack', source = src)
+arpack_lib = env.DistutilsStaticExtLibrary('arpack', source = src)
 
 # Build _arpack extension
 env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])

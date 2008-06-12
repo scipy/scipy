@@ -19,7 +19,7 @@ env.AppendUnique(LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # Build fitpack
 src = [str(s) for s in env.NumpyGlob(pjoin('fitpack', '*.f'))]
-fitpack = env.NumpyStaticExtLibrary('fitpack', source = src)
+fitpack = env.DistutilsStaticExtLibrary('fitpack', source = src)
 
 env.PrependUnique(LIBS = ['fitpack'])
 env.PrependUnique(LIBPATH = [env['build_dir']])

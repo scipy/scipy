@@ -32,7 +32,7 @@ def build_lib(name, ext, libname = None):
         libname = name
     src = env.NumpyGlob(pjoin(name, '*%s' % ext))
     assert len(src) > 0
-    env.NumpyStaticExtLibrary(libname, source = src)
+    env.DistutilsStaticExtLibrary(libname, source = src)
 
 # C libraries
 build_lib('c_misc', '.c')

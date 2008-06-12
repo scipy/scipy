@@ -52,7 +52,7 @@ if has_blas:
 else:
     libodr_src.append(pjoin('odrpack', 'd_lpkbls.f'))
 
-env.NumpyStaticExtLibrary('odrpack', source = libodr_src)
+env.DistutilsStaticExtLibrary('odrpack', source = libodr_src)
 
 env.PrependUnique(LIBS = 'odrpack')
 env.PrependUnique(LIBPATH = env['build_dir'])
