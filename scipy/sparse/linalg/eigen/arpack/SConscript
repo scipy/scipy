@@ -44,4 +44,4 @@ env.AppendUnique(CPPPATH = get_numpy_include_dirs())
 
 env.NumpyFromFTemplate('arpack.pyf', 'arpack.pyf.src')
 env.Prepend(LIBS = 'arpack')
-env.NumpyPythonExtension('_arpack', 'arpack.pyf')
+env.DistutilsPythonExtension('_arpack', 'arpack.pyf')

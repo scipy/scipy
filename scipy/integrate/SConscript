@@ -52,10 +52,10 @@ odenv = env.Clone()
 odenv.Prepend(LIBS = ['odepack', 'linpack_lite', 'mach'])
 
 # Build _quadpack
-quadenv.NumpyPythonExtension('_quadpack', source = '_quadpackmodule.c')
+quadenv.DistutilsPythonExtension('_quadpack', source = '_quadpackmodule.c')
 
 # Build _odepack
-odenv.NumpyPythonExtension('_odepack', source = '_odepackmodule.c')
+odenv.DistutilsPythonExtension('_odepack', source = '_odepackmodule.c')
 
 # Build vode
-odenv.NumpyPythonExtension('vode', source = 'vode.pyf')
+odenv.DistutilsPythonExtension('vode', source = 'vode.pyf')

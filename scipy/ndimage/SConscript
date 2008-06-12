@@ -11,12 +11,12 @@ env.AppendUnique(CPPPATH = 'src')
 
 ndimage_src = ["nd_image.c", "ni_filters.c", "ni_fourier.c", "ni_interpolation.c",
                "ni_measure.c", "ni_morphology.c", "ni_support.c"]
-env.NumpyPythonExtension('_nd_image', source = [join('src', i) for i in ndimage_src])
+env.DistutilsPythonExtension('_nd_image', source = [join('src', i) for i in ndimage_src])
 
 segment_src = ['Segmenter_EXT.c', 'Segmenter_IMPL.c']
-env.NumpyPythonExtension('_segment', source = [join('src', 'segment', i) 
+env.DistutilsPythonExtension('_segment', source = [join('src', 'segment', i) 
                                                for i in segment_src])
 
 register_src = ['Register_EXT.c', 'Register_IMPL.c']
-env.NumpyPythonExtension('_register', source = [join('src', 'register', i) 
+env.DistutilsPythonExtension('_register', source = [join('src', 'register', i) 
                                                 for i in register_src])

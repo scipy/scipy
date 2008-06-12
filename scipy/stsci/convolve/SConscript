@@ -9,5 +9,5 @@ env.AppendUnique(CPPPATH = [get_numpy_include_dirs(), get_numarray_include()])
 env.AppendUnique(CPPDEFINES = {'NUMPY': '1'})
 
 # _correlate extension
-env.NumpyPythonExtension('_correlate', source = 'src/_correlatemodule.c') 
-env.NumpyPythonExtension('_lineshape', source = 'src/_lineshapemodule.c') 
+env.DistutilsPythonExtension('_correlate', source = 'src/_correlatemodule.c') 
+env.DistutilsPythonExtension('_lineshape', source = 'src/_lineshapemodule.c') 

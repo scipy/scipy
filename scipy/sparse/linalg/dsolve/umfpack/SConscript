@@ -32,4 +32,4 @@ if has_umfpack:
     env.Append(SWIGFLAGS = '-python')
     env.Append(SWIGFLAGS = '$_CPPINCFLAGS')
     env.Append(CPPPATH = get_numpy_include_dirs())
-    env.NumpyPythonExtension('__umfpack', source = 'umfpack.i') 
+    env.DistutilsPythonExtension('__umfpack', source = 'umfpack.i') 

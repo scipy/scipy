@@ -9,4 +9,4 @@ env.AppendUnique(CPPPATH = get_numpy_include_dirs())
 
 for fmt in ['csr','csc','coo','bsr','dia']:
     sources = [ fmt + '_wrap.cxx' ]
-    env.NumpyPythonExtension('_%s' % fmt, source = sources)
+    env.DistutilsPythonExtension('_%s' % fmt, source = sources)

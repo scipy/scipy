@@ -8,12 +8,12 @@ from numscons import GetNumpyEnvironment
 env = GetNumpyEnvironment(ARGUMENTS)
 
 env.AppendUnique(CPPPATH = get_numpy_include_dirs())
-env.NumpyPythonExtension('_vq', source = [join('src', 'vq_module.c'),
+env.DistutilsPythonExtension('_vq', source = [join('src', 'vq_module.c'),
                                           join('src', 'vq.c')])
 
-env.NumpyPythonExtension('_hierarchy_wrap', source = [join('src', 'hierarchy_wrap.c'),
+env.DistutilsPythonExtension('_hierarchy_wrap', source = [join('src', 'hierarchy_wrap.c'),
                                           join('src', 'hierarchy.c')])
 
 
-env.NumpyPythonExtension('_distance_wrap', source = [join('src', 'distance_wrap.c'),
+env.DistutilsPythonExtension('_distance_wrap', source = [join('src', 'distance_wrap.c'),
                                           join('src', 'distance.c')])

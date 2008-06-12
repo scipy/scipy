@@ -42,6 +42,6 @@ pyenv.Prepend(LIBS = superlu)
 common_src = ['_superlu_utils.c', '_superluobject.c']
 
 for prec in ['z', 'd', 'c', 's']:
-    pyenv.NumpyPythonExtension('_%ssuperlu' % prec, 
+    pyenv.DistutilsPythonExtension('_%ssuperlu' % prec, 
                                source = common_src + \
                                         ['_%ssuperlumodule.c' % prec]) 

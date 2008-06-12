@@ -25,7 +25,7 @@ env.PrependUnique(LIBS = ['fitpack'])
 env.PrependUnique(LIBPATH = [env['build_dir']])
 
 # Build _fitpack
-env.NumpyPythonExtension('_fitpack', source = '_fitpackmodule.c')
+env.DistutilsPythonExtension('_fitpack', source = '_fitpackmodule.c')
 
 # Build dfitpack
-env.NumpyPythonExtension('dfitpack', source = 'fitpack.pyf')
+env.DistutilsPythonExtension('dfitpack', source = 'fitpack.pyf')

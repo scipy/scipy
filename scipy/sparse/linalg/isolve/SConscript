@@ -55,4 +55,4 @@ for method in raw_sources:
     res = env.NumpyFromFTemplate(target, pjoin('iterative', method))
     sources.append(res[0])
 
-env.NumpyPythonExtension('_iterative', source = sources)
+env.DistutilsPythonExtension('_iterative', source = sources)

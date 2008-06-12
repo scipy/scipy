@@ -52,7 +52,7 @@ env.AppendUnique(LIBPATH = [env['build_dir']])
 src = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
        'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c']
 
-env.NumpyPythonExtension('_cephes', 
+env.DistutilsPythonExtension('_cephes', 
                          source = src, 
                          LIBS = ['amos', 'toms', 'c_misc', 'cephes', 'mach',\
                                  'cdf', 'specfunlib'], 
@@ -60,6 +60,6 @@ env.NumpyPythonExtension('_cephes',
 
 # Specfun extension
 env.Prepend(LIBS = ['specfunlib'])
-env.NumpyPythonExtension('specfun', source = 'specfun.pyf',
+env.DistutilsPythonExtension('specfun', source = 'specfun.pyf',
                          F2PYOPTIONS = ["--no-wrap-functions"],
                          LINKFLAGSEND = env['F77_LDFLAGS'])

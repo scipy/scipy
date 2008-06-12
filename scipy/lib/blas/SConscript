@@ -72,7 +72,7 @@ if IsVeclib(env, 'blas') or IsAccelerate(env, 'blas'):
 else:
     env.NumpyFromFTemplate('fblaswrap.f', 'fblaswrap.f.src')
     source.append('fblaswrap.f')
-env.NumpyPythonExtension('fblas', source)
+env.DistutilsPythonExtension('fblas', source)
 
 #------------
 #   cblas
@@ -82,4 +82,4 @@ if has_cblas:
     env.NumpyFromFTemplate('cblas.pyf', 'cblas.pyf.src')
 else:
     print env.GenerateFakePyf('cblas', 'cblas.pyf.src')
-env.NumpyPythonExtension('cblas', source)
+env.DistutilsPythonExtension('cblas', source)

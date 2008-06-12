@@ -59,33 +59,33 @@ env.AppendUnique(LIBS = ['minpack', 'rootfind'])
 env.AppendUnique(LIBPATH = env['build_dir'])
 
 # _minpack pyextension
-env.NumpyPythonExtension('_minpack', '_minpackmodule.c',
+env.DistutilsPythonExtension('_minpack', '_minpackmodule.c',
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # _zeros pyextension
-env.NumpyPythonExtension('_zeros', 'zeros.c')
+env.DistutilsPythonExtension('_zeros', 'zeros.c')
 
 # _lbfgsb pyextension
 src = [pjoin('lbfgsb', i) for i in ['lbfgsb.pyf', 'routines.f']]
-env.NumpyPythonExtension('_lbfgsb', source = src,
+env.DistutilsPythonExtension('_lbfgsb', source = src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # _cobyla pyextension
 src = [pjoin('cobyla', i) for i in ['cobyla2.f', 'trstlp.f', 'cobyla.pyf']]
-env.NumpyPythonExtension('_cobyla', source = src,
+env.DistutilsPythonExtension('_cobyla', source = src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # _minpack2 pyextension
 src = [pjoin('minpack2', i) for i in ['dcsrch.f', 'dcstep.f', 'minpack2.pyf']]
-env.NumpyPythonExtension('minpack2', source = src,
+env.DistutilsPythonExtension('minpack2', source = src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # moduleTNC pyextension
-env.NumpyPythonExtension('moduleTNC', 
+env.DistutilsPythonExtension('moduleTNC', 
                          source = [pjoin('tnc', i) for i in \
                                                    ['moduleTNC.c', 'tnc.c']])
 
 # _slsqp pyextension
 src = [pjoin('slsqp', i) for i in ['slsqp_optmz.f', 'slsqp.pyf']]
-env.NumpyPythonExtension('_slsqp', source = src,
+env.DistutilsPythonExtension('_slsqp', source = src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])

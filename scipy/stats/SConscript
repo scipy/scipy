@@ -24,16 +24,16 @@ env.NumpyStaticExtLibrary('statlibimp', source = src)
 env.AppendUnique(LIBPATH = [env['build_dir']])
 
 # Statlib extension
-env.NumpyPythonExtension('statlib', source = 'statlib.pyf', 
+env.DistutilsPythonExtension('statlib', source = 'statlib.pyf', 
                          F2PYOPTIONS = ["--no-wrap-functions"],
                          LIBS = 'statlibimp',
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # futil extension
 futil_src = env.NumpyF2py(pjoin('futilmodule.c'), pjoin('futil.f'))
-env.NumpyPythonExtension('futil', source = futil_src + ['futil.f'],
+env.DistutilsPythonExtension('futil', source = futil_src + ['futil.f'],
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # mvn extension
-env.NumpyPythonExtension('mvn', source = ['mvn.pyf', 'mvndst.f'],
+env.DistutilsPythonExtension('mvn', source = ['mvn.pyf', 'mvndst.f'],
                          LINKFLAGSEND = env['F77_LDFLAGS'])

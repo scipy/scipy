@@ -58,5 +58,5 @@ env.PrependUnique(LIBS = 'odrpack')
 env.PrependUnique(LIBPATH = env['build_dir'])
 
 # odr pyextension
-env.NumpyPythonExtension('__odrpack', '__odrpack.c',
+env.DistutilsPythonExtension('__odrpack', '__odrpack.c',
                          LINKFLAGSEND = env['F77_LDFLAGS'])

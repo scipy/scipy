@@ -37,8 +37,8 @@ env.PrependUnique(LIBPATH = env['build_dir'])
 
 # Build _fftpack
 src = ['src/zfft.c','src/drfft.c','src/zrfft.c', 'src/zfftnd.c', 'fftpack.pyf']
-env.NumpyPythonExtension('_fftpack', src)
+env.DistutilsPythonExtension('_fftpack', src)
 
 # Build convolve
 src = ['src/convolve.c',  'convolve.pyf']
-env.NumpyPythonExtension('convolve', src)
+env.DistutilsPythonExtension('convolve', src)

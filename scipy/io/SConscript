@@ -8,4 +8,4 @@ from numscons import GetNumpyEnvironment
 env = GetNumpyEnvironment(ARGUMENTS)
 
 env.AppendUnique(CPPPATH = get_numpy_include_dirs())
-env.NumpyPythonExtension('numpyio', source = 'numpyiomodule.c')
+env.DistutilsPythonExtension('numpyio', source = 'numpyiomodule.c')
