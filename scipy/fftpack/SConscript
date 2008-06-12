@@ -7,7 +7,7 @@ from numscons import GetNumpyEnvironment, write_info
 from numscons import CheckFFT, IsMKL, IsFFTW2, IsFFTW3
 
 env = GetNumpyEnvironment(ARGUMENTS)
-env.Tool('numpyf2py')
+env.Tool('f2py')
 
 env.AppendUnique(CPPPATH = get_numpy_include_dirs())
 env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])

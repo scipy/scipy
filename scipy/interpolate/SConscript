@@ -6,7 +6,7 @@ from numpy.distutils.misc_util import get_numpy_include_dirs
 from numscons import GetNumpyEnvironment, CheckF77Clib
 
 env = GetNumpyEnvironment(ARGUMENTS)
-env.Tool('numpyf2py')
+env.Tool('f2py')
 
 config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib})
 if not config.CheckF77Clib():

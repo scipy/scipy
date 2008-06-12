@@ -14,7 +14,7 @@ env = GetNumpyEnvironment(ARGUMENTS)
 config = env.NumpyConfigure(custom_tests = {'CheckLAPACK' : CheckF77LAPACK,
                                             'CheckF77Clib' : CheckF77Clib})
 
-env.Tool('numpyf2py')
+env.Tool('f2py')
 #-----------------
 # Checking Lapack
 #-----------------

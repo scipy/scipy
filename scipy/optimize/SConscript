@@ -12,7 +12,7 @@ from numscons import CheckF77LAPACK, CheckF77Clib
 from numscons import write_info
 
 env = GetNumpyEnvironment(ARGUMENTS)
-env.Tool('numpyf2py')
+env.Tool('f2py')
 env.Append(CPPPATH = get_numpy_include_dirs())
 env.Append(CPPPATH = env['F2PYINCLUDEDIR'])
 #if os.name == 'nt':

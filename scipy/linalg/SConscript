@@ -19,7 +19,7 @@ from scons_support import do_generate_interface, do_generate_fake_interface, \
 #    generate_config_header, generate_config_header_emitter
 
 env = GetNumpyEnvironment(ARGUMENTS)
-env.Tool('numpyf2py')
+env.Tool('f2py')
 env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
 
 # XXX: handle cblas wrapper for complex (check in numpy.scons or here ?)

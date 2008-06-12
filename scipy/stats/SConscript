@@ -7,7 +7,7 @@ from numscons import GetNumpyEnvironment, CheckF77Clib
 
 env = GetNumpyEnvironment(ARGUMENTS)
 
-t = env.Tool('numpyf2py')
+t = env.Tool('f2py')
 
 env.AppendUnique(CPPPATH = [get_numpy_include_dirs()])
 env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])

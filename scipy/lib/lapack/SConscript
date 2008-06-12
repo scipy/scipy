@@ -17,7 +17,7 @@ from scons_support import do_generate_fake_interface, \
                           generate_interface_emitter
 
 env = GetNumpyEnvironment(ARGUMENTS)
-env.Tool('numpyf2py')
+env.Tool('f2py')
 env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
 #if os.name == 'nt':
 #    # NT needs the pythonlib to run any code importing Python.h, including
