@@ -191,7 +191,7 @@ def ARPACK_gen_eigs(matvec, sigma_solve, n, sigma, nev, which='LR', ncv=None, to
 def ARPACK_iteration(matvec, sigma_solve, n, bmat, which, nev, tol, ncv, mode):
     ncv, maxitr = check_init(n, nev, ncv)
     ipntr, d, resid, workd, workl, v = init_workspaces(n,nev,ncv)
-    init_debug()
+    #init_debug()
     ishfts = 1         # Some random arpack parameter
     # Some random arpack parameter (I think it tells ARPACK to solve the
     # general eigenproblem using shift-invert
