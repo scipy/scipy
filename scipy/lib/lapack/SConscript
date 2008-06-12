@@ -84,7 +84,7 @@ env.DistutilsPythonExtension('clapack', source = 'clapack.pyf')
 #----------------
 # calc_lwork:
 #----------------
-calc_src = env.NumpyF2py(pjoin('calc_lworkmodule.c'), 
+calc_src = env.F2py(pjoin('calc_lworkmodule.c'), 
                          source = pjoin('calc_lwork.f'))
 env.DistutilsPythonExtension('calc_lwork', source = calc_src + ['calc_lwork.f'],
                          LINKFLAGSEND = env['F77_LDFLAGS'])

@@ -30,7 +30,7 @@ env.DistutilsPythonExtension('statlib', source = 'statlib.pyf',
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # futil extension
-futil_src = env.NumpyF2py(pjoin('futilmodule.c'), pjoin('futil.f'))
+futil_src = env.F2py(pjoin('futilmodule.c'), pjoin('futil.f'))
 env.DistutilsPythonExtension('futil', source = futil_src + ['futil.f'],
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
