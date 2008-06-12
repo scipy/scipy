@@ -460,11 +460,15 @@ def eigen_symmetric(A, k=6, M=None, sigma=None, which='LM', v0=None,
         else:
             break
 
-    if  info < -1 :
-        raise RuntimeError("Error info=%d in arpack"%info)
+    if info < -1 :
+        raise RuntimeError("Error info=%d in arpack" % info)
         return None
-    if info == -1:
-        warnings.warn("Maximum number of iterations taken: %s"%iparam[2])
+
+    if info == 1:
+        warnings.warn("Maximum number of iterations taken: %s" % iparam[2])
+
+    if iparam[4] < k:
+        warnings.warn("Only %d/%d eigenvectors converged" % (iparam[4], k))
 
     # now extract eigenvalues and (optionally) eigenvectors
     rvec = return_eigenvectors
