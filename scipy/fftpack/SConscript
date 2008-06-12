@@ -30,7 +30,7 @@ if has_fft:
         pass
 
 # Build dfftpack
-src = env.NumpyGlob(pjoin('dfftpack', '*.f'))
+src = env.Glob(pjoin('dfftpack', '*.f'))
 dfftpack = env.DistutilsStaticExtLibrary('dfftpack', source = [str(s) for s in src])
 env.PrependUnique(LIBS = ['dfftpack'])
 env.PrependUnique(LIBPATH = ['.'])

@@ -48,11 +48,11 @@ write_info(env)
 #==========
 
 # minpack lib
-minpack_src = [str(s) for s in env.NumpyGlob(pjoin('minpack', '*.f'))]
+minpack_src = [str(s) for s in env.Glob(pjoin('minpack', '*.f'))]
 env.DistutilsStaticExtLibrary('minpack', source = minpack_src)
 
 # rootfind lib
-rootfind_src = [str(s) for s in env.NumpyGlob(pjoin('Zeros', '*.c'))]
+rootfind_src = [str(s) for s in env.Glob(pjoin('Zeros', '*.c'))]
 env.DistutilsStaticExtLibrary('rootfind', source = rootfind_src)
 
 env.AppendUnique(LIBS = ['minpack', 'rootfind'])

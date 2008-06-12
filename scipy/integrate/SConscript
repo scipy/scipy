@@ -26,20 +26,20 @@ env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 # XXX: lapack integration
 
 # Build linpack_lite
-src = [str(s) for s in env.NumpyGlob(pjoin('linpack_lite', '*.f'))]
+src = [str(s) for s in env.Glob(pjoin('linpack_lite', '*.f'))]
 linpack_lite = env.DistutilsStaticExtLibrary('linpack_lite', source = src)
 
 # Build mach
 # XXX: do not use optimization flags for mach
-src = [str(s) for s in env.NumpyGlob(pjoin('mach', '*.f'))]
+src = [str(s) for s in env.Glob(pjoin('mach', '*.f'))]
 mach = env.DistutilsStaticExtLibrary('mach', source = src)
 
 # Build quadpack
-src = [str(s) for s in env.NumpyGlob(pjoin('quadpack', '*.f'))]
+src = [str(s) for s in env.Glob(pjoin('quadpack', '*.f'))]
 quadpack = env.DistutilsStaticExtLibrary('quadpack', source = src)
 
 # Build odepack
-src = [str(s) for s in env.NumpyGlob(pjoin('odepack', '*.f'))]
+src = [str(s) for s in env.Glob(pjoin('odepack', '*.f'))]
 odepack = env.DistutilsStaticExtLibrary('odepack', source = src)
 
 env.AppendUnique(LIBPATH = '.')

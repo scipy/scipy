@@ -27,9 +27,9 @@ config.Finish()
 write_info(env)
 
 # Build arpack
-arpack_src = env.NumpyGlob(pjoin('ARPACK', 'SRC', '*.f'))
-arpack_src += env.NumpyGlob(pjoin('ARPACK', 'UTIL', '*.f'))
-arpack_src += env.NumpyGlob(pjoin('ARPACK', 'LAPACK', '*.f'))
+arpack_src = env.Glob(pjoin('ARPACK', 'SRC', '*.f'))
+arpack_src += env.Glob(pjoin('ARPACK', 'UTIL', '*.f'))
+arpack_src += env.Glob(pjoin('ARPACK', 'LAPACK', '*.f'))
 
 src = [str(s) for s in arpack_src]
 

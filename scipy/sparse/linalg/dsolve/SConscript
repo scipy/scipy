@@ -32,7 +32,7 @@ if sys.platform == 'win32':
 superlu_def['USE_VENDOR_BLAS'] = 2
 superlu_env.Append(CPPDEFINES = superlu_def)
 
-superlu_src = superlu_env.NumpyGlob(pjoin('SuperLU', 'SRC', '*.c'))
+superlu_src = superlu_env.Glob(pjoin('SuperLU', 'SRC', '*.c'))
 superlu = superlu_env.DistutilsStaticExtLibrary('superlu_src', source = superlu_src)
 
 # Build python extensions

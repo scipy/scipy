@@ -30,7 +30,7 @@ def build_lib(name, ext, libname = None):
     """ext should be .f or .c"""
     if not libname:
         libname = name
-    src = env.NumpyGlob(pjoin(name, '*%s' % ext))
+    src = env.Glob(pjoin(name, '*%s' % ext))
     assert len(src) > 0
     env.DistutilsStaticExtLibrary(libname, source = src)
 
