@@ -14,7 +14,7 @@ from numscons import write_info
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Tool('f2py')
 env.Append(CPPPATH = get_numpy_include_dirs())
-env.Append(CPPPATH = env['F2PYINCLUDEDIR'])
+env.Append(CPPPATH = [env['F2PYINCLUDEDIR'], 'Zeros'])
 #if os.name == 'nt':
 #    # NT needs the pythonlib to run any code importing Python.h, including
 #    # simple code using only typedef and so on, so we need it for configuration

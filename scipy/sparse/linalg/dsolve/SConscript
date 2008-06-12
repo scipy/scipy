@@ -37,7 +37,7 @@ superlu = superlu_env.DistutilsStaticExtLibrary('superlu_src', source = superlu_
 
 # Build python extensions
 pyenv = env.Clone()
-pyenv.Append(CPPPATH = [get_numpy_include_dirs(), env['src_dir']])
+pyenv.Append(CPPPATH = [get_numpy_include_dirs(), pjoin('SuperLU', 'SRC')])
 pyenv.Prepend(LIBS = superlu)
 common_src = ['_superlu_utils.c', '_superluobject.c']
 
