@@ -1,4 +1,4 @@
-# Last Change: Sat May 03 02:00 PM 2008 J
+# Last Change: Thu Jun 12 07:00 PM 2008 J
 # vim:syntax=python
 from os.path import join as pjoin, basename as pbasename
 import sys
@@ -46,7 +46,7 @@ build_lib('amos', '.f')
 build_lib('cdflib', '.f', 'cdf')
 build_lib('specfun', '.f', 'specfunlib')
 
-env.AppendUnique(LIBPATH = [env['build_dir']])
+env.AppendUnique(LIBPATH = ['.'])
 
 # Cephes extension
 src = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c', \

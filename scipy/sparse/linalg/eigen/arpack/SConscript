@@ -35,7 +35,7 @@ src = [str(s) for s in arpack_src]
 
 env.AppendUnique(CPPPATH = pjoin('ARPACK', 'SRC'))
 env.AppendUnique(F77PATH = pjoin(env['src_dir'], 'ARPACK', 'SRC'))
-env.AppendUnique(LIBPATH = env['build_dir'])
+env.AppendUnique(LIBPATH = '.')
 arpack_lib = env.DistutilsStaticExtLibrary('arpack', source = src)
 
 # Build _arpack extension

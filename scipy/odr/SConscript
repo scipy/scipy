@@ -1,4 +1,4 @@
-# Last Change: Wed Mar 05 04:00 PM 2008 J
+# Last Change: Thu Jun 12 07:00 PM 2008 J
 # vim:syntax=python
 
 import os
@@ -55,7 +55,7 @@ else:
 env.DistutilsStaticExtLibrary('odrpack', source = libodr_src)
 
 env.PrependUnique(LIBS = 'odrpack')
-env.PrependUnique(LIBPATH = env['build_dir'])
+env.PrependUnique(LIBPATH = '.')
 
 # odr pyextension
 env.DistutilsPythonExtension('__odrpack', '__odrpack.c',

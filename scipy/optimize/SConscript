@@ -1,4 +1,4 @@
-# Last Change: Sat May 03 02:00 PM 2008 J
+# Last Change: Thu Jun 12 07:00 PM 2008 J
 # vim:syntax=python
 
 import os
@@ -56,7 +56,7 @@ rootfind_src = [str(s) for s in env.NumpyGlob(pjoin('Zeros', '*.c'))]
 env.DistutilsStaticExtLibrary('rootfind', source = rootfind_src)
 
 env.AppendUnique(LIBS = ['minpack', 'rootfind'])
-env.AppendUnique(LIBPATH = env['build_dir'])
+env.AppendUnique(LIBPATH = '.')
 
 # _minpack pyextension
 env.DistutilsPythonExtension('_minpack', '_minpackmodule.c',

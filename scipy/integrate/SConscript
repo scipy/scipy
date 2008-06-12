@@ -1,4 +1,4 @@
-# Last Change: Sat May 03 02:00 PM 2008 J
+# Last Change: Thu Jun 12 07:00 PM 2008 J
 # vim:syntax=python
 from os.path import join as pjoin
 import warnings
@@ -42,7 +42,7 @@ quadpack = env.DistutilsStaticExtLibrary('quadpack', source = src)
 src = [str(s) for s in env.NumpyGlob(pjoin('odepack', '*.f'))]
 odepack = env.DistutilsStaticExtLibrary('odepack', source = src)
 
-env.AppendUnique(LIBPATH = env['build_dir'])
+env.AppendUnique(LIBPATH = '.')
 env.AppendUnique(LINKFLAGSEND = env['F77_LDFLAGS'])
 
 quadenv = env.Clone()

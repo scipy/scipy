@@ -1,4 +1,4 @@
-# Last Change: Sat May 03 02:00 PM 2008 J
+# Last Change: Thu Jun 12 07:00 PM 2008 J
 # vim:syntax=python
 from os.path import join as pjoin
 
@@ -22,7 +22,7 @@ src = [str(s) for s in env.NumpyGlob(pjoin('fitpack', '*.f'))]
 fitpack = env.DistutilsStaticExtLibrary('fitpack', source = src)
 
 env.PrependUnique(LIBS = ['fitpack'])
-env.PrependUnique(LIBPATH = [env['build_dir']])
+env.PrependUnique(LIBPATH = ['.'])
 
 # Build _fitpack
 env.DistutilsPythonExtension('_fitpack', source = '_fitpackmodule.c')
