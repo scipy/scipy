@@ -1,4 +1,4 @@
-# Last Change: Sat May 03 02:00 PM 2008 J
+# Last Change: Thu Jun 12 07:00 PM 2008 J
 # vim:syntax=python
 
 import os
@@ -123,7 +123,7 @@ env.DistutilsPythonExtension('cblas', source = 'cblas.pyf')
 #------------
 yop = fenv.haha('flapack', 'generic_flapack.pyf')
 # XXX: automatically scan dependency on flapack_user_routines.pyf ?
-fenv.Depends(yop, pjoin(env['build_dir'], 'flapack_user_routines.pyf'))
+fenv.Depends(yop, 'flapack_user_routines.pyf')
 fenv.DistutilsPythonExtension('flapack', 'flapack.pyf')
 
 #------------
