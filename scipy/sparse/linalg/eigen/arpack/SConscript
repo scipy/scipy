@@ -42,6 +42,6 @@ arpack_lib = env.DistutilsStaticExtLibrary('arpack', source = src)
 env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 env.AppendUnique(CPPPATH = get_numpy_include_dirs())
 
-env.NumpyFromFTemplate('arpack.pyf', 'arpack.pyf.src')
+env.FromFTemplate('arpack.pyf', 'arpack.pyf.src')
 env.Prepend(LIBS = 'arpack')
 env.DistutilsPythonExtension('_arpack', 'arpack.pyf')

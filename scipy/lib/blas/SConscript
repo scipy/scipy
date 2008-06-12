@@ -64,13 +64,13 @@ env.AppendUnique(F2PYOPTIONS = '--quiet')
 #------------
 #   fblas
 #------------
-env.NumpyFromFTemplate('fblas.pyf', 'fblas.pyf.src')
+env.FromFTemplate('fblas.pyf', 'fblas.pyf.src')
 source = ['fblas.pyf']
 if IsVeclib(env, 'blas') or IsAccelerate(env, 'blas'):
-    env.NumpyFromCTemplate('fblaswrap_veclib_c.c', 'fblaswrap_veclib_c.c.src')
+    env.FromCTemplate('fblaswrap_veclib_c.c', 'fblaswrap_veclib_c.c.src')
     source.append('fblaswrap_veclib_c.c')
 else:
-    env.NumpyFromFTemplate('fblaswrap.f', 'fblaswrap.f.src')
+    env.FromFTemplate('fblaswrap.f', 'fblaswrap.f.src')
     source.append('fblaswrap.f')
 env.DistutilsPythonExtension('fblas', source)
 
@@ -79,7 +79,7 @@ env.DistutilsPythonExtension('fblas', source)
 #------------
 source = ['cblas.pyf']
 if has_cblas:
-    env.NumpyFromFTemplate('cblas.pyf', 'cblas.pyf.src')
+    env.FromFTemplate('cblas.pyf', 'cblas.pyf.src')
 else:
     print env.GenerateFakePyf('cblas', 'cblas.pyf.src')
 env.DistutilsPythonExtension('cblas', source)

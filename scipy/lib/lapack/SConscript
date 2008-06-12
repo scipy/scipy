@@ -69,14 +69,14 @@ env['BUILDERS']['GenerateFakePyf'] = Builder(action = do_generate_fake_interface
 #------------
 #   flapack
 #------------
-yop = env.NumpyFromFTemplate('flapack.pyf', 'flapack.pyf.src')
+yop = env.FromFTemplate('flapack.pyf', 'flapack.pyf.src')
 env.DistutilsPythonExtension('flapack', source = ['flapack.pyf'])
 
 #------------
 #   clapack
 #------------
 if has_clapack:
-    env.NumpyFromFTemplate('clapack.pyf', 'clapack.pyf.src')
+    env.FromFTemplate('clapack.pyf', 'clapack.pyf.src')
 else:
     env.GenerateFakePyf('clapack', 'clapack.pyf.src')
 env.DistutilsPythonExtension('clapack', source = 'clapack.pyf')
