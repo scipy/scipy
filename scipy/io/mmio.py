@@ -554,16 +554,16 @@ class MMFile (object):
             coo = a.tocoo() # convert to COOrdinate format
 
             # write shape spec
-            stream.write('%i %i %i\n' % (rows,cols,coo.nnz))
+            stream.write('%i %i %i\n' % (rows, cols, coo.nnz))
 
             fmt = '%%.%dg' % precision
 
             if field == self.FIELD_PATTERN:
-                IJV = vstack((a.row, a.col)).T
+                IJV = vstack((coo.row, coo.col)).T
             elif field in [ self.FIELD_INTEGER, self.FIELD_REAL ]:
-                IJV = vstack((a.row, a.col, a.data)).T
+                IJV = vstack((coo.row, coo.col, coo.data)).T
             elif field == self.FIELD_COMPLEX:
-                IJV = vstack((a.row, a.col, a.data.real, a.data.imag)).T
+                IJV = vstack((coo.row, coo.col, coo.data.real, coo.data.imag)).T
             else:
                 raise TypeError('Unknown field type %s' % `field`)
 
