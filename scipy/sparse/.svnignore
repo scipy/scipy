@@ -1,0 +1,7 @@
+# Recursively set the SVN ignore property. Run with:
+# $ svn -R propset svn:ignore -F .svnignore .
+*.pyc
+*.bak
+*.so
+*.swp
+
