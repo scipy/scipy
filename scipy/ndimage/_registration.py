@@ -565,7 +565,7 @@ def build_fwhm(M, S):
     # M contains the voxel to physical mapping
     view_3x3 = np.square(M[0:3, 0:3])
     # sum the elements in the first row
-    vxg = np.sqrt(view_3x3.sum(axis=0))
+    vxg = np.sqrt(view_3x3.sum(axis=1))
     # assumes that voxel sampling is the same for xyz as S is the step
     size = np.array([1,1,1])*S[0]
     x = np.square(size) - np.square(vxg)
