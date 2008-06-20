@@ -1,176 +1,246 @@
-import numpy as N
-from scipy.testing import *
+# Test recasting module
 
-from scipy.io.recaster import sctype_attributes, Recaster, RecastError
+from numpy.testing import *
+import numpy as N
+
+set_package_path()
+from io.recaster import basecaster, intcaster, floatcaster, complexcaster, \
+     rejectcastercollection, precisioncastercollection,\
+     energeticcastercollection, fastcastercollection, \
+     numerictypeinfo, RecastError
+restore_path()
 
 try:  # Python 2.3 support
     from sets import Set as set
 except:
     pass
 
-class TestRecaster(TestCase):
 
+class test_numerictypeinfo(NumpyTestCase):
     def test_init(self):
-        # Setting sctype_list
-        R = Recaster()
-        assert set(R.sctype_list) == set(sctype_attributes().keys()), \
-                               'Default recaster should include all system types'
-        T = N.float32
-        R = Recaster([T])
-        assert R.sctype_list == [T], 'Scalar type list not correctly set'
-        # Setting tolerances
-        R = Recaster()
-        tols = R.default_sctype_tols()
-        assert tols == R.sctype_tols, 'Unexpected tols dictionary'
-        F = N.finfo(T)
-        R = Recaster(sctype_tols={T: {
-            'rtol': F.eps*2,
-            'atol': F.tiny*2,
-            'silly': 'silly text'}})
-        assert R.sctype_tols[T]['rtol'] == F.eps*2, \
-               'Rtol not correctly set'
-        assert R.sctype_tols[T]['atol'] == F.tiny*2, \
-               'Atol not correctly set'
-        T = N.complex128
-        F = N.finfo(T)
-        assert R.sctype_tols[T]['rtol'] == F.eps, \
-               'Rtol defaults not correctly set'
-        assert R.sctype_tols[T]['atol'] == F.tiny, \
-               'Atol defaults not correctly set'
-        # Options
-        # Sctype size lists
-        # Integer sizes
-        # Cabable types
+        types = []
+        for k in ('int', 'float', 'uint', 'complex'):
+            types += N.sctypes[k]
+        # All system numeric types by default
+        nt = numerictypeinfo()
+        assert nt.types == set(types)
+        # Can include bools as uint type
+        nt = numerictypeinfo(bool_as_uint=True)
+        types.append(N.bool)
+        assert nt.types == set(types)
+        # Bools rejected unless flag is set
+        self.assertRaises(TypeError, numerictypes,[N.bool])
+        # Can restrict by kind
+        nt = numerictypeinfo(kinds=['int', 'uint'])
+        types = []
+        for k in ('int', 'uint'):
+            types += N.sctypes[k]
+        assert nt.types == set(types)
+        # By list of types
+        type_list = [N.uint16, N.int16, N.float64]
+        nt = numertypeinfo(types=type_list)
+        assert nt.types == set(type_list)
+        # And by intersection of two
+        nt = numerictypeinfo(kinds=['int', 'uint'], types=type_list)
+        assert nt.types == set([N.uint16, N.int16])
+        # Reject non-numeric
+        self.assertRaises(TypeError, numerictypeinfo, [N.void])
 
-    def test_cast_to_fp(self):
-        R = Recaster()
-        # Define expected type output from fp recast of value
-        sta = sctype_attributes()
-        inp_outp = (
-            (1, N.complex128, 'c', sta[N.complex128]['size'], 0, N.complex128),
-            (1, N.complex128, 'c', sta[N.complex128]['size'], 1, N.complex64),
-            (1, N.complex128, 'c', sta[N.complex64]['size'], 0, N.complex64),
-            (1, N.complex128, 'f', sta[N.float64]['size'], 0, N.float64),
-            (1.0+1j, N.complex128, 'f', sta[N.complex128]['size'], 0, None),
-            (1, N.float64, 'f', sta[N.float64]['size'], 0, N.float64),
-            (1, N.float64, 'f', sta[N.float64]['size'], 1, N.float32),
-            (1, N.float64, 'f', sta[N.float32]['size'], 0, N.float32),
-            (1, N.float64, 'c', sta[N.complex128]['size'], 0, N.complex128),
-            (1, N.float64, 'c', sta[N.complex128]['size'], 1, N.complex64),
-            (1, N.int32, 'f', sta[N.float64]['size'], 0, N.float64),
-            (1, N.int32, 'f', sta[N.float64]['size'], 1, N.float32),
-            (1, N.float64, 'f', 0, 0, None),
-            )
-        for value, inp, kind, max_size, continue_down, outp in inp_outp:
-            arr = N.array(value, dtype=inp)
-            arr = R.cast_to_fp(arr, kind, max_size, continue_down)
-            if outp is None:
-                assert arr is None, \
-                       'Expected None from type %s, got %s' \
-                       % (inp, arr.dtype.type)
+    def test_info(self):
+        nt = numerictypeinfo()
+        it_expected = {'kind': 'i',
+                       'size': 1,
+                       'min': -128,
+                       'max': 127}
+        assert nt.info(N.int8) == it_expected
+        F = N.finfo(N.dtype(N.float64))
+        ft_expected = {'kind': 'f',
+                       'size', 8,
+                       'min': F.min,
+                       'max': F.max}
+        assert nt.info(N.float64) == ft_expected
+
+    def test_of_kind(self):
+        # Can select sublist of specified kind
+        nt = numerictypes()
+        allints = set(N.sctypes['uint'] + N.sctypes['uint'] + [N.bool])
+        assert set(nt.of_kind(['int', 'uint')) == uints
+
+    def test_by_size(self):
+        nt = numerictypes()
+        t_by_size = nt.by_size()
+        csz = N.inf
+        for t in t_by_size:
+            sz = N.dtype(t).itemsize
+            assert sz <= csz
+            csz = sz
+        nt = numerictypes([N.int8, N.int16])            
+        assert nt.by_size() == [N.int16, N.int8]
+        # uints are lower (appear smaller) in search order
+        # because larger range for same size means smaller
+        nt = numerictypes([N.uint16, N.int16])
+        assert nt.by_size() == [N.int16, N.uint16]
+        # bools therefore tend to be higher in order
+        nt = numerictypes([N.uint8, N.int8, N.bool], bool_as_uint=True)
+        assert nt.by_size() == [N.bool, N.int8, N.uint8]
+
+    def test_smallest_precise(self):
+        nt = numerictypes(kinds=['complex'])
+        largest_complex = nt.by_size()[0]
+        nt = numerictypes(kinds=['float'])
+        largest_float = nt.by_size()[0]        
+        nt = numerictypes(types=[N.complex128, N.float64, N.int16])
+        tests = [[N.int8, N.int16],
+                 [N.bool, N.int16],
+                 [N.uint8, N.int16],
+                 [N.int16, N.int16],
+                 [N.uint16, None],
+                 [N.int32, None],
+                 [N.float32, N.float64],
+                 [N.float64, N.float64],
+                 [N.float128, None],
+                 [N.complex64, N.complex128],
+                 [N.complex128, N.complex128],
+                 [largest_complex, None]]
+        for inp, outp in tests:
+            assert nt.smallest_precise(inp) == outp
+        # No floats, then float goes to complex
+        nt = numerictypes(types=[N.complex128])
+        assert nt.smallest_precise(N.float64) == N.complex128
+        assert nt.smallest_precise(N.float32) == N.complex128
+        assert nt.smallest_precise(largest_float) == None
+
+
+class CastTestCase(NumpyTestCase):
+    ''' Define helper function for running caster tests '''
+    def run_rig(self, caster, test_list):
+        for inpval, inptype, outval, outtype in test_list:
+            inparr = N.array(inpval, dtype=inptype)
+            if outval is None:
+                self.assertRaises(RecastError, caster.do, inparr)
                 continue
-            assert arr is not None, \
-                   'Expected %s from %s, got None' % (outp, inp)
-            dtt = arr.dtype.type
-            assert dtt is outp, \
-                   'Expected %s from %s, got %s' % (outp, inp, dtt)
+            res = caster.do(inparr)
+            assert res.dtype == N.dtype(outtype)
+            assert res == outval
+    
 
-    def test_smallest_int_sctype(self):
-        # Smallest int sctype with full recaster
-        params = sctype_attributes()
-        RF = Recaster()
-        test_triples = [(N.uint8, 0, 255),
-                      (N.int8, -128, 0),
-                      (N.uint16, 0, params[N.uint16]['max']),
-                      (N.int16, params[N.int16]['min'], 0),
-                      (N.uint32, 0, params[N.uint32]['max']),
-                      (N.int32, params[N.int32]['min'], 0),
-                      (N.uint64, 0, params[N.uint64]['max']),
-                      (N.int64, params[N.int64]['min'], 0)]
-        for T, mn, mx in test_triples:
-            rt = RF.smallest_int_sctype(mx, mn)
-            assert N.dtype(rt) == N.dtype(T), \
-                   'Expected %s, got %s type' % (T, rt)
-        # Smallest int sctype with restricted recaster
-        mmax = params[N.int32]['max']
-        mmin = params[N.int32]['min']
-        RR = Recaster([N.int32])
-        for kind in ('int', 'uint'):
-            for T in N.sctypes[kind]:
-                mx = params[T]['max']
-                mn = params[T]['min']
-                rt = RR.smallest_int_sctype(mx, mn)
-                if mx <= mmax and mn >= mmin:
-                    assert rt == N.int32, \
-                           'Expected int32 type, got %s' % rt
-                else:
-                    assert rt is None, \
-                           'Expected None, got %s for %s' % (T, rt)
-        # Test preferred int flag
-        mx = 1000
-        mn = 0
-        rt = RF.smallest_int_sctype(mx, mn)
-        assert rt == N.int16, 'Expected int16, got %s' % rt
-        rt = RF.smallest_int_sctype(mx, mn, 'i')
-        assert rt == N.int16, 'Expected int16, got %s' % rt
-        rt = RF.smallest_int_sctype(mx, mn, prefer='u')
-        assert rt == N.uint16, 'Expected uint16, got %s' % rt
+class test_basecaster(CastTestCase):
+    def test_init(self):
+        bc = basecaster()
+        assert bc.ordered_types is None
+        bc = basecaster([N.float64])
+        assert bc.ordered_types == [N.float64]        
+        bc = basecaster([N.float64], tols={})
+        bc = basecaster([N.int8, N.float64])
+        assert bc.ordered_types = [N.float64, N.int8]
+        # Reject non-numeric
+        self.assertRaises(TypeError, intcaster, [N.void])
+       
+    def test_do(self):
+        bc = basecaster()
+        self.assertRaises(NotImplementedError, bc.do, 1)
 
-    def test_recasts(self):
-        valid_types = [N.int32, N.complex128, N.float64]
-        # Test smallest
-        R = Recaster(valid_types, recast_options='smallest')
-        inp_outp = (
-            (1, N.complex128, N.int32),
-            (1, N.complex64, N.int32),
-            (1.0+1j, N.complex128, N.complex128),
-            (1.0+1j, N.complex64, N.complex128),
-            (1, N.float64, N.int32),
-            (1, N.float32, N.int32),
-            (1.1, N.float64, N.float64),
-            (-1e12, N.int64, N.float64),
-            )
-        self.run_io_recasts(R, inp_outp)
-        # Test only_if_none
-        R = Recaster(valid_types, recast_options='only_if_none')
-        inp_outp = (
-            (1, N.complex128, N.complex128),
-            (1, N.complex64, N.int32),
-            (1.0+1j, N.complex128, N.complex128),
-            (1.0+1j, N.complex64, N.complex128),
-            (1, N.float64, N.float64),
-            (1, N.float32, N.int32),
-            (1.1, N.float64, N.float64),
-            (-1e12, N.int64, N.float64),
-            )
-        self.run_io_recasts(R, inp_outp)
-        # Test preserve_precision
-        R = Recaster(valid_types, recast_options='preserve_precision')
-        inp_outp = (
-            (1, N.complex128, N.complex128),
-            (1, N.complex64, N.complex128),
-            (1.0+1j, N.complex128, N.complex128),
-            (1.0+1j, N.complex64, N.complex128),
-            (1, N.float64, N.float64),
-            (1, N.float32, N.float64),
-            (1.1, N.float64, N.float64),
-            (-1e12, N.int64, None),
-            )
-        self.run_io_recasts(R, inp_outp)
 
-    def run_io_recasts(self, R, inp_outp):
-        ''' Runs sets of value, input, output tests '''
-        for value, inp, outp in inp_outp:
-            arr = N.array(value, inp)
-            if outp is None:
-                self.assertRaises(RecastError, R.recast, arr)
-                continue
-            arr = R.recast(N.array(value, inp))
-            assert arr is not None, \
-                   'Expected %s from %s, got None' % (outp, inp)
-            dtt = arr.dtype.type
-            assert dtt is outp, \
-                   'Expected %s from %s, got %s' % (outp, inp, dtt)
+class test_intcaster(CastTestCase):
+    def test_init(self):
+        # Default leads to None in typeinfo
+        ic = intcaster()
+        assert ic.typeinfo is None
+        # Ordering
+        ic = intcaster([N.int8, N.int16])
+        assert bc.typeinfo.types == set([N.int16, N.int8])
+        assert ic.tols is None
+        # Test passed named args
+        F = N.finfo(N.dtype(N.float64))
+        tols = {N.int8: {'rtol': F.eps, 'atol': F.tiny}}
+        ic = intcaster([N.int8], tols=tols)
+        assert ic.tols == tols
+        # Reject non-integer
+        self.assertRaises(TypeError, intcaster, [N.float64])
+        self.assertRaises(TypeError, intcaster, [N.complex128])
+        # Accept bool
+        ic = intcaster([N.bool])
+        
+    def test_int_int(self):
+        ic = intcaster()
+        self.assertRaises(RecastError, ic.do, 1)
+        # Default caster tries to find smallest type with larger type range
+        # If not, falls back to largest type containing data range
+        ic = intcaster([N.int8])
+        # Tests: input value, input dtype, output value, output dtype
+        # Where None in output value indicates should raise error
+        tests = [ # Inevitable shrink
+            [1, N.int32, 1, N.int8],
+            [128, N.int32, None, None],
+            [-129, N.int32, None, None],
+            ]
+        self.run_rig(ic, tests)
+        ic = intcaster([N.int32, N.int8])
+        tests = [ # Up by default, down when 
 
-if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    def test_float_int(self):
+
+
+class test_floatcaster(CastTestCase):
+    def test_init(self):
+        pass
+
+    def test_float_float(self):
+        pass
+
+    def test_int_float(self):
+        pass
+
+    def test_complex_float(self):
+        pass
+
+
+class test_complexcaster(CastTestCase):
+    def test_init(self):
+        pass
+
+    def test_complex_complex(self):
+        pass
+
+    def test_complex_float(self):
+        pass
+
+    def test_complex_int(self):
+        ''' Necessary?  Maybe only do complex->float->int '''
+        pass
+    
+class test_rejectecastercollection(NumpyTestCase):
+    def test_init(self):
+        pass
+
+    def test_do(self):
+        pass
+    
+class test_precisioncastercollection(NumpyTestCase):
+    def test_init(self):
+        pass
+
+    def test_do(self):
+        pass
+    
+class test_energeticcastercollection(NumpyTestCase):
+    def test_init(self):
+        pass
+
+    def test_do(self):
+        pass
+    
+class test_fastcastercollection(NumpyTestCase):
+    def test_init(self):
+        pass
+
+    def test_do(self):
+        pass
+
+
+class test_smallcastercollection(NumpyTestCase):
+    def test_init(self):
+        pass
+
+    def test_do(self):
+        pass
