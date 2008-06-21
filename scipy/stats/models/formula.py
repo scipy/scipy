@@ -269,9 +269,9 @@ class Factor(Term):
         if reference is None:
             reference = 0
         else:
-            try:
+            if reference in names:
                 reference = names.index(reference)
-            except IndexError:
+            else:
                 reference = int(reference)
 
         def maineffect_func(value, reference=reference):
