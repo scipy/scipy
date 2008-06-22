@@ -178,6 +178,11 @@ NOTES
 
    It is not necessary to install blas or lapack libraries in addition.
 
+ 4) Compiler flags customization (FFLAGS, CFLAGS, etc...). If you customize
+ CFLAGS and other related flags from the command line or the shell environment,
+ beware that is does not have the standard behavior of appending options.
+ Instead, it overrides the options. As such, you have to give all options in the
+ flag for the build to be successful.
 
 GETTING SCIPY
 =============
