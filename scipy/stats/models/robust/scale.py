@@ -99,7 +99,6 @@ class Huber:
             mu = self.mu
         self.axis = unsqueeze(mu, self.axis, self.a.shape)
 
-        print subset * (a - mu)**2
         scale = N.sum(subset * (a - mu)**2, axis=self.axis) / (self.n * Huber.gamma - N.sum(1. - subset, axis=self.axis) * Huber.c**2)
 
         self.iter += 1
