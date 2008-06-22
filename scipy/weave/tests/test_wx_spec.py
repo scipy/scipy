@@ -13,12 +13,18 @@ from scipy.testing import *
 from scipy.weave import ext_tools, wx_spec
 
 
-import wx
+try:
+    import wx
+except ImportError:
+    wx = None
+
+skip = dec.skipif(True, "Cannot import wx, skipping ")
 
 class TestWxConverter(TestCase):
     def setUp(self):
-        self.app = wx.App()
-        self.s = wx_spec.wx_converter()
+        if wx:
+            self.app = wx.App()
+            self.s = wx_spec.wx_converter()
 
     @dec.slow
     def test_type_match_string(self):
@@ -106,6 +112,8 @@ class TestWxConverter(TestCase):
         b='bub'
         c = wx_return.test(b)
         assert(c == 'hello')
+
+decorate_methods(TestWxConverter, skip)
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])
