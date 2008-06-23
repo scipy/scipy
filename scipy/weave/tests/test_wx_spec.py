@@ -11,6 +11,7 @@ check_return -- test whether a variable is passed in, modified, and
 from scipy.testing import *
 
 e = None
+DONOTRUN = False
 try:
     from scipy.weave import ext_tools, wx_spec
     import wx
