@@ -100,6 +100,7 @@ class TestRegistration(TestCase):
 	assert_array_almost_equal(E, M, decimal=6)
 	return
 
+    @dec.slow
     def test_autoalign_histogram_1(self):
 	"test_autoalign_histogram_1"
 	desc = load_desc()
@@ -115,6 +116,7 @@ class TestRegistration(TestCase):
 	assert_equal(W.max(), 0.0)
 	return
 
+    @dec.slow
     def test_autoalign_histogram_2(self):
 	"test_autoalign_histogram_2"
 	desc = load_desc()
@@ -132,6 +134,7 @@ class TestRegistration(TestCase):
 	assert_equal(s, True)
 	return
 
+    @dec.slow
     def test_autoalign_ncc_value_1(self):
 	"test_autoalign_ncc_value_1"
 	desc = load_desc()
@@ -144,6 +147,7 @@ class TestRegistration(TestCase):
 	assert_equal(s, True)
 	return
 
+    @dec.slow
     def test_autoalign_ncc_value_2(self):
 	"test_autoalign_ncc_value_2"
 	desc = load_desc()
@@ -156,6 +160,7 @@ class TestRegistration(TestCase):
 	assert_equal(s, True)
 	return
 
+    @dec.slow
     def test_autoalign_nmi_value_1(self):
 	"test_autoalign_nmi_value_1"
 	desc = load_desc()
@@ -166,6 +171,7 @@ class TestRegistration(TestCase):
 	assert_almost_equal(cost, -2.0, decimal=6)
 	return
 
+    @dec.slow
     def test_autoalign_nmi_value_2(self):
 	"test_autoalign_nmi_value_2"
 	desc = load_desc()
