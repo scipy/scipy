@@ -456,7 +456,24 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
             :: kwrk=3+mx+my+nxest+nyest
        integer intent(out) :: ier
      end subroutine regrid_smth
-
+     
+     function dblint(tx,nx,ty,ny,c,kx,ky,xb,xe,yb,ye,wrk)
+       ! iy = dblint(tx,ty,c,kx,ky,xb,xe,yb,ye)
+       real*8 dimension(nx),intent(in) :: tx
+       integer intent(hide),depend(tx) :: nx=len(tx)
+       real*8 dimension(ny),intent(in) :: ty
+       integer intent(hide),depend(ty) :: ny=len(ty)
+       real*8 intent(in),dimension((nx-kx-1)*(ny-ky-1)),depend(nx,ny,kx,ky),&
+            check(len(c)==(nx-kx-1)*(ny-ky-1)):: c
+       integer :: kx
+       integer :: ky
+       real*8 intent(in) :: xb
+       real*8 intent(in) :: xe
+       real*8 intent(in) :: yb
+       real*8 intent(in) :: ye
+       real*8 dimension(nx+ny-kx-ky-2),depend(nx,ny,kx,ky),intent(cache,hide) :: wrk
+       real*8 :: dblint
+     end function dblint
   end interface
 end python module dfitpack
 
