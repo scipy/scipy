@@ -633,6 +633,9 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
     else:
         raise ValueError("Input of rank > 2 not supported")
 
+    if N.size(data) < 1:
+        raise ValueError("Input has 0 items.")
+
     # If k is not a single value, then it should be compatible with data's
     # shape
     if N.size(k) > 1 or minit == 'matrix':

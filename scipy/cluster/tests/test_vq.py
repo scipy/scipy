@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 # David Cournapeau
-# Last Change: Tue Jul 03 08:00 PM 2007 J
+# Last Change: Mon Jun 23 11:00 PM 2008 J
 
 # For now, just copy the tests from sandbox.pyem, so we can check that
 # kmeans works OK for trivial examples.
@@ -151,6 +151,15 @@ class TestKMean(TestCase):
         data = data[:, :1]
         kmeans2(data, 3, minit = 'random')
         kmeans2(data, 3, minit = 'points')
+
+    def test_kmeans2_empty(self):
+        """Ticket #505."""
+        try:
+            kmeans2([], 2)
+            raise AssertionError("This should not succeed.")
+        except ValueError, e:
+            # OK, that's what we expect
+            pass
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])
