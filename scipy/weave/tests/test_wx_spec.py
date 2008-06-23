@@ -10,19 +10,22 @@ check_return -- test whether a variable is passed in, modified, and
 
 from scipy.testing import *
 
-from scipy.weave import ext_tools, wx_spec
-
-
+e = None
 try:
+    from scipy.weave import ext_tools, wx_spec
     import wx
-except ImportError:
+except ImportError, e:
     wx = None
+    DONOTRUN = True
+except RuntimeError, e:
+    wx = None
+    DONOTRUN = True
 
-skip = dec.skipif(True, "Cannot import wx, skipping ")
+skip = dec.skipif(DONOTRUN, "(error was %s)" % str(e))
 
 class TestWxConverter(TestCase):
     def setUp(self):
-        if wx:
+        if not DONOTRUN:
             self.app = wx.App()
             self.s = wx_spec.wx_converter()
 
