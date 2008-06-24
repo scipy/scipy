@@ -27,30 +27,32 @@ from base import isspmatrix
 
 
 def spdiags(data, diags, m, n, format=None):
-    """Return a sparse matrix given its diagonals.
+    """Return a sparse matrix from diagonals.
 
     Parameters
     ----------
-        - data   : matrix whose rows contain the diagonal values
-        - diags  : diagonals to set
-            - k = 0 - the main diagonal
-            - k > 0 - the k-th upper diagonal
-            - k < 0 - the k-th lower diagonal
-        - m, n   : dimensions of the result
-        - format : format of the result (e.g. "csr")
-            -  By default (format=None) an appropriate sparse matrix
-               format is returned.  This choice is subject to change.
+    data   : array_like
+        matrix diagonals stored row-wise
+    diags  : diagonals to set
+        - k = 0  the main diagonal
+        - k > 0  the k-th upper diagonal
+        - k < 0  the k-th lower diagonal
+    m, n : int
+        shape of the result
+    format : format of the result (e.g. "csr")
+        By default (format=None) an appropriate sparse matrix
+        format is returned.  This choice is subject to change.
 
     See Also
     --------
-        The dia_matrix class which implements the DIAgonal format.
+    The dia_matrix class which implements the DIAgonal format.
 
     Example
     -------
 
-    >>> data = array([[1,2,3,4]]).repeat(3,axis=0)
+    >>> data = array([[1,2,3,4],[1,2,3,4],[1,2,3,4]])
     >>> diags = array([0,-1,2])
-    >>> spdiags(data,diags,4,4).todense()
+    >>> spdiags(data, diags, 4, 4).todense()
     matrix([[1, 0, 3, 0],
             [1, 2, 0, 4],
             [0, 2, 3, 0],
@@ -87,8 +89,12 @@ def kron(A, B, format=None):
 
     Parameters
     ----------
-    A,B    : dense or sparse matrices
-    format : format of the result (e.g. "csr")
+    A
+        matrix
+    B
+        matrix
+    format : string
+        format of the result (e.g. "csr")
 
     Returns
     -------
@@ -169,15 +175,19 @@ def kronsum(A, B, format=None):
 
     Parameters
     ----------
-    A,B    : square dense or sparse matrices
-    format : format of the result (e.g. "csr")
+    A
+        square matrix
+    B
+        square matrix
+    format : string
+        format of the result (e.g. "csr")
 
     Returns
-    =======
-        kronecker sum in a sparse matrix format
+    -------
+    kronecker sum in a sparse matrix format
 
     Examples
-    ========
+    --------
 
 
     """
@@ -206,7 +216,8 @@ def hstack( blocks, format=None, dtype=None ):
 
     blocks
         sequence of sparse matrices with compatible shapes
-    format : sparse format of the result (e.g. "csr")
+    format : string
+        sparse format of the result (e.g. "csr")
         by default an appropriate sparse matrix format is returned.
         This choice is subject to change.
 
@@ -232,7 +243,8 @@ def vstack( blocks, format=None, dtype=None ):
 
     blocks
         sequence of sparse matrices with compatible shapes
-    format : sparse format of the result (e.g. "csr")
+    format : string
+        sparse format of the result (e.g. "csr")
         by default an appropriate sparse matrix format is returned.
         This choice is subject to change.
 

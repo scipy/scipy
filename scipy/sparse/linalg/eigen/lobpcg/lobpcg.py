@@ -5,7 +5,7 @@ http://www-math.cudenver.edu/~aknyazev/software/BLOPEX/
 
 License: BSD
 
-(c) Robert Cimrman, Andrew Knyazev
+Authors: Robert Cimrman, Andrew Knyazev
 
 Examples in tests directory contributed by Nils Wagner.
 """
@@ -91,8 +91,9 @@ def makeOperator( operatorInput, expectedShape ):
     Example
     -------
 
-    A = makeOperator( arrayA, (n, n) )
-    vectorB = A( vectorX )
+    >>> A = makeOperator( arrayA, (n, n) )
+    >>> vectorB = A( vectorX )
+
     """
     if operatorInput is None:
         def ident(x):
@@ -203,8 +204,8 @@ def lobpcg( A, X,
     Notes
     -----
     If both retLambdaHistory and retResidualNormsHistory are True, the
-    return tuple has the following format:
-        (lambda, V, lambda history, residual norms history)
+    return tuple has the following format
+    (lambda, V, lambda history, residual norms history)
 
     """
     failureFlag = True
