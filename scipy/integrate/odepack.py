@@ -78,7 +78,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         'nje'    cumulative number of jacobian evaluations for each time step
         'nqu'    a vector of method orders for each successful step.
         'imxer'  index of the component of largest magnitude in the
-                 weighted local error vector (e / ewt) on an error return.
+                 weighted local error vector (e / ewt) on an error return, -1
+                 otherwise.
         'lenrw'  the length of the double work array required.
         'leniw'  the length of integer work array required.
         'mused'  a vector of method indicators for each successful time step:
