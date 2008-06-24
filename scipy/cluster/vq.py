@@ -370,10 +370,10 @@ def _kmeans(obs, guess, thresh=1e-5):
     """
 
     code_book = array(guess, copy = True)
-    nc = code_book.shape[0]
     avg_dist = []
     diff = thresh+1.
     while diff > thresh:
+        nc = code_book.shape[0]
         #compute membership and distances between obs and code_book
         obs_code, distort = vq(obs, code_book)
         avg_dist.append(mean(distort, axis=-1))
