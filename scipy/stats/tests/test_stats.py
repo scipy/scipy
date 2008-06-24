@@ -482,6 +482,15 @@ class TestRegression(TestCase):
         assert_almost_equal(intercept,0.0)
         assert_almost_equal(r,0.0)
 
+    def test_regress_simple(self):
+        """Regress a line with sinusoidal noise."""
+        x = numpy.linspace(0, 100, 100)
+        y = 0.2 * numpy.linspace(0, 100, 100) + 10
+        y += numpy.sin(numpy.linspace(0, 20, 100))
+
+        res = stats.linregress(x, y)
+        assert_almost_equal(res[4], 4.3609875083149268e-3)
+
 # Utility
 
 def compare_results(res,desired):
