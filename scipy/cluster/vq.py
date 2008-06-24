@@ -479,13 +479,17 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
         raise ValueError, 'iter must be >= to 1.'
     if type(k_or_guess) == type(array([])):
         guess = k_or_guess
+        if guess.size < 1:
+            raise ValueError("Asked for 0 cluster ? initial book was %s" % \
+                             guess)
         result = _kmeans(obs, guess, thresh = thresh)
     else:
         #initialize best distance value to a large value
         best_dist = 100000
         No = obs.shape[0]
         k = k_or_guess
-        #print 'kmeans iter: ',
+        if k < 1:
+            raise ValueError("Asked for 0 cluster ? ")
         for i in range(iter):
             #the intial code book is randomly selected from observations
             guess = take(obs, randint(0, No, k), 0)

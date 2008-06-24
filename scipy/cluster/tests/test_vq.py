@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 # David Cournapeau
-# Last Change: Mon Jun 23 11:00 PM 2008 J
+# Last Change: Tue Jun 24 04:00 PM 2008 J
 
 # For now, just copy the tests from sandbox.pyem, so we can check that
 # kmeans works OK for trivial examples.
@@ -159,6 +159,20 @@ class TestKMean(TestCase):
             raise AssertionError("This should not succeed.")
         except ValueError, e:
             # OK, that's what we expect
+            pass
+
+    def test_kmeans_0k(self):
+        """Regression test for #535: fail when k arg is 0."""
+        try:
+            kmeans(X, 0)
+            raise AssertionError("kmeans with 0 clusters should fail.")
+        except ValueError:
+            pass
+
+        try:
+            kmeans2(X, 0)
+            raise AssertionError("kmeans2 with 0 clusters should fail.")
+        except ValueError:
             pass
 
 if __name__ == "__main__":
