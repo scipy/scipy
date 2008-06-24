@@ -31,6 +31,7 @@ Py_complex cpsi_wrap( Py_complex z);
 Py_complex crgamma_wrap( Py_complex z);
 Py_complex chyp2f1_wrap( double a, double b, double c, Py_complex z);
 Py_complex chyp1f1_wrap( double a, double b, Py_complex z);
+double hyp1f1_wrap( double a, double b, double x);
 double hypU_wrap(double a, double b, double x);
 double exp1_wrap(double x);
 double expi_wrap(double x);

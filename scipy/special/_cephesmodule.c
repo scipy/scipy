@@ -108,7 +108,7 @@ static void * gdtr_data[] = { (void *)gdtr, (void *)gdtr, };
 static void * gdtri_data[] = { (void *)gdtri, (void *)gdtri, };
 */
 static void * hyp2f1_data[] = { (void *)hyp2f1, (void *)hyp2f1, (void *)chyp2f1_wrap, (void *)chyp2f1_wrap};
-static void * hyperg_data[] = { (void *)hyperg, (void *)hyperg, (void *)chyp1f1_wrap, (void *)chyp1f1_wrap};
+static void * hyp1f1_data[] = { (void *)hyp1f1_wrap, (void *)hyp1f1_wrap, (void *)chyp1f1_wrap, (void *)chyp1f1_wrap};
 static void * hypU_data[] = { (void *)hypU_wrap, (void *)hypU_wrap, };
 static void * hyp2f0_data[] = { (void *)hyp2f0, (void *)hyp2f0, };
 static void * threef0_data[] = { (void *)threef0, (void *)threef0, };
@@ -441,7 +441,7 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes4_functions, hyp2f1_data, cephes_5c2_types, 4, 4, 1, PyUFunc_None, "hyp2f1", hyp2f1_doc, 0);
 	PyDict_SetItemString(dictionary, "hyp2f1", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes3_functions, hyperg_data, cephes_4c_types, 4, 3, 1, PyUFunc_None, "hyp1f1", hyp1f1_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, hyp1f1_data, cephes_4c_types, 4, 3, 1, PyUFunc_None, "hyp1f1", hyp1f1_doc, 0);
 	PyDict_SetItemString(dictionary, "hyp1f1", f);
 	Py_DECREF(f);
 
