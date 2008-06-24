@@ -162,7 +162,7 @@ class TestKMean(TestCase):
             pass
 
     def test_kmeans_0k(self):
-        """Regression test for #535: fail when k arg is 0."""
+        """Regression test for #546: fail when k arg is 0."""
         try:
             kmeans(X, 0)
             raise AssertionError("kmeans with 0 clusters should fail.")
