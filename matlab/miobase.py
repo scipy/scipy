@@ -22,6 +22,38 @@ def small_product(arr):
         res *= e
     return res
 
+def get_matfile_version(fileobj):
+    ''' Return '4', '5', or '7' depending on apparent mat file type
+    Inputs
+    fileobj       - file object implementing seek() and read()
+    Outputs
+    version_str   - one of (strings) 4, 5, or 7
+    
+    Has the side effect of setting the file read pointer to 0
+    '''
+    # Mat4 files have a zero somewhere in first 4 bytes
+    fileobj.seek(0)
+    mopt_bytes = N.ndarray(shape=(4,),
+                           dtype=N.uint8,
+                           buffer = fileobj.read(4))
+    if 0 in mopt_bytes:
+        fileobj.seek(0)
+        return '4'
+    # For 5 or 7 we need to read an integer in the header
+    # bytes 124 through 128 contain a version integer
+    # and an endian test string
+    fileobj.seek(124)
+    tst_str = fileobj.read(4)
+    fileobj.seek(0)
+    maj_ind = int(tst_str[2] == 'I')
+    verb = ord(tst_str[maj_ind])
+    if verb == 1:
+        return '5'
+    elif verb == 2:
+        return '7'
+    raise ValueError('Unknown mat file type, version %d' % verb)
+
+
 class ByteOrder(object):
     ''' Namespace for byte ordering '''
     little_endian = sys.byteorder == 'little'
@@ -50,7 +82,7 @@ class MatStreamAgent(object):
     Attaches to initialized stream
 
     Base class for "getters" - which do store state of what they are
-    reading on itialization, and therefore need to be initialized
+    reading on initialization, and therefore need to be initialized
     before each read, and "readers" which do not store state, and only
     need to be initialized once on object creation
 
@@ -102,11 +134,8 @@ class MatFileReader(MatStreamAgent):
 
     set_dtypes              - sets data types defs from byte order
     matrix_getter_factory   - gives object to fetch next matrix from stream
-    format_looks_right      - returns True if format looks correct for
-                              this file type (Mat4, Mat5)
     guess_byte_order        - guesses file byte order from file
     """
-
     def __init__(self, mat_stream,
                  byte_order=None,
                  mat_dtype=False,
@@ -177,7 +206,8 @@ class MatFileReader(MatStreamAgent):
                           'get/set order code')
 
     def set_dtypes(self):
-        assert False, 'Not implemented'
+        ''' Set dtype endianness. In this case we have no dtypes '''
+        pass
 
     def convert_dtypes(self, dtype_template):
         dtypes = dtype_template.copy()
@@ -188,16 +218,13 @@ class MatFileReader(MatStreamAgent):
 
     def matrix_getter_factory(self):
         assert False, 'Not implemented'
-
-    def format_looks_right(self):
-        "Return True if the format looks right for this object"
-        assert False, 'Not implemented'
-
+    
     def file_header(self):
         return {}
 
     def guess_byte_order(self):
-        assert 0, 'Not implemented'
+        ''' As we do not know what file type we have, assume native '''
+        return ByteOrder.native_code
 
     def get_processor_func(self):
         ''' Processing to apply to read matrices

@@ -7,6 +7,7 @@ Module for reading and writing matlab (TM) .mat files
 import os
 import sys
 
+from miobase import get_matfile_version
 from mio4 import MatFile4Reader, MatFile4Writer
 from mio5 import MatFile5Reader, MatFile5Writer
 
@@ -57,11 +58,16 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
             raise IOError, 'Reader needs file name or open file-like object'
         byte_stream = file_name
 
-    MR = MatFile4Reader(byte_stream, **kwargs)
-    if MR.format_looks_right():
-        return MR
-    return MatFile5Reader(byte_stream, **kwargs)
-
+    mv = get_matfile_version(byte_stream)
+    if mv == '4':
+        return MatFile4Reader(byte_stream, **kwargs)
+    elif mv == '5':
+        return MatFile5Reader(byte_stream, **kwargs)
+    elif mv == '7':
+        raise NotImplementedError('Please use PyTables for matlab HDF files')
+    else:
+        raise TypeError('Did not recognize version %s' % mv)
+    
 def loadmat(file_name,  mdict=None, appendmat=True, basename='raw', **kwargs):
     ''' Load Matlab(tm) file
 
