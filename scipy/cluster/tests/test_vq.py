@@ -175,5 +175,11 @@ class TestKMean(TestCase):
         except ValueError:
             pass
 
+        try:
+            kmeans2(X, N.array([]))
+            raise AssertionError("kmeans2 with 0 clusters should fail.")
+        except ValueError:
+            pass
+
 if __name__ == "__main__":
     nose.run(argv=['', __file__])

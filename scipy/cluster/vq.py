@@ -654,7 +654,14 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
                         data")
         clusters = k.copy()
     else:
-        nc = int(k)
+        try:
+            nc = int(k)
+        except TypeError:
+            raise ValueError("k (%s) could not be converted to an integer " % str(k))
+
+        if nc < 1:
+            raise ValueError("kmeans2 for 0 clusters ? (k was %s)" % str(k))
+
         if not nc == k:
             warnings.warn("k was not an integer, was converted.")
         try:
