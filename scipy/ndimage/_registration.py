@@ -1,5 +1,10 @@
-import math
+#
+# written by Tom Waite
+# rigid body 3D registration
+#
 
+
+import math
 import numpy as np
 from scipy.special import erf
 from scipy.ndimage import correlate1d
@@ -84,7 +89,7 @@ def resize_image(imageS, imageS_mat, imageR_mat):
 
     return image, M
 
-def remap_image(image, parm_vector, resample='linear'):
+def remap_image(image, M_inverse, resample='linear'):
     """
     remaped_image = remap_image(image, parm_vector, resample='linear')
 
@@ -97,9 +102,8 @@ def remap_image(image, parm_vector, resample='linear'):
     image : {ndarray} 
         image is the source image to be remapped. 
 
-    parm_vector : {ndarray}
-        parm_vector is the 6-dimensional vector (3 angles, 3 translations)
-        generated from the rigid body registration.
+    M_inverse : {ndarray}
+        M_inverse is the 4x4 inverse affine matrix 
 
     resample : {'linear', 'cubic'}, optional
 
@@ -112,16 +116,11 @@ def remap_image(image, parm_vector, resample='linear'):
     --------
         image = fmri_series[i]
         x[0:6] = measures[i]['align_rotate'][0:6]
+	M = get_inverse_mappings(x)
         # overwrite the fMRI volume with the aligned volume
-        fmri_series[i] = remap_image(image, x, resample='cubic')
+        fmri_series[i] = remap_image(image, M, resample='cubic')
 
     """
-
-    #
-    # remap imageG to coordinates of imageF (creates imageG')
-    # use the 6 dim parm_vector (3 angles, 3 translations) to remap
-    #
-    M_inverse = get_inverse_mappings(parm_vector)
 
     # allocate the zero image
     remaped_image = np.zeros(image.shape, dtype=np.uint8)
@@ -136,6 +135,7 @@ def remap_image(image, parm_vector, resample='linear'):
         reg.register_cubic_resample(image, remaped_image, M_inverse, step)
 
     return remaped_image
+
 
 def get_inverse_mappings(parm_vector):
     """
