@@ -49,12 +49,11 @@ class Cfunc(object):
 
     Methods:
 
-        decl()          -- returns the C declaration for the function
-        cfunc()         -- returns the C function (as string)
-        support_code()  -- generate the C support code to make this
-                           function part work with PyUFuncGenericFunction
-        
-    
+        decl()      -- returns the C declaration for the function
+        cfunc()     -- returns the C function (as string)
+        ufunc_support_code()
+                    -- generate the C support code to make this
+                       function part work with PyUFuncGenericFunction
     """
     def __init__(self, f, signature):
         global _cnt
@@ -66,7 +65,7 @@ class Cfunc(object):
         assert self.nout == 1                  # for now
         
         if not verbose:
-            rem = sys.stderr
+            tmp = sys.stderr
             sys.stderr = cStringIO.StringIO()
             
         t = Translation(f, backend='c')
@@ -74,8 +73,8 @@ class Cfunc(object):
         t.source()
     
         if not verbose:
-            sys.stderr = rem
-    
+            sys.stderr = tmp
+        
         c_source_filename = t.driver.c_source_filename
         assert c_source_filename.endswith('.c')
         src = open(c_source_filename, 'r').read()
@@ -105,7 +104,7 @@ class Cfunc(object):
         return found[0]
 
 
-    def support_code(self):
+    def ufunc_support_code(self):
         arg0type = typedict[self.sig[0]][1]
         rettype = typedict[self.sig[-1]][1]
         n = self.n
@@ -186,7 +185,7 @@ def genufunc(f, signatures):
     
     declarations = ''.join('\t%s\n' % cf.decl() for cf in cfuncs)
 
-    func_support = ''.join(cf.support_code() for cf in cfuncs)
+    func_support = ''.join(cf.ufunc_support_code() for cf in cfuncs)
 
     pyufuncs = ''.join('\tPyUFunc_%i,\n' % cf.n for cf in cfuncs)
     
@@ -276,7 +275,7 @@ def mkufunc(signatures):
     """ The actual API function, to be used as decorator function.
         
     """
-    print 'signatures', signatures
+    #print 'signatures', signatures
     
     class Compile(object):
         
