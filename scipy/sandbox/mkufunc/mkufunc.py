@@ -1,3 +1,8 @@
+""" mkufunc (make U function)
+
+
+Author: Ilan Schnell (with help from Travis Oliphant and Eric Jones)
+"""
 import sys
 import re
 import cStringIO
@@ -6,6 +11,7 @@ import numpy
 import scipy.weave as weave
 
 from interactive import Translation
+
 
 verbose = False
 _cnt = 0
@@ -17,7 +23,39 @@ typedict = {
 }
 
 class Cfunc(object):
+    """ C compiled python functions
+
+    >>> def sqr(x):
+    ...     return x * x
+
+    >>> signature = [int, int] # only the input arguments are used here
     
+    compilation is done upon initialization
+    >>> x = Cfunc(sqr, signature)
+    >>> x.nin # number of input arguments
+    1
+    >>> x.nout # number of output arguments (must be 1 for now)
+    1
+    >>> x.sig
+    [<type 'int'>, <type 'int'>]
+
+    Attributes:
+
+        n           -- id number
+        sig         -- signature
+        nin         -- number of input arguments
+        nout        -- number of output arguments
+        cname       -- name of the C function
+
+    Methods:
+
+        decl()          -- returns the C declaration for the function
+        cfunc()         -- returns the C function (as string)
+        support_code()  -- generate the C support code to make this
+                           function part work with PyUFuncGenericFunction
+        
+    
+    """
     def __init__(self, f, signature):
         global _cnt
         _cnt += 1
@@ -42,19 +80,19 @@ class Cfunc(object):
         assert c_source_filename.endswith('.c')
         src = open(c_source_filename, 'r').read()
         
-        self.prefix = 'f%i_' % self.n
-        self.allCsrc = src.replace('pypy_', self.prefix + 'pypy_')
-        self.cname = self.prefix + 'pypy_g_' + f.__name__
+        self._prefix = 'f%i_' % self.n
+        self._allCsrc = src.replace('pypy_', self._prefix + 'pypy_')
+        self.cname = self._prefix + 'pypy_g_' + f.__name__
         
     def cfunc(self):
         p = re.compile(r'^\w+[*\s\w]+' + self.cname +
                        r'\s*\([^)]*\)\s*\{.*?[\n\r]\}[\n\r]',
                        re.DOTALL | re.MULTILINE | re.VERBOSE)
         
-        found = p.findall(self.allCsrc)
+        found = p.findall(self._allCsrc)
         assert len(found) == 1
         res = found[0]
-        res = res.replace(self.prefix + 'pypy_g_ll_math_ll_math_', '')
+        res = res.replace(self._prefix + 'pypy_g_ll_math_ll_math_', '')
         return res + '\n'
     
     def decl(self):
@@ -62,7 +100,7 @@ class Cfunc(object):
                        r'\s*\([^)]*\);',
                        re.DOTALL | re.MULTILINE | re.VERBOSE)
         
-        found = p.findall(self.allCsrc)
+        found = p.findall(self._allCsrc)
         assert len(found) == 1
         return found[0]
 
@@ -116,6 +154,9 @@ def test1():
 
 
 def write_pypyc(cfuncs):
+    """ Given a list of Cfunc instances, write the C code containing the
+    functions into a file.
+    """
     fo = open('pypy.c', 'w');
     fo.write('#include "head.c"\n\n')
     for cf in cfuncs:
@@ -124,7 +165,19 @@ def write_pypyc(cfuncs):
 
 
 def genufunc(f, signatures):
-    
+    """ Given a Python function and its signatures, do the following:
+
+    - Compile the function to C for each signature
+
+    - Write the C code for all these functions to a file
+
+    - Generate the support code for weave
+
+    - Generate the code for weave.  This contains the actual call to
+      PyUFuncGenericFunction
+
+    - Return the Ufunc Python object
+    """
     signatures.sort(key=lambda sig: [numpy.dtype(typ).num for typ in sig])
     
     cfuncs = [Cfunc(f, sig) for sig in signatures]
@@ -220,6 +273,9 @@ def test2():
 
 
 def mkufunc(signatures):
+    """ The actual API function, to be used as decorator function.
+        
+    """
     print 'signatures', signatures
     
     class Compile(object):
@@ -234,7 +290,5 @@ def mkufunc(signatures):
 
 
 if __name__ == '__main__':
-    # test1();     exit()
-
-    mkufunc([int, (float, int, float)])
-    
+    import doctest
+    doctest.testmod()
