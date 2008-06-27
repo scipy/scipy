@@ -1,4 +1,6 @@
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 
 /* ================================================== g_prerequisite.h === */
@@ -362,19 +364,19 @@ op_int_mul_ovf(long a, long b, long *longprod)
 
 /*** conversions ***/
 
-#define OP_CAST_FLOAT_TO_INT(x,r)    r = (long)(x)
-#define OP_CAST_FLOAT_TO_UINT(x,r)   r = (unsigned long)(x)
-#define OP_CAST_INT_TO_FLOAT(x,r)    r = (double)(x)
-#define OP_CAST_UINT_TO_FLOAT(x,r)   r = (double)(x)
-#define OP_CAST_LONGLONG_TO_FLOAT(x,r) r = (double)(x)
-#define OP_CAST_BOOL_TO_FLOAT(x,r)   r = (double)(x)
+#define OP_CAST_FLOAT_TO_INT(x,r)       r = (long)(x)
+#define OP_CAST_FLOAT_TO_UINT(x,r)      r = (unsigned long)(x)
+#define OP_CAST_INT_TO_FLOAT(x,r)       r = (double)(x)
+#define OP_CAST_UINT_TO_FLOAT(x,r)      r = (double)(x)
+#define OP_CAST_LONGLONG_TO_FLOAT(x,r)  r = (double)(x)
+#define OP_CAST_BOOL_TO_FLOAT(x,r)      r = (double)(x)
 
 #ifdef HAVE_LONG_LONG
-#define OP_CAST_FLOAT_TO_LONGLONG(x,r) r = (long long)(x)
+#define OP_CAST_FLOAT_TO_LONGLONG(x,r)  r = (long long)(x)
 #endif
 
+/* ================================================== support.h ========== */
 
+#define RPyField(ptr, name)             NULL
 
-
-/* ================================================== EOF ================ */
 /* ================================================== EOF ================ */
