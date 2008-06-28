@@ -84,7 +84,18 @@ class Math_Tests(unittest.TestCase):
             a = uf(xx)
             b = [f(x) for x in xx]
             self.assert_(allclose(a, b))
-
+            
+    def test_func2arg(self):
+        @mkufunc
+        def f(x, y):
+            return math.atan2(x, y)
+        
+        xx = array([1.0, 3.0, -2.4,  3.1, -2.3])
+        yy = array([1.0, 2.0,  7.5, -8.7,  0.0])
+        a = f(xx, yy)
+        b = [math.atan2(x, y) for x, y in zip(xx, yy)]
+        self.assert_(allclose(a, b))
+        
     def test_arithmetic(self):
         def f(x):
             return (4 * x + 2) / (x * x - 7 * x + 1)
@@ -92,6 +103,14 @@ class Math_Tests(unittest.TestCase):
         x = arange(0, 2, 0.1)
         self.assert_(allclose(uf(x), f(x)))
     
+        def f(x, y, z):
+            return x * y * z
+        uf = mkufunc(f)
+        x = arange(0, 1, 0.1)
+        y = 2 * x
+        z = 3 * x
+        self.assert_(allclose(uf(x, y, z), f(x, y, z)))
+
 
 class Loop_Tests(unittest.TestCase):
     pass

@@ -102,36 +102,69 @@ class Cfunc(object):
         found = p.findall(self._allCsrc)
         assert len(found) == 1
         return found[0]
-
+    
     def ufunc_support_code(self):
-        arg0type = typedict[self.sig[0]][1]
-        rettype = typedict[self.sig[-1]][1]
+        # Unfortunately the code in here is very hard to read.
+        # In order to make the code clearer, one would need a real template
+        # engine link Cheetah (http://cheetahtemplate.org/).
+        # However, somehting like that would be too much overhead for scipy.
+        
         n = self.n
+        nin = self.nin
         cname = self.cname
+
+        def varname(i):
+            return chr(i + ord('a'))
+        
+        declargs = ', '.join('%s %s' % (typedict[self.sig[i]][1], varname(i))
+                             for i in xrange(self.nin))
+        
+        args = ', '.join(varname(i) for i in xrange(self.nin))
+        
+        isn_steps = '\n\t'.join('npy_intp is%i = steps[%i];' % (i, i)
+                                for i in xrange(self.nin))
+        
+        ipn_args = '\n\t'.join('char *ip%i = args[%i];' % (i, i)
+                               for i in xrange(self.nin))
+        
+        body1d_in = '\n\t\t'.join('%s *in%i = (%s *)ip%i;' %
+                                  (2*(typedict[self.sig[i]][1], i))
+                                  for i in xrange(self.nin))
+        
+        body1d_add = '\n\t\t'.join('ip%i += is%i;' % (i, i)
+                                   for i in xrange(self.nin))
+        
+        ptrargs = ', '.join('*in%i' % i for i in xrange(self.nin))
+        
+        rettype = typedict[self.sig[-1]][1]
+        
         return '''
-static %(rettype)s wrap_%(cname)s(%(arg0type)s x)
+static %(rettype)s wrap_%(cname)s(%(declargs)s)
 {
-	return %(cname)s(x);
+	return %(cname)s(%(args)s);
 }
 
-typedef %(rettype)s Func_%(n)i(%(arg0type)s);
+typedef %(rettype)s Func_%(n)i(%(declargs)s);
 
 static void
 PyUFunc_%(n)i(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
 {
-	npy_intp n = dimensions[0];
-	npy_intp is0 = steps[0];
-	npy_intp os = steps[1];
-	char *ip0 = args[0];
-	char *op = args[1];
+	npy_intp i, n;
+        %(isn_steps)s
+	npy_intp os = steps[%(nin)s];
+        %(ipn_args)s
+	char *op = args[%(nin)s];
 	Func_%(n)i *f = (Func_%(n)i *) func;
-	npy_intp i;
-	
-	for(i = 0; i < n; i++, ip0 += is0, op += os) {
-		%(arg0type)s *in1 = (%(arg0type)s *)ip0;
+	n = dimensions[0];
+        
+	for(i = 0; i < n; i++) {
+		%(body1d_in)s
 		%(rettype)s *out = (%(rettype)s *)op;
 		
-		*out = f(*in1);
+		*out = f(%(ptrargs)s);
+
+                %(body1d_add)s
+                op += os;
 	}
 }
 ''' % locals()
@@ -208,12 +241,12 @@ return_val = PyUFunc_FromFuncAndData(
     %(fname)s_functions,
     %(fname)s_data,
     %(fname)s_types,
-    %(ntypes)i,         /* ntypes */
-    %(nin)i,            /* nin */
-    1,                  /* nout */
-    PyUFunc_None,       /* identity */
-    "%(fname)s",        /* name */
-    "",                 /* doc */
+    %(ntypes)i,      /* ntypes */
+    %(nin)i,         /* nin */
+    1,               /* nout */
+    PyUFunc_None,    /* identity */
+    "%(fname)s",     /* name */
+    "UFunc made by mkufunc", /* doc */
     0);
 ''' % locals()
     
@@ -238,8 +271,8 @@ return_val = PyUFunc_FromFuncAndData(
 
 
 def mkufunc(arg0=[float]):
-    """ The actual API function, to be used as decorator function.
-        
+    """ The actual API function, for use in decorator function.
+    
     """
     class Compile(object):
         
@@ -264,9 +297,7 @@ def mkufunc(arg0=[float]):
                     if t not in typedict.keys():
                         raise TypeError
             
-            print 'sigs:', signatures
             self.ufunc = genufunc(f, signatures)
-            #self.ufunc = f
             
         def __call__(self, *args):
             return self.ufunc(*args)
