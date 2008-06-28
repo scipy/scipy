@@ -6,6 +6,7 @@ Author: Ilan Schnell (with help from Travis Oliphant and Eric Jones)
 import sys
 import re
 import cStringIO
+from types import *
 
 import numpy
 import scipy.weave as weave
@@ -102,7 +103,6 @@ class Cfunc(object):
         found = p.findall(self._allCsrc)
         assert len(found) == 1
         return found[0]
-
 
     def ufunc_support_code(self):
         arg0type = typedict[self.sig[0]][1]
@@ -251,6 +251,7 @@ return_val = PyUFunc_FromFuncAndData(
 
 
 def test2():
+    from numpy import array
 
     def sqr(x):
         return x * x
@@ -271,23 +272,48 @@ def test2():
     print "y =", y, y.dtype
 
 
-def mkufunc(signatures):
+def mkufunc(arg0):
     """ The actual API function, to be used as decorator function.
         
     """
-    #print 'signatures', signatures
-    
     class Compile(object):
         
         def __init__(self, f):
+            print 'sigs:', signatures
             self.ufunc = genufunc(f, signatures)
+            #self.ufunc = f
 
         def __call__(self, *args):
             return self.ufunc(*args)
 
-    return Compile
+    if isinstance(arg0, FunctionType):
+        f = arg0
+        signatures = [float]
+        return Compile(f)
+    
+    elif isinstance(arg0, ListType):
+        signatures = arg0
+        return Compile
+
+    elif arg0 in typedict:
+        signatures = [arg0]
+        return Compile
+
+    else:
+        raise TypeError("first argument has to be a function, a type, or "
+                        "a list of signatures")
 
 
 if __name__ == '__main__':
     import doctest
-    doctest.testmod()
+    #doctest.testmod()
+
+    def sqr(x):
+        return x * x
+
+    #sqr = mkufunc({})(sqr)
+    sqr = mkufunc([(float, float)])(sqr)
+    #sqr = mkufunc(int)(sqr)
+    #sqr = mkufunc(sqr)
+
+    print sqr(8)
