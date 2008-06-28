@@ -15,7 +15,6 @@ from interactive import Translation
 
 
 verbose = False
-_cnt = 0
 
 typedict = {
     int:    ['NPY_LONG',   'long'  ],
@@ -41,7 +40,7 @@ class Cfunc(object):
     [<type 'int'>, <type 'int'>]
 
     Attributes:
-
+        f           -- the Python function object
         n           -- id number
         sig         -- signature
         nin         -- number of input arguments
@@ -56,10 +55,9 @@ class Cfunc(object):
                     -- generate the C support code to make this
                        function part work with PyUFuncGenericFunction
     """
-    def __init__(self, f, signature):
-        global _cnt
-        _cnt += 1
-        self.n = _cnt
+    def __init__(self, f, signature, n=0):
+        self.f = f
+        self.n = n
         self.sig = signature
         self.nin = f.func_code.co_argcount     # input args
         self.nout = len(self.sig) - self.nin
@@ -83,7 +81,7 @@ class Cfunc(object):
         self._prefix = 'f%i_' % self.n
         self._allCsrc = src.replace('pypy_', self._prefix + 'pypy_')
         self.cname = self._prefix + 'pypy_g_' + f.__name__
-        
+
     def cfunc(self):
         p = re.compile(r'^\w+[*\s\w]+' + self.cname +
                        r'\s*\([^)]*\)\s*\{.*?[\n\r]\}[\n\r]',
@@ -110,7 +108,7 @@ class Cfunc(object):
         n = self.n
         cname = self.cname
         return '''
-static %(rettype)s foo_%(n)i(%(arg0type)s x)
+static %(rettype)s wrap_%(cname)s(%(arg0type)s x)
 {
 	return %(cname)s(x);
 }
@@ -120,8 +118,6 @@ typedef %(rettype)s Func_%(n)i(%(arg0type)s);
 static void
 PyUFunc_%(n)i(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
 {
-	/* printf("PyUFunc_%(n)i\\n"); */
-	
 	npy_intp n = dimensions[0];
 	npy_intp is0 = steps[0];
 	npy_intp os = steps[1];
@@ -179,7 +175,7 @@ def genufunc(f, signatures):
     """
     signatures.sort(key=lambda sig: [numpy.dtype(typ).num for typ in sig])
     
-    cfuncs = [Cfunc(f, sig) for sig in signatures]
+    cfuncs = [Cfunc(f, sig, n) for n, sig in enumerate(signatures)]
     
     write_pypyc(cfuncs)
     
@@ -189,11 +185,13 @@ def genufunc(f, signatures):
 
     pyufuncs = ''.join('\tPyUFunc_%i,\n' % cf.n for cf in cfuncs)
     
-    data = ''.join('\t(void *) foo_%i,\n' % cf.n for cf in cfuncs)
+    data = ''.join('\t(void *) wrap_%s,\n' % cf.cname for cf in cfuncs)
+    
+    types = ''.join('\t%s  /* %i */\n' %
+                    (''.join(typedict[t][0] + ', ' for t in cf.sig), cf.n)
+                    for cf in cfuncs)
 
-    foo_signatures = ''.join('\t%s  /* %i */\n' %
-                         (''.join(typedict[t][0] + ', ' for t in cf.sig), cf.n)
-                         for cf in cfuncs)
+    fname = f.__name__
     
     support_code = '''
 extern "C" {
@@ -201,14 +199,14 @@ extern "C" {
 
 %(func_support)s
 
-static PyUFuncGenericFunction foo_functions[] = {
+static PyUFuncGenericFunction %(fname)s_functions[] = {
 %(pyufuncs)s};
 
-static void *foo_data[] = {
+static void *%(fname)s_data[] = {
 %(data)s};
 
-static char foo_signatures[] = {
-%(foo_signatures)s};
+static char %(fname)s_types[] = {
+%(types)s};
 ''' % locals()
 
     ntypes = len(signatures)
@@ -218,14 +216,14 @@ static char foo_signatures[] = {
 import_ufunc();
 
 return_val = PyUFunc_FromFuncAndData(
-    foo_functions,
-    foo_data,
-    foo_signatures,
+    %(fname)s_functions,
+    %(fname)s_data,
+    %(fname)s_types,
     %(ntypes)i,         /* ntypes */
     %(nin)i,            /* nin */
     1,                  /* nout */
     PyUFunc_None,       /* identity */
-    "foo",              /* name */
+    "%(fname)s",        /* name */
     "",                 /* doc */
     0);
 ''' % locals()
@@ -272,20 +270,40 @@ def test2():
     print "y =", y, y.dtype
 
 
-def mkufunc(arg0):
+def mkufunc(arg0=[float]):
     """ The actual API function, to be used as decorator function.
         
     """
     class Compile(object):
         
         def __init__(self, f):
+            nin = f.func_code.co_argcount
+            nout = 1
+            for i, sig in enumerate(signatures):
+                if sig in typedict.keys():
+                    signatures[i] = (nin + nout) * (sig,)
+                elif isinstance(sig, tuple):
+                    pass
+                else:
+                    raise TypeError
+
+            for sig in signatures:
+                assert isinstance(sig, tuple)
+                if len(sig) != nin + nout:
+                    raise TypeError("signature %r does not match the "
+                                    "number of args of function %s" %
+                                    (sig, f.__name__))
+                for t in sig:
+                    if t not in typedict.keys():
+                        raise TypeError
+            
             print 'sigs:', signatures
             self.ufunc = genufunc(f, signatures)
             #self.ufunc = f
-
+            
         def __call__(self, *args):
             return self.ufunc(*args)
-
+        
     if isinstance(arg0, FunctionType):
         f = arg0
         signatures = [float]
@@ -294,11 +312,11 @@ def mkufunc(arg0):
     elif isinstance(arg0, ListType):
         signatures = arg0
         return Compile
-
-    elif arg0 in typedict:
+    
+    elif arg0 in typedict.keys():
         signatures = [arg0]
         return Compile
-
+    
     else:
         raise TypeError("first argument has to be a function, a type, or "
                         "a list of signatures")
@@ -307,13 +325,18 @@ def mkufunc(arg0):
 if __name__ == '__main__':
     import doctest
     #doctest.testmod()
+    
+    test2()
+
+    exit()
+    
 
     def sqr(x):
         return x * x
-
+    
     #sqr = mkufunc({})(sqr)
     sqr = mkufunc([(float, float)])(sqr)
     #sqr = mkufunc(int)(sqr)
     #sqr = mkufunc(sqr)
-
+    
     print sqr(8)
