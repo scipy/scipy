@@ -1,7 +1,7 @@
 import math
 import unittest
 
-from numpy import array, arange, allclose, vectorize
+from numpy import array, arange, allclose
 
 from mkufunc import Cfunc, genufunc, mkufunc
 
@@ -66,6 +66,26 @@ class Arg_Tests(unittest.TestCase):
                 return x * x
             self.check_ufunc(f)
 
+    def test_int(self):
+        @mkufunc(int)
+        def f(x):
+            return x * x
+        self.assertEqual(f(3), 9)
+        self.assert_(isinstance(f(42), int))
+
+    def test_mixed(self):
+        @mkufunc([(int, float, int), float])
+        def f(n, x):
+            return n + x * x
+        
+        y = f(2, 3.9)            # Note that int(2 + 3.9 * 3.9) = 17
+        self.assertEqual(y, 17)
+        self.assert_(isinstance(y, int))
+        
+        y = f(2.0, 3.9)
+        self.assert_(abs(y - 17.21) < 1E-10)
+        self.assert_(isinstance(y, float))
+
 
 class Math_Tests(unittest.TestCase):
     
@@ -112,14 +132,68 @@ class Math_Tests(unittest.TestCase):
         self.assert_(allclose(uf(x, y, z), f(x, y, z)))
 
 
-class Loop_Tests(unittest.TestCase):
-    pass
+class Control_Flow_Tests(unittest.TestCase):
 
-class Switch_Tests(unittest.TestCase):
-    pass
+    def test_if(self):
+        @mkufunc(int)
+        def f(n):
+            if n < 4:
+                return n
+            else:
+                return n * n
+
+        self.assertEqual(f(3), 3)
+        self.assertEqual(f(4), 16)
+
+    def test_switch(self):
+        @mkufunc(int)
+        def f(n):
+            if n < 4:
+                return n
+            elif n == 4:
+                return 42
+            elif n == 5:
+                return 73
+            else:
+                return n * n
+
+        self.assertEqual(f(3), 3)
+        self.assertEqual(f(4), 42)
+        self.assertEqual(f(5), 73)
+        self.assertEqual(f(6), 36)
+
+    def test_loop(self):
+        @mkufunc(int)
+        def f(n):
+            res = 0
+            for i in xrange(n):
+                res += i*i
+            return res
+
+        self.assertEqual(f(3), 5)
+        self.assertEqual(f(95), 281295)
+
 
 class FreeVariable_Tests(unittest.TestCase):
-    pass
+
+    def test_const(self):
+        a = 13.6
+        @mkufunc
+        def f(x):
+            return a * x
+        
+        x = arange(0, 1, 0.1)
+        self.assert_(allclose(f(x), a * x))
+
+    def test_const2(self):
+        from math import sin, pi, sqrt
+        @mkufunc
+        def sin_deg(angle):
+            return sin(angle / 180.0 * pi)
+        
+        self.assert_(allclose(sin_deg([0, 30, 45, 60, 90, 180, 270, 360]),
+                              [0, 0.5, 1/sqrt(2), sqrt(3)/2, 1, 0, -1, 0]))
+        
 
 class Misc_Tests(unittest.TestCase):
     pass
