@@ -5,13 +5,38 @@ from numpy import array, arange, allclose, vectorize
 
 from mkufunc import Cfunc, genufunc, mkufunc
 
-def f(x):
-    return 3.2 * x * x - 18.3 * x + sin(x)
+class Internal_Tests(unittest.TestCase):
+    
+    def test_Cfunc(self):
+        def sqr(x):
+            return x * x
+        cf = Cfunc(sqr, [int, int], 42)
+        self.assertEqual(cf.nin, 1)
+        self.assertEqual(cf.nout, 1)
+        self.assertEqual(cf.cname, 'f42_pypy_g_sqr')
+
+    def test_genufunc(self):
+        def foo(x):
+            return x + 17
+        uf = genufunc(foo, [
+                (float, float),
+                (int, int),
+                ])
+        self.assertEqual(uf(4), 21)
+        x = array([1.1, 2.3])
+        y = uf(x)
+        self.assert_(allclose(y, [18.1, 19.3]))
+        self.assert_(str(y.dtype).startswith('float'))
+        
+        x = array([1, 4])
+        y = uf(x)
+        self.assertEqual(list(y), [18, 21])
+        self.assert_(str(y.dtype).startswith('int'))
+
 
 class Arg_Tests(unittest.TestCase):
     
     def check_ufunc(self, f):
-        #self.assert_(f.__type__
         for arg in (array([0.0, 1.0, 2.5]),
                     [0.0, 1.0, 2.5],
                     (0.0, 1.0, 2.5)):

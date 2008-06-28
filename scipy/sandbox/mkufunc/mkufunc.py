@@ -32,6 +32,7 @@ class Cfunc(object):
     
     compilation is done upon initialization
     >>> x = Cfunc(sqr, signature)
+    <IGNORE_OUTPUT>
     >>> x.nin # number of input arguments
     1
     >>> x.nout # number of output arguments (must be 1 for now)
@@ -136,18 +137,6 @@ PyUFunc_%(n)i(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
 ''' % locals()
 
 
-def test1():    
-    def sqr(x):
-        return x * x
-    #verbose = True
-    for argtypes in ([int, int], [float, float]):
-        x = Cfunc(sqr, argtypes)
-        print x.cname, x.nin, x.nout, x.sig
-        print x.cfunc()
-        print '{{{%s}}}' % x.decl()
-        print x.support_code()
-
-
 def write_pypyc(cfuncs):
     """ Given a list of Cfunc instances, write the C code containing the
     functions into a file.
@@ -248,28 +237,6 @@ return_val = PyUFunc_FromFuncAndData(
                         sources=['pypy.c'])
 
 
-def test2():
-    from numpy import array
-
-    def sqr(x):
-        return x * x
-    
-    ufunc = genufunc(sqr, [
-        (float, float),
-        (int, int),
-        ])
-    
-    x = array([0.0, 1.0, 2.5, 12.0])
-    print "x =", x, x.dtype
-    y = ufunc(x)
-    print "y =", y, y.dtype
-    
-    x = array([0, 1, 2, 15])
-    print "x =", x, x.dtype
-    y = ufunc(x)
-    print "y =", y, y.dtype
-
-
 def mkufunc(arg0=[float]):
     """ The actual API function, to be used as decorator function.
         
@@ -324,19 +291,4 @@ def mkufunc(arg0=[float]):
 
 if __name__ == '__main__':
     import doctest
-    #doctest.testmod()
-    
-    test2()
-
-    exit()
-    
-
-    def sqr(x):
-        return x * x
-    
-    #sqr = mkufunc({})(sqr)
-    sqr = mkufunc([(float, float)])(sqr)
-    #sqr = mkufunc(int)(sqr)
-    #sqr = mkufunc(sqr)
-    
-    print sqr(8)
+    doctest.testmod()
