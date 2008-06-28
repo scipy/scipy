@@ -6,7 +6,7 @@ Author: Ilan Schnell (with help from Travis Oliphant and Eric Jones)
 import sys
 import re
 import cStringIO
-from types import *
+from types import FunctionType
 
 import numpy
 import scipy.weave as weave
@@ -280,13 +280,13 @@ def mkufunc(arg0=[float]):
             nin = f.func_code.co_argcount
             nout = 1
             for i, sig in enumerate(signatures):
-                if sig in typedict.keys():
-                    signatures[i] = (nin + nout) * (sig,)
-                elif isinstance(sig, tuple):
+                if isinstance(sig, tuple):
                     pass
+                elif sig in typedict.keys():
+                    signatures[i] = (nin + nout) * (sig,)
                 else:
-                    raise TypeError
-
+                    raise TypeError("no match for %r" % sig)
+                
             for sig in signatures:
                 assert isinstance(sig, tuple)
                 if len(sig) != nin + nout:
@@ -295,7 +295,7 @@ def mkufunc(arg0=[float]):
                                     (sig, f.__name__))
                 for t in sig:
                     if t not in typedict.keys():
-                        raise TypeError
+                        raise TypeError("no match for %r" % t)
             
             self.ufunc = genufunc(f, signatures)
             
@@ -307,7 +307,7 @@ def mkufunc(arg0=[float]):
         signatures = [float]
         return Compile(f)
     
-    elif isinstance(arg0, ListType):
+    elif isinstance(arg0, list):
         signatures = arg0
         return Compile
     

@@ -85,7 +85,17 @@ class Arg_Tests(unittest.TestCase):
         y = f(2.0, 3.9)
         self.assert_(abs(y - 17.21) < 1E-10)
         self.assert_(isinstance(y, float))
+        
+    def test_exceptions(self):
+        def f(x):
+            return x
 
+        self.assertRaises(TypeError, mkufunc, {})
+        self.assertRaises(TypeError, mkufunc([(float,)]), f)
+        self.assertRaises(TypeError, mkufunc([3*(float,)]), f)
+        self.assertRaises(TypeError, mkufunc([{}]), f)
+        self.assertRaises(TypeError, mkufunc([(int, {})]), f)
+        
 
 class Math_Tests(unittest.TestCase):
     
