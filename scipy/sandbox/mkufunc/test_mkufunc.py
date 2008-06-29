@@ -72,7 +72,7 @@ class Arg_Tests(unittest.TestCase):
             return x * x
         self.assertEqual(f(3), 9)
         self.assert_(isinstance(f(42), int))
-
+        
     def test_mixed(self):
         @mkufunc([(int, float, int), float])
         def f(n, x):

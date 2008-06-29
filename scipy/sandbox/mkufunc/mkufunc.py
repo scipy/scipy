@@ -16,11 +16,35 @@ from interactive import Translation
 
 verbose = False
 
+def translate(f, argtypes):
+
+    if not verbose:
+        tmp = sys.stderr
+        sys.stderr = cStringIO.StringIO()
+
+    t = Translation(f, backend='c')
+    t.annotate(argtypes)
+    t.source()
+    
+    if not verbose:
+        sys.stderr = tmp
+    
+    c_source_filename = t.driver.c_source_filename
+    assert c_source_filename.endswith('.c')
+    
+    return open(c_source_filename, 'r').read()
+
+
+class Ctype:
+    def __init__(self, npy, c):
+        self.npy = npy
+        self.c = c
+
 typedict = {
-    int:    ['NPY_LONG',   'long'  ],
-    long:   ['NPY_LONG',   'long'  ],
-    float:  ['NPY_DOUBLE', 'double'],
+    int:    Ctype('NPY_LONG',   'long'  ),
+    float:  Ctype('NPY_DOUBLE', 'double'),
 }
+
 
 class Cfunc(object):
     """ C compiled python functions
@@ -31,7 +55,7 @@ class Cfunc(object):
     >>> signature = [int, int] # only the input arguments are used here
     
     compilation is done upon initialization
-    >>> x = Cfunc(sqr, signature)
+    >>> x = Cfunc(sqr, signature, 123)
     <IGNORE_OUTPUT>
     >>> x.nin # number of input arguments
     1
@@ -56,7 +80,7 @@ class Cfunc(object):
                     -- generate the C support code to make this
                        function part work with PyUFuncGenericFunction
     """
-    def __init__(self, f, signature, n=0):
+    def __init__(self, f, signature, n):
         self.f = f
         self.n = n
         self.sig = signature
@@ -64,20 +88,7 @@ class Cfunc(object):
         self.nout = len(self.sig) - self.nin
         assert self.nout == 1                  # for now
         
-        if not verbose:
-            tmp = sys.stderr
-            sys.stderr = cStringIO.StringIO()
-            
-        t = Translation(f, backend='c')
-        t.annotate(signature[:self.nin])
-        t.source()
-    
-        if not verbose:
-            sys.stderr = tmp
-        
-        c_source_filename = t.driver.c_source_filename
-        assert c_source_filename.endswith('.c')
-        src = open(c_source_filename, 'r').read()
+        src = translate(f, signature[:self.nin])
         
         self._prefix = 'f%i_' % self.n
         self._allCsrc = src.replace('pypy_', self._prefix + 'pypy_')
@@ -108,7 +119,6 @@ class Cfunc(object):
         # In order to make the code clearer, one would need a real template
         # engine link Cheetah (http://cheetahtemplate.org/).
         # However, somehting like that would be too much overhead for scipy.
-        
         n = self.n
         nin = self.nin
         cname = self.cname
@@ -116,7 +126,7 @@ class Cfunc(object):
         def varname(i):
             return chr(i + ord('a'))
         
-        declargs = ', '.join('%s %s' % (typedict[self.sig[i]][1], varname(i))
+        declargs = ', '.join('%s %s' % (typedict[self.sig[i]].c, varname(i))
                              for i in xrange(self.nin))
         
         args = ', '.join(varname(i) for i in xrange(self.nin))
@@ -128,7 +138,7 @@ class Cfunc(object):
                                for i in xrange(self.nin))
         
         body1d_in = '\n\t\t'.join('%s *in%i = (%s *)ip%i;' %
-                                  (2*(typedict[self.sig[i]][1], i))
+                                  (2*(typedict[self.sig[i]].c, i))
                                   for i in xrange(self.nin))
         
         body1d_add = '\n\t\t'.join('ip%i += is%i;' % (i, i)
@@ -136,7 +146,7 @@ class Cfunc(object):
         
         ptrargs = ', '.join('*in%i' % i for i in xrange(self.nin))
         
-        rettype = typedict[self.sig[-1]][1]
+        rettype = typedict[self.sig[-1]].c
         
         return '''
 static %(rettype)s wrap_%(cname)s(%(declargs)s)
@@ -210,7 +220,7 @@ def genufunc(f, signatures):
     data = ''.join('\t(void *) wrap_%s,\n' % cf.cname for cf in cfuncs)
     
     types = ''.join('\t%s  /* %i */\n' %
-                    (''.join(typedict[t][0] + ', ' for t in cf.sig), cf.n)
+                    (''.join(typedict[t].npy + ', ' for t in cf.sig), cf.n)
                     for cf in cfuncs)
 
     fname = f.__name__
