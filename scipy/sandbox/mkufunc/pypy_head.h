@@ -379,4 +379,3 @@ op_int_mul_ovf(long a, long b, long *longprod)
 
 #define RPyField(ptr, name)             NULL
 
-/* ================================================== EOF ================ */

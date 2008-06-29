@@ -41,16 +41,16 @@ def disassemble2(co):
         
     return res
 
-def func_hash(f):
-    txt = disassemble2(f.func_code)
+
+def func_hash(f, extra=None):
+    txt = disassemble2(f.func_code) + repr(extra)
     #print txt
     txt = pat_white.sub(' ', txt)
     return hashlib.md5(txt).hexdigest()
 
-
 if __name__ == '__main__':
-    import math
-    from math import *
+#    import math
+#    from math import *
     
     md5sums = []
     
@@ -69,9 +69,14 @@ if __name__ == '__main__':
    
 
     def f(x):
-        return math.sin(x) + math.cos(x)
+        return math.sin(x)
     md5sums.append(func_hash(f))
-    #print md5sums
-    assert md5sums == ['91d13599d610a554dccd6b44cb5ef1f0',
-                       'be0c54b477180f897cbf7604fc565d18',
-                       '732d1ef6c1ce8cc92a7f28917496d292']
+
+    def f(x):
+        return sin(x)
+    md5sums.append(func_hash(f, float))
+    
+    print md5sums
+    #assert md5sums == ['91d13599d610a554dccd6b44cb5ef1f0',
+    #                   'be0c54b477180f897cbf7604fc565d18',
+    #                   '732d1ef6c1ce8cc92a7f28917496d292']

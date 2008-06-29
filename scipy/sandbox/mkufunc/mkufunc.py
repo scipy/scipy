@@ -5,24 +5,31 @@ Author: Ilan Schnell (with help from Travis Oliphant and Eric Jones)
 """
 import sys
 import re
+import os.path
 import cStringIO
 from types import FunctionType
 
 import numpy
-import scipy.weave as weave
+from scipy import weave
 
-from interactive import Translation
 from funcutil import func_hash
 
 
 verbose = False
 
 def translate(f, argtypes):
-
+    cache_fname = os.path.join(weave.catalog.default_dir(),
+                               'pypy_%s.c' % func_hash(f, argtypes))
+    try:
+        return open(cache_fname).read()
+    except IOError:
+        pass
+    
+    from interactive import Translation
     if not verbose:
         tmp = sys.stderr
         sys.stderr = cStringIO.StringIO()
-
+        
     t = Translation(f, backend='c')
     t.annotate(argtypes)
     t.source()
@@ -33,7 +40,13 @@ def translate(f, argtypes):
     c_source_filename = t.driver.c_source_filename
     assert c_source_filename.endswith('.c')
     
-    return open(c_source_filename, 'r').read()
+    src = open(c_source_filename, 'r').read()
+
+    fo = open(cache_fname, 'w')
+    fo.write(src)
+    fo.close()
+
+    return src
 
 
 class Ctype:
@@ -180,13 +193,17 @@ PyUFunc_%(n)i(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
 }
 ''' % locals()
 
+pypyc = os.path.join(weave.catalog.default_temp_dir(), 'pypy.c')
 
 def write_pypyc(cfuncs):
     """ Given a list of Cfunc instances, write the C code containing the
     functions into a file.
     """
-    fo = open('pypy.c', 'w');
-    fo.write('#include "head.c"\n\n')
+    header = open(os.path.join(os.path.dirname(__file__),
+                               'pypy_head.h')).read()
+    fo = open(pypyc, 'w')
+    fo.write(header)
+    fo.write('/********************* end header ********************/\n\n')
     for cf in cfuncs:
         fo.write(cf.cfunc())
     fo.close()
@@ -279,13 +296,12 @@ return_val = PyUFunc_FromFuncAndData(
     
     ufunc_info = weave.base_info.custom_info()
     ufunc_info.add_header('"numpy/ufuncobject.h"')
-    ufunc_info.add_include_dir('"."')
     
     return weave.inline(code,
-                        verbose=0, #force=1,
+                        verbose=0,
                         support_code=support_code,
                         customize=ufunc_info,
-                        sources=['pypy.c'])
+                        sources=[pypyc])
 
 
 def mkufunc(arg0=[float]):
