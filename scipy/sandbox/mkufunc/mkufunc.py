@@ -12,6 +12,7 @@ import numpy
 import scipy.weave as weave
 
 from interactive import Translation
+from funcutil import func_hash
 
 
 verbose = False
@@ -243,9 +244,16 @@ static char %(fname)s_types[] = {
 
     ntypes = len(signatures)
     nin = cfuncs[0].nin
+    fhash = func_hash(f)
     
     code = '''
 import_ufunc();
+
+/****************************************************************************
+**  function name: %(fname)s
+**  signatures: %(signatures)r
+**  bytecode hash: %(fhash)s
+*****************************************************************************/
 
 return_val = PyUFunc_FromFuncAndData(
     %(fname)s_functions,
@@ -274,7 +282,7 @@ return_val = PyUFunc_FromFuncAndData(
     ufunc_info.add_include_dir('"."')
     
     return weave.inline(code,
-                        verbose=0, force=1, # XXX
+                        verbose=0, #force=1,
                         support_code=support_code,
                         customize=ufunc_info,
                         sources=['pypy.c'])
