@@ -25,10 +25,11 @@ def disassemble2(co):
     
     acc.write('co_names:\n')
     for name in co.co_names:
-        if name in '''math exp log sqrt
-                      cos sin tan acos asin atan atan2'''.split():
-            continue
-        acc.write('%8s: %s\n' % (name, eval(name)))
+        try:
+            tmp = str(eval(name))
+        except NameError:
+            tmp = 'EVAL_FAILED'
+        acc.write('%8s: %s\n' % (name, tmp))
     
     res = acc.getvalue()
     
@@ -70,7 +71,7 @@ if __name__ == '__main__':
     def f(x):
         return math.sin(x) + math.cos(x)
     md5sums.append(func_hash(f))
-
-    assert md5sums == ['b821514915e98426c49d93f58e400025',
-                       '2bf13d8983c80c8fd773db4534a2c1b6',
-                       '8d2ce5ab9152dabc3d49d0732fb84666']
+    #print md5sums
+    assert md5sums == ['91d13599d610a554dccd6b44cb5ef1f0',
+                       'be0c54b477180f897cbf7604fc565d18',
+                       '732d1ef6c1ce8cc92a7f28917496d292']
