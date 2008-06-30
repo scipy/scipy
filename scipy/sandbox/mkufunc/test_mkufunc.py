@@ -102,6 +102,7 @@ class Arg_Tests(unittest.TestCase, Util):
         self.assertRaises(TypeError, mkufunc([3*(float,)]), f)
         self.assertRaises(TypeError, mkufunc([{}]), f)
         self.assertRaises(TypeError, mkufunc([(int, {})]), f)
+        self.assertRaises(ValueError, mkufunc([]), f)
         
 
 class Math_Tests(unittest.TestCase, Util):

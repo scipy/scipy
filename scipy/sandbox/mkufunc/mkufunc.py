@@ -5,7 +5,7 @@ Author: Ilan Schnell (with help from Travis Oliphant and Eric Jones)
 """
 import sys
 import re
-import os.path
+import os, os.path
 import cStringIO
 from types import FunctionType
 
@@ -15,38 +15,26 @@ from scipy import weave
 from funcutil import func_hash
 
 
-verbose = False
-
 def translate(f, argtypes):
-    cache_fname = os.path.join(weave.catalog.default_dir(),
-                               'pypy_%s.c' % func_hash(f, argtypes))
+    """ Return pypy's C output for a given function and argument types.
+
+    The cache files are in weave's directory.
+    """
+    cache_file_name = os.path.join(weave.catalog.default_dir(),
+                                   'pypy_%s.c' % func_hash(f, salt=argtypes))
     try:
-        return open(cache_fname).read()
+        return open(cache_file_name).read()
+    
     except IOError:
-        pass
-    
-    from interactive import Translation
-    if not verbose:
-        tmp = sys.stderr
-        sys.stderr = cStringIO.StringIO()
+        from interactive import Translation
         
-    t = Translation(f, backend='c')
-    t.annotate(argtypes)
-    t.source()
-    
-    if not verbose:
-        sys.stderr = tmp
-    
-    c_source_filename = t.driver.c_source_filename
-    assert c_source_filename.endswith('.c')
-    
-    src = open(c_source_filename, 'r').read()
-
-    fo = open(cache_fname, 'w')
-    fo.write(src)
-    fo.close()
-
-    return src
+        t = Translation(f, backend='c')
+        t.annotate(argtypes)
+        t.source()
+        
+        os.rename(t.driver.c_source_filename, cache_file_name)
+        
+        return translate(f, argtypes)
 
 
 class Ctype:
@@ -98,7 +86,7 @@ class Cfunc(object):
         self.f = f
         self.n = n
         self.sig = signature
-        self.nin = f.func_code.co_argcount     # input args
+        self.nin = f.func_code.co_argcount
         self.nout = len(self.sig) - self.nin
         assert self.nout == 1                  # for now
         
@@ -193,11 +181,12 @@ PyUFunc_%(n)i(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
 }
 ''' % locals()
 
+
 pypyc = os.path.join(weave.catalog.default_temp_dir(), 'pypy.c')
 
 def write_pypyc(cfuncs):
     """ Given a list of Cfunc instances, write the C code containing the
-    functions into a file.
+        functions into a file.
     """
     header = open(os.path.join(os.path.dirname(__file__),
                                'pypy_head.h')).read()
@@ -209,30 +198,15 @@ def write_pypyc(cfuncs):
     fo.close()
 
 
-def genufunc(f, signatures):
-    """ Given a Python function and its signatures, do the following:
-
-    - Compile the function to C for each signature
-
-    - Write the C code for all these functions to a file
-
-    - Generate the support code for weave
-
-    - Generate the code for weave.  This contains the actual call to
-      PyUFuncGenericFunction
-
-    - Return the Ufunc Python object
+def support_code(cfuncs):
+    """ Given a list of Cfunc instances, return the support_code for weave.
     """
-    signatures.sort(key=lambda sig: [numpy.dtype(typ).num for typ in sig])
-    
-    cfuncs = [Cfunc(f, sig, n) for n, sig in enumerate(signatures)]
-    
-    write_pypyc(cfuncs)
+    fname = cfuncs[0].f.__name__
     
     declarations = ''.join('\t%s\n' % cf.decl() for cf in cfuncs)
-
+    
     func_support = ''.join(cf.ufunc_support_code() for cf in cfuncs)
-
+    
     pyufuncs = ''.join('\tPyUFunc_%i,\n' % cf.n for cf in cfuncs)
     
     data = ''.join('\t(void *) wrap_%s,\n' % cf.cname for cf in cfuncs)
@@ -240,10 +214,7 @@ def genufunc(f, signatures):
     types = ''.join('\t%s  /* %i */\n' %
                     (''.join(typedict[t].npy + ', ' for t in cf.sig), cf.n)
                     for cf in cfuncs)
-
-    fname = f.__name__
-    
-    support_code = '''
+    return '''
 extern "C" {
 %(declarations)s}
 
@@ -259,17 +230,22 @@ static char %(fname)s_types[] = {
 %(types)s};
 ''' % locals()
 
+
+def code(f, signatures):
+    """ Return the code for weave.
+    """
+    nin = f.func_code.co_argcount
     ntypes = len(signatures)
-    nin = cfuncs[0].nin
+    fname = f.__name__
     fhash = func_hash(f)
     
-    code = '''
+    return '''
 import_ufunc();
 
 /****************************************************************************
 **  function name: %(fname)s
 **  signatures: %(signatures)r
-**  bytecode hash: %(fhash)s
+**  fhash: %(fhash)s
 *****************************************************************************/
 
 return_val = PyUFunc_FromFuncAndData(
@@ -281,25 +257,29 @@ return_val = PyUFunc_FromFuncAndData(
     1,               /* nout */
     PyUFunc_None,    /* identity */
     "%(fname)s",     /* name */
-    "UFunc made by mkufunc", /* doc */
+    "UFunc created by mkufunc", /* doc */
     0);
 ''' % locals()
+
+
+def genufunc(f, signatures):
+    """ Return the Ufunc Python object for given function and signatures.
+    """
+    if len(signatures) == 0:
+        raise ValueError("At least one signature needed")
     
-    if 1:
-        fo = open(f.__name__ + '_code.cc', 'w');
-        fo.write(code);
-        fo.close()
-        
-        fo = open(f.__name__ + '_support_code.cc', 'w');
-        fo.write(support_code);
-        fo.close()
+    signatures.sort(key=lambda sig: [numpy.dtype(typ).num for typ in sig])
+    
+    cfuncs = [Cfunc(f, sig, n) for n, sig in enumerate(signatures)]
+    
+    write_pypyc(cfuncs)
     
     ufunc_info = weave.base_info.custom_info()
     ufunc_info.add_header('"numpy/ufuncobject.h"')
     
-    return weave.inline(code,
+    return weave.inline(code(f, signatures),
                         verbose=0,
-                        support_code=support_code,
+                        support_code=support_code(cfuncs),
                         customize=ufunc_info,
                         sources=[pypyc])
 
