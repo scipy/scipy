@@ -9,6 +9,7 @@ from numpy import random
 
 __all__ = ['anneal']
 
+_double_min = numpy.finfo(float).min
 _double_max = numpy.finfo(float).max
 class base_schedule(object):
     def __init__(self):
@@ -35,11 +36,25 @@ class base_schedule(object):
         self.tests = 0
 
     def getstart_temp(self, best_state):
+        """ Find a matching starting temperature and starting parameters vector
+        i.e. find x0 such that func(x0) = T0.
+
+        Parameters
+        ----------
+        best_state : _state
+            A _state object to store the function value and x0 found.
+
+        Returns
+        -------
+        x0 : array
+            The starting parameters vector.
+        """
+
         assert(not self.dims is None)
         lrange = self.lower
         urange = self.upper
-        fmax = -300e8
-        fmin = 300e8
+        fmax = _double_min
+        fmin = _double_max
         for _ in range(self.Ninit):
             x0 = random.uniform(size=self.dims)*(urange-lrange) + lrange
             fval = self.func(x0, *self.args)
@@ -50,6 +65,7 @@ class base_schedule(object):
                 fmin = fval
                 best_state.cost = fval
                 best_state.x = array(x0)
+
         self.T0 = (fmax-fmin)*1.5
         return best_state.x
 
