@@ -1,6 +1,6 @@
 import unittest
 
-from funcutil import func_hash
+from mkufunc import func_hash
 
 
 class Tests(unittest.TestCase):
@@ -11,7 +11,7 @@ class Tests(unittest.TestCase):
             return 2.5 * x * x + 4.7 * x
         
         self.assertEqual(func_hash(f),
-                         'f8c94c2e2dd69226706f90c2f4293497')
+                         '5f12e97debf1d2cb9e0a2f92e045b1fb')
         
         
     def test_extra(self):
@@ -20,7 +20,7 @@ class Tests(unittest.TestCase):
             return 2.5 * x * x + 4.7 * x
         
         self.assertEqual(func_hash(f, salt=[(int, int), (float, float)]),
-                         'd81db2e37ade51a430e47b72c55e197e')
+                         'e637d9825ef20cb56d364041118ca72e')
         
     def test_const(self):
         
@@ -28,7 +28,7 @@ class Tests(unittest.TestCase):
             return a + b   # a in globals
         
         self.assertEqual(func_hash(add_a),
-                         '55a68633f905a1373f61659b41402f02')
+                         '9ff237f372bf233470ce940edd58f60d')
         
     def test_inner(self):
 
@@ -40,7 +40,7 @@ class Tests(unittest.TestCase):
 
         #func_hash(foo, verbose=1)
         self.assertEqual(func_hash(foo),
-                         'a836c2dbe1b202bd68e1fe3affe1ce7a')
+                         '814c113dfc77e7ebb52915dd3ce9c37a')
 
 
 if __name__ == '__main__':

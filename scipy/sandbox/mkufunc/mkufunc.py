@@ -7,12 +7,21 @@ import sys
 import re
 import os, os.path
 import cStringIO
+import hashlib
 from types import FunctionType
 
 import numpy
 from scipy import weave
 
-from funcutil import func_hash
+
+verbose = 0
+
+def func_hash(f, salt=None):
+    """ Return a MD5 hash for a function object as string.
+    """
+    co = f.func_code
+    return hashlib.md5(co.co_code + repr(co.co_names) + repr(salt)
+                       ).hexdigest()
 
 
 def translate(f, argtypes):
@@ -174,7 +183,7 @@ PyUFunc_%(n)i(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
 
 
 def support_code(cfuncs):
-    """ Given a list of Cfunc instances, return the support_code for weave.
+    """ Given a list of Cfunc instances, return the support code for weave.
     """
     acc = cStringIO.StringIO()
     
@@ -207,7 +216,12 @@ static void *%(fname)s_data[] = {
 static char %(fname)s_types[] = {
 %(types)s};
 ''' % locals())
-    
+
+    if verbose:
+        print '------------------ start support_code -----------------'
+        print acc.getvalue()
+        print '------------------- end support_code ------------------'
+        
     return acc.getvalue()
 
 
@@ -219,7 +233,7 @@ def code(f, signatures):
     fname = f.__name__
     fhash = func_hash(f)
     
-    return '''
+    res = '''
 import_ufunc();
 
 /****************************************************************************
@@ -241,6 +255,13 @@ return_val = PyUFunc_FromFuncAndData(
     0);
 ''' % locals()
 
+    if verbose:
+        print '---------------------- start code ---------------------'
+        print res
+        print '----------------------- end code ----------------------'
+
+    return res
+
 
 def genufunc(f, signatures):
     """ Return the Ufunc Python object for given function and signatures.
@@ -256,7 +277,7 @@ def genufunc(f, signatures):
     ufunc_info.add_header('"numpy/ufuncobject.h"')
     
     return weave.inline(code(f, signatures),
-                        verbose=0,
+                        verbose=verbose,
                         support_code=support_code(cfuncs),
                         customize=ufunc_info)
 
