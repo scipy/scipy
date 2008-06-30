@@ -181,14 +181,21 @@ class Math_Tests(unittest.TestCase, Util):
         uf = mkufunc(f)
         x = arange(0, 2, 0.1)
         self.assertClose(uf(x), f(x))
+
+
+class FuncArg_Tests(unittest.TestCase, Util):
     
-        def f(x, y, z):
-            return x * y * z
+    def test_fargs0(self):
+        def f():
+            return 42
+        
         uf = mkufunc(f)
-        x = arange(0, 1, 0.1)
-        y = 2 * x
-        z = 3 * x
-        self.assertClose(uf(x, y, z), f(x, y, z))
+        self.assertEqual(uf(), 42)
+        self.assert_(type(uf()).__name__.startswith('float'))
+
+        uf = mkufunc(int)(f)
+        self.assertEqual(uf(), 42)
+        self.assert_(type(uf()).__name__.startswith('int'))
 
 
 class Control_Flow_Tests(unittest.TestCase):
