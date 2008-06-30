@@ -105,16 +105,7 @@ class Cfunc(object):
         assert len(found) == 1
         res = found[0]
         res = res.replace(self._prefix + 'pypy_g_ll_math_ll_math_', '')
-        return res + '\n'
-    
-    def decl(self):
-        p = re.compile(r'^\w+[*\s\w]+' + self.cname +
-                       r'\s*\([^)]*\);',
-                       re.DOTALL | re.MULTILINE | re.VERBOSE)
-        
-        found = p.findall(self._allCsrc)
-        assert len(found) == 1
-        return found[0]
+        return 'inline ' + res + '\n'
     
     def ufunc_support_code(self):
         # Unfortunately the code in here is very hard to read.
@@ -173,7 +164,7 @@ PyUFunc_%(n)i(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
 		%(body1d_in)s
 		%(rettype)s *out = (%(rettype)s *)op;
 		
-		*out = f(%(ptrargs)s);
+		*out = (%(rettype)s) f(%(ptrargs)s);
 
                 %(body1d_add)s
                 op += os;
@@ -182,30 +173,21 @@ PyUFunc_%(n)i(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
 ''' % locals()
 
 
-pypyc = os.path.join(weave.catalog.default_temp_dir(), 'pypy.c')
-
-def write_pypyc(cfuncs):
-    """ Given a list of Cfunc instances, write the C code containing the
-        functions into a file.
-    """
-    header = open(os.path.join(os.path.dirname(__file__),
-                               'pypy_head.h')).read()
-    fo = open(pypyc, 'w')
-    fo.write(header)
-    fo.write('/********************* end header ********************/\n\n')
-    for cf in cfuncs:
-        fo.write(cf.cfunc())
-    fo.close()
-
-
 def support_code(cfuncs):
     """ Given a list of Cfunc instances, return the support_code for weave.
     """
+    acc = cStringIO.StringIO()
+    
+    acc.write('/********************* start pypy_head.h  **************/\n\n')
+    acc.write(open(os.path.join(os.path.dirname(__file__),
+                                'pypy_head.h')).read())
+    acc.write('/********************** end pypy_head.h ****************/\n\n')
+    
+    for cf in cfuncs:
+        acc.write(cf.cfunc())
+        acc.write(cf.ufunc_support_code())
+        
     fname = cfuncs[0].f.__name__
-    
-    declarations = ''.join('\t%s\n' % cf.decl() for cf in cfuncs)
-    
-    func_support = ''.join(cf.ufunc_support_code() for cf in cfuncs)
     
     pyufuncs = ''.join('\tPyUFunc_%i,\n' % cf.n for cf in cfuncs)
     
@@ -214,12 +196,8 @@ def support_code(cfuncs):
     types = ''.join('\t%s  /* %i */\n' %
                     (''.join(typedict[t].npy + ', ' for t in cf.sig), cf.n)
                     for cf in cfuncs)
-    return '''
-extern "C" {
-%(declarations)s}
-
-%(func_support)s
-
+    
+    acc.write('''
 static PyUFuncGenericFunction %(fname)s_functions[] = {
 %(pyufuncs)s};
 
@@ -228,7 +206,9 @@ static void *%(fname)s_data[] = {
 
 static char %(fname)s_types[] = {
 %(types)s};
-''' % locals()
+''' % locals())
+    
+    return acc.getvalue()
 
 
 def code(f, signatures):
@@ -272,16 +252,13 @@ def genufunc(f, signatures):
     
     cfuncs = [Cfunc(f, sig, n) for n, sig in enumerate(signatures)]
     
-    write_pypyc(cfuncs)
-    
     ufunc_info = weave.base_info.custom_info()
     ufunc_info.add_header('"numpy/ufuncobject.h"')
     
     return weave.inline(code(f, signatures),
                         verbose=0,
                         support_code=support_code(cfuncs),
-                        customize=ufunc_info,
-                        sources=[pypyc])
+                        customize=ufunc_info)
 
 
 def mkufunc(arg0=[float]):
