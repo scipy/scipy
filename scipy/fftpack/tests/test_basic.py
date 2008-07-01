@@ -358,6 +358,17 @@ class TestFftn(TestCase):
         assert_array_almost_equal (y,swapaxes(\
             fftn(swapaxes(large_x1,-1,-2)),-1,-2))
 
+    def test_shape_argument_more(self):
+        # Test that fftn raise a value error exception when s.shape is longer
+        # than x.shape
+        x = zeros((4, 4, 2))
+        try:
+            fx = fftn(x, shape = (8, 8, 2, 1))
+            raise AssertionError("s.shape longer than x.shape succeded, "\
+                                 "but should not have.")
+        except ValueError:
+            pass
+
 
 class TestIfftn(TestCase):
 

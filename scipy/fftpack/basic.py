@@ -227,12 +227,14 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
     """ Internal auxiliary function for fftnd, ifftnd."""
     if s is None:
         s = x.shape
-    s = tuple(s)
-    if s!=x.shape:
-        assert len(s)<=len(x.shape)
+    else:
+        s = tuple(s)
+        if len(s) > len(x.shape):
+            raise ValueError("s shape cannot be longer than x shape.")
         for i in range(-len(s),0):
             if x.shape[i]!=s[i]:
                 x = _fix_shape(x,s[i],i)
+
     if axes is None:
         return work_function(x,s,direction,overwrite_x=overwrite_x)
 
