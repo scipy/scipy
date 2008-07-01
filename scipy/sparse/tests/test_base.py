@@ -105,6 +105,16 @@ class _TestCommon:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
 
 
+    def test_nonzero(self):
+        A   = array([[1, 0, 1],[0, 1, 1],[ 0, 0, 1]])
+        Asp = self.spmatrix(A)
+
+        A_nz   = set( [tuple(ij) for ij in transpose(A.nonzero())] )
+        Asp_nz = set( [tuple(ij) for ij in transpose(Asp.nonzero())] )
+
+        assert_equal(A_nz, Asp_nz)
+
+
     def test_getrow(self):
         assert_array_equal(self.datsp.getrow(1).todense(), self.dat[1,:])
     

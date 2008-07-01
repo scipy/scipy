@@ -335,6 +335,29 @@ class spmatrix(object):
     def _imag(self):
         return self.tocsr()._imag()
 
+
+    def nonzero(self):
+        """nonzero indices
+        
+        Returns a tuple of arrays (row,col) containing the indices
+        of the non-zero elements of the matrix.
+
+        Example
+        -------
+
+        >>> from scipy.sparse import csr_matrix
+        >>> A = csr_matrix([[1,2,0],[0,0,3],[4,0,5]])
+        >>> A.nonzero()
+        (array([0, 0, 1, 2, 2]), array([0, 1, 2, 0, 2]))
+
+        """
+
+        # convert to COOrdinate format
+        A = self.tocoo()
+        nz_mask = A.data != 0 
+        return (A.row[nz_mask],A.col[nz_mask])
+
+
     def getcol(self, j):
         """Returns a copy of column j of the matrix, as an (m x 1) sparse
         matrix (column vector).
