@@ -326,7 +326,11 @@ static PyObject *odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdic
       *((int *)ap_nfe->data + (k-1)) = iwork[11];
       *((int *)ap_nje->data + (k-1)) = iwork[12];
       *((int *)ap_nqu->data + (k-1)) = iwork[13];
-      imxer = iwork[15];
+      if (istate == -5 || istate == -4) {
+        imxer = iwork[15];
+      } else {
+        imxer = -1;
+      }
       lenrw = iwork[16];
       leniw = iwork[17];
       *((int *)ap_mused->data + (k-1)) = iwork[18];
@@ -348,7 +352,20 @@ static PyObject *odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdic
 
   /* Do Full output */
     if (full_output) {
-      return Py_BuildValue("N{s:N,s:N,s:N,s:N,s:N,s:N,s:N,s:N,s:i,s:i,s:i,s:N}i",PyArray_Return(ap_yout),"hu",PyArray_Return(ap_hu),"tcur",PyArray_Return(ap_tcur),"tolsf",PyArray_Return(ap_tolsf),"tsw",PyArray_Return(ap_tsw),"nst",PyArray_Return(ap_nst),"nfe",PyArray_Return(ap_nfe),"nje",PyArray_Return(ap_nje),"nqu",PyArray_Return(ap_nqu),"imxer",imxer,"lenrw",lenrw,"leniw",leniw,"mused",PyArray_Return(ap_mused),istate);
+      return Py_BuildValue("N{s:N,s:N,s:N,s:N,s:N,s:N,s:N,s:N,s:i,s:i,s:i,s:N}i",PyArray_Return(ap_yout),
+                      "hu",PyArray_Return(ap_hu),
+                      "tcur",PyArray_Return(ap_tcur),
+                      "tolsf",PyArray_Return(ap_tolsf),
+                      "tsw",PyArray_Return(ap_tsw),
+                      "nst",PyArray_Return(ap_nst),
+                      "nfe",PyArray_Return(ap_nfe),
+                      "nje",PyArray_Return(ap_nje),
+                      "nqu",PyArray_Return(ap_nqu),
+                      "imxer",imxer,
+                      "lenrw",lenrw,
+                      "leniw",leniw,
+                      "mused",PyArray_Return(ap_mused),
+                      istate);
     }
     else {
       return Py_BuildValue("Ni",PyArray_Return(ap_yout),istate);

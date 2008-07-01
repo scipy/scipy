@@ -352,6 +352,27 @@ class BivariateSpline(object):
             assert ier==0,'Invalid input: ier='+`ier`
             return z
         raise NotImplementedError
+    
+    def integral(self, xa, xb, ya, yb):
+        """
+        Evaluate the integral of the spline over area [xa,xb] x [ya,yb].
+        
+        Parameters
+        ----------
+        xa, xb : float
+            The end-points of the x integration interval.
+        ya, yb : float
+            The end-points of the y integration interval.
+        
+        Returns
+        -------
+        integ : float
+            The value of the resulting integral.
+        
+        """
+        tx,ty,c = self.tck[:3]
+        kx,ky = self.degrees
+        return dfitpack.dblint(tx,ty,c,kx,ky,xa,xb,ya,yb)
 
 class SmoothBivariateSpline(BivariateSpline):
     """ Smooth bivariate spline approximation.

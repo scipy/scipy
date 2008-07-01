@@ -169,7 +169,7 @@ class ascii_stream(object):
             return lines[:-1]
 
     def __del__(self):
-        if hasattr(self.file,'close') and self.should_close_file:
+        if hasattr(getattr(self, 'file', None),'close') and self.should_close_file:
             self.file.close()
 
     def __getitem__(self, item):

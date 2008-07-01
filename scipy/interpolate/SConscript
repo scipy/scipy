@@ -1,0 +1,31 @@
+# Last Change: Thu Jun 12 07:00 PM 2008 J
+# vim:syntax=python
+from os.path import join as pjoin
+
+from numpy.distutils.misc_util import get_numpy_include_dirs
+from numscons import GetNumpyEnvironment, CheckF77Clib
+
+env = GetNumpyEnvironment(ARGUMENTS)
+env.Tool('f2py')
+
+config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib})
+if not config.CheckF77Clib():
+    raise Exception("Could not check F77 runtime, needed for interpolate")
+config.Finish()
+
+env.PrependUnique(CPPPATH = get_numpy_include_dirs())
+env.PrependUnique(CPPPATH = env['F2PYINCLUDEDIR'])
+env.AppendUnique(LINKFLAGSEND = env['F77_LDFLAGS'])
+
+# Build fitpack
+src = [str(s) for s in env.Glob(pjoin('fitpack', '*.f'))]
+fitpack = env.DistutilsStaticExtLibrary('fitpack', source = src)
+
+env.PrependUnique(LIBS = ['fitpack'])
+env.PrependUnique(LIBPATH = ['.'])
+
+# Build _fitpack
+env.DistutilsPythonExtension('_fitpack', source = '_fitpackmodule.c')
+
+# Build dfitpack
+env.DistutilsPythonExtension('dfitpack', source = 'fitpack.pyf')

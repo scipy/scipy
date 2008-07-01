@@ -518,8 +518,8 @@ Returns
 def kendalltau(x, y, use_ties=True, use_missing=False):
     """Computes Kendall's rank correlation tau on two variables *x* and *y*.
 
-Parameters
-----------
+    Parameters
+    ----------
     xdata: sequence
         First data list (for example, time).
     ydata: sequence
@@ -529,6 +529,13 @@ Parameters
     use_missing: {False, True} optional
         Whether missing data should be allocated a rank of 0 (False) or the
         average rank (True)
+        
+    Returns
+    -------
+        tau : float
+            Kendall tau
+        prob : float
+            Approximate 2-side p-value.
     """
     (x, y, n) = _chk_size(x, y)
     (x, y) = (x.flatten(), y.flatten())
@@ -724,6 +731,17 @@ def theilslopes(y, x=None, alpha=0.05):
             Independent variable. If None, use arange(len(y)) instead.
         alpha : float
             Confidence degree.
+            
+    Returns
+    -------
+        medslope : float
+            Theil slope
+        medintercept : float
+            Intercept of the Theil line, as median(y)-medslope*median(x)
+        lo_slope : float
+            Lower bound of the confidence interval on medslope
+        up_slope : float
+            Upper bound of the confidence interval on medslope
 
     """
     y = ma.asarray(y).flatten()
@@ -755,8 +773,8 @@ def theilslopes(y, x=None, alpha=0.05):
     sigsq -= np.sum(v*k*(k-1)*(2*k+5) for (k,v) in yties.iteritems())
     sigma = np.sqrt(sigsq)
 
-    Ru = np.round((nt - z*sigma)/2. + 1)
-    Rl = np.round((nt + z*sigma)/2.)
+    Ru = min(np.round((nt - z*sigma)/2. + 1), len(slopes)-1)
+    Rl = max(np.round((nt + z*sigma)/2.), 0)
     delta = slopes[[Rl,Ru]]
     return medslope, medinter, delta[0], delta[1]
 

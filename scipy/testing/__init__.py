@@ -8,11 +8,6 @@ away.
 import unittest
 from unittest import TestCase
 
-try:
-    import nose
-except ImportError:
-    pass
-
 import decorators as dec
 from numpy.testing.utils import *
 from utils import *

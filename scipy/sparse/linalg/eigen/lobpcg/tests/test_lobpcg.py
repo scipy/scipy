@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env pytho n
 """ Test functions for the sparse.linalg.eigen.lobpcg module
 """
 
@@ -8,7 +8,7 @@ from scipy.testing import *
 from scipy import array, arange, ones, sort, cos, pi, rand, \
      set_printoptions, r_, diag, linalg
 from scipy.linalg import eig
-from scipy.sparse.linalg.eigen import lobpcg
+from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 
 
 set_printoptions(precision=3,linewidth=90)
@@ -47,7 +47,7 @@ def compare_solutions(A,B,m):
     V = rand(n,m)
     X = linalg.orth(V)
 
-    eigs,vecs = lobpcg.lobpcg(X,A,B,residualTolerance=1e-5, maxIterations=30)
+    eigs,vecs = lobpcg(A, X, B=B, tol=1e-5, maxiter=30)
     eigs.sort()
 
     #w,v = symeig(A,B)

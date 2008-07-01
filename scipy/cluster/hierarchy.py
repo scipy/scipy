@@ -22,9 +22,6 @@ Agglomerative cluster formation
  median             the median/WPGMC algorithm. (alias)
  ward               the Ward/incremental algorithm. (alias)
 
-Distance matrix computation from a collection of raw observation vectors
-
- pdist              computes distances between each observation pair.
  squareform         converts a sq. D.M. to a condensed one and vice versa.
 
 Statistic computations on hierarchies
@@ -46,30 +43,6 @@ Tree representations of hierarchies
  cnode              represents cluster nodes in a cluster hierarchy.
  lvlist             a left-to-right traversal of the leaves.
  totree             represents a linkage matrix as a tree object.
-
-Distance functions between two vectors u and v
-
- braycurtis         the Bray-Curtis distance.
- canberra           the Canberra distance.
- chebyshev          the Chebyshev distance.
- cityblock          the Manhattan distance.
- correlation        the Correlation distance.
- cosine             the Cosine distance.
- dice               the Dice dissimilarity (boolean).
- euclidean          the Euclidean distance.
- hamming            the Hamming distance (boolean).
- jaccard            the Jaccard distance (boolean).
- kulsinski          the Kulsinski distance (boolean).
- mahalanobis        the Mahalanobis distance.
- matching           the matching dissimilarity (boolean).
- minkowski          the Minkowski distance.
- rogerstanimoto     the Rogers-Tanimoto dissimilarity (boolean).
- russellrao         the Russell-Rao dissimilarity (boolean).
- seuclidean         the normalized Euclidean distance.
- sokalmichener      the Sokal-Michener dissimilarity (boolean).
- sokalsneath        the Sokal-Sneath dissimilarity (boolean).
- sqeuclidean        the squared Euclidean distance.
- yule               the Yule dissimilarity (boolean).
 
 Predicates
 
@@ -175,31 +148,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 import numpy as np
-import _hierarchy_wrap, scipy, types, math, sys, scipy.stats
+import _hierarchy_wrap, types
+import distance
 
 _cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2,
                            'weighted': 6}
 _cpy_euclid_methods = {'centroid': 3, 'median': 4, 'ward': 5}
 _cpy_linkage_methods = set(_cpy_non_euclid_methods.keys()).union(
     set(_cpy_euclid_methods.keys()))
-_array_type = np.ndarray
 
 try:
     import warnings
     def _warning(s):
-        warnings.warn('scipy-cluster: %s' % s, stacklevel=3)
+        warnings.warn('scipy.cluster: %s' % s, stacklevel=3)
 except:
     def _warning(s):
-        print ('[WARNING] scipy-cluster: %s' % s)
-
-def _unbiased_variance(X):
-    """
-    Computes the unbiased variance of each dimension of a collection of
-    observation vectors, represented by a matrix where the rows are the
-    observations.
-    """
-    #n = np.double(X.shape[1])
-    return scipy.stats.var(X, axis=0) # * n / (n - 1.0)
+        print ('[WARNING] scipy.cluster: %s' % s)
 
 def _copy_array_if_base_present(a):
     """
@@ -452,7 +416,7 @@ def linkage(y, method='single', metric='euclidean'):
     if not isinstance(method, str):
         raise TypeError("Argument 'method' must be a string.")
 
-    y = np.asarray(y)
+    y = _convert_to_double(np.asarray(y))
 
     s = y.shape
     if len(s) == 1:
@@ -473,14 +437,14 @@ def linkage(y, method='single', metric='euclidean'):
         if method not in _cpy_linkage_methods:
             raise ValueError('Invalid method: %s' % method)
         if method in _cpy_non_euclid_methods.keys():
-            dm = pdist(X, metric)
+            dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_wrap(dm, Z, n, \
                                        int(_cpy_non_euclid_methods[method]))
         elif method in _cpy_euclid_methods.keys():
             if metric != 'euclidean':
                 raise ValueError('Method %s requires the distance metric to be euclidean' % s)
-            dm = pdist(X, metric)
+            dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_euclid_wrap(dm, Z, X, m, n,
                                               int(_cpy_euclid_methods[method]))
@@ -638,6 +602,8 @@ def totree(Z, rd=False):
     functions in this library.
     """
 
+    Z = np.asarray(Z)
+
     is_valid_linkage(Z, throw=True, name='Z')
 
     # The number of original objects is equal to the number of rows minus
@@ -721,7 +687,7 @@ def squareform(X, force="no", checks=True):
     transformation.
     """
 
-    X = np.asarray(X)
+    X = _convert_to_double(np.asarray(X))
 
     if not np.issubsctype(X, np.double):
         raise TypeError('A double array must be passed.')
@@ -730,12 +696,14 @@ def squareform(X, force="no", checks=True):
 
     # X = squareform(v)
     if len(s) == 1 and force != 'tomatrix':
+        if X.shape[0] == 0:
+            return np.zeros((1,1), dtype=np.double)
+
         # Grab the closest value to the square root of the number
         # of elements times 2 to see if the number of elements
         # is indeed a binomial coefficient.
         d = int(np.ceil(np.sqrt(X.shape[0] * 2)))
 
-        print d, s[0]
         # Check that v is of valid dimensions.
         if d * (d - 1) / 2 != int(s[0]):
             raise ValueError('Incompatible vector size. It must be a binomial coefficient n choose 2 for some integer n >= 2.')
@@ -760,12 +728,15 @@ def squareform(X, force="no", checks=True):
             raise ValueError('The matrix argument must be square.')
         if checks:
             if np.sum(np.sum(X == X.transpose())) != np.product(X.shape):
-                raise ValueError('The distance matrix must be symmetrical.')
+                raise ValueError('The distance matrix array must be symmetrical.')
             if (X.diagonal() != 0).any():
-                raise ValueError('The distance matrix must have zeros along the diagonal.')
+                raise ValueError('The distance matrix array must have zeros along the diagonal.')
 
         # One-side of the dimensions is set here.
         d = s[0]
+
+        if d <= 1:
+            return np.array([], dtype=np.double)
 
         # Create a vector.
         v = np.zeros(((d * (d - 1) / 2),), dtype=np.double)
@@ -780,716 +751,21 @@ def squareform(X, force="no", checks=True):
     elif len(s) != 2 and force.lower() == 'tomatrix':
         raise ValueError("Forcing 'tomatrix' but input X is not a distance vector.")
     else:
-        raise ValueError('The first argument must be a vector or matrix. A %d-dimensional array is not permitted' % len(s))
-
-def minkowski(u, v, p):
-    """
-    d = minkowski(u, v, p)
-
-      Returns the Minkowski distance between two vectors u and v,
-
-        ||u-v||_p = (\sum {|u_i - v_i|^p})^(1/p).
-    """
-    if p < 1:
-        raise ValueError("p must be at least 1")
-    return math.pow((abs(u-v)**p).sum(), 1.0/p)
-
-def euclidean(u, v):
-    """
-    d = euclidean(u, v)
-
-      Computes the Euclidean distance between two n-vectors u and v, ||u-v||_2
-    """
-    q=np.matrix(u-v)
-    return np.sqrt((q*q.T).sum())
-
-def sqeuclidean(u, v):
-    """
-    d = sqeuclidean(u, v)
-
-      Computes the squared Euclidean distance between two n-vectors u and v,
-        (||u-v||_2)^2.
-    """
-    return ((u-v)*(u-v).T).sum()
-
-def cosine(u, v):
-    """
-    d = cosine(u, v)
-
-      Computes the Cosine distance between two n-vectors u and v,
-        (1-uv^T)/(||u||_2 * ||v||_2).
-    """
-    return (1.0 - (scipy.dot(u, v.T) / \
-                   (np.sqrt(scipy.dot(u, u.T)) * np.sqrt(scipy.dot(v, v.T)))))
-
-def correlation(u, v):
-    """
-    d = correlation(u, v)
-
-      Computes the correlation distance between two n-vectors u and v,
-
-            1 - (u - n|u|_1)(v - n|v|_1)^T
-            --------------------------------- ,
-            |(u - n|u|_1)|_2 |(v - n|v|_1)|^T
-
-      where |*|_1 is the Manhattan norm and n is the common dimensionality
-      of the vectors.
-    """
-    umu = u.mean()
-    vmu = v.mean()
-    um = u - umu
-    vm = v - vmu
-    return 1.0 - (scipy.dot(um, vm) /
-                  (np.sqrt(scipy.dot(um, um)) \
-                   * np.sqrt(scipy.dot(vm, vm))))
-
-def hamming(u, v):
-    """
-    d = hamming(u, v)
-
-      Computes the Hamming distance between two n-vectors u and v,
-      which is simply the proportion of disagreeing components in u
-      and v. If u and v are boolean vectors, the hamming distance is
-
-         (c_{01} + c_{10}) / n
-
-      where c_{ij} is the number of occurrences of
-
-         u[k] == i and v[k] == j
-
-      for k < n.
-    """
-    return (u != v).mean()
-
-def jaccard(u, v):
-    """
-    d = jaccard(u, v)
-
-      Computes the Jaccard-Needham dissimilarity between two boolean
-      n-vectors u and v, which is
-
-              c_{TF} + c_{FT}
-         ------------------------
-         c_{TT} + c_{FT} + c_{TF}
-
-      where c_{ij} is the number of occurrences of
-
-         u[k] == i and v[k] == j
-
-      for k < n.
-    """
-    return (np.double(np.bitwise_and((u != v),
-                     np.bitwise_or(u != 0, v != 0)).sum()) 
-            /  np.double(np.bitwise_or(u != 0, v != 0).sum()))
-
-def kulsinski(u, v):
-    """
-    d = kulsinski(u, v)
-
-      Computes the Kulsinski dissimilarity between two boolean n-vectors
-      u and v, which is
-
-         c_{TF} + c_{FT} - c_{TT} + n
-         ----------------------------
-              c_{FT} + c_{TF} + n
-
-      where c_{ij} is the number of occurrences of
-
-         u[k] == i and v[k] == j
-
-      for k < n.
-    """
-    (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
-
-    return (ntf + nft - ntt + n) / (ntf + nft + n)
-
-def seuclidean(u, v, V):
-    """
-    d = seuclidean(u, v, V)
-
-      Returns the standardized Euclidean distance between two
-      n-vectors u and v. V is a m-dimensional vector of component
-      variances. It is usually computed among a larger collection vectors.
-    """
-    V = np.asarray(V)
-    if len(V.shape) != 1 or V.shape[0] != u.shape[0] or u.shape[0] != v.shape[0]:
-        raise TypeError('V must be a 1-D array of the same dimension as u and v.')
-    return np.sqrt(((u-v)**2 / V).sum())
-
-def cityblock(u, v):
-    """
-    d = cityblock(u, v)
-
-      Computes the Manhattan distance between two n-vectors u and v,
-         \sum {u_i-v_i}.
-    """
-    return abs(u-v).sum()
-
-def mahalanobis(u, v, VI):
-    """
-    d = mahalanobis(u, v, VI)
-
-      Computes the Mahalanobis distance between two n-vectors u and v,
-        (u-v)VI(u-v)^T
-      where VI is the inverse covariance matrix.
-    """
-    V = np.asarray(V)
-    return np.sqrt(np.dot(np.dot((u-v),VI),(u-v).T).sum())
-
-def chebyshev(u, v):
-    """
-    d = chebyshev(u, v)
-
-      Computes the Chebyshev distance between two n-vectors u and v,
-        \max {|u_i-v_i|}.
-    """
-    return max(abs(u-v))
-
-def braycurtis(u, v):
-    """
-    d = braycurtis(u, v)
-
-      Computes the Bray-Curtis distance between two n-vectors u and v,
-        \sum{|u_i-v_i|} / \sum{|u_i+v_i|}.
-    """
-    return abs(u-v).sum() / abs(u+v).sum()
-
-def canberra(u, v):
-    """
-    d = canberra(u, v)
-
-      Computes the Canberra distance between two n-vectors u and v,
-        \sum{|u_i-v_i|} / \sum{|u_i|+|v_i}.
-    """
-    return abs(u-v).sum() / (abs(u).sum() + abs(v).sum())
-
-def _nbool_correspond_all(u, v):
-    not_u = scipy.bitwise_not(u)
-    not_v = scipy.bitwise_not(v)
-    nff = scipy.bitwise_and(not_u, not_v).sum()
-    nft = scipy.bitwise_and(not_u, v).sum()
-    ntf = scipy.bitwise_and(u, not_v).sum()
-    ntt = scipy.bitwise_and(u, v).sum()
-    return (nff, nft, ntf, ntt)
-
-def _nbool_correspond_ft_tf(u, v):
-    not_u = scipy.bitwise_not(u)
-    not_v = scipy.bitwise_not(v)
-    nft = scipy.bitwise_and(not_u, v).sum()
-    ntf = scipy.bitwise_and(u, not_v).sum()
-    return (nft, ntf)
-
-def yule(u, v):
-    """
-    d = yule(u, v)
-      Computes the Yule dissimilarity between two boolean n-vectors u and v,
-
-                  R
-         ---------------------
-         c_{TT} + c_{FF} + R/2
-
-      where c_{ij} is the number of occurrences of
-
-         u[k] == i and v[k] == j
-
-      for k < n, and
-
-         R = 2.0 * (c_{TF} + c_{FT}).
-    """
-    (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
-    return float(2.0 * ntf * nft) / float(ntt * nff + ntf * nft)
-
-def matching(u, v):
-    """
-    d = matching(u, v)
-
-      Computes the Matching dissimilarity between two boolean n-vectors
-      u and v, which is
-
-         (c_{TF} + c_{FT}) / n
-
-      where c_{ij} is the number of occurrences of
-
-         u[k] == i and v[k] == j
-
-      for k < n.
-    """
-    (nft, ntf) = _nbool_correspond_ft_tf(u, v)
-    return float(nft + ntf) / float(len(u))
-
-def dice(u, v):
-    """
-    d = dice(u, v)
-
-      Computes the Dice dissimilarity between two boolean n-vectors
-      u and v, which is
-
-                c_{TF} + c_{FT}
-         ----------------------------
-         2 * c_{TT} + c_{FT} + c_{TF}
-
-      where c_{ij} is the number of occurrences of
-
-         u[k] == i and v[k] == j
-
-      for k < n.
-    """
-    ntt = scipy.bitwise_and(u, v).sum()
-    (nft, ntf) = _nbool_correspond_ft_tf(u, v)
-    return float(ntf + nft)/float(2.0 * ntt + ntf + nft)
-
-def rogerstanimoto(u, v):
-    """
-    d = rogerstanimoto(u, v)
-
-      Computes the Rogers-Tanimoto dissimilarity between two boolean
-      n-vectors u and v,
-
-                  R
-         -------------------
-         c_{TT} + c_{FF} + R
-
-      where c_{ij} is the number of occurrences of
-
-         u[k] == i and v[k] == j
-
-      for k < n, and
-
-         R = 2.0 * (c_{TF} + c_{FT}).
-
-    """
-    (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
-    return float(2.0 * (ntf + nft)) / float(ntt + nff + (2.0 * (ntf + nft)))
-
-def russellrao(u, v):
-    """
-    d = russellrao(u, v)
-
-      Computes the Russell-Rao dissimilarity between two boolean n-vectors
-      u and v, (n - c_{TT}) / n where c_{ij} is the number of occurrences
-      of u[k] == i and v[k] == j for k < n.
-    """
-    ntt = scipy.bitwise_and(u, v).sum()
-    return float(len(u) - ntt) / float(len(u))
-
-def sokalmichener(u, v):
-    """
-    d = sokalmichener(u, v)
-
-      Computes the Sokal-Michener dissimilarity between two boolean vectors
-      u and v, 2R / (S + 2R) where c_{ij} is the number of occurrences of
-      u[k] == i and v[k] == j for k < n and R = 2 * (c_{TF} + c{FT}) and
-      S = c_{FF} + c_{TT}.
-    """
-    ntt = scipy.bitwise_and(u, v).sum()
-    nff = scipy.bitwise_and(scipy.bitwise_not(u), scipy.bitwise_not(v)).sum()
-    (nft, ntf) = _nbool_correspond_ft_tf(u, v)
-    return float(2.0 * (ntf + nft))/float(ntt + nff + 2.0 * (ntf + nft))
-
-def sokalsneath(u, v):
-    """
-    d = sokalsneath(u, v)
-
-      Computes the Sokal-Sneath dissimilarity between two boolean vectors
-      u and v, 2R / (c_{TT} + 2R) where c_{ij} is the number of occurrences
-      of u[k] == i and v[k] == j for k < n and R = 2 * (c_{TF} + c{FT}).
-    """
-    ntt = scipy.bitwise_and(u, v).sum()
-    (nft, ntf) = _nbool_correspond_ft_tf(u, v)
-    return float(2.0 * (ntf + nft))/float(ntt + 2.0 * (ntf + nft))
-
-# V means pass covariance
-_pdist_metric_info = {'euclidean': ['double'],
-                      'seuclidean': ['double'],
-                      'sqeuclidean': ['double'],
-                      'minkowski': ['double'],
-                      'cityblock': ['double'],
-                      'cosine': ['double'],
-                      'correlation': ['double'],
-                      'hamming': ['double','bool'],
-                      'jaccard': ['double', 'bool'],
-                      'chebyshev': ['double'],
-                      'canberra': ['double'],
-                      'braycurtis': ['double'],
-                      'mahalanobis': ['bool'],
-                      'yule': ['bool'],
-                      'matching': ['bool'],
-                      'dice': ['bool'],
-                      'kulsinski': ['bool'],
-                      'rogerstanimoto': ['bool'],
-                      'russellrao': ['bool'],
-                      'sokalmichener': ['bool'],
-                      'sokalsneath': ['bool']}
-
-def pdist(X, metric='euclidean', p=2, V=None, VI=None):
-    """ Y = pdist(X, method='euclidean', p=2)
-
-           Computes the distance between m original observations in
-           n-dimensional space. Returns a condensed distance matrix Y.
-           For each i and j (i<j), the metric dist(u=X[i], v=X[j]) is
-           computed and stored in the ij'th entry. See squareform
-           to learn how to retrieve this entry.
-
-        1. Y = pdist(X)
-
-          Computes the distance between m points using Euclidean distance
-          (2-norm) as the distance metric between the points. The points
-          are arranged as m n-dimensional row vectors in the matrix X.
-
-        2. Y = pdist(X, 'minkowski', p)
-
-          Computes the distances using the Minkowski distance ||u-v||_p
-          (p-norm) where p>=1.
-
-        3. Y = pdist(X, 'cityblock')
-
-          Computes the city block or Manhattan distance between the
-          points.
-
-        4. Y = pdist(X, 'seuclidean', V=None)
-
-          Computes the standardized Euclidean distance. The standardized
-          Euclidean distance between two n-vectors u and v is
-
-            sqrt(\sum {(u_i-v_i)^2 / V[x_i]}).
-
-          V is the variance vector; V[i] is the variance computed over all
-          the i'th components of the points. If not passed, it is
-          automatically computed.
-
-        5. Y = pdist(X, 'sqeuclidean')
-
-          Computes the squared Euclidean distance ||u-v||_2^2 between
-          the vectors.
-
-        6. Y = pdist(X, 'cosine')
-
-          Computes the cosine distance between vectors u and v,
-
-               1 - uv^T
-             -----------
-             |u|_2 |v|_2
-
-          where |*|_2 is the 2 norm of its argument *.
-
-        7. Y = pdist(X, 'correlation')
-
-          Computes the correlation distance between vectors u and v. This is
-
-            1 - (u - n|u|_1)(v - n|v|_1)^T
-            --------------------------------- ,
-            |(u - n|u|_1)|_2 |(v - n|v|_1)|^T
-
-          where |*|_1 is the Manhattan (or 1-norm) of its argument *,
-          and n is the common dimensionality of the vectors.
-
-        8. Y = pdist(X, 'hamming')
-
-          Computes the normalized Hamming distance, or the proportion
-          of those vector elements between two n-vectors u and v which
-          disagree. To save memory, the matrix X can be of type boolean.
-
-        9. Y = pdist(X, 'jaccard')
-
-          Computes the Jaccard distance between the points. Given two
-          vectors, u and v, the Jaccard distance is the proportion of
-          those elements u_i and v_i that disagree where at least one
-          of them is non-zero.
-
-        10. Y = pdist(X, 'chebyshev')
-
-          Computes the Chebyshev distance between the points. The
-          Chebyshev distance between two n-vectors u and v is the maximum
-          norm-1 distance between their respective elements. More
-          precisely, the distance is given by
-
-            d(u,v) = max {|u_i-v_i|}.
-
-        11. Y = pdist(X, 'canberra')
-
-          Computes the Canberra distance between the points. The
-          Canberra distance between two points u and v is
-
-                      |u_1-v_1|     |u_2-v_2|           |u_n-v_n|
-            d(u,v) = ----------- + ----------- + ... + -----------
-                     |u_1|+|v_1|   |u_2|+|v_2|         |u_n|+|v_n|
-
-        12. Y = pdist(X, 'braycurtis')
-
-          Computes the Bray-Curtis distance between the points. The
-          Bray-Curtis distance between two points u and v is
-
-                     |u_1-v_1| + |u_2-v_2| + ... + |u_n-v_n|
-            d(u,v) = ---------------------------------------
-                     |u_1+v_1| + |u_2+v_2| + ... + |u_n+v_n|
-
-        13. Y = pdist(X, 'mahalanobis', VI=None)
-
-          Computes the Mahalanobis distance between the points. The
-          Mahalanobis distance between two points u and v is
-                (u-v)(1/V)(u-v)^T
-          where (1/V) is the inverse covariance. If VI is not None,
-          VI will be used as the inverse covariance matrix.
-
-        14. Y = pdist(X, 'yule')
-
-          Computes the Yule distance between each pair of boolean
-          vectors. (see yule function documentation)
-
-        15. Y = pdist(X, 'matching')
-
-          Computes the matching distance between each pair of boolean
-          vectors. (see matching function documentation)
-
-        16. Y = pdist(X, 'dice')
-
-          Computes the Dice distance between each pair of boolean
-          vectors. (see dice function documentation)
-
-        17. Y = pdist(X, 'kulsinski')
-
-          Computes the Kulsinski distance between each pair of
-          boolean vectors. (see kulsinski function documentation)
-
-        17. Y = pdist(X, 'rogerstanimoto')
-
-          Computes the Rogers-Tanimoto distance between each pair of
-          boolean vectors. (see rogerstanimoto function documentation)
-
-        18. Y = pdist(X, 'russellrao')
-
-          Computes the Russell-Rao distance between each pair of
-          boolean vectors. (see russellrao function documentation)
-
-        19. Y = pdist(X, 'sokalmichener')
-
-          Computes the Sokal-Michener distance between each pair of
-          boolean vectors. (see sokalmichener function documentation)
-
-        20. Y = pdist(X, 'sokalsneath')
-
-          Computes the Sokal-Sneath distance between each pair of
-          boolean vectors. (see sokalsneath function documentation)
-
-        21. Y = pdist(X, f)
-
-          Computes the distance between all pairs of vectors in X
-          using the user supplied 2-arity function f. For example,
-          Euclidean distance between the vectors could be computed
-          as follows,
-
-            dm = pdist(X, (lambda u, v: np.sqrt(((u-v)*(u-v).T).sum())))
-
-          Note that you should avoid passing a reference to one of
-          the distance functions defined in this library. For example,
-
-            dm = pdist(X, sokalsneath)
-
-          would calculate the pair-wise distances between the vectors
-          in X using the Python function sokalsneath. This would result
-          in sokalsneath being called {n \choose 2} times, which is
-          inefficient. Instead, the optimized C version is more
-          efficient, and we call it using the following syntax.
-
-            dm = pdist(X, 'sokalsneath')
-       """
-#         21. Y = pdist(X, 'test_Y')
-#
-#           Computes the distance between all pairs of vectors in X
-#           using the distance metric Y but with a more succint,
-#           verifiable, but less efficient implementation.
-
-
-    X = np.asarray(X)
-
-    if np.issubsctype(X, np.floating) and not np.issubsctype(X, np.double):
-        raise TypeError('Floating point arrays must be 64-bit (got %r).' %
-        (X.dtype.type,))
-
-    # The C code doesn't do striding.
-    [X] = _copy_arrays_if_base_present([X])
-
-    s = X.shape
-
-    if len(s) != 2:
-        raise ValueError('A 2-dimensional array must be passed.');
-
-    m = s[0]
-    n = s[1]
-    dm = np.zeros((m * (m - 1) / 2,), dtype=np.double)
-
-    mtype = type(metric)
-    if mtype is types.FunctionType:
-        k = 0
-        if metric == minkowski:
-            for i in xrange(0, m - 1):
-                for j in xrange(i+1, m):
-                    dm[k] = minkowski(X[i, :], X[j, :], p)
-                    k = k + 1
-        elif metric == seuclidean:
-            for i in xrange(0, m - 1):
-                for j in xrange(i+1, m):
-                    dm[k] = seuclidean(X[i, :], X[j, :], V)
-                    k = k + 1
-        elif metric == mahalanobis:
-            for i in xrange(0, m - 1):
-                for j in xrange(i+1, m):
-                    dm[k] = mahalanobis(X[i, :], X[j, :], V)
-                    k = k + 1
-        else:
-            for i in xrange(0, m - 1):
-                for j in xrange(i+1, m):
-                    dm[k] = metric(X[i, :], X[j, :])
-                    k = k + 1
-
-    elif mtype is types.StringType:
-        mstr = metric.lower()
-
-        if X.dtype != np.double and \
-               (mstr != 'hamming' and mstr != 'jaccard'):
-            TypeError('A double array must be passed.')
-        if mstr in set(['euclidean', 'euclid', 'eu', 'e']):
-            _hierarchy_wrap.pdist_euclidean_wrap(X, dm)
-        elif mstr in set(['sqeuclidean']):
-            _hierarchy_wrap.pdist_euclidean_wrap(X, dm)
-            dm = dm ** 2.0
-        elif mstr in set(['cityblock', 'cblock', 'cb', 'c']):
-            _hierarchy_wrap.pdist_city_block_wrap(X, dm)
-        elif mstr in set(['hamming', 'hamm', 'ha', 'h']):
-            if X.dtype == np.double:
-                _hierarchy_wrap.pdist_hamming_wrap(X, dm)
-            elif X.dtype == bool:
-                _hierarchy_wrap.pdist_hamming_bool_wrap(X, dm)
-            else:
-                raise TypeError('Invalid input array value type %s '
-                                'for hamming.' % str(X.dtype))
-        elif mstr in set(['jaccard', 'jacc', 'ja', 'j']):
-            if X.dtype == np.double:
-                _hierarchy_wrap.pdist_jaccard_wrap(X, dm)
-            elif X.dtype == np.bool:
-                _hierarchy_wrap.pdist_jaccard_bool_wrap(X, dm)
-            else:
-                raise TypeError('Invalid input array value type %s for '
-                                'jaccard.' % str(X.dtype))
-        elif mstr in set(['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch']):
-            _hierarchy_wrap.pdist_chebyshev_wrap(X, dm)
-        elif mstr in set(['minkowski', 'mi', 'm']):
-            _hierarchy_wrap.pdist_minkowski_wrap(X, dm, p)
-        elif mstr in set(['seuclidean', 'se', 's']):
-            if V is not None:
-                if type(V) is not _array_type:
-                    raise TypeError('Variance vector V must be a numpy array')
-                if V.dtype != np.double:
-                    raise TypeError('Variance vector V must contain doubles.')
-                if len(V.shape) != 1:
-                    raise ValueError('Variance vector V must be one-dimensional.')
-                if V.shape[0] != n:
-                    raise ValueError('Variance vector V must be of the same dimension as the vectors on which the distances are computed.')
-                # The C code doesn't do striding.
-                [VV] = _copy_arrays_if_base_present([V])
-            else:
-                VV = _unbiased_variance(X)
-            _hierarchy_wrap.pdist_seuclidean_wrap(X, VV, dm)
-        # Need to test whether vectorized cosine works better.
-        # Find out: Is there a dot subtraction operator so I can
-        # subtract matrices in a similar way to multiplying them?
-        # Need to get rid of as much unnecessary C code as possible.
-        elif mstr in set(['cosine_old', 'cos_old']):
-            norms = np.sqrt(np.sum(X * X, axis=1))
-            _hierarchy_wrap.pdist_cosine_wrap(X, dm, norms)
-        elif mstr in set(['cosine', 'cos']):
-            norms = np.sqrt(np.sum(X * X, axis=1))
-            nV = norms.reshape(m, 1)
-            # The numerator u * v
-            nm = np.dot(X, X.T)
-            # The denom. ||u||*||v||
-            de = np.dot(nV, nV.T);
-            dm = 1 - (nm / de)
-            dm[xrange(0,m),xrange(0,m)] = 0
-            dm = squareform(dm)
-        elif mstr in set(['correlation', 'co']):
-            X2 = X - X.mean(1)[:,np.newaxis]
-            #X2 = X - np.matlib.repmat(np.mean(X, axis=1).reshape(m, 1), 1, n)
-            norms = np.sqrt(np.sum(X2 * X2, axis=1))
-            _hierarchy_wrap.pdist_cosine_wrap(X2, dm, norms)
-        elif mstr in set(['mahalanobis', 'mahal', 'mah']):
-            if VI is not None:
-                if type(VI) != _array_type:
-                    raise TypeError('VI must be a numpy array.')
-                if VI.dtype != np.double:
-                    raise TypeError('The array must contain 64-bit floats.')
-                [VI] = _copy_arrays_if_base_present([VI])
-            else:
-                V = np.cov(X.T)
-                VI = np.linalg.inv(V).T.copy()
-            # (u-v)V^(-1)(u-v)^T
-            _hierarchy_wrap.pdist_mahalanobis_wrap(X, VI, dm)
-        elif mstr == 'canberra':
-            _hierarchy_wrap.pdist_canberra_wrap(X, dm)
-        elif mstr == 'braycurtis':
-            _hierarchy_wrap.pdist_bray_curtis_wrap(X, dm)
-        elif mstr == 'yule':
-            _hierarchy_wrap.pdist_yule_bool_wrap(X, dm)
-        elif mstr == 'matching':
-            _hierarchy_wrap.pdist_matching_bool_wrap(X, dm)
-        elif mstr == 'kulsinski':
-            _hierarchy_wrap.pdist_kulsinski_bool_wrap(X, dm)
-        elif mstr == 'dice':
-            _hierarchy_wrap.pdist_dice_bool_wrap(X, dm)
-        elif mstr == 'rogerstanimoto':
-            _hierarchy_wrap.pdist_rogerstanimoto_bool_wrap(X, dm)
-        elif mstr == 'russellrao':
-            _hierarchy_wrap.pdist_russellrao_bool_wrap(X, dm)
-        elif mstr == 'sokalmichener':
-            _hierarchy_wrap.pdist_sokalmichener_bool_wrap(X, dm)
-        elif mstr == 'sokalsneath':
-            _hierarchy_wrap.pdist_sokalsneath_bool_wrap(X, dm)
-        elif metric == 'test_euclidean':
-            dm = pdist(X, euclidean)
-        elif metric == 'test_sqeuclidean':
-            if V is None:
-                V = _unbiased_variance(X)
-            dm = pdist(X, lambda u, v: seuclidean(u, v, V))
-        elif metric == 'test_braycurtis':
-            dm = pdist(X, braycurtis)
-        elif metric == 'test_mahalanobis':
-            if VI is None:
-                V = np.cov(X.T)
-                VI = np.linalg.inv(V)
-            [VI] = _copy_arrays_if_base_present([VI])
-            # (u-v)V^(-1)(u-v)^T
-            dm = pdist(X, (lambda u, v: mahalanobis(u, v, VI)))
-        elif metric == 'test_cityblock':
-            dm = pdist(X, cityblock)
-        elif metric == 'test_minkowski':
-            dm = pdist(X, minkowski, p)
-        elif metric == 'test_cosine':
-            dm = pdist(X, cosine)
-        elif metric == 'test_correlation':
-            dm = pdist(X, correlation)
-        elif metric == 'test_hamming':
-            dm = pdist(X, hamming)
-        elif metric == 'test_jaccard':
-            dm = pdist(X, jaccard)
-        elif metric == 'test_chebyshev' or metric == 'test_chebychev':
-            dm = pdist(X, chebyshev)
-        elif metric == 'test_yule':
-            dm = pdist(X, yule)
-        elif metric == 'test_matching':
-            dm = pdist(X, matching)
-        elif metric == 'test_dice':
-            dm = pdist(X, dice)
-        elif metric == 'test_rogerstanimoto':
-            dm = pdist(X, rogerstanimoto)
-        elif metric == 'test_russellrao':
-            dm = pdist(X, russellrao)
-        elif metric == 'test_sokalsneath':
-            dm = pdist(X, sokalsneath)
-        else:
-            raise ValueError('Unknown Distance Metric: %s' % mstr)
-    else:
-        raise TypeError('2nd argument metric must be a string identifier or a function.')
-    return dm
+        raise ValueError('The first argument must be one or two dimensional array. A %d-dimensional array is not permitted' % len(s))
+
+def _convert_to_bool(X):
+    if X.dtype != np.bool:
+        X = np.bool_(X)
+    if not X.flags.contiguous:
+        X = X.copy()
+    return X
+
+def _convert_to_double(X):
+    if X.dtype != np.double:
+        X = np.double(X)
+    if not X.flags.contiguous:
+        X = X.copy()
+    return X
 
 def cophenet(*args, **kwargs):
     """
@@ -1518,6 +794,8 @@ def cophenet(*args, **kwargs):
       Also returns the cophenetic distance matrix in condensed form.
 
     """
+    Z = np.asarray(Z)
+
     nargs = len(args)
 
     if nargs < 1:
@@ -1531,7 +809,7 @@ def cophenet(*args, **kwargs):
     zz = np.zeros((n*(n-1)/2,), dtype=np.double)
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
-    [Z] = _copy_arrays_if_base_present([Z])
+    Z = _convert_to_double(Z)
 
     _hierarchy_wrap.cophenetic_distances_wrap(Z, zz, int(n))
     if nargs == 1:
@@ -1575,6 +853,7 @@ def inconsistent(Z, d=2):
       This function behaves similarly to the MATLAB(TM) inconsistent
       function.
     """
+    Z = np.asarray(Z)
 
     Zs = Z.shape
     is_valid_linkage(Z, throw=True, name='Z')
@@ -1607,7 +886,7 @@ def from_mlab_linkage(Z):
        the number of original observations (leaves) in the non-singleton
        cluster i.
     """
-    is_valid_linkage(Z, throw=True, name='Z')
+    Z = np.asarray(Z)
     Zs = Z.shape
     Zpart = Z[:,0:2]
     Zd = Z[:,2].reshape(Zs[0], 1)
@@ -1629,6 +908,7 @@ def to_mlab_linkage(Z):
     last column removed and the cluster indices converted to use
     1..N indexing.
     """
+    Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
 
     return np.hstack([Z[:,0:2] + 1, Z[:,2]])
@@ -1641,6 +921,7 @@ def is_monotonic(Z):
       if for every cluster s and t joined, the distance between them is
       no less than the distance between any previously joined clusters.
     """
+    Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
 
     # We expect the i'th value to be greater than its successor.
@@ -1655,18 +936,19 @@ def is_valid_im(R, warning=False, throw=False, name=None):
       must be nonnegative. The link counts R[:,2] must be positive and
       no greater than n-1.
     """
+    R = np.asarray(R)
     valid = True
     try:
-        if type(R) is not _array_type:
+        if type(R) != np.ndarray:
             if name:
                 raise TypeError('Variable \'%s\' passed as inconsistency matrix is not a numpy array.' % name)
             else:
                 raise TypeError('Variable passed as inconsistency matrix is not a numpy array.')
         if R.dtype != np.double:
             if name:
-                raise TypeError('Inconsistency matrix \'%s\' must contain doubles (float64).' % name)
+                raise TypeError('Inconsistency matrix \'%s\' must contain doubles (double).' % name)
             else:
-                raise TypeError('Inconsistency matrix must contain doubles (float64).')
+                raise TypeError('Inconsistency matrix must contain doubles (double).')
         if len(R.shape) != 2:
             if name:
                 raise ValueError('Inconsistency matrix \'%s\' must have shape=2 (i.e. be two-dimensional).' % name)
@@ -1714,18 +996,19 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
       variable.
 
     """
+    Z = np.asarray(Z)
     valid = True
     try:
-        if type(Z) is not _array_type:
+        if type(Z) != np.ndarray:
             if name:
                 raise TypeError('\'%s\' passed as a linkage is not a valid array.' % name)
             else:
                 raise TypeError('Variable is not a valid array.')
         if Z.dtype != np.double:
             if name:
-                raise TypeError('Linkage matrix \'%s\' must contain doubles (float64).' % name)
+                raise TypeError('Linkage matrix \'%s\' must contain doubles (double).' % name)
             else:
-                raise TypeError('Linkage matrix must contain doubles (float64).')
+                raise TypeError('Linkage matrix must contain doubles (double).')
         if len(Z.shape) != 2:
             if name:
                 raise ValueError('Linkage matrix \'%s\' must have shape=2 (i.e. be two-dimensional).' % name)
@@ -1737,12 +1020,13 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
             else:
                 raise ValueError('Linkage matrix must have 4 columns.')
         n = Z.shape[0]
-        if not ((Z[:,0]-xrange(n-1, n*2-1) < 0).any()) or \
-           not (Z[:,1]-xrange(n-1, n*2-1) < 0).any():
-            if name:
-                raise ValueError('Linkage \'%s\' contains negative indices.' % name)
-            else:
-                raise ValueError('Linkage contains negative indices.')
+        if n > 1:
+            if ((Z[:,0] < 0).any() or
+                (Z[:,1] < 0).any()):
+                if name:
+                    raise ValueError('Linkage \'%s\' contains negative indices.' % name)
+                else:
+                    raise ValueError('Linkage contains negative indices.')
     except Exception, e:
         if throw:
             raise
@@ -1774,18 +1058,19 @@ def is_valid_y(y, warning=False, throw=False, name=None):
       referencing the offending variable.
 
     """
+    y = np.asarray(y)
     valid = True
     try:
-        if type(y) is not _array_type:
+        if type(y) != np.ndarray:
             if name:
                 raise TypeError('\'%s\' passed as a condensed distance matrix is not a numpy array.' % name)
             else:
                 raise TypeError('Variable is not a numpy array.')
         if y.dtype != np.double:
             if name:
-                raise TypeError('Condensed distance matrix \'%s\' must contain doubles (float64).' % name)
+                raise TypeError('Condensed distance matrix \'%s\' must contain doubles (double).' % name)
             else:
-                raise TypeError('Condensed distance matrix must contain doubles (float64).')
+                raise TypeError('Condensed distance matrix must contain doubles (double).')
         if len(y.shape) != 1:
             if name:
                 raise ValueError('Condensed distance matrix \'%s\' must have shape=1 (i.e. be one-dimensional).' % name)
@@ -1807,7 +1092,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     return valid
 
 
-def is_valid_dm(D, t=0.0):
+def is_valid_dm(D, tol=0.0, throw=False, name="D"):
     """
     is_valid_dm(D)
 
@@ -1815,12 +1100,12 @@ def is_valid_dm(D, t=0.0):
       Distance matrices must be 2-dimensional numpy arrays containing
       doubles. They must have a zero-diagonal, and they must be symmetric.
 
-    is_valid_dm(D, t)
+    is_valid_dm(D, tol)
 
       Returns True if the variable D passed is a valid distance matrix.
       Small numerical differences in D and D.T and non-zeroness of the
       diagonal are ignored if they are within the tolerance specified
-      by t.
+      by tol.
 
     is_valid_dm(..., warning=True, name='V')
 
@@ -1835,25 +1120,26 @@ def is_valid_dm(D, t=0.0):
       the offending variable.
 
     """
-
+    D = np.asarray(D)
     valid = True
     try:
-        if type(D) is not _array_type:
+        if type(D) != np.ndarray:
             if name:
                 raise TypeError('\'%s\' passed as a distance matrix is not a numpy array.' % name)
             else:
                 raise TypeError('Variable is not a numpy array.')
+        s = D.shape
         if D.dtype != np.double:
             if name:
-                raise TypeError('Distance matrix \'%s\' must contain doubles (float64).' % name)
+                raise TypeError('Distance matrix \'%s\' must contain doubles (double).' % name)
             else:
-                raise TypeError('Distance matrix must contain doubles (float64).')
+                raise TypeError('Distance matrix must contain doubles (double).')
         if len(D.shape) != 2:
             if name:
                 raise ValueError('Distance matrix \'%s\' must have shape=2 (i.e. be two-dimensional).' % name)
             else:
                 raise ValueError('Distance matrix must have shape=2 (i.e. be two-dimensional).')
-        if t == 0.0:
+        if tol == 0.0:
             if not (D == D.T).all():
                 if name:
                     raise ValueError('Distance matrix \'%s\' must be symmetric.' % name)
@@ -1865,16 +1151,16 @@ def is_valid_dm(D, t=0.0):
                 else:
                     raise ValueError('Distance matrix diagonal must be zero.')
         else:
-            if not (D - D.T <= t).all():
+            if not (D - D.T <= tol).all():
                 if name:
-                    raise ValueError('Distance matrix \'%s\' must be symmetric within tolerance %d.' % (name, t))
+                    raise ValueError('Distance matrix \'%s\' must be symmetric within tolerance %d.' % (name, tol))
                 else:
-                    raise ValueError('Distance matrix must be symmetric within tolerance %d.' % t)
-            if not (D[xrange(0, s[0]), xrange(0, s[0])] <= t).all():
+                    raise ValueError('Distance matrix must be symmetric within tolerance %5.5f.' % tol)
+            if not (D[xrange(0, s[0]), xrange(0, s[0])] <= tol).all():
                 if name:
-                    raise ValueError('Distance matrix \'%s\' diagonal must be close to zero within tolerance %d.' % (name, t))
+                    raise ValueError('Distance matrix \'%s\' diagonal must be close to zero within tolerance %5.5f.' % (name, tol))
                 else:
-                    raise ValueError('Distance matrix \'%s\' diagonal must be close to zero within tolerance %d.' % t)
+                    raise ValueError('Distance matrix \'%s\' diagonal must be close to zero within tolerance %5.5f.' % tol)
     except Exception, e:
         if throw:
             raise
@@ -1888,8 +1174,9 @@ def numobs_linkage(Z):
     Returns the number of original observations that correspond to a
     linkage matrix Z.
     """
+    Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
-    return (Z.shape[0] - 1)
+    return (Z.shape[0] + 1)
 
 def numobs_dm(D):
     """
@@ -1898,7 +1185,8 @@ def numobs_dm(D):
       Returns the number of original observations that correspond to a
       square, non-condensed distance matrix D.
     """
-    is_valid_dm(D, tol=Inf, throw=True, name='D')
+    D = np.asarray(D)
+    is_valid_dm(D, tol=np.inf, throw=True, name='D')
     return D.shape[0]
 
 def numobs_y(Y):
@@ -1908,8 +1196,9 @@ def numobs_y(Y):
       Returns the number of original observations that correspond to a
       condensed distance matrix Y.
     """
-    is_valid_y(y, throw=True, name='Y')
-    d = int(np.ceil(np.sqrt(y.shape[0] * 2)))
+    Y = np.asarray(Y)
+    is_valid_y(Y, throw=True, name='Y')
+    d = int(np.ceil(np.sqrt(Y.shape[0] * 2)))
     return d
 
 def Z_y_correspond(Z, Y):
@@ -1922,6 +1211,8 @@ def Z_y_correspond(Z, Y):
       check in algorithms that make extensive use of linkage and distance
       matrices that must correspond to the same set of original observations.
     """
+    Z = np.asarray(Z)
+    Y = np.asarray(Y)
     return numobs_y(Y) == numobs_Z(Z)
 
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
@@ -1981,10 +1272,11 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
           cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
 
     """
+    Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
-    T = np.zeros((n,), dtype=np.int32)
+    T = np.zeros((n,), dtype=np.int)
 
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
@@ -1994,6 +1286,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         if R is None:
             R = inconsistent(Z, depth)
         else:
+            R = np.asarray(R)
             is_valid_im(R, throw=True, name='R')
             # Since the C code does not support striding using strides.
             # The dimensions are used instead.
@@ -2048,7 +1341,7 @@ def fclusterdata(X, t, criterion='inconsistent', \
                     descriptions.
 
         distance:   the distance metric for calculating pairwise
-                    distances. See pdist for descriptions and
+                    distances. See distance.pdist for descriptions and
                     linkage to verify compatibility with the linkage
                     method.
 
@@ -2063,14 +1356,17 @@ def fclusterdata(X, t, criterion='inconsistent', \
 
     This function is similar to MATLAB(TM) clusterdata function.
     """
+    X = np.asarray(X)
 
-    if type(X) is not _array_type or len(X.shape) != 2:
-        raise TypeError('X must be an n by m numpy array.')
+    if type(X) != np.ndarray or len(X.shape) != 2:
+        raise TypeError('The observation matrix X must be an n by m numpy array.')
 
-    Y = pdist(X, metric=distance)
+    Y = distance.pdist(X, metric=distance)
     Z = linkage(Y, method=method)
     if R is None:
         R = inconsistent(Z, d=depth)
+    else:
+        R = np.asarray(R)
     T = fcluster(Z, criterion=criterion, depth=depth, R=R, t=t)
     return T
 
@@ -2081,9 +1377,10 @@ def lvlist(Z):
       Returns a list of leaf node ids as they appear in the tree from
       left to right. Z is a linkage matrix.
     """
+    Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
     n = Z.shape[0] + 1
-    ML = np.zeros((n,), dtype=np.int32)
+    ML = np.zeros((n,), dtype=np.int)
     [Z] = _copy_arrays_if_base_present([Z])
     _hierarchy_wrap.prelist_wrap(Z, ML, int(n))
     return ML
@@ -2102,10 +1399,10 @@ try:
     # p <= 20, size="12"
     # 20 < p <= 30, size="10"
     # 30 < p <= 50, size="8"
-    # 50 < p <= scipy.inf, size="6"
+    # 50 < p <= np.inf, size="6"
 
-    _dtextsizes = {20: 12, 30: 10, 50: 8, 85: 6, scipy.inf: 5}
-    _drotation =  {20: 0,          40: 45,       scipy.inf: 90}
+    _dtextsizes = {20: 12, 30: 10, 50: 8, 85: 6, np.inf: 5}
+    _drotation =  {20: 0,          40: 45,       np.inf: 90}
     _dtextsortedkeys = list(_dtextsizes.keys())
     _dtextsortedkeys.sort()
     _drotationsortedkeys = list(_drotation.keys())
@@ -2141,7 +1438,7 @@ try:
         ivw = len(ivl) * 10
         # Depenendent variable plot height
         dvw = mh + mh * 0.05
-        ivticks = scipy.arange(5, len(ivl)*10+5, 10)
+        ivticks = np.arange(5, len(ivl)*10+5, 10)
         if orientation == 'top':
             axis.set_ylim([0, dvw])
             axis.set_xlim([0, ivw])
@@ -2519,6 +1816,7 @@ def dendrogram(Z, p=30, truncate_mode=None, colorthreshold=None,
     #         or results in a crossing, an exception will be thrown. Passing
     #         None orders leaf nodes based on the order they appear in the
     #         pre-order traversal.
+    Z = np.asarray(Z)
 
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
@@ -2537,7 +1835,7 @@ def dendrogram(Z, p=30, truncate_mode=None, colorthreshold=None,
 
     if truncate_mode == 'mtica' or truncate_mode == 'level':
         if p <= 0:
-            p = scipy.inf
+            p = np.inf
     if get_leaves:
         lvs = []
     else:
@@ -2637,7 +1935,7 @@ def _append_contraction_marks_sub(Z, iv, i, n, contraction_marks):
 
 
 def _dendrogram_calculate_info(Z, p, truncate_mode, \
-                               colorthreshold=scipy.inf, get_leaves=True, \
+                               colorthreshold=np.inf, get_leaves=True, \
                                orientation='top', labels=None, \
                                count_sort=False, distance_sort=False, \
                                show_leaf_counts=False, i=-1, iv=0.0, \
@@ -2882,9 +2180,12 @@ def is_isomorphic(T1, T2):
       Returns True iff two different cluster assignments T1 and T2 are
       equivalent. T1 and T2 must be arrays of the same size.
     """
-    if type(T1) is not _array_type:
+    T1 = np.asarray(T1)
+    T2 = np.asarray(T2)
+
+    if type(T1) != np.ndarray:
         raise TypeError('T1 must be a numpy array.')
-    if type(T2) is not _array_type:
+    if type(T2) != np.ndarray:
         raise TypeError('T2 must be a numpy array.')
 
     T1S = T1.shape
@@ -2919,6 +2220,7 @@ def maxdists(Z):
       Note that when Z[:,2] is monotonic, Z[:,2] and MD should not differ.
       See linkage for more information on this issue.
     """
+    Z = np.asarray(Z)
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
@@ -2936,6 +2238,8 @@ def maxinconsts(Z, R):
       inconsistency matrix. MI is a monotonic (n-1)-sized numpy array of
       doubles.
     """
+    Z = np.asarray(Z)
+    R = np.asarray(R)
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
 
@@ -2954,6 +2258,8 @@ def maxRstat(Z, R, i):
     is the maximum over R[Q(j)-n, i] where Q(j) the set of all node ids
     corresponding to nodes below and including j.
     """
+    Z = np.asarray(Z)
+    R = np.asarray(R)
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
     if type(i) is not types.IntType:
@@ -2989,7 +2295,9 @@ def leaders(Z, T):
     i < n, i corresponds to an original observation, otherwise it
     corresponds to a non-singleton cluster.
     """
-    if type(T) != _array_type or T.dtype != np.int:
+    Z = np.asarray(Z)
+    T = np.asarray(T)
+    if type(T) != np.ndarray or T.dtype != np.int:
         raise TypeError('T must be a one-dimensional numpy array of integers.')
     is_valid_linkage(Z, throw=True, name='Z')
     if len(T) != Z.shape[0] + 1:
@@ -2997,8 +2305,8 @@ def leaders(Z, T):
 
     Cl = np.unique(T)
     kk = len(Cl)
-    L = np.zeros((kk,), dtype=np.int32)
-    M = np.zeros((kk,), dtype=np.int32)
+    L = np.zeros((kk,), dtype=np.int)
+    M = np.zeros((kk,), dtype=np.int)
     n = Z.shape[0] + 1
     [Z, T] = _copy_arrays_if_base_present([Z, T])
     s = _hierarchy_wrap.leaders_wrap(Z, T, L, M, int(kk), int(n))

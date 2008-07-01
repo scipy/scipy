@@ -370,10 +370,10 @@ def _kmeans(obs, guess, thresh=1e-5):
     """
 
     code_book = array(guess, copy = True)
-    nc = code_book.shape[0]
     avg_dist = []
     diff = thresh+1.
     while diff > thresh:
+        nc = code_book.shape[0]
         #compute membership and distances between obs and code_book
         obs_code, distort = vq(obs, code_book)
         avg_dist.append(mean(distort, axis=-1))
@@ -479,13 +479,17 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
         raise ValueError, 'iter must be >= to 1.'
     if type(k_or_guess) == type(array([])):
         guess = k_or_guess
+        if guess.size < 1:
+            raise ValueError("Asked for 0 cluster ? initial book was %s" % \
+                             guess)
         result = _kmeans(obs, guess, thresh = thresh)
     else:
         #initialize best distance value to a large value
         best_dist = 100000
         No = obs.shape[0]
         k = k_or_guess
-        #print 'kmeans iter: ',
+        if k < 1:
+            raise ValueError("Asked for 0 cluster ? ")
         for i in range(iter):
             #the intial code book is randomly selected from observations
             guess = take(obs, randint(0, No, k), 0)
@@ -633,6 +637,9 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
     else:
         raise ValueError("Input of rank > 2 not supported")
 
+    if N.size(data) < 1:
+        raise ValueError("Input has 0 items.")
+
     # If k is not a single value, then it should be compatible with data's
     # shape
     if N.size(k) > 1 or minit == 'matrix':
@@ -647,7 +654,14 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
                         data")
         clusters = k.copy()
     else:
-        nc = int(k)
+        try:
+            nc = int(k)
+        except TypeError:
+            raise ValueError("k (%s) could not be converted to an integer " % str(k))
+
+        if nc < 1:
+            raise ValueError("kmeans2 for 0 clusters ? (k was %s)" % str(k))
+
         if not nc == k:
             warnings.warn("k was not an integer, was converted.")
         try:

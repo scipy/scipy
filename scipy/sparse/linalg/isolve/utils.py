@@ -1,3 +1,7 @@
+__docformat__ = "restructuredtext en"
+
+__all__ = [] 
+
 from warnings import warn
 
 from numpy import asanyarray, asarray, asmatrix, array, matrix, zeros
@@ -24,27 +28,34 @@ def id(x):
 def make_system(A, M, x0, b, xtype=None):
     """Make a linear system Ax=b
 
-    Parameters:
-        A - LinearOperator
-            - sparse or dense matrix (or any valid input to aslinearoperator)
-        M - LinearOperator or None
-            - preconditioner
-            - sparse or dense matrix (or any valid input to aslinearoperator)
-        x0 - array_like or None
-            - initial guess to iterative method
-        b  - array_like
-            - right hand side
-        xtype - None or one of 'fdFD'
-            - dtype of the x vector
+    Parameters
+    ----------
+    A : LinearOperator
+        sparse or dense matrix (or any valid input to aslinearoperator)
+    M : {LinearOperator, Nones}
+        preconditioner
+        sparse or dense matrix (or any valid input to aslinearoperator)
+    x0 : {array_like, None}
+        initial guess to iterative method
+    b : array_like
+        right hand side
+    xtype : {'f', 'd', 'F', 'D', None}
+        dtype of the x vector
 
-    Returns:
-        (A, M, x, b, postprocess) where:
-            - A is a LinearOperator
-            - M is a LinearOperator
-            - x is the initial guess (rank 1 array)
-            - b is the rhs (rank 1 array)
-            - postprocess is a function that converts the solution vector
-              to the appropriate type and dimensions (e.g. (N,1) matrix)
+    Returns
+    -------
+    (A, M, x, b, postprocess)
+        A : LinearOperator
+            matrix of the linear system
+        M : LinearOperator
+            preconditioner
+        x : rank 1 ndarray
+            initial guess
+        b : rank 1 ndarray
+            right hand side
+        postprocess : function
+            converts the solution vector to the appropriate 
+            type and dimensions (e.g. (N,1) matrix)
 
     """
     A_ = A

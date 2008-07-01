@@ -29,6 +29,8 @@ Ed Schofield        -- Maximum entropy and Monte Carlo modules, help with
                        sparse matrix module
 Travis Vaught       -- initial work on stats module clean up
 Jeff Whitaker       -- Mac OS X support
+David Cournapeau    -- bug-fixes, refactor of fftpack and cluster, numscons build.
+Damian Eads         -- hiearchical clustering
 
 
 Testing:

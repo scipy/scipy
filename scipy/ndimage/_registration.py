@@ -1,10 +1,17 @@
+#
+# written by Tom Waite
+# rigid body 3D registration
+#
+
+
 import math
-import os
-import numpy as NP
-import scipy.ndimage._register as R
-import scipy.special  as SP
-import scipy.ndimage  as NDI
-import scipy.optimize as OPT
+import numpy as np
+from scipy.special import erf
+from scipy.ndimage import correlate1d
+from scipy.optimize import fmin_powell, fmin_cg
+
+import scipy.ndimage._register as reg
+
 import time
 import glob
 
@@ -29,71 +36,60 @@ warnings.warn(_msg, UserWarning)
 #  ---- co-registration and IO  ---- 
 #
 
-def resize_image(imageG, imageF_mat):
+def resize_image(imageS, imageS_mat, imageR_mat):
     """
-    zoom_image = resize_image(source_image, reference_image[mat])
+    zoom_image = resize_image(imageS, imageS_mat, imageR_mat)
 
-    Fractional resample source_image to reference_imagesize. The
-    resample is implemented with 3D cubic spline. The reference
-    image [mat] is the 4x4 voxel-to-physical conversion matrix.
+    Fractional resample source_image to reference_image size. The
+    resample is implemented with 3D cubic spline. The source
+    imageS_mat is the 4x4 voxel-to-physical conversion matrix.
     
     Parameters 
     ----------
 
-    imageG : {dictionary} 
-        imageG is the source image to be resized. it is a dictionary with
-        the data as an ndarray in the ['data'] component.
+    imageS: {ndarray} 
+        imageS is the source image to be resized.
 
-    reference_image[mat] : {ndarray}
-        refernce_image is the image whose sampling dimensions the source
-        image is to be remapped to. [mat] refers to the component
-        of the image dictionary, reference_image['mat'] that is the
-        sampling dimensions.
+    imageS_mat : {ndarray} 
+        the 4x4 transform of the source image that maps voxel to physical.
+
+    imageR_mat : {ndarray}
+        the 4x4 transform of the destination image that maps voxel to physical.
 
     Returns 
     -------
-    zoom_image : {dictionary}
+    zoom_image : {ndarray}
 
     Examples
     --------
 
     >>> import _registration as reg
-    >>> measures, imageF_anat, fmri_series = reg.demo_MRI_coregistration()
+    >>> measures, image_anat, image_anat_mat, image_fmri_mat, fmri_series = reg.demo_MRI_coregistration()
 
-    >>> resampled_fmri = reg.resize_image(fmri_series[10], imageF_anat['mat'])
+    >>> resampled_fmri = reg.resize_image(fmri_series[10], image_fmri_mat, image_anat_mat)
 
-    image 10 in the fmri_series is resampled to imageF_anat coordinates
+    image 10 in the fmri_series is resampled from image_fmri_mat to image_anat coordinates
 
     """
 
-    Z = NP.zeros(3, dtype=NP.float64);
     # get the zoom
-    Z[0] = imageG['mat'][0][0] / imageF_mat[0][0]
-    Z[1] = imageG['mat'][1][1] / imageF_mat[1][1]
-    Z[2] = imageG['mat'][2][2] / imageF_mat[2][2]
+    Z = imageS_mat.diagonal() / imageR_mat.diagonal()
 
-    # new volume dimensions (rounded)
-    D = NP.zeros(3, dtype=NP.int32);
-    D[0] = int(float(imageG['dim'][0])*Z[0]+0.5)
-    D[1] = int(float(imageG['dim'][1])*Z[1]+0.5)
-    D[2] = int(float(imageG['dim'][2])*Z[2]+0.5)
+    # new volume dimensions (rounded). D, imageS and Z are 3D and this is a vector element product
+    D = (imageS.shape * Z + 0.5).astype(np.int16)
 
-    M = NP.eye(4, dtype=NP.float64);
-    # for the test data, set the xyz voxel sizes for fMRI volume
-    M[0][0] = imageG['mat'][0][0]/Z[0]
-    M[1][1] = imageG['mat'][1][1]/Z[1]
-    M[2][2] = imageG['mat'][2][2]/Z[2]
+    # for the test data, set the xyz voxel sizes for fMRI volume. M is a 4x4 matrix.
+    M = np.diag(imageS_mat.diagonal() / Z)    
 
-    image = NP.zeros(D[2]*D[1]*D[0], dtype=NP.uint8).reshape(D[2], D[0], D[1])
+    image = np.zeros((D[2],D[1],D[0]),np.uint8)
+    
     mode  = 2
     scale = 0
-    R.register_volume_resample(imageG['data'], image, Z, scale, mode)
-    F = NP.zeros(3, dtype=NP.float64);
-    zoom_image = {'data' : image, 'mat' : M, 'dim' : D, 'fwhm' : F}
+    reg.register_volume_resample(imageS, image, Z, scale, mode)
 
-    return zoom_image
+    return image, M
 
-def remap_image(image, parm_vector, resample='linear'):
+def remap_image(image, M_inverse, resample='linear'):
     """
     remaped_image = remap_image(image, parm_vector, resample='linear')
 
@@ -103,50 +99,43 @@ def remap_image(image, parm_vector, resample='linear'):
 
     Parameters 
     ----------
-    image : {dictionary} 
-        image is the source image to be remapped. it is a dictionary with
-        the data as an ndarray in the ['data'] component.
+    image : {ndarray} 
+        image is the source image to be remapped. 
 
-    parm_vector : {ndarray}
-        parm_vector is the 6-dimensional vector (3 angles, 3 translations)
-        generated from the registration.
+    M_inverse : {ndarray}
+        M_inverse is the 4x4 inverse affine matrix 
 
     resample : {'linear', 'cubic'}, optional
 
 
     Returns 
     -------
-    remaped_image : {dictionary}
+    remaped_image : {ndarray}
 
     Examples
     --------
         image = fmri_series[i]
         x[0:6] = measures[i]['align_rotate'][0:6]
+	M = get_inverse_mappings(x)
         # overwrite the fMRI volume with the aligned volume
-        fmri_series[i] = remap_image(image, x, resample='cubic')
+        fmri_series[i] = remap_image(image, M, resample='cubic')
 
     """
 
-    #
-    # remap imageG to coordinates of imageF (creates imageG')
-    # use the 6 dim parm_vector (3 angles, 3 translations) to remap
-    #
-    M_inverse = get_inverse_mappings(parm_vector)
-    (layers, rows, cols) = image['data'].shape
     # allocate the zero image
-    remaped_image = NP.zeros(layers*rows*cols, dtype=NP.uint8).reshape(layers, rows, cols)
-    remaped_image = {'data' : remaped_image, 'mat' : image['mat'], 
-                     'dim' : image['dim'], 'fwhm' : image['fwhm']}
-    imdata = build_structs()
+    remaped_image = np.zeros(image.shape, dtype=np.uint8)
+
+    step = np.array([1, 1, 1], dtype=np.int32)
 
     if resample == 'linear':
         # trilinear interpolation mapping.
-        R.register_linear_resample(image['data'], remaped_image['data'], M_inverse, imdata['step'])
+        reg.register_linear_resample(image, remaped_image, M_inverse, step)
     elif resample == 'cubic':
         # tricubic convolve interpolation mapping. 
-        R.register_cubic_resample(image['data'], remaped_image['data'], M_inverse, imdata['step'])
+        reg.register_cubic_resample(image, remaped_image, M_inverse, step)
 
     return remaped_image
+
 
 def get_inverse_mappings(parm_vector):
     """
@@ -168,7 +157,7 @@ def get_inverse_mappings(parm_vector):
 
     >>> import numpy as NP
     >>> import _registration as reg
-    >>> array = NP.zeros(6, dtype=float)
+    >>> array = np.zeros(6, dtype=float)
     >>> M = reg.get_inverse_mappings(array)
     >>> M 
 
@@ -180,55 +169,53 @@ def get_inverse_mappings(parm_vector):
 
     """
     # get the inverse mapping to rotate the G matrix to F space following registration
-    imdata = build_structs()
-    # inverse angles and translations
-    imdata['parms'][0] = -parm_vector[0]
-    imdata['parms'][1] = -parm_vector[1]
-    imdata['parms'][2] = -parm_vector[2]
-    imdata['parms'][3] = -parm_vector[3]
-    imdata['parms'][4] = -parm_vector[4]
-    imdata['parms'][5] = -parm_vector[5]
-    M_inverse = build_rotate_matrix(imdata['parms'])
+    # -parm_vector is the inverse angles and translations
+    M_inverse = build_rotate_matrix(-parm_vector)
     return M_inverse
 
-def python_coreg(image1, image2, imdata, ftype=1, smimage=0, lite=0, smhist=0,
-                 method='nmi', opt_method='powell'):
-    """
-    parm_vector = python_coreg(image1, image2, imdata, ftype=1, smimage=0, lite=0,
-                               smhist=0, method='nmi', opt_method='powell'):
+def register(image1, image1_mat, image2, image2_mat, multires=[4, 2], histo_fwhm=3, 
+             ftype=1, lite=0, smhist=0, method='nmi', opt_method='hybrid',
+	     optimize_function=None):
 
-    takes two images and the image data descriptor (imdata) and determines the optimal 
+    """
+    parm_vector = register(image1, image1_mat, image2, image2_mat, multires=[4, 2], histo_fwhm=3,
+                             ftype=1, lite=0, smhist=0, method='nmi', opt_method='powell'):
+
     alignment of the two images (measured by mutual information or cross correlation) 
     using optimization search of 3 angle and 3 translation parameters. The optimization 
     uses either the Powell or Conjugate Gradient methods in the scipy optimization 
-    package. The optimal parameter is returned.
+    package. The optimal rigid body parameter is returned.
 
     Parameters 
     ----------
-    image1 : {dictionary} 
+    image1 : {nd_array} 
         image1 is the source image to be remapped during the registration. 
-        it is a dictionary with the data as an ndarray in the ['data'] component.
-    image2 : {dictionary} 
+    image1_mat : {nd_array} 
+        image1_mat is the source image MAT 
+    image2 : {nd_array} 
         image2 is the reference image that image1 gets mapped to. 
-    imdata : {dictionary} 
-        image sampling and optimization information.
+    image2_mat : {nd_array} 
+        image2_mat is the source image MAT 
+    multires: {list}, optional
+        the volume subsample values for each pass of the registration.
+	the default is 2 passes with subsample 4 in pass 1 and subsample 2 in pass 2
+    histo_fwhm : {int}, optional
+        used for the filter kernel in the low pass filter of the joint histogram 
     ftype : {0, 1}, optional
         flag for type of low pass filter. 0 is Gauss-Spline
         1 is pure Gauss. Sigma determined from volume sampling info.
-    smimage : {0, 1}, optional
-        flag for volume 3D low pass filtering of image 2.
-        0 for no filter, 1 for do filter.
     lite : {0, 1}, optional
         lite of 1 is to jitter both images during resampling. 0
         is to not jitter. jittering is for non-aliased volumes.
     smhist: {0, 1}, optional
         flag for joint histogram low pass filtering. 0 for no filter,
         1 for do filter.
-    method: {'nmi', 'mi', 'ncc', 'ecc'}, optional
+    method: {'nmi', 'mi', 'ncc', 'ecc', 'mse'}, optional
         flag for type of registration metric. nmi is normalized mutual
         information; mi is mutual information; ecc is entropy cross
-        correlation; ncc is normalized cross correlation.
-    opt_method: {'powell', 'hybrid'}, optional
+        correlation; ncc is normalized cross correlation. mse is mean
+	squared error.
+    opt_method: {'powell', 'cg', 'hybrid'}, optional
         registration is two pass. Pass 1 is low res to get close to alignment
         and pass 2 starts at the pass 1 optimal alignment. In powell pass 1 and
         2 are powell, in hybrid pass 2 is conjugate gradient.
@@ -246,107 +233,169 @@ def python_coreg(image1, image2, imdata, ftype=1, smimage=0, lite=0, smhist=0,
     >>> import numpy as NP
     >>> import _registration as reg
 
-    >>> image1, image2, imdata = reg.demo_MRI_volume_align()
-    >>> parm_vector = python_coreg(image1, image2, imdata)
+    >>> image1, image2, fwhm, improc = reg.demo_build_dual_volumes()
+    >>> parm_vector = register(image1, image2, fwhm, improc)
 
     """
-    start = time.time()
-    # smooth of the images
-    if smimage: 
-        image_F_xyz2 = filter_image_3D(image2['data'], image2['fwhm'], ftype)
-        image2['data'] = image_F_xyz2
-    parm_vector = multires_registration(image1, image2, imdata, lite, smhist, method, opt_method)
-    stop = time.time()
-    print 'Total Optimizer Time is ', (stop-start)
+
+    # do the parameter validity checking. this is specific to this 3D registration.
+    # make sure the image is 3D and the mats are 4x4 with nonzero diagonal
+
+    if image1.ndim != 3:
+        raise ValueError, "Image 1 is not 3 dimensional"
+
+    if image2.ndim != 3:
+        raise ValueError, "Image 2 is not 3 dimensional"
+
+    if image1.dtype != np.uint8:
+        raise ValueError, "Image 1 is not 8 bit (required for joint histogram)"
+
+    if image2.dtype != np.uint8:
+        raise ValueError, "Image 2 is not 8 bit (required for joint histogram)"
+
+    if image1_mat.shape != (4,4):
+        raise ValueError, "Image1 MAT is not 4x4"
+
+    if image2_mat.shape != (4,4):
+        raise ValueError, "Image2 MAT is not 4x4"
+
+    if (np.diag(image1_mat)).prod() == 0:
+        raise ValueError, "Image1 MAT has a 0 on the diagonal"
+
+    if (np.diag(image2_mat)).prod() == 0:
+        raise ValueError, "Image2 MAT has a 0 on the diagonal"
+
+    if opt_method=='hybrid' and np.size(multires) != 2:
+        raise ValueError, "hybrid method must be 2 pass registration"
+
+    if ftype != 0 and ftype != 1: 
+        raise ValueError, "choose filter type 0 or 1 only"
+
+    if lite != 0 and lite != 1: 
+        raise ValueError, "choose histogram generation type 0 or 1 only"
+
+    if smhist != 0 and smhist != 1: 
+        raise ValueError, "choose histogram smoothing type 0 or 1 only"
+
+    if method != 'nmi' and method != 'mi'  and method != 'ncc'\
+                       and method != 'ecc' and method != 'mse':
+        raise ValueError, "choose cost method nmi, mi, ecc, mse, ncc"
+
+    if opt_method != 'powell' and opt_method != 'cg'  and opt_method != 'hybrid':
+        raise ValueError, "only optimize methods powell, cg or hybrid are supported"
+
+    # default is to use the cost_function I provided.
+    # this shows you can override this but the parameters will have to
+    # be changed for the new cost function if it is different
+
+    if optimize_function == None:
+        optimize_function = cost_function
+
+    parm_vector = multires_registration(optimize_function, image1, image1_mat, image2, image2_mat,
+		                        multires, histo_fwhm, lite, smhist, method, opt_method)
+
     return parm_vector
 
-def multires_registration(image1, image2, imdata, lite, smhist, method, opt_method):
-    """
-    x = multires_registration(image1, image2, imdata, lite, smhist, method, opt_method)
+def multires_registration(optimize_function, image1, image1_mat, image2, image2_mat,
+		          multires, histo_fwhm, lite, smhist, method, opt_method):
 
-    to be called by python_coreg() which optionally does 3D image filtering and 
-    provies timing for registration.
+    """
+
+    to be called by register() which does parameter validation 
 
     Parameters 
     ----------
-
-    image1 : {dictionary} 
+    image1 : {nd_array} 
         image1 is the source image to be remapped during the registration. 
-        it is a dictionary with the data as an ndarray in the ['data'] component.
-    image2 : {dictionary} 
+    image1_mat : {nd_array} 
+        image1_mat is the source image MAT 
+    image2 : {nd_array} 
         image2 is the reference image that image1 gets mapped to. 
-    imdata : {dictionary} 
-        image sampling and optimization information.
-    lite : {integer}
+    image2_mat : {nd_array} 
+        image2_mat is the source image MAT 
+    multires: {list}, optional
+        the volume subsample values for each pass of the registration.
+	the default is 2 passes with subsample 4 in pass 1 and subsample 2 in pass 2
+    histo_fwhm : {int}, optional
+        used for the filter kernel in the low pass filter of the joint histogram 
+    ftype : {0, 1}, optional
+        flag for type of low pass filter. 0 is Gauss-Spline
+        1 is pure Gauss. Sigma determined from volume sampling info.
+    lite : {0, 1}, optional
         lite of 1 is to jitter both images during resampling. 0
         is to not jitter. jittering is for non-aliased volumes.
-    smhist: {integer}
+    smhist: {0, 1}, optional
         flag for joint histogram low pass filtering. 0 for no filter,
         1 for do filter.
-    method: {'nmi', 'mi', 'ncc', 'ecc'}
+    method: {'nmi', 'mi', 'ncc', 'ecc', 'mse'}, optional
         flag for type of registration metric. nmi is normalized mutual
         information; mi is mutual information; ecc is entropy cross
-        correlation; ncc is normalized cross correlation.
-    opt_method: {'powell', 'hybrid'}
+        correlation; ncc is normalized cross correlation. mse is mean
+	squared error.
+    opt_method: {'powell', 'cg', 'hybrid'}, optional
         registration is two pass. Pass 1 is low res to get close to alignment
         and pass 2 starts at the pass 1 optimal alignment. In powell pass 1 and
         2 are powell, in hybrid pass 2 is conjugate gradient.
 
+
     Returns 
     -------
-    x : {nd_array}
+    parm_vector : {nd_array}
         this is the optimal alignment (6-dim) array with 3 angles and
         3 translations.
 
     Examples
     --------
 
-    (calling this from python_coreg which optionally filters image2)
+    (calling this from register which optionally filters image2)
     >>> import numpy as NP
     >>> import _registration as reg
-    >>> image1, image2, imdata = reg.demo_MRI_volume_align()
-    >>> parm_vector = python_coreg(image1, image2, imdata)
+    >>> image1, mat1, image2, mat2 = reg.demo_build_dual_volumes()
+    >>> parm_vector = register(image1, image2, imdata)
 
     """
     ret_histo=0
-    # zero out the start parameter; but this may be set to large values 
-    # if the head is out of range and well off the optimal alignment skirt
-    imdata['parms'][0:5] = 0.0
+    step = np.array([1, 1, 1], dtype=np.int32)
+    fwhm = np.zeros(2, dtype=np.int32)
     # make the step a scalar to can put in a multi-res loop
-    loop = range(imdata['sample'].size)
-    x = imdata['parms']
+    loop = range(np.size(multires))
+    # 6-D zero vector
+    x = np.zeros(6, dtype=np.float64);
+    # the kernel fwhm value for the x and y joint histogram filter
+    fwhm[:] = histo_fwhm
     for i in loop:
-        step = imdata['sample'][i]
-        imdata['step'][:] = step
-        optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist,
-                        method, ret_histo)
+	# this is the volume subsample
+	step[:] = multires[i]
+	# optfunc_args is specific to the cost_function in this file
+	# this will need to change if you use another optimize_function.
+        optfunc_args = (image1, image1_mat, image2, image2_mat, step, histo_fwhm,
+			lite, smhist, method, ret_histo)
         p_args = (optfunc_args,)
         if opt_method=='powell':
             print 'POWELL multi-res registration step size ', step
             print 'vector ', x
-            x = OPT.fmin_powell(optimize_function, x, args=p_args,
-                                callback=callback_powell) 
+            x = fmin_powell(optimize_function, x, args=p_args, callback=callback_powell)
         elif opt_method=='cg':
             print 'CG multi-res registration step size ', step
             print 'vector ', x
-            x = OPT.fmin_cg(optimize_function, x, args=p_args, callback=callback_cg) 
+            x = fmin_cg(optimize_function, x, args=p_args, callback=callback_cg) 
         elif opt_method=='hybrid':
             if i==0:
                 print 'Hybrid POWELL multi-res registration step size ', step
                 print 'vector ', x
                 lite = 0
-                optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist,
-                                method, ret_histo)
+                optfunc_args = (image1, image1_mat, image2, image2_mat, step, histo_fwhm,
+                                lite, smhist, method, ret_histo)
                 p_args = (optfunc_args,)
-                x = OPT.fmin_powell(optimize_function, x, args=p_args, callback=callback_powell) 
+                x = fmin_powell(optimize_function, x, args=p_args, callback=callback_powell) 
             elif i==1:
                 print 'Hybrid CG multi-res registration step size ', step
                 print 'vector ', x
                 lite = 1
-                optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, 
-                                smhist, method, ret_histo)
+                optfunc_args = (image1, image1_mat, image2, image2_mat, step, histo_fwhm,
+                                lite, smhist, method, ret_histo)
                 p_args = (optfunc_args,)
-                x = OPT.fmin_cg(optimize_function, x, args=p_args, callback=callback_cg) 
+                x = fmin_cg(optimize_function, x, args=p_args, callback=callback_cg) 
 
     return x
 
@@ -367,7 +416,7 @@ def callback_cg(x):
     print x
     return
 
-def smooth_kernel(fwhm, x, ktype=1):
+def smooth_kernel(fwhm, x, pixel_scale=8.0, ktype=1):
     """
     kernel = smooth_kernel(fwhm, x, ktype=1)
 
@@ -395,8 +444,8 @@ def smooth_kernel(fwhm, x, ktype=1):
     >>> import _registration as reg
     >>> fwhm = 3
     >>> ftype = 2
-    >>> p = NP.ceil(2*fwhm).astype(int)
-    >>> x = NP.array(range(-p, p+1))
+    >>> p = np.ceil(2*fwhm).astype(int)
+    >>> x = np.array(range(-p, p+1))
     >>> kernel = reg.smooth_kernel(fwhm, x, ktype=ftype)
     >>> kernel
 
@@ -409,24 +458,26 @@ def smooth_kernel(fwhm, x, ktype=1):
 
     """
     eps = 0.00001
-    s   = NP.square((fwhm/math.sqrt(8.0*math.log(2.0)))) + eps
+    s   = np.square((fwhm/math.sqrt(pixel_scale*math.log(2.0)))) + eps
     if ktype==1:
         # from SPM: Gauss kernel convolved with 1st degree B spline
         w1 = 0.5 * math.sqrt(2.0/s)
         w2 = -0.5 / s
         w3 = math.sqrt((s*math.pi) /2.0)
-        kernel = 0.5*(SP.erf(w1*(x+1))*(x+1)       + SP.erf(w1*(x-1))*(x-1)    - 2.0*SP.erf(w1*(x))*(x) + 
-                      w3*(NP.exp(w2*NP.square(x+1))) + NP.exp(w2*(NP.square(x-1))) - 2.0*NP.exp(w2*NP.square(x)))
+        kernel = 0.5*(erf(w1*(x+1))*(x+1) + erf(w1*(x-1))*(x-1)
+                      - 2.0*erf(w1*(x))*(x) + w3*(np.exp(w2*np.square(x+1))) 
+                      + np.exp(w2*(np.square(x-1)))
+                      - 2.0*np.exp(w2*np.square(x)))
         kernel[kernel<0] = 0
         kernel = kernel / kernel.sum()  
     else:
         # Gauss kernel 
-        kernel = (1.0/math.sqrt(2.0*math.pi*s)) * NP.exp(-NP.square(x)/(2.0*s)) 
+        kernel = (1.0/math.sqrt(2.0*math.pi*s)) * np.exp(-np.square(x)/(2.0*s)) 
         kernel = kernel / kernel.sum()  
 
     return kernel
 
-def filter_image_3D(imageRaw, fwhm, ftype=2):
+def filter_image_3D(imageRaw, fwhm, ftype=2, give_2D=0):
     """
     image_F_xyz = filter_image_3D(imageRaw, fwhm, ftype=2):
     does 3D separable digital filtering using scipy.ndimage.correlate1d
@@ -436,9 +487,9 @@ def filter_image_3D(imageRaw, fwhm, ftype=2):
     imageRaw : {nd_array}
         the unfiltered 3D volume image
     fwhm : {int}
-        used for kernel width
+        used for kernel width. this is 3 elements (one for each dimension)
     ktype: {1, 2}, optional
-        kernel type. 1 is Gauss convoled with spline, 2 is Gauss
+        kernel type. 1 is Gauss convoled with spline (SPM), 2 is Gauss
 
     Returns 
     -------
@@ -449,30 +500,38 @@ def filter_image_3D(imageRaw, fwhm, ftype=2):
     --------
 
     >>> import _registration as reg
-    >>> image1, image2, imdata = reg.demo_MRI_volume_align()
+    >>> image1, image2, imdata = reg.demo_build_dual_volumes()
     >>> ftype = 1
-    >>> image_Filter_xyz = filter_image_3D(image1['data'], image1['fwhm'], ftype)
+    >>> image_Filter_xyz = filter_image_3D(image, fwhm, ftype)
     >>> image1['data'] = image_Filter_xyz
     """
 
-    p = NP.ceil(2*fwhm[0]).astype(int)
-    x = NP.array(range(-p, p+1))
+    p = np.ceil(2*fwhm).astype(int)
+    x = np.array(range(-p[0], p[0]+1))
     kernel_x = smooth_kernel(fwhm[0], x, ktype=ftype)
-    p = NP.ceil(2*fwhm[1]).astype(int)
-    x = NP.array(range(-p, p+1))
+
+    x = np.array(range(-p[1], p[1]+1))
     kernel_y = smooth_kernel(fwhm[1], x, ktype=ftype)
-    p = NP.ceil(2*fwhm[2]).astype(int)
-    x = NP.array(range(-p, p+1))
+
+    x = np.array(range(-p[2], p[2]+1))
     kernel_z = smooth_kernel(fwhm[2], x, ktype=ftype)
+
     output=None
-    # 3D filter in 3 1D separable stages
+    # 3D filter in 3 1D separable stages. keep the image
+    # names at each stage separate in case you need them
+    # for example may need an image that is 2D slice filtered only
     axis = 0
-    image_F_x   = NDI.correlate1d(imageRaw,   kernel_x, axis, output)
+    image_F_x   = correlate1d(imageRaw,   kernel_x, axis, output)
     axis = 1
-    image_F_xy  = NDI.correlate1d(image_F_x,  kernel_y, axis, output)
+    image_F_xy  = correlate1d(image_F_x,  kernel_y, axis, output)
     axis = 2
-    image_F_xyz = NDI.correlate1d(image_F_xy, kernel_z, axis, output)
-    return image_F_xyz  
+    image_F_xyz = correlate1d(image_F_xy, kernel_z, axis, output)
+
+    if give_2D==0:
+        return image_F_xyz  
+    else:
+        return image_F_xyz, image_F_xy
+
 
 def build_fwhm(M, S):
     """
@@ -500,28 +559,28 @@ def build_fwhm(M, S):
     >>> import _registration as reg
     >>> anat_desc = reg.load_anatMRI_desc()
     >>> image1 = reg.load_volume(anat_desc, imagename='ANAT1_V0001.img')
-    >>> imdata = reg.build_structs()
     >>> image1['fwhm'] = reg.build_fwhm(image1['mat'], imdata['step'])
 
     """
-    view_3x3 = NP.square(M[0:3, 0:3])
-    # sum the elements inn the first row
-    vxg = NP.sqrt(view_3x3.sum(axis=0))
-    # assumes that sampling is the same for xyz
-    size = NP.array([1,1,1])*S[0]
-    x = NP.square(size) - NP.square(vxg)
+    # M contains the voxel to physical mapping
+    view_3x3 = np.square(M[0:3, 0:3])
+    # sum the elements in the first row
+    vxg = np.sqrt(view_3x3.sum(axis=1))
+    # assumes that voxel sampling is the same for xyz as S is the step
+    size = np.array([1,1,1])*S[0]
+    x = np.square(size) - np.square(vxg)
     # clip
     x[x<0] = 0
-    fwhm = NP.sqrt(x) / vxg
+    fwhm = np.sqrt(x) / vxg
     # pathology when stepsize = 1 for MAT equal to the identity matrix
     fwhm[fwhm==0] = 1
     # return the 3D Gaussian kernel width (xyz)
     return fwhm 
 
-def optimize_function(x, optfunc_args):
+def cost_function(x, optfunc_args):
     """
-    cost = optimize_function(x, optfunc_args)    --- OR ---
-    cost, joint_histogram = optimize_function(x, optfunc_args)   
+    cost = cost_function(x, optfunc_args)    --- OR ---
+    cost, joint_histogram = cost_function(x, optfunc_args)   
 
     computes the alignment between 2 volumes using cross correlation or mutual
     information metrics. In both the 8 bit joint histogram of the 2 images is
@@ -588,7 +647,6 @@ def optimize_function(x, optfunc_args):
     >>> anat_desc = reg.load_anatMRI_desc()
     >>> image1 = reg.load_volume(anat_desc, imagename='ANAT1_V0001.img')
     >>> image2 = reg.load_volume(anat_desc, imagename='ANAT1_V0001.img')
-    >>> imdata = reg.build_structs()
     >>> image1['fwhm'] = reg.build_fwhm(image1['mat'], imdata['step'])
     >>> image2['fwhm'] = reg.build_fwhm(image2['mat'], imdata['step'])
     >>> method = 'ncc'
@@ -596,46 +654,47 @@ def optimize_function(x, optfunc_args):
     >>> smhist = 0
     >>> ret_histo = 1
     >>> optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist, method, ret_histo)
-    >>> x = NP.zeros(6, dtype=NP.float64)
-    >>> return cost, joint_histogram = reg.optimize_function(x, optfunc_args)
+    >>> x = np.zeros(6, dtype=np.float64)
+    >>> return cost, joint_histogram = reg.cost_function(x, optfunc_args)
 
 
     """
 
     image_F       = optfunc_args[0]
-    image_G       = optfunc_args[1]
-    sample_vector = optfunc_args[2]
-    fwhm          = optfunc_args[3]
-    do_lite       = optfunc_args[4]
-    smooth        = optfunc_args[5]
-    method        = optfunc_args[6]
-    ret_histo     = optfunc_args[7]
+    image_F_mat   = optfunc_args[1]
+    image_G       = optfunc_args[2]
+    image_G_mat   = optfunc_args[3]
+    sample_vector = optfunc_args[4]
+    fwhm          = optfunc_args[5]
+    do_lite       = optfunc_args[6]
+    smooth        = optfunc_args[7]
+    method        = optfunc_args[8]
+    ret_histo     = optfunc_args[9]
 
     rot_matrix = build_rotate_matrix(x)
     cost = 0.0
     epsilon = 2.2e-16 
     # image_G is base image
     # image_F is the to-be-rotated image
-    # rot_matrix is the 4x4 constructed (current angles and translates) transform matrix
+    # rot_matrix is the 4x4 constructed (rigid body) transform matrix
     # sample_vector is the subsample vector for x-y-z
 
-    F_inv = NP.linalg.inv(image_F['mat'])
-    composite = NP.dot(F_inv, image_G['mat'])
-    composite = NP.dot(composite, rot_matrix)
+    F_inv = np.linalg.inv(image_F_mat)
+    composite = np.dot(F_inv, image_G_mat)
+    composite = np.dot(composite, rot_matrix)
 
     if method == 'mse':
         #
         # mean squard error method
         #
 
-        (layers, rows, cols) = image_F['data'].shape
         # allocate the zero image
-        remap_image_F = NP.zeros(layers*rows*cols, dtype=NP.uint8).reshape(layers, rows, cols)
-        imdata = build_structs()
+        #(layers, rows, cols) = image_F.shape
+        remap_image_F = np.zeros(image_F.shape, dtype=np.uint8)
         # trilinear interpolation mapping.
-        R.register_linear_resample(image_F['data'], remap_image_F, composite,
-                                   imdata['step'])
-        cost = (NP.square(image_G['data']-remap_image_F)).mean()
+        reg.register_linear_resample(image_F, remap_image_F, composite, sample_vector)
+        cost = (np.square(image_G-remap_image_F)).mean()
+	# cost is min when G and F are aligned so keep cost positive
 
         return cost
 
@@ -645,29 +704,25 @@ def optimize_function(x, optfunc_args):
         #
 
         # allocate memory for 2D histogram
-        joint_histogram = NP.zeros([256, 256], dtype=NP.float64);
+        joint_histogram = np.zeros([256, 256], dtype=np.float64)
 
         if do_lite: 
-            R.register_histogram_lite(image_F['data'], image_G['data'], composite,
-                                      sample_vector, joint_histogram)
+            reg.register_histogram_lite(image_F, image_G, composite, sample_vector, joint_histogram)
         else:
-            R.register_histogram(image_F['data'], image_G['data'], composite,
-                                 sample_vector, joint_histogram)
+            reg.register_histogram(image_F, image_G, composite, sample_vector, joint_histogram)
 
         # smooth the histogram
         if smooth: 
-            p = NP.ceil(2*fwhm[0]).astype(int)
-            x = NP.array(range(-p, p+1))
-            kernel1 = smooth_kernel(fwhm[0], x)
-            p = NP.ceil(2*fwhm[1]).astype(int)
-            x = NP.array(range(-p, p+1))
-            kernel2 = smooth_kernel(fwhm[1], x)
+            p = np.ceil(2*fwhm).astype(int)
+            x = np.array(range(-p, p+1))
+            hkernel = smooth_kernel(fwhm, x)
             output=None
-            # 2D filter in 1D separable stages
+            # 2D filter in 1D separable stages using the same kernel. SPM
+	    # has options for a 2D fwhm kernel yet only uses 1 element
             axis = 0
-            result = NDI.correlate1d(joint_histogram, kernel1, axis, output)
+            joint_histogram = correlate1d(joint_histogram, hkernel, axis, output)
             axis = 1
-            joint_histogram = NDI.correlate1d(result, kernel1, axis, output)
+            joint_histogram = correlate1d(joint_histogram, hkernel, axis, output)
 
         joint_histogram += epsilon # prevent log(0) 
         # normalize the joint histogram
@@ -678,108 +733,50 @@ def optimize_function(x, optfunc_args):
 
         if method == 'mi':
             # mutual information
-            marginal_outer = NP.outer(marginal_col, marginal_row)
-            H = joint_histogram * NP.log(joint_histogram / marginal_outer)  
+            marginal_outer = np.outer(marginal_col, marginal_row)
+            H = joint_histogram * np.log(joint_histogram / marginal_outer)  
             mutual_information = H.sum()
             cost = -mutual_information
 
         elif method == 'ecc':
             # entropy correlation coefficient 
-            marginal_outer = NP.outer(marginal_col, marginal_row)
-            H = joint_histogram * NP.log(joint_histogram / marginal_outer)  
+            marginal_outer = np.outer(marginal_col, marginal_row)
+            H = joint_histogram * np.log(joint_histogram / marginal_outer)  
             mutual_information = H.sum()
-            row_entropy = marginal_row * NP.log(marginal_row)
-            col_entropy = marginal_col * NP.log(marginal_col)
+            row_entropy = marginal_row * np.log(marginal_row)
+            col_entropy = marginal_col * np.log(marginal_col)
             ecc  = -2.0*mutual_information/(row_entropy.sum() + col_entropy.sum())
             cost = -ecc
 
         elif method == 'nmi':
             # normalized mutual information
-            row_entropy = marginal_row * NP.log(marginal_row)
-            col_entropy = marginal_col * NP.log(marginal_col)
-            H = joint_histogram * NP.log(joint_histogram)  
-            nmi = (row_entropy.sum() + col_entropy.sum()) / (H.sum())
+            row_entropy = marginal_row * np.log(marginal_row)
+            col_entropy = marginal_col * np.log(marginal_col)
+            H = joint_histogram * np.log(joint_histogram)  
+            nmi  = (row_entropy.sum() + col_entropy.sum()) / (H.sum())
             cost = -nmi
 
         elif method == 'ncc':
             # cross correlation from the joint histogram 
             r, c = joint_histogram.shape
-            i = NP.array(range(1,c+1))
-            j = NP.array(range(1,r+1))
+            i = np.array(range(1,c+1))
+            j = np.array(range(1,r+1))
             m1 = (marginal_row * i).sum()
             m2 = (marginal_col * j).sum()
-            sig1 = NP.sqrt((marginal_row*(NP.square(i-m1))).sum())
-            sig2 = NP.sqrt((marginal_col*(NP.square(j-m2))).sum())
-            [a, b] = NP.mgrid[1:c+1, 1:r+1]
+            sig1 = np.sqrt((marginal_row*(np.square(i-m1))).sum())
+            sig2 = np.sqrt((marginal_col*(np.square(j-m2))).sum())
+            [a, b] = np.mgrid[1:c+1, 1:r+1]
             a = a - m1
             b = b - m2
             # element multiplies in the joint histogram and grids
             H = ((joint_histogram * a) * b).sum()
-            ncc = H / (NP.dot(sig1, sig2)) 
+            ncc  = H / (np.dot(sig1, sig2)) 
             cost = -ncc
 
         if ret_histo:
             return cost, joint_histogram 
         else:
             return cost
-
-
-def build_structs(step=1):
-    """
-    img_data = build_structs(step=1)
-
-    builds the image data (imdata) dictionary for later use as parameter
-    storage in the co-registration.
-
-    Parameters 
-    ----------
-    step : {int} : optional
-    default is 1 and is the sample increment in voxels. This sets the sample
-    for x,y,z and is the same value in all 3 axes. only change the default for debug.
-
-    Returns 
-    -------
-    img_data : {dictionary}
-
-    Examples
-    --------
-
-    >>> import numpy as NP
-    >>> import _registration as reg
-    >>> imdata = reg.build_structs()
-
-    """
-
-    # build image data structures here
-    P = NP.zeros(6, dtype=NP.float64);
-    T = NP.zeros(6, dtype=NP.float64);
-    F = NP.zeros(2, dtype=NP.int32);
-    S = NP.ones(3,  dtype=NP.int32);
-    sample = NP.zeros(2, dtype=NP.int32);
-    S[0] = step
-    S[1] = step
-    S[2] = step
-    # image/histogram smoothing
-    F[0] = 3
-    F[1] = 3
-    # subsample for multiresolution registration
-    sample[0] = 4
-    sample[1] = 2
-    # tolerances for angle (0-2) and translation (3-5)
-    T[0] = 0.02 
-    T[1] = 0.02 
-    T[2] = 0.02 
-    T[3] = 0.001 
-    T[4] = 0.001 
-    T[5] = 0.001 
-    # P[0] = alpha <=> pitch. + alpha is moving back in the sagittal plane
-    # P[1] = beta  <=> roll.  + beta  is moving right in the coronal plane
-    # P[2] = gamma <=> yaw.   + gamma is right turn in the transverse plane
-    # P[3] = Tx
-    # P[4] = Ty
-    # P[5] = Tz
-    img_data = {'parms' : P, 'step' : S, 'fwhm' : F, 'tol' : T, 'sample' : sample}
-    return img_data
 
 
 def build_rotate_matrix(img_data_parms):
@@ -803,8 +800,7 @@ def build_rotate_matrix(img_data_parms):
 
     >>> import numpy as NP
     >>> import _registration as reg
-    >>> imdata = reg.build_structs()
-    >>> x = NP.zeros(6, dtype=NP.float64)
+    >>> x = np.zeros(6, dtype=np.float64)
     >>> M = reg.build_rotate_matrix(x)
     >>> M 
     array([[ 1.,  0.,  0.,  0.],
@@ -815,10 +811,10 @@ def build_rotate_matrix(img_data_parms):
 
     """
 
-    R1 = NP.zeros([4,4], dtype=NP.float64);
-    R2 = NP.zeros([4,4], dtype=NP.float64);
-    R3 = NP.zeros([4,4], dtype=NP.float64);
-    T  = NP.eye(4, dtype=NP.float64);
+    R1 = np.zeros([4,4], dtype=np.float64);
+    R2 = np.zeros([4,4], dtype=np.float64);
+    R3 = np.zeros([4,4], dtype=np.float64);
+    T  = np.eye(4, dtype=np.float64);
 
     alpha = math.radians(img_data_parms[0])
     beta  = math.radians(img_data_parms[1])
@@ -853,404 +849,196 @@ def build_rotate_matrix(img_data_parms):
     T[1][3] = img_data_parms[4]
     T[2][3] = img_data_parms[5]
 
-    rot_matrix = NP.dot(T, R1);
-    rot_matrix = NP.dot(rot_matrix, R2);
-    rot_matrix = NP.dot(rot_matrix, R3);
+    rot_matrix = np.dot(T, R1);
+    rot_matrix = np.dot(rot_matrix, R2);
+    rot_matrix = np.dot(rot_matrix, R3);
 
     return rot_matrix
 
 
-def load_volume(imagedesc, imagename=None, threshold=0.999, debug=0):
+def build_gauss_volume(imagedesc, S=[1500.0, 2500.0, 1000.0]):
 
     """
-    image = load_volume(imagedesc, imagename=None, threshold=0.999, debug=0)  --- OR ---
-    image, h, ih, index = load_volume(imagedesc, imagename=None, threshold=0.999, debug=0)
+    build a 3D Gaussian volume. user passes in image dims in imagedesc
+    the sigma for each axis is S[3] where 0=z, 1=y, 2=x
 
-    gets an image descriptor and optional filename and returns a scaled 8 bit volume. The
-    scaling is designed to make full use of the 8 bits (ignoring high amplitude outliers).
-    The current method uses numpy fromfile and will be replaced by neuroimage nifti load.
+    volume3D = build_test_volume(imagedesc, S)
 
     Parameters 
     ----------
-    imagedesc : {dictionary} 
-        imagedesc is the descriptor of the image to be read. 
+    imagedesc : {dictionary}
+        volume dimensions and sampling
 
-    imagename : {string} : optional
-        name of image file. No name creates a blank image that is used for creating
-        a rotated test image or image rescaling.
-
-    threshold : {float} : optional
-        this is the threshold for upper cutoff in the 8 bit scaling. The volume histogram
-        and integrated histogram is computed and the upper amplitude cutoff is where the 
-        integrated histogram crosses the value set in the threshold. setting threshold to
-        1.0 means the scaling is done over the min to max amplitude range.
-
-    debug : {0, 1} : optional
-        when debug=1 the method returns the volume histogram, integrated histogram and the 
-        amplitude index where the provided threshold occured.
+    S : {tuple}
+        the Gaussian sigma for Z, Y and X
 
     Returns 
     -------
-    image : {dictionary}
-        the volume data assoicated with the filename or a blank volume of the same
-        dimensions as specified in imagedesc.
 
-    --- OR --- (if debug = 1)
+    volume3D : {nd_array}
+        the 3D volume for testing
 
-    image : {dictionary}
-        the volume data assoicated with the filename or a blank volume of the same
-        dimensions as specified in imagedesc.
+    """
+    layers = imagedesc['layers']
+    rows   = imagedesc['rows']
+    cols   = imagedesc['cols']
 
-    h : {nd_array}
-        the volume 1D amplitude histogram
+    L = layers/2
+    R = rows/2
+    C = cols/2
 
+    # build coordinates for 3D Gaussian volume
+    # coordinates are centered at (0, 0, 0)
+    [a, b, c] = np.mgrid[-L:L, -R:R, -C:C]
+
+    sigma    = np.array([S[0], S[1], S[2]])
+    aa       = (np.square(a))/sigma[0]
+    bb       = (np.square(b))/sigma[1]
+    cc       = (np.square(c))/sigma[2]
+    volume3D = (255.0*np.exp(-(aa + bb + cc))).astype(np.uint8)
+
+    return volume3D
+
+
+def scale_image(image, max_amp=255, image_type=np.uint8, threshold=0.999, fetch_ih=0):
+
+    """
+    scale and threshold clip the volume using the integrated histogram
+    to set the high threshold
+
+    Parameters 
+    ----------
+    image : {nd_array}
+        raw unscaled volume
+
+    max_amp : int (default 255)
+        the maximum value of the scaled image
+
+    image_type : nd_array dtype (default uint8)
+        the type of the volume to return.
+
+    threshold : float (default 0.999)
+        the value of the normalized integrated histogram
+	that when reached sets the high threshold index
+
+    Returns 
+    -------
+    image : {nd_array}
+        the scaled volume
     ih : {nd_array}
-        the volume 1D amplitude integrated histogram
+        the integrated histogram. can be used for image display 
+	purpose (histogram equalization)
 
-    index : {int}
-        the amplitude (histogram index) where the integrated histogram
-        crosses the 'threshold' provided.
+    """
 
-    Examples
-    --------
+    max = image.max()
+    min = image.min()
+    if max == 0 and min == 0:
+        raise ValueError, "Zero image. cannot be scaled"
 
-    >>> import numpy as NP
-    >>> import _registration as reg
-    >>> anat_desc = reg.load_anatMRI_desc()
-    >>> image_anat, h, ih, index = reg.load_volume(anat_desc, imagename='ANAT1_V0001.img', debug=1)
-    >>> index
-    210
+    # need range of pixels for the number of bins
+    h, edges = np.histogram(image, bins=(max-min))
+    ih = (np.cumsum(h)).astype(np.float64)
+    # normalize the integrated histogram
+    ih = ih / ih.max()
+    indices = np.where(ih >= threshold)
+    # wind up getting all the indices where the ih >= threshold
+    # and only need the first index. tuple has one nd_array and
+    # get the 0 element from it ([0][0])
+    index   = indices[0][0]
+    scale   = float(max_amp) / (index-min)
+    image   = (scale*(image.astype(np.float)-min))
+    image[image>max_amp] = max_amp
+    # down type. usually will go from float to 8 bit (needed for the 8 bit joint histogram)
+    image = image.astype(image_type)
+
+    if fetch_ih == 1:
+        return image, ih
+    else:
+        return image
+
+
+def check_alignment(image1, image1_mat, image2, image2_mat, histo_fwhm=3, method='ncc', lite=0,
+                    smhist=0, alpha=0.0, beta=0.0, gamma=0.0, Tx=0, Ty=0, Tz=0, ret_histo=0):
+                    
+    """
+    test the cost function and (optional) view the joint histogram. can be used
+    during intra-modal registration to measure the current alignment (return
+    the cross correlation). would measure before and after registration
+
 
 
     """
 
-    # load MRI or fMRI volume and return an autoscaled 8 bit image.
-    # autoscale is using integrated histogram to deal with outlier high amplitude voxels
-    if imagename == None:
-        # imagename of none means to create a blank image
-        ImageVolume = NP.zeros(imagedesc['layers']*imagedesc['rows']*imagedesc['cols'],
-                        dtype=NP.uint16).reshape(imagedesc['layers'], imagedesc['rows'], imagedesc['cols'])
-    else:
-        ImageVolume = NP.fromfile(imagename,
-                        dtype=NP.uint16).reshape(imagedesc['layers'], imagedesc['rows'], imagedesc['cols']);
+    # do the parameter validity checking. this is specific to this 3D registration.
+    # make sure the image is 3D and the mats are 4x4 with nonzero diagonal
 
-    # the mat (voxel to physical) matrix
-    M = NP.eye(4, dtype=NP.float64);
-    # for now just the sample size (mm units) in x, y and z
-    M[0][0] = imagedesc['sample_x']
-    M[1][1] = imagedesc['sample_y']
-    M[2][2] = imagedesc['sample_z']
-    # dimensions 
-    D = NP.zeros(3, dtype=NP.int32);
-    # Gaussian kernel - fill in with build_fwhm() 
-    F = NP.zeros(3, dtype=NP.float64);
-    D[0] = imagedesc['rows']
-    D[1] = imagedesc['cols']
-    D[2] = imagedesc['layers']
+    if image1.ndim != 3:
+        raise ValueError, "Image 1 is not 3 dimensional"
 
-    if imagename == None:
-        # no voxels to scale to 8 bits
-        ImageVolume = ImageVolume.astype(NP.uint8)
-        image = {'data' : ImageVolume, 'mat' : M, 'dim' : D, 'fwhm' : F}
-        return image
+    if image2.ndim != 3:
+        raise ValueError, "Image 2 is not 3 dimensional"
 
-    # 8 bit scale with threshold clip of the volume integrated histogram
-    max = ImageVolume.max()
-    min = ImageVolume.min()
-    ih  = NP.zeros(max-min+1, dtype=NP.float64);
-    h   = NP.zeros(max-min+1, dtype=NP.float64);
-    if threshold <= 0:
-        threshold = 0.999
-    elif threshold > 1.0:
-        threshold = 1.0
-    # get the integrated histogram of the volume and get max from 
-    # the threshold crossing in the integrated histogram 
-    index  = R.register_image_threshold(ImageVolume, h, ih, threshold)
-    scale  = 255.0 / (index-min)
-    # generate the scaled 8 bit image
-    images = (scale*(ImageVolume.astype(NP.float)-min))
-    images[images>255] = 255 
-    image = {'data' : images.astype(NP.uint8), 'mat' : M, 'dim' : D, 'fwhm' : F}
-    if debug == 1:
-        return image, h, ih, index
-    else:
-        return image
+    if image1.dtype != np.uint8:
+        raise ValueError, "Image 1 is not 8 bit (required for joint histogram)"
 
+    if image2.dtype != np.uint8:
+        raise ValueError, "Image 2 is not 8 bit (required for joint histogram)"
 
+    if image1_mat.shape != (4,4):
+        raise ValueError, "Image1 MAT is not 4x4"
 
-#
-#  ---- demo/debug routines  ---- 
-#
+    if image2_mat.shape != (4,4):
+        raise ValueError, "Image2 MAT is not 4x4"
 
-def load_anatMRI_desc():
-    # this is for demo on the test MRI and fMRI volumes
-    rows   = 256
-    cols   = 256
-    layers = 90
-    xsamp  = 0.9375
-    ysamp  = 0.9375
-    zsamp  = 1.5
-    desc = {'rows' : rows, 'cols' : cols, 'layers' : layers, 
-            'sample_x' : xsamp, 'sample_y' : ysamp, 'sample_z' : zsamp}
-    return desc
+    if (np.diag(image1_mat)).prod() == 0:
+        raise ValueError, "Image1 MAT has a 0 on the diagonal"
 
-def load_fMRI_desc():
-    # this is for demo on the test MRI and fMRI volumes
-    rows   = 64
-    cols   = 64
-    layers = 28
-    xsamp  = 3.75
-    ysamp  = 3.75
-    zsamp  = 5.0
-    desc = {'rows' : rows, 'cols' : cols, 'layers' : layers, 
-            'sample_x' : xsamp, 'sample_y' : ysamp, 'sample_z' : zsamp}
-    return desc
+    if (np.diag(image2_mat)).prod() == 0:
+        raise ValueError, "Image2 MAT has a 0 on the diagonal"
 
-def read_fMRI_directory(path):
-    files_fMRI = glob.glob(path)
-    return files_fMRI
+    if method != 'nmi' and method != 'mi'  and method != 'ncc'\
+                       and method != 'ecc' and method != 'mse':
+        raise ValueError, "choose cost method nmi, mi, ecc, mse, ncc"
 
+    P    = np.zeros(6, dtype=np.float64);
+    P[0] = alpha
+    P[1] = beta
+    P[2] = gamma
+    P[3] = Tx
+    P[4] = Ty
+    P[5] = Tz
 
-def check_alignment(image1, image2, imdata, method='ncc', lite=0, smhist=0, 
-                    alpha=0.0, beta=0.0, gamma=0.0, Tx=0, Ty=0, Tz=0, ret_histo=0):
-                    
-    #
-    # to test the cost function and view the joint histogram
-    # for 2 images. used for debug
-    #
-    imdata['parms'][0] = alpha
-    imdata['parms'][1] = beta
-    imdata['parms'][2] = gamma
-    imdata['parms'][3] = Tx
-    imdata['parms'][4] = Ty
-    imdata['parms'][5] = Tz
-    M = build_rotate_matrix(imdata['parms'])
-    optfunc_args = (image1, image2, imdata['step'], imdata['fwhm'], lite, smhist, method, ret_histo)
-
+    step = np.array([1, 1, 1], dtype=np.int32)
+    optfunc_args = (image1, image1_mat, image2, image2_mat, step, histo_fwhm, lite,
+		    smhist, method, ret_histo)
+			
     if ret_histo:
-        cost, joint_histogram = optimize_function(imdata['parms'], optfunc_args)
+        cost, joint_histogram = cost_function(P, optfunc_args)
         return cost, joint_histogram 
     else:
-        cost = optimize_function(imdata['parms'], optfunc_args)
+        cost = cost_function(P, optfunc_args)
         return cost
 
-def build_scale_image(image, scale):
+
+
+def build_scale_volume(image, mat, scale):
     #
     # rescale the 'mat' (voxel to physical mapping matrix) 
     #
-    (layers, rows, cols) = image['data'].shape
-    M = image['mat'] * scale
+    M = mat * scale
+    (layers, rows, cols) = image.shape
     # dimensions 
-    D = NP.zeros(3, dtype=NP.int32);
-    # Gaussian kernel - fill in with build_fwhm() 
-    F = NP.zeros(3, dtype=NP.float64);
-    Z = NP.zeros(3, dtype=NP.float64);
+    D = np.zeros(3, dtype=np.int32);
+    Z = np.zeros(3, dtype=np.float64);
     D[0] = rows/scale
     D[1] = cols/scale
     D[2] = layers/scale
-    image2 = NP.zeros(D[2]*D[1]*D[0], dtype=NP.uint8).reshape(D[2], D[0], D[1]);
+    image2 = np.zeros([D[2], D[0], D[1]], dtype=np.uint8)
     mode = 1;
-    R.register_volume_resample(image['data'], image2, Z, scale, mode)
-    scaled_image = {'data' : image2, 'mat' : M, 'dim' : D, 'fwhm' : F}
-    return scaled_image
+    reg.register_volume_resample(image, image2, Z, scale, mode)
+    return image2, M
 
 
-def demo_MRI_volume_align(scale=2, alpha=3.0, beta=4.0, gamma=5.0, Tx = 0.0, Ty = 0.0, Tz = 0.0):
-    """
-    demo with (must have file ANAT1_V0001.img)
-
-    image1, image2, imdata = reg.demo_MRI_volume_align()
-    x = reg.python_coreg(image1, image2, imdata, method='ncc', lite=1) 
-    image2r = reg.remap_image(image2, x, resample='cubic')
-    image2rz = reg.resize_image(image2r, image1['mat'])
-
-
-    slice1 = image1['data'][45, :, :]
-    slice2 = image2['data'][45/2, :, :]
-    slice2r = image2r['data'][45/2, :, :]
-    slice2rz = image2rz['data'][45, :, :]
-
-    pylab.figure(1)
-    pylab.bone()
-    pylab.imshow(slice1)
-    pylab.imshow(slice1)
-    pylab.figure(2)
-    pylab.imshow(slice2)
-    pylab.figure(3)
-    pylab.imshow(slice2r)
-    pylab.figure(4)
-    pylab.imshow(slice2rz)
-    pylab.show()
-
-    """
-    #
-    # this is for coreg MRI / fMRI scale test. The volume is anatomical MRI.
-    # the image is rotated in 3D. after rotation the image is scaled.  
-    #
-
-    anat_desc = load_anatMRI_desc()
-    image1 = load_volume(anat_desc, imagename='ANAT1_V0001.img')
-    image2 = load_volume(anat_desc, imagename=None)
-    imdata = build_structs()
-    image1['fwhm'] = build_fwhm(image1['mat'], imdata['step'])
-    image2['fwhm'] = build_fwhm(image2['mat'], imdata['step'])
-    imdata['parms'][0] = alpha
-    imdata['parms'][1] = beta
-    imdata['parms'][2] = gamma
-    imdata['parms'][3] = Tx
-    imdata['parms'][4] = Ty
-    imdata['parms'][5] = Tz
-    M = build_rotate_matrix(imdata['parms'])
-    # rotate volume. linear interpolation means the volume is low pass filtered
-    R.register_linear_resample(image1['data'], image2['data'], M, imdata['step'])
-    # subsample volume
-    image3 = build_scale_image(image2, scale)
-    return image1, image3, imdata
-
-def demo_rotate_fMRI_volume(fMRIVol, x): 
-    #
-    # return rotated fMRIVol. the fMRIVol is already loaded, and gets rotated
-    #
-
-    desc = load_fMRI_desc()
-    image = load_volume(desc, imagename=None)
-    imdata = build_structs()
-    image['fwhm'] = build_fwhm(image['mat'], imdata['step'])
-    imdata['parms'][0] = x[0]  # alpha
-    imdata['parms'][1] = x[1]  # beta
-    imdata['parms'][2] = x[2]  # gamma
-    imdata['parms'][3] = x[3]  # Tx
-    imdata['parms'][4] = x[4]  # Ty
-    imdata['parms'][5] = x[5]  # Tz
-    M = build_rotate_matrix(imdata['parms'])
-    # rotate volume. cubic spline interpolation means the volume is NOT low pass filtered
-    R.register_cubic_resample(fMRIVol['data'], image['data'], M, imdata['step'])
-    return image
-
-def demo_MRI_coregistration(optimizer_method='powell', histo_method=1, smooth_histo=0, smooth_image=0, ftype=1):
-    """
-    demo with (must have file ANAT1_V0001.img and fMRI directory fMRIData)
-
-    measures, imageF_anat, fmri_series = reg.demo_MRI_coregistration()
-
-    show results with
-
-    In [59]: measures[25]['cost']
-    Out[59]: -0.48607185
-
-    In [60]: measures[25]['align_cost']
-    Out[60]: -0.99514639
-
-    In [61]: measures[25]['align_rotate']
-    Out[61]:
-    array([ 1.94480181,  5.64703989,  5.35002136, -5.00544405, -2.2712214, -1.42249691], dtype=float32)
-
-    In [62]: measures[25]['rotate']
-    Out[62]:
-    array([ 1.36566341,  4.70644331,  4.68198586, -4.32256889, -2.47607017, -2.39173937], dtype=float32)
-
-
-    """
-
-    # demo of alignment of fMRI series with anatomical MRI
-    # in this demo, each fMRI volume is first perturbed (rotated, translated) 
-    # by a random value. The initial registration is measured, then the optimal
-    # alignment is computed and the registration measure made following the volume remap.
-    # The fMRI registration is done with the first fMRI volume using normalized cross-correlation.
-    # Each fMRI volume is rotated to the fMRI-0 volume and the series is ensemble averaged.
-    # The ensemble averaged is then registered with the anatomical MRI volume using normalized mutual information.
-    # The fMRI series is then rotated with this parameter. The alignments are done with 3D cubic splines.
-
-    # read the anatomical MRI volume
-    anat_desc = load_anatMRI_desc()
-    imageF_anat = load_volume(anat_desc, imagename='ANAT1_V0001.img')
-    # the sampling structure
-    imdata = build_structs()
-    # the volume filter
-    imageF_anat['fwhm'] = build_fwhm(imageF_anat['mat'], imdata['step'])
-
-    # read in the file list of the fMRI data
-    metric_test = NP.dtype([('cost', 'f'),
-                           ('align_cost', 'f'),
-                           ('rotate', 'f', 6),
-                           ('align_rotate', 'f', 6)])
-
-    fMRIdata = read_fMRI_directory('fMRIData\*.img')
-    fmri_desc = load_fMRI_desc()
-    fmri_series = {}
-    ave_fMRI_volume = NP.zeros(fmri_desc['layers']*fmri_desc['rows']*fmri_desc['cols'],
-                      dtype=NP.float64).reshape(fmri_desc['layers'], fmri_desc['rows'], fmri_desc['cols'])
-    count = 0
-    number_volumes = len(fMRIdata)
-    measures = NP.zeros(number_volumes, dtype=metric_test)
-    # load and perturb (rotation, translation) the fMRI volumes
-    for i in fMRIdata:
-        image = load_volume(fmri_desc, i)
-        # random perturbation of angle, translation for each volume beyond the first
-        if count == 0:
-            image['fwhm'] = build_fwhm(image['mat'], imdata['step'])
-            fmri_series[count] = image
-            count = count + 1
-        else:
-            x = NP.random.random(6) - 0.5
-            x = 10.0 * x
-            fmri_series[count] = demo_rotate_fMRI_volume(image, x)
-            measures[count]['rotate'][0:6] = x[0:6]
-            count = count + 1
-
-
-    # load and register the fMRI volumes with volume_0 using normalized cross correlation metric
-    imageF = fmri_series[0]
-    if smooth_image:
-        image_F_xyz = filter_image_3D(imageF['data'], imageF['fwhm'], ftype)
-        imageF['data'] = image_F_xyz
-    for i in range(1, number_volumes):
-        imageG = fmri_series[i]
-        # the measure prior to alignment 
-        measures[i]['cost'] = check_alignment(imageF, imageG, imdata, method='ncc',
-                                              lite=histo_method, smhist=smooth_histo)
-        x = python_coreg(imageF, imageG, imdata, lite=histo_method, method='ncc',
-                         opt_method=optimizer_method, smhist=smooth_histo, smimage=smooth_image)
-        measures[i]['align_rotate'][0:6] = x[0:6]
-        measures[i]['align_cost'] = check_alignment(imageF, imageG, imdata, method='ncc', 
-                                         lite=histo_method, smhist=smooth_histo,
-                                         alpha=x[0], beta=x[1], gamma=x[2], Tx=x[3], Ty=x[4], Tz=x[5])
-
-
-    # align the volumes and average them for co-registration with the anatomical MRI 
-    ave_fMRI_volume = fmri_series[0]['data'].astype(NP.float64)
-    for i in range(1, number_volumes):
-        image = fmri_series[i]
-        x[0:6] = measures[i]['align_rotate'][0:6]
-        # overwrite the fMRI volume with the aligned volume
-        fmri_series[i] = remap_image(image, x, resample='cubic')
-        ave_fMRI_volume = ave_fMRI_volume + fmri_series[i]['data'].astype(NP.float64)
-
-    ave_fMRI_volume = (ave_fMRI_volume / float(number_volumes)).astype(NP.uint8)
-    ave_fMRI_volume = {'data' : ave_fMRI_volume, 'mat' : imageF['mat'], 
-                       'dim' : imageF['dim'], 'fwhm' : imageF['fwhm']}
-    # register (using normalized mutual information) with the anatomical MRI
-    if smooth_image:
-        image_F_anat_xyz = filter_image_3D(imageF_anat['data'], imageF_anat['fwhm'], ftype)
-        imageF_anat['data'] = image_F_anat_xyz
-    x = python_coreg(imageF_anat, ave_fMRI_volume, imdata, lite=histo_method,
-                     method='nmi', opt_method=optimizer_method, smhist=smooth_histo, smimage=smooth_image)
-    print 'functional-anatomical align parameters '
-    print x
-    for i in range(number_volumes):
-        image = fmri_series[i]
-        # overwrite the fMRI volume with the anatomical-aligned volume
-        fmri_series[i] = remap_image(image, x, resample='cubic')
-
-    return measures, imageF_anat, fmri_series
-
-
-def demo_fMRI_resample(imageF_anat, fmri_series):
-    resampled_fmri_series = {}
-    number_volumes = len(fmri_series)
-    for i in range(number_volumes):
-        resampled_fmri_series[i] = resize_image(fmri_series[i], imageF_anat['mat'])
-
-    return resampled_fmri_series
 
 

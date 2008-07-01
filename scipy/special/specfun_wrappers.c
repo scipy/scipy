@@ -29,6 +29,7 @@ extern void F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
 extern void F_FUNC(cpsi,CPSI)(double*,double*,double*,double*);
 extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,Py_complex*,Py_complex*);
 extern void F_FUNC(cchg,CCHG)(double*,double*,Py_complex*,Py_complex*);
+extern void F_FUNC(chgm,CHGM)(double*,double*,double*,double*);
 extern void F_FUNC(chgu,CHGU)(double*,double*,double*,double*,int*);
 extern void F_FUNC(itairy,ITAIRY)(double*,double*,double*,double*,double*);
 extern void F_FUNC(e1xb,E1XB)(double*,double*);
@@ -147,6 +148,15 @@ double hypU_wrap(double a, double b, double x) {
   
 }
 
+double hyp1f1_wrap(double a, double b, double x) {
+   double outy;
+ 
+   F_FUNC(chgm,CHGM)(&a, &b, &x, &outy);
+   if (outy == 1e300) {
+     outy = INFINITY;
+   }
+   return outy;
+}
 
 int itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt) {
   double tmp; 

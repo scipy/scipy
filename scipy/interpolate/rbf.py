@@ -42,7 +42,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from numpy import sqrt, log, asarray, newaxis, all, dot, float64, eye
+from numpy import sqrt, log, asarray, newaxis, all, dot, float64, exp, eye
 from scipy import linalg
 
 class Rbf(object):
@@ -58,7 +58,7 @@ class Rbf(object):
             return sqrt((1.0/self.epsilon*r)**2 + 1)
         elif self.function.lower() == 'inverse multiquadric':
             return 1.0/sqrt((1.0/self.epsilon*r)**2 + 1)
-        elif self.function.lower() == 'gausian':
+        elif self.function.lower() == 'gaussian':
             return exp(-(self.epsilon*r)**2)
         elif self.function.lower() == 'cubic':
             return r**3
@@ -84,7 +84,7 @@ class Rbf(object):
             ::
                 'multiquadric': sqrt((self.epsilon*r)**2 + 1)
                 'inverse multiquadric': 1.0/sqrt((self.epsilon*r)**2 + 1)
-                'gausian': exp(-(self.epsilon*r)**2)
+                'gaussian': exp(-(self.epsilon*r)**2)
                 'cubic': r**3
                 'quintic': r**5
                 'thin-plate': r**2 * log(r)

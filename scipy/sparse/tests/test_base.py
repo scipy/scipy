@@ -215,18 +215,26 @@ class _TestCommon:
         assert_array_equal(self.datsp - A.todense(),self.dat - A.todense())
 
     def test_elmul(self):
-        temp = self.dat.copy()
-        temp[0,2] = 2.0
-        temp = self.spmatrix(temp)
-        c = temp.multiply(self.datsp)
-        assert_array_equal(c.todense(),[[1,0,0,4],[9,0,1,0],[0,4,0,0]])
-
-        # complex
-        A = array([[1-2j,0+5j,-1+0j],[4-3j,-3+6j,5]])
-        B = array([[5+2j,7-3j,-2+1j],[0-1j,-4+2j,9]])
+        # real/real
+        A = array([[4,0,9],[2,-3,5]])
+        B = array([[0,7,0],[0,-4,0]])
         Asp = self.spmatrix(A)
         Bsp = self.spmatrix(B)
-        assert_almost_equal( Asp.multiply(Bsp).todense(), A*B)
+        assert_almost_equal( Asp.multiply(Bsp).todense(), A*B) #sparse/sparse
+        assert_almost_equal( Asp.multiply(B),             A*B) #sparse/dense
+
+        # complex/complex
+        C = array([[1-2j,0+5j,-1+0j],[4-3j,-3+6j,5]])
+        D = array([[5+2j,7-3j,-2+1j],[0-1j,-4+2j,9]])
+        Csp = self.spmatrix(C)
+        Dsp = self.spmatrix(D)
+        assert_almost_equal( Csp.multiply(Dsp).todense(), C*D) #sparse/sparse
+        assert_almost_equal( Csp.multiply(D),             C*D) #sparse/dense
+
+        # real/complex
+        assert_almost_equal( Asp.multiply(Dsp).todense(), A*D) #sparse/sparse
+        assert_almost_equal( Asp.multiply(D),             A*D) #sparse/dense
+        
 
     def test_eldiv(self):
         expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]]

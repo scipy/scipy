@@ -1,8 +1,6 @@
 from os.path import join as pjoin, splitext, basename as pbasename
 
 def generate_interface_emitter(target, source, env):
-    source = [pjoin(env['build_dir'], str(i)) for i in source]
-    target = [pjoin(env['build_dir'], str(i)) for i in target]
     base = str(target[0])
     return (['%s.pyf' % base], source)
 

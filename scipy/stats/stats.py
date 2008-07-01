@@ -50,6 +50,10 @@ MOMENTS:  moment
           kurtosis
           normaltest (for arrays only)
 
+MOMENTS HANDLING NAN: nanmean
+                      nanmedian
+                      nanstd
+
 ALTERED VERSIONS:  tmean
                    tvar
                    tstd
@@ -214,6 +218,7 @@ __all__ = ['gmean', 'hmean', 'mean', 'cmedian', 'median', 'mode',
            'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums',
            'fastsort', 'rankdata',
+           'nanmean', 'nanstd', 'nanmedian',
           ]
 
 

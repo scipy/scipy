@@ -284,7 +284,8 @@ class MatFileReader(MatStreamAgent):
 
     def end_of_stream(self):
         b = self.mat_stream.read(1)
-        self.mat_stream.seek(-1,1)
+        curpos = self.mat_stream.tell()
+        self.mat_stream.seek(curpos-1)
         return len(b) == 0
 
 

@@ -242,7 +242,12 @@ python module specfun ! in
         ! eix
         ! e1xb
 
-        ! chgm
+        subroutine chgm(a,b,x,hg) ! in :specfun:specfun.f
+             double precision intent(in) :: a
+             double precision intent(in) :: b
+             double precision intent(in) :: x
+             double precision intent(out) :: hg
+        end subroutine chgm
 
         ! stvh0
 

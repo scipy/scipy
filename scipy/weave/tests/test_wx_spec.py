@@ -10,15 +10,25 @@ check_return -- test whether a variable is passed in, modified, and
 
 from scipy.testing import *
 
-from scipy.weave import ext_tools, wx_spec
+e = None
+DONOTRUN = False
+try:
+    from scipy.weave import ext_tools, wx_spec
+    import wx
+except ImportError, e:
+    wx = None
+    DONOTRUN = True
+except RuntimeError, e:
+    wx = None
+    DONOTRUN = True
 
-
-import wx
+skip = dec.skipif(DONOTRUN, "(error was %s)" % str(e))
 
 class TestWxConverter(TestCase):
     def setUp(self):
-        self.app = wx.App()
-        self.s = wx_spec.wx_converter()
+        if not DONOTRUN:
+            self.app = wx.App()
+            self.s = wx_spec.wx_converter()
 
     @dec.slow
     def test_type_match_string(self):
@@ -106,6 +116,8 @@ class TestWxConverter(TestCase):
         b='bub'
         c = wx_return.test(b)
         assert(c == 'hello')
+
+decorate_methods(TestWxConverter, skip)
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])

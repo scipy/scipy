@@ -44,6 +44,7 @@ del _num
 # Remove the linalg imported from numpy so that the scipy.linalg package can be
 # imported.
 del linalg
+__all__.remove('linalg')
 
 try:
     from __config__ import show as show_config
@@ -61,6 +62,20 @@ SCIPY_IMPORT_VERBOSE = int(_os.environ.get('SCIPY_IMPORT_VERBOSE','-1'))
 del _os
 pkgload = PackageLoader()
 pkgload(verbose=SCIPY_IMPORT_VERBOSE,postpone=True)
+
+# Remove subpackage names from __all__ such that they are not imported via 
+# "from scipy import *". This works around a numpy bug present in < 1.2.
+subpackages = """cluster constants fftpack integrate interpolate io lib linalg
+linsolve maxentropy misc ndimage odr optimize sandbox signal sparse special
+splinalg stats stsci testing weave""".split()
+for name in subpackages:
+    try:
+        __all__.remove(name)
+    except ValueError:
+        pass
+
+del name, subpackages
+
 __doc__ += """
 
 Available subpackages

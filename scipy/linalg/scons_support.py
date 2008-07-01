@@ -14,8 +14,6 @@ def do_generate_interface(target, source, env):
     return 0
 
 def generate_interface_emitter(target, source, env):
-    source = [pjoin(env['build_dir'], str(i)) for i in source]
-    target = [pjoin(env['build_dir'], str(i)) for i in target]
     base = str(target[0])
     return (['%s.pyf' % base], source)
 

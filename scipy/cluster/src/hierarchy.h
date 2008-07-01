@@ -34,8 +34,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _CPY_CLUSTER_H
-#define _CPY_CLUSTER_H
+#ifndef _CPY_HIERARCHY_H
+#define _CPY_HIERARCHY_H
 
 #define CPY_LINKAGE_SINGLE 0
 #define CPY_LINKAGE_COMPLETE 1
@@ -89,34 +89,8 @@ typedef void (distfunc) (cinfo *info, int mini, int minj, int np, int n);
 void dist_to_squareform_from_vector(double *M, const double *v, int n);
 void dist_to_vector_from_squareform(const double *M, double *v, int n);
 
-void pdist_euclidean(const double *X, double *dm, int m, int n);
-void pdist_seuclidean(const double *X,
-		      const double *var, double *dm, int m, int n);
-void pdist_mahalanobis(const double *X, const double *covinv,
-		       double *dm, int m, int n);
-void pdist_bray_curtis(const double *X, double *dm, int m, int n);
-void pdist_canberra(const double *X, double *dm, int m, int n);
-void pdist_hamming(const double *X, double *dm, int m, int n);
-void pdist_hamming_bool(const char *X, double *dm, int m, int n);
-void pdist_city_block(const double *X, double *dm, int m, int n);
-void pdist_cosine(const double *X, double *dm, int m, int n, const double *norms);
-void pdist_chebyshev(const double *X, double *dm, int m, int n);
-void pdist_jaccard(const double *X, double *dm, int m, int n);
-void pdist_jaccard_bool(const char *X, double *dm, int m, int n);
-void pdist_kulsinski_bool(const char *X, double *dm, int m, int n);
-void pdist_minkowski(const double *X, double *dm, int m, int n, double p);
-void pdist_yule_bool(const char *X, double *dm, int m, int n);
-void pdist_matching_bool(const char *X, double *dm, int m, int n);
-void pdist_dice_bool(const char *X, double *dm, int m, int n);
-void pdist_rogerstanimoto_bool(const char *X, double *dm, int m, int n);
-void pdist_russellrao_bool(const char *X, double *dm, int m, int n);
-void pdist_sokalmichener_bool(const char *X, double *dm, int m, int n);
-void pdist_sokalsneath_bool(const char *X, double *dm, int m, int n);
-
 void inconsistency_calculation(const double *Z, double *R, int n, int d);
 void inconsistency_calculation_alt(const double *Z, double *R, int n, int d);
-
-double dot_product(const double *u, const double *v, int n);
 
 void chopmins(int *ind, int mini, int minj, int np);
 void chopmins_ns_i(double *ind, int mini, int np);

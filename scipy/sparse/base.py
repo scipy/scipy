@@ -195,13 +195,14 @@ class spmatrix(object):
         """Return this matrix in a given sparse format
 
         Parameters
-        ==========
-            - format : desired sparse matrix format
-              - If format is None then no conversion is performed
-              - Other possible values include:
-                -  "csr" for csr_matrix format
-                -  "csc" for csc_matrix format
-                -  "dok" for dok_matrix format and so on
+        ----------
+        format : {string, None}
+            desired sparse matrix format
+                - None for no format conversion
+                - "csr" for csr_matrix format
+                - "csc" for csc_matrix format
+                - "lil" for lil_matrix format
+                - "dok" for dok_matrix format and so on
 
         """
 

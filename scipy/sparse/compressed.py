@@ -251,11 +251,13 @@ class _cs_matrix(_data_matrix):
     def __truediv__(self,other):
         if isscalarlike(other):
             return self * (1./other)
+
         elif isspmatrix(other):
-            if (other.shape != self.shape):
-                raise ValueError, "inconsistent shapes"
+            if other.shape != self.shape:
+                raise ValueError('inconsistent shapes')
 
             return self._binopt(other,'_eldiv_')
+
         else:
             raise NotImplementedError
 
@@ -263,11 +265,11 @@ class _cs_matrix(_data_matrix):
     def multiply(self, other):
         """Point-wise multiplication by another matrix
         """
-        if (other.shape != self.shape):
-            raise ValueError, "inconsistent shapes"
+        if other.shape != self.shape:
+            raise ValueError('inconsistent shapes')
 
         if isdense(other):
-            return multiply(self.todense(),other)
+            return numpy.multiply(self.todense(),other)
         else:
             other = self.__class__(other)
             return self._binopt(other,'_elmul_')

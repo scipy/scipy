@@ -116,5 +116,37 @@ void coo_todense(const I n_row,
 }
 
 
+/*
+ * Compute Y += A*X for COO matrix A and dense vectors X,Y
+ *
+ *
+ * Input Arguments:
+ *   I  nnz           - number of nonzeros in A
+ *   I  Ai[nnz]       - row indices
+ *   I  Aj[nnz]       - column indices
+ *   T  Ax[nnz]       - nonzero values
+ *   T  Xx[n_col]     - input vector
+ *
+ * Output Arguments:
+ *   T  Yx[n_row]     - output vector
+ *
+ * Notes:
+ *   Output array Yx must be preallocated
+ *
+ *   Complexity: Linear.  Specifically O(nnz(A))
+ * 
+ */
+template <class I, class T>
+void coo_matvec(const I nnz,
+	            const I Ai[], 
+	            const I Aj[], 
+	            const T Ax[],
+	            const T Xx[],
+	                  T Yx[])
+{
+    for(I n = 0; n < nnz; n++){
+        Yx[Ai[n]] += Ax[n] * Xx[Aj[n]];
+    }
+}
 
 #endif

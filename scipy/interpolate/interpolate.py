@@ -152,9 +152,6 @@ class interp1d(object):
     UnivariateSpline - a more recent wrapper of the FITPACK routines
     """
 
-    _interp_axis = -1 # used to set which is default interpolation
-                      # axis.  DO NOT CHANGE OR CODE WILL BREAK.
-
     def __init__(self, x, y, kind='linear', axis=-1,
                  copy=True, bounds_error=True, fill_value=np.nan):
         """ Initialize a 1D linear interpolation class.
@@ -226,12 +223,18 @@ class interp1d(object):
         if kind == 'linear':
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
-            oriented_y = y.swapaxes(self._interp_axis, axis)
+            axes = range(y.ndim)
+            del axes[self.axis]
+            axes.append(self.axis)
+            oriented_y = y.transpose(axes)
             minval = 2
-            len_y = oriented_y.shape[self._interp_axis]
+            len_y = oriented_y.shape[-1]
             self._call = self._call_linear
         else:
-            oriented_y = y.swapaxes(0, axis)
+            axes = range(y.ndim)
+            del axes[self.axis]
+            axes.insert(0, self.axis)
+            oriented_y = y.transpose(axes)
             minval = order + 1
             len_y = oriented_y.shape[0]
             self._call = self._call_spline
@@ -322,10 +325,10 @@ class interp1d(object):
             return y_new.transpose(axes)
         else:
             y_new[out_of_bounds] = self.fill_value
-            axes = range(ny - nx, ny)
-            axes[self.axis:self.axis] = range(ny - nx)
+            axes = range(nx, ny)
+            axes[self.axis:self.axis] = range(nx)
             return y_new.transpose(axes)
-
+    
     def _check_bounds(self, x_new):
         """ Check the inputs for being in the bounds of the interpolated data.
 
@@ -407,6 +410,16 @@ class ppform(object):
     fromspline = classmethod(fromspline)
 
 
+def _dot0(a, b):
+    """Similar to numpy.dot, but sum over last axis of a and 1st axis of b"""
+    if b.ndim <= 2:
+        return dot(a, b)
+    else:
+        axes = range(b.ndim)
+        axes.insert(-1, 0)
+        axes.pop(0)
+        return dot(a, b.transpose(axes))
+
 def _find_smoothest(xk, yk, order, conds=None, B=None):
     # construct Bmatrix, and Jmatrix
     # e = J*c
@@ -431,8 +444,7 @@ def _find_smoothest(xk, yk, order, conds=None, B=None):
     tmp = dot(tmp,V1)
     tmp = dot(tmp,np.diag(1.0/s))
     tmp = dot(tmp,u.T)
-    return dot(tmp, yk)
-
+    return _dot0(tmp, yk)
 
 def _setdiag(a, k, v):
     assert (a.ndim==2)
@@ -471,7 +483,7 @@ def _find_smoothest2(xk, yk):
     V2[1::2] = -1
     V2 /= math.sqrt(Np1)
     dk = np.diff(xk)
-    b = 2*np.diff(yk)/dk
+    b = 2*np.diff(yk, axis=0)/dk
     J = np.zeros((N-1,N+1))
     idk = 1.0/dk
     _setdiag(J,0,idk[:-1])
@@ -480,7 +492,7 @@ def _find_smoothest2(xk, yk):
     A = dot(J.T,J)
     val = dot(V2,dot(A,V2))
     res1 = dot(np.outer(V2,V2)/val,A)
-    mk = dot(np.eye(Np1)-res1,dot(Bd,b))
+    mk = dot(np.eye(Np1)-res1, _dot0(Bd,b))
     return mk
 
 def _get_spline2_Bb(xk, yk, kind, conds):
