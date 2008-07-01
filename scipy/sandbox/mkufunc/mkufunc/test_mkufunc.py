@@ -183,21 +183,6 @@ class Math_Tests(unittest.TestCase, Util):
         self.assertClose(uf(x), f(x))
 
 
-class FuncArg_Tests(unittest.TestCase, Util):
-    
-    def test_fargs0(self):
-        def f():
-            return 42
-        
-        uf = mkufunc(f)
-        self.assertEqual(uf(), 42)
-        self.assert_(type(uf()).__name__.startswith('float'))
-
-        uf = mkufunc(int)(f)
-        self.assertEqual(uf(), 42)
-        self.assert_(type(uf()).__name__.startswith('int'))
-
-
 class Control_Flow_Tests(unittest.TestCase):
 
     def test_if(self):
