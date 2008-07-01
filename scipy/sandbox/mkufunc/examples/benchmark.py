@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from math import sin, cos
-import time
+import time, hashlib
 
 from numpy import arange, vectorize, allclose
 from scipy import weave
@@ -18,13 +18,6 @@ mfunc = mkufunc([(float, float)])(f)
 
 #####################################################################
 support_code = '''
-double foo(double x)
-{
-        return x;
-}
-
-typedef double Func_0(double a);
-
 static void
 PyUFunc_0(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
 {
@@ -33,13 +26,13 @@ PyUFunc_0(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
         npy_intp os = steps[1];
         char *ip0 = args[0];
         char *op = args[1];
-        Func_0 *f = (Func_0 *) func;
         n = dimensions[0];
+        double x;
         
         for(i = 0; i < n; i++) {
-                double x = (double *)ip0;
+                x = *(double *)ip0;
                 double *out = (double *)op;
-
+                
                 *out = 4.2 * x*x + 3.7 * x + 1.5;
 
                 ip0 += is0;
@@ -51,23 +44,19 @@ static PyUFuncGenericFunction f_functions[] = {
         PyUFunc_0,
 };
 
-static void *f_data[] = {
-        (void *) foo,
-};
-
 static char f_types[] = {
-        NPY_DOUBLE, NPY_DOUBLE,   /* 0 */
+        NPY_DOUBLE, NPY_DOUBLE,
 };
 '''
 ufunc_info = weave.base_info.custom_info()
 ufunc_info.add_header('"numpy/ufuncobject.h"')
 
-ufunc = weave.inline('''
+ufunc = weave.inline('/*' + hashlib.md5(support_code).hexdigest() + '''*/
 import_ufunc();
 
 return_val = PyUFunc_FromFuncAndData(
             f_functions,
-            f_data,
+            NULL,
             f_types,
             1,             /* ntypes */
             1,             /* nin */
