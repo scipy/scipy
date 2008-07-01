@@ -2,7 +2,7 @@
 from math import sin, cos
 import time, hashlib
 
-from numpy import arange, vectorize, allclose
+from numpy import arange, vectorize, allclose, empty_like
 from scipy import weave
 
 from mkufunc.api import mkufunc
@@ -75,7 +75,7 @@ return_val = PyUFunc_FromFuncAndData(
 x = arange(0, 1000, 0.0001)    #print "x =", x, x.dtype
 
 start_time = time.time()
-b_y = x.copy()
+b_y = empty_like(x)
 weave.blitz("b_y[:] = 4.2 * x[:] * x[:] + 3.7 * x[:] + 1.5")
 b_time = time.time() - start_time
 print 'blitz: %.6f sec' % b_time
