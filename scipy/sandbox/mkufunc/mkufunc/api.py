@@ -104,9 +104,17 @@ class Cfunc(object):
         self.cname = self._prefix + 'pypy_g_' + f.__name__
 
     def cfunc(self):
-        p = re.compile(r'^\w+[*\s\w]+' + self.cname +
-                       r'\s*\([^)]*\)\s*\{.*?[\n\r]\}[\n\r]',
-                       re.DOTALL | re.MULTILINE | re.VERBOSE)
+        p = re.compile(
+            r'''
+            ^\w+                 # return type of function
+            [\s]+                # whitespace
+            %s                   # function name
+            \s*                  # possibly whitespace
+            \([^)]*\)            # argument types
+            \s*                  # possibly whitespace
+            \{.*?[\n\r]\}[\n\r]  # function body ending with } in single line
+            ''' % self.cname,
+            re.DOTALL | re.MULTILINE | re.VERBOSE)
         
         found = p.findall(self._allCsrc)
         assert len(found) == 1
