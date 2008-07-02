@@ -117,6 +117,16 @@ class Math_Tests(unittest.TestCase, Util):
         b = [f(x) for x in xx]
         self.assertClose(a, b)
         
+    def test_pi(self):
+        @mkufunc
+        def f(x): return math.pi * x
+        self.assertFuncsEqual(f, lambda x: math.pi * x)
+
+    def test_e(self):
+        @mkufunc#(show=1)
+        def f(x): return math.e * x
+        self.assertFuncsEqual(f, lambda x: math.e * x)
+   
     def test_exp(self):
         @mkufunc
         def f(x): return math.exp(x)
@@ -126,6 +136,11 @@ class Math_Tests(unittest.TestCase, Util):
         @mkufunc
         def f(x): return math.log(x)
         self.assertFuncsEqual(f, math.log)
+
+    def test_log10(self):
+        @mkufunc
+        def f(x): return math.log10(x)
+        self.assertFuncsEqual(f, math.log10)
 
     def test_sqrt(self):
         @mkufunc
@@ -147,6 +162,21 @@ class Math_Tests(unittest.TestCase, Util):
         def f(x): return math.tan(x)
         self.assertFuncsEqual(f, math.tan)
         
+    def test_cosh(self):
+        @mkufunc
+        def f(x): return math.cosh(x)
+        self.assertFuncsEqual(f, math.cosh)
+
+    def test_sinh(self):
+        @mkufunc
+        def f(x): return math.sinh(x)
+        self.assertFuncsEqual(f, math.sinh)
+        
+    def test_tanh(self):
+        @mkufunc
+        def f(x): return math.tanh(x)
+        self.assertFuncsEqual(f, math.tanh)
+        
     def test_acos(self):
         @mkufunc
         def f(x): return math.acos(x)
@@ -156,7 +186,7 @@ class Math_Tests(unittest.TestCase, Util):
         @mkufunc
         def f(x): return math.asin(x)
         self.assertFuncsEqual(f, math.asin)
-        
+
     def test_atan(self):
         @mkufunc
         def f(x): return math.atan(x)
@@ -169,12 +199,25 @@ class Math_Tests(unittest.TestCase, Util):
 
         self.assertClose(f(4, 5), math.atan2(4, 5))
         
-        xx = array([1.0, 3.0, -2.4,  3.1, -2.3])
-        yy = array([1.0, 2.0,  7.5, -8.7,  0.0])
+        xx = array([1.0, 3.0, -2.4,  3.1, -2.3, -1.0])
+        yy = array([1.0, 2.0,  7.5, -8.7,  0.0, -3.2])
         a = f(xx, yy)
         b = [math.atan2(x, y) for x, y in zip(xx, yy)]
         self.assertClose(a, b)
+
+    def test_pow(self):
+        @mkufunc
+        def f(x, y):
+            return math.pow(x, y)
         
+        self.assertClose(f(2, 3), 8)
+        
+        xx = array([1.0, 3.0, 2.4, 0.0, 0.0, 0.0, 2.3,  2.0])
+        yy = array([1.0, 2.0, 7.5, 0.0, 0.5, 1.0, 0.0, -1.0])
+        a = f(xx, yy)
+        b = [math.pow(x, y) for x, y in zip(xx, yy)]
+        self.assertClose(a, b)
+       
     def test_arithmetic(self):
         def f(x):
             return (4 * x + 2) / (x * x - 7 * x + 1)
@@ -236,7 +279,13 @@ class FreeVariable_Tests(unittest.TestCase, Util):
         x = arange(0, 1, 0.1)
         self.assertClose(f(x), a * x)
 
-    def test_const2(self):
+
+class Misc_Tests(unittest.TestCase, Util):
+
+    def test_lambda(self):
+        self.assertRaises(AssertionError, mkufunc, lambda x: x*x + 2)
+    
+    def test_angle(self):
         from math import sin, pi, sqrt
         @mkufunc
         def sin_deg(angle):
@@ -244,11 +293,8 @@ class FreeVariable_Tests(unittest.TestCase, Util):
         
         self.assertClose(sin_deg([0, 30, 45, 60, 90, 180, 270, 360]),
                          [0, 0.5, 1/sqrt(2), sqrt(3)/2, 1, 0, -1, 0])
-        
+  
 
-class Misc_Tests(unittest.TestCase, Util):
-
-    pass
 
 
 if __name__ == '__main__':
