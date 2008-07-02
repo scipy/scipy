@@ -230,7 +230,7 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
     else:
         s = tuple(s)
         if len(s) > len(x.shape):
-            raise ValueError("s shape cannot be longer than x shape.")
+            raise ValueError("shape cannot be longer than x shape.")
         for i in range(-len(s),0):
             if x.shape[i]!=s[i]:
                 x = _fix_shape(x,s[i],i)
