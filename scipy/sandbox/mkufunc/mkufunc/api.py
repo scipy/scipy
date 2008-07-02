@@ -15,6 +15,7 @@ from scipy import weave
 
 
 verbose = 0
+showC = 0
 
 def func_hash(f, salt=None):
     """ Return a MD5 hash for a function object as string.
@@ -112,7 +113,7 @@ class Cfunc(object):
             \s*                  # possibly whitespace
             \([^)]*\)            # argument types
             \s*                  # possibly whitespace
-            \{.*?[\n\r]\}[\n\r]  # function body ending with } in single line
+            \{.*?\n\}\n          # function body ending with } in single line
             ''' % self.cname,
             re.DOTALL | re.MULTILINE | re.VERBOSE)
         
@@ -120,7 +121,12 @@ class Cfunc(object):
         assert len(found) == 1
         res = found[0]
         res = res.replace(self._prefix + 'pypy_g_ll_math_ll_math_', '')
-        return 'inline ' + res + '\n'
+        if showC:
+            print '------------------'
+            print res
+            print '------------------'
+        
+        return 'inline %s\n' % res
     
     def ufunc_support_code(self):
         # Unfortunately the code in here is very hard to read.
@@ -288,7 +294,7 @@ def genufunc(f, signatures):
                         customize=ufunc_info)
 
 
-def mkufunc(arg0=[float]):
+def mkufunc(arg0=[float], src=0):
     """ Python decorator which returns compiled UFunc of the function given.
     
     >>> from numpy import arange
@@ -330,7 +336,10 @@ def mkufunc(arg0=[float]):
             
         def __call__(self, *args):
             return self.ufunc(*args)
-        
+
+    global showC
+    showC = src
+    
     if isinstance(arg0, FunctionType):
         f = arg0
         signatures = [float]

@@ -123,10 +123,10 @@ class Math_Tests(unittest.TestCase, Util):
         self.assertFuncsEqual(f, lambda x: math.pi * x)
 
     def test_e(self):
-        @mkufunc#(show=1)
+        @mkufunc
         def f(x): return math.e * x
         self.assertFuncsEqual(f, lambda x: math.e * x)
-   
+        
     def test_exp(self):
         @mkufunc
         def f(x): return math.exp(x)
@@ -216,6 +216,19 @@ class Math_Tests(unittest.TestCase, Util):
         yy = array([1.0, 2.0, 7.5, 0.0, 0.5, 1.0, 0.0, -1.0])
         a = f(xx, yy)
         b = [math.pow(x, y) for x, y in zip(xx, yy)]
+        self.assertClose(a, b)
+        
+    def test_hypot(self):
+        @mkufunc
+        def f(x, y):
+            return math.hypot(x, y)
+        
+        self.assertClose(f(3, 4), 5)
+        
+        xx = array([3.0, 2.4, -2.4,  3.1, -2.3, -1.0])
+        yy = array([4.0, 7.5,  7.5, -8.7,  0.0, -3.2])
+        a = f(xx, yy)
+        b = [math.hypot(x, y) for x, y in zip(xx, yy)]
         self.assertClose(a, b)
        
     def test_arithmetic(self):
