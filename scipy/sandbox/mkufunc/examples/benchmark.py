@@ -2,7 +2,7 @@
 from math import sin, cos
 import time, hashlib
 
-from numpy import arange, vectorize, allclose, empty_like
+from numpy import linspace, vectorize, allclose, empty_like
 from scipy import weave
 
 from mkufunc.api import mkufunc
@@ -72,7 +72,7 @@ return_val = PyUFunc_FromFuncAndData(
 #############################################################
 
 
-x = arange(0, 1000, 0.0001)    #print "x =", x, x.dtype
+x = linspace(0, 1, 10000*1000)
 
 start_time = time.time()
 b_y = empty_like(x)

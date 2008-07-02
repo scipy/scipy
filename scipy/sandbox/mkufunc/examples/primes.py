@@ -1,8 +1,11 @@
 #!/usr/bin/env python
+import sys
+sys.path.append('../mkufunc')
+
 from math import sqrt
 import time
 
-from mkufunc.api import mkufunc
+from api import mkufunc
 
 
 def count_primes(N):
@@ -17,13 +20,13 @@ def count_primes(N):
 
 
 start_time = time.time()
-assert count_primes(1000000) == 78498
+print count_primes(100000)
 print 'Python: %.6f sec' % (time.time() - start_time)
 
 
-count_primes = mkufunc(int)(count_primes)
+count_primes = mkufunc(int, src=len(sys.argv)-1)(count_primes)
 
 
 start_time = time.time()
-assert count_primes(1000000) == 78498
+print count_primes(100000)
 print 'Compiled: %.6f sec' % (time.time() - start_time)
