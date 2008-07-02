@@ -229,6 +229,12 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
         s = x.shape
     else:
         s = tuple(s)
+        if axes is None:
+            axes = range(len(s))
+        elif not len(axes) == len(s):
+            raise ValueError("when given, axes and shape arguments "\
+                             "have to be of the same length")
+
         if len(s) > len(x.shape):
             raise ValueError("shape cannot be longer than x shape.")
         for i in range(-len(s),0):
