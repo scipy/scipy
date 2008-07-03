@@ -1,11 +1,8 @@
 #!/usr/bin/env python
-import sys
-sys.path.append('../mkufunc')
-
 from math import sqrt
 import time
 
-from api import mkufunc
+from mkufunc.api import mkufunc
 
 
 def count_primes(N):

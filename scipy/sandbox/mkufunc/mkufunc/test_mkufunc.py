@@ -3,7 +3,7 @@ import unittest
 
 from numpy import array, arange, allclose
 
-from api import Cfunc, genufunc, mkufunc
+from mkufunc.api import Cfunc, genufunc, mkufunc
 
 
 class Util:
