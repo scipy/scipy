@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 from math import sqrt
-import time
+import time, sys
+
+src = 0
+if len(sys.argv) == 2 and sys.argv[1] == 's':
+    src = 1
+    
+
 
 from mkufunc.api import mkufunc
 
@@ -21,7 +27,7 @@ print count_primes(100000)
 print 'Python: %.6f sec' % (time.time() - start_time)
 
 
-count_primes = mkufunc(int, src=len(sys.argv)-1)(count_primes)
+count_primes = mkufunc(int, src=src)(count_primes)
 
 
 start_time = time.time()
