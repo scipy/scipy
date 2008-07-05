@@ -6,18 +6,18 @@
 -1
 >>> mandel(10, 10)
 1
->>> mandel(N.array([-1, 0, 10]), N.array([.3, 0, 10]))
+>>> mandel(array([-1, 0, 10]), array([.3, 0, 10]))
 array([36, -1,  1])
 """
 import hashlib
 
-import numpy as N
+from numpy import array
 from scipy import weave
 
 support_code = '''
 #define D 1000
 
-long depth(double cr, double ci)
+long iterations(double cr, double ci)
 {
         long d = 1;
         double zr=cr, zi=ci, zr2, zi2;
@@ -42,15 +42,10 @@ PyUFunc_0(char **args, npy_intp *dimensions, npy_intp *steps, void *func)
         char *ip1 = args[1];
         char *op = args[2];
         n = dimensions[0];
-        double cr, ci;
         
         for(i = 0; i < n; i++) {
-                cr = *(double *)ip0;
-                ci = *(double *)ip1;
-                long *out = (long *)op;
-                
-                *out = depth(cr, ci);
-                
+                *(long *)op = iterations(*(double *)ip0,
+                                         *(double *)ip1);
                 ip0 += is0;
                 ip1 += is1;
                 op += os;
@@ -80,7 +75,7 @@ return_val = PyUFunc_FromFuncAndData(
             1,             /* nout */
             PyUFunc_None,  /* identity */
             "mandel",      /* name */
-            "returns depth from cr, ci",         /* doc */
+            "returns number of iterations from cr, ci",    /* doc */
             0);
             ''',
                      support_code=support_code,
