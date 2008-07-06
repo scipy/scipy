@@ -48,11 +48,16 @@ write_info(env)
 #==========
 
 # minpack lib
-minpack_src = [str(s) for s in env.Glob(pjoin('minpack', '*.f'))]
+minpack_src = [pjoin("minpack", s) for s in ["chkder.f", "dogleg.f",
+"dpmpar.f", "enorm.f", "fdjac1.f", "fdjac2.f", "hybrd.f", "hybrd1.f",
+"hybrj.f", "hybrj1.f", "lmder.f", "lmder1.f", "lmdif.f", "lmdif1.f", "lmpar.f",
+"lmstr.f", "lmstr1.f", "minpack.txt", "qform.f", "qrfac.f", "qrsolv.f",
+"r1mpyq.f", "r1updt.f", "rwupdt.f"]]
 env.DistutilsStaticExtLibrary('minpack', source = minpack_src)
 
 # rootfind lib
-rootfind_src = [str(s) for s in env.Glob(pjoin('Zeros', '*.c'))]
+rootfind_src  = [pjoin("Zeros", s) for s in ["bisect.c", "brenth.c",
+"brentq.c", "ridder.c"]]
 env.DistutilsStaticExtLibrary('rootfind', source = rootfind_src)
 
 env.AppendUnique(LIBS = ['minpack', 'rootfind'])

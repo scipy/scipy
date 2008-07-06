@@ -26,20 +26,37 @@ env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 # XXX: lapack integration
 
 # Build linpack_lite
-src = [str(s) for s in env.Glob(pjoin('linpack_lite', '*.f'))]
+src = [pjoin("linpack_lite", s) for s in [ "dgbfa.f", "dgbsl.f", "dgefa.f",
+"dgesl.f", "dgtsl.f", "zgbfa.f", "zgbsl.f", "zgefa.f", "zgesl.f"]]
 linpack_lite = env.DistutilsStaticExtLibrary('linpack_lite', source = src)
 
 # Build mach
 # XXX: do not use optimization flags for mach
-src = [str(s) for s in env.Glob(pjoin('mach', '*.f'))]
+src = [pjoin("mach", s) for s in ["d1mach.f", "i1mach.f", "r1mach.f",
+"xerror.f"]]
 mach = env.DistutilsStaticExtLibrary('mach', source = src)
 
 # Build quadpack
-src = [str(s) for s in env.Glob(pjoin('quadpack', '*.f'))]
+src = [pjoin("quadpack", s) for s in ["dqag.f", "dqage.f", "dqagi.f",
+"dqagie.f", "dqagp.f", "dqagpe.f", "dqags.f", "dqagse.f", "dqawc.f",
+"dqawce.f", "dqawf.f", "dqawfe.f", "dqawo.f", "dqawoe.f", "dqaws.f",
+"dqawse.f", "dqc25c.f", "dqc25f.f", "dqc25s.f", "dqcheb.f", "dqelg.f",
+"dqk15.f", "dqk15i.f", "dqk15w.f", "dqk21.f", "dqk31.f", "dqk41.f", "dqk51.f",
+"dqk61.f", "dqmomo.f", "dqng.f", "dqpsrt.f", "dqwgtc.f", "dqwgtf.f",
+"dqwgts.f"]]
 quadpack = env.DistutilsStaticExtLibrary('quadpack', source = src)
 
 # Build odepack
-src = [str(s) for s in env.Glob(pjoin('odepack', '*.f'))]
+src = [pjoin("odepack", s) for s in [ "adjlr.f", "aigbt.f", "ainvg.f",
+"blkdta000.f", "bnorm.f", "cdrv.f", "cfode.f", "cntnzu.f", "ddasrt.f",
+"ddassl.f", "decbt.f", "ewset.f", "fnorm.f", "intdy.f", "iprep.f", "jgroup.f",
+"lsoda.f", "lsodar.f", "lsode.f", "lsodes.f", "lsodi.f", "lsoibt.f", "md.f",
+"mdi.f", "mdm.f", "mdp.f", "mdu.f", "nnfc.f", "nnsc.f", "nntc.f", "nroc.f",
+"nsfc.f", "odrv.f", "pjibt.f", "prep.f", "prepj.f", "prepji.f", "prja.f",
+"prjs.f", "rchek.f", "roots.f", "slsbt.f", "slss.f", "solbt.f",
+"solsy.f", "srcar.f", "srcma.f", "srcms.f", "srcom.f", "sro.f", "stoda.f",
+"stode.f", "stodi.f", "vmnorm.f", "vnorm.f", "vode.f", "xerrwv.f", "xsetf.f",
+"xsetun.f", "zvode.f"]]
 odepack = env.DistutilsStaticExtLibrary('odepack', source = src)
 
 env.AppendUnique(LIBPATH = '.')

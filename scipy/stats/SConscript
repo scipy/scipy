@@ -18,7 +18,7 @@ if not config.CheckF77Clib():
 config.Finish()
 
 # Statlib library
-src = env.Glob(pjoin('statlib', '*.f' ))
+src = [pjoin("statlib", s) for s in [ "ansari.f", "spearman.f", "swilk.f"]]
 env.DistutilsStaticExtLibrary('statlibimp', source = src)
 
 env.AppendUnique(LIBPATH = '.')
