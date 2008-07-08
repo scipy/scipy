@@ -13,7 +13,8 @@
 *
       RETURN
 *
-      END FUNCTION <_c>GETBREAK
+      END
+*     END FUNCTION <_c>GETBREAK
 
 
 

@@ -557,4 +557,5 @@
 *
 *     End of QMRREVCOM
 *
-      END SUBROUTINE <_c>QMRREVCOM
+      END
+*     END SUBROUTINE <_c>QMRREVCOM
