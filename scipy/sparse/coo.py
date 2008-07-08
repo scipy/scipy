@@ -7,11 +7,10 @@ __all__ = ['coo_matrix', 'isspmatrix_coo']
 from itertools import izip
 from warnings import warn
 
-from numpy import array, asarray, empty, intc, zeros,  \
-        unique, searchsorted, atleast_2d, empty_like, rank, \
-        deprecate
+from numpy import array, asarray, empty, intc, zeros, \
+        unique, searchsorted, atleast_2d, rank, deprecate
 
-from sparsetools import coo_tocsr, coo_tocsc, coo_todense
+from sparsetools import coo_tocsr, coo_tocsc, coo_todense, coo_matvec
 from base import isspmatrix
 from data import _data_matrix
 from sputils import upcast, to_native, isshape, getdtype
@@ -55,7 +54,6 @@ class coo_matrix(_data_matrix):
         - does not directly support:
             + arithmetic operations
             + slicing
-            + matrix vector products
 
 
     Intended Usage
@@ -118,21 +116,21 @@ class coo_matrix(_data_matrix):
                 try:
                     obj, ij = arg1
                 except:
-                    raise TypeError, "invalid input format"
+                    raise TypeError('invalid input format')
 
                 try:
                     if len(ij) != 2:
                         raise TypeError
                 except TypeError:
-                    raise TypeError, "invalid input format"
+                    raise TypeError('invalid input format')
 
-                self.row = array(ij[0],copy=copy,dtype=intc)
-                self.col = array(ij[1],copy=copy,dtype=intc)
-                self.data = array(obj,copy=copy)
+                self.row  = array(ij[0], copy=copy, dtype=intc)
+                self.col  = array(ij[1], copy=copy, dtype=intc)
+                self.data = array(  obj, copy=copy)
 
                 if shape is None:
                     if len(self.row) == 0 or len(self.col) == 0:
-                        raise ValueError, "cannot infer dimensions from zero sized index arrays"
+                        raise ValueError('cannot infer dimensions from zero sized index arrays')
                     M = self.row.max() + 1
                     N = self.col.max() + 1
                     self.shape = (M, N)
@@ -144,13 +142,13 @@ class coo_matrix(_data_matrix):
         elif arg1 is None:
             # Initialize an empty matrix.
             if not isinstance(shape, tuple) or not isintlike(shape[0]):
-                raise TypeError, "dimensions not understood"
+                raise TypeError('dimensions not understood')
             warn('coo_matrix(None, shape=(M,N)) is deprecated, ' \
                     'use coo_matrix( (M,N) ) instead', DeprecationWarning)
             self.shape = shape
-            self.data = array([],getdtype(dtype, default=float))
-            self.row = array([],dtype=intc)
-            self.col = array([],dtype=intc)
+            self.data = array([], getdtype(dtype, default=float))
+            self.row = array([], dtype=intc)
+            self.col = array([], dtype=intc)
         else:
             if isspmatrix(arg1):
                 if isspmatrix_coo(arg1) and copy:
@@ -169,10 +167,10 @@ class coo_matrix(_data_matrix):
                 try:
                     M = atleast_2d(asarray(arg1))
                 except:
-                    raise TypeError, "invalid input format"
+                    raise TypeError('invalid input format')
 
                 if len(M.shape) != 2:
-                    raise TypeError, "expected rank <= 2 array or matrix"
+                    raise TypeError('expected rank <= 2 array or matrix')
                 self.shape = M.shape
                 self.row,self.col = (M != 0).nonzero()
                 self.data  = M[self.row,self.col]
@@ -182,11 +180,10 @@ class coo_matrix(_data_matrix):
     def getnnz(self):
         nnz = len(self.data)
         if (nnz != len(self.row)) or (nnz != len(self.col)):
-            raise ValueError, "row, column, and data array must all be "\
-                  "the same length"
+            raise ValueError('row, column, and data array must all be the same length')
 
         if rank(self.data) != 1 or rank(self.row) != 1 or rank(self.col) != 1:
-            raise ValueError, "row, column, and data arrays must have rank 1"
+            raise ValueError('row, column, and data arrays must have rank 1')
 
         return nnz
     nnz = property(fget=getnnz)
@@ -204,22 +201,20 @@ class coo_matrix(_data_matrix):
                     % self.col.dtype.name )
 
         # only support 32-bit ints for now
-        self.row  = asarray(self.row,dtype=intc)
-        self.col  = asarray(self.col,dtype=intc)
+        self.row  = asarray(self.row, dtype=intc)
+        self.col  = asarray(self.col, dtype=intc)
         self.data = to_native(self.data)
 
         if nnz > 0:
-            if(self.row.max() >= self.shape[0]):
-                raise ValueError, "row index exceedes matrix dimensions"
-            if(self.col.max() >= self.shape[1]):
-                raise ValueError, "column index exceedes matrix dimensions"
-            if(self.row.min() < 0):
-                raise ValueError, "negative row index found"
-            if(self.col.min() < 0):
-                raise ValueError, "negative column index found"
+            if self.row.max() >= self.shape[0]:
+                raise ValueError('row index exceedes matrix dimensions')
+            if self.col.max() >= self.shape[1]:
+                raise ValueError('column index exceedes matrix dimensions')
+            if self.row.min() < 0:
+                raise ValueError('negative row index found')
+            if self.col.min() < 0:
+                raise ValueError('negative column index found')
 
-        # some functions pass floats
-        self.shape = tuple([int(x) for x in self.shape])
 
     @deprecate
     def rowcol(self, num):
@@ -334,6 +329,15 @@ class coo_matrix(_data_matrix):
             return coo_matrix( (data, (self.row, self.col) ), \
                                    shape=self.shape, dtype=data.dtype)
 
+    ###########################
+    # Multiplication handlers #
+    ###########################
+
+    def _mul_vector(self, other):
+        #output array
+        result = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
+        coo_matvec(self.nnz, self.row, self.col, self.data, other, result)
+        return result
 
 from sputils import _isinstance
 

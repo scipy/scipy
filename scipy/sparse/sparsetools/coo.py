@@ -149,3 +149,32 @@ def coo_todense(*args):
     """
   return _coo.coo_todense(*args)
 
+def coo_matvec(*args):
+  """
+    coo_matvec(int nnz, int Ai, int Aj, signed char Ax, signed char Xx, 
+        signed char Yx)
+    coo_matvec(int nnz, int Ai, int Aj, unsigned char Ax, unsigned char Xx, 
+        unsigned char Yx)
+    coo_matvec(int nnz, int Ai, int Aj, short Ax, short Xx, short Yx)
+    coo_matvec(int nnz, int Ai, int Aj, unsigned short Ax, unsigned short Xx, 
+        unsigned short Yx)
+    coo_matvec(int nnz, int Ai, int Aj, int Ax, int Xx, int Yx)
+    coo_matvec(int nnz, int Ai, int Aj, unsigned int Ax, unsigned int Xx, 
+        unsigned int Yx)
+    coo_matvec(int nnz, int Ai, int Aj, long long Ax, long long Xx, 
+        long long Yx)
+    coo_matvec(int nnz, int Ai, int Aj, unsigned long long Ax, unsigned long long Xx, 
+        unsigned long long Yx)
+    coo_matvec(int nnz, int Ai, int Aj, float Ax, float Xx, float Yx)
+    coo_matvec(int nnz, int Ai, int Aj, double Ax, double Xx, double Yx)
+    coo_matvec(int nnz, int Ai, int Aj, long double Ax, long double Xx, 
+        long double Yx)
+    coo_matvec(int nnz, int Ai, int Aj, npy_cfloat_wrapper Ax, npy_cfloat_wrapper Xx, 
+        npy_cfloat_wrapper Yx)
+    coo_matvec(int nnz, int Ai, int Aj, npy_cdouble_wrapper Ax, npy_cdouble_wrapper Xx, 
+        npy_cdouble_wrapper Yx)
+    coo_matvec(int nnz, int Ai, int Aj, npy_clongdouble_wrapper Ax, 
+        npy_clongdouble_wrapper Xx, npy_clongdouble_wrapper Yx)
+    """
+  return _coo.coo_matvec(*args)
+

@@ -43,7 +43,7 @@ class lil_matrix(spmatrix):
     Disadvantages of the LIL format
         - arithmetic operations LIL + LIL are slow (consider CSR or CSC)
         - slow column slicing (consider CSC)
-        - matrix vector products are slower than CSR/CSC
+        - slow matrix vector products (consider CSR or CSC)
 
     Intended Usage
         - LIL is a convenient format for constructing sparse matrices
@@ -322,20 +322,17 @@ class lil_matrix(spmatrix):
         else:
             raise ValueError, "invalid index value: %s" % str((i, j))
 
-    def __mul__(self, other):           # self * other
-        if isscalarlike(other):
-            if other == 0:
-                # Multiply by zero: return the zero matrix
-                new = lil_matrix(shape=self.shape, dtype=self.dtype)
-            else:
-                new = self.copy()
-                # Multiply this scalar by every element.
-                new.data = numpy.array([[val*other for val in rowvals] for
-                                        rowvals in new.data], dtype=object)
-            return new
+    def _mul_scalar(self, other):
+        if other == 0:
+            # Multiply by zero: return the zero matrix
+            new = lil_matrix(shape=self.shape, dtype=self.dtype)
         else:
-            return self.dot(other)
-
+            new = self.copy()
+            # Multiply this scalar by every element.
+            new.data = numpy.array([[val*other for val in rowvals] for
+                                    rowvals in new.data], dtype=object)
+        return new
+    
     def __truediv__(self, other):           # self / other
         if isscalarlike(other):
             new = self.copy()

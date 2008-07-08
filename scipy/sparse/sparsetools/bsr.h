@@ -618,14 +618,11 @@ void bsr_matvec_fixed(const I n_brow,
 	                  const T Xx[],
 	                        T Yx[])
 {
-    for(I i = 0; i < R*n_brow; i++){
-        Yx[i] = 0;
-    }
-
+    const int RC = R*C;
     for(I i = 0; i < n_brow; i++) {
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++) {
             I j = Aj[jj];
-            matvec<R,C,1,1>(Ax + jj*R*C, Xx + j*C, Yx + i*R);
+            matvec<R,C,1,1>(Ax + jj*RC, Xx + j*C, Yx + i*R);
         }
     }
 }
@@ -686,11 +683,6 @@ void bsr_matvec(const I n_brow,
 #endif
 
     //otherwise use general method
-
-    for(I i = 0; i < R*n_brow; i++){
-        Yx[i] = 0;
-    }
-
     for(I i = 0; i < n_brow; i++){
         const T * A = Ax + R * C * Ap[i];
               T * y = Yx + R * i;

@@ -349,18 +349,15 @@ class dok_matrix(spmatrix, dict):
             new[key] = -self[key]
         return new
 
-    def __mul__(self, other):           # self * other
-        if isscalarlike(other):
-            new = dok_matrix(self.shape, dtype=self.dtype)
-            # Multiply this scalar by every element.
-            for (key, val) in self.iteritems():
-                new[key] = val * other
-            #new.dtype.char = self.dtype.char
-            return new
-        else:
-            return self.dot(other)
+    def _mul_scalar(self, other):
+        new = dok_matrix(self.shape, dtype=self.dtype)
+        # Multiply this scalar by every element.
+        for (key, val) in self.iteritems():
+            new[key] = val * other
+        #new.dtype.char = self.dtype.char
+        return new
 
-    def __imul__(self, other):           # self * other
+    def __imul__(self, other):
         if isscalarlike(other):
             # Multiply this scalar by every element.
             for (key, val) in self.iteritems():
@@ -370,23 +367,8 @@ class dok_matrix(spmatrix, dict):
         else:
             return NotImplementedError
 
-    def __rmul__(self, other):          # other * self
-        if isscalarlike(other):
-            new = dok_matrix(self.shape, dtype=self.dtype)
-            # Multiply this scalar by every element.
-            for (key, val) in self.iteritems():
-                new[key] = other * val
-            #new.dtype.char = self.dtype.char
-            return new
-        else:
-            # Don't use asarray unless we have to
-            try:
-                tr = other.transpose()
-            except AttributeError:
-                tr = asarray(other).transpose()
-            return self.transpose().dot(tr).transpose()
 
-    def __truediv__(self, other):           # self * other
+    def __truediv__(self, other):
         if isscalarlike(other):
             new = dok_matrix(self.shape, dtype=self.dtype)
             # Multiply this scalar by every element.
@@ -398,7 +380,7 @@ class dok_matrix(spmatrix, dict):
             return self.tocsr() / other
 
 
-    def __itruediv__(self, other):           # self * other
+    def __itruediv__(self, other):
         if isscalarlike(other):
             # Multiply this scalar by every element.
             for (key, val) in self.iteritems():

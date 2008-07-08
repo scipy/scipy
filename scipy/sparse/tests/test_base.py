@@ -137,15 +137,17 @@ class _TestCommon:
         assert_array_equal(self.dat.mean(axis=0), self.datsp.mean(axis=0))
         assert_array_equal(self.dat.mean(axis=1), self.datsp.mean(axis=1))
 
-    def test_fromdense(self):
-        A = matrix([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
-        assert_array_equal(self.spmatrix(A).todense(),A)
-        assert_array_equal(self.spmatrix(A.A).todense(),A)
-        assert_array_equal(self.spmatrix(A.tolist()).todense(),A)
+    def test_from_array(self):
+        A = array([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
+        assert_array_equal(self.spmatrix(A).todense(), A)
 
-    def test_fromlist(self):
+    def test_from_matrix(self):
         A = matrix([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
-        assert_array_equal(self.spmatrix(A.tolist()).todense(),A)
+        assert_array_equal(self.spmatrix(A).todense(), A)
+
+    def test_from_list(self):
+        A = [[1,0,0],[2,3,4],[0,5,0],[0,0,0]]
+        assert_array_equal(self.spmatrix(A).todense(), A)
 
     def test_todense(self):
         chk = self.datsp.todense()
@@ -224,7 +226,7 @@ class _TestCommon:
         assert_array_equal(A.todense() - self.datsp,A.todense() - self.dat)
         assert_array_equal(self.datsp - A.todense(),self.dat - A.todense())
 
-    def test_elmul(self):
+    def test_elementwise_multiply(self):
         # real/real
         A = array([[4,0,9],[2,-3,5]])
         B = array([[0,7,0],[0,-4,0]])
@@ -246,7 +248,7 @@ class _TestCommon:
         assert_almost_equal( Asp.multiply(D),             A*D) #sparse/dense
         
 
-    def test_eldiv(self):
+    def test_elementwise_divide(self):
         expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]]
         assert_array_equal((self.datsp / self.datsp).todense(),expected)
 
@@ -393,7 +395,7 @@ class _TestCommon:
             assert_equal( result.shape, (4,2) )
             assert_equal( result, dot(a,b) )
 
-    def test_formatconversions(self):
+    def test_sparse_format_conversions(self):
         A = sparse.kron([[1,0,1],[0,1,1],[1,0,0]], [[1,1],[0,1]] )
         D = A.todense()
         A = self.spmatrix(A)
@@ -412,12 +414,7 @@ class _TestCommon:
             assert_array_equal(c.todense(), D)
 
 
-
-    def test_todia(self):
-        #TODO, add and test .todia(maxdiags)
-        pass
-
-    def test_tocompressedblock(self):
+    def test_tobsr(self):
         x = array([[1,0,2,0],[0,0,0,0],[0,0,4,5]])
         y = array([[0,1,2],[3,0,5]])
         A = numpy.kron(x,y)
@@ -695,61 +692,61 @@ class _TestFancyIndexing:
         A = self.spmatrix( B )
 
         # [i,j]
-        assert_equal(A[2,3],B[2,3])
-        assert_equal(A[-1,8],B[-1,8])
+        assert_equal(A[2,3],  B[2,3])
+        assert_equal(A[-1,8], B[-1,8])
         assert_equal(A[-1,-2],B[-1,-2])
 
         # [i,1:2]
-        assert_equal(A[2,:].todense(),B[2,:])
+        assert_equal(A[2,:].todense(),   B[2,:])
         assert_equal(A[2,5:-2].todense(),B[2,5:-2])
 
         # [i,[1,2]]
-        assert_equal(A[3,[1,3]].todense(),B[3,[1,3]])
+        assert_equal(A[3,[1,3]].todense(),  B[3,[1,3]])
         assert_equal(A[-1,[2,-5]].todense(),B[-1,[2,-5]])
 
         # [1:2,j]
-        assert_equal(A[:,2].todense(),B[:,2])
-        assert_equal(A[3:4,9].todense(),B[3:4,9])
+        assert_equal(A[:,2].todense(),   B[:,2])
+        assert_equal(A[3:4,9].todense(), B[3:4,9])
         assert_equal(A[1:4,-5].todense(),B[1:4,-5])
         assert_equal(A[2:-1,3].todense(),B[2:-1,3])
         
         # [1:2,1:2]
         assert_equal(A[1:2,1:2].todense(),B[1:2,1:2])
-        assert_equal(A[4:,3:].todense(),B[4:,3:])
-        assert_equal(A[:4,:5].todense(),B[:4,:5])
+        assert_equal(A[4:,3:].todense(),  B[4:,3:])
+        assert_equal(A[:4,:5].todense(),  B[:4,:5])
         assert_equal(A[2:-1,:5].todense(),B[2:-1,:5])
 
         # [1:2,[1,2]]
         assert_equal(A[:,[2,8,3,-1]].todense(),B[:,[2,8,3,-1]])
-        assert_equal(A[3:4,[9]].todense(),B[3:4,[9]])
-        assert_equal(A[1:4,[-1,-5]].todense(),B[1:4,[-1,-5]])
+        assert_equal(A[3:4,[9]].todense(),     B[3:4,[9]])
+        assert_equal(A[1:4,[-1,-5]].todense(), B[1:4,[-1,-5]])
 
         # [[1,2],j]
-        assert_equal(A[[1,3],3].todense(),B[[1,3],3])
-        assert_equal(A[[2,-5],-4].todense(),B[[2,-5],-4])
+        assert_equal(A[[1,3],3].todense(),   B[[1,3],3])
+        assert_equal(A[[2,-5],-4].todense(), B[[2,-5],-4])
 
         # [[1,2],1:2]
-        assert_equal(A[[1,3],:].todense(),B[[1,3],:])
+        assert_equal(A[[1,3],:].todense(),    B[[1,3],:])
         assert_equal(A[[2,-5],8:-1].todense(),B[[2,-5],8:-1])
 
         # [[1,2],[1,2]]
-        assert_equal(A[[1,3],[2,4]],B[[1,3],[2,4]])
+        assert_equal(A[[1,3],[2,4]],   B[[1,3],[2,4]])
         assert_equal(A[[-1,-3],[2,-4]],B[[-1,-3],[2,-4]])
 
         # [[[1],[2]],[1,2]]
-        assert_equal(A[[[1],[3]],[2,4]].todense(),B[[[1],[3]],[2,4]])
+        assert_equal(A[[[1],[3]],[2,4]].todense(),        B[[[1],[3]],[2,4]])
         assert_equal(A[[[-1],[-3],[-2]],[2,-4]].todense(),B[[[-1],[-3],[-2]],[2,-4]])
 
         # [i]
-        assert_equal(A[1,:].todense(),B[1,:])
+        assert_equal(A[1,:].todense(), B[1,:])
         assert_equal(A[-2,:].todense(),B[-2,:])
 
         # [1:2]
-        assert_equal(A[1:4].todense(),B[1:4])
+        assert_equal(A[1:4].todense(), B[1:4])
         assert_equal(A[1:-2].todense(),B[1:-2])
 
         # [[1,2]]
-        assert_equal(A[[1,3]].todense(),B[[1,3]])
+        assert_equal(A[[1,3]].todense(),  B[[1,3]])
         assert_equal(A[[-1,-3]].todense(),B[[-1,-3]])
 
         # [[1,2],:][:,[1,2]]

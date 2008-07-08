@@ -142,54 +142,20 @@ class dia_matrix(_data_matrix):
 
     nnz = property(fget=getnnz)
 
+    def _mul_vector(self, other):
+        x = other
 
-    def __mul__(self, other): # self * other
-        """ Scalar, vector, or matrix multiplication
-        """
-        if isscalarlike(other):
-            return dia_matrix((other * self.data, self.diags),self.shape)
-        else:
-            return self.dot(other)
-
-    def matmat(self, other):
-        if isspmatrix(other):
-            M, K1 = self.shape
-            K2, N = other.shape
-            if (K1 != K2):
-                raise ValueError, "shape mismatch error"
-
-            return self.tocsr() * other
-            #TODO handle sparse/sparse matmat here
-        else:
-            return self.tocsr() * other
-            #TODO handle sparse/dense matmat here
-
-
-    def matvec(self,other):
-        x = asarray(other)
-
-        if x.ndim == 1:
-            x = x.reshape(-1,1)
-        if self.shape[1] != x.shape[0]:
-            raise ValueError, "dimension mismatch"
-
-        y = zeros((self.shape[0],x.shape[1]), dtype=upcast(self.dtype,x.dtype))
-        temp = empty_like( y )
+        y = zeros( self.shape[0], dtype=upcast(self.dtype,x.dtype))
 
         L = self.data.shape[1]
+
         M,N = self.shape
 
         dia_matvec(M,N, len(self.diags), L, self.diags, self.data, x.ravel(), y.ravel())
 
-        if isinstance(other, matrix):
-            y = asmatrix(y)
-
-        if other.ndim == 1:
-            # If 'other' was a 1d array, reshape the result
-            y = y.reshape(-1)
-
         return y
 
+    
     def todia(self,copy=False):
         if copy:
             return self.copy()

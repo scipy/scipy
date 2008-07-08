@@ -6,7 +6,8 @@ __all__ = ['spmatrix', 'isspmatrix', 'issparse',
 from warnings import warn
 
 import numpy
-from numpy import asarray, asmatrix, asanyarray, ones, deprecate
+from numpy import asarray, asmatrix, asanyarray, ones, deprecate, ravel, \
+        matrix
 
 from sputils import isdense, isscalarlike, isintlike
 
@@ -66,10 +67,10 @@ class spmatrix(object):
         try:
             shape = int(shape[0]),int(shape[1]) #floats, other weirdness
         except:
-            raise TypeError,'invalid shape'
+            raise TypeError('invalid shape')
 
         if not (shape[0] >= 1 and shape[1] >= 1):
-            raise TypeError,'invalid shape'
+            raise TypeError('invalid shape')
 
         if (self._shape != shape) and (self._shape is not None):
             try:
@@ -215,6 +216,11 @@ class spmatrix(object):
     #   and operations return in csr format
     #  thus, a new sparse matrix format just needs to define
     #  a tocsr method
+    
+    def multiply(self, other):
+        """Point-wise multiplication by another matrix
+        """
+        return self.tocsr().multiply(other)
 
     def __abs__(self):
         return abs(self.tocsr())
@@ -231,14 +237,84 @@ class spmatrix(object):
 
     def __rsub__(self, other):  # other - self
         return self.tocsr().__rsub__(other)
-
-    def multiply(self, other):
-        """Point-wise multiplication by another matrix
-        """
-        return self.tocsr().multiply(other)
+    
+    # old __mul__ interfaces
+    def matvec(self, other):
+        return self * other
+    def matmat(self, other):
+        return self * other
+    def dot(self, other):
+        return self * other
 
     def __mul__(self, other):
-        return self.tocsr().__mul__(other)
+        """interpret other and call one of the following
+
+        self._mul_scalar()
+        self._mul_vector()
+        self._mul_sparse_matrix()
+        self._mul_dense_matrix()
+        """
+
+        M,N = self.shape
+        
+        if isscalarlike(other):
+            # scalar value
+            return self._mul_scalar(other)
+       
+        if issparse(other):
+            return self._mul_sparse_matrix(other)
+
+        try:
+            other.shape
+        except AttributeError:
+            # If it's a list or whatever, treat it like a matrix
+            other = asanyarray(other)
+
+        if isdense(other) and asarray(other).squeeze().ndim <= 1:
+            ##
+            # dense row or column vector
+            if other.shape != (N,) and other.shape != (N,1):
+                raise ValueError('dimension mismatch')
+
+            result = self._mul_vector(ravel(other))
+
+            if isinstance(other, matrix):
+                result = asmatrix(result)
+
+            if other.ndim == 2 and other.shape[1] == 1:
+                # If 'other' was an (nx1) column vector, reshape the result
+                result = result.reshape(-1,1)
+            
+            return result
+
+        elif len(other.shape) == 2:
+            ##
+            # dense 2D array or matrix
+
+            if other.shape[0] != self.shape[1]:
+                raise ValueError('dimension mismatch')
+        
+            result = self._mul_dense_matrix(asarray(other))
+
+            if isinstance(other, matrix):
+                result = asmatrix(result)
+
+            return result
+        else:
+            raise ValueError('could not interpret dimensions')
+
+    # by default, use CSR for __mul__ handlers
+    def _mul_scalar(self, other):
+        return self.tocsr()._mul_scalar(other)
+
+    def _mul_vector(self, other):
+        return self.tocsr()._mul_vector(other)
+
+    def _mul_dense_matrix(self, other):
+        return self.tocsr()._mul_dense_matrix(other)
+
+    def _mul_sparse_matrix(self, other):
+        return self.tocsr()._mul_sparse_matrix(other)
 
     def __rmul__(self, other):
         return self.tocsr().__rmul__(other)
@@ -384,35 +460,6 @@ class spmatrix(object):
         a[0, i] = 1
         return a * self
 
-    def dot(self, other):
-        """ A generic interface for matrix-matrix or matrix-vector
-        multiplication.
-        """
-
-        try:
-            other.shape
-        except AttributeError:
-            # If it's a list or whatever, treat it like a matrix
-            other = asanyarray(other)
-
-        if isdense(other) and asarray(other).squeeze().ndim <= 1:
-            # it's a dense row or column vector
-            return self.matvec(other)
-        elif len(other.shape) == 2:
-            # it's a 2d dense array, dense matrix, or sparse matrix
-            return self.matmat(other)
-        else:
-            raise ValueError, "could not interpret dimensions"
-
-
-    def matmat(self, other):
-        return self.tocsr().matmat(other)
-
-    def matvec(self, other):
-        """Multiplies the sparse matrix by the vector 'other', returning a
-        dense vector as a result.
-        """
-        return self.tocsr().matvec(other)
 
     def rmatvec(self, other, conjugate=True):
         """Multiplies the vector 'other' by the sparse matrix, returning a
@@ -442,7 +489,7 @@ class spmatrix(object):
         return asmatrix(self.toarray())
 
     def toarray(self):
-        return self.tocsr().toarray()
+        return self.tocoo().toarray()
 
     def todok(self):
         return self.tocoo().todok()

@@ -12,4 +12,6 @@ INSTANTIATE_ALL(coo_tocsr)
 INSTANTIATE_ALL(coo_tocsc)
 INSTANTIATE_ALL(coo_todense)
 
+INSTANTIATE_ALL(coo_matvec)
+
 

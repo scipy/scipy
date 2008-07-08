@@ -116,6 +116,7 @@ class BenchmarkSparse(TestCase):
             iter = 0
             while iter < 5 and time.clock() - start < 1:
                 A.has_sorted_indices = False
+                A.indices[:2] = 2,1
                 A.sort_indices()
                 iter += 1
             end = time.clock()
@@ -130,6 +131,7 @@ class BenchmarkSparse(TestCase):
         matrices.append(('Identity',   sparse.identity(10**4,format='dia')))
         matrices.append(('Identity',   sparse.identity(10**4,format='csr')))
         matrices.append(('Poisson5pt', poisson2d(300,format='dia')))
+        matrices.append(('Poisson5pt', poisson2d(300,format='coo')))
         matrices.append(('Poisson5pt', poisson2d(300,format='csr')))
         matrices.append(('Poisson5pt', poisson2d(300,format='bsr')))
 

@@ -690,18 +690,18 @@ void csr_binop_csr(const I n_row,
 /* element-wise binary operations*/
 template <class I, class T>
 void csr_elmul_csr(const I n_row, const I n_col, 
-                   const I Ap [], const I Aj [], const T Ax [],
-                   const I Bp [], const I Bj [], const T Bx [],
-                   I Cp[], I Cj[], T Cx[])
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],       T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
 }
 
 template <class I, class T>
 void csr_eldiv_csr(const I n_row, const I n_col, 
-                   const I Ap [], const I Aj [], const T Ax [],
-                   const I Bp [], const I Bj [], const T Bx [],
-                   I Cp[], I Cj[], T Cx[])
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],       T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::divides<T>());
 }
@@ -709,18 +709,18 @@ void csr_eldiv_csr(const I n_row, const I n_col,
 
 template <class I, class T>
 void csr_plus_csr(const I n_row, const I n_col, 
-                 const I Ap [], const I Aj [], const T Ax [],
-                 const I Bp [], const I Bj [], const T Bx [],
-                   I Cp[], I Cj[], T Cx[])
+                  const I Ap[], const I Aj[], const T Ax[],
+                  const I Bp[], const I Bj[], const T Bx[],
+                        I Cp[],       I Cj[],       T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
 }
 
 template <class I, class T>
 void csr_minus_csr(const I n_row, const I n_col, 
-                   const I Ap[], const I Aj [], const T Ax [],
-                   const I Bp[], const I Bj [], const T Bx [],
-                         I Cp[], I Cj[], T Cx[])
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],       T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
 }

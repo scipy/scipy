@@ -58,3 +58,12 @@ class _data_matrix(spmatrix):
 
     def copy(self):
         return self._with_data(self.data.copy(),copy=True)
+
+
+    ###########################
+    # Multiplication handlers #
+    ###########################
+
+    def _mul_scalar(self, other):
+        return self._with_data(self.data * other)
+

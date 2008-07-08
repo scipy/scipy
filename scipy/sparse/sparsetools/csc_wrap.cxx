@@ -3181,30 +3181,46 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass1(PyObject *SWIGUNUSEDPARM(self), PyOb
   csc_matmat_pass1< int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -3285,24 +3301,36 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_1(PyObject *SWIGUNUSEDPARM(self), 
   csc_diagonal< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -3383,24 +3411,36 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_2(PyObject *SWIGUNUSEDPARM(self), 
   csc_diagonal< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -3481,24 +3521,36 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_3(PyObject *SWIGUNUSEDPARM(self), 
   csc_diagonal< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -3579,24 +3631,36 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_4(PyObject *SWIGUNUSEDPARM(self), 
   csc_diagonal< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -3677,24 +3741,36 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
   csc_diagonal< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -3775,24 +3851,36 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
   csc_diagonal< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -3873,24 +3961,36 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_7(PyObject *SWIGUNUSEDPARM(self), 
   csc_diagonal< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -3971,24 +4071,36 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_8(PyObject *SWIGUNUSEDPARM(self), 
   csc_diagonal< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -4069,24 +4181,36 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_9(PyObject *SWIGUNUSEDPARM(self), 
   csc_diagonal< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -4167,24 +4291,36 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_10(PyObject *SWIGUNUSEDPARM(self),
   csc_diagonal< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -4265,24 +4401,36 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_11(PyObject *SWIGUNUSEDPARM(self),
   csc_diagonal< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -4363,24 +4511,36 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_12(PyObject *SWIGUNUSEDPARM(self),
   csc_diagonal< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -4461,24 +4621,36 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_13(PyObject *SWIGUNUSEDPARM(self),
   csc_diagonal< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -4559,24 +4731,36 @@ SWIGINTERN PyObject *_wrap_csc_diagonal__SWIG_14(PyObject *SWIGUNUSEDPARM(self),
   csc_diagonal< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,arg6);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -5209,24 +5393,36 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyO
   csc_tocsr< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -5323,24 +5519,36 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyO
   csc_tocsr< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -5437,24 +5645,36 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyO
   csc_tocsr< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -5551,24 +5771,36 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyO
   csc_tocsr< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -5665,24 +5897,36 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyO
   csc_tocsr< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -5779,24 +6023,36 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyO
   csc_tocsr< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -5893,24 +6149,36 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_7(PyObject *SWIGUNUSEDPARM(self), PyO
   csc_tocsr< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -6007,24 +6275,36 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_8(PyObject *SWIGUNUSEDPARM(self), PyO
   csc_tocsr< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -6121,24 +6401,36 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_9(PyObject *SWIGUNUSEDPARM(self), PyO
   csc_tocsr< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -6235,24 +6527,36 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_10(PyObject *SWIGUNUSEDPARM(self), Py
   csc_tocsr< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -6349,24 +6653,36 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_11(PyObject *SWIGUNUSEDPARM(self), Py
   csc_tocsr< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -6463,24 +6779,36 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_12(PyObject *SWIGUNUSEDPARM(self), Py
   csc_tocsr< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -6577,24 +6905,36 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_13(PyObject *SWIGUNUSEDPARM(self), Py
   csc_tocsr< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -6691,24 +7031,36 @@ SWIGINTERN PyObject *_wrap_csc_tocsr__SWIG_14(PyObject *SWIGUNUSEDPARM(self), Py
   csc_tocsr< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,arg6,arg7,arg8);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   return NULL;
 }
@@ -7523,42 +7875,66 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_1(PyObject *SWIGUNUSEDPARM(sel
   csc_matmat_pass2< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -7697,42 +8073,66 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_2(PyObject *SWIGUNUSEDPARM(sel
   csc_matmat_pass2< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -7871,42 +8271,66 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_3(PyObject *SWIGUNUSEDPARM(sel
   csc_matmat_pass2< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -8045,42 +8469,66 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_4(PyObject *SWIGUNUSEDPARM(sel
   csc_matmat_pass2< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -8219,42 +8667,66 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_5(PyObject *SWIGUNUSEDPARM(sel
   csc_matmat_pass2< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -8393,42 +8865,66 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_6(PyObject *SWIGUNUSEDPARM(sel
   csc_matmat_pass2< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -8567,42 +9063,66 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_7(PyObject *SWIGUNUSEDPARM(sel
   csc_matmat_pass2< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -8741,42 +9261,66 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_8(PyObject *SWIGUNUSEDPARM(sel
   csc_matmat_pass2< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -8915,42 +9459,66 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_9(PyObject *SWIGUNUSEDPARM(sel
   csc_matmat_pass2< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -9089,42 +9657,66 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_10(PyObject *SWIGUNUSEDPARM(se
   csc_matmat_pass2< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -9263,42 +9855,66 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_11(PyObject *SWIGUNUSEDPARM(se
   csc_matmat_pass2< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -9437,42 +10053,66 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_12(PyObject *SWIGUNUSEDPARM(se
   csc_matmat_pass2< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -9611,42 +10251,66 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_13(PyObject *SWIGUNUSEDPARM(se
   csc_matmat_pass2< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -9785,42 +10449,66 @@ SWIGINTERN PyObject *_wrap_csc_matmat_pass2__SWIG_14(PyObject *SWIGUNUSEDPARM(se
   csc_matmat_pass2< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -10801,30 +11489,46 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_1(PyObject *SWIGUNUSEDPARM(self), Py
   csc_matvec< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(signed char const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -10919,30 +11623,46 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_2(PyObject *SWIGUNUSEDPARM(self), Py
   csc_matvec< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(unsigned char const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -11037,30 +11757,46 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_3(PyObject *SWIGUNUSEDPARM(self), Py
   csc_matvec< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(short const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -11155,30 +11891,46 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_4(PyObject *SWIGUNUSEDPARM(self), Py
   csc_matvec< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(unsigned short const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -11273,30 +12025,46 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_5(PyObject *SWIGUNUSEDPARM(self), Py
   csc_matvec< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -11391,30 +12159,46 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_6(PyObject *SWIGUNUSEDPARM(self), Py
   csc_matvec< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(unsigned int const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -11509,30 +12293,46 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_7(PyObject *SWIGUNUSEDPARM(self), Py
   csc_matvec< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(long long const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -11627,30 +12427,46 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_8(PyObject *SWIGUNUSEDPARM(self), Py
   csc_matvec< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(unsigned long long const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -11745,30 +12561,46 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_9(PyObject *SWIGUNUSEDPARM(self), Py
   csc_matvec< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(float const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -11863,30 +12695,46 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_10(PyObject *SWIGUNUSEDPARM(self), P
   csc_matvec< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(double const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -11981,30 +12829,46 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_11(PyObject *SWIGUNUSEDPARM(self), P
   csc_matvec< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(long double const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -12099,30 +12963,46 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_12(PyObject *SWIGUNUSEDPARM(self), P
   csc_matvec< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(npy_cfloat_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -12217,30 +13097,46 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_13(PyObject *SWIGUNUSEDPARM(self), P
   csc_matvec< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(npy_cdouble_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -12335,30 +13231,46 @@ SWIGINTERN PyObject *_wrap_csc_matvec__SWIG_14(PyObject *SWIGUNUSEDPARM(self), P
   csc_matvec< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(npy_clongdouble_wrapper const (*))arg6,arg7);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   return NULL;
 }
@@ -13103,42 +14015,66 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_1(PyObject *SWIGUNUSEDPARM(self),
   csc_elmul_csc< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -13277,42 +14213,66 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_2(PyObject *SWIGUNUSEDPARM(self),
   csc_elmul_csc< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -13451,42 +14411,66 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_3(PyObject *SWIGUNUSEDPARM(self),
   csc_elmul_csc< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -13625,42 +14609,66 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_4(PyObject *SWIGUNUSEDPARM(self),
   csc_elmul_csc< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -13799,42 +14807,66 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   csc_elmul_csc< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -13973,42 +15005,66 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   csc_elmul_csc< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -14147,42 +15203,66 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_7(PyObject *SWIGUNUSEDPARM(self),
   csc_elmul_csc< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -14321,42 +15401,66 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_8(PyObject *SWIGUNUSEDPARM(self),
   csc_elmul_csc< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -14495,42 +15599,66 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_9(PyObject *SWIGUNUSEDPARM(self),
   csc_elmul_csc< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -14669,42 +15797,66 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_10(PyObject *SWIGUNUSEDPARM(self)
   csc_elmul_csc< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -14843,42 +15995,66 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_11(PyObject *SWIGUNUSEDPARM(self)
   csc_elmul_csc< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -15017,42 +16193,66 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_12(PyObject *SWIGUNUSEDPARM(self)
   csc_elmul_csc< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -15191,42 +16391,66 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_13(PyObject *SWIGUNUSEDPARM(self)
   csc_elmul_csc< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -15365,42 +16589,66 @@ SWIGINTERN PyObject *_wrap_csc_elmul_csc__SWIG_14(PyObject *SWIGUNUSEDPARM(self)
   csc_elmul_csc< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -16425,42 +17673,66 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_1(PyObject *SWIGUNUSEDPARM(self),
   csc_eldiv_csc< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -16599,42 +17871,66 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_2(PyObject *SWIGUNUSEDPARM(self),
   csc_eldiv_csc< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -16773,42 +18069,66 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_3(PyObject *SWIGUNUSEDPARM(self),
   csc_eldiv_csc< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -16947,42 +18267,66 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_4(PyObject *SWIGUNUSEDPARM(self),
   csc_eldiv_csc< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -17121,42 +18465,66 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   csc_eldiv_csc< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -17295,42 +18663,66 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   csc_eldiv_csc< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -17469,42 +18861,66 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_7(PyObject *SWIGUNUSEDPARM(self),
   csc_eldiv_csc< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -17643,42 +19059,66 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_8(PyObject *SWIGUNUSEDPARM(self),
   csc_eldiv_csc< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -17817,42 +19257,66 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_9(PyObject *SWIGUNUSEDPARM(self),
   csc_eldiv_csc< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -17991,42 +19455,66 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_10(PyObject *SWIGUNUSEDPARM(self)
   csc_eldiv_csc< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -18165,42 +19653,66 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_11(PyObject *SWIGUNUSEDPARM(self)
   csc_eldiv_csc< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -18339,42 +19851,66 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_12(PyObject *SWIGUNUSEDPARM(self)
   csc_eldiv_csc< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -18513,42 +20049,66 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_13(PyObject *SWIGUNUSEDPARM(self)
   csc_eldiv_csc< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -18687,42 +20247,66 @@ SWIGINTERN PyObject *_wrap_csc_eldiv_csc__SWIG_14(PyObject *SWIGUNUSEDPARM(self)
   csc_eldiv_csc< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -19747,42 +21331,66 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_1(PyObject *SWIGUNUSEDPARM(self), 
   csc_plus_csc< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -19921,42 +21529,66 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_2(PyObject *SWIGUNUSEDPARM(self), 
   csc_plus_csc< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -20095,42 +21727,66 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_3(PyObject *SWIGUNUSEDPARM(self), 
   csc_plus_csc< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -20269,42 +21925,66 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_4(PyObject *SWIGUNUSEDPARM(self), 
   csc_plus_csc< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -20443,42 +22123,66 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), 
   csc_plus_csc< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -20617,42 +22321,66 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), 
   csc_plus_csc< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -20791,42 +22519,66 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_7(PyObject *SWIGUNUSEDPARM(self), 
   csc_plus_csc< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -20965,42 +22717,66 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_8(PyObject *SWIGUNUSEDPARM(self), 
   csc_plus_csc< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -21139,42 +22915,66 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_9(PyObject *SWIGUNUSEDPARM(self), 
   csc_plus_csc< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -21313,42 +23113,66 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_10(PyObject *SWIGUNUSEDPARM(self),
   csc_plus_csc< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -21487,42 +23311,66 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_11(PyObject *SWIGUNUSEDPARM(self),
   csc_plus_csc< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -21661,42 +23509,66 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_12(PyObject *SWIGUNUSEDPARM(self),
   csc_plus_csc< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -21835,42 +23707,66 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_13(PyObject *SWIGUNUSEDPARM(self),
   csc_plus_csc< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -22009,42 +23905,66 @@ SWIGINTERN PyObject *_wrap_csc_plus_csc__SWIG_14(PyObject *SWIGUNUSEDPARM(self),
   csc_plus_csc< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -23069,42 +24989,66 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_1(PyObject *SWIGUNUSEDPARM(self),
   csc_minus_csc< int,signed char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(signed char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -23243,42 +25187,66 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_2(PyObject *SWIGUNUSEDPARM(self),
   csc_minus_csc< int,unsigned char >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned char const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -23417,42 +25385,66 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_3(PyObject *SWIGUNUSEDPARM(self),
   csc_minus_csc< int,short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -23591,42 +25583,66 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_4(PyObject *SWIGUNUSEDPARM(self),
   csc_minus_csc< int,unsigned short >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned short const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -23765,42 +25781,66 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self),
   csc_minus_csc< int,int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -23939,42 +25979,66 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self),
   csc_minus_csc< int,unsigned int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned int const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -24113,42 +26177,66 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_7(PyObject *SWIGUNUSEDPARM(self),
   csc_minus_csc< int,long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -24287,42 +26375,66 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_8(PyObject *SWIGUNUSEDPARM(self),
   csc_minus_csc< int,unsigned long long >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(unsigned long long const (*))arg5,(int const (*))arg6,(int const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -24461,42 +26573,66 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_9(PyObject *SWIGUNUSEDPARM(self),
   csc_minus_csc< int,float >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(float const (*))arg5,(int const (*))arg6,(int const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -24635,42 +26771,66 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_10(PyObject *SWIGUNUSEDPARM(self)
   csc_minus_csc< int,double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -24809,42 +26969,66 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_11(PyObject *SWIGUNUSEDPARM(self)
   csc_minus_csc< int,long double >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(long double const (*))arg5,(int const (*))arg6,(int const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -24983,42 +27167,66 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_12(PyObject *SWIGUNUSEDPARM(self)
   csc_minus_csc< int,npy_cfloat_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -25157,42 +27365,66 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_13(PyObject *SWIGUNUSEDPARM(self)
   csc_minus_csc< int,npy_cdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -25331,42 +27563,66 @@ SWIGINTERN PyObject *_wrap_csc_minus_csc__SWIG_14(PyObject *SWIGUNUSEDPARM(self)
   csc_minus_csc< int,npy_clongdouble_wrapper >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(int const (*))arg6,(int const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
   resultobj = SWIG_Py_Void();
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return resultobj;
 fail:
   {
-    if (is_new_object3 && array3) Py_DECREF(array3);
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
   }
   {
-    if (is_new_object4 && array4) Py_DECREF(array4);
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
   }
   {
-    if (is_new_object5 && array5) Py_DECREF(array5);
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
   }
   {
-    if (is_new_object6 && array6) Py_DECREF(array6);
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
   }
   {
-    if (is_new_object7 && array7) Py_DECREF(array7);
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
   }
   {
-    if (is_new_object8 && array8) Py_DECREF(array8);
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
   }
   return NULL;
 }
@@ -27099,4 +29355,3 @@ SWIGEXPORT void SWIG_init(void) {
   
 }
 
- 
