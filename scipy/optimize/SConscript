@@ -4,8 +4,6 @@
 import os
 from os.path import join as pjoin, splitext
 
-from numpy.distutils.misc_util import get_numpy_include_dirs
-from numscons import get_python_inc#, get_pythonlib_dir
 from numscons import GetNumpyEnvironment
 from numscons import CheckF77LAPACK, CheckF77Clib
 
@@ -13,8 +11,7 @@ from numscons import write_info
 
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Tool('f2py')
-env.Append(CPPPATH = get_numpy_include_dirs())
-env.Append(CPPPATH = [env['F2PYINCLUDEDIR'], 'Zeros'])
+env.Append(CPPPATH = ['Zeros'])
 #if os.name == 'nt':
 #    # NT needs the pythonlib to run any code importing Python.h, including
 #    # simple code using only typedef and so on, so we need it for configuration
@@ -64,33 +61,33 @@ env.AppendUnique(LIBS = ['minpack', 'rootfind'])
 env.AppendUnique(LIBPATH = '.')
 
 # _minpack pyextension
-env.DistutilsPythonExtension('_minpack', '_minpackmodule.c',
+env.NumpyPythonExtension('_minpack', '_minpackmodule.c',
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # _zeros pyextension
-env.DistutilsPythonExtension('_zeros', 'zeros.c')
+env.NumpyPythonExtension('_zeros', 'zeros.c')
 
 # _lbfgsb pyextension
 src = [pjoin('lbfgsb', i) for i in ['lbfgsb.pyf', 'routines.f']]
-env.DistutilsPythonExtension('_lbfgsb', source = src,
+env.NumpyPythonExtension('_lbfgsb', source = src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # _cobyla pyextension
 src = [pjoin('cobyla', i) for i in ['cobyla2.f', 'trstlp.f', 'cobyla.pyf']]
-env.DistutilsPythonExtension('_cobyla', source = src,
+env.NumpyPythonExtension('_cobyla', source = src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # _minpack2 pyextension
 src = [pjoin('minpack2', i) for i in ['dcsrch.f', 'dcstep.f', 'minpack2.pyf']]
-env.DistutilsPythonExtension('minpack2', source = src,
+env.NumpyPythonExtension('minpack2', source = src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # moduleTNC pyextension
-env.DistutilsPythonExtension('moduleTNC', 
+env.NumpyPythonExtension('moduleTNC', 
                          source = [pjoin('tnc', i) for i in \
                                                    ['moduleTNC.c', 'tnc.c']])
 
 # _slsqp pyextension
 src = [pjoin('slsqp', i) for i in ['slsqp_optmz.f', 'slsqp.pyf']]
-env.DistutilsPythonExtension('_slsqp', source = src,
+env.NumpyPythonExtension('_slsqp', source = src,
                          LINKFLAGSEND = env['F77_LDFLAGS'])

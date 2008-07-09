@@ -2,15 +2,11 @@
 # vim:syntax=python
 from os.path import join as pjoin
 
-from numpy.distutils.misc_util import get_numpy_include_dirs
 from numscons import GetNumpyEnvironment, CheckF77Clib
 
 env = GetNumpyEnvironment(ARGUMENTS)
 
 t = env.Tool('f2py')
-
-env.AppendUnique(CPPPATH = [get_numpy_include_dirs()])
-env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 
 config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib})
 if not config.CheckF77Clib():
@@ -24,16 +20,16 @@ env.DistutilsStaticExtLibrary('statlibimp', source = src)
 env.AppendUnique(LIBPATH = '.')
 
 # Statlib extension
-env.DistutilsPythonExtension('statlib', source = 'statlib.pyf', 
+env.NumpyPythonExtension('statlib', source = 'statlib.pyf', 
                          F2PYOPTIONS = ["--no-wrap-functions"],
                          LIBS = 'statlibimp',
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # futil extension
 futil_src = env.F2py(pjoin('futilmodule.c'), pjoin('futil.f'))
-env.DistutilsPythonExtension('futil', source = futil_src + ['futil.f'],
+env.NumpyPythonExtension('futil', source = futil_src + ['futil.f'],
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # mvn extension
-env.DistutilsPythonExtension('mvn', source = ['mvn.pyf', 'mvndst.f'],
+env.NumpyPythonExtension('mvn', source = ['mvn.pyf', 'mvndst.f'],
                          LINKFLAGSEND = env['F77_LDFLAGS'])

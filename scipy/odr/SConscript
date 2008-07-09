@@ -4,15 +4,12 @@
 import os
 from os.path import join as pjoin, splitext
 
-from numpy.distutils.misc_util import get_numpy_include_dirs
-from numscons import get_python_inc#, get_pythonlib_dir
 from numscons import GetNumpyEnvironment
 from numscons import CheckF77BLAS, CheckF77Clib
 
 from numscons import write_info
 
 env = GetNumpyEnvironment(ARGUMENTS)
-env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
 #if os.name == 'nt':
 #    # NT needs the pythonlib to run any code importing Python.h, including
 #    # simple code using only typedef and so on, so we need it for configuration
@@ -58,5 +55,5 @@ env.PrependUnique(LIBS = 'odrpack')
 env.PrependUnique(LIBPATH = '.')
 
 # odr pyextension
-env.DistutilsPythonExtension('__odrpack', '__odrpack.c',
+env.NumpyPythonExtension('__odrpack', '__odrpack.c',
                          LINKFLAGSEND = env['F77_LDFLAGS'])

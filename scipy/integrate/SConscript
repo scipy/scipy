@@ -3,7 +3,6 @@
 from os.path import join as pjoin
 import warnings
 
-from numpy.distutils.misc_util import get_numpy_include_dirs
 from numscons import GetNumpyEnvironment, CheckF77Clib, CheckF77BLAS
 
 env = GetNumpyEnvironment(ARGUMENTS)
@@ -19,9 +18,6 @@ if not config.CheckF77BLAS():
     raise Exception("Could not find F77 BLAS, needed for integrate package")
 
 config.Finish()
-
-env.AppendUnique(CPPPATH = get_numpy_include_dirs())
-env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 
 # XXX: lapack integration
 
@@ -69,10 +65,10 @@ odenv = env.Clone()
 odenv.Prepend(LIBS = ['odepack', 'linpack_lite', 'mach'])
 
 # Build _quadpack
-quadenv.DistutilsPythonExtension('_quadpack', source = '_quadpackmodule.c')
+quadenv.NumpyPythonExtension('_quadpack', source = '_quadpackmodule.c')
 
 # Build _odepack
-odenv.DistutilsPythonExtension('_odepack', source = '_odepackmodule.c')
+odenv.NumpyPythonExtension('_odepack', source = '_odepackmodule.c')
 
 # Build vode
-odenv.DistutilsPythonExtension('vode', source = 'vode.pyf')
+odenv.NumpyPythonExtension('vode', source = 'vode.pyf')

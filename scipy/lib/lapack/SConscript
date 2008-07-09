@@ -4,8 +4,6 @@
 import os
 from os.path import join as pjoin, splitext
 
-from numpy.distutils.misc_util import get_numpy_include_dirs
-from numscons import get_python_inc
 from numscons import GetNumpyEnvironment
 from numscons import CheckF77LAPACK,\
                                   CheckCLAPACK, \
@@ -18,7 +16,6 @@ from scons_support import do_generate_fake_interface, \
 
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Tool('f2py')
-env.Append(CPPPATH = [get_python_inc(), get_numpy_include_dirs()])
 #if os.name == 'nt':
 #    # NT needs the pythonlib to run any code importing Python.h, including
 #    # simple code using only typedef and so on, so we need it for configuration
@@ -70,7 +67,7 @@ env['BUILDERS']['GenerateFakePyf'] = Builder(action = do_generate_fake_interface
 #   flapack
 #------------
 yop = env.FromFTemplate('flapack.pyf', 'flapack.pyf.src')
-env.DistutilsPythonExtension('flapack', source = ['flapack.pyf'])
+env.NumpyPythonExtension('flapack', source = ['flapack.pyf'])
 
 #------------
 #   clapack
@@ -79,17 +76,17 @@ if has_clapack:
     env.FromFTemplate('clapack.pyf', 'clapack.pyf.src')
 else:
     env.GenerateFakePyf('clapack', 'clapack.pyf.src')
-env.DistutilsPythonExtension('clapack', source = 'clapack.pyf')
+env.NumpyPythonExtension('clapack', source = 'clapack.pyf')
 
 #----------------
 # calc_lwork:
 #----------------
 calc_src = env.F2py(pjoin('calc_lworkmodule.c'), 
                          source = pjoin('calc_lwork.f'))
-env.DistutilsPythonExtension('calc_lwork', source = calc_src + ['calc_lwork.f'],
+env.NumpyPythonExtension('calc_lwork', source = calc_src + ['calc_lwork.f'],
                          LINKFLAGSEND = env['F77_LDFLAGS'])
 
 #--------------
 # Atlas version
 #--------------
-env.DistutilsPythonExtension('atlas_version', 'atlas_version.c')
+env.NumpyPythonExtension('atlas_version', 'atlas_version.c')

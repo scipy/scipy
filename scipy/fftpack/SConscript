@@ -2,15 +2,11 @@
 # vim:syntax=python
 from os.path import join as pjoin
 
-from numpy.distutils.misc_util import get_numpy_include_dirs
 from numscons import GetNumpyEnvironment, write_info
 from numscons import CheckFFT, IsMKL, IsFFTW2, IsFFTW3
 
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Tool('f2py')
-
-env.AppendUnique(CPPPATH = get_numpy_include_dirs())
-env.AppendUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 
 # Check fft implementation
 config = env.NumpyConfigure(custom_tests = {'CheckFFT': CheckFFT})
@@ -41,8 +37,8 @@ env.PrependUnique(LIBPATH = ['.'])
 
 # Build _fftpack
 src = ['src/zfft.c','src/drfft.c','src/zrfft.c', 'src/zfftnd.c', 'fftpack.pyf']
-env.DistutilsPythonExtension('_fftpack', src)
+env.NumpyPythonExtension('_fftpack', src)
 
 # Build convolve
 src = ['src/convolve.c',  'convolve.pyf']
-env.DistutilsPythonExtension('convolve', src)
+env.NumpyPythonExtension('convolve', src)

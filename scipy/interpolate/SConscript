@@ -2,7 +2,6 @@
 # vim:syntax=python
 from os.path import join as pjoin
 
-from numpy.distutils.misc_util import get_numpy_include_dirs
 from numscons import GetNumpyEnvironment, CheckF77Clib
 
 env = GetNumpyEnvironment(ARGUMENTS)
@@ -13,8 +12,6 @@ if not config.CheckF77Clib():
     raise Exception("Could not check F77 runtime, needed for interpolate")
 config.Finish()
 
-env.PrependUnique(CPPPATH = get_numpy_include_dirs())
-env.PrependUnique(CPPPATH = env['F2PYINCLUDEDIR'])
 env.AppendUnique(LINKFLAGSEND = env['F77_LDFLAGS'])
 
 # Build fitpack
@@ -39,7 +36,7 @@ env.PrependUnique(LIBS = ['fitpack'])
 env.PrependUnique(LIBPATH = ['.'])
 
 # Build _fitpack
-env.DistutilsPythonExtension('_fitpack', source = '_fitpackmodule.c')
+env.NumpyPythonExtension('_fitpack', source = '_fitpackmodule.c')
 
 # Build dfitpack
-env.DistutilsPythonExtension('dfitpack', source = 'fitpack.pyf')
+env.NumpyPythonExtension('dfitpack', source = 'fitpack.pyf')
