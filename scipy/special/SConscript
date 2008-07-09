@@ -20,6 +20,7 @@ if not config.CheckF77Clib():
     raise RuntimeError("Could not get C/F77 runtime information")
 config.Finish()
 
+env.AppendUnique(CPPPATH = env["PYEXTCPPPATH"]) 
 def build_lib(name, ext, libname = None):
     """ext should be .f or .c"""
     if not libname:

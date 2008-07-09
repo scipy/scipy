@@ -1,7 +1,5 @@
 from os.path import join as pjoin
 
-from numpy.distutils.misc_util import get_numpy_include_dirs
-
 from numscons import GetNumpyEnvironment
 from numscons import CheckF77BLAS, CheckF77Clib, NumpyCheckLibAndHeader
 from numscons import write_info
@@ -31,5 +29,4 @@ write_info(env)
 if has_umfpack:
     env.Append(SWIGFLAGS = '-python')
     env.Append(SWIGFLAGS = '$_CPPINCFLAGS')
-    env.Append(CPPPATH = get_numpy_include_dirs())
-    env.DistutilsPythonExtension('__umfpack', source = 'umfpack.i') 
+    env.NumpyPythonExtension('__umfpack', source = 'umfpack.i') 
