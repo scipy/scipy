@@ -107,7 +107,7 @@ class TestKMean(TestCase):
             res = kmeans2(data, initk, missing = 'raise')
             raise AssertionError("Exception not raised ! Should not happen")
         except ClusterError, e:
-            print "exception raised as expected: " + str(e)
+            pass
 
     def test_kmeans2_simple(self):
         """Testing simple call to kmeans2 and its results."""
