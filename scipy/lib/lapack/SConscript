@@ -32,10 +32,6 @@ config = env.NumpyConfigure(custom_tests = {'CheckCLAPACK' : CheckCLAPACK,
 #--------------
 # Checking Blas
 #--------------
-if not config.CheckF77Clib():
-    raise RuntimeError("Could not check F/C runtime library for %s/%s, " \
-                       "contact the maintainer" % (env['CC'], env['F77']))
-
 st = config.CheckLAPACK(check_version = 1)
 if not st:
     raise RuntimeError("no lapack found, necessary for lapack module")
@@ -83,8 +79,7 @@ env.NumpyPythonExtension('clapack', source = 'clapack.pyf')
 #----------------
 calc_src = env.F2py(pjoin('calc_lworkmodule.c'), 
                          source = pjoin('calc_lwork.f'))
-env.NumpyPythonExtension('calc_lwork', source = calc_src + ['calc_lwork.f'],
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+env.NumpyPythonExtension('calc_lwork', source = calc_src + ['calc_lwork.f'])
 
 #--------------
 # Atlas version

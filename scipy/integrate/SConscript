@@ -9,11 +9,8 @@ env = GetNumpyEnvironment(ARGUMENTS)
 env.Tool('f2py')
 
 # Configuration
-config = env.NumpyConfigure(custom_tests = {'CheckF77Clib' : CheckF77Clib,
-                                            'CheckF77BLAS' : CheckF77BLAS})
+config = env.NumpyConfigure(custom_tests = {'CheckF77BLAS' : CheckF77BLAS})
 
-if not config.CheckF77Clib():
-    raise Exception("Could not check F77 runtime, needed for interpolate")
 if not config.CheckF77BLAS():
     raise Exception("Could not find F77 BLAS, needed for integrate package")
 
@@ -56,7 +53,6 @@ src = [pjoin("odepack", s) for s in [ "adjlr.f", "aigbt.f", "ainvg.f",
 odepack = env.DistutilsStaticExtLibrary('odepack', source = src)
 
 env.AppendUnique(LIBPATH = '.')
-env.AppendUnique(LINKFLAGSEND = env['F77_LDFLAGS'])
 
 quadenv = env.Clone()
 quadenv.Prepend(LIBS = ['quadpack', 'linpack_lite', 'mach'])

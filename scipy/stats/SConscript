@@ -22,14 +22,11 @@ env.AppendUnique(LIBPATH = '.')
 # Statlib extension
 env.NumpyPythonExtension('statlib', source = 'statlib.pyf', 
                          F2PYOPTIONS = ["--no-wrap-functions"],
-                         LIBS = 'statlibimp',
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+                         LIBS = 'statlibimp')
 
 # futil extension
 futil_src = env.F2py(pjoin('futilmodule.c'), pjoin('futil.f'))
-env.NumpyPythonExtension('futil', source = futil_src + ['futil.f'],
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+env.NumpyPythonExtension('futil', source = futil_src + ['futil.f'])
 
 # mvn extension
-env.NumpyPythonExtension('mvn', source = ['mvn.pyf', 'mvndst.f'],
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+env.NumpyPythonExtension('mvn', source = ['mvn.pyf', 'mvndst.f'])

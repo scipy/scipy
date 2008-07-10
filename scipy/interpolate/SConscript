@@ -12,8 +12,6 @@ if not config.CheckF77Clib():
     raise Exception("Could not check F77 runtime, needed for interpolate")
 config.Finish()
 
-env.AppendUnique(LINKFLAGSEND = env['F77_LDFLAGS'])
-
 # Build fitpack
 src = [pjoin("fitpack", s) for s in ["bispev.f", "clocur.f", "cocosp.f",
 "concon.f", "concur.f", "cualde.f", "curev.f", "curfit.f", "dblint.f",

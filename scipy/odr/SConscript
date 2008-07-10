@@ -19,8 +19,7 @@ env = GetNumpyEnvironment(ARGUMENTS)
 #=======================
 # Starting Configuration
 #=======================
-config = env.NumpyConfigure(custom_tests = {'CheckBLAS' : CheckF77BLAS, 
-                                            'CheckF77Clib' : CheckF77Clib})
+config = env.NumpyConfigure(custom_tests = {'CheckBLAS' : CheckF77BLAS}) 
 
 if not config.CheckF77Clib():
     raise RuntimeError("Could not check F/C runtime library for %s/%s, " \
@@ -55,5 +54,4 @@ env.PrependUnique(LIBS = 'odrpack')
 env.PrependUnique(LIBPATH = '.')
 
 # odr pyextension
-env.NumpyPythonExtension('__odrpack', '__odrpack.c',
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+env.NumpyPythonExtension('__odrpack', '__odrpack.c')

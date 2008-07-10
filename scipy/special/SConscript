@@ -50,11 +50,9 @@ src = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
 env.NumpyPythonExtension('_cephes', 
                          source = src, 
                          LIBS = ['amos', 'toms', 'c_misc', 'cephes', 'mach',\
-                                 'cdf', 'specfunlib'], 
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+                                 'cdf', 'specfunlib']) 
 
 # Specfun extension
 env.Prepend(LIBS = ['specfunlib'])
 env.NumpyPythonExtension('specfun', source = 'specfun.pyf',
-                         F2PYOPTIONS = ["--no-wrap-functions"],
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+                         F2PYOPTIONS = ["--no-wrap-functions"])

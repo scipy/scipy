@@ -21,16 +21,11 @@ env.Append(CPPPATH = ['Zeros'])
 #=======================
 # Starting Configuration
 #=======================
-config = env.NumpyConfigure(custom_tests = {'CheckLAPACK' : CheckF77LAPACK,
-                                            'CheckF77Clib' : CheckF77Clib})
+config = env.NumpyConfigure(custom_tests = {'CheckLAPACK' : CheckF77LAPACK})
 
 #-----------------
 # Checking Lapack
 #-----------------
-if not config.CheckF77Clib():
-    raise RuntimeLibrary("Could not check C/F runtime library for %s/%s"\
-                         " , contact the maintainer" % (env['CC'], env['F77']))
-
 st = config.CheckLAPACK()
 if not st:
     has_lapack = 0
@@ -61,26 +56,22 @@ env.AppendUnique(LIBS = ['minpack', 'rootfind'])
 env.AppendUnique(LIBPATH = '.')
 
 # _minpack pyextension
-env.NumpyPythonExtension('_minpack', '_minpackmodule.c',
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+env.NumpyPythonExtension('_minpack', '_minpackmodule.c')
 
 # _zeros pyextension
 env.NumpyPythonExtension('_zeros', 'zeros.c')
 
 # _lbfgsb pyextension
 src = [pjoin('lbfgsb', i) for i in ['lbfgsb.pyf', 'routines.f']]
-env.NumpyPythonExtension('_lbfgsb', source = src,
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+env.NumpyPythonExtension('_lbfgsb', source = src)
 
 # _cobyla pyextension
 src = [pjoin('cobyla', i) for i in ['cobyla2.f', 'trstlp.f', 'cobyla.pyf']]
-env.NumpyPythonExtension('_cobyla', source = src,
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+env.NumpyPythonExtension('_cobyla', source = src)
 
 # _minpack2 pyextension
 src = [pjoin('minpack2', i) for i in ['dcsrch.f', 'dcstep.f', 'minpack2.pyf']]
-env.NumpyPythonExtension('minpack2', source = src,
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+env.NumpyPythonExtension('minpack2', source = src)
 
 # moduleTNC pyextension
 env.NumpyPythonExtension('moduleTNC', 
@@ -89,5 +80,4 @@ env.NumpyPythonExtension('moduleTNC',
 
 # _slsqp pyextension
 src = [pjoin('slsqp', i) for i in ['slsqp_optmz.f', 'slsqp.pyf']]
-env.NumpyPythonExtension('_slsqp', source = src,
-                         LINKFLAGSEND = env['F77_LDFLAGS'])
+env.NumpyPythonExtension('_slsqp', source = src)
