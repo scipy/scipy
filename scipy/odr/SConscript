@@ -21,7 +21,7 @@ env = GetNumpyEnvironment(ARGUMENTS)
 #=======================
 config = env.NumpyConfigure(custom_tests = {'CheckBLAS' : CheckF77BLAS}) 
 
-if not config.CheckF77Clib():
+if not config.CheckBLAS():
     raise RuntimeError("Could not check F/C runtime library for %s/%s, " \
                        "contact the maintainer" % (env['CC'], env['F77']))
 
