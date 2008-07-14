@@ -159,7 +159,7 @@ NOTES
    source directories).  More details of how to do this are on the SciPy
    Wiki, at:
 
-     http://new.scipy.org/Wiki/Installing_SciPy/BuildingGeneral
+     http://www.scipy.org/Installing_SciPy/BuildingGeneral
 
 3) Users of Debian (and derivatives like Ubuntu) can use the following
    deb packages::
