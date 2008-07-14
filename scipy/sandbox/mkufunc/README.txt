@@ -15,5 +15,5 @@ Requirements:
 
 You need the pypy path in your PYTHONPATH environment:
 
-$ export PYTHONPATH=/giant/src/pypy-dist
+$ export PYTHONPATH=/<...>/pypy-dist
 
