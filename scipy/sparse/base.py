@@ -485,6 +485,9 @@ class spmatrix(object):
     #    else:
     #        return other.matmat(self.transpose())
 
+    #def __array__(self):
+    #    return self.toarray()
+
     def todense(self):
         return asmatrix(self.toarray())
 

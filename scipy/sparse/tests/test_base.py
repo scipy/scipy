@@ -149,6 +149,10 @@ class _TestCommon:
         A = [[1,0,0],[2,3,4],[0,5,0],[0,0,0]]
         assert_array_equal(self.spmatrix(A).todense(), A)
 
+    #def test_array(self):
+    #    """test array(A) where A is in sparse format"""
+    #    assert_equal( array(self.datsp), self.dat )
+
     def test_todense(self):
         chk = self.datsp.todense()
         assert_array_equal(chk,self.dat)

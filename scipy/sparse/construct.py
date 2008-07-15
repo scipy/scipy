@@ -7,11 +7,10 @@ __all__ = [ 'spdiags', 'eye', 'identity', 'kron', 'kronsum',
             'hstack', 'vstack', 'bmat' ]
 
 
-from itertools import izip
 from warnings import warn
 
 import numpy
-from numpy import ones, clip, array, arange, intc, asarray, rank, zeros, \
+from numpy import ones, arange, intc, asarray, rank, zeros, \
         cumsum, concatenate, empty
 
 from sputils import upcast
@@ -49,7 +48,6 @@ def spdiags(data, diags, m, n, format=None):
 
     Example
     -------
-
     >>> data = array([[1,2,3,4],[1,2,3,4],[1,2,3,4]])
     >>> diags = array([0,-1,2])
     >>> spdiags(data, diags, 4, 4).todense()
@@ -62,7 +60,32 @@ def spdiags(data, diags, m, n, format=None):
     return dia_matrix((data, diags), shape=(m,n)).asformat(format)
 
 def identity(n, dtype='d', format=None):
-    """identity(n) returns a sparse (n x n) identity matrix"""
+    """Identity matrix in sparse format
+    
+    Returns an identity matrix with shape (n,n) using a given
+    sparse format and dtype.
+
+    Parameters
+    ----------
+    n : integer
+        Shape of the identity matrix.
+    dtype :
+        Data type of the matrix
+    format : string
+        Sparse format of the result, e.g. format="csr", etc.
+
+    Examples
+    --------
+    >>> identity(3).todense()
+    matrix([[ 1.,  0.,  0.],
+            [ 0.,  1.,  0.],
+            [ 0.,  0.,  1.]])
+    >>> identity(3, dtype='int8', format='dia')
+    <3x3 sparse matrix of type '<type 'numpy.int8'>'
+            with 3 stored elements (1 diagonals) in DIAgonal format>
+
+    """
+
     if format in ['csr','csc']:
         indptr  = arange(n+1, dtype=intc)
         indices = arange(n, dtype=intc)
@@ -74,6 +97,10 @@ def identity(n, dtype='d', format=None):
         col  = arange(n, dtype=intc)
         data = ones(n, dtype=dtype)
         return coo_matrix((data,(row,col)),(n,n))
+    elif format == 'dia':
+        data = ones(n, dtype=dtype)
+        diags = [0]
+        return dia_matrix( (data,diags), shape=(n,n) )
     else:
         return identity( n, dtype=dtype, format='csr').asformat(format)
 
@@ -103,7 +130,6 @@ def kron(A, B, format=None):
 
     Examples
     --------
-
     >>> A = csr_matrix(array([[0,2],[5,0]]))
     >>> B = csr_matrix(array([[1,2],[3,4]]))
     >>> kron(A,B).todense()
@@ -200,7 +226,7 @@ def kronsum(A, B, format=None):
     if B.shape[0] != B.shape[1]:
         raise ValueError('B is not square')
 
-    dtype = upcast(A.dtype,B.dtype)
+    dtype = upcast(A.dtype, B.dtype)
 
     L = kron(identity(B.shape[0],dtype=dtype), A, format=format)
     R = kron(B, identity(A.shape[0],dtype=dtype), format=format)
@@ -213,7 +239,6 @@ def hstack( blocks, format=None, dtype=None ):
 
     Parameters
     ----------
-
     blocks
         sequence of sparse matrices with compatible shapes
     format : string
@@ -223,7 +248,6 @@ def hstack( blocks, format=None, dtype=None ):
 
     Example
     -------
-
     >>> from scipy.sparse import coo_matrix, vstack
     >>> A = coo_matrix([[1,2],[3,4]])
     >>> B = coo_matrix([[5],[6]])
@@ -240,7 +264,6 @@ def vstack( blocks, format=None, dtype=None ):
 
     Parameters
     ----------
-
     blocks
         sequence of sparse matrices with compatible shapes
     format : string
@@ -250,7 +273,6 @@ def vstack( blocks, format=None, dtype=None ):
 
     Example
     -------
-
     >>> from scipy.sparse import coo_matrix, vstack
     >>> A = coo_matrix([[1,2],[3,4]])
     >>> B = coo_matrix([[5,6]])
@@ -268,7 +290,6 @@ def bmat( blocks, format=None, dtype=None ):
 
     Parameters
     ----------
-
     blocks
         grid of sparse matrices with compatible shapes
         an entry of None implies an all-zero matrix
@@ -278,7 +299,6 @@ def bmat( blocks, format=None, dtype=None ):
 
     Example
     -------
-
     >>> from scipy.sparse import coo_matrix, bmat
     >>> A = coo_matrix([[1,2],[3,4]])
     >>> B = coo_matrix([[5],[6]])
@@ -398,7 +418,8 @@ def lil_eye((r,c), k=0, dtype='d'):
             DeprecationWarning)
     return eye(r,c,k,dtype=dtype,format='lil')
 
-
+from numpy import clip
+from itertools import izip
 
 #TODO remove this function
 def lil_diags(diags,offsets,(m,n),dtype='d'):
