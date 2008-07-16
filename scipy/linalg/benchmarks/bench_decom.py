@@ -7,7 +7,7 @@ import numpy
 from numpy import linalg
 from scipy.linalg import eigvals
 
-from scipy.testing import *
+from numpy.testing import *
 
 def random(size):
     return rand(*size)

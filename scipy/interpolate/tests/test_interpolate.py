@@ -1,4 +1,4 @@
-from scipy.testing import *
+from numpy.testing import *
 from numpy import mgrid, pi, sin, ogrid, poly1d
 import numpy as np
 

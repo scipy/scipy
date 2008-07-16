@@ -21,7 +21,7 @@ fromiter = numpy.fromiter
 narray = numpy.array
 
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.sandbox.pyloess import lowess, stl, loess, loess_anova
 

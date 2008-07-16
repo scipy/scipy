@@ -1,5 +1,5 @@
 
-from scipy.testing import *
+from numpy.testing import *
 
 from yyy import fun
 

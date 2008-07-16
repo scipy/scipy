@@ -5,7 +5,7 @@
 
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 from numpy import ones
 
 from scipy.linalg import flapack, clapack

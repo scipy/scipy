@@ -22,7 +22,7 @@ from scipy.sandbox import maskedarray
 marray = maskedarray.masked_array
 masked_values = maskedarray.masked_values
 
-from scipy.testing import *
+from numpy.testing import *
 from scipy.sandbox.maskedarray.testutils import build_err_msg, \
         assert_equal, assert_almost_equal
 

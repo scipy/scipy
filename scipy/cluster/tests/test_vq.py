@@ -8,7 +8,7 @@
 
 import sys
 import os.path
-from scipy.testing import *
+from numpy.testing import *
 
 import numpy as N
 

@@ -8,7 +8,7 @@ from numpy import (arange, zeros, array, dot, sqrt, cos, sin, absolute,
                    eye, pi, exp, allclose)
 from scipy.linalg import norm
 
-from scipy.testing import *
+from numpy.testing import *
 from scipy.integrate import odeint, ode
 
 #------------------------------------------------------------------------------

@@ -34,7 +34,7 @@
 
 from numpy import dot, array
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.special import *
 import scipy.special._cephes as cephes

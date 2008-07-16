@@ -8,7 +8,7 @@ Run benchmarks if scipy is installed:
 """
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.sandbox.exmplpackage.foo import *
 

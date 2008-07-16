@@ -14,7 +14,7 @@ from numpy.ma import masked
 import scipy.stats.mstats as ms
 import scipy.stats.mmorestats as mms
 
-from scipy.testing import *
+from numpy.testing import *
 
 
 class TestMisc(TestCase):

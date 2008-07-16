@@ -1,6 +1,6 @@
 import math
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.optimize import cobyla as co
 

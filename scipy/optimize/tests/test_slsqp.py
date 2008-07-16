@@ -1,4 +1,4 @@
-from scipy.testing import *
+from numpy.testing import *
 import numpy as np
 
 from scipy.optimize import  fmin_slsqp

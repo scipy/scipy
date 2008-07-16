@@ -12,7 +12,7 @@ Run tests if fftpack is not installed:
 """
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
 
 from numpy import pi

@@ -11,7 +11,7 @@ import sys
 import numpy
 from numpy import array, identity, dot, sqrt
 
-from scipy.testing import *
+from numpy.testing import *
 
 import scipy.linalg
 from scipy.linalg import signm,logm,funm, sqrtm, expm, expm2, expm3

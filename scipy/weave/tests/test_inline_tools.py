@@ -1,7 +1,7 @@
 
 from numpy import *
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.weave import inline_tools
 

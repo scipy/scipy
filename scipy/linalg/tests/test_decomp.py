@@ -15,7 +15,7 @@ Run tests if linalg is not installed:
 """
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr, \
      schur,rsf2csf, lu_solve,lu_factor,solve,diagsvd,hessenberg,rq, \

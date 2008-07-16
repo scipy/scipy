@@ -31,7 +31,7 @@
 import math
 import numpy
 from numpy import fft
-from scipy.testing import *
+from numpy.testing import *
 import scipy.ndimage as ndimage
 
 eps = 1e-12

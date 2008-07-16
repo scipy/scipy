@@ -5,7 +5,7 @@ To run tests locally:
 
 """
 
-from scipy.testing import *
+from numpy.testing import *
 
 from numpy import array,real,imag,finfo,concatenate,\
     column_stack,argsort,dot,round,conj,sort,random

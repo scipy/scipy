@@ -4,7 +4,7 @@
 # also check out numpyio.fread.__doc__ and other method docstrings.
 
 import os
-from scipy.testing import *
+from numpy.testing import *
 import scipy.io as io
 from scipy.io import numpyio
 from scipy.io import array_import

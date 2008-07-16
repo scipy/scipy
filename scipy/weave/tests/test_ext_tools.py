@@ -1,7 +1,7 @@
 
 import time
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.weave import ext_tools, c_spec
 try:

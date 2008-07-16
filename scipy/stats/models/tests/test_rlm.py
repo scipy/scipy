@@ -3,7 +3,7 @@ Test functions for models.rlm
 """
 
 import numpy.random as R
-from scipy.testing import *
+from numpy.testing import *
 
 import scipy.stats.models.rlm as models
 

@@ -3,7 +3,7 @@ Test functions for models.regression
 """
 
 from numpy.random import standard_normal
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.stats.models.regression import OLSModel, ARModel
 

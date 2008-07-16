@@ -1,6 +1,6 @@
 from math import sqrt
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.optimize import zeros as cc
 

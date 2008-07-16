@@ -2,7 +2,7 @@ import sys
 import os
 
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.weave import catalog
 

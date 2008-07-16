@@ -20,7 +20,7 @@ from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, \
         asarray, vstack, ndarray, transpose, diag
 
 import random
-from scipy.testing import *
+from numpy.testing import *
 
 import scipy.sparse as sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \

@@ -1,5 +1,5 @@
 import numpy as N
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.io.recaster import sctype_attributes, Recaster, RecastError
 

@@ -1,5 +1,5 @@
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.sandbox.fdfpack import periodic_finite_difference as diff
 

@@ -1,7 +1,7 @@
 import math
 import numpy as np
 import scipy.ndimage._registration as reg
-from scipy.testing import *
+from numpy.testing import *
 
 def load_desc():
     # this is for a 256x256x90 volume with 0.9375 x 0.9375 * 1.5 mm voxel sizes 

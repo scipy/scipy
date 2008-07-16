@@ -18,7 +18,7 @@ Run tests if intsampler is not installed:
 from numpy import arange, add, array, dot, zeros, identity
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.sandbox.montecarlo import *
 from scipy import stats

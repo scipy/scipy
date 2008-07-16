@@ -13,7 +13,7 @@ Run tests if interpolate is not installed:
 #import libwadpy
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 from numpy import array, diff
 from scipy.interpolate.fitpack2 import UnivariateSpline,LSQUnivariateSpline,\
      InterpolatedUnivariateSpline

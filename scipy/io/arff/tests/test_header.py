@@ -2,7 +2,7 @@
 """Test for parsing arff headers only."""
 import os
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.io.arff.arffread import read_header, MetaData, parse_type, \
                                    ParseArffError

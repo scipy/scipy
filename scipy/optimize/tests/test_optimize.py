@@ -9,7 +9,7 @@ To run it in its simplest form::
 
 """
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy import optimize
 from scipy.optimize import leastsq

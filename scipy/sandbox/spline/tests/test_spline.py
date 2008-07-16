@@ -13,7 +13,7 @@ Run tests if spline is not installed:
 """
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 from numpy import array, arange, around, pi, sin, cos
 
 

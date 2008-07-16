@@ -17,7 +17,7 @@ import scipy.optimize as optimize
 import scipy.special as special
 import futil
 import numpy as sb
-from scipy.testing.decorators import setastest
+from numpy.testing.decorators import setastest
 
 __all__ = ['find_repeats',
            'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',

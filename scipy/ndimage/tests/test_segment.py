@@ -1,7 +1,7 @@
 import math
 import numpy as NP
 import scipy.ndimage._segmenter as seg
-from scipy.testing import *
+from numpy.testing import *
 
 def run_sobel():
     img    = seg.build_test_discs()

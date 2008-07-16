@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # Last Change: Fri Dec 15 10:00 PM 2006 J
 
-from scipy.testing import *
+from numpy.testing import *
 from numpy.random import randn, seed
 from numpy import correlate, array, concatenate, require, corrcoef
 from numpy.fft import fft, ifft

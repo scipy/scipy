@@ -3,7 +3,7 @@ Test functions for models.robust.scale
 """
 
 import numpy.random as R
-from scipy.testing import *
+from numpy.testing import *
 
 import scipy.stats.models.robust.scale as scale
 

@@ -1,7 +1,7 @@
 import os
 from StringIO import StringIO
 from tempfile import mkstemp
-from scipy.testing import *
+from numpy.testing import *
 import numpy as N
 
 from scipy.io.npfile import npfile, sys_endian_code

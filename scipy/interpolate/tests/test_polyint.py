@@ -1,5 +1,5 @@
 
-from scipy.testing import *
+from numpy.testing import *
 from scipy.interpolate import KroghInterpolator, krogh_interpolate, \
         BarycentricInterpolator, barycentric_interpolate, \
         PiecewisePolynomial, piecewise_polynomial_interpolate, \

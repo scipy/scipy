@@ -23,7 +23,7 @@ import numpy
 from numpy import arange, add, array, dot, zeros, identity, conjugate, transpose
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, \
      tril, pinv, pinv2, solve_banded

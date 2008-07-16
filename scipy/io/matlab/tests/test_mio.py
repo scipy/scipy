@@ -4,7 +4,7 @@ import os
 from glob import glob
 from cStringIO import StringIO
 from tempfile import mkstemp, mkdtemp
-from scipy.testing import *
+from numpy.testing import *
 from numpy import arange, array, eye, pi, cos, exp, sin, sqrt, ndarray,  \
      zeros, reshape, transpose, empty
 import scipy.sparse as SP

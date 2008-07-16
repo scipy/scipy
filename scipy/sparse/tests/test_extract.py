@@ -2,7 +2,7 @@
 
 import numpy
 from numpy import array, matrix
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.sparse import csr_matrix
 

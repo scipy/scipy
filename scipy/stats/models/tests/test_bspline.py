@@ -3,7 +3,7 @@ Test functions for models.bspline
 """
 
 import numpy as N
-from scipy.testing import *
+from numpy.testing import *
 
 import scipy.stats.models as S
 try:

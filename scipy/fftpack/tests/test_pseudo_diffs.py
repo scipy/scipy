@@ -11,7 +11,7 @@ Run tests if fftpack is not installed:
   python tests/test_pseudo_diffs.py [<level>]
 """
 import sys
-from scipy.testing import *
+from numpy.testing import *
 from scipy.fftpack import diff,fft,ifft,tilbert,itilbert,hilbert,ihilbert,rfft
 from scipy.fftpack import shift
 from scipy.fftpack import fftfreq

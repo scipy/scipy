@@ -5,7 +5,7 @@ import time
 import numpy
 from numpy import ones, array, asarray, empty
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy import sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \

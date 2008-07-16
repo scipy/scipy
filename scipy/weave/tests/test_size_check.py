@@ -1,6 +1,6 @@
 import os
 from numpy import *
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.weave import size_check
 from scipy.weave.ast_tools import *

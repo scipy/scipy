@@ -4,7 +4,7 @@ Test functions for models.GLM
 
 import numpy as N
 import numpy.random as R
-from scipy.testing import *
+from numpy.testing import *
 
 import scipy.stats.models as S
 import scipy.stats.models.glm as models

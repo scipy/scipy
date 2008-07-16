@@ -3,7 +3,7 @@ Author: Ondrej Certik
 May 2007
 """
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.optimize import nonlin
 from numpy import matrix, diag

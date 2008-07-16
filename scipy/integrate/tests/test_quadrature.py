@@ -1,7 +1,7 @@
 
 import numpy
 from numpy import cos, sin, pi
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.integrate import quadrature, romberg, romb
 

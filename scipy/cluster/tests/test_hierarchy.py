@@ -37,7 +37,7 @@ import sys
 import os.path
 import numpy
 
-from scipy.testing import *
+from numpy.testing import *
 from scipy.cluster.hierarchy import squareform, linkage, from_mlab_linkage, numobs_dm, numobs_y, numobs_linkage
 from scipy.cluster.distance import pdist, matching, jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule
 

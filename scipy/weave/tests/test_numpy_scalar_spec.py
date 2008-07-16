@@ -10,7 +10,7 @@ global test_dir
 test_dir = ''
 
 import numpy
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.weave import inline_tools,ext_tools
 from scipy.weave.build_tools import msvc_exists, gcc_exists

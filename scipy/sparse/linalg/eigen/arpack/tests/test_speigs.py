@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.sparse.linalg.interface import aslinearoperator
 from scipy.sparse.linalg.eigen.arpack.speigs import *

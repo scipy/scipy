@@ -10,7 +10,7 @@ Copyright: Ed Schofield, 2003-2006
 from numpy import arange, add, array, dot, zeros, identity
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 
 from numpy import sum, array, average, sqrt
 #from scipy.montecarlo import *

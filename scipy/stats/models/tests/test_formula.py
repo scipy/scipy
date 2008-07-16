@@ -7,7 +7,7 @@ import string
 import numpy as N
 import numpy.random as R
 import numpy.linalg as L
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.stats.models import utils, formula, contrast
 

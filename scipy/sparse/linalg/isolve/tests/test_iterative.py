@@ -2,7 +2,7 @@
 """ Test functions for the sparse.linalg.isolve module
 """
 
-from scipy.testing import *
+from numpy.testing import *
 
 from numpy import zeros, dot, diag, ones, arange, array
 from numpy.random import rand

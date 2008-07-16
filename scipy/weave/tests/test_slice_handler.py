@@ -1,5 +1,5 @@
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.weave import slice_handler
 from scipy.weave.slice_handler import indexed_array_pattern

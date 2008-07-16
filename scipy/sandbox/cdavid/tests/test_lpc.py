@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # Last Change: Tue Nov 28 05:00 PM 2006 J
 
-from scipy.testing import *
+from numpy.testing import *
 from numpy.random import randn, seed
 from numpy import correlate, array, concatenate, require
 

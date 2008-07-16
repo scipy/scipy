@@ -1,7 +1,7 @@
 # Author:  Travis Oliphant, 2002
 #
 
-from scipy.testing import *
+from numpy.testing import *
 
 
 import scipy.stats as stats

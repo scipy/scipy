@@ -16,7 +16,7 @@ import sys
 import math
 
 from numpy import arange, add, array
-from scipy.testing import *
+from numpy.testing import *
 from scipy.lib.blas import fblas
 from scipy.lib.blas import cblas
 from scipy.lib.blas import get_blas_funcs

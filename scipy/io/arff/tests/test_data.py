@@ -3,7 +3,7 @@
 import os
 
 import numpy as N
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.io.arff.arffread import loadarff
 

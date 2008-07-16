@@ -1,6 +1,6 @@
 #this program corresponds to special.py
 
-from scipy.testing import *
+from numpy.testing import *
 
 import scipy.signal as signal
 

@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # Last Change: Fri Dec 15 10:00 PM 2006 J
 
-from scipy.testing import *
+from numpy.testing import *
 
 import numpy as N
 

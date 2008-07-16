@@ -67,7 +67,7 @@ pkgload(verbose=SCIPY_IMPORT_VERBOSE,postpone=True)
 # "from scipy import *". This works around a numpy bug present in < 1.2.
 subpackages = """cluster constants fftpack integrate interpolate io lib linalg
 linsolve maxentropy misc ndimage odr optimize sandbox signal sparse special
-splinalg stats stsci testing weave""".split()
+splinalg stats stsci weave""".split()
 for name in subpackages:
     try:
         __all__.remove(name)
@@ -83,7 +83,7 @@ Available subpackages
 """
 __doc__ += pkgload.get_pkgdocs()
 
-from testing.pkgtester import Tester
+from numpy.testing import Tester
 test = Tester().test
 bench = Tester().bench
 __doc__ += """

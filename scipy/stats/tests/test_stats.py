@@ -7,7 +7,7 @@
 """
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 from numpy import array, arange, zeros, ravel, float32, float64, power
 import numpy
 

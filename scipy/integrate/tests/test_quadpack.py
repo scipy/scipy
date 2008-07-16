@@ -1,6 +1,6 @@
 import numpy
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
-from scipy.testing import *
+from numpy.testing import *
 from scipy.integrate import quad, dblquad, tplquad
 
 def assert_quad((value, err), tabledValue, errTol=1.5e-8):

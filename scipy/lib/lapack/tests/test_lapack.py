@@ -16,7 +16,7 @@ can be run (see the isrunnable method).
 
 import os
 import sys
-from scipy.testing import *
+from numpy.testing import *
 from numpy import dot, ones, zeros
 
 from scipy.lib.lapack import flapack, clapack

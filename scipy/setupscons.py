@@ -22,7 +22,6 @@ def configuration(parent_package='',top_path=None, setup_name = 'setupscons.py')
     config.add_subpackage('ndimage')
     config.add_subpackage('stsci')
     config.add_subpackage('weave')
-    config.add_subpackage('testing')
     config.make_svn_version_py()  # installs __svn_version__.py
     config.scons_make_config_py() # installs __config__.py
     return config

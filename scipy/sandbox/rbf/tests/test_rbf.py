@@ -2,7 +2,7 @@
 # Created by John Travers, Robert Hetland, 2007
 """ Test functions for rbf module """
 
-from scipy.testing import *
+from numpy.testing import *
 from numpy import linspace, sin, random, exp
 
 

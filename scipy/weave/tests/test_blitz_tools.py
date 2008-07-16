@@ -4,7 +4,7 @@ import time
 from numpy import dot, float32, float64, complex64, complex128, \
      zeros, random, array, sum, abs, allclose
 
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy.weave import blitz_tools
 from scipy.weave.ast_tools import harvest_variables

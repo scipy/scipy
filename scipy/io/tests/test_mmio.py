@@ -2,7 +2,7 @@
 
 from tempfile import mktemp
 from numpy import array,transpose
-from scipy.testing import *
+from numpy.testing import *
 
 import scipy
 import scipy.sparse

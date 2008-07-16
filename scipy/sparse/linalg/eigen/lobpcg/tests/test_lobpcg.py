@@ -3,7 +3,7 @@
 """
 
 import numpy
-from scipy.testing import *
+from numpy.testing import *
 
 from scipy import array, arange, ones, sort, cos, pi, rand, \
      set_printoptions, r_, diag, linalg

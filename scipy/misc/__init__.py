@@ -20,5 +20,5 @@ except ImportError:
 
 __all__ += common.__all__
 
-from scipy.testing.pkgtester import Tester
+from numpy.testing import Tester
 test = Tester().test

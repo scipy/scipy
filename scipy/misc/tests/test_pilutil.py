@@ -2,7 +2,7 @@ import os.path
 import glob
 import numpy as N
 
-from scipy.testing import *
+from numpy.testing import *
 
 try:
     import PIL.Image

@@ -58,5 +58,5 @@ def get_blas_funcs(names,arrays=(),debug=0):
         funcs.append(func)
     return tuple(funcs)
 
-from scipy.testing.pkgtester import Tester
+from numpy.testing import Tester
 test = Tester().test

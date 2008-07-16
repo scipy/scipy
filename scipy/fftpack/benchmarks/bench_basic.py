@@ -1,7 +1,7 @@
 """ Test functions for fftpack.basic module
 """
 import sys
-from scipy.testing import *
+from numpy.testing import *
 from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft
 from scipy.fftpack import _fftpack as fftpack
 
