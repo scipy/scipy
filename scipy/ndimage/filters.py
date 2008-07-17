@@ -63,7 +63,7 @@ def correlate1d(input, weights, axis = -1, output = None, mode = "reflect",
     if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     output, return_value = _ni_support._get_output(output, input)
-    weights = numpy.asarray(weights, dtype = numpy.float64)
+    weights = numpy.asarray(weights, dtype=numpy.float64)
     if weights.ndim != 1 or weights.shape[0] < 1:
         raise RuntimeError, 'no filter weights given'
     if not weights.flags.contiguous:
@@ -332,7 +332,7 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
     if numpy.iscomplexobj(int):
         raise TypeError, 'Complex type not supported'
     origins = _ni_support._normalize_sequence(origin, input.ndim)
-    weights = numpy.asarray(weights, dtype = numpy.float64)
+    weights = numpy.asarray(weights, dtype=numpy.float64)
     wshape = [ii for ii in weights.shape if ii > 0]
     if len(wshape) != input.ndim:
         raise RuntimeError, 'filter weights array has incorrect shape.'
@@ -492,7 +492,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
             else:
                 separable = False
     else:
-        structure = numpy.asarray(structure, dtype = numpy.float64)
+        structure = numpy.asarray(structure, dtype=numpy.float64)
         separable = False
         if footprint is None:
             footprint = numpy.ones(structure.shape, bool)
@@ -573,9 +573,9 @@ def _rank_filter(input, rank, size = None, footprint = None, output = None,
         if size is None:
             raise RuntimeError, "no footprint or filter size provided"
         sizes = _ni_support._normalize_sequence(size, input.ndim)
-        footprint = numpy.ones(sizes, dtype = bool)
+        footprint = numpy.ones(sizes, dtype=bool)
     else:
-        footprint = numpy.asarray(footprint, dtype = bool)
+        footprint = numpy.asarray(footprint, dtype=bool)
     fshape = [ii for ii in footprint.shape if ii > 0]
     if len(fshape) != input.ndim:
         raise RuntimeError, 'filter footprint array has incorrect shape.'
@@ -709,7 +709,7 @@ def generic_filter(input, function, size = None, footprint = None,
         if size is None:
             raise RuntimeError, "no footprint or filter size provided"
         sizes = _ni_support._normalize_sequence(size, input.ndim)
-        footprint = numpy.ones(size, dtype = bool)
+        footprint = numpy.ones(sizes, dtype=bool)
     else:
         footprint = numpy.asarray(footprint)
         footprint = footprint.astype(bool)
