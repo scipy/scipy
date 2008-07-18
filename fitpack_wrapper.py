@@ -1,13 +1,20 @@
-""" fit_helper.py
+"""
+This module is used for spline interpolation, and functions
+as a wrapper around the FITPACK Fortran interpolation
+package.  It is not intended to be directly accessed by
+the user, but rather through the class Interpolate1D.
 
-mimics the functionality of enthought.interpolate that is
-contained in the module fitting.py
+The code has been modified from an older version of
+scipy.interpolate, where it was directly called by the
+user.  As such, it includes functionality not available through
+Interpolate1D.  For this reason, users may wish to get
+under the hood.
 
 """
 
 import numpy as np
 
-import dfitpack #fixme: rename module fitpack_wrapper
+import dfitpack
 
 
 class Spline(object):
@@ -119,7 +126,7 @@ class Spline(object):
         if x is (partially) ordered.
         
         """
-        print 'length of x: ', len(x)
+        
         if len(x) == 0: return np.array([]) #hack to cope with shape (0,)
         if nu is None:
             return dfitpack.splev(*(self._eval_args+(x,)))
@@ -190,13 +197,16 @@ class Test(unittest.TestCase):
         T1 = time.clock()
         interp_func = Spline(x, y, k=1)
         T2 = time.clock()
-        print 'time to create linear interp function: ', T2 - T1
+        print "time to create order 1 spline interpolation function with N = %i:" % N, T2 - T1
         new_x = np.arange(N)+0.5
         t1 = time.clock()
         new_y = interp_func(new_x)
         t2 = time.clock()
-        print '1d interp (sec):', t2 - t1
+        print "time for order 1 spline interpolation with N = %i:" % N, t2 - t1
         self.assertAllclose(new_y[:5], [0.5, 1.5, 2.5, 3.5, 4.5])
+    
+    def runTest(self):
+        self.test_linearSpl()
                              
 if __name__ == '__main__':
     unittest.main()
