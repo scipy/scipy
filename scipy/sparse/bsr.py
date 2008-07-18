@@ -15,7 +15,7 @@ from base import isspmatrix, _formats
 from sputils import isshape, getdtype, to_native, isscalarlike, isdense, \
         upcast
 import sparsetools
-from sparsetools import bsr_matvec, csr_matmat_pass1, csr_matmat_pass2, \
+from sparsetools import bsr_matvec, bsr_matvecs, csr_matmat_pass1, csr_matmat_pass2, \
         bsr_matmat_pass2, bsr_transpose, bsr_sort_indices
 
 class bsr_matrix(_cs_matrix):
@@ -296,15 +296,29 @@ class bsr_matrix(_cs_matrix):
         result = zeros( self.shape[0], dtype=upcast(self.dtype, other.dtype) )
 
         bsr_matvec(M/R, N/C, R, C, \
-            self.indptr, self.indices, ravel(self.data), other, result)
+            self.indptr, self.indices, self.data.ravel(), 
+            other, result)
+
+        return result
+    
+    def _mul_dense_matrix(self,other):
+        R,C = self.blocksize
+        M,N = self.shape
+        n_vecs = other.shape[1] #number of column vectors
+
+        result = zeros( (M,n_vecs), dtype=upcast(self.dtype,other.dtype) )
+
+        bsr_matvecs(M/R, N/C, n_vecs, R, C, \
+                self.indptr, self.indices, self.data.ravel(), \
+                other.ravel(), result.ravel())
 
         return result
 
-    def _mul_dense_matrix(self, other):
-        # TODO make sparse * dense matrix multiplication more efficient
-        # matvec each column of other
-        result = hstack( [ self * col.reshape(-1,1) for col in asarray(other).T ] )
-        return result                
+    #def _mul_dense_matrix(self, other):
+    #    # TODO make sparse * dense matrix multiplication more efficient
+    #    # matvec each column of other
+    #    result = hstack( [ self * col.reshape(-1,1) for col in asarray(other).T ] )
+    #    return result                
 
     def _mul_sparse_matrix(self, other):
         M, K1 = self.shape

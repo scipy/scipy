@@ -8,7 +8,7 @@ from itertools import izip
 from warnings import warn
 
 from numpy import array, asarray, empty, intc, zeros, \
-        unique, searchsorted, atleast_2d, rank, deprecate
+        unique, searchsorted, atleast_2d, rank, deprecate, hstack
 
 from sparsetools import coo_tocsr, coo_tocsc, coo_todense, coo_matvec
 from base import isspmatrix
@@ -338,6 +338,9 @@ class coo_matrix(_data_matrix):
         result = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
         coo_matvec(self.nnz, self.row, self.col, self.data, other, result)
         return result
+    
+    def _mul_dense_matrix(self, other):
+        return hstack( [ self._mul_vector(col).reshape(-1,1) for col in other.T ] )
 
 from sputils import _isinstance
 

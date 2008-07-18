@@ -22,6 +22,8 @@ if isUmfpack and noScikit:
 useUmfpack = True
 
 
+__all__ = [ 'use_solver', 'spsolve', 'splu', 'factorized' ]
+
 #convert numpy char to superLU char
 superLU_transtabl = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 

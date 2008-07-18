@@ -400,7 +400,7 @@ class _TestCommon:
             assert_equal( result, dot(a,b) )
 
     def test_sparse_format_conversions(self):
-        A = sparse.kron([[1,0,1],[0,1,1],[1,0,0]], [[1,1],[0,1]] )
+        A = sparse.kron( [[1,0,2],[0,3,4],[5,0,0]], [[1,2],[0,3]] )
         D = A.todense()
         A = self.spmatrix(A)
 
@@ -441,7 +441,7 @@ class _TestCommon:
 
 
     def test_add_dense(self):
-        """ Check whether adding a dense matrix to a sparse matrix works
+        """ adding a dense matrix to a sparse matrix
         """
         sum1 = self.dat + self.datsp
         assert_array_equal(sum1, 2*self.dat)
@@ -449,7 +449,7 @@ class _TestCommon:
         assert_array_equal(sum2, 2*self.dat)
 
     def test_sub_dense(self):
-        """ Check whether adding a dense matrix to a sparse matrix works
+        """ subtracting a dense matrix to/from a sparse matrix
         """
         sum1 = 3*self.dat - self.datsp
         assert_array_equal(sum1, 2*self.dat)
@@ -1406,6 +1406,16 @@ class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
         assert_array_equal(asp.nnz, 3*4)
         assert_array_equal(asp.todense(),bsp.todense())
 
+    def test_bsr_matvec(self):
+        A = bsr_matrix( arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5) )
+        x = arange(A.shape[1]).reshape(-1,1)
+        assert_equal(A*x, A.todense()*x)
+
+    def test_bsr_matvecs(self):
+        A = bsr_matrix( arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5) )
+        x = arange(A.shape[1]*6).reshape(-1,6)
+        assert_equal(A*x, A.todense()*x)
+        
 
 if __name__ == "__main__":
     nose.run(argv=['', __file__])

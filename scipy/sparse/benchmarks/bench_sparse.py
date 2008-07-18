@@ -48,8 +48,8 @@ class BenchmarkSparse(TestCase):
     def bench_arithmetic(self):
         matrices = []
         #matrices.append( ('A','Identity', sparse.identity(500**2,format='csr')) )
-        matrices.append( ('A','Poisson5pt', poisson2d(500,format='csr'))  )
-        matrices.append( ('B','Poisson5pt^2', poisson2d(500,format='csr')**2)  )
+        matrices.append( ('A','Poisson5pt', poisson2d(250,format='csr'))  )
+        matrices.append( ('B','Poisson5pt^2', poisson2d(250,format='csr')**2)  )
 
         print
         print '                 Sparse Matrix Arithmetic'
@@ -82,7 +82,7 @@ class BenchmarkSparse(TestCase):
 
                     start = time.clock()
                     iter = 0
-                    while iter < 5 or time.clock() < start + 1:
+                    while iter < 3 or time.clock() < start + 0.5:
                         fn(y)
                         iter += 1
                     end = time.clock()
@@ -133,6 +133,7 @@ class BenchmarkSparse(TestCase):
         matrices.append(('Poisson5pt', poisson2d(300,format='dia')))
         matrices.append(('Poisson5pt', poisson2d(300,format='coo')))
         matrices.append(('Poisson5pt', poisson2d(300,format='csr')))
+        matrices.append(('Poisson5pt', poisson2d(300,format='csc')))
         matrices.append(('Poisson5pt', poisson2d(300,format='bsr')))
 
         A = sparse.kron(poisson2d(150),ones((2,2))).tobsr(blocksize=(2,2))
@@ -159,11 +160,6 @@ class BenchmarkSparse(TestCase):
             iter = 0
             while iter < 5 or time.clock() < start + 1:
                 y = A*x
-                #try:
-                #    #avoid creating y if possible
-                #    A.matvec(x,y)
-                #except:
-                #    y = A*x
                 iter += 1
             end = time.clock()
 
@@ -174,6 +170,46 @@ class BenchmarkSparse(TestCase):
             MFLOPs = (2*A.nnz*iter/(end-start))/float(1e6)
 
             print fmt % (A.format,name,shape,A.nnz,MFLOPs)
+
+    def bench_matvecs(self):
+        matrices = []
+        matrices.append(('Poisson5pt', poisson2d(300,format='dia')))
+        matrices.append(('Poisson5pt', poisson2d(300,format='coo')))
+        matrices.append(('Poisson5pt', poisson2d(300,format='csr')))
+        matrices.append(('Poisson5pt', poisson2d(300,format='csc')))
+        matrices.append(('Poisson5pt', poisson2d(300,format='bsr')))
+
+
+        n_vecs = 10
+
+        print
+        print '             Sparse Matrix (Block) Vector Product'
+        print '                       Blocksize = %d' % (n_vecs,)
+        print '=================================================================='
+        print ' type |    name      |         shape        |    nnz   |  MFLOPs  '
+        print '------------------------------------------------------------------'
+        fmt = '  %3s | %12s | %20s | %8d |  %6.1f '
+
+        for name,A in matrices:
+            x = ones((A.shape[1],10),dtype=A.dtype)
+
+            y = A*x  #warmup
+
+            start = time.clock()
+            iter = 0
+            while iter < 5 or time.clock() < start + 1:
+                y = A*x
+                iter += 1
+            end = time.clock()
+
+            del y
+
+            name = name.center(12)
+            shape = ("%s" % (A.shape,)).center(20)
+            MFLOPs = (2*n_vecs*A.nnz*iter/(end-start))/float(1e6)
+
+            print fmt % (A.format,name,shape,A.nnz,MFLOPs)
+
 
     def bench_construction(self):
         """build matrices by inserting single values"""
@@ -213,13 +249,13 @@ class BenchmarkSparse(TestCase):
     def bench_conversion(self):
         A = poisson2d(100)
 
-        formats = ['csr','csc','coo','lil','dok']
+        formats = ['csr','csc','coo','dia','lil','dok']
 
         print
-        print '                Sparse Matrix Conversion'
-        print '=========================================================='
-        print ' format | tocsr() | tocsc() | tocoo() | tolil() | todok() '
-        print '----------------------------------------------------------'
+        print '                     Sparse Matrix Conversion'
+        print '===================================================================='
+        print ' format | tocsr() | tocsc() | tocoo() | todia() | tolil() | todok() '
+        print '--------------------------------------------------------------------'
 
         for fromfmt in formats:
             base = getattr(A,'to' + fromfmt)()

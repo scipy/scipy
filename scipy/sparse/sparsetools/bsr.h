@@ -6,7 +6,7 @@
 #include <functional>
 
 #include "csr.h"
-#include "fixed_size.h"
+#include "dense.h"
 
 
 template <class I, class T>
@@ -19,10 +19,10 @@ void bsr_diagonal(const I n_brow,
 	              const T Ax[],
 	                    T Yx[])
 {
-    const I N  = std::min(R*n_brow, C*n_bcol);
+    const I D  = std::min(R*n_brow, C*n_bcol);
     const I RC = R*C;
 
-    for(I i = 0; i < N; i++){
+    for(I i = 0; i < D; i++){
         Yx[i] = 0;
     }
 
@@ -45,7 +45,7 @@ void bsr_diagonal(const I n_brow,
     else 
     {
         //This could be made faster
-        const I end = (N/R) + (N % R == 0 ? 0 : 1);
+        const I end = (D/R) + (D % R == 0 ? 0 : 1);
         for(I i = 0; i < end; i++){
             for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
                 const I base_row = R*i;
@@ -54,7 +54,7 @@ void bsr_diagonal(const I n_brow,
 
                 for(I bi = 0; bi < R; bi++){
                     const I row = base_row + bi;
-                    if (row >= N) break;
+                    if (row >= D) break;
 
                     for(I bj = 0; bj < C; bj++){
                         const I col = base_col + bj;
@@ -87,16 +87,15 @@ void bsr_scale_rows(const I n_brow,
 	                const T Xx[])
 {
     const I RC = R*C;
-    for(I i = 0; i < n_brow; i++){
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-            for(I bi = 0; bi < R; bi++){
-                const T s = Xx[R*i + bi];
-                T * block_row = Ax + RC*jj + C*bi;
-                
-                for(I bj = 0; bj < C; bj++){
-                    block_row[bj] *= s;
-                }
 
+    for(I i = 0; i < n_brow; i++){
+        const T * row_scales = Xx + R*i;
+
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+           T * block = Ax + RC*jj;
+
+            for(I bi = 0; bi < R; bi++){
+                scal(C, row_scales[bi], block + C*bi);
             }
         }
     }
@@ -167,7 +166,7 @@ void bsr_sort_indices(const I n_brow,
     const I RC    = R*C;
     const I nnz   = RC*nblks;
 
-    //compute permutation of blocks using tranpose(CSR)
+    //compute permutation of blocks using CSR
     std::vector<I> perm(nblks);
 
     for(I i = 0; i < nblks; i++)
@@ -249,69 +248,6 @@ void bsr_transpose(const I n_brow,
 }
 
 
-template <class I, class T, int R, int C, int N>
-void bsr_matmat_pass2_fixed(const I n_brow,  const I n_bcol, 
-      	                    const I Ap[],    const I Aj[],    const T Ax[],
-      	                    const I Bp[],    const I Bj[],    const T Bx[],
-      	                          I Cp[],          I Cj[],          T Cx[])
-{
-    const I RC = R*C;
-    const I RN = R*N;
-    const I NC = N*C;
-    const I SIZE = RC*Cp[n_brow];
-
-    for(I i = 0; i < SIZE; i++){
-        Cx[i] = 0;
-    }
- 
-    std::vector<I>  next(n_bcol,-1);
-    std::vector<T*> mats(n_bcol);
-
-    
-    I nnz = 0;
-
-    Cp[0] = 0;
-
-    for(I i = 0; i < n_brow; i++){
-        I head   = -2;
-        I length =  0;
-
-        I jj_start = Ap[i];
-        I jj_end   = Ap[i+1];
-        for(I jj = jj_start; jj < jj_end; jj++){
-            I j = Aj[jj];
-
-            I kk_start = Bp[j];
-            I kk_end   = Bp[j+1];
-            for(I kk = kk_start; kk < kk_end; kk++){
-                I k = Bj[kk];
-
-                if(next[k] == -1){
-                    next[k] = head;                        
-                    head = k;
-                    Cj[nnz] = k;
-                    mats[k] = Cx + RC*nnz;
-                    nnz++;
-                    length++;
-                }
-
-                const T * A = Ax + jj*RN;
-                const T * B = Bx + kk*NC;
-                T * result = mats[k];
-                matmat<R,C,N>(A,B,result);
-            }
-        }         
-
-        for(I jj = 0; jj < length; jj++){
-            I temp = head;                
-            head = next[head];
-            next[temp] = -1; //clear arrays
-        }
-
-    }
-    
-}
-
 
 template <class I, class T>
 void bsr_matmat_pass2(const I n_brow,  const I n_bcol, 
@@ -322,44 +258,8 @@ void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
 {
     assert(R > 0 && C > 0 && N > 0);
 
-#ifdef SPARSETOOLS_TESTING
-#define F(X,Y,Z) bsr_matmat_pass2_fixed<I,T,X,Y,Z>
-
-    void (*dispatch[4][4][4])(I,I,const I*,const I*,const T*,
-                                  const I*,const I*,const T*,
-                                        I*,      I*,      T*) = \
-    {
-        { { F(1,1,1), F(1,1,2), F(1,1,3), F(1,1,4) },
-          { F(1,2,1), F(1,2,2), F(1,2,3), F(1,2,4) },
-          { F(1,3,1), F(1,3,2), F(1,3,3), F(1,3,4) },
-          { F(1,4,1), F(1,4,2), F(1,4,3), F(1,4,4) },
-        },
-        { { F(2,1,1), F(2,1,2), F(2,1,3), F(2,1,4) },
-          { F(2,2,1), F(2,2,2), F(2,2,3), F(2,2,4) },
-          { F(2,3,1), F(2,3,2), F(2,3,3), F(2,3,4) },
-          { F(2,4,1), F(2,4,2), F(2,4,3), F(2,4,4) },
-        },
-        { { F(3,1,1), F(3,1,2), F(3,1,3), F(3,1,4) },
-          { F(3,2,1), F(3,2,2), F(3,2,3), F(3,2,4) },
-          { F(3,3,1), F(3,3,2), F(3,3,3), F(3,3,4) },
-          { F(3,4,1), F(3,4,2), F(3,4,3), F(3,4,4) },
-        },
-        { { F(4,1,1), F(4,1,2), F(4,1,3), F(4,1,4) },
-          { F(4,2,1), F(4,2,2), F(4,2,3), F(4,2,4) },
-          { F(4,3,1), F(4,3,2), F(4,3,3), F(4,3,4) },
-          { F(4,4,1), F(4,4,2), F(4,4,3), F(4,4,4) },
-        }
-    };
-    
-    if (R <= 4 && C <= 4 && N <= 4){
-        dispatch[R-1][N-1][C-1](n_brow,n_bcol,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx);
-        return;
-    }
-
-#undef F
-#endif
-
     if( R == 1 && N == 1 && C == 1 ){
+        // Use CSR for 1x1 blocksize
         csr_matmat_pass2(n_brow, n_bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx);
         return;
     }
@@ -367,12 +267,8 @@ void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
     const I RC = R*C;
     const I RN = R*N;
     const I NC = N*C;
-    const I SIZE = RC*Cp[n_brow];
 
-
-    for(I i = 0; i < SIZE; i++){
-        Cx[i] = 0;
-    }
+    std::fill( Cx, Cx + RC * Cp[n_brow], 0 ); //clear output array
  
     std::vector<I>  next(n_bcol,-1);
     std::vector<T*> mats(n_bcol);
@@ -405,15 +301,8 @@ void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
 
                 const T * A = Ax + jj*RN;
                 const T * B = Bx + kk*NC;
-                T * result = mats[k];
-                for(I r = 0; r < R; r++){
-                    for(I c = 0; c < C; c++){
-                        for(I n = 0; n < N; n++){
-                            result[C*r + c] += A[N*r + n] * B[C*n + c];
 
-                        }
-                    }
-                }
+                gemm(R, C, N, A, B, mats[k]);
             }
         }         
 
@@ -609,37 +498,6 @@ void bsr_minus_bsr(const I n_row, const I n_col, const I R, const I C,
 //    }
 //}
 
-template <class I, class T, int R, int C>
-void bsr_matvec_fixed(const I n_brow,
-	                  const I n_bcol, 
-	                  const I Ap[], 
-	                  const I Aj[], 
-	                  const T Ax[],
-	                  const T Xx[],
-	                        T Yx[])
-{
-    const int RC = R*C;
-    for(I i = 0; i < n_brow; i++) {
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++) {
-            I j = Aj[jj];
-            matvec<R,C,1,1>(Ax + jj*RC, Xx + j*C, Yx + i*R);
-        }
-    }
-}
-
-/*
- * Generate the table below with:
- *   out = ''
- *   N = 8
- *   for i in range(N):
- *       out += '{'
- *       for j in range(N-1):
- *           out += ' F(%d,%d),' % (i+1,j+1)
- *       out += ' F(%d,%d) },\n' % (i+1,j+2)
- *   out = out[:-2]
- *
- */
-
 
 template <class I, class T>
 void bsr_matvec(const I n_brow,
@@ -655,50 +513,72 @@ void bsr_matvec(const I n_brow,
     assert(R > 0 && C > 0);
 
     if( R == 1 && C == 1 ){
-        csr_matvec(n_brow, n_bcol, Ap, Aj, Ax, Xx, Yx); //use CSR for 1x1 blocksize 
+        //use CSR for 1x1 blocksize 
+        csr_matvec(n_brow, n_bcol, Ap, Aj, Ax, Xx, Yx);
         return;
     }
 
-#ifdef SPARSETOOLS_TESTING
-#define F(X,Y) bsr_matvec_fixed<I,T,X,Y>
-
-    void (*dispatch[8][8])(I,I,const I*,const I*,const T*,const T*,T*) = \
-        {
-          { F(1,1), F(1,2), F(1,3), F(1,4), F(1,5), F(1,6), F(1,7), F(1,8) },
-          { F(2,1), F(2,2), F(2,3), F(2,4), F(2,5), F(2,6), F(2,7), F(2,8) },
-          { F(3,1), F(3,2), F(3,3), F(3,4), F(3,5), F(3,6), F(3,7), F(3,8) },
-          { F(4,1), F(4,2), F(4,3), F(4,4), F(4,5), F(4,6), F(4,7), F(4,8) },
-          { F(5,1), F(5,2), F(5,3), F(5,4), F(5,5), F(5,6), F(5,7), F(5,8) },
-          { F(6,1), F(6,2), F(6,3), F(6,4), F(6,5), F(6,6), F(6,7), F(6,8) },
-          { F(7,1), F(7,2), F(7,3), F(7,4), F(7,5), F(7,6), F(7,7), F(7,8) },
-          { F(8,1), F(8,2), F(8,3), F(8,4), F(8,5), F(8,6), F(8,7), F(8,8) }
-        };
-
-    if (R <= 8 && C <= 8){
-        dispatch[R-1][C-1](n_brow,n_bcol,Ap,Aj,Ax,Xx,Yx);
-        return;
-    }
-
-#undef F
-#endif
-
-    //otherwise use general method
+    const I RC = R*C;
     for(I i = 0; i < n_brow; i++){
-        const T * A = Ax + R * C * Ap[i];
-              T * y = Yx + R * i;
+        T * y = Yx + R * i;
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-            const T * x = Xx + C*Aj[jj];
+            const I j = Aj[jj];
+            const T * A = Ax + RC * jj;
+            const T * x = Xx + C * j;
+            gemv(R, C, A, x, y); // y += A*x
+        }
+    }
+}
+/*
+ * Compute Y += A*X for BSR matrix A and dense block vectors X,Y
+ *
+ *
+ * Input Arguments:
+ *   I  n_brow              - number of row blocks in A
+ *   I  n_bcol              - number of column blocks in A
+ *   I  n_vecs              - number of column vectors in X and Y
+ *   I  R                   - rows per block
+ *   I  C                   - columns per block
+ *   I  Ap[n_brow+1]        - row pointer
+ *   I  Aj[nblks(A)]        - column indices
+ *   T  Ax[nnz(A)]          - nonzeros
+ *   T  Xx[C*n_bcol,n_vecs] - input vector
+ *
+ * Output Arguments:
+ *   T  Yx[R*n_brow,n_vecs] - output vector
+ *
+ */
+template <class I, class T>
+void bsr_matvecs(const I n_brow,
+	             const I n_bcol, 
+                 const I n_vecs,
+	             const I R, 
+	             const I C, 
+	             const I Ap[], 
+	             const I Aj[], 
+	             const T Ax[],
+	             const T Xx[],
+	                   T Yx[])
+{
+    assert(R > 0 && C > 0);
 
-            //TODO replace this with a proper matvec
-            for( I r = 0; r < R; r++ ){
-                T sum = 0;
-                for( I c = 0; c < C; c++ ){
-                    sum += (*A) * x[c];
-                    A++;
-                }
-                y[r] += sum;
-            }
+    if( R == 1 && C == 1 ){
+        //use CSR for 1x1 blocksize 
+        csr_matvecs(n_brow, n_bcol, n_vecs, Ap, Aj, Ax, Xx, Yx);
+        return;
+    }
 
+    const I A_bs = R*C;      //Ax blocksize
+    const I Y_bs = n_vecs*R; //Yx blocksize
+    const I X_bs = C*n_vecs; //Xx blocksize
+
+    for(I i = 0; i < n_brow; i++){
+        T * y = Yx + Y_bs * i;
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            const I j = Aj[jj];
+            const T * A = Ax + A_bs * jj;
+            const T * x = Xx + X_bs * j;
+            gemm(R, n_vecs, C, A, x, y); // y += A*x
         }
     }
 }

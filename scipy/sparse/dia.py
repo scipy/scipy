@@ -6,7 +6,7 @@ __all__ = ['dia_matrix','isspmatrix_dia']
 
 from numpy import asarray, asmatrix, matrix, zeros, arange, array, \
         empty_like, intc, atleast_1d, atleast_2d, add, multiply, \
-        unique
+        unique, hstack
 
 from base import isspmatrix, _formats
 from data import _data_matrix
@@ -155,6 +155,8 @@ class dia_matrix(_data_matrix):
 
         return y
 
+    def _mul_dense_matrix(self, other):
+        return hstack( [ self._mul_vector(col).reshape(-1,1) for col in other.T ] )
     
     def todia(self,copy=False):
         if copy:
@@ -180,21 +182,22 @@ class dia_matrix(_data_matrix):
         for i,k in enumerate(self.diags):
             row[i,:] -= k
 
+        row,col,data = row.ravel(),col.ravel(),self.data.ravel()
+
         mask  = (row >= 0)
         mask &= (row < self.shape[0])
         mask &= (col < self.shape[1])
-        mask &= self.data != 0
-        row,col,data = row[mask],col[mask],self.data[mask]
-        row,col,data = row.reshape(-1),col.reshape(-1),data.reshape(-1)
+        mask &= data != 0
+        row,col,data = row[mask],col[mask],data[mask]
+        #row,col,data = row.reshape(-1),col.reshape(-1),data.reshape(-1)
 
         from coo import coo_matrix
         return coo_matrix((data,(row,col)),shape=self.shape)
 
     # needed by _data_matrix
-    def _with_data(self,data,copy=True):
+    def _with_data(self, data, copy=True):
         """Returns a matrix with the same sparsity structure as self,
-        but with different data.  By default the structure arrays
-        (i.e. .indptr and .indices) are copied.
+        but with different data.  By default the structure arrays are copied.
         """
         if copy:
             return dia_matrix( (data,self.diags.copy()), shape=self.shape)

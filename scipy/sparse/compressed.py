@@ -276,7 +276,7 @@ class _cs_matrix(_data_matrix):
         #output array
         result = zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
  
-        # csrmux, cscmux
+        # csr_matvec or csc_matvec
         fn = getattr(sparsetools,self.format + '_matvec')
         fn(M, N, self.indptr, self.indices, self.data, other, result)
  
@@ -284,9 +284,16 @@ class _cs_matrix(_data_matrix):
 
 
     def _mul_dense_matrix(self,other):
-        # TODO make sparse * dense matrix multiplication more efficient
-        # matvec each column of other
-        return hstack( [ self * col.reshape(-1,1) for col in asarray(other).T ] )
+        M,N = self.shape
+        n_vecs = other.shape[1] #number of column vectors
+
+        result = zeros( (M,n_vecs), dtype=upcast(self.dtype,other.dtype) )
+
+        # csr_matvecs or csc_matvecs
+        fn = getattr(sparsetools,self.format + '_matvecs')
+        fn(M, N, n_vecs, self.indptr, self.indices, self.data, other.ravel(), result.ravel())
+
+        return result
 
     
     def _mul_sparse_matrix(self, other):
