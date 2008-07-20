@@ -3,7 +3,7 @@ import unittest
 
 from numpy import array, arange, allclose
 
-from mkufunc.api import Cfunc, genufunc, mkufunc
+from api import Cfunc, genufunc, mkufunc
 
 
 class Util:
@@ -237,6 +237,14 @@ class Math_Tests(unittest.TestCase, Util):
         uf = mkufunc(f)
         x = arange(0, 2, 0.1)
         self.assertClose(uf(x), f(x))
+
+    def test_modulo(self):
+        @mkufunc(int)
+        def f(i):
+            return i % 5
+        
+        self.assert_(all(f(range(7)) == array([0, 1, 2, 3, 4, 0, 1])))
+        self.assert_(all(f(arange(8)) == array([0, 1, 2, 3, 4, 0, 1, 2])))
 
 
 class Control_Flow_Tests(unittest.TestCase):
