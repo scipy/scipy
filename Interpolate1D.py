@@ -11,7 +11,7 @@
 
     Classes provided include:
 
-        Interpolate1D  :   an object for interpolation of
+        interpolate1d  :   an object for interpolation of
                                 various kinds.  interp1d is a wrapper
                                 around this class.
                                 
@@ -35,16 +35,21 @@ import numpy as np
 from numpy import array, arange, empty, float64, NaN
 
 def make_array_safe(ary, typecode=np.float64):
+    """Used to make sure that inputs and outputs are
+    properly formatted.
+    """
     ary = np.atleast_1d(np.asarray(ary, typecode))
     if not ary.flags['CONTIGUOUS']:
         ary = ary.copy()
     return ary
     
-def interp1d(x, y, new_x, kind='linear', low=np.NaN, high=np.NaN, kindkw={}, lowkw={}, highkw={}, \
-                        remove_bad_data = False, bad_data=[]):
+def interp1d(x, y, new_x, kind='linear', low=np.NaN, high=np.NaN, \
+                    kindkw={}, lowkw={}, highkw={}, \
+                    remove_bad_data = False, bad_data=[]):
     """ A function for interpolation of 1D data.
         
-        REQUIRED ARGUMENTS:
+        Parameters
+        -----------
             
         x -- list or NumPy array
             x includes the x-values for the data set to
@@ -60,7 +65,8 @@ def interp1d(x, y, new_x, kind='linear', low=np.NaN, high=np.NaN, kindkw={}, low
             points whose value is to be interpolated from x and y.
             new_x must be in sorted order, lowest to highest.
                 
-        OPTIONAL ARGUMENTS:
+        Optional Arguments
+        -------------------
         
         kind -- Usu. function or string.  But can be any type.
             Specifies the type of extrapolation to use for values within
@@ -89,7 +95,9 @@ def interp1d(x, y, new_x, kind='linear', low=np.NaN, high=np.NaN, kindkw={}, low
             
             numpy.NaN is always considered bad data.
             
-        SAMPLE ACCEPTABLE ARGUMENTS:
+        Acceptable Input Strings
+        ------------------------
+        
             "linear" -- linear interpolation : default
             "logarithmic" -- logarithmic interpolation : linear in log space?
             "block" --
@@ -98,7 +106,9 @@ def interp1d(x, y, new_x, kind='linear', low=np.NaN, high=np.NaN, kindkw={}, low
                 indicates order of spline
             numpy.NaN -- return numpy.NaN
         
-        EXAMPLES:
+        Examples
+        ---------
+        
             >>> import numpy
             >>> from Interpolate1D import interp1d
             >>> x = range(5)        # note list is permitted
@@ -107,13 +117,15 @@ def interp1d(x, y, new_x, kind='linear', low=np.NaN, high=np.NaN, kindkw={}, low
             >>> interp1d(x, y, new_x)
             array([.2, 2.3, 5.6, NaN])
     """
-    return Interpolate1D(x, y, kind=kind, low=low, high=high, kindkw=kindkw, lowkw=lowkw, highkw=highkw, \
-                        remove_bad_data = remove_bad_data, bad_data=bad_data)(new_x)
+    return Interpolate1D(x, y, kind=kind, low=low, high=high, \
+                                    kindkw=kindkw, lowkw=lowkw, highkw=highkw, \
+                                    remove_bad_data = remove_bad_data, bad_data=bad_data)(new_x)
 
-class interpolate1d(object):
-    """ An object for interpolation of 1D data.
-            
-        REQUIRED ARGUMENTS:
+class Interpolate1d(object):
+    """ A class for interpolation of 1D data.
+        
+        Parameters
+        -----------
             
         x -- list or NumPy array
             x includes the x-values for the data set to
@@ -125,7 +137,8 @@ class interpolate1d(object):
             interpolate from.  Note that y must be
             one-dimensional.
                 
-        OPTIONAL ARGUMENTS:
+        Optional Arguments
+        -------------------
         
         kind -- Usu. function or string.  But can be any type.
             Specifies the type of extrapolation to use for values within
@@ -154,7 +167,9 @@ class interpolate1d(object):
             
             numpy.NaN is always considered bad data.
             
-        SAMPLE ACCEPTABLE ARGUMENTS:
+        Acceptable Input Strings
+        ------------------------
+        
             "linear" -- linear interpolation : default
             "logarithmic" -- logarithmic interpolation : linear in log space?
             "block" --
@@ -163,21 +178,22 @@ class interpolate1d(object):
                 indicates order of spline
             numpy.NaN -- return numpy.NaN
         
-        EXAMPLES:
+        Examples
+        ---------
+        
             >>> import numpy
-            >>> from Interpolate1D import Interpolate1D
+            >>> from Interpolate1D import interp1d
             >>> x = range(5)        # note list is permitted
             >>> y = numpy.arange(5.)
-            >>> interp = Interpolate1D(x, y)
             >>> new_x = [.2, 2.3, 5.6]
-            >>> interp(new_x)
+            >>> interp1d(x, y, new_x)
             array([.2, 2.3, 5.6, NaN])
-        
     """
     # FIXME: more informative descriptions of sample arguments
     # FIXME: examples in doc string
     
-    def __init__(self, x, y, kind='linear', low=np.NaN, high=np.NaN, kindkw={}, lowkw={}, highkw={}, \
+    def __init__(self, x, y, kind='linear', low=np.NaN, high=np.NaN, \
+                        kindkw={}, lowkw={}, highkw={}, \
                         remove_bad_data = False, bad_data=[]):
                 
         self._format_array(x, y, remove_bad_data = remove_bad_data, bad_data = bad_data)
@@ -187,14 +203,14 @@ class interpolate1d(object):
         self.low = self._init_interp_method(self._x, self._y, low, lowkw)
         self.high = self._init_interp_method(self._x, self._y, high, highkw)
 
-    def _format_array(self, x, y, remove_bad_data = False, bad_data = []):#=[None, np.NaN]):#=[None, np.NaN]):
+    def _format_array(self, x, y, remove_bad_data = False, bad_data = []):
         """
-        Assigns properly formatted versions of x and y to self._x and self._y.
-        Also records data types.
-        
-        Formatting includes removal of all points whose x or y coordinate
-        is in missing_data.  This is the primary difference from
-        make_array_safe.
+            Assigns properly formatted versions of x and y to self._x and self._y.
+            Also records data types.
+            
+            Formatting includes removal of all points whose x or y coordinate
+            is in missing_data.  This is the primary difference from
+            make_array_safe.
         
         """
         # FIXME: don't allow copying multiple times.
@@ -208,11 +224,9 @@ class interpolate1d(object):
         x = np.array(x)
         y = np.array(y)
         if remove_bad_data:
-            mask = np.array([  (xi not in bad_data) and (not np.isnan(xi)) and (y[i] not in bad_data) and (not np.isnan(y[i])) \
-                    for i, xi in enumerate(x) ])
-            print 'mask equals: ', mask, type(mask)
-            print 'x equals: ', x
-            print 'x[mask] is: ', x[mask]
+            mask = np.array([  (xi not in bad_data) and (not np.isnan(xi)) and \
+                                        (y[i] not in bad_data) and (not np.isnan(y[i])) \
+                                    for i, xi in enumerate(x) ])
             x = x[mask]
             y = y[mask]
             
@@ -228,15 +242,14 @@ class interpolate1d(object):
     
     def _init_interp_method(self, x, y, interp_arg, kw):
         """
-        User provides interp_arg and dictionary kw.  _init_interp_method
-        returns the interpolating function from x and y specified by interp_arg,
-        possibly with extra keyword arguments given in kw.
+            User provides interp_arg and dictionary kw.  _init_interp_method
+            returns the interpolating function from x and y specified by interp_arg,
+            possibly with extra keyword arguments given in kw.
         
         """
         # FIXME : error checking specific to interpolation method.  x and y long
         #   enough for order-3 spline if that's indicated, etc.  Functions should throw
-        #   errors themselves when Interpolate1D is called, but errors at instantiation
-        #   would be nice.
+        #   errors themselves, but errors at instantiation would be nice.
         
         from inspect import isclass, isfunction
         
@@ -257,7 +270,9 @@ class interpolate1d(object):
 
     def __call__(self, x):
         """
-            
+            Input x must be in sorted order.
+            Breaks x into pieces in-range, below-range, and above range.
+            Performs appropriate operation on each and concatenates results.
         """
         
         x = make_array_safe(x)
@@ -277,6 +292,8 @@ class interpolate1d(object):
         else: new_high = self.high(x[high_mask])
         
         result = np.concatenate((new_low, new_interp, new_high)) # FIXME : deal with mixed datatypes
+                                                                                          # Would be nice to say result = zeros(dtype=?)
+                                                                                          # and fill in
         
         return result
         
@@ -288,25 +305,31 @@ class Test(unittest.TestCase):
         self.assert_(np.allclose(make_array_safe(x), make_array_safe(y)))
         
     def test__interpolate_wrapper(self):
+        """ run unit test contained in interpolate_wrapper.py
+        """
         print "\n\nTESTING _interpolate_wrapper MODULE"
         from interpolate_wrapper import Test
         T = Test()
         T.runTest()
         
     def test__fitpack_wrapper(self):
+        """ run unit test contained in fitpack_wrapper.py
+        """
         print "\n\nTESTING _fitpack_wrapper MODULE"
         from fitpack_wrapper import Test
         T = Test()
         T.runTest()
         
     def test_spline1_defaultExt(self):
-        # make sure : spline order 1 (linear) interpolation works correctly
-        # make sure : default extrapolation works
+        """
+            make sure : spline order 1 (linear) interpolation works correctly
+            make sure : default extrapolation works
+        """
         print "\n\nTESTING LINEAR (1st ORDER) SPLINE"
         N = 7 # must be > 5
         x = np.arange(N)
         y = np.arange(N)
-        interp_func = Interpolate1D(x, y, kind='Spline', kindkw={'k':1}, low=None, high=599.73)
+        interp_func = Interpolate1d(x, y, kind='Spline', kindkw={'k':1}, low=None, high=599.73)
         new_x = np.arange(N+1)-0.5
         new_y = interp_func(new_x)
         
@@ -315,13 +338,16 @@ class Test(unittest.TestCase):
         self.assert_(new_y[-1] == 599.73)
         
     def test_spline2(self):
+        """
+            make sure : order-2 splines work on linear data
+            make sure : order-2 splines work on non-linear data
+        """
         print "\n\nTESTING 2nd ORDER SPLINE"
-        # make sure : order-2 splines work on linear data
         N = 7 #must be > 5
         x = np.arange(N)
         y = np.arange(N)
         T1 = time.clock()
-        interp_func = Interpolate1D(x, y, kind='Spline', kindkw={'k':2}, low='spline', high='spline')
+        interp_func = Interpolate1d(x, y, kind='Spline', kindkw={'k':2}, low='spline', high='spline')
         T2 = time.clock()
         print "time to create 2nd order spline interp function with N = %i: " % N, T2 - T1
         new_x = np.arange(N+1)-0.5
@@ -335,22 +361,24 @@ class Test(unittest.TestCase):
         N = 7
         x = np.arange(N)
         y = x**2
-        interp_func = Interpolate1D(x, y, kind='Spline', kindkw={'k':2}, low='spline', high='spline')
+        interp_func = Interpolate1d(x, y, kind='Spline', kindkw={'k':2}, low='spline', high='spline')
         new_x = np.arange(N+1)-0.5
         new_y = interp_func(new_x)
         self.assertAllclose(new_x**2, new_y)
         
         
     def test_linear(self):
-        # make sure : linear interpolation works 
-        # make sure : linear extrapolation works
+        """
+            make sure : linear interpolation works 
+            make sure : linear extrapolation works
+        """
         print "\n\nTESTING LINEAR INTERPOLATION"
         N = 7
         x = arange(N)
         y = arange(N)
         new_x = arange(N+1)-0.5
         T1 = time.clock()
-        interp_func = Interpolate1D(x, y, kind='linear', low='linear', high='linear')
+        interp_func = Interpolate1d(x, y, kind='linear', low='linear', high='linear')
         T2 = time.clock()
         print "time to create linear interp function with N = %i: " % N, T2 - T1
         t1 = time.clock()
@@ -361,18 +389,22 @@ class Test(unittest.TestCase):
         self.assertAllclose(new_x, new_y)
         
     def test_noLow(self):
-        # make sure : having no out-of-range elements in new_x is fine
-        # There was a bug with this earlier.
+        """
+            make sure : having no out-of-range elements in new_x is fine
+            There was a bug with this earlier.
+        """
         N = 5
         x = arange(N)
         y = arange(N)
         new_x = arange(1,N-1)+.2
-        interp_func = Interpolate1D(x, y, kind='linear', low='linear', high=np.NaN)
+        interp_func = Interpolate1d(x, y, kind='linear', low='linear', high=np.NaN)
         new_y = interp_func(new_x)
         self.assertAllclose(new_x, new_y)
         
     def test_intper1d(self):
-        # make sure : interp1d works, at least in the linear case
+        """
+            make sure : interp1d works, at least in the linear case
+        """
         N = 7
         x = arange(N)
         y = arange(N)

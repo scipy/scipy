@@ -6,15 +6,29 @@ at appropriate places in the code.
 
 
 **comment interpolate1d
+There's comments there already, but they should be
+made better.
 
 
 **doc strings for interpolate1d and its members
+There's docstrings there already, but they should be
+made better.  In particular, it must be ensured that
+they are of the proper format and include examples.
+
+The doc strings for __init__.py, interpolate1d.py,
+Interpolate1d, and interp1d are virtually identical
+and very long; perhaps a master string can be stored
+somewhere that they all reference.  This would make
+updates of documentation easier.
 
 
 **more strings user can pass ('cubic', etc)
+User can specify interpolation type as a string argument
+to interpolate1d at initialization.  More strings should work.
 
 
 **figure out NumPy version stuff with vectorize.
+In function interpolate1d._format_array.
 It would be nice to remove the hack I used.
 I believe vectorize is supposed to handle arrays of
 length 0, but it's not working on my computer.
@@ -51,6 +65,13 @@ scipy.interpolate).  This isn't necessarily the best (for example,
 speed of FITPACK is highly sensitive to parameter k).  Other code
 is used in scipy.ndimage and scipy.signal.  There is surely other
 code out there too.  Figure out what is best and incorporate it.
+
+
+**high-level road map
+when the module is more established, there should be a page on
+the wiki which describes the big-picture of the module; what
+the capabilities are and which should be added, large-scale
+architecture of the module, etc.
 
 
 **update for 2D and ND
