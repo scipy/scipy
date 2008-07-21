@@ -1,0 +1,59 @@
+TODO
+This list contains a number of things which need fixing and/or
+improvement.  There's also a small explanatory
+note with ideas.  More info is often contained in FIXMEs
+at appropriate places in the code.
+
+
+**comment interpolate1d
+
+
+**doc strings for interpolate1d and its members
+
+
+**more strings user can pass ('cubic', etc)
+
+
+**figure out NumPy version stuff with vectorize.
+It would be nice to remove the hack I used.
+I believe vectorize is supposed to handle arrays of
+length 0, but it's not working on my computer.
+
+
+**better handling of variable types
+Currently everything is cast to a float64 if it is not already
+a float32.  Is this the best way to do it?
+
+Also, for the future, code should be added for record arrays,
+which mix real values with strings.  This is, I believe already
+largely supported, but that's not because the code was written
+with that in mind.  I haven't thought through the details.
+
+Perhaps this should be done as another function/class which 
+wraps interpolate1d.
+
+
+**allow y to be 2-dimensional
+That way the interpolated function is from R1 -> Rn, and
+not just R1 -> R1.  This requires some thinking about axes.
+
+
+**write regression tests
+desired for fitpack_wrapper and _interpolate_wrapper
+as well as interpolate1d.  Recommend using the
+shelve module
+
+
+**pick best spline
+Under-the-hood machinery currently comes from _interpolate.cpp
+(used in enthought.interpolate) and FITPACK (Fortran, used in 
+scipy.interpolate).  This isn't necessarily the best (for example,
+speed of FITPACK is highly sensitive to parameter k).  Other code
+is used in scipy.ndimage and scipy.signal.  There is surely other
+code out there too.  Figure out what is best and incorporate it.
+
+
+**update for 2D and ND
+This will probably take the form of two additional
+classes both based on interpolate1d.  Thus it probably
+shouldn't be done until interpolate1d is more settled.
