@@ -1,14 +1,4 @@
 #!/usr/bin/env python
-"""
->>> mandel(-1, .3)
-36
->>> mandel(0, 0)
--1
->>> mandel(10, 10)
-1
->>> mandel(array([-1, 0, 10]), array([.3, 0, 10]))
-array([36, -1,  1])
-"""
 from numpy import array
 from mkufunc.api import mkufunc
 
@@ -33,5 +23,9 @@ def mandel(cr, ci):
     
 
 if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
+
+    assert mandel(-1, .3) == 36
+    assert mandel(0, 0) == -1
+    assert mandel(10, 10) == 1
+    assert all(mandel(array([-1, 0, 10]), array([.3, 0, 10])) ==
+               array([36, -1,  1]))
