@@ -91,4 +91,4 @@ class TestNonlin(TestCase):
 
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

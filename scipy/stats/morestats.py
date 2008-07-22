@@ -18,6 +18,7 @@ import scipy.special as special
 import futil
 import numpy as sb
 from numpy.testing.decorators import setastest
+import warnings
 
 __all__ = ['find_repeats',
            'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
@@ -475,9 +476,9 @@ def shapiro(x,a=None,reta=0):
     y = sort(x)
     a,w,pw,ifault = statlib.swilk(y,a[:N/2],init)
     if not ifault in [0,2]:
-        print ifault
+        warnings.warn(str(ifault))
     if N > 5000:
-        print "p-value may not be accurate for N > 5000."
+        warnings.warn("p-value may not be accurate for N > 5000.")
     if reta:
         return w, pw, a
     else:
@@ -616,7 +617,7 @@ def ansari(x,y):
     repeats = (len(uxy) != len(xy))
     exact = ((m<55) and (n<55) and not repeats)
     if repeats and ((m < 55)  or (n < 55)):
-        print "Ties preclude use of exact statistic."
+        warnings.warn("Ties preclude use of exact statistic.")
     if exact:
         astart, a1, ifault = statlib.gscale(n,m)
         ind = AB-astart
@@ -972,7 +973,7 @@ Returns: t-statistic, two-tailed p-value
     d = compress(not_equal(d,0),d,axis=-1) # Keep all non-zero differences
     count = len(d)
     if (count < 10):
-        print "Warning: sample size too small for normal approximation."
+        warnings.warn("Warning: sample size too small for normal approximation.")
     r = stats.rankdata(abs(d))
     r_plus = sum((d > 0)*r,axis=0)
     r_minus = sum((d < 0)*r,axis=0)

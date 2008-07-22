@@ -76,4 +76,4 @@ class TestWavelets(TestCase):
         assert_array_almost_equal(x,y,decimal=2)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

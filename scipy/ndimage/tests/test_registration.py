@@ -186,7 +186,7 @@ class TestRegistration(TestCase):
 
 if __name__ == "__main__":
     #nose.runmodule()
-    nose.run(argv=['', __file__])
+    run_module_suite()
 
 
 

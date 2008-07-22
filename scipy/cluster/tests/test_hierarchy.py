@@ -122,7 +122,8 @@ class TestSquareForm(TestCase):
         Yr = squareform(A)
         s = A.shape
         k = 0
-        print A.shape, Y.shape, Yr.shape
+        if verbose >= 3:
+            print A.shape, Y.shape, Yr.shape
         self.failUnless(len(s) == 2)
         self.failUnless(len(Yr.shape) == 1)
         self.failUnless(s[0] == s[1])
@@ -144,7 +145,8 @@ class TestNumObs(TestCase):
             X = numpy.random.rand(n, 4)
             Y = pdist(X)
             A = squareform(Y)
-            print A.shape, Y.shape
+            if verbose >= 3:
+                print A.shape, Y.shape
             self.failUnless(numobs_dm(A) == n)
 
     def test_numobs_y_multi_matrix(self):
@@ -206,5 +208,5 @@ def within_tol(a, b, tol):
     return numpy.abs(a - b).max() < tol
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()
 

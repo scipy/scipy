@@ -1418,4 +1418,4 @@ class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic,
         
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

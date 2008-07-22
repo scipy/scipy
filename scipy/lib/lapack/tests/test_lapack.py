@@ -21,10 +21,10 @@ from numpy import dot, ones, zeros
 
 from scipy.lib.lapack import flapack, clapack
 
-sys.path.insert(0, os.path.split(__file__))
+#sys.path.insert(0, os.path.split(__file__))
 from gesv_tests import _test_gev
 from esv_tests import _test_ev
-del sys.path[0]
+#del sys.path[0]
 
 #class _test_ev: pass
 

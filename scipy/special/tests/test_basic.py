@@ -2003,4 +2003,4 @@ class TestSpherical(TestCase):
         assert_almost_equal(sy3,sphpy,4) #compare correct derivative val. (correct =-system val).
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

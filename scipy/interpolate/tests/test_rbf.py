@@ -36,5 +36,4 @@ def test_rbf3d():
     assert_array_almost_equal(di, d)
 
 if __name__ == "__main__":
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()

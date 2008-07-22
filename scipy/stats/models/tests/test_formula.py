@@ -314,4 +314,4 @@ class TestFormula(TestCase):
         assert_equal(set(ff.termnames()), set(['a', 'b', 'c', 'b*c']))
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

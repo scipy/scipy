@@ -213,4 +213,4 @@ class TestExpon(TestCase):
         assert_equal(stats.expon.pdf(0),1)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

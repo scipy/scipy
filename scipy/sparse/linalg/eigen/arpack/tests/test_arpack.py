@@ -239,8 +239,9 @@ class TestEigenComplexNonSymmetric(TestArpack):
         exact_eval=d['eval'].astype(typ.upper())
         ind=self.sort_choose(exact_eval,typ,k,which)
         exact_eval=exact_eval[ind]
-        print "exact"
-        print exact_eval
+        if verbose >= 3:
+            print "exact"
+            print exact_eval
 
 
         # compute eigenvalues
@@ -248,7 +249,8 @@ class TestEigenComplexNonSymmetric(TestArpack):
         ind=self.sort_choose(eval,typ,k,which)
         eval=eval[ind]
         evec=evec[:,ind]
-        print eval
+        if verbose >= 3:
+            print eval
         # check eigenvalues
         # check eigenvectors A*evec=eval*evec
         for i in range(k):
@@ -269,4 +271,4 @@ class TestEigenComplexNonSymmetric(TestArpack):
 
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

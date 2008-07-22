@@ -245,4 +245,4 @@ class TestLagrange(TestCase):
         assert_array_almost_equal(p.coeffs,pl.coeffs)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

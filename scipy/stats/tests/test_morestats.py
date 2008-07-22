@@ -111,4 +111,4 @@ class TestFindRepeats(TestCase):
         assert_array_equal(nums,[3,3,2,2])
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

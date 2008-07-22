@@ -50,4 +50,4 @@ class TestEigs(TestCase):
 #          94.646308846854879, 95.30841709116271], decimal=11)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

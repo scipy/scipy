@@ -144,4 +144,4 @@ class TestRectBivariateSpline(TestCase):
         assert_array_almost_equal(lut(x,y),z)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

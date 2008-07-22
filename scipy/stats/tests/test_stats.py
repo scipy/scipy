@@ -854,4 +854,4 @@ class TestThreshold(TestCase):
                            [0,2,3,4,0,0,0])
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

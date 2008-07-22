@@ -58,4 +58,4 @@ class TestRFFTFreq(TestCase):
         assert_array_almost_equal(10*pi*rfftfreq(10,pi),x)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

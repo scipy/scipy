@@ -104,4 +104,4 @@ class TestQuad(TestCase):
                     8/3.0 * (b**4.0 - a**4.0))
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

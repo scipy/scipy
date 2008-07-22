@@ -24,7 +24,8 @@ class TestNumpyio(TestCase):
         fid.close()
         # Reopen the file and read in data
         fid = open(fname,"rb")
-        print "\nDon't worry about a warning regarding the number of bytes read."
+        if verbose >= 3:
+            print "\nDon't worry about a warning regarding the number of bytes read."
         b = numpyio.fread(fid,1000000,N.Int16,N.Int)
         fid.close()
         assert(N.product(a.astype(N.Int16) == b,axis=0))
@@ -64,4 +65,4 @@ class TestRegression(TestCase):
         f.close()
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

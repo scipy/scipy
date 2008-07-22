@@ -67,4 +67,4 @@ class TestSparseUtils(TestCase):
         assert_equal(isdense( np.matrix([1]) ),True)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()

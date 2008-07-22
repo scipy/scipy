@@ -389,4 +389,4 @@ class TestIfftn(TestCase):
             assert_array_almost_equal (fftn(ifftn(x)),x)
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()
