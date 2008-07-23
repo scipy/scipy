@@ -1,15 +1,11 @@
 import os
-from numpy import *
+import numpy as np
 from numpy.testing import *
 
 from scipy.weave import size_check
 from scipy.weave.ast_tools import *
 
-
-import numpy as nx
-
-empty = array(())
-
+empty = np.array(())
 
 class TestMakeSameLength(TestCase):
 
@@ -24,19 +20,19 @@ class TestMakeSameLength(TestCase):
         self.generic_check(x,y,desired)
     def test_x_scalar(self):
         x,y = (),(1,2)
-        desired = array((1,1)),array((1,2))
+        desired = np.array((1,1)), np.array((1,2))
         self.generic_check(x,y,desired)
     def test_y_scalar(self):
         x,y = (1,2),()
-        desired = array((1,2)),array((1,1))
+        desired = np.array((1,2)), np.array((1,1))
         self.generic_check(x,y,desired)
     def test_x_short(self):
         x,y = (1,2),(1,2,3)
-        desired = array((1,1,2)),array((1,2,3))
+        desired = np.array((1,1,2)), np.array((1,2,3))
         self.generic_check(x,y,desired)
     def test_y_short(self):
         x,y = (1,2,3),(1,2)
-        desired = array((1,2,3)),array((1,1,2))
+        desired = np.array((1,2,3)), np.array((1,1,2))
         self.generic_check(x,y,desired)
 
 class TestBinaryOpSize(TestCase):
@@ -48,7 +44,7 @@ class TestBinaryOpSize(TestCase):
         self.failUnlessRaises(ValueError, size_check.binary_op_size, x, y)
 
     def desired_type(self,val):
-        return array(val)
+        return np.array(val)
     def test_scalar(self):
         x,y = (),()
         desired = self.desired_type(())
@@ -101,9 +97,9 @@ class TestBinaryOpSize(TestCase):
 class TestDummyArray(TestBinaryOpSize):
     def generic_check(self,x,y,desired):
         if type(x) is type(()):
-            x = ones(x)
+            x = np.ones(x)
         if type(y) is type(()):
-            y = ones(y)
+            y = np.ones(y)
         xx = size_check.dummy_array(x)
         yy = size_check.dummy_array(y)
         ops = ['+', '-', '/', '*', '<<', '>>']
@@ -113,7 +109,7 @@ class TestDummyArray(TestBinaryOpSize):
             assert_array_equal(actual,desired)
 
     def desired_type(self,val):
-        return size_check.dummy_array(array(val),1)
+        return size_check.dummy_array(np.array(val),1)
 
 class TestDummyArrayIndexing(TestCase):
     def generic_check(self,ary,expr,desired):
@@ -122,7 +118,7 @@ class TestDummyArrayIndexing(TestCase):
         #print desired, actual
         assert_array_equal(actual,desired, expr)
     def generic_wrap(self,a,expr):
-        desired = array(eval(expr).shape)
+        desired = np.array(eval(expr).shape)
         try:
             self.generic_check(a,expr,desired)
         except IndexError:
@@ -131,19 +127,19 @@ class TestDummyArrayIndexing(TestCase):
                       'valid array shape -> %s' % (expr, str(desired))
                 raise AttributeError, msg
     def generic_1d(self,expr):
-        a = arange(10)
+        a = np.arange(10)
         self.generic_wrap(a,expr)
     def generic_2d(self,expr):
-        a = ones((10,20))
+        a = np.ones((10,20))
         self.generic_wrap(a,expr)
     def generic_3d(self,expr):
-        a = ones((10,20,1))
+        a = np.ones((10,20,1))
         self.generic_wrap(a,expr)
 
     def generic_1d_index(self,expr):
-        a = arange(10)
+        a = np.arange(10)
         #print expr ,eval(expr)
-        desired = array(())
+        desired = np.array(())
         self.generic_check(a,expr,desired)
     def test_1d_index_0(self):
         self.generic_1d_index('a[0]')
@@ -269,33 +265,33 @@ class TestDummyArrayIndexing(TestCase):
 
 class TestReduction(TestCase):
     def test_1d_0(self):
-        a = ones((5,))
+        a = np.ones((5,))
         actual = size_check.reduction(a,0)
         desired = size_check.dummy_array((),1)
         assert_array_equal(actual.shape,desired.shape)
     def test_2d_0(self):
-        a = ones((5,10))
+        a = np.ones((5,10))
         actual = size_check.reduction(a,0)
         desired = size_check.dummy_array((10,),1)
         assert_array_equal(actual.shape,desired.shape)
     def test_2d_1(self):
-        a = ones((5,10))
+        a = np.ones((5,10))
         actual = size_check.reduction(a,1)
         desired = size_check.dummy_array((5,),1)
         assert_array_equal(actual.shape,desired.shape)
     def test_3d_0(self):
-        a = ones((5,6,7))
+        a = np.ones((5,6,7))
         actual = size_check.reduction(a,1)
         desired = size_check.dummy_array((5,7),1)
         assert_array_equal(actual.shape,desired.shape)
     def test_error0(self):
-        a = ones((5,))
+        a = np.ones((5,))
         try:
             actual = size_check.reduction(a,-2)
         except ValueError:
             pass
     def test_error1(self):
-        a = ones((5,))
+        a = np.ones((5,))
         try:
             actual = size_check.reduction(a,1)
         except ValueError:
@@ -324,7 +320,7 @@ class TestExpressions(TestCase):
             print 'DEISRED:',desired
     def generic_wrap(self,expr,**kw):
         try:
-            x = array(eval(expr,kw))
+            x = np.array(eval(expr,kw))
             try:
                 desired = x.shape
             except:
@@ -333,41 +329,41 @@ class TestExpressions(TestCase):
             desired = 'failed'
         self.generic_check(expr,desired,**kw)
     def test_generic_1d(self):
-        a = arange(10)
+        a = np.arange(10)
         expr = 'a[:]'
         self.generic_wrap(expr,a=a)
         expr = 'a[:] + a'
         self.generic_wrap(expr,a=a)
         bad_expr = 'a[4:] + a'
         self.generic_wrap(bad_expr,a=a)
-        a = arange(10)
-        b = ones((1,10))
+        a = np.arange(10)
+        b = np.ones((1,10))
         expr = 'a + b'
         self.generic_wrap(expr,a=a,b=b)
         bad_expr = 'a[:5] + b'
         self.generic_wrap(bad_expr,a=a,b=b)
     def test_single_index(self):
-        a = arange(10)
+        a = np.arange(10)
         expr = 'a[5] + a[3]'
         self.generic_wrap(expr,a=a)
 
     def test_calculated_index(self):
-        a = arange(10)
+        a = np.arange(10)
         nx = 0
         expr = 'a[5] + a[nx+3]'
         size_check.check_expr(expr,locals())
     def test_calculated_index2(self):
-        a = arange(10)
+        a = np.arange(10)
         nx = 0
         expr = 'a[1:5] + a[nx+1:5+nx]'
         size_check.check_expr(expr,locals())
     def generic_2d(self,expr):
-        a = ones((10,20))
+        a = np.ones((10,20))
         self.generic_wrap(a,expr)
     def generic_3d(self,expr):
-        a = ones((10,20,1))
+        a = np.ones((10,20,1))
         self.generic_wrap(a,expr)
 
 
 if __name__ == "__main__":
-    nose.run(argv=['', __file__])
+    run_module_suite()
