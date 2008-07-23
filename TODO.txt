@@ -52,11 +52,9 @@ That way the interpolated function is from R1 -> Rn, and
 not just R1 -> R1.  This requires some thinking about axes.
 
 
-**write regression tests
+**improve regression tests
 desired for fitpack_wrapper and _interpolate_wrapper
-as well as interpolate1d.  Recommend using the
-shelve module
-
+as well as interpolate1d.
 
 **pick best spline
 Under-the-hood machinery currently comes from _interpolate.cpp
@@ -72,6 +70,13 @@ when the module is more established, there should be a page on
 the wiki which describes the big-picture of the module; what
 the capabilities are and which should be added, large-scale
 architecture of the module, etc.
+
+It might note which underlying C/Fortran modules can or should
+be modified or merged.  It would be great if either 1) there were
+only 1 extension module, or 2) the modules showed natural
+differentiation of functionality (one for splines, one for simple
+operations, etc), rather than being a holdover of where they
+were stolen from.
 
 
 **update for 2D and ND

@@ -145,8 +145,9 @@ class Interpolate1d(object):
             the range of x.  If a string is passed, it will look for an object
             or function with that name and call it when evaluating.  If 
             a function or object is passed, it will be called when interpolating.
-            If nothing else, assumes the argument is intended as a value
-            to be returned for all arguments.  Defaults to linear interpolation.
+            A constant signifies a function which returns that constant
+            (e.g. val and lambda x : val are equivalent).  Defaults to linear
+            interpolation.
             
         kindkw -- dictionary
             If kind is a class, function or string, additional keyword arguments
@@ -195,10 +196,11 @@ class Interpolate1d(object):
     def __init__(self, x, y, kind='linear', low=np.NaN, high=np.NaN, \
                         kindkw={}, lowkw={}, highkw={}, \
                         remove_bad_data = False, bad_data=[]):
-                
+        
+        # store properly-formatted versions of x and y
         self._format_array(x, y, remove_bad_data = remove_bad_data, bad_data = bad_data)
 
-        
+        # store interpolation functions for each range
         self.kind = self._init_interp_method(self._x, self._y, kind, kindkw)
         self.low = self._init_interp_method(self._x, self._y, low, lowkw)
         self.high = self._init_interp_method(self._x, self._y, high, highkw)
@@ -230,7 +232,7 @@ class Interpolate1d(object):
             x = x[mask]
             y = y[mask]
             
-        # collect dataypes and make arrays
+        # select proper dataypes and make arrays
         self._xdtype = {np.float32 : np.float32}.setdefault(type(x[0]), np.float64) # unless data is float32,  cast to float64
         self._ydtype = {np.float32 : np.float32}.setdefault(type(y[0]), np.float64)
         self._x = make_array_safe(x, self._xdtype).copy()
@@ -255,12 +257,15 @@ class Interpolate1d(object):
         
         # FIXME : more string options available ('cubic', etc)
         if interp_arg in ['linear', 'logarithmic', 'block', 'block_average_above']:
+            # string used to indicate interpolation method,  Select appropriate function
             func = {'linear':linear, 'logarithmic':logarithmic, 'block':block, \
                         'block_average_above':block_average_above}[interp_arg]
             result = lambda new_x : func(self._x, self._y, new_x, **kw)
         elif interp_arg in ['Spline', Spline, 'spline']:
+            # spline is a special case of above
             result = Spline(self._x, self._y, **kw)
         elif isfunction(interp_arg):
+            # assume user has passed a function
             result = lambda new_x : interp_arg(new_x, **kw)
         elif isclass(interp_arg):
             result = interp_arg(x, y, **kw)
@@ -276,10 +281,13 @@ class Interpolate1d(object):
         """
         
         x = make_array_safe(x)
+        
+        # masks indicate which elements fall into which interpolation region
         low_mask = x<self._x[0]
         high_mask = x>self._x[-1]
         interp_mask = (~low_mask) & (~high_mask)
         
+        # use correct function for x values in each region
         if len(x[low_mask]) == 0: new_low=np.array([])  # FIXME : remove need for if/else.
                                                                             # if/else is a hack, since vectorize is failing
                                                                             # to work on lists/arrays of length 0
