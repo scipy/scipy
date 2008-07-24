@@ -31,7 +31,7 @@ def linear(x, y, new_x):
     assert len(y.shape) < 3, "function only works with 1D or 2D arrays"
     if len(y.shape) == 2:
         new_y = np.zeros((y.shape[0], len(new_x)), np.float64)
-        for i in range(len(new_y)):
+        for i in range(len(new_y)): # for each row
             _interpolate.linear_dddd(x, y[i], new_x, new_y[i])
     else:
         new_y = np.zeros(len(new_x), np.float64)

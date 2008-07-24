@@ -2,19 +2,19 @@
 This module is used for spline interpolation, and functions
 as a wrapper around the FITPACK Fortran interpolation
 package.  It is not intended to be directly accessed by
-the user, but rather through the class Interpolate1D.
+the user, but rather through the class Interpolate1d.
 
 The code has been modified from an older version of
 scipy.interpolate, where it was directly called by the
 user.  As such, it includes functionality not available through
-Interpolate1D.  For this reason, users may wish to get
+Interpolate1d.  For this reason, users may wish to get
 under the hood.
 
 """
 
 import numpy as np
 
-import dfitpack
+import dfitpack # lower-level wrapper around FITPACK
 
 
 class Spline(object):
@@ -30,7 +30,7 @@ class Spline(object):
     BivariateSpline - a similar class for bivariate spline interpolation
     """
 
-    def __init__(self, x, y, w=None, bbox = [None]*2, k=3, s=None):
+    def __init__(self, x, y, w=None, bbox = [None]*2, k=3, s=0.0):
         """
         Input:
           x,y   - 1-d sequences of data points (x must be
@@ -44,46 +44,21 @@ class Spline(object):
           k=3        - degree of the univariate spline.
           s          - positive smoothing factor defined for
                        estimation condition:
-                         sum((w[i]*(y[i]-s(x[i])))**2,axis=0) <= s
+                         sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0) <= s
                        Default s=len(w) which should be a good value
                        if 1/w[i] is an estimate of the standard
                        deviation of y[i].
         """
         #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
-        data = dfitpack.fpcurf0(x,y,k,w=w,
-                                xb=bbox[0],xe=bbox[1],s=s)
+        data = dfitpack.fpcurf0(x, y, k, w=w,
+                                xb=bbox[0], xe=bbox[1], s=s)
         if data[-1]==1:
             # nest too small, setting to maximum bound
             data = self._reset_nest(data)
         self._data = data
-        self._reset_class()
-
-    def _reset_class(self):
-        data = self._data
+        # the relevant part of self._reset_class()
         n,t,c,k,ier = data[7],data[8],data[9],data[5],data[-1]
         self._eval_args = t[:n],c[:n],k
-        if ier==0:
-            # the spline returned has a residual sum of squares fp
-            # such that abs(fp-s)/s <= tol with tol a relative
-            # tolerance set to 0.001 by the program
-            pass
-        elif ier==-1:
-            # the spline returned is an interpolating spline
-            #self.__class__ = InterpolatedUnivariateSpline
-            pass
-        elif ier==-2:
-            # the spline returned is the weighted least-squares
-            # polynomial of degree k. In this extreme case fp gives
-            # the upper bound fp0 for the smoothing factor s.
-            #self.__class__ = LSQUnivariateSpline
-            pass
-        else:
-            # error
-            #if ier==1:
-            #    self.__class__ = LSQUnivariateSpline
-            #message = _curfit_messages.get(ier,'ier=%s' % (ier))
-            #warnings.warn(message)
-            pass
 
     def _reset_nest(self, data, nest=None):
         n = data[10]
@@ -118,7 +93,7 @@ class Spline(object):
             # nest too small, setting to maximum bound
             data = self._reset_nest(data)
         self._data = data
-        self._reset_class()
+        #self._reset_class()
 
     def __call__(self, x, nu=None):
         """ Evaluate spline (or its nu-th derivative) at positions x.

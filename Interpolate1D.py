@@ -11,7 +11,7 @@
 
     Classes provided include:
 
-        interpolate1d  :   an object for interpolation of
+        Interpolate1d  :   an object for interpolation of
                                 various kinds.  interp1d is a wrapper
                                 around this class.
                                 
@@ -117,7 +117,7 @@ def interp1d(x, y, new_x, kind='linear', low=np.NaN, high=np.NaN, \
             >>> interp1d(x, y, new_x)
             array([.2, 2.3, 5.6, NaN])
     """
-    return Interpolate1D(x, y, kind=kind, low=low, high=high, \
+    return Interpolate1d(x, y, kind=kind, low=low, high=high, \
                                     kindkw=kindkw, lowkw=lowkw, highkw=highkw, \
                                     remove_bad_data = remove_bad_data, bad_data=bad_data)(new_x)
 
@@ -255,7 +255,6 @@ class Interpolate1d(object):
         
         from inspect import isclass, isfunction
         
-        # FIXME : more string options available ('cubic', etc)
         if interp_arg in ['linear', 'logarithmic', 'block', 'block_average_above']:
             # string used to indicate interpolation method,  Select appropriate function
             func = {'linear':linear, 'logarithmic':logarithmic, 'block':block, \
@@ -264,6 +263,13 @@ class Interpolate1d(object):
         elif interp_arg in ['Spline', Spline, 'spline']:
             # spline is a special case of above
             result = Spline(self._x, self._y, **kw)
+        elif interp_arg in ['cubic', 'Cubic', 'Quadratic', \
+                                'quadratic', 'Quad', 'quad']:
+            # specify certain kinds of splines
+            if interp_arg in ['cubic', 'Cubic']:
+                result = Spline(self._x, self._y, k=3)
+            elif interp_arg in ['Quadratic', 'quadratic', 'Quad', 'quad']:
+                result = Spline(self._x, self._y, k=2)
         elif isfunction(interp_arg):
             # assume user has passed a function
             result = lambda new_x : interp_arg(new_x, **kw)
@@ -279,7 +285,8 @@ class Interpolate1d(object):
             Breaks x into pieces in-range, below-range, and above range.
             Performs appropriate operation on each and concatenates results.
         """
-        
+        # FIXME : make_array_safe may also be called within the interpolation technique.
+        #   waste of time, but ok for the time being.
         x = make_array_safe(x)
         
         # masks indicate which elements fall into which interpolation region
@@ -349,6 +356,8 @@ class Test(unittest.TestCase):
         """
             make sure : order-2 splines work on linear data
             make sure : order-2 splines work on non-linear data
+            make sure : 'cubic' and 'quad' as arguments yield
+                                the desired spline
         """
         print "\n\nTESTING 2nd ORDER SPLINE"
         N = 7 #must be > 5
@@ -369,7 +378,7 @@ class Test(unittest.TestCase):
         N = 7
         x = np.arange(N)
         y = x**2
-        interp_func = Interpolate1d(x, y, kind='Spline', kindkw={'k':2}, low='spline', high='spline')
+        interp_func = Interpolate1d(x, y, kind='Spline', kindkw={'k':2}, low='quad', high='cubic')
         new_x = np.arange(N+1)-0.5
         new_y = interp_func(new_x)
         self.assertAllclose(new_x**2, new_y)

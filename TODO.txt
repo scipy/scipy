@@ -5,81 +5,121 @@ note with ideas.  More info is often contained in FIXMEs
 at appropriate places in the code.
 
 
+**handle smoothing in fitpack_wrapper
+    The default smoothing parameter (s) means we aren't actually
+    doing interpolation.  Also, small but non-zero s makes the
+    algorithm very slow.  Figure out how to handle this, prob by
+    not letting the user see s and setting it to 0.
+
+    This may be best handled by modifying fitpack_wrapper.py.
+
+
+**pick best spline
+    Under-the-hood machinery currently comes from _interpolate.cpp
+    (used in enthought.interpolate) and FITPACK (Fortran, used in 
+    scipy.interpolate).  This isn't necessarily the best (for example,
+    speed of FITPACK is highly sensitive to parameter s).  Other code
+    is used in scipy.ndimage and scipy.signal.  There is surely other
+    code out there too.  Figure out what is best and incorporate it.
+
+    Signal code is slower than FITPACK, and NDImage really only does
+    filtering.  I'm inclined to stay with FITPACK.
+
+
+**clean up fitpack_wrapper.py
+    Currently is all hacked together from scipy.interpolate.
+    There is unused functionality, commented-out functionality,
+    and other undesirables.  Once it has been established what
+    we will include, that stuff needs to be cleaned up, and the
+    rest needs to be either removed or set aside.
+
+
 **comment interpolate1d
-There's comments there already, but they should be
-made better.
+    There's comments there already, but they should be
+    made better.
 
 
 **doc strings for interpolate1d and its members
-There's docstrings there already, but they should be
-made better.  In particular, it must be ensured that
-they are of the proper format and include examples.
+    There's docstrings there already, but they should be
+    made better.  In particular, it must be ensured that
+    they are of the proper format and include examples.
 
-The doc strings for __init__.py, interpolate1d.py,
-Interpolate1d, and interp1d are virtually identical
-and very long; perhaps a master string can be stored
-somewhere that they all reference.  This would make
-updates of documentation easier.
-
-
-**more strings user can pass ('cubic', etc)
-User can specify interpolation type as a string argument
-to interpolate1d at initialization.  More strings should work.
+    The doc strings for __init__.py, interpolate1d.py,
+    Interpolate1d, and interp1d are virtually identical
+    and very long; perhaps a master string can be stored
+    somewhere that they all reference.  This would make
+    updates of documentation easier.
 
 
 **figure out NumPy version stuff with vectorize.
-In function interpolate1d._format_array.
-It would be nice to remove the hack I used.
-I believe vectorize is supposed to handle arrays of
-length 0, but it's not working on my computer.
+    In function interpolate1d._format_array.
+    It would be nice to remove the hack I used.
+    I believe vectorize is supposed to handle arrays of
+    length 0, but it's not working on my computer.
 
 
 **better handling of variable types
-Currently everything is cast to a float64 if it is not already
-a float32.  Is this the best way to do it?
+    Currently everything is cast to a float64 if it is not already
+    a float32.  Is this the best way to do it?
 
-Also, for the future, code should be added for record arrays,
-which mix real values with strings.  This is, I believe already
-largely supported, but that's not because the code was written
-with that in mind.  I haven't thought through the details.
+    Also, for the future, code should be added for record arrays,
+    which mix real values with strings.  This is, I believe already
+    largely supported, but that's not because the code was written
+    with that in mind.  I haven't thought through the details.
 
-Perhaps this should be done as another function/class which 
-wraps interpolate1d.
-
-
-**allow y to be 2-dimensional
-That way the interpolated function is from R1 -> Rn, and
-not just R1 -> R1.  This requires some thinking about axes.
+    Perhaps this should be done as another function/class which 
+    wraps interpolate1d.
 
 
 **improve regression tests
-desired for fitpack_wrapper and _interpolate_wrapper
-as well as interpolate1d.
-
-**pick best spline
-Under-the-hood machinery currently comes from _interpolate.cpp
-(used in enthought.interpolate) and FITPACK (Fortran, used in 
-scipy.interpolate).  This isn't necessarily the best (for example,
-speed of FITPACK is highly sensitive to parameter k).  Other code
-is used in scipy.ndimage and scipy.signal.  There is surely other
-code out there too.  Figure out what is best and incorporate it.
+    desired for fitpack_wrapper and _interpolate_wrapper
+    as well as interpolate1d.
 
 
 **high-level road map
-when the module is more established, there should be a page on
-the wiki which describes the big-picture of the module; what
-the capabilities are and which should be added, large-scale
-architecture of the module, etc.
+    when the module is more established, there should be a page on
+    the wiki which describes the big-picture of the module; what
+    the capabilities are and which should be added, large-scale
+    architecture of the module, etc.
 
-It might note which underlying C/Fortran modules can or should
-be modified or merged.  It would be great if either 1) there were
-only 1 extension module, or 2) the modules showed natural
-differentiation of functionality (one for splines, one for simple
-operations, etc), rather than being a holdover of where they
-were stolen from.
+    It might note which underlying C/Fortran modules can or should
+    be modified or merged.  It would be great if either 1) there were
+    only 1 extension module, or 2) the modules showed natural
+    differentiation of functionality (one for splines, one for simple
+    operations, etc), rather than being a holdover of where they
+    were stolen from.
 
 
 **update for 2D and ND
-This will probably take the form of two additional
-classes both based on interpolate1d.  Thus it probably
-shouldn't be done until interpolate1d is more settled.
+    This will probably take the form of two additional
+    classes both based on interpolate1d.  Thus it probably
+    shouldn't be done until interpolate1d is more settled.
+
+
+**more convenient way to enter kw arguments
+    currently users have to pass in dictionaries of additional
+    keyword arguments for specific interpolation types.
+    This is kind of awkward, and it would be nice to let
+    them pass in a single argument.  But this is low priority.
+
+
+**allow y to be 2-dimensional
+    That way the interpolated function is from R1 -> Rn, and
+    not just R1 -> R1.  This requires some thinking about axes.
+
+    The interpolation should, I think, be along columns, so each
+    row of y is one complete observation.  This is because 1) rows
+    are separated more from each other when an array is displayed,
+    and 2) the user may want to enter the data as y=array([obs1, obs2, ...]).
+
+    There are two big problem.  First, interpolate_wrapper interpolates
+    along rows, because each row is contiguous.  Second,
+    FITPACK doesn't support 2D y arrays.
+
+    The solution is to have the user indicate which axis to interpolate
+    along, and take the transpose if need be (also copy, so that
+    the columns become contiguous).  Then when the user enters newx,
+    all under-the-hood interpolation is performed on contiguous
+    arrays.
+
+    Whatever is done must be very well commented.
