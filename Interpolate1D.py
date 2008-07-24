@@ -45,7 +45,7 @@ def make_array_safe(ary, typecode=np.float64):
     
 def interp1d(x, y, new_x, kind='linear', low=np.NaN, high=np.NaN, \
                     kindkw={}, lowkw={}, highkw={}, \
-                    remove_bad_data = False, bad_data=[]):
+                    remove_bad_data = False, bad_data=[], interp_axis = 0):
     """ A function for interpolation of 1D data.
         
         Parameters
@@ -196,51 +196,47 @@ class Interpolate1d(object):
     def __init__(self, x, y, kind='linear', low=np.NaN, high=np.NaN, \
                         kindkw={}, lowkw={}, highkw={}, \
                         remove_bad_data = False, bad_data=[]):
+        # FIXME: don't allow copying multiple times.
+        # FIXME : allow no copying, in case user has huge dataset
         
-        # store properly-formatted versions of x and y
-        self._format_array(x, y, remove_bad_data = remove_bad_data, bad_data = bad_data)
+        # check acceptable size and dimensions
+        x = np.array(x)
+        y = np.array(y)
+        assert len(x) > 0 and len(y) > 0 , "Interpolate1D does not support\
+                                        arrays of length 0"
+        assert x.ndim == 1 , "x must be one-dimensional"
+        assert y.ndim == 1 , "y must be one-dimensional" 
+        assert len(x) == len(y) , "x and y must be of the same length"
+        
+        # remove bad data, is there is any
+        if remove_bad_data:
+            x, y = self._remove_bad_data(x, y, bad_data)
+        
+        # select proper dataypes and make arrays
+        self._xdtype = {np.float32 : np.float32}.setdefault(type(x[0]), np.float64) # unless data is float32,  cast to float64
+        self._ydtype = {np.float32 : np.float32}.setdefault(type(y[0]), np.float64)
+        self._x = make_array_safe(x, self._xdtype).copy()
+        self._y = make_array_safe(y, self._ydtype).copy()
 
         # store interpolation functions for each range
         self.kind = self._init_interp_method(self._x, self._y, kind, kindkw)
         self.low = self._init_interp_method(self._x, self._y, low, lowkw)
         self.high = self._init_interp_method(self._x, self._y, high, highkw)
 
-    def _format_array(self, x, y, remove_bad_data = False, bad_data = []):
+    def _remove_bad_data(self, x, y, bad_data = [None, np.NaN]):
+        """ removes data points whose x or y coordinate is
+            either in bad_data or is a NaN.
         """
-            Assigns properly formatted versions of x and y to self._x and self._y.
-            Also records data types.
-            
-            Formatting includes removal of all points whose x or y coordinate
-            is in missing_data.  This is the primary difference from
-            make_array_safe.
-        
-        """
-        # FIXME: don't allow copying multiple times.
-         
-        # check acceptable lengths for x and y
-        assert len(x) > 0 and len(y) > 0 , "Interpolate1D does not support\
-                                        arrays of length 0"
-        assert len(x) == len(y) , "x and y must be of the same length"
-        
-        # remove bad data
-        x = np.array(x)
-        y = np.array(y)
-        if remove_bad_data:
-            mask = np.array([  (xi not in bad_data) and (not np.isnan(xi)) and \
-                                        (y[i] not in bad_data) and (not np.isnan(y[i])) \
-                                    for i, xi in enumerate(x) ])
-            x = x[mask]
-            y = y[mask]
-            
-        # select proper dataypes and make arrays
-        self._xdtype = {np.float32 : np.float32}.setdefault(type(x[0]), np.float64) # unless data is float32,  cast to float64
-        self._ydtype = {np.float32 : np.float32}.setdefault(type(y[0]), np.float64)
-        self._x = make_array_safe(x, self._xdtype).copy()
-        self._y = make_array_safe(y, self._ydtype).copy()
-            
-        # check dimensionality
-        assert self._x.ndim == 1 , "x must be one-dimensional"
-        assert self._y.ndim == 1 , "y must be one-dimensional"    
+        # FIXME : In the future, it may be good to just replace the bad points with good guesses.
+        #       Especially in generalizing the higher dimensions
+        # FIXME : This step is very inefficient because it iterates over the array
+        mask = np.array([  (xi not in bad_data) and (not np.isnan(xi)) and \
+                                    (y[i] not in bad_data) and (not np.isnan(y[i])) \
+                                for i, xi in enumerate(x) ])
+        x = x[mask]
+        y = y[mask]
+        return x, y
+  
     
     def _init_interp_method(self, x, y, interp_arg, kw):
         """
@@ -427,6 +423,17 @@ class Test(unittest.TestCase):
         y = arange(N)
         new_x = arange(N+1)-0.5
         new_y = interp1d(x, y, new_x, kind='linear', low='linear', high='linear')        
+        self.assertAllclose(new_x, new_y)
+        
+    def test_removeBad(self):
+        """make sure : interp1d works with bad data
+        """
+        N = 7.0 # must be >=5
+        x = arange(N); x[2] = np.NaN
+        y = arange(N); y[4] = None; y[0]=np.NaN
+        new_x = arange(N+1)-0.5
+        new_y = interp1d(x, y, new_x, kind='linear', low='linear', high='linear', \
+                                    remove_bad_data = True, bad_data = [None])
         self.assertAllclose(new_x, new_y)
         
 if __name__ == '__main__':

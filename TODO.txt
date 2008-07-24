@@ -94,6 +94,13 @@ at appropriate places in the code.
     This will probably take the form of two additional
     classes both based on interpolate1d.  Thus it probably
     shouldn't be done until interpolate1d is more settled.
+    
+    There is an interesting problem here.  Most of the extensions
+    I have assume a regular grid.  First off, this is often unrealistic.
+    Secondly, if I DO use a rectangular grid, how do I deal with bad
+    data?  The best way is probably a pre-processing where you
+    interpolate values for the bad points (linear would be a nice simple
+    way to do it at first, just to get it working)
 
 
 **more convenient way to enter kw arguments
@@ -123,3 +130,11 @@ at appropriate places in the code.
     arrays.
 
     Whatever is done must be very well commented.
+    
+    Also, there's a problem with removing bad data and still
+    retaining a rectangular array.  I would have to store a list
+    of (x,y) pairs, which suggests I should do this with a wrapper
+    function anyway.  Not memory efficient, but oh well.  In the
+    future, however, when x is a ND array, I should work around this;
+    I should have it be Rn -> Rm and fill in missing values to the best
+    of my ability.
