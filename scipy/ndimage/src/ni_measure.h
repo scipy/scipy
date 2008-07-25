@@ -36,7 +36,7 @@
 
 /* structure for array regions to find objects: */
 typedef struct {
-  int start[NI_MAXDIM], end[NI_MAXDIM];
+    int start[NI_MAXDIM], end[NI_MAXDIM];
 } NI_ObjectRegion;
 
 int NI_Label(PyArrayObject*, PyArrayObject*, maybelong*, PyArrayObject*);
@@ -44,16 +44,16 @@ int NI_Label(PyArrayObject*, PyArrayObject*, maybelong*, PyArrayObject*);
 int NI_FindObjects(PyArrayObject*, maybelong, maybelong*);
 
 int NI_CenterOfMass(PyArrayObject*, PyArrayObject*, maybelong, maybelong,
-                    maybelong*, maybelong, double*);
+                                        maybelong*, maybelong, double*);
 
 int NI_Histogram(PyArrayObject*, PyArrayObject*, maybelong, maybelong, 
-       maybelong*, maybelong,  PyArrayObject**, double, double, maybelong);
+             maybelong*, maybelong,  PyArrayObject**, double, double, maybelong);
 
 int NI_Statistics(PyArrayObject*, PyArrayObject*, maybelong, maybelong,
-                  maybelong*, maybelong, double*, maybelong*, double*, 
-                  double*, double*, maybelong*, maybelong*);
+                                    maybelong*, maybelong, double*, maybelong*, double*, 
+                                    double*, double*, maybelong*, maybelong*);
 
 int NI_WatershedIFT(PyArrayObject*, PyArrayObject*, PyArrayObject*, 
-                    PyArrayObject*);
+                                        PyArrayObject*);
 
 #endif

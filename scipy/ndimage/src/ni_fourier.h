@@ -33,8 +33,8 @@
 #define NI_FOURIER_H
 
 int NI_FourierFilter(PyArrayObject*, PyArrayObject*, maybelong, int,
-                     PyArrayObject*, int);
+                                         PyArrayObject*, int);
 int NI_FourierShift(PyArrayObject*, PyArrayObject*, maybelong, int,
-                    PyArrayObject*);
+                                        PyArrayObject*);
 
 #endif
