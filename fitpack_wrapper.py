@@ -14,7 +14,7 @@ under the hood.
 
 import numpy as np
 
-import dfitpack # lower-level wrapper around FITPACK
+import dfitpack # extension module containing FITPACK subroutines
 
 
 class Spline(object):
@@ -30,7 +30,7 @@ class Spline(object):
     BivariateSpline - a similar class for bivariate spline interpolation
     """
 
-    def __init__(self, x, y, w=None, bbox = [None]*2, k=3, s=0.0):
+    def __init__(self, x=None, y=None, w=None, bbox = [None]*2, k=3, s=0.0):
         """
         Input:
           x,y   - 1-d sequences of data points (x must be
@@ -49,9 +49,23 @@ class Spline(object):
                        if 1/w[i] is an estimate of the standard
                        deviation of y[i].
         """
+        
+        self._k = k
+        self._s = s
+        self._bbox = bbox
+        self._w = w
+        
+        if x is not None and y is not None:
+            self.init_xy(x, y)
+            self._is_initialized = True
+        else:
+            self._is_initialized = False
+        
+    def init_xy(self, x, y):
+        
         #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
-        data = dfitpack.fpcurf0(x, y, k, w=w,
-                                xb=bbox[0], xe=bbox[1], s=s)
+        data = dfitpack.fpcurf0(x, y, self._k, w=self._w,
+                                xb=self._bbox[0], xe=self._bbox[1], s=self._s)
         if data[-1]==1:
             # nest too small, setting to maximum bound
             data = self._reset_nest(data)
@@ -59,6 +73,8 @@ class Spline(object):
         # the relevant part of self._reset_class()
         n,t,c,k,ier = data[7],data[8],data[9],data[5],data[-1]
         self._eval_args = t[:n],c[:n],k
+        
+        self._is_initialized = True
 
     def _reset_nest(self, data, nest=None):
         n = data[10]
@@ -101,11 +117,13 @@ class Spline(object):
         if x is (partially) ordered.
         
         """
-        
-        if len(x) == 0: return np.array([]) #hack to cope with shape (0,)
-        if nu is None:
-            return dfitpack.splev(*(self._eval_args+(x,)))
-        return dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
+        if self._is_initialized:
+            if len(x) == 0: return np.array([]) #hack to cope with shape (0,)
+            if nu is None:
+                return dfitpack.splev(*(self._eval_args+(x,)))
+            return dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
+        else:
+            raise TypeError, "x and y must be set before interpolation is possible"
 
     def get_knots(self):
         """ Return the positions of (boundary and interior)
@@ -165,23 +183,58 @@ class Test(unittest.TestCase):
     def assertAllclose(self, x, y):
         self.assert_(np.allclose(x, y))
         
-    def test_linearSpl(self):
+    def test_linearInterp(self):
+        """ make sure : linear interpolation (spline with order = 1, s = 0)works
+        """
         N = 3000.
         x = np.arange(N)
         y = np.arange(N)
-        T1 = time.clock()
+        #T1 = time.clock()
         interp_func = Spline(x, y, k=1)
-        T2 = time.clock()
-        print "time to create order 1 spline interpolation function with N = %i:" % N, T2 - T1
+        #T2 = time.clock()
+        #print "time to create order 1 spline interpolation function with N = %i:" % N, T2 - T1
         new_x = np.arange(N)+0.5
-        t1 = time.clock()
+        #t1 = time.clock()
         new_y = interp_func(new_x)
-        t2 = time.clock()
-        print "time for order 1 spline interpolation with N = %i:" % N, t2 - t1
+        #t2 = time.clock()
+        #print "time for order 1 spline interpolation with N = %i:" % N, t2 - t1
+        self.assertAllclose(new_y[:5], [0.5, 1.5, 2.5, 3.5, 4.5])
+        
+    def test_quadInterp(self):
+        """ make sure : quadratic interpolation (spline with order = 2, s = 0)works
+        """
+        N = 3000.
+        x = np.arange(N)
+        y = x**2
+        interp_func = Spline(x, y, k=2)
+        #print "time to create order 1 spline interpolation function with N = %i:" % N, T2 - T1
+        new_x = np.arange(N)+0.5
+        #t1 = time.clock()
+        new_y = interp_func(x)
+        #t2 = time.clock()
+        #print "time for order 1 spline interpolation with N = %i:" % N, t2 - t1
+        self.assertAllclose(new_y, y)
+        
+        
+    def test_inputFormat(self):
+        """ make sure : it's possible to instantiate Spline without x and y
+        """
+        #print "testing input format"
+        N = 3000.
+        x = np.arange(N)
+        y = np.arange(N)
+        interp_func = Spline(k=1)
+        interp_func.init_xy(x, y)
+        new_x = np.arange(N)+0.5
+        new_y = interp_func(new_x)
         self.assertAllclose(new_y[:5], [0.5, 1.5, 2.5, 3.5, 4.5])
     
     def runTest(self):
-        self.test_linearSpl()
+        test_list = [name for name in dir(self) if name.find('test_')==0]
+        for test_name in test_list:
+            exec("self.%s()" % test_name)
+           
+        
                              
 if __name__ == '__main__':
     unittest.main()

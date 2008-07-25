@@ -192,6 +192,7 @@ class Interpolate1d(object):
     """
     # FIXME: more informative descriptions of sample arguments
     # FIXME: examples in doc string
+    # FIXME : Allow copying or not of arrays.  non-copy + remove_bad_data should flash a warning (esp if we interpolate missing values), but work anyway.
     
     def __init__(self, x, y, kind='linear', low=np.NaN, high=np.NaN, \
                         kindkw={}, lowkw={}, highkw={}, \
@@ -212,12 +213,9 @@ class Interpolate1d(object):
         if remove_bad_data:
             x, y = self._remove_bad_data(x, y, bad_data)
         
-        # select proper dataypes and make arrays
-        self._xdtype = {np.float32 : np.float32}.setdefault(type(x[0]), np.float64) # unless data is float32,  cast to float64
-        self._ydtype = {np.float32 : np.float32}.setdefault(type(y[0]), np.float64)
-        self._x = make_array_safe(x, self._xdtype).copy()
-        self._y = make_array_safe(y, self._ydtype).copy()
-
+        # FIXME : may be good to let x and y be initialized later, or changed after-the-fact
+        self._init_xy(x, y)
+        
         # store interpolation functions for each range
         self.kind = self._init_interp_method(self._x, self._y, kind, kindkw)
         self.low = self._init_interp_method(self._x, self._y, low, lowkw)
@@ -236,8 +234,14 @@ class Interpolate1d(object):
         x = x[mask]
         y = y[mask]
         return x, y
-  
     
+    def _init_xy(self, x, y):
+        # select proper dataypes and make arrays
+        self._xdtype = {np.float32 : np.float32}.setdefault(type(x[0]), np.float64) # unless data is float32,  cast to float64
+        self._ydtype = {np.float32 : np.float32}.setdefault(type(y[0]), np.float64)
+        self._x = make_array_safe(x, self._xdtype).copy()
+        self._y = make_array_safe(y, self._ydtype).copy()
+        
     def _init_interp_method(self, x, y, interp_arg, kw):
         """
             User provides interp_arg and dictionary kw.  _init_interp_method
@@ -251,28 +255,55 @@ class Interpolate1d(object):
         
         from inspect import isclass, isfunction
         
+        # primary usage : user passes a string indicating a known function
         if interp_arg in ['linear', 'logarithmic', 'block', 'block_average_above']:
             # string used to indicate interpolation method,  Select appropriate function
             func = {'linear':linear, 'logarithmic':logarithmic, 'block':block, \
                         'block_average_above':block_average_above}[interp_arg]
             result = lambda new_x : func(self._x, self._y, new_x, **kw)
         elif interp_arg in ['Spline', Spline, 'spline']:
-            # spline is a special case of above
+            # use the Spline class from fitpack_wrapper
             result = Spline(self._x, self._y, **kw)
         elif interp_arg in ['cubic', 'Cubic', 'Quadratic', \
-                                'quadratic', 'Quad', 'quad']:
-            # specify certain kinds of splines
+                                'quadratic', 'Quad', 'quad', 'Quintic', 'quintic']:
+            # specify specific kinds of splines
             if interp_arg in ['cubic', 'Cubic']:
                 result = Spline(self._x, self._y, k=3)
             elif interp_arg in ['Quadratic', 'quadratic', 'Quad', 'quad']:
                 result = Spline(self._x, self._y, k=2)
+            elif interp_arg in ['Quintic', 'quintic']:
+                result = Spline(self._x, self._y, k=4)
+                
+        # secondary usage : user passes a callable class
+        elif isclass(interp_arg) and hasattr(interp_arg, '__call__'):
+            if hasattr(interp_arg, 'init_xy'):
+                result = interp_arg(**kw)
+                result.init_xy(self._x, self._y)
+            elif hasattr(interp_arg, 'set_xy'):
+                result = interp_arg(**kw)
+                result.set_xy(self._x, self._y)
+            else:
+                result = interp_arg(x, y, **kw)
+                
+        # user passes an instance of a callable class which has yet
+        # to have its x and y initialized.
+        elif hasattr(interp_arg, 'init_xy') and hasattr(interp_arg, '__call__'):
+            result = interp_arg
+            result.init_xy(self._x, self._y)
+        elif hasattr(interp_arg, 'set_xy') and hasattr(interp_arg, '__call__'):
+            result = interp_arg
+            result.set_xy(self._x, self._y)
+                
+        # user passes a function to be called
+        elif isfunction(interp_arg) and interp.func_code.argcount == 3:
+            result = lambda new_x : interp_arg(self._x, self._y, new_x, **kw)
         elif isfunction(interp_arg):
-            # assume user has passed a function
             result = lambda new_x : interp_arg(new_x, **kw)
-        elif isclass(interp_arg):
-            result = interp_arg(x, y, **kw)
+        
+        # default : user has passed a default value to always be returned
         else:
             result = np.vectorize(lambda new_x : interp_arg)
+            
         return result
 
     def __call__(self, x):
@@ -315,7 +346,7 @@ class Test(unittest.TestCase):
     def assertAllclose(self, x, y):
         self.assert_(np.allclose(make_array_safe(x), make_array_safe(y)))
         
-    def test__interpolate_wrapper(self):
+    def test_interpolate_wrapper(self):
         """ run unit test contained in interpolate_wrapper.py
         """
         print "\n\nTESTING _interpolate_wrapper MODULE"
@@ -323,13 +354,63 @@ class Test(unittest.TestCase):
         T = Test()
         T.runTest()
         
-    def test__fitpack_wrapper(self):
+    def test_fitpack_wrapper(self):
         """ run unit test contained in fitpack_wrapper.py
         """
         print "\n\nTESTING _fitpack_wrapper MODULE"
         from fitpack_wrapper import Test
         T = Test()
         T.runTest()
+        
+    def test_instantiationFormat(self):
+        """ make sure : all allowed instantiation formats are supported
+        """
+        
+        # make sure : an instance of a callable class in which
+        # x and y haven't been initiated works
+        print 'hello'
+        N = 7 #must be > 5
+        x = np.arange(N)
+        y = np.arange(N)
+        interp_func = Interpolate1d(x, y, kind=Spline(k=2), low=Spline(k=2), high=Spline(k=2))
+        new_x = np.arange(N+1)-0.5
+        new_y = interp_func(new_x)
+        self.assertAllclose(new_x, new_y)
+        
+    def test_callFormat(self):
+        """ make sure : all allowed calling formats are supported
+        """
+        # make sure : having no out-of-range elements in new_x is fine
+        # There was a bug with this earlier.        
+        N = 5
+        x = arange(N)
+        y = arange(N)
+        new_x = arange(1,N-1)+.2
+        interp_func = Interpolate1d(x, y, kind='linear', low='linear', high=np.NaN)
+        new_y = interp_func(new_x)
+        self.assertAllclose(new_x, new_y)
+        
+    def test_removeBad(self):
+        """make sure : interp1d works with bad data
+        """
+        N = 7.0 # must be >=5
+        x = arange(N); x[2] = np.NaN
+        y = arange(N); y[4] = None; y[0]=np.NaN
+        new_x = arange(N+1)-0.5
+        new_y = interp1d(x, y, new_x, kind='linear', low='linear', high='linear', \
+                                    remove_bad_data = True, bad_data = [None])
+        self.assertAllclose(new_x, new_y)
+        
+    def test_intper1d(self):
+        """
+            make sure : interp1d works, at least in the linear case
+        """
+        N = 7
+        x = arange(N)
+        y = arange(N)
+        new_x = arange(N+1)-0.5
+        new_y = interp1d(x, y, new_x, kind='linear', low='linear', high='linear')        
+        self.assertAllclose(new_x, new_y)
         
     def test_spline1_defaultExt(self):
         """
@@ -401,40 +482,11 @@ class Test(unittest.TestCase):
         
         self.assertAllclose(new_x, new_y)
         
-    def test_noLow(self):
-        """
-            make sure : having no out-of-range elements in new_x is fine
-            There was a bug with this earlier.
-        """
-        N = 5
-        x = arange(N)
-        y = arange(N)
-        new_x = arange(1,N-1)+.2
-        interp_func = Interpolate1d(x, y, kind='linear', low='linear', high=np.NaN)
-        new_y = interp_func(new_x)
-        self.assertAllclose(new_x, new_y)
+    
         
-    def test_intper1d(self):
-        """
-            make sure : interp1d works, at least in the linear case
-        """
-        N = 7
-        x = arange(N)
-        y = arange(N)
-        new_x = arange(N+1)-0.5
-        new_y = interp1d(x, y, new_x, kind='linear', low='linear', high='linear')        
-        self.assertAllclose(new_x, new_y)
+    
         
-    def test_removeBad(self):
-        """make sure : interp1d works with bad data
-        """
-        N = 7.0 # must be >=5
-        x = arange(N); x[2] = np.NaN
-        y = arange(N); y[4] = None; y[0]=np.NaN
-        new_x = arange(N+1)-0.5
-        new_y = interp1d(x, y, new_x, kind='linear', low='linear', high='linear', \
-                                    remove_bad_data = True, bad_data = [None])
-        self.assertAllclose(new_x, new_y)
+    
         
 if __name__ == '__main__':
     unittest.main()                 

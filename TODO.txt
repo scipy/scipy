@@ -5,25 +5,33 @@ note with ideas.  More info is often contained in FIXMEs
 at appropriate places in the code.
 
 
+**include license for FITPACK
+    take it from scipy.interpolate.
+
+
 **handle smoothing in fitpack_wrapper
     The default smoothing parameter (s) means we aren't actually
     doing interpolation.  Also, small but non-zero s makes the
     algorithm very slow.  Figure out how to handle this, prob by
     not letting the user see s and setting it to 0.
 
-    This may be best handled by modifying fitpack_wrapper.py.
+    Then again, users very often want to smooth data at the same
+    time.  FITPACK suffers from VERY slow performance when s
+    is very small but not 0.  This is a problem.
 
 
 **pick best spline
     Under-the-hood machinery currently comes from _interpolate.cpp
     (used in enthought.interpolate) and FITPACK (Fortran, used in 
     scipy.interpolate).  This isn't necessarily the best (for example,
-    speed of FITPACK is highly sensitive to parameter s).  Other code
+    speed of FITPACK is highly sensitive to smoothing parameter s).  Other code
     is used in scipy.ndimage and scipy.signal.  There is surely other
     code out there too.  Figure out what is best and incorporate it.
 
-    Signal code is slower than FITPACK, and NDImage really only does
-    filtering.  I'm inclined to stay with FITPACK.
+    Signal code is slower than FITPACK, and NDImage requires a
+    regular grid.  I'm inclined to stay with FITPACK, except for the
+    slow performance when x is small (we could add a hack to not
+    let s be tiny > 0).
 
 
 **clean up fitpack_wrapper.py
@@ -36,7 +44,8 @@ at appropriate places in the code.
 
 **comment interpolate1d
     There's comments there already, but they should be
-    made better.
+    made better.  Plus, features are changing, which requires
+    updating the documentation.
 
 
 **doc strings for interpolate1d and its members
@@ -51,8 +60,8 @@ at appropriate places in the code.
     updates of documentation easier.
 
 
-**figure out NumPy version stuff with vectorize.
-    In function interpolate1d._format_array.
+**figure out NumPy stuff with vectorize.
+    In function interpolate1d.__call__
     It would be nice to remove the hack I used.
     I believe vectorize is supposed to handle arrays of
     length 0, but it's not working on my computer.
@@ -96,45 +105,25 @@ at appropriate places in the code.
     shouldn't be done until interpolate1d is more settled.
     
     There is an interesting problem here.  Most of the extensions
-    I have assume a regular grid.  First off, this is often unrealistic.
-    Secondly, if I DO use a rectangular grid, how do I deal with bad
+    I have assume a regular grid.  First off, this is often not general.
+    Secondly, if I DO use a regular grid, how do I deal with bad
     data?  The best way is probably a pre-processing where you
     interpolate values for the bad points (linear would be a nice simple
     way to do it at first, just to get it working)
 
 
-**more convenient way to enter kw arguments
-    currently users have to pass in dictionaries of additional
-    keyword arguments for specific interpolation types.
-    This is kind of awkward, and it would be nice to let
-    them pass in a single argument.  But this is low priority.
-
-
-**allow y to be 2-dimensional
-    That way the interpolated function is from R1 -> Rn, and
-    not just R1 -> R1.  This requires some thinking about axes.
-
-    The interpolation should, I think, be along columns, so each
-    row of y is one complete observation.  This is because 1) rows
-    are separated more from each other when an array is displayed,
-    and 2) the user may want to enter the data as y=array([obs1, obs2, ...]).
-
-    There are two big problem.  First, interpolate_wrapper interpolates
-    along rows, because each row is contiguous.  Second,
-    FITPACK doesn't support 2D y arrays.
-
-    The solution is to have the user indicate which axis to interpolate
-    along, and take the transpose if need be (also copy, so that
-    the columns become contiguous).  Then when the user enters newx,
-    all under-the-hood interpolation is performed on contiguous
-    arrays.
-
-    Whatever is done must be very well commented.
-    
-    Also, there's a problem with removing bad data and still
-    retaining a rectangular array.  I would have to store a list
-    of (x,y) pairs, which suggests I should do this with a wrapper
-    function anyway.  Not memory efficient, but oh well.  In the
-    future, however, when x is a ND array, I should work around this;
-    I should have it be Rn -> Rm and fill in missing values to the best
-    of my ability.
+**allow y to be 2-dimensional?
+    It is not decided whether this feature should be supported, but
+    I don't think it should; I think there should be another class with
+    that functionality which wraps Interpolate1d.  The main reasons
+    are:
+    1) interpolation should probably be along columns, so the user
+    can enter data as enter the data as y=array([obs1, obs2, ...]).  But
+    the interpolate_wrapper and fitpack_wrapper interpolate along
+    rows; this means there would be messy transposes in the code.
+    2) FITPACK doesn't support 2D y arrays, which means we would
+    have to store the y columns separately
+    3) If we remove bad data, bearing in mind (2), we would also
+    have to store copies of x, since the bad data in the y cols aren't
+    at the same locations, meaning that different data points should be
+    deleted for each column.

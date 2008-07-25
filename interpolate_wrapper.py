@@ -155,7 +155,7 @@ class Test(unittest.TestCase):
         t1 = time.clock()
         new_y = linear(x, y, new_x)
         t2 = time.clock()
-        print "time for linear interpolation with N = %i:" % N, t2 - t1
+        #print "time for linear interpolation with N = %i:" % N, t2 - t1
         
         self.assertAllclose(new_y[:5], [0.5, 1.5, 2.5, 3.5, 4.5])
         
@@ -168,7 +168,7 @@ class Test(unittest.TestCase):
         t1 = time.clock()
         new_y = block_average_above(x, y, new_x)
         t2 = time.clock()
-        print "time for block_avg_above interpolation with N = %i:" % N, t2 - t1
+        #print "time for block_avg_above interpolation with N = %i:" % N, t2 - t1
         self.assertAllclose(new_y[:5], [0.0, 0.5, 2.5, 4.5, 6.5])
 
     def test_linear2(self):
@@ -179,7 +179,7 @@ class Test(unittest.TestCase):
         t1 = time.clock()
         new_y = linear(x, y, new_x)
         t2 = time.clock()
-        print "time for 2D linear interpolation with N = %i:" % N, t2 - t1
+        #print "time for 2D linear interpolation with N = %i:" % N, t2 - t1
         self.assertAllclose(new_y[:5,:5],
                             [[ 0.5, 1.5, 2.5, 3.5, 4.5],
                              [ 0.5, 1.5, 2.5, 3.5, 4.5],
@@ -188,22 +188,21 @@ class Test(unittest.TestCase):
                              [ 0.5, 1.5, 2.5, 3.5, 4.5]])
                              
     def test_logarithmic(self):
-        N = 3000.
+        N = 4000.
         x = arange(N)
         y = arange(N)
         new_x = arange(N)+0.5
         t1 = time.clock()
         new_y = logarithmic(x, y, new_x)
         t2 = time.clock()
-        print "time for logarithmic interpolation with N = %i:" % N, t2 - t1
+        #print "time for logarithmic interpolation with N = %i:" % N, t2 - t1
         correct_y = [np.NaN, 1.41421356, 2.44948974, 3.46410162, 4.47213595]
         self.assertAllclose(new_y[:5], correct_y)
         
     def runTest(self):
-        self.test_linear()
-        self.test_block_average_above()
-        self.test_linear2()
-        self.test_logarithmic()
+        test_list = [name for name in dir(self) if name.find('test_')==0]
+        for test_name in test_list:
+            exec("self.%s()" % test_name)
     
 if __name__ == '__main__':
     unittest.main()
