@@ -1,9 +1,10 @@
-""" helper_funcs.py
+""" helper_funcs.py.
+    scavenged from enthought,interpolate
 """
 
 import numpy as np
 import sys
-import _interpolate
+import _interpolate # C extension.  Does all the real work.
 
 def make_array_safe(ary, typecode = np.float64):
     ary = np.atleast_1d(np.asarray(ary, typecode))
@@ -104,7 +105,10 @@ def block_average_above(x, y, new_x):
     return new_y
 
 def block(x, y, new_x):
-        """ Used when only one element is available in the log.
+        """ Essentially a step function.
+        
+            For each new_x[i], finds largest j such that
+            x[j] < new_x[j], and returns y[j].
         """
 
         # find index of values in x that preceed values in x
@@ -119,21 +123,6 @@ def block(x, y, new_x):
         indices = np.atleast_1d(np.clip(indices, 0, np.Inf).astype(np.int))
         new_y = np.take(y, indices, axis=-1)
         return new_y
-def test_helper():
-    """ use numpy.allclose to test
-    """
-    
-    print "now testing accuracy of interpolation of linear data"
-    
-    x = np.arange(10.)
-    y = 2.0*x
-    c = np.array([-1.0, 2.3, 10.5])
-    
-    assert np.allclose( linear(x, y, c) , [-2.0, 4.6, 21.0] ), "problem in linear"
-    assert np.allclose( logarithmic(x, y, c) , [0. , 4.51738774 , 21.47836848] ), \
-                    "problem with logarithmic"
-    assert np.allclose( block_average_above(x, y, c) , [0., 2., 4.] ), \
-                    "problem with block_average_above"
 
 
 # Unit Test

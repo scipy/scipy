@@ -268,10 +268,10 @@ class Interpolate1d(object):
         elif interp_arg in ['cubic', 'Cubic', 'Quadratic', \
                                 'quadratic', 'Quad', 'quad', 'Quintic', 'quintic']:
             # specify specific kinds of splines
-            if interp_arg in ['cubic', 'Cubic']:
-                result = Spline(self._x, self._y, k=3)
-            elif interp_arg in ['Quadratic', 'quadratic', 'Quad', 'quad']:
+            if interp_arg in ['Quadratic', 'quadratic', 'Quad', 'quad']:
                 result = Spline(self._x, self._y, k=2)
+            elif interp_arg in ['cubic', 'Cubic']:
+                result = Spline(self._x, self._y, k=3)
             elif interp_arg in ['Quintic', 'quintic']:
                 result = Spline(self._x, self._y, k=4)
                 
@@ -296,14 +296,11 @@ class Interpolate1d(object):
             result.set_xy(self._x, self._y)
                 
         # user passes a function to be called
-        # FIXME : I think there is too much flexibility allowed here; it makes
-        #       there be more pathological side cases to consider.  Functions
-        #       should perhaps be reqired to be of the form f(x, y, newx, **kw)
-        elif isfunction(interp_arg) and interp.func_code.argcount >= 3:
+        # Assume function has form of f(x, y, newx, **kw)
+        # FIXME : should other function forms be allowed?
+        elif isfunction(interp_arg):
             # assume x, y and newx are all passed to interp_arg
             result = lambda new_x : interp_arg(self._x, self._y, new_x, **kw)
-        elif isfunction(interp_arg):
-            result = lambda new_x : interp_arg(new_x, **kw)
         
         # default : user has passed a default value to always be returned
         else:

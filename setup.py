@@ -9,19 +9,25 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('', parent_package, top_path)
 
 
+    # C++ extension for several basic interpolation types
     config.add_extension('_interpolate',
                          ['_interpolate.cpp'],
                          include_dirs = ['.'],
                          depends = ['interpolate.h'])
 
+    # used by dfitpack extension
     config.add_library('fitpack',
                        sources=[join('fitpack', '*.f')],
                       )
 
+    # Fortran routines (collectively "FITPACK" for spline interpolation)
     config.add_extension('dfitpack',
                          sources=['fitpack.pyf'],
                          libraries=['fitpack'],
                         )
+                        
+    # FIXME : add documentation files
+    # config.add_data_dir(
 
     return config
 

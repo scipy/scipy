@@ -1,8 +1,7 @@
 """
 This module is used for spline interpolation, and functions
 as a wrapper around the FITPACK Fortran interpolation
-package.  It is not intended to be directly accessed by
-the user, but rather through the class Interpolate1d.
+package.
 
 The code has been modified from an older version of
 scipy.interpolate, where it was directly called by the
@@ -11,10 +10,15 @@ Interpolate1d.  For this reason, users may wish to get
 under the hood.
 
 """
+# FIXME : clean up this file!  scipy.interpolate contained a lot of
+#       nice functionality that is only partially in this file.
+#       The question is whether to copy over the full functionality
+#       to the point where we may as well include fitting.py form
+#       scipy.interpolate, or whether we should strip is down some.
 
 import numpy as np
 
-import dfitpack # extension module containing FITPACK subroutines
+import dfitpack # extension module containing FITPACK subroutines in Fortran
 
 
 class Spline(object):

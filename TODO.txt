@@ -94,7 +94,10 @@ at appropriate places in the code.
     I believe vectorize is supposed to handle arrays of
     length 0, but it's not working on my computer.
     
-    
+
+**allow newx to be in non-sorted order
+    This requires rethinking the partition of newx into
+    low, high and mid
     
 ********* LONGER TERM ************
 
