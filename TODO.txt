@@ -5,26 +5,25 @@ note with ideas.  More info is often contained in FIXMEs
 at appropriate places in the code.
 
 
-**include license for FITPACK
-    take it from scipy.interpolate.
+************ PRESSING ISSUES ***********
 
+**handle smoothing 
+    There is a question of whether, if, and how much to allow
+    smoothing of the data.  If we smooth, we're not technically
+    interpolating, but users often want to smooth data.  
 
-**handle smoothing in fitpack_wrapper
-    The default smoothing parameter (s) means we aren't actually
-    doing interpolation.  Also, small but non-zero s makes the
-    algorithm very slow.  Figure out how to handle this, prob by
-    not letting the user see s and setting it to 0.
+    In fitpack_wrapper the smoothing parameter is s.  It now defaults
+    to 0.0 (exact interpolation).  Zero smoothing and moderate (s ~ 1)
+    are fast, but small non-zero s makes the algorithm VERY slow.
 
-    Then again, users very often want to smooth data at the same
-    time.  FITPACK suffers from VERY slow performance when s
-    is very small but not 0.  This is a problem.
+    Currently the user does see s in Interpolate1d; no smoothing 
+    is available.  The Spline class, however, has it available (default = 0.0).
 
 
 **pick best spline
     Under-the-hood machinery currently comes from _interpolate.cpp
     (used in enthought.interpolate) and FITPACK (Fortran, used in 
-    scipy.interpolate).  This isn't necessarily the best (for example,
-    speed of FITPACK is highly sensitive to smoothing parameter s).  Other code
+    scipy.interpolate).  This isn't necessarily the best.  Other code
     is used in scipy.ndimage and scipy.signal.  There is surely other
     code out there too.  Figure out what is best and incorporate it.
 
@@ -35,15 +34,44 @@ at appropriate places in the code.
 
 
 **clean up fitpack_wrapper.py
-    Currently is all hacked together from scipy.interpolate.
+    Currently it is all hacked together from scipy.interpolate.
     There is unused functionality, commented-out functionality,
     and other undesirables.  Once it has been established what
-    we will include, that stuff needs to be cleaned up, and the
+    we will include, and what should be accessible to the user, 
+    that stuff needs to be cleaned up, and the
     rest needs to be either removed or set aside.
+    
+
+**better handling of variable types
+    Currently everything is cast to a float64 if it is not already
+    a float32.  Is this the best way to do it?
+
+    There's also the question of Y being 2-dimensional and/or
+    incorporating strings for record arrays.  My instinct is to
+    have Interpolate1d only interpolate functions that are from
+    R1 -> R1.  That's how it is currently designed.  Other stuff
+    can be made as wrappers around Interpolate1d.
+    
+    See also "allow y to be 2-dimensional?" below
+    
+    
+
+*********** DOCUENTATION-TYPE AND NON-URGENT TASKS *******
+
+**improve regression tests
+    desired for fitpack_wrapper and _interpolate_wrapper
+    as well as Interpolate1d.  What I have now is
+    really basic.
 
 
-**comment interpolate1d
-    There's comments there already, but they should be
+**improve unit tests
+    interpolate1d.py has its own unit tests, which also call
+    the unit tests of fitpack_wrapper and _interpolate_wrapper.
+    But they could surely be made better.
+
+
+**comment all files
+    There are comments there already, but they should be
     made better.  Plus, features are changing, which requires
     updating the documentation.
 
@@ -61,29 +89,41 @@ at appropriate places in the code.
 
 
 **figure out NumPy stuff with vectorize.
-    In function interpolate1d.__call__
+    In function Interpolate1d.__call__
     It would be nice to remove the hack I used.
     I believe vectorize is supposed to handle arrays of
     length 0, but it's not working on my computer.
+    
+    
+    
+********* LONGER TERM ************
 
-
-**better handling of variable types
-    Currently everything is cast to a float64 if it is not already
-    a float32.  Is this the best way to do it?
-
-    Also, for the future, code should be added for record arrays,
-    which mix real values with strings.  This is, I believe already
-    largely supported, but that's not because the code was written
-    with that in mind.  I haven't thought through the details.
-
-    Perhaps this should be done as another function/class which 
-    wraps interpolate1d.
-
-
-**improve regression tests
-    desired for fitpack_wrapper and _interpolate_wrapper
-    as well as interpolate1d.
-
+**update for 2D and ND
+    This will probably take the form of two additional
+    classes both based on interpolate1d.  Thus it probably
+    shouldn't be done until interpolate1d is more settled.
+    
+    There is an interesting problem here.  Most of the extensions
+    I have assume a regular grid.  First off, this is often not general.
+    Secondly, if I DO use a regular grid, how do I deal with bad
+    data?  The best way is probably a pre-processing where you
+    interpolate values for the bad points (linear would be a nice simple
+    way to do it at first, just to get it working)
+    
+    We should probably use something other than FITPACK for this.
+    First off it's at most 2D.  But much worse, it doesn't evaluate at
+    a set of points; it evaluates over a grid, which requires inputs
+    being in sorted order (both in x and y coordinates).  This makes
+    input inconvenient and the code runs a lot slower than ndimage.
+    ND image has 2 main downsides :1) it requires x and y be uniform
+    spacing (since its really interpolating entries of an array, rather
+    than values of a function on Rn), and 2) the C code is TERRIBLY
+    documented/commented.  But that can be fixed.
+    
+    So we may have two separate classes: Interpolate1d which is
+    based on FITPACK (or something else, depending on what
+    happens with the smoothing parameter), and InterpolateNd
+    which is based on ndimage.
 
 **high-level road map
     when the module is more established, there should be a page on
@@ -97,19 +137,6 @@ at appropriate places in the code.
     differentiation of functionality (one for splines, one for simple
     operations, etc), rather than being a holdover of where they
     were stolen from.
-
-
-**update for 2D and ND
-    This will probably take the form of two additional
-    classes both based on interpolate1d.  Thus it probably
-    shouldn't be done until interpolate1d is more settled.
-    
-    There is an interesting problem here.  Most of the extensions
-    I have assume a regular grid.  First off, this is often not general.
-    Secondly, if I DO use a regular grid, how do I deal with bad
-    data?  The best way is probably a pre-processing where you
-    interpolate values for the bad points (linear would be a nice simple
-    way to do it at first, just to get it working)
 
 
 **allow y to be 2-dimensional?

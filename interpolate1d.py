@@ -130,7 +130,7 @@ class Interpolate1d(object):
         x -- list or NumPy array
             x includes the x-values for the data set to
             interpolate from.  It must be sorted in
-            ascending order
+            ascending order.
                 
         y -- list or NumPy array
             y includes the y-values for the data set  to
@@ -159,7 +159,7 @@ class Interpolate1d(object):
             a number') for all values outside the range of x.
         
         remove_bad_data -- bool
-            indicates whether to remove bad data.
+            indicates whether to remove bad data points from x and y.
             
         bad_data -- list
             List of values (in x or y) which indicate unacceptable data. All points
@@ -168,7 +168,7 @@ class Interpolate1d(object):
             
             numpy.NaN is always considered bad data.
             
-        Acceptable Input Strings
+        Some Acceptable Input Strings
         ------------------------
         
             "linear" -- linear interpolation : default
@@ -192,7 +192,8 @@ class Interpolate1d(object):
     """
     # FIXME: more informative descriptions of sample arguments
     # FIXME: examples in doc string
-    # FIXME : Allow copying or not of arrays.  non-copy + remove_bad_data should flash a warning (esp if we interpolate missing values), but work anyway.
+    # FIXME : Allow copying or not of arrays.  non-copy + remove_bad_data should flash 
+    #           a warning (esp if we interpolate missing values), but work anyway.
     
     def __init__(self, x, y, kind='linear', low=np.NaN, high=np.NaN, \
                         kindkw={}, lowkw={}, highkw={}, \
@@ -203,8 +204,7 @@ class Interpolate1d(object):
         # check acceptable size and dimensions
         x = np.array(x)
         y = np.array(y)
-        assert len(x) > 0 and len(y) > 0 , "Interpolate1D does not support\
-                                        arrays of length 0"
+        assert len(x) > 0 and len(y) > 0 , "Arrays cannot be of zero length"
         assert x.ndim == 1 , "x must be one-dimensional"
         assert y.ndim == 1 , "y must be one-dimensional" 
         assert len(x) == len(y) , "x and y must be of the same length"
@@ -213,13 +213,14 @@ class Interpolate1d(object):
         if remove_bad_data:
             x, y = self._remove_bad_data(x, y, bad_data)
         
+        # store data
         # FIXME : may be good to let x and y be initialized later, or changed after-the-fact
         self._init_xy(x, y)
         
         # store interpolation functions for each range
-        self.kind = self._init_interp_method(self._x, self._y, kind, kindkw)
-        self.low = self._init_interp_method(self._x, self._y, low, lowkw)
-        self.high = self._init_interp_method(self._x, self._y, high, highkw)
+        self.kind = self._init_interp_method(kind, kindkw)
+        self.low = self._init_interp_method(low, lowkw)
+        self.high = self._init_interp_method(high, highkw)
 
     def _remove_bad_data(self, x, y, bad_data = [None, np.NaN]):
         """ removes data points whose x or y coordinate is
@@ -242,7 +243,7 @@ class Interpolate1d(object):
         self._x = make_array_safe(x, self._xdtype).copy()
         self._y = make_array_safe(y, self._ydtype).copy()
         
-    def _init_interp_method(self, x, y, interp_arg, kw):
+    def _init_interp_method(self, interp_arg, kw):
         """
             User provides interp_arg and dictionary kw.  _init_interp_method
             returns the interpolating function from x and y specified by interp_arg,
@@ -295,7 +296,11 @@ class Interpolate1d(object):
             result.set_xy(self._x, self._y)
                 
         # user passes a function to be called
-        elif isfunction(interp_arg) and interp.func_code.argcount == 3:
+        # FIXME : I think there is too much flexibility allowed here; it makes
+        #       there be more pathological side cases to consider.  Functions
+        #       should perhaps be reqired to be of the form f(x, y, newx, **kw)
+        elif isfunction(interp_arg) and interp.func_code.argcount >= 3:
+            # assume x, y and newx are all passed to interp_arg
             result = lambda new_x : interp_arg(self._x, self._y, new_x, **kw)
         elif isfunction(interp_arg):
             result = lambda new_x : interp_arg(new_x, **kw)
@@ -306,7 +311,7 @@ class Interpolate1d(object):
             
         return result
 
-    def __call__(self, x):
+    def __call__(self, newx):
         """
             Input x must be in sorted order.
             Breaks x into pieces in-range, below-range, and above range.
@@ -314,24 +319,24 @@ class Interpolate1d(object):
         """
         # FIXME : make_array_safe may also be called within the interpolation technique.
         #   waste of time, but ok for the time being.
-        x = make_array_safe(x)
+        newx = make_array_safe(newx)
         
         # masks indicate which elements fall into which interpolation region
-        low_mask = x<self._x[0]
-        high_mask = x>self._x[-1]
+        low_mask = newx<self._x[0]
+        high_mask = newx>self._x[-1]
         interp_mask = (~low_mask) & (~high_mask)
         
         # use correct function for x values in each region
-        if len(x[low_mask]) == 0: new_low=np.array([])  # FIXME : remove need for if/else.
+        if len(newx[low_mask]) == 0: new_low=np.array([])  # FIXME : remove need for if/else.
                                                                             # if/else is a hack, since vectorize is failing
                                                                             # to work on lists/arrays of length 0
                                                                             # on the computer where this is being
                                                                             # developed
-        else: new_low = self.low(x[low_mask])
-        if len(x[interp_mask])==0: new_interp=np.array([])
-        else: new_interp = self.kind(x[interp_mask])
-        if len(x[high_mask]) == 0: new_high = np.array([])
-        else: new_high = self.high(x[high_mask])
+        else: new_low = self.low(newx[low_mask])
+        if len(newx[interp_mask])==0: new_interp=np.array([])
+        else: new_interp = self.kind(newx[interp_mask])
+        if len(newx[high_mask]) == 0: new_high = np.array([])
+        else: new_high = self.high(newx[high_mask])
         
         result = np.concatenate((new_low, new_interp, new_high)) # FIXME : deal with mixed datatypes
                                                                                           # Would be nice to say result = zeros(dtype=?)
@@ -349,7 +354,7 @@ class Test(unittest.TestCase):
     def test_interpolate_wrapper(self):
         """ run unit test contained in interpolate_wrapper.py
         """
-        print "\n\nTESTING _interpolate_wrapper MODULE"
+        #print "\n\nTESTING _interpolate_wrapper MODULE"
         from interpolate_wrapper import Test
         T = Test()
         T.runTest()
@@ -357,7 +362,7 @@ class Test(unittest.TestCase):
     def test_fitpack_wrapper(self):
         """ run unit test contained in fitpack_wrapper.py
         """
-        print "\n\nTESTING _fitpack_wrapper MODULE"
+        #print "\n\nTESTING _fitpack_wrapper MODULE"
         from fitpack_wrapper import Test
         T = Test()
         T.runTest()
@@ -367,8 +372,7 @@ class Test(unittest.TestCase):
         """
         
         # make sure : an instance of a callable class in which
-        # x and y haven't been initiated works
-        print 'hello'
+        #   x and y haven't been initiated works
         N = 7 #must be > 5
         x = np.arange(N)
         y = np.arange(N)
@@ -402,8 +406,7 @@ class Test(unittest.TestCase):
         self.assertAllclose(new_x, new_y)
         
     def test_intper1d(self):
-        """
-            make sure : interp1d works, at least in the linear case
+        """ make sure : interp1d works, at least in the linear case
         """
         N = 7
         x = arange(N)
@@ -413,11 +416,10 @@ class Test(unittest.TestCase):
         self.assertAllclose(new_x, new_y)
         
     def test_spline1_defaultExt(self):
-        """
-            make sure : spline order 1 (linear) interpolation works correctly
+        """ make sure : spline order 1 (linear) interpolation works correctly
             make sure : default extrapolation works
         """
-        print "\n\nTESTING LINEAR (1st ORDER) SPLINE"
+        #print "\n\nTESTING LINEAR (1st ORDER) SPLINE"
         N = 7 # must be > 5
         x = np.arange(N)
         y = np.arange(N)
@@ -430,13 +432,12 @@ class Test(unittest.TestCase):
         self.assert_(new_y[-1] == 599.73)
         
     def test_spline2(self):
-        """
-            make sure : order-2 splines work on linear data
+        """ make sure : order-2 splines work on linear data
             make sure : order-2 splines work on non-linear data
             make sure : 'cubic' and 'quad' as arguments yield
                                 the desired spline
         """
-        print "\n\nTESTING 2nd ORDER SPLINE"
+        #print "\n\nTESTING 2nd ORDER SPLINE"
         N = 7 #must be > 5
         x = np.arange(N)
         y = np.arange(N)
@@ -462,11 +463,10 @@ class Test(unittest.TestCase):
         
         
     def test_linear(self):
-        """
-            make sure : linear interpolation works 
+        """ make sure : linear interpolation works 
             make sure : linear extrapolation works
         """
-        print "\n\nTESTING LINEAR INTERPOLATION"
+        #print "\n\nTESTING LINEAR INTERPOLATION"
         N = 7
         x = arange(N)
         y = arange(N)
@@ -482,11 +482,6 @@ class Test(unittest.TestCase):
         
         self.assertAllclose(new_x, new_y)
         
-    
-        
-    
-        
-    
         
 if __name__ == '__main__':
     unittest.main()                 
