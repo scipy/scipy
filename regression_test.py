@@ -1,4 +1,5 @@
-""" regression test:
+""" 
+    regression test:
 
     This script runs a simple regression test on the functionality of
     the interpolation module.  Currently, when run, it times each
@@ -15,7 +16,7 @@ from interpolate1d import Test
 filename = 'regression_test.dbm'
 
 log_total = shelve.open(filename)
-current_time = str(time.localtime()[0:5]) # specified up to minute
+current_time = str(time.localtime()[0:5]) # specified up to the minute
 
 # run all tests in interpolate1d's test class
 test_list = [name for name in dir(Test) if name.find('test_') == 0]

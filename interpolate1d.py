@@ -1,30 +1,3 @@
-"""
-    Interpolation of 1D data
-
-    This module provides several functions and classes for interpolation
-    and extrapolation of 1D data (1D in both input and output).  The
-    primary function provided is:
-
-        interp1d(x, y, new_x) : from data points x and y, interpolates
-                                        values for points in new_x and
-                                        returns them as an array.
-
-    Classes provided include:
-
-        Interpolate1d  :   an object for interpolation of
-                                various kinds.  interp1d is a wrapper
-                                around this class.
-                                
-        Spline : an object for spline interpolation
-        
-    Functions provided include:
-
-        linear : linear interpolation
-        logarithmic :  logarithmic interpolation
-        block : block interpolation
-        block_average_above : block average above interpolation
-
-"""
 
 # FIXME: information strings giving mathematical descriptions of the actions
 #     of the functions.
@@ -119,44 +92,77 @@ def interp1d(x, y, new_x, kind='linear', low=np.NaN, high=np.NaN, \
     """
     return Interpolate1d(x, y, kind=kind, low=low, high=high, \
                                     kindkw=kindkw, lowkw=lowkw, highkw=highkw, \
-                                    remove_bad_data = remove_bad_data, bad_data=bad_data)(new_x)
+                                    remove_bad_data = remove_bad_data, bad_data=bad_data\
+                                    )(new_x)
 
 class Interpolate1d(object):
-    """ A class for interpolation of 1D data.
+    """ A callable class for interpolation of 1D, real-valued data.
         
         Parameters
         -----------
             
-        x -- list or NumPy array
+        x -- list or 1D NumPy array
             x includes the x-values for the data set to
             interpolate from.  It must be sorted in
             ascending order.
                 
-        y -- list or NumPy array
+        y -- list or 1D NumPy array
             y includes the y-values for the data set  to
-            interpolate from.  Note that y must be
-            one-dimensional.
+            interpolate from.  Note that 2-dimensional
+            y is not supported.
                 
         Optional Arguments
         -------------------
         
-        kind -- Usu. function or string.  But can be any type.
-            Specifies the type of extrapolation to use for values within
-            the range of x.  If a string is passed, it will look for an object
-            or function with that name and call it when evaluating.  If 
-            a function or object is passed, it will be called when interpolating.
-            A constant signifies a function which returns that constant
-            (e.g. val and lambda x : val are equivalent).  Defaults to linear
-            interpolation.
+        kind -- Usu. string or function.  But can be any type.
+            Specifies the type of interpolation to use for values within
+            the range of x.
+            
+            If a string is passed, it will look for an object
+            or function with that name and call it when evaluating.
+            This is the primary mode of operation.  See below for list
+            of acceptable strings.
+            
+            By default, linear interpolation is used.
+            
+            Other options are also available:
+            
+                If a callable class is passed, it is assumed to have format
+                    instance = Class(x, y, **kw).
+                It is instantiated and used for interpolation when the instance
+                of Interpolate1d is called.
+                
+                If a callable object with method "init_xy" or "set_xy" is
+                passed, that method will be used to set x and y, and the
+                object will be called during interpolation.
+                
+                If a function is passed, it will be called when interpolating.
+                It is assumed to have the form 
+                    newy = kind(x, y, newx), 
+                where x, y, newx, and newy are all numpy arrays.
+                
+                A primitive type which is not a string signifies a function
+                which is identically that value (e.g. val and 
+                lambda x, y, newx : val are equivalent).
+            
+        low  -- same as for kind
+            How to extrapolate values for inputs below the range of x.
+            Same options as for 'kind'.  Defaults to returning numpy.NaN ('not 
+            a number') for all values below the range of x.
+            
+        high  -- same as for kind
+            How to extrapolate values for inputs above the range of x.
+            Same options as for 'kind'.  Defaults to returning numpy.NaN ('not 
+            a number') for all values above the range of x.
             
         kindkw -- dictionary
             If kind is a class, function or string, additional keyword arguments
-            may be needed (example: if you want a 2nd order spline, kind = 'spline'
-            and kindkw = {'k' : 2}.
+            may be needed (example: if you want a 2nd order spline, you could
+            set kind = 'spline' and kindkw = {'k' : 2}.)
             
-        low (high) -- same as for kind
-            Same options as for 'kind'.  Defaults to returning numpy.NaN ('not 
-            a number') for all values outside the range of x.
+        lowkw -- like kindkw, but for low extrapolation
+            
+        highkw -- like kindkw, except for high extrapolation
         
         remove_bad_data -- bool
             indicates whether to remove bad data points from x and y.
@@ -177,7 +183,10 @@ class Interpolate1d(object):
             "block_average_above' -- block average above
             "Spline" -- spline interpolation.  keyword k (defaults to 3) 
                 indicates order of spline
-            numpy.NaN -- return numpy.NaN
+            "quad", "quadratic" -- spline interpolation order 2
+            "cubic" -- spline interpolation order 3
+            "quartic" -- spline interpolation order 4
+            "quintic" -- spline interpolation order 5
         
         Examples
         ---------
@@ -201,6 +210,11 @@ class Interpolate1d(object):
         # FIXME: don't allow copying multiple times.
         # FIXME : allow no copying, in case user has huge dataset
         
+        self._remove_bad_data = remove_bad_data
+        # remove bad data, is there is any
+        if self._remove_bad_data:
+            x, y = self._remove_bad_data(x, y, bad_data)
+        
         # check acceptable size and dimensions
         x = np.array(x)
         y = np.array(y)
@@ -209,11 +223,7 @@ class Interpolate1d(object):
         assert y.ndim == 1 , "y must be one-dimensional" 
         assert len(x) == len(y) , "x and y must be of the same length"
         
-        # remove bad data, is there is any
-        if remove_bad_data:
-            x, y = self._remove_bad_data(x, y, bad_data)
-        
-        # store data
+        # store data, and remove bad data points is applicable
         # FIXME : may be good to let x and y be initialized later, or changed after-the-fact
         self._init_xy(x, y)
         
@@ -221,6 +231,14 @@ class Interpolate1d(object):
         self.kind = self._init_interp_method(kind, kindkw)
         self.low = self._init_interp_method(low, lowkw)
         self.high = self._init_interp_method(high, highkw)
+
+    def _init_xy(self, x, y):
+        
+        # select proper dataypes and make arrays
+        self._xdtype = {np.float32 : np.float32}.setdefault(type(x[0]), np.float64) # unless data is float32,  cast to float64
+        self._ydtype = {np.float32 : np.float32}.setdefault(type(y[0]), np.float64)
+        self._x = make_array_safe(x, self._xdtype).copy()
+        self._y = make_array_safe(y, self._ydtype).copy()
 
     def _remove_bad_data(self, x, y, bad_data = [None, np.NaN]):
         """ removes data points whose x or y coordinate is
@@ -235,18 +253,11 @@ class Interpolate1d(object):
         x = x[mask]
         y = y[mask]
         return x, y
-    
-    def _init_xy(self, x, y):
-        # select proper dataypes and make arrays
-        self._xdtype = {np.float32 : np.float32}.setdefault(type(x[0]), np.float64) # unless data is float32,  cast to float64
-        self._ydtype = {np.float32 : np.float32}.setdefault(type(y[0]), np.float64)
-        self._x = make_array_safe(x, self._xdtype).copy()
-        self._y = make_array_safe(y, self._ydtype).copy()
         
     def _init_interp_method(self, interp_arg, kw):
         """
             User provides interp_arg and dictionary kw.  _init_interp_method
-            returns the interpolating function from x and y specified by interp_arg,
+            returns the interpolating function specified by interp_arg,
             possibly with extra keyword arguments given in kw.
         
         """
@@ -264,17 +275,24 @@ class Interpolate1d(object):
             result = lambda new_x : func(self._x, self._y, new_x, **kw)
         elif interp_arg in ['Spline', Spline, 'spline']:
             # use the Spline class from fitpack_wrapper
+            # k = 3 unless otherwise specified
             result = Spline(self._x, self._y, **kw)
-        elif interp_arg in ['cubic', 'Cubic', 'Quadratic', \
-                                'quadratic', 'Quad', 'quad', 'Quintic', 'quintic']:
+        elif interp_arg in ['Quadratic', 'quadratic', 'Quad', 'quad', \
+                                'Cubic', 'cubic', \
+                                'Quartic', 'quartic', 'Quar', 'quar',\
+                                'Quintic', 'quintic', 'Quin', 'quin']:
             # specify specific kinds of splines
             if interp_arg in ['Quadratic', 'quadratic', 'Quad', 'quad']:
                 result = Spline(self._x, self._y, k=2)
-            elif interp_arg in ['cubic', 'Cubic']:
+            elif interp_arg in ['Cubic', 'cubic']:
                 result = Spline(self._x, self._y, k=3)
-            elif interp_arg in ['Quintic', 'quintic']:
+            elif interp_arg in ['Quartic', 'quartic', 'Quar', 'quar']:
                 result = Spline(self._x, self._y, k=4)
-                
+            elif interp_arg in ['Quintic', 'quintic', 'Quin', 'quin']:
+                result = Spline(self._x, self._y, k=5)
+        elif isinstance(interp_arg, str):
+            raise TypeError, "input string %s not valid" % interp_arg
+        
         # secondary usage : user passes a callable class
         elif isclass(interp_arg) and hasattr(interp_arg, '__call__'):
             if hasattr(interp_arg, 'init_xy'):
@@ -310,7 +328,8 @@ class Interpolate1d(object):
 
     def __call__(self, newx):
         """
-            Input x must be in sorted order.
+            Input x must be a list or NumPy array in sorted order.
+            
             Breaks x into pieces in-range, below-range, and above range.
             Performs appropriate operation on each and concatenates results.
         """

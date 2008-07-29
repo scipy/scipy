@@ -1,8 +1,15 @@
 """ sample operation script
+
+    Creates a sample dataset, performs several
+    basic interpolations on it, and plots results
+    for comparison.  Pauses, then does the same
+    thing using different user-input options.
+
     Note that in the plot, quadratic, cubic and
     quintic lines blur together.  You can comment
     two out to see one clearly.
 """
+
 import numpy as np
 import interpolate1d as I
 import matplotlib.pyplot as P
@@ -11,6 +18,7 @@ import fitpack_wrapper
 import time
 
 
+    
 ## Interpolating in-range data.  Basic operation
 if True:
     
@@ -37,8 +45,8 @@ if True:
     y_cubic = interp(newx)
     
     # 4th order spline
-    interp = I.Interpolate1d(x, y, 'quintic')
-    y_quintic = interp(newx)
+    interp = I.Interpolate1d(x, y, 'quartic')
+    y_quartic = interp(newx)
 
     # plot result
     print "plotting results"
@@ -47,12 +55,13 @@ if True:
     P.plot(newx, y_linear, 'b')
     P.plot(newx, y_quad, 'r')
     P.plot(newx, y_cubic, 'm')
-    P.plot(newx, y_quintic, 'y')
+    P.plot(newx, y_quartic, 'y')
     P.title( "interpolating in-range data with Interpolate1d class" )
     P.show()
     print "plotted results"
     
-    time.sleep(3)
+    time.sleep(5)
+
 
 ## demoing some of the other interfac features
 if True:
@@ -78,7 +87,11 @@ if True:
     y_cubic2 = interp(newx)
 
     # 4th order spline
-    interp = I.Interpolate1d(x, y, 'quintic')
+    interp = I.Interpolate1d(x, y, 'Quartic')
+    y_quartic2 = interp(newx)
+    
+    # 5th order spline
+    interp = I.Interpolate1d(x, y, 'Quintic')
     y_quintic2 = interp(newx)
 
     # plot result
@@ -88,10 +101,34 @@ if True:
     P.plot(newx, y_linear2, 'b')
     P.plot(newx, y_quad2, 'r')
     P.plot(newx, y_cubic2, 'm')
+    P.plot(newx, y_quartic2, 'y')
     P.plot(newx, y_quintic2, 'y')
     P.title( "same data through different interface" )
     P.show()
     print "plotted results"
+        
+
+# demoing block_average_above and logarithmic
+if False:
+    N = 10.0
+    x = np.arange(N)
+    x[1] = 1.2 # make it grid non-regular
+    y = np.sin(x)    
+    newx = np.arange(.05, N, .05)
+
+    # block interpolation
+    # FIXME : I'm not really familiar with logarithmic
+    #   interpolation and thus can't comment on what these
+    #   data should look like, but this looks weird.
+    interp = I.Interpolate1d(x, y, 'logarithmic')
+    y_logarithmic = interp(newx)
+
+    # linear interpolation
+    interp = I.Interpolate1d(x, y, 'block_average_above')
+    y_blockavgabove = interp(newx)
     
-    #time.sleep(20)
-    
+    # plotting the results
+    P.hold(true)
+    P.plot(newx, y_logarithmic, 'g')
+    P.plot(newx, y_blockavgabove, 'r')
+    P.show()

@@ -10,11 +10,12 @@ Interpolate1d.  For this reason, users may wish to get
 under the hood.
 
 """
-# FIXME : clean up this file!  scipy.interpolate contained a lot of
+# FIXME : CLEAN UP THIS FILE!  scipy.interpolate contained a lot of
 #       nice functionality that is only partially in this file.
 #       The question is whether to copy over the full functionality
-#       to the point where we may as well include fitting.py form
-#       scipy.interpolate, or whether we should strip is down some.
+#       to the point where we may as well include fitting.py from
+#       scipy.interpolate, or whether we should strip this down some.
+#       Until that's decided, cleaning is premature.
 
 import numpy as np
 
