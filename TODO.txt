@@ -103,7 +103,7 @@ at appropriate places in the code.
 
 **update for 2D and ND
     This will probably take the form of two additional
-    classes both based on interpolate1d.  Thus it probably
+    classes both modelled after interpolate1d.  Thus it probably
     shouldn't be done until interpolate1d is more settled.
     
     There is an interesting problem here.  Most of the extensions
@@ -114,7 +114,7 @@ at appropriate places in the code.
     way to do it at first, just to get it working)
     
     We should probably use something other than FITPACK for this.
-    First off it's at most 2D.  But much worse, it doesn't evaluate at
+    But firstly it's at most 2D.  Much worse, it doesn't evaluate at
     a set of points; it evaluates over a grid, which requires inputs
     being in sorted order (both in x and y coordinates).  This makes
     input inconvenient and the code runs a lot slower than ndimage.
@@ -127,6 +127,13 @@ at appropriate places in the code.
     based on FITPACK (or something else, depending on what
     happens with the smoothing parameter), and InterpolateNd
     which is based on ndimage.
+    
+    Another option is to have two classes: one for uniformly spaced data and
+    and one for scattered data.  Regularly spaced would use NDImage, and
+    scattered would start as an inefficient wrapper around FITPACK.  But longer
+    term the scattered data could be done with Delaunay triangulation,
+    perhaps something that would implicitly calculate the convex hull
+    of the points and interpolate within it.
 
 **high-level road map
     when the module is more established, there should be a page on
