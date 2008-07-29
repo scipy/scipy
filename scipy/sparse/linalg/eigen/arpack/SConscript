@@ -24,7 +24,6 @@ if not st:
 config.Finish()
 write_info(env)
 
-print env.Dump()
 # Build arpack
 arpack_src = [pjoin("ARPACK", "SRC", s) for s in [ "cgetv0.f", "cnaitr.f",
 "cnapps.f", "cnaup2.f", "cnaupd.f", "cneigh.f", "cneupd.f", "cngets.f",
