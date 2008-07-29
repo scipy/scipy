@@ -1,16 +1,20 @@
+*. _remove_bad_data should be left up to the interpolation method if it knows what to do.
+   otherwise, it is handled by this top level class.
+   And, we definitely don't want the list comprehension in the remove_bad_data class.
+
 *. Function signatures:
     
     def interp1d(x, y, new_x, kind='linear', low=np.NaN, high=np.NaN, \
                         kindkw={}, lowkw={}, highkw={}, \
                         remove_bad_data = False, bad_data=[], interp_axis = 0):
-
-     o. the trailing \ for new lines are not necessary for functions since line continuation
-        is implicit with the open/close parentheses.
-     o. [minor] I would just use NaN instead of np.NaN.  						
+    
      o. It is dangerous to initialize containers as default arguments because they are
         effectively a singleton for the function.  We can discuss this if you don't know
         what I am talking about.
      o. kindkw, lowkw, and highkw aren't really necessary I don't think.  They should go.
+     Xo. [minor] I would just use NaN instead of np.NaN.  						
+     Xo. the trailing \ for new lines are not necessary for functions since line continuation
+        is implicit with the open/close parentheses.
 	 Xo. Do you need both remove_bad_data and bad_data?  If bad_data is None, then you 
 	    don't remove bad_data...
 	 Xo. I think I would change interp_axis to just be axis.  This is consistent with many
@@ -23,14 +27,6 @@
 	I think all of this might simplify the interface to the following:
 	
     def interp1d(x, y, new_x, kind='linear', low=NaN, high=NaN, bad_data=None, axis=-1):
-
-*. _remove_bad_data should be left up to the interpolation method if it knows what to do.
-   otherwise, it is handled by this top level class.
-   And, we definitely don't want the list comprehension in the remove_bad_data class.
-
-X*. I am glad to see your docstrings.
-
-X*. Move tests into a seprate test directory.
 
 X*. Follow scipy/FORMAT_GUIDLINES.txt in the main scipy directory.
 
@@ -67,6 +63,9 @@ For example:
 	     instead of:
 
 	        def base_class()
+X*. I am glad to see your docstrings.
+
+X*. Move tests into a seprate test directory.
 
 X*. make_array_safe
    I would prefer 'make_array_safe' named atleast_1d_and_contiguous().  This is more specific

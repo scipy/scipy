@@ -9,7 +9,7 @@ __doc__ = \
     and extrapolation of 1D (in both input and output) real-valued.  The
     primary function provided is:
 
-        interp1(x, y, new_x) :  from data points (x[i], y[i]), interpolates
+        interp1d(x, y, new_x) :  from data points (x[i], y[i]), interpolates
                                         values for points in new_x and
                                         returns them as an array.  x and new_x
                                         must both be in sorted order.
