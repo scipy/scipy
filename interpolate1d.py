@@ -6,8 +6,7 @@ from fitpack_wrapper import Spline
 import numpy as np
 from numpy import array, arange, empty, float64, NaN
     
-def interp1d(x, y, new_x, interp = 'linear', low = NaN, high = NaN,
-                    interpkw = {}, lowkw={}, highkw={},
+def interp1d(x, y, new_x, interp = 'linear', extrap_low = NaN, extrap_high = NaN,
                     bad_data = None):
     """ A function for interpolation of 1D data.
         
@@ -38,11 +37,6 @@ def interp1d(x, y, new_x, interp = 'linear', low = NaN, high = NaN,
             a function or object is passed, it will be called when interpolating.
             If nothing else, assumes the argument is intended as a value
             to be returned for all arguments.  Defaults to linear interpolation.
-            
-        kindkw -- dictionary
-            If kind is a class, function or string, additional keyword arguments
-            may be needed (example: if you want a 2nd order spline, kind = 'spline'
-            and kindkw = {'k' : 2}.
             
         low (high) -- same as for kind
             Same options as for 'kind'.  Defaults to returning numpy.NaN ('not 
@@ -82,11 +76,8 @@ def interp1d(x, y, new_x, interp = 'linear', low = NaN, high = NaN,
     """
     return Interpolate1d(x, y, 
                                 interp = interp,
-                                low = low,
-                                high = high,
-                                interpkw = interpkw,
-                                lowkw = lowkw,
-                                highkw = highkw,
+                                extrap_low = extrap_low,
+                                extrap_high = extrap_high,
                                 bad_data = bad_data
                                 )(new_x)
 
@@ -123,7 +114,7 @@ class Interpolate1d(object):
             Other options are also available:
             
                 If a callable class is passed, it is assumed to have format
-                    instance = Class(x, y, **kw).
+                    instance = Class(x, y).
                 It is instantiated and used for interpolation when the instance
                 of Interpolate1d is called.
                 
@@ -149,15 +140,6 @@ class Interpolate1d(object):
             How to extrapolate values for inputs above the range of x.
             Same options as for 'kind'.  Defaults to returning numpy.NaN ('not 
             a number') for all values above the range of x.
-            
-        kindkw -- dictionary
-            If kind is a class, function or string, additional keyword arguments
-            may be needed (example: if you want a 2nd order spline, you could
-            set kind = 'spline' and kindkw = {'k' : 2}.)
-            
-        lowkw -- like kindkw, but for low extrapolation
-            
-        highkw -- like kindkw, except for high extrapolation
         
         remove_bad_data -- bool
             indicates whether to remove bad data points from x and y.
@@ -200,8 +182,8 @@ class Interpolate1d(object):
     # FIXME : Allow copying or not of arrays.  non-copy + remove_bad_data should flash 
     #           a warning (esp if we interpolate missing values), but work anyway.
     
-    def __init__(self, x, y, interp = 'linear', low = NaN, high = NaN,
-                        interpkw={}, lowkw={}, highkw={}, bad_data = None):
+    def __init__(self, x, y, interp = 'linear', extrap_low = NaN, extrap_high = NaN,
+                        bad_data = None):
         # FIXME: don't allow copying multiple times.
         # FIXME : allow no copying, in case user has huge dataset
         
@@ -222,9 +204,9 @@ class Interpolate1d(object):
         self._init_xy(x, y)
         
         # store interpolation functions for each range
-        self.interp = self._init_interp_method(interp, interpkw)
-        self.low = self._init_interp_method(low, lowkw)
-        self.high = self._init_interp_method(high, highkw)
+        self.interp = self._init_interp_method(interp)
+        self.extrap_low = self._init_interp_method(extrap_low)
+        self.extrap_high = self._init_interp_method(extrap_high)
 
     def _init_xy(self, x, y):
         
@@ -248,12 +230,9 @@ class Interpolate1d(object):
         y = y[mask]
         return x, y
         
-    def _init_interp_method(self, interp_arg, kw):
+    def _init_interp_method(self, interp_arg):
         """
-            User provides interp_arg and dictionary kw.  _init_interp_method
-            returns the interpolating function specified by interp_arg,
-            possibly with extra keyword arguments given in kw.
-        
+            returns the interpolating function specified by interp_arg.
         """
         # FIXME : error checking specific to interpolation method.  x and y long
         #   enough for order-3 spline if that's indicated, etc.  Functions should throw
@@ -266,11 +245,11 @@ class Interpolate1d(object):
             # string used to indicate interpolation method,  Select appropriate function
             func = {'linear':linear, 'logarithmic':logarithmic, 'block':block, \
                         'block_average_above':block_average_above}[interp_arg]
-            result = lambda new_x : func(self._x, self._y, new_x, **kw)
+            result = lambda new_x : func(self._x, self._y, new_x)
         elif interp_arg in ['Spline', 'spline']:
             # use the Spline class from fitpack_wrapper
             # k = 3 unless otherwise specified
-            result = Spline(self._x, self._y, **kw)
+            result = Spline(self._x, self._y)
         elif interp_arg in ['Quadratic', 'quadratic', 'Quad', 'quad', \
                                 'Cubic', 'cubic', \
                                 'Quartic', 'quartic', 'Quar', 'quar',\
@@ -290,13 +269,13 @@ class Interpolate1d(object):
         # secondary usage : user passes a callable class
         elif isclass(interp_arg) and hasattr(interp_arg, '__call__'):
             if hasattr(interp_arg, 'init_xy'):
-                result = interp_arg(**kw)
+                result = interp_arg()
                 result.init_xy(self._x, self._y)
             elif hasattr(interp_arg, 'set_xy'):
-                result = interp_arg(**kw)
+                result = interp_arg()
                 result.set_xy(self._x, self._y)
             else:
-                result = interp_arg(x, y, **kw)
+                result = interp_arg(x, y)
                 
         # user passes an instance of a callable class which has yet
         # to have its x and y initialized.
@@ -308,9 +287,9 @@ class Interpolate1d(object):
             result.set_xy(self._x, self._y)
                 
         # user passes a function to be called
-        # Assume function has form of f(x, y, newx, **kw)
+        # Assume function has form of f(x, y, newx)
         elif isfunction(interp_arg):
-            result = lambda new_x : interp_arg(self._x, self._y, new_x, **kw)
+            result = lambda new_x : interp_arg(self._x, self._y, new_x)
         
         # default : user has passed a default value to always be returned
         else:
@@ -344,11 +323,11 @@ class Interpolate1d(object):
                                                                             # to work on lists/arrays of length 0
                                                                             # on the computer where this is being
                                                                             # developed
-        else: new_low = self.low(newx_array[low_mask])
+        else: new_low = self.extrap_low(newx_array[low_mask])
         if len(newx_array[interp_mask])==0: new_interp=np.array([])
         else: new_interp = self.interp(newx_array[interp_mask])
         if len(newx_array[high_mask]) == 0: new_high = np.array([])
-        else: new_high = self.high(newx_array[high_mask])
+        else: new_high = self.extrap_high(newx_array[high_mask])
         
         result_array = np.concatenate((new_low, new_interp, new_high)) # FIXME : deal with mixed datatypes
                                                                                           # Would be nice to say result = zeros(dtype=?)

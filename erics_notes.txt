@@ -11,7 +11,7 @@
      o. It is dangerous to initialize containers as default arguments because they are
         effectively a singleton for the function.  We can discuss this if you don't know
         what I am talking about.
-     o. kindkw, lowkw, and highkw aren't really necessary I don't think.  They should go.
+     Xo. kindkw, lowkw, and highkw aren't really necessary I don't think.  They should go.
      Xo. [minor] I would just use NaN instead of np.NaN.  						
      Xo. the trailing \ for new lines are not necessary for functions since line continuation
         is implicit with the open/close parentheses.
