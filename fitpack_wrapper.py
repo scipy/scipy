@@ -19,7 +19,7 @@ under the hood.
 
 import numpy as np
 
-import dfitpack # extension module containing FITPACK subroutines in Fortran
+import _dfitpack # extension module containing FITPACK subroutines in Fortran
 
 
 class Spline(object):
@@ -69,7 +69,7 @@ class Spline(object):
     def init_xy(self, x, y):
         
         #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
-        data = dfitpack.fpcurf0(x, y, self._k, w=self._w,
+        data = _dfitpack.fpcurf0(x, y, self._k, w=self._w,
                                 xb=self._bbox[0], xe=self._bbox[1], s=self._s)
         if data[-1]==1:
             # nest too small, setting to maximum bound
@@ -95,7 +95,7 @@ class Spline(object):
         fpint.resize(nest)
         nrdata.resize(nest)
         args = data[:8] + (t,c,n,fpint,nrdata,data[13])
-        data = dfitpack.fpcurf1(*args)
+        data = _dfitpack.fpcurf1(*args)
         return data
 
     def set_smoothing_factor(self, s):
@@ -109,7 +109,7 @@ class Spline(object):
                           'LSQ spline with fixed knots')
             return
         args = data[:6] + (s,) + data[7:]
-        data = dfitpack.fpcurf1(*args)
+        data = _dfitpack.fpcurf1(*args)
         if data[-1]==1:
             # nest too small, setting to maximum bound
             data = self._reset_nest(data)
@@ -125,8 +125,8 @@ class Spline(object):
         if self._is_initialized:
             if len(x) == 0: return np.array([]) #hack to cope with shape (0,)
             if nu is None:
-                return dfitpack.splev(*(self._eval_args+(x,)))
-            return dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
+                return _dfitpack.splev(*(self._eval_args+(x,)))
+            return _dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
         else:
             raise TypeError, "x and y must be set before interpolation is possible"
 
@@ -155,11 +155,11 @@ class Spline(object):
         """ Return definite integral of the spline between two
         given points.
         """
-        return dfitpack.splint(*(self._eval_args+(a,b)))
+        return _dfitpack.splint(*(self._eval_args+(a,b)))
 
     def derivatives(self, x):
         """ Return all derivatives of the spline at the point x."""
-        d,ier = dfitpack.spalde(*(self._eval_args+(x,)))
+        d,ier = _dfitpack.spalde(*(self._eval_args+(x,)))
         assert ier==0,`ier`
         return d
 
@@ -170,7 +170,7 @@ class Spline(object):
         """
         k = self._data[5]
         if k==3:
-            z,m,ier = dfitpack.sproot(*self._eval_args[:2])
+            z,m,ier = _dfitpack.sproot(*self._eval_args[:2])
             assert ier==0,`ier`
             return z[:m]
         raise NotImplementedError,\

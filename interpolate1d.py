@@ -210,9 +210,8 @@ class Interpolate1d(object):
         # FIXME: don't allow copying multiple times.
         # FIXME : allow no copying, in case user has huge dataset
         
-        self._remove_bad_data = remove_bad_data
         # remove bad data, is there is any
-        if self._remove_bad_data:
+        if remove_bad_data:
             x, y = self._remove_bad_data(x, y, bad_data)
         
         # check acceptable size and dimensions

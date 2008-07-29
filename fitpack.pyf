@@ -1,7 +1,7 @@
 !    -*- f90 -*-
 ! Author: Pearu Peterson <pearu@cens.ioc.ee>
 !
-python module dfitpack ! in
+python module _dfitpack ! in
 
   usercode '''
 
@@ -475,5 +475,5 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        real*8 :: dblint
      end function dblint
   end interface
-end python module dfitpack
+end python module _dfitpack
 

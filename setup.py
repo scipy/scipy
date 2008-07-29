@@ -16,14 +16,14 @@ def configuration(parent_package='',top_path=None):
                          depends = ['interpolate.h'])
 
     # used by dfitpack extension
-    config.add_library('fitpack',
+    config.add_library('_fitpack',
                        sources=[join('fitpack', '*.f')],
                       )
 
     # Fortran routines (collectively "FITPACK" for spline interpolation)
-    config.add_extension('dfitpack',
+    config.add_extension('_dfitpack',
                          sources=['fitpack.pyf'],
-                         libraries=['fitpack'],
+                         libraries=['_fitpack'],
                         )
                         
     # FIXME : add documentation files
