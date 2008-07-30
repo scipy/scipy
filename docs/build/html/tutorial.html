@@ -59,7 +59,8 @@ by When new values fall outside of the range of interpolation data, the tools ca
 <h1 id="d-interpolation-with-the-functional-interface">1D Interpolation with the Functional Interface<a class="headerlink" href="#d-interpolation-with-the-functional-interface" title="Permalink to this headline">¶</a></h1>
 <div class="section">
 <h2 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
-<p>The following example uses the &#8216;interp1d&#8217; function to linearly interpolate a sin curve from a sparse set of values.:</p>
+<p>The following example uses the &#8216;interp1d&#8217; function to linearly interpolate a sin
+curve from a sparse set of values.</p>
 <pre>    # start up ipython for our examples.
     $ ipython -pylab
 
@@ -78,8 +79,9 @@ Out [10]: 0.76394372684109768
 In [9]: interp1d(x, y, array(1.2) )
 Out [10]: 0.76394372684109768
 
-    # To interpolate from these x,y values at multiple points, possibly to get a more dense set of new_x, new_y values,
-# pass a numpy array to interp1d, and the return type will also be a numpy array.
+    # To interpolate from these x,y values at multiple points, possibly to get a more dense set
+# of new_x, new_y values to approximate the function, pass a numpy array to interp1d,
+# and the return type will also be a numpy array.
     In [4]: new_x = linspace(0, 2*pi, 21)
     In [5]: new_y = interp1d(x, y, new_x)
 

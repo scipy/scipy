@@ -21,7 +21,8 @@ For 2D interpolation,
 Basic Usage
 -------------
 
-The following example uses the 'interp1d' function to linearly interpolate a sin curve from a sparse set of values.::
+The following example uses the 'interp1d' function to linearly interpolate a sin 
+curve from a sparse set of values. ::
 
 	# start up ipython for our examples.
 	$ ipython -pylab
@@ -41,24 +42,23 @@ The following example uses the 'interp1d' function to linearly interpolate a sin
     In [9]: interp1d(x, y, array(1.2) )
     Out [10]: 0.76394372684109768
     
-	# To interpolate from these x,y values at multiple points, possibly to get a more dense set of new_x, new_y values,
-    # pass a numpy array to interp1d, and the return type will also be a numpy array.
+	# To interpolate from these x,y values at multiple points, possibly to get a more dense set
+    # of new_x, new_y values to approximate the function, pass a numpy array to interp1d, 
+    # and the return type will also be a numpy array.
 	In [4]: new_x = linspace(0, 2*pi, 21)
 	In [5]: new_y = interp1d(x, y, new_x)
 
 	# Plot the results using matplotlib. [note examples assume you are running in ipython -pylab]
 	In [6]: plot(x, y, 'ro', new_x, new_y, 'b-')
     
-.. image:: interp1d_linear_simple.png
+.. image:: interp1d_linear_simple.png 
 
 ::
-    
+
     # Alternatively, x, y and new_x can also be lists (they are internally converted into arrays
     # before processing)
     In []: interp1d( [1.0, 2.0], [1.0, 2.0], [1.3] )
     Out []: array([ 1.3 ])
-	
-
 
 What happens if we pass in a new_x with values outside the range of x?  By default, new_y will be
 NaN at all such points: ::
@@ -68,7 +68,6 @@ NaN at all such points: ::
     In [7]: interp1d(x, y, array([-2, -1, 1, 2]))
     Out [8]: array([        NaN,     NaN,     0.63661977,   0.72676046])
 
-
 If we want a type of interpolation other than linear, there is a range of options which we can specify 
 with the keyword argument interp, which is usually a string.  For example::
 
@@ -77,7 +76,6 @@ with the keyword argument interp, which is usually a string.  For example::
     In [8]: plot(x, y, 'r', new_x, new_y_quadratic, 'g')
     
 .. image:: interp1d_linear_and_quadratic.png
-
 
 There is a large selection of strings which specify a range of interpolation methods.  The list includes:
 
