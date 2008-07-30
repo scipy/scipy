@@ -139,12 +139,15 @@ data. ::
 User-defined Interpolation Methods
 --------------------------------------
 
-If you want more direct control than is afforded by the string interface, this is also possible.
-Note, however, that this is not for the faint-hearted.  You must be very careful to have correct
-format, and failure to do so can cause a range of errors.
+The string interface is designed to conveniently take care of most things a user would want
+to do in a way that is easy and, when something goes wrong, informative and helpful.
+If, however, you want more direct control than is afforded by the string interface, this is also possible.
+Note, that this is trickier than using strings.  You must be very careful to have correct
+format, and failure to do so can cause a range of errors which won't necessarily result in
+informative error messages.
 
-interp can also be set to a function, a callable class, or an instance of a callable class.  If you do this, however, you will
-have to be careful about formatting.
+interp (or, equivalently, extrap_low and extrap_high) can also be set to a function, a callable 
+class, or an instance of a callable class.
 
 If a function is passed, it will be called when interpolating.
 It is assumed to have the form ::
@@ -157,7 +160,7 @@ If a callable class is passed, it is assumed to have format::
 
         instance = Class(x, y, **kw).
         
-which can then be called by
+which can then be called by ::
 
             new_y = instance(new_x)
             
@@ -166,7 +169,7 @@ passed, that method will be used to set x and y as follows: ::
 
         instance.set_xy(x, y, **kw)
         
-and the object will be called during interpolation.
+and the object will be called during interpolation. ::
 
                 new_y = instance(new_x)
                 
@@ -203,4 +206,16 @@ lambda x, y, newx : val are equivalent). ::
     In []: new_y
     Out []: array([ 7.1, 1.0, 4.0 ])
 
- 
+ ================================================
+1D Interpolation with the Object Interface
+================================================
+
+interp1d is in fact a wrapper around the class Interpolate1d.  If you want to
+interpolate multiple times from the same dataset, this can be more efficient than the
+functional interface because many interpolation methods (splines, for example) involve
+preprocessing steps which need only be performed once by the object.
+
+The only real difference between the objective and functional interfaces is that new_x
+is passed as the third argument to interp1d, whereas in the objective interface it is
+passed to an instance of Interpolate1d.  All other arguments to interp1d (x, y, interp, 
+extrap_low/high, interpkw, etc) are passed into Interpolate1d at instantiation.

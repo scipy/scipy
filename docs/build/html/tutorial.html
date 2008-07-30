@@ -149,11 +149,14 @@ In []: plot(new_x, new_y_bad, 'r', new_x, new_y_no_bad, 'g')</pre>
 </div>
 <div class="section">
 <h2 id="user-defined-interpolation-methods">User-defined Interpolation Methods<a class="headerlink" href="#user-defined-interpolation-methods" title="Permalink to this headline">¶</a></h2>
-<p>If you want more direct control than is afforded by the string interface, this is also possible.
-Note, however, that this is not for the faint-hearted.  You must be very careful to have correct
-format, and failure to do so can cause a range of errors.</p>
-<p>interp can also be set to a function, a callable class, or an instance of a callable class.  If you do this, however, you will
-have to be careful about formatting.</p>
+<p>The string interface is designed to conveniently take care of most things a user would want
+to do in a way that is easy and, when something goes wrong, informative and helpful.
+If, however, you want more direct control than is afforded by the string interface, this is also possible.
+Note, that this is trickier than using strings.  You must be very careful to have correct
+format, and failure to do so can cause a range of errors which won&#8217;t necessarily result in
+informative error messages.</p>
+<p>interp (or, equivalently, extrap_low and extrap_high) can also be set to a function, a callable
+class, or an instance of a callable class.</p>
 <p>If a function is passed, it will be called when interpolating.
 It is assumed to have the form</p>
 <div class="highlight"><pre><span class="n">newy</span> <span class="o">=</span> <span class="n">interp</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">newx</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
@@ -162,45 +165,61 @@ It is assumed to have the form</p>
 <p>If a callable class is passed, it is assumed to have format:</p>
 <pre>instance = Class(x, y, **kw).</pre>
 <p>which can then be called by</p>
-<blockquote>
-new_y = instance(new_x)</blockquote>
+<div class="highlight"><pre><span class="n">new_y</span> <span class="o">=</span> <span class="n">instance</span><span class="p">(</span><span class="n">new_x</span><span class="p">)</span>
+</pre></div>
 <p>If a callable object with method &#8220;init_xy&#8221; or &#8220;set_xy&#8221; is
 passed, that method will be used to set x and y as follows:</p>
 <div class="highlight"><pre><span class="n">instance</span><span class="o">.</span><span class="n">set_xy</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
 </pre></div>
 <p>and the object will be called during interpolation.</p>
-<blockquote>
-new_y = instance(new_x)</blockquote>
+<div class="highlight"><pre><span class="n">new_y</span> <span class="o">=</span> <span class="n">instance</span><span class="p">(</span><span class="n">new_x</span><span class="p">)</span>
+</pre></div>
 <p>If the &#8220;init_xy&#8221; and &#8220;set_xy&#8221; are not present, it will be called as</p>
 <blockquote>
 new_y = argument(new_x)</blockquote>
 <p>A primitive type which is not a string signifies a function
 which is identically that value (e.g. val and
 lambda x, y, newx : val are equivalent).</p>
-<pre># However, this behavior can be overwritten in the same way as linear interpolation,
-# by setting the keyword extrap_low (for values below the range of interpolation) and
-# extrap_high (for values above that range)
-In []: def dummy(x, y, newx, default = 5.1):
-            # Note that dummy has acceptable form
-            return np.array([ default ])
-In []: class Phony:
-            def __init__(self, val = 4.0):
-                self.val = val
-            def init_xy(self, x, y):
-                pass
-            def __call__(self, newx):
-                return self.val
-In []: x = arange(5.0)
-In []: y = arange(5.0)
-In []: new_x = np.array([ -1, .4, 7 ])
-In []: new_y = interp1d(x, y, interp = Phony,
-                                    interpkw = {'val':1.0},
-                                    extrap_low = dummy,
-                                    lowkw = {'default':7.1},
-                                    extrap_high = dummy
-                                    )
-In []: new_y
-Out []: array([ 7.1, 1.0, 4.0 ])</pre>
+<pre>   # However, this behavior can be overwritten in the same way as linear interpolation,
+   # by setting the keyword extrap_low (for values below the range of interpolation) and
+   # extrap_high (for values above that range)
+   In []: def dummy(x, y, newx, default = 5.1):
+               # Note that dummy has acceptable form
+               return np.array([ default ])
+   In []: class Phony:
+               def __init__(self, val = 4.0):
+                   self.val = val
+               def init_xy(self, x, y):
+                   pass
+               def __call__(self, newx):
+                   return self.val
+   In []: x = arange(5.0)
+   In []: y = arange(5.0)
+   In []: new_x = np.array([ -1, .4, 7 ])
+   In []: new_y = interp1d(x, y, interp = Phony,
+                                       interpkw = {'val':1.0},
+                                       extrap_low = dummy,
+                                       lowkw = {'default':7.1},
+                                       extrap_high = dummy
+                                       )
+   In []: new_y
+   Out []: array([ 7.1, 1.0, 4.0 ])
+
+================================================</pre>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">c:\home\python\Interpolate1D\docs\tutorial.rst</tt>, line 210)</p>
+Literal block ends without a blank line; unexpected unindent.</div>
+<div class="section">
+<h3 id="d-interpolation-with-the-object-interface">1D Interpolation with the Object Interface<a class="headerlink" href="#d-interpolation-with-the-object-interface" title="Permalink to this headline">¶</a></h3>
+<p>interp1d is in fact a wrapper around the class Interpolate1d.  If you want to
+interpolate multiple times from the same dataset, this can be more efficient than the
+functional interface because many interpolation methods (splines, for example) involve
+preprocessing steps which need only be performed once by the object.</p>
+<p>The only real difference between the objective and functional interfaces is that new_x
+is passed as the third argument to interp1d, whereas in the objective interface it is
+passed to an instance of Interpolate1d.  All other arguments to interp1d (x, y, interp,
+extrap_low/high, interpkw, etc) are passed into Interpolate1d at instantiation.</p>
+</div>
 </div>
 </div>
 
@@ -216,7 +235,10 @@ Out []: array([ 7.1, 1.0, 4.0 ])</pre>
 <li><a class="reference" href="#d-interpolation-with-the-functional-interface">1D Interpolation with the Functional Interface</a><ul>
 <li><a class="reference" href="#basic-usage">Basic Usage</a></li>
 <li><a class="reference" href="#removal-of-bad-datapoints">Removal of Bad Datapoints</a></li>
-<li><a class="reference" href="#user-defined-interpolation-methods">User-defined Interpolation Methods</a></li>
+<li><a class="reference" href="#user-defined-interpolation-methods">User-defined Interpolation Methods</a><ul>
+<li><a class="reference" href="#d-interpolation-with-the-object-interface">1D Interpolation with the Object Interface</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
