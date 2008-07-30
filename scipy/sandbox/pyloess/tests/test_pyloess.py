@@ -25,6 +25,8 @@ from numpy.testing import *
 
 from scipy.sandbox.pyloess import lowess, stl, loess, loess_anova
 
+data_path, _ = os.path.split(__file__)
+
 #####---------------------------------------------------------------------------
 #---- --- LOWESS ---
 #####---------------------------------------------------------------------------
@@ -80,14 +82,14 @@ class TestStl(TestCase):
     def __init__(self, *args, **kwds):
         TestCase.__init__(self, *args, **kwds)
         # Get CO2 data ................
-        filename = os.path.join('tests','co2_data')
+        filename = os.path.join(data_path,'co2_data')
         F = open(filename, 'r')
         data = []
         for line in F.readlines():
             data.append([float(x) for x in line.rstrip().split()])
         co2_data = numpy.concatenate(data)
         # Get CO2 results .............
-        filename = os.path.join('tests','co2_results_double')
+        filename = os.path.join(data_path,'co2_results_double')
         F = open(filename, 'r')
         co2_results = []
         for line in F.readlines():
@@ -125,7 +127,7 @@ class TestLoess2d(TestCase):
     #
     def __init__(self, *args, **kwds):
         TestCase.__init__(self, *args, **kwds)
-        dfile = open(os.path.join('tests','madeup_data'), 'r')
+        dfile = open(os.path.join(data_path,'madeup_data'), 'r')
         dfile.readline()
         x = fromiter((float(v) for v in dfile.readline().rstrip().split()),
                      float_).reshape(-1,2)
@@ -133,7 +135,7 @@ class TestLoess2d(TestCase):
         y = fromiter((float(v) for v in dfile.readline().rstrip().split()),
                      float_)
         #
-        rfile = open(os.path.join('tests','madeup_result'), 'r')
+        rfile = open(os.path.join(data_path,'madeup_result'), 'r')
         results = []
         for i in range(8):
             rfile.readline()
@@ -285,7 +287,7 @@ class TestLoessGas(TestCase):
                                1.0376667, 1.1308333, 1.2240000])
         coverage = 0.99
 
-        rfile = open(os.path.join('tests','gas_result'), 'r')
+        rfile = open(os.path.join(data_path,'gas_result'), 'r')
         results = []
         for i in range(8):
             rfile.readline()
