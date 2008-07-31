@@ -95,6 +95,8 @@ There is a large selection of strings which specify a range of interpolation met
 
 #. 'linear' : linear interpolation, same as the default
 #. 'block' : "round new_x down" to the nearest values where we know y.
+#. 'nearest' : take the y value of the nearest point
+#. 'logarithmic' : logarithmic interpolation (linear in log(y) )
 #. 'spline' : spline interpolation of default order (currently 3)
 #. 'cubic' : 3rd order spline interpolation
 #. 'quartic' : 4th order spline interpolation
@@ -401,3 +403,107 @@ prototype, and repeat.  If she does this, she can "zoom in" on the optimal thick
     
 More sophisticated optimization tools are also available from the scipy.optimize
 module.
+
+===================
+The Spline Class
+===================
+
+Interpolate1d, with the string arguments 'spline', 'cubic', 'quad', 'quintic', etc, is
+actually a wrapper around the Spline class, which contains fast and powerful Fortran
+code for working with splines.  However, Interpolate1d only wraps a part of this functionality.
+For some tasks, it is good to be able to directly access this power.
+
+This section describes the operation of the Spline class.
+
+----------------
+Intro to Splines
+----------------
+
+Splines are a class of functions which 
+#) are easy and quick to evaluate, 
+#) can be fitted to any 1D data, and 
+#) are quite smooth
+#) do not show the pathological Runge's phenomenon which mares polynomial fits
+Thus, they are ideal for interpolation if we need something smoother than
+a simple linear fit.  This is the barest of mathematical primers on splines;
+more information is readily available on the internet.
+
+
+Mathematically, a spline function S of order k is defined relative to a sequence of "knots", x1, x2, ..., xn. On
+every interval [xi, x_{i-1}], S is a polynomial of order at most k (it is from this that the ease and speed
+of splines arises).  At a knot, where two of the polynomials meet, they are required to agree in the first
+k-1 derivatives (ie all but the last).  A spline is specified by the locations of its knots and the coefficients
+of its polynomial in each interval.
+
+For interpolation purposes, the knots are typically chosen to be the known data points. It
+is also common for splines to include smoothing of data, so that the curve does not pass
+through all the data points but is smoother than it would be if it had to. k=3 is the most 
+common order of spline used in interpolation, and is often called a cubic spline.
+
+-------------
+Basic Usage
+-------------
+
+At instantiation, the user passes in x, y, and possibly the spline order k (which defaults to 3).
+Calls are then made with the new_x array. ::
+
+    In []: from interpolate import Spline
+    In []: x = linspace(0, 2*pi, 5)
+    In []: y = sin(x)
+    In []: interp = Spline(x, y, k=3)
+    In []: new_x = linspace(0, 2*pi, 40)
+    In []: plot(x, y, 'r', new_x, interp(new_x), 'g')
+
+..image :: spline_of_sin.png
+
+Notice that the resulting curve is extremely smooth.  It is this smoothness that makes splines
+in general (and cubic splines in particular) so sought after.
+::
+
+    # There is also an init_xy method
+    In []: interp2 = Spline(k=2)
+    In []: interp2.init_xy(x, y)
+
+
+---------------------
+Optional Arguments
+---------------------
+
+At instantiation:
+
+#) bbox
+    This is a 2-element list specifying the endpoints of the approximation interval.
+    It default to [x[0],x[-1]]
+    
+#) w
+    a 1D sequence of weights which defaults to all ones.
+
+#) s 
+    If s is zero, the interpolation is exact.  If s is not 0, the curve is smoothe subject to
+    the constraint that sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0) <= s
+
+At calling:
+
+#) nu
+    Spline returns, not the spline function S, but the (nu)th derivative of S.  nu defaults
+    to 0, so Spline usually returns the zeroth derivative of S, ie S.
+
+-----------------
+Special Methods
+-----------------
+
+#) set_smoothing_factor(s)
+#) get_knots
+    returns the positions of the knots of the spline
+#) get_coeffs
+    returns the coefficients of the 
+#) get_residual
+    returns the weighted sum of the errors (due to smoothing) at the data points
+    sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0)
+#) integral(a, b)
+    returns the integral from a to b
+#) derivatives(x)
+    returns all the derivatives of the spline at point x
+#) roots
+    This only works for cubic splines.  But it returns the places where the spline
+    is identically zero.
