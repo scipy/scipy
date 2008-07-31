@@ -1,7 +1,12 @@
+from os.path import join as pjoin
 
-def configuration(parent_package='',top_path=None, setup_name = 'setupscons.py'):
+def configuration(parent_package='', top_path=None, setup_name='setupscons.py'):
     from numpy.distutils.misc_util import Configuration
-    config = Configuration('scipy',parent_package,top_path, setup_name = 'setupscons.py')
+    from numpy.distutils.misc_util import scons_generate_config_py
+
+    pkgname = 'scipy'
+    config = Configuration(pkgname, parent_package, top_path,
+                           setup_name = 'setupscons.py')
     config.add_subpackage('cluster')
     config.add_subpackage('fftpack')
     config.add_subpackage('integrate')
@@ -23,7 +28,17 @@ def configuration(parent_package='',top_path=None, setup_name = 'setupscons.py')
     config.add_subpackage('stsci')
     config.add_subpackage('weave')
     config.make_svn_version_py()  # installs __svn_version__.py
-    config.scons_make_config_py() # installs __config__.py
+
+    def add_config(*args, **kw):
+        # Generate __config__, handle inplace issues.
+        if kw['scons_cmd'].inplace:
+            target = pjoin(kw['pkg_name'], '__config__.py')
+        else:
+            target = pjoin(kw['scons_cmd'].build_lib, kw['pkg_name'],
+                           '__config__.py')
+        scons_generate_config_py(target)
+    config.add_sconscript(None, post_hook = add_config)
+
     return config
 
 if __name__ == '__main__':
