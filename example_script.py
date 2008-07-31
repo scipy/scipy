@@ -82,10 +82,6 @@ if True:
     interp = I.Interpolate1d(x, y, fitpack_wrapper.Spline(k=2))
     y_quad2 = interp(newx)
 
-    # 3rd order spline with additional keyword arguments
-    interp = I.Interpolate1d(x, y, fitpack_wrapper.Spline, kindkw = {'k':3})
-    y_cubic2 = interp(newx)
-
     # 4th order spline
     interp = I.Interpolate1d(x, y, 'Quartic')
     y_quartic2 = interp(newx)
@@ -100,7 +96,6 @@ if True:
     P.plot(newx, y_block2, 'g')
     P.plot(newx, y_linear2, 'b')
     P.plot(newx, y_quad2, 'r')
-    P.plot(newx, y_cubic2, 'm')
     P.plot(newx, y_quartic2, 'y')
     P.plot(newx, y_quintic2, 'y')
     P.title( "same data through different interface" )

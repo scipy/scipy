@@ -481,6 +481,9 @@ At instantiation:
 #) s 
     If s is zero, the interpolation is exact.  If s is not 0, the curve is smoothe subject to
     the constraint that sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0) <= s
+    
+    BEWARE : in the current implementation of the code, if s is small but not zero,
+            instantiating Spline can become painfully slow.
 
 At calling:
 

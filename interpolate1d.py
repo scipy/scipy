@@ -1,18 +1,22 @@
 # FIXME: information strings giving mathematical descriptions of the actions
 #     of the functions.
 
-from interpolate_wrapper import linear, logarithmic, block, \
-                block_average_above, atleast_1d_and_contiguous
+from interpolate_wrapper import atleast_1d_and_contiguous, \
+                linear, logarithmic, block, block_average_above, nearest
 from fitpack_wrapper import Spline
 import numpy as np
 from numpy import array, arange, empty, float64, NaN
 
 # dictionary of interpolation functions/classes/objects
 method_register = \
-                { 'linear' : linear, 
+                { # functions
+                    'linear' : linear, 
                     'logarithmic' : logarithmic, 
                     'block' : block, 
                     'block_average_above' : block_average_above, 
+                    'nearest' : nearest,
+                    
+                    # Splines
                     'Spline' : Spline, 'spline' : Spline,
                     'Quadratic' : Spline(k=2), 'quadratic' : Spline(k=2),
                     'Quad' : Spline(k=2), 'quad' : Spline(k=2),

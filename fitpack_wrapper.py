@@ -1,7 +1,12 @@
 """
 This module is used for spline interpolation, and functions
 as a wrapper around the FITPACK Fortran interpolation
-package.
+package.  Its functionality is contained in the Spline
+class.
+
+Spline is primarily meant to be called by Interpolate1d
+or inter1d, but is a stand-alone class in its own right.
+
 
 The code has been modified from an older version of
 scipy.interpolate, where it was directly called by the
@@ -29,10 +34,6 @@ class Spline(object):
 
     Can include least-squares fitting.
 
-    See also:
-
-    splrep, splev, sproot, spint, spalde - an older wrapping of FITPACK
-    BivariateSpline - a similar class for bivariate spline interpolation
     """
 
     def __init__(self, x=None, y=None, w=None, bbox = [None]*2, k=3, s=0.0):
@@ -43,16 +44,14 @@ class Spline(object):
 
         Optional input:
           w          - positive 1-d sequence of weights
-          bbox       - 2-sequence specifying the boundary of
+          bbox     - 2-sequence specifying the boundary of
                        the approximation interval.
                        By default, bbox=[x[0],x[-1]]
-          k=3        - degree of the univariate spline.
+          k=3     - degree of the univariate spline.
           s          - positive smoothing factor defined for
                        estimation condition:
                          sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0) <= s
-                       Default s=len(w) which should be a good value
-                       if 1/w[i] is an estimate of the standard
-                       deviation of y[i].
+                        Default s=0
         """
         
         self._k = k

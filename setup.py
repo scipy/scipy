@@ -22,7 +22,7 @@ def configuration(parent_package='',top_path=None):
 
     # Fortran routines (collectively "FITPACK" for spline interpolation)
     config.add_extension('_dfitpack',
-                         sources=['fitpack.pyf'],
+                         sources=['_fitpack.pyf'],
                          libraries=['_fitpack'],
                         )
                         

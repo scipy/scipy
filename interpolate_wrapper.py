@@ -6,8 +6,26 @@ import numpy as np
 import sys
 import _interpolate # C extension.  Does all the real work.
 
-def atleast_1d_and_contiguous(ary, typecode = np.float64):
-    return np.atleast_1d( np.ascontiguousarray(ary, typecode) )
+def atleast_1d_and_contiguous(ary, dtype = np.float64):
+    return np.atleast_1d( np.ascontiguousarray(ary, dtype) )
+
+def nearest(x, y, new_x):
+    """ Rounds each new_x[i] to the closest value in x
+        and returns corresponding y.
+    """
+    shifted_x = np.concatenate(( np.array([x[0]-1]) , x[0:-1] ))
+    
+    midpoints_of_x = atleast_1d_and_contiguous( .5*(x + shifted_x) )
+    new_x = atleast_1d_and_contiguous(new_x)
+    
+    TINY = 1e-10
+    indices = np.searchsorted(midpoints_of_x, new_x+TINY)-1
+    indices = np.atleast_1d(np.clip(indices, 0, np.Inf).astype(np.int))
+    new_y = np.take(y, indices, axis=-1)
+    
+    return new_y
+    
+    
 
 def linear(x, y, new_x):
     """ Linearly interpolates values in new_x based on the values in x and y
@@ -106,7 +124,6 @@ def block(x, y, new_x):
             For each new_x[i], finds largest j such that
             x[j] < new_x[j], and returns y[j].
         """
-
         # find index of values in x that preceed values in x
         # This code is a little strange -- we really want a routine that
         # returns the index of values where x[j] < x[index]
