@@ -41,11 +41,11 @@ curve from a sparse set of values. ::
     # start up ipython for our examples.
     $ ipython -pylab
     
-    In [1]: from interpolate import interp1d
+    In []: from interpolate import interp1d
     
     # Create our "known" set of 5 points with the x values in one array and the y values in another.
-    In [2]: x = linspace(0, 2*pi, 5)
-    In [3]: y = sin(x)
+    In []: x = linspace(0, 2*pi, 5)
+    In []: y = sin(x)
     
     # If we only want a value at a single point, we can pass in a scalar and interp1d
     # will return a scalar
@@ -145,15 +145,19 @@ The following example demonstrates using this keyword argument ::
     # data will be linear, except for artificial bad points
     In []: x = arange(10.); y = arange(10.)
     In []: x[1] = NaN # bad data
-    In []: y[2] = 55   # bad data
-    In []: new_x = arange(0, 10., .1)
+    In []: y[6] = 55   # bad data
+    In []: new_x = arange(0, 9., .1)
     In []: new_y_bad = interp1d(x, y, new_x)
     In []: new_y_no_bad = interp1d(x, y, new_x, bad_data=[55])
-    In []: plot(new_x, new_y_bad, 'r', new_x, new_y_no_bad, 'g')
+    In []: plot(new_x, new_y_bad, 'ro', new_x, new_y_no_bad, 'b+')
     
 .. image :: with_and_without_bad_data.png
 
-
+The plot with the bad data still in is visually marred by the bad value,
+the NaN in x[1] makes all extrapolated values that depend on X[1]
+become NaN as well, and NaN does not show up on a graph.  In contrast,
+using bad_data removed both those points, so the entire range of x is linearly
+interpolated.
 
 --------------------------------------
 User-defined Interpolation Methods
@@ -166,22 +170,24 @@ If you define your own types, you must be very careful to have correct
 format; failure to do so can cause a range of errors which won't necessarily result in
 informative error messages.
 
-kind (or, equivalently, low or high) can also be set to a function, a callable 
-class, or an instance of a callable class.
+To specify your own interpolation type, set kind (or low or high) to a function, a callable 
+class, or an instance of a callable class.  The function or class instance will be stored (if you
+pass a class, an instance will be stored) by Interpolate1d and used on the appropriate part
+of new_x whenever Interpolate1d is called.  interp1d creates and calls an instance of Interpolate1d
+all in one shot.
 
-If a function is passed, it will be called when interpolating.
-It is assumed to have the form ::
+If a function is passed, it is assumed to have the form ::
 
-        newy = interp(x, y, newx)
+        newy = kind(x, y, newx)
         
 where x, y, newx, and newy are all 1D numpy arrays.
             
-If a class is passed, it is assumed to have ones of two formats.
+If a class is passed, it is assumed to have one of two formats.
 If there is a "init_xy" or "set_xy" method, the class is instantiated
 with no argument, then the relevant method is called to initialize 
 x and y, and the class is later called with a 1D array as an argument.::
 
-        instance = Class().
+        instance = kind().
         instance.set_xy(x, y)
         new_y = instance(new_x)
 
@@ -189,21 +195,21 @@ If the class does not have an init_xy or set_xy method, the class
 is instantiated with x and y as arguments, and passed a 1D array
 during interpolation. ::
 
-            instance = Class(x, y)
+            instance = kind(x, y)
             new_y = instance(new_x)
             
-You can also pass an instance of the callable class, rather than the class
-itself.  This is useful is the class has other parameters besides x, y, and
+You can also pass an instance of acallable class, rather than the class
+itself.  This is useful if the class has other parameters besides x, y, and
 new_x (perhaps smoothing coefficients, orders for polynomials, etc).
 
 If the instance has a method "init_xy" or "set_xy", 
 that method will be used to set x and y, and the instance will be
 called later: ::
 
-        instance.set_xy(x, y)
-        new_y = instance(new_x)
+        kind.set_xy(x, y)
+        new_y = kind(new_x)
                 
-If the instance has no "init_xy" or "set_xy" method, it will be called as ::
+If the instance has no "init_xy" or "set_xy" method, it will be called like ::
 
         new_y = kind(x, y, new_x)
         
@@ -215,18 +221,19 @@ in cryptic errors, so be careful.  Here is a demo of how to properly use these f
 
     In []: def dummy(x, y, newx):
                 # Note that dummy has acceptable form
-                return 5.7
+                return array([ 5.7 ])
     In []: class Phony:
                 def __init__(self, val = 4.0):
                     self.val = val
                 def init_xy(self, x, y):
                     pass
                 def __call__(self, newx):
-                    return self.val
+                    # must return an array
+                    return array([ self.val ])
     In []: x = arange(5.0)
     In []: y = arange(5.0)
     In []: new_x = np.array([ -1, 2.4, 7 ])
-    In []: new_y = interp1d(x, y, 
+    In []: new_y = interp1d(x, y, new_x,
                             kind = Phony, 
                             low = dummy,
                             high = dummy
@@ -300,7 +307,7 @@ and 2) estimate the average temperature.
     Out []: 20
     In []: plot(depth, temp)
     
-    # darn, many of the temperatures are 1000, indicating
+    # He realizes that many of the temperatures are 1000, indicating
     # a measurement error, which makes it look terrible.
     # And what is there doesn't look smooth
     
@@ -323,7 +330,8 @@ of the CO2 output of the cancer cells. For several different levels of CO2 ouput
 he also has measurements of the growth rate of these cells.  Each data point represents 
 a week's work on the part of experimentalists, so though there isn't much 
 data he'll have to make due.  Now, his full simulation takes up hundreds of lines of
-code, so we only show the module estimate_growth_rate.py which he wrote. 
+code, so we only show the module estimate_growth_rate.py which is used by
+the simulation to estimate the growth rate of the cells at various point in time.
 ::
 
     """ Contains callable class EstimateGrowthRate, which accepts blood glucose level as
@@ -336,7 +344,7 @@ code, so we only show the module estimate_growth_rate.py which he wrote.
     growth_filename = "growth.txt"
     
     class EstimateGrowthRate:
-        """ This class is instantiated once at the beginning of the simulation, and then
+        """ This class should be instantiated once at the beginning of the simulation, and then
             called many times while it is running.  Internally, the spline coefficients are
             only calculated once, at instantiation, so this is much more time efficient than
             using interp1d multiple times.
@@ -355,7 +363,6 @@ code, so we only show the module estimate_growth_rate.py which he wrote.
             
         def __call__(self, glucose_level):
             return self.CO2_to_growth( self.glucose_to_CO2( glucose_level ))
-
 
 --------------
 Optimization
