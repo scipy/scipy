@@ -2,24 +2,24 @@
 Overview
 ==================
 
-Often researchers need to infer from a data set the values at points where measurements
-were not taken.  Perhaps they are running a simulation that will demand data points
-never measured.  Perhaps to estimate a statistic of a function (say, the integral) they
-want to guess its value everywhere based on a few points.  Perhaps they know a function
-which must be evaluated multiple times, but evaluating it is expensive; they want to evaluate
-it several times at first, and make educated guesses in the future.  In all these cases, interpolation
-it the tool of choice.
+Interpolation is the process of using known data to guess the value of unknown data.  It turns
+a sample of a function into an approximation of that function for every value, and is one of
+the most basic mathematical tools available to a researcher.
 
 The interpolate package provides tools for interpolating and extrapolating new data points from a known set of data points.  
 Interpolate provides both a functional interface that is flexible and easy to use as well as an object oriented interface that 
 can be more efficient and flexible for some cases.  It is able to interpolate and extrapolate in 1D, 2D, and even N 
-dimensions.*[fixme: 1D only right now]*
+dimensions. *[FIXME : 1D only right now]*
 
 For 1D interpolation, it handles linear and spline(cubic, quadratic, and quintic) for both uniformly and non-uniformly spaced 
 data points "out of the box."  Users can choose the behavior when new values fall outside the range of known data, and
 with a little more work, they can incorporate interpolation methods that are specially tailored to their needs.
 
-For 2D interpolation, 
+For 2D interpolation, *[FIXME : include this]*
+
+This tutorial covers how to use the interpolate module, provides some basic examples, and shows
+them at work in realistic sample sessions.  These sessions demonstrate how to use the 
+interpolate module, but also highlight some of the uses of interpolation techniques.
 
 ================================================
 1D Interpolation with the Functional Interface
@@ -38,36 +38,32 @@ can define and pass in their own custom-tailored interpolation methods.
 The following example uses the 'interp1d' function to linearly interpolate a sin 
 curve from a sparse set of values. ::
     
-	# start up ipython for our examples.
-	$ ipython -pylab
-	
-	In [1]: from interpolate import interp1d
-	
-	# Create our "known" set of 5 points with the x values in one array and the y values in another.
-	In [2]: x = linspace(0, 2*pi, 5)
-	In [3]: y = sin(x)
+    # start up ipython for our examples.
+    $ ipython -pylab
     
-::
+    In [1]: from interpolate import interp1d
+    
+    # Create our "known" set of 5 points with the x values in one array and the y values in another.
+    In [2]: x = linspace(0, 2*pi, 5)
+    In [3]: y = sin(x)
     
     # If we only want a value at a single point, we can pass in a scalar and interp1d
     # will return a scalar
-    In [9]: interp1d(x, y, 1.2)
-    Out [10]: 0.76394372684109768
-    
-::
+    In []: interp1d(x, y, 1.2)
+    Out []: 0.76394372684109768
     
     # 0-dimensional arrays are also treated as scalars
-    In [9]: interp1d(x, y, array(1.2) )
-    Out [10]: 0.76394372684109768
+    In []: interp1d(x, y, array(1.2) )
+    Out []: 0.76394372684109768
     
     # To interpolate from these x,y values at multiple points, possibly to get a more dense set
     # of new_x, new_y values to approximate the function, pass a numpy array to interp1d, 
     # and the return type will also be a numpy array.
-	In [4]: new_x = linspace(0, 2*pi, 21)
-	In [5]: new_y = interp1d(x, y, new_x)
-
-	# Plot the results using matplotlib. [note examples assume you are running in ipython -pylab]
-	In [6]: plot(x, y, 'ro', new_x, new_y, 'b-')
+    In []: new_x = linspace(0, 2*pi, 21)
+    In []: new_y = interp1d(x, y, new_x)
+    
+    # Plot the results using matplotlib. [note examples assume you are running in ipython -pylab]
+    In []: plot(x, y, 'ro', new_x, new_y, 'b-')
         
 .. image:: interp1d_linear_simple.png 
 
@@ -83,15 +79,15 @@ NaN at all such points: ::
 
     # If we attempt to extrapolate values outside the interpolation range, interp1d defaults
     # to returning NaN
-    In [7]: interp1d(x, y, array([-2, -1, 1, 2]))
-    Out [8]: array([        NaN,     NaN,     0.63661977,   0.72676046])
+    In []: interp1d(x, y, array([-2, -1, 1, 2]))
+    Out []: array([        NaN,     NaN,     0.63661977,   0.72676046])
 
 If we want a type of interpolation other than linear, there is a range of options which we can specify 
-with the keyword argument kind, which is usually a string.  For example::
+with the keyword argument "kind", which is usually a string.  Continuing from the previous example,::
 
     # If we want quadratic (2nd order) spline interpolation, we can use the string 'quadratic'
-    In [7]: new_y_quadratic = interp1d(x, y, new_x, kind = 'quadratic')
-    In [8]: plot(x, y, 'r', new_x, new_y_quadratic, 'g')
+    In []: new_y_quadratic = interp1d(x, y, new_x, kind = 'quadratic')
+    In []: plot(x, y, 'r', new_x, new_y_quadratic, 'g')
     
 .. image:: interp1d_linear_and_quadratic.png
 
@@ -105,7 +101,7 @@ There is a large selection of strings which specify a range of interpolation met
 #. 'quintic' : 5th order spline interpolation
 
 The same flexibility is afforded for extrapolation by the keywords low and high, which
-specify how to treat values below and above the range of know data: ::
+specify how to treat values below and above the range of known data: ::
 
     In []: z = array([ 1.0, 2.0 ])
     In []: interp1d(z, z, array([-5.0, 5.0]), low = 'linear', high = 'linear') # -5 and 5 both out of range
@@ -133,7 +129,7 @@ below.
 Removal of Bad Datapoints
 -----------------------------
 
-Many datasets have missing or corrupt data which it is desirable to ignore when interpolating,
+Many datasets have missing or corrupt data which we want to ignore when interpolating,
 and to this end, interp1d has the keyword argument bad_data.
 
 bad_data defaults to being None.  But if it is a list, all "bad" points (x[i], y[i]) will be removed
@@ -144,7 +140,7 @@ before any interpolation is performed.  A point is "bad" if
 Note that bad_data must be either None or a list of numbers.  Including NaN or None in the list,
 for example, is not supported and will cause errors. 
 
-The following example shows how ::
+The following example demonstrates using this keyword argument ::
 
     # data will be linear, except for artificial bad points
     In []: x = arange(10.); y = arange(10.)
@@ -165,12 +161,12 @@ User-defined Interpolation Methods
 
 The string interface is designed to conveniently take care of most things a user would want
 to do in a way that is easy and, when something goes wrong, informative and helpful.
-If, however, you want more direct control than is afforded by the string interface, that is also possible,
-thought it's a little trickier than using strings.  You must be very careful to have correct
-format, and failure to do so can cause a range of errors which won't necessarily result in
+If, however, you want more direct control than is afforded by the string interface, that is also possible.
+If you define your own types, you must be very careful to have correct
+format; failure to do so can cause a range of errors which won't necessarily result in
 informative error messages.
 
-kind (or, equivalently, low and high) can also be set to a function, a callable 
+kind (or, equivalently, low or high) can also be set to a function, a callable 
 class, or an instance of a callable class.
 
 If a function is passed, it will be called when interpolating.
@@ -178,36 +174,45 @@ It is assumed to have the form ::
 
         newy = interp(x, y, newx)
         
-where x, y, newx, and newy are all numpy arrays.
+where x, y, newx, and newy are all 1D numpy arrays.
             
-If a callable class is passed, it is assumed to have format::
+If a class is passed, it is assumed to have ones of two formats.
+If there is a "init_xy" or "set_xy" method, the class is instantiated
+with no argument, then the relevant method is called to initialize 
+x and y, and the class is later called with a 1D array as an argument.::
 
-        instance = Class(x, y).
-        
-which can then be called by ::
+        instance = Class().
+        instance.set_xy(x, y)
+        new_y = instance(new_x)
 
+If the class does not have an init_xy or set_xy method, the class
+is instantiated with x and y as arguments, and passed a 1D array
+during interpolation. ::
+
+            instance = Class(x, y)
             new_y = instance(new_x)
             
-If a callable object with method "init_xy" or "set_xy" is
-passed, that method will be used to set x and y as follows: ::
+You can also pass an instance of the callable class, rather than the class
+itself.  This is useful is the class has other parameters besides x, y, and
+new_x (perhaps smoothing coefficients, orders for polynomials, etc).
+
+If the instance has a method "init_xy" or "set_xy", 
+that method will be used to set x and y, and the instance will be
+called later: ::
 
         instance.set_xy(x, y)
-        
-and the object will be called during interpolation. ::
-
         new_y = instance(new_x)
                 
-If the "init_xy" and "set_xy" are not present, it will be called as
+If the instance has no "init_xy" or "set_xy" method, it will be called as ::
 
-        new_y = argument(new_x)
-                
-A primitive type which is not a string signifies a function
-which is identically that value (e.g. val and 
-lambda x, y, newx : val are equivalent). ::
+        new_y = kind(x, y, new_x)
+        
+Failure to follow these guidelines (say, by having kind require other keyword
+arguments, having a method "initialize_xy" rather than "init_xy", etc) can result
+in cryptic errors, so be careful.  Here is a demo of how to properly use these features:
 
-    # However, this behavior can be overwritten in the same way as linear interpolation,
-    # by setting the keyword extrap_low (for values below the range of interpolation) and
-    # extrap_high (for values above that range)
+::
+
     In []: def dummy(x, y, newx):
                 # Note that dummy has acceptable form
                 return 5.7
@@ -222,10 +227,10 @@ lambda x, y, newx : val are equivalent). ::
     In []: y = arange(5.0)
     In []: new_x = np.array([ -1, 2.4, 7 ])
     In []: new_y = interp1d(x, y, 
-                                        kind = Phony, 
-                                        low = dummy,
-                                        high = dummy
-                                        )
+                            kind = Phony, 
+                            low = dummy,
+                            high = dummy
+                            )
     In []: new_y
     Out []: array([ 5.7, 4.0, 5.7 ])
 
@@ -251,7 +256,7 @@ with new_x as the only argument. ::
 
     # The default behavior is virtually the same
     In []: x = linspace(0, 2*pi, 5)
-	In []: y = sin(x)
+    In []: y = sin(x)
     In []: new_x = linspace(0, 2*pi, 21)
     In []: new_y1 = interp1d(x, y, new_x)
     In []: interp_obj1 = Interpolate1d(x, y)
@@ -279,16 +284,12 @@ interpolate module.
 Estimating Function Statistics and Displaying Data
 -----------------------------------------------------
 
-In this session, the engineer
-has a data set of geological data indicating the temperature at various
-depths in the ground.  The data set is noisy and large.  He wants to 1)
-get a feel for the data, and 2) estimate the average temperature.
+In this session, the geologist
+has a data set of data indicating the temperature at various
+depths in the ground.  He wants to 1) get a visual feel for the data, 
+and 2) estimate the average temperature.
 ::
 
-    # start up ipython for our examples.
-	$ ipython -pylab
-    
-    # load the data from a text file
     In []: data_array = loadtxt('dataset1.txt')
     In []: shape(data_array)
     Out []: (12, 2)
@@ -305,26 +306,29 @@ get a feel for the data, and 2) estimate the average temperature.
     
     In []: import interpolate as I
     In []: plot( I.interp1d(depth, temp, linspace(0,20,100), bad_data = [1000])
-    In []: # much better, but he wants to see it smoother too
+    # much better, but he wants to see it smoother too
     In []: plot( I.interp1d(depth, temp, linspace(0,20,100), kind='cubic', bad_data = [1000])
     
-    # To find the average temp he can't average the data because the samples
-    # are not necessarily uniform, but he can uniformly sample the interpolated function
-    In []: average_temp = average( I.interp1d(depth, temp, linspace(0,20,100), 'cubic', bad_data=[1000]))
+    # To find the average temp he can't average the data points because the samples
+    # are not necessarily uniform, but it is easy to uniformly sample the interpolated function
+    In []: average_temp = average( I.interp1d(depth, temp, linspace(0,20,100), 'cubic', bad_data=[1000]) )
     
 ---------------------------------
-Modelling from a small dataset
+Modeling from a small dataset
 ---------------------------------
 
 This computational biologist wants to model the growth rate of 
-cancer cells in tissue.  He has measurements of the metabolic rate of cancer 
-cells at several concentrations of blood glucose.  He also has measurements
-of the growth rate of these cells as a function of their CO2 metabolic output.  Each data point represents 
+cancer cells in tissue.  For several levels of blood glucose, he has measurements 
+of the CO2 output of the cancer cells. For several different levels of CO2 ouput,
+he also has measurements of the growth rate of these cells.  Each data point represents 
 a week's work on the part of experimentalists, so though there isn't much 
 data he'll have to make due.  Now, his full simulation takes up hundreds of lines of
-code, but we show here the module object estimate_growth_rate which he wrote. 
+code, so we only show the module estimate_growth_rate.py which he wrote. 
 ::
 
+    """ Contains callable class EstimateGrowthRate, which accepts blood glucose level as
+        an argument and returns interpolated growth rate of cells.
+    """
     import numpy as np
     import interpolate as I
     
@@ -387,8 +391,6 @@ prototype, and repeat.  If she does this, she can "zoom in" on the optimal thick
     In []: where_to_insert = max( find(thickness < guess_thick) ) +1
     In []: thickness = insert(thickness, where_to_insert, guess_thick)
     In []: peformance = insert(performance, where_to_insert, measured_perf)
-
-
-            
-
-        
+    
+More sophisticated optimization tools are also available from the scipy.optimize
+module.
