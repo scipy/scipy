@@ -10,18 +10,19 @@ from numpy import array, arange, empty, float64, NaN
 # dictionary of interpolation functions/classes/objects
 method_register = \
                 { # functions
-                    'linear' : linear, 
-                    'logarithmic' : logarithmic, 
-                    'block' : block, 
+                    'linear' : linear,  'Linear' : linear, 
+                    'logarithmic' : logarithmic, 'Logarithmic' : logarithmic, 
+                    'block' : block, 'Block' : block, 
                     'block_average_above' : block_average_above, 
-                    'nearest' : nearest,
+                    'Block_average_above' : block_average_above, 
+                    'nearest' : nearest, 'Nearest' : nearest,
                     
                     # Splines
                     'Spline' : Spline, 'spline' : Spline,
                     'Quadratic' : Spline(k=2), 'quadratic' : Spline(k=2),
                     'Quad' : Spline(k=2), 'quad' : Spline(k=2),
                     'Cubic' : Spline(k=3), 'cubic' : Spline(k=3),
-                    'Quartic' : Spline(k=3), 'quartic' : Spline(k=3),
+                    'Quartic' : Spline(k=4), 'quartic' : Spline(k=4),
                     'Quar' : Spline(k=4), 'quar' : Spline(k=4),
                     'Quintic' : Spline(k=5), 'quintic' : Spline(k=5),
                     'Quin' : Spline(k=5), 'quin' : Spline(k=5)
@@ -76,20 +77,14 @@ def interp1d(x, y, new_x,
                 Same options as for 'kind'.  Defaults to returning numpy.NaN ('not 
                 a number') for all values above the range of x.
                 
-            bad_data -- list
+            bad_data -- list of numbers
                 List of numerical values (in x or y) which indicate unacceptable data. 
                 
                 If bad_data is not None (its default), all points whose x or y coordinate is in
-                bad_data, OR ones of whose coordinates is NaN, will be removed.
+                bad_data, OR ones of whose coordinates is NaN, will be removed.  Note that
+                bad_data != None means NaNs will be removed even if they are not in
+                bad_data.
                 
-            interpkw -- dictionary
-                If interp is set to a function, class or callable object, this contains
-                additional keywords.
-                
-            lowkw (highkw) -- dictionary
-                like interpkw, but for extrap_low and extrap_high
-                
-            
         Some Acceptable Input Strings
         ------------------------
         
@@ -97,14 +92,13 @@ def interp1d(x, y, new_x,
             "logarithmic" -- logarithmic interpolation : linear in log space?
             "block" --
             "block_average_above' -- block average above
-            "Spline" -- spline interpolation.  keyword k (defaults to 3) 
-                indicates order of spline
+            "Spline" -- spline interpolation of default order
             "quad", "quadratic" -- spline interpolation order 2
             "cubic" -- spline interpolation order 3
             "quartic" -- spline interpolation order 4
             "quintic" -- spline interpolation order 5
             
-        Other options for interp, extrap_low, and extrap_high
+        Other options for kind, low, and high
         ---------------------------------------------------
         
             If you choose to use a non-string argument, you must
@@ -112,21 +106,21 @@ def interp1d(x, y, new_x,
             
             If a function is passed, it will be called when interpolating.
             It is assumed to have the form 
-                newy = interp(x, y, newx, **kw), 
+                newy = interp(x, y, newx), 
             where x, y, newx, and newy are all numpy arrays.
             
             If a callable class is passed, it is assumed to have format
-                instance = Class(x, y, **kw).
+                instance = Class(x, y).
             which can then be called by
                 new_y = instance(new_x)
             
             If a callable object with method "init_xy" or "set_xy" is
             passed, that method will be used to set x and y as follows
-                instance.set_xy(x, y, **kw)
+                instance.set_xy(x, y)
             and the object will be called during interpolation.
                 new_y = instance(new_x)
             If the "init_xy" and "set_xy" are not present, it will be called as
-                new_y = argument(new_x)
+                new_y = argument(x, y, new_x)
                 
             A primitive type which is not a string signifies a function
             which is identically that value (e.g. val and 
@@ -187,11 +181,13 @@ class Interpolate1d(object):
                 Same options as for 'kind'.  Defaults to returning numpy.NaN ('not 
                 a number') for all values above the range of x.
                 
-            bad_data -- list
+            bad_data -- list of numbers
                 List of numerical values (in x or y) which indicate unacceptable data. 
                 
                 If bad_data is not None (its default), all points whose x or y coordinate is in
-                bad_data, OR ones of whose coordinates is NaN, will be removed.
+                bad_data, OR ones of whose coordinates is NaN, will be removed.  Note that
+                bad_data != None means NaNs will be removed even if they are not in
+                bad_data.
                 
         Some Acceptable Input Strings
         ------------------------
@@ -200,8 +196,7 @@ class Interpolate1d(object):
             "logarithmic" -- logarithmic interpolation : linear in log space?
             "block" --
             "block_average_above' -- block average above
-            "Spline" -- spline interpolation.  keyword k (defaults to 3) 
-                indicates order of spline
+            "Spline" -- spline interpolation of default order
             "quad", "quadratic" -- spline interpolation order 2
             "cubic" -- spline interpolation order 3
             "quartic" -- spline interpolation order 4
@@ -229,7 +224,7 @@ class Interpolate1d(object):
             and the object will be called during interpolation.
                 new_y = instance(new_x)
             If the "init_xy" and "set_xy" are not present, it will be called as
-                new_y = argument(new_x)
+                new_y = argument(x, y, new_x)
                 
             A primitive type which is not a string signifies a function
             which is identically that value (e.g. val and 
@@ -239,7 +234,7 @@ class Interpolate1d(object):
         ---------
         
             >>> import numpy
-            >>> from interpolate1d import Interpolate1d
+            >>> from interpolate import Interpolate1d
             >>> x = range(5)        # note list is permitted
             >>> y = numpy.arange(5.)
             >>> new_x = [.2, 2.3, 5.6, 7.0]

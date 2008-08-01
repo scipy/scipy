@@ -7,7 +7,7 @@ a sample of a function into an approximation of that function for every value, a
 the most basic mathematical tools available to a researcher.
 
 The interpolate package provides tools for interpolating and extrapolating new data points from a known set of data points.  
-Interpolate provides both a functional interface that is flexible and easy to use as well as an object oriented interface that 
+It provides a functional interface that is flexible and easy to use as well as an object oriented interface that 
 can be more efficient and flexible for some cases.  It is able to interpolate and extrapolate in 1D, 2D, and even N 
 dimensions. *[FIXME : 1D only right now]*
 
@@ -472,24 +472,24 @@ Optional Arguments
 At instantiation:
 
 #) bbox
-    This is a 2-element list specifying the endpoints of the approximation interval.
-    It default to [x[0],x[-1]]
+This is a 2-element list specifying the endpoints of the approximation interval.
+It default to [x[0],x[-1]]
     
 #) w
-    a 1D sequence of weights which defaults to all ones.
+a 1D sequence of weights which defaults to all ones.
 
 #) s 
-    If s is zero, the interpolation is exact.  If s is not 0, the curve is smoothe subject to
-    the constraint that sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0) <= s
+If s is zero, the interpolation is exact.  If s is not 0, the curve is smoothe subject to
+the constraint that sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0) <= s
     
-    BEWARE : in the current implementation of the code, if s is small but not zero,
-            instantiating Spline can become painfully slow.
+BEWARE : in the current implementation of the code, if s is small but not zero,
+    instantiating Spline can become painfully slow.
 
 At calling:
 
 #) nu
-    Spline returns, not the spline function S, but the (nu)th derivative of S.  nu defaults
-    to 0, so Spline usually returns the zeroth derivative of S, ie S.
+Spline returns, not the spline function S, but the (nu)th derivative of S.  nu defaults
+to 0, so Spline usually returns the zeroth derivative of S, ie S.
 
 -----------------
 Special Methods
@@ -497,16 +497,73 @@ Special Methods
 
 #) set_smoothing_factor(s)
 #) get_knots
-    returns the positions of the knots of the spline
+returns the positions of the knots of the spline
 #) get_coeffs
-    returns the coefficients of the 
+returns the coefficients of the 
 #) get_residual
-    returns the weighted sum of the errors (due to smoothing) at the data points
-    sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0)
+returns the weighted sum of the errors (due to smoothing) at the data points
+sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0)
 #) integral(a, b)
-    returns the integral from a to b
+returns the integral from a to b
 #) derivatives(x)
-    returns all the derivatives of the spline at point x
+returns all the derivatives of the spline at point x
 #) roots
-    This only works for cubic splines.  But it returns the places where the spline
-    is identically zero.
+This only works for cubic splines.  But it returns the places where the spline
+is identically zero.
+
+
+================================================
+2D Interpolation
+================================================
+
+*[This is being written preemptively]*
+
+In 2D interpolation, known data are of the form (x, y, z), and we interpolate
+z_new from (x_new, y_new).  
+
+As in the case of 1D interpolation, there is a convenient functional interface
+for 2D interpolation as well as a callable object which can be more efficient.
+In analogy to 1D interpolation, the function is interp2d and the class is Interpolate2d.
+
+------------------------------------------
+The Functional Interface
+------------------------------------------
+
+The functional interface is virtually identical to that for interp1d: ::
+
+    new_z = interp2d(x, y, z, new_x, new_y)
+
+The range of interpolation is the rectangle given by the largest and
+smallest values in x and y.
+As in the case of 1D, string arguments can be passed
+as keywords to specify particular types of interpolation.  The keywords
+in this case are kind (for in-range interpolation) and out (for out-of-bounds).
+
+By default, out of bounds returns NaN, and in-bounds returns a linear
+interpolation.
+
+new_x and new_y may be either arrays, lists or scalars.  If they are
+scalars or zero-dimensional arrays, new_z will be a scalar as well.  Otherwise
+a vector is returned.
+
+------------------------------------------
+The Objective Interface
+------------------------------------------
+
+The objective interface for 2D is slightly more complicated.  
+
+================================================
+ND Interpolation
+================================================
+
+
+
+================================================
+ND Scattered Interpolation
+================================================
+ 
+ Still in development.
+ 
+ Ideally the range of interpolation would be the convex hull of the known
+ data points, and a Delaunay triangulation would be determined and stored
+ at instantiation.  Then again, that would be VERY expensive.

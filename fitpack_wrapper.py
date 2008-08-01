@@ -1,26 +1,20 @@
 """
-This module is used for spline interpolation, and functions
-as a wrapper around the FITPACK Fortran interpolation
-package.  Its functionality is contained in the Spline
-class.
+    This module is used for spline interpolation, and functions
+    as a wrapper around the FITPACK Fortran interpolation
+    package.  Its functionality is contained in the Spline
+    class.
 
-Spline is primarily meant to be called by Interpolate1d
-or inter1d, but is a stand-alone class in its own right.
+    Spline is primarily meant to be called by Interpolate1d
+    or interp1d, but is a stand-alone class in its own right
+    that is not available through these interfaces.
 
-
-The code has been modified from an older version of
-scipy.interpolate, where it was directly called by the
-user.  As such, it includes functionality not available through
-Interpolate1d.  For this reason, users may wish to get
-under the hood.
+    The code has been modified from an older version of
+    scipy.interpolate, where it was directly called by the
+    user.  As such, it includes functionality not available through
+    Interpolate1d.  For this reason, users may wish to get
+    under the hood.
 
 """
-# FIXME : CLEAN UP THIS FILE!  scipy.interpolate contained a lot of
-#       nice functionality that is only partially in this file.
-#       The question is whether to copy over the full functionality
-#       to the point where we may as well include fitting.py from
-#       scipy.interpolate, or whether we should strip this down some.
-#       Until that's decided, cleaning is premature.
 
 import numpy as np
 
@@ -29,26 +23,26 @@ import _dfitpack # extension module containing FITPACK subroutines in Fortran
 
 class Spline(object):
     """ Univariate spline s(x) of degree k on the interval
-    [xb,xe] calculated from a given set of data points
-    (x,y).
+        [xb,xe] calculated from a given set of data points
+        (x,y).
 
-    Can include least-squares fitting.
+        Can include least-squares fitting.
 
     """
 
     def __init__(self, x=None, y=None, w=None, bbox = [None]*2, k=3, s=0.0):
         """
         Input:
-          x,y   - 1-d sequences of data points (x must be
+            x,y   - 1-d sequences of data points (x must be
                   in strictly ascending order)
 
         Optional input:
-          w          - positive 1-d sequence of weights
-          bbox     - 2-sequence specifying the boundary of
+            k=3     - degree of the univariate spline.
+            w       - positive 1-d sequence of weights
+            bbox   - 2-sequence specifying the boundary of
                        the approximation interval.
                        By default, bbox=[x[0],x[-1]]
-          k=3     - degree of the univariate spline.
-          s          - positive smoothing factor defined for
+            s        - positive smoothing factor defined for
                        estimation condition:
                          sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0) <= s
                         Default s=0
