@@ -10,24 +10,24 @@
 """
 
 import shelve, time
-from interpolate1d import Test
+#from tests/test_interpolate1d import Test
 
 # name of log file to which all data is stored.
 filename = 'regression_test.dbm'
 
-log_total = shelve.open(filename)
+#log_total = shelve.open(filename)
 current_time = str(time.localtime()[0:5]) # specified up to the minute
 
 # run all tests in interpolate1d's test class
-test_list = [name for name in dir(Test) if name.find('test_') == 0]
+#test_list = [name for name in dir(Test) if name.find('test_') == 0]
 log_now = {}
 
 # record time taken for each test
-for test_name in test_list:
-    t1 = time.clock()
-    eval('Test.%s' % test_name)
-    t2 = time.clock()
-    log_now[test_name] = t2-t1
+#for test_name in test_list:
+  #  t1 = time.clock()
+   # eval('Test.%s' % test_name)
+    #t2 = time.clock()
+    #log_now[test_name] = t2-t1
 
-log_total[current_time] = log_now
-log_total.close()
+#log_total[current_time] = log_now
+#log_total.close()
