@@ -471,14 +471,12 @@ Optional Arguments
 
 At instantiation:
 
-#) bbox
+#. bbox
 This is a 2-element list specifying the endpoints of the approximation interval.
 It default to [x[0],x[-1]]
-    
-#) w
+#. w
 a 1D sequence of weights which defaults to all ones.
-
-#) s 
+#. s 
 If s is zero, the interpolation is exact.  If s is not 0, the curve is smoothe subject to
 the constraint that sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0) <= s
     
@@ -487,27 +485,30 @@ BEWARE : in the current implementation of the code, if s is small but not zero,
 
 At calling:
 
-#) nu
+#. nu
 Spline returns, not the spline function S, but the (nu)th derivative of S.  nu defaults
 to 0, so Spline usually returns the zeroth derivative of S, ie S.
+
 
 -----------------
 Special Methods
 -----------------
 
-#) set_smoothing_factor(s)
-#) get_knots
+The following special methods are also available, which are not wrapped by Interpolate1d.
+
+#. set_smoothing_factor(s = 0.0)
+#. get_knots
 returns the positions of the knots of the spline
-#) get_coeffs
+#. get_coeffs
 returns the coefficients of the 
-#) get_residual
+#. get_residual
 returns the weighted sum of the errors (due to smoothing) at the data points
 sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0)
-#) integral(a, b)
+#. integral(a, b)
 returns the integral from a to b
-#) derivatives(x)
+#. derivatives(x)
 returns all the derivatives of the spline at point x
-#) roots
+#. roots
 This only works for cubic splines.  But it returns the places where the spline
 is identically zero.
 
@@ -550,7 +551,42 @@ a vector is returned.
 The Objective Interface
 ------------------------------------------
 
-The objective interface for 2D is slightly more complicated.  
+The objective interface for 2D is similarly analogous to 1D.
+
+------------------------------------------
+The Spline2d Class
+------------------------------------------
+
+Just as with Spline, Spline2d is mostly intended to be wrapper by
+Interpolate2d, but it also functions as a stand-alone class featuring
+functionality not accessible through Interpolate2d.
+
+It is instantiated in virtually the same way ::
+
+    instance = Spline2d(x, y, z, kx = 3, ky = 3, s=0.0)
+    
+where x, y and z are 1D arrays.  It is called with arrays
+newx and newy, returning an array newz of the same length.
+
+Beyond basic usage, Spline2 also has the methods
+
+#) get_grid(self, x, y)
+x and y are treated as the coordinates of a grid, and all
+points on the grid are interpolated and returned in an array.
+    
+That is, if z = S.get_grid(x,y), z[i,j] is the interpolated value
+at the point (xi, yj)
+
+#) integral(xa, xb, ya, yb)
+Integrate the interpolated function over the indicated rectangle
+
+#) get_residual
+
+#) get_knots
+
+#) get_coeffs
+    
+
 
 ================================================
 ND Interpolation

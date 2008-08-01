@@ -50,14 +50,11 @@ class Spline2d(object):
         [xb,xe] x [yb, ye] calculated from a given set of data points
         (x,y,z).
 
-        See also:
-
-        bisplrep, bisplev - an older wrapping of FITPACK
-        UnivariateSpline - a similar class for univariate spline interpolation
-        SmoothUnivariateSpline - to create a BivariateSpline through the
-                                 given points
-        LSQUnivariateSpline - to create a BivariateSpline using weighted
-                              least-squares fitting
+        More commenting needed
+        
+        If (xi, yi) is outside the interpolation range, it is
+        assigned the value of the nearest point that is within the
+        interpolation range.
     """
     def __init__(self, x=None, y=None, z=None, w=None, bbox=[None]*4, kx=3, ky=3, s=0.0, eps=None):
         """
@@ -118,8 +115,11 @@ class Spline2d(object):
     def __call__(self, x, y):
         """ Evaluate spline at positions x[i],y[i].
             x and y should be 1d arrays.
+            
+            If (xi, yi) is outside the interpolation range, it will be
+            assigned the value of the nearest point that is within the
+            interpolation range.
         """
-        # what happens when x contains duplicate values?
         
         if self._is_initialized is not True:
             raise Error, "x, y and z must be initialized before interpolating"
@@ -131,26 +131,24 @@ class Spline2d(object):
         data_grid = self.get_grid(sorted_x, sorted_y)
         
         # fixme : no list comprehension
-        z = np.array([ data_grid[np.searchsorted(sorted(x), x[i]), np.searchsorted(sorted(y),y[i])] \
+        z = np.array([ data_grid[np.searchsorted(sorted_x, x[i]), np.searchsorted(sorted_y,y[i])] \
                                     for i,xi in enumerate(x) ])
-            
+        
         return z
         
         
-    def get_grid(self, x, y, mth='array'):
+    def get_grid(self, x, y):
         """ Evaluate spline at positions x[i],y[j]."""
         
         if self._is_initialized is not True:
             raise Error, "x, y and z must be initialized before interpolating"
         
-        if mth=='array':
-            tx,ty,c = self.tck[:3]
-            kx,ky = self.degrees
-            z,ier = _dfitpack.bispev(tx,ty,c,kx,ky,x,y)
-            assert ier==0,'Invalid input: ier='+`ier`
-            return z
-        raise NotImplementedError
-
+        tx,ty,c = self.tck[:3]
+        kx,ky = self.degrees
+        z,ier = _dfitpack.bispev(tx,ty,c,kx,ky,x,y)
+        assert ier==0,'Invalid input: ier='+`ier`
+        return z
+        
     def get_residual(self):
         """ Return weighted sum of squared residuals of the spline
         approximation: sum ((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0)

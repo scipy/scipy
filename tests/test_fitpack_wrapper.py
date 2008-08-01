@@ -17,7 +17,7 @@ class Test(unittest.TestCase):
     def assertAllclose(self, x, y):
         self.assert_(np.allclose(x, y))
         
-    def test_linearInterp(self):
+    def test_k_1(self):
         """ make sure : linear interpolation (spline with order = 1, s = 0)works
         """
         N = 3000.
@@ -34,7 +34,7 @@ class Test(unittest.TestCase):
         #print "time for order 1 spline interpolation with N = %i:" % N, t2 - t1
         self.assertAllclose(new_y[:5], [0.5, 1.5, 2.5, 3.5, 4.5])
         
-    def test_quadInterp(self):
+    def test_k_2(self):
         """ make sure : quadratic interpolation (spline with order = 2, s = 0)works
         """
         N = 3000.
@@ -49,6 +49,18 @@ class Test(unittest.TestCase):
         #print "time for order 1 spline interpolation with N = %i:" % N, t2 - t1
         self.assertAllclose(new_y, y)
         
+    def test_extrap(self):
+        """ make sure 1D extrapolation works
+        """
+        N = 3000.
+        x = np.arange(N)
+        y = np.arange(N)
+        
+        interp_func = Spline(x, y, k=1)
+        newx = np.arange(-2, N)+0.5
+        newy = interp_func(newx)
+        
+        self.assertAllclose(newx, newy)
         
     def test_inputFormat(self):
         """ make sure : it's possible to instantiate Spline without x and y
