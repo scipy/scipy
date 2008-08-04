@@ -764,7 +764,7 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             # (u-v)V^(-1)(u-v)^T
             _distance_wrap.pdist_mahalanobis_wrap(_convert_to_double(X), VI, dm)
         elif mstr == 'canberra':
-            _distance_wrap.pdist_canberra_wrap(_convert_to_bool(X), dm)
+            _distance_wrap.pdist_canberra_wrap(_convert_to_double(X), dm)
         elif mstr == 'braycurtis':
             _distance_wrap.pdist_bray_curtis_wrap(_convert_to_bool(X), dm)
         elif mstr == 'yule':
@@ -802,6 +802,8 @@ def pdist(X, metric='euclidean', p=2, V=None, VI=None):
             [VI] = _copy_arrays_if_base_present([VI])
             # (u-v)V^(-1)(u-v)^T
             dm = pdist(X, (lambda u, v: mahalanobis(u, v, VI)))
+        elif metric == 'test_canberra':
+            dm = pdist(X, canberra)
         elif metric == 'test_cityblock':
             dm = pdist(X, cityblock)
         elif metric == 'test_minkowski':
