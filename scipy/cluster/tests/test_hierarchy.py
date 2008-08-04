@@ -38,7 +38,7 @@ import os.path
 import numpy
 
 from numpy.testing import *
-from scipy.cluster.hierarchy import squareform, linkage, from_mlab_linkage, numobs_dm, numobs_y, numobs_linkage
+from scipy.cluster.hierarchy import squareform, linkage, from_mlab_linkage, numobs_dm, numobs_y, numobs_linkage, inconsistent
 from scipy.cluster.distance import pdist, matching, jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule
 
 _tdist = numpy.array([[0,    662,  877,  255,  412,  996],
@@ -58,8 +58,22 @@ _filenames = ["iris.txt",
               "linkage-complete-tdist.txt",
               "linkage-average-tdist.txt",
               "linkage-weighted-tdist.txt",
+              "inconsistent-complete-tdist-depth-1.txt",
+              "inconsistent-complete-tdist-depth-2.txt",
+              "inconsistent-complete-tdist-depth-3.txt",
+              "inconsistent-complete-tdist-depth-4.txt",
+              "inconsistent-single-tdist-depth-0.txt",
+              "inconsistent-single-tdist-depth-1.txt",
+              "inconsistent-single-tdist-depth-2.txt",
+              "inconsistent-single-tdist-depth-3.txt",
+              "inconsistent-single-tdist-depth-4.txt",
+              "inconsistent-single-tdist-depth-5.txt",
+              "inconsistent-single-tdist.txt",
+              "inconsistent-weighted-tdist-depth-1.txt",
+              "inconsistent-weighted-tdist-depth-2.txt",
+              "inconsistent-weighted-tdist-depth-3.txt",
+              "inconsistent-weighted-tdist-depth-4.txt",
               "random-bool-data.txt"]
-
 
 def load_testing_files():
     for fn in _filenames:
@@ -203,6 +217,21 @@ class TestLinkage(TestCase):
         expectedZ = from_mlab_linkage(Zmlab)
         #print Z, expectedZ, numpy.abs(Z - expectedZ).max()
         self.failUnless(within_tol(Z, expectedZ, eps))
+
+class TestInconsistent(TestCase):
+
+    def test_single_inconsistent_tdist(self):
+        for i in xrange(0, 100):
+            yield help_single_inconsistent_depth, i
+
+def help_single_inconsistent_depth(self, i):
+    Y = squareform(_tdist)
+    Z = linkage(Y, 'single')
+    R = inconsistent(Z, i)
+    Rright = eo['inconsistent-single-tdist-depth-' + str(i)]
+    eps = 1e-05
+    print numpy.abs(R - Rright).max()
+    self.failUnless(within_tol(R, Rright, eps))
 
 def within_tol(a, b, tol):
     return numpy.abs(a - b).max() < tol
