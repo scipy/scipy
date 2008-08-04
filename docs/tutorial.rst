@@ -6,28 +6,30 @@ Interpolation is the process of using known data to guess the value of unknown d
 a sample of a function into an approximation of that function for every value, and is one of
 the most basic mathematical tools available to a researcher.
 
-The interpolate package provides tools for interpolating and extrapolating new data points from a known set of data points.  
-It provides a functional interface that is flexible and easy to use as well as an object oriented interface that 
-can be more efficient and flexible for some cases.  It is able to interpolate and extrapolate in 1D, 2D, and even N 
-dimensions. *[FIXME : 1D only right now]*
+The interpolate package provides tools for interpolating and extrapolating new data points 
+from a known set of data points.  It provides a functional interface that is flexible and easy 
+to use as well as an object oriented interface that can be more efficient and flexible for some 
+cases.  It is able to interpolate and extrapolate in 1D, 2D, and even N dimensions. *[FIXME : 1D only right now]*
 
-For 1D interpolation, it handles linear and spline(cubic, quadratic, and quintic) for both uniformly and non-uniformly spaced 
-data points "out of the box."  Users can choose the behavior when new values fall outside the range of known data, and
-with a little more work, they can incorporate interpolation methods that are specially tailored to their needs.
+For 1D interpolation, it handles both uniformly and non-uniformly spaced data points, 
+and many popular interpolation methods (particularly splines) are available by simply passing in a keyword
+string ('linear' for linear interpolation, 'cubic' for spline order 3, etc).  With a little 
+more work, users can design and incorporate interpolation methods that are specially tailored to their needs.
 
-For 2D interpolation, *[FIXME : include this]*
+2D interpolation is analogous to 1D, with a nearly identical user interface (corrected for the fact
+that each data point has one more component) and functionality.
 
 This tutorial covers how to use the interpolate module, provides some basic examples, and shows
 them at work in realistic sample sessions.  These sessions demonstrate how to use the 
 interpolate module, but also highlight some of the uses of interpolation techniques.
 
-================================================
-1D Interpolation with the Functional Interface
-================================================
+======================
+1D Interpolation 
+======================
 
--------------
-Basic Usage
--------------
+---------------------------------------------------------
+Basic Usage with the Functional Interface
+---------------------------------------------------------
 
 For most users, the primary feature of interpolate is the function 'interp1d'.  It takes
 in known data points and the points at which to interpolate values, and returns
@@ -161,6 +163,7 @@ become NaN as well, and NaN does not show up on a graph.  In contrast,
 using bad_data removed both those points, so the entire range of x is linearly
 interpolated.
 
+
 --------------------------------------
 User-defined Interpolation Methods
 --------------------------------------
@@ -244,12 +247,25 @@ in cryptic errors, so be careful.  Here is a demo of how to properly use these f
     Out []: array([ 5.7, 4.0, 5.7 ])
 
 
+-----------------------------
+Smoothing data
+-----------------------------
+Interpolate1d does not explicitly support smoothing of noisy data.  Other packages
+can be used to pre-filter the data before calling Interpolate1d on it, but
+a more convenient option is provided by the Spline class described below.
+
+Spline supports data smoothing with the keyword s (which defaults to 0, i.e. no
+smoothing).  If you want smoothing, you can set kind equal to an instance of the
+Spline class which has s != 0.  For example: ::
+
+    In []: import interpolate as I
+    In []: newy = I.interp1d(x, y, newx, kind=I.Spline(s=4.0) )
 
 
 
-================================================
+--------------------------------------------------------------------
 1D Interpolation with the Object Interface
-================================================
+--------------------------------------------------------------------
 
 interp1d is built as a wrapper around the class Interpolate1d.  If you want to
 interpolate multiple times from the same dataset, it can be more efficient
@@ -281,17 +297,17 @@ with new_x as the only argument. ::
     In []: new_y2 == new_Y2
     Out []: True
     
-==================================================
+--------------------------------------------------------------------
 Sample Data Analysis Sessions Using Interpolate
-==================================================
+--------------------------------------------------------------------
 
 Below are several sample sessions or code pieces from various applications
 showing uses for interpolation and how it can be done using the
 interpolate module.
 
------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Estimating Function Statistics and Displaying Data
------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In this session, the geologist
 has a data set of data indicating the temperature at various
@@ -322,9 +338,9 @@ and 2) estimate the average temperature.
     # are not necessarily uniform, but it is easy to uniformly sample the interpolated function
     In []: average_temp = average( I.interp1d(depth, temp, linspace(0,20,100), 'cubic', bad_data=[1000]) )
     
----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Modeling from a small dataset
----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This computational biologist wants to model the growth rate of 
 cancer cells in tissue.  For several levels of blood glucose, he has measurements 
@@ -366,9 +382,9 @@ the simulation to estimate the growth rate of the cells at various point in time
         def __call__(self, glucose_level):
             return self.CO2_to_growth( self.glucose_to_CO2( glucose_level ))
 
---------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Optimization
---------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This engineer is developing a piece of hardware, and needs to find the optimal
 thickness for a thin film it contains.  Because performance (by some metric) is at a premium,
@@ -404,9 +420,9 @@ prototype, and repeat.  If she does this, she can "zoom in" on the optimal thick
 More sophisticated optimization tools are also available from the scipy.optimize
 module.
 
-===================
+-----------------------------------------
 The Spline Class
-===================
+-----------------------------------------
 
 Interpolate1d, with the string arguments 'spline', 'cubic', 'quad', 'quintic', etc, is
 actually a wrapper around the Spline class, which contains fast and powerful Fortran
@@ -415,9 +431,9 @@ For some tasks, it is good to be able to directly access this power.
 
 This section describes the operation of the Spline class.
 
-----------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Intro to Splines
-----------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Splines are a class of functions which 
 #) are easy and quick to evaluate, 
@@ -440,9 +456,9 @@ is also common for splines to include smoothing of data, so that the curve does 
 through all the data points but is smoother than it would be if it had to. k=3 is the most 
 common order of spline used in interpolation, and is often called a cubic spline.
 
--------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Basic Usage
--------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 At instantiation, the user passes in x, y, and possibly the spline order k (which defaults to 3).
 Calls are then made with the new_x array. ::
@@ -465,9 +481,9 @@ in general (and cubic splines in particular) so sought after.
     In []: interp2.init_xy(x, y)
 
 
----------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Optional Arguments
----------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 At instantiation:
 
@@ -490,27 +506,27 @@ Spline returns, not the spline function S, but the (nu)th derivative of S.  nu d
 to 0, so Spline usually returns the zeroth derivative of S, ie S.
 
 
------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Special Methods
------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following special methods are also available, which are not wrapped by Interpolate1d.
+The following special methods are also available, which are not wrapped by Interpolate1d :
 
 #. set_smoothing_factor(s = 0.0)
 #. get_knots
-returns the positions of the knots of the spline
+    returns the positions of the knots of the spline
 #. get_coeffs
-returns the coefficients of the 
+    returns the coefficients of the 
 #. get_residual
-returns the weighted sum of the errors (due to smoothing) at the data points
-sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0)
+    returns the weighted sum of the errors (due to smoothing) at the data points
+    sum((w[i]*( y[i]-s(x[i]) ))**2,axis=0)
 #. integral(a, b)
-returns the integral from a to b
+    returns the integral from a to b
 #. derivatives(x)
-returns all the derivatives of the spline at point x
+    returns all the derivatives of the spline at point x
 #. roots
-This only works for cubic splines.  But it returns the places where the spline
-is identically zero.
+    This only works for cubic splines.  But it returns the places where the spline
+    is identically zero.
 
 
 ================================================
@@ -530,28 +546,67 @@ In analogy to 1D interpolation, the function is interp2d and the class is Interp
 The Functional Interface
 ------------------------------------------
 
-The functional interface is virtually identical to that for interp1d: ::
+The functional interface is completely analogous to that for interp1d: ::
 
-    new_z = interp2d(x, y, z, new_x, new_y)
+    newz = interp2d(x, y, z, newx, newy, kind='linear', out=NaN)
 
-The range of interpolation is the rectangle given by the largest and
-smallest values in x and y.
-As in the case of 1D, string arguments can be passed
-as keywords to specify particular types of interpolation.  The keywords
-in this case are kind (for in-range interpolation) and out (for out-of-bounds).
+where x, y, z, are 1D arrays or lists, and newx and newy may be either arrays, lists or scalars.  
+If they are scalars or zero-dimensional arrays, newz will be a scalar as well.  Otherwise
+a vector is returned.  The only differences from intper1d are
 
-By default, out of bounds returns NaN, and in-bounds returns a linear
-interpolation.
+#. The known data points are specified by 3 arrays (x, y and z) rather than 2 (x and y).
+    z is the dependent variable, while x and y are independent variables.
+#. Where to interpolate values is specified by two arrays, newx and newy, rather
+    than only one array.
+#. The extrapolation keywords "low" and "high" are replaced by the single keyword "out"
+    for out-of-bounds.
+#. Not all of the same keyword arguments are available for 1D and 2D.  The main ones like 
+    'linear', 'cubic' and 'spline', however, work in both cases, and we try to give analogous
+    methods the same name.  But some methods are particular to, or have only been written
+    for, one praticular dimensionality.
 
-new_x and new_y may be either arrays, lists or scalars.  If they are
-scalars or zero-dimensional arrays, new_z will be a scalar as well.  Otherwise
-a vector is returned.
+As in 1D, linear interpolation is used by default, while out of bounds returns NaN.
+
+Here is an example session: ::
+
+    In []: from interpolate import interp2d
+    In []: x, y = meshgrid( arange(10.), arange(10.) )
+    In []: z = x*y
+    In []: x, y, z = map(ravel, [x, y, z] )
+    # calling with scalars to get the value at a point
+    In []: interp2d(x, y, z, 5.5, 7.0)
+    Out []: 38.5
+    # plotting a cross-section of the surface
+    In []: newx = arange(0, 5, .2)
+    In []: newy = arange(0, 5, .2)
+    In []: plot( interp2d(x, y, z, newx, newy ))
+    
+.. image :: XY-crossection.png
+
+We can also use imshow to see the whole surface, though we must use
+reshape to turn z back into a 2D array. ::
+
+    In []: X, Y = meshgrid( arange(0,9,.2), arange(0,9,.2) )
+    In []: Z = interp2d(x, y, z, ravel(X), ravel(Y))
+    In []: len(Z)
+    Out []: 2025
+    # sqrt(2025) = 45
+    In []: imshow( reshape(Z, (45,45) ) )
+
+.. image :: XY-surface.png
 
 ------------------------------------------
 The Objective Interface
 ------------------------------------------
 
-The objective interface for 2D is similarly analogous to 1D.
+The objective interface for 2D is similarly analogous to 1D.  The class is
+instantiated with x, y, z, kind and out.  It is called with newx and newy. ::
+
+    In []: interp_obj = Interpolate2d(x, y, z)
+    In []: newz = interp_obj(newx, newy)
+
+
+
 
 ------------------------------------------
 The Spline2d Class
@@ -571,20 +626,18 @@ newx and newy, returning an array newz of the same length.
 Beyond basic usage, Spline2 also has the methods
 
 #) get_grid(self, x, y)
-x and y are treated as the coordinates of a grid, and all
-points on the grid are interpolated and returned in an array.
-    
-That is, if z = S.get_grid(x,y), z[i,j] is the interpolated value
-at the point (xi, yj)
-
+    x and y are treated as the coordinates of a grid, and all
+    points on the grid are interpolated and returned in an array.
+    That is, if z = S.get_grid(x,y), z[i,j] is the interpolated value
+    at the point (xi, yj)
 #) integral(xa, xb, ya, yb)
-Integrate the interpolated function over the indicated rectangle
-
+    Integrate the interpolated function over the indicated rectangle
 #) get_residual
-
+    Same as Spline
 #) get_knots
-
+    Same as Spline
 #) get_coeffs
+    Same as Spline
     
 
 

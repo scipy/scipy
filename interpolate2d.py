@@ -239,22 +239,23 @@ class Interpolate2d:
         
         # make input into a nice 1d, contiguous array
         newx = atleast_1d_and_contiguous(newx, dtype=self._xdtype)
-        assert newx.ndim == 1, "newx can be at most 1-dimensional"
         newy = atleast_1d_and_contiguous(newy, dtype=self._ydtype)
+        assert newx.ndim == 1, "newx can be at most 1-dimensional"
         assert newy.ndim == 1, "newy can be at most 1-dimensional"
         assert len(newx) == len(newy), "newx and newy must be the same length"
         
         in_range_mask = (min(self._x) <= newx)  & (newx <= max(self._x)) & \
                                 (min(self._y) <= newy) & (newy <= max(self._y))        
         
+        # filling array of interpolated z-values
         result = np.zeros(np.shape(newx))
-        if sum(in_range_mask) > 0:
-            # hack to deal with behavior of vectorize on arrays of length 0
+        if sum(in_range_mask) > 0: # if there are in-range values.  hack to deal 
+                                                # with behavior of np.vectorize on arrays of length 0
             result[in_range_mask] = self.kind(newx[in_range_mask], newy[in_range_mask])        
         if sum(~in_range_mask) > 0:
-            # hack to deal with behavior of vectorize on arrays of length 0
             result[~in_range_mask] = self.out(newx[~in_range_mask], newy[~in_range_mask])
         
+        # revert to scalar if applicable
         if input_is_scalar:
             result = result[0]
         

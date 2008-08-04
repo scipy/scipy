@@ -5,7 +5,7 @@ note with ideas.  More info is often contained in FIXMEs
 at appropriate places in the code.
 
 
-************ PRESSING ISSUES ***********
+************ API and/or MAJOR ISSUES ***********
 
 **handle smoothing 
     There is a question of whether, if, and how much to allow
@@ -19,6 +19,10 @@ at appropriate places in the code.
     This appears resolved, in that Spline can do smoothing (but defaults
     to not), and user-defined classes are allowed to smooth.
 
+**remove list comprehension in interpolate2d.Interpolate2d.__call__
+
+**possibly allow interp2d to return a 2d array?  Like in the case that
+    x and y are 2d arrays in meshgrid format.
 
 **pick best spline
     Under-the-hood machinery currently comes from _interpolate.cpp
@@ -31,15 +35,6 @@ at appropriate places in the code.
     regular grid.  I'm inclined to stay with FITPACK, except for the
     slow performance when x is small (we could add a hack to not
     let s be tiny > 0).
-
-
-**clean up fitpack_wrapper.py
-    Currently it is all hacked together from scipy.interpolate.
-    There is unused functionality, commented-out functionality,
-    and other undesirables.  Once it has been established what
-    we will include, and what should be accessible to the user, 
-    that stuff needs to be cleaned up, and the
-    rest needs to be either removed or set aside.
     
 **allow y to be 2-dimensional?
     It is not decided whether this feature should be supported, but
@@ -68,6 +63,10 @@ at appropriate places in the code.
     can be made as wrappers around Interpolate1d.
     
     See also "allow y to be 2-dimensional?" below
+    
+**Put Spline2d into fitpack_wrapper.py
+    It's out now so that is can be worked on separately, but the
+    fitpack-based code should all be in one module.
     
     
 
@@ -113,7 +112,7 @@ at appropriate places in the code.
     
 ********* LONGER TERM ************
 
-**update for 2D and ND
+**update for ND
     This will take the form of two additional
     classes both modelled after interpolate1d.  Thus it probably
     shouldn't be done until interpolate1d is more settled.

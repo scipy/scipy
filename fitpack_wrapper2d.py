@@ -120,22 +120,26 @@ class Spline2d(object):
             assigned the value of the nearest point that is within the
             interpolation range.
         """
+        # FIXME : this function calls self.get_grid, which is extremely inefficient.  However,
+        # I don't believe Fitpack really provides functionality to interpolate at scattered values.
         
-        if self._is_initialized is not True:
+        if self._is_initialized is False:
             raise Error, "x, y and z must be initialized before interpolating"
             
         # check input format
-        assert isinstance(x, np.ndarray) and isinstance(y, np.ndarray), \
+        assert ( isinstance(x, np.ndarray) and isinstance(y, np.ndarray) ), \
                     "newx and newy must both be numpy arrays"
         assert len(x) == len(y), "newx and newy must be of the same length"
         
         # sort only once for efficiency
-        sorted_x = sorted(x)
-        sorted_y = sorted(y)
+        sorted_x = x.copy()
+        sorted_x.sort()
+        sorted_y = y.copy()
+        sorted_y.sort()
         
         data_grid = self.get_grid(sorted_x, sorted_y)
         
-        # fixme : no list comprehension
+        # FIXME : no list comprehension
         z = np.array([ data_grid[np.searchsorted(sorted_x, x[i]), np.searchsorted(sorted_y,y[i])] \
                                     for i,xi in enumerate(x) ])
         
