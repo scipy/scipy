@@ -113,7 +113,7 @@ class Spline2d(object):
         self._is_initialized = True
         
     def __call__(self, x, y):
-        """ Evaluate spline at positions x[i],y[i].
+        """ Evaluate spline at positions (x[i], y[i]).
             x and y should be 1d arrays.
             
             If (xi, yi) is outside the interpolation range, it will be
@@ -123,6 +123,11 @@ class Spline2d(object):
         
         if self._is_initialized is not True:
             raise Error, "x, y and z must be initialized before interpolating"
+            
+        # check input format
+        assert isinstance(x, np.ndarray) and isinstance(y, np.ndarray), \
+                    "newx and newy must both be numpy arrays"
+        assert len(x) == len(y), "newx and newy must be of the same length"
         
         # sort only once for efficiency
         sorted_x = sorted(x)
@@ -142,6 +147,11 @@ class Spline2d(object):
         
         if self._is_initialized is not True:
             raise Error, "x, y and z must be initialized before interpolating"
+        
+        # check input format
+        assert isinstance(x, np.ndarray) and isinstance(y, np.ndarray), \
+                    "newx and newy must both be numpy arrays"
+        assert len(x) == len(y), "newx and newy must be of the same length"
         
         tx,ty,c = self.tck[:3]
         kx,ky = self.degrees

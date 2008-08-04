@@ -75,24 +75,13 @@ class Test(unittest.TestCase):
         Z = X + Y
         x, y, z = map(ravel, [X, Y, Z])
         
-        newx = arange(N+8) +.5
-        newy = 2*newx
-        
         interp_func = Spline2d(x, y, z, kx=1, ky=1)
-        newz = interp_func(newx, newy)
         
-        print "newx: ", newx
-        print "newy: ", newy
-        print "sum : ", newx+newy
-        print "newz: ", newz
+        # upper-right region of R2
+        self.assertAllclose(interp_func(np.array([N+1.]),np.array([N+1.])) , 2*N-2)
         
-        print "Homer Simpson"
-        print interp_func(array([-2.0]),array([3.5]))
-        print interp_func(array([-7.0]),array([3.5]))
-        print interp_func(array([-2.0]),array([7]))
-        print "Bartman"
-        
-        self.assertAllclose(newz, newx+newy)
+        # directly above interpolation region; only extrapolating in one variable
+        self.assertAllclose(interp_func(np.array([N])/2.,2.*np.array([N])) , N/2. + (N-1.))
     
     def runTest(self):
         test_list = [name for name in dir(self) if name.find('test_')==0]
