@@ -1,9 +1,0 @@
-
-- Documentation
-
-- improve caching of pypy compiler output
-
-- think about shipping issues (using weave ext_tools)
-
-- add Csrc attribute to ufunc object
-
