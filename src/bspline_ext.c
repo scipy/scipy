@@ -99,7 +99,7 @@ static PyObject *BSpline_Evaluate(PyObject *self, PyObject *args)
     PyObject *x_array     = NULL;
     PyObject *basis_array = NULL;
 
-    if(!PyArg_ParseTuple(args, "OOiiii", &knots_array, &x_array, &lower, &upper, &m, &d)) 
+    if(!PyArg_ParseTuple(args, "OOiiii", &x_array, &knots_array, &m, &d, &lower, &upper)) 
 	    goto exit;
 
     nknots = PyArray_DIMS(knots_array);
