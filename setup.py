@@ -13,31 +13,31 @@ def configuration(parent_package='',top_path=None):
 
     # C++ extension for several basic interpolation types
     config.add_extension('_interpolate',
-                        ['_interpolate.cpp'],
-                        include_dirs = ['.'],
-                        depends = ['interpolate.h'])
+                        ['extensions/_interpolate.cpp'],
+                        include_dirs = ['extensions'],
+                        depends = ['extensions/interpolate.h'])
 
     # used by dfitpack extension
     config.add_library('_fitpack',
-                        sources=[join('fitpack', '*.f')],
+                        sources=[join('extensions/fitpack', '*.f')],
                       )
 
     # Fortran routines (collectively "FITPACK" for spline interpolation)
     config.add_extension('_dfitpack',
-                        sources=['_fitpack.pyf'],
+                        sources=['extensions/_fitpack.pyf'],
                         libraries=['_fitpack'],
                         )
                         
     # ND Image routines for ND interpolation
     config.add_extension('_nd_image',
-                        sources=["ndimage/nd_image.c",
-                                    "ndimage/ni_filters.c",
-                                    "ndimage/ni_fourier.c",
-                                    "ndimage/ni_interpolation.c",
-                                    "ndimage/ni_measure.c",
-                                    "ndimage/ni_morphology.c",
-                                    "ndimage/ni_support.c"],
-                        include_dirs=['ndimage']+[get_include()],
+                        sources=["extensions/ndimage/nd_image.c",
+                                    "extensions/ndimage/ni_filters.c",
+                                    "extensions/ndimage/ni_fourier.c",
+                                    "extensions/ndimage/ni_interpolation.c",
+                                    "extensions/ndimage/ni_measure.c",
+                                    "extensions/ndimage/ni_morphology.c",
+                                    "extensions/ndimage/ni_support.c"],
+                        include_dirs=['extensions/ndimage']+[get_include()],
                         )
                         
     config.add_data_dir('docs')
