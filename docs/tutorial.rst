@@ -683,16 +683,15 @@ out-of-bounds; alternate types can be specified by the keywords
 #) 'kind' must be a string ('linear', 'block', 'cubic', etc) indicating a type of
     spline interpolation, or else an integers specifying the spline order.
 #) 'out' must be either NaN (the default), 'nearest', 'wrap', 'reflect' or 'constant'
+    where the strings indicate extrapolation methods.
 
 The user cannot pass in specially-tailored interpolation methods.
 
-There 
+There is also an objective interface that interpNd wraps around.  The
+class InterpolateNd is instantiated with all arguments other than coordinates,
+and called with coordinates.
 
-The second point is that all interpolation is done using splines.  The keyword is still
-"kind", but only keywords specifying splines ('spline', 'cubic', 'quadratic', 'quintic', etc)
-are acceptable.  If kind is an integer, that integer is taken to be the order of the spline.
-Note also that 'linear' denotes a spline of order 1, and 'block' denotes a spline of order
-zero.  
+Finally, removal of bad data points is not supported for ND interpolation.
 
 
 

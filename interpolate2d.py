@@ -1,7 +1,7 @@
 
 from numpy import NaN, array
 import numpy as np
-from fitpack_wrapper2d import Spline2d
+from fitpack_wrapper import Spline2d
 
 def atleast_1d_and_contiguous(ary, dtype = np.float64):
     # FIXME : don't have in 2 places

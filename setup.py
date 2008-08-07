@@ -40,7 +40,6 @@ def configuration(parent_package='',top_path=None):
                         include_dirs=['ndimage']+[get_include()],
                         )
                         
-    # FIXME : add documentation files
     config.add_data_dir('docs')
 
     return config

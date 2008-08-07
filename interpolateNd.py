@@ -5,7 +5,63 @@ import numpy as np
 import _nd_image
 
 def interpNd(data, coordinates, starting_coords=None, spacings=None, kind='linear',out=NaN):
-    return Interpolate1d(data = data,
+    """ A function for interpolation of 1D, real-valued data.
+        
+        Parameters
+        -----------
+            
+            data -- NumPy array (N-dimensional) or list of lists
+                indicates the known values of the function.
+            
+            coordinates -- array or list
+                To interpolate at a set of L points, array must be NxL, where
+                each column denotes a point.  If only one point is desired, its
+                coordinates may be entered as either a list or an array.
+                
+        Optional Arguments
+        -------------------
+        
+            starting_coords -- array or list
+                indicates the point in space
+                whose value is given by data[0, ..., 0].
+                Defaults to being all zeros.
+                
+            spacings -- array or list
+                jth component gives spacing
+                of points along the jth axis.  Defaults
+                to being all ones.
+        
+            kind -- A string or integer
+                Indicates what interpolation method to perform on
+                points within the region of interpolation
+                
+                0, 'block' -- block interpolation based on interval midpoints
+                1, 'linear' -- linear interpolation
+                2, 'quadratic' -- spline order 2 interpolation
+                3, 'cubic' -- cubic spline interpolation
+                4, 'quartic' -- 4th order spline interpolation
+                5, 'quintic' -- 5th order spine interpolation
+                
+            out -- string or NaN
+                Indicates how to extrapolate values at points outside 
+                the region of interpolation.
+            
+                NaN -- return NaN for all points out of range
+                'nearest' -- return value at nearest valid point
+                'constant' -- returns 0
+                'wrap' -- points over one boundary wrap around to the other side
+                'reflect' -- out-of-bounds points are reflected into the valid region
+                
+        Example
+        --------
+        
+            >>> import numpy as np
+            >>> from interpolate import interpNd
+            >>> boring_data = np.ones((5,5,5))
+            >>> nd.interpNd(boring_data, np.array([[2.3], [1.0], [3.9]]))
+            1.0
+    """
+    return InterpolateNd(data = data,
                                     starting_coords = starting_coords,
                                     spacings = spacings,
                                     kind = kind,
@@ -13,6 +69,57 @@ def interpNd(data, coordinates, starting_coords=None, spacings=None, kind='linea
                                     )(coordinates)
 
 class InterpolateNd:
+    """ A callable class for interpolation of 1D, real-valued data.
+        
+        Parameters
+        -----------
+            
+            data -- NumPy array (N-dimensional) or list of lists
+                indicates the known values of the function.
+                
+        Optional Arguments
+        -------------------
+        
+            starting_coords -- array or list
+                indicates the point in space
+                whose value is given by data[0, ..., 0].
+                Defaults to being all zeros.
+                
+            spacings -- array or list
+                jth component gives spacing
+                of points along the jth axis.  Defaults
+                to being all ones.
+        
+            kind -- A string or integer
+                Indicates what interpolation method to perform on
+                points within the region of interpolation
+                
+                0, 'block' -- block interpolation based on interval midpoints
+                1, 'linear' -- linear interpolation
+                2, 'quadratic' -- spline order 2 interpolation
+                3, 'cubic' -- cubic spline interpolation
+                4, 'quartic' -- 4th order spline interpolation
+                5, 'quintic' -- 5th order spine interpolation
+                
+            out -- string or NaN
+                Indicates how to extrapolate values at points outside 
+                the region of interpolation.
+            
+                NaN -- return NaN for all points out of range
+                'nearest' -- return value at nearest valid point
+                'constant' -- returns 0
+                'wrap' -- points over one boundary wrap around to the other side
+                'reflect' -- out-of-bounds points are reflected into the valid region
+                
+        Example
+        --------
+        
+            >>> import numpy as np
+            >>> from interpolate import InterpolateNd
+            >>> boring_data = np.ones((5,5,5))
+            >>> nd.InterpolateNd(boring_data)( np.array([[2.3], [1.0], [3.9]]) )
+            1.0
+    """
     def __init__(self, data, starting_coords =None, spacings = None, 
                         kind='linear', out=NaN):
         """ data = array or list of lists

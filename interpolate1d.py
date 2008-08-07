@@ -130,7 +130,7 @@ def interp1d(x, y, new_x,
         ---------
         
             >>> import numpy
-            >>> from Interpolate1D import interp1d
+            >>> from interpolate import interp1d
             >>> x = range(5)        # note list is permitted
             >>> y = numpy.arange(5.)
             >>> new_x = [.2, 2.3, 5.6]

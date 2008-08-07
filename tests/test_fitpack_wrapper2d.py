@@ -10,7 +10,7 @@ import unittest
 import time
 from numpy import arange, allclose, ones, meshgrid, ravel, array
 import numpy as np
-from fitpack_wrapper2d import Spline2d
+from fitpack_wrapper import Spline2d
 
 class Test(unittest.TestCase):
     

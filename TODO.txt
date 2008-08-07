@@ -4,37 +4,15 @@ improvement.  There's also a small explanatory
 note with ideas.  More info is often contained in FIXMEs
 at appropriate places in the code.
 
+Note that I don't include much about docstrings, documentation, or
+comments here.  Improvement of those, esp as other stuff evolves,
+is a given.
+
 
 ************ API and/or MAJOR ISSUES ***********
 
-**handle smoothing 
-    There is a question of whether, if, and how much to allow
-    smoothing of the data.  If we smooth, we're not technically
-    interpolating, but users often want to smooth data.  
-
-    In fitpack_wrapper the smoothing parameter is s.  It now defaults
-    to 0.0 (exact interpolation).  Zero smoothing and moderate (s ~ 1)
-    are fast, but small non-zero s makes the algorithm VERY slow.
-    
-    This appears resolved, in that Spline can do smoothing (but defaults
-    to not), and user-defined classes are allowed to smooth.
-
-**remove list comprehension in interpolate2d.Interpolate2d.__call__
-
 **possibly allow interp2d to return a 2d array?  Like in the case that
     x and y are 2d arrays in meshgrid format.
-
-**pick best spline
-    Under-the-hood machinery currently comes from _interpolate.cpp
-    (used in enthought.interpolate) and FITPACK (Fortran, used in 
-    scipy.interpolate).  This isn't necessarily the best.  Other code
-    is used in scipy.ndimage and scipy.signal.  There is surely other
-    code out there too.  Figure out what is best and incorporate it.
-
-    Signal code is slower than FITPACK, and NDImage requires a
-    regular grid.  I'm inclined to stay with FITPACK, except for the
-    slow performance when x is small (we could add a hack to not
-    let s be tiny > 0).
     
 **allow y to be 2-dimensional?
     It is not decided whether this feature should be supported, but
@@ -53,98 +31,42 @@ at appropriate places in the code.
     deleted for each column.
 
 **better handling of variable types
-    Currently everything is cast to a float64 if it is not already
-    a float32.  Is this the best way to do it?
-
-    There's also the question of Y being 2-dimensional and/or
-    incorporating strings for record arrays.  My instinct is to
-    have Interpolate1d only interpolate functions that are from
-    R1 -> R1.  That's how it is currently designed.  Other stuff
-    can be made as wrappers around Interpolate1d.
+    Currently only 1D interpolation deals with both float32
+    and float64 data.
     
-    See also "allow y to be 2-dimensional?" below
-    
-**Put Spline2d into fitpack_wrapper.py
-    It's out now so that is can be worked on separately, but the
-    fitpack-based code should all be in one module.
-    
-    
+**include spline pre-filtering in ND interpolation,
+    or understand why we don't need to do that.
 
-*********** DOCUMENTATION-TYPE AND NON-URGENT TASKS *******
-
-**improve regression tests
-    desired for fitpack_wrapper and _interpolate_wrapper
-    as well as Interpolate1d.  What I have now is
-    really basic.
-
-
-**improve unit tests in tests directory
-
-
-**comment all files
-    There are comments there already, but they should be
-    made better.  Plus, features are changing, which requires
-    updating the documentation.
-
-
-**doc strings for interpolate1d and its members
-    There's docstrings there already, but they should be
-    made better.  In particular, it must be ensured that
-    they are of the proper format and include examples.
-
-    The doc strings for __init__.py, interpolate1d.py,
-    Interpolate1d, and interp1d are virtually identical
-    and very long; perhaps a master string can be stored
-    somewhere that they all reference.  This would make
-    updates of documentation easier.
-
+**README file that describes the architecture of the
+    package and also includes license information.
 
 **figure out NumPy stuff with vectorize.
     In function Interpolate1d.__call__
     It would be nice to remove the hack I used.
     I believe vectorize is supposed to handle arrays of
     length 0, but it's not working on my computer.
-    
 
-**allow newx to be in non-sorted order
+**allow newx to be in non-sorted order for 1D
     This requires rethinking the partition of newx into
     low, high and mid
     
+**put all extension files into their own directory
+    
 ********* LONGER TERM ************
 
-**update for ND
-    This will take the form of two additional
-    classes both modelled after interpolate1d.  Thus it probably
-    shouldn't be done until interpolate1d is more settled.
+**allow for scattered ND data
+    A Delaunay triangulation may be a good way to do this. I
+    would really like to code it up, but that may be a bit preliminary.
     
-    There is an interesting problem here.  Most of the extensions
-    I have assume a regular grid.  First off, this is often not general.
-    Secondly, if I DO use a regular grid, how do I deal with bad
-    data?  The best way is probably a pre-processing where you
-    interpolate values for the bad points (linear would be a nice simple
-    way to do it at first, just to get it working)
-    
-    We should probably use something other than FITPACK for this.
-    But firstly it's at most 2D.  Much worse, it doesn't evaluate at
-    a set of points; it evaluates over a grid, which requires inputs
-    being in sorted order (both in x and y coordinates).  This makes
-    input inconvenient and the code runs a lot slower than ndimage.
-    ND image has 2 main downsides :1) it requires x and y be uniform
-    spacing (since its really interpolating entries of an array, rather
-    than values of a function on Rn), and 2) the C code is TERRIBLY
-    documented/commented.  But that can be fixed.
-    
-    So we may have two separate classes: Interpolate1d which is
-    based on FITPACK (or something else, depending on what
-    happens with the smoothing parameter), and InterpolateNd
-    which is based on ndimage.
-    
-    Another option is to have two classes: one for uniformly spaced data and
-    and one for scattered data.  Regularly spaced would use NDImage, and
-    scattered would start as an inefficient wrapper around FITPACK.  But longer
-    term the scattered data could be done with Delaunay triangulation,
-    perhaps something that would implicitly calculate the convex hull
-    of the points and interpolate within it.
+**rethink extension packages and capabilities
+    Under-the-hood machinery currently comes from _interpolate.cpp
+    (used in enthought.interpolate), FITPACK (Fortran, used in 
+    scipy.interpolate) and ndimage.  This isn't necessarily the best.  
+    Other code is used in scipy.signal.  There is surely other
+    code out there too.  Figure out what is best and incorporate it.
+
+    Currently, 1D and 2D both mostly wrap FITPACK through the Spline
+    and Spline2d classes, and ND wraps ndimage.
 
 **high-level road map
     when the module is more established, there should be a page on

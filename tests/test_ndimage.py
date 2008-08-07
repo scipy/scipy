@@ -9,13 +9,20 @@ import unittest
 import time
 from numpy import arange, allclose, ones, array
 import numpy as np
-import ndimage_wrapper as nd
+import interpolateNd as nd
 
 class Test (unittest.TestCase):
     
     def assertAllclose(self, x, y):
         self.assert_(np.allclose(x, y))
     
+    def test_interpNd(self):
+        """ Make sure : the function interpNd works
+        """
+        boring_data = np.ones((5,5,5))
+        answer = nd.interpNd(boring_data, np.array([[2.3], [1.0], [3.9]]))
+        self.assertAllclose( answer , 1.0 )
+        
     def test_linear(self):
         """ Make sure : basic linear works
         """
