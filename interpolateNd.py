@@ -132,6 +132,7 @@ class InterpolateNd:
         """
         
         # FIXME : include spline filtering
+        # the ndimage module says that it requires pre-filtering for 
         
         # checking format of input
         data = array(data)
@@ -191,8 +192,16 @@ class InterpolateNd:
         else:
             raise ValueError, "argument kind = %s not recognized" % str(kind)
                 
+        
+        # This step is done because it is required by the ndimage code that I'm scavenging.
+        # I don't fully understand why it must do this, and that's a problem.  But empirically
+        # this step is needed in order to get good-looking data.
+        if self.order >1:
+            self._data_array = spline_filter(data, self.order)
+        else:
+            self._data_array = data
+        
         # storing relevant data
-        self._data_array = data
         self.ndim = data.ndim
         self._shape = np.shape(data)
         self._spacings = spacings
@@ -296,3 +305,39 @@ class InterpolateNd:
         
     
     
+import _ni_support
+
+def spline_filter1d(input, order = 3, axis = -1, output = np.float64,
+                    output_type = None):
+                    # takes array and everything; we can make input safe if user never touches it
+    """ Calculates a one-dimensional spline filter along the given axis.
+
+        The lines of the array along the given axis are filtered by a
+        spline filter. The order of the spline must be >= 2 and <= 5.
+    """    
+    if order in [0, 1]:
+        output[...] = np.array(input)
+    else:
+        _nd_image.spline_filter1d(input, order, axis, output)
+    return output
+
+def spline_filter(input, order = 3, output = np.float64,
+                  output_type = None):
+    """ Multi-dimensional spline filter.
+
+        Note: The multi-dimensional filter is implemented as a sequence of
+        one-dimensional spline filters. The intermediate arrays are stored
+        in the same data type as the output. Therefore, for output types
+        with a limited precision, the results may be imprecise because
+        intermediate results may be stored with insufficient precision.
+    """
+                                                    
+    output = np.zeros( np.shape(input) , dtype=np.float64 ) # place to store the data
+                                                    
+    if order not in [0, 1] and input.ndim > 0:
+        for axis in range(input.ndim):
+            spline_filter1d(input, order, axis, output = output)
+            input = output
+    else:
+        output[...] = input[...]
+    return output

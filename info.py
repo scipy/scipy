@@ -27,7 +27,7 @@ __doc__ = \
     
     The following callable classes are also provided:
 
-        Interpolate1d  :   an object for interpolation of
+        Interpolate1d  :   an object for 1D interpolation of
                                 various kinds.  interp1d is a wrapper
                                 around this class.
                                 
@@ -36,15 +36,21 @@ __doc__ = \
                                 is used.  However, not all functionality
                                 of Spline is available through Interpolate1d.
                                 
-        Interpolate2d  :
+        Interpolate2d  :  an object for 2D interpolation of
+                                various kinds.  interp2d is a wrapper
+                                around this class.
         
-        Spline 2d  :  
+        Spline2d  :  an object for spline interpolation.  Interpolate1d
+                                wraps this class if spline interpolation
+                                is used.  However, not all functionality
+                                of Spline2d is available through Interpolate1d.
         
-        InterpolateNd  :
+        InterpolateNd  :  an object for interpolation of ND data.  interpNd
+                                is a wrapper around this class.
         
     These functions and classes constitute the primary api.  However, several
-    additional functions are also provided (the primary api in many cases calls
-    these functions):
+    additional less generic functions are also provided for more direct interpolation.
+    They don't have as crafted a UI as those above, but they are quick and easy:
 
         linear : linear interpolation
         logarithmic :  logarithmic interpolation

@@ -36,6 +36,15 @@ is a given.
     
 **include spline pre-filtering in ND interpolation,
     or understand why we don't need to do that.
+    
+    It appears that higher-order splines also smooth the data
+    increasingly.  Yes, I checked and they definitely don't
+    reproduce perfectly the input; they flatten stuff.
+    
+    The pre-filtering definitely improves the output by a whole lot;
+    I suspect it returns some sort of transform of the data.  But I
+    really wish I knew what it did; why didn't this guy document his
+    code better than he did??
 
 **README file that describes the architecture of the
     package and also includes license information.
@@ -48,9 +57,13 @@ is a given.
 
 **allow newx to be in non-sorted order for 1D
     This requires rethinking the partition of newx into
-    low, high and mid
+    low, high and kind
     
-**put all extension files into their own directory
+    The main hurdle is that I can only really fill and array
+    using result[mask] = partial_result if I can guarantee
+    that everything will have the same type.  Maybe it is
+    worth compromising the generality of the function to
+    allow that.
     
 ********* LONGER TERM ************
 
