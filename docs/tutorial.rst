@@ -645,6 +645,55 @@ Beyond basic usage, Spline2 also has the methods
 ND Interpolation
 ================================================
 
+1D and 2D interpolation are analogous in their user interface.  However,
+the ND interpolation breaks from their patterns in certain important respects.
+
+The biggest difference is that the known data must be on a uniformly spaced
+grid; scattered points are not acceptable.  Rather than a list of points, the
+user passes in an N-dimensional array of data.  By default, the (i, j, k) element 
+of the array is taken to give the value of the function at the point (i, j, k), but
+the user can specify a different set of starting points and spacings.  The
+starting points and spacings can be different for each axis.  Starting points
+and spacings are specified by the keywords 'starting_coords' and 'spacings',
+which can be passed as arrays or lists.
+
+Second, when calling the object / function, the points to be interpolated are
+passed as an nxL array, where n is the dimensionality of the data; each column
+of the array specifies a point at which to interpolate a value, and the returned
+array of length L gives the value at each of the points.
+
+Here is a basic example which illustrates these points: ::
+
+    In []: from interpolate import interpNd
+    In []: X, Y = meshgrid(arange(10.), arange(10.))
+    In []: Z = X+Y # function just adds coordinates
+    In []: coordinates = array([ [1.1, 2.2, 4.6],
+                                          [1.1, 2.2, 4.0 ])
+    In []: interpNd(Z, coordinates)
+    Out []: array([2.2, 4.4, 8.6])
+    # say the data start at the point (2, 1) and
+    # points are spaced 2 apart
+    In []: interpNd(Z, coordinates, starting_coords = array([1, 1], spacings=[2, 2])
+    Out []: array([ .1, 1.2, 3.3])
+    
+By default, the interpolation is linear for points in-range and returns NaN for
+out-of-bounds; alternate types can be specified by the keywords
+'kind' and 'out', as in 2D interpolation.  However, 
+
+#) 'kind' must be a string ('linear', 'block', 'cubic', etc) indicating a type of
+    spline interpolation, or else an integers specifying the spline order.
+#) 'out' must be either NaN (the default), 'nearest', 'wrap', 'reflect' or 'constant'
+
+The user cannot pass in specially-tailored interpolation methods.
+
+There 
+
+The second point is that all interpolation is done using splines.  The keyword is still
+"kind", but only keywords specifying splines ('spline', 'cubic', 'quadratic', 'quintic', etc)
+are acceptable.  If kind is an integer, that integer is taken to be the order of the spline.
+Note also that 'linear' denotes a spline of order 1, and 'block' denotes a spline of order
+zero.  
+
 
 
 ================================================

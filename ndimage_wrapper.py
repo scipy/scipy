@@ -4,20 +4,27 @@ from numpy import array, arange, NaN
 import numpy as np
 import _nd_image
 
+def interpNd(data, coordinates, starting_coords=None, spacings=None, kind='linear',out=NaN):
+    return Interpolate1d(data = data,
+                                    starting_coords = starting_coords,
+                                    spacings = spacings,
+                                    kind = kind,
+                                    out = out
+                                    )(coordinates)
+
 class InterpolateNd:
     def __init__(self, data, starting_coords =None, spacings = None, 
-                        order=3, out=NaN):
+                        kind='linear', out=NaN):
         """ data = array or list of lists
             starting_coords = None, list, 1D array or 2D (nx1) array
             spacings = None, list, 1D array or 2D (nx1) array
+            kind = string or integer
+                0 = block extrapolation between midpoints
             out = string in 'nearest', 'wrap', 'reflect', 'mirror', 'constant'
                         or just NaN
         """
         
         # FIXME : include spline filtering
-        
-        if order < 0 or order > 5:
-            raise RuntimeError, 'spline order not supported'
         
         # checking format of input
         data = array(data)
@@ -29,15 +36,54 @@ class InterpolateNd:
             starting_coords = array(starting_coords)
             assert starting_coords.size == data.ndim, "There must be one element of \
                             starting_coords per data dimension.  Size mismatch."
-            starting_coords = reshape(starting_coords, (data.ndim, 1))
+            starting_coords = np.reshape(starting_coords, (data.ndim, 1))
         if spacings == None:
-            spacings = np.zeros(( data.ndim, 1 ))
+            spacings = np.ones(( data.ndim, 1 ))
         else:
             spacings = array(spacings)
             assert starting_coords.size == data.ndim, "There must be one element of \
                             starting_coords per data dimension"
-            spacings = reshape(spacings, (data.ndim, 1))
+            spacings = np.reshape(spacings, (data.ndim, 1))
         
+        # determining the order
+        order_dict = \
+            { 0:0,
+                '0':0,
+                'block':0,
+                1:1,
+                '1':1,
+                'linear':1,
+                'Linear':1,
+                2:2,
+                '2':2,
+                'quadratic':2,
+                'quad':2,
+                'Quadratic':2,
+                'Quad':2,
+                3:3,
+                '3':3,
+                'spline':3,
+                'Spline':3,
+                'cubic':3,
+                'Cubic':3,
+                4:4,
+                '4':4,
+                'quartic':4,
+                'Quartic':4,
+                5:5,
+                '5':5,
+                'quintic':5,
+                'quint':5,
+                'Quintic':5,
+                'Quint':5
+                }
+        if order_dict.has_key(kind):
+            self.order = order_dict[kind]
+        elif isinstance(kind, int):
+            raise ValueError, "Only spline orders 0, 1, ..., 5 are supported"
+        else:
+            raise ValueError, "argument kind = %s not recognized" % str(kind)
+                
         # storing relevant data
         self._data_array = data
         self.ndim = data.ndim
@@ -46,7 +92,6 @@ class InterpolateNd:
         self._min_coords = starting_coords
         self._max_coords = self._min_coords + self._shape*self._spacings
         self.out = out
-        self.order = order
         
     def __call__(self, coordinates):
         """ coordinates is an n x L array, where n is the dimensionality of the data
