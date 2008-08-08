@@ -20,8 +20,7 @@ Statistical models
 """
 __docformat__ = 'restructuredtext en'
 
-depends = ['weave',
-           'special.orthogonal',
+depends = ['special.orthogonal',
            'integrate',
            'optimize',
            'linalg']
