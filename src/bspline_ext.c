@@ -3,7 +3,7 @@
 
 /*  function prototypes */
 
-double *bspline(double*, double*, int, double *, int, int, int, int, int); 
+double *bspline(double**, double*, int, double *, int, int, int, int, int); 
 void bspline_gram(double **, double *, int, int, int, int);
 void invband_compute(double **, double *, int, int);
 
@@ -15,8 +15,8 @@ static PyObject *BSpline_Invband(PyObject *self, PyObject *args)
     double *L_data;
     npy_intp *dims_invband;
     npy_intp *dims_L;
-    PyObject *L       = NULL;
-    PyObject *invband = NULL;
+    PyArrayObject *L       = NULL;
+    PyArrayObject *invband = NULL;
 
     if(!PyArg_ParseTuple(args, "O", &L)) 
 	    goto exit;
@@ -28,13 +28,11 @@ static PyObject *BSpline_Invband(PyObject *self, PyObject *args)
     dims_invband[0] = dims_L[0];
     dims_invband[1] = dims_L[1];
 
-    invband = (PyObject*)PyArray_SimpleNew(2, dims_invband, PyArray_DOUBLE);
+    invband = (PyArrayObject*)PyArray_SimpleNew(2, dims_invband, PyArray_DOUBLE);
     data    = (double *)PyArray_DATA(invband);
     free(dims_invband);
 
     invband_compute(data, L_data, (int)dims_L[0], (int)dims_L[1]);
-
-    Py_DECREF(invband);
 
 exit:
 
@@ -51,11 +49,11 @@ static PyObject *BSpline_Gram(PyObject *self, PyObject *args)
     int dl;
     int dr;
     double *knots;
-    double *data;
+    double **data;
     npy_intp *nknots;
     npy_intp *dims_gram;
-    PyObject *knots_array = NULL;
-    PyObject *gram_array  = NULL;
+    PyArrayObject *knots_array = NULL;
+    PyArrayObject *gram_array  = NULL;
 
     if(!PyArg_ParseTuple(args, "Oiii", &knots_array, &m, &dl, &dr)) 
 	    goto exit;
@@ -67,13 +65,11 @@ static PyObject *BSpline_Gram(PyObject *self, PyObject *args)
     dims_gram[0] = (int)nknots[0] - m;
     dims_gram[1] = m; 
 
-    gram_array  = (PyObject*)PyArray_SimpleNew(2, dims_gram, PyArray_DOUBLE);
-    data        = (double *)PyArray_DATA(gram_array);
+    gram_array  = (PyArrayObject*)PyArray_SimpleNew(2, dims_gram, PyArray_DOUBLE);
+    data        = (double **)PyArray_DATA(gram_array);
     free(dims_gram);
 
     bspline_gram(data, knots, (int)nknots[0], m, dl, dr);
-
-    Py_DECREF(gram_array);
 
 exit:
 
@@ -85,6 +81,7 @@ exit:
 static PyObject *BSpline_Evaluate(PyObject *self, PyObject *args)
 {
 
+    int i;
     int upper;
     int lower;
     int m;
@@ -94,10 +91,10 @@ static PyObject *BSpline_Evaluate(PyObject *self, PyObject *args)
     double *data;
     npy_intp *nknots;
     npy_intp *nx;
-    npy_intp *dims_basis;
-    PyObject *knots_array = NULL;
-    PyObject *x_array     = NULL;
-    PyObject *basis_array = NULL;
+    npy_intp dims_basis[2];
+    PyArrayObject *knots_array = NULL;
+    PyArrayObject *x_array     = NULL;
+    PyArrayObject *basis_array = NULL;
 
     if(!PyArg_ParseTuple(args, "OOiiii", &x_array, &knots_array, &m, &d, &lower, &upper)) 
 	    goto exit;
@@ -108,16 +105,12 @@ static PyObject *BSpline_Evaluate(PyObject *self, PyObject *args)
     knots  = (double *)PyArray_DATA(knots_array);
     x      = (double *)PyArray_DATA(x_array);
 
-    dims_basis = calloc(2, sizeof(npy_intp));
     dims_basis[0] = upper-lower;
     dims_basis[1] = (int)nx[0];
-    basis_array   = (PyObject*)PyArray_SimpleNew(2, dims_basis, PyArray_DOUBLE);
+    basis_array   = (PyArrayObject*)PyArray_SimpleNew(2, dims_basis, PyArray_DOUBLE);
     data          = (double *)PyArray_DATA(basis_array);
-    free(dims_basis);
 
-    bspline(data, x, (int)nx[0], knots, (int)nknots[0], m, d, lower, upper); 
-
-    Py_DECREF(basis_array);
+    bspline(&data, x, (int)nx[0], knots, (int)nknots[0], m, d, lower, upper); 
 
 exit:
 
@@ -134,7 +127,7 @@ static PyMethodDef BSplineMethods[] =
     {  NULL, NULL, 0, NULL},
 };
 
-PyMODINIT_FUNC init_segment(void)
+PyMODINIT_FUNC init_hbspline(void)
 {
     Py_InitModule("_hbspline", BSplineMethods);
     import_array();
