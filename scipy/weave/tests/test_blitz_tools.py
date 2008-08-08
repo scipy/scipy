@@ -8,10 +8,7 @@ from numpy.testing import *
 
 from scipy.weave import blitz_tools
 from scipy.weave.ast_tools import harvest_variables
-
-set_local_path()
 from weave_test_utils import *
-restore_path()
 
 
 class TestAstToBlitzExpr(TestCase):

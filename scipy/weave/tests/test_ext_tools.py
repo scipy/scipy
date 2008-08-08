@@ -1,4 +1,3 @@
-
 import time
 
 from numpy.testing import *
@@ -10,9 +9,7 @@ except ImportError:
     pass # requires numpy.numerix
 
 
-set_local_path()
 from weave_test_utils import *
-restore_path()
 
 build_dir = empty_temp_dir()
 print 'building extensions here:', build_dir
