@@ -32,7 +32,7 @@ static PyObject *BSpline_Invband(PyObject *self, PyObject *args)
     data    = (double *)PyArray_DATA(invband);
     free(dims_invband);
 
-    invband_compute(data, L_data, (int)dims_L[0], (int)dims_L[1]);
+    invband_compute(&data, L_data, (int)dims_L[0], (int)dims_L[1]);
 
 exit:
 
@@ -49,7 +49,7 @@ static PyObject *BSpline_Gram(PyObject *self, PyObject *args)
     int dl;
     int dr;
     double *knots;
-    double **data;
+    double *data;
     npy_intp *nknots;
     npy_intp *dims_gram;
     PyArrayObject *knots_array = NULL;
@@ -66,10 +66,10 @@ static PyObject *BSpline_Gram(PyObject *self, PyObject *args)
     dims_gram[1] = m; 
 
     gram_array  = (PyArrayObject*)PyArray_SimpleNew(2, dims_gram, PyArray_DOUBLE);
-    data        = (double **)PyArray_DATA(gram_array);
+    data        = (double *)PyArray_DATA(gram_array);
     free(dims_gram);
 
-    bspline_gram(data, knots, (int)nknots[0], m, dl, dr);
+    bspline_gram(&data, knots, (int)nknots[0], m, dl, dr);
 
 exit:
 
