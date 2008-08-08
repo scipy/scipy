@@ -11,6 +11,11 @@ is a given.
 
 ************ API and/or MAJOR ISSUES ***********
 
+**better ND interpolation
+    InterpolateNd works, but the quadratic and higher order splines are
+    sometimes really ugly.  It seems they have a boundary condition that the
+    derivative must be zero.
+
 **possibly allow interp2d to return a 2d array?  Like in the case that
     x and y are 2d arrays in meshgrid format.
     

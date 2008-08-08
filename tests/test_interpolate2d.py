@@ -9,7 +9,7 @@ import numpy as np
 from numpy import arange, meshgrid, ravel
 
 from interpolate2d import interp2d, Interpolate2d, atleast_1d_and_contiguous
-from fitpack_wrapper2d import Spline2d
+from fitpack_wrapper import Spline2d
 
 # unit testing
 import unittest, time

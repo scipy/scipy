@@ -2,7 +2,7 @@
 
 from numpy import array, arange, NaN
 import numpy as np
-import _nd_image
+import _nd_image # extension module with interpolation code
 
 def interpNd(data, coordinates, starting_coords=None, spacings=None, kind='linear',out=NaN):
     """ A function for interpolation of 1D, real-valued data.
@@ -70,6 +70,10 @@ def interpNd(data, coordinates, starting_coords=None, spacings=None, kind='linea
 
 class InterpolateNd:
     """ A callable class for interpolation of 1D, real-valued data.
+    
+        Under the hood, interpolation is always done with splines.  Those
+        of order 2 or higher have the boundary condition of zero derivative.
+        This is a potential shortcoming of the package; natural splines would be better.
         
         Parameters
         -----------
@@ -120,6 +124,11 @@ class InterpolateNd:
             >>> nd.InterpolateNd(boring_data)( np.array([[2.3], [1.0], [3.9]]) )
             1.0
     """
+    # Under the hood this works by interpolating entries in an array, rather than
+    # values at points in space.  Known data are stored as an array; info on spacings
+    # and starting coords describes the mapping from the array to ND space.  When the
+    # function is called, the coordinates are first converted into array values.
+    # The array interpolation is handled by the C extension _nd_image.
     def __init__(self, data, starting_coords =None, spacings = None, 
                         kind='linear', out=NaN):
         """ data = array or list of lists
@@ -130,9 +139,6 @@ class InterpolateNd:
             out = string in 'nearest', 'wrap', 'reflect', 'mirror', 'constant'
                         or just NaN
         """
-        
-        # FIXME : include spline filtering
-        # the ndimage module says that it requires pre-filtering for 
         
         # checking format of input
         data = array(data)
@@ -192,21 +198,21 @@ class InterpolateNd:
         else:
             raise ValueError, "argument kind = %s not recognized" % str(kind)
                 
-        
+        # Spline pre-filtering
         # This step is done because it is required by the ndimage code that I'm scavenging.
         # I don't fully understand why it must do this, and that's a problem.  But empirically
         # this step is needed in order to get good-looking data.
         if self.order >1:
-            self._data_array = spline_filter(data, self.order)
+            self._data_array = self._spline_filter(data, self.order)
         else:
             self._data_array = data
         
         # storing relevant data
-        self.ndim = data.ndim
-        self._shape = np.shape(data)
+        self.ndim = self._data_array.ndim
+        self.shape_as_column_vec = np.reshape(np.shape(self._data_array), 
+                                                                (self.ndim, 1))
         self._spacings = spacings
         self._min_coords = starting_coords
-        self._max_coords = self._min_coords + self._shape*self._spacings
         self.out = out
         
     def __call__(self, coordinates):
@@ -271,73 +277,36 @@ class InterpolateNd:
         """ return an array of bools saying which
             points are in interpolation bounds
         """
-        shape_as_column_vec = np.reshape(self._shape, (self.ndim, 1))
         
         # entry is 1 if that coordinate of a point is in its bounds
         index_in_bounds = (0 <= indices) & \
-                                    (indices <= shape_as_column_vec)
+                                    (indices <= self.shape_as_column_vec)
         
         # for each point, number of coordinates that are in bounds
         num_indices_in_bounds = np.sum(index_in_bounds, axis=0)
         
         # True if each coordinate for the point is in bounds
         return num_indices_in_bounds == self.ndim
-        
-    def _coord_in_bounds(self, coordinates):
-        """ return an array of bools saying which
-            points are in interpolation bounds
+
+    def _spline_filter(self, data, order = 3):
+        """ Multi-dimensional spline filter.
+
+            Note: The multi-dimensional filter is implemented as a sequence of
+            one-dimensional spline filters. The intermediate arrays are stored
+            in the same data type as the output. Therefore, for output types
+            with a limited precision, the results may be imprecise because
+            intermediate results may be stored with insufficient precision.
+            
+            order must be from 0 to 5
         """
-        # entry is 1 if that coordinate of a point is in its bounds
-        coord_in_bounds = (self._min_coords <= coordinates) & \
-                                    (coordinates <= self._max_coords)
+                                                        
+        # allocate memory in which to put the output
+        output = np.zeros( np.shape(data) , dtype=np.float64 )
         
-        # for each point, number of coordinates that are in bounds
-        num_coords_in_bounds = np.sum(coord_in_bounds, axis=0)
-        
-        # True if each coordinate for the point is in bounds
-        return num_coords_in_bounds == self.ndim
-        
-    
-        
-    
-        
-        
-        
-    
-    
-import _ni_support
-
-def spline_filter1d(input, order = 3, axis = -1, output = np.float64,
-                    output_type = None):
-                    # takes array and everything; we can make input safe if user never touches it
-    """ Calculates a one-dimensional spline filter along the given axis.
-
-        The lines of the array along the given axis are filtered by a
-        spline filter. The order of the spline must be >= 2 and <= 5.
-    """    
-    if order in [0, 1]:
-        output[...] = np.array(input)
-    else:
-        _nd_image.spline_filter1d(input, order, axis, output)
-    return output
-
-def spline_filter(input, order = 3, output = np.float64,
-                  output_type = None):
-    """ Multi-dimensional spline filter.
-
-        Note: The multi-dimensional filter is implemented as a sequence of
-        one-dimensional spline filters. The intermediate arrays are stored
-        in the same data type as the output. Therefore, for output types
-        with a limited precision, the results may be imprecise because
-        intermediate results may be stored with insufficient precision.
-    """
-                                                    
-    output = np.zeros( np.shape(input) , dtype=np.float64 ) # place to store the data
-                                                    
-    if order not in [0, 1] and input.ndim > 0:
-        for axis in range(input.ndim):
-            spline_filter1d(input, order, axis, output = output)
-            input = output
-    else:
-        output[...] = input[...]
-    return output
+        if order in [0, 1]:
+            output = data
+        else:
+            for axis in range(data.ndim):
+                _nd_image.spline_filter1d(data, order, axis, output)
+                data = output
+        return output
