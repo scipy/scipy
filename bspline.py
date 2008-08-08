@@ -20,7 +20,15 @@ import numpy.linalg as L
 
 from scipy.linalg import solveh_banded
 from scipy.optimize import golden
-from scipy.stats.models import _bspline
+from scipy.stats.models import _hbspline
+
+
+# Issue warning regarding heavy development status of this module
+import warnings
+_msg = "The bspline code is technology preview and requires significant work\
+on the public API and documentation. The API will likely change in the future"
+warnings.warn(_msg, UserWarning)
+
 
 def _band2array(a, lower=0, symmetric=False, hermitian=False):
     """
@@ -190,6 +198,10 @@ class BSpline(object):
                  Bspline to avoid extra evaluation in the __call__ method
 
     '''
+    # FIXME: update parameter names, replace single character names 
+    # FIXME: `order` should be actual spline order (implemented as order+1)
+    ## FIXME: update the use of spline order in extension code (evaluate is recursively called) 
+    # FIXME: eliminate duplicate M and m attributes (m is order, M is related to tau size)
 
     def __init__(self, knots, order=4, M=None, coef=None, x=None):
 
@@ -277,7 +289,7 @@ class BSpline(object):
         x.shape = (N.product(_shape,axis=0),)
         if i < self.tau.shape[0] - 1:
            ## TODO: OWNDATA flags...
-            v = _bspline.evaluate(x, self.tau, self.m, d, i, i+1)
+            v = _hbspline.evaluate(x, self.tau, self.m, d, i, i+1)
         else:
             return N.zeros(x.shape, N.float64)
 
@@ -321,7 +333,7 @@ class BSpline(object):
 
         d = N.asarray(d)
         if d.shape == ():
-            v = _bspline.evaluate(x, self.tau, self.m, int(d), lower, upper)
+            v = _hbspline.evaluate(x, self.tau, self.m, int(d), lower, upper)
         else:
             if d.shape[0] != 2:
                 raise ValueError, "if d is not an integer, expecting a jx2 \
@@ -330,7 +342,7 @@ class BSpline(object):
 
             v = 0
             for i in range(d.shape[1]):
-                v += d[1,i] * _bspline.evaluate(x, self.tau, self.m, d[0,i], lower, upper)
+                v += d[1,i] * _hbspline.evaluate(x, self.tau, self.m, d[0,i], lower, upper)
 
         v.shape = (upper-lower,) + _shape
         if upper == self.tau.shape[0] - self.m:
@@ -373,7 +385,7 @@ class BSpline(object):
 
         d = N.squeeze(d)
         if N.asarray(d).shape == ():
-            self.g = _bspline.gram(self.tau, self.m, int(d), int(d))
+            self.g = _hbspline.gram(self.tau, self.m, int(d), int(d))
         else:
             d = N.asarray(d)
             if d.shape[0] != 2:
@@ -385,7 +397,7 @@ class BSpline(object):
             self.g = 0
             for i in range(d.shape[1]):
                 for j in range(d.shape[1]):
-                    self.g += d[1,i]* d[1,j] * _bspline.gram(self.tau, self.m, int(d[0,i]), int(d[0,j]))
+                    self.g += d[1,i]* d[1,j] * _hbspline.gram(self.tau, self.m, int(d[0,i]), int(d[0,j]))
         self.g = self.g.T
         self.d = d
         return N.nan_to_num(self.g)
@@ -424,6 +436,8 @@ class SmoothingSpline(BSpline):
            Formally, this solves a minimization:
 
            fhat = ARGMIN_f SUM_i=1^n (y_i-f(x_i))^2 + pen * int f^(2)^2
+
+	   int is integral. pen is lambda (from Hastie)
 
            See Chapter 5 of
 
@@ -553,7 +567,7 @@ class SmoothingSpline(BSpline):
         """
 
         if self.pen > 0:
-            _invband = _bspline.invband(self.chol.copy())
+            _invband = _hbspline.invband(self.chol.copy())
             tr = _trace_symbanded(_invband, self.btb, lower=1)
             return tr
         else:
