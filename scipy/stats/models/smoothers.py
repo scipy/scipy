@@ -9,9 +9,8 @@ import numpy.linalg as L
 from scipy.linalg import solveh_banded
 from scipy.optimize import golden
 
-from scipy.stats.models import _bspline
-from scipy.stats.models.bspline import bspline, _band2array
-
+from scipy.stats.models import _hbspline
+from scipy.stats.models.bspline import BSpline, _band2array
 
 class PolySmoother:
     """
@@ -61,7 +60,7 @@ class PolySmoother:
         _y = y * _w
         self.coef = N.dot(L.pinv(X).T, _y)
 
-class SmoothingSpline(bspline):
+class SmoothingSpline(BSpline):
 
     penmax = 30.
 
@@ -153,7 +152,7 @@ class SmoothingSpline(bspline):
         """
 
         if self.pen > 0:
-            _invband = _bspline.invband(self.chol.copy())
+            _invband = _hbspline.invband(self.chol.copy())
             tr = _trace_symbanded(_invband, self.btb, lower=1)
             return tr
         else:
@@ -174,7 +173,7 @@ class SmoothingSplineFixedDF(SmoothingSpline):
     def __init__(self, knots, order=4, coef=None, M=None, target_df=None):
         if target_df is not None:
             self.target_df = target_df
-        bspline.__init__(self, knots, order=order, coef=coef, M=M)
+        BSpline.__init__(self, knots, order=order, coef=coef, M=M)
         self.target_reached = False
 
     def fit(self, y, x=None, df=None, weights=None, tol=1.0e-03):

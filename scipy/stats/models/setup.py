@@ -1,27 +1,21 @@
 
-def configuration(parent_package='',top_path=None, package_name='models'):
+def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    config = Configuration(package_name,parent_package,top_path)
+    config = Configuration('models',parent_package,top_path)
 
-    config.add_subpackage('*')
+    config.add_subpackage('family')
+    config.add_subpackage('robust')
 
     config.add_data_dir('tests')
 
-    try:
-        from scipy.stats.models.bspline_module import mod
-        n, s, d = weave_ext(mod)
-        config.add_extension(n, s, **d)
-    except ImportError: pass
-
+    config.add_extension('_hbspline',
+                         sources=['src/bspline_ext.c',
+                                  'src/bspline_impl.c'],
+    )
     return config
-
-def weave_ext(mod):
-    d = mod.setup_extension().__dict__
-    n = d['name']; del(d['name'])
-    s = d['sources']; del(d['sources'])
-    return n, s, d
 
 if __name__ == '__main__':
 
     from numpy.distutils.core import setup
-    setup(**configuration(top_path='', package_name='scipy.stats.models').todict())
+    setup(**configuration(top_path='').todict())
+
